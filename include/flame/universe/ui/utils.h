@@ -341,7 +341,7 @@ namespace flame
 				auto new_m = new_mail<WrapedMail>();
 				new_m.p->f = func;
 				new_m.p->m = mail;
-				cer->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				cer->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key))
 					{
 						auto& m = *(WrapedMail*)c;
@@ -495,7 +495,7 @@ namespace flame
 				c_element();
 				auto ce = c_event_receiver();
 				ce->pass = (Entity*)INVALID_POINTER;
-				ce->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				ce->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thumb = (*(cScrollbarThumb**)c);
 					if (is_mouse_scroll(action, key))
 						thumb->update(-pos.x() * 20.f);
@@ -802,7 +802,7 @@ namespace flame
 			new_m.p->root = current_root();
 			new_m.p->f = func;
 			new_m.p->m = mail;
-			c_event_receiver()->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			c_event_receiver()->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto& m = *(WrapedMail*)c;

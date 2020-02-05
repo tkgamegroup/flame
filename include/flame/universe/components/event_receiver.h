@@ -29,9 +29,9 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drop_count, const uint* drops);
 
-		ListenerHub<void(void* c, KeyState action, int value)> key_listeners;
-		ListenerHub<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)> mouse_listeners;
-		ListenerHub<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)> drag_and_drop_listeners;
+		ListenerHub<void(void* c, KeyStateFlags action, int value)>								key_listeners;
+		ListenerHub<void(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>		mouse_listeners;
+		ListenerHub<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)>	drag_and_drop_listeners;
 
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};

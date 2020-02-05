@@ -53,7 +53,7 @@ namespace flame
 			c_event_receiver->pass = pass;
 			if (!modal)
 			{
-				c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto e = *(Entity**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{

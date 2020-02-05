@@ -79,9 +79,9 @@ namespace flame
 
 				VkDescriptorSetLayoutBinding vk_binding;
 				vk_binding.binding = i;
-				vk_binding.descriptorType = to_enum(type);
+				vk_binding.descriptorType = to_backend(type);
 				vk_binding.descriptorCount = b->count;
-				vk_binding.stageFlags = to_flags(ShaderStageAll);
+				vk_binding.stageFlags = to_backend_flags<ShaderStage$>(ShaderStageAll);
 				vk_binding.pImmutableSamplers = nullptr;
 				vk_bindings.push_back(vk_binding);
 			}
@@ -380,7 +380,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_enum(l->bindings[binding]->type);
+			write.descriptorType = to_backend(l->bindings[binding]->type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
@@ -406,7 +406,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_enum(l->bindings[binding]->type);
+			write.descriptorType = to_backend(l->bindings[binding]->type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
@@ -601,7 +601,7 @@ namespace flame
 			VkPushConstantRange vk_pushconstant;
 			vk_pushconstant.offset = 0;
 			vk_pushconstant.size = pc_size;
-			vk_pushconstant.stageFlags = to_flags(ShaderStageAll);
+			vk_pushconstant.stageFlags = to_backend_flags<ShaderStage$>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -1147,7 +1147,7 @@ namespace flame
 				dst.pNext = nullptr;
 				dst.pSpecializationInfo = nullptr;
 				dst.pName = "main";
-				dst.stage = to_enum(src.type);
+				dst.stage = to_backend(src.type);
 				dst.module = src.vk_shader_module;
 			}
 
@@ -1168,10 +1168,10 @@ namespace flame
 						_dst.binding = i;
 						_dst.offset = dst.stride;
 						dst.stride += format_size(_src.format);
-						_dst.format = to_enum(_src.format);
+						_dst.format = to_backend(_src.format);
 						vk_vi_attributes.push_back(_dst);
 					}
-					dst.inputRate = to_enum(src.rate);
+					dst.inputRate = to_backend(src.rate);
 				}
 			}
 
@@ -1188,7 +1188,7 @@ namespace flame
 			assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 			assembly_state.flags = 0;
 			assembly_state.pNext = nullptr;
-			assembly_state.topology = to_enum(vi ? vi->primitive_topology : PrimitiveTopologyTriangleList);
+			assembly_state.topology = to_backend(vi ? vi->primitive_topology : PrimitiveTopologyTriangleList);
 			assembly_state.primitiveRestartEnable = VK_FALSE;
 
 			VkPipelineTessellationStateCreateInfo tess_state;
@@ -1226,8 +1226,8 @@ namespace flame
 			raster_state.flags = 0;
 			raster_state.depthClampEnable = raster ? raster->depth_clamp : false;
 			raster_state.rasterizerDiscardEnable = VK_FALSE;
-			raster_state.polygonMode = to_enum(raster ? raster->polygon_mode : PolygonModeFill);
-			raster_state.cullMode = to_enum(raster ? raster->cull_mode : CullModeNone);
+			raster_state.polygonMode = to_backend(raster ? raster->polygon_mode : PolygonModeFill);
+			raster_state.cullMode = to_backend(raster ? raster->cull_mode : CullModeNone);
 			raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 			raster_state.depthBiasEnable = VK_FALSE;
 			raster_state.depthBiasConstantFactor = 0.f;
@@ -1239,7 +1239,7 @@ namespace flame
 			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
-			multisample_state.rasterizationSamples = to_enum(sc);
+			multisample_state.rasterizationSamples = to_backend(sc);
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
 			multisample_state.pSampleMask = nullptr;
@@ -1252,7 +1252,7 @@ namespace flame
 			depth_stencil_state.pNext = nullptr;
 			depth_stencil_state.depthTestEnable = depth ? depth->test : false;
 			depth_stencil_state.depthWriteEnable = depth ? depth->write : false;
-			depth_stencil_state.depthCompareOp = to_enum(depth ? depth->compare_op : CompareOpLess);
+			depth_stencil_state.depthCompareOp = to_backend(depth ? depth->compare_op : CompareOpLess);
 			depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 			depth_stencil_state.minDepthBounds = 0;
 			depth_stencil_state.maxDepthBounds = 0;
@@ -1274,11 +1274,11 @@ namespace flame
 					const auto& src = outputs[i];
 					auto& dst = vk_blend_attachment_states[i];
 					dst.blendEnable = src.blend_enable;
-					dst.srcColorBlendFactor = to_enum(src.blend_src_color);
-					dst.dstColorBlendFactor = to_enum(src.blend_dst_color);
+					dst.srcColorBlendFactor = to_backend(src.blend_src_color);
+					dst.dstColorBlendFactor = to_backend(src.blend_dst_color);
 					dst.colorBlendOp = VK_BLEND_OP_ADD;
-					dst.srcAlphaBlendFactor = to_enum(src.blend_src_alpha);
-					dst.dstAlphaBlendFactor = to_enum(src.blend_dst_alpha);
+					dst.srcAlphaBlendFactor = to_backend(src.blend_src_alpha);
+					dst.dstAlphaBlendFactor = to_backend(src.blend_dst_alpha);
 					dst.alphaBlendOp = VK_BLEND_OP_ADD;
 					dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				}
@@ -1298,7 +1298,7 @@ namespace flame
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
 			for (auto i = 0; i < dynamic_state_count; i++)
-				vk_dynamic_states.push_back(to_enum((DynamicState)dynamic_states[i]));
+				vk_dynamic_states.push_back(to_backend((DynamicState)dynamic_states[i]));
 			if (vp.x() == 0 && vp.y() == 0)
 			{
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
@@ -1360,7 +1360,7 @@ namespace flame
 			pipeline_info.stage.pNext = nullptr;
 			pipeline_info.stage.pSpecializationInfo = nullptr;
 			pipeline_info.stage.pName = "main";
-			pipeline_info.stage.stage = to_enum(ShaderStageComp);
+			pipeline_info.stage.stage = to_backend(ShaderStageComp);
 			pipeline_info.stage.module = compute_shader_info.vk_shader_module;
 
 			pipeline_info.basePipelineHandle = 0;

@@ -19,7 +19,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage);
+			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsageFlags usage);
 			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
@@ -45,7 +45,7 @@ namespace flame
 			~ImageviewPrivate();
 		};
 
-		inline ImageAspect aspect_from_format(Format$ fmt)
+		inline ImageAspectFlags aspect_from_format(Format$ fmt)
 		{
 			if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				return ImageAspectColor;
@@ -54,7 +54,7 @@ namespace flame
 				int a = ImageAspectDepth;
 				if (fmt >= Format_DepthStencil_Begin && fmt <= Format_DepthStencil_End)
 					a |= ImageAspectStencil;
-				return (ImageAspect)a;
+				return a;
 			}
 			return ImageAspectColor;
 		}

@@ -42,7 +42,7 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key))
 					{
 						auto thiz = *(cTogglePrivate**)c;

@@ -106,7 +106,7 @@ namespace flame
 			if (window)
 			{
 
-				key_listener = window->key_listeners.add([](void* c, KeyState action, int value) {
+				key_listener = window->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(sEventDispatcherPrivate**)c;
 
 					if (action == KeyStateNull)
@@ -139,7 +139,7 @@ namespace flame
 					thiz->pending_update = true;
 				}, new_mail_p(this));
 
-				mouse_listener = window->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = window->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(sEventDispatcherPrivate**)c;
 
 					if (action == KeyStateNull)
@@ -273,18 +273,18 @@ namespace flame
 				{
 					auto s = mouse_buttons[i];
 					if (s & KeyStateJust)
-						((cEventReceiverPrivate*)er)->on_mouse((KeyState)s, (MouseKey)i, mouse_pos);
+						((cEventReceiverPrivate*)er)->on_mouse(s, (MouseKey)i, mouse_pos);
 				}
 			}
-			if (focusing && is_mouse_up((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
+			if (focusing && is_mouse_up(mouse_buttons[Mouse_Left], Mouse_Left, true) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
 			{
 				auto disp = mouse_pos - active_pos;
-				((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp), Mouse_Null, disp);
+				((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, disp);
 				if (focusing) // since focusing may change to null after on_mouse
 				{
 					if (potential_dbclick_er == focusing)
 					{
-						((cEventReceiverPrivate*)focusing)->on_mouse(KeyState(KeyStateDown | KeyStateUp | KeyStateDouble), Mouse_Null, disp);
+						((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, disp);
 						potential_dbclick_er = nullptr;
 						potential_dbclick_time = 0.f;
 					}

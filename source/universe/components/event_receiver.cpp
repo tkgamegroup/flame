@@ -32,12 +32,12 @@ namespace flame
 		ListenerHubImpl::destroy(drag_and_drop_listeners.impl);
 	}
 
-	void cEventReceiverPrivate::on_key(KeyState action, uint value)
+	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)
 	{
 		key_listeners.call(action, value);
 	}
 
-	void cEventReceiverPrivate::on_mouse(KeyState action, MouseKey key, const Vec2i& value)
+	void cEventReceiverPrivate::on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value)
 	{
 		mouse_listeners.call(action, key, value);
 	}

@@ -4,7 +4,7 @@ namespace flame
 {
 	namespace ui
 	{
-		inline bool is_menu_can_open(cMenu* menu, KeyState action, MouseKey key)
+		inline bool is_menu_can_open(cMenu* menu, KeyStateFlags action, MouseKey key)
 		{
 			if (menu->mode == cMenu::ModeContext)
 			{

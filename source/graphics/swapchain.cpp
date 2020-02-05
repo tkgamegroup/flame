@@ -75,7 +75,7 @@ namespace flame
 			surface_formats.resize(surface_format_count);
 			vkGetPhysicalDeviceSurfaceFormatsKHR(d->physical_device, s, &surface_format_count, surface_formats.data());
 
-			swapchain_format = to_enum(surface_formats[0].format, true);
+			swapchain_format = get_format(surface_formats[0].format, true);
 
 			VkSwapchainCreateInfoKHR swapchain_info;
 			swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -83,7 +83,7 @@ namespace flame
 			swapchain_info.pNext = nullptr;
 			swapchain_info.surface = s;
 			swapchain_info.minImageCount = image_count;
-			swapchain_info.imageFormat = to_enum(swapchain_format);
+			swapchain_info.imageFormat = to_backend(swapchain_format);
 			swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
 			swapchain_info.imageExtent.width = size.x();
 			swapchain_info.imageExtent.height = size.y();

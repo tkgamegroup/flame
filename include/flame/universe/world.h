@@ -18,7 +18,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS System* get_system_plain(uint name_hash) const;
 
-		template<class T>
+		template <class T>
 		T* get_system_t(uint name_hash) const
 		{
 			return (T*)get_system_plain(name_hash);

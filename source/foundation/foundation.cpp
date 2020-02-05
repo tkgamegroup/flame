@@ -600,7 +600,7 @@ namespace flame
 		bool modifier_shift;
 		bool modifier_ctrl;
 		bool modifier_alt;
-		void (*callback)(void* c, KeyState action);
+		void (*callback)(void* c, KeyStateFlags action);
 		Mail<> capture;
 	};
 
@@ -634,7 +634,7 @@ namespace flame
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyState action), const Mail<>& capture)
+	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail<>& capture)
 	{
 		auto l = new GlobalKeyListener;
 		l->key = key;
@@ -1143,7 +1143,7 @@ namespace flame
 
 	static std::vector<SysWindowPrivate*> windows;
 
-	SysWindow* SysWindow::create(const char* title, const Vec2u& size, uint style)
+	SysWindow* SysWindow::create(const char* title, const Vec2u& size, WindowStyleFlags style)
 	{
 		static bool initialized = false;
 		if (!initialized)

@@ -64,7 +64,7 @@ namespace flame
 
 	FLAME_UNIVERSE_EXPORTS void* universe_alloc(uint size);
 
-	template<class T>
+	template <class T>
 	T* new_u_object()
 	{
 		auto c = (T*)universe_alloc(sizeof(T));

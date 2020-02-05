@@ -54,7 +54,7 @@ struct cComponentDealer : Component
 	}
 };
 
-template<class T>
+template <class T>
 void create_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 {
 	auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
@@ -84,7 +84,7 @@ void create_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 	ui::current_parent()->add_component(c_tracker);
 }
 
-template<uint N, class T>
+template <uint N, class T>
 void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 {
 	struct Capture

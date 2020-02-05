@@ -79,7 +79,7 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->accept_key = true;
-				key_listener = event_receiver->key_listeners.add([](void* c, KeyState action, int value) {
+				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
 					auto text = thiz->text;
 					auto lenght = text->text_length();
@@ -136,7 +136,7 @@ namespace flame
 					}
 				}, new_mail_p(this));
 
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cEditPrivate**)c;
 
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)

@@ -232,7 +232,10 @@ namespace flame
 			assert(res == VK_SUCCESS || res == VK_ERROR_OUT_OF_DATE_KHR);
 		}
 
-		inline VkFormat to_enum(Format$ f)
+		template <class T>
+		VkFlags to_backend_flags(uint);
+
+		inline VkFormat to_backend(Format$ f)
 		{
 			switch (f)
 			{
@@ -276,7 +279,7 @@ namespace flame
 			}
 		}
 
-		inline Format$ to_enum(VkFormat f, bool is_swapchain)
+		inline Format$ get_format(VkFormat f, bool is_swapchain)
 		{
 			switch (f)
 			{
@@ -289,7 +292,7 @@ namespace flame
 			}
 		}
 
-		inline std::string cpp_typehash_to_glsl_typename(uint hash)
+		inline std::string to_glsl_typename(uint hash)
 		{
 			switch (hash)
 			{
@@ -335,7 +338,7 @@ namespace flame
 			}
 		}
 
-		inline std::string format_to_cpp_typename(Format$ f)
+		inline std::string to_cpp_typename(Format$ f)
 		{
 			switch (f)
 			{
@@ -354,7 +357,7 @@ namespace flame
 			}
 		}
 
-		inline std::string format_to_glsl_typename(Format$ f)
+		inline std::string to_glsl_typename(Format$ f)
 		{
 			switch (f)
 			{
@@ -373,7 +376,8 @@ namespace flame
 			}
 		}
 
-		inline VkMemoryPropertyFlags to_flags(MemProp$ p)
+		template <>
+		inline VkFlags to_backend_flags<MemProp$>(uint p)
 		{
 			VkMemoryPropertyFlags ret = 0;
 			if (p & MemPropDevice)
@@ -385,7 +389,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkSampleCountFlagBits to_enum(SampleCount$ s)
+		inline VkSampleCountFlagBits to_backend(SampleCount$ s)
 		{
 			switch (s)
 			{
@@ -404,7 +408,7 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlagBits to_enum(ShaderStage$ t)
+		inline VkShaderStageFlagBits to_backend(ShaderStage$ t)
 		{
 			switch (t)
 			{
@@ -423,7 +427,8 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlags to_flags(ShaderStage$ t)
+		template <>
+		inline VkFlags to_backend_flags<ShaderStage$>(uint t)
 		{
 			VkShaderStageFlags ret = 0;
 			if (t & ShaderStageVert)
@@ -441,7 +446,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkDescriptorType to_enum(DescriptorType$ t)
+		inline VkDescriptorType to_backend(DescriptorType$ t)
 		{
 			switch (t)
 			{
@@ -456,7 +461,7 @@ namespace flame
 			}
 		}
 
-		inline VkPipelineBindPoint to_enum(PipelineType t)
+		inline VkPipelineBindPoint to_backend(PipelineType t)
 		{
 			switch (t)
 			{
@@ -469,7 +474,8 @@ namespace flame
 			}
 		}
 
-		inline VkBufferUsageFlags to_flags(BufferUsage$ u)
+		template <>
+		inline VkFlags to_backend_flags<BufferUsage$>(uint u)
 		{
 			VkBufferUsageFlags ret = 0;
 			if (u & BufferUsageTransferSrc)
@@ -489,7 +495,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageUsageFlags to_flags(ImageUsage$ u, Format$ fmt, SampleCount$ sc)
+		inline VkImageUsageFlags get_backend_image_usage_flags(ImageUsageFlags u, Format$ fmt, SampleCount$ sc)
 		{
 			VkImageUsageFlags ret = 0;
 			if (u & ImageUsageTransferSrc)
@@ -512,7 +518,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageLayout to_enum(ImageLayout l, Format$ fmt)
+		inline VkImageLayout to_backend(ImageLayout l, Format$ fmt)
 		{
 			switch (l)
 			{
@@ -537,7 +543,8 @@ namespace flame
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 
-		inline VkImageAspectFlags to_flags(ImageAspect a)
+		template <>
+		inline VkFlags to_backend_flags<ImageAspect>(uint a)
 		{
 			VkImageAspectFlags ret = 0;
 			if (a & ImageAspectColor)
@@ -549,7 +556,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageViewType to_enum(ImageviewType$ t)
+		inline VkImageViewType to_backend(ImageviewType$ t)
 		{
 			switch (t)
 			{
@@ -570,7 +577,7 @@ namespace flame
 			}
 		}
 
-		inline VkComponentSwizzle to_enum(Swizzle$ s)
+		inline VkComponentSwizzle to_backend(Swizzle$ s)
 		{
 			switch (s)
 			{
@@ -591,7 +598,7 @@ namespace flame
 			}
 		}
 
-		inline VkFilter to_enum(Filter f)
+		inline VkFilter to_backend(Filter f)
 		{
 			switch (f)
 			{
@@ -602,7 +609,7 @@ namespace flame
 			}
 		}
 
-		inline VkVertexInputRate to_enum(VertexInputRate$ r)
+		inline VkVertexInputRate to_backend(VertexInputRate$ r)
 		{
 			switch (r)
 			{
@@ -613,7 +620,7 @@ namespace flame
 			}
 		}
 
-		inline VkPrimitiveTopology to_enum(PrimitiveTopology$ t)
+		inline VkPrimitiveTopology to_backend(PrimitiveTopology$ t)
 		{
 			switch (t)
 			{
@@ -642,7 +649,7 @@ namespace flame
 			}
 		}
 
-		inline VkPolygonMode to_enum(PolygonMode m)
+		inline VkPolygonMode to_backend(PolygonMode m)
 		{
 			switch (m)
 			{
@@ -655,7 +662,7 @@ namespace flame
 			}
 		}
 
-		inline VkCompareOp to_enum(CompareOp o)
+		inline VkCompareOp to_backend(CompareOp o)
 		{
 			switch (o)
 			{
@@ -676,7 +683,7 @@ namespace flame
 			}
 		}
 
-		inline VkCullModeFlagBits to_enum(CullMode m)
+		inline VkCullModeFlagBits to_backend(CullMode m)
 		{
 			switch (m)
 			{
@@ -691,7 +698,7 @@ namespace flame
 			}
 		}
 
-		inline VkBlendFactor to_enum(BlendFactor$ f)
+		inline VkBlendFactor to_backend(BlendFactor$ f)
 		{
 			switch (f)
 			{
@@ -736,7 +743,7 @@ namespace flame
 			}
 		}
 
-		inline VkDynamicState to_enum(DynamicState s)
+		inline VkDynamicState to_backend(DynamicState s)
 		{
 			switch (s)
 			{
@@ -763,7 +770,7 @@ namespace flame
 
 #elif defined(FLAME_D3D12)
 
-		inline DXGI_FORMAT to_enum(Format f)
+		inline DXGI_FORMAT to_backend(Format f)
 		{
 			switch (f)
 			{
@@ -805,7 +812,7 @@ namespace flame
 			}
 		}
 
-		inline D3D12_RESOURCE_STATES to_enum(ImageLayout l)
+		inline D3D12_RESOURCE_STATES to_backend(ImageLayout l)
 		{
 			switch (l)
 			{

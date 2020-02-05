@@ -6,8 +6,8 @@
 #define FLAME_NETWORK_EXPORTS __declspec(dllimport)
 #endif
 
+#include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
-#include <flame/foundation/serialize.h>
 
 namespace flame
 {

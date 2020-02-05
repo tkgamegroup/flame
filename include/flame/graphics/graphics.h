@@ -62,6 +62,8 @@ namespace flame
 			MemPropMax = 0xffffffff
 		};
 
+		typedef uint MemPropFlags;
+
 		enum SampleCount$
 		{
 			SampleCount_1,
@@ -87,6 +89,8 @@ namespace flame
 
 			ShaderStageMax = 0xffffffff
 		};
+
+		typedef uint ShaderStageFlags;
 
 		enum DescriptorType$
 		{
@@ -118,6 +122,8 @@ namespace flame
 			BufferUsageMax = 0xffffffff
 		};
 
+		typedef uint BufferUsageFlags;
+
 		enum ImageUsage$
 		{
 			ImageUsageTransferSrc = 1 << 0,
@@ -128,6 +134,8 @@ namespace flame
 
 			ImageUsageMax = 0xffffffff
 		};
+
+		typedef uint ImageUsageFlags;
 
 		enum ImageLayout
 		{
@@ -146,6 +154,8 @@ namespace flame
 			ImageAspectDepth = 1 << 1,
 			ImageAspectStencil = 1 << 2
 		};
+
+		typedef uint ImageAspectFlags;
 
 		enum ImageviewType$
 		{

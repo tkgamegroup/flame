@@ -31,7 +31,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint name_hash) const;
 
-		template<class T>
+		template <class T>
 		T* get_component_t(uint name_hash) const
 		{
 			return (T*)get_component_plain(name_hash);

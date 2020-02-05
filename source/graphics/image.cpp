@@ -51,7 +51,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device* _d, Format$ _format, const Vec2u& _size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsage$ usage)
+		ImagePrivate::ImagePrivate(Device* _d, Format$ _format, const Vec2u& _size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsageFlags usage)
 		{
 			format = _format;
 			size = _size;
@@ -69,15 +69,15 @@ namespace flame
 			imageInfo.flags = 0;
 			imageInfo.pNext = nullptr;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
-			imageInfo.format = to_enum(format);
+			imageInfo.format = to_backend(format);
 			imageInfo.extent.width = size.x();
 			imageInfo.extent.height = size.y();
 			imageInfo.extent.depth = 1;
 			imageInfo.mipLevels = level;
 			imageInfo.arrayLayers = layer;
-			imageInfo.samples = to_enum(sample_count);
+			imageInfo.samples = to_backend(sample_count);
 			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-			imageInfo.usage = to_flags(usage, format, sample_count);
+			imageInfo.usage = get_backend_image_usage_flags(usage, format, sample_count);
 			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			imageInfo.queueFamilyIndexCount = 0;
 			imageInfo.pQueueFamilyIndices = nullptr;
@@ -252,13 +252,13 @@ namespace flame
 			((ImagePrivate*)this)->set_pixels(offset, extent, src);
 		}
 
-		Image* Image::create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsage$ usage, void* data)
+		Image* Image::create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsageFlags usage, void* data)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
 
 			if (data)
 			{
-				auto staging_buffer = Buffer::create(d, i->data_size, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
+				auto staging_buffer = Buffer::create(d, i->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -279,11 +279,11 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsage$ extra_usage)
+		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage)
 		{
-			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst | extra_usage));
+			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
-			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
+			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 			staging_buffer->map();
 			memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
 			staging_buffer->unmap();
@@ -303,7 +303,7 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create_from_file(Device* d, const wchar_t* filename, ImageUsage$ extra_usage)
+		Image* Image::create_from_file(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -373,7 +373,7 @@ namespace flame
 
 				fmt = find_format(bmp->channel, bmp->bpp);
 
-				staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemProp$(MemPropHost | MemPropHostCoherent));
+				staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -383,7 +383,7 @@ namespace flame
 				buffer_copy_regions.push_back(BufferImageCopy(Vec2u(width, height)));
 			}
 
-			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst | extra_usage));
+			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
@@ -524,14 +524,14 @@ namespace flame
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
 			info.pNext = nullptr;
-			info.components.r = to_enum(swizzle_r);
-			info.components.g = to_enum(swizzle_g);
-			info.components.b = to_enum(swizzle_b);
-			info.components.a = to_enum(swizzle_a);
+			info.components.r = to_backend(swizzle_r);
+			info.components.g = to_backend(swizzle_g);
+			info.components.b = to_backend(swizzle_b);
+			info.components.a = to_backend(swizzle_a);
 			info.image = image->v;
-			info.viewType = to_enum(type);
-			info.format = to_enum(image->format);
-			info.subresourceRange.aspectMask = to_flags(aspect_from_format(image->format));
+			info.viewType = to_backend(type);
+			info.format = to_backend(image->format);
+			info.subresourceRange.aspectMask = to_backend_flags<ImageAspect>(aspect_from_format(image->format));
 			info.subresourceRange.baseMipLevel = base_level;
 			info.subresourceRange.levelCount = level_count;
 			info.subresourceRange.baseArrayLayer = base_layer;
@@ -700,8 +700,8 @@ namespace flame
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 			info.flags = 0;
 			info.pNext = nullptr;
-			info.magFilter = to_enum(mag_filter);
-			info.minFilter = to_enum(min_filter);
+			info.magFilter = to_backend(mag_filter);
+			info.minFilter = to_backend(min_filter);
 			info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 			info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;

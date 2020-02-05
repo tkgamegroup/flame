@@ -1,6 +1,6 @@
 #pragma once
 
-template<class T>
+template <class T>
 T sto_s(const wchar_t* s)
 {
 	try
@@ -85,7 +85,7 @@ struct cBoolDataTracker : cDataTracker
 	}
 };
 
-template<class T>
+template <class T>
 struct cDigitalDataTracker : cDataTracker
 {
 	cText* edit_text;
@@ -112,7 +112,7 @@ struct cDigitalDataTracker : cDataTracker
 	}
 };
 
-template<uint N, class T>
+template <uint N, class T>
 struct cDigitalVecDataTracker : cDataTracker
 {
 	cText* edit_texts[N];

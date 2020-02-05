@@ -846,7 +846,7 @@ namespace flame
 		return ((TypeinfoDatabasePrivate*)this)->module_name.c_str();
 	}
 
-	template<class T, class U>
+	template <class T, class U>
 	Array<T*> get_typeinfo_objects(const std::map<uint, std::unique_ptr<U>>& map)
 	{
 		auto ret = Array<T*>();
@@ -860,7 +860,7 @@ namespace flame
 		return ret;
 	}
 
-	template<class T>
+	template <class T>
 	T* find_typeinfo_object(const std::map<uint, std::unique_ptr<T>>& map, uint name_hash)
 	{
 		auto it = map.find(name_hash);

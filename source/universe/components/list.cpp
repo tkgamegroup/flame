@@ -48,7 +48,7 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 					{
 						auto thiz = *(cListItemPrivate**)c;
@@ -110,7 +110,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				if (select_air_when_clicked)
 				{
-					mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto thiz = *(cListPrivate**)c;
 
 						if (is_mouse_down(action, key, true) && key == Mouse_Left)

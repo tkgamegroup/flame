@@ -91,7 +91,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cScrollbarThumbPrivate**)c);
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
 					{

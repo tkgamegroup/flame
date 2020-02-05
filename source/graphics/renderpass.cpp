@@ -16,8 +16,8 @@ namespace flame
 				auto at_info = _attachments[i];
 
 				vk_attachments[i].flags = 0;
-				vk_attachments[i].format = to_enum(at_info->format);
-				vk_attachments[i].samples = to_enum(at_info->sample_count);
+				vk_attachments[i].format = to_backend(at_info->format);
+				vk_attachments[i].samples = to_backend(at_info->sample_count);
 				vk_attachments[i].loadOp = at_info->clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				vk_attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				vk_attachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

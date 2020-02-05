@@ -43,7 +43,7 @@ namespace flame
 		return buf;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::string to_string(const Vec<N, uint>& v)
 	{
 		auto ret = to_string(v[0]);
@@ -52,7 +52,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::string to_string(const Vec<N, int>& v)
 	{
 		auto ret = to_string(v[0]);
@@ -61,7 +61,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::string to_string(const Vec<N, float>& v, int precision = 6)
 	{
 		auto ret = to_string(v[0], precision);
@@ -70,7 +70,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::string to_string(const Vec<N, uchar>& v)
 	{
 		auto ret = to_string(v[0]);
@@ -108,7 +108,7 @@ namespace flame
 		return buf;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::wstring to_wstring(const Vec<N, uint>& v)
 	{
 		auto ret = to_wstring(v[0]);
@@ -117,7 +117,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::wstring to_wstring(const Vec<N, int>& v)
 	{
 		auto ret = to_wstring(v[0]);
@@ -126,7 +126,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::wstring to_wstring(const Vec<N, float>& v, int precision = 6)
 	{
 		auto ret = to_wstring(v[0], precision);
@@ -135,7 +135,7 @@ namespace flame
 		return ret;
 	}
 
-	template<uint N>
+	template <uint N>
 	inline std::wstring to_wstring(const Vec<N, uchar>& v)
 	{
 		auto ret = to_wstring(v[0]);
@@ -228,28 +228,28 @@ namespace flame
 		return Vec4c(ret);
 	}
 
-	template<class T>
+	template <class T>
 	T sto(const char* s); 
 
-	template<>
+	template <>
 	inline int sto<int>(const char* s)
 	{
 		return std::stoi(s);
 	}
 
-	template<>
+	template <>
 	inline uint sto<uint>(const char* s)
 	{
 		return std::stoul(s);
 	}
 
-	template<>
+	template <>
 	inline float sto<float>(const char* s)
 	{
 		return std::stof(s);
 	}
 
-	template<>
+	template <>
 	inline uchar sto<uchar>(const char* s)
 	{
 		return std::stoul(s);
@@ -339,34 +339,34 @@ namespace flame
 		return Vec4c(ret);
 	}
 
-	template<class T>
+	template <class T>
 	T sto(const wchar_t* s);
 
-	template<>
+	template <>
 	inline int sto<int>(const wchar_t* s)
 	{
 		return std::stoi(s);
 	}
 
-	template<>
+	template <>
 	inline uint sto<uint>(const wchar_t* s)
 	{
 		return std::stoul(s);
 	}
 
-	template<>
+	template <>
 	inline float sto<float>(const wchar_t* s)
 	{
 		return std::stof(s);
 	}
 
-	template<>
+	template <>
 	inline uchar sto<uchar>(const wchar_t* s)
 	{
 		return std::stoul(s);
 	}
 
-	template<typename CH>
+	template <typename CH>
 	std::basic_string<CH> scut(const std::basic_string<CH>& str, int length) // < 0 means from end
 	{
 		if (length < 0)
@@ -374,19 +374,19 @@ namespace flame
 		return std::basic_string<CH>(str.begin(), str.begin() + length);
 	}
 
-	template<typename CH>
+	template <typename CH>
 	bool sstartswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
 	{
 		return str.size() >= oth.size() && str.compare(0, oth.size(), oth) == 0;
 	}
 
-	template<typename CH>
+	template <typename CH>
 	bool sendswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
 	{
 		return str.size() >= oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
 	}
 
-	template<typename CH>
+	template <typename CH>
 	std::vector<std::basic_string<CH>> ssplit(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		std::basic_istringstream<CH> iss(str);
@@ -399,7 +399,7 @@ namespace flame
 		return ret;
 	}
 
-	template<typename CH>
+	template <typename CH>
 	std::vector<std::basic_string<CH>> ssplit_lastone(const std::basic_string<CH>& str, CH delimiter = ' ')
 	{
 		auto i = str.size() - 1;
@@ -414,7 +414,7 @@ namespace flame
 		return ret;
 	}
 
-	template<typename CH>
+	template <typename CH>
 	std::vector<std::basic_string<CH>> ssplit_dbnull(const CH* str)
 	{
 		std::vector<std::basic_string<CH>> ret;
@@ -437,7 +437,7 @@ namespace flame
 		return ret;
 	}
 
-	template<typename CH>
+	template <typename CH>
 	std::vector<std::basic_string<CH>> ssplit_regex(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
 	{
 		std::vector<std::basic_string<CH>> ret;
@@ -566,7 +566,7 @@ namespace flame
 		return FileTypeUnknown;
 	}
 
-	template<class T>
+	template <class T>
 	inline T read(std::ifstream& file)
 	{
 		T v;
@@ -595,7 +595,7 @@ namespace flame
 		return v;
 	}
 
-	template<class T>
+	template <class T>
 	inline void write(std::ofstream& file, const T& v)
 	{
 		file.write((char*)&v, sizeof(T));

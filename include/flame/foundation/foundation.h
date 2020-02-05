@@ -36,6 +36,8 @@ namespace flame
 		KeyStateDouble = 1 << 2,
 	};
 
+	typedef uint KeyStateFlags;
+
 	enum Key
 	{
 		KeyNull = -1,
@@ -90,52 +92,52 @@ namespace flame
 		Dropped
 	};
 
-	inline bool is_key_down(KeyState action) // value is Key
+	inline bool is_key_down(KeyStateFlags action) // value is Key
 	{
 		return action == KeyStateDown;
 	}
 
-	inline bool is_key_up(KeyState action) // value is Key
+	inline bool is_key_up(KeyStateFlags action) // value is Key
 	{
 		return action == KeyStateUp;
 	}
 
-	inline bool is_key_char(KeyState action) // value is ch
+	inline bool is_key_char(KeyStateFlags action) // value is ch
 	{
 		return action == KeyStateNull;
 	}
 
-	inline bool is_mouse_enter(KeyState action, MouseKey key)
+	inline bool is_mouse_enter(KeyStateFlags action, MouseKey key)
 	{
 		return action == KeyStateDown && key == Mouse_Null;
 	}
 
-	inline bool is_mouse_leave(KeyState action, MouseKey key)
+	inline bool is_mouse_leave(KeyStateFlags action, MouseKey key)
 	{
 		return action == KeyStateUp && key == Mouse_Null;
 	}
 
-	inline bool is_mouse_down(KeyState action, MouseKey key, bool just = false) // value is pos
+	inline bool is_mouse_down(KeyStateFlags action, MouseKey key, bool just = false) // value is pos
 	{
 		return action == (KeyStateDown | (just ? KeyStateJust : 0)) && key != Mouse_Null;
 	}
 
-	inline bool is_mouse_up(KeyState action, MouseKey key, bool just = false) // value is pos
+	inline bool is_mouse_up(KeyStateFlags action, MouseKey key, bool just = false) // value is pos
 	{
 		return action == (KeyStateUp | (just ? KeyStateJust : 0)) && key != Mouse_Null;
 	}
 
-	inline bool is_mouse_move(KeyState action, MouseKey key) // value is disp
+	inline bool is_mouse_move(KeyStateFlags action, MouseKey key) // value is disp
 	{
 		return action == KeyStateNull && key == Mouse_Null;
 	}
 
-	inline bool is_mouse_scroll(KeyState action, MouseKey key) // value.x() is scroll value
+	inline bool is_mouse_scroll(KeyStateFlags action, MouseKey key) // value.x() is scroll value
 	{
 		return action == KeyStateNull && key == Mouse_Middle;
 	}
 
-	inline bool is_mouse_clicked(KeyState action, MouseKey key, bool db = false)
+	inline bool is_mouse_clicked(KeyStateFlags action, MouseKey key, bool db = false)
 	{
 		return action == (KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0)) && key == Mouse_Null;
 	}
@@ -145,7 +147,7 @@ namespace flame
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
-	template<class T = void>
+	template <class T = void>
 	struct Mail
 	{
 		T* p;
@@ -169,7 +171,7 @@ namespace flame
 		}
 	};
 
-	template<class T>
+	template <class T>
 	Mail<T> new_mail(const T* v = nullptr, uint udt_name_hash = 0)
 	{
 		auto p = f_malloc(sizeof(T));
@@ -191,7 +193,7 @@ namespace flame
 		return new_mail(&p);
 	}
 
-	template<class T>
+	template <class T>
 	void delete_mail(const Mail<T>& m)
 	{
 		if (!m.p)
@@ -201,13 +203,13 @@ namespace flame
 		f_free(m.p);
 	}
 
-	template<class F>
+	template <class F>
 	struct Closure
 	{
 		F* function;
 		Mail<> capture;
 
-		template<class FF = F, class ...Args>
+		template <class FF = F, class ...Args>
 		auto call(Args... args)
 		{
 			return ((FF*)function)(capture.p, args...);
@@ -230,7 +232,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
 	};
 
-	template<class F>
+	template <class F>
 	struct ListenerHub
 	{
 		ListenerHubImpl* impl;
@@ -245,7 +247,7 @@ namespace flame
 			impl->remove_plain(c);
 		}
 
-		template<class ...Args>
+		template <class ...Args>
 		void call(Args... args)
 		{
 			auto count = impl->count();
@@ -286,7 +288,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyState action), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
 	enum FileChangeType
@@ -310,6 +312,8 @@ namespace flame
 		WindowResizable = 1 << 1,
 		WindowFullscreen = 1 << 2
 	};
+
+	typedef uint WindowStyleFlags;
 
 	enum CursorType
 	{
@@ -361,14 +365,14 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		ListenerHub<void(void* c, KeyState action, int value)>							key_listeners;
-		ListenerHub<void(void* c, KeyState action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
-		ListenerHub<void(void* c, const Vec2u & size)>									resize_listeners;
-		ListenerHub<void(void* c)>														destroy_listeners;
+		ListenerHub<void(void* c, KeyStateFlags action, int value)>							key_listeners;
+		ListenerHub<void(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
+		ListenerHub<void(void* c, const Vec2u & size)>										resize_listeners;
+		ListenerHub<void(void* c)>															destroy_listeners;
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static SysWindow* create(const char* title, const Vec2u& size, uint style);
+		FLAME_FOUNDATION_EXPORTS static SysWindow* create(const char* title, const Vec2u& size, WindowStyleFlags style);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SysWindow* s);
 	};
 

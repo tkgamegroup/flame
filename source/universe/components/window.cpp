@@ -42,7 +42,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMoveablePrivate**)c;
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
 						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, true);
@@ -82,7 +82,7 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cBringToFrontPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -143,7 +143,7 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSizeDraggerPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->active)
 						thiz->p_element->set_size(Vec2f(pos), true);
@@ -302,7 +302,7 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->dragging && thiz->page)
 					{

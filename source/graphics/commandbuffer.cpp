@@ -210,7 +210,7 @@ namespace flame
 			assert(p->type != PipelineNone);
 			current_pipeline = (PipelinePrivate*)p;
 #if defined(FLAME_VULKAN)
-			vkCmdBindPipeline(v, to_enum(p->type), ((PipelinePrivate*)p)->v);
+			vkCmdBindPipeline(v, to_backend(p->type), ((PipelinePrivate*)p)->v);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -219,7 +219,7 @@ namespace flame
 		void CommandbufferPrivate::bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindDescriptorSets(v, to_enum(pll ? PipelineGraphics : current_pipeline->type), pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, idx, 1, &((DescriptorsetPrivate*)s)->v, 0, nullptr);
+			vkCmdBindDescriptorSets(v, to_backend(pll ? PipelineGraphics : current_pipeline->type), pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, idx, 1, &((DescriptorsetPrivate*)s)->v, 0, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -249,7 +249,7 @@ namespace flame
 			if (!pll)
 				pll = current_pipeline->pll;
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(v, pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, to_flags(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(v, pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, to_backend_flags<ShaderStage$>(ShaderStageAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -349,7 +349,7 @@ namespace flame
 		void CommandbufferPrivate::copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies)
 		{
 #if defined(FLAME_VULKAN)
-			auto aspect = to_flags(aspect_from_format(dst->format));
+			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(dst->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copy_count);
 			for (auto i = 0; i < copy_count; i++)
@@ -364,7 +364,7 @@ namespace flame
 		void CommandbufferPrivate::copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies)
 		{
 #if defined(FLAME_VULKAN)
-			auto aspect = to_flags(aspect_from_format(src->format));
+			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(src->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copy_count);
 			for (auto i = 0; i < copy_count; i++)
@@ -385,12 +385,12 @@ namespace flame
 			VkImageMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			barrier.pNext = nullptr;
-			barrier.oldLayout = to_enum(from, i->format);
-			barrier.newLayout = to_enum(to, i->format);
+			barrier.oldLayout = to_backend(from, i->format);
+			barrier.newLayout = to_backend(to, i->format);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.image = ((ImagePrivate*)i)->v;
-			barrier.subresourceRange.aspectMask = to_flags(aspect_from_format(i->format));
+			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspect>(aspect_from_format(i->format));
 			barrier.subresourceRange.baseMipLevel = base_level;
 			barrier.subresourceRange.levelCount = level_count;
 			barrier.subresourceRange.baseArrayLayer = base_layer;

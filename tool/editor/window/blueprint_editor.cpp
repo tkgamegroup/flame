@@ -1088,7 +1088,7 @@ Entity* cBPEditor::create_subgraph_entity(BP::SubGraph* s)
 	return e_subgraph;
 }
 
-template<class T>
+template <class T>
 void create_edit(cBPEditor* editor, BP::Slot* input)
 {
 	auto& data = *(T*)input->data();
@@ -1122,7 +1122,7 @@ void create_edit(cBPEditor* editor, BP::Slot* input)
 	ui::current_parent()->add_component(c_tracker);
 }
 
-template<uint N, class T>
+template <uint N, class T>
 void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 {
 	auto& data = *(Vec<N, T>*)input->data();
