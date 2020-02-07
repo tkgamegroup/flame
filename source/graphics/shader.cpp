@@ -73,7 +73,7 @@ namespace flame
 				vk_binding.binding = i;
 				vk_binding.descriptorType = to_backend(b.type);
 				vk_binding.descriptorCount = b.count;
-				vk_binding.stageFlags = to_backend_flags<ShaderStage$>(ShaderStageAll);
+				vk_binding.stageFlags = to_backend_flags<ShaderStage>(ShaderStageAll);
 				vk_binding.pImmutableSamplers = nullptr;
 				vk_bindings.push_back(vk_binding);
 			}
@@ -159,11 +159,11 @@ namespace flame
 			BP::Node* n;
 
 			BP_IN_BASE_LINE;
-			BP_IN(DescriptorType$, type);
+			BP_IN(DescriptorType, type);
 			BP_IN(uint, count);
 			BP_IN(StringA, name);
 			BP_IN(Buffer*, buffer);
-			BP_IN(TargetType$, target_type);
+			BP_IN(TargetType, target_type);
 			BP_IN(void*, v);
 
 			BP_OUT_BASE_LINE;
@@ -456,7 +456,7 @@ namespace flame
 			BP_IN(uint, index);
 			BP_IN(uint, count);
 			BP_IN(Buffer*, buffer);
-			BP_IN(TargetType$, target_type);
+			BP_IN(TargetType, target_type);
 			BP_IN(void*, v);
 
 			BP_OUT_BASE_LINE;
@@ -574,7 +574,7 @@ namespace flame
 			VkPushConstantRange vk_pushconstant;
 			vk_pushconstant.offset = 0;
 			vk_pushconstant.size = pc_size;
-			vk_pushconstant.stageFlags = to_backend_flags<ShaderStage$>(ShaderStageAll);
+			vk_pushconstant.stageFlags = to_backend_flags<ShaderStage>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -658,7 +658,7 @@ namespace flame
 
 			BP_IN_BASE_LINE;
 			BP_IN(StringA, name);
-			BP_IN(Format$, format);
+			BP_IN(Format, format);
 
 			BP_OUT_BASE_LINE;
 			BP_OUT(VertexInputAttribute, out);
@@ -693,7 +693,7 @@ namespace flame
 
 			BP_IN_BASE_LINE;
 			BP_IN(Array<VertexInputAttribute*>*, attributes);
-			BP_IN(VertexInputRate$, rate);
+			BP_IN(VertexInputRate, rate);
 
 			BP_OUT_BASE_LINE;
 			BP_OUT(VertexInputBuffer, out);
@@ -729,7 +729,7 @@ namespace flame
 
 			BP_IN_BASE_LINE;
 			BP_IN(Array<VertexInputBuffer*>*, buffers);
-			BP_IN(PrimitiveTopology$, primitive_topology);
+			BP_IN(PrimitiveTopology, primitive_topology);
 			BP_IN(uint, patch_control_points);
 
 			BP_OUT_BASE_LINE;
@@ -850,7 +850,7 @@ namespace flame
 									for (auto& p : sp)
 									{
 										auto sp = ssplit(p, ':');
-										BlendFactor$ f;
+										BlendFactor f;
 										if (sp[1] == "0")
 											f = BlendFactorZero;
 										else if (sp[1] == "1")
@@ -1122,7 +1122,7 @@ namespace flame
 			}
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
 			d(d),
 			pll(pll)
 		{
@@ -1385,7 +1385,7 @@ namespace flame
 		}
 
 		Pipeline* Pipeline::create(Device* d, uint shader_count, const wchar_t* const* shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
-			VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states)
+			VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states)
 		{
 			std::vector<StageInfo> stage_infos;
 			auto has_vert_stage = false;
@@ -1451,7 +1451,7 @@ namespace flame
 			BP_IN(VertexInputInfo*, vi);
 			BP_IN(Vec2u, vp);
 			BP_IN(RasterInfo*, raster);
-			BP_IN(SampleCount$, sc);
+			BP_IN(SampleCount, sc);
 			BP_IN(DepthInfo*, depth);
 			BP_IN(Array<uint>*, dynamic_states);
 

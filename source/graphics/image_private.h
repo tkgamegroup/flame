@@ -19,8 +19,8 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsageFlags usage);
-			ImagePrivate(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
+			ImagePrivate(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage);
+			ImagePrivate(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
 			void set_props();
@@ -41,11 +41,11 @@ namespace flame
 #endif
 			int ref_count;
 
-			ImageviewPrivate(Image* image, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a);
+			ImageviewPrivate(Image* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a);
 			~ImageviewPrivate();
 		};
 
-		inline ImageAspectFlags aspect_from_format(Format$ fmt)
+		inline ImageAspectFlags aspect_from_format(Format fmt)
 		{
 			if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				return ImageAspectColor;

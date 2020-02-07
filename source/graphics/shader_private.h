@@ -84,10 +84,10 @@ namespace flame
 				std::string formated_type;
 
 				bool blend_enable;
-				BlendFactor$ blend_src_color;
-				BlendFactor$ blend_dst_color;
-				BlendFactor$ blend_src_alpha;
-				BlendFactor$ blend_dst_alpha;
+				BlendFactor blend_src_color;
+				BlendFactor blend_dst_color;
+				BlendFactor blend_src_alpha;
+				BlendFactor blend_dst_alpha;
 				/*
 					if (blendEnable) 
 					{
@@ -156,7 +156,7 @@ namespace flame
 			std::wstring filename;
 			std::string prefix;
 			std::filesystem::path path;
-			ShaderStage$ type;
+			ShaderStage type;
 
 			std::vector<InOut> inputs;
 			std::vector<InOut> outputs;
@@ -193,7 +193,7 @@ namespace flame
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount$ sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states);
+			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states);
 			PipelinePrivate(DevicePrivate* d, const StageInfo& compute_stage_info, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
 		};

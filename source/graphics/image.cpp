@@ -14,7 +14,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		Format$ Image::find_format(uint channel, uint bpp)
+		Format Image::find_format(uint channel, uint bpp)
 		{
 			switch (channel)
 			{
@@ -53,7 +53,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(Device* _d, Format$ _format, const Vec2u& _size, uint _level, uint _layer, SampleCount$ _sample_count, ImageUsageFlags usage)
+		ImagePrivate::ImagePrivate(Device* _d, Format _format, const Vec2u& _size, uint _level, uint _layer, SampleCount _sample_count, ImageUsageFlags usage)
 		{
 			format = _format;
 			size = _size;
@@ -104,7 +104,7 @@ namespace flame
 #endif
 		}
 
-		ImagePrivate::ImagePrivate(Device* _d, Format$ _format, const Vec2u& _size, uint _level, uint _layer, void* native) :
+		ImagePrivate::ImagePrivate(Device* _d, Format _format, const Vec2u& _size, uint _level, uint _layer, void* native) :
 			d((DevicePrivate*)_d)
 		{
 			format = _format;
@@ -254,7 +254,7 @@ namespace flame
 			((ImagePrivate*)this)->set_pixels(offset, extent, src);
 		}
 
-		Image* Image::create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsageFlags usage, void* data)
+		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
 
@@ -414,7 +414,7 @@ namespace flame
 				printf("cannot save png that has more than 8bit per channel\n");
 		}
 
-		Image* Image::create_from_native(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native)
+		Image* Image::create_from_native(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native)
 		{
 			return new ImagePrivate(d, format, size, level, layer, native);
 		}
@@ -429,12 +429,12 @@ namespace flame
 			BP::Node* n;
 
 			BP_IN_BASE_LINE;
-			BP_IN(Format$, format);
+			BP_IN(Format, format);
 			BP_IN(Vec2u, size);
 			BP_IN(uint, level);
 			BP_IN(uint, layer);
-			BP_IN(SampleCount$, sample_count);
-			BP_INd(ImageUsage$, usage, m);
+			BP_IN(SampleCount, sample_count);
+			BP_INd(ImageUsage, usage, m);
 			BP_IN(bool, init_with_color);
 			BP_IN(Vec4c, init_color);
 
@@ -489,7 +489,7 @@ namespace flame
 			BP_IN(Image*, in);
 
 			BP_OUT_BASE_LINE;
-			BP_OUT(Format$, format);
+			BP_OUT(Format, format);
 			BP_OUT(Vec2u, size);
 
 			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
@@ -515,7 +515,7 @@ namespace flame
 			}
 		};
 
-		ImageviewPrivate::ImageviewPrivate(Image* _image, ImageviewType$ _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle$ _swizzle_r, Swizzle$ _swizzle_g, Swizzle$ _swizzle_b, Swizzle$ _swizzle_a) :
+		ImageviewPrivate::ImageviewPrivate(Image* _image, ImageviewType _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle _swizzle_r, Swizzle _swizzle_g, Swizzle _swizzle_b, Swizzle _swizzle_a) :
 			image((ImagePrivate*)_image)
 		{
 			d = image->d;
@@ -579,7 +579,7 @@ namespace flame
 			return ((ImageviewPrivate*)this)->image;
 		}
 
-		Imageview* Imageview::create(Image* image, ImageviewType$ type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle$ swizzle_r, Swizzle$ swizzle_g, Swizzle$ swizzle_b, Swizzle$ swizzle_a)
+		Imageview* Imageview::create(Image* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a)
 		{
 			return new ImageviewPrivate(image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
 		}
@@ -595,15 +595,15 @@ namespace flame
 
 			BP_IN_BASE_LINE;
 			BP_IN(Image*, image);
-			BP_IN(ImageviewType$, type);
+			BP_IN(ImageviewType, type);
 			BP_IN(uint, base_level);
 			BP_IN(uint, level_count);
 			BP_IN(uint, base_layer);
 			BP_IN(uint, layer_count);
-			BP_IN(Swizzle$, swizzle_r);
-			BP_IN(Swizzle$, swizzle_g);
-			BP_IN(Swizzle$, swizzle_b);
-			BP_IN(Swizzle$, swizzle_a);
+			BP_IN(Swizzle, swizzle_r);
+			BP_IN(Swizzle, swizzle_g);
+			BP_IN(Swizzle, swizzle_b);
+			BP_IN(Swizzle, swizzle_a);
 
 			BP_OUT_BASE_LINE;
 			BP_OUT(Imageview*, out);

@@ -16,7 +16,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		enum Format$
+		enum Format
 		{
 			Format_Undefined,
 
@@ -53,7 +53,7 @@ namespace flame
 			FormatMax = 0xffffffff
 		};
 
-		enum MemProp$
+		enum MemProp
 		{
 			MemPropDevice = 1 << 0,
 			MemPropHost = 1 << 1,
@@ -64,7 +64,7 @@ namespace flame
 
 		typedef uint MemPropFlags;
 
-		enum SampleCount$
+		enum SampleCount
 		{
 			SampleCount_1,
 			SampleCount_2,
@@ -76,7 +76,7 @@ namespace flame
 			SampleCountMax = 0xffffffff
 		};
 
-		enum ShaderStage$
+		enum ShaderStage
 		{
 			ShaderStageNone,
 			ShaderStageVert = 1 << 0,
@@ -92,7 +92,7 @@ namespace flame
 
 		typedef uint ShaderStageFlags;
 
-		enum DescriptorType$
+		enum DescriptorType
 		{
 			DescriptorUniformBuffer,
 			DescriptorStorageBuffer,
@@ -109,7 +109,7 @@ namespace flame
 			PipelineCompute
 		};
 
-		enum BufferUsage$
+		enum BufferUsage
 		{
 			BufferUsageTransferSrc = 1 << 0,
 			BufferUsageTransferDst = 1 << 1,
@@ -124,7 +124,7 @@ namespace flame
 
 		typedef uint BufferUsageFlags;
 
-		enum ImageUsage$
+		enum ImageUsage
 		{
 			ImageUsageTransferSrc = 1 << 0,
 			ImageUsageTransferDst = 1 << 1,
@@ -157,7 +157,7 @@ namespace flame
 
 		typedef uint ImageAspectFlags;
 
-		enum ImageviewType$
+		enum ImageviewType
 		{
 			Imageview1D,
 			Imageview2D,
@@ -170,7 +170,7 @@ namespace flame
 			ImageViewMax = 0xffffffff
 		};
 
-		enum Swizzle$
+		enum Swizzle
 		{
 			SwizzleIdentity,
 			SwizzleZero,
@@ -181,7 +181,7 @@ namespace flame
 			SwizzleA
 		};
 
-		enum TargetType$
+		enum TargetType
 		{
 			TargetImage, // Image*
 			TargetImageview, // Imageview*
@@ -202,13 +202,13 @@ namespace flame
 			FilterLinear
 		};
 
-		enum VertexInputRate$
+		enum VertexInputRate
 		{
 			VertexInputRateVertex,
 			VertexInputRateInstance,
 		};
 
-		enum PrimitiveTopology$
+		enum PrimitiveTopology
 		{
 			PrimitiveTopologyPointList,
 			PrimitiveTopologyLineList,
@@ -249,7 +249,7 @@ namespace flame
 			CullModeFrontAndback,
 		};
 
-		enum BlendFactor$
+		enum BlendFactor
 		{
 			BlendFactorZero,
 			BlendFactorOne,
@@ -272,9 +272,9 @@ namespace flame
 			BlendFactorOneMinusSrc1Alpha
 		};
 
-		inline bool is_blend_factor_dual(BlendFactor$ f)
+		inline bool is_blend_factor_dual(BlendFactor f)
 		{
-			const BlendFactor$ dual_src_enums[] = {
+			const BlendFactor dual_src_enums[] = {
 				BlendFactorSrc1Color,
 				BlendFactorOneMinusSrc1Color,
 				BlendFactorSrc1Alpha,

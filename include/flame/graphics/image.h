@@ -13,18 +13,18 @@ namespace flame
 
 		struct Image
 		{
-			Format$ format;
+			Format format;
 			Vec2u size;
 			uint level;
 			uint layer;
-			SampleCount$ sample_count;
+			SampleCount sample_count;
 
 			uint channel;
 			uint bpp;
 			uint pitch;
 			uint data_size;
 
-			FLAME_GRAPHICS_EXPORTS static Format$ find_format(uint channel, uint bpp);
+			FLAME_GRAPHICS_EXPORTS static Format find_format(uint channel, uint bpp);
 
 			// a layout change from Undefined to ShaderReadOnly, and a clear
 			FLAME_GRAPHICS_EXPORTS void init(const Vec4c& col);
@@ -33,35 +33,35 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
 			FLAME_GRAPHICS_EXPORTS void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, SampleCount$ sample_count, ImageUsageFlags usage, void* data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_bitmap(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage = 0); // default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static Image* create_from_file(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage = 0); // default usage: ShaderSampled, TransferDst
 			FLAME_GRAPHICS_EXPORTS static void save_to_png(Image *i, const wchar_t* filename);
-			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format$ format, const Vec2u& size, uint level, uint layer, void* native);
+			FLAME_GRAPHICS_EXPORTS static Image* create_from_native(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 
 			FLAME_GRAPHICS_EXPORTS static void destroy(Image* i);
 		};
 
 		struct Imageview
 		{
-			ImageviewType$ type;
+			ImageviewType type;
 			uint base_level;
 			uint level_count;
 			uint base_layer;
 			uint layer_count;
-			Swizzle$ swizzle_r;
-			Swizzle$ swizzle_g;
-			Swizzle$ swizzle_b;
-			Swizzle$ swizzle_a;
+			Swizzle swizzle_r;
+			Swizzle swizzle_g;
+			Swizzle swizzle_b;
+			Swizzle swizzle_a;
 
 			FLAME_GRAPHICS_EXPORTS Image* image() const;
 
-			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image* i, ImageviewType$ type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1, 
-				Swizzle$ swizzle_r = SwizzleIdentity, Swizzle$ swizzle_g = SwizzleIdentity, Swizzle$ swizzle_b = SwizzleIdentity, Swizzle$ swizzle_a = SwizzleIdentity);
+			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image* i, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1, 
+				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Imageview* v);
 		};
 
-		inline Image* image_from_target(TargetType$ t, void* v)
+		inline Image* image_from_target(TargetType t, void* v)
 		{
 			if (!v)
 				return nullptr;

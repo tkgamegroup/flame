@@ -12,9 +12,9 @@ namespace flame
 
 		struct AttachmentInfo
 		{
-			Format$ format;
+			Format format;
 			bool clear;
-			SampleCount$ sample_count;
+			SampleCount sample_count;
 		};
 
 		struct SubpassInfo
@@ -59,7 +59,7 @@ namespace flame
 
 		struct RenderTarget
 		{
-			TargetType$ type;
+			TargetType type;
 			void* v;
 			bool clear;
 			Vec4c clear_color;

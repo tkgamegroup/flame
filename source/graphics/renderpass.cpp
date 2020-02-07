@@ -165,9 +165,9 @@ namespace flame
 			BP::Node* n;
 
 			BP_IN_BASE_LINE;
-			BP_IN(Format$, format);
+			BP_IN(Format, format);
 			BP_IN(bool, clear);
-			BP_IN(SampleCount$, sample_count);
+			BP_IN(SampleCount, sample_count);
 
 			BP_OUT_BASE_LINE;
 			BP_OUT(AttachmentInfo, out);
@@ -514,7 +514,7 @@ namespace flame
 		{
 			std::vector<AttachmentInfo*> rp_attachments;
 			std::vector<SubpassInfo*> rp_subpasses;
-			std::vector<std::tuple<TargetType$, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
+			std::vector<std::tuple<TargetType, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
 			std::vector<std::unique_ptr<SubpassInfoPrivate>> sp_infos;
 			for (auto i = 0; i < pass_count; i++)
 			{
@@ -660,7 +660,7 @@ namespace flame
 			BP::Node* n;
 
 			BP_IN_BASE_LINE;
-			BP_IN(TargetType$, type);
+			BP_IN(TargetType, type);
 			BP_IN(void*, v);
 			BP_IN(bool, clear);
 			BP_IN(Vec4c, clear_color);

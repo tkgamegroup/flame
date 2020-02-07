@@ -945,45 +945,6 @@ namespace flame
 		DWORD dw;
 		wchar_t* pwname;
 
-		// enums
-		IDiaEnumSymbols* _enums;
-		global->findChildren(SymTagEnum, NULL, nsNone, &_enums);
-		IDiaSymbol* _enum;
-		while (SUCCEEDED(_enums->Next(1, &_enum, &ul)) && (ul == 1))
-		{
-			_enum->get_name(&pwname);
-			bool pass_prefix, pass_$;
-			auto name = format_name(pwname, &pass_prefix, &pass_$);
-			if (pass_prefix && pass_$ && name.find("unnamed") == std::string::npos)
-			{
-				auto hash = FLAME_HASH(name.c_str());
-				if (!::flame::find_enum(hash))
-				{
-					auto e = db->add_enum(name.c_str());
-
-					IDiaEnumSymbols* items;
-					_enum->findChildren(SymTagNull, NULL, nsNone, &items);
-					IDiaSymbol* item;
-					while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
-					{
-						VARIANT v;
-						ZeroMemory(&v, sizeof(v));
-						item->get_name(&pwname);
-						item->get_value(&v);
-
-						auto item_name = w2s(pwname);
-						if (!sendswith(item_name, std::string("Max")) && !sendswith(item_name, std::string("Count")))
-							e->add_item(item_name.c_str(), v.lVal);
-
-						item->Release();
-					}
-					items->Release();
-				}
-			}
-			_enum->Release();
-		}
-		_enums->Release();
-
 		// udts
 		IDiaEnumSymbols* _udts;
 		global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
@@ -1022,6 +983,32 @@ namespace flame
 							s_type->get_length(&ull);
 
 							auto desc = symbol_to_typeinfo(s_type, attribute);
+							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+							{
+								auto hash = FLAME_HASH(desc.base_name.c_str());
+								if (!::flame::find_enum(hash))
+								{
+									auto e = db->add_enum(desc.base_name.c_str());
+
+									IDiaEnumSymbols* items;
+									s_type->findChildren(SymTagNull, NULL, nsNone, &items);
+									IDiaSymbol* item;
+									while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
+									{
+										VARIANT v;
+										ZeroMemory(&v, sizeof(v));
+										item->get_name(&pwname);
+										item->get_value(&v);
+
+										auto item_name = w2s(pwname);
+										if (!sendswith(item_name, std::string("Max")) && !sendswith(item_name, std::string("Count")))
+											e->add_item(item_name.c_str(), v.lVal);
+
+										item->Release();
+									}
+									items->Release();
+								}
+							}
 							u->add_variable(desc.get(), name.c_str(), attribute.c_str(), l, ull);
 
 							s_type->Release();

@@ -20,7 +20,7 @@ namespace flame
 
 		struct DescriptorBinding
 		{
-			DescriptorType$ type;
+			DescriptorType type;
 			uint count;
 			const char* name;
 			Buffer* buffer;
@@ -59,21 +59,21 @@ namespace flame
 		struct VertexInputAttribute
 		{
 			const char* name;
-			Format$ format;
+			Format format;
 		};
 
 		struct VertexInputBuffer
 		{
 			uint attribute_count;
 			VertexInputAttribute* const* attributes;
-			VertexInputRate$ rate;
+			VertexInputRate rate;
 		};
 
 		struct VertexInputInfo
 		{
 			uint buffer_count;
 			VertexInputBuffer* const* buffers;
-			PrimitiveTopology$ primitive_topology;
+			PrimitiveTopology primitive_topology;
 			uint patch_control_points;
 		};
 
@@ -91,7 +91,7 @@ namespace flame
 			CompareOp compare_op;
 		};
 
-		inline std::wstring shader_stage_name(ShaderStage$ s)
+		inline std::wstring shader_stage_name(ShaderStage s)
 		{
 			switch (s)
 			{
@@ -110,7 +110,7 @@ namespace flame
 			}
 		}
 
-		inline ShaderStage$ shader_stage_from_ext(const std::wstring& extension)
+		inline ShaderStage shader_stage_from_ext(const std::wstring& extension)
 		{
 			if (extension == L".vert")
 				return ShaderStageVert;
@@ -144,7 +144,7 @@ namespace flame
 			PipelineType type;
 
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, uint shader_count, const wchar_t* const* shader_filenames /* filename[:prefix] */, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
-				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount$ sc = SampleCount_1, DepthInfo* depth = nullptr,
+				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
 				uint dynamic_state_count = 0, const uint* dynamic_states = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
 			FLAME_GRAPHICS_EXPORTS static  void destroy(Pipeline* p);

@@ -235,7 +235,7 @@ namespace flame
 		template <class T>
 		VkFlags to_backend_flags(uint);
 
-		inline VkFormat to_backend(Format$ f)
+		inline VkFormat to_backend(Format f)
 		{
 			switch (f)
 			{
@@ -279,7 +279,7 @@ namespace flame
 			}
 		}
 
-		inline Format$ get_format(VkFormat f, bool is_swapchain)
+		inline Format get_format(VkFormat f, bool is_swapchain)
 		{
 			switch (f)
 			{
@@ -317,7 +317,7 @@ namespace flame
 			}
 		}
 
-		inline uint format_size(Format$ f)
+		inline uint format_size(Format f)
 		{
 			switch (f)
 			{
@@ -338,7 +338,7 @@ namespace flame
 			}
 		}
 
-		inline std::string to_cpp_typename(Format$ f)
+		inline std::string to_cpp_typename(Format f)
 		{
 			switch (f)
 			{
@@ -357,7 +357,7 @@ namespace flame
 			}
 		}
 
-		inline std::string to_glsl_typename(Format$ f)
+		inline std::string to_glsl_typename(Format f)
 		{
 			switch (f)
 			{
@@ -377,7 +377,7 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<MemProp$>(uint p)
+		inline VkFlags to_backend_flags<MemProp>(uint p)
 		{
 			VkMemoryPropertyFlags ret = 0;
 			if (p & MemPropDevice)
@@ -389,7 +389,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkSampleCountFlagBits to_backend(SampleCount$ s)
+		inline VkSampleCountFlagBits to_backend(SampleCount s)
 		{
 			switch (s)
 			{
@@ -408,7 +408,7 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlagBits to_backend(ShaderStage$ t)
+		inline VkShaderStageFlagBits to_backend(ShaderStage t)
 		{
 			switch (t)
 			{
@@ -428,7 +428,7 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<ShaderStage$>(uint t)
+		inline VkFlags to_backend_flags<ShaderStage>(uint t)
 		{
 			VkShaderStageFlags ret = 0;
 			if (t & ShaderStageVert)
@@ -446,7 +446,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkDescriptorType to_backend(DescriptorType$ t)
+		inline VkDescriptorType to_backend(DescriptorType t)
 		{
 			switch (t)
 			{
@@ -475,7 +475,7 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<BufferUsage$>(uint u)
+		inline VkFlags to_backend_flags<BufferUsage>(uint u)
 		{
 			VkBufferUsageFlags ret = 0;
 			if (u & BufferUsageTransferSrc)
@@ -495,7 +495,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageUsageFlags get_backend_image_usage_flags(ImageUsageFlags u, Format$ fmt, SampleCount$ sc)
+		inline VkImageUsageFlags get_backend_image_usage_flags(ImageUsageFlags u, Format fmt, SampleCount sc)
 		{
 			VkImageUsageFlags ret = 0;
 			if (u & ImageUsageTransferSrc)
@@ -518,7 +518,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageLayout to_backend(ImageLayout l, Format$ fmt)
+		inline VkImageLayout to_backend(ImageLayout l, Format fmt)
 		{
 			switch (l)
 			{
@@ -556,7 +556,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageViewType to_backend(ImageviewType$ t)
+		inline VkImageViewType to_backend(ImageviewType t)
 		{
 			switch (t)
 			{
@@ -577,7 +577,7 @@ namespace flame
 			}
 		}
 
-		inline VkComponentSwizzle to_backend(Swizzle$ s)
+		inline VkComponentSwizzle to_backend(Swizzle s)
 		{
 			switch (s)
 			{
@@ -609,7 +609,7 @@ namespace flame
 			}
 		}
 
-		inline VkVertexInputRate to_backend(VertexInputRate$ r)
+		inline VkVertexInputRate to_backend(VertexInputRate r)
 		{
 			switch (r)
 			{
@@ -620,7 +620,7 @@ namespace flame
 			}
 		}
 
-		inline VkPrimitiveTopology to_backend(PrimitiveTopology$ t)
+		inline VkPrimitiveTopology to_backend(PrimitiveTopology t)
 		{
 			switch (t)
 			{
@@ -698,7 +698,7 @@ namespace flame
 			}
 		}
 
-		inline VkBlendFactor to_backend(BlendFactor$ f)
+		inline VkBlendFactor to_backend(BlendFactor f)
 		{
 			switch (f)
 			{

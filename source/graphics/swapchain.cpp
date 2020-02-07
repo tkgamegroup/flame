@@ -18,7 +18,7 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		Format$ get_swapchain_format()
+		Format get_swapchain_format()
 		{
 			return swapchain_format;
 		}

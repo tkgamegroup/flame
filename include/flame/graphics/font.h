@@ -26,7 +26,7 @@ namespace flame
 			int advance;
 		};
 
-		enum FontDrawType$
+		enum FontDrawType
 		{
 			FontDrawPixel,
 			FontDrawLcd,
@@ -35,7 +35,7 @@ namespace flame
 
 		struct FontAtlas : Object
 		{
-			FontDrawType$ draw_type;
+			FontDrawType draw_type;
 
 			void* canvas_;
 			uint canvas_slot_;
@@ -52,7 +52,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType$ draw_type, uint font_count, const wchar_t* const* fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType draw_type, uint font_count, const wchar_t* const* fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

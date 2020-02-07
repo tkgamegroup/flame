@@ -21,7 +21,7 @@ namespace flame
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
 			buffer_info.size = size;
-			buffer_info.usage = to_backend_flags<BufferUsage$>(usage);
+			buffer_info.usage = to_backend_flags<BufferUsage>(usage);
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
 			uint queue_family_idx[] = {
@@ -166,8 +166,8 @@ namespace flame
 
 			BP_IN_BASE_LINE;
 			BP_IN(uint, size);
-			BP_INd(BufferUsage$, usage, m);
-			BP_INd(MemProp$, mem_prop, m);
+			BP_INd(BufferUsage, usage, m);
+			BP_INd(MemProp, mem_prop, m);
 
 			BP_OUT_BASE_LINE;
 			BP_OUT(Buffer*, out);

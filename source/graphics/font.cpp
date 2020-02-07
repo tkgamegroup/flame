@@ -68,7 +68,7 @@ namespace flame
 			Image* image;
 			Imageview* imageview;
 
-			FontAtlasPrivate(Device* d, FontDrawType$ _draw_type, uint font_count, const wchar_t* const* _fonts)
+			FontAtlasPrivate(Device* d, FontDrawType _draw_type, uint font_count, const wchar_t* const* _fonts)
 			{
 				for (auto i = 0; i < font_count; i++)
 				{
@@ -104,7 +104,7 @@ namespace flame
 
 				bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsage$(ImageUsageSampled | ImageUsageTransferDst));
+				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
 				image->init(Vec4c(0, 0, 0, 255));
 				if (draw_type == FontDrawPixel)
 					imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
@@ -361,7 +361,7 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, FontDrawType$ draw_type, uint font_count, const wchar_t* const* fonts)
+		FontAtlas* FontAtlas::create(Device* d, FontDrawType draw_type, uint font_count, const wchar_t* const* fonts)
 		{
 			return new FontAtlasPrivate(d, draw_type, font_count, fonts);
 		}
@@ -401,7 +401,7 @@ namespace flame
 			BP::Node* n;
 
 			BP_IN_BASE_LINE;
-			BP_IN(FontDrawType$, draw_type);
+			BP_IN(FontDrawType, draw_type);
 			BP_IN(Array<StringW>*, fonts);
 
 			BP_OUT_BASE_LINE;

@@ -15,7 +15,7 @@ namespace flame
 		struct Semaphore;
 		struct Commandbuffer;
 
-		FLAME_GRAPHICS_EXPORTS Format$ get_swapchain_format();
+		FLAME_GRAPHICS_EXPORTS Format get_swapchain_format();
 
 		struct Swapchain
 		{

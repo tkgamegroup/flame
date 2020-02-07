@@ -41,7 +41,7 @@ namespace flame
 
 	struct Serializer_FontAtlas$
 	{
-		graphics::FontDrawType$ draw_type$;
+		graphics::FontDrawType draw_type$;
 		StringW fonts$;
 
 		FLAME_UNIVERSE_EXPORTS Serializer_FontAtlas$()

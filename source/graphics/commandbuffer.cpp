@@ -251,7 +251,7 @@ namespace flame
 			if (!pll)
 				pll = current_pipeline->pll;
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(v, pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, to_backend_flags<ShaderStage$>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(v, pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, to_backend_flags<ShaderStage>(ShaderStageAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif
