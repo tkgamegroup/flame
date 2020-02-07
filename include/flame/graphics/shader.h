@@ -18,20 +18,12 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorpool* p);
 		};
 
-		struct DescriptorBindingBase
+		struct DescriptorBinding
 		{
 			DescriptorType$ type;
 			uint count;
 			const char* name;
-		};
-
-		struct DescriptorBufferBinding : DescriptorBindingBase
-		{
 			Buffer* buffer;
-		};
-
-		struct DescriptorImageBinding : DescriptorBindingBase
-		{
 			Imageview* view;
 			Sampler* sampler;
 		};
@@ -39,10 +31,10 @@ namespace flame
 		struct Descriptorlayout
 		{
 			FLAME_GRAPHICS_EXPORTS uint binding_count() const;
-			FLAME_GRAPHICS_EXPORTS const DescriptorBindingBase* get_binding(uint binding) const;
+			FLAME_GRAPHICS_EXPORTS const DescriptorBinding& get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, DescriptorBindingBase* const* bindings, Descriptorpool* default_set_pool = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* default_set_pool = nullptr);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 

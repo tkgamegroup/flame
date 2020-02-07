@@ -10,6 +10,8 @@
 #include <android_native_app_glue.h>
 #endif
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	namespace graphics
@@ -271,36 +273,35 @@ namespace flame
 
 		struct SwapchainResizable$
 		{
-			AttributeP<SwapchainResizable> in$i;
+			BP::Node* n;
 
-			AttributeP<Swapchain> sc$o;
-			AttributeD<Array<Image*>> images$o;
-			AttributeD<uint> image_idx$o;
+			BP_IN_BASE_LINE;
+			BP_IN(SwapchainResizable*, in);
 
-			FLAME_GRAPHICS_EXPORTS SwapchainResizable$()
+			BP_OUT_BASE_LINE;
+			BP_OUT(Swapchain*, sc);
+			BP_OUT(Array<Image*>, images);
+			BP_OUT(uint, image_idx);
+
+			FLAME_GRAPHICS_EXPORTS void active_update$(uint frame)
 			{
-			}
-
-			FLAME_GRAPHICS_EXPORTS void active_update$(BP* scene)
-			{
-				if (in$i.v->changed)
+				if (in$i->changed)
 				{
-					sc$o.v = in$i.v->sc();
-					if (sc$o.v)
+					sc$o = in$i->sc();
+					if (sc$o)
 					{
-						images$o.v.resize(sc$o.v->image_count());
-						for (auto i = 0; i < images$o.v.s; i++)
-							images$o.v[i] = sc$o.v->image(i);
+						images$o.resize(sc$o->image_count());
+						for (auto i = 0; i < images$o.s; i++)
+							images$o[i] = sc$o->image(i);
 					}
 					else
-						images$o.v.resize(0);
-					auto frame = scene->frame;
-					sc$o.frame = frame;
-					images$o.frame = frame;
+						images$o.resize(0);
+					sc_s()->set_frame(frame);
+					images_s()->set_frame(frame);
 				}
-				image_idx$o.v = sc$o.v ? sc$o.v->image_index() : 0;
-				image_idx$o.frame = scene->frame;
-				in$i.v->changed = false;
+				image_idx$o = sc$o ? sc$o->image_index() : 0;
+				image_idx_s()->set_frame(frame);
+				in$i->changed = false;
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~SwapchainResizable$()

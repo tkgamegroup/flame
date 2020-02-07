@@ -154,7 +154,7 @@ Entity* create_drag_edit(bool is_float)
 		}
 	}, new_mail(&capture));
 
-	capture.d_er->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+	capture.d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 		auto& capture = *(Capture*)c;
 		if (is_mouse_clicked(action, key) && pos == 0)
 		{

@@ -1,6 +1,8 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	struct BPPrivate;
@@ -38,14 +40,14 @@ namespace flame
 		uint offset;
 		uint size;
 		std::string default_value;
-		void* raw_data;
+		int frame;
+		void* data;
 
 		std::vector<SlotPrivate*> links;
 
 		SlotPrivate(NodePrivate* node, IO io, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
 		SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi);
 
-		void set_frame(int frame);
 		void set_data(const void* data);
 		bool link_to(SlotPrivate* target);
 
@@ -188,13 +190,16 @@ namespace flame
 		size(size),
 		default_value(default_value)
 	{
-		raw_data = (char*)node->object + offset;
+		data = (char*)node->object + offset;
 		user_data = nullptr;
 
 		if (io == In)
+		{
 			links.push_back(nullptr);
+			frame = 0;
+		}
 		else /* if (type == Output) */
-			set_frame(-1);
+			frame = -1;
 	}
 
 	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi) :
@@ -203,17 +208,12 @@ namespace flame
 	{
 	}
 
-	void SlotPrivate::set_frame(int frame)
-	{
-		((AttributeBase*)raw_data)->frame = frame;
-	}
-
 	void SlotPrivate::set_data(const void* d)
 	{
-		set_frame(node->scene->frame);
+		frame = node->scene->frame;
 		node->scene->root->add_to_pending_update(node);
 		 
-		type->copy_from(d, raw_data);
+		type->copy_from(d, data);
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -260,7 +260,7 @@ namespace flame
 		if (target)
 			target->links.push_back(this);
 
-		set_frame(node->scene->frame);
+		frame = node->scene->frame;
 
 		auto root = node->scene->root;
 		root->need_update_hierarchy = true;
@@ -295,6 +295,8 @@ namespace flame
 		object = malloc(size);
 		memset(object, 0, size);
 
+		auto thiz = this;
+		memcpy(object, &thiz, sizeof(void*));
 		{
 			auto f = udt->find_function("ctor");
 			if (f && f->parameter_count() == 0)
@@ -311,7 +313,7 @@ namespace flame
 		update_addr = nullptr;
 		{
 			auto f = only_not_null(udt->find_function("update"), udt->find_function("active_update"));
-			assert(f.first && check_function(f.first, "D#void", { "P#BP" }));
+			assert(f.first && check_function(f.first, "D#void", { "D#uint" }));
 			if (f.second == 1)
 				active = true;
 			update_addr = (char*)module + (uint)f.first->rva();
@@ -326,7 +328,6 @@ namespace flame
 			if (!ai && !ao)
 				continue;
 			assert(!(ai && ao));
-			assert(v->type()->is_attribute());
 			if (ai)
 				inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, v));
 			else /* if (ao) */
@@ -353,6 +354,8 @@ namespace flame
 		object = malloc(size);
 		memset(object, 0, size);
 
+		auto thiz = this;
+		memcpy(object, &thiz, sizeof(void*));
 		if (ctor_addr)
 			cmf(p2f<MF_v_v>(ctor_addr), object);
 
@@ -404,26 +407,21 @@ namespace flame
 
 	void NodePrivate::update()
 	{
-		for (auto& input : inputs)
+		for (auto& in : inputs)
 		{
-			auto out = input->links[0];
+			auto out = in->links[0];
 			if (out)
 			{
-				auto ia = (AttributeBase*)input->raw_data;
-				if (out->type->tag() == TypeData && input->type->tag() == TypePointer)
-				{
-					auto p = out->data();
-					memcpy(input->data(), &p, sizeof(void*));
-				}
+				if (out->type->tag() == TypeData && in->type->tag() == TypePointer)
+					memcpy(in->data, &out->data, sizeof(void*));
 				else
-					memcpy(input->data(), out->data(), input->size - sizeof(AttributeBase));
-				auto new_frame = ((AttributeBase*)out->raw_data)->frame;
-				if (new_frame > ia->frame)
-					ia->frame = new_frame;
+					memcpy(in->data, out->data, in->size);
+				if (out->frame > in->frame)
+					in->frame = out->frame;
 			}
 		}
 
-		cmf(p2f<MF_v_vp>(update_addr), object, scene);
+		cmf(p2f<MF_v_u>(update_addr), object, scene->frame);
 	}
 
 	static void on_node_added(NodePrivate* n)
@@ -458,7 +456,7 @@ namespace flame
 			for (auto& l : o->links)
 			{
 				l->links[0] = nullptr;
-				l->set_frame(frame);
+				l->frame = frame;
 				root->add_to_pending_update(l->node);
 			}
 		}
@@ -849,7 +847,7 @@ namespace flame
 
 			for (auto& o : n->outputs)
 			{
-				if (o->frame() == frame)
+				if (o->frame == frame)
 				{
 					for (auto& i : o->links)
 						add_to_update_list(this, i->node);
@@ -928,22 +926,17 @@ namespace flame
 
 	int BP::Slot::frame() const
 	{
-		return ((AttributeBase*)(((SlotPrivate*)this)->raw_data))->frame;
+		return ((SlotPrivate*)this)->frame;
 	}
 
 	void BP::Slot::set_frame(int frame)
 	{
-		((SlotPrivate*)this)->set_frame(frame);
-	}
-
-	void* BP::Slot::raw_data() const
-	{
-		return ((SlotPrivate*)this)->raw_data;
+		((SlotPrivate*)this)->frame = frame;
 	}
 
 	void* BP::Slot::data() const
 	{
-		return (char*)((SlotPrivate*)this)->raw_data + sizeof(AttributeBase);
+		return ((SlotPrivate*)this)->data;
 	}
 
 	void BP::Slot::set_data(const void* d)
@@ -1377,69 +1370,80 @@ namespace flame
 			if (n_d.type.compare(0, prefix_enum.l, prefix_enum.s) == 0)
 			{
 				std::string enum_name(n_d.type.begin() + prefix_enum.l + 1, n_d.type.end() - 1);
+#pragma pack(1)
 				struct Dummy
 				{
-					AttributeD<int> in;
-					AttributeD<int> out;
+					BP::Node* n;
 
-					void update(BP* scene)
+					int in;
+					int out;
+
+					void update(uint frame)
 					{
-						if (in.frame > out.frame)
+						if (n->input(0)->frame() > n->output(0)->frame())
 						{
-							out.v = in.v;
-							out.frame = scene->frame;
+							out = in;
+							n->output(0)->set_frame(frame);
 						}
 					}
 				};
+#pragma pack()
 				n = bp->add_node(sizeof(Dummy), n_d.type, {
-						{TypeInfo::get(TypeEnumSingle, enum_name.c_str(), true), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
+						{TypeInfo::get(TypeEnumSingle, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
 					}, {
-						{TypeInfo::get(TypeEnumSingle, enum_name.c_str(), true), "out", offsetof(Dummy, out), sizeof(Dummy::in), ""}
+						{TypeInfo::get(TypeEnumSingle, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
 					}, nullptr, nullptr, f2v(&Dummy::update), false, n_d.id);
 			}
 			else if (n_d.type.compare(0, prefix_var.l, prefix_var.s) == 0)
 			{
 				std::string type_name(n_d.type.begin() + prefix_var.l + 1, n_d.type.end() - 1);
+#pragma pack(1)
 				struct Dummy
 				{
+					BP::Node* n;
+
 					uint type_hash;
 					uint type_size;
 
 					void dtor()
 					{
-						auto& in = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy));
-						auto& out = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + sizeof(AttributeBase) + type_size);
-						data_dtor(type_hash, &in.v);
-						data_dtor(type_hash, &out.v);
+						auto in = (char*)&type_size + sizeof(uint);
+						auto out = (char*)&type_size + sizeof(uint) + type_size;
+						data_dtor(type_hash, in);
+						data_dtor(type_hash, out);
 					}
 
-					void update(BP* scene)
+					void update(uint frame)
 					{
-						auto& in = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy));
-						auto& out = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + sizeof(AttributeBase) + type_size);
-						if (in.frame > out.frame)
+						auto in = (char*)&type_size + sizeof(uint);
+						auto out = (char*)&type_size + sizeof(uint) + type_size;
+						if (n->input(0)->frame() > n->output(0)->frame())
 						{
-							data_copy(type_hash, &in.v, &out.v, type_size);
-							out.frame = scene->frame;
+							data_copy(type_hash, in, out, type_size);
+							n->output(0)->set_frame(frame);
 						}
 					}
 				};
+#pragma pack()
 				auto type_hash = FLAME_HASH(type_name.c_str());
 				auto type_size = data_size(type_hash);
-				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * 2, n_d.type, {
-						{TypeInfo::get(TypeData, type_name.c_str(), true), "in", sizeof(Dummy), sizeof(AttributeBase) + type_size, ""}
+				n = bp->add_node(sizeof(Dummy) + type_size * 2, n_d.type, {
+						{TypeInfo::get(TypeData, type_name.c_str()), "in", sizeof(Dummy), type_size, ""}
 					}, {
-						{TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + sizeof(AttributeBase) + type_size, sizeof(AttributeBase) + type_size, ""}
+						{TypeInfo::get(TypeData, type_name.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
 					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false, n_d.id);
 				auto obj = n->object;
-				*(uint*)obj = type_hash;
-				*(uint*)((char*)obj + sizeof(uint)) = type_size;
+				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
+				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
 			}
 			else if (n_d.type.compare(0, prefix_array.l, prefix_array.s) == 0)
 			{
 				auto parameters = ssplit(std::string(n_d.type.begin() + prefix_array.l + 1, n_d.type.end() - 1), '+');
+#pragma pack(1)
 				struct Dummy
 				{
+					BP::Node* n;
+
 					uint type_hash;
 					uint type_size;
 					uint size;
@@ -1447,35 +1451,39 @@ namespace flame
 					void dtor()
 					{
 						for (auto i = 0; i < size; i++)
-							data_dtor(type_hash, &((AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i))->v);
-						auto& out = *(AttributeD<Array<int>>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size);
-						for (auto i = 0; i < out.v.s; i++)
-							data_dtor(type_hash, (char*)out.v.v + type_size * i);
-						f_free(out.v.v);
+							data_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
+						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+						for (auto i = 0; i < out.s; i++)
+							data_dtor(type_hash, (char*)out.v + type_size * i);
+						f_free(out.v);
 					}
 
-					void update(BP* scene)
+					void update(uint frame)
 					{
-						auto& out = *(AttributeD<Array<int>>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size);
-						if (out.frame == -1)
+						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+						auto out_frame = n->output(0)->frame();
+						if (out_frame == -1)
 						{
-							out.v.s = size;
+							out.s = size;
 							auto m_size = type_size * size;
-							out.v.v = (int*)f_malloc(m_size);
-							memset(out.v.v, 0, m_size);
+							out.v = (int*)f_malloc(m_size);
+							memset(out.v, 0, m_size);
 						}
-						auto last_out_frame = out.frame;
+						auto is_out_updated = false;
 						for (auto i = 0; i < size; i++)
 						{
-							auto& v = *(AttributeD<int>*)((char*)&type_hash + sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i);
-							if (v.frame > last_out_frame)
+							auto v = (char*)&size + sizeof(uint) + type_size * i;
+							if (n->input(0)->frame() > out_frame)
 							{
-								data_copy(type_hash, &v.v, (char*)out.v.v + type_size * i, type_size);
-								out.frame = scene->frame;
+								data_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+								is_out_updated = true;
 							}
 						}
+						if (is_out_updated)
+							n->output(0)->set_frame(frame);
 					}
 				};
+#pragma pack()
 				auto tag = TypeData;
 				auto type_name = parameters[1];
 				auto base_name = type_name;
@@ -1491,18 +1499,17 @@ namespace flame
 				for (auto i = 0; i < size; i++)
 				{
 					inputs.push_back({
-						TypeInfo::get(tag, base_name.c_str(), true), std::to_string(i),
-						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * i, sizeof(AttributeBase) + type_size, ""
+						TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
+						sizeof(Dummy) + type_size * i, type_size, ""
 					});
 				}
-				n = bp->add_node(sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size + sizeof(AttributeBase) + sizeof(Array<int>), n_d.type, inputs, {
-						{TypeInfo::get(TypeData, type_name.c_str(), true, true), "out", 
-						sizeof(Dummy) + (sizeof(AttributeBase) + type_size) * size, sizeof(AttributeBase) + type_size, ""}
+				n = bp->add_node(sizeof(Dummy) + type_size * size + sizeof(Array<int>), n_d.type, inputs, {
+						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
 				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false, n_d.id);
 				auto obj = n->object;
-				*(uint*)obj = type_hash;
-				*(uint*)((char*)obj + sizeof(uint)) = type_size;
-				*(uint*)((char*)obj + sizeof(uint) + sizeof(uint)) = size;
+				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
+				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
+				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint) + sizeof(uint)) = size;
 			}
 			else
 				n = bp->add_node(n_d.type, n_d.id);
@@ -1515,7 +1522,7 @@ namespace flame
 					auto type = input->type;
 					auto tag = type->tag();
 					if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
-						type->unserialize(d_d.value, input->raw_data);
+						type->unserialize(d_d.value, input->data);
 				}
 			}
 		}
@@ -1597,14 +1604,14 @@ namespace flame
 				auto tag = type->tag();
 				if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
 				{
-					auto value_str = type->serialize(input->raw_data, 2);
+					auto value_str = type->serialize(input->data, 2);
 					if (value_str != input->default_value)
 					{
 						if (!n_datas)
 							n_datas = n_node.append_child("datas");
 						auto n_data = n_datas.append_child("data");
 						n_data.append_attribute("name").set_value(input->name.c_str());
-						n_data.append_attribute("value").set_value(type->serialize(input->raw_data, 2).c_str());
+						n_data.append_attribute("value").set_value(type->serialize(input->data, 2).c_str());
 					}
 				}
 			}
@@ -1665,543 +1672,688 @@ namespace flame
 
 	struct Vec1i$
 	{
-		AttributeD<int> x$i;
+		BP::Node* n;
 
-		AttributeD<Vec1i> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(int, x);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec1i, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec2i$
 	{
-		AttributeD<int> x$i;
-		AttributeD<int> y$i;
+		BP::Node* n;
 
-		AttributeD<Vec2i> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(int, x);
+		BP_IN(int, y);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec2i, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec3i$
 	{
-		AttributeD<int> x$i;
-		AttributeD<int> y$i;
-		AttributeD<int> z$i;
+		BP::Node* n;
 
-		AttributeD<Vec3i> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(int, x);
+		BP_IN(int, y);
+		BP_IN(int, z);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec3i, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec4i$
 	{
-		AttributeD<int> x$i;
-		AttributeD<int> y$i;
-		AttributeD<int> z$i;
-		AttributeD<int> w$i;
+		BP::Node* n;
 
-		AttributeD<Vec4i> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(int, x);
+		BP_IN(int, y);
+		BP_IN(int, z);
+		BP_IN(int, w);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec4i, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
-			if (w$i.frame > last_out_frame)
+			if (w_s()->frame() > out_frame)
 			{
-				out$o.v[3] = w$i.v;
-				out$o.frame = scene->frame;
+				out$o[3] = w$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec1u$
 	{
-		AttributeD<uint> x$i;
+		BP::Node* n;
 
-		AttributeD<Vec1u> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uint, x);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec1u, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec2u$
 	{
-		AttributeD<uint> x$i;
-		AttributeD<uint> y$i;
+		BP::Node* n;
 
-		AttributeD<Vec2u> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uint, x);
+		BP_IN(uint, y);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec2u, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec3u$
 	{
-		AttributeD<uint> x$i;
-		AttributeD<uint> y$i;
-		AttributeD<uint> z$i;
+		BP::Node* n;
 
-		AttributeD<Vec3u> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uint, x);
+		BP_IN(uint, y);
+		BP_IN(uint, z);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec3u, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec4u$
 	{
-		AttributeD<uint> x$i;
-		AttributeD<uint> y$i;
-		AttributeD<uint> z$i;
-		AttributeD<uint> w$i;
+		BP::Node* n;
 
-		AttributeD<Vec4u> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uint, x);
+		BP_IN(uint, y);
+		BP_IN(uint, z);
+		BP_IN(uint, w);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec4u, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
-			if (w$i.frame > last_out_frame)
+			if (w_s()->frame() > out_frame)
 			{
-				out$o.v[3] = w$i.v;
-				out$o.frame = scene->frame;
+				out$o[3] = w$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec1f$
 	{
-		AttributeD<float> x$i;
+		BP::Node* n;
 
-		AttributeD<Vec1f> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, x);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec1f, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec2f$
 	{
-		AttributeD<float> x$i;
-		AttributeD<float> y$i;
+		BP::Node* n;
 
-		AttributeD<Vec2f> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, x);
+		BP_IN(float, y);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec2f, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec3f$
 	{
-		AttributeD<float> x$i;
-		AttributeD<float> y$i;
-		AttributeD<float> z$i;
+		BP::Node* n;
 
-		AttributeD<Vec3f> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, x);
+		BP_IN(float, y);
+		BP_IN(float, z);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec3f, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec4f$
 	{
-		AttributeD<float> x$i;
-		AttributeD<float> y$i;
-		AttributeD<float> z$i;
-		AttributeD<float> w$i;
+		BP::Node* n;
 
-		AttributeD<Vec4f> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, x);
+		BP_IN(float, y);
+		BP_IN(float, z);
+		BP_IN(float, w);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec4f, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
-			if (w$i.frame > last_out_frame)
+			if (w_s()->frame() > out_frame)
 			{
-				out$o.v[3] = w$i.v;
-				out$o.frame = scene->frame;
+				out$o[3] = w$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec1c$
 	{
-		AttributeD<uchar> x$i;
+		BP::Node* n;
 
-		AttributeD<Vec1c> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uchar, x);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec1c, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec2c$
 	{
-		AttributeD<uchar> x$i;
-		AttributeD<uchar> y$i;
+		BP::Node* n;
 
-		AttributeD<Vec2c> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uchar, x);
+		BP_IN(uchar, y);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec2c, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec3c$
 	{
-		AttributeD<uchar> x$i;
-		AttributeD<uchar> y$i;
-		AttributeD<uchar> z$i;
+		BP::Node* n;
 
-		AttributeD<Vec3c> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uchar, x);
+		BP_IN(uchar, y);
+		BP_IN(uchar, z);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec3c, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct Vec4c$
 	{
-		AttributeD<uchar> x$i;
-		AttributeD<uchar> y$i;
-		AttributeD<uchar> z$i;
-		AttributeD<uchar> w$i;
+		BP::Node* n;
 
-		AttributeD<Vec4c> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(uchar, x);
+		BP_IN(uchar, y);
+		BP_IN(uchar, z);
+		BP_IN(uchar, w);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec4c, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			auto last_out_frame = out$o.frame;
-			if (x$i.frame > last_out_frame)
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
 			{
-				out$o.v[0] = x$i.v;
-				out$o.frame = scene->frame;
+				out$o[0] = x$i;
+				out_updated = true;
 			}
-			if (y$i.frame > last_out_frame)
+			if (y_s()->frame() > out_frame)
 			{
-				out$o.v[1] = y$i.v;
-				out$o.frame = scene->frame;
+				out$o[1] = y$i;
+				out_updated = true;
 			}
-			if (z$i.frame > last_out_frame)
+			if (z_s()->frame() > out_frame)
 			{
-				out$o.v[2] = z$i.v;
-				out$o.frame = scene->frame;
+				out$o[2] = z$i;
+				out_updated = true;
 			}
-			if (w$i.frame > last_out_frame)
+			if (w_s()->frame() > out_frame)
 			{
-				out$o.v[3] = w$i.v;
-				out$o.frame = scene->frame;
+				out$o[3] = w$i;
+				out_updated = true;
 			}
+			if (out_updated)
+				out_s()->set_frame(frame);
 		}
 	};
 
 	struct F2U$
 	{
-		AttributeD<float> v$i;
+		BP::Node* n;
 
-		AttributeD<uint> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, in);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(uint, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			if (v$i.frame > out$o.frame)
+			auto out_frame = out_s()->frame();
+			if (in_s()->frame() > out_frame)
 			{
-				out$o.v = v$i.v;
-				out$o.frame = scene->frame;
+				out$o = in$i;
+				out_s()->set_frame(frame);
 			}
 		}
 	};
 
 	struct Add$
 	{
-		AttributeD<float> a$i;
-		AttributeD<float> b$i;
+		BP::Node* n;
 
-		AttributeD<float> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, a);
+		BP_IN(float, b);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(float, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
+			auto out_frame = out_s()->frame();
+			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame)
 			{
-				out$o.v = a$i.v + b$i.v;
-				out$o.frame = scene->frame;
+				out$o = a$i + b$i;
+				out_s()->set_frame(frame);
 			}
 		}
 	};
 
 	struct Multiple$
 	{
-		AttributeD<float> a$i;
-		AttributeD<float> b$i;
+		BP::Node* n;
 
-		AttributeD<float> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, a);
+		BP_IN(float, b);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(float, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame)
+			auto out_frame = out_s()->frame();
+			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame)
 			{
-				out$o.v = a$i.v * b$i.v;
-				out$o.frame = scene->frame;
+				out$o = a$i * b$i;
+				out_s()->set_frame(frame);
 			}
 		}
 	};
 
 	struct MakeVec2f$
 	{
-		AttributeD<float> x$i;
-		AttributeD<float> y$i;
+		BP::Node* n;
 
-		AttributeD<Vec2f> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, x);
+		BP_IN(float, y);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec2f, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			if (x$i.frame > out$o.frame)
-				out$o.v.x() = x$i.v;
-			if (y$i.frame > out$o.frame)
-				out$o.v.y() = y$i.v;
-			out$o.frame = scene->frame;
+			auto out_frame = out_s()->frame();
+			if (x_s()->frame() > out_frame)
+				out$o.x() = x$i;
+			if (y_s()->frame() > out_frame)
+				out$o.y() = y$i;
+			out_s()->set_frame(frame);
 		}
 	};
 
 	struct Time$
 	{
-		AttributeD<float> delta$o;
-		AttributeD<float> total$o;
+		BP::Node* n;
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(float, delta);
+		BP_OUT(float, total);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			delta$o.v = looper().delta_time;
-			total$o.v = scene->time;
-			delta$o.frame = scene->frame;
-			total$o.frame = scene->frame;
+			delta$o = looper().delta_time;
+			total$o = n->scene()->time;
+			delta_s()->set_frame(frame);
+			total_s()->set_frame(frame);
 		}
 	};
 
 	struct LinearInterpolation1d$
 	{
-		AttributeD<float> a$i;
-		AttributeD<float> b$i;
-		AttributeD<float> t$i;
+		BP::Node* n;
 
-		AttributeD<float> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(float, a);
+		BP_IN(float, b);
+		BP_IN(float, t);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(float, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
+			auto out_frame = out_s()->frame();
+			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
 			{
-				if (t$i.v <= 0.f)
-					out$o.v = a$i.v;
-				else if (t$i.v >= 1.f)
-					out$o.v = b$i.v;
+				if (t$i <= 0.f)
+					out$o = a$i;
+				else if (t$i >= 1.f)
+					out$o = b$i;
 				else
-					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = scene->frame;
+					out$o = a$i + (b$i - a$i) * t$i;
+				out_s()->set_frame(frame);
 			}
 		}
 	};
 
 	struct LinearInterpolation2d$
 	{
-		AttributeD<Vec2f> a$i;
-		AttributeD<Vec2f> b$i;
-		AttributeD<float> t$i;
+		BP::Node* n;
 
-		AttributeD<Vec2f> out$o;
+		BP_IN_BASE_LINE;
+		BP_IN(Vec2f, a);
+		BP_IN(Vec2f, b);
+		BP_IN(float, t);
 
-		FLAME_FOUNDATION_EXPORTS void update$(BP* scene)
+		BP_OUT_BASE_LINE;
+		BP_OUT(Vec2f, out);
+
+		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
 		{
-			if (a$i.frame > out$o.frame || b$i.frame > out$o.frame || t$i.frame > out$o.frame)
+			auto out_frame = out_s()->frame();
+			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
 			{
-				if (t$i.v <= 0.f)
-					out$o.v = a$i.v;
-				else if (t$i.v >= 1.f)
-					out$o.v = b$i.v;
+				if (t$i <= 0.f)
+					out$o = a$i;
+				else if (t$i >= 1.f)
+					out$o = b$i;
 				else
-					out$o.v = a$i.v + (b$i.v - a$i.v) * t$i.v;
-				out$o.frame = scene->frame;
+					out$o = a$i + (b$i - a$i) * t$i;
+				out_s()->set_frame(frame);
 			}
 		}
 	};

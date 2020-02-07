@@ -13,6 +13,8 @@
 #include <msdfgen.h>
 #include <msdfgen-ext.h>
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	namespace graphics
@@ -396,33 +398,38 @@ namespace flame
 
 		struct FontAtlas$
 		{
-			AttributeE<FontDrawType$> draw_type$i;
-			AttributeP<Array<StringW>> fonts$i;
+			BP::Node* n;
 
-			AttributeP<FontAtlas> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(FontDrawType$, draw_type);
+			BP_IN(Array<StringW>*, fonts);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(FontAtlas*, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (draw_type$i.frame > out$o.frame || fonts$i.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				if (draw_type_s()->frame() > out_frame || fonts_s()->frame() > out_frame)
 				{
-					if (out$o.v)
-						FontAtlas::destroy(out$o.v);
+					if (out$o)
+						FontAtlas::destroy(out$o);
 					auto d = Device::default_one();
-					std::vector<const wchar_t*> fonts(fonts$i.v ? fonts$i.v->s : 0);
+					std::vector<const wchar_t*> fonts(fonts$i ? fonts$i->s : 0);
 					for (auto i = 0; i < fonts.size(); i++)
-						fonts[i] = fonts$i.v->at(i).v;
+						fonts[i] = fonts$i->at(i).v;
 					if (d && !fonts.empty())
-						out$o.v = FontAtlas::create(d, draw_type$i.v, fonts.size(), fonts.data());
+						out$o = FontAtlas::create(d, draw_type$i, fonts.size(), fonts.data());
 					else
 						printf("cannot create fontatlas\n");
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~FontAtlas$()
 			{
-				if (out$o.v)
-					FontAtlas::destroy(out$o.v);
+				if (out$o)
+					FontAtlas::destroy(out$o);
 			}
 		};
 	}

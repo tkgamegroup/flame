@@ -194,7 +194,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 	ui::c_element();
 	auto c_event_receiver = ui::c_event_receiver();
 	c_event_receiver->pass = (Entity*)INVALID_POINTER;
-	c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+	c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 		auto editor = *(cSceneEditorPrivate**)c;
 		if (is_mouse_down(action, key, true) && key == Mouse_Left)
 		{
@@ -249,7 +249,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 			capture.e = c_editor;
 			capture.er = c_event_receiver;
 			capture.off = element_pos_offset;
-			c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+			c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 				{
@@ -289,7 +289,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				capture.e = c_editor;
 				capture.er = c_event_receiver;
 				capture.off = element_pos_offset;
-				c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{
@@ -329,7 +329,7 @@ void open_scene_editor(const std::wstring& filename, const Vec2f& pos)
 				capture.e = c_editor;
 				capture.er = c_event_receiver;
 				capture.off = element_pos_offset;
-				c_event_receiver->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (capture.er->active && is_mouse_move(action, key) && capture.e->selected)
 					{

@@ -995,9 +995,6 @@ namespace flame
 
 	std::string TypeInfo::serialize(const void* src, int precision) const
 	{
-		if (is_attribute())
-			src = (char*)src + sizeof(AttributeBase);
-
 		switch (tag())
 		{
 		case TypeEnumSingle:
@@ -1087,9 +1084,6 @@ namespace flame
 
 	void TypeInfo::unserialize(const std::string& src, void* dst) const
 	{
-		if (is_attribute())
-			dst = (char*)dst + sizeof(AttributeBase);
-
 		switch (tag())
 		{
 		case TypeEnumSingle:
@@ -1194,9 +1188,6 @@ namespace flame
 
 	void TypeInfo::copy_from(const void* src, void* dst) const
 	{
-		if (is_attribute())
-			dst = (char*)dst + sizeof(AttributeBase);
-
 		if (tag() == TypeData)
 			data_copy(base_hash(), src, dst);
 		else if (tag() == TypeEnumSingle || tag() == TypeEnumMulti)

@@ -7,6 +7,8 @@
 
 #include "canvas.h"
 
+#include <flame/reflect_macros.h>
+
 using namespace flame;
 using namespace graphics;
 
@@ -17,18 +19,12 @@ namespace flame
 		CmdDrawElement,
 		CmdDrawTextLcd,
 		CmdDrawTextSdf,
-		CmdSetScissor,
-
-		CmdDrawRect
+		CmdSetScissor
 	};
 
-	struct CmdBase
+	struct Cmd
 	{
 		CmdType type;
-	};
-
-	struct Cmd : CmdBase
-	{
 		union
 		{
 			struct
@@ -39,88 +35,6 @@ namespace flame
 			}draw_data;
 			Vec4f scissor;
 		}v;
-	};
-
-	struct Rect : CmdBase
-	{
-		Vec2f pos;
-		Vec2f size;
-		Vec4c color;
-	};
-
-	struct Rect$
-	{
-		AttributeD<Vec2f> pos$i;
-		AttributeD<Vec2f> size$i;
-		AttributeD<Vec4c> color$i;
-		AttributeD<float> alpha$i;
-
-		AttributeD<Rect> out$o;
-
-		__declspec(dllexport) Rect$()
-		{
-			alpha$i.v = 1.f;
-		}
-
-		__declspec(dllexport) void update$(BP* scene)
-		{
-			out$o.v.type = CmdDrawRect;
-			if (pos$i.frame > out$o.frame)
-				out$o.v.pos = pos$i.v;
-			if (size$i.frame > out$o.frame)
-				out$o.v.size = size$i.v;
-			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
-				out$o.v.color = color$i.v.new_proply<3>(alpha$i.v);
-			out$o.frame = scene->frame;
-		}
-	};
-
-	struct TextSdf : CmdBase
-	{
-		FontAtlas* font_atals;
-		float scale;
-		Vec2f pos;
-		Vec4c color;
-		Array<Glyph*> glyphs;
-	};
-
-	struct TextSdf$
-	{
-		AttributeP<void> font_atals$i;
-		AttributeD<float> scale$i;
-		AttributeD<Vec2f> pos$i;
-		AttributeD<Vec4c> color$i;
-		AttributeD<float> alpha$i;
-		AttributeD<StringW> text$i;
-
-		AttributeD<TextSdf> out$o;
-
-		__declspec(dllexport) TextSdf$()
-		{
-			scale$i.v = 1.f;
-			alpha$i.v = 1.f;
-		}
-
-		__declspec(dllexport) void update$(BP* scene)
-		{
-			out$o.v.type = CmdDrawTextSdf;
-			if (font_atals$i.frame > out$o.frame)
-				out$o.v.font_atals = (FontAtlas*)font_atals$i.v;
-			if (scale$i.frame > out$o.frame)
-				out$o.v.scale = scale$i.v;
-			if (pos$i.frame > out$o.frame)
-				out$o.v.pos = pos$i.v;
-			if (color$i.frame > out$o.frame || alpha$i.frame > out$o.frame)
-				out$o.v.color = color$i.v.new_proply<3>(alpha$i.v);
-			if (text$i.frame > out$o.frame)
-			{
-				out$o.v.glyphs.resize(text$i.v.s);
-				auto atlas = (FontAtlas*)font_atals$i.v;
-				for (auto i = 0; i < text$i.v.s; i++)
-					out$o.v.glyphs[i] = atlas->get_glyph(text$i.v.v[i], 0);
-			}
-			out$o.frame = scene->frame;
-		}
 	};
 
 	struct CanvasPrivate : Canvas
@@ -157,22 +71,23 @@ namespace flame
 
 	struct MakeCmd$
 	{
-		AttributeP<Array<graphics::Commandbuffer*>> cbs$i;
-		AttributeP<graphics::Buffer> vtx_buf$i;
-		AttributeP<graphics::Buffer> idx_buf$i;
-		AttributeP<graphics::RenderpassAndFramebuffer> rnf$i;
-		AttributeD<uint> image_idx$i;
-		AttributeP<graphics::Pipelinelayout> pll$i;
-		AttributeP<graphics::Pipeline> pl_element$i;
-		AttributeP<graphics::Pipeline> pl_text_lcd$i;
-		AttributeP<graphics::Pipeline> pl_text_sdf$i;
-		AttributeP<graphics::Descriptorset> ds$i;
-		AttributeP<graphics::Imageview> white_iv$i;
+		BP::Node* n;
 
-		AttributeP<void> canvas$o;
+		BP_IN_BASE_LINE;
+		BP_IN(Array<Commandbuffer*>*, cbs);
+		BP_IN(Buffer*, vtx_buf);
+		BP_IN(Buffer*, idx_buf);
+		BP_IN(RenderpassAndFramebuffer*, rnf);
+		BP_IN(uint, image_idx);
+		BP_IN(Pipelinelayout*, pll);
+		BP_IN(Pipeline*, pl_element);
+		BP_IN(Pipeline*, pl_text_lcd);
+		BP_IN(Pipeline*, pl_text_sdf);
+		BP_IN(Descriptorset*, ds);
+		BP_IN(Imageview*, white_iv);
 
-		AttributeP<Array<graphics::FontAtlas*>> font_atlases$i;
-		AttributeP<Array<void*>> content$i;
+		BP_OUT_BASE_LINE;
+		BP_OUT(Canvas*, canvas);
 
 		Vec4c clear_color;
 
@@ -194,7 +109,7 @@ namespace flame
 
 		__declspec(dllexport) ~MakeCmd$()
 		{
-			delete (CanvasPrivate*)canvas$o.v;
+			delete (CanvasPrivate*)canvas$o;
 		}
 
 		uint set_image(int index, Imageview* v, Filter filter, Atlas* atlas)
@@ -206,7 +121,7 @@ namespace flame
 				assert(v);
 				for (auto i = 0; i < imgs.size(); i++)
 				{
-					if (imgs[i].view == white_iv$i.v)
+					if (imgs[i].view == white_iv$i)
 					{
 						index = i;
 						break;
@@ -217,7 +132,7 @@ namespace flame
 			Vec2f white_uv;
 			if (!v)
 			{
-				v = white_iv$i.v;
+				v = white_iv$i;
 				white_uv = 0.5f;
 				atlas = nullptr;
 			}
@@ -227,7 +142,7 @@ namespace flame
 				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
 				white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
 			}
-			((Descriptorset*)ds$i.v)->set_image(0, index, v, filter);
+			ds$i->set_image(0, index, v, filter);
 			imgs[index] = { v, white_uv, atlas };
 			return index;
 		}
@@ -479,80 +394,47 @@ namespace flame
 			idx_cnt += 6;
 		}
 
-		__declspec(dllexport) void update$(BP* scene)
+		__declspec(dllexport) void update$(uint _frame)
 		{
 			if (frame == -1)
 			{
-				vtx_end = (Vertex*)vtx_buf$i.v->mapped;
-				idx_end = (uint*)idx_buf$i.v->mapped;
+				vtx_end = (Vertex*)vtx_buf$i->mapped;
+				idx_end = (uint*)idx_buf$i->mapped;
 
 				clear_color = Vec4c(0, 0, 0, 255);
 
-				auto ds_layout = ds$i.v->layout();
-				imgs.resize(ds_layout->binding_count() ? ds_layout->get_binding(0)->count : 0, { white_iv$i.v, Vec2f(0.5f), nullptr });
+				auto ds_layout = ds$i->layout();
+				imgs.resize(ds_layout->binding_count() ? ds_layout->get_binding(0).count : 0, { white_iv$i, Vec2f(0.5f), nullptr });
 
 				auto c = new CanvasPrivate;
-				c->scene = scene;
+				c->scene = n->scene();
 				c->mc = this;
-				canvas$o.v = c;
-				canvas$o.frame = scene->frame;
-
-				std::vector<void*> font_atlases(font_atlases$i.v ? font_atlases$i.v->s : 0);
-				for (auto i = 0; i < font_atlases.size(); i++)
-					font_atlases[i] = font_atlases$i.v->at(i);
-				for (auto f : font_atlases)
-					c->add_font((FontAtlas*)f);
+				canvas$o = c;
+				canvas_s()->set_frame(_frame);
 
 				frame = 0;
 			}
 			else
 			{
-				auto cb = cbs$i.v->at(image_idx$i.v);
+				auto cb = cbs$i->at(image_idx$i);
 
-				if (rnf$i.v && (pl_element$i.v || pl_text_lcd$i.v || pl_text_sdf$i.v))
+				if (rnf$i && (pl_element$i || pl_text_lcd$i || pl_text_sdf$i))
 				{
-					auto pll = (Pipelinelayout*)pll$i.v;
-
-					auto fb = rnf$i.v->framebuffer(image_idx$i.v);
+					auto fb = rnf$i->framebuffer(image_idx$i);
 					surface_size = Vec2f(fb->image_size);
 
 					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 
-					if (content$i.v)
-					{
-						auto& content = *content$i.v;
-						for (auto i = 0; i < content.s; i++)
-						{
-							switch (((CmdBase*)content[i])->type)
-							{
-							case CmdDrawRect:
-							{
-								auto c = (Rect*)content[i];
-								std::vector<Vec2f> points;
-								path_rect(points, c->pos, c->size);
-								fill(points.size(), points.data(), c->color);
-							}
-							break;
-							case CmdDrawTextSdf:
-							{
-								auto c = (TextSdf*)content[i];
-								add_text(c->font_atals, c->glyphs.s, c->glyphs.v, sdf_font_size * c->scale, c->scale, c->pos, c->color);
-							}
-							break;
-							}
-						}
-					}
-
 					cb->begin();
-					auto cv = rnf$i.v->clearvalues();
+					auto cv = rnf$i->clearvalues();
 					cv->set(0, clear_color);
 					cb->begin_renderpass(fb, cv);
-					if (idx_end != idx_buf$i.v->mapped)
+					if (idx_end != idx_buf$i->mapped)
 					{
 						cb->set_viewport(curr_scissor);
 						cb->set_scissor(curr_scissor);
-						cb->bind_vertexbuffer(vtx_buf$i.v, 0);
-						cb->bind_indexbuffer(idx_buf$i.v, IndiceTypeUint);
+						cb->bind_vertexbuffer(vtx_buf$i, 0);
+						cb->bind_indexbuffer(idx_buf$i, IndiceTypeUint);
 
 						struct
 						{
@@ -561,8 +443,8 @@ namespace flame
 						}pc;
 						pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
 						pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
-						cb->push_constant(0, sizeof(pc), &pc, pll);
-						cb->bind_descriptorset(ds$i.v, 0, pll);
+						cb->push_constant(0, sizeof(pc), &pc, pll$i);
+						cb->bind_descriptorset(ds$i, 0, pll$i);
 
 						auto vtx_off = 0;
 						auto idx_off = 0;
@@ -573,7 +455,7 @@ namespace flame
 							case CmdDrawElement:
 								if (cmd.v.draw_data.idx_cnt > 0)
 								{
-									cb->bind_pipeline(pl_element$i.v);
+									cb->bind_pipeline(pl_element$i);
 									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 									vtx_off += cmd.v.draw_data.vtx_cnt;
 									idx_off += cmd.v.draw_data.idx_cnt;
@@ -582,7 +464,7 @@ namespace flame
 							case CmdDrawTextLcd:
 								if (cmd.v.draw_data.idx_cnt > 0)
 								{
-									cb->bind_pipeline(pl_text_lcd$i.v);
+									cb->bind_pipeline(pl_text_lcd$i);
 									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 									vtx_off += cmd.v.draw_data.vtx_cnt;
 									idx_off += cmd.v.draw_data.idx_cnt;
@@ -591,7 +473,7 @@ namespace flame
 							case CmdDrawTextSdf:
 								if (cmd.v.draw_data.idx_cnt > 0)
 								{
-									cb->bind_pipeline(pl_text_sdf$i.v);
+									cb->bind_pipeline(pl_text_sdf$i);
 									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 									vtx_off += cmd.v.draw_data.vtx_cnt;
 									idx_off += cmd.v.draw_data.idx_cnt;
@@ -612,8 +494,8 @@ namespace flame
 					cb->end();
 				}
 
-				vtx_end = (Vertex*)vtx_buf$i.v->mapped;
-				idx_end = (uint*)idx_buf$i.v->mapped;
+				vtx_end = (Vertex*)vtx_buf$i->mapped;
+				idx_end = (uint*)idx_buf$i->mapped;
 				cmds.clear();
 			}
 		}

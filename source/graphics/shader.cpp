@@ -9,7 +9,7 @@
 #include <spirv_glsl.hpp>
 #endif
 
-#include <functional>
+#include <flame/reflect_macros.h>
 
 namespace flame
 {
@@ -58,7 +58,7 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, uint binding_count, DescriptorBindingBase* const* _bindings, Descriptorpool* default_set_pool) :
+		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, uint binding_count, DescriptorBinding* const* _bindings, Descriptorpool* default_set_pool) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
@@ -66,21 +66,13 @@ namespace flame
 			bindings.resize(binding_count);
 			for (auto i = 0; i < binding_count; i++)
 			{
-				auto b = (DescriptorBindingBase*)_bindings[i];
-				auto type = b->type;
-
-				DescriptorBindingBase* new_b = nullptr;
-				if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-					bindings[i] = new DescriptorBufferBinding(*(DescriptorBufferBinding*)b);
-				else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
-					bindings[i] = new DescriptorImageBinding(*(DescriptorImageBinding*)b);
-				else
-					assert(0);
+				auto& b = *_bindings[i];
+				bindings[i] = b;
 
 				VkDescriptorSetLayoutBinding vk_binding;
 				vk_binding.binding = i;
-				vk_binding.descriptorType = to_backend(type);
-				vk_binding.descriptorCount = b->count;
+				vk_binding.descriptorType = to_backend(b.type);
+				vk_binding.descriptorCount = b.count;
 				vk_binding.stageFlags = to_backend_flags<ShaderStage$>(ShaderStageAll);
 				vk_binding.pImmutableSamplers = nullptr;
 				vk_bindings.push_back(vk_binding);
@@ -102,24 +94,22 @@ namespace flame
 				default_set = Descriptorset::create(default_set_pool, this);
 				for (auto i = 0; i < bindings.size(); i++)
 				{
-					auto& _b = bindings[i];
-					auto type = _b->type;
+					auto& b = bindings[i];
+					auto type = b.type;
 					if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
 					{
-						auto b = (DescriptorBufferBinding*)_b;
-						if (b->buffer)
+						if (b.buffer)
 						{
-							for (auto j = 0; j < b->count; j++)
-								default_set->set_buffer(i, j, b->buffer);
+							for (auto j = 0; j < b.count; j++)
+								default_set->set_buffer(i, j, b.buffer);
 						}
 					}
 					else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
 					{
-						auto b = (DescriptorImageBinding*)_b;
-						if (b->view)
+						if (b.view)
 						{
-							for (auto j = 0; j < b->count; j++)
-								default_set->set_image(i, j, b->view, b->sampler);
+							for (auto j = 0; j < b.count; j++)
+								default_set->set_image(i, j, b.view, b.sampler);
 						}
 					}
 				}
@@ -132,15 +122,6 @@ namespace flame
 		{
 			if (default_set)
 				Descriptorset::destroy(default_set);
-
-			for (auto b : bindings)
-			{
-				auto type = b->type;
-				if (type == DescriptorUniformBuffer || type == DescriptorStorageBuffer)
-					delete(DescriptorBufferBinding*)b;
-				else if (type == DescriptorSampledImage || type == DescriptorStorageImage)
-					delete(DescriptorImageBinding*)b;
-			}
 #if defined(FLAME_VULKAN)
 			vkDestroyDescriptorSetLayout(((DevicePrivate*)d)->v, v, nullptr);
 #elif defined(FLAME_D3D12)
@@ -153,7 +134,7 @@ namespace flame
 			return ((DescriptorlayoutPrivate*)this)->bindings.size();
 		}
 
-		const DescriptorBindingBase* Descriptorlayout::get_binding(uint binding) const
+		const DescriptorBinding& Descriptorlayout::get_binding(uint binding) const
 		{
 			return ((DescriptorlayoutPrivate*)this)->bindings[binding];
 		}
@@ -163,7 +144,7 @@ namespace flame
 			return ((DescriptorlayoutPrivate*)this)->default_set;
 		}
 
-		Descriptorlayout* Descriptorlayout::create(Device* d, uint binding_count, DescriptorBindingBase* const* bindings, Descriptorpool* pool_to_create_default_set)
+		Descriptorlayout* Descriptorlayout::create(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* pool_to_create_default_set)
 		{
 			return new DescriptorlayoutPrivate(d, binding_count, bindings, pool_to_create_default_set);
 		}
@@ -173,169 +154,141 @@ namespace flame
 			delete (DescriptorlayoutPrivate*)l;
 		}
 
-		struct DescriptorBufferBinding$
+		struct DescriptorBinding$
 		{
-			AttributeD<bool> storage$i;
-			AttributeD<uint> count$i;
-			AttributeD<StringA> name$i;
-			AttributeP<Buffer> buffer$i;
+			BP::Node* n;
 
-			AttributeD<DescriptorBufferBinding> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(DescriptorType$, type);
+			BP_IN(uint, count);
+			BP_IN(StringA, name);
+			BP_IN(Buffer*, buffer);
+			BP_IN(TargetType$, target_type);
+			BP_IN(void*, v);
 
-			FLAME_GRAPHICS_EXPORTS DescriptorBufferBinding$()
+			BP_OUT_BASE_LINE;
+			BP_OUT(DescriptorBinding, out);
+			BP_OUT(Imageview*, iv);
+
+			FLAME_GRAPHICS_EXPORTS DescriptorBinding$()
 			{
-				storage$i.v = false;
-				count$i.v = 1;
+				count$i = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				auto last_out_frame = out$o.frame;
-				if (storage$i.frame > last_out_frame)
-				{
-					out$o.v.type = storage$i.v ? DescriptorStorageBuffer : DescriptorUniformBuffer;
-					out$o.frame = scene->frame;
-				}
-				if (count$i.frame > last_out_frame)
-				{
-					out$o.v.count = count$i.v;
-					out$o.frame = scene->frame;
-				}
-				if (name$i.frame > last_out_frame)
-				{
-					out$o.v.name = name$i.v.v;
-					out$o.frame = scene->frame;
-				}
-				if (buffer$i.frame > last_out_frame)
-				{
-					out$o.v.buffer = (Buffer*)buffer$i.v;
-					out$o.frame = scene->frame;
-				}
-			}
-		};
-
-		struct DescriptorImageBinding$
-		{
-			AttributeD<uint> binding$i;
-			AttributeD<bool> storage$i;
-			AttributeD<uint> count$i;
-			AttributeD<StringA> name$i;
-			AttributeE<TargetType$> target_type$i;
-			AttributeP<void> v$i;
-
-			AttributeD<DescriptorImageBinding> out$o;
-			AttributeP<Imageview> iv$o;
-
-			FLAME_GRAPHICS_EXPORTS DescriptorImageBinding$()
-			{
-				storage$i.v = false;
-				count$i.v = 1;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
-			{
-				auto last_out_frame = out$o.frame;
-				if (last_out_frame == -1)
+				auto out_frame = out_s()->frame();
+				auto out_updated = false;
+				if (out_frame == -1)
 				{
 					auto d = Device::default_one();
 					if (d)
-						out$o.v.sampler = d->sp_linear;
-					out$o.frame = scene->frame;
+						out$o.sampler = d->sp_linear;
+					out_updated = true;
 				}
-				if (target_type$i.frame > iv$o.frame || v$i.frame > iv$o.frame)
+				auto iv_frame = iv_s()->frame();
+				if (target_type_s()->frame() > iv_frame || v_s()->frame() > iv_frame)
 				{
-					if (iv$o.v)
-						Imageview::destroy(iv$o.v);
-					if (target_type$i.v == TargetImage)
-						iv$o.v = Imageview::create((Image*)v$i.v);
+					if (iv$o)
+						Imageview::destroy(iv$o);
+					if (target_type$i == TargetImage && v$i)
+						iv$o = Imageview::create((Image*)v$i);
 					else
-						iv$o.v = nullptr;
-					iv$o.frame = scene->frame;
+						iv$o = nullptr;
+					iv_s()->set_frame(frame);
 				}
-				if (storage$i.frame > last_out_frame)
+				if (type_s()->frame() > out_frame)
 				{
-					out$o.v.type = storage$i.v ? DescriptorStorageImage : DescriptorSampledImage;
-					out$o.frame = scene->frame;
+					out$o.type = type$i;
+					out_updated = true;
 				}
-				if (count$i.frame > last_out_frame)
+				if (count_s()->frame() > out_frame)
 				{
-					out$o.v.count = count$i.v;
-					out$o.frame = scene->frame;
+					out$o.count = count$i;
+					out_updated = true;
 				}
-				if (name$i.frame > last_out_frame)
+				if (name_s()->frame() > out_frame)
 				{
-					out$o.v.name = name$i.v.v;
-					out$o.frame = scene->frame;
+					out$o.name = name$i.v;
+					out_updated = true;
 				}
-				if (iv$o.frame > last_out_frame)
+				if (buffer_s()->frame() > out_frame)
 				{
-					switch (target_type$i.v)
+					out$o.buffer = buffer$i;
+					out_updated = true;
+				}
+				if (iv_s()->frame() > out_frame)
+				{
+					switch (target_type$i)
 					{
 					case TargetImage:
-						out$o.v.view = (Imageview*)iv$o.v;
+						out$o.view = iv$o;
 						break;
 					case TargetImageview:
-						out$o.v.view = (Imageview*)v$i.v;
+						out$o.view = (Imageview*)v$i;
 						break;
 					case TargetImages:
-						out$o.v.view = nullptr;
+						out$o.view = nullptr;
 						break;
 					}
-					out$o.frame = scene->frame;
+					out_updated = true;
 				}
+				if (out_updated)
+					out_s()->set_frame(frame);
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~DescriptorImageBinding$()
+			FLAME_GRAPHICS_EXPORTS ~DescriptorBinding$()
 			{
-				if (iv$o.v)
-					Imageview::destroy(iv$o.v);
+				if (iv$o)
+					Imageview::destroy(iv$o);
 			}
 		};
 
 		struct Descriptorlayout$
 		{
-			AttributeP<Array<void*>> bindings$i;
-			AttributeD<bool> create_default_set$i;
+			BP::Node* n;
 
-			AttributeP<Descriptorlayout> out$o;
-			AttributeP<Descriptorset> default_set$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Array<DescriptorBinding*>*, bindings);
+			BP_IN(bool, create_default_set);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(Descriptorlayout*, out);
+			BP_OUT(Descriptorset*, default_set);
 
 			FLAME_GRAPHICS_EXPORTS Descriptorlayout$()
 			{
-				create_default_set$i.v = true;
+				create_default_set$i = true;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (bindings$i.frame > out$o.frame || create_default_set$i.frame > default_set$o.frame)
+				if (bindings_s()->frame() > out_s()->frame() || create_default_set_s()->frame() > default_set_s()->frame())
 				{
-					if (out$o.v)
-						Descriptorlayout::destroy(out$o.v);
+					if (out$o)
+						Descriptorlayout::destroy(out$o);
 					auto d = Device::default_one();
-					if (d)
+					if (d && bindings$i->s > 0)
 					{
-						std::vector<DescriptorBindingBase*> bindings(bindings$i.v ? bindings$i.v->s : 0);
-						for (auto i = 0; i < bindings.size(); i++)
-							bindings[i] = (DescriptorBindingBase*)bindings$i.v->at(i);
-						out$o.v = Descriptorlayout::create(d, bindings.size(), bindings.data(), create_default_set$i.v ? d->dp : nullptr);
-						default_set$o.v = ((Descriptorlayout*)out$o.v)->default_set();
+						out$o = Descriptorlayout::create(d, bindings$i->s, bindings$i->v, create_default_set$i ? d->dp : nullptr);
+						default_set$o = (out$o)->default_set();
 					}
 					else
 					{
 						printf("cannot create descriptorlayout\n");
 
-						out$o.v = nullptr;
-						default_set$o.v = nullptr;
+						out$o = nullptr;
+						default_set$o = nullptr;
 					}
-					out$o.frame = scene->frame;
-					default_set$o.frame = scene->frame;
+					out_s()->set_frame(frame);
+					default_set_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Descriptorlayout$()
 			{
-				if (out$o.v)
-					Descriptorlayout::destroy(out$o.v);
+				if (out$o)
+					Descriptorlayout::destroy(out$o);
 			}
 		};
 
@@ -380,7 +333,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(l->bindings[binding]->type);
+			write.descriptorType = to_backend(l->bindings[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
@@ -406,7 +359,7 @@ namespace flame
 			write.dstSet = v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(l->bindings[binding]->type);
+			write.descriptorType = to_backend(l->bindings[binding].type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
@@ -451,139 +404,159 @@ namespace flame
 
 		struct Descriptorset$
 		{
-			AttributeP<void> dsl$i;
+			BP::Node* n;
 
-			AttributeP<void> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Descriptorlayout*, dsl);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Descriptorset*, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (dsl$i.frame > out$o.frame)
+				if (dsl_s()->frame() > out_s()->frame())
 				{
-					if (out$o.v)
-						Descriptorset::destroy((Descriptorset*)out$o.v);
+					if (out$o)
+						Descriptorset::destroy(out$o);
 					auto d = Device::default_one();
-					if (d && dsl$i.v)
-						out$o.v = Descriptorset::create(d->dp, (Descriptorlayout*)dsl$i.v);
+					if (d && dsl$i)
+						out$o = Descriptorset::create(d->dp, dsl$i);
 					else
 					{
 						printf("cannot create descriptorsetset\n");
 
-						out$o.v = nullptr;
+						out$o = nullptr;
 					}
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Descriptorset$()
 			{
-				if (out$o.v)
-					Descriptorset::destroy((Descriptorset*)out$o.v);
+				if (out$o)
+					Descriptorset::destroy((Descriptorset*)out$o);
 			}
 		};
 
-		struct BufferDescriptorWrite$
+		struct DescriptorWrite
 		{
-			AttributeD<uint> binding$i;
-			AttributeD<uint> index$i;
-			AttributeD<uint> count$i;
-			AttributeP<void> buffer$i;
-
-			AttributeP<void> out$o;
-
-			FLAME_GRAPHICS_EXPORTS BufferDescriptorWrite$()
-			{
-				count$i.v = 1;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
-			{
-				if (binding$i.frame > out$o.frame || index$i.frame > out$o.frame || count$i.frame > out$o.frame || buffer$i.frame > out$o.frame)
-				{
-					out$o.v = this;
-					out$o.frame = scene->frame;
-				}
-			}
+			uint binding;
+			uint index;
+			uint count;
+			Buffer* buffer;
+			Imageview* view;
 		};
 
-		struct ImageDescriptorWrite$
+		struct DescriptorWrite$
 		{
-			AttributeD<uint> binding$i;
-			AttributeD<uint> index$i;
-			AttributeD<uint> count$i;
-			AttributeE<TargetType$> target_type$i;
-			AttributeP<void> v$i;
+			BP::Node* n;
 
-			AttributeP<void> out$o;
-			AttributeP<void> iv$o;
+			BP_IN_BASE_LINE;
+			BP_IN(uint, binding);
+			BP_IN(uint, index);
+			BP_IN(uint, count);
+			BP_IN(Buffer*, buffer);
+			BP_IN(TargetType$, target_type);
+			BP_IN(void*, v);
 
-			FLAME_GRAPHICS_EXPORTS ImageDescriptorWrite$()
+			BP_OUT_BASE_LINE;
+			BP_OUT(DescriptorWrite, out);
+			BP_OUT(Imageview*, iv);
+
+			FLAME_GRAPHICS_EXPORTS DescriptorWrite$()
 			{
-				count$i.v = 1;
+				count$i = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (target_type$i.frame > iv$o.frame || v$i.frame > iv$o.frame)
+				auto iv_frame = iv_s()->frame();
+				if (target_type_s()->frame() > iv_frame || v_s()->frame() > iv_frame)
 				{
-					if (iv$o.v)
-						Imageview::destroy((Imageview*)iv$o.v);
-					if (target_type$i.v == TargetImage)
-						iv$o.v = Imageview::create((Image*)v$i.v);
+					if (iv$o)
+						Imageview::destroy(iv$o);
+					if (target_type$i == TargetImage)
+						iv$o = Imageview::create((Image*)v$i);
 					else
-						iv$o.v = nullptr;
-					iv$o.frame = scene->frame;
+						iv$o = nullptr;
+					iv_s()->set_frame(frame);
 				}
-				if (binding$i.frame > out$o.frame || index$i.frame > out$o.frame || count$i.frame > out$o.frame || iv$o.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				auto out_updated = false;
+				if (count_s()->frame() > out_frame)
 				{
-					out$o.v = this;
-					out$o.frame = scene->frame;
+					out$o.count = count$i;
+					out_updated = true;
 				}
+				if (buffer_s()->frame() > out_frame)
+				{
+					out$o.buffer = buffer$i;
+					out_updated = true;
+				}
+				if (iv_s()->frame() > out_frame)
+				{
+					switch (target_type$i)
+					{
+					case TargetImage:
+						out$o.view = iv$o;
+						break;
+					case TargetImageview:
+						out$o.view = (Imageview*)v$i;
+						break;
+					case TargetImages:
+						out$o.view = nullptr;
+						break;
+					}
+					out_updated = true;
+				}
+				if (out_updated)
+					out_s()->set_frame(frame);
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~ImageDescriptorWrite$()
+			FLAME_GRAPHICS_EXPORTS ~DescriptorWrite$()
 			{
-				if (iv$o.v)
-					Imageview::destroy((Imageview*)iv$o.v);
+				if (iv$o)
+					Imageview::destroy(iv$o);
 			}
 		};
 
 		struct DescriptorWriter$
 		{
-			AttributeP<void> set$i;
-			AttributeP<Array<void*>> buffer_writes$i;
-			AttributeP<Array<void*>> image_writes$i;
+			BP::Node* n;
 
-			AttributeP<void> set$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Descriptorset*, in);
+			BP_IN(Array<DescriptorWrite*>*, writes);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Descriptorset*, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (set$i.frame > set$o.frame || buffer_writes$i.frame > set$o.frame || image_writes$i.frame > set$o.frame)
+				auto out_frame = out_s()->frame();
+				if (in_s()->frame() > out_frame || writes_s()->frame() > out_frame)
 				{
-					std::vector<void*> buffer_writes(buffer_writes$i.v ? buffer_writes$i.v->s : 0);
-					for (auto i = 0; i < buffer_writes.size(); i++)
-						buffer_writes[i] = buffer_writes$i.v->at(i);
-					for (auto _w : buffer_writes)
-					{
-						auto w = (BufferDescriptorWrite$*)_w;
-						for (auto i = 0; i < w->count$i.v; i++)
-							((graphics::Descriptorset*)set$i.v)->set_buffer(w->binding$i.v, w->index$i.v + i, (graphics::Buffer*)w->buffer$i.v);
-					}
-					std::vector<void*> image_writes(image_writes$i.v ? image_writes$i.v->s : 0);
-					for (auto i = 0; i < image_writes.size(); i++)
-						image_writes[i] = image_writes$i.v->at(i);
-					if (!image_writes.empty())
+					if (writes$i)
 					{
 						auto sampler = Device::default_one()->sp_linear;
-						for (auto _w : image_writes)
+						for (auto i = 0; i < writes$i->s; i++)
 						{
-							auto w = (ImageDescriptorWrite$*)_w;
-							for (auto i = 0; i < w->count$i.v; i++)
-								((graphics::Descriptorset*)set$i.v)->set_image(w->binding$i.v, w->index$i.v + i, (graphics::Imageview*)w->iv$o.v, sampler);
+							auto& w = writes$i->at(i);
+							if (w->buffer)
+							{
+								for (auto j = 0; j < w->count; j++)
+									in$i->set_buffer(w->binding, w->index + j, w->buffer);
+							}
+							else
+							{
+								for (auto j = 0; j < w->count; j++)
+									in$i->set_image(w->binding, w->index + j, w->view, sampler);
+							}
 						}
 					}
 
-					set$o.v = set$i.v;
-					set$o.frame = scene->frame;
+					out$o = in$i;
+					out_s()->set_frame(frame);
 				}
 			}
 		};
@@ -643,126 +616,152 @@ namespace flame
 
 		struct Pipelinelayout$
 		{
-			AttributeP<Array<Descriptorlayout*>> descriptorlayouts$i;
-			AttributeD<uint> push_constant_size$i;
+			BP::Node* n;
 
-			AttributeP<Pipelinelayout> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Array<Descriptorlayout*>*, descriptorlayouts);
+			BP_IN(uint, push_constant_size);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Pipelinelayout*, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (descriptorlayouts$i.frame > out$o.frame || push_constant_size$i.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				if (descriptorlayouts_s()->frame() > out_frame || push_constant_size_s()->frame() > out_frame)
 				{
-					if (out$o.v)
-						Pipelinelayout::destroy(out$o.v);
+					if (out$o)
+						Pipelinelayout::destroy(out$o);
 					auto d = Device::default_one();
 					if (d)
-						out$o.v = Pipelinelayout::create(d, descriptorlayouts$i.v ? descriptorlayouts$i.v->s : 0, descriptorlayouts$i.v ? descriptorlayouts$i.v->v : nullptr, push_constant_size$i.v);
+						out$o = Pipelinelayout::create(d, descriptorlayouts$i ? descriptorlayouts$i->s : 0, descriptorlayouts$i ? descriptorlayouts$i->v : nullptr, push_constant_size$i);
 					else
 					{
 						printf("cannot create pipelinelayout\n");
 
-						out$o.v = nullptr;
+						out$o = nullptr;
 					}
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Pipelinelayout$()
 			{
-				if (out$o.v)
-					Pipelinelayout::destroy(out$o.v);
+				if (out$o)
+					Pipelinelayout::destroy(out$o);
 			}
 		};
 
 		struct VertexInputAttribute$
 		{
-			AttributeD<StringA> name$i;
-			AttributeE<Format$> format$i;
+			BP::Node* n;
 
-			AttributeD<VertexInputAttribute> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(StringA, name);
+			BP_IN(Format$, format);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(VertexInputAttribute, out);
 
 			FLAME_GRAPHICS_EXPORTS VertexInputAttribute$()
 			{
-				format$i.v = Format_R8G8B8A8_UNORM;
+				format$i = Format_R8G8B8A8_UNORM;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				auto last_out_frame = out$o.frame;
-				if (name$i.frame > last_out_frame)
+				auto out_frame = out_s()->frame();
+				auto out_updated = false;
+				if (name_s()->frame() > out_frame)
 				{
-					out$o.v.name = name$i.v.v;
-					out$o.frame = scene->frame;
+					out$o.name = name$i.v;
+					out_updated = true;
 				}
-				if (format$i.frame > last_out_frame)
+				if (format_s()->frame() > out_frame)
 				{
-					out$o.v.format = format$i.v;
-					out$o.frame = scene->frame;
+					out$o.format = format$i;
+					out_updated = true;
 				}
+				if (out_updated)
+					out_s()->set_frame(frame);
 			}
 		};
 
 		struct VertexInputBuffer$
 		{
-			AttributeP<Array<VertexInputAttribute*>> attributes$i;
-			AttributeE<VertexInputRate$> rate$i;
+			BP::Node* n;
 
-			AttributeD<VertexInputBuffer> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Array<VertexInputAttribute*>*, attributes);
+			BP_IN(VertexInputRate$, rate);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(VertexInputBuffer, out);
 
 			FLAME_GRAPHICS_EXPORTS VertexInputBuffer$()
 			{
-				rate$i.v = VertexInputRateVertex;
+				rate$i = VertexInputRateVertex;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				auto last_out_frame = out$o.frame;
-				if (attributes$i.frame > last_out_frame)
+				auto out_frame = out_s()->frame();
+				auto out_updated = false;
+				if (attributes_s()->frame() > out_frame)
 				{
-					out$o.v.attribute_count = attributes$i.v ? attributes$i.v->s : 0;
-					out$o.v.attributes = attributes$i.v ? attributes$i.v->v : nullptr;
-					out$o.frame = scene->frame;
+					out$o.attribute_count = attributes$i ? attributes$i->s : 0;
+					out$o.attributes = attributes$i ? attributes$i->v : nullptr;
+					out_updated = true;
 				}
-				if (rate$i.frame > last_out_frame)
+				if (rate_s()->frame() > out_frame)
 				{
-					out$o.v.rate = rate$i.v;
-					out$o.frame = scene->frame;
+					out$o.rate = rate$i;
+					out_updated = true;
 				}
+				if (out_updated)
+					out_s()->set_frame(frame);
 			}
 		};
 
 		struct VertexInputInfo$
 		{
-			AttributeP<Array<VertexInputBuffer*>> buffers$i;
-			AttributeE<PrimitiveTopology$> primitive_topology$i;
-			AttributeD<uint> patch_control_points$i;
+			BP::Node* n;
 
-			AttributeD<VertexInputInfo> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Array<VertexInputBuffer*>*, buffers);
+			BP_IN(PrimitiveTopology$, primitive_topology);
+			BP_IN(uint, patch_control_points);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(VertexInputInfo, out);
 
 			FLAME_GRAPHICS_EXPORTS VertexInputInfo$()
 			{
-				primitive_topology$i.v = PrimitiveTopologyTriangleList;
+				primitive_topology$i = PrimitiveTopologyTriangleList;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				auto last_out_frame = out$o.frame;
-				if (buffers$i.frame > last_out_frame)
+				auto out_frame = out_s()->frame();
+				auto out_updated = false;
+				if (buffers_s()->frame() > out_frame)
 				{
-					out$o.v.buffer_count = buffers$i.v ? buffers$i.v->s : 0;
-					out$o.v.buffers = buffers$i.v ? buffers$i.v->v : nullptr;
-					out$o.frame = scene->frame;
+					out$o.buffer_count = buffers$i ? buffers$i->s : 0;
+					out$o.buffers = buffers$i ? buffers$i->v : nullptr;
+					out_updated = true;
 				}
-				if (primitive_topology$i.frame > last_out_frame)
+				if (primitive_topology_s()->frame() > out_frame)
 				{
-					out$o.v.primitive_topology = primitive_topology$i.v;
-					out$o.frame = scene->frame;
+					out$o.primitive_topology = primitive_topology$i;
+					out_updated = true;
 				}
-				if (patch_control_points$i.frame > last_out_frame)
+				if (patch_control_points_s()->frame() > out_frame)
 				{
-					out$o.v.patch_control_points = patch_control_points$i.v;
-					out$o.frame = scene->frame;
+					out$o.patch_control_points = patch_control_points$i;
+					out_updated = true;
 				}
+				if (out_updated)
+					out_s()->set_frame(frame);
 			}
 		};
 
@@ -911,7 +910,7 @@ namespace flame
 									auto dsl = pll->dsls[j];
 									for (auto k = 0; k < dsl->bindings.size(); k++)
 									{
-										if (dsl->bindings[k]->name == name)
+										if (dsl->bindings[k].name == name)
 										{
 											set = j;
 											binding = k;
@@ -939,7 +938,7 @@ namespace flame
 									auto dsl = pll->dsls[j];
 									for (auto k = 0; k < dsl->bindings.size(); k++)
 									{
-										if (dsl->bindings[k]->name == name)
+										if (dsl->bindings[k].name == name)
 										{
 											set = j;
 											binding = k;
@@ -1442,52 +1441,56 @@ namespace flame
 
 		struct Pipeline$
 		{
-			AttributeP<Array<StringW>> shader_filenames$i;
-			AttributeP<Pipelinelayout> pll$i;
-			AttributeP<Renderpass> renderpass$i;
-			AttributeD<uint> subpass_idx$i;
-			AttributeP<VertexInputInfo> vi$i;
-			AttributeD<Vec2u> vp$i;
-			AttributeP<RasterInfo> raster$i;
-			AttributeE<SampleCount$> sc$i;
-			AttributeP<DepthInfo> depth$i;
-			AttributeP<Array<uint>> dynamic_states$i;
+			BP::Node* n;
 
-			AttributeP<Pipeline> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Array<StringW>*, shader_filenames);
+			BP_IN(Pipelinelayout*, pll);
+			BP_IN(Renderpass*, renderpass);
+			BP_IN(uint, subpass_idx);
+			BP_IN(VertexInputInfo*, vi);
+			BP_IN(Vec2u, vp);
+			BP_IN(RasterInfo*, raster);
+			BP_IN(SampleCount$, sc);
+			BP_IN(DepthInfo*, depth);
+			BP_IN(Array<uint>*, dynamic_states);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Pipeline*, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (renderpass$i.frame > out$o.frame || subpass_idx$i.frame > out$o.frame || shader_filenames$i.frame > out$o.frame || pll$i.frame > out$o.frame ||
-					vi$i.frame > out$o.frame || vp$i.frame > out$o.frame || raster$i.frame > out$o.frame || sc$i.frame > out$o.frame || depth$i.frame > out$o.frame || dynamic_states$i.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				if (renderpass_s()->frame() > out_frame || subpass_idx_s()->frame() > out_frame || shader_filenames_s()->frame() > out_frame || pll_s()->frame() > out_frame ||
+					vi_s()->frame() > out_frame || vp_s()->frame() > out_frame || raster_s()->frame() > out_frame || sc_s()->frame() > out_frame || depth_s()->frame() > out_frame || dynamic_states_s()->frame() > out_frame)
 				{
-					if (out$o.v)
-						Pipeline::destroy(out$o.v);
+					if (out$o)
+						Pipeline::destroy(out$o);
 					auto d = Device::default_one();
-					std::vector<std::wstring> shader_filenames(shader_filenames$i.v ? shader_filenames$i.v->s : 0);
-					auto bp_path = std::filesystem::path(scene->filename()).parent_path().wstring() + L"/";
+					std::vector<std::wstring> shader_filenames(shader_filenames$i ? shader_filenames$i->s : 0);
+					auto bp_path = std::filesystem::path(n->scene()->filename()).parent_path().wstring() + L"/";
 					for (auto i = 0; i < shader_filenames.size(); i++)
-						shader_filenames[i] = bp_path + shader_filenames$i.v->at(i).str();
-					if (d && renderpass$i.v && ((Renderpass*)renderpass$i.v)->subpass_count() > subpass_idx$i.v && !shader_filenames.empty() && pll$i.v)
+						shader_filenames[i] = bp_path + shader_filenames$i->at(i).str();
+					if (d && renderpass$i && renderpass$i->subpass_count() > subpass_idx$i && !shader_filenames.empty() && pll$i)
 					{
 						std::vector<const wchar_t*> _names(shader_filenames.size());
 						for (auto i = 0; i < _names.size(); i++)
 							_names[i] = shader_filenames[i].c_str();
-						out$o.v = Pipeline::create(d, _names.size(), _names.data(), (Pipelinelayout*)pll$i.v, (Renderpass*)renderpass$i.v, subpass_idx$i.v,
-							(VertexInputInfo*)vi$i.v, vp$i.v, (RasterInfo*)raster$i.v, sc$i.v, (DepthInfo*)depth$i.v, dynamic_states$i.v ? dynamic_states$i.v->s : 0, dynamic_states$i.v ? dynamic_states$i.v->v : nullptr);
+						out$o = Pipeline::create(d, _names.size(), _names.data(), pll$i, renderpass$i, subpass_idx$i,
+							vi$i, vp$i, raster$i, sc$i, depth$i, dynamic_states$i ? dynamic_states$i->s : 0, dynamic_states$i ? dynamic_states$i->v : nullptr);
 					}
 					else
-						out$o.v = nullptr;
-					if (!out$o.v)
+						out$o = nullptr;
+					if (!out$o)
 						printf("cannot create pipeline\n");
-
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Pipeline$()
 			{
-				if (out$o.v)
-					Pipeline::destroy(out$o.v);
+				if (out$o)
+					Pipeline::destroy(out$o);
 			}
 		};
 	}

@@ -3,6 +3,8 @@
 #include "buffer_private.h"
 #include "commandbuffer_private.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	namespace graphics
@@ -160,41 +162,45 @@ namespace flame
 
 		struct Buffer$
 		{
-			AttributeD<uint> size$i;
-			AttributeE<BufferUsage$> usage$im;
-			AttributeE<MemProp$> mem_prop$im;
+			BP::Node* n;
 
-			AttributeP<Buffer> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(uint, size);
+			BP_INd(BufferUsage$, usage, m);
+			BP_INd(MemProp$, mem_prop, m);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(Buffer*, out);
 
 			FLAME_GRAPHICS_EXPORTS Buffer$()
 			{
-				mem_prop$im.v = MemPropDevice;
+				mem_prop$im = MemPropDevice;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (size$i.frame > out$o.frame || usage$im.frame > out$o.frame || mem_prop$im.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				if (size_s()->frame() > out_frame || usage_s()->frame() > out_frame || mem_prop_s()->frame() > out_frame)
 				{
-					if (out$o.v)
-						Buffer::destroy((Buffer*)out$o.v);
+					if (out$o)
+						Buffer::destroy(out$o);
 					auto d = Device::default_one();
-					if (d && size$i.v > 0 && usage$im.v > 0 && mem_prop$im.v > 0)
+					if (d && size$i > 0 && usage$im > 0 && mem_prop$im > 0)
 					{
-						auto b = Buffer::create(d, size$i.v, usage$im.v, mem_prop$im.v);
-						if (mem_prop$im.v == (MemPropHost | MemPropHostCoherent))
-							b->map();
-						out$o.v = b;
+						out$o = Buffer::create(d, size$i, usage$im, mem_prop$im);
+						if (mem_prop$im == (MemPropHost | MemPropHostCoherent))
+							out$o->map();
 					}
 					else
-						out$o.v = nullptr;
-					out$o.frame = scene->frame;
+						out$o = nullptr;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Buffer$()
 			{
-				if (out$o.v)
-					Buffer::destroy((Buffer*)out$o.v);
+				if (out$o)
+					Buffer::destroy(out$o);
 			}
 		};
 	}

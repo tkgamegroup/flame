@@ -40,34 +40,27 @@ namespace flame
 
 	struct TypeInfoPrivate : TypeInfo
 	{
-		TypeTag$ tag;
-		bool is_attribute;
+		TypeTag tag;
 		bool is_array;
 		std::string base_name;
 		std::string name;
 		uint base_hash;
 		uint hash;
 
-		TypeInfoPrivate(TypeTag$ tag, const std::string& base_name, bool is_attribute, bool is_array) :
+		TypeInfoPrivate(TypeTag tag, const std::string& base_name, bool is_array) :
 			tag(tag),
 			base_name(base_name),
 			base_hash(FLAME_HASH(base_name.c_str())),
-			is_attribute(is_attribute),
 			is_array(is_array)
 		{
-			name = make_str(tag, base_name, is_attribute, is_array);
+			name = make_str(tag, base_name, is_array);
 			hash = FLAME_HASH(name.c_str());
 		}
 	};
 
-	TypeTag$ TypeInfo::tag() const
+	TypeTag TypeInfo::tag() const
 	{
 		return ((TypeInfoPrivate*)this)->tag;
-	}
-
-	bool TypeInfo::is_attribute() const
-	{
-		return ((TypeInfoPrivate*)this)->is_attribute;
 	}
 
 	bool TypeInfo::is_array() const
@@ -97,27 +90,25 @@ namespace flame
 
 	static std::vector<std::unique_ptr<TypeInfoPrivate>> type_infos;
 
-	const TypeInfo* TypeInfo::get(TypeTag$ tag, const char* base_name, bool is_attribute, bool is_array)
+	const TypeInfo* TypeInfo::get(TypeTag tag, const char* base_name, bool is_array)
 	{
 		for (auto& i : type_infos)
 		{
-			if (i->tag == tag && i->base_name == base_name &&
-				i->is_attribute == is_attribute && i->is_array == is_array)
+			if (i->tag == tag && i->base_name == base_name && i->is_array == is_array)
 				return i.get();
 		}
-		auto i = new TypeInfoPrivate(tag, base_name, is_attribute, is_array);
+		auto i = new TypeInfoPrivate(tag, base_name, is_array);
 		type_infos.emplace_back(i);
 		return i;
 	}
 
 	const TypeInfo* TypeInfo::get(const char* str)
 	{
-		TypeTag$ tag;
+		TypeTag tag;
 		std::string base_name;
-		bool is_attribute;
 		bool is_array;
-		break_str(str, tag, base_name, is_attribute, is_array);
-		return TypeInfo::get(tag, base_name.c_str(), is_attribute, is_array);
+		break_str(str, tag, base_name, is_array);
+		return TypeInfo::get(tag, base_name.c_str(), is_array);
 	}
 
 	struct VariableInfoPrivate : VariableInfo
@@ -540,8 +531,7 @@ namespace flame
 
 	struct TypeInfoDesc
 	{
-		TypeTag$ tag;
-		bool is_attribute;
+		TypeTag tag;
 		bool is_array;
 		std::string base_name;
 
@@ -549,9 +539,8 @@ namespace flame
 		{
 		}
 
-		TypeInfoDesc(TypeTag$ tag, const std::string& base_name, bool is_attribute = false, bool is_array = false) :
+		TypeInfoDesc(TypeTag tag, const std::string& base_name, bool is_array = false) :
 			tag(tag),
-			is_attribute(is_attribute),
 			is_array(is_array),
 			base_name(base_name)
 		{
@@ -559,7 +548,7 @@ namespace flame
 
 		const TypeInfo* get()
 		{
-			return TypeInfo::get(tag, base_name.c_str(), is_attribute, is_array);
+			return TypeInfo::get(tag, base_name.c_str(), is_array);
 		}
 	};
 
@@ -567,6 +556,8 @@ namespace flame
 	{
 		DWORD dw;
 		wchar_t* pwname;
+
+		FLAME_SAL(array_str, "Array");
 
 		auto base_type_name = [](IDiaSymbol* s)->std::string {
 			DWORD baseType;
@@ -645,7 +636,14 @@ namespace flame
 				break;
 			}
 			pointer_type->Release();
-			return TypeInfoDesc(TypePointer, name);
+			auto is_array = false;
+			if (name.compare(0, array_str.l, array_str.s) == 0 && name.size() > array_str.l + 1)
+			{
+				is_array = true;
+				name.erase(name.begin(), name.begin() + array_str.l + 1);
+				name.erase(name.end() - 1);
+			}
+			return TypeInfoDesc(TypePointer, name, is_array);
 		}
 		case SymTagUDT:
 		{
@@ -653,35 +651,13 @@ namespace flame
 			auto tag = TypeData;
 			auto name = format_name(pwname);
 			auto is_array = false;
-			auto is_attribute = false;
-
-			FLAME_SAL(array_str, "Array");
-			FLAME_SAL(attribute_str, "Attribute");
-
-			if (name.compare(0, attribute_str.l, attribute_str.s) == 0 && name.size() > attribute_str.l + 1)
-			{
-				is_attribute = true;
-				switch (name[attribute_str.l])
-				{
-				case 'E':
-					tag = decoration.find('m') != std::string::npos ? TypeEnumMulti : TypeEnumSingle;
-					break;
-				case 'D':
-					break;
-				case 'P':
-					tag = TypePointer;
-					break;
-				}
-				name.erase(name.begin(), name.begin() + attribute_str.l + 2);
-				name.erase(name.end() - 1);
-			}
 			if (name.compare(0, array_str.l, array_str.s) == 0 && name.size() > array_str.l + 1)
 			{
 				is_array = true;
 				name.erase(name.begin(), name.begin() + array_str.l + 1);
 				name.erase(name.end() - 1);
 			}
-			return TypeInfoDesc(tag, name, is_attribute, is_array);
+			return TypeInfoDesc(tag, name, is_array);
 		}
 		break;
 		case SymTagFunctionArgType:

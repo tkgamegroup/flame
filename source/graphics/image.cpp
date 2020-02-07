@@ -8,6 +8,8 @@
 #include "commandbuffer_private.h"
 #include "shader_private.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	namespace graphics
@@ -424,82 +426,91 @@ namespace flame
 
 		struct Image$
 		{
-			AttributeE<Format$> format$i;
-			AttributeD<Vec2u> size$i;
-			AttributeD<uint> level$i;
-			AttributeD<uint> layer$i;
-			AttributeE<SampleCount$> sample_count$i;
-			AttributeE<ImageUsage$> usage$mi;
-			AttributeD<bool> init_with_color$i;
-			AttributeD<Vec4c> init_color$i;
+			BP::Node* n;
 
-			AttributeP<Image> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Format$, format);
+			BP_IN(Vec2u, size);
+			BP_IN(uint, level);
+			BP_IN(uint, layer);
+			BP_IN(SampleCount$, sample_count);
+			BP_INd(ImageUsage$, usage, m);
+			BP_IN(bool, init_with_color);
+			BP_IN(Vec4c, init_color);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(Image*, out);
 
 			FLAME_GRAPHICS_EXPORTS Image$()
 			{
-				format$i.v = Format_R8G8B8A8_UNORM;
-				size$i.v = 4;
-				level$i.v = 1;
-				layer$i.v = 1;
-				usage$mi.v = ImageUsageSampled;
+				format$i = Format_R8G8B8A8_UNORM;
+				size$i = 4;
+				level$i = 1;
+				layer$i = 1;
+				usage$im = ImageUsageSampled;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (format$i.frame > out$o.frame || size$i.frame > out$o.frame || level$i.frame > out$o.frame || layer$i.frame > out$o.frame || sample_count$i.frame > out$o.frame || usage$mi.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				if (format_s()->frame() > out_frame || size_s()->frame() > out_frame || level_s()->frame() > out_frame || layer_s()->frame() > out_frame || sample_count_s()->frame() > out_frame || usage_s()->frame() > out_frame)
 				{
-					if (out$o.v)
-						Image::destroy((Image*)out$o.v);
+					if (out$o)
+						Image::destroy(out$o);
 					auto d = Device::default_one();
-					if (d && format$i.v != Format_Undefined && size$i.v.x() > 0 && size$i.v.y() > 0 && level$i.v > 0 && layer$i.v > 0)
+					if (d && format$i != Format_Undefined && size$i.x() > 0 && size$i.y() > 0 && level$i > 0 && layer$i > 0)
 					{
-						out$o.v = Image::create(d, format$i.v, size$i.v, level$i.v, layer$i.v, sample_count$i.v, usage$mi.v);
-						if (init_with_color$i.v)
-							((Image*)out$o.v)->init(init_color$i.v);
+						out$o = Image::create(d, format$i, size$i, level$i, layer$i, sample_count$i, usage$im);
+						if (init_with_color$i)
+							out$o->init(init_color$i);
 					}
 					else
 					{
 						printf("cannot create image\n");
 
-						out$o.v = nullptr;
+						out$o = nullptr;
 					}
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Image$()
 			{
-				if (out$o.v)
-					Image::destroy((Image*)out$o.v);
+				if (out$o)
+					Image::destroy(out$o);
 			}
 		};
 
 		struct ImageInspector$
 		{
-			AttributeP<void> in$i;
+			BP::Node* n;
 
-			AttributeE<Format$> format$o;
-			AttributeD<Vec2u> size$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Image*, in);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Format$, format);
+			BP_OUT(Vec2u, size);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (in$i.frame > format$o.frame || in$i.frame > size$o.frame)
+				auto in_frame = in_s()->frame();
+				if (in_frame > format_s()->frame() || in_frame > size_s()->frame())
 				{
-					auto image = (Image*)in$i.v;
-					if (image)
+					if (in$i)
 					{
-						format$o.v = image->format;
-						size$o.v = image->size;
+						format$o = in$i->format;
+						size$o = in$i->size;
 					}
 					else
 					{
 						printf("cannot inspect image\n");
 
-						format$o.v = Format_Undefined;
-						size$o.v = Vec2u(0);
+						format$o = Format_Undefined;
+						size$o = Vec2u(0);
 					}
-					format$o.frame = scene->frame;
-					size$o.frame = scene->frame;
+					format_s()->set_frame(frame);
+					size_s()->set_frame(frame);
 				}
 			}
 		};
@@ -580,115 +591,130 @@ namespace flame
 
 		struct Imageview$
 		{
-			AttributeP<Image> image$i;
-			AttributeE<ImageviewType$> type$i;
-			AttributeD<uint> base_level$i;
-			AttributeD<uint> level_count$i;
-			AttributeD<uint> base_layer$i;
-			AttributeD<uint> layer_count$i;
-			AttributeE<Swizzle$> swizzle_r$i;
-			AttributeE<Swizzle$> swizzle_g$i;
-			AttributeE<Swizzle$> swizzle_b$i;
-			AttributeE<Swizzle$> swizzle_a$i;
+			BP::Node* n;
 
-			AttributeP<Imageview> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Image*, image);
+			BP_IN(ImageviewType$, type);
+			BP_IN(uint, base_level);
+			BP_IN(uint, level_count);
+			BP_IN(uint, base_layer);
+			BP_IN(uint, layer_count);
+			BP_IN(Swizzle$, swizzle_r);
+			BP_IN(Swizzle$, swizzle_g);
+			BP_IN(Swizzle$, swizzle_b);
+			BP_IN(Swizzle$, swizzle_a);
+
+			BP_OUT_BASE_LINE;
+			BP_OUT(Imageview*, out);
 
 			FLAME_GRAPHICS_EXPORTS Imageview$()
 			{
-				type$i.v = Imageview2D;
-				level_count$i.v = 1;
-				layer_count$i.v = 1;
+				type$i = Imageview2D;
+				level_count$i = 1;
+				layer_count$i = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (image$i.frame > out$o.frame || type$i.frame > out$o.frame || base_level$i.frame > out$o.frame || base_layer$i.frame > out$o.frame || layer_count$i.frame > out$o.frame || swizzle_r$i.frame > out$o.frame || swizzle_g$i.frame > out$o.frame || swizzle_b$i.frame > out$o.frame || swizzle_a$i.frame > out$o.frame)
+				auto out_frame = out_s()->frame();
+				if (image_s()->frame() > out_frame || type_s()->frame() > out_frame || 
+					base_level_s()->frame() > out_frame || base_layer_s()->frame() > out_frame || layer_count_s()->frame() > out_frame || 
+					swizzle_r_s()->frame() > out_frame || swizzle_g_s()->frame() > out_frame || swizzle_b_s()->frame() > out_frame || swizzle_a_s()->frame() > out_frame)
 				{
-					if (out$o.v)
-						Imageview::destroy(out$o.v);
-					if (image$i.v && level_count$i.v > 0 && layer_count$i.v > 0)
-						out$o.v = Imageview::create(image$i.v, type$i.v, base_level$i.v, level_count$i.v, base_layer$i.v, layer_count$i.v, swizzle_r$i.v, swizzle_g$i.v, swizzle_b$i.v, swizzle_a$i.v);
+					if (out$o)
+						Imageview::destroy(out$o);
+					if (image$i && level_count$i > 0 && layer_count$i > 0)
+						out$o = Imageview::create(image$i, type$i, base_level$i, level_count$i, base_layer$i, layer_count$i, swizzle_r$i, swizzle_g$i, swizzle_b$i, swizzle_a$i);
 					else
 					{
 						printf("cannot create imageview\n");
 
-						out$o.v = nullptr;
+						out$o = nullptr;
 					}
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~Imageview$()
 			{
-				if (out$o.v)
-					Imageview::destroy(out$o.v);
+				if (out$o)
+					Imageview::destroy(out$o);
 			}
 
 		};
 
 		struct ImageviewGeneral$
 		{
-			AttributeP<Image> image$i;
+			BP::Node* n;
 
-			AttributeP<Imageview> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Image*, image);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Imageview*, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (image$i.frame > out$o.frame)
+				if (image_s()->frame() > out_s()->frame())
 				{
-					if (out$o.v)
-						Imageview::destroy(out$o.v);
-					if (image$i.v)
-						out$o.v = Imageview::create(image$i.v);
+					if (out$o)
+						Imageview::destroy(out$o);
+					if (image$i)
+						out$o = Imageview::create(image$i);
 					else
 					{
 						printf("cannot create imageview general\n");
 
-						out$o.v = nullptr;
+						out$o = nullptr;
 					}
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~ImageviewGeneral$()
 			{
-				if (out$o.v)
-					Imageview::destroy(out$o.v);
+				if (out$o)
+					Imageview::destroy(out$o);
 			}
 		};
 
 		struct ImageviewsGeneral$
 		{
-			AttributeP<Array<Image*>> images$i;
+			BP::Node* n;
 
-			AttributeD<Array<Imageview*>> out$o;
+			BP_IN_BASE_LINE;
+			BP_IN(Array<Image*>*, images);
 
-			FLAME_GRAPHICS_EXPORTS void update$(BP* scene)
+			BP_OUT_BASE_LINE;
+			BP_OUT(Array<Imageview*>, out);
+
+			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
 			{
-				if (images$i.frame > out$o.frame)
+				if (images_s()->frame() > out_s()->frame())
 				{
-					for (auto i = 0; i < out$o.v.s; i++)
-						Imageview::destroy(out$o.v[i]);
-					if (images$i.v && images$i.v->s)
+					for (auto i = 0; i < out$o.s; i++)
+						Imageview::destroy(out$o[i]);
+					if (images$i && images$i->s)
 					{
-						out$o.v.resize(images$i.v->s);
-						for (auto i = 0; i < out$o.v.s; i++)
-							out$o.v[i] = Imageview::create(images$i.v->at(i));
+						out$o.resize(images$i->s);
+						for (auto i = 0; i < out$o.s; i++)
+							out$o.v[i] = Imageview::create(images$i->at(i));
 					}
 					else
 					{
 						printf("cannot create imageviews general\n");
 
-						out$o.v.resize(0);
+						out$o.resize(0);
 					}
-					out$o.frame = scene->frame;
+					out_s()->set_frame(frame);
 				}
 			}
 
 			FLAME_GRAPHICS_EXPORTS ~ImageviewsGeneral$()
 			{
-				for (auto i = 0; i < out$o.v.s; i++)
-					Imageview::destroy(out$o.v[i]);
+				for (auto i = 0; i < out$o.s; i++)
+					Imageview::destroy(out$o[i]);
 			}
 		};
 

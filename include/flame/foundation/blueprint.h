@@ -60,7 +60,6 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS int frame() const;
 			FLAME_FOUNDATION_EXPORTS void set_frame(int frame);
-			FLAME_FOUNDATION_EXPORTS void* raw_data() const;
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 

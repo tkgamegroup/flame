@@ -248,7 +248,7 @@ struct cResourceExplorer : Component
 				}capture;
 				capture.e = thiz;
 				capture.p = p;
-				item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+				item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (is_mouse_clicked(action, key, true))
 						capture.e->navigate(capture.p);

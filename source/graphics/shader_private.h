@@ -36,10 +36,10 @@ namespace flame
 
 #endif
 
-			std::vector<DescriptorBindingBase*> bindings;
+			std::vector<DescriptorBinding> bindings;
 			Descriptorset* default_set;
 
-			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBindingBase* const* bindings, Descriptorpool* default_set_pool);
+			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* default_set_pool);
 			~DescriptorlayoutPrivate();
 		};
 
