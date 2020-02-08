@@ -41,7 +41,7 @@ int main(int argc, char **args)
 
 	std::ofstream cmakelists(L"CMakeLists.txt");
 	cmakelists << "# THIS FILE IS AUTO GENERATED\n";
-	cmakelists << "cmake_minimum_required(VERSION 3.4)\n";
+	cmakelists << "cmake_minimum_required(VERSION 3.16.4)\n";
 	cmakelists << "project(bp)\n";
 	cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 	cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";

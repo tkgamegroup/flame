@@ -1,5 +1,6 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_lib(flame_graphics "${SOURCE_LIST}" "flame")
+add_library(flame_graphics SHARED ${SOURCE_LIST})
+set_target_properties(flame_graphics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_graphics PRIVATE FLAME_GRAPHICS_MODULE)
 if (FLAME_RENDER_API MATCHES "Vulkan")
 	target_compile_definitions(flame_graphics PRIVATE VK_USE_PLATFORM_WIN32_KHR)

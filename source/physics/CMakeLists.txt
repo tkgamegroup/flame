@@ -1,5 +1,6 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_lib(flame_physics "${SOURCE_LIST}" "flame")
+add_library(flame_physics SHARED ${SOURCE_LIST})
+set_target_properties(flame_physics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_physics PRIVATE FLAME_PHYSICS_MODULE)
 target_include_directories(flame_physics PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_include_directories(flame_physics PUBLIC "${PHYSX_PATH}/PhysX_3.4/Include")

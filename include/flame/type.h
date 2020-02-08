@@ -647,10 +647,6 @@ namespace flame
 		FLAME_TYPE_EXPORTS EnumInfo* find_enum(uint name_hash);
 		FLAME_TYPE_EXPORTS EnumInfo* add_enum(const char* name);
 
-		FLAME_TYPE_EXPORTS Array<FunctionInfo*> get_functions();
-		FLAME_TYPE_EXPORTS FunctionInfo* find_function(uint name_hash);
-		FLAME_TYPE_EXPORTS FunctionInfo* add_function(const char* name, void* rva, const TypeInfo* return_type);
-
 		FLAME_TYPE_EXPORTS Array<UdtInfo*> get_udts();
 		FLAME_TYPE_EXPORTS UdtInfo* find_udt(uint name_hash);
 		FLAME_TYPE_EXPORTS UdtInfo* add_udt(const TypeInfo* type, uint size);
@@ -697,25 +693,6 @@ namespace flame
 		{
 			auto db = extra_global_dbs[i];
 			auto info = db->find_udt(name_hash);
-			if (info)
-				return info;
-		}
-		return nullptr;
-	}
-
-	inline FunctionInfo* find_function(uint name_hash)
-	{
-		for (auto i = 0; i < global_db_count(); i++)
-		{
-			auto db = global_db(i);
-			auto info = db->find_function(name_hash);
-			if (info)
-				return info;
-		}
-		for (auto i = 0; i < extra_global_db_count; i++)
-		{
-			auto db = extra_global_dbs[i];
-			auto info = db->find_function(name_hash);
 			if (info)
 				return info;
 		}

@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.16.4)
+
+project(flame)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -10,24 +12,6 @@ foreach(c ${CMAKE_CONFIGURATION_TYPES})
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${c} "${CMAKE_SOURCE_DIR}/bin")
 	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${c} "${CMAKE_SOURCE_DIR}/bin")
 endforeach()
-
-project(flame)
-
-function(add_static_lib name source_list folder)
-	add_library(${name} STATIC ${source_list})
-	set_target_properties(${name} PROPERTIES FOLDER ${folder})
-endfunction()
-
-function(add_lib name source_list folder)
-	add_library(${name} SHARED ${source_list})
-	set_target_properties(${name} PROPERTIES FOLDER ${folder})
-endfunction()
-
-function(add_exe name source_list folder)
-	add_executable(${name} ${source_list})
-	set_target_properties(${name} PROPERTIES FOLDER ${folder})
-	set_target_properties(${name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-endfunction()
 
 set(FLAME_PLATFORM "Windows" CACHE STRING "Platform")
 set_property(CACHE FLAME_PLATFORM PROPERTY STRINGS Windows Android)

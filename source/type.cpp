@@ -544,7 +544,7 @@ namespace flame
 		}
 	};
 
-	static TypeInfoDesc symbol_to_typeinfo(IDiaSymbol* s_type, const std::string& decoration)
+	static TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, const std::string& decoration)
 	{
 		DWORD dw;
 		wchar_t* pwname;
@@ -656,98 +656,11 @@ namespace flame
 		{
 			IDiaSymbol* s_arg_type;
 			s_type->get_type(&s_arg_type);
-			auto ret = symbol_to_typeinfo(s_arg_type, "");
+			auto ret = typeinfo_from_symbol(s_arg_type, "");
 			s_arg_type->Release();
 			return ret;
 		}
 		}
-	}
-
-	struct FunctionDesc
-	{
-		void* rva;
-		TypeInfoDesc ret_type;
-		std::vector<TypeInfoDesc> parameters;
-	};
-
-	void symbol_to_function(IDiaSymbol* s_function, FunctionDesc& desc)
-	{
-		DWORD dw;
-		ULONG ul;
-
-		s_function->get_relativeVirtualAddress(&dw);
-		desc.rva = (void*)dw;
-		if (!desc.rva)
-			return;
-
-		IDiaSymbol* s_function_type;
-		s_function->get_type(&s_function_type);
-
-		IDiaSymbol* s_return_type;
-		s_function_type->get_type(&s_return_type);
-		desc.ret_type = symbol_to_typeinfo(s_return_type, "");
-		s_return_type->Release();
-
-		/*
-		if (rva && attribute.find('c') != std::string::npos)
-		{
-			s_function->get_length(&ull);
-			IDiaEnumLineNumbers* lines;
-
-			if (SUCCEEDED(session->findLinesByRVA(dw, (DWORD)ull, &lines)))
-			{
-				IDiaLineNumber* line;
-				DWORD src_file_id = -1;
-				std::wstring source_file_name;
-				DWORD line_num;
-
-				uint min_line = 1000000;
-				uint max_line = 0;
-
-				while (SUCCEEDED(lines->Next(1, &line, &ul)) && (ul == 1))
-				{
-					if (src_file_id == -1)
-					{
-						line->get_sourceFileId(&src_file_id);
-
-						BSTR fn;
-						IDiaSourceFile* source_file;
-						line->get_sourceFile(&source_file);
-						source_file->get_fileName(&fn);
-						source_file->Release();
-
-						source_file_name = fn;
-					}
-
-					line->get_lineNumber(&line_num);
-					if (min_line > line_num)
-						min_line = line_num;
-					if (max_line < line_num)
-						max_line = line_num;
-
-					line->Release();
-				}
-
-				lines->Release();
-
-				if (max_line > min_line)
-					code = w2s(source_file_name) + "#" + std::to_string(min_line) + ":" + std::to_string(max_line);
-			}
-		}
-		*/
-
-		IDiaEnumSymbols* s_parameters;
-		s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
-		IDiaSymbol* s_parameter;
-		while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
-		{
-			desc.parameters.push_back(symbol_to_typeinfo(s_parameter, ""));
-
-			s_parameter->Release();
-		}
-		s_parameters->Release();
-
-		s_function_type->Release();
 	}
 
 	struct TypeinfoDatabasePrivate : TypeinfoDatabase
@@ -757,7 +670,6 @@ namespace flame
 
 		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
 		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
-		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> functions;
 
 		TypeinfoDatabasePrivate()
 		{
@@ -837,27 +749,6 @@ namespace flame
 		return e;
 	}
 
-	Array<FunctionInfo*> TypeinfoDatabase::get_functions()
-	{
-		return get_typeinfo_objects<FunctionInfo>(((TypeinfoDatabasePrivate*)this)->functions);
-	}
-
-	FunctionInfo* TypeinfoDatabase::find_function(uint name_hash)
-	{
-		return find_typeinfo_object(((TypeinfoDatabasePrivate*)this)->functions, name_hash);
-	}
-
-	FunctionInfo* TypeinfoDatabase::add_function(const char* name, void* rva, const TypeInfo* return_type)
-	{
-		auto f = new FunctionInfoPrivate;
-		f->return_type = (TypeInfoPrivate*)return_type;
-		f->db = this;
-		f->name = name;
-		f->rva = rva;
-		((TypeinfoDatabasePrivate*)this)->functions.emplace(FLAME_HASH(name), f);
-		return f;
-	}
-
 	Array<UdtInfo*> TypeinfoDatabase::get_udts()
 	{
 		return get_typeinfo_objects<UdtInfo>(((TypeinfoDatabasePrivate*)this)->udts);
@@ -934,13 +825,26 @@ namespace flame
 		extra_global_db_count = 1;
 		extra_global_dbs = (TypeinfoDatabase**)&db;
 
-
-
 		LONG l;
 		ULONG ul;
 		ULONGLONG ull;
 		DWORD dw;
 		wchar_t* pwname;
+
+		IDiaEnumSourceFiles* _source_files;
+		IDiaSourceFile* _source_file;
+		session->findFile(nullptr, nullptr, 0, &_source_files);
+		while (SUCCEEDED(_source_files->Next(1, &_source_file, &ul)) && (ul == 1))
+		{
+			_source_file->get_fileName(&pwname);
+			auto fn = std::filesystem::path(pwname);
+			if (fn.extension() == L".cpp")
+			{
+				int cut = 1;
+			}
+			_source_file->Release();
+		}
+		_source_files->Release();
 
 		// udts
 		IDiaEnumSymbols* _udts;
@@ -979,7 +883,7 @@ namespace flame
 							_variable->get_offset(&l);
 							s_type->get_length(&ull);
 
-							auto desc = symbol_to_typeinfo(s_type, attribute);
+							auto desc = typeinfo_from_symbol(s_type, attribute);
 							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 							{
 								auto hash = FLAME_HASH(desc.base_name.c_str());
@@ -1034,13 +938,35 @@ namespace flame
 							else if (name[0] == '~')
 								name = "dtor";
 
-							FunctionDesc desc;
-							symbol_to_function(_function, desc);
-							if (desc.rva)
+							void* rva;
+							TypeInfoDesc ret_type;
+
+							_function->get_relativeVirtualAddress(&dw);
+							rva = (void*)dw;
+							if (rva)
 							{
-								auto f = (FunctionInfoPrivate*)u->add_function(name.c_str(), desc.rva, desc.ret_type.get());
-								for (auto& p : desc.parameters)
-									f->add_parameter(p.get());
+								IDiaSymbol* s_function_type;
+								_function->get_type(&s_function_type);
+
+								IDiaSymbol* s_return_type;
+								s_function_type->get_type(&s_return_type);
+								ret_type = typeinfo_from_symbol(s_return_type, "");
+								s_return_type->Release();
+
+								auto f = (FunctionInfoPrivate*)u->add_function(name.c_str(), rva, ret_type.get());
+
+								IDiaEnumSymbols* s_parameters;
+								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
+								IDiaSymbol* s_parameter;
+								while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
+								{
+									f->add_parameter(typeinfo_from_symbol(s_parameter, "").get());
+
+									s_parameter->Release();
+								}
+								s_parameters->Release();
+
+								s_function_type->Release();
 							}
 						}
 						_function->Release();
@@ -1088,36 +1014,6 @@ namespace flame
 		}
 		_udts->Release();
 
-		// functions
-		IDiaEnumSymbols* _functions;
-		global->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-		IDiaSymbol* _function;
-		while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
-		{
-			_function->get_name(&pwname);
-			bool pass_prefix, pass_$;
-			std::string attribute;
-			auto name = format_name(pwname, &pass_prefix, &pass_$, &attribute);
-			if (pass_prefix && pass_$ && attribute.find("::") == std::string::npos /* not a member function */)
-			{
-				auto hash = FLAME_HASH(name.c_str());
-				if (!::flame::find_function(hash))
-				{
-					FunctionDesc desc;
-					symbol_to_function(_function, desc);
-					if (desc.rva)
-					{
-						auto f = db->add_function(name.c_str(), desc.rva, desc.ret_type.get());
-						for (auto& p : desc.parameters)
-							f->add_parameter(p.get());
-					}
-				}
-			}
-
-			_function->Release();
-		}
-		_functions->Release();
-
 		pugi::xml_document file;
 		auto file_root = file.append_child("typeinfo");
 
@@ -1135,23 +1031,6 @@ namespace flame
 				auto n_item = n_items.append_child("item");
 				n_item.append_attribute("name").set_value(i->name.c_str());
 				n_item.append_attribute("value").set_value(i->value);
-			}
-		}
-
-		auto n_functions = file_root.append_child("functions");
-		for (auto& _f : db->functions)
-		{
-			auto f = _f.second.get();
-
-			auto n_function = n_functions.append_child("function");
-			n_function.append_attribute("name").set_value(f->name.c_str());
-			n_function.append_attribute("rva").set_value((uint)f->rva);
-			n_function.append_attribute("return_type").set_value(f->return_type->name.c_str());
-			if (!f->parameter_types.empty())
-			{
-				auto n_parameters = n_function.append_child("parameters");
-				for (auto& p : f->parameter_types)
-					n_parameters.append_child("parameter").append_attribute("type").set_value(p->name.c_str());
 			}
 		}
 
@@ -1223,13 +1102,6 @@ namespace flame
 
 			for (auto n_item : n_enum.child("items"))
 				e->add_item(n_item.attribute("name").value(), n_item.attribute("value").as_int());
-		}
-
-		for (auto n_function : file_root.child("functions"))
-		{
-			auto f = db->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
-			for (auto n_parameter : n_function.child("parameters"))
-				f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
 		}
 
 		for (auto n_udt : file_root.child("udts"))

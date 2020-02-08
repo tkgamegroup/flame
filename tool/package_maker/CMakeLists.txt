@@ -1,3 +1,5 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_exe(package_maker "${SOURCE_LIST}" "tool")
+add_executable(package_maker ${SOURCE_LIST})
+set_target_properties(package_maker PROPERTIES FOLDER "tool")
+set_target_properties(package_maker PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 target_link_libraries(package_maker flame_foundation)

@@ -1,3 +1,5 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_exe(tetris "${SOURCE_LIST}" "game")
+add_executable(tetris ${SOURCE_LIST})
+set_target_properties(tetris PROPERTIES FOLDER "game")
+set_target_properties(tetris PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 target_link_libraries(tetris flame_universe)

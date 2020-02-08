@@ -1,3 +1,5 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_exe(texture_packer "${SOURCE_LIST}" "tool")
+add_executable(texture_packer ${SOURCE_LIST})
+set_target_properties(texture_packer PROPERTIES FOLDER "tool")
+set_target_properties(texture_packer PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 target_link_libraries(texture_packer flame_foundation)

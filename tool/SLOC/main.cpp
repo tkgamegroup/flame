@@ -129,7 +129,7 @@ void iter(const std::wstring &p)
 
 int main(int argc, char **args)
 {
-	std::ifstream policy_file("SLOC_Policy.txt");
+	std::ifstream policy_file("sloc_options.txt");
 	if (policy_file.good())
 	{
 		while (!policy_file.eof())

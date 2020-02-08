@@ -1,5 +1,6 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_lib(flame_foundation "${SOURCE_LIST}" "flame")
+add_library(flame_foundation SHARED ${SOURCE_LIST})
+set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)
 target_compile_definitions(flame_foundation PUBLIC VS_LOCATION="${VS_PATH}")
 target_include_directories(flame_foundation PRIVATE ${STB_PATH})

@@ -1,5 +1,6 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_lib(flame_universe "${SOURCE_LIST}" "flame")
+add_library(flame_universe SHARED ${SOURCE_LIST})
+set_target_properties(flame_universe PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_universe PRIVATE FLAME_UNIVERSE_MODULE)
 target_include_directories(flame_universe PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_include_directories(flame_universe PUBLIC "${CMAKE_SOURCE_DIR}/ext/assimp/include")

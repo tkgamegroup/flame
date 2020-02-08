@@ -1,4 +1,5 @@
-add_lib(flame_type "type.cpp" "flame")
+add_library(flame_type SHARED "type.cpp")
+set_target_properties(flame_type PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_type PRIVATE FLAME_TYPE_MODULE)
 target_include_directories(flame_type PUBLIC ${PUGIXML_PATH}/src)
 target_include_directories(flame_type PRIVATE "${VS_PATH}/DIA SDK/include")

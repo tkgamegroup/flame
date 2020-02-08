@@ -1,5 +1,6 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_lib(flame_sound "${SOURCE_LIST}" "flame")
+add_library(flame_sound SHARED ${SOURCE_LIST})
+set_target_properties(flame_sound PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_sound PRIVATE FLAME_SOUND_MODULE)
 target_include_directories(flame_sound PRIVATE ${OPENAL_PATH}/include)
 target_include_directories(flame_sound PUBLIC "${CMAKE_SOURCE_DIR}/include")
