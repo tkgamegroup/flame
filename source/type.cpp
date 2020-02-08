@@ -425,14 +425,6 @@ namespace flame
 		}
 
 		{
-			auto pos = str.find(prefix.s, 0, prefix.l);
-			while (pos != std::string::npos)
-			{
-				str = str.replace(pos, prefix.l, "");
-				pos = str.find(prefix.s, 0, prefix.l);
-			}
-		}
-		{
 			auto pos = str.find(str_unsigned.s, 0, str_unsigned.l);
 			while (pos != std::string::npos)
 			{
@@ -557,7 +549,7 @@ namespace flame
 		DWORD dw;
 		wchar_t* pwname;
 
-		FLAME_SAL(array_str, "Array");
+		FLAME_SAL(array_str, "flame::Array");
 
 		auto base_type_name = [](IDiaSymbol* s)->std::string {
 			DWORD baseType;
@@ -938,6 +930,8 @@ namespace flame
 		db->module_name = module_filename;
 		extra_global_db_count = 1;
 		extra_global_dbs = (TypeinfoDatabase**)&db;
+
+
 
 		LONG l;
 		ULONG ul;
