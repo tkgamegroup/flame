@@ -274,7 +274,6 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
 
-	FLAME_FOUNDATION_EXPORTS Array<StringA> get_module_dependancies(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
 	FLAME_FOUNDATION_EXPORTS StringW get_module_name(void* module);
 

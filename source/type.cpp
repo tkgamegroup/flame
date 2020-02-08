@@ -900,11 +900,14 @@ namespace flame
 			assert(0);
 			return;
 		}
-		std::wstring pdb_filename;
+		std::filesystem::path pdb_filename;
 		if (_pdb_filename)
 			pdb_filename = _pdb_filename;
 		else
-			pdb_filename = module_filename_path.replace_extension(L".pdb");
+		{
+			pdb_filename = module_filename_path;
+			pdb_filename.replace_extension(L".pdb");
+		}
 		if (FAILED(dia_source->loadDataFromPdb(pdb_filename.c_str())))
 		{
 			printf("pdb failed to open: %s\n", w2s(pdb_filename).c_str());
