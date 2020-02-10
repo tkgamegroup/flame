@@ -18,86 +18,93 @@
 
 #include <functional>
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
-	struct DstImage$
+	struct R(DstImage)
 	{
-		AttributeP<Image> img$o;
-		AttributeE<TargetType$> type$o;
-		AttributeP<Imageview> view$o;
+		BP::Node* n;
 
-		AttributeD<uint> idx$o;
+		BASE1;
+		RV(Image*, img, o);
+		RV(TargetType, type, o);
+		RV(Imageview*, view, o);
+		RV(uint, idx, o);
 
-		__declspec(dllexport) void RF(update)(BP* scene)
+		__declspec(dllexport) void RF(update)(uint frame)
 		{
-			if (img$o.frame == -1)
+			if (img_s()->frame() == -1)
 			{
-				if (idx$o.v > 0)
-					app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
-				if (img$o.v)
-					Image::destroy(img$o.v);
-				if (view$o.v)
-					Imageview::destroy(view$o.v);
+				if (idx > 0)
+					app.s_2d_renderer->canvas->set_image(idx, nullptr);
+				if (img)
+					Image::destroy(img);
+				if (view)
+					Imageview::destroy(view);
 				auto d = Device::default_one();
 				if (d)
 				{
-					img$o.v = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled));
-					(img$o.v)->init(Vec4c(0, 0, 0, 255));
+					img = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled);
+					(img)->init(Vec4c(0, 0, 0, 255));
 				}
 				else
-					img$o.v = nullptr;
-				type$o.v = TargetImageview;
-				type$o.frame = scene->frame;
-				if (img$o.v)
+					img = nullptr;
+				type = TargetImageview;
+				type_s()->set_frame(frame);
+				if (img)
 				{
-					view$o.v = Imageview::create(img$o.v);
-					idx$o.v = app.s_2d_renderer->canvas->set_image(-1, view$o.v);
+					view = Imageview::create(img);
+					idx = app.s_2d_renderer->canvas->set_image(-1, view);
 				}
-				img$o.frame = scene->frame;
-				view$o.frame = scene->frame;
-				idx$o.frame = scene->frame;
+				img_s()->set_frame(frame);
+				view_s()->set_frame(frame);
+				idx_s()->set_frame(frame);
 			}
 		}
 
-		__declspec(dllexport) ~DstImage$()
+		__declspec(dllexport) RF(~DstImage)()
 		{
-			if (idx$o.v > 0)
-				app.s_2d_renderer->canvas->set_image(idx$o.v, nullptr);
-			if (img$o.v)
-				Image::destroy(img$o.v);
-			if (view$o.v)
-				Imageview::destroy(view$o.v);
+			if (idx > 0)
+				app.s_2d_renderer->canvas->set_image(idx, nullptr);
+			if (img)
+				Image::destroy(img);
+			if (view)
+				Imageview::destroy(view);
 		}
 	};
 
-	struct CmdBufs$
+	struct R(CmdBufs)
 	{
-		AttributeD<Array<Commandbuffer*>> out$o;
+		BP::Node* n;
 
-		__declspec(dllexport) void active_RF(update)(BP* scene)
+		BASE1;
+		RV(Array<Commandbuffer*>, out, o);
+
+		__declspec(dllexport) void RF(active_update)(uint frame)
 		{
-			if (out$o.frame == -1)
+			if (out_s()->frame() == -1)
 			{
-				for (auto i = 0; i < out$o.v.s; i++)
-					Commandbuffer::destroy(out$o.v[i]);
+				for (auto i = 0; i < out.s; i++)
+					Commandbuffer::destroy(out[i]);
 				auto d = Device::default_one();
 				if (d)
 				{
-					out$o.v.resize(1);
-					out$o.v[0] = Commandbuffer::create(d->gcp);
+					out.resize(1);
+					out[0] = Commandbuffer::create(d->gcp);
 				}
 				else
-					out$o.v.resize(0);
-				out$o.frame = scene->frame;
+					out.resize(0);
+				out_s()->set_frame(frame);
 			}
 
-			app.extra_cbs.push_back(out$o.v[0]);
+			app.extra_cbs.push_back(out[0]);
 		}
 
-		__declspec(dllexport) ~CmdBufs$()
+		__declspec(dllexport) RF(~CmdBufs)()
 		{
-			for (auto i = 0; i < out$o.v.s; i++)
-				Commandbuffer::destroy(out$o.v[i]);
+			for (auto i = 0; i < out.s; i++)
+				Commandbuffer::destroy(out[i]);
 		}
 	};
 }
@@ -234,8 +241,8 @@ struct cBPEditor : Component
 			for (auto i = 0; i < u->variable_count(); i++)
 			{
 				auto v = u->variable(i);
-				std::string decoration = v->decoration();
-				if (decoration.find('i') != std::string::npos || decoration.find('o') != std::string::npos)
+				auto flags = v->flags();
+				if ((flags & VariableFlagInput) || (flags & VariableFlagOutput))
 				{
 					no_input_output = false;
 					break;
@@ -1836,13 +1843,13 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 					if (i)
 					{
 						auto type = i->type();
-						auto value_before = type->serialize(i->raw_data(), 2);
+						auto value_before = type->serialize(i->data(), 2);
 						auto data = new char[i->size()];
 						type->unserialize(value, data);
-						i->set_data((char*)data + sizeof(AttributeBase));
+						i->set_data((char*)data);
 						((cBPSlot*)i->user_data)->tracker->update_view();
 						delete[] data;
-						auto value_after = type->serialize(i->raw_data(), 2);
+						auto value_after = type->serialize(i->data(), 2);
 						console->print(L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after));
 						editor->set_changed(true);
 					}
@@ -1903,18 +1910,18 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 							for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
 							{
 								auto vari = udt->variable(i_i);
-								auto attribute = std::string(vari->decoration());
-								if (attribute.find('i') != std::string::npos)
+								auto flags = vari->flags();
+								if (flags & VariableFlagInput)
 									inputs.push_back(vari);
-								if (attribute.find('o') != std::string::npos)
+								else if (flags & VariableFlagOutput)
 									outputs.push_back(vari);
 							}
 							console->print(L"[In]");
 							for (auto& i : inputs)
-								console->print(wfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
+								console->print(wfmt(L"name:%s flags:%d type:%s", s2w(i->name()).c_str(), i->flags(), s2w(i->type()->name()).c_str()));
 							console->print(L"[Out]");
 							for (auto& o : outputs)
-								console->print(wfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
+								console->print(wfmt(L"name:%s flags:%d type:%s", s2w(o->name()).c_str(), o->flags(), s2w(o->type()->name()).c_str()));
 						}
 						else
 							console->print(L"udt not found");
@@ -1942,7 +1949,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 								if (input->link())
 									link_address = input->link()->get_address().str();
 								console->print(wfmt(L"[%s]", s2w(link_address).c_str()));
-								auto str = s2w(type->serialize(input->raw_data(), 2));
+								auto str = s2w(type->serialize(input->data(), 2));
 								if (str.empty())
 									str = L"-";
 								console->print(wfmt(L"   %s", str.c_str()));
@@ -1953,7 +1960,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 								auto output = n->output(i);
 								auto type = output->type();
 								console->print(s2w(output->name()));
-								auto str = s2w(type->serialize(output->raw_data(), 2).c_str());
+								auto str = s2w(type->serialize(output->data(), 2).c_str());
 								if (str.empty())
 									str = L"-";
 								console->print(wfmt(L"   %s", str.c_str()));

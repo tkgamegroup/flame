@@ -87,7 +87,7 @@ struct cResourceExplorer : Component
 		file_img = Image::create_from_file(app.d, L"../art/ui/imgs/file.png");
 		file_img_v = Imageview::create(file_img);
 		file_img_idx = canvas->set_image(-1, file_img_v);
-		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsage$(ImageUsageTransferDst | ImageUsageSampled));
+		thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
 		thumbnails_img->init(Vec4c(255));
 		thumbnails_img_v = Imageview::create(thumbnails_img);
 		thumbnails_img_idx = canvas->set_image(-1, thumbnails_img_v, FilterNearest);
