@@ -18,7 +18,7 @@ int main(int argc, char **args)
 			std::getline(atlas_options, line);
 			if (!line.empty())
 			{
-				auto sp = ssplit(line);
+				auto sp = SUS::split(line);
 				if (sp[0] == "border")
 					border = true;
 				else if (sp[0] == "out")

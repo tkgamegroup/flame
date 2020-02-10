@@ -515,8 +515,8 @@ namespace flame
 
 		str = head + tail;
 
-		str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
-		str.erase(std::remove(str.begin(), str.end(), '$'), str.end());
+		SUS::remove_ch(str, ' ');
+		SUS::remove_ch(str, '$');
 
 		return tn_c2a(str);
 	}
@@ -831,6 +831,24 @@ namespace flame
 		DWORD dw;
 		wchar_t* pwname;
 
+		std::filesystem::path source_root;
+		{
+			DWORD h;
+			auto version_size = GetFileVersionInfoSizeW(module_filename, &h);
+			if (version_size > 0)
+			{
+				auto version_data = new char[version_size];
+				if (GetFileVersionInfoW(module_filename, h, version_size, version_data))
+				{
+					void* d; uint s;
+					VerQueryValue(version_data, "\\StringFileInfo\\040904b0\\FileDescription", &d, &s);
+					source_root = (char*)d;
+					source_root.make_preferred();
+				}
+				delete[] version_data;
+			}
+		}
+		std::vector<std::filesystem::path> my_cpps;
 		IDiaEnumSourceFiles* _source_files;
 		IDiaSourceFile* _source_file;
 		session->findFile(nullptr, nullptr, 0, &_source_files);
@@ -840,11 +858,108 @@ namespace flame
 			auto fn = std::filesystem::path(pwname);
 			if (fn.extension() == L".cpp")
 			{
-				int cut = 1;
+				auto my_file = false;
+				auto p = fn.parent_path();
+				while (p.root_path() != p)
+				{
+					if (p == source_root)
+					{
+						my_file = true;
+						break;
+					}
+					p = p.parent_path();
+				}
+				if (my_file)
+					my_cpps.push_back(fn);
 			}
 			_source_file->Release();
 		}
 		_source_files->Release();
+
+		struct DesiredVariable
+		{
+			std::string name;
+			char io; // n: none, i: input, o: output
+			bool multi;
+		};
+		struct DesiredFunction
+		{
+			std::string name;
+		};
+		struct DesiredUDT
+		{
+			std::string name;
+			std::string full_name;
+			std::vector<DesiredVariable> variables;
+			std::vector<DesiredFunction> functions;
+		};
+		std::vector<DesiredUDT> desired_udts;
+
+		for (auto& cpp : my_cpps)
+		{
+			std::ifstream file(cpp);
+			while (!file.eof())
+			{
+				std::string line;
+				std::getline(file, line);
+				static std::regex reg_RB(R"(RB\((.*)\))");
+				static std::regex reg_RE(R"(RE)");
+				static std::regex reg_RV(R"(RV\((.*)\))");
+				static std::regex reg_RF(R"(RF\((\w+)\))");
+				std::smatch res;
+				if (std::regex_search(line, res, reg_RB))
+				{
+					auto str = res[1].str();
+					SUS::remove_spaces(str);
+					auto sp = SUS::split(str, ',');
+					DesiredUDT du;
+					du.name = sp[0];
+					for (auto i = 1; i < sp.size(); i++)
+						du.full_name += sp[i] + "::";
+					du.full_name += du.name;
+
+					std::vector<std::string> udt_lines;
+					while (!file.eof())
+					{
+						std::getline(file, line);
+						if (std::regex_search(line, reg_RE))
+							break;
+						udt_lines.push_back(line);
+					}
+
+					for (auto& l : udt_lines)
+					{
+						if (std::regex_search(l, res, reg_RV))
+						{
+							auto str = res[1].str();
+							SUS::remove_spaces(str);
+							auto sp = SUS::split(str, ',');
+							DesiredVariable v;
+							v.multi = false;
+							v.name = sp[0];
+							if (sp.size() > 1)
+								v.io = sp[1][0];
+							for (auto i = 2; i < sp.size(); i++)
+							{
+								if (sp[i] == "m")
+									v.multi = true;
+							}
+							du.variables.push_back(v);
+						}
+						else if (std::regex_search(l, res, reg_RF))
+						{
+							auto str = res[1].str();
+							SUS::remove_spaces(str);
+							DesiredFunction f;
+							f.name = str;
+							du.functions.push_back(f);
+						}
+					}
+					desired_udts.push_back(du);
+				}
+			}
+			file.close();
+		}
 
 		// udts
 		IDiaEnumSymbols* _udts;
@@ -853,10 +968,22 @@ namespace flame
 		while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
 		{
 			_udt->get_name(&pwname);
+			auto name = w2s(pwname);
+
 			bool pass_prefix, pass_$;
 			auto udt_name = format_name(pwname, &pass_prefix, &pass_$);
 
-			if (pass_prefix && pass_$ && udt_name.find("(unnamed") == std::string::npos && udt_name.find("(lambda_") == std::string::npos)
+			auto ok = false;
+			for (auto& du : desired_udts)
+			{
+				if (du.full_name == name)
+				{
+					ok = true;
+					break;
+				}
+			}
+
+			if (!ok && pass_prefix && pass_$ && udt_name.find("(unnamed") == std::string::npos && udt_name.find("(lambda_") == std::string::npos)
 			{
 				auto udt_hash = TypeInfo::get_hash(TypeData, udt_name.c_str());
 				if (!::flame::find_udt(udt_hash))
@@ -902,7 +1029,7 @@ namespace flame
 										item->get_value(&v);
 
 										auto item_name = w2s(pwname);
-										if (!sendswith(item_name, std::string("Max")) && !sendswith(item_name, std::string("Count")))
+										if (!SUS::ends_with(item_name, "Max") && !SUS::ends_with(item_name, "Count"))
 											e->add_item(item_name.c_str(), v.lVal);
 
 										item->Release();
@@ -921,11 +1048,11 @@ namespace flame
 					IDiaEnumSymbols* _functions;
 					_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
 					IDiaSymbol* _function;
-					auto name_no_namespace = udt_name;
+					auto internal_name = udt_name;
 					{
-						auto pos = name_no_namespace.find_last_of(':');
+						auto pos = internal_name.find_last_of(':');
 						if (pos != std::string::npos)
-							name_no_namespace.erase(name_no_namespace.begin(), name_no_namespace.begin() + pos + 1);
+							internal_name.erase(internal_name.begin(), internal_name.begin() + pos + 1);
 					}
 					while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
 					{
@@ -933,7 +1060,7 @@ namespace flame
 						auto name = format_name(pwname, nullptr, &pass_$);
 						if (pass_$)
 						{
-							if (name == name_no_namespace)
+							if (name == internal_name)
 								name = "ctor";
 							else if (name[0] == '~')
 								name = "dtor";

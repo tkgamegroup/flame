@@ -18,7 +18,7 @@ namespace flame
 			auto l = parent->child(parent->child_count() - 1);
 			if (l->dying_)
 				return nullptr;
-			if (check && !sstartswith(std::string(l->name()), std::string("layer_")))
+			if (check && !SUS::starts_with(l->name(), "layer_"))
 				return nullptr;
 			return l;
 		}

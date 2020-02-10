@@ -1,5 +1,6 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_library(flame_foundation SHARED ${SOURCE_LIST})
+generate_rc()
+add_library(flame_foundation SHARED ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 set_target_properties(flame_foundation PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_foundation PRIVATE FLAME_FOUNDATION_MODULE)
 target_compile_definitions(flame_foundation PUBLIC VS_LOCATION="${VS_PATH}")

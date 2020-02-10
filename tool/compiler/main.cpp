@@ -70,7 +70,7 @@ int main(int argc, char **args)
 	exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
 
 	printf("compiling:\n");
-	exec_and_redirect_to_std_output(nullptr, wsfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), get_curr_path().v).data());
+	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), get_curr_path().v).data());
 
 	system("pause");
 

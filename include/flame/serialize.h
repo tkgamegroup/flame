@@ -366,103 +366,123 @@ namespace flame
 		return std::stoul(s);
 	}
 
-	template <typename CH>
-	std::basic_string<CH> scut(const std::basic_string<CH>& str, int length) // < 0 means from end
+	template <class CH>
+	struct StrUtils
 	{
-		if (length < 0)
-			length = str.size() + length;
-		return std::basic_string<CH>(str.begin(), str.begin() + length);
-	}
-
-	template <typename CH>
-	bool sstartswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
-	{
-		return str.size() >= oth.size() && str.compare(0, oth.size(), oth) == 0;
-	}
-
-	template <typename CH>
-	bool sendswith(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
-	{
-		return str.size() >= oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
-	}
-
-	template <typename CH>
-	std::vector<std::basic_string<CH>> ssplit(const std::basic_string<CH>& str, CH delimiter = ' ')
-	{
-		std::basic_istringstream<CH> iss(str);
-		std::vector<std::basic_string<CH>> ret;
-
-		std::basic_string<CH> s;
-		while (std::getline(iss, s, delimiter))
-			ret.push_back(s);
-
-		return ret;
-	}
-
-	template <typename CH>
-	std::vector<std::basic_string<CH>> ssplit_lastone(const std::basic_string<CH>& str, CH delimiter = ' ')
-	{
-		auto i = str.size() - 1;
-		for (; i >= 0; i--)
+		static std::basic_string<CH> cut(const std::basic_string<CH>& str, int length) // < 0 means from end
 		{
-			if (str[i] == delimiter)
-				break;
+			if (length < 0)
+				length = str.size() + length;
+			return std::basic_string<CH>(str.begin(), str.begin() + length);
 		}
-		std::vector<std::basic_string<CH>> ret;
-		ret.push_back(i > 0 ? std::basic_string<CH>(str.begin(), str.begin() + i) : std::basic_string<CH>());
-		ret.push_back(i < str.size() - 1 ? std::basic_string<CH>(str.begin() + i + 1, str.end()) : std::basic_string<CH>());
-		return ret;
-	}
 
-	template <typename CH>
-	std::vector<std::basic_string<CH>> ssplit_dbnull(const CH* str)
-	{
-		std::vector<std::basic_string<CH>> ret;
-
-		auto p = str, q = str;
-		while (true)
+		static bool starts_with(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
 		{
-			if (*p == 0)
+			return str.size() >= oth.size() && str.compare(0, oth.size(), oth) == 0;
+		}
+
+		static bool ends_with(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
+		{
+			return str.size() >= oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
+		}
+
+		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
+		{
+			std::basic_istringstream<CH> iss(str);
+			std::vector<std::basic_string<CH>> ret;
+
+			std::basic_string<CH> s;
+			while (std::getline(iss, s, delimiter))
+				ret.push_back(s);
+
+			return ret;
+		}
+
+		static std::vector<std::basic_string<CH>> split_lastone(const std::basic_string<CH>& str, CH delimiter = ' ')
+		{
+			auto i = str.size() - 1;
+			for (; i >= 0; i--)
 			{
-				ret.push_back(q);
-				p++;
-				if (*p == 0)
+				if (str[i] == delimiter)
 					break;
-				q = p;
 			}
-			else
-				p++;
+			std::vector<std::basic_string<CH>> ret;
+			ret.push_back(i > 0 ? std::basic_string<CH>(str.begin(), str.begin() + i) : std::basic_string<CH>());
+			ret.push_back(i < str.size() - 1 ? std::basic_string<CH>(str.begin() + i + 1, str.end()) : std::basic_string<CH>());
+			return ret;
 		}
 
-		return ret;
-	}
-
-	template <typename CH>
-	std::vector<std::basic_string<CH>> ssplit_regex(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
-	{
-		std::vector<std::basic_string<CH>> ret;
-
-		std::match_results<typename std::basic_string<CH>::const_iterator> match;
-		auto s = str;
-
-		while (std::regex_search(s, match, reg))
+		static std::vector<std::basic_string<CH>> split_dbnull(const CH* str)
 		{
-			ret.push_back(match[req_idx]);
-			s = match.suffix();
+			std::vector<std::basic_string<CH>> ret;
+
+			auto p = str, q = str;
+			while (true)
+			{
+				if (*p == 0)
+				{
+					ret.push_back(q);
+					p++;
+					if (*p == 0)
+						break;
+					q = p;
+				}
+				else
+					p++;
+			}
+
+			return ret;
 		}
 
-		return ret;
+		static std::vector<std::basic_string<CH>> split_regex(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
+		{
+			std::vector<std::basic_string<CH>> ret;
+
+			std::match_results<typename std::basic_string<CH>::const_iterator> res;
+			auto s = str;
+
+			while (std::regex_search(s, res, reg))
+			{
+				ret.push_back(res[req_idx]);
+				s = res.suffix();
+			}
+
+			return ret;
+		}
+
+		static void remove_ch(std::basic_string<CH>& str, CH ch = ' ')
+		{
+			str.erase(std::remove(str.begin(), str.end(), ch), str.end());
+		}
+
+		static void remove_spaces(std::basic_string<CH>& str)
+		{
+			remove_ch(str, ' ');
+			remove_ch(str, '\t');
+		}
+	};
+
+	using SUS = StrUtils<char>;
+	using SUW = StrUtils<wchar_t>;
+
+	inline std::string sfmt(const char* fmt, ...)
+	{
+		static char buf[1024];
+		va_list ap;
+		va_start(ap, &fmt);
+		vsprintf(buf, fmt, ap);
+		va_end(ap);
+		return buf;
 	}
 
-	inline std::wstring a2w(const std::string& str)
+	inline std::wstring wfmt(const wchar_t* fmt, ...)
 	{
-		setlocale(LC_ALL, "chs");
-		auto len = mbstowcs(nullptr, str.c_str(), 0) + 1;
-		std::wstring wstr;
-		wstr.resize(len);
-		mbstowcs((wchar_t*)wstr.data(), str.c_str(), len);
-		setlocale(LC_ALL, "");
-		return wstr;
+		static wchar_t buf[1024];
+		va_list ap;
+		va_start(ap, &fmt);
+		vswprintf(buf, fmt, ap);
+		va_end(ap);
+		return buf;
 	}
 
 	inline std::wstring s2w(const std::string& str)
@@ -475,26 +495,6 @@ namespace flame
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.to_bytes(wstr);
-	}
-
-	inline std::string sfmt(const std::string& fmt, ...)
-	{
-		static char buf[1024];
-		va_list ap;
-		va_start(ap, &fmt);
-		vsprintf(buf, fmt.c_str(), ap);
-		va_end(ap);
-		return buf;
-	}
-
-	inline std::wstring wsfmt(const std::wstring& fmt, ...)
-	{
-		static wchar_t buf[1024];
-		va_list ap;
-		va_start(ap, &fmt);
-		vswprintf(buf, fmt.c_str(), ap);
-		va_end(ap);
-		return buf;
 	}
 
 #ifdef FLAME_WINDOWS
@@ -1094,7 +1094,7 @@ namespace flame
 			auto v = 0;
 			auto e = find_enum(base_hash());
 			assert(e);
-			auto sp = ssplit(src, ';');
+			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
 				v |= e->find_item(t.c_str())->value();
 			*(int*)dst = v;

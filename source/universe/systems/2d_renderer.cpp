@@ -55,7 +55,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
 		{
-			auto sp = ssplit(std::wstring(fonts$.v), L';');
+			auto sp = SUW::split(fonts$.str(), L';');
 			std::vector<const wchar_t*> fonts(sp.size());
 			for (auto i = 0; i < sp.size(); i++)
 				fonts[i] = sp[i].c_str();

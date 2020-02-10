@@ -6,6 +6,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_definitions(-W0 -std:c++latest)
 
+include("cmake_utils.cmake")
+
 foreach(c ${CMAKE_CONFIGURATION_TYPES})
 	string(TOUPPER ${c} c )
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${c} "${CMAKE_SOURCE_DIR}/bin")

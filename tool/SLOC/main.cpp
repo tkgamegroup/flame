@@ -137,7 +137,7 @@ int main(int argc, char **args)
 			std::string line;
 			std::getline(policy_file, line);
 
-			auto sp = ssplit(line);
+			auto sp = SUS::split(line);
 			if (sp.size() > 0)
 			{
 				if (sp[0] == "accept:")

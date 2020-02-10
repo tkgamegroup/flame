@@ -76,7 +76,7 @@ int main(int argc, char **args)
 
 				std::wstring d = s2w((char*)get_ptr_from_rva(importDesc->Name,
 					image->FileHeader, image->MappedAddress));
-				if (d != L"flame_type.dll" && sstartswith(d, std::wstring(L"flame_")))
+				if (d != L"flame_type.dll" && SUW::starts_with(d, L"flame_"))
 				{
 					auto found = false;
 					for (auto& _d : dependencies)

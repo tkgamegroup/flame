@@ -708,7 +708,7 @@ namespace flame
 
 	NodePrivate* BPPrivate::find_node(const std::string& address) const
 	{
-		auto sp = ssplit(address, '.');
+		auto sp = SUS::split(address, '.');
 		switch (sp.size())
 		{
 		case 2:
@@ -738,7 +738,7 @@ namespace flame
 
 	SlotPrivate* BPPrivate::find_input(const std::string& address) const
 	{
-		auto sp = ssplit_lastone(address, '.');
+		auto sp = SUS::split_lastone(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -747,7 +747,7 @@ namespace flame
 
 	SlotPrivate* BPPrivate::find_output(const std::string& address) const
 	{
-		auto sp = ssplit_lastone(address, '.');
+		auto sp = SUS::split_lastone(address, '.');
 		auto n = find_node(sp[0]);
 		if (!n)
 			return nullptr;
@@ -1438,7 +1438,7 @@ namespace flame
 			}
 			else if (n_d.type.compare(0, prefix_array.l, prefix_array.s) == 0)
 			{
-				auto parameters = ssplit(std::string(n_d.type.begin() + prefix_array.l + 1, n_d.type.end() - 1), '+');
+				auto parameters = SUS::split(std::string(n_d.type.begin() + prefix_array.l + 1, n_d.type.end() - 1), '+');
 #pragma pack(1)
 				struct Dummy
 				{
@@ -2319,43 +2319,32 @@ namespace flame
 			auto out_frame = out_s()->frame();
 			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
 			{
-				if (t$i <= 0.f)
-					out$o = a$i;
-				else if (t$i >= 1.f)
-					out$o = b$i;
-				else
-					out$o = a$i + (b$i - a$i) * t$i;
+				out$o = a$i + (b$i - a$i) * clamp(t$i, 0.f, 1.f);
 				out_s()->set_frame(frame);
 			}
 		}
 	};
 
-	struct LinearInterpolation2d$
-	{
+	RB(R_LinearInterpolation2d, flame)
 		BP::Node* n;
 
-		BP_IN_BASE_LINE;
-		BP_IN(Vec2f, a);
-		BP_IN(Vec2f, b);
-		BP_IN(float, t);
+		BASE0;
+		RV(Vec2f, a, i);
+		RV(Vec2f, b, i);
+		RV(float, t, i);
 
-		BP_OUT_BASE_LINE;
-		BP_OUT(Vec2f, out);
+		BASE1;
+		RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void update$(uint frame)
+		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
 			{
-				if (t$i <= 0.f)
-					out$o = a$i;
-				else if (t$i >= 1.f)
-					out$o = b$i;
-				else
-					out$o = a$i + (b$i - a$i) * t$i;
+				out = a + (b - a) * clamp(t, 0.f, 1.f);
 				out_s()->set_frame(frame);
 			}
 		}
-	};
+	RE
 }
 

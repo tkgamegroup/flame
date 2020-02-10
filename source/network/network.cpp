@@ -50,10 +50,10 @@ namespace flame
 		auto lines = string_split(req, '\n');
 		for (auto& l : lines)
 		{
-			std::smatch match;
-			if (std::regex_search(l, match, reg_key))
+			std::smatch res;
+			if (std::regex_search(l, res, reg_key))
 			{
-				std::string key = match[1];
+				std::string key = res[1];
 				SHA1 sha1;
 				sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 				key = base64_encode(sha1.final_bin());

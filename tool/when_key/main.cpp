@@ -14,7 +14,7 @@ int main(int argc, char **args)
 
 	printf("key=\"%s\" cmd=\"%s\"\n", args[1], args[2]);
 
-	auto keys = ssplit(std::string(args[1]), '+');
+	auto keys = SUS::split(args[1], '+');
 	auto key = KeyNull;
 	auto shift = false;
 	auto ctrl = false;

@@ -557,8 +557,8 @@ struct cBPEditor : Component
 					auto input = n->input(j);
 					if (input->link())
 					{
-						auto in_sp = ssplit(input->get_address().str(), '.');
-						auto out_sp = ssplit(input->link()->get_address().str(), '.');
+						auto in_sp = SUS::split(input->get_address().str(), '.');
+						auto out_sp = SUS::split(input->link()->get_address().str(), '.');
 
 						gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
 					}
@@ -614,17 +614,17 @@ struct cBPEditor : Component
 		}
 
 		std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
-		std::smatch match;
-		while (std::regex_search(str, match, reg_node))
+		std::smatch res;
+		while (std::regex_search(str, res, reg_node))
 		{
-			auto n = bp->find_node(match[1].str().c_str());
+			auto n = bp->find_node(res[1].str().c_str());
 			if (n)
 			{
-				n->pos = Vec2f(std::stof(match[2].str().c_str()), std::stof(match[3].str().c_str())) * 100.f;
+				n->pos = Vec2f(std::stof(res[2].str().c_str()), std::stof(res[3].str().c_str())) * 100.f;
 				((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 			}
 
-			str = match.suffix();
+			str = res.suffix();
 		}
 
 		return true;
@@ -1820,7 +1820,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 				auto editor = *(cBPEditor**)c;
 				auto& filename = editor->filename;
 				auto bp = editor->bp;
-				auto tokens = ssplit(cmd);
+				auto tokens = SUW::split(cmd);
 
 				if (editor->locked)
 				{
@@ -1911,10 +1911,10 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 							}
 							console->print(L"[In]");
 							for (auto& i : inputs)
-								console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
+								console->print(wfmt(L"name:%s decoration:%s type:%s", s2w(i->name()).c_str(), s2w(i->decoration()).c_str(), s2w(i->type()->name()).c_str()));
 							console->print(L"[Out]");
 							for (auto& o : outputs)
-								console->print(wsfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
+								console->print(wfmt(L"name:%s decoration:%s type:%s", s2w(o->name()).c_str(), s2w(o->decoration()).c_str(), s2w(o->type()->name()).c_str()));
 						}
 						else
 							console->print(L"udt not found");
@@ -1924,7 +1924,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 						for (auto i = 0; i < bp->node_count(); i++)
 						{
 							auto n = bp->node(i);
-							console->print(wsfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
+							console->print(wfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()));
 						}
 					}
 					else if (tokens[1] == L"node")
@@ -1941,11 +1941,11 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 								std::string link_address;
 								if (input->link())
 									link_address = input->link()->get_address().str();
-								console->print(wsfmt(L"[%s]", s2w(link_address).c_str()));
+								console->print(wfmt(L"[%s]", s2w(link_address).c_str()));
 								auto str = s2w(type->serialize(input->raw_data(), 2));
 								if (str.empty())
 									str = L"-";
-								console->print(wsfmt(L"   %s", str.c_str()));
+								console->print(wfmt(L"   %s", str.c_str()));
 							}
 							console->print(L"[Out]");
 							for (auto i = 0; i < n->output_count(); i++)
@@ -1956,7 +1956,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 								auto str = s2w(type->serialize(output->raw_data(), 2).c_str());
 								if (str.empty())
 									str = L"-";
-								console->print(wsfmt(L"   %s", str.c_str()));
+								console->print(wfmt(L"   %s", str.c_str()));
 							}
 						}
 						else
@@ -1981,7 +1981,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 					{
 						auto n = editor->add_node(w2s(tokens[2]), tokens[3] == L"-" ? "" : w2s(tokens[3]), Vec2f(0.f));
 						if (n)
-							console->print(wsfmt(L"node added: %s", s2w(n->id()).c_str()));
+							console->print(wfmt(L"node added: %s", s2w(n->id()).c_str()));
 						else
 							console->print(L"bad udt name or id already exist");
 					}
@@ -1994,7 +1994,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 							in->link_to(out);
 							auto out_addr = in->link()->get_address();
 							auto in_addr = in->get_address();
-							console->print(wsfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
+							console->print(wfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()));
 							editor->set_changed(true);
 						}
 						else
@@ -2013,7 +2013,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 							if (!editor->remove_node(n))
 								printf("cannot remove test nodes\n");
 							else
-								console->print(wsfmt(L"node removed: %s", tokens[2].c_str()));
+								console->print(wfmt(L"node removed: %s", tokens[2].c_str()));
 						}
 						else
 							console->print(L"node not found");
@@ -2024,7 +2024,7 @@ void open_blueprint_editor(const std::wstring& filename, const Vec2f& pos)
 						if (i)
 						{
 							i->link_to(nullptr);
-							console->print(wsfmt(L"link removed: %s", tokens[2].c_str()));
+							console->print(wfmt(L"link removed: %s", tokens[2].c_str()));
 							editor->set_changed(true);
 						}
 						else

@@ -6,6 +6,7 @@ target_include_directories(flame_type PRIVATE "${VS_PATH}/DIA SDK/include")
 target_include_directories(flame_type PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(flame_type ${PUGIXML_PATH}/build/Debug/pugixml.lib)
 target_link_libraries(flame_type "${VS_PATH}/DIA SDK/lib/amd64/diaguids.lib")
+target_link_libraries(flame_type "Version.lib")
 
 add_subdirectory(foundation)
 add_subdirectory(network)

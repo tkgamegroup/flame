@@ -791,14 +791,14 @@ namespace flame
 				glsl_file << glsl_header;
 				{
 					std::string line;
-					std::smatch match;
+					std::smatch res;
 					while (!src.eof())
 					{
 						std::getline(src, line);
 
-						if (std::regex_search(line, match, shader_regex_in))
+						if (std::regex_search(line, res, shader_regex_in))
 						{
-							StageInfo::InOut in(match[2].str(), match[1].str());
+							StageInfo::InOut in(res[2].str(), res[1].str());
 							if (s.type == ShaderStageVert)
 							{
 								auto location = 0;
@@ -837,19 +837,19 @@ namespace flame
 								s.inputs.push_back(in);
 							}
 						}
-						else if (std::regex_search(line, match, shader_regex_out))
+						else if (std::regex_search(line, res, shader_regex_out))
 						{
-							StageInfo::InOut out(match[2].str(), match[1].str());
+							StageInfo::InOut out(res[2].str(), res[1].str());
 							auto dual = false;
 							if (s.type == ShaderStageFrag)
 							{
-								if (match[3].matched)
+								if (res[3].matched)
 								{
 									out.blend_enable = true;
-									auto sp = ssplit(match[4].str());
+									auto sp = SUS::split(res[4].str());
 									for (auto& p : sp)
 									{
-										auto sp = ssplit(p, ':');
+										auto sp = SUS::split(p, ':');
 										BlendFactor f;
 										if (sp[1] == "0")
 											f = BlendFactorZero;
@@ -891,20 +891,20 @@ namespace flame
 								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + out.formated_type + " o_" + out.name + ";\n";
 							s.outputs.push_back(out);
 						}
-						else if (std::regex_search(line, match, shader_regex_pc))
+						else if (std::regex_search(line, res, shader_regex_pc))
 						{
 							if (pll && pll->pc_size > 0)
 								glsl_file << "layout (push_constant) uniform pc_t\n";
 							else
 								glsl_file << "struct type_" + std::to_string(type_id++) + "\n";
 						}
-						else if (std::regex_search(line, match, shader_regex_ubo))
+						else if (std::regex_search(line, res, shader_regex_ubo))
 						{
 							auto set = 0;
 							auto binding = -1;
 							if (pll)
 							{
-								auto name = match[1].str();
+								auto name = res[1].str();
 								for (auto j = 0; j < pll->dsls.size(); j++)
 								{
 									auto dsl = pll->dsls[j];
@@ -926,13 +926,13 @@ namespace flame
 								glsl_file << "struct eliminate_" + std::to_string(type_id) + "\n";
 							type_id++;
 						}
-						else if (std::regex_search(line, match, shader_regex_tex))
+						else if (std::regex_search(line, res, shader_regex_tex))
 						{
 							auto set = 0;
 							auto binding = -1;
 							if (pll)
 							{
-								auto name = match[1].str();
+								auto name = res[1].str();
 								for (auto j = 0; j < pll->dsls.size(); j++)
 								{
 									auto dsl = pll->dsls[j];
@@ -942,7 +942,7 @@ namespace flame
 										{
 											set = j;
 											binding = k;
-											glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform sampler2D " + name + (match[2].matched ? match[2].str() : "") + ";\n";
+											glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform sampler2D " + name + (res[2].matched ? res[2].str() : "") + ";\n";
 											break;
 										}
 									}

@@ -99,7 +99,7 @@ struct App
 									if (hovering->entity == app.root)
 										str += L"Root";
 									else
-										str += wsfmt(L"%I64X", (ulonglong)hovering);
+										str += wfmt(L"%I64X", (ulonglong)hovering);
 								}
 								else
 									str += L"NULL";
@@ -114,7 +114,7 @@ struct App
 									if (focusing->entity == app.root)
 										str += L"Root";
 									else
-										str += wsfmt(L"%I64X", (ulonglong)focusing);
+										str += wfmt(L"%I64X", (ulonglong)focusing);
 									if (focusing == app.event_dispatcher->hovering)
 										color = Vec4c(0, 255, 0, 255);
 									if (app.event_dispatcher->focusing->active)
@@ -135,7 +135,7 @@ struct App
 									if (drag_overing->entity == app.root)
 										str += L"Root";
 									else
-										str += wsfmt(L"%I64X", (ulonglong)drag_overing);
+										str += wfmt(L"%I64X", (ulonglong)drag_overing);
 								}
 								else
 									str += L"NULL";
