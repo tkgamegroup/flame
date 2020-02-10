@@ -76,25 +76,6 @@ namespace flame
 		return ret;
 	}
 
-	StringW get_curr_path()
-	{
-		wchar_t buf[260];
-		GetCurrentDirectoryW(sizeof(buf), buf);
-		return StringW(buf);
-	}
-
-	StringW get_app_path()
-	{
-		wchar_t buf[260];
-		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		return StringW(std::filesystem::path(buf).parent_path().wstring());
-	}
-
-	void set_curr_path(const wchar_t* p)
-	{
-		SetCurrentDirectoryW(p);
-	}
-
 	void read_process_memory(void* process, void* address, uint size, void* dst)
 	{
 		SIZE_T ret_byte;

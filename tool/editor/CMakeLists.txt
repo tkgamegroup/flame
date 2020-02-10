@@ -1,5 +1,6 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_executable(editor ${SOURCE_LIST})
+generate_rc()
+add_executable(editor ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 set_target_properties(editor PROPERTIES FOLDER "tool")
 set_target_properties(editor PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 target_compile_definitions(editor PRIVATE GRAPHVIZ_PATH="${GRAPHVIZ_PATH}")

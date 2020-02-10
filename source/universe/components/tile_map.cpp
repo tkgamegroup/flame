@@ -4,6 +4,8 @@
 
 #include "../renderpath/canvas/canvas.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	struct cTileMapPrivate : cTileMap
@@ -145,59 +147,59 @@ namespace flame
 		return new cTileMapPrivate();
 	}
 
-	struct Serializer_cTileMap$
+	struct R(Serializer_cTileMap, flame,)
 	{
-		Vec2u size$;
-		Vec2f cell_size$;
-		Array<ulonglong> tiles$;
-		Array<int> cells$;
+		Vec2u size;
+		Vec2f cell_size;
+		Array<ulonglong> tiles;
+		Array<int> cells;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_cTileMap$()
+		FLAME_UNIVERSE_EXPORTS RF(Serializer_cTileMap)()
 		{
-			size$ = Vec2u(0);
-			cell_size$ = Vec2f(0.f);
+			size = Vec2u(0);
+			cell_size = Vec2f(0.f);
 		}
 
-		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
+		FLAME_UNIVERSE_EXPORTS Component* RF(create)(World* w)
 		{
 			auto c = new cTileMapPrivate();
 
-			c->size_ = size$;
-			c->cell_size = cell_size$;
-			c->tiles.resize(tiles$.s);
-			for (auto i = 0; i < tiles$.s; i++)
+			c->size_ = size;
+			c->cell_size = cell_size;
+			c->tiles.resize(tiles.s);
+			for (auto i = 0; i < tiles.s; i++)
 			{
-				auto id = tiles$[i];
+				auto id = tiles[i];
 				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
 				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
 			}
-			c->cells.resize(cells$.s);
-			for (auto i = 0; i < cells$.s; i++)
-				c->cells[i ]= cells$[i];
+			c->cells.resize(cells.s);
+			for (auto i = 0; i < cells.s; i++)
+				c->cells[i ]= cells[i];
 
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
+		FLAME_UNIVERSE_EXPORTS void RF(serialize)(Component* _c, int offset)
 		{
 			auto c = (cTileMapPrivate*)_c;
 
 			if (offset == -1)
 			{
-				size$ = c->size_;
-				cell_size$ = c->cell_size;
+				size = c->size_;
+				cell_size = c->cell_size;
 
 			}
 		}
 
-		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
+		FLAME_UNIVERSE_EXPORTS void  RF(unserialize)(Component* _c, int offset)
 		{
 			auto c = (cTileMapPrivate*)_c;
 
 			if (offset == -1)
 			{
-				c->size_ = size$;
-				c->cell_size = cell_size$;
+				c->size_ = size;
+				c->cell_size = cell_size;
 			}
 		}
 	};

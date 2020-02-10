@@ -251,7 +251,7 @@ namespace flame
 
 		void SwapchainResizable::link_bp(BP* bp, void* cbs)
 		{
-			auto n_scr = bp->add_node("D#flame::graphics::SwapchainResizable", "scr");
+			auto n_scr = bp->add_node("D#flame::graphics::R_SwapchainResizable", "scr");
 			n_scr->find_input("in")->set_data_p(this);
 			bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
 			assert(bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images")));
@@ -271,40 +271,40 @@ namespace flame
 			delete (SwapchainResizablePrivate*)s;
 		}
 
-		struct SwapchainResizable$
+		struct R(R_SwapchainResizable, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(SwapchainResizable*, in);
+			BASE0;
+			RV(SwapchainResizable*, in, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Swapchain*, sc);
-			BP_OUT(Array<Image*>, images);
-			BP_OUT(uint, image_idx);
+			BASE1;
+			RV(Swapchain*, sc, o);
+			RV(Array<Image*>, images, o);
+			RV(uint, image_idx, o);
 
-			FLAME_GRAPHICS_EXPORTS void active_update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(active_update)(uint frame)
 			{
-				if (in$i->changed)
+				if (in->changed)
 				{
-					sc$o = in$i->sc();
-					if (sc$o)
+					sc = in->sc();
+					if (sc)
 					{
-						images$o.resize(sc$o->image_count());
-						for (auto i = 0; i < images$o.s; i++)
-							images$o[i] = sc$o->image(i);
+						images.resize(sc->image_count());
+						for (auto i = 0; i < images.s; i++)
+							images[i] = sc->image(i);
 					}
 					else
-						images$o.resize(0);
+						images.resize(0);
 					sc_s()->set_frame(frame);
 					images_s()->set_frame(frame);
 				}
-				image_idx$o = sc$o ? sc$o->image_index() : 0;
+				image_idx = sc ? sc->image_index() : 0;
 				image_idx_s()->set_frame(frame);
-				in$i->changed = false;
+				in->changed = false;
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~SwapchainResizable$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_SwapchainResizable)()
 			{
 			}
 		};

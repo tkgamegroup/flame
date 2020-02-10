@@ -17,7 +17,7 @@ namespace flame
 		{
 		}
 
-		__declspec(dllexport) void update$(BP* scene)
+		__declspec(dllexport) void RF(update)(BP* scene)
 		{
 			if (cbs$i.frame > frame || fbs$i.frame > frame || cv$i.frame > frame)
 			{

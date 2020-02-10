@@ -8,30 +8,32 @@
 
 #include "../renderpath/canvas/canvas.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
-	struct Serializer_Atlas$
+	struct R(Serializer_Atlas, flame,)
 	{
-		StringW filename$;
+		StringW filename;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_Atlas$()
+		FLAME_UNIVERSE_EXPORTS RF(Serializer_Atlas)()
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~Serializer_Atlas$()
+		FLAME_UNIVERSE_EXPORTS RF(~Serializer_Atlas)()
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
+		FLAME_UNIVERSE_EXPORTS Object* RF(create)(World* w)
 		{
-			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename$.v);
+			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename.v);
 			auto renderer = w->get_system(s2DRenderer);
 			if (renderer)
 				renderer->canvas->add_atlas(a);
 			return a;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void destroy$(Object* o)
+		FLAME_UNIVERSE_EXPORTS void RF(destroy)(Object* o)
 		{
 			auto a = (graphics::Atlas*)o;
 			((graphics::Canvas*)a->canvas_)->set_image(a->canvas_slot_, nullptr);
@@ -39,34 +41,34 @@ namespace flame
 		}
 	};
 
-	struct Serializer_FontAtlas$
+	struct R(Serializer_FontAtlas, flame,)
 	{
-		graphics::FontDrawType draw_type$;
-		StringW fonts$;
+		graphics::FontDrawType draw_type;
+		StringW fonts;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_FontAtlas$()
+		FLAME_UNIVERSE_EXPORTS RF(Serializer_FontAtlas)()
 		{
-			draw_type$ = graphics::FontDrawPixel;
+			draw_type = graphics::FontDrawPixel;
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~Serializer_FontAtlas$()
+		FLAME_UNIVERSE_EXPORTS RF(~Serializer_FontAtlas)()
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS Object* create$(World* w)
+		FLAME_UNIVERSE_EXPORTS Object* RF(create)(World* w)
 		{
-			auto sp = SUW::split(fonts$.str(), L';');
+			auto sp = SUW::split(fonts.str(), L';');
 			std::vector<const wchar_t*> fonts(sp.size());
 			for (auto i = 0; i < sp.size(); i++)
 				fonts[i] = sp[i].c_str();
-			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type$, fonts.size(), fonts.data());
+			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type, fonts.size(), fonts.data());
 			auto renderer = w->get_system(s2DRenderer);
 			if (renderer)
 				renderer->canvas->add_font(f);
 			return f;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void destroy$(Object* o)
+		FLAME_UNIVERSE_EXPORTS void RF(destroy)(Object* o)
 		{
 			auto f = (graphics::FontAtlas*)o;
 			((graphics::Canvas*)f->canvas_)->set_image(f->canvas_slot_, nullptr);

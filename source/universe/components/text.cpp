@@ -10,6 +10,8 @@
 
 #include "../renderpath/canvas/canvas.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	struct cTextPrivate : cText
@@ -169,117 +171,117 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	struct Serializer_cText$
+	struct R(Serializer_cText, flame,)
 	{
-		uint font_atlas_id$;
-		Vec4c color$;
-		uint font_size$;
-		bool right_align$;
-		bool auto_width$;
-		bool auto_height$;
-		StringW text$;
+		uint font_atlas_id;
+		Vec4c color;
+		uint font_size;
+		bool right_align;
+		bool auto_width;
+		bool auto_height;
+		StringW text;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_cText$()
+		FLAME_UNIVERSE_EXPORTS RF(Serializer_cText)()
 		{
-			color$ = ui::style_4c(ui::TextColorNormal);
-			font_size$ = ui::style_1u(ui::FontSize);
-			right_align$ = false;
-			auto_width$ = false;
-			auto_height$ = false;
+			color = ui::style_4c(ui::TextColorNormal);
+			font_size = ui::style_1u(ui::FontSize);
+			right_align = false;
+			auto_width = false;
+			auto_height = false;
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~Serializer_cText$()
+		FLAME_UNIVERSE_EXPORTS RF(~Serializer_cText)()
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
+		FLAME_UNIVERSE_EXPORTS Component* RF(create)(World* w)
 		{
-			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id$));
+			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id));
 
-			c->color = color$;
-			c->font_size_ = font_size$;
-			c->auto_width_ = auto_width$;
-			c->auto_height_ = auto_height$;
-			c->set_text(text$.v);
+			c->color = color;
+			c->font_size_ = font_size;
+			c->auto_width_ = auto_width;
+			c->auto_height_ = auto_height;
+			c->set_text(text.v);
 
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
+		FLAME_UNIVERSE_EXPORTS void RF(serialize)(Component* _c, int offset)
 		{
 			auto c = (cTextPrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)
 			{
-				font_atlas_id$ = c->font_atlas->id;
-				color$ = c->color;
-				font_size$ = c->font_size_;
-				auto_width$ = c->auto_width_;
-				auto_height$ = c->auto_height_;
-				text$ = c->text;
+				font_atlas_id = c->font_atlas->id;
+				color = c->color;
+				font_size = c->font_size_;
+				auto_width = c->auto_width_;
+				auto_height = c->auto_height_;
+				text = c->text;
 			}
 			else
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_cText$, font_atlas_id$):
-					font_atlas_id$ = c->font_atlas->id;
+				case offsetof(Serializer_cText, font_atlas_id):
+					font_atlas_id = c->font_atlas->id;
 					break;
-				case offsetof(Serializer_cText$, color$):
-					color$ = c->color;
+				case offsetof(Serializer_cText, color):
+					color = c->color;
 					break;
-				case offsetof(Serializer_cText$, font_size$):
-					font_size$ = c->font_size_;
+				case offsetof(Serializer_cText, font_size):
+					font_size = c->font_size_;
 					break;
-				case offsetof(Serializer_cText$, auto_width$):
-					auto_width$ = c->auto_width_;
+				case offsetof(Serializer_cText, auto_width):
+					auto_width = c->auto_width_;
 					break;
-				case offsetof(Serializer_cText$, auto_height$):
-					auto_height$ = c->auto_height_;
+				case offsetof(Serializer_cText, auto_height):
+					auto_height = c->auto_height_;
 					break;
-				case offsetof(Serializer_cText$, text$):
-					text$ = c->text;
+				case offsetof(Serializer_cText, text):
+					text = c->text;
 					break;
 				}
 			}
 		}
 
-		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
+		FLAME_UNIVERSE_EXPORTS void  RF(unserialize)(Component* _c, int offset)
 		{
 			auto c = (cTextPrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)
 			{
-				c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id$);
-				c->color = color$;
-				c->font_size_ = font_size$;
-				c->auto_width_ = auto_width$;
-				c->auto_height_ = auto_height$;
-				c->set_text(text$.v);
+				c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id);
+				c->color = color;
+				c->font_size_ = font_size;
+				c->auto_width_ = auto_width;
+				c->auto_height_ = auto_height;
+				c->set_text(text.v);
 			}
 			else
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_cText$, font_atlas_id$):
-					c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id$);
+				case offsetof(Serializer_cText, font_atlas_id):
+					c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id);
 					break;
-				case offsetof(Serializer_cText$, color$):
-					c->color = color$;
+				case offsetof(Serializer_cText, color):
+					c->color = color;
 					break;
-				case offsetof(Serializer_cText$, font_size$):
-					c->font_size_ = font_size$;
+				case offsetof(Serializer_cText, font_size):
+					c->font_size_ = font_size;
 					break;
-				case offsetof(Serializer_cText$, auto_width$):
-					c->auto_width_ = auto_width$;
+				case offsetof(Serializer_cText, auto_width):
+					c->auto_width_ = auto_width;
 					break;
-				case offsetof(Serializer_cText$, auto_height$):
-					c->auto_height_ = auto_height$;
+				case offsetof(Serializer_cText, auto_height):
+					c->auto_height_ = auto_height;
 					break;
-				case offsetof(Serializer_cText$, text$):
-					c->set_text(text$.v);
+				case offsetof(Serializer_cText, text):
+					c->set_text(text.v);
 					break;
 				}
 			}

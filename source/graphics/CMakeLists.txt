@@ -1,5 +1,6 @@
 file(GLOB SOURCE_LIST "*.c*")
-add_library(flame_graphics SHARED ${SOURCE_LIST})
+generate_rc()
+add_library(flame_graphics SHARED ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 set_target_properties(flame_graphics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_graphics PRIVATE FLAME_GRAPHICS_MODULE)
 if (FLAME_RENDER_API MATCHES "Vulkan")

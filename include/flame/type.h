@@ -425,6 +425,10 @@ namespace flame
 		}
 	};
 
+	FLAME_TYPE_EXPORTS StringW get_curr_path();
+	FLAME_TYPE_EXPORTS StringW get_app_path();
+	FLAME_TYPE_EXPORTS void set_curr_path(const wchar_t* p);
+
 	enum TypeTag
 	{
 		TypeEnumSingle,
@@ -556,12 +560,19 @@ namespace flame
 		inline void copy_from(const void* src, void* dst) const;
 	};
 
+	enum VariableFlags
+	{
+		VariableFlagInput = 1 << 0,
+		VariableFlagOutput = 1 << 2,
+		VariableFlagEnumMulti = 1 << 3
+	};
+
 	struct VariableInfo
 	{
 		FLAME_TYPE_EXPORTS const TypeInfo* type() const;
 		FLAME_TYPE_EXPORTS const char* name() const;
 		FLAME_TYPE_EXPORTS uint name_hash() const;
-		FLAME_TYPE_EXPORTS const char* decoration() const;
+		FLAME_TYPE_EXPORTS uint flags() const;
 		FLAME_TYPE_EXPORTS uint offset() const;
 		FLAME_TYPE_EXPORTS uint size() const;
 		FLAME_TYPE_EXPORTS const char* default_value() const;
@@ -610,33 +621,13 @@ namespace flame
 		FLAME_TYPE_EXPORTS uint variable_count() const;
 		FLAME_TYPE_EXPORTS VariableInfo* variable(uint idx) const;
 		FLAME_TYPE_EXPORTS VariableInfo* find_variable(const char* name, int* out_idx = nullptr) const;
-		FLAME_TYPE_EXPORTS VariableInfo* add_variable(const TypeInfo* type, const char* name, const char* decoration, uint offset, uint size);
+		FLAME_TYPE_EXPORTS VariableInfo* add_variable(const TypeInfo* type, const char* name, uint flags, uint offset, uint size);
 
 		FLAME_TYPE_EXPORTS uint function_count() const;
 		FLAME_TYPE_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_TYPE_EXPORTS FunctionInfo* find_function(const char* name, int* out_idx = nullptr) const;
 		FLAME_TYPE_EXPORTS FunctionInfo* add_function(const char* name, void* rva, const TypeInfo* return_type);
 	};
-
-	/*
-		something end with '$[a]' means it is reflectable
-		the 'a' is called decoration, and is optional
-		if first char of member name is '_', then the '_' will be ignored in reflection
-
-		such as:
-			struct Apple$ // mark this will be collected by typeinfogen
-			{
-				float size$; // mark this member will be collected
-				Vec3f color$i; // mark this member will be collected, and its decoration is 'i'
-				float _1$i; // mark this member will be collected, and reflected name is '1'
-			};
-
-		the decoration can be one or more chars, and order doesn't matter
-
-		currently, the following attributes are used by typeinfogen, others are free to use:
-			'm' for enum variable, means it can hold combination of the enum
-			'c' for function, means to collect the code of the function
-	*/
 
 	struct TypeinfoDatabase
 	{

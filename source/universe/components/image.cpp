@@ -4,6 +4,8 @@
 
 #include "../renderpath/canvas/canvas.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	struct cImagePrivate : cImage
@@ -56,39 +58,39 @@ namespace flame
 		return new cImagePrivate();
 	}
 
-	struct Serializer_cImage$
+	struct R(Serializer_cImage, flame,)
 	{
-		ulonglong id$;
-		Vec2f uv0$;
-		Vec2f uv1$;
-		Vec4c color$;
+		ulonglong id;
+		Vec2f uv0;
+		Vec2f uv1;
+		Vec4c color;
 
-		FLAME_UNIVERSE_EXPORTS Serializer_cImage$()
+		FLAME_UNIVERSE_EXPORTS RF(Serializer_cImage)()
 		{
-			id$ = 0;
-			uv0$ = Vec2f(0.f);
-			uv1$ = Vec2f(1.f);
-			color$ = Vec4c(255);
+			id = 0;
+			uv0 = Vec2f(0.f);
+			uv1 = Vec2f(1.f);
+			color = Vec4c(255);
 		}
 
-		FLAME_UNIVERSE_EXPORTS ~Serializer_cImage$()
+		FLAME_UNIVERSE_EXPORTS RF(~Serializer_cImage)()
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS Component* create$(World* w)
+		FLAME_UNIVERSE_EXPORTS Component* RF(create)(World* w)
 		{
 			auto c = new cImagePrivate();
 
-			auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id$ >> 32);
-			c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id$ & 0xffffffff);
-			c->uv0 = uv0$;
-			c->uv1 = uv1$;
-			c->color = color$;
+			auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
+			c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
+			c->uv0 = uv0;
+			c->uv1 = uv1;
+			c->color = color;
 
 			return c;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void serialize$(Component* _c, int offset)
+		FLAME_UNIVERSE_EXPORTS void RF(serialize)(Component* _c, int offset)
 		{
 			auto c = (cImagePrivate*)_c;
 			auto w = c->entity->world_;
@@ -96,65 +98,65 @@ namespace flame
 			if (offset == -1)
 			{
 				auto atlas = ((graphics::Canvas*)w->find_object(FLAME_CHASH("Canvas"), 0))->get_atlas(c->id >> 16);
-				id$ = (atlas->id << 32) + atlas->tile(c->id & 0xffff).id;
-				color$ = c->color;
-				uv0$ = c->uv0;
-				uv1$ = c->uv1;
+				id = (atlas->id << 32) + atlas->tile(c->id & 0xffff).id;
+				color = c->color;
+				uv0 = c->uv0;
+				uv1 = c->uv1;
 			}
 			else
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_cImage$, id$):
+				case offsetof(Serializer_cImage, id):
 				{
 					auto atlas = ((graphics::Canvas*)w->find_object(FLAME_CHASH("Canvas"), 0))->get_atlas(c->id >> 16);
-					id$ = (atlas->id << 32) + atlas->tile(c->id & 0xffff).id;
+					id = (atlas->id << 32) + atlas->tile(c->id & 0xffff).id;
 				}
 					break;
-				case offsetof(Serializer_cImage$, color$):
-					color$ = c->color;
+				case offsetof(Serializer_cImage, color):
+					color = c->color;
 					break;
-				case offsetof(Serializer_cImage$, uv0$):
-					uv0$ = c->uv0;
+				case offsetof(Serializer_cImage, uv0):
+					uv0 = c->uv0;
 					break;
-				case offsetof(Serializer_cImage$, uv1$):
-					uv1$ = c->uv1;
+				case offsetof(Serializer_cImage, uv1):
+					uv1 = c->uv1;
 					break;
 				}
 			}
 		}
 
-		FLAME_UNIVERSE_EXPORTS void unserialize$(Component* _c, int offset)
+		FLAME_UNIVERSE_EXPORTS void  RF(unserialize)(Component* _c, int offset)
 		{
 			auto c = (cImagePrivate*)_c;
 			auto w = c->entity->world_;
 
 			if (offset == -1)
 			{
-				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id$ >> 32);
-				c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id$ & 0xffffffff);
-				c->uv0 = uv0$;
-				c->uv1 = uv1$;
-				c->color = color$;
+				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
+				c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
+				c->uv0 = uv0;
+				c->uv1 = uv1;
+				c->color = color;
 			}
 			else
 			{
 				switch (offset)
 				{
-				case offsetof(Serializer_cImage$, id$):
+				case offsetof(Serializer_cImage, id):
 				{
-					auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id$ >> 32);
-					c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id$ & 0xffffffff);
+					auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
+					c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
 				}
 					break;
-				case offsetof(Serializer_cImage$, color$):
-					c->color = color$;
+				case offsetof(Serializer_cImage, color):
+					c->color = color;
 					break;
-				case offsetof(Serializer_cImage$, uv0$):
-					c->uv0 = uv0$;
+				case offsetof(Serializer_cImage, uv0):
+					c->uv0 = uv0;
 					break;
-				case offsetof(Serializer_cImage$, uv1$):
-					c->uv1 = uv1$;
+				case offsetof(Serializer_cImage, uv1):
+					c->uv1 = uv1;
 					break;
 				}
 			}

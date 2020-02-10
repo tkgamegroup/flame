@@ -28,7 +28,7 @@ namespace flame
 
 		AttributeD<uint> idx$o;
 
-		__declspec(dllexport) void update$(BP* scene)
+		__declspec(dllexport) void RF(update)(BP* scene)
 		{
 			if (img$o.frame == -1)
 			{
@@ -74,7 +74,7 @@ namespace flame
 	{
 		AttributeD<Array<Commandbuffer*>> out$o;
 
-		__declspec(dllexport) void active_update$(BP* scene)
+		__declspec(dllexport) void active_RF(update)(BP* scene)
 		{
 			if (out$o.frame == -1)
 			{

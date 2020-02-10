@@ -43,23 +43,30 @@ int main(int argc, char **args)
 	cmakelists << "# THIS FILE IS AUTO GENERATED\n";
 	cmakelists << "cmake_minimum_required(VERSION 3.16.4)\n";
 	cmakelists << "project(bp)\n";
+	auto flame_path = std::string(getenv("FLAME_PATH"));
+	for (auto& ch : flame_path)
+	{
+		if (ch == '\\')
+			ch = '/';
+	}
+	cmakelists << "include(\"" << flame_path << "/cmake_utils.cmake\")\n";
 	cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 	cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
-	cmakelists << "add_library(bp SHARED ${SOURCE_LIST})\n";
+	cmakelists << "generate_rc()\n";
+	cmakelists << "add_library(bp SHARED ${SOURCE_LIST} \"${CMAKE_CURRENT_BINARY_DIR}/version.rc\")\n";
 	{
 		auto path = std::filesystem::canonical(get_app_path().v);
 		auto str = (path / L"flame_type.lib").string();
 		std::replace(str.begin(), str.end(), '\\', '/');
-		cmakelists << "target_link_libraries(bp " << str << ")\n";
+		cmakelists << "target_link_libraries(bp \"" << str << "\")\n";
 	}
 	for (auto& l : libraries)
-		cmakelists << "target_link_libraries(bp " << l << ")\n";
+		cmakelists << "target_link_libraries(bp \"" << l << "\")\n";
 	cmakelists << "target_include_directories(bp PRIVATE ${CMAKE_SOURCE_DIR}/../../include)\n";
 	srand(::time(0));
 	auto pdb_filename = std::to_string(::rand() % 100000);
 	cmakelists << "set_target_properties(bp PROPERTIES PDB_NAME " << pdb_filename << ")\n";
-	cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/../../bin/typeinfogen ${CMAKE_SOURCE_DIR}/build/debug/bp.dll ";
-	cmakelists << "-p${CMAKE_SOURCE_DIR}/build/debug/" << pdb_filename << ".pdb)\n";
+	cmakelists << "add_custom_command(TARGET bp POST_BUILD COMMAND \"${CMAKE_SOURCE_DIR}/../../bin/typeinfogen\" \"${CMAKE_SOURCE_DIR}/build/debug/bp.dll\" -p" << pdb_filename << ")\n";
 	cmakelists.close();
 
 	printf(" - done\n");

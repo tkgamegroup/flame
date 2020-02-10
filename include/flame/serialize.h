@@ -485,6 +485,17 @@ namespace flame
 		return buf;
 	}
 
+	inline std::wstring a2w(const std::string& str)
+	{
+		setlocale(LC_ALL, "chs");
+		auto len = mbstowcs(nullptr, str.c_str(), 0) + 1;
+		std::wstring wstr;
+		wstr.resize(len);
+		mbstowcs((wchar_t*)wstr.data(), str.c_str(), len);
+		setlocale(LC_ALL, "");
+		return wstr;
+	}
+
 	inline std::wstring s2w(const std::string& str)
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;

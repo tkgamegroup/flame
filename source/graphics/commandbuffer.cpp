@@ -620,75 +620,75 @@ namespace flame
 			delete (CommandbufferPrivate*)c;
 		}
 
-		struct Commandbuffer$
+		struct R(R_Commandbuffer, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Commandbuffer*, out);
+			BASE1;
+			RV(Commandbuffer*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				if (out_s()->frame() == -1)
 				{
 					auto d = Device::default_one();
 					if (d)
-						out$o = Commandbuffer::create(d->gcp);
+						out = Commandbuffer::create(d->gcp);
 					else
 					{
 						printf("cannot create commandbuffer\n");
 
-						out$o = nullptr;
+						out = nullptr;
 					}
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Commandbuffer$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_Commandbuffer)()
 			{
-				if (out$o)
-					Commandbuffer::destroy((Commandbuffer*)out$o);
+				if (out)
+					Commandbuffer::destroy((Commandbuffer*)out);
 			}
 
 		};
 
-		struct Commandbuffers$
+		struct R(R_Commandbuffers, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(uint, size);
+			BASE0;
+			RV(uint, size, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Array<Commandbuffer*>, out);
+			BASE1;
+			RV(Array<Commandbuffer*>, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				if (size_s()->frame() > out_s()->frame())
 				{
-					for (auto i = 0; i < out$o.s; i++)
-						Commandbuffer::destroy(out$o[i]);
+					for (auto i = 0; i < out.s; i++)
+						Commandbuffer::destroy(out[i]);
 					auto d = Device::default_one();
-					if (d && size$i > 0)
+					if (d && size > 0)
 					{
-						out$o.resize(size$i);
-						for (auto i = 0; i < size$i; i++)
-							out$o.v[i] = Commandbuffer::create(d->gcp);
+						out.resize(size);
+						for (auto i = 0; i < size; i++)
+							out.v[i] = Commandbuffer::create(d->gcp);
 					}
 					else
 					{
 						printf("cannot create commandbuffers\n");
 
-						out$o.resize(0);
+						out.resize(0);
 					}
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Commandbuffers$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_Commandbuffers)()
 			{
-				for (auto i = 0; i < out$o.s; i++)
-					Commandbuffer::destroy(out$o[i]);
+				for (auto i = 0; i < out.s; i++)
+					Commandbuffer::destroy(out[i]);
 			}
 		};
 

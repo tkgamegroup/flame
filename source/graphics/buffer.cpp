@@ -160,47 +160,47 @@ namespace flame
 			delete (BufferPrivate*)b;
 		}
 
-		struct Buffer$
+		struct R(R_Buffer, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(uint, size);
-			BP_INd(BufferUsage, usage, m);
-			BP_INd(MemProp, mem_prop, m);
+			BASE0;
+			RV(uint, size, i);
+			RV(BufferUsage, usage, i, m);
+			RV(MemProp, mem_prop, i, m);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Buffer*, out);
+			BASE1;
+			RV(Buffer*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS Buffer$()
+			FLAME_GRAPHICS_EXPORTS RF(R_Buffer)()
 			{
-				mem_prop$im = MemPropDevice;
+				mem_prop = MemPropDevice;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (size_s()->frame() > out_frame || usage_s()->frame() > out_frame || mem_prop_s()->frame() > out_frame)
 				{
-					if (out$o)
-						Buffer::destroy(out$o);
+					if (out)
+						Buffer::destroy(out);
 					auto d = Device::default_one();
-					if (d && size$i > 0 && usage$im > 0 && mem_prop$im > 0)
+					if (d && size > 0 && usage > 0 && mem_prop > 0)
 					{
-						out$o = Buffer::create(d, size$i, usage$im, mem_prop$im);
-						if (mem_prop$im == (MemPropHost | MemPropHostCoherent))
-							out$o->map();
+						out = Buffer::create(d, size, usage, mem_prop);
+						if (mem_prop == (MemPropHost | MemPropHostCoherent))
+							out->map();
 					}
 					else
-						out$o = nullptr;
+						out = nullptr;
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Buffer$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_Buffer)()
 			{
-				if (out$o)
-					Buffer::destroy(out$o);
+				if (out)
+					Buffer::destroy(out);
 			}
 		};
 	}

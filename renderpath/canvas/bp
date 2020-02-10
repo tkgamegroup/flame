@@ -9,25 +9,25 @@
 				<data name="in" value="SampleCount_8" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::RenderTarget" id="rt_dst" pos="265.72;81.27" />
+		<node type="D#flame::graphics::R_RenderTarget" id="rt_dst" pos="265.72;81.27" />
 		<node type="D#Array(1+flame::graphics::RenderTarget*)" id="resolve_targets" pos="530.72;137.27" />
-		<node type="D#flame::graphics::ImageInspector" id="dst_props" pos="605.64;353.25" />
-		<node type="D#flame::graphics::Image" id="img_ms" pos="874.61;704.05">
+		<node type="D#flame::graphics::R_ImageInspector" id="dst_props" pos="605.64;353.25" />
+		<node type="D#flame::graphics::R_Image" id="img_ms" pos="874.61;704.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::RenderTarget" id="rt_ms" pos="1147.58;717.05">
+		<node type="D#flame::graphics::R_RenderTarget" id="rt_ms" pos="1147.58;717.05">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
 		<node type="D#Array(1+flame::graphics::RenderTarget*)" id="color_targets" pos="1435.58;684.05" />
-		<node type="D#flame::graphics::SubpassTargetInfo" id="sp" pos="1587.80;830.92" />
+		<node type="D#flame::graphics::R_SubpassTargetInfo" id="sp" pos="1587.80;830.92" />
 		<node type="D#Array(1+flame::graphics::SubpassTargetInfo*)" id="sps" pos="1807.80;845.92" />
-		<node type="D#flame::graphics::RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
-		<node type="D#flame::graphics::DescriptorBinding" id="imgs_binding" pos="1144.81;1500.79">
+		<node type="D#flame::graphics::R_RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
+		<node type="D#flame::graphics::R_DescriptorBinding" id="imgs_binding" pos="1144.81;1500.79">
 			<datas>
         <data name="type" value="DescriptorSampledImage" />
 				<data name="count" value="64" />
@@ -35,34 +35,34 @@
 			</datas>
 		</node>
 		<node type="D#Array(1+flame::graphics::DescriptorBinding*)" id="bindings" pos="1412.81;1446.79" />
-		<node type="D#flame::graphics::Descriptorlayout" id="dsl" pos="1525.51;1688.91" />
+		<node type="D#flame::graphics::R_Descriptorlayout" id="dsl" pos="1525.51;1688.91" />
 		<node type="D#Array(1+flame::graphics::Descriptorlayout*)" id="dsls" pos="1758.81;1827.79" />
-		<node type="D#flame::graphics::Pipelinelayout" id="pll" pos="1881.80;1713.37">
+		<node type="D#flame::graphics::R_Pipelinelayout" id="pll" pos="1881.80;1713.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::VertexInputAttribute" id="via0" pos="1678.10;1036.00">
+		<node type="D#flame::graphics::R_VertexInputAttribute" id="via0" pos="1678.10;1036.00">
 			<datas>
 				<data name="name" value="pos" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::VertexInputAttribute" id="via1" pos="1648.10;1222.00">
+		<node type="D#flame::graphics::R_VertexInputAttribute" id="via1" pos="1648.10;1222.00">
 			<datas>
 				<data name="name" value="uv" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::VertexInputAttribute" id="via2" pos="1650.60;1398.00">
+		<node type="D#flame::graphics::R_VertexInputAttribute" id="via2" pos="1650.60;1398.00">
 			<datas>
 				<data name="name" value="color" />
 			</datas>
 		</node>
 		<node type="D#Array(3+flame::graphics::VertexInputAttribute*)" id="vias" pos="1928.63;1198.33" />
-		<node type="D#flame::graphics::VertexInputBuffer" id="vib" pos="2071.05;1207.71" />
+		<node type="D#flame::graphics::R_VertexInputBuffer" id="vib" pos="2071.05;1207.71" />
 		<node type="D#Array(1+flame::graphics::VertexInputBuffer*)" id="vibs" pos="2331.05;1211.71" />
-		<node type="D#flame::graphics::VertexInputInfo" id="vi" pos="2416.83;1411.37" />
+		<node type="D#flame::graphics::R_VertexInputInfo" id="vi" pos="2416.83;1411.37" />
 		<node type="D#Array(2+flame::StringW)" id="pl_element_shs" pos="2690.57;794.81">
 			<datas>
 				<data name="0" value="element.vert" />
@@ -81,46 +81,46 @@
 				<data name="1" value="text_sdf.frag" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::Pipeline" id="pl_element" pos="2877.23;827.38">
+		<node type="D#flame::graphics::R_Pipeline" id="pl_element" pos="2877.23;827.38">
 			<datas>
 				<data name="subpass_idx" value="0" />
 				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::Pipeline" id="pl_text_lcd" pos="2878.06;1223.97">
+		<node type="D#flame::graphics::R_Pipeline" id="pl_text_lcd" pos="2878.06;1223.97">
 			<datas>
 				<data name="subpass_idx" value="0" />
 				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::Pipeline" id="pl_text_sdf" pos="2883.68;1621.44">
+		<node type="D#flame::graphics::R_Pipeline" id="pl_text_sdf" pos="2883.68;1621.44">
 			<datas>
 				<data name="subpass_idx" value="0" />
 				<data name="vp" value="0;0" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::Image" id="img_white" pos="861.12;1424.24">
+		<node type="D#flame::graphics::R_Image" id="img_white" pos="861.12;1424.24">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::Buffer" id="vtx_buf" pos="224.88;545.00">
+		<node type="D#flame::graphics::R_Buffer" id="vtx_buf" pos="224.88;545.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="D#flame::graphics::Buffer" id="idx_buf" pos="229.05;998.72">
+		<node type="D#flame::graphics::R_Buffer" id="idx_buf" pos="229.05;998.72">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="D#flame::MakeCmd" id="make_cmd" pos="3555.50;360.50" />
+		<node type="D#MakeCmd" id="make_cmd" pos="3555.50;360.50" />
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="resolve_targets.0" />

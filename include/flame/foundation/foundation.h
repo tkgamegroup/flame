@@ -258,9 +258,6 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
-	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
-	FLAME_FOUNDATION_EXPORTS StringW get_app_path();
-	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled);

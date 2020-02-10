@@ -396,40 +396,40 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->imageview;
 		}
 
-		struct FontAtlas$
+		struct R(R_FontAtlas, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(FontDrawType, draw_type);
-			BP_IN(Array<StringW>*, fonts);
+			BASE0;
+			RV(FontDrawType, draw_type, i);
+			RV(Array<StringW>*, fonts, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(FontAtlas*, out);
+			BASE1;
+			RV(FontAtlas*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (draw_type_s()->frame() > out_frame || fonts_s()->frame() > out_frame)
 				{
-					if (out$o)
-						FontAtlas::destroy(out$o);
+					if (out)
+						FontAtlas::destroy(out);
 					auto d = Device::default_one();
-					std::vector<const wchar_t*> fonts(fonts$i ? fonts$i->s : 0);
-					for (auto i = 0; i < fonts.size(); i++)
-						fonts[i] = fonts$i->at(i).v;
-					if (d && !fonts.empty())
-						out$o = FontAtlas::create(d, draw_type$i, fonts.size(), fonts.data());
+					std::vector<const wchar_t*> _fonts(fonts ? fonts->s : 0);
+					for (auto i = 0; i < _fonts.size(); i++)
+						_fonts[i] = fonts->at(i).v;
+					if (d && !_fonts.empty())
+						out = FontAtlas::create(d, draw_type, _fonts.size(), _fonts.data());
 					else
 						printf("cannot create fontatlas\n");
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~FontAtlas$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_FontAtlas)()
 			{
-				if (out$o)
-					FontAtlas::destroy(out$o);
+				if (out)
+					FontAtlas::destroy(out);
 			}
 		};
 	}

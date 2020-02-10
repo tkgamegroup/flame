@@ -424,90 +424,90 @@ namespace flame
 			delete (ImagePrivate*)i;
 		}
 
-		struct Image$
+		struct R(R_Image, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(Format, format);
-			BP_IN(Vec2u, size);
-			BP_IN(uint, level);
-			BP_IN(uint, layer);
-			BP_IN(SampleCount, sample_count);
-			BP_INd(ImageUsage, usage, m);
-			BP_IN(bool, init_with_color);
-			BP_IN(Vec4c, init_color);
+			BASE0;
+			RV(Format, format, i);
+			RV(Vec2u, size, i);
+			RV(uint, level, i);
+			RV(uint, layer, i);
+			RV(SampleCount, sample_count, i);
+			RV(ImageUsage, usage, i, m);
+			RV(bool, init_with_color, i);
+			RV(Vec4c, init_color, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Image*, out);
+			BASE1;
+			RV(Image*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS Image$()
+			FLAME_GRAPHICS_EXPORTS RF(R_Image)()
 			{
-				format$i = Format_R8G8B8A8_UNORM;
-				size$i = 4;
-				level$i = 1;
-				layer$i = 1;
-				usage$im = ImageUsageSampled;
+				format = Format_R8G8B8A8_UNORM;
+				size = 4;
+				level = 1;
+				layer = 1;
+				usage = ImageUsageSampled;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (format_s()->frame() > out_frame || size_s()->frame() > out_frame || level_s()->frame() > out_frame || layer_s()->frame() > out_frame || sample_count_s()->frame() > out_frame || usage_s()->frame() > out_frame)
 				{
-					if (out$o)
-						Image::destroy(out$o);
+					if (out)
+						Image::destroy(out);
 					auto d = Device::default_one();
-					if (d && format$i != Format_Undefined && size$i.x() > 0 && size$i.y() > 0 && level$i > 0 && layer$i > 0)
+					if (d && format != Format_Undefined && size.x() > 0 && size.y() > 0 && level > 0 && layer > 0)
 					{
-						out$o = Image::create(d, format$i, size$i, level$i, layer$i, sample_count$i, usage$im);
-						if (init_with_color$i)
-							out$o->init(init_color$i);
+						out = Image::create(d, format, size, level, layer, sample_count, usage);
+						if (init_with_color)
+							out->init(init_color);
 					}
 					else
 					{
 						printf("cannot create image\n");
 
-						out$o = nullptr;
+						out = nullptr;
 					}
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Image$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_Image)()
 			{
-				if (out$o)
-					Image::destroy(out$o);
+				if (out)
+					Image::destroy(out);
 			}
 		};
 
-		struct ImageInspector$
+		struct R(R_ImageInspector, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(Image*, in);
+			BASE0;
+			RV(Image*, in, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Format, format);
-			BP_OUT(Vec2u, size);
+			BASE1;
+			RV(Format, format, o);
+			RV(Vec2u, size, o);
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				auto in_frame = in_s()->frame();
 				if (in_frame > format_s()->frame() || in_frame > size_s()->frame())
 				{
-					if (in$i)
+					if (in)
 					{
-						format$o = in$i->format;
-						size$o = in$i->size;
+						format = in->format;
+						size = in->size;
 					}
 					else
 					{
 						printf("cannot inspect image\n");
 
-						format$o = Format_Undefined;
-						size$o = Vec2u(0);
+						format = Format_Undefined;
+						size = Vec2u(0);
 					}
 					format_s()->set_frame(frame);
 					size_s()->set_frame(frame);
@@ -589,132 +589,132 @@ namespace flame
 			delete (ImageviewPrivate*)v;
 		}
 
-		struct Imageview$
+		struct R(R_Imageview, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(Image*, image);
-			BP_IN(ImageviewType, type);
-			BP_IN(uint, base_level);
-			BP_IN(uint, level_count);
-			BP_IN(uint, base_layer);
-			BP_IN(uint, layer_count);
-			BP_IN(Swizzle, swizzle_r);
-			BP_IN(Swizzle, swizzle_g);
-			BP_IN(Swizzle, swizzle_b);
-			BP_IN(Swizzle, swizzle_a);
+			BASE0;
+			RV(Image*, image, i);
+			RV(ImageviewType, type, i);
+			RV(uint, base_level, i);
+			RV(uint, level_count, i);
+			RV(uint, base_layer, i);
+			RV(uint, layer_count, i);
+			RV(Swizzle, swizzle_r, i);
+			RV(Swizzle, swizzle_g, i);
+			RV(Swizzle, swizzle_b, i);
+			RV(Swizzle, swizzle_a, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Imageview*, out);
+			BASE1;
+			RV(Imageview*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS Imageview$()
+			FLAME_GRAPHICS_EXPORTS RF(R_Imageview)()
 			{
-				type$i = Imageview2D;
-				level_count$i = 1;
-				layer_count$i = 1;
+				type = Imageview2D;
+				level_count = 1;
+				layer_count = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (image_s()->frame() > out_frame || type_s()->frame() > out_frame || 
 					base_level_s()->frame() > out_frame || base_layer_s()->frame() > out_frame || layer_count_s()->frame() > out_frame || 
 					swizzle_r_s()->frame() > out_frame || swizzle_g_s()->frame() > out_frame || swizzle_b_s()->frame() > out_frame || swizzle_a_s()->frame() > out_frame)
 				{
-					if (out$o)
-						Imageview::destroy(out$o);
-					if (image$i && level_count$i > 0 && layer_count$i > 0)
-						out$o = Imageview::create(image$i, type$i, base_level$i, level_count$i, base_layer$i, layer_count$i, swizzle_r$i, swizzle_g$i, swizzle_b$i, swizzle_a$i);
+					if (out)
+						Imageview::destroy(out);
+					if (image && level_count > 0 && layer_count > 0)
+						out = Imageview::create(image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
 					else
 					{
 						printf("cannot create imageview\n");
 
-						out$o = nullptr;
+						out = nullptr;
 					}
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~Imageview$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_Imageview)()
 			{
-				if (out$o)
-					Imageview::destroy(out$o);
+				if (out)
+					Imageview::destroy(out);
 			}
 
 		};
 
-		struct ImageviewGeneral$
+		struct R(R_ImageviewGeneral, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(Image*, image);
+			BASE0;
+			RV(Image*, image, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Imageview*, out);
+			BASE1;
+			RV(Imageview*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				if (image_s()->frame() > out_s()->frame())
 				{
-					if (out$o)
-						Imageview::destroy(out$o);
-					if (image$i)
-						out$o = Imageview::create(image$i);
+					if (out)
+						Imageview::destroy(out);
+					if (image)
+						out = Imageview::create(image);
 					else
 					{
 						printf("cannot create imageview general\n");
 
-						out$o = nullptr;
+						out = nullptr;
 					}
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~ImageviewGeneral$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_ImageviewGeneral)()
 			{
-				if (out$o)
-					Imageview::destroy(out$o);
+				if (out)
+					Imageview::destroy(out);
 			}
 		};
 
-		struct ImageviewsGeneral$
+		struct R(R_ImageviewsGeneral, flame, graphics)
 		{
 			BP::Node* n;
 
-			BP_IN_BASE_LINE;
-			BP_IN(Array<Image*>*, images);
+			BASE0;
+			RV(Array<Image*>*, images, i);
 
-			BP_OUT_BASE_LINE;
-			BP_OUT(Array<Imageview*>, out);
+			BASE1;
+			RV(Array<Imageview*>, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void update$(uint frame)
+			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				if (images_s()->frame() > out_s()->frame())
 				{
-					for (auto i = 0; i < out$o.s; i++)
-						Imageview::destroy(out$o[i]);
-					if (images$i && images$i->s)
+					for (auto i = 0; i < out.s; i++)
+						Imageview::destroy(out[i]);
+					if (images && images->s)
 					{
-						out$o.resize(images$i->s);
-						for (auto i = 0; i < out$o.s; i++)
-							out$o.v[i] = Imageview::create(images$i->at(i));
+						out.resize(images->s);
+						for (auto i = 0; i < out.s; i++)
+							out.v[i] = Imageview::create(images->at(i));
 					}
 					else
 					{
 						printf("cannot create imageviews general\n");
 
-						out$o.resize(0);
+						out.resize(0);
 					}
 					out_s()->set_frame(frame);
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS ~ImageviewsGeneral$()
+			FLAME_GRAPHICS_EXPORTS RF(~R_ImageviewsGeneral)()
 			{
-				for (auto i = 0; i < out$o.s; i++)
-					Imageview::destroy(out$o[i]);
+				for (auto i = 0; i < out.s; i++)
+					Imageview::destroy(out[i]);
 			}
 		};
 

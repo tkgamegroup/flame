@@ -1,4 +1,5 @@
 #include <flame/serialize.h>
+#include <flame/foundation/foundation.h>
 
 #include <Windows.h>
 #include <ImageHlp.h>
@@ -102,8 +103,11 @@ int main(int argc, char **args)
 	{
 		printf("generating typeinfo");
 
+		auto last_curr_path = get_curr_path();
+		set_curr_path(get_app_path().v);
 		for (auto& d : dependencies)
 			TypeinfoDatabase::load(std::filesystem::path(d).replace_extension(L".typeinfo").c_str(), true, false);
+		set_curr_path(last_curr_path.v);
 
 		TypeinfoDatabase::collect(filename.c_str(), !pdb_filename.empty() ? pdb_filename.c_str() : nullptr);
 
