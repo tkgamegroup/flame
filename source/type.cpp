@@ -864,7 +864,7 @@ namespace flame
 				std::getline(file, line);
 				static std::regex reg_R(R"(\sR\((.*)\))");
 				static std::regex reg_RV(R"(\sRV\((.*)\))");
-				static std::regex reg_RF(R"(\sRF\((\w+)\))");
+				static std::regex reg_RF(R"(\sRF\(([\~\w]+)\))");
 				std::smatch res;
 				if (std::regex_search(line, res, reg_R))
 				{

@@ -20,50 +20,19 @@
 
 #include <flame/reflect_macros.h>
 
-namespace flame
+struct R(DstImage)
 {
-	struct R(DstImage)
+	BP::Node* n;
+
+	BASE1;
+	RV(Image*, img, o);
+	RV(TargetType, type, o);
+	RV(Imageview*, view, o);
+	RV(uint, idx, o);
+
+	__declspec(dllexport) void RF(update)(uint frame)
 	{
-		BP::Node* n;
-
-		BASE1;
-		RV(Image*, img, o);
-		RV(TargetType, type, o);
-		RV(Imageview*, view, o);
-		RV(uint, idx, o);
-
-		__declspec(dllexport) void RF(update)(uint frame)
-		{
-			if (img_s()->frame() == -1)
-			{
-				if (idx > 0)
-					app.s_2d_renderer->canvas->set_image(idx, nullptr);
-				if (img)
-					Image::destroy(img);
-				if (view)
-					Imageview::destroy(view);
-				auto d = Device::default_one();
-				if (d)
-				{
-					img = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled);
-					(img)->init(Vec4c(0, 0, 0, 255));
-				}
-				else
-					img = nullptr;
-				type = TargetImageview;
-				type_s()->set_frame(frame);
-				if (img)
-				{
-					view = Imageview::create(img);
-					idx = app.s_2d_renderer->canvas->set_image(-1, view);
-				}
-				img_s()->set_frame(frame);
-				view_s()->set_frame(frame);
-				idx_s()->set_frame(frame);
-			}
-		}
-
-		__declspec(dllexport) RF(~DstImage)()
+		if (img_s()->frame() == -1)
 		{
 			if (idx > 0)
 				app.s_2d_renderer->canvas->set_image(idx, nullptr);
@@ -71,43 +40,71 @@ namespace flame
 				Image::destroy(img);
 			if (view)
 				Imageview::destroy(view);
-		}
-	};
-
-	struct R(CmdBufs)
-	{
-		BP::Node* n;
-
-		BASE1;
-		RV(Array<Commandbuffer*>, out, o);
-
-		__declspec(dllexport) void RF(active_update)(uint frame)
-		{
-			if (out_s()->frame() == -1)
+			auto d = Device::default_one();
+			if (d)
 			{
-				for (auto i = 0; i < out.s; i++)
-					Commandbuffer::destroy(out[i]);
-				auto d = Device::default_one();
-				if (d)
-				{
-					out.resize(1);
-					out[0] = Commandbuffer::create(d->gcp);
-				}
-				else
-					out.resize(0);
-				out_s()->set_frame(frame);
+				img = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled);
+				(img)->init(Vec4c(0, 0, 0, 255));
 			}
-
-			app.extra_cbs.push_back(out[0]);
+			else
+				img = nullptr;
+			type = TargetImageview;
+			type_s()->set_frame(frame);
+			if (img)
+			{
+				view = Imageview::create(img);
+				idx = app.s_2d_renderer->canvas->set_image(-1, view);
+			}
+			img_s()->set_frame(frame);
+			view_s()->set_frame(frame);
+			idx_s()->set_frame(frame);
 		}
+	}
 
-		__declspec(dllexport) RF(~CmdBufs)()
+	__declspec(dllexport) RF(~DstImage)()
+	{
+		if (idx > 0)
+			app.s_2d_renderer->canvas->set_image(idx, nullptr);
+		if (img)
+			Image::destroy(img);
+		if (view)
+			Imageview::destroy(view);
+	}
+};
+
+struct R(CmdBufs)
+{
+	BP::Node* n;
+
+	BASE1;
+	RV(Array<Commandbuffer*>, out, o);
+
+	__declspec(dllexport) void RF(active_update)(uint frame)
+	{
+		if (out_s()->frame() == -1)
 		{
 			for (auto i = 0; i < out.s; i++)
 				Commandbuffer::destroy(out[i]);
+			auto d = Device::default_one();
+			if (d)
+			{
+				out.resize(1);
+				out[0] = Commandbuffer::create(d->gcp);
+			}
+			else
+				out.resize(0);
+			out_s()->set_frame(frame);
 		}
-	};
-}
+
+		app.extra_cbs.push_back(out[0]);
+	}
+
+	__declspec(dllexport) RF(~CmdBufs)()
+	{
+		for (auto i = 0; i < out.s; i++)
+			Commandbuffer::destroy(out[i]);
+	}
+};
 
 const auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
 

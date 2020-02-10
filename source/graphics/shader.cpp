@@ -765,11 +765,11 @@ namespace flame
 			}
 		};
 
-		const std::regex shader_regex_in(R"(^\s*in\s+([\w]+)\s+i_([\w]+)\s*;\s*$)");
-		const std::regex shader_regex_out(R"(^\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;\s*$)");
-		const std::regex shader_regex_pc(R"(^\s*pushconstant\s*$)");
-		const std::regex shader_regex_ubo(R"(^\s*uniform\s+([\w]+)\s*$)");
-		const std::regex shader_regex_tex(R"(^\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;\s*$)");
+		const std::regex shader_regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
+		const std::regex shader_regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
+		const std::regex shader_regex_pc(R"(\s*pushconstant)");
+		const std::regex shader_regex_ubo(R"(\s*uniform\s+([\w]+))");
+		const std::regex shader_regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
 
 		void compile_shaders(DevicePrivate* d, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
 		{
