@@ -268,7 +268,7 @@ namespace flame
 			return c;
 		}
 
-		inline Entity* e_empty(int pos = -1)
+		inline Entity* e_empty()
 		{
 			Entity* e;
 			if (next_entity)
@@ -280,7 +280,26 @@ namespace flame
 				e = Entity::create();
 			auto p = current_parent();
 			if (p)
+			{
+				auto pos = (int)p->child_count() - 1;
+				while (pos >= 0)
+				{
+					auto c = p->child(pos);
+					if (c->get_component(cBringToFront) || c->get_component(cSizeDragger))
+						pos--;
+					else if (c->get_component(cSplitter))
+					{
+						if (pos == 0)
+							pos--;
+						else
+							break;
+					}
+					else
+						break;
+				}
+				pos++;
 				p->add_child(e, pos);
+			}
 			set_current_entity(e);
 			return e;
 		}
@@ -921,20 +940,9 @@ namespace flame
 
 		inline Entity* e_begin_docker_layout(LayoutType type)
 		{
-			auto is_parent_container = is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") });
-			auto pos = -1;
-			if (is_parent_container)
-				pos = 0;
-			else
-			{
-				if (current_parent()->child_count() == 1)
-					pos = 0;
-				else
-					pos = 2;
-			}
-			auto e = e_empty(pos);
+			auto e = e_empty();
 			make_docker_layout(e, type);
-			if (!is_parent_container)
+			if (!is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") }))
 			{
 				auto ca = e->get_component(cAligner);
 				ca->x_align_ = AlignxFree;
@@ -952,20 +960,9 @@ namespace flame
 
 		inline Entity* e_begin_docker()
 		{
-			auto is_parent_container = is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") });
-			auto pos = -1;
-			if (is_parent_container)
-				pos = 0;
-			else
-			{
-				if (current_parent()->child_count() == 1)
-					pos = 0;
-				else
-					pos = 2;
-			}
-			auto e = e_empty(pos);
+			auto e = e_empty();
 			make_docker(e);
-			if (!is_parent_container)
+			if (!is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") }))
 			{
 				auto ca = e->get_component(cAligner);
 				ca->x_align_ = AlignxFree;
