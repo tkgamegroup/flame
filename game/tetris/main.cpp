@@ -21,12 +21,14 @@ struct MyApp : App
 	cTileMap* board;
 	cText* text_time;
 	cText* text_lines;
+	cText* text_score;
 
 	bool just_down_key[KEY_COUNT];
 
 	float time;
 	float play_time;
 	uint clear_lines;
+	uint score;
 	bool gaming;
 	Vec2i mino_pos;
 	MinoType mino_type;
@@ -34,6 +36,8 @@ struct MyApp : App
 	Vec2i mino_coords[3];
 	uint mino_bottom_dist;
 	uint mino_ticks;
+	uint mino_pack_idx;
+	MinoType mino_pack[MinoTypeCount];
 
 	MyApp()
 	{
@@ -46,12 +50,23 @@ struct MyApp : App
 		time = 0.f;
 		play_time = 0.f;
 		clear_lines = 0;
+		score = 0;
 		gaming = true;
 		mino_pos.x() = 0;
 		mino_pos.y() = -1;
 		mino_rotation = 0;
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
+		new_mino_pack();
+	}
+
+	void new_mino_pack()
+	{
+		mino_pack_idx = 0;
+		for (auto i = 0; i < MinoTypeCount; i++)
+			mino_pack[i] = (MinoType)i;
+		for (auto i = 0; i < MinoTypeCount; i++)
+			std::swap(mino_pack[i], mino_pack[rand() % MinoTypeCount]);
 	}
 
 	void toggle_board(int idx, uint offset_y)
@@ -159,7 +174,9 @@ struct MyApp : App
 				if (mino_pos.y() == -1)
 				{
 					mino_pos = Vec2i(4, 3);
-					mino_type = MinoType(rand() % MinoTypeCount);
+					mino_type = mino_pack[mino_pack_idx++];
+					if (mino_pack_idx >= MinoTypeCount)
+						new_mino_pack();
 					mino_rotation = 0;
 					for (auto i = 0 ; i < 3; i++)
 						mino_coords[i] = g_mino_coords[mino_type][i];
@@ -222,11 +239,11 @@ struct MyApp : App
 								clear_lines++;
 							}
 						}
-						if (!line_empty(3))
+						if (!line_empty(3) || clear_lines >= 40)
 						{
 							gaming = false;
 							ui::e_begin_dialog(Vec4c(100));
-							ui::e_text(L"Game Over");
+							ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
 							ui::e_button(Icon_REPEAT, [](void*) {
 								ui::remove_top_layer(app.root);
 								app.board->clear_cells();
@@ -255,6 +272,7 @@ struct MyApp : App
 
 				text_time->set_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
 				text_lines->set_text((L"Lines: " + std::to_wstring(clear_lines)).c_str());
+				text_score->set_text((L"Score: " + std::to_wstring(score)).c_str());
 			}
 
 			for (auto i = 0; i < KEY_COUNT; i++)
@@ -318,6 +336,8 @@ int main(int argc, char **args)
 		app.text_time = ui::e_text(L"Time:")->get_component(cText);
 		ui::next_element_pos = Vec2f(450.f, 70.f);
 		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
+		ui::next_element_pos = Vec2f(450.f, 120.f);
+		app.text_score = ui::e_text(L"Score:")->get_component(cText);
 		ui::pop_style(ui::FontSize);
 
 		ui::e_text(L"");
