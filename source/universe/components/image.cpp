@@ -17,9 +17,9 @@ namespace flame
 			element = nullptr;
 
 			id = 0;
-			uv0 = Vec2f(0.f);
-			uv1 = Vec2f(1.f);
-			color = Vec4c(255);
+			uv0 = 0.f;
+			uv1 = 1.f;
+			color = 255;
 
 			draw_cmd = nullptr;
 		}
@@ -61,6 +61,8 @@ namespace flame
 	struct R(Serializer_cImage, flame,)
 	{
 		ulonglong id;
+		Vec2f pos_offset;
+		Vec2f size_offset;
 		Vec2f uv0;
 		Vec2f uv1;
 		Vec4c color;
@@ -68,9 +70,11 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cImage)()
 		{
 			id = 0;
-			uv0 = Vec2f(0.f);
-			uv1 = Vec2f(1.f);
-			color = Vec4c(255);
+			pos_offset = 0.f;
+			size_offset = 0.f;
+			uv0 = 0.f;
+			uv1 = 1.f;
+			color = 255;
 		}
 
 		FLAME_UNIVERSE_EXPORTS RF(~Serializer_cImage)()
@@ -99,9 +103,9 @@ namespace flame
 			{
 				auto atlas = ((graphics::Canvas*)w->find_object(FLAME_CHASH("Canvas"), 0))->get_atlas(c->id >> 16);
 				id = (atlas->id << 32) + atlas->tile(c->id & 0xffff).id;
-				color = c->color;
 				uv0 = c->uv0;
 				uv1 = c->uv1;
+				color = c->color;
 			}
 			else
 			{
@@ -113,14 +117,14 @@ namespace flame
 					id = (atlas->id << 32) + atlas->tile(c->id & 0xffff).id;
 				}
 					break;
-				case offsetof(Serializer_cImage, color):
-					color = c->color;
-					break;
 				case offsetof(Serializer_cImage, uv0):
 					uv0 = c->uv0;
 					break;
 				case offsetof(Serializer_cImage, uv1):
 					uv1 = c->uv1;
+					break;
+				case offsetof(Serializer_cImage, color):
+					color = c->color;
 					break;
 				}
 			}
@@ -149,14 +153,14 @@ namespace flame
 					c->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
 				}
 					break;
-				case offsetof(Serializer_cImage, color):
-					c->color = color;
-					break;
 				case offsetof(Serializer_cImage, uv0):
 					c->uv0 = uv0;
 					break;
 				case offsetof(Serializer_cImage, uv1):
 					c->uv1 = uv1;
+					break;
+				case offsetof(Serializer_cImage, color):
+					c->color = color;
 					break;
 				}
 			}

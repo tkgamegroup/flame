@@ -77,7 +77,7 @@ struct MyApp : App
 		ui::push_parent(root);
 		ui::push_style_1u(ui::FontSize, 20);
 
-		const auto block_size = 24.f;
+		const auto block_size = 16.f;
 
 		ui::next_element_pos = Vec2f(100.f, 20.f);
 		ui::e_text(L"Hold");
