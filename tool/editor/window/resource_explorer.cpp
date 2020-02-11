@@ -80,7 +80,7 @@ struct cResourceExplorer : Component
 	cResourceExplorer() :
 		Component("cResourceExplorer")
 	{
-		auto canvas = app.s_2d_renderer->canvas;
+		auto canvas = app.canvas;
 		folder_img = Image::create_from_file(app.d, L"../art/ui/imgs/folder.png");
 		folder_img_v = Imageview::create(folder_img);
 		folder_img_idx = canvas->set_image(-1, folder_img_v);
@@ -114,7 +114,7 @@ struct cResourceExplorer : Component
 
 	~cResourceExplorer()
 	{
-		auto canvas = app.s_2d_renderer->canvas;
+		auto canvas = app.canvas;
 		canvas->set_image(folder_img_idx, nullptr);
 		Imageview::destroy(folder_img_v);
 		Image::destroy(folder_img);

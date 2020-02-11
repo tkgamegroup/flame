@@ -72,11 +72,17 @@ namespace flame
 		return c;
 	}
 
+	struct World;
+
 	struct Universe
 	{
 		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);
 		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
-		FLAME_UNIVERSE_EXPORTS uint find_id(Object* o);
+
+		FLAME_UNIVERSE_EXPORTS uint world_count();
+		FLAME_UNIVERSE_EXPORTS World* world(uint idx);
+		FLAME_UNIVERSE_EXPORTS void add_world(World* w);
+		FLAME_UNIVERSE_EXPORTS void remove_world(World* w);
 
 		FLAME_UNIVERSE_EXPORTS void update();
 

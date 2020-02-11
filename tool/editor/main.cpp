@@ -1,57 +1,19 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/synchronize.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/world.h>
-#include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/ui/utils.h>
-
-#include "../renderpath/canvas/canvas.h"
 
 #include "app.h"
 #include "window/resource_explorer.h"
 
-void App::create()
+void MyApp::create()
 {
-	w = SysWindow::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable);
-	w->set_maximized(true);
-	d = Device::create(true);
-	scr = SwapchainResizable::create(d, w);
-	fence = Fence::create(d);
-	sc_cbs.resize(scr->sc()->image_count());
-	for (auto i = 0; i < sc_cbs.s; i++)
-		sc_cbs[i] = Commandbuffer::create(d->gcp);
-	render_finished = Semaphore::create(d);
-	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
-	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
-	TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
-	TypeinfoDatabase::load(L"editor.typeinfo", true, true);
+	App::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true);
 
-	wchar_t* fonts[] = { 
-		L"c:/windows/fonts/msyh.ttc", 
-		L"../art/font_awesome.ttf"
-	};
-	font_atlas_pixel = FontAtlas::create(d, FontDrawPixel, 2, fonts);
+	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	ui::style_set_to_light();
 
-	app.u = Universe::create();
-	app.u->add_object(app.w);
-
-	auto w = World::create(app.u);
-	w->add_system(sLayoutManagement::create());
-	w->add_system(sEventDispatcher::create());
-
-	s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", scr, FLAME_CHASH("SwapchainResizable"), &sc_cbs);
-	w->add_system(s_2d_renderer);
-	s_2d_renderer->canvas->add_font(app.font_atlas_pixel);
-	s_2d_renderer->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-
-	root = w->root();
+	root = u->world(0)->root();
 
 	ui::set_current_entity(root);
 	c_element_root = ui::c_element();
@@ -88,31 +50,7 @@ void App::create()
 	open_resource_explorer(L"..", Vec2f(5, 724.f));
 }
 
-void App::run()
-{
-	auto sc = scr->sc();
-
-	if (sc)
-		sc->acquire_image();
-
-	fence->wait();
-	looper().process_events();
-
-	c_element_root->set_size(Vec2f(w->size));
-	u->update();
-
-	if (sc)
-	{
-		std::vector<Commandbuffer*> cbs;
-		cbs.push_back(sc_cbs[sc->image_index()]);
-		cbs.insert(cbs.begin(), extra_cbs.begin(), extra_cbs.end());
-		extra_cbs.clear();
-		d->gq->submit(cbs.size(), cbs.data(), sc->image_avalible(), render_finished, fence);
-		d->gq->present(sc, render_finished);
-	}
-}
-
-App app;
+MyApp app;
 
 Entity* create_drag_edit(bool is_float)
 {
@@ -202,10 +140,9 @@ int main(int argc, char **args)
 {
 	app.create();
 
-	looper().loop([](void* c) {
-		auto app = (*(App**)c);
-		app->run();
-	}, new_mail_p(&app));
+	looper().loop([](void*) {
+		app.run();
+	}, Mail<>());
 
 	return 0;
 }

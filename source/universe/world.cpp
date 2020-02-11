@@ -1,13 +1,11 @@
 #include <flame/serialize.h>
-#include "universe_private.h"
 #include "world_private.h"
 
 namespace flame
 {
-	WorldPrivate::WorldPrivate(Universe* u)
+	WorldPrivate::WorldPrivate()
 	{
-		universe_ = u;
-		((UniversePrivate*)u)->worlds.emplace_back(this);
+		universe_ = nullptr;
 
 		auto e = new EntityPrivate;
 		e->world_ = this;
@@ -90,9 +88,9 @@ namespace flame
 		return ((WorldPrivate*)this)->root.get();
 	}
 
-	World* World::create(Universe* u)
+	World* World::create()
 	{
-		return new WorldPrivate(u);
+		return new WorldPrivate();
 	}
 
 	void World::destroy(World* w)

@@ -35,7 +35,7 @@ struct R(DstImage)
 		if (img_s()->frame() == -1)
 		{
 			if (idx > 0)
-				app.s_2d_renderer->canvas->set_image(idx, nullptr);
+				app.canvas->set_image(idx, nullptr);
 			if (img)
 				Image::destroy(img);
 			if (view)
@@ -53,7 +53,7 @@ struct R(DstImage)
 			if (img)
 			{
 				view = Imageview::create(img);
-				idx = app.s_2d_renderer->canvas->set_image(-1, view);
+				idx = app.canvas->set_image(-1, view);
 			}
 			img_s()->set_frame(frame);
 			view_s()->set_frame(frame);
@@ -64,7 +64,7 @@ struct R(DstImage)
 	__declspec(dllexport) RF(~DstImage)()
 	{
 		if (idx > 0)
-			app.s_2d_renderer->canvas->set_image(idx, nullptr);
+			app.canvas->set_image(idx, nullptr);
 		if (img)
 			Image::destroy(img);
 		if (view)
@@ -96,7 +96,7 @@ struct R(CmdBufs)
 			out_s()->set_frame(frame);
 		}
 
-		app.extra_cbs.push_back(out[0]);
+		app.cbs.push_back(out[0]);
 	}
 
 	__declspec(dllexport) RF(~CmdBufs)()

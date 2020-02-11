@@ -36,6 +36,35 @@ namespace flame
 		return nullptr;
 	}
 
+	uint Universe::world_count()
+	{
+		return ((UniversePrivate*)this)->worlds.size();
+	}
+
+	World* Universe::world(uint idx)
+	{
+		return ((UniversePrivate*)this)->worlds[idx].get();
+	}
+
+	void Universe::add_world(World* w)
+	{
+		w->universe_ = this;
+		((UniversePrivate*)this)->worlds.emplace_back((WorldPrivate*)w);
+	}
+
+	void Universe::remove_world(World* w)
+	{
+		auto& worlds = ((UniversePrivate*)this)->worlds;
+		for (auto it = worlds.begin(); it != worlds.end(); it++)
+		{
+			if (it->get() == w)
+			{
+				worlds.erase(it);
+				return;
+			}
+		}
+	}
+
 	void Universe::update()
 	{
 		((UniversePrivate*)this)->update();

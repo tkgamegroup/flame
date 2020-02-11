@@ -30,7 +30,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS Entity* root() const;
 
-		FLAME_UNIVERSE_EXPORTS static World* create(Universe* u);
+		FLAME_UNIVERSE_EXPORTS static World* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);
 	};
 

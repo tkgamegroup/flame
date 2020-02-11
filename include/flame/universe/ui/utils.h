@@ -905,7 +905,7 @@ namespace flame
 			e->set_name("docker_static_container");
 			auto ce = c_element();
 			ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			ce->color_ = Vec4c(128, 128, 128, 255);
+			ce->color_ = style_4c(WindowColor);
 			c_event_receiver();
 			c_aligner(SizeFitParent, SizeFitParent);
 			c_layout(LayoutFree);

@@ -1,18 +1,8 @@
 #include <flame/serialize.h>
-#include <flame/foundation/bitmap.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/graphics/device.h>
-#include <flame/graphics/synchronize.h>
-#include <flame/graphics/swapchain.h>
-#include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/world.h>
-#include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/2d_renderer.h>
-#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/ui/utils.h>
-
-#include "../renderpath/canvas/canvas.h"
+#include <flame/utils/app.h>
 
 #include "mino.h"
 #include "key.h"
@@ -24,21 +14,9 @@ const auto board_width = 10U;
 const auto board_height = 24U;
 const auto down_ticks = 24U;
 
-struct App
+struct MyApp : App
 {
-	SysWindow* w;
-	Device* d;
-	SwapchainResizable* scr;
-	Fence* fence;
-	std::vector<Commandbuffer*> cbs;
-	Semaphore* render_finished;
-
-	FontAtlas* font_atlas;
-
-	Universe* u;
 	sEventDispatcher* s_event_dispatcher;
-	Entity* root;
-	cElement* c_element_root;
 
 	cTileMap* board;
 
@@ -53,7 +31,7 @@ struct App
 	uint mino_bottom_dist;
 	uint mino_ticks;
 
-	App()
+	MyApp()
 	{
 		init_mino();
 		init_key();
@@ -148,16 +126,8 @@ struct App
 		return false;
 	}
 
-	void run()
+	void on_frame() override
 	{
-		auto sc = scr->sc();
-
-		if (sc)
-			sc->acquire_image();
-
-		fence->wait();
-		looper().process_events();
-
 		auto key_states = s_event_dispatcher->key_states;
 		for (auto i = 0; i < KEY_COUNT; i++)
 		{
@@ -249,7 +219,7 @@ struct App
 							ui::e_begin_dialog(Vec4c(100));
 							ui::e_text(L"Game Over");
 							ui::e_button(Icon_REPEAT, [](void* c) {
-								auto thiz = *(App**)c;
+								auto thiz = *(MyApp**)c;
 								ui::remove_top_layer(thiz->root);
 								thiz->board->clear_cells();
 								thiz->gaming = true;
@@ -281,54 +251,19 @@ struct App
 
 			time -= frame_rate;
 		}
-
-		c_element_root->set_size(Vec2f(w->size));
-		u->update();
-
-		if (sc)
-		{
-			d->gq->submit(1, &cbs[sc->image_index()], sc->image_avalible(), render_finished, fence);
-			d->gq->present(sc, render_finished);
-		}
 	}
 }app;
 
 int main(int argc, char **args)
 {
-	app.w = SysWindow::create("Tetris", Vec2u(800, 600), WindowFrame);
-	app.d = Device::create(true);
-	app.scr = SwapchainResizable::create(app.d, app.w);
-	app.fence = Fence::create(app.d);
-	app.cbs.resize(app.scr->sc()->image_count());
-	for (auto i = 0; i < app.cbs.size(); i++)
-		app.cbs[i] = Commandbuffer::create(app.d->gcp);
-	app.render_finished = Semaphore::create(app.d);
-	TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
-	TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
-	TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
+	app.create("Tetris", Vec2u(800, 600), WindowFrame);
 
-	app.u = Universe::create();
-	app.u->add_object(app.w);
+	auto w = app.u->world(0);
 
-	auto w = World::create(app.u);
-	w->add_system(sLayoutManagement::create());
-	app.s_event_dispatcher = sEventDispatcher::create();
-	w->add_system(app.s_event_dispatcher);
-	auto s_2d_renderer = s2DRenderer::create(L"../renderpath/canvas/bp", app.scr, FLAME_CHASH("SwapchainResizable"), &app.cbs);
-	w->add_system(s_2d_renderer);
+	app.s_event_dispatcher = w->get_system(sEventDispatcher);
 
 	auto atlas = Atlas::load(app.d, L"../game/tetris/art/atlas/main.png");
-	{
-		auto canvas = s_2d_renderer->canvas;
-		wchar_t* fonts[] = {
-			L"c:/windows/fonts/msyh.ttc",
-			L"../art/font_awesome.ttf"
-		};
-		app.font_atlas = FontAtlas::create(app.d, FontDrawPixel, 2, fonts);
-		canvas->add_font(app.font_atlas);
-
-		canvas->add_atlas(atlas);
-	}
+	app.canvas->add_atlas(atlas);
 
 	auto root = w->root();
 	app.root = root;
@@ -336,7 +271,7 @@ int main(int argc, char **args)
 	app.c_element_root = ui::c_element();
 	ui::c_layout();
 
-	ui::push_font_atlas(app.font_atlas);
+	ui::push_font_atlas(app.font_atlas_pixel);
 	ui::set_current_root(root);
 
 	ui::push_parent(root);
@@ -378,9 +313,9 @@ int main(int argc, char **args)
 
 	srand(time(0));
 
-	looper().loop([](void* c) {
-		(*(App**)c)->run();
-	}, new_mail_p(&app));
+	looper().loop([](void*) {
+		app.run();
+	}, Mail<>());
 
 	return 0;
 }

@@ -9,7 +9,7 @@
 
 void open_image_viewer(uint id, const Vec2f& pos)
 {
-	auto image_size = (Vec2f)app.s_2d_renderer->canvas->get_image(id)->image()->size;
+	auto image_size = (Vec2f)app.canvas->get_image(id)->image()->size;
 
 	ui::push_parent(app.root);
 	ui::next_element_pos = pos;
