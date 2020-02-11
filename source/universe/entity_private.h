@@ -27,6 +27,7 @@ namespace flame
 		void reposition_child(EntityPrivate* e, int position);
 		void mark_dying();
 		void remove_child(EntityPrivate* e, bool destroy);
+		void remove_children(int from, int to, bool destroy);
 		EntityPrivate* copy();
 		void update_visibility();
 	};

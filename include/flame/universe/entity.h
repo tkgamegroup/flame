@@ -49,7 +49,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Entity* find_child(const char* name) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e, int position = -1); /* -1 is end */
 		FLAME_UNIVERSE_EXPORTS void reposition_child(Entity* e, int position); /* -1 is last */
-		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true); /* if e==InvalidPointer, then remove all */
+		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);
+		FLAME_UNIVERSE_EXPORTS void remove_children(int from, int to /* -1 is end */, bool destroy = true);
 
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
 

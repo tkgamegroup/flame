@@ -151,7 +151,7 @@ struct cResourceExplorer : Component
 			auto address_bar = thiz->address_bar;
 			auto list = thiz->e_list;
 
-			address_bar->remove_child((Entity*)INVALID_POINTER);
+			address_bar->remove_children(0, -1);
 			ui::push_parent(address_bar);
 			ui::push_style_4c(ui::ButtonColorNormal, Vec4c(0));
 
@@ -218,7 +218,7 @@ struct cResourceExplorer : Component
 			looper().clear_events(FLAME_CHASH("update thumbnail"));
 
 			list->get_component(cList)->set_selected(nullptr, false);
-			list->remove_child((Entity*)INVALID_POINTER);
+			list->remove_child(0, -1);
 
 			std::vector<std::filesystem::path> dirs;
 			std::vector<std::filesystem::path> files;

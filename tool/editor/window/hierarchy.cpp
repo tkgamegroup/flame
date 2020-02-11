@@ -201,7 +201,7 @@ void cHierarchy::refresh_selected()
 
 void cHierarchy::refresh()
 {
-	e_tree->remove_child((Entity*)INVALID_POINTER);
+	e_tree->remove_children(0, -1);
 	ui::push_parent(e_tree);
 	create_tree_node(this, editor->prefab);
 	ui::pop_parent();

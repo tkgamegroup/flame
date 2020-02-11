@@ -174,56 +174,58 @@ namespace flame
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
-		if (e == INVALID_POINTER)
+		for (auto it = children.begin(); it != children.end(); it++)
 		{
-			for (auto& c : components)
+			if (it->get() == e)
 			{
-				for (auto& e : children)
+				for (auto _it = it + 1; _it != children.end(); _it++)
+					(*_it)->order_ -= 1;
+				for (auto& c : components)
 				{
 					for (auto& _c : e->components)
 						c.second->on_child_component_removed(_c.second.get());
 				}
-			}
-			for (auto& e : children)
-			{
-				e->on_removed_listeners.call(e.get());
-				leave_world(e.get());
+				e->on_removed_listeners.call(e);
+				leave_world(e);
 				if (!destroy)
 				{
 					e->parent = nullptr;
-					e.release();
+					it->release();
 				}
 				else
 					e->mark_dying();
+				children.erase(it);
+				return;
 			}
-			children.clear();
 		}
-		else
+	}
+
+	void EntityPrivate::remove_children(int from, int to, bool destroy)
+	{
+		for (auto& c : components)
 		{
-			for (auto it = children.begin(); it != children.end(); it++)
+			for (auto& e : children)
 			{
-				if (it->get() == e)
-				{
-					for (auto _it = it + 1; _it != children.end(); _it++)
-						(*_it)->order_ -= 1;
-					for (auto& c : components)
-					{
-						for (auto& _c : e->components)
-							c.second->on_child_component_removed(_c.second.get());
-					}
-					e->on_removed_listeners.call(e);
-					leave_world(e);
-					if (!destroy)
-					{
-						e->parent = nullptr;
-						it->release();
-					}
-					else
-						e->mark_dying();
-					children.erase(it);
-					return;
-				}
+				for (auto& _c : e->components)
+					c.second->on_child_component_removed(_c.second.get());
 			}
+		}
+		if (to == -1)
+			to = children.size() - 1;
+		auto count = to - from + 1;
+		for (auto i = 0; i < count; i++)
+		{
+			auto& e = children[from];
+			e->on_removed_listeners.call(e.get());
+			leave_world(e.get());
+			if (!destroy)
+			{
+				e->parent = nullptr;
+				e.release();
+			}
+			else
+				e->mark_dying();
+			children.erase(children.begin() + from);
 		}
 	}
 
@@ -327,6 +329,11 @@ namespace flame
 	void Entity::remove_child(Entity* e, bool destroy)
 	{
 		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
+	}
+
+	void Entity::remove_children(int from, int to, bool destroy)
+	{
+		((EntityPrivate*)this)->remove_children(from, to, destroy);
 	}
 
 	Entity* Entity::copy()

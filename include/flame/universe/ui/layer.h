@@ -28,7 +28,7 @@ namespace flame
 			auto l = get_top_layer(parent);
 
 			if (take)
-				l->remove_child((Entity*)INVALID_POINTER, false);
+				l->remove_children(0, -1, false);
 			l->dying_ = true;
 			looper().add_event([](void* c) {
 				auto l = *(Entity**)c;

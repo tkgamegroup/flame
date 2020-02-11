@@ -161,7 +161,7 @@ int main(int argc, char** args)
 				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
-					e_scene->remove_child((Entity*)INVALID_POINTER);
+					e_scene->remove_children(0, -1);
 
 					auto e_box1 = Entity::create();
 					e_scene->add_child(e_box1);
@@ -212,7 +212,7 @@ int main(int argc, char** args)
 				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
-					e_scene->remove_child((Entity*)INVALID_POINTER);
+					e_scene->remove_child(0, -1);
 				}, new_mail_p(e_scene));
 			}
 		}, new_mail_p(e_scene));
@@ -245,7 +245,7 @@ int main(int argc, char** args)
 				looper().add_event([](void* c) {
 					auto e_scene = *(Entity**)c;
 
-					e_scene->remove_child((Entity*)INVALID_POINTER);
+					e_scene->remove_child(0, -1);
 					if (std::filesystem::exists(L"test.prefab"))
 						e_scene->add_child(Entity::create_from_file(e_scene->world_, L"test.prefab"));
 				}, new_mail_p(e_scene));

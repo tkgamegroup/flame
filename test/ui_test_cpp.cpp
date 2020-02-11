@@ -26,7 +26,7 @@ struct MyApp : App
 				ui::e_begin_menubar_menu(L"Style");
 					ui::e_menu_item(L"Dark", [](void* c) {
 						looper().add_event([](void*) {
-							app.root->remove_child((Entity*)INVALID_POINTER);
+							app.root->remove_children(0, -1);
 							app.canvas->set_clear_color(Vec4c(0, 0, 0, 255));
 							ui::style_set_to_dark();
 							app.create_widgets();
@@ -34,7 +34,7 @@ struct MyApp : App
 					}, Mail<>());
 					ui::e_menu_item(L"Light", [](void* c) {
 						looper().add_event([](void*) {
-							app.root->remove_child((Entity*)INVALID_POINTER);
+							app.root->remove_children(0, -1);
 							app.canvas->set_clear_color(Vec4c(200, 200, 200, 255));
 							ui::style_set_to_light();
 							app.create_widgets();

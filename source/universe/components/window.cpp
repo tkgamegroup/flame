@@ -256,7 +256,7 @@ namespace flame
 					if (p->name_hash() == FLAME_CHASH("docker_floating_container"))
 						p->parent()->remove_child(p);
 					else if (p->name_hash() == FLAME_CHASH("docker_static_container"))
-						p->remove_child((Entity*)INVALID_POINTER);
+						p->remove_children(0, -1);
 					else if (p->name_hash() == FLAME_CHASH("docker_layout"))
 					{
 						auto oth_docker = p->child((docker->order_ & 0xffffff) == 0 ? 2 : 0);

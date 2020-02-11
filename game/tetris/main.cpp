@@ -17,6 +17,7 @@ const auto down_ticks = 24U;
 struct MyApp : App
 {
 	sEventDispatcher* s_event_dispatcher;
+	Atlas* atlas;
 
 	cTileMap* board;
 	cText* text_time;
@@ -43,7 +44,69 @@ struct MyApp : App
 	{
 		init_mino();
 		init_key();
+		gaming = false;
+	}
 
+	void create_home_scene()
+	{
+		ui::push_parent(root);
+
+		ui::e_button(L"40 Lines RTA", [](void*) {
+			looper().add_event([](void*) {
+				app.root->remove_children(1, -1);
+				app.create_game_scene();
+				app.start_game();
+			}, Mail<>());
+		}, Mail<>());
+
+		ui::pop_parent();
+	}
+
+	void create_game_scene()
+	{
+		ui::push_parent(root);
+
+		const auto block_size = 24.f;
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(200.f, 20.f);
+		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
+		{
+			auto ce = ui::c_element();
+			ce->frame_thickness_ = 6.f;
+			ce->frame_color_ = Vec4c(255);
+			ce->clip_children = true;
+		}
+		ui::push_parent(ui::current_entity());
+
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
+		ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
+		ui::c_element();
+		{
+			app.board = cTileMap::create();
+			app.board->cell_size = Vec2f(block_size);
+			app.board->set_size(Vec2u(board_width, board_height));
+			for (auto i = 0; i < atlas->tile_count(); i++)
+				app.board->add_tile((atlas->canvas_slot_ << 16) + i);
+			ui::current_entity()->add_component(app.board);
+		}
+
+		ui::pop_parent();
+
+		ui::push_style_1u(ui::FontSize, 20);
+		ui::next_element_pos = Vec2f(450.f, 20.f);
+		app.text_time = ui::e_text(L"Time:")->get_component(cText);
+		ui::next_element_pos = Vec2f(450.f, 70.f);
+		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
+		ui::next_element_pos = Vec2f(450.f, 120.f);
+		app.text_score = ui::e_text(L"Score:")->get_component(cText);
+		ui::pop_style(ui::FontSize);
+
+		ui::pop_parent();
+	}
+
+	void start_game()
+	{
 		for (auto i = 0; i < KEY_COUNT; i++)
 			just_down_key[i] = false;
 
@@ -149,7 +212,7 @@ struct MyApp : App
 
 	void on_frame() override
 	{
-		auto key_states = s_event_dispatcher->key_states;
+		auto& key_states = s_event_dispatcher->key_states;
 		for (auto i = 0; i < KEY_COUNT; i++)
 		{
 			if (!just_down_key[i])
@@ -291,8 +354,8 @@ int main(int argc, char **args)
 
 	app.s_event_dispatcher = w->get_system(sEventDispatcher);
 
-	auto atlas = Atlas::load(app.d, L"../game/tetris/art/atlas/main.png");
-	app.canvas->add_atlas(atlas);
+	app.atlas = Atlas::load(app.d, L"../game/tetris/art/atlas/main.png");
+	app.canvas->add_atlas(app.atlas);
 
 	auto root = w->root();
 	app.root = root;
@@ -302,53 +365,17 @@ int main(int argc, char **args)
 	ui::push_font_atlas(app.font_atlas_pixel);
 	ui::set_current_root(root);
 
-	ui::push_parent(root);
-
-		const auto block_size = 24.f;
-		ui::e_empty();
-		ui::next_element_pos = Vec2f(200.f, 20.f);
-		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
-		{
-			auto ce = ui::c_element();
-			ce->frame_thickness_ = 6.f;
-			ce->frame_color_ = Vec4c(255);
-			ce->clip_children = true;
-		}
-		ui::push_parent(ui::current_entity());
-
-			ui::e_empty();
-			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
-			ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
-			ui::c_element();
-			{
-				app.board = cTileMap::create();
-				app.board->cell_size = Vec2f(block_size);
-				app.board->set_size(Vec2u(board_width, board_height));
-				for (auto i = 0; i < atlas->tile_count(); i++)
-					app.board->add_tile((atlas->canvas_slot_ << 16) + i);
-				ui::current_entity()->add_component(app.board);
-			}
-
-		ui::pop_parent();
-
-		ui::push_style_1u(ui::FontSize, 20);
-		ui::next_element_pos = Vec2f(450.f, 20.f);
-		app.text_time = ui::e_text(L"Time:")->get_component(cText);
-		ui::next_element_pos = Vec2f(450.f, 70.f);
-		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
-		ui::next_element_pos = Vec2f(450.f, 120.f);
-		app.text_score = ui::e_text(L"Score:")->get_component(cText);
-		ui::pop_style(ui::FontSize);
-
-		ui::e_text(L"");
-		ui::c_aligner(AlignxLeft, AlignyBottom);
-		add_fps_listener([](void* c, uint fps) {
-			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-		}, new_mail_p(ui::current_entity()->get_component(cText)));
-
+	ui::push_parent(app.root);
+	ui::e_text(L"");
+	ui::c_aligner(AlignxLeft, AlignyBottom);
+	add_fps_listener([](void* c, uint fps) {
+		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+	}, new_mail_p(ui::current_entity()->get_component(cText)));
 	ui::pop_parent();
 
 	srand(time(0));
+
+	app.create_home_scene();
 
 	looper().loop([](void*) {
 		app.run();

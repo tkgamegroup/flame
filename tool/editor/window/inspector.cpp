@@ -136,7 +136,7 @@ struct cInspectorPrivate : cInspector
 	{
 		auto selected = editor->selected;
 
-		e_layout->remove_child((Entity*)INVALID_POINTER);
+		e_layout->remove_children(0, -1);
 		ui::push_parent(e_layout);
 		if (!selected)
 			ui::e_text(L"Nothing Selected");

@@ -223,7 +223,7 @@ struct cBPEditor : Component
 
 	void refresh_add_node_menu()
 	{
-		e_add_node_menu->remove_child((Entity*)INVALID_POINTER);
+		e_add_node_menu->remove_children(0, -1);
 
 		std::vector<UdtInfo*> all_udts;
 		auto add_udt = [&](UdtInfo* u) {
@@ -349,7 +349,7 @@ struct cBPEditor : Component
 
 		refresh_add_node_menu();
 
-		e_base->remove_child((Entity*)INVALID_POINTER);
+		e_base->remove_child(0, -1);
 
 		for (auto i = 0; i < bp->library_count(); i++)
 			create_library_entity(bp->library(i));
