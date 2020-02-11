@@ -81,7 +81,7 @@ namespace flame
 		{
 			Image* image;
 			Imageview* imageview;
-			std::vector<AtlasTilePrivate> tiles;
+			std::vector<std::unique_ptr<AtlasTilePrivate>> tiles;
 
 			AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename);
 			~AtlasPrivate();

@@ -151,7 +151,7 @@ namespace flame
 	{
 		struct Tile
 		{
-			std::wstring filename;
+			std::string id;
 			Bitmap* b;
 			Vec2i pos;
 		};
@@ -162,7 +162,7 @@ namespace flame
 		for (auto i = 0; i < input_count; i++)
 		{
 			Tile t;
-			t.filename = std::filesystem::canonical(inputs[i]).lexically_relative(output_dir).make_preferred().wstring();
+			t.id = std::filesystem::path(inputs[i]).filename().string();
 			t.b = Bitmap::create_from_file(inputs[i]);
 			t.pos = Vec2i(-1);
 			tiles.push_back(t);
@@ -200,7 +200,7 @@ namespace flame
 		atlas_file << (border ? "1" : "0") << "\n";
 		for (auto& t : tiles)
 		{
-			atlas_file << w2s(t.filename) + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), t.b->size)) + "\n";
+			atlas_file << t.id + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), t.b->size)) + "\n";
 			Bitmap::destroy(t.b);
 		}
 		atlas_file.close();

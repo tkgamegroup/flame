@@ -19,7 +19,11 @@ struct MyApp : App
 	sEventDispatcher* s_event_dispatcher;
 	Atlas* atlas;
 
-	cTileMap* board;
+	cTileMap* board_main;
+	cTileMap* board_hold;
+	cTileMap* board_next1;
+	cTileMap* board_next2;
+	cTileMap* board_next3;
 	cText* text_time;
 	cText* text_lines;
 	cText* text_score;
@@ -62,11 +66,27 @@ struct MyApp : App
 		ui::pop_parent();
 	}
 
+	void set_board_tiles(cTileMap* m)
+	{
+		for (auto i = 1; i <= 9; i++)
+			m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH(("tile" + std::to_string(i) + ".png").c_str())));
+	}
+
 	void create_game_scene()
 	{
 		ui::push_parent(root);
+		ui::push_style_1u(ui::FontSize, 20);
 
 		const auto block_size = 24.f;
+
+		ui::next_element_pos = Vec2f(100.f, 20.f);
+		ui::e_text(L"Hold");
+
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(70.f, 50.f);
+		ui::next_element_size = Vec2f(block_size * 4);
+		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
+
 		ui::e_empty();
 		ui::next_element_pos = Vec2f(200.f, 20.f);
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
@@ -82,26 +102,43 @@ struct MyApp : App
 		ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
 		ui::c_element();
+		ui::c_image()->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_CHASH("bg.png"));
 		{
-			app.board = cTileMap::create();
-			app.board->cell_size = Vec2f(block_size);
-			app.board->set_size(Vec2u(board_width, board_height));
-			for (auto i = 0; i < atlas->tile_count(); i++)
-				app.board->add_tile((atlas->canvas_slot_ << 16) + i);
-			ui::current_entity()->add_component(app.board);
+			app.board_main = cTileMap::create();
+			app.board_main->cell_size = Vec2f(block_size);
+			app.board_main->set_size(Vec2u(board_width, board_height));
+			set_board_tiles(app.board_main);
+			ui::current_entity()->add_component(app.board_main);
 		}
 
 		ui::pop_parent();
 
-		ui::push_style_1u(ui::FontSize, 20);
-		ui::next_element_pos = Vec2f(450.f, 20.f);
-		app.text_time = ui::e_text(L"Time:")->get_component(cText);
-		ui::next_element_pos = Vec2f(450.f, 70.f);
-		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
-		ui::next_element_pos = Vec2f(450.f, 120.f);
-		app.text_score = ui::e_text(L"Score:")->get_component(cText);
-		ui::pop_style(ui::FontSize);
+		ui::next_element_pos = Vec2f(500.f, 20.f);
+		ui::e_text(L"Next");
 
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(470.f, 50.f);
+		ui::next_element_size = Vec2f(block_size * 4);
+		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
+
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(470.f, 170.f);
+		ui::next_element_size = Vec2f(block_size * 4);
+		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
+
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(470.f, 290.f);
+		ui::next_element_size = Vec2f(block_size * 4);
+		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
+
+		ui::next_element_pos = Vec2f(70.f, 220.f);
+		app.text_time = ui::e_text(L"Time:")->get_component(cText);
+		ui::next_element_pos = Vec2f(70.f, 270.f);
+		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
+		ui::next_element_pos = Vec2f(70.f, 320.f);
+		app.text_score = ui::e_text(L"Score:")->get_component(cText);
+
+		ui::pop_style(ui::FontSize);
 		ui::pop_parent();
 	}
 
@@ -134,35 +171,35 @@ struct MyApp : App
 
 	void toggle_board(int idx, uint offset_y)
 	{
-		board->set_cell(Vec2u(mino_pos) + Vec2u(0, offset_y), idx);
-		board->set_cell(Vec2u(mino_pos + mino_coords[0] + Vec2u(0, offset_y)), idx);
-		board->set_cell(Vec2u(mino_pos + mino_coords[1] + Vec2u(0, offset_y)), idx);
-		board->set_cell(Vec2u(mino_pos + mino_coords[2] + Vec2u(0, offset_y)), idx);
+		board_main->set_cell(Vec2u(mino_pos) + Vec2u(0, offset_y), idx);
+		board_main->set_cell(Vec2u(mino_pos + mino_coords[0] + Vec2u(0, offset_y)), idx);
+		board_main->set_cell(Vec2u(mino_pos + mino_coords[1] + Vec2u(0, offset_y)), idx);
+		board_main->set_cell(Vec2u(mino_pos + mino_coords[2] + Vec2u(0, offset_y)), idx);
 	}
 
 	bool check_board(const Vec2i& p)
 	{
 		return 
-			board->cell(mino_pos + p) == -1 &&
-			board->cell(mino_pos + p + mino_coords[0]) == -1 &&
-			board->cell(mino_pos + p + mino_coords[1]) == -1 &&
-			board->cell(mino_pos + p + mino_coords[2]) == -1;
+			board_main->cell(mino_pos + p) == -1 &&
+			board_main->cell(mino_pos + p + mino_coords[0]) == -1 &&
+			board_main->cell(mino_pos + p + mino_coords[1]) == -1 &&
+			board_main->cell(mino_pos + p + mino_coords[2]) == -1;
 	}
 
 	bool check_board(Vec2i* in, const Vec2i& p)
 	{
 		return
-			board->cell(p) == -1 &&
-			board->cell(in[0] + p) == -1 &&
-			board->cell(in[1] + p) == -1 &&
-			board->cell(in[2] + p) == -1;
+			board_main->cell(p) == -1 &&
+			board_main->cell(in[0] + p) == -1 &&
+			board_main->cell(in[1] + p) == -1 &&
+			board_main->cell(in[2] + p) == -1;
 	}
 
 	bool line_empty(uint l)
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (board->cell(Vec2i(x, l)) != -1)
+			if (board_main->cell(Vec2i(x, l)) != -1)
 				return false;
 		}
 		return true;
@@ -172,7 +209,7 @@ struct MyApp : App
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (board->cell(Vec2i(x, l)) == -1)
+			if (board_main->cell(Vec2i(x, l)) == -1)
 				return false;
 		}
 		return true;
@@ -292,11 +329,11 @@ struct MyApp : App
 							if (line_full(i))
 							{
 								for (auto x = 0; x < board_width; x++)
-									board->set_cell(Vec2u(x, i), -1);
+									board_main->set_cell(Vec2u(x, i), -1);
 								for (auto j = i; j > 0; j--)
 								{
 									for (auto x = 0; x < board_width; x++)
-										board->set_cell(Vec2u(x, j), board->cell(Vec2i(x, j - 1)));
+										board_main->set_cell(Vec2u(x, j), board_main->cell(Vec2i(x, j - 1)));
 								}
 								i++;
 								clear_lines++;
@@ -309,7 +346,7 @@ struct MyApp : App
 							ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
 							ui::e_button(Icon_REPEAT, [](void*) {
 								ui::remove_top_layer(app.root);
-								app.board->clear_cells();
+								app.board_main->clear_cells();
 								app.gaming = true;
 							}, Mail<>());
 							ui::c_aligner(AlignxMiddle, AlignyFree);
