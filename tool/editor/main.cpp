@@ -16,7 +16,6 @@ void MyApp::create()
 	root = u->world(0)->root();
 
 	ui::set_current_entity(root);
-	c_element_root = ui::c_element();
 	ui::c_layout();
 
 	ui::push_font_atlas(app.font_atlas_pixel);

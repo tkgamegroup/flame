@@ -268,7 +268,6 @@ int main(int argc, char **args)
 	auto root = w->root();
 	app.root = root;
 	ui::set_current_entity(root);
-	app.c_element_root = ui::c_element();
 	ui::c_layout();
 
 	ui::push_font_atlas(app.font_atlas_pixel);

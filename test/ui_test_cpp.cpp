@@ -1,7 +1,5 @@
 #include <flame/serialize.h>
-#include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
-#include <flame/graphics/shader.h>
 #include <flame/universe/ui/utils.h>
 #include <flame/utils/app.h>
 
@@ -286,7 +284,6 @@ int main(int argc, char** args)
 
 	app.root = w->root();
 	ui::set_current_entity(app.root);
-	app.c_element_root = ui::c_element();
 	ui::c_layout();
 	ui::push_font_atlas(app.font_atlas_pixel);
 	app.create_widgets();

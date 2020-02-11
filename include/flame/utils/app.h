@@ -2,36 +2,20 @@
 
 #include <flame/foundation/foundation.h>
 #include <flame/graphics/device.h>
-#include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
+#include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
+#include <flame/universe/components/element.h>
 
 #include "../renderpath/canvas/canvas.h"
 
 namespace flame
 {
-	struct Window;
-
-	namespace graphics
-	{
-		struct Device;
-		struct SwapchainResizable;
-		struct Fence;
-		struct Commandbuffer;
-		struct Semaphore;
-		struct FontAtlas;
-		struct Canvas;
-	}
-
-	struct Universe;
-	struct Entity;
-	struct cElement;
-
 	struct App
 	{
 		SysWindow* w;
@@ -82,6 +66,8 @@ namespace flame
 			w->add_system(s2DRenderer::create(L"../renderpath/canvas/bp", scr, FLAME_CHASH("SwapchainResizable"), &sc_cbs));
 			canvas = w->get_system(s2DRenderer)->canvas;
 			canvas->add_font(font_atlas_pixel);
+			c_element_root = cElement::create();
+			w->root()->add_component(c_element_root);
 		}
 
 		virtual void on_frame()

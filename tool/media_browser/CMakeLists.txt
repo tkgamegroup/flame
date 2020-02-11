@@ -1,0 +1,7 @@
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
+add_executable(media_browser ${SOURCE_LIST})
+set_target_properties(media_browser PROPERTIES FOLDER "tool")
+set_target_properties(media_browser PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+target_link_libraries(media_browser flame_foundation)
+target_link_libraries(media_browser flame_graphics)
+target_link_libraries(media_browser flame_universe)
