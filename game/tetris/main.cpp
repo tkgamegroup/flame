@@ -21,9 +21,7 @@ struct MyApp : App
 
 	cTileMap* board_main;
 	cTileMap* board_hold;
-	cTileMap* board_next1;
-	cTileMap* board_next2;
-	cTileMap* board_next3;
+	cTileMap* board_next[3];
 	cText* text_time;
 	cText* text_lines;
 	cText* text_score;
@@ -37,12 +35,13 @@ struct MyApp : App
 	bool gaming;
 	Vec2i mino_pos;
 	MinoType mino_type;
+	MinoType mino_held;
 	uint mino_rotation;
 	Vec2i mino_coords[3];
 	uint mino_bottom_dist;
 	uint mino_ticks;
-	uint mino_pack_idx;
-	MinoType mino_pack[MinoTypeCount];
+	Vec2u mino_pack_idx;
+	MinoType mino_packs[2][MinoTypeCount];
 
 	MyApp()
 	{
@@ -77,15 +76,26 @@ struct MyApp : App
 		ui::push_parent(root);
 		ui::push_style_1u(ui::FontSize, 20);
 
-		const auto block_size = 16.f;
+		const auto block_size = 24.f;
 
 		ui::next_element_pos = Vec2f(100.f, 20.f);
 		ui::e_text(L"Hold");
 
 		ui::e_empty();
 		ui::next_element_pos = Vec2f(70.f, 50.f);
-		ui::next_element_size = Vec2f(block_size * 4);
-		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
+		ui::next_element_size = Vec2f(block_size * 4 + 8.f);
+		{
+			auto ce = ui::c_element();
+			ce->inner_padding_ = Vec4f(4.f);
+			ce->color_ = Vec4c(30, 30, 30, 255);
+		}
+		{
+			app.board_hold = cTileMap::create();
+			app.board_hold->cell_size = Vec2f(block_size);
+			app.board_hold->set_size(Vec2u(4));
+			set_board_tiles(app.board_hold);
+			ui::current_entity()->add_component(app.board_hold);
+		}
 
 		ui::e_empty();
 		ui::next_element_pos = Vec2f(200.f, 20.f);
@@ -116,20 +126,24 @@ struct MyApp : App
 		ui::next_element_pos = Vec2f(500.f, 20.f);
 		ui::e_text(L"Next");
 
-		ui::e_empty();
-		ui::next_element_pos = Vec2f(470.f, 50.f);
-		ui::next_element_size = Vec2f(block_size * 4);
-		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
-
-		ui::e_empty();
-		ui::next_element_pos = Vec2f(470.f, 170.f);
-		ui::next_element_size = Vec2f(block_size * 4);
-		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
-
-		ui::e_empty();
-		ui::next_element_pos = Vec2f(470.f, 290.f);
-		ui::next_element_size = Vec2f(block_size * 4);
-		ui::c_element()->color_ = Vec4c(30, 30, 30, 255);
+		for (auto i = 0; i < 3; i++)
+		{
+			ui::e_empty();
+			ui::next_element_pos = Vec2f(470.f, 50.f + 120.f * i);
+			ui::next_element_size = Vec2f(block_size * 4 + 8.f);
+			{
+				auto ce = ui::c_element();
+				ce->inner_padding_ = Vec4f(4.f);
+				ce->color_ = Vec4c(30, 30, 30, 255);
+			}
+			{
+				app.board_next[i] = cTileMap::create();
+				app.board_next[i]->cell_size = Vec2f(block_size);
+				app.board_next[i]->set_size(Vec2u(4));
+				set_board_tiles(app.board_next[i]);
+				ui::current_entity()->add_component(app.board_next[i]);
+			}
+		}
 
 		ui::next_element_pos = Vec2f(70.f, 220.f);
 		app.text_time = ui::e_text(L"Time:")->get_component(cText);
@@ -154,6 +168,7 @@ struct MyApp : App
 		gaming = true;
 		mino_pos.x() = 0;
 		mino_pos.y() = -1;
+		mino_held = MinoTypeCount;
 		mino_rotation = 0;
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
@@ -162,19 +177,20 @@ struct MyApp : App
 
 	void new_mino_pack()
 	{
-		mino_pack_idx = 0;
+		mino_pack_idx = Vec2i(1 - mino_pack_idx.x(), 0);
+		auto& curr_pack = mino_packs[mino_pack_idx.x()];
 		for (auto i = 0; i < MinoTypeCount; i++)
-			mino_pack[i] = (MinoType)i;
+			curr_pack[i] = (MinoType)i;
 		for (auto i = 0; i < MinoTypeCount; i++)
-			std::swap(mino_pack[i], mino_pack[rand() % MinoTypeCount]);
+			std::swap(curr_pack[i], curr_pack[rand() % MinoTypeCount]);
 	}
 
-	void toggle_board(int idx, uint offset_y)
+	void toggle_board(cTileMap* board, int idx, const Vec2i& pos, uint offset_y, Vec2i* coords)
 	{
-		board_main->set_cell(Vec2u(mino_pos) + Vec2u(0, offset_y), idx);
-		board_main->set_cell(Vec2u(mino_pos + mino_coords[0] + Vec2u(0, offset_y)), idx);
-		board_main->set_cell(Vec2u(mino_pos + mino_coords[1] + Vec2u(0, offset_y)), idx);
-		board_main->set_cell(Vec2u(mino_pos + mino_coords[2] + Vec2u(0, offset_y)), idx);
+		board->set_cell(Vec2u(pos) + Vec2u(0, offset_y), idx);
+		board->set_cell(Vec2u(pos + coords[0] + Vec2u(0, offset_y)), idx);
+		board->set_cell(Vec2u(pos + coords[1] + Vec2u(0, offset_y)), idx);
+		board->set_cell(Vec2u(pos + coords[2] + Vec2u(0, offset_y)), idx);
 	}
 
 	bool check_board(const Vec2i& p)
@@ -266,108 +282,143 @@ struct MyApp : App
 			{
 				if (mino_pos.y() != -1)
 				{
-					toggle_board(-1, 0);
+					toggle_board(board_main, -1, mino_pos, 0, mino_coords);
 					if (mino_bottom_dist > 0)
-						toggle_board(-1, mino_bottom_dist);
+						toggle_board(board_main, -1, mino_pos, mino_bottom_dist, mino_coords);
 				}
 
-				if (mino_pos.y() == -1)
+				if (mino_pos.y() < 0)
 				{
+					if (mino_pos.y() == -1 || mino_type == MinoTypeCount)
+					{
+						mino_type = mino_packs[mino_pack_idx.x()][mino_pack_idx.y()++];
+						if (mino_pack_idx.y() >= MinoTypeCount)
+							new_mino_pack();
+						for (auto i = 0; i < 3; i++)
+						{
+							board_next[i]->clear_cells();
+							auto next_idx = mino_pack_idx;
+							next_idx.y() += i;
+							if (next_idx.y() >= MinoTypeCount)
+							{
+								next_idx.x() = 1 - next_idx.x();
+								next_idx.y() %= MinoTypeCount;
+							}
+							auto t = mino_packs[next_idx.x()][next_idx.y()];
+							Vec2i coords[3];
+							for (auto j = 0; j < 3; j++)
+								coords[j] = g_mino_coords[t][j];
+							toggle_board(board_next[i], t, Vec2i(1), 0, coords);
+						}
+					}
+					if (mino_pos.y() == -2)
+					{
+						board_hold->clear_cells();
+						Vec2i coords[3];
+						for (auto i = 0; i < 3; i++)
+							coords[i] = g_mino_coords[mino_held][i];
+						toggle_board(board_hold, mino_held, Vec2i(1), 0, coords);
+					}
 					mino_pos = Vec2i(4, 3);
-					mino_type = mino_pack[mino_pack_idx++];
-					if (mino_pack_idx >= MinoTypeCount)
-						new_mino_pack();
 					mino_rotation = 0;
 					for (auto i = 0 ; i < 3; i++)
 						mino_coords[i] = g_mino_coords[mino_type][i];
 					mino_ticks = 0;
 				}
 
-				auto r = 0;
-				if (just_down_key[KEY_ROTATE_LEFT])
-					r--;
-				if (just_down_key[KEY_ROTATE_RIGHT])
-					r++;
-				if (r != 0)
+				if (just_down_key[KEY_HOLD])
 				{
-					Vec2i new_coords[3];
-					Vec2i offset;
-					if (super_rotation(r == 1, new_coords, &offset))
+					mino_pos.y() = -2;
+					std::swap(mino_held, mino_type);
+				}
+				else
+				{
+					auto r = 0;
+					if (just_down_key[KEY_ROTATE_LEFT])
+						r--;
+					if (just_down_key[KEY_ROTATE_RIGHT])
+						r++;
+					if (r != 0)
 					{
-						mino_rotation = get_rotation_idx(true);
-						mino_pos += offset;
-						for (auto i = 0; i < 3; i++)
-							mino_coords[i] = new_coords[i];
+						Vec2i new_coords[3];
+						Vec2i offset;
+						if (super_rotation(r == 1, new_coords, &offset))
+						{
+							mino_rotation = get_rotation_idx(true);
+							mino_pos += offset;
+							for (auto i = 0; i < 3; i++)
+								mino_coords[i] = new_coords[i];
+							mino_ticks = 0;
+						}
+					}
+
+					auto mx = 0;
+					if (just_down_key[KEY_LEFT])
+						mx--;
+					if (just_down_key[KEY_RIGHT])
+						mx++;
+					if (mx != 0 && check_board(Vec2i(mx, 0)))
+					{
+						mino_pos.x() += mx;
 						mino_ticks = 0;
 					}
-				}
 
-				auto mx = 0;
-				if (just_down_key[KEY_LEFT])
-					mx--;
-				if (just_down_key[KEY_RIGHT])
-					mx++;
-				if (mx != 0 && check_board(Vec2i(mx, 0)))
-				{
-					mino_pos.x() += mx;
-					mino_ticks = 0;
-				}
-
-				mino_bottom_dist = 0;
-				while (check_board(Vec2i(0, mino_bottom_dist + 1)))
-					mino_bottom_dist++;
-				auto hard_drop = just_down_key[KEY_HARD_DROP];
-				if (hard_drop || mino_ticks >= (mino_bottom_dist > 0 && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 2 : down_ticks))
-				{
-					if (hard_drop || mino_bottom_dist == 0)
+					mino_bottom_dist = 0;
+					while (check_board(Vec2i(0, mino_bottom_dist + 1)))
+						mino_bottom_dist++;
+					auto hard_drop = just_down_key[KEY_HARD_DROP];
+					if (hard_drop || mino_ticks >= (mino_bottom_dist > 0 && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 2 : down_ticks))
 					{
-						mino_pos.y() += mino_bottom_dist;
-						mino_bottom_dist = 0;
-						toggle_board(mino_type, 0);
-						for (auto i = (int)board_height - 1; i >= 0; i--)
+						if (hard_drop || mino_bottom_dist == 0)
 						{
-							if (line_full(i))
+							mino_pos.y() += mino_bottom_dist;
+							mino_bottom_dist = 0;
+							toggle_board(board_main, mino_type, mino_pos, 0, mino_coords);
+							for (auto i = (int)board_height - 1; i >= 0; i--)
 							{
-								for (auto x = 0; x < board_width; x++)
-									board_main->set_cell(Vec2u(x, i), -1);
-								for (auto j = i; j > 0; j--)
+								if (line_full(i))
 								{
 									for (auto x = 0; x < board_width; x++)
-										board_main->set_cell(Vec2u(x, j), board_main->cell(Vec2i(x, j - 1)));
+										board_main->set_cell(Vec2u(x, i), -1);
+									for (auto j = i; j > 0; j--)
+									{
+										for (auto x = 0; x < board_width; x++)
+											board_main->set_cell(Vec2u(x, j), board_main->cell(Vec2i(x, j - 1)));
+									}
+									i++;
+									clear_lines++;
 								}
-								i++;
-								clear_lines++;
 							}
+							if (!line_empty(3) || clear_lines >= 40)
+							{
+								gaming = false;
+								ui::e_begin_dialog(Vec4c(100));
+								ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
+								ui::e_button(Icon_REPEAT, [](void*) {
+									ui::remove_top_layer(app.root);
+									app.board_main->clear_cells();
+									app.gaming = true;
+								}, Mail<>());
+								ui::c_aligner(AlignxMiddle, AlignyFree);
+								ui::e_end_dialog();
+							}
+							mino_pos.y() = -1;
 						}
-						if (!line_empty(3) || clear_lines >= 40)
+						else
 						{
-							gaming = false;
-							ui::e_begin_dialog(Vec4c(100));
-							ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
-							ui::e_button(Icon_REPEAT, [](void*) {
-								ui::remove_top_layer(app.root);
-								app.board_main->clear_cells();
-								app.gaming = true;
-							}, Mail<>());
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-							ui::e_end_dialog();
+							mino_pos.y()++;
+							mino_bottom_dist--;
 						}
-						mino_pos.y() = -1;
+						mino_ticks = 0;
 					}
-					else
-					{
-						mino_pos.y()++;
-						mino_bottom_dist--;
-					}
-					mino_ticks = 0;
-				}
-				mino_ticks++;
+					mino_ticks++;
 
-				if (mino_pos.y() != -1)
-				{
-					if (mino_bottom_dist)
-						toggle_board(MinoTypeCount + 1, mino_bottom_dist);
-					toggle_board(mino_type, 0);
+					if (mino_pos.y() != -1)
+					{
+						if (mino_bottom_dist)
+							toggle_board(board_main, MinoTypeCount + 1, mino_pos, mino_bottom_dist, mino_coords);
+						toggle_board(board_main, mino_type, mino_pos, 0, mino_coords);
+					}
 				}
 
 				text_time->set_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
