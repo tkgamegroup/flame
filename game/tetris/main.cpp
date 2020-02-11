@@ -19,10 +19,14 @@ struct MyApp : App
 	sEventDispatcher* s_event_dispatcher;
 
 	cTileMap* board;
+	cText* text_time;
+	cText* text_lines;
 
 	bool just_down_key[KEY_COUNT];
 
 	float time;
+	float play_time;
+	uint clear_lines;
 	bool gaming;
 	Vec2i mino_pos;
 	MinoType mino_type;
@@ -40,6 +44,8 @@ struct MyApp : App
 			just_down_key[i] = false;
 
 		time = 0.f;
+		play_time = 0.f;
+		clear_lines = 0;
 		gaming = true;
 		mino_pos.x() = 0;
 		mino_pos.y() = -1;
@@ -135,7 +141,9 @@ struct MyApp : App
 				just_down_key[i] = key_states[key_map[i]] == (KeyStateDown | KeyStateJust);
 		}
 
-		time += looper().delta_time;
+		auto dt = looper().delta_time;
+		time += dt;
+		play_time += dt;
 		const auto frame_rate = 1.f / (24.f * ((key_states[Key_F1] & KeyStateDown) ? 100.f : 1.f));
 		while (time > frame_rate)
 		{
@@ -211,6 +219,7 @@ struct MyApp : App
 										board->set_cell(Vec2u(x, j), board->cell(Vec2i(x, j - 1)));
 								}
 								i++;
+								clear_lines++;
 							}
 						}
 						if (!line_empty(3))
@@ -218,12 +227,11 @@ struct MyApp : App
 							gaming = false;
 							ui::e_begin_dialog(Vec4c(100));
 							ui::e_text(L"Game Over");
-							ui::e_button(Icon_REPEAT, [](void* c) {
-								auto thiz = *(MyApp**)c;
-								ui::remove_top_layer(thiz->root);
-								thiz->board->clear_cells();
-								thiz->gaming = true;
-							}, new_mail_p(this));
+							ui::e_button(Icon_REPEAT, [](void*) {
+								ui::remove_top_layer(app.root);
+								app.board->clear_cells();
+								app.gaming = true;
+							}, Mail<>());
 							ui::c_aligner(AlignxMiddle, AlignyFree);
 							ui::e_end_dialog();
 						}
@@ -244,6 +252,9 @@ struct MyApp : App
 						toggle_board(MinoTypeCount + 1, mino_bottom_dist);
 					toggle_board(mino_type, 0);
 				}
+
+				text_time->set_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
+				text_lines->set_text((L"Lines: " + std::to_wstring(clear_lines)).c_str());
 			}
 
 			for (auto i = 0; i < KEY_COUNT; i++)
@@ -301,6 +312,13 @@ int main(int argc, char **args)
 			}
 
 		ui::pop_parent();
+
+		ui::push_style_1u(ui::FontSize, 20);
+		ui::next_element_pos = Vec2f(450.f, 20.f);
+		app.text_time = ui::e_text(L"Time:")->get_component(cText);
+		ui::next_element_pos = Vec2f(450.f, 70.f);
+		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
+		ui::pop_style(ui::FontSize);
 
 		ui::e_text(L"");
 		ui::c_aligner(AlignxLeft, AlignyBottom);
