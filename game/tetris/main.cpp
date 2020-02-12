@@ -14,6 +14,20 @@ const auto board_width = 10U;
 const auto board_height = 24U;
 const auto down_ticks = 24U;
 
+enum TileIndex
+{
+	TileGrid,
+	TileMino1,
+	TileMino2,
+	TileMino3,
+	TileMino4,
+	TileMino5,
+	TileMino6,
+	TileMino7,
+	TileGray,
+	TileGhost
+};
+
 struct MyApp : App
 {
 	sEventDispatcher* s_event_dispatcher;
@@ -67,8 +81,11 @@ struct MyApp : App
 
 	void set_board_tiles(cTileMap* m)
 	{
-		for (auto i = 1; i <= 9; i++)
-			m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH(("tile" + std::to_string(i) + ".png").c_str())));
+		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("grid.png")));
+		for (auto i = 1; i <= 7; i++)
+			m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH((std::to_string(i) + ".png").c_str())));
+		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("ghost.png")));
 	}
 
 	void create_game_scene()
@@ -112,7 +129,6 @@ struct MyApp : App
 		ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
 		ui::c_element();
-		ui::c_image()->id = (atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_CHASH("bg.png"));
 		{
 			app.board_main = cTileMap::create();
 			app.board_main->cell_size = Vec2f(block_size);
@@ -158,6 +174,8 @@ struct MyApp : App
 
 	void start_game()
 	{
+		board_main->clear_cells(TileGrid);
+
 		for (auto i = 0; i < KEY_COUNT; i++)
 			just_down_key[i] = false;
 
@@ -196,26 +214,26 @@ struct MyApp : App
 	bool check_board(const Vec2i& p)
 	{
 		return 
-			board_main->cell(mino_pos + p) == -1 &&
-			board_main->cell(mino_pos + p + mino_coords[0]) == -1 &&
-			board_main->cell(mino_pos + p + mino_coords[1]) == -1 &&
-			board_main->cell(mino_pos + p + mino_coords[2]) == -1;
+			board_main->cell(mino_pos + p) == TileGrid &&
+			board_main->cell(mino_pos + p + mino_coords[0]) == TileGrid &&
+			board_main->cell(mino_pos + p + mino_coords[1]) == TileGrid &&
+			board_main->cell(mino_pos + p + mino_coords[2]) == TileGrid;
 	}
 
 	bool check_board(Vec2i* in, const Vec2i& p)
 	{
 		return
-			board_main->cell(p) == -1 &&
-			board_main->cell(in[0] + p) == -1 &&
-			board_main->cell(in[1] + p) == -1 &&
-			board_main->cell(in[2] + p) == -1;
+			board_main->cell(p) == TileGrid &&
+			board_main->cell(in[0] + p) == TileGrid &&
+			board_main->cell(in[1] + p) == TileGrid &&
+			board_main->cell(in[2] + p) == TileGrid;
 	}
 
 	bool line_empty(uint l)
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (board_main->cell(Vec2i(x, l)) != -1)
+			if (board_main->cell(Vec2i(x, l)) != TileGrid)
 				return false;
 		}
 		return true;
@@ -225,7 +243,7 @@ struct MyApp : App
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (board_main->cell(Vec2i(x, l)) == -1)
+			if (board_main->cell(Vec2i(x, l)) == TileGrid)
 				return false;
 		}
 		return true;
@@ -282,9 +300,9 @@ struct MyApp : App
 			{
 				if (mino_pos.y() != -1)
 				{
-					toggle_board(board_main, -1, mino_pos, 0, mino_coords);
+					toggle_board(board_main, TileGrid, mino_pos, 0, mino_coords);
 					if (mino_bottom_dist > 0)
-						toggle_board(board_main, -1, mino_pos, mino_bottom_dist, mino_coords);
+						toggle_board(board_main, TileGrid, mino_pos, mino_bottom_dist, mino_coords);
 				}
 
 				if (mino_pos.y() < 0)
@@ -308,7 +326,7 @@ struct MyApp : App
 							Vec2i coords[3];
 							for (auto j = 0; j < 3; j++)
 								coords[j] = g_mino_coords[t][j];
-							toggle_board(board_next[i], t, Vec2i(1), 0, coords);
+							toggle_board(board_next[i], TileMino1 + t, Vec2i(1), 0, coords);
 						}
 					}
 					if (mino_pos.y() == -2)
@@ -317,7 +335,7 @@ struct MyApp : App
 						Vec2i coords[3];
 						for (auto i = 0; i < 3; i++)
 							coords[i] = g_mino_coords[mino_held][i];
-						toggle_board(board_hold, mino_held, Vec2i(1), 0, coords);
+						toggle_board(board_hold, TileMino1 + mino_held, Vec2i(1), 0, coords);
 					}
 					mino_pos = Vec2i(4, 3);
 					mino_rotation = 0;
@@ -373,13 +391,13 @@ struct MyApp : App
 						{
 							mino_pos.y() += mino_bottom_dist;
 							mino_bottom_dist = 0;
-							toggle_board(board_main, mino_type, mino_pos, 0, mino_coords);
+							toggle_board(board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
 							for (auto i = (int)board_height - 1; i >= 0; i--)
 							{
 								if (line_full(i))
 								{
 									for (auto x = 0; x < board_width; x++)
-										board_main->set_cell(Vec2u(x, i), -1);
+										board_main->set_cell(Vec2u(x, i), TileGrid);
 									for (auto j = i; j > 0; j--)
 									{
 										for (auto x = 0; x < board_width; x++)
@@ -396,7 +414,7 @@ struct MyApp : App
 								ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
 								ui::e_button(Icon_REPEAT, [](void*) {
 									ui::remove_top_layer(app.root);
-									app.board_main->clear_cells();
+									app.board_main->clear_cells(TileGrid);
 									app.gaming = true;
 								}, Mail<>());
 								ui::c_aligner(AlignxMiddle, AlignyFree);
@@ -416,8 +434,8 @@ struct MyApp : App
 					if (mino_pos.y() != -1)
 					{
 						if (mino_bottom_dist)
-							toggle_board(board_main, MinoTypeCount + 1, mino_pos, mino_bottom_dist, mino_coords);
-						toggle_board(board_main, mino_type, mino_pos, 0, mino_coords);
+							toggle_board(board_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords);
+						toggle_board(board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
 					}
 				}
 

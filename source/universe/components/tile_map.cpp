@@ -132,13 +132,13 @@ namespace flame
 		thiz->cells[idx.y() * size_.x() + idx.x()] = tile_idx;
 	}
 
-	void cTileMap::clear_cells()
+	void cTileMap::clear_cells(int tile_idx)
 	{
 		auto thiz = (cTileMapPrivate*)this;
 		for (auto y = 0; y < size_.y(); y++)
 		{
 			for (auto x = 0; x < size_.x(); x++)
-				thiz->cells[y * size_.x() + x] = -1;
+				thiz->cells[y * size_.x() + x] = tile_idx;
 		}
 	}
 
