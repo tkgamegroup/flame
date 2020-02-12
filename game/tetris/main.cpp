@@ -35,7 +35,7 @@ struct MyApp : App
 
 	cTileMap* board_main;
 	cTileMap* board_hold;
-	cTileMap* board_next[3];
+	cTileMap* board_next[5];
 	cText* text_time;
 	cText* text_lines;
 	cText* text_score;
@@ -68,6 +68,13 @@ struct MyApp : App
 	{
 		ui::push_parent(root);
 
+		ui::e_begin_layout(LayoutVertical, 8.f);
+		ui::c_aligner(AlignxMiddle, AlignyMiddle);
+		ui::push_style_1u(ui::FontSize, 40);
+		ui::e_text(L"Tetris");
+		ui::c_aligner(AlignxMiddle, AlignyFree);
+		ui::pop_style(ui::FontSize);
+		ui::push_style_1u(ui::FontSize, 20);
 		ui::e_button(L"40 Lines RTA", [](void*) {
 			looper().add_event([](void*, bool*) {
 				app.root->remove_children(1, -1);
@@ -75,6 +82,9 @@ struct MyApp : App
 				app.start_game();
 			}, Mail<>());
 		}, Mail<>());
+		ui::c_aligner(AlignxMiddle, AlignyFree);
+		ui::pop_style(ui::FontSize);
+		ui::e_end_layout();
 
 		ui::pop_parent();
 	}
@@ -145,10 +155,10 @@ struct MyApp : App
 		ui::next_element_pos = Vec2f(480.f, 20.f);
 		ui::e_text(L"Next");
 
-		for (auto i = 0; i < 3; i++)
+		for (auto i = 0; i < array_size(board_next); i++)
 		{
 			ui::e_empty();
-			ui::next_element_pos = Vec2f(470.f, 50.f + 120.f * i);
+			ui::next_element_pos = Vec2f(470.f, 50.f + 80.f * i);
 			ui::next_element_size = Vec2f(block_size * 4 + 8.f);
 			{
 				auto ce = ui::c_element();
@@ -173,33 +183,12 @@ struct MyApp : App
 
 		ui::pop_style(ui::FontSize);
 		ui::pop_parent();
+
+		app.play_time = 0.f;
 	}
 
-	void start_game()
+	void add_count_down()
 	{
-		board_main->clear_cells(TileGrid);
-		board_hold->clear_cells(-1);
-		for (auto i = 0; i < 3; i++)
-			board_next[i]->clear_cells(-1);
-		text_time->set_text(L"Time: 00:00");
-		text_lines->set_text(L"Lines: 0");
-		text_score->set_text(L"Score: 0");
-
-		for (auto i = 0; i < KEY_COUNT; i++)
-			just_down_key[i] = false;
-
-		time = 0.f;
-		clear_lines = 0;
-		score = 0;
-		mino_pos = Vec2i(0, -1);
-		mino_type = MinoTypeCount;
-		mino_held = MinoTypeCount;
-		mino_pack_idx = Vec2u(1, MinoTypeCount);
-		mino_rotation = 0;
-		mino_bottom_dist = 0;
-		mino_ticks = 0;
-		new_mino_pack();
-
 		struct Capture
 		{
 			uint time;
@@ -221,11 +210,38 @@ struct MyApp : App
 				auto e = capture.text->entity;
 				e->parent()->remove_child(e);
 				app.gaming = true;
-				app.play_time = 0.f;
 			}
 			else
 				*go_on = true;
 		}, new_mail(&capture), 1.f);
+	}
+
+	void start_game()
+	{
+		board_main->clear_cells(TileGrid);
+		board_hold->clear_cells(-1);
+		for (auto i = 0; i < array_size(board_next); i++)
+			board_next[i]->clear_cells(-1);
+		text_time->set_text(L"Time: 00:00");
+		text_lines->set_text(L"Lines: 0");
+		text_score->set_text(L"Score: 0");
+
+		for (auto i = 0; i < KEY_COUNT; i++)
+			just_down_key[i] = false;
+
+		time = 0.f;
+		clear_lines = 0;
+		score = 0;
+		mino_pos = Vec2i(0, -1);
+		mino_type = MinoTypeCount;
+		mino_held = MinoTypeCount;
+		mino_pack_idx = Vec2u(1, MinoTypeCount);
+		mino_rotation = 0;
+		mino_bottom_dist = 0;
+		mino_ticks = 0;
+		new_mino_pack();
+
+		add_count_down();
 	}
 
 	void new_mino_pack()
@@ -327,10 +343,41 @@ struct MyApp : App
 
 		auto dt = looper().delta_time;
 		time += dt;
-		play_time += dt;
+		if (gaming)
+			play_time += dt;
 		const auto frame_rate = 1.f / (24.f * ((key_states[Key_F1] & KeyStateDown) ? 100.f : 1.f));
 		while (time > frame_rate)
 		{
+			if (gaming)
+			{
+				if (just_down_key[KEY_PAUSE])
+				{
+					gaming = false;
+					ui::e_begin_dialog(Vec4c(100));
+					ui::e_text(L"Pausing");
+					ui::e_begin_layout(LayoutHorizontal, 4.f);
+					ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_button(Icon_HOME, [](void*) {
+						ui::remove_top_layer(app.root);
+						looper().add_event([](void*, bool*) {
+							app.root->remove_children(1, -1);
+							app.create_home_scene();
+						}, Mail<>());
+					}, Mail<>());
+					ui::e_button(Icon_REPEAT, [](void*) {
+						ui::remove_top_layer(app.root);
+						app.play_time = 0.f;
+						app.start_game();
+					}, Mail<>());
+					ui::e_button(Icon_TIMES, [](void*) {
+						ui::remove_top_layer(app.root);
+						app.add_count_down();
+					}, Mail<>());
+					ui::e_end_layout();
+					ui::e_end_dialog();
+				}
+			}
+
 			if (gaming)
 			{
 				if (mino_pos.y() != -1)
@@ -347,7 +394,7 @@ struct MyApp : App
 						mino_type = mino_packs[mino_pack_idx.x()][mino_pack_idx.y()++];
 						if (mino_pack_idx.y() >= MinoTypeCount)
 							new_mino_pack();
-						for (auto i = 0; i < 3; i++)
+						for (auto i = 0; i < array_size(board_next); i++)
 						{
 							board_next[i]->clear_cells();
 							auto next_idx = mino_pack_idx;
@@ -449,12 +496,25 @@ struct MyApp : App
 							{
 								gaming = false;
 								ui::e_begin_dialog(Vec4c(100));
-								ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
+								ui::e_text(L"Game Over");
+								ui::e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
+								ui::e_text((L"Lines: " + wfmt(L"%d", clear_lines)).c_str());
+								ui::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
+								ui::e_begin_layout(LayoutHorizontal, 4.f);
+								ui::c_aligner(AlignxMiddle, AlignyFree);
+								ui::e_button(Icon_HOME, [](void*) {
+									ui::remove_top_layer(app.root);
+									looper().add_event([](void*, bool*) {
+										app.root->remove_children(1, -1);
+										app.create_home_scene();
+									}, Mail<>());
+								}, Mail<>());
 								ui::e_button(Icon_REPEAT, [](void*) {
 									ui::remove_top_layer(app.root);
+									app.play_time = 0.f;
 									app.start_game();
 								}, Mail<>());
-								ui::c_aligner(AlignxMiddle, AlignyFree);
+								ui::e_end_layout();
 								ui::e_end_dialog();
 							}
 							mino_pos.y() = -1;

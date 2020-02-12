@@ -6,6 +6,7 @@ using namespace flame;
 
 enum
 {
+	KEY_PAUSE,
 	KEY_LEFT,
 	KEY_RIGHT,
 	KEY_ROTATE_LEFT,
