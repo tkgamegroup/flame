@@ -380,7 +380,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail<>& capture);
 
-		FLAME_FOUNDATION_EXPORTS void* add_event(void (*event)(void* c), const Mail<>& capture, void (*ending)(void* c) = nullptr, bool repeatly = false, float interval = 0.f, uint id = 0, bool only = false /* if true, only one event of the id can exists in list */);
+		FLAME_FOUNDATION_EXPORTS void* add_event(void (*func)(void* c, bool* go_on), const Mail<>& capture, float interval = 0.f, uint id = 0);
 
 		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
 		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */
@@ -396,17 +396,22 @@ namespace flame
 			uint last_frame;
 			void (*e)(void* c, uint fps);
 			Mail<> c;
-		}e;
-		e.last_frame = 0;
-		e.e = event;
-		e.c = capture;
-		return looper().add_event([](void* c) {
+
+			~Capture()
+			{
+				delete_mail(c);
+			}
+		};
+		auto m = new_mail<Capture>();
+		m.p->last_frame = 0;
+		m.p->e = event;
+		m.p->c = capture;
+		return looper().add_event([](void* c, bool* go_on) {
 			auto& capture = *(Capture*)c;
 			auto frame = looper().frame;
 			capture.e(capture.c.p, frame - capture.last_frame);
 			capture.last_frame = frame;
-		}, new_mail(&e), [](void* c) {
-			delete_mail(((Capture*)c)->c);
-		}, true, 1.f);
+			*go_on = true;
+		}, m, 1.f);
 	}
 }

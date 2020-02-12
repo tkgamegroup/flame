@@ -158,7 +158,7 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_event([](void* c) {
+				looper().add_event([](void* c, bool*) {
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_children(0, -1);
@@ -209,7 +209,7 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_event([](void* c) {
+				looper().add_event([](void* c, bool*) {
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_child(0, -1);
@@ -225,7 +225,7 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_event([](void* c) {
+				looper().add_event([](void* c, bool*) {
 					auto e_scene = *(Entity**)c;
 
 					if (e_scene->child_count() > 0)
@@ -242,7 +242,7 @@ int main(int argc, char** args)
 			auto e_scene = *(Entity**)c;
 			if (is_mouse_clicked(action, key))
 			{
-				looper().add_event([](void* c) {
+				looper().add_event([](void* c, bool*) {
 					auto e_scene = *(Entity**)c;
 
 					e_scene->remove_child(0, -1);

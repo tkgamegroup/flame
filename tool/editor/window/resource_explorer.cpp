@@ -144,7 +144,7 @@ struct cResourceExplorer : Component
 	{
 		curr_path = path;
 
-		looper().add_event([](void* c) {
+		looper().add_event([](void* c, bool*) {
 			auto thiz = *(cResourceExplorer**)c;
 			auto& base_path = thiz->base_path;
 			auto& curr_path = thiz->curr_path;
@@ -410,7 +410,7 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 					explorer->thumbnails_seats_occupied.push_back(std::move(explorer->thumbnails_seats_free.front()));
 					explorer->thumbnails_seats_free.erase(explorer->thumbnails_seats_free.begin());
 					
-					looper().add_event([](void* c) {
+					looper().add_event([](void* c, bool*) {
 						auto thiz = *(cThumbnail**)c;
 						auto image = thiz->image;
 						auto explorer = thiz->explorer;
@@ -426,7 +426,7 @@ void cThumbnail::draw(graphics::Canvas* canvas)
 						image->uv0 = Vec2f(thiz->seat->pos) / thumbnails_img_size;
 						image->uv1 = Vec2f(thiz->seat->pos + thumbnail_size) / thumbnails_img_size;
 						image->color = Vec4c(255);
-					}, new_mail_p(this), nullptr, false, 0.f, FLAME_CHASH("update thumbnail"));
+					}, new_mail_p(this), 0.f, FLAME_CHASH("update thumbnail"));
 				}
 			}
 		}

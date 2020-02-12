@@ -875,7 +875,7 @@ namespace flame
 				{
 					e_button(Icon_WINDOW_CLOSE, [](void* c) {
 						auto e = *(Entity**)c;
-						looper().add_event([](void* c) {
+						looper().add_event([](void* c, bool*) {
 							auto e = *(Entity**)c;
 							e->parent()->remove_child(e);
 						}, new_mail_p(e));
@@ -1013,7 +1013,7 @@ namespace flame
 			push_parent(et);
 			e_button(Icon_WINDOW_CLOSE, [](void* c) {
 				auto thiz = (*(cDockerTab**)c);
-				looper().add_event([](void* c) {
+				looper().add_event([](void* c, bool*) {
 					auto thiz = (*(cDockerTab**)c);
 					thiz->take_away(true);
 				}, new_mail_p(thiz));

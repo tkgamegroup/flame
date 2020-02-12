@@ -162,7 +162,7 @@ struct cBPEditor : Component
 
 		if (console_tab)
 		{
-			looper().add_event([](void* c) {
+			looper().add_event([](void* c, bool*) {
 				auto tab = *(cDockerTab**)c;
 				tab->take_away(true);
 			}, new_mail_p(console_tab));
@@ -389,7 +389,7 @@ struct cBPEditor : Component
 		}capture;
 		capture.e = this;
 		capture.l = l;
-		looper().add_event([](void* c) {
+		looper().add_event([](void* c, bool*) {
 			auto& capture = *(Capture*)c;
 			auto bp = capture.e->bp;
 
@@ -422,7 +422,7 @@ struct cBPEditor : Component
 		}capture;
 		capture.e = this;
 		capture.s = s;
-		looper().add_event([](void* c) {
+		looper().add_event([](void* c, bool*) {
 			auto& capture = *(Capture*)c;
 			auto e = (Entity*)capture.s->user_data;
 			e->parent()->remove_child(e);
@@ -436,7 +436,7 @@ struct cBPEditor : Component
 	{
 		if (selected_.node->id() == "test_dst" || selected_.node->id() == "test_cbs")
 			return false;
-		looper().add_event([](void* c) {
+		looper().add_event([](void* c, bool*) {
 			auto n = *(BP::Node**)c;
 			auto e = (Entity*)n->user_data;
 			e->parent()->remove_child(e);
@@ -1002,11 +1002,11 @@ Entity* cBPEditor::create_subgraph_entity(BP::SubGraph* s)
 		ui::c_event_receiver();
 		ui::c_layout(LayoutVertical)->fence = 1;
 		ui::c_moveable();
-		auto c_package = new_u_object<cBPObject>();
-		c_package->editor = this;
-		c_package->t = SelSubGraph;
-		c_package->p = s;
-		e_subgraph->add_component(c_package);
+		auto c_subgraph = new_u_object<cBPObject>();
+		c_subgraph->editor = this;
+		c_subgraph->t = SelSubGraph;
+		c_subgraph->p = s;
+		e_subgraph->add_component(c_subgraph);
 	}
 	ui::push_parent(e_subgraph);
 	ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);

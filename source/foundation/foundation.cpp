@@ -1241,41 +1241,23 @@ namespace flame
 	struct Event
 	{
 		uint id;
-		bool repeatly;
 		float interval;
 		float rest;
-		std::unique_ptr<Closure<void(void* c)>> event;
-		void (*ending)(void* c);
-
-		~Event()
-		{
-			if (ending)
-				ending(event->capture.p);
-		}
+		std::unique_ptr<Closure<void(void* c, bool* go_on)>> event;
 	};
 
 	static std::list<std::unique_ptr<Event>> events;
 
-	void* Looper::add_event(void (*event)(void* c), const Mail<>& capture, void (*ending)(void* c), bool repeatly, float interval, uint id, bool only)
+	void* Looper::add_event(void (*func)(void* c, bool* go_on), const Mail<>& capture, float interval, uint id)
 	{
-		if (only)
-		{
-			for (auto& e : events)
-			{
-				if (id == e->id)
-					return nullptr;
-			}
-		}
 		auto e = new Event;
 		e->id = id;
-		e->repeatly = repeatly;
 		e->interval = interval;
 		e->rest = interval;
-		auto c = new Closure<void(void* c)>;
-		c->function = event;
+		auto c = new Closure<void(void* c, bool* go_on)>;
+		c->function = func;
 		c->capture = capture;
 		e->event.reset(c);
-		e->ending = ending;
 		events.emplace_back(e);
 		return c;
 	}
@@ -1316,8 +1298,9 @@ namespace flame
 			e->rest -= delta_time;
 			if (e->rest <= 0)
 			{
-				e->event->call();
-				if (!e->repeatly)
+				auto go_on = false;
+				e->event->call(&go_on);
+				if (!go_on)
 				{
 					it = events.erase(it);
 					continue;

@@ -82,7 +82,7 @@ struct cHierarchyItem : Component
 
 						if (ok)
 						{
-							looper().add_event([](void* c) {
+							looper().add_event([](void* c, bool*) {
 								auto& capture = *(Capture*)c;
 
 								capture.src->parent()->remove_child(capture.src, false);
@@ -247,7 +247,7 @@ void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
 			}capture;
 			capture.e = editor;
 			capture.s = ((cTree*)t)->selected;
-			looper().add_event([](void* c) {
+			looper().add_event([](void* c, bool*) {
 				auto& capture = *(Capture*)c;
 				auto editor = capture.e;
 				Entity* selected = nullptr;

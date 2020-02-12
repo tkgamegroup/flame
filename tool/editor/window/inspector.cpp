@@ -229,7 +229,7 @@ struct cInspectorPrivate : cInspector
 					Capture _capture;
 					_capture.e = capture.e;
 					_capture.c = capture.c;
-					looper().add_event([](void* c) {
+					looper().add_event([](void* c, bool*) {
 						auto& capture = *(Capture*)c;
 						capture.e->parent()->remove_child(capture.e);
 						capture.c->entity->remove_component(capture.c);
@@ -479,7 +479,7 @@ struct cInspectorPrivate : cInspector
 					capture.u = udt;
 					ui::e_menu_item(s2w(udt->type()->name() + prefix.l).c_str(), [](void* c) {
 						auto& capture = *(Capture*)c;
-						looper().add_event([](void* c) {
+						looper().add_event([](void* c, bool*) {
 							auto& capture = *(Capture*)c;
 
 							auto dummy = malloc(capture.u->size());

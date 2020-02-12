@@ -69,7 +69,7 @@ struct MyApp : App
 		ui::push_parent(root);
 
 		ui::e_button(L"40 Lines RTA", [](void*) {
-			looper().add_event([](void*) {
+			looper().add_event([](void*, bool*) {
 				app.root->remove_children(1, -1);
 				app.create_game_scene();
 				app.start_game();
@@ -93,26 +93,7 @@ struct MyApp : App
 		ui::push_parent(root);
 		ui::push_style_1u(ui::FontSize, 20);
 
-		const auto block_size = 24.f;
-
-		ui::next_element_pos = Vec2f(100.f, 20.f);
-		ui::e_text(L"Hold");
-
-		ui::e_empty();
-		ui::next_element_pos = Vec2f(70.f, 50.f);
-		ui::next_element_size = Vec2f(block_size * 4 + 8.f);
-		{
-			auto ce = ui::c_element();
-			ce->inner_padding_ = Vec4f(4.f);
-			ce->color_ = Vec4c(30, 30, 30, 255);
-		}
-		{
-			app.board_hold = cTileMap::create();
-			app.board_hold->cell_size = Vec2f(block_size);
-			app.board_hold->set_size(Vec2u(4));
-			set_board_tiles(app.board_hold);
-			ui::current_entity()->add_component(app.board_hold);
-		}
+		auto block_size = 24.f;
 
 		ui::e_empty();
 		ui::next_element_pos = Vec2f(200.f, 20.f);
@@ -130,16 +111,38 @@ struct MyApp : App
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
 		ui::c_element();
 		{
-			app.board_main = cTileMap::create();
-			app.board_main->cell_size = Vec2f(block_size);
-			app.board_main->set_size(Vec2u(board_width, board_height));
-			set_board_tiles(app.board_main);
-			ui::current_entity()->add_component(app.board_main);
+			board_main = cTileMap::create();
+			board_main->cell_size = Vec2f(block_size);
+			board_main->set_size(Vec2u(board_width, board_height));
+			board_main->clear_cells(TileGrid);
+			set_board_tiles(board_main);
+			ui::current_entity()->add_component(board_main);
 		}
 
 		ui::pop_parent();
 
-		ui::next_element_pos = Vec2f(500.f, 20.f);
+		block_size = 16.f;
+
+		ui::next_element_pos = Vec2f(80.f, 20.f);
+		ui::e_text(L"Hold");
+
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(70.f, 50.f);
+		ui::next_element_size = Vec2f(block_size * 4 + 8.f);
+		{
+			auto ce = ui::c_element();
+			ce->inner_padding_ = Vec4f(4.f);
+			ce->color_ = Vec4c(30, 30, 30, 255);
+		}
+		{
+			board_hold = cTileMap::create();
+			board_hold->cell_size = Vec2f(block_size);
+			board_hold->set_size(Vec2u(4));
+			set_board_tiles(board_hold);
+			ui::current_entity()->add_component(board_hold);
+		}
+
+		ui::next_element_pos = Vec2f(480.f, 20.f);
 		ui::e_text(L"Next");
 
 		for (auto i = 0; i < 3; i++)
@@ -153,20 +156,20 @@ struct MyApp : App
 				ce->color_ = Vec4c(30, 30, 30, 255);
 			}
 			{
-				app.board_next[i] = cTileMap::create();
-				app.board_next[i]->cell_size = Vec2f(block_size);
-				app.board_next[i]->set_size(Vec2u(4));
-				set_board_tiles(app.board_next[i]);
-				ui::current_entity()->add_component(app.board_next[i]);
+				board_next[i] = cTileMap::create();
+				board_next[i]->cell_size = Vec2f(block_size);
+				board_next[i]->set_size(Vec2u(4));
+				set_board_tiles(board_next[i]);
+				ui::current_entity()->add_component(board_next[i]);
 			}
 		}
 
 		ui::next_element_pos = Vec2f(70.f, 220.f);
-		app.text_time = ui::e_text(L"Time:")->get_component(cText);
+		text_time = ui::e_text(L"Time: 00:00")->get_component(cText);
 		ui::next_element_pos = Vec2f(70.f, 270.f);
-		app.text_lines = ui::e_text(L"Lines:")->get_component(cText);
+		text_lines = ui::e_text(L"Lines: 0")->get_component(cText);
 		ui::next_element_pos = Vec2f(70.f, 320.f);
-		app.text_score = ui::e_text(L"Score:")->get_component(cText);
+		text_score = ui::e_text(L"Score: 0")->get_component(cText);
 
 		ui::pop_style(ui::FontSize);
 		ui::pop_parent();
@@ -175,22 +178,54 @@ struct MyApp : App
 	void start_game()
 	{
 		board_main->clear_cells(TileGrid);
+		board_hold->clear_cells(-1);
+		for (auto i = 0; i < 3; i++)
+			board_next[i]->clear_cells(-1);
+		text_time->set_text(L"Time: 00:00");
+		text_lines->set_text(L"Lines: 0");
+		text_score->set_text(L"Score: 0");
 
 		for (auto i = 0; i < KEY_COUNT; i++)
 			just_down_key[i] = false;
 
 		time = 0.f;
-		play_time = 0.f;
 		clear_lines = 0;
 		score = 0;
-		gaming = true;
-		mino_pos.x() = 0;
-		mino_pos.y() = -1;
+		mino_pos = Vec2i(0, -1);
+		mino_type = MinoTypeCount;
 		mino_held = MinoTypeCount;
+		mino_pack_idx = Vec2u(1, MinoTypeCount);
 		mino_rotation = 0;
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
 		new_mino_pack();
+
+		struct Capture
+		{
+			uint time;
+			cText* text;
+		}capture;
+		capture.time = 3;
+		ui::push_parent(root);
+		ui::push_style_1u(ui::FontSize, 50);
+		ui::next_element_pos = Vec2f(310.f, 200.f);
+		capture.text = ui::e_text(L"3")->get_component(cText);
+		ui::pop_style(ui::FontSize);
+		ui::pop_parent();
+		looper().add_event([](void* c, bool* go_on) {
+			auto& capture = *(Capture*)c;
+			capture.time--;
+			capture.text->set_text(std::to_wstring(capture.time).c_str());
+			if (capture.time == 0)
+			{
+				auto e = capture.text->entity;
+				e->parent()->remove_child(e);
+				app.gaming = true;
+				app.play_time = 0.f;
+			}
+			else
+				*go_on = true;
+		}, new_mail(&capture), 1.f);
 	}
 
 	void new_mino_pack()
@@ -332,10 +367,13 @@ struct MyApp : App
 					if (mino_pos.y() == -2)
 					{
 						board_hold->clear_cells();
-						Vec2i coords[3];
-						for (auto i = 0; i < 3; i++)
-							coords[i] = g_mino_coords[mino_held][i];
-						toggle_board(board_hold, TileMino1 + mino_held, Vec2i(1), 0, coords);
+						if (mino_held != MinoTypeCount)
+						{
+							Vec2i coords[3];
+							for (auto i = 0; i < 3; i++)
+								coords[i] = g_mino_coords[mino_held][i];
+							toggle_board(board_hold, TileMino1 + mino_held, Vec2i(1), 0, coords);
+						}
 					}
 					mino_pos = Vec2i(4, 3);
 					mino_rotation = 0;
@@ -414,8 +452,7 @@ struct MyApp : App
 								ui::e_text((L"Game Over, Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
 								ui::e_button(Icon_REPEAT, [](void*) {
 									ui::remove_top_layer(app.root);
-									app.board_main->clear_cells(TileGrid);
-									app.gaming = true;
+									app.start_game();
 								}, Mail<>());
 								ui::c_aligner(AlignxMiddle, AlignyFree);
 								ui::e_end_dialog();

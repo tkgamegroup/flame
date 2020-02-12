@@ -25,7 +25,7 @@ struct MyApp : App
 			ui::e_begin_menu_bar();
 				ui::e_begin_menubar_menu(L"Style");
 					ui::e_menu_item(L"Dark", [](void* c) {
-						looper().add_event([](void*) {
+						looper().add_event([](void*, bool*) {
 							app.root->remove_children(0, -1);
 							app.canvas->set_clear_color(Vec4c(0, 0, 0, 255));
 							ui::style_set_to_dark();
@@ -33,7 +33,7 @@ struct MyApp : App
 						}, Mail<>());
 					}, Mail<>());
 					ui::e_menu_item(L"Light", [](void* c) {
-						looper().add_event([](void*) {
+						looper().add_event([](void*, bool*) {
 							app.root->remove_children(0, -1);
 							app.canvas->set_clear_color(Vec4c(200, 200, 200, 255));
 							ui::style_set_to_light();
@@ -59,7 +59,7 @@ struct MyApp : App
 						capture.txt_drag_overing = ui::e_text(L"Drag Overing: ")->get_component(cText);
 						ui::e_end_window();
 						ui::pop_parent();
-						w->associate_resource(looper().add_event([](void* c) {
+						w->associate_resource(looper().add_event([](void* c, bool* go_on) {
 							auto& capture = *(Capture*)c;
 							{
 								std::wstring str = L"Mouse: ";
@@ -116,7 +116,8 @@ struct MyApp : App
 									str += L"NULL";
 								capture.txt_drag_overing->set_text(str.c_str());
 							}
-						}, new_mail(&capture), nullptr, true), [](void* ev) {
+							*go_on = true;
+						}, new_mail(&capture)), [](void* ev) {
 							looper().remove_event(ev);
 						});
 					}, Mail<>());

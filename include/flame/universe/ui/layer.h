@@ -30,7 +30,7 @@ namespace flame
 			if (take)
 				l->remove_children(0, -1, false);
 			l->dying_ = true;
-			looper().add_event([](void* c) {
+			looper().add_event([](void* c, bool*) {
 				auto l = *(Entity**)c;
 				l->parent()->remove_child(l);
 			}, new_mail_p(l));
