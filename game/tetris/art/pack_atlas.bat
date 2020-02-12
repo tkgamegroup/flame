@@ -1,0 +1,1 @@
+"../../../bin/texture_packer" -oatlas/main.png

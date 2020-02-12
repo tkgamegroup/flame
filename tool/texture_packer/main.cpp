@@ -9,44 +9,21 @@ int main(int argc, char **args)
 	std::vector<const wchar_t*> inputs;
 	std::wstring output;
 	auto border = false;
-	if (argc == 1)
+	for (auto i = 1; i < argc; i++)
 	{
-		std::ifstream atlas_options(L"atlas_options.txt");
-		while (!atlas_options.eof())
+		auto arg = std::string(args[i]);
+		if (arg[0] == '-' && arg.size() > 1)
 		{
-			std::string line;
-			std::getline(atlas_options, line);
-			if (!line.empty())
-			{
-				auto sp = SUS::split(line);
-				if (sp[0] == "border")
-					border = true;
-				else if (sp[0] == "out")
-					output = s2w(sp[1]);
-			}
-		}
-		atlas_options.close();
-		for (std::filesystem::directory_iterator end, it(get_curr_path().v); it != end; it++)
-		{
-			if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
-				_inputs.push_back(it->path().wstring());
+			if (arg[1] == 'b')
+				border = true;
+			else if (arg[1] == 'o' && arg.size() > 2)
+				output = s2w(std::string(arg.begin() + 2, arg.end()));
 		}
 	}
-	else
+	for (std::filesystem::directory_iterator end, it(get_curr_path().v); it != end; it++)
 	{
-		for (auto i = 1; i < argc; i++)
-		{
-			if (args[i] == std::string("-o"))
-			{
-				i++;
-				if (i < argc)
-					output = s2w(args[i]);
-			}
-			else if (args[i] == std::string("-b"))
-				border = true;
-			else
-				_inputs.push_back(s2w(args[i]));
-		}
+		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
+			_inputs.push_back(it->path().wstring());
 	}
 	for (auto& i : _inputs)
 		inputs.push_back(i.c_str());

@@ -1,0 +1,1 @@
+"../../bin/compiler.exe" -nbp -l../../bin/flame_foundation.lib -l../../bin/flame_graphics.lib

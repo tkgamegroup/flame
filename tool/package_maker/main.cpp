@@ -6,32 +6,29 @@ using namespace flame;
 int main(int argc, char **args)
 {
 	std::filesystem::path root;
-	std::filesystem::path out;
+	std::filesystem::path dst;
 	std::vector<std::filesystem::path> items;
 
-	std::ifstream package_description(L"package_description.txt");
-	if (!package_description.good())
-		return 0;
-
-	std::string line;
-	std::getline(package_description, line);
-	root = line;
-	std::getline(package_description, line);
-	out = line;
-	while (!package_description.eof())
+	for (auto i = 1; i < argc; i++)
 	{
-		std::getline(package_description, line);
-		if (!line.empty())
-			items.push_back(line);
+		auto arg = std::string(args[i]);
+		if (arg[0] == '-' && arg.size() > 1)
+		{
+			if (arg[1] == 'r' && arg.size() > 2)
+				root = std::string(arg.begin() + 2, arg.end());
+			else if (arg[1] == 'd' && arg.size() > 2)
+				dst = std::string(arg.begin() + 2, arg.end());
+		}
+		else
+			items.push_back(arg);
 	}
-	package_description.close();
 
 	for (auto& i : items)
 	{
-		auto p = out / i.parent_path();
+		auto p = dst / i.parent_path();
 		if (!std::filesystem::exists(p))
 			std::filesystem::create_directories(p);
-		std::filesystem::copy_file(root / i, out / i, std::filesystem::copy_options::overwrite_existing);
+		std::filesystem::copy_file(root / i, dst / i, std::filesystem::copy_options::overwrite_existing);
 	}
 
 	return 0;
