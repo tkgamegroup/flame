@@ -385,7 +385,7 @@ struct MyApp : App
 					while (check_board(Vec2i(0, mino_bottom_dist + 1)))
 						mino_bottom_dist++;
 					auto hard_drop = just_down_key[KEY_HARD_DROP];
-					if (hard_drop || mino_ticks >= (mino_bottom_dist > 0 && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 2 : down_ticks))
+					if (hard_drop || mino_ticks >= (mino_bottom_dist > 0 && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 1 : down_ticks))
 					{
 						if (hard_drop || mino_bottom_dist == 0)
 						{
