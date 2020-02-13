@@ -48,7 +48,6 @@ namespace flame
 			TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
 			TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
 			TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
-			TypeinfoDatabase::load(L"editor.typeinfo", true, true);
 
 			wchar_t* fonts[] = {
 				L"c:/windows/fonts/msyh.ttc",

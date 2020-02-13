@@ -1,1 +1,16 @@
-"../../bin/package_maker.exe" -r../../ -drelease/ bin/tetris.exe bin/flame_type.dll bin/flame_foundation.dll bin/flame_foundation.typeinfo bin/flame_graphics.dll bin/flame_graphics.typeinfo bin/flame_universe.dll bin/flame_universe.typeinfo bin/freetype.dll renderpath/canvas/bp renderpath/canvas/element.vert renderpath/canvas/element.frag renderpath/canvas/text_lcd.frag renderpath/canvas/text_sdf.frag renderpath/canvas/build/Debug/bp.dll renderpath/canvas/build/Debug/bp.typeinfo game/tetris/art/atlas/main.png game/tetris/art/atlas/main.png.atlas
+ECHO OFF
+SET FILES=
+SET FILES=%FILES% bin/tetris.exe bin/flame_type.dll
+SET FILES=%FILES% bin/flame_foundation.dll
+SET FILES=%FILES% bin/flame_graphics.dll
+SET FILES=%FILES% bin/flame_universe.dll
+SET FILES=%FILES% bin/freetype.dll
+SET FILES=%FILES% renderpath/canvas/bp
+SET FILES=%FILES% renderpath/canvas/element.vert
+SET FILES=%FILES% renderpath/canvas/element.frag
+SET FILES=%FILES% renderpath/canvas/text_lcd.frag
+SET FILES=%FILES% renderpath/canvas/text_sdf.frag
+SET FILES=%FILES% renderpath/canvas/build/Debug/bp.dll
+SET FILES=%FILES% game/tetris/art/atlas/main.png
+SET FILES=%FILES% game/tetris/art/atlas/main.png.atlas
+"../../bin/package_maker.exe" -r../../ -drelease/ %FILES%

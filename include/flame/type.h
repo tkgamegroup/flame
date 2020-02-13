@@ -594,7 +594,6 @@ namespace flame
 		FLAME_TYPE_EXPORTS EnumItem* item(int idx) const;
 		FLAME_TYPE_EXPORTS EnumItem* find_item(const char* name, int* out_idx = nullptr) const;
 		FLAME_TYPE_EXPORTS EnumItem* find_item(int value, int* out_idx = nullptr) const;
-		FLAME_TYPE_EXPORTS EnumItem* add_item(const char* name, int value);
 	};
 
 	struct FunctionInfo
@@ -607,7 +606,6 @@ namespace flame
 
 		FLAME_TYPE_EXPORTS uint parameter_count() const;
 		FLAME_TYPE_EXPORTS const TypeInfo* parameter_type(uint idx) const;
-		FLAME_TYPE_EXPORTS void add_parameter(const TypeInfo* type);
 
 	};
 
@@ -621,12 +619,10 @@ namespace flame
 		FLAME_TYPE_EXPORTS uint variable_count() const;
 		FLAME_TYPE_EXPORTS VariableInfo* variable(uint idx) const;
 		FLAME_TYPE_EXPORTS VariableInfo* find_variable(const char* name, int* out_idx = nullptr) const;
-		FLAME_TYPE_EXPORTS VariableInfo* add_variable(const TypeInfo* type, const char* name, uint flags, uint offset, uint size);
 
 		FLAME_TYPE_EXPORTS uint function_count() const;
 		FLAME_TYPE_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_TYPE_EXPORTS FunctionInfo* find_function(const char* name, int* out_idx = nullptr) const;
-		FLAME_TYPE_EXPORTS FunctionInfo* add_function(const char* name, void* rva, const TypeInfo* return_type);
 	};
 
 	struct TypeinfoDatabase
@@ -636,13 +632,10 @@ namespace flame
 
 		FLAME_TYPE_EXPORTS Array<EnumInfo*> get_enums();
 		FLAME_TYPE_EXPORTS EnumInfo* find_enum(uint name_hash);
-		FLAME_TYPE_EXPORTS EnumInfo* add_enum(const char* name);
 
 		FLAME_TYPE_EXPORTS Array<UdtInfo*> get_udts();
 		FLAME_TYPE_EXPORTS UdtInfo* find_udt(uint name_hash);
-		FLAME_TYPE_EXPORTS UdtInfo* add_udt(const TypeInfo* type, uint size);
 
-		FLAME_TYPE_EXPORTS static void collect(const wchar_t* module_filename, const wchar_t* pdb_filename = nullptr);
 		FLAME_TYPE_EXPORTS static TypeinfoDatabase* load(const wchar_t* typeinfo_filename, bool add_to_global, bool load_with_module);
 		FLAME_TYPE_EXPORTS static void destroy(TypeinfoDatabase* db);
 	};

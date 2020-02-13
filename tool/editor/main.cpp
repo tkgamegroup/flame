@@ -10,6 +10,8 @@ void MyApp::create()
 {
 	App::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true);
 
+	TypeinfoDatabase::load(L"editor.typeinfo", true, true);
+
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	ui::style_set_to_light();
 
