@@ -241,11 +241,17 @@ struct MyApp : App
 		mino_pos = Vec2i(0, -1);
 		mino_type = MinoTypeCount;
 		mino_held = MinoTypeCount;
-		mino_pack_idx = Vec2u(1, MinoTypeCount);
+		mino_pack_idx = Vec2u(0, 0);
 		mino_rotation = 0;
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
-		new_mino_pack();
+		for (auto i = 0; i < 2; i++)
+		{
+			for (auto j = 0; j < MinoTypeCount; j++)
+				mino_packs[i][j] = (MinoType)j;
+			for (auto j = 0; j < MinoTypeCount; j++)
+				std::swap(mino_packs[i][j], mino_packs[i][rand() % MinoTypeCount]);
+		}
 
 		add_count_down();
 	}
