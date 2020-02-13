@@ -35,7 +35,7 @@ struct MyApp : App
 
 	cTileMap* board_main;
 	cTileMap* board_hold;
-	cTileMap* board_next[5];
+	cTileMap* board_next[6];
 	cText* text_time;
 	cText* text_lines;
 	cText* text_score;
@@ -106,7 +106,7 @@ struct MyApp : App
 		auto block_size = 24.f;
 
 		ui::e_empty();
-		ui::next_element_pos = Vec2f(200.f, 20.f);
+		ui::next_element_pos = Vec2f(120.f, 20.f);
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
 		{
 			auto ce = ui::c_element();
@@ -133,11 +133,11 @@ struct MyApp : App
 
 		block_size = 16.f;
 
-		ui::next_element_pos = Vec2f(80.f, 20.f);
+		ui::next_element_pos = Vec2f(35.f, 20.f);
 		ui::e_text(L"Hold");
 
 		ui::e_empty();
-		ui::next_element_pos = Vec2f(70.f, 50.f);
+		ui::next_element_pos = Vec2f(20.f, 50.f);
 		ui::next_element_size = Vec2f(block_size * 4 + 8.f);
 		{
 			auto ce = ui::c_element();
@@ -152,19 +152,25 @@ struct MyApp : App
 			ui::current_entity()->add_component(board_hold);
 		}
 
-		ui::next_element_pos = Vec2f(480.f, 20.f);
+		block_size = 12.f;
+
+		ui::next_element_pos = Vec2f(400.f, 20.f);
 		ui::e_text(L"Next");
+
+		ui::e_empty();
+		ui::next_element_pos = Vec2f(390.f, 50.f);
+		ui::next_element_size = Vec2f(block_size * 4 + 8.f, 52.f * array_size(board_next) + 8.f);
+		{
+			auto ce = ui::c_element();
+			ce->color_ = Vec4c(30, 30, 30, 255);
+		}
 
 		for (auto i = 0; i < array_size(board_next); i++)
 		{
 			ui::e_empty();
-			ui::next_element_pos = Vec2f(470.f, 50.f + 80.f * i);
+			ui::next_element_pos = Vec2f(390.f, 50.f + 52.f * i);
 			ui::next_element_size = Vec2f(block_size * 4 + 8.f);
-			{
-				auto ce = ui::c_element();
-				ce->inner_padding_ = Vec4f(4.f);
-				ce->color_ = Vec4c(30, 30, 30, 255);
-			}
+			ui::c_element()->inner_padding_ = Vec4f(4.f);
 			{
 				board_next[i] = cTileMap::create();
 				board_next[i]->cell_size = Vec2f(block_size);
@@ -174,11 +180,11 @@ struct MyApp : App
 			}
 		}
 
-		ui::next_element_pos = Vec2f(70.f, 220.f);
+		ui::next_element_pos = Vec2f(20.f, 220.f);
 		text_time = ui::e_text(L"Time: 00:00")->get_component(cText);
-		ui::next_element_pos = Vec2f(70.f, 270.f);
+		ui::next_element_pos = Vec2f(20.f, 270.f);
 		text_lines = ui::e_text(L"Lines: 0")->get_component(cText);
-		ui::next_element_pos = Vec2f(70.f, 320.f);
+		ui::next_element_pos = Vec2f(20.f, 320.f);
 		text_score = ui::e_text(L"Score: 0")->get_component(cText);
 
 		ui::pop_style(ui::FontSize);
@@ -197,7 +203,7 @@ struct MyApp : App
 		capture.time = 3;
 		ui::push_parent(root);
 		ui::push_style_1u(ui::FontSize, 50);
-		ui::next_element_pos = Vec2f(310.f, 200.f);
+		ui::next_element_pos = Vec2f(230.f, 200.f);
 		capture.text = ui::e_text(L"3")->get_component(cText);
 		ui::pop_style(ui::FontSize);
 		ui::pop_parent();
@@ -470,7 +476,12 @@ struct MyApp : App
 					while (check_board(Vec2i(0, mino_bottom_dist + 1)))
 						mino_bottom_dist++;
 					auto hard_drop = just_down_key[KEY_HARD_DROP];
-					if (hard_drop || mino_ticks >= (mino_bottom_dist > 0 && (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown) ? 1 : down_ticks))
+					auto down_ticks_final = down_ticks;
+					if (mino_bottom_dist == 0)
+						down_ticks_final = 12;
+					else if (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown)
+						down_ticks_final = 1;
+					if (hard_drop || mino_ticks >= down_ticks_final)
 					{
 						if (hard_drop || mino_bottom_dist == 0)
 						{
@@ -551,7 +562,7 @@ struct MyApp : App
 
 int main(int argc, char **args)
 {
-	app.create("Tetris", Vec2u(800, 600), WindowFrame);
+	app.create("Tetris", Vec2u(500, 550), WindowFrame);
 
 	auto w = app.u->world(0);
 

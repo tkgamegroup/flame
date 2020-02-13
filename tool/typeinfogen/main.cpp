@@ -292,10 +292,10 @@ int main(int argc, char **args)
 				if (importDesc->TimeDateStamp == 0 && importDesc->Name == 0)
 					break;
 
-				std::wstring d = s2w((char*)get_ptr_from_rva(importDesc->Name,
-					image->FileHeader, image->MappedAddress));
+				std::filesystem::path d = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
 				if (d != L"flame_type.dll" && SUW::starts_with(d, L"flame_"))
 				{
+					d.replace_extension(L".typeinfo");
 					auto found = false;
 					for (auto& _d : dependencies)
 					{
