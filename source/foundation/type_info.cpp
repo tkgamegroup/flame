@@ -304,7 +304,7 @@ namespace flame
 	{
 		auto typeinfogen_path = std::filesystem::path(getenv("FLAME_PATH"));
 		typeinfogen_path = typeinfogen_path / L"bin/typeinfogen.exe";
-		exec(typeinfogen_path.c_str(), (wchar_t*)module_filename, true);
+		exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_filename).c_str());
 
 		auto module_path = std::filesystem::path(module_filename);
 		module_path.replace_extension(L".typeinfo");
