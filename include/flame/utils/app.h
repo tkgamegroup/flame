@@ -66,8 +66,9 @@ namespace flame
 			w->add_system(s2DRenderer::create(L"../renderpath/canvas/bp", scr, FLAME_CHASH("SwapchainResizable"), &sc_cbs));
 			canvas = w->get_system(s2DRenderer)->canvas;
 			canvas->add_font(font_atlas_pixel);
+			root = w->root();
 			c_element_root = cElement::create();
-			w->root()->add_component(c_element_root);
+			root->add_component(c_element_root);
 		}
 
 		virtual void on_frame()

@@ -270,7 +270,6 @@ namespace flame
 							auto aligner = oth_docker->get_component(cAligner);
 							aligner->set_x_align(AlignxLeft);
 							aligner->set_y_align(AlignyTop);
-							aligner->set_using_padding(true);
 						}
 					}
 				}
@@ -683,7 +682,6 @@ namespace flame
 									auto aligner = docker->get_component(cAligner);
 									aligner->set_x_align(AlignxFree);
 									aligner->set_y_align(AlignyFree);
-									aligner->set_using_padding(false);
 								}
 								else
 								{
@@ -697,7 +695,6 @@ namespace flame
 									aligner->set_y_align(AlignyFree);
 									aligner->set_width_factor(p_element->size_.x());
 									aligner->set_height_factor(p_element->size_.y());
-									aligner->set_using_padding(false);
 
 									{
 										auto oth = p->child(docker_idx == 0 ? 2 : 0);
@@ -718,7 +715,6 @@ namespace flame
 									auto c_aligner = new_docker->get_component(cAligner);
 									c_aligner->set_x_align(AlignxFree);
 									c_aligner->set_y_align(AlignyFree);
-									c_aligner->set_using_padding(false);
 								}
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);

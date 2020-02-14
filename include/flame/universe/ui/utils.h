@@ -22,6 +22,7 @@
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
 #include <flame/universe/ui/menu_utils.h>
+#include <flame/universe/ui/splitter_utils.h>
 #include <flame/universe/ui/window_utils.h>
 
 namespace flame
@@ -142,9 +143,11 @@ namespace flame
 			return c;
 		}
 
-		inline cLayout* c_layout(LayoutType type = LayoutFree)
+		inline cLayout* c_layout(LayoutType type = LayoutFree, bool width_fit_children = true, bool height_fit_children = true)
 		{
 			auto c = cLayout::create(type);
+			c->width_fit_children = width_fit_children;
+			c->height_fit_children = height_fit_children;
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -152,6 +155,13 @@ namespace flame
 		inline cScrollbar* c_scrollbar()
 		{
 			auto c = cScrollbar::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cSplitter* c_splitter(SplitterType type)
+		{
+			auto c = cSplitter::create(type);
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -315,12 +325,8 @@ namespace flame
 		{
 			auto e = e_empty();
 			c_element();
-			auto cl = c_layout(type);
+			auto cl = c_layout(type, width_fit_children, height_fit_children);
 			cl->item_padding = item_padding;
-			if (!width_fit_children)
-				cl->width_fit_children = false;
-			if (!height_fit_children)
-				cl->height_fit_children = false;
 			push_parent(e);
 			return e;
 		}
@@ -521,6 +527,23 @@ namespace flame
 				}, new_mail_p(ct));
 				c_aligner(SizeFitParent, SizeFitParent);
 			}
+			pop_parent();
+		}
+
+		inline Entity* e_begin_splitter(SplitterType type)
+		{
+			auto e = e_empty();
+			c_element();
+			c_aligner(SizeFitParent, SizeFitParent);
+			c_layout(type == SplitterHorizontal ? LayoutHorizontal : LayoutVertical, false, false);
+			push_parent(e);
+			e_empty();
+			make_splitter(current_entity(), type);
+			return e;
+		}
+
+		inline void e_end_splitter()
+		{
 			pop_parent();
 		}
 

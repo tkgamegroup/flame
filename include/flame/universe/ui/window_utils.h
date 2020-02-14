@@ -1,5 +1,7 @@
 #pragma once
 
+#include "splitter_utils.h"
+
 namespace flame
 {
 	namespace ui
@@ -64,23 +66,8 @@ namespace flame
 			e->add_component(cl);
 			{
 				auto es = Entity::create();
+				ui::make_splitter(es, type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical);
 				e->add_child(es);
-				auto ce = cElement::create();
-				ce->size_ = 8.f;
-				es->add_component(ce);
-				es->add_component(cEventReceiver::create());
-				auto cs = cStyleColor::create();
-				cs->color_normal = Vec4c(0);
-				cs->color_hovering = style_4c(FrameColorHovering);
-				cs->color_active = style_4c(FrameColorActive);
-				es->add_component(cs);
-				es->add_component(cSplitter::create(type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical));
-				auto ca = cAligner::create();
-				if (type == LayoutHorizontal)
-					ca->height_policy_ = SizeFitParent;
-				else
-					ca->width_policy_ = SizeFitParent;
-				es->add_component(ca);
 			}
 		}
 

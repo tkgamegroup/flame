@@ -18,9 +18,12 @@ int main(int argc, char** args)
 	ui::c_layout();
 	ui::set_current_root(app.root);
 	ui::push_parent(app.root);
-		ui::e_begin_layout(LayoutHorizontal, 0.f, false, false);
+		ui::e_begin_splitter(SplitterHorizontal);
+		ui::e_element()->get_component(cElement)->color_ = Vec4c(255, 0, 0, 255);
 		ui::c_aligner(SizeFitParent, SizeFitParent);
-		ui::e_end_layout();
+		ui::e_element()->get_component(cElement)->color_ = Vec4c(0, 255, 0, 255);
+		ui::c_aligner(SizeFitParent, SizeFitParent);
+		ui::e_end_splitter();
 	ui::pop_parent();
 
 	looper().loop([](void*) {
