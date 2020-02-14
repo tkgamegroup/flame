@@ -1,10 +1,3 @@
-add_library(flame_type SHARED "type.cpp")
-set_target_properties(flame_type PROPERTIES FOLDER "flame")
-target_compile_definitions(flame_type PRIVATE FLAME_TYPE_MODULE)
-target_include_directories(flame_type PUBLIC ${PUGIXML_PATH}/src)
-target_include_directories(flame_type PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(flame_type ${PUGIXML_PATH}/build/Debug/pugixml.lib)
-
 add_subdirectory(foundation)
 add_subdirectory(network)
 add_subdirectory(graphics)

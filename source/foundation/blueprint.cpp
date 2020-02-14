@@ -1,5 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
+#include <flame/foundation/type_info.h>
 
 #include <flame/reflect_macros.h>
 
@@ -504,7 +505,7 @@ namespace flame
 		m->filename = fn;
 		m->absolute_filename = absolute_filename;
 		m->module = module;
-		m->db = TypeinfoDatabase::load(absolute_filename.replace_extension(L".typeinfo").c_str(), false, true);
+		m->db = TypeinfoDatabase::load(absolute_filename.c_str(), false, true);
 
 		libraries.emplace_back(m);
 		collect_dbs();

@@ -7,4 +7,4 @@ target_compile_definitions(editor PRIVATE GRAPHVIZ_PATH="${GRAPHVIZ_PATH}")
 target_link_libraries(editor flame_foundation)
 target_link_libraries(editor flame_graphics)
 target_link_libraries(editor flame_universe)
-add_custom_command(TARGET editor POST_BUILD COMMAND ${CMAKE_SOURCE_DIR}/bin/typeinfogen ${CMAKE_SOURCE_DIR}/bin/editor.exe)
+

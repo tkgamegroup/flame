@@ -1,4 +1,3 @@
-#include <flame/foundation/bitmap.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/renderpass.h>

@@ -1,6 +1,5 @@
 #include <flame/serialize.h>
-#include <flame/foundation/foundation.h>
-#include "../source/type_private.h"
+#include "../source/foundation/type_info_private.h"
 
 #include <Windows.h>
 #include <ImageHlp.h>
@@ -251,36 +250,15 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	std::filesystem::path dll_path(args[1]);
-	auto typeinfo_path = dll_path;
+	std::filesystem::path module_path(args[1]);
+	auto typeinfo_path = module_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 	std::vector<std::filesystem::path> dependencies;
-	auto pdb_path = dll_path;
+	auto pdb_path = module_path;
 	pdb_path.replace_extension(L".pdb");
-	for (auto i = 2; i < argc; i++)
-	{
-		auto arg = args[i];
-		if (arg[0] == '-')
-		{
-			switch (arg[1])
-			{
-			case 'd':
-			{
-				auto d = std::filesystem::path(arg + 2);
-				d.replace_extension(L".typeinfo");
-				dependencies.push_back(d);
-			}
-				break;
-			case 'p':
-				pdb_path = s2w(arg + 2);
-				pdb_path = dll_path.parent_path() / pdb_path;
-				break;
-			}
-		}
-	}
 
 	{
-		auto image = ImageLoad(dll_path.string().c_str(), dll_path.parent_path().string().c_str());
+		auto image = ImageLoad(module_path.string().c_str(), module_path.parent_path().string().c_str());
 
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
 		{
@@ -293,7 +271,7 @@ int main(int argc, char **args)
 					break;
 
 				std::filesystem::path d = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
-				if (d != L"flame_type.dll" && SUW::starts_with(d, L"flame_"))
+				if (SUW::starts_with(d, L"flame_"))
 				{
 					d.replace_extension(L".typeinfo");
 					auto found = false;
@@ -316,9 +294,9 @@ int main(int argc, char **args)
 
 	}
 
-	if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(dll_path))
+	if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
 	{
-		printf("generating typeinfo");
+		printf("generating typeinfo for %s: ", module_path.string().c_str());
 
 		auto last_curr_path = get_curr_path();
 		set_curr_path(get_app_path().v);
@@ -357,7 +335,7 @@ int main(int argc, char **args)
 		}
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = dll_path;
+		db->module_name = module_path;
 		extra_global_db_count = 1;
 		extra_global_dbs = (TypeinfoDatabase**)&db;
 
@@ -370,11 +348,11 @@ int main(int argc, char **args)
 		std::filesystem::path source_root;
 		{
 			DWORD h;
-			auto version_size = GetFileVersionInfoSizeW(dll_path.c_str(), &h);
+			auto version_size = GetFileVersionInfoSizeW(module_path.c_str(), &h);
 			if (version_size > 0)
 			{
 				auto version_data = new char[version_size];
-				if (GetFileVersionInfoW(dll_path.c_str(), h, version_size, version_data))
+				if (GetFileVersionInfoW(module_path.c_str(), h, version_size, version_data))
 				{
 					void* d; uint s;
 					VerQueryValue(version_data, "\\StringFileInfo\\040904b0\\FileDescription", &d, &s);
@@ -649,7 +627,7 @@ int main(int argc, char **args)
 						}
 						if (ctor)
 						{
-							auto library = LoadLibraryW(dll_path.c_str());
+							auto library = LoadLibraryW(module_path.c_str());
 							if (library)
 							{
 								auto obj = malloc(u->size);
@@ -747,8 +725,6 @@ int main(int argc, char **args)
 
 		printf(" - done\n");
 	}
-	else
-		printf("typeinfo up to data\n");
 
 	return 0;
 }

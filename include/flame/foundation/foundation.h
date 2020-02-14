@@ -27,6 +27,339 @@
 
 namespace flame
 {
+	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
+	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
+	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
+
+	template <class CH>
+	struct String
+	{
+		uint s;
+		CH* v;
+
+		String() :
+			s(0),
+			v(nullptr)
+		{
+		}
+
+		String(const String& rhs)
+		{
+			s = rhs.s;
+			v = (CH*)f_malloc(sizeof(CH) * (s + 1));
+			memcpy(v, rhs.v, sizeof(CH) * s);
+			v[s] = 0;
+		}
+
+		String(String&& rhs)
+		{
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		String(const CH* str, uint _s)
+		{
+			s = _s;
+			v = (CH*)f_malloc(sizeof(CH) * (s + 1));
+			memcpy(v, str, sizeof(CH) * s);
+			v[s] = 0;
+		}
+
+		String(const CH* str) :
+			String(str, std::char_traits<CH>::length(str))
+		{
+		}
+
+		String(const std::basic_string<CH>& str) :
+			String(str.data(), str.size())
+		{
+		}
+
+		~String()
+		{
+			f_free(v);
+		}
+
+		void resize(uint _s)
+		{
+			if (s != _s)
+			{
+				s = _s;
+				if (s > 0)
+				{
+					v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));
+					v[s] = 0;
+				}
+			}
+		}
+
+		void assign(const CH* _v, uint _s)
+		{
+			resize(_s);
+			memcpy(v, _v, sizeof(CH) * s);
+		}
+
+		void operator=(const String& rhs)
+		{
+			assign(rhs.v, rhs.s);
+		}
+
+		void operator=(String&& rhs)
+		{
+			f_free(v);
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		void operator=(const CH* str)
+		{
+			assign(str, std::char_traits<CH>::length(str));
+		}
+
+		void operator=(const std::basic_string<CH>& str)
+		{
+			assign(str.c_str(), str.size());
+		}
+
+		std::basic_string<CH> str()
+		{
+			return std::basic_string<CH>(v, s);
+		}
+	};
+
+	using StringA = String<char>;
+	using StringW = String<wchar_t>;
+
+	template <class T>
+	struct Array
+	{
+		uint s;
+		T* v;
+
+		Array() :
+			s(0),
+			v(nullptr)
+		{
+		}
+
+		Array(const Array& rhs)
+		{
+			s = rhs.s;
+			v = (T*)f_malloc(sizeof(T) * s);
+			for (auto i = 0; i < s; i++)
+			{
+				new (&v[i])T;
+				v[i] = rhs.v[i];
+			}
+		}
+
+		Array(Array&& rhs)
+		{
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		~Array()
+		{
+			for (auto i = 0; i < s; i++)
+				v[i].~T();
+			f_free(v);
+		}
+
+		void resize(uint _s)
+		{
+			if (s != _s)
+			{
+				for (auto i = 0; i < s; i++)
+					v[i].~T();
+				s = _s;
+				if (s > 0)
+				{
+					v = (T*)f_realloc(v, sizeof(T) * s);
+					for (auto i = 0; i < s; i++)
+						new (&v[i])T;
+				}
+				else
+				{
+					f_free(v);
+					v = nullptr;
+				}
+			}
+		}
+
+		const T& at(uint idx) const
+		{
+			return v[idx];
+		}
+
+		T& at(uint idx)
+		{
+			return v[idx];
+		}
+
+		const T& operator[](uint idx) const
+		{
+			return v[idx];
+		}
+
+		T& operator[](uint idx)
+		{
+			return v[idx];
+		}
+
+		void operator=(const Array& rhs)
+		{
+			resize(rhs.s);
+			for (auto i = 0; i < s; i++)
+				v[i] = rhs.v[i];
+		}
+
+		void operator=(Array&& rhs)
+		{
+			for (auto i = 0; i < s; i++)
+				v[i].~T();
+			f_free(v);
+			s = rhs.s;
+			v = rhs.v;
+			rhs.s = 0;
+			rhs.v = nullptr;
+		}
+
+		void push_back(const T& _v)
+		{
+			resize(s + 1);
+			v[s - 1] = _v;
+		}
+	};
+
+	struct Object
+	{
+		const char* name;
+		const uint name_hash;
+		uint id;
+
+		Object(const char* name) :
+			name(name),
+			name_hash(FLAME_HASH(name)),
+			id(0)
+		{
+		}
+	};
+
+	template <class T = void>
+	struct Mail
+	{
+		T* p;
+		void* dtor;
+		uint udt_name_hash;
+
+		Mail() :
+			p(nullptr),
+			dtor(nullptr),
+			udt_name_hash(0)
+		{
+		}
+
+		operator Mail<void>()
+		{
+			Mail<void> ret;
+			ret.p = p;
+			ret.dtor = dtor;
+			ret.udt_name_hash = udt_name_hash;
+			return ret;
+		}
+	};
+
+	template <class T>
+	Mail<T> new_mail(const T* v = nullptr, uint udt_name_hash = 0)
+	{
+		auto p = f_malloc(sizeof(T));
+		if (v)
+			new(p) T(*v);
+		else
+			new(p) T;
+
+		Mail<T> ret;
+		ret.p = (T*)p;
+		ret.dtor = df2v<T>();
+		ret.udt_name_hash = udt_name_hash;
+
+		return ret;
+	}
+
+	inline Mail<void*> new_mail_p(void* p)
+	{
+		return new_mail(&p);
+	}
+
+	template <class T>
+	void delete_mail(const Mail<T>& m)
+	{
+		if (!m.p)
+			return;
+		if (m.dtor)
+			cmf(p2f<MF_v_v>(m.dtor), m.p);
+		f_free(m.p);
+	}
+
+	template <class F>
+	struct Closure
+	{
+		F* function;
+		Mail<> capture;
+
+		template <class FF = F, class ...Args>
+		auto call(Args... args)
+		{
+			return ((FF*)function)(capture.p, args...);
+		}
+
+		~Closure()
+		{
+			delete_mail(capture);
+			capture.p = nullptr;
+		}
+	};
+
+	struct ListenerHubImpl
+	{
+		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl *create();
+		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
+		FLAME_FOUNDATION_EXPORTS uint count();
+		FLAME_FOUNDATION_EXPORTS Closure<void(void*)>& item(uint idx);
+		FLAME_FOUNDATION_EXPORTS void* add_plain(void(*pf)(void* c), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
+	};
+
+	template <class F>
+	struct ListenerHub
+	{
+		ListenerHubImpl* impl;
+
+		void* add(F* pf, const Mail<>& capture)
+		{
+			return impl->add_plain((void(*)(void* c))pf, capture);
+		}
+
+		void remove(void* c)
+		{
+			impl->remove_plain(c);
+		}
+
+		template <class ...Args>
+		void call(Args... args)
+		{
+			auto count = impl->count();
+			for (auto i = 0; i < count; i++)
+				impl->item(i).call<F>(args...);
+		}
+	};
 	enum KeyState
 	{
 		KeyStateNull,
@@ -147,115 +480,12 @@ namespace flame
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
-	template <class T = void>
-	struct Mail
-	{
-		T* p;
-		void* dtor;
-		uint udt_name_hash;
-
-		Mail() :
-			p(nullptr),
-			dtor(nullptr),
-			udt_name_hash(0)
-		{
-		}
-
-		operator Mail<void>()
-		{
-			Mail<void> ret;
-			ret.p = p;
-			ret.dtor = dtor;
-			ret.udt_name_hash = udt_name_hash;
-			return ret;
-		}
-	};
-
-	template <class T>
-	Mail<T> new_mail(const T* v = nullptr, uint udt_name_hash = 0)
-	{
-		auto p = f_malloc(sizeof(T));
-		if (v)
-			new(p) T(*v);
-		else
-			new(p) T;
-
-		Mail<T> ret;
-		ret.p = (T*)p;
-		ret.dtor = df2v<T>();
-		ret.udt_name_hash = udt_name_hash;
-
-		return ret;
-	}
-
-	inline Mail<void*> new_mail_p(void* p)
-	{
-		return new_mail(&p);
-	}
-
-	template <class T>
-	void delete_mail(const Mail<T>& m)
-	{
-		if (!m.p)
-			return;
-		if (m.dtor)
-			cmf(p2f<MF_v_v>(m.dtor), m.p);
-		f_free(m.p);
-	}
-
-	template <class F>
-	struct Closure
-	{
-		F* function;
-		Mail<> capture;
-
-		template <class FF = F, class ...Args>
-		auto call(Args... args)
-		{
-			return ((FF*)function)(capture.p, args...);
-		}
-
-		~Closure()
-		{
-			delete_mail(capture);
-			capture.p = nullptr;
-		}
-	};
-
-	struct ListenerHubImpl
-	{
-		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl *create();
-		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
-		FLAME_FOUNDATION_EXPORTS uint count();
-		FLAME_FOUNDATION_EXPORTS Closure<void(void*)>& item(uint idx);
-		FLAME_FOUNDATION_EXPORTS void* add_plain(void(*pf)(void* c), const Mail<>& capture);
-		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
-	};
-
-	template <class F>
-	struct ListenerHub
-	{
-		ListenerHubImpl* impl;
-
-		void* add(F* pf, const Mail<>& capture)
-		{
-			return impl->add_plain((void(*)(void* c))pf, capture);
-		}
-
-		void remove(void* c)
-		{
-			impl->remove_plain(c);
-		}
-
-		template <class ...Args>
-		void call(Args... args)
-		{
-			auto count = impl->count();
-			for (auto i = 0; i < count; i++)
-				impl->item(i).call<F>(args...);
-		}
-	};
-
+	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
+	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
+	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
+	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
+	FLAME_FOUNDATION_EXPORTS StringW get_app_path();
+	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);

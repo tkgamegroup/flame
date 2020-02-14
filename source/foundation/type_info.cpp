@@ -1,61 +1,10 @@
 #include <flame/serialize.h>
-#include "type_private.h"
+#include "type_info_private.h"
 
 #include <Windows.h>
 
 namespace flame
 {
-	void* f_malloc(uint size)
-	{
-		return malloc(size);
-	}
-
-	void* f_realloc(void* p, uint size)
-	{
-		if (!p)
-			return f_malloc(size);
-		return realloc(p, size);
-	}
-
-	void f_free(void* p)
-	{
-		free(p);
-	}
-
-	void* load_module(const wchar_t* module_name)
-	{
-		return LoadLibraryW(module_name);
-	}
-
-	void* get_module_func(void* module, const char* name)
-	{
-		return GetProcAddress((HMODULE)module, name);
-	}
-
-	void free_module(void* library)
-	{
-		FreeLibrary((HMODULE)library);
-	}
-
-	StringW get_curr_path()
-	{
-		wchar_t buf[260];
-		GetCurrentDirectoryW(sizeof(buf), buf);
-		return StringW(buf);
-	}
-
-	StringW get_app_path()
-	{
-		wchar_t buf[260];
-		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		return StringW(std::filesystem::path(buf).parent_path().wstring());
-	}
-
-	void set_curr_path(const wchar_t* p)
-	{
-		SetCurrentDirectoryW(p);
-	}
-
 	TypeTag TypeInfo::tag() const
 	{
 		return ((TypeInfoPrivate*)this)->tag;
@@ -351,18 +300,25 @@ namespace flame
 		return find_typeinfo_object(((TypeinfoDatabasePrivate*)this)->udts, name_hash);
 	}
 
-	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* typeinfo_filename, bool add_to_global, bool load_with_module)
+	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* module_filename, bool add_to_global, bool load_with_module)
 	{
+		auto typeinfogen_path = std::filesystem::path(getenv("FLAME_PATH"));
+		typeinfogen_path = typeinfogen_path / L"bin/typeinfogen.exe";
+		exec(typeinfogen_path.c_str(), (wchar_t*)module_filename, true);
+
+		auto module_path = std::filesystem::path(module_filename);
+		module_path.replace_extension(L".typeinfo");
+
 		pugi::xml_document file;
 		pugi::xml_node file_root;
-		if (!file.load_file(typeinfo_filename) || (file_root = file.first_child()).name() != std::string("typeinfo"))
+		if (!file.load_file(module_path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
 		{
 			assert(0);
 			return nullptr;
 		}
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = std::filesystem::path(typeinfo_filename).replace_extension(L".dll");
+		db->module_name = module_filename;
 		extra_global_db_count = 1;
 		extra_global_dbs = (TypeinfoDatabase**)&db;
 

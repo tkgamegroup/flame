@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/foundation/foundation.h>
+#include <flame/foundation/type_info.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
@@ -45,9 +46,9 @@ namespace flame
 			for (auto i = 0; i < sc_cbs.s; i++)
 				sc_cbs[i] = graphics::Commandbuffer::create(d->gcp);
 			render_finished = graphics::Semaphore::create(d);
-			TypeinfoDatabase::load(L"flame_foundation.typeinfo", true, true);
-			TypeinfoDatabase::load(L"flame_graphics.typeinfo", true, true);
-			TypeinfoDatabase::load(L"flame_universe.typeinfo", true, true);
+			TypeinfoDatabase::load(L"flame_foundation.dll", true, true);
+			TypeinfoDatabase::load(L"flame_graphics.dll", true, true);
+			TypeinfoDatabase::load(L"flame_universe.dll", true, true);
 
 			wchar_t* fonts[] = {
 				L"c:/windows/fonts/msyh.ttc",

@@ -1,4 +1,4 @@
-#include <flame/serialize.h>
+#include <flame/foundation/type_info.h>
 #include "entity_private.h"
 
 namespace flame

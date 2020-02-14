@@ -63,6 +63,58 @@ namespace flame
 		}
 	}
 
+	void* f_malloc(uint size)
+	{
+		return malloc(size);
+	}
+
+	void* f_realloc(void* p, uint size)
+	{
+		if (!p)
+			return f_malloc(size);
+		return realloc(p, size);
+	}
+
+	void f_free(void* p)
+	{
+		free(p);
+	}
+
+	void* load_module(const wchar_t* module_name)
+	{
+		return LoadLibraryW(module_name);
+	}
+
+	void* get_module_func(void* module, const char* name)
+	{
+		return GetProcAddress((HMODULE)module, name);
+	}
+
+	void free_module(void* library)
+	{
+		FreeLibrary((HMODULE)library);
+	}
+
+	StringW get_curr_path()
+	{
+		wchar_t buf[260];
+		GetCurrentDirectoryW(sizeof(buf), buf);
+		return StringW(buf);
+	}
+
+	StringW get_app_path()
+	{
+		wchar_t buf[260];
+		GetModuleFileNameW(nullptr, buf, sizeof(buf));
+		return StringW(std::filesystem::path(buf).parent_path().wstring());
+	}
+
+	void set_curr_path(const wchar_t* p)
+	{
+		SetCurrentDirectoryW(p);
+	}
+
+
 	void *get_hinst()
 	{
 		return GetModuleHandle(nullptr);

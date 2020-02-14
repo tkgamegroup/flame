@@ -246,20 +246,14 @@ struct MyApp : App
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
 		for (auto i = 0; i < 2; i++)
-		{
-			for (auto j = 0; j < MinoTypeCount; j++)
-				mino_packs[i][j] = (MinoType)j;
-			for (auto j = 0; j < MinoTypeCount; j++)
-				std::swap(mino_packs[i][j], mino_packs[i][rand() % MinoTypeCount]);
-		}
+			shuffle_pack(i);
 
 		add_count_down();
 	}
 
-	void new_mino_pack()
+	void shuffle_pack(uint idx)
 	{
-		mino_pack_idx = Vec2i(1 - mino_pack_idx.x(), 0);
-		auto& curr_pack = mino_packs[mino_pack_idx.x()];
+		auto& curr_pack = mino_packs[idx];
 		for (auto i = 0; i < MinoTypeCount; i++)
 			curr_pack[i] = (MinoType)i;
 		for (auto i = 0; i < MinoTypeCount; i++)
@@ -405,7 +399,10 @@ struct MyApp : App
 					{
 						mino_type = mino_packs[mino_pack_idx.x()][mino_pack_idx.y()++];
 						if (mino_pack_idx.y() >= MinoTypeCount)
-							new_mino_pack();
+						{
+							mino_pack_idx = Vec2i(1 - mino_pack_idx.x(), 0);
+							shuffle_pack(mino_pack_idx.x());
+						}
 						for (auto i = 0; i < array_size(board_next); i++)
 						{
 							board_next[i]->clear_cells();

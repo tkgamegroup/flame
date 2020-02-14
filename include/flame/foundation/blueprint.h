@@ -7,12 +7,12 @@ namespace flame
 	/*
 		- A blueprint(BP) is a scene that represents relations between objects.
 		- An object is called node and associated with an udt or a package that contains another scene.
-		- The reflected members with attribute 'i' or 'o' will be as inputs or outpus.
-		- All inputs and outputs must be Attribute[*]<T> type.
+		- At least one input or output must exist in the reflected udts.
 		- The udt must have a update function, the function return nothing and takes no parameters
 		- Address: [package_id].[node_id].[varible_name]
 	*/
 
+	struct TypeInfo;
 	struct VariableInfo;
 	struct UdtInfo;
 	struct TypeinfoDatabase;
