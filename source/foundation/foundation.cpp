@@ -10,6 +10,7 @@
 #include <Shlwapi.h>
 #include <CommCtrl.h>
 #include <thumbcache.h>
+#include <ImageHlp.h>
 #elif FLAME_ANDROID
 #include <android_native_app_glue.h>
 #endif
@@ -260,6 +261,13 @@ namespace flame
 		CloseHandle(proc_info.hThread);
 	}
 
+	StringW get_module_name(void* module)
+	{
+		wchar_t buf[260];
+		GetModuleFileNameW((HMODULE)module, buf, sizeof(buf));
+		return StringW(buf);
+	}
+
 	void* get_module_from_address(void* addr)
 	{
 		HMODULE module = NULL;
@@ -267,11 +275,56 @@ namespace flame
 		return module;
 	}
 
-	StringW get_module_name(void* module)
+	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
 	{
-		wchar_t buf[260];
-		GetModuleFileNameW((HMODULE)module, buf, sizeof(buf));
-		return StringW(buf);
+		auto section = IMAGE_FIRST_SECTION(pNTHeader);
+
+		for (auto i = 0; i < pNTHeader->FileHeader.NumberOfSections; i++, section++)
+		{
+			auto size = section->Misc.VirtualSize;
+			if (0 == size)
+				size = section->SizeOfRawData;
+
+			if (rva >= section->VirtualAddress && rva < section->VirtualAddress + size)
+				return section;
+		}
+
+		return 0;
+	}
+
+	static LPVOID get_ptr_from_rva(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader, PBYTE imageBase)
+	{
+		auto pSectionHdr = get_enclosing_section_header(rva, pNTHeader);
+		if (!pSectionHdr)
+			return 0;
+
+		auto delta = (INT)(pSectionHdr->VirtualAddress - pSectionHdr->PointerToRawData);
+		return (PVOID)(imageBase + rva - delta);
+	}
+
+	Array<StringW> get_module_dependencies(const wchar_t* filename)
+	{
+		Array<StringW> ret;
+		auto path = std::filesystem::path(filename);
+		auto image = ImageLoad(path.string().c_str(), path.parent_path().string().c_str());
+		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
+		{
+			auto importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
+				image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress,
+				image->FileHeader, image->MappedAddress);
+			while (true)
+			{
+				if (importDesc->TimeDateStamp == 0 && importDesc->Name == 0)
+					break;
+
+				std::filesystem::path d = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
+				ret.push_back(d.c_str());
+
+				importDesc++;
+			}
+		}
+		ImageUnload(image);
+		return ret;
 	}
 
 	StringW get_clipboard()

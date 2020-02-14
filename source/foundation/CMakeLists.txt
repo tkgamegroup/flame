@@ -7,5 +7,6 @@ target_compile_definitions(flame_foundation PUBLIC VS_LOCATION="${VS_PATH}")
 target_include_directories(flame_foundation PRIVATE ${STB_PATH})
 target_include_directories(flame_foundation PUBLIC ${PUGIXML_PATH}/src)
 target_include_directories(flame_foundation PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(flame_foundation imagehlp.lib)
 target_link_libraries(flame_foundation ${PUGIXML_PATH}/build/Debug/pugixml.lib)
 

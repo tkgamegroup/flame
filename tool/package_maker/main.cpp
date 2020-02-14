@@ -34,12 +34,37 @@ int main(int argc, char **args)
 
 		std::filesystem::copy_file(s, d, std::filesystem::copy_options::overwrite_existing);
 
-		if (s.extension() == L".dll" || s.extension() == L".exe")
-			s.replace_extension(L".typeinfo");
-		if (std::filesystem::exists(s))
+		auto ext = s.extension();
+
+		if (ext == L".exe")
 		{
-			d.replace_extension(L".typeinfo");
-			std::filesystem::copy_file(s, d, std::filesystem::copy_options::overwrite_existing);
+			auto dependencies = get_module_dependencies(s.c_str());
+			for (auto i = 0; i < dependencies.s; i++)
+			{
+				auto dep = dependencies[i].str();
+				auto ss = s.parent_path() / dep;
+				if (std::filesystem::exists(ss))
+				{
+					auto dd = d.parent_path() / dep;
+					std::filesystem::copy_file(ss, dd, std::filesystem::copy_options::overwrite_existing);
+					ss.replace_extension(L".typeinfo");
+					if (std::filesystem::exists(ss))
+					{
+						dd.replace_extension(L".typeinfo");
+						std::filesystem::copy_file(ss, dd, std::filesystem::copy_options::overwrite_existing);
+					}
+				}
+			}
+		}
+
+		if (ext == L".dll" || ext == L".exe")
+		{
+			s.replace_extension(L".typeinfo");
+			if (std::filesystem::exists(s))
+			{
+				d.replace_extension(L".typeinfo");
+				std::filesystem::copy_file(s, d, std::filesystem::copy_options::overwrite_existing);
+			}
 		}
 	}
 

@@ -2,38 +2,10 @@
 #include "../source/foundation/type_info_private.h"
 
 #include <Windows.h>
-#include <ImageHlp.h>
 #include <dia2.h>
 #include <atlbase.h>
 
 using namespace flame;
-
-static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
-{
-	auto section = IMAGE_FIRST_SECTION(pNTHeader);
-
-	for (auto i = 0; i < pNTHeader->FileHeader.NumberOfSections; i++, section++)
-	{
-		auto size = section->Misc.VirtualSize;
-		if (0 == size)
-			size = section->SizeOfRawData;
-
-		if (rva >= section->VirtualAddress && rva < section->VirtualAddress + size)
-			return section;
-	}
-
-	return 0;
-}
-
-static LPVOID get_ptr_from_rva(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader, PBYTE imageBase)
-{
-	auto pSectionHdr = get_enclosing_section_header(rva, pNTHeader);
-	if (!pSectionHdr)
-		return 0;
-
-	auto delta = (INT)(pSectionHdr->VirtualAddress - pSectionHdr->PointerToRawData);
-	return (PVOID)(imageBase + rva - delta);
-}
 
 std::string format_type(const wchar_t* in, bool* is_array)
 {
@@ -244,11 +216,7 @@ TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 
 int main(int argc, char **args)
 {
-	if (argc < 2)
-	{
-		printf("argc is less than 2, exit\n");
-		return 0;
-	}
+	auto force = (argc > 2 && args[2] == std::string("-f"));
 
 	std::filesystem::path module_path(args[1]);
 	auto typeinfo_path = module_path;
@@ -257,44 +225,18 @@ int main(int argc, char **args)
 	auto pdb_path = module_path;
 	pdb_path.replace_extension(L".pdb");
 
+	auto arr_dep = get_module_dependencies(module_path.c_str());
+	for (auto i = 0; i < arr_dep.s; i++)
 	{
-		auto image = ImageLoad(module_path.string().c_str(), module_path.parent_path().string().c_str());
-
-		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
+		auto d = std::filesystem::path(arr_dep[i].str());
+		if (SUW::starts_with(d, L"flame_"))
 		{
-			auto importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
-				image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress,
-				image->FileHeader, image->MappedAddress);
-			while (true)
-			{
-				if (importDesc->TimeDateStamp == 0 && importDesc->Name == 0)
-					break;
-
-				std::filesystem::path d = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
-				if (SUW::starts_with(d, L"flame_"))
-				{
-					d.replace_extension(L".typeinfo");
-					auto found = false;
-					for (auto& _d : dependencies)
-					{
-						if (d == _d)
-						{
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-						dependencies.push_back(d);
-				}
-
-				importDesc++;
-			}
+			d.replace_extension(L".typeinfo");
+			dependencies.push_back(d);
 		}
-		ImageUnload(image);
-
 	}
 
-	if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
+	if (force || !std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
 	{
 		printf("generating typeinfo for %s: ", module_path.string().c_str());
 

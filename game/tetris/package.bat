@@ -1,9 +1,6 @@
 ECHO OFF
 SET FILES=
-SET FILES=%FILES% bin/tetris.exe bin/flame_type.dll
-SET FILES=%FILES% bin/flame_foundation.dll
-SET FILES=%FILES% bin/flame_graphics.dll
-SET FILES=%FILES% bin/flame_universe.dll
+SET FILES=%FILES% bin/tetris.exe
 SET FILES=%FILES% bin/freetype.dll
 SET FILES=%FILES% renderpath/canvas/bp
 SET FILES=%FILES% renderpath/canvas/element.vert

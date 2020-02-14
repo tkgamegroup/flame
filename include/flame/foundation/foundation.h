@@ -176,13 +176,12 @@ namespace flame
 		{
 			if (s != _s)
 			{
-				for (auto i = 0; i < s; i++)
+				for (auto i = _s; i < s; i++)
 					v[i].~T();
-				s = _s;
-				if (s > 0)
+				if (_s != 0)
 				{
-					v = (T*)f_realloc(v, sizeof(T) * s);
-					for (auto i = 0; i < s; i++)
+					v = (T*)f_realloc(v, sizeof(T) * _s);
+					for (auto i = s; i < _s; i++)
 						new (&v[i])T;
 				}
 				else
@@ -190,6 +189,7 @@ namespace flame
 					f_free(v);
 					v = nullptr;
 				}
+				s = _s;
 			}
 		}
 
@@ -500,20 +500,16 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
-
-	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
 	FLAME_FOUNDATION_EXPORTS StringW get_module_name(void* module);
-
+	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
+	FLAME_FOUNDATION_EXPORTS Array<StringW> get_module_dependencies(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
-
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
-
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
-
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail<>& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
