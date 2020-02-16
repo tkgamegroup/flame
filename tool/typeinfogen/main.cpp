@@ -219,6 +219,12 @@ int main(int argc, char **args)
 	auto force = (argc > 2 && args[2] == std::string("-f"));
 
 	std::filesystem::path module_path(args[1]);
+	if (!std::filesystem::exists(module_path))
+	{
+		printf("typeinfogen: module does not exist: %s", module_path.string().c_str());
+		return 0;
+	}
+
 	auto typeinfo_path = module_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 	std::vector<std::filesystem::path> dependencies;

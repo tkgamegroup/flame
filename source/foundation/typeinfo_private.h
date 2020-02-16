@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/foundation/type_info.h>
+#include <flame/foundation/typeinfo.h>
 
 namespace flame
 {

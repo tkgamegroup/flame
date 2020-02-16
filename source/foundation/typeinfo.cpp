@@ -1,5 +1,5 @@
 #include <flame/serialize.h>
-#include "type_info_private.h"
+#include "typeinfo_private.h"
 
 #include <Windows.h>
 

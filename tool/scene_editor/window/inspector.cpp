@@ -1,5 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/universe/ui/utils.h>
+#include <flame/universe/ui/typeinfo_utils.h>
 
 #include "../app.h"
 #include "../data_tracker.h"
@@ -57,7 +58,7 @@ struct cComponentDealer : Component
 template <class T>
 void create_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 {
-	auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
+	auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
 
 	struct Capture
 	{
@@ -99,7 +100,7 @@ void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 	for (auto i = 0; i < N; i++)
 	{
 		ui::e_begin_layout(LayoutHorizontal, 4.f);
-		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
+		auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
@@ -255,7 +256,7 @@ struct cInspectorPrivate : cInspector
 					{
 						auto info = find_enum(base_hash);
 
-						create_enum_combobox(info, 120.f);
+						ui::create_enum_combobox(info, 120.f);
 
 						struct Capture
 						{
@@ -285,7 +286,7 @@ struct cInspectorPrivate : cInspector
 					{
 						auto info = find_enum(base_hash);
 
-						create_enum_checkboxs(info);
+						ui::create_enum_checkboxs(info);
 						for (auto k = 0; k < info->item_count(); k++)
 						{
 							struct Capture

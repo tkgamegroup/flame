@@ -10,7 +10,6 @@
 
 #include "../app.h"
 #include "resource_explorer.h"
-#include "blueprint_editor.h"
 #include "scene_editor.h"
 
 struct cResourceExplorer;
@@ -302,15 +301,6 @@ struct cResourceExplorer : Component
 						open_scene_editor(capture.e->selected, Vec2f(450.f, 20.f));
 					}, new_mail(&capture));
 					ui::e_end_popup_menu();
-				}
-				else if (p.filename() == L"bp")
-				{
-					ui::e_begin_popup_menu();
-					ui::e_menu_item(L"Open", [](void* c) {
-						auto& capture = *(Capture*)c;
-						capture.e->selected = capture.p;
-						open_blueprint_editor(capture.e->selected, Vec2f(4.f, 10.f));
-					}, new_mail(&capture));
 				}
 				ui::pop_parent();
 			}

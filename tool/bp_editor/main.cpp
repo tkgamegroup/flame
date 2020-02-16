@@ -4,13 +4,12 @@
 #include <flame/universe/ui/utils.h>
 
 #include "app.h"
-#include "window/resource_explorer.h"
 
 void MyApp::create()
 {
-	App::create("Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true);
+	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true);
 
-	TypeinfoDatabase::load(L"editor.exe", true, true);
+	TypeinfoDatabase::load(L"bp_editor.exe", true, true);
 
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	ui::style_set_to_light();
@@ -47,8 +46,6 @@ void MyApp::create()
 		ui::e_end_layout();
 
 	ui::pop_parent();
-
-	open_resource_explorer(L"..", Vec2f(5, 724.f));
 }
 
 MyApp app;
@@ -121,20 +118,6 @@ Entity* create_drag_edit(bool is_float)
 	}, new_mail(&capture));
 
 	return e_layout;
-}
-
-void create_enum_combobox(EnumInfo* info, float width)
-{
-	ui::e_begin_combobox(120.f);
-		for (auto i = 0; i < info->item_count(); i++)
-			ui::e_combobox_item(s2w(info->item(i)->name()).c_str());
-	ui::e_end_combobox();
-}
-
-void create_enum_checkboxs(EnumInfo* info)
-{
-	for (auto i = 0; i < info->item_count(); i++)
-		ui::e_checkbox(s2w(info->item(i)->name()).c_str());
 }
 
 int main(int argc, char **args)

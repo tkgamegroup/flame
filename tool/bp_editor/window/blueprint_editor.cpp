@@ -1098,7 +1098,7 @@ void create_edit(cBPEditor* editor, BP::Slot* input)
 	auto& data = *(T*)input->data();
 
 	ui::push_style_1u(ui::FontSize, 12);
-	auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
+	auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
 	struct Capture
 	{
 		cBPEditor* editor;
@@ -1144,7 +1144,7 @@ void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 	for (auto i = 0; i < N; i++)
 	{
 		ui::e_begin_layout(LayoutHorizontal, 4.f);
-		auto e_edit = create_drag_edit(std::is_floating_point<T>::value);
+		auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
 		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {

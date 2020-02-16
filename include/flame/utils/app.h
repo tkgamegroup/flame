@@ -1,7 +1,7 @@
 #pragma once
 
 #include <flame/foundation/foundation.h>
-#include <flame/foundation/type_info.h>
+#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>

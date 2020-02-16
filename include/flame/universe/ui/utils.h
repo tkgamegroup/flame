@@ -19,11 +19,13 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
-#include <flame/universe/ui/menu_utils.h>
-#include <flame/universe/ui/splitter_utils.h>
-#include <flame/universe/ui/window_utils.h>
+
+#include "menu_utils.h"
+#include "splitter_utils.h"
+#include "window_utils.h"
 
 namespace flame
 {
@@ -462,6 +464,76 @@ namespace flame
 			if (width == 0.f)
 				c_aligner(SizeFitParent, SizeFixed);
 			c_edit();
+			return e;
+		}
+
+		inline Entity* e_drag_edit(bool is_float)
+		{
+			auto e = e_begin_layout(LayoutVertical);
+			e->get_component(cLayout)->fence = 1;
+
+			auto ee = e_edit(50.f);
+			ee->set_visibility(false);
+			auto ed = e_button(L"");
+			ed->get_component(cElement)->size_.x() = 58.f;
+			ed->get_component(cText)->auto_width_ = false;
+
+			e_end_layout();
+
+			struct Capture
+			{
+				Entity* e;
+				cText* e_t;
+				cEdit* e_e;
+				cEventReceiver* e_er;
+				Entity* d;
+				cEventReceiver* d_er;
+				bool is_float;
+			}capture;
+			capture.e = ee;
+			capture.e_t = ee->get_component(cText);
+			capture.e_e = ee->get_component(cEdit);
+			capture.e_er = ee->get_component(cEventReceiver);
+			capture.d = ed;
+			capture.d_er = ed->get_component(cEventReceiver);
+			capture.is_float = is_float;
+
+			capture.e_er->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
+				auto& capture = *(Capture*)c;
+				if (hash == FLAME_CHASH("focusing") && ((cEventReceiver*)er)->focusing == false)
+				{
+					capture.e->set_visibility(false);
+					capture.d->set_visibility(true);
+				}
+			}, new_mail(&capture));
+
+			capture.d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto& capture = *(Capture*)c;
+				if (is_mouse_clicked(action, key) && pos == 0)
+				{
+					capture.e->set_visibility(true);
+					capture.d->set_visibility(false);
+					auto dp = capture.d_er->dispatcher;
+					dp->next_focusing = capture.e_er;
+					dp->pending_update = true;
+				}
+				else if (capture.d_er->active && is_mouse_move(action, key))
+				{
+					if (capture.is_float)
+					{
+						auto v = std::stof(capture.e_t->text());
+						v += pos.x() * 0.05f;
+						capture.e_t->set_text(to_wstring(v, 2).c_str());
+					}
+					else
+					{
+						auto v = std::stoi(capture.e_t->text());
+						v += pos.x();
+						capture.e_t->set_text(std::to_wstring(v).c_str());
+					}
+				}
+			}, new_mail(&capture));
+
 			return e;
 		}
 
