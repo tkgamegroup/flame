@@ -149,10 +149,10 @@ namespace flame
 
 	struct R(Serializer_cTileMap, flame,)
 	{
-		Vec2u size;
-		Vec2f cell_size;
-		Array<ulonglong> tiles;
-		Array<int> cells;
+		RV(Vec2u, size, n);
+		RV(Vec2f, cell_size, n);
+		RV(Array<ulonglong>, tiles, n);
+		RV(Array<int>, cells, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cTileMap)()
 		{

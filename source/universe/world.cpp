@@ -1,4 +1,4 @@
-#include <flame/foundation/type_info.h>
+#include <flame/foundation/typeinfo.h>
 #include "world_private.h"
 
 namespace flame
@@ -110,7 +110,7 @@ namespace flame
 
 		for (auto n_o : file_root)
 		{
-			auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + n_o.name()).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("D#flame::Serializer_") + n_o.name()).c_str()));
 			assert(udt);
 			auto dummy = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());
@@ -127,7 +127,7 @@ namespace flame
 			void* object;
 			{
 				auto f = udt->find_function("create");
-				assert(f && check_function(f, "P#Object", { "P#World" }));
+				assert(f && check_function(f, "P#Object", { "P#flame::World" }));
 				object = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), dummy, w);
 			}
 			((WorldPrivate*)w)->objects.emplace_back((Object*)object, udt);

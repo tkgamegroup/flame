@@ -258,17 +258,17 @@ namespace flame
 
 	struct R(Serializer_cElement, flame,)
 	{
-		Vec2f pos;
-		float scale;
-		Vec2f size;
-		Vec4f inner_padding;
-		float alpha;
-		Vec4f roundness;
-		uint roundness_lod;
-		float frame_thickness;
-		Vec4c color;
-		Vec4c frame_color;
-		bool clip_children;
+		RV(Vec2f, pos, n);
+		RV(float, scale, n);
+		RV(Vec2f, size, n);
+		RV(Vec4f, inner_padding, n);
+		RV(float, alpha, n);
+		RV(Vec4f, roundness, n);
+		RV(uint, roundness_lod, n);
+		RV(float, frame_thickness, n);
+		RV(Vec4c, color, n);
+		RV(Vec4c, frame_color, n);
+		RV(bool, clip_children, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cElement)()
 		{

@@ -1,4 +1,4 @@
-#include <flame/foundation/type_info.h>
+#include <flame/foundation/typeinfo.h>
 #include "entity_private.h"
 
 namespace flame
@@ -359,7 +359,7 @@ namespace flame
 
 		for (auto n_c : src.child("components"))
 		{
-			auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + n_c.name()).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("D#flame::Serializer_") + n_c.name()).c_str()));
 			assert(udt);
 			auto object = malloc(udt->size());
 			auto module = load_module(udt->db()->module_name());
@@ -376,7 +376,7 @@ namespace flame
 			void* component;
 			{
 				auto f = udt->find_function("create");
-				assert(f && check_function(f, "P#Component", { "P#World" }));
+				assert(f && check_function(f, "P#flame::Component", { "P#flame::World" }));
 				component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
 			}
 			e->add_component((Component*)component);
@@ -431,7 +431,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("serialize");
-					assert(f && check_function(f, "D#void", { "P#Component", "D#int" }));
+					assert(f && check_function(f, "D#void", { "P#flame::Component", "D#int" }));
 					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), object, c, -1);
 				}
 				for (auto i = 0; i < udt->variable_count(); i++)

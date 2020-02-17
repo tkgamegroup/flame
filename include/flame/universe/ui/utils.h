@@ -751,7 +751,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_combobox(float width, int idx = -1)
+		inline Entity* e_begin_combobox(float width)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
@@ -770,8 +770,6 @@ namespace flame
 			auto cm = c_menu(cMenu::ModeMain);
 			cm->root = current_root();
 			auto ccb = c_combobox();
-			if (idx != -1)
-				ccb->set_index(idx, false);
 			push_parent(e);
 			e_empty();
 			c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
@@ -782,8 +780,10 @@ namespace flame
 			return e;
 		}
 
-		inline void e_end_combobox()
+		inline void e_end_combobox(int idx = -1)
 		{
+			if (idx != -1)
+				current_parent()->get_component(cMenuItems)->menu->entity->get_component(cCombobox)->set_index(idx, false);
 			pop_parent();
 		}
 
@@ -1073,13 +1073,7 @@ namespace flame
 			pop_parent();
 		}
 
-		struct sDockerPage
-		{
-			Entity* tab;
-			Entity* page;
-		};
-
-		inline sDockerPage e_begin_docker_page(const wchar_t* title)
+		inline std::pair<Entity*, Entity*> e_begin_docker_page(const wchar_t* title)
 		{
 			push_parent(current_parent()->child(0));
 			auto et = e_empty();
@@ -1126,14 +1120,31 @@ namespace flame
 			}
 			pop_parent();
 			push_parent(ep);
-			sDockerPage ret;
-			ret.tab = et;
-			ret.page = ep;
-			return ret;
+			return std::make_pair(et, ep);
 		}
 
 		inline void e_end_docker_page()
 		{
+			pop_parent();
+		}
+
+		inline std::pair<Entity*, Entity*> e_begin_docker_window(const wchar_t* title)
+		{
+			auto r = current_root();
+			push_parent(r);
+			auto s = r->get_component(cElement)->size_;
+			next_element_pos = s * 0.25f;
+			next_element_size = s * 0.5f;
+			e_begin_docker_floating_container();
+			e_begin_docker();
+			return e_begin_docker_page(title);
+		}
+
+		inline void e_end_docker_window()
+		{
+			e_end_docker_page();
+			e_end_docker();
+			e_end_docker_floating_container();
 			pop_parent();
 		}
 

@@ -1,6 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/foundation/type_info.h>
+#include <flame/foundation/typeinfo.h>
 
 #include <flame/reflect_macros.h>
 

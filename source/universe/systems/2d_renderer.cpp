@@ -14,7 +14,7 @@ namespace flame
 {
 	struct R(Serializer_Atlas, flame,)
 	{
-		StringW filename;
+		RV(StringW, filename, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_Atlas)()
 		{
@@ -43,8 +43,8 @@ namespace flame
 
 	struct R(Serializer_FontAtlas, flame,)
 	{
-		graphics::FontDrawType draw_type;
-		StringW fonts;
+		RV(graphics::FontDrawType, draw_type, n);
+		RV(StringW, fonts, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_FontAtlas)()
 		{

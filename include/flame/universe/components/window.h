@@ -69,7 +69,6 @@ namespace flame
 		cDockerTab() :
 			Component("cDockerTab")
 		{
-
 		}
 
 		FLAME_UNIVERSE_EXPORTS void take_away(bool close);

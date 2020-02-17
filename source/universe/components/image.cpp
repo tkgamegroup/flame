@@ -60,12 +60,12 @@ namespace flame
 
 	struct R(Serializer_cImage, flame,)
 	{
-		ulonglong id;
-		Vec2f pos_offset;
-		Vec2f size_offset;
-		Vec2f uv0;
-		Vec2f uv1;
-		Vec4c color;
+		RV(ulonglong, id, n);
+		RV(Vec2f, pos_offset, n);
+		RV(Vec2f, size_offset, n);
+		RV(Vec2f, uv0, n);
+		RV(Vec2f, uv1, n);
+		RV(Vec4c, color, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cImage)()
 		{

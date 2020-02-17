@@ -173,13 +173,13 @@ namespace flame
 
 	struct R(Serializer_cText, flame,)
 	{
-		uint font_atlas_id;
-		Vec4c color;
-		uint font_size;
-		bool right_align;
-		bool auto_width;
-		bool auto_height;
-		StringW text;
+		RV(uint, font_atlas_id, n);
+		RV(Vec4c, color, n);
+		RV(uint, font_size, n);
+		RV(bool, right_align, n);
+		RV(bool, auto_width, n);
+		RV(bool, auto_height, n);
+		RV(StringW, text, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cText)()
 		{

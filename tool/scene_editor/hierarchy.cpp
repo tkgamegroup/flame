@@ -1,20 +1,11 @@
-#include <flame/serialize.h>
-#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/ui/utils.h>
-
-#include "../renderpath/canvas/canvas.h"
-
-#include "../app.h"
-#include "hierarchy.h"
-#include "scene_editor.h"
-#include "inspector.h"
+#include "app.h"
 
 struct cHierarchyItem : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
 
-	cHierarchy* hierarchy;
 	Entity* e;
 
 	int drop_pos;
@@ -59,12 +50,10 @@ struct cHierarchyItem : Component
 					{
 						struct Capture
 						{
-							cHierarchy* h;
 							Entity* dst;
 							Entity* src;
 							int i;
 						}capture;
-						capture.h = thiz->hierarchy;
 						capture.dst = thiz->e;
 						capture.src = er->entity->get_component(cHierarchyItem)->e;
 						capture.i = thiz->drop_pos;
@@ -97,7 +86,7 @@ struct cHierarchyItem : Component
 									capture.dst->parent()->add_child(capture.src, idx);
 								}
 
-								capture.h->refresh();
+								app.hierarchy->refresh();
 							}, new_mail(&capture));
 						}
 					}
@@ -134,21 +123,20 @@ struct cHierarchyItem : Component
 	}
 };
 
-static void create_tree_node(cHierarchy* hierarchy, Entity* e)
+static void create_tree_node(Entity* e)
 {
 	if (e->child_count() > 0)
 	{
 		auto e_tree_node = ui::e_begin_tree_node(s2w(e->name()).c_str());
 		{
 			auto c_item = new_u_object<cHierarchyItem>();
-			c_item->hierarchy = hierarchy;
 			c_item->e = e;
 			e_tree_node->child(0)->add_component(c_item);
 		}
 
 		auto e_sub_tree = e_tree_node->child(1);
 		for (auto i = 0; i < e->child_count(); i++)
-			create_tree_node(hierarchy, e->child(i));
+			create_tree_node(e->child(i));
 		ui::e_end_tree_node();
 	}
 	else
@@ -156,16 +144,57 @@ static void create_tree_node(cHierarchy* hierarchy, Entity* e)
 		auto e_tree_leaf = ui::e_tree_leaf(s2w(e->name()).c_str());
 		{
 			auto c_item = new_u_object<cHierarchyItem>();
-			c_item->hierarchy = hierarchy;
 			c_item->e = e;
 			e_tree_leaf->add_component(c_item);
 		}
 	}
 }
 
+cHierarchy::cHierarchy() :
+	Component("cHierarchy")
+{
+	auto e_page = ui::e_begin_docker_window(L"Hierarchy").second;
+	{
+		auto c_layout = ui::c_layout(LayoutVertical);
+		c_layout->width_fit_children = false;
+		c_layout->height_fit_children = false;
+
+		e_page->add_component(this);
+	}
+
+	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+		e_tree = ui::e_begin_tree(true, 8.f);
+		{
+			auto c_tree = e_tree->get_component(cTree);
+			c_tree->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+				auto editor = *(cSceneEditor**)c;
+
+				looper().add_event([](void* c, bool*) {
+					auto s = *(Entity**)c;
+					Entity* selected = nullptr;
+					if (s)
+					{
+						if (s->get_component(cTreeLeaf))
+							selected = s->get_component(cHierarchyItem)->e;
+						else
+							selected = s->child(0)->get_component(cHierarchyItem)->e;
+					}
+					auto different = selected != app.selected;
+					app.selected = selected;
+					if (app.inspector && different)
+						app.inspector->refresh();
+				}, new_mail_p(((cTree*)t)->selected));
+			}, Mail<>());
+		}
+		ui::e_end_tree();
+	ui::e_end_scroll_view1();
+
+	refresh();
+}
+
 cHierarchy::~cHierarchy()
 {
-	editor->hierarchy = nullptr;
+	app.hierarchy = nullptr;
 }
 
 static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
@@ -193,88 +222,25 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 void cHierarchy::refresh_selected()
 {
 	auto tree = e_tree->get_component(cTree);
-	if (!editor->selected)
+	if (!app.selected)
 		tree->set_selected(nullptr, false);
 	else
-		tree->set_selected(find_item(editor->selected), false);
+		tree->set_selected(find_item(app.selected), false);
 }
 
 void cHierarchy::refresh()
 {
 	e_tree->remove_children(0, -1);
-	ui::push_parent(e_tree);
-	create_tree_node(this, editor->prefab);
-	ui::pop_parent();
+	if (app.prefab)
+	{
+		ui::push_parent(e_tree);
+		create_tree_node(app.prefab);
+		ui::pop_parent();
+	}
 	refresh_selected();
 }
 
 Entity* cHierarchy::find_item(Entity* e) const
 {
 	return find_item_in_tree(e_tree, e);
-}
-
-void open_hierachy(cSceneEditor* editor, const Vec2f& pos)
-{
-	ui::push_parent(app.root);
-	ui::next_element_pos = pos;
-	ui::next_element_size = Vec2f(200.f, 900.f);
-	ui::e_begin_docker_floating_container();
-	ui::e_begin_docker();
-	auto c_tab = ui::e_begin_docker_page(L"Hierarchy").tab->get_component(cDockerTab);
-	ui::current_entity();
-	{
-		auto c_layout = ui::c_layout(LayoutVertical);
-		c_layout->width_fit_children = false;
-		c_layout->height_fit_children = false;
-	}
-	auto c_hierarchy = new_u_object<cHierarchy>();
-	ui::current_entity()->add_component(c_hierarchy);
-	c_hierarchy->tab = c_tab;
-	c_hierarchy->editor = editor;
-	editor->hierarchy = c_hierarchy;
-
-	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
-	auto e_tree = ui::e_begin_tree(true, 8.f);
-	{
-		auto c_tree = e_tree->get_component(cTree);
-		c_tree->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-			auto editor = *(cSceneEditor**)c;
-
-			struct Capture
-			{
-				cSceneEditor* e;
-				Entity* s;
-			}capture;
-			capture.e = editor;
-			capture.s = ((cTree*)t)->selected;
-			looper().add_event([](void* c, bool*) {
-				auto& capture = *(Capture*)c;
-				auto editor = capture.e;
-				Entity* selected = nullptr;
-				if (capture.s)
-				{
-					if (capture.s->get_component(cTreeLeaf))
-						selected = capture.s->get_component(cHierarchyItem)->e;
-					else
-						selected = capture.s->child(0)->get_component(cHierarchyItem)->e;
-				}
-				auto different = selected != editor->selected;
-				editor->selected = selected;
-				if (editor->inspector && different)
-					editor->inspector->refresh();
-			}, new_mail(&capture));
-		}, new_mail_p(editor));
-	}
-	ui::e_end_tree();
-	ui::e_end_scroll_view1();
-
-	ui::e_end_docker_page();
-	ui::e_end_docker();
-	ui::e_end_docker_floating_container();
-	ui::pop_parent();
-
-	c_hierarchy->e_tree = e_tree;
-	ui::push_parent(e_tree);
-	create_tree_node(c_hierarchy, editor->prefab);
-	ui::pop_parent();
 }
