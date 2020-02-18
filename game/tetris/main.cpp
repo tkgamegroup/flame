@@ -2,6 +2,7 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
 #include <flame/universe/ui/utils.h>
+#include <flame/network/network.h>
 #include <flame/utils/app.h>
 
 #include "mino.h"
@@ -35,9 +36,26 @@ enum GameMode
 	GameSinglePractice
 };
 
+enum RoomState
+{
+	RoomPrepare,
+	RoomGaming
+};
+
+struct Player
+{
+	std::wstring name;
+	void* client_id;
+};
+
 struct MyApp : App
 {
 	std::wstring your_name;
+	Server* server;
+	std::wstring room_name;
+	RoomState room_state;
+	std::vector<Player> players;
+	Client* client;
 
 	sEventDispatcher* s_event_dispatcher;
 	Atlas* atlas;
@@ -77,6 +95,9 @@ struct MyApp : App
 
 	MyApp()
 	{
+		server = nullptr;
+		client = nullptr;
+
 		init_mino();
 		init_key();
 		gaming = false;
@@ -209,7 +230,18 @@ struct MyApp : App
 						ui::e_input_dialog(L"Room Name", [](void*, bool ok, const wchar_t* text) {
 							if (ok && text[0])
 							{
-
+								app.room_name = text;
+								app.room_state = RoomPrepare;
+								app.server = Server::create(SocketNormal, 2434, [](void*, void* id) {
+									if (app.room_state == RoomPrepare && app.players.size())
+									{
+										;
+									}
+								}, Mail<>());
+								looper().add_event([](void*, bool*) {
+									app.root->remove_children(1, -1);
+									app.create_online_local_room_scene();
+								}, Mail<>());
 							}
 						}, Mail<>());
 					}
@@ -217,6 +249,10 @@ struct MyApp : App
 				ui::e_button(L"Join Room", [](void*) {
 					if (app.your_name.empty())
 						ui::e_message_dialog(L"Name Must Not Be Empty!");
+					else
+					{
+
+					}
 				}, Mail<>());
 				ui::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {

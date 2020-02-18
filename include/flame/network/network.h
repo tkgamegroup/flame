@@ -17,31 +17,40 @@ namespace flame
 		SocketWeb
 	};
 
-	struct ClientSocket
+	struct Client
 	{
-		FLAME_NETWORK_EXPORTS ClientSocket* create(SocketType type);
-		FLAME_NETWORK_EXPORTS void destroy(ClientSocket* sock);
+		FLAME_NETWORK_EXPORTS void send(uint size, void* data);
+
+		FLAME_NETWORK_EXPORTS static Client* create(SocketType type, const char* ip, uint port, void on_message(void* c, const char* msg), void on_close(void* c), const Mail<>& capture);
+		FLAME_NETWORK_EXPORTS static void destroy(Client* c);
+	};
+
+	struct Server
+	{
+		FLAME_NETWORK_EXPORTS void set_client(void* id, void on_message(void* c, const char* msg), void on_close(void* c), const Mail<>& capture);
+		FLAME_NETWORK_EXPORTS void send(void* id, uint size, void* data);
+
+		FLAME_NETWORK_EXPORTS static Server* create(SocketType type, uint port, void on_connect(void* c, void* id), const Mail<>& capture);
+		FLAME_NETWORK_EXPORTS static void destroy(Server* s);
 	};
 
 	struct OneClientServer // only first one client can connect
 	{
 		void* ev_closed;
 
-		FLAME_NETWORK_EXPORTS bool send(int size, void* data);
+		FLAME_NETWORK_EXPORTS bool send(uint size, void* data);
 
-		FLAME_NETWORK_EXPORTS static OneClientServer* create(SocketType type, ushort port, int timeout/* second */, void on_message(void* c, const std::string& str), const Mail<>& capture);
-		FLAME_NETWORK_EXPORTS static void destroy(OneClientServer* sock);
+		FLAME_NETWORK_EXPORTS static OneClientServer* create(SocketType type, uint port, uint timeout/* second */, void on_message(void* c, const char* msg), const Mail<>& capture);
+		FLAME_NETWORK_EXPORTS static void destroy(OneClientServer* s);
 	};
 
 	struct FrameSyncServer
 	{
 		void* ev_closed;
 
-		FLAME_NETWORK_EXPORTS bool send(int client_idx, int size, void* data);
+		FLAME_NETWORK_EXPORTS bool send(uint client_idx, uint size, void* data);
 
-		FLAME_NETWORK_EXPORTS static FrameSyncServer* create(SocketType type, ushort port, int client_count);
-		FLAME_NETWORK_EXPORTS static void destroy(FrameSyncServer* sock);
+		FLAME_NETWORK_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint client_count);
+		FLAME_NETWORK_EXPORTS static void destroy(FrameSyncServer* s);
 	};
-
-	FLAME_NETWORK_EXPORTS void network_init();
 }

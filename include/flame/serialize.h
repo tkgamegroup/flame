@@ -3,6 +3,7 @@
 #include <flame/math.h>
 
 #include <pugixml.hpp>
+#include <nlohmann/json.hpp>
 
 #include <stdarg.h>
 #include <regex>

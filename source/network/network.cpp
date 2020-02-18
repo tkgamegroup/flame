@@ -5,16 +5,6 @@
 
 namespace flame
 {
-	void recv_all(int fd, uchar* dst, int rest)
-	{
-		while (rest > 0)
-		{
-			auto ret = recv(fd, (char*)dst, rest, 0);
-			dst += ret;
-			rest -= ret;
-		}
-	}
-
 	bool websocket_shakehank(int fd_c)
 	{
 		int res;
@@ -32,7 +22,7 @@ namespace flame
 		}
 
 		uchar buf[1024 * 16];
-		auto ret = recv(fd_c, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
+		auto ret = recv(fd_c, (char*)buf, array_size(buf), 0);
 
 		auto p = buf;
 
@@ -47,7 +37,7 @@ namespace flame
 		std::regex reg_key(R"(Sec-WebSocket-Key: (.*))");
 
 		std::string req((char*)p);
-		auto lines = string_split(req, '\n');
+		auto lines = SUS::split(req, '\n');
 		for (auto& l : lines)
 		{
 			std::smatch res;
@@ -60,7 +50,7 @@ namespace flame
 
 				char reply[1024 * 16], time_str[128];
 				auto time = std::time(nullptr);
-				std::strftime(time_str, FLAME_ARRAYSIZE(time_str), "%a, %d %b %Y %FLAME_HASH:%M:%S GMT", std::localtime(&time));
+				std::strftime(time_str, array_size(time_str), "%a, %d %b %Y %FLAME_HASH:%M:%S GMT", std::localtime(&time));
 				sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
 					"Content-Length: 0\r\n"
 					"Upgrade: websocket\r\n"
@@ -77,7 +67,7 @@ namespace flame
 		return true;
 	}
 
-	bool websocket_send(int fd, int size, void* data)
+	bool websocket_send(int fd, uint size, void* data)
 	{
 		uchar buf[1024 * 64];
 		auto p = buf;
@@ -116,7 +106,7 @@ namespace flame
 	{
 		uchar buf[1024 * 64];
 
-		auto bytes = recv(fd, (char*)buf, FLAME_ARRAYSIZE(buf), 0);
+		auto bytes = recv(fd, (char*)buf, array_size(buf), 0);
 		if (bytes <= 0)
 		{
 			closed = true;
@@ -217,13 +207,265 @@ namespace flame
 		return ret;
 	}
 
+	void init()
+	{
+		static auto inited = false;
+		if (!inited)
+		{
+			WSADATA wsa_d = {};
+			WSAStartup(MAKEWORD(1, 1), &wsa_d);
+			inited = true;
+		}
+	}
+
+	struct ClientPrivate : Client
+	{
+		SocketType type;
+
+		int fd;
+
+		std::unique_ptr<Closure<void(void* c, const char* msg)>> on_message;
+		std::unique_ptr<Closure<void(void* c)>> on_close;
+
+		~ClientPrivate()
+		{
+			closesocket(fd);
+		}
+
+		void close()
+		{
+			closesocket(fd);
+			fd = 0;
+			on_close->call();
+		}
+	};
+
+	void Client::send(uint size, void* data)
+	{
+		::send(((ClientPrivate*)this)->fd, (char*)data, size, 0);
+	}
+
+	Client* Client::create(SocketType type, const char* ip, uint port, void on_message(void* c, const char* msg), void on_close(void* c), const Mail<>& capture)
+	{
+		init();
+
+		int res;
+
+		auto fd_c = socket(AF_INET, SOCK_STREAM, 0);
+		assert(fd_c != INVALID_SOCKET);
+
+		sockaddr_in address = {};
+		address.sin_family = AF_INET;
+		address.sin_addr.S_un.S_addr = inet_addr(ip);
+		address.sin_port = htons(port);
+
+		res = connect(fd_c, (sockaddr*)&address, sizeof(address));
+		if (res == SOCKET_ERROR)
+		{
+			closesocket(fd_c);
+			return nullptr;
+		}
+
+		auto c = new ClientPrivate;
+		c->type = type;
+		c->fd = fd_c;
+		{
+			auto _c = new Closure<void(void* c, const char* msg)>;
+			_c->function = on_message;
+			_c->capture = capture;
+			c->on_message.reset(_c);
+		}
+		{
+			auto _c = new Closure<void(void* c)>;
+			_c->function = on_close;
+			_c->capture = capture;
+			c->on_close.reset(_c);
+		}
+
+		std::thread([=]() {
+			while (true)
+			{
+				int size;
+				auto ret = recv(fd_c, (char*)&size, sizeof(int), 0);
+				if (ret < sizeof(int))
+				{
+					c->close();
+					return;
+				}
+				char buf[1024 * 64];
+				auto p = buf;
+				while (size > 0)
+				{
+					auto ret = recv(fd_c, p, size, 0);
+					if (ret <= 0)
+					{
+						c->close();
+						return;
+					}
+					p += ret;
+					size -= ret;
+				}
+				c->on_message->call(buf);
+			}
+		}).detach();
+
+		return c;
+	}
+
+	void Client::destroy(Client* c)
+	{
+
+	}
+
+	struct ServerPrivate : Server
+	{
+		struct Client
+		{
+			int fd;
+			std::unique_ptr<Closure<void(void* c, const char* msg)>> on_message;
+			std::unique_ptr<Closure<void(void* c)>> on_close;
+
+			~Client()
+			{
+				closesocket(fd);
+				fd = 0;
+				on_close->call();
+			}
+		};
+
+		SocketType type;
+
+		int fd;
+
+		std::vector<std::unique_ptr<Client>> cs;
+
+		std::unique_ptr<Closure<void(void* c, void* id)>> on_connect;
+
+		~ServerPrivate()
+		{
+			closesocket(fd);
+		}
+
+		void remove_client(Client* c)
+		{
+			for (auto it = cs.begin(); it != cs.end(); it++)
+			{
+				if (it->get() == c)
+				{
+					cs.erase(it);
+					break;
+				}
+			}
+		}
+	};
+
+	void Server::set_client(void* id, void on_message(void* c, const char* msg), void on_close(void* c), const Mail<>& capture)
+	{
+		{
+			auto c = new Closure<void(void* c, const char* msg)>;
+			c->function = on_message;
+			c->capture = capture;
+			((ServerPrivate::Client*)id)->on_message.reset(c);
+		}
+		{
+			auto c = new Closure<void(void* c)>;
+			c->function = on_close;
+			c->capture = capture;
+			((ServerPrivate::Client*)id)->on_close.reset(c);
+		}
+	}
+
+	void Server::send(void* id, uint size, void* data)
+	{
+		::send(((ServerPrivate::Client*)id)->fd, (char*)data, size, 0) > 0;
+	}
+
+	Server* Server::create(SocketType type, uint port, void on_connect(void* c, void* id), const Mail<>& capture)
+	{
+		init();
+
+		int res;
+
+		auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
+		assert(fd_s != INVALID_SOCKET);
+
+		sockaddr_in address = {};
+		address.sin_family = AF_INET;
+		address.sin_addr.S_un.S_addr = INADDR_ANY;
+		address.sin_port = htons(port);
+		res = bind(fd_s, (sockaddr*)&address, sizeof(address));
+		assert(res == 0);
+		res = listen(fd_s, 1);
+		assert(res == 0);
+
+		auto s = new ServerPrivate;
+		s->type = type;
+		s->fd = fd_s;
+		{
+			auto c = new Closure<void(void* c, void* id)>;
+			c->function = on_connect;
+			c->capture = capture;
+			s->on_connect.reset(c);
+		}
+
+		std::thread([=]() {
+			while (true)
+			{
+				auto fd = accept(fd_s, nullptr, nullptr);
+				if (fd == INVALID_SOCKET)
+					return;
+				auto c = new ServerPrivate::Client;
+				c->fd = fd;
+				s->on_connect->call(c);
+				if (c->on_message->function || c->on_close->function)
+					s->cs.emplace_back(c);
+				else
+					delete c;
+
+				std::thread([=]() {
+					while (true)
+					{
+						int size;
+						auto ret = recv(fd, (char*)&size, sizeof(int), 0);
+						if (ret < sizeof(int))
+						{
+							s->remove_client(c);
+							return;
+						}
+						char buf[1024 * 64];
+						auto p = buf;
+						while (size > 0)
+						{
+							auto ret = recv(fd, p, size, 0);
+							if (ret <= 0)
+							{
+								s->remove_client(c);
+								return;
+							}
+							p += ret;
+							size -= ret;
+						}
+						c->on_message->call(buf);
+					}
+				}).detach();
+			}
+		}).detach();
+
+		return s;
+	}
+
+	void Server::destroy(Server* s)
+	{
+		delete (ServerPrivate*)s;
+	}
+
 	struct OneClientServerPrivate : OneClientServer
 	{
 		SocketType type;
 
 		int fd_c;
 
-		bool send(int size, void* data)
+		bool send(uint size, void* data)
 		{
 			if (type == SocketWeb)
 				return websocket_send(fd_c, size, data);
@@ -232,13 +474,15 @@ namespace flame
 		}
 	};
 
-	bool OneClientServer::send(int size, void* data)
+	bool OneClientServer::send(uint size, void* data)
 	{
 		return ((OneClientServerPrivate*)this)->send(size, data);
 	}
 
-	OneClientServer* OneClientServer::create(SocketType type, ushort port, int _timeout, void on_message(void* c, const std::string& str), const Mail<>& capture)
+	OneClientServer* OneClientServer::create(SocketType type, uint port, uint _timeout, void on_message(void* c, const char* msg), const Mail<>& capture)
 	{
+		init();
+
 		int res;
 
 		auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
@@ -285,7 +529,7 @@ namespace flame
 				bool closed = false;
 				auto reqs = websocket_recv(fd_c, closed);
 				for (auto& r : reqs)
-					on_message(capture.p, r);
+					on_message(capture.p, r.c_str());
 				if (closed)
 				{
 					SetEvent(s->ev_closed);
@@ -298,7 +542,7 @@ namespace flame
 		return s;
 	}
 
-	void OneClientServer::destroy(OneClientServer* sock)
+	void OneClientServer::destroy(OneClientServer* s)
 	{
 
 	}
@@ -312,9 +556,9 @@ namespace flame
 
 		std::vector<int> fd_cs;
 
-		SerializableNode* frame_advance_data;
+		nlohmann::json frame_data;
 
-		bool send(int client_idx, int size, void* data)
+		bool send(uint client_idx, int size, void* data)
 		{
 			if (type == SocketWeb)
 				return websocket_send(fd_cs[client_idx], size, data);
@@ -323,7 +567,7 @@ namespace flame
 		}
 	};
 
-	FrameSyncServer* FrameSyncServer::create(SocketType type, ushort port, int client_count)
+	FrameSyncServer* FrameSyncServer::create(SocketType type, uint port, uint client_count)
 	{
 		int res;
 
@@ -363,28 +607,22 @@ namespace flame
 		s->semaphore = 0;
 		s->fd_cs = fd_cs;
 		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
-		s->frame_advance_data = SerializableNode::create("");
-		s->frame_advance_data->new_attr("action", "frame");
-
 
 		{
 			srand(time(0));
-			auto seed = ::rand();
-			auto json = SerializableNode::create("");
-			json->new_attr("action", "start");
-			json->new_attr("seed", std::to_string(seed));
-			auto str = SerializableNode::to_json_string(json);
+			nlohmann::json json = {
+				{"action", "start"},
+				{"seed", ::rand()}
+			};
+			auto str = json.dump();
 			for (auto i = 0; i < client_count; i++)
-				s->send(i, str.p->size(), str.p->data());
-			delete_mail(str);
-			SerializableNode::destroy(json);
+				s->send(i, str.size(), str.data());
 		}
 
 		std::thread([s]() {
-			fd_set rfds;
-
 			while (true)
 			{
+				fd_set rfds;
 				FD_ZERO(&rfds);
 				for (auto fd : s->fd_cs)
 					FD_SET(fd, &rfds);
@@ -399,43 +637,35 @@ namespace flame
 							auto reqs = websocket_recv(fd, closed);
 							if (reqs.size() > 0)
 							{
-								auto json = SerializableNode::create_from_json_string(reqs[0]);
-								auto n_frame = json->find_node("frame");
-								if (n_frame && n_frame->type() == SerializableNode::Value)
+								auto req = nlohmann::json::parse(reqs[0]);
+								auto n_frame = req.find("frame");
+								if (n_frame != req.end())
 								{
-									auto frame = std::stoi(n_frame->value().c_str());
+									auto frame = n_frame->get<int>();
 									if (frame == s->frame)
 									{
 										s->semaphore++;
-										auto n_data = json->find_node("data");
-										auto dst = s->frame_advance_data->new_node(std::to_string(client_idx + 1));
-										for (auto i = 0; i < n_data->node_count(); i++)
-										{
-											auto n = json->node(i);
-											dst->new_attr(n->name(), n->value());
-										}
+										auto dst = s->frame_data[std::to_string(client_idx + 1)];
+										for (auto& i : req["data"].items())
+											dst[i.key()] = i.value();
 
 										if (s->semaphore >= s->fd_cs.size())
 										{
 											s->frame++;
 											s->semaphore = 0;
 
-											auto str = SerializableNode::to_json_string(s->frame_advance_data);
+											s->frame_data["action"] = "frame";
+											auto str = s->frame_data.dump();
 											for (auto i = 0; i < 2; i++)
-												s->send(i, str.p->size(), str.p->data());
-											delete_mail(str);
-											SerializableNode::destroy(s->frame_advance_data);
-											s->frame_advance_data = SerializableNode::create("");
-											s->frame_advance_data->new_attr("action", "frame");
+												s->send(i, str.size(), str.data());
+											s->frame_data.clear();
 										}
 									}
 								}
-								SerializableNode::destroy(json);
 							}
 							if (closed)
 							{
 								// TODO
-								/* do something! */
 							}
 						}
 						client_idx++;
@@ -447,19 +677,13 @@ namespace flame
 		return s;
 	}
 
-	bool FrameSyncServer::send(int client_idx, int size, void* data)
+	bool FrameSyncServer::send(uint client_idx, uint size, void* data)
 	{
 		return ((FrameSyncServerPrivate*)this)->send(client_idx, size, data);
 	}
 
-	void FrameSyncServer::destroy(FrameSyncServer* sock)
+	void FrameSyncServer::destroy(FrameSyncServer* s)
 	{
 
-	}
-
-	void network_init()
-	{
-		WSADATA wsa_d = {};
-		WSAStartup(MAKEWORD(1, 1), &wsa_d);
 	}
 }

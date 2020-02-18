@@ -37,6 +37,7 @@ endif()
 
 set(VS_PATH "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community" CACHE PATH "VisualStudio Path")
 set(PUGIXML_PATH "" CACHE PATH "Pugi XML Path")
+set(NJSON_PATH "" CACHE PATH "NJson Path")
 set(STB_PATH "" CACHE PATH "STB Path")
 set(FREETYPE_PATH "" CACHE PATH "FreeType Path")
 set(MSDFGEN_PATH "" CACHE PATH "Msdfgen Path")
