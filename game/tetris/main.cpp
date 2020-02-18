@@ -361,7 +361,7 @@ struct MyApp : App
 		if (!just_down_hard_drop)
 			just_down_hard_drop = key_states[key_map[KEY_HARD_DROP]] == (KeyStateDown | KeyStateJust);
 		if (!just_down_hold)
-			just_down_hold = key_states[key_map[KEY_HARD_DROP]] == (KeyStateDown | KeyStateJust);
+			just_down_hold = key_states[key_map[KEY_HOLD]] == (KeyStateDown | KeyStateJust);
 
 		auto dt = looper().delta_time;
 		time += dt;
