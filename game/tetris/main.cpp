@@ -40,6 +40,10 @@ struct MyApp : App
 	cText* text_lines;
 	cText* text_score;
 
+	bool just_down_pause;
+	bool just_down_rotate_left;
+	bool just_down_rotate_right;
+	bool just_down_hard_drop;
 	bool just_down_key[KEY_COUNT];
 
 	float time;

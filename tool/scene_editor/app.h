@@ -2,6 +2,7 @@
 
 #include <flame/serialize.h>
 #include <flame/graphics/image.h>
+#include <flame/universe/ui/utils.h>
 #include <flame/utils/app.h>
 
 using namespace flame;
@@ -45,7 +46,7 @@ struct cResourceExplorer : Component
 	void* ev_end_file_watcher;
 
 	cResourceExplorer();
-	virtual ~cResourceExplorer() override;
+	~cResourceExplorer() override;
 	Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id);
 	void cResourceExplorer::navigate(const std::filesystem::path& path);
 	void cResourceExplorer::on_component_added(Component* c);
@@ -57,7 +58,7 @@ struct cHierarchy : Component
 	Entity* e_tree;
 
 	cHierarchy();
-	virtual ~cHierarchy() override;
+	~cHierarchy() override;
 	Entity* find_item(Entity* e) const;
 	void refresh_selected();
 	void refresh();
@@ -69,7 +70,7 @@ struct cInspector : Component
 	void* module;
 
 	cInspector();
-	virtual ~cInspector() override;
+	~cInspector() override;
 	void update_data_tracker(uint component_hash, uint data_offset) const;
 	void refresh();
 };

@@ -27,24 +27,59 @@ void MyApp::create()
 	ui::c_aligner(SizeFitParent, SizeFitParent);
 
 	ui::e_begin_menu_bar();
-	ui::e_begin_menubar_menu(L"Window");
-	ui::e_menu_item(L"Resource Explorer", [](void* c) {
-		if (!app.resource_explorer)
-			app.resource_explorer = new cResourceExplorer;
-	}, new_mail_p(this));
-	ui::e_menu_item(L"Scene Editor", [](void* c) {
-		if (!app.scene_editor)
-			app.scene_editor = new cSceneEditor;
-	}, new_mail_p(this));
-	ui::e_menu_item(L"Hierarchy", [](void* c) {
-		if (!app.hierarchy)
-			app.hierarchy = new cHierarchy;
-	}, new_mail_p(this));
-	ui::e_menu_item(L"Inspector", [](void* c) {
-		if (!app.inspector)
-			app.inspector = new cInspector;
-	}, new_mail_p(this));
-	ui::e_end_menubar_menu();
+		ui::e_begin_menubar_menu(L"Scene");
+			ui::e_menu_item(L"New Entity", [](void* c) {
+				looper().add_event([](void* c, bool*) {
+					auto e = Entity::create();
+					e->set_name("unnamed");
+					if (app.selected)
+						app.selected->add_child(e);
+					else
+						app.prefab->add_child(e);
+					if (app.hierarchy)
+						app.hierarchy->refresh();
+				}, Mail<>());
+			}, Mail<>());
+			ui::e_menu_item(L"Save", [](void* c) {
+
+			}, Mail<>());
+			ui::e_end_menubar_menu();
+			ui::e_begin_menubar_menu(L"Edit");
+			ui::e_menu_item(L"Delete", [](void* c) {
+				looper().add_event([](void* c, bool*) {
+					if (app.selected)
+					{
+						app.selected = nullptr;
+						if (app.inspector)
+							app.inspector->refresh();
+						app.selected->parent()->remove_child(app.selected);
+						if (app.hierarchy)
+							app.hierarchy->refresh();
+					}
+				}, Mail<>());
+			}, Mail<>());
+			ui::e_menu_item(L"Duplicate", [](void* c) {
+
+			}, Mail<>());
+		ui::e_end_menubar_menu();
+		ui::e_begin_menubar_menu(L"Window");
+		ui::e_menu_item(L"Resource Explorer", [](void* c) {
+			if (!app.resource_explorer)
+				app.resource_explorer = new cResourceExplorer;
+		}, new_mail_p(this));
+		ui::e_menu_item(L"Scene Editor", [](void* c) {
+			if (!app.scene_editor)
+				app.scene_editor = new cSceneEditor;
+		}, new_mail_p(this));
+		ui::e_menu_item(L"Hierarchy", [](void* c) {
+			if (!app.hierarchy)
+				app.hierarchy = new cHierarchy;
+		}, new_mail_p(this));
+		ui::e_menu_item(L"Inspector", [](void* c) {
+			if (!app.inspector)
+				app.inspector = new cInspector;
+		}, new_mail_p(this));
+		ui::e_end_menubar_menu();
 	ui::e_end_menu_bar();
 
 	ui::e_begin_docker_static_container();

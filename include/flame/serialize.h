@@ -366,6 +366,19 @@ namespace flame
 		return std::stoul(s);
 	}
 
+	template <class T>
+	T sto_s(const wchar_t* s)
+	{
+		try
+		{
+			return sto<T>(s);
+		}
+		catch (...)
+		{
+			return 0;
+		}
+	}
+
 	template <class CH>
 	struct StrUtils
 	{

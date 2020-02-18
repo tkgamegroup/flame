@@ -1,4 +1,3 @@
-#include <flame/universe/ui/utils.h>
 #include "app.h"
 
 struct cSceneOverlayer : Component
@@ -58,44 +57,6 @@ cSceneEditor::cSceneEditor() :
 
 		e_page->add_component(this);
 	}
-
-	ui::e_begin_menu_bar();
-	ui::e_begin_menubar_menu(L"Scene");
-	ui::e_menu_item(L"New Entity", [](void* c) {
-		looper().add_event([](void* c, bool*) {
-			auto e = Entity::create();
-			e->set_name("unnamed");
-			if (app.selected)
-				app.selected->add_child(e);
-			else
-				app.prefab->add_child(e);
-			if (app.hierarchy)
-				app.hierarchy->refresh();
-		}, Mail<>());
-	}, Mail<>());
-	ui::e_menu_item(L"Save", [](void* c) {
-
-	}, Mail<>());
-	ui::e_end_menubar_menu();
-	ui::e_begin_menubar_menu(L"Edit");
-	ui::e_menu_item(L"Delete", [](void* c) {
-		looper().add_event([](void* c, bool*) {
-			if (app.selected)
-			{
-				app.selected = nullptr;
-				if (app.inspector)
-					app.inspector->refresh();
-				app.selected->parent()->remove_child(app.selected);
-				if (app.hierarchy)
-					app.hierarchy->refresh();
-			}
-		}, Mail<>());
-	}, Mail<>());
-	ui::e_menu_item(L"Duplicate", [](void* c) {
-
-	}, Mail<>());
-	ui::e_end_menubar_menu();
-	ui::e_end_menu_bar();
 
 	ui::e_begin_layout(LayoutHorizontal, 4.f);
 	ui::e_text(L"Tool");

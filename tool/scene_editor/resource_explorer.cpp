@@ -1,5 +1,4 @@
 #include <flame/foundation/bitmap.h>
-#include <flame/universe/ui/utils.h>
 #include "app.h"
 
 struct cThumbnail : Component
