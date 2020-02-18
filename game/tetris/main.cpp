@@ -28,8 +28,17 @@ enum TileIndex
 	TileGhost
 };
 
+enum GameMode
+{
+	GameSingleLevel,
+	GameSingleRTA,
+	GameSinglePractice
+};
+
 struct MyApp : App
 {
+	std::wstring your_name;
+
 	sEventDispatcher* s_event_dispatcher;
 	Atlas* atlas;
 
@@ -53,11 +62,14 @@ struct MyApp : App
 	uint clear_lines;
 	uint score;
 	bool gaming;
+	GameMode game_mode;
 	Vec2i mino_pos;
 	MinoType mino_type;
-	MinoType mino_held;
+	MinoType mino_hold;
+	bool mino_just_hold;
 	uint mino_rotation;
 	Vec2i mino_coords[3];
+	int mino_reset_times;
 	uint mino_bottom_dist;
 	uint mino_ticks;
 	Vec2u mino_pack_idx;
@@ -73,25 +85,167 @@ struct MyApp : App
 	void create_home_scene()
 	{
 		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 40);
+				ui::e_text(L"Tetris");
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+				ui::push_style_1u(ui::FontSize, 20);
+				ui::e_button(L"Single", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_single_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Online", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_online_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
+		ui::pop_parent();
+	}
 
+	void create_single_scene()
+	{
+		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 20);
+				ui::e_button(L"RTA 40", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_game_scene();
+						app.game_mode = GameSingleRTA;
+						app.start_game();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Practice", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_game_scene();
+						app.game_mode = GameSinglePractice;
+						app.start_game();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_home_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_online_scene()
+	{
+		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+				ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 20);
+				ui::e_button(L"Local", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_online_local_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"www.not-yet.com", [](void*) {
+					looper().add_event([](void*, bool*) {
+
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_home_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_online_local_scene()
+	{
+		ui::push_parent(root);
+		ui::next_element_size = Vec2f(500.f, 0.f);
+		ui::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->inner_padding_ = 8.f;
+		ui::c_aligner(SizeFixed, SizeFitParent)->x_align_ = AlignxMiddle;
+			ui::push_style_1u(ui::FontSize, 20);
+			ui::e_begin_layout(LayoutHorizontal, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyFree);
+			ui::e_text(L"Name")->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
+				if (hash == FLAME_CHASH("text"))
+					app.your_name = ((cText*)c)->text();
+			}, Mail<>());
+				ui::e_edit(400.f);
+			ui::e_end_layout();
+			ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
+				ui::e_begin_list(true);
+				for (auto i = 0; i < 10; i++)
+					ui::e_list_item((L"item" + std::to_wstring(i)).c_str());
+				ui::e_end_list();
+			ui::e_end_scroll_view1();
+			ui::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 2;
+			ui::c_aligner(SizeFitParent, SizeFixed);
+				ui::e_button(L"Create Room", [](void*) {
+					if (app.your_name.empty())
+						ui::e_message_dialog(L"Name Must Not Be Empty!");
+					else
+					{
+						ui::e_input_dialog(L"Room Name", [](void*, bool ok, const wchar_t* text) {
+							if (ok && text[0])
+							{
+
+							}
+						}, Mail<>());
+					}
+				}, Mail<>());
+				ui::e_button(L"Join Room", [](void*) {
+					if (app.your_name.empty())
+						ui::e_message_dialog(L"Name Must Not Be Empty!");
+				}, Mail<>());
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_online_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxRight, AlignyTop);
+			ui::e_end_layout();
+			ui::pop_style(ui::FontSize);
+		ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_online_local_room_scene()
+	{
+		ui::push_parent(root);
 		ui::e_begin_layout(LayoutVertical, 8.f);
 		ui::c_aligner(AlignxMiddle, AlignyMiddle);
-		ui::push_style_1u(ui::FontSize, 40);
-		ui::e_text(L"Tetris");
-		ui::c_aligner(AlignxMiddle, AlignyFree);
-		ui::pop_style(ui::FontSize);
 		ui::push_style_1u(ui::FontSize, 20);
-		ui::e_button(L"40 Lines RTA", [](void*) {
+		ui::e_button(L"Back", [](void*) {
 			looper().add_event([](void*, bool*) {
 				app.root->remove_children(1, -1);
-				app.create_game_scene();
-				app.start_game();
+				app.create_online_local_scene();
 			}, Mail<>());
 		}, Mail<>());
 		ui::c_aligner(AlignxMiddle, AlignyFree);
 		ui::pop_style(ui::FontSize);
 		ui::e_end_layout();
-
 		ui::pop_parent();
 	}
 
@@ -112,7 +266,7 @@ struct MyApp : App
 		auto block_size = 24.f;
 
 		ui::e_empty();
-		ui::next_element_pos = Vec2f(120.f, 20.f);
+		ui::next_element_pos = Vec2f(120.f, 50.f);
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
 		{
 			auto ce = ui::c_element();
@@ -251,9 +405,11 @@ struct MyApp : App
 		score = 0;
 		mino_pos = Vec2i(0, -1);
 		mino_type = MinoTypeCount;
-		mino_held = MinoTypeCount;
+		mino_hold = MinoTypeCount;
+		mino_just_hold = false;
 		mino_pack_idx = Vec2u(0, 0);
 		mino_rotation = 0;
+		mino_reset_times = -1;
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
 		for (auto i = 0; i < 2; i++)
@@ -375,27 +531,28 @@ struct MyApp : App
 				if (just_down_pause)
 				{
 					gaming = false;
-					ui::e_begin_dialog(Vec4c(100));
-					ui::e_text(L"Pausing");
-					ui::e_begin_layout(LayoutHorizontal, 4.f);
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(Icon_HOME, [](void*) {
-						ui::remove_top_layer(app.root);
-						looper().add_event([](void*, bool*) {
-							app.root->remove_children(1, -1);
-							app.create_home_scene();
+					ui::e_begin_dialog();
+						ui::e_text(L"Pausing");
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Resume", [](void*) {
+							ui::remove_top_layer(app.root);
+							app.add_count_down();
 						}, Mail<>());
-					}, Mail<>());
-					ui::e_button(Icon_REPEAT, [](void*) {
-						ui::remove_top_layer(app.root);
-						app.play_time = 0.f;
-						app.start_game();
-					}, Mail<>());
-					ui::e_button(Icon_TIMES, [](void*) {
-						ui::remove_top_layer(app.root);
-						app.add_count_down();
-					}, Mail<>());
-					ui::e_end_layout();
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Restart", [](void*) {
+							ui::remove_top_layer(app.root);
+							app.play_time = 0.f;
+							app.start_game();
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Home", [](void*) {
+							ui::remove_top_layer(app.root);
+							looper().add_event([](void*, bool*) {
+								app.root->remove_children(1, -1);
+								app.create_home_scene();
+							}, Mail<>());
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
 					ui::e_end_dialog();
 				}
 			}
@@ -439,28 +596,32 @@ struct MyApp : App
 					if (mino_pos.y() == -2)
 					{
 						board_hold->clear_cells();
-						if (mino_held != MinoTypeCount)
+						if (mino_hold != MinoTypeCount)
 						{
 							Vec2i coords[3];
 							for (auto i = 0; i < 3; i++)
-								coords[i] = g_mino_coords[mino_held][i];
-							toggle_board(board_hold, TileMino1 + mino_held, Vec2i(1), 0, coords);
+								coords[i] = g_mino_coords[mino_hold][i];
+							toggle_board(board_hold, TileMino1 + mino_hold, Vec2i(1), 0, coords);
 						}
 					}
 					mino_pos = Vec2i(4, 3);
 					mino_rotation = 0;
 					for (auto i = 0 ; i < 3; i++)
 						mino_coords[i] = g_mino_coords[mino_type][i];
+					mino_reset_times = -1;
 					mino_ticks = 0;
 				}
 
-				if (just_down_hold)
+				if (just_down_hold && (game_mode == GameSinglePractice || mino_just_hold == false))
 				{
 					mino_pos.y() = -2;
-					std::swap(mino_held, mino_type);
+					std::swap(mino_hold, mino_type);
+					mino_just_hold = true;
 				}
 				else
 				{
+					auto moved = false;
+
 					auto r = 0;
 					if (just_down_rotate_left)
 						r--;
@@ -476,7 +637,7 @@ struct MyApp : App
 							mino_pos += offset;
 							for (auto i = 0; i < 3; i++)
 								mino_coords[i] = new_coords[i];
-							mino_ticks = 0;
+							moved = true;
 						}
 					}
 
@@ -487,7 +648,7 @@ struct MyApp : App
 							left_frames = 0;
 						else
 							left_frames++;
-						if (left_frames == 0 || (left_frames >= 6 && left_frames % 2 == 0))
+						if (left_frames == 0 || (left_frames >= 5))
 							mx--;
 					}
 					else
@@ -498,7 +659,7 @@ struct MyApp : App
 							right_frames = 0;
 						else
 							right_frames++;
-						if (right_frames == 0 || (right_frames >= 6 && right_frames % 2 == 0))
+						if (right_frames == 0 || (right_frames >= 5))
 							mx++;
 					}
 					else
@@ -506,24 +667,46 @@ struct MyApp : App
 					if (mx != 0 && check_board(Vec2i(mx, 0)))
 					{
 						mino_pos.x() += mx;
-						mino_ticks = 0;
+						moved = true;
 					}
 
 					mino_bottom_dist = 0;
 					while (check_board(Vec2i(0, mino_bottom_dist + 1)))
 						mino_bottom_dist++;
-					auto down_ticks_final = down_ticks;
+					if (moved)
+					{
+						if (game_mode == GameSinglePractice)
+							mino_ticks = 0;
+						else
+						{
+							if (mino_reset_times == -1 && mino_bottom_dist == 0)
+								mino_reset_times = 0;
+							if (mino_reset_times >= 0)
+							{
+								if (mino_reset_times >= 15)
+									mino_ticks = down_ticks;
+								else
+									mino_ticks = 0;
+								mino_reset_times++;
+							}
+						}
+					}
+					auto is_soft_drop = key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown;
+					auto down_ticks_final = game_mode == GameSinglePractice ? 9999 : down_ticks;
 					if (mino_bottom_dist == 0)
 						down_ticks_final = 12;
-					else if (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown)
+					else if (is_soft_drop)
 						down_ticks_final = 1;
 					if (just_down_hard_drop || mino_ticks >= down_ticks_final)
 					{
 						if (just_down_hard_drop || mino_bottom_dist == 0)
 						{
 							mino_pos.y() += mino_bottom_dist;
+							if (just_down_hard_drop)
+								score += mino_bottom_dist * 2;
 							mino_bottom_dist = 0;
 							toggle_board(board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
+							auto full_lines = 0;
 							for (auto i = (int)board_height - 1; i >= 0; i--)
 							{
 								if (line_full(i))
@@ -536,40 +719,65 @@ struct MyApp : App
 											board_main->set_cell(Vec2u(x, j), board_main->cell(Vec2i(x, j - 1)));
 									}
 									i++;
-									clear_lines++;
+									full_lines++;
 								}
 							}
-							if (!line_empty(3) || clear_lines >= 40)
+							clear_lines += full_lines;
+							switch (full_lines)
+							{
+							case 1:
+								score += 100;
+								break;
+							case 2:
+								score += 300;
+								break;
+							case 3:
+								score += 500;
+								break;
+							case 4:
+								score += 800;
+								break;
+							}
+							auto gameover = !line_empty(3);
+							if (!gameover)
+							{
+								if (game_mode == GameSingleRTA && clear_lines >= 40)
+									gameover = true;
+							}
+							if (gameover)
 							{
 								gaming = false;
-								ui::e_begin_dialog(Vec4c(100));
-								ui::e_text(L"Game Over");
-								ui::e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
-								ui::e_text((L"Lines: " + wfmt(L"%d", clear_lines)).c_str());
-								ui::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
-								ui::e_begin_layout(LayoutHorizontal, 4.f);
-								ui::c_aligner(AlignxMiddle, AlignyFree);
-								ui::e_button(Icon_HOME, [](void*) {
-									ui::remove_top_layer(app.root);
-									looper().add_event([](void*, bool*) {
-										app.root->remove_children(1, -1);
-										app.create_home_scene();
+								ui::e_begin_dialog();
+									ui::e_text(L"Game Over");
+									ui::c_aligner(AlignxMiddle, AlignyFree);
+									ui::e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
+									ui::e_text((L"Lines: " + wfmt(L"%d", clear_lines)).c_str());
+									ui::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
+									ui::e_button(L"Home", [](void*) {
+										ui::remove_top_layer(app.root);
+										looper().add_event([](void*, bool*) {
+											app.root->remove_children(1, -1);
+											app.create_home_scene();
+										}, Mail<>());
 									}, Mail<>());
-								}, Mail<>());
-								ui::e_button(Icon_REPEAT, [](void*) {
-									ui::remove_top_layer(app.root);
-									app.play_time = 0.f;
-									app.start_game();
-								}, Mail<>());
-								ui::e_end_layout();
+									ui::c_aligner(AlignxMiddle, AlignyFree);
+									ui::e_button(L"Restart", [](void*) {
+										ui::remove_top_layer(app.root);
+										app.play_time = 0.f;
+										app.start_game();
+									}, Mail<>());
+									ui::c_aligner(AlignxMiddle, AlignyFree);
 								ui::e_end_dialog();
 							}
 							mino_pos.y() = -1;
+							mino_just_hold = false;
 						}
 						else
 						{
 							mino_pos.y()++;
 							mino_bottom_dist--;
+							if (is_soft_drop)
+								score++;
 						}
 						mino_ticks = 0;
 					}
@@ -601,7 +809,7 @@ struct MyApp : App
 
 int main(int argc, char **args)
 {
-	app.create("Tetris", Vec2u(500, 550), WindowFrame);
+	app.create("Tetris", Vec2u(800, 600), WindowFrame);
 
 	auto w = app.u->world(0);
 

@@ -1753,6 +1753,16 @@ namespace flame
 			return fited_rect(desired_size, size.x() / size.y());
 	}
 
+	inline Vec3c col3_inv(const Vec3c& col)
+	{
+		return Vec3c(255 - col.r(), 255 - col.g(), 255 - col.b());
+	}
+
+	inline Vec4c col3_inv(const Vec4c& col)
+	{
+		return Vec4c(255 - col.r(), 255 - col.g(), 255 - col.b(), col.a());
+	}
+
 	inline Vec3c hsv_2_col3(const Vec3f& hsv)
 	{
 		auto h = hsv.x();

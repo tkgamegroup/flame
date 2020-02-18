@@ -1148,7 +1148,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_dialog(const Vec4c& color = Vec4c(255))
+		inline Entity* e_begin_dialog()
 		{
 			auto r = current_root();
 			auto l = add_layer(r, "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
@@ -1158,7 +1158,9 @@ namespace flame
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->inner_padding_ = Vec4f(8.f);
-			ce->color_ = color;
+			ce->frame_thickness_ = 2.f;
+			ce->color_ = style_4c(BackgroundColor);
+			ce->frame_color_  = col3_inv(style_4c(BackgroundColor));
 			c_aligner(AlignxMiddle, AlignyMiddle);
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			pop_parent();

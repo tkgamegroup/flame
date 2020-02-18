@@ -148,7 +148,7 @@ struct MyApp : App
 
 				ui::next_element_pos = Vec2f(416.f, 10.f);
 				ui::e_begin_layout(LayoutVertical, 16.f);
-					ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f, 2.f)->get_component(cElement);
+					ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f, 2.f);
 						ui::e_begin_list(true);
 							for (auto i = 0; i < 10; i++)
 								ui::e_list_item((L"item" + std::to_wstring(i)).c_str());
