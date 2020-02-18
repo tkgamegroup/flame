@@ -44,7 +44,9 @@ struct MyApp : App
 	bool just_down_rotate_left;
 	bool just_down_rotate_right;
 	bool just_down_hard_drop;
-	bool just_down_key[KEY_COUNT];
+	bool just_down_hold;
+	int left_frames;
+	int right_frames;
 
 	float time;
 	float play_time;
@@ -236,8 +238,13 @@ struct MyApp : App
 		text_lines->set_text(L"Lines: 0");
 		text_score->set_text(L"Score: 0");
 
-		for (auto i = 0; i < KEY_COUNT; i++)
-			just_down_key[i] = false;
+		just_down_pause = false;
+		just_down_rotate_left = false;
+		just_down_rotate_right = false;
+		just_down_hard_drop = false;
+		just_down_hold = false;
+		left_frames = -1;
+		right_frames = -1;
 
 		time = 0.f;
 		clear_lines = 0;
@@ -345,11 +352,16 @@ struct MyApp : App
 	void on_frame() override
 	{
 		auto& key_states = s_event_dispatcher->key_states;
-		for (auto i = 0; i < KEY_COUNT; i++)
-		{
-			if (!just_down_key[i])
-				just_down_key[i] = key_states[key_map[i]] == (KeyStateDown | KeyStateJust);
-		}
+		if (!just_down_pause)
+			just_down_pause = key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust);
+		if (!just_down_rotate_left)
+			just_down_rotate_left = key_states[key_map[KEY_ROTATE_LEFT]] == (KeyStateDown | KeyStateJust);
+		if (!just_down_rotate_right)
+			just_down_rotate_right = key_states[key_map[KEY_ROTATE_RIGHT]] == (KeyStateDown | KeyStateJust);
+		if (!just_down_hard_drop)
+			just_down_hard_drop = key_states[key_map[KEY_HARD_DROP]] == (KeyStateDown | KeyStateJust);
+		if (!just_down_hold)
+			just_down_hold = key_states[key_map[KEY_HARD_DROP]] == (KeyStateDown | KeyStateJust);
 
 		auto dt = looper().delta_time;
 		time += dt;
@@ -360,7 +372,7 @@ struct MyApp : App
 		{
 			if (gaming)
 			{
-				if (just_down_key[KEY_PAUSE])
+				if (just_down_pause)
 				{
 					gaming = false;
 					ui::e_begin_dialog(Vec4c(100));
@@ -442,7 +454,7 @@ struct MyApp : App
 					mino_ticks = 0;
 				}
 
-				if (just_down_key[KEY_HOLD])
+				if (just_down_hold)
 				{
 					mino_pos.y() = -2;
 					std::swap(mino_held, mino_type);
@@ -450,9 +462,9 @@ struct MyApp : App
 				else
 				{
 					auto r = 0;
-					if (just_down_key[KEY_ROTATE_LEFT])
+					if (just_down_rotate_left)
 						r--;
-					if (just_down_key[KEY_ROTATE_RIGHT])
+					if (just_down_rotate_right)
 						r++;
 					if (r != 0)
 					{
@@ -469,10 +481,28 @@ struct MyApp : App
 					}
 
 					auto mx = 0;
-					if (just_down_key[KEY_LEFT])
-						mx--;
-					if (just_down_key[KEY_RIGHT])
-						mx++;
+					if (key_states[key_map[KEY_LEFT]] & KeyStateDown)
+					{
+						if (left_frames == -1)
+							left_frames = 0;
+						else
+							left_frames++;
+						if (left_frames == 0 || (left_frames >= 6 && left_frames % 2 == 0))
+							mx--;
+					}
+					else
+						left_frames = -1;
+					if (key_states[key_map[KEY_RIGHT]] & KeyStateDown)
+					{
+						if (right_frames == -1)
+							right_frames = 0;
+						else
+							right_frames++;
+						if (right_frames == 0 || (right_frames >= 6 && right_frames % 2 == 0))
+							mx++;
+					}
+					else
+						right_frames = -1;
 					if (mx != 0 && check_board(Vec2i(mx, 0)))
 					{
 						mino_pos.x() += mx;
@@ -482,15 +512,14 @@ struct MyApp : App
 					mino_bottom_dist = 0;
 					while (check_board(Vec2i(0, mino_bottom_dist + 1)))
 						mino_bottom_dist++;
-					auto hard_drop = just_down_key[KEY_HARD_DROP];
 					auto down_ticks_final = down_ticks;
 					if (mino_bottom_dist == 0)
 						down_ticks_final = 12;
 					else if (key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown)
 						down_ticks_final = 1;
-					if (hard_drop || mino_ticks >= down_ticks_final)
+					if (just_down_hard_drop || mino_ticks >= down_ticks_final)
 					{
-						if (hard_drop || mino_bottom_dist == 0)
+						if (just_down_hard_drop || mino_bottom_dist == 0)
 						{
 							mino_pos.y() += mino_bottom_dist;
 							mino_bottom_dist = 0;
@@ -559,8 +588,11 @@ struct MyApp : App
 				text_score->set_text((L"Score: " + std::to_wstring(score)).c_str());
 			}
 
-			for (auto i = 0; i < KEY_COUNT; i++)
-				just_down_key[i] = false;
+			just_down_pause = false;
+			just_down_rotate_left = false;
+			just_down_rotate_right = false;
+			just_down_hard_drop = false;
+			just_down_hold = false;
 
 			time -= frame_rate;
 		}

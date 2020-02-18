@@ -302,16 +302,18 @@ namespace flame
 
 	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* module_filename, bool add_to_global, bool load_with_module)
 	{
-		auto typeinfogen_path = std::filesystem::path(getenv("FLAME_PATH"));
-		typeinfogen_path = typeinfogen_path / L"bin/typeinfogen.exe";
-		exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_filename).c_str());
-
-		auto module_path = std::filesystem::path(module_filename);
-		module_path.replace_extension(L".typeinfo");
+		auto typeinfo_path = std::filesystem::path(module_filename);
+		typeinfo_path.replace_extension(L".typeinfo");
+		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_filename))
+		{
+			auto typeinfogen_path = std::filesystem::path(getenv("FLAME_PATH"));
+			typeinfogen_path = typeinfogen_path / L"bin/typeinfogen.exe";
+			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_filename).c_str());
+		}
 
 		pugi::xml_document file;
 		pugi::xml_node file_root;
-		if (!file.load_file(module_path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
+		if (!file.load_file(typeinfo_path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
 		{
 			assert(0);
 			return nullptr;
