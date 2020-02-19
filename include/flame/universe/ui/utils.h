@@ -1180,6 +1180,7 @@ namespace flame
 			e_button(L"OK", [](void* c) {
 				remove_top_layer(*(Entity**)c);
 			}, new_mail_p(current_root()));
+			c_aligner(AlignxMiddle, AlignyFree);
 			e_end_dialog();
 			return e;
 		}
@@ -1189,6 +1190,7 @@ namespace flame
 			auto e = e_begin_dialog();
 			e_text(title);
 			e_begin_layout(LayoutHorizontal, 4.f);
+			c_aligner(AlignxMiddle, AlignyFree);
 			struct WrapedMail
 			{
 				void(*f)(void*, bool);
@@ -1228,6 +1230,7 @@ namespace flame
 			auto ct = e_edit(100.f)->get_component(cText);
 			e_end_layout();
 			e_begin_layout(LayoutHorizontal, 4.f);
+			c_aligner(AlignxMiddle, AlignyFree);
 			struct WrapedMail
 			{
 				void(*f)(void*, bool, const wchar_t*);

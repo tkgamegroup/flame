@@ -208,23 +208,50 @@ struct MyApp : App
 			ui::push_style_1u(ui::FontSize, 20);
 			ui::e_begin_layout(LayoutHorizontal, 8.f);
 			ui::c_aligner(AlignxMiddle, AlignyFree);
-			ui::e_text(L"Name")->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
-				if (hash == FLAME_CHASH("text"))
-					app.your_name = ((cText*)c)->text();
-			}, Mail<>());
-				ui::e_edit(400.f);
+				ui::e_text(L"Your Name");
+				ui::e_edit(300.f)->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
+					if (hash == FLAME_CHASH("text"))
+						app.your_name = ((cText*)c)->text();
+				}, Mail<>());
 			ui::e_end_layout();
 			ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
-				ui::e_begin_list(true);
-				for (auto i = 0; i < 10; i++)
-					ui::e_list_item((L"item" + std::to_wstring(i)).c_str());
+				auto e_room_list = ui::e_begin_list(true);
 				ui::e_end_list();
 			ui::e_end_scroll_view1();
-			ui::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 2;
+			ui::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 3;
 			ui::c_aligner(SizeFitParent, SizeFixed);
+				ui::e_button(Icon_REFRESH, [](void* c) {
+					auto e_room_list = *(Entity**)c;
+					looper().add_event([](void* c, bool*) {
+						auto e_room_list = *(Entity**)c;
+						e_room_list->remove_children(0, -1);
+						nlohmann::json req;
+						req["action"] = "get_room";
+						auto str = req.dump();
+						board_cast(2434, str.data(), str.size(), 1, [](void* c, const char* ip, const char* msg, uint size) {
+							auto e_room_list = *(Entity**)c;
+							auto reply = nlohmann::json::parse(std::string(msg, size));
+							struct Capture
+							{
+								Entity* e_room_list;
+								std::wstring name;
+								std::wstring host;
+							}capture;
+							capture.e_room_list = e_room_list;
+							capture.name = s2w(reply["name"].get<std::string>());
+							capture.host = s2w(reply["host"].get<std::string>());
+							looper().add_event([](void* c, bool*) {
+								auto& capture = *(Capture*)c;
+								ui::push_parent(capture.e_room_list);
+								ui::e_list_item((L"Name:" + capture.name + L" Creator:" + capture.host).c_str());
+								ui::pop_parent();
+							}, new_mail(&capture));
+						}, new_mail_p(e_room_list));
+					}, new_mail_p(e_room_list));
+				}, new_mail_p(e_room_list))->get_component(cEventReceiver)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
 				ui::e_button(L"Create Room", [](void*) {
 					if (app.your_name.empty())
-						ui::e_message_dialog(L"Name Must Not Be Empty!");
+						ui::e_message_dialog(L"Name Cannot Not Be Empty!");
 					else
 					{
 						ui::e_input_dialog(L"Room Name", [](void*, bool ok, const wchar_t* text) {
@@ -232,7 +259,19 @@ struct MyApp : App
 							{
 								app.room_name = text;
 								app.room_state = RoomPrepare;
-								app.server = Server::create(SocketNormal, 2434, [](void*, void* id) {
+								app.server = Server::create(SocketNormal, 2434, 
+								[](void*, void* id, const char* msg, uint size) {
+									auto req = nlohmann::json::parse(std::string(msg, size));
+									if (req["action"] == "get_room")
+									{
+										nlohmann::json reply;
+										reply["name"] = w2s(app.room_name);
+										reply["host"] = w2s(app.your_name);
+										auto str = reply.dump();
+										app.server->send(id, str.data(), str.size(), true);
+									}
+								},
+								[](void*, void* id) {
 									if (app.room_state == RoomPrepare && app.players.size())
 									{
 										;
@@ -248,7 +287,7 @@ struct MyApp : App
 				}, Mail<>());
 				ui::e_button(L"Join Room", [](void*) {
 					if (app.your_name.empty())
-						ui::e_message_dialog(L"Name Must Not Be Empty!");
+						ui::e_message_dialog(L"Name Cannot Not Be Empty!");
 					else
 					{
 
@@ -277,6 +316,8 @@ struct MyApp : App
 			looper().add_event([](void*, bool*) {
 				app.root->remove_children(1, -1);
 				app.create_online_local_scene();
+				if (app.server)
+					Server::destroy(app.server);
 			}, Mail<>());
 		}, Mail<>());
 		ui::c_aligner(AlignxMiddle, AlignyFree);

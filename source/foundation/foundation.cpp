@@ -140,9 +140,9 @@ namespace flame
 		Sleep(time < 0 ? INFINITE : time);
 	}
 
-	void* create_event(bool signaled)
+	void* create_event(bool signaled, bool manual)
 	{
-		return CreateEvent(NULL, false, signaled, NULL);
+		return CreateEvent(NULL, manual, signaled, NULL);
 	}
 
 	void set_event(void* ev)
@@ -1352,9 +1352,11 @@ namespace flame
 	};
 
 	static std::list<std::unique_ptr<Event>> events;
+	static std::recursive_mutex event_mtx;
 
 	void* Looper::add_event(void (*func)(void* c, bool* go_on), const Mail<>& capture, float interval, uint id)
 	{
+		event_mtx.lock();
 		auto e = new Event;
 		e->id = id;
 		e->interval = interval;
@@ -1364,23 +1366,27 @@ namespace flame
 		c->capture = capture;
 		e->event.reset(c);
 		events.emplace_back(e);
+		event_mtx.unlock();
 		return c;
 	}
 
 	void Looper::remove_event(void* ret_by_add)
 	{
+		event_mtx.lock();
 		for (auto it = events.begin(); it != events.end(); it++)
 		{
 			if ((*it)->event.get() == ret_by_add)
 			{
 				it = events.erase(it);
-				return;
+				break;
 			}
 		}
+		event_mtx.unlock();
 	}
 
 	void Looper::clear_events(int id)
 	{
+		event_mtx.lock();
 		if (id == -1)
 			events.clear();
 		else
@@ -1393,10 +1399,12 @@ namespace flame
 					it++;
 			}
 		}
+		event_mtx.unlock();
 	}
 
 	void Looper::process_events()
 	{
+		event_mtx.lock();
 		for (auto it = events.begin(); it != events.end();)
 		{
 			auto& e = *it;
@@ -1414,6 +1422,7 @@ namespace flame
 			}
 			it++;
 		}
+		event_mtx.unlock();
 	}
 
 	Looper& looper()

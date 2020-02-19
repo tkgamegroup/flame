@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/network/network.h>
 
 #include <winsock2.h>
@@ -5,30 +6,30 @@
 
 namespace flame
 {
-	bool websocket_shakehank(int fd_c)
+	bool websocket_shakehank(int fd)
 	{
 		int res;
+
 		fd_set rfds;
 		timeval timeout = { 1, 0 };
-
 		FD_ZERO(&rfds);
-		FD_SET(fd_c, &rfds);
+		FD_SET(fd, &rfds);
 		res = select(-1, &rfds, nullptr, nullptr, &timeout);
 
 		if (res <= 0)
 		{
-			closesocket(fd_c);
+			closesocket(fd);
 			return false;
 		}
 
 		uchar buf[1024 * 16];
-		auto ret = recv(fd_c, (char*)buf, array_size(buf), 0);
+		auto ret = recv(fd, (char*)buf, array_size(buf), 0);
 
 		auto p = buf;
 
 		if (ret <= 0 || !(ret > 3 && p[0] == 'G' && p[1] == 'E' && p[2] == 'T'))
 		{
-			closesocket(fd_c);
+			closesocket(fd);
 			return false;
 		}
 
@@ -59,7 +60,7 @@ namespace flame
 					"Connection: Upgrade\r\n"
 					"Data: %s\r\n"
 					"\r\n", key.c_str(), time_str);
-				auto res = ::send(fd_c, reply, strlen(reply), 0);
+				auto res = ::send(fd, reply, strlen(reply), 0);
 				assert(res > 0);
 			}
 		}
@@ -224,53 +225,60 @@ namespace flame
 
 		int fd;
 
-		std::unique_ptr<Closure<void(void* c, const char* msg)>> on_message;
+		std::unique_ptr<Closure<void(void* c, const char* msg, uint size)>> on_message;
 		std::unique_ptr<Closure<void(void* c)>> on_close;
+
+		void* ev_ended;
 
 		~ClientPrivate()
 		{
-			closesocket(fd);
+			destroy_event(ev_ended);
 		}
 
-		void close()
+		void stop()
 		{
-			closesocket(fd);
-			fd = 0;
+			if (fd)
+			{
+				closesocket(fd);
+				fd = 0;
+			}
 			on_close->call();
 		}
 	};
 
-	void Client::send(uint size, void* data)
+	void Client::send(void* data, uint size)
 	{
-		::send(((ClientPrivate*)this)->fd, (char*)data, size, 0);
+		auto buf = new char[size + sizeof(uint)];
+		*(uint*)buf = size;
+		memcpy(buf + sizeof(uint), data, size);
+		::send(((ClientPrivate*)this)->fd, buf, size + sizeof(uint), 0);
 	}
 
-	Client* Client::create(SocketType type, const char* ip, uint port, void on_message(void* c, const char* msg), void on_close(void* c), const Mail<>& capture)
+	Client* Client::create(SocketType type, const char* ip, uint port, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail<>& capture)
 	{
 		init();
 
 		int res;
 
-		auto fd_c = socket(AF_INET, SOCK_STREAM, 0);
-		assert(fd_c != INVALID_SOCKET);
-
+		auto fd = socket(AF_INET, SOCK_STREAM, 0);
+		assert(fd != INVALID_SOCKET);
 		sockaddr_in address = {};
 		address.sin_family = AF_INET;
 		address.sin_addr.S_un.S_addr = inet_addr(ip);
 		address.sin_port = htons(port);
-
-		res = connect(fd_c, (sockaddr*)&address, sizeof(address));
+		res = connect(fd, (sockaddr*)&address, sizeof(address));
 		if (res == SOCKET_ERROR)
 		{
-			closesocket(fd_c);
+			closesocket(fd);
 			return nullptr;
 		}
 
 		auto c = new ClientPrivate;
 		c->type = type;
-		c->fd = fd_c;
+		c->fd = fd;
+		c->ev_ended = create_event(false, true);
 		{
-			auto _c = new Closure<void(void* c, const char* msg)>;
+			auto _c = new Closure<void(void* c, const char* msg, uint size)>;
 			_c->function = on_message;
 			_c->capture = capture;
 			c->on_message.reset(_c);
@@ -286,26 +294,29 @@ namespace flame
 			while (true)
 			{
 				int size;
-				auto ret = recv(fd_c, (char*)&size, sizeof(int), 0);
+				auto ret = recv(fd, (char*)&size, sizeof(int), 0);
 				if (ret < sizeof(int))
 				{
-					c->close();
+					c->stop();
+					set_event(c->ev_ended);
 					return;
 				}
 				char buf[1024 * 64];
 				auto p = buf;
-				while (size > 0)
+				auto rest = size;
+				while (rest > 0)
 				{
-					auto ret = recv(fd_c, p, size, 0);
+					auto ret = recv(fd, p, rest, 0);
 					if (ret <= 0)
 					{
-						c->close();
+						c->stop();
+						set_event(c->ev_ended);
 						return;
 					}
 					p += ret;
-					size -= ret;
+					rest -= ret;
 				}
-				c->on_message->call(buf);
+				c->on_message->call(buf, size);
 			}
 		}).detach();
 
@@ -314,7 +325,10 @@ namespace flame
 
 	void Client::destroy(Client* c)
 	{
-
+		auto thiz = (ClientPrivate*)c;
+		thiz->stop();
+		wait_event(thiz->ev_ended, -1);
+		delete thiz;
 	}
 
 	struct ServerPrivate : Server
@@ -322,32 +336,61 @@ namespace flame
 		struct Client
 		{
 			int fd;
-			std::unique_ptr<Closure<void(void* c, const char* msg)>> on_message;
+			std::unique_ptr<Closure<void(void* c, const char* msg, uint size)>> on_message;
 			std::unique_ptr<Closure<void(void* c)>> on_close;
 
-			~Client()
+			void* ev_ended;
+
+			void stop()
 			{
-				closesocket(fd);
-				fd = 0;
-				on_close->call();
+				if (fd)
+				{
+					closesocket(fd);
+					fd = 0;
+					on_close->call();
+				}
 			}
+		};
+
+		struct DgramAddress
+		{
+			int fd;
+			sockaddr* paddr;
 		};
 
 		SocketType type;
 
-		int fd;
+		int fd_d;
+		int fd_s;
 
 		std::vector<std::unique_ptr<Client>> cs;
 
+		std::unique_ptr<Closure<void(void* c, void* id, const char* msg, uint size)>> on_dgram;
 		std::unique_ptr<Closure<void(void* c, void* id)>> on_connect;
 
-		~ServerPrivate()
+		void* ev_ended_d;
+		void* ev_ended_s;
+
+		void stop()
 		{
-			closesocket(fd);
+			if (fd_d)
+			{
+				closesocket(fd_d);
+				fd_d = 0;
+			}
+			if (fd_s)
+			{
+				closesocket(fd_s);
+				fd_s = 0;
+			}
+			for (auto& c : cs)
+				c->stop();
 		}
 
 		void remove_client(Client* c)
 		{
+			c->stop();
+			wait_event(c->ev_ended, -1);
 			for (auto it = cs.begin(); it != cs.end(); it++)
 			{
 				if (it->get() == c)
@@ -359,10 +402,10 @@ namespace flame
 		}
 	};
 
-	void Server::set_client(void* id, void on_message(void* c, const char* msg), void on_close(void* c), const Mail<>& capture)
+	void Server::set_client(void* id, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail<>& capture)
 	{
 		{
-			auto c = new Closure<void(void* c, const char* msg)>;
+			auto c = new Closure<void(void* c, const char* msg, uint size)>;
 			c->function = on_message;
 			c->capture = capture;
 			((ServerPrivate::Client*)id)->on_message.reset(c);
@@ -375,21 +418,41 @@ namespace flame
 		}
 	}
 
-	void Server::send(void* id, uint size, void* data)
+	void Server::send(void* id, void* data, uint size, bool is_dgram)
 	{
-		::send(((ServerPrivate::Client*)id)->fd, (char*)data, size, 0) > 0;
+		if (!is_dgram)
+		{
+			auto buf = new char[size + sizeof(uint)];
+			*(uint*)buf = size;
+			memcpy(buf + sizeof(uint), data, size);
+			::send(((ServerPrivate::Client*)id)->fd, buf, size + sizeof(uint), 0);
+		}
+		else
+		{
+			auto& da = *(ServerPrivate::DgramAddress*)id;
+			sendto(da.fd, (char*)data, size, 0, da.paddr, sizeof(sockaddr_in));
+		}
 	}
 
-	Server* Server::create(SocketType type, uint port, void on_connect(void* c, void* id), const Mail<>& capture)
+	Server* Server::create(SocketType type, uint port, void on_dgram(void* c, void* id, const char* msg, uint size), void on_connect(void* c, void* id), const Mail<>& capture)
 	{
 		init();
 
 		int res;
+		sockaddr_in address;
+
+		auto fd_d = socket(AF_INET, SOCK_DGRAM, 0);
+		assert(fd_d != INVALID_SOCKET);
+		address = {};
+		address.sin_family = AF_INET;
+		address.sin_addr.S_un.S_addr = INADDR_ANY;
+		address.sin_port = htons(port);
+		res = bind(fd_d, (sockaddr*)&address, sizeof(address));
+		assert(res == 0);
 
 		auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
 		assert(fd_s != INVALID_SOCKET);
-
-		sockaddr_in address = {};
+		address = {};
 		address.sin_family = AF_INET;
 		address.sin_addr.S_un.S_addr = INADDR_ANY;
 		address.sin_port = htons(port);
@@ -400,7 +463,16 @@ namespace flame
 
 		auto s = new ServerPrivate;
 		s->type = type;
-		s->fd = fd_s;
+		s->fd_d = fd_d;
+		s->fd_s = fd_s;
+		s->ev_ended_d = create_event(false, true);
+		s->ev_ended_s = create_event(false, true);
+		{
+			auto c = new Closure<void(void* c, void* id, const char* msg, uint size)>;
+			c->function = on_dgram;
+			c->capture = capture;
+			s->on_dgram.reset(c);
+		}
 		{
 			auto c = new Closure<void(void* c, void* id)>;
 			c->function = on_connect;
@@ -411,22 +483,52 @@ namespace flame
 		std::thread([=]() {
 			while (true)
 			{
-				auto fd = accept(fd_s, nullptr, nullptr);
-				if (fd == INVALID_SOCKET)
+				char buf[1024 * 64];
+				sockaddr_in address;
+				int address_size = sizeof(address);
+				auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
+				if (res <= 0)
+				{
+					closesocket(s->fd_d);
+					s->fd_d = 0;
+					set_event(s->ev_ended_d);
 					return;
+				}
+				ServerPrivate::DgramAddress da;
+				da.fd = s->fd_d;
+				da.paddr = (sockaddr*)&address;
+				s->on_dgram->call(&da, buf, res);
+			}
+		}).detach();
+
+		std::thread([=]() {
+			while (true)
+			{
+				auto fd = accept(s->fd_s, nullptr, nullptr);
+				if (fd == INVALID_SOCKET)
+				{
+					s->stop();
+					set_event(s->ev_ended_s);
+					return;
+				}
 				auto c = new ServerPrivate::Client;
 				c->fd = fd;
+				c->ev_ended = create_event(false, true);
 				s->on_connect->call(c);
 				if (c->on_message->function || c->on_close->function)
 					s->cs.emplace_back(c);
 				else
+				{
+					closesocket(fd);
 					delete c;
+					continue;
+				}
 
 				std::thread([=]() {
 					while (true)
 					{
 						int size;
-						auto ret = recv(fd, (char*)&size, sizeof(int), 0);
+						auto ret = recv(c->fd, (char*)&size, sizeof(int), 0);
 						if (ret < sizeof(int))
 						{
 							s->remove_client(c);
@@ -434,18 +536,19 @@ namespace flame
 						}
 						char buf[1024 * 64];
 						auto p = buf;
-						while (size > 0)
+						auto rest = size;
+						while (rest > 0)
 						{
-							auto ret = recv(fd, p, size, 0);
+							auto ret = recv(c->fd, p, rest, 0);
 							if (ret <= 0)
 							{
 								s->remove_client(c);
 								return;
 							}
 							p += ret;
-							size -= ret;
+							rest -= ret;
 						}
-						c->on_message->call(buf);
+						c->on_message->call(buf, size);
 					}
 				}).detach();
 			}
@@ -456,95 +559,13 @@ namespace flame
 
 	void Server::destroy(Server* s)
 	{
-		delete (ServerPrivate*)s;
-	}
-
-	struct OneClientServerPrivate : OneClientServer
-	{
-		SocketType type;
-
-		int fd_c;
-
-		bool send(uint size, void* data)
-		{
-			if (type == SocketWeb)
-				return websocket_send(fd_c, size, data);
-			else
-				return ::send(fd_c, (char*)data, size, 0) > 0;
-		}
-	};
-
-	bool OneClientServer::send(uint size, void* data)
-	{
-		return ((OneClientServerPrivate*)this)->send(size, data);
-	}
-
-	OneClientServer* OneClientServer::create(SocketType type, uint port, uint _timeout, void on_message(void* c, const char* msg), const Mail<>& capture)
-	{
-		init();
-
-		int res;
-
-		auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-		assert(fd_s != INVALID_SOCKET);
-
-		sockaddr_in address = {};
-		address.sin_family = AF_INET;
-		address.sin_addr.S_un.S_addr = INADDR_ANY;
-		address.sin_port = htons(port);
-		res = bind(fd_s, (sockaddr*)& address, sizeof(address));
-		assert(res == 0);
-		res = listen(fd_s, 1);
-		assert(res == 0);
-
-		timeval timeout = { _timeout, 0 };
-		fd_set rfds;
-
-		FD_ZERO(&rfds);
-		FD_SET(fd_s, &rfds);
-		res = select(-1, &rfds, nullptr, nullptr, &timeout);
-		if (res <= 0)
-		{
-			closesocket(fd_s);
-			return nullptr;
-		}
-
-		auto fd_c = accept(fd_s, nullptr, nullptr);
-		closesocket(fd_s);
-
-		if (type == SocketWeb)
-		{
-			if (!websocket_shakehank(fd_c))
-				return nullptr;
-		}
-
-		auto s = new OneClientServerPrivate;
-		s->type = type;
-		s->fd_c = fd_c;
-		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
-
-		std::thread([=]() {
-			while (true)
-			{
-				bool closed = false;
-				auto reqs = websocket_recv(fd_c, closed);
-				for (auto& r : reqs)
-					on_message(capture.p, r.c_str());
-				if (closed)
-				{
-					SetEvent(s->ev_closed);
-					delete_mail(capture);
-					return;
-				}
-			}
-		}).detach();
-
-		return s;
-	}
-
-	void OneClientServer::destroy(OneClientServer* s)
-	{
-
+		auto thiz = (ServerPrivate*)s;
+		thiz->stop();
+		wait_event(thiz->ev_ended_d, -1);
+		wait_event(thiz->ev_ended_s, -1);
+		for (auto& c : thiz->cs)
+			wait_event(c->ev_ended, -1);
+		delete thiz;
 	}
 
 	struct FrameSyncServerPrivate : FrameSyncServer
@@ -558,12 +579,36 @@ namespace flame
 
 		nlohmann::json frame_data;
 
-		bool send(uint client_idx, int size, void* data)
+		void* ev_ended;
+
+		~FrameSyncServerPrivate()
+		{
+			destroy_event(ev_ended);
+		}
+
+		static bool send_detail(SocketType type, int fd, void* data, int size)
 		{
 			if (type == SocketWeb)
-				return websocket_send(fd_cs[client_idx], size, data);
+				return websocket_send(fd, size, data);
 			else
-				return ::send(fd_cs[client_idx], (char*)data, size, 0) > 0;
+				return ::send(fd, (char*)data, size, 0) > 0;
+		}
+
+		bool send(uint client_id, void* data, int size)
+		{
+			return send_detail(type, fd_cs[client_id], data, size);
+		}
+
+		void stop()
+		{
+			for (auto& fd : fd_cs)
+			{
+				if (fd)
+				{
+					closesocket(fd);
+					fd = 0;
+				}
+			}
 		}
 	};
 
@@ -573,7 +618,6 @@ namespace flame
 
 		auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
 		assert(fd_s != INVALID_SOCKET);
-
 		sockaddr_in address = {};
 		address.sin_family = AF_INET;
 		address.sin_addr.S_un.S_addr = INADDR_ANY;
@@ -586,27 +630,20 @@ namespace flame
 		std::vector<int> fd_cs;
 		while (fd_cs.size() < client_count)
 		{
-			auto fd_c = accept(fd_s, nullptr, nullptr);
-			if (fd_c == INVALID_SOCKET)
+			auto fd = accept(fd_s, nullptr, nullptr);
+			if (fd == INVALID_SOCKET)
 				return nullptr;
 
 			if (type == SocketWeb)
 			{
-				if (!websocket_shakehank(fd_c))
+				if (!websocket_shakehank(fd))
 					continue;
 			}
 
-			fd_cs.push_back(fd_c);
+			fd_cs.push_back(fd);
 		}
 
 		closesocket(fd_s);
-
-		auto s = new FrameSyncServerPrivate;
-		s->type = type;
-		s->frame = 0;
-		s->semaphore = 0;
-		s->fd_cs = fd_cs;
-		s->ev_closed = CreateEvent(nullptr, true, false, nullptr);
 
 		{
 			srand(time(0));
@@ -615,9 +652,19 @@ namespace flame
 				{"seed", ::rand()}
 			};
 			auto str = json.dump();
-			for (auto i = 0; i < client_count; i++)
-				s->send(i, str.size(), str.data());
+			for (auto fd : fd_cs)
+			{
+				if (!FrameSyncServerPrivate::send_detail(type, fd, str.data(), str.size()))
+					return nullptr;
+			}
 		}
+
+		auto s = new FrameSyncServerPrivate;
+		s->type = type;
+		s->frame = 0;
+		s->semaphore = 0;
+		s->fd_cs = fd_cs;
+		s->ev_ended = create_event(false, true);
 
 		std::thread([s]() {
 			while (true)
@@ -626,49 +673,51 @@ namespace flame
 				FD_ZERO(&rfds);
 				for (auto fd : s->fd_cs)
 					FD_SET(fd, &rfds);
-				if (select(-1, &rfds, nullptr, nullptr, nullptr) > 0)
+				auto res = select(-1, &rfds, nullptr, nullptr, nullptr);
+				if (res < 0)
 				{
-					auto client_idx = 0;
-					for (auto fd : s->fd_cs)
+					s->stop();
+					set_event(s->ev_ended);
+					return;
+				}
+				for (auto i = 0; i < s->fd_cs.size(); i++)
+				{
+					auto fd = s->fd_cs[i];
+					if (FD_ISSET(fd, &rfds))
 					{
-						if (FD_ISSET(fd, &rfds))
+						auto closed = false;
+						auto reqs = websocket_recv(fd, closed);
+						if (closed || reqs.empty())
 						{
-							bool closed = false;
-							auto reqs = websocket_recv(fd, closed);
-							if (reqs.size() > 0)
+							s->stop();
+							set_event(s->ev_ended);
+							return;
+						}
+						auto req = nlohmann::json::parse(reqs[0]);
+						auto n_frame = req.find("frame");
+						if (n_frame != req.end())
+						{
+							auto frame = n_frame->get<int>();
+							if (frame == s->frame)
 							{
-								auto req = nlohmann::json::parse(reqs[0]);
-								auto n_frame = req.find("frame");
-								if (n_frame != req.end())
+								s->semaphore++;
+								auto dst = s->frame_data[std::to_string(i)];
+								for (auto& i : req["data"].items())
+									dst[i.key()] = i.value();
+
+								if (s->semaphore >= s->fd_cs.size())
 								{
-									auto frame = n_frame->get<int>();
-									if (frame == s->frame)
-									{
-										s->semaphore++;
-										auto dst = s->frame_data[std::to_string(client_idx + 1)];
-										for (auto& i : req["data"].items())
-											dst[i.key()] = i.value();
+									s->frame++;
+									s->semaphore = 0;
 
-										if (s->semaphore >= s->fd_cs.size())
-										{
-											s->frame++;
-											s->semaphore = 0;
-
-											s->frame_data["action"] = "frame";
-											auto str = s->frame_data.dump();
-											for (auto i = 0; i < 2; i++)
-												s->send(i, str.size(), str.data());
-											s->frame_data.clear();
-										}
-									}
+									s->frame_data["action"] = "frame";
+									auto str = s->frame_data.dump();
+									for (auto i = 0; i < 2; i++)
+										s->send(i, str.data(), str.size());
+									s->frame_data.clear();
 								}
 							}
-							if (closed)
-							{
-								// TODO
-							}
 						}
-						client_idx++;
 					}
 				}
 			}
@@ -677,13 +726,65 @@ namespace flame
 		return s;
 	}
 
-	bool FrameSyncServer::send(uint client_idx, uint size, void* data)
+	bool FrameSyncServer::send(uint client_idx, void* data, uint size)
 	{
-		return ((FrameSyncServerPrivate*)this)->send(client_idx, size, data);
+		return ((FrameSyncServerPrivate*)this)->send(client_idx, data, size);
 	}
 
 	void FrameSyncServer::destroy(FrameSyncServer* s)
 	{
+		auto thiz = (FrameSyncServerPrivate*)s;
+		thiz->stop();
+		wait_event(thiz->ev_ended, -1);
+		delete thiz;
+	}
 
+	void board_cast(uint port, void* data, uint size, uint _timeout, void on_message(void* c, const char* ip, const char* msg, uint size), const Mail<>& capture)
+	{
+		init();
+
+		int res;
+
+		auto fd = socket(AF_INET, SOCK_DGRAM, 0);
+		assert(fd != INVALID_SOCKET); 
+		auto attr = 1;
+		setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&attr, sizeof(attr));
+		sockaddr_in address;
+		address.sin_family = AF_INET;
+		address.sin_addr.S_un.S_addr = inet_addr("255.255.255.255");
+		address.sin_port = htons(port);
+
+		sendto(fd, (char*)data, size, 0, (sockaddr*)&address, sizeof(address));
+
+		std::thread([=]() {
+			int res;
+
+			while (true)
+			{
+				timeval timeout = { _timeout, 0 };
+				fd_set rfds;
+				FD_ZERO(&rfds);
+				FD_SET(fd, &rfds);
+				res = select(-1, &rfds, nullptr, nullptr, &timeout);
+				if (res <= 0)
+				{
+					closesocket(fd);
+					delete_mail(capture);
+					return;
+				}
+
+				char buf[1024 * 64];
+				sockaddr_in address;
+				int address_size = sizeof(address);
+				res = recvfrom(fd, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
+				if (res <= 0)
+				{
+					closesocket(fd);
+					delete_mail(capture);
+					return;
+				}
+				on_message(capture.p, inet_ntoa(address.sin_addr), buf, res);
+			}
+		}).detach();
 	}
 }

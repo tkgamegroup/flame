@@ -93,6 +93,21 @@ namespace flame
 			drops[i] = _drops[i];
 	}
 
+	void cEventReceiver::on_key(KeyStateFlags action, uint value)
+	{
+		((cEventReceiverPrivate*)this)->on_key(action, value);
+	}
+
+	void cEventReceiver::on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value)
+	{
+		((cEventReceiverPrivate*)this)->on_mouse(action, key, value);
+	}
+
+	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
+	{
+		((cEventReceiverPrivate*)this)->on_drag_and_drop(action, er, pos);
+	}
+
 	cEventReceiver* cEventReceiver::create()
 	{
 		return new cEventReceiverPrivate();

@@ -490,7 +490,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
 	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever
-	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled);
+	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled, bool manual = false);
 	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);

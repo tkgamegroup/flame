@@ -33,6 +33,10 @@ namespace flame
 		ListenerHub<void(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>		mouse_listeners;
 		ListenerHub<void(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)>	drag_and_drop_listeners;
 
+		FLAME_UNIVERSE_EXPORTS void on_key(KeyStateFlags action, uint value);
+		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);
+		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
+
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};
 }
