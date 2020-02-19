@@ -1377,7 +1377,7 @@ namespace flame
 		{
 			if ((*it)->event.get() == ret_by_add)
 			{
-				it = events.erase(it);
+				events.erase(it);
 				break;
 			}
 		}

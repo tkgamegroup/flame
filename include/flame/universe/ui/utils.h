@@ -1225,10 +1225,8 @@ namespace flame
 		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m)
 		{
 			auto e = e_begin_dialog();
-			e_begin_layout(LayoutHorizontal, 4.f);
 			e_text(title);
 			auto ct = e_edit(100.f)->get_component(cText);
-			e_end_layout();
 			e_begin_layout(LayoutHorizontal, 4.f);
 			c_aligner(AlignxMiddle, AlignyFree);
 			struct WrapedMail
