@@ -860,6 +860,10 @@ struct MyApp : App
 
 	void quit_game()
 	{
+		looper().clear_events(FLAME_CHASH("count_down"));
+
+		gaming = false;
+
 		if (app.server)
 			Server::destroy(app.server);
 		if (app.client)
