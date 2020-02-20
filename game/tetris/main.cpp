@@ -82,6 +82,7 @@ struct MyApp : App
 	cText* c_text_level;
 	cText* c_text_lines;
 	cText* c_text_score;
+	cText* c_text_garage;
 
 	bool just_down_rotate_left;
 	bool just_down_rotate_right;
@@ -100,6 +101,7 @@ struct MyApp : App
 	uint score;
 	int clear_ticks;
 	uint full_lines[4];
+	uint garbage;
 	Vec2i mino_pos;
 	MinoType mino_type;
 	MinoType mino_hold;
@@ -385,6 +387,13 @@ struct MyApp : App
 															ui::e_end_dialog();
 														}, Mail<>());
 													}
+													else if (action == "attack")
+													{
+														auto value = req["value"].get<int>();
+														looper().add_event([](void* c, bool*) {
+															app.garbage = *(int*)c;
+														}, new_mail(&value));
+													}
 
 													break;
 												}
@@ -463,6 +472,13 @@ struct MyApp : App
 											ui::c_aligner(AlignxMiddle, AlignyFree);
 										ui::e_end_dialog();
 									}, Mail<>());
+								}
+								else if (action == "attack")
+								{
+									auto value = req["value"].get<int>();
+									looper().add_event([](void* c, bool*) {
+										app.garbage = *(int*)c;
+									}, new_mail(&value));
 								}
 							}, 
 							[](void*) {
@@ -653,6 +669,14 @@ struct MyApp : App
 					c_text_score = ui::e_text(L"")->get_component(cText);
 					ui::pop_style(ui::FontSize);
 				}
+				else
+				{
+					ui::push_style_1u(ui::FontSize, 20);
+					ui::next_element_pos = Vec2f(90.f, 500.f);
+					c_text_garage = ui::e_text(L"")->get_component(cText);
+					c_text_garage->color = Vec4c(200, 120, 100, 255);
+					ui::pop_style(ui::FontSize);
+				}
 
 			ui::pop_parent();
 
@@ -703,6 +727,8 @@ struct MyApp : App
 				c_text_lines->set_text(wfmt(L"%04d", lines).c_str());
 			c_text_score->set_text(wfmt(L"%09d", score).c_str());
 		}
+		else
+			c_text_garage->set_text(wfmt(L"%02d", garbage).c_str());
 	}
 
 	void start_game()
@@ -1258,23 +1284,63 @@ struct MyApp : App
 											level++;
 											level = min(24U, level);
 										}
+
+										auto attack = 0;
+										switch (l)
+										{
+										case 1:
+											score += 100;
+											break;
+										case 2:
+											score += 300;
+											attack = 1;
+											break;
+										case 3:
+											score += 500;
+											attack = 2;
+											break;
+										case 4:
+											score += 800;
+											attack = 4;
+											break;
+										}
+
+										if (attack > 0)
+										{
+											nlohmann::json req;
+											req["action"] = "attack";
+											req["value"] = attack;
+											auto str = req.dump();
+											if (server)
+												server->send(players[0].id, str.data(), str.size(), false);
+											if (client)
+												client->send(str.data(), str.size());
+										}
 									}
 									else
-										clear_ticks = 0;
-									switch (l)
 									{
-									case 1:
-										score += 100;
-										break;
-									case 2:
-										score += 300;
-										break;
-									case 3:
-										score += 500;
-										break;
-									case 4:
-										score += 800;
-										break;
+										if (garbage)
+										{
+											for (auto i = 0; i < board_height - garbage; i++)
+											{
+												for (auto x = 0; x < board_width; x++)
+												{
+													auto id = c_board_main->cell(Vec2i(x, i + garbage));
+													c_board_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
+												}
+											}
+											auto hole = ::rand() % board_width;
+											for (auto i = 0; i < garbage; i++)
+											{
+												auto y = board_height - i - 1;
+												for (auto x = 0; x < board_width; x++)
+													c_board_main->set_cell(Vec2u(x, y), TileGray, Vec4c(200, 200, 200, 255));
+												c_board_main->set_cell(Vec2u(hole, y), TileGrid);
+											}
+											garbage = 0;
+										}
+
+										clear_ticks = 0;
 									}
 									mino_pos.y() = -1;
 									mino_just_hold = false;
