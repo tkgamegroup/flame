@@ -362,7 +362,7 @@ struct MyApp : App
 																for (auto x = 0; x < board_width; x++)
 																{
 																	auto id = board[y * board_width + x] - '0';
-																	app.c_board_opponent_main->set_cell(Vec2u(x, y), id, Vec4c(200, 200, 200, 255));
+																	app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
 																}
 															}
 														}, new_mail(&board));
@@ -371,6 +371,18 @@ struct MyApp : App
 													{
 														looper().add_event([](void* c, bool*) {
 															app.win = true;
+															if (app.paused)
+																ui::remove_top_layer(app.root);
+															ui::e_begin_dialog();
+																ui::e_text(L"You Win");
+																ui::c_aligner(AlignxMiddle, AlignyFree);
+																ui::e_button(L"Quit", [](void*) {
+																	ui::remove_top_layer(app.root);
+
+																	app.quit_game();
+																}, Mail<>());
+																ui::c_aligner(AlignxMiddle, AlignyFree);
+															ui::e_end_dialog();
 														}, Mail<>());
 													}
 
@@ -429,7 +441,7 @@ struct MyApp : App
 											for (auto x = 0; x < board_width; x++)
 											{
 												auto id = board[y * board_width + x] - '0';
-												app.c_board_opponent_main->set_cell(Vec2u(x, y), id, Vec4c(200, 200, 200, 255));
+												app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
 											}
 										}
 									}, new_mail(&board));
@@ -438,6 +450,18 @@ struct MyApp : App
 								{
 									looper().add_event([](void* c, bool*) {
 										app.win = true;
+										if (app.paused)
+											ui::remove_top_layer(app.root);
+										ui::e_begin_dialog();
+											ui::e_text(L"You Win");
+											ui::c_aligner(AlignxMiddle, AlignyFree);
+											ui::e_button(L"Quit", [](void*) {
+												ui::remove_top_layer(app.root);
+
+												app.quit_game();
+											}, Mail<>());
+											ui::c_aligner(AlignxMiddle, AlignyFree);
+										ui::e_end_dialog();
 									}, Mail<>());
 								}
 							}, 
@@ -837,64 +861,65 @@ struct MyApp : App
 
 		if (game_mode != GameMenu)
 		{
-			if (game_mode != GameMulti && key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
+			if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
 			{
 				if (!paused)
 				{
-					looper().clear_events(FLAME_CHASH("count_down"));
+					if (game_mode != GameMulti)
+					{
+						looper().clear_events(FLAME_CHASH("count_down"));
 
-					ui::e_begin_dialog();
-						ui::e_text(L"Paused");
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Resume", [](void*) {
-							app.paused = false;
-							ui::remove_top_layer(app.root);
+						ui::e_begin_dialog();
+							ui::e_text(L"Paused");
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+							ui::e_button(L"Resume", [](void*) {
+								app.paused = false;
+								ui::remove_top_layer(app.root);
 
-							if (app.game_mode != GameMulti)
 								app.add_count_down();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Restart", [](void*) {
-							app.paused = false;
-							ui::remove_top_layer(app.root);
+							}, Mail<>());
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+							ui::e_button(L"Restart", [](void*) {
+								app.paused = false;
+								ui::remove_top_layer(app.root);
 
-							app.play_time = 0.f;
-							app.start_game();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Quit", [](void*) {
-							app.paused = false;
-							ui::remove_top_layer(app.root);
+								app.play_time = 0.f;
+								app.start_game();
+							}, Mail<>());
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+							ui::e_button(L"Quit", [](void*) {
+								app.paused = false;
+								ui::remove_top_layer(app.root);
 
-							app.quit_game();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_end_dialog();
+								app.quit_game();
+							}, Mail<>());
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_end_dialog();
+					}
+					else
+					{
+						ui::e_begin_dialog();
+							ui::e_text(L"Paused");
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+							ui::e_button(L"Resume", [](void*) {
+								app.paused = false;
+								ui::remove_top_layer(app.root);
+							}, Mail<>());
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+							ui::e_button(L"Quit", [](void*) {
+								app.paused = false;
+								ui::remove_top_layer(app.root);
+
+								app.quit_game();
+							}, Mail<>());
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_end_dialog();
+					}
 
 					paused = true;
-					gaming = false;
+					if (game_mode != GameMulti)
+						gaming = false;
 				}
-				else
-				{
-					paused = false;
-					gaming = false;
-					ui::remove_top_layer(app.root);
-					add_count_down();
-				}
-			}
-
-			if (win)
-			{
-				ui::e_begin_dialog();
-					ui::e_text(L"You Win");
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Quit", [](void*) {
-						ui::remove_top_layer(app.root);
-
-						app.quit_game();
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_end_dialog();
 			}
 
 			auto dt = looper().delta_time;

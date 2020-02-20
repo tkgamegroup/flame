@@ -225,24 +225,28 @@ namespace flame
 
 		int fd;
 
-		std::unique_ptr<Closure<void(void* c, const char* msg, uint size)>> on_message;
-		std::unique_ptr<Closure<void(void* c)>> on_close;
+		void (*on_message)(void* c, const char* msg, uint size);
+		void (*on_close)(void* c);
+		Mail<> capture;
 
+		std::recursive_mutex mtx;
 		void* ev_ended;
 
 		~ClientPrivate()
 		{
+			delete_mail(capture);
 			destroy_event(ev_ended);
 		}
 
 		void stop()
 		{
+			std::lock_guard<std::recursive_mutex> lock(mtx);
 			if (fd)
 			{
 				closesocket(fd);
 				fd = 0;
 			}
-			on_close->call();
+			on_close(capture.p);
 		}
 	};
 
@@ -277,25 +281,17 @@ namespace flame
 		c->type = type;
 		c->fd = fd;
 		c->ev_ended = create_event(false, true);
-		{
-			auto _c = new Closure<void(void* c, const char* msg, uint size)>;
-			_c->function = on_message;
-			_c->capture = capture;
-			c->on_message.reset(_c);
-		}
-		{
-			auto _c = new Closure<void(void* c)>;
-			_c->function = on_close;
-			_c->capture = capture;
-			c->on_close.reset(_c);
-		}
+		c->on_message = on_message;
+		c->on_close = on_close;
+		c->capture = capture;
 
 		std::thread([=]() {
 			while (true)
 			{
 				int size;
-				auto ret = recv(fd, (char*)&size, sizeof(int), 0);
-				if (ret < sizeof(int))
+				auto ret = recv(c->fd, (char*)&size, sizeof(int), 0);
+				std::lock_guard<std::recursive_mutex> lock(c->mtx);
+				if (ret < (int)sizeof(int))
 				{
 					c->stop();
 					set_event(c->ev_ended);
@@ -306,7 +302,7 @@ namespace flame
 				auto rest = size;
 				while (rest > 0)
 				{
-					auto ret = recv(fd, p, rest, 0);
+					auto ret = recv(c->fd, p, rest, 0);
 					if (ret <= 0)
 					{
 						c->stop();
@@ -316,7 +312,7 @@ namespace flame
 					p += ret;
 					rest -= ret;
 				}
-				c->on_message->call(buf, size);
+				c->on_message(c->capture.p, buf, size);
 			}
 		}).detach();
 
@@ -336,18 +332,28 @@ namespace flame
 		struct Client
 		{
 			int fd;
-			std::unique_ptr<Closure<void(void* c, const char* msg, uint size)>> on_message;
-			std::unique_ptr<Closure<void(void* c)>> on_close;
 
+			void (*on_message)(void* c, const char* msg, uint size);
+			void (*on_close)(void* c);
+			Mail<> capture;
+
+			std::recursive_mutex mtx;
 			void* ev_ended;
+
+			~Client()
+			{
+				delete_mail(capture);
+				destroy_event(ev_ended);
+			}
 
 			void stop()
 			{
+				std::lock_guard<std::recursive_mutex> lock(mtx);
 				if (fd)
 				{
 					closesocket(fd);
 					fd = 0;
-					on_close->call();
+					on_close(capture.p);
 				}
 			}
 		};
@@ -365,14 +371,24 @@ namespace flame
 
 		std::vector<std::unique_ptr<Client>> cs;
 
-		std::unique_ptr<Closure<void(void* c, void* id, const char* msg, uint size)>> on_dgram;
-		std::unique_ptr<Closure<void(void* c, void* id)>> on_connect;
+		void (*on_dgram)(void* c, void* id, const char* msg, uint size);
+		void (*on_connect)(void* c, void* id);
+		Mail<> capture;
 
+		std::recursive_mutex mtx;
 		void* ev_ended_d;
 		void* ev_ended_s;
 
+		~ServerPrivate()
+		{
+			delete_mail(capture);
+			destroy_event(ev_ended_d);
+			destroy_event(ev_ended_s);
+		}
+
 		void stop()
 		{
+			std::lock_guard<std::recursive_mutex> lock(mtx);
 			if (fd_d)
 			{
 				closesocket(fd_d);
@@ -386,36 +402,14 @@ namespace flame
 			for (auto& c : cs)
 				c->stop();
 		}
-
-		void remove_client(Client* c)
-		{
-			c->stop();
-			wait_event(c->ev_ended, -1);
-			for (auto it = cs.begin(); it != cs.end(); it++)
-			{
-				if (it->get() == c)
-				{
-					cs.erase(it);
-					break;
-				}
-			}
-		}
 	};
 
 	void Server::set_client(void* id, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail<>& capture)
 	{
-		{
-			auto c = new Closure<void(void* c, const char* msg, uint size)>;
-			c->function = on_message;
-			c->capture = capture;
-			((ServerPrivate::Client*)id)->on_message.reset(c);
-		}
-		{
-			auto c = new Closure<void(void* c)>;
-			c->function = on_close;
-			c->capture = capture;
-			((ServerPrivate::Client*)id)->on_close.reset(c);
-		}
+		auto client = (ServerPrivate::Client*)id;
+		client->on_message = on_message;
+		client->on_close = on_close;
+		client->capture = capture;
 	}
 
 	void Server::send(void* id, void* data, uint size, bool is_dgram)
@@ -467,18 +461,9 @@ namespace flame
 		s->fd_s = fd_s;
 		s->ev_ended_d = create_event(false, true);
 		s->ev_ended_s = create_event(false, true);
-		{
-			auto c = new Closure<void(void* c, void* id, const char* msg, uint size)>;
-			c->function = on_dgram;
-			c->capture = capture;
-			s->on_dgram.reset(c);
-		}
-		{
-			auto c = new Closure<void(void* c, void* id)>;
-			c->function = on_connect;
-			c->capture = capture;
-			s->on_connect.reset(c);
-		}
+		s->on_dgram = on_dgram;
+		s->on_connect = on_connect;
+		s->capture = capture;
 
 		std::thread([=]() {
 			while (true)
@@ -487,17 +472,21 @@ namespace flame
 				sockaddr_in address;
 				int address_size = sizeof(address);
 				auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
+				std::lock_guard<std::recursive_mutex> lock(s->mtx);
 				if (res <= 0)
 				{
-					closesocket(s->fd_d);
-					s->fd_d = 0;
+					if (s->fd_d)
+					{
+						closesocket(s->fd_d);
+						s->fd_d = 0;
+					}
 					set_event(s->ev_ended_d);
 					return;
 				}
 				ServerPrivate::DgramAddress da;
 				da.fd = s->fd_d;
 				da.paddr = (sockaddr*)&address;
-				s->on_dgram->call(&da, buf, res);
+				s->on_dgram(s->capture.p, &da, buf, res);
 			}
 		}).detach();
 
@@ -505,6 +494,7 @@ namespace flame
 			while (true)
 			{
 				auto fd = accept(s->fd_s, nullptr, nullptr);
+				std::lock_guard<std::recursive_mutex> lock(s->mtx);
 				if (fd == INVALID_SOCKET)
 				{
 					s->stop();
@@ -514,7 +504,7 @@ namespace flame
 				auto c = new ServerPrivate::Client;
 				c->fd = fd;
 				c->ev_ended = create_event(false, true);
-				s->on_connect->call(c);
+				s->on_connect(s->capture.p, c);
 				if (c->on_message || c->on_close)
 					s->cs.emplace_back(c);
 				else
@@ -529,9 +519,11 @@ namespace flame
 					{
 						int size;
 						auto ret = recv(c->fd, (char*)&size, sizeof(int), 0);
-						if (ret < sizeof(int))
+						std::lock_guard<std::recursive_mutex> lock(c->mtx);
+						if (ret < (int)sizeof(int))
 						{
-							s->remove_client(c);
+							c->stop();
+							set_event(c->ev_ended);
 							return;
 						}
 						char buf[1024 * 64];
@@ -542,13 +534,14 @@ namespace flame
 							auto ret = recv(c->fd, p, rest, 0);
 							if (ret <= 0)
 							{
-								s->remove_client(c);
+								c->stop();
+								set_event(c->ev_ended);
 								return;
 							}
 							p += ret;
 							rest -= ret;
 						}
-						c->on_message->call(buf, size);
+						c->on_message(c->capture.p, buf, size);
 					}
 				}).detach();
 			}

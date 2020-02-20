@@ -1372,7 +1372,7 @@ namespace flame
 
 	void Looper::remove_event(void* ret_by_add)
 	{
-		event_mtx.lock();
+		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
 		{
 			if ((*it)->event.get() == ret_by_add)
@@ -1381,12 +1381,11 @@ namespace flame
 				break;
 			}
 		}
-		event_mtx.unlock();
 	}
 
 	void Looper::clear_events(int id)
 	{
-		event_mtx.lock();
+		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
 			events.clear();
 		else
@@ -1399,12 +1398,11 @@ namespace flame
 					it++;
 			}
 		}
-		event_mtx.unlock();
 	}
 
 	void Looper::process_events()
 	{
-		event_mtx.lock();
+		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end();)
 		{
 			auto& e = *it;
@@ -1422,7 +1420,6 @@ namespace flame
 			}
 			it++;
 		}
-		event_mtx.unlock();
 	}
 
 	Looper& looper()
