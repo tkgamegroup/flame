@@ -26,7 +26,7 @@ namespace flame
 			element = nullptr;
 
 			size_ = Vec2u(0);
-			cell_size = Vec2f(0.f);
+			cell_size_ = Vec2f(0.f);
 
 			draw_cmd = nullptr;
 		}
@@ -54,6 +54,7 @@ namespace flame
 			{
 				auto padding = element->inner_padding_ * element->global_scale;
 				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
+				auto cell_size = cell_size_ * element->global_scale;
 				for (auto y = 0; y < size_.y(); y++)
 				{
 					for (auto x = 0; x < size_.x(); x++)
@@ -181,7 +182,7 @@ namespace flame
 			auto c = new cTileMapPrivate();
 
 			c->size_ = size;
-			c->cell_size = cell_size;
+			c->cell_size_ = cell_size;
 			c->tiles.resize(tiles.s);
 			for (auto i = 0; i < tiles.s; i++)
 			{
@@ -207,7 +208,7 @@ namespace flame
 			if (offset == -1)
 			{
 				size = c->size_;
-				cell_size = c->cell_size;
+				cell_size = c->cell_size_;
 			}
 		}
 
@@ -218,7 +219,7 @@ namespace flame
 			if (offset == -1)
 			{
 				c->set_size(size);
-				c->cell_size = cell_size;
+				c->cell_size_ = cell_size;
 			}
 		}
 	};

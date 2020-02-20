@@ -23,6 +23,7 @@ namespace flame
 		void add_component(Component* c);
 		void remove_component(Component* c);
 		EntityPrivate* find_child(const std::string& name) const;
+		int find_child(EntityPrivate* e) const;
 		void add_child(EntityPrivate* e, int position);
 		void reposition_child(EntityPrivate* e, int position);
 		void mark_dying();

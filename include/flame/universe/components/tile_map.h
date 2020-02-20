@@ -11,7 +11,7 @@ namespace flame
 		cElement* element;
 
 		Vec2u size_;
-		Vec2f cell_size;
+		Vec2f cell_size_;
 
 		cTileMap() :
 			Component("cTileMap")

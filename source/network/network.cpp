@@ -515,7 +515,7 @@ namespace flame
 				c->fd = fd;
 				c->ev_ended = create_event(false, true);
 				s->on_connect->call(c);
-				if (c->on_message->function || c->on_close->function)
+				if (c->on_message || c->on_close)
 					s->cs.emplace_back(c);
 				else
 				{

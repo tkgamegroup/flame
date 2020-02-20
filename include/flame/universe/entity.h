@@ -47,6 +47,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS uint child_count() const;
 		FLAME_UNIVERSE_EXPORTS Entity* child(uint index) const;
 		FLAME_UNIVERSE_EXPORTS Entity* find_child(const char* name) const;
+		FLAME_UNIVERSE_EXPORTS int find_child(Entity* e) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e, int position = -1); /* -1 is end */
 		FLAME_UNIVERSE_EXPORTS void reposition_child(Entity* e, int position); /* -1 is last */
 		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);

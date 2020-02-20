@@ -109,6 +109,16 @@ namespace flame
 		return nullptr;
 	}
 
+	int EntityPrivate::find_child(EntityPrivate* e) const
+	{
+		for (auto i = 0; i < children.size(); i++)
+		{
+			if (children[i].get() == e)
+				return i;
+		}
+		return -1;
+	}
+
 	static void enter_world(World* w, EntityPrivate* e)
 	{
 		e->world_ = w;
@@ -314,6 +324,11 @@ namespace flame
 	Entity* Entity::find_child(const char* name) const
 	{
 		return ((EntityPrivate*)this)->find_child(name);
+	}
+
+	int Entity::find_child(Entity* e) const
+	{
+		return ((EntityPrivate*)this)->find_child((EntityPrivate*)e);
 	}
 
 	void Entity::add_child(Entity* e, int position)
