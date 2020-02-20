@@ -24,8 +24,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void remove_tile(uint id);
 		FLAME_UNIVERSE_EXPORTS void set_size(const Vec2u& s);
 		FLAME_UNIVERSE_EXPORTS int cell(const Vec2i& idx) const;
-		FLAME_UNIVERSE_EXPORTS void set_cell(const Vec2u& idx, int tile_idx /* -1 is null */);
-		FLAME_UNIVERSE_EXPORTS void clear_cells(int tile_idx = -1);
+		FLAME_UNIVERSE_EXPORTS void set_cell(const Vec2u& idx, int tile_idx/* -1 is null */, const Vec4c& col = Vec4c(255));
+		FLAME_UNIVERSE_EXPORTS void clear_cells(int tile_idx = -1, const Vec4c& col = Vec4c(255));
 
 		FLAME_UNIVERSE_EXPORTS static cTileMap* create();
 	};

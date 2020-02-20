@@ -8,10 +8,16 @@
 
 namespace flame
 {
+	struct Cell
+	{
+		int idx;
+		Vec4c col;
+	};
+
 	struct cTileMapPrivate : cTileMap
 	{
 		std::vector<uint> tiles;
-		std::vector<int> cells;
+		std::vector<Cell> cells;
 
 		void* draw_cmd;
 
@@ -52,9 +58,9 @@ namespace flame
 				{
 					for (auto x = 0; x < size_.x(); x++)
 					{
-						auto idx = cells[y * size_.x() + x];
-						if (idx != -1)
-							canvas->add_image(pos + Vec2f(x * cell_size.x(), y * cell_size.y()), cell_size, tiles[idx], Vec2f(0.f), Vec2f(1.f));
+						auto& c = cells[y * size_.x() + x];
+						if (c.idx != -1)
+							canvas->add_image(pos + Vec2f(x * cell_size.x(), y * cell_size.y()), cell_size, tiles[c.idx], Vec2f(0.f), Vec2f(1.f), c.col);
 					}
 				}
 			}
@@ -92,7 +98,10 @@ namespace flame
 			{
 				tiles.erase(it);
 				for (auto& c : thiz->cells)
-					c = -1;
+				{
+					if (c.idx == id)
+						c.idx = -1;
+				}
 				return;
 			}
 		}
@@ -103,7 +112,7 @@ namespace flame
 		if (size_ == s)
 			return;
 		auto& cells = ((cTileMapPrivate*)this)->cells;
-		std::vector<int> new_cells(s.x() * s.y(), -1);
+		std::vector<Cell> new_cells(s.x() * s.y(), { -1, Vec4c(255) });
 		auto mx = min(s.x(), size_.x());
 		auto my = min(s.y(), size_.y());
 		for (auto y = 0; y < my; y++)
@@ -119,26 +128,32 @@ namespace flame
 	{
 		if (idx.x() < 0 || idx.x() >= size_.x() || idx.y() < 0 || idx.y() >= size_.y())
 			return -2;
-		return ((cTileMapPrivate*)this)->cells[idx.y() * size_.x() + idx.x()];
+		return ((cTileMapPrivate*)this)->cells[idx.y() * size_.x() + idx.x()].idx;
 	}
 
-	void cTileMap::set_cell(const Vec2u& idx, int tile_idx)
+	void cTileMap::set_cell(const Vec2u& idx, int tile_idx, const Vec4c& col)
 	{
 		auto thiz = (cTileMapPrivate*)this;
 		if (idx.x() >= size_.x() || idx.y() >= size_.y())
 			return;
 		if (tile_idx != -1 && tile_idx >= thiz->tiles.size())
 			return;
-		thiz->cells[idx.y() * size_.x() + idx.x()] = tile_idx;
+		auto& c = thiz->cells[idx.y() * size_.x() + idx.x()];
+		c.idx = tile_idx;
+		c.col = col;
 	}
 
-	void cTileMap::clear_cells(int tile_idx)
+	void cTileMap::clear_cells(int tile_idx, const Vec4c& col)
 	{
 		auto thiz = (cTileMapPrivate*)this;
 		for (auto y = 0; y < size_.y(); y++)
 		{
 			for (auto x = 0; x < size_.x(); x++)
-				thiz->cells[y * size_.x() + x] = tile_idx;
+			{
+				auto& c = thiz->cells[y * size_.x() + x];
+				c.idx = tile_idx;
+				c.col = col;
+			}
 		}
 	}
 
@@ -152,7 +167,8 @@ namespace flame
 		RV(Vec2u, size, n);
 		RV(Vec2f, cell_size, n);
 		RV(Array<ulonglong>, tiles, n);
-		RV(Array<int>, cells, n);
+		RV(Array<int>, cells_idxs, n);
+		RV(Array<Vec4c>, cells_cols, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cTileMap)()
 		{
@@ -173,9 +189,13 @@ namespace flame
 				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
 				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
 			}
-			c->cells.resize(cells.s);
-			for (auto i = 0; i < cells.s; i++)
-				c->cells[i ]= cells[i];
+			c->cells.resize(cells_idxs.s);
+			for (auto i = 0; i < cells_idxs.s; i++)
+			{
+				auto& dst = c->cells[i];
+				dst.idx = cells_idxs[i];
+				dst.col = cells_cols[i];
+			}
 
 			return c;
 		}
@@ -188,7 +208,6 @@ namespace flame
 			{
 				size = c->size_;
 				cell_size = c->cell_size;
-
 			}
 		}
 
@@ -198,7 +217,7 @@ namespace flame
 
 			if (offset == -1)
 			{
-				c->size_ = size;
+				c->set_size(size);
 				c->cell_size = cell_size;
 			}
 		}
