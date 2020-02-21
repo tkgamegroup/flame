@@ -4,14 +4,14 @@ namespace flame
 {
 	namespace sound
 	{
-		DevicePrivate::DevicePrivate(DeviceType t) :
-			type(t),
-			al_dev(nullptr)
+		DevicePrivate::DevicePrivate()
 		{
-			if (type == DevicePlay)
-				al_dev = alcOpenDevice(nullptr);
-			else if (type == DeviceRecord)
-				al_dev = alcCaptureOpenDevice(nullptr, 44100, AL_FORMAT_STEREO16, 44100 * 4 /* one second */);
+			al_dev = alcOpenDevice(nullptr);
+		}
+
+		DevicePrivate::DevicePrivate(uint frequency, bool stereo, bool _16bit, float duration)
+		{
+			al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), sound_size(frequency, stereo, _16bit, duration));
 		}
 
 		DevicePrivate::~DevicePrivate()
@@ -24,21 +24,12 @@ namespace flame
 			alcCaptureStart(al_dev);
 		}
 
-		int DevicePrivate::get_recorded_samples()
-		{
-			ALint samples;
-			alcGetIntegerv(al_dev, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
-			return samples;
-		}
-
-		void DevicePrivate::get_recorded_data(void* dst, int samples)
-		{
-			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
-		}
-
-		void DevicePrivate::stop_record()
+		void DevicePrivate::stop_record(void* dst)
 		{
 			alcCaptureStop(al_dev);
+			ALint samples;
+			alcGetIntegerv(al_dev, ALC_CAPTURE_SAMPLES, (ALCsizei)sizeof(ALint), &samples);
+			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
 		void Device::start_record()
@@ -46,24 +37,19 @@ namespace flame
 			((DevicePrivate*)this)->start_record();
 		}
 
-		int Device::get_recorded_samples()
+		void Device::stop_record(void* dst)
 		{
-			return ((DevicePrivate*)this)->get_recorded_samples();
+			((DevicePrivate*)this)->stop_record(dst);
 		}
 
-		void Device::get_recorded_data(void* dst, int samples)
+		Device* Device::create_player()
 		{
-			((DevicePrivate*)this)->get_recorded_data(dst, samples);
+			return new DevicePrivate();
 		}
 
-		void Device::stop_record()
+		Device* Device::create_recorder(uint frequency, bool stereo, bool _16bit, float duration)
 		{
-			((DevicePrivate*)this)->stop_record();
-		}
-
-		Device* Device::create(DeviceType t)
-		{
-			return new DevicePrivate(t);
+			return new DevicePrivate(frequency, stereo, _16bit, duration);
 		}
 
 		void Device::destroy(Device *d)

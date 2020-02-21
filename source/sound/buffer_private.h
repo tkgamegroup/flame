@@ -13,8 +13,8 @@ namespace flame
 		{
 			ALuint al_buf;
 
-			BufferPrivate(FILE* f, bool reverse = false);
-			BufferPrivate(int size, void* data);
+			BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration);
+			BufferPrivate(FILE* f);
 			~BufferPrivate();
 		};
 	}

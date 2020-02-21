@@ -3,6 +3,11 @@ set_target_properties(window_test PROPERTIES FOLDER "test")
 set_target_properties(window_test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 target_link_libraries(window_test flame_foundation)
 
+add_executable(8beeper "8beeper.cpp")
+set_target_properties(8beeper PROPERTIES FOLDER "test")
+set_target_properties(8beeper PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+target_link_libraries(8beeper flame_sound)
+
 add_executable(graphics_test_bp "graphics_test_bp.cpp")
 set_target_properties(graphics_test_bp PROPERTIES FOLDER "test")
 set_target_properties(graphics_test_bp PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")

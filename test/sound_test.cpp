@@ -8,18 +8,16 @@ using namespace flame;
 
 int main(int argc, char** args)
 {
-	auto recorder = sound::Device::create(sound::DeviceRecord);
+	auto recorder = sound::Device::create_recorder();
+	auto data = new uchar[sound::sound_size(1.f)];
 	recorder->start_record();
 	sleep(1000);
-	auto samples = recorder->get_recorded_samples();
-	auto data = new ushort[samples * 2];
-	recorder->get_recorded_data(data, samples);
-	recorder->stop_record();
+	recorder->stop_record(data);
 
-	auto device = sound::Device::create(sound::DevicePlay);
-	auto context = sound::Context::create(device);
+	auto player = sound::Device::create_player();
+	auto context = sound::Context::create(player);
 	context->make_current();
-	auto buffer = sound::Buffer::create_from_data(samples * 4, data);
+	auto buffer = sound::Buffer::create_from_data(data);
 	auto source = sound::Source::create(buffer);
 	source->play();
 

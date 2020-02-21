@@ -374,7 +374,10 @@ struct MyApp : App
 														looper().add_event([](void* c, bool*) {
 															app.win = true;
 															if (app.paused)
+															{
+																app.paused = false;
 																ui::remove_top_layer(app.root);
+															}
 															ui::e_begin_dialog();
 																ui::e_text(L"You Win");
 																ui::c_aligner(AlignxMiddle, AlignyFree);

@@ -9,17 +9,14 @@ namespace flame
 	{
 		struct DevicePrivate : Device
 		{
-			DeviceType type;
-
 			ALCdevice *al_dev;
 
-			DevicePrivate(DeviceType t);
+			DevicePrivate();
+			DevicePrivate(uint frequency, bool stereo, bool _16bit, float duration);
 			~DevicePrivate();
 
 			void start_record();
-			int get_recorded_samples();
-			void get_recorded_data(void* dst, int samples);
-			void stop_record();
+			void stop_record(void* dst);
 		};
 	}
 }

@@ -7,8 +7,7 @@ namespace flame
 {
 	namespace sound
 	{
-		SourcePrivate::SourcePrivate(Buffer *b) :
-			al_src(0)
+		SourcePrivate::SourcePrivate(Buffer *b)
 		{
 			alGenSources(1, &al_src);
 			alSourcei(al_src, AL_BUFFER, ((BufferPrivate*)b)->al_buf);
