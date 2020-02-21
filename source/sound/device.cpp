@@ -11,7 +11,7 @@ namespace flame
 
 		DevicePrivate::DevicePrivate(uint frequency, bool stereo, bool _16bit, float duration)
 		{
-			al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), sound_size(frequency, stereo, _16bit, duration));
+			al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(frequency, stereo, _16bit, duration));
 		}
 
 		DevicePrivate::~DevicePrivate()

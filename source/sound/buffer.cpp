@@ -9,7 +9,7 @@ namespace flame
 		BufferPrivate::BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration)
 		{
 			alGenBuffers(1, &al_buf);
-			alBufferData(al_buf, to_backend(stereo, _16bit), data, sound_size(duration, frequency, stereo, _16bit), frequency);
+			alBufferData(al_buf, to_backend(stereo, _16bit), data, get_size(duration, frequency, stereo, _16bit), frequency);
 		}
 
 		BufferPrivate::BufferPrivate(FILE* f)
