@@ -729,9 +729,8 @@ namespace flame
 
 					static std::regex reg_pair(R"(^(\w+)\s*=(.*))");
 					static std::regex reg_quot(R"(^\"(.*)\"$)");
-
-					INI_Entry entry;
 					std::smatch res;
+					INI_Entry entry;
 					if (std::regex_search(line, res, reg_pair))
 					{
 						entry.key = res[1].str();
