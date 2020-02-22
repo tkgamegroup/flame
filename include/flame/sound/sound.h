@@ -35,7 +35,7 @@ namespace flame
 			WavaNoise
 		};
 
-		inline void wave(std::vector<float>& samples, uint frequency, WavaType type, uint pitch)
+		inline void wave(std::vector<float>& samples, uint frequency, WavaType type, uint pitch, float power = 1.f)
 		{
 			for (auto i = 0; i < samples.size(); i++)
 			{
@@ -43,16 +43,16 @@ namespace flame
 				switch (type)
 				{
 				case WavaSin:
-					samples[i] += cos(t * M_PI * 2.f);
+					samples[i] += cos(t * M_PI * 2.f) * power;
 					break;
 				case WavaSquare:
-					samples[i] += t < 0.5f ? 1.f : 0.f;
+					samples[i] += (t < 0.5f ? 1.f : 0.f) * power;
 					break;
 				case WavaTriangle:
-					samples[i] += t < 0.5f ? t / 0.5f : 1.f - (t - 0.5f) / 0.5f;
+					samples[i] += (t < 0.5f ? t / 0.5f : 1.f - (t - 0.5f) / 0.5f) * power;
 					break;
 				case WavaNoise:
-					samples[i] += (float)::rand() / (float)RAND_MAX;
+					samples[i] += ((float)::rand() / (float)RAND_MAX) * power;
 					break;
 				}
 			}

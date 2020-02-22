@@ -59,6 +59,24 @@ struct Player
 
 struct MyApp : App
 {
+	sound::Device* sound_device;
+	sound::Context* sound_context;
+
+	graphics::Atlas* atlas;
+
+	sound::Buffer* sound_move_buf;
+	sound::Buffer* sound_rotate_buf;
+	sound::Buffer* sound_hard_drop_buf;
+	sound::Buffer* sound_clear_buf;
+	sound::Buffer* sound_hold_buf;
+	sound::Source* sound_move_src;
+	sound::Source* sound_rotate_src;
+	sound::Source* sound_hard_drop_src;
+	sound::Source* sound_clear_src;
+	sound::Source* sound_hold_src;
+
+	sEventDispatcher* s_event_dispatcher;
+
 	std::wstring your_name;
 	std::wstring room_name;
 	RoomState room_state;
@@ -66,9 +84,6 @@ struct MyApp : App
 	std::vector<Player> players;
 	Server* server;
 	Client* client;
-
-	sEventDispatcher* s_event_dispatcher;
-	graphics::Atlas* atlas;
 
 	GameMode game_mode;
 
@@ -1133,6 +1148,8 @@ struct MyApp : App
 							mino_pos.y() = -2;
 							std::swap(mino_hold, mino_type);
 							mino_just_hold = true;
+
+							sound_hold_src->play();
 						}
 						else
 						{
@@ -1154,6 +1171,8 @@ struct MyApp : App
 									for (auto i = 0; i < 3; i++)
 										mino_coords[i] = new_coords[i];
 									moved = true;
+
+									sound_rotate_src->play();
 								}
 							}
 
@@ -1184,6 +1203,8 @@ struct MyApp : App
 							{
 								mino_pos.x() += mx;
 								moved = true;
+
+								sound_move_src->play();
 							}
 
 							mino_bottom_dist = 0;
@@ -1209,7 +1230,7 @@ struct MyApp : App
 							}
 							auto is_soft_drop = key_states[key_map[KEY_SOFT_DROP]] & KeyStateDown;
 							auto down_ticks_final = DOWN_TICKS;
-							if (is_one_of(game_mode, { GameSingleRTA, GameSinglePractice }))
+							if (game_mode == GameSinglePractice)
 								down_ticks_final = 9999;
 							else
 								down_ticks_final = down_ticks_final - level + 1;
@@ -1322,6 +1343,8 @@ struct MyApp : App
 											if (client)
 												client->send(str.data(), str.size());
 										}
+
+										sound_clear_src->play();
 									}
 									else
 									{
@@ -1356,9 +1379,16 @@ struct MyApp : App
 									mino_pos.y()++;
 									mino_bottom_dist--;
 									if (is_soft_drop)
+									{
 										score++;
+
+										sound_move_src->play();
+									}
 								}
 								mino_ticks = 0;
+
+								if (just_down_hard_drop)
+									sound_hard_drop_src->play();
 							}
 							mino_ticks++;
 
@@ -1389,12 +1419,84 @@ int main(int argc, char **args)
 {
 	app.create("Tetris", Vec2u(800, 600), WindowFrame);
 
-	auto w = app.u->world(0);
-
-	app.s_event_dispatcher = w->get_system(sEventDispatcher);
+	app.sound_device = sound::Device::create_player();
+	app.sound_context = sound::Context::create(app.sound_device);
+	app.sound_context->make_current();
 
 	app.atlas = graphics::Atlas::load(app.d, L"../game/tetris/art/atlas/main.atlas");
 	app.canvas->add_atlas(app.atlas);
+
+	{
+		auto freq = 4000U;
+		auto stereo = false;
+		auto _16bit = false;
+		auto fade_time = 0.05f;
+
+		{
+			auto dura = 0.05f;
+			std::vector<float> samples;
+			samples.resize(sound::get_sample_count(dura, freq));
+			auto size = sound::get_size(samples.size(), stereo, _16bit);
+			auto data = new uchar[size];
+			sound::wave(samples, freq, sound::WavaSquare, 220U, 0.5f);
+			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
+			app.sound_move_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+			app.sound_move_src = sound::Source::create(app.sound_move_buf);
+			delete[]data;
+		}
+		{
+			auto dura = 0.05f;
+			std::vector<float> samples;
+			samples.resize(sound::get_sample_count(dura, freq));
+			auto size = sound::get_size(samples.size(), stereo, _16bit);
+			auto data = new uchar[size];
+			sound::wave(samples, freq, sound::WavaSquare, 600U, 0.5f);
+			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
+			app.sound_rotate_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+			app.sound_rotate_src = sound::Source::create(app.sound_rotate_buf);
+			delete[]data;
+		}
+		{
+			auto dura = 0.05f;
+			std::vector<float> samples;
+			samples.resize(sound::get_sample_count(dura, freq));
+			auto size = sound::get_size(samples.size(), stereo, _16bit);
+			auto data = new uchar[size];
+			sound::wave(samples, freq, sound::WavaNoise, 0U, 1.f);
+			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
+			app.sound_hard_drop_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+			app.sound_hard_drop_src = sound::Source::create(app.sound_hard_drop_buf);
+			delete[]data;
+		}
+		{
+			auto dura = 0.1f;
+			std::vector<float> samples;
+			samples.resize(sound::get_sample_count(dura, freq));
+			auto size = sound::get_size(samples.size(), stereo, _16bit);
+			auto data = new uchar[size];
+			sound::wave(samples, freq, sound::WavaTriangle, 800U, 1.f);
+			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
+			app.sound_clear_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+			app.sound_clear_src = sound::Source::create(app.sound_clear_buf);
+			delete[]data;
+		}
+		{
+			auto dura = 0.05f;
+			std::vector<float> samples;
+			samples.resize(sound::get_sample_count(dura, freq));
+			auto size = sound::get_size(samples.size(), stereo, _16bit);
+			auto data = new uchar[size];
+			sound::wave(samples, freq, sound::WavaSin, 1000U, 0.5f);
+			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
+			app.sound_hold_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+			app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
+			delete[]data;
+		}
+	}
+
+	auto w = app.u->world(0);
+
+	app.s_event_dispatcher = w->get_system(sEventDispatcher);
 
 	auto root = w->root();
 	app.root = root;
