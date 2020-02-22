@@ -5,47 +5,47 @@
 
 using namespace flame;
 
-static std::vector<std::wstring> accept_exts;
-static std::vector<std::wstring> general_ignores;
-static std::vector<std::wstring> special_ignores;
+static std::vector<std::wstring> extensions;
+static std::vector<std::wstring> general_excludes;
+static std::vector<std::wstring> special_excludes;
 
 bool is_slash_chr(wchar_t ch)
 {
 	return ch == L'/' || ch == L'\\';
 }
 
-void add_accept(const std::wstring &i)
+void add_extension(const std::wstring &i)
 {
-	accept_exts.push_back(i);
+	extensions.push_back(i);
 }
 
-void add_igonore(const std::wstring &i)
+void add_exclude(const std::wstring &i)
 {
 	std::filesystem::path p(i);
 	auto i_fmt = p.wstring();
 
 	if (i_fmt.size() > 2 && i_fmt[0] == L'*' &&  is_slash_chr(i_fmt[1]))
 	{
-		general_ignores.push_back(std::wstring(i_fmt.c_str() + 2));
+		general_excludes.push_back(std::wstring(i_fmt.c_str() + 2));
 		return;
 	}
-	special_ignores.push_back(i_fmt);
+	special_excludes.push_back(i_fmt);
 }
 
-void add_default_accept()
+void add_default_extensions()
 {
-	accept_exts.push_back(L".h");
-	accept_exts.push_back(L".inl");
-	accept_exts.push_back(L".hpp");
-	accept_exts.push_back(L".c");
-	accept_exts.push_back(L".cpp");
-	accept_exts.push_back(L".cxx");
-	accept_exts.push_back(L".js");
+	extensions.push_back(L".h");
+	extensions.push_back(L".inl");
+	extensions.push_back(L".hpp");
+	extensions.push_back(L".c");
+	extensions.push_back(L".cpp");
+	extensions.push_back(L".cxx");
+	extensions.push_back(L".js");
 }
 
-void add_default_ignore()
+void add_default_excludes()
 {
-	add_igonore(L"*/.git");
+	add_exclude(L"*/.git");
 }
 
 long long total_lines = 0;
@@ -59,7 +59,7 @@ void iter(const std::wstring &p)
 		auto fn = it->path().filename().wstring();
 
 		auto ignore = false;
-		for (auto &i : general_ignores)
+		for (auto &i : general_excludes)
 		{
 			if (i == fn)
 			{
@@ -69,7 +69,7 @@ void iter(const std::wstring &p)
 		}
 		if (ignore)
 			continue;
-		for (auto &i : special_ignores)
+		for (auto &i : special_excludes)
 		{
 			if (i == ffn)
 			{
@@ -90,7 +90,7 @@ void iter(const std::wstring &p)
 		{
 			auto accept = false;
 			auto ext = it->path().extension();
-			for (auto &e : accept_exts)
+			for (auto &e : extensions)
 			{
 				if (e == ext)
 				{
@@ -129,50 +129,30 @@ void iter(const std::wstring &p)
 
 int main(int argc, char **args)
 {
-	std::ifstream policy_file("sloc_options.txt");
-	if (policy_file.good())
+	auto ini = parse_ini_file("sloc_options.ini");
+	for (auto& e : ini.get_section_entries("extensions"))
 	{
-		while (!policy_file.eof())
-		{
-			std::string line;
-			std::getline(policy_file, line);
-
-			auto sp = SUS::split(line);
-			if (sp.size() > 0)
-			{
-				if (sp[0] == "accept:")
-				{
-					for (auto i = 1; i < sp.size(); i++)
-					{
-						if (sp[i] == "[default]")
-							add_default_accept();
-						else
-							add_accept(s2w(sp[i]));
-					}
-				}
-				else if (sp[0] == "ignore:")
-				{
-					for (auto i = 1; i < sp.size(); i++)
-					{
-						if (sp[i] == "[default]")
-							add_default_ignore();
-						else
-							add_igonore(s2w(sp[i]));
-					}
-				}
-			}
-		}
-		policy_file.close();
+		if (e.value == "%default%")
+			add_default_extensions();
+		else
+			add_extension(s2w(e.value));
+	}
+	for (auto& e : ini.get_section_entries("excludes"))
+	{
+		if (e.value == "%default%")
+			add_default_excludes();
+		else
+			add_exclude(s2w(e.value));
 	}
 
-	if (general_ignores.empty() && special_ignores.empty())
-		add_default_ignore();
-	if (accept_exts.empty())
-		add_default_accept();
+	if (general_excludes.empty() && special_excludes.empty())
+		add_default_extensions();
+	if (extensions.empty())
+		add_default_extensions();
 
 	auto curr_path = get_curr_path();
 
-	for (auto& i : special_ignores)
+	for (auto& i : special_excludes)
 	{
 		if (i.size() > 0 && !is_slash_chr(i[0]))
 			i = L"\\" + i;

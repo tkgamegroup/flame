@@ -30,7 +30,7 @@ namespace flame
 		struct Font
 		{
 			std::wstring filename;
-			std::pair<std::unique_ptr<char[]>, long long> font_file;
+			std::string font_file;
 			FT_Face ft_face;
 			uint ref_count;
 
@@ -45,7 +45,7 @@ namespace flame
 					FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
 				}
 
-				FT_New_Memory_Face(ft_library, (uchar*)font_file.first.get(), font_file.second, 0, &ft_face);
+				FT_New_Memory_Face(ft_library, (uchar*)font_file.data(), font_file.size(), 0, &ft_face);
 
 				ref_count = 0;
 			}

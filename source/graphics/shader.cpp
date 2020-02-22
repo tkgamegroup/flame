@@ -1006,7 +1006,7 @@ namespace flame
 				}
 
 				auto spv_file = get_file_content(L"out.spv");
-				if (!spv_file.first)
+				if (spv_file.empty())
 					assert(0);
 
 				if (std::filesystem::exists(L"out.spv"))
@@ -1017,8 +1017,8 @@ namespace flame
 				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 				shader_info.flags = 0;
 				shader_info.pNext = nullptr;
-				shader_info.codeSize = spv_file.second;
-				shader_info.pCode = (uint*)spv_file.first.get();
+				shader_info.codeSize = spv_file.size();
+				shader_info.pCode = (uint*)spv_file.data();
 				chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &s.vk_shader_module));
 #elif defined(FLAME_D3D12)
 

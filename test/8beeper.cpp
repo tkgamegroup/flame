@@ -35,9 +35,9 @@ float get_square_wave(float t)
 {
 	float ret;
 	if (t < 0.5f)
-		ret = 0.9f;
+		ret = 1.f;
 	else
-		ret = 0.1f;
+		ret = 0.f;
 	return ret;
 }
 

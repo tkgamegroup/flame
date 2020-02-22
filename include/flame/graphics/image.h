@@ -124,7 +124,7 @@ namespace flame
 				return -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS static Atlas* load(Device* d, const wchar_t* filename /* the image filename, not the atlas */);
+			FLAME_GRAPHICS_EXPORTS static Atlas* load(Device* d, const wchar_t* filename);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Atlas* a);
 		};
 	}

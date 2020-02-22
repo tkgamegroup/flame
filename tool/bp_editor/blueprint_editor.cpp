@@ -91,7 +91,7 @@ struct R(CmdBufs)
 	}
 };
 
-struct cBPSlot : Component
+struct cSlot : Component
 {
 	cElement* element;
 	cText* text;
@@ -100,8 +100,8 @@ struct cBPSlot : Component
 
 	BP::Slot* s;
 
-	cBPSlot() :
-		Component("cBPSlot")
+	cSlot() :
+		Component("cSlot")
 	{
 		element = nullptr;
 		event_receiver = nullptr;
@@ -129,7 +129,7 @@ struct cBPSlot : Component
 			}
 
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-				auto thiz = *(cBPSlot**)c;
+				auto thiz = *(cSlot**)c;
 				auto s = thiz->s;
 				if (action == DragStart)
 				{
@@ -144,7 +144,7 @@ struct cBPSlot : Component
 					app.bp_editor->dragging_slot = nullptr;
 				else if (action == Dropped)
 				{
-					auto oth = er->entity->get_component(cBPSlot)->s;
+					auto oth = er->entity->get_component(cSlot)->s;
 					if (s->io() == BP::Slot::In)
 					{
 						if (s->link_to(oth))
@@ -161,7 +161,7 @@ struct cBPSlot : Component
 	}
 };
 
-struct cBPScene : Component
+struct cScene : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
@@ -171,8 +171,8 @@ struct cBPScene : Component
 
 	float link_stick_out;
 
-	cBPScene() :
-		Component("cBPScene")
+	cScene() :
+		Component("cScene")
 	{
 	}
 
@@ -185,7 +185,7 @@ struct cBPScene : Component
 			auto get_pos = [&](BP::Slot* s) {
 				if (s->user_data)
 				{
-					auto e = ((cBPSlot*)s->user_data)->element;
+					auto e = ((cSlot*)s->user_data)->element;
 					return e->global_pos + e->global_size * 0.5f;
 				}
 				else
@@ -252,14 +252,14 @@ struct cBPScene : Component
 		{
 			element = (cElement*)c;
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
-				(*(cBPScene**)c)->draw(canvas);
+				(*(cScene**)c)->draw(canvas);
 			}, new_mail_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& _pos) {
-				auto thiz = *(cBPScene**)c;
+				auto thiz = *(cScene**)c;
 				auto pos = (Vec2f)_pos;
 				auto line_width = 3.f * thiz->base_element->global_scale;
 
@@ -300,7 +300,7 @@ struct cBPScene : Component
 		});
 		if (app.bp_editor->dragging_slot)
 		{
-			auto e = ((cBPSlot*)app.bp_editor->dragging_slot->user_data)->element;
+			auto e = ((cSlot*)app.bp_editor->dragging_slot->user_data)->element;
 
 			std::vector<Vec2f> points;
 			points.push_back(e->global_pos + e->global_size * 0.5f);
@@ -310,7 +310,7 @@ struct cBPScene : Component
 	}
 };
 
-struct cBPObject : Component
+struct cSceneObject : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
@@ -319,8 +319,8 @@ struct cBPObject : Component
 	void* p;
 	bool moved;
 
-	cBPObject() :
-		Component("cBPObject")
+	cSceneObject() :
+		Component("cSceneObject")
 	{
 		moved = false;
 	}
@@ -333,7 +333,7 @@ struct cBPObject : Component
 			element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
 				if (hash == FLAME_CHASH("pos"))
 				{
-					auto thiz = *(cBPObject**)c;
+					auto thiz = *(cSceneObject**)c;
 					auto pos = ((cElement*)e)->pos_;
 					switch (thiz->t)
 					{
@@ -355,12 +355,12 @@ struct cBPObject : Component
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cBPObject**)c;
+				auto thiz = *(cSceneObject**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					app.select(thiz->t, thiz->p);
 			}, new_mail_p(this));
 			event_receiver->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
-				auto thiz = *(cBPObject**)c;
+				auto thiz = *(cSceneObject**)c;
 				if (hash == FLAME_CHASH("state"))
 				{
 					switch (((cEventReceiver*)er)->state)
@@ -381,8 +381,8 @@ struct cBPObject : Component
 	}
 };
 
-cBPEditor::cBPEditor() :
-	Component("BPEditor")
+cEditor::cEditor() :
+	Component("cEditor")
 {
 	auto tnp = ui::e_begin_docker_window(app.filepath.c_str());
 	{
@@ -400,7 +400,7 @@ cBPEditor::cBPEditor() :
 			ui::e_begin_layout();
 			ui::c_event_receiver();
 			ui::c_aligner(SizeFitParent, SizeFitParent);
-			auto c_bp_scene = new_u_object<cBPScene>();
+			auto c_bp_scene = new_u_object<cScene>();
 			ui::current_entity()->add_component(c_bp_scene);
 
 				e_base = ui::e_empty();
@@ -412,7 +412,7 @@ cBPEditor::cBPEditor() :
 					auto c_event_receiver = ui::c_event_receiver();
 					c_event_receiver->pass = (Entity*)INVALID_POINTER;
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto c_bp_scene = *(cBPScene**)c;
+						auto c_bp_scene = *(cScene**)c;
 						if (is_mouse_scroll(action, key))
 						{
 							auto s = clamp(c_bp_scene->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
@@ -451,7 +451,7 @@ cBPEditor::cBPEditor() :
 		ui::e_end_docker_window();
 }
 
-cBPEditor::~cBPEditor()
+cEditor::~cEditor()
 {
 	app.bp_editor = nullptr;
 }
@@ -470,26 +470,26 @@ static Entity* selected_entity()
 	return nullptr;
 }
 
-void cBPEditor::on_deselect()
+void cEditor::on_deselect()
 {
 	auto e = selected_entity();
 	if (e)
 		e->get_component(cElement)->set_frame_thickness(0.f);
 }
 
-void cBPEditor::on_select()
+void cEditor::on_select()
 {
 	auto e = selected_entity();
 	if (e)
 		e->get_component(cElement)->set_frame_thickness(4.f);
 }
 
-void cBPEditor::set_add_pos_center()
+void cEditor::set_add_pos_center()
 {
 	add_pos = e_base->parent()->get_component(cElement)->size_ * 0.5f - e_base->get_component(cElement)->pos_;
 }
 
-void cBPEditor::on_changed()
+void cEditor::on_changed()
 {
 	auto title = app.filepath.wstring();
 	if (app.changed)
@@ -497,7 +497,7 @@ void cBPEditor::on_changed()
 	tab_text->set_text(title.c_str());
 }
 
-void cBPEditor::on_load()
+void cEditor::on_load()
 {
 	e_base->remove_child(0, -1);
 
@@ -513,7 +513,7 @@ void cBPEditor::on_load()
 	on_changed();
 }
 
-void cBPEditor::on_add_library(BP::Library* l)
+void cEditor::on_add_library(BP::Library* l)
 {
 	l->pos = add_pos;
 
@@ -529,7 +529,7 @@ void cBPEditor::on_add_library(BP::Library* l)
 			ui::c_event_receiver();
 			ui::c_layout(LayoutVertical)->fence = 1;
 			ui::c_moveable();
-			auto c_library = new_u_object<cBPObject>();
+			auto c_library = new_u_object<cSceneObject>();
 			c_library->t = SelLibrary;
 			c_library->p = l;
 			e_library->add_component(c_library);
@@ -550,7 +550,7 @@ void cBPEditor::on_add_library(BP::Library* l)
 }
 
 template <class T>
-void create_edit(cBPEditor* editor, BP::Slot* input)
+void create_edit(cEditor* editor, BP::Slot* input)
 {
 	auto& data = *(T*)input->data();
 
@@ -582,7 +582,7 @@ void create_edit(cBPEditor* editor, BP::Slot* input)
 }
 
 template <uint N, class T>
-void create_vec_edit(cBPEditor* editor, BP::Slot* input)
+void create_vec_edit(cEditor* editor, BP::Slot* input)
 {
 	auto& data = *(Vec<N, T>*)input->data();
 
@@ -622,7 +622,7 @@ void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 	ui::current_parent()->add_component(c_tracker);
 }
 
-void cBPEditor::on_add_node(BP::Node* n)
+void cEditor::on_add_node(BP::Node* n)
 {
 	n->pos = add_pos;
 
@@ -637,7 +637,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 			ui::c_event_receiver();
 			ui::c_layout(LayoutVertical)->fence = 1;
 			ui::c_moveable();
-			auto c_node = new_u_object<cBPObject>();
+			auto c_node = new_u_object<cSceneObject>();
 			c_node->t = SelNode;
 			c_node->p = n;
 			e_node->add_component(c_node);
@@ -826,7 +826,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 							if (app.bp->find_output_export(input) != -1)
 								c_text->set_text(L"  p");
 							ui::pop_style(ui::FontSize);
-							auto c_slot = new_u_object<cBPSlot>();
+							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = input;
 							c_slot->text = c_text;
 							ui::current_entity()->add_component(c_slot);
@@ -836,13 +836,13 @@ void cBPEditor::on_add_node(BP::Node* n)
 								auto s = *(BP::Slot**)c;
 								app.bp->add_input_export(s);
 								app.set_changed(true);
-								((cBPSlot*)s->user_data)->text->set_text(L"  p");
+								((cSlot*)s->user_data)->text->set_text(L"  p");
 							}, new_mail_p(input));
 							ui::e_menu_item(L"Remove From Exports", [](void* c) {
 								auto s = *(BP::Slot**)c;
 								app.bp->remove_input_export(s);
 								app.set_changed(true);
-								((cBPSlot*)s->user_data)->text->set_text(L"");
+								((cSlot*)s->user_data)->text->set_text(L"");
 							}, new_mail_p(input));
 							ui::e_end_popup_menu();
 
@@ -1074,7 +1074,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 							if (app.bp->find_output_export(output) != -1)
 								c_text->set_text(L"  p");
 							ui::pop_style(ui::FontSize);
-							auto c_slot = new_u_object<cBPSlot>();
+							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = output;
 							c_slot->text = c_text;
 							ui::current_entity()->add_component(c_slot);
@@ -1084,13 +1084,13 @@ void cBPEditor::on_add_node(BP::Node* n)
 								auto s = *(BP::Slot**)c;
 								app.bp->add_output_export(s);
 								app.set_changed(true);
-								((cBPSlot*)s->user_data)->text->set_text(L"  p");
+								((cSlot*)s->user_data)->text->set_text(L"  p");
 							}, new_mail_p(output));
 							ui::e_menu_item(L"Remove From Exports", [](void* c) {
 								auto s = *(BP::Slot**)c;
 								app.bp->remove_output_export(s);
 								app.set_changed(true);
-								((cBPSlot*)s->user_data)->text->set_text(L"");
+								((cSlot*)s->user_data)->text->set_text(L"");
 							}, new_mail_p(output));
 							ui::e_end_popup_menu();
 							ui::e_end_layout();
@@ -1107,7 +1107,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 	ui::pop_parent();
 }
 
-void cBPEditor::on_add_subgraph(BP::SubGraph* s)
+void cEditor::on_add_subgraph(BP::SubGraph* s)
 {
 	s->pos = add_pos;
 
@@ -1122,7 +1122,7 @@ void cBPEditor::on_add_subgraph(BP::SubGraph* s)
 			ui::c_event_receiver();
 			ui::c_layout(LayoutVertical)->fence = 1;
 			ui::c_moveable();
-			auto c_subgraph = new_u_object<cBPObject>();
+			auto c_subgraph = new_u_object<cSceneObject>();
 			c_subgraph->t = SelSubGraph;
 			c_subgraph->p = s;
 			e_subgraph->add_component(c_subgraph);
@@ -1157,7 +1157,7 @@ void cBPEditor::on_add_subgraph(BP::SubGraph* s)
 								c_element->roundness_lod = 2;
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 								ui::c_event_receiver();
-								auto c_slot = new_u_object<cBPSlot>();
+								auto c_slot = new_u_object<cSlot>();
 								c_slot->s = s;
 								ui::current_entity()->add_component(c_slot);
 								s->user_data = c_slot;
@@ -1184,7 +1184,7 @@ void cBPEditor::on_add_subgraph(BP::SubGraph* s)
 								c_element->roundness_lod = 2;
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 								ui::c_event_receiver();
-								auto c_slot = new_u_object<cBPSlot>();
+								auto c_slot = new_u_object<cSlot>();
 								c_slot->s = s;
 								ui::current_entity()->add_component(c_slot);
 								s->user_data = c_slot;
@@ -1204,7 +1204,7 @@ void cBPEditor::on_add_subgraph(BP::SubGraph* s)
 	ui::pop_parent();
 }
 
-void cBPEditor::on_remove_library(BP::Library* l)
+void cEditor::on_remove_library(BP::Library* l)
 {
 	auto m_db = l->db();
 	for (auto i = 0; i < app.bp->node_count(); i++)
@@ -1221,20 +1221,20 @@ void cBPEditor::on_remove_library(BP::Library* l)
 	e->parent()->remove_child(e);
 }
 
-void cBPEditor::on_remove_node(BP::Node* n)
+void cEditor::on_remove_node(BP::Node* n)
 {
 	auto e = (Entity*)n->user_data;
 	e->parent()->remove_child(e);
 }
 
-void cBPEditor::on_remove_subgraph(BP::SubGraph* s)
+void cEditor::on_remove_subgraph(BP::SubGraph* s)
 {
 	auto e = (Entity*)s->user_data;
 	e->parent()->remove_child(e);
 }
 
-void cBPEditor::on_data_changed(BP::Slot* s)
+void cEditor::on_data_changed(BP::Slot* s)
 {
-	((cBPSlot*)s->user_data)->tracker->update_view();
+	((cSlot*)s->user_data)->tracker->update_view();
 }
 

@@ -1,2 +1,0 @@
-accept: [default] .vert .tesc .tese .geom .frag .xml
-ignore: [default] */bin */build art

@@ -125,7 +125,7 @@ namespace flame
 		auto file = get_file_content(filename);
 
 		int cx, cy, cz, channel;
-		auto data = stbi_load_gif_from_memory((uchar*)file.first.get(), file.second, nullptr, &cx, &cy, &cz, &channel, 4);
+		auto data = stbi_load_gif_from_memory((uchar*)file.data(), file.size(), nullptr, &cx, &cy, &cz, &channel, 4);
 		stbi_image_free(data);
 
 		return nullptr;
@@ -149,6 +149,8 @@ namespace flame
 
 	void pack_atlas(uint input_count, const wchar_t* const* inputs, const wchar_t* output, bool border)
 	{
+		auto output_path = std::filesystem::path(output);
+
 		struct Tile
 		{
 			std::string id;
@@ -156,7 +158,7 @@ namespace flame
 			Vec2i pos;
 		};
 		std::vector<Tile> tiles;
-		auto output_dir = std::filesystem::canonical(std::filesystem::path(output).parent_path());
+		auto output_dir = std::filesystem::canonical(output_path.parent_path());
 		if (output_dir.empty())
 			output_dir = get_curr_path().v;
 		for (auto i = 0; i < input_count; i++)
@@ -195,9 +197,13 @@ namespace flame
 				t.b->copy_to(b, Vec2u(0), t.b->size, Vec2u(t.pos), border);
 		}
 
-		Bitmap::save_to_file(b, output);
-		std::ofstream atlas_file(output + std::wstring(L".atlas"));
-		atlas_file << (border ? "1" : "0") << "\n";
+		Bitmap::save_to_file(b, output_path.c_str());
+
+		output_path.replace_extension(L".atlas");
+		std::ofstream atlas_file(output_path);
+		atlas_file << "image = \"" << output_path.filename().string() << "\"\n";
+		atlas_file << "border = " << (border ? "1" : "0") << "\n";
+		atlas_file << "\n[tiles]\n";
 		for (auto& t : tiles)
 		{
 			atlas_file << t.id + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), t.b->size)) + "\n";

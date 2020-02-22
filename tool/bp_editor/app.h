@@ -7,7 +7,7 @@
 using namespace flame;
 using namespace graphics;
 
-struct cBPEditor : Component
+struct cEditor : Component
 {
 	cText* tab_text;
 	Vec2f add_pos;
@@ -17,8 +17,8 @@ struct cBPEditor : Component
 
 	bool running;
 
-	cBPEditor();
-	virtual ~cBPEditor() override;
+	cEditor();
+	virtual ~cEditor() override;
 	void on_deselect();
 	void on_select();
 	void set_add_pos_center();
@@ -73,7 +73,7 @@ struct MyApp : App
 		BP::Slot* link;
 	}selected;
 
-	cBPEditor* bp_editor;
+	cEditor* bp_editor;
 	cConsole* console;
 
 	Entity* e_add_node_menu;

@@ -7,6 +7,10 @@
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/font.h>
+#include <flame/sound/device.h>
+#include <flame/sound/context.h>
+#include <flame/sound/buffer.h>
+#include <flame/sound/source.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/event_dispatcher.h>

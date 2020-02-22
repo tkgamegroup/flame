@@ -9,7 +9,6 @@
 #include "key.h"
 
 using namespace flame;
-using namespace graphics;
 
 const auto board_width = 10U;
 const auto board_height = 24U;
@@ -69,7 +68,7 @@ struct MyApp : App
 	Client* client;
 
 	sEventDispatcher* s_event_dispatcher;
-	Atlas* atlas;
+	graphics::Atlas* atlas;
 
 	GameMode game_mode;
 
@@ -1394,7 +1393,7 @@ int main(int argc, char **args)
 
 	app.s_event_dispatcher = w->get_system(sEventDispatcher);
 
-	app.atlas = Atlas::load(app.d, L"../game/tetris/art/atlas/main.png");
+	app.atlas = graphics::Atlas::load(app.d, L"../game/tetris/art/atlas/main.atlas");
 	app.canvas->add_atlas(app.atlas);
 
 	auto root = w->root();

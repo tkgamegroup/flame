@@ -400,6 +400,12 @@ namespace flame
 			return str.size() >= oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
 		}
 
+		static void trim(std::basic_string<CH>& str)
+		{
+			str.erase(str.begin(), str.begin() + str.find_first_not_of(' '));
+			str.erase(str.begin() + str.find_last_not_of(' ') + 1, str.end());
+		}
+
 		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
 		{
 			std::basic_istringstream<CH> iss(str);
@@ -651,30 +657,260 @@ namespace flame
 		return s;
 	}
 
-	inline std::pair<std::unique_ptr<char[]>, longlong> get_file_content(const std::wstring& filename)
+	inline std::string get_file_content(const std::filesystem::path& filename)
 	{
 #ifdef FLAME_WINDOWS
 		std::ifstream file(filename, std::ios::binary);
 #else
-		auto utf8_filename = w2s(filename);
-		std::ifstream file(utf8_filename, std::ios::binary);
+		std::ifstream file(w2s(filename), std::ios::binary);
 #endif
 		if (!file.good())
-			return std::make_pair(nullptr, 0);
+			return "";
 
 		auto length = get_file_length(file);
-		auto data = new char[length + 1];
-		file.read(data, length);
-		data[length] = 0;
-		return std::make_pair(std::unique_ptr<char[]>(data), length);
+		std::string ret;
+		ret.resize(length);
+		file.read(ret.data(), length);
+		file.close();
+		return ret;
 	}
 
-	inline std::string get_file_string(const std::wstring& filename)
+	struct INI_Entry
 	{
-		auto content = get_file_content(filename);
-		if (content.first)
-			return std::string(content.first.get(), content.first.get() + content.second);
-		return std::string();
+		std::string key;
+		std::string value;
+	};
+
+	struct INI_Section
+	{
+		std::string name;
+		std::vector<INI_Entry> entries;
+	};
+
+	struct INI_File
+	{
+		std::vector<INI_Section> sections;
+
+		const std::vector<INI_Entry>& get_section_entries(const std::string& name)
+		{
+			for (auto& s : sections)
+			{
+				if (s.name == name)
+					return s.entries;
+			}
+			return std::vector<INI_Entry>();
+		}
+	};
+
+	inline INI_File parse_ini_file(const std::filesystem::path& filename)
+	{
+		std::ifstream file(filename);
+		INI_File ret;
+		while (!file.eof())
+		{
+			std::string line;
+			std::getline(file, line);
+			if (!line.empty())
+			{
+				SUS::trim(line);
+				if (line.size() > 2 && line.front() == '[' && line.back() == ']')
+				{
+					INI_Section section;
+					section.name = std::string(line.begin() + 1, line.end() - 1);
+					ret.sections.push_back(section);
+				}
+				else
+				{
+					if (ret.sections.empty())
+					{
+						INI_Section section;
+						ret.sections.push_back(section);
+					}
+
+					static std::regex reg_pair(R"(^(\w+)\s*=(.*))");
+					static std::regex reg_quot(R"(^\"(.*)\"$)");
+
+					INI_Entry entry;
+					std::smatch res;
+					if (std::regex_search(line, res, reg_pair))
+					{
+						entry.key = res[1].str();
+						entry.value = res[2].str();
+					}
+					else
+						entry.value = line;
+					SUS::trim(entry.value);
+					if (std::regex_search(entry.value, res, reg_quot))
+						entry.value = res[1].str();
+
+					ret.sections.back().entries.push_back(entry);
+				}
+			}
+		}
+		file.close();
+		return ret;
+	}
+
+	// baseXX encoding is from https://github.com/r-lyeh-archived/base
+
+	inline std::string base85_encode(const uchar* data, uint length)
+	{
+		assert(length % 4 == 0);
+
+		const char encoder[86] =
+			"0123456789" "abcdefghij" "klmnopqrst" "uvwxyzABCD"             // 00..39
+			"EFGHIJKLMN" "OPQRSTUVWX" "YZ.-:+=^!/" "*?&<>()[]{" "}@%$#";    // 40..84 // free chars: , ; _ ` | ~ \'
+
+		std::string ret;
+		ret.resize(((length + 3) / 4) * 5);
+		auto dst = &ret[0];
+
+		for (auto i = 0; i < length; i += 4)
+		{
+			auto d = *(uint*)(data + i);
+			for (auto j = 0; j < 5; j++)
+			{
+				*dst = encoder[d];
+				dst++;
+				d /= 85;
+			}
+		}
+
+		return ret;
+	}
+
+	inline void base85_decode(const std::string& str, uchar* dst) // dst length is str length * 4 / 5
+	{
+		assert(str.length() % 5 == 0);
+
+		const unsigned char decoder[128] = {
+				0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, // 0x00..0x0F
+				0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, // 0x10..0x1F
+				0, 68,  0, 84, 83, 82, 72,  0, 75, 76, 70, 65,  0, 63, 62, 69, // 0x20..0x2F
+				0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 64,  0, 73, 66, 74, 71, // 0x30..0x3F
+			   81, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, // 0x40..0x4F
+			   51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 77,  0, 78, 67,  0, // 0x50..0x5F
+				0, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, // 0x60..0x6F
+			   25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 79,  0, 80,  0,  0, // 0x70..0x7F
+		};
+
+		auto src = &str[0];
+
+		auto dst_off = 0;
+		while (*src)
+		{
+			uint v = decoder[src[0]] +
+				85 * (decoder[src[1]] +
+					85 * (decoder[src[2]] +
+						85 * (decoder[src[3]] +
+							85 * decoder[src[4]])));
+			for (auto i = 0; i < 4; i++)
+			{
+				dst[dst_off + i] = v & 0xff;
+				v = (v >> 8);
+			}
+			src += 5;
+			dst_off += 4;
+		}
+	}
+
+	inline std::string base64_encode(const std::string& text)
+	{
+		std::string out;
+
+		const std::string chars =
+			"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz"
+			"0123456789+/";
+
+		unsigned char const* bytes_to_encode = (unsigned char const*)text.c_str();
+		unsigned int in_len = (unsigned int)text.size();
+		unsigned int i = 0;
+		unsigned int j = 0;
+		unsigned char char_array_3[3];
+		unsigned char char_array_4[4];
+
+		while (in_len--) {
+			char_array_3[i++] = *(bytes_to_encode++);
+			if (i == 3) {
+				char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+				char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+				char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+				char_array_4[3] = char_array_3[2] & 0x3f;
+
+				for (i = 0; (i < 4); i++)
+					out += chars[char_array_4[i]];
+				i = 0;
+			}
+		}
+
+		if (i) {
+			for (j = i; j < 3; j++)
+				char_array_3[j] = '\0';
+
+			char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+			char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+			char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+			char_array_4[3] = char_array_3[2] & 0x3f;
+
+			for (j = 0; (j < i + 1); j++)
+				out += chars[char_array_4[j]];
+
+			while ((i++ < 3))
+				out += '=';
+		}
+
+		return out;
+	}
+
+	inline std::string base64_decode(const std::string& encoded)
+	{
+		std::string out;
+
+		const std::string chars =
+			"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz"
+			"0123456789+/";
+
+		unsigned int in_len = (unsigned int)encoded.size();
+		unsigned int i = 0;
+		unsigned int j = 0;
+		unsigned int in_ = 0;
+		unsigned char char_array_4[4], char_array_3[3];
+		out.clear();
+
+		while (in_len-- && (encoded[in_] != '=') && //is_base64(encoded[in_])) {
+			(isalnum(encoded[in_]) || encoded[in_] == '+' || encoded[in_] == '/')) {
+			char_array_4[i++] = encoded[in_]; in_++;
+			if (i == 4) {
+				for (i = 0; i < 4; i++)
+					char_array_4[i] = chars.find(char_array_4[i]);
+
+				char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+				char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+				char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+				for (i = 0; (i < 3); i++)
+					out += char_array_3[i];
+				i = 0;
+			}
+		}
+
+		if (i) {
+			for (j = i; j < 4; j++)
+				char_array_4[j] = 0;
+
+			for (j = 0; j < 4; j++)
+				char_array_4[j] = chars.find(char_array_4[j]);
+
+			char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+			char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+			char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+			for (j = 0; (j < i - 1); j++) out += char_array_3[j];
+		}
+
+		return out;
 	}
 
 	// SHA1 is from https://github.com/vog/sha1

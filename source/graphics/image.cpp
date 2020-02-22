@@ -773,31 +773,32 @@ namespace flame
 			Image::destroy(image);
 		}
 
-		AtlasPrivate::AtlasPrivate(Device* d, const std::wstring& filename, const std::wstring& atlas_filename)
+		AtlasPrivate::AtlasPrivate(Device* d, const std::wstring& filename)
 		{
 			id = FLAME_HASH(filename.c_str());
 
-			image = Image::create_from_file(d, filename.c_str());
+			std::wstring image_filename;
+			auto ini = parse_ini_file(filename);
+			for (auto& e : ini.get_section_entries(""))
+			{
+				if (e.key == "image")
+					image_filename = std::filesystem::path(filename).parent_path() / e.value;
+				else if (e.key == "border")
+					border = !(e.value == "0");
+			}
+
+			image = Image::create_from_file(d, image_filename.c_str());
 			imageview = Imageview::create(image);
 
 			auto w = (float)image->size.x();
 			auto h = (float)image->size.y();
 
-			std::ifstream file(atlas_filename);
-
-			std::string line;
-			std::getline(file, line);
-			border = line == "1";
-
-			while (!file.eof())
+			for (auto& e : ini.get_section_entries("tiles"))
 			{
-				std::string t;
 				auto tile = new AtlasTilePrivate;
 
-				std::getline(file, line);
-				if (line.empty())
-					break;
-				std::stringstream ss(line);
+				std::string t;
+				std::stringstream ss(e.value);
 				ss >> t;
 				tile->_filename = s2w(t);
 				tile->filename = tile->_filename.c_str();
@@ -813,7 +814,6 @@ namespace flame
 
 				tiles.emplace_back(tile);
 			}
-			file.close();
 		}
 
 		Imageview* Atlas::imageview() const
@@ -833,11 +833,10 @@ namespace flame
 
 		Atlas* Atlas::load(Device* d, const wchar_t* filename)
 		{
-			auto atlas_filename = std::wstring(filename) + L".atlas";
-			if (!std::filesystem::exists(filename) || !std::filesystem::exists(atlas_filename))
+			if (!std::filesystem::exists(filename))
 				return nullptr;
 
-			auto atlas = new AtlasPrivate(d, filename, atlas_filename);
+			auto atlas = new AtlasPrivate(d, filename);
 
 			return atlas;
 		}
