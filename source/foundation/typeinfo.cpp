@@ -302,13 +302,16 @@ namespace flame
 
 	TypeinfoDatabase* TypeinfoDatabase::load(const wchar_t* module_filename, bool add_to_global, bool load_with_module)
 	{
-		auto typeinfo_path = std::filesystem::path(module_filename);
+		std::filesystem::path module_path(module_filename);
+		if (!module_path.is_absolute())
+			module_path = get_app_path().str() / module_path;
+		auto typeinfo_path = std::filesystem::path(module_path);
 		typeinfo_path.replace_extension(L".typeinfo");
-		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_filename))
+		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
 		{
 			auto typeinfogen_path = std::filesystem::path(getenv("FLAME_PATH"));
-			typeinfogen_path = typeinfogen_path / L"bin/typeinfogen.exe";
-			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_filename).c_str());
+			typeinfogen_path = typeinfogen_path / L"bin/debug/typeinfogen.exe";
+			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_path.wstring()).c_str());
 		}
 
 		pugi::xml_document file;
@@ -320,7 +323,7 @@ namespace flame
 		}
 
 		auto db = new TypeinfoDatabasePrivate;
-		db->module_name = module_filename;
+		db->module_name = module_path;
 		extra_global_db_count = 1;
 		extra_global_dbs = (TypeinfoDatabase**)&db;
 

@@ -8,11 +8,12 @@ add_definitions(-W0 -std:c++latest)
 
 include("cmake_utils.cmake")
 
-foreach(c ${CMAKE_CONFIGURATION_TYPES})
-	string(TOUPPER ${c} c )
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${c} "${CMAKE_SOURCE_DIR}/bin")
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${c} "${CMAKE_SOURCE_DIR}/bin")
-	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${c} "${CMAKE_SOURCE_DIR}/bin")
+foreach(type ${CMAKE_CONFIGURATION_TYPES})
+	string(TOUPPER ${type} type_u)
+	string(TOLOWER ${type} type_l)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${type_u} "${CMAKE_SOURCE_DIR}/bin/${type_l}")
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${type_u} "${CMAKE_SOURCE_DIR}/bin/${type_l}")
+	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${type_u} "${CMAKE_SOURCE_DIR}/bin/${type_l}")
 endforeach()
 
 set(FLAME_PLATFORM "Windows" CACHE STRING "Platform")

@@ -516,7 +516,7 @@ void cInspector::refresh()
 						auto u = *(UdtInfo**)c;
 
 						auto dummy = malloc(u->size());
-						auto module = load_module(u->db()->module_name());
+						auto module = u->db()->module();
 						{
 							auto f = u->find_function("ctor");
 							if (f && f->parameter_count() == 0)
@@ -534,7 +534,6 @@ void cInspector::refresh()
 							if (f)
 								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 						}
-						free_module(module);
 						free(dummy);
 
 						app.inspector->refresh();

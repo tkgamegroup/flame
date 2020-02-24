@@ -29,6 +29,8 @@ An ECS Game Engine Based On Reflection.
 - you need git-lfs
   
 - cmake, set path to those libraries
+
+- build typeinfogen first
   
 - enjoy
 

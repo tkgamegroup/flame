@@ -20,7 +20,7 @@ namespace flame
 			if (udt)
 			{
 				auto dummy = malloc(udt->size());
-				auto module = load_module(udt->db()->module_name());
+				auto module = udt->db()->module();
 				{
 					auto f = udt->find_function("ctor");
 					if (f && f->parameter_count() == 0)
@@ -36,7 +36,6 @@ namespace flame
 					if (f)
 						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 				}
-				free_module(module);
 				free(dummy);
 			}
 		}
@@ -113,7 +112,7 @@ namespace flame
 			auto udt = find_udt(FLAME_HASH((std::string("D#flame::Serializer_") + n_o.name()).c_str()));
 			assert(udt);
 			auto dummy = malloc(udt->size());
-			auto module = load_module(udt->db()->module_name());
+			auto module = udt->db()->module();
 			{
 				auto f = udt->find_function("ctor");
 				if (f && f->parameter_count() == 0)
@@ -136,7 +135,6 @@ namespace flame
 				if (f)
 					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
 			}
-			free_module(module);
 			free(dummy);
 		}
 

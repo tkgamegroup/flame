@@ -59,19 +59,14 @@ struct Player
 
 struct MyApp : App
 {
-	sound::Device* sound_device;
-	sound::Context* sound_context;
-
 	graphics::Atlas* atlas;
 
 	sound::Buffer* sound_move_buf;
-	sound::Buffer* sound_rotate_buf;
-	sound::Buffer* sound_hard_drop_buf;
+	sound::Buffer* sound_drop_buf;
 	sound::Buffer* sound_clear_buf;
 	sound::Buffer* sound_hold_buf;
 	sound::Source* sound_move_src;
-	sound::Source* sound_rotate_src;
-	sound::Source* sound_hard_drop_src;
+	sound::Source* sound_drop_src;
 	sound::Source* sound_clear_src;
 	sound::Source* sound_hold_src;
 
@@ -1172,7 +1167,7 @@ struct MyApp : App
 										mino_coords[i] = new_coords[i];
 									moved = true;
 
-									sound_rotate_src->play();
+									sound_move_src->play();
 								}
 							}
 
@@ -1332,6 +1327,16 @@ struct MyApp : App
 											break;
 										}
 
+										auto cancel = max(attack, l);
+										if (garbage)
+										{
+											if (garbage < cancel)
+												garbage = 0;
+											else
+												garbage -= cancel;
+											attack -= cancel;
+										}
+
 										if (attack > 0)
 										{
 											nlohmann::json req;
@@ -1373,6 +1378,8 @@ struct MyApp : App
 									}
 									mino_pos.y() = -1;
 									mino_just_hold = false;
+
+									sound_drop_src->play();
 								}
 								else
 								{
@@ -1386,9 +1393,6 @@ struct MyApp : App
 									}
 								}
 								mino_ticks = 0;
-
-								if (just_down_hard_drop)
-									sound_hard_drop_src->play();
 							}
 							mino_ticks++;
 
@@ -1419,11 +1423,7 @@ int main(int argc, char **args)
 {
 	app.create("Tetris", Vec2u(800, 600), WindowFrame);
 
-	app.sound_device = sound::Device::create_player();
-	app.sound_context = sound::Context::create(app.sound_device);
-	app.sound_context->make_current();
-
-	app.atlas = graphics::Atlas::load(app.d, L"../game/tetris/art/atlas/main.atlas");
+	app.atlas = graphics::Atlas::load(app.graphics_device, L"../game/tetris/art/atlas/main.atlas");
 	app.canvas->add_atlas(app.atlas);
 
 	{
@@ -1450,22 +1450,10 @@ int main(int argc, char **args)
 			samples.resize(sound::get_sample_count(dura, freq));
 			auto size = sound::get_size(samples.size(), stereo, _16bit);
 			auto data = new uchar[size];
-			sound::wave(samples, freq, sound::WavaSquare, 600U, 0.5f);
-			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
-			app.sound_rotate_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
-			app.sound_rotate_src = sound::Source::create(app.sound_rotate_buf);
-			delete[]data;
-		}
-		{
-			auto dura = 0.05f;
-			std::vector<float> samples;
-			samples.resize(sound::get_sample_count(dura, freq));
-			auto size = sound::get_size(samples.size(), stereo, _16bit);
-			auto data = new uchar[size];
 			sound::wave(samples, freq, sound::WavaNoise, 0U, 1.f);
 			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
-			app.sound_hard_drop_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
-			app.sound_hard_drop_src = sound::Source::create(app.sound_hard_drop_buf);
+			app.sound_drop_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
+			app.sound_drop_src = sound::Source::create(app.sound_drop_buf);
 			delete[]data;
 		}
 		{
@@ -1494,7 +1482,7 @@ int main(int argc, char **args)
 		}
 	}
 
-	auto w = app.u->world(0);
+	auto w = app.universe->world(0);
 
 	app.s_event_dispatcher = w->get_system(sEventDispatcher);
 

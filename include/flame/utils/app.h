@@ -23,51 +23,61 @@ namespace flame
 {
 	struct App
 	{
-		SysWindow* w;
-		graphics::Device* d;
-		graphics::SwapchainResizable* scr;
-		graphics::Fence* fence;
-		std::vector<graphics::Commandbuffer*> cbs;
-		Array<graphics::Commandbuffer*> sc_cbs;
-		graphics::Semaphore* render_finished;
+		SysWindow* window;
+
+		graphics::Device* graphics_device;
+		graphics::SwapchainResizable* swapchain;
+		std::vector<graphics::Commandbuffer*> graphics_cbs;
+		Array<graphics::Commandbuffer*> graphics_sc_cbs;
+		graphics::Fence* render_fence;
+		graphics::Semaphore* render_semaphore;
+
+		sound::Device* sound_device;
+		sound::Context* sound_context;
 
 		graphics::FontAtlas* font_atlas_pixel;
 		graphics::Canvas* canvas;
 
-		Universe* u;
+		Universe* universe;
 		Entity* root;
 		cElement* c_element_root;
 
 		void create(const char* title, const Vec2u size, uint styles, bool maximized = false)
 		{
-			w = SysWindow::create(title, size, styles);
-			if (maximized)
-				w->set_maximized(true);
-			d = graphics::Device::create(true);
-			scr = graphics::SwapchainResizable::create(d, w);
-			fence = graphics::Fence::create(d);
-			sc_cbs.resize(scr->sc()->image_count());
-			for (auto i = 0; i < sc_cbs.s; i++)
-				sc_cbs[i] = graphics::Commandbuffer::create(d->gcp);
-			render_finished = graphics::Semaphore::create(d);
 			TypeinfoDatabase::load(L"flame_foundation.dll", true, true);
 			TypeinfoDatabase::load(L"flame_graphics.dll", true, true);
 			TypeinfoDatabase::load(L"flame_universe.dll", true, true);
+
+			window = SysWindow::create(title, size, styles);
+			if (maximized)
+				window->set_maximized(true);
+
+			graphics_device = graphics::Device::create(true);
+			swapchain = graphics::SwapchainResizable::create(graphics_device, window);
+			graphics_sc_cbs.resize(swapchain->sc()->image_count());
+			for (auto i = 0; i < graphics_sc_cbs.s; i++)
+				graphics_sc_cbs[i] = graphics::Commandbuffer::create(graphics_device->gcp);
+			render_fence = graphics::Fence::create(graphics_device);
+			render_semaphore = graphics::Semaphore::create(graphics_device);
+
+			sound_device = sound::Device::create_player();
+			sound_context = sound::Context::create(sound_device);
+			sound_context->make_current();
 
 			wchar_t* fonts[] = {
 				L"c:/windows/fonts/msyh.ttc",
 				L"../art/font_awesome.ttf"
 			};
-			font_atlas_pixel = graphics::FontAtlas::create(d, graphics::FontDrawPixel, 2, fonts);
+			font_atlas_pixel = graphics::FontAtlas::create(graphics_device, graphics::FontDrawPixel, 2, fonts);
 
-			u = Universe::create();
-			u->add_object(w);
+			universe = Universe::create();
+			universe->add_object(window);
 
 			auto w = World::create();
-			u->add_world(w);
+			universe->add_world(w);
 			w->add_system(sLayoutManagement::create());
 			w->add_system(sEventDispatcher::create());
-			w->add_system(s2DRenderer::create(L"../renderpath/canvas/bp", scr, FLAME_CHASH("SwapchainResizable"), &sc_cbs));
+			w->add_system(s2DRenderer::create(L"../renderpath/canvas/bp", swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs));
 			canvas = w->get_system(s2DRenderer)->canvas;
 			canvas->add_font(font_atlas_pixel);
 			root = w->root();
@@ -81,26 +91,26 @@ namespace flame
 
 		void run()
 		{
-			auto sc = scr->sc();
+			auto sc = swapchain->sc();
 
 			if (sc)
 				sc->acquire_image();
 
-			fence->wait();
+			render_fence->wait();
 			looper().process_events();
 
 			on_frame();
 
-			c_element_root->set_size(Vec2f(w->size));
-			u->update();
+			c_element_root->set_size(Vec2f(window->size));
+			universe->update();
 
 			if (sc)
 			{
-				cbs.push_back(sc_cbs[sc->image_index()]);
-				d->gq->submit(cbs.size(), cbs.data(), sc->image_avalible(), render_finished, fence);
-				d->gq->present(sc, render_finished);
+				graphics_cbs.push_back(graphics_sc_cbs[sc->image_index()]);
+				graphics_device->gq->submit(graphics_cbs.size(), graphics_cbs.data(), sc->image_avalible(), render_semaphore, render_fence);
+				graphics_device->gq->present(sc, render_semaphore);
 			}
-			cbs.clear();
+			graphics_cbs.clear();
 		}
 	};
 }

@@ -1,4 +1,6 @@
+*.lib
 *.dll
+*.exe
 *.typeinfo
 out.glsl
 out.spv
