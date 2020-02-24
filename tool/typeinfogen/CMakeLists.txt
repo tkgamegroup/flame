@@ -1,9 +1,8 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
 add_executable(typeinfogen ${SOURCE_LIST})
 set_target_properties(typeinfogen PROPERTIES FOLDER "tool")
-set_target_properties(typeinfogen PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 target_include_directories(typeinfogen PRIVATE "${VS_PATH}/DIA SDK/include")
 target_link_libraries(typeinfogen flame_foundation)
 target_link_libraries(typeinfogen "${VS_PATH}/DIA SDK/lib/amd64/diaguids.lib")
 target_link_libraries(typeinfogen "Version.lib")
-
+add_custom_command(TARGET typeinfogen POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VS_PATH}/DIA SDK/bin/amd64/msdia140.dll" $(TargetDir))

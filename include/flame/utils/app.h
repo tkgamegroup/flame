@@ -36,9 +36,13 @@ namespace flame
 		sound::Context* sound_context;
 
 		graphics::FontAtlas* font_atlas_pixel;
-		graphics::Canvas* canvas;
 
 		Universe* universe;
+		World* world;
+		sLayoutManagement* s_layout_management;
+		sEventDispatcher* s_event_dispatcher;
+		s2DRenderer* s_2d_renderer;
+		graphics::Canvas* canvas;
 		Entity* root;
 		cElement* c_element_root;
 
@@ -73,14 +77,17 @@ namespace flame
 			universe = Universe::create();
 			universe->add_object(window);
 
-			auto w = World::create();
-			universe->add_world(w);
-			w->add_system(sLayoutManagement::create());
-			w->add_system(sEventDispatcher::create());
-			w->add_system(s2DRenderer::create(L"../renderpath/canvas/bp", swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs));
-			canvas = w->get_system(s2DRenderer)->canvas;
+			world = World::create();
+			universe->add_world(world);
+			s_layout_management = sLayoutManagement::create();
+			world->add_system(s_layout_management);
+			s_event_dispatcher = sEventDispatcher::create();
+			world->add_system(s_event_dispatcher);
+			s_2d_renderer = s2DRenderer::create((std::filesystem::path(getenv("FLAME_PATH")) / L"renderpath/canvas/bp").c_str(), swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs);
+			world->add_system(s_2d_renderer);
+			canvas = s_2d_renderer->canvas;
 			canvas->add_font(font_atlas_pixel);
-			root = w->root();
+			root = world->root();
 			c_element_root = cElement::create();
 			root->add_component(c_element_root);
 		}

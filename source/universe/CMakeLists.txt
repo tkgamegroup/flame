@@ -4,7 +4,6 @@ add_library(flame_universe SHARED ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/ver
 set_target_properties(flame_universe PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_universe PRIVATE FLAME_UNIVERSE_MODULE)
 target_include_directories(flame_universe PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_include_directories(flame_universe PUBLIC "${CMAKE_SOURCE_DIR}/ext/assimp/include")
 target_link_libraries(flame_universe flame_graphics)
 target_link_libraries(flame_universe ${PUGIXML_PATH}/build/Debug/pugixml.lib)
 

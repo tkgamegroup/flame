@@ -1185,7 +1185,7 @@ namespace flame
 			wcex.cbClsExtra = 0;
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
-			auto icon_image = Bitmap::create_from_file(L"ico.png");
+			auto icon_image = Bitmap::create_from_file((std::filesystem::path(getenv("FLAME_PATH")) / L"art/ico.png").c_str());
 			if (icon_image)
 			{
 				icon_image->swap_channel(0, 2);

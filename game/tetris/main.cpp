@@ -70,8 +70,6 @@ struct MyApp : App
 	sound::Source* sound_clear_src;
 	sound::Source* sound_hold_src;
 
-	sEventDispatcher* s_event_dispatcher;
-
 	std::wstring your_name;
 	std::wstring room_name;
 	RoomState room_state;
@@ -149,31 +147,6 @@ struct MyApp : App
 				ui::c_aligner(AlignxMiddle, AlignyFree);
 				ui::pop_style(ui::FontSize);
 				ui::push_style_1u(ui::FontSize, 20);
-				ui::e_button(L"Single", [](void*) {
-					looper().add_event([](void*, bool*) {
-						app.root->remove_children(1, -1);
-						app.create_single_scene();
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Online", [](void*) {
-					looper().add_event([](void*, bool*) {
-						app.root->remove_children(1, -1);
-						app.create_online_scene();
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
-	}
-
-	void create_single_scene()
-	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
 				ui::e_button(L"Marathon", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
@@ -195,14 +168,14 @@ struct MyApp : App
 				ui::e_button(L"Practice", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
-						app.create_single_pratice_otions_scene();
+						app.create_pratice_otions_scene();
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Back", [](void*) {
+				ui::e_button(L"LAN", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
-						app.create_home_scene();
+						app.create_lan_scene();
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
@@ -211,7 +184,7 @@ struct MyApp : App
 		ui::pop_parent();
 	}
 
-	void create_single_pratice_otions_scene()
+	void create_pratice_otions_scene()
 	{
 		ui::push_parent(root);
 			ui::e_begin_layout(LayoutVertical, 8.f);
@@ -229,37 +202,6 @@ struct MyApp : App
 				ui::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
-						app.create_single_scene();
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
-	}
-
-	void create_online_scene()
-	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-				ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
-				ui::e_button(L"Local", [](void*) {
-					looper().add_event([](void*, bool*) {
-						app.root->remove_children(1, -1);
-						app.create_online_local_scene();
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"www.not-yet.com", [](void*) {
-					looper().add_event([](void*, bool*) {
-
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Back", [](void*) {
-					looper().add_event([](void*, bool*) {
-						app.root->remove_children(1, -1);
 						app.create_home_scene();
 					}, Mail<>());
 				}, Mail<>());
@@ -269,7 +211,7 @@ struct MyApp : App
 		ui::pop_parent();
 	}
 
-	void create_online_local_scene()
+	void create_lan_scene()
 	{
 		ui::push_parent(root);
 		ui::next_element_size = Vec2f(500.f, 0.f);
@@ -527,7 +469,7 @@ struct MyApp : App
 						app.rooms.clear();
 
 						app.root->remove_children(1, -1);
-						app.create_online_scene();
+						app.create_home_scene();
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxRight, AlignyTop);
@@ -1421,9 +1363,19 @@ struct MyApp : App
 
 int main(int argc, char **args)
 {
+	std::filesystem::path resource_path;
+	{
+		auto config = parse_ini_file(L"config.ini");
+		for (auto& e : config.get_section_entries(""))
+		{
+			if (e.key == "resource_path")
+				resource_path = e.value;
+		}
+	}
+
 	app.create("Tetris", Vec2u(800, 600), WindowFrame);
 
-	app.atlas = graphics::Atlas::load(app.graphics_device, L"../game/tetris/art/atlas/main.atlas");
+	app.atlas = graphics::Atlas::load(app.graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
 	app.canvas->add_atlas(app.atlas);
 
 	{
@@ -1482,17 +1434,11 @@ int main(int argc, char **args)
 		}
 	}
 
-	auto w = app.universe->world(0);
-
-	app.s_event_dispatcher = w->get_system(sEventDispatcher);
-
-	auto root = w->root();
-	app.root = root;
-	ui::set_current_entity(root);
+	ui::set_current_entity(app.root);
 	ui::c_layout();
 
 	ui::push_font_atlas(app.font_atlas_pixel);
-	ui::set_current_root(root);
+	ui::set_current_root(app.root);
 
 	ui::push_parent(app.root);
 	ui::e_text(L"");

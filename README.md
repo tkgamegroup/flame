@@ -30,7 +30,7 @@ An ECS Game Engine Based On Reflection.
   
 - cmake, set path to those libraries
 
-- build typeinfogen first
+- build typeinfogen first (in debug config)
   
 - enjoy
 
