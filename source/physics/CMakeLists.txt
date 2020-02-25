@@ -4,15 +4,14 @@ add_library(flame_physics SHARED ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/vers
 set_target_properties(flame_physics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_physics PRIVATE FLAME_PHYSICS_MODULE)
 target_include_directories(flame_physics PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_include_directories(flame_physics PUBLIC "${PHYSX_PATH}/PhysX_3.4/Include")
-target_include_directories(flame_physics PUBLIC "${PHYSX_PATH}/PxShared/include")
-target_link_libraries(flame_physics ${PHYSX_PATH}/PhysX_3.4/Lib/vc15win${FLAME_SYS_BIT}/PhysX3DEBUG_${FLAME_SYS_NAME}.lib)
-target_link_libraries(flame_physics ${PHYSX_PATH}/PhysX_3.4/Lib/vc15win${FLAME_SYS_BIT}/PhysX3CommonDEBUG_${FLAME_SYS_NAME}.lib)
-target_link_libraries(flame_physics ${PHYSX_PATH}/PhysX_3.4/Lib/vc15win${FLAME_SYS_BIT}/PhysX3ExtensionsDEBUG.lib)
-target_link_libraries(flame_physics ${PHYSX_PATH}/PxShared/lib/vc15win${FLAME_SYS_BIT}/PxFoundationDEBUG_${FLAME_SYS_NAME}.lib)
-add_custom_target(copy_physx_dlls 
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PHYSX_PATH}/PhysX_3.4/Bin/vc15win${FLAME_SYS_BIT}/PhysX3CommonDEBUG_${FLAME_SYS_NAME}.dll ${CMAKE_SOURCE_DIR}/bin
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PHYSX_PATH}/PhysX_3.4/Bin/vc15win${FLAME_SYS_BIT}/PhysX3DEBUG_${FLAME_SYS_NAME}.dll ${CMAKE_SOURCE_DIR}/bin
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PHYSX_PATH}/PxShared/bin/vc15win${FLAME_SYS_BIT}/PxFoundationDEBUG_${FLAME_SYS_NAME}.dll ${CMAKE_SOURCE_DIR}/bin
-)
-add_dependencies(flame_physics copy_physx_dlls)
+if (FLAME_ENABLE_PHYSICS)
+	target_include_directories(flame_physics PRIVATE "${PHYSX_DIR}/PhysX_3.4/Include")
+	target_include_directories(flame_physics PRIVATE "${PHYSX_DIR}/PxShared/include")
+	target_link_libraries(flame_physics "${PHYSX_STATIC_LIBRARY_DIR}/PxFoundationRELEASE_x64.lib")
+	target_link_libraries(flame_physics "${PHYSX_STATIC_LIBRARY_DIR}/PhysX3RELEASE_x64.lib")
+	target_link_libraries(flame_physics "${PHYSX_STATIC_LIBRARY_DIR}/PhysX3CommonRELEASE_x64.lib")
+	target_link_libraries(flame_physics "${PHYSX_STATIC_LIBRARY_DIR}/PhysX3ExtensionsRELEASE.lib")
+	add_custom_command(TARGET flame_physics POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PHYSX_SHARED_LIBRARY_DIR}/PxFoundationRELEASE_x64.dll" $(TargetDir))
+	add_custom_command(TARGET flame_physics POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PHYSX_SHARED_LIBRARY_DIR}/PhysX3RELEASE_x64.dll" $(TargetDir))
+	add_custom_command(TARGET flame_physics POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PHYSX_SHARED_LIBRARY_DIR}/PhysX3CommonRELEASE_x64.dll" $(TargetDir))
+endif()

@@ -132,7 +132,8 @@ namespace flame
 	void read_process_memory(void* process, void* address, uint size, void* dst)
 	{
 		SIZE_T ret_byte;
-		assert(ReadProcessMemory(process, address, dst, size, &ret_byte));
+		auto ok = ReadProcessMemory(process, address, dst, size, &ret_byte);
+		assert(ok);
 	}
 
 	void sleep(int time)
@@ -205,6 +206,8 @@ namespace flame
 
 	StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters)
 	{
+		bool ok;
+
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
 
@@ -213,9 +216,11 @@ namespace flame
 		saAttr.bInheritHandle = TRUE;
 		saAttr.lpSecurityDescriptor = NULL;
 
-		assert(CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0));
+		ok = CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0);
+		assert(ok);
 
-		assert(SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0));
+		ok = SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
+		assert(ok);
 
 		STARTUPINFOW start_info = {};
 		start_info.cb = sizeof(STARTUPINFOW);
@@ -720,10 +725,13 @@ namespace flame
 
 		while (true)
 		{
+			bool ok;
+
 			ZeroMemory(&overlapped, sizeof(OVERLAPPED));
 			overlapped.hEvent = event_changed;
 
-			assert(ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL));
+			ok = ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL);
+			assert(ok);
 
 			if (event_end)
 			{
@@ -739,7 +747,8 @@ namespace flame
 				WaitForSingleObject(overlapped.hEvent, INFINITE);
 
 			DWORD ret_bytes;
-			assert(GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false) == 1);
+			ok = GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false);
+			assert(ok);
 
 			auto base = 0;
 			auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;

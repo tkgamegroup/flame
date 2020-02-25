@@ -247,7 +247,12 @@ int main(int argc, char **args)
 		TypeinfoDatabase::load(d.c_str(), true, false);
 	set_curr_path(last_curr_path.v);
 
-	assert(SUCCEEDED(CoInitialize(NULL)));
+	if (FAILED(CoInitialize(NULL)))
+	{
+		printf("com initial failed\n");
+		assert(0);
+		return 0;
+	}
 
 	CComPtr<IDiaDataSource> dia_source;
 	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))

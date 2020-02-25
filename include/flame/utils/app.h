@@ -46,7 +46,7 @@ namespace flame
 		Entity* root;
 		cElement* c_element_root;
 
-		void create(const char* title, const Vec2u size, uint styles, bool maximized = false)
+		void create(const char* title, const Vec2u size, uint styles, const std::filesystem::path& engine_path, bool maximized = false)
 		{
 			TypeinfoDatabase::load(L"flame_foundation.dll", true, true);
 			TypeinfoDatabase::load(L"flame_graphics.dll", true, true);
@@ -68,9 +68,10 @@ namespace flame
 			sound_context = sound::Context::create(sound_device);
 			sound_context->make_current();
 
-			wchar_t* fonts[] = {
+			auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
+			const wchar_t* fonts[] = {
 				L"c:/windows/fonts/msyh.ttc",
-				L"../art/font_awesome.ttf"
+				font_awesome_path.c_str(),
 			};
 			font_atlas_pixel = graphics::FontAtlas::create(graphics_device, graphics::FontDrawPixel, 2, fonts);
 
@@ -83,7 +84,7 @@ namespace flame
 			world->add_system(s_layout_management);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			s_2d_renderer = s2DRenderer::create((std::filesystem::path(getenv("FLAME_PATH")) / L"renderpath/canvas/bp").c_str(), swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs);
+			s_2d_renderer = s2DRenderer::create((engine_path / L"renderpath/canvas/bp").c_str(), swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs);
 			world->add_system(s_2d_renderer);
 			canvas = s_2d_renderer->canvas;
 			canvas->add_font(font_atlas_pixel);

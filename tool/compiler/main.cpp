@@ -26,22 +26,6 @@ int main(int argc, char **args)
 
 	auto flame_path = std::string(getenv("FLAME_PATH"));
 
-	std::string pugixml_path;
-	std::ifstream cmake_caches(flame_path + "build/CMakeCache.txt");
-	while (!cmake_caches.eof())
-	{
-		std::string line;
-		std::getline(cmake_caches, line);
-		static std::regex reg_pugixml_path(R"(PUGIXML_PATH:PATH\=(.*))");
-		std::smatch res;
-		if (std::regex_search(line, res, reg_pugixml_path))
-		{
-			pugixml_path = res[1].str();
-			break;
-		}
-	}
-	cmake_caches.close();
-
 	std::ofstream cmakelists(L"CMakeLists.txt");
 	cmakelists << "# THIS FILE IS AUTO GENERATED\n";
 	cmakelists << "cmake_minimum_required(VERSION 3.16.4)\n";
@@ -56,11 +40,35 @@ int main(int argc, char **args)
 	cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
 	cmakelists << "generate_rc()\n";
 	cmakelists << "add_library(" << name << " SHARED ${SOURCE_LIST} \"${CMAKE_CURRENT_BINARY_DIR}/version.rc\")\n";
-	cmakelists << "target_include_directories(" << name << " PRIVATE \"" << pugixml_path << "\")\n";
 	cmakelists << "target_include_directories(" << name << " PRIVATE \"" << flame_path << "include\")\n";
 	for (auto& l : libraries)
 		cmakelists << "target_link_libraries(" << name << " \"" << l << "\")\n";
-	cmakelists.close();
+
+	{
+		// reflect the setup about xml and json libraries so that can use xml/json easily
+
+		std::ifstream cmake_caches(flame_path + "build/CMakeCache.txt");
+		while (!cmake_caches.eof())
+		{
+			std::string line;
+			std::getline(cmake_caches, line);
+			static std::regex reg_pugixml_include_dir(R"(PUGIXML_INCLUDE_DIR:PATH\=(.*))");
+			static std::regex reg_pugixml_debug_static_library_path(R"(PUGIXML_DEBUG_STATIC_LIBRARY_PATH:FILEPATH\=(.*))");
+			static std::regex reg_pugixml_release_static_library_path(R"(PUGIXML_RELEASE_STATIC_LIBRARY_PATH:FILEPATH\=(.*))");
+			static std::regex reg_njson_include_dir(R"(NJSON_INCLUDE_DIR:PATH\=(.*))");
+			std::smatch res;
+			if (std::regex_search(line, res, reg_pugixml_include_dir))
+				cmakelists << "target_include_directories(" << name << " PRIVATE \"" << res[1].str() << "\")\n";
+			else if (std::regex_search(line, res, reg_pugixml_debug_static_library_path))
+				cmakelists << "target_link_libraries(" << name << " \"" << res[1].str() << "\")\n";
+			else if (std::regex_search(line, res, reg_pugixml_release_static_library_path))
+				cmakelists << "target_link_libraries(" << name << " \"" << res[1].str() << "\")\n";
+			else if (std::regex_search(line, res, reg_njson_include_dir))
+				cmakelists << "target_include_directories(" << name << " PRIVATE \"" << res[1].str() << "\")\n";
+		}
+		cmake_caches.close();
+		cmakelists.close();
+	}
 
 	std::wstring cmake_cmd(L"cmake ");
 	cmake_cmd += L" -B build";

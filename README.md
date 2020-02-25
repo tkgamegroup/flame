@@ -3,36 +3,43 @@ An ECS Game Engine Based On Reflection.
 
 # Requirements:
 
-- pugixml     - https://github.com/zeux/pugixml
+- git-lfs
 
-- njson       - https://github.com/nlohmann/json
+- VisualStudio
 
-- STB         - https://github.com/nothings/stb
+- VulkanSDK     - https://vulkan.lunarg.com/sdk/home#windows
+
+- Graphviz      - (optional)
   
-- freetype    - https://github.com/ubawurinna/freetype-windows-binaries
+# Libraries:
 
-- msdfgen     - (must use my forked version, changed a little bit) https://github.com/tkgamegroup/msdfgen
+- pugixml       - https://github.com/zeux/pugixml
 
-- VulkanSDK   - https://vulkan.lunarg.com/sdk/home#windows
+- njson         - https://github.com/nlohmann/json
 
-- SPIRV-Cross - https://github.com/KhronosGroup/SPIRV-Cross
-
-- OpenAL      - http://www.openal.org/
-
-- Graphviz    - (optional)
+- STB           - https://github.com/nothings/stb
   
+- freetype      - https://github.com/ubawurinna/freetype-windows-binaries
+
+- msdfgen       - (must use my forked version, changed a little bit) https://github.com/tkgamegroup/msdfgen
+
+- SPIRV-Cross   - https://github.com/KhronosGroup/SPIRV-Cross
+
+- OpenAL        - http://www.openal.org/
 
 # Build:
 
-- regsvr32 msdia**.dll in visual studio's dia sdk
+- cmake flame
 
-- you need git-lfs
-  
-- cmake, set path to those libraries
+- regsvr32 msdia**.dll in visual studio's dia sdk i.e. "vs_path/DIA SDK/bin/amd64"
 
 - build typeinfogen first (in debug config)
+
+- build other porjects
   
 - enjoy
+
+PS: if you want to build in release confin, always build in RelWithDebugInfo, because DebugInfo is always needed
 
 ### UI Gallery:
 ![ui](https://github.com/tkgamegroup/flame/blob/master/screenshots/ui.png)

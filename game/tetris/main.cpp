@@ -818,10 +818,16 @@ struct MyApp : App
 
 		gaming = false;
 
-		if (app.server)
-			Server::destroy(app.server);
-		if (app.client)
-			Client::destroy(app.client);
+		if (server)
+		{
+			Server::destroy(server);
+			server = nullptr;
+		}
+		if (client)
+		{
+			Client::destroy(client);
+			client = nullptr;
+		}
 		app.players.clear();
 
 		looper().add_event([](void*, bool*) {
@@ -1373,7 +1379,8 @@ int main(int argc, char **args)
 		}
 	}
 
-	app.create("Tetris", Vec2u(800, 600), WindowFrame);
+	auto engine_path = getenv("FLAME_PATH");
+	app.create("Tetris", Vec2u(800, 600), WindowFrame, engine_path ? engine_path : resource_path);
 
 	app.atlas = graphics::Atlas::load(app.graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
 	app.canvas->add_atlas(app.atlas);
