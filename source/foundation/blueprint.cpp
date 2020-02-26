@@ -10,6 +10,8 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
+	extern bool debug_config;
+
 	struct LibraryPrivate : BP::Library
 	{
 		std::wstring filename;
@@ -492,7 +494,19 @@ namespace flame
 				return nullptr;
 		}
 
-		std::filesystem::path absolute_filename = std::filesystem::path(filename).parent_path() / fn;
+		auto fn_config = fn;
+		{
+			auto config_str = debug_config ? L"debug" : L"relwithdebinfo";
+			static FLAME_SAL(str, L"{config}");
+			auto pos = fn_config.find(str.s, 0, str.l);
+			while (pos != std::string::npos)
+			{
+				fn_config = fn_config.replace(pos, str.l, config_str);
+				pos = fn_config.find(str.s, 0, str.l);
+			}
+		}
+
+		std::filesystem::path absolute_filename = std::filesystem::path(filename).parent_path() / fn_config;
 		auto module = load_module(absolute_filename.c_str());
 		if (!module)
 		{

@@ -1435,4 +1435,10 @@ namespace flame
 	{
 		return _looper;
 	}
+
+	auto debug_config = true;
+	void set_debug_config(bool v)
+	{
+		debug_config = v;
+	}
 }

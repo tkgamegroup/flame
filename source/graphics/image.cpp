@@ -834,7 +834,10 @@ namespace flame
 		Atlas* Atlas::load(Device* d, const wchar_t* filename)
 		{
 			if (!std::filesystem::exists(filename))
+			{
+				wprintf(L"cannot find atlas: %s\n", filename);
 				return nullptr;
+			}
 
 			auto atlas = new AtlasPrivate(d, filename);
 

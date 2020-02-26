@@ -5,23 +5,29 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
+	auto config = std::string(args[1]);
+
 	std::string name;
 	std::vector<std::string> libraries;
-
-	for (auto i = 1; i < argc; i++)
+	auto compile_otions = parse_ini_file(L"compile_otions.ini");
+	for (auto& e : compile_otions.get_section_entries(""))
 	{
-		auto arg = std::string(args[i]);
-		if (arg[0] == '-' && arg.size() > 1)
+		if (e.key == "name")
+			name = e.value;
+	}
+	for (auto& e : compile_otions.get_section_entries("libraries"))
+	{
+		auto l = e.value;
+		static FLAME_SAL(str, "{config}");
+		auto pos = l.find(str.s, 0, str.l);
+		while (pos != std::string::npos)
 		{
-			if (arg[1] == 'n' && arg.size() > 2)
-				name = std::string(arg.begin() + 2, arg.end());
-			else if (arg[1] == 'l' && arg.size() > 2)
-			{
-				auto l = std::filesystem::canonical(std::string(arg.begin() + 2, arg.end())).replace_extension(L".lib").string();
-				std::replace(l.begin(), l.end(), '\\', '/');
-				libraries.push_back(l);
-			}
+			l = l.replace(pos, str.l, config);
+			pos = l.find(str.s, 0, str.l);
 		}
+		l = std::filesystem::canonical(l).string();
+		std::replace(l.begin(), l.end(), '\\', '/');
+		libraries.push_back(l);
 	}
 
 	auto flame_path = std::string(getenv("FLAME_PATH"));
@@ -30,11 +36,7 @@ int main(int argc, char **args)
 	cmakelists << "# THIS FILE IS AUTO GENERATED\n";
 	cmakelists << "cmake_minimum_required(VERSION 3.16.4)\n";
 	cmakelists << "project(" << name << ")\n";
-	for (auto& ch : flame_path)
-	{
-		if (ch == '\\')
-			ch = '/';
-	}
+	std::replace(flame_path.begin(), flame_path.end(), '\\', '/');
 	cmakelists << "include(\"" << flame_path << "cmake_utils.cmake\")\n";
 	cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 	cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
@@ -74,7 +76,7 @@ int main(int argc, char **args)
 	cmake_cmd += L" -B build";
 	exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
 
-	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build debug", s2w(VS_LOCATION).c_str(), get_curr_path().v).data());
+	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build %s", s2w(VS_LOCATION).c_str(), get_curr_path().v, s2w(config).c_str()).data());
 
 	system("pause");
 

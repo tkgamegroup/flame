@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <BP>
 	<libraries>
-		<library filename="build/Debug/bp.dll" pos="-294.00;-179.00" />
+		<library filename="build/{config}/bp.dll" pos="-294.00;-179.00" />
 	</libraries>
 	<nodes>
 		<node type="D#Enum(flame::graphics::SampleCount)" id="sc" pos="517.81;967.10">

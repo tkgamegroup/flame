@@ -1374,7 +1374,12 @@ int main(int argc, char **args)
 		auto config = parse_ini_file(L"config.ini");
 		for (auto& e : config.get_section_entries(""))
 		{
-			if (e.key == "resource_path")
+			if (e.key == "debug")
+			{
+				set_debug_config(e.value == "1");
+				resource_path = e.value;
+			}
+			else if (e.key == "resource_path")
 				resource_path = e.value;
 		}
 	}

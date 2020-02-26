@@ -704,13 +704,16 @@ namespace flame
 
 	inline INI_File parse_ini_file(const std::filesystem::path& filename)
 	{
-		std::ifstream file(filename);
 		INI_File ret;
+
+		std::ifstream file(filename);
+		if (!file.good())
+			return ret;
 		while (!file.eof())
 		{
 			std::string line;
 			std::getline(file, line);
-			if (!line.empty())
+			if (!line.empty() && line[0] != ';')
 			{
 				SUS::trim(line);
 				if (line.size() > 2 && line.front() == '[' && line.back() == ']')
@@ -747,6 +750,7 @@ namespace flame
 			}
 		}
 		file.close();
+
 		return ret;
 	}
 
