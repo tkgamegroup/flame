@@ -18,6 +18,7 @@ enum
 };
 
 extern Key key_map[KEY_COUNT];
+extern const wchar_t* key_names[KEY_COUNT];
 
 void init_key();
 

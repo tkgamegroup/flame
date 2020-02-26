@@ -4,6 +4,7 @@
 #include <flame/universe/ui/utils.h>
 #include <flame/network/network.h>
 #include <flame/utils/app.h>
+#include <flame/universe/ui/typeinfo_utils.h>
 
 #include "mino.h"
 #include "key.h"
@@ -176,6 +177,13 @@ struct MyApp : App
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_lan_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Key", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_key_scene();
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
@@ -476,6 +484,32 @@ struct MyApp : App
 			ui::e_end_layout();
 			ui::pop_style(ui::FontSize);
 		ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_key_scene()
+	{
+		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 20);
+				for (auto i = 0; i < KEY_COUNT; i++)
+				{
+					ui::e_begin_layout(LayoutHorizontal, 4.f);
+					ui::e_text(key_names[i]);
+					ui::e_edit(200.f, s2w(get_key_name(key_map[i])).c_str());
+					ui::c_aligner(SizeGreedy, SizeFixed);
+					ui::e_end_layout();
+				}
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_home_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
 		ui::pop_parent();
 	}
 

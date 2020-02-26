@@ -407,6 +407,84 @@ namespace flame
 		KeyMax = 0xffffffff
 	};
 
+	inline char* get_key_name(Key key)
+	{
+		switch (key)
+		{
+		case KeyNull:
+			return "";
+		case Key_Backspace:
+			return "backspace";
+		case Key_Enter:
+			return "enter";
+		case Key_Esc:
+			return "esc";
+		case Key_Space:
+			return "spcae";
+		case Key_Left:
+			return "left";
+		case Key_Up:
+			return "up";
+		case Key_Right:
+			return "right";
+		case Key_Down:
+			return "down";
+		case Key_A:
+			return "a";
+		case Key_B:
+			return "b";
+		case Key_C:
+			return "c";
+		case Key_D:
+			return "d";
+		case Key_E:
+			return "e";
+		case Key_F:
+			return "f";
+		case Key_G:
+			return "g";
+		case Key_H:
+			return "h";
+		case Key_I:
+			return "i";
+		case Key_J:
+			return "j";
+		case Key_K:
+			return "k";
+		case Key_L:
+			return "l";
+		case Key_M:
+			return "m";
+		case Key_N:
+			return "n";
+		case Key_O:
+			return "o";
+		case Key_P:
+			return "p";
+		case Key_Q:
+			return "q";
+		case Key_R:
+			return "r";
+		case Key_S:
+			return "s";
+		case Key_T:
+			return "t";
+		case Key_U:
+			return "u";
+		case Key_V:
+			return "v";
+		case Key_W:
+			return "w";
+		case Key_X:
+			return "x";
+		case Key_Y:
+			return "y";
+		case Key_Z:
+			return "z";
+		}
+		return "";
+	}
+
 	enum MouseKey
 	{
 		Mouse_Null = -1,
