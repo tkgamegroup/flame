@@ -37,6 +37,7 @@ namespace flame
 				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
 					if (hash == FLAME_CHASH("state"))
 						(*(cStyleColorPrivate**)c)->style();
+					return true;
 				}, new_mail_p(this));
 				style();
 			}
@@ -110,6 +111,7 @@ namespace flame
 				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
 					if (hash == FLAME_CHASH("state"))
 						(*(cStyleColor2Private**)c)->style();
+					return true;
 				}, new_mail_p(this));
 				style();
 			}
@@ -180,6 +182,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
 					(*(cStyleTextColorPrivate**)c)->style();
+					return true;
 				}, new_mail_p(this));
 				style();
 			}
@@ -247,6 +250,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
 					(*(cStyleTextColor2Private**)c)->style();
+					return true;
 				}, new_mail_p(this));
 				style();
 			}

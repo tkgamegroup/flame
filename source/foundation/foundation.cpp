@@ -19,7 +19,7 @@ namespace flame
 {
 	struct ListenerHubImnplPrivate: ListenerHubImpl
 	{
-		std::vector<std::unique_ptr<Closure<void(void* c)>>> listeners;
+		std::vector<std::unique_ptr<Closure<bool(void* c)>>> listeners;
 	};
 
 	ListenerHubImpl* ListenerHubImpl::create()
@@ -37,17 +37,20 @@ namespace flame
 		return ((ListenerHubImnplPrivate*)this)->listeners.size();
 	}
 
-	Closure<void(void*)>& ListenerHubImpl::item(uint idx)
+	Closure<bool(void*)>& ListenerHubImpl::item(uint idx)
 	{
 		return *((ListenerHubImnplPrivate*)this)->listeners[idx].get();
 	}
 
-	void* ListenerHubImpl::add_plain(void(*pf)(void* c), const Mail<>& capture)
+	void* ListenerHubImpl::add_plain(bool(*pf)(void* c), const Mail<>& capture, int pos)
 	{
-		auto c = new Closure<void(void* c)>;
+		auto c = new Closure<bool(void* c)>;
 		c->function = pf;
 		c->capture = capture;
-		((ListenerHubImnplPrivate*)this)->listeners.emplace_back(c);
+		auto thiz = (ListenerHubImnplPrivate*)this;
+		if (pos == -1)
+			pos = thiz->listeners.size();
+		thiz->listeners.emplace(thiz->listeners.begin() + pos, c);
 		return c;
 	}
 

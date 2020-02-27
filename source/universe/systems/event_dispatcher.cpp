@@ -137,6 +137,8 @@ namespace flame
 					}
 
 					thiz->pending_update = true;
+
+					return true;
 				}, new_mail_p(this));
 
 				mouse_listener = window->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -156,6 +158,8 @@ namespace flame
 					}
 
 					thiz->pending_update = true;
+
+					return true;
 				}, new_mail_p(this));
 			}
 		}

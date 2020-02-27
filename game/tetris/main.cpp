@@ -133,8 +133,12 @@ struct MyApp : App
 
 	~MyApp()
 	{
-		std::ofstream user_data(L"user_data.txt");
-		user_data << w2s(your_name) << "\n";
+		std::ofstream user_data(L"user_data.ini");
+		user_data << "name = " << w2s(your_name) << "\n";
+		user_data << "\n[key]\n";
+		auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+		for (auto i = 0; i < KEY_COUNT; i++)
+			user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->name() << "\n";
 		user_data.close();
 	}
 
@@ -232,6 +236,7 @@ struct MyApp : App
 				ui::e_edit(300.f, app.your_name.c_str())->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
 					if (hash == FLAME_CHASH("text"))
 						app.your_name = ((cText*)c)->text();
+					return true;
 				}, Mail<>());
 			ui::e_end_layout();
 			ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
@@ -493,11 +498,29 @@ struct MyApp : App
 			ui::e_begin_layout(LayoutVertical, 8.f);
 			ui::c_aligner(AlignxMiddle, AlignyMiddle);
 				ui::push_style_1u(ui::FontSize, 20);
+				auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 				for (auto i = 0; i < KEY_COUNT; i++)
 				{
 					ui::e_begin_layout(LayoutHorizontal, 4.f);
 					ui::e_text(key_names[i]);
-					ui::e_edit(200.f, s2w(get_key_name(key_map[i])).c_str());
+					struct Capture
+					{
+						cText* t;
+						int i;
+					}capture;
+					auto e_edit = ui::e_edit(200.f, s2w(key_info->find_item(key_map[i])->name()).c_str());
+					capture.t = e_edit->get_component(cText);
+					capture.i = i;
+					e_edit->get_component(cEventReceiver)->key_listeners.add([](void* c, KeyStateFlags action, int value) {
+						if (action == KeyStateDown)
+						{
+							auto& capture = *(Capture*)c;
+							key_map[capture.i] = (Key)value;
+							auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+							capture.t->set_text(s2w(key_info->find_item((Key)value)->name()).c_str());
+						}
+						return false;
+					}, new_mail(&capture), 0);
 					ui::c_aligner(SizeGreedy, SizeFixed);
 					ui::e_end_layout();
 				}
@@ -1499,13 +1522,20 @@ int main(int argc, char **args)
 	app.game_mode = GameMenu;
 	app.create_home_scene();
 
-	std::ifstream user_data(L"user_data.txt");
-	if (user_data.good())
+	auto user_data = parse_ini_file(L"user_data.ini");
+	for (auto& e : user_data.get_section_entries(""))
 	{
-		std::string line;
-		std::getline(user_data, line);
-		app.your_name = s2w(line);
-		user_data.close();
+		if (e.key == "name")
+			app.your_name = s2w(e.value);
+	}
+	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	for (auto& e : user_data.get_section_entries("key"))
+	{
+		for (auto i = 0; i < KEY_COUNT; i++)
+		{
+			if (key_names[i] == s2w(e.key))
+				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value();
+		}
 	}
 
 	looper().loop([](void*) {

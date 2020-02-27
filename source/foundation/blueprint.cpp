@@ -2343,5 +2343,18 @@ namespace flame
 			}
 		}
 	};
+
+	struct R(R_KeyListener, flame)
+	{
+		BP::Node* n;
+
+		BASE0;
+		RV(Key, key, i);
+
+		FLAME_FOUNDATION_EXPORTS void RF(active_update)(uint frame)
+		{
+
+		}
+	};
 }
 

@@ -402,8 +402,11 @@ namespace flame
 
 		static void trim(std::basic_string<CH>& str)
 		{
-			str.erase(str.begin(), str.begin() + str.find_first_not_of(' '));
-			str.erase(str.begin() + str.find_last_not_of(' ') + 1, str.end());
+			if (!str.empty())
+			{
+				str.erase(str.begin(), str.begin() + str.find_first_not_of(' '));
+				str.erase(str.begin() + str.find_last_not_of(' ') + 1, str.end());
+			}
 		}
 
 		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')

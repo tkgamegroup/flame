@@ -44,6 +44,7 @@ namespace flame
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cTileMapPrivate**)c)->draw(canvas);
+					return true;
 				}, new_mail_p(this));
 			}
 		}

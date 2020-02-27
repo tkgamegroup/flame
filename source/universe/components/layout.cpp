@@ -151,7 +151,7 @@ namespace flame
 			element_data_listener = element->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
 				auto thiz = *(cLayoutPrivate**)c;
 				if (sender == thiz)
-					return;
+					return true;
 				switch (hash)
 				{
 				case FLAME_CHASH("scale"):
@@ -160,6 +160,7 @@ namespace flame
 					if (thiz->management)
 						thiz->management->add_to_update_list(thiz);
 				}
+				return true;
 			}, new_mail_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cAligner"))
@@ -243,7 +244,7 @@ namespace flame
 						element_data_listener = element->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
-								return;
+								return true;
 							switch (hash)
 							{
 							case FLAME_CHASH("pos"):
@@ -253,6 +254,7 @@ namespace flame
 									thiz->management->add_to_update_list(thiz);
 								break;
 							}
+							return true;
 						}, new_mail_p(this));
 					}
 					void* aligner_data_listener = nullptr;
@@ -261,9 +263,10 @@ namespace flame
 						aligner_data_listener = aligner->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
-								return;
+								return true;
 							if (thiz->management)
 								thiz->management->add_to_update_list(thiz);
+							return true;
 						}, new_mail_p(this));
 					}
 					void* text_data_listener = nullptr;
@@ -272,7 +275,7 @@ namespace flame
 						text_data_listener = text->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
-								return;
+								return true;
 							switch (hash)
 							{
 							case FLAME_CHASH("text"):
@@ -284,6 +287,7 @@ namespace flame
 									thiz->management->add_to_update_list(thiz);
 								break;
 							}
+							return true;
 						}, new_mail_p(this));
 					}
 					als.emplace_back(element, aligner, text, 

@@ -332,8 +332,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl *create();
 		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
 		FLAME_FOUNDATION_EXPORTS uint count();
-		FLAME_FOUNDATION_EXPORTS Closure<void(void*)>& item(uint idx);
-		FLAME_FOUNDATION_EXPORTS void* add_plain(void(*pf)(void* c), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS Closure<bool(void*)>& item(uint idx);
+		FLAME_FOUNDATION_EXPORTS void* add_plain(bool(*pf)(void* c), const Mail<>& capture, int pos);
 		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
 	};
 
@@ -342,9 +342,9 @@ namespace flame
 	{
 		ListenerHubImpl* impl;
 
-		void* add(F* pf, const Mail<>& capture)
+		void* add(F* pf, const Mail<>& capture, int pos = -1)
 		{
-			return impl->add_plain((void(*)(void* c))pf, capture);
+			return impl->add_plain((bool(*)(void* c))pf, capture, pos);
 		}
 
 		void remove(void* c)
@@ -357,7 +357,10 @@ namespace flame
 		{
 			auto count = impl->count();
 			for (auto i = 0; i < count; i++)
-				impl->item(i).call<F>(args...);
+			{
+				if (!impl->item(i).call<F>(args...))
+					break;
+			}
 		}
 	};
 	enum KeyState
@@ -402,88 +405,8 @@ namespace flame
 		Key_NumLock,
 		Key_ScrollLock,
 
-		KeyCount,
-
-		KeyMax = 0xffffffff
+		KeyCount
 	};
-
-	inline char* get_key_name(Key key)
-	{
-		switch (key)
-		{
-		case KeyNull:
-			return "";
-		case Key_Backspace:
-			return "backspace";
-		case Key_Enter:
-			return "enter";
-		case Key_Esc:
-			return "esc";
-		case Key_Space:
-			return "spcae";
-		case Key_Left:
-			return "left";
-		case Key_Up:
-			return "up";
-		case Key_Right:
-			return "right";
-		case Key_Down:
-			return "down";
-		case Key_A:
-			return "a";
-		case Key_B:
-			return "b";
-		case Key_C:
-			return "c";
-		case Key_D:
-			return "d";
-		case Key_E:
-			return "e";
-		case Key_F:
-			return "f";
-		case Key_G:
-			return "g";
-		case Key_H:
-			return "h";
-		case Key_I:
-			return "i";
-		case Key_J:
-			return "j";
-		case Key_K:
-			return "k";
-		case Key_L:
-			return "l";
-		case Key_M:
-			return "m";
-		case Key_N:
-			return "n";
-		case Key_O:
-			return "o";
-		case Key_P:
-			return "p";
-		case Key_Q:
-			return "q";
-		case Key_R:
-			return "r";
-		case Key_S:
-			return "s";
-		case Key_T:
-			return "t";
-		case Key_U:
-			return "u";
-		case Key_V:
-			return "v";
-		case Key_W:
-			return "w";
-		case Key_X:
-			return "x";
-		case Key_Y:
-			return "y";
-		case Key_Z:
-			return "z";
-		}
-		return "";
-	}
 
 	enum MouseKey
 	{
@@ -665,10 +588,10 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		ListenerHub<void(void* c, KeyStateFlags action, int value)>							key_listeners;
-		ListenerHub<void(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
-		ListenerHub<void(void* c, const Vec2u & size)>										resize_listeners;
-		ListenerHub<void(void* c)>															destroy_listeners;
+		ListenerHub<bool(void* c, KeyStateFlags action, int value)>							key_listeners;
+		ListenerHub<bool(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
+		ListenerHub<bool(void* c, const Vec2u & size)>										resize_listeners;
+		ListenerHub<bool(void* c)>															destroy_listeners;
 
 		FLAME_FOUNDATION_EXPORTS void close();
 

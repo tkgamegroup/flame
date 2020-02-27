@@ -86,6 +86,7 @@ namespace flame
 							}
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}

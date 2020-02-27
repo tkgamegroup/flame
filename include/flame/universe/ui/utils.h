@@ -374,6 +374,7 @@ namespace flame
 						auto& m = *(WrapedMail*)c;
 						m.f(m.m.p);
 					}
+					return true;
 				}, new_m);
 			}
 			if (use_style)
@@ -505,6 +506,7 @@ namespace flame
 					capture.e->set_visibility(false);
 					capture.d->set_visibility(true);
 				}
+				return true;
 			}, new_mail(&capture));
 
 			capture.d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -532,6 +534,7 @@ namespace flame
 						capture.e_t->set_text(std::to_wstring(v).c_str());
 					}
 				}
+				return true;
 			}, new_mail(&capture));
 
 			return e;
@@ -596,6 +599,7 @@ namespace flame
 					auto thumb = (*(cScrollbarThumb**)c);
 					if (is_mouse_scroll(action, key))
 						thumb->update(-pos.x() * 20.f);
+					return true;
 				}, new_mail_p(ct));
 				c_aligner(SizeFitParent, SizeFitParent);
 			}
@@ -923,6 +927,7 @@ namespace flame
 					remove_top_layer(m.root);
 					m.f(m.m.p);
 				}
+				return true;
 			}, new_m);
 			auto cs = c_style_color();
 			cs->color_normal = style_4c(FrameColorNormal);

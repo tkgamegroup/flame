@@ -46,6 +46,7 @@ namespace flame
 					auto thiz = *(cMoveablePrivate**)c;
 					if (thiz->event_receiver->active && is_mouse_move(action, key))
 						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, true);
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -83,9 +84,9 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cBringToFrontPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
+						auto thiz = *(cBringToFrontPrivate**)c;
 						if (!ui::get_top_layer(thiz->entity->parent()->parent(), true))
 						{
 							looper().add_event([](void* c, bool*) {
@@ -98,6 +99,7 @@ namespace flame
 							}, new_mail_p(thiz->entity));
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -147,6 +149,7 @@ namespace flame
 					auto thiz = (*(cSizeDraggerPrivate**)c);
 					if (is_mouse_move(action, key) && thiz->event_receiver->active)
 						thiz->p_element->set_size(Vec2f(pos), true);
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -295,6 +298,7 @@ namespace flame
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cDockerTabPrivate**)c)->draw(canvas);
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
@@ -308,6 +312,7 @@ namespace flame
 						thiz->element->set_pos(Vec2f(pos), true);
 						thiz->page_element->set_pos(Vec2f(pos), true);
 					}
+					return true;
 				}, new_mail_p(this));
 
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
@@ -360,6 +365,7 @@ namespace flame
 							}, new_mail_p(thiz));
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cListItem"))
@@ -525,6 +531,7 @@ namespace flame
 							}, new_mail_p(thiz));
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cList"))
@@ -545,6 +552,7 @@ namespace flame
 							pages->child(idx)->set_visibility(true);
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -794,6 +802,7 @@ namespace flame
 							}, new_mail_p(thiz));
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -894,6 +903,7 @@ namespace flame
 							}, new_mail_p(thiz));
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}

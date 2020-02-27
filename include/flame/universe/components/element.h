@@ -49,7 +49,7 @@ namespace flame
 		{
 		}
 
-		ListenerHub<void(void* c, graphics::Canvas * canvas)> cmds;
+		ListenerHub<bool(void* c, graphics::Canvas * canvas)> cmds;
 
 		FLAME_UNIVERSE_EXPORTS void set_x(float x, bool add = false, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_y(float y, bool add = false, void* sender = nullptr);

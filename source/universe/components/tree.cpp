@@ -69,6 +69,7 @@ namespace flame
 						auto thiz = *(cTreeLeafPrivate**)c;
 						thiz->tree->set_selected(thiz->entity);
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
@@ -147,6 +148,7 @@ namespace flame
 						auto thiz = *(cTreeNodeTitlePrivate**)c;
 						thiz->tree->set_selected(thiz->entity->parent());
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
@@ -202,6 +204,7 @@ namespace flame
 						e->set_visibility(!e->visibility_);
 						thiz->text->set_text(e->visibility_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -237,6 +240,7 @@ namespace flame
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						(*(cTreePrivate**)c)->set_selected(nullptr);
+					return true;
 				}, new_mail_p(this));
 			}
 		}

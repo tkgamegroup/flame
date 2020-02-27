@@ -58,14 +58,15 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cComboboxItemPrivate**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
+						auto thiz = *(cComboboxItemPrivate**)c;
 						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
 						auto combobox = menu->entity->get_component(cCombobox);
 						ui::remove_top_layer(menu->root);
 						combobox->set_index(thiz->idx);
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor"))

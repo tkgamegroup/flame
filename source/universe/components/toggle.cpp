@@ -48,6 +48,7 @@ namespace flame
 						auto thiz = *(cTogglePrivate**)c;
 						thiz->set_toggled(!thiz->toggled);
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))

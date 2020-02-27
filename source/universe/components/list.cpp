@@ -55,6 +55,7 @@ namespace flame
 						if (thiz->list)
 							thiz->list->set_selected(thiz->entity);
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
@@ -111,10 +112,9 @@ namespace flame
 				if (select_air_when_clicked)
 				{
 					mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto thiz = *(cListPrivate**)c;
-
 						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							thiz->set_selected(nullptr);
+							(*(cListPrivate**)c)->set_selected(nullptr);
+						return true;
 					}, new_mail_p(this));
 				}
 			}

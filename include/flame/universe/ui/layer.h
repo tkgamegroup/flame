@@ -54,13 +54,14 @@ namespace flame
 			if (!modal)
 			{
 				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto e = *(Entity**)c;
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
+						auto e = *(Entity**)c;
 						auto l = get_top_layer(e);
 						if (l)
 							remove_top_layer(e);
 					}
+					return true;
 				}, new_mail_p(parent));
 			}
 			l->add_component(c_event_receiver);

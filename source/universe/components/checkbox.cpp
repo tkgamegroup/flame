@@ -40,6 +40,7 @@ namespace flame
 						auto thiz = *(cCheckboxPrivate**)c;
 						thiz->set_checked(!thiz->checked);
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))

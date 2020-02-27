@@ -234,6 +234,7 @@ namespace flame
 				else
 					thiz->sc = nullptr;
 				thiz->changed = true;
+				return true;
 			}, new_mail(&thiz));
 		}
 		

@@ -37,6 +37,7 @@ namespace flame
 					auto thiz = *(cMenuItemsPrivate**)c;
 					if (thiz->menu)
 						thiz->menu->opened = false;
+					return true;
 				}, new_mail_p(this));
 			}
 		}
@@ -167,6 +168,7 @@ namespace flame
 					auto thiz = *(cMenuPrivate**)c;
 					if (ui::is_menu_can_open(thiz, action, key))
 						thiz->open((Vec2f)pos);
+					return true;
 				}, new_mail_p(this));
 			}
 		}

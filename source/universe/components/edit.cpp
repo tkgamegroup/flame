@@ -60,6 +60,7 @@ namespace flame
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cEditPrivate**)c)->draw(canvas);
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cText"))
@@ -73,6 +74,7 @@ namespace flame
 						thiz->text_changed = true;
 						break;
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
@@ -134,13 +136,14 @@ namespace flame
 							break;
 						}
 					}
+
+					return true;
 				}, new_mail_p(this));
 
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cEditPrivate**)c;
-
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
+						auto thiz = *(cEditPrivate**)c;
 						auto element = thiz->element;
 						auto text = thiz->text;
 						auto atlas = text->font_atlas;
@@ -177,6 +180,7 @@ namespace flame
 								y += line_space;
 						}
 					}
+					return true;
 				}, new_mail_p(this));
 			}
 		}
