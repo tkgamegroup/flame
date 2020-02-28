@@ -69,6 +69,12 @@ int main(int argc, char **args)
 			s /= n;
 		}
 
+		if (!std::filesystem::exists(s))
+		{
+			printf("cannot find src file: %s\n", s.string().c_str());
+			continue;
+		}
+
 		{
 			auto _sp = SUS::split(sp[1], '/');
 			for (auto j = 0; j < _sp.size(); j++)

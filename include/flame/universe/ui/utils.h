@@ -436,11 +436,11 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_image(uint id, const Vec2f& size, float padding = 0.f, float frame_thickness = 0.f, const Vec4c& frame_color = Vec4c(0))
+		inline Entity* e_image(uint id, float padding = 0.f, float frame_thickness = 0.f, const Vec4c& frame_color = Vec4c(0))
 		{
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->size_ = size + Vec2f(padding) * 2.f;
+			ce->size_ = next_element_size + Vec2f(padding) * 2.f;
 			ce->inner_padding_ = Vec4f(padding);
 			ce->frame_thickness_ = frame_thickness;
 			ce->frame_color_ = frame_color;

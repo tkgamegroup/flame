@@ -116,6 +116,14 @@ namespace flame
 			}
 			else
 				default_set = nullptr;
+
+			hash = 0;
+			for (auto& b : bindings)
+			{
+				hash_update(hash, b.type);
+				hash_update(hash, FLAME_HASH(b.name));
+				hash_update(hash, b.count);
+			}
 		}
 
 		DescriptorlayoutPrivate::~DescriptorlayoutPrivate()
@@ -593,6 +601,11 @@ namespace flame
 			dsls.resize(descriptorlayout_count);
 			for (auto i = 0; i < dsls.size(); i++)
 				dsls[i] = (DescriptorlayoutPrivate*)descriptorlayouts[i];
+
+			hash = 0;
+			for (auto& d : dsls)
+				hash_update(hash, d->hash);
+			hash_update(hash, pc_size);
 		}
 
 		PipelinelayoutPrivate::~PipelinelayoutPrivate()
@@ -765,252 +778,349 @@ namespace flame
 			}
 		};
 
-		const std::regex shader_regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
-		const std::regex shader_regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
-		const std::regex shader_regex_pc(R"(\s*pushconstant)");
-		const std::regex shader_regex_ubo(R"(\s*uniform\s+([\w]+))");
-		const std::regex shader_regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
-
 		void compile_shaders(DevicePrivate* d, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
 		{
+			const std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
+			const std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
+			const std::regex regex_pc(R"(\s*pushconstant)");
+			const std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
+			const std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
+
+			auto hash = 0U;
+			for (auto& s : stage_infos)
+			{
+				hash = hash_update(hash, FLAME_HASH(s.path.c_str()));
+				hash = hash_update(hash, FLAME_HASH(s.prefix.c_str()));
+			}
+			hash = hash_update(hash, pll->hash);
+			for (auto i = 0; i < vi->buffer_count; i++)
+			{
+				auto b = vi->buffers[i];
+				for (auto j = 0; j < b->attribute_count; j++)
+				{
+					auto a = b->attributes[j];
+					hash = hash_update(hash, a->format);
+					hash = hash_update(hash, FLAME_HASH(a->name));
+				}
+				hash = hash_update(hash, b->rate);
+			}
+			hash = hash_update(hash, vi->primitive_topology);
+			hash = hash_update(hash, vi->patch_control_points);
+			auto hash_str = std::to_wstring(hash);
+
 			for (auto i = 0; i < stage_infos.size(); i++)
 			{
 				auto& s = stage_infos[i];
 
-				std::ifstream src(s.path);
+				std::filesystem::path spv_path = s.path;
+				spv_path += L".";
+				spv_path += hash_str;
+				auto res_path = spv_path;
+				spv_path += L".spv";
+				res_path += L".res";
 
-				std::string glsl_header = "#version 450 core\n"
-					"#extension GL_ARB_shading_language_420pack : enable\n";
-				if (s.type != ShaderStageComp)
-					glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
-				glsl_header += s.prefix + "\n";
-
-				auto type_id = 0;
-
-				std::ofstream glsl_file(L"out.glsl");
-				glsl_file << glsl_header;
+				if (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(s.path))
 				{
-					std::string line;
-					std::smatch res;
-					while (!src.eof())
-					{
-						std::getline(src, line);
+					wprintf(L"begin compiling shader:%s\n", s.path.c_str());
 
-						if (std::regex_search(line, res, shader_regex_in))
+					std::ifstream src(s.path);
+
+					std::string glsl_header = "#version 450 core\n"
+						"#extension GL_ARB_shading_language_420pack : enable\n";
+					if (s.type != ShaderStageComp)
+						glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
+					glsl_header += s.prefix + "\n";
+
+					auto type_id = 0;
+
+					std::ofstream glsl_file(L"out.glsl");
+					glsl_file << glsl_header;
+					{
+						std::string line;
+						std::smatch res;
+						while (!src.eof())
 						{
-							StageInfo::InOut in(res[2].str(), res[1].str());
-							if (s.type == ShaderStageVert)
+							std::getline(src, line);
+
+							auto get_formated_type = [](const std::string& type) {
+								auto ret = type;
+								if (ret[0] == 'i' || ret[0] == 'u')
+									ret = "flat " + ret;
+								return ret;
+							};
+
+							if (std::regex_search(line, res, regex_in))
 							{
-								auto location = 0;
-								if (vi)
+								StageInfo::InOut in;
+								in.type = res[1].str();
+								in.name = res[2].str();
+								if (s.type == ShaderStageVert)
 								{
-									for (auto i = 0; i < vi->buffer_count; i++)
+									auto location = 0;
+									if (vi)
 									{
-										const auto& b = *vi->buffers[i];
-										for (auto j = 0; j < b.attribute_count; j++)
+										for (auto i = 0; i < vi->buffer_count; i++)
 										{
-											const auto& a = *b.attributes[j];
-											if (a.name == in.name)
+											const auto& b = *vi->buffers[i];
+											for (auto j = 0; j < b.attribute_count; j++)
 											{
-												glsl_file << "layout (location = " + std::to_string(location) + +") in " + in.formated_type + " i_" + in.name + ";\n";
-												location = -1;
-												break;
+												const auto& a = *b.attributes[j];
+												if (a.name == in.name)
+												{
+													glsl_file << "layout (location = " + std::to_string(location) + +") in " + get_formated_type(in.type) + " i_" + in.name + ";\n";
+													location = -1;
+													break;
+												}
+												location++;
 											}
-											location++;
+											if (location == -1)
+												break;
 										}
-										if (location == -1)
-											break;
 									}
 								}
-							}
-							else
-							{
-								auto& ps = stage_infos[i - 1];
-								for (auto j = 0; j < ps.outputs.size(); j++)
+								else
 								{
-									if (ps.outputs[j].name == in.name)
+									auto& ps = stage_infos[i - 1];
+									for (auto j = 0; j < ps.outputs.size(); j++)
 									{
-										glsl_file << "layout (location = " + std::to_string(j) + +") in " + in.formated_type + " i_" + in.name + ";\n";
-										break;
+										if (ps.outputs[j].name == in.name)
+										{
+											glsl_file << "layout (location = " + std::to_string(j) + +") in " + get_formated_type(in.type) + " i_" + in.name + ";\n";
+											break;
+										}
 									}
 								}
 								s.inputs.push_back(in);
 							}
-						}
-						else if (std::regex_search(line, res, shader_regex_out))
-						{
-							StageInfo::InOut out(res[2].str(), res[1].str());
-							auto dual = false;
-							if (s.type == ShaderStageFrag)
+							else if (std::regex_search(line, res, regex_out))
 							{
-								if (res[3].matched)
+								StageInfo::InOut out;
+								out.type = res[1].str();
+								out.name = res[2].str();
+								auto dual = false;
+								if (s.type == ShaderStageFrag)
 								{
-									out.blend_enable = true;
-									auto sp = SUS::split(res[4].str());
-									for (auto& p : sp)
+									StageInfo::BlendOptions bo;
+									if (res[3].matched)
 									{
-										auto sp = SUS::split(p, ':');
-										BlendFactor f;
-										if (sp[1] == "0")
-											f = BlendFactorZero;
-										else if (sp[1] == "1")
-											f = BlendFactorOne;
-										else if (sp[1] == "sa")
-											f = BlendFactorSrcAlpha;
-										else if (sp[1] == "1msa")
-											f = BlendFactorOneMinusSrcAlpha;
-										else if (sp[1] == "s1c")
+										bo.enable = true;
+										auto sp = SUS::split(res[4].str());
+										for (auto& p : sp)
 										{
-											dual = true;
-											f = BlendFactorSrc1Color;
+											auto sp = SUS::split(p, ':');
+											BlendFactor f;
+											if (sp[1] == "0")
+												f = BlendFactorZero;
+											else if (sp[1] == "1")
+												f = BlendFactorOne;
+											else if (sp[1] == "sa")
+												f = BlendFactorSrcAlpha;
+											else if (sp[1] == "1msa")
+												f = BlendFactorOneMinusSrcAlpha;
+											else if (sp[1] == "s1c")
+											{
+												dual = true;
+												f = BlendFactorSrc1Color;
+											}
+											else if (sp[1] == "1ms1c")
+											{
+												dual = true;
+												f = BlendFactorOneMinusSrc1Color;
+											}
+											else
+												continue;
+											if (sp[0] == "sc")
+												bo.src_color = f;
+											else if (sp[0] == "dc")
+												bo.dst_color = f;
+											else if (sp[0] == "sa")
+												bo.src_alpha = f;
+											else if (sp[0] == "da")
+												bo.dst_alpha = f;
 										}
-										else if (sp[1] == "1ms1c")
+									}
+									s.blend_options.push_back(bo);
+								}
+								if (dual)
+								{
+									glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 0) out " + get_formated_type(out.type) + " o_" + out.name + "0;\n";
+									glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 1) out " + get_formated_type(out.type) + " o_" + out.name + "1;\n";
+								}
+								else
+									glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
+								s.outputs.push_back(out);
+							}
+							else if (std::regex_search(line, res, regex_pc))
+							{
+								if (pll && pll->pc_size > 0)
+									glsl_file << "layout (push_constant) uniform pc_t\n";
+								else
+									glsl_file << "struct type_" + std::to_string(type_id++) + "\n";
+							}
+							else if (std::regex_search(line, res, regex_ubo))
+							{
+								auto set = 0;
+								auto binding = -1;
+								if (pll)
+								{
+									auto name = res[1].str();
+									for (auto j = 0; j < pll->dsls.size(); j++)
+									{
+										auto dsl = pll->dsls[j];
+										for (auto k = 0; k < dsl->bindings.size(); k++)
 										{
-											dual = true;
-											f = BlendFactorOneMinusSrc1Color;
+											if (dsl->bindings[k].name == name)
+											{
+												set = j;
+												binding = k;
+												glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform type_" + std::to_string(type_id) + "\n";
+												break;
+											}
 										}
-										else
-											continue;
-										if (sp[0] == "sc")
-											out.blend_src_color = f;
-										else if (sp[0] == "dc")
-											out.blend_dst_color = f;
-										else if (sp[0] == "sa")
-											out.blend_src_alpha = f;
-										else if (sp[0] == "da")
-											out.blend_dst_alpha = f;
+										if (binding != -1)
+											break;
 									}
 								}
+								if (binding == -1)
+									glsl_file << "struct eliminate_" + std::to_string(type_id) + "\n";
+								type_id++;
 							}
-							if (dual)
+							else if (std::regex_search(line, res, regex_tex))
 							{
-								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 0) out " + out.formated_type + " o_" + out.name + "0;\n";
-								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 1) out " + out.formated_type + " o_" + out.name + "1;\n";
+								auto set = 0;
+								auto binding = -1;
+								if (pll)
+								{
+									auto name = res[1].str();
+									for (auto j = 0; j < pll->dsls.size(); j++)
+									{
+										auto dsl = pll->dsls[j];
+										for (auto k = 0; k < dsl->bindings.size(); k++)
+										{
+											if (dsl->bindings[k].name == name)
+											{
+												set = j;
+												binding = k;
+												glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform sampler2D " + name + (res[2].matched ? res[2].str() : "") + ";\n";
+												break;
+											}
+										}
+										if (binding != -1)
+											break;
+									}
+								}
 							}
 							else
-								glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + out.formated_type + " o_" + out.name + ";\n";
-							s.outputs.push_back(out);
+								glsl_file << line + "\n";
 						}
-						else if (std::regex_search(line, res, shader_regex_pc))
-						{
-							if (pll && pll->pc_size > 0)
-								glsl_file << "layout (push_constant) uniform pc_t\n";
-							else
-								glsl_file << "struct type_" + std::to_string(type_id++) + "\n";
-						}
-						else if (std::regex_search(line, res, shader_regex_ubo))
-						{
-							auto set = 0;
-							auto binding = -1;
-							if (pll)
-							{
-								auto name = res[1].str();
-								for (auto j = 0; j < pll->dsls.size(); j++)
-								{
-									auto dsl = pll->dsls[j];
-									for (auto k = 0; k < dsl->bindings.size(); k++)
-									{
-										if (dsl->bindings[k].name == name)
-										{
-											set = j;
-											binding = k;
-											glsl_file << "layout (set = " + std::to_string(set) + ", binding = "+ std::to_string(binding) + ") uniform type_" + std::to_string(type_id) + "\n";
-											break;
-										}
-									}
-									if (binding != -1)
-										break;
-								}
-							}
-							if (binding == -1)
-								glsl_file << "struct eliminate_" + std::to_string(type_id) + "\n";
-							type_id++;
-						}
-						else if (std::regex_search(line, res, shader_regex_tex))
-						{
-							auto set = 0;
-							auto binding = -1;
-							if (pll)
-							{
-								auto name = res[1].str();
-								for (auto j = 0; j < pll->dsls.size(); j++)
-								{
-									auto dsl = pll->dsls[j];
-									for (auto k = 0; k < dsl->bindings.size(); k++)
-									{
-										if (dsl->bindings[k].name == name)
-										{
-											set = j;
-											binding = k;
-											glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform sampler2D " + name + (res[2].matched ? res[2].str() : "") + ";\n";
-											break;
-										}
-									}
-									if (binding != -1)
-										break;
-								}
-							}
-						}
-						else
-							glsl_file << line + "\n";
-					}
 
-				}
-				glsl_file.close();
-
-				if (std::filesystem::exists(L"out.spv"))
-					std::filesystem::remove(L"out.spv");
-
-				auto vk_sdk_path = s2w(getenv("VK_SDK_PATH"));
-				assert(vk_sdk_path != L"");
-
-				std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -o out.spv");
-
-				auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), (wchar_t*)command_line.c_str());
-				std::filesystem::remove(L"out.glsl");
-				if (!std::filesystem::exists(L"out.spv"))
-				{
-					printf("shader \"%s\" compile error:\n%s\n", w2s(s.filename).c_str(), output.v);
-					printf("trying to use fallback");
-
-					std::ofstream glsl_file(L"out.glsl");
-					glsl_file << glsl_header;
-					switch (s.type)
-					{
-					case ShaderStageVert:
-						glsl_file << "void main()\n"
-							"{\n"
-							"\tgl_Position = vec4(0, 0, 0, 1);"
-							"}\n";
-						break;
-					case ShaderStageFrag:
-						glsl_file <<
-							"void main()\n"
-							"{\n"
-							"}\n";
-						break;
-					default:
-						assert(0); // WIP
 					}
 					glsl_file.close();
 
-					auto output = exec_and_get_output((vk_sdk_path + L"/Bin/glslc.exe").c_str(), (wchar_t*)command_line.c_str());
-					std::filesystem::remove(L"out.glsl");
-					if (!std::filesystem::exists(L"out.spv"))
+					if (std::filesystem::exists(spv_path))
+						std::filesystem::remove(spv_path);
+
+					auto vk_sdk_path = getenv("VK_SDK_PATH");
+					if (!vk_sdk_path)
 					{
-						printf(" - failed\n error:\n%s", output.v);
+						printf("cannot find vk sdk\n");
 						assert(0);
 					}
 
-					printf(" - ok\n");
+					std::filesystem::path glslc_path = vk_sdk_path;
+					glslc_path /= L"Bin/glslc.exe";
+
+					std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -o" + spv_path.wstring());
+
+					auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
+					std::filesystem::remove(L"out.glsl");
+					if (!std::filesystem::exists(spv_path))
+					{
+						printf("compile error:\n%s\n", output.v);
+						printf("trying to use fallback");
+
+						std::ofstream glsl_file(L"out.glsl");
+						glsl_file << glsl_header;
+						switch (s.type)
+						{
+						case ShaderStageVert:
+							glsl_file << "void main()\n"
+								"{\n"
+								"\tgl_Position = vec4(0, 0, 0, 1);"
+								"}\n";
+							break;
+						case ShaderStageFrag:
+							glsl_file <<
+								"void main()\n"
+								"{\n"
+								"}\n";
+							break;
+						default:
+							assert(0); // WIP
+						}
+						glsl_file.close();
+
+						auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
+						std::filesystem::remove(L"out.glsl");
+						if (!std::filesystem::exists(spv_path))
+						{
+							printf(" - failed\n error:\n%s", output.v);
+							assert(0);
+						}
+
+						printf(" - ok\n");
+					}
+
+					wprintf(L"end compiling shader:%s\n", s.path.c_str());
+
+					{
+						nlohmann::json json;
+						if (s.type == ShaderStageFrag)
+						{
+							auto& bos = json["blend_options"];
+							for (auto i = 0; i < s.blend_options.size(); i++)
+							{
+								auto& bo = bos[i];
+								auto& src = s.blend_options[i];
+								bo["enable"] = src.enable;
+								bo["src_color"] = src.src_color;
+								bo["dst_color"] = src.dst_color;
+								bo["src_alpha"] = src.src_alpha;
+								bo["dst_alpha"] = src.dst_alpha;
+							}
+						}
+						std::ofstream res(res_path);
+						res << json.dump();
+						res.close();
+					}
+				}
+				else
+				{
+					auto res = get_file_content(res_path);
+					if (!res.empty())
+					{
+						auto json = nlohmann::json::parse(res);
+						if (s.type == ShaderStageFrag)
+						{
+							auto& bos = json["blend_options"];
+							for (auto i = 0; i < bos.size(); i++)
+							{
+								auto& bo = bos[i];
+								StageInfo::BlendOptions dst;
+								dst.enable = bo["enable"].get<bool>();
+								dst.src_color = (BlendFactor)bo["src_color"].get<int>();
+								dst.dst_color = (BlendFactor)bo["dst_color"].get<int>();
+								dst.src_alpha = (BlendFactor)bo["src_alpha"].get<int>();
+								dst.dst_alpha = (BlendFactor)bo["dst_alpha"].get<int>();
+								s.blend_options.push_back(dst);
+							}
+						}
+					}
 				}
 
-				auto spv_file = get_file_content(L"out.spv");
+				auto spv_file = get_file_content(spv_path);
 				if (spv_file.empty())
 					assert(0);
-
-				if (std::filesystem::exists(L"out.spv"))
-					std::filesystem::remove(L"out.spv");
 
 #if defined(FLAME_VULKAN)
 				VkShaderModuleCreateInfo shader_info;
@@ -1267,17 +1377,17 @@ namespace flame
 			}
 			if (stage_infos.back().type == ShaderStageFrag)
 			{
-				auto& outputs = stage_infos.back().outputs;
-				for (auto i = 0; i < outputs.size(); i++)
+				auto& bos = stage_infos.back().blend_options;
+				for (auto i = 0; i < bos.size(); i++)
 				{
-					const auto& src = outputs[i];
+					const auto& src = bos[i];
 					auto& dst = vk_blend_attachment_states[i];
-					dst.blendEnable = src.blend_enable;
-					dst.srcColorBlendFactor = to_backend(src.blend_src_color);
-					dst.dstColorBlendFactor = to_backend(src.blend_dst_color);
+					dst.blendEnable = src.enable;
+					dst.srcColorBlendFactor = to_backend(src.src_color);
+					dst.dstColorBlendFactor = to_backend(src.dst_color);
 					dst.colorBlendOp = VK_BLEND_OP_ADD;
-					dst.srcAlphaBlendFactor = to_backend(src.blend_src_alpha);
-					dst.dstAlphaBlendFactor = to_backend(src.blend_dst_alpha);
+					dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
+					dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
 					dst.alphaBlendOp = VK_BLEND_OP_ADD;
 					dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				}

@@ -142,7 +142,8 @@ struct MyApp : App
 					}, new_mail_p(ui::next_entity));
 					ui::e_checkbox(L"Checkbox");
 					ui::e_toggle(L"Toggle");
-					ui::e_image(img_id << 16, Vec2f(250.f), 4.f, 2.f, Vec4c(10, 200, 10, 255));
+					ui::next_element_size = 250.f;
+					ui::e_image(img_id << 16, 4.f, 2.f, Vec4c(10, 200, 10, 255));
 					ui::e_edit(100.f);
 				ui::e_end_layout();
 

@@ -6,3 +6,5 @@
 *.dll
 *.lib
 *.typeinfo
+*.spv
+*.res

@@ -1197,16 +1197,19 @@ namespace flame
 			wcex.cbClsExtra = 0;
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
-			auto icon_image = Bitmap::create_from_file((std::filesystem::path(getenv("FLAME_PATH")) / L"art/ico.png").c_str());
-			if (icon_image)
+			wcex.hIcon = 0;
+			auto flame_path = getenv("FLAME_PATH");
+			if (flame_path)
 			{
-				icon_image->swap_channel(0, 2);
-				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x(), icon_image->size.y(), 1,
-					icon_image->bpp, nullptr, icon_image->data);
-				Bitmap::destroy(icon_image);
+				auto icon_image = Bitmap::create_from_file((std::filesystem::path(flame_path) / L"art/ico.png").c_str());
+				if (icon_image)
+				{
+					icon_image->swap_channel(0, 2);
+					wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x(), icon_image->size.y(), 1,
+						icon_image->bpp, nullptr, icon_image->data);
+					Bitmap::destroy(icon_image);
+				}
 			}
-			else
-				wcex.hIcon = 0;
 			wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 			wcex.hbrBackground = 0;
 			wcex.lpszMenuName = 0;

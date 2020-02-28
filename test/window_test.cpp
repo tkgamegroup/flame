@@ -9,6 +9,7 @@ int main(int argc, char** args)
 	w->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 		if (is_mouse_down(action, key))
 			(*(SysWindow**)c)->close();
+		return true;
 	}, new_mail(&w));
 
 	looper().loop([](void* c) {

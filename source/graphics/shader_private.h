@@ -39,6 +39,8 @@ namespace flame
 			std::vector<DescriptorBinding> bindings;
 			Descriptorset* default_set;
 
+			uint hash;
+
 			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* default_set_pool);
 			~DescriptorlayoutPrivate();
 		};
@@ -74,6 +76,8 @@ namespace flame
 
 			PipelinelayoutPrivate(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
+
+			uint hash;
 		};
 
 		struct StageInfo
@@ -81,36 +85,35 @@ namespace flame
 			struct InOut
 			{
 				std::string name;
-				std::string formated_type;
+				std::string type;
+			};
 
-				bool blend_enable;
-				BlendFactor blend_src_color;
-				BlendFactor blend_dst_color;
-				BlendFactor blend_src_alpha;
-				BlendFactor blend_dst_alpha;
+			struct BlendOptions
+			{
+				bool enable;
+				BlendFactor src_color;
+				BlendFactor dst_color;
+				BlendFactor src_alpha;
+				BlendFactor dst_alpha;
 				/*
-					if (blendEnable) 
+					if (Enable)
 					{
 						finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
 						finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
 					}
 					else
 						finalColor = newColor;
- 
+
 					finalColor = finalColor & colorWriteMask;
 				*/
 
-				InOut(const std::string& name, const std::string& type) :
-					name(name),
-					formated_type(type),
-					blend_enable(false),
-					blend_src_color(BlendFactorZero),
-					blend_dst_color(BlendFactorZero),
-					blend_src_alpha(BlendFactorZero),
-					blend_dst_alpha(BlendFactorZero)
+				BlendOptions() :
+					enable(false),
+					src_color(BlendFactorZero),
+					dst_color(BlendFactorZero),
+					src_alpha(BlendFactorZero),
+					dst_alpha(BlendFactorZero)
 				{
-					if (type[0] == 'i' || type[0] == 'u')
-						formated_type = "flat " + formated_type;
 				}
 			};
 
@@ -160,6 +163,7 @@ namespace flame
 
 			std::vector<InOut> inputs;
 			std::vector<InOut> outputs;
+			std::vector<BlendOptions> blend_options;
 			std::vector<std::unique_ptr<Resource>> uniform_buffers;
 			std::unique_ptr<Resource> push_constant;
 
@@ -176,6 +180,7 @@ namespace flame
 				if (sp.size() > 1)
 					prefix = w2s(sp[1]);
 				path = std::filesystem::canonical(filename);
+				path.make_preferred();
 				type = shader_stage_from_ext(path.extension());
 				vk_shader_module = 0;
 			}

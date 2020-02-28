@@ -24,12 +24,10 @@ void add_exclude(const std::wstring &i)
 	std::filesystem::path p(i);
 	auto i_fmt = p.wstring();
 
-	if (i_fmt.size() > 2 && i_fmt[0] == L'*' &&  is_slash_chr(i_fmt[1]))
-	{
+	if (i_fmt.size() > 2 && i_fmt[0] == L'*' && is_slash_chr(i_fmt[1]))
 		general_excludes.push_back(std::wstring(i_fmt.c_str() + 2));
-		return;
-	}
-	special_excludes.push_back(i_fmt);
+	else
+		special_excludes.push_back(i_fmt);
 }
 
 void add_default_extensions()

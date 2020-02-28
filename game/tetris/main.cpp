@@ -90,7 +90,7 @@ struct MyApp : App
 	cText* c_text_level;
 	cText* c_text_lines;
 	cText* c_text_score;
-	cText* c_text_garage;
+	Entity* e_garbage;
 
 	bool just_down_rotate_left;
 	bool just_down_rotate_right;
@@ -682,11 +682,8 @@ struct MyApp : App
 				}
 				else
 				{
-					ui::push_style_1u(ui::FontSize, 20);
 					ui::next_element_pos = Vec2f(90.f, 500.f);
-					c_text_garage = ui::e_text(L"")->get_component(cText);
-					c_text_garage->color = Vec4c(200, 120, 100, 255);
-					ui::pop_style(ui::FontSize);
+					e_garbage = ui::e_element();
 				}
 
 			ui::pop_parent();
@@ -738,8 +735,6 @@ struct MyApp : App
 				c_text_lines->set_text(wfmt(L"%04d", lines).c_str());
 			c_text_score->set_text(wfmt(L"%09d", score).c_str());
 		}
-		else
-			c_text_garage->set_text(wfmt(L"%02d", garbage).c_str());
 	}
 
 	void start_game()
@@ -762,6 +757,7 @@ struct MyApp : App
 		lines = 0;
 		score = 0;
 		clear_ticks = -1;
+		garbage = 0;
 		mino_pos = Vec2i(0, -1);
 		mino_type = MinoTypeCount;
 		mino_hold = MinoTypeCount;
@@ -978,6 +974,7 @@ struct MyApp : App
 			{
 				if ((game_mode == GameMulti || !paused) && gaming && !win)
 				{
+					auto last_garbage = garbage;
 					if (clear_ticks != -1)
 					{
 						clear_ticks--;
@@ -1411,6 +1408,18 @@ struct MyApp : App
 					}
 
 					update_status();
+					if (last_garbage != garbage)
+					{
+						e_garbage->remove_children(0, -1);
+						ui::push_parent(e_garbage);
+						for (auto i = 0; i < garbage; i++)
+						{
+							ui::next_element_pos = Vec2f(0.f, -i * 24.f);
+							ui::next_element_size = Vec2f(24.f);
+							ui::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+						}
+						ui::pop_parent();
+					}
 				}
 
 				just_down_rotate_left = false;
