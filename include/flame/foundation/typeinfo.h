@@ -193,6 +193,24 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS uint function_count() const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int* out_idx = nullptr) const;
+
+		inline void serialize(const void* src, int precision, nlohmann::json& dst) const
+		{
+			for (auto i = 0; i < variable_count(); i++)
+			{
+				auto v = variable(i);
+				dst[v->name()] = v->type()->serialize((char*)src + v->offset(), precision);
+			}
+		}
+
+		inline void unserialize(const nlohmann::json& src, const void* dst) const
+		{
+			for (auto i = 0; i < variable_count(); i++)
+			{
+				auto v = variable(i);
+				v->type()->unserialize(src[v->name()].get<std::string>(), (char*)dst + v->offset());
+			}
+		}
 	};
 
 	struct TypeinfoDatabase

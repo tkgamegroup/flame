@@ -310,7 +310,7 @@ int main(int argc, char **args)
 			delete[] version_data;
 		}
 	}
-	std::vector<std::filesystem::path> my_cpps;
+	std::vector<std::filesystem::path> my_sources;
 	IDiaEnumSourceFiles* _source_files;
 	IDiaSourceFile* _source_file;
 	session->findFile(nullptr, nullptr, 0, &_source_files);
@@ -318,7 +318,8 @@ int main(int argc, char **args)
 	{
 		_source_file->get_fileName(&pwname);
 		auto fn = std::filesystem::path(pwname);
-		if (fn.extension() == L".cpp")
+		auto ext = fn.extension();
+		if (ext == L".h" || ext == L".cpp")
 		{
 			auto my_file = false;
 			auto p = fn.parent_path();
@@ -332,7 +333,7 @@ int main(int argc, char **args)
 				p = p.parent_path();
 			}
 			if (my_file)
-				my_cpps.push_back(fn);
+				my_sources.push_back(fn);
 		}
 		_source_file->Release();
 	}
@@ -356,7 +357,7 @@ int main(int argc, char **args)
 	};
 	std::vector<DesiredUDT> desired_udts;
 
-	for (auto& cpp : my_cpps)
+	for (auto& cpp : my_sources)
 	{
 		std::ifstream file(cpp);
 		while (!file.eof())

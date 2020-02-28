@@ -1,4 +1,5 @@
 #include <flame/foundation/blueprint.h>
+#include <flame/foundation/typeinfo.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"
@@ -806,7 +807,7 @@ namespace flame
 			}
 			hash = hash_update(hash, vi->primitive_topology);
 			hash = hash_update(hash, vi->patch_control_points);
-			auto hash_str = std::to_wstring(hash);
+			auto str_hash = std::to_wstring(hash);
 
 			for (auto i = 0; i < stage_infos.size(); i++)
 			{
@@ -814,7 +815,7 @@ namespace flame
 
 				std::filesystem::path spv_path = s.path;
 				spv_path += L".";
-				spv_path += hash_str;
+				spv_path += str_hash;
 				auto res_path = spv_path;
 				spv_path += L".spv";
 				res_path += L".res";
@@ -900,7 +901,7 @@ namespace flame
 								auto dual = false;
 								if (s.type == ShaderStageFrag)
 								{
-									StageInfo::BlendOptions bo;
+									BlendOptions bo;
 									if (res[3].matched)
 									{
 										bo.enable = true;
@@ -1077,17 +1078,10 @@ namespace flame
 						nlohmann::json json;
 						if (s.type == ShaderStageFrag)
 						{
+							auto info = find_udt(FLAME_CHASH("D#flame::graphics::BlendOptions"));
 							auto& bos = json["blend_options"];
 							for (auto i = 0; i < s.blend_options.size(); i++)
-							{
-								auto& bo = bos[i];
-								auto& src = s.blend_options[i];
-								bo["enable"] = src.enable;
-								bo["src_color"] = src.src_color;
-								bo["dst_color"] = src.dst_color;
-								bo["src_alpha"] = src.src_alpha;
-								bo["dst_alpha"] = src.dst_alpha;
-							}
+								info->serialize(&s.blend_options[i], 2, bos[i]);
 						}
 						std::ofstream res(res_path);
 						res << json.dump();
@@ -1102,16 +1096,12 @@ namespace flame
 						auto json = nlohmann::json::parse(res);
 						if (s.type == ShaderStageFrag)
 						{
+							auto info = find_udt(FLAME_CHASH("D#flame::graphics::BlendOptions"));
 							auto& bos = json["blend_options"];
 							for (auto i = 0; i < bos.size(); i++)
 							{
-								auto& bo = bos[i];
-								StageInfo::BlendOptions dst;
-								dst.enable = bo["enable"].get<bool>();
-								dst.src_color = (BlendFactor)bo["src_color"].get<int>();
-								dst.dst_color = (BlendFactor)bo["dst_color"].get<int>();
-								dst.src_alpha = (BlendFactor)bo["src_alpha"].get<int>();
-								dst.dst_alpha = (BlendFactor)bo["dst_alpha"].get<int>();
+								BlendOptions dst;
+								info->unserialize(bos[i], &dst);
 								s.blend_options.push_back(dst);
 							}
 						}

@@ -5,6 +5,8 @@
 #include <flame/graphics/shader.h>
 #include "graphics_private.h"
 
+#include <flame/reflect_macros.h>
+
 namespace flame
 {
 	struct SerializableNode;
@@ -80,41 +82,42 @@ namespace flame
 			uint hash;
 		};
 
+		struct R(BlendOptions, flame, graphics)
+		{
+			RV(bool, enable, n);
+			RV(BlendFactor, src_color, n);
+			RV(BlendFactor, dst_color, n);
+			RV(BlendFactor, src_alpha, n);
+			RV(BlendFactor, dst_alpha, n);
+
+			/*
+				if (Enable)
+				{
+					finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
+					finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
+				}
+				else
+					finalColor = newColor;
+
+				finalColor = finalColor & colorWriteMask;
+			*/
+
+			BlendOptions() :
+				enable(false),
+				src_color(BlendFactorZero),
+				dst_color(BlendFactorZero),
+				src_alpha(BlendFactorZero),
+				dst_alpha(BlendFactorZero)
+			{
+			}
+		};
+
 		struct StageInfo
 		{
 			struct InOut
 			{
 				std::string name;
 				std::string type;
-			};
-
-			struct BlendOptions
-			{
-				bool enable;
-				BlendFactor src_color;
-				BlendFactor dst_color;
-				BlendFactor src_alpha;
-				BlendFactor dst_alpha;
-				/*
-					if (Enable)
-					{
-						finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
-						finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
-					}
-					else
-						finalColor = newColor;
-
-					finalColor = finalColor & colorWriteMask;
-				*/
-
-				BlendOptions() :
-					enable(false),
-					src_color(BlendFactorZero),
-					dst_color(BlendFactorZero),
-					src_alpha(BlendFactorZero),
-					dst_alpha(BlendFactorZero)
-				{
-				}
 			};
 
 			struct Variable
