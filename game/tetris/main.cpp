@@ -90,6 +90,7 @@ struct MyApp : App
 	cText* c_text_level;
 	cText* c_text_lines;
 	cText* c_text_score;
+	cText* c_text_special;
 	Entity* e_garbage;
 
 	bool just_down_rotate_left;
@@ -109,7 +110,11 @@ struct MyApp : App
 	uint score;
 	int clear_ticks;
 	uint full_lines[4];
+	uint combo;
+	bool back_to_back;
+	int special_ticks;
 	uint garbage;
+	bool need_update_garbage;
 	Vec2i mino_pos;
 	MinoType mino_type;
 	MinoType mino_hold;
@@ -359,6 +364,7 @@ struct MyApp : App
 														auto value = req["value"].get<int>();
 														looper().add_event([](void* c, bool*) {
 															app.garbage = *(int*)c;
+															app.need_update_garbage = true;
 														}, new_mail(&value));
 													}
 
@@ -445,6 +451,7 @@ struct MyApp : App
 									auto value = req["value"].get<int>();
 									looper().add_event([](void* c, bool*) {
 										app.garbage = *(int*)c;
+										app.need_update_garbage = true;
 									}, new_mail(&value));
 								}
 							}, 
@@ -554,6 +561,7 @@ struct MyApp : App
 		{
 			auto ce = ui::c_element();
 			ce->frame_thickness_ = 6.f;
+			ce->color_ = Vec4c(30, 30, 30, 255);
 			ce->frame_color_ = Vec4c(255);
 			ce->clip_children = true;
 		}
@@ -682,9 +690,19 @@ struct MyApp : App
 				}
 				else
 				{
-					ui::next_element_pos = Vec2f(90.f, 500.f);
+					ui::next_element_pos = Vec2f(94.f, 516.f);
 					e_garbage = ui::e_element();
 				}
+
+				ui::push_style_1u(ui::FontSize, 28);
+				ui::next_element_pos = Vec2f(37.f, 200.f);
+				{
+					auto e = ui::e_text(L"");
+					e->set_visibility(false);
+					c_text_special = e->get_component(cText);
+				}
+				c_text_special->color = Vec4c(200, 80, 40, 255);
+				ui::pop_style(ui::FontSize);
 
 			ui::pop_parent();
 
@@ -757,7 +775,11 @@ struct MyApp : App
 		lines = 0;
 		score = 0;
 		clear_ticks = -1;
+		combo = 0;
+		back_to_back = false;
+		special_ticks = -1;
 		garbage = 0;
+		need_update_garbage = false;
 		mino_pos = Vec2i(0, -1);
 		mino_type = MinoTypeCount;
 		mino_hold = MinoTypeCount;
@@ -767,6 +789,14 @@ struct MyApp : App
 		mino_reset_times = -1;
 		mino_bottom_dist = 0;
 		mino_ticks = 0;
+		{
+			auto seed = ::time(0);
+			if (server)
+				seed++;
+			else if (client)
+				seed--;
+			srand(seed);
+		}
 		for (auto i = 0; i < 2; i++)
 			shuffle_pack(i);
 
@@ -974,7 +1004,6 @@ struct MyApp : App
 			{
 				if ((game_mode == GameMulti || !paused) && gaming && !win)
 				{
-					auto last_garbage = garbage;
 					if (clear_ticks != -1)
 					{
 						clear_ticks--;
@@ -1150,7 +1179,10 @@ struct MyApp : App
 						}
 						else
 						{
-							auto moved = false;
+							static auto last_is_rotate_action = false;
+							static auto mini = false;
+
+							auto rotated = false;
 
 							auto r = 0;
 							if (just_down_rotate_left)
@@ -1163,15 +1195,21 @@ struct MyApp : App
 								Vec2i offset;
 								if (super_rotation(r == 1, new_coords, &offset))
 								{
-									mino_rotation = get_rotation_idx(true);
+									if (offset != 0)
+										mini = true;
+									else
+										mini = false;
+									mino_rotation = get_rotation_idx(r == 1);
 									mino_pos += offset;
 									for (auto i = 0; i < 3; i++)
 										mino_coords[i] = new_coords[i];
-									moved = true;
+									rotated = true;
 
 									sound_move_src->play();
 								}
 							}
+
+							auto moved = false;
 
 							auto mx = 0;
 							if (key_states[key_map[KEY_LEFT]] & KeyStateDown)
@@ -1204,10 +1242,15 @@ struct MyApp : App
 								sound_move_src->play();
 							}
 
+							if (!last_is_rotate_action)
+								last_is_rotate_action = rotated && !moved;
+							else
+								last_is_rotate_action = !moved;
+
 							mino_bottom_dist = 0;
 							while (check_board(Vec2i(0, mino_bottom_dist + 1)))
 								mino_bottom_dist++;
-							if (moved)
+							if (rotated || moved)
 							{
 								if (game_mode == GameSinglePractice)
 									mino_ticks = 0;
@@ -1237,6 +1280,9 @@ struct MyApp : App
 								down_ticks_final = 1;
 							if (just_down_hard_drop || mino_ticks >= down_ticks_final)
 							{
+								if (mino_bottom_dist > 0)
+									last_is_rotate_action = false;
+
 								if (just_down_hard_drop || mino_bottom_dist == 0)
 								{
 									mino_pos.y() += mino_bottom_dist;
@@ -1252,8 +1298,6 @@ struct MyApp : App
 									{
 										if (line_full(i))
 										{
-											for (auto x = 0; x < board_width; x++)
-												c_board_main->set_cell(Vec2u(x, i), TileGrid);
 											full_lines[l] = i;
 
 											{
@@ -1302,30 +1346,162 @@ struct MyApp : App
 									lines += l;
 									if (l > 0)
 									{
-										clear_ticks = CLEAR_TICKS;
-										if (game_mode == GameSingleMarathon && lines % 5 == 0)
-										{
-											level++;
-											level = min(24U, level);
-										}
+										std::wstring special_str;
 
 										auto attack = 0;
+
+										if (combo >= 1)
+										{
+											if (combo > 12)
+												attack += 5;
+											else
+											{
+												switch (combo)
+												{
+												case 2:
+													attack += 1;
+													break;
+												case 3:
+													attack += 1;
+													break;
+												case 4:
+													attack += 2;
+													break;
+												case 5:
+													attack += 2;
+													break;
+												case 6:
+													attack += 3;
+													break;
+												case 7:
+													attack += 3;
+													break;
+												case 8:
+													attack += 4;
+													break;
+												case 9:
+													attack += 4;
+													break;
+												case 10:
+													attack += 4;
+													break;
+												case 11:
+													attack += 5;
+													break;
+												case 12:
+													attack += 5;
+													break;
+												}
+											}
+											special_str += wfmt(L"Ren %d\n", combo);
+										}
+										combo++;
+
+										auto tspin = mino_type == Mino_T && last_is_rotate_action;
+										if (tspin)
+										{
+											Vec2i judge_points[] = {
+												Vec2i(-1, -1),
+												Vec2i(+1, -1),
+												Vec2i(-1, +1),
+												Vec2i(+1, +1),
+											};
+											auto count = 0;
+											for (auto i = 0; i < array_size(judge_points); i++)
+											{
+												auto p = mino_pos + judge_points[i];
+												if (p.x() < 0 || p.x() >= board_width ||
+													p.y() < 0 || p.y() >= board_height || 
+													c_board_main->cell(p) != TileGrid)
+													count++;
+											}
+											if (count < 3)
+												tspin = false;
+										}
+
 										switch (l)
 										{
 										case 1:
-											score += 100;
+											if (tspin)
+											{
+												if (mini)
+												{
+													score += 400;
+													special_str += L"T-Spin\nMini\n";
+												}
+												else
+												{
+													score += 800;
+													attack += 2;
+													special_str += L"T-Spin\nSingle\n";
+												}
+												if (back_to_back)
+												{
+													score += mini ? 200 : 400;
+													attack++;
+													special_str += L"\nBack\nTo\nBack";
+												}
+												back_to_back = true;
+											}
+											else
+												back_to_back = false;
 											break;
 										case 2:
-											score += 300;
-											attack = 1;
+											if (tspin)
+											{
+												score += 1200;
+												attack += 4;
+												special_str += L"T-Spin\nDouble\n";
+												if (back_to_back)
+												{
+													score += 600;
+													attack++;
+													special_str += L"\nBack\nTo\nBack";
+												}
+												back_to_back = true;
+											}
+											else
+											{
+												score += 300;
+												attack += 1;
+												special_str += L"Double\n";
+												back_to_back = false;
+											}
 											break;
 										case 3:
-											score += 500;
-											attack = 2;
+											if (tspin)
+											{
+												score += 1600;
+												attack += 6;
+												special_str += L"T-Spin\nTriple\n";
+												if (back_to_back)
+												{
+													score += 800;
+													attack++;
+													special_str += L"\nBack\nTo\nBack";
+												}
+												back_to_back = true;
+											}
+											else
+											{
+												score += 500;
+												attack += 2;
+												special_str += L"Triple\n";
+												back_to_back = false;
+											}
 											break;
 										case 4:
 											score += 800;
-											attack = 4;
+											attack += 4;
+
+											special_str += L"Tetris\n";
+											if (back_to_back)
+											{
+												score += 400;
+												attack++;
+												special_str += L"\nBack\nTo\nBack";
+											}
+											back_to_back = true;
 											break;
 										}
 
@@ -1337,6 +1513,14 @@ struct MyApp : App
 											else
 												garbage -= cancel;
 											attack -= cancel;
+											need_update_garbage = true;
+										}
+
+										if (!special_str.empty())
+										{
+											c_text_special->entity->set_visibility(true);
+											c_text_special->set_text(special_str.c_str());
+											special_ticks = 24;
 										}
 
 										if (attack > 0)
@@ -1350,6 +1534,20 @@ struct MyApp : App
 											if (client)
 												client->send(str.data(), str.size());
 										}
+
+										for (auto i = 0; i < l; i++)
+										{
+											for (auto x = 0; x < board_width; x++)
+												c_board_main->set_cell(Vec2u(x, full_lines[i]), TileGrid);
+										}
+
+										clear_ticks = CLEAR_TICKS;
+										if (game_mode == GameSingleMarathon && lines % 5 == 0)
+										{
+											level++;
+											level = min(24U, level);
+										}
+
 
 										sound_clear_src->play();
 									}
@@ -1374,9 +1572,11 @@ struct MyApp : App
 												c_board_main->set_cell(Vec2u(hole, y), TileGrid);
 											}
 											garbage = 0;
+											need_update_garbage = true;
 										}
 
 										clear_ticks = 0;
+										combo = 0;
 									}
 									mino_pos.y() = -1;
 									mino_just_hold = false;
@@ -1401,14 +1601,14 @@ struct MyApp : App
 							if (mino_pos.y() != -1)
 							{
 								if (mino_bottom_dist)
-									draw_mino(c_board_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords);
+									draw_mino(c_board_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords, g_mino_colors[mino_type]);
 								draw_mino(c_board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
 							}
 						}
 					}
 
 					update_status();
-					if (last_garbage != garbage)
+					if (need_update_garbage)
 					{
 						e_garbage->remove_children(0, -1);
 						ui::push_parent(e_garbage);
@@ -1419,6 +1619,17 @@ struct MyApp : App
 							ui::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
 						}
 						ui::pop_parent();
+						need_update_garbage = false;
+					}
+				}
+
+				if (special_ticks != -1)
+				{
+					special_ticks--;
+					if (special_ticks <= 0)
+					{
+						c_text_special->entity->set_visibility(false);
+						special_ticks = -1;
 					}
 				}
 
@@ -1525,8 +1736,6 @@ int main(int argc, char **args)
 		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
 	}, new_mail_p(ui::current_entity()->get_component(cText)));
 	ui::pop_parent();
-
-	srand(time(0));
 
 	app.game_mode = GameMenu;
 	app.create_home_scene();

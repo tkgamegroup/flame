@@ -187,7 +187,7 @@ namespace flame
 		for (auto& t : tiles)
 		{
 			size.x() = max(t.pos.x() + t.b->size.x() + (border ? 1 : 0), size.x());
-			size.y() = max(t.pos.y() + t.b->size.y() + (border ? 1 : 0), size.y());
+			size.y() = max(t.pos.y() + t.b->size.y() + (border ? 1 : 0) + 1, size.y());
 		}
 
 		auto b = Bitmap::create(size, 4, 32);
@@ -199,8 +199,9 @@ namespace flame
 
 		Bitmap::save_to_file(b, output_path.c_str());
 
-		output_path.replace_extension(L".atlas");
-		std::ofstream atlas_file(output_path);
+		auto atlas_path = output_path;
+		atlas_path.replace_extension(L".atlas");
+		std::ofstream atlas_file(atlas_path);
 		atlas_file << "image = \"" << output_path.filename().string() << "\"\n";
 		atlas_file << "border = " << (border ? "1" : "0") << "\n";
 		atlas_file << "\n[tiles]\n";

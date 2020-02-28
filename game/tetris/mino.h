@@ -17,7 +17,8 @@ enum MinoType
 	MinoTypeCount
 };
 
-extern Vec2i g_mino_coords[7][3];
+extern Vec2i g_mino_coords[MinoTypeCount][3];
+extern Vec4c g_mino_colors[MinoTypeCount];
 
 extern Vec2i g_mino_LTSZJ_offsets[5][4];
 extern Vec2i g_mino_O_offsets[5][4];

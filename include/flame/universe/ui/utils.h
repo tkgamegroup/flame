@@ -440,7 +440,7 @@ namespace flame
 		{
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->size_ = next_element_size + Vec2f(padding) * 2.f;
+			ce->size_ += Vec2f(padding) * 2.f;
 			ce->inner_padding_ = Vec4f(padding);
 			ce->frame_thickness_ = frame_thickness;
 			ce->frame_color_ = frame_color;
