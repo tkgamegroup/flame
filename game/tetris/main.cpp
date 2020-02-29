@@ -63,11 +63,15 @@ struct MyApp : App
 	graphics::Atlas* atlas;
 
 	sound::Buffer* sound_move_buf;
-	sound::Buffer* sound_drop_buf;
+	sound::Buffer* sound_rotate_buf;
+	sound::Buffer* sound_soft_drop_buf;
+	sound::Buffer* sound_hard_drop_buf;
 	sound::Buffer* sound_clear_buf;
 	sound::Buffer* sound_hold_buf;
 	sound::Source* sound_move_src;
-	sound::Source* sound_drop_src;
+	sound::Source* sound_rotate_src;
+	sound::Source* sound_soft_drop_src;
+	sound::Source* sound_hard_drop_src;
 	sound::Source* sound_clear_src;
 	sound::Source* sound_hold_src;
 
@@ -1205,7 +1209,7 @@ struct MyApp : App
 										mino_coords[i] = new_coords[i];
 									rotated = true;
 
-									sound_move_src->play();
+									sound_rotate_src->play();
 								}
 							}
 
@@ -1319,17 +1323,17 @@ struct MyApp : App
 													uint f;
 												}capture;
 												capture.e = element;
-												capture.f = 10;
+												capture.f = 5;
 												looper().add_event([](void* c, bool* go_on) {
 													auto& capture = *(Capture*)c;
 													capture.f--;
 													if (capture.f > 0)
 													{
-														capture.e->pos_.x() -= 5.f;
-														capture.e->size_.x() += 10.f;
-														capture.e->pos_.y() += 1.2f;
-														capture.e->size_.y() -= 2.4f;
-														capture.e->color_.a() = max(capture.e->color_.a() - 15, 0);
+														capture.e->pos_.x() -= 10.f;
+														capture.e->size_.x() += 20.f;
+														capture.e->pos_.y() += 2.4f;
+														capture.e->size_.y() -= 4.8f;
+														capture.e->color_.a() = max(capture.e->color_.a() - 30, 0);
 														*go_on = true;
 													}
 													else
@@ -1548,7 +1552,6 @@ struct MyApp : App
 											level = min(24U, level);
 										}
 
-
 										sound_clear_src->play();
 									}
 									else
@@ -1577,11 +1580,14 @@ struct MyApp : App
 
 										clear_ticks = 0;
 										combo = 0;
+
+										if (just_down_hard_drop)
+											sound_hard_drop_src->play();
+										else
+											sound_soft_drop_src->play();
 									}
 									mino_pos.y() = -1;
 									mino_just_hold = false;
-
-									sound_drop_src->play();
 								}
 								else
 								{
@@ -1668,59 +1674,34 @@ int main(int argc, char **args)
 	app.canvas->add_atlas(app.atlas);
 
 	{
-		auto freq = 4000U;
-		auto stereo = false;
-		auto _16bit = false;
-		auto fade_time = 0.05f;
-
-		{
-			auto dura = 0.05f;
-			std::vector<float> samples;
-			samples.resize(sound::get_sample_count(dura, freq));
-			auto size = sound::get_size(samples.size(), stereo, _16bit);
-			auto data = new uchar[size];
-			sound::wave(samples, freq, sound::WavaSquare, 220U, 0.5f);
-			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
-			app.sound_move_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
-			app.sound_move_src = sound::Source::create(app.sound_move_buf);
-			delete[]data;
-		}
-		{
-			auto dura = 0.05f;
-			std::vector<float> samples;
-			samples.resize(sound::get_sample_count(dura, freq));
-			auto size = sound::get_size(samples.size(), stereo, _16bit);
-			auto data = new uchar[size];
-			sound::wave(samples, freq, sound::WavaNoise, 0U, 1.f);
-			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
-			app.sound_drop_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
-			app.sound_drop_src = sound::Source::create(app.sound_drop_buf);
-			delete[]data;
-		}
-		{
-			auto dura = 0.1f;
-			std::vector<float> samples;
-			samples.resize(sound::get_sample_count(dura, freq));
-			auto size = sound::get_size(samples.size(), stereo, _16bit);
-			auto data = new uchar[size];
-			sound::wave(samples, freq, sound::WavaTriangle, 800U, 1.f);
-			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
-			app.sound_clear_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
-			app.sound_clear_src = sound::Source::create(app.sound_clear_buf);
-			delete[]data;
-		}
-		{
-			auto dura = 0.05f;
-			std::vector<float> samples;
-			samples.resize(sound::get_sample_count(dura, freq));
-			auto size = sound::get_size(samples.size(), stereo, _16bit);
-			auto data = new uchar[size];
-			sound::wave(samples, freq, sound::WavaSin, 1000U, 0.5f);
-			sound::fill_data(data, freq, stereo, _16bit, samples, fade_time);
-			app.sound_hold_buf = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
-			app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
-			delete[]data;
-		}
+		app.sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
+		app.sound_move_src = sound::Source::create(app.sound_move_buf);
+		app.sound_move_src->set_volume(0.4f);
+	}
+	{
+		app.sound_rotate_buf = sound::Buffer::create_from_file((resource_path / L"art/rotate.wav").c_str());
+		app.sound_rotate_src = sound::Source::create(app.sound_rotate_buf);
+		app.sound_rotate_src->set_volume(0.3f);
+	}
+	{
+		app.sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/soft_drop.wav").c_str());
+		app.sound_soft_drop_src = sound::Source::create(app.sound_soft_drop_buf);
+		app.sound_soft_drop_src->set_volume(0.4f);
+	}
+	{
+		app.sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/hard_drop.wav").c_str());
+		app.sound_hard_drop_src = sound::Source::create(app.sound_hard_drop_buf);
+		app.sound_hard_drop_src->set_volume(0.7f);
+	}
+	{
+		app.sound_clear_buf = sound::Buffer::create_from_file((resource_path / L"art/clear.wav").c_str());
+		app.sound_clear_src = sound::Source::create(app.sound_clear_buf);
+		app.sound_clear_src->set_volume(0.5f);
+	}
+	{
+		app.sound_hold_buf = sound::Buffer::create_from_file((resource_path / L"art/hold.wav").c_str());
+		app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
+		app.sound_hold_src->set_volume(0.5f);
 	}
 
 	ui::set_current_entity(app.root);
