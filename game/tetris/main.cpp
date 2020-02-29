@@ -1653,22 +1653,26 @@ struct MyApp : App
 int main(int argc, char **args)
 {
 	std::filesystem::path resource_path;
+	std::filesystem::path engine_path;
 	{
 		auto config = parse_ini_file(L"config.ini");
 		for (auto& e : config.get_section_entries(""))
 		{
 			if (e.key == "debug")
-			{
 				set_debug_config(e.value == "1");
-				resource_path = e.value;
-			}
 			else if (e.key == "resource_path")
 				resource_path = e.value;
+			else if (e.key == "engine_path")
+			{
+				if (e.value == "{e}")
+					engine_path = getenv("FLAME_PATH");
+				else
+					engine_path = e.value;
+			}
 		}
 	}
 
-	auto engine_path = getenv("FLAME_PATH");
-	app.create("Tetris", Vec2u(800, 600), WindowFrame, engine_path ? engine_path : resource_path);
+	app.create("Tetris", Vec2u(800, 600), WindowFrame, engine_path);
 
 	app.atlas = graphics::Atlas::load(app.graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
 	app.canvas->add_atlas(app.atlas);

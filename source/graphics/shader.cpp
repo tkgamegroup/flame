@@ -779,7 +779,7 @@ namespace flame
 			}
 		};
 
-		void compile_shaders(DevicePrivate* d, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
+		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
 		{
 			const std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
 			const std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
@@ -813,18 +813,20 @@ namespace flame
 			{
 				auto& s = stage_infos[i];
 
-				std::filesystem::path spv_path = s.path;
+				std::filesystem::path spv_path = dir / s.path;
 				spv_path += L".";
 				spv_path += str_hash;
 				auto res_path = spv_path;
 				spv_path += L".spv";
 				res_path += L".res";
 
-				if (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(s.path))
+				auto ok = true;
+				auto shader_path = dir / s.path;
+				if (std::filesystem::exists(shader_path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(shader_path)))
 				{
-					wprintf(L"begin compiling shader:%s\n", s.path.c_str());
+					wprintf(L"begin compiling shader:%s\n", shader_path.c_str());
 
-					std::ifstream src(s.path);
+					std::ifstream src(shader_path);
 
 					std::string glsl_header = "#version 450 core\n"
 						"#extension GL_ARB_shading_language_420pack : enable\n";
@@ -834,6 +836,7 @@ namespace flame
 
 					auto type_id = 0;
 
+					printf("generating glsl file");
 					std::ofstream glsl_file(L"out.glsl");
 					glsl_file << glsl_header;
 					{
@@ -1017,62 +1020,66 @@ namespace flame
 
 					}
 					glsl_file.close();
+					printf(" - done\n");
 
 					if (std::filesystem::exists(spv_path))
 						std::filesystem::remove(spv_path);
 
 					auto vk_sdk_path = getenv("VK_SDK_PATH");
-					if (!vk_sdk_path)
+					if (vk_sdk_path)
 					{
-						printf("cannot find vk sdk\n");
-						assert(0);
-					}
+						std::filesystem::path glslc_path = vk_sdk_path;
+						glslc_path /= L"Bin/glslc.exe";
 
-					std::filesystem::path glslc_path = vk_sdk_path;
-					glslc_path /= L"Bin/glslc.exe";
-
-					std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -o" + spv_path.wstring());
-
-					auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
-					std::filesystem::remove(L"out.glsl");
-					if (!std::filesystem::exists(spv_path))
-					{
-						printf("compile error:\n%s\n", output.v);
-						printf("trying to use fallback");
-
-						std::ofstream glsl_file(L"out.glsl");
-						glsl_file << glsl_header;
-						switch (s.type)
-						{
-						case ShaderStageVert:
-							glsl_file << "void main()\n"
-								"{\n"
-								"\tgl_Position = vec4(0, 0, 0, 1);"
-								"}\n";
-							break;
-						case ShaderStageFrag:
-							glsl_file <<
-								"void main()\n"
-								"{\n"
-								"}\n";
-							break;
-						default:
-							assert(0); // WIP
-						}
-						glsl_file.close();
+						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -o" + spv_path.wstring());
 
 						auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
 						std::filesystem::remove(L"out.glsl");
 						if (!std::filesystem::exists(spv_path))
 						{
-							printf(" - failed\n error:\n%s", output.v);
-							assert(0);
+							printf("compile error:\n%s\n", output.v);
+							printf("trying to use fallback");
+
+							std::ofstream glsl_file(L"out.glsl");
+							glsl_file << glsl_header;
+							switch (s.type)
+							{
+							case ShaderStageVert:
+								glsl_file << "void main()\n"
+									"{\n"
+									"\tgl_Position = vec4(0, 0, 0, 1);"
+									"}\n";
+								break;
+							case ShaderStageFrag:
+								glsl_file <<
+									"void main()\n"
+									"{\n"
+									"}\n";
+								break;
+							default:
+								assert(0); // WIP
+							}
+							glsl_file.close();
+
+							auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
+							std::filesystem::remove(L"out.glsl");
+							if (!std::filesystem::exists(spv_path))
+							{
+								printf(" - failed\n error:\n%s", output.v);
+								assert(0);
+								ok = false;
+							}
+							else
+								printf(" - ok\n");
 						}
 
-						printf(" - ok\n");
+						wprintf(L"end compiling shader:%s\n", shader_path.c_str());
 					}
-
-					wprintf(L"end compiling shader:%s\n", s.path.c_str());
+					else
+					{
+						printf("cannot find vk sdk\n");
+						assert(0);
+					}
 
 					{
 						nlohmann::json json;
@@ -1108,9 +1115,15 @@ namespace flame
 					}
 				}
 
+				if (!ok)
+					return false;
+
 				auto spv_file = get_file_content(spv_path);
 				if (spv_file.empty())
+				{
 					assert(0);
+					return false;
+				}
 
 #if defined(FLAME_VULKAN)
 				VkShaderModuleCreateInfo shader_info;
@@ -1220,6 +1233,8 @@ namespace flame
 				//	get_v(src.type_id, &push_constant->v);
 				//}
 			}
+
+			return true;
 		}
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
@@ -1484,7 +1499,7 @@ namespace flame
 #endif
 		}
 
-		Pipeline* Pipeline::create(Device* d, uint shader_count, const wchar_t* const* shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
+		Pipeline* Pipeline::create(Device* d, const wchar_t* shader_dir, uint shader_count, const wchar_t* const* shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
 			VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states)
 		{
 			std::vector<StageInfo> stage_infos;
@@ -1494,8 +1509,6 @@ namespace flame
 			{
 				StageInfo info(shader_filenames[i]);
 
-				if (!std::filesystem::exists(info.path))
-					return nullptr;
 				for (auto& s : stage_infos)
 				{
 					if (s.path == info.path || s.type == info.type)
@@ -1516,20 +1529,23 @@ namespace flame
 				return (int)a.type < (int)b.type;
 			});
 
-			compile_shaders((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, vi);
+			if (!compile_shaders((DevicePrivate*)d, shader_dir, stage_infos, (PipelinelayoutPrivate*)pll, vi))
+				return nullptr;
 
 			return new PipelinePrivate((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, dynamic_state_count, dynamic_states);
 		}
 
-		Pipeline* Pipeline::create(Device* d, const wchar_t* compute_shader_filename, Pipelinelayout* pll)
+		Pipeline* Pipeline::create(Device* d, const wchar_t* shader_dir, const wchar_t* compute_shader_filename, Pipelinelayout* pll)
 		{
 			StageInfo compute_stage_info(compute_shader_filename);
-			if (!std::filesystem::exists(compute_stage_info.path) || compute_stage_info.type != ShaderStageComp)
+			if (compute_stage_info.type != ShaderStageComp)
 				return nullptr;
 
 			std::vector<StageInfo> stage_infos;
 			stage_infos.push_back(std::move(compute_stage_info));
-			compile_shaders((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, nullptr);
+
+			if (!compile_shaders((DevicePrivate*)d, shader_dir, stage_infos, (PipelinelayoutPrivate*)pll, nullptr))
+				return nullptr;
 
 			return new PipelinePrivate((DevicePrivate*)d, compute_stage_info, (PipelinelayoutPrivate*)pll);
 		}
@@ -1567,16 +1583,12 @@ namespace flame
 					if (out)
 						Pipeline::destroy(out);
 					auto d = Device::default_one();
-					std::vector<std::wstring> _shader_filenames(shader_filenames ? shader_filenames->s : 0);
-					auto bp_path = std::filesystem::path(n->scene()->filename()).parent_path().wstring() + L"/";
-					for (auto i = 0; i < _shader_filenames.size(); i++)
-						_shader_filenames[i] = bp_path + shader_filenames->at(i).str();
-					if (d && renderpass && renderpass->subpass_count() > subpass_idx && !_shader_filenames.empty() && pll)
+					if (d && renderpass && renderpass->subpass_count() > subpass_idx && shader_filenames->s > 0 && pll)
 					{
-						std::vector<const wchar_t*> _names(_shader_filenames.size());
+						std::vector<const wchar_t*> _names(shader_filenames->s);
 						for (auto i = 0; i < _names.size(); i++)
-							_names[i] = _shader_filenames[i].c_str();
-						out = Pipeline::create(d, _names.size(), _names.data(), pll, renderpass, subpass_idx,
+							_names[i] = shader_filenames->at(i).v;
+						out = Pipeline::create(d, std::filesystem::path(n->scene()->filename()).parent_path().c_str(), _names.size(), _names.data(), pll, renderpass, subpass_idx,
 							vi, vp, raster, sc, depth, dynamic_states ? dynamic_states->s : 0, dynamic_states ? dynamic_states->v : nullptr);
 					}
 					else

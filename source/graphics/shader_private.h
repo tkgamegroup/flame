@@ -159,9 +159,8 @@ namespace flame
 				}
 			};
 
-			std::wstring filename;
-			std::string prefix;
 			std::filesystem::path path;
+			std::string prefix;
 			ShaderStage type;
 
 			std::vector<InOut> inputs;
@@ -179,11 +178,10 @@ namespace flame
 			StageInfo(const std::wstring& fn)
 			{
 				auto sp = SUW::split(fn, L'$');
-				filename = sp[0];
+				path = sp[0];
+				path.make_preferred();
 				if (sp.size() > 1)
 					prefix = w2s(sp[1]);
-				path = std::filesystem::canonical(filename);
-				path.make_preferred();
 				type = shader_stage_from_ext(path.extension());
 				vk_shader_module = 0;
 			}

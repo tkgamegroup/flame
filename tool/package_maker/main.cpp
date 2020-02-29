@@ -3,6 +3,8 @@
 
 using namespace flame;
 
+auto copied_files_count = 0;
+
 void copy_typeinfo(const std::filesystem::path& _s, const std::filesystem::path& _d)
 {
 	auto s = _s;
@@ -12,6 +14,8 @@ void copy_typeinfo(const std::filesystem::path& _s, const std::filesystem::path&
 		auto d = _d;
 		d.replace_extension(L".typeinfo");
 		std::filesystem::copy_file(s, d, std::filesystem::copy_options::overwrite_existing);
+		wprintf(L"%s   =>   %s\n", s.c_str(), d.c_str());
+		copied_files_count++;
 	}
 }
 
@@ -22,7 +26,7 @@ int main(int argc, char **args)
 	std::filesystem::path destination;
 	std::vector<std::string> items;
 
-	auto description = parse_ini_file(L"package_description.ini");
+	auto description = parse_ini_file(args[1]);
 	for (auto& e : description.get_section_entries(""))
 	{
 		if (e.key == "src")
@@ -33,6 +37,7 @@ int main(int argc, char **args)
 	for (auto& e : description.get_section_entries("items"))
 		items.push_back(e.value);
 
+	auto copied_item_count = 0;
 	for (auto& i : items)
 	{
 		auto sp = SUS::split(i);
@@ -105,6 +110,9 @@ int main(int argc, char **args)
 		if (!std::filesystem::exists(d_p))
 			std::filesystem::create_directories(d_p);
 		std::filesystem::copy_file(s, d, std::filesystem::copy_options::overwrite_existing);
+		wprintf(L"%s   =>   %s\n", s.c_str(), d.c_str());
+		copied_item_count++;
+		copied_files_count++;
 
 		auto ext = n.extension();
 
@@ -120,6 +128,8 @@ int main(int argc, char **args)
 				{
 					auto dd = d_p / dep;
 					std::filesystem::copy_file(ss, dd, std::filesystem::copy_options::overwrite_existing);
+					wprintf(L"%s   =>   %s\n", ss.c_str(), dd.c_str());
+					copied_files_count++;
 					copy_typeinfo(ss, dd);
 				}
 			}
@@ -136,12 +146,16 @@ int main(int argc, char **args)
 					{
 						auto dd = d_p / e.value;
 						std::filesystem::copy_file(ss, dd, std::filesystem::copy_options::overwrite_existing);
+						wprintf(L"%s   =>   %s\n", ss.c_str(), dd.c_str());
+						copied_files_count++;
 					}
 					break;
 				}
 			}
 		}
 	}
+
+	printf("copied: %d/%d items, %d files\n", copied_item_count, items.size(), copied_files_count);
 
 	return 0;
 }
