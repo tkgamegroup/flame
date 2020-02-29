@@ -63,13 +63,11 @@ struct MyApp : App
 	graphics::Atlas* atlas;
 
 	sound::Buffer* sound_move_buf;
-	sound::Buffer* sound_rotate_buf;
 	sound::Buffer* sound_soft_drop_buf;
 	sound::Buffer* sound_hard_drop_buf;
 	sound::Buffer* sound_clear_buf;
 	sound::Buffer* sound_hold_buf;
 	sound::Source* sound_move_src;
-	sound::Source* sound_rotate_src;
 	sound::Source* sound_soft_drop_src;
 	sound::Source* sound_hard_drop_src;
 	sound::Source* sound_clear_src;
@@ -1209,7 +1207,7 @@ struct MyApp : App
 										mino_coords[i] = new_coords[i];
 									rotated = true;
 
-									sound_rotate_src->play();
+									sound_move_src->play();
 								}
 							}
 
@@ -1680,17 +1678,12 @@ int main(int argc, char **args)
 	{
 		app.sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
 		app.sound_move_src = sound::Source::create(app.sound_move_buf);
-		app.sound_move_src->set_volume(0.4f);
-	}
-	{
-		app.sound_rotate_buf = sound::Buffer::create_from_file((resource_path / L"art/rotate.wav").c_str());
-		app.sound_rotate_src = sound::Source::create(app.sound_rotate_buf);
-		app.sound_rotate_src->set_volume(0.3f);
+		app.sound_move_src->set_volume(1.f);
 	}
 	{
 		app.sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/soft_drop.wav").c_str());
 		app.sound_soft_drop_src = sound::Source::create(app.sound_soft_drop_buf);
-		app.sound_soft_drop_src->set_volume(0.4f);
+		app.sound_soft_drop_src->set_volume(0.7f);
 	}
 	{
 		app.sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/hard_drop.wav").c_str());

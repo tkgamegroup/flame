@@ -11,7 +11,11 @@ void init_mino()
 {
 	g_mino_coords[Mino_L][0] = Vec2i(-1, +0);
 	g_mino_coords[Mino_L][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_L][2] = Vec2i(+1, -1);
+	g_mino_coords[Mino_L][2] = Vec2i(-1, -1);
+
+	g_mino_coords[Mino_J][0] = Vec2i(-1, +0);
+	g_mino_coords[Mino_J][1] = Vec2i(+1, +0);
+	g_mino_coords[Mino_J][2] = Vec2i(+1, -1);
 
 	g_mino_coords[Mino_T][0] = Vec2i(-1, +0);
 	g_mino_coords[Mino_T][1] = Vec2i(+1, +0);
@@ -24,10 +28,6 @@ void init_mino()
 	g_mino_coords[Mino_Z][0] = Vec2i(-1, -1);
 	g_mino_coords[Mino_Z][1] = Vec2i(+0, -1);
 	g_mino_coords[Mino_Z][2] = Vec2i(+1, +0);
-
-	g_mino_coords[Mino_J][0] = Vec2i(-1, +0);
-	g_mino_coords[Mino_J][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_J][2] = Vec2i(-1, -1);
 
 	g_mino_coords[Mino_O][0] = Vec2i(+0, -1);
 	g_mino_coords[Mino_O][1] = Vec2i(+1, +0);
