@@ -153,6 +153,19 @@ int main(int argc, char **args)
 				}
 			}
 		}
+		else if (ext == L".spv")
+		{
+			auto ss = s;
+			ss.replace_extension(L".res");
+			if (std::filesystem::exists(ss))
+			{
+				auto dd = d;
+				dd.replace_extension(L".res");
+				std::filesystem::copy_file(ss, dd, std::filesystem::copy_options::overwrite_existing);
+				wprintf(L"%s   =>   %s\n", ss.c_str(), dd.c_str());
+				copied_files_count++;
+			}
+		}
 	}
 
 	printf("copied: %d/%d items, %d files\n", copied_item_count, items.size(), copied_files_count);
