@@ -216,8 +216,7 @@ struct MyApp : App
 
 			ui::e_end_layout();
 
-			ui::e_text(L"");
-			ui::current_entity()->associate_resource(add_fps_listener([](void* c, uint fps) {
+			ui::e_text(L"")->associate_resource(add_fps_listener([](void* c, uint fps) {
 				(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
 			}, new_mail_p(ui::current_entity()->get_component(cText))), [](void* ev) {
 				looper().remove_event(ev);

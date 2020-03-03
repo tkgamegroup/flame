@@ -46,7 +46,7 @@ namespace flame
 		Entity* root;
 		cElement* c_element_root;
 
-		void create(const char* title, const Vec2u size, uint styles, const std::filesystem::path& engine_path, bool maximized = false)
+		void create(const char* title, const Vec2u size, uint styles, bool graphics_debug, const std::filesystem::path& engine_path, bool maximized = false)
 		{
 			TypeinfoDatabase::load(L"flame_foundation.dll", true, true);
 			TypeinfoDatabase::load(L"flame_graphics.dll", true, true);
@@ -56,7 +56,7 @@ namespace flame
 			if (maximized)
 				window->set_maximized(true);
 
-			graphics_device = graphics::Device::create(true);
+			graphics_device = graphics::Device::create(graphics_debug);
 			swapchain = graphics::SwapchainResizable::create(graphics_device, window);
 			graphics_sc_cbs.resize(swapchain->sc()->image_count());
 			for (auto i = 0; i < graphics_sc_cbs.s; i++)
@@ -96,10 +96,6 @@ namespace flame
 			root->add_component(c_element_root);
 		}
 
-		virtual void on_frame()
-		{
-		}
-
 		void run()
 		{
 			auto sc = swapchain->sc();
@@ -109,8 +105,6 @@ namespace flame
 
 			render_fence->wait();
 			looper().process_events();
-
-			on_frame();
 
 			c_element_root->set_size(Vec2f(window->size));
 			universe->update();
