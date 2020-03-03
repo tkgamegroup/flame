@@ -233,7 +233,23 @@ struct MyApp : App
 			auto action = req["action"].get<std::string>();
 			if (action == "report_room")
 			{
+				app.room_name = s2w(req["room_name"].get<std::string>());
+				app.root->remove_children(1, -1);
+				app.game_mode = GameMulti;
+				app.create_game_scene();
 			}
+			else if (action == "player_entered")
+			{
+				ui::push_parent(app.e_base);
+				app.c_board_opponent_main = app.create_board_main(Vec2f(500.f, 50.f), 24.f);
+				ui::push_style_1u(ui::FontSize, 30);
+				ui::next_element_pos = Vec2f(500.f, 10.f);
+				ui::e_text(s2w(req["name"].get<std::string>()).c_str());
+				ui::pop_style(ui::FontSize);
+				ui::pop_parent();
+			}
+			else if(action == "game_start")
+				app.start_game();
 			else if (action == "report_board")
 			{
 				auto board = req["board"].get<std::string>();
@@ -280,26 +296,11 @@ struct MyApp : App
 		}, Mail<>());
 		if (app.client)
 		{
-			//app.room_name = room.name;
 			nlohmann::json req;
 			req["action"] = "join_room";
 			req["name"] = w2s(app.your_name);
 			auto str = req.dump();
 			app.client->send(str.data(), str.size());
-			looper().add_event([](void* c, bool*) {
-				app.root->remove_children(1, -1);
-				app.game_mode = GameMulti;
-				app.create_game_scene();
-				ui::push_parent(app.e_base);
-				app.c_board_opponent_main = app.create_board_main(Vec2f(500.f, 50.f), 24.f);
-				ui::next_element_pos = Vec2f(500.f, 10.f);
-				ui::push_style_1u(ui::FontSize, 30);
-				//ui::e_text(app.rooms[*(int*)c].host.c_str());
-				ui::pop_style(ui::FontSize);
-				ui::pop_parent();
-
-				app.start_game();
-			}, Mail<>());
 		}
 		else
 			ui::e_message_dialog(L"Join Room Failed");
@@ -389,14 +390,23 @@ struct MyApp : App
 													{
 														p.name = s2w(req["name"].get<std::string>());
 
-														looper().add_event([](void* c, bool*) {
-															ui::push_parent(app.e_base);
-																ui::push_style_1u(ui::FontSize, 30);
-																ui::next_element_pos = Vec2f(500.f, 10.f);
-																ui::e_text(app.players[*(int*)c].name.c_str());
-																ui::pop_style(ui::FontSize);
-															ui::pop_parent();
-														}, new_mail(&i));
+														ui::push_parent(app.e_base);
+														app.c_board_opponent_main = app.create_board_main(Vec2f(500.f, 50.f), 24.f);
+														ui::push_style_1u(ui::FontSize, 30);
+														ui::next_element_pos = Vec2f(500.f, 10.f);
+														ui::e_text(app.players[i].name.c_str());
+														ui::pop_style(ui::FontSize);
+														ui::pop_parent();
+
+														{
+															nlohmann::json reply;
+															reply["action"] = "game_start";
+															auto str = reply.dump();
+															app.server->send(id, str.data(), str.size(), false);
+														}
+
+														app.room_state = RoomGaming;
+														app.start_game();
 													}
 													else if (action == "report_board")
 													{
@@ -454,12 +464,20 @@ struct MyApp : App
 										player.id = id;
 										app.players.push_back(player);
 
-										app.room_state = RoomGaming;
-										ui::push_parent(app.e_base);
-										app.c_board_opponent_main = app.create_board_main(Vec2f(500.f, 50.f), 24.f);
-										ui::pop_parent();
-
-										app.start_game();
+										{
+											nlohmann::json reply;
+											reply["action"] = "report_room";
+											reply["room_name"] = w2s(app.room_name);
+											auto str = reply.dump();
+											app.server->send(id, str.data(), str.size(), false);
+										}
+										{
+											nlohmann::json reply;
+											reply["action"] = "player_entered";
+											reply["name"] = w2s(app.your_name);
+											auto str = reply.dump();
+											app.server->send(id, str.data(), str.size(), false);
+										}
 									}
 								}, Mail<>());
 								looper().add_event([](void*, bool*) {
