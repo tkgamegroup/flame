@@ -25,6 +25,8 @@ const auto sound_hard_drop_volumn = 0.7f;
 const auto sound_clear_volumn = 0.5f;
 const auto sound_hold_volumn = 0.5f;
 
+auto fx_volumn = 10U;
+
 auto left_right_sensitiveness = 10U;
 auto left_right_speed = 2U;
 auto soft_drop_speed = 1U;
@@ -51,19 +53,18 @@ enum GameMode
 	GameMulti
 };
 
-enum RoomState
-{
-	RoomPrepare,
-	RoomGaming
-};
-
 struct Player
 {
 	std::wstring name;
 	void* id;
 
-	cText* c_text_name;
-	cTileMap* c_board_main;
+	Entity* e;
+	cTileMap* c_board;
+
+	Player() :
+		id(nullptr)
+	{
+	}
 };
 
 struct MyApp : App
@@ -81,13 +82,12 @@ struct MyApp : App
 	sound::Source* sound_clear_src;
 	sound::Source* sound_hold_src;
 
-	uint fx_volumn;
-
-	std::wstring your_name;
+	std::wstring my_name;
 	std::wstring room_name;
-	RoomState room_state;
 	std::vector<Player> players;
+	uint my_room_index;
 	Server* server;
+	uint room_max_people;
 	Client* client;
 
 	GameMode game_mode;
@@ -96,7 +96,6 @@ struct MyApp : App
 	cTileMap* c_board_main;
 	cTileMap* c_board_hold;
 	cTileMap* c_board_next[6];
-	cTileMap* c_board_opponent_main;
 	cText* c_text_time;
 	cText* c_text_level;
 	cText* c_text_lines;
@@ -144,11 +143,17 @@ struct MyApp : App
 	~MyApp()
 	{
 		std::ofstream user_data(L"user_data.ini");
-		user_data << "name = " << w2s(your_name) << "\n";
+		user_data << "name = " << w2s(my_name) << "\n";
 		user_data << "\n[key]\n";
 		auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 		for (auto i = 0; i < KEY_COUNT; i++)
 			user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->name() << "\n";
+		user_data << "\n[sound]\n";
+		user_data << "fx_volumn = " << fx_volumn << "\n";
+		user_data << "\n[sensitiveness]\n";
+		user_data << "left_right_sensitiveness = " << left_right_sensitiveness << "\n";
+		user_data << "left_right_speed = " << left_right_speed << "\n";
+		user_data << "soft_drop_speed = " << soft_drop_speed << "\n";
 		user_data.close();
 	}
 
@@ -171,7 +176,7 @@ struct MyApp : App
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"RTA 40", [](void*) {
+				ui::e_button(L"RTA", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.game_mode = GameSingleRTA;
@@ -183,7 +188,8 @@ struct MyApp : App
 				ui::e_button(L"Practice", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
-						app.create_pratice_otions_scene();
+						app.game_mode = GameSinglePractice;
+						app.create_game_scene();
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
@@ -206,72 +212,53 @@ struct MyApp : App
 		ui::pop_parent();
 	}
 
-	void create_pratice_otions_scene()
-	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
-				ui::e_button(L"Start", [](void*) {
-					looper().add_event([](void*, bool*) {
-						app.root->remove_children(1, -1);
-						app.game_mode = GameSinglePractice;
-						app.create_game_scene();
-						app.start_game();
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Back", [](void*) {
-					looper().add_event([](void*, bool*) {
-						app.root->remove_children(1, -1);
-						app.create_home_scene();
-					}, Mail<>());
-				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
-	}
-
 	void join_room(const char* ip)
 	{
 		app.client = Client::create(SocketNormal, ip, 2434,
-			[](void*, const char* msg, uint size) {
+		[](void*, const char* msg, uint size) {
 			auto req = nlohmann::json::parse(std::string(msg, size));
 			auto action = req["action"].get<std::string>();
 			if (action == "report_room")
 			{
 				app.room_name = s2w(req["room_name"].get<std::string>());
+				app.room_max_people = req["max_people"].get<int>();
+				app.players.resize(app.room_max_people);
+				app.my_room_index = req["index"].get<int>();
 				app.root->remove_children(1, -1);
 				app.game_mode = GameMulti;
 				app.create_game_scene();
 			}
 			else if (action == "player_entered")
 			{
+				auto& p = app.players[req["index"].get<int>()];
+				p.name = s2w(req["name"].get<std::string>());
+
 				ui::push_parent(app.e_base);
-				app.c_board_opponent_main = app.create_board_main(Vec2f(500.f, 50.f), 24.f);
-				ui::push_style_1u(ui::FontSize, 30);
-				ui::next_element_pos = Vec2f(500.f, 10.f);
-				ui::e_text(s2w(req["name"].get<std::string>()).c_str());
-				ui::pop_style(ui::FontSize);
+				p.c_board = app.create_board_main(Vec2f(500.f, 50.f), 24.f, p.name.c_str());
 				ui::pop_parent();
 			}
 			else if(action == "game_start")
 				app.start_game();
 			else if (action == "report_board")
 			{
-				auto board = req["board"].get<std::string>();
+				struct Capture
+				{
+					cTileMap* b;
+					std::string d;
+				}capture;
+				capture.b = app.players[req["index"].get<int>()].c_board;
+				capture.d = req["board"].get<std::string>();
 				looper().add_event([](void* c, bool*) {
-					auto& board = *(std::string*)c;
+					auto& capture = *(Capture*)c;
 					for (auto y = 0; y < board_height; y++)
 					{
 						for (auto x = 0; x < board_width; x++)
 						{
-							auto id = board[y * board_width + x] - '0';
-							app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+							auto id = capture.d[y * board_width + x] - '0';
+							capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 						}
 					}
-				}, new_mail(&board));
+				}, new_mail(&capture));
 			}
 			else if (action == "report_gameover")
 			{
@@ -300,13 +287,13 @@ struct MyApp : App
 				}, new_mail(&value));
 			}
 		},
-			[](void*) {
+		[](void*) {
 		}, Mail<>());
 		if (app.client)
 		{
 			nlohmann::json req;
 			req["action"] = "join_room";
-			req["name"] = w2s(app.your_name);
+			req["name"] = w2s(app.my_name);
 			auto str = req.dump();
 			app.client->send(str.data(), str.size());
 		}
@@ -324,9 +311,9 @@ struct MyApp : App
 			ui::e_begin_layout(LayoutHorizontal, 8.f);
 			ui::c_aligner(AlignxMiddle, AlignyFree);
 				ui::e_text(L"Your Name");
-				ui::e_edit(300.f, app.your_name.c_str())->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
+				ui::e_edit(300.f, app.my_name.c_str())->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
 					if (hash == FLAME_CHASH("text"))
-						app.your_name = ((cText*)c)->text();
+						app.my_name = ((cText*)c)->text();
 					return true;
 				}, Mail<>());
 			ui::e_end_layout();
@@ -360,141 +347,189 @@ struct MyApp : App
 					}, new_mail_p(e_room_list));
 				}, new_mail_p(e_room_list))->get_component(cEventReceiver)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
 				ui::e_button(L"Create Room", [](void*) {
-					if (app.your_name.empty())
+					if (app.my_name.empty())
 						ui::e_message_dialog(L"Your Name Cannot Not Be Empty");
 					else
 					{
-						ui::e_input_dialog(L"Room Name", [](void*, bool ok, const wchar_t* text) {
-							if (ok && text[0])
-							{
-								app.room_name = text;
-								app.room_state = RoomPrepare;
-								app.server = Server::create(SocketNormal, 2434, 
-								[](void*, void* id, const char* msg, uint size) {
-									auto req = nlohmann::json::parse(std::string(msg, size));
-									if (req["action"] == "get_room")
+						ui::e_begin_dialog();
+							ui::e_text(L"Room Name");
+							ui::e_edit(100.f)->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
+								if (hash == FLAME_CHASH("text"))
+									app.room_name = ((cText*)c)->text();
+								return true;
+							}, Mail<>());
+							ui::e_text(L"Max People");
+							ui::e_begin_combobox(100.f)->get_component(cCombobox)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
+								if (hash == FLAME_CHASH("index"))
+								{
+									auto index = ((cCombobox*)c)->idx;
+									switch (index)
 									{
-										nlohmann::json reply;
-										reply["name"] = w2s(app.room_name);
-										reply["host"] = w2s(app.your_name);
-										auto str = reply.dump();
-										app.server->send(id, str.data(), str.size(), true);
+									case 0:
+										app.room_max_people = 2;
+										break;
+									case 1:
+										app.room_max_people = 6;
+										break;
 									}
-								},
-								[](void*, void* id) {
-									if (app.room_state == RoomPrepare)
+								}
+								return true;
+							}, Mail<>());
+							ui::e_combobox_item(L"2");
+							ui::e_combobox_item(L"6");
+							ui::e_end_combobox(0);
+							app.room_max_people = 2;
+							ui::e_begin_layout(LayoutHorizontal, 4.f);
+							ui::c_aligner(AlignxMiddle, AlignyFree);
+								ui::e_button(L"OK", [](void* c) {
+									ui::remove_top_layer(app.root);
+
+									if (!app.room_name.empty())
 									{
-										app.server->set_client(id,
-										[](void* c, const char* msg, uint size) {
-											auto id = *(void**)c;
-											for (auto i = 0; i < app.players.size(); i++)
+										app.players.resize(app.room_max_people);
+										app.my_room_index = 0;
+										{
+											auto& me = app.players[0];
+											me.id = (void*)0xffff;
+											me.name = app.my_name;
+										}
+										app.server = Server::create(SocketNormal, 2434,
+										[](void*, void* id, const char* msg, uint size) {
+											auto req = nlohmann::json::parse(std::string(msg, size));
+											if (req["action"] == "get_room")
 											{
-												auto& p = app.players[i];
-												if (p.id == id)
+												nlohmann::json reply;
+												reply["name"] = w2s(app.room_name);
+												reply["host"] = w2s(app.my_name);
+												auto str = reply.dump();
+												app.server->send(id, str.data(), str.size(), true);
+											}
+										},
+										[](void*, void* id) {
+											if (!app.gaming)
+											{
+												for (auto i = 0; i < app.players.size(); i++)
 												{
-													auto req = nlohmann::json::parse(std::string(msg, size));
-													auto action = req["action"].get<std::string>();
-													if (action == "join_room")
+													auto& p = app.players[i];
+													if (!p.id)
 													{
-														p.name = s2w(req["name"].get<std::string>());
-
-														ui::push_parent(app.e_base);
-														app.c_board_opponent_main = app.create_board_main(Vec2f(500.f, 50.f), 24.f);
-														ui::push_style_1u(ui::FontSize, 30);
-														ui::next_element_pos = Vec2f(500.f, 10.f);
-														ui::e_text(app.players[i].name.c_str());
-														ui::pop_style(ui::FontSize);
-														ui::pop_parent();
-
 														{
 															nlohmann::json reply;
-															reply["action"] = "game_start";
+															reply["action"] = "report_room";
+															reply["room_name"] = w2s(app.room_name);
+															reply["max_people"] = app.room_max_people;
+															reply["index"] = i;
 															auto str = reply.dump();
 															app.server->send(id, str.data(), str.size(), false);
 														}
-
-														app.room_state = RoomGaming;
-														app.start_game();
-													}
-													else if (action == "report_board")
-													{
-														auto board = req["board"].get<std::string>();
-														looper().add_event([](void* c, bool*) {
-															auto& board = *(std::string*)c;
-															for (auto y = 0; y < board_height; y++)
+														for (auto j = 0; j < app.players.size(); j++)
+														{
+															auto& p = app.players[j];
+															if (p.id)
 															{
-																for (auto x = 0; x < board_width; x++)
+																nlohmann::json reply;
+																reply["action"] = "player_entered";
+																reply["index"] = j;
+																reply["name"] = w2s(p.name);
+																auto str = reply.dump();
+																app.server->send(id, str.data(), str.size(), false);
+															}
+														}
+
+														p.id = id;
+														app.server->set_client(id,
+														[](void* c, const char* msg, uint size) {
+															auto& p = app.players[*(int*)c];
+															auto req = nlohmann::json::parse(std::string(msg, size));
+															auto action = req["action"].get<std::string>();
+															if (action == "join_room")
+															{
+																p.name = s2w(req["name"].get<std::string>());
+
+																ui::push_parent(app.e_base);
+																p.c_board = app.create_board_main(Vec2f(500.f, 50.f), 24.f, p.name.c_str());
+																ui::pop_parent();
+
 																{
-																	auto id = board[y * board_width + x] - '0';
-																	app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+																	nlohmann::json reply;
+																	reply["action"] = "game_start";
+																	auto str = reply.dump();
+																	app.server->send(p.id, str.data(), str.size(), false);
 																}
+
+																app.start_game();
 															}
-														}, new_mail(&board));
-													}
-													else if (action == "report_gameover")
-													{
-														looper().add_event([](void* c, bool*) {
-															app.win = true;
-															if (app.paused)
+															else if (action == "report_board")
 															{
-																app.paused = false;
-																ui::remove_top_layer(app.root);
+																struct Capture
+																{
+																	cTileMap* b;
+																	std::string d;
+																}capture;
+																capture.b = app.players[req["index"].get<int>()].c_board;
+																capture.d = req["board"].get<std::string>();
+																looper().add_event([](void* c, bool*) {
+																	auto& capture = *(Capture*)c;
+																	for (auto y = 0; y < board_height; y++)
+																	{
+																		for (auto x = 0; x < board_width; x++)
+																		{
+																			auto id = capture.d[y * board_width + x] - '0';
+																			capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+																		}
+																	}
+																}, new_mail(&capture));
 															}
-															ui::e_begin_dialog();
-																ui::e_text(L"You Win");
-																ui::c_aligner(AlignxMiddle, AlignyFree);
-																ui::e_button(L"Quit", [](void*) {
-																	ui::remove_top_layer(app.root);
+															else if (action == "report_gameover")
+															{
+																looper().add_event([](void* c, bool*) {
+																	app.win = true;
+																	if (app.paused)
+																	{
+																		app.paused = false;
+																		ui::remove_top_layer(app.root);
+																	}
+																	ui::e_begin_dialog();
+																	ui::e_text(L"You Win");
+																	ui::c_aligner(AlignxMiddle, AlignyFree);
+																	ui::e_button(L"Quit", [](void*) {
+																		ui::remove_top_layer(app.root);
 
-																	app.quit_game();
+																		app.quit_game();
+																	}, Mail<>());
+																	ui::c_aligner(AlignxMiddle, AlignyFree);
+																	ui::e_end_dialog();
 																}, Mail<>());
-																ui::c_aligner(AlignxMiddle, AlignyFree);
-															ui::e_end_dialog();
-														}, Mail<>());
-													}
-													else if (action == "attack")
-													{
-														auto value = req["value"].get<int>();
-														looper().add_event([](void* c, bool*) {
-															app.garbage = *(int*)c;
-															app.need_update_garbage = true;
-														}, new_mail(&value));
-													}
+															}
+															else if (action == "attack")
+															{
+																auto value = req["value"].get<int>();
+																looper().add_event([](void* c, bool*) {
+																	app.garbage = *(int*)c;
+																	app.need_update_garbage = true;
+																}, new_mail(&value));
+															}
+														},
+														[](void*) {
+														}, new_mail(&i));
 
-													break;
+														break;
+													}
 												}
 											}
-										},
-										[](void*) {
-										}, new_mail_p(id));
-
-										Player player;
-										player.id = id;
-										app.players.push_back(player);
-
-										{
-											nlohmann::json reply;
-											reply["action"] = "report_room";
-											reply["room_name"] = w2s(app.room_name);
-											auto str = reply.dump();
-											app.server->send(id, str.data(), str.size(), false);
-										}
-										{
-											nlohmann::json reply;
-											reply["action"] = "player_entered";
-											reply["name"] = w2s(app.your_name);
-											auto str = reply.dump();
-											app.server->send(id, str.data(), str.size(), false);
-										}
+										}, Mail<>());
+										looper().add_event([](void*, bool*) {
+											app.root->remove_children(1, -1);
+											app.game_mode = GameMulti;
+											app.create_game_scene();
+										}, Mail<>());
 									}
 								}, Mail<>());
-								looper().add_event([](void*, bool*) {
-									app.root->remove_children(1, -1);
-									app.game_mode = GameMulti;
-									app.create_game_scene();
+								ui::e_button(L"Cancel", [](void* c) {
+									ui::remove_top_layer(app.root);
 								}, Mail<>());
-							}
-						}, Mail<>());
+							ui::e_end_layout();
+						ui::e_end_dialog();
 					}
 				}, Mail<>());
 				ui::e_button(L"Join Room", [](void* c) {
@@ -502,7 +537,7 @@ struct MyApp : App
 					auto selected = e_room_list->get_component(cList)->selected;
 					if (selected)
 					{
-						if (app.your_name.empty())
+						if (app.my_name.empty())
 							ui::e_message_dialog(L"Your Name Cannot Not Be Empty");
 						else
 							app.join_room(selected->get_component(cDataKeeper)->get_stringa_item(FLAME_CHASH("ip")));
@@ -511,7 +546,7 @@ struct MyApp : App
 						ui::e_message_dialog(L"You Need To Select A Room");
 				}, new_mail_p(e_room_list));
 				ui::e_button(L"Direct Connect", [](void* c) {
-					if (app.your_name.empty())
+					if (app.my_name.empty())
 						ui::e_message_dialog(L"Your Name Cannot Not Be Empty");
 					else
 					{
@@ -632,10 +667,10 @@ struct MyApp : App
 					capture.t = ui::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
 					auto change_fx_volumn = [](void* c) {
 						auto& capture = *(Capture*)c;
-						auto v = app.fx_volumn + capture.v;
+						auto v = fx_volumn + capture.v;
 						if (v >= 0 && v <= 10)
 						{
-							app.fx_volumn = v;
+							fx_volumn = v;
 							capture.t->set_text(wfmt(L"FX %d", v).c_str());
 
 							auto f = v / 10.f;
@@ -747,9 +782,15 @@ struct MyApp : App
 		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("ghost.png")));
 	}
 
-	cTileMap* create_board_main(const Vec2f& pos, float block_size)
+	cTileMap* create_board_main(const Vec2f& pos, float block_size, const wchar_t* title = nullptr)
 	{
-		cTileMap* ret;
+		if (title)
+		{
+			ui::push_style_1u(ui::FontSize, 30);
+			ui::next_element_pos = Vec2f(pos.x(), pos.y() - 40.f);
+			ui::e_text(title);
+			ui::pop_style(ui::FontSize);
+		}
 		ui::e_empty();
 		ui::next_element_pos = pos;
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
@@ -761,20 +802,18 @@ struct MyApp : App
 			ce->clip_children = true;
 		}
 		ui::push_parent(ui::current_entity());
-		ui::e_empty();
-		ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
-		ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
-		ui::c_element();
-		{
-			ret = cTileMap::create();
-			ret->cell_size_ = Vec2f(block_size);
-			ret->set_size(Vec2u(board_width, board_height));
-			ret->clear_cells(TileGrid);
-			set_board_tiles(ret);
-			ui::current_entity()->add_component(ret);
-		}
+			ui::e_empty();
+			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
+			ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
+			ui::c_element();
+			auto board = cTileMap::create();
+			board->cell_size_ = Vec2f(block_size);
+			board->set_size(Vec2u(board_width, board_height));
+			board->clear_cells(TileGrid);
+			set_board_tiles(board);
+			ui::current_entity()->add_component(board);
 		ui::pop_parent();
-		return ret;
+		return board;
 	}
 
 	void create_game_scene()
@@ -809,7 +848,7 @@ struct MyApp : App
 					ui::e_text(L"Practice");
 					break;
 				case GameMulti:
-					ui::e_text(your_name.c_str());
+					ui::e_text(my_name.c_str());
 					break;
 				}
 				ui::pop_style(ui::FontSize);
@@ -1221,6 +1260,7 @@ struct MyApp : App
 					{
 						nlohmann::json req;
 						req["action"] = "report_board";
+						req["index"] = my_room_index;
 						std::string board;
 						board.resize(board_height * board_width);
 						for (auto y = 0; y < board_height; y++)
@@ -1234,7 +1274,10 @@ struct MyApp : App
 						req["board"] = board;
 						auto str = req.dump();
 						if (server)
-							server->send(players[0].id, str.data(), str.size(), false);
+						{
+							for (auto i = 1; i < players.size(); i++)
+								server->send(players[i].id, str.data(), str.size(), false);
+						}
 						if (client)
 							client->send(str.data(), str.size());
 					}
@@ -1330,7 +1373,10 @@ struct MyApp : App
 							req["action"] = "report_gameover";
 							auto str = req.dump();
 							if (server)
-								server->send(players[0].id, str.data(), str.size(), false);
+							{
+								for (auto i = 0; i < players.size(); i++)
+									server->send(players[i].id, str.data(), str.size(), false);
+							}
 							if (client)
 								client->send(str.data(), str.size());
 
@@ -1612,8 +1658,11 @@ struct MyApp : App
 										req["action"] = "attack";
 										req["value"] = attack;
 										auto str = req.dump();
-										if (server)
-											server->send(players[0].id, str.data(), str.size(), false);
+										if (server) 
+										{
+											for (auto i = 1; i < players.size(); i++)
+												server->send(players[i].id, str.data(), str.size(), false);
+										}
 										if (client)
 											client->send(str.data(), str.size());
 									}
@@ -1764,8 +1813,6 @@ int main(int argc, char **args)
 		app.sound_hold_src->set_volume(sound_hold_volumn);
 	}
 
-	app.fx_volumn = 10;
-
 	ui::set_current_entity(app.root);
 	ui::c_layout();
 
@@ -1787,7 +1834,7 @@ int main(int argc, char **args)
 	for (auto& e : user_data.get_section_entries(""))
 	{
 		if (e.key == "name")
-			app.your_name = s2w(e.value);
+			app.my_name = s2w(e.value);
 	}
 	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 	for (auto& e : user_data.get_section_entries("key"))
@@ -1797,6 +1844,20 @@ int main(int argc, char **args)
 			if (key_names[i] == s2w(e.key))
 				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value();
 		}
+	}
+	for (auto& e : user_data.get_section_entries("sound"))
+	{
+		if (e.key == "fx_volumn")
+			fx_volumn = std::stoi(e.value);
+	}
+	for (auto& e : user_data.get_section_entries("sensitiveness"))
+	{
+		if (e.key == "left_right_sensitiveness")
+			left_right_sensitiveness = std::stoi(e.value);
+		else if (e.key == "left_right_speed")
+			left_right_speed = std::stoi(e.value);
+		else if (e.key == "soft_drop_speed")
+			soft_drop_speed = std::stoi(e.value);
 	}
 
 	looper().loop([](void*) {
