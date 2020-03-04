@@ -17,6 +17,13 @@ const auto board_width = 10U;
 const auto board_height = 24U;
 const auto DOWN_TICKS = 60U;
 const auto CLEAR_TICKS = 15U;
+const auto mino_col_decay = Vec4c(200, 200, 200, 255);
+
+const auto sound_move_volumn = 1.f;
+const auto sound_soft_drop_volumn = 0.7f;
+const auto sound_hard_drop_volumn = 0.7f;
+const auto sound_clear_volumn = 0.5f;
+const auto sound_hold_volumn = 0.5f;
 
 enum TileIndex
 {
@@ -70,6 +77,8 @@ struct MyApp : App
 	sound::Source* sound_clear_src;
 	sound::Source* sound_hold_src;
 
+	uint fx_volumn;
+
 	std::wstring your_name;
 	std::wstring room_name;
 	RoomState room_state;
@@ -105,7 +114,6 @@ struct MyApp : App
 	uint full_lines[4];
 	uint combo;
 	bool back_to_back;
-	int special_ticks;
 	uint garbage;
 	bool need_update_garbage;
 	Vec2i mino_pos;
@@ -256,7 +264,7 @@ struct MyApp : App
 						for (auto x = 0; x < board_width; x++)
 						{
 							auto id = board[y * board_width + x] - '0';
-							app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
+							app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 						}
 					}
 				}, new_mail(&board));
@@ -414,7 +422,7 @@ struct MyApp : App
 																for (auto x = 0; x < board_width; x++)
 																{
 																	auto id = board[y * board_width + x] - '0';
-																	app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
+																	app.c_board_opponent_main->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 																}
 															}
 														}, new_mail(&board));
@@ -528,6 +536,38 @@ struct MyApp : App
 			ui::e_begin_layout(LayoutVertical, 8.f);
 			ui::c_aligner(AlignxMiddle, AlignyMiddle);
 				ui::push_style_1u(ui::FontSize, 20);
+				ui::e_button(L"Key", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_key_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Sound", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_sound_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_home_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_key_scene()
+	{
+		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 20);
 				auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 				for (auto i = 0; i < KEY_COUNT; i++)
 				{
@@ -557,7 +597,53 @@ struct MyApp : App
 				ui::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
-						app.create_home_scene();
+						app.create_config_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_sound_scene()
+	{
+		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 20);
+				ui::e_begin_layout(LayoutHorizontal, 4.f);
+					struct Capture
+					{
+						cText* t;
+						int v;
+					}capture;
+					auto change_fx_volumn = [](void* c) {
+						auto& capture = *(Capture*)c;
+						auto v = app.fx_volumn + capture.v;
+						if (v >= 0 && v <= 10)
+						{
+							app.fx_volumn = v;
+							capture.t->set_text(wfmt(L"FX %d", v).c_str());
+
+							auto f = v / 10.f;
+							app.sound_move_src->set_volume(f * sound_move_volumn);
+							app.sound_soft_drop_src->set_volume(f* sound_soft_drop_volumn);
+							app.sound_hard_drop_src->set_volume(f* sound_hard_drop_volumn);
+							app.sound_clear_src->set_volume(f* sound_clear_volumn);
+							app.sound_hold_src->set_volume(f* sound_hold_volumn);
+						}
+					};
+					capture.t = ui::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
+					capture.v = -1;
+					ui::e_button(L"-", change_fx_volumn, new_mail(&capture));
+					capture.v = 1;
+					ui::e_button(L"+", change_fx_volumn, new_mail(&capture));
+				ui::e_end_layout();
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_config_scene();
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
@@ -806,7 +892,6 @@ struct MyApp : App
 		clear_ticks = -1;
 		combo = 0;
 		back_to_back = false;
-		special_ticks = -1;
 		garbage = 0;
 		need_update_garbage = false;
 		mino_pos = Vec2i(0, -1);
@@ -1034,7 +1119,7 @@ struct MyApp : App
 									for (auto x = 0; x < board_width; x++)
 									{
 										auto id = c_board_main->cell(Vec2i(x, j - 1));
-										c_board_main->set_cell(Vec2u(x, j), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
+										c_board_main->set_cell(Vec2u(x, j), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 									}
 								}
 								else
@@ -1131,22 +1216,22 @@ struct MyApp : App
 						{
 							auto pos = mino_pos;
 							c_board_main->set_cell(Vec2u(pos), 
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, Vec4c(200, 200, 200, 255));
+								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 						{
 							auto pos = mino_pos + mino_coords[0];
 							c_board_main->set_cell(Vec2u(pos),
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, Vec4c(200, 200, 200, 255));
+								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 						{
 							auto pos = mino_pos + mino_coords[1];
 							c_board_main->set_cell(Vec2u(pos),
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, Vec4c(200, 200, 200, 255));
+								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 						{
 							auto pos = mino_pos + mino_coords[2];
 							c_board_main->set_cell(Vec2u(pos),
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, Vec4c(200, 200, 200, 255));
+								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 					}
 					if (dead || (game_mode == GameSingleRTA && lines >= 40))
@@ -1323,7 +1408,7 @@ struct MyApp : App
 								if (hard_drop)
 									score += mino_bottom_dist * 2;
 								mino_bottom_dist = 0;
-								draw_mino(c_board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords, Vec4c(200, 200, 200, 255));
+								draw_mino(c_board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords, mino_col_decay);
 
 								for (auto i = 0; i < 4; i++)
 									full_lines[i] = -1;
@@ -1427,7 +1512,10 @@ struct MyApp : App
 									{
 										c_text_special->entity->set_visibility(true);
 										c_text_special->set_text(special_str.c_str());
-										special_ticks = 24;
+										looper().clear_events(FLAME_CHASH("special_text"));
+										looper().add_event([](void*, bool*) {
+											app.c_text_special->entity->set_visibility(false);
+										}, Mail<>(), 1.f, FLAME_CHASH("special_text"));
 									}
 
 									if (attack > 0)
@@ -1466,7 +1554,7 @@ struct MyApp : App
 											for (auto x = 0; x < board_width; x++)
 											{
 												auto id = c_board_main->cell(Vec2i(x, i + garbage));
-												c_board_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : Vec4c(200, 200, 200, 255));
+												c_board_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 											}
 										}
 										auto hole = ::rand() % board_width;
@@ -1474,7 +1562,7 @@ struct MyApp : App
 										{
 											auto y = board_height - i - 1;
 											for (auto x = 0; x < board_width; x++)
-												c_board_main->set_cell(Vec2u(x, y), TileGray, Vec4c(200, 200, 200, 255));
+												c_board_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
 											c_board_main->set_cell(Vec2u(hole, y), TileGrid);
 										}
 										garbage = 0;
@@ -1532,16 +1620,6 @@ struct MyApp : App
 				need_update_garbage = false;
 			}
 		}
-
-		if (special_ticks != -1)
-		{
-			special_ticks--;
-			if (special_ticks <= 0)
-			{
-				c_text_special->entity->set_visibility(false);
-				special_ticks = -1;
-			}
-		}
 	}
 }app;
 
@@ -1575,28 +1653,30 @@ int main(int argc, char **args)
 	{
 		app.sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
 		app.sound_move_src = sound::Source::create(app.sound_move_buf);
-		app.sound_move_src->set_volume(1.f);
+		app.sound_move_src->set_volume(sound_move_volumn);
 	}
 	{
 		app.sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/soft_drop.wav").c_str());
 		app.sound_soft_drop_src = sound::Source::create(app.sound_soft_drop_buf);
-		app.sound_soft_drop_src->set_volume(0.7f);
+		app.sound_soft_drop_src->set_volume(sound_soft_drop_volumn);
 	}
 	{
 		app.sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/hard_drop.wav").c_str());
 		app.sound_hard_drop_src = sound::Source::create(app.sound_hard_drop_buf);
-		app.sound_hard_drop_src->set_volume(0.7f);
+		app.sound_hard_drop_src->set_volume(sound_hard_drop_volumn);
 	}
 	{
 		app.sound_clear_buf = sound::Buffer::create_from_file((resource_path / L"art/clear.wav").c_str());
 		app.sound_clear_src = sound::Source::create(app.sound_clear_buf);
-		app.sound_clear_src->set_volume(0.5f);
+		app.sound_clear_src->set_volume(sound_clear_volumn);
 	}
 	{
 		app.sound_hold_buf = sound::Buffer::create_from_file((resource_path / L"art/hold.wav").c_str());
 		app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
-		app.sound_hold_src->set_volume(0.5f);
+		app.sound_hold_src->set_volume(sound_hold_volumn);
 	}
+
+	app.fx_volumn = 10;
 
 	ui::set_current_entity(app.root);
 	ui::c_layout();
