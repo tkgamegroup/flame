@@ -77,27 +77,16 @@ namespace flame
 			}
 		}
 
-		void clear_focus()
-		{
-			focusing->hovering = false;
-			focusing->focusing = false;
-			focusing->active = false;
-			focusing->dragging = false;
-			focusing = nullptr;
-		}
-
 		void receiver_leave_world(cEventReceiver* er)
 		{
 			if (er == focusing)
-				clear_focus();
+				focusing = nullptr;
 			if (er == hovering)
-			{
-				er->hovering = false;
 				hovering = false;
-			}
 			if (er == drag_overing)
 				drag_overing = nullptr;
 			er->state = EventReceiverNormal;
+			er->state_listeners.call(EventReceiverNormal);
 		}
 
 		void on_added() override
@@ -182,10 +171,10 @@ namespace flame
 			}
 
 			auto prev_hovering = hovering;
-			auto prev_hovering_active = (hovering && hovering->active) ? true : false;
 			auto prev_focusing = focusing;
-			auto prev_dragging = (!focusing || !focusing->dragging) ? nullptr : focusing;
+			auto prev_focusing_state = focusing_state;
 			auto prev_drag_overing = drag_overing;
+			auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
 
 			if (next_focusing != INVALID_POINTER)
 			{
@@ -196,28 +185,22 @@ namespace flame
 			if (focusing)
 			{
 				if (!focusing->entity->global_visibility_)
-					clear_focus();
-				else if (focusing->active && ((KeyState)mouse_buttons[Mouse_Left] & KeyStateUp))
-				{
-					focusing->active = false;
-					focusing->dragging = false;
-				}
+					focusing = nullptr;
+				else if (focusing_state != FocusingNormal && ((KeyState)mouse_buttons[Mouse_Left] & KeyStateUp))
+					focusing_state = FocusingNormal;
 			}
 
 			drag_overing = nullptr;
-			if (focusing && focusing->active)
+			if (focusing && focusing_state == FocusingAndActive)
 			{
-				if (focusing->drag_hash != 0 && !focusing->dragging)
+				if (focusing->drag_hash)
 				{
 					if (mouse_disp != 0 && (abs(mouse_pos.x() - active_pos.x()) > 4.f || abs(mouse_pos.y() - active_pos.y()) > 4.f))
-						focusing->dragging = true;
+						focusing_state = FocusingAndDragging;
 				}
 			}
 			else if (hovering)
-			{
-				hovering->hovering = false;
 				hovering = nullptr;
-			}
 			hovers_searcher.search(this, mouse_pos, (EntityPrivate*)root);
 
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
@@ -227,7 +210,7 @@ namespace flame
 				if (hovering)
 				{
 					focusing = hovering;
-					hovering->active = true;
+					focusing_state = FocusingAndActive;
 					active_pos = mouse_pos;
 				}
 			}
@@ -237,11 +220,7 @@ namespace flame
 				key_dispatch_list.clear();
 
 				if (prev_focusing)
-				{
-					prev_focusing->focusing = false;
-					prev_focusing->active = false;
-					prev_focusing->data_changed(FLAME_CHASH("focusing"), nullptr);
-				}
+					prev_focusing->focus_listeners.call(false);
 				if (focusing)
 				{
 					auto e = focusing->entity;
@@ -253,8 +232,7 @@ namespace flame
 						e = e->parent();
 					}
 
-					focusing->focusing = true;
-					focusing->data_changed(FLAME_CHASH("focusing"), nullptr);
+					focusing->focus_listeners.call(true);
 				}
 			}
 
@@ -302,22 +280,23 @@ namespace flame
 				if (prev_hovering)
 				{
 					prev_hovering->state = EventReceiverNormal;
-					prev_hovering->data_changed(FLAME_CHASH("state"), nullptr);
+					prev_hovering->state_listeners.call(EventReceiverNormal);
 				}
 				if (hovering)
 				{
-					hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-					hovering->data_changed(FLAME_CHASH("state"), nullptr);
+					hovering->state = (hovering == focusing && focusing_state != FocusingNormal) ? EventReceiverActive : EventReceiverHovering;
+					hovering->state_listeners.call(hovering->state);
 				}
 			}
-			else if (hovering && hovering->active != prev_hovering_active)
+			else if (hovering && prev_focusing_state != focusing_state)
 			{
-				hovering->state = hovering->active ? EventReceiverActive : EventReceiverHovering;
-				hovering->data_changed(FLAME_CHASH("state"), nullptr);
+				hovering->state = focusing_state != FocusingNormal ? EventReceiverActive : EventReceiverHovering;
+				hovering->state_listeners.call(hovering->state);
 			}
-			if (!prev_dragging && focusing && focusing->dragging)
+
+			if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
 				((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
-			else if (prev_dragging && (!focusing || !focusing->dragging))
+			else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
 			{
 				if (prev_drag_overing)
 					((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
@@ -343,7 +322,7 @@ namespace flame
 	{
 		thiz = _thiz;
 		pos = Vec2f(_pos);
-		active = thiz->focusing && thiz->focusing->active;
+		active = thiz->focusing && thiz->focusing_state == FocusingAndActive;
 		pass = (EntityPrivate*)INVALID_POINTER;
 		mouse_dispatch_list.clear();
 		if (active)
@@ -384,12 +363,9 @@ namespace flame
 			if (!er->pass)
 			{
 				if (!ban && !thiz->hovering)
-				{
-					er->hovering = true;
 					thiz->hovering = er;
-				}
 
-				if (thiz->focusing && thiz->focusing->dragging && !thiz->drag_overing && er != thiz->focusing)
+				if (thiz->focusing && thiz->focusing_state == FocusingAndActive && !thiz->drag_overing && er != thiz->focusing)
 				{
 					auto hash = thiz->focusing->drag_hash;
 					for (auto h : er->acceptable_drops)

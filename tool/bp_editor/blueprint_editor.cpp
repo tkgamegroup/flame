@@ -359,23 +359,21 @@ struct cSceneObject : Component
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					app.select(thiz->t, thiz->p);
 			}, new_mail_p(this));
-			event_receiver->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
+			event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 				auto thiz = *(cSceneObject**)c;
-				if (hash == FLAME_CHASH("state"))
+				switch (state)
 				{
-					switch (((cEventReceiver*)er)->state)
+				case EventReceiverActive:
+					thiz->moved = false;
+					break;
+				default:
+					if (thiz->moved)
 					{
-					case EventReceiverActive:
+						app.set_changed(true);
 						thiz->moved = false;
-						break;
-					default:
-						if (thiz->moved)
-						{
-							app.set_changed(true);
-							thiz->moved = false;
-						}
 					}
 				}
+				return true;
 			}, new_mail_p(this));
 		}
 	}

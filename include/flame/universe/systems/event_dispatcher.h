@@ -15,6 +15,7 @@ namespace flame
 
 		cEventReceiver* hovering;
 		cEventReceiver* focusing;
+		FocusingState focusing_state;
 		cEventReceiver* drag_overing;
 
 		cEventReceiver* next_focusing;

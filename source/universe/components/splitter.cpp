@@ -2,6 +2,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/splitter.h>
+#include <flame/universe/utils.h>
 
 namespace flame
 {
@@ -31,7 +32,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSplitterPrivate**)c);
-					if (thiz->event_receiver->active && is_mouse_move(action, key))
+					if (is_active(thiz->event_receiver) && is_mouse_move(action, key))
 					{
 						auto parent = thiz->entity->parent();
 						auto idx = thiz->entity->order_ & 0xffffff;

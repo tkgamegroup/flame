@@ -20,6 +20,7 @@
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/window.h>
 #include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/utils.h>
 #include <flame/universe/ui/layer.h>
 #include <flame/universe/ui/style_stack.h>
 
@@ -499,9 +500,9 @@ namespace flame
 			capture.d_er = ed->get_component(cEventReceiver);
 			capture.is_float = is_float;
 
-			capture.e_er->data_changed_listeners.add([](void* c, Component* er, uint hash, void*) {
+			capture.e_er->focus_listeners.add([](void* c, bool focusing) {
 				auto& capture = *(Capture*)c;
-				if (hash == FLAME_CHASH("focusing") && ((cEventReceiver*)er)->focusing == false)
+				if (!focusing)
 				{
 					capture.e->set_visibility(false);
 					capture.d->set_visibility(true);
@@ -519,7 +520,7 @@ namespace flame
 					dp->next_focusing = capture.e_er;
 					dp->pending_update = true;
 				}
-				else if (capture.d_er->active && is_mouse_move(action, key))
+				else if (is_active(capture.d_er) && is_mouse_move(action, key))
 				{
 					if (capture.is_float)
 					{

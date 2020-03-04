@@ -14,15 +14,13 @@ namespace flame
 		accept_key = false;
 		drag_hash = 0;
 
-		hovering = false;
-		focusing = false;
-		active = false;
-		dragging = false;
 		state = EventReceiverNormal;
 
 		key_listeners.impl = ListenerHubImpl::create();
 		mouse_listeners.impl = ListenerHubImpl::create();
 		drag_and_drop_listeners.impl = ListenerHubImpl::create();
+		focus_listeners.impl = ListenerHubImpl::create();
+		state_listeners.impl = ListenerHubImpl::create();
 	}
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
@@ -30,6 +28,8 @@ namespace flame
 		ListenerHubImpl::destroy(key_listeners.impl);
 		ListenerHubImpl::destroy(mouse_listeners.impl);
 		ListenerHubImpl::destroy(drag_and_drop_listeners.impl);
+		ListenerHubImpl::destroy(focus_listeners.impl);
+		ListenerHubImpl::destroy(state_listeners.impl);
 	}
 
 	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)

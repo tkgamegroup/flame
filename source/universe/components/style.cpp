@@ -24,7 +24,7 @@ namespace flame
 		~cStyleColorPrivate()
 		{
 			if (!entity->dying_)
-				event_receiver->data_changed_listeners.remove(state_changed_listener);
+				event_receiver->state_listeners.remove(state_changed_listener);
 		}
 
 		void on_component_added(Component* c) override
@@ -34,9 +34,8 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
-					if (hash == FLAME_CHASH("state"))
-						(*(cStyleColorPrivate**)c)->style();
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+					(*(cStyleColorPrivate**)c)->style();
 					return true;
 				}, new_mail_p(this));
 				style();
@@ -98,7 +97,7 @@ namespace flame
 		~cStyleColor2Private()
 		{
 			if (!entity->dying_)
-				event_receiver->data_changed_listeners.remove(state_changed_listener);
+				event_receiver->state_listeners.remove(state_changed_listener);
 		}
 
 		void on_component_added(Component* c) override
@@ -108,9 +107,8 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
-					if (hash == FLAME_CHASH("state"))
-						(*(cStyleColor2Private**)c)->style();
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+					(*(cStyleColor2Private**)c)->style();
 					return true;
 				}, new_mail_p(this));
 				style();
@@ -170,7 +168,7 @@ namespace flame
 		~cStyleTextColorPrivate()
 		{
 			if (!entity->dying_)
-				event_receiver->data_changed_listeners.remove(state_changed_listener);
+				event_receiver->state_listeners.remove(state_changed_listener);
 		}
 
 		void on_component_added(Component* c) override
@@ -180,7 +178,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleTextColorPrivate**)c)->style();
 					return true;
 				}, new_mail_p(this));
@@ -238,7 +236,7 @@ namespace flame
 		~cStyleTextColor2Private()
 		{
 			if (!entity->dying_)
-				event_receiver->data_changed_listeners.remove(state_changed_listener);
+				event_receiver->state_listeners.remove(state_changed_listener);
 		}
 
 		void on_component_added(Component* c) override
@@ -248,7 +246,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->data_changed_listeners.add([](void* c, Component*, uint hash, void*) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleTextColor2Private**)c)->style();
 					return true;
 				}, new_mail_p(this));

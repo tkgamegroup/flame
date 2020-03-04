@@ -10,6 +10,13 @@
 
 namespace flame
 {
+	enum FocusingState
+	{
+		FocusingNormal,
+		FocusingAndActive,
+		FocusingAndDragging
+	};
+
 	enum EventReceiverState
 	{
 		EventReceiverNormal,

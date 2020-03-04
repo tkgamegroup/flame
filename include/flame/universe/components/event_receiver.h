@@ -15,12 +15,13 @@ namespace flame
 		Entity* pass; // invali pointer - pass all, nullptr [default] - pass nothing, or pass pointing and its children
 		bool accept_key;
 		uint drag_hash; // non-zero means it can be draged to drop
-
-		bool hovering;
-		bool focusing;
-		bool active;
-		bool dragging;
 		EventReceiverState state;
+
+		ListenerHub<bool(void* c, KeyStateFlags action, int value)>								key_listeners;
+		ListenerHub<bool(void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos)>		mouse_listeners;
+		ListenerHub<bool(void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>	drag_and_drop_listeners;
+		ListenerHub<bool(void* c, bool focusing)>												focus_listeners;
+		ListenerHub<bool(void* c, EventReceiverState state)>									state_listeners;
 
 		cEventReceiver() :
 			Component("cEventReceiver")
@@ -28,10 +29,6 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drop_count, const uint* drops);
-
-		ListenerHub<bool(void* c, KeyStateFlags action, int value)>								key_listeners;
-		ListenerHub<bool(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>		mouse_listeners;
-		ListenerHub<bool(void* c, DragAndDrop action, cEventReceiver * er, const Vec2i & pos)>	drag_and_drop_listeners;
 
 		FLAME_UNIVERSE_EXPORTS void on_key(KeyStateFlags action, uint value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);

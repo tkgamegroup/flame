@@ -4,6 +4,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
+#include <flame/universe/utils.h>
 #include <flame/universe/ui/style_stack.h>
 
 #include "../renderpath/canvas/canvas.h"
@@ -187,7 +188,7 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (!element->cliped && event_receiver->focusing && (int(looper().total_time * 2.f) % 2 == 0))
+			if (!element->cliped && is_focusing(event_receiver) && (int(looper().total_time * 2.f) % 2 == 0))
 			{
 				auto global_scale = element->global_scale;
 				auto font_atlas = text->font_atlas;
