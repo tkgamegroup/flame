@@ -25,6 +25,10 @@ const auto sound_hard_drop_volumn = 0.7f;
 const auto sound_clear_volumn = 0.5f;
 const auto sound_hold_volumn = 0.5f;
 
+auto left_right_sensitiveness = 10U;
+auto left_right_speed = 2U;
+auto soft_drop_speed = 1U;
+
 enum TileIndex
 {
 	TileGrid,
@@ -550,6 +554,13 @@ struct MyApp : App
 					}, Mail<>());
 				}, Mail<>());
 				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::e_button(L"Sensitiveness", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_sensitiveness_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
 				ui::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
@@ -612,12 +623,13 @@ struct MyApp : App
 			ui::e_begin_layout(LayoutVertical, 8.f);
 			ui::c_aligner(AlignxMiddle, AlignyMiddle);
 				ui::push_style_1u(ui::FontSize, 20);
+				struct Capture
+				{
+					cText* t;
+					int v;
+				}capture;
 				ui::e_begin_layout(LayoutHorizontal, 4.f);
-					struct Capture
-					{
-						cText* t;
-						int v;
-					}capture;
+					capture.t = ui::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
 					auto change_fx_volumn = [](void* c) {
 						auto& capture = *(Capture*)c;
 						auto v = app.fx_volumn + capture.v;
@@ -634,11 +646,85 @@ struct MyApp : App
 							app.sound_hold_src->set_volume(f* sound_hold_volumn);
 						}
 					};
-					capture.t = ui::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
 					capture.v = -1;
 					ui::e_button(L"-", change_fx_volumn, new_mail(&capture));
 					capture.v = 1;
 					ui::e_button(L"+", change_fx_volumn, new_mail(&capture));
+				ui::e_end_layout();
+				ui::e_button(L"Back", [](void*) {
+					looper().add_event([](void*, bool*) {
+						app.root->remove_children(1, -1);
+						app.create_config_scene();
+					}, Mail<>());
+				}, Mail<>());
+				ui::c_aligner(AlignxMiddle, AlignyFree);
+				ui::pop_style(ui::FontSize);
+			ui::e_end_layout();
+		ui::pop_parent();
+	}
+
+	void create_sensitiveness_scene()
+	{
+		ui::push_parent(root);
+			ui::e_begin_layout(LayoutVertical, 8.f);
+			ui::c_aligner(AlignxMiddle, AlignyMiddle);
+				ui::push_style_1u(ui::FontSize, 20);
+				ui::e_text(L"Small Number Means More Sensitivity Or Faster");
+				struct Capture
+				{
+					cText* t;
+					int v;
+				}capture;
+				ui::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = ui::e_text(wfmt(L"Left Right Sensitiveness %d",
+						left_right_sensitiveness).c_str())->get_component(cText);
+					auto change_lr_sens = [](void* c) {
+						auto& capture = *(Capture*)c;
+						auto v = left_right_sensitiveness + capture.v;
+						if (v >= 5 && v <= 30)
+						{
+							left_right_sensitiveness = v;
+							capture.t->set_text(wfmt(L"Left Right Sensitiveness %d", v).c_str());
+						}
+					};
+					capture.v = -1;
+					ui::e_button(L"-", change_lr_sens, new_mail(&capture));
+					capture.v = 1;
+					ui::e_button(L"+", change_lr_sens, new_mail(&capture));
+				ui::e_end_layout();
+				ui::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = ui::e_text(wfmt(L"Left Right Speed %d",
+						left_right_speed).c_str())->get_component(cText);
+					auto change_lr_sp = [](void* c) {
+						auto& capture = *(Capture*)c;
+						auto v = left_right_speed + capture.v;
+						if (v >= 1 && v <= 10)
+						{
+							left_right_speed = v;
+							capture.t->set_text(wfmt(L"Left Right Speed %d", v).c_str());
+						}
+					};
+					capture.v = -1;
+					ui::e_button(L"-", change_lr_sp, new_mail(&capture));
+					capture.v = 1;
+					ui::e_button(L"+", change_lr_sp, new_mail(&capture));
+				ui::e_end_layout();
+				ui::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = ui::e_text(wfmt(L"Soft Drop Speed %d",
+						soft_drop_speed).c_str())->get_component(cText);
+					auto change_sd_sp = [](void* c) {
+						auto& capture = *(Capture*)c;
+						auto v = soft_drop_speed + capture.v;
+						if (v >= 1 && v <= 10)
+						{
+							soft_drop_speed = v;
+							capture.t->set_text(wfmt(L"Soft Drop Speed %d", v).c_str());
+						}
+					};
+					capture.v = -1;
+					ui::e_button(L"-", change_sd_sp, new_mail(&capture));
+					capture.v = 1;
+					ui::e_button(L"+", change_sd_sp, new_mail(&capture));
 				ui::e_end_layout();
 				ui::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
@@ -1336,7 +1422,8 @@ struct MyApp : App
 								left_frames = 0;
 							else
 								left_frames++;
-							if (left_frames == 0 || (left_frames >= 10 && left_frames % 2 == 0))
+							if (left_frames == 0 || (left_frames >= left_right_sensitiveness
+								&& left_frames % left_right_speed == 0))
 								mx--;
 						}
 						else
@@ -1347,7 +1434,8 @@ struct MyApp : App
 								right_frames = 0;
 							else
 								right_frames++;
-							if (right_frames == 0 || (right_frames >= 10 && right_frames % 2 == 0))
+							if (right_frames == 0 || (right_frames >= left_right_sensitiveness
+								&& right_frames % left_right_speed == 0))
 								mx++;
 						}
 						else
@@ -1395,7 +1483,7 @@ struct MyApp : App
 						if (mino_bottom_dist == 0)
 							down_ticks_final = 30;
 						else if (is_soft_drop)
-							down_ticks_final = 1;
+							down_ticks_final = soft_drop_speed;
 						auto hard_drop = key_states[key_map[KEY_HARD_DROP]] == (KeyStateDown | KeyStateJust);
 						if (hard_drop || mino_ticks >= down_ticks_final)
 						{
