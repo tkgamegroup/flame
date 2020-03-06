@@ -1154,10 +1154,10 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_dialog()
+		inline Entity* e_begin_dialog(const char* layer_name_suffix = nullptr)
 		{
 			auto r = current_root();
-			auto l = add_layer(r, "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
+			auto l = add_layer(r, layer_name_suffix ? layer_name_suffix : "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
 			set_current_entity(l);
 			c_layout();
 			push_parent(l);

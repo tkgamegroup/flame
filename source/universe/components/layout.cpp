@@ -307,22 +307,25 @@ namespace flame
 				auto element = std::get<0>(al);
 				auto aligner = std::get<1>(al);
 
-				auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->text_length(), text->font_size_));
-				if (text->font_atlas->draw_type == graphics::FontDrawSdf)
-					s *= text->scale_;
-				if (text->auto_width_)
+				if (text->auto_width_ || text->auto_height_)
 				{
-					auto w = s.x() + element->inner_padding_h();
-					if (aligner && aligner->width_policy_ == SizeGreedy)
-						aligner->set_min_width(w);
-					element->set_width(w, false, this);
-				}
-				if (text->auto_height_)
-				{
-					auto h = s.y() + element->inner_padding_v();
-					if (aligner && aligner->height_policy_ == SizeGreedy)
-						aligner->set_min_height(h);
-					element->set_height(h, false, this);
+					auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->text_length(), text->font_size_));
+					if (text->font_atlas->draw_type == graphics::FontDrawSdf)
+						s *= text->scale_;
+					if (text->auto_width_)
+					{
+						auto w = s.x() + element->inner_padding_h();
+						if (aligner && aligner->width_policy_ == SizeGreedy)
+							aligner->set_min_width(w);
+						element->set_width(w, false, this);
+					}
+					if (text->auto_height_)
+					{
+						auto h = s.y() + element->inner_padding_v();
+						if (aligner && aligner->height_policy_ == SizeGreedy)
+							aligner->set_min_height(h);
+						element->set_height(h, false, this);
+					}
 				}
 			}
 		}

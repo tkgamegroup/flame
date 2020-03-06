@@ -11,15 +11,26 @@ namespace flame
 
 	namespace ui
 	{
-		inline Entity* get_top_layer(Entity* parent, bool check = false)
+		inline Entity* get_top_layer(Entity* parent, bool check = false, const char* name_suffix = nullptr)
 		{
 			if (parent->child_count() == 0)
 				return nullptr;
 			auto l = parent->child(parent->child_count() - 1);
 			if (l->dying_)
 				return nullptr;
-			if (check && !SUS::starts_with(l->name(), "layer_"))
-				return nullptr;
+			if (check)
+			{
+				if (name_suffix)
+				{
+					if (l->name() != std::string("layer_") + name_suffix)
+						return nullptr;
+				}
+				else
+				{
+					if (!SUS::starts_with(l->name(), "layer_"))
+						return nullptr;
+				}
+			}
 			return l;
 		}
 

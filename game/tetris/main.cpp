@@ -55,14 +55,22 @@ enum GameMode
 
 struct Player
 {
-	std::wstring name;
 	void* id;
+	std::wstring name;
+	bool ready;
 
 	Entity* e;
-	cTileMap* c_board;
+	cTileMap* c_main;
+	cTileMap* c_hold;
+	cTileMap* c_next[6];
+	cText* c_count_down;
+	cText* c_ready;
+	cText* c_rank;
+	Entity* e_garbage;
 
 	Player() :
-		id(nullptr)
+		id(nullptr),
+		ready(false)
 	{
 	}
 };
@@ -86,29 +94,24 @@ struct MyApp : App
 	std::wstring room_name;
 	std::vector<Player> players;
 	uint my_room_index;
+	bool room_gaming;
 	Server* server;
 	uint room_max_people;
 	Client* client;
 
 	GameMode game_mode;
 
-	Entity* e_base;
-	cTileMap* c_board_main;
-	cTileMap* c_board_hold;
-	cTileMap* c_board_next[6];
 	cText* c_text_time;
 	cText* c_text_level;
 	cText* c_text_lines;
 	cText* c_text_score;
 	cText* c_text_special;
-	Entity* e_garbage;
+	Entity* e_start_or_ready;
 
 	int left_frames;
 	int right_frames;
 
-	bool paused;
 	bool gaming;
-	bool win;
 	float play_time;
 	uint level;
 	uint lines;
@@ -133,6 +136,9 @@ struct MyApp : App
 
 	MyApp()
 	{
+		players.resize(1);
+		players[0].id = (void*)0xffff;
+		my_room_index = 0;
 		server = nullptr;
 		client = nullptr;
 
@@ -212,6 +218,193 @@ struct MyApp : App
 		ui::pop_parent();
 	}
 
+	void create_player_controls(int player_index)
+	{
+		auto scale = (player_index == my_room_index || room_max_people == 2) ? 1.f : 0.5f;
+		auto block_size = 24U * scale;
+
+		auto pos = Vec2f(game_mode != GameMulti ? 120.f : 0.f, 0.f);
+		if (player_index != my_room_index)
+		{
+			switch (room_max_people)
+			{
+			case 2:
+				pos = Vec2f(420.f, 0.f);
+				break;
+			case 7:
+			{
+				auto index = player_index;
+				if (index > my_room_index)
+					index--;
+				pos = Vec2f(330.f + (index % 3) * 128.f, (index / 3) * 265.f);
+			}
+				break;
+			}
+		}
+
+		ui::push_style_1u(ui::FontSize, 30 * scale);
+		ui::next_element_pos = Vec2f(pos.x() + 80.f, pos.y() + 40.f * scale);
+
+		auto c_text_title = ui::e_text([player_index]() {
+			switch (app.game_mode)
+			{
+			case GameSingleMarathon:
+				return L"Marathon";
+			case GameSingleRTA:
+				return L"RTA";
+			case GameSinglePractice:
+				return L"Practice";
+			case GameMulti:
+				return app.players[player_index].name.c_str();
+			}
+		}())->get_component(cText);
+		if (game_mode == GameMulti && player_index == 0)
+			c_text_title->color = Vec4c(91, 82, 119, 255);
+		ui::pop_style(ui::FontSize);
+
+		ui::e_empty();
+		ui::next_element_pos = pos + Vec2f(85.f, 80.f);
+		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
+		{
+			auto ce = ui::c_element();
+			ce->frame_thickness_ = 6.f * scale;
+			ce->color_ = Vec4c(30, 30, 30, 255);
+			ce->frame_color_ = Vec4c(255);
+			ce->clip_children = true;
+		}
+		auto& p = players[player_index];
+		ui::push_parent(ui::current_entity());
+			ui::e_empty();
+			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
+			ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
+			ui::c_element();
+			p.c_main = cTileMap::create();
+			p.c_main->cell_size_ = Vec2f(block_size);
+			p.c_main->set_size(Vec2u(board_width, board_height));
+			p.c_main->clear_cells(TileGrid);
+			set_board_tiles(p.c_main);
+			ui::current_entity()->add_component(p.c_main);
+		ui::pop_parent();
+
+		if (player_index == my_room_index)
+		{
+			block_size = 16U * scale;
+
+			ui::next_element_pos = pos + Vec2f(22.f, 80.f);
+			ui::e_text(L"Hold");
+
+			ui::e_empty();
+			ui::next_element_pos = pos + Vec2f(8.f, 100.f);
+			ui::next_element_size = Vec2f(block_size * 4 + 8.f);
+			{
+				auto ce = ui::c_element();
+				ce->inner_padding_ = Vec4f(4.f);
+				ce->color_ = Vec4c(30, 30, 30, 255);
+			}
+			{
+				p.c_hold = cTileMap::create();
+				p.c_hold->cell_size_ = Vec2f(block_size);
+				p.c_hold->set_size(Vec2u(4, 3));
+				set_board_tiles(p.c_hold);
+				ui::current_entity()->add_component(p.c_hold);
+			}
+
+			ui::next_element_pos = pos + Vec2f(350.f, 80.f);
+			ui::e_text(L"Next");
+
+			ui::e_empty();
+			ui::next_element_pos = pos + Vec2f(330.f, 100.f);
+			ui::next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * array_size(p.c_next) + 8.f - 45.f);
+			{
+				auto ce = ui::c_element();
+				ce->color_ = Vec4c(30, 30, 30, 255);
+			}
+			auto create_next_board = [&](int i, int base, float y_off, float block_size) {
+				ui::e_empty();
+				ui::next_element_pos = pos + Vec2f(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
+				ui::next_element_size = Vec2f(block_size * 4 + 8.f);
+				ui::c_element()->inner_padding_ = Vec4f(4.f);
+				{
+					p.c_next[i] = cTileMap::create();
+					p.c_next[i]->cell_size_ = Vec2f(block_size);
+					p.c_next[i]->set_size(Vec2u(4));
+					set_board_tiles(p.c_next[i]);
+					ui::current_entity()->add_component(p.c_next[i]);
+				}
+			};
+			for (auto i = 0; i < 1; i++)
+				create_next_board(i, 0, 0.f, 16.f);
+			for (auto i = 1; i < 3; i++)
+				create_next_board(i, 1, 16.f * 3.f + 4.f, 14.f);
+			for (auto i = 3; i < array_size(p.c_next); i++)
+				create_next_board(i, 3, 16.f * 3.f + 4.f + (14.f * 3.f + 4.f) * 2, 12.f);
+
+			ui::next_element_pos = pos + Vec2f(180.f, 250.f);
+			ui::push_style_1u(ui::FontSize, 80);
+			p.c_count_down = ui::e_text(L"")->get_component(cText);
+			ui::pop_style(ui::FontSize);
+
+			if (game_mode == GameMulti)
+			{
+				ui::next_element_pos = pos + Vec2f(54.f, 546.f);
+				p.e_garbage = ui::e_element();
+			}
+		}
+	}
+
+	void process_player_entered(int index)
+	{
+		looper().add_event([](void* c, bool*) {
+			auto index = *(int*)c;
+			auto& p = app.players[index];
+			ui::push_parent(app.root);
+				p.e = ui::e_element();
+				ui::push_parent(p.e);
+					app.create_player_controls(index);
+				ui::pop_parent();
+			ui::pop_parent();
+		}, new_mail(&index));
+	}
+
+	void process_report_board(int index, const std::string& d)
+	{
+		struct Capture
+		{
+			cTileMap* b;
+			std::string d;
+		}capture;
+		capture.b = app.players[index].c_main;
+		capture.d = d;
+		looper().add_event([](void* c, bool*) {
+			auto& capture = *(Capture*)c;
+			for (auto y = 0; y < board_height; y++)
+			{
+				for (auto x = 0; x < board_width; x++)
+				{
+					auto id = capture.d[y * board_width + x] - '0';
+					capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+				}
+			}
+		}, new_mail(&capture));
+	}
+
+	void process_game_start()
+	{
+		looper().add_event([](void*, bool*) {
+			app.room_gaming = true;
+			app.start_game();
+		}, Mail<>());
+	}
+
+	void process_gameover()
+	{
+		looper().add_event([](void*, bool*) {
+			app.room_gaming = false;
+			app.gaming = false;
+			ui::e_message_dialog(L"You Win");
+		}, Mail<>());
+	}
+
 	void join_room(const char* ip)
 	{
 		app.client = Client::create(SocketNormal, ip, 2434,
@@ -222,62 +415,32 @@ struct MyApp : App
 			{
 				app.room_name = s2w(req["room_name"].get<std::string>());
 				app.room_max_people = req["max_people"].get<int>();
+				app.players.clear();
 				app.players.resize(app.room_max_people);
 				app.my_room_index = req["index"].get<int>();
-				app.root->remove_children(1, -1);
-				app.game_mode = GameMulti;
-				app.create_game_scene();
+				auto& me = app.players[app.my_room_index];
+				me.id = (void*)0xffff;
+				me.name = app.my_name;
+				looper().add_event([](void*, bool*) {
+					app.root->remove_children(1, -1);
+					app.game_mode = GameMulti;
+					app.create_game_scene();
+				}, Mail<>());
 			}
 			else if (action == "player_entered")
 			{
-				auto& p = app.players[req["index"].get<int>()];
+				auto index = req["index"].get<int>();
+				auto& p = app.players[index];
 				p.name = s2w(req["name"].get<std::string>());
 
-				ui::push_parent(app.e_base);
-				p.c_board = app.create_board_main(Vec2f(500.f, 50.f), 24.f, p.name.c_str());
-				ui::pop_parent();
+				app.process_player_entered(index);
 			}
-			else if(action == "game_start")
-				app.start_game();
+			else if (action == "game_start")
+				app.process_game_start();
 			else if (action == "report_board")
-			{
-				struct Capture
-				{
-					cTileMap* b;
-					std::string d;
-				}capture;
-				capture.b = app.players[req["index"].get<int>()].c_board;
-				capture.d = req["board"].get<std::string>();
-				looper().add_event([](void* c, bool*) {
-					auto& capture = *(Capture*)c;
-					for (auto y = 0; y < board_height; y++)
-					{
-						for (auto x = 0; x < board_width; x++)
-						{
-							auto id = capture.d[y * board_width + x] - '0';
-							capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
-						}
-					}
-				}, new_mail(&capture));
-			}
+				app.process_report_board(req["index"].get<int>(), req["board"].get<std::string>());
 			else if (action == "report_gameover")
-			{
-				looper().add_event([](void* c, bool*) {
-					app.win = true;
-					if (app.paused)
-						ui::remove_top_layer(app.root);
-					ui::e_begin_dialog();
-					ui::e_text(L"You Win");
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Quit", [](void*) {
-						ui::remove_top_layer(app.root);
-
-						app.quit_game();
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_end_dialog();
-				}, Mail<>());
-			}
+				app.process_gameover();
 			else if (action == "attack")
 			{
 				auto value = req["value"].get<int>();
@@ -369,14 +532,14 @@ struct MyApp : App
 										app.room_max_people = 2;
 										break;
 									case 1:
-										app.room_max_people = 6;
+										app.room_max_people = 7;
 										break;
 									}
 								}
 								return true;
 							}, Mail<>());
 							ui::e_combobox_item(L"2");
-							ui::e_combobox_item(L"6");
+							ui::e_combobox_item(L"7");
 							ui::e_end_combobox(0);
 							app.room_max_people = 2;
 							ui::e_begin_layout(LayoutHorizontal, 4.f);
@@ -386,6 +549,7 @@ struct MyApp : App
 
 									if (!app.room_name.empty())
 									{
+										app.players.clear();
 										app.players.resize(app.room_max_people);
 										app.my_room_index = 0;
 										{
@@ -406,7 +570,7 @@ struct MyApp : App
 											}
 										},
 										[](void*, void* id) {
-											if (!app.gaming)
+											if (!app.room_gaming)
 											{
 												for (auto i = 0; i < app.players.size(); i++)
 												{
@@ -439,68 +603,22 @@ struct MyApp : App
 														p.id = id;
 														app.server->set_client(id,
 														[](void* c, const char* msg, uint size) {
-															auto& p = app.players[*(int*)c];
+															auto index = *(int*)c;
+															auto& p = app.players[index];
 															auto req = nlohmann::json::parse(std::string(msg, size));
 															auto action = req["action"].get<std::string>();
 															if (action == "join_room")
 															{
 																p.name = s2w(req["name"].get<std::string>());
 
-																ui::push_parent(app.e_base);
-																p.c_board = app.create_board_main(Vec2f(500.f, 50.f), 24.f, p.name.c_str());
-																ui::pop_parent();
-
-																{
-																	nlohmann::json reply;
-																	reply["action"] = "game_start";
-																	auto str = reply.dump();
-																	app.server->send(p.id, str.data(), str.size(), false);
-																}
-
-																app.start_game();
+																app.process_player_entered(index);
 															}
+															else if (action == "ready")
+																p.ready = true;
 															else if (action == "report_board")
-															{
-																struct Capture
-																{
-																	cTileMap* b;
-																	std::string d;
-																}capture;
-																capture.b = app.players[req["index"].get<int>()].c_board;
-																capture.d = req["board"].get<std::string>();
-																looper().add_event([](void* c, bool*) {
-																	auto& capture = *(Capture*)c;
-																	for (auto y = 0; y < board_height; y++)
-																	{
-																		for (auto x = 0; x < board_width; x++)
-																		{
-																			auto id = capture.d[y * board_width + x] - '0';
-																			capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
-																		}
-																	}
-																}, new_mail(&capture));
-															}
+																app.process_report_board(req["index"].get<int>(), req["board"].get<std::string>());
 															else if (action == "report_gameover")
-															{
-																looper().add_event([](void* c, bool*) {
-																	app.win = true;
-																	if (app.paused)
-																	{
-																		app.paused = false;
-																		ui::remove_top_layer(app.root);
-																	}
-																	ui::e_begin_dialog();
-																	ui::e_text(L"You Win");
-																	ui::c_aligner(AlignxMiddle, AlignyFree);
-																	ui::e_button(L"Quit", [](void*) {
-																		ui::remove_top_layer(app.root);
-
-																		app.quit_game();
-																	}, Mail<>());
-																	ui::c_aligner(AlignxMiddle, AlignyFree);
-																	ui::e_end_dialog();
-																}, Mail<>());
-															}
+																app.process_gameover();
 															else if (action == "attack")
 															{
 																auto value = req["value"].get<int>();
@@ -518,6 +636,7 @@ struct MyApp : App
 												}
 											}
 										}, Mail<>());
+										app.room_gaming = false;
 										looper().add_event([](void*, bool*) {
 											app.root->remove_children(1, -1);
 											app.game_mode = GameMulti;
@@ -782,165 +901,51 @@ struct MyApp : App
 		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("ghost.png")));
 	}
 
-	cTileMap* create_board_main(const Vec2f& pos, float block_size, const wchar_t* title = nullptr)
-	{
-		if (title)
-		{
-			ui::push_style_1u(ui::FontSize, 30);
-			ui::next_element_pos = Vec2f(pos.x(), pos.y() - 40.f);
-			ui::e_text(title);
-			ui::pop_style(ui::FontSize);
-		}
-		ui::e_empty();
-		ui::next_element_pos = pos;
-		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
-		{
-			auto ce = ui::c_element();
-			ce->frame_thickness_ = 6.f;
-			ce->color_ = Vec4c(30, 30, 30, 255);
-			ce->frame_color_ = Vec4c(255);
-			ce->clip_children = true;
-		}
-		ui::push_parent(ui::current_entity());
-			ui::e_empty();
-			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
-			ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
-			ui::c_element();
-			auto board = cTileMap::create();
-			board->cell_size_ = Vec2f(block_size);
-			board->set_size(Vec2u(board_width, board_height));
-			board->clear_cells(TileGrid);
-			set_board_tiles(board);
-			ui::current_entity()->add_component(board);
-		ui::pop_parent();
-		return board;
-	}
-
 	void create_game_scene()
 	{
 		ui::push_parent(root);
 		ui::push_style_1u(ui::FontSize, 20);
 
-			if (game_mode == GameMulti)
-				ui::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
-
-			ui::next_element_pos = Vec2f(game_mode == GameMulti ? -20.f : 100.f, 30.f);
-			e_base = ui::e_element();
-			e_base->associate_resource(looper().add_event([](void*, bool* go_on) {
+			ui::e_empty()->associate_resource(looper().add_event([](void*, bool* go_on) {
 				app.do_game_logic();
 				*go_on = true;
 			}, new_mail_p(ui::current_entity()->get_component(cText))), [](void* ev) {
 				looper().remove_event(ev);
 			});
-			ui::push_parent(e_base);
 
-				ui::next_element_pos = Vec2f(120.f, 10.f);
-				ui::push_style_1u(ui::FontSize, 30);
-				switch (game_mode)
-				{
-				case GameSingleMarathon:
-					ui::e_text(L"Marathon");
-					break;
-				case GameSingleRTA:
-					ui::e_text(L"RTA");
-					break;
-				case GameSinglePractice:
-					ui::e_text(L"Practice");
-					break;
-				case GameMulti:
-					ui::e_text(my_name.c_str());
-					break;
-				}
-				ui::pop_style(ui::FontSize);
+			if (game_mode == GameMulti)
+				ui::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
 
-				auto block_size = 24.f;
-
-				c_board_main = create_board_main(Vec2f(120.f, 50.f), block_size);
-
-				block_size = 16.f;
-
-				ui::next_element_pos = Vec2f(52.f, 50.f);
-				ui::e_text(L"Hold");
-
-				ui::e_empty();
-				ui::next_element_pos = Vec2f(37.f, 70.f);
-				ui::next_element_size = Vec2f(block_size * 4 + 8.f);
-				{
-					auto ce = ui::c_element();
-					ce->inner_padding_ = Vec4f(4.f);
-					ce->color_ = Vec4c(30, 30, 30, 255);
-				}
-				{
-					c_board_hold = cTileMap::create();
-					c_board_hold->cell_size_ = Vec2f(block_size);
-					c_board_hold->set_size(Vec2u(4, 3));
-					set_board_tiles(c_board_hold);
-					ui::current_entity()->add_component(c_board_hold);
-				}
-
-				ui::next_element_pos = Vec2f(375.f, 50.f);
-				ui::e_text(L"Next");
-
-				ui::e_empty();
-				ui::next_element_pos = Vec2f(370.f, 70.f);
-				ui::next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * array_size(c_board_next) + 8.f - 45.f);
-				{
-					auto ce = ui::c_element();
-					ce->color_ = Vec4c(30, 30, 30, 255);
-				}
-				auto create_next_board = [&](int i, int base, float y_off, float block_size) {
-					ui::e_empty();
-					ui::next_element_pos = Vec2f(370.f, 70.f + y_off + (block_size * 3.f + 4.f) * (i - base));
-					ui::next_element_size = Vec2f(block_size * 4 + 8.f);
-					ui::c_element()->inner_padding_ = Vec4f(4.f);
-					{
-						c_board_next[i] = cTileMap::create();
-						c_board_next[i]->cell_size_ = Vec2f(block_size);
-						c_board_next[i]->set_size(Vec2u(4));
-						set_board_tiles(c_board_next[i]);
-						ui::current_entity()->add_component(c_board_next[i]);
-					}
-				};
-				for (auto i = 0; i < 1; i++)
-					create_next_board(i, 0, 0.f, 16.f);
-				for (auto i = 1; i < 3; i++)
-					create_next_board(i, 1, 16.f * 3.f + 4.f, 14.f);
-				for (auto i = 3; i < array_size(c_board_next); i++)
-					create_next_board(i, 3, 16.f * 3.f + 4.f + (14.f * 3.f + 4.f) * 2, 12.f);
+				create_player_controls(my_room_index);
 
 				if (game_mode != GameMulti)
 				{
-					ui::next_element_pos = Vec2f(450.f, 120.f);
+					ui::next_element_pos = Vec2f(535.f, 150.f);
 					ui::e_text(L"TIME")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::next_element_pos = Vec2f(450.f, 180.f);
+					ui::next_element_pos = Vec2f(535.f, 210.f);
 					ui::e_text(L"LEVEL")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::next_element_pos = Vec2f(450.f, 240.f);
+					ui::next_element_pos = Vec2f(535.f, 270.f);
 					ui::e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::next_element_pos = Vec2f(450.f, 300.f);
+					ui::next_element_pos = Vec2f(535.f, 330.f);
 					ui::e_text(L"SCORE")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
 					ui::push_style_1u(ui::FontSize, 40);
-					ui::next_element_pos = Vec2f(450.f, 140.f);
+					ui::next_element_pos = Vec2f(535.f, 170.f);
 					c_text_time = ui::e_text(L"")->get_component(cText);
-					ui::next_element_pos = Vec2f(450.f, 200.f);
+					ui::next_element_pos = Vec2f(535.f, 230.f);
 					c_text_level = ui::e_text(L"")->get_component(cText);
-					ui::next_element_pos = Vec2f(450.f, 260.f);
+					ui::next_element_pos = Vec2f(535.f, 290.f);
 					c_text_lines = ui::e_text(L"")->get_component(cText);
-					ui::next_element_pos = Vec2f(450.f, 320.f);
+					ui::next_element_pos = Vec2f(535.f, 350.f);
 					c_text_score = ui::e_text(L"")->get_component(cText);
 					ui::pop_style(ui::FontSize);
 				}
-				else
-				{
-					ui::next_element_pos = Vec2f(94.f, 516.f);
-					e_garbage = ui::e_element();
-				}
 
 				ui::push_style_1u(ui::FontSize, 28);
-				ui::next_element_pos = Vec2f(37.f, 200.f);
+				ui::next_element_pos = Vec2f(8.f, 230.f);
 				{
 					auto e = ui::e_text(L"");
 					e->set_visibility(false);
@@ -949,13 +954,59 @@ struct MyApp : App
 				c_text_special->color = Vec4c(200, 80, 40, 255);
 				ui::pop_style(ui::FontSize);
 
-			ui::pop_parent();
+			if (game_mode == GameMulti)
+			{
+				ui::next_element_pos = Vec2f(4.f, 500.f);
+				if (my_room_index == 0)
+				{
+					e_start_or_ready = ui::e_button(L"Start", [](void*) {
+						if ([]() {
+							auto only_you = true;
+							for (auto i = 1; i < app.players.size(); i++)
+							{
+								auto& p = app.players[i];
+								if (!p.id)
+									continue;
+								only_you = false;
+								if (!p.ready)
+									return false;
+							}
+							return !only_you;
+						}())
+						{
+							app.process_game_start();
+
+							{
+								nlohmann::json req;
+								req["action"] = "game_start";
+								auto str = req.dump();
+								for (auto i = 1; i < app.players.size(); i++)
+									app.server->send(app.players[i].id, str.data(), str.size(), false);
+							}
+						}
+					}, Mail<>());
+				}
+				else
+				{
+					e_start_or_ready = ui::e_button(L"Ready", [](void*) {
+						auto& me = app.players[app.my_room_index];
+						if (!app.room_gaming && !me.ready)
+						{
+							me.ready = true;
+							nlohmann::json req;
+							req["action"] = "ready";
+							auto str = req.dump();
+							app.client->send(str.data(), str.size());
+						}
+					}, Mail<>());
+				}
+			}
 
 		ui::pop_style(ui::FontSize);
 		ui::pop_parent();
 	}
 
-	void add_count_down()
+	void begin_count_down()
 	{
 		struct Capture
 		{
@@ -964,25 +1015,22 @@ struct MyApp : App
 
 			~Capture()
 			{
-				auto e = text->entity;
-				e->parent()->remove_child(e);
-				app.gaming = true;
+				text->entity->set_visibility(false);
 			}
 		};
 		auto capture = new_mail<Capture>();
 		capture.p->time = 3;
-		ui::push_parent(e_base);
-		ui::push_style_1u(ui::FontSize, 80);
-		ui::next_element_pos = Vec2f(220.f, 250.f);
-		capture.p->text = ui::e_text(L"3")->get_component(cText);
-		ui::pop_style(ui::FontSize);
-		ui::pop_parent();
+		capture.p->text = players[my_room_index].c_count_down;
+		capture.p->text->set_text(L"3");
+		capture.p->text->entity->set_visibility(true);
 		looper().add_event([](void* c, bool* go_on) {
 			auto& capture = *(Capture*)c;
 			capture.time--;
 			capture.text->set_text(std::to_wstring(capture.time).c_str());
 			if (capture.time > 0)
 				*go_on = true;
+			else
+				app.gaming = true;
 		}, capture, 1.f, FLAME_CHASH("count_down"));
 	}
 
@@ -1002,10 +1050,21 @@ struct MyApp : App
 
 	void start_game()
 	{
-		c_board_main->clear_cells(TileGrid);
-		c_board_hold->clear_cells(-1);
-		for (auto i = 0; i < array_size(c_board_next); i++)
-			c_board_next[i]->clear_cells(-1);
+		for (auto i = 0; i < players.size(); i++)
+		{
+			auto& p = app.players[i];
+			if (p.id)
+			{
+				p.ready = false;
+				p.c_main->clear_cells(TileGrid);
+				if (i == app.my_room_index)
+				{
+					p.c_hold->clear_cells(-1);
+					for (auto j = 0; j < array_size(p.c_next); j++)
+						p.c_next[j]->clear_cells(-1);
+				}
+			}
+		}
 
 		left_frames = -1;
 		right_frames = -1;
@@ -1041,10 +1100,8 @@ struct MyApp : App
 
 		update_status();
 
-		paused = false;
 		gaming = false;
-		win = false;
-		add_count_down();
+		begin_count_down();
 	}
 
 	void shuffle_pack(uint idx)
@@ -1064,39 +1121,39 @@ struct MyApp : App
 		board->set_cell(Vec2u(pos + coords[2] + Vec2u(0, offset_y)), idx, col);
 	}
 
-	bool check_board(const Vec2i& p)
+	bool check_board(cTileMap* board, const Vec2i& p)
 	{
 		return 
-			c_board_main->cell(mino_pos + p) == TileGrid &&
-			c_board_main->cell(mino_pos + p + mino_coords[0]) == TileGrid &&
-			c_board_main->cell(mino_pos + p + mino_coords[1]) == TileGrid &&
-			c_board_main->cell(mino_pos + p + mino_coords[2]) == TileGrid;
+			board->cell(mino_pos + p) == TileGrid &&
+			board->cell(mino_pos + p + mino_coords[0]) == TileGrid &&
+			board->cell(mino_pos + p + mino_coords[1]) == TileGrid &&
+			board->cell(mino_pos + p + mino_coords[2]) == TileGrid;
 	}
 
-	bool check_board(Vec2i* in, const Vec2i& p)
+	bool check_board(cTileMap* board, Vec2i* in, const Vec2i& p)
 	{
 		return
-			c_board_main->cell(p) == TileGrid &&
-			c_board_main->cell(in[0] + p) == TileGrid &&
-			c_board_main->cell(in[1] + p) == TileGrid &&
-			c_board_main->cell(in[2] + p) == TileGrid;
+			board->cell(p) == TileGrid &&
+			board->cell(in[0] + p) == TileGrid &&
+			board->cell(in[1] + p) == TileGrid &&
+			board->cell(in[2] + p) == TileGrid;
 	}
 
-	bool line_empty(uint l)
+	bool line_empty(cTileMap* board, uint l)
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (c_board_main->cell(Vec2i(x, l)) != TileGrid)
+			if (board->cell(Vec2i(x, l)) != TileGrid)
 				return false;
 		}
 		return true;
 	}
 
-	bool line_full(uint l)
+	bool line_full(cTileMap* board, uint l)
 	{
 		for (auto x = 0; x < board_width; x++)
 		{
-			if (c_board_main->cell(Vec2i(x, l)) == TileGrid)
+			if (board->cell(Vec2i(x, l)) == TileGrid)
 				return false;
 		}
 		return true;
@@ -1109,7 +1166,7 @@ struct MyApp : App
 		return mino_rotation == 0 ? 3 : mino_rotation - 1;
 	}
 
-	bool super_rotation(bool clockwise, Vec2i* out_coord, Vec2i* offset)
+	bool super_rotation(cTileMap* board, bool clockwise, Vec2i* out_coord, Vec2i* offset)
 	{
 		Mat2x2i mats[] = {
 			Mat2x2i(Vec2i(0, -1), Vec2i(1, 0)),
@@ -1128,7 +1185,7 @@ struct MyApp : App
 		for (auto i = 0; i < 5; i++)
 		{
 			*offset = offsets[i][mino_rotation] - offsets[i][new_ridx];
-			if (check_board(out_coord, mino_pos + *offset))
+			if (check_board(board, out_coord, mino_pos + *offset))
 				return true;
 		}
 		return false;
@@ -1138,8 +1195,12 @@ struct MyApp : App
 	{
 		looper().clear_events(FLAME_CHASH("count_down"));
 
+		room_gaming = false;
 		gaming = false;
 
+		players.resize(1);
+		players[0].id = (void*)0xffff;
+		my_room_index = 0;
 		if (server)
 		{
 			Server::destroy(server);
@@ -1150,7 +1211,6 @@ struct MyApp : App
 			Client::destroy(client);
 			client = nullptr;
 		}
-		app.players.clear();
 
 		looper().add_event([](void*, bool*) {
 			app.root->remove_children(1, -1);
@@ -1164,68 +1224,62 @@ struct MyApp : App
 
 		if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
 		{
-			if (!paused)
+			if (!ui::get_top_layer(app.root, true, "paused"))
 			{
 				if (game_mode != GameMulti)
 				{
 					looper().clear_events(FLAME_CHASH("count_down"));
+					gaming = false;
 
-					ui::e_begin_dialog();
-					ui::e_text(L"Paused");
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Resume", [](void*) {
-						app.paused = false;
-						ui::remove_top_layer(app.root);
-
-						app.add_count_down();
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Restart", [](void*) {
-						app.paused = false;
-						ui::remove_top_layer(app.root);
-
-						app.play_time = 0.f;
-						app.start_game();
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Quit", [](void*) {
-						app.paused = false;
-						ui::remove_top_layer(app.root);
-
-						app.quit_game();
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_begin_dialog("paused");
+						ui::e_text(L"Paused");
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Resume", [](void*) {
+							ui::remove_top_layer(app.root);
+							app.begin_count_down();
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Restart", [](void*) {
+							ui::remove_top_layer(app.root);
+							app.play_time = 0.f;
+							app.start_game();
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Quit", [](void*) {
+							ui::remove_top_layer(app.root);
+							app.quit_game();
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
 					ui::e_end_dialog();
 				}
 				else
 				{
-					ui::e_begin_dialog();
-					ui::e_text(L"Paused");
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Resume", [](void*) {
-						app.paused = false;
-						ui::remove_top_layer(app.root);
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Quit", [](void*) {
-						app.paused = false;
-						ui::remove_top_layer(app.root);
-
-						app.quit_game();
-					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_begin_dialog("paused");
+						ui::e_text(L"");
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Resume", [](void*) {
+							ui::remove_top_layer(app.root);
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
+						ui::e_button(L"Quit", [](void*) {
+							ui::remove_top_layer(app.root);
+							app.quit_game();
+						}, Mail<>());
+						ui::c_aligner(AlignxMiddle, AlignyFree);
 					ui::e_end_dialog();
 				}
-
-				paused = true;
-				if (game_mode != GameMulti)
-					gaming = false;
 			}
 		}
 
-		if ((game_mode == GameMulti || !paused) && gaming && !win)
+		if (gaming)
 		{
 			play_time += looper().delta_time;
+
+			auto& p = players[my_room_index];
+			auto& c_main = p.c_main;
+			auto& c_hold = p.c_hold;
+			auto& c_next = p.c_next;
+			auto& e_garbage = p.e_garbage;
 
 			if (clear_ticks != -1)
 			{
@@ -1243,14 +1297,14 @@ struct MyApp : App
 								{
 									for (auto x = 0; x < board_width; x++)
 									{
-										auto id = c_board_main->cell(Vec2i(x, j - 1));
-										c_board_main->set_cell(Vec2u(x, j), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+										auto id = c_main->cell(Vec2i(x, j - 1));
+										c_main->set_cell(Vec2u(x, j), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 									}
 								}
 								else
 								{
 									for (auto x = 0; x < board_width; x++)
-										c_board_main->set_cell(Vec2u(x, j), TileGrid);
+										c_main->set_cell(Vec2u(x, j), TileGrid);
 								}
 							}
 						}
@@ -1261,17 +1315,17 @@ struct MyApp : App
 						nlohmann::json req;
 						req["action"] = "report_board";
 						req["index"] = my_room_index;
-						std::string board;
-						board.resize(board_height * board_width);
+						std::string d;
+						d.resize(board_height * board_width);
 						for (auto y = 0; y < board_height; y++)
 						{
 							for (auto x = 0; x < board_width; x++)
 							{
-								auto id = c_board_main->cell(Vec2i(x, y));
-								board[y * board_width + x] = '0' + id;
+								auto id = c_main->cell(Vec2i(x, y));
+								d[y * board_width + x] = '0' + id;
 							}
 						}
-						req["board"] = board;
+						req["board"] = d;
 						auto str = req.dump();
 						if (server)
 						{
@@ -1289,9 +1343,9 @@ struct MyApp : App
 			{
 				if (mino_pos.y() >= 0)
 				{
-					draw_mino(c_board_main, TileGrid, mino_pos, 0, mino_coords);
+					draw_mino(c_main, TileGrid, mino_pos, 0, mino_coords);
 					if (mino_bottom_dist > 0)
-						draw_mino(c_board_main, TileGrid, mino_pos, mino_bottom_dist, mino_coords);
+						draw_mino(c_main, TileGrid, mino_pos, mino_bottom_dist, mino_coords);
 				}
 
 				if (mino_pos.y() < 0)
@@ -1304,9 +1358,9 @@ struct MyApp : App
 							shuffle_pack(mino_pack_idx.x());
 							mino_pack_idx = Vec2i(1 - mino_pack_idx.x(), 0);
 						}
-						for (auto i = 0; i < array_size(c_board_next); i++)
+						for (auto i = 0; i < array_size(c_next); i++)
 						{
-							c_board_next[i]->clear_cells();
+							c_next[i]->clear_cells();
 							auto next_idx = mino_pack_idx;
 							next_idx.y() += i;
 							if (next_idx.y() >= MinoTypeCount)
@@ -1318,18 +1372,18 @@ struct MyApp : App
 							Vec2i coords[3];
 							for (auto j = 0; j < 3; j++)
 								coords[j] = g_mino_coords[t][j];
-							draw_mino(c_board_next[i], TileMino1 + t, Vec2i(1), 0, coords);
+							draw_mino(c_next[i], TileMino1 + t, Vec2i(1), 0, coords);
 						}
 					}
 					if (mino_pos.y() == -2)
 					{
-						c_board_hold->clear_cells();
+						c_hold->clear_cells();
 						if (mino_hold != MinoTypeCount)
 						{
 							Vec2i coords[3];
 							for (auto i = 0; i < 3; i++)
 								coords[i] = g_mino_coords[mino_hold][i];
-							draw_mino(c_board_hold, TileMino1 + mino_hold, Vec2i(1), 0, coords);
+							draw_mino(c_hold, TileMino1 + mino_hold, Vec2i(1), 0, coords);
 						}
 					}
 					mino_pos = Vec2i(4, 5 - (mino_type == Mino_I ? 1 : 0));
@@ -1339,28 +1393,24 @@ struct MyApp : App
 					mino_reset_times = -1;
 					mino_ticks = 0;
 
-					auto dead = !check_board(Vec2i(0));
+					auto dead = !check_board(c_main, Vec2i(0));
 					if (dead)
 					{
 						{
 							auto pos = mino_pos;
-							c_board_main->set_cell(Vec2u(pos), 
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+							c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 						{
 							auto pos = mino_pos + mino_coords[0];
-							c_board_main->set_cell(Vec2u(pos),
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+							c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 						{
 							auto pos = mino_pos + mino_coords[1];
-							c_board_main->set_cell(Vec2u(pos),
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+							c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 						{
 							auto pos = mino_pos + mino_coords[2];
-							c_board_main->set_cell(Vec2u(pos),
-								c_board_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+							c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 						}
 					}
 					if (dead || (game_mode == GameSingleRTA && lines >= 40))
@@ -1374,22 +1424,13 @@ struct MyApp : App
 							auto str = req.dump();
 							if (server)
 							{
-								for (auto i = 0; i < players.size(); i++)
+								for (auto i = 1; i < players.size(); i++)
 									server->send(players[i].id, str.data(), str.size(), false);
 							}
 							if (client)
 								client->send(str.data(), str.size());
 
-							ui::e_begin_dialog();
-							ui::e_text(L"You Lose");
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-							ui::e_button(L"Quit", [](void*) {
-								ui::remove_top_layer(app.root);
-
-								app.quit_game();
-							}, Mail<>());
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-							ui::e_end_dialog();
+							ui::e_message_dialog(L"You Lose");
 						}
 						else
 						{
@@ -1402,13 +1443,11 @@ struct MyApp : App
 							ui::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
 							ui::e_button(L"Quit", [](void*) {
 								ui::remove_top_layer(app.root);
-
 								app.quit_game();
 							}, Mail<>());
 							ui::c_aligner(AlignxMiddle, AlignyFree);
 							ui::e_button(L"Restart", [](void*) {
 								ui::remove_top_layer(app.root);
-
 								app.start_game();
 							}, Mail<>());
 							ui::c_aligner(AlignxMiddle, AlignyFree);
@@ -1443,7 +1482,7 @@ struct MyApp : App
 						{
 							Vec2i new_coords[3];
 							Vec2i offset;
-							if (super_rotation(r == 1, new_coords, &offset))
+							if (super_rotation(c_main, r == 1, new_coords, &offset))
 							{
 								if (offset != 0)
 									mini = true;
@@ -1486,7 +1525,7 @@ struct MyApp : App
 						}
 						else
 							right_frames = -1;
-						if (mx != 0 && check_board(Vec2i(mx, 0)))
+						if (mx != 0 && check_board(c_main, Vec2i(mx, 0)))
 						{
 							mino_pos.x() += mx;
 							moved = true;
@@ -1500,7 +1539,7 @@ struct MyApp : App
 							last_is_rotate_action = !moved;
 
 						mino_bottom_dist = 0;
-						while (check_board(Vec2i(0, mino_bottom_dist + 1)))
+						while (check_board(c_main, Vec2i(0, mino_bottom_dist + 1)))
 							mino_bottom_dist++;
 						if (rotated || moved)
 						{
@@ -1542,20 +1581,20 @@ struct MyApp : App
 								if (hard_drop)
 									score += mino_bottom_dist * 2;
 								mino_bottom_dist = 0;
-								draw_mino(c_board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords, mino_col_decay);
+								draw_mino(c_main, TileMino1 + mino_type, mino_pos, 0, mino_coords, mino_col_decay);
 
 								for (auto i = 0; i < 4; i++)
 									full_lines[i] = -1;
 								auto l = 0U;
 								for (auto i = 0; i < board_height; i++)
 								{
-									if (line_full(i))
+									if (line_full(c_main, i))
 									{
 										full_lines[l] = i;
 
 										{
-											auto cell_size = c_board_main->cell_size_;
-											auto board_element = c_board_main->element;
+											auto cell_size = c_main->cell_size_;
+											auto board_element = c_main->element;
 											auto pos = board_element->global_pos + Vec2f(board_element->inner_padding_[0], board_element->inner_padding_[1]);
 											pos.y() += i * cell_size.y();
 											ui::push_parent(root);
@@ -1622,7 +1661,7 @@ struct MyApp : App
 											auto p = mino_pos + judge_points[i];
 											if (p.x() < 0 || p.x() >= board_width ||
 												p.y() < 0 || p.y() >= board_height ||
-												c_board_main->cell(p) != TileGrid)
+												c_main->cell(p) != TileGrid)
 												count++;
 										}
 										if (count < 3)
@@ -1670,7 +1709,7 @@ struct MyApp : App
 									for (auto i = 0; i < l; i++)
 									{
 										for (auto x = 0; x < board_width; x++)
-											c_board_main->set_cell(Vec2u(x, full_lines[i]), TileGrid);
+											c_main->set_cell(Vec2u(x, full_lines[i]), TileGrid);
 									}
 
 									clear_ticks = CLEAR_TICKS;
@@ -1690,8 +1729,8 @@ struct MyApp : App
 										{
 											for (auto x = 0; x < board_width; x++)
 											{
-												auto id = c_board_main->cell(Vec2i(x, i + garbage));
-												c_board_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+												auto id = c_main->cell(Vec2i(x, i + garbage));
+												c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 											}
 										}
 										auto hole = ::rand() % board_width;
@@ -1699,8 +1738,8 @@ struct MyApp : App
 										{
 											auto y = board_height - i - 1;
 											for (auto x = 0; x < board_width; x++)
-												c_board_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
-											c_board_main->set_cell(Vec2u(hole, y), TileGrid);
+												c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
+											c_main->set_cell(Vec2u(hole, y), TileGrid);
 										}
 										garbage = 0;
 										need_update_garbage = true;
@@ -1735,8 +1774,8 @@ struct MyApp : App
 						if (mino_pos.y() != -1)
 						{
 							if (mino_bottom_dist)
-								draw_mino(c_board_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords, g_mino_colors[mino_type]);
-							draw_mino(c_board_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
+								draw_mino(c_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords, g_mino_colors[mino_type]);
+							draw_mino(c_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
 						}
 					}
 				}

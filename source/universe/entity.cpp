@@ -22,6 +22,8 @@ namespace flame
 
 	EntityPrivate::~EntityPrivate()
 	{
+		for (auto& c : children)
+			c->on_removed_listeners.call(c.get());
 		ListenerHubImpl::destroy(on_removed_listeners.impl);
 		for (auto& r : resources)
 			r.second(r.first);
