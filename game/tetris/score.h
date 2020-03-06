@@ -2,7 +2,7 @@
 
 #include <flame/serialize.h>
 
-inline void get_combo_award(uint combo, uint& attack, std::wstring& str)
+inline void get_combo_award(uint combo, int& attack, std::wstring& str)
 {
 	if (combo >= 1)
 	{
@@ -51,7 +51,7 @@ inline void get_combo_award(uint combo, uint& attack, std::wstring& str)
 	}
 }
 
-inline void get_lines_award(uint l, bool tspin, bool mini, bool& back_to_back, uint& score, uint& attack, std::wstring& str)
+inline void get_lines_award(uint l, bool tspin, bool mini, bool& back_to_back, uint& score, int& attack, std::wstring& str)
 {
 	switch (l)
 	{

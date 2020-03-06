@@ -58,6 +58,7 @@ struct Player
 	void* id;
 	std::wstring name;
 	bool ready;
+	bool dead;
 
 	Entity* e;
 	cTileMap* c_main;
@@ -70,7 +71,8 @@ struct Player
 
 	Player() :
 		id(nullptr),
-		ready(false)
+		ready(false),
+		dead(false)
 	{
 	}
 };
@@ -350,6 +352,18 @@ struct MyApp : App
 				p.e_garbage = ui::e_element();
 			}
 		}
+
+		if (game_mode == GameMulti)
+		{
+			ui::push_style_1u(ui::FontSize, 60 * scale);
+			ui::next_element_pos = pos + Vec2f(150.f, 200.f) * scale;
+			p.c_ready = ui::e_text(L"Ready")->get_component(cText);
+			p.c_ready->entity->set_visibility(false);
+			ui::next_element_pos = pos + Vec2f(160.f, 150.f) * scale;
+			p.c_rank = ui::e_text(L"Ready")->get_component(cText);
+			p.c_rank->entity->set_visibility(false);
+			ui::pop_style(ui::FontSize);
+		}
 	}
 
 	void process_player_entered(int index)
@@ -364,6 +378,23 @@ struct MyApp : App
 				ui::pop_parent();
 			ui::pop_parent();
 		}, new_mail(&index));
+	}
+
+	void process_player_ready(int index)
+	{
+		looper().add_event([](void* c, bool*) {
+			auto& p = app.players[*(int*)c];
+			p.ready = true;
+			p.c_ready->entity->set_visibility(true);
+		}, new_mail(&index));
+	}
+
+	void process_game_start()
+	{
+		looper().add_event([](void*, bool*) {
+			app.room_gaming = true;
+			app.start_game();
+		}, Mail<>());
 	}
 
 	void process_report_board(int index, const std::string& d)
@@ -388,12 +419,36 @@ struct MyApp : App
 		}, new_mail(&capture));
 	}
 
-	void process_game_start()
+	void process_dead(int index, int rank)
 	{
-		looper().add_event([](void*, bool*) {
-			app.room_gaming = true;
-			app.start_game();
-		}, Mail<>());
+		struct Capture
+		{
+			int index;
+			int rank;
+		}capture;
+		capture.index = index;
+		capture.rank = rank;
+		looper().add_event([](void* c, bool*) {
+			auto& capture = *(Capture*)c;
+			auto& p = app.players[capture.index];
+			std::wstring str;
+			switch (capture.rank)
+			{
+			case 1:
+				str = L"1st";
+				break;
+			case 2:
+				str = L"2nd";
+				break;
+			case 3:
+				str = L"3rd";
+				break;
+			default:
+				str = std::to_wstring(capture.rank) + L"th";
+			}
+			p.c_rank->set_text(str.c_str());
+			p.c_rank->entity->set_visibility(true);
+		}, new_mail(&capture));
 	}
 
 	void process_gameover()
@@ -401,7 +456,7 @@ struct MyApp : App
 		looper().add_event([](void*, bool*) {
 			app.room_gaming = false;
 			app.gaming = false;
-			ui::e_message_dialog(L"You Win");
+			app.e_start_or_ready->set_visibility(true);
 		}, Mail<>());
 	}
 
@@ -431,21 +486,26 @@ struct MyApp : App
 			{
 				auto index = req["index"].get<int>();
 				auto& p = app.players[index];
+				p.id = (void*)0xffff;
 				p.name = s2w(req["name"].get<std::string>());
 
 				app.process_player_entered(index);
 			}
+			else if (action == "player_ready")
+				app.process_player_ready(req["index"].get<int>());
 			else if (action == "game_start")
 				app.process_game_start();
 			else if (action == "report_board")
 				app.process_report_board(req["index"].get<int>(), req["board"].get<std::string>());
+			else if (action == "report_dead")
+				app.process_dead(req["index"].get<int>(), req["rank"].get<int>());
 			else if (action == "report_gameover")
 				app.process_gameover();
 			else if (action == "attack")
 			{
 				auto value = req["value"].get<int>();
 				looper().add_event([](void* c, bool*) {
-					app.garbage = *(int*)c;
+					app.garbage += *(int*)c;
 					app.need_update_garbage = true;
 				}, new_mail(&value));
 			}
@@ -462,6 +522,76 @@ struct MyApp : App
 		}
 		else
 			ui::e_message_dialog(L"Join Room Failed");
+	}
+
+	void people_dead(int index)
+	{
+		auto& p = players[index];
+		p.dead = true;
+
+		auto total_people = 0;
+		auto dead_people = 0;
+		auto last_people = 0;
+		for (auto i = 0; i < app.players.size(); i++)
+		{
+			auto& p = app.players[i];
+			if (p.id)
+			{
+				total_people++;
+				if (p.dead)
+					dead_people++;
+				else
+					last_people = i;
+			}
+		}
+		auto rank = total_people - dead_people + 1;
+
+		{
+			nlohmann::json rep;
+			rep["action"] = "report_dead";
+			rep["index"] = index;
+			rep["rank"] = rank;
+			auto str = rep.dump();
+			for (auto i = 1; i < app.players.size(); i++)
+			{
+				auto& p = app.players[i];
+				if (p.id)
+					app.server->send(p.id, str.data(), str.size(), false);
+			}
+		}
+
+		process_dead(index, rank);
+
+		if (total_people - dead_people == 1)
+		{
+			{
+				nlohmann::json rep;
+				rep["action"] = "report_dead";
+				rep["index"] = last_people;
+				rep["rank"] = 1;
+				auto str = rep.dump();
+				for (auto i = 1; i < app.players.size(); i++)
+				{
+					auto& p = app.players[i];
+					if (p.id)
+						app.server->send(p.id, str.data(), str.size(), false);
+				}
+			}
+			app.process_dead(last_people, 1);
+
+			{
+				nlohmann::json rep;
+				rep["action"] = "report_gameover";
+				auto str = rep.dump();
+				for (auto i = 1; i < app.players.size(); i++)
+				{
+					auto& p = app.players[i];
+					if (p.id)
+						app.server->send(p.id, str.data(), str.size(), false);
+				}
+			}
+			app.process_gameover();
+		}
 	}
 
 	void create_lan_scene()
@@ -496,9 +626,9 @@ struct MyApp : App
 						auto str = req.dump();
 						board_cast(2434, str.data(), str.size(), 1, [](void* c, const char* ip, const char* msg, uint size) {
 							auto e_room_list = *(Entity**)c;
-							auto reply = nlohmann::json::parse(std::string(msg, size));
-							auto name = s2w(reply["name"].get<std::string>());
-							auto host = s2w(reply["host"].get<std::string>());
+							auto rep = nlohmann::json::parse(std::string(msg, size));
+							auto name = s2w(rep["name"].get<std::string>());
+							auto host = s2w(rep["host"].get<std::string>());
 
 							ui::push_parent(e_room_list);
 							ui::e_list_item((L"Name:" + name + L" Host:" + host).c_str());
@@ -562,10 +692,10 @@ struct MyApp : App
 											auto req = nlohmann::json::parse(std::string(msg, size));
 											if (req["action"] == "get_room")
 											{
-												nlohmann::json reply;
-												reply["name"] = w2s(app.room_name);
-												reply["host"] = w2s(app.my_name);
-												auto str = reply.dump();
+												nlohmann::json rep;
+												rep["name"] = w2s(app.room_name);
+												rep["host"] = w2s(app.my_name);
+												auto str = rep.dump();
 												app.server->send(id, str.data(), str.size(), true);
 											}
 										},
@@ -578,26 +708,21 @@ struct MyApp : App
 													if (!p.id)
 													{
 														{
-															nlohmann::json reply;
-															reply["action"] = "report_room";
-															reply["room_name"] = w2s(app.room_name);
-															reply["max_people"] = app.room_max_people;
-															reply["index"] = i;
-															auto str = reply.dump();
+															nlohmann::json rep;
+															rep["action"] = "report_room";
+															rep["room_name"] = w2s(app.room_name);
+															rep["max_people"] = app.room_max_people;
+															rep["index"] = i;
+															auto str = rep.dump();
 															app.server->send(id, str.data(), str.size(), false);
 														}
-														for (auto j = 0; j < app.players.size(); j++)
 														{
-															auto& p = app.players[j];
-															if (p.id)
-															{
-																nlohmann::json reply;
-																reply["action"] = "player_entered";
-																reply["index"] = j;
-																reply["name"] = w2s(p.name);
-																auto str = reply.dump();
-																app.server->send(id, str.data(), str.size(), false);
-															}
+															nlohmann::json rep;
+															rep["action"] = "player_entered";
+															rep["index"] = app.my_room_index;
+															rep["name"] = w2s(app.my_name);
+															auto str = rep.dump();
+															app.server->send(id, str.data(), str.size(), false);
 														}
 
 														p.id = id;
@@ -611,14 +736,69 @@ struct MyApp : App
 															{
 																p.name = s2w(req["name"].get<std::string>());
 
+																{
+																	nlohmann::json rep;
+																	rep["action"] = "player_entered";
+																	rep["index"] = index;
+																	rep["name"] = w2s(p.name);
+																	auto str = req.dump();
+																	for (auto i = 1; i < app.players.size(); i++)
+																	{
+																		if (i != index)
+																		{
+																			auto& p = app.players[i];
+																			if (p.id)
+																				app.server->send(p.id, str.data(), str.size(), false);
+																		}
+																	}
+																}
+
 																app.process_player_entered(index);
 															}
 															else if (action == "ready")
-																p.ready = true;
+															{
+																app.process_player_ready(index);
+
+																{
+																	nlohmann::json rep;
+																	rep["action"] = "player_ready";
+																	rep["index"] = index;
+																	auto str = req.dump();
+																	for (auto i = 1; i < app.players.size(); i++)
+																	{
+																		if (i != index)
+																		{
+																			auto& p = app.players[i];
+																			if (p.id)
+																				app.server->send(p.id, str.data(), str.size(), false);
+																		}
+																	}
+																}
+															}
 															else if (action == "report_board")
-																app.process_report_board(req["index"].get<int>(), req["board"].get<std::string>());
-															else if (action == "report_gameover")
-																app.process_gameover();
+															{
+																auto d = req["board"].get<std::string>();
+																app.process_report_board(req["index"].get<int>(), d);
+
+																{
+																	nlohmann::json rep;
+																	rep["action"] = "report_board";
+																	rep["index"] = index;
+																	rep["board"] = d;
+																	auto str = req.dump();
+																	for (auto i = 1; i < app.players.size(); i++)
+																	{
+																		if (i != index)
+																		{
+																			auto& p = app.players[i];
+																			if (p.id)
+																				app.server->send(p.id, str.data(), str.size(), false);
+																		}
+																	}
+																}
+															}
+															else if (action == "report_dead")
+																app.people_dead(index);
 															else if (action == "attack")
 															{
 																auto value = req["value"].get<int>();
@@ -997,6 +1177,8 @@ struct MyApp : App
 							req["action"] = "ready";
 							auto str = req.dump();
 							app.client->send(str.data(), str.size());
+
+							app.process_player_ready(app.my_room_index);
 						}
 					}, Mail<>());
 				}
@@ -1056,6 +1238,7 @@ struct MyApp : App
 			if (p.id)
 			{
 				p.ready = false;
+				p.dead = false;
 				p.c_main->clear_cells(TileGrid);
 				if (i == app.my_room_index)
 				{
@@ -1063,8 +1246,15 @@ struct MyApp : App
 					for (auto j = 0; j < array_size(p.c_next); j++)
 						p.c_next[j]->clear_cells(-1);
 				}
+				if (game_mode == GameMulti)
+				{
+					p.c_ready->entity->set_visibility(false);
+					p.c_rank->entity->set_visibility(false);
+				}
 			}
 		}
+		if (game_mode == GameMulti)
+			e_start_or_ready->set_visibility(false);
 
 		left_frames = -1;
 		right_frames = -1;
@@ -1281,6 +1471,8 @@ struct MyApp : App
 			auto& c_next = p.c_next;
 			auto& e_garbage = p.e_garbage;
 
+			auto dead = false;
+
 			if (clear_ticks != -1)
 			{
 				clear_ticks--;
@@ -1308,32 +1500,6 @@ struct MyApp : App
 								}
 							}
 						}
-					}
-
-					if (game_mode == GameMulti)
-					{
-						nlohmann::json req;
-						req["action"] = "report_board";
-						req["index"] = my_room_index;
-						std::string d;
-						d.resize(board_height * board_width);
-						for (auto y = 0; y < board_height; y++)
-						{
-							for (auto x = 0; x < board_width; x++)
-							{
-								auto id = c_main->cell(Vec2i(x, y));
-								d[y * board_width + x] = '0' + id;
-							}
-						}
-						req["board"] = d;
-						auto str = req.dump();
-						if (server)
-						{
-							for (auto i = 1; i < players.size(); i++)
-								server->send(players[i].id, str.data(), str.size(), false);
-						}
-						if (client)
-							client->send(str.data(), str.size());
 					}
 
 					clear_ticks = -1;
@@ -1393,7 +1559,7 @@ struct MyApp : App
 					mino_reset_times = -1;
 					mino_ticks = 0;
 
-					auto dead = !check_board(c_main, Vec2i(0));
+					dead = !check_board(c_main, Vec2i(0));
 					if (dead)
 					{
 						{
@@ -1417,22 +1583,7 @@ struct MyApp : App
 					{
 						gaming = false;
 
-						if (game_mode == GameMulti)
-						{
-							nlohmann::json req;
-							req["action"] = "report_gameover";
-							auto str = req.dump();
-							if (server)
-							{
-								for (auto i = 1; i < players.size(); i++)
-									server->send(players[i].id, str.data(), str.size(), false);
-							}
-							if (client)
-								client->send(str.data(), str.size());
-
-							ui::e_message_dialog(L"You Lose");
-						}
-						else
+						if (game_mode != GameMulti)
 						{
 							ui::e_begin_dialog();
 							ui::e_text(L"Game Over");
@@ -1456,7 +1607,7 @@ struct MyApp : App
 					}
 				}
 
-				if (gaming)
+				if (!dead)
 				{
 					if (key_states[key_map[KEY_HOLD]] == (KeyStateDown | KeyStateJust) && (game_mode == GameSinglePractice || mino_just_hold == false))
 					{
@@ -1640,7 +1791,7 @@ struct MyApp : App
 								{
 									std::wstring special_str;
 
-									auto attack = 0U;
+									auto attack = 0;
 
 									get_combo_award(combo, attack, special_str);
 
@@ -1670,13 +1821,20 @@ struct MyApp : App
 
 									get_lines_award(l, tspin, mini, back_to_back, score, attack, special_str);
 
-									auto cancel = max(attack, l);
+									auto cancel = max(attack, (int)l);
 									if (garbage)
 									{
 										if (garbage < cancel)
+										{
+											cancel -= garbage;
 											garbage = 0;
+										}
 										else
+										{
 											garbage -= cancel;
+											cancel = 0;
+										}
+
 										attack -= cancel;
 										need_update_garbage = true;
 									}
@@ -1776,6 +1934,45 @@ struct MyApp : App
 							if (mino_bottom_dist)
 								draw_mino(c_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords, g_mino_colors[mino_type]);
 							draw_mino(c_main, TileMino1 + mino_type, mino_pos, 0, mino_coords);
+						}
+					}
+				}
+
+				if (game_mode == GameMulti)
+				{
+					nlohmann::json req;
+					req["action"] = "report_board";
+					req["index"] = my_room_index;
+					std::string d;
+					d.resize(board_height * board_width);
+					for (auto y = 0; y < board_height; y++)
+					{
+						for (auto x = 0; x < board_width; x++)
+						{
+							auto id = c_main->cell(Vec2i(x, y));
+							d[y * board_width + x] = '0' + id;
+						}
+					}
+					req["board"] = d;
+					auto str = req.dump();
+					if (server)
+					{
+						for (auto i = 1; i < players.size(); i++)
+							server->send(players[i].id, str.data(), str.size(), false);
+					}
+					if (client)
+						client->send(str.data(), str.size());
+
+					if (dead)
+					{
+						if (server)
+							people_dead(my_room_index);
+						if (client)
+						{
+							nlohmann::json req;
+							req["action"] = "report_dead";
+							auto str = req.dump();
+							client->send(str.data(), str.size());
 						}
 					}
 				}

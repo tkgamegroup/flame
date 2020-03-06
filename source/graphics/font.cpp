@@ -58,10 +58,23 @@ namespace flame
 
 		static std::vector<std::unique_ptr<Font>> loaded_fonts;
 
+		Glyph* new_glyph()
+		{
+			auto g = new Glyph;
+			g->unicode = 0;
+			g->size = 0;
+			g->off = 0;
+			g->advance = 0;
+			g->uv0 = Vec2f(0.f);
+			g->uv1 = Vec2f(0.f);
+			return g;
+		}
+
 		struct FontAtlasPrivate : FontAtlas
 		{
 			std::vector<Font*> fonts;
 
+			std::unique_ptr<Glyph> empty_glyph;
 			std::unordered_map<uint, std::unique_ptr<Glyph>> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
@@ -110,6 +123,8 @@ namespace flame
 					imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
 				else
 					imageview = Imageview::create(image);
+
+				empty_glyph.reset(new_glyph());
 			}
 
 			~FontAtlasPrivate()
@@ -136,19 +151,17 @@ namespace flame
 
 			Glyph* get_glyph(wchar_t unicode, uint font_size)
 			{
+				if (font_size == 0)
+					return empty_glyph.get();
+
 				if (draw_type == FontDrawSdf)
 					font_size = sdf_font_size;
 				auto hash = hash_update(unicode, font_size);
 
 				if (!map[hash])
 				{
-					auto g = new Glyph;
+					auto g = new_glyph();
 					g->unicode = unicode;
-					g->size = 0;
-					g->off = 0;
-					g->advance = 0;
-					g->uv0 = Vec2f(0.f);
-					g->uv1 = Vec2f(0.f);
 					map[hash].reset(g);
 
 					for (auto font : fonts)
