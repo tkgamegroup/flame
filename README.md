@@ -39,7 +39,7 @@ An ECS Game Engine Based On Reflection.
   
 - enjoy
 
-PS: if you want to build in release confin, always build in RelWithDebugInfo, because DebugInfo is always needed
+PS: if you want to build in release confin, always build in RelWithDebInfo, because DebugInfo is always needed
 
 ### UI Gallery:
 ![ui](https://github.com/tkgamegroup/flame/blob/master/screenshots/ui.png)
