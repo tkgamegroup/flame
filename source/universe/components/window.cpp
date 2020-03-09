@@ -224,6 +224,7 @@ namespace flame
 			page_element = page->get_component(cElement);
 			auto page_aligner = page->get_component(cAligner);
 			auto list = list_item->list;
+			list_item->list = nullptr;
 
 			if (close)
 			{

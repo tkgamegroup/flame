@@ -32,8 +32,7 @@ namespace flame
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
 
-		cEventReceiver* potential_dbclick_er;
-		float potential_dbclick_time;
+		float dbclick_timer;
 
 		Vec2i active_pos;
 
@@ -61,8 +60,7 @@ namespace flame
 			mouse_scroll = 0;
 			for (auto i = 0; i < array_size(mouse_buttons); i++)
 				mouse_buttons[i] = KeyStateUp;
-			potential_dbclick_er = nullptr;
-			potential_dbclick_time = 0.f;
+			dbclick_timer = -1.f;
 
 			active_pos = Vec2i(0);
 		}
@@ -159,21 +157,14 @@ namespace flame
 			pending_update = false;
 
 			mouse_disp = mouse_pos - mouse_pos_prev;
-			if (potential_dbclick_er)
-			{
-				potential_dbclick_time += looper().delta_time;
-				if (potential_dbclick_time > 0.5f)
-				{
-					potential_dbclick_er = nullptr;
-					potential_dbclick_time = 0.f;
-				}
-			}
 
 			auto prev_hovering = hovering;
 			auto prev_focusing = focusing;
 			auto prev_focusing_state = focusing_state;
 			auto prev_drag_overing = drag_overing;
 			auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
+
+			hovering = nullptr;
 
 			if (next_focusing != INVALID_POINTER)
 			{
@@ -189,6 +180,15 @@ namespace flame
 					focusing_state = FocusingNormal;
 			}
 
+			if (!focusing)
+				dbclick_timer = -1.f;
+			if (dbclick_timer > 0.f)
+			{
+				dbclick_timer -= looper().delta_time;
+				if (dbclick_timer <= 0.f)
+					dbclick_timer = -1.f;
+			}
+
 			drag_overing = nullptr;
 			if (focusing && focusing_state == FocusingAndActive)
 			{
@@ -198,8 +198,6 @@ namespace flame
 						focusing_state = FocusingAndDragging;
 				}
 			}
-			else if (hovering)
-				hovering = nullptr;
 			hovers_searcher.search(this, mouse_pos, (EntityPrivate*)root);
 
 			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
@@ -260,18 +258,12 @@ namespace flame
 			if (focusing && is_mouse_up(mouse_buttons[Mouse_Left], Mouse_Left, true) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
 			{
 				auto disp = mouse_pos - active_pos;
-				((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, disp);
-				if (focusing) // since focusing may change to null after on_mouse
-				{
-					if (potential_dbclick_er == focusing)
-					{
-						((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, disp);
-						potential_dbclick_er = nullptr;
-						potential_dbclick_time = 0.f;
-					}
-					else
-						potential_dbclick_er = focusing;
-				}
+				auto db = dbclick_timer > 0.f;
+				((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
+				if (db)
+					dbclick_timer = -1.f;
+				else
+					dbclick_timer = 0.5f;
 			}
 
 			if (prev_hovering != hovering)
@@ -323,7 +315,7 @@ namespace flame
 		pos = Vec2f(_pos);
 		pass = (EntityPrivate*)INVALID_POINTER;
 		mouse_dispatch_list.clear();
-		if (thiz->focusing && thiz->focusing_state == FocusingAndActive)
+		if (thiz->focusing && thiz->focusing_state != FocusingNormal)
 			mouse_dispatch_list.push_back(thiz->focusing);
 		search_r(root);
 		std::reverse(mouse_dispatch_list.begin(), mouse_dispatch_list.end());

@@ -10,8 +10,6 @@ const auto img_id = 9;
 
 struct MyApp : App
 {
-	sEventDispatcher* event_dispatcher;
-
 	FontAtlas* font_atlas_lcd;
 	FontAtlas* font_atlas_sdf;
 
@@ -66,12 +64,12 @@ struct MyApp : App
 							auto& capture = *(Capture*)c;
 							{
 								std::wstring str = L"Mouse: ";
-								str += to_wstring(app.event_dispatcher->mouse_pos);
+								str += to_wstring(app.s_event_dispatcher->mouse_pos);
 								capture.txt_mouse->set_text(str.c_str());
 							}
 							{
 								std::wstring str = L"Hovering: ";
-								auto hovering = app.event_dispatcher->hovering;
+								auto hovering = app.s_event_dispatcher->hovering;
 								if (hovering)
 								{
 									if (hovering->entity == app.root)
@@ -86,16 +84,16 @@ struct MyApp : App
 							{
 								auto color = ui::style_4c(ui::TextColorNormal);
 								std::wstring str = L"Focusing: ";
-								auto focusing = app.event_dispatcher->focusing;
+								auto focusing = app.s_event_dispatcher->focusing;
 								if (focusing)
 								{
 									if (focusing->entity == app.root)
 										str += L"Root";
 									else
 										str += wfmt(L"%I64X", (ulonglong)focusing);
-									if (focusing == app.event_dispatcher->hovering)
+									if (focusing == app.s_event_dispatcher->hovering)
 										color = Vec4c(0, 255, 0, 255);
-									switch (app.event_dispatcher->focusing_state)
+									switch (app.s_event_dispatcher->focusing_state)
 									{
 									case FocusingAndActive:
 										str += L" Active";
@@ -112,7 +110,7 @@ struct MyApp : App
 							}
 							{
 								std::wstring str = L"Draw Overing: ";
-								auto drag_overing = app.event_dispatcher->drag_overing;
+								auto drag_overing = app.s_event_dispatcher->drag_overing;
 								if (drag_overing)
 								{
 									if (drag_overing->entity == app.root)
