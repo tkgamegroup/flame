@@ -14,7 +14,8 @@ namespace flame
 	{
 		World* world_;
 
-		ListenerHub<bool(void* c, Entity* e)> on_removed_listeners;
+		ListenerHub<bool(void* c)> on_removed_listeners;
+		ListenerHub<bool(void* c)> on_destroyed_listeners;
 
 		uint order_; // depth, child_idx
 		int created_frame_;
@@ -54,8 +55,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void remove_children(int from, int to /* -1 is end */, bool destroy = true);
 
 		FLAME_UNIVERSE_EXPORTS Entity* copy();
-
-		FLAME_UNIVERSE_EXPORTS void associate_resource(void* res, void(*deleter)(void* res));
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, const wchar_t* filename);

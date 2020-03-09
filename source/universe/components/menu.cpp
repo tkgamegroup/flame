@@ -33,7 +33,7 @@ namespace flame
 		{
 			if (!on_removed_listener)
 			{
-				on_removed_listener = entity->on_removed_listeners.add([](void* c, Entity* l) {
+				on_removed_listener = entity->on_removed_listeners.add([](void* c) {
 					auto thiz = *(cMenuItemsPrivate**)c;
 					if (thiz->menu)
 						thiz->menu->opened = false;

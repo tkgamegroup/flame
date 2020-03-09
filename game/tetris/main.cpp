@@ -569,7 +569,7 @@ struct MyApp : App
 		},
 		[](void*) {
 			looper().add_event([](void*, bool*) {
-				ui::e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](void*, Entity*) {
+				ui::e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](void*) {
 					looper().add_event([](void*, bool*) {
 						app.quit_game();
 					}, Mail<>());
@@ -1182,12 +1182,16 @@ struct MyApp : App
 		ui::push_parent(root);
 		ui::push_style_1u(ui::FontSize, 20);
 
-			ui::e_empty()->associate_resource(looper().add_event([](void*, bool* go_on) {
-				app.do_game_logic();
-				*go_on = true;
-			}, new_mail_p(ui::current_entity()->get_component(cText))), [](void* ev) {
-				looper().remove_event(ev);
-			});
+			{
+				auto e = ui::e_empty();
+				e->on_destroyed_listeners.add([](void* c) {
+					looper().remove_event(*(void**)c);
+					return true;
+				}, new_mail_p(looper().add_event([](void*, bool* go_on) {
+					app.do_game_logic();
+					*go_on = true;
+				}, Mail<>())));
+			}
 
 			if (game_mode == GameMulti)
 				ui::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
@@ -2169,11 +2173,15 @@ int main(int argc, char **args)
 	ui::set_current_root(app.root);
 
 	ui::push_parent(app.root);
-	ui::e_text(L"")->associate_resource(add_fps_listener([](void* c, uint fps) {
-		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, new_mail_p(ui::current_entity()->get_component(cText))), [](void* ev) {
-		looper().remove_event(ev);
-	});
+	{
+		auto e = ui::e_text(L"");
+		e->on_destroyed_listeners.add([](void* c) {
+			looper().remove_event(*(void**)c);
+			return true;
+		}, new_mail_p(add_fps_listener([](void* c, uint fps) {
+			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+		}, new_mail_p(e->get_component(cText)))));
+	}
 	ui::c_aligner(AlignxLeft, AlignyBottom);
 	ui::pop_parent();
 

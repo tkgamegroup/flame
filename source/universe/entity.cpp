@@ -6,6 +6,7 @@ namespace flame
 	EntityPrivate::EntityPrivate()
 	{
 		on_removed_listeners.impl = ListenerHubImpl::create();
+		on_destroyed_listeners.impl = ListenerHubImpl::create();
 
 		order_ = 0;
 		created_frame_ = looper().frame;
@@ -23,10 +24,10 @@ namespace flame
 	EntityPrivate::~EntityPrivate()
 	{
 		for (auto& c : children)
-			c->on_removed_listeners.call(c.get());
+			c->on_removed_listeners.call();
+		on_destroyed_listeners.call();
 		ListenerHubImpl::destroy(on_removed_listeners.impl);
-		for (auto& r : resources)
-			r.second(r.first);
+		ListenerHubImpl::destroy(on_destroyed_listeners.impl);
 	}
 
 	void EntityPrivate::set_visibility(bool v)
@@ -197,7 +198,7 @@ namespace flame
 					for (auto& _c : e->components)
 						c.second->on_child_component_removed(_c.second.get());
 				}
-				e->on_removed_listeners.call(e);
+				e->on_removed_listeners.call();
 				leave_world(e);
 				if (!destroy)
 				{
@@ -228,7 +229,7 @@ namespace flame
 		for (auto i = 0; i < count; i++)
 		{
 			auto& e = children[from];
-			e->on_removed_listeners.call(e.get());
+			e->on_removed_listeners.call();
 			leave_world(e.get());
 			if (!destroy)
 			{
@@ -356,11 +357,6 @@ namespace flame
 	Entity* Entity::copy()
 	{
 		return ((EntityPrivate*)this)->copy();
-	}
-
-	void Entity::associate_resource(void* res, void(*deleter)(void* res))
-	{
-		((EntityPrivate*)this)->resources.emplace_back(res, deleter);
 	}
 
 	Entity* Entity::create()
