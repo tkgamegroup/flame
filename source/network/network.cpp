@@ -238,15 +238,16 @@ namespace flame
 			destroy_event(ev_ended);
 		}
 
-		void stop()
+		void stop(bool passive)
 		{
 			std::lock_guard<std::recursive_mutex> lock(mtx);
 			if (fd)
 			{
 				closesocket(fd);
 				fd = 0;
+				if (passive)
+					on_close(capture.p);
 			}
-			on_close(capture.p);
 		}
 	};
 
@@ -293,7 +294,7 @@ namespace flame
 				std::lock_guard<std::recursive_mutex> lock(c->mtx);
 				if (ret < (int)sizeof(int))
 				{
-					c->stop();
+					c->stop(true);
 					set_event(c->ev_ended);
 					return;
 				}
@@ -305,7 +306,7 @@ namespace flame
 					auto ret = recv(c->fd, p, rest, 0);
 					if (ret <= 0)
 					{
-						c->stop();
+						c->stop(true);
 						set_event(c->ev_ended);
 						return;
 					}
@@ -322,7 +323,7 @@ namespace flame
 	void Client::destroy(Client* c)
 	{
 		auto thiz = (ClientPrivate*)c;
-		thiz->stop();
+		thiz->stop(false);
 		wait_event(thiz->ev_ended, -1);
 		delete thiz;
 	}
@@ -346,14 +347,15 @@ namespace flame
 				destroy_event(ev_ended);
 			}
 
-			void stop()
+			void stop(bool passive)
 			{
 				std::lock_guard<std::recursive_mutex> lock(mtx);
 				if (fd)
 				{
 					closesocket(fd);
 					fd = 0;
-					on_close(capture.p);
+					if (passive)
+						on_close(capture.p);
 				}
 			}
 		};
@@ -400,7 +402,7 @@ namespace flame
 				fd_s = 0;
 			}
 			for (auto& c : cs)
-				c->stop();
+				c->stop(false);
 		}
 	};
 
@@ -522,7 +524,7 @@ namespace flame
 						std::lock_guard<std::recursive_mutex> lock(c->mtx);
 						if (ret < (int)sizeof(int))
 						{
-							c->stop();
+							c->stop(true);
 							set_event(c->ev_ended);
 							return;
 						}
@@ -534,7 +536,7 @@ namespace flame
 							auto ret = recv(c->fd, p, rest, 0);
 							if (ret <= 0)
 							{
-								c->stop();
+								c->stop(true);
 								set_event(c->ev_ended);
 								return;
 							}

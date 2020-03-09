@@ -1,7 +1,7 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
+#include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
@@ -14,88 +14,69 @@
 
 namespace flame
 {
-	struct cTextPrivate : cText
+	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
 	{
-		std::wstring text;
-		std::vector<graphics::Glyph*> glyphs;
-		void* draw_cmd;
+		element = nullptr;
 
-		cTextPrivate(graphics::FontAtlas* _font_atlas)
+		font_atlas = _font_atlas;
+		color = ui::style_4c(ui::TextColorNormal);
+		font_size_ = ui::style_1u(ui::FontSize);
+		scale_ = 1.f;
+		auto_width_ = true;
+		auto_height_ = true;
+
+		draw_cmd = nullptr;
+	}
+
+	cTextPrivate::cTextPrivate::~cTextPrivate()
+	{
+		if (!entity->dying_)
+			element->cmds.remove(draw_cmd);
+	}
+
+	void cTextPrivate::draw(graphics::Canvas* canvas)
+	{
+		if (!element->cliped)
 		{
-			element = nullptr;
-
-			font_atlas = _font_atlas;
-			color = ui::style_4c(ui::TextColorNormal);
-			font_size_ = ui::style_1u(ui::FontSize);
-			scale_ = 1.f;
-			auto_width_ = true;
-			auto_height_ = true;
-
-			last_font_size = 0;
-			last_scale = 0.f;
-
-			draw_cmd = nullptr;
-		}
-
-		cTextPrivate::~cTextPrivate()
-		{
-			if (!entity->dying_)
-				element->cmds.remove(draw_cmd);
-		}
-
-		void update_glyphs()
-		{
-			glyphs.resize(text.size());
-			for (auto i = 0; i < text.size(); i++)
-				glyphs[i] = font_atlas->get_glyph(text[i], last_font_size);
-		}
-
-		void draw(graphics::Canvas* canvas)
-		{
-			if (!element->cliped)
+			if (font_atlas->draw_type == graphics::FontDrawSdf)
 			{
-				auto is_sdf = font_atlas->draw_type == graphics::FontDrawSdf;
-				auto global_scale = element->global_scale;
-				auto fs = font_size_;
-				if (!is_sdf)
-					fs *= global_scale;
-				if (fs != last_font_size)
-				{
-					last_font_size = fs;
-					update_glyphs();
-				}
-				last_scale = scale_ * (is_sdf ? global_scale : 1.f);
-				canvas->add_text(font_atlas, glyphs.size(), glyphs.data(), last_font_size, last_scale, element->global_pos +
-					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale,
+				canvas->add_text(font_atlas, text.c_str(), 0, scale_ * element->global_scale, element->global_pos +
+					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
+					color.new_proply<3>(element->alpha_));
+			}
+			else
+			{
+				canvas->add_text(font_atlas, text.c_str(), font_size_ * element->global_scale, 1.f, element->global_pos +
+					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
 					color.new_proply<3>(element->alpha_));
 			}
 		}
+	}
 
-		void on_component_added(Component* c) override
+	void cTextPrivate::on_component_added(Component* c)
+	{
+		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-			{
-				element = (cElement*)c;
-				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
-					(*(cTextPrivate**)c)->draw(canvas);
-					return true;
-				}, new_mail_p(this));
-			}
+			element = (cElement*)c;
+			draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
+				(*(cTextPrivate**)c)->draw(canvas);
+				return true;
+			}, new_mail_p(this));
 		}
+	}
 
-		Component* copy() override
-		{
-			auto copy = new cTextPrivate(font_atlas);
+	Component* cTextPrivate::copy()
+	{
+		auto copy = new cTextPrivate(font_atlas);
 
-			copy->color = color;
-			copy->font_size_ = font_size_;
-			copy->auto_width_ = auto_width_;
-			copy->auto_height_ = auto_height_;
-			copy->text = text;
+		copy->color = color;
+		copy->font_size_ = font_size_;
+		copy->auto_width_ = auto_width_;
+		copy->auto_height_ = auto_height_;
+		copy->text = text;
 
-			return copy;
-		}
-	};
+		return copy;
+	}
 
 	uint cText::text_length() const
 	{
@@ -111,25 +92,6 @@ namespace flame
 	{
 		auto thiz = (cTextPrivate*)this;
 		thiz->text = text;
-		thiz->update_glyphs();
-		data_changed(FLAME_CHASH("text"), sender);
-	}
-
-	void cText::insert_char(wchar_t ch, uint pos, void* sender)
-	{
-		auto thiz = (cTextPrivate*)this;
-		auto& str = thiz->text;
-		str.insert(str.begin() + pos, ch);
-		thiz->update_glyphs();
-		data_changed(FLAME_CHASH("text"), sender);
-	}
-
-	void cText::erase_char(uint pos, void* sender)
-	{
-		auto thiz = (cTextPrivate*)this;
-		auto& str = thiz->text;
-		str.erase(str.begin() + pos);
-		thiz->update_glyphs();
 		data_changed(FLAME_CHASH("text"), sender);
 	}
 
@@ -138,7 +100,6 @@ namespace flame
 		if (s == font_size_)
 			return;
 		font_size_ = s;
-		((cTextPrivate*)this)->update_glyphs();
 		data_changed(FLAME_CHASH("font_size"), sender);
 	}
 

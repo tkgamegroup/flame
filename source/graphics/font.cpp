@@ -162,6 +162,7 @@ namespace flame
 				{
 					auto g = new_glyph();
 					g->unicode = unicode;
+					g->font_size = font_size;
 					map[hash].reset(g);
 
 					for (auto font : fonts)
@@ -293,85 +294,6 @@ namespace flame
 
 				return map[hash].get();
 			}
-
-			Vec2u get_text_offset(const std::wstring_view& text, uint font_size)
-			{
-				auto w = 0U;
-				auto h = 0U;
-				for (auto ch : text)
-				{
-					if (!ch)
-						break;
-					if (ch == '\n')
-					{
-						w = 0.f;
-						h += font_size;
-					}
-					else if (ch != '\r' && ch != '\t')
-						w += get_glyph(ch, font_size)->advance;
-				}
-				return Vec2u(w, h);
-			}
-
-			Vec2u get_text_size(const std::wstring_view& text, uint font_size)
-			{
-				auto w = 0U;
-				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
-				auto h = line_space;
-				auto lw = 0U;
-				for (auto ch : text)
-				{
-					if (ch == '\n')
-					{
-						h += line_space;
-						lw = 0.f;
-					}
-					else if (ch != '\r')
-					{
-						if (ch == '\t')
-							ch = ' ';
-						lw += get_glyph(ch, font_size)->advance;
-						if (lw > w)
-							w = lw;
-					}
-				}
-				return Vec2u(w, h);
-			}
-
-			StringW slice_text_by_width(const std::wstring_view& text, uint font_size, uint width)
-			{
-				assert(width > font_size);
-
-				auto ret = std::wstring();
-				auto w = 0;
-				for (auto ch : text)
-				{
-					if (!ch)
-						break;
-					switch (ch)
-					{
-					case '\n':
-						w = 0;
-						ret += '\n';
-						break;
-					case '\r':
-						break;
-					case '\t':
-						ch = ' ';
-					default:
-						auto adv = get_glyph(ch, font_size)->advance;
-						if (w + adv >= width)
-						{
-							w = adv;
-							ret += '\n';
-						}
-						else
-							w += adv;
-						ret += ch;
-					}
-				}
-				return StringW(ret);
-			}
 		};
 
 		FontAtlas* FontAtlas::create(Device* d, FontDrawType draw_type, uint font_count, const wchar_t* const* fonts)
@@ -387,21 +309,6 @@ namespace flame
 		Glyph* FontAtlas::get_glyph(wchar_t unicode, uint font_size)
 		{
 			return ((FontAtlasPrivate*)this)->get_glyph(unicode, font_size);
-		}
-
-		Vec2u FontAtlas::get_text_offset(const wchar_t* text, uint text_length, uint font_size)
-		{
-			return ((FontAtlasPrivate*)this)->get_text_offset(std::wstring_view(text, text_length), font_size);
-		}
-
-		Vec2u FontAtlas::get_text_size(const wchar_t* text, uint text_length, uint font_size)
-		{
-			return ((FontAtlasPrivate*)this)->get_text_size(std::wstring_view(text, text_length), font_size);
-		}
-
-		StringW FontAtlas::slice_text_by_width(const wchar_t* text, uint text_length, uint font_size, uint width)
-		{
-			return ((FontAtlasPrivate*)this)->slice_text_by_width(std::wstring_view(text, text_length), font_size, width);
 		}
 
 		Imageview* FontAtlas::imageview() const

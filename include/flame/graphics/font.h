@@ -20,6 +20,7 @@ namespace flame
 		struct Glyph
 		{
 			ushort unicode;
+			uint font_size;
 			Vec2i off;
 			Vec2u size;
 			Vec2f uv0;
@@ -46,10 +47,100 @@ namespace flame
 			{
 			}
 
+			Vec2u text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			{
+				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
+				auto off = Vec2u(0);
+
+				auto pstr = begin;
+				while (*pstr && pstr != end)
+				{
+					auto ch = *pstr;
+					if (ch == '\n')
+					{
+						off.x() = 0.f;
+						off.y() += font_size;
+					}
+					else if (ch != '\r')
+					{
+						if (ch == '\t')
+							ch = ' ';
+						off.x() += get_glyph(ch, font_size)->advance;
+					}
+					pstr++;
+				}
+				return off;
+			}
+
+			Vec2u text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			{
+				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
+				auto size = Vec2u(0, line_space);
+				auto x = 0U;
+
+				auto pstr = begin;
+				while (*pstr && pstr != end)
+				{
+					auto ch = *pstr;
+					if (ch == '\n')
+					{
+						size.y() += line_space;
+						x = 0;
+					}
+					else if (ch != '\r')
+					{
+						if (ch == '\t')
+							ch = ' ';
+						x += get_glyph(ch, font_size)->advance;
+						size.x() = max(size.x(), x);
+					}
+					pstr++;
+				}
+				return size;
+			}
+
+			StringW wrap_text(uint font_size, uint width, const wchar_t* begin, const wchar_t* end = nullptr)
+			{
+				if (font_size <= width)
+				{
+					assert(0);
+					return L"";
+				}
+
+				auto ret = std::wstring();
+				auto w = 0U;
+
+				auto pstr = begin;
+				while (*pstr && pstr != end)
+				{
+					auto ch = *pstr;
+					switch (ch)
+					{
+					case '\n':
+						w = 0;
+						ret += '\n';
+						break;
+					case '\r':
+						continue;
+					case '\t':
+						ch = ' ';
+					default:
+						auto adv = get_glyph(ch, font_size)->advance;
+						if (w + adv >= width)
+						{
+							w = adv;
+							ret += '\n';
+						}
+						else
+							w += adv;
+						ret += ch;
+					}
+					pstr++;
+				}
+				return StringW(ret);
+			}
+
 			FLAME_GRAPHICS_EXPORTS Glyph* get_glyph(wchar_t unicode, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2u get_text_offset(const wchar_t* text, uint text_length, uint font_size);
-			FLAME_GRAPHICS_EXPORTS Vec2u get_text_size(const wchar_t* text, uint text_length, uint font_size);
-			FLAME_GRAPHICS_EXPORTS StringW slice_text_by_width(const wchar_t* text, uint text_length, uint font_size, uint width);
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 

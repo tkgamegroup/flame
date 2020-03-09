@@ -309,9 +309,12 @@ namespace flame
 
 				if (text->auto_width_ || text->auto_height_)
 				{
-					auto s = Vec2f(text->font_atlas->get_text_size(text->text(), text->text_length(), text->font_size_));
-					if (text->font_atlas->draw_type == graphics::FontDrawSdf)
-						s *= text->scale_;
+					auto font_atlas = text->font_atlas;
+					Vec2f s;
+					if (font_atlas->draw_type == graphics::FontDrawSdf)
+						s = Vec2f(font_atlas->text_size(0, text->text(), nullptr)) * text->scale_;
+					else
+						s = Vec2f(font_atlas->text_size(text->font_size_, text->text(), nullptr));
 					if (text->auto_width_)
 					{
 						auto w = s.x() + element->inner_padding_h();

@@ -46,7 +46,7 @@ struct CanvasPrivate : Canvas
 	void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness) override;
 	void fill(uint point_count, const Vec2f* points, const Vec4c& col) override;
 
-	void add_text(FontAtlas* f, uint glyph_count, Glyph* const* glyphs, uint line_space, float scale, const Vec2f& pos, const Vec4c& col) override;
+	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& pos, const Vec4c& col) override;
 	void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 	const Vec4f& scissor() override;
 	void set_scissor(const Vec4f& scissor) override;
@@ -160,7 +160,7 @@ struct R(MakeCmd)
 		cmds.push_back(cmd);
 	}
 
-	void stroke(uint point_count, const Vec2f * points, const Vec4c & col, float thickness)
+	void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness)
 	{
 		if (point_count < 2)
 			return;
@@ -256,7 +256,7 @@ struct R(MakeCmd)
 		}
 	}
 
-	void fill(uint point_count, const Vec2f * points, const Vec4c & col)
+	void fill(uint point_count, const Vec2f* points, const Vec4c& col)
 	{
 		if (point_count < 3)
 			return;
@@ -289,8 +289,9 @@ struct R(MakeCmd)
 		}
 	}
 
-	void add_text(FontAtlas * f, uint glyph_count, Glyph* const* glyphs, uint line_space, float scale, const Vec2f & _pos, const Vec4c & col)
+	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& _pos, const Vec4c& col)
 	{
+		auto line_space = font_size * scale;
 		auto pos = Vec2f(Vec2i(_pos));
 
 		if (cmds.empty() || cmds.back().type != (CmdType)f->draw_type || cmds.back().v.draw_data.id != f->canvas_slot_)
@@ -305,10 +306,10 @@ struct R(MakeCmd)
 		auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 		auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
-		for (auto i = 0; i < glyph_count; i++)
+		auto pstr = text;
+		while (*pstr)
 		{
-			auto g = glyphs[i];
-			auto ch = g->unicode;
+			auto ch = *pstr;
 			if (ch == '\n')
 			{
 				pos.y() += line_space;
@@ -318,6 +319,8 @@ struct R(MakeCmd)
 			{
 				if (ch == '\t')
 					ch = ' ';
+
+				auto g = f->get_glyph(ch, font_size);
 
 				auto p = pos + Vec2f(g->off) * scale;
 				auto size = Vec2f(g->size) * scale;
@@ -341,10 +344,12 @@ struct R(MakeCmd)
 
 				pos.x() += g->advance * scale;
 			}
+
+			pstr++;
 		}
 	}
 
-	void add_image(const Vec2f & _pos, const Vec2f & size, uint id, const Vec2f & _uv0, const Vec2f & _uv1, const Vec4c & tint_col)
+	void add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
 	{
 		auto pos = Vec2f(Vec2i(_pos));
 		auto uv0 = _uv0;
@@ -528,9 +533,9 @@ void CanvasPrivate::fill(uint point_count, const Vec2f* points, const Vec4c& col
 	((MakeCmd*)mc)->fill(point_count, points, col);
 }
 
-void CanvasPrivate::add_text(FontAtlas* f, uint glyph_count, Glyph* const* glyphs, uint line_space, float scale, const Vec2f& pos, const Vec4c& col)
+void CanvasPrivate::add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& pos, const Vec4c& col)
 {
-	((MakeCmd*)mc)->add_text(f, glyph_count, glyphs, line_space, scale, pos, col);
+	((MakeCmd*)mc)->add_text(f, text, font_size, scale, pos, col);
 }
 
 void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

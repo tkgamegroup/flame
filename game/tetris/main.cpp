@@ -57,10 +57,12 @@ struct Player
 {
 	void* id;
 	std::wstring name;
+	bool disconnected;
 	bool ready;
 	bool dead;
 
 	Entity* e;
+	cText* c_name;
 	cTileMap* c_main;
 	cTileMap* c_hold;
 	cTileMap* c_next[6];
@@ -68,12 +70,14 @@ struct Player
 	cText* c_ready;
 	cText* c_rank;
 	Entity* e_garbage;
+	Entity* e_kick;
 
-	Player() :
-		id(nullptr),
-		ready(false),
-		dead(false)
+	void reset()
 	{
+		id = nullptr;
+		disconnected = false;
+		ready = false;
+		dead = false;
 	}
 };
 
@@ -244,28 +248,56 @@ struct MyApp : App
 			}
 		}
 
-		ui::push_style_1u(ui::FontSize, 30 * scale);
-		ui::next_element_pos = Vec2f(pos.x() + 80.f, pos.y() + 40.f * scale);
+		auto& p = players[player_index];
 
-		auto c_text_title = ui::e_text([player_index]() {
-			switch (app.game_mode)
+		ui::next_element_pos = pos + Vec2f(80.f, 40.f) * scale;
+		ui::e_begin_layout(LayoutHorizontal, 4.f);
+			ui::push_style_1u(ui::FontSize, 30 * scale);
+			p.c_name = ui::e_text([p]() {
+				switch (app.game_mode)
+				{
+				case GameSingleMarathon:
+					return L"Marathon";
+				case GameSingleRTA:
+					return L"RTA";
+				case GameSinglePractice:
+					return L"Practice";
+				case GameMulti:
+					return p.name.c_str();
+				}
+			}())->get_component(cText);
+			if (game_mode == GameMulti && player_index == 0)
+				p.c_name->color = Vec4c(91, 82, 119, 255);
+			ui::pop_style(ui::FontSize);
+
+			if (my_room_index == 0 && player_index != my_room_index)
 			{
-			case GameSingleMarathon:
-				return L"Marathon";
-			case GameSingleRTA:
-				return L"RTA";
-			case GameSinglePractice:
-				return L"Practice";
-			case GameMulti:
-				return app.players[player_index].name.c_str();
+				p.e_kick = ui::e_button(Icon_TIMES, [](void* c) {
+					auto index = *(int*)c;
+
+					app.process_player_left(index);
+
+					{
+						nlohmann::json rep;
+						rep["action"] = "player_left";
+						rep["index"] = index;
+						auto str = rep.dump();
+						for (auto i = 1; i < app.players.size(); i++)
+						{
+							if (i != index)
+							{
+								auto& p = app.players[i];
+								if (p.id && !p.disconnected)
+									app.server->send(p.id, str.data(), str.size(), false);
+							}
+						}
+					}
+				}, new_mail(&player_index));
 			}
-		}())->get_component(cText);
-		if (game_mode == GameMulti && player_index == 0)
-			c_text_title->color = Vec4c(91, 82, 119, 255);
-		ui::pop_style(ui::FontSize);
+		ui::e_end_layout();
 
 		ui::e_empty();
-		ui::next_element_pos = pos + Vec2f(85.f, 80.f);
+		ui::next_element_pos = pos + Vec2f(85.f, 80.f) * scale;
 		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
 		{
 			auto ce = ui::c_element();
@@ -274,7 +306,7 @@ struct MyApp : App
 			ce->frame_color_ = Vec4c(255);
 			ce->clip_children = true;
 		}
-		auto& p = players[player_index];
+
 		ui::push_parent(ui::current_entity());
 			ui::e_empty();
 			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
@@ -380,6 +412,26 @@ struct MyApp : App
 		}, new_mail(&index));
 	}
 
+	void process_player_disconnected(int index)
+	{
+		looper().add_event([](void* c, bool*) {
+			auto index = *(int*)c;
+			auto& p = app.players[index];
+			p.disconnected = true;
+			p.c_name->set_text((p.name + L" " + Icon_BOLT).c_str());
+		}, new_mail(&index));
+	}
+
+	void process_player_left(int index)
+	{
+		looper().add_event([](void* c, bool*) {
+			auto index = *(int*)c;
+			auto& p = app.players[index];
+			p.reset();
+			app.root ->remove_child(p.e);
+		}, new_mail(&index));
+	}
+
 	void process_player_ready(int index)
 	{
 		looper().add_event([](void* c, bool*) {
@@ -470,8 +522,9 @@ struct MyApp : App
 			{
 				app.room_name = s2w(req["room_name"].get<std::string>());
 				app.room_max_people = req["max_people"].get<int>();
-				app.players.clear();
 				app.players.resize(app.room_max_people);
+				for (auto& p : app.players)
+					p.reset();
 				app.my_room_index = req["index"].get<int>();
 				auto& me = app.players[app.my_room_index];
 				me.id = (void*)0xffff;
@@ -491,6 +544,10 @@ struct MyApp : App
 
 				app.process_player_entered(index);
 			}
+			else if (action == "player_disconnected")
+				app.process_player_disconnected(req["index"].get<int>());
+			else if (action == "player_left")
+				app.process_player_left(req["index"].get<int>());
 			else if (action == "player_ready")
 				app.process_player_ready(req["index"].get<int>());
 			else if (action == "game_start")
@@ -511,6 +568,14 @@ struct MyApp : App
 			}
 		},
 		[](void*) {
+			looper().add_event([](void*, bool*) {
+				ui::e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](void*, Entity*) {
+					looper().add_event([](void*, bool*) {
+						app.quit_game();
+					}, Mail<>());
+					return true;
+				}, Mail<>());
+			}, Mail<>());
 		}, Mail<>());
 		if (app.client)
 		{
@@ -555,7 +620,7 @@ struct MyApp : App
 			for (auto i = 1; i < app.players.size(); i++)
 			{
 				auto& p = app.players[i];
-				if (p.id)
+				if (p.id && !p.disconnected)
 					app.server->send(p.id, str.data(), str.size(), false);
 			}
 		}
@@ -564,6 +629,8 @@ struct MyApp : App
 
 		if (total_people - dead_people == 1)
 		{
+			app.process_dead(last_people, 1);
+
 			{
 				nlohmann::json rep;
 				rep["action"] = "report_dead";
@@ -573,11 +640,18 @@ struct MyApp : App
 				for (auto i = 1; i < app.players.size(); i++)
 				{
 					auto& p = app.players[i];
-					if (p.id)
+					if (p.id && !p.disconnected)
 						app.server->send(p.id, str.data(), str.size(), false);
 				}
 			}
-			app.process_dead(last_people, 1);
+
+			for (auto i = 1; i < app.players.size(); i++)
+			{
+				auto& p = app.players[i];
+				if (p.id)
+					p.e_kick->set_visibility(true);
+			}
+			app.process_gameover();
 
 			{
 				nlohmann::json rep;
@@ -586,11 +660,10 @@ struct MyApp : App
 				for (auto i = 1; i < app.players.size(); i++)
 				{
 					auto& p = app.players[i];
-					if (p.id)
+					if (p.id && !p.disconnected)
 						app.server->send(p.id, str.data(), str.size(), false);
 				}
 			}
-			app.process_gameover();
 		}
 	}
 
@@ -679,8 +752,9 @@ struct MyApp : App
 
 									if (!app.room_name.empty())
 									{
-										app.players.clear();
 										app.players.resize(app.room_max_people);
+										for (auto& p : app.players)
+											p.reset();
 										app.my_room_index = 0;
 										{
 											auto& me = app.players[0];
@@ -736,24 +810,24 @@ struct MyApp : App
 															{
 																p.name = s2w(req["name"].get<std::string>());
 
+																app.process_player_entered(index);
+
 																{
 																	nlohmann::json rep;
 																	rep["action"] = "player_entered";
 																	rep["index"] = index;
 																	rep["name"] = w2s(p.name);
-																	auto str = req.dump();
+																	auto str = rep.dump();
 																	for (auto i = 1; i < app.players.size(); i++)
 																	{
 																		if (i != index)
 																		{
 																			auto& p = app.players[i];
-																			if (p.id)
+																			if (p.id && !p.disconnected)
 																				app.server->send(p.id, str.data(), str.size(), false);
 																		}
 																	}
 																}
-
-																app.process_player_entered(index);
 															}
 															else if (action == "ready")
 															{
@@ -763,13 +837,13 @@ struct MyApp : App
 																	nlohmann::json rep;
 																	rep["action"] = "player_ready";
 																	rep["index"] = index;
-																	auto str = req.dump();
+																	auto str = rep.dump();
 																	for (auto i = 1; i < app.players.size(); i++)
 																	{
 																		if (i != index)
 																		{
 																			auto& p = app.players[i];
-																			if (p.id)
+																			if (p.id && !p.disconnected)
 																				app.server->send(p.id, str.data(), str.size(), false);
 																		}
 																	}
@@ -785,13 +859,13 @@ struct MyApp : App
 																	rep["action"] = "report_board";
 																	rep["index"] = index;
 																	rep["board"] = d;
-																	auto str = req.dump();
+																	auto str = rep.dump();
 																	for (auto i = 1; i < app.players.size(); i++)
 																	{
 																		if (i != index)
 																		{
 																			auto& p = app.players[i];
-																			if (p.id)
+																			if (p.id && !p.disconnected)
 																				app.server->send(p.id, str.data(), str.size(), false);
 																		}
 																	}
@@ -803,12 +877,34 @@ struct MyApp : App
 															{
 																auto value = req["value"].get<int>();
 																looper().add_event([](void* c, bool*) {
-																	app.garbage = *(int*)c;
+																	app.garbage += *(int*)c;
 																	app.need_update_garbage = true;
 																}, new_mail(&value));
 															}
 														},
-														[](void*) {
+														[](void* c) {
+															auto index = *(int*)c;
+
+															app.process_player_disconnected(index);
+
+															{
+																nlohmann::json rep;
+																rep["action"] = "player_disconnected";
+																rep["index"] = index;
+																auto str = rep.dump();
+																for (auto i = 1; i < app.players.size(); i++)
+																{
+																	if (i != index)
+																	{
+																		auto& p = app.players[i];
+																		if (p.id && !p.disconnected)
+																			app.server->send(p.id, str.data(), str.size(), false);
+																	}
+																}
+															}
+
+															if (app.room_gaming)
+																app.people_dead(index);
 														}, new_mail(&i));
 
 														break;
@@ -1154,6 +1250,12 @@ struct MyApp : App
 							return !only_you;
 						}())
 						{
+							for (auto i = 1; i < app.players.size(); i++)
+							{
+								auto& p = app.players[i];
+								if (p.id && !p.disconnected)
+									p.e_kick->set_visibility(false);
+							}
 							app.process_game_start();
 
 							{
@@ -1161,7 +1263,11 @@ struct MyApp : App
 								req["action"] = "game_start";
 								auto str = req.dump();
 								for (auto i = 1; i < app.players.size(); i++)
-									app.server->send(app.players[i].id, str.data(), str.size(), false);
+								{
+									auto& p = app.players[i];
+									if (p.id && !p.disconnected)
+										app.server->send(p.id, str.data(), str.size(), false);
+								}
 							}
 						}
 					}, Mail<>());
@@ -1183,6 +1289,18 @@ struct MyApp : App
 					}, Mail<>());
 				}
 			}
+
+			ui::e_button(Icon_TIMES, [](void*) {
+				ui::e_confirm_dialog(L"Quit?", [](void*, bool yes) {
+					if (yes)
+					{
+						looper().add_event([](void*, bool*) {
+							app.quit_game();
+						}, Mail<>());
+					}
+				}, Mail<>());
+			}, Mail<>());
+			ui::c_aligner(AlignxRight, AlignyTop);
 
 		ui::pop_style(ui::FontSize);
 		ui::pop_parent();
@@ -1412,51 +1530,40 @@ struct MyApp : App
 	{
 		auto& key_states = s_event_dispatcher->key_states;
 
-		if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
+		if (game_mode != GameMulti)
 		{
-			if (!ui::get_top_layer(app.root, true, "paused"))
+			if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
 			{
-				if (game_mode != GameMulti)
+				if (!ui::get_top_layer(app.root, true, "paused"))
 				{
 					looper().clear_events(FLAME_CHASH("count_down"));
 					gaming = false;
 
 					ui::e_begin_dialog("paused");
-						ui::e_text(L"Paused");
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Resume", [](void*) {
-							ui::remove_top_layer(app.root);
-							app.begin_count_down();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Restart", [](void*) {
-							ui::remove_top_layer(app.root);
-							app.play_time = 0.f;
-							app.start_game();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Quit", [](void*) {
-							ui::remove_top_layer(app.root);
-							app.quit_game();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_text(L"Paused");
+					ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_button(L"Resume", [](void*) {
+						ui::remove_top_layer(app.root);
+						app.begin_count_down();
+					}, Mail<>());
+					ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_button(L"Restart", [](void*) {
+						ui::remove_top_layer(app.root);
+						app.play_time = 0.f;
+						app.start_game();
+					}, Mail<>());
+					ui::c_aligner(AlignxMiddle, AlignyFree);
+					ui::e_button(L"Quit", [](void*) {
+						ui::remove_top_layer(app.root);
+						app.quit_game();
+					}, Mail<>());
+					ui::c_aligner(AlignxMiddle, AlignyFree);
 					ui::e_end_dialog();
 				}
 				else
 				{
-					ui::e_begin_dialog("paused");
-						ui::e_text(L"");
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Resume", [](void*) {
-							ui::remove_top_layer(app.root);
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-						ui::e_button(L"Quit", [](void*) {
-							ui::remove_top_layer(app.root);
-							app.quit_game();
-						}, Mail<>());
-						ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_end_dialog();
+					ui::remove_top_layer(app.root);
+					begin_count_down();
 				}
 			}
 		}
@@ -1858,7 +1965,11 @@ struct MyApp : App
 										if (server) 
 										{
 											for (auto i = 1; i < players.size(); i++)
-												server->send(players[i].id, str.data(), str.size(), false);
+											{
+												auto& p = players[i];
+												if (p.id && !p.disconnected)
+													server->send(p.id, str.data(), str.size(), false);
+											}
 										}
 										if (client)
 											client->send(str.data(), str.size());
@@ -1958,7 +2069,11 @@ struct MyApp : App
 					if (server)
 					{
 						for (auto i = 1; i < players.size(); i++)
-							server->send(players[i].id, str.data(), str.size(), false);
+						{
+							auto& p = players[i];
+							if (p.id && !p.disconnected)
+								server->send(p.id, str.data(), str.size(), false);
+						}
 					}
 					if (client)
 						client->send(str.data(), str.size());

@@ -1,6 +1,6 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
+#include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
@@ -13,13 +13,6 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
-		bool text_changed;
-		uint last_font_size;
-		uint last_cursor;
-		graphics::Glyph* cursor_glyph;
-		Vec2f cursor_pos;
-
-		void* text_changed_listener;
 		void* key_listener;
 		void* mouse_listener;
 		void* draw_cmd;
@@ -32,12 +25,6 @@ namespace flame
 
 			cursor = 0;
 
-			text_changed = true;
-			last_font_size = 0;
-			last_cursor = 0;
-			cursor_glyph = nullptr;
-
-			text_changed_listener = nullptr;
 			key_listener = nullptr;
 			mouse_listener = nullptr;
 			draw_cmd = nullptr;
@@ -48,7 +35,6 @@ namespace flame
 			if (!entity->dying_)
 			{
 				element->cmds.remove(draw_cmd);
-				text->data_changed_listeners.remove(text_changed_listener);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 			}
@@ -65,27 +51,15 @@ namespace flame
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cText"))
-			{
 				text = (cText*)c;
-				text_changed_listener = text->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
-					auto thiz = *(cEditPrivate**)c;
-					switch (hash)
-					{
-					case FLAME_CHASH("text"):
-						thiz->text_changed = true;
-						break;
-					}
-					return true;
-				}, new_mail_p(this));
-			}
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->accept_key = true;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
-					auto text = thiz->text;
-					auto lenght = text->text_length();
+					auto text = (cTextPrivate*)thiz->text;
+					auto& str = text->text;
 
 					if (action == KeyStateNull)
 					{
@@ -95,13 +69,15 @@ namespace flame
 							if (thiz->cursor > 0)
 							{
 								thiz->cursor--;
-								text->erase_char(thiz->cursor);
+								str.erase(str.begin() + thiz->cursor);
+								text->data_changed(FLAME_CHASH("text"), nullptr);
 							}
 							break;
 						case 22:
 						{
 							thiz->cursor = 0;
-							text->set_text(get_clipboard().v);
+							str = get_clipboard().v;
+							text->data_changed(FLAME_CHASH("text"), nullptr);
 						}
 							break;
 						case 27:
@@ -109,7 +85,8 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							text->insert_char(value, thiz->cursor);
+							str.insert(str.begin() + thiz->cursor, value);
+							text->data_changed(FLAME_CHASH("text"), nullptr);
 							thiz->cursor++;
 						}
 					}
@@ -122,18 +99,21 @@ namespace flame
 								thiz->cursor--;
 							break;
 						case Key_Right:
-							if (thiz->cursor < lenght)
+							if (thiz->cursor < str.size())
 								thiz->cursor++;
 							break;
 						case Key_Home:
 							thiz->cursor = 0;
 							break;
 						case Key_End:
-							thiz->cursor = lenght;
+							thiz->cursor = str.size();
 							break;
 						case Key_Del:
-							if (thiz->cursor < lenght)
-								text->erase_char(thiz->cursor);
+							if (thiz->cursor < str.size())
+							{
+								str.erase(str.begin() + thiz->cursor);
+								text->data_changed(FLAME_CHASH("text"), nullptr);
+							}
 							break;
 						}
 					}
@@ -190,21 +170,22 @@ namespace flame
 		{
 			if (!element->cliped && is_focusing(event_receiver) && (int(looper().total_time * 2.f) % 2 == 0))
 			{
-				auto global_scale = element->global_scale;
 				auto font_atlas = text->font_atlas;
-				auto font_size = text->last_font_size;
-				if (text_changed || font_size != last_font_size || cursor != last_cursor)
+
+				if (font_atlas->draw_type == graphics::FontDrawSdf)
 				{
-					text_changed = false;
-					last_font_size = font_size;
-					last_cursor = cursor;
-					cursor_glyph = font_atlas->get_glyph(L'|', last_font_size);
-					cursor_pos = Vec2f(font_atlas->get_text_offset(text->text(), cursor, last_font_size));
+					canvas->add_text(font_atlas, L"|", 0, text->scale_ * element->global_scale, element->global_pos +
+						Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
+						Vec2f(font_atlas->text_offset(0, text->text(), text->text() + cursor)) * text->scale_ * element->global_scale,
+						text->color.new_proply<3>(element->alpha_));
 				}
-				auto scale = text->last_scale;
-				canvas->add_text(font_atlas, 1, &cursor_glyph, last_font_size, scale, element->global_pos +
-					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * global_scale + cursor_pos * scale,
-					text->color.new_proply<3>(element->alpha_));
+				else
+				{
+					canvas->add_text(font_atlas, L"|", text->font_size_ * element->global_scale, 1.f, element->global_pos +
+						Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
+						Vec2f(font_atlas->text_offset(text->font_size_ * element->global_scale, text->text(), text->text() + cursor)),
+						text->color.new_proply<3>(element->alpha_));
+				}
 			}
 		}
 	};
