@@ -8,7 +8,8 @@ namespace flame
 		on_removed_listeners.impl = ListenerHubImpl::create();
 		on_destroyed_listeners.impl = ListenerHubImpl::create();
 
-		order_ = 0;
+		depth_ = 0;
+		index_ = 0;
 		created_frame_ = looper().frame;
 		dying_ = false;
 
@@ -145,9 +146,10 @@ namespace flame
 		if (position == -1)
 			position = children.size();
 		for (auto i = position; i < children.size(); i++)
-			children[i]->order_ += 1;
+			children[i]->index_ += 1;
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
-		e->order_ = (order_ & 0xff000000) + (1 << 24) + position;
+		e->depth_ = depth_ + 1;
+		e->index_ = position;
 		e->parent = this;
 		if (!e->world_ && world_)
 			enter_world(world_, e);
@@ -165,13 +167,13 @@ namespace flame
 		if (position == -1)
 			position = children.size() - 1;
 		assert(position < children.size());
-		auto old_position = e->order_ & 0xffffff;
+		auto old_position = e->index_;
 		if (old_position == position)
 			return;
 		auto dst = children[position].get();
 		std::swap(children[old_position], children[position]);
-		dst->order_ = (dst->order_ & 0xff000000) + old_position;
-		e->order_ = (e->order_ & 0xff000000) + position;
+		dst->index_ = old_position;
+		e->index_ = position;
 		for (auto& c : e->components)
 			c.second->on_position_changed();
 		for (auto& c : components)
@@ -192,7 +194,7 @@ namespace flame
 			if (it->get() == e)
 			{
 				for (auto _it = it + 1; _it != children.end(); _it++)
-					(*_it)->order_ -= 1;
+					(*_it)->index_ -= 1;
 				for (auto& c : components)
 				{
 					for (auto& _c : e->components)

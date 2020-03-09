@@ -349,13 +349,25 @@ namespace flame
 		if (!er->element->cliped && rect_contains(er->element->cliped_rect, pos))
 		{
 			if (!ban && (!thiz->hovering || !(thiz->focusing && thiz->focusing_state == FocusingAndActive) || er != thiz->focusing))
-				mouse_dispatch_list.push_back(er);
+			{
+				auto found = false;
+				for (auto& r : mouse_dispatch_list)
+				{
+					if (r == er)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+					mouse_dispatch_list.push_back(er);
+			}
 			if (!er->pass)
 			{
 				if (!ban && !thiz->hovering)
 					thiz->hovering = er;
 
-				if (thiz->focusing && thiz->focusing_state == FocusingAndActive && !thiz->drag_overing && er != thiz->focusing)
+				if (thiz->focusing && thiz->focusing_state == FocusingAndDragging && !thiz->drag_overing && er != thiz->focusing)
 				{
 					auto hash = thiz->focusing->drag_hash;
 					for (auto h : er->acceptable_drops)

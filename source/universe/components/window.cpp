@@ -220,7 +220,7 @@ namespace flame
 
 			auto docker = tabbar->parent();
 			auto pages = docker->child(1);
-			page = pages->child(entity->order_ & 0xffffff);
+			page = pages->child(entity->index_);
 			page_element = page->get_component(cElement);
 			auto page_aligner = page->get_component(cAligner);
 			auto list = list_item->list;
@@ -262,10 +262,10 @@ namespace flame
 						p->remove_children(0, -1);
 					else if (p->name_hash() == FLAME_CHASH("docker_layout"))
 					{
-						auto oth_docker = p->child((docker->order_ & 0xffffff) == 0 ? 2 : 0);
+						auto oth_docker = p->child(docker->index_ == 0 ? 2 : 0);
 						p->remove_child(oth_docker, false);
 						auto pp = p->parent();
-						auto idx = p->order_ & 0xffffff;
+						auto idx = p->index_;
 						pp->remove_child(p);
 						pp->add_child(oth_docker, idx);
 						if (pp->name_hash() == FLAME_CHASH("docker_floating_container"))
@@ -546,7 +546,7 @@ namespace flame
 						auto pages = docker->child(1);
 						if (pages->child_count() > 0)
 						{
-							auto idx = ((cList*)l)->selected->order_ & 0xffffff;
+							auto idx = ((cList*)l)->selected->index_;
 							for (auto i = 0; i < pages->child_count(); i++)
 								pages->child(i)->set_visibility(false);
 							pages->child(idx)->set_visibility(true);
@@ -681,7 +681,7 @@ namespace flame
 								auto docker_element = docker->get_component(cElement);
 								auto docker_aligner = docker->get_component(cAligner);
 								auto p = docker->parent();
-								auto docker_idx = docker->order_ & 0xffffff;
+								auto docker_idx = docker->index_;
 								auto layout = Entity::create();
 								ui::make_docker_layout(layout, LayoutFree);
 
