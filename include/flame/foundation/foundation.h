@@ -641,6 +641,4 @@ namespace flame
 			*go_on = true;
 		}, m, 1.f);
 	}
-
-	FLAME_FOUNDATION_EXPORTS void set_debug_config(bool v); // default is true
 }

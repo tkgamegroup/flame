@@ -10,8 +10,6 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
-	extern bool debug_config;
-
 	struct LibraryPrivate : BP::Library
 	{
 		std::wstring filename;
@@ -486,37 +484,42 @@ namespace flame
 		}
 	}
 
-	LibraryPrivate* BPPrivate::add_library(const std::wstring& fn)
+	LibraryPrivate* BPPrivate::add_library(const std::wstring& _fn)
 	{
 		for (auto& l : libraries)
 		{
-			if (l->filename == fn)
+			if (l->filename == _fn)
 				return nullptr;
 		}
 
-		auto fn_config = fn;
+		auto fn = _fn;
 		{
-			auto config_str = debug_config ? L"debug" : L"relwithdebinfo";
+			std::wstring config_str;
+#ifdef NDEBUG
+			config_str = L"relwithdebinfo";
+#else
+			config_str = L"debug";
+#endif
 			static FLAME_SAL(str, L"{config}");
-			auto pos = fn_config.find(str.s, 0, str.l);
-			while (pos != std::string::npos)
+			auto pos = fn.find(str.s, 0, str.l);
+			while (pos != std::wstring::npos)
 			{
-				fn_config = fn_config.replace(pos, str.l, config_str);
-				pos = fn_config.find(str.s, 0, str.l);
+				fn = fn.replace(pos, str.l, config_str);
+				pos = fn.find(str.s, 0, str.l);
 			}
 		}
 
-		std::filesystem::path absolute_filename = std::filesystem::path(filename).parent_path() / fn_config;
+		std::filesystem::path absolute_filename = std::filesystem::path(filename).parent_path() / fn;
 		auto module = load_module(absolute_filename.c_str());
 		if (!module)
 		{
-			printf("cannot add library %s\n", w2s(fn).c_str());
+			printf("cannot add library %s\n", w2s(_fn).c_str());
 			return nullptr;
 		}
 		absolute_filename = std::filesystem::canonical(absolute_filename);
 
 		auto m = new LibraryPrivate;
-		m->filename = fn;
+		m->filename = _fn;
 		m->absolute_filename = absolute_filename;
 		m->module = module;
 		m->db = TypeinfoDatabase::load(absolute_filename.c_str(), false, true);
