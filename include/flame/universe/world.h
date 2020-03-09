@@ -11,8 +11,6 @@ namespace flame
 
 	struct World
 	{
-		Universe* universe_;
-
 		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);
 		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
 
@@ -29,6 +27,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void add_system(System* s);
 
 		FLAME_UNIVERSE_EXPORTS Entity* root() const;
+
+		FLAME_UNIVERSE_EXPORTS void update();
 
 		FLAME_UNIVERSE_EXPORTS static World* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);

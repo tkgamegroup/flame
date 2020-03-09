@@ -1,5 +1,4 @@
 #include <flame/graphics/font.h>
-#include "../universe_private.h"
 #include "../entity_private.h"
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>

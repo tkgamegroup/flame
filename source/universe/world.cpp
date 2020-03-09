@@ -5,8 +5,6 @@ namespace flame
 {
 	WorldPrivate::WorldPrivate()
 	{
-		universe_ = nullptr;
-
 		auto e = new EntityPrivate;
 		e->world_ = this;
 		root.reset(e);
@@ -57,7 +55,7 @@ namespace flame
 					return o.first;
 			}
 		}
-		return universe_->find_object(name_hash, id);
+		return nullptr;
 	}
 
 	System* WorldPrivate::get_system_plain(uint name_hash) const
@@ -68,6 +66,13 @@ namespace flame
 				return s.get();
 		}
 		return nullptr;
+	}
+
+	void WorldPrivate::update()
+	{
+		root->update_visibility();
+		for (auto& s : systems)
+			s->update(root.get());
 	}
 
 	System* World::get_system_plain(uint name_hash) const
@@ -85,6 +90,11 @@ namespace flame
 	Entity* World::root() const
 	{
 		return ((WorldPrivate*)this)->root.get();
+	}
+
+	void World::update()
+	{
+		((WorldPrivate*)this)->update();
 	}
 
 	World* World::create()

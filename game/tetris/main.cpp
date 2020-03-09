@@ -1,11 +1,11 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/ui/utils.h>
 #include <flame/universe/components/data_keeper.h>
+#include <flame/universe/ui/utils.h>
+#include <flame/universe/ui/typeinfo_utils.h>
 #include <flame/network/network.h>
 #include <flame/utils/app.h>
-#include <flame/universe/ui/typeinfo_utils.h>
 
 #include "mino.h"
 #include "key.h"

@@ -69,33 +69,13 @@ namespace flame
 
 	struct World;
 
-	FLAME_UNIVERSE_EXPORTS void* universe_alloc(uint size);
-
 	template <class T>
 	T* new_u_object()
 	{
-		auto c = (T*)universe_alloc(sizeof(T));
+		auto c = (T*)f_malloc(sizeof(T));
 		new (c) T;
 		return c;
 	}
-
-	struct World;
-
-	struct Universe
-	{
-		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);
-		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
-
-		FLAME_UNIVERSE_EXPORTS uint world_count();
-		FLAME_UNIVERSE_EXPORTS World* world(uint idx);
-		FLAME_UNIVERSE_EXPORTS void add_world(World* w);
-		FLAME_UNIVERSE_EXPORTS void remove_world(World* w);
-
-		FLAME_UNIVERSE_EXPORTS void update();
-
-		FLAME_UNIVERSE_EXPORTS static Universe* create();
-		FLAME_UNIVERSE_EXPORTS static void destroy(Universe* u);
-	};
 
 	// objects in universe module can have serialization through an reflected type, the type name is 'Serializer_' + object's name
 }

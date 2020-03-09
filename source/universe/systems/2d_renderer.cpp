@@ -1,7 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/graphics/device.h>
 #include "../entity_private.h"
-#include "../universe_private.h"
 #include <flame/universe/world.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include "../components/element_private.h"

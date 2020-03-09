@@ -37,7 +37,6 @@ namespace flame
 
 		graphics::FontAtlas* font_atlas_pixel;
 
-		Universe* universe;
 		World* world;
 		sLayoutManagement* s_layout_management;
 		sEventDispatcher* s_event_dispatcher;
@@ -78,11 +77,8 @@ namespace flame
 			};
 			font_atlas_pixel = graphics::FontAtlas::create(graphics_device, graphics::FontDrawPixel, 2, fonts);
 
-			universe = Universe::create();
-			universe->add_object(window);
-
 			world = World::create();
-			universe->add_world(world);
+			world->add_object(window);
 			s_layout_management = sLayoutManagement::create();
 			world->add_system(s_layout_management);
 			s_event_dispatcher = sEventDispatcher::create();
@@ -107,7 +103,7 @@ namespace flame
 			looper().process_events();
 
 			c_element_root->set_size(Vec2f(window->size));
-			universe->update();
+			world->update();
 
 			if (sc)
 			{
