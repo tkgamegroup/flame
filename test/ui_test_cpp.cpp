@@ -59,7 +59,10 @@ struct MyApp : App
 						capture.txt_drag_overing = ui::e_text(L"Drag Overing: ")->get_component(cText);
 						ui::e_end_window();
 						ui::pop_parent();
-						w->associate_resource(looper().add_event([](void* c, bool* go_on) {
+						w->on_destroyed_listeners.add([](void* c) {
+							looper().remove_event(*(void**)c);
+							return true;
+						}, new_mail_p(looper().add_event([](void* c, bool* go_on) {
 							auto& capture = *(Capture*)c;
 							{
 								std::wstring str = L"Mouse: ";
@@ -92,10 +95,15 @@ struct MyApp : App
 										str += wfmt(L"%I64X", (ulonglong)focusing);
 									if (focusing == app.event_dispatcher->hovering)
 										color = Vec4c(0, 255, 0, 255);
-									if (app.event_dispatcher->focusing->active)
+									switch (app.event_dispatcher->focusing_state)
+									{
+									case FocusingAndActive:
 										str += L" Active";
-									if (app.event_dispatcher->focusing->dragging)
+										break;
+									case FocusingAndDragging:
 										str += L" Dragging";
+										break;
+									}
 								}
 								else
 									str += L"NULL";
@@ -117,9 +125,7 @@ struct MyApp : App
 								capture.txt_drag_overing->set_text(str.c_str());
 							}
 							*go_on = true;
-						}, new_mail(&capture)), [](void* ev) {
-							looper().remove_event(ev);
-						});
+						}, new_mail(&capture))));
 					}, Mail<>());
 				ui::e_end_menubar_menu();
 			ui::e_end_menu_bar();
@@ -216,11 +222,15 @@ struct MyApp : App
 
 			ui::e_end_layout();
 
-			ui::e_text(L"")->associate_resource(add_fps_listener([](void* c, uint fps) {
-				(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-			}, new_mail_p(ui::current_entity()->get_component(cText))), [](void* ev) {
-				looper().remove_event(ev);
-			});
+			{
+				auto e = ui::e_text(L"");
+				e->on_destroyed_listeners.add([](void* c) {
+					looper().remove_event(*(void**)c);
+					return true;
+				}, new_mail_p(add_fps_listener([](void* c, uint fps) {
+					(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+				}, new_mail_p(e->get_component(cText)))));
+			}
 		ui::e_end_layout();
 
 		//ui::e_begin_docker_static_container();
@@ -266,24 +276,22 @@ struct MyApp : App
 
 int main(int argc, char** args)
 {
-	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	std::filesystem::path engine_path = getenv("FLAME_PATH");
 
-	auto w = app.u->world(0);
+	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
 
-	app.event_dispatcher = w->get_system(sEventDispatcher);
 	{
 		wchar_t* fonts[] = {
 			L"c:/windows/fonts/msyh.ttc",
 			L"../art/font_awesome.ttf"
 		};
-		app.font_atlas_lcd = FontAtlas::create(app.d, FontDrawLcd, 1, fonts);
+		app.font_atlas_lcd = FontAtlas::create(app.graphics_device, FontDrawLcd, 1, fonts);
 		app.canvas->add_font(app.font_atlas_lcd);
-		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, 1, fonts);
+		app.font_atlas_sdf = FontAtlas::create(app.graphics_device, FontDrawSdf, 1, fonts);
 		app.canvas->add_font(app.font_atlas_sdf);
 	}
-	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.d, L"../art/ui/imgs/9.png")));
+	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/ui/imgs/9.png").c_str())));
 
-	app.root = w->root();
 	ui::set_current_entity(app.root);
 	ui::c_layout();
 	ui::push_font_atlas(app.font_atlas_pixel);

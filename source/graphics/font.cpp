@@ -151,11 +151,12 @@ namespace flame
 
 			Glyph* get_glyph(wchar_t unicode, uint font_size)
 			{
+				if (draw_type == FontDrawSdf)
+					font_size = sdf_font_size;
+
 				if (font_size == 0)
 					return empty_glyph.get();
 
-				if (draw_type == FontDrawSdf)
-					font_size = sdf_font_size;
 				auto hash = hash_update(unicode, font_size);
 
 				if (!map[hash])

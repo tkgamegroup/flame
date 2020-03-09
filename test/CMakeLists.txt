@@ -21,6 +21,7 @@ target_link_libraries(sound_test flame_sound)
 add_executable(ui_test_cpp "ui_test_cpp.cpp")
 set_target_properties(ui_test_cpp PROPERTIES FOLDER "test")
 target_link_libraries(ui_test_cpp flame_universe)
+target_link_libraries(ui_test_cpp flame_sound)
 
 add_executable(ui_test_file "ui_test_file.cpp")
 set_target_properties(ui_test_file PROPERTIES FOLDER "test")

@@ -291,7 +291,7 @@ struct R(MakeCmd)
 
 	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& _pos, const Vec4c& col)
 	{
-		auto line_space = font_size * scale;
+		auto line_space = (f->draw_type == FontDrawSdf ? sdf_font_size : font_size) * scale;
 		auto pos = Vec2f(Vec2i(_pos));
 
 		if (cmds.empty() || cmds.back().type != (CmdType)f->draw_type || cmds.back().v.draw_data.id != f->canvas_slot_)

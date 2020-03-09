@@ -13,7 +13,6 @@ namespace flame
 	{
 		sEventDispatcherPrivate* thiz;
 		Vec2f pos;
-		bool active;
 		EntityPrivate* pass;
 		std::vector<cEventReceiver*> mouse_dispatch_list;
 
@@ -322,10 +321,9 @@ namespace flame
 	{
 		thiz = _thiz;
 		pos = Vec2f(_pos);
-		active = thiz->focusing && thiz->focusing_state == FocusingAndActive;
 		pass = (EntityPrivate*)INVALID_POINTER;
 		mouse_dispatch_list.clear();
-		if (active)
+		if (thiz->focusing && thiz->focusing_state == FocusingAndActive)
 			mouse_dispatch_list.push_back(thiz->focusing);
 		search_r(root);
 		std::reverse(mouse_dispatch_list.begin(), mouse_dispatch_list.end());
@@ -358,7 +356,7 @@ namespace flame
 
 		if (!er->element->cliped && rect_contains(er->element->cliped_rect, pos))
 		{
-			if (!ban && (!thiz->hovering || !active || er != thiz->focusing))
+			if (!ban && (!thiz->hovering || !(thiz->focusing && thiz->focusing_state == FocusingAndActive) || er != thiz->focusing))
 				mouse_dispatch_list.push_back(er);
 			if (!er->pass)
 			{
