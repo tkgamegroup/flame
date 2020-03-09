@@ -1,2 +1,2 @@
-"../../bin/debug/package_maker.exe" package_debug.ini
+"../../bin/debug/package_maker.exe" debug
 pause

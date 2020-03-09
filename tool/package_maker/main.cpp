@@ -19,6 +19,20 @@ void copy_typeinfo(const std::filesystem::path& _s, const std::filesystem::path&
 	}
 }
 
+void copy_pdb(const std::filesystem::path& _s, const std::filesystem::path& _d)
+{
+	auto s = _s;
+	s.replace_extension(L".pdb");
+	if (std::filesystem::exists(s))
+	{
+		auto d = _d;
+		d.replace_extension(L".pdb");
+		std::filesystem::copy_file(s, d, std::filesystem::copy_options::overwrite_existing);
+		wprintf(L"%s   =>   %s\n", s.c_str(), d.c_str());
+		copied_files_count++;
+	}
+}
+
 int main(int argc, char **args)
 {
 	std::filesystem::path engine_dir = getenv("FLAME_PATH");
@@ -26,13 +40,33 @@ int main(int argc, char **args)
 	std::filesystem::path destination;
 	std::vector<std::string> items;
 
-	auto description = parse_ini_file(args[1]);
+	std::string config = args[1];
+	std::transform(config.begin(), config.end(), config.begin(), ::tolower);
+
+	auto description = parse_ini_file(L"package_description.ini");
 	for (auto& e : description.get_section_entries(""))
 	{
+		auto fmt = [&config](std::string& s) {
+			static FLAME_SAL(str, "{c}");
+			auto pos = s.find(str.s, 0, str.l);
+			while (pos != std::string::npos)
+			{
+				s = s.replace(pos, str.l, config);
+				pos = s.find(str.s, 0, str.l);
+			}
+		};
 		if (e.key == "src")
-			source = e.value;
+		{
+			auto str = e.value;
+			fmt(str);
+			source = str;
+		}
 		else if (e.key == "dst")
-			destination = e.value;
+		{
+			auto str = e.value;
+			fmt(str);
+			destination = str;
+		}
 	}
 	for (auto& e : description.get_section_entries("items"))
 		items.push_back(e.value);
@@ -48,27 +82,32 @@ int main(int argc, char **args)
 
 		{
 			auto _sp = SUS::split(sp[0], '/');
-			if (_sp[0].size() == 3 && _sp[0][0] == '{' && _sp[0][2] == '}')
+			for (auto j = 0; j < _sp.size() - 1; j++)
 			{
-				switch (sp[0][1])
+				if (_sp[j].size() == 3 && _sp[j][0] == '{' && _sp[j][2] == '}')
 				{
-				case 'e':
-					s = engine_dir;
-					break;
-				case 's':
-					s = source;
-					break;
+					std::wstring str;
+					switch (_sp[j][1])
+					{
+					case 'e':
+						str = engine_dir;
+						break;
+					case 's':
+						str = source;
+						break;
+					case 'c':
+						str = s2w(config);
+						break;
+					}
+					s /= str;
+					if (j > 0)
+						p /= str;
 				}
-			}
-			else
-			{
-				s = _sp[0];
-				p = s;
-			}
-			for (auto j = 1; j < _sp.size() - 1; j++)
-			{
-				s /= _sp[j];
-				p /= _sp[j];
+				else
+				{
+					s /= _sp[j];
+					p /= _sp[j];
+				}
 			}
 			n = _sp.back();
 			s /= n;
@@ -119,6 +158,8 @@ int main(int argc, char **args)
 		if (ext == L".exe" || ext == L".dll")
 		{
 			copy_typeinfo(s, d);
+			if (config == "debug")
+				copy_pdb(s, d);
 			auto dependencies = get_module_dependencies(s.c_str());
 			for (auto i = 0; i < dependencies.s; i++)
 			{
@@ -131,6 +172,8 @@ int main(int argc, char **args)
 					wprintf(L"%s   =>   %s\n", ss.c_str(), dd.c_str());
 					copied_files_count++;
 					copy_typeinfo(ss, dd);
+					if (config == "debug")
+						copy_pdb(ss, dd);
 				}
 			}
 		}

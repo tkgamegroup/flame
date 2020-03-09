@@ -1,5 +1,5 @@
 debug/
 debug.rar
-release/
-release.rar
+relwithdebinfo/
+relwithdebinfo.rar
 vc_redist.x64.exe
