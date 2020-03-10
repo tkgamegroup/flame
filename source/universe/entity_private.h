@@ -5,13 +5,16 @@
 
 namespace flame
 {
+	struct WorldPrivate;
+
 	struct EntityPrivate : Entity
 	{
 		std::string name;
 		uint name_hash;
 
-		std::unordered_map<uint, std::unique_ptr<Component>> components;
+		WorldPrivate* world;
 		EntityPrivate* parent;
+		std::unordered_map<uint, std::unique_ptr<Component>> components;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
 		EntityPrivate();

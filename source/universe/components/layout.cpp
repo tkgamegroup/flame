@@ -133,7 +133,7 @@ namespace flame
 
 	void cLayoutPrivate::on_entered_world()
 	{
-		management = entity->world_->get_system(sLayoutManagement);
+		management = entity->world()->get_system(sLayoutManagement);
 		management->add_to_update_list(this);
 	}
 

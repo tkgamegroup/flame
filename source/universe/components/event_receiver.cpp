@@ -1,5 +1,5 @@
 #include <flame/universe/world.h>
-#include <flame/universe/systems/event_dispatcher.h>
+#include "../systems/event_dispatcher_private.h"
 #include <flame/universe/components/element.h>
 #include "event_receiver_private.h"
 
@@ -49,7 +49,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_entered_world()
 	{
-		dispatcher = entity->world_->get_system(sEventDispatcher);
+		dispatcher = entity->world()->get_system(sEventDispatcher);
 		dispatcher->pending_update = true;
 	}
 
@@ -57,7 +57,7 @@ namespace flame
 	{
 		if (dispatcher)
 		{
-			dispatcher->receiver_leave_world(this);
+			((sEventDispatcherPrivate*)dispatcher)->remove_receiver(this);
 			dispatcher->pending_update = true;
 			dispatcher = nullptr;
 		}

@@ -5,9 +5,8 @@ namespace flame
 {
 	WorldPrivate::WorldPrivate()
 	{
-		auto e = new EntityPrivate;
-		e->world_ = this;
-		root.reset(e);
+		root.reset(new EntityPrivate);
+		root->world = this;
 	}
 
 	WorldPrivate::~WorldPrivate()

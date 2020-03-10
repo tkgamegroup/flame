@@ -172,7 +172,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void RF(serialize)(Component* _c, int offset)
 		{
 			auto c = (cTextPrivate*)_c;
-			auto w = c->entity->world_;
 
 			if (offset == -1)
 			{
@@ -212,7 +211,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void  RF(unserialize)(Component* _c, int offset)
 		{
 			auto c = (cTextPrivate*)_c;
-			auto w = c->entity->world_;
+			auto w = c->entity->world();
 
 			if (offset == -1)
 			{

@@ -1,5 +1,6 @@
 #include <flame/foundation/typeinfo.h>
 #include "entity_private.h"
+#include "world_private.h"
 
 namespace flame
 {
@@ -18,7 +19,7 @@ namespace flame
 
 		name_hash = 0;
 
-		world_ = nullptr;
+		world = nullptr;
 		parent = nullptr;
 	}
 
@@ -69,7 +70,7 @@ namespace flame
 		assert(!get_component_plain(c->name_hash));
 
 		c->entity = this;
-		if (world_)
+		if (world)
 			c->on_entered_world();
 		for (auto& _c : components)
 			_c.second->on_component_added(c);
@@ -125,7 +126,7 @@ namespace flame
 
 	static void enter_world(World* w, EntityPrivate* e)
 	{
-		e->world_ = w;
+		e->world = (WorldPrivate*)w;
 		for (auto& c : e->components)
 			c.second->on_entered_world();
 		for (auto& c : e->children)
@@ -134,7 +135,7 @@ namespace flame
 
 	static void leave_world(EntityPrivate* e)
 	{
-		e->world_ = nullptr;
+		e->world = nullptr;
 		for (auto& c : e->components)
 			c.second->on_left_world();
 		for (auto& c : e->children)
@@ -151,8 +152,8 @@ namespace flame
 		e->depth_ = depth_ + 1;
 		e->index_ = position;
 		e->parent = this;
-		if (!e->world_ && world_)
-			enter_world(world_, e);
+		if (!e->world && world)
+			enter_world(world, e);
 		for (auto& c : components)
 		{
 			for (auto& _c : e->components)
@@ -309,6 +310,11 @@ namespace flame
 	void Entity::remove_component(Component* c)
 	{
 		((EntityPrivate*)this)->remove_component(c);
+	}
+
+	World* Entity::world() const
+	{
+		return ((EntityPrivate*)this)->world;
 	}
 
 	Entity* Entity::parent() const

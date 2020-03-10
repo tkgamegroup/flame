@@ -12,8 +12,6 @@ namespace flame
 
 	struct Entity
 	{
-		World* world_;
-
 		ListenerHub<bool(void* c)> on_removed_listeners;
 		ListenerHub<bool(void* c)> on_destroyed_listeners;
 
@@ -45,6 +43,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
 
+		FLAME_UNIVERSE_EXPORTS World* world() const;
 		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
 		FLAME_UNIVERSE_EXPORTS uint child_count() const;
 		FLAME_UNIVERSE_EXPORTS Entity* child(uint index) const;
