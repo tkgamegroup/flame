@@ -595,7 +595,10 @@ namespace flame
 				e_empty();
 				c_element();
 				auto ce = c_event_receiver();
-				ce->pass = (Entity*)INVALID_POINTER;
+				ce->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+					*pass = true;
+					return true;
+				}, Mail<>());
 				ce->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thumb = (*(cScrollbarThumb**)c);
 					if (is_mouse_scroll(action, key))
@@ -759,6 +762,7 @@ namespace flame
 		inline Entity* e_begin_combobox(float width)
 		{
 			auto e = e_empty();
+			e->gene = FLAME_CHASH("menu");
 			auto ce = c_element();
 			ce->size_ = Vec2f(width + 8.f, style_1u(FontSize) + 4.f);
 			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
@@ -814,6 +818,7 @@ namespace flame
 		inline Entity* e_begin_menu_bar()
 		{
 			auto e = e_empty();
+			e->gene = FLAME_CHASH("menubar");
 			c_element()->color_ = style_4c(FrameColorNormal);
 			c_aligner(SizeFitParent, SizeFixed);
 			c_layout(LayoutHorizontal)->item_padding = 4.f;
@@ -851,6 +856,7 @@ namespace flame
 		inline Entity* e_begin_button_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
+			e->gene = FLAME_CHASH("menu");
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
@@ -991,7 +997,10 @@ namespace flame
 
 				e_empty();
 				c_element();
-				c_event_receiver()->pass = (Entity*)INVALID_POINTER;
+				c_event_receiver()->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+					*pass = true;
+					return true;
+				}, Mail<>());
 				c_aligner(SizeFitParent, SizeFitParent);
 				c_bring_to_front();
 			}
@@ -1157,7 +1166,7 @@ namespace flame
 		inline Entity* e_begin_dialog(const char* layer_name_suffix = nullptr)
 		{
 			auto r = current_root();
-			auto l = add_layer(r, layer_name_suffix ? layer_name_suffix : "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
+			auto l = add_layer(r, layer_name_suffix ? layer_name_suffix : "dialog", 0, true, Vec4c(0, 0, 0, 127));
 			set_current_entity(l);
 			c_layout();
 			push_parent(l);

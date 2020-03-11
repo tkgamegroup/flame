@@ -104,12 +104,13 @@ namespace flame
 			{
 				if (mode == ModeContext)
 				{
-					opened = true;
-					auto layer = ui::add_layer(root, "menu", nullptr, false);
+					auto layer = ui::add_layer(root, "menu", 0, false);
 					auto items_element = items->get_component(cElement);
 					items_element->set_pos(Vec2f(pos));
 					items_element->set_scale(element->global_scale);
 					layer->add_child(items);
+
+					opened = true;
 				}
 				else
 				{
@@ -124,11 +125,17 @@ namespace flame
 						}
 					}
 
-					opened = true;
-
-					auto layer = ui::get_top_layer(root);
-					if (layer->name_hash() != FLAME_CHASH("layer_menu"))
-						layer = nullptr;
+					auto layer = root->child_count() ? root->child(root->child_count() - 1) : nullptr;
+					if (layer)
+					{
+						if (layer->name_hash() == FLAME_CHASH("layer_menu"))
+						{
+							if (layer->dying_)
+								return;
+						}
+						else
+							layer = nullptr;
+					}
 					if (mode == ModeSub)
 						assert(layer);
 					else
@@ -136,10 +143,10 @@ namespace flame
 						if (mode == ModeMenubar)
 						{
 							if (!layer)
-								layer = ui::add_layer(root, "menu", p, false);
+								layer = ui::add_layer(root, "menu", FLAME_CHASH("menubar"), false);
 						}
 						else
-							layer = ui::add_layer(root, "menu", entity, false);
+							layer = ui::add_layer(root, "menu", FLAME_CHASH("menu"), false);
 					}
 					auto items_element = items->get_component(cElement);
 					switch (mode)
@@ -153,6 +160,8 @@ namespace flame
 					}
 					items_element->set_scale(element->global_scale);
 					layer->add_child(items);
+
+					opened = true;
 				}
 			}
 		}

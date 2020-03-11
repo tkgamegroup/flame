@@ -55,7 +55,6 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				event_receiver->accept_key = true;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
 					auto text = (cTextPrivate*)thiz->text;

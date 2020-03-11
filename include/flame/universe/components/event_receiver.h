@@ -12,11 +12,10 @@ namespace flame
 		sEventDispatcher* dispatcher;
 		cElement* element;
 
-		Entity* pass; // invali pointer - pass all, nullptr [default] - pass nothing, or pass pointing and its children
-		bool accept_key;
 		uint drag_hash; // non-zero means it can be draged to drop
 		EventReceiverState state;
 
+		ListenerHub<bool(void* c, cEventReceiver* er, bool* pass)>								pass_checkers;
 		ListenerHub<bool(void* c, KeyStateFlags action, int value)>								key_listeners;
 		ListenerHub<bool(void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos)>		mouse_listeners;
 		ListenerHub<bool(void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>	drag_and_drop_listeners;

@@ -9,6 +9,8 @@ namespace flame
 		on_removed_listeners.impl = ListenerHubImpl::create();
 		on_destroyed_listeners.impl = ListenerHubImpl::create();
 
+		gene = 0;
+
 		depth_ = 0;
 		index_ = 0;
 		created_frame_ = looper().frame;
@@ -135,11 +137,18 @@ namespace flame
 
 	static void leave_world(EntityPrivate* e)
 	{
+		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
+			leave_world(it->get());
 		e->world = nullptr;
 		for (auto& c : e->components)
 			c.second->on_left_world();
+	}
+
+	static void inherit(EntityPrivate* e, uint gene)
+	{
+		e->gene = gene;
 		for (auto& c : e->children)
-			leave_world(c.get());
+			inherit(c.get(), gene);
 	}
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
@@ -149,6 +158,7 @@ namespace flame
 		for (auto i = position; i < children.size(); i++)
 			children[i]->index_ += 1;
 		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
+		inherit(e, gene);
 		e->depth_ = depth_ + 1;
 		e->index_ = position;
 		e->parent = this;

@@ -25,7 +25,10 @@ namespace flame
 				e->add_child(e_btf);
 				e_btf->add_component(cElement::create());
 				auto cer = cEventReceiver::create();
-				cer->pass = (Entity*)INVALID_POINTER;
+				cer->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+					*pass = true;
+					return true;
+				}, Mail<>());
 				e_btf->add_component(cer);
 				auto ca = cAligner::create();
 				ca->width_policy_ = SizeFitParent;

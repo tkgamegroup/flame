@@ -2,7 +2,6 @@
 #include <flame/universe/world.h>
 #include "event_dispatcher_private.h"
 #include <flame/universe/components/element.h>
-#include "../components/event_receiver_private.h"
 
 namespace flame
 {
@@ -15,6 +14,7 @@ namespace flame
 		hovering = nullptr;
 		focusing = nullptr;
 		focusing_state = FocusingNormal;
+		key_receiving = nullptr;
 		drag_overing = nullptr;
 
 		next_focusing = (cEventReceiver*)INVALID_POINTER;
@@ -49,6 +49,8 @@ namespace flame
 			focusing = nullptr;
 		if (er == hovering)
 			hovering = nullptr;
+		if (er == key_receiving)
+			key_receiving = nullptr;
 		if (er == drag_overing)
 			drag_overing = nullptr;
 		er->state = EventReceiverNormal;
@@ -119,65 +121,36 @@ namespace flame
 		}
 	}
 
-	void sEventDispatcherPrivate::dispatch_mouse(EntityPrivate* e)
+	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
 	{
-		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
+		auto mouse_contained = !er->element->cliped && rect_contains(er->element->cliped_rect, Vec2f(mouse_pos));
+
+		if ([&]() {
+				if (!mouse_event_checker)
+					return true;
+				if (mouse_event_checker == INVALID_POINTER)
+					return false;
+				auto pass = false;
+				mouse_event_checker->pass_checkers.call(er, &pass);
+				return pass;
+			}() && (force || mouse_contained))
 		{
-			auto c = it->get();
-			if (c->global_visibility_)
-				dispatch_mouse(c);
-		}
-
-		if (!pass)
-			return;
-
-		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
-		if (!er)
-			return;
-
-		auto mouse_contained = (!er->element->cliped && rect_contains(er->element->cliped_rect, Vec2f(mouse_pos)));
-		if ((er == focusing && focusing_state != FocusingNormal) || mouse_contained)
-		{
-			//if (!ban && !thiz->hovering)
-			//	thiz->hovering = er;
-
-			//auto prev_drag_overing = drag_overing;
-			//auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
-
-			hovering = mouse_contained ? er : nullptr;
-
-			if (is_mouse_down((KeyState)mouse_buttons[Mouse_Left], Mouse_Left, true))
+			if (mouse_contained)
 			{
-				focusing = nullptr;
+				hovering = er;
 
-				if (hovering)
+				if (mouse_buttons[Mouse_Left] == (KeyStateDown | KeyStateJust))
 				{
-					focusing = hovering;
-					focusing_state = FocusingAndActive;
-					active_pos = mouse_pos;
+					focusing = nullptr;
+
+					if (hovering)
+					{
+						focusing = hovering;
+						focusing_state = FocusingAndActive;
+						active_pos = mouse_pos;
+					}
 				}
 			}
-
-			//if (prev_focusing != focusing)
-			//{
-			//	key_dispatch_list.clear();
-
-			//	if (prev_focusing)
-			//		prev_focusing->focus_listeners.call(false);
-			//	if (focusing)
-			//	{
-			//		auto e = focusing->entity;
-			//		while (e)
-			//		{
-			//			auto er = e->get_component(cEventReceiver);
-			//			if (er && er->accept_key)
-			//				key_dispatch_list.push_back(er);
-			//			e = e->parent();
-			//		}
-
-			//		focusing->focus_listeners.call(true);
-			//	}
-			//}
 
 			if (mouse_disp != 0)
 				((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
@@ -190,8 +163,26 @@ namespace flame
 					((cEventReceiverPrivate*)er)->on_mouse(s, (MouseKey)i, mouse_pos);
 			}
 
-			pass = false;
+			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
 		}
+
+		er->frame = looper().frame;
+	}
+
+	void sEventDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
+	{
+		for (auto i = (int)e->children.size() - 1; i >= 0; i--)
+		{
+			auto c = e->children[i].get();
+			if (c->global_visibility_ && e->get_component(cElement))
+				dispatch_mouse_recursively(c);
+		}
+
+		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
+		if (!er || er->frame >= (int)looper().frame)
+			return;
+
+		dispatch_mouse_single(er, false);
 	}
 
 	void sEventDispatcherPrivate::update(Entity* root)
@@ -205,7 +196,10 @@ namespace flame
 		auto prev_hovering = hovering;
 		auto prev_focusing = focusing;
 		auto prev_focusing_state = focusing_state;
+		auto prev_drag_overing = drag_overing;
+		//auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
 		hovering = nullptr;
+		drag_overing = nullptr;
 
 		if (next_focusing != INVALID_POINTER)
 		{
@@ -217,20 +211,19 @@ namespace flame
 		{
 			if (!focusing->entity->global_visibility_)
 				focusing = nullptr;
-			else if (focusing_state != FocusingNormal && ((KeyState)mouse_buttons[Mouse_Left] & KeyStateUp))
+			else if (focusing_state != FocusingNormal && (mouse_buttons[Mouse_Left] & KeyStateUp))
 				focusing_state = FocusingNormal;
-		}
 
-		if (!focusing)
+			if (dbclick_timer > 0.f)
+			{
+				dbclick_timer -= looper().delta_time;
+				if (dbclick_timer <= 0.f)
+					dbclick_timer = -1.f;
+			}
+		}
+		else
 			dbclick_timer = -1.f;
-		if (dbclick_timer > 0.f)
-		{
-			dbclick_timer -= looper().delta_time;
-			if (dbclick_timer <= 0.f)
-				dbclick_timer = -1.f;
-		}
 
-		drag_overing = nullptr;
 		if (focusing && focusing_state == FocusingAndActive)
 		{
 			if (focusing->drag_hash)
@@ -240,10 +233,12 @@ namespace flame
 			}
 		}
 
-		pass = true;
-		dispatch_mouse((EntityPrivate*)root);
+		mouse_event_checker = nullptr;
+		if (focusing && focusing_state != FocusingNormal)
+			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
+		dispatch_mouse_recursively((EntityPrivate*)root);
 
-		if (focusing && is_mouse_up(mouse_buttons[Mouse_Left], Mouse_Left, true) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
+		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
 		{
 			auto disp = mouse_pos - active_pos;
 			auto db = dbclick_timer > 0.f;
@@ -273,6 +268,14 @@ namespace flame
 			hovering->state_listeners.call(hovering->state);
 		}
 
+		if (prev_focusing != focusing)
+		{
+			if (prev_focusing)
+				prev_focusing->focus_listeners.call(false);
+			if (focusing)
+				focusing->focus_listeners.call(true);
+		}
+
 		//if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
 		//	((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
 		//else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
@@ -297,15 +300,15 @@ namespace flame
 		//	}
 		//}
 
-		//for (auto er : key_dispatch_list)
-		//{
-		//	for (auto& code : keydown_inputs)
-		//		((cEventReceiverPrivate*)er)->on_key(KeyStateDown, code);
-		//	for (auto& code : keyup_inputs)
-		//		((cEventReceiverPrivate*)er)->on_key(KeyStateUp, code);
-		//	for (auto& ch : char_inputs)
-		//		((cEventReceiverPrivate*)er)->on_key(KeyStateNull, ch);
-		//}
+		if (focusing)
+		{
+			for (auto& code : keydown_inputs)
+				((cEventReceiverPrivate*)focusing)->on_key(KeyStateDown, code);
+			for (auto& code : keyup_inputs)
+				((cEventReceiverPrivate*)focusing)->on_key(KeyStateUp, code);
+			for (auto& ch : char_inputs)
+				((cEventReceiverPrivate*)focusing)->on_key(KeyStateNull, ch);
+		}
 
 		keydown_inputs.clear();
 		keyup_inputs.clear();

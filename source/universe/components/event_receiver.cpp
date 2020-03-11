@@ -10,21 +10,23 @@ namespace flame
 		dispatcher = nullptr;
 		element = nullptr;
 
-		pass = nullptr;
-		accept_key = false;
 		drag_hash = 0;
 
 		state = EventReceiverNormal;
 
+		pass_checkers.impl = ListenerHubImpl::create();
 		key_listeners.impl = ListenerHubImpl::create();
 		mouse_listeners.impl = ListenerHubImpl::create();
 		drag_and_drop_listeners.impl = ListenerHubImpl::create();
 		focus_listeners.impl = ListenerHubImpl::create();
 		state_listeners.impl = ListenerHubImpl::create();
+
+		frame = -1;
 	}
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
+		ListenerHubImpl::destroy(pass_checkers.impl);
 		ListenerHubImpl::destroy(key_listeners.impl);
 		ListenerHubImpl::destroy(mouse_listeners.impl);
 		ListenerHubImpl::destroy(drag_and_drop_listeners.impl);
@@ -79,7 +81,6 @@ namespace flame
 	{
 		auto copy = new cEventReceiverPrivate();
 
-		copy->pass = pass;
 		copy->drag_hash = drag_hash;
 
 		return copy;

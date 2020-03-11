@@ -1,9 +1,13 @@
+#pragma once
+
 #include <flame/universe/components/event_receiver.h>
 
 namespace flame
 {
 	struct cEventReceiverPrivate : cEventReceiver
 	{
+		int frame;
+
 		std::vector<uint> acceptable_drops;
 
 		cEventReceiverPrivate();

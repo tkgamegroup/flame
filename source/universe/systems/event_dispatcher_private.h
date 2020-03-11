@@ -1,7 +1,8 @@
 #pragma once
 
-#include <flame/universe/systems/event_dispatcher.h>
 #include "../entity_private.h"
+#include <flame/universe/systems/event_dispatcher.h>
+#include "../components/event_receiver_private.h"
 
 namespace flame
 {
@@ -16,7 +17,7 @@ namespace flame
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
 
-		bool pass;
+		cEventReceiverPrivate* mouse_event_checker;
 		float dbclick_timer;
 		Vec2i active_pos;
 
@@ -24,7 +25,8 @@ namespace flame
 		~sEventDispatcherPrivate();
 		void on_receiver_removed(cEventReceiver* er);
 		void on_added() override;
-		void dispatch_mouse(EntityPrivate* e);
+		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
+		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update(Entity* root) override;
 	};
 }

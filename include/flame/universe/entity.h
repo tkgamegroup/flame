@@ -15,6 +15,8 @@ namespace flame
 		ListenerHub<bool(void* c)> on_removed_listeners;
 		ListenerHub<bool(void* c)> on_destroyed_listeners;
 
+		uint gene;
+
 		uint depth_;
 		uint index_;
 		int created_frame_;
