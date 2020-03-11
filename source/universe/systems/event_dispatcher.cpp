@@ -166,6 +166,19 @@ namespace flame
 			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
 		}
 
+		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)
+		{
+			auto hash = focusing->drag_hash;
+			for (auto h : er->acceptable_drops)
+			{
+				if (h == hash)
+				{
+					drag_overing = er;
+					break;
+				}
+			}
+		}
+
 		er->frame = looper().frame;
 	}
 
@@ -197,7 +210,7 @@ namespace flame
 		auto prev_focusing = focusing;
 		auto prev_focusing_state = focusing_state;
 		auto prev_drag_overing = drag_overing;
-		//auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
+		auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
 		hovering = nullptr;
 		drag_overing = nullptr;
 
@@ -273,34 +286,36 @@ namespace flame
 			if (prev_focusing)
 				prev_focusing->focus_listeners.call(false);
 			if (focusing)
+			{
 				focusing->focus_listeners.call(true);
+
+				key_receiving = nullptr;
+				auto e = focusing->entity;
+				while (e)
+				{
+					auto er = e->get_component(cEventReceiver);
+					if (er && er->key_listeners.impl->count())
+					{
+						key_receiving = er;
+						break;
+					}
+					e = e->parent();
+				}
+			}
 		}
 
-		//if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
-		//	((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
-		//else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
-		//{
-		//	if (prev_drag_overing)
-		//		((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
-		//	((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
-		//}
-		//if (drag_overing)
-		//	((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
+		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
+			((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
+		else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
+		{
+			if (prev_drag_overing)
+				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
+			((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
+		}
+		if (drag_overing)
+			((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
 
-		//if (thiz->focusing && thiz->focusing_state == FocusingAndDragging && !thiz->drag_overing && er != thiz->focusing)
-		//{
-		//	auto hash = thiz->focusing->drag_hash;
-		//	for (auto h : er->acceptable_drops)
-		//	{
-		//		if (h == hash)
-		//		{
-		//			thiz->drag_overing = er;
-		//			break;
-		//		}
-		//	}
-		//}
-
-		if (focusing)
+		if (key_receiving)
 		{
 			for (auto& code : keydown_inputs)
 				((cEventReceiverPrivate*)focusing)->on_key(KeyStateDown, code);
