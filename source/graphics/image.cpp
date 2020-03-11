@@ -309,7 +309,10 @@ namespace flame
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
+			{
+				wprintf(L"cannot find image: %s\n", filename);
 				return nullptr;
+			}
 
 			int width, height, level, layer;
 			auto fmt = Format_Undefined;

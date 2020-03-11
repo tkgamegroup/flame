@@ -288,7 +288,7 @@ int main(int argc, char** args)
 		app.font_atlas_sdf = FontAtlas::create(app.graphics_device, FontDrawSdf, 1, fonts);
 		app.canvas->add_font(app.font_atlas_sdf);
 	}
-	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/ui/imgs/9.png").c_str())));
+	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/9.png").c_str())));
 
 	ui::set_current_entity(app.root);
 	ui::c_layout();

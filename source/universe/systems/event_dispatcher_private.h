@@ -16,28 +16,15 @@ namespace flame
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
 
+		bool pass;
 		float dbclick_timer;
-
 		Vec2i active_pos;
-
-		std::vector<cEventReceiver*> key_dispatch_list;
 
 		sEventDispatcherPrivate();
 		~sEventDispatcherPrivate();
-		void remove_receiver(cEventReceiver* er);
+		void on_receiver_removed(cEventReceiver* er);
 		void on_added() override;
+		void dispatch_mouse(EntityPrivate* e);
 		void update(Entity* root) override;
 	};
-
-	struct HoversSearcher
-	{
-		sEventDispatcherPrivate* thiz;
-		Vec2f pos;
-		EntityPrivate* pass;
-		std::vector<cEventReceiver*> mouse_dispatch_list;
-
-		void search(sEventDispatcherPrivate* thiz, const Vec2i& pos, EntityPrivate* root);
-		void search_r(EntityPrivate* e);
-	};
-	static HoversSearcher hovers_searcher;
 }

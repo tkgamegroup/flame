@@ -57,7 +57,7 @@ namespace flame
 	{
 		if (dispatcher)
 		{
-			((sEventDispatcherPrivate*)dispatcher)->remove_receiver(this);
+			((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
 			dispatcher->pending_update = true;
 			dispatcher = nullptr;
 		}

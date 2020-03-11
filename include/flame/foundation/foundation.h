@@ -473,7 +473,7 @@ namespace flame
 
 	inline bool is_mouse_clicked(KeyStateFlags action, MouseKey key)
 	{
-		return action == (KeyStateDown | KeyStateUp) && key == Mouse_Null;
+		return (action & KeyStateDown) && (action & KeyStateUp) && key == Mouse_Null;
 	}
 
 	inline ulonglong get_now_ns()

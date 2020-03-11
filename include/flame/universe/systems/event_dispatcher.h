@@ -6,11 +6,6 @@ namespace flame
 {
 	struct cEventReceiver;
 
-	struct MouseEventDispatcher
-	{
-
-	};
-
 	struct sEventDispatcher : System
 	{
 		KeyStateFlags key_states[KeyCount];
@@ -31,6 +26,9 @@ namespace flame
 			System("sEventDispatcher")
 		{
 		}
+
+		FLAME_UNIVERSE_EXPORTS cEventReceiver* get_next_mouse_hovering();
+		FLAME_UNIVERSE_EXPORTS void set_event_passthrough();
 
 		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create();
 	};
