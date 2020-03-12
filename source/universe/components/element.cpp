@@ -10,8 +10,9 @@ namespace flame
 	cElementPrivate::cElementPrivate()
 	{
 		pos_ = 0.f;
-		scale_ = 1.f;
 		size_ = 0.f;
+		scale_ = 1.f;
+		pivot_ = 0.f;
 		inner_padding_ = Vec4f(0.f);
 		alpha_ = 1.f;
 		roundness_ = Vec4f(0.f);
@@ -40,16 +41,17 @@ namespace flame
 		auto p = entity->parent();
 		if (!p)
 		{
-			global_pos = pos_;
 			global_scale = scale_;
+			global_size = size_ * global_scale;
+			global_pos = pos_;
 		}
 		else
 		{
 			auto p_element = p->get_component(cElement);
-			global_pos = p_element->global_pos + p_element->global_scale * pos_;
 			global_scale = p_element->global_scale * scale_;
+			global_size = size_ * global_scale;
+			global_pos = p_element->global_pos + p_element->global_scale * pos_ - pivot_ * global_size;
 		}
-		global_size = size_ * global_scale;
 	}
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
@@ -81,8 +83,9 @@ namespace flame
 		auto copy = new cElementPrivate();
 
 		copy->pos_ = pos_;
-		copy->scale_ = scale_;
 		copy->size_ = size_;
+		copy->scale_ = scale_;
+		copy->pivot_ = pivot_;
 		copy->inner_padding_ = inner_padding_;
 		copy->alpha_ = alpha_;
 		copy->roundness_ = roundness_;
@@ -259,8 +262,9 @@ namespace flame
 	struct R(Serializer_cElement, flame,)
 	{
 		RV(Vec2f, pos, n);
-		RV(float, scale, n);
 		RV(Vec2f, size, n);
+		RV(float, scale, n);
+		RV(Vec2f, pivot, n);
 		RV(Vec4f, inner_padding, n);
 		RV(float, alpha, n);
 		RV(Vec4f, roundness, n);
@@ -273,8 +277,9 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cElement)()
 		{
 			pos = 0.f;
-			scale = 1.f;
 			size = 0.f;
+			scale = 1.f;
+			pivot = 0.f;
 			inner_padding = Vec4f(0.f);
 			alpha = 1.f;
 			roundness = Vec4f(0.f);
@@ -290,8 +295,9 @@ namespace flame
 			auto c = new cElementPrivate();
 
 			c->pos_ = pos;
-			c->scale_ = scale;
 			c->size_ = size;
+			c->scale_ = scale;
+			c->pivot_ = pivot;
 			c->inner_padding_ = inner_padding;
 			c->alpha_ = alpha;
 			c->roundness_ = roundness;
@@ -311,8 +317,9 @@ namespace flame
 			if (offset == -1)
 			{
 				pos = c->pos_;
-				scale = c->scale_;
 				size = c->size_;
+				scale = c->scale_;
+				pivot = c->pivot_;
 				inner_padding = c->inner_padding_;
 				alpha = c->alpha_;
 				roundness = c->roundness_;
@@ -329,11 +336,14 @@ namespace flame
 				case offsetof(Serializer_cElement, pos):
 					pos = c->pos_;
 					break;
+				case offsetof(Serializer_cElement, size):
+					size = c->size_;
+					break;
 				case offsetof(Serializer_cElement, scale):
 					scale = c->scale_;
 					break;
-				case offsetof(Serializer_cElement, size):
-					size = c->size_;
+				case offsetof(Serializer_cElement, pivot):
+					pivot = c->pivot_;
 					break;
 				case offsetof(Serializer_cElement, inner_padding):
 					inner_padding = c->inner_padding_;
@@ -370,8 +380,9 @@ namespace flame
 			if (offset == -1)
 			{
 				c->pos_ = pos;
-				c->scale_ = scale;
 				c->size_ = size;
+				c->scale_ = scale;
+				c->pivot_ = pivot;
 				c->inner_padding_ = inner_padding;
 				c->alpha_ = alpha;
 				c->roundness_ = roundness;
@@ -388,11 +399,14 @@ namespace flame
 				case offsetof(Serializer_cElement, pos):
 					c->pos_ = pos;
 					break;
+				case offsetof(Serializer_cElement, size):
+					c->size_ = size;
+					break;
 				case offsetof(Serializer_cElement, scale):
 					c->scale_ = scale;
 					break;
-				case offsetof(Serializer_cElement, size):
-					c->size_ = size;
+				case offsetof(Serializer_cElement, pivot):
+					c->pivot_ = pivot;
 					break;
 				case offsetof(Serializer_cElement, inner_padding):
 					c->inner_padding_ = inner_padding;

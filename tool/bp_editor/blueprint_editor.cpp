@@ -260,22 +260,42 @@ struct cScene : Component
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
-			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& _pos) {
+			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cScene**)c;
-				auto pos = (Vec2f)_pos;
-				auto line_width = 3.f * thiz->base_element->global_scale;
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				auto ed = app.s_event_dispatcher;
+				if (is_mouse_scroll(action, key))
 				{
-					app.deselect();
-
-					thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
-						if (segment_distance(p1, p2, pos) < line_width)
+					auto s = clamp(thiz->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
+					thiz->base_element->set_scale(s);
+					thiz->scale_text->set_text((std::to_wstring(int(s * 100)) + L"%").c_str());
+				}
+				else
+				{
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+					{
+						if (is_mouse_move(action, key))
 						{
-							app.select(SelLink, l);
-							return false;
+							if (ed->mouse_buttons[Mouse_Left] & KeyStateDown)
+								thiz->base_element->set_pos(Vec2f(pos), true);
 						}
-						return true;
-					});
+					}
+					else
+					{
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
+						{
+							app.deselect();
+
+							auto line_width = 3.f * thiz->base_element->global_scale;
+							thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
+								if (segment_distance(p1, p2, Vec2f(pos)) < line_width)
+								{
+									app.select(SelLink, l);
+									return false;
+								}
+								return true;
+							});
+						}
+					}
 				}
 				return true;
 			}, new_mail_p(this));
@@ -407,33 +427,6 @@ cEditor::cEditor() :
 
 				e_base = ui::e_empty();
 				c_bp_scene->base_element = ui::c_element();
-
-				auto e_overlayer = ui::e_empty();
-				ui::c_element();
-				{
-					auto c_event_receiver = ui::c_event_receiver();
-					c_event_receiver->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
-						*pass = true;
-						return true;
-					}, Mail<>());
-					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto c_bp_scene = *(cScene**)c;
-						if (is_mouse_scroll(action, key))
-						{
-							auto s = clamp(c_bp_scene->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
-							c_bp_scene->base_element->set_scale(s);
-							c_bp_scene->scale_text->set_text((std::to_wstring(int(s * 100)) + L"%").c_str());
-						}
-						else if (is_mouse_move(action, key))
-						{
-							auto ed = c_bp_scene->event_receiver->dispatcher;
-							if ((ed->key_states[Key_Ctrl] & KeyStateDown) && (ed->mouse_buttons[Mouse_Left] & KeyStateDown))
-								c_bp_scene->base_element->set_pos(Vec2f(pos), true);
-						}
-						return true;
-					}, new_mail_p(c_bp_scene));
-				}
-				ui::c_aligner(SizeFitParent, SizeFitParent);
 
 				on_load();
 
