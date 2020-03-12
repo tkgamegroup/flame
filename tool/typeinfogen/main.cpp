@@ -236,7 +236,8 @@ int main(int argc, char **args)
 		if (SUW::starts_with(d, L"flame_"))
 		{
 			d.replace_extension(L".typeinfo");
-			dependencies.push_back(d);
+			if (std::filesystem::exists(d))
+				dependencies.push_back(d);
 		}
 	}
 	printf("generating typeinfo for %s: ", module_path.string().c_str());

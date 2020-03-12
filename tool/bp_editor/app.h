@@ -117,7 +117,7 @@ struct MyApp : App
 	bool generate_graph_image();
 	bool auto_set_layout();
 
-	void create();
+	bool create(const char* filename);
 	void load(const std::filesystem::path& filepath);
 };
 

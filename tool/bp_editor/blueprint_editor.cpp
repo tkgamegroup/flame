@@ -81,7 +81,7 @@ struct R(CmdBufs)
 			out_s()->set_frame(frame);
 		}
 
-		app.cbs.push_back(out[0]);
+		app.graphics_cbs.push_back(out[0]);
 	}
 
 	__declspec(dllexport) RF(~CmdBufs)()
@@ -156,6 +156,7 @@ struct cSlot : Component
 							app.set_changed(true);
 					}
 				}
+				return true;
 			}, new_mail_p(this));
 		}
 	}
@@ -253,6 +254,7 @@ struct cScene : Component
 			element = (cElement*)c;
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cScene**)c)->draw(canvas);
+				return true;
 			}, new_mail_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
@@ -262,7 +264,6 @@ struct cScene : Component
 				auto thiz = *(cScene**)c;
 				auto pos = (Vec2f)_pos;
 				auto line_width = 3.f * thiz->base_element->global_scale;
-
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					app.deselect();
@@ -276,6 +277,7 @@ struct cScene : Component
 						return true;
 					});
 				}
+				return true;
 			}, new_mail_p(this));
 		}
 	}
@@ -349,6 +351,7 @@ struct cSceneObject : Component
 					}
 					thiz->moved = true;
 				}
+				return true;
 			}, new_mail_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
@@ -358,6 +361,7 @@ struct cSceneObject : Component
 				auto thiz = *(cSceneObject**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					app.select(thiz->t, thiz->p);
+				return true;
 			}, new_mail_p(this));
 			event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 				auto thiz = *(cSceneObject**)c;
@@ -408,7 +412,10 @@ cEditor::cEditor() :
 				ui::c_element();
 				{
 					auto c_event_receiver = ui::c_event_receiver();
-					c_event_receiver->pass = (Entity*)INVALID_POINTER;
+					c_event_receiver->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+						*pass = true;
+						return true;
+					}, Mail<>());
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto c_bp_scene = *(cScene**)c;
 						if (is_mouse_scroll(action, key))
@@ -423,6 +430,7 @@ cEditor::cEditor() :
 							if ((ed->key_states[Key_Ctrl] & KeyStateDown) && (ed->mouse_buttons[Mouse_Left] & KeyStateDown))
 								c_bp_scene->base_element->set_pos(Vec2f(pos), true);
 						}
+						return true;
 					}, new_mail_p(c_bp_scene));
 				}
 				ui::c_aligner(SizeFitParent, SizeFitParent);
@@ -539,7 +547,10 @@ void cEditor::on_add_library(BP::Library* l)
 			ui::e_end_layout();
 			ui::e_empty();
 			ui::c_element();
-			ui::c_event_receiver()->pass = (Entity*)INVALID_POINTER;
+			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+				*pass = true;
+				return true;
+			}, Mail<>());
 			ui::c_aligner(SizeFitParent, SizeFitParent);
 			ui::c_bring_to_front();
 		ui::pop_parent();
@@ -571,6 +582,7 @@ void create_edit(cEditor* editor, BP::Slot* input)
 			capture.drag_text->set_text(text);
 			app.set_changed(true);
 		}
+		return true;
 	}, new_mail(&capture));
 	ui::pop_style(ui::FontSize);
 
@@ -609,6 +621,7 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 				capture.drag_text->set_text(text);
 				app.set_changed(true);
 			}
+			return true;
 		}, new_mail(&capture));
 		ui::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
 		ui::e_end_layout();
@@ -649,6 +662,7 @@ void cEditor::on_add_node(BP::Node* n)
 				ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 					if (hash == FLAME_CHASH("text"))
 						(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()).c_str());
+					return true;
 				}, new_mail_p(n));
 				ui::pop_style(ui::FontSize);
 
@@ -876,6 +890,7 @@ void cEditor::on_add_node(BP::Node* n)
 										capture.input->set_data(&v);
 										app.set_changed(true);
 									}
+									return true;
 								}, new_mail(&capture));
 
 								auto c_tracker = new_u_object<cEnumSingleDataTracker>();
@@ -913,6 +928,7 @@ void cEditor::on_add_node(BP::Node* n)
 											capture.input->set_data(&v);
 											app.set_changed(true);
 										}
+										return true;
 									}, new_mail(&capture));
 								}
 
@@ -942,6 +958,7 @@ void cEditor::on_add_node(BP::Node* n)
 											capture.input->set_data(&v);
 											app.set_changed(true);
 										}
+										return true;
 									}, new_mail(&capture));
 
 									auto c_tracker = new_u_object<cBoolDataTracker>();
@@ -1007,6 +1024,7 @@ void cEditor::on_add_node(BP::Node* n)
 											s->set_data(&StringA(w2s(((cText*)t)->text())));
 											app.set_changed(true);
 										}
+										return true;
 									}, new_mail_p(input));
 
 									auto c_tracker = new_u_object<cStringADataTracker>();
@@ -1024,6 +1042,7 @@ void cEditor::on_add_node(BP::Node* n)
 											s->set_data(&StringW(((cText*)t)->text()));
 											app.set_changed(true);
 										}
+										return true;
 									}, new_mail_p(input));
 
 									auto c_tracker = new_u_object<cStringWDataTracker>();
@@ -1098,7 +1117,10 @@ void cEditor::on_add_node(BP::Node* n)
 			ui::e_end_layout();
 			ui::e_empty();
 			ui::c_element();
-			ui::c_event_receiver()->pass = (Entity*)INVALID_POINTER;
+			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+				*pass = true;
+				return true;
+			}, Mail<>());
 			ui::c_aligner(SizeFitParent, SizeFitParent);
 			ui::c_bring_to_front();
 		ui::pop_parent();
@@ -1133,6 +1155,7 @@ void cEditor::on_add_subgraph(BP::SubGraph* s)
 				ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
 					if (hash == FLAME_CHASH("text"))
 						(*(BP::SubGraph**)c)->set_id(w2s(((cText*)t)->text()).c_str());
+					return true;
 				}, new_mail_p(s));
 				ui::e_text(s->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 
@@ -1195,7 +1218,10 @@ void cEditor::on_add_subgraph(BP::SubGraph* s)
 
 			ui::e_empty();
 			ui::c_element();
-			ui::c_event_receiver()->pass = (Entity*)INVALID_POINTER;
+			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+				*pass = true;
+				return true;
+			}, Mail<>());
 			ui::c_aligner(SizeFitParent, SizeFitParent);
 			ui::c_bring_to_front();
 		ui::pop_parent();

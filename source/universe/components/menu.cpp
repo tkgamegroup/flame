@@ -12,42 +12,6 @@
 
 namespace flame
 {
-	struct cMenuItemsPrivate : cMenuItems
-	{
-		void* on_removed_listener;
-
-		cMenuItemsPrivate()
-		{
-			menu = nullptr;
-
-			on_removed_listener = nullptr;
-		}
-
-		~cMenuItemsPrivate()
-		{
-			if (!entity->dying_)
-				entity->on_removed_listeners.remove(on_removed_listener);
-		}
-
-		void on_added() override
-		{
-			if (!on_removed_listener)
-			{
-				on_removed_listener = entity->on_removed_listeners.add([](void* c) {
-					auto thiz = *(cMenuItemsPrivate**)c;
-					if (thiz->menu)
-						thiz->menu->opened = false;
-					return true;
-				}, new_mail_p(this));
-			}
-		}
-	};
-
-	cMenuItems* cMenuItems::create()
-	{
-		return new cMenuItemsPrivate();
-	}
-
 	struct cMenuPrivate : cMenu
 	{
 		void* mouse_listener;
@@ -98,6 +62,19 @@ namespace flame
 			}
 		}
 
+		void close_subs(Entity* p)
+		{
+			if (mode != ModeMain)
+			{
+				for (auto i = 0; i < p->child_count(); i++)
+				{
+					auto menu = (cMenuPrivate*)p->child(i)->get_component(cMenu);
+					if (menu)
+						menu->close();
+				}
+			}
+		}
+
 		void open(const Vec2f& pos)
 		{
 			if (!opened)
@@ -114,16 +91,8 @@ namespace flame
 				}
 				else
 				{
-					auto p = entity->parent();
-					if (mode != ModeMain && p)
-					{
-						for (auto i = 0; i < p->child_count(); i++)
-						{
-							auto menu = (cMenuPrivate*)p->child(i)->get_component(cMenu);
-							if (menu)
-								menu->close();
-						}
-					}
+					if (entity->parent())
+						close_subs(entity->parent());
 
 					auto layer = root->child_count() ? root->child(root->child_count() - 1) : nullptr;
 					if (layer)
@@ -186,5 +155,77 @@ namespace flame
 	cMenu* cMenu::create(cMenu::Mode mode)
 	{
 		return new cMenuPrivate(mode);
+	}
+
+	struct cMenuItemsPrivate : cMenuItems
+	{
+		void* on_removed_listener;
+
+		cMenuItemsPrivate()
+		{
+			menu = nullptr;
+
+			on_removed_listener = nullptr;
+		}
+
+		~cMenuItemsPrivate()
+		{
+			if (!entity->dying_)
+				entity->on_removed_listeners.remove(on_removed_listener);
+		}
+
+		void on_added() override
+		{
+			if (!on_removed_listener)
+			{
+				on_removed_listener = entity->on_removed_listeners.add([](void* c) {
+					auto thiz = *(cMenuItemsPrivate**)c;
+					if (thiz->menu)
+						thiz->menu->opened = false;
+					return true;
+				}, new_mail_p(this));
+			}
+		}
+	};
+
+	cMenuItems* cMenuItems::create()
+	{
+		return new cMenuItemsPrivate();
+	}
+
+	struct cMenuItemPrivate : cMenuItem
+	{
+		void* mouse_listener;
+
+		cMenuItemPrivate()
+		{
+			mouse_listener = nullptr;
+		}
+
+		~cMenuItemPrivate()
+		{
+			if (!entity->dying_)
+				event_receiver->mouse_listeners.remove(mouse_listener);
+		}
+
+		void on_component_added(Component* c) override
+		{
+			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			{
+				event_receiver = (cEventReceiver*)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = *(cMenuItemPrivate**)c;
+					auto menu = (cMenuPrivate*)thiz->entity->parent()->get_component(cMenuItems)->menu;
+					if (ui::get_top_layer(menu->root, true, "menu"))
+						menu->close_subs(menu->items);
+					return true;
+				}, new_mail_p(this));
+			}
+		}
+	};
+
+	cMenuItem* cMenuItem::create()
+	{
+		return new cMenuItemPrivate();
 	}
 }

@@ -22,6 +22,7 @@ struct cHierarchyItem : Component
 			element = (cElement*)c;
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cHierarchyItem**)c)->draw(canvas);
+				return true;
 			}, new_mail_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
@@ -79,7 +80,7 @@ struct cHierarchyItem : Component
 									capture.dst->add_child(capture.src);
 								else
 								{
-									auto idx = capture.dst->order_ & 0xffffff;
+									auto idx = capture.dst->index_;
 									if (capture.i == 2)
 										idx++;
 									capture.dst->parent()->add_child(capture.src, idx);
@@ -91,6 +92,8 @@ struct cHierarchyItem : Component
 					}
 
 				}
+
+				return true;
 			}, new_mail_p(this));
 		}
 	}
@@ -183,6 +186,8 @@ cHierarchy::cHierarchy() :
 					if (app.inspector && different)
 						app.inspector->refresh();
 				}, new_mail_p(((cTree*)t)->selected));
+
+				return true;
 			}, Mail<>());
 		}
 		ui::e_end_tree();

@@ -6,4 +6,4 @@ target_compile_definitions(bp_editor PRIVATE GRAPHVIZ_PATH="${GRAPHVIZ_PATH}")
 target_link_libraries(bp_editor flame_foundation)
 target_link_libraries(bp_editor flame_graphics)
 target_link_libraries(bp_editor flame_universe)
-
+target_link_libraries(bp_editor flame_sound)

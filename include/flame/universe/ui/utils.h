@@ -232,6 +232,13 @@ namespace flame
 			return c;
 		}
 
+		inline cMenuItem* c_menu_item()
+		{
+			auto c = cMenuItem::create();
+			current_entity()->add_component(c);
+			return c;
+		}
+
 		inline cCombobox* c_combobox()
 		{
 			auto c = cCombobox::create();
@@ -936,6 +943,7 @@ namespace flame
 				}
 				return true;
 			}, new_m);
+			c_menu_item();
 			auto cs = c_style_color();
 			cs->color_normal = style_4c(FrameColorNormal);
 			cs->color_hovering = style_4c(FrameColorHovering);

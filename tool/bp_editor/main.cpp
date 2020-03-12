@@ -226,6 +226,7 @@ void MyApp::refresh_add_node_menu()
 					auto item = menu->child(i);
 					item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
 				}
+				return true;
 			}, new_mail_p(e_add_node_menu));
 			add_node_menu_filter = ui::current_entity()->get_component(cEdit);
 		ui::e_end_layout();
@@ -358,7 +359,7 @@ bool MyApp::auto_set_layout()
 	if (!std::filesystem::exists(graph_filename))
 		return false;
 
-	auto str = get_file_string(L"bp.graph.txt");
+	auto str = get_file_content(L"bp.graph.txt");
 	for (auto it = str.begin(); it != str.end(); )
 	{
 		if (*it == '\\')
@@ -397,17 +398,17 @@ bool MyApp::auto_set_layout()
 	return true;
 }
 
-void MyApp::on_frame()
+bool MyApp::create(const char* filename)
 {
-	if (running)
-		bp->update();
-}
-
-void MyApp::create()
-{
-	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true);
+	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
 
 	TypeinfoDatabase::load(L"bp_editor.exe", true, true);
+
+	filepath = filename;
+	fileppath = app.filepath.parent_path();
+	bp = BP::create_from_file(app.filepath.c_str());
+	if (!bp)
+		return false;
 
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	ui::style_set_to_light();
@@ -501,6 +502,8 @@ void MyApp::create()
 	link_test_nodes();
 
 	refresh_add_node_menu();
+
+	return true;
 }
 
 MyApp app;
@@ -509,14 +512,15 @@ int main(int argc, char **args)
 {
 	if (argc < 2)
 		return 0;
-	
-	app.filepath = args[1];
-	app.fileppath = app.filepath.parent_path();
-	app.bp = BP::create_from_file(app.filepath.c_str());
-	if (!app.bp)
+
+	if (!app.create(args[1]))
 		return 0;
 
-	app.create();
+	looper().add_event([](void*, bool* go_on) {
+		if (app.running)
+			app.bp->update();
+		*go_on = true;
+	}, Mail<>(), 0.f);
 
 	looper().loop([](void*) {
 		app.run();

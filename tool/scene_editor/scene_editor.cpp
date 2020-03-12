@@ -20,6 +20,7 @@ struct cSceneOverlayer : Component
 			element = (cElement*)c;
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cSceneOverlayer**)c)->draw(canvas);
+				return true;
 			}, new_mail_p(this));
 		}
 	}
