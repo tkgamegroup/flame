@@ -160,13 +160,13 @@ namespace flame
 		return f2v(&Wrap::dtor);
 	}
 
-	inline bool not_null_equal(void* a, void* b)
+	inline bool equal_and_not_null(void* a, void* b)
 	{
 		return a && a == b;
 	}
 
 	template <class T>
-	std::pair<T*, uchar> only_not_null(T* a, T* b)
+	std::pair<T*, uchar> find_not_null_and_only(T* a, T* b)
 	{
 		if (a && !b)
 			return std::make_pair(a, 0);

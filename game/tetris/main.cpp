@@ -126,8 +126,7 @@ struct MyApp : App
 	uint full_lines[4];
 	uint combo;
 	bool back_to_back;
-	uint garbage;
-	bool need_update_garbage;
+	std::vector<uint> garbages;
 	Vec2i mino_pos;
 	MinoType mino_type;
 	MinoType mino_hold;
@@ -471,6 +470,15 @@ struct MyApp : App
 		}, new_mail(&capture));
 	}
 
+	void process_attack(int value)
+	{
+		looper().add_event([](void* c, bool*) {
+			auto n = *(int*)c;
+			for (auto i = 0; i < n; i++)
+				app.garbages.push_back(60);
+		}, new_mail(&value));
+	}
+
 	void process_dead(int index, int rank)
 	{
 		struct Capture
@@ -561,10 +569,7 @@ struct MyApp : App
 			else if (action == "attack")
 			{
 				auto value = req["value"].get<int>();
-				looper().add_event([](void* c, bool*) {
-					app.garbage += *(int*)c;
-					app.need_update_garbage = true;
-				}, new_mail(&value));
+				app.process_attack(value);
 			}
 		},
 		[](void*) {
@@ -876,10 +881,7 @@ struct MyApp : App
 															else if (action == "attack")
 															{
 																auto value = req["value"].get<int>();
-																looper().add_event([](void* c, bool*) {
-																	app.garbage += *(int*)c;
-																	app.need_update_garbage = true;
-																}, new_mail(&value));
+																app.process_attack(value);
 															}
 														},
 														[](void* c) {
@@ -1388,8 +1390,7 @@ struct MyApp : App
 		clear_ticks = -1;
 		combo = 0;
 		back_to_back = false;
-		garbage = 0;
-		need_update_garbage = false;
+		garbages.clear();
 		mino_pos = Vec2i(0, -1);
 		mino_type = MinoTypeCount;
 		mino_hold = MinoTypeCount;
@@ -1933,21 +1934,21 @@ struct MyApp : App
 									get_lines_award(l, tspin, mini, back_to_back, score, attack, special_str);
 
 									auto cancel = max(attack, (int)l);
-									if (garbage)
+									if (!garbages.empty())
 									{
-										if (garbage < cancel)
+										if (garbages.size() < cancel)
 										{
-											cancel -= garbage;
-											garbage = 0;
+											cancel -= garbages.size();
+											garbages.clear();
 										}
 										else
 										{
-											garbage -= cancel;
+											for (auto i = 0; i < cancel; i++)
+												garbages.erase(garbages.begin());
 											cancel = 0;
 										}
 
 										attack -= cancel;
-										need_update_garbage = true;
 									}
 
 									if (!special_str.empty())
@@ -1996,26 +1997,36 @@ struct MyApp : App
 								}
 								else
 								{
-									if (garbage)
+									if (!garbages.empty())
 									{
-										for (auto i = 0; i < board_height - garbage; i++)
+										auto n = 0;
+										for (auto it = garbages.begin(); it != garbages.end();)
+										{
+											if (*it == 0)
+											{
+												it = garbages.erase(it);
+												n++;
+											}
+											else
+												it++;
+										}
+
+										for (auto i = 0; i < board_height - n; i++)
 										{
 											for (auto x = 0; x < board_width; x++)
 											{
-												auto id = c_main->cell(Vec2i(x, i + garbage));
+												auto id = c_main->cell(Vec2i(x, i + n));
 												c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 											}
 										}
 										auto hole = ::rand() % board_width;
-										for (auto i = 0; i < garbage; i++)
+										for (auto i = 0; i < n; i++)
 										{
 											auto y = board_height - i - 1;
 											for (auto x = 0; x < board_width; x++)
 												c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
 											c_main->set_cell(Vec2u(hole, y), TileGrid);
 										}
-										garbage = 0;
-										need_update_garbage = true;
 									}
 
 									clear_ticks = 0;
@@ -2098,18 +2109,24 @@ struct MyApp : App
 			}
 
 			update_status();
-			if (need_update_garbage)
+			if (e_garbage->child_count() != garbages.size())
 			{
 				e_garbage->remove_children(0, -1);
 				ui::push_parent(e_garbage);
-				for (auto i = 0; i < garbage; i++)
+				for (auto i = 0; i < garbages.size(); i++)
 				{
 					ui::next_element_pos = Vec2f(0.f, -i * 24.f);
 					ui::next_element_size = Vec2f(24.f);
 					ui::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
 				}
 				ui::pop_parent();
-				need_update_garbage = false;
+			}
+			for (auto i = 0; i < garbages.size(); i++)
+			{
+				if (garbages[i] > 0)
+					garbages[i]--;
+				if (garbages[i] == 0)
+					e_garbage->child(i)->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
 			}
 		}
 	}

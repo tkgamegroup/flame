@@ -179,10 +179,10 @@ void MyApp::refresh_add_node_menu()
 	std::vector<UdtInfo*> all_udts;
 	auto add_udt = [&](UdtInfo* u) {
 		{
-			auto f = only_not_null(u->find_function("update"), u->find_function("active_update"));
+			auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
 			if (!f.first)
 				return;
-			if (!check_function(f.first, "D#void", {}))
+			if (!check_function(f.first, "D#void", { "D#uint" }))
 				return;
 		}
 		auto no_input_output = true;

@@ -227,7 +227,7 @@ namespace flame
 				return false;
 			if (node == target->node) // same node
 				return false;
-			if (not_null_equal(node->scene->scene, target->node->scene->scene)) // same sub graph
+			if (equal_and_not_null(node->scene->scene, target->node->scene->scene)) // same sub graph
 				return false;
 		}
 
@@ -313,7 +313,7 @@ namespace flame
 
 		update_addr = nullptr;
 		{
-			auto f = only_not_null(udt->find_function("update"), udt->find_function("active_update"));
+			auto f = find_not_null_and_only(udt->find_function("update"), udt->find_function("active_update"));
 			assert(f.first && check_function(f.first, "D#void", { "D#uint" }));
 			if (f.second == 1)
 				active = true;
