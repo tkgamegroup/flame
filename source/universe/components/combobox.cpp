@@ -101,7 +101,7 @@ namespace flame
 		}
 	};
 
-	void cCombobox::set_index(int _idx, bool trigger_changed)
+	void cCombobox::set_index(int _idx, void* sender)
 	{
 		auto items = entity->get_component(cMenu)->items;
 		if (idx != -1)
@@ -123,8 +123,7 @@ namespace flame
 					comboboxitem->do_style(true);
 			}
 		}
-		if (trigger_changed)
-			data_changed(FLAME_CHASH("index"), nullptr);
+		data_changed(FLAME_CHASH("index"), sender);
 	}
 
 	cCombobox* cCombobox::create()

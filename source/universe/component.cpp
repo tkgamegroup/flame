@@ -16,6 +16,7 @@ namespace flame
 
 	void Component::data_changed(uint hash, void* sender)
 	{
-		data_changed_listeners.call(this, hash, sender);
+		if (sender != INVALID_POINTER)
+			data_changed_listeners.call(this, hash, sender);
 	}
 }

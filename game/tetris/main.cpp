@@ -470,7 +470,7 @@ struct MyApp : App
 		}, new_mail(&capture));
 	}
 
-	void process_attack(int value)
+	void process_attack(int index, int value)
 	{
 		looper().add_event([](void* c, bool*) {
 			auto n = *(int*)c;
@@ -568,8 +568,9 @@ struct MyApp : App
 				app.process_gameover();
 			else if (action == "attack")
 			{
+				auto index = req["index"].get<int>();
 				auto value = req["value"].get<int>();
-				app.process_attack(value);
+				app.process_attack(index, value);
 			}
 		},
 		[](void*) {
@@ -880,8 +881,21 @@ struct MyApp : App
 																app.people_dead(index);
 															else if (action == "attack")
 															{
+																auto target = req["target"].get<int>();
 																auto value = req["value"].get<int>();
-																app.process_attack(value);
+																if (target == app.my_room_index)
+																	app.process_attack(index, value);
+																else
+																{
+																	nlohmann::json rep;
+																	rep["action"] = "attack";
+																	rep["index"] = index;
+																	rep["value"] = value;
+																	auto str = rep.dump();
+																	auto& p = app.players[target];
+																	if (p.id && !p.disconnected)
+																		app.server->send(p.id, str.data(), str.size(), false);
+																}
 															}
 														},
 														[](void* c) {
@@ -1966,18 +1980,31 @@ struct MyApp : App
 										nlohmann::json req;
 										req["action"] = "attack";
 										req["value"] = attack;
-										auto str = req.dump();
+										auto n = ::rand() % players.size() + 1;
+										auto target = 0;
+										while (n > 0)
+										{
+											target++;
+											if (target == players.size())
+												target = 1;
+											auto& p = players[target];
+											if (p.id && !p.disconnected)
+												n--;
+										}
 										if (server) 
 										{
-											for (auto i = 1; i < players.size(); i++)
-											{
-												auto& p = players[i];
-												if (p.id && !p.disconnected)
-													server->send(p.id, str.data(), str.size(), false);
-											}
+											req["index"] = my_room_index;
+											auto str = req.dump();
+											auto& p = players[target];
+											if (p.id && !p.disconnected)
+												server->send(p.id, str.data(), str.size(), false);
 										}
 										if (client)
+										{
+											req["target"] = target;
+											auto str = req.dump();
 											client->send(str.data(), str.size());
+										}
 									}
 
 									for (auto i = 0; i < l; i++)

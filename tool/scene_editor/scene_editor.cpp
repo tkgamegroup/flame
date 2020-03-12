@@ -49,7 +49,7 @@ struct cSceneOverlayer : Component
 cSceneEditor::cSceneEditor() :
 	Component("cSceneEditor")
 {
-	auto e_page = ui::e_begin_docker_window(L"Scene Editor").second;
+	auto e_page = ui::e_begin_docker_and_page(L"Scene Editor").second;
 	{
 		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
@@ -237,7 +237,7 @@ cSceneEditor::cSceneEditor() :
 
 	ui::e_end_layout();
 
-	ui::e_end_docker_window();
+	ui::e_end_docker_and_page();
 }
 
 cSceneEditor::~cSceneEditor()

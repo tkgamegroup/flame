@@ -25,7 +25,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_toggled(bool toggled, bool trigger_changed = true);
+		FLAME_UNIVERSE_EXPORTS void set_toggled(bool toggled, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cToggle* create();
 	};

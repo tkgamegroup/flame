@@ -21,7 +21,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, bool trigger_changed = true);
+		FLAME_UNIVERSE_EXPORTS void set_checked(bool checked, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cCheckbox* create();
 	};

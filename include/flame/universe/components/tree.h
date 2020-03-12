@@ -79,7 +79,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, bool trigger_changed = true);
+		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};

@@ -197,7 +197,7 @@ cResourceExplorer::cResourceExplorer() :
 			ui::e_end_list();
 		ui::e_end_scroll_view1();
 
-	ui::e_end_docker_window();
+	ui::e_end_docker_and_page();
 
 	ev_file_changed = create_event(false);
 	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {

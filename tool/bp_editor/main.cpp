@@ -12,15 +12,15 @@ void MyApp::set_changed(bool v)
 	if (changed != v)
 	{
 		changed = v;
-		if (bp_editor)
-			bp_editor->on_changed();
+		if (editor)
+			editor->on_changed();
 	}
 }
 
 void MyApp::deselect()
 {
-	if (bp_editor)
-		bp_editor->on_deselect();
+	if (editor)
+		editor->on_deselect();
 
 	sel_type = SelAir;
 	selected.plain = nullptr;
@@ -32,8 +32,8 @@ void MyApp::select(SelType t, void* p)
 	sel_type = t;
 	selected.plain = p;
 
-	if (bp_editor)
-		bp_editor->on_select();
+	if (editor)
+		editor->on_select();
 }
 
 BP::Library* MyApp::add_library(const wchar_t* filename)
@@ -41,8 +41,8 @@ BP::Library* MyApp::add_library(const wchar_t* filename)
 	auto l = bp->add_library(filename);
 	if (l)
 	{
-		if (bp_editor)
-			bp_editor->on_add_library(l);
+		if (editor)
+			editor->on_add_library(l);
 		refresh_add_node_menu();
 		set_changed(true);
 	}
@@ -52,9 +52,10 @@ BP::Library* MyApp::add_library(const wchar_t* filename)
 BP::Node* MyApp::add_node(const char* type_name, const char* id)
 {
 	auto n = bp->add_node(type_name, id);
-	if (bp_editor)
-		bp_editor->on_add_node(n);
-	set_changed(true);
+	if (editor)
+		editor->on_add_node(n);
+	if (!SUS::starts_with(id, "test_"))
+		set_changed(true);
 	return n;
 }
 
@@ -63,8 +64,8 @@ BP::SubGraph* MyApp::add_subgraph(const wchar_t* filename, const char* id)
 	auto s = bp->add_subgraph(filename, id);
 	if (s)
 	{
-		if (app.bp_editor)
-			app.bp_editor->on_add_subgraph(s);
+		if (app.editor)
+			app.editor->on_add_subgraph(s);
 		set_changed(true);
 	}
 	return s;
@@ -74,8 +75,8 @@ void MyApp::remove_library(BP::Library* l)
 {
 	looper().add_event([](void* c, bool*) {
 		auto l = *(BP::Library**)c;
-		if (app.bp_editor)
-			app.bp_editor->on_remove_library(l);
+		if (app.editor)
+			app.editor->on_remove_library(l);
 		app.bp->remove_library(l);
 		app.refresh_add_node_menu();
 		app.set_changed(true);
@@ -84,12 +85,12 @@ void MyApp::remove_library(BP::Library* l)
 
 bool MyApp::remove_node(BP::Node* n)
 {
-	if (n->id() == "test_dst" || n->id() == "test_cbs")
+	if (SUS::starts_with(n->id(), "test_"))
 		return false;
 	looper().add_event([](void* c, bool*) {
 		auto n = *(BP::Node**)c;
-		if (app.bp_editor)
-			app.bp_editor->on_remove_node(n);
+		if (app.editor)
+			app.editor->on_remove_node(n);
 		n->scene()->remove_node(n);
 	}, new_mail_p(n));
 	set_changed(true);
@@ -100,8 +101,8 @@ void MyApp::remove_subgraph(BP::SubGraph* s)
 {
 	looper().add_event([](void* c, bool*) {
 		auto s = *(BP::SubGraph**)c;
-		if (app.bp_editor)
-			app.bp_editor->on_remove_subgraph(s);
+		if (app.editor)
+			app.editor->on_remove_subgraph(s);
 		app.bp->remove_subgraph(s);
 		app.set_changed(true);
 	}, new_mail_p(s));
@@ -240,8 +241,8 @@ void MyApp::refresh_add_node_menu()
 		{
 			ui::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
 				app.reset_add_node_menu_filter();
-				if (app.bp_editor)
-					app.bp_editor->set_add_pos_center();
+				if (app.editor)
+					app.editor->set_add_pos_center();
 				app.add_node((*(UdtInfo**)c)->type()->name(), "");
 			}, new_mail_p(udt));
 		}
@@ -410,6 +411,12 @@ bool MyApp::create(const char* filename)
 	if (!bp)
 		return false;
 
+	app.window->set_title(("BP Editor - " + filepath.string()).c_str());
+
+	pugi::xml_document window_layout;
+	pugi::xml_node window_layout_root;
+	auto window_layout_ok = window_layout.load_file(L"window_layout.xml") && (window_layout_root = window_layout.first_child()).name() == std::string("layout");
+
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	ui::style_set_to_light();
 
@@ -435,8 +442,8 @@ bool MyApp::create(const char* filename)
 						ui::e_input_dialog(L"library", [](void* c, bool ok, const wchar_t* text) {
 							if (ok && text[0])
 							{
-								if (app.bp_editor)
-									app.bp_editor->set_add_pos_center();
+								if (app.editor)
+									app.editor->set_add_pos_center();
 								auto l = app.add_library(text);
 								if (!l)
 									ui::e_message_dialog(L"Add Library Failed");
@@ -449,8 +456,8 @@ bool MyApp::create(const char* filename)
 					ui::e_input_dialog(L"bp", [](void* c, bool ok, const wchar_t* text) {
 						if (ok && text[0])
 						{
-							if (app.bp_editor)
-								app.bp_editor->set_add_pos_center();
+							if (app.editor)
+								app.editor->set_add_pos_center();
 							auto s = app.add_subgraph(text, "");
 							if (!s)
 								ui::e_message_dialog(L"Add Sub Graph Failed");
@@ -460,8 +467,8 @@ bool MyApp::create(const char* filename)
 				ui::e_end_menubar_menu();
 				ui::e_begin_menubar_menu(L"Edit");
 				ui::e_menu_item(L"Duplicate", [](void* c) {
-					if (app.bp_editor)
-						app.bp_editor->set_add_pos_center();
+					if (app.editor)
+						app.editor->set_add_pos_center();
 					app.duplicate_selected();
 				}, Mail<>());
 				ui::e_menu_item(L"Delete", [](void* c) {
@@ -488,6 +495,17 @@ bool MyApp::create(const char* filename)
 			ui::e_end_menu_bar();
 
 			ui::e_begin_docker_static_container();
+			if (window_layout_ok)
+			{
+				for (auto n_window : window_layout_root.child("static"))
+				{
+					std::string name = n_window.name();
+					ui::e_begin_docker();
+					if (name == "editor")
+						editor = new cEditor();
+					ui::e_end_docker();
+				}
+			}
 			ui::e_end_docker_static_container();
 
 			ui::e_text(L"");
@@ -496,6 +514,14 @@ bool MyApp::create(const char* filename)
 			}, new_mail_p(ui::current_entity()->get_component(cText)));
 
 		ui::e_end_layout();
+
+		if (window_layout_ok)
+		{
+			for (auto n_window : window_layout_root.child("floating"))
+			{
+
+			}
+		}
 
 	ui::pop_parent();
 

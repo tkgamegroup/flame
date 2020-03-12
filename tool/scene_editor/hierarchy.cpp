@@ -155,7 +155,7 @@ static void create_tree_node(Entity* e)
 cHierarchy::cHierarchy() :
 	Component("cHierarchy")
 {
-	auto e_page = ui::e_begin_docker_window(L"Hierarchy").second;
+	auto e_page = ui::e_begin_docker_and_page(L"Hierarchy").second;
 	{
 		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;

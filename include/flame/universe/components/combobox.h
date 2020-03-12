@@ -26,7 +26,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_index(int idx, bool trigger_changed = true);
+		FLAME_UNIVERSE_EXPORTS void set_index(int idx, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};

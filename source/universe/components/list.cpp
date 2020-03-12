@@ -133,7 +133,7 @@ namespace flame
 		}
 	};
 
-	void cList::set_selected(Entity* e, bool trigger_changed)
+	void cList::set_selected(Entity* e, void* sender)
 	{
 		if (selected == e)
 			return;
@@ -150,8 +150,7 @@ namespace flame
 				listitem->do_style(true);
 		}
 		selected = e;
-		if (trigger_changed)
-			data_changed(FLAME_CHASH("selected"), nullptr);
+		data_changed(FLAME_CHASH("selected"), sender);
 	}
 
 	cList* cList::create(bool select_air_when_clicked)

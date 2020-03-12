@@ -245,7 +245,7 @@ namespace flame
 		}
 	};
 
-	void cTree::set_selected(Entity* e, bool trigger_changed)
+	void cTree::set_selected(Entity* e, void* sender)
 	{
 		if (selected)
 		{
@@ -272,8 +272,7 @@ namespace flame
 			}
 		}
 		selected = e;
-		if (trigger_changed)
-			data_changed(FLAME_CHASH("selected"), nullptr);
+		data_changed(FLAME_CHASH("selected"), sender);
 	}
 
 	cTree* cTree::create()

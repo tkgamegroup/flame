@@ -69,14 +69,14 @@ namespace flame
 							{
 								thiz->cursor--;
 								str.erase(str.begin() + thiz->cursor);
-								text->data_changed(FLAME_CHASH("text"), nullptr);
+								text->data_changed(FLAME_CHASH("text"), thiz);
 							}
 							break;
 						case 22:
 						{
 							thiz->cursor = 0;
 							str = get_clipboard().v;
-							text->data_changed(FLAME_CHASH("text"), nullptr);
+							text->data_changed(FLAME_CHASH("text"), thiz);
 						}
 							break;
 						case 27:
@@ -85,7 +85,7 @@ namespace flame
 							value = '\n';
 						default:
 							str.insert(str.begin() + thiz->cursor, value);
-							text->data_changed(FLAME_CHASH("text"), nullptr);
+							text->data_changed(FLAME_CHASH("text"), thiz);
 							thiz->cursor++;
 						}
 					}
@@ -111,7 +111,7 @@ namespace flame
 							if (thiz->cursor < str.size())
 							{
 								str.erase(str.begin() + thiz->cursor);
-								text->data_changed(FLAME_CHASH("text"), nullptr);
+								text->data_changed(FLAME_CHASH("text"), thiz);
 							}
 							break;
 						}

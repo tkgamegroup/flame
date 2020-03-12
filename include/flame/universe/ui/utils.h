@@ -1151,26 +1151,6 @@ namespace flame
 			pop_parent();
 		}
 
-		inline std::pair<Entity*, Entity*> e_begin_docker_window(const wchar_t* title)
-		{
-			auto r = current_root();
-			push_parent(r);
-			auto s = r->get_component(cElement)->size_;
-			next_element_pos = s * 0.25f;
-			next_element_size = s * 0.5f;
-			e_begin_docker_floating_container();
-			e_begin_docker();
-			return e_begin_docker_page(title);
-		}
-
-		inline void e_end_docker_window()
-		{
-			e_end_docker_page();
-			e_end_docker();
-			e_end_docker_floating_container();
-			pop_parent();
-		}
-
 		inline Entity* e_begin_dialog(const char* layer_name_suffix = nullptr)
 		{
 			auto r = current_root();

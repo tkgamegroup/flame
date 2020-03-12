@@ -73,7 +73,7 @@ struct MyApp : App
 		BP::Slot* link;
 	}selected;
 
-	cEditor* bp_editor;
+	cEditor* editor;
 	cConsole* console;
 
 	Entity* e_add_node_menu;
@@ -81,7 +81,7 @@ struct MyApp : App
 
 	MyApp()
 	{
-		bp_editor = nullptr;
+		editor = nullptr;
 		console = nullptr;
 
 		bp = nullptr;

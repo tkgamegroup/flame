@@ -1082,7 +1082,9 @@ namespace flame
 
 	const void SysWindow::set_title(const char* _title)
 	{
-		((SysWindowPrivate*)this)->title = _title;
+		auto thiz = (SysWindowPrivate*)this;
+		thiz->title = _title;
+		SetWindowTextA(thiz->hWnd, _title);
 	}
 
 #ifdef FLAME_WINDOWS

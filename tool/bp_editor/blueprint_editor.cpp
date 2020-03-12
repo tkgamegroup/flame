@@ -133,7 +133,7 @@ struct cSlot : Component
 				auto s = thiz->s;
 				if (action == DragStart)
 				{
-					app.bp_editor->dragging_slot = s;
+					app.editor->dragging_slot = s;
 					if (s->io() == BP::Slot::In)
 					{
 						s->link_to(nullptr);
@@ -141,7 +141,7 @@ struct cSlot : Component
 					}
 				}
 				else if (action == DragEnd)
-					app.bp_editor->dragging_slot = nullptr;
+					app.editor->dragging_slot = nullptr;
 				else if (action == Dropped)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
@@ -300,9 +300,9 @@ struct cScene : Component
 			}
 			return true;
 		});
-		if (app.bp_editor->dragging_slot)
+		if (app.editor->dragging_slot)
 		{
-			auto e = ((cSlot*)app.bp_editor->dragging_slot->user_data)->element;
+			auto e = ((cSlot*)app.editor->dragging_slot->user_data)->element;
 
 			std::vector<Vec2f> points;
 			points.push_back(e->global_pos + e->global_size * 0.5f);
@@ -386,7 +386,7 @@ struct cSceneObject : Component
 cEditor::cEditor() :
 	Component("cEditor")
 {
-	auto tnp = ui::e_begin_docker_window(app.filepath.c_str());
+	auto tnp = ui::e_begin_docker_page(app.filepath.c_str());
 	{
 		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
@@ -394,7 +394,7 @@ cEditor::cEditor() :
 		c_layout->fence = 2;
 	}
 	tnp.second->add_component(this);
-	app.bp_editor->tab_text = tnp.first->get_component(cText);
+	tab_text = tnp.first->get_component(cText);
 
 		ui::e_begin_layout()->get_component(cElement)->clip_children = true;
 		ui::c_aligner(SizeFitParent, SizeFitParent);
@@ -454,12 +454,12 @@ cEditor::cEditor() :
 
 		ui::e_end_layout();
 
-		ui::e_end_docker_window();
+	ui::e_end_docker_page();
 }
 
 cEditor::~cEditor()
 {
-	app.bp_editor = nullptr;
+	app.editor = nullptr;
 }
 
 static Entity* selected_entity()
@@ -497,7 +497,7 @@ void cEditor::set_add_pos_center()
 
 void cEditor::on_changed()
 {
-	auto title = app.filepath.wstring();
+	std::wstring title = L"editor";
 	if (app.changed)
 		title += L"*";
 	tab_text->set_text(title.c_str());

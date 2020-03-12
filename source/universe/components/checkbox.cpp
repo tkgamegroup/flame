@@ -60,13 +60,12 @@ namespace flame
 		}
 	};
 
-	void cCheckbox::set_checked(bool _checked, bool trigger_changed)
+	void cCheckbox::set_checked(bool _checked, void* sender)
 	{
 		auto thiz = (cCheckboxPrivate*)this;
 		checked = _checked;
 		thiz->do_style();
-		if (trigger_changed)
-			data_changed(FLAME_CHASH("checked"), nullptr);
+		data_changed(FLAME_CHASH("checked"), sender);
 	}
 
 	cCheckbox* cCheckbox::create()

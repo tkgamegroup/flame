@@ -58,13 +58,12 @@ namespace flame
 		}
 	};
 
-	void cToggle::set_toggled(bool _toggled, bool trigger_changed)
+	void cToggle::set_toggled(bool _toggled, void* sender)
 	{
 		auto thiz = (cTogglePrivate*)this;
 		toggled = _toggled;
 		thiz->do_style();
-		if (trigger_changed)
-			data_changed(FLAME_CHASH("toggled"), nullptr);
+		data_changed(FLAME_CHASH("toggled"), sender);
 	}
 
 	cToggle* cToggle::create()
