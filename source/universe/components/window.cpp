@@ -885,6 +885,12 @@ namespace flame
 
 								auto new_docker = Entity::create();
 								ui::make_docker(new_docker);
+								{
+									auto ca = new_docker->get_component(cAligner);
+									ca->x_align_ = AlignxFree;
+									ca->y_align_ = AlignyFree;
+									ca->using_padding_ = false;
+								}
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
 								thiz->entity->add_child(new_docker);

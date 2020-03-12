@@ -487,7 +487,7 @@ bool MyApp::create(const char* filename)
 				}, Mail<>());
 				ui::e_end_menubar_menu();
 				ui::e_begin_menubar_menu(L"Window");
-				ui::e_menu_item(L"BP Editor", [](void* c) {
+				ui::e_menu_item(L"Editor", [](void* c) {
 				}, Mail<>());
 				ui::e_menu_item(L"Console", [](void* c) {
 				}, Mail<>());

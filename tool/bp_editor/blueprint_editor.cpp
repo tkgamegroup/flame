@@ -635,8 +635,6 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 
 void cEditor::on_add_node(BP::Node* n)
 {
-	n->pos = add_pos;
-
 	ui::push_parent(e_base);
 		auto e_node = ui::e_empty();
 		n->user_data = e_node;
