@@ -68,19 +68,19 @@ namespace flame
 		{
 			auto parent = entity->parent();
 			parent_element = parent->get_component(cElement);
-			parent_element_listener = parent_element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+			parent_element_listener = parent_element->data_changed_listeners.add([](void* c, uint hash, void*) {
 				if (hash == FLAME_CHASH("size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
 				return true;
 			}, new_mail_p(this));
 			scrollbar = parent->get_component(cScrollbar);
 			target_layout = parent->parent()->child(0)->get_component(cLayout);
-			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, uint hash, void*) {
 				if (hash == FLAME_CHASH("size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
 				return true;
 			}, new_mail_p(this));
-			target_layout_listener = target_layout->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+			target_layout_listener = target_layout->data_changed_listeners.add([](void* c, uint hash, void*) {
 				if (hash == FLAME_CHASH("content_size"))
 					(*(cScrollbarThumbPrivate**)c)->update(0.f);
 				return true;

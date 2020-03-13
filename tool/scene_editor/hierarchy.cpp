@@ -155,7 +155,7 @@ static void create_tree_node(Entity* e)
 cHierarchy::cHierarchy() :
 	Component("cHierarchy")
 {
-	auto e_page = ui::e_begin_docker_and_page(L"Hierarchy").second;
+	auto e_page = ui::e_begin_docker_page(L"Hierarchy").second;
 	{
 		auto c_layout = ui::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
@@ -164,34 +164,33 @@ cHierarchy::cHierarchy() :
 		e_page->add_component(this);
 	}
 
-	ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
-		e_tree = ui::e_begin_tree(true, 8.f);
-		{
-			auto c_tree = e_tree->get_component(cTree);
-			c_tree->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				auto editor = *(cSceneEditor**)c;
+		ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+			e_tree = ui::e_begin_tree(true, 8.f);
+			{
+				auto c_tree = e_tree->get_component(cTree);
+				c_tree->data_changed_listeners.add([](void* c, uint hash, void*) {
+					looper().add_event([](void* c, bool*) {
+						auto s = *(Entity**)c;
+						Entity* selected = nullptr;
+						if (s)
+						{
+							if (s->get_component(cTreeLeaf))
+								selected = s->get_component(cHierarchyItem)->e;
+							else
+								selected = s->child(0)->get_component(cHierarchyItem)->e;
+						}
+						auto different = selected != app.selected;
+						app.selected = selected;
+						if (app.inspector && different)
+							app.inspector->refresh();
+					}, new_mail_p((*(cTree**)c)->selected));
+					return true;
+				}, new_mail_p(c_tree));
+			}
+			ui::e_end_tree();
+		ui::e_end_scroll_view1();
 
-				looper().add_event([](void* c, bool*) {
-					auto s = *(Entity**)c;
-					Entity* selected = nullptr;
-					if (s)
-					{
-						if (s->get_component(cTreeLeaf))
-							selected = s->get_component(cHierarchyItem)->e;
-						else
-							selected = s->child(0)->get_component(cHierarchyItem)->e;
-					}
-					auto different = selected != app.selected;
-					app.selected = selected;
-					if (app.inspector && different)
-						app.inspector->refresh();
-				}, new_mail_p(((cTree*)t)->selected));
-
-				return true;
-			}, Mail<>());
-		}
-		ui::e_end_tree();
-	ui::e_end_scroll_view1();
+		ui::e_end_docker_page();
 
 	refresh();
 }

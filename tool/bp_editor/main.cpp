@@ -219,16 +219,19 @@ void MyApp::refresh_add_node_menu()
 	ui::push_parent(e_add_node_menu);
 		ui::e_begin_layout(LayoutHorizontal, 4.f);
 			ui::e_text(Icon_SEARCH);
-			ui::e_edit(150.f)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-				auto menu = *(Entity**)c;
-				auto str = ((cText*)t)->text();
-				for (auto i = 1; i < menu->child_count(); i++)
-				{
-					auto item = menu->child(i);
-					item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-				}
-				return true;
-			}, new_mail_p(e_add_node_menu));
+			{
+				auto c_text = ui::e_edit(150.f)->get_component(cText);
+				c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
+					auto menu = app.e_add_node_menu;
+					auto str = (*(cText**)c)->text();
+					for (auto i = 1; i < menu->child_count(); i++)
+					{
+						auto item = menu->child(i);
+						item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+					}
+					return true;
+				}, new_mail_p(c_text));
+			}
 			add_node_menu_filter = ui::current_entity()->get_component(cEdit);
 		ui::e_end_layout();
 		ui::e_menu_item(L"Enum", [](void* c) {

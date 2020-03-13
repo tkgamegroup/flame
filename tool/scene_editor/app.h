@@ -8,13 +8,13 @@
 using namespace flame;
 using namespace graphics;
 
-struct cSceneEditor : Component
+struct cEditor : Component
 {
 	Entity* e_scene;
 	Vec2f mpos;
 
-	cSceneEditor();
-	~cSceneEditor() override;
+	cEditor();
+	~cEditor() override;
 	void search_hover(Entity* e);
 };
 
@@ -77,7 +77,7 @@ struct cInspector : Component
 
 struct MyApp : App
 {
-	cSceneEditor* scene_editor;
+	cEditor* editor;
 	cResourceExplorer* resource_explorer;
 	cHierarchy* hierarchy;
 	cInspector* inspector;
@@ -88,7 +88,7 @@ struct MyApp : App
 
 	MyApp()
 	{
-		scene_editor = nullptr;
+		editor = nullptr;
 		resource_explorer = nullptr;
 		hierarchy = nullptr;
 		inspector = nullptr;

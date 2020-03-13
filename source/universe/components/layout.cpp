@@ -148,7 +148,7 @@ namespace flame
 		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
-			element_data_listener = element->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
+			element_data_listener = element->data_changed_listeners.add([](void* c, uint hash, void* sender) {
 				auto thiz = *(cLayoutPrivate**)c;
 				if (sender == thiz)
 					return true;
@@ -241,7 +241,7 @@ namespace flame
 					void* element_data_listener = nullptr;
 					if (element)
 					{
-						element_data_listener = element->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
+						element_data_listener = element->data_changed_listeners.add([](void* c, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
 								return true;
@@ -260,7 +260,7 @@ namespace flame
 					void* aligner_data_listener = nullptr;
 					if (aligner)
 					{
-						aligner_data_listener = aligner->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
+						aligner_data_listener = aligner->data_changed_listeners.add([](void* c, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
 								return true;
@@ -272,7 +272,7 @@ namespace flame
 					void* text_data_listener = nullptr;
 					if (text)
 					{
-						text_data_listener = text->data_changed_listeners.add([](void* c, Component*, uint hash, void* sender) {
+						text_data_listener = text->data_changed_listeners.add([](void* c, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
 								return true;

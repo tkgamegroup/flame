@@ -11,6 +11,9 @@ namespace flame
 	{
 		World* world_;
 
+		ListenerHub<bool(void* c)> before_update_listeners;
+		ListenerHub<bool(void* c)> after_update_listeners;
+
 		System(const char* name) :
 			Object(name),
 			world_(nullptr)
@@ -19,6 +22,6 @@ namespace flame
 
 		virtual ~System() {};
 		virtual void on_added() {}
-		virtual void update(Entity* root) = 0;
+		virtual void update() = 0;
 	};
 }

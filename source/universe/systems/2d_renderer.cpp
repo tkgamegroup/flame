@@ -114,9 +114,9 @@ namespace flame
 			}
 		}
 
-		void update(Entity* root) override
+		void update() override
 		{
-			do_render((EntityPrivate*)root);
+			do_render((EntityPrivate*)world_->root());
 			canvas->scene->update();
 		}
 	};

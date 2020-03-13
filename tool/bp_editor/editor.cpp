@@ -352,11 +352,11 @@ struct cSceneObject : Component
 		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
-			element->data_changed_listeners.add([](void* c, Component* e, uint hash, void*) {
+			element->data_changed_listeners.add([](void* c, uint hash, void*) {
 				if (hash == FLAME_CHASH("pos"))
 				{
 					auto thiz = *(cSceneObject**)c;
-					auto pos = ((cElement*)e)->pos_;
+					auto pos = thiz->element->pos_;
 					switch (thiz->t)
 					{
 					case SelLibrary:
@@ -561,15 +561,17 @@ void create_edit(cEditor* editor, BP::Slot* input)
 	struct Capture
 	{
 		BP::Slot* input;
+		cText* edit_text;
 		cText* drag_text;
 	}capture;
 	capture.input = input;
+	capture.edit_text = e_edit->child(0)->get_component(cText);
 	capture.drag_text = e_edit->child(1)->get_component(cText);
-	e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+	capture.edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 		auto& capture = *(Capture*)c;
 		if (hash == FLAME_CHASH("text"))
 		{
-			auto text = ((cText*)t)->text();
+			auto text = capture.edit_text->text();
 			auto data = sto_s<T>(text);
 			capture.input->set_data(&data);
 			capture.drag_text->set_text(text);
@@ -593,6 +595,7 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 	{
 		BP::Slot* input;
 		uint i;
+		cText* edit_text;
 		cText* drag_text;
 	}capture;
 	capture.input = input;
@@ -602,12 +605,13 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 		ui::e_begin_layout(LayoutHorizontal, 4.f);
 		auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
+		capture.edit_text = e_edit->child(0)->get_component(cText);
 		capture.drag_text = e_edit->child(1)->get_component(cText);
-		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		capture.edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 			auto& capture = *(Capture*)c;
 			if (hash == FLAME_CHASH("text"))
 			{
-				auto text = ((cText*)t)->text();
+				auto text = capture.edit_text->text();
 				auto data = *(Vec<N, T>*)capture.input->data();
 				data[capture.i] = sto_s<T>(text);
 				capture.input->set_data(&data);
@@ -650,11 +654,23 @@ void cEditor::on_add_node(BP::Node* n)
 				ui::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 				ui::c_event_receiver();
 				ui::c_edit();
-				ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-					if (hash == FLAME_CHASH("text"))
-						(*(BP::Node**)c)->set_id(w2s(((cText*)t)->text()).c_str());
-					return true;
-				}, new_mail_p(n));
+				{
+					struct Capture
+					{
+						BP::Node* n;
+						cText* t;
+					}capture;
+					capture.n = n;
+					capture.t = ui::current_entity()->get_component(cText);
+					capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
+						if (hash == FLAME_CHASH("text"))
+						{
+							auto& capture = *(Capture*)c;
+							capture.n->set_id(w2s(capture.t->text()).c_str());
+						}
+						return true;
+					}, new_mail(&capture));
+				}
 				ui::pop_style(ui::FontSize);
 
 				auto udt = n->udt();
@@ -870,14 +886,16 @@ void cEditor::on_add_node(BP::Node* n)
 								{
 									BP::Slot* input;
 									EnumInfo* e;
+									cCombobox* cb;
 								}capture;
 								capture.input = input;
 								capture.e = info;
-								e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+								capture.cb = e_data->child(0)->get_component(cCombobox);
+								capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 									auto& capture = *(Capture*)c;
 									if (hash == FLAME_CHASH("index"))
 									{
-										auto v = capture.e->item(((cCombobox*)cb)->idx)->value();
+										auto v = capture.e->item(capture.cb->idx)->value();
 										capture.input->set_data(&v);
 										app.set_changed(true);
 									}
@@ -904,15 +922,17 @@ void cEditor::on_add_node(BP::Node* n)
 									{
 										BP::Slot* input;
 										int v;
+										cCheckbox* cb;
 									}capture;
 									capture.input = input;
 									capture.v = item->value();
-									e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+									capture.cb = e_data->child(k)->child(0)->get_component(cCheckbox);
+									capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 										auto& capture = *(Capture*)c;
 										if (hash == FLAME_CHASH("checked"))
 										{
 											auto v = *(int*)capture.input->data();
-											if (((cCheckbox*)cb)->checked)
+											if (capture.cb->checked)
 												v |= capture.v;
 											else
 												v &= ~capture.v;
@@ -939,13 +959,15 @@ void cEditor::on_add_node(BP::Node* n)
 									struct Capture
 									{
 										BP::Slot* input;
+										cCheckbox* cb;
 									}capture;
 									capture.input = input;
-									e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+									capture.cb = e_checkbox->get_component(cCheckbox);
+									capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 										auto& capture = *(Capture*)c;
 										if (hash == FLAME_CHASH("checked"))
 										{
-											auto v = (((cCheckbox*)cb)->checked) ? 1 : 0;
+											auto v = (capture.cb->checked) ? 1 : 0;
 											capture.input->set_data(&v);
 											app.set_changed(true);
 										}
@@ -1007,16 +1029,22 @@ void cEditor::on_add_node(BP::Node* n)
 									break;
 								case FLAME_CHASH("StringA"):
 								{
-									auto e_edit = ui::e_edit(50.f);
-									e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-										auto s = *(BP::Slot**)c;
+									struct Capture
+									{
+										BP::Slot* i;
+										cText* t;
+									}capture;
+									capture.i = input;
+									capture.t = ui::e_edit(50.f)->get_component(cText);
+									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 										if (hash == FLAME_CHASH("text"))
 										{
-											s->set_data(&StringA(w2s(((cText*)t)->text())));
+											auto& capture = *(Capture*)c;
+											capture.i->set_data(&StringA(w2s(capture.t->text())));
 											app.set_changed(true);
 										}
 										return true;
-									}, new_mail_p(input));
+									}, new_mail(&capture));
 
 									auto c_tracker = new_u_object<cStringADataTracker>();
 									c_tracker->data = input->data();
@@ -1025,16 +1053,22 @@ void cEditor::on_add_node(BP::Node* n)
 								break;
 								case FLAME_CHASH("StringW"):
 								{
-									auto e_edit = ui::e_edit(50.f);
-									e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-										auto s = *(BP::Slot**)c;
+									struct Capture
+									{
+										BP::Slot* i;
+										cText* t;
+									}capture;
+									capture.i = input;
+									capture.t = ui::e_edit(50.f)->get_component(cText);
+									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 										if (hash == FLAME_CHASH("text"))
 										{
-											s->set_data(&StringW(((cText*)t)->text()));
+											auto& capture = *(Capture*)c;
+											capture.i->set_data(&StringW(capture.t->text()));
 											app.set_changed(true);
 										}
 										return true;
-									}, new_mail_p(input));
+									}, new_mail(&capture));
 
 									auto c_tracker = new_u_object<cStringWDataTracker>();
 									c_tracker->data = input->data();
@@ -1143,11 +1177,23 @@ void cEditor::on_add_subgraph(BP::SubGraph* s)
 				ui::e_text(s2w(s->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 				ui::c_event_receiver();
 				ui::c_edit();
-				ui::current_entity()->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
-					if (hash == FLAME_CHASH("text"))
-						(*(BP::SubGraph**)c)->set_id(w2s(((cText*)t)->text()).c_str());
-					return true;
-				}, new_mail_p(s));
+				{
+					struct Capture
+					{
+						BP::SubGraph* s;
+						cText* t;
+					}capture;
+					capture.s = s;
+					capture.t = ui::current_entity()->get_component(cText);
+					capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
+						if (hash == FLAME_CHASH("text"))
+						{
+							auto& capture = *(Capture*)c;
+							capture.s->set_id(w2s(capture.t->text()).c_str());
+						}
+						return true;
+					}, new_mail(&capture));
+				}
 				ui::e_text(s->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 
 				ui::e_begin_layout(LayoutHorizontal, 16.f);

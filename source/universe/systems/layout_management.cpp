@@ -1,4 +1,5 @@
 #include "../entity_private.h"
+#include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include "../components/element_private.h"
 #include <flame/universe/components/aligner.h>
@@ -48,7 +49,7 @@ namespace flame
 				calc_geometry(c.get());
 		}
 
-		void update(Entity* root) override
+		void update() override
 		{
 			while (!update_list.empty())
 			{
@@ -59,7 +60,7 @@ namespace flame
 					l->update();
 			}
 
-			calc_geometry((EntityPrivate*)root);
+			calc_geometry((EntityPrivate*)world_->root());
 		}
 	};
 

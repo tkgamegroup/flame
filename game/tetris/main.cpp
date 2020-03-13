@@ -683,11 +683,14 @@ struct MyApp : App
 			ui::e_begin_layout(LayoutHorizontal, 8.f);
 			ui::c_aligner(AlignxMiddle, AlignyFree);
 				ui::e_text(L"Your Name");
-				ui::e_edit(300.f, app.my_name.c_str())->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
-					if (hash == FLAME_CHASH("text"))
-						app.my_name = ((cText*)c)->text();
-					return true;
-				}, Mail<>());
+				{
+					auto c_text = ui::e_edit(300.f, app.my_name.c_str())->get_component(cText);
+					c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
+						if (hash == FLAME_CHASH("text"))
+							app.my_name = (*(cText**)c)->text();
+						return true;
+					}, new_mail_p(c_text));
+				}
 			ui::e_end_layout();
 			ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
 				auto e_room_list = ui::e_begin_list(true);
@@ -725,28 +728,34 @@ struct MyApp : App
 					{
 						ui::e_begin_dialog();
 							ui::e_text(L"Room Name");
-							ui::e_edit(100.f)->get_component(cText)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
-								if (hash == FLAME_CHASH("text"))
-									app.room_name = ((cText*)c)->text();
-								return true;
-							}, Mail<>());
+							{
+								auto c_text = ui::e_edit(100.f)->get_component(cText);
+								c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
+									if (hash == FLAME_CHASH("text"))
+										app.room_name = (*(cText**)c)->text();
+									return true;
+								}, new_mail_p(c_text));
+							}
 							ui::e_text(L"Max People");
-							ui::e_begin_combobox(100.f)->get_component(cCombobox)->data_changed_listeners.add([](void*, Component* c, uint hash, void*) {
-								if (hash == FLAME_CHASH("index"))
-								{
-									auto index = ((cCombobox*)c)->idx;
-									switch (index)
+							{
+								auto c_combobox = ui::e_begin_combobox(100.f)->get_component(cCombobox);
+								c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
+									if (hash == FLAME_CHASH("index"))
 									{
-									case 0:
-										app.room_max_people = 2;
-										break;
-									case 1:
-										app.room_max_people = 7;
-										break;
+										auto index = (*(cCombobox**)c)->idx;
+										switch (index)
+										{
+										case 0:
+											app.room_max_people = 2;
+											break;
+										case 1:
+											app.room_max_people = 7;
+											break;
+										}
 									}
-								}
-								return true;
-							}, Mail<>());
+									return true;
+								}, new_mail_p(c_combobox));
+							}
 							ui::e_combobox_item(L"2");
 							ui::e_combobox_item(L"7");
 							ui::e_end_combobox(0);

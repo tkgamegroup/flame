@@ -198,7 +198,7 @@ namespace flame
 		dispatch_mouse_single(er, false);
 	}
 
-	void sEventDispatcherPrivate::update(Entity* root)
+	void sEventDispatcherPrivate::update()
 	{
 		if (!pending_update)
 			return;
@@ -249,7 +249,7 @@ namespace flame
 		mouse_event_checker = nullptr;
 		if (focusing && focusing_state != FocusingNormal)
 			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
-		dispatch_mouse_recursively((EntityPrivate*)root);
+		dispatch_mouse_recursively((EntityPrivate*)world_->root());
 
 		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
 		{

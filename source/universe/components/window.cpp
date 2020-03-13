@@ -537,7 +537,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cList"))
 			{
 				list = (cList*)c;
-				selected_changed_listener = list->data_changed_listeners.add([](void* c, Component* l, uint hash, void*) {
+				selected_changed_listener = list->data_changed_listeners.add([](void* c, uint hash, void*) {
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					if (hash == FLAME_CHASH("selected"))
 					{
@@ -546,7 +546,7 @@ namespace flame
 						auto pages = docker->child(1);
 						if (pages->child_count() > 0)
 						{
-							auto idx = ((cList*)l)->selected->index_;
+							auto idx = thiz->list->selected->index_;
 							for (auto i = 0; i < pages->child_count(); i++)
 								pages->child(i)->set_visibility(false);
 							pages->child(idx)->set_visibility(true);

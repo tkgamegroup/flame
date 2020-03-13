@@ -9,7 +9,7 @@ MyApp app;
 
 void MyApp::create()
 {
-	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true);
+	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
 
 	TypeinfoDatabase::load(L"scene_editor.exe", true, true);
 
@@ -68,8 +68,8 @@ void MyApp::create()
 				app.resource_explorer = new cResourceExplorer;
 		}, new_mail_p(this));
 		ui::e_menu_item(L"Scene Editor", [](void* c) {
-			if (!app.scene_editor)
-				app.scene_editor = new cSceneEditor;
+			if (!app.editor)
+				app.editor = new cEditor;
 		}, new_mail_p(this));
 		ui::e_menu_item(L"Hierarchy", [](void* c) {
 			if (!app.hierarchy)
@@ -101,8 +101,8 @@ void MyApp::load(const std::filesystem::path& _filepath)
 	if (prefab)
 		prefab->parent()->remove_child(prefab);
 	prefab = Entity::create_from_file(u->world(0), filepath.c_str());
-	if (scene_editor)
-		scene_editor->e_scene->add_child(prefab);
+	if (editor)
+		editor->e_scene->add_child(prefab);
 }
 
 int main(int argc, char **args)
