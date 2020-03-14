@@ -80,6 +80,8 @@ namespace flame
 		s2DRendererPrivate(graphics::Canvas* _canvas)
 		{
 			canvas = _canvas;
+
+			pending_update = false;
 		}
 
 		void do_render(EntityPrivate* e)
@@ -116,6 +118,9 @@ namespace flame
 
 		void update() override
 		{
+			if (!pending_update)
+				return;
+			pending_update = false;
 			do_render((EntityPrivate*)world_->root());
 			canvas->scene->update();
 		}

@@ -15,6 +15,8 @@ namespace flame
 		~cElementPrivate();
 		void calc_geometry();
 		void draw(graphics::Canvas* canvas);
+		void on_entered_world() override;
+		void on_left_world() override;
 		Component* copy() override;
 	};
 }

@@ -27,6 +27,7 @@ namespace flame
 
 		graphics::Device* graphics_device;
 		graphics::SwapchainResizable* swapchain;
+		bool swapchain_used;
 		std::vector<graphics::Commandbuffer*> graphics_cbs;
 		Array<graphics::Commandbuffer*> graphics_sc_cbs;
 		graphics::Fence* render_fence;
@@ -57,6 +58,7 @@ namespace flame
 
 			graphics_device = graphics::Device::create(graphics_debug);
 			swapchain = graphics::SwapchainResizable::create(graphics_device, window);
+			swapchain_used = false;
 			graphics_sc_cbs.resize(swapchain->sc()->image_count());
 			for (auto i = 0; i < graphics_sc_cbs.s; i++)
 				graphics_sc_cbs[i] = graphics::Commandbuffer::create(graphics_device->gcp);
@@ -84,6 +86,17 @@ namespace flame
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
 			s_2d_renderer = s2DRenderer::create((engine_path / L"renderpath/canvas/bp").c_str(), swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs);
+			s_2d_renderer->before_update_listeners.add([](void* c) {
+				auto thiz = *(App**)c;
+				if (!thiz->swapchain_used && thiz->s_2d_renderer->pending_update)
+				{
+					auto sc = thiz->swapchain->sc();
+					if (sc)
+						sc->acquire_image();
+					thiz->swapchain_used = true;
+				}
+				return true;
+			}, new_mail_p(this));
 			world->add_system(s_2d_renderer);
 			canvas = s_2d_renderer->canvas;
 			canvas->add_font(font_atlas_pixel);
@@ -94,22 +107,19 @@ namespace flame
 
 		void run()
 		{
-			auto sc = swapchain->sc();
-
-			if (sc)
-				sc->acquire_image();
-
 			render_fence->wait();
 			looper().process_events();
 
 			c_element_root->set_size(Vec2f(window->size));
 			world->update();
 
-			if (sc)
+			auto sc = swapchain->sc();
+			if (sc && swapchain_used)
 			{
 				graphics_cbs.push_back(graphics_sc_cbs[sc->image_index()]);
 				graphics_device->gq->submit(graphics_cbs.size(), graphics_cbs.data(), sc->image_avalible(), render_semaphore, render_fence);
 				graphics_device->gq->present(sc, render_semaphore);
+				swapchain_used = false;
 			}
 			graphics_cbs.clear();
 		}

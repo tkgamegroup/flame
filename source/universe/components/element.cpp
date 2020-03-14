@@ -1,4 +1,5 @@
-#include "../entity_private.h"
+#include  "../world_private.h"
+#include <flame/universe/systems/2d_renderer.h>
 #include "element_private.h"
 
 #include "../renderpath/canvas/canvas.h"
@@ -9,6 +10,8 @@ namespace flame
 {
 	cElementPrivate::cElementPrivate()
 	{
+		renderer = nullptr;
+
 		pos_ = 0.f;
 		size_ = 0.f;
 		scale_ = 1.f;
@@ -78,6 +81,18 @@ namespace flame
 		cmds.call(canvas);
 	}
 
+	void cElementPrivate::on_entered_world()
+	{
+		renderer = entity->world()->get_system(s2DRenderer);
+		renderer->pending_update = true;
+	}
+
+	void cElementPrivate::on_left_world()
+	{
+		renderer->pending_update = true;
+		renderer = nullptr;
+	}
+
 	Component* cElementPrivate::copy()
 	{
 		auto copy = new cElementPrivate();
@@ -108,6 +123,8 @@ namespace flame
 			pos_.x() += x;
 		else
 			pos_.x() = x;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
@@ -121,6 +138,8 @@ namespace flame
 			pos_.y() += y;
 		else
 			pos_.y() = y;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
@@ -134,20 +153,9 @@ namespace flame
 			pos_ += p;
 		else
 			pos_ = p;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
-	}
-
-	void cElement::set_scale(float s, bool add, void* sender)
-	{
-		if (add && s == 0.f)
-			return;
-		if (!add && s == scale_)
-			return;
-		if (add)
-			scale_ += s;
-		else
-			scale_ = s;
-		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cElement::set_width(float w, bool add, void* sender)
@@ -160,6 +168,8 @@ namespace flame
 			size_.x() += w;
 		else
 			size_.x() = w;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
 	}
 
@@ -173,6 +183,8 @@ namespace flame
 			size_.y() += h;
 		else
 			size_.y() = h;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
 	}
 
@@ -186,7 +198,24 @@ namespace flame
 			size_ += s;
 		else
 			size_ = s;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
+	}
+
+	void cElement::set_scale(float s, bool add, void* sender)
+	{
+		if (add && s == 0.f)
+			return;
+		if (!add && s == scale_)
+			return;
+		if (add)
+			scale_ += s;
+		else
+			scale_ = s;
+		if (renderer)
+			renderer->pending_update = true;
+		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cElement::set_alpha(float a, bool add, void* sender)
@@ -199,6 +228,8 @@ namespace flame
 			alpha_ += a;
 		else
 			alpha_ = a;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("alpha"), sender);
 	}
 
@@ -212,6 +243,8 @@ namespace flame
 			roundness_ += r;
 		else
 			roundness_ = r;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("roundness"), sender);
 	}
 
@@ -225,6 +258,8 @@ namespace flame
 			frame_thickness_ += t;
 		else
 			frame_thickness_ = t;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("frame_thickness"), sender);
 	}
 
@@ -238,6 +273,8 @@ namespace flame
 			color_ += c;
 		else
 			color_ = c;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("color"), sender);
 	}
 
@@ -251,6 +288,8 @@ namespace flame
 			frame_color_ += c;
 		else
 			frame_color_ = c;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("frame_color"), sender);
 	}
 
@@ -276,18 +315,9 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cElement)()
 		{
-			pos = 0.f;
-			size = 0.f;
 			scale = 1.f;
-			pivot = 0.f;
-			inner_padding = Vec4f(0.f);
 			alpha = 1.f;
-			roundness = Vec4f(0.f);
-			roundness_lod = 0;
-			frame_thickness = 0.f;
-			color = Vec4c(0);
 			frame_color = Vec4c(255);
-			clip_children = false;
 		}
 
 		FLAME_UNIVERSE_EXPORTS Component* RF(create)(World* w)

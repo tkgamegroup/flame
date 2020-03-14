@@ -1990,15 +1990,18 @@ struct MyApp : App
 										req["action"] = "attack";
 										req["value"] = attack;
 										auto n = ::rand() % players.size() + 1;
-										auto target = 0;
+										auto target = -1;
 										while (n > 0)
 										{
 											target++;
 											if (target == players.size())
-												target = 1;
-											auto& p = players[target];
-											if (p.id && !p.disconnected)
-												n--;
+												target = 0;
+											if (target != my_room_index)
+											{
+												auto& p = players[target];
+												if (p.id && !p.disconnected)
+													n--;
+											}
 										}
 										if (server) 
 										{

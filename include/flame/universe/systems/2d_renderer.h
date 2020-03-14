@@ -15,6 +15,8 @@ namespace flame
 	{
 		graphics::Canvas* canvas;
 
+		bool pending_update;
+
 		s2DRenderer() :
 			System("s2DRenderer")
 		{

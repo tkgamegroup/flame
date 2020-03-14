@@ -32,6 +32,8 @@ namespace flame
 		dbclick_timer = -1.f;
 
 		active_pos = Vec2i(0);
+
+		pending_update = false;
 	}
 
 	sEventDispatcherPrivate::~sEventDispatcherPrivate()

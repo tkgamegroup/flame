@@ -9,8 +9,12 @@ namespace flame
 		struct Canvas;
 	}
 
+	struct s2DRenderer;
+
 	struct cElement : Component
 	{
+		s2DRenderer* renderer;
+
 		Vec2f pos_;
 		Vec2f size_;
 		float scale_;

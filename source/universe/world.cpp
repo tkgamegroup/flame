@@ -71,7 +71,11 @@ namespace flame
 	{
 		root->update_visibility();
 		for (auto& s : systems)
+		{
+			s->before_update_listeners.call();
 			s->update();
+			s->after_update_listeners.call();
+		}
 	}
 
 	System* World::get_system_plain(uint name_hash) const
