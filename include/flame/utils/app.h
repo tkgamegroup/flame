@@ -106,13 +106,21 @@ namespace flame
 			{
 				auto sc = swapchain->sc();
 				if (sc)
+				{
 					sc->acquire_image();
-				swapchain_used = true;
+					swapchain_used = true;
+				}
 			}
 		}
 
 		void run()
 		{
+			{
+				uint dt = looper().delta_time * 1000;
+				if (dt < 16)
+					sleep(16 - dt);
+			}
+
 			render_fence->wait();
 			looper().process_events();
 

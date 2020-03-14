@@ -50,12 +50,15 @@ namespace flame
 				looper().remove_event(cusor_flash_event);
 		}
 
-		void flash_cursor()
+		void flash_cursor(bool force = false)
 		{
 			auto render = element->renderer;
 			if (render)
 				render->pending_update = true;
-			show_cursor = !show_cursor;
+			if (force)
+				show_cursor = false;
+			else
+				show_cursor = !show_cursor;
 		}
 
 		void on_component_added(Component* c) override
@@ -200,6 +203,7 @@ namespace flame
 							looper().remove_event(thiz->cusor_flash_event);
 							thiz->cusor_flash_event = nullptr;
 						}
+						thiz->flash_cursor(true);
 					}
 					return true;
 				}, new_mail_p(this));

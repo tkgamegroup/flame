@@ -469,18 +469,21 @@ static Entity* selected_entity()
 	return nullptr;
 }
 
+static Vec4c unselected_col = Vec4c(0, 0, 0, 255);
+static Vec4c selected_col = Vec4c(252, 252, 50, 200);
+
 void cEditor::on_deselect()
 {
 	auto e = selected_entity();
 	if (e)
-		e->get_component(cElement)->set_frame_thickness(0.f);
+		e->get_component(cElement)->set_frame_color(unselected_col);
 }
 
 void cEditor::on_select()
 {
 	auto e = selected_entity();
 	if (e)
-		e->get_component(cElement)->set_frame_thickness(4.f);
+		e->get_component(cElement)->set_frame_color(selected_col);
 }
 
 void cEditor::set_add_pos_center()
@@ -523,8 +526,11 @@ void cEditor::on_add_library(BP::Library* l)
 		{
 			auto c_element = ui::c_element();
 			c_element->pos_ = l->pos;
+			c_element->roundness_ = 8.f;
+			c_element->roundness_lod = 2;
+			c_element->frame_thickness_ = 4.f;
 			c_element->color_ = Vec4c(255, 200, 190, 200);
-			c_element->frame_color_ = Vec4c(252, 252, 50, 200);
+			c_element->frame_color_ = unselected_col;
 			ui::c_event_receiver();
 			ui::c_layout(LayoutVertical)->fence = 1;
 			ui::c_moveable();
@@ -638,8 +644,11 @@ void cEditor::on_add_node(BP::Node* n)
 		{
 			auto c_element = ui::c_element();
 			c_element->pos_ = n->pos;
+			c_element->roundness_ = 8.f;
+			c_element->roundness_lod = 2;
+			c_element->frame_thickness_ = 4.f;
 			c_element->color_ = Vec4c(255, 255, 255, 200);
-			c_element->frame_color_ = Vec4c(252, 252, 50, 200);
+			c_element->frame_color_ = unselected_col;
 			ui::c_event_receiver();
 			ui::c_layout(LayoutVertical)->fence = 1;
 			ui::c_moveable();
@@ -1162,8 +1171,11 @@ void cEditor::on_add_subgraph(BP::SubGraph* s)
 		{
 			auto c_element = ui::c_element();
 			c_element->pos_ = s->pos;
+			c_element->roundness_ = 8.f;
+			c_element->roundness_lod = 2;
+			c_element->frame_thickness_ = 4.f;
 			c_element->color_ = Vec4c(190, 255, 200, 200);
-			c_element->frame_color_ = Vec4c(252, 252, 50, 200);
+			c_element->frame_color_ = unselected_col;
 			ui::c_event_receiver();
 			ui::c_layout(LayoutVertical)->fence = 1;
 			ui::c_moveable();
