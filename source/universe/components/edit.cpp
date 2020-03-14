@@ -1,4 +1,5 @@
 #include <flame/graphics/font.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
@@ -15,7 +16,10 @@ namespace flame
 	{
 		void* key_listener;
 		void* mouse_listener;
+		void* focus_listener;
 		void* draw_cmd;
+		void* cusor_flash_event;
+		bool show_cursor;
 
 		cEditPrivate()
 		{
@@ -27,7 +31,10 @@ namespace flame
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
+			focus_listener = nullptr;
 			draw_cmd = nullptr;
+			cusor_flash_event = nullptr;
+			show_cursor = false;
 		}
 
 		~cEditPrivate()
@@ -37,7 +44,18 @@ namespace flame
 				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
+				event_receiver->mouse_listeners.remove(focus_listener);
 			}
+			if (cusor_flash_event)
+				looper().remove_event(cusor_flash_event);
+		}
+
+		void flash_cursor()
+		{
+			auto render = element->renderer;
+			if (render)
+				render->pending_update = true;
+			show_cursor = !show_cursor;
 		}
 
 		void on_component_added(Component* c) override
@@ -162,12 +180,35 @@ namespace flame
 					}
 					return true;
 				}, new_mail_p(this));
+
+				focus_listener = event_receiver->focus_listeners.add([](void* c, bool focusing) {
+					auto thiz = *(cEditPrivate**)c;
+					if (focusing)
+					{
+						if (!thiz->cusor_flash_event)
+						{
+							thiz->cusor_flash_event = looper().add_event([](void* c, bool* go_on) {
+								(*(cEditPrivate**)c)->flash_cursor();
+								*go_on = true;
+							}, new_mail_p(thiz), 0.5f);
+						}
+					}
+					else
+					{
+						if (thiz->cusor_flash_event)
+						{
+							looper().remove_event(thiz->cusor_flash_event);
+							thiz->cusor_flash_event = nullptr;
+						}
+					}
+					return true;
+				}, new_mail_p(this));
 			}
 		}
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (!element->cliped && is_focusing(event_receiver) && (int(looper().total_time * 2.f) % 2 == 0))
+			if (show_cursor && !element->cliped)
 			{
 				auto font_atlas = text->font_atlas;
 
