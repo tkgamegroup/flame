@@ -46,7 +46,7 @@ namespace flame
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMoveablePrivate**)c;
 					if (is_active(thiz->event_receiver) && is_mouse_move(action, key))
-						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, true);
+						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, thiz);
 					return true;
 				}, new_mail_p(this));
 			}

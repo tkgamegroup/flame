@@ -32,6 +32,10 @@ namespace flame
 		cliped_rect = Vec4f(-1.f);
 
 		cmds.impl = ListenerHubImpl::create();
+
+		last_global_pos = 0.f;
+		last_global_scale = 0.f;
+		last_global_size = 0.f;
 	}
 
 	cElementPrivate::~cElementPrivate()
@@ -55,18 +59,35 @@ namespace flame
 			global_size = size_ * global_scale;
 			global_pos = p_element->global_pos + p_element->global_scale * pos_ - pivot_ * global_size;
 		}
+
+		if (global_pos != last_global_pos)
+		{
+			if (renderer)
+				renderer->pending_update = true;
+			last_global_pos = global_pos;
+		}
+		if (global_scale != last_global_scale)
+		{
+			if (renderer)
+				renderer->pending_update = true;
+			last_global_scale = global_scale;
+		}
+		if (global_size != last_global_size)
+		{
+			if (renderer)
+				renderer->pending_update = true;
+			last_global_size = global_size;
+		}
 	}
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (!cliped)
 		{
-			auto r = roundness_ * global_scale;
-
 			if (alpha_ > 0.f)
 			{
 				std::vector<Vec2f> points;
-				path_rect(points, global_pos, global_size, r, roundness_lod);
+				path_rect(points, global_pos, global_size, roundness_ * global_scale, roundness_lod);
 				if (color_.w() > 0)
 					canvas->fill(points.size(), points.data(), color_.new_proply<3>(alpha_));
 				auto ft = frame_thickness_ * global_scale;
@@ -123,8 +144,6 @@ namespace flame
 			pos_.x() += x;
 		else
 			pos_.x() = x;
-		if (renderer)
-			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
@@ -138,8 +157,6 @@ namespace flame
 			pos_.y() += y;
 		else
 			pos_.y() = y;
-		if (renderer)
-			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
@@ -153,9 +170,20 @@ namespace flame
 			pos_ += p;
 		else
 			pos_ = p;
-		if (renderer)
-			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
+	}
+
+	void cElement::set_scale(float s, bool add, void* sender)
+	{
+		if (add && s == 0.f)
+			return;
+		if (!add && s == scale_)
+			return;
+		if (add)
+			scale_ += s;
+		else
+			scale_ = s;
+		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cElement::set_width(float w, bool add, void* sender)
@@ -168,8 +196,6 @@ namespace flame
 			size_.x() += w;
 		else
 			size_.x() = w;
-		if (renderer)
-			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
 	}
 
@@ -183,8 +209,6 @@ namespace flame
 			size_.y() += h;
 		else
 			size_.y() = h;
-		if (renderer)
-			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
 	}
 
@@ -198,24 +222,7 @@ namespace flame
 			size_ += s;
 		else
 			size_ = s;
-		if (renderer)
-			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
-	}
-
-	void cElement::set_scale(float s, bool add, void* sender)
-	{
-		if (add && s == 0.f)
-			return;
-		if (!add && s == scale_)
-			return;
-		if (add)
-			scale_ += s;
-		else
-			scale_ = s;
-		if (renderer)
-			renderer->pending_update = true;
-		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cElement::set_alpha(float a, bool add, void* sender)

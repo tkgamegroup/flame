@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/world.h>
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
@@ -92,6 +93,9 @@ namespace flame
 	{
 		auto thiz = (cTextPrivate*)this;
 		thiz->text = text;
+		auto renderer = thiz->element->renderer;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("text"), sender);
 	}
 

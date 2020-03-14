@@ -88,13 +88,8 @@ namespace flame
 			s_2d_renderer = s2DRenderer::create((engine_path / L"renderpath/canvas/bp").c_str(), swapchain, FLAME_CHASH("SwapchainResizable"), &graphics_sc_cbs);
 			s_2d_renderer->before_update_listeners.add([](void* c) {
 				auto thiz = *(App**)c;
-				if (!thiz->swapchain_used && thiz->s_2d_renderer->pending_update)
-				{
-					auto sc = thiz->swapchain->sc();
-					if (sc)
-						sc->acquire_image();
-					thiz->swapchain_used = true;
-				}
+				if (thiz->s_2d_renderer->pending_update)
+					thiz->prepare_swapchain();
 				return true;
 			}, new_mail_p(this));
 			world->add_system(s_2d_renderer);
@@ -105,10 +100,24 @@ namespace flame
 			root->add_component(c_element_root);
 		}
 
+		void prepare_swapchain()
+		{
+			if (!swapchain_used)
+			{
+				auto sc = swapchain->sc();
+				if (sc)
+					sc->acquire_image();
+				swapchain_used = true;
+			}
+		}
+
 		void run()
 		{
 			render_fence->wait();
 			looper().process_events();
+
+			if (!graphics_cbs.empty())
+				prepare_swapchain();
 
 			c_element_root->set_size(Vec2f(window->size));
 			world->update();

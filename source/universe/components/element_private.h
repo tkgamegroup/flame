@@ -11,6 +11,10 @@ namespace flame
 
 	struct cElementPrivate : cElement
 	{
+		Vec2f last_global_pos;
+		float last_global_scale;
+		Vec2f last_global_size;
+
 		cElementPrivate();
 		~cElementPrivate();
 		void calc_geometry();
