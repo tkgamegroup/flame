@@ -26,10 +26,8 @@ struct cEditor : Component
 	void on_load();
 	void on_add_library(BP::Library* l);
 	void on_add_node(BP::Node* n);
-	void on_add_subgraph(BP::SubGraph* s);
 	void on_remove_library(BP::Library* l);
 	void on_remove_node(BP::Node* n);
-	void on_remove_subgraph(BP::SubGraph* s);
 	void on_data_changed(BP::Slot* s);
 };
 
@@ -46,7 +44,6 @@ enum SelType
 {
 	SelAir,
 	SelLibrary,
-	SelSubGraph,
 	SelNode,
 	SelSlot,
 	SelLink
@@ -67,7 +64,6 @@ struct MyApp : App
 	{
 		void* plain;
 		BP::Library* library;
-		BP::SubGraph* subgraph;
 		BP::Node* node;
 		BP::Slot* slot;
 		BP::Slot* link;
@@ -100,10 +96,8 @@ struct MyApp : App
 
 	BP::Library* add_library(const wchar_t* filename);
 	BP::Node* add_node(const char* type_name, const char* id);
-	BP::SubGraph* add_subgraph(const wchar_t* filename, const char* id);
 	void remove_library(BP::Library* l);
 	bool remove_node(BP::Node* n);
-	void remove_subgraph(BP::SubGraph* s);
 
 	void duplicate_selected();
 	void delete_selected();

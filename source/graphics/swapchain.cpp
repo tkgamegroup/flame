@@ -256,11 +256,11 @@ namespace flame
 
 			auto n_scr = bp->add_node("D#flame::graphics::R_SwapchainResizable", "swapchain");
 			n_scr->find_input("in")->set_data_p(this);
-			bp->find_input("*.rt_dst.type")->set_data_i(TargetImages);
-			ok = bp->find_input("*.rt_dst.v")->link_to(n_scr->find_output("images"));
+			bp->find_input("rt_dst.type")->set_data_i(TargetImages);
+			ok = bp->find_input("rt_dst.v")->link_to(n_scr->find_output("images"));
 			assert(ok);
-			bp->find_input("*.make_cmd.cbs")->set_data_p(cbs);
-			auto s_img_idx = bp->find_input("*.make_cmd.image_idx");
+			bp->find_input("make_cmd.cbs")->set_data_p(cbs);
+			auto s_img_idx = bp->find_input("make_cmd.image_idx");
 			if (s_img_idx)
 			{
 				ok = s_img_idx->link_to(n_scr->find_output("image_idx"));

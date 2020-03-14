@@ -59,18 +59,6 @@ BP::Node* MyApp::add_node(const char* type_name, const char* id)
 	return n;
 }
 
-BP::SubGraph* MyApp::add_subgraph(const wchar_t* filename, const char* id)
-{
-	auto s = bp->add_subgraph(filename, id);
-	if (s)
-	{
-		if (app.editor)
-			app.editor->on_add_subgraph(s);
-		set_changed(true);
-	}
-	return s;
-}
-
 void MyApp::remove_library(BP::Library* l)
 {
 	looper().add_event([](void* c, bool*) {
@@ -95,17 +83,6 @@ bool MyApp::remove_node(BP::Node* n)
 	}, new_mail_p(n));
 	set_changed(true);
 	return true;
-}
-
-void MyApp::remove_subgraph(BP::SubGraph* s)
-{
-	looper().add_event([](void* c, bool*) {
-		auto s = *(BP::SubGraph**)c;
-		if (app.editor)
-			app.editor->on_remove_subgraph(s);
-		app.bp->remove_subgraph(s);
-		app.set_changed(true);
-	}, new_mail_p(s));
 }
 
 void MyApp::duplicate_selected()
@@ -150,8 +127,6 @@ void MyApp::delete_selected()
 		}, new_mail_p(selected.library));
 	}
 	break;
-	case SelSubGraph:
-		break;
 	case SelNode:
 		if (!remove_node(selected.node))
 			ui::e_message_dialog(L"Cannot Remove Test Nodes");
@@ -455,18 +430,6 @@ bool MyApp::create(const char* filename)
 					}, Mail<>());
 				app.e_add_node_menu = ui::e_begin_sub_menu(L"Nodes")->get_component(cMenu)->items;
 				ui::e_end_sub_menu();
-				ui::e_menu_item(L"Sub Graph", [](void* c) {
-					ui::e_input_dialog(L"bp", [](void* c, bool ok, const wchar_t* text) {
-						if (ok && text[0])
-						{
-							if (app.editor)
-								app.editor->set_add_pos_center();
-							auto s = app.add_subgraph(text, "");
-							if (!s)
-								ui::e_message_dialog(L"Add Sub Graph Failed");
-						}
-					}, Mail<>());
-				}, Mail<>());
 				ui::e_end_menubar_menu();
 				ui::e_begin_menubar_menu(L"Edit");
 				ui::e_menu_item(L"Duplicate", [](void* c) {

@@ -47,7 +47,7 @@ namespace flame
 			}, new_mail_p(l));
 		}
 
-		inline Entity* add_layer(Entity* parent, const char* name_suffix /* layer_* */, uint gene = 0, bool modal = false, const Vec4c& col = Vec4c(0))
+		inline Entity* add_layer(Entity* parent, const char* name_suffix /* layer_* */, void* gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
 		{
 			auto l = Entity::create();
 			l->set_name((std::string("layer_") + name_suffix).c_str());
@@ -64,10 +64,10 @@ namespace flame
 			if (gene)
 			{
 				c_event_receiver->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
-					if (er->entity->gene == *(uint*)c)
+					if (er->entity->gene == *(void**)c)
 						*pass = true;
 					return true;
-				}, new_mail(&gene));
+				}, new_mail_p(gene));
 			}
 			if (!modal)
 			{

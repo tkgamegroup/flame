@@ -21,17 +21,6 @@ namespace flame
 		~LibraryPrivate();
 	};
 
-	struct SubGraphPrivate : BP::SubGraph
-	{
-		BPPrivate* scene;
-		std::string id;
-		std::wstring filename;
-		BPPrivate* bp;
-
-		SubGraphPrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp);
-		~SubGraphPrivate();
-	};
-
 	struct SlotPrivate : BP::Slot
 	{
 		NodePrivate* node;
@@ -105,17 +94,9 @@ namespace flame
 	{
 		std::wstring filename;
 
-		SubGraphPrivate* scene;
-		BPPrivate* root;
-
-		std::vector<std::unique_ptr<SubGraphPrivate>> subgraphs;
-
 		std::vector<TypeinfoDatabase*> dbs;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
-
-		std::vector<SlotPrivate*> input_exports;
-		std::vector<SlotPrivate*> output_exports;
 
 		std::vector<NodePrivate*> active_nodes;
 		std::vector<NodePrivate*> pending_update_nodes;
@@ -126,18 +107,12 @@ namespace flame
 		{
 			frame = 0;
 			time = 0.f;
-			scene = nullptr;
-			root = this;
 			need_update_hierarchy = true;
 		}
 
 		LibraryPrivate* add_library(const std::wstring& filename);
 		void remove_library(LibraryPrivate* m);
 		LibraryPrivate* find_library(const std::wstring& filename) const;
-
-		SubGraphPrivate* add_subgraph(const std::wstring& filename, const std::string& id);
-		void remove_subgraph(SubGraphPrivate* i);
-		SubGraphPrivate* find_subgraph(const std::string& id) const;
 
 		void collect_dbs();
 
@@ -164,22 +139,6 @@ namespace flame
 	LibraryPrivate::~LibraryPrivate()
 	{
 		TypeinfoDatabase::destroy(db);
-	}
-
-	SubGraphPrivate::SubGraphPrivate(BPPrivate* scene, const std::string& id, BPPrivate* bp) :
-		scene(scene),
-		id(id),
-		bp(bp)
-	{
-		pos = Vec2f(0.f);
-		user_data = nullptr;
-
-		bp->scene = this;
-	}
-
-	SubGraphPrivate::~SubGraphPrivate()
-	{
-		BP::destroy(bp);
 	}
 
 	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value) :
@@ -212,7 +171,7 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		frame = node->scene->frame;
-		node->scene->root->add_to_pending_update(node);
+		node->scene->add_to_pending_update(node);
 		 
 		type->copy_from(d, data);
 	}
@@ -226,8 +185,6 @@ namespace flame
 			if (target->io == In)
 				return false;
 			if (node == target->node) // same node
-				return false;
-			if (equal_and_not_null(node->scene->scene, target->node->scene->scene)) // same sub graph
 				return false;
 		}
 
@@ -263,11 +220,11 @@ namespace flame
 
 		frame = node->scene->frame;
 
-		auto root = node->scene->root;
-		root->need_update_hierarchy = true;
-		root->add_to_pending_update(node);
+		auto scene = node->scene;
+		scene->need_update_hierarchy = true;
+		scene->add_to_pending_update(node);
 		if (target)
-			root->add_to_pending_update(target->node);
+			scene->add_to_pending_update(target->node);
 
 		return true;
 	}
@@ -425,14 +382,13 @@ namespace flame
 	static void on_node_added(NodePrivate* n)
 	{
 		if (n->active)
-			n->scene->root->active_nodes.push_back(n);
+			n->scene->active_nodes.push_back(n);
 	}
 
 	static void on_node_removed(NodePrivate* n)
 	{
 		auto scene = n->scene;
 		auto frame = scene->frame;
-		auto root = scene->root;
 
 		for (auto& i : n->inputs)
 		{
@@ -455,17 +411,17 @@ namespace flame
 			{
 				l->links[0] = nullptr;
 				l->frame = frame;
-				root->add_to_pending_update(l->node);
+				scene->add_to_pending_update(l->node);
 			}
 		}
 
 		if (n->in_pending_update)
 		{
-			for (auto it = root->pending_update_nodes.begin(); it != root->pending_update_nodes.end(); it++)
+			for (auto it = scene->pending_update_nodes.begin(); it != scene->pending_update_nodes.end(); it++)
 			{
 				if (*it == n)
 				{
-					root->pending_update_nodes.erase(it);
+					scene->pending_update_nodes.erase(it);
 					break;
 				}
 			}
@@ -473,11 +429,11 @@ namespace flame
 
 		if (n->active)
 		{
-			for (auto it = root->active_nodes.begin(); it != root->active_nodes.end(); it++)
+			for (auto it = scene->active_nodes.begin(); it != scene->active_nodes.end(); it++)
 			{
 				if (*it == n)
 				{
-					root->active_nodes.erase(it);
+					scene->active_nodes.erase(it);
 					break;
 				}
 			}
@@ -571,66 +527,6 @@ namespace flame
 		return nullptr;
 	}
 
-	SubGraphPrivate* BPPrivate::add_subgraph(const std::wstring& fn, const std::string& id)
-	{
-		std::string s_id;
-		if (!id.empty())
-		{
-			s_id = id;
-			if (find_subgraph(s_id))
-				return nullptr;
-		}
-		else
-		{
-			for (auto i = 0; i < subgraphs.size() + 1; i++)
-			{
-				s_id = "subgraph_" + std::to_string(i);
-				if (!find_subgraph(s_id))
-					break;
-			}
-		}
-
-		auto bp = (BPPrivate*)BP::create_from_file((std::filesystem::path(filename).parent_path().parent_path() / fn / L"bp").wstring().c_str(), root);
-		if (!bp)
-			return nullptr;
-
-		auto p = new SubGraphPrivate(this, s_id, bp);
-		p->filename = fn;
-		subgraphs.emplace_back(p);
-
-		collect_dbs();
-		root->need_update_hierarchy = true;
-
-		return p;
-	}
-
-	void BPPrivate::remove_subgraph(SubGraphPrivate* s)
-	{
-		for (auto it = subgraphs.begin(); it != subgraphs.end(); it++)
-		{
-			if (it->get() == s)
-			{
-				subgraphs.erase(it);
-
-				collect_dbs();
-				root->need_update_hierarchy = true;
-
-				return;
-			}
-		}
-	}
-
-	SubGraphPrivate* BPPrivate::find_subgraph(const std::string& id) const
-	{
-		auto& subgraphs = ((BPPrivate*)this)->subgraphs;
-		for (auto& s : subgraphs)
-		{
-			if (s->id == id)
-				return s.get();
-		}
-		return nullptr;
-	}
-
 	void BPPrivate::collect_dbs()
 	{
 		dbs.clear();
@@ -682,7 +578,7 @@ namespace flame
 		nodes.emplace_back(n);
 		on_node_added(n);
 
-		root->need_update_hierarchy = true;
+		need_update_hierarchy = true;
 
 		return n;
 	}
@@ -700,7 +596,7 @@ namespace flame
 		nodes.emplace_back(n);
 		on_node_added(n);
 
-		root->need_update_hierarchy = true;
+		need_update_hierarchy = true;
 
 		return n;
 	}
@@ -718,35 +614,15 @@ namespace flame
 			}
 		}
 
-		root->need_update_hierarchy = true;
+		need_update_hierarchy = true;
 	}
 
-	NodePrivate* BPPrivate::find_node(const std::string& address) const
+	NodePrivate* BPPrivate::find_node(const std::string& id) const
 	{
-		auto sp = SUS::split(address, '.');
-		switch (sp.size())
+		for (auto& n : ((BPPrivate*)this)->nodes)
 		{
-		case 2:
-			if (sp[0] != "*")
-			{
-				auto p = find_subgraph(sp[0]);
-				if (p)
-					return p->bp->find_node(sp[1]);
-				return nullptr;
-			}
-			for (auto& s : ((BPPrivate*)this)->subgraphs)
-			{
-				auto n = s->bp->find_node(address);
-				if (n)
-					return n;
-			}
-			sp[0] = sp[1];
-		case 1:
-			for (auto& n : ((BPPrivate*)this)->nodes)
-			{
-				if (n->id == sp[0])
-					return n.get();
-			}
+			if (n->id == id)
+				return n.get();
 		}
 		return nullptr;
 	}
@@ -773,9 +649,6 @@ namespace flame
 	{
 		libraries.clear();
 		nodes.clear();
-		input_exports.clear();
-		output_exports.clear();
-		subgraphs.clear();
 		need_update_hierarchy = true;
 		update_list.clear();
 	}
@@ -786,17 +659,6 @@ namespace flame
 			return;
 		pending_update_nodes.push_back(n);
 		n->in_pending_update = true;
-	}
-
-	static void collect_nodes(BPPrivate* scn, std::vector<NodePrivate*>& ns)
-	{
-		for (auto& n : scn->nodes)
-		{
-			n->order = 0xffffffff;
-			ns.push_back(n.get());
-		}
-		for (auto& s : scn->subgraphs)
-			collect_nodes(s->bp, ns);
 	}
 
 	static void add_to_hierarchy(BPPrivate* scn, NodePrivate* n, uint& order)
@@ -831,16 +693,11 @@ namespace flame
 
 	void BPPrivate::update()
 	{
-		assert(root == this);
-
 		if (need_update_hierarchy)
 		{
-			std::vector<NodePrivate*> ns;
-			collect_nodes(this, ns);
-
 			auto order = 0U;
-			for (auto n : ns)
-				add_to_hierarchy(this, n, order);
+			for (auto& n : nodes)
+				add_to_hierarchy(this, n.get(), order);
 		}
 
 		for (auto n : active_nodes)
@@ -882,26 +739,6 @@ namespace flame
 	TypeinfoDatabase* BP::Library::db() const
 	{
 		return ((LibraryPrivate*)this)->db;
-	}
-
-	BP* BP::SubGraph::scene() const
-	{
-		return ((SubGraphPrivate*)this)->scene;
-	}
-
-	const char* BP::SubGraph::id() const
-	{
-		return ((SubGraphPrivate*)this)->id.c_str();
-	}
-
-	void BP::SubGraph::set_id(const char* id)
-	{
-		((SubGraphPrivate*)this)->id = id;
-	}
-
-	BP* BP::SubGraph::bp() const
-	{
-		return ((SubGraphPrivate*)this)->bp;
 	}
 
 	BP::Node* BP::Slot::node() const
@@ -1039,11 +876,6 @@ namespace flame
 		return ((BPPrivate*)this)->filename.c_str();
 	}
 
-	BP::SubGraph* BP::scene() const
-	{
-		return ((BPPrivate*)this)->scene;
-	}
-
 	uint BP::library_count() const
 	{
 		return ((BPPrivate*)this)->libraries.size();
@@ -1067,31 +899,6 @@ namespace flame
 	BP::Library* BP::find_library(const wchar_t* filename) const
 	{
 		return ((BPPrivate*)this)->find_library(filename);
-	}
-
-	uint BP::subgraph_count() const
-	{
-		return ((BPPrivate*)this)->subgraphs.size();
-	}
-
-	BP::SubGraph* BP::subgraph(uint idx) const
-	{
-		return ((BPPrivate*)this)->subgraphs[idx].get();
-	}
-
-	BP::SubGraph* BP::add_subgraph(const wchar_t* filename, const char* id)
-	{
-		return ((BPPrivate*)this)->add_subgraph(filename, id);
-	}
-
-	void BP::remove_subgraph(SubGraph* e)
-	{
-		((BPPrivate*)this)->remove_subgraph((SubGraphPrivate*)e);
-	}
-
-	BP::SubGraph* BP::find_subgraph(const char* id) const
-	{
-		return ((BPPrivate*)this)->find_subgraph(id);
 	}
 
 	uint BP::db_count() const
@@ -1124,9 +931,9 @@ namespace flame
 		((BPPrivate*)this)->remove_node((NodePrivate*)n);
 	}
 
-	BP::Node* BP::find_node(const char* address) const
+	BP::Node* BP::find_node(const char* id) const
 	{
-		return ((BPPrivate*)this)->find_node(address);
+		return ((BPPrivate*)this)->find_node(id);
 	}
 
 	BP::Slot* BP::find_input(const char* address) const
@@ -1137,96 +944,6 @@ namespace flame
 	BP::Slot* BP::find_output(const char* address) const
 	{
 		return ((BPPrivate*)this)->find_output(address);
-	}
-
-	uint BP::input_export_count() const
-	{
-		return ((BPPrivate*)this)->input_exports.size();
-	}
-
-	BP::Slot* BP::input_export(uint idx) const
-	{
-		return ((BPPrivate*)this)->input_exports[idx];
-	}
-
-	void BP::add_input_export(Slot* s)
-	{
-		auto& input_exports = ((BPPrivate*)this)->input_exports;
-		for (auto& e : input_exports)
-		{
-			if (e == s)
-				return;
-		}
-		input_exports.emplace_back((SlotPrivate*)s);
-	}
-
-	void BP::remove_input_export(Slot* s)
-	{
-		auto& input_exports = ((BPPrivate*)this)->input_exports;
-		for (auto it = input_exports.begin(); it != input_exports.end(); it++)
-		{
-			if ((*it) == s)
-			{
-				input_exports.erase(it);
-				return;
-			}
-		}
-	}
-
-	int BP::find_input_export(Slot* s) const
-	{
-		auto& input_exports = ((BPPrivate*)this)->input_exports;
-		for (auto i = 0; i < input_exports.size(); i++)
-		{
-			if (input_exports[i] == s)
-				return i;
-		}
-		return -1;
-	}
-
-	uint BP::output_export_count() const
-	{
-		return ((BPPrivate*)this)->output_exports.size();
-	}
-
-	BP::Slot* BP::output_export(uint idx) const
-	{
-		return ((BPPrivate*)this)->output_exports[idx];
-	}
-
-	void BP::add_output_export(Slot* s)
-	{
-		auto& output_exports = ((BPPrivate*)this)->output_exports;
-		for (auto& e : output_exports)
-		{
-			if (e == s)
-				return;
-		}
-		output_exports.emplace_back((SlotPrivate*)s);
-	}
-
-	void BP::remove_output_export(Slot* s)
-	{
-		auto& output_exports = ((BPPrivate*)this)->output_exports;
-		for (auto it = output_exports.begin(); it != output_exports.end(); it++)
-		{
-			if ((*it) == s)
-			{
-				output_exports.erase(it);
-				return;
-			}
-		}
-	}
-
-	int BP::find_output_export(Slot* s) const
-	{
-		auto& output_exports = ((BPPrivate*)this)->output_exports;
-		for (auto i = 0; i < output_exports.size(); i++)
-		{
-			if (output_exports[i] == s)
-				return i;
-		}
-		return -1;
 	}
 
 	void BP::clear()
@@ -1246,7 +963,7 @@ namespace flame
 		return bp;
 	}
 
-	BP* BP::create_from_file(const wchar_t* filename, BP* root)
+	BP* BP::create_from_file(const wchar_t* filename)
 	{
 		auto s_filename = w2s(filename);
 		auto path = std::filesystem::path(filename);
@@ -1278,24 +995,6 @@ namespace flame
 			library.filename = s2w(n_library.attribute("filename").value());
 			library.pos = stof2(n_library.attribute("pos").value());
 			library_descs.push_back(library);
-		}
-
-		struct SubGraphDesc
-		{
-			std::wstring filename;
-			std::string id;
-			Vec2f pos;
-		};
-		std::vector<SubGraphDesc> subgraph_descs; 
-
-		for (auto n_subgraph : file_root.child("packages"))
-		{
-			SubGraphDesc subgraph;
-
-			subgraph.filename = s2w(n_subgraph.attribute("filename").value());
-			subgraph.id = n_subgraph.attribute("id").value();
-			subgraph.pos = stof2(n_subgraph.attribute("pos").value());
-			subgraph_descs.push_back(subgraph);
 		}
 
 		struct DataDesc
@@ -1355,8 +1054,6 @@ namespace flame
 			output_export_descs.push_back(n.attribute("v").value());
 
 		auto bp = new BPPrivate();
-		if (root)
-			bp->root = (BPPrivate*)root;
 		bp->filename = filename;
 
 		for (auto& l_d : library_descs)
@@ -1364,13 +1061,6 @@ namespace flame
 			auto l = bp->add_library(l_d.filename);
 			if (l)
 				l->pos = l_d.pos;
-		}
-
-		for (auto& s_d : subgraph_descs)
-		{
-			auto s = bp->add_subgraph(s_d.filename, s_d.id);
-			if (s)
-				s->pos = s_d.pos;
 		}
 
 		extra_global_db_count = bp->dbs.size();
@@ -1557,11 +1247,6 @@ namespace flame
 				printf("cannot link: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
 		}
 
-		for (auto& e_d : input_export_descs)
-			bp->add_input_export(bp->find_input(e_d));
-		for (auto& e_d : output_export_descs)
-			bp->add_output_export(bp->find_output(e_d));
-
 		printf("end loading bp: %s\n", s_filename.c_str());
 
 		return bp;
@@ -1582,18 +1267,6 @@ namespace flame
 			auto n_module = n_libraries.append_child("library");
 			n_module.append_attribute("filename").set_value(w2s(l->filename).c_str());
 			n_module.append_attribute("pos").set_value(to_string(l->pos, 2).c_str());
-		}
-
-		if (!bp->subgraphs.empty())
-		{
-			auto n_packages = file_root.append_child("subgraphs");
-			for (auto& s : bp->subgraphs)
-			{
-				auto n_subgraph = n_packages.append_child("subgraph");
-				n_subgraph.append_attribute("filename").set_value(w2s(s->filename).c_str());
-				n_subgraph.append_attribute("id").set_value(s->id.c_str());
-				n_subgraph.append_attribute("pos").set_value(to_string(s->pos, 2).c_str());
-			}
 		}
 
 		extra_global_db_count = bp->dbs.size();
@@ -1635,20 +1308,6 @@ namespace flame
 		extra_global_dbs = nullptr;
 
 		auto n_links = file_root.append_child("links");
-		for (auto& s : bp->subgraphs)
-		{
-			for (auto& in : s->bp->input_exports)
-			{
-				auto out = in->links[0];
-				if (out)
-				{
-					auto n_link = n_links.append_child("link");
-					auto out_bp = out->node->scene;
-					n_link.append_attribute("out").set_value(((out_bp != bp ? out_bp->scene->id + "." : "") + out->get_address().v).c_str());
-					n_link.append_attribute("in").set_value((s->id + "." + in->get_address().v).c_str());
-				}
-			}
-		}
 		for (auto& n : bp->nodes)
 		{
 			if (n->used_by_editor)
@@ -1659,22 +1318,10 @@ namespace flame
 				if (out && !out->node->used_by_editor)
 				{
 					auto n_link = n_links.append_child("link");
-					auto out_bp = out->node->scene;
-					n_link.append_attribute("out").set_value(((out_bp != bp ? out_bp->scene->id + "." : "") + out->get_address().v).c_str());
+					n_link.append_attribute("out").set_value(out->get_address().v);
 					n_link.append_attribute("in").set_value(in->get_address().v);
 				}
 			}
-		}
-
-		if (!bp->input_exports.empty() || !bp->output_exports.empty())
-		{
-			auto n_exports = file_root.append_child("exports");
-			auto n_input_exports = n_exports.append_child("input");
-			for (auto& e : bp->input_exports)
-				n_input_exports.append_child("export").append_attribute("v").set_value(e->get_address().v);
-			auto n_output_exports = n_exports.append_child("output");
-			for (auto& e : bp->output_exports)
-				n_output_exports.append_child("export").append_attribute("v").set_value(e->get_address().v);
 		}
 
 		file.save_file(filename);

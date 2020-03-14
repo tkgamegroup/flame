@@ -11,9 +11,7 @@ namespace flame
 	{
 		struct Device;
 		struct Image;
-		struct Imageview;
 		struct Semaphore;
-		struct Commandbuffer;
 
 		FLAME_GRAPHICS_EXPORTS Format get_swapchain_format();
 
@@ -27,7 +25,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS uint image_index() const;
 			FLAME_GRAPHICS_EXPORTS void acquire_image();
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow*w);
+			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow* w);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
 

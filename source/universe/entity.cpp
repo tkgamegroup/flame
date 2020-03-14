@@ -9,7 +9,7 @@ namespace flame
 		on_removed_listeners.impl = ListenerHubImpl::create();
 		on_destroyed_listeners.impl = ListenerHubImpl::create();
 
-		gene = 0;
+		gene = nullptr;
 
 		depth_ = 0;
 		index_ = 0;
@@ -144,7 +144,7 @@ namespace flame
 			c.second->on_left_world();
 	}
 
-	static void inherit(EntityPrivate* e, uint gene)
+	static void inherit(EntityPrivate* e, void* gene)
 	{
 		e->gene = gene;
 		for (auto& c : e->children)

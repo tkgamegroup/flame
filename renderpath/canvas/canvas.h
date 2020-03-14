@@ -76,7 +76,7 @@ namespace flame
 				if (dst_hash == FLAME_CHASH("SwapchainResizable"))
 					((graphics::SwapchainResizable*)dst)->link_bp(bp, cbs);
 				bp->update();
-				return (Canvas*)bp->find_output("*.make_cmd.canvas")->data_p();
+				return (Canvas*)bp->find_output("make_cmd.canvas")->data_p();
 			}
 		};
 	}

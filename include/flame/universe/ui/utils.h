@@ -769,7 +769,7 @@ namespace flame
 		inline Entity* e_begin_combobox(float width)
 		{
 			auto e = e_empty();
-			e->gene = FLAME_CHASH("menu");
+			e->gene = e;
 			auto ce = c_element();
 			ce->size_ = Vec2f(width + 8.f, style_1u(FontSize) + 4.f);
 			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
@@ -825,7 +825,7 @@ namespace flame
 		inline Entity* e_begin_menu_bar()
 		{
 			auto e = e_empty();
-			e->gene = FLAME_CHASH("menubar");
+			e->gene = e;
 			c_element()->color_ = style_4c(FrameColorNormal);
 			c_aligner(SizeFitParent, SizeFixed);
 			c_layout(LayoutHorizontal)->item_padding = 4.f;
@@ -863,7 +863,7 @@ namespace flame
 		inline Entity* e_begin_button_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
-			e->gene = FLAME_CHASH("menu");
+			e->gene = e;
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();

@@ -189,24 +189,6 @@ struct cScene : Component
 					auto e = ((cSlot*)s->user_data)->element;
 					return e->global_pos + e->global_size * 0.5f;
 				}
-				else
-				{
-					auto scn = s->node()->scene();
-					BP::SubGraph* sg;
-					while (scn != app.bp)
-					{
-						sg = scn->scene();
-						if (!sg)
-							break;
-						scn = sg->scene();
-					}
-
-					auto e = ((Entity*)sg->user_data)->get_component(cElement);
-					auto ret = e->global_pos;
-					if (s->io() == BP::Slot::Out)
-						ret.x() += e->size_.x();
-					return ret;
-				}
 			};
 
 			if (!callback(get_pos(output), get_pos(input), input))
@@ -214,24 +196,6 @@ struct cScene : Component
 			return true;
 		};
 
-		for (auto i = 0; i < app.bp->subgraph_count(); i++)
-		{
-			auto s = app.bp->subgraph(i);
-			auto sbp = s->bp();
-			for (auto j = 0; j < sbp->output_export_count(); j++)
-			{
-				auto output = sbp->output_export(j);
-				for (auto k = 0; k < output->link_count(); k++)
-				{
-					auto input = output->link(k);
-					if (input->node()->scene()->scene() != s)
-					{
-						if (!process(output, input))
-							return;
-					}
-				}
-			}
-		}
 		for (auto i = 0; i < app.bp->node_count(); i++)
 		{
 			auto n = app.bp->node(i);
@@ -362,9 +326,6 @@ struct cSceneObject : Component
 					case SelLibrary:
 						((BP::Library*)thiz->p)->pos = pos;
 						break;
-					case SelSubGraph:
-						((BP::SubGraph*)thiz->p)->pos = pos;
-						break;
 					case SelNode:
 						((BP::Node*)thiz->p)->pos = pos;
 						break;
@@ -461,8 +422,6 @@ static Entity* selected_entity()
 	{
 	case SelLibrary:
 		return (Entity*)app.selected.library->user_data;
-	case SelSubGraph:
-		return (Entity*)app.selected.subgraph->user_data;
 	case SelNode:
 		return (Entity*)app.selected.node->user_data;
 	}
@@ -507,8 +466,6 @@ void cEditor::on_load()
 		on_add_library(app.bp->library(i));
 	for (auto i = 0; i < app.bp->node_count(); i++)
 		on_add_node(app.bp->node(i));
-	for (auto i = 0; i < app.bp->subgraph_count(); i++)
-		on_add_subgraph(app.bp->subgraph(i));
 
 	dragging_slot = nullptr;
 
@@ -851,8 +808,6 @@ void cEditor::on_add_node(BP::Node* n)
 							auto c_text = ui::c_text();
 							c_text->auto_width_ = false;
 							c_text->auto_height_ = false;
-							if (app.bp->find_output_export(input) != -1)
-								c_text->set_text(L"  p");
 							ui::pop_style(ui::FontSize);
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = input;
@@ -860,18 +815,6 @@ void cEditor::on_add_node(BP::Node* n)
 							ui::current_entity()->add_component(c_slot);
 							input->user_data = c_slot;
 							ui::e_begin_popup_menu(false);
-							ui::e_menu_item(L"Add To Exports", [](void* c) {
-								auto s = *(BP::Slot**)c;
-								app.bp->add_input_export(s);
-								app.set_changed(true);
-								((cSlot*)s->user_data)->text->set_text(L"  p");
-							}, new_mail_p(input));
-							ui::e_menu_item(L"Remove From Exports", [](void* c) {
-								auto s = *(BP::Slot**)c;
-								app.bp->remove_input_export(s);
-								app.set_changed(true);
-								((cSlot*)s->user_data)->text->set_text(L"");
-							}, new_mail_p(input));
 							ui::e_end_popup_menu();
 
 							ui::e_text(s2w(input->name()).c_str());
@@ -1122,8 +1065,6 @@ void cEditor::on_add_node(BP::Node* n)
 							auto c_text = ui::c_text();
 							c_text->auto_width_ = false;
 							c_text->auto_height_ = false;
-							if (app.bp->find_output_export(output) != -1)
-								c_text->set_text(L"  p");
 							ui::pop_style(ui::FontSize);
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = output;
@@ -1131,140 +1072,12 @@ void cEditor::on_add_node(BP::Node* n)
 							ui::current_entity()->add_component(c_slot);
 							output->user_data = c_slot;
 							ui::e_begin_popup_menu(false);
-							ui::e_menu_item(L"Add To Exports", [](void* c) {
-								auto s = *(BP::Slot**)c;
-								app.bp->add_output_export(s);
-								app.set_changed(true);
-								((cSlot*)s->user_data)->text->set_text(L"  p");
-							}, new_mail_p(output));
-							ui::e_menu_item(L"Remove From Exports", [](void* c) {
-								auto s = *(BP::Slot**)c;
-								app.bp->remove_output_export(s);
-								app.set_changed(true);
-								((cSlot*)s->user_data)->text->set_text(L"");
-							}, new_mail_p(output));
 							ui::e_end_popup_menu();
 							ui::e_end_layout();
 						}
 					ui::e_end_layout();
 				ui::e_end_layout();
 			ui::e_end_layout();
-			ui::e_empty();
-			ui::c_element();
-			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
-				*pass = true;
-				return true;
-			}, Mail<>());
-			ui::c_aligner(SizeFitParent, SizeFitParent);
-			ui::c_bring_to_front();
-		ui::pop_parent();
-	ui::pop_parent();
-}
-
-void cEditor::on_add_subgraph(BP::SubGraph* s)
-{
-	s->pos = add_pos;
-
-	ui::push_parent(e_base);
-		auto e_subgraph = ui::e_empty();
-		s->user_data = e_subgraph;
-		{
-			auto c_element = ui::c_element();
-			c_element->pos_ = s->pos;
-			c_element->roundness_ = 8.f;
-			c_element->roundness_lod = 2;
-			c_element->frame_thickness_ = 4.f;
-			c_element->color_ = Vec4c(190, 255, 200, 200);
-			c_element->frame_color_ = unselected_col;
-			ui::c_event_receiver();
-			ui::c_layout(LayoutVertical)->fence = 1;
-			ui::c_moveable();
-			auto c_subgraph = new_u_object<cSceneObject>();
-			c_subgraph->t = SelSubGraph;
-			c_subgraph->p = s;
-			e_subgraph->add_component(c_subgraph);
-		}
-		ui::push_parent(e_subgraph);
-			ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-				ui::e_text(s2w(s->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-				ui::c_event_receiver();
-				ui::c_edit();
-				{
-					struct Capture
-					{
-						BP::SubGraph* s;
-						cText* t;
-					}capture;
-					capture.s = s;
-					capture.t = ui::current_entity()->get_component(cText);
-					capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
-						if (hash == FLAME_CHASH("text"))
-						{
-							auto& capture = *(Capture*)c;
-							capture.s->set_id(w2s(capture.t->text()).c_str());
-						}
-						return true;
-					}, new_mail(&capture));
-				}
-				ui::e_text(s->bp()->filename())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
-
-				ui::e_begin_layout(LayoutHorizontal, 16.f);
-				ui::c_aligner(SizeGreedy, SizeFixed);
-					auto bp = s->bp();
-					ui::e_begin_layout(LayoutVertical);
-					ui::c_aligner(SizeGreedy, SizeFixed);
-						for (auto i = 0; i < bp->input_export_count(); i++)
-						{
-							auto s = bp->input_export(i);
-
-							ui::e_begin_layout(LayoutHorizontal);
-							ui::e_empty();
-							{
-								auto c_element = ui::c_element();
-								auto r = ui::style_1u(ui::FontSize);
-								c_element->size_ = r;
-								c_element->roundness_ = r * 0.5f;
-								c_element->roundness_lod = 2;
-								c_element->color_ = Vec4c(200, 200, 200, 255);
-								ui::c_event_receiver();
-								auto c_slot = new_u_object<cSlot>();
-								c_slot->s = s;
-								ui::current_entity()->add_component(c_slot);
-								s->user_data = c_slot;
-							}
-							ui::e_text(s2w(s->get_address().str()).c_str());
-							ui::e_end_layout();
-						}
-					ui::e_end_layout();
-					ui::e_begin_layout(LayoutVertical);
-					ui::c_aligner(SizeGreedy, SizeFixed);
-						for (auto i = 0; i < bp->output_export_count(); i++)
-						{
-							auto s = bp->output_export(i);
-
-							ui::e_begin_layout(LayoutHorizontal);
-							ui::c_aligner(AlignxRight, AlignyFree);
-							ui::e_text(s2w(s->get_address().str()).c_str());
-							ui::e_empty();
-							{
-								auto c_element = ui::c_element();
-								auto r = ui::style_1u(ui::FontSize);
-								c_element->size_ = r;
-								c_element->roundness_ = r * 0.5f;
-								c_element->roundness_lod = 2;
-								c_element->color_ = Vec4c(200, 200, 200, 255);
-								ui::c_event_receiver();
-								auto c_slot = new_u_object<cSlot>();
-								c_slot->s = s;
-								ui::current_entity()->add_component(c_slot);
-								s->user_data = c_slot;
-							}
-							ui::e_end_layout();
-						}
-					ui::e_end_layout();
-				ui::e_end_layout();
-			ui::e_end_layout();
-
 			ui::e_empty();
 			ui::c_element();
 			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
@@ -1297,12 +1110,6 @@ void cEditor::on_remove_library(BP::Library* l)
 void cEditor::on_remove_node(BP::Node* n)
 {
 	auto e = (Entity*)n->user_data;
-	e->parent()->remove_child(e);
-}
-
-void cEditor::on_remove_subgraph(BP::SubGraph* s)
-{
-	auto e = (Entity*)s->user_data;
 	e->parent()->remove_child(e);
 }
 

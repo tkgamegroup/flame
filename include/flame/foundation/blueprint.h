@@ -9,7 +9,7 @@ namespace flame
 		- An object is called node and associated with an udt or a package that contains another scene.
 		- At least one input or output must exist in the reflected udts.
 		- The udt must have a update function, the function return nothing and takes no parameters
-		- Address: [package_id].[node_id].[varible_name]
+		- Address: [node_id].[varible_name]
 	*/
 
 	struct TypeInfo;
@@ -26,18 +26,6 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 			Vec2f pos;
-
-			void* user_data;
-		};
-
-		struct SubGraph
-		{
-			FLAME_FOUNDATION_EXPORTS BP* scene() const;
-			FLAME_FOUNDATION_EXPORTS const char* id() const;
-			FLAME_FOUNDATION_EXPORTS void set_id(const char* id);
-			Vec2f pos;
-
-			FLAME_FOUNDATION_EXPORTS BP* bp() const;
 
 			void* user_data;
 		};
@@ -113,19 +101,11 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
 
-		FLAME_FOUNDATION_EXPORTS SubGraph* scene() const; // nullptr or in a sub graph
-
 		FLAME_FOUNDATION_EXPORTS uint library_count() const;
 		FLAME_FOUNDATION_EXPORTS Library* library(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Library* add_library(const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS void remove_library(Library* m);
 		FLAME_FOUNDATION_EXPORTS Library* find_library(const wchar_t* filename) const;
-
-		FLAME_FOUNDATION_EXPORTS uint subgraph_count() const;
-		FLAME_FOUNDATION_EXPORTS SubGraph* subgraph(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS SubGraph* add_subgraph(const wchar_t* filename, const char* id);
-		FLAME_FOUNDATION_EXPORTS void remove_subgraph(SubGraph* e);
-		FLAME_FOUNDATION_EXPORTS SubGraph* find_subgraph(const char* id) const;
 
 		FLAME_FOUNDATION_EXPORTS uint db_count() const;
 		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* const* dbs() const;
@@ -134,28 +114,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* type, const char* id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
-		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* address) const;
+		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address) const;
-		
-		FLAME_FOUNDATION_EXPORTS uint input_export_count() const;
-		FLAME_FOUNDATION_EXPORTS Slot* input_export(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS void add_input_export(Slot* s);
-		FLAME_FOUNDATION_EXPORTS void remove_input_export(Slot* s);
-		FLAME_FOUNDATION_EXPORTS int find_input_export(Slot* s) const;
-
-		FLAME_FOUNDATION_EXPORTS uint output_export_count() const;
-		FLAME_FOUNDATION_EXPORTS Slot* output_export(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS void add_output_export(Slot* s);
-		FLAME_FOUNDATION_EXPORTS void remove_output_export(Slot* s);
-		FLAME_FOUNDATION_EXPORTS int find_output_export(Slot* s) const;
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS static BP* create();
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, BP* root = nullptr);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};

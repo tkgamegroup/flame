@@ -1984,7 +1984,7 @@ struct MyApp : App
 										}, Mail<>(), 1.f, FLAME_CHASH("special_text"));
 									}
 
-									if (attack > 0)
+									if (game_mode == GameMulti && attack > 0)
 									{
 										nlohmann::json req;
 										req["action"] = "attack";
@@ -2148,24 +2148,27 @@ struct MyApp : App
 			}
 
 			update_status();
-			if (e_garbage->child_count() != garbages.size())
+			if (game_mode == GameMulti)
 			{
-				e_garbage->remove_children(0, -1);
-				ui::push_parent(e_garbage);
+				if (e_garbage->child_count() != garbages.size())
+				{
+					e_garbage->remove_children(0, -1);
+					ui::push_parent(e_garbage);
+					for (auto i = 0; i < garbages.size(); i++)
+					{
+						ui::next_element_pos = Vec2f(0.f, -i * 24.f);
+						ui::next_element_size = Vec2f(24.f);
+						ui::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+					}
+					ui::pop_parent();
+				}
 				for (auto i = 0; i < garbages.size(); i++)
 				{
-					ui::next_element_pos = Vec2f(0.f, -i * 24.f);
-					ui::next_element_size = Vec2f(24.f);
-					ui::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+					if (garbages[i] > 0)
+						garbages[i]--;
+					if (garbages[i] == 0)
+						e_garbage->child(i)->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
 				}
-				ui::pop_parent();
-			}
-			for (auto i = 0; i < garbages.size(); i++)
-			{
-				if (garbages[i] > 0)
-					garbages[i]--;
-				if (garbages[i] == 0)
-					e_garbage->child(i)->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
 			}
 		}
 	}

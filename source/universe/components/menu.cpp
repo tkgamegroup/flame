@@ -91,8 +91,9 @@ namespace flame
 				}
 				else
 				{
-					if (entity->parent())
-						close_subs(entity->parent());
+					auto p = entity->parent();
+					if (p)
+						close_subs(p);
 
 					auto layer = root->child_count() ? root->child(root->child_count() - 1) : nullptr;
 					if (layer)
@@ -112,10 +113,10 @@ namespace flame
 						if (mode == ModeMenubar)
 						{
 							if (!layer)
-								layer = ui::add_layer(root, "menu", FLAME_CHASH("menubar"), false);
+								layer = ui::add_layer(root, "menu", p, false);
 						}
 						else
-							layer = ui::add_layer(root, "menu", FLAME_CHASH("menu"), false);
+							layer = ui::add_layer(root, "menu", entity, false);
 					}
 					auto items_element = items->get_component(cElement);
 					switch (mode)
