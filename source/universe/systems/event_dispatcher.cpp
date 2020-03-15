@@ -137,7 +137,9 @@ namespace flame
 				return pass;
 			}() && (force || mouse_contained))
 		{
-			if (mouse_contained)
+			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
+
+			if (mouse_event_checker == INVALID_POINTER && mouse_contained)
 			{
 				hovering = er;
 
@@ -164,8 +166,6 @@ namespace flame
 				if (s & KeyStateJust)
 					((cEventReceiverPrivate*)er)->on_mouse(s, (MouseKey)i, mouse_pos);
 			}
-
-			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
 		}
 
 		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)

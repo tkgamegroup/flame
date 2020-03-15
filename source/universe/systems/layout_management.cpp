@@ -39,6 +39,9 @@ namespace flame
 
 		void calc_geometry(EntityPrivate* e)
 		{
+			if (!e->global_visibility_)
+				return;
+
 			auto element = (cElementPrivate*)e->get_component(cElement);
 			if (!element)
 				return;

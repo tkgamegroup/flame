@@ -114,6 +114,12 @@ namespace flame
 		renderer = nullptr;
 	}
 
+	void cElementPrivate::on_visibility_changed()
+	{
+		if (renderer)
+			renderer->pending_update = true;
+	}
+
 	Component* cElementPrivate::copy()
 	{
 		auto copy = new cElementPrivate();

@@ -21,6 +21,7 @@ namespace flame
 		void draw(graphics::Canvas* canvas);
 		void on_entered_world() override;
 		void on_left_world() override;
+		void on_visibility_changed() override;
 		Component* copy() override;
 	};
 }

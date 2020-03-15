@@ -89,6 +89,8 @@ struct R(CmdBufs)
 	}
 };
 
+const auto slot_bezier_extent = 50.f;
+
 struct cSlot : Component
 {
 	cElement* element;
@@ -168,8 +170,6 @@ struct cScene : Component
 
 	cText* scale_text;
 
-	float link_stick_out;
-
 	cScene() :
 		Component("cScene")
 	{
@@ -213,7 +213,9 @@ struct cScene : Component
 						{
 							app.deselect();
 
-							auto line_width = 3.f * thiz->base_element->global_scale;
+							auto scale = thiz->base_element->global_scale;
+							auto extent = slot_bezier_extent * scale;
+							auto line_width = 3.f * scale;
 							for (auto i = 0; i < app.bp->node_count(); i++)
 							{
 								auto n = app.bp->node(i);
@@ -225,7 +227,7 @@ struct cScene : Component
 										auto input = output->link(k);
 										auto p1 = ((cSlot*)output->user_data)->element->center();
 										auto p4 = ((cSlot*)input->user_data)->element->center();
-										if (segment_distance(p1, p4, Vec2f(pos)) < line_width)
+										if (distance(bezier_closest_point(Vec2f(pos), p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4, 4, 7), Vec2f(pos)) < line_width)
 										{
 											app.select(SelLink, input);
 											return false;
@@ -244,8 +246,9 @@ struct cScene : Component
 
 	void draw(graphics::Canvas* canvas)
 	{
-		link_stick_out = 50.f * base_element->global_scale;
-		auto line_width = 3.f * base_element->global_scale;
+		auto scale = base_element->global_scale;
+		auto extent = slot_bezier_extent * scale;
+		auto line_width = 3.f * scale;
 
 		if (element->cliped)
 			return;
@@ -262,19 +265,17 @@ struct cScene : Component
 					auto p1 = ((cSlot*)output->user_data)->element->center();
 					auto p4 = ((cSlot*)input->user_data)->element->center();
 					std::vector<Vec2f> points;
-					points.push_back(p1);
-					points.push_back(p4);
+					path_bezier(points, p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4);
 					canvas->stroke(points.size(), points.data(), app.selected.link == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
 				}
 			}
 		}
 		if (app.editor->dragging_slot)
 		{
-			std::vector<Vec2f> points;
 			auto p1 = ((cSlot*)app.editor->dragging_slot->user_data)->element->center();
 			auto p4 = Vec2f(event_receiver->dispatcher->mouse_pos);
-			points.push_back(p1);
-			points.push_back(p4);
+			std::vector<Vec2f> points;
+			path_bezier(points, p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4);
 			canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 50, 255), line_width);
 		}
 	}

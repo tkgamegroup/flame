@@ -121,8 +121,9 @@ namespace flame
 			if (!pending_update)
 				return;
 			pending_update = false;
-			do_render((EntityPrivate*)world_->root());
 			canvas->scene->update();
+			do_render((EntityPrivate*)world_->root());
+			canvas->record();
 		}
 	};
 

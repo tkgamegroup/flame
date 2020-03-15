@@ -32,36 +32,6 @@ namespace flame
 				f->canvas_slot_ = set_image(-1, f->imageview(), f->draw_type == FontDrawSdf ? FilterLinear : FilterNearest);
 			}
 
-			static Vec2f text_size(FontAtlas* f, const wchar_t* text, uint font_size, float scale)
-			{
-				auto line_space = font_size * scale;
-				auto ret = Vec2f(0.f, line_space);
-				auto x = 0.f;
-
-				auto pstr = text;
-				while (*pstr)
-				{
-					auto ch = *pstr;
-					if (ch == '\n')
-					{
-						ret.y() += line_space;
-						x = 0.f;
-					}
-					else if (ch != '\r')
-					{
-						if (ch == '\t')
-							ch = ' ';
-
-						x += f->get_glyph(ch, font_size)->advance * scale;
-						ret.x() = max(ret.x(), x);
-					}
-
-					pstr++;
-				}
-
-				return ret;
-			}
-
 			virtual void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness) = 0;
 			virtual void fill(uint point_count, const Vec2f* points, const Vec4c& col) = 0;
 
@@ -69,6 +39,8 @@ namespace flame
 			virtual void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
 			virtual const Vec4f& scissor() = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;
+
+			virtual void record() = 0;
 
 			inline static Canvas* create(const wchar_t* filename, void* dst, uint dst_hash, void* cbs)
 			{

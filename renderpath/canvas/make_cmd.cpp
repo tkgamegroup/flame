@@ -50,6 +50,8 @@ struct CanvasPrivate : Canvas
 	void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 	const Vec4f& scissor() override;
 	void set_scissor(const Vec4f& scissor) override;
+
+	void record() override;
 };
 
 struct Img
@@ -98,9 +100,11 @@ struct R(MakeCmd)
 	Vec4f curr_scissor;
 
 	int frame;
+	bool ready;
 
 	__declspec(dllexport) RF(MakeCmd)() :
-		frame(-1)
+		frame(-1),
+		ready(false)
 	{
 	}
 
@@ -398,6 +402,8 @@ struct R(MakeCmd)
 
 	__declspec(dllexport) void RF(update)(uint _frame)
 	{
+		ready = false;
+
 		if (frame == -1)
 		{
 			vtx_end = (Vertex*)vtx_buf->mapped;
@@ -418,88 +424,95 @@ struct R(MakeCmd)
 		}
 		else
 		{
-			auto cb = cbs->at(image_idx);
+			vtx_end = (Vertex*)vtx_buf->mapped;
+			idx_end = (uint*)idx_buf->mapped;
 
 			if (rnf && (pl_element || pl_text_lcd || pl_text_sdf))
 			{
-				auto fb = rnf->framebuffer(image_idx);
-				surface_size = Vec2f(fb->image_size);
-
+				surface_size = Vec2f(rnf->framebuffer(image_idx)->image_size);
 				curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 
-				cb->begin();
-				auto cv = rnf->clearvalues();
-				cv->set(0, clear_color);
-				cb->begin_renderpass(fb, cv);
-				if (idx_end != idx_buf->mapped)
-				{
-					cb->set_viewport(curr_scissor);
-					cb->set_scissor(curr_scissor);
-					cb->bind_vertexbuffer(vtx_buf, 0);
-					cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
-
-					struct
-					{
-						Vec2f scale;
-						Vec2f sdf_range;
-					}pc;
-					pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
-					pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
-					cb->push_constant(0, sizeof(pc), &pc, pll);
-					cb->bind_descriptorset(ds, 0, pll);
-
-					auto vtx_off = 0;
-					auto idx_off = 0;
-					for (auto& cmd : cmds)
-					{
-						switch (cmd.type)
-						{
-						case CmdDrawElement:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_element);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdDrawTextLcd:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_text_lcd);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdDrawTextSdf:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_text_sdf);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdSetScissor:
-							cb->set_scissor(cmd.v.scissor);
-							break;
-						}
-					}
-				}
-				cb->end_renderpass();
-				cb->end();
-			}
-			else
-			{
-				cb->begin();
-				cb->end();
+				ready = true;
 			}
 
-			vtx_end = (Vertex*)vtx_buf->mapped;
-			idx_end = (uint*)idx_buf->mapped;
 			cmds.clear();
 		}
+	}
+
+	void record()
+	{
+		auto cb = cbs->at(image_idx);
+		if (ready)
+		{
+			cb->begin();
+			auto cv = rnf->clearvalues();
+			cv->set(0, clear_color);
+			cb->begin_renderpass(rnf->framebuffer(image_idx), cv);
+			if (idx_end != idx_buf->mapped)
+			{
+				cb->set_viewport(curr_scissor);
+				cb->set_scissor(curr_scissor);
+				cb->bind_vertexbuffer(vtx_buf, 0);
+				cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
+
+				struct
+				{
+					Vec2f scale;
+					Vec2f sdf_range;
+				}pc;
+				pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
+				pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
+				cb->push_constant(0, sizeof(pc), &pc, pll);
+				cb->bind_descriptorset(ds, 0, pll);
+
+				auto vtx_off = 0;
+				auto idx_off = 0;
+				for (auto& cmd : cmds)
+				{
+					switch (cmd.type)
+					{
+					case CmdDrawElement:
+						if (cmd.v.draw_data.idx_cnt > 0)
+						{
+							cb->bind_pipeline(pl_element);
+							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							vtx_off += cmd.v.draw_data.vtx_cnt;
+							idx_off += cmd.v.draw_data.idx_cnt;
+						}
+						break;
+					case CmdDrawTextLcd:
+						if (cmd.v.draw_data.idx_cnt > 0)
+						{
+							cb->bind_pipeline(pl_text_lcd);
+							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							vtx_off += cmd.v.draw_data.vtx_cnt;
+							idx_off += cmd.v.draw_data.idx_cnt;
+						}
+						break;
+					case CmdDrawTextSdf:
+						if (cmd.v.draw_data.idx_cnt > 0)
+						{
+							cb->bind_pipeline(pl_text_sdf);
+							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							vtx_off += cmd.v.draw_data.vtx_cnt;
+							idx_off += cmd.v.draw_data.idx_cnt;
+						}
+						break;
+					case CmdSetScissor:
+						cb->set_scissor(cmd.v.scissor);
+						break;
+					}
+				}
+			}
+			cb->end_renderpass();
+			cb->end();
+		}
+		else
+		{
+			cb->begin();
+			cb->end();
+		}
+		cmds.clear();
 	}
 };
 
@@ -551,4 +564,9 @@ const Vec4f& CanvasPrivate::scissor()
 void CanvasPrivate::set_scissor(const Vec4f& scissor)
 {
 	((MakeCmd*)mc)->set_scissor(scissor);
+}
+
+void CanvasPrivate::record()
+{
+	((MakeCmd*)mc)->record();
 }
