@@ -3,7 +3,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/toggle.h>
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/style.h>
 
 namespace flame
 {

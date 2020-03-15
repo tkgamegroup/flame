@@ -4,8 +4,8 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
-#include <flame/universe/utils.h>
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/event.h>
+#include <flame/universe/utils/style.h>
 
 namespace flame
 {

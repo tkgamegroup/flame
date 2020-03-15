@@ -1,6 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/ui/utils.h>
+#include <flame/universe/utils/ui.h>
 #include <flame/utils/app.h>
 
 using namespace flame;
@@ -14,17 +14,17 @@ int main(int argc, char** args)
 {
 	app.create("Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable);
 
-	ui::set_current_entity(app.root);
-	ui::c_layout();
-	ui::set_current_root(app.root);
-	ui::push_parent(app.root);
-		ui::e_begin_splitter(SplitterHorizontal);
-		ui::e_element()->get_component(cElement)->color_ = Vec4c(255, 0, 0, 255);
-		ui::c_aligner(SizeFitParent, SizeFitParent);
-		ui::e_element()->get_component(cElement)->color_ = Vec4c(0, 255, 0, 255);
-		ui::c_aligner(SizeFitParent, SizeFitParent);
-		ui::e_end_splitter();
-	ui::pop_parent();
+	utils::set_current_entity(app.root);
+	utils::c_layout();
+	utils::set_current_root(app.root);
+	utils::push_parent(app.root);
+		utils::e_begin_splitter(SplitterHorizontal);
+		utils::e_element()->get_component(cElement)->color_ = Vec4c(255, 0, 0, 255);
+		utils::c_aligner(SizeFitParent, SizeFitParent);
+		utils::e_element()->get_component(cElement)->color_ = Vec4c(0, 255, 0, 255);
+		utils::c_aligner(SizeFitParent, SizeFitParent);
+		utils::e_end_splitter();
+	utils::pop_parent();
 
 	looper().loop([](void*) {
 		app.run();

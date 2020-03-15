@@ -7,8 +7,8 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
-#include <flame/universe/ui/layer.h>
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/layer.h>
+#include <flame/universe/utils/style.h>
 
 namespace flame
 {
@@ -62,7 +62,7 @@ namespace flame
 						auto thiz = *(cComboboxItemPrivate**)c;
 						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
 						auto combobox = menu->entity->get_component(cCombobox);
-						ui::remove_top_layer(menu->root);
+						utils::remove_top_layer(menu->root);
 						combobox->set_index(thiz->idx);
 					}
 					return true;

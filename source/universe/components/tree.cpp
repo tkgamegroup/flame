@@ -8,8 +8,8 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
-#include <flame/universe/ui/layer.h>
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/layer.h>
+#include <flame/universe/utils/style.h>
 
 namespace flame
 {

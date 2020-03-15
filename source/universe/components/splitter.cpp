@@ -2,7 +2,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/splitter.h>
-#include <flame/universe/utils.h>
+#include <flame/universe/utils/event.h>
 
 namespace flame
 {

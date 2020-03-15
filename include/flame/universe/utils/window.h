@@ -1,10 +1,16 @@
 #pragma once
 
-#include "splitter_utils.h"
+#include <flame/universe/components/element.h>
+#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/aligner.h>
+#include <flame/universe/components/layout.h>
+#include <flame/universe/components/list.h>
+#include <flame/universe/components/window.h>
+#include <flame/universe/utils/splitter.h>
 
 namespace flame
 {
-	namespace ui
+	namespace utils
 	{
 		inline void make_docker_floating_container(Entity* e, const Vec2f& pos, const Vec2f& size)
 		{
@@ -69,7 +75,7 @@ namespace flame
 			e->add_component(cl);
 			{
 				auto es = Entity::create();
-				ui::make_splitter(es, type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical);
+				utils::make_splitter(es, type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical);
 				e->add_child(es);
 			}
 		}

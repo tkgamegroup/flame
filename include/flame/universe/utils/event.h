@@ -1,7 +1,7 @@
 #pragma once
 
-#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/components/event_receiver.h>
 
 namespace flame
 {

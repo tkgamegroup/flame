@@ -7,7 +7,7 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/style.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -20,8 +20,8 @@ namespace flame
 		element = nullptr;
 
 		font_atlas = _font_atlas;
-		color = ui::style_4c(ui::TextColorNormal);
-		font_size_ = ui::style_1u(ui::FontSize);
+		color = utils::style_4c(utils::TextColorNormal);
+		font_size_ = utils::style_1u(utils::FontSize);
 		scale_ = 1.f;
 		auto_width_ = true;
 		auto_height_ = true;
@@ -149,8 +149,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cText)()
 		{
-			color = ui::style_4c(ui::TextColorNormal);
-			font_size = ui::style_1u(ui::FontSize);
+			color = utils::style_4c(utils::TextColorNormal);
+			font_size = utils::style_1u(utils::FontSize);
 			right_align = false;
 			auto_width = false;
 			auto_height = false;

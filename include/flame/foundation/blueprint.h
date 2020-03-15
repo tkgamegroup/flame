@@ -25,9 +25,6 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
-			Vec2f pos;
-
-			void* user_data;
 		};
 
 		struct Slot

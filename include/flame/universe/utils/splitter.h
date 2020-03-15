@@ -1,8 +1,14 @@
 #pragma once
 
+#include <flame/universe/components/element.h>
+#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/style.h>
+#include <flame/universe/components/aligner.h>
+#include <flame/universe/components/splitter.h>
+
 namespace flame
 {
-	namespace ui
+	namespace utils
 	{
 		inline void make_splitter(Entity* e, SplitterType type)
 		{

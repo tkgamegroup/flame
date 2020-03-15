@@ -1,9 +1,8 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/components/data_keeper.h>
-#include <flame/universe/ui/utils.h>
-#include <flame/universe/ui/typeinfo_utils.h>
+#include <flame/universe/utils/ui.h>
+#include <flame/universe/utils/typeinfo.h>
 #include <flame/network/network.h>
 #include <flame/utils/app.h>
 
@@ -170,15 +169,15 @@ struct MyApp : App
 
 	void create_home_scene()
 	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 40);
-				ui::e_text(L"Tetris");
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-				ui::push_style_1u(ui::FontSize, 20);
-				ui::e_button(L"Marathon", [](void*) {
+		utils::push_parent(root);
+			utils::e_begin_layout(LayoutVertical, 8.f);
+			utils::c_aligner(AlignxMiddle, AlignyMiddle);
+				utils::push_style_1u(utils::FontSize, 40);
+				utils::e_text(L"Tetris");
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::pop_style(utils::FontSize);
+				utils::push_style_1u(utils::FontSize, 20);
+				utils::e_button(L"Marathon", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.game_mode = GameSingleMarathon;
@@ -186,8 +185,8 @@ struct MyApp : App
 						app.start_game();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"RTA", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"RTA", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.game_mode = GameSingleRTA;
@@ -195,32 +194,32 @@ struct MyApp : App
 						app.start_game();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Practice", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"Practice", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.game_mode = GameSinglePractice;
 						app.create_game_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"LAN", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"LAN", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_lan_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Config", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"Config", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::pop_style(utils::FontSize);
+			utils::e_end_layout();
+		utils::pop_parent();
 	}
 
 	void create_player_controls(int player_index)
@@ -249,10 +248,10 @@ struct MyApp : App
 
 		auto& p = players[player_index];
 
-		ui::next_element_pos = pos + Vec2f(80.f, 40.f) * scale;
-		ui::e_begin_layout(LayoutHorizontal, 4.f);
-			ui::push_style_1u(ui::FontSize, 30 * scale);
-			p.c_name = ui::e_text([p]() {
+		utils::next_element_pos = pos + Vec2f(80.f, 40.f) * scale;
+		utils::e_begin_layout(LayoutHorizontal, 4.f);
+			utils::push_style_1u(utils::FontSize, 30 * scale);
+			p.c_name = utils::e_text([p]() {
 				switch (app.game_mode)
 				{
 				case GameSingleMarathon:
@@ -267,11 +266,11 @@ struct MyApp : App
 			}())->get_component(cText);
 			if (game_mode == GameMulti && player_index == 0)
 				p.c_name->color = Vec4c(91, 82, 119, 255);
-			ui::pop_style(ui::FontSize);
+			utils::pop_style(utils::FontSize);
 
 			if (my_room_index == 0 && player_index != my_room_index)
 			{
-				p.e_kick = ui::e_button(Icon_TIMES, [](void* c) {
+				p.e_kick = utils::e_button(Icon_TIMES, [](void* c) {
 					auto index = *(int*)c;
 
 					app.process_player_left(index);
@@ -293,44 +292,44 @@ struct MyApp : App
 					}
 				}, new_mail(&player_index));
 			}
-		ui::e_end_layout();
+		utils::e_end_layout();
 
-		ui::e_empty();
-		ui::next_element_pos = pos + Vec2f(85.f, 80.f) * scale;
-		ui::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
+		utils::e_empty();
+		utils::next_element_pos = pos + Vec2f(85.f, 80.f) * scale;
+		utils::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
 		{
-			auto ce = ui::c_element();
+			auto ce = utils::c_element();
 			ce->frame_thickness_ = 6.f * scale;
 			ce->color_ = Vec4c(30, 30, 30, 255);
 			ce->frame_color_ = Vec4c(255);
 			ce->clip_children = true;
 		}
 
-		ui::push_parent(ui::current_entity());
-			ui::e_empty();
-			ui::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
-			ui::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
-			ui::c_element();
+		utils::push_parent(utils::current_entity());
+			utils::e_empty();
+			utils::next_element_pos = Vec2f(0.f, -block_size * 3.8f);
+			utils::next_element_size = Vec2f(block_size * board_width, block_size * board_height);
+			utils::c_element();
 			p.c_main = cTileMap::create();
 			p.c_main->cell_size_ = Vec2f(block_size);
 			p.c_main->set_size(Vec2u(board_width, board_height));
 			p.c_main->clear_cells(TileGrid);
 			set_board_tiles(p.c_main);
-			ui::current_entity()->add_component(p.c_main);
-		ui::pop_parent();
+			utils::current_entity()->add_component(p.c_main);
+		utils::pop_parent();
 
 		if (player_index == my_room_index)
 		{
 			block_size = 16U * scale;
 
-			ui::next_element_pos = pos + Vec2f(22.f, 80.f);
-			ui::e_text(L"Hold");
+			utils::next_element_pos = pos + Vec2f(22.f, 80.f);
+			utils::e_text(L"Hold");
 
-			ui::e_empty();
-			ui::next_element_pos = pos + Vec2f(8.f, 100.f);
-			ui::next_element_size = Vec2f(block_size * 4 + 8.f);
+			utils::e_empty();
+			utils::next_element_pos = pos + Vec2f(8.f, 100.f);
+			utils::next_element_size = Vec2f(block_size * 4 + 8.f);
 			{
-				auto ce = ui::c_element();
+				auto ce = utils::c_element();
 				ce->inner_padding_ = Vec4f(4.f);
 				ce->color_ = Vec4c(30, 30, 30, 255);
 			}
@@ -339,30 +338,30 @@ struct MyApp : App
 				p.c_hold->cell_size_ = Vec2f(block_size);
 				p.c_hold->set_size(Vec2u(4, 3));
 				set_board_tiles(p.c_hold);
-				ui::current_entity()->add_component(p.c_hold);
+				utils::current_entity()->add_component(p.c_hold);
 			}
 
-			ui::next_element_pos = pos + Vec2f(350.f, 80.f);
-			ui::e_text(L"Next");
+			utils::next_element_pos = pos + Vec2f(350.f, 80.f);
+			utils::e_text(L"Next");
 
-			ui::e_empty();
-			ui::next_element_pos = pos + Vec2f(330.f, 100.f);
-			ui::next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * array_size(p.c_next) + 8.f - 45.f);
+			utils::e_empty();
+			utils::next_element_pos = pos + Vec2f(330.f, 100.f);
+			utils::next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * array_size(p.c_next) + 8.f - 45.f);
 			{
-				auto ce = ui::c_element();
+				auto ce = utils::c_element();
 				ce->color_ = Vec4c(30, 30, 30, 255);
 			}
 			auto create_next_board = [&](int i, int base, float y_off, float block_size) {
-				ui::e_empty();
-				ui::next_element_pos = pos + Vec2f(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
-				ui::next_element_size = Vec2f(block_size * 4 + 8.f);
-				ui::c_element()->inner_padding_ = Vec4f(4.f);
+				utils::e_empty();
+				utils::next_element_pos = pos + Vec2f(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
+				utils::next_element_size = Vec2f(block_size * 4 + 8.f);
+				utils::c_element()->inner_padding_ = Vec4f(4.f);
 				{
 					p.c_next[i] = cTileMap::create();
 					p.c_next[i]->cell_size_ = Vec2f(block_size);
 					p.c_next[i]->set_size(Vec2u(4));
 					set_board_tiles(p.c_next[i]);
-					ui::current_entity()->add_component(p.c_next[i]);
+					utils::current_entity()->add_component(p.c_next[i]);
 				}
 			};
 			for (auto i = 0; i < 1; i++)
@@ -372,28 +371,28 @@ struct MyApp : App
 			for (auto i = 3; i < array_size(p.c_next); i++)
 				create_next_board(i, 3, 16.f * 3.f + 4.f + (14.f * 3.f + 4.f) * 2, 12.f);
 
-			ui::next_element_pos = pos + Vec2f(180.f, 250.f);
-			ui::push_style_1u(ui::FontSize, 80);
-			p.c_count_down = ui::e_text(L"")->get_component(cText);
-			ui::pop_style(ui::FontSize);
+			utils::next_element_pos = pos + Vec2f(180.f, 250.f);
+			utils::push_style_1u(utils::FontSize, 80);
+			p.c_count_down = utils::e_text(L"")->get_component(cText);
+			utils::pop_style(utils::FontSize);
 
 			if (game_mode == GameMulti)
 			{
-				ui::next_element_pos = pos + Vec2f(54.f, 546.f);
-				p.e_garbage = ui::e_element();
+				utils::next_element_pos = pos + Vec2f(54.f, 546.f);
+				p.e_garbage = utils::e_element();
 			}
 		}
 
 		if (game_mode == GameMulti)
 		{
-			ui::push_style_1u(ui::FontSize, 60 * scale);
-			ui::next_element_pos = pos + Vec2f(150.f, 200.f) * scale;
-			p.c_ready = ui::e_text(L"Ready")->get_component(cText);
+			utils::push_style_1u(utils::FontSize, 60 * scale);
+			utils::next_element_pos = pos + Vec2f(150.f, 200.f) * scale;
+			p.c_ready = utils::e_text(L"Ready")->get_component(cText);
 			p.c_ready->entity->set_visibility(false);
-			ui::next_element_pos = pos + Vec2f(160.f, 150.f) * scale;
-			p.c_rank = ui::e_text(L"Ready")->get_component(cText);
+			utils::next_element_pos = pos + Vec2f(160.f, 150.f) * scale;
+			p.c_rank = utils::e_text(L"Ready")->get_component(cText);
 			p.c_rank->entity->set_visibility(false);
-			ui::pop_style(ui::FontSize);
+			utils::pop_style(utils::FontSize);
 		}
 	}
 
@@ -402,12 +401,12 @@ struct MyApp : App
 		looper().add_event([](void* c, bool*) {
 			auto index = *(int*)c;
 			auto& p = app.players[index];
-			ui::push_parent(app.root);
-				p.e = ui::e_element();
-				ui::push_parent(p.e);
+			utils::push_parent(app.root);
+				p.e = utils::e_element();
+				utils::push_parent(p.e);
 					app.create_player_controls(index);
-				ui::pop_parent();
-			ui::pop_parent();
+				utils::pop_parent();
+			utils::pop_parent();
 		}, new_mail(&index));
 	}
 
@@ -575,7 +574,7 @@ struct MyApp : App
 		},
 		[](void*) {
 			looper().add_event([](void*, bool*) {
-				ui::e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](void*) {
+				utils::e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](void*) {
 					looper().add_event([](void*, bool*) {
 						app.quit_game();
 					}, Mail<>());
@@ -592,7 +591,7 @@ struct MyApp : App
 			app.client->send(str.data(), str.size());
 		}
 		else
-			ui::e_message_dialog(L"Join Room Failed");
+			utils::e_message_dialog(L"Join Room Failed");
 	}
 
 	void people_dead(int index)
@@ -675,30 +674,30 @@ struct MyApp : App
 
 	void create_lan_scene()
 	{
-		ui::push_parent(root);
-		ui::next_element_size = Vec2f(500.f, 0.f);
-		ui::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->inner_padding_ = 8.f;
-		ui::c_aligner(SizeFixed, SizeFitParent)->x_align_ = AlignxMiddle;
-			ui::push_style_1u(ui::FontSize, 20);
-			ui::e_begin_layout(LayoutHorizontal, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_text(L"Your Name");
+		utils::push_parent(root);
+		utils::next_element_size = Vec2f(500.f, 0.f);
+		utils::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->inner_padding_ = 8.f;
+		utils::c_aligner(SizeFixed, SizeFitParent)->x_align_ = AlignxMiddle;
+			utils::push_style_1u(utils::FontSize, 20);
+			utils::e_begin_layout(LayoutHorizontal, 8.f);
+			utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_text(L"Your Name");
 				{
-					auto c_text = ui::e_edit(300.f, app.my_name.c_str())->get_component(cText);
+					auto c_text = utils::e_edit(300.f, app.my_name.c_str())->get_component(cText);
 					c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 						if (hash == FLAME_CHASH("text"))
 							app.my_name = (*(cText**)c)->text();
 						return true;
 					}, new_mail_p(c_text));
 				}
-			ui::e_end_layout();
-			ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
-				auto e_room_list = ui::e_begin_list(true);
-				ui::e_end_list();
-			ui::e_end_scroll_view1();
-			ui::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 4;
-			ui::c_aligner(SizeFitParent, SizeFixed);
-				ui::e_button(Icon_REFRESH, [](void* c) {
+			utils::e_end_layout();
+			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
+				auto e_room_list = utils::e_begin_list(true);
+				utils::e_end_list();
+			utils::e_end_scroll_view1();
+			utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 4;
+			utils::c_aligner(SizeFitParent, SizeFixed);
+				utils::e_button(Icon_REFRESH, [](void* c) {
 					auto e_room_list = *(Entity**)c;
 					looper().add_event([](void* c, bool*) {
 						auto e_room_list = *(Entity**)c;
@@ -712,33 +711,31 @@ struct MyApp : App
 							auto name = s2w(rep["name"].get<std::string>());
 							auto host = s2w(rep["host"].get<std::string>());
 
-							ui::push_parent(e_room_list);
-							ui::e_list_item((L"Name:" + name + L" Host:" + host).c_str());
-							auto dk = cDataKeeper::create();
-							dk->add_stringa_item(FLAME_CHASH("ip"), ip);
-							ui::current_entity()->add_component(dk);
-							ui::pop_parent();
+							utils::push_parent(e_room_list);
+							utils::e_list_item((L"Name:" + name + L" Host:" + host).c_str());
+							utils::c_data_keeper()->add_stringa_item(FLAME_CHASH("ip"), ip);
+							utils::pop_parent();
 						}, new_mail_p(e_room_list));
 					}, new_mail_p(e_room_list));
 				}, new_mail_p(e_room_list))->get_component(cEventReceiver)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
-				ui::e_button(L"Create Room", [](void*) {
+				utils::e_button(L"Create Room", [](void*) {
 					if (app.my_name.empty())
-						ui::e_message_dialog(L"Your Name Cannot Not Be Empty");
+						utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 					else
 					{
-						ui::e_begin_dialog();
-							ui::e_text(L"Room Name");
+						utils::e_begin_dialog();
+							utils::e_text(L"Room Name");
 							{
-								auto c_text = ui::e_edit(100.f)->get_component(cText);
+								auto c_text = utils::e_edit(100.f)->get_component(cText);
 								c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 									if (hash == FLAME_CHASH("text"))
 										app.room_name = (*(cText**)c)->text();
 									return true;
 								}, new_mail_p(c_text));
 							}
-							ui::e_text(L"Max People");
+							utils::e_text(L"Max People");
 							{
-								auto c_combobox = ui::e_begin_combobox(100.f)->get_component(cCombobox);
+								auto c_combobox = utils::e_begin_combobox(100.f)->get_component(cCombobox);
 								c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
 									if (hash == FLAME_CHASH("index"))
 									{
@@ -756,14 +753,14 @@ struct MyApp : App
 									return true;
 								}, new_mail_p(c_combobox));
 							}
-							ui::e_combobox_item(L"2");
-							ui::e_combobox_item(L"7");
-							ui::e_end_combobox(0);
+							utils::e_combobox_item(L"2");
+							utils::e_combobox_item(L"7");
+							utils::e_end_combobox(0);
 							app.room_max_people = 2;
-							ui::e_begin_layout(LayoutHorizontal, 4.f);
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-								ui::e_button(L"OK", [](void* c) {
-									ui::remove_top_layer(app.root);
+							utils::e_begin_layout(LayoutHorizontal, 4.f);
+							utils::c_aligner(AlignxMiddle, AlignyFree);
+								utils::e_button(L"OK", [](void* c) {
+									utils::remove_top_layer(app.root);
 
 									if (!app.room_name.empty())
 									{
@@ -945,106 +942,106 @@ struct MyApp : App
 										}, Mail<>());
 									}
 								}, Mail<>());
-								ui::e_button(L"Cancel", [](void* c) {
-									ui::remove_top_layer(app.root);
+								utils::e_button(L"Cancel", [](void* c) {
+									utils::remove_top_layer(app.root);
 								}, Mail<>());
-							ui::e_end_layout();
-						ui::e_end_dialog();
+							utils::e_end_layout();
+						utils::e_end_dialog();
 					}
 				}, Mail<>());
-				ui::e_button(L"Join Room", [](void* c) {
+				utils::e_button(L"Join Room", [](void* c) {
 					auto e_room_list = *(Entity**)c;
 					auto selected = e_room_list->get_component(cList)->selected;
 					if (selected)
 					{
 						if (app.my_name.empty())
-							ui::e_message_dialog(L"Your Name Cannot Not Be Empty");
+							utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 						else
 							app.join_room(selected->get_component(cDataKeeper)->get_stringa_item(FLAME_CHASH("ip")));
 					}
 					else
-						ui::e_message_dialog(L"You Need To Select A Room");
+						utils::e_message_dialog(L"You Need To Select A Room");
 				}, new_mail_p(e_room_list));
-				ui::e_button(L"Direct Connect", [](void* c) {
+				utils::e_button(L"Direct Connect", [](void* c) {
 					if (app.my_name.empty())
-						ui::e_message_dialog(L"Your Name Cannot Not Be Empty");
+						utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 					else
 					{
-						ui::e_input_dialog(L"IP", [](void*, bool ok, const wchar_t* text) {
+						utils::e_input_dialog(L"IP", [](void*, bool ok, const wchar_t* text) {
 							if (ok)
 								app.join_room(w2s(text).c_str());
 						}, Mail<>());
 					}
 				}, new_mail_p(e_room_list));
-				ui::e_button(L"Back", [](void*) {
+				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_home_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxRight, AlignyTop);
-			ui::e_end_layout();
-			ui::pop_style(ui::FontSize);
-		ui::e_end_layout();
-		ui::pop_parent();
+				utils::c_aligner(AlignxRight, AlignyTop);
+			utils::e_end_layout();
+			utils::pop_style(utils::FontSize);
+		utils::e_end_layout();
+		utils::pop_parent();
 	}
 
 	void create_config_scene()
 	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
-				ui::e_button(L"Key", [](void*) {
+		utils::push_parent(root);
+			utils::e_begin_layout(LayoutVertical, 8.f);
+			utils::c_aligner(AlignxMiddle, AlignyMiddle);
+				utils::push_style_1u(utils::FontSize, 20);
+				utils::e_button(L"Key", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_key_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Sound", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"Sound", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_sound_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Sensitiveness", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"Sensitiveness", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_sensitiveness_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::e_button(L"Back", [](void*) {
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_home_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::pop_style(utils::FontSize);
+			utils::e_end_layout();
+		utils::pop_parent();
 	}
 
 	void create_key_scene()
 	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
+		utils::push_parent(root);
+			utils::e_begin_layout(LayoutVertical, 8.f);
+			utils::c_aligner(AlignxMiddle, AlignyMiddle);
+				utils::push_style_1u(utils::FontSize, 20);
 				auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 				for (auto i = 0; i < KEY_COUNT; i++)
 				{
-					ui::e_begin_layout(LayoutHorizontal, 4.f);
-					ui::e_text(key_names[i]);
+					utils::e_begin_layout(LayoutHorizontal, 4.f);
+					utils::e_text(key_names[i]);
 					struct Capture
 					{
 						cText* t;
 						int i;
 					}capture;
-					auto e_edit = ui::e_edit(200.f, s2w(key_info->find_item(key_map[i])->name()).c_str());
+					auto e_edit = utils::e_edit(200.f, s2w(key_info->find_item(key_map[i])->name()).c_str());
 					capture.t = e_edit->get_component(cText);
 					capture.i = i;
 					e_edit->get_component(cEventReceiver)->key_listeners.add([](void* c, KeyStateFlags action, int value) {
@@ -1057,34 +1054,34 @@ struct MyApp : App
 						}
 						return false;
 					}, new_mail(&capture), 0);
-					ui::c_aligner(SizeGreedy, SizeFixed);
-					ui::e_end_layout();
+					utils::c_aligner(SizeGreedy, SizeFixed);
+					utils::e_end_layout();
 				}
-				ui::e_button(L"Back", [](void*) {
+				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::pop_style(utils::FontSize);
+			utils::e_end_layout();
+		utils::pop_parent();
 	}
 
 	void create_sound_scene()
 	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
+		utils::push_parent(root);
+			utils::e_begin_layout(LayoutVertical, 8.f);
+			utils::c_aligner(AlignxMiddle, AlignyMiddle);
+				utils::push_style_1u(utils::FontSize, 20);
 				struct Capture
 				{
 					cText* t;
 					int v;
 				}capture;
-				ui::e_begin_layout(LayoutHorizontal, 4.f);
-					capture.t = ui::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = utils::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
 					auto change_fx_volumn = [](void* c) {
 						auto& capture = *(Capture*)c;
 						auto v = fx_volumn + capture.v;
@@ -1102,36 +1099,36 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					ui::e_button(L"-", change_fx_volumn, new_mail(&capture));
+					utils::e_button(L"-", change_fx_volumn, new_mail(&capture));
 					capture.v = 1;
-					ui::e_button(L"+", change_fx_volumn, new_mail(&capture));
-				ui::e_end_layout();
-				ui::e_button(L"Back", [](void*) {
+					utils::e_button(L"+", change_fx_volumn, new_mail(&capture));
+				utils::e_end_layout();
+				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::pop_style(utils::FontSize);
+			utils::e_end_layout();
+		utils::pop_parent();
 	}
 
 	void create_sensitiveness_scene()
 	{
-		ui::push_parent(root);
-			ui::e_begin_layout(LayoutVertical, 8.f);
-			ui::c_aligner(AlignxMiddle, AlignyMiddle);
-				ui::push_style_1u(ui::FontSize, 20);
-				ui::e_text(L"Small Number Means More Sensitivity Or Faster");
+		utils::push_parent(root);
+			utils::e_begin_layout(LayoutVertical, 8.f);
+			utils::c_aligner(AlignxMiddle, AlignyMiddle);
+				utils::push_style_1u(utils::FontSize, 20);
+				utils::e_text(L"Small Number Means More Sensitivity Or Faster");
 				struct Capture
 				{
 					cText* t;
 					int v;
 				}capture;
-				ui::e_begin_layout(LayoutHorizontal, 4.f);
-					capture.t = ui::e_text(wfmt(L"Left Right Sensitiveness %d",
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = utils::e_text(wfmt(L"Left Right Sensitiveness %d",
 						left_right_sensitiveness).c_str())->get_component(cText);
 					auto change_lr_sens = [](void* c) {
 						auto& capture = *(Capture*)c;
@@ -1143,12 +1140,12 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					ui::e_button(L"-", change_lr_sens, new_mail(&capture));
+					utils::e_button(L"-", change_lr_sens, new_mail(&capture));
 					capture.v = 1;
-					ui::e_button(L"+", change_lr_sens, new_mail(&capture));
-				ui::e_end_layout();
-				ui::e_begin_layout(LayoutHorizontal, 4.f);
-					capture.t = ui::e_text(wfmt(L"Left Right Speed %d",
+					utils::e_button(L"+", change_lr_sens, new_mail(&capture));
+				utils::e_end_layout();
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = utils::e_text(wfmt(L"Left Right Speed %d",
 						left_right_speed).c_str())->get_component(cText);
 					auto change_lr_sp = [](void* c) {
 						auto& capture = *(Capture*)c;
@@ -1160,12 +1157,12 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					ui::e_button(L"-", change_lr_sp, new_mail(&capture));
+					utils::e_button(L"-", change_lr_sp, new_mail(&capture));
 					capture.v = 1;
-					ui::e_button(L"+", change_lr_sp, new_mail(&capture));
-				ui::e_end_layout();
-				ui::e_begin_layout(LayoutHorizontal, 4.f);
-					capture.t = ui::e_text(wfmt(L"Soft Drop Speed %d",
+					utils::e_button(L"+", change_lr_sp, new_mail(&capture));
+				utils::e_end_layout();
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					capture.t = utils::e_text(wfmt(L"Soft Drop Speed %d",
 						soft_drop_speed).c_str())->get_component(cText);
 					auto change_sd_sp = [](void* c) {
 						auto& capture = *(Capture*)c;
@@ -1177,20 +1174,20 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					ui::e_button(L"-", change_sd_sp, new_mail(&capture));
+					utils::e_button(L"-", change_sd_sp, new_mail(&capture));
 					capture.v = 1;
-					ui::e_button(L"+", change_sd_sp, new_mail(&capture));
-				ui::e_end_layout();
-				ui::e_button(L"Back", [](void*) {
+					utils::e_button(L"+", change_sd_sp, new_mail(&capture));
+				utils::e_end_layout();
+				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
 					}, Mail<>());
 				}, Mail<>());
-				ui::c_aligner(AlignxMiddle, AlignyFree);
-				ui::pop_style(ui::FontSize);
-			ui::e_end_layout();
-		ui::pop_parent();
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::pop_style(utils::FontSize);
+			utils::e_end_layout();
+		utils::pop_parent();
 	}
 
 	void set_board_tiles(cTileMap* m)
@@ -1204,11 +1201,11 @@ struct MyApp : App
 
 	void create_game_scene()
 	{
-		ui::push_parent(root);
-		ui::push_style_1u(ui::FontSize, 20);
+		utils::push_parent(root);
+		utils::push_style_1u(utils::FontSize, 20);
 
 			{
-				auto e = ui::e_empty();
+				auto e = utils::e_empty();
 				e->on_destroyed_listeners.add([](void* c) {
 					looper().remove_event(*(void**)c);
 					return true;
@@ -1219,52 +1216,52 @@ struct MyApp : App
 			}
 
 			if (game_mode == GameMulti)
-				ui::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
+				utils::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
 
 				create_player_controls(my_room_index);
 
 				if (game_mode != GameMulti)
 				{
-					ui::next_element_pos = Vec2f(535.f, 150.f);
-					ui::e_text(L"TIME")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::next_element_pos = Vec2f(535.f, 150.f);
+					utils::e_text(L"TIME")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::next_element_pos = Vec2f(535.f, 210.f);
-					ui::e_text(L"LEVEL")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::next_element_pos = Vec2f(535.f, 210.f);
+					utils::e_text(L"LEVEL")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::next_element_pos = Vec2f(535.f, 270.f);
-					ui::e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::next_element_pos = Vec2f(535.f, 270.f);
+					utils::e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::next_element_pos = Vec2f(535.f, 330.f);
-					ui::e_text(L"SCORE")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::next_element_pos = Vec2f(535.f, 330.f);
+					utils::e_text(L"SCORE")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					ui::push_style_1u(ui::FontSize, 40);
-					ui::next_element_pos = Vec2f(535.f, 170.f);
-					c_text_time = ui::e_text(L"")->get_component(cText);
-					ui::next_element_pos = Vec2f(535.f, 230.f);
-					c_text_level = ui::e_text(L"")->get_component(cText);
-					ui::next_element_pos = Vec2f(535.f, 290.f);
-					c_text_lines = ui::e_text(L"")->get_component(cText);
-					ui::next_element_pos = Vec2f(535.f, 350.f);
-					c_text_score = ui::e_text(L"")->get_component(cText);
-					ui::pop_style(ui::FontSize);
+					utils::push_style_1u(utils::FontSize, 40);
+					utils::next_element_pos = Vec2f(535.f, 170.f);
+					c_text_time = utils::e_text(L"")->get_component(cText);
+					utils::next_element_pos = Vec2f(535.f, 230.f);
+					c_text_level = utils::e_text(L"")->get_component(cText);
+					utils::next_element_pos = Vec2f(535.f, 290.f);
+					c_text_lines = utils::e_text(L"")->get_component(cText);
+					utils::next_element_pos = Vec2f(535.f, 350.f);
+					c_text_score = utils::e_text(L"")->get_component(cText);
+					utils::pop_style(utils::FontSize);
 				}
 
-				ui::push_style_1u(ui::FontSize, 28);
-				ui::next_element_pos = Vec2f(8.f, 230.f);
+				utils::push_style_1u(utils::FontSize, 28);
+				utils::next_element_pos = Vec2f(8.f, 230.f);
 				{
-					auto e = ui::e_text(L"");
+					auto e = utils::e_text(L"");
 					e->set_visibility(false);
 					c_text_special = e->get_component(cText);
 				}
 				c_text_special->color = Vec4c(200, 80, 40, 255);
-				ui::pop_style(ui::FontSize);
+				utils::pop_style(utils::FontSize);
 
 			if (game_mode == GameMulti)
 			{
-				ui::next_element_pos = Vec2f(4.f, 500.f);
+				utils::next_element_pos = Vec2f(4.f, 500.f);
 				if (my_room_index == 0)
 				{
-					e_start_or_ready = ui::e_button(L"Start", [](void*) {
+					e_start_or_ready = utils::e_button(L"Start", [](void*) {
 						if ([]() {
 							auto only_you = true;
 							for (auto i = 1; i < app.players.size(); i++)
@@ -1303,7 +1300,7 @@ struct MyApp : App
 				}
 				else
 				{
-					e_start_or_ready = ui::e_button(L"Ready", [](void*) {
+					e_start_or_ready = utils::e_button(L"Ready", [](void*) {
 						auto& me = app.players[app.my_room_index];
 						if (!app.room_gaming && !me.ready)
 						{
@@ -1319,8 +1316,8 @@ struct MyApp : App
 				}
 			}
 
-			ui::e_button(Icon_TIMES, [](void*) {
-				ui::e_confirm_dialog(L"Quit?", [](void*, bool yes) {
+			utils::e_button(Icon_TIMES, [](void*) {
+				utils::e_confirm_dialog(L"Quit?", [](void*, bool yes) {
 					if (yes)
 					{
 						looper().add_event([](void*, bool*) {
@@ -1329,10 +1326,10 @@ struct MyApp : App
 					}
 				}, Mail<>());
 			}, Mail<>());
-			ui::c_aligner(AlignxRight, AlignyTop);
+			utils::c_aligner(AlignxRight, AlignyTop);
 
-		ui::pop_style(ui::FontSize);
-		ui::pop_parent();
+		utils::pop_style(utils::FontSize);
+		utils::pop_parent();
 	}
 
 	void begin_count_down()
@@ -1562,35 +1559,35 @@ struct MyApp : App
 		{
 			if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
 			{
-				if (!ui::get_top_layer(app.root, true, "paused"))
+				if (!utils::get_top_layer(app.root, true, "paused"))
 				{
 					looper().clear_events(FLAME_CHASH("count_down"));
 					gaming = false;
 
-					ui::e_begin_dialog("paused");
-					ui::e_text(L"Paused");
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Resume", [](void*) {
-						ui::remove_top_layer(app.root);
+					utils::e_begin_dialog("paused");
+					utils::e_text(L"Paused");
+					utils::c_aligner(AlignxMiddle, AlignyFree);
+					utils::e_button(L"Resume", [](void*) {
+						utils::remove_top_layer(app.root);
 						app.begin_count_down();
 					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Restart", [](void*) {
-						ui::remove_top_layer(app.root);
+					utils::c_aligner(AlignxMiddle, AlignyFree);
+					utils::e_button(L"Restart", [](void*) {
+						utils::remove_top_layer(app.root);
 						app.play_time = 0.f;
 						app.start_game();
 					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_button(L"Quit", [](void*) {
-						ui::remove_top_layer(app.root);
+					utils::c_aligner(AlignxMiddle, AlignyFree);
+					utils::e_button(L"Quit", [](void*) {
+						utils::remove_top_layer(app.root);
 						app.quit_game();
 					}, Mail<>());
-					ui::c_aligner(AlignxMiddle, AlignyFree);
-					ui::e_end_dialog();
+					utils::c_aligner(AlignxMiddle, AlignyFree);
+					utils::e_end_dialog();
 				}
 				else
 				{
-					ui::remove_top_layer(app.root);
+					utils::remove_top_layer(app.root);
 					begin_count_down();
 				}
 			}
@@ -1720,24 +1717,24 @@ struct MyApp : App
 
 						if (game_mode != GameMulti)
 						{
-							ui::e_begin_dialog();
-							ui::e_text(L"Game Over");
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-							ui::e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
-							ui::e_text((L"Level: " + wfmt(L"%d", level)).c_str());
-							ui::e_text((L"Lines: " + wfmt(L"%d", lines)).c_str());
-							ui::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
-							ui::e_button(L"Quit", [](void*) {
-								ui::remove_top_layer(app.root);
+							utils::e_begin_dialog();
+							utils::e_text(L"Game Over");
+							utils::c_aligner(AlignxMiddle, AlignyFree);
+							utils::e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
+							utils::e_text((L"Level: " + wfmt(L"%d", level)).c_str());
+							utils::e_text((L"Lines: " + wfmt(L"%d", lines)).c_str());
+							utils::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
+							utils::e_button(L"Quit", [](void*) {
+								utils::remove_top_layer(app.root);
 								app.quit_game();
 							}, Mail<>());
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-							ui::e_button(L"Restart", [](void*) {
-								ui::remove_top_layer(app.root);
+							utils::c_aligner(AlignxMiddle, AlignyFree);
+							utils::e_button(L"Restart", [](void*) {
+								utils::remove_top_layer(app.root);
 								app.start_game();
 							}, Mail<>());
-							ui::c_aligner(AlignxMiddle, AlignyFree);
-							ui::e_end_dialog();
+							utils::c_aligner(AlignxMiddle, AlignyFree);
+							utils::e_end_dialog();
 						}
 					}
 				}
@@ -1883,13 +1880,13 @@ struct MyApp : App
 											auto board_element = c_main->element;
 											auto pos = board_element->global_pos + Vec2f(board_element->inner_padding_[0], board_element->inner_padding_[1]);
 											pos.y() += i * cell_size.y();
-											ui::push_parent(root);
-											ui::next_element_pos = pos;
-											ui::next_element_size = Vec2f(cell_size.x() * board_width, cell_size.y());
-											ui::e_empty();
-											auto element = ui::c_element();
+											utils::push_parent(root);
+											utils::next_element_pos = pos;
+											utils::next_element_size = Vec2f(cell_size.x() * board_width, cell_size.y());
+											utils::e_empty();
+											auto element = utils::c_element();
 											element->color_ = Vec4c(255);
-											ui::pop_parent();
+											utils::pop_parent();
 
 											struct Capture
 											{
@@ -2153,14 +2150,14 @@ struct MyApp : App
 				if (e_garbage->child_count() != garbages.size())
 				{
 					e_garbage->remove_children(0, -1);
-					ui::push_parent(e_garbage);
+					utils::push_parent(e_garbage);
 					for (auto i = 0; i < garbages.size(); i++)
 					{
-						ui::next_element_pos = Vec2f(0.f, -i * 24.f);
-						ui::next_element_size = Vec2f(24.f);
-						ui::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+						utils::next_element_pos = Vec2f(0.f, -i * 24.f);
+						utils::next_element_size = Vec2f(24.f);
+						utils::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
 					}
-					ui::pop_parent();
+					utils::pop_parent();
 				}
 				for (auto i = 0; i < garbages.size(); i++)
 				{
@@ -2225,15 +2222,15 @@ int main(int argc, char **args)
 		app.sound_hold_src->set_volume(sound_hold_volumn);
 	}
 
-	ui::set_current_entity(app.root);
-	ui::c_layout();
+	utils::set_current_entity(app.root);
+	utils::c_layout();
 
-	ui::push_font_atlas(app.font_atlas_pixel);
-	ui::set_current_root(app.root);
+	utils::push_font_atlas(app.font_atlas_pixel);
+	utils::set_current_root(app.root);
 
-	ui::push_parent(app.root);
+	utils::push_parent(app.root);
 	{
-		auto e = ui::e_text(L"");
+		auto e = utils::e_text(L"");
 		e->on_destroyed_listeners.add([](void* c) {
 			looper().remove_event(*(void**)c);
 			return true;
@@ -2241,8 +2238,8 @@ int main(int argc, char **args)
 			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
 		}, new_mail_p(e->get_component(cText)))));
 	}
-	ui::c_aligner(AlignxLeft, AlignyBottom);
-	ui::pop_parent();
+	utils::c_aligner(AlignxLeft, AlignyBottom);
+	utils::pop_parent();
 
 	app.create_home_scene();
 

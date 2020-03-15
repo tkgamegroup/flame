@@ -20,30 +20,22 @@
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/window.h>
 #include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/utils.h>
-#include <flame/universe/ui/layer.h>
-#include <flame/universe/ui/style_stack.h>
-
-#include "menu_utils.h"
-#include "splitter_utils.h"
-#include "window_utils.h"
+#include <flame/universe/utils/entity.h>
+#include <flame/universe/utils/event.h>
+#include <flame/universe/utils/layer.h>
+#include <flame/universe/utils/style.h>
+#include <flame/universe/utils/menu.h>
+#include <flame/universe/utils/splitter.h>
+#include <flame/universe/utils/window.h>
 
 namespace flame
 {
-	namespace ui
+	namespace utils
 	{
 		FLAME_UNIVERSE_EXPORTS graphics::FontAtlas* current_font_atlas();
 		FLAME_UNIVERSE_EXPORTS void push_font_atlas(graphics::FontAtlas* font_atlas);
 		FLAME_UNIVERSE_EXPORTS void pop_font_atlas();
-		FLAME_UNIVERSE_EXPORTS Entity* current_root();
-		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
-		FLAME_UNIVERSE_EXPORTS Entity* current_entity();
-		FLAME_UNIVERSE_EXPORTS void set_current_entity(Entity* e);
-		FLAME_UNIVERSE_EXPORTS Entity* current_parent();
-		FLAME_UNIVERSE_EXPORTS void push_parent(Entity* parent);
-		FLAME_UNIVERSE_EXPORTS void pop_parent();
 
-		FLAME_UNIVERSE_EXPORTS extern Entity* next_entity;
 		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_pos;
 		FLAME_UNIVERSE_EXPORTS extern Vec2f next_element_size;
 

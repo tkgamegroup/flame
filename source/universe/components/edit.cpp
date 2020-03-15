@@ -5,8 +5,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
-#include <flame/universe/utils.h>
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/style.h>
 
 #include "../renderpath/canvas/canvas.h"
 

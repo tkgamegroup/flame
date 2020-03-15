@@ -1,7 +1,7 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/ui/utils.h>
+#include <flame/universe/utils/ui.h>
 
 #include "app.h"
 
@@ -14,21 +14,21 @@ void MyApp::create()
 	TypeinfoDatabase::load(L"scene_editor.exe", true, true);
 
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	ui::style_set_to_light();
+	utils::style_set_to_light();
 
-	ui::set_current_entity(root);
-	ui::c_layout();
+	utils::set_current_entity(root);
+	utils::c_layout();
 
-	ui::push_font_atlas(app.font_atlas_pixel);
-	ui::set_current_root(root);
-	ui::push_parent(root);
+	utils::push_font_atlas(app.font_atlas_pixel);
+	utils::set_current_root(root);
+	utils::push_parent(root);
 
-	ui::e_begin_layout(LayoutVertical, 0.f, false, false);
-	ui::c_aligner(SizeFitParent, SizeFitParent);
+	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
+	utils::c_aligner(SizeFitParent, SizeFitParent);
 
-	ui::e_begin_menu_bar();
-		ui::e_begin_menubar_menu(L"Scene");
-			ui::e_menu_item(L"New Entity", [](void* c) {
+	utils::e_begin_menu_bar();
+		utils::e_begin_menubar_menu(L"Scene");
+			utils::e_menu_item(L"New Entity", [](void* c) {
 				looper().add_event([](void* c, bool*) {
 					auto e = Entity::create();
 					e->set_name("unnamed");
@@ -40,12 +40,12 @@ void MyApp::create()
 						app.hierarchy->refresh();
 				}, Mail<>());
 			}, Mail<>());
-			ui::e_menu_item(L"Save", [](void* c) {
+			utils::e_menu_item(L"Save", [](void* c) {
 
 			}, Mail<>());
-			ui::e_end_menubar_menu();
-			ui::e_begin_menubar_menu(L"Edit");
-			ui::e_menu_item(L"Delete", [](void* c) {
+			utils::e_end_menubar_menu();
+			utils::e_begin_menubar_menu(L"Edit");
+			utils::e_menu_item(L"Delete", [](void* c) {
 				looper().add_event([](void* c, bool*) {
 					if (app.selected)
 					{
@@ -58,41 +58,41 @@ void MyApp::create()
 					}
 				}, Mail<>());
 			}, Mail<>());
-			ui::e_menu_item(L"Duplicate", [](void* c) {
+			utils::e_menu_item(L"Duplicate", [](void* c) {
 
 			}, Mail<>());
-		ui::e_end_menubar_menu();
-		ui::e_begin_menubar_menu(L"Window");
-		ui::e_menu_item(L"Resource Explorer", [](void* c) {
+		utils::e_end_menubar_menu();
+		utils::e_begin_menubar_menu(L"Window");
+		utils::e_menu_item(L"Resource Explorer", [](void* c) {
 			if (!app.resource_explorer)
 				app.resource_explorer = new cResourceExplorer;
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Scene Editor", [](void* c) {
+		utils::e_menu_item(L"Scene Editor", [](void* c) {
 			if (!app.editor)
 				app.editor = new cEditor;
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Hierarchy", [](void* c) {
+		utils::e_menu_item(L"Hierarchy", [](void* c) {
 			if (!app.hierarchy)
 				app.hierarchy = new cHierarchy;
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Inspector", [](void* c) {
+		utils::e_menu_item(L"Inspector", [](void* c) {
 			if (!app.inspector)
 				app.inspector = new cInspector;
 		}, new_mail_p(this));
-		ui::e_end_menubar_menu();
-	ui::e_end_menu_bar();
+		utils::e_end_menubar_menu();
+	utils::e_end_menu_bar();
 
-	ui::e_begin_docker_static_container();
-	ui::e_end_docker_static_container();
+	utils::e_begin_docker_static_container();
+	utils::e_end_docker_static_container();
 
-	ui::e_text(L"");
+	utils::e_text(L"");
 	add_fps_listener([](void* c, uint fps) {
 		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, new_mail_p(ui::current_entity()->get_component(cText)));
+	}, new_mail_p(utils::current_entity()->get_component(cText)));
 
-	ui::e_end_layout();
+	utils::e_end_layout();
 
-	ui::pop_parent();
+	utils::pop_parent();
 }
 
 void MyApp::load(const std::filesystem::path& _filepath)

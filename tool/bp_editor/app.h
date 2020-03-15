@@ -1,7 +1,7 @@
 #pragma once
 
 #include <flame/serialize.h>
-#include <flame/universe/ui/utils.h>
+#include <flame/universe/utils/ui.h>
 #include <flame/utils/app.h>
 
 using namespace flame;
@@ -24,9 +24,7 @@ struct cEditor : Component
 	void set_add_pos_center();
 	void on_changed();
 	void on_load();
-	void on_add_library(BP::Library* l);
 	void on_add_node(BP::Node* n);
-	void on_remove_library(BP::Library* l);
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
 };
@@ -43,7 +41,6 @@ struct cConsole : Component
 enum SelType
 {
 	SelAir,
-	SelLibrary,
 	SelNode,
 	SelSlot,
 	SelLink
@@ -63,7 +60,6 @@ struct MyApp : App
 	union
 	{
 		void* plain;
-		BP::Library* library;
 		BP::Node* node;
 		BP::Slot* slot;
 		BP::Slot* link;
@@ -72,7 +68,7 @@ struct MyApp : App
 	cEditor* editor;
 	cConsole* console;
 
-	Entity* e_add_node_menu;
+	Entity* e_node_menu_items;
 	cEdit* add_node_menu_filter;
 
 	MyApp()

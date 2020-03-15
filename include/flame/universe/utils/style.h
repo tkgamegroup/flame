@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	namespace ui
+	namespace utils
 	{
 		enum Style
 		{

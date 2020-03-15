@@ -1,7 +1,5 @@
-#include <flame/universe/ui/typeinfo_utils.h>
+#include <flame/universe/utils/typeinfo.h>
 #include "app.h"
-
-#include <functional>
 
 #include <flame/reflect_macros.h>
 
@@ -177,40 +175,6 @@ struct cScene : Component
 	{
 	}
 
-	void for_each_link(const std::function<bool(const Vec2f& p1, const Vec2f& p2, BP::Slot* input)>& callback)
-	{
-		const auto process = [&](BP::Slot* output, BP::Slot* input) {
-			if (!output->user_data && !input->user_data)
-				return true;
-
-			auto get_pos = [&](BP::Slot* s) {
-				if (s->user_data)
-				{
-					auto e = ((cSlot*)s->user_data)->element;
-					return e->global_pos + e->global_size * 0.5f;
-				}
-			};
-
-			if (!callback(get_pos(output), get_pos(input), input))
-				return false;
-			return true;
-		};
-
-		for (auto i = 0; i < app.bp->node_count(); i++)
-		{
-			auto n = app.bp->node(i);
-			for (auto j = 0; j < n->output_count(); j++)
-			{
-				auto output = n->output(j);
-				for (auto k = 0; k < output->link_count(); k++)
-				{
-					if (!process(output, output->link(k)))
-						return;
-				}
-			}
-		}
-	}
-
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
@@ -250,14 +214,26 @@ struct cScene : Component
 							app.deselect();
 
 							auto line_width = 3.f * thiz->base_element->global_scale;
-							thiz->for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
-								if (segment_distance(p1, p2, Vec2f(pos)) < line_width)
+							for (auto i = 0; i < app.bp->node_count(); i++)
+							{
+								auto n = app.bp->node(i);
+								for (auto j = 0; j < n->output_count(); j++)
 								{
-									app.select(SelLink, l);
-									return false;
+									auto output = n->output(j);
+									for (auto k = 0; k < output->link_count(); k++)
+									{
+										auto input = output->link(k);
+										auto p1 = ((cSlot*)output->user_data)->element->center();
+										auto p4 = ((cSlot*)input->user_data)->element->center();
+										if (segment_distance(p1, p4, Vec2f(pos)) < line_width)
+										{
+											app.select(SelLink, input);
+											return false;
+										}
+									}
 								}
-								return true;
-							});
+							}
+							return true;
 						}
 					}
 				}
@@ -274,23 +250,31 @@ struct cScene : Component
 		if (element->cliped)
 			return;
 
-		for_each_link([&](const Vec2f& p1, const Vec2f& p2, BP::Slot* l) {
-			if (rect_overlapping(rect(element->pos_, element->size_), Vec4f(min(p1, p2), max(p1, p2))))
+		for (auto i = 0; i < app.bp->node_count(); i++)
+		{
+			auto n = app.bp->node(i);
+			for (auto j = 0; j < n->output_count(); j++)
 			{
-				std::vector<Vec2f> points;
-				points.push_back(p1);
-				points.push_back(p2);
-				canvas->stroke(points.size(), points.data(), app.selected.link == l ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
+				auto output = n->output(j);
+				for (auto k = 0; k < output->link_count(); k++)
+				{
+					auto input = output->link(k);
+					auto p1 = ((cSlot*)output->user_data)->element->center();
+					auto p4 = ((cSlot*)input->user_data)->element->center();
+					std::vector<Vec2f> points;
+					points.push_back(p1);
+					points.push_back(p4);
+					canvas->stroke(points.size(), points.data(), app.selected.link == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
+				}
 			}
-			return true;
-		});
+		}
 		if (app.editor->dragging_slot)
 		{
-			auto e = ((cSlot*)app.editor->dragging_slot->user_data)->element;
-
 			std::vector<Vec2f> points;
-			points.push_back(e->global_pos + e->global_size * 0.5f);
-			points.push_back(Vec2f(event_receiver->dispatcher->mouse_pos));
+			auto p1 = ((cSlot*)app.editor->dragging_slot->user_data)->element->center();
+			auto p4 = Vec2f(event_receiver->dispatcher->mouse_pos);
+			points.push_back(p1);
+			points.push_back(p4);
 			canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 50, 255), line_width);
 		}
 	}
@@ -321,15 +305,8 @@ struct cSceneObject : Component
 				{
 					auto thiz = *(cSceneObject**)c;
 					auto pos = thiz->element->pos_;
-					switch (thiz->t)
-					{
-					case SelLibrary:
-						((BP::Library*)thiz->p)->pos = pos;
-						break;
-					case SelNode:
+					if (thiz->t == SelNode)
 						((BP::Node*)thiz->p)->pos = pos;
-						break;
-					}
 					thiz->moved = true;
 				}
 				return true;
@@ -367,9 +344,9 @@ struct cSceneObject : Component
 cEditor::cEditor() :
 	Component("cEditor")
 {
-	auto tnp = ui::e_begin_docker_page(app.filepath.c_str());
+	auto tnp = utils::e_begin_docker_page(app.filepath.c_str());
 	{
-		auto c_layout = ui::c_layout(LayoutVertical);
+		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
@@ -377,38 +354,38 @@ cEditor::cEditor() :
 	tnp.second->add_component(this);
 	tab_text = tnp.first->get_component(cText);
 
-		ui::e_begin_layout()->get_component(cElement)->clip_children = true;
-		ui::c_aligner(SizeFitParent, SizeFitParent);
+		utils::e_begin_layout()->get_component(cElement)->clip_children = true;
+		utils::c_aligner(SizeFitParent, SizeFitParent);
 
-			ui::e_begin_layout();
-			ui::c_event_receiver();
-			ui::c_aligner(SizeFitParent, SizeFitParent);
+			utils::e_begin_layout();
+			utils::c_event_receiver();
+			utils::c_aligner(SizeFitParent, SizeFitParent);
 			auto c_bp_scene = new_u_object<cScene>();
-			ui::current_entity()->add_component(c_bp_scene);
+			utils::current_entity()->add_component(c_bp_scene);
 
-				e_base = ui::e_empty();
-				c_bp_scene->base_element = ui::c_element();
+				e_base = utils::e_empty();
+				c_bp_scene->base_element = utils::c_element();
 
 				on_load();
 
-			ui::e_end_layout();
+			utils::e_end_layout();
 
-			ui::next_entity = Entity::create();
-			ui::e_button(L"Run", [](void* c) {
+			utils::next_entity = Entity::create();
+			utils::e_button(L"Run", [](void* c) {
 				app.running = !app.running;
 				(*(Entity**)c)->get_component(cText)->set_text(app.running ? L"Pause" : L"Run");
 
 				if (app.running)
 					app.bp->time = 0.f;
-			}, new_mail_p(ui::next_entity));
+			}, new_mail_p(utils::next_entity));
 
-			ui::e_text(L"100%");
-			ui::c_aligner(AlignxLeft, AlignyBottom);
-			c_bp_scene->scale_text = ui::current_entity()->get_component(cText);
+			utils::e_text(L"100%");
+			utils::c_aligner(AlignxLeft, AlignyBottom);
+			c_bp_scene->scale_text = utils::current_entity()->get_component(cText);
 
-		ui::e_end_layout();
+		utils::e_end_layout();
 
-	ui::e_end_docker_page();
+	utils::e_end_docker_page();
 }
 
 cEditor::~cEditor()
@@ -418,13 +395,8 @@ cEditor::~cEditor()
 
 static Entity* selected_entity()
 {
-	switch (app.sel_type)
-	{
-	case SelLibrary:
-		return (Entity*)app.selected.library->user_data;
-	case SelNode:
+	if (app.sel_type == SelNode)
 		return (Entity*)app.selected.node->user_data;
-	}
 	return nullptr;
 }
 
@@ -462,8 +434,6 @@ void cEditor::on_load()
 {
 	e_base->remove_child(0, -1);
 
-	for (auto i = 0; i < app.bp->library_count(); i++)
-		on_add_library(app.bp->library(i));
 	for (auto i = 0; i < app.bp->node_count(); i++)
 		on_add_node(app.bp->node(i));
 
@@ -472,55 +442,13 @@ void cEditor::on_load()
 	on_changed();
 }
 
-void cEditor::on_add_library(BP::Library* l)
-{
-	l->pos = add_pos;
-
-	ui::push_parent(e_base);
-
-		auto e_library = ui::e_empty();
-		l->user_data = e_library;
-		{
-			auto c_element = ui::c_element();
-			c_element->pos_ = l->pos;
-			c_element->roundness_ = 8.f;
-			c_element->roundness_lod = 2;
-			c_element->frame_thickness_ = 4.f;
-			c_element->color_ = Vec4c(255, 200, 190, 200);
-			c_element->frame_color_ = unselected_col;
-			ui::c_event_receiver();
-			ui::c_layout(LayoutVertical)->fence = 1;
-			ui::c_moveable();
-			auto c_library = new_u_object<cSceneObject>();
-			c_library->t = SelLibrary;
-			c_library->p = l;
-			e_library->add_component(c_library);
-		}
-		ui::push_parent(e_library);
-			ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-				ui::e_text(l->filename())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-				ui::e_text(L"library")->get_component(cText)->color = Vec4c(50, 50, 50, 255);
-			ui::e_end_layout();
-			ui::e_empty();
-			ui::c_element();
-			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
-				*pass = true;
-				return true;
-			}, Mail<>());
-			ui::c_aligner(SizeFitParent, SizeFitParent);
-			ui::c_bring_to_front();
-		ui::pop_parent();
-
-	ui::pop_parent();
-}
-
 template <class T>
 void create_edit(cEditor* editor, BP::Slot* input)
 {
 	auto& data = *(T*)input->data();
 
-	ui::push_style_1u(ui::FontSize, 12);
-	auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
+	utils::push_style_1u(utils::FontSize, 12);
+	auto e_edit = utils::e_drag_edit(std::is_floating_point<T>::value);
 	struct Capture
 	{
 		BP::Slot* input;
@@ -542,11 +470,11 @@ void create_edit(cEditor* editor, BP::Slot* input)
 		}
 		return true;
 	}, new_mail(&capture));
-	ui::pop_style(ui::FontSize);
+	utils::pop_style(utils::FontSize);
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
 	c_tracker->data = &data;
-	ui::current_parent()->add_component(c_tracker);
+	utils::current_parent()->add_component(c_tracker);
 }
 
 template <uint N, class T>
@@ -562,11 +490,11 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 		cText* drag_text;
 	}capture;
 	capture.input = input;
-	ui::push_style_1u(ui::FontSize, 12);
+	utils::push_style_1u(utils::FontSize, 12);
 	for (auto i = 0; i < N; i++)
 	{
-		ui::e_begin_layout(LayoutHorizontal, 4.f);
-		auto e_edit = ui::e_drag_edit(std::is_floating_point<T>::value);
+		utils::e_begin_layout(LayoutHorizontal, 4.f);
+		auto e_edit = utils::e_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.edit_text = e_edit->child(0)->get_component(cText);
 		capture.drag_text = e_edit->child(1)->get_component(cText);
@@ -583,43 +511,43 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 			}
 			return true;
 		}, new_mail(&capture));
-		ui::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
-		ui::e_end_layout();
+		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
+		utils::e_end_layout();
 	}
-	ui::pop_style(ui::FontSize);
+	utils::pop_style(utils::FontSize);
 
 	auto c_tracker = new_u_object<cDigitalVecDataTracker<N, T>>();
 	c_tracker->data = &data;
-	ui::current_parent()->add_component(c_tracker);
+	utils::current_parent()->add_component(c_tracker);
 }
 
 void cEditor::on_add_node(BP::Node* n)
 {
-	ui::push_parent(e_base);
-		auto e_node = ui::e_empty();
+	utils::push_parent(e_base);
+		auto e_node = utils::e_empty();
 		n->user_data = e_node;
 		{
-			auto c_element = ui::c_element();
+			auto c_element = utils::c_element();
 			c_element->pos_ = n->pos;
 			c_element->roundness_ = 8.f;
 			c_element->roundness_lod = 2;
 			c_element->frame_thickness_ = 4.f;
 			c_element->color_ = Vec4c(255, 255, 255, 200);
 			c_element->frame_color_ = unselected_col;
-			ui::c_event_receiver();
-			ui::c_layout(LayoutVertical)->fence = 1;
-			ui::c_moveable();
+			utils::c_event_receiver();
+			utils::c_layout(LayoutVertical)->fence = 1;
+			utils::c_moveable();
 			auto c_node = new_u_object<cSceneObject>();
 			c_node->t = SelNode;
 			c_node->p = n;
 			e_node->add_component(c_node);
 		}
-		ui::push_parent(e_node);
-			ui::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-				ui::push_style_1u(ui::FontSize, 21);
-				ui::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-				ui::c_event_receiver();
-				ui::c_edit();
+		utils::push_parent(e_node);
+			utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+				utils::push_style_1u(utils::FontSize, 21);
+				utils::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+				utils::c_event_receiver();
+				utils::c_edit();
 				{
 					struct Capture
 					{
@@ -627,7 +555,7 @@ void cEditor::on_add_node(BP::Node* n)
 						cText* t;
 					}capture;
 					capture.n = n;
-					capture.t = ui::current_entity()->get_component(cText);
+					capture.t = utils::current_entity()->get_component(cText);
 					capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 						if (hash == FLAME_CHASH("text"))
 						{
@@ -637,19 +565,19 @@ void cEditor::on_add_node(BP::Node* n)
 						return true;
 					}, new_mail(&capture));
 				}
-				ui::pop_style(ui::FontSize);
+				utils::pop_style(utils::FontSize);
 
 				auto udt = n->udt();
 				if (udt)
 				{
 					auto module_name = std::filesystem::path(udt->db()->module_name());
 					module_name = module_name.lexically_relative(std::filesystem::canonical(app.fileppath));
-					ui::e_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
+					utils::e_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
 				}
 				std::string udt_name = n->type_name();
 				if (n->id() == "test_dst")
 				{
-					ui::e_button(L"Show", [](void* c) {
+					utils::e_button(L"Show", [](void* c) {
 						//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
 					}, new_mail_p(n));
 				}
@@ -782,57 +710,57 @@ void cEditor::on_add_node(BP::Node* n)
 				//		}
 				//	}, new_mail(&capture));
 				//}
-				ui::e_begin_layout(LayoutHorizontal, 16.f);
-				ui::c_aligner(SizeGreedy, SizeFixed);
+				utils::e_begin_layout(LayoutHorizontal, 16.f);
+				utils::c_aligner(SizeGreedy, SizeFixed);
 
-					ui::e_begin_layout(LayoutVertical);
-					ui::c_aligner(SizeGreedy, SizeFixed);
+					utils::e_begin_layout(LayoutVertical);
+					utils::c_aligner(SizeGreedy, SizeFixed);
 						for (auto i = 0; i < n->input_count(); i++)
 						{
 							auto input = n->input(i);
 
-							ui::e_begin_layout(LayoutVertical, 2.f);
+							utils::e_begin_layout(LayoutVertical, 2.f);
 
-							ui::e_begin_layout(LayoutHorizontal);
-							ui::e_empty();
+							utils::e_begin_layout(LayoutHorizontal);
+							utils::e_empty();
 							{
-								auto c_element = ui::c_element();
-								auto r = ui::style_1u(ui::FontSize);
+								auto c_element = utils::c_element();
+								auto r = utils::style_1u(utils::FontSize);
 								c_element->size_ = r;
 								c_element->roundness_ = r * 0.5f;
 								c_element->roundness_lod = 2;
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 							}
-							ui::c_event_receiver();
-							ui::push_style_1u(ui::FontSize, 9);
-							auto c_text = ui::c_text();
+							utils::c_event_receiver();
+							utils::push_style_1u(utils::FontSize, 9);
+							auto c_text = utils::c_text();
 							c_text->auto_width_ = false;
 							c_text->auto_height_ = false;
-							ui::pop_style(ui::FontSize);
+							utils::pop_style(utils::FontSize);
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = input;
 							c_slot->text = c_text;
-							ui::current_entity()->add_component(c_slot);
+							utils::current_entity()->add_component(c_slot);
 							input->user_data = c_slot;
-							ui::e_begin_popup_menu(false);
-							ui::e_end_popup_menu();
+							utils::e_begin_popup_menu(false);
+							utils::e_end_popup_menu();
 
-							ui::e_text(s2w(input->name()).c_str());
-							ui::e_end_layout();
+							utils::e_text(s2w(input->name()).c_str());
+							utils::e_end_layout();
 
-							auto e_data = ui::e_begin_layout(LayoutVertical, 2.f);
-							e_data->get_component(cElement)->inner_padding_ = Vec4f(ui::style_1u(ui::FontSize), 0.f, 0.f, 0.f);
+							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
+							e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
 							extra_global_db_count = app.bp->db_count();
 							extra_global_dbs = app.bp->dbs();
 							auto type = input->type();
 							auto base_hash = type->base_hash();
-							ui::push_style_1u(ui::FontSize, 12);
+							utils::push_style_1u(utils::FontSize, 12);
 							switch (type->tag())
 							{
 							case TypeEnumSingle:
 							{
 								auto info = find_enum(base_hash);
-								ui::create_enum_combobox(info, 120.f);
+								utils::create_enum_combobox(info, 120.f);
 
 								struct Capture
 								{
@@ -865,7 +793,7 @@ void cEditor::on_add_node(BP::Node* n)
 								auto v = *(int*)input->data();
 
 								auto info = find_enum(base_hash);
-								ui::create_enum_checkboxs(info);
+								utils::create_enum_checkboxs(info);
 								for (auto k = 0; k < info->item_count(); k++)
 								{
 									auto item = info->item(k);
@@ -906,7 +834,7 @@ void cEditor::on_add_node(BP::Node* n)
 								{
 								case FLAME_CHASH("bool"):
 								{
-									auto e_checkbox = ui::e_checkbox(L"");
+									auto e_checkbox = utils::e_checkbox(L"");
 
 									struct Capture
 									{
@@ -987,7 +915,7 @@ void cEditor::on_add_node(BP::Node* n)
 										cText* t;
 									}capture;
 									capture.i = input;
-									capture.t = ui::e_edit(50.f)->get_component(cText);
+									capture.t = utils::e_edit(50.f)->get_component(cText);
 									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 										if (hash == FLAME_CHASH("text"))
 										{
@@ -1011,7 +939,7 @@ void cEditor::on_add_node(BP::Node* n)
 										cText* t;
 									}capture;
 									capture.i = input;
-									capture.t = ui::e_edit(50.f)->get_component(cText);
+									capture.t = utils::e_edit(50.f)->get_component(cText);
 									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 										if (hash == FLAME_CHASH("text"))
 										{
@@ -1032,79 +960,62 @@ void cEditor::on_add_node(BP::Node* n)
 							}
 							extra_global_db_count = 0;
 							extra_global_dbs = nullptr;
-							ui::pop_style(ui::FontSize);
-							ui::e_end_layout();
+							utils::pop_style(utils::FontSize);
+							utils::e_end_layout();
 
-							ui::e_end_layout();
+							utils::e_end_layout();
 
 							c_slot->tracker = e_data->get_component(cDataTracker);
 						}
-					ui::e_end_layout();
+					utils::e_end_layout();
 
-					ui::e_begin_layout(LayoutVertical);
-					ui::c_aligner(SizeGreedy, SizeFixed);
+					utils::e_begin_layout(LayoutVertical);
+					utils::c_aligner(SizeGreedy, SizeFixed);
 						for (auto i = 0; i < n->output_count(); i++)
 						{
 							auto output = n->output(i);
 
-							ui::e_begin_layout(LayoutHorizontal);
-							ui::c_aligner(AlignxRight, AlignyFree);
-							ui::e_text(s2w(output->name()).c_str());
+							utils::e_begin_layout(LayoutHorizontal);
+							utils::c_aligner(AlignxRight, AlignyFree);
+							utils::e_text(s2w(output->name()).c_str());
 
-							ui::e_empty();
+							utils::e_empty();
 							{
-								auto c_element = ui::c_element();
-								auto r = ui::style_1u(ui::FontSize);
+								auto c_element = utils::c_element();
+								auto r = utils::style_1u(utils::FontSize);
 								c_element->size_ = r;
 								c_element->roundness_ = r * 0.5f;
 								c_element->roundness_lod = 2;
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 							}
-							ui::c_event_receiver();
-							ui::push_style_1u(ui::FontSize, 9);
-							auto c_text = ui::c_text();
+							utils::c_event_receiver();
+							utils::push_style_1u(utils::FontSize, 9);
+							auto c_text = utils::c_text();
 							c_text->auto_width_ = false;
 							c_text->auto_height_ = false;
-							ui::pop_style(ui::FontSize);
+							utils::pop_style(utils::FontSize);
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = output;
 							c_slot->text = c_text;
-							ui::current_entity()->add_component(c_slot);
+							utils::current_entity()->add_component(c_slot);
 							output->user_data = c_slot;
-							ui::e_begin_popup_menu(false);
-							ui::e_end_popup_menu();
-							ui::e_end_layout();
+							utils::e_begin_popup_menu(false);
+							utils::e_end_popup_menu();
+							utils::e_end_layout();
 						}
-					ui::e_end_layout();
-				ui::e_end_layout();
-			ui::e_end_layout();
-			ui::e_empty();
-			ui::c_element();
-			ui::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+					utils::e_end_layout();
+				utils::e_end_layout();
+			utils::e_end_layout();
+			utils::e_empty();
+			utils::c_element();
+			utils::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
 				*pass = true;
 				return true;
 			}, Mail<>());
-			ui::c_aligner(SizeFitParent, SizeFitParent);
-			ui::c_bring_to_front();
-		ui::pop_parent();
-	ui::pop_parent();
-}
-
-void cEditor::on_remove_library(BP::Library* l)
-{
-	auto m_db = l->db();
-	for (auto i = 0; i < app.bp->node_count(); i++)
-	{
-		auto n = app.bp->node(i);
-		auto udt = n->udt();
-		if (udt && udt->db() == m_db)
-		{
-			auto e = (Entity*)n->user_data;
-			e->parent()->remove_child(e);
-		}
-	}
-	auto e = (Entity*)l->user_data;
-	e->parent()->remove_child(e);
+			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_bring_to_front();
+		utils::pop_parent();
+	utils::pop_parent();
 }
 
 void cEditor::on_remove_node(BP::Node* n)

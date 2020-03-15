@@ -9,10 +9,10 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/utils.h>
-#include <flame/universe/ui/layer.h>
-#include <flame/universe/ui/style_stack.h>
-#include <flame/universe/ui/window_utils.h>
+#include <flame/universe/utils/event.h>
+#include <flame/universe/utils/layer.h>
+#include <flame/universe/utils/style.h>
+#include <flame/universe/utils/window.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -88,7 +88,7 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						auto thiz = *(cBringToFrontPrivate**)c;
-						if (!ui::get_top_layer(thiz->entity->parent()->parent(), true))
+						if (!utils::get_top_layer(thiz->entity->parent()->parent(), true))
 						{
 							looper().add_event([](void* c, bool*) {
 								auto p = (*(Entity**)c)->parent();
@@ -338,11 +338,11 @@ namespace flame
 								auto page_aligner = e_page->get_component(cAligner);
 
 								auto e_container = Entity::create();
-								ui::make_docker_floating_container(e_container, thiz->drop_pos, page_element->size_);
+								utils::make_docker_floating_container(e_container, thiz->drop_pos, page_element->size_);
 								thiz->root->add_child(e_container);
 
 								auto e_docker = Entity::create();
-								ui::make_docker(e_docker);
+								utils::make_docker(e_docker);
 								e_container->add_child(e_docker, 0);
 
 								auto e_tabbar = e_docker->child(0);
@@ -683,7 +683,7 @@ namespace flame
 								auto p = docker->parent();
 								auto docker_idx = docker->index_;
 								auto layout = Entity::create();
-								ui::make_docker_layout(layout, LayoutFree);
+								utils::make_docker_layout(layout, LayoutFree);
 
 								if (is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
 								{
@@ -716,7 +716,7 @@ namespace flame
 								p->add_child(layout, docker_idx);
 
 								auto new_docker = Entity::create();
-								ui::make_docker(new_docker);
+								utils::make_docker(new_docker);
 								auto new_docker_element = new_docker->get_component(cElement);
 								auto new_docker_aligner = new_docker->get_component(cAligner);
 								{
@@ -884,7 +884,7 @@ namespace flame
 								auto page_aligner = e_page->get_component(cAligner);
 
 								auto new_docker = Entity::create();
-								ui::make_docker(new_docker);
+								utils::make_docker(new_docker);
 								{
 									auto ca = new_docker->get_component(cAligner);
 									ca->x_align_ = AlignxFree;

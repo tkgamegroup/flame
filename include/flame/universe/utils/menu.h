@@ -1,8 +1,10 @@
 #pragma once
 
+#include <flame/universe/components/menu.h>
+
 namespace flame
 {
-	namespace ui
+	namespace utils
 	{
 		inline bool is_menu_can_open(cMenu* menu, KeyStateFlags action, MouseKey key)
 		{

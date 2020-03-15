@@ -1,8 +1,8 @@
-#include <flame/universe/ui/style_stack.h>
+#include <flame/universe/utils/style.h>
 
 namespace flame
 {
-	namespace ui
+	namespace utils
 	{
 		std::stack<StyleValue> _styles[StyleCount];
 

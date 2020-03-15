@@ -17,7 +17,6 @@ namespace flame
 		void* module;
 		TypeinfoDatabase* db;
 
-		LibraryPrivate();
 		~LibraryPrivate();
 	};
 
@@ -129,12 +128,6 @@ namespace flame
 		void add_to_pending_update(NodePrivate* n);
 		void update();
 	};
-
-	LibraryPrivate::LibraryPrivate()
-	{
-		pos = Vec2f(0.f);
-		user_data = nullptr;
-	}
 
 	LibraryPrivate::~LibraryPrivate()
 	{
@@ -984,7 +977,6 @@ namespace flame
 		struct LibraryDesc
 		{
 			std::wstring filename;
-			Vec2f pos;
 		};
 		std::vector<LibraryDesc> library_descs;
 
@@ -993,7 +985,6 @@ namespace flame
 			LibraryDesc library;
 
 			library.filename = s2w(n_library.attribute("filename").value());
-			library.pos = stof2(n_library.attribute("pos").value());
 			library_descs.push_back(library);
 		}
 
@@ -1057,11 +1048,7 @@ namespace flame
 		bp->filename = filename;
 
 		for (auto& l_d : library_descs)
-		{
-			auto l = bp->add_library(l_d.filename);
-			if (l)
-				l->pos = l_d.pos;
-		}
+			bp->add_library(l_d.filename);
 
 		extra_global_db_count = bp->dbs.size();
 		extra_global_dbs = bp->dbs.data();
@@ -1266,7 +1253,6 @@ namespace flame
 		{
 			auto n_module = n_libraries.append_child("library");
 			n_module.append_attribute("filename").set_value(w2s(l->filename).c_str());
-			n_module.append_attribute("pos").set_value(to_string(l->pos, 2).c_str());
 		}
 
 		extra_global_db_count = bp->dbs.size();

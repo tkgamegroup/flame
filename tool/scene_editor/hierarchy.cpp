@@ -129,7 +129,7 @@ static void create_tree_node(Entity* e)
 {
 	if (e->child_count() > 0)
 	{
-		auto e_tree_node = ui::e_begin_tree_node(s2w(e->name()).c_str());
+		auto e_tree_node = utils::e_begin_tree_node(s2w(e->name()).c_str());
 		{
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->e = e;
@@ -139,11 +139,11 @@ static void create_tree_node(Entity* e)
 		auto e_sub_tree = e_tree_node->child(1);
 		for (auto i = 0; i < e->child_count(); i++)
 			create_tree_node(e->child(i));
-		ui::e_end_tree_node();
+		utils::e_end_tree_node();
 	}
 	else
 	{
-		auto e_tree_leaf = ui::e_tree_leaf(s2w(e->name()).c_str());
+		auto e_tree_leaf = utils::e_tree_leaf(s2w(e->name()).c_str());
 		{
 			auto c_item = new_u_object<cHierarchyItem>();
 			c_item->e = e;
@@ -155,17 +155,17 @@ static void create_tree_node(Entity* e)
 cHierarchy::cHierarchy() :
 	Component("cHierarchy")
 {
-	auto e_page = ui::e_begin_docker_page(L"Hierarchy").second;
+	auto e_page = utils::e_begin_docker_page(L"Hierarchy").second;
 	{
-		auto c_layout = ui::c_layout(LayoutVertical);
+		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 
 		e_page->add_component(this);
 	}
 
-		ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
-			e_tree = ui::e_begin_tree(true, 8.f);
+		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+			e_tree = utils::e_begin_tree(true, 8.f);
 			{
 				auto c_tree = e_tree->get_component(cTree);
 				c_tree->data_changed_listeners.add([](void* c, uint hash, void*) {
@@ -187,10 +187,10 @@ cHierarchy::cHierarchy() :
 					return true;
 				}, new_mail_p(c_tree));
 			}
-			ui::e_end_tree();
-		ui::e_end_scroll_view1();
+			utils::e_end_tree();
+		utils::e_end_scroll_view1();
 
-		ui::e_end_docker_page();
+		utils::e_end_docker_page();
 
 	refresh();
 }
@@ -236,9 +236,9 @@ void cHierarchy::refresh()
 	e_tree->remove_children(0, -1);
 	if (app.prefab)
 	{
-		ui::push_parent(e_tree);
+		utils::push_parent(e_tree);
 		create_tree_node(app.prefab);
-		ui::pop_parent();
+		utils::pop_parent();
 	}
 	refresh_selected();
 }

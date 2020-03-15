@@ -49,9 +49,9 @@ struct cOverlayer : Component
 cEditor::cEditor() :
 	Component("cEditor")
 {
-	auto e_page = ui::e_begin_docker_page(L"Editor").second;
+	auto e_page = utils::e_begin_docker_page(L"Editor").second;
 	{
-		auto c_layout = ui::c_layout(LayoutVertical);
+		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -59,23 +59,23 @@ cEditor::cEditor() :
 		e_page->add_component(this);
 	}
 
-		ui::e_begin_layout(LayoutHorizontal, 4.f);
-			ui::e_text(L"Tool");
-			auto e_tool = ui::e_begin_combobox(50.f);
-				ui::e_combobox_item(L"Null");
-				ui::e_combobox_item(L"Move");
-				ui::e_combobox_item(L"Scale");
-			ui::e_end_combobox(0);
-		ui::e_end_layout();
+		utils::e_begin_layout(LayoutHorizontal, 4.f);
+			utils::e_text(L"Tool");
+			auto e_tool = utils::e_begin_combobox(50.f);
+				utils::e_combobox_item(L"Null");
+				utils::e_combobox_item(L"Move");
+				utils::e_combobox_item(L"Scale");
+			utils::e_end_combobox(0);
+		utils::e_end_layout();
 
-		ui::e_begin_layout()->get_component(cElement)->clip_children = true;
-		ui::c_aligner(SizeFitParent, SizeFitParent);
-		e_scene = ui::current_entity();
+		utils::e_begin_layout()->get_component(cElement)->clip_children = true;
+		utils::c_aligner(SizeFitParent, SizeFitParent);
+		e_scene = utils::current_entity();
 		if (app.prefab)
 			e_scene->add_child(app.prefab);
 
-		auto e_overlayer = ui::e_element();
-		auto c_event_receiver = ui::c_event_receiver();
+		auto e_overlayer = utils::e_element();
+		auto c_event_receiver = utils::c_event_receiver();
 		c_event_receiver->pass = (Entity*)INVALID_POINTER;
 		c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -102,8 +102,8 @@ cEditor::cEditor() :
 				}, new_mail(&capture));
 			}
 		}, Mail<>());
-		ui::c_aligner(SizeFitParent, SizeFitParent);
-		ui::push_parent(e_overlayer);
+		utils::c_aligner(SizeFitParent, SizeFitParent);
+		utils::push_parent(e_overlayer);
 		{
 			auto c_overlayer = new_u_object<cOverlayer>();
 			e_overlayer->add_component(c_overlayer);
@@ -112,12 +112,12 @@ cEditor::cEditor() :
 			assert(udt_element);
 			auto element_pos_offset = udt_element->find_variable("pos")->offset();
 
-			auto e_transform_tool = ui::e_empty();
-			c_overlayer->transform_tool_element = ui::c_element();
+			auto e_transform_tool = utils::e_empty();
+			c_overlayer->transform_tool_element = utils::c_element();
 			c_overlayer->transform_tool_element->size_ = 20.f;
 			c_overlayer->transform_tool_element->frame_thickness_ = 2.f;
 			{
-				auto c_event_receiver = ui::c_event_receiver();
+				auto c_event_receiver = utils::c_event_receiver();
 				struct Capture
 				{
 					cEventReceiver* er;
@@ -139,24 +139,24 @@ cEditor::cEditor() :
 					}
 				}, new_mail(&capture));
 				{
-					auto c_style = ui::c_style_color();
+					auto c_style = utils::c_style_color();
 					c_style->color_normal = Vec4c(100, 100, 100, 128);
 					c_style->color_hovering = Vec4c(50, 50, 50, 190);
 					c_style->color_active = Vec4c(80, 80, 80, 255);
 					c_style->style();
 				}
 
-				ui::push_parent(e_transform_tool);
-				ui::e_empty();
+				utils::push_parent(e_transform_tool);
+				utils::e_empty();
 				{
-					auto c_element = ui::c_element();
+					auto c_element = utils::c_element();
 					c_element->pos_.x() = 25.f;
 					c_element->pos_.y() = 5.f;
 					c_element->size_.x() = 20.f;
 					c_element->size_.y() = 10.f;
 					c_element->frame_thickness_ = 2.f;
 
-					auto c_event_receiver = ui::c_event_receiver();
+					auto c_event_receiver = utils::c_event_receiver();
 					struct Capture
 					{
 						cEventReceiver* er;
@@ -179,23 +179,23 @@ cEditor::cEditor() :
 					}, new_mail(&capture));
 
 					{
-						auto c_style = ui::c_style_color();
+						auto c_style = utils::c_style_color();
 						c_style->color_normal = Vec4c(100, 100, 100, 128);
 						c_style->color_hovering = Vec4c(50, 50, 50, 190);
 						c_style->color_active = Vec4c(80, 80, 80, 255);
 						c_style->style();
 					}
 				}
-				ui::e_empty();
+				utils::e_empty();
 				{
-					auto c_element = ui::c_element();
+					auto c_element = utils::c_element();
 					c_element->pos_.x() = 5.f;
 					c_element->pos_.y() = 25.f;
 					c_element->size_.x() = 10.f;
 					c_element->size_.y() = 20.f;
 					c_element->frame_thickness_ = 2.f;
 
-					auto c_event_receiver = ui::c_event_receiver();
+					auto c_event_receiver = utils::c_event_receiver();
 					struct Capture
 					{
 						cEventReceiver* er;
@@ -218,14 +218,14 @@ cEditor::cEditor() :
 					}, new_mail(&capture));
 
 					{
-						auto c_style = ui::c_style_color();
+						auto c_style = utils::c_style_color();
 						c_style->color_normal = Vec4c(100, 100, 100, 128);
 						c_style->color_hovering = Vec4c(50, 50, 50, 190);
 						c_style->color_active = Vec4c(80, 80, 80, 255);
 						c_style->style();
 					}
 				}
-				ui::pop_parent();
+				utils::pop_parent();
 			}
 
 			e_tool->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
@@ -233,11 +233,11 @@ cEditor::cEditor() :
 					(*(cOverlayer**)c)->tool_type = ((cCombobox*)cb)->idx;
 			}, new_mail_p(c_overlayer));
 		}
-		ui::pop_parent();
+		utils::pop_parent();
 
-		ui::e_end_layout();
+		utils::e_end_layout();
 
-	ui::e_end_docker_page();
+	utils::e_end_docker_page();
 }
 
 cEditor::~cEditor()

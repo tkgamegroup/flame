@@ -1,7 +1,7 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/ui/utils.h>
+#include <flame/universe/utils/ui.h>
 
 #include "app.h"
 
@@ -41,8 +41,6 @@ BP::Library* MyApp::add_library(const wchar_t* filename)
 	auto l = bp->add_library(filename);
 	if (l)
 	{
-		if (editor)
-			editor->on_add_library(l);
 		refresh_add_node_menu();
 		set_changed(true);
 	}
@@ -63,8 +61,6 @@ void MyApp::remove_library(BP::Library* l)
 {
 	looper().add_event([](void* c, bool*) {
 		auto l = *(BP::Library**)c;
-		if (app.editor)
-			app.editor->on_remove_library(l);
 		app.bp->remove_library(l);
 		app.refresh_add_node_menu();
 		app.set_changed(true);
@@ -108,28 +104,9 @@ void MyApp::delete_selected()
 {
 	switch (sel_type)
 	{
-	case SelLibrary:
-	{
-		std::wstring str;
-		auto l_db = selected.library->db();
-		for (auto i = 0; i < bp->node_count(); i++)
-		{
-			auto n = bp->node(i);
-			auto udt = n->udt();
-			if (udt && udt->db() == l_db)
-				str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type_name()) + L"\n";
-		}
-
-		ui::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove the library?").c_str(), [](void* c, bool yes) {
-			auto l = *(BP::Library**)c;
-			if (yes)
-				app.remove_library(l);
-		}, new_mail_p(selected.library));
-	}
-	break;
 	case SelNode:
 		if (!remove_node(selected.node))
-			ui::e_message_dialog(L"Cannot Remove Test Nodes");
+			utils::e_message_dialog(L"Cannot Remove Test Nodes");
 		break;
 	case SelLink:
 		selected.link->link_to(nullptr);
@@ -144,13 +121,13 @@ void MyApp::reset_add_node_menu_filter()
 {
 	add_node_menu_filter->text->set_text(L"");
 
-	for (auto i = 1; i < e_add_node_menu->child_count(); i++)
-		e_add_node_menu->child(i)->set_visibility(true);
+	for (auto i = 1; i < e_node_menu_items->child_count(); i++)
+		e_node_menu_items->child(i)->set_visibility(true);
 }
 
 void MyApp::refresh_add_node_menu()
 {
-	e_add_node_menu->remove_children(0, -1);
+	e_node_menu_items->remove_children(0, -1);
 
 	std::vector<UdtInfo*> all_udts;
 	auto add_udt = [&](UdtInfo* u) {
@@ -191,13 +168,13 @@ void MyApp::refresh_add_node_menu()
 		return std::string(a->type()->name()) < std::string(b->type()->name());
 	});
 
-	ui::push_parent(e_add_node_menu);
-		ui::e_begin_layout(LayoutHorizontal, 4.f);
-			ui::e_text(Icon_SEARCH);
+	utils::push_parent(e_node_menu_items);
+		utils::e_begin_layout(LayoutHorizontal, 4.f);
+			utils::e_text(Icon_SEARCH);
 			{
-				auto c_text = ui::e_edit(150.f)->get_component(cText);
+				auto c_text = utils::e_edit(150.f)->get_component(cText);
 				c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-					auto menu = app.e_add_node_menu;
+					auto menu = app.e_node_menu_items;
 					auto str = (*(cText**)c)->text();
 					for (auto i = 1; i < menu->child_count(); i++)
 					{
@@ -207,24 +184,24 @@ void MyApp::refresh_add_node_menu()
 					return true;
 				}, new_mail_p(c_text));
 			}
-			add_node_menu_filter = ui::current_entity()->get_component(cEdit);
-		ui::e_end_layout();
-		ui::e_menu_item(L"Enum", [](void* c) {
+			add_node_menu_filter = utils::current_entity()->get_component(cEdit);
+		utils::e_end_layout();
+		utils::e_menu_item(L"Enum", [](void* c) {
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Var", [](void* c) {
+		utils::e_menu_item(L"Var", [](void* c) {
 		}, new_mail_p(this));
-		ui::e_menu_item(L"Array", [](void* c) {
+		utils::e_menu_item(L"Array", [](void* c) {
 		}, new_mail_p(this));
 		for (auto udt : all_udts)
 		{
-			ui::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
+			utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
 				app.reset_add_node_menu_filter();
 				if (app.editor)
 					app.editor->set_add_pos_center();
 				app.add_node((*(UdtInfo**)c)->type()->name(), "");
 			}, new_mail_p(udt));
 		}
-	ui::pop_parent();
+	utils::pop_parent();
 }
 
 void MyApp::link_test_nodes()
@@ -396,90 +373,146 @@ bool MyApp::create(const char* filename)
 	auto window_layout_ok = window_layout.load_file(L"window_layout.xml") && (window_layout_root = window_layout.first_child()).name() == std::string("layout");
 
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	ui::style_set_to_light();
+	utils::style_set_to_light();
 
-	ui::set_current_entity(root);
-	ui::c_layout();
+	utils::set_current_entity(root);
+	utils::c_layout();
 
-	ui::push_font_atlas(app.font_atlas_pixel);
-	ui::set_current_root(root);
-	ui::push_parent(root);
+	utils::push_font_atlas(app.font_atlas_pixel);
+	utils::set_current_root(root);
+	utils::push_parent(root);
 
-		ui::e_begin_layout(LayoutVertical, 0.f, false, false);
-		ui::c_aligner(SizeFitParent, SizeFitParent);
+		utils::e_begin_layout(LayoutVertical, 0.f, false, false);
+		utils::c_aligner(SizeFitParent, SizeFitParent);
 
-			ui::e_begin_menu_bar();
-				ui::e_begin_menubar_menu(L"Blueprint");
-					ui::e_menu_item(L"Save", [](void* c) {
+			utils::e_begin_menu_bar();
+				utils::e_begin_menubar_menu(L"Blueprint");
+					utils::e_menu_item(L"Save", [](void* c) {
 						BP::save_to_file(app.bp, app.filepath.c_str());
 						app.set_changed(false);
 					}, Mail<>());
-				ui::e_end_menubar_menu();
-				ui::e_begin_menubar_menu(L"Add");
-					ui::e_menu_item(L"Library", [](void* c) {
-						ui::e_input_dialog(L"library", [](void* c, bool ok, const wchar_t* text) {
-							if (ok && text[0])
+					utils::e_menu_item(L"Libraries", [](void* c) {
+						utils::e_begin_dialog();
+							utils::e_text(L"Libraries");
+							utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f, 2.f);
+							auto e_list = utils::e_begin_list(true);
+							for (auto i = 0; i < app.bp->library_count(); i++)
 							{
-								if (app.editor)
-									app.editor->set_add_pos_center();
-								auto l = app.add_library(text);
-								if (!l)
-									ui::e_message_dialog(L"Add Library Failed");
+								auto l = app.bp->library(i);
+								utils::e_list_item(l->filename());
+								utils::c_data_keeper()->add_voidp_item(FLAME_CHASH("library"), l);
 							}
-						}, Mail<>());
+							utils::e_end_list();
+							utils::e_end_scroll_view1();
+							utils::e_begin_layout(LayoutHorizontal, 4.f);
+							utils::e_button(L"Add", [](void* c) {
+								utils::e_input_dialog(L"file", [](void* c, bool ok, const wchar_t* text) {
+									if (ok && text[0])
+									{
+										if (app.editor)
+											app.editor->set_add_pos_center();
+										auto l = app.add_library(text);
+										if (!l)
+											utils::e_message_dialog(L"Failed");
+										else
+										{
+											utils::push_parent(*(Entity**)c);
+											utils::e_list_item(l->filename());
+											utils::c_data_keeper()->add_voidp_item(FLAME_CHASH("library"), l);
+											utils::pop_parent();
+										}
+									}
+								}, new_mail_p(*(void**)c));
+							}, new_mail_p(e_list));
+							utils::e_button(L"Remove", [](void* c) {
+								auto e_list = *(Entity**)c;
+								auto c_list = e_list->get_component(cList);
+								auto e_item = c_list->selected;
+								if (e_item)
+								{
+									auto l = (BP::Library*)e_item->get_component(cDataKeeper)->get_voidp_item(FLAME_CHASH("library"));
+									std::wstring str;
+									auto l_db = l->db();
+									for (auto i = 0; i < app.bp->node_count(); i++)
+									{
+										auto n = app.bp->node(i);
+										auto udt = n->udt();
+										if (udt && udt->db() == l_db)
+											str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type_name()) + L"\n";
+									}
+
+									utils::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove the library?").c_str(), [](void* c, bool yes) {
+										if (yes)
+										{
+											auto e_item = *(void**)c;
+											looper().add_event([](void* c, bool*) {
+												auto e_item = *(Entity**)c;
+												auto l = (BP::Library*)e_item->get_component(cDataKeeper)->get_voidp_item(FLAME_CHASH("library"));
+												app.remove_library(l);
+												e_item->parent()->remove_child(e_item);
+											}, new_mail_p(e_item));
+										}
+									}, new_mail_p(e_item));
+								}
+							}, new_mail_p(e_list));
+							utils::e_button(L"Close", [](void*) {
+								utils::remove_top_layer(app.root);
+							}, Mail<>());
+							utils::e_end_layout();
+						utils::e_end_dialog();
 					}, Mail<>());
-				app.e_add_node_menu = ui::e_begin_sub_menu(L"Nodes")->get_component(cMenu)->items;
-				ui::e_end_sub_menu();
-				ui::e_end_menubar_menu();
-				ui::e_begin_menubar_menu(L"Edit");
-				ui::e_menu_item(L"Duplicate", [](void* c) {
+				utils::e_end_menubar_menu();
+				app.e_node_menu_items = utils::e_begin_menubar_menu(L"Add")->get_component(cMenu)->items;
+				utils::e_end_menubar_menu();
+				utils::e_begin_menubar_menu(L"Edit");
+				utils::e_menu_item(L"Duplicate", [](void* c) {
 					if (app.editor)
 						app.editor->set_add_pos_center();
 					app.duplicate_selected();
 				}, Mail<>());
-				ui::e_menu_item(L"Delete", [](void* c) {
+				utils::e_menu_item(L"Delete", [](void* c) {
 					app.delete_selected();
 				}, Mail<>());
-				ui::e_end_menubar_menu();
-				ui::e_begin_menubar_menu(L"Tools");
-				ui::e_menu_item(L"Generate Graph Image", [](void* c) {
+				utils::e_end_menubar_menu();
+				utils::e_begin_menubar_menu(L"Tools");
+				utils::e_menu_item(L"Generate Graph Image", [](void* c) {
 					app.generate_graph_image();
 				}, Mail<>());
-				ui::e_menu_item(L"Auto Set Layout", [](void* c) {
+				utils::e_menu_item(L"Auto Set Layout", [](void* c) {
 					app.auto_set_layout();
 				}, Mail<>());
-				ui::e_menu_item(L"Link Test Nodes", [](void* c) {
+				utils::e_menu_item(L"Link Test Nodes", [](void* c) {
 					app.link_test_nodes();
 				}, Mail<>());
-				ui::e_end_menubar_menu();
-				ui::e_begin_menubar_menu(L"Window");
-				ui::e_menu_item(L"Editor", [](void* c) {
+				utils::e_end_menubar_menu();
+				utils::e_begin_menubar_menu(L"Window");
+				utils::e_menu_item(L"Editor", [](void* c) {
 				}, Mail<>());
-				ui::e_menu_item(L"Console", [](void* c) {
+				utils::e_menu_item(L"Console", [](void* c) {
 				}, Mail<>());
-				ui::e_end_menubar_menu();
-			ui::e_end_menu_bar();
+				utils::e_end_menubar_menu();
+			utils::e_end_menu_bar();
 
-			ui::e_begin_docker_static_container();
+			utils::e_begin_docker_static_container();
 			if (window_layout_ok)
 			{
 				for (auto n_window : window_layout_root.child("static"))
 				{
 					std::string name = n_window.name();
-					ui::e_begin_docker();
+					utils::e_begin_docker();
 					if (name == "editor")
 						editor = new cEditor();
-					ui::e_end_docker();
+					utils::e_end_docker();
 				}
 			}
-			ui::e_end_docker_static_container();
+			utils::e_end_docker_static_container();
 
-			ui::e_text(L"");
+			utils::e_text(L"");
 			add_fps_listener([](void* c, uint fps) {
 				(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-			}, new_mail_p(ui::current_entity()->get_component(cText)));
+			}, new_mail_p(utils::current_entity()->get_component(cText)));
 
-		ui::e_end_layout();
+		utils::e_end_layout();
 
 		if (window_layout_ok)
 		{
@@ -489,7 +522,7 @@ bool MyApp::create(const char* filename)
 			}
 		}
 
-	ui::pop_parent();
+	utils::pop_parent();
 
 	link_test_nodes();
 

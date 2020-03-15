@@ -3,10 +3,10 @@
 cConsole::cConsole() :
 	Component("cConsole")
 {
-	auto e_page = ui::e_begin_docker_page(L"Console").second;
+	auto e_page = utils::e_begin_docker_page(L"Console").second;
 	{
 		e_page->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-		auto c_layout = ui::c_layout(LayoutVertical);
+		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -14,21 +14,21 @@ cConsole::cConsole() :
 		e_page->add_component(this);
 	}
 
-		ui::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
-			ui::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_children = true;
-			ui::c_aligner(SizeFitParent, SizeFitParent);
-			c_text_log = ui::e_text(app.filepath.c_str())->get_component(cText);
-			ui::e_end_layout();
-		ui::e_end_scroll_view1(ui::style_1u(ui::FontSize));
+		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_children = true;
+			utils::c_aligner(SizeFitParent, SizeFitParent);
+			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
+			utils::e_end_layout();
+		utils::e_end_scroll_view1(utils::style_1u(utils::FontSize));
 
-		ui::e_button(L"Clear", [](void* c) {
+		utils::e_button(L"Clear", [](void* c) {
 			app.console->c_text_log->set_text(L"");
 		}, Mail<>());
 
-		ui::e_begin_layout(LayoutHorizontal, 4.f);
-		ui::c_aligner(SizeFitParent, SizeFixed);
-			c_edit_input = ui::e_edit(0.f)->get_component(cEdit);
-			ui::e_button(L"Exec", [](void* c) {
+		utils::e_begin_layout(LayoutHorizontal, 4.f);
+		utils::c_aligner(SizeFitParent, SizeFixed);
+			c_edit_input = utils::e_edit(0.f)->get_component(cEdit);
+			utils::e_button(L"Exec", [](void* c) {
 				auto log_text = app.console->c_text_log;
 				std::wstring log = log_text->text();
 				auto input_text = app.console->c_edit_input->text;
@@ -279,9 +279,9 @@ cConsole::cConsole() :
 				log_text->set_text(log.c_str());
 
 			}, Mail<>());
-		ui::e_end_layout();
+		utils::e_end_layout();
 
-	ui::e_end_docker_page();
+	utils::e_end_docker_page();
 }
 
 cConsole::~cConsole()

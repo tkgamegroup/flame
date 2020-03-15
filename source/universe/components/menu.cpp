@@ -6,9 +6,9 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
-#include <flame/universe/ui/layer.h>
-#include <flame/universe/ui/style_stack.h>
-#include <flame/universe/ui/menu_utils.h>
+#include <flame/universe/utils/layer.h>
+#include <flame/universe/utils/style.h>
+#include <flame/universe/utils/menu.h>
 
 namespace flame
 {
@@ -25,7 +25,7 @@ namespace flame
 			items = Entity::create();
 			{
 				auto ce = cElement::create();
-				ce->color_ = ui::style_4c(ui::FrameColorNormal).new_replacely<3>(255);
+				ce->color_ = utils::style_4c(utils::FrameColorNormal).new_replacely<3>(255);
 				items->add_component(ce);
 				items->add_component(cLayout::create(LayoutVertical));
 				items->add_component(cMenuItems::create());
@@ -58,7 +58,7 @@ namespace flame
 						menu->close();
 				}
 
-				ui::get_top_layer(root)->remove_child(items, false);
+				utils::get_top_layer(root)->remove_child(items, false);
 			}
 		}
 
@@ -81,7 +81,7 @@ namespace flame
 			{
 				if (mode == ModeContext)
 				{
-					auto layer = ui::add_layer(root, "menu", 0, false);
+					auto layer = utils::add_layer(root, "menu", 0, false);
 					auto items_element = items->get_component(cElement);
 					items_element->set_pos(Vec2f(pos));
 					items_element->set_scale(element->global_scale);
@@ -113,10 +113,10 @@ namespace flame
 						if (mode == ModeMenubar)
 						{
 							if (!layer)
-								layer = ui::add_layer(root, "menu", p, false);
+								layer = utils::add_layer(root, "menu", p, false);
 						}
 						else
-							layer = ui::add_layer(root, "menu", entity, false);
+							layer = utils::add_layer(root, "menu", entity, false);
 					}
 					auto items_element = items->get_component(cElement);
 					switch (mode)
@@ -145,7 +145,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMenuPrivate**)c;
-					if (ui::is_menu_can_open(thiz, action, key))
+					if (utils::is_menu_can_open(thiz, action, key))
 						thiz->open((Vec2f)pos);
 					return true;
 				}, new_mail_p(this));
@@ -217,7 +217,7 @@ namespace flame
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMenuItemPrivate**)c;
 					auto menu = (cMenuPrivate*)thiz->entity->parent()->get_component(cMenuItems)->menu;
-					if (ui::get_top_layer(menu->root, true, "menu"))
+					if (utils::get_top_layer(menu->root, true, "menu"))
 						menu->close_subs(menu->items);
 					return true;
 				}, new_mail_p(this));

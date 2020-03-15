@@ -9,7 +9,7 @@ namespace flame
 {
 	struct Entity;
 
-	namespace ui
+	namespace utils
 	{
 		inline Entity* get_top_layer(Entity* parent, bool check = false, const char* name_suffix = nullptr)
 		{
