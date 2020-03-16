@@ -85,7 +85,7 @@ struct MyApp : App
 	void select(SelType t, void* p);
 
 	BP::Library* add_library(const wchar_t* filename);
-	BP::Node* add_node(const char* type_name, const char* id);
+	BP::Node* add_node(const char* type_name, const char* id, const Vec2f& pos);
 	void remove_library(BP::Library* l);
 	bool remove_node(BP::Node* n);
 

@@ -44,9 +44,10 @@ BP::Library* MyApp::add_library(const wchar_t* filename)
 	return l;
 }
 
-BP::Node* MyApp::add_node(const char* type_name, const char* id)
+BP::Node* MyApp::add_node(const char* type_name, const char* id, const Vec2f& pos)
 {
 	auto n = bp->add_node(type_name, id);
+	n->pos = pos;
 	if (editor)
 		editor->on_add_node(n);
 	if (!SUS::starts_with(id, "test_"))
@@ -83,7 +84,7 @@ void MyApp::duplicate_selected()
 	{
 	case SelNode:
 	{
-		auto n = add_node(selected.node->type_name(), "");
+		auto n = add_node(selected.node->type_name(), "", selected.node->pos);
 		for (auto i = 0; i < n->input_count(); i++)
 		{
 			auto src = selected.node->input(i);
@@ -118,8 +119,7 @@ void MyApp::link_test_nodes()
 	auto n_dst = app.bp->find_node("test_dst");
 	if (!n_dst)
 	{
-		n_dst = app.add_node("D#DstImage", "test_dst");
-		n_dst->pos = Vec2f(0.f, -200.f);
+		n_dst = app.add_node("D#DstImage", "test_dst", Vec2f(0.f, 0.f));
 		n_dst->used_by_editor = true;
 	}
 	{
@@ -135,8 +135,7 @@ void MyApp::link_test_nodes()
 	auto n_cbs = app.bp->find_node("test_cbs");
 	if (!n_cbs)
 	{
-		n_cbs = app.add_node("D#CmdBufs", "test_cbs");
-		n_dst->pos = Vec2f(2000.f, -200.f);
+		n_cbs = app.add_node("D#CmdBufs", "test_cbs", Vec2f(0.f, -200.f));
 		n_cbs->used_by_editor = true;
 	}
 	{

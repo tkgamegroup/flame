@@ -194,7 +194,7 @@ cConsole::cConsole() :
 					{
 						if (tokens[1] == L"node")
 						{
-							auto n = app.add_node(w2s(tokens[2]).c_str(), (tokens[3] == L"-" ? "" : w2s(tokens[3])).c_str());
+							auto n = app.add_node(w2s(tokens[2]).c_str(), (tokens[3] == L"-" ? "" : w2s(tokens[3])).c_str(), Vec2f(0.f));
 							n->pos = Vec2f(0.f);
 							if (n)
 								log += wfmt(L"node added: %s", s2w(n->id()).c_str()) + L"\n";

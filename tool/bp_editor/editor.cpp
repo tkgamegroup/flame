@@ -303,34 +303,46 @@ struct cScene : Component
 										}, Mail<>());
 										utils::e_menu_item(L"Array", [](void*) {
 										}, Mail<>());
-										for (auto udt : node_types)
 										{
-											utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
-												app.add_node((*(UdtInfo**)c)->type()->name(), "");
-											}, new_mail_p(udt));
+											struct Capture
+											{
+												UdtInfo* u;
+												Vec2f p;
+											}capture;
+											capture.p = (Vec2f(pos) - thiz->base_element->global_pos) / (thiz->scale * 0.1f);
+											for (auto udt : node_types)
+											{
+												capture.u = udt;
+												utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
+													auto& capture = *(Capture*)c;
+													app.add_node(capture.u->type()->name(), "", capture.p);
+												}, new_mail(&capture));
+											}
 										}
 									utils::e_end_list();
 								utils::e_end_scroll_view1();
 							utils::pop_parent();
 						utils::pop_parent();
 
-						struct Capture
 						{
-							Entity* l;
-							cText* t;
-						}capture;
-						capture.l = list;
-						capture.t = c_text_search;
-						c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
-							auto& capture = *(Capture*)c;
-							std::wstring str = capture.t->text();
-							for (auto i = 0; i < capture.l->child_count(); i++)
+							struct Capture
 							{
-								auto item = capture.l->child(i);
-								item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-							}
-							return true;
-						}, new_mail(&capture));
+								Entity* l;
+								cText* t;
+							}capture;
+							capture.l = list;
+							capture.t = c_text_search;
+							c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
+								auto& capture = *(Capture*)c;
+								std::wstring str = capture.t->text();
+								for (auto i = 0; i < capture.l->child_count(); i++)
+								{
+									auto item = capture.l->child(i);
+									item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+								}
+								return true;
+							}, new_mail(&capture));
+						}
 					}
 				}
 				else if (is_mouse_move(action, key))
