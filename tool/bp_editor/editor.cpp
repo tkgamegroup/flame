@@ -168,11 +168,13 @@ struct cScene : Component
 	cEventReceiver* event_receiver;
 	cElement* base_element;
 
+	uint scale;
 	cText* scale_text;
 
 	cScene() :
 		Component("cScene")
 	{
+		scale = 10;
 	}
 
 	void on_component_added(Component* c) override
@@ -193,19 +195,24 @@ struct cScene : Component
 				auto ed = app.s_event_dispatcher;
 				if (is_mouse_scroll(action, key))
 				{
-					auto s = clamp(thiz->base_element->scale_ + (pos.x() > 0.f ? 0.1f : -0.1f), 0.1f, 2.f);
-					thiz->base_element->set_scale(s);
-					thiz->scale_text->set_text((std::to_wstring(int(s * 100)) + L"%").c_str());
+					auto v = (pos.x() > 0.f ? 1 : -1);
+					thiz->scale += v;
+					if (thiz->scale < 1 || thiz->scale > 10)
+						thiz->scale -= v;
+					else
+					{
+						auto p = (Vec2f(ed->mouse_pos) - thiz->base_element->global_pos) / ((thiz->scale - v) * 0.1f);
+						thiz->base_element->set_pos(float(v) * p * -0.1f, true);
+						thiz->base_element->set_scale(thiz->scale * 0.1f);
+						thiz->scale_text->set_text((std::to_wstring(thiz->scale * 10) + L"%").c_str());
+					}
 				}
 				else
 				{
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->mouse_buttons[Mouse_Middle] & KeyStateDown)
 					{
 						if (is_mouse_move(action, key))
-						{
-							if (ed->mouse_buttons[Mouse_Left] & KeyStateDown)
-								thiz->base_element->set_pos(Vec2f(pos), true);
-						}
+							thiz->base_element->set_pos(Vec2f(pos), true);
 					}
 					else
 					{
@@ -246,12 +253,14 @@ struct cScene : Component
 
 	void draw(graphics::Canvas* canvas)
 	{
+		if (element->cliped)
+			return;
+
 		auto scale = base_element->global_scale;
 		auto extent = slot_bezier_extent * scale;
 		auto line_width = 3.f * scale;
 
-		if (element->cliped)
-			return;
+
 
 		for (auto i = 0; i < app.bp->node_count(); i++)
 		{
@@ -281,17 +290,16 @@ struct cScene : Component
 	}
 };
 
-struct cSceneObject : Component
+struct cNode : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
 
-	SelType t;
-	void* p;
+	BP::Node* n;
 	bool moved;
 
-	cSceneObject() :
-		Component("cSceneObject")
+	cNode() :
+		Component("cNode")
 	{
 		moved = false;
 	}
@@ -304,10 +312,9 @@ struct cSceneObject : Component
 			element->data_changed_listeners.add([](void* c, uint hash, void*) {
 				if (hash == FLAME_CHASH("pos"))
 				{
-					auto thiz = *(cSceneObject**)c;
+					auto thiz = *(cNode**)c;
 					auto pos = thiz->element->pos_;
-					if (thiz->t == SelNode)
-						((BP::Node*)thiz->p)->pos = pos;
+					thiz->n->pos = pos;
 					thiz->moved = true;
 				}
 				return true;
@@ -317,13 +324,13 @@ struct cSceneObject : Component
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cSceneObject**)c;
+				auto thiz = *(cNode**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					app.select(thiz->t, thiz->p);
+					app.select(SelNode, thiz->n);
 				return true;
 			}, new_mail_p(this));
 			event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-				auto thiz = *(cSceneObject**)c;
+				auto thiz = *(cNode**)c;
 				switch (state)
 				{
 				case EventReceiverActive:
@@ -402,7 +409,7 @@ static Entity* selected_entity()
 }
 
 static Vec4c unselected_col = Vec4c(0, 0, 0, 255);
-static Vec4c selected_col = Vec4c(252, 252, 50, 200);
+static Vec4c selected_col = Vec4c(128, 128, 0, 255);
 
 void cEditor::on_deselect()
 {
@@ -538,9 +545,8 @@ void cEditor::on_add_node(BP::Node* n)
 			utils::c_event_receiver();
 			utils::c_layout(LayoutVertical)->fence = 1;
 			utils::c_moveable();
-			auto c_node = new_u_object<cSceneObject>();
-			c_node->t = SelNode;
-			c_node->p = n;
+			auto c_node = new_u_object<cNode>();
+			c_node->n = n;
 			e_node->add_component(c_node);
 		}
 		utils::push_parent(e_node);

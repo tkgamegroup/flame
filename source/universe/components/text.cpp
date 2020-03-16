@@ -92,6 +92,8 @@ namespace flame
 	void cText::set_text(const wchar_t* text, void* sender)
 	{
 		auto thiz = (cTextPrivate*)this;
+		if (thiz->text == text)
+			return;
 		thiz->text = text;
 		auto renderer = thiz->element->renderer;
 		if (renderer)

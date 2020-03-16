@@ -342,7 +342,9 @@ namespace flame
 		{
 			auto e = e_empty();
 			c_element();
-			c_text()->set_text(text);
+			auto t = c_text();
+			if (text)
+				t->set_text(text);
 			return e;
 		}
 
@@ -959,7 +961,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_window(const wchar_t* title)
+		inline Entity* e_begin_window(const wchar_t* title, bool close_button = true)
 		{
 			Entity* el;
 			auto e = e_empty();
@@ -977,19 +979,20 @@ namespace flame
 				ce->color_ = style_4c(HeaderColorNormal);
 				c_text()->set_text(title);
 				c_aligner(SizeGreedy, SizeFixed);
-				c_layout();
-				push_parent(current_entity());
+				if (close_button)
 				{
+					c_layout();
+					push_parent(current_entity());
 					e_button(Icon_WINDOW_CLOSE, [](void* c) {
-						auto e = *(Entity**)c;
+						auto e = *(void**)c;
 						looper().add_event([](void* c, bool*) {
 							auto e = *(Entity**)c;
 							e->parent()->remove_child(e);
 						}, new_mail_p(e));
 					}, new_mail_p(e), false);
 					c_aligner(AlignxRight, AlignyFree);
+					pop_parent();
 				}
-				pop_parent();
 
 				el = e_empty();
 				c_element()->inner_padding_ = Vec4f(8.f, 4.f, 8.f, 4.f);
@@ -1254,6 +1257,116 @@ namespace flame
 			}, new_m);
 			e_end_layout();
 			e_end_dialog();
+			return e;
+		}
+
+		inline Entity* e_reflector_window(sEventDispatcher* event_dispatcher)
+		{
+			push_parent(current_root());
+			auto e = e_begin_window(L"Reflector", false);
+			struct Capture
+			{
+				sEventDispatcher* event_dispatcher;
+				cText* txt_mouse;
+				cText* txt_hovering;
+				cText* txt_focusing;
+				cText* txt_drag_overing;
+			}capture;
+			capture.event_dispatcher = event_dispatcher;
+			capture.txt_mouse = e_text(nullptr)->get_component(cText);
+			capture.txt_hovering = e_text(nullptr)->get_component(cText);
+			capture.txt_focusing = e_text(nullptr)->get_component(cText);
+			capture.txt_drag_overing = e_text(nullptr)->get_component(cText);
+			e_button(L"Close", [](void* c) {
+				auto e = *(void**)c;
+				looper().add_event([](void* c, bool*) {
+					auto e = *(Entity**)c;
+					e->parent()->remove_child(e);
+				}, new_mail_p(e));
+			}, new_mail_p(e));
+			e_end_window();
+			e->on_destroyed_listeners.add([](void* c) {
+				looper().remove_event(*(void**)c);
+				return true;
+			}, new_mail_p(looper().add_event([](void* c, bool* go_on) {
+				auto& capture = *(Capture*)c;
+				auto root = current_root();
+				{
+					std::wstring str = L"Mouse: ";
+					str += to_wstring(capture.event_dispatcher->mouse_pos);
+					capture.txt_mouse->set_text(str.c_str());
+				}
+
+				auto geometry_str = [](cEventReceiver* er) {
+					std::wstring ret;
+					auto e = er->element;
+					ret += wfmt(L"\n    (%.2f, %.2f) %.2f (%.2f, %.2f)",
+						e->global_pos.x(), e->global_pos.y(),
+						e->global_scale,
+						e->global_size.x(), e->global_size.y());
+					return ret;
+				};
+				{
+					std::wstring str = L"Hovering: ";
+					auto hovering = capture.event_dispatcher->hovering;
+					if (hovering)
+					{
+						if (hovering->entity == root)
+							str += L"Root";
+						else
+							str += wfmt(L"%I64X", (ulonglong)hovering);
+						str += geometry_str(hovering);
+					}
+					else
+						str += L"NULL";
+					capture.txt_hovering->set_text(str.c_str());
+				}
+				{
+					auto color = style_4c(TextColorNormal);
+					std::wstring str = L"Focusing: ";
+					auto focusing = capture.event_dispatcher->focusing;
+					if (focusing)
+					{
+						if (focusing->entity == root)
+							str += L"Root";
+						else
+							str += wfmt(L"%I64X", (ulonglong)focusing);
+						if (focusing == capture.event_dispatcher->hovering)
+							color = Vec4c(0, 255, 0, 255);
+						switch (capture.event_dispatcher->focusing_state)
+						{
+						case FocusingAndActive:
+							str += L" Active";
+							break;
+						case FocusingAndDragging:
+							str += L" Dragging";
+							break;
+						}
+						str += geometry_str(focusing);
+					}
+					else
+						str += L"NULL";
+					capture.txt_focusing->color = color;
+					capture.txt_focusing->set_text(str.c_str());
+				}
+				{
+					std::wstring str = L"Draw Overing: ";
+					auto drag_overing = capture.event_dispatcher->drag_overing;
+					if (drag_overing)
+					{
+						if (drag_overing->entity == root)
+							str += L"Root";
+						else
+							str += wfmt(L"%I64X", (ulonglong)drag_overing);
+						str += geometry_str(drag_overing);
+					}
+					else
+						str += L"NULL";
+					capture.txt_drag_overing->set_text(str.c_str());
+				}
+				*go_on = true;
+			}, new_mail(&capture))));
+			pop_parent();
 			return e;
 		}
 	}

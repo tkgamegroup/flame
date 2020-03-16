@@ -42,7 +42,6 @@ enum SelType
 {
 	SelAir,
 	SelNode,
-	SelSlot,
 	SelLink
 };
 

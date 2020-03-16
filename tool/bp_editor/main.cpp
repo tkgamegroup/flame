@@ -465,31 +465,34 @@ bool MyApp::create(const char* filename)
 				app.e_node_menu_items = utils::e_begin_menubar_menu(L"Add")->get_component(cMenu)->items;
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");
-				utils::e_menu_item(L"Duplicate", [](void* c) {
-					if (app.editor)
-						app.editor->set_add_pos_center();
-					app.duplicate_selected();
-				}, Mail<>());
-				utils::e_menu_item(L"Delete", [](void* c) {
-					app.delete_selected();
-				}, Mail<>());
+					utils::e_menu_item(L"Duplicate", [](void* c) {
+						if (app.editor)
+							app.editor->set_add_pos_center();
+						app.duplicate_selected();
+					}, Mail<>());
+					utils::e_menu_item(L"Delete", [](void* c) {
+						app.delete_selected();
+					}, Mail<>());
+				utils::e_end_menubar_menu();
+				utils::e_begin_menubar_menu(L"View");
+					utils::e_menu_item(L"Editor", [](void* c) {
+					}, Mail<>());
+					utils::e_menu_item(L"Console", [](void* c) {
+					}, Mail<>());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Tools");
-				utils::e_menu_item(L"Generate Graph Image", [](void* c) {
-					app.generate_graph_image();
-				}, Mail<>());
-				utils::e_menu_item(L"Auto Set Layout", [](void* c) {
-					app.auto_set_layout();
-				}, Mail<>());
-				utils::e_menu_item(L"Link Test Nodes", [](void* c) {
-					app.link_test_nodes();
-				}, Mail<>());
-				utils::e_end_menubar_menu();
-				utils::e_begin_menubar_menu(L"Window");
-				utils::e_menu_item(L"Editor", [](void* c) {
-				}, Mail<>());
-				utils::e_menu_item(L"Console", [](void* c) {
-				}, Mail<>());
+					utils::e_menu_item(L"Generate Graph Image", [](void* c) {
+						app.generate_graph_image();
+					}, Mail<>());
+					utils::e_menu_item(L"Auto Set Layout", [](void* c) {
+						app.auto_set_layout();
+					}, Mail<>());
+					utils::e_menu_item(L"Link Test Nodes", [](void* c) {
+						app.link_test_nodes();
+					}, Mail<>());
+					utils::e_menu_item(L"Reflector", [](void* c) {
+						utils::e_reflector_window(app.s_event_dispatcher);
+					}, Mail<>());
 				utils::e_end_menubar_menu();
 			utils::e_end_menu_bar();
 

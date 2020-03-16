@@ -40,90 +40,9 @@ struct MyApp : App
 					}, Mail<>());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Window");
-					utils::e_menu_item(L"Status", [](void* c) {
-						utils::push_parent(app.root);
+					utils::e_menu_item(L"Reflector", [](void* c) {
 						utils::next_element_pos = Vec2f(100.f);
-						auto w = utils::e_begin_window(L"Status");
-						struct Capture
-						{
-							cText* txt_mouse;
-							cText* txt_hovering;
-							cText* txt_focusing;
-							cText* txt_drag_overing;
-						}capture;
-						capture.txt_mouse = utils::e_text(L"Mouse: ")->get_component(cText);
-						capture.txt_hovering = utils::e_text(L"Hovering: ")->get_component(cText);
-						capture.txt_focusing = utils::e_text(L"Focusing: ")->get_component(cText);
-						capture.txt_drag_overing = utils::e_text(L"Drag Overing: ")->get_component(cText);
-						utils::e_end_window();
-						utils::pop_parent();
-						w->on_destroyed_listeners.add([](void* c) {
-							looper().remove_event(*(void**)c);
-							return true;
-						}, new_mail_p(looper().add_event([](void* c, bool* go_on) {
-							auto& capture = *(Capture*)c;
-							{
-								std::wstring str = L"Mouse: ";
-								str += to_wstring(app.s_event_dispatcher->mouse_pos);
-								capture.txt_mouse->set_text(str.c_str());
-							}
-							{
-								std::wstring str = L"Hovering: ";
-								auto hovering = app.s_event_dispatcher->hovering;
-								if (hovering)
-								{
-									if (hovering->entity == app.root)
-										str += L"Root";
-									else
-										str += wfmt(L"%I64X", (ulonglong)hovering);
-								}
-								else
-									str += L"NULL";
-								capture.txt_hovering->set_text(str.c_str());
-							}
-							{
-								auto color = utils::style_4c(utils::TextColorNormal);
-								std::wstring str = L"Focusing: ";
-								auto focusing = app.s_event_dispatcher->focusing;
-								if (focusing)
-								{
-									if (focusing->entity == app.root)
-										str += L"Root";
-									else
-										str += wfmt(L"%I64X", (ulonglong)focusing);
-									if (focusing == app.s_event_dispatcher->hovering)
-										color = Vec4c(0, 255, 0, 255);
-									switch (app.s_event_dispatcher->focusing_state)
-									{
-									case FocusingAndActive:
-										str += L" Active";
-										break;
-									case FocusingAndDragging:
-										str += L" Dragging";
-										break;
-									}
-								}
-								else
-									str += L"NULL";
-								capture.txt_focusing->color = color;
-								capture.txt_focusing->set_text(str.c_str());
-							}
-							{
-								std::wstring str = L"Draw Overing: ";
-								auto drag_overing = app.s_event_dispatcher->drag_overing;
-								if (drag_overing)
-								{
-									if (drag_overing->entity == app.root)
-										str += L"Root";
-									else
-										str += wfmt(L"%I64X", (ulonglong)drag_overing);
-								}
-								else
-									str += L"NULL";
-								capture.txt_drag_overing->set_text(str.c_str());
-							}
-							*go_on = true;
-						}, new_mail(&capture))));
+						utils::e_reflector_window(app.s_event_dispatcher);
 					}, Mail<>());
 				utils::e_end_menubar_menu();
 			utils::e_end_menu_bar();
