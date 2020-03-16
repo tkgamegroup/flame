@@ -11,7 +11,7 @@ namespace flame
 
 		struct SwapchainPrivate : Swapchain
 		{
-			SysWindow*w;
+			SysWindow* w;
 
 			DevicePrivate* d;
 #if defined(FLAME_VULKAN)
@@ -24,24 +24,18 @@ namespace flame
 			std::vector<Image*> images;
 			SemaphorePrivate* image_avalible;
 
+			uint hash;
+
 			uint image_index;
+
+			void* resize_listener;
 
 			SwapchainPrivate(Device *d, SysWindow*w);
 			~SwapchainPrivate();
 
+			void update();
+
 			void acquire_image();
-		};
-
-		struct SwapchainResizablePrivate : SwapchainResizable
-		{
-			SysWindow* w;
-
-			Device* d;
-			Swapchain* sc;
-			void* resize_listener;
-
-			SwapchainResizablePrivate(Device* d, SysWindow* w);
-			~SwapchainResizablePrivate();
 		};
 	}
 }

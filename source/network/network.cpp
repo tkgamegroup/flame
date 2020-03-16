@@ -240,7 +240,7 @@ namespace flame
 
 		void stop(bool passive)
 		{
-			std::lock_guard<std::recursive_mutex> lock(mtx);
+			std::lock_guard lock(mtx);
 			if (fd)
 			{
 				closesocket(fd);
@@ -291,7 +291,7 @@ namespace flame
 			{
 				int size;
 				auto ret = recv(c->fd, (char*)&size, sizeof(int), 0);
-				std::lock_guard<std::recursive_mutex> lock(c->mtx);
+				std::lock_guard lock(c->mtx);
 				if (ret < (int)sizeof(int))
 				{
 					c->stop(true);
@@ -349,7 +349,7 @@ namespace flame
 
 			void stop(bool passive)
 			{
-				std::lock_guard<std::recursive_mutex> lock(mtx);
+				std::lock_guard lock(mtx);
 				if (fd)
 				{
 					closesocket(fd);
@@ -390,7 +390,7 @@ namespace flame
 
 		void stop()
 		{
-			std::lock_guard<std::recursive_mutex> lock(mtx);
+			std::lock_guard lock(mtx);
 			if (fd_d)
 			{
 				closesocket(fd_d);
@@ -474,7 +474,7 @@ namespace flame
 				sockaddr_in address;
 				int address_size = sizeof(address);
 				auto res = recvfrom(s->fd_d, buf, sizeof(buf), 0, (sockaddr*)&address, &address_size);
-				std::lock_guard<std::recursive_mutex> lock(s->mtx);
+				std::lock_guard lock(s->mtx);
 				if (res <= 0)
 				{
 					if (s->fd_d)
@@ -496,7 +496,7 @@ namespace flame
 			while (true)
 			{
 				auto fd = accept(s->fd_s, nullptr, nullptr);
-				std::lock_guard<std::recursive_mutex> lock(s->mtx);
+				std::lock_guard lock(s->mtx);
 				if (fd == INVALID_SOCKET)
 				{
 					s->stop();
@@ -521,7 +521,7 @@ namespace flame
 					{
 						int size;
 						auto ret = recv(c->fd, (char*)&size, sizeof(int), 0);
-						std::lock_guard<std::recursive_mutex> lock(c->mtx);
+						std::lock_guard lock(c->mtx);
 						if (ret < (int)sizeof(int))
 						{
 							c->stop(true);

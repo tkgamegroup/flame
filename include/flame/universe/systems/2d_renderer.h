@@ -6,7 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct SwapchainResizable;
 		struct Commandbuffer;
 		struct Canvas;
 	}

@@ -9,6 +9,7 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct Swapchain;
 		struct Commandbuffer;
 
 		struct Canvas
@@ -45,8 +46,8 @@ namespace flame
 			inline static Canvas* create(const wchar_t* filename, void* dst, uint dst_hash, void* cbs)
 			{
 				auto bp = BP::create_from_file(filename);
-				if (dst_hash == FLAME_CHASH("SwapchainResizable"))
-					((graphics::SwapchainResizable*)dst)->link_bp(bp, cbs);
+				if (dst_hash == FLAME_CHASH("Swapchain"))
+					((graphics::Swapchain*)dst)->link_bp(bp, cbs);
 				bp->update();
 				return (Canvas*)bp->find_output("make_cmd.canvas")->data_p();
 			}

@@ -13,10 +13,10 @@ namespace flame
 		struct Image;
 		struct Semaphore;
 
-		FLAME_GRAPHICS_EXPORTS Format get_swapchain_format();
-
 		struct Swapchain
 		{
+			FLAME_GRAPHICS_EXPORTS static Format get_format();
+
 			FLAME_GRAPHICS_EXPORTS SysWindow* window() const;
 			FLAME_GRAPHICS_EXPORTS uint image_count() const;
 			FLAME_GRAPHICS_EXPORTS Image* image(uint idx) const;
@@ -25,20 +25,12 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS uint image_index() const;
 			FLAME_GRAPHICS_EXPORTS void acquire_image();
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow* w);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
-		};
-
-		struct SwapchainResizable
-		{
-			bool changed;
-
-			FLAME_GRAPHICS_EXPORTS Swapchain* sc() const;
+			FLAME_GRAPHICS_EXPORTS uint hash() const;
 
 			FLAME_GRAPHICS_EXPORTS void link_bp(BP* bp, void* cbs);
 
-			FLAME_GRAPHICS_EXPORTS static SwapchainResizable* create(Device* d, SysWindow* w);
-			FLAME_GRAPHICS_EXPORTS static void destroy(SwapchainResizable* s);
+			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow* w);
+			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
 	}
 }
