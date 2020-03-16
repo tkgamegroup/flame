@@ -160,7 +160,7 @@ namespace flame
 			delete (RenderpassPrivate*)r;
 		}
 
-		struct R(R_AttachmentInfo, flame, graphics)
+		struct R(R_AttachmentInfo)
 		{
 			BP::Node* n;
 
@@ -203,7 +203,7 @@ namespace flame
 
 		};
 
-		struct R(R_SubpassInfo, flame, graphics)
+		struct R(R_SubpassInfo)
 		{
 			BP::Node* n;
 
@@ -246,7 +246,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_Renderpass, flame, graphics)
+		struct R(R_Renderpass)
 		{
 			BP::Node* n;
 
@@ -361,7 +361,7 @@ namespace flame
 			delete (ClearvaluesPrivate*)c;
 		}
 
-		struct R(R_Clearvalues, flame, graphics)
+		struct R(R_Clearvalues)
 		{
 			BP::Node* n;
 
@@ -471,7 +471,7 @@ namespace flame
 			delete (FramebufferPrivate*)f;
 		}
 
-		struct R(R_Framebuffer, flame, graphics)
+		struct R(R_Framebuffer)
 		{
 			BP::Node* n;
 
@@ -655,7 +655,7 @@ namespace flame
 			delete (RenderpassAndFramebufferPrivate*)s;
 		}
 
-		struct R(R_RenderTarget, flame, graphics)
+		struct R(R_RenderTarget)
 		{
 			BP::Node* n;
 
@@ -702,7 +702,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_SubpassTargetInfo, flame, graphics)
+		struct R(R_SubpassTargetInfo)
 		{
 			BP::Node* n;
 
@@ -745,7 +745,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_RenderpassAndFramebuffer, flame, graphics)
+		struct R(R_RenderpassAndFramebuffer)
 		{
 			BP::Node* n;
 

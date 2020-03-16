@@ -620,7 +620,7 @@ namespace flame
 			delete (CommandbufferPrivate*)c;
 		}
 
-		struct R(R_Commandbuffer, flame, graphics)
+		struct R(R_Commandbuffer)
 		{
 			BP::Node* n;
 
@@ -652,7 +652,7 @@ namespace flame
 
 		};
 
-		struct R(R_Commandbuffers, flame, graphics)
+		struct R(R_Commandbuffers)
 		{
 			BP::Node* n;
 

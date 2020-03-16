@@ -1318,7 +1318,7 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-	struct R(R_Vec1i, flame)
+	struct R(R_Vec1i)
 	{
 		BP::Node* n;
 
@@ -1338,7 +1338,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec2i, flame)
+	struct R(R_Vec2i)
 	{
 		BP::Node* n;
 
@@ -1368,7 +1368,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3i, flame)
+	struct R(R_Vec3i)
 	{
 		BP::Node* n;
 
@@ -1404,7 +1404,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4i, flame)
+	struct R(R_Vec4i)
 	{
 		BP::Node* n;
 
@@ -1446,7 +1446,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec1u, flame)
+	struct R(R_Vec1u)
 	{
 		BP::Node* n;
 
@@ -1466,7 +1466,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec2u, flame)
+	struct R(R_Vec2u)
 	{
 		BP::Node* n;
 
@@ -1496,7 +1496,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3u, flame)
+	struct R(R_Vec3u)
 	{
 		BP::Node* n;
 
@@ -1532,7 +1532,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4u, flame)
+	struct R(R_Vec4u)
 	{
 		BP::Node* n;
 
@@ -1574,7 +1574,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec1f, flame)
+	struct R(R_Vec1f)
 	{
 		BP::Node* n;
 
@@ -1594,7 +1594,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec2f, flame)
+	struct R(R_Vec2f)
 	{
 		BP::Node* n;
 
@@ -1624,7 +1624,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3f, flame)
+	struct R(R_Vec3f)
 	{
 		BP::Node* n;
 
@@ -1660,7 +1660,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4f, flame)
+	struct R(R_Vec4f)
 	{
 		BP::Node* n;
 
@@ -1702,7 +1702,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec1c, flame)
+	struct R(R_Vec1c)
 	{
 		BP::Node* n;
 
@@ -1722,7 +1722,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec2c, flame)
+	struct R(R_Vec2c)
 	{
 		BP::Node* n;
 
@@ -1752,7 +1752,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3c, flame)
+	struct R(R_Vec3c)
 	{
 		BP::Node* n;
 
@@ -1788,7 +1788,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4c, flame)
+	struct R(R_Vec4c)
 	{
 		BP::Node* n;
 
@@ -1830,7 +1830,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_F2U, flame)
+	struct R(R_F2U)
 	{
 		BP::Node* n;
 
@@ -1851,7 +1851,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Add, flame)
+	struct R(R_Add)
 	{
 		BP::Node* n;
 
@@ -1873,7 +1873,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Multiple, flame)
+	struct R(R_Multiple)
 	{
 		BP::Node* n;
 
@@ -1895,7 +1895,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_MakeVec2f, flame)
+	struct R(R_MakeVec2f)
 	{
 		BP::Node* n;
 
@@ -1917,7 +1917,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Time, flame)
+	struct R(R_Time)
 	{
 		BP::Node* n;
 
@@ -1934,7 +1934,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_LinearInterpolation1d, flame)
+	struct R(R_LinearInterpolation1d)
 	{
 		BP::Node* n;
 
@@ -1957,7 +1957,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_LinearInterpolation2d, flame)
+	struct R(R_LinearInterpolation2d)
 	{
 		BP::Node* n;
 
@@ -1980,7 +1980,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_KeyListener, flame)
+	struct R(R_KeyListener)
 	{
 		BP::Node* n;
 

@@ -59,7 +59,7 @@ namespace flame
 		return new cImagePrivate();
 	}
 
-	struct R(Serializer_cImage, flame,)
+	struct R(Serializer_cImage)
 	{
 		RV(ulonglong, id, n);
 		RV(Vec2f, pos_offset, n);

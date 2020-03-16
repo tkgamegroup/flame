@@ -427,7 +427,7 @@ namespace flame
 			delete (ImagePrivate*)i;
 		}
 
-		struct R(R_Image, flame, graphics)
+		struct R(R_Image)
 		{
 			BP::Node* n;
 
@@ -484,7 +484,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_ImageInspector, flame, graphics)
+		struct R(R_ImageInspector)
 		{
 			BP::Node* n;
 
@@ -592,7 +592,7 @@ namespace flame
 			delete (ImageviewPrivate*)v;
 		}
 
-		struct R(R_Imageview, flame, graphics)
+		struct R(R_Imageview)
 		{
 			BP::Node* n;
 
@@ -647,7 +647,7 @@ namespace flame
 
 		};
 
-		struct R(R_ImageviewGeneral, flame, graphics)
+		struct R(R_ImageviewGeneral)
 		{
 			BP::Node* n;
 
@@ -682,7 +682,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_ImageviewsGeneral, flame, graphics)
+		struct R(R_ImageviewsGeneral)
 		{
 			BP::Node* n;
 

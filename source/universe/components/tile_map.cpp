@@ -164,7 +164,7 @@ namespace flame
 		return new cTileMapPrivate();
 	}
 
-	struct R(Serializer_cTileMap, flame,)
+	struct R(Serializer_cTileMap)
 	{
 		RV(Vec2u, size, n);
 		RV(Vec2f, cell_size, n);

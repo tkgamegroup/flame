@@ -317,7 +317,7 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->imageview;
 		}
 
-		struct R(R_FontAtlas, flame, graphics)
+		struct R(R_FontAtlas)
 		{
 			BP::Node* n;
 

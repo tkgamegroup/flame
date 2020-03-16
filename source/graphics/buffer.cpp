@@ -160,7 +160,7 @@ namespace flame
 			delete (BufferPrivate*)b;
 		}
 
-		struct R(R_Buffer, flame, graphics)
+		struct R(R_Buffer)
 		{
 			BP::Node* n;
 

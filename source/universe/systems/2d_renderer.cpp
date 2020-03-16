@@ -11,7 +11,7 @@
 
 namespace flame
 {
-	struct R(Serializer_Atlas, flame,)
+	struct R(Serializer_Atlas)
 	{
 		RV(StringW, filename, n);
 
@@ -40,7 +40,7 @@ namespace flame
 		}
 	};
 
-	struct R(Serializer_FontAtlas, flame,)
+	struct R(Serializer_FontAtlas)
 	{
 		RV(graphics::FontDrawType, draw_type, n);
 		RV(StringW, fonts, n);

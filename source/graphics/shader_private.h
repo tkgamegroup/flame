@@ -82,7 +82,7 @@ namespace flame
 			uint hash;
 		};
 
-		struct R(BlendOptions, flame, graphics)
+		struct R(BlendOptions)
 		{
 			RV(bool, enable, n);
 			RV(BlendFactor, src_color, n);

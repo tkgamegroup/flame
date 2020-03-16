@@ -360,46 +360,43 @@ int main(int argc, char **args)
 
 	for (auto& cpp : my_sources)
 	{
+		std::vector<std::string> lines;
+		std::vector<std::string> current_namespaces;
+
 		std::ifstream file(cpp);
 		while (!file.eof())
 		{
 			std::string line;
 			std::getline(file, line);
-			static std::regex reg_R(R"(\sR\((.*)\))");
-			static std::regex reg_RV(R"(\sRV\((.*)\))");
-			static std::regex reg_RF(R"(\sRF\(([\~\w]+)\))");
+			SUS::trim(line);
+			if (!line.empty())
+				lines.push_back(line);
+		}
+
+		auto braces_level = 0;
+		for (auto i = 0; i < lines.size(); i++)
+		{
+			static std::regex reg_ns(R"(namespace\s+(\w+))");
+			static std::regex reg_R(R"(R\((.*)\))");
+			static std::regex reg_RV(R"(RV\((.*)\))");
+			static std::regex reg_RF(R"(RF\(([\~\w]+)\))");
 			std::smatch res;
-			if (std::regex_search(line, res, reg_R))
+			if (std::regex_search(lines[i], res, reg_ns))
+				current_namespaces.push_back(res[1].str());
+			else if (std::regex_search(lines[i], res, reg_R))
 			{
 				auto str = res[1].str();
-				SUS::remove_spaces(str);
-				auto sp = SUS::split(str, ',');
+				SUS::trim(str);
 				DesiredUDT du;
-				du.name = sp[0];
-				for (auto i = 1; i < sp.size(); i++)
-					du.full_name += sp[i] + "::";
-				du.full_name += du.name;
+				du.name = str;
+				for (auto& ns : current_namespaces)
+					du.full_name += ns + "::";
+				du.full_name += str;
 
-				std::vector<std::string> udt_lines;
 				auto braces_level = 0;
-				while (!file.eof())
+				for (i = i + 1; i < lines.size(); i++)
 				{
-					std::getline(file, line);
-					udt_lines.push_back(line);
-					for (auto& ch : line)
-					{
-						if (ch == '{')
-							braces_level++;
-						else if (ch == '}')
-							braces_level--;
-					}
-					if (braces_level == 0)
-						break;
-				}
-
-				for (auto& line : udt_lines)
-				{
-					if (std::regex_search(line, res, reg_RV))
+					if (std::regex_search(lines[i], res, reg_RV))
 					{
 						auto str = res[1].str();
 						SUS::remove_spaces(str);
@@ -422,7 +419,7 @@ int main(int argc, char **args)
 						}
 						du.variables.push_back(v);
 					}
-					else if (std::regex_search(line, res, reg_RF))
+					else if (std::regex_search(lines[i], res, reg_RF))
 					{
 						auto str = res[1].str();
 						SUS::remove_spaces(str);
@@ -430,8 +427,22 @@ int main(int argc, char **args)
 						f.name = str;
 						du.functions.push_back(f);
 					}
+					else
+					{
+						braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
+						braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
+						if (braces_level == 0)
+							break;
+					}
 				}
 				desired_udts.push_back(du);
+			}
+			else
+			{
+				braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
+				braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
+				if (braces_level == 0 && !current_namespaces.empty())
+					current_namespaces.erase(current_namespaces.end() - 1);
 			}
 		}
 		file.close();

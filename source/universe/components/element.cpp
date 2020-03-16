@@ -311,7 +311,7 @@ namespace flame
 		return new cElementPrivate();
 	}
 
-	struct R(Serializer_cElement, flame,)
+	struct R(Serializer_cElement)
 	{
 		RV(Vec2f, pos, n);
 		RV(Vec2f, size, n);

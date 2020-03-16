@@ -163,7 +163,7 @@ namespace flame
 			delete (DescriptorlayoutPrivate*)l;
 		}
 
-		struct R(R_DescriptorBinding, flame, graphics)
+		struct R(R_DescriptorBinding)
 		{
 			BP::Node* n;
 
@@ -253,7 +253,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_Descriptorlayout, flame, graphics)
+		struct R(R_Descriptorlayout)
 		{
 			BP::Node* n;
 
@@ -411,7 +411,7 @@ namespace flame
 			delete (DescriptorsetPrivate*)s;
 		}
 
-		struct R(R_Descriptorset, flame, graphics)
+		struct R(R_Descriptorset)
 		{
 			BP::Node* n;
 
@@ -456,7 +456,7 @@ namespace flame
 			Imageview* view;
 		};
 
-		struct R(R_DescriptorWrite, flame, graphics)
+		struct R(R_DescriptorWrite)
 		{
 			BP::Node* n;
 
@@ -529,7 +529,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_DescriptorWriter, flame, graphics)
+		struct R(R_DescriptorWriter)
 		{
 			BP::Node* n;
 
@@ -628,7 +628,7 @@ namespace flame
 			delete (PipelinelayoutPrivate*)l;
 		}
 
-		struct R(R_Pipelinelayout, flame, graphics)
+		struct R(R_Pipelinelayout)
 		{
 			BP::Node* n;
 
@@ -666,7 +666,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_VertexInputAttribute, flame, graphics)
+		struct R(R_VertexInputAttribute)
 		{
 			BP::Node* n;
 
@@ -701,7 +701,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_VertexInputBuffer, flame, graphics)
+		struct R(R_VertexInputBuffer)
 		{
 			BP::Node* n;
 
@@ -737,7 +737,7 @@ namespace flame
 			}
 		};
 
-		struct R(R_VertexInputInfo, flame, graphics)
+		struct R(R_VertexInputInfo)
 		{
 			BP::Node* n;
 
@@ -1555,7 +1555,7 @@ namespace flame
 			delete (PipelinePrivate*)p;
 		}
 
-		struct R(R_Pipeline, flame, graphics)
+		struct R(R_Pipeline)
 		{
 			BP::Node* n;
 

@@ -139,7 +139,7 @@ namespace flame
 		return new cTextPrivate(font_atlas);
 	}
 
-	struct R(Serializer_cText, flame,)
+	struct R(Serializer_cText)
 	{
 		RV(uint, font_atlas_id, n);
 		RV(Vec4c, color, n);

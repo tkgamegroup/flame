@@ -278,7 +278,7 @@ namespace flame
 			delete (SwapchainResizablePrivate*)s;
 		}
 
-		struct R(R_SwapchainResizable, flame, graphics)
+		struct R(R_SwapchainResizable)
 		{
 			BP::Node* n;
 
