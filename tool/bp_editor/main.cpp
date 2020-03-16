@@ -117,54 +117,49 @@ void MyApp::delete_selected()
 	deselect();
 }
 
-void MyApp::reset_add_node_menu_filter()
-{
-	add_node_menu_filter->text->set_text(L"");
-
-	for (auto i = 1; i < e_node_menu_items->child_count(); i++)
-		e_node_menu_items->child(i)->set_visibility(true);
-}
-
 void MyApp::refresh_add_node_menu()
 {
 	e_node_menu_items->remove_children(0, -1);
 
-	std::vector<UdtInfo*> all_udts;
-	auto add_udt = [&](UdtInfo* u) {
+	auto check = [](UdtInfo* u) {
 		{
 			auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
 			if (!f.first)
-				return;
+				return false;
 			if (!check_function(f.first, "D#void", { "D#uint" }))
-				return;
+				return false;
 		}
-		auto no_input_output = true;
 		for (auto i = 0; i < u->variable_count(); i++)
 		{
 			auto v = u->variable(i);
 			auto flags = v->flags();
 			if ((flags & VariableFlagInput) || (flags & VariableFlagOutput))
-			{
-				no_input_output = false;
-				break;
-			}
+				return true;
 		}
-		if (!no_input_output)
-			all_udts.push_back(u);
+		return false;
 	};
+	std::vector<UdtInfo*> node_types;
 	for (auto i = 0; i < global_db_count(); i++)
 	{
 		auto udts = global_db(i)->get_udts();
 		for (auto j = 0; j < udts.s; j++)
-			add_udt(udts.v[j]);
+		{
+			auto udt = udts.v[j];
+			if (check(udt))
+				node_types.push_back(udt);
+		}
 	}
 	for (auto i = 0; i < app.bp->db_count(); i++)
 	{
 		auto udts = app.bp->dbs()[i]->get_udts();
 		for (auto j = 0; j < udts.s; j++)
-			add_udt(udts.v[j]);
+		{
+			auto udt = udts.v[j];
+			if (check(udt))
+				node_types.push_back(udt);
+		}
 	}
-	std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
+	std::sort(node_types.begin(), node_types.end(), [](UdtInfo* a, UdtInfo* b) {
 		return std::string(a->type()->name()) < std::string(b->type()->name());
 	});
 
@@ -192,12 +187,9 @@ void MyApp::refresh_add_node_menu()
 		}, new_mail_p(this));
 		utils::e_menu_item(L"Array", [](void* c) {
 		}, new_mail_p(this));
-		for (auto udt : all_udts)
+		for (auto udt : node_types)
 		{
 			utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
-				app.reset_add_node_menu_filter();
-				if (app.editor)
-					app.editor->set_add_pos_center();
 				app.add_node((*(UdtInfo**)c)->type()->name(), "");
 			}, new_mail_p(udt));
 		}
@@ -409,8 +401,6 @@ bool MyApp::create(const char* filename)
 								utils::e_input_dialog(L"file", [](void* c, bool ok, const wchar_t* text) {
 									if (ok && text[0])
 									{
-										if (app.editor)
-											app.editor->set_add_pos_center();
 										auto l = app.add_library(text);
 										if (!l)
 											utils::e_message_dialog(L"Failed");
@@ -466,8 +456,6 @@ bool MyApp::create(const char* filename)
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");
 					utils::e_menu_item(L"Duplicate", [](void* c) {
-						if (app.editor)
-							app.editor->set_add_pos_center();
 						app.duplicate_selected();
 					}, Mail<>());
 					utils::e_menu_item(L"Delete", [](void* c) {

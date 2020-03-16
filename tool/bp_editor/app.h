@@ -10,7 +10,6 @@ using namespace graphics;
 struct cEditor : Component
 {
 	cText* tab_text;
-	Vec2f add_pos;
 	Entity* e_base;
 
 	BP::Slot* dragging_slot;
@@ -21,7 +20,6 @@ struct cEditor : Component
 	virtual ~cEditor() override;
 	void on_deselect();
 	void on_select();
-	void set_add_pos_center();
 	void on_changed();
 	void on_load();
 	void on_add_node(BP::Node* n);
@@ -97,7 +95,6 @@ struct MyApp : App
 	void duplicate_selected();
 	void delete_selected();
 
-	void reset_add_node_menu_filter();
 	void refresh_add_node_menu();
 
 	void link_test_nodes();

@@ -10,7 +10,7 @@ namespace flame
 		{
 			if (menu->mode == cMenu::ModeContext)
 			{
-				if ((is_mouse_down(action, key, true) && key == Mouse_Right))
+				if ((is_mouse_up(action, key, true) && key == Mouse_Right))
 					return true;
 			}
 			else

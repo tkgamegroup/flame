@@ -445,11 +445,6 @@ void cEditor::on_select()
 		e->get_component(cElement)->set_frame_color(selected_col);
 }
 
-void cEditor::set_add_pos_center()
-{
-	add_pos = e_base->parent()->get_component(cElement)->size_ * 0.5f - e_base->get_component(cElement)->pos_;
-}
-
 void cEditor::on_changed()
 {
 	std::wstring title = L"editor";
