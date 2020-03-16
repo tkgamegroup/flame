@@ -260,7 +260,27 @@ struct cScene : Component
 		auto extent = slot_bezier_extent * scale;
 		auto line_width = 3.f * scale;
 
-
+		{
+			auto pos = base_element->global_pos;
+			auto size = element->global_size;
+			const auto grid_size = 50.f * base_element->global_scale;
+			auto grid_number = Vec2i(size / grid_size) + 1;
+			auto grid_offset = element->global_pos + (fract(pos / grid_size) - 1.f) * grid_size;
+			for (auto x = 0; x < grid_number.x(); x++)
+			{
+				std::vector<Vec2f> points;
+				points.push_back(grid_offset + Vec2f(x * grid_size, 0.f));
+				points.push_back(grid_offset + Vec2f(x * grid_size, size.y()));
+				canvas->stroke(points.size(), points.data(), Vec4c(200, 200, 200, 255), 1.f);
+			}
+			for (auto y = 0; y < grid_number.y(); y++)
+			{
+				std::vector<Vec2f> points;
+				points.push_back(grid_offset + Vec2f(0.f, y * grid_size));
+				points.push_back(grid_offset + Vec2f(size.x(), y * grid_size));
+				canvas->stroke(points.size(), points.data(), Vec4c(200, 200, 200, 255), 1.f);
+			}
+		}
 
 		for (auto i = 0; i < app.bp->node_count(); i++)
 		{

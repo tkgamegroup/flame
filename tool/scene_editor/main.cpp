@@ -85,11 +85,6 @@ void MyApp::create()
 	utils::e_begin_docker_static_container();
 	utils::e_end_docker_static_container();
 
-	utils::e_text(L"");
-	add_fps_listener([](void* c, uint fps) {
-		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, new_mail_p(utils::current_entity()->get_component(cText)));
-
 	utils::e_end_layout();
 
 	utils::pop_parent();
