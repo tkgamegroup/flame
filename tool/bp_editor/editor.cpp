@@ -168,12 +168,14 @@ struct cScene : Component
 	cEventReceiver* event_receiver;
 	cElement* base_element;
 
+	bool moved;
 	uint scale;
 	cText* scale_text;
 
 	cScene() :
 		Component("cScene")
 	{
+		moved = false;
 		scale = 10;
 	}
 
@@ -207,43 +209,136 @@ struct cScene : Component
 						thiz->scale_text->set_text((std::to_wstring(thiz->scale * 10) + L"%").c_str());
 					}
 				}
-				else
+				else if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					if (ed->mouse_buttons[Mouse_Middle] & KeyStateDown)
-					{
-						if (is_mouse_move(action, key))
-							thiz->base_element->set_pos(Vec2f(pos), true);
-					}
-					else
-					{
-						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						{
-							app.deselect();
+					app.deselect();
 
-							auto scale = thiz->base_element->global_scale;
-							auto extent = slot_bezier_extent * scale;
-							auto line_width = 3.f * scale;
-							for (auto i = 0; i < app.bp->node_count(); i++)
+					auto scale = thiz->base_element->global_scale;
+					auto extent = slot_bezier_extent * scale;
+					auto line_width = 3.f * scale;
+					for (auto i = 0; i < app.bp->node_count(); i++)
+					{
+						auto n = app.bp->node(i);
+						for (auto j = 0; j < n->output_count(); j++)
+						{
+							auto output = n->output(j);
+							for (auto k = 0; k < output->link_count(); k++)
 							{
-								auto n = app.bp->node(i);
-								for (auto j = 0; j < n->output_count(); j++)
+								auto input = output->link(k);
+								auto p1 = ((cSlot*)output->user_data)->element->center();
+								auto p4 = ((cSlot*)input->user_data)->element->center();
+								if (distance(bezier_closest_point(Vec2f(pos), p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4, 4, 7), Vec2f(pos)) < line_width)
 								{
-									auto output = n->output(j);
-									for (auto k = 0; k < output->link_count(); k++)
-									{
-										auto input = output->link(k);
-										auto p1 = ((cSlot*)output->user_data)->element->center();
-										auto p4 = ((cSlot*)input->user_data)->element->center();
-										if (distance(bezier_closest_point(Vec2f(pos), p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4, 4, 7), Vec2f(pos)) < line_width)
-										{
-											app.select(SelLink, input);
-											return false;
-										}
-									}
+									app.select(SelLink, input);
+									return false;
 								}
 							}
-							return true;
 						}
+					}
+				}
+				else if (is_mouse_down(action, key, true) && key == Mouse_Right)
+					thiz->moved = false;
+				else if (is_mouse_up(action, key, true) && key == Mouse_Right)
+				{
+					if (!thiz->moved)
+					{
+						auto check = [](UdtInfo* u) {
+							{
+								auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
+								if (!f.first)
+									return false;
+								if (!check_function(f.first, "D#void", { "D#uint" }))
+									return false;
+							}
+							for (auto i = 0; i < u->variable_count(); i++)
+							{
+								auto v = u->variable(i);
+								auto flags = v->flags();
+								if ((flags & VariableFlagInput) || (flags & VariableFlagOutput))
+									return true;
+							}
+							return false;
+						};
+						std::vector<UdtInfo*> node_types;
+						for (auto i = 0; i < global_db_count(); i++)
+						{
+							auto udts = global_db(i)->get_udts();
+							for (auto j = 0; j < udts.s; j++)
+							{
+								auto udt = udts.v[j];
+								if (check(udt))
+									node_types.push_back(udt);
+							}
+						}
+						for (auto i = 0; i < app.bp->db_count(); i++)
+						{
+							auto udts = app.bp->dbs()[i]->get_udts();
+							for (auto j = 0; j < udts.s; j++)
+							{
+								auto udt = udts.v[j];
+								if (check(udt))
+									node_types.push_back(udt);
+							}
+						}
+						std::sort(node_types.begin(), node_types.end(), [](UdtInfo* a, UdtInfo* b) {
+							return std::string(a->type()->name()) < std::string(b->type()->name());
+						});
+
+						utils::push_parent(utils::add_layer(app.root, ""));
+							utils::e_empty();
+							utils::next_element_pos = pos;
+							utils::c_element()->color_ = utils::style_4c(utils::BackgroundColor);
+							utils::c_layout(LayoutVertical)->item_padding = 4.f;
+							utils::push_parent(utils::current_entity());
+								utils::e_begin_layout(LayoutHorizontal, 4.f);
+									utils::e_text(Icon_SEARCH);
+									auto c_text_search = utils::e_edit(300.f)->get_component(cText);
+								utils::e_end_layout();
+								utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f, 2.f);
+								utils::c_aligner(SizeGreedy, SizeFixed);
+									auto list = utils::e_begin_list(true);
+										utils::e_menu_item(L"Enum", [](void*) {
+										}, Mail<>());
+										utils::e_menu_item(L"Var", [](void*) {
+										}, Mail<>());
+										utils::e_menu_item(L"Array", [](void*) {
+										}, Mail<>());
+										for (auto udt : node_types)
+										{
+											utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
+												app.add_node((*(UdtInfo**)c)->type()->name(), "");
+											}, new_mail_p(udt));
+										}
+									utils::e_end_list();
+								utils::e_end_scroll_view1();
+							utils::pop_parent();
+						utils::pop_parent();
+
+						struct Capture
+						{
+							Entity* l;
+							cText* t;
+						}capture;
+						capture.l = list;
+						capture.t = c_text_search;
+						c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
+							auto& capture = *(Capture*)c;
+							std::wstring str = capture.t->text();
+							for (auto i = 0; i < capture.l->child_count(); i++)
+							{
+								auto item = capture.l->child(i);
+								item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+							}
+							return true;
+						}, new_mail(&capture));
+					}
+				}
+				else if (is_mouse_move(action, key))
+				{
+					if (ed->mouse_buttons[Mouse_Right] & KeyStateDown)
+					{
+						thiz->base_element->set_pos(Vec2f(pos), true);
+						thiz->moved = true;
 					}
 				}
 				return true;

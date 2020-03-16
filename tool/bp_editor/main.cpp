@@ -40,10 +40,7 @@ BP::Library* MyApp::add_library(const wchar_t* filename)
 {
 	auto l = bp->add_library(filename);
 	if (l)
-	{
-		refresh_add_node_menu();
 		set_changed(true);
-	}
 	return l;
 }
 
@@ -62,7 +59,6 @@ void MyApp::remove_library(BP::Library* l)
 	looper().add_event([](void* c, bool*) {
 		auto l = *(BP::Library**)c;
 		app.bp->remove_library(l);
-		app.refresh_add_node_menu();
 		app.set_changed(true);
 	}, new_mail_p(l));
 }
@@ -115,85 +111,6 @@ void MyApp::delete_selected()
 	}
 
 	deselect();
-}
-
-void MyApp::refresh_add_node_menu()
-{
-	e_node_menu_items->remove_children(0, -1);
-
-	auto check = [](UdtInfo* u) {
-		{
-			auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
-			if (!f.first)
-				return false;
-			if (!check_function(f.first, "D#void", { "D#uint" }))
-				return false;
-		}
-		for (auto i = 0; i < u->variable_count(); i++)
-		{
-			auto v = u->variable(i);
-			auto flags = v->flags();
-			if ((flags & VariableFlagInput) || (flags & VariableFlagOutput))
-				return true;
-		}
-		return false;
-	};
-	std::vector<UdtInfo*> node_types;
-	for (auto i = 0; i < global_db_count(); i++)
-	{
-		auto udts = global_db(i)->get_udts();
-		for (auto j = 0; j < udts.s; j++)
-		{
-			auto udt = udts.v[j];
-			if (check(udt))
-				node_types.push_back(udt);
-		}
-	}
-	for (auto i = 0; i < app.bp->db_count(); i++)
-	{
-		auto udts = app.bp->dbs()[i]->get_udts();
-		for (auto j = 0; j < udts.s; j++)
-		{
-			auto udt = udts.v[j];
-			if (check(udt))
-				node_types.push_back(udt);
-		}
-	}
-	std::sort(node_types.begin(), node_types.end(), [](UdtInfo* a, UdtInfo* b) {
-		return std::string(a->type()->name()) < std::string(b->type()->name());
-	});
-
-	utils::push_parent(e_node_menu_items);
-		utils::e_begin_layout(LayoutHorizontal, 4.f);
-			utils::e_text(Icon_SEARCH);
-			{
-				auto c_text = utils::e_edit(150.f)->get_component(cText);
-				c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-					auto menu = app.e_node_menu_items;
-					auto str = (*(cText**)c)->text();
-					for (auto i = 1; i < menu->child_count(); i++)
-					{
-						auto item = menu->child(i);
-						item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-					}
-					return true;
-				}, new_mail_p(c_text));
-			}
-			add_node_menu_filter = utils::current_entity()->get_component(cEdit);
-		utils::e_end_layout();
-		utils::e_menu_item(L"Enum", [](void* c) {
-		}, new_mail_p(this));
-		utils::e_menu_item(L"Var", [](void* c) {
-		}, new_mail_p(this));
-		utils::e_menu_item(L"Array", [](void* c) {
-		}, new_mail_p(this));
-		for (auto udt : node_types)
-		{
-			utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
-				app.add_node((*(UdtInfo**)c)->type()->name(), "");
-			}, new_mail_p(udt));
-		}
-	utils::pop_parent();
 }
 
 void MyApp::link_test_nodes()
@@ -452,8 +369,6 @@ bool MyApp::create(const char* filename)
 						utils::e_end_dialog();
 					}, Mail<>());
 				utils::e_end_menubar_menu();
-				app.e_node_menu_items = utils::e_begin_menubar_menu(L"Add")->get_component(cMenu)->items;
-				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");
 					utils::e_menu_item(L"Duplicate", [](void* c) {
 						app.duplicate_selected();
@@ -511,8 +426,6 @@ bool MyApp::create(const char* filename)
 	utils::pop_parent();
 
 	link_test_nodes();
-
-	refresh_add_node_menu();
 
 	return true;
 }

@@ -226,9 +226,13 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMenuItemPrivate**)c;
-					auto menu = (cMenuPrivate*)thiz->entity->parent()->get_component(cMenuItems)->menu;
-					if (utils::get_top_layer(menu->root, true, "menu"))
-						menu->close_subs(menu->items);
+					auto c_items = thiz->entity->parent()->get_component(cMenuItems);
+					if (c_items)
+					{
+						auto menu = (cMenuPrivate*)c_items->menu;
+						if (utils::get_top_layer(menu->root, true, "menu"))
+							menu->close_subs(menu->items);
+					}
 					return true;
 				}, new_mail_p(this));
 			}

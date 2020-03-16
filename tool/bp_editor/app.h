@@ -65,9 +65,6 @@ struct MyApp : App
 	cEditor* editor;
 	cConsole* console;
 
-	Entity* e_node_menu_items;
-	cEdit* add_node_menu_filter;
-
 	MyApp()
 	{
 		editor = nullptr;
@@ -94,8 +91,6 @@ struct MyApp : App
 
 	void duplicate_selected();
 	void delete_selected();
-
-	void refresh_add_node_menu();
 
 	void link_test_nodes();
 
