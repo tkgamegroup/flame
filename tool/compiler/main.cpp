@@ -18,7 +18,7 @@ int main(int argc, char **args)
 	for (auto& e : compile_otions.get_section_entries("libraries"))
 	{
 		auto l = e.value;
-		static FLAME_SAL(str, "{config}");
+		static FLAME_SAL(str, "{c}");
 		auto pos = l.find(str.s, 0, str.l);
 		while (pos != std::string::npos)
 		{
@@ -39,7 +39,7 @@ int main(int argc, char **args)
 	std::replace(flame_path.begin(), flame_path.end(), '\\', '/');
 	cmakelists << "include(\"" << flame_path << "cmake_utils.cmake\")\n";
 	cmakelists << "add_definitions(-W0 -std:c++latest)\n";
-	cmakelists << "file(GLOB SOURCE_LIST \"*.c*\")\n";
+	cmakelists << "file(GLOB SOURCE_LIST \"*.h*\" \"*.c*\")\n";
 	cmakelists << "generate_rc()\n";
 	cmakelists << "add_library(" << name << " SHARED ${SOURCE_LIST} \"${CMAKE_CURRENT_BINARY_DIR}/version.rc\")\n";
 	cmakelists << "target_include_directories(" << name << " PRIVATE \"" << flame_path << "include\")\n";

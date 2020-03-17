@@ -69,6 +69,8 @@ if (FLAME_ENABLE_PHYSICS)
 	set(PHYSX_SHARED_LIBRARY_DIR "" CACHE PATH "PHYSX SHARED Library Directory")
 endif()
 
+set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
+
 add_subdirectory(source)
 add_subdirectory(test)
 add_subdirectory(game)

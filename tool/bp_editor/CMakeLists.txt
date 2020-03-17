@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
+file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 generate_rc()
 add_executable(bp_editor ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 set_target_properties(bp_editor PROPERTIES FOLDER "tool")

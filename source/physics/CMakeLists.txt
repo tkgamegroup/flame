@@ -1,4 +1,4 @@
-file(GLOB SOURCE_LIST "*.c*")
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
 generate_rc()
 add_library(flame_physics SHARED ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 set_target_properties(flame_physics PROPERTIES FOLDER "flame")

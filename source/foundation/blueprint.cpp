@@ -449,7 +449,7 @@ namespace flame
 #else
 			config_str = L"debug";
 #endif
-			static FLAME_SAL(str, L"{config}");
+			static FLAME_SAL(str, L"{c}");
 			auto pos = fn.find(str.s, 0, str.l);
 			while (pos != std::wstring::npos)
 			{

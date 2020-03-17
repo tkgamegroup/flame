@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
+file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 add_executable(typeinfogen ${SOURCE_LIST})
 set_target_properties(typeinfogen PROPERTIES FOLDER "tool")
 target_include_directories(typeinfogen PRIVATE "${VS_PATH}/DIA SDK/include")
