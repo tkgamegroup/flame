@@ -14,8 +14,6 @@ struct cEditor : Component
 
 	BP::Slot* dragging_slot;
 
-	bool running;
-
 	cEditor();
 	virtual ~cEditor() override;
 	void on_deselect();
@@ -50,7 +48,7 @@ struct MyApp : App
 	BP* bp;
 	bool changed;
 	bool locked;
-	bool running;
+	bool auto_update;
 
 	SelType sel_type;
 
@@ -76,7 +74,7 @@ struct MyApp : App
 
 		sel_type = SelAir;
 		selected.plain = nullptr;
-		running = false;
+		auto_update = false;
 	}
 
 	void set_changed(bool v);

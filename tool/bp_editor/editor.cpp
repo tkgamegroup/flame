@@ -270,9 +270,9 @@ struct cScene : Component
 									node_types.push_back(udt);
 							}
 						}
-						for (auto i = 0; i < app.bp->db_count(); i++)
+						for (auto i = 0; i < app.bp->library_count(); i++)
 						{
-							auto udts = app.bp->dbs()[i]->get_udts();
+							auto udts = app.bp->library(i)->db()->get_udts();
 							for (auto j = 0; j < udts.s; j++)
 							{
 								auto udt = udts.v[j];
@@ -368,10 +368,10 @@ struct cScene : Component
 		auto line_width = 3.f * scale;
 
 		{
-			auto pos = base_element->global_pos;
-			auto size = element->global_size;
 			const auto grid_size = 50.f * base_element->global_scale;
-			auto grid_number = Vec2i(size / grid_size) + 1;
+			auto pos = base_element->global_pos;
+			auto size = element->global_size + grid_size * 2.f;
+			auto grid_number = Vec2i(size / grid_size) + 2;
 			auto grid_offset = element->global_pos + (fract(pos / grid_size) - 1.f) * grid_size;
 			for (auto x = 0; x < grid_number.x(); x++)
 			{
@@ -497,30 +497,34 @@ cEditor::cEditor() :
 			utils::c_aligner(SizeFitParent, SizeFitParent);
 			auto c_bp_scene = new_u_object<cScene>();
 			utils::current_entity()->add_component(c_bp_scene);
-
 				e_base = utils::e_empty();
 				c_bp_scene->base_element = utils::c_element();
-
-				on_load();
-
 			utils::e_end_layout();
 
-			utils::next_entity = Entity::create();
-			utils::e_button(L"Run", [](void* c) {
-				app.running = !app.running;
-				(*(Entity**)c)->get_component(cText)->set_text(app.running ? L"Pause" : L"Run");
+			{
+				auto c_element = utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cElement);
+				c_element->inner_padding_ = 4.f;
+				c_element->color_ = Vec4c(200, 200, 200, 255);
+				utils::c_aligner(SizeFitParent, SizeFixed);
+				utils::e_button(L"Update One Frame");
+				auto c_checkbox = utils::e_checkbox(L"Auto Update")->get_component(cCheckbox);
+				c_checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
+					if (hash == FLAME_CHASH("checked"))
+						app.auto_update = (*(cCheckbox**)c)->checked;
+					return true;
+				}, new_mail_p(c_checkbox));
+				utils::e_button(L"Reset Time");
+				utils::e_end_layout();
+			}
 
-				if (app.running)
-					app.bp->time = 0.f;
-			}, new_mail_p(utils::next_entity));
-
-			utils::e_text(L"100%");
+			c_bp_scene->scale_text = utils::e_text(L"100%")->get_component(cText);
 			utils::c_aligner(AlignxLeft, AlignyBottom);
-			c_bp_scene->scale_text = utils::current_entity()->get_component(cText);
 
 		utils::e_end_layout();
 
 	utils::e_end_docker_page();
+
+	on_load();
 }
 
 cEditor::~cEditor()
@@ -674,26 +678,39 @@ void cEditor::on_add_node(BP::Node* n)
 		utils::push_parent(e_node);
 			utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 				utils::push_style_1u(utils::FontSize, 21);
-				utils::e_text(s2w(n->id()).c_str())->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-				utils::c_event_receiver();
-				utils::c_edit();
-				{
-					struct Capture
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
 					{
-						BP::Node* n;
-						cText* t;
-					}capture;
-					capture.n = n;
-					capture.t = utils::current_entity()->get_component(cText);
-					capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
-						if (hash == FLAME_CHASH("text"))
+						auto e_text = utils::e_text(s2w(n->id()).c_str());
+						e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+						utils::c_event_receiver();
+						utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
+						struct Capture
 						{
+							BP::Node* n;
+							cText* t;
+						}capture;
+						capture.n = n;
+						capture.t = e_text->get_component(cText);
+						utils::e_button(Icon_PENCIL_SQUARE_O, [](void* c) {
 							auto& capture = *(Capture*)c;
-							capture.n->set_id(w2s(capture.t->text()).c_str());
-						}
-						return true;
-					}, new_mail(&capture));
-				}
+							utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
+								if (ok && text[0])
+								{
+									auto id = w2s(text);
+									for (auto i = 0; i < app.bp->node_count(); i++)
+									{
+										if (app.bp->node(i)->id() == id)
+											return;
+									}
+									auto& capture = *(Capture*)c;
+									capture.n->set_id(id.c_str());
+									capture.t->set_text(text);
+								}
+							}, new_mail(&capture));
+						}, new_mail(&capture));
+					}
+					utils::pop_style(utils::ButtonColorNormal);
+				utils::e_end_layout();
 				utils::pop_style(utils::FontSize);
 
 				auto udt = n->udt();
@@ -879,8 +896,12 @@ void cEditor::on_add_node(BP::Node* n)
 
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
 							e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
-							extra_global_db_count = app.bp->db_count();
-							extra_global_dbs = app.bp->dbs();
+							std::vector<TypeinfoDatabase*> dbs;
+							dbs.resize(app.bp->library_count());
+							for (auto i = 0; i < dbs.size(); i++)
+								dbs[i] = app.bp->library(i)->db();
+							extra_global_db_count = dbs.size();
+							extra_global_dbs = dbs.data();
 							auto type = input->type();
 							auto base_hash = type->base_hash();
 							utils::push_style_1u(utils::FontSize, 12);

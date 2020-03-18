@@ -80,6 +80,12 @@ struct Player
 	}
 };
 
+struct Garbage
+{
+	uint time;
+	uint lines;
+};
+
 struct MyApp : App
 {
 	graphics::Atlas* atlas;
@@ -125,7 +131,8 @@ struct MyApp : App
 	uint full_lines[4];
 	uint combo;
 	bool back_to_back;
-	std::vector<uint> garbages;
+	std::vector<Garbage> garbages;
+	bool need_update_garbages_tip;
 	Vec2i mino_pos;
 	MinoType mino_type;
 	MinoType mino_hold;
@@ -473,8 +480,11 @@ struct MyApp : App
 	{
 		looper().add_event([](void* c, bool*) {
 			auto n = *(int*)c;
-			for (auto i = 0; i < n; i++)
-				app.garbages.push_back(60);
+			Garbage g;
+			g.time = 60;
+			g.lines = n;
+			app.garbages.push_back(g);
+			app.need_update_garbages_tip = true;
 		}, new_mail(&value));
 	}
 
@@ -1411,6 +1421,7 @@ struct MyApp : App
 		combo = 0;
 		back_to_back = false;
 		garbages.clear();
+		need_update_garbages_tip = true;
 		mino_pos = Vec2i(0, -1);
 		mino_type = MinoTypeCount;
 		mino_hold = MinoTypeCount;
@@ -1595,6 +1606,8 @@ struct MyApp : App
 
 		if (gaming)
 		{
+			s_2d_renderer->pending_update = true;
+
 			play_time += looper().delta_time;
 
 			auto& p = players[my_room_index];
@@ -1956,17 +1969,21 @@ struct MyApp : App
 									auto cancel = max(attack, (int)l);
 									if (!garbages.empty())
 									{
-										if (garbages.size() < cancel)
+										for (auto it = garbages.begin(); it != garbages.end();)
 										{
-											cancel -= garbages.size();
-											garbages.clear();
+											if (it->lines <= cancel)
+											{
+												cancel -= it->lines;
+												it = garbages.erase(it);
+											}
+											else
+											{
+												it->lines -= cancel;
+												cancel = 0;
+												break;
+											}
 										}
-										else
-										{
-											for (auto i = 0; i < cancel; i++)
-												garbages.erase(garbages.begin());
-											cancel = 0;
-										}
+										need_update_garbages_tip = true;
 
 										attack -= cancel;
 									}
@@ -2035,33 +2052,32 @@ struct MyApp : App
 								{
 									if (!garbages.empty())
 									{
-										auto n = 0;
 										for (auto it = garbages.begin(); it != garbages.end();)
 										{
-											if (*it == 0)
+											if (it->time == 0)
 											{
+												auto n = it->lines;
+												for (auto i = 0; i < board_height - n; i++)
+												{
+													for (auto x = 0; x < board_width; x++)
+													{
+														auto id = c_main->cell(Vec2i(x, i + n));
+														c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+													}
+												}
+												auto hole = ::rand() % board_width;
+												for (auto i = 0; i < n; i++)
+												{
+													auto y = board_height - i - 1;
+													for (auto x = 0; x < board_width; x++)
+														c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
+													c_main->set_cell(Vec2u(hole, y), TileGrid);
+												}
 												it = garbages.erase(it);
-												n++;
+												need_update_garbages_tip = true;
 											}
 											else
 												it++;
-										}
-
-										for (auto i = 0; i < board_height - n; i++)
-										{
-											for (auto x = 0; x < board_width; x++)
-											{
-												auto id = c_main->cell(Vec2i(x, i + n));
-												c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
-											}
-										}
-										auto hole = ::rand() % board_width;
-										for (auto i = 0; i < n; i++)
-										{
-											auto y = board_height - i - 1;
-											for (auto x = 0; x < board_width; x++)
-												c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
-											c_main->set_cell(Vec2u(hole, y), TileGrid);
 										}
 									}
 
@@ -2147,24 +2163,37 @@ struct MyApp : App
 			update_status();
 			if (game_mode == GameMulti)
 			{
-				if (e_garbage->child_count() != garbages.size())
+				if (need_update_garbages_tip)
 				{
 					e_garbage->remove_children(0, -1);
 					utils::push_parent(e_garbage);
+					auto idx = 0;
 					for (auto i = 0; i < garbages.size(); i++)
 					{
-						utils::next_element_pos = Vec2f(0.f, -i * 24.f);
-						utils::next_element_size = Vec2f(24.f);
-						utils::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+						auto& g = garbages[i];
+						for (auto j = 0; j < g.lines; j++)
+						{
+							utils::next_element_pos = Vec2f(0.f, -idx * 24.f - i * 4.f);
+							utils::next_element_size = Vec2f(24.f);
+							utils::e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+							idx++;
+						}
 					}
 					utils::pop_parent();
+					need_update_garbages_tip = false;
 				}
+				auto idx = 0;
 				for (auto i = 0; i < garbages.size(); i++)
 				{
-					if (garbages[i] > 0)
-						garbages[i]--;
-					if (garbages[i] == 0)
-						e_garbage->child(i)->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
+					auto& g = garbages[i];
+					if (g.time > 0)
+						g.time--;
+					if (g.time == 0)
+					{
+						for (auto j = 0; j < g.lines; j++)
+							e_garbage->child(idx + j)->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
+					}
+					idx += g.lines;
 				}
 			}
 		}

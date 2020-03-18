@@ -440,7 +440,7 @@ int main(int argc, char **args)
 		return 0;
 
 	looper().add_event([](void*, bool* go_on) {
-		if (app.running)
+		if (app.auto_update)
 			app.bp->update();
 		*go_on = true;
 	}, Mail<>(), 0.f);

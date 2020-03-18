@@ -283,6 +283,14 @@ namespace flame
 			hovering->state_listeners.call(hovering->state);
 		}
 
+		if (prev_hovering != hovering)
+		{
+			if (prev_hovering)
+				prev_hovering->hover_listeners.call(false);
+			if (hovering)
+				hovering->hover_listeners.call(true);
+		}
+
 		if (prev_focusing != focusing)
 		{
 			if (prev_focusing)

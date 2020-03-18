@@ -43,8 +43,12 @@ cConsole::cConsole() :
 					log += L"bp is locked\n";
 				else
 				{
-					extra_global_db_count = app.bp->db_count();
-					extra_global_dbs = app.bp->dbs();
+					std::vector<TypeinfoDatabase*> dbs;
+					dbs.resize(app.bp->library_count());
+					for (auto i = 0; i < dbs.size(); i++)
+						dbs[i] = app.bp->library(i)->db();
+					extra_global_db_count = dbs.size();
+					extra_global_dbs = dbs.data();
 
 					auto set_data = [&](const std::string& address, const std::string& value) {
 						auto i = app.bp->find_input(address.c_str());
@@ -95,9 +99,9 @@ cConsole::cConsole() :
 								for (auto i = 0; i < udts.s; i++)
 									all_udts.push_back(udts.v[i]);
 							}
-							for (auto i = 0; i < app.bp->db_count(); i++)
+							for (auto& db : dbs)
 							{
-								auto udts = app.bp->dbs()[i]->get_udts();
+								auto udts = db->get_udts();
 								for (auto i = 0; i < udts.s; i++)
 									all_udts.push_back(udts.v[i]);
 							}

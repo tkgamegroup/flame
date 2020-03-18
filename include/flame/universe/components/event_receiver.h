@@ -19,6 +19,7 @@ namespace flame
 		ListenerHub<bool(void* c, KeyStateFlags action, int value)>								key_listeners;
 		ListenerHub<bool(void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos)>		mouse_listeners;
 		ListenerHub<bool(void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>	drag_and_drop_listeners;
+		ListenerHub<bool(void* c, bool hovering)>												hover_listeners;
 		ListenerHub<bool(void* c, bool focusing)>												focus_listeners;
 		ListenerHub<bool(void* c, EventReceiverState state)>									state_listeners;
 
