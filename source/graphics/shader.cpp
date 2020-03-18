@@ -779,6 +779,8 @@ namespace flame
 			}
 		};
 
+		static BP* execution_context = nullptr;
+
 		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
 		{
 			const std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
@@ -1124,6 +1126,9 @@ namespace flame
 					assert(0);
 					return false;
 				}
+
+				if (execution_context)
+					execution_context->report_used_resource(spv_path.c_str());
 
 #if defined(FLAME_VULKAN)
 				VkShaderModuleCreateInfo shader_info;
@@ -1588,8 +1593,10 @@ namespace flame
 						std::vector<const wchar_t*> _names(shader_filenames->s);
 						for (auto i = 0; i < _names.size(); i++)
 							_names[i] = shader_filenames->at(i).v;
+						execution_context = n->scene();
 						out = Pipeline::create(d, std::filesystem::path(n->scene()->filename()).parent_path().c_str(), _names.size(), _names.data(), pll, renderpass, subpass_idx,
 							vi, vp, raster, sc, depth, dynamic_states ? dynamic_states->s : 0, dynamic_states ? dynamic_states->v : nullptr);
+						execution_context = nullptr;
 					}
 					else
 						out = nullptr;

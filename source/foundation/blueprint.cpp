@@ -93,14 +93,14 @@ namespace flame
 	{
 		std::wstring filename;
 
-		std::vector<TypeinfoDatabase*> dbs;
-
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
 		std::vector<NodePrivate*> active_nodes;
 		std::vector<NodePrivate*> pending_update_nodes;
 		std::list<NodePrivate*> update_list;
 		bool need_update_hierarchy;
+
+		std::vector<std::filesystem::path> used_resources;
 
 		BPPrivate()
 		{
@@ -109,11 +109,19 @@ namespace flame
 			need_update_hierarchy = true;
 		}
 
+		void update_resources_file()
+		{
+			std::filesystem::path path(filename);
+			path.replace_filename(L"bpres");
+			std::ofstream file(path);
+			for (auto& r : used_resources)
+				file << r.string() << "\n";
+			file.close();
+		}
+
 		LibraryPrivate* add_library(const std::wstring& filename);
 		void remove_library(LibraryPrivate* m);
 		LibraryPrivate* find_library(const std::wstring& filename) const;
-
-		void collect_dbs();
 
 		bool check_or_create_id(std::string& id) const;
 		NodePrivate* add_node(const std::string& type, const std::string& type_name);
@@ -127,6 +135,8 @@ namespace flame
 
 		void add_to_pending_update(NodePrivate* n);
 		void update();
+
+		void report_used_resource(const std::wstring& filename);
 	};
 
 	LibraryPrivate::~LibraryPrivate()
@@ -474,7 +484,9 @@ namespace flame
 		m->db = TypeinfoDatabase::load(absolute_filename.c_str(), false, true);
 
 		libraries.emplace_back(m);
-		collect_dbs();
+
+		used_resources.push_back(_fn);
+		update_resources_file();
 
 		return m;
 	}
@@ -501,8 +513,17 @@ namespace flame
 						n_it++;
 				}
 
+				for (auto it = used_resources.begin(); it != used_resources.end(); it++)
+				{
+					if (*it == l->filename)
+					{
+						used_resources.erase(it);
+						break;
+					}
+				}
+				update_resources_file();
+
 				libraries.erase(it);
-				collect_dbs();
 
 				return;
 			}
@@ -518,13 +539,6 @@ namespace flame
 				return l.get();
 		}
 		return nullptr;
-	}
-
-	void BPPrivate::collect_dbs()
-	{
-		dbs.clear();
-		for (auto& l : libraries)
-			dbs.push_back(l->db);
 	}
 
 	bool BPPrivate::check_or_create_id(std::string& id) const
@@ -548,6 +562,9 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
 	{
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& l : libraries)
+			dbs.push_back(l->db);
 		extra_global_db_count = dbs.size();
 		extra_global_dbs = dbs.data();
 		auto udt = find_udt(FLAME_HASH(type.c_str()));
@@ -724,6 +741,21 @@ namespace flame
 		time += looper().delta_time;
 	}
 
+	void BPPrivate::report_used_resource(const std::wstring& _fn)
+	{
+		std::filesystem::path fn(_fn);
+		fn = fn.lexically_relative(std::filesystem::path(filename).parent_path());
+
+		for (auto& r : used_resources)
+		{
+			if (r == fn)
+				return;
+		}
+
+		used_resources.push_back(fn);
+		update_resources_file();
+	}
+
 	const wchar_t* BP::Library::filename() const
 	{
 		return ((LibraryPrivate*)this)->filename.c_str();
@@ -894,16 +926,6 @@ namespace flame
 		return ((BPPrivate*)this)->find_library(filename);
 	}
 
-	uint BP::db_count() const
-	{
-		return ((BPPrivate*)this)->dbs.size();
-	}
-
-	TypeinfoDatabase* const* BP::dbs() const
-	{
-		return ((BPPrivate*)this)->dbs.data();
-	}
-
 	uint BP::node_count() const
 	{
 		return ((BPPrivate*)this)->nodes.size();
@@ -947,6 +969,11 @@ namespace flame
 	void BP::update()
 	{
 		((BPPrivate*)this)->update();
+	}
+
+	void BP::report_used_resource(const wchar_t* filename)
+	{
+		((BPPrivate*)this)->report_used_resource(filename);
 	}
 
 	BP* BP::create()
@@ -1036,22 +1063,18 @@ namespace flame
 			link_descs.push_back(link);
 		}
 
-		std::vector<std::string> input_export_descs;
-		std::vector<std::string> output_export_descs;
-
-		for (auto n : file_root.child("exports").child("input"))
-			input_export_descs.push_back(n.attribute("v").value());
-		for (auto n : file_root.child("exports").child("output"))
-			output_export_descs.push_back(n.attribute("v").value());
-
 		auto bp = new BPPrivate();
 		bp->filename = filename;
+		bp->update_resources_file();
 
 		for (auto& l_d : library_descs)
 			bp->add_library(l_d.filename);
 
-		extra_global_db_count = bp->dbs.size();
-		extra_global_dbs = bp->dbs.data();
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& l : bp->libraries)
+			dbs.push_back(l->db);
+		extra_global_db_count = dbs.size();
+		extra_global_dbs = dbs.data();
 		for (auto& n_d : node_descs)
 		{
 			NodePrivate* n = nullptr;
@@ -1255,8 +1278,11 @@ namespace flame
 			n_module.append_attribute("filename").set_value(w2s(l->filename).c_str());
 		}
 
-		extra_global_db_count = bp->dbs.size();
-		extra_global_dbs = bp->dbs.data();
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& l : bp->libraries)
+			dbs.push_back(l->db);
+		extra_global_db_count = dbs.size();
+		extra_global_dbs = dbs.data();
 		auto n_nodes = file_root.append_child("nodes");
 		for (auto& n : bp->nodes)
 		{

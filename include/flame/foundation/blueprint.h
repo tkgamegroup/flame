@@ -104,9 +104,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void remove_library(Library* m);
 		FLAME_FOUNDATION_EXPORTS Library* find_library(const wchar_t* filename) const;
 
-		FLAME_FOUNDATION_EXPORTS uint db_count() const;
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* const* dbs() const;
-
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* type, const char* id);
@@ -118,6 +115,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void clear();
 
 		FLAME_FOUNDATION_EXPORTS void update();
+
+		FLAME_FOUNDATION_EXPORTS void report_used_resource(const wchar_t* filename);
 
 		FLAME_FOUNDATION_EXPORTS static BP* create();
 		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename);

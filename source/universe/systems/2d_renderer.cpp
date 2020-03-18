@@ -84,6 +84,11 @@ namespace flame
 			pending_update = false;
 		}
 
+		~s2DRendererPrivate()
+		{
+			BP::destroy(canvas->scene);
+		}
+
 		void do_render(EntityPrivate* e)
 		{
 			if (!e->global_visibility_)
