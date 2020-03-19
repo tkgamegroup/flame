@@ -100,7 +100,8 @@ struct cSlot : Component
 
 	BP::Slot* s;
 
-	Entity* tip;
+	Entity* tip_type;
+	Entity* tip_link;
 
 	cSlot() :
 		Component("cSlot")
@@ -109,7 +110,8 @@ struct cSlot : Component
 		event_receiver = nullptr;
 		tracker = nullptr;
 
-		tip = nullptr;
+		tip_type = nullptr;
+		tip_link = nullptr;
 	}
 
 	void on_component_added(Component* c) override
@@ -137,6 +139,7 @@ struct cSlot : Component
 				auto element = thiz->element;
 				auto s = thiz->s;
 				auto is_in = s->io() == BP::Slot::In;
+
 				if (action == DragStart)
 				{
 					app.editor->dragging_slot = s;
@@ -151,17 +154,61 @@ struct cSlot : Component
 					app.s_2d_renderer->pending_update = true;
 				else if (action == DragEnd)
 				{
+					if (!er)
+					{
+
+					}
+
 					app.editor->dragging_slot = nullptr;
 					app.s_2d_renderer->pending_update = true;
 				}
 				else if (action == BeingOverStart)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
-					element->set_frame_color((is_in ? s->can_link(oth) : oth->can_link(s)) ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
+					auto ok = (is_in ? s->can_link(oth) : oth->can_link(s));
+
+					element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
 					element->set_frame_thickness(2.f);
+
+					if (!thiz->tip_link)
+					{
+						utils::push_parent(app.root);
+						thiz->tip_link = utils::e_begin_layout(LayoutVertical, 4.f);
+						auto c_element = thiz->tip_link->get_component(cElement);
+						c_element->pos_ = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
+						c_element->pivot_ = Vec2f(0.5f, 1.f);
+						c_element->inner_padding_ = 4.f;
+						c_element->frame_thickness_ = 2.f;
+						c_element->color_ = Vec4c(200, 200, 200, 255);
+						c_element->frame_color_ = Vec4c(0, 0, 0, 255);
+						{
+							auto s_type = s->type();
+							auto o_type = oth->type();
+							std::wstring str;
+							if (is_in)
+								str = s2w(o_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(s_type->name());
+							else
+								str = s2w(s_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(o_type->name());
+							utils::e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+						}
+						utils::e_end_layout();
+						utils::pop_parent();
+					}
 				}
 				else if (action == BeingOverEnd)
+				{
 					element->set_frame_thickness(0.f);
+
+					if (thiz->tip_link)
+					{
+						auto e = thiz->tip_link;
+						thiz->tip_link = nullptr;
+						looper().add_event([](void* c, bool*) {
+							auto e = *(Entity**)c;
+							e->parent()->remove_child(e);
+						}, new_mail_p(e));
+					}
+				}
 				else if (action == BeenDropped)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
@@ -176,18 +223,20 @@ struct cSlot : Component
 							app.set_changed(true);
 					}
 				}
+
 				return true;
 			}, new_mail_p(this));
 			event_receiver->hover_listeners.add([](void* c, bool hovering) {
 				auto thiz = *(cSlot**)c;
 				auto s = thiz->s;
 				auto is_in = s->io() == BP::Slot::In;
+
 				if (!hovering)
 				{
-					if (thiz->tip)
+					if (thiz->tip_type)
 					{
-						auto e = thiz->tip;
-						thiz->tip = nullptr;
+						auto e = thiz->tip_type;
+						thiz->tip_type = nullptr;
 						looper().add_event([](void* c, bool*) {
 							auto e = *(Entity**)c;
 							e->parent()->remove_child(e);
@@ -196,22 +245,47 @@ struct cSlot : Component
 				}
 				else
 				{
-					if (!thiz->tip)
+					if (!thiz->tip_type)
 					{
 						utils::push_parent(app.root);
-							thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
-							auto c_element = thiz->tip->get_component(cElement);
+							thiz->tip_type = utils::e_begin_layout(LayoutVertical, 4.f);
+							auto c_element = thiz->tip_type->get_component(cElement);
 							c_element->pos_ = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
 							c_element->pivot_ = Vec2f(is_in ? 1.f : 0.f , 0.f);
 							c_element->inner_padding_ = 4.f;
 							c_element->frame_thickness_ = 2.f;
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
-								utils::e_text(s2w(s->type()->name()).c_str());
+								{
+									auto type = s->type();
+									std::wstring str;
+									Vec4c col;
+									switch (type->tag())
+									{
+									case TypeEnumSingle:
+										str = L"Enum Single\n" + s2w(type->base_name());
+										col = Vec4c(128, 128, 0, 255);
+										break;
+									case TypeEnumMulti:
+										str = L"Enum Multi\n" + s2w(type->base_name());
+										col = Vec4c(160, 128, 0, 255);
+										break;
+									case TypeData:
+										str = L"Data\n" + s2w(type->base_name());
+										col = Vec4c(0, 128, 128, 255);
+										break;
+									case TypePointer:
+										str = L"Pointer\n" + s2w(type->base_name());
+										col = Vec4c(255, 0, 0, 255);
+										break;
+									}
+									utils::e_text(str.c_str())->get_component(cText)->color = col;
+								}
 							utils::e_end_layout();
 						utils::pop_parent();
 					}
 				}
+
 				return true;
 			}, new_mail_p(this));
 		}
@@ -233,6 +307,117 @@ struct cScene : Component
 	{
 		moved = false;
 		scale = 10;
+	}
+
+	void show_add_node_menu(const Vec2f& pos)
+	{
+		auto check = [](UdtInfo* u) {
+			{
+				auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
+				if (!f.first)
+					return false;
+				if (!check_function(f.first, "D#void", { "D#uint" }))
+					return false;
+			}
+			for (auto i = 0; i < u->variable_count(); i++)
+			{
+				auto v = u->variable(i);
+				auto flags = v->flags();
+				if ((flags & VariableFlagInput) || (flags & VariableFlagOutput))
+					return true;
+			}
+			return false;
+		};
+		std::vector<UdtInfo*> node_types;
+		for (auto i = 0; i < global_db_count(); i++)
+		{
+			auto udts = global_db(i)->get_udts();
+			for (auto j = 0; j < udts.s; j++)
+			{
+				auto udt = udts.v[j];
+				if (check(udt))
+					node_types.push_back(udt);
+			}
+		}
+		for (auto i = 0; i < app.bp->library_count(); i++)
+		{
+			auto udts = app.bp->library(i)->db()->get_udts();
+			for (auto j = 0; j < udts.s; j++)
+			{
+				auto udt = udts.v[j];
+				if (check(udt))
+					node_types.push_back(udt);
+			}
+		}
+		std::sort(node_types.begin(), node_types.end(), [](UdtInfo* a, UdtInfo* b) {
+			return std::string(a->type()->name()) < std::string(b->type()->name());
+		});
+
+		utils::push_parent(utils::add_layer(app.root, ""));
+			utils::e_empty();
+			utils::next_element_pos = pos;
+			utils::c_element()->color_ = utils::style_4c(utils::BackgroundColor);
+			utils::c_layout(LayoutVertical)->item_padding = 4.f;
+			utils::push_parent(utils::current_entity());
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					utils::e_text(Icon_SEARCH);
+					auto c_text_search = utils::e_edit(300.f)->get_component(cText);
+				utils::e_end_layout();
+				utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f, 2.f);
+				utils::c_aligner(SizeGreedy, SizeFixed);
+					auto list = utils::e_begin_list(true);
+						utils::e_menu_item(L"Enum Single", [](void*) {
+
+						}, Mail<>());
+						utils::e_menu_item(L"Enum Multi", [](void*) {
+
+						}, Mail<>());
+						utils::e_menu_item(L"Variable", [](void*) {
+
+						}, Mail<>());
+						utils::e_menu_item(L"Array", [](void*) {
+
+						}, Mail<>());
+						{
+							struct Capture
+							{
+								UdtInfo* u;
+								Vec2f p;
+							}capture;
+							capture.p = (Vec2f(pos) - base_element->global_pos) / (scale * 0.1f);
+							for (auto udt : node_types)
+							{
+								capture.u = udt;
+								utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
+									auto& capture = *(Capture*)c;
+									app.add_node(capture.u->type()->name() + 2, "", capture.p);
+								}, new_mail(&capture));
+							}
+						}
+					utils::e_end_list();
+				utils::e_end_scroll_view1();
+			utils::pop_parent();
+		utils::pop_parent();
+
+		{
+			struct Capture
+			{
+				Entity* l;
+				cText* t;
+			}capture;
+			capture.l = list;
+			capture.t = c_text_search;
+			c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
+				auto& capture = *(Capture*)c;
+				std::wstring str = capture.t->text();
+				for (auto i = 0; i < capture.l->child_count(); i++)
+				{
+					auto item = capture.l->child(i);
+					item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+				}
+				return true;
+			}, new_mail(&capture));
+		}
 	}
 
 	void on_component_added(Component* c) override
@@ -302,109 +487,7 @@ struct cScene : Component
 				else if (is_mouse_up(action, key, true) && key == Mouse_Right)
 				{
 					if (!thiz->moved)
-					{
-						auto check = [](UdtInfo* u) {
-							{
-								auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
-								if (!f.first)
-									return false;
-								if (!check_function(f.first, "D#void", { "D#uint" }))
-									return false;
-							}
-							for (auto i = 0; i < u->variable_count(); i++)
-							{
-								auto v = u->variable(i);
-								auto flags = v->flags();
-								if ((flags & VariableFlagInput) || (flags & VariableFlagOutput))
-									return true;
-							}
-							return false;
-						};
-						std::vector<UdtInfo*> node_types;
-						for (auto i = 0; i < global_db_count(); i++)
-						{
-							auto udts = global_db(i)->get_udts();
-							for (auto j = 0; j < udts.s; j++)
-							{
-								auto udt = udts.v[j];
-								if (check(udt))
-									node_types.push_back(udt);
-							}
-						}
-						for (auto i = 0; i < app.bp->library_count(); i++)
-						{
-							auto udts = app.bp->library(i)->db()->get_udts();
-							for (auto j = 0; j < udts.s; j++)
-							{
-								auto udt = udts.v[j];
-								if (check(udt))
-									node_types.push_back(udt);
-							}
-						}
-						std::sort(node_types.begin(), node_types.end(), [](UdtInfo* a, UdtInfo* b) {
-							return std::string(a->type()->name()) < std::string(b->type()->name());
-						});
-
-						utils::push_parent(utils::add_layer(app.root, ""));
-							utils::e_empty();
-							utils::next_element_pos = pos;
-							utils::c_element()->color_ = utils::style_4c(utils::BackgroundColor);
-							utils::c_layout(LayoutVertical)->item_padding = 4.f;
-							utils::push_parent(utils::current_entity());
-								utils::e_begin_layout(LayoutHorizontal, 4.f);
-									utils::e_text(Icon_SEARCH);
-									auto c_text_search = utils::e_edit(300.f)->get_component(cText);
-								utils::e_end_layout();
-								utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f, 2.f);
-								utils::c_aligner(SizeGreedy, SizeFixed);
-									auto list = utils::e_begin_list(true);
-										utils::e_menu_item(L"Enum", [](void*) {
-										}, Mail<>());
-										utils::e_menu_item(L"Var", [](void*) {
-										}, Mail<>());
-										utils::e_menu_item(L"Array", [](void*) {
-										}, Mail<>());
-										{
-											struct Capture
-											{
-												UdtInfo* u;
-												Vec2f p;
-											}capture;
-											capture.p = (Vec2f(pos) - thiz->base_element->global_pos) / (thiz->scale * 0.1f);
-											for (auto udt : node_types)
-											{
-												capture.u = udt;
-												utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
-													auto& capture = *(Capture*)c;
-													app.add_node(capture.u->type()->name(), "", capture.p);
-												}, new_mail(&capture));
-											}
-										}
-									utils::e_end_list();
-								utils::e_end_scroll_view1();
-							utils::pop_parent();
-						utils::pop_parent();
-
-						{
-							struct Capture
-							{
-								Entity* l;
-								cText* t;
-							}capture;
-							capture.l = list;
-							capture.t = c_text_search;
-							c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
-								auto& capture = *(Capture*)c;
-								std::wstring str = capture.t->text();
-								for (auto i = 0; i < capture.l->child_count(); i++)
-								{
-									auto item = capture.l->child(i);
-									item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-								}
-								return true;
-							}, new_mail(&capture));
-						}
-					}
+						thiz->show_add_node_menu(Vec2f(pos));
 				}
 				else if (is_mouse_move(action, key))
 				{
@@ -565,14 +648,21 @@ struct cNode : Component
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
 								auto n = thiz->n;
 								std::wstring str;
+								Vec4c col;
 								auto udt = n->udt();
 								if (udt)
 								{
 									auto module_name = std::filesystem::path(udt->db()->module_name());
 									module_name = module_name.lexically_relative(std::filesystem::canonical(app.fileppath));
-									str += module_name.wstring() + L"\n";
+									str = L"UDT\n" + s2w(n->type_name() + 2) + L"\n" + module_name.wstring();
+									col = Vec4c(128, 60, 220, 255);
 								}
-								utils::e_text((str + s2w(n->type_name())).c_str());
+								else
+								{
+									str = s2w(n->type_name());
+									col = Vec4c(0, 0, 0, 255);
+								}
+								utils::e_text(str.c_str())->get_component(cText)->color = col;
 							utils::e_end_layout();
 						utils::pop_parent();
 					}
@@ -828,7 +918,7 @@ void cEditor::on_add_node(BP::Node* n)
 									capture.n->set_id(id.c_str());
 									capture.t->set_text(text);
 								}
-							}, new_mail(&capture));
+							}, new_mail(&capture), s2w(capture.n->id()).c_str());
 						}, new_mail(&capture));
 					}
 					utils::pop_style(utils::ButtonColorNormal);

@@ -119,27 +119,27 @@ void MyApp::link_test_nodes()
 	auto n_dst = app.bp->find_node("test_dst");
 	if (!n_dst)
 	{
-		n_dst = app.add_node("D#DstImage", "test_dst", Vec2f(0.f, 0.f));
+		n_dst = app.add_node("DstImage", "test_dst", Vec2f(0.f, 0.f));
 		n_dst->used_by_editor = true;
 	}
 	{
-		auto s = app.bp->find_input("*.rt_dst.type");
+		auto s = app.bp->find_input("rt_dst.type");
 		if (s)
 			s->link_to(n_dst->find_output("type"));
 	}
 	{
-		auto s = app.bp->find_input("*.rt_dst.v");
+		auto s = app.bp->find_input("rt_dst.v");
 		if (s)
 			s->link_to(n_dst->find_output("view"));
 	}
 	auto n_cbs = app.bp->find_node("test_cbs");
 	if (!n_cbs)
 	{
-		n_cbs = app.add_node("D#CmdBufs", "test_cbs", Vec2f(0.f, -200.f));
+		n_cbs = app.add_node("CmdBufs", "test_cbs", Vec2f(0.f, -200.f));
 		n_cbs->used_by_editor = true;
 	}
 	{
-		auto s = app.bp->find_input("*.make_cmd.cbs");
+		auto s = app.bp->find_input("make_cmd.cbs");
 		if (s)
 			s->link_to(n_cbs->find_output("out"));
 	}

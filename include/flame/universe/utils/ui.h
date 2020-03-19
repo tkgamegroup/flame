@@ -517,9 +517,7 @@ namespace flame
 				{
 					capture.e->set_visibility(true);
 					capture.d->set_visibility(false);
-					auto dp = capture.d_er->dispatcher;
-					dp->next_focusing = capture.e_er;
-					dp->pending_update = true;
+					capture.d_er->dispatcher->next_focusing = capture.e_er;
 				}
 				else if (is_active(capture.d_er) && is_mouse_move(action, key))
 				{
@@ -1219,11 +1217,14 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m)
+		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m, 
+			const wchar_t* default_text = nullptr)
 		{
 			auto e = e_begin_dialog();
 			e_text(title);
 			auto ct = e_edit(100.f)->get_component(cText);
+			if (default_text)
+				ct->set_text(default_text);
 			e_begin_layout(LayoutHorizontal, 4.f);
 			c_aligner(AlignxMiddle, AlignyFree);
 			struct WrapedMail

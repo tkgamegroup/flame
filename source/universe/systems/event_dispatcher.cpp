@@ -329,7 +329,7 @@ namespace flame
 			if (prev_drag_overing)
 				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(BeingOverEnd, focusing, mouse_pos);
 			if (drag_overing)
-				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOverStart, prev_dragging, mouse_pos);
+				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOverStart, focusing, mouse_pos);
 		}
 		if (focusing && focusing_state == FocusingAndDragging)
 		{

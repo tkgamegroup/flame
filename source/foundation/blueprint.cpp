@@ -578,7 +578,7 @@ namespace flame
 			dbs.push_back(l->db);
 		extra_global_db_count = dbs.size();
 		extra_global_dbs = dbs.data();
-		auto udt = find_udt(FLAME_HASH(type.c_str()));
+		auto udt = find_udt(FLAME_HASH(("D#" + type).c_str()));
 		extra_global_db_count = 0;
 		extra_global_dbs = nullptr;
 
@@ -1095,12 +1095,12 @@ namespace flame
 		{
 			NodePrivate* n = nullptr;
 
-			static FLAME_SAL(prefix_enum, "D#Enum");
-			static FLAME_SAL(prefix_var, "D#Var");
-			static FLAME_SAL(prefix_array, "D#Array");
-			if (n_d.type.compare(0, prefix_enum.l, prefix_enum.s) == 0)
-			{
-				std::string enum_name(n_d.type.begin() + prefix_enum.l + 1, n_d.type.end() - 1);
+			static FLAME_SAL(prefix_enum_single, "EnumSingle");
+			static FLAME_SAL(prefix_enum_multi, "EnumMulti");
+			static FLAME_SAL(prefix_variable, "Variable");
+			static FLAME_SAL(prefix_array, "Array");
+
+			auto add_enum_node = [&](TypeTag tag, const std::string& enum_name) {
 #pragma pack(1)
 				struct Dummy
 				{
@@ -1120,14 +1120,24 @@ namespace flame
 				};
 #pragma pack()
 				n = bp->add_node(sizeof(Dummy), n_d.type, {
-						{TypeInfo::get(TypeEnumSingle, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
+						{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
 					}, {
-						{TypeInfo::get(TypeEnumSingle, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
+						{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
 					}, nullptr, nullptr, f2v(&Dummy::update), false, n_d.id);
-			}
-			else if (n_d.type.compare(0, prefix_var.l, prefix_var.s) == 0)
+			};
+			if (n_d.type.compare(0, prefix_enum_single.l, prefix_enum_single.s) == 0)
 			{
-				std::string type_name(n_d.type.begin() + prefix_var.l + 1, n_d.type.end() - 1);
+				std::string enum_name(n_d.type.begin() + prefix_enum_single.l + 1, n_d.type.end() - 1);
+				add_enum_node(TypeEnumSingle, enum_name);
+			}
+			else if (n_d.type.compare(0, prefix_enum_multi.l, prefix_enum_multi.s) == 0)
+			{
+				std::string enum_name(n_d.type.begin() + prefix_enum_multi.l + 1, n_d.type.end() - 1);
+				add_enum_node(TypeEnumMulti, enum_name);
+			}
+			else if (n_d.type.compare(0, prefix_variable.l, prefix_variable.s) == 0)
+			{
+				std::string type_name(n_d.type.begin() + prefix_variable.l + 1, n_d.type.end() - 1);
 #pragma pack(1)
 				struct Dummy
 				{

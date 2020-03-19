@@ -36,7 +36,10 @@ namespace flame
 
 	void EntityPrivate::set_visibility(bool v)
 	{
+		if (visibility_ == v)
+			return;
 		visibility_ = v;
+		update_visibility();
 		for (auto& c : components)
 			c.second->on_visibility_changed();
 		if (parent)
