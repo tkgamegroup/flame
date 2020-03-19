@@ -423,7 +423,10 @@ namespace flame
 		DragStart,
 		DragEnd,
 		DragOvering,
-		Dropped
+		BeingOverStart,
+		BeingOvering,
+		BeingOverEnd,
+		BeenDropped
 	};
 
 	inline bool is_key_down(KeyStateFlags action) // value is Key

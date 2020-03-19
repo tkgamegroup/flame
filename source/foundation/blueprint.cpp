@@ -38,6 +38,7 @@ namespace flame
 		SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi);
 
 		void set_data(const void* data);
+		bool can_link(SlotPrivate* target) const;
 		bool link_to(SlotPrivate* target);
 
 		StringA get_address() const;
@@ -179,7 +180,7 @@ namespace flame
 		type->copy_from(d, data);
 	}
 
-	bool SlotPrivate::link_to(SlotPrivate* target)
+	bool SlotPrivate::can_link(SlotPrivate* target) const
 	{
 		assert(io == In);
 
@@ -203,6 +204,16 @@ namespace flame
 				(base_hash == target_type->base_hash() || base_hash == FLAME_CHASH("void")))))
 				return false;
 		}
+
+		return true;
+	}
+
+	bool SlotPrivate::link_to(SlotPrivate* target)
+	{
+		assert(io == In);
+
+		if (!can_link(target))
+			return false;
 
 		if (links[0])
 		{
@@ -829,6 +840,11 @@ namespace flame
 	BP::Slot* BP::Slot::link(int idx) const
 	{
 		return ((SlotPrivate*)this)->links[idx];
+	}
+
+	bool BP::Slot::can_link(Slot* target) const
+	{
+		return ((SlotPrivate*)this)->can_link((SlotPrivate*)target);
 	}
 
 	bool BP::Slot::link_to(BP::Slot*target)

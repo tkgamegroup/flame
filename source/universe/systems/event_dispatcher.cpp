@@ -143,7 +143,8 @@ namespace flame
 			{
 				hovering = er;
 
-				if (mouse_buttons[Mouse_Left] == (KeyStateDown | KeyStateJust))
+				if (mouse_buttons[Mouse_Left] == (KeyStateDown | KeyStateJust) ||
+					mouse_buttons[Mouse_Right] == (KeyStateDown | KeyStateJust))
 				{
 					focusing = nullptr;
 
@@ -226,7 +227,8 @@ namespace flame
 		{
 			if (!focusing->entity->global_visibility_)
 				focusing = nullptr;
-			else if (focusing_state != FocusingNormal && (mouse_buttons[Mouse_Left] & KeyStateUp))
+			else if (focusing_state != FocusingNormal && 
+				((mouse_buttons[Mouse_Left] & KeyStateUp) && (mouse_buttons[Mouse_Right] & KeyStateUp)))
 				focusing_state = FocusingNormal;
 
 			if (dbclick_timer > 0.f)
@@ -319,11 +321,22 @@ namespace flame
 		else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
 		{
 			if (prev_drag_overing)
-				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(Dropped, prev_dragging, mouse_pos);
+				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(BeenDropped, prev_dragging, mouse_pos);
 			((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
 		}
-		if (drag_overing)
-			((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(DragOvering, focusing, mouse_pos);
+		if (prev_drag_overing != drag_overing)
+		{
+			if (prev_drag_overing)
+				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(BeingOverEnd, focusing, mouse_pos);
+			if (drag_overing)
+				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOverStart, prev_dragging, mouse_pos);
+		}
+		if (focusing && focusing_state == FocusingAndDragging)
+		{
+			((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragOvering, drag_overing, mouse_pos);
+			if (drag_overing)
+				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOvering, focusing, mouse_pos);
+		}
 
 		if (key_receiving)
 		{

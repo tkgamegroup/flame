@@ -56,7 +56,6 @@ struct MyApp : App
 	{
 		void* plain;
 		BP::Node* node;
-		BP::Slot* slot;
 		BP::Slot* link;
 	}selected;
 

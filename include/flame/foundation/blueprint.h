@@ -65,6 +65,7 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS uint link_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
+			FLAME_FOUNDATION_EXPORTS bool can_link(Slot* target) const;
 			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
 
 			FLAME_FOUNDATION_EXPORTS StringA get_address() const;

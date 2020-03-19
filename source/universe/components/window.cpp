@@ -479,7 +479,7 @@ namespace flame
 					auto thiz = (*(cDockerTabbarPrivate**)c);
 					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
 					{
-						if (action == DragOvering)
+						if (action == BeingOvering)
 						{
 							float show_drop_pos;
 							auto idx = thiz->calc_pos(pos.x(), &show_drop_pos);
@@ -496,7 +496,7 @@ namespace flame
 							primitive.size = Vec2f(10.f, thiz->element->global_size.y());
 							drop_tab->drop_tips.push_back(primitive);
 						}
-						else if (action == Dropped)
+						else if (action == BeenDropped)
 						{
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
@@ -600,7 +600,7 @@ namespace flame
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerPagesPrivate**)c);
-					if (action == DragOvering)
+					if (action == BeingOvering)
 					{
 						thiz->dock_side = Outside;
 						auto center = thiz->element->center();
@@ -659,12 +659,12 @@ namespace flame
 							drop_tab->drop_tips.push_back(primitive);
 						}
 					}
-					else if (action == Dropped)
+					else if (action == BeenDropped)
 					{
 						if (thiz->dock_side == SideCenter)
 						{
 							auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent()->child(0)->get_component(cEventReceiver);
-							tabbar_er->on_drag_and_drop(Dropped, er, Vec2i(0, 99999));
+							tabbar_er->on_drag_and_drop(BeenDropped, er, Vec2i(0, 99999));
 						}
 						else if (thiz->dock_side != Outside)
 						{
@@ -850,7 +850,7 @@ namespace flame
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerStaticContainerPrivate**)c);
-					if (action == DragOvering)
+					if (action == BeingOvering)
 					{
 						thiz->dock_side = Outside;
 						auto center = thiz->element->center();
@@ -869,7 +869,7 @@ namespace flame
 							drop_tab->drop_tips.push_back(primitive);
 						}
 					}
-					else if (action == Dropped)
+					else if (action == BeenDropped)
 					{
 						if (thiz->dock_side == SideCenter)
 						{

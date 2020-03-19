@@ -34,7 +34,7 @@ struct cHierarchyItem : Component
 				auto thiz = *(cHierarchyItem**)c;
 				auto element = thiz->element;
 
-				if (action == DragOvering)
+				if (action == BeingOvering)
 				{
 					auto h = element->global_size.y() * 0.3f;
 					if (pos.y() < element->global_pos.y() + h)
@@ -44,7 +44,7 @@ struct cHierarchyItem : Component
 					else
 						thiz->drop_pos = 1;
 				}
-				else if (action == Dropped)
+				else if (action == BeenDropped)
 				{
 					if (!(thiz->entity->parent()->get_component(cTree) && thiz->drop_pos != 1))
 					{

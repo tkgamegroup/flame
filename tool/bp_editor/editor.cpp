@@ -100,12 +100,16 @@ struct cSlot : Component
 
 	BP::Slot* s;
 
+	Entity* tip;
+
 	cSlot() :
 		Component("cSlot")
 	{
 		element = nullptr;
 		event_receiver = nullptr;
 		tracker = nullptr;
+
+		tip = nullptr;
 	}
 
 	void on_component_added(Component* c) override
@@ -130,19 +134,35 @@ struct cSlot : Component
 
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cSlot**)c;
+				auto element = thiz->element;
 				auto s = thiz->s;
+				auto is_in = s->io() == BP::Slot::In;
 				if (action == DragStart)
 				{
 					app.editor->dragging_slot = s;
-					if (s->io() == BP::Slot::In)
+					if (is_in)
 					{
+						if (s->link())
+							app.set_changed(true);
 						s->link_to(nullptr);
-						app.set_changed(true);
 					}
 				}
+				else if (action == DragOvering)
+					app.s_2d_renderer->pending_update = true;
 				else if (action == DragEnd)
+				{
 					app.editor->dragging_slot = nullptr;
-				else if (action == Dropped)
+					app.s_2d_renderer->pending_update = true;
+				}
+				else if (action == BeingOverStart)
+				{
+					auto oth = er->entity->get_component(cSlot)->s;
+					element->set_frame_color((is_in ? s->can_link(oth) : oth->can_link(s)) ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
+					element->set_frame_thickness(2.f);
+				}
+				else if (action == BeingOverEnd)
+					element->set_frame_thickness(0.f);
+				else if (action == BeenDropped)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
 					if (s->io() == BP::Slot::In)
@@ -154,6 +174,42 @@ struct cSlot : Component
 					{
 						if (oth->link_to(thiz->s))
 							app.set_changed(true);
+					}
+				}
+				return true;
+			}, new_mail_p(this));
+			event_receiver->hover_listeners.add([](void* c, bool hovering) {
+				auto thiz = *(cSlot**)c;
+				auto s = thiz->s;
+				auto is_in = s->io() == BP::Slot::In;
+				if (!hovering)
+				{
+					if (thiz->tip)
+					{
+						auto e = thiz->tip;
+						thiz->tip = nullptr;
+						looper().add_event([](void* c, bool*) {
+							auto e = *(Entity**)c;
+							e->parent()->remove_child(e);
+						}, new_mail_p(e));
+					}
+				}
+				else
+				{
+					if (!thiz->tip)
+					{
+						utils::push_parent(app.root);
+							thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
+							auto c_element = thiz->tip->get_component(cElement);
+							c_element->pos_ = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
+							c_element->pivot_ = Vec2f(is_in ? 1.f : 0.f , 0.f);
+							c_element->inner_padding_ = 4.f;
+							c_element->frame_thickness_ = 2.f;
+							c_element->color_ = Vec4c(200, 200, 200, 255);
+							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
+								utils::e_text(s2w(s->type()->name()).c_str());
+							utils::e_end_layout();
+						utils::pop_parent();
 					}
 				}
 				return true;
@@ -211,6 +267,8 @@ struct cScene : Component
 				}
 				else if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
+					app.s_2d_renderer->pending_update = true;
+
 					app.deselect();
 
 					auto scale = thiz->base_element->global_scale;
@@ -227,7 +285,10 @@ struct cScene : Component
 								auto input = output->link(k);
 								auto p1 = ((cSlot*)output->user_data)->element->center();
 								auto p4 = ((cSlot*)input->user_data)->element->center();
-								if (distance(bezier_closest_point(Vec2f(pos), p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4, 4, 7), Vec2f(pos)) < line_width)
+								auto p2 = p1 + Vec2f(extent, 0.f);
+								auto p3 = p4 - Vec2f(extent, 0.f);
+								auto bb = rect_from_points(p1, p2, p3, p4);
+								if (rect_contains(bb, Vec2f(pos)) && distance(bezier_closest_point(Vec2f(pos), p1, p2, p3, p4, 4, 7), Vec2f(pos)) < line_width)
 								{
 									app.select(SelLink, input);
 									return false;
@@ -363,6 +424,7 @@ struct cScene : Component
 		if (element->cliped)
 			return;
 
+		auto range = rect(element->global_pos, element->global_size);
 		auto scale = base_element->global_scale;
 		auto extent = slot_bezier_extent * scale;
 		auto line_width = 3.f * scale;
@@ -400,9 +462,15 @@ struct cScene : Component
 					auto input = output->link(k);
 					auto p1 = ((cSlot*)output->user_data)->element->center();
 					auto p4 = ((cSlot*)input->user_data)->element->center();
-					std::vector<Vec2f> points;
-					path_bezier(points, p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4);
-					canvas->stroke(points.size(), points.data(), app.selected.link == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
+					auto p2 = p1 + Vec2f(extent, 0.f);
+					auto p3 = p4 - Vec2f(extent, 0.f);
+					auto bb = rect_from_points(p1, p2, p3, p4);
+					if (rect_overlapping(bb, range))
+					{
+						std::vector<Vec2f> points;
+						path_bezier(points, p1, p2, p3, p4);
+						canvas->stroke(points.size(), points.data(), app.selected.link == input ? Vec4c(255, 255, 50, 255) : Vec4c(100, 100, 120, 255), line_width);
+					}
 				}
 			}
 		}
@@ -410,9 +478,16 @@ struct cScene : Component
 		{
 			auto p1 = ((cSlot*)app.editor->dragging_slot->user_data)->element->center();
 			auto p4 = Vec2f(event_receiver->dispatcher->mouse_pos);
-			std::vector<Vec2f> points;
-			path_bezier(points, p1, p1 + Vec2f(extent, 0.f), p4 - Vec2f(extent, 0.f), p4);
-			canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 50, 255), line_width);
+			auto is_in = app.editor->dragging_slot->io() == BP::Slot::In;
+			auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
+			auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
+			auto bb = rect_from_points(p1, p2, p3, p4);
+			if (rect_overlapping(bb, range))
+			{
+				std::vector<Vec2f> points;
+				path_bezier(points, p1, p2, p3, p4);
+				canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 50, 255), line_width);
+			}
 		}
 	}
 };
@@ -423,12 +498,17 @@ struct cNode : Component
 	cEventReceiver* event_receiver;
 
 	BP::Node* n;
+
 	bool moved;
+
+	Entity* tip;
 
 	cNode() :
 		Component("cNode")
 	{
 		moved = false;
+
+		tip = nullptr;
 	}
 
 	void on_component_added(Component* c) override
@@ -454,6 +534,49 @@ struct cNode : Component
 				auto thiz = *(cNode**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					app.select(SelNode, thiz->n);
+				return true;
+			}, new_mail_p(this));
+			event_receiver->hover_listeners.add([](void* c, bool hovering) {
+				auto thiz = *(cNode**)c;
+				if (!hovering)
+				{
+					if (thiz->tip)
+					{
+						auto e = thiz->tip;
+						thiz->tip = nullptr;
+						looper().add_event([](void* c, bool*) {
+							auto e = *(Entity**)c;
+							e->parent()->remove_child(e);
+						}, new_mail_p(e));
+					}
+				}
+				else
+				{
+					if (!thiz->tip)
+					{
+						utils::push_parent(app.root);
+							thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
+							auto c_element = thiz->tip->get_component(cElement);
+							c_element->pos_ = thiz->element->global_pos - Vec2f(0.f, 8.f);
+							c_element->pivot_ = Vec2f(0.f, 1.f);
+							c_element->inner_padding_ = 4.f;
+							c_element->frame_thickness_ = 2.f;
+							c_element->color_ = Vec4c(200, 200, 200, 255);
+							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
+								auto n = thiz->n;
+								std::wstring str;
+								auto udt = n->udt();
+								if (udt)
+								{
+									auto module_name = std::filesystem::path(udt->db()->module_name());
+									module_name = module_name.lexically_relative(std::filesystem::canonical(app.fileppath));
+									str += module_name.wstring() + L"\n";
+								}
+								utils::e_text((str + s2w(n->type_name())).c_str());
+							utils::e_end_layout();
+						utils::pop_parent();
+					}
+				}
 				return true;
 			}, new_mail_p(this));
 			event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
@@ -682,7 +805,6 @@ void cEditor::on_add_node(BP::Node* n)
 					{
 						auto e_text = utils::e_text(s2w(n->id()).c_str());
 						e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-						utils::c_event_receiver();
 						utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
 						struct Capture
 						{
@@ -713,149 +835,146 @@ void cEditor::on_add_node(BP::Node* n)
 				utils::e_end_layout();
 				utils::pop_style(utils::FontSize);
 
+				std::string type_name = n->type_name();
 				auto udt = n->udt();
-				if (udt)
-				{
-					auto module_name = std::filesystem::path(udt->db()->module_name());
-					module_name = module_name.lexically_relative(std::filesystem::canonical(app.fileppath));
-					utils::e_text((module_name.wstring() + L"\n" + s2w(n->type_name())).c_str())->get_component(cText)->color = Vec4c(50, 50, 50, 255);
-				}
-				std::string udt_name = n->type_name();
+
 				if (n->id() == "test_dst")
 				{
 					utils::e_button(L"Show", [](void* c) {
 						//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
 					}, new_mail_p(n));
 				}
-				//else if (udt_name == "D#graphics::Shader")
-				//{
-				//	auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
-				//	e_content->add_child(e_edit);
+				else if (type_name == "D#graphics::Shader")
+				{
+					/*
+					auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
+					e_content->add_child(e_edit);
 
-				//	struct Capture
-				//	{
-				//		BP::Node* n;
-				//	}capture;
-				//	capture.n = n;
-				//	e_edit->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				//		auto& capture = *(Capture*)c;
+					struct Capture
+					{
+						BP::Node* n;
+					}capture;
+					capture.n = n;
+					e_edit->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+						auto& capture = *(Capture*)c;
 
-				//		if (is_mouse_clicked(action, key))
-				//		{
-				//			capture.e->locked = true;
-				//			auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
-				//			{
-				//				t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
+						if (is_mouse_clicked(action, key))
+						{
+							capture.e->locked = true;
+							auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
+							{
+								t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
 
-				//				auto c_layout = cLayout::create(LayoutVertical);
-				//				c_layout->width_fit_children = false;
-				//				c_layout->height_fit_children = false;
-				//				t->add_component(c_layout);
-				//			}
+								auto c_layout = cLayout::create(LayoutVertical);
+								c_layout->width_fit_children = false;
+								c_layout->height_fit_children = false;
+								t->add_component(c_layout);
+							}
 
-				//			auto e_buttons = Entity::create();
-				//			t->add_child(e_buttons);
-				//			{
-				//				e_buttons->add_component(cElement::create());
+							auto e_buttons = Entity::create();
+							t->add_child(e_buttons);
+							{
+								e_buttons->add_component(cElement::create());
 
-				//				auto c_layout = cLayout::create(LayoutHorizontal);
-				//				c_layout->item_padding = 4.f;
-				//				e_buttons->add_component(c_layout);
-				//			}
+								auto c_layout = cLayout::create(LayoutHorizontal);
+								c_layout->item_padding = 4.f;
+								e_buttons->add_component(c_layout);
+							}
 
-				//			auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
-				//			e_buttons->add_child(e_back);
-				//			{
-				//				e_back->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				//					if (is_mouse_clicked(action, key))
-				//					{
-				//						destroy_topmost(editor->entity, false);
-				//						editor->locked = false;
-				//					}
-				//				}, new_mail_p(capture.e));
-				//			}
+							auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
+							e_buttons->add_child(e_back);
+							{
+								e_back->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+									if (is_mouse_clicked(action, key))
+									{
+										destroy_topmost(editor->entity, false);
+										editor->locked = false;
+									}
+								}, new_mail_p(capture.e));
+							}
 
-				//			auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
-				//			e_buttons->add_child(e_compile);
+							auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
+							e_buttons->add_child(e_compile);
 
-				//			auto e_text_tip = Entity::create();
-				//			e_buttons->add_child(e_text_tip);
-				//			{
-				//				e_text_tip->add_component(cElement::create());
+							auto e_text_tip = Entity::create();
+							e_buttons->add_child(e_text_tip);
+							{
+								e_text_tip->add_component(cElement::create());
 
-				//				auto c_text = cText::create(app.font_atlas_pixel);
-				//				c_text->set_text(L"(Do update first to get popper result)");
-				//				e_text_tip->add_component(c_text);
-				//			}
+								auto c_text = cText::create(app.font_atlas_pixel);
+								c_text->set_text(L"(Do update first to get popper result)");
+								e_text_tip->add_component(c_text);
+							}
 
-				//			auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
+							auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
 
-				//			auto e_text_view = Entity::create();
-				//			{
-				//				auto c_element = cElement::create();
-				//				c_element->clip_children = true;
-				//				e_text_view->add_component(c_element);
+							auto e_text_view = Entity::create();
+							{
+								auto c_element = cElement::create();
+								c_element->clip_children = true;
+								e_text_view->add_component(c_element);
 
-				//				auto c_aligner = cAligner::create();
-				//				c_aligner->width_policy_ = SizeFitParent;
-				//				c_aligner->height_policy_ = SizeFitParent;
-				//				e_text_view->add_component(c_aligner);
+								auto c_aligner = cAligner::create();
+								c_aligner->width_policy_ = SizeFitParent;
+								c_aligner->height_policy_ = SizeFitParent;
+								e_text_view->add_component(c_aligner);
 
-				//				auto c_layout = cLayout::create(LayoutVertical);
-				//				c_layout->width_fit_children = false;
-				//				c_layout->height_fit_children = false;
-				//				e_text_view->add_component(c_layout);
-				//			}
+								auto c_layout = cLayout::create(LayoutVertical);
+								c_layout->width_fit_children = false;
+								c_layout->height_fit_children = false;
+								e_text_view->add_component(c_layout);
+							}
 
-				//			auto e_text = Entity::create();
-				//			e_text_view->add_child(e_text);
-				//			{
-				//				e_text->add_component(cElement::create());
+							auto e_text = Entity::create();
+							e_text_view->add_child(e_text);
+							{
+								e_text->add_component(cElement::create());
 
-				//				auto c_text = cText::create(app.font_atlas_pixel);
-				//				auto file = get_file_string(capture.e->filepath + L"/" + filename);
-				//				c_text->set_text(s2w(file).c_str());
-				//				c_text->auto_width_ = false;
-				//				e_text->add_component(c_text);
+								auto c_text = cText::create(app.font_atlas_pixel);
+								auto file = get_file_string(capture.e->filepath + L"/" + filename);
+								c_text->set_text(s2w(file).c_str());
+								c_text->auto_width_ = false;
+								e_text->add_component(c_text);
 
-				//				e_text->add_component(cEventReceiver::create());
+								e_text->add_component(cEventReceiver::create());
 
-				//				e_text->add_component(cEdit::create());
+								e_text->add_component(cEdit::create());
 
-				//				auto c_aligner = cAligner::create();
-				//				c_aligner->width_policy_ = SizeFitParent;
-				//				e_text->add_component(c_aligner);
+								auto c_aligner = cAligner::create();
+								c_aligner->width_policy_ = SizeFitParent;
+								e_text->add_component(c_aligner);
 
-				//				{
-				//					struct _Capture
-				//					{
-				//						BP::Node* n;
-				//						cText* t;
-				//					}_capture;
-				//					_capture.n = capture.n;
-				//					_capture.t = c_text;
-				//					e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-				//						auto& capture = *(_Capture*)c;
-				//						if (is_mouse_clicked(action, key))
-				//						{
-				//							auto i_filename = capture.n->find_input("filename");
-				//							std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
-				//							auto str = w2s(capture.t->text());
-				//							str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
-				//							file.write(str.c_str(), str.size());
-				//							file.close();
-				//							i_filename->set_frame(capture.n->scene()->frame);
-				//						}
-				//					}, new_mail(&_capture));
-				//				}
-				//			}
+								{
+									struct _Capture
+									{
+										BP::Node* n;
+										cText* t;
+									}_capture;
+									_capture.n = capture.n;
+									_capture.t = c_text;
+									e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+										auto& capture = *(_Capture*)c;
+										if (is_mouse_clicked(action, key))
+										{
+											auto i_filename = capture.n->find_input("filename");
+											std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
+											auto str = w2s(capture.t->text());
+											str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+											file.write(str.c_str(), str.size());
+											file.close();
+											i_filename->set_frame(capture.n->scene()->frame);
+										}
+									}, new_mail(&_capture));
+								}
+							}
 
-				//			auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
-				//			e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
-				//			t->add_child(e_scrollbar_container);
-				//		}
-				//	}, new_mail(&capture));
-				//}
+							auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
+							e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
+							t->add_child(e_scrollbar_container);
+						}
+					}, new_mail(&capture));
+					*/
+				}
 				utils::e_begin_layout(LayoutHorizontal, 16.f);
 				utils::c_aligner(SizeGreedy, SizeFixed);
 
@@ -873,7 +992,7 @@ void cEditor::on_add_node(BP::Node* n)
 								auto c_element = utils::c_element();
 								auto r = utils::style_1u(utils::FontSize);
 								c_element->size_ = r;
-								c_element->roundness_ = r * 0.5f;
+								c_element->roundness_ = r * 0.4f;
 								c_element->roundness_lod = 2;
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 							}
@@ -1134,7 +1253,7 @@ void cEditor::on_add_node(BP::Node* n)
 								auto c_element = utils::c_element();
 								auto r = utils::style_1u(utils::FontSize);
 								c_element->size_ = r;
-								c_element->roundness_ = r * 0.5f;
+								c_element->roundness_ = r * 0.4f;
 								c_element->roundness_lod = 2;
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 							}

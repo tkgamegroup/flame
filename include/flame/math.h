@@ -293,6 +293,12 @@ namespace flame
 			return v_[3];
 		}
 
+		Vec<2, T> xy() const
+		{
+			static_assert(N > 2);
+			return Vec<2, T>(v_[0], v_[1]);
+		}
+
 		Vec<2, T> xz() const
 		{
 			static_assert(N > 2);
@@ -303,6 +309,12 @@ namespace flame
 		{
 			static_assert(N > 3);
 			return Vec<2, T>(v_[1], v_[3]);
+		}
+
+		Vec<2, T> zw() const
+		{
+			static_assert(N > 3);
+			return Vec<2, T>(v_[2], v_[3]);
 		}
 
 		T operator[](uint i) const
@@ -1211,16 +1223,10 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	T minN(T a, T b, T c)
-	{
-		return min(min(a, b), c);
-	}
-
 	template <class T, class ...Args>
-	T minN(T a, T b, T c, Args... args)
+	T minN(T a, T b, Args... args)
 	{
-		return minN(min(a, b), c, args...);
+		return minN(min(a, b), args...);
 	}
 
 	template <class T>
@@ -1238,16 +1244,10 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	T maxN(T a, T b, T c)
-	{
-		return max(max(a, b), c);
-	}
-
 	template <class T, class ...Args>
-	T maxN(T a, T b, T c, Args... args)
+	T maxN(T a, T b, Args... rest)
 	{
-		return maxN(max(a, b), c, args...);
+		return maxN(max(a, b), rest...);
 	}
 
 	template <class T>
@@ -1624,13 +1624,46 @@ namespace flame
 	}
 
 	template <class T>
-	Vec<4, T> rect_expand(const Vec<4, T>& rect, T length)
+	void rect_expand(Vec<4, T>& rect, T length)
 	{
-		Vec<4, T> ret(*this);
-		ret.x() -= length;
-		ret.y() -= length;
-		ret.z() += length;
-		ret.w() += length;
+		rect.x() -= length;
+		rect.y() -= length;
+		rect.z() += length;
+		rect.w() += length;
+	}
+
+	template <class T>
+	void rect_expand(Vec<4, T>& rect, const Vec<2, T>& p)
+	{
+		rect.x() = min(rect.x(), p.x());
+		rect.y() = min(rect.y(), p.y());
+		rect.z() = max(rect.z(), p.x());
+		rect.w() = max(rect.w(), p.y());
+	}
+
+	template <class T, class ...Args>
+	void rect_expand(Vec<4, T>& rect, const Vec<2, T>& p, Args... rest)
+	{
+		rect_expand(rect, p);
+		rect_expand(rect, rest...);
+	}
+
+	template <class T>
+	Vec<4, T> rect_from_points(const Vec<2, T>& p1, const Vec<2, T>& p2)
+	{
+		Vec<4, T> ret;
+		ret.x() = min(p1.x(), p2.x());
+		ret.y() = min(p1.y(), p2.y());
+		ret.z() = max(p1.x(), p2.x());
+		ret.w() = max(p1.y(), p2.y());
+		return ret;
+	}
+
+	template <class T, class ...Args>
+	Vec<4, T> rect_from_points(const Vec<2, T>& p1, const Vec<2, T>& p2, Args... rest)
+	{
+		auto ret = rect_from_points(p1, p2);
+		rect_expand(ret, rest...);
 		return ret;
 	}
 
