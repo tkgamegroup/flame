@@ -91,10 +91,41 @@ struct R(CmdBufs)
 
 const auto slot_bezier_extent = 50.f;
 
+static const wchar_t* type_prefix(TypeTag t, bool is_array = false)
+{
+	switch (t)
+	{
+	case TypeEnumSingle:
+		return L"Enum Single\n";
+	case TypeEnumMulti:
+		return L"Enum Multi\n";
+	case TypeData:
+		return is_array ? L"Array\n" : L"Data\n";
+	case TypePointer:
+		return is_array ? L"Array Pointer\n" : L"Pointer\n";
+	}
+	return L"";
+}
+
+static Vec4c type_color(TypeTag t)
+{
+	switch (t)
+	{
+	case TypeEnumSingle:
+		return Vec4c(128, 128, 0, 255);
+	case TypeEnumMulti:
+		return Vec4c(160, 128, 0, 255);
+	case TypeData:
+		return Vec4c(0, 128, 128, 255);
+	case TypePointer:
+		return Vec4c(255, 0, 0, 255);
+	}
+	return Vec4c(0);
+}
+
 struct cSlot : Component
 {
 	cElement* element;
-	cText* text;
 	cEventReceiver* event_receiver;
 	cDataTracker* tracker;
 
@@ -118,8 +149,6 @@ struct cSlot : Component
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
 			element = (cElement*)c;
-		else if (c->name_hash == FLAME_CHASH("cText"))
-			text = (cText*)c;
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
@@ -189,7 +218,7 @@ struct cSlot : Component
 								str = s2w(o_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(s_type->name());
 							else
 								str = s2w(s_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(o_type->name());
-							utils::e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+							utils::e_text(str.c_str())->get_component(cText)->color_ = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
 						}
 						utils::e_end_layout();
 						utils::pop_parent();
@@ -258,28 +287,8 @@ struct cSlot : Component
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
 								{
 									auto type = s->type();
-									std::wstring str;
-									Vec4c col;
-									switch (type->tag())
-									{
-									case TypeEnumSingle:
-										str = L"Enum Single\n" + s2w(type->base_name());
-										col = Vec4c(128, 128, 0, 255);
-										break;
-									case TypeEnumMulti:
-										str = L"Enum Multi\n" + s2w(type->base_name());
-										col = Vec4c(160, 128, 0, 255);
-										break;
-									case TypeData:
-										str = L"Data\n" + s2w(type->base_name());
-										col = Vec4c(0, 128, 128, 255);
-										break;
-									case TypePointer:
-										str = L"Pointer\n" + s2w(type->base_name());
-										col = Vec4c(255, 0, 0, 255);
-										break;
-									}
-									utils::e_text(str.c_str())->get_component(cText)->color = col;
+									auto tag = type->tag();
+									utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color_ = type_color(tag);
 								}
 							utils::e_end_layout();
 						utils::pop_parent();
@@ -307,6 +316,62 @@ struct cScene : Component
 	{
 		moved = false;
 		scale = 10;
+	}
+
+	void show_add_enum_node_menu(TypeTag tag, const Vec2f& pos)
+	{
+		std::vector<EnumInfo*> enum_infos;
+		for (auto i = 0; i < global_db_count(); i++)
+		{
+			auto enums = global_db(i)->get_enums();
+			for (auto j = 0; j < enums.s; j++)
+				enum_infos.push_back(enums.v[j]);
+		}
+		for (auto i = 0; i < app.bp->library_count(); i++)
+		{
+			auto enums = app.bp->library(i)->db()->get_enums();
+			for (auto j = 0; j < enums.s; j++)
+				enum_infos.push_back(enums.v[j]);
+		}
+		std::sort(enum_infos.begin(), enum_infos.end(), [](EnumInfo* a, EnumInfo* b) {
+			return std::string(a->name()) < std::string(b->name());
+		});
+
+		utils::push_parent(utils::add_layer(app.root, ""));
+			utils::e_empty();
+			utils::next_element_pos = pos;
+			utils::c_element()->color_ = utils::style_4c(utils::BackgroundColor);
+			utils::c_layout(LayoutVertical)->item_padding = 4.f;
+			utils::push_parent(utils::current_entity());
+				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					utils::e_text(Icon_SEARCH);
+					auto c_text_search = utils::e_edit(300.f)->get_component(cText);
+				utils::e_end_layout();
+				utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f);
+				utils::c_aligner(SizeGreedy, SizeFixed);
+					auto e_list = utils::e_begin_list(true);
+						struct Capture
+						{
+							TypeTag t;
+							EnumInfo* e;
+							Vec2f p;
+						}capture;
+						capture.t = tag;
+						capture.p = (Vec2f(pos) - base_element->global_pos) / (scale * 0.1f);
+						for (auto ei : enum_infos)
+						{
+							capture.e = ei;
+							utils::e_menu_item(s2w(ei->name()).c_str(), [](void* c) {
+								auto& capture = *(Capture*)c;
+								app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.e->name()) + ")").c_str(), "", capture.p);
+							}, new_mail(&capture));
+						}
+					utils::e_end_list();
+				utils::e_end_scroll_view1();
+			utils::pop_parent();
+		utils::pop_parent();
+
+		app.add_filter_function(c_text_search, e_list);
 	}
 
 	void show_add_node_menu(const Vec2f& pos)
@@ -363,61 +428,52 @@ struct cScene : Component
 					utils::e_text(Icon_SEARCH);
 					auto c_text_search = utils::e_edit(300.f)->get_component(cText);
 				utils::e_end_layout();
-				utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f, 2.f);
+				utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f);
 				utils::c_aligner(SizeGreedy, SizeFixed);
-					auto list = utils::e_begin_list(true);
-						utils::e_menu_item(L"Enum Single", [](void*) {
-
-						}, Mail<>());
-						utils::e_menu_item(L"Enum Multi", [](void*) {
-
-						}, Mail<>());
+					auto e_list = utils::e_begin_list(true);
+						{
+							struct Capture
+							{
+								cScene* thiz;
+								Vec2f p;
+							}capture;
+							capture.thiz = this;
+							capture.p = pos;
+							utils::e_menu_item(L"Enum Single", [](void* c) {
+								auto& capture = *(Capture*)c;
+								capture.thiz->show_add_enum_node_menu(TypeEnumSingle, capture.p);
+							}, new_mail(&capture));
+							utils::e_menu_item(L"Enum Multi", [](void* c) {
+								auto& capture = *(Capture*)c;
+								capture.thiz->show_add_enum_node_menu(TypeEnumMulti, capture.p);
+							}, new_mail(&capture));
+						}
 						utils::e_menu_item(L"Variable", [](void*) {
 
 						}, Mail<>());
 						utils::e_menu_item(L"Array", [](void*) {
 
 						}, Mail<>());
+						struct Capture
 						{
-							struct Capture
-							{
-								UdtInfo* u;
-								Vec2f p;
-							}capture;
-							capture.p = (Vec2f(pos) - base_element->global_pos) / (scale * 0.1f);
-							for (auto udt : node_types)
-							{
-								capture.u = udt;
-								utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
-									auto& capture = *(Capture*)c;
-									app.add_node(capture.u->type()->name() + 2, "", capture.p);
-								}, new_mail(&capture));
-							}
+							UdtInfo* u;
+							Vec2f p;
+						}capture;
+						capture.p = (Vec2f(pos) - base_element->global_pos) / (scale * 0.1f);
+						for (auto udt : node_types)
+						{
+							capture.u = udt;
+							utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
+								auto& capture = *(Capture*)c;
+								app.add_node(capture.u->type()->name() + 2, "", capture.p);
+							}, new_mail(&capture));
 						}
 					utils::e_end_list();
 				utils::e_end_scroll_view1();
 			utils::pop_parent();
 		utils::pop_parent();
 
-		{
-			struct Capture
-			{
-				Entity* l;
-				cText* t;
-			}capture;
-			capture.l = list;
-			capture.t = c_text_search;
-			c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
-				auto& capture = *(Capture*)c;
-				std::wstring str = capture.t->text();
-				for (auto i = 0; i < capture.l->child_count(); i++)
-				{
-					auto item = capture.l->child(i);
-					item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-				}
-				return true;
-			}, new_mail(&capture));
-		}
+		app.add_filter_function(c_text_search, e_list);
 	}
 
 	void on_component_added(Component* c) override
@@ -575,12 +631,46 @@ struct cScene : Component
 	}
 };
 
+static const wchar_t* node_type_prefix(char t)
+{
+	switch (t)
+	{
+	case 'S':
+		return type_prefix(TypeEnumSingle);
+	case 'M':
+		return type_prefix(TypeEnumMulti);
+	case 'V':
+		return L"Variable\n";
+	case 'A':
+		return L"Array\n";
+	}
+	return L"";
+}
+
+static Vec4c node_type_color(char t)
+{
+	switch (t)
+	{
+	case 'S':
+		return type_color(TypeEnumSingle);
+	case 'M':
+		return type_color(TypeEnumMulti);
+	case 'V':
+		return Vec4c(0, 128, 0, 255);
+	case 'A':
+		return Vec4c(0, 0, 255, 255);
+	}
+	return Vec4c(128, 60, 220, 255);
+}
+
 struct cNode : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
 
 	BP::Node* n;
+	char n_type;
+	std::wstring n_name;
 
 	bool moved;
 
@@ -648,21 +738,12 @@ struct cNode : Component
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
 								auto n = thiz->n;
 								std::wstring str;
-								Vec4c col;
 								auto udt = n->udt();
 								if (udt)
-								{
-									auto module_name = std::filesystem::path(udt->db()->module_name());
-									module_name = module_name.lexically_relative(std::filesystem::canonical(app.fileppath));
-									str = L"UDT\n" + s2w(n->type_name() + 2) + L"\n" + module_name.wstring();
-									col = Vec4c(128, 60, 220, 255);
-								}
+									str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + thiz->n_name;
 								else
-								{
-									str = s2w(n->type_name());
-									col = Vec4c(0, 0, 0, 255);
-								}
-								utils::e_text(str.c_str())->get_component(cText)->color = col;
+									str = node_type_prefix(thiz->n_type) + thiz->n_name;
+								utils::e_text(str.c_str())->get_component(cText)->color_ = node_type_color(thiz->n_type);
 							utils::e_end_layout();
 						utils::pop_parent();
 					}
@@ -708,10 +789,10 @@ cEditor::cEditor() :
 			utils::e_begin_layout();
 			utils::c_event_receiver();
 			utils::c_aligner(SizeFitParent, SizeFitParent);
-			auto c_bp_scene = new_u_object<cScene>();
-			utils::current_entity()->add_component(c_bp_scene);
+			c_scene = new_u_object<cScene>();
+			utils::current_entity()->add_component(c_scene);
 				e_base = utils::e_empty();
-				c_bp_scene->base_element = utils::c_element();
+				c_scene->base_element = utils::c_element();
 			utils::e_end_layout();
 
 			{
@@ -730,7 +811,7 @@ cEditor::cEditor() :
 				utils::e_end_layout();
 			}
 
-			c_bp_scene->scale_text = utils::e_text(L"100%")->get_component(cText);
+			c_scene->scale_text = utils::e_text(L"100%")->get_component(cText);
 			utils::c_aligner(AlignxLeft, AlignyBottom);
 
 		utils::e_end_layout();
@@ -884,10 +965,15 @@ void cEditor::on_add_node(BP::Node* n)
 			utils::c_event_receiver();
 			utils::c_layout(LayoutVertical)->fence = 1;
 			utils::c_moveable();
+		}
 			auto c_node = new_u_object<cNode>();
 			c_node->n = n;
+			{
+				std::string parameters;
+				c_node->n_type = BP::type_from_node_name(n->type(), parameters);
+				c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type() + 2);
+			}
 			e_node->add_component(c_node);
-		}
 		utils::push_parent(e_node);
 			utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 				utils::push_style_1u(utils::FontSize, 21);
@@ -895,6 +981,7 @@ void cEditor::on_add_node(BP::Node* n)
 					{
 						auto e_text = utils::e_text(s2w(n->id()).c_str());
 						e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+						e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
 						utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
 						struct Capture
 						{
@@ -908,14 +995,8 @@ void cEditor::on_add_node(BP::Node* n)
 							utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
 								if (ok && text[0])
 								{
-									auto id = w2s(text);
-									for (auto i = 0; i < app.bp->node_count(); i++)
-									{
-										if (app.bp->node(i)->id() == id)
-											return;
-									}
 									auto& capture = *(Capture*)c;
-									capture.n->set_id(id.c_str());
+									capture.n->set_id(w2s(text).c_str());
 									capture.t->set_text(text);
 								}
 							}, new_mail(&capture), s2w(capture.n->id()).c_str());
@@ -925,7 +1006,7 @@ void cEditor::on_add_node(BP::Node* n)
 				utils::e_end_layout();
 				utils::pop_style(utils::FontSize);
 
-				std::string type_name = n->type_name();
+				std::string type = n->type();
 				auto udt = n->udt();
 
 				if (n->id() == "test_dst")
@@ -934,7 +1015,7 @@ void cEditor::on_add_node(BP::Node* n)
 						//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
 					}, new_mail_p(n));
 				}
-				else if (type_name == "D#graphics::Shader")
+				else if (type == "D#graphics::Shader")
 				{
 					/*
 					auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
@@ -1087,20 +1168,14 @@ void cEditor::on_add_node(BP::Node* n)
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 							}
 							utils::c_event_receiver();
-							utils::push_style_1u(utils::FontSize, 9);
-							auto c_text = utils::c_text();
-							c_text->auto_width_ = false;
-							c_text->auto_height_ = false;
-							utils::pop_style(utils::FontSize);
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = input;
-							c_slot->text = c_text;
 							utils::current_entity()->add_component(c_slot);
 							input->user_data = c_slot;
 							utils::e_begin_popup_menu(false);
 							utils::e_end_popup_menu();
 
-							utils::e_text(s2w(input->name()).c_str());
+							utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color_ = type_color(input->type()->tag());
 							utils::e_end_layout();
 
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
@@ -1336,7 +1411,7 @@ void cEditor::on_add_node(BP::Node* n)
 
 							utils::e_begin_layout(LayoutHorizontal);
 							utils::c_aligner(AlignxRight, AlignyFree);
-							utils::e_text(s2w(output->name()).c_str());
+							utils::e_text(s2w(output->name()).c_str())->get_component(cText)->color_ = type_color(output->type()->tag());
 
 							utils::e_empty();
 							{
@@ -1348,14 +1423,8 @@ void cEditor::on_add_node(BP::Node* n)
 								c_element->color_ = Vec4c(200, 200, 200, 255);
 							}
 							utils::c_event_receiver();
-							utils::push_style_1u(utils::FontSize, 9);
-							auto c_text = utils::c_text();
-							c_text->auto_width_ = false;
-							c_text->auto_height_ = false;
-							utils::pop_style(utils::FontSize);
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = output;
-							c_slot->text = c_text;
 							utils::current_entity()->add_component(c_slot);
 							output->user_data = c_slot;
 							utils::e_begin_popup_menu(false);

@@ -84,7 +84,7 @@ void MyApp::duplicate_selected()
 	{
 	case SelNode:
 	{
-		auto n = add_node(selected.node->type_name(), "", selected.node->pos);
+		auto n = add_node(selected.node->type(), "", selected.node->pos);
 		for (auto i = 0; i < n->input_count(); i++)
 		{
 			auto src = selected.node->input(i);
@@ -158,7 +158,7 @@ void MyApp::update_gv()
 		{
 			auto n = bp->node(i);
 			auto name = n->id();
-			auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, n->type_name());
+			auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, n->type());
 			for (auto j = 0; j < n->input_count(); j++)
 			{
 				auto input = n->input(j);
@@ -262,6 +262,27 @@ bool MyApp::auto_set_layout()
 	return true;
 }
 
+void MyApp::add_filter_function(cText* c_text_search, Entity* e_list)
+{
+	struct Capture
+	{
+		Entity* l;
+		cText* t;
+	}capture;
+	capture.l = e_list;
+	capture.t = c_text_search;
+	c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
+		auto& capture = *(Capture*)c;
+		std::wstring str = capture.t->text();
+		for (auto i = 0; i < capture.l->child_count(); i++)
+		{
+			auto item = capture.l->child(i);
+			item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+		}
+		return true;
+	}, new_mail(&capture));
+}
+
 bool MyApp::create(const char* filename)
 {
 	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
@@ -295,14 +316,14 @@ bool MyApp::create(const char* filename)
 
 			utils::e_begin_menu_bar();
 				utils::e_begin_menubar_menu(L"Blueprint");
-					utils::e_menu_item(L"Save", [](void* c) {
+					utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
 						BP::save_to_file(app.bp, app.filepath.c_str());
 						app.set_changed(false);
 					}, Mail<>());
-					utils::e_menu_item(L"Libraries", [](void* c) {
+					utils::e_menu_item((std::wstring(Icon_BOOK) + L"    Libraries").c_str(), [](void* c) {
 						utils::e_begin_dialog();
 							utils::e_text(L"Libraries");
-							utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f, 2.f);
+							utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f);
 							auto e_list = utils::e_begin_list(true);
 							for (auto i = 0; i < app.bp->library_count(); i++)
 							{
@@ -344,7 +365,7 @@ bool MyApp::create(const char* filename)
 										auto n = app.bp->node(i);
 										auto udt = n->udt();
 										if (udt && udt->db() == l_db)
-											str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type_name()) + L"\n";
+											str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type()) + L"\n";
 									}
 
 									utils::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove the library?").c_str(), [](void* c, bool yes) {
@@ -369,10 +390,10 @@ bool MyApp::create(const char* filename)
 					}, Mail<>());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");
-					utils::e_menu_item(L"Duplicate", [](void* c) {
+					utils::e_menu_item((std::wstring(Icon_CLONE) + L"    Duplicate").c_str(), [](void* c) {
 						app.duplicate_selected();
 					}, Mail<>());
-					utils::e_menu_item(L"Delete", [](void* c) {
+					utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](void* c) {
 						app.delete_selected();
 					}, Mail<>());
 				utils::e_end_menubar_menu();

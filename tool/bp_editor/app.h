@@ -7,12 +7,16 @@
 using namespace flame;
 using namespace graphics;
 
+struct cScene;
+
 struct cEditor : Component
 {
 	cText* tab_text;
 	Entity* e_base;
 
 	BP::Slot* dragging_slot;
+
+	cScene* c_scene;
 
 	cEditor();
 	virtual ~cEditor() override;
@@ -94,6 +98,8 @@ struct MyApp : App
 	void update_gv();
 	bool generate_graph_image();
 	bool auto_set_layout();
+
+	void add_filter_function(cText* c_text_search, Entity* list);
 
 	bool create(const char* filename);
 	void load(const std::filesystem::path& filepath);

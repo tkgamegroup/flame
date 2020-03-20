@@ -25,16 +25,16 @@ struct MyApp : App
 						utils::e_menu_item(L"Dark", [](void* c) {
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
-								app.canvas->set_clear_color(Vec4c(0, 0, 0, 255));
 								utils::style_set_to_dark();
+								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
 								app.create_widgets();
 							}, Mail<>());
 						}, Mail<>());
 						utils::e_menu_item(L"Light", [](void* c) {
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
-								app.canvas->set_clear_color(Vec4c(200, 200, 200, 255));
 								utils::style_set_to_light();
+								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
 								app.create_widgets();
 							}, Mail<>());
 						}, Mail<>());
@@ -66,26 +66,38 @@ struct MyApp : App
 						utils::e_checkbox(L"Checkbox");
 						utils::e_toggle(L"Toggle");
 						utils::next_element_size = 250.f;
-						utils::e_image(img_id << 16, 4.f, 2.f, Vec4c(10, 200, 10, 255));
+						{
+							auto c_element = utils::e_image(img_id << 16, 4.f)->get_component(cElement);
+							c_element->frame_thickness_ = 2.f;
+							c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+						}
 						utils::e_edit(100.f);
 					utils::e_end_layout();
 
 					utils::next_element_pos = Vec2f(416.f, 10.f);
 					utils::e_begin_layout(LayoutVertical, 16.f);
-						utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f, 2.f);
+						{
+							auto c_element = utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f)->get_component(cElement);
+							c_element->frame_thickness_ = 2.f;
+							c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
 							utils::e_begin_list(true);
-								for (auto i = 0; i < 10; i++)
-									utils::e_list_item((L"item" + std::to_wstring(i)).c_str());
+							for (auto i = 0; i < 10; i++)
+								utils::e_list_item((L"item" + std::to_wstring(i)).c_str());
 							utils::e_end_list();
-						utils::e_end_scroll_view1();
+							utils::e_end_scroll_view1();
+						}
 
-						utils::e_begin_tree(false, 4.f, 2.f);
-							utils::e_begin_tree_node(L"A");
-								utils::e_tree_leaf(L"C");
-								utils::e_tree_leaf(L"D");
-							utils::e_end_tree_node();
-							utils::e_tree_leaf(L"B");
-						utils::e_end_tree();
+						{
+							auto c_element = utils::e_begin_tree(false, 4.f)->get_component(cElement);
+							c_element->frame_thickness_ = 2.f;
+							c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+								utils::e_begin_tree_node(L"A");
+									utils::e_tree_leaf(L"C");
+									utils::e_tree_leaf(L"D");
+								utils::e_end_tree_node();
+								utils::e_tree_leaf(L"B");
+							utils::e_end_tree();
+						}
 
 						utils::e_begin_combobox(100.f);
 							utils::e_combobox_item(L"Apple");
@@ -95,54 +107,6 @@ struct MyApp : App
 					utils::e_end_layout();
 
 				utils::e_end_layout();
-
-				{
-					auto e = utils::e_text(L"");
-					e->on_destroyed_listeners.add([](void* c) {
-						looper().remove_event(*(void**)c);
-						return true;
-					}, new_mail_p(add_fps_listener([](void* c, uint fps) {
-						(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-					}, new_mail_p(e->get_component(cText)))));
-				}
-			utils::e_end_layout();
-
-			//utils::e_begin_docker_static_container();
-			//utils::e_end_docker_static_container();
-
-			utils::next_element_pos = Vec2f(416.f, 300.f);
-			utils::next_element_size = Vec2f(200.f, 200.f);
-			utils::e_begin_docker_floating_container();
-				utils::e_begin_docker();
-					utils::e_begin_docker_page(L"ResourceExplorer");
-						utils::e_text(L"flower.png  main.cpp");
-					utils::e_end_docker_page();
-				utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-
-			utils::next_element_pos = Vec2f(640.f, 300.f);
-			utils::next_element_size = Vec2f(200.f, 200.f);
-			utils::e_begin_docker_floating_container();
-				utils::e_begin_docker_layout(LayoutHorizontal);
-					utils::e_begin_docker();
-						utils::e_begin_docker_page(L"TextEditor");
-							utils::e_text(L"printf(\"Hello World!\\n\");");
-						utils::e_end_docker_page();
-					utils::e_end_docker();
-					utils::e_begin_docker_layout(LayoutVertical);
-						utils::e_begin_docker();
-							utils::e_begin_docker_page(L"Hierarchy");
-								utils::e_text(L"Node A\n--Node B");
-							utils::e_end_docker_page();
-						utils::e_end_docker();
-						utils::e_begin_docker();
-							utils::e_begin_docker_page(L"Inspector");
-								utils::e_text(L"Name: James Bond\nID: 007");
-							utils::e_end_docker_page();
-						utils::e_end_docker();
-					utils::e_end_docker_layout();
-				utils::e_end_docker_layout();
-			utils::e_end_docker_floating_container();
 
 				utils::e_begin_popup_menu();
 					utils::next_entity = Entity::create();
@@ -186,6 +150,54 @@ struct MyApp : App
 						}, new_mail_p(utils::next_entity));
 					utils::e_end_sub_menu();
 				utils::e_end_popup_menu();
+
+				{
+					auto e = utils::e_text(L"");
+					e->on_destroyed_listeners.add([](void* c) {
+						looper().remove_event(*(void**)c);
+						return true;
+					}, new_mail_p(add_fps_listener([](void* c, uint fps) {
+						(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+					}, new_mail_p(e->get_component(cText)))));
+				}
+			utils::e_end_layout();
+
+			//utils::e_begin_docker_static_container();
+			//utils::e_end_docker_static_container();
+
+			utils::next_element_pos = Vec2f(416.f, 300.f);
+			utils::next_element_size = Vec2f(200.f, 200.f);
+			utils::e_begin_docker_floating_container();
+				utils::e_begin_docker();
+					utils::e_begin_docker_page(L"ResourceExplorer").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+						utils::e_text(L"flower.png  main.cpp");
+					utils::e_end_docker_page();
+				utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+
+			utils::next_element_pos = Vec2f(640.f, 300.f);
+			utils::next_element_size = Vec2f(200.f, 200.f);
+			utils::e_begin_docker_floating_container();
+				utils::e_begin_docker_layout(LayoutHorizontal);
+					utils::e_begin_docker();
+						utils::e_begin_docker_page(L"TextEditor").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+							utils::e_text(L"printf(\"Hello World!\\n\");");
+						utils::e_end_docker_page();
+					utils::e_end_docker();
+					utils::e_begin_docker_layout(LayoutVertical);
+						utils::e_begin_docker();
+							utils::e_begin_docker_page(L"Hierarchy").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+								utils::e_text(L"Node A\n--Node B");
+							utils::e_end_docker_page();
+						utils::e_end_docker();
+						utils::e_begin_docker();
+							utils::e_begin_docker_page(L"Inspector").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+								utils::e_text(L"Name: James Bond\nID: 007");
+							utils::e_end_docker_page();
+						utils::e_end_docker();
+					utils::e_end_docker_layout();
+				utils::e_end_docker_layout();
+			utils::e_end_docker_floating_container();
 
 		utils::pop_parent();
 	}

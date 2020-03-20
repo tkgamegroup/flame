@@ -276,16 +276,11 @@ namespace flame
 		data_changed(FLAME_CHASH("frame_thickness"), sender);
 	}
 
-	void cElement::set_color(const Vec4c& c, bool add, void* sender)
+	void cElement::set_color(const Vec4c& c, void* sender)
 	{
-		if (add && c == (uchar)0)
+		if (c == color_)
 			return;
-		if (!add && c == color_)
-			return;
-		if (add)
-			color_ += c;
-		else
-			color_ = c;
+		color_ = c;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("color"), sender);

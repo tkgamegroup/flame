@@ -77,8 +77,8 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
 			FLAME_FOUNDATION_EXPORTS const char* id() const;
-			FLAME_FOUNDATION_EXPORTS void set_id(const char* id);
-			FLAME_FOUNDATION_EXPORTS const char* type_name() const;
+			FLAME_FOUNDATION_EXPORTS bool set_id(const char* id);
+			FLAME_FOUNDATION_EXPORTS const char* type() const;
 			FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
 			Vec2f pos;
 
@@ -93,6 +93,43 @@ namespace flame
 			bool used_by_editor;
 			void* user_data;
 		};
+
+		inline static char type_from_node_name(const std::string& name, std::string& parameters)
+		{
+			{
+				static FLAME_SAL(prefix, "EnumSingle");
+				if (name.compare(0, prefix.l, prefix.s) == 0)
+				{
+					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					return 'S';
+				}
+			}
+			{
+				static FLAME_SAL(prefix, "EnumMulti");
+				if (name.compare(0, prefix.l, prefix.s) == 0)
+				{
+					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					return 'M';
+				}
+			}
+			{
+				static FLAME_SAL(prefix, "Variable");
+				if (name.compare(0, prefix.l, prefix.s) == 0)
+				{
+					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					return 'V';
+				}
+			}
+			{
+				static FLAME_SAL(prefix, "Array");
+				if (name.compare(0, prefix.l, prefix.s) == 0)
+				{
+					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					return 'A';
+				}
+			}
+			return 0;
+		}
 
 		uint frame;
 		float time;

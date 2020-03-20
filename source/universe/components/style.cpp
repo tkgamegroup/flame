@@ -200,10 +200,10 @@ namespace flame
 		switch (event_receiver->state)
 		{
 		case EventReceiverNormal:
-			text->color = color_normal;
+			text->set_color(color_normal);
 			break;
 		case EventReceiverHovering: case EventReceiverActive:
-			text->color = color_else;
+			text->set_color(color_else);
 			break;
 		}
 	}
@@ -271,10 +271,10 @@ namespace flame
 		switch (event_receiver->state)
 		{
 		case EventReceiverNormal:
-			text->color = color_normal[level];
+			text->set_color(color_normal[level]);
 			break;
 		case EventReceiverHovering: case EventReceiverActive:
-			text->color = color_else[level];
+			text->set_color(color_else[level]);
 			break;
 		}
 	}

@@ -78,7 +78,8 @@ namespace flame
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
 					auto text = (cTextPrivate*)thiz->text;
-					auto& str = text->text;
+					auto str = text->text;
+					auto changed = false;
 
 					if (action == KeyStateNull)
 					{
@@ -89,14 +90,14 @@ namespace flame
 							{
 								thiz->cursor--;
 								str.erase(str.begin() + thiz->cursor);
-								text->data_changed(FLAME_CHASH("text"), thiz);
+								changed = true;
 							}
 							break;
 						case 22:
 						{
 							thiz->cursor = 0;
 							str = get_clipboard().v;
-							text->data_changed(FLAME_CHASH("text"), thiz);
+							changed = true;
 						}
 							break;
 						case 27:
@@ -105,8 +106,8 @@ namespace flame
 							value = '\n';
 						default:
 							str.insert(str.begin() + thiz->cursor, value);
-							text->data_changed(FLAME_CHASH("text"), thiz);
 							thiz->cursor++;
+							changed = true;
 						}
 					}
 					else if (action == KeyStateDown)
@@ -131,11 +132,14 @@ namespace flame
 							if (thiz->cursor < str.size())
 							{
 								str.erase(str.begin() + thiz->cursor);
-								text->data_changed(FLAME_CHASH("text"), thiz);
+								changed = true;
 							}
 							break;
 						}
 					}
+
+					if (changed)
+						text->set_text(str.c_str());
 
 					return true;
 				}, new_mail_p(this));
@@ -220,14 +224,14 @@ namespace flame
 					canvas->add_text(font_atlas, L"|", 0, text->scale_ * element->global_scale, element->global_pos +
 						Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
 						Vec2f(font_atlas->text_offset(0, text->text(), text->text() + cursor)) * text->scale_ * element->global_scale,
-						text->color.new_proply<3>(element->alpha_));
+						text->color_.new_proply<3>(element->alpha_));
 				}
 				else
 				{
 					canvas->add_text(font_atlas, L"|", text->font_size_ * element->global_scale, 1.f, element->global_pos +
 						Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
 						Vec2f(font_atlas->text_offset(text->font_size_ * element->global_scale, text->text(), text->text() + cursor)),
-						text->color.new_proply<3>(element->alpha_));
+						text->color_.new_proply<3>(element->alpha_));
 				}
 			}
 		}

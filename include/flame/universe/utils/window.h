@@ -20,8 +20,8 @@ namespace flame
 			ce->size_ = size + Vec2f(16.f, 28.f + style_1u(FontSize));
 			ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
 			ce->frame_thickness_ = 2.f;
-			ce->color_ = style_4c(WindowColor);
-			ce->frame_color_ = style_4c(BackgroundColor);
+			ce->color_ = style_4c(BackgroundColor);
+			ce->frame_color_ = style_4c(ForegroundColor);
 			e->add_component(ce);
 			e->add_component(cEventReceiver::create());
 			e->add_component(cLayout::create(LayoutFree));

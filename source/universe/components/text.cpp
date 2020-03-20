@@ -20,9 +20,9 @@ namespace flame
 		element = nullptr;
 
 		font_atlas = _font_atlas;
-		color = utils::style_4c(utils::TextColorNormal);
 		font_size_ = utils::style_1u(utils::FontSize);
 		scale_ = 1.f;
+		color_ = utils::style_4c(utils::TextColorNormal);
 		auto_width_ = true;
 		auto_height_ = true;
 
@@ -43,13 +43,13 @@ namespace flame
 			{
 				canvas->add_text(font_atlas, text.c_str(), 0, scale_ * element->global_scale, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
-					color.new_proply<3>(element->alpha_));
+					color_.new_proply<3>(element->alpha_));
 			}
 			else
 			{
 				canvas->add_text(font_atlas, text.c_str(), font_size_ * element->global_scale, 1.f, element->global_pos +
 					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
-					color.new_proply<3>(element->alpha_));
+					color_.new_proply<3>(element->alpha_));
 			}
 		}
 	}
@@ -70,11 +70,12 @@ namespace flame
 	{
 		auto copy = new cTextPrivate(font_atlas);
 
-		copy->color = color;
+		copy->text = text;
 		copy->font_size_ = font_size_;
+		copy->scale_ = scale_;
+		copy->color_ = color_;
 		copy->auto_width_ = auto_width_;
 		copy->auto_height_ = auto_height_;
-		copy->text = text;
 
 		return copy;
 	}
@@ -95,7 +96,7 @@ namespace flame
 		if (thiz->text == text)
 			return;
 		thiz->text = text;
-		auto renderer = thiz->element->renderer;
+		auto renderer = element->renderer;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("text"), sender);
@@ -106,6 +107,9 @@ namespace flame
 		if (s == font_size_)
 			return;
 		font_size_ = s;
+		auto renderer = element->renderer;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("font_size"), sender);
 	}
 
@@ -114,7 +118,21 @@ namespace flame
 		if (s == scale_)
 			return;
 		scale_ = s;
+		auto renderer = element->renderer;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("scale"), sender);
+	}
+
+	void cText::set_color(const Vec4c& c, void* sender)
+	{
+		if (c == color_)
+			return;
+		color_ = c;
+		auto renderer = element->renderer;
+		if (renderer)
+			renderer->pending_update = true;
+		data_changed(FLAME_CHASH("color"), sender);
 	}
 
 	void cText::set_auto_width(bool v, void* sender)
@@ -142,18 +160,17 @@ namespace flame
 	struct R(Serializer_cText)
 	{
 		RV(uint, font_atlas_id, n);
-		RV(Vec4c, color, n);
+		RV(StringW, text, n);
 		RV(uint, font_size, n);
-		RV(bool, right_align, n);
+		RV(float, scale, n);
+		RV(Vec4c, color, n);
 		RV(bool, auto_width, n);
 		RV(bool, auto_height, n);
-		RV(StringW, text, n);
 
 		FLAME_UNIVERSE_EXPORTS RF(Serializer_cText)()
 		{
 			color = utils::style_4c(utils::TextColorNormal);
 			font_size = utils::style_1u(utils::FontSize);
-			right_align = false;
 			auto_width = false;
 			auto_height = false;
 		}
@@ -166,11 +183,12 @@ namespace flame
 		{
 			auto c = new cTextPrivate((graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id));
 
-			c->color = color;
+			c->set_text(text.v);
 			c->font_size_ = font_size;
+			c->scale_ = scale;
+			c->color_ = color;
 			c->auto_width_ = auto_width;
 			c->auto_height_ = auto_height;
-			c->set_text(text.v);
 
 			return c;
 		}
@@ -182,11 +200,12 @@ namespace flame
 			if (offset == -1)
 			{
 				font_atlas_id = c->font_atlas->id;
-				color = c->color;
+				text = c->text;
 				font_size = c->font_size_;
+				scale = c->scale_;
+				color = c->color_;
 				auto_width = c->auto_width_;
 				auto_height = c->auto_height_;
-				text = c->text;
 			}
 			else
 			{
@@ -195,20 +214,23 @@ namespace flame
 				case offsetof(Serializer_cText, font_atlas_id):
 					font_atlas_id = c->font_atlas->id;
 					break;
-				case offsetof(Serializer_cText, color):
-					color = c->color;
+				case offsetof(Serializer_cText, text):
+					text = c->text;
 					break;
 				case offsetof(Serializer_cText, font_size):
 					font_size = c->font_size_;
+					break;
+				case offsetof(Serializer_cText, scale):
+					scale = c->scale_;
+					break;
+				case offsetof(Serializer_cText, color):
+					color = c->color_;
 					break;
 				case offsetof(Serializer_cText, auto_width):
 					auto_width = c->auto_width_;
 					break;
 				case offsetof(Serializer_cText, auto_height):
 					auto_height = c->auto_height_;
-					break;
-				case offsetof(Serializer_cText, text):
-					text = c->text;
 					break;
 				}
 			}
@@ -222,11 +244,12 @@ namespace flame
 			if (offset == -1)
 			{
 				c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id);
-				c->color = color;
+				c->set_text(text.v);
 				c->font_size_ = font_size;
+				c->scale_ = scale;
+				c->color_ = color;
 				c->auto_width_ = auto_width;
 				c->auto_height_ = auto_height;
-				c->set_text(text.v);
 			}
 			else
 			{
@@ -235,20 +258,23 @@ namespace flame
 				case offsetof(Serializer_cText, font_atlas_id):
 					c->font_atlas = (graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), font_atlas_id);
 					break;
-				case offsetof(Serializer_cText, color):
-					c->color = color;
+				case offsetof(Serializer_cText, text):
+					c->set_text(text.v);
 					break;
 				case offsetof(Serializer_cText, font_size):
 					c->font_size_ = font_size;
+					break;
+				case offsetof(Serializer_cText, scale):
+					c->scale_ = scale;
+					break;
+				case offsetof(Serializer_cText, color):
+					c->color_ = color;
 					break;
 				case offsetof(Serializer_cText, auto_width):
 					c->auto_width_ = auto_width;
 					break;
 				case offsetof(Serializer_cText, auto_height):
 					c->auto_height_ = auto_height;
-					break;
-				case offsetof(Serializer_cText, text):
-					c->set_text(text.v);
 					break;
 				}
 			}

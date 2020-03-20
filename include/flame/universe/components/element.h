@@ -66,7 +66,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_alpha(float a, bool add = false, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_roundness(const Vec4f& r, bool add = false, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_frame_thickness(float t, bool add = false, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_color(const Vec4c& c, bool add = false, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_color(const Vec4c& c, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_frame_color(const Vec4c& c, bool add = false, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cElement* create();

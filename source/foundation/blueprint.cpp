@@ -57,7 +57,7 @@ namespace flame
 	{
 		BPPrivate* scene;
 		std::string id;
-		std::string type_name;
+		std::string type;
 		UdtInfo* udt;
 		bool active;
 
@@ -75,7 +75,7 @@ namespace flame
 		bool in_update_list;
 
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
-		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, 
+		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
 			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active);
 		~NodePrivate();
 
@@ -125,8 +125,7 @@ namespace flame
 		LibraryPrivate* find_library(const std::wstring& filename) const;
 
 		bool check_or_create_id(std::string& id) const;
-		NodePrivate* add_node(const std::string& type, const std::string& type_name);
-		NodePrivate* add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active, const std::string& id);
+		NodePrivate* add_node(const std::string& type, const std::string& id);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& address) const;
 		SlotPrivate* find_input(const std::string& address) const;
@@ -251,7 +250,7 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
 		id(id),
-		type_name(udt->type()->name()),
+		type(udt->type()->name()),
 		udt(udt),
 		active(false),
 		module(module),
@@ -304,11 +303,11 @@ namespace flame
 		}
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type_name, uint size, 
+	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
 		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr, bool active) :
 		scene(scene),
 		id(id),
-		type_name(type_name),
+		type(type),
 		udt(nullptr),
 		active(active),
 		module(nullptr),
@@ -338,7 +337,6 @@ namespace flame
 				_i.offset, _i.size, _i.default_value);
 			inputs.emplace_back(i);
 		}
-
 		for (auto& _o : _outputs)
 		{
 			auto o = new SlotPrivate(this, BP::Slot::Out, _o.type, _o.name,
@@ -391,12 +389,6 @@ namespace flame
 		}
 
 		cmf(p2f<MF_v_u>(update_addr), object, scene->frame);
-	}
-
-	static void on_node_added(NodePrivate* n)
-	{
-		if (n->active)
-			n->scene->active_nodes.push_back(n);
 	}
 
 	static void on_node_removed(NodePrivate* n)
@@ -573,21 +565,6 @@ namespace flame
 
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
 	{
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& l : libraries)
-			dbs.push_back(l->db);
-		extra_global_db_count = dbs.size();
-		extra_global_dbs = dbs.data();
-		auto udt = find_udt(FLAME_HASH(("D#" + type).c_str()));
-		extra_global_db_count = 0;
-		extra_global_dbs = nullptr;
-
-		if (!udt)
-		{
-			printf("cannot add node, type not found: %s\n", type.c_str());
-			return nullptr;
-		}
-
 		std::string id = _id;
 		if (!check_or_create_id(id))
 		{
@@ -595,28 +572,175 @@ namespace flame
 			return nullptr;
 		}
 
-		auto n = new NodePrivate(this, id, udt, udt->db()->module());
-		nodes.emplace_back(n);
-		on_node_added(n);
+		NodePrivate* n = nullptr;
 
-		need_update_hierarchy = true;
+		auto add_enum_node = [&](TypeTag tag, const std::string& enum_name) {
+#pragma pack(1)
+			struct Dummy
+			{
+				BP::Node* n;
 
-		return n;
-	}
+				int in;
+				int out;
 
-	NodePrivate* BPPrivate::add_node(uint size, const std::string& type_name, const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active, const std::string& _id)
-	{
-		std::string id = _id;
-		if (!check_or_create_id(id))
+				void update(uint frame)
+				{
+					if (n->input(0)->frame() > n->output(0)->frame())
+					{
+						out = in;
+						n->output(0)->set_frame(frame);
+					}
+				}
+			};
+#pragma pack()
+			n = new NodePrivate(this, id, type, sizeof(Dummy), {
+					{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
+				}, {
+					{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
+				}, nullptr, nullptr, f2v(&Dummy::update), false);
+		};
+		std::string parameters;
+		switch (type_from_node_name(type, parameters))
 		{
-			printf("cannot add node, id repeated\n");
-			return nullptr;
+		case 'S':
+			add_enum_node(TypeEnumSingle, parameters);
+			break;
+		case 'M':
+			add_enum_node(TypeEnumMulti, parameters);
+			break;
+		case 'V':
+		{
+#pragma pack(1)
+			struct Dummy
+			{
+				BP::Node* n;
+
+				uint type_hash;
+				uint type_size;
+
+				void dtor()
+				{
+					auto in = (char*)&type_size + sizeof(uint);
+					auto out = (char*)&type_size + sizeof(uint) + type_size;
+					data_dtor(type_hash, in);
+					data_dtor(type_hash, out);
+				}
+
+				void update(uint frame)
+				{
+					auto in = (char*)&type_size + sizeof(uint);
+					auto out = (char*)&type_size + sizeof(uint) + type_size;
+					if (n->input(0)->frame() > n->output(0)->frame())
+					{
+						data_copy(type_hash, in, out, type_size);
+						n->output(0)->set_frame(frame);
+					}
+				}
+			};
+#pragma pack()
+			auto type_hash = FLAME_HASH(parameters.c_str());
+			auto type_size = data_size(type_hash);
+			n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * 2, {
+					{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size, ""}
+				}, {
+					{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false);
+			auto obj = n->object;
+			*(uint*)((char*)obj + sizeof(void*)) = type_hash;
+			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
+		}
+		break;
+		case 'A':
+		{
+			auto sp = SUS::split(parameters, '+');
+#pragma pack(1)
+			struct Dummy
+			{
+				BP::Node* n;
+
+				uint type_hash;
+				uint type_size;
+				uint size;
+
+				void dtor()
+				{
+					for (auto i = 0; i < size; i++)
+						data_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
+					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+					for (auto i = 0; i < out.s; i++)
+						data_dtor(type_hash, (char*)out.v + type_size * i);
+					f_free(out.v);
+				}
+
+				void update(uint frame)
+				{
+					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+					auto out_frame = n->output(0)->frame();
+					if (out_frame == -1)
+					{
+						out.s = size;
+						auto m_size = type_size * size;
+						out.v = (int*)f_malloc(m_size);
+						memset(out.v, 0, m_size);
+					}
+					auto is_out_updated = false;
+					for (auto i = 0; i < size; i++)
+					{
+						auto v = (char*)&size + sizeof(uint) + type_size * i;
+						if (n->input(0)->frame() > out_frame)
+						{
+							data_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+							is_out_updated = true;
+						}
+					}
+					if (is_out_updated)
+						n->output(0)->set_frame(frame);
+				}
+			};
+#pragma pack()
+			auto tag = TypeData;
+			auto type_name = sp[1];
+			auto base_name = type_name;
+			if (type_name.back() == '*')
+			{
+				base_name.erase(base_name.end() - 1);
+				tag = TypePointer;
+			}
+			auto type_hash = FLAME_HASH(base_name.c_str());
+			uint type_size = tag == TypeData ? data_size(type_hash) : sizeof(void*);
+			auto size = stoi(sp[0]);
+			std::vector<SlotDesc> inputs;
+			for (auto i = 0; i < size; i++)
+			{
+				inputs.push_back({
+					TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
+					sizeof(Dummy) + type_size * i, type_size, ""
+					});
+			}
+			n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
+					{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false);
+			auto obj = n->object;
+			*(uint*)((char*)obj + sizeof(void*)) = type_hash;
+			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
+			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint) + sizeof(uint)) = size;
+		}
+		break;
+		default:
+			auto udt = find_udt(FLAME_HASH(("D#" + type).c_str()));
+
+			if (!udt)
+			{
+				printf("cannot add node, type: %s\n", type.c_str());
+				return nullptr;
+			}
+
+			n = new NodePrivate(this, id, udt, udt->db()->module());
 		}
 
-		auto n = new NodePrivate(this, id, type_name, size, inputs, outputs, ctor_addr, dtor_addr, update_addr, active);
 		nodes.emplace_back(n);
-		on_node_added(n);
-
+		if (n->active)
+			active_nodes.push_back(n);
 		need_update_hierarchy = true;
 
 		return n;
@@ -867,14 +991,25 @@ namespace flame
 		return ((NodePrivate*)this)->id.c_str();
 	}
 
-	void BP::Node::set_id(const char* id)
+	bool BP::Node::set_id(const char* id)
 	{
-		((NodePrivate*)this)->id = id;
+		if (!id || !id[0])
+			return false;
+		auto thiz = (NodePrivate*)this;
+		if (thiz->id == id)
+			return true;
+		for (auto& n : thiz->scene->nodes)
+		{
+			if (n->id == id)
+				return false;
+		}
+		thiz->id = id;
+		return true;
 	}
 
-	const char* BP::Node::type_name() const
+	const char* BP::Node::type() const
 	{
-		return ((NodePrivate*)this)->type_name.c_str();
+		return ((NodePrivate*)this)->type.c_str();
 	}
 
 	UdtInfo* BP::Node::udt() const
@@ -954,7 +1089,16 @@ namespace flame
 
 	BP::Node* BP::add_node(const char* type, const char* id)
 	{
-		return ((BPPrivate*)this)->add_node(type, id);
+		auto thiz = (BPPrivate*)this;
+		std::vector<TypeinfoDatabase*> dbs;
+		for (auto& l : thiz->libraries)
+			dbs.push_back(l->db);
+		extra_global_db_count = dbs.size();
+		extra_global_dbs = dbs.data();
+		auto n = thiz->add_node(type, id);
+		extra_global_db_count = 0;
+		extra_global_dbs = nullptr;
+		return n;
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -1093,167 +1237,7 @@ namespace flame
 		extra_global_dbs = dbs.data();
 		for (auto& n_d : node_descs)
 		{
-			NodePrivate* n = nullptr;
-
-			static FLAME_SAL(prefix_enum_single, "EnumSingle");
-			static FLAME_SAL(prefix_enum_multi, "EnumMulti");
-			static FLAME_SAL(prefix_variable, "Variable");
-			static FLAME_SAL(prefix_array, "Array");
-
-			auto add_enum_node = [&](TypeTag tag, const std::string& enum_name) {
-#pragma pack(1)
-				struct Dummy
-				{
-					BP::Node* n;
-
-					int in;
-					int out;
-
-					void update(uint frame)
-					{
-						if (n->input(0)->frame() > n->output(0)->frame())
-						{
-							out = in;
-							n->output(0)->set_frame(frame);
-						}
-					}
-				};
-#pragma pack()
-				n = bp->add_node(sizeof(Dummy), n_d.type, {
-						{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
-					}, {
-						{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
-					}, nullptr, nullptr, f2v(&Dummy::update), false, n_d.id);
-			};
-			if (n_d.type.compare(0, prefix_enum_single.l, prefix_enum_single.s) == 0)
-			{
-				std::string enum_name(n_d.type.begin() + prefix_enum_single.l + 1, n_d.type.end() - 1);
-				add_enum_node(TypeEnumSingle, enum_name);
-			}
-			else if (n_d.type.compare(0, prefix_enum_multi.l, prefix_enum_multi.s) == 0)
-			{
-				std::string enum_name(n_d.type.begin() + prefix_enum_multi.l + 1, n_d.type.end() - 1);
-				add_enum_node(TypeEnumMulti, enum_name);
-			}
-			else if (n_d.type.compare(0, prefix_variable.l, prefix_variable.s) == 0)
-			{
-				std::string type_name(n_d.type.begin() + prefix_variable.l + 1, n_d.type.end() - 1);
-#pragma pack(1)
-				struct Dummy
-				{
-					BP::Node* n;
-
-					uint type_hash;
-					uint type_size;
-
-					void dtor()
-					{
-						auto in = (char*)&type_size + sizeof(uint);
-						auto out = (char*)&type_size + sizeof(uint) + type_size;
-						data_dtor(type_hash, in);
-						data_dtor(type_hash, out);
-					}
-
-					void update(uint frame)
-					{
-						auto in = (char*)&type_size + sizeof(uint);
-						auto out = (char*)&type_size + sizeof(uint) + type_size;
-						if (n->input(0)->frame() > n->output(0)->frame())
-						{
-							data_copy(type_hash, in, out, type_size);
-							n->output(0)->set_frame(frame);
-						}
-					}
-				};
-#pragma pack()
-				auto type_hash = FLAME_HASH(type_name.c_str());
-				auto type_size = data_size(type_hash);
-				n = bp->add_node(sizeof(Dummy) + type_size * 2, n_d.type, {
-						{TypeInfo::get(TypeData, type_name.c_str()), "in", sizeof(Dummy), type_size, ""}
-					}, {
-						{TypeInfo::get(TypeData, type_name.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
-					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false, n_d.id);
-				auto obj = n->object;
-				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
-				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
-			}
-			else if (n_d.type.compare(0, prefix_array.l, prefix_array.s) == 0)
-			{
-				auto parameters = SUS::split(std::string(n_d.type.begin() + prefix_array.l + 1, n_d.type.end() - 1), '+');
-#pragma pack(1)
-				struct Dummy
-				{
-					BP::Node* n;
-
-					uint type_hash;
-					uint type_size;
-					uint size;
-
-					void dtor()
-					{
-						for (auto i = 0; i < size; i++)
-							data_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
-						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-						for (auto i = 0; i < out.s; i++)
-							data_dtor(type_hash, (char*)out.v + type_size * i);
-						f_free(out.v);
-					}
-
-					void update(uint frame)
-					{
-						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-						auto out_frame = n->output(0)->frame();
-						if (out_frame == -1)
-						{
-							out.s = size;
-							auto m_size = type_size * size;
-							out.v = (int*)f_malloc(m_size);
-							memset(out.v, 0, m_size);
-						}
-						auto is_out_updated = false;
-						for (auto i = 0; i < size; i++)
-						{
-							auto v = (char*)&size + sizeof(uint) + type_size * i;
-							if (n->input(0)->frame() > out_frame)
-							{
-								data_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
-								is_out_updated = true;
-							}
-						}
-						if (is_out_updated)
-							n->output(0)->set_frame(frame);
-					}
-				};
-#pragma pack()
-				auto tag = TypeData;
-				auto type_name = parameters[1];
-				auto base_name = type_name;
-				if (type_name.back() == '*')
-				{
-					base_name.erase(base_name.end() - 1);
-					tag = TypePointer;
-				}
-				auto type_hash = FLAME_HASH(base_name.c_str());
-				uint type_size = tag == TypeData ? data_size(type_hash) : sizeof(void*);
-				auto size = stoi(parameters[0]);
-				std::vector<SlotDesc> inputs;
-				for (auto i = 0; i < size; i++)
-				{
-					inputs.push_back({
-						TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
-						sizeof(Dummy) + type_size * i, type_size, ""
-					});
-				}
-				n = bp->add_node(sizeof(Dummy) + type_size * size + sizeof(Array<int>), n_d.type, inputs, {
-						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
-				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false, n_d.id);
-				auto obj = n->object;
-				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
-				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
-				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint) + sizeof(uint)) = size;
-			}
-			else
-				n = bp->add_node(n_d.type, n_d.id);
+			auto n = bp->add_node(n_d.type, n_d.id);
 			if (n)
 			{
 				n->pos = n_d.pos;
@@ -1317,7 +1301,7 @@ namespace flame
 			auto udt = n->udt;
 
 			auto n_node = n_nodes.append_child("node");
-			n_node.append_attribute("type").set_value(n->type_name.c_str());
+			n_node.append_attribute("type").set_value(n->type.c_str());
 			n_node.append_attribute("id").set_value(n->id.c_str());
 			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());
 

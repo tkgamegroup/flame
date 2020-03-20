@@ -11,6 +11,7 @@ namespace flame
 		{
 			FontSize, // uint
 			BackgroundColor, // Vec4c
+			ForegroundColor, // Vec4c
 			TextColorNormal, // Vec4c
 			TextColorElse, // Vec4c
 			FrameColorNormal, // Vec4c
@@ -25,12 +26,6 @@ namespace flame
 			SelectedColorNormal, // Vec4c
 			SelectedColorHovering, // Vec4c
 			SelectedColorActive, // Vec4c
-			UncheckedColorNormal, // Vec4c
-			UncheckedColorHovering, // Vec4c
-			UncheckedColorActive, // Vec4c
-			CheckedColorNormal, // Vec4c
-			CheckedColorHovering, // Vec4c
-			CheckedColorActive, // Vec4c
 			ScrollbarColor, // Vec4c
 			ScrollbarThumbColorNormal, // Vec4c
 			ScrollbarThumbColorHovering, // Vec4c
@@ -43,7 +38,6 @@ namespace flame
 			SelectedTabColorElse, // Vec4c
 			SelectedTabTextColorNormal, // Vec4c
 			SelectedTabTextColorElse, // Vec4c
-			WindowColor, // Vec4c
 
 			StyleCount
 		};

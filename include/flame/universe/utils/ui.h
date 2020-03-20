@@ -401,12 +401,12 @@ namespace flame
 			ce->frame_color_ = style_4c(TextColorNormal);
 			c_event_receiver();
 			auto cs = c_style_color2();
-			cs->color_normal[0] = style_4c(UncheckedColorNormal);
-			cs->color_hovering[0] = style_4c(UncheckedColorHovering);
-			cs->color_active[0] = style_4c(UncheckedColorActive);
-			cs->color_normal[1] = style_4c(CheckedColorNormal);
-			cs->color_hovering[1] = style_4c(CheckedColorHovering);
-			cs->color_active[1] = style_4c(CheckedColorActive);
+			cs->color_normal[0] = style_4c(FrameColorNormal);
+			cs->color_hovering[0] = style_4c(FrameColorHovering);
+			cs->color_active[0] = style_4c(FrameColorActive);
+			cs->color_normal[1] = style_4c(ButtonColorNormal);
+			cs->color_hovering[1] = style_4c(ButtonColorHovering);
+			cs->color_active[1] = style_4c(ButtonColorActive);
 			cs->style();
 			c_checkbox()->checked = checked;
 			if (text[0])
@@ -421,15 +421,15 @@ namespace flame
 		{
 			auto e = e_empty();
 			auto ce = c_element();
-			auto r = style_1u(FontSize) * 0.5f;
+			auto r = style_1u(FontSize) * 0.8f;
 			ce->roundness_ = r;
-			ce->inner_padding_ = Vec4f(r, 2.f, r, 2.f);
+			ce->inner_padding_ = Vec4f(r, 4.f, r, 4.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
-			cs->color_normal[0] = hsv_2_col4(52.f, 0.23f, 0.97f, 0.40f * 255.f);
-			cs->color_hovering[0] = hsv_2_col4(52.f, 0.23f, 0.97f, 1.00f * 255.f);
-			cs->color_active[0] = hsv_2_col4(49.f, 0.43f, 0.97f, 1.00f * 255.f);
+			cs->color_normal[0] = style_4c(FrameColorNormal);
+			cs->color_hovering[0] = style_4c(FrameColorHovering);
+			cs->color_active[0] = style_4c(FrameColorActive);
 			cs->color_normal[1] = style_4c(ButtonColorNormal);
 			cs->color_hovering[1] = style_4c(ButtonColorHovering);
 			cs->color_active[1] = style_4c(ButtonColorActive);
@@ -438,14 +438,12 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_image(uint id, float padding = 0.f, float frame_thickness = 0.f, const Vec4c& frame_color = Vec4c(0))
+		inline Entity* e_image(uint id, float padding = 0.f)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ += Vec2f(padding) * 2.f;
 			ce->inner_padding_ = Vec4f(padding);
-			ce->frame_thickness_ = frame_thickness;
-			ce->frame_color_ = frame_color;
 			c_image()->id = id;
 			return e;
 		}
@@ -457,7 +455,7 @@ namespace flame
 			ce->size_.x() = width + 8.f;
 			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			ce->color_ = style_4c(FrameColorNormal);
-			ce->frame_color_ = style_4c(TextColorNormal);
+			ce->frame_color_ = style_4c(ForegroundColor);
 			ce->frame_thickness_ = 2.f;
 			auto ct = c_text();
 			ct->auto_width_ = false;
@@ -540,13 +538,12 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_scroll_view1(ScrollbarType type, const Vec2f size, float padding = 0.f, float frame_thickness = 0.f)
+		inline Entity* e_begin_scroll_view1(ScrollbarType type, const Vec2f size, float padding = 0.f)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ = size;
 			ce->inner_padding_ = Vec4f(padding);
-			ce->frame_thickness_ = frame_thickness;
 			ce->clip_children = true;
 			if (size == 0.f)
 				c_aligner(SizeFitParent, SizeFitParent);
@@ -668,12 +665,11 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_tree(bool fit_parent, float padding = 0.f, float frame_thickness = 0.f)
+		inline Entity* e_begin_tree(bool fit_parent, float padding = 0.f)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->inner_padding_ = Vec4f(padding);
-			ce->frame_thickness_ = frame_thickness;
 			c_event_receiver();
 			if (fit_parent)
 				c_aligner(SizeFitParent, SizeFitParent);
@@ -965,7 +961,9 @@ namespace flame
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ += Vec2f(0.f, 4.f + style_1u(FontSize));
-			ce->color_ = style_4c(WindowColor);
+			ce->frame_thickness_ = 2.f;
+			ce->color_ = style_4c(BackgroundColor);
+			ce->frame_color_ = style_4c(ForegroundColor);
 			c_event_receiver();
 			c_layout(LayoutVertical)->fence = 2;
 			c_moveable();
@@ -1035,7 +1033,7 @@ namespace flame
 			e->set_name("docker_static_container");
 			auto ce = c_element();
 			ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			ce->color_ = style_4c(WindowColor);
+			ce->color_ = style_4c(BackgroundColor);
 			c_event_receiver();
 			c_aligner(SizeFitParent, SizeFitParent);
 			c_layout(LayoutFree);
@@ -1122,7 +1120,7 @@ namespace flame
 					auto thiz = (*(cDockerTab**)c);
 					thiz->take_away(true);
 				}, new_mail_p(thiz));
-			}, new_mail_p(cdt), false);
+			}, new_mail_p(cdt), false)->get_component(cText)->color_ = style_4c(TabTextColorNormal);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
 			pop_parent();
@@ -1346,7 +1344,7 @@ namespace flame
 					}
 					else
 						str += L"NULL";
-					capture.txt_focusing->color = color;
+					capture.txt_focusing->set_color(color);
 					capture.txt_focusing->set_text(str.c_str());
 				}
 				{
