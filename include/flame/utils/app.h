@@ -123,8 +123,8 @@ namespace flame
 			render_fence->wait();
 			looper().process_events();
 
-			if (!graphics_cbs.empty())
-				prepare_swapchain();
+			//if (!graphics_cbs.empty())
+			//	prepare_swapchain();
 
 			c_element_root->set_size(Vec2f(window->size));
 			world->update();

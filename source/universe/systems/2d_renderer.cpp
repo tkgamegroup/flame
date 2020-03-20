@@ -80,6 +80,10 @@ namespace flame
 		s2DRendererPrivate(graphics::Canvas* _canvas)
 		{
 			canvas = _canvas;
+			canvas->set_draw([](void* c) {
+				auto thiz = *(s2DRendererPrivate**)c;
+				thiz->do_render((EntityPrivate*)thiz->world_->root());
+			}, new_mail_p(this));
 
 			pending_update = false;
 		}
@@ -127,8 +131,6 @@ namespace flame
 				return;
 			pending_update = false;
 			canvas->scene->update();
-			do_render((EntityPrivate*)world_->root());
-			canvas->record();
 		}
 	};
 

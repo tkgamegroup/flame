@@ -3,7 +3,7 @@
 
 #include <flame/reflect_macros.h>
 
-struct R(DstImage)
+struct R(TestRenderTarget)
 {
 	BP::Node* n;
 
@@ -12,17 +12,14 @@ struct R(DstImage)
 	RV(TargetType, type, o);
 	RV(Imageview*, view, o);
 	RV(uint, idx, o);
+	RV(Array<Commandbuffer*>, out, o);
 
-	__declspec(dllexport) void RF(update)(uint frame)
+	__declspec(dllexport) void RF(active_update)(uint frame)
 	{
 		if (img_s()->frame() == -1)
 		{
 			if (idx > 0)
 				app.canvas->set_image(idx, nullptr);
-			if (img)
-				Image::destroy(img);
-			if (view)
-				Imageview::destroy(view);
 			auto d = Device::default_one();
 			if (d)
 			{
@@ -42,32 +39,8 @@ struct R(DstImage)
 			view_s()->set_frame(frame);
 			idx_s()->set_frame(frame);
 		}
-	}
-
-	__declspec(dllexport) RF(~DstImage)()
-	{
-		if (idx > 0)
-			app.canvas->set_image(idx, nullptr);
-		if (img)
-			Image::destroy(img);
-		if (view)
-			Imageview::destroy(view);
-	}
-};
-
-struct R(CmdBufs)
-{
-	BP::Node* n;
-
-	BASE1;
-	RV(Array<Commandbuffer*>, out, o);
-
-	__declspec(dllexport) void RF(active_update)(uint frame)
-	{
 		if (out_s()->frame() == -1)
 		{
-			for (auto i = 0; i < out.s; i++)
-				Commandbuffer::destroy(out[i]);
 			auto d = Device::default_one();
 			if (d)
 			{
@@ -82,8 +55,14 @@ struct R(CmdBufs)
 		app.graphics_cbs.push_back(out[0]);
 	}
 
-	__declspec(dllexport) RF(~CmdBufs)()
+	__declspec(dllexport) RF(~TestRenderTarget)()
 	{
+		if (idx > 0)
+			app.canvas->set_image(idx, nullptr);
+		if (img)
+			Image::destroy(img);
+		if (view)
+			Imageview::destroy(view);
 		for (auto i = 0; i < out.s; i++)
 			Commandbuffer::destroy(out[i]);
 	}
@@ -465,7 +444,7 @@ struct cScene : Component
 							capture.u = udt;
 							utils::e_menu_item(s2w(udt->type()->name()).c_str(), [](void* c) {
 								auto& capture = *(Capture*)c;
-								app.add_node(capture.u->type()->name() + 2, "", capture.p);
+								app.add_node(capture.u->type()->name(), "", capture.p);
 							}, new_mail(&capture));
 						}
 					utils::e_end_list();
@@ -795,22 +774,6 @@ cEditor::cEditor() :
 				c_scene->base_element = utils::c_element();
 			utils::e_end_layout();
 
-			{
-				auto c_element = utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cElement);
-				c_element->inner_padding_ = 4.f;
-				c_element->color_ = Vec4c(200, 200, 200, 255);
-				utils::c_aligner(SizeFitParent, SizeFixed);
-				utils::e_button(L"Update One Frame");
-				auto c_checkbox = utils::e_checkbox(L"Auto Update")->get_component(cCheckbox);
-				c_checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
-					if (hash == FLAME_CHASH("checked"))
-						app.auto_update = (*(cCheckbox**)c)->checked;
-					return true;
-				}, new_mail_p(c_checkbox));
-				utils::e_button(L"Reset Time");
-				utils::e_end_layout();
-			}
-
 			c_scene->scale_text = utils::e_text(L"100%")->get_component(cText);
 			utils::c_aligner(AlignxLeft, AlignyBottom);
 
@@ -971,7 +934,7 @@ void cEditor::on_add_node(BP::Node* n)
 			{
 				std::string parameters;
 				c_node->n_type = BP::type_from_node_name(n->type(), parameters);
-				c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type() + 2);
+				c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type());
 			}
 			e_node->add_component(c_node);
 		utils::push_parent(e_node);
@@ -1189,6 +1152,7 @@ void cEditor::on_add_node(BP::Node* n)
 							auto type = input->type();
 							auto base_hash = type->base_hash();
 							utils::push_style_1u(utils::FontSize, 12);
+
 							switch (type->tag())
 							{
 							case TypeEnumSingle:
@@ -1296,52 +1260,52 @@ void cEditor::on_add_node(BP::Node* n)
 								case FLAME_CHASH("int"):
 									create_edit<int>(this, input);
 									break;
-								case FLAME_CHASH("Vec(2+int)"):
+								case FLAME_CHASH("flame::Vec(2+int)"):
 									create_vec_edit<2, int>(this, input);
 									break;
-								case FLAME_CHASH("Vec(3+int)"):
+								case FLAME_CHASH("flame::Vec(3+int)"):
 									create_vec_edit<3, int>(this, input);
 									break;
-								case FLAME_CHASH("Vec(4+int)"):
+								case FLAME_CHASH("flame::Vec(4+int)"):
 									create_vec_edit<4, int>(this, input);
 									break;
 								case FLAME_CHASH("uint"):
 									create_edit<uint>(this, input);
 									break;
-								case FLAME_CHASH("Vec(2+uint)"):
+								case FLAME_CHASH("flame::Vec(2+uint)"):
 									create_vec_edit<2, uint>(this, input);
 									break;
-								case FLAME_CHASH("Vec(3+uint)"):
+								case FLAME_CHASH("flame::Vec(3+uint)"):
 									create_vec_edit<3, uint>(this, input);
 									break;
-								case FLAME_CHASH("Vec(4+uint)"):
+								case FLAME_CHASH("flame::Vec(4+uint)"):
 									create_vec_edit<4, uint>(this, input);
 									break;
 								case FLAME_CHASH("float"):
 									create_edit<float>(this, input);
 									break;
-								case FLAME_CHASH("Vec(2+float)"):
+								case FLAME_CHASH("flame::Vec(2+float)"):
 									create_vec_edit<2, float>(this, input);
 									break;
-								case FLAME_CHASH("Vec(3+float)"):
+								case FLAME_CHASH("flame::Vec(3+float)"):
 									create_vec_edit<3, float>(this, input);
 									break;
-								case FLAME_CHASH("Vec(4+float)"):
+								case FLAME_CHASH("flame::Vec(4+float)"):
 									create_vec_edit<4, float>(this, input);
 									break;
 								case FLAME_CHASH("uchar"):
 									create_edit<uchar>(this, input);
 									break;
-								case FLAME_CHASH("Vec(2+uchar)"):
+								case FLAME_CHASH("flame::Vec(2+uchar)"):
 									create_vec_edit<2, uchar>(this, input);
 									break;
-								case FLAME_CHASH("Vec(3+uchar)"):
+								case FLAME_CHASH("flame::Vec(3+uchar)"):
 									create_vec_edit<3, uchar>(this, input);
 									break;
-								case FLAME_CHASH("Vec(4+uchar)"):
+								case FLAME_CHASH("flame::Vec(4+uchar)"):
 									create_vec_edit<4, uchar>(this, input);
 									break;
-								case FLAME_CHASH("StringA"):
+								case FLAME_CHASH("flame::StringA"):
 								{
 									struct Capture
 									{
@@ -1365,7 +1329,7 @@ void cEditor::on_add_node(BP::Node* n)
 									e_data->add_component(c_tracker);
 								}
 								break;
-								case FLAME_CHASH("StringW"):
+								case FLAME_CHASH("flame::StringW"):
 								{
 									struct Capture
 									{

@@ -41,7 +41,7 @@ namespace flame
 			virtual const Vec4f& scissor() = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;
 
-			virtual void record() = 0;
+			virtual void set_draw(void(*draw)(void* c), const Mail<>& capture) = 0;
 
 			inline static Canvas* create(const wchar_t* filename, void* dst, uint dst_hash, void* cbs)
 			{

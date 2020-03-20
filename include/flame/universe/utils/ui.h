@@ -949,7 +949,7 @@ namespace flame
 				{
 					c_layout();
 					push_parent(current_entity());
-					e_button(Icon_WINDOW_CLOSE, [](void* c) {
+					e_button(Icon_TIMES, [](void* c) {
 						auto e = *(void**)c;
 						looper().add_event([](void* c, bool*) {
 							auto e = *(Entity**)c;
@@ -1084,7 +1084,7 @@ namespace flame
 			auto cdt = c_docker_tab();
 			cdt->root = current_root();
 			push_parent(et);
-			e_button(Icon_WINDOW_CLOSE, [](void* c) {
+			e_button(Icon_TIMES, [](void* c) {
 				auto thiz = (*(cDockerTab**)c);
 				looper().add_event([](void* c, bool*) {
 					auto thiz = (*(cDockerTab**)c);

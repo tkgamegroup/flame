@@ -116,32 +116,26 @@ void MyApp::delete_selected()
 
 void MyApp::link_test_nodes()
 {
-	auto n_dst = app.bp->find_node("test_dst");
-	if (!n_dst)
+	auto n_rt = app.bp->find_node("test_rt");
+	if (!n_rt)
 	{
-		n_dst = app.add_node("DstImage", "test_dst", Vec2f(0.f, 0.f));
-		n_dst->used_by_editor = true;
+		n_rt = app.add_node("TestRenderTarget", "test_rt", Vec2f(0.f, 0.f));
+		n_rt->used_by_editor = true;
 	}
 	{
 		auto s = app.bp->find_input("rt_dst.type");
 		if (s)
-			s->link_to(n_dst->find_output("type"));
+			s->link_to(n_rt->find_output("type"));
 	}
 	{
 		auto s = app.bp->find_input("rt_dst.v");
 		if (s)
-			s->link_to(n_dst->find_output("view"));
-	}
-	auto n_cbs = app.bp->find_node("test_cbs");
-	if (!n_cbs)
-	{
-		n_cbs = app.add_node("CmdBufs", "test_cbs", Vec2f(0.f, -200.f));
-		n_cbs->used_by_editor = true;
+			s->link_to(n_rt->find_output("view"));
 	}
 	{
 		auto s = app.bp->find_input("make_cmd.cbs");
 		if (s)
-			s->link_to(n_cbs->find_output("out"));
+			s->link_to(n_rt->find_output("out"));
 	}
 }
 
@@ -418,6 +412,24 @@ bool MyApp::create(const char* filename)
 					}, Mail<>());
 				utils::e_end_menubar_menu();
 			utils::e_end_menu_bar();
+
+			{
+				auto c_element = utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cElement);
+				c_element->inner_padding_ = 4.f;
+				c_element->color_ = utils::style_4c(utils::FrameColorNormal);
+				utils::c_aligner(SizeFitParent, SizeFixed);
+				utils::e_button(L"Update One Frame", [](void*) {
+					app.bp->update();
+				}, Mail<>());
+				auto c_checkbox = utils::e_checkbox(L"Auto Update")->get_component(cCheckbox);
+				c_checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
+					if (hash == FLAME_CHASH("checked"))
+						app.auto_update = (*(cCheckbox**)c)->checked;
+					return true;
+				}, new_mail_p(c_checkbox));
+				utils::e_button(L"Reset Time");
+				utils::e_end_layout();
+			}
 
 			utils::e_begin_docker_static_container();
 			if (window_layout_ok)

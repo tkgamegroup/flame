@@ -250,7 +250,7 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
 		id(id),
-		type(udt->type()->name()),
+		type(udt->type()->name() + 2),
 		udt(udt),
 		active(false),
 		module(module),
