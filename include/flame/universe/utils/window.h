@@ -47,7 +47,7 @@ namespace flame
 				e->add_child(e_sd);
 				auto ce = cElement::create();
 				ce->size_ = 8.f;
-				ce->color_ = Vec4c(200, 100, 100, 255);
+				ce->color_ = style_4c(FrameColorHovering);
 				e_sd->add_component(ce);
 				e_sd->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();

@@ -9,7 +9,6 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
-#include <flame/universe/components/toggle.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
@@ -109,13 +108,6 @@ namespace flame
 		inline cCheckbox* c_checkbox()
 		{
 			auto c = cCheckbox::create();
-			current_entity()->add_component(c);
-			return c;
-		}
-
-		inline cToggle* c_toggle()
-		{
-			auto c = cToggle::create();
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -255,13 +247,6 @@ namespace flame
 		inline cBringToFront* c_bring_to_front()
 		{
 			auto c = cBringToFront::create();
-			current_entity()->add_component(c);
-			return c;
-		}
-
-		inline cSizeDragger* c_size_dragger()
-		{
-			auto c = cSizeDragger::create();
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -414,27 +399,6 @@ namespace flame
 				e_text(text);
 				e_end_layout();
 			}
-			return e;
-		}
-
-		inline Entity* e_toggle(const wchar_t* text)
-		{
-			auto e = e_empty();
-			auto ce = c_element();
-			auto r = style_1u(FontSize) * 0.8f;
-			ce->roundness_ = r;
-			ce->inner_padding_ = Vec4f(r, 4.f, r, 4.f);
-			c_text()->set_text(text);
-			c_event_receiver();
-			auto cs = c_style_color2();
-			cs->color_normal[0] = style_4c(FrameColorNormal);
-			cs->color_hovering[0] = style_4c(FrameColorHovering);
-			cs->color_active[0] = style_4c(FrameColorActive);
-			cs->color_normal[1] = style_4c(ButtonColorNormal);
-			cs->color_hovering[1] = style_4c(ButtonColorHovering);
-			cs->color_active[1] = style_4c(ButtonColorActive);
-			cs->style();
-			c_toggle();
 			return e;
 		}
 
@@ -1126,7 +1090,7 @@ namespace flame
 					auto thiz = (*(cDockerTab**)c);
 					thiz->take_away(true);
 				}, new_mail_p(thiz));
-			}, new_mail_p(cdt), false)->get_component(cText)->color_ = style_4c(TabTextColorNormal);
+			}, new_mail_p(cdt), false)->get_component(cText)->color_ = style_4c(TabTextColorElse);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
 			pop_parent();

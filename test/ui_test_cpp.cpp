@@ -64,7 +64,6 @@ struct MyApp : App
 							printf("thank you for clicking me\n");
 						}, new_mail_p(utils::next_entity));
 						utils::e_checkbox(L"Checkbox");
-						utils::e_toggle(L"Toggle");
 						utils::next_element_size = 250.f;
 						{
 							auto c_element = utils::e_image(img_id << 16, 4.f)->get_component(cElement);
