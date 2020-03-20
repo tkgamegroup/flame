@@ -20,9 +20,6 @@ namespace flame
 			ButtonColorNormal, // Vec4c
 			ButtonColorHovering, // Vec4c
 			ButtonColorActive, // Vec4c
-			HeaderColorNormal, // Vec4c
-			HeaderColorHovering, // Vec4c
-			HeaderColorActive, // Vec4c
 			SelectedColorNormal, // Vec4c
 			SelectedColorHovering, // Vec4c
 			SelectedColorActive, // Vec4c

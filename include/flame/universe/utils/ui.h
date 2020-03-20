@@ -475,7 +475,13 @@ namespace flame
 
 			auto ee = e_edit(50.f);
 			ee->set_visibility(false);
+			push_style_4c(ButtonColorNormal, style_4c(FrameColorNormal));
+			push_style_4c(ButtonColorHovering, style_4c(FrameColorHovering));
+			push_style_4c(ButtonColorActive, style_4c(FrameColorActive));
 			auto ed = e_button(L"");
+			pop_style(ButtonColorNormal);
+			pop_style(ButtonColorHovering);
+			pop_style(ButtonColorActive);
 			ed->get_component(cElement)->size_.x() = 58.f;
 			ed->get_component(cText)->auto_width_ = false;
 
@@ -972,7 +978,7 @@ namespace flame
 				e_empty();
 				auto ce = c_element();
 				ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
-				ce->color_ = style_4c(HeaderColorNormal);
+				ce->color_ = style_4c(SelectedTabColorNormal);
 				c_text()->set_text(title);
 				c_aligner(SizeGreedy, SizeFixed);
 				if (close_button)
