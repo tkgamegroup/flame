@@ -289,7 +289,39 @@ namespace flame
 		return true;
 	}
 
-	inline uint data_size(uint type_hash)
+	inline auto& basic_types()
+	{
+		static const char* types[] = {
+			"bool",
+			"int",
+			"uint",
+			"flame::Vec(1+int)",
+			"flame::Vec(2+int)",
+			"flame::Vec(3+int)",
+			"flame::Vec(4+int)",
+			"flame::Vec(1+uint)",
+			"flame::Vec(2+uint)",
+			"flame::Vec(3+uint)",
+			"flame::Vec(4+uint)",
+			"longlong",
+			"ulonglong",
+			"float",
+			"flame::Vec(1+float)",
+			"flame::Vec(2+float)",
+			"flame::Vec(3+float)",
+			"flame::Vec(4+float)",
+			"uchar",
+			"flame::Vec(1+uchar)",
+			"flame::Vec(2+uchar)",
+			"flame::Vec(3+uchar)",
+			"flame::Vec(4+uchar)",
+			"flame::StringA",
+			"flame::StringW"
+		};
+		return types;
+	}
+
+	inline uint basic_type_size(uint type_hash)
 	{
 		switch (type_hash)
 		{
@@ -337,12 +369,11 @@ namespace flame
 			return sizeof(StringA);
 		case FLAME_CHASH("flame::StringW"):
 			return sizeof(StringW);
-		default:
-			assert(0);
 		}
+		return 0;
 	}
 
-	inline void data_copy(uint type_hash, const void* src, void* dst, uint size = 0)
+	inline void basic_type_copy(uint type_hash, const void* src, void* dst, uint size = 0)
 	{
 		switch (type_hash)
 		{
@@ -354,10 +385,10 @@ namespace flame
 			return;
 		}
 
-		memcpy(dst, src, size ? size : data_size(type_hash));
+		memcpy(dst, src, size ? size : basic_type_size(type_hash));
 	}
 
-	inline void data_dtor(uint type_hash, void* p)
+	inline void basic_type_dtor(uint type_hash, void* p)
 	{
 		switch (type_hash)
 		{
@@ -562,7 +593,7 @@ namespace flame
 	void TypeInfo::copy_from(const void* src, void* dst) const
 	{
 		if (tag() == TypeData)
-			data_copy(base_hash(), src, dst);
+			basic_type_copy(base_hash(), src, dst);
 		else if (tag() == TypeEnumSingle || tag() == TypeEnumMulti)
 			memcpy(dst, src, sizeof(int));
 		else if (tag() == TypePointer)

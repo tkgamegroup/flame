@@ -622,8 +622,8 @@ namespace flame
 				{
 					auto in = (char*)&type_size + sizeof(uint);
 					auto out = (char*)&type_size + sizeof(uint) + type_size;
-					data_dtor(type_hash, in);
-					data_dtor(type_hash, out);
+					basic_type_dtor(type_hash, in);
+					basic_type_dtor(type_hash, out);
 				}
 
 				void update(uint frame)
@@ -632,14 +632,14 @@ namespace flame
 					auto out = (char*)&type_size + sizeof(uint) + type_size;
 					if (n->input(0)->frame() > n->output(0)->frame())
 					{
-						data_copy(type_hash, in, out, type_size);
+						basic_type_copy(type_hash, in, out, type_size);
 						n->output(0)->set_frame(frame);
 					}
 				}
 			};
 #pragma pack()
 			auto type_hash = FLAME_HASH(parameters.c_str());
-			auto type_size = data_size(type_hash);
+			auto type_size = basic_type_size(type_hash);
 			n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * 2, {
 					{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size, ""}
 				}, {
@@ -665,10 +665,10 @@ namespace flame
 				void dtor()
 				{
 					for (auto i = 0; i < size; i++)
-						data_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
+						basic_type_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
 					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
 					for (auto i = 0; i < out.s; i++)
-						data_dtor(type_hash, (char*)out.v + type_size * i);
+						basic_type_dtor(type_hash, (char*)out.v + type_size * i);
 					f_free(out.v);
 				}
 
@@ -689,7 +689,7 @@ namespace flame
 						auto v = (char*)&size + sizeof(uint) + type_size * i;
 						if (n->input(0)->frame() > out_frame)
 						{
-							data_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+							basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
 							is_out_updated = true;
 						}
 					}
@@ -707,7 +707,7 @@ namespace flame
 				tag = TypePointer;
 			}
 			auto type_hash = FLAME_HASH(base_name.c_str());
-			uint type_size = tag == TypeData ? data_size(type_hash) : sizeof(void*);
+			uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
 			auto size = stoi(sp[0]);
 			std::vector<SlotDesc> inputs;
 			for (auto i = 0; i < size; i++)
@@ -1354,27 +1354,7 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-	struct R(R_Vec1i)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(int, x, i);
-
-		BASE1;
-		RV(Vec1i, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			if (x_s()->frame() > out_s()->frame())
-			{
-				out[0] = x;
-				out_s()->set_frame(frame);
-			}
-		}
-	};
-
-	struct R(R_Vec2i)
+	struct R(R_MakeVec2i)
 	{
 		BP::Node* n;
 
@@ -1404,7 +1384,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3i)
+	struct R(R_MakeVec3i)
 	{
 		BP::Node* n;
 
@@ -1440,7 +1420,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4i)
+	struct R(R_MakeVec4i)
 	{
 		BP::Node* n;
 
@@ -1482,27 +1462,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec1u)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(uint, x, i);
-
-		BASE1;
-		RV(Vec1u, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			if (x_s()->frame() > out_s()->frame())
-			{
-				out[0] = x;
-				out_s()->set_frame(frame);
-			}
-		}
-	};
-
-	struct R(R_Vec2u)
+	struct R(R_MakeVec2u)
 	{
 		BP::Node* n;
 
@@ -1532,7 +1492,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3u)
+	struct R(R_MakeVec3u)
 	{
 		BP::Node* n;
 
@@ -1568,7 +1528,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4u)
+	struct R(R_MakeVec4u)
 	{
 		BP::Node* n;
 
@@ -1610,27 +1570,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec1f)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(float, x, i);
-
-		BASE1;
-		RV(Vec1f, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			if (x_s()->frame() > out_s()->frame())
-			{
-				out[0] = x;
-				out_s()->set_frame(frame);
-			}
-		}
-	};
-
-	struct R(R_Vec2f)
+	struct R(R_MakeVec2f)
 	{
 		BP::Node* n;
 
@@ -1660,7 +1600,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3f)
+	struct R(R_MakeVec3f)
 	{
 		BP::Node* n;
 
@@ -1696,7 +1636,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4f)
+	struct R(R_MakeVec4f)
 	{
 		BP::Node* n;
 
@@ -1738,27 +1678,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec1c)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(uchar, x, i);
-
-		BASE1;
-		RV(Vec1c, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			if (x_s()->frame() > out_s()->frame())
-			{
-				out[0] = x;
-				out_s()->set_frame(frame);
-			}
-		}
-	};
-
-	struct R(R_Vec2c)
+	struct R(R_MakeVec2c)
 	{
 		BP::Node* n;
 
@@ -1788,7 +1708,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec3c)
+	struct R(R_MakeVec3c)
 	{
 		BP::Node* n;
 
@@ -1824,7 +1744,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_Vec4c)
+	struct R(R_MakeVec4c)
 	{
 		BP::Node* n;
 
@@ -1866,7 +1786,7 @@ namespace flame
 		}
 	};
 
-	struct R(R_F2U)
+	struct R(R_FloatToUint)
 	{
 		BP::Node* n;
 
@@ -1928,28 +1848,6 @@ namespace flame
 				out = a * b;
 				out_s()->set_frame(frame);
 			}
-		}
-	};
-
-	struct R(R_MakeVec2f)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(float, x, i);
-		RV(float, y, i);
-
-		BASE1;
-		RV(Vec2f, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			if (x_s()->frame() > out_frame)
-				out.x() = x;
-			if (y_s()->frame() > out_frame)
-				out.y() = y;
-			out_s()->set_frame(frame);
 		}
 	};
 
@@ -2023,7 +1921,7 @@ namespace flame
 		BASE0;
 		RV(Key, key, i);
 
-		FLAME_FOUNDATION_EXPORTS void RF(active_update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
 		{
 
 		}

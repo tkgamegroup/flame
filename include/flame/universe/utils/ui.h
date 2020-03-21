@@ -593,7 +593,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_list(bool size_fit_parent)
+		inline Entity* e_begin_list(bool size_fit_parent, float padding = 4.f)
 		{
 			auto e = e_empty();
 			c_element();
@@ -601,7 +601,7 @@ namespace flame
 			if (size_fit_parent)
 				c_aligner(SizeFitParent, SizeFitParent);
 			auto cl = c_layout(LayoutVertical);
-			cl->item_padding = 4.f;
+			cl->item_padding = padding;
 			cl->width_fit_children = false;
 			cl->height_fit_children = false;
 			c_list();

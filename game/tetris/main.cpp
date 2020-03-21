@@ -272,7 +272,7 @@ struct MyApp : App
 				}
 			}())->get_component(cText);
 			if (game_mode == GameMulti && player_index == 0)
-				p.c_name->color = Vec4c(91, 82, 119, 255);
+				p.c_name->color_ = Vec4c(91, 82, 119, 255);
 			utils::pop_style(utils::FontSize);
 
 			if (my_room_index == 0 && player_index != my_room_index)
@@ -701,7 +701,7 @@ struct MyApp : App
 					}, new_mail_p(c_text));
 				}
 			utils::e_end_layout();
-			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f, 2.f);
+			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f)->get_component(cElement)->frame_thickness_ = 2.f;
 				auto e_room_list = utils::e_begin_list(true);
 				utils::e_end_list();
 			utils::e_end_scroll_view1();
@@ -1233,16 +1233,16 @@ struct MyApp : App
 				if (game_mode != GameMulti)
 				{
 					utils::next_element_pos = Vec2f(535.f, 150.f);
-					utils::e_text(L"TIME")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::e_text(L"TIME")->get_component(cText)->color_ = Vec4c(40, 80, 200, 255);
 
 					utils::next_element_pos = Vec2f(535.f, 210.f);
-					utils::e_text(L"LEVEL")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::e_text(L"LEVEL")->get_component(cText)->color_ = Vec4c(40, 80, 200, 255);
 
 					utils::next_element_pos = Vec2f(535.f, 270.f);
-					utils::e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color_ = Vec4c(40, 80, 200, 255);
 
 					utils::next_element_pos = Vec2f(535.f, 330.f);
-					utils::e_text(L"SCORE")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+					utils::e_text(L"SCORE")->get_component(cText)->color_ = Vec4c(40, 80, 200, 255);
 
 					utils::push_style_1u(utils::FontSize, 40);
 					utils::next_element_pos = Vec2f(535.f, 170.f);
@@ -1263,7 +1263,7 @@ struct MyApp : App
 					e->set_visibility(false);
 					c_text_special = e->get_component(cText);
 				}
-				c_text_special->color = Vec4c(200, 80, 40, 255);
+				c_text_special->color_ = Vec4c(200, 80, 40, 255);
 				utils::pop_style(utils::FontSize);
 
 			if (game_mode == GameMulti)
