@@ -38,7 +38,6 @@ namespace flame
 		SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi);
 
 		void set_data(const void* data);
-		bool can_link(SlotPrivate* target) const;
 		bool link_to(SlotPrivate* target);
 
 		StringA get_address() const;
@@ -179,40 +178,26 @@ namespace flame
 		type->copy_from(d, data);
 	}
 
-	bool SlotPrivate::can_link(SlotPrivate* target) const
+	bool SlotPrivate::link_to(SlotPrivate* target)
 	{
 		assert(io == In);
-
-		if (target)
-		{
-			if (target->io == In)
-				return false;
-			if (node == target->node) // same node
-				return false;
-		}
 
 		if (links[0] == target)
 			return true;
 
 		if (target)
 		{
-			auto base_hash = type->base_hash();
-			auto target_type = target->type;
-			auto target_tag = target_type->tag();
-			if (!(type == target_type || (type->tag() == TypePointer && (target_tag == TypeData || target_tag == TypePointer) &&
-				(base_hash == target_type->base_hash() || base_hash == FLAME_CHASH("void")))))
+			if (target->io == In)
+				return false;
+			if (node == target->node)
 				return false;
 		}
 
-		return true;
-	}
-
-	bool SlotPrivate::link_to(SlotPrivate* target)
-	{
-		assert(io == In);
-
-		if (!can_link(target))
-			return false;
+		if (target)
+		{
+			if (!can_link(type, target->type))
+				return false;
+		}
 
 		if (links[0])
 		{
@@ -964,11 +949,6 @@ namespace flame
 	BP::Slot* BP::Slot::link(int idx) const
 	{
 		return ((SlotPrivate*)this)->links[idx];
-	}
-
-	bool BP::Slot::can_link(Slot* target) const
-	{
-		return ((SlotPrivate*)this)->can_link((SlotPrivate*)target);
 	}
 
 	bool BP::Slot::link_to(BP::Slot*target)

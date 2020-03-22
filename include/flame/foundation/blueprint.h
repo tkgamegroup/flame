@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
+#include <flame/foundation/typeinfo.h>
 
 namespace flame
 {
@@ -11,11 +11,6 @@ namespace flame
 		- The udt must have a update function, the function return nothing and takes no parameters
 		- Address: [node_id].[varible_name]
 	*/
-
-	struct TypeInfo;
-	struct VariableInfo;
-	struct UdtInfo;
-	struct TypeinfoDatabase;
 
 	struct BP
 	{
@@ -63,9 +58,21 @@ namespace flame
 				set_data(&p);
 			}
 
+			static bool can_link(const TypeInfo* in_type, const TypeInfo* out_out)
+			{
+				if (in_type == out_out)
+					return true;
+				auto in_base_hash = in_type->base_hash();
+				auto out_tag = out_out->tag();
+				if (in_type->tag() == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
+					(in_base_hash == out_out->base_hash() || in_base_hash == FLAME_CHASH("void")))
+					return true;
+
+				return false;
+			}
+
 			FLAME_FOUNDATION_EXPORTS uint link_count() const;
 			FLAME_FOUNDATION_EXPORTS Slot* link(int idx = 0) const;
-			FLAME_FOUNDATION_EXPORTS bool can_link(Slot* target) const;
 			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
 
 			FLAME_FOUNDATION_EXPORTS StringA get_address() const;

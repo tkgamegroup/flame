@@ -169,7 +169,7 @@ struct cSlot : Component
 				else if (action == BeingOverStart)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
-					auto ok = (is_in ? s->can_link(oth) : oth->can_link(s));
+					auto ok = (is_in ? BP::Slot::can_link(s->type(), oth->type()) : BP::Slot::can_link(oth->type(), s->type()));
 
 					element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
 					element->set_frame_thickness(2.f);
@@ -672,7 +672,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 				}
 				if (dragging_slot->io() == BP::Slot::Out)
 				{
-
+					if (BP::Slot::can_link(v->type(), dragging_slot->type()))
+					{
+						node_types.emplace_back(u, v);
+						return;
+					}
 				}
 			}
 			if (flags & VariableFlagOutput)
@@ -684,7 +688,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 				}
 				if (dragging_slot->io() == BP::Slot::In)
 				{
-
+					if (BP::Slot::can_link(dragging_slot->type(), v->type()))
+					{
+						node_types.emplace_back(u, v);
+						return;
+					}
 				}
 			}
 		}
@@ -850,7 +858,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							_capture.t = tag;
 							_capture.p = capture.p;
 							_capture.s = base_name;
-							utils::e_menu_item(((tag == TypeEnumSingle ? L"EnumSingle(" : L"EnumMulti(") + s2w(base_name) + L")").c_str(), [](void* c) {
+							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
 								auto n = app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.s) + ")").c_str(), "", capture.p);
 								auto s = app.editor->dragging_slot;
@@ -874,9 +882,9 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								}_capture;
 								_capture.p = capture.p;
 								_capture.s = base_name;
-								utils::e_menu_item((L"Variable(" + s2w(base_name) + L")").c_str(), [](void* c) {
+								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](void* c) {
 									auto& capture = *(_Capture*)c;
-									auto n = app.add_node(("Variable" + std::string(capture.s) + ")").c_str(), "", capture.p);
+									auto n = app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
 									auto s = app.editor->dragging_slot;
 									if (s)
 									{
@@ -890,22 +898,50 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						}
 						else if (tag == TypePointer && is_array)
 						{
-
+							struct _Capture
+							{
+								const char* s;
+								Vec2f p;
+							}_capture;
+							_capture.p = capture.p;
+							_capture.s = base_name;
+							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](void* c) {
+								auto& capture = *(_Capture*)c;
+								auto n = app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
+								auto s = app.editor->dragging_slot;
+								if (s)
+								{
+									if (s->io() == BP::Slot::In)
+										s->link_to(n->find_output("out"));
+									else
+										n->find_input("0")->link_to(s);
+								}
+							}, new_mail(&_capture));
 						}
 					}
 					{
 						struct Capture
 						{
 							UdtInfo* u;
+							VariableInfo* v;
 							Vec2f p;
 						}capture;
 						capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
-						for (auto udt : node_types)
+						for (auto& t : node_types)
 						{
-							capture.u = udt.first;
-							utils::e_menu_item(s2w(udt.first->type()->name()).c_str(), [](void* c) {
+							capture.u = t.first;
+							capture.v = t.second;
+							utils::e_menu_item(s2w(t.first->type()->name()).c_str(), [](void* c) {
 								auto& capture = *(Capture*)c;
-								app.add_node(capture.u->type()->name() + 2, "", capture.p);
+								auto n = app.add_node(capture.u->type()->name() + 2, "", capture.p);
+								auto s = app.editor->dragging_slot;
+								if (s)
+								{
+									if (s->io() == BP::Slot::In)
+										s->link_to(n->find_output(capture.v->name()));
+									else
+										n->find_input(capture.v->name())->link_to(s);
+								}
 							}, new_mail(&capture));
 						}
 					}
