@@ -17,6 +17,7 @@ struct cEditor : Component
 	cText* c_scale_text;
 
 	BP::Slot* dragging_slot;
+	BP::Slot* pending_link_slot;
 	Vec2f dragging_slot_pos;
 
 	cEditor();

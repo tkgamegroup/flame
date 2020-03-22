@@ -306,7 +306,7 @@ namespace flame
 				while (e)
 				{
 					auto er = e->get_component(cEventReceiver);
-					if (er && er->key_listeners.impl->count())
+					if (er && er->key_listeners.impl->count() > 0)
 					{
 						key_receiving = er;
 						break;
@@ -341,11 +341,11 @@ namespace flame
 		if (key_receiving)
 		{
 			for (auto& code : keydown_inputs)
-				((cEventReceiverPrivate*)focusing)->on_key(KeyStateDown, code);
+				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateDown, code);
 			for (auto& code : keyup_inputs)
-				((cEventReceiverPrivate*)focusing)->on_key(KeyStateUp, code);
+				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateUp, code);
 			for (auto& ch : char_inputs)
-				((cEventReceiverPrivate*)focusing)->on_key(KeyStateNull, ch);
+				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateNull, ch);
 		}
 
 		keydown_inputs.clear();

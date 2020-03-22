@@ -898,9 +898,9 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto& m = *(WrapedMail*)c;
-					m.f(m.m.p);
 					if (m.close)
 						remove_top_layer(m.root);
+					m.f(m.m.p);
 				}
 				return true;
 			}, new_m);

@@ -576,6 +576,18 @@ cEditor::cEditor() :
 				utils::push_parent(utils::current_entity());
 					e_base = utils::e_empty();
 					c_base_element = utils::c_element();
+					utils::c_event_receiver()->key_listeners.add([](void*, KeyStateFlags action, int value) {
+						if (is_key_down(action))
+						{
+							switch (value)
+							{
+							case Key_Del:
+								app.delete_selected();
+								break;
+							}
+						}
+						return true;
+					}, Mail<>());
 					base_moved = false;
 				utils::pop_parent();
 			}
@@ -716,6 +728,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 
 	utils::push_parent(utils::add_layer(app.root, ""));
 		utils::e_empty()->on_removed_listeners.add([](void*) {
+			app.editor->pending_link_slot = app.editor->dragging_slot;
 			app.editor->dragging_slot = nullptr;
 			return true;
 		}, Mail<>());
@@ -862,7 +875,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
 								auto n = app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.s) + ")").c_str(), "", capture.p);
-								auto s = app.editor->dragging_slot;
+								auto s = app.editor->pending_link_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
@@ -886,7 +899,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](void* c) {
 									auto& capture = *(_Capture*)c;
 									auto n = app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
-									auto s = app.editor->dragging_slot;
+									auto s = app.editor->pending_link_slot;
 									if (s)
 									{
 										if (s->io() == BP::Slot::In)
@@ -909,7 +922,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
 								auto n = app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
-								auto s = app.editor->dragging_slot;
+								auto s = app.editor->pending_link_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
@@ -935,7 +948,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							utils::e_menu_item(s2w(t.first->type()->name()).c_str(), [](void* c) {
 								auto& capture = *(Capture*)c;
 								auto n = app.add_node(capture.u->type()->name() + 2, "", capture.p);
-								auto s = app.editor->dragging_slot;
+								auto s = app.editor->pending_link_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
