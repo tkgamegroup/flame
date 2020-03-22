@@ -388,6 +388,7 @@ struct cNode : Component
 									str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + thiz->n_name;
 								else
 									str = node_type_prefix(thiz->n_type) + thiz->n_name;
+								str += L"\n" + s2w(n->id());
 								utils::e_text(str.c_str())->get_component(cText)->color_ = node_type_color(thiz->n_type);
 							utils::e_end_layout();
 						utils::pop_parent();
@@ -1075,35 +1076,39 @@ void cEditor::on_add_node(BP::Node* n)
 				c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type());
 			}
 			e_node->add_component(c_node);
+			utils::e_begin_popup_menu(false);
+				utils::e_menu_item(L"Change ID", [](void* c) {
+					auto n = *(BP::Node**)c;
+					looper().add_event([](void* c, bool*) {
+						auto n = *(BP::Node**)c;
+						utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
+							if (ok && text[0])
+								(*(BP::Node**)c)->set_id(w2s(text).c_str());
+						}, new_mail_p(n), s2w(n->id()).c_str());
+					}, new_mail_p(n));
+				}, new_mail_p(n));
+				utils::e_menu_item(L"Duplicate", [](void* c) {
+				}, new_mail_p(n));
+				utils::e_menu_item(L"Delete", [](void* c) {
+				}, new_mail_p(n));
+			utils::e_end_popup_menu();
 		utils::push_parent(e_node);
 			utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
 				utils::push_style_1u(utils::FontSize, 21);
 				utils::e_begin_layout(LayoutHorizontal, 4.f);
+					if (c_node->n_type == 0)
 					{
-						auto e_text = utils::e_text(s2w(n->id()).c_str());
+						auto str = s2w(n->type());
+						auto last_colon = str.find_last_of(L':');
+						if (last_colon == std::wstring::npos)
+							last_colon = 0;
+						else
+							last_colon++;
+						str = std::wstring(str.begin() + last_colon, str.end());
+						auto e_text = utils::e_text(str.c_str());
 						e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 						e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
-						utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
-						struct Capture
-						{
-							BP::Node* n;
-							cText* t;
-						}capture;
-						capture.n = n;
-						capture.t = e_text->get_component(cText);
-						utils::e_button(Icon_PENCIL_SQUARE_O, [](void* c) {
-							auto& capture = *(Capture*)c;
-							utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
-								if (ok && text[0])
-								{
-									auto& capture = *(Capture*)c;
-									capture.n->set_id(w2s(text).c_str());
-									capture.t->set_text(text);
-								}
-							}, new_mail(&capture), s2w(capture.n->id()).c_str());
-						}, new_mail(&capture));
 					}
-					utils::pop_style(utils::ButtonColorNormal);
 				utils::e_end_layout();
 				utils::pop_style(utils::FontSize);
 
@@ -1113,7 +1118,7 @@ void cEditor::on_add_node(BP::Node* n)
 				if (n->id() == "test_dst")
 				{
 					utils::e_button(L"Show", [](void* c) {
-						//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data(), Vec2f(1495.f, 339.f));
+						//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data());
 					}, new_mail_p(n));
 				}
 				else if (type == "D#graphics::Shader")
@@ -1271,9 +1276,18 @@ void cEditor::on_add_node(BP::Node* n)
 							utils::c_event_receiver();
 							auto c_slot = new_u_object<cSlot>();
 							c_slot->s = input;
-							utils::current_entity()->add_component(c_slot);
 							input->user_data = c_slot;
+							utils::current_entity()->add_component(c_slot);
 							utils::e_begin_popup_menu(false);
+								utils::e_menu_item(L"Break Links", [](void* c) {
+								}, new_mail_p(input));
+								utils::e_menu_item(L"Reset Value", [](void* c) {
+								}, new_mail_p(input));
+								if (c_node->n_type == 'A')
+								{
+									utils::e_menu_item(L"Remove Slot", [](void* c) {
+									}, new_mail_p(input));
+								}
 							utils::e_end_popup_menu();
 
 							utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color_ = type_color(input->type()->tag());
@@ -1530,11 +1544,24 @@ void cEditor::on_add_node(BP::Node* n)
 							utils::current_entity()->add_component(c_slot);
 							output->user_data = c_slot;
 							utils::e_begin_popup_menu(false);
+								utils::e_menu_item(L"Break Links", [](void* c) {
+								}, new_mail_p(output));
 							utils::e_end_popup_menu();
 							utils::e_end_layout();
 						}
 					utils::e_end_layout();
 				utils::e_end_layout();
+
+				if (c_node->n_type == 'A')
+				{
+					auto c_element = utils::e_button(L"+", [](void* c) {
+					}, new_mail_p(n))->get_component(cElement);
+					c_element->inner_padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
+					c_element->roundness_ = 8.f;
+					c_element->roundness_lod = 2;
+					utils::c_aligner(AlignxMiddle, AlignyFree);
+				}
+
 			utils::e_end_layout();
 			utils::e_empty();
 			utils::c_element();

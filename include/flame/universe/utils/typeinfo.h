@@ -143,7 +143,8 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(s2w(((StringA*)data)->str()).c_str(), INVALID_POINTER);
+			auto& d = *(StringA*)data;
+			text->set_text(d.v ? s2w(d.str()).c_str() : L"", INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -160,7 +161,8 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(((StringW*)data)->v, INVALID_POINTER);
+			auto& d = *(StringW*)data;
+			text->set_text(d.v ? d.v : L"", INVALID_POINTER);
 		}
 
 		void on_added() override

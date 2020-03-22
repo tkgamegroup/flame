@@ -31,9 +31,9 @@ namespace flame
 			pop_style(FrameColorNormal); push_style_4c(FrameColorNormal, 220, 220, 220, 255);
 			pop_style(FrameColorHovering); push_style_4c(FrameColorHovering, 230, 230, 230, 255);
 			pop_style(FrameColorActive); push_style_4c(FrameColorActive, 225, 225, 225, 255);
-			pop_style(ButtonColorNormal); push_style_4c(ButtonColorNormal, 5, 170, 245, 255);
-			pop_style(ButtonColorHovering); push_style_4c(ButtonColorHovering, 5, 155, 230, 255);
-			pop_style(ButtonColorActive); push_style_4c(ButtonColorActive, 0, 135, 210, 255);
+			pop_style(ButtonColorNormal); push_style_4c(ButtonColorNormal, 86, 119, 252, 255);
+			pop_style(ButtonColorHovering); push_style_4c(ButtonColorHovering, 78, 108, 239, 255);
+			pop_style(ButtonColorActive); push_style_4c(ButtonColorActive, 69, 94, 222, 255);
 			pop_style(SelectedColorNormal); push_style_4c(SelectedColorNormal, 200, 220, 245, 255);
 			pop_style(SelectedColorHovering); push_style_4c(SelectedColorHovering, 205, 225, 250, 255);
 			pop_style(SelectedColorActive); push_style_4c(SelectedColorActive, 195, 215, 240, 255);
@@ -61,9 +61,9 @@ namespace flame
 			pop_style(FrameColorNormal); push_style_4c(FrameColorNormal, 55, 55, 55, 255);
 			pop_style(FrameColorHovering); push_style_4c(FrameColorHovering, 65, 65, 65, 255);
 			pop_style(FrameColorActive); push_style_4c(FrameColorActive, 60, 60, 60, 255);
-			pop_style(ButtonColorNormal); push_style_4c(ButtonColorNormal, 5, 170, 245, 255);
-			pop_style(ButtonColorHovering); push_style_4c(ButtonColorHovering, 5, 155, 230, 255);
-			pop_style(ButtonColorActive); push_style_4c(ButtonColorActive, 0, 135, 210, 255);
+			pop_style(ButtonColorNormal); push_style_4c(ButtonColorNormal, 86, 119, 252, 255);
+			pop_style(ButtonColorHovering); push_style_4c(ButtonColorHovering, 78, 108, 239, 255);
+			pop_style(ButtonColorActive); push_style_4c(ButtonColorActive, 69, 94, 222, 255);
 			pop_style(SelectedColorNormal); push_style_4c(SelectedColorNormal, 100, 110, 125, 255);
 			pop_style(SelectedColorHovering); push_style_4c(SelectedColorHovering, 105, 115, 130, 255);
 			pop_style(SelectedColorActive); push_style_4c(SelectedColorActive, 90, 105, 120, 255);
