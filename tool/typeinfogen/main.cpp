@@ -609,6 +609,21 @@ int main(int argc, char **args)
 							FreeLibrary(library);
 						}
 					}
+					else
+					{
+						for (auto& i : u->variables)
+						{
+							auto type = i->type;
+							auto tag = type->tag;
+							if (!type->is_array && tag == TypeData && !(i->flags & VariableFlagOutput))
+							{
+								auto d = new char[i->size];
+								memset(d, 0, i->size);
+								i->default_value = type->serialize(d, 1);
+								delete[] d;
+							}
+						}
+					}
 				}
 
 				break;

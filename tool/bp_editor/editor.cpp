@@ -1590,6 +1590,7 @@ void cEditor::on_add_node(BP::Node* n)
 				if (c_node->n_type == 'A')
 				{
 					auto c_element = utils::e_button(L"+", [](void* c) {
+						auto n = *(BP::Node**)c;
 					}, new_mail_p(n))->get_component(cElement);
 					c_element->inner_padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
 					c_element->roundness_ = 8.f;

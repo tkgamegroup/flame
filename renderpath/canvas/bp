@@ -81,24 +81,9 @@
 				<data name="1" value="text_sdf.frag" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_Pipeline" id="pl_element" pos="2877.23;827.38">
-			<datas>
-				<data name="subpass_idx" value="0" />
-				<data name="vp" value="0;0" />
-			</datas>
-		</node>
-		<node type="flame::graphics::R_Pipeline" id="pl_text_lcd" pos="2878.06;1223.97">
-			<datas>
-				<data name="subpass_idx" value="0" />
-				<data name="vp" value="0;0" />
-			</datas>
-		</node>
-		<node type="flame::graphics::R_Pipeline" id="pl_text_sdf" pos="2883.68;1621.44">
-			<datas>
-				<data name="subpass_idx" value="0" />
-				<data name="vp" value="0;0" />
-			</datas>
-		</node>
+		<node type="flame::graphics::R_Pipeline" id="pl_element" pos="2877.23;827.38" />
+		<node type="flame::graphics::R_Pipeline" id="pl_text_lcd" pos="2878.06;1223.97" />
+		<node type="flame::graphics::R_Pipeline" id="pl_text_sdf" pos="2883.68;1621.44" />
 		<node type="flame::graphics::R_Image" id="img_white" pos="861.12;1424.24">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
