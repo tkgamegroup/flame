@@ -7,16 +7,17 @@
 using namespace flame;
 using namespace graphics;
 
-struct cScene;
-
 struct cEditor : Component
 {
-	cText* tab_text;
+	cText* c_tab_text;
 	Entity* e_base;
+	cElement* c_base_element;
+	bool base_moved;
+	uint scale;
+	cText* c_scale_text;
 
 	BP::Slot* dragging_slot;
-
-	cScene* c_scene;
+	Vec2f dragging_slot_pos;
 
 	cEditor();
 	virtual ~cEditor() override;
@@ -27,6 +28,7 @@ struct cEditor : Component
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
+	void show_add_node_menu(const Vec2f& pos);
 };
 
 struct cConsole : Component
@@ -98,8 +100,6 @@ struct MyApp : App
 	void update_gv();
 	bool generate_graph_image();
 	bool auto_set_layout();
-
-	void add_filter_function(cText* c_text_search, Entity* list);
 
 	bool create(const char* filename);
 	void load(const std::filesystem::path& filepath);

@@ -49,7 +49,7 @@ enum GameMode
 	GameSingleMarathon,
 	GameSingleRTA,
 	GameSinglePractice,
-	GameMulti
+	GameVS
 };
 
 struct Player
@@ -234,7 +234,7 @@ struct MyApp : App
 		auto scale = (player_index == my_room_index || room_max_people == 2) ? 1.f : 0.5f;
 		auto block_size = 24U * scale;
 
-		auto pos = Vec2f(game_mode != GameMulti ? 120.f : 0.f, 0.f);
+		auto pos = Vec2f(game_mode != GameVS ? 120.f : 0.f, 0.f);
 		if (player_index != my_room_index)
 		{
 			switch (room_max_people)
@@ -267,11 +267,11 @@ struct MyApp : App
 					return L"RTA";
 				case GameSinglePractice:
 					return L"Practice";
-				case GameMulti:
+				case GameVS:
 					return p.name.c_str();
 				}
 			}())->get_component(cText);
-			if (game_mode == GameMulti && player_index == 0)
+			if (game_mode == GameVS && player_index == 0)
 				p.c_name->color_ = Vec4c(91, 82, 119, 255);
 			utils::pop_style(utils::FontSize);
 
@@ -383,22 +383,22 @@ struct MyApp : App
 			p.c_count_down = utils::e_text(L"")->get_component(cText);
 			utils::pop_style(utils::FontSize);
 
-			if (game_mode == GameMulti)
+			if (game_mode == GameVS)
 			{
 				utils::next_element_pos = pos + Vec2f(54.f, 546.f);
 				p.e_garbage = utils::e_element();
 			}
 		}
 
-		if (game_mode == GameMulti)
+		if (game_mode == GameVS)
 		{
 			utils::push_style_1u(utils::FontSize, 60 * scale);
 			utils::next_element_pos = pos + Vec2f(150.f, 200.f) * scale;
 			p.c_ready = utils::e_text(L"Ready")->get_component(cText);
-			p.c_ready->entity->set_visibility(false);
+			p.c_ready->entity->set_visible(false);
 			utils::next_element_pos = pos + Vec2f(160.f, 150.f) * scale;
 			p.c_rank = utils::e_text(L"Ready")->get_component(cText);
-			p.c_rank->entity->set_visibility(false);
+			p.c_rank->entity->set_visible(false);
 			utils::pop_style(utils::FontSize);
 		}
 	}
@@ -442,7 +442,7 @@ struct MyApp : App
 		looper().add_event([](void* c, bool*) {
 			auto& p = app.players[*(int*)c];
 			p.ready = true;
-			p.c_ready->entity->set_visibility(true);
+			p.c_ready->entity->set_visible(true);
 		}, new_mail(&index));
 	}
 
@@ -516,7 +516,7 @@ struct MyApp : App
 				str = std::to_wstring(capture.rank) + L"th";
 			}
 			p.c_rank->set_text(str.c_str());
-			p.c_rank->entity->set_visibility(true);
+			p.c_rank->entity->set_visible(true);
 		}, new_mail(&capture));
 	}
 
@@ -525,7 +525,7 @@ struct MyApp : App
 		looper().add_event([](void*, bool*) {
 			app.room_gaming = false;
 			app.gaming = false;
-			app.e_start_or_ready->set_visibility(true);
+			app.e_start_or_ready->set_visible(true);
 		}, Mail<>());
 	}
 
@@ -548,7 +548,7 @@ struct MyApp : App
 				me.name = app.my_name;
 				looper().add_event([](void*, bool*) {
 					app.root->remove_children(1, -1);
-					app.game_mode = GameMulti;
+					app.game_mode = GameVS;
 					app.create_game_scene();
 				}, Mail<>());
 			}
@@ -664,7 +664,7 @@ struct MyApp : App
 			{
 				auto& p = app.players[i];
 				if (p.id)
-					p.e_kick->set_visibility(true);
+					p.e_kick->set_visible(true);
 			}
 			app.process_gameover();
 
@@ -947,7 +947,7 @@ struct MyApp : App
 										app.room_gaming = false;
 										looper().add_event([](void*, bool*) {
 											app.root->remove_children(1, -1);
-											app.game_mode = GameMulti;
+											app.game_mode = GameVS;
 											app.create_game_scene();
 										}, Mail<>());
 									}
@@ -1225,12 +1225,12 @@ struct MyApp : App
 				}, Mail<>())));
 			}
 
-			if (game_mode == GameMulti)
+			if (game_mode == GameVS)
 				utils::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
 
 				create_player_controls(my_room_index);
 
-				if (game_mode != GameMulti)
+				if (game_mode != GameVS)
 				{
 					utils::next_element_pos = Vec2f(535.f, 150.f);
 					utils::e_text(L"TIME")->get_component(cText)->color_ = Vec4c(40, 80, 200, 255);
@@ -1260,13 +1260,13 @@ struct MyApp : App
 				utils::next_element_pos = Vec2f(8.f, 230.f);
 				{
 					auto e = utils::e_text(L"");
-					e->set_visibility(false);
+					e->set_visible(false);
 					c_text_special = e->get_component(cText);
 				}
 				c_text_special->color_ = Vec4c(200, 80, 40, 255);
 				utils::pop_style(utils::FontSize);
 
-			if (game_mode == GameMulti)
+			if (game_mode == GameVS)
 			{
 				utils::next_element_pos = Vec2f(4.f, 500.f);
 				if (my_room_index == 0)
@@ -1290,7 +1290,7 @@ struct MyApp : App
 							{
 								auto& p = app.players[i];
 								if (p.id && !p.disconnected)
-									p.e_kick->set_visibility(false);
+									p.e_kick->set_visible(false);
 							}
 							app.process_game_start();
 
@@ -1351,14 +1351,14 @@ struct MyApp : App
 
 			~Capture()
 			{
-				text->entity->set_visibility(false);
+				text->entity->set_visible(false);
 			}
 		};
 		auto capture = new_mail<Capture>();
 		capture.p->time = 3;
 		capture.p->text = players[my_room_index].c_count_down;
 		capture.p->text->set_text(L"3");
-		capture.p->text->entity->set_visibility(true);
+		capture.p->text->entity->set_visible(true);
 		looper().add_event([](void* c, bool* go_on) {
 			auto& capture = *(Capture*)c;
 			capture.time--;
@@ -1372,7 +1372,7 @@ struct MyApp : App
 
 	void update_status()
 	{
-		if (game_mode != GameMulti)
+		if (game_mode != GameVS)
 		{
 			c_text_time->set_text(wfmt(L"%02d:%02d.%02d", (int)play_time / 60, ((int)play_time) % 60, int(play_time * 100) % 100).c_str());
 			c_text_level->set_text(wfmt(L"%02d", level).c_str());
@@ -1400,15 +1400,15 @@ struct MyApp : App
 					for (auto j = 0; j < array_size(p.c_next); j++)
 						p.c_next[j]->clear_cells(-1);
 				}
-				if (game_mode == GameMulti)
+				if (game_mode == GameVS)
 				{
-					p.c_ready->entity->set_visibility(false);
-					p.c_rank->entity->set_visibility(false);
+					p.c_ready->entity->set_visible(false);
+					p.c_rank->entity->set_visible(false);
 				}
 			}
 		}
-		if (game_mode == GameMulti)
-			e_start_or_ready->set_visibility(false);
+		if (game_mode == GameVS)
+			e_start_or_ready->set_visible(false);
 
 		left_frames = -1;
 		right_frames = -1;
@@ -1443,6 +1443,7 @@ struct MyApp : App
 			shuffle_pack(i);
 
 		update_status();
+		players[my_room_index].e_garbage->remove_children(0, -1);
 
 		gaming = false;
 		begin_count_down();
@@ -1566,7 +1567,7 @@ struct MyApp : App
 	{
 		auto& key_states = s_event_dispatcher->key_states;
 
-		if (game_mode != GameMulti)
+		if (game_mode != GameVS)
 		{
 			if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
 			{
@@ -1728,7 +1729,7 @@ struct MyApp : App
 					{
 						gaming = false;
 
-						if (game_mode != GameMulti)
+						if (game_mode != GameVS)
 						{
 							utils::e_begin_dialog();
 							utils::e_text(L"Game Over");
@@ -1973,32 +1974,32 @@ struct MyApp : App
 										{
 											if (it->lines <= cancel)
 											{
+												attack -= it->lines;
 												cancel -= it->lines;
 												it = garbages.erase(it);
 											}
 											else
 											{
 												it->lines -= cancel;
+												attack -= cancel;
 												cancel = 0;
 												break;
 											}
 										}
 										need_update_garbages_tip = true;
-
-										attack -= cancel;
 									}
 
 									if (!special_str.empty())
 									{
-										c_text_special->entity->set_visibility(true);
+										c_text_special->entity->set_visible(true);
 										c_text_special->set_text(special_str.c_str());
 										looper().clear_events(FLAME_CHASH("special_text"));
 										looper().add_event([](void*, bool*) {
-											app.c_text_special->entity->set_visibility(false);
+											app.c_text_special->entity->set_visible(false);
 										}, Mail<>(), 1.f, FLAME_CHASH("special_text"));
 									}
 
-									if (game_mode == GameMulti && attack > 0)
+									if (game_mode == GameVS && attack > 0)
 									{
 										nlohmann::json req;
 										req["action"] = "attack";
@@ -2050,35 +2051,32 @@ struct MyApp : App
 								}
 								else
 								{
-									if (!garbages.empty())
+									for (auto it = garbages.begin(); it != garbages.end();)
 									{
-										for (auto it = garbages.begin(); it != garbages.end();)
+										if (it->time == 0)
 										{
-											if (it->time == 0)
+											auto n = it->lines;
+											for (auto i = 0; i < board_height - n; i++)
 											{
-												auto n = it->lines;
-												for (auto i = 0; i < board_height - n; i++)
+												for (auto x = 0; x < board_width; x++)
 												{
-													for (auto x = 0; x < board_width; x++)
-													{
-														auto id = c_main->cell(Vec2i(x, i + n));
-														c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
-													}
+													auto id = c_main->cell(Vec2i(x, i + n));
+													c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 												}
-												auto hole = ::rand() % board_width;
-												for (auto i = 0; i < n; i++)
-												{
-													auto y = board_height - i - 1;
-													for (auto x = 0; x < board_width; x++)
-														c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
-													c_main->set_cell(Vec2u(hole, y), TileGrid);
-												}
-												it = garbages.erase(it);
-												need_update_garbages_tip = true;
 											}
-											else
-												it++;
+											auto hole = ::rand() % board_width;
+											for (auto i = 0; i < n; i++)
+											{
+												auto y = board_height - i - 1;
+												for (auto x = 0; x < board_width; x++)
+													c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
+												c_main->set_cell(Vec2u(hole, y), TileGrid);
+											}
+											it = garbages.erase(it);
+											need_update_garbages_tip = true;
 										}
+										else
+											it++;
 									}
 
 									clear_ticks = 0;
@@ -2116,7 +2114,7 @@ struct MyApp : App
 					}
 				}
 
-				if (game_mode == GameMulti)
+				if (game_mode == GameVS)
 				{
 					nlohmann::json req;
 					req["action"] = "report_board";
@@ -2161,7 +2159,7 @@ struct MyApp : App
 			}
 
 			update_status();
-			if (game_mode == GameMulti)
+			if (game_mode == GameVS)
 			{
 				if (need_update_garbages_tip)
 				{

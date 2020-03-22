@@ -233,7 +233,7 @@ namespace flame
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
 				auto e = entity->child(i);
-				if (e->global_visibility_)
+				if (e->global_visible_)
 				{
 					auto element = e->get_component(cElement);
 					auto aligner = e->get_component(cAligner);

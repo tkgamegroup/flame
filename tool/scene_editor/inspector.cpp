@@ -203,10 +203,10 @@ void cInspector::refresh()
 		}, Mail<>());
 		end_item();
 		begin_item(L"visible");
-		auto checkbox = utils::e_checkbox(L"", app.selected->visibility_)->get_component(cCheckbox)->
+		auto checkbox = utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox)->
 			data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
-				app.selected->set_visibility(((cCheckbox*)cb)->checked);
+				app.selected->set_visible(((cCheckbox*)cb)->checked);
 		}, Mail<>());
 		end_item();
 

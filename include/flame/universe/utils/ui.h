@@ -438,7 +438,7 @@ namespace flame
 			e->get_component(cLayout)->fence = 1;
 
 			auto ee = e_edit(50.f);
-			ee->set_visibility(false);
+			ee->set_visible(false);
 			push_style_4c(ButtonColorNormal, style_4c(FrameColorNormal));
 			push_style_4c(ButtonColorHovering, style_4c(FrameColorHovering));
 			push_style_4c(ButtonColorActive, style_4c(FrameColorActive));
@@ -473,8 +473,8 @@ namespace flame
 				auto& capture = *(Capture*)c;
 				if (!focusing)
 				{
-					capture.e->set_visibility(false);
-					capture.d->set_visibility(true);
+					capture.e->set_visible(false);
+					capture.d->set_visible(true);
 				}
 				return true;
 			}, new_mail(&capture));
@@ -483,8 +483,8 @@ namespace flame
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key) && pos == 0)
 				{
-					capture.e->set_visibility(true);
-					capture.d->set_visibility(false);
+					capture.e->set_visible(true);
+					capture.d->set_visible(false);
 					capture.d_er->dispatcher->next_focusing = capture.e_er;
 				}
 				else if (is_active(capture.d_er) && is_mouse_move(action, key))
@@ -871,7 +871,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c), const Mail<>& mail)
+		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c), const Mail<>& mail, bool close_menu = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -879,6 +879,7 @@ namespace flame
 			struct WrapedMail
 			{
 				Entity* root;
+				bool close;
 				void(*f)(void*);
 				Mail<> m;
 
@@ -890,13 +891,15 @@ namespace flame
 			};
 			auto new_m = new_mail<WrapedMail>();
 			new_m.p->root = current_root();
+			new_m.p->close = close_menu;
 			new_m.p->f = func;
 			new_m.p->m = mail;
 			c_event_receiver()->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto& m = *(WrapedMail*)c;
-					remove_top_layer(m.root);
+					if (m.close)
+						remove_top_layer(m.root);
 					m.f(m.m.p);
 				}
 				return true;

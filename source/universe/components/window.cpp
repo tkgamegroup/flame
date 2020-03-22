@@ -237,7 +237,7 @@ namespace flame
 
 				tabbar->remove_child(entity, false);
 				pages->remove_child(page, false);
-				page->set_visibility(true);
+				page->set_visible(true);
 				element->set_pos(element->global_pos);
 				element->set_alpha(0.5f);
 				page_element->set_pos(Vec2f(element->pos_.x(), element->pos_.y() + element->global_size.y() + 8.f));
@@ -548,8 +548,8 @@ namespace flame
 						{
 							auto idx = thiz->list->selected->index_;
 							for (auto i = 0; i < pages->child_count(); i++)
-								pages->child(i)->set_visibility(false);
-							pages->child(idx)->set_visibility(true);
+								pages->child(i)->set_visible(false);
+							pages->child(idx)->set_visible(true);
 						}
 					}
 					return true;

@@ -256,27 +256,6 @@ bool MyApp::auto_set_layout()
 	return true;
 }
 
-void MyApp::add_filter_function(cText* c_text_search, Entity* e_list)
-{
-	struct Capture
-	{
-		Entity* l;
-		cText* t;
-	}capture;
-	capture.l = e_list;
-	capture.t = c_text_search;
-	c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
-		auto& capture = *(Capture*)c;
-		std::wstring str = capture.t->text();
-		for (auto i = 0; i < capture.l->child_count(); i++)
-		{
-			auto item = capture.l->child(i);
-			item->set_visibility(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-		}
-		return true;
-	}, new_mail(&capture));
-}
-
 bool MyApp::create(const char* filename)
 {
 	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
@@ -418,15 +397,15 @@ bool MyApp::create(const char* filename)
 				c_element->inner_padding_ = 4.f;
 				c_element->color_ = utils::style_4c(utils::FrameColorNormal);
 				utils::c_aligner(SizeFitParent, SizeFixed);
-				utils::e_button(L"Update One Frame", [](void*) {
-					app.bp->update();
-				}, Mail<>());
-				auto c_checkbox = utils::e_checkbox(L"Auto Update")->get_component(cCheckbox);
+				auto c_checkbox = utils::e_checkbox(L"Auto ")->get_component(cCheckbox);
 				c_checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
 						app.auto_update = (*(cCheckbox**)c)->checked;
 					return true;
 				}, new_mail_p(c_checkbox));
+				utils::e_button(L"Update", [](void*) {
+					app.bp->update();
+				}, Mail<>());
 				utils::e_button(L"Reset Time");
 				utils::e_end_layout();
 			}

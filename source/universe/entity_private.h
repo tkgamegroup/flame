@@ -19,7 +19,7 @@ namespace flame
 
 		EntityPrivate();
 		~EntityPrivate();
-		void set_visibility(bool v);
+		void set_visible(bool v);
 		Component* get_component_plain(uint name_hash);
 		Array<Component*> get_components();
 		void add_component(Component* c);

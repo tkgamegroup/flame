@@ -16,8 +16,8 @@ namespace flame
 		created_frame_ = looper().frame;
 		dying_ = false;
 
-		visibility_ = true;
-		global_visibility_ = true;
+		visible_ = true;
+		global_visible_ = true;
 
 		name_hash = 0;
 
@@ -34,11 +34,11 @@ namespace flame
 		ListenerHubImpl::destroy(on_destroyed_listeners.impl);
 	}
 
-	void EntityPrivate::set_visibility(bool v)
+	void EntityPrivate::set_visible(bool v)
 	{
-		if (visibility_ == v)
+		if (visible_ == v)
 			return;
-		visibility_ = v;
+		visible_ = v;
 		update_visibility();
 		for (auto& c : components)
 			c.second->on_visibility_changed();
@@ -262,7 +262,7 @@ namespace flame
 	{
 		auto ret = new EntityPrivate;
 
-		ret->visibility_ = visibility_;
+		ret->visible_ = visible_;
 		ret->set_name(name.c_str());
 		for (auto& c : components)
 			ret->add_component(c.second->copy());
@@ -275,9 +275,9 @@ namespace flame
 	void EntityPrivate::update_visibility()
 	{
 		if (!parent)
-			global_visibility_ = visibility_;
+			global_visible_ = visible_;
 		else
-			global_visibility_ = visibility_ && parent->global_visibility_;
+			global_visible_ = visible_ && parent->global_visible_;
 
 		for (auto& e : children)
 			e->update_visibility();
@@ -300,9 +300,9 @@ namespace flame
 		thiz->name_hash = FLAME_HASH(name);
 	}
 
-	void Entity::set_visibility(bool v)
+	void Entity::set_visible(bool v)
 	{
-		((EntityPrivate*)this)->set_visibility(v);
+		((EntityPrivate*)this)->set_visible(v);
 	}
 
 	Component* Entity::get_component_plain(uint name_hash) const
@@ -389,7 +389,7 @@ namespace flame
 	{
 		auto e = Entity::create();
 		e->set_name(src.attribute("name").value());
-		e->set_visibility(src.attribute("visibility").as_bool());
+		e->set_visible(src.attribute("visibility").as_bool());
 
 		for (auto n_c : src.child("components"))
 		{
@@ -442,7 +442,7 @@ namespace flame
 	{
 		auto n = dst.append_child("entity");
 		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
-		n.append_attribute("visibility").set_value(src->visibility_ );
+		n.append_attribute("visibility").set_value(src->visible_ );
 
 		if (!src->components.empty())
 		{

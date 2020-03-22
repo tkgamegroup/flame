@@ -95,7 +95,7 @@ namespace flame
 
 		void do_render(EntityPrivate* e)
 		{
-			if (!e->global_visibility_)
+			if (!e->global_visible_)
 				return;
 
 			auto element = (cElementPrivate*)e->get_component(cElement);

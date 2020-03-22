@@ -200,8 +200,8 @@ namespace flame
 					{
 						auto thiz = *(cTreeNodeArrowPrivate**)c;
 						auto e = thiz->entity->parent()->parent()->child(1);
-						e->set_visibility(!e->visibility_);
-						thiz->text->set_text(e->visibility_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
+						e->set_visible(!e->visible_);
+						thiz->text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 					}
 					return true;
 				}, new_mail_p(this));

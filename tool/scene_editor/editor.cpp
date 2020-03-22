@@ -252,7 +252,7 @@ void cEditor::search_hover(Entity* e)
 		for (auto i = (int)e->child_count() - 1; i >= 0; i--)
 		{
 			auto c = e->child(i);
-			if (c->global_visibility_)
+			if (c->global_visible_)
 				search_hover(c);
 		}
 	}

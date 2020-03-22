@@ -22,14 +22,14 @@ namespace flame
 		int created_frame_;
 		bool dying_;
 
-		bool visibility_;
-		bool global_visibility_;
+		bool visible_;
+		bool global_visible_;
 
 		FLAME_UNIVERSE_EXPORTS const char* name() const;
 		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
 		FLAME_UNIVERSE_EXPORTS void set_name(const char* name) const;
 
-		FLAME_UNIVERSE_EXPORTS void set_visibility(bool v);
+		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
 		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint name_hash) const;
 
