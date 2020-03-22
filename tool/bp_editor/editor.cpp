@@ -127,6 +127,24 @@ struct cSlot : Component
 		tip_link = nullptr;
 	}
 
+	~cSlot() override
+	{
+		clear_tips();
+	}
+
+	void clear_tips()
+	{
+		if (tip_type)
+		{
+			auto e = tip_type;
+			tip_type = nullptr;
+			looper().add_event([](void* c, bool*) {
+				auto e = *(Entity**)c;
+				e->parent()->remove_child(e);
+			}, new_mail_p(e));
+		}
+	}
+
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
@@ -152,7 +170,10 @@ struct cSlot : Component
 				auto is_in = s->io() == BP::Slot::In;
 
 				if (action == DragStart)
+				{
 					app.editor->dragging_slot = s;
+					app.deselect();
+				}
 				else if (action == DragOvering)
 				{
 					app.editor->dragging_slot_pos = Vec2f(pos);
@@ -236,17 +257,7 @@ struct cSlot : Component
 				auto is_in = s->io() == BP::Slot::In;
 
 				if (!hovering)
-				{
-					if (thiz->tip_type)
-					{
-						auto e = thiz->tip_type;
-						thiz->tip_type = nullptr;
-						looper().add_event([](void* c, bool*) {
-							auto e = *(Entity**)c;
-							e->parent()->remove_child(e);
-						}, new_mail_p(e));
-					}
-				}
+					thiz->clear_tips();
 				else
 				{
 					if (!thiz->tip_type)
@@ -329,6 +340,24 @@ struct cNode : Component
 		tip = nullptr;
 	}
 
+	~cNode() override
+	{
+		clear_tips();
+	}
+
+	void clear_tips()
+	{
+		if (tip)
+		{
+			auto e = tip;
+			tip = nullptr;
+			looper().add_event([](void* c, bool*) {
+				auto e = *(Entity**)c;
+				e->parent()->remove_child(e);
+			}, new_mail_p(e));
+		}
+	}
+
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
@@ -357,17 +386,7 @@ struct cNode : Component
 			event_receiver->hover_listeners.add([](void* c, bool hovering) {
 				auto thiz = *(cNode**)c;
 				if (!hovering)
-				{
-					if (thiz->tip)
-					{
-						auto e = thiz->tip;
-						thiz->tip = nullptr;
-						looper().add_event([](void* c, bool*) {
-							auto e = *(Entity**)c;
-							e->parent()->remove_child(e);
-						}, new_mail_p(e));
-					}
-				}
+					thiz->clear_tips();
 				else
 				{
 					if (!thiz->tip)
@@ -388,7 +407,7 @@ struct cNode : Component
 									str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + thiz->n_name;
 								else
 									str = node_type_prefix(thiz->n_type) + thiz->n_name;
-								str += L"\n" + s2w(n->id());
+								str += L"\nID: " + s2w(n->id());
 								utils::e_text(str.c_str())->get_component(cText)->color_ = node_type_color(thiz->n_type);
 							utils::e_end_layout();
 						utils::pop_parent();
@@ -508,75 +527,73 @@ cEditor::cEditor() :
 
 					return true;
 				}, new_mail_p(c_element));
-				utils::c_event_receiver()->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_scroll(action, key))
-					{
-						auto v = (pos.x() > 0.f ? 1 : -1);
-						app.editor->scale += v;
-						if (app.editor->scale < 1 || app.editor->scale > 10)
-							app.editor->scale -= v;
-						else
+				{
+					auto c_event_receiver = utils::c_event_receiver();
+					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_scroll(action, key))
 						{
-							auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - app.editor->c_base_element->global_pos) / ((app.editor->scale - v) * 0.1f);
-							app.editor->c_base_element->set_pos(float(v) * p * -0.1f, true);
-							app.editor->c_base_element->set_scale(app.editor->scale * 0.1f);
-							app.editor->c_scale_text->set_text((std::to_wstring(app.editor->scale * 10) + L"%").c_str());
-						}
-					}
-					else if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						app.s_2d_renderer->pending_update = true;
-
-						app.deselect();
-
-						auto scale = app.editor->c_base_element->global_scale;
-						auto extent = slot_bezier_extent * scale;
-						auto line_width = 3.f * scale;
-						for (auto i = 0; i < app.bp->node_count(); i++)
-						{
-							auto n = app.bp->node(i);
-							for (auto j = 0; j < n->output_count(); j++)
+							auto v = (pos.x() > 0.f ? 1 : -1);
+							app.editor->scale += v;
+							if (app.editor->scale < 1 || app.editor->scale > 10)
+								app.editor->scale -= v;
+							else
 							{
-								auto output = n->output(j);
-								for (auto k = 0; k < output->link_count(); k++)
+								auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - app.editor->c_base_element->global_pos) / ((app.editor->scale - v) * 0.1f);
+								app.editor->c_base_element->set_pos(float(v) * p * -0.1f, true);
+								app.editor->c_base_element->set_scale(app.editor->scale * 0.1f);
+								app.editor->c_scale_text->set_text((std::to_wstring(app.editor->scale * 10) + L"%").c_str());
+							}
+						}
+						else if (is_mouse_down(action, key, true) && key == Mouse_Left)
+						{
+							app.s_2d_renderer->pending_update = true;
+
+							app.deselect();
+
+							auto scale = app.editor->c_base_element->global_scale;
+							auto extent = slot_bezier_extent * scale;
+							auto line_width = 3.f * scale;
+							for (auto i = 0; i < app.bp->node_count(); i++)
+							{
+								auto n = app.bp->node(i);
+								for (auto j = 0; j < n->output_count(); j++)
 								{
-									auto input = output->link(k);
-									auto p1 = ((cSlot*)output->user_data)->element->center();
-									auto p4 = ((cSlot*)input->user_data)->element->center();
-									auto p2 = p1 + Vec2f(extent, 0.f);
-									auto p3 = p4 - Vec2f(extent, 0.f);
-									auto bb = rect_from_points(p1, p2, p3, p4);
-									if (rect_contains(bb, Vec2f(pos)) && distance(bezier_closest_point(Vec2f(pos), p1, p2, p3, p4, 4, 7), Vec2f(pos)) < line_width)
+									auto output = n->output(j);
+									for (auto k = 0; k < output->link_count(); k++)
 									{
-										app.select(SelLink, input);
-										return false;
+										auto input = output->link(k);
+										auto p1 = ((cSlot*)output->user_data)->element->center();
+										auto p4 = ((cSlot*)input->user_data)->element->center();
+										auto p2 = p1 + Vec2f(extent, 0.f);
+										auto p3 = p4 - Vec2f(extent, 0.f);
+										auto bb = rect_from_points(p1, p2, p3, p4);
+										if (rect_contains(bb, Vec2f(pos)) && distance(bezier_closest_point(Vec2f(pos), p1, p2, p3, p4, 4, 7), Vec2f(pos)) < line_width)
+										{
+											app.select(SelLink, input);
+											return false;
+										}
 									}
 								}
 							}
 						}
-					}
-					else if (is_mouse_down(action, key, true) && key == Mouse_Right)
-						app.editor->base_moved = false;
-					else if (is_mouse_up(action, key, true) && key == Mouse_Right)
-					{
-						if (!app.editor->base_moved)
-							app.editor->show_add_node_menu(Vec2f(pos));
-					}
-					else if (is_mouse_move(action, key))
-					{
-						if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
+						else if (is_mouse_down(action, key, true) && key == Mouse_Right)
+							app.editor->base_moved = false;
+						else if (is_mouse_up(action, key, true) && key == Mouse_Right)
 						{
-							app.editor->c_base_element->set_pos(Vec2f(pos), true);
-							app.editor->base_moved = true;
+							if (!app.editor->base_moved)
+								app.editor->show_add_node_menu(Vec2f(pos));
 						}
-					}
-					return true;
-				}, Mail<>());
-				utils::c_aligner(SizeFitParent, SizeFitParent);
-				utils::push_parent(utils::current_entity());
-					e_base = utils::e_empty();
-					c_base_element = utils::c_element();
-					utils::c_event_receiver()->key_listeners.add([](void*, KeyStateFlags action, int value) {
+						else if (is_mouse_move(action, key))
+						{
+							if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
+							{
+								app.editor->c_base_element->set_pos(Vec2f(pos), true);
+								app.editor->base_moved = true;
+							}
+						}
+						return true;
+					}, Mail<>());
+					c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
 						if (is_key_down(action))
 						{
 							switch (value)
@@ -588,6 +605,11 @@ cEditor::cEditor() :
 						}
 						return true;
 					}, Mail<>());
+				}
+				utils::c_aligner(SizeFitParent, SizeFitParent);
+				utils::push_parent(utils::current_entity());
+					e_base = utils::e_empty();
+					c_base_element = utils::c_element();
 					base_moved = false;
 				utils::pop_parent();
 			}

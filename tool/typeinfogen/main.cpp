@@ -599,7 +599,7 @@ int main(int argc, char **args)
 							{
 								auto type = i->type;
 								auto tag = type->tag;
-								if (!type->is_array && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData) && !(i->flags | VariableFlagOutput))
+								if (!type->is_array && tag != TypePointer && !(i->flags & VariableFlagOutput))
 									i->default_value = type->serialize((char*)obj + i->offset, 1);
 							}
 							if (dtor)

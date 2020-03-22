@@ -1292,7 +1292,7 @@ namespace flame
 					continue;
 				auto type = input->type;
 				auto tag = type->tag();
-				if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
+				if (!type->is_array() && tag != TypePointer)
 				{
 					auto value_str = type->serialize(input->data, 2);
 					if (value_str != input->default_value)
