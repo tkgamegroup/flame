@@ -259,7 +259,7 @@ namespace flame
 						focusing_state = FocusingNormal;
 					break;
 				case FocusByLeftOrRightButton:
-					if ((mouse_buttons[Mouse_Left] & KeyStateUp) || (mouse_buttons[Mouse_Right] & KeyStateUp))
+					if ((mouse_buttons[Mouse_Left] & KeyStateUp) && (mouse_buttons[Mouse_Right] & KeyStateUp))
 						focusing_state = FocusingNormal;
 					break;
 				}

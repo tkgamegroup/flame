@@ -30,7 +30,6 @@ void MyApp::select(const std::vector<BP::Node*>& nodes)
 {
 	deselect();
 	selected_nodes = nodes;
-	selected_link = nullptr;
 
 	if (editor)
 		editor->on_select();
@@ -39,7 +38,6 @@ void MyApp::select(const std::vector<BP::Node*>& nodes)
 void MyApp::select(BP::Slot* link)
 {
 	deselect();
-	selected_nodes.clear();
 	selected_link = link;
 
 	if (editor)
@@ -84,30 +82,52 @@ void MyApp::remove_node(BP::Node* n)
 
 void MyApp::duplicate_selected()
 {
+	std::vector<BP::Node*> new_nodes;
 	for (auto& s : selected_nodes)
 	{
-		auto n = add_node(s->type(), "", s->pos);
+		auto n = add_node(s->type(), "", s->pos + Vec2f(20.f));
+		new_nodes.push_back(n);
 		for (auto i = 0; i < n->input_count(); i++)
+			n->input(i)->set_data(s->input(i)->data());
+	}
+	for (auto i = 0; i < new_nodes.size(); i++)
+	{
+		auto n = new_nodes[i];
+		for (auto j = 0; j < n->input_count(); j++)
 		{
-			auto src = s->input(i);
-			auto dst = n->input(i);
-			dst->set_data(src->data());
-			dst->link_to(src->link(0));
+			auto link = selected_nodes[i]->input(j)->link(0);
+			if (link)
+			{
+				auto nn = link->node();
+				for (auto k = 0; k < selected_nodes.size(); k++)
+				{
+					if (nn == selected_nodes[k])
+					{
+						link = new_nodes[k]->output(link->index());
+						break;
+					}
+				}
+			}
+			n->input(j)->link_to(link);
 		}
 	}
+	select(new_nodes);
 }
 
 void MyApp::delete_selected()
 {
-	for (auto& s : selected_nodes)
-		remove_node(s);
+	if (!selected_nodes.empty())
+	{
+		for (auto& s : selected_nodes)
+			remove_node(s);
+		selected_nodes.clear();
+	}
 	if (selected_link)
 	{
 		selected_link->link_to(nullptr);
 		set_changed(true);
+		selected_link = nullptr;
 	}
-
-	deselect();
 }
 
 void MyApp::link_test_nodes()

@@ -380,21 +380,35 @@ struct cNode : Component
 	void on_component_added(Component* c) override
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
-		{
 			element = (cElement*)c;
-			element->data_changed_listeners.add([](void* c, uint hash, void*) {
-				if (hash == FLAME_CHASH("pos"))
-					(*(cNode**)c)->moved = true;
-				return true;
-			}, new_mail_p(this));
-		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cNode**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					app.select({ thiz->n });
+				{
+					auto n = thiz->n;
+					for (auto& s : app.selected_nodes)
+					{
+						if (n == s)
+						{
+							n = nullptr;
+							break;
+						}
+					}
+					if (n)
+						app.select({ n });
+				}
+				else if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
+				{
+					for (auto& s : app.selected_nodes)
+					{
+						auto e = ((Entity*)s->user_data)->get_component(cElement);
+						e->set_pos((Vec2f)pos / e->global_scale, true);
+					}
+					thiz->moved = true;
+				}
 				return true;
 			}, new_mail_p(this));
 			event_receiver->hover_listeners.add([](void* c, bool hovering) {
@@ -473,6 +487,18 @@ cEditor::cEditor() :
 
 					if (element->cliped)
 						return true;
+
+					if (app.editor->selecting)
+					{
+						std::vector<Vec2f> points;
+						auto p0 = app.editor->c_base_element->global_pos;
+						auto s = app.editor->scale * 0.1f;
+						auto p1 = app.editor->select_anchor_begin * s + p0;
+						auto p2 = app.editor->select_anchor_end * s + p0;
+						path_rect(points, p1, p2 - p1);
+						points.push_back(points[0]);
+						canvas->stroke(points.size(), points.data(), Vec4c(17, 193, 101, 255), 2.f);
+					}
 
 					auto range = rect(element->global_pos, element->global_size);
 					auto scale = base_element->global_scale;
@@ -554,7 +580,7 @@ cEditor::cEditor() :
 				}, new_mail_p(c_element));
 				{
 					auto c_event_receiver = utils::c_event_receiver();
-					c_event_receiver->focus_type = FocusByRightButton;
+					c_event_receiver->focus_type = FocusByLeftOrRightButton;
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						if (is_mouse_scroll(action, key))
 							app.editor->base_scale((pos.x() > 0.f ? 1 : -1));
@@ -564,34 +590,9 @@ cEditor::cEditor() :
 
 							app.deselect();
 
-							auto scale = app.editor->c_base_element->global_scale;
-							auto extent = slot_bezier_extent * scale;
-							auto line_width = 3.f * scale;
-							for (auto i = 0; i < app.bp->node_count(); i++)
-							{
-								auto n = app.bp->node(i);
-								for (auto j = 0; j < n->output_count(); j++)
-								{
-									auto output = n->output(j);
-									for (auto k = 0; k < output->link_count(); k++)
-									{
-										auto input = output->link(k);
-										auto p1 = ((cSlot*)output->user_data)->element->center();
-										auto p4 = ((cSlot*)input->user_data)->element->center();
-										auto p2 = p1 + Vec2f(extent, 0.f);
-										auto p3 = p4 - Vec2f(extent, 0.f);
-										auto bb = rect_from_points(p1, p2, p3, p4);
-										if (rect_contains(bb, Vec2f(pos)) && distance(bezier_closest_point(Vec2f(pos), p1, p2, p3, p4, 4, 7), Vec2f(pos)) < line_width)
-										{
-											app.select(input);
-											return false;
-										}
-									}
-								}
-							}
-						}
-						else if (is_mouse_up(action, key, true) && key == Mouse_Left)
-						{
+							app.editor->selecting = true;
+							app.editor->select_anchor_begin = (Vec2f(pos) - app.editor->c_base_element->global_pos) / (app.editor->scale * 0.1f);
+							app.editor->select_anchor_end = app.editor->select_anchor_begin;
 						}
 						else if (is_mouse_down(action, key, true) && key == Mouse_Right)
 							app.editor->base_moved = false;
@@ -602,6 +603,13 @@ cEditor::cEditor() :
 						}
 						else if (is_mouse_move(action, key))
 						{
+							if (app.editor->selecting)
+							{
+								app.s_2d_renderer->pending_update = true;
+
+								app.editor->select_anchor_end = (Vec2f(app.s_event_dispatcher->mouse_pos) - app.editor->c_base_element->global_pos) / (app.editor->scale * 0.1f);
+							}
+
 							if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
 								app.editor->base_move(Vec2f(pos));
 						}
@@ -619,6 +627,62 @@ cEditor::cEditor() :
 							case Key_Del:
 								app.delete_selected();
 								break;
+							}
+						}
+						return true;
+					}, Mail<>());
+					c_event_receiver->state_listeners.add([](void*, EventReceiverState state) {
+						if (state != EventReceiverActive)
+						{
+							if (app.editor->selecting)
+							{
+								app.s_2d_renderer->pending_update = true;
+
+								app.editor->selecting = false;
+								if (app.editor->select_anchor_begin == app.editor->select_anchor_end)
+								{
+									auto scale = app.editor->c_base_element->global_scale;
+									auto extent = slot_bezier_extent * scale;
+									auto line_width = 3.f * scale;
+									for (auto i = 0; i < app.bp->node_count(); i++)
+									{
+										auto n = app.bp->node(i);
+										for (auto j = 0; j < n->output_count(); j++)
+										{
+											auto output = n->output(j);
+											for (auto k = 0; k < output->link_count(); k++)
+											{
+												auto input = output->link(k);
+												auto p1 = ((cSlot*)output->user_data)->element->center();
+												auto p4 = ((cSlot*)input->user_data)->element->center();
+												auto p2 = p1 + Vec2f(extent, 0.f);
+												auto p3 = p4 - Vec2f(extent, 0.f);
+												auto bb = rect_from_points(p1, p2, p3, p4);
+												auto pos = app.editor->select_anchor_begin * (app.editor->scale * 0.1f) + app.editor->c_base_element->global_pos;
+												if (rect_contains(bb, pos) && distance(bezier_closest_point(pos, p1, p2, p3, p4, 4, 7), pos) < line_width)
+												{
+													app.select(input);
+													return true;
+												}
+											}
+										}
+									}
+								}
+								else
+								{
+									auto p0 = app.editor->c_base_element->global_pos;
+									auto s = app.editor->scale * 0.1f;
+									auto r = rect_from_points(app.editor->select_anchor_begin * s + p0, app.editor->select_anchor_end * s + p0);
+									std::vector<BP::Node*> nodes;
+									for (auto i = 0; i < app.bp->node_count(); i++)
+									{
+										auto n = app.bp->node(i);
+										auto e = ((Entity*)n->user_data)->get_component(cElement);
+										if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
+											nodes.push_back(n);
+									}
+									app.select(nodes);
+								}
 							}
 						}
 						return true;
@@ -775,7 +839,6 @@ void cEditor::on_add_node(BP::Node* n)
 		c_element->frame_color_ = unselected_col;
 		utils::c_event_receiver();
 		utils::c_layout(LayoutVertical)->fence = 1;
-		utils::c_moveable();
 	}
 		auto c_node = new_u_object<cNode>();
 		c_node->n = n;

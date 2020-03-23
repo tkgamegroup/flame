@@ -17,8 +17,8 @@ struct cEditor : Component
 	cText* c_scale_text;
 
 	bool selecting;
-	Vec2f select_begin;
-	Vec2f select_end;
+	Vec2f select_anchor_begin;
+	Vec2f select_anchor_end;
 
 	BP::Slot* dragging_slot;
 	BP::Slot* pending_link_slot;
