@@ -24,6 +24,7 @@ namespace flame
 	{
 		NodePrivate* node;
 		IO io;
+		uint index;
 		const TypeInfo* type;
 		std::string name;
 		uint offset;
@@ -34,8 +35,8 @@ namespace flame
 
 		std::vector<SlotPrivate*> links;
 
-		SlotPrivate(NodePrivate* node, IO io, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
-		SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi);
+		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
+		SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi);
 
 		void set_data(const void* data);
 		bool link_to(SlotPrivate* target);
@@ -143,9 +144,10 @@ namespace flame
 		TypeinfoDatabase::destroy(db);
 	}
 
-	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value) :
-		io(io),
+	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value) :
 		node(node),
+		io(io),
+		index(index),
 		type(type),
 		name(name),
 		offset(offset),
@@ -164,8 +166,8 @@ namespace flame
 			frame = -1;
 	}
 
-	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, VariableInfo* vi) :
-		SlotPrivate(node, io, vi->type(), vi->name(),
+	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi) :
+		SlotPrivate(node, io, index, vi->type(), vi->name(),
 			vi->offset(), vi->size(), vi->default_value())
 	{
 	}
@@ -282,9 +284,9 @@ namespace flame
 			auto flags = v->flags();
 			assert(flags);
 			if (flags & VariableFlagInput)
-				inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, v));
+				inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, inputs.size(), v));
 			else if (flags & VariableFlagOutput)
-				outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, v));
+				outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
 		}
 	}
 
@@ -316,17 +318,15 @@ namespace flame
 		update_addr = _update_addr;
 		assert(update_addr);
 
-		for (auto& _i : _inputs)
+		for (auto i = 0; i < _inputs.size(); i++)
 		{
-			auto i = new SlotPrivate(this, BP::Slot::In, _i.type, _i.name,
-				_i.offset, _i.size, _i.default_value);
-			inputs.emplace_back(i);
+			auto& d = _inputs[i];
+			inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, i, d.type, d.name, d.offset, d.size, d.default_value));
 		}
-		for (auto& _o : _outputs)
+		for (auto i = 0; i < _outputs.size(); i++)
 		{
-			auto o = new SlotPrivate(this, BP::Slot::Out, _o.type, _o.name,
-				_o.offset, _o.size, _o.default_value);
-			outputs.emplace_back(o);
+			auto& d = _outputs[i];
+			outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, i, d.type, d.name, d.offset, d.size, d.default_value));
 		}
 	}
 
@@ -894,6 +894,11 @@ namespace flame
 	BP::Slot::IO BP::Slot::io() const
 	{
 		return ((SlotPrivate*)this)->io;
+	}
+
+	uint BP::Slot::index() const
+	{
+		return ((SlotPrivate*)this)->index;
 	}
 
 	const TypeInfo* BP::Slot::type() const

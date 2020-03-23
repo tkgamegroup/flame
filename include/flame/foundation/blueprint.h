@@ -32,6 +32,7 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS Node* node() const;
 			FLAME_FOUNDATION_EXPORTS IO io() const;
+			FLAME_FOUNDATION_EXPORTS uint index() const;
 			FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 			FLAME_FOUNDATION_EXPORTS const char* name() const;
 			FLAME_FOUNDATION_EXPORTS uint offset() const;

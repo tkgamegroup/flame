@@ -30,7 +30,7 @@ namespace flame
 
 		Entity* current_parent()
 		{
-			return _parents.top();
+			return _parents.empty() ? nullptr : _parents.top();
 		}
 
 		void push_parent(Entity* parent)

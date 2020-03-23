@@ -17,7 +17,7 @@ namespace flame
 		dying_ = false;
 
 		visible_ = true;
-		global_visible_ = true;
+		global_visible_ = false;
 
 		name_hash = 0;
 

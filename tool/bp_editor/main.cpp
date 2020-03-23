@@ -68,12 +68,9 @@ bool MyApp::remove_node(BP::Node* n)
 {
 	if (SUS::starts_with(n->id(), "test_"))
 		return false;
-	looper().add_event([](void* c, bool*) {
-		auto n = *(BP::Node**)c;
-		if (app.editor)
-			app.editor->on_remove_node(n);
-		n->scene()->remove_node(n);
-	}, new_mail_p(n));
+	if (app.editor)
+		app.editor->on_remove_node(n);
+	n->scene()->remove_node(n);
 	set_changed(true);
 	return true;
 }

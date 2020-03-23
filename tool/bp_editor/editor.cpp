@@ -495,33 +495,43 @@ cEditor::cEditor() :
 							for (auto k = 0; k < output->link_count(); k++)
 							{
 								auto input = output->link(k);
-								auto p1 = ((cSlot*)output->user_data)->element->center();
-								auto p4 = ((cSlot*)input->user_data)->element->center();
-								auto p2 = p1 + Vec2f(extent, 0.f);
-								auto p3 = p4 - Vec2f(extent, 0.f);
-								auto bb = rect_from_points(p1, p2, p3, p4);
-								if (rect_overlapping(bb, range))
+								auto e1 = ((cSlot*)output->user_data)->element;
+								auto e2 = ((cSlot*)input->user_data)->element;
+								if (e1->entity->global_visible_ && e2->entity->global_visible_)
 								{
-									std::vector<Vec2f> points;
-									path_bezier(points, p1, p2, p3, p4);
-									canvas->stroke(points.size(), points.data(), app.selected.link == input ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+									auto p1 = e1->center();
+									auto p4 = e2->center();
+									auto p2 = p1 + Vec2f(extent, 0.f);
+									auto p3 = p4 - Vec2f(extent, 0.f);
+									auto bb = rect_from_points(p1, p2, p3, p4);
+									if (rect_overlapping(bb, range))
+									{
+										std::vector<Vec2f> points;
+										path_bezier(points, p1, p2, p3, p4);
+										canvas->stroke(points.size(), points.data(), app.selected.link == input ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+									}
 								}
 							}
 						}
 					}
-					if (app.editor->dragging_slot)
+					auto ds = app.editor->dragging_slot;
+					if (ds)
 					{
-						auto p1 = ((cSlot*)app.editor->dragging_slot->user_data)->element->center();
-						auto p4 = app.editor->dragging_slot_pos;
-						auto is_in = app.editor->dragging_slot->io() == BP::Slot::In;
-						auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
-						auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
-						auto bb = rect_from_points(p1, p2, p3, p4);
-						if (rect_overlapping(bb, range))
+						auto e1 = ((cSlot*)ds->user_data)->element;
+						if (e1->entity->global_visible_)
 						{
-							std::vector<Vec2f> points;
-							path_bezier(points, p1, p2, p3, p4);
-							canvas->stroke(points.size(), points.data(), selected_col, line_width);
+							auto p1 = e1->center();
+							auto p4 = app.editor->dragging_slot_pos;
+							auto is_in = ds->io() == BP::Slot::In;
+							auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
+							auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
+							auto bb = rect_from_points(p1, p2, p3, p4);
+							if (rect_overlapping(bb, range))
+							{
+								std::vector<Vec2f> points;
+								path_bezier(points, p1, p2, p3, p4);
+								canvas->stroke(points.size(), points.data(), selected_col, line_width);
+							}
 						}
 					}
 
@@ -1088,533 +1098,595 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 
 void cEditor::on_add_node(BP::Node* n)
 {
-	utils::push_parent(e_base);
-		auto e_node = utils::e_empty();
-		n->user_data = e_node;
+	auto e_node = Entity::create();
+	utils::set_current_entity(e_node);
+	n->user_data = e_node;
+	{
+		auto c_element = utils::c_element();
+		c_element->pos_ = n->pos;
+		c_element->roundness_ = 8.f;
+		c_element->roundness_lod = 2;
+		c_element->frame_thickness_ = 4.f;
+		c_element->color_ = Vec4c(255, 255, 255, 200);
+		c_element->frame_color_ = unselected_col;
+		utils::c_event_receiver();
+		utils::c_layout(LayoutVertical)->fence = 1;
+		utils::c_moveable();
+	}
+		auto c_node = new_u_object<cNode>();
+		c_node->n = n;
 		{
-			auto c_element = utils::c_element();
-			c_element->pos_ = n->pos;
-			c_element->roundness_ = 8.f;
-			c_element->roundness_lod = 2;
-			c_element->frame_thickness_ = 4.f;
-			c_element->color_ = Vec4c(255, 255, 255, 200);
-			c_element->frame_color_ = unselected_col;
-			utils::c_event_receiver();
-			utils::c_layout(LayoutVertical)->fence = 1;
-			utils::c_moveable();
+			std::string parameters;
+			c_node->n_type = BP::type_from_node_name(n->type(), parameters);
+			c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type());
 		}
-			auto c_node = new_u_object<cNode>();
-			c_node->n = n;
-			{
-				std::string parameters;
-				c_node->n_type = BP::type_from_node_name(n->type(), parameters);
-				c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type());
-			}
-			e_node->add_component(c_node);
-			utils::e_begin_popup_menu(false);
-				utils::e_menu_item(L"Change ID", [](void* c) {
+		e_node->add_component(c_node);
+		utils::e_begin_popup_menu(false);
+			utils::e_menu_item(L"Change ID", [](void* c) {
+				auto n = *(BP::Node**)c;
+				looper().add_event([](void* c, bool*) {
 					auto n = *(BP::Node**)c;
-					looper().add_event([](void* c, bool*) {
-						auto n = *(BP::Node**)c;
-						utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
-							if (ok && text[0])
-								(*(BP::Node**)c)->set_id(w2s(text).c_str());
-						}, new_mail_p(n), s2w(n->id()).c_str());
-					}, new_mail_p(n));
+					utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
+						if (ok && text[0])
+							(*(BP::Node**)c)->set_id(w2s(text).c_str());
+					}, new_mail_p(n), s2w(n->id()).c_str());
 				}, new_mail_p(n));
-				utils::e_menu_item(L"Duplicate", [](void* c) {
-				}, new_mail_p(n));
-				utils::e_menu_item(L"Delete", [](void* c) {
-				}, new_mail_p(n));
-			utils::e_end_popup_menu();
-		utils::push_parent(e_node);
-			utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
-				utils::push_style_1u(utils::FontSize, 21);
-				utils::e_begin_layout(LayoutHorizontal, 4.f);
-					if (c_node->n_type == 0)
-					{
-						auto str = s2w(n->type());
-						auto last_colon = str.find_last_of(L':');
-						if (last_colon == std::wstring::npos)
-							last_colon = 0;
-						else
-							last_colon++;
-						str = std::wstring(str.begin() + last_colon, str.end());
-						auto e_text = utils::e_text(str.c_str());
-						e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
-						e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
-					}
-				utils::e_end_layout();
-				utils::pop_style(utils::FontSize);
-
-				std::string type = n->type();
-				auto udt = n->udt();
-
-				if (n->id() == "test_dst")
+			}, new_mail_p(n));
+			utils::e_menu_item(L"Duplicate", [](void* c) {
+			}, new_mail_p(n));
+			utils::e_menu_item(L"Delete", [](void* c) {
+			}, new_mail_p(n));
+		utils::e_end_popup_menu();
+	utils::push_parent(e_node);
+		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+			utils::push_style_1u(utils::FontSize, 21);
+			utils::e_begin_layout(LayoutHorizontal, 4.f);
+				if (c_node->n_type == 0)
 				{
-					utils::e_button(L"Show", [](void* c) {
-						//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data());
-					}, new_mail_p(n));
+					auto str = s2w(n->type());
+					auto last_colon = str.find_last_of(L':');
+					if (last_colon == std::wstring::npos)
+						last_colon = 0;
+					else
+						last_colon++;
+					str = std::wstring(str.begin() + last_colon, str.end());
+					auto e_text = utils::e_text(str.c_str());
+					e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+					e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
 				}
-				else if (type == "D#graphics::Shader")
+			utils::e_end_layout();
+			utils::pop_style(utils::FontSize);
+
+			std::string type = n->type();
+			auto udt = n->udt();
+
+			if (n->id() == "test_dst")
+			{
+				utils::e_button(L"Show", [](void* c) {
+					//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data());
+				}, new_mail_p(n));
+			}
+			else if (type == "D#graphics::Shader")
+			{
+				/*
+				auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
+				e_content->add_child(e_edit);
+
+				struct Capture
 				{
-					/*
-					auto e_edit = create_standard_button(app.font_atlas_pixel, 0.9f, L"Edit Shader");
-					e_content->add_child(e_edit);
+					BP::Node* n;
+				}capture;
+				capture.n = n;
+				e_edit->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+					auto& capture = *(Capture*)c;
 
-					struct Capture
+					if (is_mouse_clicked(action, key))
 					{
-						BP::Node* n;
-					}capture;
-					capture.n = n;
-					e_edit->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-						auto& capture = *(Capture*)c;
-
-						if (is_mouse_clicked(action, key))
+						capture.e->locked = true;
+						auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 						{
-							capture.e->locked = true;
-							auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
+							t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
+
+							auto c_layout = cLayout::create(LayoutVertical);
+							c_layout->width_fit_children = false;
+							c_layout->height_fit_children = false;
+							t->add_component(c_layout);
+						}
+
+						auto e_buttons = Entity::create();
+						t->add_child(e_buttons);
+						{
+							e_buttons->add_component(cElement::create());
+
+							auto c_layout = cLayout::create(LayoutHorizontal);
+							c_layout->item_padding = 4.f;
+							e_buttons->add_component(c_layout);
+						}
+
+						auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
+						e_buttons->add_child(e_back);
+						{
+							e_back->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+								if (is_mouse_clicked(action, key))
+								{
+									destroy_topmost(editor->entity, false);
+									editor->locked = false;
+								}
+							}, new_mail_p(capture.e));
+						}
+
+						auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
+						e_buttons->add_child(e_compile);
+
+						auto e_text_tip = Entity::create();
+						e_buttons->add_child(e_text_tip);
+						{
+							e_text_tip->add_component(cElement::create());
+
+							auto c_text = cText::create(app.font_atlas_pixel);
+							c_text->set_text(L"(Do update first to get popper result)");
+							e_text_tip->add_component(c_text);
+						}
+
+						auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
+
+						auto e_text_view = Entity::create();
+						{
+							auto c_element = cElement::create();
+							c_element->clip_children = true;
+							e_text_view->add_component(c_element);
+
+							auto c_aligner = cAligner::create();
+							c_aligner->width_policy_ = SizeFitParent;
+							c_aligner->height_policy_ = SizeFitParent;
+							e_text_view->add_component(c_aligner);
+
+							auto c_layout = cLayout::create(LayoutVertical);
+							c_layout->width_fit_children = false;
+							c_layout->height_fit_children = false;
+							e_text_view->add_component(c_layout);
+						}
+
+						auto e_text = Entity::create();
+						e_text_view->add_child(e_text);
+						{
+							e_text->add_component(cElement::create());
+
+							auto c_text = cText::create(app.font_atlas_pixel);
+							auto file = get_file_string(capture.e->filepath + L"/" + filename);
+							c_text->set_text(s2w(file).c_str());
+							c_text->auto_width_ = false;
+							e_text->add_component(c_text);
+
+							e_text->add_component(cEventReceiver::create());
+
+							e_text->add_component(cEdit::create());
+
+							auto c_aligner = cAligner::create();
+							c_aligner->width_policy_ = SizeFitParent;
+							e_text->add_component(c_aligner);
+
 							{
-								t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
-
-								auto c_layout = cLayout::create(LayoutVertical);
-								c_layout->width_fit_children = false;
-								c_layout->height_fit_children = false;
-								t->add_component(c_layout);
-							}
-
-							auto e_buttons = Entity::create();
-							t->add_child(e_buttons);
-							{
-								e_buttons->add_component(cElement::create());
-
-								auto c_layout = cLayout::create(LayoutHorizontal);
-								c_layout->item_padding = 4.f;
-								e_buttons->add_component(c_layout);
-							}
-
-							auto e_back = create_standard_button(app.font_atlas_pixel, 1.f, L"Back");
-							e_buttons->add_child(e_back);
-							{
-								e_back->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+								struct _Capture
+								{
+									BP::Node* n;
+									cText* t;
+								}_capture;
+								_capture.n = capture.n;
+								_capture.t = c_text;
+								e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
+									auto& capture = *(_Capture*)c;
 									if (is_mouse_clicked(action, key))
 									{
-										destroy_topmost(editor->entity, false);
-										editor->locked = false;
+										auto i_filename = capture.n->find_input("filename");
+										std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
+										auto str = w2s(capture.t->text());
+										str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+										file.write(str.c_str(), str.size());
+										file.close();
+										i_filename->set_frame(capture.n->scene()->frame);
 									}
-								}, new_mail_p(capture.e));
+								}, new_mail(&_capture));
 							}
-
-							auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
-							e_buttons->add_child(e_compile);
-
-							auto e_text_tip = Entity::create();
-							e_buttons->add_child(e_text_tip);
-							{
-								e_text_tip->add_component(cElement::create());
-
-								auto c_text = cText::create(app.font_atlas_pixel);
-								c_text->set_text(L"(Do update first to get popper result)");
-								e_text_tip->add_component(c_text);
-							}
-
-							auto filename = ssplit(*(std::wstring*)capture.n->find_input("filename")->data(), L':')[0];
-
-							auto e_text_view = Entity::create();
-							{
-								auto c_element = cElement::create();
-								c_element->clip_children = true;
-								e_text_view->add_component(c_element);
-
-								auto c_aligner = cAligner::create();
-								c_aligner->width_policy_ = SizeFitParent;
-								c_aligner->height_policy_ = SizeFitParent;
-								e_text_view->add_component(c_aligner);
-
-								auto c_layout = cLayout::create(LayoutVertical);
-								c_layout->width_fit_children = false;
-								c_layout->height_fit_children = false;
-								e_text_view->add_component(c_layout);
-							}
-
-							auto e_text = Entity::create();
-							e_text_view->add_child(e_text);
-							{
-								e_text->add_component(cElement::create());
-
-								auto c_text = cText::create(app.font_atlas_pixel);
-								auto file = get_file_string(capture.e->filepath + L"/" + filename);
-								c_text->set_text(s2w(file).c_str());
-								c_text->auto_width_ = false;
-								e_text->add_component(c_text);
-
-								e_text->add_component(cEventReceiver::create());
-
-								e_text->add_component(cEdit::create());
-
-								auto c_aligner = cAligner::create();
-								c_aligner->width_policy_ = SizeFitParent;
-								e_text->add_component(c_aligner);
-
-								{
-									struct _Capture
-									{
-										BP::Node* n;
-										cText* t;
-									}_capture;
-									_capture.n = capture.n;
-									_capture.t = c_text;
-									e_compile->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyState action, MouseKey key, const Vec2i& pos) {
-										auto& capture = *(_Capture*)c;
-										if (is_mouse_clicked(action, key))
-										{
-											auto i_filename = capture.n->find_input("filename");
-											std::ofstream file(capture.e->filepath + L"/" + *(std::wstring*)i_filename->data());
-											auto str = w2s(capture.t->text());
-											str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
-											file.write(str.c_str(), str.size());
-											file.close();
-											i_filename->set_frame(capture.n->scene()->frame);
-										}
-									}, new_mail(&_capture));
-								}
-							}
-
-							auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
-							e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
-							t->add_child(e_scrollbar_container);
 						}
-					}, new_mail(&capture));
-					*/
-				}
-				utils::e_begin_layout(LayoutHorizontal, 16.f);
+
+						auto e_scrollbar_container = wrap_standard_scrollbar(e_text_view, ScrollbarVertical, true, default_style.font_size);
+						e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
+						t->add_child(e_scrollbar_container);
+					}
+				}, new_mail(&capture));
+				*/
+			}
+			utils::e_begin_layout(LayoutHorizontal, 16.f);
+			utils::c_aligner(SizeGreedy, SizeFixed);
+
+				utils::e_begin_layout(LayoutVertical);
 				utils::c_aligner(SizeGreedy, SizeFixed);
+					for (auto i = 0; i < n->input_count(); i++)
+					{
+						auto input = n->input(i);
 
-					utils::e_begin_layout(LayoutVertical);
-					utils::c_aligner(SizeGreedy, SizeFixed);
-						for (auto i = 0; i < n->input_count(); i++)
+						utils::e_begin_layout(LayoutVertical, 2.f);
+
+						utils::e_begin_layout(LayoutHorizontal);
+						utils::e_empty();
 						{
-							auto input = n->input(i);
-
-							utils::e_begin_layout(LayoutVertical, 2.f);
-
-							utils::e_begin_layout(LayoutHorizontal);
-							utils::e_empty();
+							auto c_element = utils::c_element();
+							auto r = utils::style_1u(utils::FontSize);
+							c_element->size_ = r;
+							c_element->roundness_ = r * 0.4f;
+							c_element->roundness_lod = 2;
+							c_element->color_ = Vec4c(200, 200, 200, 255);
+						}
+						utils::c_event_receiver();
+						auto c_slot = new_u_object<cSlot>();
+						c_slot->s = input;
+						input->user_data = c_slot;
+						utils::current_entity()->add_component(c_slot);
+						utils::e_begin_popup_menu(false);
+							utils::e_menu_item(L"Break Links", [](void* c) {
+							}, new_mail_p(input));
+							utils::e_menu_item(L"Reset Value", [](void* c) {
+							}, new_mail_p(input));
+							if (c_node->n_type == 'A')
 							{
-								auto c_element = utils::c_element();
-								auto r = utils::style_1u(utils::FontSize);
-								c_element->size_ = r;
-								c_element->roundness_ = r * 0.4f;
-								c_element->roundness_lod = 2;
-								c_element->color_ = Vec4c(200, 200, 200, 255);
+								utils::e_menu_item(L"Remove Slot", [](void* c) {
+									auto input = *(BP::Slot**)c;
+									auto n = input->node();
+									if (n->input_count() == 1)
+										return;
+									app.deselect();
+									auto idx = input->index();
+									std::string type = n->type();
+									std::string id = n->id();
+									auto left_pos = type.find('(');
+									auto plus_pos = type.find('+');
+									auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
+									type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
+									auto nn = app.add_node(type.c_str(), "", n->pos);
+									for (auto i = 0; i < n->input_count(); i++)
+									{
+										if (i == idx)
+											continue;
+										auto src = n->input(i);
+										auto dst = nn->input(i > idx ? i - 1 : i);
+										dst->set_data(src->data());
+										dst->link_to(src->link(0));
+									}
+									for (auto i = 0; i < n->output_count(); i++)
+									{
+										auto src = n->output(i);
+										auto dst = nn->output(i);
+										for (auto j = 0; j < src->link_count(); j++)
+											src->link(j)->link_to(dst);
+									}
+									app.remove_node(n);
+									nn->set_id(id.c_str());
+								}, new_mail_p(input));
 							}
-							utils::c_event_receiver();
-							auto c_slot = new_u_object<cSlot>();
-							c_slot->s = input;
-							input->user_data = c_slot;
-							utils::current_entity()->add_component(c_slot);
-							utils::e_begin_popup_menu(false);
-								utils::e_menu_item(L"Break Links", [](void* c) {
-								}, new_mail_p(input));
-								utils::e_menu_item(L"Reset Value", [](void* c) {
-								}, new_mail_p(input));
-								if (c_node->n_type == 'A')
+						utils::e_end_popup_menu();
+
+						utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color_ = type_color(input->type()->tag());
+						utils::e_end_layout();
+
+						auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
+						e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
+						std::vector<TypeinfoDatabase*> dbs;
+						dbs.resize(app.bp->library_count());
+						for (auto i = 0; i < dbs.size(); i++)
+							dbs[i] = app.bp->library(i)->db();
+						extra_global_db_count = dbs.size();
+						extra_global_dbs = dbs.data();
+						auto type = input->type();
+						auto base_hash = type->base_hash();
+						utils::push_style_1u(utils::FontSize, 12);
+
+						switch (type->tag())
+						{
+						case TypeEnumSingle:
+						{
+							auto info = find_enum(base_hash);
+							utils::create_enum_combobox(info, 120.f);
+
+							struct Capture
+							{
+								BP::Slot* input;
+								EnumInfo* e;
+								cCombobox* cb;
+							}capture;
+							capture.input = input;
+							capture.e = info;
+							capture.cb = e_data->child(0)->get_component(cCombobox);
+							capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
+								auto& capture = *(Capture*)c;
+								if (hash == FLAME_CHASH("index"))
 								{
-									utils::e_menu_item(L"Remove Slot", [](void* c) {
-									}, new_mail_p(input));
+									auto v = capture.e->item(capture.cb->idx)->value();
+									capture.input->set_data(&v);
+									app.set_changed(true);
 								}
-							utils::e_end_popup_menu();
+								return true;
+							}, new_mail(&capture));
 
-							utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color_ = type_color(input->type()->tag());
-							utils::e_end_layout();
+							auto c_tracker = new_u_object<cEnumSingleDataTracker>();
+							c_tracker->data = input->data();
+							c_tracker->info = info;
+							e_data->add_component(c_tracker);
+						}
+						break;
+						case TypeEnumMulti:
+						{
+							auto v = *(int*)input->data();
 
-							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
-							e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
-							std::vector<TypeinfoDatabase*> dbs;
-							dbs.resize(app.bp->library_count());
-							for (auto i = 0; i < dbs.size(); i++)
-								dbs[i] = app.bp->library(i)->db();
-							extra_global_db_count = dbs.size();
-							extra_global_dbs = dbs.data();
-							auto type = input->type();
-							auto base_hash = type->base_hash();
-							utils::push_style_1u(utils::FontSize, 12);
-
-							switch (type->tag())
+							auto info = find_enum(base_hash);
+							utils::create_enum_checkboxs(info);
+							for (auto k = 0; k < info->item_count(); k++)
 							{
-							case TypeEnumSingle:
-							{
-								auto info = find_enum(base_hash);
-								utils::create_enum_combobox(info, 120.f);
+								auto item = info->item(k);
 
 								struct Capture
 								{
 									BP::Slot* input;
-									EnumInfo* e;
-									cCombobox* cb;
+									int v;
+									cCheckbox* cb;
 								}capture;
 								capture.input = input;
-								capture.e = info;
-								capture.cb = e_data->child(0)->get_component(cCombobox);
+								capture.v = item->value();
+								capture.cb = e_data->child(k)->child(0)->get_component(cCheckbox);
 								capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 									auto& capture = *(Capture*)c;
-									if (hash == FLAME_CHASH("index"))
+									if (hash == FLAME_CHASH("checked"))
 									{
-										auto v = capture.e->item(capture.cb->idx)->value();
+										auto v = *(int*)capture.input->data();
+										if (capture.cb->checked)
+											v |= capture.v;
+										else
+											v &= ~capture.v;
+										capture.input->set_data(&v);
+										app.set_changed(true);
+									}
+									return true;
+								}, new_mail(&capture));
+							}
+
+							auto c_tracker = new_u_object<cEnumMultiDataTracker>();
+							c_tracker->data = input->data();
+							c_tracker->info = info;
+							e_data->add_component(c_tracker);
+						}
+						break;
+						case TypeData:
+							switch (base_hash)
+							{
+							case FLAME_CHASH("bool"):
+							{
+								auto e_checkbox = utils::e_checkbox(L"");
+
+								struct Capture
+								{
+									BP::Slot* input;
+									cCheckbox* cb;
+								}capture;
+								capture.input = input;
+								capture.cb = e_checkbox->get_component(cCheckbox);
+								capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
+									auto& capture = *(Capture*)c;
+									if (hash == FLAME_CHASH("checked"))
+									{
+										auto v = (capture.cb->checked) ? 1 : 0;
 										capture.input->set_data(&v);
 										app.set_changed(true);
 									}
 									return true;
 								}, new_mail(&capture));
 
-								auto c_tracker = new_u_object<cEnumSingleDataTracker>();
+								auto c_tracker = new_u_object<cBoolDataTracker>();
 								c_tracker->data = input->data();
-								c_tracker->info = info;
 								e_data->add_component(c_tracker);
 							}
 							break;
-							case TypeEnumMulti:
+							case FLAME_CHASH("int"):
+								create_edit<int>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(2+int)"):
+								create_vec_edit<2, int>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(3+int)"):
+								create_vec_edit<3, int>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(4+int)"):
+								create_vec_edit<4, int>(this, input);
+								break;
+							case FLAME_CHASH("uint"):
+								create_edit<uint>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(2+uint)"):
+								create_vec_edit<2, uint>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(3+uint)"):
+								create_vec_edit<3, uint>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(4+uint)"):
+								create_vec_edit<4, uint>(this, input);
+								break;
+							case FLAME_CHASH("float"):
+								create_edit<float>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(2+float)"):
+								create_vec_edit<2, float>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(3+float)"):
+								create_vec_edit<3, float>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(4+float)"):
+								create_vec_edit<4, float>(this, input);
+								break;
+							case FLAME_CHASH("uchar"):
+								create_edit<uchar>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(2+uchar)"):
+								create_vec_edit<2, uchar>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(3+uchar)"):
+								create_vec_edit<3, uchar>(this, input);
+								break;
+							case FLAME_CHASH("flame::Vec(4+uchar)"):
+								create_vec_edit<4, uchar>(this, input);
+								break;
+							case FLAME_CHASH("flame::StringA"):
 							{
-								auto v = *(int*)input->data();
-
-								auto info = find_enum(base_hash);
-								utils::create_enum_checkboxs(info);
-								for (auto k = 0; k < info->item_count(); k++)
+								struct Capture
 								{
-									auto item = info->item(k);
-
-									struct Capture
+									BP::Slot* i;
+									cText* t;
+								}capture;
+								capture.i = input;
+								capture.t = utils::e_edit(50.f)->get_component(cText);
+								capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
+									if (hash == FLAME_CHASH("text"))
 									{
-										BP::Slot* input;
-										int v;
-										cCheckbox* cb;
-									}capture;
-									capture.input = input;
-									capture.v = item->value();
-									capture.cb = e_data->child(k)->child(0)->get_component(cCheckbox);
-									capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 										auto& capture = *(Capture*)c;
-										if (hash == FLAME_CHASH("checked"))
-										{
-											auto v = *(int*)capture.input->data();
-											if (capture.cb->checked)
-												v |= capture.v;
-											else
-												v &= ~capture.v;
-											capture.input->set_data(&v);
-											app.set_changed(true);
-										}
-										return true;
-									}, new_mail(&capture));
-								}
+										capture.i->set_data(&StringA(w2s(capture.t->text())));
+										app.set_changed(true);
+									}
+									return true;
+								}, new_mail(&capture));
 
-								auto c_tracker = new_u_object<cEnumMultiDataTracker>();
+								auto c_tracker = new_u_object<cStringADataTracker>();
 								c_tracker->data = input->data();
-								c_tracker->info = info;
 								e_data->add_component(c_tracker);
 							}
 							break;
-							case TypeData:
-								switch (base_hash)
-								{
-								case FLAME_CHASH("bool"):
-								{
-									auto e_checkbox = utils::e_checkbox(L"");
-
-									struct Capture
-									{
-										BP::Slot* input;
-										cCheckbox* cb;
-									}capture;
-									capture.input = input;
-									capture.cb = e_checkbox->get_component(cCheckbox);
-									capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
-										auto& capture = *(Capture*)c;
-										if (hash == FLAME_CHASH("checked"))
-										{
-											auto v = (capture.cb->checked) ? 1 : 0;
-											capture.input->set_data(&v);
-											app.set_changed(true);
-										}
-										return true;
-									}, new_mail(&capture));
-
-									auto c_tracker = new_u_object<cBoolDataTracker>();
-									c_tracker->data = input->data();
-									e_data->add_component(c_tracker);
-								}
-								break;
-								case FLAME_CHASH("int"):
-									create_edit<int>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+int)"):
-									create_vec_edit<2, int>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+int)"):
-									create_vec_edit<3, int>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+int)"):
-									create_vec_edit<4, int>(this, input);
-									break;
-								case FLAME_CHASH("uint"):
-									create_edit<uint>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+uint)"):
-									create_vec_edit<2, uint>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+uint)"):
-									create_vec_edit<3, uint>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+uint)"):
-									create_vec_edit<4, uint>(this, input);
-									break;
-								case FLAME_CHASH("float"):
-									create_edit<float>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+float)"):
-									create_vec_edit<2, float>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+float)"):
-									create_vec_edit<3, float>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+float)"):
-									create_vec_edit<4, float>(this, input);
-									break;
-								case FLAME_CHASH("uchar"):
-									create_edit<uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+uchar)"):
-									create_vec_edit<2, uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+uchar)"):
-									create_vec_edit<3, uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+uchar)"):
-									create_vec_edit<4, uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::StringA"):
-								{
-									struct Capture
-									{
-										BP::Slot* i;
-										cText* t;
-									}capture;
-									capture.i = input;
-									capture.t = utils::e_edit(50.f)->get_component(cText);
-									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
-										if (hash == FLAME_CHASH("text"))
-										{
-											auto& capture = *(Capture*)c;
-											capture.i->set_data(&StringA(w2s(capture.t->text())));
-											app.set_changed(true);
-										}
-										return true;
-									}, new_mail(&capture));
-
-									auto c_tracker = new_u_object<cStringADataTracker>();
-									c_tracker->data = input->data();
-									e_data->add_component(c_tracker);
-								}
-								break;
-								case FLAME_CHASH("flame::StringW"):
-								{
-									struct Capture
-									{
-										BP::Slot* i;
-										cText* t;
-									}capture;
-									capture.i = input;
-									capture.t = utils::e_edit(50.f)->get_component(cText);
-									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
-										if (hash == FLAME_CHASH("text"))
-										{
-											auto& capture = *(Capture*)c;
-											capture.i->set_data(&StringW(capture.t->text()));
-											app.set_changed(true);
-										}
-										return true;
-									}, new_mail(&capture));
-
-									auto c_tracker = new_u_object<cStringWDataTracker>();
-									c_tracker->data = input->data();
-									e_data->add_component(c_tracker);
-								}
-								break;
-								}
-								break;
-							}
-							extra_global_db_count = 0;
-							extra_global_dbs = nullptr;
-							utils::pop_style(utils::FontSize);
-							utils::e_end_layout();
-
-							utils::e_end_layout();
-
-							c_slot->tracker = e_data->get_component(cDataTracker);
-						}
-					utils::e_end_layout();
-
-					utils::e_begin_layout(LayoutVertical);
-					utils::c_aligner(SizeGreedy, SizeFixed);
-						for (auto i = 0; i < n->output_count(); i++)
-						{
-							auto output = n->output(i);
-
-							utils::e_begin_layout(LayoutHorizontal);
-							utils::c_aligner(AlignxRight, AlignyFree);
-							utils::e_text(s2w(output->name()).c_str())->get_component(cText)->color_ = type_color(output->type()->tag());
-
-							utils::e_empty();
+							case FLAME_CHASH("flame::StringW"):
 							{
-								auto c_element = utils::c_element();
-								auto r = utils::style_1u(utils::FontSize);
-								c_element->size_ = r;
-								c_element->roundness_ = r * 0.4f;
-								c_element->roundness_lod = 2;
-								c_element->color_ = Vec4c(200, 200, 200, 255);
+								struct Capture
+								{
+									BP::Slot* i;
+									cText* t;
+								}capture;
+								capture.i = input;
+								capture.t = utils::e_edit(50.f)->get_component(cText);
+								capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
+									if (hash == FLAME_CHASH("text"))
+									{
+										auto& capture = *(Capture*)c;
+										capture.i->set_data(&StringW(capture.t->text()));
+										app.set_changed(true);
+									}
+									return true;
+								}, new_mail(&capture));
+
+								auto c_tracker = new_u_object<cStringWDataTracker>();
+								c_tracker->data = input->data();
+								e_data->add_component(c_tracker);
 							}
-							utils::c_event_receiver();
-							auto c_slot = new_u_object<cSlot>();
-							c_slot->s = output;
-							utils::current_entity()->add_component(c_slot);
-							output->user_data = c_slot;
-							utils::e_begin_popup_menu(false);
-								utils::e_menu_item(L"Break Links", [](void* c) {
-								}, new_mail_p(output));
-							utils::e_end_popup_menu();
-							utils::e_end_layout();
+							break;
+							}
+							break;
 						}
-					utils::e_end_layout();
+						extra_global_db_count = 0;
+						extra_global_dbs = nullptr;
+						utils::pop_style(utils::FontSize);
+						utils::e_end_layout();
+
+						utils::e_end_layout();
+
+						c_slot->tracker = e_data->get_component(cDataTracker);
+					}
 				utils::e_end_layout();
 
-				if (c_node->n_type == 'A')
-				{
-					auto c_element = utils::e_button(L"+", [](void* c) {
-						auto n = *(BP::Node**)c;
-					}, new_mail_p(n))->get_component(cElement);
-					c_element->inner_padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
-					c_element->roundness_ = 8.f;
-					c_element->roundness_lod = 2;
-					utils::c_aligner(AlignxMiddle, AlignyFree);
-				}
+				utils::e_begin_layout(LayoutVertical);
+				utils::c_aligner(SizeGreedy, SizeFixed);
+					for (auto i = 0; i < n->output_count(); i++)
+					{
+						auto output = n->output(i);
 
+						utils::e_begin_layout(LayoutHorizontal);
+						utils::c_aligner(AlignxRight, AlignyFree);
+						utils::e_text(s2w(output->name()).c_str())->get_component(cText)->color_ = type_color(output->type()->tag());
+
+						utils::e_empty();
+						{
+							auto c_element = utils::c_element();
+							auto r = utils::style_1u(utils::FontSize);
+							c_element->size_ = r;
+							c_element->roundness_ = r * 0.4f;
+							c_element->roundness_lod = 2;
+							c_element->color_ = Vec4c(200, 200, 200, 255);
+						}
+						utils::c_event_receiver();
+						auto c_slot = new_u_object<cSlot>();
+						c_slot->s = output;
+						utils::current_entity()->add_component(c_slot);
+						output->user_data = c_slot;
+						utils::e_begin_popup_menu(false);
+							utils::e_menu_item(L"Break Links", [](void* c) {
+							}, new_mail_p(output));
+						utils::e_end_popup_menu();
+						utils::e_end_layout();
+					}
+				utils::e_end_layout();
 			utils::e_end_layout();
-			utils::e_empty();
-			utils::c_element();
-			utils::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
-				*pass = true;
-				return true;
-			}, Mail<>());
-			utils::c_aligner(SizeFitParent, SizeFitParent);
-			utils::c_bring_to_front();
-		utils::pop_parent();
+
+			if (c_node->n_type == 'A')
+			{
+				auto c_element = utils::e_button(L"+", [](void* c) {
+					auto n = *(BP::Node**)c;
+					app.deselect();
+					std::string type = n->type();
+					std::string id = n->id();
+					{
+						auto left_pos = type.find('(');
+						auto plus_pos = type.find('+');
+						auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
+						type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size + 1) + std::string(type.begin() + plus_pos, type.end());
+						auto nn = app.add_node(type.c_str(), "", n->pos);
+						for (auto i = 0; i < n->input_count(); i++)
+						{
+							auto src = n->input(i);
+							auto dst = nn->input(i);
+							dst->set_data(src->data());
+							dst->link_to(src->link(0));
+						}
+						for (auto i = 0; i < n->output_count(); i++)
+						{
+							auto src = n->output(i);
+							auto dst = nn->output(i);
+							for (auto j = 0; j < src->link_count(); j++)
+								src->link(j)->link_to(dst);
+						}
+						app.remove_node(n);
+						nn->set_id(id.c_str());
+					}
+				}, new_mail_p(n))->get_component(cElement);
+				c_element->inner_padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
+				c_element->roundness_ = 8.f;
+				c_element->roundness_lod = 2;
+				utils::c_aligner(AlignxMiddle, AlignyFree);
+			}
+
+		utils::e_end_layout();
+		utils::e_empty();
+		utils::c_element();
+		utils::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+			*pass = true;
+			return true;
+		}, Mail<>());
+		utils::c_aligner(SizeFitParent, SizeFitParent);
+		utils::c_bring_to_front();
 	utils::pop_parent();
+
+	looper().add_event([](void* c, bool*) {
+		app.editor->e_base->add_child(*(Entity**)c);
+	}, new_mail_p(e_node));
 }
 
 void cEditor::on_remove_node(BP::Node* n)
 {
-	auto e = (Entity*)n->user_data;
-	e->parent()->remove_child(e);
+	looper().add_event([](void* c, bool*) {
+		auto e = *(Entity**)c;
+		e->parent()->remove_child(e);
+	}, new_mail_p(n->user_data));
 }
 
 void cEditor::on_data_changed(BP::Slot* s)
