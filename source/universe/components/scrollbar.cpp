@@ -97,7 +97,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cScrollbarThumbPrivate**)c);
-					if (is_active(thiz->event_receiver) && is_mouse_move(action, key))
+					if (utils::is_active(thiz->event_receiver) && is_mouse_move(action, key))
 					{
 						if (thiz->type == ScrollbarVertical)
 							thiz->update(pos.y());

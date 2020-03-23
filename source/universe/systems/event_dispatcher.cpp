@@ -143,16 +143,35 @@ namespace flame
 			{
 				hovering = er;
 
-				if (mouse_buttons[Mouse_Left] == (KeyStateDown | KeyStateJust) ||
-					mouse_buttons[Mouse_Right] == (KeyStateDown | KeyStateJust))
+				auto left_just_down = mouse_buttons[Mouse_Left] == (KeyStateDown | KeyStateJust);
+				auto right_just_down = mouse_buttons[Mouse_Right] == (KeyStateDown | KeyStateJust);
+				if (left_just_down || right_just_down)
 				{
 					focusing = nullptr;
-
 					if (hovering)
 					{
-						focusing = hovering;
-						focusing_state = FocusingAndActive;
-						active_pos = mouse_pos;
+						auto do_focus = false;
+						switch (hovering->focus_type)
+						{
+						case FocusByLeftButton:
+							if (left_just_down)
+								do_focus = true;
+							break;
+						case FocusByRightButton:
+							if (right_just_down)
+								do_focus = true;
+							break;
+						case FocusByLeftOrRightButton:
+							if (left_just_down || right_just_down)
+								do_focus = true;
+							break;
+						}
+						if (do_focus)
+						{
+							focusing = hovering;
+							focusing_state = FocusingAndActive;
+							active_pos = mouse_pos;
+						}
 					}
 				}
 			}
@@ -227,9 +246,24 @@ namespace flame
 		{
 			if (!focusing->entity->global_visible_)
 				focusing = nullptr;
-			else if (focusing_state != FocusingNormal && 
-				((mouse_buttons[Mouse_Left] & KeyStateUp) && (mouse_buttons[Mouse_Right] & KeyStateUp)))
-				focusing_state = FocusingNormal;
+			else if (focusing_state != FocusingNormal)
+			{
+				switch (focusing->focus_type)
+				{
+				case FocusByLeftButton:
+					if (mouse_buttons[Mouse_Left] & KeyStateUp)
+						focusing_state = FocusingNormal;
+					break;
+				case FocusByRightButton:
+					if (mouse_buttons[Mouse_Right] & KeyStateUp)
+						focusing_state = FocusingNormal;
+					break;
+				case FocusByLeftOrRightButton:
+					if ((mouse_buttons[Mouse_Left] & KeyStateUp) || (mouse_buttons[Mouse_Right] & KeyStateUp))
+						focusing_state = FocusingNormal;
+					break;
+				}
+			}
 
 			if (dbclick_timer > 0.f)
 			{

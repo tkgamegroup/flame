@@ -45,7 +45,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMoveablePrivate**)c;
-					if (is_active(thiz->event_receiver) && is_mouse_move(action, key))
+					if (utils::is_active(thiz->event_receiver) && is_mouse_move(action, key))
 						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, thiz);
 					return true;
 				}, new_mail_p(this));
@@ -148,7 +148,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSizeDraggerPrivate**)c);
-					if (is_mouse_move(action, key) && is_active(thiz->event_receiver))
+					if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
 						thiz->p_element->set_size(Vec2f(pos), true);
 					return true;
 				}, new_mail_p(this));
@@ -307,7 +307,7 @@ namespace flame
 				event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
-					if (is_mouse_move(action, key) && is_dragging(thiz->event_receiver) && thiz->page)
+					if (is_mouse_move(action, key) && utils::is_dragging(thiz->event_receiver) && thiz->page)
 					{
 						thiz->element->set_pos(Vec2f(pos), true);
 						thiz->page_element->set_pos(Vec2f(pos), true);

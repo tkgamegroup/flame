@@ -10,8 +10,8 @@ namespace flame
 		dispatcher = nullptr;
 		element = nullptr;
 
+		focus_type = FocusByLeftButton;
 		drag_hash = 0;
-
 		state = EventReceiverNormal;
 
 		pass_checkers.impl = ListenerHubImpl::create();

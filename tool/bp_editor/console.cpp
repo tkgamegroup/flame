@@ -230,10 +230,8 @@ cConsole::cConsole() :
 							auto n = app.bp->find_node(w2s(tokens[2]).c_str());
 							if (n)
 							{
-								if (!app.remove_node(n))
-									printf("cannot remove test nodes\n");
-								else
-									log += wfmt(L"node removed: %s", tokens[2].c_str()) + L"\n";
+								app.remove_node(n);
+								log += wfmt(L"node removed: %s", tokens[2].c_str()) + L"\n";
 							}
 							else
 								log += L"node not found\n";

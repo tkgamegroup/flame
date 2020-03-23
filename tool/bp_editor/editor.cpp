@@ -113,6 +113,8 @@ struct cSlot : Component
 
 	BP::Slot* s;
 
+	bool dragging;
+
 	Entity* tip_type;
 	Entity* tip_link;
 
@@ -122,6 +124,8 @@ struct cSlot : Component
 		element = nullptr;
 		event_receiver = nullptr;
 		tracker = nullptr;
+
+		dragging = false;
 
 		tip_type = nullptr;
 		tip_link = nullptr;
@@ -162,7 +166,20 @@ struct cSlot : Component
 				event_receiver->drag_hash = FLAME_CHASH("output_slot");
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
 			}
-
+			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto thiz = *(cSlot**)c;
+				if (thiz->dragging)
+				{
+					if (is_mouse_scroll(action, key))
+						app.editor->base_scale((pos.x() > 0.f ? 1 : -1));
+					else if (is_mouse_move(action, key))
+					{
+						if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
+							app.editor->base_move(Vec2f(pos));
+					}
+				}
+				return true;
+			}, new_mail_p(this));
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cSlot**)c;
 				auto element = thiz->element;
@@ -171,6 +188,7 @@ struct cSlot : Component
 
 				if (action == DragStart)
 				{
+					thiz->dragging = true;
 					app.editor->dragging_slot = s;
 					app.deselect();
 				}
@@ -181,6 +199,7 @@ struct cSlot : Component
 				}
 				else if (action == DragEnd)
 				{
+					thiz->dragging = false;
 					if (!er)
 						app.editor->show_add_node_menu(Vec2f(pos));
 					else
@@ -365,12 +384,7 @@ struct cNode : Component
 			element = (cElement*)c;
 			element->data_changed_listeners.add([](void* c, uint hash, void*) {
 				if (hash == FLAME_CHASH("pos"))
-				{
-					auto thiz = *(cNode**)c;
-					auto pos = thiz->element->pos_;
-					thiz->n->pos = pos;
-					thiz->moved = true;
-				}
+					(*(cNode**)c)->moved = true;
 				return true;
 			}, new_mail_p(this));
 		}
@@ -380,7 +394,7 @@ struct cNode : Component
 			event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cNode**)c;
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					app.select(SelNode, thiz->n);
+					app.select({ thiz->n });
 				return true;
 			}, new_mail_p(this));
 			event_receiver->hover_listeners.add([](void* c, bool hovering) {
@@ -423,8 +437,9 @@ struct cNode : Component
 					thiz->moved = false;
 					break;
 				default:
-					if (thiz->moved)
+					if (thiz->moved && !utils::is_active(thiz->event_receiver))
 					{
+						thiz->n->pos = thiz->element->pos_;
 						app.set_changed(true);
 						thiz->moved = false;
 					}
@@ -508,7 +523,7 @@ cEditor::cEditor() :
 									{
 										std::vector<Vec2f> points;
 										path_bezier(points, p1, p2, p3, p4);
-										canvas->stroke(points.size(), points.data(), app.selected.link == input ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+										canvas->stroke(points.size(), points.data(), app.selected_link == input ? selected_col : Vec4c(100, 100, 120, 255), line_width);
 									}
 								}
 							}
@@ -539,21 +554,10 @@ cEditor::cEditor() :
 				}, new_mail_p(c_element));
 				{
 					auto c_event_receiver = utils::c_event_receiver();
+					c_event_receiver->focus_type = FocusByRightButton;
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						if (is_mouse_scroll(action, key))
-						{
-							auto v = (pos.x() > 0.f ? 1 : -1);
-							app.editor->scale += v;
-							if (app.editor->scale < 1 || app.editor->scale > 10)
-								app.editor->scale -= v;
-							else
-							{
-								auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - app.editor->c_base_element->global_pos) / ((app.editor->scale - v) * 0.1f);
-								app.editor->c_base_element->set_pos(float(v) * p * -0.1f, true);
-								app.editor->c_base_element->set_scale(app.editor->scale * 0.1f);
-								app.editor->c_scale_text->set_text((std::to_wstring(app.editor->scale * 10) + L"%").c_str());
-							}
-						}
+							app.editor->base_scale((pos.x() > 0.f ? 1 : -1));
 						else if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						{
 							app.s_2d_renderer->pending_update = true;
@@ -579,12 +583,15 @@ cEditor::cEditor() :
 										auto bb = rect_from_points(p1, p2, p3, p4);
 										if (rect_contains(bb, Vec2f(pos)) && distance(bezier_closest_point(Vec2f(pos), p1, p2, p3, p4, 4, 7), Vec2f(pos)) < line_width)
 										{
-											app.select(SelLink, input);
+											app.select(input);
 											return false;
 										}
 									}
 								}
 							}
+						}
+						else if (is_mouse_up(action, key, true) && key == Mouse_Left)
+						{
 						}
 						else if (is_mouse_down(action, key, true) && key == Mouse_Right)
 							app.editor->base_moved = false;
@@ -596,10 +603,7 @@ cEditor::cEditor() :
 						else if (is_mouse_move(action, key))
 						{
 							if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
-							{
-								app.editor->c_base_element->set_pos(Vec2f(pos), true);
-								app.editor->base_moved = true;
-							}
+								app.editor->base_move(Vec2f(pos));
 						}
 						return true;
 					}, Mail<>());
@@ -608,6 +612,10 @@ cEditor::cEditor() :
 						{
 							switch (value)
 							{
+							case Key_D:
+								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+									app.duplicate_selected();
+								break;
 							case Key_Del:
 								app.delete_selected();
 								break;
@@ -630,7 +638,14 @@ cEditor::cEditor() :
 
 	utils::e_end_docker_page();
 
-	on_load();
+	selecting = false;
+
+	dragging_slot = nullptr;
+
+	for (auto i = 0; i < app.bp->node_count(); i++)
+		on_add_node(app.bp->node(i));
+
+	on_changed();
 }
 
 cEditor::~cEditor()
@@ -638,25 +653,24 @@ cEditor::~cEditor()
 	app.editor = nullptr;
 }
 
-static Entity* selected_entity()
-{
-	if (app.sel_type == SelNode)
-		return (Entity*)app.selected.node->user_data;
-	return nullptr;
-}
-
 void cEditor::on_deselect()
 {
-	auto e = selected_entity();
-	if (e)
-		e->get_component(cElement)->set_frame_color(unselected_col);
+	for (auto& s : app.selected_nodes)
+	{
+		auto e = (Entity*)s->user_data;
+		if (e)
+			e->get_component(cElement)->set_frame_color(unselected_col);
+	}
 }
 
 void cEditor::on_select()
 {
-	auto e = selected_entity();
-	if (e)
-		e->get_component(cElement)->set_frame_color(selected_col);
+	for (auto& s : app.selected_nodes)
+	{
+		auto e = (Entity*)s->user_data;
+		if (e)
+			e->get_component(cElement)->set_frame_color(selected_col);
+	}
 }
 
 void cEditor::on_changed()
@@ -665,356 +679,6 @@ void cEditor::on_changed()
 	if (app.changed)
 		title += L"*";
 	c_tab_text->set_text(title.c_str());
-}
-
-void cEditor::on_load()
-{
-	e_base->remove_child(0, -1);
-
-	for (auto i = 0; i < app.bp->node_count(); i++)
-		on_add_node(app.bp->node(i));
-
-	dragging_slot = nullptr;
-
-	on_changed();
-}
-
-void cEditor::show_add_node_menu(const Vec2f& pos)
-{
-	const TypeInfo* type;
-	TypeTag tag;
-	const char* base_name;
-	uint base_hash;
-	bool is_array;
-	if (dragging_slot)
-	{
-		type = dragging_slot->type();
-		tag = type->tag();
-		base_name = type->base_name();
-		base_hash = type->base_hash();
-		is_array = type->is_array();
-	}
-
-	std::vector<std::pair<UdtInfo*, VariableInfo*>> node_types;
-	auto add_udt = [&](UdtInfo* u) {
-		{
-			auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
-			if (!f.first)
-				return;
-			if (!check_function(f.first, "D#void", { "D#uint" }))
-				return;
-		}
-		for (auto i = 0; i < u->variable_count(); i++)
-		{
-			auto v = u->variable(i);
-			auto flags = v->flags();
-			if (flags & VariableFlagInput)
-			{
-				if (!dragging_slot)
-				{
-					node_types.emplace_back(u, nullptr);
-					return;
-				}
-				if (dragging_slot->io() == BP::Slot::Out)
-				{
-					if (BP::Slot::can_link(v->type(), dragging_slot->type()))
-					{
-						node_types.emplace_back(u, v);
-						return;
-					}
-				}
-			}
-			if (flags & VariableFlagOutput)
-			{
-				if (!dragging_slot)
-				{
-					node_types.emplace_back(u, nullptr);
-					return;
-				}
-				if (dragging_slot->io() == BP::Slot::In)
-				{
-					if (BP::Slot::can_link(dragging_slot->type(), v->type()))
-					{
-						node_types.emplace_back(u, v);
-						return;
-					}
-				}
-			}
-		}
-	};
-	for (auto i = 0; i < global_db_count(); i++)
-	{
-		auto udts = global_db(i)->get_udts();
-		for (auto j = 0; j < udts.s; j++)
-			add_udt(udts.v[j]);
-	}
-	for (auto i = 0; i < app.bp->library_count(); i++)
-	{
-		auto udts = app.bp->library(i)->db()->get_udts();
-		for (auto j = 0; j < udts.s; j++)
-			add_udt(udts.v[j]);
-	}
-	std::sort(node_types.begin(), node_types.end(), [](const auto& a, const auto& b) {
-		return std::string(a.first->type()->name()) < std::string(b.first->type()->name());
-	});
-
-	utils::push_parent(utils::add_layer(app.root, ""));
-		utils::e_empty()->on_removed_listeners.add([](void*) {
-			app.editor->pending_link_slot = app.editor->dragging_slot;
-			app.editor->dragging_slot = nullptr;
-			return true;
-		}, Mail<>());
-		utils::next_element_pos = pos;
-		auto c_element = utils::c_element();
-		c_element->inner_padding_ = 4.f;
-		c_element->frame_thickness_ = 2.f;
-		c_element->color_ = utils::style_4c(utils::BackgroundColor);
-		c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
-		utils::c_layout(LayoutVertical)->item_padding = 4.f;
-		utils::push_parent(utils::current_entity());
-			if (dragging_slot)
-				utils::e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color_ = type_color(tag);
-			utils::e_begin_layout(LayoutHorizontal, 4.f);
-				utils::e_text(Icon_SEARCH);
-				auto c_text_search = utils::e_edit(300.f)->get_component(cText);
-			utils::e_end_layout();
-			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f);
-			utils::c_aligner(SizeGreedy, SizeFixed);
-				auto e_list = utils::e_begin_list(true, 0.f);
-					struct Capture
-					{
-						Entity* l;
-						Vec2f p;
-
-						void show_enums(TypeTag tag)
-						{
-							std::vector<EnumInfo*> enum_infos;
-							for (auto i = 0; i < global_db_count(); i++)
-							{
-								auto enums = global_db(i)->get_enums();
-								for (auto j = 0; j < enums.s; j++)
-									enum_infos.push_back(enums.v[j]);
-							}
-							for (auto i = 0; i < app.bp->library_count(); i++)
-							{
-								auto enums = app.bp->library(i)->db()->get_enums();
-								for (auto j = 0; j < enums.s; j++)
-									enum_infos.push_back(enums.v[j]);
-							}
-							std::sort(enum_infos.begin(), enum_infos.end(), [](EnumInfo* a, EnumInfo* b) {
-								return std::string(a->name()) < std::string(b->name());
-							});
-
-							struct Capture
-							{
-								TypeTag t;
-								EnumInfo* e;
-								Vec2f p;
-							}capture;
-							capture.t = tag;
-							capture.p = p;
-							l->remove_children(0, -1);
-							for (auto ei : enum_infos)
-							{
-								capture.e = ei;
-								utils::push_parent(l);
-								utils::e_menu_item(s2w(ei->name()).c_str(), [](void* c) {
-									auto& capture = *(Capture*)c;
-									app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.e->name()) + ")").c_str(), "", capture.p);
-								}, new_mail(&capture));
-								utils::pop_parent();
-							}
-						}
-					}capture;
-					capture.l = e_list;
-					capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
-					if (!dragging_slot)
-					{
-						utils::e_menu_item(L"Enum Single", [](void* c) {
-							auto& capture = *(Capture*)c;
-							looper().add_event([](void* c, bool*) {
-								auto& capture = *(Capture*)c;
-								capture.show_enums(TypeEnumSingle);
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
-						utils::e_menu_item(L"Enum Multi", [](void* c) {
-							auto& capture = *(Capture*)c;
-							looper().add_event([](void* c, bool*) {
-								auto& capture = *(Capture*)c;
-								capture.show_enums(TypeEnumMulti);
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
-						utils::e_menu_item(L"Variable", [](void* c) {
-							auto& capture = *(Capture*)c;
-							looper().add_event([](void* c, bool*) {
-								auto& capture = *(Capture*)c;
-								struct _Capture
-								{
-									const char* s;
-									Vec2f p;
-								}_capture;
-								_capture.p = capture.p;
-								capture.l->remove_children(0, -1);
-								for (auto t : basic_types())
-								{
-									_capture.s = t;
-									utils::push_parent(capture.l);
-									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
-										auto& capture = *(_Capture*)c;
-										app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
-									}, new_mail(&_capture));
-									utils::pop_parent();
-								}
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
-						utils::e_menu_item(L"Array", [](void* c) {
-							auto& capture = *(Capture*)c;
-							looper().add_event([](void* c, bool*) {
-								auto& capture = *(Capture*)c;
-								struct _Capture
-								{
-									const char* s;
-									Vec2f p;
-								}_capture;
-								_capture.p = capture.p;
-								capture.l->remove_children(0, -1);
-								for (auto t : basic_types())
-								{
-									_capture.s = t;
-									utils::push_parent(capture.l);
-									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
-										auto& capture = *(_Capture*)c;
-										app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
-									}, new_mail(&_capture));
-									utils::pop_parent();
-								}
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
-					}
-					else
-					{
-						if (tag == TypeEnumSingle || tag == TypeEnumMulti)
-						{
-							struct _Capture
-							{
-								TypeTag t;
-								const char* s;
-								Vec2f p;
-							}_capture;
-							_capture.t = tag;
-							_capture.p = capture.p;
-							_capture.s = base_name;
-							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](void* c) {
-								auto& capture = *(_Capture*)c;
-								auto n = app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.s) + ")").c_str(), "", capture.p);
-								auto s = app.editor->pending_link_slot;
-								if (s)
-								{
-									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output("out"));
-									else
-										n->find_input("in")->link_to(s);
-								}
-							}, new_mail(&_capture));
-						}
-						else if (tag == TypeData && !is_array)
-						{
-							if (basic_type_size(base_hash))
-							{
-								struct _Capture
-								{
-									const char* s;
-									Vec2f p;
-								}_capture;
-								_capture.p = capture.p;
-								_capture.s = base_name;
-								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](void* c) {
-									auto& capture = *(_Capture*)c;
-									auto n = app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
-									auto s = app.editor->pending_link_slot;
-									if (s)
-									{
-										if (s->io() == BP::Slot::In)
-											s->link_to(n->find_output("out"));
-										else
-											n->find_input("in")->link_to(s);
-									}
-								}, new_mail(&_capture));
-							}
-						}
-						else if (tag == TypePointer && is_array)
-						{
-							struct _Capture
-							{
-								const char* s;
-								Vec2f p;
-							}_capture;
-							_capture.p = capture.p;
-							_capture.s = base_name;
-							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](void* c) {
-								auto& capture = *(_Capture*)c;
-								auto n = app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
-								auto s = app.editor->pending_link_slot;
-								if (s)
-								{
-									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output("out"));
-									else
-										n->find_input("0")->link_to(s);
-								}
-							}, new_mail(&_capture));
-						}
-					}
-					{
-						struct Capture
-						{
-							UdtInfo* u;
-							VariableInfo* v;
-							Vec2f p;
-						}capture;
-						capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
-						for (auto& t : node_types)
-						{
-							capture.u = t.first;
-							capture.v = t.second;
-							utils::e_menu_item(s2w(t.first->type()->name()).c_str(), [](void* c) {
-								auto& capture = *(Capture*)c;
-								auto n = app.add_node(capture.u->type()->name() + 2, "", capture.p);
-								auto s = app.editor->pending_link_slot;
-								if (s)
-								{
-									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output(capture.v->name()));
-									else
-										n->find_input(capture.v->name())->link_to(s);
-								}
-							}, new_mail(&capture));
-						}
-					}
-				utils::e_end_list();
-			utils::e_end_scroll_view1();
-		utils::pop_parent();
-	utils::pop_parent();
-
-	{
-		struct Capture
-		{
-			Entity* l;
-			cText* t;
-		}capture;
-		capture.l = e_list;
-		capture.t = c_text_search;
-		c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
-			auto& capture = *(Capture*)c;
-			std::wstring str = capture.t->text();
-			for (auto i = 0; i < capture.l->child_count(); i++)
-			{
-				auto item = capture.l->child(i);
-				item->set_visible(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
-			}
-			return true;
-		}, new_mail(&capture));
-	}
 }
 
 template <class T>
@@ -1694,3 +1358,360 @@ void cEditor::on_data_changed(BP::Slot* s)
 	((cSlot*)s->user_data)->tracker->update_view();
 }
 
+void cEditor::base_scale(int v)
+{
+	scale += v;
+	if (scale < 1 || scale > 10)
+		scale -= v;
+	else
+	{
+		auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - c_base_element->global_pos) / ((scale - v) * 0.1f);
+		c_base_element->set_pos(float(v) * p * -0.1f, true);
+		c_base_element->set_scale(scale * 0.1f);
+		c_scale_text->set_text((std::to_wstring(scale * 10) + L"%").c_str());
+	}
+}
+
+void cEditor::base_move(const Vec2f& p)
+{
+	c_base_element->set_pos(p, true);
+	base_moved = true;
+}
+
+void cEditor::show_add_node_menu(const Vec2f& pos)
+{
+	const TypeInfo* type;
+	TypeTag tag;
+	const char* base_name;
+	uint base_hash;
+	bool is_array;
+	if (dragging_slot)
+	{
+		type = dragging_slot->type();
+		tag = type->tag();
+		base_name = type->base_name();
+		base_hash = type->base_hash();
+		is_array = type->is_array();
+	}
+
+	std::vector<std::pair<UdtInfo*, VariableInfo*>> node_types;
+	auto add_udt = [&](UdtInfo* u) {
+		{
+			auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
+			if (!f.first)
+				return;
+			if (!check_function(f.first, "D#void", { "D#uint" }))
+				return;
+		}
+		for (auto i = 0; i < u->variable_count(); i++)
+		{
+			auto v = u->variable(i);
+			auto flags = v->flags();
+			if (flags & VariableFlagInput)
+			{
+				if (!dragging_slot)
+				{
+					node_types.emplace_back(u, nullptr);
+					return;
+				}
+				if (dragging_slot->io() == BP::Slot::Out)
+				{
+					if (BP::Slot::can_link(v->type(), dragging_slot->type()))
+					{
+						node_types.emplace_back(u, v);
+						return;
+					}
+				}
+			}
+			if (flags & VariableFlagOutput)
+			{
+				if (!dragging_slot)
+				{
+					node_types.emplace_back(u, nullptr);
+					return;
+				}
+				if (dragging_slot->io() == BP::Slot::In)
+				{
+					if (BP::Slot::can_link(dragging_slot->type(), v->type()))
+					{
+						node_types.emplace_back(u, v);
+						return;
+					}
+				}
+			}
+		}
+	};
+	for (auto i = 0; i < global_db_count(); i++)
+	{
+		auto udts = global_db(i)->get_udts();
+		for (auto j = 0; j < udts.s; j++)
+			add_udt(udts.v[j]);
+	}
+	for (auto i = 0; i < app.bp->library_count(); i++)
+	{
+		auto udts = app.bp->library(i)->db()->get_udts();
+		for (auto j = 0; j < udts.s; j++)
+			add_udt(udts.v[j]);
+	}
+	std::sort(node_types.begin(), node_types.end(), [](const auto& a, const auto& b) {
+		return std::string(a.first->type()->name()) < std::string(b.first->type()->name());
+	});
+
+	utils::push_parent(utils::add_layer(app.root, ""));
+		utils::e_empty()->on_removed_listeners.add([](void*) {
+			app.editor->pending_link_slot = app.editor->dragging_slot;
+			app.editor->dragging_slot = nullptr;
+			return true;
+		}, Mail<>());
+		utils::next_element_pos = pos;
+		auto c_element = utils::c_element();
+		c_element->inner_padding_ = 4.f;
+		c_element->frame_thickness_ = 2.f;
+		c_element->color_ = utils::style_4c(utils::BackgroundColor);
+		c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+		utils::c_layout(LayoutVertical)->item_padding = 4.f;
+		utils::push_parent(utils::current_entity());
+			if (dragging_slot)
+				utils::e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color_ = type_color(tag);
+			utils::e_begin_layout(LayoutHorizontal, 4.f);
+				utils::e_text(Icon_SEARCH);
+				auto c_text_search = utils::e_edit(300.f)->get_component(cText);
+			utils::e_end_layout();
+			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f);
+			utils::c_aligner(SizeGreedy, SizeFixed);
+				auto e_list = utils::e_begin_list(true, 0.f);
+					struct Capture
+					{
+						Entity* l;
+						Vec2f p;
+
+						void show_enums(TypeTag tag)
+						{
+							std::vector<EnumInfo*> enum_infos;
+							for (auto i = 0; i < global_db_count(); i++)
+							{
+								auto enums = global_db(i)->get_enums();
+								for (auto j = 0; j < enums.s; j++)
+									enum_infos.push_back(enums.v[j]);
+							}
+							for (auto i = 0; i < app.bp->library_count(); i++)
+							{
+								auto enums = app.bp->library(i)->db()->get_enums();
+								for (auto j = 0; j < enums.s; j++)
+									enum_infos.push_back(enums.v[j]);
+							}
+							std::sort(enum_infos.begin(), enum_infos.end(), [](EnumInfo* a, EnumInfo* b) {
+								return std::string(a->name()) < std::string(b->name());
+							});
+
+							struct Capture
+							{
+								TypeTag t;
+								EnumInfo* e;
+								Vec2f p;
+							}capture;
+							capture.t = tag;
+							capture.p = p;
+							l->remove_children(0, -1);
+							for (auto ei : enum_infos)
+							{
+								capture.e = ei;
+								utils::push_parent(l);
+								utils::e_menu_item(s2w(ei->name()).c_str(), [](void* c) {
+									auto& capture = *(Capture*)c;
+									app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.e->name()) + ")").c_str(), "", capture.p);
+								}, new_mail(&capture));
+								utils::pop_parent();
+							}
+						}
+					}capture;
+					capture.l = e_list;
+					capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
+					if (!dragging_slot)
+					{
+						utils::e_menu_item(L"Enum Single", [](void* c) {
+							auto& capture = *(Capture*)c;
+							looper().add_event([](void* c, bool*) {
+								auto& capture = *(Capture*)c;
+								capture.show_enums(TypeEnumSingle);
+							}, new_mail(&capture));
+						}, new_mail(&capture), false);
+						utils::e_menu_item(L"Enum Multi", [](void* c) {
+							auto& capture = *(Capture*)c;
+							looper().add_event([](void* c, bool*) {
+								auto& capture = *(Capture*)c;
+								capture.show_enums(TypeEnumMulti);
+							}, new_mail(&capture));
+						}, new_mail(&capture), false);
+						utils::e_menu_item(L"Variable", [](void* c) {
+							auto& capture = *(Capture*)c;
+							looper().add_event([](void* c, bool*) {
+								auto& capture = *(Capture*)c;
+								struct _Capture
+								{
+									const char* s;
+									Vec2f p;
+								}_capture;
+								_capture.p = capture.p;
+								capture.l->remove_children(0, -1);
+								for (auto t : basic_types())
+								{
+									_capture.s = t;
+									utils::push_parent(capture.l);
+									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
+										auto& capture = *(_Capture*)c;
+										app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
+									}, new_mail(&_capture));
+									utils::pop_parent();
+								}
+							}, new_mail(&capture));
+						}, new_mail(&capture), false);
+						utils::e_menu_item(L"Array", [](void* c) {
+							auto& capture = *(Capture*)c;
+							looper().add_event([](void* c, bool*) {
+								auto& capture = *(Capture*)c;
+								struct _Capture
+								{
+									const char* s;
+									Vec2f p;
+								}_capture;
+								_capture.p = capture.p;
+								capture.l->remove_children(0, -1);
+								for (auto t : basic_types())
+								{
+									_capture.s = t;
+									utils::push_parent(capture.l);
+									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
+										auto& capture = *(_Capture*)c;
+										app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
+									}, new_mail(&_capture));
+									utils::pop_parent();
+								}
+							}, new_mail(&capture));
+						}, new_mail(&capture), false);
+					}
+					else
+					{
+						if (tag == TypeEnumSingle || tag == TypeEnumMulti)
+						{
+							struct _Capture
+							{
+								TypeTag t;
+								const char* s;
+								Vec2f p;
+							}_capture;
+							_capture.t = tag;
+							_capture.p = capture.p;
+							_capture.s = base_name;
+							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](void* c) {
+								auto& capture = *(_Capture*)c;
+								auto n = app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.s) + ")").c_str(), "", capture.p);
+								auto s = app.editor->pending_link_slot;
+								if (s)
+								{
+									if (s->io() == BP::Slot::In)
+										s->link_to(n->find_output("out"));
+									else
+										n->find_input("in")->link_to(s);
+								}
+							}, new_mail(&_capture));
+						}
+						else if (tag == TypeData && !is_array)
+						{
+							if (basic_type_size(base_hash))
+							{
+								struct _Capture
+								{
+									const char* s;
+									Vec2f p;
+								}_capture;
+								_capture.p = capture.p;
+								_capture.s = base_name;
+								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](void* c) {
+									auto& capture = *(_Capture*)c;
+									auto n = app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
+									auto s = app.editor->pending_link_slot;
+									if (s)
+									{
+										if (s->io() == BP::Slot::In)
+											s->link_to(n->find_output("out"));
+										else
+											n->find_input("in")->link_to(s);
+									}
+								}, new_mail(&_capture));
+							}
+						}
+						else if (tag == TypePointer && is_array)
+						{
+							struct _Capture
+							{
+								const char* s;
+								Vec2f p;
+							}_capture;
+							_capture.p = capture.p;
+							_capture.s = base_name;
+							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](void* c) {
+								auto& capture = *(_Capture*)c;
+								auto n = app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
+								auto s = app.editor->pending_link_slot;
+								if (s)
+								{
+									if (s->io() == BP::Slot::In)
+										s->link_to(n->find_output("out"));
+									else
+										n->find_input("0")->link_to(s);
+								}
+							}, new_mail(&_capture));
+						}
+					}
+					{
+						struct Capture
+						{
+							UdtInfo* u;
+							VariableInfo* v;
+							Vec2f p;
+						}capture;
+						capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
+						for (auto& t : node_types)
+						{
+							capture.u = t.first;
+							capture.v = t.second;
+							utils::e_menu_item(s2w(t.first->type()->name()).c_str(), [](void* c) {
+								auto& capture = *(Capture*)c;
+								auto n = app.add_node(capture.u->type()->name() + 2, "", capture.p);
+								auto s = app.editor->pending_link_slot;
+								if (s)
+								{
+									if (s->io() == BP::Slot::In)
+										s->link_to(n->find_output(capture.v->name()));
+									else
+										n->find_input(capture.v->name())->link_to(s);
+								}
+							}, new_mail(&capture));
+						}
+					}
+				utils::e_end_list();
+			utils::e_end_scroll_view1();
+		utils::pop_parent();
+	utils::pop_parent();
+
+	{
+		struct Capture
+		{
+			Entity* l;
+			cText* t;
+		}capture;
+		capture.l = e_list;
+		capture.t = c_text_search;
+		c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
+			auto& capture = *(Capture*)c;
+			std::wstring str = capture.t->text();
+			for (auto i = 0; i < capture.l->child_count(); i++)
+			{
+				auto item = capture.l->child(i);
+				item->set_visible(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+			}
+			return true;
+		}, new_mail(&capture));
+	}
+}

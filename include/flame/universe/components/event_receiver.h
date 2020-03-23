@@ -12,6 +12,7 @@ namespace flame
 		sEventDispatcher* dispatcher;
 		cElement* element;
 
+		FocusType focus_type;
 		uint drag_hash; // non-zero means it can be draged to drop
 		EventReceiverState state;
 

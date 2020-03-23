@@ -22,15 +22,25 @@ void MyApp::deselect()
 	if (editor)
 		editor->on_deselect();
 
-	sel_type = SelAir;
-	selected.plain = nullptr;
+	selected_nodes.clear();
+	selected_link = nullptr;
 }
 
-void MyApp::select(SelType t, void* p)
+void MyApp::select(const std::vector<BP::Node*>& nodes)
 {
 	deselect();
-	sel_type = t;
-	selected.plain = p;
+	selected_nodes = nodes;
+	selected_link = nullptr;
+
+	if (editor)
+		editor->on_select();
+}
+
+void MyApp::select(BP::Slot* link)
+{
+	deselect();
+	selected_nodes.clear();
+	selected_link = link;
 
 	if (editor)
 		editor->on_select();
@@ -64,48 +74,37 @@ void MyApp::remove_library(BP::Library* l)
 	}, new_mail_p(l));
 }
 
-bool MyApp::remove_node(BP::Node* n)
+void MyApp::remove_node(BP::Node* n)
 {
-	if (SUS::starts_with(n->id(), "test_"))
-		return false;
 	if (app.editor)
 		app.editor->on_remove_node(n);
 	n->scene()->remove_node(n);
 	set_changed(true);
-	return true;
 }
 
 void MyApp::duplicate_selected()
 {
-	switch (sel_type)
+	for (auto& s : selected_nodes)
 	{
-	case SelNode:
-	{
-		auto n = add_node(selected.node->type(), "", selected.node->pos);
+		auto n = add_node(s->type(), "", s->pos);
 		for (auto i = 0; i < n->input_count(); i++)
 		{
-			auto src = selected.node->input(i);
+			auto src = s->input(i);
 			auto dst = n->input(i);
 			dst->set_data(src->data());
 			dst->link_to(src->link(0));
 		}
 	}
-	break;
-	}
 }
 
 void MyApp::delete_selected()
 {
-	switch (sel_type)
+	for (auto& s : selected_nodes)
+		remove_node(s);
+	if (selected_link)
 	{
-	case SelNode:
-		if (!remove_node(selected.node))
-			utils::e_message_dialog(L"Cannot Remove Test Nodes");
-		break;
-	case SelLink:
-		selected.link->link_to(nullptr);
+		selected_link->link_to(nullptr);
 		set_changed(true);
-		break;
 	}
 
 	deselect();

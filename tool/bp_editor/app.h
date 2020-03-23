@@ -16,6 +16,10 @@ struct cEditor : Component
 	uint scale;
 	cText* c_scale_text;
 
+	bool selecting;
+	Vec2f select_begin;
+	Vec2f select_end;
+
 	BP::Slot* dragging_slot;
 	BP::Slot* pending_link_slot;
 	Vec2f dragging_slot_pos;
@@ -25,10 +29,11 @@ struct cEditor : Component
 	void on_deselect();
 	void on_select();
 	void on_changed();
-	void on_load();
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
+	void base_scale(int v);
+	void base_move(const Vec2f& p);
 	void show_add_node_menu(const Vec2f& pos);
 };
 
@@ -41,13 +46,6 @@ struct cConsole : Component
 	virtual ~cConsole() override;
 };
 
-enum SelType
-{
-	SelAir,
-	SelNode,
-	SelLink
-};
-
 struct MyApp : App
 {
 	std::filesystem::path filepath;
@@ -57,14 +55,8 @@ struct MyApp : App
 	bool locked;
 	bool auto_update;
 
-	SelType sel_type;
-
-	union
-	{
-		void* plain;
-		BP::Node* node;
-		BP::Slot* link;
-	}selected;
+	std::vector<BP::Node*> selected_nodes;
+	BP::Slot* selected_link;
 
 	cEditor* editor;
 	cConsole* console;
@@ -78,20 +70,20 @@ struct MyApp : App
 		changed = false;
 		locked = false;
 
-		sel_type = SelAir;
-		selected.plain = nullptr;
+		selected_link = nullptr;
 		auto_update = false;
 	}
 
 	void set_changed(bool v);
 
 	void deselect();
-	void select(SelType t, void* p);
+	void select(const std::vector<BP::Node*>& nodes);
+	void select(BP::Slot* link);
 
 	BP::Library* add_library(const wchar_t* filename);
 	BP::Node* add_node(const char* type_name, const char* id, const Vec2f& pos);
 	void remove_library(BP::Library* l);
-	bool remove_node(BP::Node* n);
+	void remove_node(BP::Node* n);
 
 	void duplicate_selected();
 	void delete_selected();

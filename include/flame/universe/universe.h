@@ -10,6 +10,13 @@
 
 namespace flame
 {
+	enum FocusType
+	{
+		FocusByLeftButton,
+		FocusByRightButton,
+		FocusByLeftOrRightButton
+	};
+
 	enum FocusingState
 	{
 		FocusingNormal,
