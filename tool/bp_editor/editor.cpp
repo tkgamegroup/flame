@@ -622,30 +622,6 @@ cEditor::cEditor() :
 						}
 						return true;
 					}, Mail<>());
-					c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
-						if (is_key_down(action))
-						{
-							switch (value)
-							{
-							case Key_Z:
-								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-									undo();
-								break;
-							case Key_Y:
-								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-									redo();
-								break;
-							case Key_D:
-								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-									app.duplicate_selected();
-								break;
-							case Key_Del:
-								app.delete_selected();
-								break;
-							}
-						}
-						return true;
-					}, Mail<>());
 					c_event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 						if (state != EventReceiverActive && app.editor->selecting)
 						{
@@ -748,7 +724,7 @@ cEditor::cEditor() :
 	for (auto i = 0; i < app.bp->node_count(); i++)
 		on_add_node(app.bp->node(i));
 
-	on_changed();
+	on_bp_changed();
 }
 
 cEditor::~cEditor()
@@ -776,12 +752,17 @@ void cEditor::on_select()
 	}
 }
 
+void cEditor::on_id_changed(BP::Node* n)
+{
+	((Entity*)n->user_data)->get_component(cNode)->clear_tips();
+}
+
 void cEditor::on_pos_changed(BP::Node* n)
 {
 	((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 }
 
-void cEditor::on_changed()
+void cEditor::on_bp_changed()
 {
 	std::wstring title = L"editor";
 	if (app.changed)
@@ -895,13 +876,10 @@ void cEditor::on_add_node(BP::Node* n)
 		utils::e_begin_popup_menu(false);
 			utils::e_menu_item(L"Change ID", [](void* c) {
 				auto n = *(BP::Node**)c;
-				looper().add_event([](void* c, bool*) {
-					auto n = *(BP::Node**)c;
-					utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
-						if (ok && text[0])
-							(*(BP::Node**)c)->set_id(w2s(text).c_str());
-					}, new_mail_p(n), s2w(n->id()).c_str());
-				}, new_mail_p(n));
+				utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
+					if (ok && text[0])
+						app.set_id(*(BP::Node**)c, w2s(text));
+				}, new_mail_p(n), s2w(n->id()).c_str());
 			}, new_mail_p(n));
 			utils::e_menu_item(L"Duplicate", [](void* c) {
 			}, new_mail_p(n));
@@ -916,11 +894,8 @@ void cEditor::on_add_node(BP::Node* n)
 				{
 					auto str = s2w(n->type());
 					auto last_colon = str.find_last_of(L':');
-					if (last_colon == std::wstring::npos)
-						last_colon = 0;
-					else
-						last_colon++;
-					str = std::wstring(str.begin() + last_colon, str.end());
+					if (last_colon != std::wstring::npos)
+						str = std::wstring(str.begin() + last_colon + 1, str.end());
 					auto e_text = utils::e_text(str.c_str());
 					e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 					e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);

@@ -124,7 +124,7 @@ namespace flame
 		void remove_library(LibraryPrivate* m);
 		LibraryPrivate* find_library(const std::wstring& filename) const;
 
-		bool check_or_create_id(std::string& id) const;
+		bool check_or_create_id(std::string& id, const std::string& type) const;
 		NodePrivate* add_node(const std::string& type, const std::string& id);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& address) const;
@@ -529,7 +529,7 @@ namespace flame
 		return nullptr;
 	}
 
-	bool BPPrivate::check_or_create_id(std::string& id) const
+	bool BPPrivate::check_or_create_id(std::string& id, const std::string& type) const
 	{
 		if (!id.empty())
 		{
@@ -538,9 +538,13 @@ namespace flame
 		}
 		else
 		{
+			auto prefix = type + "_";
+			auto last_colon = prefix.find_last_of(L':');
+			if (last_colon != std::string::npos)
+				prefix = std::string(prefix.begin() + last_colon + 1, prefix.end());
 			for (auto i = 0; i < nodes.size() + 1; i++)
 			{
-				id = "node_" + std::to_string(i);
+				id = prefix + std::to_string(i);
 				if (!find_node(id))
 					break;
 			}
@@ -551,7 +555,7 @@ namespace flame
 	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
 	{
 		std::string id = _id;
-		if (!check_or_create_id(id))
+		if (!check_or_create_id(id, type))
 		{
 			printf("cannot add node, id repeated\n");
 			return nullptr;

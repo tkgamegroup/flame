@@ -1,6 +1,9 @@
 #pragma once
 
 #include <flame/serialize.h>
+#include <flame/universe/world.h>
+#include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/components/data_keeper.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
@@ -36,11 +39,18 @@ namespace flame
 
 		inline void remove_top_layer(Entity* parent, bool take = true)
 		{
-			auto l = get_top_layer(parent);
+			auto l = get_top_layer(parent, true);
+			if (!l)
+				return;
 
 			if (take)
 				l->remove_children(0, -1, false);
+
 			l->dying_ = true;
+			auto dp = l->get_component(cDataKeeper);
+			if (dp)
+				parent->world()->get_system(sEventDispatcher)->next_focusing = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
+
 			looper().add_event([](void* c, bool*) {
 				auto l = *(Entity**)c;
 				l->parent()->remove_child(l);
@@ -52,9 +62,19 @@ namespace flame
 			auto l = Entity::create();
 			l->set_name((std::string("layer_") + name_suffix).c_str());
 			parent->add_child(l);
-
-			auto e_c_element = parent->get_component(cElement);
-			assert(e_c_element);
+			
+			{
+				auto ed = parent->world()->get_system(sEventDispatcher);
+				auto focusing = ed->next_focusing;
+				if (focusing == INVALID_POINTER)
+					focusing = ed->focusing;
+				if (focusing)
+				{
+					auto c_data_keeper = cDataKeeper::create();
+					c_data_keeper->add_voidp_item(FLAME_CHASH("focusing"), focusing);
+					l->add_component(c_data_keeper);
+				}
+			}
 
 			auto c_element = cElement::create();
 			c_element->color_ = col;

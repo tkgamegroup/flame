@@ -11,6 +11,34 @@ struct Action
 	virtual void redo() = 0;
 };
 
+struct Action_ChangeID : Action
+{
+	std::string prev_id;
+	std::string after_id;
+
+	void undo() override
+	{
+		auto n = app.bp->find_node(after_id.c_str());
+		if (n)
+		{
+			n->set_id(prev_id.c_str());
+			if (app.editor)
+				app.editor->on_id_changed(n);
+		}
+	}
+
+	void redo() override
+	{
+		auto n = app.bp->find_node(prev_id.c_str());
+		if (n)
+		{
+			n->set_id(after_id.c_str());
+			if (app.editor)
+				app.editor->on_id_changed(n);
+		}
+	}
+};
+
 struct Action_MoveNode : Action
 {
 	std::string id;
@@ -42,17 +70,8 @@ struct Action_MoveNode : Action
 
 struct Action_AddNode : Action
 {
+	std::string type;
 	std::string id;
-
-	void undo() override
-	{
-
-	}
-
-	void redo() override
-	{
-
-	}
 };
 
 static std::vector<std::unique_ptr<Action>> actions;
@@ -95,8 +114,23 @@ void MyApp::set_changed(bool v)
 	{
 		changed = v;
 		if (editor)
-			editor->on_changed();
+			editor->on_bp_changed();
 	}
+}
+
+void MyApp::set_id(BP::Node* n, const std::string& id)
+{
+	std::string prev_id = n->id();
+
+	if (!n->set_id(id.c_str()))
+		return;
+
+	auto a = new Action_ChangeID;
+	a->prev_id = prev_id;
+	a->after_id = id;
+	add_action(a);
+
+	set_changed(true);
 }
 
 void MyApp::set_node_pos(BP::Node* n, const Vec2f& pos)
@@ -108,6 +142,7 @@ void MyApp::set_node_pos(BP::Node* n, const Vec2f& pos)
 	add_action(a);
 
 	n->pos = pos;
+
 	set_changed(true);
 }
 
@@ -391,6 +426,34 @@ bool MyApp::create(const char* filename)
 	utils::style_set_to_light();
 
 	utils::set_current_entity(root);
+	{
+		auto c_event_receiver = utils::c_event_receiver();
+		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
+			if (is_key_down(action))
+			{
+				switch (value)
+				{
+				case Key_Z:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						undo();
+					break;
+				case Key_Y:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						redo();
+					break;
+				case Key_D:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						app.duplicate_selected();
+					break;
+				case Key_Del:
+					app.delete_selected();
+					break;
+				}
+			}
+			return true;
+		}, Mail<>());
+		s_event_dispatcher->next_focusing = c_event_receiver;
+	}
 	utils::c_layout();
 
 	utils::push_font_atlas(app.font_atlas_pixel);

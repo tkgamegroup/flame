@@ -147,7 +147,8 @@ namespace flame
 				auto right_just_down = mouse_buttons[Mouse_Right] == (KeyStateDown | KeyStateJust);
 				if (left_just_down || right_just_down)
 				{
-					focusing = nullptr;
+					if (left_just_down)
+						focusing = nullptr;
 					if (hovering)
 					{
 						auto do_focus = false;
