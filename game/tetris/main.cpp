@@ -1443,7 +1443,8 @@ struct MyApp : App
 			shuffle_pack(i);
 
 		update_status();
-		players[my_room_index].e_garbage->remove_children(0, -1);
+		if (game_mode == GameVS)
+			players[my_room_index].e_garbage->remove_children(0, -1);
 
 		gaming = false;
 		begin_count_down();

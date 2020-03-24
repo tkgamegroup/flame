@@ -56,7 +56,7 @@ struct MyApp : App
 	bool auto_update;
 
 	std::vector<BP::Node*> selected_nodes;
-	BP::Slot* selected_link;
+	std::vector<BP::Slot*> selected_links;
 
 	cEditor* editor;
 	cConsole* console;
@@ -70,7 +70,6 @@ struct MyApp : App
 		changed = false;
 		locked = false;
 
-		selected_link = nullptr;
 		auto_update = false;
 	}
 
@@ -78,7 +77,7 @@ struct MyApp : App
 
 	void deselect();
 	void select(const std::vector<BP::Node*>& nodes);
-	void select(BP::Slot* link);
+	void select(const std::vector<BP::Slot*>& links);
 
 	BP::Library* add_library(const wchar_t* filename);
 	BP::Node* add_node(const char* type_name, const char* id, const Vec2f& pos);

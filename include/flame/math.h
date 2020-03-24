@@ -1315,6 +1315,12 @@ namespace flame
 	}
 
 	template <class T>
+	T cross(const Vec<2, T>& lhs, const Vec<2, T>& rhs)
+	{
+		return lhs.x() * rhs.y() - lhs.y() * rhs.x();
+	}
+
+	template <class T>
 	Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
 	{
 		return Vec<3, T>(
@@ -1508,6 +1514,15 @@ namespace flame
 			Vec<4, T>(0, -1, 0, 0),
 			Vec<4, T>(0, 0, 1, 0),
 			Vec<4, T>(0, 0, 0, 1)) * ret;
+	}
+
+	template <class T>
+	T segment_intersect(const Vec<2, T>& a, const Vec<2, T>& b, const Vec<2, T>& c, const Vec<2, T>& d)
+	{
+		auto ab = b - a;
+		auto dc = c - d;
+		return cross(ab, c -a) * cross(ab, d - a) <= 0.f &&
+			cross(dc, a - d) * cross(dc, b - d) <= 0.f;
 	}
 
 	template <class T>

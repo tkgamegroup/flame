@@ -530,27 +530,35 @@ cEditor::cEditor() :
 					for (auto i = 0; i < app.bp->node_count(); i++)
 					{
 						auto n = app.bp->node(i);
-						for (auto j = 0; j < n->output_count(); j++)
+						for (auto j = 0; j < n->input_count(); j++)
 						{
-							auto output = n->output(j);
-							for (auto k = 0; k < output->link_count(); k++)
+							auto input = n->input(j);
+							auto output = input->link(0);
+							if (!output)
+								continue;
+							auto e1 = ((cSlot*)output->user_data)->element;
+							auto e2 = ((cSlot*)input->user_data)->element;
+							if (e1->entity->global_visible_ && e2->entity->global_visible_)
 							{
-								auto input = output->link(k);
-								auto e1 = ((cSlot*)output->user_data)->element;
-								auto e2 = ((cSlot*)input->user_data)->element;
-								if (e1->entity->global_visible_ && e2->entity->global_visible_)
+								auto p1 = e1->center();
+								auto p4 = e2->center();
+								auto p2 = p1 + Vec2f(extent, 0.f);
+								auto p3 = p4 - Vec2f(extent, 0.f);
+								auto bb = rect_from_points(p1, p2, p3, p4);
+								if (rect_overlapping(bb, range))
 								{
-									auto p1 = e1->center();
-									auto p4 = e2->center();
-									auto p2 = p1 + Vec2f(extent, 0.f);
-									auto p3 = p4 - Vec2f(extent, 0.f);
-									auto bb = rect_from_points(p1, p2, p3, p4);
-									if (rect_overlapping(bb, range))
+									std::vector<Vec2f> points;
+									path_bezier(points, p1, p2, p3, p4);
+									auto selected = false;
+									for (auto& s : app.selected_links)
 									{
-										std::vector<Vec2f> points;
-										path_bezier(points, p1, p2, p3, p4);
-										canvas->stroke(points.size(), points.data(), app.selected_link == input ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+										if (s == input)
+										{
+											selected = true;
+											break;
+										}
 									}
+									canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
 								}
 							}
 						}
@@ -631,62 +639,86 @@ cEditor::cEditor() :
 						}
 						return true;
 					}, Mail<>());
-					c_event_receiver->state_listeners.add([](void*, EventReceiverState state) {
-						if (state != EventReceiverActive)
+					c_event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+						if (state != EventReceiverActive && app.editor->selecting)
 						{
-							if (app.editor->selecting)
-							{
-								app.s_2d_renderer->pending_update = true;
+							app.s_2d_renderer->pending_update = true;
 
-								app.editor->selecting = false;
-								if (app.editor->select_anchor_begin == app.editor->select_anchor_end)
+							app.editor->selecting = false;
+							if (app.editor->select_anchor_begin == app.editor->select_anchor_end)
+								return true;
+
+							auto p0 = app.editor->c_base_element->global_pos;
+							auto s = app.editor->scale * 0.1f;
+							auto r = rect_from_points(app.editor->select_anchor_begin * s + p0, app.editor->select_anchor_end * s + p0);
+
+							std::vector<BP::Node*> nodes;
+							for (auto i = 0; i < app.bp->node_count(); i++)
+							{
+								auto n = app.bp->node(i);
+								auto e = ((Entity*)n->user_data)->get_component(cElement);
+								if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
+									nodes.push_back(n);
+							}
+							if (!nodes.empty())
+							{
+								app.select(nodes);
+								return true;
+							}
+
+							std::vector<BP::Slot*> links;
+
+							Vec2f lines[8];
+							lines[0] = Vec2f(r.x(), r.y());
+							lines[1] = Vec2f(r.z(), r.y());
+							lines[2] = Vec2f(r.x(), r.y());
+							lines[3] = Vec2f(r.x(), r.w());
+							lines[4] = Vec2f(r.z(), r.w());
+							lines[5] = Vec2f(r.x(), r.w());
+							lines[6] = Vec2f(r.z(), r.w());
+							lines[7] = Vec2f(r.z(), r.y());
+
+							auto element = *(cElement**)c;
+							auto range = rect(element->global_pos, element->global_size);
+							auto scale = app.editor->c_base_element->global_scale;
+							auto extent = slot_bezier_extent * scale;
+							for (auto i = 0; i < app.bp->node_count(); i++)
+							{
+								auto n = app.bp->node(i);
+								for (auto j = 0; j < n->input_count(); j++)
 								{
-									auto scale = app.editor->c_base_element->global_scale;
-									auto extent = slot_bezier_extent * scale;
-									auto line_width = 3.f * scale;
-									for (auto i = 0; i < app.bp->node_count(); i++)
+									auto input = n->input(j);
+									auto output = input->link(0);
+									if (!output)
+										continue;
+									auto p1 = ((cSlot*)output->user_data)->element->center();
+									auto p4 = ((cSlot*)input->user_data)->element->center();
+									auto p2 = p1 + Vec2f(extent, 0.f);
+									auto p3 = p4 - Vec2f(extent, 0.f);
+									auto bb = rect_from_points(p1, p2, p3, p4);
+									if (rect_overlapping(bb, range))
 									{
-										auto n = app.bp->node(i);
-										for (auto j = 0; j < n->output_count(); j++)
+										std::vector<Vec2f> points;
+										path_bezier(points, p1, p2, p3, p4);
+										for (auto k = 0; k < points.size() - 1; k++)
 										{
-											auto output = n->output(j);
-											for (auto k = 0; k < output->link_count(); k++)
+											for (auto m = 0; m < 8; m += 2)
 											{
-												auto input = output->link(k);
-												auto p1 = ((cSlot*)output->user_data)->element->center();
-												auto p4 = ((cSlot*)input->user_data)->element->center();
-												auto p2 = p1 + Vec2f(extent, 0.f);
-												auto p3 = p4 - Vec2f(extent, 0.f);
-												auto bb = rect_from_points(p1, p2, p3, p4);
-												auto pos = app.editor->select_anchor_begin * (app.editor->scale * 0.1f) + app.editor->c_base_element->global_pos;
-												if (rect_contains(bb, pos) && distance(bezier_closest_point(pos, p1, p2, p3, p4, 4, 7), pos) < line_width)
+												if (segment_intersect(lines[m], lines[m + 1], points[k], points[k + 1]))
 												{
-													app.select(input);
-													return true;
+													links.push_back(input);
 												}
 											}
 										}
 									}
 								}
-								else
-								{
-									auto p0 = app.editor->c_base_element->global_pos;
-									auto s = app.editor->scale * 0.1f;
-									auto r = rect_from_points(app.editor->select_anchor_begin * s + p0, app.editor->select_anchor_end * s + p0);
-									std::vector<BP::Node*> nodes;
-									for (auto i = 0; i < app.bp->node_count(); i++)
-									{
-										auto n = app.bp->node(i);
-										auto e = ((Entity*)n->user_data)->get_component(cElement);
-										if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
-											nodes.push_back(n);
-									}
-									app.select(nodes);
-								}
 							}
+
+							if (!links.empty())
+								app.select(links);
 						}
 						return true;
-					}, Mail<>());
+					}, new_mail_p(c_element));
 				}
 				utils::c_aligner(SizeFitParent, SizeFitParent);
 				utils::push_parent(utils::current_entity());

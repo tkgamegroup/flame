@@ -23,7 +23,7 @@ void MyApp::deselect()
 		editor->on_deselect();
 
 	selected_nodes.clear();
-	selected_link = nullptr;
+	selected_links.clear();
 }
 
 void MyApp::select(const std::vector<BP::Node*>& nodes)
@@ -35,10 +35,10 @@ void MyApp::select(const std::vector<BP::Node*>& nodes)
 		editor->on_select();
 }
 
-void MyApp::select(BP::Slot* link)
+void MyApp::select(const std::vector<BP::Slot*>& links)
 {
 	deselect();
-	selected_link = link;
+	selected_links = links;
 
 	if (editor)
 		editor->on_select();
@@ -122,11 +122,12 @@ void MyApp::delete_selected()
 			remove_node(s);
 		selected_nodes.clear();
 	}
-	if (selected_link)
+	if (!selected_links.empty())
 	{
-		selected_link->link_to(nullptr);
+		for (auto& s : selected_links)
+			s->link_to(nullptr);
+		selected_links.clear();
 		set_changed(true);
-		selected_link = nullptr;
 	}
 }
 
