@@ -5,7 +5,74 @@
 
 #include "app.h"
 
-const auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+struct Action
+{
+	virtual void undo() = 0;
+	virtual void redo() = 0;
+};
+
+struct Action_MoveNode : Action
+{
+	std::string id;
+	Vec2f prev_pos;
+	Vec2f after_pos;
+
+	void undo() override
+	{
+		auto n = app.bp->find_node(id.c_str());
+		if (n)
+		{
+			n->pos = prev_pos;
+			if (app.editor)
+				app.editor->on_pos_changed(n);
+		}
+	}
+
+	void redo() override
+	{
+		auto n = app.bp->find_node(id.c_str());
+		if (n)
+		{
+			n->pos = after_pos;
+			if (app.editor)
+				app.editor->on_pos_changed(n);
+		}
+	}
+};
+
+static std::vector<std::unique_ptr<Action>> actions;
+static auto action_idx = 0;
+
+static void add_action(Action* a)
+{
+	if (actions.size() > action_idx)
+		actions.erase(actions.begin() + action_idx, actions.end());
+	actions.emplace_back(a);
+	action_idx++;
+}
+
+void undo()
+{
+	if (action_idx > 0)
+	{
+		action_idx--;
+		actions[action_idx]->undo();
+
+		if (action_idx == 0)
+			app.set_changed(false);
+	}
+}
+
+void redo()
+{
+	if (action_idx < actions.size())
+	{
+		actions[action_idx]->redo();
+		action_idx++;
+
+		app.set_changed(true);
+	}
+}
 
 void MyApp::set_changed(bool v)
 {
@@ -15,6 +82,18 @@ void MyApp::set_changed(bool v)
 		if (editor)
 			editor->on_changed();
 	}
+}
+
+void MyApp::set_node_pos(BP::Node* n, const Vec2f& pos)
+{
+	auto a = new Action_MoveNode;
+	a->id = n->id();
+	a->prev_pos = n->pos;
+	a->after_pos = pos;
+	add_action(a);
+
+	n->pos = pos;
+	set_changed(true);
 }
 
 void MyApp::deselect()
@@ -215,6 +294,8 @@ void MyApp::update_gv()
 	}
 }
 
+const auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
+
 bool MyApp::generate_graph_image()
 {
 	update_gv();
@@ -380,6 +461,12 @@ bool MyApp::create(const char* filename)
 					}, Mail<>());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");
+					utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void* c) {
+						undo();
+					}, Mail<>());
+					utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void* c) {
+						redo();
+					}, Mail<>());
 					utils::e_menu_item((std::wstring(Icon_CLONE) + L"    Duplicate").c_str(), [](void* c) {
 						app.duplicate_selected();
 					}, Mail<>());

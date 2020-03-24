@@ -453,8 +453,7 @@ struct cNode : Component
 				default:
 					if (thiz->moved && !utils::is_active(thiz->event_receiver))
 					{
-						thiz->n->pos = thiz->element->pos_;
-						app.set_changed(true);
+						app.set_node_pos(thiz->n, thiz->element->pos_);
 						thiz->moved = false;
 					}
 				}
@@ -628,6 +627,14 @@ cEditor::cEditor() :
 						{
 							switch (value)
 							{
+							case Key_Z:
+								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+									undo();
+								break;
+							case Key_Y:
+								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+									redo();
+								break;
 							case Key_D:
 								if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
 									app.duplicate_selected();
@@ -767,6 +774,11 @@ void cEditor::on_select()
 		if (e)
 			e->get_component(cElement)->set_frame_color(selected_col);
 	}
+}
+
+void cEditor::on_pos_changed(BP::Node* n)
+{
+	((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 }
 
 void cEditor::on_changed()

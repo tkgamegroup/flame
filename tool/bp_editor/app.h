@@ -28,6 +28,7 @@ struct cEditor : Component
 	virtual ~cEditor() override;
 	void on_deselect();
 	void on_select();
+	void on_pos_changed(BP::Node* n);
 	void on_changed();
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
@@ -45,6 +46,9 @@ struct cConsole : Component
 	cConsole();
 	virtual ~cConsole() override;
 };
+
+void undo();
+void redo();
 
 struct MyApp : App
 {
@@ -74,6 +78,7 @@ struct MyApp : App
 	}
 
 	void set_changed(bool v);
+	void set_node_pos(BP::Node*n, const Vec2f& pos);
 
 	void deselect();
 	void select(const std::vector<BP::Node*>& nodes);
