@@ -40,6 +40,21 @@ struct Action_MoveNode : Action
 	}
 };
 
+struct Action_AddNode : Action
+{
+	std::string id;
+
+	void undo() override
+	{
+
+	}
+
+	void redo() override
+	{
+
+	}
+};
+
 static std::vector<std::unique_ptr<Action>> actions;
 static auto action_idx = 0;
 
