@@ -198,10 +198,16 @@ cConsole::cConsole() :
 					{
 						if (tokens[1] == L"node")
 						{
-							auto n = app.add_node(w2s(tokens[2]).c_str(), (tokens[3] == L"-" ? "" : w2s(tokens[3])).c_str(), Vec2f(0.f));
-							n->pos = Vec2f(0.f);
+							NodeDesc d;
+							d.type = w2s(tokens[2]);
+							d.id = tokens[3] == L"-" ? "" : w2s(tokens[3]);
+							d.pos = 0.f;
+							auto n = app.add_node(d);
 							if (n)
+							{
+								app.set_changed(true);
 								log += wfmt(L"node added: %s", s2w(n->id()).c_str()) + L"\n";
+							}
 							else
 								log += L"bad udt name or id already exist\n";
 						}
@@ -230,7 +236,8 @@ cConsole::cConsole() :
 							auto n = app.bp->find_node(w2s(tokens[2]).c_str());
 							if (n)
 							{
-								app.remove_node(n);
+								app.remove_nodes({ n });
+								app.set_changed(true);
 								log += wfmt(L"node removed: %s", tokens[2].c_str()) + L"\n";
 							}
 							else

@@ -59,12 +59,9 @@ namespace flame
 
 	void cEventReceiverPrivate::on_left_world()
 	{
-		if (dispatcher)
-		{
-			((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
-			dispatcher->pending_update = true;
-			dispatcher = nullptr;
-		}
+		((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
+		dispatcher->pending_update = true;
+		dispatcher = nullptr;
 	}
 
 	void cEventReceiverPrivate::on_component_added(Component* c)

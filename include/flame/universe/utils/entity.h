@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/universe/components/timer.h>
 #include <flame/universe/components/data_keeper.h>
 
 namespace flame
@@ -15,6 +16,14 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void pop_parent();
 
 		FLAME_UNIVERSE_EXPORTS extern Entity* next_entity;
+
+		inline cTimer* c_timer(float interval)
+		{
+			auto c = cTimer::create();
+			c->interval = interval;
+			current_entity()->add_component(c);
+			return c;
+		}
 
 		inline cDataKeeper* c_data_keeper()
 		{

@@ -12,6 +12,7 @@
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
 #include <flame/universe/world.h>
+#include <flame/universe/systems/timer_management.h>
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
@@ -39,6 +40,7 @@ namespace flame
 		graphics::FontAtlas* font_atlas_pixel;
 
 		World* world;
+		sTimerManagement* s_timer_management;
 		sLayoutManagement* s_layout_management;
 		sEventDispatcher* s_event_dispatcher;
 		s2DRenderer* s_2d_renderer;
@@ -81,6 +83,8 @@ namespace flame
 
 			world = World::create();
 			world->add_object(window);
+			s_timer_management = sTimerManagement::create();
+			world->add_system(s_timer_management);
 			s_layout_management = sLayoutManagement::create();
 			world->add_system(s_layout_management);
 			s_event_dispatcher = sEventDispatcher::create();

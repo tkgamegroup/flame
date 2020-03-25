@@ -17,7 +17,7 @@ namespace flame
 				return;
 			update_list.push_back(l);
 			l->pending_update = true;
-			std::sort(update_list.begin(), update_list.end(), [](const cLayout* a, const cLayout* b) {
+			std::sort(update_list.begin(), update_list.end(), [](const auto& a, const auto& b) {
 				return a->entity->depth_ < b->entity->depth_;
 			});
 		}

@@ -443,19 +443,15 @@ struct cNode : Component
 				}
 				return true;
 			}, new_mail_p(this));
-			event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+			event_receiver->state_listeners.add([](void* c, EventReceiverState) {
 				auto thiz = *(cNode**)c;
-				switch (state)
+				if (thiz->moved && !utils::is_active(thiz->event_receiver))
 				{
-				case EventReceiverActive:
+					std::vector<Vec2f> poses;
+					for (auto& s : app.selected_nodes)
+						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos_);
+					app.set_node_pos(app.selected_nodes, poses);
 					thiz->moved = false;
-					break;
-				default:
-					if (thiz->moved && !utils::is_active(thiz->event_receiver))
-					{
-						app.set_node_pos(thiz->n, thiz->element->pos_);
-						thiz->moved = false;
-					}
 				}
 				return true;
 			}, new_mail_p(this));
@@ -1089,7 +1085,11 @@ void cEditor::on_add_node(BP::Node* n)
 									auto plus_pos = type.find('+');
 									auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
 									type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
-									auto nn = app.add_node(type.c_str(), "", n->pos);
+									NodeDesc d;
+									d.type = type;
+									d.id = "";
+									d.pos = n->pos;
+									auto nn = app.add_node(d);
 									for (auto i = 0; i < n->input_count(); i++)
 									{
 										if (i == idx)
@@ -1106,7 +1106,7 @@ void cEditor::on_add_node(BP::Node* n)
 										for (auto j = 0; j < src->link_count(); j++)
 											src->link(j)->link_to(dst);
 									}
-									app.remove_node(n);
+									app.remove_nodes({ n });
 									nn->set_id(id.c_str());
 								}, new_mail_p(input));
 							}
@@ -1386,7 +1386,11 @@ void cEditor::on_add_node(BP::Node* n)
 						auto plus_pos = type.find('+');
 						auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
 						type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size + 1) + std::string(type.begin() + plus_pos, type.end());
-						auto nn = app.add_node(type.c_str(), "", n->pos);
+						NodeDesc d;
+						d.type = type;
+						d.id = "";
+						d.pos = n->pos;
+						auto nn = app.add_node(d);
 						for (auto i = 0; i < n->input_count(); i++)
 						{
 							auto src = n->input(i);
@@ -1401,7 +1405,7 @@ void cEditor::on_add_node(BP::Node* n)
 							for (auto j = 0; j < src->link_count(); j++)
 								src->link(j)->link_to(dst);
 						}
-						app.remove_node(n);
+						app.remove_nodes({ n });
 						nn->set_id(id.c_str());
 					}
 				}, new_mail_p(n))->get_component(cElement);
@@ -1589,7 +1593,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							struct Capture
 							{
 								TypeTag t;
-								EnumInfo* e;
+								const char* s;
 								Vec2f p;
 							}capture;
 							capture.t = tag;
@@ -1597,11 +1601,17 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							l->remove_children(0, -1);
 							for (auto ei : enum_infos)
 							{
-								capture.e = ei;
+								capture.s = ei->name();
 								utils::push_parent(l);
 								utils::e_menu_item(s2w(ei->name()).c_str(), [](void* c) {
 									auto& capture = *(Capture*)c;
-									app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.e->name()) + ")").c_str(), "", capture.p);
+									NodeDesc d;
+									d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
+									d.type += capture.s;
+									d.type += ")";
+									d.id = "";
+									d.pos = capture.p;
+									app.add_node(d);
 								}, new_mail(&capture));
 								utils::pop_parent();
 							}
@@ -1642,7 +1652,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									utils::push_parent(capture.l);
 									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
 										auto& capture = *(_Capture*)c;
-										app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
+										NodeDesc d;
+										d.type = "Variable(";
+										d.type += capture.s;
+										d.type += ")";
+										d.id = "";
+										d.pos = capture.p;
+										app.add_node(d);
 									}, new_mail(&_capture));
 									utils::pop_parent();
 								}
@@ -1665,7 +1681,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									utils::push_parent(capture.l);
 									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
 										auto& capture = *(_Capture*)c;
-										app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
+										NodeDesc d;
+										d.type = "Array(1+";
+										d.type += capture.s;
+										d.type += ")";
+										d.id = "";
+										d.pos = capture.p;
+										app.add_node(d);
 									}, new_mail(&_capture));
 									utils::pop_parent();
 								}
@@ -1687,7 +1709,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							_capture.s = base_name;
 							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
-								auto n = app.add_node(((capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(") + std::string(capture.s) + ")").c_str(), "", capture.p);
+								NodeDesc d;
+								d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
+								d.type += capture.s;
+								d.type += ")";
+								d.id = "";
+								d.pos = capture.p;
+								auto n = app.add_node(d);
 								auto s = app.editor->pending_link_slot;
 								if (s)
 								{
@@ -1711,7 +1739,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								_capture.s = base_name;
 								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](void* c) {
 									auto& capture = *(_Capture*)c;
-									auto n = app.add_node(("Variable(" + std::string(capture.s) + ")").c_str(), "", capture.p);
+									NodeDesc d;
+									d.type = "Variable(";
+									d.type += capture.s;
+									d.type += ")";
+									d.id = "";
+									d.pos = capture.p;
+									auto n = app.add_node(d);
 									auto s = app.editor->pending_link_slot;
 									if (s)
 									{
@@ -1734,7 +1768,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							_capture.s = base_name;
 							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
-								auto n = app.add_node(("Array(1+" + std::string(capture.s) + ")").c_str(), "", capture.p);
+								NodeDesc d;
+								d.type = "Array(1+";
+								d.type += capture.s;
+								d.type += ")";
+								d.id = "";
+								d.pos = capture.p;
+								auto n = app.add_node(d);
 								auto s = app.editor->pending_link_slot;
 								if (s)
 								{
@@ -1749,26 +1789,31 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 					{
 						struct Capture
 						{
-							UdtInfo* u;
-							VariableInfo* v;
+							const char* us;
+							const char* vs;
 							Vec2f p;
 						}capture;
 						capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
 						for (auto& t : node_types)
 						{
-							capture.u = t.first;
-							capture.v = t.second;
+							capture.us = t.first->type()->name() + 2;
+							capture.vs = t.second ? t.second->name() : nullptr;
 							utils::e_menu_item(s2w(t.first->type()->name()).c_str(), [](void* c) {
 								auto& capture = *(Capture*)c;
-								auto n = app.add_node(capture.u->type()->name() + 2, "", capture.p);
+								NodeDesc d;
+								d.type = capture.us;
+								d.id = "";
+								d.pos = capture.p;
+								auto n = app.add_node(d);
 								auto s = app.editor->pending_link_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output(capture.v->name()));
+										s->link_to(n->find_output(capture.vs));
 									else
-										n->find_input(capture.v->name())->link_to(s);
+										n->find_input(capture.vs)->link_to(s);
 								}
+								app.set_changed(true);
 							}, new_mail(&capture));
 						}
 					}

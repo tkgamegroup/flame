@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include <flame/universe/systems/2d_renderer.h>
+#include <flame/universe/components/timer.h>
 #include <flame/universe/components/element.h>
 #include "text_private.h"
 #include <flame/universe/components/event_receiver.h>
@@ -13,26 +14,29 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
+		void* cusor_flash_callback;
 		void* key_listener;
 		void* mouse_listener;
 		void* focus_listener;
 		void* draw_cmd;
-		void* cusor_flash_event;
+
 		bool show_cursor;
 
 		cEditPrivate()
 		{
+			timer = nullptr;
 			element = nullptr;
 			text = nullptr;
 			event_receiver = nullptr;
 
 			cursor = 0;
 
+			cusor_flash_callback = nullptr;
 			key_listener = nullptr;
 			mouse_listener = nullptr;
 			focus_listener = nullptr;
 			draw_cmd = nullptr;
-			cusor_flash_event = nullptr;
+
 			show_cursor = false;
 		}
 
@@ -40,13 +44,14 @@ namespace flame
 		{
 			if (!entity->dying_)
 			{
+				timer->callbacks.remove(cusor_flash_callback);
 				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 				event_receiver->mouse_listeners.remove(focus_listener);
 			}
-			if (cusor_flash_event)
-				looper().remove_event(cusor_flash_event);
+			if (cusor_flash_callback)
+				looper().remove_event(cusor_flash_callback);
 		}
 
 		void flash_cursor(bool force = false)
@@ -62,7 +67,15 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
+			if (c->name_hash == FLAME_CHASH("cTimer"))
+			{
+				timer = (cTimer*)c;
+				cusor_flash_callback = timer->callbacks.add([](void* c) {
+					(*(cEditPrivate**)c)->flash_cursor();
+					return true;
+				}, new_mail_p(this));
+			}
+			else if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -190,22 +203,10 @@ namespace flame
 				focus_listener = event_receiver->focus_listeners.add([](void* c, bool focusing) {
 					auto thiz = *(cEditPrivate**)c;
 					if (focusing)
-					{
-						if (!thiz->cusor_flash_event)
-						{
-							thiz->cusor_flash_event = looper().add_event([](void* c, bool* go_on) {
-								(*(cEditPrivate**)c)->flash_cursor();
-								*go_on = true;
-							}, new_mail_p(thiz), 0.5f);
-						}
-					}
+						thiz->timer->start();
 					else
 					{
-						if (thiz->cusor_flash_event)
-						{
-							looper().remove_event(thiz->cusor_flash_event);
-							thiz->cusor_flash_event = nullptr;
-						}
+						thiz->timer->stop();
 						thiz->flash_cursor(true);
 					}
 					return true;

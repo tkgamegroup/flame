@@ -5,6 +5,59 @@
 
 #include "app.h"
 
+static BP::Node* _add_node(const std::string& type, const std::string& id, const Vec2f& pos)
+{
+	auto n = app.bp->add_node(type.c_str(), id.c_str());
+	if (!n)
+		return nullptr;
+	n->pos = pos;
+
+	if (app.editor)
+		app.editor->on_add_node(n);
+
+	return n;
+}
+
+static void _remove_node(BP::Node* n)
+{
+	if (app.editor)
+		app.editor->on_remove_node(n);
+	app.bp->remove_node(n);
+}
+
+static std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
+{
+	std::vector<BP::Node*> ret(models.size());
+	for (auto i = 0; i < models.size(); i++)
+	{
+		auto n = models[i];
+		ret[i] = _add_node(n->type(), "", n->pos + Vec2f(20.f));
+	}
+	for (auto i = 0; i < models.size(); i++)
+	{
+		auto n = ret[i];
+		for (auto j = 0; j < n->input_count(); j++)
+		{
+			n->input(j)->set_data(models[i]->input(j)->data());
+			auto link = models[i]->input(j)->link(0);
+			if (link)
+			{
+				auto nn = link->node();
+				for (auto k = 0; k < models.size(); k++)
+				{
+					if (nn == models[k])
+					{
+						link = ret[k]->output(link->index());
+						break;
+					}
+				}
+			}
+			n->input(j)->link_to(link);
+		}
+	}
+	return ret;
+}
+
 struct Action
 {
 	virtual void undo() = 0;
@@ -39,39 +92,104 @@ struct Action_ChangeID : Action
 	}
 };
 
-struct Action_MoveNode : Action
+struct Action_MoveNodes : Action
 {
-	std::string id;
-	Vec2f prev_pos;
-	Vec2f after_pos;
+	struct Target
+	{
+		std::string id;
+		Vec2f prev_pos;
+		Vec2f after_pos;
+	};
+	std::vector<Target> targets;
 
 	void undo() override
 	{
-		auto n = app.bp->find_node(id.c_str());
-		if (n)
+		for (auto& t : targets)
 		{
-			n->pos = prev_pos;
-			if (app.editor)
-				app.editor->on_pos_changed(n);
+			auto n = app.bp->find_node(t.id.c_str());
+			if (n)
+			{
+				n->pos = t.prev_pos;
+				if (app.editor)
+					app.editor->on_pos_changed(n);
+			}
 		}
 	}
 
 	void redo() override
 	{
-		auto n = app.bp->find_node(id.c_str());
-		if (n)
+		for (auto& t : targets)
 		{
-			n->pos = after_pos;
-			if (app.editor)
-				app.editor->on_pos_changed(n);
+			auto n = app.bp->find_node(t.id.c_str());
+			if (n)
+			{
+				n->pos = t.after_pos;
+				if (app.editor)
+					app.editor->on_pos_changed(n);
+			}
 		}
 	}
 };
 
 struct Action_AddNode : Action
 {
-	std::string type;
-	std::string id;
+	NodeDesc desc;
+
+	void undo() override
+	{
+		auto n = app.bp->find_node(desc.id.c_str());
+		if (n)
+			_remove_node(n);
+	}
+
+	void redo() override
+	{
+		_add_node(desc.type.c_str(), desc.id.c_str(), desc.pos);
+	}
+};
+
+struct Action_DuplicateNodes : Action
+{
+	std::vector<std::string> models;
+	std::vector<std::string> duplications;
+
+	void undo() override
+	{
+		for (auto& d : duplications)
+		{
+			auto n = app.bp->find_node(d.c_str());
+			if (n)
+				_remove_node(n);
+		}
+	}
+
+	void redo() override
+	{
+		std::vector<BP::Node*> nodes(models.size());
+		for (auto i = 0; i < models.size(); i++)
+			nodes[i] = app.bp->find_node(models[i].c_str());
+		auto new_nodes = _duplicate_nodes(nodes);
+		for (auto i = 0; i < models.size(); i++)
+			duplications[i] = new_nodes[i]->id();
+	}
+};
+
+struct Action_RemoveNode : Action
+{
+	void undo() override
+	{
+
+	}
+
+	void redo() override
+	{
+
+	}
+};
+
+struct Action_SetLinks : Action
+{
+
 };
 
 static std::vector<std::unique_ptr<Action>> actions;
@@ -83,6 +201,13 @@ static void add_action(Action* a)
 		actions.erase(actions.begin() + action_idx, actions.end());
 	actions.emplace_back(a);
 	action_idx++;
+}
+
+static Entity* e_notification;
+static void show_notification(const std::wstring& text)
+{
+	if (e_notification)
+		;
 }
 
 void undo()
@@ -103,6 +228,45 @@ void redo()
 	{
 		actions[action_idx]->redo();
 		action_idx++;
+
+		app.set_changed(true);
+	}
+}
+
+static void duplicate_selected()
+{
+	if (app.selected_nodes.empty())
+		return;
+
+	auto a = new Action_DuplicateNodes;
+	a->models.resize(app.selected_nodes.size());
+	for (auto i = 0; i < app.selected_nodes.size(); i++)
+		a->models[i] = app.selected_nodes[i]->id();
+
+	auto new_nodes = _duplicate_nodes(app.selected_nodes);
+	app.select(new_nodes);
+
+	a->duplications.resize(new_nodes.size());
+	for (auto i = 0; i < new_nodes.size(); i++)
+		a->duplications[i] = new_nodes[i]->id();
+
+	add_action(a);
+
+	app.set_changed(true);
+}
+
+static void remove_selected()
+{
+	if (!app.selected_nodes.empty())
+	{
+		app.remove_nodes(app.selected_nodes);
+		app.selected_nodes.clear();
+	}
+	if (!app.selected_links.empty())
+	{
+		for (auto& s : app.selected_links)
+			s->link_to(nullptr);
+		app.selected_links.clear();
 
 		app.set_changed(true);
 	}
@@ -133,15 +297,24 @@ void MyApp::set_id(BP::Node* n, const std::string& id)
 	set_changed(true);
 }
 
-void MyApp::set_node_pos(BP::Node* n, const Vec2f& pos)
+void MyApp::set_node_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& poses)
 {
-	auto a = new Action_MoveNode;
-	a->id = n->id();
-	a->prev_pos = n->pos;
-	a->after_pos = pos;
+	std::vector<Action_MoveNodes::Target> targets(nodes.size());
+	for (auto i = 0; i < nodes.size(); i++)
+	{
+		auto& src = nodes[i];
+		auto& dst = targets[i];
+		dst.id = src->id();
+		dst.prev_pos = src->pos;
+		dst.after_pos = poses[i];
+	}
+
+	auto a = new Action_MoveNodes;
+	a->targets = targets;
 	add_action(a);
 
-	n->pos = pos;
+	for (auto i = 0; i < nodes.size(); i++)
+		nodes[i]->pos = poses[i];
 
 	set_changed(true);
 }
@@ -173,116 +346,68 @@ void MyApp::select(const std::vector<BP::Slot*>& links)
 		editor->on_select();
 }
 
-BP::Library* MyApp::add_library(const wchar_t* filename)
+BP::Library* MyApp::add_library(const std::wstring& filename)
 {
-	auto l = bp->add_library(filename);
+	auto l = bp->add_library(filename.c_str());
 	if (l)
 		set_changed(true);
 	return l;
 }
 
-BP::Node* MyApp::add_node(const char* type_name, const char* id, const Vec2f& pos)
+void MyApp::remove_library(BP::Library* l)
 {
-	auto n = bp->add_node(type_name, id);
-	n->pos = pos;
-	if (editor)
-		editor->on_add_node(n);
-	if (!SUS::starts_with(id, "test_"))
-		set_changed(true);
+	app.bp->remove_library(l);
+	app.set_changed(true);
+}
+
+BP::Node* MyApp::add_node(const NodeDesc& desc)
+{
+	auto n = _add_node(desc.type, desc.id, desc.pos);
+	if (!n)
+		return nullptr;
+
+	auto a = new Action_AddNode;
+	a->desc.type = desc.type;
+	a->desc.id = n->id();
+	a->desc.pos = desc.pos;
+	add_action(a);
+
+	set_changed(true);
+
 	return n;
 }
 
-void MyApp::remove_library(BP::Library* l)
+void MyApp::remove_nodes(const std::vector<BP::Node*> nodes)
 {
-	looper().add_event([](void* c, bool*) {
-		auto l = *(BP::Library**)c;
-		app.bp->remove_library(l);
-		app.set_changed(true);
-	}, new_mail_p(l));
-}
+	for (auto& n : nodes)
+		_remove_node(n);
 
-void MyApp::remove_node(BP::Node* n)
-{
-	if (app.editor)
-		app.editor->on_remove_node(n);
-	n->scene()->remove_node(n);
 	set_changed(true);
-}
-
-void MyApp::duplicate_selected()
-{
-	std::vector<BP::Node*> new_nodes;
-	for (auto& s : selected_nodes)
-	{
-		auto n = add_node(s->type(), "", s->pos + Vec2f(20.f));
-		new_nodes.push_back(n);
-		for (auto i = 0; i < n->input_count(); i++)
-			n->input(i)->set_data(s->input(i)->data());
-	}
-	for (auto i = 0; i < new_nodes.size(); i++)
-	{
-		auto n = new_nodes[i];
-		for (auto j = 0; j < n->input_count(); j++)
-		{
-			auto link = selected_nodes[i]->input(j)->link(0);
-			if (link)
-			{
-				auto nn = link->node();
-				for (auto k = 0; k < selected_nodes.size(); k++)
-				{
-					if (nn == selected_nodes[k])
-					{
-						link = new_nodes[k]->output(link->index());
-						break;
-					}
-				}
-			}
-			n->input(j)->link_to(link);
-		}
-	}
-	select(new_nodes);
-}
-
-void MyApp::delete_selected()
-{
-	if (!selected_nodes.empty())
-	{
-		for (auto& s : selected_nodes)
-			remove_node(s);
-		selected_nodes.clear();
-	}
-	if (!selected_links.empty())
-	{
-		for (auto& s : selected_links)
-			s->link_to(nullptr);
-		selected_links.clear();
-		set_changed(true);
-	}
 }
 
 void MyApp::link_test_nodes()
 {
-	auto n_rt = app.bp->find_node("test_rt");
-	if (!n_rt)
-	{
-		n_rt = app.add_node("TestRenderTarget", "test_rt", Vec2f(0.f, 0.f));
-		n_rt->used_by_editor = true;
-	}
-	{
-		auto s = app.bp->find_input("rt_dst.type");
-		if (s)
-			s->link_to(n_rt->find_output("type"));
-	}
-	{
-		auto s = app.bp->find_input("rt_dst.v");
-		if (s)
-			s->link_to(n_rt->find_output("view"));
-	}
-	{
-		auto s = app.bp->find_input("make_cmd.cbs");
-		if (s)
-			s->link_to(n_rt->find_output("out"));
-	}
+	//auto n_rt = app.bp->find_node("test_rt");
+	//if (!n_rt)
+	//{
+	//	n_rt = app.add_node("TestRenderTarget", "test_rt", Vec2f(0.f, 0.f));
+	//	n_rt->used_by_editor = true;
+	//}
+	//{
+	//	auto s = app.bp->find_input("rt_dst.type");
+	//	if (s)
+	//		s->link_to(n_rt->find_output("type"));
+	//}
+	//{
+	//	auto s = app.bp->find_input("rt_dst.v");
+	//	if (s)
+	//		s->link_to(n_rt->find_output("view"));
+	//}
+	//{
+	//	auto s = app.bp->find_input("make_cmd.cbs");
+	//	if (s)
+	//		s->link_to(n_rt->find_output("out"));
+	//}
 }
 
 void MyApp::update_gv()
@@ -443,10 +568,10 @@ bool MyApp::create(const char* filename)
 					break;
 				case Key_D:
 					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						app.duplicate_selected();
+						duplicate_selected();
 					break;
 				case Key_Del:
-					app.delete_selected();
+					remove_selected();
 					break;
 				}
 			}
@@ -546,10 +671,10 @@ bool MyApp::create(const char* filename)
 						redo();
 					}, Mail<>());
 					utils::e_menu_item((std::wstring(Icon_CLONE) + L"    Duplicate").c_str(), [](void* c) {
-						app.duplicate_selected();
+						duplicate_selected();
 					}, Mail<>());
-					utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](void* c) {
-						app.delete_selected();
+					utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Remove").c_str(), [](void* c) {
+						remove_selected();
 					}, Mail<>());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"View");

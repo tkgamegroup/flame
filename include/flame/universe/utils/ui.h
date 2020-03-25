@@ -415,6 +415,7 @@ namespace flame
 		inline Entity* e_edit(float width, const wchar_t* text = nullptr)
 		{
 			auto e = e_empty();
+			c_timer(0.5f);
 			auto ce = c_element();
 			ce->size_.x() = width + 8.f;
 			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);

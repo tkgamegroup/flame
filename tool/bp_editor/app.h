@@ -51,6 +51,32 @@ struct cConsole : Component
 void undo();
 void redo();
 
+struct NodeDesc
+{
+	std::string type;
+	std::string id;
+	Vec2f pos;
+};
+
+struct InputSaving
+{
+	std::string data;
+	std::string link;
+};
+
+struct OutputSaving
+{
+	std::string data;
+	std::vector<std::string> links;
+};
+
+struct NodeSaving
+{
+	NodeDesc desc;
+	std::vector<InputSaving> inputs;
+	std::vector<OutputSaving> outputs;
+};
+
 struct MyApp : App
 {
 	std::filesystem::path filepath;
@@ -80,19 +106,16 @@ struct MyApp : App
 
 	void set_changed(bool v);
 	void set_id(BP::Node* n, const std::string& id);
-	void set_node_pos(BP::Node*n, const Vec2f& pos);
+	void set_node_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
 
 	void deselect();
 	void select(const std::vector<BP::Node*>& nodes);
 	void select(const std::vector<BP::Slot*>& links);
 
-	BP::Library* add_library(const wchar_t* filename);
-	BP::Node* add_node(const char* type_name, const char* id, const Vec2f& pos);
+	BP::Library* add_library(const std::wstring& filename);
 	void remove_library(BP::Library* l);
-	void remove_node(BP::Node* n);
-
-	void duplicate_selected();
-	void delete_selected();
+	BP::Node* add_node(const NodeDesc& desc);
+	void remove_nodes(const std::vector<BP::Node*> nodes);
 
 	void link_test_nodes();
 
@@ -101,7 +124,6 @@ struct MyApp : App
 	bool auto_set_layout();
 
 	bool create(const char* filename);
-	void load(const std::filesystem::path& filepath);
 };
 
 extern MyApp app;
