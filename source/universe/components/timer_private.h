@@ -5,8 +5,10 @@ namespace flame
 {
 	struct cTimerPrivate : cTimer
 	{
+		std::unique_ptr<Closure<void(void* c)>> callback;
+
 		sTimerManagement* management;
-		bool timing;
+		bool updating;
 
 		cTimerPrivate();
 		~cTimerPrivate();

@@ -16,11 +16,16 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void pop_parent();
 
 		FLAME_UNIVERSE_EXPORTS extern Entity* next_entity;
+		FLAME_UNIVERSE_EXPORTS extern uint next_component_id;
 
-		inline cTimer* c_timer(float interval)
+		inline cTimer* c_timer()
 		{
 			auto c = cTimer::create();
-			c->interval = interval;
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -28,6 +33,11 @@ namespace flame
 		inline cDataKeeper* c_data_keeper()
 		{
 			auto c = cDataKeeper::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}

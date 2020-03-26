@@ -31,15 +31,16 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
-		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint name_hash) const;
+		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint hash) const;
 
 		template <class T>
-		T* get_component_t(uint name_hash) const
+		T* get_component_t(uint hash) const
 		{
-			return (T*)get_component_plain(name_hash);
+			return (T*)get_component_plain(hash);
 		}
 
 #define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
+#define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
 
 		FLAME_UNIVERSE_EXPORTS Array<Component*> get_components() const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);

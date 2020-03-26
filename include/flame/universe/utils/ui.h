@@ -41,6 +41,11 @@ namespace flame
 		inline cElement* c_element()
 		{
 			auto c = cElement::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			c->pos_ = next_element_pos;
 			next_element_pos = Vec2f(0.f);
 			c->size_ = next_element_size;
@@ -52,6 +57,11 @@ namespace flame
 		inline cText* c_text()
 		{
 			auto c = cText::create(current_font_atlas());
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -59,6 +69,11 @@ namespace flame
 		inline cImage* c_image()
 		{
 			auto c = cImage::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -66,6 +81,11 @@ namespace flame
 		inline cEventReceiver* c_event_receiver()
 		{
 			auto c = cEventReceiver::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -73,6 +93,11 @@ namespace flame
 		inline cStyleColor* c_style_color()
 		{
 			auto c = cStyleColor::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -80,6 +105,11 @@ namespace flame
 		inline cStyleColor2* c_style_color2()
 		{
 			auto c = cStyleColor2::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -87,6 +117,11 @@ namespace flame
 		inline cStyleTextColor* c_style_text_color()
 		{
 			auto c = cStyleTextColor::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -94,6 +129,11 @@ namespace flame
 		inline cStyleTextColor2* c_style_text_color2()
 		{
 			auto c = cStyleTextColor2::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -101,6 +141,11 @@ namespace flame
 		inline cEdit* c_edit()
 		{
 			auto c = cEdit::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -108,6 +153,11 @@ namespace flame
 		inline cCheckbox* c_checkbox()
 		{
 			auto c = cCheckbox::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -115,6 +165,11 @@ namespace flame
 		inline cAligner* c_aligner(Alignx x, Aligny y)
 		{
 			auto c = cAligner::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			c->x_align_ = x;
 			c->y_align_ = y;
 			current_entity()->add_component(c);
@@ -124,6 +179,11 @@ namespace flame
 		inline cAligner* c_aligner(SizePolicy width_policy, SizePolicy height_policy)
 		{
 			auto c = cAligner::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			c->width_policy_ = width_policy;
 			c->height_policy_ = height_policy;
 			current_entity()->add_component(c);
@@ -133,6 +193,11 @@ namespace flame
 		inline cLayout* c_layout(LayoutType type = LayoutFree, bool width_fit_children = true, bool height_fit_children = true)
 		{
 			auto c = cLayout::create(type);
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			c->width_fit_children = width_fit_children;
 			c->height_fit_children = height_fit_children;
 			current_entity()->add_component(c);
@@ -142,6 +207,11 @@ namespace flame
 		inline cScrollbar* c_scrollbar()
 		{
 			auto c = cScrollbar::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -149,6 +219,11 @@ namespace flame
 		inline cSplitter* c_splitter(SplitterType type)
 		{
 			auto c = cSplitter::create(type);
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -156,6 +231,11 @@ namespace flame
 		inline cScrollbarThumb* c_scrollbar_thumb(ScrollbarType type)
 		{
 			auto c = cScrollbarThumb::create(type);
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -163,6 +243,11 @@ namespace flame
 		inline cList* c_list()
 		{
 			auto c = cList::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -170,6 +255,11 @@ namespace flame
 		inline cListItem* c_list_item()
 		{
 			auto c = cListItem::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -177,6 +267,11 @@ namespace flame
 		inline cTree* c_tree()
 		{
 			auto c = cTree::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -184,6 +279,11 @@ namespace flame
 		inline cTreeNode* c_tree_node()
 		{
 			auto c = cTreeNode::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -191,6 +291,11 @@ namespace flame
 		inline cTreeNodeTitle* c_tree_node_title()
 		{
 			auto c = cTreeNodeTitle::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -198,6 +303,11 @@ namespace flame
 		inline cTreeNodeArrow* c_tree_node_arrow()
 		{
 			auto c = cTreeNodeArrow::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -205,6 +315,11 @@ namespace flame
 		inline cTreeLeaf* c_tree_leaf()
 		{
 			auto c = cTreeLeaf::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -212,6 +327,11 @@ namespace flame
 		inline cMenu* c_menu(cMenu::Mode mode)
 		{
 			auto c = cMenu::create(mode);
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -219,6 +339,11 @@ namespace flame
 		inline cMenuItem* c_menu_item()
 		{
 			auto c = cMenuItem::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -226,6 +351,11 @@ namespace flame
 		inline cCombobox* c_combobox()
 		{
 			auto c = cCombobox::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -233,6 +363,11 @@ namespace flame
 		inline cComboboxItem* c_combobox_item()
 		{
 			auto c = cComboboxItem::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -240,6 +375,11 @@ namespace flame
 		inline cMoveable* c_moveable()
 		{
 			auto c = cMoveable::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -247,6 +387,11 @@ namespace flame
 		inline cBringToFront* c_bring_to_front()
 		{
 			auto c = cBringToFront::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -254,6 +399,11 @@ namespace flame
 		inline cDockerTab* c_docker_tab()
 		{
 			auto c = cDockerTab::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -261,6 +411,11 @@ namespace flame
 		inline cDockerStaticContainer* c_docker_static_container()
 		{
 			auto c = cDockerStaticContainer::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -415,7 +570,8 @@ namespace flame
 		inline Entity* e_edit(float width, const wchar_t* text = nullptr)
 		{
 			auto e = e_empty();
-			c_timer(0.5f);
+			next_component_id = FLAME_CHASH("edit");
+			c_timer()->interval = 0.5f;
 			auto ce = c_element();
 			ce->size_.x() = width + 8.f;
 			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);

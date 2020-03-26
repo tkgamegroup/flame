@@ -17,20 +17,22 @@ namespace flame
 
 		void add_to_update_list(cTimerPrivate* t)
 		{
-			if (t->timing)
+			if (t->updating)
 				return;
 			update_list.push_back(t);
-			t->timing = true;
+			t->updating = true;
 			std::sort(update_list.begin(), update_list.end(), [](const auto& a, const auto& b) {
-				return a->entity->depth_ < b->entity->depth_ || a->entity->index_ < b->entity->index_;
+				if (!a || !b)
+					return true;
+				return a->entity->depth_ < b->entity->depth_ && a->entity->index_ < b->entity->index_;
 			});
 		}
 
 		void remove_from_update_list(cTimerPrivate* t)
 		{
-			if (!t->timing)
+			if (!t->updating)
 				return;
-			t->timing = false;
+			t->updating = false;
 			for (auto it = update_list.begin(); it != update_list.end(); it++)
 			{
 				if ((*it) == t)
@@ -53,11 +55,19 @@ namespace flame
 			updating = true;
 			for (auto& t : update_list)
 			{
+				if (!t->entity->global_visible_)
+				{
+					t->updating = false;
+					t = nullptr;
+					need_clear = true;
+					continue;
+				}
+
 				t->_t += dt;
 				if (t->_t >= t->interval)
 				{
 					t->_t = 0;
-					t->callbacks.call();
+					t->callback->call();
 				}
 			}
 			if (need_clear)

@@ -44,5 +44,6 @@ namespace flame
 		}
 
 		Entity* next_entity = nullptr;
+		uint next_component_id = 0;
 	}
 }

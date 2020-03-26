@@ -49,9 +49,9 @@ namespace flame
 		}
 	}
 
-	Component* EntityPrivate::get_component_plain(uint name_hash)
+	Component* EntityPrivate::get_component_plain(uint hash)
 	{
-		auto it = components.find(name_hash);
+		auto it = components.find(hash);
 		if (it == components.end())
 			return nullptr;
 		return it->second.get();
@@ -72,7 +72,10 @@ namespace flame
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		assert(!get_component_plain(c->name_hash));
+		auto hash = c->name_hash;
+		if (c->id)
+			hash = hash_update(hash, c->id);
+		assert(!get_component_plain(hash));
 
 		c->entity = this;
 		if (world)
@@ -81,7 +84,7 @@ namespace flame
 			_c.second->on_component_added(c);
 		for (auto& _c : components)
 			c->on_component_added(_c.second.get());
-		components[c->name_hash].reset(c);
+		components[hash].reset(c);
 		c->on_added();
 		if (parent)
 		{

@@ -14,7 +14,6 @@ namespace flame
 {
 	struct cEditPrivate : cEdit
 	{
-		void* cusor_flash_callback;
 		void* key_listener;
 		void* mouse_listener;
 		void* focus_listener;
@@ -31,7 +30,6 @@ namespace flame
 
 			cursor = 0;
 
-			cusor_flash_callback = nullptr;
 			key_listener = nullptr;
 			mouse_listener = nullptr;
 			focus_listener = nullptr;
@@ -44,14 +42,12 @@ namespace flame
 		{
 			if (!entity->dying_)
 			{
-				timer->callbacks.remove(cusor_flash_callback);
+				timer->set_callback(nullptr, Mail<>());
 				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
 				event_receiver->mouse_listeners.remove(focus_listener);
 			}
-			if (cusor_flash_callback)
-				looper().remove_event(cusor_flash_callback);
 		}
 
 		void flash_cursor(bool force = false)
@@ -67,12 +63,11 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == FLAME_CHASH("cTimer"))
+			if (c->name_hash == FLAME_CHASH("cTimer") && c->id == FLAME_CHASH("edit"))
 			{
 				timer = (cTimer*)c;
-				cusor_flash_callback = timer->callbacks.add([](void* c) {
+				timer->set_callback([](void* c) {
 					(*(cEditPrivate**)c)->flash_cursor();
-					return true;
 				}, new_mail_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cElement"))
