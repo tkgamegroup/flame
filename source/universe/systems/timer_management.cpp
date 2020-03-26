@@ -33,6 +33,7 @@ namespace flame
 			if (!t->updating)
 				return;
 			t->updating = false;
+			t->reset();
 			for (auto it = update_list.begin(); it != update_list.end(); it++)
 			{
 				if ((*it) == t)
@@ -55,19 +56,45 @@ namespace flame
 			updating = true;
 			for (auto& t : update_list)
 			{
+				auto do_remove = false;
+
 				if (!t->entity->global_visible_)
+					do_remove = true;
+				else
 				{
-					t->updating = false;
-					t = nullptr;
-					need_clear = true;
-					continue;
+					auto do_call = false;
+
+					if ((t->max_time > 0.f || t->max_times > 0) && t->_total_time == 0.f)
+						t->callback->call();
+
+					t->_time += dt;
+					t->_total_time += dt;
+					if (t->_time >= t->interval)
+					{
+						t->_time = 0;
+						t->_times++;
+						t->callback->call();
+					}
+					if (t->max_time > 0.f && t->_total_time >= t->max_time)
+					{
+						t->_total_time = t->max_time;
+						t->callback->call();
+						do_remove = true;
+					}
+					if (t->max_times > 0 && t->_times >= t->max_times)
+					{
+						t->_times = t->max_times;
+						t->callback->call();
+						do_remove = true;
+					}
 				}
 
-				t->_t += dt;
-				if (t->_t >= t->interval)
+				if (do_remove)
 				{
-					t->_t = 0;
-					t->callback->call();
+					t->updating = false;
+					t->reset();
+					t = nullptr;
+					need_clear = true;
 				}
 			}
 			if (need_clear)

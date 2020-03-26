@@ -6,10 +6,13 @@ namespace flame
 {
 	struct cTimer : Component
 	{
-		float _t;
 		float interval;
-		int times;
-		float duration;
+		float max_time;
+		int max_times;
+
+		float _time;
+		float _total_time;
+		int _times;
 
 		cTimer() :
 			Component("cTimer")
@@ -18,7 +21,7 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void start();
 		FLAME_UNIVERSE_EXPORTS void stop();
-		FLAME_UNIVERSE_EXPORTS void set_callback(void(*callback)(void* c), const Mail<>& capture);
+		FLAME_UNIVERSE_EXPORTS void set_callback(void(*callback)(void* c), const Mail<>& capture, bool start = true);
 
 		FLAME_UNIVERSE_EXPORTS static cTimer* create();
 	};

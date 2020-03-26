@@ -7,10 +7,13 @@ namespace flame
 		management(nullptr),
 		updating(false)
 	{
-		_t = 0.f;
 		interval = 0.f;
-		times = -1;
-		duration = -1.f;
+		max_time = -1.f;
+		max_times = -1;
+
+		_time = 0.f;
+		_total_time = 0.f;
+		_times = 0;
 
 		auto c = new Closure<void(void* c)>;
 		c->function = nullptr;
@@ -22,20 +25,24 @@ namespace flame
 		stop();
 	}
 
+	void cTimerPrivate::reset()
+	{
+		_time = 0.f;
+		_total_time = 0.f;
+		_times = 0;
+	}
+
 	void cTimerPrivate::start()
 	{
 		if (!updating && callback->function)
-		{
-			_t = 0; 
 			management->add_to_update_list(this);
-		}
 	}
 
 	void cTimerPrivate::stop()
 	{
 		if (updating)
 		{
-			_t = 0;
+			reset();
 			management->remove_from_update_list(this);
 		}
 	}
@@ -61,13 +68,15 @@ namespace flame
 		((cTimerPrivate*)this)->stop();
 	}
 
-	void cTimer::set_callback(void(*callback)(void* c), const Mail<>& capture)
+	void cTimer::set_callback(void(*callback)(void* c), const Mail<>& capture, bool _start)
 	{
 		stop();
 		auto c = new Closure<void(void* c)>;
 		c->function = callback;
 		c->capture = capture;
 		((cTimerPrivate*)this)->callback.reset(c);
+		if (_start)
+			start();
 	}
 
 	cTimer* cTimer::create()

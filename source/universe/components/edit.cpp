@@ -68,7 +68,7 @@ namespace flame
 				timer = (cTimer*)c;
 				timer->set_callback([](void* c) {
 					(*(cEditPrivate**)c)->flash_cursor();
-				}, new_mail_p(this));
+				}, new_mail_p(this), false);
 			}
 			else if (c->name_hash == FLAME_CHASH("cElement"))
 			{

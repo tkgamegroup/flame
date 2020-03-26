@@ -55,6 +55,8 @@ namespace flame
 			key_receiving = nullptr;
 		if (er == drag_overing)
 			drag_overing = nullptr;
+		if (er == next_focusing)
+			next_focusing = (cEventReceiver*)INVALID_POINTER;
 		er->state = EventReceiverNormal;
 		er->state_listeners.call(EventReceiverNormal);
 	}

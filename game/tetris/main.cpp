@@ -1214,16 +1214,10 @@ struct MyApp : App
 		utils::push_parent(root);
 		utils::push_style_1u(utils::FontSize, 20);
 
-			{
-				auto e = utils::e_empty();
-				e->on_destroyed_listeners.add([](void* c) {
-					looper().remove_event(*(void**)c);
-					return true;
-				}, new_mail_p(looper().add_event([](void*, bool* go_on) {
-					app.do_game_logic();
-					*go_on = true;
-				}, Mail<>())));
-			}
+			utils::e_empty();
+			utils::c_timer()->set_callback([](void*) {
+				app.do_game_logic();
+			}, Mail<>());
 
 			if (game_mode == GameVS)
 				utils::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
@@ -1273,17 +1267,17 @@ struct MyApp : App
 				{
 					e_start_or_ready = utils::e_button(L"Start", [](void*) {
 						if ([]() {
-							auto only_you = true;
+							auto n = 0;
 							for (auto i = 1; i < app.players.size(); i++)
 							{
 								auto& p = app.players[i];
 								if (!p.id)
 									continue;
-								only_you = false;
 								if (!p.ready)
 									return false;
+								n++;
 							}
-							return !only_you;
+							return n != 0;
 						}())
 						{
 							for (auto i = 1; i < app.players.size(); i++)

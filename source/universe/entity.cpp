@@ -170,6 +170,8 @@ namespace flame
 		e->parent = this;
 		if (!e->world && world)
 			enter_world(world, e);
+		if (world)
+			e->update_visibility();
 		for (auto& c : components)
 		{
 			for (auto& _c : e->components)

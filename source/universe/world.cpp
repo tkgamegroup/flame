@@ -7,6 +7,7 @@ namespace flame
 	{
 		root.reset(new EntityPrivate);
 		root->world = this;
+		root->global_visible_ = true;
 	}
 
 	WorldPrivate::~WorldPrivate()
@@ -69,7 +70,6 @@ namespace flame
 
 	void WorldPrivate::update()
 	{
-		root->update_visibility();
 		for (auto& s : systems)
 		{
 			s->before_update_listeners.call();
