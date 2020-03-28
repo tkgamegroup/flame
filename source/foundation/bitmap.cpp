@@ -158,9 +158,6 @@ namespace flame
 			Vec2i pos;
 		};
 		std::vector<Tile> tiles;
-		auto output_dir = std::filesystem::canonical(output_path.parent_path());
-		if (output_dir.empty())
-			output_dir = get_curr_path().v;
 		for (auto i = 0; i < input_count; i++)
 		{
 			Tile t;

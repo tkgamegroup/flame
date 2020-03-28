@@ -1,0 +1,1 @@
+run art/pack_atlas.bat to generate the atlas in the first time or to update it

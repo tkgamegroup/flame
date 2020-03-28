@@ -64,9 +64,6 @@ namespace flame
 				{
 					auto do_call = false;
 
-					if ((t->max_time > 0.f || t->max_times > 0) && t->_total_time == 0.f)
-						t->callback->call();
-
 					t->_time += dt;
 					t->_total_time += dt;
 					if (t->_time >= t->interval)
@@ -78,13 +75,11 @@ namespace flame
 					if (t->max_time > 0.f && t->_total_time >= t->max_time)
 					{
 						t->_total_time = t->max_time;
-						t->callback->call();
 						do_remove = true;
 					}
 					if (t->max_times > 0 && t->_times >= t->max_times)
 					{
 						t->_times = t->max_times;
-						t->callback->call();
 						do_remove = true;
 					}
 				}
