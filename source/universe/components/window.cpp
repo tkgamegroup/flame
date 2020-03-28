@@ -273,10 +273,10 @@ namespace flame
 						pp->add_child(oth_docker, idx);
 						if (pp->name_hash() == FLAME_CHASH("docker_floating_container"))
 						{
-							auto aligner = oth_docker->get_component(cAligner);
-							aligner->set_x_align(AlignxLeft);
-							aligner->set_y_align(AlignyTop);
-							aligner->set_using_padding(true);
+							auto ca = oth_docker->get_component(cAligner);
+							ca->set_x_align(AlignxLeft);
+							ca->set_y_align(AlignyTop);
+							ca->set_using_padding(true);
 						}
 					}
 				}
@@ -680,9 +680,9 @@ namespace flame
 								auto docker_element = docker->get_component(cElement);
 								auto docker_aligner = docker->get_component(cAligner);
 								auto p = docker->parent();
-								auto docker_idx = docker->index_;
+								auto docker_idx = docker->index_; LayoutFree;
 								auto layout = Entity::create();
-								utils::make_docker_layout(layout, LayoutFree);
+								utils::make_docker_layout(layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
 
 								if (is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
 								{
@@ -719,9 +719,10 @@ namespace flame
 								auto new_docker_element = new_docker->get_component(cElement);
 								auto new_docker_aligner = new_docker->get_component(cAligner);
 								{
-									auto c_aligner = new_docker->get_component(cAligner);
-									c_aligner->set_x_align(AlignxFree);
-									c_aligner->set_y_align(AlignyFree);
+									auto ca = new_docker->get_component(cAligner);
+									ca->x_align_ = AlignxFree;
+									ca->y_align_ = AlignyFree;
+									ca->using_padding_ = false;
 								}
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
