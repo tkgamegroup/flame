@@ -29,6 +29,8 @@ An ECS Game Engine Based On Reflection.
 
 - cmake flame
 
+- run ./set_env.bat, add cmake into system environment path, rebot
+
 - regsvr32 msdia**.dll in visual studio's dia sdk i.e. "vs_path/DIA SDK/bin/amd64"
 
 - build typeinfogen first (in debug config)
