@@ -33,6 +33,10 @@ An ECS Game Engine Based On Reflection.
 
 - build typeinfogen first (in debug config)
 
+- build compiler
+
+- run renderpath/canvas/compile_debug.bat
+
 - build other porjects
   
 - enjoy
