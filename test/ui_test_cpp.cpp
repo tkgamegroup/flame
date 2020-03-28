@@ -59,7 +59,7 @@ struct MyApp : App
 						utils::e_text(L"Text Sdf");
 						utils::pop_font_atlas();
 						utils::next_entity = Entity::create();
-						utils::e_button(L"Click Me£¡", [](void* c) {
+						utils::e_button(L"Click Me!", [](void* c) {
 							(*(Entity**)c)->get_component(cText)->set_text(L"Click Me! :)");
 							printf("thank you for clicking me\n");
 						}, new_mail_p(utils::next_entity));

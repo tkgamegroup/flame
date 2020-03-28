@@ -226,6 +226,9 @@ namespace flame
 			auto list = list_item->list;
 			list_item->list = nullptr;
 
+			if (tabbar->child_count() > 1 && list && list->selected == entity)
+				list->set_selected(list->entity->child(0));
+
 			if (close)
 			{
 				pages->remove_child(page); // remove tab first will lead variable 'page' to be trash data
@@ -273,14 +276,10 @@ namespace flame
 							auto aligner = oth_docker->get_component(cAligner);
 							aligner->set_x_align(AlignxLeft);
 							aligner->set_y_align(AlignyTop);
+							aligner->set_using_padding(true);
 						}
 					}
 				}
-			}
-			else
-			{
-				if (list && list->selected == entity)
-					list->set_selected(list->entity->child(0));
 			}
 		}
 
