@@ -376,7 +376,7 @@ int main(int argc, char **args)
 		auto braces_level = 0;
 		for (auto i = 0; i < lines.size(); i++)
 		{
-			static std::regex reg_ns(R"(namespace\s+(\w+))");
+			static std::regex reg_ns(R"(^namespace\s+(\w+))");
 			static std::regex reg_R(R"(R\((.*)\))");
 			static std::regex reg_RV(R"(RV\((.*)\))");
 			static std::regex reg_RF(R"(RF\(([\~\w]+)\))");

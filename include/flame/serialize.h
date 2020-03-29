@@ -404,8 +404,24 @@ namespace flame
 		{
 			if (!str.empty())
 			{
-				str.erase(str.begin(), str.begin() + str.find_first_not_of(' '));
-				str.erase(str.begin() + str.find_last_not_of(' ') + 1, str.end());
+				auto begin = 0;
+				auto end = (int)str.size();
+				for (; begin < str.size(); begin++)
+				{
+					auto ch = str[begin];
+					if (ch != ' ' && ch != '\t')
+						break;
+				}
+				for (; end > 0; end--)
+				{
+					auto ch = str[end - 1];
+					if (ch != ' ' && ch != '\t')
+						break;
+				}
+				if (begin >= end)
+					str = "";
+				else
+					str = std::basic_string<CH>(str.begin() + begin, str.begin() + end);
 			}
 		}
 

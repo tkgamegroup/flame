@@ -72,6 +72,6 @@ endif()
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
 
 add_subdirectory(source)
+add_subdirectory(tool)
 add_subdirectory(test)
 add_subdirectory(game)
-add_subdirectory(tool)

@@ -4,4 +4,6 @@ set_target_properties(scene_editor PROPERTIES FOLDER "tool")
 target_link_libraries(scene_editor flame_foundation)
 target_link_libraries(scene_editor flame_graphics)
 target_link_libraries(scene_editor flame_universe)
+add_dependencies(scene_editor typeinfogen)
+add_dependencies(scene_editor compiler)
 

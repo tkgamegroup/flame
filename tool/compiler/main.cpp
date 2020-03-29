@@ -16,27 +16,15 @@ int main(int argc, char **args)
 			name = e.value;
 	}
 	for (auto& e : compile_otions.get_section_entries("libraries"))
-	{
-		auto l = e.value;
-		static FLAME_SAL(str, "{c}");
-		auto pos = l.find(str.s, 0, str.l);
-		while (pos != std::string::npos)
-		{
-			l = l.replace(pos, str.l, config);
-			pos = l.find(str.s, 0, str.l);
-		}
-		l = std::filesystem::canonical(l).string();
-		std::replace(l.begin(), l.end(), '\\', '/');
-		libraries.push_back(l);
-	}
+		libraries.push_back(e.value);
 
 	auto flame_path = std::string(getenv("FLAME_PATH"));
+	std::replace(flame_path.begin(), flame_path.end(), '\\', '/');
 
 	std::ofstream cmakelists(L"CMakeLists.txt");
 	cmakelists << "# THIS FILE IS AUTO GENERATED\n";
 	cmakelists << "cmake_minimum_required(VERSION 3.16.4)\n";
 	cmakelists << "project(" << name << ")\n";
-	std::replace(flame_path.begin(), flame_path.end(), '\\', '/');
 	cmakelists << "include(\"" << flame_path << "cmake_utils.cmake\")\n";
 	cmakelists << "add_definitions(-W0 -std:c++latest)\n";
 	cmakelists << "file(GLOB SOURCE_LIST \"*.h*\" \"*.c*\")\n";
@@ -44,7 +32,10 @@ int main(int argc, char **args)
 	cmakelists << "add_library(" << name << " SHARED ${SOURCE_LIST} \"${CMAKE_CURRENT_BINARY_DIR}/version.rc\")\n";
 	cmakelists << "target_include_directories(" << name << " PRIVATE \"" << flame_path << "include\")\n";
 	for (auto& l : libraries)
-		cmakelists << "target_link_libraries(" << name << " \"" << l << "\")\n";
+	{
+		cmakelists << "target_link_libraries(" << name << " debug \"" << flame_path << "bin/debug/" << l << "\")\n";
+		cmakelists << "target_link_libraries(" << name << " optimized \"" << flame_path << "bin/relwithdebinfo/" << l << "\")\n";
+	}
 
 	{
 		// reflect the setup about xml and json libraries so that can use xml/json easily
@@ -72,11 +63,13 @@ int main(int argc, char **args)
 		cmakelists.close();
 	}
 
-	std::wstring cmake_cmd(L"cmake ");
+	std::wstring vs_path = s2w(VS_LOCATION);
+
+	auto cmake_cmd = L"\"" + vs_path + L"/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe\" ";
 	cmake_cmd += L" -B build";
 	exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
 
-	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build %s", s2w(VS_LOCATION).c_str(), get_curr_path().v, s2w(config).c_str()).data());
+	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build %s", vs_path.c_str(), get_curr_path().v, s2w(config).c_str()).data());
 
 	system("pause");
 
