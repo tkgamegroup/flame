@@ -394,7 +394,7 @@ namespace flame
 	{
 		auto e = Entity::create();
 		e->set_name(src.attribute("name").value());
-		e->set_visible(src.attribute("visibility").as_bool());
+		e->set_visible(src.attribute("visible").as_bool());
 
 		for (auto n_c : src.child("components"))
 		{
@@ -447,7 +447,7 @@ namespace flame
 	{
 		auto n = dst.append_child("entity");
 		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
-		n.append_attribute("visibility").set_value(src->visible_ );
+		n.append_attribute("visible").set_value(src->visible_ );
 
 		if (!src->components.empty())
 		{
@@ -458,7 +458,7 @@ namespace flame
 
 				auto n_c = n_cs.append_child(c->name);
 
-				auto udt = find_udt(FLAME_HASH((std::string("D#Serializer_") + c->name).c_str()));
+				auto udt = find_udt(FLAME_HASH((std::string("D#flame::Serializer_") + c->name).c_str()));
 				assert(udt);
 				auto object = malloc(udt->size());
 				auto module = udt->db()->module();
@@ -506,7 +506,7 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file, (EntityPrivate*)e);
+		save_prefab(file_root, (EntityPrivate*)e);
 
 		file.save_file(filename);
 	}

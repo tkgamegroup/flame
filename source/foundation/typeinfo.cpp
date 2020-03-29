@@ -309,8 +309,13 @@ namespace flame
 		typeinfo_path.replace_extension(L".typeinfo");
 		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
 		{
-			auto typeinfogen_path = std::filesystem::path(getenv("FLAME_PATH"));
-			typeinfogen_path = typeinfogen_path / L"bin/debug/typeinfogen.exe";
+			auto typeinfogen_path = std::filesystem::path(get_app_path().str()) / L"typeinfogen.exe";
+			if (!std::filesystem::exists(typeinfogen_path))
+			{
+				printf("typeinfo out of date: %s, and cannot find typeinfogen\n", typeinfo_path.string().c_str());
+				assert(0);
+				return nullptr;
+			}
 			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_path.wstring()).c_str());
 		}
 
@@ -318,6 +323,7 @@ namespace flame
 		pugi::xml_node file_root;
 		if (!file.load_file(typeinfo_path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
 		{
+			printf("cannot find typeinfo: %s\n", typeinfo_path.string().c_str());
 			assert(0);
 			return nullptr;
 		}
