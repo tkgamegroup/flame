@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <BP>
   <libraries>
-    <library filename="build/{c}/bp.dll" />
+    <library directory="make_cmd" />
   </libraries>
 	<nodes>
 		<node type="flame::graphics::R_RenderTarget" id="rt_dst" pos="17.72;43.53">
