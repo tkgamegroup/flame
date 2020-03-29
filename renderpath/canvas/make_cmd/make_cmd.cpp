@@ -4,7 +4,7 @@
 #include <flame/graphics/shader.h>
 #include <flame/graphics/commandbuffer.h>
 
-#include "canvas.h"
+#include "../canvas.h"
 
 #include <flame/reflect_macros.h>
 

@@ -18,7 +18,7 @@ namespace flame
 
 		struct Library
 		{
-			FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
+			FLAME_FOUNDATION_EXPORTS const wchar_t* directory() const;
 			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
 		};
 
@@ -146,9 +146,9 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS uint library_count() const;
 		FLAME_FOUNDATION_EXPORTS Library* library(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Library* add_library(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS Library* add_library(const wchar_t* directory);
 		FLAME_FOUNDATION_EXPORTS void remove_library(Library* m);
-		FLAME_FOUNDATION_EXPORTS Library* find_library(const wchar_t* filename) const;
+		FLAME_FOUNDATION_EXPORTS Library* find_library(const wchar_t* directory) const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;

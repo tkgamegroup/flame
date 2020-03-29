@@ -12,8 +12,7 @@ namespace flame
 
 	struct LibraryPrivate : BP::Library
 	{
-		std::wstring filename;
-		std::filesystem::path absolute_filename;
+		std::wstring directory;
 		void* module;
 		TypeinfoDatabase* db;
 
@@ -120,9 +119,9 @@ namespace flame
 			file.close();
 		}
 
-		LibraryPrivate* add_library(const std::wstring& filename);
+		LibraryPrivate* add_library(const std::wstring& directory);
 		void remove_library(LibraryPrivate* m);
-		LibraryPrivate* find_library(const std::wstring& filename) const;
+		LibraryPrivate* find_library(const std::wstring& directory) const;
 
 		bool check_or_create_id(std::string& id, const std::string& type) const;
 		NodePrivate* add_node(const std::string& type, const std::string& id);
@@ -431,49 +430,74 @@ namespace flame
 		}
 	}
 
-	LibraryPrivate* BPPrivate::add_library(const std::wstring& _fn)
+	LibraryPrivate* BPPrivate::add_library(const std::wstring& _dir)
 	{
+		auto dir = _dir;
+		std::replace(dir.begin(), dir.end(), '\\', '/');
+		if (dir.empty())
+			return nullptr;
+		if (dir.back() == '/')
+			dir.erase(dir.begin() + dir.size() - 1);
+
 		for (auto& l : libraries)
 		{
-			if (l->filename == _fn)
+			if (l->directory == dir)
 				return nullptr;
 		}
 
-		auto fn = _fn;
+		std::wstring name;
+		auto abs_dir = std::filesystem::path(filename).parent_path() / dir;
+		if (!std::filesystem::exists(abs_dir))
+			return nullptr;
+		auto compile_otions = parse_ini_file(abs_dir / L"compile_otions.ini");
+		for (auto& e : compile_otions.get_section_entries(""))
 		{
-			std::wstring config_str;
-#ifdef NDEBUG
-			config_str = L"relwithdebinfo";
-#else
-			config_str = L"debug";
-#endif
-			static FLAME_SAL(str, L"{c}");
-			auto pos = fn.find(str.s, 0, str.l);
-			while (pos != std::wstring::npos)
+			if (e.key == "name")
 			{
-				fn = fn.replace(pos, str.l, config_str);
-				pos = fn.find(str.s, 0, str.l);
+				name = s2w(e.value) + L".dll";
+				break;
 			}
 		}
+		if (name.empty())
+			return nullptr;
 
-		std::filesystem::path absolute_filename = std::filesystem::path(filename).parent_path() / fn;
-		auto module = load_module(absolute_filename.c_str());
+		std::wstring config_str;
+#ifdef NDEBUG
+		config_str = L"relwithdebinfo";
+#else
+		config_str = L"debug";
+#endif
+
+		auto abs_path = abs_dir / L"build" / config_str / name;
+		if (!std::filesystem::exists(abs_path))
+		{
+			auto compiler_path = std::filesystem::path(get_app_path().str()) / L"compiler.exe";
+			if (!std::filesystem::exists(compiler_path))
+			{
+				wprintf(L"cannot find library: %s, and cannot find compiler\n", dir.c_str());
+				return nullptr;
+			}
+			auto last_curr_path = get_curr_path();
+			set_curr_path(abs_dir.c_str());
+			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(compiler_path.wstring() + L" " + config_str).c_str());
+			set_curr_path(last_curr_path.v);
+		}
+
+		auto module = load_module(abs_path.c_str());
 		if (!module)
 		{
-			printf("cannot add library %s\n", w2s(_fn).c_str());
+			wprintf(L"cannot add library %s\n", dir.c_str());
 			return nullptr;
 		}
-		absolute_filename = std::filesystem::canonical(absolute_filename);
 
 		auto m = new LibraryPrivate;
-		m->filename = _fn;
-		m->absolute_filename = absolute_filename;
+		m->directory = dir;
 		m->module = module;
-		m->db = TypeinfoDatabase::load(absolute_filename.c_str(), false, true);
+		m->db = TypeinfoDatabase::load(abs_path.c_str(), false, true);
 
 		libraries.emplace_back(m);
 
-		used_resources.push_back(_fn);
+		used_resources.push_back(dir + L"/build/{c}/" + name);
 		update_resources_file();
 
 		return m;
@@ -503,7 +527,7 @@ namespace flame
 
 				for (auto it = used_resources.begin(); it != used_resources.end(); it++)
 				{
-					if (*it == l->filename)
+					if (*it == l->directory)
 					{
 						used_resources.erase(it);
 						break;
@@ -518,12 +542,12 @@ namespace flame
 		}
 	}
 
-	LibraryPrivate* BPPrivate::find_library(const std::wstring& filename) const
+	LibraryPrivate* BPPrivate::find_library(const std::wstring& directory) const
 	{
 		auto& libraries = ((BPPrivate*)this)->libraries;
 		for (auto& l : libraries)
 		{
-			if (l->filename == filename)
+			if (l->directory == directory)
 				return l.get();
 		}
 		return nullptr;
@@ -880,9 +904,9 @@ namespace flame
 		update_resources_file();
 	}
 
-	const wchar_t* BP::Library::filename() const
+	const wchar_t* BP::Library::directory() const
 	{
-		return ((LibraryPrivate*)this)->filename.c_str();
+		return ((LibraryPrivate*)this)->directory.c_str();
 	}
 
 	TypeinfoDatabase* BP::Library::db() const
@@ -1051,9 +1075,9 @@ namespace flame
 		return ((BPPrivate*)this)->libraries[idx].get();
 	}
 
-	BP::Library* BP::add_library(const wchar_t* filename)
+	BP::Library* BP::add_library(const wchar_t* directory)
 	{
-		return ((BPPrivate*)this)->add_library(filename);
+		return ((BPPrivate*)this)->add_library(directory);
 	}
 
 	void BP::remove_library(BP::Library* m)
@@ -1061,9 +1085,9 @@ namespace flame
 		((BPPrivate*)this)->remove_library((LibraryPrivate*)m);
 	}
 
-	BP::Library* BP::find_library(const wchar_t* filename) const
+	BP::Library* BP::find_library(const wchar_t* directory) const
 	{
-		return ((BPPrivate*)this)->find_library(filename);
+		return ((BPPrivate*)this)->find_library(directory);
 	}
 
 	uint BP::node_count() const
@@ -1127,9 +1151,7 @@ namespace flame
 
 	BP* BP::create()
 	{
-		auto bp = new BPPrivate();
-		bp->add_library(L"flame_foundation.dll");
-		return bp;
+		return new BPPrivate();
 	}
 
 	BP* BP::create_from_file(const wchar_t* filename)
@@ -1150,19 +1172,10 @@ namespace flame
 			return nullptr;
 		}
 
-		struct LibraryDesc
-		{
-			std::wstring filename;
-		};
-		std::vector<LibraryDesc> library_descs;
+		std::vector<std::wstring> library_descs;
 
 		for (auto n_library : file_root.child("libraries"))
-		{
-			LibraryDesc library;
-
-			library.filename = s2w(n_library.attribute("filename").value());
-			library_descs.push_back(library);
-		}
+			library_descs.push_back(s2w(n_library.attribute("directory").value()));
 
 		struct DataDesc
 		{
@@ -1217,7 +1230,7 @@ namespace flame
 		bp->update_resources_file();
 
 		for (auto& l_d : library_descs)
-			bp->add_library(l_d.filename);
+			bp->add_library(l_d);
 
 		std::vector<TypeinfoDatabase*> dbs;
 		for (auto& l : bp->libraries)
@@ -1273,8 +1286,8 @@ namespace flame
 		auto n_libraries = file_root.append_child("libraries");
 		for (auto& l : bp->libraries)
 		{
-			auto n_module = n_libraries.append_child("library");
-			n_module.append_attribute("filename").set_value(w2s(l->filename).c_str());
+			auto n_module = n_libraries.append_child("directory");
+			n_module.append_attribute("directory").set_value(w2s(l->directory).c_str());
 		}
 
 		std::vector<TypeinfoDatabase*> dbs;

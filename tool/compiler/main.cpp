@@ -69,7 +69,7 @@ int main(int argc, char **args)
 	cmake_cmd += L" -B build";
 	exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
 
-	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/bp.sln\" /build %s", vs_path.c_str(), get_curr_path().v, s2w(config).c_str()).data());
+	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/%s.sln\" /build %s", vs_path.c_str(), get_curr_path().v, s2w(name).c_str(), s2w(config).c_str()).data());
 
 	system("pause");
 

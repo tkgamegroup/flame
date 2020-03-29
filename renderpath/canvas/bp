@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <BP>
 	<libraries>
-		<library filename="build/{c}/bp.dll" />
+		<library directory="make_cmd" />
 	</libraries>
 	<nodes>
 		<node type="EnumSingle(flame::graphics::SampleCount)" id="sc" pos="517.81;967.10">
