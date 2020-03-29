@@ -46,6 +46,8 @@ namespace flame
 			inline static Canvas* create(const wchar_t* filename, void* dst, uint dst_hash, void* cbs)
 			{
 				auto bp = BP::create_from_file(filename);
+				if (!bp)
+					return nullptr;
 				if (dst_hash == FLAME_CHASH("Swapchain"))
 					((graphics::Swapchain*)dst)->link_bp(bp, cbs);
 				bp->update();

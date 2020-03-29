@@ -269,6 +269,8 @@ static void remove_selected()
 		app.selected_links.clear();
 
 		app.set_changed(true);
+
+		app.s_2d_renderer->pending_update = true;
 	}
 }
 
@@ -602,14 +604,14 @@ bool MyApp::create(const char* filename)
 							for (auto i = 0; i < app.bp->library_count(); i++)
 							{
 								auto l = app.bp->library(i);
-								utils::e_list_item(l->filename());
+								utils::e_list_item(l->directory());
 								utils::c_data_keeper()->add_voidp_item(FLAME_CHASH("library"), l);
 							}
 							utils::e_end_list();
 							utils::e_end_scroll_view1();
 							utils::e_begin_layout(LayoutHorizontal, 4.f);
 							utils::e_button(L"Add", [](void* c) {
-								utils::e_input_dialog(L"file", [](void* c, bool ok, const wchar_t* text) {
+								utils::e_input_dialog(L"directory", [](void* c, bool ok, const wchar_t* text) {
 									if (ok && text[0])
 									{
 										auto l = app.add_library(text);
@@ -618,7 +620,7 @@ bool MyApp::create(const char* filename)
 										else
 										{
 											utils::push_parent(*(Entity**)c);
-											utils::e_list_item(l->filename());
+											utils::e_list_item(l->directory());
 											utils::c_data_keeper()->add_voidp_item(FLAME_CHASH("library"), l);
 											utils::pop_parent();
 										}
