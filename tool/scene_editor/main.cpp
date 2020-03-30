@@ -95,7 +95,7 @@ void MyApp::load(const std::filesystem::path& _filepath)
 	filepath = _filepath;
 	if (prefab)
 		prefab->parent()->remove_child(prefab);
-	prefab = Entity::create_from_file(u->world(0), filepath.c_str());
+	prefab = Entity::create_from_file(world, filepath.c_str());
 	if (editor)
 		editor->e_scene->add_child(prefab);
 }

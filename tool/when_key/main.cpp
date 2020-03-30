@@ -41,7 +41,7 @@ int main(int argc, char **args)
 		std::string c;
 	}capture;
 	capture.c = args[2];
-	add_global_key_listener(key, shift, ctrl, alt, [](void* c, KeyState action){
+	add_global_key_listener(key, shift, ctrl, alt, [](void* c, KeyStateFlags action) {
 		auto& capture = *(Capture*)c;
 
 		if (action == KeyStateDown)

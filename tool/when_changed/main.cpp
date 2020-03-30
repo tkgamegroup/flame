@@ -23,7 +23,7 @@ int main(int argc, char **args)
 	}capture;
 	capture.p = args[1];
 	capture.c = args[2];
-	add_file_watcher(std::filesystem::path(args[1]).parent_path().c_str(), [](void* c, FileChangeType type, const std::wstring& filename) {
+	add_file_watcher(std::filesystem::path(args[1]).parent_path().c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {
 		auto& capture = *(Capture*)c;
 
 		auto now_time = get_now_ns();

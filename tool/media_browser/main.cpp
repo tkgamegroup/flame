@@ -12,7 +12,9 @@ struct MyApp : App
 
 int main(int argc, char** args)
 {
-	app.create("Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	std::filesystem::path engine_path = getenv("FLAME_PATH");
+
+	app.create("Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
 
 	utils::set_current_entity(app.root);
 	utils::c_layout();

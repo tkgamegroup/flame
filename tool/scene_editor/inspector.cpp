@@ -58,19 +58,22 @@ void create_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 		cComponentDealer* d;
 		VariableInfo* v;
 		cText* drag_text;
+		cText* edit_text;
 	}capture;
 	capture.d = d;
 	capture.v = v;
 	capture.drag_text = e_edit->child(1)->get_component(cText);
-	e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+	capture.edit_text = e_edit->child(0)->get_component(cText);
+	capture.edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 		auto& capture = *(Capture*)c;
 		if (hash == FLAME_CHASH("text"))
 		{
-			auto text = ((cText*)t)->text();
+			auto text = capture.edit_text->text();
 			*(T*)((char*)capture.d->dummy + capture.v->offset()) = sto_s<T>(text);
 			capture.d->unserialize(capture.v->offset());
 			capture.drag_text->set_text(text);
 		}
+		return true;
 	}, new_mail(&capture));
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
@@ -87,6 +90,7 @@ void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 		VariableInfo* v;
 		int i;
 		cText* drag_text;
+		cText* edit_text;
 	}capture;
 	capture.d = d;
 	capture.v = v;
@@ -96,15 +100,17 @@ void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 		auto e_edit = utils::e_drag_edit(std::is_floating_point<T>::value);
 		capture.i = i;
 		capture.drag_text = e_edit->child(1)->get_component(cText);
-		e_edit->child(0)->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		capture.edit_text = e_edit->child(0)->get_component(cText);
+		capture.edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 			auto& capture = *(Capture*)c;
 			if (hash == FLAME_CHASH("text"))
 			{
-				auto text = ((cText*)t)->text();
+				auto text = capture.edit_text->text();
 				(*(Vec<N, T>*)((char*)capture.d->dummy + capture.v->offset()))[capture.i] = sto_s<T>(text);
 				capture.d->unserialize(capture.v->offset());
 				capture.drag_text->set_text(text);
 			}
+			return true;
 		}, new_mail(&capture));
 		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
 		utils::e_end_layout();
@@ -185,11 +191,11 @@ void cInspector::refresh()
 	else
 	{
 		begin_item(L"name");
-		auto c_text = utils::e_edit(100.f, s2w(app.selected->name()).c_str())->get_component(cText)
-			->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+		auto c_text = utils::e_edit(100.f, s2w(app.selected->name()).c_str())->get_component(cText);
+		c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
-				auto text = ((cText*)t)->text();
+				auto text = (*(cText**)c)->text();
 				app.selected->set_name(w2s(text).c_str());
 				if (app.hierarchy)
 				{
@@ -200,14 +206,16 @@ void cInspector::refresh()
 						item->get_component(cText)->set_text(text);
 				}
 			}
-		}, Mail<>());
+			return true;
+		}, new_mail_p(c_text));
 		end_item();
 		begin_item(L"visible");
-		auto checkbox = utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox)->
-			data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+		auto checkbox = utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox);
+		checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
-				app.selected->set_visible(((cCheckbox*)cb)->checked);
-		}, Mail<>());
+				app.selected->set_visible((*(cCheckbox**)c)->checked);
+			return true;
+		}, new_mail_p(checkbox));
 		end_item();
 
 		auto components = app.selected->get_components();
@@ -255,7 +263,7 @@ void cInspector::refresh()
 
 			auto e_name = utils::e_text(s2w(component->name).c_str());
 			e_name->get_component(cElement)->inner_padding_.z() = 4.f + utils::style_1u(utils::FontSize);
-			e_name->get_component(cText)->color = Vec4c(30, 40, 160, 255);
+			e_name->get_component(cText)->color_ = Vec4c(30, 40, 160, 255);
 			utils::c_layout();
 			utils::push_parent(e_name);
 			struct Capture
@@ -276,7 +284,7 @@ void cInspector::refresh()
 					capture.c->entity->remove_component(capture.c);
 				}, new_mail(&_capture));
 			}, new_mail(&capture))
-				->get_component(cText)->color = Vec4c(200, 40, 20, 255);
+				->get_component(cText)->color_ = Vec4c(200, 40, 20, 255);
 			utils::c_aligner(AlignxRight, AlignyFree);
 			utils::pop_parent();
 
@@ -303,17 +311,20 @@ void cInspector::refresh()
 						cComponentDealer* d;
 						VariableInfo* v;
 						EnumInfo* info;
+						cCombobox* cb;
 					}capture;
 					capture.d = c_dealer;
 					capture.v = v;
 					capture.info = info;
-					e_data->child(0)->get_component(cCombobox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+					capture.cb = e_data->child(0)->get_component(cCombobox);
+					capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 						auto& capture = *(Capture*)c;
 						if (hash == FLAME_CHASH("index"))
 						{
-							*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(((cCombobox*)cb)->idx)->value();
+							*(int*)((char*)capture.d->dummy + capture.v->offset()) = capture.info->item(capture.cb->idx)->value();
 							capture.d->unserialize(capture.v->offset());
 						}
+						return true;
 					}, new_mail(&capture));
 
 					auto c_tracker = new_u_object<cEnumSingleDataTracker>();
@@ -334,21 +345,24 @@ void cInspector::refresh()
 							cComponentDealer* d;
 							VariableInfo* v;
 							int vl;
+							cCheckbox* cb;
 						}capture;
 						capture.d = c_dealer;
 						capture.v = v;
 						capture.vl = info->item(k)->value();
-						e_data->child(k)->child(0)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+						capture.cb = e_data->child(k)->child(0)->get_component(cCheckbox);
+						capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 							auto& capture = *(Capture*)c;
 							if (hash == FLAME_CHASH("checkbox"))
 							{
 								auto pv = (int*)((char*)capture.d->dummy + capture.v->offset());
-								if (((cCheckbox*)cb)->checked)
+								if (capture.cb->checked)
 									(*pv) |= capture.vl;
 								else
 									(*pv) &= ~capture.vl;
 								capture.d->unserialize(capture.v->offset());
 							}
+							return true;
 						}, new_mail(&capture));
 					}
 
@@ -368,16 +382,19 @@ void cInspector::refresh()
 						{
 							cComponentDealer* d;
 							VariableInfo* v;
+							cCheckbox* cb;
 						}capture;
 						capture.d = c_dealer;
 						capture.v = v;
-						e_checkbox->get_component(cCheckbox)->data_changed_listeners.add([](void* c, Component* cb, uint hash, void*) {
+						capture.cb = e_checkbox->get_component(cCheckbox);
+						capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
 							auto& capture = *(Capture*)c;
 							if (hash == FLAME_CHASH("checkbox"))
 							{
-								*(bool*)((char*)capture.d->dummy + capture.v->offset()) = ((cCheckbox*)cb)->checked;
+								*(bool*)((char*)capture.d->dummy + capture.v->offset()) = capture.cb->checked;
 								capture.d->unserialize(capture.v->offset());
 							}
+							return true;
 						}, new_mail(&capture));
 
 						auto c_tracker = new_u_object<cBoolDataTracker>();
@@ -440,16 +457,19 @@ void cInspector::refresh()
 						{
 							cComponentDealer* d;
 							VariableInfo* v;
+							cText* t;
 						}capture;
 						capture.d = c_dealer;
 						capture.v = v;
-						e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+						capture.t = e_edit->get_component(cText);
+						capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 							auto& capture = *(Capture*)c;
 							if (hash == FLAME_CHASH("text"))
 							{
-								*(StringA*)((char*)capture.d->dummy + capture.v->offset()) = w2s(((cText*)t)->text());
+								*(StringA*)((char*)capture.d->dummy + capture.v->offset()) = w2s(capture.t->text());
 								capture.d->unserialize(capture.v->offset());
 							}
+							return true;
 						}, new_mail(&capture));
 
 						auto c_tracker = new_u_object<cStringADataTracker>();
@@ -464,16 +484,19 @@ void cInspector::refresh()
 						{
 							cComponentDealer* d;
 							VariableInfo* v;
+							cText* t;
 						}capture;
 						capture.d = c_dealer;
 						capture.v = v;
-						e_edit->get_component(cText)->data_changed_listeners.add([](void* c, Component* t, uint hash, void*) {
+						capture.t = e_edit->get_component(cText);
+						capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
 							auto& capture = *(Capture*)c;
 							if (hash == FLAME_CHASH("text"))
 							{
-								*(StringW*)((char*)capture.d->dummy + capture.v->offset()) = ((cText*)t)->text();
+								*(StringW*)((char*)capture.d->dummy + capture.v->offset()) = capture.t->text();
 								capture.d->unserialize(capture.v->offset());
 							}
+							return true;
 						}, new_mail(&capture));
 
 						auto c_tracker = new_u_object<cStringWDataTracker>();

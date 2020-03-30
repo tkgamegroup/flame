@@ -11,7 +11,9 @@ using namespace graphics;
 struct cEditor : Component
 {
 	Entity* e_scene;
-	Vec2f mpos;
+	cElement* c_transform_tool_element;
+
+	int tool_type;
 
 	cEditor();
 	~cEditor() override;

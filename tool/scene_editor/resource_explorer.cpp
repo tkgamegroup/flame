@@ -45,6 +45,7 @@ struct cThumbnail : Component
 		{
 			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cThumbnail**)c)->draw(canvas);
+				return true;
 			}, new_mail_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cImage"))
@@ -113,13 +114,13 @@ cResourceExplorer::cResourceExplorer() :
 	Component("cResourceExplorer")
 {
 	auto canvas = app.canvas;
-	folder_img = Image::create_from_file(app.d, L"../art/ui/imgs/folder.png");
+	folder_img = Image::create_from_file(app.graphics_device, L"../art/ui/imgs/folder.png");
 	folder_img_v = Imageview::create(folder_img);
 	folder_img_idx = canvas->set_image(-1, folder_img_v);
-	file_img = Image::create_from_file(app.d, L"../art/ui/imgs/file.png");
+	file_img = Image::create_from_file(app.graphics_device, L"../art/ui/imgs/file.png");
 	file_img_v = Imageview::create(file_img);
 	file_img_idx = canvas->set_image(-1, file_img_v);
-	thumbnails_img = Image::create(app.d, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
+	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
 	thumbnails_img->init(Vec4c(255));
 	thumbnails_img_v = Imageview::create(thumbnails_img);
 	thumbnails_img_idx = canvas->set_image(-1, thumbnails_img_v, FilterNearest);
@@ -143,7 +144,7 @@ cResourceExplorer::cResourceExplorer() :
 		}
 	}
 
-	auto e_page = utils::e_begin_docker_window(L"Resource Explorer").second;
+	auto e_page = utils::e_begin_docker_page(L"Resource Explorer").second;
 	e_page->get_component(cElement)->inner_padding_ = 4.f;
 	{
 		auto c_layout = utils::c_layout(LayoutVertical);
@@ -197,7 +198,7 @@ cResourceExplorer::cResourceExplorer() :
 			utils::e_end_list();
 		utils::e_end_scroll_view1();
 
-	utils::e_end_docker_and_page();
+	utils::e_end_docker_page();
 
 	ev_file_changed = create_event(false);
 	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {
@@ -231,8 +232,9 @@ Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_i
 	auto e_item = utils::e_list_item(L"", false);
 	utils::c_layout(LayoutVertical)->item_padding = 4.f;
 	utils::push_parent(e_item);
-	utils::e_image(img_id << 16, Vec2f(64.f));
-	utils::e_text(app.font_atlas_pixel->slice_text_by_width(title.c_str(), title.size(), utils::style_1u(utils::FontSize), 64.f).v);
+	utils::next_element_size = 64.f;
+	utils::e_image(img_id << 16);
+	utils::e_text(app.font_atlas_pixel->wrap_text(utils::style_1u(utils::FontSize), 64.f, title.c_str(), title.c_str() + title.size()).v);
 	utils::pop_parent();
 	return e_item;
 }
@@ -339,8 +341,9 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			capture.p = p;
 			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
-				if (is_mouse_clicked(action, key, true))
+				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					app.resource_explorer->navigate(capture.p);
+				return true;
 			}, new_mail(&capture));
 			utils::push_parent(item);
 			utils::e_begin_popup_menu();
@@ -402,6 +405,7 @@ void cResourceExplorer::on_component_added(Component* c)
 	{
 		((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 			app.resource_explorer->draw(canvas);
+			return true;
 		}, Mail<>());
 	}
 }
