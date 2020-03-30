@@ -141,7 +141,17 @@ namespace flame
 						break;
 					}
 					items_element->set_scale(element->global_scale);
-					layer->add_child(items);
+					struct Capture
+					{
+						Entity* l;
+						Entity* i;
+					}capture;
+					capture.l = layer;
+					capture.i = items;
+					looper().add_event([](void* c, bool*) {
+						auto& capture = *(Capture*)c;
+						capture.l->add_child(capture.i);
+					}, new_mail(&capture));
 
 					opened = true;
 				}

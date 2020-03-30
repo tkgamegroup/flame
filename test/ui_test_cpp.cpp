@@ -107,49 +107,6 @@ struct MyApp : App
 
 				utils::e_end_layout();
 
-				utils::e_begin_popup_menu();
-					utils::next_entity = Entity::create();
-					utils::e_menu_item(L"Refresh", [](void* c) {
-						wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
-					utils::next_entity = Entity::create();
-					utils::e_menu_item(L"Save", [](void* c) {
-						wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
-					utils::next_entity = Entity::create();
-					utils::e_menu_item(L"Help", [](void* c) {
-						wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
-					utils::e_begin_sub_menu(L"add");
-						utils::next_entity = Entity::create();
-						utils::e_menu_item(L"Tree", [](void* c) {
-							wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
-						}, new_mail_p(utils::next_entity));
-						utils::next_entity = Entity::create();
-						utils::e_menu_item(L"Car", [](void* c) {
-							wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
-						}, new_mail_p(utils::next_entity));
-						utils::next_entity = Entity::create();
-						utils::e_menu_item(L"House", [](void* c) {
-							wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
-						}, new_mail_p(utils::next_entity));
-					utils::e_end_sub_menu();
-					utils::e_begin_sub_menu(L"Remove");
-						utils::next_entity = Entity::create();
-						utils::e_menu_item(L"Tree", [](void* c) {
-							wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
-						}, new_mail_p(utils::next_entity));
-						utils::next_entity = Entity::create();
-						utils::e_menu_item(L"Car", [](void* c) {
-							wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
-						}, new_mail_p(utils::next_entity));
-						utils::next_entity = Entity::create();
-						utils::e_menu_item(L"House", [](void* c) {
-							wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
-						}, new_mail_p(utils::next_entity));
-					utils::e_end_sub_menu();
-				utils::e_end_popup_menu();
-
 				{
 					auto e = utils::e_text(L"");
 					e->on_destroyed_listeners.add([](void* c) {
@@ -197,6 +154,49 @@ struct MyApp : App
 					utils::e_end_docker_layout();
 				utils::e_end_docker_layout();
 			utils::e_end_docker_floating_container();
+
+			utils::e_begin_popup_menu();
+				utils::next_entity = Entity::create();
+				utils::e_menu_item(L"Refresh", [](void* c) {
+					wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
+				}, new_mail_p(utils::next_entity));
+				utils::next_entity = Entity::create();
+				utils::e_menu_item(L"Save", [](void* c) {
+					wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
+				}, new_mail_p(utils::next_entity));
+				utils::next_entity = Entity::create();
+				utils::e_menu_item(L"Help", [](void* c) {
+					wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
+				}, new_mail_p(utils::next_entity));
+				utils::e_begin_sub_menu(L"Add");
+					utils::next_entity = Entity::create();
+					utils::e_menu_item(L"Tree", [](void* c) {
+						wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(utils::next_entity));
+					utils::next_entity = Entity::create();
+					utils::e_menu_item(L"Car", [](void* c) {
+						wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(utils::next_entity));
+					utils::next_entity = Entity::create();
+					utils::e_menu_item(L"House", [](void* c) {
+						wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(utils::next_entity));
+				utils::e_end_sub_menu();
+				utils::e_begin_sub_menu(L"Remove");
+					utils::next_entity = Entity::create();
+					utils::e_menu_item(L"Tree", [](void* c) {
+						wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(utils::next_entity));
+					utils::next_entity = Entity::create();
+					utils::e_menu_item(L"Car", [](void* c) {
+						wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(utils::next_entity));
+					utils::next_entity = Entity::create();
+					utils::e_menu_item(L"House", [](void* c) {
+						wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
+					}, new_mail_p(utils::next_entity));
+				utils::e_end_sub_menu();
+			utils::e_end_popup_menu();
 
 		utils::pop_parent();
 	}
