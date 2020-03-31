@@ -38,7 +38,7 @@ namespace flame
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cImagePrivate**)c)->draw(canvas);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 

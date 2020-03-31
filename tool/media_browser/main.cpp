@@ -30,7 +30,7 @@ int main(int argc, char** args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail<>());
+	}, Mail());
 
 	return 0;
 }

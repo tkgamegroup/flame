@@ -46,7 +46,7 @@ struct cThumbnail : Component
 			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cThumbnail**)c)->draw(canvas);
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cImage"))
 		{
@@ -59,7 +59,7 @@ struct cThumbnail : Component
 				auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
 				bitmap->swap_channel(0, 2);
 				thiz->thumbnail = bitmap;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 	}
 
@@ -102,7 +102,7 @@ struct cThumbnail : Component
 							image->uv0 = Vec2f(*thiz->seat) / thumbnails_img_size;
 							image->uv1 = Vec2f(*thiz->seat + thumbnail_size) / thumbnails_img_size;
 							image->color = Vec4c(255);
-						}, new_mail_p(this), 0.f, FLAME_CHASH("update thumbnail"));
+						}, Mail::from_p(this), 0.f, FLAME_CHASH("update thumbnail"));
 					}
 				}
 			}
@@ -180,8 +180,8 @@ cResourceExplorer::cResourceExplorer() :
 								Entity::save_to_file(e, (app.resource_explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
 								Entity::destroy(e);
 							}
-						}, Mail<>());
-					}, Mail<>());
+						}, Mail());
+					}, Mail());
 					utils::e_menu_item(L"New BP", [](void* c) {
 						utils::e_input_dialog(L"name", [](void* c, bool ok, const wchar_t* text) {
 							if (ok)
@@ -192,8 +192,8 @@ cResourceExplorer::cResourceExplorer() :
 								bp->save_to_file(bp, (p / L"bp").c_str());
 								BP::destroy(bp);
 							}
-						}, Mail<>());
-					}, Mail<>());
+						}, Mail());
+					}, Mail());
 				utils::e_end_popup_menu();
 			utils::e_end_list();
 		utils::e_end_scroll_view1();
@@ -203,7 +203,7 @@ cResourceExplorer::cResourceExplorer() :
 	ev_file_changed = create_event(false);
 	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {
 		set_event(app.resource_explorer->ev_file_changed);
-	}, Mail<>(), true, false);
+	}, Mail(), true, false);
 
 	navigate(base_path);
 }
@@ -256,7 +256,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		utils::e_button(Icon_LEVEL_UP, [](void* c) {
 			if (app.resource_explorer->curr_path != app.resource_explorer->base_path)
 				app.resource_explorer->navigate(app.resource_explorer->curr_path.parent_path());
-		}, Mail<>());
+		}, Mail());
 
 		std::vector<std::filesystem::path> stems;
 		for (auto p = curr_path; ; p = p.parent_path())
@@ -271,13 +271,13 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		{
 			struct Capture
 			{
-				std::wstring p;
+				wchar_t p[256];
 			}capture;
-			capture.p = s.wstring();
+			wcscpy_s(capture.p, s.c_str());
 			utils::e_button(s.filename().c_str(), [](void* c) {
 				auto& capture = *(Capture*)c;
 				app.resource_explorer->navigate(capture.p);
-			}, new_mail(&capture));
+			}, Mail::from_t(&capture));
 
 			std::vector<std::filesystem::path> sub_dirs;
 			for (std::filesystem::directory_iterator end, it(s); it != end; it++)
@@ -292,13 +292,13 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				{
 					struct Capture
 					{
-						std::wstring p;
+						wchar_t p[256];
 					}capture;
-					capture.p = p.wstring();
+					wcscpy_s(capture.p, s.c_str());
 					utils::e_menu_item(p.filename().c_str(), [](void* c) {
 						auto& capture = *(Capture*)c;
 						app.resource_explorer->navigate(capture.p);
-					}, new_mail(&capture));
+					}, Mail::from_t(&capture));
 				}
 				utils::e_end_button_menu();
 			}
@@ -336,22 +336,22 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			auto item = app.resource_explorer->create_listitem(p.filename().wstring(), app.resource_explorer->folder_img_idx);
 			struct Capture
 			{
-				std::filesystem::path p;
+				wchar_t p[256];
 			}capture;
-			capture.p = p;
+			wcscpy_s(capture.p, p.c_str());
 			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					app.resource_explorer->navigate(capture.p);
 				return true;
-			}, new_mail(&capture));
+			}, Mail::from_t(&capture));
 			utils::push_parent(item);
 			utils::e_begin_popup_menu();
 			utils::e_menu_item(L"Open", [](void* c) {
 				auto& capture = *(Capture*)c;
 				app.resource_explorer->selected = capture.p;
 				app.resource_explorer->navigate(app.resource_explorer->selected);
-			}, new_mail(&capture));
+			}, Mail::from_t(&capture));
 			utils::e_end_popup_menu();
 			utils::pop_parent();
 		}
@@ -377,26 +377,26 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				e_image->add_component(c_thumbnail);
 			}
 			utils::push_parent(item);
-			struct Capture
-			{
-				std::filesystem::path p;
-			}capture;
-			capture.p = p;
 			if (ext == L".prefab")
 			{
 				utils::e_begin_popup_menu();
+				struct Capture
+				{
+					wchar_t p[256];
+				}capture;
+				wcscpy_s(capture.p, p.c_str());
 				utils::e_menu_item(L"Open", [](void* c) {
 					auto& capture = *(Capture*)c;
 					app.resource_explorer->selected = capture.p;
 					app.load(app.resource_explorer->selected);
-				}, new_mail(&capture));
+				}, Mail::from_t(&capture));
 				utils::e_end_popup_menu();
 			}
 			utils::pop_parent();
 		}
 		utils::pop_style(utils::FrameColorNormal);
 		utils::pop_parent();
-	}, new_mail_p(this));
+	}, Mail::from_p(this));
 }
 
 void cResourceExplorer::on_component_added(Component* c)
@@ -406,7 +406,7 @@ void cResourceExplorer::on_component_added(Component* c)
 		((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
 			app.resource_explorer->draw(canvas);
 			return true;
-		}, Mail<>());
+		}, Mail());
 	}
 }
 

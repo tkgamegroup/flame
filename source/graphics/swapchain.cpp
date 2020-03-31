@@ -30,7 +30,7 @@ namespace flame
 				auto thiz = *(SwapchainPrivate**)c;
 				thiz->update();
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 
 			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
 		}

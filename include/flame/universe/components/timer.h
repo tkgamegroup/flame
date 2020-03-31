@@ -10,6 +10,7 @@ namespace flame
 		float max_time;
 		int max_times;
 
+		bool _updating;
 		float _time;
 		float _total_time;
 		int _times;
@@ -21,7 +22,8 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void start();
 		FLAME_UNIVERSE_EXPORTS void stop();
-		FLAME_UNIVERSE_EXPORTS void set_callback(void(*callback)(void* c), const Mail<>& capture, bool start = true);
+		FLAME_UNIVERSE_EXPORTS void reset();
+		FLAME_UNIVERSE_EXPORTS void set_callback(void(*callback)(void* c), const Mail& capture, bool start = true);
 
 		FLAME_UNIVERSE_EXPORTS static cTimer* create();
 	};

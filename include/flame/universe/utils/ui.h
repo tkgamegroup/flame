@@ -488,7 +488,7 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_button(const wchar_t* text, void(*func)(void* c) = nullptr, const Mail<>& mail = Mail<>(), bool use_style = true)
+		inline Entity* e_button(const wchar_t* text, void(*func)(void* c) = nullptr, const Mail& capture = Mail(), bool use_style = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
@@ -496,28 +496,18 @@ namespace flame
 			auto cer = c_event_receiver();
 			if (func)
 			{
-				struct WrapedMail
+				struct Capture
 				{
 					void(*f)(void*);
-					Mail<> m;
-
-					~WrapedMail()
-					{
-						delete_mail(m);
-						m.p = nullptr;
-					}
 				};
-				auto new_m = new_mail<WrapedMail>();
-				new_m.p->f = func;
-				new_m.p->m = mail;
+				auto m = Mail::take(capture, sizeof(Capture));
+				auto& new_capture = *(Capture*)m.p;
+				new_capture.f = func;
 				cer->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key))
-					{
-						auto& m = *(WrapedMail*)c;
-						m.f(m.m.p);
-					}
+						((Capture*)c)->f((char*)c + sizeof(Capture));
 					return true;
-				}, new_m);
+				}, m);
 			}
 			if (use_style)
 			{
@@ -634,7 +624,7 @@ namespace flame
 					capture.d->set_visible(true);
 				}
 				return true;
-			}, new_mail(&capture));
+			}, Mail::from_t(&capture));
 
 			capture.d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
@@ -660,7 +650,7 @@ namespace flame
 					}
 				}
 				return true;
-			}, new_mail(&capture));
+			}, Mail::from_t(&capture));
 
 			return e;
 		}
@@ -721,13 +711,13 @@ namespace flame
 				ce->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
 					*pass = true;
 					return true;
-				}, Mail<>());
+				}, Mail());
 				ce->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thumb = (*(cScrollbarThumb**)c);
 					if (is_mouse_scroll(action, key))
 						thumb->update(-pos.x() * 20.f);
 					return true;
-				}, new_mail_p(ct));
+				}, Mail::from_p(ct));
 				c_aligner(SizeFitParent, SizeFitParent);
 			}
 			pop_parent();
@@ -1028,39 +1018,32 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c), const Mail<>& mail, bool close_menu = true)
+		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c), const Mail& capture, bool close_menu = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
-			struct WrapedMail
+			struct Capture
 			{
 				Entity* root;
 				bool close;
 				void(*f)(void*);
-				Mail<> m;
-
-				~WrapedMail()
-				{
-					delete_mail(m);
-					m.p = nullptr;
-				}
 			};
-			auto new_m = new_mail<WrapedMail>();
-			new_m.p->root = current_root();
-			new_m.p->close = close_menu;
-			new_m.p->f = func;
-			new_m.p->m = mail;
+			auto m = Mail::take(capture, sizeof(Capture));
+			auto& new_capture = *(Capture*)m.p;
+			new_capture.root = current_root();
+			new_capture.close = close_menu;
+			new_capture.f = func;
 			c_event_receiver()->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					auto& m = *(WrapedMail*)c;
+					auto& m = *(Capture*)c;
 					if (m.close)
 						remove_top_layer(m.root);
-					m.f(m.m.p);
+					m.f((char*)c + sizeof(Capture));
 				}
 				return true;
-			}, new_m);
+			}, m);
 			c_menu_item();
 			auto cs = c_style_color();
 			cs->color_normal = style_4c(FrameColorNormal);
@@ -1114,8 +1097,8 @@ namespace flame
 						looper().add_event([](void* c, bool*) {
 							auto e = *(Entity**)c;
 							e->parent()->remove_child(e);
-						}, new_mail_p(e));
-					}, new_mail_p(e), false);
+						}, Mail::from_p(e));
+					}, Mail::from_p(e), false);
 					c_aligner(AlignxRight, AlignyFree);
 					pop_parent();
 				}
@@ -1129,7 +1112,7 @@ namespace flame
 				c_event_receiver()->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
 					*pass = true;
 					return true;
-				}, Mail<>());
+				}, Mail());
 				c_aligner(SizeFitParent, SizeFitParent);
 				c_bring_to_front();
 			}
@@ -1249,8 +1232,8 @@ namespace flame
 				looper().add_event([](void* c, bool*) {
 					auto thiz = (*(cDockerTab**)c);
 					thiz->take_away(true);
-				}, new_mail_p(thiz));
-			}, new_mail_p(cdt), false)->get_component(cText)->color_ = style_4c(TabTextColorElse);
+				}, Mail::from_p(thiz));
+			}, Mail::from_p(cdt), false)->get_component(cText)->color_ = style_4c(TabTextColorElse);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
 			pop_parent();
@@ -1302,51 +1285,43 @@ namespace flame
 			e_text(message);
 			e_button(L"OK", [](void* c) {
 				remove_top_layer(*(Entity**)c);
-			}, new_mail_p(current_root()));
+			}, Mail::from_p(current_root()));
 			c_aligner(AlignxMiddle, AlignyFree);
 			e_end_dialog();
 			return e;
 		}
 
-		inline Entity* e_confirm_dialog(const wchar_t* title, void (*callback)(void* c, bool yes), const Mail<>& m)
+		inline Entity* e_confirm_dialog(const wchar_t* title, void (*callback)(void* c, bool yes), const Mail& capture)
 		{
 			auto e = e_begin_dialog();
 			e_text(title);
 			e_begin_layout(LayoutHorizontal, 4.f);
 			c_aligner(AlignxMiddle, AlignyFree);
-			struct WrapedMail
+			struct Capture
 			{
-				void(*f)(void*, bool);
-				Mail<> m;
 				Entity* r;
-
-				~WrapedMail()
-				{
-					delete_mail(m);
-					m.p = nullptr;
-				}
+				void(*f)(void*, bool);
 			};
-			auto new_m = new_mail<WrapedMail>();
-			new_m.p->f = callback;
-			new_m.p->m = m;
-			new_m.p->r = current_root();
+			auto m = Mail::take(capture, sizeof(Capture));
+			auto& new_capture = *(Capture*)m.p;
+			new_capture.r = current_root();
+			new_capture.f = callback;
 			e_button(L"OK", [](void* c) {
-				auto& m = *(WrapedMail*)c;
+				auto& m = *(Capture*)c;
 				remove_top_layer(m.r);
-				m.f(m.m.p, true);
-			}, new_m);
+				m.f((char*)c + sizeof(Capture), true);
+			}, m);
 			e_button(L"Cancel", [](void* c) {
-				auto& m = *(WrapedMail*)c;
+				auto& m = *(Capture*)c;
 				remove_top_layer(m.r);
-				m.f(m.m.p, false);
-			}, new_m);
+				m.f((char*)c + sizeof(Capture), false);
+			}, m.duplicate());
 			e_end_layout();
 			e_end_dialog();
 			return e;
 		}
 
-		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail<>& m, 
-			const wchar_t* default_text = nullptr)
+		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail& capture, const wchar_t* default_text = nullptr)
 		{
 			auto e = e_begin_dialog();
 			e_text(title);
@@ -1355,34 +1330,27 @@ namespace flame
 				ct->set_text(default_text);
 			e_begin_layout(LayoutHorizontal, 4.f);
 			c_aligner(AlignxMiddle, AlignyFree);
-			struct WrapedMail
+			struct Capture
 			{
-				void(*f)(void*, bool, const wchar_t*);
-				Mail<> m;
 				Entity* r;
 				cText* t;
-
-				~WrapedMail()
-				{
-					delete_mail(m);
-					m.p = nullptr;
-				}
+				void(*f)(void*, bool, const wchar_t*);
 			};
-			auto new_m = new_mail<WrapedMail>();
-			new_m.p->f = callback;
-			new_m.p->m = m;
-			new_m.p->r = current_root();
-			new_m.p->t = ct;
+			auto m = Mail::take(capture, sizeof(Capture));
+			auto& new_capture = *(Capture*)m.p;
+			new_capture.r = current_root();
+			new_capture.t = ct;
+			new_capture.f = callback;
 			e_button(L"OK", [](void* c) {
-				auto& m = *(WrapedMail*)c;
+				auto& m = *(Capture*)c;
 				remove_top_layer(m.r);
-				m.f(m.m.p, true, m.t->text());
-			}, new_m);
+				m.f((char*)c + sizeof(Capture), true, m.t->text());
+			}, m);
 			e_button(L"Cancel", [](void* c) {
-				auto& m = *(WrapedMail*)c;
+				auto& m = *(Capture*)c;
 				remove_top_layer(m.r);
-				m.f(m.m.p, false, nullptr);
-			}, new_m);
+				m.f((char*)c + sizeof(Capture), false, nullptr);
+			}, m.duplicate());
 			e_end_layout();
 			e_end_dialog();
 			return e;
@@ -1410,13 +1378,13 @@ namespace flame
 				looper().add_event([](void* c, bool*) {
 					auto e = *(Entity**)c;
 					e->parent()->remove_child(e);
-				}, new_mail_p(e));
-			}, new_mail_p(e));
+				}, Mail::from_p(e));
+			}, Mail::from_p(e));
 			e_end_window();
 			e->on_destroyed_listeners.add([](void* c) {
 				looper().remove_event(*(void**)c);
 				return true;
-			}, new_mail_p(looper().add_event([](void* c, bool* go_on) {
+			}, Mail::from_p(looper().add_event([](void* c, bool* go_on) {
 				auto& capture = *(Capture*)c;
 				auto root = current_root();
 				{
@@ -1493,7 +1461,7 @@ namespace flame
 					capture.txt_drag_overing->set_text(str.c_str());
 				}
 				*go_on = true;
-			}, new_mail(&capture))));
+			}, Mail::from_t(&capture))));
 			pop_parent();
 			return e;
 		}

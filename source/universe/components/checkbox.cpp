@@ -40,7 +40,7 @@ namespace flame
 						thiz->set_checked(!thiz->checked);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{

@@ -252,78 +252,82 @@ namespace flame
 		}
 	};
 
-	template <class T = void>
 	struct Mail
 	{
-		T* p;
-		void* dtor;
-		uint udt_name_hash;
+		uint s;
+		void* p;
 
 		Mail() :
-			p(nullptr),
-			dtor(nullptr),
-			udt_name_hash(0)
+			s(0),
+			p(nullptr)
 		{
 		}
 
-		operator Mail<void>()
+		Mail(uint s) :
+			s(s),
+			p(f_malloc(s))
 		{
-			Mail<void> ret;
-			ret.p = p;
-			ret.dtor = dtor;
-			ret.udt_name_hash = udt_name_hash;
+		}
+
+		static Mail take(const Mail& oth, uint expand)
+		{
+			Mail ret;
+			ret.s = oth.s + expand;
+			if (expand == 0)
+				ret.p = oth.p;
+			else
+			{
+				ret.p = f_malloc(ret.s);
+				memcpy((char*)ret.p + expand, oth.p, oth.s);
+				f_free(oth.p);
+			}
+			return ret;
+		}
+
+		template<class T>
+		static Mail from_t(T* p)
+		{
+			Mail ret(sizeof(T));
+			memcpy(ret.p, p, sizeof(T));
+			return ret;
+		}
+
+		static Mail from_p(void* p)
+		{
+			Mail ret(sizeof(void*));
+			memcpy(ret.p, &p, sizeof(void*));
+			return ret;
+		}
+
+		Mail duplicate() const
+		{
+			Mail ret(s);
+			memcpy(ret.p, p, s);
 			return ret;
 		}
 	};
 
-	template <class T>
-	Mail<T> new_mail(const T* v = nullptr, uint udt_name_hash = 0)
-	{
-		auto p = f_malloc(sizeof(T));
-		if (v)
-			new(p) T(*v);
-		else
-			new(p) T;
-
-		Mail<T> ret;
-		ret.p = (T*)p;
-		ret.dtor = df2v<T>();
-		ret.udt_name_hash = udt_name_hash;
-
-		return ret;
-	}
-
-	inline Mail<void*> new_mail_p(void* p)
-	{
-		return new_mail(&p);
-	}
-
-	template <class T>
-	void delete_mail(const Mail<T>& m)
-	{
-		if (!m.p)
-			return;
-		if (m.dtor)
-			cmf(p2f<MF_v_v>(m.dtor), m.p);
-		f_free(m.p);
-	}
-
 	template <class F>
 	struct Closure
 	{
-		F* function;
-		Mail<> capture;
+		F* f;
+		Mail c;
 
-		template <class FF = F, class ...Args>
-		auto call(Args... args)
+		Closure(F* f, const Mail& c) :
+			f(f),
+			c(c)
 		{
-			return ((FF*)function)(capture.p, args...);
 		}
 
 		~Closure()
 		{
-			delete_mail(capture);
-			capture.p = nullptr;
+			f_free(c.p);
+		}
+
+		template <class FF = F, class ...Args>
+		auto call(Args... args)
+		{
+			return ((FF*)f)(c.p, args...);
 		}
 	};
 
@@ -333,7 +337,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
 		FLAME_FOUNDATION_EXPORTS uint count();
 		FLAME_FOUNDATION_EXPORTS Closure<bool(void*)>& item(uint idx);
-		FLAME_FOUNDATION_EXPORTS void* add_plain(bool(*pf)(void* c), const Mail<>& capture, int pos);
+		FLAME_FOUNDATION_EXPORTS void* add_plain(bool(*pf)(void* c), const Mail& capture, int pos);
 		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
 	};
 
@@ -342,7 +346,7 @@ namespace flame
 	{
 		ListenerHubImpl* impl;
 
-		void* add(F* pf, const Mail<>& capture, int pos = -1)
+		void* add(F* pf, const Mail& capture, int pos = -1)
 		{
 			return impl->add_plain((bool(*)(void* c))pf, capture, pos);
 		}
@@ -514,7 +518,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
 	enum FileChangeType
@@ -525,10 +529,10 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture, bool all_changes = true, bool sync = true);
+	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail& capture, bool all_changes = true, bool sync = true);
 	// set_event to returned ev to end the file watching
 
-	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(void* c), const Mail<>& capture);
+	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(void* c), const Mail& capture);
 	FLAME_FOUNDATION_EXPORTS void clear_all_works();
 	FLAME_FOUNDATION_EXPORTS void wait_all_works();
 
@@ -608,9 +612,9 @@ namespace flame
 		float delta_time; // second
 		float total_time; // second
 
-		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail<>& capture);
+		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail& capture);
 
-		FLAME_FOUNDATION_EXPORTS void* add_event(void (*func)(void* c, bool* go_on), const Mail<>& capture, float interval = 0.f, uint id = 0);
+		FLAME_FOUNDATION_EXPORTS void* add_event(void (*func)(void* c, bool* go_on), const Mail& capture, float interval = 0.f, uint id = 0);
 
 		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
 		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */
@@ -619,27 +623,21 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
 
-	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail<>& capture)
+	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail& capture)
 	{
 		struct Capture
 		{
 			uint last_frame;
 			void (*e)(void* c, uint fps);
-			Mail<> c;
-
-			~Capture()
-			{
-				delete_mail(c);
-			}
 		};
-		auto m = new_mail<Capture>();
-		m.p->last_frame = 0;
-		m.p->e = event;
-		m.p->c = capture;
+		auto m = Mail::take(capture, sizeof(Capture));
+		auto& new_capture = *(Capture*)m.p;
+		new_capture.last_frame = 0;
+		new_capture.e = event;
 		return looper().add_event([](void* c, bool* go_on) {
 			auto& capture = *(Capture*)c;
 			auto frame = looper().frame;
-			capture.e(capture.c.p, frame - capture.last_frame);
+			capture.e((char*)c + sizeof(Capture), frame - capture.last_frame);
 			capture.last_frame = frame;
 			*go_on = true;
 		}, m, 1.f);

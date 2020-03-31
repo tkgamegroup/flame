@@ -51,7 +51,7 @@ struct CanvasPrivate : Canvas
 	const Vec4f& scissor() override;
 	void set_scissor(const Vec4f& scissor) override;
 
-	void set_draw(void(*_draw)(void* c), const Mail<>& _capture) override;
+	void set_draw(void(*_draw)(void* c), const Mail& _capture) override;
 };
 
 struct Img
@@ -99,7 +99,7 @@ struct R(MakeCmd)
 	Vec4f curr_scissor;
 
 	void(*draw)(void*);
-	Mail<> capture;
+	Mail capture;
 
 	std::vector<Cmd> cmds;
 
@@ -114,7 +114,7 @@ struct R(MakeCmd)
 	__declspec(dllexport) RF(~MakeCmd)()
 	{
 		delete (CanvasPrivate*)canvas;
-		delete_mail(capture);
+		f_free(capture.p);
 	}
 
 	uint set_image(int index, Imageview * v, Filter filter, Atlas * atlas)
@@ -562,7 +562,7 @@ void CanvasPrivate::set_scissor(const Vec4f& scissor)
 	((MakeCmd*)mc)->set_scissor(scissor);
 }
 
-void CanvasPrivate::set_draw(void(*draw)(void* c), const Mail<>& capture)
+void CanvasPrivate::set_draw(void(*draw)(void* c), const Mail& capture)
 {
 	auto thiz = ((MakeCmd*)mc);
 	thiz->draw = draw;

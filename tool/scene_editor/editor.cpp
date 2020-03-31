@@ -50,13 +50,13 @@ cEditor::cEditor() :
 				else
 					app.editor->c_transform_tool_element->set_pos(Vec2f(-200.f));
 				return true;
-			}, new_mail_p(c_element));
+			}, Mail::from_p(c_element));
 		}
 		auto c_event_receiver = utils::c_event_receiver();
 		c_event_receiver->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
 			*pass = true;
 			return true;
-		}, Mail<>());
+		}, Mail());
 		c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
@@ -71,10 +71,10 @@ cEditor::cEditor() :
 						if (app.inspector)
 							app.inspector->refresh();
 					}
-				}, Mail<>());
+				}, Mail());
 			}
 			return true;
-		}, Mail<>());
+		}, Mail());
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 		utils::push_parent(e_overlayer);
 		{
@@ -108,7 +108,7 @@ cEditor::cEditor() :
 						}
 					}
 					return true;
-				}, new_mail(&capture));
+				}, Mail::from_t(&capture));
 				{
 				auto c_style = utils::c_style_color();
 				c_style->color_normal = Vec4c(100, 100, 100, 128);
@@ -148,7 +148,7 @@ cEditor::cEditor() :
 							}
 						}
 						return true;
-					}, new_mail(&capture));
+					}, Mail::from_t(&capture));
 
 					{
 						auto c_style = utils::c_style_color();
@@ -188,7 +188,7 @@ cEditor::cEditor() :
 							}
 						}
 						return true;
-					}, new_mail(&capture));
+					}, Mail::from_t(&capture));
 
 					{
 						auto c_style = utils::c_style_color();
@@ -207,7 +207,7 @@ cEditor::cEditor() :
 					if (hash == FLAME_CHASH("index"))
 						app.editor->tool_type = (*(cCombobox**)c)->idx;
 					return true;
-				}, new_mail_p(c_combobox));
+				}, Mail::from_p(c_combobox));
 			}
 		}
 		utils::pop_parent();

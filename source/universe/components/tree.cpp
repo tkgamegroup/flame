@@ -69,7 +69,7 @@ namespace flame
 						thiz->tree->set_selected(thiz->entity);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
@@ -148,7 +148,7 @@ namespace flame
 						thiz->tree->set_selected(thiz->entity->parent());
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
@@ -204,7 +204,7 @@ namespace flame
 						thiz->text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 	};
@@ -240,7 +240,7 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						(*(cTreePrivate**)c)->set_selected(nullptr);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 	};

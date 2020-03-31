@@ -28,22 +28,22 @@ struct MyApp : App
 								utils::style_set_to_dark();
 								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
 								app.create_widgets();
-							}, Mail<>());
-						}, Mail<>());
+							}, Mail());
+						}, Mail());
 						utils::e_menu_item(L"Light", [](void* c) {
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
 								utils::style_set_to_light();
 								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
 								app.create_widgets();
-							}, Mail<>());
-						}, Mail<>());
+							}, Mail());
+						}, Mail());
 					utils::e_end_menubar_menu();
 					utils::e_begin_menubar_menu(L"Window");
 						utils::e_menu_item(L"Reflector", [](void* c) {
 							utils::next_element_pos = Vec2f(100.f);
 							utils::e_reflector_window(app.s_event_dispatcher);
-						}, Mail<>());
+						}, Mail());
 					utils::e_end_menubar_menu();
 				utils::e_end_menu_bar();
 
@@ -62,7 +62,7 @@ struct MyApp : App
 						utils::e_button(L"Click Me!", [](void* c) {
 							(*(Entity**)c)->get_component(cText)->set_text(L"Click Me! :)");
 							printf("thank you for clicking me\n");
-						}, new_mail_p(utils::next_entity));
+						}, Mail::from_p(utils::next_entity));
 						utils::e_checkbox(L"Checkbox");
 						utils::next_element_size = 250.f;
 						{
@@ -112,9 +112,9 @@ struct MyApp : App
 					e->on_destroyed_listeners.add([](void* c) {
 						looper().remove_event(*(void**)c);
 						return true;
-					}, new_mail_p(add_fps_listener([](void* c, uint fps) {
+					}, Mail::from_p(add_fps_listener([](void* c, uint fps) {
 						(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-					}, new_mail_p(e->get_component(cText)))));
+					}, Mail::from_p(e->get_component(cText)))));
 				}
 			utils::e_end_layout();
 
@@ -159,42 +159,42 @@ struct MyApp : App
 				utils::next_entity = Entity::create();
 				utils::e_menu_item(L"Refresh", [](void* c) {
 					wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
-				}, new_mail_p(utils::next_entity));
+				}, Mail::from_p(utils::next_entity));
 				utils::next_entity = Entity::create();
 				utils::e_menu_item(L"Save", [](void* c) {
 					wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
-				}, new_mail_p(utils::next_entity));
+				}, Mail::from_p(utils::next_entity));
 				utils::next_entity = Entity::create();
 				utils::e_menu_item(L"Help", [](void* c) {
 					wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
-				}, new_mail_p(utils::next_entity));
+				}, Mail::from_p(utils::next_entity));
 				utils::e_begin_sub_menu(L"Add");
 					utils::next_entity = Entity::create();
 					utils::e_menu_item(L"Tree", [](void* c) {
 						wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
+					}, Mail::from_p(utils::next_entity));
 					utils::next_entity = Entity::create();
 					utils::e_menu_item(L"Car", [](void* c) {
 						wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
+					}, Mail::from_p(utils::next_entity));
 					utils::next_entity = Entity::create();
 					utils::e_menu_item(L"House", [](void* c) {
 						wprintf(L"Add %s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
+					}, Mail::from_p(utils::next_entity));
 				utils::e_end_sub_menu();
 				utils::e_begin_sub_menu(L"Remove");
 					utils::next_entity = Entity::create();
 					utils::e_menu_item(L"Tree", [](void* c) {
 						wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
+					}, Mail::from_p(utils::next_entity));
 					utils::next_entity = Entity::create();
 					utils::e_menu_item(L"Car", [](void* c) {
 						wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
+					}, Mail::from_p(utils::next_entity));
 					utils::next_entity = Entity::create();
 					utils::e_menu_item(L"House", [](void* c) {
 						wprintf(L"Remove %s!\n", (*(Entity**)c)->get_component(cText)->text());
-					}, new_mail_p(utils::next_entity));
+					}, Mail::from_p(utils::next_entity));
 				utils::e_end_sub_menu();
 			utils::e_end_popup_menu();
 
@@ -228,7 +228,7 @@ int main(int argc, char** args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail<>());
+	}, Mail());
 
 	return 0;
 }

@@ -145,7 +145,7 @@ struct cSlot : Component
 			looper().add_event([](void* c, bool*) {
 				auto e = *(Entity**)c;
 				e->parent()->remove_child(e);
-			}, new_mail_p(e));
+			}, Mail::from_p(e));
 		}
 	}
 
@@ -179,7 +179,7 @@ struct cSlot : Component
 					}
 				}
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cSlot**)c;
 				auto element = thiz->element;
@@ -250,7 +250,7 @@ struct cSlot : Component
 						looper().add_event([](void* c, bool*) {
 							auto e = *(Entity**)c;
 							e->parent()->remove_child(e);
-						}, new_mail_p(e));
+						}, Mail::from_p(e));
 					}
 				}
 				else if (action == BeenDropped)
@@ -269,7 +269,7 @@ struct cSlot : Component
 				}
 
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 			event_receiver->hover_listeners.add([](void* c, bool hovering) {
 				auto thiz = *(cSlot**)c;
 				auto s = thiz->s;
@@ -301,7 +301,7 @@ struct cSlot : Component
 				}
 
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 	}
 };
@@ -373,7 +373,7 @@ struct cNode : Component
 			looper().add_event([](void* c, bool*) {
 				auto e = *(Entity**)c;
 				e->parent()->remove_child(e);
-			}, new_mail_p(e));
+			}, Mail::from_p(e));
 		}
 	}
 
@@ -410,7 +410,7 @@ struct cNode : Component
 					thiz->moved = true;
 				}
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 			event_receiver->hover_listeners.add([](void* c, bool hovering) {
 				auto thiz = *(cNode**)c;
 				if (!hovering)
@@ -442,7 +442,7 @@ struct cNode : Component
 					}
 				}
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 			event_receiver->state_listeners.add([](void* c, EventReceiverState) {
 				auto thiz = *(cNode**)c;
 				if (thiz->moved && !utils::is_active(thiz->event_receiver))
@@ -454,7 +454,7 @@ struct cNode : Component
 					thiz->moved = false;
 				}
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 	}
 };
@@ -580,7 +580,7 @@ cEditor::cEditor() :
 					}
 
 					return true;
-				}, new_mail_p(c_element));
+				}, Mail::from_p(c_element));
 				{
 					auto c_event_receiver = utils::c_event_receiver();
 					c_event_receiver->focus_type = FocusByLeftOrRightButton;
@@ -617,7 +617,7 @@ cEditor::cEditor() :
 								app.editor->base_move(Vec2f(pos));
 						}
 						return true;
-					}, Mail<>());
+					}, Mail());
 					c_event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 						if (state != EventReceiverActive && app.editor->selecting)
 						{
@@ -697,7 +697,7 @@ cEditor::cEditor() :
 								app.select(links);
 						}
 						return true;
-					}, new_mail_p(c_element));
+					}, Mail::from_p(c_element));
 				}
 				utils::c_aligner(SizeFitParent, SizeFitParent);
 				utils::push_parent(utils::current_entity());
@@ -793,7 +793,7 @@ void create_edit(cEditor* editor, BP::Slot* input)
 			app.set_changed(true);
 		}
 		return true;
-	}, new_mail(&capture));
+	}, Mail::from_t(&capture));
 	utils::pop_style(utils::FontSize);
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
@@ -834,7 +834,7 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 				app.set_changed(true);
 			}
 			return true;
-		}, new_mail(&capture));
+		}, Mail::from_t(&capture));
 		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
 		utils::e_end_layout();
 	}
@@ -875,12 +875,12 @@ void cEditor::on_add_node(BP::Node* n)
 				utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
 					if (ok && text[0])
 						app.set_id(*(BP::Node**)c, w2s(text));
-				}, new_mail_p(n), s2w(n->id()).c_str());
-			}, new_mail_p(n));
+				}, Mail::from_p(n), s2w(n->id()).c_str());
+			}, Mail::from_p(n));
 			utils::e_menu_item(L"Duplicate", [](void* c) {
-			}, new_mail_p(n));
+			}, Mail::from_p(n));
 			utils::e_menu_item(L"Delete", [](void* c) {
-			}, new_mail_p(n));
+			}, Mail::from_p(n));
 		utils::e_end_popup_menu();
 	utils::push_parent(e_node);
 		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
@@ -906,7 +906,7 @@ void cEditor::on_add_node(BP::Node* n)
 			{
 				utils::e_button(L"Show", [](void* c) {
 					//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data());
-				}, new_mail_p(n));
+				}, Mail::from_p(n));
 			}
 			else if (type == "D#graphics::Shader")
 			{
@@ -954,7 +954,7 @@ void cEditor::on_add_node(BP::Node* n)
 									destroy_topmost(editor->entity, false);
 									editor->locked = false;
 								}
-							}, new_mail_p(capture.e));
+							}, Mail::from_p(capture.e));
 						}
 
 						auto e_compile = create_standard_button(app.font_atlas_pixel, 1.f, L"Compile");
@@ -1028,7 +1028,7 @@ void cEditor::on_add_node(BP::Node* n)
 										file.close();
 										i_filename->set_frame(capture.n->scene()->frame);
 									}
-								}, new_mail(&_capture));
+								}, Mail::from_t(&_capture));
 							}
 						}
 
@@ -1036,7 +1036,7 @@ void cEditor::on_add_node(BP::Node* n)
 						e_scrollbar_container->get_component(cAligner)->height_factor_ = 2.f / 3.f;
 						t->add_child(e_scrollbar_container);
 					}
-				}, new_mail(&capture));
+				}, Mail::from_t(&capture));
 				*/
 			}
 			utils::e_begin_layout(LayoutHorizontal, 16.f);
@@ -1067,9 +1067,9 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::current_entity()->add_component(c_slot);
 						utils::e_begin_popup_menu(false);
 							utils::e_menu_item(L"Break Links", [](void* c) {
-							}, new_mail_p(input));
+							}, Mail::from_p(input));
 							utils::e_menu_item(L"Reset Value", [](void* c) {
-							}, new_mail_p(input));
+							}, Mail::from_p(input));
 							if (c_node->n_type == 'A')
 							{
 								utils::e_menu_item(L"Remove Slot", [](void* c) {
@@ -1108,7 +1108,7 @@ void cEditor::on_add_node(BP::Node* n)
 									}
 									app.remove_nodes({ n });
 									nn->set_id(id.c_str());
-								}, new_mail_p(input));
+								}, Mail::from_p(input));
 							}
 						utils::e_end_popup_menu();
 
@@ -1152,7 +1152,7 @@ void cEditor::on_add_node(BP::Node* n)
 									app.set_changed(true);
 								}
 								return true;
-							}, new_mail(&capture));
+							}, Mail::from_t(&capture));
 
 							auto c_tracker = new_u_object<cEnumSingleDataTracker>();
 							c_tracker->data = input->data();
@@ -1192,7 +1192,7 @@ void cEditor::on_add_node(BP::Node* n)
 										app.set_changed(true);
 									}
 									return true;
-								}, new_mail(&capture));
+								}, Mail::from_t(&capture));
 							}
 
 							auto c_tracker = new_u_object<cEnumMultiDataTracker>();
@@ -1224,7 +1224,7 @@ void cEditor::on_add_node(BP::Node* n)
 										app.set_changed(true);
 									}
 									return true;
-								}, new_mail(&capture));
+								}, Mail::from_t(&capture));
 
 								auto c_tracker = new_u_object<cBoolDataTracker>();
 								c_tracker->data = input->data();
@@ -1296,7 +1296,7 @@ void cEditor::on_add_node(BP::Node* n)
 										app.set_changed(true);
 									}
 									return true;
-								}, new_mail(&capture));
+								}, Mail::from_t(&capture));
 
 								auto c_tracker = new_u_object<cStringADataTracker>();
 								c_tracker->data = input->data();
@@ -1320,7 +1320,7 @@ void cEditor::on_add_node(BP::Node* n)
 										app.set_changed(true);
 									}
 									return true;
-								}, new_mail(&capture));
+								}, Mail::from_t(&capture));
 
 								auto c_tracker = new_u_object<cStringWDataTracker>();
 								c_tracker->data = input->data();
@@ -1367,7 +1367,7 @@ void cEditor::on_add_node(BP::Node* n)
 						output->user_data = c_slot;
 						utils::e_begin_popup_menu(false);
 							utils::e_menu_item(L"Break Links", [](void* c) {
-							}, new_mail_p(output));
+							}, Mail::from_p(output));
 						utils::e_end_popup_menu();
 						utils::e_end_layout();
 					}
@@ -1408,7 +1408,7 @@ void cEditor::on_add_node(BP::Node* n)
 						app.remove_nodes({ n });
 						nn->set_id(id.c_str());
 					}
-				}, new_mail_p(n))->get_component(cElement);
+				}, Mail::from_p(n))->get_component(cElement);
 				c_element->inner_padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
 				c_element->roundness_ = 8.f;
 				c_element->roundness_lod = 2;
@@ -1421,14 +1421,14 @@ void cEditor::on_add_node(BP::Node* n)
 		utils::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
 			*pass = true;
 			return true;
-		}, Mail<>());
+		}, Mail());
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 		utils::c_bring_to_front();
 	utils::pop_parent();
 
 	looper().add_event([](void* c, bool*) {
 		app.editor->e_base->add_child(*(Entity**)c);
-	}, new_mail_p(e_node));
+	}, Mail::from_p(e_node));
 }
 
 void cEditor::on_remove_node(BP::Node* n)
@@ -1436,7 +1436,7 @@ void cEditor::on_remove_node(BP::Node* n)
 	looper().add_event([](void* c, bool*) {
 		auto e = *(Entity**)c;
 		e->parent()->remove_child(e);
-	}, new_mail_p(n->user_data));
+	}, Mail::from_p(n->user_data));
 }
 
 void cEditor::on_data_changed(BP::Slot* s)
@@ -1548,7 +1548,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 			app.editor->pending_link_slot = app.editor->dragging_slot;
 			app.editor->dragging_slot = nullptr;
 			return true;
-		}, Mail<>());
+		}, Mail());
 		utils::next_element_pos = pos;
 		auto c_element = utils::c_element();
 		c_element->inner_padding_ = 4.f;
@@ -1612,7 +1612,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									d.id = "";
 									d.pos = capture.p;
 									app.add_node(d);
-								}, new_mail(&capture));
+								}, Mail::from_t(&capture));
 								utils::pop_parent();
 							}
 						}
@@ -1626,15 +1626,15 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							looper().add_event([](void* c, bool*) {
 								auto& capture = *(Capture*)c;
 								capture.show_enums(TypeEnumSingle);
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
+							}, Mail::from_t(&capture));
+						}, Mail::from_t(&capture), false);
 						utils::e_menu_item(L"Enum Multi", [](void* c) {
 							auto& capture = *(Capture*)c;
 							looper().add_event([](void* c, bool*) {
 								auto& capture = *(Capture*)c;
 								capture.show_enums(TypeEnumMulti);
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
+							}, Mail::from_t(&capture));
+						}, Mail::from_t(&capture), false);
 						utils::e_menu_item(L"Variable", [](void* c) {
 							auto& capture = *(Capture*)c;
 							looper().add_event([](void* c, bool*) {
@@ -1659,11 +1659,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 										d.id = "";
 										d.pos = capture.p;
 										app.add_node(d);
-									}, new_mail(&_capture));
+									}, Mail::from_t(&_capture));
 									utils::pop_parent();
 								}
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
+							}, Mail::from_t(&capture));
+						}, Mail::from_t(&capture), false);
 						utils::e_menu_item(L"Array", [](void* c) {
 							auto& capture = *(Capture*)c;
 							looper().add_event([](void* c, bool*) {
@@ -1688,11 +1688,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 										d.id = "";
 										d.pos = capture.p;
 										app.add_node(d);
-									}, new_mail(&_capture));
+									}, Mail::from_t(&_capture));
 									utils::pop_parent();
 								}
-							}, new_mail(&capture));
-						}, new_mail(&capture), false);
+							}, Mail::from_t(&capture));
+						}, Mail::from_t(&capture), false);
 					}
 					else
 					{
@@ -1724,7 +1724,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									else
 										n->find_input("in")->link_to(s);
 								}
-							}, new_mail(&_capture));
+							}, Mail::from_t(&_capture));
 						}
 						else if (tag == TypeData && !is_array)
 						{
@@ -1754,7 +1754,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 										else
 											n->find_input("in")->link_to(s);
 									}
-								}, new_mail(&_capture));
+								}, Mail::from_t(&_capture));
 							}
 						}
 						else if (tag == TypePointer && is_array)
@@ -1783,7 +1783,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									else
 										n->find_input("0")->link_to(s);
 								}
-							}, new_mail(&_capture));
+							}, Mail::from_t(&_capture));
 						}
 					}
 					{
@@ -1814,7 +1814,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 										n->find_input(capture.vs)->link_to(s);
 								}
 								app.set_changed(true);
-							}, new_mail(&capture));
+							}, Mail::from_t(&capture));
 						}
 					}
 				utils::e_end_list();
@@ -1839,6 +1839,6 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 				item->set_visible(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
 			}
 			return true;
-		}, new_mail(&capture));
+		}, Mail::from_t(&capture));
 	}
 }

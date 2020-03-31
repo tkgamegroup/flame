@@ -82,7 +82,7 @@ int main(int argc, char** args)
 	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	app.canvas->set_draw([](void*) {
 		app.draw();
-	}, Mail<>());
+	}, Mail());
 
 	{
 		auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
@@ -103,7 +103,7 @@ int main(int argc, char** args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail<>());
+	}, Mail());
 
 	return 0;
 }

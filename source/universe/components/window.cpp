@@ -48,7 +48,7 @@ namespace flame
 					if (utils::is_active(thiz->event_receiver) && is_mouse_move(action, key))
 						thiz->element->set_pos((Vec2f)pos / thiz->element->global_scale, true, thiz);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 
@@ -97,11 +97,11 @@ namespace flame
 								if (idx == 0)
 									return;
 								pp->reposition_child(p, idx);
-							}, new_mail_p(thiz->entity));
+							}, Mail::from_p(thiz->entity));
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 
@@ -151,7 +151,7 @@ namespace flame
 					if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
 						thiz->p_element->set_size(Vec2f(pos), true);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 
@@ -298,7 +298,7 @@ namespace flame
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cDockerTabPrivate**)c)->draw(canvas);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
@@ -312,7 +312,7 @@ namespace flame
 						thiz->page_element->set_pos(Vec2f(pos), true);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 
 				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
@@ -321,7 +321,7 @@ namespace flame
 						thiz->floating = true;
 						looper().add_event([](void* c, bool*) {
 							(*(cDockerTabPrivate**)c)->take_away(false);
-						}, new_mail_p(thiz));
+						}, Mail::from_p(thiz));
 					}
 					else if (action == DragEnd)
 					{
@@ -361,11 +361,11 @@ namespace flame
 								page_aligner->set_height_policy(SizeFitParent);
 								thiz->page = nullptr;
 								thiz->page_element = nullptr;
-							}, new_mail_p(thiz));
+							}, Mail::from_p(thiz));
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cListItem"))
 				list_item = (cListItem*)c;
@@ -527,11 +527,11 @@ namespace flame
 								thiz->drop_idx = 0;
 
 								thiz->list->set_selected(e_tab);
-							}, new_mail_p(thiz));
+							}, Mail::from_p(thiz));
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cList"))
 			{
@@ -552,7 +552,7 @@ namespace flame
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 
@@ -799,11 +799,11 @@ namespace flame
 									layout->add_child(docker, 0);
 									layout->add_child(new_docker, 2);
 								}
-							}, new_mail_p(thiz));
+							}, Mail::from_p(thiz));
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 
@@ -906,11 +906,11 @@ namespace flame
 								page_element->set_alpha(1.f);
 								page_aligner->set_width_policy(SizeFitParent);
 								page_aligner->set_height_policy(SizeFitParent);
-							}, new_mail_p(thiz));
+							}, Mail::from_p(thiz));
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 	};

@@ -9,7 +9,7 @@ int main(int argc, char** args)
 		if (is_mouse_down(action, key))
 			(*(SysWindow**)c)->close();
 		return true;
-	}, new_mail_p(w));
+	}, Mail::from_p(w));
 
 	looper().loop([](void*) {
 	}, Mail());

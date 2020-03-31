@@ -8,7 +8,6 @@ namespace flame
 		std::unique_ptr<Closure<void(void* c)>> callback;
 
 		sTimerManagement* management;
-		bool updating;
 
 		cTimerPrivate();
 		~cTimerPrivate();

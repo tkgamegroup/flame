@@ -18,22 +18,22 @@ int main(int argc, char **args)
 
 	struct Capture
 	{
-		std::filesystem::path p;
-		std::string c;
+		char path[256];
+		char cmd[256];
 	}capture;
-	capture.p = args[1];
-	capture.c = args[2];
+	strcpy_s(capture.path, args[1]);
+	strcpy_s(capture.cmd, args[2]);
 	add_file_watcher(std::filesystem::path(args[1]).parent_path().c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {
 		auto& capture = *(Capture*)c;
 
 		auto now_time = get_now_ns();
-		if (capture.p == filename && now_time - last_change_time > 1'000'000'000)
+		if (std::filesystem::path(capture.path) == filename && now_time - last_change_time > 1'000'000'000)
 		{
 			printf("changed\n");
 
-			system(capture.c.c_str());
+			system(capture.cmd);
 		}
 		last_change_time = now_time;
 
-	}, new_mail(&capture), false);
+	}, Mail::from_t(&capture), false);
 }

@@ -83,7 +83,7 @@ namespace flame
 			canvas->set_draw([](void* c) {
 				auto thiz = *(s2DRendererPrivate**)c;
 				thiz->do_render((EntityPrivate*)thiz->world_->root());
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 
 			pending_update = false;
 		}

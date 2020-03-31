@@ -27,7 +27,7 @@ int main(int argc, char** args)
 	utils::c_aligner(AlignxLeft, AlignyBottom);
 	add_fps_listener([](void* c, uint fps) {
 		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, new_mail_p(utils::current_entity()->get_component(cText)));
+	}, Mail::from_p(utils::current_entity()->get_component(cText)));
 
 	utils::next_element_pos = Vec2f(16.f, 28.f);
 	utils::e_begin_layout(LayoutVertical, 16.f);
@@ -79,19 +79,19 @@ int main(int argc, char** args)
 						e_text->add_component(c_text);
 					}
 
-				}, new_mail_p(e));
-			}, new_mail_p(e_scene));
+				}, Mail::from_p(e));
+			}, Mail::from_p(e_scene));
 			utils::e_button(L"Clear Scene", [](void* c) {
 				auto e = *(void**)c;
 				looper().add_event([](void* c, bool*) {
 					(*(Entity**)c)->remove_children(0, -1);
-				}, new_mail_p(e));
-			}, new_mail_p(e_scene));
+				}, Mail::from_p(e));
+			}, Mail::from_p(e_scene));
 			utils::e_button(L"Save Scene", [](void* c) {
 				auto e_scene = *(Entity**)c;
 				if (e_scene->child_count() > 0)
 					Entity::save_to_file(e_scene->child(0), L"test.prefab");
-			}, new_mail_p(e_scene));
+			}, Mail::from_p(e_scene));
 			utils::e_button(L"Load Scene", [](void* c) {
 				auto e = *(void**)c;
 				looper().add_event([](void* c, bool*) {
@@ -99,8 +99,8 @@ int main(int argc, char** args)
 					e_scene->remove_children(0, -1);
 					if (std::filesystem::exists(L"test.prefab"))
 						e_scene->add_child(Entity::create_from_file(e_scene->world(), L"test.prefab"));
-				}, new_mail_p(e));
-			}, new_mail_p(e_scene));
+				}, Mail::from_p(e));
+			}, Mail::from_p(e_scene));
 		utils::e_end_layout();
 	utils::e_end_layout();
 
@@ -109,7 +109,7 @@ int main(int argc, char** args)
 	looper().loop([](void* c) {
 		auto app = (*(App**)c);
 		app->run();
-	}, new_mail_p(&app));
+	}, Mail::from_p(&app));
 
 	return 0;
 }

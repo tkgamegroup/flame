@@ -161,7 +161,7 @@ namespace flame
 						thiz->management->add_to_update_list(thiz);
 				}
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cAligner"))
 			aligner = (cAligner*)c;
@@ -255,7 +255,7 @@ namespace flame
 								break;
 							}
 							return true;
-						}, new_mail_p(this));
+						}, Mail::from_p(this));
 					}
 					void* aligner_data_listener = nullptr;
 					if (aligner)
@@ -267,7 +267,7 @@ namespace flame
 							if (thiz->management)
 								thiz->management->add_to_update_list(thiz);
 							return true;
-						}, new_mail_p(this));
+						}, Mail::from_p(this));
 					}
 					void* text_data_listener = nullptr;
 					if (text)
@@ -288,7 +288,7 @@ namespace flame
 								break;
 							}
 							return true;
-						}, new_mail_p(this));
+						}, Mail::from_p(this));
 					}
 					als.emplace_back(element, aligner, text, 
 						element_data_listener,

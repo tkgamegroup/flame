@@ -34,7 +34,7 @@ namespace flame
 				cer->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
 					*pass = true;
 					return true;
-				}, Mail<>());
+				}, Mail());
 				e_btf->add_component(cer);
 				auto ca = cAligner::create();
 				ca->width_policy_ = SizeFitParent;

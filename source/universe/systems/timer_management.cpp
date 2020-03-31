@@ -17,10 +17,10 @@ namespace flame
 
 		void add_to_update_list(cTimerPrivate* t)
 		{
-			if (t->updating)
+			if (t->_updating)
 				return;
 			update_list.push_back(t);
-			t->updating = true;
+			t->_updating = true;
 			std::sort(update_list.begin(), update_list.end(), [](const auto& a, const auto& b) {
 				if (!a || !b)
 					return true;
@@ -30,9 +30,9 @@ namespace flame
 
 		void remove_from_update_list(cTimerPrivate* t)
 		{
-			if (!t->updating)
+			if (!t->_updating)
 				return;
-			t->updating = false;
+			t->_updating = false;
 			t->reset();
 			for (auto it = update_list.begin(); it != update_list.end(); it++)
 			{
@@ -86,7 +86,7 @@ namespace flame
 
 				if (do_remove)
 				{
-					t->updating = false;
+					t->_updating = false;
 					t->reset();
 					t = nullptr;
 					need_clear = true;

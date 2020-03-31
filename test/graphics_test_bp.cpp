@@ -65,7 +65,7 @@ int main(int argc, char** args)
 	looper().loop([](void* c) {
 		auto app = (*(App * *)c);
 		app->run();
-	}, new_mail_p(&app));
+	}, Mail::from_p(&app));
 
 	return 0;
 }

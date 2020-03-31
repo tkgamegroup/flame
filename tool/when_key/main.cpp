@@ -38,9 +38,9 @@ int main(int argc, char **args)
 
 	struct Capture
 	{
-		std::string c;
+		char cmd[256];
 	}capture;
-	capture.c = args[2];
+	strcpy_s(capture.cmd, args[2]);
 	add_global_key_listener(key, shift, ctrl, alt, [](void* c, KeyStateFlags action) {
 		auto& capture = *(Capture*)c;
 
@@ -48,9 +48,9 @@ int main(int argc, char **args)
 		{
 			printf("pressed\n");
 
-			system(capture.c.c_str());
+			system(capture.cmd);
 		}
-	}, new_mail(&capture));
+	}, Mail::from_t(&capture));
 
 	do_simple_dispatch_loop();
 

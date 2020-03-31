@@ -37,7 +37,7 @@ namespace flame
 				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleColorPrivate**)c)->style();
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 				style();
 			}
 		}
@@ -110,7 +110,7 @@ namespace flame
 				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleColor2Private**)c)->style();
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 				style();
 			}
 		}
@@ -181,7 +181,7 @@ namespace flame
 				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleTextColorPrivate**)c)->style();
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 				style();
 			}
 		}
@@ -249,7 +249,7 @@ namespace flame
 				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleTextColor2Private**)c)->style();
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 				style();
 			}
 		}

@@ -227,14 +227,14 @@ namespace flame
 
 		void (*on_message)(void* c, const char* msg, uint size);
 		void (*on_close)(void* c);
-		Mail<> capture;
+		Mail capture;
 
 		std::recursive_mutex mtx;
 		void* ev_ended;
 
 		~ClientPrivate()
 		{
-			delete_mail(capture);
+			f_free(capture.p);
 			destroy_event(ev_ended);
 		}
 
@@ -259,7 +259,7 @@ namespace flame
 		::send(((ClientPrivate*)this)->fd, buf, size + sizeof(uint), 0);
 	}
 
-	Client* Client::create(SocketType type, const char* ip, uint port, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail<>& capture)
+	Client* Client::create(SocketType type, const char* ip, uint port, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail& capture)
 	{
 		init();
 
@@ -336,14 +336,14 @@ namespace flame
 
 			void (*on_message)(void* c, const char* msg, uint size);
 			void (*on_close)(void* c);
-			Mail<> capture;
+			Mail capture;
 
 			std::recursive_mutex mtx;
 			void* ev_ended;
 
 			~Client()
 			{
-				delete_mail(capture);
+				f_free(capture.p);
 				destroy_event(ev_ended);
 			}
 
@@ -375,7 +375,7 @@ namespace flame
 
 		void (*on_dgram)(void* c, void* id, const char* msg, uint size);
 		void (*on_connect)(void* c, void* id);
-		Mail<> capture;
+		Mail capture;
 
 		std::recursive_mutex mtx;
 		void* ev_ended_d;
@@ -383,7 +383,7 @@ namespace flame
 
 		~ServerPrivate()
 		{
-			delete_mail(capture);
+			f_free(capture.p);
 			destroy_event(ev_ended_d);
 			destroy_event(ev_ended_s);
 		}
@@ -406,7 +406,7 @@ namespace flame
 		}
 	};
 
-	void Server::set_client(void* id, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail<>& capture)
+	void Server::set_client(void* id, void on_message(void* c, const char* msg, uint size), void on_close(void* c), const Mail& capture)
 	{
 		auto client = (ServerPrivate::Client*)id;
 		client->on_message = on_message;
@@ -430,7 +430,7 @@ namespace flame
 		}
 	}
 
-	Server* Server::create(SocketType type, uint port, void on_dgram(void* c, void* id, const char* msg, uint size), void on_connect(void* c, void* id), const Mail<>& capture)
+	Server* Server::create(SocketType type, uint port, void on_dgram(void* c, void* id, const char* msg, uint size), void on_connect(void* c, void* id), const Mail& capture)
 	{
 		init();
 
@@ -734,7 +734,7 @@ namespace flame
 		delete thiz;
 	}
 
-	void board_cast(uint port, void* data, uint size, uint _timeout, void on_message(void* c, const char* ip, const char* msg, uint size), const Mail<>& capture)
+	void board_cast(uint port, void* data, uint size, uint _timeout, void on_message(void* c, const char* ip, const char* msg, uint size), const Mail& capture)
 	{
 		init();
 
@@ -764,7 +764,7 @@ namespace flame
 				if (res <= 0)
 				{
 					closesocket(fd);
-					delete_mail(capture);
+					f_free(capture.p);
 					return;
 				}
 
@@ -775,7 +775,7 @@ namespace flame
 				if (res <= 0)
 				{
 					closesocket(fd);
-					delete_mail(capture);
+					f_free(capture.p);
 					return;
 				}
 				on_message(capture.p, inet_ntoa(address.sin_addr), buf, res);

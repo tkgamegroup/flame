@@ -23,7 +23,7 @@ cConsole::cConsole() :
 
 		utils::e_button(L"Clear", [](void* c) {
 			app.console->c_text_log->set_text(L"");
-		}, Mail<>());
+		}, Mail());
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
 		utils::c_aligner(SizeFitParent, SizeFixed);
@@ -287,7 +287,7 @@ cConsole::cConsole() :
 
 				log_text->set_text(log.c_str());
 
-			}, Mail<>());
+			}, Mail());
 		utils::e_end_layout();
 
 	utils::e_end_docker_page();

@@ -23,7 +23,7 @@ struct cHierarchyItem : Component
 			element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				(*(cHierarchyItem**)c)->draw(canvas);
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
@@ -87,14 +87,14 @@ struct cHierarchyItem : Component
 								}
 
 								app.hierarchy->refresh();
-							}, new_mail(&capture));
+							}, Mail::from_t(&capture));
 						}
 					}
 
 				}
 
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 		}
 	}
 
@@ -183,9 +183,9 @@ cHierarchy::cHierarchy() :
 						app.selected = selected;
 						if (app.inspector && different)
 							app.inspector->refresh();
-					}, new_mail_p((*(cTree**)c)->selected));
+					}, Mail::from_p((*(cTree**)c)->selected));
 					return true;
-				}, new_mail_p(c_tree));
+				}, Mail::from_p(c_tree));
 			}
 			utils::e_end_tree();
 		utils::e_end_scroll_view1();

@@ -42,14 +42,12 @@ namespace flame
 		return *((ListenerHubImnplPrivate*)this)->listeners[idx].get();
 	}
 
-	void* ListenerHubImpl::add_plain(bool(*pf)(void* c), const Mail<>& capture, int pos)
+	void* ListenerHubImpl::add_plain(bool(*pf)(void* c), const Mail& capture, int pos)
 	{
-		auto c = new Closure<bool(void* c)>;
-		c->function = pf;
-		c->capture = capture;
 		auto thiz = (ListenerHubImnplPrivate*)this;
 		if (pos == -1)
 			pos = thiz->listeners.size();
+		auto c = new Closure(pf, capture);
 		thiz->listeners.emplace(thiz->listeners.begin() + pos, c);
 		return c;
 	}
@@ -638,8 +636,7 @@ namespace flame
 		bool modifier_shift;
 		bool modifier_ctrl;
 		bool modifier_alt;
-		void (*callback)(void* c, KeyStateFlags action);
-		Mail<> capture;
+		std::unique_ptr<Closure<void(void* c, KeyStateFlags action)>> callback;
 	};
 
 	static HHOOK global_key_hook = 0;
@@ -666,21 +663,20 @@ namespace flame
 				action = KeyStateDown;
 			else if (wParam == WM_KEYUP)
 				action = KeyStateUp;
-			l->callback(l->capture.p, action);
+			l->callback->call(action);
 		}
 
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail<>& capture)
+	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail& capture)
 	{
 		auto l = new GlobalKeyListener;
 		l->key = key;
 		l->modifier_shift = modifier_shift;
 		l->modifier_ctrl = modifier_ctrl;
 		l->modifier_alt = modifier_alt;
-		l->callback = callback;
-		l->capture = capture;
+		l->callback.reset(new Closure(callback, capture));
 
 		global_key_listeners.emplace_back(l);
 
@@ -696,7 +692,6 @@ namespace flame
 		{
 			if ((*it).get() == handle)
 			{
-				delete_mail((*it)->capture);
 				global_key_listeners.erase(it);
 				break;
 			}
@@ -712,7 +707,7 @@ namespace flame
 		}
 	}
 
-	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture)
+	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail& capture)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
@@ -788,7 +783,7 @@ namespace flame
 			}
 		}
 
-		delete_mail(capture);
+		f_free(capture.p);
 
 		destroy_event(event_changed);
 		destroy_event(dir_handle);
@@ -797,7 +792,7 @@ namespace flame
 			destroy_event(event_end);
 	}
 
-	void* add_file_watcher(const wchar_t* _path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail<>& capture, bool all_changes, bool sync)
+	void* add_file_watcher(const wchar_t* _path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail& capture, bool all_changes, bool sync)
 	{
 		std::filesystem::path path = _path;
 
@@ -826,7 +821,7 @@ namespace flame
 	static std::condition_variable cv;
 	static auto workers = all_workers;
 
-	static std::vector<std::pair<void(*)(void* c), Mail<>>> works;
+	static std::vector<std::unique_ptr<Closure<void(void*)>>> works;
 
 	static void try_distribute_work()
 	{
@@ -835,12 +830,12 @@ namespace flame
 			mtx.lock();
 
 			workers--;
-			auto w = works.front();
+			auto w = works.front().release();
 			works.erase(works.begin());
 
 			std::thread([=]() {
-				w.first(w.second.p);
-				delete_mail(w.second);
+				w->call();
+				delete w;
 				mtx.lock();
 				workers++;
 				cv.notify_one();
@@ -852,10 +847,10 @@ namespace flame
 		}
 	}
 
-	void add_work(void (*function)(void* c), const Mail<>& capture)
+	void add_work(void (*function)(void* c), const Mail& capture)
 	{
 		mtx.lock();
-		works.emplace_back(function, capture);
+		works.emplace_back(new Closure(function, capture));
 		mtx.unlock();
 
 		try_distribute_work();
@@ -864,8 +859,6 @@ namespace flame
 	void clear_all_works()
 	{
 		mtx.lock();
-		for (auto& c : works)
-			delete_mail(c.second);
 		works.clear();
 		mtx.unlock();
 
@@ -1296,7 +1289,7 @@ namespace flame
 
 	static ulonglong last_time;
 
-	int Looper::loop(void (*idle_func)(void* c), const Mail<>& capture)
+	int Looper::loop(void (*idle_func)(void* c), const Mail& capture)
 	{
 		if (windows.size() == 0)
 			return 1;
@@ -1345,7 +1338,7 @@ namespace flame
 
 			if (windows.empty())
 			{
-				delete_mail(capture);
+				f_free(capture.p);
 				return 0;
 			}
 
@@ -1371,16 +1364,14 @@ namespace flame
 	static std::list<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
-	void* Looper::add_event(void (*func)(void* c, bool* go_on), const Mail<>& capture, float interval, uint id)
+	void* Looper::add_event(void (*func)(void* c, bool* go_on), const Mail& capture, float interval, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
 		e->id = id;
 		e->interval = interval;
 		e->rest = interval;
-		auto c = new Closure<void(void* c, bool* go_on)>;
-		c->function = func;
-		c->capture = capture;
+		auto c = new Closure(func, capture);
 		e->event.reset(c);
 		events.emplace_back(e);
 		event_mtx.unlock();

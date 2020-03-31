@@ -74,7 +74,7 @@ void create_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 			capture.drag_text->set_text(text);
 		}
 		return true;
-	}, new_mail(&capture));
+	}, Mail::from_t(&capture));
 
 	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
 	c_tracker->data = pdata;
@@ -111,7 +111,7 @@ void create_vec_edit(void* pdata, cComponentDealer* d, VariableInfo* v)
 				capture.drag_text->set_text(text);
 			}
 			return true;
-		}, new_mail(&capture));
+		}, Mail::from_t(&capture));
 		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
 		utils::e_end_layout();
 	}
@@ -207,7 +207,7 @@ void cInspector::refresh()
 				}
 			}
 			return true;
-		}, new_mail_p(c_text));
+		}, Mail::from_p(c_text));
 		end_item();
 		begin_item(L"visible");
 		auto checkbox = utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox);
@@ -215,7 +215,7 @@ void cInspector::refresh()
 			if (hash == FLAME_CHASH("checked"))
 				app.selected->set_visible((*(cCheckbox**)c)->checked);
 			return true;
-		}, new_mail_p(checkbox));
+		}, Mail::from_p(checkbox));
 		end_item();
 
 		auto components = app.selected->get_components();
@@ -282,8 +282,8 @@ void cInspector::refresh()
 					auto& capture = *(Capture*)c;
 					capture.e->parent()->remove_child(capture.e);
 					capture.c->entity->remove_component(capture.c);
-				}, new_mail(&_capture));
-			}, new_mail(&capture))
+				}, Mail::from_t(&_capture));
+			}, Mail::from_t(&capture))
 				->get_component(cText)->color_ = Vec4c(200, 40, 20, 255);
 			utils::c_aligner(AlignxRight, AlignyFree);
 			utils::pop_parent();
@@ -325,7 +325,7 @@ void cInspector::refresh()
 							capture.d->unserialize(capture.v->offset());
 						}
 						return true;
-					}, new_mail(&capture));
+					}, Mail::from_t(&capture));
 
 					auto c_tracker = new_u_object<cEnumSingleDataTracker>();
 					c_tracker->data = pdata;
@@ -363,7 +363,7 @@ void cInspector::refresh()
 								capture.d->unserialize(capture.v->offset());
 							}
 							return true;
-						}, new_mail(&capture));
+						}, Mail::from_t(&capture));
 					}
 
 					auto c_tracker = new_u_object<cEnumMultiDataTracker>();
@@ -395,7 +395,7 @@ void cInspector::refresh()
 								capture.d->unserialize(capture.v->offset());
 							}
 							return true;
-						}, new_mail(&capture));
+						}, Mail::from_t(&capture));
 
 						auto c_tracker = new_u_object<cBoolDataTracker>();
 						c_tracker->data = pdata;
@@ -470,7 +470,7 @@ void cInspector::refresh()
 								capture.d->unserialize(capture.v->offset());
 							}
 							return true;
-						}, new_mail(&capture));
+						}, Mail::from_t(&capture));
 
 						auto c_tracker = new_u_object<cStringADataTracker>();
 						c_tracker->data = pdata;
@@ -497,7 +497,7 @@ void cInspector::refresh()
 								capture.d->unserialize(capture.v->offset());
 							}
 							return true;
-						}, new_mail(&capture));
+						}, Mail::from_t(&capture));
 
 						auto c_tracker = new_u_object<cStringWDataTracker>();
 						c_tracker->data = pdata;
@@ -560,8 +560,8 @@ void cInspector::refresh()
 						free(dummy);
 
 						app.inspector->refresh();
-					}, new_mail_p(*(UdtInfo**)c));
-				}, new_mail_p(udt));
+					}, Mail::from_p(*(UdtInfo**)c));
+				}, Mail::from_p(udt));
 			}
 		}
 		utils::e_end_button_menu();

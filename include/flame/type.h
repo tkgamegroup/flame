@@ -122,44 +122,6 @@ namespace flame
 		return (*((__f_Dummy*)p).*f)(args...);
 	}
 
-	template <class T>
-	typename std::enable_if<std::is_pod<T>::value, void*>::type cf2v() // ctor function to void pointer
-	{
-		return nullptr;
-	}
-
-	template <class T>
-	typename std::enable_if<!std::is_pod<T>::value, void*>::type cf2v() // ctor function to void pointer
-	{
-		struct Wrap : T
-		{
-			void ctor()
-			{
-				new(this) T;
-			}
-		};
-		return f2v(&Wrap::ctor);
-	}
-
-	template <class T>
-	typename std::enable_if<std::is_pod<T>::value, void*>::type df2v() // dtor function to void pointer
-	{
-		return nullptr;
-	}
-
-	template <class T>
-	typename std::enable_if<!std::is_pod<T>::value, void*>::type df2v() // dtor function to void pointer
-	{
-		struct Wrap : T
-		{
-			void dtor()
-			{
-				(*this).~Wrap();
-			}
-		};
-		return f2v(&Wrap::dtor);
-	}
-
 	inline bool equal_and_not_null(void* a, void* b)
 	{
 		return a && a == b;

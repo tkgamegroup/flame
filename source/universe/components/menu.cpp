@@ -97,7 +97,7 @@ namespace flame
 					looper().add_event([](void* c, bool*) {
 						auto& capture = *(Capture*)c;
 						capture.l->add_child(capture.i);
-					}, new_mail(&capture));
+					}, Mail::from_t(&capture));
 
 					opened = true;
 				}
@@ -151,7 +151,7 @@ namespace flame
 					looper().add_event([](void* c, bool*) {
 						auto& capture = *(Capture*)c;
 						capture.l->add_child(capture.i);
-					}, new_mail(&capture));
+					}, Mail::from_t(&capture));
 
 					opened = true;
 				}
@@ -170,7 +170,7 @@ namespace flame
 					if (utils::is_menu_can_open(thiz, action, key))
 						thiz->open((Vec2f)pos);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 	};
@@ -206,7 +206,7 @@ namespace flame
 					if (thiz->menu)
 						thiz->menu->opened = false;
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 	};
@@ -246,7 +246,7 @@ namespace flame
 							menu->close_subs(menu->items);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 	};

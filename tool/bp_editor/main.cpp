@@ -578,7 +578,7 @@ bool MyApp::create(const char* filename)
 				}
 			}
 			return true;
-		}, Mail<>());
+		}, Mail());
 		s_event_dispatcher->next_focusing = c_event_receiver;
 	}
 	utils::c_layout();
@@ -595,7 +595,7 @@ bool MyApp::create(const char* filename)
 					utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
 						BP::save_to_file(app.bp, app.filepath.c_str());
 						app.set_changed(false);
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_BOOK) + L"    Libraries").c_str(), [](void* c) {
 						utils::e_begin_dialog();
 							utils::e_text(L"Libraries");
@@ -625,8 +625,8 @@ bool MyApp::create(const char* filename)
 											utils::pop_parent();
 										}
 									}
-								}, new_mail_p(*(void**)c));
-							}, new_mail_p(e_list));
+								}, Mail::from_p(*(void**)c));
+							}, Mail::from_p(e_list));
 							utils::e_button(L"Remove", [](void* c) {
 								auto e_list = *(Entity**)c;
 								auto c_list = e_list->get_component(cList);
@@ -653,51 +653,51 @@ bool MyApp::create(const char* filename)
 												auto l = (BP::Library*)e_item->get_component(cDataKeeper)->get_voidp_item(FLAME_CHASH("library"));
 												app.remove_library(l);
 												e_item->parent()->remove_child(e_item);
-											}, new_mail_p(e_item));
+											}, Mail::from_p(e_item));
 										}
-									}, new_mail_p(e_item));
+									}, Mail::from_p(e_item));
 								}
-							}, new_mail_p(e_list));
+							}, Mail::from_p(e_list));
 							utils::e_button(L"Close", [](void*) {
 								utils::remove_top_layer(app.root);
-							}, Mail<>());
+							}, Mail());
 							utils::e_end_layout();
 						utils::e_end_dialog();
-					}, Mail<>());
+					}, Mail());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");
 					utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void* c) {
 						undo();
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void* c) {
 						redo();
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_CLONE) + L"    Duplicate").c_str(), [](void* c) {
 						duplicate_selected();
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Remove").c_str(), [](void* c) {
 						remove_selected();
-					}, Mail<>());
+					}, Mail());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"View");
 					utils::e_menu_item(L"Editor", [](void* c) {
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item(L"Console", [](void* c) {
-					}, Mail<>());
+					}, Mail());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Tools");
 					utils::e_menu_item(L"Generate Graph Image", [](void* c) {
 						app.generate_graph_image();
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item(L"Auto Set Layout", [](void* c) {
 						app.auto_set_layout();
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item(L"Link Test Nodes", [](void* c) {
 						app.link_test_nodes();
-					}, Mail<>());
+					}, Mail());
 					utils::e_menu_item(L"Reflector", [](void* c) {
 						utils::e_reflector_window(app.s_event_dispatcher);
-					}, Mail<>());
+					}, Mail());
 				utils::e_end_menubar_menu();
 			utils::e_end_menu_bar();
 
@@ -711,10 +711,10 @@ bool MyApp::create(const char* filename)
 					if (hash == FLAME_CHASH("checked"))
 						app.auto_update = (*(cCheckbox**)c)->checked;
 					return true;
-				}, new_mail_p(c_checkbox));
+				}, Mail::from_p(c_checkbox));
 				utils::e_button(L"Update", [](void*) {
 					app.bp->update();
-				}, Mail<>());
+				}, Mail());
 				utils::e_button(L"Reset Time");
 				utils::e_end_layout();
 			}
@@ -764,11 +764,11 @@ int main(int argc, char **args)
 		if (app.auto_update)
 			app.bp->update();
 		*go_on = true;
-	}, Mail<>(), 0.f);
+	}, Mail(), 0.f);
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail<>());
+	}, Mail());
 
 	return 0;
 }

@@ -95,7 +95,7 @@ namespace flame
 				if (thiz->s_2d_renderer->pending_update)
 					thiz->prepare_swapchain();
 				return true;
-			}, new_mail_p(this));
+			}, Mail::from_p(this));
 			world->add_system(s_2d_renderer);
 			canvas = s_2d_renderer->canvas;
 			canvas->add_font(font_atlas_pixel);

@@ -54,7 +54,7 @@ namespace flame
 			looper().add_event([](void* c, bool*) {
 				auto l = *(Entity**)c;
 				l->parent()->remove_child(l);
-			}, new_mail_p(l));
+			}, Mail::from_p(l));
 		}
 
 		inline Entity* add_layer(Entity* parent, const char* name_suffix /* layer_* */, void* gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
@@ -87,7 +87,7 @@ namespace flame
 					if (er->entity->gene == *(void**)c)
 						*pass = true;
 					return true;
-				}, new_mail_p(gene));
+				}, Mail::from_p(gene));
 			}
 			if (!modal)
 			{
@@ -100,7 +100,7 @@ namespace flame
 							remove_top_layer(e);
 					}
 					return true;
-				}, new_mail_p(parent));
+				}, Mail::from_p(parent));
 			}
 			l->add_component(c_event_receiver);
 

@@ -1,3 +1,6 @@
+add_executable(empty_test "empty_test.cpp")
+set_target_properties(empty_test PROPERTIES FOLDER "test")
+
 add_executable(window_test "window_test.cpp")
 set_target_properties(window_test PROPERTIES FOLDER "test")
 target_link_libraries(window_test flame_foundation)

@@ -42,7 +42,7 @@ namespace flame
 		{
 			if (!entity->dying_)
 			{
-				timer->set_callback(nullptr, Mail<>());
+				timer->set_callback(nullptr, Mail());
 				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
@@ -68,7 +68,7 @@ namespace flame
 				timer = (cTimer*)c;
 				timer->set_callback([](void* c) {
 					(*(cEditPrivate**)c)->flash_cursor();
-				}, new_mail_p(this), false);
+				}, Mail::from_p(this), false);
 			}
 			else if (c->name_hash == FLAME_CHASH("cElement"))
 			{
@@ -76,7 +76,7 @@ namespace flame
 				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
 					(*(cEditPrivate**)c)->draw(canvas);
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cText"))
 				text = (cText*)c;
@@ -150,7 +150,7 @@ namespace flame
 						text->set_text(str.c_str());
 
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
@@ -193,7 +193,7 @@ namespace flame
 						}
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 
 				focus_listener = event_receiver->focus_listeners.add([](void* c, bool focusing) {
 					auto thiz = *(cEditPrivate**)c;
@@ -205,7 +205,7 @@ namespace flame
 						thiz->flash_cursor(true);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 		}
 

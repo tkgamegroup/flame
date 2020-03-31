@@ -38,11 +38,11 @@ void MyApp::create()
 						app.prefab->add_child(e);
 					if (app.hierarchy)
 						app.hierarchy->refresh();
-				}, Mail<>());
-			}, Mail<>());
+				}, Mail());
+			}, Mail());
 			utils::e_menu_item(L"Save", [](void* c) {
 
-			}, Mail<>());
+			}, Mail());
 			utils::e_end_menubar_menu();
 			utils::e_begin_menubar_menu(L"Edit");
 			utils::e_menu_item(L"Delete", [](void* c) {
@@ -56,29 +56,29 @@ void MyApp::create()
 						if (app.hierarchy)
 							app.hierarchy->refresh();
 					}
-				}, Mail<>());
-			}, Mail<>());
+				}, Mail());
+			}, Mail());
 			utils::e_menu_item(L"Duplicate", [](void* c) {
 
-			}, Mail<>());
+			}, Mail());
 		utils::e_end_menubar_menu();
 		utils::e_begin_menubar_menu(L"Window");
 		utils::e_menu_item(L"Resource Explorer", [](void* c) {
 			if (!app.resource_explorer)
 				app.resource_explorer = new cResourceExplorer;
-		}, new_mail_p(this));
+		}, Mail::from_p(this));
 		utils::e_menu_item(L"Scene Editor", [](void* c) {
 			if (!app.editor)
 				app.editor = new cEditor;
-		}, new_mail_p(this));
+		}, Mail::from_p(this));
 		utils::e_menu_item(L"Hierarchy", [](void* c) {
 			if (!app.hierarchy)
 				app.hierarchy = new cHierarchy;
-		}, new_mail_p(this));
+		}, Mail::from_p(this));
 		utils::e_menu_item(L"Inspector", [](void* c) {
 			if (!app.inspector)
 				app.inspector = new cInspector;
-		}, new_mail_p(this));
+		}, Mail::from_p(this));
 		utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();
 
@@ -106,7 +106,7 @@ int main(int argc, char **args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail<>());
+	}, Mail());
 
 	return 0;
 }

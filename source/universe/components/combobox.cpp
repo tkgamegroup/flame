@@ -66,7 +66,7 @@ namespace flame
 						combobox->set_index(thiz->idx);
 					}
 					return true;
-				}, new_mail_p(this));
+				}, Mail::from_p(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
 			{
