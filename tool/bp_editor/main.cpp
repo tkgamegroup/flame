@@ -174,22 +174,97 @@ struct Action_DuplicateNodes : Action
 	}
 };
 
-struct Action_RemoveNode : Action
+struct Action_RemoveNodes : Action
 {
+	std::vector<NodeSaving> savings;
+
 	void undo() override
 	{
+		for (auto& s : savings)
+		{
+			auto n = _add_node(s.desc.type.c_str(), s.desc.id.c_str(), s.desc.pos);
+			if (n)
+			{
+				for (auto i = 0; i < s.inputs.size(); i++)
+				{
+					auto& src = s.inputs[i];
+					auto dst = n->input(i);
+					auto type = dst->type();
+					if (type->tag() != TypePointer)
+					{
+						auto data = new char[dst->size()];
+						type->unserialize(src.data, data);
+						dst->set_data((char*)data);
+						delete[] data;
+					}
 
+					if (!src.link.empty())
+					{
+						auto slot = app.bp->find_output(src.link.c_str());
+						if (slot)
+							dst->link_to(slot);
+					}
+				}
+				for (auto i = 0; i < s.outputs.size(); i++)
+				{
+					auto& src = s.outputs[i];
+					auto dst = n->output(i);
+
+					for (auto& a : src.links)
+					{
+						auto slot = app.bp->find_input(a.c_str());
+						if (slot)
+							slot->link_to(dst);
+					}
+				}
+			}
+		}
 	}
 
 	void redo() override
 	{
-
+		for (auto& s : savings) 
+		{
+			auto n = app.bp->find_node(s.desc.id.c_str());
+			if (n)
+				_remove_node(n);
+		}
 	}
 };
 
 struct Action_SetLinks : Action
 {
+	struct LinkDesc
+	{
+		std::string input_addr;
+		std::string prev_output_addr;
+		std::string after_output_addr;
+	};
+	std::vector<LinkDesc> link_descs;
 
+	void undo() override
+	{
+		for (auto& l : link_descs)
+		{
+			auto i = app.bp->find_input(l.input_addr.c_str());
+			if (i)
+				i->link_to(l.prev_output_addr.empty() ? nullptr : app.bp->find_output(l.prev_output_addr.c_str()));
+		}
+		
+		app.s_2d_renderer->pending_update = true;
+	}
+
+	void redo() override
+	{
+		for (auto& l : link_descs)
+		{
+			auto i = app.bp->find_input(l.input_addr.c_str());
+			if (i)
+				i->link_to(l.after_output_addr.empty() ? nullptr : app.bp->find_output(l.after_output_addr.c_str()));
+		}
+
+		app.s_2d_renderer->pending_update = true;
+	}
 };
 
 static std::vector<std::unique_ptr<Action>> actions;
@@ -264,61 +339,16 @@ static void remove_selected()
 	}
 	if (!app.selected_links.empty())
 	{
-		for (auto& s : app.selected_links)
-			s->link_to(nullptr);
+		std::vector<std::pair<BP::Slot*, BP::Slot*>> links(app.selected_links.size());
+		for (auto i = 0; i < app.selected_links.size(); i++)
+			links[i] = { app.selected_links[i], nullptr };
+		app.set_links(links);
 		app.selected_links.clear();
 
 		app.set_changed(true);
 
 		app.s_2d_renderer->pending_update = true;
 	}
-}
-
-void MyApp::set_changed(bool v)
-{
-	if (changed != v)
-	{
-		changed = v;
-		if (editor)
-			editor->on_bp_changed();
-	}
-}
-
-void MyApp::set_id(BP::Node* n, const std::string& id)
-{
-	std::string prev_id = n->id();
-
-	if (!n->set_id(id.c_str()))
-		return;
-
-	auto a = new Action_ChangeID;
-	a->prev_id = prev_id;
-	a->after_id = id;
-	add_action(a);
-
-	set_changed(true);
-}
-
-void MyApp::set_node_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& poses)
-{
-	std::vector<Action_MoveNodes::Target> targets(nodes.size());
-	for (auto i = 0; i < nodes.size(); i++)
-	{
-		auto& src = nodes[i];
-		auto& dst = targets[i];
-		dst.id = src->id();
-		dst.prev_pos = src->pos;
-		dst.after_pos = poses[i];
-	}
-
-	auto a = new Action_MoveNodes;
-	a->targets = targets;
-	add_action(a);
-
-	for (auto i = 0; i < nodes.size(); i++)
-		nodes[i]->pos = poses[i];
-
-	set_changed(true);
 }
 
 void MyApp::deselect()
@@ -346,6 +376,16 @@ void MyApp::select(const std::vector<BP::Slot*>& links)
 
 	if (editor)
 		editor->on_select();
+}
+
+void MyApp::set_changed(bool v)
+{
+	if (changed != v)
+	{
+		changed = v;
+		if (editor)
+			editor->on_bp_changed();
+	}
 }
 
 BP::Library* MyApp::add_library(const std::wstring& filename)
@@ -381,14 +421,127 @@ BP::Node* MyApp::add_node(const NodeDesc& desc)
 
 void MyApp::remove_nodes(const std::vector<BP::Node*> nodes)
 {
+	auto a = new Action_RemoveNodes;
+	a->savings.resize(nodes.size());
+	for (auto i = 0; i < nodes.size(); i++)
+	{
+		auto n = nodes[i];
+		auto& s = a->savings[i];
+		s.desc.type = n->type();
+		s.desc.id = n->id();
+		s.desc.pos = n->pos;
+		s.inputs.resize(n->input_count());
+		for (auto j = 0; j < s.inputs.size(); j++)
+		{
+			auto src = n->input(j);
+			auto& dst = s.inputs[j];
+			auto type = src->type();
+			if (type->tag() != TypePointer)
+				dst.data = type->serialize(src->data(), 2);
+			auto slot = src->link(0);
+			if (slot)
+				dst.link = slot->get_address().v;
+		}
+		s.outputs.resize(n->output_count());
+		for (auto j = 0; j < s.outputs.size(); j++)
+		{
+			auto src = n->output(j);
+			auto& dst = s.outputs[j];
+			for (auto k = 0; k < src->link_count(); k++)
+			{
+				auto slot = src->link(k);
+				auto _n = slot->node();
+				auto existed = false;
+				for (auto& n : nodes)
+				{
+					if (_n == n)
+					{
+						existed = true;
+						break;
+					}
+				}
+				if (existed)
+					continue;
+				dst.links.push_back(slot->get_address().v);
+			}
+		}
+	}
+	add_action(a);
+
 	for (auto& n : nodes)
 		_remove_node(n);
 
 	set_changed(true);
 }
 
-void MyApp::link_test_nodes()
+void MyApp::set_node_id(BP::Node* n, const std::string& id)
 {
+	std::string prev_id = n->id();
+
+	if (!n->set_id(id.c_str()))
+		return;
+
+	auto a = new Action_ChangeID;
+	a->prev_id = prev_id;
+	a->after_id = id;
+	add_action(a);
+
+	set_changed(true);
+}
+
+void MyApp::set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& poses)
+{
+	auto a = new Action_MoveNodes;
+	a->targets.resize(nodes.size());
+	for (auto i = 0; i < nodes.size(); i++)
+	{
+		auto& src = nodes[i];
+		auto& dst = a->targets[i];
+		dst.id = src->id();
+		dst.prev_pos = src->pos;
+		dst.after_pos = poses[i];
+	}
+	add_action(a);
+
+	for (auto i = 0; i < nodes.size(); i++)
+		nodes[i]->pos = poses[i];
+
+	set_changed(true);
+}
+
+void MyApp::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links)
+{
+	auto a = new Action_SetLinks;
+	a->link_descs.resize(links.size());
+	for (auto i = 0; i < links.size(); i++)
+	{
+		auto& src = links[i];
+		auto& dst = a->link_descs[i];
+		dst.input_addr = src.first->get_address().v;
+		auto prev = src.first->link(0);
+		if (prev)
+			dst.prev_output_addr = prev->get_address().v;
+		if (src.second)
+			dst.after_output_addr = src.second->get_address().v;
+	}
+	add_action(a);
+
+	for (auto& l : links)
+		l.first->link_to(l.second);
+
+	set_changed(true);
+}
+
+void MyApp::save()
+{
+	BP::save_to_file(app.bp, app.filepath.c_str());
+
+	actions.clear();
+	action_idx = 0;
+
+	app.set_changed(false);
+}
+
 	//auto n_rt = app.bp->find_node("test_rt");
 	//if (!n_rt)
 	//{
@@ -410,7 +563,6 @@ void MyApp::link_test_nodes()
 	//	if (s)
 	//		s->link_to(n_rt->find_output("out"));
 	//}
-}
 
 void MyApp::update_gv()
 {
@@ -593,8 +745,7 @@ bool MyApp::create(const char* filename)
 			utils::e_begin_menu_bar();
 				utils::e_begin_menubar_menu(L"Blueprint");
 					utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
-						BP::save_to_file(app.bp, app.filepath.c_str());
-						app.set_changed(false);
+						app.save();
 					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_BOOK) + L"    Libraries").c_str(), [](void* c) {
 						utils::e_begin_dialog();
@@ -692,9 +843,6 @@ bool MyApp::create(const char* filename)
 					utils::e_menu_item(L"Auto Set Layout", [](void* c) {
 						app.auto_set_layout();
 					}, Mail());
-					utils::e_menu_item(L"Link Test Nodes", [](void* c) {
-						app.link_test_nodes();
-					}, Mail());
 					utils::e_menu_item(L"Reflector", [](void* c) {
 						utils::e_reflector_window(app.s_event_dispatcher);
 					}, Mail());
@@ -744,8 +892,6 @@ bool MyApp::create(const char* filename)
 		}
 
 	utils::pop_parent();
-
-	link_test_nodes();
 
 	return true;
 }

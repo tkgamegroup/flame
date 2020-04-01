@@ -1,5 +1,7 @@
 #pragma once
 
+// WIP: don't use this
+
 #include <flame/magic_macros.h>
 
 #define DECLARE(x) decltype(x) x;

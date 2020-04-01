@@ -50,26 +50,6 @@ cConsole::cConsole() :
 					extra_global_db_count = dbs.size();
 					extra_global_dbs = dbs.data();
 
-					auto set_data = [&](const std::string& address, const std::string& value) {
-						auto i = app.bp->find_input(address.c_str());
-						if (i)
-						{
-							auto type = i->type();
-							auto value_before = type->serialize(i->data(), 2);
-							auto data = new char[i->size()];
-							type->unserialize(value, data);
-							i->set_data((char*)data);
-							if (app.editor)
-								app.editor->on_data_changed(i);
-							delete[] data;
-							auto value_after = type->serialize(i->data(), 2);
-							log += L"set value: " + s2w(address) + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
-							app.set_changed(true);
-						}
-						else
-							log += L"input not found\n";
-					};
-
 					if (tokens[0] == L"help")
 					{
 						log +=
@@ -205,7 +185,6 @@ cConsole::cConsole() :
 							auto n = app.add_node(d);
 							if (n)
 							{
-								app.set_changed(true);
 								log += wfmt(L"node added: %s", s2w(n->id()).c_str()) + L"\n";
 							}
 							else
@@ -217,11 +196,8 @@ cConsole::cConsole() :
 							auto in = app.bp->find_input(w2s(tokens[3]).c_str());
 							if (out && in)
 							{
-								in->link_to(out);
-								auto out_addr = in->link()->get_address();
-								auto in_addr = in->get_address();
-								log += wfmt(L"link added: %s -> %s", s2w(out_addr.str()).c_str(), s2w(in_addr.str()).c_str()) + L"\n";
-								app.set_changed(true);
+								app.set_links({ {in, out} });
+								log += wfmt(L"link added: %s -> %s", s2w(out->get_address().str()).c_str(), s2w(in->get_address().str()).c_str()) + L"\n";
 							}
 							else
 								log += L"wrong address\n";
@@ -237,7 +213,6 @@ cConsole::cConsole() :
 							if (n)
 							{
 								app.remove_nodes({ n });
-								app.set_changed(true);
 								log += wfmt(L"node removed: %s", tokens[2].c_str()) + L"\n";
 							}
 							else
@@ -245,12 +220,11 @@ cConsole::cConsole() :
 						}
 						else if (tokens[1] == L"link")
 						{
-							auto i = app.bp->find_input(w2s(tokens[3]).c_str());
-							if (i)
+							auto in = app.bp->find_input(w2s(tokens[2]).c_str());
+							if (in)
 							{
-								i->link_to(nullptr);
+								app.set_links({ {in, nullptr} });
 								log += wfmt(L"link removed: %s", tokens[2].c_str()) + L"\n";
-								app.set_changed(true);
 							}
 							else
 								log += L"input not found\n";
@@ -259,7 +233,23 @@ cConsole::cConsole() :
 							log += L"unknow object to remove\n";
 					}
 					else if (tokens[0] == L"set")
-						set_data(w2s(tokens[1]), w2s(tokens[2]));
+					{
+						auto i = app.bp->find_input(w2s(tokens[1]).c_str());
+						if (i)
+						{
+							auto type = i->type();
+							auto value_before = type->serialize(i->data(), 2);
+							auto data = new char[i->size()];
+							type->unserialize(w2s(tokens[2]), data);
+							i->set_data((char*)data);
+							delete[] data;
+							auto value_after = type->serialize(i->data(), 2);
+							log += L"set value: " + tokens[1] + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
+							app.set_changed(true);
+						}
+						else
+							log += L"input not found\n";
+					}
 					else if (tokens[0] == L"update")
 					{
 						app.bp->update();
@@ -267,8 +257,7 @@ cConsole::cConsole() :
 					}
 					else if (tokens[0] == L"save")
 					{
-						BP::save_to_file(app.bp, app.filepath.c_str());
-						app.set_changed(false);
+						app.save();
 						log += L"file saved\n";
 					}
 					else if (tokens[0] == L"auto-set-layout")

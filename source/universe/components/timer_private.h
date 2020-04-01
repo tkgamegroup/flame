@@ -16,5 +16,6 @@ namespace flame
 		void stop();
 		void on_entered_world() override;
 		void on_left_world() override;
+		void on_visibility_changed() override;
 	};
 }

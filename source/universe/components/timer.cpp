@@ -56,6 +56,12 @@ namespace flame
 		management = nullptr;
 	}
 
+	void cTimerPrivate::on_visibility_changed()
+	{
+		if (!entity->global_visible_)
+			stop();
+	}
+
 	void cTimer::start()
 	{
 		((cTimerPrivate*)this)->start();

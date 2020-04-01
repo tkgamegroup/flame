@@ -66,7 +66,6 @@ struct InputSaving
 
 struct OutputSaving
 {
-	std::string data;
 	std::vector<std::string> links;
 };
 
@@ -104,20 +103,21 @@ struct MyApp : App
 		auto_update = false;
 	}
 
-	void set_changed(bool v);
-	void set_id(BP::Node* n, const std::string& id);
-	void set_node_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
-
 	void deselect();
 	void select(const std::vector<BP::Node*>& nodes);
 	void select(const std::vector<BP::Slot*>& links);
+
+	void set_changed(bool v);
 
 	BP::Library* add_library(const std::wstring& filename);
 	void remove_library(BP::Library* l);
 	BP::Node* add_node(const NodeDesc& desc);
 	void remove_nodes(const std::vector<BP::Node*> nodes);
+	void set_node_id(BP::Node* n, const std::string& id);
+	void set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
+	void set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links);
 
-	void link_test_nodes();
+	void save();
 
 	void update_gv();
 	bool generate_graph_image();

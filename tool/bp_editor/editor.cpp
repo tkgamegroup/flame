@@ -257,15 +257,9 @@ struct cSlot : Component
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
 					if (s->io() == BP::Slot::In)
-					{
-						if (s->link_to(oth))
-							app.set_changed(true);
-					}
+						app.set_links({ {s, oth} });
 					else
-					{
-						if (oth->link_to(thiz->s))
-							app.set_changed(true);
-					}
+						app.set_links({ {oth, s} });
 				}
 
 				return true;
@@ -450,7 +444,7 @@ struct cNode : Component
 					std::vector<Vec2f> poses;
 					for (auto& s : app.selected_nodes)
 						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos_);
-					app.set_node_pos(app.selected_nodes, poses);
+					app.set_nodes_pos(app.selected_nodes, poses);
 					thiz->moved = false;
 				}
 				return true;
@@ -528,7 +522,7 @@ cEditor::cEditor() :
 						for (auto j = 0; j < n->input_count(); j++)
 						{
 							auto input = n->input(j);
-							auto output = input->link(0);
+							auto output = input->link();
 							if (!output)
 								continue;
 							auto e1 = ((cSlot*)output->user_data)->element;
@@ -667,7 +661,7 @@ cEditor::cEditor() :
 								for (auto j = 0; j < n->input_count(); j++)
 								{
 									auto input = n->input(j);
-									auto output = input->link(0);
+									auto output = input->link();
 									if (!output)
 										continue;
 									auto p1 = ((cSlot*)output->user_data)->element->center();
@@ -679,6 +673,7 @@ cEditor::cEditor() :
 									{
 										std::vector<Vec2f> points;
 										path_bezier(points, p1, p2, p3, p4);
+										auto ok = false;
 										for (auto k = 0; k < points.size() - 1; k++)
 										{
 											for (auto m = 0; m < 8; m += 2)
@@ -686,8 +681,14 @@ cEditor::cEditor() :
 												if (segment_intersect(lines[m], lines[m + 1], points[k], points[k + 1]))
 												{
 													links.push_back(input);
+													ok = true;
+													break;
 												}
+												if (ok)
+													break;
 											}
+											if (ok)
+												break;
 										}
 									}
 								}
@@ -874,7 +875,7 @@ void cEditor::on_add_node(BP::Node* n)
 				auto n = *(BP::Node**)c;
 				utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
 					if (ok && text[0])
-						app.set_id(*(BP::Node**)c, w2s(text));
+						app.set_node_id(*(BP::Node**)c, w2s(text));
 				}, Mail::from_p(n), s2w(n->id()).c_str());
 			}, Mail::from_p(n));
 			utils::e_menu_item(L"Duplicate", [](void* c) {
@@ -1097,7 +1098,7 @@ void cEditor::on_add_node(BP::Node* n)
 										auto src = n->input(i);
 										auto dst = nn->input(i > idx ? i - 1 : i);
 										dst->set_data(src->data());
-										dst->link_to(src->link(0));
+										dst->link_to(src->link());
 									}
 									for (auto i = 0; i < n->output_count(); i++)
 									{
@@ -1396,7 +1397,7 @@ void cEditor::on_add_node(BP::Node* n)
 							auto src = n->input(i);
 							auto dst = nn->input(i);
 							dst->set_data(src->data());
-							dst->link_to(src->link(0));
+							dst->link_to(src->link());
 						}
 						for (auto i = 0; i < n->output_count(); i++)
 						{
@@ -1813,7 +1814,6 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									else
 										n->find_input(capture.vs)->link_to(s);
 								}
-								app.set_changed(true);
 							}, Mail::from_t(&capture));
 						}
 					}
