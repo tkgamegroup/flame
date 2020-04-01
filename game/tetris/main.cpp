@@ -5,6 +5,7 @@
 #include <flame/universe/utils/typeinfo.h>
 #include <flame/network/network.h>
 #include <flame/utils/app.h>
+#include <flame/utils/fps.h>
 
 #include "mino.h"
 #include "key.h"

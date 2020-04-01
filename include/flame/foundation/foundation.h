@@ -263,46 +263,31 @@ namespace flame
 		{
 		}
 
-		Mail(uint s) :
+		Mail(uint s, void* d = nullptr) :
 			s(s),
 			p(f_malloc(s))
 		{
-		}
-
-		static Mail take(const Mail& oth, uint expand)
-		{
-			Mail ret;
-			ret.s = oth.s + expand;
-			if (expand == 0)
-				ret.p = oth.p;
-			else
-			{
-				ret.p = f_malloc(ret.s);
-				memcpy((char*)ret.p + expand, oth.p, oth.s);
-				f_free(oth.p);
-			}
-			return ret;
+			if (d)
+				memcpy(p, d, s);
 		}
 
 		template<class T>
 		static Mail from_t(T* p)
 		{
-			Mail ret(sizeof(T));
-			memcpy(ret.p, p, sizeof(T));
-			return ret;
+			return Mail(sizeof(T), p);
 		}
 
 		static Mail from_p(void* p)
 		{
-			Mail ret(sizeof(void*));
-			memcpy(ret.p, &p, sizeof(void*));
-			return ret;
+			return Mail(sizeof(void*), &p);
 		}
 
-		Mail duplicate() const
+		template<class T>
+		static Mail expand_original(T* p, const Mail& old)
 		{
-			Mail ret(s);
-			memcpy(ret.p, p, s);
+			auto ret = Mail(sizeof(T) + old.s);
+			memcpy(ret.p, p, sizeof(T));
+			memcpy((char*)ret.p + sizeof(T), old.p, old.s);
 			return ret;
 		}
 	};
@@ -622,24 +607,4 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
-
-	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail& capture)
-	{
-		struct Capture
-		{
-			uint last_frame;
-			void (*e)(void* c, uint fps);
-		};
-		auto m = Mail::take(capture, sizeof(Capture));
-		auto& new_capture = *(Capture*)m.p;
-		new_capture.last_frame = 0;
-		new_capture.e = event;
-		return looper().add_event([](void* c, bool* go_on) {
-			auto& capture = *(Capture*)c;
-			auto frame = looper().frame;
-			capture.e((char*)c + sizeof(Capture), frame - capture.last_frame);
-			capture.last_frame = frame;
-			*go_on = true;
-		}, m, 1.f);
-	}
 }
