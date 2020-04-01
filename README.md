@@ -11,17 +11,17 @@ An ECS Game Engine Based On Reflection.
   
 # Libraries:
 
-- pugixml       - https://github.com/zeux/pugixml
+- pugixml       - https://github.com/zeux/pugixml or https://gitee.com/tkgamegroup/pugixml
 
-- njson         - https://github.com/nlohmann/json
+- njson         - https://github.com/nlohmann/json or https://gitee.com/tkgamegroup/json
 
-- STB           - https://github.com/nothings/stb
+- STB           - https://github.com/nothings/stb or https://gitee.com/tkgamegroup/stb
   
-- freetype      - https://github.com/ubawurinna/freetype-windows-binaries
+- freetype      - https://github.com/ubawurinna/freetype-windows-binaries or https://gitee.com/tkgamegroup/freetype-windows-binaries
 
-- msdfgen       - (must use my forked version, changed a little bit) https://github.com/tkgamegroup/msdfgen
+- msdfgen       - (must use my forked version, changed a little bit) https://github.com/tkgamegroup/msdfgen or https://gitee.com/tkgamegroup/msdfgen
 
-- SPIRV-Cross   - https://github.com/KhronosGroup/SPIRV-Cross
+- SPIRV-Cross   - https://github.com/KhronosGroup/SPIRV-Cross or https://gitee.com/tkgamegroup/SPIRV-Cross
 
 - OpenAL        - http://www.openal.org/
 
