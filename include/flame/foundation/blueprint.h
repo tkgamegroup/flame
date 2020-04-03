@@ -44,6 +44,8 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 
+			FLAME_FOUNDATION_EXPORTS const wchar_t* fail_message() const;
+
 			void* data_p()
 			{
 				return *(void**)data();
@@ -163,6 +165,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void update();
 
 		FLAME_FOUNDATION_EXPORTS void report_used_resource(const wchar_t* filename);
+
+		FLAME_FOUNDATION_EXPORTS Array<Slot*> get_fail_slots() const;
 
 		FLAME_FOUNDATION_EXPORTS static BP* create();
 		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename);

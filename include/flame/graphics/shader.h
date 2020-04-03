@@ -35,7 +35,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS const DescriptorBinding& get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* default_set_pool = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, DescriptorBinding* const* bindings, bool create_default_set = false);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 

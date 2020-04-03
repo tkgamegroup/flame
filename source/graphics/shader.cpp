@@ -59,7 +59,7 @@ namespace flame
 			delete (DescriptorpoolPrivate*)p;
 		}
 
-		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, uint binding_count, DescriptorBinding* const* _bindings, Descriptorpool* default_set_pool) :
+		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, uint binding_count, DescriptorBinding* const* _bindings, bool create_default) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
@@ -90,9 +90,9 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			if (default_set_pool)
+			if (create_default)
 			{
-				default_set = Descriptorset::create(default_set_pool, this);
+				default_set = Descriptorset::create(d->dp, this);
 				for (auto i = 0; i < bindings.size(); i++)
 				{
 					auto& b = bindings[i];
@@ -153,9 +153,9 @@ namespace flame
 			return ((DescriptorlayoutPrivate*)this)->default_set;
 		}
 
-		Descriptorlayout* Descriptorlayout::create(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* pool_to_create_default_set)
+		Descriptorlayout* Descriptorlayout::create(Device* d, uint binding_count, DescriptorBinding* const* bindings, bool create_default_set)
 		{
-			return new DescriptorlayoutPrivate(d, binding_count, bindings, pool_to_create_default_set);
+			return new DescriptorlayoutPrivate(d, binding_count, bindings, create_default_set);
 		}
 
 		void Descriptorlayout::destroy(Descriptorlayout* l)
@@ -279,7 +279,7 @@ namespace flame
 					auto d = Device::default_one();
 					if (d && bindings->s > 0)
 					{
-						out = Descriptorlayout::create(d, bindings->s, bindings->v, create_default_set ? d->dp : nullptr);
+						out = Descriptorlayout::create(d, bindings->s, bindings->v, create_default_set);
 						default_set = (out)->default_set();
 					}
 					else
@@ -796,19 +796,22 @@ namespace flame
 				hash = hash_update(hash, FLAME_HASH(s.prefix.c_str()));
 			}
 			hash = hash_update(hash, pll->hash);
-			for (auto i = 0; i < vi->buffer_count; i++)
+			if (vi)
 			{
-				auto b = vi->buffers[i];
-				for (auto j = 0; j < b->attribute_count; j++)
+				for (auto i = 0; i < vi->buffer_count; i++)
 				{
-					auto a = b->attributes[j];
-					hash = hash_update(hash, a->format);
-					hash = hash_update(hash, FLAME_HASH(a->name));
+					auto b = vi->buffers[i];
+					for (auto j = 0; j < b->attribute_count; j++)
+					{
+						auto a = b->attributes[j];
+						hash = hash_update(hash, a->format);
+						hash = hash_update(hash, FLAME_HASH(a->name));
+					}
+					hash = hash_update(hash, b->rate);
 				}
-				hash = hash_update(hash, b->rate);
+				hash = hash_update(hash, vi->primitive_topology);
+				hash = hash_update(hash, vi->patch_control_points);
 			}
-			hash = hash_update(hash, vi->primitive_topology);
-			hash = hash_update(hash, vi->patch_control_points);
 			auto str_hash = std::to_wstring(hash);
 
 			for (auto i = 0; i < stage_infos.size(); i++)

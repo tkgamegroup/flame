@@ -9,6 +9,15 @@ add_executable(8beeper "8beeper.cpp")
 set_target_properties(8beeper PROPERTIES FOLDER "test")
 target_link_libraries(8beeper flame_sound)
 
+add_executable(graphics_test_clear "graphics_test_clear.cpp")
+set_target_properties(graphics_test_clear PROPERTIES FOLDER "test")
+target_link_libraries(graphics_test_clear flame_graphics)
+
+add_executable(graphics_test_image "graphics_test_image.cpp")
+set_target_properties(graphics_test_image PROPERTIES FOLDER "test")
+target_link_libraries(graphics_test_image flame_graphics)
+add_dependencies(graphics_test_image typeinfogen)
+
 add_executable(graphics_test_bp "graphics_test_bp.cpp")
 set_target_properties(graphics_test_bp PROPERTIES FOLDER "test")
 target_link_libraries(graphics_test_bp flame_graphics)

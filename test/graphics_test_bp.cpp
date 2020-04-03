@@ -36,7 +36,6 @@ struct App
 	}
 
 }app;
-auto papp = &app;
 
 int main(int argc, char** args)
 {
@@ -62,10 +61,9 @@ int main(int argc, char** args)
 
 	app.sc->link_bp(app.bp, &app.cbs);
 
-	looper().loop([](void* c) {
-		auto app = (*(App * *)c);
-		app->run();
-	}, Mail::from_p(&app));
+	looper().loop([](void*) {
+		app.run();
+	}, Mail());
 
 	return 0;
 }

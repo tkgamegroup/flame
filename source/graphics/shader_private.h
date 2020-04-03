@@ -43,7 +43,7 @@ namespace flame
 
 			uint hash;
 
-			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBinding* const* bindings, Descriptorpool* default_set_pool);
+			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBinding* const* bindings, bool create_default_set);
 			~DescriptorlayoutPrivate();
 		};
 
