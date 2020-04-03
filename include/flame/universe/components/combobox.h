@@ -19,14 +19,14 @@ namespace flame
 		cText* text;
 		cEventReceiver* event_receiver;
 
-		int idx;
+		int index;
 
 		cCombobox() :
 			Component("cCombobox")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_index(int idx, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_index(int index, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};
@@ -36,7 +36,7 @@ namespace flame
 		cEventReceiver* event_receiver;
 		cStyleColor2* style;
 
-		int idx;
+		int index;
 
 		cComboboxItem() :
 			Component("cComboboxItem")

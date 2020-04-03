@@ -12,7 +12,7 @@ namespace flame
 		cTimerPrivate();
 		~cTimerPrivate();
 		void reset();
-		void start();
+		void start(bool force_restart);
 		void stop();
 		void on_entered_world() override;
 		void on_left_world() override;

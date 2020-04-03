@@ -14,7 +14,7 @@ namespace flame
 
 		FocusType focus_type;
 		uint drag_hash; // non-zero means it can be draged to drop
-		EventReceiverState state;
+		EventReceiverStateFlags state;
 
 		ListenerHub<bool(void* c, cEventReceiver* er, bool* pass)>								pass_checkers;
 		ListenerHub<bool(void* c, KeyStateFlags action, int value)>								key_listeners;
@@ -22,7 +22,7 @@ namespace flame
 		ListenerHub<bool(void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>	drag_and_drop_listeners;
 		ListenerHub<bool(void* c, bool hovering)>												hover_listeners;
 		ListenerHub<bool(void* c, bool focusing)>												focus_listeners;
-		ListenerHub<bool(void* c, EventReceiverState state)>									state_listeners;
+		ListenerHub<bool(void* c, EventReceiverStateFlags state)>								state_listeners;
 
 		cEventReceiver() :
 			Component("cEventReceiver")

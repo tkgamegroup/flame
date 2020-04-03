@@ -30,9 +30,14 @@ namespace flame
 		_times = 0;
 	}
 
-	void cTimerPrivate::start()
+	void cTimerPrivate::start(bool force_restart)
 	{
-		if (!_updating && callback->f)
+		if (_updating)
+		{
+			if (force_restart)
+				reset();
+		}
+		else if (callback->f)
 			management->add_to_update_list(this);
 	}
 
@@ -62,9 +67,9 @@ namespace flame
 			stop();
 	}
 
-	void cTimer::start()
+	void cTimer::start(bool force_restart)
 	{
-		((cTimerPrivate*)this)->start();
+		((cTimerPrivate*)this)->start(force_restart);
 	}
 
 	void cTimer::stop()

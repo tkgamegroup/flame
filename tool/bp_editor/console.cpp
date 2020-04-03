@@ -238,14 +238,18 @@ cConsole::cConsole() :
 						if (i)
 						{
 							auto type = i->type();
-							auto value_before = type->serialize(i->data(), 2);
-							auto data = new char[i->size()];
-							type->unserialize(w2s(tokens[2]), data);
-							i->set_data((char*)data);
-							delete[] data;
-							auto value_after = type->serialize(i->data(), 2);
-							log += L"set value: " + tokens[1] + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
-							app.set_changed(true);
+							if (type->tag() != TypePointer)
+							{
+								auto value_before = type->serialize(i->data(), 2);
+								auto data = new char[i->size()];
+								type->unserialize(w2s(tokens[2]), data);
+								app.set_data(i, data, false);
+								delete[] data;
+								auto value_after = type->serialize(i->data(), 2);
+								log += L"set value: " + tokens[1] + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
+							}
+							else
+								log += L"cannot set pointer type\n";
 						}
 						else
 							log += L"input not found\n";

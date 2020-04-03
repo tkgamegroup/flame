@@ -21,7 +21,7 @@ namespace flame
 			event_receiver = nullptr;
 			style = nullptr;
 
-			idx = -1;
+			index = -1;
 
 			mouse_listener = nullptr;
 		}
@@ -43,11 +43,11 @@ namespace flame
 
 		void on_added() override
 		{
-			if (idx == -1)
+			if (index == -1)
 			{
 				auto items = entity->parent();
 				if (items)
-					idx = items->child_count() - 1;
+					index = items->child_count() - 1;
 			}
 		}
 
@@ -63,12 +63,12 @@ namespace flame
 						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
 						auto combobox = menu->entity->get_component(cCombobox);
 						utils::remove_top_layer(menu->root);
-						combobox->set_index(thiz->idx);
+						combobox->set_index(thiz->index);
 					}
 					return true;
 				}, Mail::from_p(this));
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor"))
+			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
 				style = (cStyleColor2*)c;
 				style->level = 0;
@@ -91,7 +91,7 @@ namespace flame
 			text = nullptr;
 			event_receiver = nullptr;
 
-			idx = -1;
+			index = -1;
 		}
 
 		void on_component_added(Component* c) override
@@ -101,21 +101,23 @@ namespace flame
 		}
 	};
 
-	void cCombobox::set_index(int _idx, void* sender)
+	void cCombobox::set_index(int _index, void* sender)
 	{
+		if (index == _index)
+			return;
 		auto items = entity->get_component(cMenu)->items;
-		if (idx != -1)
+		if (index != -1)
 		{
-			auto comboboxitem = (cComboboxItemPrivate*)items->child(idx)->get_component(cComboboxItem);
+			auto comboboxitem = (cComboboxItemPrivate*)items->child(index)->get_component(cComboboxItem);
 			if (comboboxitem)
 				comboboxitem->do_style(false);
 		}
-		idx = _idx;
-		if (idx < 0)
+		index = _index;
+		if (index < 0)
 			text->set_text(L"");
 		else
 		{
-			auto selected = items->child(idx);
+			auto selected = items->child(index);
 			text->set_text(selected->get_component(cText)->text());
 			{
 				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(cComboboxItem);

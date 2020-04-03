@@ -303,24 +303,22 @@ namespace flame
 				dbclick_timer = 0.5f;
 		}
 
-		if (prev_hovering != hovering)
-		{
-			if (prev_hovering)
-			{
-				prev_hovering->state = EventReceiverNormal;
-				prev_hovering->state_listeners.call(EventReceiverNormal);
-			}
-			if (hovering)
-			{
-				hovering->state = (hovering == focusing && focusing_state != FocusingNormal) ? EventReceiverActive : EventReceiverHovering;
-				hovering->state_listeners.call(hovering->state);
-			}
-		}
-		else if (hovering && prev_focusing_state != focusing_state)
-		{
-			hovering->state = focusing_state != FocusingNormal ? EventReceiverActive : EventReceiverHovering;
-			hovering->state_listeners.call(hovering->state);
-		}
+		auto get_state = [&](cEventReceiver* er) {
+			EventReceiverStateFlags state = EventReceiverNormal;
+			if (er == hovering)
+				state |= EventReceiverHovering;
+			if (er == focusing && focusing_state != FocusingNormal)
+				state |= EventReceiverActive;
+			return state;
+		};
+		if (prev_hovering)
+			((cEventReceiverPrivate*)prev_hovering)->set_state(get_state(prev_hovering));
+		if (hovering)
+			((cEventReceiverPrivate*)hovering)->set_state(get_state(hovering));
+		if (prev_focusing)
+			((cEventReceiverPrivate*)prev_focusing)->set_state(get_state(prev_focusing));
+		if (focusing)
+			((cEventReceiverPrivate*)focusing)->set_state(get_state(focusing));
 
 		if (prev_hovering != hovering)
 		{

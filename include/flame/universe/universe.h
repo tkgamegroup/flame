@@ -26,10 +26,12 @@ namespace flame
 
 	enum EventReceiverState
 	{
-		EventReceiverNormal,
-		EventReceiverHovering,
-		EventReceiverActive
+		EventReceiverNormal = 0,
+		EventReceiverHovering = 1 << 0,
+		EventReceiverActive = 1 << 1
 	};
+
+	typedef uint EventReceiverStateFlags;
 
 	enum Alignx
 	{
@@ -75,14 +77,6 @@ namespace flame
 	};
 
 	struct World;
-
-	template <class T>
-	T* new_u_object()
-	{
-		auto c = (T*)f_malloc(sizeof(T));
-		new (c) T;
-		return c;
-	}
 
 	// objects in universe module can have serialization through an reflected type, the type name is 'Serializer_' + object's name
 }

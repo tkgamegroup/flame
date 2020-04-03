@@ -488,19 +488,19 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_button(const wchar_t* text, void(*func)(void* c) = nullptr, const Mail& _capture = Mail(), bool use_style = true)
+		inline Entity* e_button(const wchar_t* text, void(*on_clicked)(void* c) = nullptr, const Mail& _capture = Mail(), bool use_style = true)
 		{
 			auto e = e_empty();
 			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			auto cer = c_event_receiver();
-			if (func)
+			if (on_clicked)
 			{
 				struct Capture
 				{
 					void(*f)(void*);
 				}capture;
-				capture.f = func;
+				capture.f = on_clicked;
 				cer->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key))
 						((Capture*)c)->f((char*)c + sizeof(Capture));
@@ -578,7 +578,7 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_drag_edit(bool is_float)
+		inline Entity* e_drag_edit()
 		{
 			auto e = e_begin_layout(LayoutVertical);
 			e->get_component(cLayout)->fence = 1;
@@ -599,54 +599,31 @@ namespace flame
 
 			struct Capture
 			{
-				Entity* e;
-				cText* e_t;
-				cEdit* e_e;
-				cEventReceiver* e_er;
-				Entity* d;
-				cEventReceiver* d_er;
-				bool is_float;
+				Entity* ee;
+				Entity* ed;
 			}capture;
-			capture.e = ee;
-			capture.e_t = ee->get_component(cText);
-			capture.e_e = ee->get_component(cEdit);
-			capture.e_er = ee->get_component(cEventReceiver);
-			capture.d = ed;
-			capture.d_er = ed->get_component(cEventReceiver);
-			capture.is_float = is_float;
+			capture.ee = ee;
+			capture.ed = ed;
 
-			capture.e_er->focus_listeners.add([](void* c, bool focusing) {
+			ee->get_component(cEventReceiver)->focus_listeners.add([](void* c, bool focusing) {
 				auto& capture = *(Capture*)c;
 				if (!focusing)
 				{
-					capture.e->set_visible(false);
-					capture.d->set_visible(true);
+					capture.ee->set_visible(false);
+					capture.ed->set_visible(true);
 				}
 				return true;
 			}, Mail::from_t(&capture));
 
-			capture.d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			ed->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key) && pos == 0)
 				{
-					capture.e->set_visible(true);
-					capture.d->set_visible(false);
-					capture.d_er->dispatcher->next_focusing = capture.e_er;
-				}
-				else if (is_active(capture.d_er) && is_mouse_move(action, key))
-				{
-					if (capture.is_float)
-					{
-						auto v = std::stof(capture.e_t->text());
-						v += pos.x() * 0.05f;
-						capture.e_t->set_text(to_wstring(v, 2).c_str());
-					}
-					else
-					{
-						auto v = std::stoi(capture.e_t->text());
-						v += pos.x();
-						capture.e_t->set_text(std::to_wstring(v).c_str());
-					}
+					capture.ee->set_visible(true);
+					capture.ed->set_visible(false);
+					capture.ee->get_component(cEdit)->cursor = 0;
+					auto er = capture.ee->get_component(cEventReceiver);
+					er->dispatcher->next_focusing = er;
 				}
 				return true;
 			}, Mail::from_t(&capture));

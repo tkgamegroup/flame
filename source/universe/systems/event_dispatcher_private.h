@@ -16,9 +16,9 @@ namespace flame
 		std::vector<Key> keyup_inputs;
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
+		float dbclick_timer;
 
 		cEventReceiverPrivate* mouse_event_checker;
-		float dbclick_timer;
 		Vec2i active_pos;
 
 		sEventDispatcherPrivate();

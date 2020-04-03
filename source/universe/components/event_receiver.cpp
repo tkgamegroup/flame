@@ -51,6 +51,15 @@ namespace flame
 		drag_and_drop_listeners.call(action, er, pos);
 	}
 
+	void cEventReceiverPrivate::set_state(EventReceiverStateFlags _state)
+	{
+		if (state != _state)
+		{
+			state = _state;
+			state_listeners.call(state);
+		}
+	}
+
 	void cEventReceiverPrivate::on_entered_world()
 	{
 		dispatcher = entity->world()->get_system(sEventDispatcher);

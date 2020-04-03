@@ -5,6 +5,23 @@
 
 namespace flame
 {
+	Vec4c get_color_2(EventReceiverStateFlags state, const std::vector<Vec4c>& colors)
+	{
+		if ((state & EventReceiverHovering) || (state & EventReceiverActive))
+			return colors[1];
+		return colors[0];
+	}
+
+	Vec4c get_color_3(EventReceiverStateFlags state, const std::vector<Vec4c>& colors)
+	{
+		auto lv = 0;
+		if (state & EventReceiverHovering)
+			lv++;
+		if (state & EventReceiverActive)
+			lv++;
+		return colors[lv];
+	}
+
 	struct cStyleColorPrivate : cStyleColor
 	{
 		void* state_changed_listener;
@@ -34,7 +51,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
 					(*(cStyleColorPrivate**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -54,18 +71,7 @@ namespace flame
 
 	void cStyleColor::style()
 	{
-		switch (event_receiver->state)
-		{
-		case EventReceiverNormal:
-			element->set_color(color_normal);
-			break;
-		case EventReceiverHovering:
-			element->set_color(color_hovering);
-			break;
-		case EventReceiverActive:
-			element->set_color(color_active);
-			break;
-		}
+		element->set_color(get_color_3(event_receiver->state, { color_normal, color_hovering, color_active }));
 	}
 
 	cStyleColor* cStyleColor::create()
@@ -107,7 +113,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
 					(*(cStyleColor2Private**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -131,18 +137,7 @@ namespace flame
 
 	void cStyleColor2::style()
 	{
-		switch (event_receiver->state)
-		{
-		case EventReceiverNormal:
-			element->set_color(color_normal[level]);
-			break;
-		case EventReceiverHovering:
-			element->set_color(color_hovering[level]);
-			break;
-		case EventReceiverActive:
-			element->set_color(color_active[level]);
-			break;
-		}
+		element->set_color(get_color_3(event_receiver->state, { color_normal[level], color_hovering[level], color_active[level] }));
 	}
 
 	cStyleColor2* cStyleColor2::create()
@@ -178,7 +173,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
 					(*(cStyleTextColorPrivate**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -197,15 +192,7 @@ namespace flame
 
 	void cStyleTextColor::style()
 	{
-		switch (event_receiver->state)
-		{
-		case EventReceiverNormal:
-			text->set_color(color_normal);
-			break;
-		case EventReceiverHovering: case EventReceiverActive:
-			text->set_color(color_else);
-			break;
-		}
+		text->set_color(get_color_2(event_receiver->state, { color_normal, color_else }));
 	}
 
 	cStyleTextColor* cStyleTextColor::create()
@@ -246,7 +233,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
 					(*(cStyleTextColor2Private**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -268,15 +255,7 @@ namespace flame
 
 	void cStyleTextColor2::style()
 	{
-		switch (event_receiver->state)
-		{
-		case EventReceiverNormal:
-			text->set_color(color_normal[level]);
-			break;
-		case EventReceiverHovering: case EventReceiverActive:
-			text->set_color(color_else[level]);
-			break;
-		}
+		text->set_color(get_color_2(event_receiver->state, { color_normal[level], color_else[level] }));
 	}
 
 	cStyleTextColor2* cStyleTextColor2::create()

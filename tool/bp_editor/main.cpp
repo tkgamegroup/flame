@@ -60,14 +60,20 @@ static std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& mod
 
 struct Action
 {
+	wchar_t* name;
 	virtual void undo() = 0;
 	virtual void redo() = 0;
 };
 
-struct Action_ChangeID : Action
+struct Action_ChangeNodeID : Action
 {
 	std::string prev_id;
 	std::string after_id;
+
+	Action_ChangeNodeID()
+	{
+		name = L"Change Node ID";
+	}
 
 	void undo() override
 	{
@@ -102,6 +108,11 @@ struct Action_MoveNodes : Action
 	};
 	std::vector<Target> targets;
 
+	Action_MoveNodes()
+	{
+		name = L"Move Nodes";
+	}
+
 	void undo() override
 	{
 		for (auto& t : targets)
@@ -135,6 +146,11 @@ struct Action_AddNode : Action
 {
 	NodeDesc desc;
 
+	Action_AddNode()
+	{
+		name = L"Add Node";
+	}
+
 	void undo() override
 	{
 		auto n = app.bp->find_node(desc.id.c_str());
@@ -152,6 +168,11 @@ struct Action_DuplicateNodes : Action
 {
 	std::vector<std::string> models;
 	std::vector<std::string> duplications;
+
+	Action_DuplicateNodes()
+	{
+		name = L"Duplicate Nodes";
+	}
 
 	void undo() override
 	{
@@ -177,6 +198,11 @@ struct Action_DuplicateNodes : Action
 struct Action_RemoveNodes : Action
 {
 	std::vector<NodeSaving> savings;
+
+	Action_RemoveNodes()
+	{
+		name = L"Remove Nodes";
+	}
 
 	void undo() override
 	{
@@ -242,6 +268,11 @@ struct Action_SetLinks : Action
 	};
 	std::vector<LinkDesc> link_descs;
 
+	Action_SetLinks()
+	{
+		name = L"Set Links";
+	}
+
 	void undo() override
 	{
 		for (auto& l : link_descs)
@@ -267,6 +298,50 @@ struct Action_SetLinks : Action
 	}
 };
 
+struct Action_SetData : Action
+{
+	std::string input_addr;
+	std::string prev_data;
+	std::string after_data;
+
+	Action_SetData()
+	{
+		name = L"Set Data";
+	}
+
+	void undo() override
+	{
+		auto s = app.bp->find_input(input_addr.c_str());
+		if (s)
+		{
+			auto type = s->type();
+			auto data = new char[s->size()];
+			type->unserialize(prev_data, data);
+			s->set_data((char*)data);
+			delete[] data;
+
+			if (app.editor)
+				app.editor->on_data_changed(s);
+		}
+	}
+
+	void redo() override
+	{
+		auto s = app.bp->find_input(input_addr.c_str());
+		if (s)
+		{
+			auto type = s->type();
+			auto data = new char[s->size()];
+			type->unserialize(after_data, data);
+			s->set_data((char*)data);
+			delete[] data;
+
+			if (app.editor)
+				app.editor->on_data_changed(s);
+		}
+	}
+};
+
 static std::vector<std::unique_ptr<Action>> actions;
 static auto action_idx = 0;
 
@@ -278,22 +353,20 @@ static void add_action(Action* a)
 	action_idx++;
 }
 
-static Entity* e_notification;
-static void show_notification(const std::wstring& text)
-{
-	if (e_notification)
-		;
-}
-
 void undo()
 {
 	if (action_idx > 0)
 	{
 		action_idx--;
-		actions[action_idx]->undo();
+		auto a = actions[action_idx].get();
+		a->undo();
 
 		if (action_idx == 0)
 			app.set_changed(false);
+
+		app.e_notification->set_visible(true);
+		app.e_notification->get_component(cTimer)->start();
+		app.e_notification->get_component(cText)->set_text((std::wstring(L"Undo ") + a->name).c_str());
 	}
 }
 
@@ -301,10 +374,15 @@ void redo()
 {
 	if (action_idx < actions.size())
 	{
-		actions[action_idx]->redo();
+		auto a = actions[action_idx].get();
+		a->redo();
 		action_idx++;
 
 		app.set_changed(true);
+
+		app.e_notification->set_visible(true);
+		app.e_notification->get_component(cTimer)->start();
+		app.e_notification->get_component(cText)->set_text((std::wstring(L"Redo ") + a->name).c_str());
 	}
 }
 
@@ -481,7 +559,7 @@ void MyApp::set_node_id(BP::Node* n, const std::string& id)
 	if (!n->set_id(id.c_str()))
 		return;
 
-	auto a = new Action_ChangeID;
+	auto a = new Action_ChangeNodeID;
 	a->prev_id = prev_id;
 	a->after_id = id;
 	add_action(a);
@@ -532,6 +610,23 @@ void MyApp::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links)
 	set_changed(true);
 }
 
+void MyApp::set_data(BP::Slot* input, void* data, bool from_editor)
+{
+	auto type = input->type();
+
+	auto a = new Action_SetData;
+	a->input_addr = input->get_address().v;
+	a->prev_data = type->serialize(input->data(), 2);
+	a->after_data = type->serialize(data, 2);
+	add_action(a);
+
+	input->set_data(data);
+	set_changed(true);
+
+	if (!from_editor && editor)
+		editor->on_data_changed(input);
+}
+
 void MyApp::save()
 {
 	BP::save_to_file(app.bp, app.filepath.c_str());
@@ -542,27 +637,27 @@ void MyApp::save()
 	app.set_changed(false);
 }
 
-	//auto n_rt = app.bp->find_node("test_rt");
-	//if (!n_rt)
-	//{
-	//	n_rt = app.add_node("TestRenderTarget", "test_rt", Vec2f(0.f, 0.f));
-	//	n_rt->used_by_editor = true;
-	//}
-	//{
-	//	auto s = app.bp->find_input("rt_dst.type");
-	//	if (s)
-	//		s->link_to(n_rt->find_output("type"));
-	//}
-	//{
-	//	auto s = app.bp->find_input("rt_dst.v");
-	//	if (s)
-	//		s->link_to(n_rt->find_output("view"));
-	//}
-	//{
-	//	auto s = app.bp->find_input("make_cmd.cbs");
-	//	if (s)
-	//		s->link_to(n_rt->find_output("out"));
-	//}
+//auto n_rt = app.bp->find_node("test_rt");
+//if (!n_rt)
+//{
+//	n_rt = app.add_node("TestRenderTarget", "test_rt", Vec2f(0.f, 0.f));
+//	n_rt->used_by_editor = true;
+//}
+//{
+//	auto s = app.bp->find_input("rt_dst.type");
+//	if (s)
+//		s->link_to(n_rt->find_output("type"));
+//}
+//{
+//	auto s = app.bp->find_input("rt_dst.v");
+//	if (s)
+//		s->link_to(n_rt->find_output("view"));
+//}
+//{
+//	auto s = app.bp->find_input("make_cmd.cbs");
+//	if (s)
+//		s->link_to(n_rt->find_output("out"));
+//}
 
 void MyApp::update_gv()
 {
@@ -890,6 +985,26 @@ bool MyApp::create(const char* filename)
 
 			}
 		}
+
+		utils::push_style_1u(utils::FontSize, 30);
+		e_notification = utils::e_text(L"");
+		{
+			auto c_element = e_notification->get_component(cElement);
+			c_element->inner_padding_ = Vec4f(20.f, 10.f, 20.f, 10.f);
+			c_element->color_ = Vec4c(0, 0, 0, 255);
+		}
+		e_notification->get_component(cText)->color_ = Vec4c(255);
+		utils::c_aligner(AlignxRight, AlignyBottom);
+		e_notification->set_visible(false);
+		{
+			auto c_timer = utils::c_timer();
+			c_timer->interval = 1.f;
+			c_timer->max_times = 1;
+			c_timer->set_callback([](void*) {
+				app.e_notification->set_visible(false);
+			}, Mail(), false);
+		}
+		utils::pop_style(utils::FontSize);
 
 	utils::pop_parent();
 

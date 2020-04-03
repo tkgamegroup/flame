@@ -91,6 +91,8 @@ struct MyApp : App
 	cEditor* editor;
 	cConsole* console;
 
+	Entity* e_notification;
+
 	MyApp()
 	{
 		editor = nullptr;
@@ -116,6 +118,7 @@ struct MyApp : App
 	void set_node_id(BP::Node* n, const std::string& id);
 	void set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
 	void set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links);
+	void set_data(BP::Slot* input, void* data, bool from_editor);
 
 	void save();
 

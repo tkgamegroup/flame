@@ -437,7 +437,7 @@ struct cNode : Component
 				}
 				return true;
 			}, Mail::from_p(this));
-			event_receiver->state_listeners.add([](void* c, EventReceiverState) {
+			event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags) {
 				auto thiz = *(cNode**)c;
 				if (thiz->moved && !utils::is_active(thiz->event_receiver))
 				{
@@ -612,8 +612,8 @@ cEditor::cEditor() :
 						}
 						return true;
 					}, Mail());
-					c_event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-						if (state != EventReceiverActive && app.editor->selecting)
+					c_event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
+						if (!(state & EventReceiverActive) && app.editor->selecting)
 						{
 							app.s_2d_renderer->pending_update = true;
 
@@ -770,79 +770,36 @@ void cEditor::on_bp_changed()
 template <class T>
 void create_edit(cEditor* editor, BP::Slot* input)
 {
-	auto& data = *(T*)input->data();
+	utils::e_drag_edit();
 
-	utils::push_style_1u(utils::FontSize, 12);
-	auto e_edit = utils::e_drag_edit(std::is_floating_point<T>::value);
-	struct Capture
-	{
-		BP::Slot* input;
-		cText* edit_text;
-		cText* drag_text;
-	}capture;
-	capture.input = input;
-	capture.edit_text = e_edit->child(0)->get_component(cText);
-	capture.drag_text = e_edit->child(1)->get_component(cText);
-	capture.edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-		auto& capture = *(Capture*)c;
-		if (hash == FLAME_CHASH("text"))
-		{
-			auto text = capture.edit_text->text();
-			auto data = sto_s<T>(text);
-			capture.input->set_data(&data);
-			capture.drag_text->set_text(text);
-			app.set_changed(true);
-		}
-		return true;
-	}, Mail::from_t(&capture));
-	utils::pop_style(utils::FontSize);
-
-	auto c_tracker = new_u_object<cDigitalDataTracker<T>>();
-	c_tracker->data = &data;
+	auto c_tracker = (cDigitalDataTracker<T>*)f_malloc(sizeof(cDigitalDataTracker<T>));
+	new (c_tracker) cDigitalDataTracker<T>((T*)input->data(), [](void* c, T v, bool exit_editing) {
+		if (exit_editing)
+			app.set_data(*(BP::Slot**)c, &v, true);
+		else
+			(*(BP::Slot**)c)->set_data(&v);
+	}, Mail::from_p(input));
 	utils::current_parent()->add_component(c_tracker);
 }
 
 template <uint N, class T>
 void create_vec_edit(cEditor* editor, BP::Slot* input)
 {
-	auto& data = *(Vec<N, T>*)input->data();
-
-	struct Capture
-	{
-		BP::Slot* input;
-		uint i;
-		cText* edit_text;
-		cText* drag_text;
-	}capture;
-	capture.input = input;
-	utils::push_style_1u(utils::FontSize, 12);
 	for (auto i = 0; i < N; i++)
 	{
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
-		auto e_edit = utils::e_drag_edit(std::is_floating_point<T>::value);
-		capture.i = i;
-		capture.edit_text = e_edit->child(0)->get_component(cText);
-		capture.drag_text = e_edit->child(1)->get_component(cText);
-		capture.edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-			auto& capture = *(Capture*)c;
-			if (hash == FLAME_CHASH("text"))
-			{
-				auto text = capture.edit_text->text();
-				auto data = *(Vec<N, T>*)capture.input->data();
-				data[capture.i] = sto_s<T>(text);
-				capture.input->set_data(&data);
-				capture.drag_text->set_text(text);
-				app.set_changed(true);
-			}
-			return true;
-		}, Mail::from_t(&capture));
+		utils::e_drag_edit();
 		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
 		utils::e_end_layout();
 	}
-	utils::pop_style(utils::FontSize);
 
-	auto c_tracker = new_u_object<cDigitalVecDataTracker<N, T>>();
-	c_tracker->data = &data;
+	auto c_tracker = (cDigitalVecDataTracker<N, T>*)f_malloc(sizeof(cDigitalVecDataTracker<N, T>));
+	new (c_tracker) cDigitalVecDataTracker<N, T>((Vec<N, T>*)input->data(), [](void* c, const Vec<N, T>& v, bool exit_editing) {
+		if (exit_editing)
+			app.set_data(*(BP::Slot**)c, (void*)&v, true);
+		else
+			(*(BP::Slot**)c)->set_data((void*)&v);
+	}, Mail::from_p(input));
 	utils::current_parent()->add_component(c_tracker);
 }
 
@@ -862,7 +819,8 @@ void cEditor::on_add_node(BP::Node* n)
 		utils::c_event_receiver();
 		utils::c_layout(LayoutVertical)->fence = 1;
 	}
-		auto c_node = new_u_object<cNode>();
+		auto c_node = (cNode*)f_malloc(sizeof(cNode));
+		new (c_node) cNode;
 		c_node->n = n;
 		{
 			std::string parameters;
@@ -1062,7 +1020,8 @@ void cEditor::on_add_node(BP::Node* n)
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 						}
 						utils::c_event_receiver();
-						auto c_slot = new_u_object<cSlot>();
+						auto c_slot = (cSlot*)f_malloc(sizeof(cSlot));
+						new (c_slot) cSlot;
 						c_slot->s = input;
 						input->user_data = c_slot;
 						utils::current_entity()->add_component(c_slot);
@@ -1118,6 +1077,7 @@ void cEditor::on_add_node(BP::Node* n)
 
 						auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
 						e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
+
 						std::vector<TypeinfoDatabase*> dbs;
 						dbs.resize(app.bp->library_count());
 						for (auto i = 0; i < dbs.size(); i++)
@@ -1126,7 +1086,6 @@ void cEditor::on_add_node(BP::Node* n)
 						extra_global_dbs = dbs.data();
 						auto type = input->type();
 						auto base_hash = type->base_hash();
-						utils::push_style_1u(utils::FontSize, 12);
 
 						switch (type->tag())
 						{
@@ -1135,29 +1094,10 @@ void cEditor::on_add_node(BP::Node* n)
 							auto info = find_enum(base_hash);
 							utils::create_enum_combobox(info, 120.f);
 
-							struct Capture
-							{
-								BP::Slot* input;
-								EnumInfo* e;
-								cCombobox* cb;
-							}capture;
-							capture.input = input;
-							capture.e = info;
-							capture.cb = e_data->child(0)->get_component(cCombobox);
-							capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
-								auto& capture = *(Capture*)c;
-								if (hash == FLAME_CHASH("index"))
-								{
-									auto v = capture.e->item(capture.cb->idx)->value();
-									capture.input->set_data(&v);
-									app.set_changed(true);
-								}
-								return true;
-							}, Mail::from_t(&capture));
-
-							auto c_tracker = new_u_object<cEnumSingleDataTracker>();
-							c_tracker->data = input->data();
-							c_tracker->info = info;
+							auto c_tracker = (cEnumSingleDataTracker*)f_malloc(sizeof(cEnumSingleDataTracker));
+							new (c_tracker) cEnumSingleDataTracker((int*)input->data(), info, [](void* c, int v) {
+								app.set_data(*(BP::Slot**)c, &v, true);
+							}, Mail::from_p(input));
 							e_data->add_component(c_tracker);
 						}
 						break;
@@ -1167,38 +1107,11 @@ void cEditor::on_add_node(BP::Node* n)
 
 							auto info = find_enum(base_hash);
 							utils::create_enum_checkboxs(info);
-							for (auto k = 0; k < info->item_count(); k++)
-							{
-								auto item = info->item(k);
 
-								struct Capture
-								{
-									BP::Slot* input;
-									int v;
-									cCheckbox* cb;
-								}capture;
-								capture.input = input;
-								capture.v = item->value();
-								capture.cb = e_data->child(k)->child(0)->get_component(cCheckbox);
-								capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
-									auto& capture = *(Capture*)c;
-									if (hash == FLAME_CHASH("checked"))
-									{
-										auto v = *(int*)capture.input->data();
-										if (capture.cb->checked)
-											v |= capture.v;
-										else
-											v &= ~capture.v;
-										capture.input->set_data(&v);
-										app.set_changed(true);
-									}
-									return true;
-								}, Mail::from_t(&capture));
-							}
-
-							auto c_tracker = new_u_object<cEnumMultiDataTracker>();
-							c_tracker->data = input->data();
-							c_tracker->info = info;
+							auto c_tracker = (cEnumMultiDataTracker*)f_malloc(sizeof(cEnumMultiDataTracker));
+							new (c_tracker) cEnumMultiDataTracker((int*)input->data(), info, [](void* c, int v) {
+								app.set_data(*(BP::Slot**)c, &v, true);
+							}, Mail::from_p(input));
 							e_data->add_component(c_tracker);
 						}
 						break;
@@ -1209,26 +1122,10 @@ void cEditor::on_add_node(BP::Node* n)
 							{
 								auto e_checkbox = utils::e_checkbox(L"");
 
-								struct Capture
-								{
-									BP::Slot* input;
-									cCheckbox* cb;
-								}capture;
-								capture.input = input;
-								capture.cb = e_checkbox->get_component(cCheckbox);
-								capture.cb->data_changed_listeners.add([](void* c, uint hash, void*) {
-									auto& capture = *(Capture*)c;
-									if (hash == FLAME_CHASH("checked"))
-									{
-										auto v = (capture.cb->checked) ? 1 : 0;
-										capture.input->set_data(&v);
-										app.set_changed(true);
-									}
-									return true;
-								}, Mail::from_t(&capture));
-
-								auto c_tracker = new_u_object<cBoolDataTracker>();
-								c_tracker->data = input->data();
+								auto c_tracker = (cBoolDataTracker*)f_malloc(sizeof(cBoolDataTracker));
+								new (c_tracker) cBoolDataTracker((bool*)input->data(), [](void* c, bool v) {
+									app.set_data(*(BP::Slot**)c, &v, true);
+								}, Mail::from_p(input));
 								e_data->add_component(c_tracker);
 							}
 							break;
@@ -1299,8 +1196,10 @@ void cEditor::on_add_node(BP::Node* n)
 									return true;
 								}, Mail::from_t(&capture));
 
-								auto c_tracker = new_u_object<cStringADataTracker>();
-								c_tracker->data = input->data();
+								auto c_tracker = (cStringADataTracker*)f_malloc(sizeof(cStringADataTracker));
+								new (c_tracker) cStringADataTracker((StringA*)input->data(), [](void* c, const char* v) {
+									app.set_data(*(BP::Slot**)c, (void*)v, true);
+								}, Mail::from_p(input));
 								e_data->add_component(c_tracker);
 							}
 							break;
@@ -1323,8 +1222,10 @@ void cEditor::on_add_node(BP::Node* n)
 									return true;
 								}, Mail::from_t(&capture));
 
-								auto c_tracker = new_u_object<cStringWDataTracker>();
-								c_tracker->data = input->data();
+								auto c_tracker = (cStringWDataTracker*)f_malloc(sizeof(cStringWDataTracker));
+								new (c_tracker) cStringWDataTracker((StringW*)input->data(), [](void* c, const wchar_t* v) {
+									app.set_data(*(BP::Slot**)c, (void*)v, true);
+								}, Mail::from_p(input));
 								e_data->add_component(c_tracker);
 							}
 							break;
@@ -1333,7 +1234,6 @@ void cEditor::on_add_node(BP::Node* n)
 						}
 						extra_global_db_count = 0;
 						extra_global_dbs = nullptr;
-						utils::pop_style(utils::FontSize);
 						utils::e_end_layout();
 
 						utils::e_end_layout();
@@ -1362,7 +1262,8 @@ void cEditor::on_add_node(BP::Node* n)
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 						}
 						utils::c_event_receiver();
-						auto c_slot = new_u_object<cSlot>();
+						auto c_slot = (cSlot*)f_malloc(sizeof(cSlot));
+						new (c_slot) cSlot;
 						c_slot->s = output;
 						utils::current_entity()->add_component(c_slot);
 						output->user_data = c_slot;
