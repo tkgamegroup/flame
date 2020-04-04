@@ -27,6 +27,8 @@ add_dependencies(graphics_test_bp compiler)
 add_executable(graphics_test_canvas "graphics_test_canvas.cpp")
 set_target_properties(graphics_test_canvas PROPERTIES FOLDER "test")
 target_link_libraries(graphics_test_canvas flame_graphics)
+add_dependencies(graphics_test_canvas typeinfogen)
+add_dependencies(graphics_test_canvas compiler)
 
 add_executable(sound_test "sound_test.cpp")
 set_target_properties(sound_test PROPERTIES FOLDER "test")

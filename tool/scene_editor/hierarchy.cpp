@@ -131,7 +131,8 @@ static void create_tree_node(Entity* e)
 	{
 		auto e_tree_node = utils::e_begin_tree_node(s2w(e->name()).c_str());
 		{
-			auto c_item = new_u_object<cHierarchyItem>();
+			auto c_item = (cHierarchyItem*)f_malloc(sizeof(cHierarchyItem));
+			new (c_item) cHierarchyItem;
 			c_item->e = e;
 			e_tree_node->child(0)->add_component(c_item);
 		}
@@ -145,7 +146,8 @@ static void create_tree_node(Entity* e)
 	{
 		auto e_tree_leaf = utils::e_tree_leaf(s2w(e->name()).c_str());
 		{
-			auto c_item = new_u_object<cHierarchyItem>();
+			auto c_item = (cHierarchyItem*)f_malloc(sizeof(cHierarchyItem));
+			new (c_item) cHierarchyItem;
 			c_item->e = e;
 			e_tree_leaf->add_component(c_item);
 		}

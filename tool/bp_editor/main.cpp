@@ -794,7 +794,8 @@ bool MyApp::create(const char* filename)
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
-	auto window_layout_ok = window_layout.load_file(L"window_layout.xml") && (window_layout_root = window_layout.first_child()).name() == std::string("layout");
+	if (window_layout.load_file(L"window_layout.xml"))
+		window_layout_root = window_layout.first_child();
 
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	utils::style_set_to_light();
@@ -963,7 +964,7 @@ bool MyApp::create(const char* filename)
 			}
 
 			utils::e_begin_docker_static_container();
-			if (window_layout_ok)
+			if (window_layout_root)
 			{
 				for (auto n_window : window_layout_root.child("static"))
 				{
@@ -978,7 +979,7 @@ bool MyApp::create(const char* filename)
 
 		utils::e_end_layout();
 
-		if (window_layout_ok)
+		if (window_layout_root)
 		{
 			for (auto n_window : window_layout_root.child("floating"))
 			{

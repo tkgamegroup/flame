@@ -205,7 +205,7 @@ cEditor::cEditor() :
 				auto c_combobox = e_tool->get_component(cCombobox);
 				c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
 					if (hash == FLAME_CHASH("index"))
-						app.editor->tool_type = (*(cCombobox**)c)->idx;
+						app.editor->tool_type = (*(cCombobox**)c)->index;
 					return true;
 				}, Mail::from_p(c_combobox));
 			}

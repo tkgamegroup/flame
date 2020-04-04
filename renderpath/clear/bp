@@ -4,17 +4,17 @@
 		<directory directory="make_cmd" />
 	</libraries>
 	<nodes>
-		<node type="flame::graphics::R_RenderTarget" id="rt_dst" pos="-58.28;-5.47">
+		<node type="flame::graphics::R_RenderTarget" id="rt_dst" pos="56.72;84.53">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="200;100;50;255" />
 			</datas>
 		</node>
-		<node type="Array(1+flame::graphics::RenderTarget*)" id="color_targets" pos="223.72;38.53" />
-		<node type="flame::graphics::R_SubpassTargetInfo" id="sp" pos="337.81;52.53" />
-		<node type="Array(1+flame::graphics::SubpassTargetInfo*)" id="sps" pos="552.81;85.53" />
-		<node type="flame::graphics::R_RenderpassAndFramebuffer" id="rnf" pos="668.20;90.53" />
-		<node type="MakeCmd" id="make_cmd" pos="940.20;85.53" />
+		<node type="Array(1+flame::graphics::RenderTarget*)" id="color_targets" pos="338.72;128.53" />
+		<node type="flame::graphics::R_SubpassTargetInfo" id="sp" pos="452.81;142.53" />
+		<node type="Array(1+flame::graphics::SubpassTargetInfo*)" id="sps" pos="667.81;175.53" />
+		<node type="flame::graphics::R_RenderpassAndFramebuffer" id="rnf" pos="783.20;180.53" />
+		<node type="MakeCmd" id="make_cmd" pos="1055.20;175.53" />
 	</nodes>
 	<links>
 		<link out="rt_dst.out" in="color_targets.0" />
