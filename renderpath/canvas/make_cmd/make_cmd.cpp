@@ -429,82 +429,85 @@ struct R(MakeCmd)
 			vtx_end = (Vertex*)vtx_buf->mapped;
 			idx_end = (uint*)idx_buf->mapped;
 
-			auto cb = cbs->at(image_idx);
-			if (rnf && (pl_element || pl_text_lcd || pl_text_sdf))
+			if (cbs)
 			{
-				surface_size = Vec2f(rnf->framebuffer(image_idx)->image_size);
-				curr_scissor = Vec4f(Vec2f(0.f), surface_size);
-
-				if (draw)
-					draw(capture.p);
-
-				cb->begin();
-				auto cv = rnf->clearvalues();
-				cv->set(0, clear_color);
-				cb->begin_renderpass(rnf->framebuffer(image_idx), cv);
-				if (idx_end != idx_buf->mapped)
+				auto cb = cbs->at(image_idx);
+				if (rnf && (pl_element || pl_text_lcd || pl_text_sdf))
 				{
-					cb->set_viewport(curr_scissor);
-					cb->set_scissor(curr_scissor);
-					cb->bind_vertexbuffer(vtx_buf, 0);
-					cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
+					surface_size = Vec2f(rnf->framebuffer(image_idx)->image_size);
+					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
 
-					struct
-					{
-						Vec2f scale;
-						Vec2f sdf_range;
-					}pc;
-					pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
-					pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
-					cb->push_constant(0, sizeof(pc), &pc, pll);
-					cb->bind_descriptorset(ds, 0, pll);
+					if (draw)
+						draw(capture.p);
 
-					auto vtx_off = 0;
-					auto idx_off = 0;
-					for (auto& cmd : cmds)
+					cb->begin();
+					auto cv = rnf->clearvalues();
+					cv->set(0, clear_color);
+					cb->begin_renderpass(rnf->framebuffer(image_idx), cv);
+					if (idx_end != idx_buf->mapped)
 					{
-						switch (cmd.type)
+						cb->set_viewport(curr_scissor);
+						cb->set_scissor(curr_scissor);
+						cb->bind_vertexbuffer(vtx_buf, 0);
+						cb->bind_indexbuffer(idx_buf, IndiceTypeUint);
+
+						struct
 						{
-						case CmdDrawElement:
-							if (cmd.v.draw_data.idx_cnt > 0)
+							Vec2f scale;
+							Vec2f sdf_range;
+						}pc;
+						pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
+						pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
+						cb->push_constant(0, sizeof(pc), &pc, pll);
+						cb->bind_descriptorset(ds, 0, pll);
+
+						auto vtx_off = 0;
+						auto idx_off = 0;
+						for (auto& cmd : cmds)
+						{
+							switch (cmd.type)
 							{
-								cb->bind_pipeline(pl_element);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
+							case CmdDrawElement:
+								if (cmd.v.draw_data.idx_cnt > 0)
+								{
+									cb->bind_pipeline(pl_element);
+									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+									vtx_off += cmd.v.draw_data.vtx_cnt;
+									idx_off += cmd.v.draw_data.idx_cnt;
+								}
+								break;
+							case CmdDrawTextLcd:
+								if (cmd.v.draw_data.idx_cnt > 0)
+								{
+									cb->bind_pipeline(pl_text_lcd);
+									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+									vtx_off += cmd.v.draw_data.vtx_cnt;
+									idx_off += cmd.v.draw_data.idx_cnt;
+								}
+								break;
+							case CmdDrawTextSdf:
+								if (cmd.v.draw_data.idx_cnt > 0)
+								{
+									cb->bind_pipeline(pl_text_sdf);
+									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+									vtx_off += cmd.v.draw_data.vtx_cnt;
+									idx_off += cmd.v.draw_data.idx_cnt;
+								}
+								break;
+							case CmdSetScissor:
+								cb->set_scissor(cmd.v.scissor);
+								break;
 							}
-							break;
-						case CmdDrawTextLcd:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_text_lcd);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdDrawTextSdf:
-							if (cmd.v.draw_data.idx_cnt > 0)
-							{
-								cb->bind_pipeline(pl_text_sdf);
-								cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-								vtx_off += cmd.v.draw_data.vtx_cnt;
-								idx_off += cmd.v.draw_data.idx_cnt;
-							}
-							break;
-						case CmdSetScissor:
-							cb->set_scissor(cmd.v.scissor);
-							break;
 						}
 					}
+					cb->end_renderpass();
+					cb->end();
 				}
-				cb->end_renderpass();
-				cb->end();
-			}
-			else
-			{
-				cb->begin();
-				cb->end();
+				else
+				{
+					cb->begin();
+					cb->end();
+				}
 			}
 
 			cmds.clear();

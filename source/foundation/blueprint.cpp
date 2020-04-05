@@ -245,7 +245,6 @@ namespace flame
 		in_update_list(false)
 	{
 		pos = Vec2f(0.f);
-		used_by_editor = false;
 		user_data = nullptr;
 
 		auto size = udt->size();
@@ -302,7 +301,6 @@ namespace flame
 		in_update_list(false)
 	{
 		pos = Vec2f(0.f);
-		used_by_editor = false;
 		user_data = nullptr;
 
 		object = malloc(size);
@@ -1149,12 +1147,7 @@ namespace flame
 		((BPPrivate*)this)->report_used_resource(filename);
 	}
 
-	BP* BP::create()
-	{
-		return new BPPrivate();
-	}
-
-	BP* BP::create_from_file(const wchar_t* filename)
+	BP* BP::create_from_file(const wchar_t* filename, bool test_mode)
 	{
 		auto s_filename = w2s(filename);
 		auto path = std::filesystem::path(filename);
@@ -1193,10 +1186,14 @@ namespace flame
 
 		for (auto n_node : file_root.child("nodes"))
 		{
+			auto id = n_node.attribute("id").value();
+			if (!test_mode && SUS::starts_with(id, "test_"))
+				continue;
+
 			NodeDesc node;
 
 			node.type = n_node.attribute("type").value();
-			node.id = n_node.attribute("id").value();
+			node.id = id;
 			node.pos = stof2(n_node.attribute("pos").value());
 
 			for (auto n_data : n_node.child("datas"))
@@ -1219,9 +1216,14 @@ namespace flame
 
 		for (auto n_link : file_root.child("links"))
 		{
+			auto o_addr = n_link.attribute("out").value();
+			auto i_addr = n_link.attribute("in").value();
+			if (!test_mode && (SUS::starts_with(o_addr, "test_") || SUS::starts_with(i_addr, "test_")))
+				continue;
+
 			LinkDesc link;
-			link.out_addr = n_link.attribute("out").value();
-			link.in_addr = n_link.attribute("in").value();
+			link.out_addr = o_addr;
+			link.in_addr = i_addr;
 			link_descs.push_back(link);
 		}
 
@@ -1298,8 +1300,6 @@ namespace flame
 		auto n_nodes = file_root.append_child("nodes");
 		for (auto& n : bp->nodes)
 		{
-			if (n->used_by_editor)
-				continue;
 			auto udt = n->udt;
 
 			auto n_node = n_nodes.append_child("node");
@@ -1334,12 +1334,10 @@ namespace flame
 		auto n_links = file_root.append_child("links");
 		for (auto& n : bp->nodes)
 		{
-			if (n->used_by_editor)
-				continue;
 			for (auto& in : n->inputs)
 			{
 				auto out = in->links[0];
-				if (out && !out->node->used_by_editor)
+				if (out)
 				{
 					auto n_link = n_links.append_child("link");
 					n_link.append_attribute("out").set_value(out->get_address().v);

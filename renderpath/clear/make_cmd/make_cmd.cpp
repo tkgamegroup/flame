@@ -18,10 +18,13 @@ struct R(MakeCmd)
 
 	__declspec(dllexport) void RF(update)(uint _frame)
 	{
-		auto cb = cbs->at(image_idx);
-		cb->begin();
-		cb->begin_renderpass(rnf->framebuffer(image_idx), rnf->clearvalues());
-		cb->end_renderpass();
-		cb->end();
+		if (cbs && rnf)
+		{
+			auto cb = cbs->at(image_idx);
+			cb->begin();
+			cb->begin_renderpass(rnf->framebuffer(image_idx), rnf->clearvalues());
+			cb->end_renderpass();
+			cb->end();
+		}
 	}
 };

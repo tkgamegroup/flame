@@ -100,7 +100,6 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
 
-			bool used_by_editor;
 			void* user_data;
 		};
 
@@ -168,8 +167,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS Array<Slot*> get_fail_slots() const;
 
-		FLAME_FOUNDATION_EXPORTS static BP* create();
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, bool test_mode = false);
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};

@@ -786,7 +786,7 @@ bool MyApp::create(const char* filename)
 
 	filepath = filename;
 	fileppath = app.filepath.parent_path();
-	bp = BP::create_from_file(app.filepath.c_str());
+	bp = BP::create_from_file(app.filepath.c_str(), true);
 	if (!bp)
 		return false;
 
