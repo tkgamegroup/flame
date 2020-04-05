@@ -627,6 +627,26 @@ void MyApp::set_data(BP::Slot* input, void* data, bool from_editor)
 		editor->on_data_changed(input);
 }
 
+void MyApp::update()
+{
+	if (failed)
+	{
+		if (editor)
+			editor->clear_failed_flags();
+	}
+	bp->update();
+
+	auto failed_slots = bp->failed_slots();
+	if (failed_slots.s > 0)
+	{
+		if (editor)
+			editor->set_failed_flags();
+		failed = true;
+	}
+	else
+		failed = false;
+}
+
 void MyApp::save()
 {
 	BP::save_to_file(app.bp, app.filepath.c_str());
@@ -957,7 +977,7 @@ bool MyApp::create(const char* filename)
 					return true;
 				}, Mail::from_p(c_checkbox));
 				utils::e_button(L"Update", [](void*) {
-					app.bp->update();
+					app.update();
 				}, Mail());
 				utils::e_button(L"Reset Time");
 				utils::e_end_layout();
@@ -1024,7 +1044,7 @@ int main(int argc, char **args)
 
 	looper().add_event([](void*, bool* go_on) {
 		if (app.auto_update)
-			app.bp->update();
+			app.update();
 		*go_on = true;
 	}, Mail(), 0.f);
 

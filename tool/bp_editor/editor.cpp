@@ -91,7 +91,7 @@ struct cSlot : Component
 
 	bool dragging;
 
-	Entity* tip_type;
+	Entity* tip_info;
 	Entity* tip_link;
 
 	cSlot() :
@@ -103,7 +103,7 @@ struct cSlot : Component
 
 		dragging = false;
 
-		tip_type = nullptr;
+		tip_info = nullptr;
 		tip_link = nullptr;
 	}
 
@@ -114,10 +114,10 @@ struct cSlot : Component
 
 	void clear_tips()
 	{
-		if (tip_type)
+		if (tip_info)
 		{
-			auto e = tip_type;
-			tip_type = nullptr;
+			auto e = tip_info;
+			tip_info = nullptr;
 			looper().add_event([](void* c, bool*) {
 				auto e = *(Entity**)c;
 				e->parent()->remove_child(e);
@@ -249,11 +249,11 @@ struct cSlot : Component
 					thiz->clear_tips();
 				else
 				{
-					if (!thiz->tip_type)
+					if (!thiz->tip_info)
 					{
 						utils::push_parent(app.root);
-							thiz->tip_type = utils::e_begin_layout(LayoutVertical, 4.f);
-							auto c_element = thiz->tip_type->get_component(cElement);
+							thiz->tip_info = utils::e_begin_layout(LayoutVertical, 4.f);
+							auto c_element = thiz->tip_info->get_component(cElement);
 							c_element->pos_ = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
 							c_element->pivot_ = Vec2f(is_in ? 1.f : 0.f , 0.f);
 							c_element->inner_padding_ = 4.f;
@@ -263,7 +263,11 @@ struct cSlot : Component
 								{
 									auto type = s->type();
 									auto tag = type->tag();
-									utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color_ = type_color(tag);
+									auto text = type_prefix(tag, type->is_array()) + s2w(type->base_name());
+									auto fail_message = s2w(s->fail_message());
+									if (!fail_message.empty())
+										text += L"\n\n" + fail_message;
+									utils::e_text(text.c_str())->get_component(cText)->color_ = type_color(tag);
 								}
 							utils::e_end_layout();
 						utils::pop_parent();
@@ -1013,6 +1017,12 @@ void cEditor::on_add_node(BP::Node* n)
 							c_element->roundness_lod = 2;
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 						}
+						{
+							auto c_text = utils::c_text();
+							c_text->color_ = Vec4c(255, 0, 0, 255);
+							c_text->auto_width_ = false;
+							c_text->auto_height_ = false;
+						}
 						utils::c_event_receiver();
 						auto c_slot = (cSlot*)f_malloc(sizeof(cSlot));
 						new (c_slot) cSlot;
@@ -1735,5 +1745,32 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 			}
 			return true;
 		}, Mail::from_t(&capture));
+	}
+}
+
+void cEditor::clear_failed_flags()
+{
+	for (auto i = 0; i < app.bp->node_count(); i++)
+	{
+		auto n = app.bp->node(i);
+		for (auto j = 0; j < n->input_count(); j++)
+		{
+			auto in = n->input(j);
+			((cSlot*)in->user_data)->entity->get_component(cText)->set_text(L"");
+		}
+	}
+}
+
+void cEditor::set_failed_flags()
+{
+	for (auto i = 0; i < app.bp->node_count(); i++)
+	{
+		auto n = app.bp->node(i);
+		for (auto j = 0; j < n->input_count(); j++)
+		{
+			auto in = n->input(j);
+			if (in->fail_message()[0])
+				((cSlot*)in->user_data)->entity->get_component(cText)->set_text(Icon_TIMES);
+		}
 	}
 }

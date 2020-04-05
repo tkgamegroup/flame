@@ -34,6 +34,8 @@ namespace flame
 
 		std::vector<SlotPrivate*> links;
 
+		std::string fail_message;
+
 		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
 		SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi);
 
@@ -102,11 +104,15 @@ namespace flame
 
 		std::vector<std::filesystem::path> used_resources;
 
+		bool need_check_fail;
+		Array<Slot*> failed_slots;
+
 		BPPrivate()
 		{
 			frame = 0;
 			time = 0.f;
 			need_update_hierarchy = true;
+			need_check_fail = false;
 		}
 
 		void update_resources_file()
@@ -358,6 +364,7 @@ namespace flame
 	{
 		for (auto& in : inputs)
 		{
+			in->fail_message.clear();
 			auto out = in->links[0];
 			if (out)
 			{
@@ -864,6 +871,9 @@ namespace flame
 			n->in_pending_update = false;
 		}
 		pending_update_nodes.clear();
+
+		need_check_fail =  failed_slots.s > 0;
+		failed_slots.resize(0);
 		
 		while (!update_list.empty())
 		{
@@ -879,6 +889,18 @@ namespace flame
 				{
 					for (auto& i : o->links)
 						add_to_update_list(this, i->node);
+				}
+			}
+		}
+
+		if (need_check_fail)
+		{
+			for (auto& n : nodes)
+			{
+				for (auto& in : n->inputs)
+				{
+					if (!in->fail_message.empty())
+						failed_slots.push_back(in.get());
 				}
 			}
 		}
@@ -990,6 +1012,18 @@ namespace flame
 	StringA BP::Slot::get_address() const
 	{
 		return ((SlotPrivate*)this)->get_address();
+	}
+
+	const char* BP::Slot::fail_message() const
+	{
+		return ((SlotPrivate*)this)->fail_message.c_str();
+	}
+
+	void BP::Slot::set_fail_message(const char* message)
+	{
+		auto thiz = (SlotPrivate*)this;
+		thiz->fail_message = message;
+		thiz->node->scene->need_check_fail = true;
 	}
 
 	BP *BP::Node::scene() const
@@ -1145,6 +1179,11 @@ namespace flame
 	void BP::report_used_resource(const wchar_t* filename)
 	{
 		((BPPrivate*)this)->report_used_resource(filename);
+	}
+
+	Array<BP::Slot*> BP::failed_slots() const
+	{
+		return ((BPPrivate*)this)->failed_slots;
 	}
 
 	BP* BP::create_from_file(const wchar_t* filename, bool test_mode)

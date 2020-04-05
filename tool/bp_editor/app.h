@@ -37,6 +37,8 @@ struct cEditor : Component
 	void base_scale(int v);
 	void base_move(const Vec2f& p);
 	void show_add_node_menu(const Vec2f& pos);
+	void clear_failed_flags();
+	void set_failed_flags();
 };
 
 struct cConsole : Component
@@ -81,8 +83,8 @@ struct MyApp : App
 	std::filesystem::path filepath;
 	std::filesystem::path fileppath;
 	BP* bp;
+	bool failed;
 	bool changed;
-	bool locked;
 	bool auto_update;
 
 	std::vector<BP::Node*> selected_nodes;
@@ -99,8 +101,8 @@ struct MyApp : App
 		console = nullptr;
 
 		bp = nullptr;
+		failed = false;
 		changed = false;
-		locked = false;
 
 		auto_update = false;
 	}
@@ -119,6 +121,8 @@ struct MyApp : App
 	void set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
 	void set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links);
 	void set_data(BP::Slot* input, void* data, bool from_editor);
+
+	void update();
 
 	void save();
 

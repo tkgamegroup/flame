@@ -792,7 +792,12 @@ namespace flame
 				{
 					if (out)
 						RenderpassAndFramebuffer::destroy(out);
-					auto ok = passes && passes->s;
+					auto ok = true;
+					if (!passes || passes->s == 0)
+					{
+						passes_s()->set_fail_message("passes must not be empty");
+						ok = false;
+					}
 					if (ok)
 					{
 						for (auto i = 0; i < passes->s; i++)
