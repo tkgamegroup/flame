@@ -71,7 +71,7 @@ namespace flame
 				if (focusing)
 				{
 					auto c_data_keeper = cDataKeeper::create();
-					c_data_keeper->add_voidp_item(FLAME_CHASH("focusing"), focusing);
+					c_data_keeper->set_voidp_item(FLAME_CHASH("focusing"), focusing);
 					l->add_component(c_data_keeper);
 				}
 			}

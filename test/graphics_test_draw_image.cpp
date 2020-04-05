@@ -48,7 +48,6 @@ int main(int argc, char** args)
 
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 
-
 	app.w = SysWindow::create("Graphics Test", Vec2u(800, 600), WindowFrame);
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);

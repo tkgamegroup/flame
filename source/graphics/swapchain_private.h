@@ -14,6 +14,7 @@ namespace flame
 			SysWindow* w;
 
 			DevicePrivate* d;
+			bool add_trans_dst_usage;
 #if defined(FLAME_VULKAN)
 			VkSurfaceKHR s;
 			VkSwapchainKHR v;
@@ -30,7 +31,7 @@ namespace flame
 
 			void* resize_listener;
 
-			SwapchainPrivate(Device *d, SysWindow*w);
+			SwapchainPrivate(Device *d, SysWindow* w, bool add_trans_dst_usage);
 			~SwapchainPrivate();
 
 			void update();

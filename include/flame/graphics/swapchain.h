@@ -29,7 +29,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void link_bp(BP* bp, void* cbs);
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow* w);
+			FLAME_GRAPHICS_EXPORTS static Swapchain *create(Device *d, SysWindow* w, bool add_trans_dst_usage = false);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Swapchain *s);
 		};
 	}

@@ -740,7 +740,7 @@ struct MyApp : App
 
 							utils::push_parent(e_room_list);
 							utils::e_list_item((L"Name:" + name + L" Host:" + host).c_str());
-							utils::c_data_keeper()->add_stringa_item(FLAME_CHASH("ip"), ip);
+							utils::c_data_keeper()->set_stringa_item(FLAME_CHASH("ip"), ip);
 							utils::pop_parent();
 						}, Mail::from_p(e_room_list));
 					}, Mail::from_p(e_room_list));

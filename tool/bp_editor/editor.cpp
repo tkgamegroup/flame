@@ -7,64 +7,40 @@ struct R(TestRenderTarget)
 {
 	BP::Node* n;
 
+	uint prev_hash;
+
+	BASE0;
+	RV(App::Window*, w, i);
+
 	BASE1;
-	RV(Image*, img, o);
 	RV(TargetType, type, o);
-	RV(Imageview*, view, o);
-	RV(uint, idx, o);
-	RV(Array<Commandbuffer*>, out, o);
+	RV(Array<Image*>, images, o);
+	RV(Array<Commandbuffer*>, cbs, o);
+	RV(uint, image_idx, o);
 
 	__declspec(dllexport) void RF(active_update)(uint frame)
 	{
-		if (img_s()->frame() == -1)
+		auto sc = w ? w->sc : nullptr;
+		auto hash = sc ? sc->hash() : -1;
+		if (hash != prev_hash)
 		{
-			if (idx > 0)
-				app.canvas->set_image(idx, nullptr);
-			auto d = Device::default_one();
-			if (d)
-			{
-				img = Image::create(d, Format_R8G8B8A8_UNORM, Vec2u(800, 600), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageAttachment | ImageUsageSampled);
-				(img)->init(Vec4c(0, 0, 0, 255));
-			}
-			else
-				img = nullptr;
-			type = TargetImageview;
+			type = TargetImages;
 			type_s()->set_frame(frame);
-			if (img)
-			{
-				view = Imageview::create(img);
-				idx = app.canvas->set_image(-1, view);
-			}
-			img_s()->set_frame(frame);
-			view_s()->set_frame(frame);
-			idx_s()->set_frame(frame);
-		}
-		if (out_s()->frame() == -1)
-		{
-			auto d = Device::default_one();
-			if (d)
-			{
-				out.resize(1);
-				out[0] = Commandbuffer::create(d->gcp);
-			}
-			else
-				out.resize(0);
-			out_s()->set_frame(frame);
-		}
+			images.resize(sc ? sc->image_count() : 0);
+			for (auto i = 0; i < images.s; i++)
+				images[i] = sc->image(i);
+			images_s()->set_frame(frame);
+			cbs.resize(images.s);
+			for (auto i = 0; i < cbs.s; i++)
+				cbs[i] = w->cbs[i];
+			cbs_s()->set_frame(frame);
 
-		app.graphics_cbs.push_back(out[0]);
-	}
-
-	__declspec(dllexport) RF(~TestRenderTarget)()
-	{
-		if (idx > 0)
-			app.canvas->set_image(idx, nullptr);
-		if (img)
-			Image::destroy(img);
-		if (view)
-			Imageview::destroy(view);
-		for (auto i = 0; i < out.s; i++)
-			Commandbuffer::destroy(out[i]);
+			prev_hash = hash;
+		}
+		if (sc)
+			w->prepare_sc();
+		image_idx = sc ? sc->image_index() : 0;
+		image_idx_s()->set_frame(frame);
 	}
 };
 
@@ -859,12 +835,30 @@ void cEditor::on_add_node(BP::Node* n)
 			utils::pop_style(utils::FontSize);
 
 			std::string type = n->type();
-			auto udt = n->udt();
 
-			if (n->id() == "test_dst")
+			if (type == "TestRenderTarget")
 			{
+				auto dp = cDataKeeper::create();
+				dp->set_voidp_item(FLAME_CHASH("window"), nullptr);
+				e_node->add_component(dp);
 				utils::e_button(L"Show", [](void* c) {
-					//open_image_viewer(*(uint*)(*(BP::Node**)c)->find_output("idx")->data());
+					auto n = *(BP::Node**)c;
+					auto dp = ((Entity*)n->user_data)->get_component(cDataKeeper);
+					auto w = (App::Window*)dp->get_voidp_item(FLAME_CHASH("window"));
+					if (!w)
+					{
+						w = new App::Window("Test Render Target", Vec2u(400, 300), WindowFrame, app.graphics_device, app.windows[0]->w);
+						n->find_input("w")->set_data_p(w);
+						w->w->destroy_listeners.add([](void* c) {
+							auto n = *(BP::Node**)c;
+							((Entity*)n->user_data)->get_component(cDataKeeper)->set_voidp_item(FLAME_CHASH("window"), nullptr);
+							n->find_input("w")->set_data_p(nullptr);
+							return true;
+						}, Mail::from_p(n));
+						app.windows.emplace_back(w);
+						dp->set_voidp_item(FLAME_CHASH("window"), w);
+					}
+
 				}, Mail::from_p(n));
 			}
 			else if (type == "D#graphics::Shader")

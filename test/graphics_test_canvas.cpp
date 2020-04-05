@@ -38,10 +38,11 @@ struct App
 		if (sc->image_count())
 			sc->acquire_image();
 
-		fence->wait();
 		looper().process_events();
 
 		canvas->scene->update();
+
+		fence->wait();
 
 		if (sc->image_count())
 		{

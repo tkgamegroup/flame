@@ -18,9 +18,10 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(Device* _d, SysWindow* w) :
+		SwapchainPrivate::SwapchainPrivate(Device* _d, SysWindow* w, bool add_trans_dst_usage) :
 			d((DevicePrivate*)_d),
 			w(w),
+			add_trans_dst_usage(add_trans_dst_usage),
 			s(nullptr),
 			v(nullptr)
 		{
@@ -141,7 +142,7 @@ namespace flame
 				swapchain_info.imageExtent.width = size.x();
 				swapchain_info.imageExtent.height = size.y();
 				swapchain_info.imageArrayLayers = 1;
-				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (add_trans_dst_usage ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0);
 				swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 				swapchain_info.queueFamilyIndexCount = 0;
 				swapchain_info.pQueueFamilyIndices = nullptr;
@@ -253,9 +254,9 @@ namespace flame
 			return ((SwapchainPrivate*)this)->hash;
 		}
 
-		Swapchain *Swapchain::create(Device *d, SysWindow*w)
+		Swapchain *Swapchain::create(Device *d, SysWindow* w, bool add_trans_dst_usage)
 		{
-			return new SwapchainPrivate(d, w);
+			return new SwapchainPrivate(d, w, add_trans_dst_usage);
 		}
 
 		void Swapchain::destroy(Swapchain *s)

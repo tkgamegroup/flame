@@ -790,7 +790,7 @@ bool MyApp::create(const char* filename)
 	if (!bp)
 		return false;
 
-	app.window->set_title(("BP Editor - " + filepath.string()).c_str());
+	app.windows[0]->w->set_title(("BP Editor - " + filepath.string()).c_str());
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
@@ -852,7 +852,7 @@ bool MyApp::create(const char* filename)
 							{
 								auto l = app.bp->library(i);
 								utils::e_list_item(l->directory());
-								utils::c_data_keeper()->add_voidp_item(FLAME_CHASH("library"), l);
+								utils::c_data_keeper()->set_voidp_item(FLAME_CHASH("library"), l);
 							}
 							utils::e_end_list();
 							utils::e_end_scroll_view1();
@@ -868,7 +868,7 @@ bool MyApp::create(const char* filename)
 										{
 											utils::push_parent(*(Entity**)c);
 											utils::e_list_item(l->directory());
-											utils::c_data_keeper()->add_voidp_item(FLAME_CHASH("library"), l);
+											utils::c_data_keeper()->set_voidp_item(FLAME_CHASH("library"), l);
 											utils::pop_parent();
 										}
 									}

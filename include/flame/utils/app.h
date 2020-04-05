@@ -24,15 +24,70 @@ namespace flame
 {
 	struct App
 	{
-		SysWindow* window;
+		struct Window
+		{
+			SysWindow* w;
+			graphics::Swapchain* sc;
+			bool sc_used;
+			Array<graphics::Commandbuffer*> cbs;
+			graphics::Fence* fence;
+			graphics::Semaphore* semaphore;
+
+			Window(const char* title, const Vec2u size, uint styles, graphics::Device* d, SysWindow* p = nullptr)
+			{
+				w = SysWindow::create(title, size, styles, p);
+				w->destroy_listeners.add([](void* c) {
+					auto thiz = *(Window**)c;
+					thiz->w = nullptr;
+					return true;
+				}, Mail::from_p(this));
+				sc = graphics::Swapchain::create(d, w);
+				sc_used = false;
+				cbs.resize(sc->image_count());
+				for (auto i = 0; i < cbs.s; i++)
+					cbs[i] = graphics::Commandbuffer::create(d->gcp);
+				fence = graphics::Fence::create(d);
+				semaphore = graphics::Semaphore::create(d);
+			}
+
+			~Window()
+			{
+				if (!w)
+					return;
+				graphics::Swapchain::destroy(sc);
+				SysWindow::destroy(w);
+				for (auto i = 0; i < cbs.s; i++)
+					graphics::Commandbuffer::destroy(cbs[i]);
+				graphics::Fence::destroy(fence);
+				graphics::Semaphore::destroy(semaphore);
+			}
+
+			void prepare_sc()
+			{
+				if (!sc_used)
+				{
+					if (sc->image_count())
+					{
+						sc->acquire_image();
+						sc_used = true;
+					}
+				}
+			}
+
+			void render(graphics::Device* d)
+			{
+				fence->wait();
+				if (sc->image_count() && sc_used)
+				{
+					d->gq->submit(1, &cbs[sc->image_index()], sc->image_avalible(), semaphore, fence);
+					d->gq->present(sc, semaphore);
+					sc_used = false;
+				}
+			}
+		};
 
 		graphics::Device* graphics_device;
-		graphics::Swapchain* swapchain;
-		bool swapchain_used;
-		std::vector<graphics::Commandbuffer*> graphics_cbs;
-		Array<graphics::Commandbuffer*> graphics_sc_cbs;
-		graphics::Fence* render_fence;
-		graphics::Semaphore* render_semaphore;
+		std::vector<std::unique_ptr<Window>> windows;
 
 		sound::Device* sound_device;
 		sound::Context* sound_context;
@@ -54,18 +109,16 @@ namespace flame
 			TypeinfoDatabase::load(L"flame_graphics.dll", true, true);
 			TypeinfoDatabase::load(L"flame_universe.dll", true, true);
 
-			window = SysWindow::create(title, size, styles);
-			if (maximized)
-				window->set_maximized(true);
-
 			graphics_device = graphics::Device::create(graphics_debug);
-			swapchain = graphics::Swapchain::create(graphics_device, window);
-			swapchain_used = false;
-			graphics_sc_cbs.resize(swapchain->image_count());
-			for (auto i = 0; i < graphics_sc_cbs.s; i++)
-				graphics_sc_cbs[i] = graphics::Commandbuffer::create(graphics_device->gcp);
-			render_fence = graphics::Fence::create(graphics_device);
-			render_semaphore = graphics::Semaphore::create(graphics_device);
+
+			auto main_window = new Window(title, size, styles, graphics_device);
+			windows.emplace_back(main_window);
+			if (maximized)
+				main_window->w->set_maximized(true);
+			main_window->w->destroy_listeners.add([](void*) {
+				exit(0);
+				return true;
+			}, Mail());
 
 			sound_device = sound::Device::create_player();
 			sound_context = sound::Context::create(sound_device);
@@ -82,18 +135,18 @@ namespace flame
 			font_atlas_pixel = graphics::FontAtlas::create(graphics_device, graphics::FontDrawPixel, 2, fonts);
 
 			world = World::create();
-			world->add_object(window);
+			world->add_object(main_window->w);
 			s_timer_management = sTimerManagement::create();
 			world->add_system(s_timer_management);
 			s_layout_management = sLayoutManagement::create();
 			world->add_system(s_layout_management);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			s_2d_renderer = s2DRenderer::create((engine_path / L"renderpath/canvas/bp").c_str(), swapchain, FLAME_CHASH("Swapchain"), &graphics_sc_cbs);
+			s_2d_renderer = s2DRenderer::create((engine_path / L"renderpath/canvas/bp").c_str(), main_window->sc, FLAME_CHASH("Swapchain"), &main_window->cbs);
 			s_2d_renderer->before_update_listeners.add([](void* c) {
 				auto thiz = *(App**)c;
 				if (thiz->s_2d_renderer->pending_update)
-					thiz->prepare_swapchain();
+					thiz->windows[0]->prepare_sc();
 				return true;
 			}, Mail::from_p(this));
 			world->add_system(s_2d_renderer);
@@ -104,18 +157,6 @@ namespace flame
 			root->add_component(c_element_root);
 		}
 
-		void prepare_swapchain()
-		{
-			if (!swapchain_used)
-			{
-				if (swapchain->image_count())
-				{
-					swapchain->acquire_image();
-					swapchain_used = true;
-				}
-			}
-		}
-
 		void run()
 		{
 			{
@@ -124,23 +165,22 @@ namespace flame
 					sleep(16 - dt);
 			}
 
-			render_fence->wait();
 			looper().process_events();
 
-			//if (!graphics_cbs.empty())
-			//	prepare_swapchain();
-
-			c_element_root->set_size(Vec2f(window->size));
+			c_element_root->set_size(Vec2f(windows[0]->w->size));
 			world->update();
 
-			if (swapchain->image_count() && swapchain_used)
+			for (auto it = windows.begin(); it != windows.end();)
 			{
-				graphics_cbs.push_back(graphics_sc_cbs[swapchain->image_index()]);
-				graphics_device->gq->submit(graphics_cbs.size(), graphics_cbs.data(), swapchain->image_avalible(), render_semaphore, render_fence);
-				graphics_device->gq->present(swapchain, render_semaphore);
-				swapchain_used = false;
+				auto w = it->get();
+				if (!w->w)
+					it = windows.erase(it);
+				else
+				{
+					w->render(graphics_device);
+					it++;
+				}
 			}
-			graphics_cbs.clear();
 		}
 	};
 }

@@ -427,7 +427,6 @@ namespace flame
 			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
 				barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 				break;
-
 			default:
 				barrier.srcAccessMask = 0;
 				break;
@@ -457,7 +456,9 @@ namespace flame
 					barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
 				barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 				break;
-
+			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+				barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+				break;
 			default:
 				barrier.dstAccessMask = 0;
 				break;

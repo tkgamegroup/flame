@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/graphics/font.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -37,5 +38,12 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_auto_height(bool v, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
+	};
+
+	struct cDecoratedText : Component
+	{
+		cElement* element;
+
+		graphics::FontAtlas* font_atlas;
 	};
 }

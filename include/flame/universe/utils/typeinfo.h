@@ -243,7 +243,8 @@ namespace flame
 				if ((action == KeyStateDown && value == Key_Enter) ||
 					(action == KeyStateNull && (value == '\r' || value == '\n')))
 				{
-					(*(cEventReceiver**)c)->dispatcher->next_focusing = nullptr;
+					auto r = utils::current_root();
+					(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
@@ -385,7 +386,8 @@ namespace flame
 					if ((action == KeyStateDown && value == Key_Enter) ||
 						(action == KeyStateNull && (value == '\r' || value == '\n')))
 					{
-						(*(cEventReceiver**)c)->dispatcher->next_focusing = nullptr;
+						auto r = utils::current_root();
+						(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 						return false;
 					}
 					return true;
@@ -489,7 +491,8 @@ namespace flame
 			event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 				if (action == KeyStateDown && value == Key_Enter)
 				{
-					(*(cEventReceiver**)c)->dispatcher->next_focusing = nullptr;
+					auto r = utils::current_root();
+					(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
@@ -550,7 +553,8 @@ namespace flame
 			event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 				if (action == KeyStateDown && value == Key_Enter)
 				{
-					(*(cEventReceiver**)c)->dispatcher->next_focusing = nullptr;
+					auto r = utils::current_root();
+					(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;

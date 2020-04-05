@@ -525,7 +525,8 @@ namespace flame
 	{
 		WindowFrame = 1 << 0,
 		WindowResizable = 1 << 1,
-		WindowFullscreen = 1 << 2
+		WindowFullscreen = 1 << 2,
+		WindowTopmost = 1 << 3
 	};
 
 	typedef uint WindowStyleFlags;
@@ -576,7 +577,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
 
 		FLAME_FOUNDATION_EXPORTS void set_pos(const Vec2i& pos);
-		FLAME_FOUNDATION_EXPORTS void set_size(const Vec2i& pos, const Vec2u& size, int style);
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
@@ -587,7 +587,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
-		FLAME_FOUNDATION_EXPORTS static SysWindow* create(const char* title, const Vec2u& size, WindowStyleFlags style);
+		FLAME_FOUNDATION_EXPORTS static SysWindow* create(const char* title, const Vec2u& size, WindowStyleFlags style, SysWindow* parent = nullptr);
 		FLAME_FOUNDATION_EXPORTS static void destroy(SysWindow* s);
 	};
 

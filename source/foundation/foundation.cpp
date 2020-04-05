@@ -896,7 +896,7 @@ namespace flame
 		bool dead;
 
 #ifdef FLAME_WINDOWS
-		SysWindowPrivate(const std::string& _title, const Vec2u& _size, uint _style)
+		SysWindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, SysWindowPrivate* parent)
 		{
 			title = _title;
 
@@ -904,7 +904,41 @@ namespace flame
 
 			hWnd = 0;
 
-			set_size(Vec2i(-1), _size, _style);
+			size = _size;
+			style = _style;
+
+			assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+
+			Vec2u final_size;
+			auto screen_size = get_screen_size();
+
+			auto win32_style = WS_VISIBLE;
+			if (style == 0)
+				win32_style |= WS_POPUP | WS_BORDER;
+			else
+			{
+				if (style & WindowFullscreen)
+					final_size = screen_size;
+				if (style & WindowFrame)
+					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+				if (style & WindowResizable)
+					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+			}
+
+			auto win32_ex_style = 0L;
+			if (style & WindowTopmost)
+				win32_ex_style |= WS_EX_TOPMOST;
+
+			RECT rect = { 0, 0, size.x(), size.y() };
+			AdjustWindowRect(&rect, win32_style, false);
+			final_size.x() = rect.right - rect.left;
+			final_size.y() = rect.bottom - rect.top;
+
+			pos.x() = (screen_size.x() - final_size.x()) / 2;
+			pos.y() = (screen_size.y() - final_size.y()) / 2;
+
+			hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
+				pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 
 			SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
@@ -998,59 +1032,6 @@ namespace flame
 			}
 		}
 
-		void set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
-		{
-			if (_size.x() > 0)
-				size.x() = _size.x();
-			if (_size.y() > 0)
-				size.y() = _size.y();
-
-			bool style_changed = false;
-			if (_style != -1 && _style != style)
-			{
-				style = _style;
-				style_changed = true;
-			}
-
-			assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
-
-			Vec2u final_size;
-			auto screen_size = get_screen_size();
-
-			auto win32_style = WS_VISIBLE;
-			if (style == 0)
-				win32_style |= WS_POPUP | WS_BORDER;
-			else
-			{
-				if (style & WindowFullscreen)
-					final_size = screen_size;
-				if (style & WindowFrame)
-					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-				if (style & WindowResizable)
-					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-			}
-
-			RECT rect = { 0, 0, size.x(), size.y() };
-			AdjustWindowRect(&rect, win32_style, false);
-			final_size.x() = rect.right - rect.left;
-			final_size.y() = rect.bottom - rect.top;
-
-			pos.x() = _pos.x() == -1 ? (screen_size.x() - final_size.x()) / 2 : _pos.x();
-			pos.y() = _pos.y() == -1 ? (screen_size.y() - final_size.y()) / 2 : _pos.y();
-
-			if (!hWnd)
-			{
-				hWnd = CreateWindowA("flame_wnd", title.c_str(), win32_style,
-					pos.x(), pos.y(), final_size.x(), final_size.y(), NULL, NULL, (HINSTANCE)get_hinst(), NULL);
-			}
-			else
-			{
-				if (style_changed)
-					SetWindowLong(hWnd, GWL_STYLE, win32_style);
-				MoveWindow(hWnd, pos.x(), pos.y(), size.x(), size.y(), true);
-			}
-		}
-
 		void set_maximized(bool v)
 		{
 			ShowWindow(hWnd, v ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
@@ -1090,11 +1071,6 @@ namespace flame
 	{
 		pos = _pos;
 		SetWindowPos(reinterpret_cast<SysWindowPrivate*>(this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-	}
-
-	void SysWindow::set_size(const Vec2i& _pos, const Vec2u& _size, int _style)
-	{
-		reinterpret_cast<SysWindowPrivate*>(this)->set_size(_pos, _size, _style);
 	}
 
 	void SysWindow::set_maximized(bool v)
@@ -1180,7 +1156,7 @@ namespace flame
 
 	static std::vector<SysWindowPrivate*> windows;
 
-	SysWindow* SysWindow::create(const char* title, const Vec2u& size, WindowStyleFlags style)
+	SysWindow* SysWindow::create(const char* title, const Vec2u& size, WindowStyleFlags style, SysWindow* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1215,7 +1191,7 @@ namespace flame
 			initialized = true;
 		}
 
-		auto w = new SysWindowPrivate(title, size, style);
+		auto w = new SysWindowPrivate(title, size, style, (SysWindowPrivate*)parent);
 		windows.push_back(w);
 		return w;
 	}

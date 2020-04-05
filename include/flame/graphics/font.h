@@ -28,6 +28,13 @@ namespace flame
 			int advance;
 		};
 
+		struct DecoratedChar
+		{
+			ushort code;
+			uint size;
+			Vec4c color;
+		};
+
 		enum FontDrawType
 		{
 			FontDrawPixel,
