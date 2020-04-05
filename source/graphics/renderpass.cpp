@@ -804,6 +804,7 @@ namespace flame
 						{
 							if (!check_pass(*passes->at(i)))
 							{
+								passes_s()->set_fail_message(("pass " + std::to_string(i) + " is not satisfied").c_str());
 								ok = false;
 								break;
 							}
@@ -821,8 +822,6 @@ namespace flame
 					}
 					else
 					{
-						printf("cannot create renderpassandframebuffer\n");
-
 						out = nullptr;
 						rp = nullptr;
 						fbs.resize(0);

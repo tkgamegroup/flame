@@ -223,6 +223,12 @@ namespace flame
 		if (target)
 			target->links.push_back(this);
 
+		if (!target && type->tag() == TypePointer)
+		{
+			void* p = nullptr;
+			memcpy(data, &p, sizeof(void*));
+		}
+
 		frame = node->scene->frame;
 
 		auto scene = node->scene;
@@ -365,6 +371,7 @@ namespace flame
 		for (auto& in : inputs)
 		{
 			in->fail_message.clear();
+
 			auto out = in->links[0];
 			if (out)
 			{

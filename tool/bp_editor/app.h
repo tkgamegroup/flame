@@ -90,6 +90,8 @@ struct MyApp : App
 	std::vector<BP::Node*> selected_nodes;
 	std::vector<BP::Slot*> selected_links;
 
+	cCheckbox* c_auto_update;
+
 	cEditor* editor;
 	cConsole* console;
 

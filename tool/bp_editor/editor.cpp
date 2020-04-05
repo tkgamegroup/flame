@@ -1030,7 +1030,7 @@ void cEditor::on_add_node(BP::Node* n)
 						input->user_data = c_slot;
 						utils::current_entity()->add_component(c_slot);
 						utils::e_begin_popup_menu(false);
-							utils::e_menu_item(L"Break Links", [](void* c) {
+							utils::e_menu_item(L"Break Link(s)", [](void* c) {
 							}, Mail::from_p(input));
 							utils::e_menu_item(L"Reset Value", [](void* c) {
 							}, Mail::from_p(input));
@@ -1079,170 +1079,175 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color_ = type_color(input->type()->tag());
 						utils::e_end_layout();
 
-						auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
-						e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
-
-						std::vector<TypeinfoDatabase*> dbs;
-						dbs.resize(app.bp->library_count());
-						for (auto i = 0; i < dbs.size(); i++)
-							dbs[i] = app.bp->library(i)->db();
-						extra_global_db_count = dbs.size();
-						extra_global_dbs = dbs.data();
 						auto type = input->type();
-						auto base_hash = type->base_hash();
-
-						switch (type->tag())
+						auto tag = type->tag();
+						if (!input->link() && tag != TypePointer)
 						{
-						case TypeEnumSingle:
-						{
-							auto info = find_enum(base_hash);
-							utils::create_enum_combobox(info, 120.f);
+							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
+							e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
 
-							auto c_tracker = (cEnumSingleDataTracker*)f_malloc(sizeof(cEnumSingleDataTracker));
-							new (c_tracker) cEnumSingleDataTracker((int*)input->data(), info, [](void* c, int v) {
-								app.set_data(*(BP::Slot**)c, &v, true);
-							}, Mail::from_p(input));
-							e_data->add_component(c_tracker);
-						}
-						break;
-						case TypeEnumMulti:
-						{
-							auto v = *(int*)input->data();
+							std::vector<TypeinfoDatabase*> dbs;
+							dbs.resize(app.bp->library_count());
+							for (auto i = 0; i < dbs.size(); i++)
+								dbs[i] = app.bp->library(i)->db();
+							extra_global_db_count = dbs.size();
+							extra_global_dbs = dbs.data();
+							auto base_hash = type->base_hash();
 
-							auto info = find_enum(base_hash);
-							utils::create_enum_checkboxs(info);
-
-							auto c_tracker = (cEnumMultiDataTracker*)f_malloc(sizeof(cEnumMultiDataTracker));
-							new (c_tracker) cEnumMultiDataTracker((int*)input->data(), info, [](void* c, int v) {
-								app.set_data(*(BP::Slot**)c, &v, true);
-							}, Mail::from_p(input));
-							e_data->add_component(c_tracker);
-						}
-						break;
-						case TypeData:
-							switch (base_hash)
+							switch (tag)
 							{
-							case FLAME_CHASH("bool"):
+							case TypeEnumSingle:
 							{
-								auto e_checkbox = utils::e_checkbox(L"");
+								auto info = find_enum(base_hash);
+								utils::create_enum_combobox(info, 120.f);
 
-								auto c_tracker = (cBoolDataTracker*)f_malloc(sizeof(cBoolDataTracker));
-								new (c_tracker) cBoolDataTracker((bool*)input->data(), [](void* c, bool v) {
+								auto c_tracker = (cEnumSingleDataTracker*)f_malloc(sizeof(cEnumSingleDataTracker));
+								new (c_tracker) cEnumSingleDataTracker((int*)input->data(), info, [](void* c, int v) {
 									app.set_data(*(BP::Slot**)c, &v, true);
 								}, Mail::from_p(input));
 								e_data->add_component(c_tracker);
 							}
 							break;
-							case FLAME_CHASH("int"):
-								create_edit<int>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(2+int)"):
-								create_vec_edit<2, int>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(3+int)"):
-								create_vec_edit<3, int>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(4+int)"):
-								create_vec_edit<4, int>(this, input);
-								break;
-							case FLAME_CHASH("uint"):
-								create_edit<uint>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(2+uint)"):
-								create_vec_edit<2, uint>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(3+uint)"):
-								create_vec_edit<3, uint>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(4+uint)"):
-								create_vec_edit<4, uint>(this, input);
-								break;
-							case FLAME_CHASH("float"):
-								create_edit<float>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(2+float)"):
-								create_vec_edit<2, float>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(3+float)"):
-								create_vec_edit<3, float>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(4+float)"):
-								create_vec_edit<4, float>(this, input);
-								break;
-							case FLAME_CHASH("uchar"):
-								create_edit<uchar>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(2+uchar)"):
-								create_vec_edit<2, uchar>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(3+uchar)"):
-								create_vec_edit<3, uchar>(this, input);
-								break;
-							case FLAME_CHASH("flame::Vec(4+uchar)"):
-								create_vec_edit<4, uchar>(this, input);
-								break;
-							case FLAME_CHASH("flame::StringA"):
+							case TypeEnumMulti:
 							{
-								struct Capture
-								{
-									BP::Slot* i;
-									cText* t;
-								}capture;
-								capture.i = input;
-								capture.t = utils::e_edit(50.f)->get_component(cText);
-								capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
-									if (hash == FLAME_CHASH("text"))
-									{
-										auto& capture = *(Capture*)c;
-										capture.i->set_data(&StringA(w2s(capture.t->text())));
-										app.set_changed(true);
-									}
-									return true;
-								}, Mail::from_t(&capture));
+								auto v = *(int*)input->data();
 
-								auto c_tracker = (cStringADataTracker*)f_malloc(sizeof(cStringADataTracker));
-								new (c_tracker) cStringADataTracker((StringA*)input->data(), [](void* c, const char* v) {
-									app.set_data(*(BP::Slot**)c, (void*)v, true);
+								auto info = find_enum(base_hash);
+								utils::create_enum_checkboxs(info);
+
+								auto c_tracker = (cEnumMultiDataTracker*)f_malloc(sizeof(cEnumMultiDataTracker));
+								new (c_tracker) cEnumMultiDataTracker((int*)input->data(), info, [](void* c, int v) {
+									app.set_data(*(BP::Slot**)c, &v, true);
 								}, Mail::from_p(input));
 								e_data->add_component(c_tracker);
 							}
 							break;
-							case FLAME_CHASH("flame::StringW"):
-							{
-								struct Capture
+							case TypeData:
+								switch (base_hash)
 								{
-									BP::Slot* i;
-									cText* t;
-								}capture;
-								capture.i = input;
-								capture.t = utils::e_edit(50.f)->get_component(cText);
-								capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
-									if (hash == FLAME_CHASH("text"))
-									{
-										auto& capture = *(Capture*)c;
-										capture.i->set_data(&StringW(capture.t->text()));
-										app.set_changed(true);
-									}
-									return true;
-								}, Mail::from_t(&capture));
+								case FLAME_CHASH("bool"):
+								{
+									auto e_checkbox = utils::e_checkbox(L"");
 
-								auto c_tracker = (cStringWDataTracker*)f_malloc(sizeof(cStringWDataTracker));
-								new (c_tracker) cStringWDataTracker((StringW*)input->data(), [](void* c, const wchar_t* v) {
-									app.set_data(*(BP::Slot**)c, (void*)v, true);
-								}, Mail::from_p(input));
-								e_data->add_component(c_tracker);
+									auto c_tracker = (cBoolDataTracker*)f_malloc(sizeof(cBoolDataTracker));
+									new (c_tracker) cBoolDataTracker((bool*)input->data(), [](void* c, bool v) {
+										app.set_data(*(BP::Slot**)c, &v, true);
+									}, Mail::from_p(input));
+									e_data->add_component(c_tracker);
+								}
+								break;
+								case FLAME_CHASH("int"):
+									create_edit<int>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(2+int)"):
+									create_vec_edit<2, int>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(3+int)"):
+									create_vec_edit<3, int>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(4+int)"):
+									create_vec_edit<4, int>(this, input);
+									break;
+								case FLAME_CHASH("uint"):
+									create_edit<uint>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(2+uint)"):
+									create_vec_edit<2, uint>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(3+uint)"):
+									create_vec_edit<3, uint>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(4+uint)"):
+									create_vec_edit<4, uint>(this, input);
+									break;
+								case FLAME_CHASH("float"):
+									create_edit<float>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(2+float)"):
+									create_vec_edit<2, float>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(3+float)"):
+									create_vec_edit<3, float>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(4+float)"):
+									create_vec_edit<4, float>(this, input);
+									break;
+								case FLAME_CHASH("uchar"):
+									create_edit<uchar>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(2+uchar)"):
+									create_vec_edit<2, uchar>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(3+uchar)"):
+									create_vec_edit<3, uchar>(this, input);
+									break;
+								case FLAME_CHASH("flame::Vec(4+uchar)"):
+									create_vec_edit<4, uchar>(this, input);
+									break;
+								case FLAME_CHASH("flame::StringA"):
+								{
+									struct Capture
+									{
+										BP::Slot* i;
+										cText* t;
+									}capture;
+									capture.i = input;
+									capture.t = utils::e_edit(50.f)->get_component(cText);
+									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
+										if (hash == FLAME_CHASH("text"))
+										{
+											auto& capture = *(Capture*)c;
+											capture.i->set_data(&StringA(w2s(capture.t->text())));
+											app.set_changed(true);
+										}
+										return true;
+									}, Mail::from_t(&capture));
+
+									auto c_tracker = (cStringADataTracker*)f_malloc(sizeof(cStringADataTracker));
+									new (c_tracker) cStringADataTracker((StringA*)input->data(), [](void* c, const char* v) {
+										app.set_data(*(BP::Slot**)c, (void*)v, true);
+									}, Mail::from_p(input));
+									e_data->add_component(c_tracker);
+								}
+								break;
+								case FLAME_CHASH("flame::StringW"):
+								{
+									struct Capture
+									{
+										BP::Slot* i;
+										cText* t;
+									}capture;
+									capture.i = input;
+									capture.t = utils::e_edit(50.f)->get_component(cText);
+									capture.t->data_changed_listeners.add([](void* c, uint hash, void*) {
+										if (hash == FLAME_CHASH("text"))
+										{
+											auto& capture = *(Capture*)c;
+											capture.i->set_data(&StringW(capture.t->text()));
+											app.set_changed(true);
+										}
+										return true;
+									}, Mail::from_t(&capture));
+
+									auto c_tracker = (cStringWDataTracker*)f_malloc(sizeof(cStringWDataTracker));
+									new (c_tracker) cStringWDataTracker((StringW*)input->data(), [](void* c, const wchar_t* v) {
+										app.set_data(*(BP::Slot**)c, (void*)v, true);
+									}, Mail::from_p(input));
+									e_data->add_component(c_tracker);
+								}
+								break;
+								}
+								break;
 							}
-							break;
-							}
-							break;
+							extra_global_db_count = 0;
+							extra_global_dbs = nullptr;
+							utils::e_end_layout();
+
+							c_slot->tracker = e_data->get_component(cDataTracker);
 						}
-						extra_global_db_count = 0;
-						extra_global_dbs = nullptr;
-						utils::e_end_layout();
 
 						utils::e_end_layout();
 
-						c_slot->tracker = e_data->get_component(cDataTracker);
 					}
 				utils::e_end_layout();
 
@@ -1272,7 +1277,7 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::current_entity()->add_component(c_slot);
 						output->user_data = c_slot;
 						utils::e_begin_popup_menu(false);
-							utils::e_menu_item(L"Break Links", [](void* c) {
+							utils::e_menu_item(L"Break Link(s)", [](void* c) {
 							}, Mail::from_p(output));
 						utils::e_end_popup_menu();
 						utils::e_end_layout();
@@ -1339,10 +1344,8 @@ void cEditor::on_add_node(BP::Node* n)
 
 void cEditor::on_remove_node(BP::Node* n)
 {
-	looper().add_event([](void* c, bool*) {
-		auto e = *(Entity**)c;
-		e->parent()->remove_child(e);
-	}, Mail::from_p(n->user_data));
+	auto e = (Entity*)n->user_data;
+	e->parent()->remove_child(e);
 }
 
 void cEditor::on_data_changed(BP::Slot* s)

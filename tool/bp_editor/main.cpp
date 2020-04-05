@@ -21,7 +21,11 @@ static BP::Node* _add_node(const std::string& type, const std::string& id, const
 static void _remove_node(BP::Node* n)
 {
 	if (app.editor)
-		app.editor->on_remove_node(n);
+	{
+		looper().add_event([](void* c, bool*) {
+			app.editor->on_remove_node(*(BP::Node**)c);
+		}, Mail::from_p(n));
+	}
 	app.bp->remove_node(n);
 }
 
@@ -56,6 +60,16 @@ static std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& mod
 		}
 	}
 	return ret;
+}
+
+static void _set_link(BP::Slot* in, BP::Slot* out)
+{
+	looper().add_event([](void* c, bool*) {
+		auto n = *(BP::Node**)c;
+		app.editor->on_remove_node(n);
+		app.editor->on_add_node(n);
+	}, Mail::from_p(in->node()));
+	in->link_to(out);
 }
 
 struct Action
@@ -279,7 +293,7 @@ struct Action_SetLinks : Action
 		{
 			auto i = app.bp->find_input(l.input_addr.c_str());
 			if (i)
-				i->link_to(l.prev_output_addr.empty() ? nullptr : app.bp->find_output(l.prev_output_addr.c_str()));
+				_set_link(i, l.prev_output_addr.empty() ? nullptr : app.bp->find_output(l.prev_output_addr.c_str()));
 		}
 		
 		app.s_2d_renderer->pending_update = true;
@@ -291,7 +305,7 @@ struct Action_SetLinks : Action
 		{
 			auto i = app.bp->find_input(l.input_addr.c_str());
 			if (i)
-				i->link_to(l.after_output_addr.empty() ? nullptr : app.bp->find_output(l.after_output_addr.c_str()));
+				_set_link(i, l.after_output_addr.empty() ? nullptr : app.bp->find_output(l.after_output_addr.c_str()));
 		}
 
 		app.s_2d_renderer->pending_update = true;
@@ -605,7 +619,7 @@ void MyApp::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links)
 	add_action(a);
 
 	for (auto& l : links)
-		l.first->link_to(l.second);
+		_set_link(l.first, l.second);
 
 	set_changed(true);
 }
@@ -641,6 +655,12 @@ void MyApp::update()
 	{
 		if (editor)
 			editor->set_failed_flags();
+		if (auto_update)
+		{
+			c_auto_update->set_checked(false);
+			utils::e_message_dialog(L"Updat Failed!\nauto update stopped");
+		}
+
 		failed = true;
 	}
 	else
@@ -970,12 +990,12 @@ bool MyApp::create(const char* filename)
 				c_element->inner_padding_ = 4.f;
 				c_element->color_ = utils::style_4c(utils::FrameColorNormal);
 				utils::c_aligner(SizeFitParent, SizeFixed);
-				auto c_checkbox = utils::e_checkbox(L"Auto ")->get_component(cCheckbox);
-				c_checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
+				c_auto_update = utils::e_checkbox(L"Auto ")->get_component(cCheckbox);
+				c_auto_update->data_changed_listeners.add([](void* , uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
-						app.auto_update = (*(cCheckbox**)c)->checked;
+						app.auto_update = app.c_auto_update->checked;
 					return true;
-				}, Mail::from_p(c_checkbox));
+				}, Mail());
 				utils::e_button(L"Update", [](void*) {
 					app.update();
 				}, Mail());
