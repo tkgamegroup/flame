@@ -26,13 +26,13 @@ namespace flame
 		float frame_thickness_;
 		Vec4c color_;
 		Vec4c frame_color_;
-		bool clip_children;
+		ClipFlags clip_flags;
 
 		Vec2f global_pos;
 		float global_scale;
 		Vec2f global_size;
-		bool cliped;
-		Vec4f cliped_rect;
+		bool clipped;
+		Vec4f clipped_rect;
 
 		float inner_padding_h() const
 		{

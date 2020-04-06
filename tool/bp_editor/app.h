@@ -97,6 +97,8 @@ struct MyApp : App
 
 	Entity* e_notification;
 
+	BP::Node* test_render_targets[10];
+
 	MyApp()
 	{
 		editor = nullptr;
@@ -107,6 +109,9 @@ struct MyApp : App
 		changed = false;
 
 		auto_update = false;
+
+		for (auto i = 0; i < array_size(test_render_targets); i++)
+			test_render_targets[i] = nullptr;
 	}
 
 	void deselect();
@@ -131,6 +136,8 @@ struct MyApp : App
 	void update_gv();
 	bool generate_graph_image();
 	bool auto_set_layout();
+
+	void show_test_render_target(BP::Node* n);
 
 	bool create(const char* filename);
 };

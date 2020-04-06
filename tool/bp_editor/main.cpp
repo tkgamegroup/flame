@@ -818,6 +818,25 @@ bool MyApp::auto_set_layout()
 	return true;
 }
 
+void MyApp::show_test_render_target(BP::Node* n)
+{
+	auto dp = ((Entity*)n->user_data)->get_component(cDataKeeper);
+	auto w = (App::Window*)dp->get_voidp_item(FLAME_CHASH("window"));
+	if (!w)
+	{
+		w = new App::Window("Test Render Target", Vec2u(400, 300), WindowFrame, graphics_device, windows[0]->w);
+		n->find_input("w")->set_data_p(w);
+		w->w->destroy_listeners.add([](void* c) {
+			auto n = *(BP::Node**)c;
+			((Entity*)n->user_data)->get_component(cDataKeeper)->set_voidp_item(FLAME_CHASH("window"), nullptr);
+			n->find_input("w")->set_data_p(nullptr);
+			return true;
+		}, Mail::from_p(n));
+		windows.emplace_back(w);
+		dp->set_voidp_item(FLAME_CHASH("window"), w);
+	}
+}
+
 bool MyApp::create(const char* filename)
 {
 	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
@@ -846,23 +865,42 @@ bool MyApp::create(const char* filename)
 		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
 			if (is_key_down(action))
 			{
-				switch (value)
+				if (value >= Key_0 && value <= Key_9 &&
+					(app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown))
 				{
-				case Key_Z:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						undo();
-					break;
-				case Key_Y:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						redo();
-					break;
-				case Key_D:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						duplicate_selected();
-					break;
-				case Key_Del:
-					remove_selected();
-					break;
+					if (app.editor)
+					{
+						auto n = app.test_render_targets[value == Key_0 ? 9 : value - Key_1];
+						if (n)
+							app.show_test_render_target(n);
+					}
+				}
+				else
+				{
+					switch (value)
+					{
+					case Key_Z:
+						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+							undo();
+						break;
+					case Key_Y:
+						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+							redo();
+						break;
+					case Key_D:
+						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+							duplicate_selected();
+						break;
+					case Key_Del:
+						remove_selected();
+						break;
+					case Key_F2:
+						app.update();
+						break;
+					case Key_F3:
+						app.c_auto_update->set_checked(true);
+						break;
+					}
 				}
 			}
 			return true;
@@ -990,13 +1028,13 @@ bool MyApp::create(const char* filename)
 				c_element->inner_padding_ = 4.f;
 				c_element->color_ = utils::style_4c(utils::FrameColorNormal);
 				utils::c_aligner(SizeFitParent, SizeFixed);
-				c_auto_update = utils::e_checkbox(L"Auto ")->get_component(cCheckbox);
+				c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
 				c_auto_update->data_changed_listeners.add([](void* , uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
 						app.auto_update = app.c_auto_update->checked;
 					return true;
 				}, Mail());
-				utils::e_button(L"Update", [](void*) {
+				utils::e_button(L"Update (F2)", [](void*) {
 					app.update();
 				}, Mail());
 				utils::e_button(L"Reset Time");

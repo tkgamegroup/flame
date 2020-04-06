@@ -263,20 +263,6 @@ namespace flame
 		}
 	}
 
-	EntityPrivate* EntityPrivate::copy()
-	{
-		auto ret = new EntityPrivate;
-
-		ret->visible_ = visible_;
-		ret->set_name(name.c_str());
-		for (auto& c : components)
-			ret->add_component(c.second->copy());
-		for (auto& e : children)
-			ret->add_child(e->copy(), -1);
-
-		return ret;
-	}
-
 	void EntityPrivate::update_visibility()
 	{
 		if (!parent)
@@ -378,11 +364,6 @@ namespace flame
 	void Entity::remove_children(int from, int to, bool destroy)
 	{
 		((EntityPrivate*)this)->remove_children(from, to, destroy);
-	}
-
-	Entity* Entity::copy()
-	{
-		return ((EntityPrivate*)this)->copy();
 	}
 
 	Entity* Entity::create()

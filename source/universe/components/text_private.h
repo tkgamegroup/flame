@@ -11,6 +11,5 @@ namespace flame
 		cTextPrivate::~cTextPrivate();
 		void draw(graphics::Canvas* canvas);
 		void on_component_added(Component* c) override;
-		Component* copy() override;
 	};
 }

@@ -58,15 +58,6 @@ namespace flame
 				style();
 			}
 		}
-
-		Component* copy() override
-		{
-			auto copy = new cStyleColorPrivate;
-			copy->color_normal = color_normal;
-			copy->color_hovering = color_hovering;
-			copy->color_active = color_active;
-			return copy;
-		}
 	};
 
 	void cStyleColor::style()
@@ -120,19 +111,6 @@ namespace flame
 				style();
 			}
 		}
-
-		Component* copy() override
-		{
-			auto copy = new cStyleColor2Private;
-			copy->level = level;
-			for (auto i = 0; i < 2; i++)
-			{
-				copy->color_normal[i] = color_normal[i];
-				copy->color_hovering[i] = color_hovering[i];
-				copy->color_active[i] = color_active[i];
-			}
-			return copy;
-		}
 	};
 
 	void cStyleColor2::style()
@@ -179,14 +157,6 @@ namespace flame
 				}, Mail::from_p(this));
 				style();
 			}
-		}
-
-		Component* copy() override
-		{
-			auto copy = new cStyleTextColorPrivate;
-			copy->color_normal = color_normal;
-			copy->color_else = color_else;
-			return copy;
 		}
 	};
 
@@ -239,17 +209,6 @@ namespace flame
 				}, Mail::from_p(this));
 				style();
 			}
-		}
-
-		Component* copy() override
-		{
-			auto copy = new cStyleTextColor2Private;
-			for (auto i = 0; i < 2; i++)
-			{
-				copy->color_normal[i] = color_normal[i];
-				copy->color_else[i] = color_else[i];
-			}
-			return copy;
 		}
 	};
 

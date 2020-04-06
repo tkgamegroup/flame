@@ -20,6 +20,5 @@ namespace flame
 		void on_left_world() override;
 		void on_component_added(Component* c) override;
 		void on_visibility_changed() override;
-		Component* copy() override;
 	};
 }

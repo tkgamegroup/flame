@@ -102,7 +102,7 @@ struct cHierarchyItem : Component
 	{
 		if (event_receiver->dispatcher->drag_overing != event_receiver)
 			drop_pos = -1;
-		if (!element->cliped && drop_pos >= 0)
+		if (!element->clipped && drop_pos >= 0)
 		{
 			std::vector<Vec2f> points;
 			switch (drop_pos)

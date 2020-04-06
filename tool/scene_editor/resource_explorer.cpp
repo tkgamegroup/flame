@@ -67,7 +67,7 @@ struct cThumbnail : Component
 	{
 		if (thumbnail)
 		{
-			if (image->element->cliped)
+			if (image->element->clipped)
 			{
 				if (seat)
 				{

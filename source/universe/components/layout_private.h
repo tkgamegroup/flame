@@ -30,6 +30,5 @@ namespace flame
 		void on_child_component_added(Component* c) override;
 		void on_child_component_removed(Component* c) override;
 		void update();
-		Component* copy() override;
 	};
 }

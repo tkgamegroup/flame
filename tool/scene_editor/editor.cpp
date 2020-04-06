@@ -22,7 +22,7 @@ cEditor::cEditor() :
 			utils::e_end_combobox(0);
 		utils::e_end_layout();
 
-		utils::e_begin_layout()->get_component(cElement)->clip_children = true;
+		utils::e_begin_layout()->get_component(cElement)->clip_flags = ClipChildren;
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 		e_scene = utils::current_entity();
 		if (app.prefab)
@@ -33,7 +33,7 @@ cEditor::cEditor() :
 			auto c_element = e_overlayer->get_component(cElement);
 			c_element->cmds.add([](void* c, graphics::Canvas* canvas) {
 				auto element = *(cElement**)c;
-				if (!element->cliped && app.selected)
+				if (!element->clipped && app.selected)
 				{
 					auto se = app.selected->get_component(cElement);
 					if (se)
@@ -239,6 +239,6 @@ void cEditor::search_hover(Entity* e)
 		return;
 
 	auto element = e->get_component(cElement);
-	if (element && rect_contains(element->cliped_rect, Vec2f(app.s_event_dispatcher->mouse_pos)))
+	if (element && rect_contains(element->clipped_rect, Vec2f(app.s_event_dispatcher->mouse_pos)))
 		app.selected = e;
 }

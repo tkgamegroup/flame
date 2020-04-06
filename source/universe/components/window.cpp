@@ -51,11 +51,6 @@ namespace flame
 				}, Mail::from_p(this));
 			}
 		}
-
-		Component* copy() override
-		{
-			return new cMoveablePrivate;
-		}
 	};
 
 	cMoveable* cMoveable::create()
@@ -104,11 +99,6 @@ namespace flame
 				}, Mail::from_p(this));
 			}
 		}
-
-		Component* copy() override
-		{
-			return new cBringToFrontPrivate;
-		}
 	};
 
 	cBringToFront* cBringToFront::create()
@@ -153,11 +143,6 @@ namespace flame
 					return true;
 				}, Mail::from_p(this));
 			}
-		}
-
-		Component* copy() override
-		{
-			return new cSizeDraggerPrivate;
 		}
 	};
 
@@ -380,7 +365,7 @@ namespace flame
 			}
 			else
 			{
-				if (!element->cliped)
+				if (!element->clipped)
 				{
 					for (auto p : drop_tips)
 					{
@@ -390,15 +375,6 @@ namespace flame
 					}
 				}
 			}
-		}
-
-		Component* copy() override
-		{
-			auto copy = new cDockerTabPrivate();
-
-			copy->root = root;
-
-			return copy;
 		}
 	};
 
@@ -554,11 +530,6 @@ namespace flame
 					return true;
 				}, Mail::from_p(this));
 			}
-		}
-
-		Component* copy() override
-		{
-			return new cDockerTabbarPrivate;
 		}
 	};
 
@@ -805,11 +776,6 @@ namespace flame
 					return true;
 				}, Mail::from_p(this));
 			}
-		}
-
-		Component* copy() override
-		{
-			return new cDockerPagesPrivate;
 		}
 	};
 

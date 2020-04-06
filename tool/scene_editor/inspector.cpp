@@ -139,7 +139,7 @@ cInspector::cInspector() :
 	utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
 		e_layout = utils::e_empty();
 		{
-			utils::c_element()->clip_children = true;
+			utils::c_element()->clip_flags = ClipChildren;
 			auto cl = utils::c_layout(LayoutVertical);
 			cl->item_padding = 4.f;
 			cl->width_fit_children = false;

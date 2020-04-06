@@ -446,7 +446,7 @@ cEditor::cEditor() :
 	tnp.second->add_component(this);
 	c_tab_text = tnp.first->get_component(cText);
 
-		utils::e_begin_layout()->get_component(cElement)->clip_children = true;
+		utils::e_begin_layout()->get_component(cElement)->clip_flags = ClipChildren;
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 			{
 				auto c_element = utils::e_element()->get_component(cElement);
@@ -454,7 +454,7 @@ cEditor::cEditor() :
 					auto element = *(cElement**)c;
 					auto base_element = app.editor->c_base_element;
 
-					if (element->cliped)
+					if (element->clipped)
 						return true;
 
 					if (app.editor->selecting)
@@ -845,24 +845,21 @@ void cEditor::on_add_node(BP::Node* n)
 				auto dp = cDataKeeper::create();
 				dp->set_voidp_item(FLAME_CHASH("window"), nullptr);
 				e_node->add_component(dp);
-				utils::e_button(L"Show", [](void* c) {
-					auto n = *(BP::Node**)c;
-					auto dp = ((Entity*)n->user_data)->get_component(cDataKeeper);
-					auto w = (App::Window*)dp->get_voidp_item(FLAME_CHASH("window"));
-					if (!w)
+				auto slot = -1;
+				for (auto i = 0; i < array_size(app.test_render_targets); i++)
+				{
+					if (!app.test_render_targets[i])
 					{
-						w = new App::Window("Test Render Target", Vec2u(400, 300), WindowFrame, app.graphics_device, app.windows[0]->w);
-						n->find_input("w")->set_data_p(w);
-						w->w->destroy_listeners.add([](void* c) {
-							auto n = *(BP::Node**)c;
-							((Entity*)n->user_data)->get_component(cDataKeeper)->set_voidp_item(FLAME_CHASH("window"), nullptr);
-							n->find_input("w")->set_data_p(nullptr);
-							return true;
-						}, Mail::from_p(n));
-						app.windows.emplace_back(w);
-						dp->set_voidp_item(FLAME_CHASH("window"), w);
+						slot = i;
+						app.test_render_targets[i] = n;
+						break;
 					}
-
+				}
+				auto name = std::wstring(L"Show");
+				if (slot != -1)
+					name += L" (ctrl+" + (slot < 9 ? std::to_wstring(slot + 1) : L"0") + L")";
+				utils::e_button(name.c_str(), [](void* c) {
+					app.show_test_render_target(*(BP::Node**)c);
 				}, Mail::from_p(n));
 			}
 			else if (type == "D#graphics::Shader")
@@ -932,7 +929,7 @@ void cEditor::on_add_node(BP::Node* n)
 						auto e_text_view = Entity::create();
 						{
 							auto c_element = cElement::create();
-							c_element->clip_children = true;
+							c_element->clip_flags = ClipChildren;
 							e_text_view->add_component(c_element);
 
 							auto c_aligner = cAligner::create();
@@ -1346,6 +1343,18 @@ void cEditor::on_remove_node(BP::Node* n)
 {
 	auto e = (Entity*)n->user_data;
 	e->parent()->remove_child(e);
+
+	if (n->type() == "TestRenderTarget")
+	{
+		for (auto i = 0; i < array_size(app.test_render_targets); i++)
+		{
+			if (app.test_render_targets[i] == n)
+			{
+				app.test_render_targets[i] = nullptr;
+				break;
+			}
+		}
+	}
 }
 
 void cEditor::on_data_changed(BP::Slot* s)

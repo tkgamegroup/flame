@@ -31,7 +31,6 @@ namespace flame
 		void mark_dying();
 		void remove_child(EntityPrivate* e, bool destroy);
 		void remove_children(int from, int to, bool destroy);
-		EntityPrivate* copy();
 		void update_visibility();
 	};
 }

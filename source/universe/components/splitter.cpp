@@ -91,11 +91,6 @@ namespace flame
 				}, Mail::from_p(this));
 			}
 		}
-
-		Component* copy() override
-		{
-			return new cSplitterPrivate(type);
-		}
 	};
 
 	cSplitter* cSplitter::create(SplitterType type)

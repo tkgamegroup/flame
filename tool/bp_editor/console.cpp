@@ -15,7 +15,7 @@ cConsole::cConsole() :
 	}
 
 		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
-			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_children = true;
+			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
 			utils::c_aligner(SizeFitParent, SizeFitParent);
 			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
 			utils::e_end_layout();

@@ -127,7 +127,7 @@ namespace flame
 
 	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
 	{
-		auto mouse_contained = !er->element->cliped && rect_contains(er->element->cliped_rect, Vec2f(mouse_pos));
+		auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
 
 		if ([&]() {
 				if (!mouse_event_checker)
@@ -292,7 +292,7 @@ namespace flame
 			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
 		dispatch_mouse_recursively((EntityPrivate*)world_->root());
 
-		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->cliped_rect, Vec2f(mouse_pos)))
+		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mouse_pos)))
 		{
 			auto disp = mouse_pos - active_pos;
 			auto db = dbclick_timer > 0.f;

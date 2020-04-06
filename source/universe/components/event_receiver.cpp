@@ -85,15 +85,6 @@ namespace flame
 			dispatcher->pending_update = true;
 	}
 
-	Component* cEventReceiverPrivate::copy()
-	{
-		auto copy = new cEventReceiverPrivate();
-
-		copy->drag_hash = drag_hash;
-
-		return copy;
-	}
-
 	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
 	{
 		auto& drops = ((cEventReceiverPrivate*)this)->acceptable_drops;

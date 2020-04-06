@@ -11,19 +11,11 @@
 
 namespace flame
 {
-	struct R(Serializer_Atlas)
+	struct Serializer_Atlas
 	{
 		RV(StringW, filename, n);
 
-		FLAME_UNIVERSE_EXPORTS RF(Serializer_Atlas)()
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS RF(~Serializer_Atlas)()
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS Object* RF(create)(World* w)
+		Object* create(World* w)
 		{
 			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename.v);
 			auto renderer = w->get_system(s2DRenderer);
@@ -32,7 +24,7 @@ namespace flame
 			return a;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void RF(destroy)(Object* o)
+		void destroy(Object* o)
 		{
 			auto a = (graphics::Atlas*)o;
 			((graphics::Canvas*)a->canvas_)->set_image(a->canvas_slot_, nullptr);
@@ -40,21 +32,12 @@ namespace flame
 		}
 	};
 
-	struct R(Serializer_FontAtlas)
+	struct Serializer_FontAtlas
 	{
 		RV(graphics::FontDrawType, draw_type, n);
 		RV(StringW, fonts, n);
 
-		FLAME_UNIVERSE_EXPORTS RF(Serializer_FontAtlas)()
-		{
-			draw_type = graphics::FontDrawPixel;
-		}
-
-		FLAME_UNIVERSE_EXPORTS RF(~Serializer_FontAtlas)()
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS Object* RF(create)(World* w)
+		Object* create(World* w)
 		{
 			auto sp = SUW::split(fonts.str(), L';');
 			std::vector<const wchar_t*> fonts(sp.size());
@@ -67,7 +50,7 @@ namespace flame
 			return f;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void RF(destroy)(Object* o)
+		void destroy(Object* o)
 		{
 			auto f = (graphics::FontAtlas*)o;
 			((graphics::Canvas*)f->canvas_)->set_image(f->canvas_slot_, nullptr);
@@ -104,22 +87,47 @@ namespace flame
 
 			const auto& scissor = canvas->scissor();
 			auto r = rect(element->global_pos, element->global_size);
-			element->cliped = !rect_overlapping(scissor, r);
-			element->cliped_rect = element->cliped ? Vec4f(-1.f) : Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
-			element->draw(canvas);
+			element->clipped = !rect_overlapping(scissor, r);
+			element->clipped_rect = element->clipped ? Vec4f(-1.f) : Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
 
-			if (element->clip_children)
+			auto clip_flags = element->clip_flags;
+			if (clip_flags)
 			{
 				auto last_scissor = canvas->scissor();
 				auto scissor = Vec4f(element->global_pos, element->global_pos + element->global_size);
 				scissor += Vec4f(element->inner_padding_[0], element->inner_padding_[1], -element->inner_padding_[2], -element->inner_padding_[3]) * element->global_scale;
-				canvas->set_scissor(scissor);
-				for (auto& c : e->children)
-					do_render(c.get());
-				canvas->set_scissor(last_scissor);
+				if (clip_flags == (ClipSelf | ClipChildren))
+				{
+					element->draw(canvas);
+					canvas->set_scissor(scissor);
+					element->cmds.call(canvas);
+					for (auto& c : e->children)
+						do_render(c.get());
+					canvas->set_scissor(last_scissor);
+				}
+				else if (clip_flags == ClipSelf)
+				{
+					element->draw(canvas);
+					canvas->set_scissor(scissor);
+					element->cmds.call(canvas);
+					canvas->set_scissor(last_scissor);
+					for (auto& c : e->children)
+						do_render(c.get());
+				}
+				else if (clip_flags == ClipChildren)
+				{
+					element->draw(canvas);
+					element->cmds.call(canvas);
+					canvas->set_scissor(scissor);
+					for (auto& c : e->children)
+						do_render(c.get());
+					canvas->set_scissor(last_scissor);
+				}
 			}
 			else
 			{
+				element->draw(canvas);
+				element->cmds.call(canvas);
 				for (auto& c : e->children)
 					do_render(c.get());
 			}

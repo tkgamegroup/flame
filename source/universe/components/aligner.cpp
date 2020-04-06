@@ -31,23 +31,6 @@ namespace flame
 					min_height_ = element->size_.y();
 			}
 		}
-
-		Component* copy() override
-		{
-			auto copy = new cAlignerPrivate();
-
-			copy->x_align_ = x_align_;
-			copy->y_align_ = y_align_;
-			copy->width_policy_ = width_policy_;
-			copy->min_width_ = min_width_;
-			copy->width_factor_ = width_factor_;
-			copy->height_policy_ = height_policy_;
-			copy->min_height_ = min_height_;
-			copy->height_factor_ = height_factor_;
-			copy->using_padding_ = using_padding_;
-
-			return copy;
-		}
 	};
 
 	cAligner* cAligner::create()

@@ -100,7 +100,7 @@ namespace flame
 				et->set_name("docker_tabbar");
 				e->add_child(et);
 				auto ce = cElement::create();
-				ce->clip_children = true;
+				ce->clip_flags = ClipChildren;
 				et->add_component(ce);
 				et->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();

@@ -71,11 +71,6 @@ namespace flame
 				do_style(false);
 			}
 		}
-
-		Component* copy() override
-		{
-			return new cListItemPrivate;
-		}
 	};
 
 	cListItem* cListItem::create()
@@ -124,12 +119,6 @@ namespace flame
 		{
 			if (c->name_hash == FLAME_CHASH("cListItem"))
 				((cListItem*)c)->list = this;
-		}
-
-		Component* copy() override
-		{
-			auto copy = new cListPrivate(select_air_when_clicked);
-			return copy;
 		}
 	};
 

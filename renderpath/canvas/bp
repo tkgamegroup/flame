@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <BP>
 	<libraries>
-		<library directory="make_cmd" />
+		<directory directory="make_cmd" />
 	</libraries>
 	<nodes>
 		<node type="EnumSingle(flame::graphics::SampleCount)" id="sc" pos="517.81;967.10">
@@ -105,13 +105,12 @@
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="MakeCmd" id="make_cmd" pos="3555.50;360.50">
-			<datas>
-				<data name="image_idx" value="0" />
-			</datas>
-		</node>
+		<node type="MakeCmd" id="make_cmd" pos="3555.50;360.50" />
+		<node type="TestRenderTarget" id="test_target" pos="49.00;53.00" />
 	</nodes>
 	<links>
+		<link out="test_target.type" in="rt_dst.type" />
+		<link out="test_target.images" in="rt_dst.v" />
 		<link out="rt_dst.out" in="resolve_targets.0" />
 		<link out="rt_dst.first_image" in="dst_props.in" />
 		<link out="dst_props.format" in="img_ms.format" />
@@ -149,9 +148,11 @@
 		<link out="rnf.rp" in="pl_text_sdf.renderpass" />
 		<link out="vi.out" in="pl_text_sdf.vi" />
 		<link out="sc.out" in="pl_text_sdf.sc" />
+		<link out="test_target.cbs" in="make_cmd.cbs" />
 		<link out="vtx_buf.out" in="make_cmd.vtx_buf" />
 		<link out="idx_buf.out" in="make_cmd.idx_buf" />
 		<link out="rnf.out" in="make_cmd.rnf" />
+		<link out="test_target.image_idx" in="make_cmd.image_idx" />
 		<link out="pll.out" in="make_cmd.pll" />
 		<link out="pl_element.out" in="make_cmd.pl_element" />
 		<link out="pl_text_lcd.out" in="make_cmd.pl_text_lcd" />

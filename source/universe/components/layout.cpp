@@ -613,17 +613,6 @@ namespace flame
 		}
 	}
 
-	Component* cLayoutPrivate::copy()
-	{
-		auto copy = new cLayoutPrivate(type);
-
-		copy->item_padding = item_padding;
-		copy->width_fit_children = width_fit_children;
-		copy->height_fit_children = height_fit_children;
-
-		return copy;
-	}
-
 	void cLayout::set_x_scroll_offset(float x)
 	{
 		if (scroll_offset_.x() == x)

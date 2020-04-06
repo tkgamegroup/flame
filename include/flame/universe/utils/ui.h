@@ -10,7 +10,7 @@
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
+#include <flame/universe/components/layout.h>-
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/list.h>
@@ -567,6 +567,7 @@ namespace flame
 			ce->color_ = style_4c(FrameColorNormal);
 			ce->frame_color_ = style_4c(ForegroundColor);
 			ce->frame_thickness_ = 2.f;
+			ce->clip_flags = ClipSelf;
 			auto ct = c_text();
 			ct->auto_width_ = false;
 			if (text)
@@ -575,6 +576,23 @@ namespace flame
 			if (width == 0.f)
 				c_aligner(SizeFitParent, SizeFixed);
 			c_edit();
+			return e;
+		}
+
+		inline Entity* e_color_picker(const Vec4c& init_col)
+		{
+			auto e = e_empty();
+			auto ce = c_element();
+			ce->size_ = 16.f;
+			ce->color_ = init_col;
+			c_event_receiver()->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				push_parent(current_root());
+				e_begin_layout(LayoutVertical, 4.f);
+
+				e_end_layout();
+				pop_parent();
+				return true;
+			}, Mail::from_p(ce));
 			return e;
 		}
 
@@ -637,7 +655,7 @@ namespace flame
 			auto ce = c_element();
 			ce->size_ = size;
 			ce->inner_padding_ = Vec4f(padding);
-			ce->clip_children = true;
+			ce->clip_flags = ClipChildren;
 			if (size == 0.f)
 				c_aligner(SizeFitParent, SizeFitParent);
 			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical);
@@ -1217,7 +1235,7 @@ namespace flame
 			{
 				auto ce = c_element();
 				ce->color_ = style_4c(BackgroundColor);
-				ce->clip_children = true;
+				ce->clip_flags = ClipChildren;
 				c_aligner(SizeFitParent, SizeFitParent);
 			}
 			pop_parent();

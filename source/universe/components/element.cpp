@@ -23,13 +23,13 @@ namespace flame
 		frame_thickness_ = 0.f;
 		color_ = Vec4c(0);
 		frame_color_ = Vec4c(255);
-		clip_children = false;
+		clip_flags = 0;
 
 		global_pos = 0.f;
 		global_scale = 0.f;
 		global_size = 0.f;
-		cliped = false;
-		cliped_rect = Vec4f(-1.f);
+		clipped = false;
+		clipped_rect = Vec4f(-1.f);
 
 		cmds.impl = ListenerHubImpl::create();
 
@@ -82,7 +82,7 @@ namespace flame
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
-		if (!cliped)
+		if (!clipped)
 		{
 			if (alpha_ > 0.f)
 			{
@@ -98,8 +98,6 @@ namespace flame
 				}
 			}
 		}
-
-		cmds.call(canvas);
 	}
 
 	void cElementPrivate::on_entered_world()
@@ -118,26 +116,6 @@ namespace flame
 	{
 		if (renderer)
 			renderer->pending_update = true;
-	}
-
-	Component* cElementPrivate::copy()
-	{
-		auto copy = new cElementPrivate();
-
-		copy->pos_ = pos_;
-		copy->size_ = size_;
-		copy->scale_ = scale_;
-		copy->pivot_ = pivot_;
-		copy->inner_padding_ = inner_padding_;
-		copy->alpha_ = alpha_;
-		copy->roundness_ = roundness_;
-		copy->roundness_lod = roundness_lod;
-		copy->frame_thickness_ = frame_thickness_;
-		copy->color_ = color_;
-		copy->frame_color_ = frame_color_;
-		copy->clip_children = clip_children;
-
-		return copy;
 	}
 
 	void cElement::set_x(float x, bool add, void* sender)
@@ -305,173 +283,4 @@ namespace flame
 	{
 		return new cElementPrivate();
 	}
-
-	struct R(Serializer_cElement)
-	{
-		RV(Vec2f, pos, n);
-		RV(Vec2f, size, n);
-		RV(float, scale, n);
-		RV(Vec2f, pivot, n);
-		RV(Vec4f, inner_padding, n);
-		RV(float, alpha, n);
-		RV(Vec4f, roundness, n);
-		RV(uint, roundness_lod, n);
-		RV(float, frame_thickness, n);
-		RV(Vec4c, color, n);
-		RV(Vec4c, frame_color, n);
-		RV(bool, clip_children, n);
-
-		FLAME_UNIVERSE_EXPORTS RF(Serializer_cElement)()
-		{
-			scale = 1.f;
-			alpha = 1.f;
-			frame_color = Vec4c(255);
-		}
-
-		FLAME_UNIVERSE_EXPORTS Component* RF(create)(World* w)
-		{
-			auto c = new cElementPrivate();
-
-			c->pos_ = pos;
-			c->size_ = size;
-			c->scale_ = scale;
-			c->pivot_ = pivot;
-			c->inner_padding_ = inner_padding;
-			c->alpha_ = alpha;
-			c->roundness_ = roundness;
-			c->roundness_lod = roundness_lod;
-			c->frame_thickness_ = frame_thickness;
-			c->color_ = color;
-			c->frame_color_ = frame_color;
-			c->clip_children = clip_children;
-
-			return c;
-		}
-
-		FLAME_UNIVERSE_EXPORTS void RF(serialize)(Component* _c, int offset)
-		{
-			auto c = (cElementPrivate*)_c;
-
-			if (offset == -1)
-			{
-				pos = c->pos_;
-				size = c->size_;
-				scale = c->scale_;
-				pivot = c->pivot_;
-				inner_padding = c->inner_padding_;
-				alpha = c->alpha_;
-				roundness = c->roundness_;
-				roundness_lod = c->roundness_lod;
-				frame_thickness = c->frame_thickness_;
-				color = c->color_;
-				frame_color = c->frame_color_;
-				clip_children = c->clip_children;
-			}
-			else
-			{
-				switch (offset)
-				{
-				case offsetof(Serializer_cElement, pos):
-					pos = c->pos_;
-					break;
-				case offsetof(Serializer_cElement, size):
-					size = c->size_;
-					break;
-				case offsetof(Serializer_cElement, scale):
-					scale = c->scale_;
-					break;
-				case offsetof(Serializer_cElement, pivot):
-					pivot = c->pivot_;
-					break;
-				case offsetof(Serializer_cElement, inner_padding):
-					inner_padding = c->inner_padding_;
-					break;
-				case offsetof(Serializer_cElement, alpha):
-					alpha = c->alpha_;
-					break;
-				case offsetof(Serializer_cElement, roundness):
-					roundness = c->roundness_;
-					break;
-				case offsetof(Serializer_cElement, roundness_lod):
-					roundness_lod = c->roundness_lod;
-					break;
-				case offsetof(Serializer_cElement, frame_thickness):
-					frame_thickness = c->frame_thickness_;
-					break;
-				case offsetof(Serializer_cElement, color):
-					color = c->color_;
-					break;
-				case offsetof(Serializer_cElement, frame_color):
-					frame_color = c->frame_color_;
-					break;
-				case offsetof(Serializer_cElement, clip_children):
-					clip_children = c->clip_children;
-					break;
-				}
-			}
-		}
-
-		FLAME_UNIVERSE_EXPORTS void  RF(unserialize)(Component* _c, int offset)
-		{
-			auto c = (cElementPrivate*)_c;
-
-			if (offset == -1)
-			{
-				c->pos_ = pos;
-				c->size_ = size;
-				c->scale_ = scale;
-				c->pivot_ = pivot;
-				c->inner_padding_ = inner_padding;
-				c->alpha_ = alpha;
-				c->roundness_ = roundness;
-				c->roundness_lod = roundness_lod;
-				c->frame_thickness_ = frame_thickness;
-				c->color_ = color;
-				c->frame_color_ = frame_color;
-				c->clip_children = clip_children;
-			}
-			else
-			{
-				switch (offset)
-				{
-				case offsetof(Serializer_cElement, pos):
-					c->pos_ = pos;
-					break;
-				case offsetof(Serializer_cElement, size):
-					c->size_ = size;
-					break;
-				case offsetof(Serializer_cElement, scale):
-					c->scale_ = scale;
-					break;
-				case offsetof(Serializer_cElement, pivot):
-					c->pivot_ = pivot;
-					break;
-				case offsetof(Serializer_cElement, inner_padding):
-					c->inner_padding_ = inner_padding;
-					break;
-				case offsetof(Serializer_cElement, alpha):
-					c->alpha_ = alpha;
-					break;
-				case offsetof(Serializer_cElement, roundness):
-					c->roundness_ = roundness;
-					break;
-				case offsetof(Serializer_cElement, roundness_lod):
-					c->roundness_lod = roundness_lod;
-					break;
-				case offsetof(Serializer_cElement, frame_thickness):
-					c->frame_thickness_ = frame_thickness;
-					break;
-				case offsetof(Serializer_cElement, color):
-					c->color_ = color;
-					break;
-				case offsetof(Serializer_cElement, frame_color):
-					c->frame_color_ = frame_color;
-					break;
-				case offsetof(Serializer_cElement, clip_children):
-					c->clip_children = clip_children;
-					break;
-				}
-			}
-		}
-	};
 }

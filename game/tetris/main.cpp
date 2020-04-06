@@ -310,7 +310,7 @@ struct MyApp : App
 			ce->frame_thickness_ = 6.f * scale;
 			ce->color_ = Vec4c(30, 30, 30, 255);
 			ce->frame_color_ = Vec4c(255);
-			ce->clip_children = true;
+			ce->clip_flags = ClipChildren;;
 		}
 
 		utils::push_parent(utils::current_entity());

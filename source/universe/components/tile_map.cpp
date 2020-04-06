@@ -51,7 +51,7 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (!element->cliped)
+			if (!element->clipped)
 			{
 				auto padding = element->inner_padding_ * element->global_scale;
 				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
@@ -163,65 +163,4 @@ namespace flame
 	{
 		return new cTileMapPrivate();
 	}
-
-	struct R(Serializer_cTileMap)
-	{
-		RV(Vec2u, size, n);
-		RV(Vec2f, cell_size, n);
-		RV(Array<ulonglong>, tiles, n);
-		RV(Array<int>, cells_idxs, n);
-		RV(Array<Vec4c>, cells_cols, n);
-
-		FLAME_UNIVERSE_EXPORTS RF(Serializer_cTileMap)()
-		{
-			size = Vec2u(0);
-			cell_size = Vec2f(0.f);
-		}
-
-		FLAME_UNIVERSE_EXPORTS Component* RF(create)(World* w)
-		{
-			auto c = new cTileMapPrivate();
-
-			c->size_ = size;
-			c->cell_size_ = cell_size;
-			c->tiles.resize(tiles.s);
-			for (auto i = 0; i < tiles.s; i++)
-			{
-				auto id = tiles[i];
-				auto atlas = (graphics::Atlas*)w->find_object(FLAME_CHASH("Atlas"), id >> 32);
-				c->tiles[i] = (atlas->canvas_slot_ << 16) + atlas->find_tile(id & 0xffffffff);
-			}
-			c->cells.resize(cells_idxs.s);
-			for (auto i = 0; i < cells_idxs.s; i++)
-			{
-				auto& dst = c->cells[i];
-				dst.idx = cells_idxs[i];
-				dst.col = cells_cols[i];
-			}
-
-			return c;
-		}
-
-		FLAME_UNIVERSE_EXPORTS void RF(serialize)(Component* _c, int offset)
-		{
-			auto c = (cTileMapPrivate*)_c;
-
-			if (offset == -1)
-			{
-				size = c->size_;
-				cell_size = c->cell_size_;
-			}
-		}
-
-		FLAME_UNIVERSE_EXPORTS void  RF(unserialize)(Component* _c, int offset)
-		{
-			auto c = (cTileMapPrivate*)_c;
-
-			if (offset == -1)
-			{
-				c->set_size(size);
-				c->cell_size_ = cell_size;
-			}
-		}
-	};
 }

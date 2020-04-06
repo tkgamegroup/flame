@@ -30,7 +30,9 @@ namespace flame
 
 		void on_component_added(Component* c) override
 		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			if (c->name_hash == FLAME_CHASH("cElement"))
+				element = (cElement*)c;
+			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {

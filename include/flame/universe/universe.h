@@ -10,6 +10,14 @@
 
 namespace flame
 {
+	enum ClipFlag
+	{
+		ClipSelf = 1 << 0,
+		ClipChildren = 1 << 1
+	};
+
+	typedef uint ClipFlags;
+
 	enum FocusType
 	{
 		FocusByLeftButton,

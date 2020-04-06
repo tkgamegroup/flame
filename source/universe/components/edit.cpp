@@ -211,7 +211,7 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (show_cursor && !element->cliped)
+			if (show_cursor && !element->clipped)
 			{
 				auto font_atlas = text->font_atlas;
 
