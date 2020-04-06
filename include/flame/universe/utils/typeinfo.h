@@ -564,9 +564,9 @@ namespace flame
 
 	namespace utils
 	{
-		void create_enum_combobox(EnumInfo* info, float width)
+		void create_enum_combobox(EnumInfo* info)
 		{
-			e_begin_combobox(width);
+			e_begin_combobox();
 			for (auto i = 0; i < info->item_count(); i++)
 				e_combobox_item(s2w(info->item(i)->name()).c_str());
 			e_end_combobox();

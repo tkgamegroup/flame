@@ -879,6 +879,10 @@ bool MyApp::create(const char* filename)
 				{
 					switch (value)
 					{
+					case Key_S:
+						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+							app.save();
+						break;
 					case Key_Z:
 						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
 							undo();

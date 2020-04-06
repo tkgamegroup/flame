@@ -1096,7 +1096,7 @@ void cEditor::on_add_node(BP::Node* n)
 							case TypeEnumSingle:
 							{
 								auto info = find_enum(base_hash);
-								utils::create_enum_combobox(info, 120.f);
+								utils::create_enum_combobox(info);
 
 								auto c_tracker = (cEnumSingleDataTracker*)f_malloc(sizeof(cEnumSingleDataTracker));
 								new (c_tracker) cEnumSingleDataTracker((int*)input->data(), info, [](void* c, int v) {

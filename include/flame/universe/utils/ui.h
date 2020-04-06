@@ -865,12 +865,12 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_combobox(float width)
+		inline Entity* e_begin_combobox()
 		{
 			auto e = e_empty();
 			e->gene = e;
 			auto ce = c_element();
-			ce->size_ = Vec2f(width + 8.f, style_1u(FontSize) + 4.f);
+			ce->size_ = Vec2f(8.f, style_1u(FontSize) + 4.f);
 			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
 			ce->frame_color_ = style_4c(TextColorNormal);
 			ce->frame_thickness_ = 2.f;
@@ -897,8 +897,17 @@ namespace flame
 
 		inline void e_end_combobox(int idx = -1)
 		{
+			auto eis = current_parent();
+			auto ecb = eis->get_component(cMenuItems)->menu->entity;
+			auto ccb = ecb->get_component(cCombobox);
+			auto max_width = 0U;
+			auto font = current_font_atlas();
+			auto font_size = style_1u(FontSize);
+			for (auto i = 0; i < eis->child_count(); i++)
+				max_width = max(max_width, font->text_size(font_size, eis->child(i)->get_component(cText)->text()).x());
+			ecb->get_component(cElement)->set_width(max_width + font_size, true);
 			if (idx != -1)
-				current_parent()->get_component(cMenuItems)->menu->entity->get_component(cCombobox)->set_index(idx, false);
+				ccb->set_index(idx, false);
 			pop_parent();
 		}
 
