@@ -99,7 +99,7 @@ struct MyApp : App
 							utils::e_end_tree();
 						}
 
-						utils::e_begin_combobox(100.f);
+						utils::e_begin_combobox();
 							utils::e_combobox_item(L"Apple");
 							utils::e_combobox_item(L"Boy");
 							utils::e_combobox_item(L"Cat");

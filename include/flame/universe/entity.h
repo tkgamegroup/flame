@@ -23,7 +23,7 @@ namespace flame
 		bool dying_;
 
 		bool visible_;
-		bool global_visible_;
+		bool global_visibility;
 
 		FLAME_UNIVERSE_EXPORTS const char* name() const;
 		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
@@ -41,6 +41,20 @@ namespace flame
 
 #define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
 #define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
+
+		inline bool _is_child_of(const Entity* p, const Entity* e) const
+		{
+			if (!e)
+				return false;
+			if (p == e)
+				return true;
+			return _is_child_of(p, e->parent());
+		}
+
+		inline bool is_child_of(const Entity* p) const
+		{
+			return _is_child_of(p, this);
+		}
 
 		FLAME_UNIVERSE_EXPORTS Array<Component*> get_components() const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);

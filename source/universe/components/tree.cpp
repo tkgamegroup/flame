@@ -183,6 +183,13 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
+		void toggle_collapse()
+		{
+			auto e = entity->parent()->parent()->child(1);
+			e->set_visible(!e->visible_);
+			text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
+		}
+
 		void on_added() override
 		{
 			tree = entity->parent()->parent()->get_component(cTreeNode)->tree;
@@ -197,12 +204,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						auto thiz = *(cTreeNodeArrowPrivate**)c;
-						auto e = thiz->entity->parent()->parent()->child(1);
-						e->set_visible(!e->visible_);
-						thiz->text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
-					}
+						(*(cTreeNodeArrowPrivate**)c)->toggle_collapse();
 					return true;
 				}, Mail::from_p(this));
 			}

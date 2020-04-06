@@ -26,6 +26,7 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 		void on_component_added(Component* c) override;
+		void on_visibility_changed() override;
 		void on_child_visibility_changed() override;
 		void on_child_component_added(Component* c) override;
 		void on_child_component_removed(Component* c) override;

@@ -39,7 +39,7 @@ namespace flame
 
 		void calc_geometry(EntityPrivate* e)
 		{
-			if (!e->global_visible_)
+			if (!e->global_visibility)
 				return;
 
 			auto element = (cElementPrivate*)e->get_component(cElement);
@@ -59,7 +59,7 @@ namespace flame
 				auto l = update_list.back();
 				update_list.erase(update_list.end() - 1);
 				l->pending_update = false;
-				if (l->entity->global_visible_)
+				if (l->entity->global_visibility)
 					l->update();
 			}
 

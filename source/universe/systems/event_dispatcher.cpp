@@ -212,7 +212,7 @@ namespace flame
 		for (auto i = (int)e->children.size() - 1; i >= 0; i--)
 		{
 			auto c = e->children[i].get();
-			if (c->global_visible_ && e->get_component(cElement))
+			if (c->global_visibility && e->get_component(cElement))
 				dispatch_mouse_recursively(c);
 		}
 
@@ -247,7 +247,7 @@ namespace flame
 
 		if (focusing)
 		{
-			if (!focusing->entity->global_visible_)
+			if (!focusing->entity->global_visibility)
 				focusing = nullptr;
 			else if (focusing_state != FocusingNormal)
 			{

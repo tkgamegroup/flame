@@ -63,7 +63,7 @@ namespace flame
 
 	void cTimerPrivate::on_visibility_changed()
 	{
-		if (!entity->global_visible_)
+		if (!entity->global_visibility)
 			stop();
 	}
 

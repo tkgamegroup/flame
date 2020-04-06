@@ -17,7 +17,7 @@ namespace flame
 		dying_ = false;
 
 		visible_ = true;
-		global_visible_ = false;
+		global_visibility = false;
 
 		name_hash = 0;
 
@@ -40,13 +40,6 @@ namespace flame
 			return;
 		visible_ = v;
 		update_visibility();
-		for (auto& c : components)
-			c.second->on_visibility_changed();
-		if (parent)
-		{
-			for (auto& c : parent->components)
-				c.second->on_child_visibility_changed();
-		}
 	}
 
 	Component* EntityPrivate::get_component_plain(uint hash)
@@ -265,10 +258,21 @@ namespace flame
 
 	void EntityPrivate::update_visibility()
 	{
+		auto prev_visibility = global_visibility;
 		if (!parent)
-			global_visible_ = visible_;
+			global_visibility = visible_;
 		else
-			global_visible_ = visible_ && parent->global_visible_;
+			global_visibility = visible_ && parent->global_visibility;
+		if (global_visibility != prev_visibility)
+		{
+			for (auto& c : components)
+				c.second->on_visibility_changed();
+			if (parent)
+			{
+				for (auto& c : parent->components)
+					c.second->on_child_visibility_changed();
+			}
+		}
 
 		for (auto& e : children)
 			e->update_visibility();

@@ -7,7 +7,7 @@ namespace flame
 	{
 		root.reset(new EntityPrivate);
 		root->world = this;
-		root->global_visible_ = true;
+		root->global_visibility = true;
 	}
 
 	WorldPrivate::~WorldPrivate()

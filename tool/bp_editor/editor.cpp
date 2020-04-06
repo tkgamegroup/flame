@@ -507,7 +507,7 @@ cEditor::cEditor() :
 								continue;
 							auto e1 = ((cSlot*)output->user_data)->element;
 							auto e2 = ((cSlot*)input->user_data)->element;
-							if (e1->entity->global_visible_ && e2->entity->global_visible_)
+							if (e1->entity->global_visibility && e2->entity->global_visibility)
 							{
 								auto p1 = e1->center();
 								auto p4 = e2->center();
@@ -536,7 +536,7 @@ cEditor::cEditor() :
 					if (ds)
 					{
 						auto e1 = ((cSlot*)ds->user_data)->element;
-						if (e1->entity->global_visible_)
+						if (e1->entity->global_visibility)
 						{
 							auto p1 = e1->center();
 							auto p4 = app.editor->dragging_slot_pos;

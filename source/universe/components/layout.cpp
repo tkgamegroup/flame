@@ -167,6 +167,12 @@ namespace flame
 			aligner = (cAligner*)c;
 	}
 
+	void cLayoutPrivate::on_visibility_changed()
+	{
+		if (management)
+			management->add_to_update_list(this);
+	}
+
 	void cLayoutPrivate::on_child_visibility_changed()
 	{
 		als_dirty = true;
@@ -233,7 +239,7 @@ namespace flame
 			for (auto i = 0; i < entity->child_count(); i++)
 			{
 				auto e = entity->child(i);
-				if (e->global_visible_)
+				if (e->global_visibility)
 				{
 					auto element = e->get_component(cElement);
 					auto aligner = e->get_component(cAligner);

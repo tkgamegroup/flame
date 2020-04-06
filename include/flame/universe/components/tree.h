@@ -65,6 +65,8 @@ namespace flame
 		{
 		}
 
+		FLAME_UNIVERSE_EXPORTS void toggle_collapse();
+
 		FLAME_UNIVERSE_EXPORTS static cTreeNodeArrow* create();
 	};
 
