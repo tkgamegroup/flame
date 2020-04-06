@@ -1368,11 +1368,8 @@ namespace flame
 				bool recording;
 				Entity* e_window;
 				cText* txt_record;
-				void* hovering;
 				cText* txt_hovering;
-				void* focusing;
 				cText* txt_focusing;
-				void* drag_overing;
 				cText* txt_drag_overing;
 			}capture;
 			capture.event_dispatcher = event_dispatcher;
@@ -1380,11 +1377,8 @@ namespace flame
 			capture.recording = true;
 			capture.e_window = e;
 			capture.txt_record = e_text(L"Recording (Esc)")->get_component(cText);
-			capture.hovering = INVALID_POINTER;
 			capture.txt_hovering = e_text(nullptr)->get_component(cText);
-			capture.focusing = INVALID_POINTER;
 			capture.txt_focusing = e_text(nullptr)->get_component(cText);
-			capture.drag_overing = INVALID_POINTER;
 			capture.txt_drag_overing = e_text(nullptr)->get_component(cText);
 
 			auto refresh = [](Entity* et) {
@@ -1477,7 +1471,6 @@ namespace flame
 						auto e = hovering ? hovering->entity : nullptr;
 						if (e->is_child_of(capture.e_window))
 							e = nullptr;
-						capture.hovering = e;
 						str += wfmt(L"0x%016I64X", (ulonglong)e);
 						capture.txt_hovering->set_text(str.c_str());
 					}
@@ -1488,7 +1481,6 @@ namespace flame
 						auto e = focusing ? focusing->entity : nullptr;
 						if (e->is_child_of(capture.e_window))
 							e = nullptr;
-						capture.focusing = e;
 						str += wfmt(L"0x%016I64X", (ulonglong)e);
 						if (e)
 						{
@@ -1513,7 +1505,6 @@ namespace flame
 						auto e = drag_overing ? drag_overing->entity : nullptr;
 						if (e->is_child_of(capture.e_window))
 							e = nullptr;
-						capture.drag_overing = e;
 						str += wfmt(L"0x%016I64X", (ulonglong)e);
 						capture.txt_drag_overing->set_text(str.c_str());
 					}

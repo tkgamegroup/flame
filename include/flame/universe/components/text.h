@@ -39,11 +39,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static cText* create(graphics::FontAtlas* font_atlas);
 	};
-
-	struct cDecoratedText : Component
-	{
-		cElement* element;
-
-		graphics::FontAtlas* font_atlas;
-	};
 }
