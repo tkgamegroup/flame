@@ -16,8 +16,6 @@ An ECS Game Engine Based On Reflection.
 - njson         - https://github.com/nlohmann/json or https://gitee.com/tkgamegroup/json
 
 - STB           - https://github.com/nothings/stb or https://gitee.com/tkgamegroup/stb
-  
-- freetype      - https://github.com/ubawurinna/freetype-windows-binaries or https://gitee.com/tkgamegroup/freetype-windows-binaries
 
 - SPIRV-Cross   - https://github.com/KhronosGroup/SPIRV-Cross or https://gitee.com/tkgamegroup/SPIRV-Cross
 

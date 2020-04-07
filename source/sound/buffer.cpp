@@ -1,6 +1,5 @@
-#include "buffer_private.h"
-
 #include <flame/serialize.h>
+#include "buffer_private.h"
 
 namespace flame
 {

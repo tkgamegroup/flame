@@ -5,10 +5,8 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/font.h>
 
-#include <ft2build.h>
-#include <freetype/freetype.h>
-#include <freetype/ftlcdfil.h>
-#include FT_OUTLINE_H
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
 
 #include <flame/reflect_macros.h>
 
@@ -16,8 +14,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		FT_Library ft_library = 0;
-
 		void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end)
 		{
 			out_begin = 0x20;
@@ -28,7 +24,7 @@ namespace flame
 		{
 			std::wstring filename;
 			std::string font_file;
-			FT_Face ft_face;
+			stbtt_fontinfo info;
 			uint ref_count;
 
 			Font(const std::wstring& _filename)
@@ -36,20 +32,9 @@ namespace flame
 				filename = _filename;
 				font_file = get_file_content(filename);
 
-				if (!ft_library)
-				{
-					FT_Init_FreeType(&ft_library);
-					FT_Library_SetLcdFilter(ft_library, FT_LCD_FILTER_DEFAULT);
-				}
-
-				FT_New_Memory_Face(ft_library, (uchar*)font_file.data(), font_file.size(), 0, &ft_face);
+				stbtt_InitFont(&info, (uchar*)font_file.data(), stbtt_GetFontOffsetForIndex((uchar*)font_file.data(), 0));
 
 				ref_count = 0;
-			}
-
-			~Font()
-			{
-				FT_Done_Face(ft_face);
 			}
 		};
 
@@ -157,52 +142,36 @@ namespace flame
 
 					for (auto font : fonts)
 					{
-						auto ft_face = font->ft_face;
-						auto glyph_index = FT_Get_Char_Index(ft_face, unicode);
-						if (glyph_index == 0)
+						auto info = &font->info;
+						auto index = stbtt_FindGlyphIndex(info, unicode);
+						if (index == 0)
 							continue;
 
-						FT_Size_RequestRec ft_req = {};
-						ft_req.type = FT_SIZE_REQUEST_TYPE_REAL_DIM;
-						ft_req.height = font_size * 64;
-						FT_Request_Size(ft_face, &ft_req);
-						auto ascender = ft_face->size->metrics.ascender / 64;
-
-						FT_Load_Glyph(ft_face, glyph_index, FT_LOAD_DEFAULT);
-
-						auto ft_glyph = ft_face->glyph;
-						auto size = Vec2u(ft_glyph->bitmap.width, ft_glyph->bitmap.rows);
-						g->size = size;
-						g->off = Vec2u(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
-						g->advance = ft_glyph->advance.x / 64;
-
-						if (size > 0U)
+						auto scale = stbtt_ScaleForPixelHeight(info, font_size);
+						auto x = 0, y = 0, w = 0, h = 0, ascent = 0, adv = 0;
+						auto bitmap = stbtt_GetGlyphBitmap(info, scale, scale, index, &w, &h, &x, &y);
+						stbtt_GetFontVMetrics(info, &ascent, 0, 0);
+						ascent *= scale;
+						stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
+						adv *= scale;
+						g->size = Vec2u(w, h);
+						g->off = Vec2u(x, ascent + h + y);
+						g->advance = adv;
+						if (bitmap)
 						{
-							auto n = bin_pack_root->find(size);
+							auto n = bin_pack_root->find(g->size);
 							if (n)
 							{
 								auto& atlas_pos = n->pos;
 
-								FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_NORMAL);
+								image->set_pixels(atlas_pos, g->size, bitmap);
 
-								auto pitch_ft = ft_glyph->bitmap.pitch;
-								auto pitch_temp = size.x();
-								auto temp = new uchar[pitch_temp * size.y()];
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-										temp[y * pitch_temp + x] = ft_glyph->bitmap.buffer[y * pitch_ft + x];
-								}
-
-								image->set_pixels(atlas_pos, size, temp);
-
-								delete[] temp;
-
-								g->uv0 = Vec2f(atlas_pos.x(), atlas_pos.y() + size.y()) / image->size;
-								g->uv1 = Vec2f(atlas_pos.x() + size.x(), atlas_pos.y()) / image->size;
+								g->uv0 = Vec2f(atlas_pos.x(), atlas_pos.y() + g->size.y()) / image->size;
+								g->uv1 = Vec2f(atlas_pos.x() + g->size.x(), atlas_pos.y()) / image->size;
 							}
 							else
 								printf("font atlas is full\n");
+							delete[]bitmap;
 						}
 
 						break;

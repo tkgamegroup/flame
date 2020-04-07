@@ -141,6 +141,7 @@ namespace flame
 			return 0;
 		}
 
+		bool test_mode;
 		uint frame;
 		float time;
 

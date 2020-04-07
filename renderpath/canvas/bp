@@ -4,7 +4,7 @@
 		<directory directory="make_cmd" />
 	</libraries>
 	<nodes>
-		<node type="EnumSingle(flame::graphics::SampleCount)" id="sc" pos="537.81;1061.10">
+		<node type="EnumSingle(flame::graphics::SampleCount)" id="sc" pos="450.19;944.67">
 			<datas>
 				<data name="in" value="SampleCount_8" />
 			</datas>
@@ -12,22 +12,22 @@
 		<node type="flame::graphics::R_RenderTarget" id="rt_dst" pos="289.72;123.27" />
 		<node type="Array(1+flame::graphics::RenderTarget*)" id="resolve_targets" pos="720.22;223.77" />
 		<node type="flame::graphics::R_ImageInspector" id="dst_props" pos="615.64;419.25" />
-		<node type="flame::graphics::R_Image" id="img_ms" pos="874.61;704.05">
+		<node type="flame::graphics::R_Image" id="img_ms" pos="857.94;534.05">
 			<datas>
 				<data name="usage" value="ImageUsageAttachment" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_RenderTarget" id="rt_ms" pos="1147.58;717.05">
+		<node type="flame::graphics::R_RenderTarget" id="rt_ms" pos="1135.91;637.05">
 			<datas>
 				<data name="clear" value="1" />
 				<data name="clear_color" value="0;0;0;255" />
 			</datas>
 		</node>
 		<node type="Array(1+flame::graphics::RenderTarget*)" id="color_targets" pos="1435.58;684.05" />
-		<node type="flame::graphics::R_SubpassTargetInfo" id="sp" pos="1587.80;830.92" />
-		<node type="Array(1+flame::graphics::SubpassTargetInfo*)" id="sps" pos="1807.80;845.92" />
-		<node type="flame::graphics::R_RenderpassAndFramebuffer" id="rnf" pos="2103.14;821.79" />
-		<node type="flame::graphics::R_DescriptorBinding" id="imgs_binding" pos="1144.81;1500.79">
+		<node type="flame::graphics::R_SubpassTargetInfo" id="sp" pos="1653.13;627.25" />
+		<node type="Array(1+flame::graphics::SubpassTargetInfo*)" id="sps" pos="1936.88;651.00" />
+		<node type="flame::graphics::R_RenderpassAndFramebuffer" id="rnf" pos="2093.47;620.62" />
+		<node type="flame::graphics::R_DescriptorBinding" id="imgs_binding" pos="1111.48;1427.46">
 			<datas>
 				<data name="type" value="DescriptorSampledImage" />
 				<data name="count" value="64" />
@@ -35,63 +35,63 @@
 			</datas>
 		</node>
 		<node type="Array(1+flame::graphics::DescriptorBinding*)" id="bindings" pos="1412.81;1446.79" />
-		<node type="flame::graphics::R_Descriptorlayout" id="dsl" pos="1537.51;1678.91" />
-		<node type="Array(1+flame::graphics::Descriptorlayout*)" id="dsls" pos="1820.81;1703.79" />
-		<node type="flame::graphics::R_Pipelinelayout" id="pll" pos="2023.80;1675.37">
+		<node type="flame::graphics::R_Descriptorlayout" id="dsl" pos="1595.84;1438.91" />
+		<node type="Array(1+flame::graphics::Descriptorlayout*)" id="dsls" pos="1879.14;1463.79" />
+		<node type="flame::graphics::R_Pipelinelayout" id="pll" pos="2082.13;1435.37">
 			<datas>
 				<data name="push_constant_size" value="16" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_VertexInputAttribute" id="via0" pos="1541.10;1127.00">
+		<node type="flame::graphics::R_VertexInputAttribute" id="via0" pos="1430.10;842.33">
 			<datas>
 				<data name="name" value="pos" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_VertexInputAttribute" id="via1" pos="1549.10;1271.00">
+		<node type="flame::graphics::R_VertexInputAttribute" id="via1" pos="1438.10;986.33">
 			<datas>
 				<data name="name" value="uv" />
 				<data name="format" value="Format_R32G32_SFLOAT" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_VertexInputAttribute" id="via2" pos="1545.60;1443.00">
+		<node type="flame::graphics::R_VertexInputAttribute" id="via2" pos="1434.60;1158.33">
 			<datas>
 				<data name="name" value="color" />
 			</datas>
 		</node>
-		<node type="Array(3+flame::graphics::VertexInputAttribute*)" id="vias" pos="1904.63;1320.33" />
-		<node type="flame::graphics::R_VertexInputBuffer" id="vib" pos="2013.05;1283.71" />
-		<node type="Array(1+flame::graphics::VertexInputBuffer*)" id="vibs" pos="2283.05;1315.71" />
-		<node type="flame::graphics::R_VertexInputInfo" id="vi" pos="2384.83;1369.37" />
-		<node type="Array(2+flame::StringW)" id="pl_shs" pos="2690.57;794.81">
+		<node type="Array(3+flame::graphics::VertexInputAttribute*)" id="vias" pos="1793.63;1035.66" />
+		<node type="flame::graphics::R_VertexInputBuffer" id="vib" pos="1902.05;999.04" />
+		<node type="Array(1+flame::graphics::VertexInputBuffer*)" id="vibs" pos="2172.05;1031.04" />
+		<node type="flame::graphics::R_VertexInputInfo" id="vi" pos="2273.83;1084.70" />
+		<node type="Array(2+flame::StringW)" id="pl_shs" pos="2446.90;886.14">
 			<datas>
 				<data name="0" value="element.vert" />
 				<data name="1" value="element.frag" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_Pipeline" id="pl" pos="2877.23;827.38" />
-		<node type="flame::graphics::R_Image" id="img_white" pos="777.12;1418.24">
+		<node type="flame::graphics::R_Pipeline" id="pl" pos="2770.23;943.71" />
+		<node type="flame::graphics::R_Image" id="img_white" pos="742.12;1376.57">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
 				<data name="init_with_color" value="1" />
 				<data name="init_color" value="255;255;255;255" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_Buffer" id="vtx_buf" pos="2752.88;157.00">
+		<node type="flame::graphics::R_Buffer" id="vtx_buf" pos="2224.88;151.00">
 			<datas>
 				<data name="size" value="3495200" />
 				<data name="usage" value="BufferUsageVertex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="flame::graphics::R_Buffer" id="idx_buf" pos="2741.05;466.72">
+		<node type="flame::graphics::R_Buffer" id="idx_buf" pos="2503.05;164.05">
 			<datas>
 				<data name="size" value="1048576" />
 				<data name="usage" value="BufferUsageIndex" />
 				<data name="mem_prop" value="MemPropHost;MemPropHostCoherent" />
 			</datas>
 		</node>
-		<node type="MakeCmd" id="make_cmd" pos="3555.50;360.50" />
+		<node type="MakeCmd" id="make_cmd" pos="2867.50;411.17" />
 		<node type="TestRenderTarget" id="test_target" pos="49.00;53.00" />
 	</nodes>
 	<links>

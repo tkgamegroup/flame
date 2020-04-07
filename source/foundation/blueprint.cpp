@@ -117,6 +117,8 @@ namespace flame
 
 		void update_resources_file()
 		{
+			if (test_mode)
+				return;
 			std::filesystem::path path(filename);
 			path.replace_filename(L"bpres");
 			std::ofstream file(path);
@@ -1275,6 +1277,7 @@ namespace flame
 
 		auto bp = new BPPrivate();
 		bp->filename = filename;
+		bp->test_mode = test_mode;
 		bp->update_resources_file();
 
 		for (auto& l_d : library_descs)

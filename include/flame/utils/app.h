@@ -125,12 +125,9 @@ namespace flame
 			sound_context = sound::Context::create(sound_device);
 			sound_context->make_current();
 
-			auto msyh_path = L"c:/windows/fonts/msyh.ttc";
-			if (!std::filesystem::exists(msyh_path))
-				msyh_path = L"c:/windows/fonts/msyh.ttf";
 			auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
 			const wchar_t* fonts[] = {
-				msyh_path,
+				L"c:/windows/fonts/arial.ttf",
 				font_awesome_path.c_str(),
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);

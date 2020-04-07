@@ -2,8 +2,6 @@
 
 #include <flame/sound/sound.h>
 
-#include <string>
-
 namespace flame
 {
 	namespace sound

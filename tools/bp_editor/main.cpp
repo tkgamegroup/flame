@@ -913,7 +913,7 @@ bool MyApp::create(const char* filename)
 	}
 	utils::c_layout();
 
-	utils::push_font_atlas(app.font_atlas_pixel);
+	utils::push_font_atlas(app.font_atlas);
 	utils::set_current_root(root);
 	utils::push_parent(root);
 
