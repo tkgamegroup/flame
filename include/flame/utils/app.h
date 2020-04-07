@@ -17,6 +17,7 @@
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
+#include <flame/universe/utils/ui.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -152,6 +153,7 @@ namespace flame
 			world->add_system(s_2d_renderer);
 			canvas = s_2d_renderer->canvas;
 			canvas->add_font(font_atlas_pixel);
+
 			root = world->root();
 			c_element_root = cElement::create();
 			root->add_component(c_element_root);

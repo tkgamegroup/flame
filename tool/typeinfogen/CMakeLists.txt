@@ -1,7 +1,0 @@
-file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
-add_executable(typeinfogen ${SOURCE_LIST})
-set_target_properties(typeinfogen PROPERTIES FOLDER "tool")
-target_include_directories(typeinfogen PRIVATE "${VS_PATH}/DIA SDK/include")
-target_link_libraries(typeinfogen flame_foundation)
-target_link_libraries(typeinfogen "${VS_PATH}/DIA SDK/lib/amd64/diaguids.lib")
-target_link_libraries(typeinfogen "Version.lib")
