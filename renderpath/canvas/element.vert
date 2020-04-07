@@ -9,7 +9,6 @@ out uint o_id;
 pushconstant
 {
 	vec2 scale;
-	vec2 sdf_range;
 }pc;
 
 void main()

@@ -19,7 +19,7 @@ namespace flame
 		Vec2f size_;
 		float scale_;
 		Vec2f pivot_;
-		Vec4f inner_padding_; // L T R B
+		Vec4f padding_; // L T R B
 		float alpha_;
 		Vec4f roundness_;
 		uint roundness_lod;
@@ -34,19 +34,34 @@ namespace flame
 		bool clipped;
 		Vec4f clipped_rect;
 
-		float inner_padding_h() const
+		float padding_h() const
 		{
-			return inner_padding_[0] + inner_padding_[2];
+			return padding_[0] + padding_[2];
 		}
 
-		float inner_padding_v() const
+		float padding_v() const
 		{
-			return inner_padding_[1] + inner_padding_[3];
+			return padding_[1] + padding_[3];
 		}
 
 		Vec2f center() const
 		{
 			return global_pos + global_size * 0.5f;
+		}
+
+		Vec2f content_min() const
+		{
+			return global_pos + Vec2f(padding_[0], padding_[1]) * global_scale;
+		}
+
+		Vec2f content_max() const
+		{
+			return global_pos + global_size - Vec2f(padding_[2], padding_[3]) * global_scale;
+		}
+
+		Vec2f content_size() const
+		{
+			return global_size - Vec2f(padding_[0] + padding_[2], padding_[1] + padding_[3]) * global_scale;
 		}
 
 		cElement() :

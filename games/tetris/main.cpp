@@ -338,7 +338,7 @@ struct MyApp : App
 			utils::next_element_size = Vec2f(block_size * 4 + 8.f);
 			{
 				auto ce = utils::c_element();
-				ce->inner_padding_ = Vec4f(4.f);
+				ce->padding_ = Vec4f(4.f);
 				ce->color_ = Vec4c(30, 30, 30, 255);
 			}
 			{
@@ -363,7 +363,7 @@ struct MyApp : App
 				utils::e_empty();
 				utils::next_element_pos = pos + Vec2f(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
 				utils::next_element_size = Vec2f(block_size * 4 + 8.f);
-				utils::c_element()->inner_padding_ = Vec4f(4.f);
+				utils::c_element()->padding_ = Vec4f(4.f);
 				{
 					p.c_next[i] = cTileMap::create();
 					p.c_next[i]->cell_size_ = Vec2f(block_size);
@@ -703,7 +703,7 @@ struct MyApp : App
 	{
 		utils::push_parent(root);
 		utils::next_element_size = Vec2f(500.f, 0.f);
-		utils::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->inner_padding_ = 8.f;
+		utils::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->padding_ = 8.f;
 		utils::c_aligner(SizeFixed, SizeFitParent)->x_align_ = AlignxMiddle;
 			utils::push_style_1u(utils::FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 8.f);
@@ -762,11 +762,11 @@ struct MyApp : App
 							}
 							utils::e_text(L"Max People");
 							{
-								auto c_combobox = utils::e_begin_combobox(100.f)->get_component(cCombobox);
+								auto c_combobox = utils::e_begin_combobox()->get_component(cCombobox);
 								c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
 									if (hash == FLAME_CHASH("index"))
 									{
-										auto index = (*(cCombobox**)c)->idx;
+										auto index = (*(cCombobox**)c)->index;
 										switch (index)
 										{
 										case 0:
@@ -1884,7 +1884,7 @@ struct MyApp : App
 										{
 											auto cell_size = c_main->cell_size_;
 											auto board_element = c_main->element;
-											auto pos = board_element->global_pos + Vec2f(board_element->inner_padding_[0], board_element->inner_padding_[1]);
+											auto pos = board_element->global_pos + Vec2f(board_element->padding_[0], board_element->padding_[1]);
 											pos.y() += i * cell_size.y();
 											utils::push_parent(root);
 											utils::next_element_pos = pos;

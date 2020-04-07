@@ -197,7 +197,7 @@ struct cSlot : Component
 						auto c_element = thiz->tip_link->get_component(cElement);
 						c_element->pos_ = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
 						c_element->pivot_ = Vec2f(0.5f, 1.f);
-						c_element->inner_padding_ = 4.f;
+						c_element->padding_ = 4.f;
 						c_element->frame_thickness_ = 2.f;
 						c_element->color_ = Vec4c(200, 200, 200, 255);
 						c_element->frame_color_ = Vec4c(0, 0, 0, 255);
@@ -256,7 +256,7 @@ struct cSlot : Component
 							auto c_element = thiz->tip_info->get_component(cElement);
 							c_element->pos_ = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
 							c_element->pivot_ = Vec2f(is_in ? 1.f : 0.f , 0.f);
-							c_element->inner_padding_ = 4.f;
+							c_element->padding_ = 4.f;
 							c_element->frame_thickness_ = 2.f;
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
@@ -398,7 +398,7 @@ struct cNode : Component
 							auto c_element = thiz->tip->get_component(cElement);
 							c_element->pos_ = thiz->element->global_pos - Vec2f(0.f, 8.f);
 							c_element->pivot_ = Vec2f(0.f, 1.f);
-							c_element->inner_padding_ = 4.f;
+							c_element->padding_ = 4.f;
 							c_element->frame_thickness_ = 2.f;
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
@@ -822,7 +822,7 @@ void cEditor::on_add_node(BP::Node* n)
 			}, Mail::from_p(n));
 		utils::e_end_popup_menu();
 	utils::push_parent(e_node);
-		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->padding_ = Vec4f(8.f);
 			utils::push_style_1u(utils::FontSize, 21);
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 				if (c_node->n_type == 0)
@@ -832,7 +832,7 @@ void cEditor::on_add_node(BP::Node* n)
 					if (last_colon != std::wstring::npos)
 						str = std::wstring(str.begin() + last_colon + 1, str.end());
 					auto e_text = utils::e_text(str.c_str());
-					e_text->get_component(cElement)->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+					e_text->get_component(cElement)->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 					e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
 				}
 			utils::e_end_layout();
@@ -881,7 +881,7 @@ void cEditor::on_add_node(BP::Node* n)
 						capture.e->locked = true;
 						auto t = create_topmost(capture.e->entity, false, false, true, Vec4c(255, 255, 255, 235), true);
 						{
-							t->get_component(cElement)->inner_padding_ = Vec4f(4.f);
+							t->get_component(cElement)->padding_ = Vec4f(4.f);
 
 							auto c_layout = cLayout::create(LayoutVertical);
 							c_layout->width_fit_children = false;
@@ -1081,7 +1081,7 @@ void cEditor::on_add_node(BP::Node* n)
 						if (!input->link() && tag != TypePointer)
 						{
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
-							e_data->get_component(cElement)->inner_padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
+							e_data->get_component(cElement)->padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
 
 							std::vector<TypeinfoDatabase*> dbs;
 							dbs.resize(app.bp->library_count());
@@ -1317,7 +1317,7 @@ void cEditor::on_add_node(BP::Node* n)
 						nn->set_id(id.c_str());
 					}
 				}, Mail::from_p(n))->get_component(cElement);
-				c_element->inner_padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
+				c_element->padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
 				c_element->roundness_ = 8.f;
 				c_element->roundness_lod = 2;
 				utils::c_aligner(AlignxMiddle, AlignyFree);
@@ -1469,7 +1469,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		}, Mail());
 		utils::next_element_pos = pos;
 		auto c_element = utils::c_element();
-		c_element->inner_padding_ = 4.f;
+		c_element->padding_ = 4.f;
 		c_element->frame_thickness_ = 2.f;
 		c_element->color_ = utils::style_4c(utils::BackgroundColor);
 		c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);

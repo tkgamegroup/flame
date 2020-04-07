@@ -19,8 +19,6 @@ An ECS Game Engine Based On Reflection.
   
 - freetype      - https://github.com/ubawurinna/freetype-windows-binaries or https://gitee.com/tkgamegroup/freetype-windows-binaries
 
-- msdfgen       - (must use my forked version, changed a little bit) https://github.com/tkgamegroup/msdfgen or https://gitee.com/tkgamegroup/msdfgen
-
 - SPIRV-Cross   - https://github.com/KhronosGroup/SPIRV-Cross or https://gitee.com/tkgamegroup/SPIRV-Cross
 
 - OpenAL        - http://www.openal.org/

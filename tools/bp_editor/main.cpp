@@ -1029,7 +1029,7 @@ bool MyApp::create(const char* filename)
 
 			{
 				auto c_element = utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cElement);
-				c_element->inner_padding_ = 4.f;
+				c_element->padding_ = 4.f;
 				c_element->color_ = utils::style_4c(utils::FrameColorNormal);
 				utils::c_aligner(SizeFitParent, SizeFixed);
 				c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
@@ -1073,7 +1073,7 @@ bool MyApp::create(const char* filename)
 		e_notification = utils::e_text(L"");
 		{
 			auto c_element = e_notification->get_component(cElement);
-			c_element->inner_padding_ = Vec4f(20.f, 10.f, 20.f, 10.f);
+			c_element->padding_ = Vec4f(20.f, 10.f, 20.f, 10.f);
 			c_element->color_ = Vec4c(0, 0, 0, 255);
 		}
 		e_notification->get_component(cText)->color_ = Vec4c(255);

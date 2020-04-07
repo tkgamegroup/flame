@@ -16,7 +16,7 @@ namespace flame
 		size_ = 0.f;
 		scale_ = 1.f;
 		pivot_ = 0.f;
-		inner_padding_ = Vec4f(0.f);
+		padding_ = Vec4f(0.f);
 		alpha_ = 1.f;
 		roundness_ = Vec4f(0.f);
 		roundness_lod = 0;

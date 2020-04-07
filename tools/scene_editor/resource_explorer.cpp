@@ -72,7 +72,7 @@ struct cThumbnail : Component
 				if (seat)
 				{
 					return_seat();
-					image->element->inner_padding_ = Vec4f(0.f);
+					image->element->padding_ = Vec4f(0.f);
 					image->id = 0;
 					image->color = Vec4c(100, 100, 100, 128);
 				}
@@ -97,7 +97,7 @@ struct cThumbnail : Component
 
 							auto h = (64 - thumbnail_size.x()) * 0.5f;
 							auto v = (64 - thumbnail_size.y()) * 0.5f;
-							image->element->inner_padding_ = Vec4f(h, v, h, v);
+							image->element->padding_ = Vec4f(h, v, h, v);
 							image->id = app.resource_explorer->thumbnails_img_idx << 16;
 							image->uv0 = Vec2f(*thiz->seat) / thumbnails_img_size;
 							image->uv1 = Vec2f(*thiz->seat + thumbnail_size) / thumbnails_img_size;
@@ -145,7 +145,7 @@ cResourceExplorer::cResourceExplorer() :
 	}
 
 	auto e_page = utils::e_begin_docker_page(L"Resource Explorer").second;
-	e_page->get_component(cElement)->inner_padding_ = 4.f;
+	e_page->get_component(cElement)->padding_ = 4.f;
 	{
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
@@ -425,7 +425,7 @@ void cResourceExplorer::draw(graphics::Canvas* canvas)
 	}
 	else
 	{
-		auto w = c_list_element->size_.x() - c_list_element->inner_padding_h();
+		auto w = c_list_element->size_.x() - c_list_element->padding_h();
 		c_list_layout->set_column(max(1U, uint(w / (c_list_layout->item_padding + 64.f))));
 	}
 }

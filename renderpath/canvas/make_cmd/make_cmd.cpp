@@ -14,8 +14,6 @@ using namespace graphics;
 enum CmdType
 {
 	CmdDrawElement,
-	CmdDrawTextLcd,
-	CmdDrawTextSdf,
 	CmdSetScissor
 };
 
@@ -46,7 +44,7 @@ struct CanvasPrivate : Canvas
 	void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness) override;
 	void fill(uint point_count, const Vec2f* points, const Vec4c& col) override;
 
-	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& pos, const Vec4c& col) override;
+	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col) override;
 	void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 	const Vec4f& scissor() override;
 	void set_scissor(const Vec4f& scissor) override;
@@ -79,9 +77,7 @@ struct R(MakeCmd)
 	RV(RenderpassAndFramebuffer*, rnf, i);
 	RV(uint, image_idx, i);
 	RV(Pipelinelayout*, pll, i);
-	RV(Pipeline*, pl_element, i);
-	RV(Pipeline*, pl_text_lcd, i);
-	RV(Pipeline*, pl_text_sdf, i);
+	RV(Pipeline*, pl, i);
 	RV(Descriptorset*, ds, i);
 	RV(Imageview*, white_iv, i);
 
@@ -297,15 +293,14 @@ struct R(MakeCmd)
 		}
 	}
 
-	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& _pos, const Vec4c& col)
+	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& _pos, const Vec4c& col)
 	{
-		auto line_space = (f->draw_type == FontDrawSdf ? sdf_font_size : font_size) * scale;
 		auto pos = Vec2f(Vec2i(_pos));
 
-		if (cmds.empty() || cmds.back().type != (CmdType)f->draw_type || cmds.back().v.draw_data.id != f->canvas_slot_)
+		if (cmds.empty() || cmds.back().type != CmdDrawElement || cmds.back().v.draw_data.id != f->canvas_slot_)
 		{
 			Cmd cmd;
-			cmd.type = (CmdType)f->draw_type;
+			cmd.type = CmdDrawElement;
 			cmd.v.draw_data.id = f->canvas_slot_;
 			cmd.v.draw_data.vtx_cnt = 0;
 			cmd.v.draw_data.idx_cnt = 0;
@@ -320,7 +315,7 @@ struct R(MakeCmd)
 			auto ch = *pstr;
 			if (ch == '\n')
 			{
-				pos.y() += line_space;
+				pos.y() += font_size;
 				pos.x() = (int)_pos.x();
 			}
 			else if (ch != '\r')
@@ -330,8 +325,8 @@ struct R(MakeCmd)
 
 				auto g = f->get_glyph(ch, font_size);
 
-				auto p = pos + Vec2f(g->off) * scale;
-				auto size = Vec2f(g->size) * scale;
+				auto p = pos + Vec2f(g->off);
+				auto size = Vec2f(g->size);
 				if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), curr_scissor))
 				{
 					vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
@@ -350,7 +345,7 @@ struct R(MakeCmd)
 					idx_cnt += 6;
 				}
 
-				pos.x() += g->advance * scale;
+				pos.x() += g->advance;
 			}
 
 			pstr++;
@@ -432,7 +427,7 @@ struct R(MakeCmd)
 			if (cbs)
 			{
 				auto cb = cbs->at(image_idx);
-				if (rnf && (pl_element || pl_text_lcd || pl_text_sdf))
+				if (rnf && pl)
 				{
 					surface_size = Vec2f(rnf->framebuffer(image_idx)->image_size);
 					curr_scissor = Vec4f(Vec2f(0.f), surface_size);
@@ -454,10 +449,9 @@ struct R(MakeCmd)
 						struct
 						{
 							Vec2f scale;
-							Vec2f sdf_range;
 						}pc;
 						pc.scale = Vec2f(2.f / surface_size.x(), 2.f / surface_size.y());
-						pc.sdf_range = Vec2f(sdf_range) / font_atlas_size;
+						cb->bind_pipeline(pl);
 						cb->push_constant(0, sizeof(pc), &pc, pll);
 						cb->bind_descriptorset(ds, 0, pll);
 
@@ -470,25 +464,6 @@ struct R(MakeCmd)
 							case CmdDrawElement:
 								if (cmd.v.draw_data.idx_cnt > 0)
 								{
-									cb->bind_pipeline(pl_element);
-									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-									vtx_off += cmd.v.draw_data.vtx_cnt;
-									idx_off += cmd.v.draw_data.idx_cnt;
-								}
-								break;
-							case CmdDrawTextLcd:
-								if (cmd.v.draw_data.idx_cnt > 0)
-								{
-									cb->bind_pipeline(pl_text_lcd);
-									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
-									vtx_off += cmd.v.draw_data.vtx_cnt;
-									idx_off += cmd.v.draw_data.idx_cnt;
-								}
-								break;
-							case CmdDrawTextSdf:
-								if (cmd.v.draw_data.idx_cnt > 0)
-								{
-									cb->bind_pipeline(pl_text_sdf);
 									cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 									vtx_off += cmd.v.draw_data.vtx_cnt;
 									idx_off += cmd.v.draw_data.idx_cnt;
@@ -545,9 +520,9 @@ void CanvasPrivate::fill(uint point_count, const Vec2f* points, const Vec4c& col
 	((MakeCmd*)mc)->fill(point_count, points, col);
 }
 
-void CanvasPrivate::add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& pos, const Vec4c& col)
+void CanvasPrivate::add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col)
 {
-	((MakeCmd*)mc)->add_text(f, text, font_size, scale, pos, col);
+	((MakeCmd*)mc)->add_text(f, text, font_size, pos, col);
 }
 
 void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

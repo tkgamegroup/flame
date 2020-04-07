@@ -14,8 +14,6 @@ namespace flame
 		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end);
 
 		const Vec2u font_atlas_size = Vec2u(1024);
-		const uint sdf_range = 4;
-		const uint sdf_font_size = 32;
 
 		struct Glyph
 		{
@@ -35,17 +33,8 @@ namespace flame
 			Vec4c color;
 		};
 
-		enum FontDrawType
-		{
-			FontDrawPixel,
-			FontDrawLcd,
-			FontDrawSdf
-		};
-
 		struct FontAtlas : Object
 		{
-			FontDrawType draw_type;
-
 			void* canvas_;
 			uint canvas_slot_;
 
@@ -56,7 +45,6 @@ namespace flame
 
 			Vec2u text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
-				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
 				auto off = Vec2u(0);
 
 				auto pstr = begin;
@@ -81,8 +69,7 @@ namespace flame
 
 			Vec2u text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
-				auto line_space = draw_type == FontDrawSdf ? sdf_font_size : font_size;
-				auto size = Vec2u(0, line_space);
+				auto size = Vec2u(0, font_size);
 				auto x = 0U;
 
 				auto pstr = begin;
@@ -91,7 +78,7 @@ namespace flame
 					auto ch = *pstr;
 					if (ch == '\n')
 					{
-						size.y() += line_space;
+						size.y() += font_size;
 						x = 0;
 					}
 					else if (ch != '\r')
@@ -151,7 +138,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, FontDrawType draw_type, uint font_count, const wchar_t* const* fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint font_count, const wchar_t* const* fonts);
 			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
 		};
 	}

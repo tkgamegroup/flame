@@ -49,7 +49,7 @@ namespace flame
 
 	void cLayoutPrivate::apply_h_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
 	{
-		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->inner_padding_.xz() : Vec2f(0.f);
+		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->padding_.xz() : Vec2f(0.f);
 		auto w = element->size_.x() - padding[0] - padding[1];
 		switch (_aligner ? _aligner->width_policy_ : SizeFixed)
 		{
@@ -80,7 +80,7 @@ namespace flame
 
 	void cLayoutPrivate::apply_v_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
 	{
-		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->inner_padding_.yw() : Vec2f(0.f);
+		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->padding_.yw() : Vec2f(0.f);
 		auto h = element->size_.y() - padding[0] - padding[1];
 		switch (_aligner ? _aligner->height_policy_ : SizeFixed)
 		{
@@ -286,7 +286,6 @@ namespace flame
 							{
 							case FLAME_CHASH("text"):
 							case FLAME_CHASH("font_size"):
-							case FLAME_CHASH("scale"):
 							case FLAME_CHASH("auto_width"):
 							case FLAME_CHASH("auto_height"):
 								if (thiz->management)
@@ -316,21 +315,17 @@ namespace flame
 				if (text->auto_width_ || text->auto_height_)
 				{
 					auto font_atlas = text->font_atlas;
-					Vec2f s;
-					if (font_atlas->draw_type == graphics::FontDrawSdf)
-						s = Vec2f(font_atlas->text_size(0, text->text(), nullptr)) * text->scale_;
-					else
-						s = Vec2f(font_atlas->text_size(text->font_size_, text->text(), nullptr));
+					auto s = Vec2f(font_atlas->text_size(text->font_size_, text->text(), nullptr));
 					if (text->auto_width_)
 					{
-						auto w = s.x() + element->inner_padding_h();
+						auto w = s.x() + element->padding_h();
 						if (aligner && aligner->width_policy_ == SizeGreedy)
 							aligner->set_min_width(w);
 						element->set_width(w, false, this);
 					}
 					if (text->auto_height_)
 					{
-						auto h = s.y() + element->inner_padding_v();
+						auto h = s.y() + element->padding_v();
 						if (aligner && aligner->height_policy_ == SizeGreedy)
 							aligner->set_min_height(h);
 						element->set_height(h, false, this);
@@ -390,8 +385,8 @@ namespace flame
 			if (fence > 0 && !als.empty())
 				w -= item_padding;
 			set_content_size(Vec2f(w, h));
-			w += element->inner_padding_h();
-			h += element->inner_padding_v();
+			w += element->padding_h();
+			h += element->padding_v();
 			if (width_fit_children)
 				use_children_width(w);
 			if (height_fit_children)
@@ -402,7 +397,7 @@ namespace flame
 				w /= factor;
 			else
 				w = 0.f;
-			auto x = element->inner_padding_[0];
+			auto x = element->padding_[0];
 			for (auto i = 0; i < n; i++)
 			{
 				auto& al = als[i];
@@ -470,8 +465,8 @@ namespace flame
 			if (fence > 0 && !als.empty())
 				h -= item_padding;
 			set_content_size(Vec2f(w, h));
-			w += element->inner_padding_h();
-			h += element->inner_padding_v();
+			w += element->padding_h();
+			h += element->padding_v();
 			if (width_fit_children)
 				use_children_width(w);
 			if (height_fit_children)
@@ -486,7 +481,7 @@ namespace flame
 				h /= factor;
 			else
 				h = 0.f;
-			auto y = element->inner_padding_[1];
+			auto y = element->padding_[1];
 			for (auto i = 0; i < n; i++)
 			{
 				auto& al = als[i];
@@ -516,9 +511,9 @@ namespace flame
 			{
 				set_content_size(Vec2f(0.f));
 				if (width_fit_children)
-					use_children_width(element->inner_padding_h());
+					use_children_width(element->padding_h());
 				if (height_fit_children)
-					use_children_height(element->inner_padding_v());
+					use_children_height(element->padding_v());
 				for (auto i = 0; i < n; i++)
 				{
 					auto& al = als[i];
@@ -527,8 +522,8 @@ namespace flame
 
 					assert(!aligner || (aligner->x_align_ == AlignxFree && aligner->y_align_ == AlignyFree));
 
-					element->set_x(scroll_offset_.x() + element->inner_padding_[0], false, this);
-					element->set_y(scroll_offset_.y() + element->inner_padding_[1], false, this);
+					element->set_x(scroll_offset_.x() + element->padding_[0], false, this);
+					element->set_y(scroll_offset_.y() + element->padding_[1], false, this);
 				}
 				for (auto i = n; i < als.size(); i++)
 				{
@@ -574,15 +569,15 @@ namespace flame
 					h -= item_padding;
 				}
 				set_content_size(Vec2f(w, h));
-				w += element->inner_padding_h();
-				h += element->inner_padding_v();
+				w += element->padding_h();
+				h += element->padding_v();
 				if (width_fit_children)
 					use_children_width(w);
 				if (height_fit_children)
 					use_children_height(h);
 
-				auto x = element->inner_padding_[0];
-				auto y = element->inner_padding_[1];
+				auto x = element->padding_[0];
+				auto y = element->padding_[1];
 				lh = 0.f;
 				c = 0;
 				for (auto i = 0; i < n; i++)
@@ -602,7 +597,7 @@ namespace flame
 					c++;
 					if (c == column_)
 					{
-						x = element->inner_padding_[0];
+						x = element->padding_[0];
 						y += lh + item_padding;
 						lh = 0.f;
 						c = 0;

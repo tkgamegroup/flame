@@ -20,7 +20,6 @@ namespace flame
 
 		font_atlas = _font_atlas;
 		font_size_ = utils::style_1u(utils::FontSize);
-		scale_ = 1.f;
 		color_ = utils::style_4c(utils::TextColorNormal);
 		auto_width_ = true;
 		auto_height_ = true;
@@ -38,18 +37,8 @@ namespace flame
 	{
 		if (!element->clipped)
 		{
-			if (font_atlas->draw_type == graphics::FontDrawSdf)
-			{
-				canvas->add_text(font_atlas, text.c_str(), 0, scale_ * element->global_scale, element->global_pos +
-					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
-					color_.new_proply<3>(element->alpha_));
-			}
-			else
-			{
-				canvas->add_text(font_atlas, text.c_str(), font_size_ * element->global_scale, 1.f, element->global_pos +
-					Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale,
-					color_.new_proply<3>(element->alpha_));
-			}
+			canvas->add_text(font_atlas, text.c_str(), font_size_ * element->global_scale, element->content_min(),
+				color_.new_proply<3>(element->alpha_));
 		}
 	}
 
@@ -94,16 +83,6 @@ namespace flame
 		if (element && element->renderer)
 			element->renderer->pending_update = true;
 		data_changed(FLAME_CHASH("font_size"), sender);
-	}
-
-	void cText::set_scale(float s, void* sender)
-	{
-		if (s == scale_)
-			return;
-		scale_ = s;
-		if (element && element->renderer)
-			element->renderer->pending_update = true;
-		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
 	void cText::set_color(const Vec4c& c, void* sender)

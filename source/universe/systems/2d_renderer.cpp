@@ -34,7 +34,6 @@ namespace flame
 
 	struct Serializer_FontAtlas
 	{
-		RV(graphics::FontDrawType, draw_type, n);
 		RV(StringW, fonts, n);
 
 		Object* create(World* w)
@@ -43,7 +42,7 @@ namespace flame
 			std::vector<const wchar_t*> fonts(sp.size());
 			for (auto i = 0; i < sp.size(); i++)
 				fonts[i] = sp[i].c_str();
-			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), draw_type, fonts.size(), fonts.data());
+			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), fonts.size(), fonts.data());
 			auto renderer = w->get_system(s2DRenderer);
 			if (renderer)
 				renderer->canvas->add_font(f);
@@ -94,8 +93,7 @@ namespace flame
 			if (clip_flags)
 			{
 				auto last_scissor = canvas->scissor();
-				auto scissor = Vec4f(element->global_pos, element->global_pos + element->global_size);
-				scissor += Vec4f(element->inner_padding_[0], element->inner_padding_[1], -element->inner_padding_[2], -element->inner_padding_[3]) * element->global_scale;
+				auto scissor = Vec4f(element->content_min(), element->content_max());
 				if (clip_flags == (ClipSelf | ClipChildren))
 				{
 					element->draw(canvas);

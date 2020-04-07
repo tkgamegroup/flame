@@ -30,13 +30,13 @@ namespace flame
 			void add_font(FontAtlas* f)
 			{
 				f->canvas_ = this;
-				f->canvas_slot_ = set_image(-1, f->imageview(), f->draw_type == FontDrawSdf ? FilterLinear : FilterNearest);
+				f->canvas_slot_ = set_image(-1, f->imageview(), FilterNearest);
 			}
 
 			virtual void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness) = 0;
 			virtual void fill(uint point_count, const Vec2f* points, const Vec4c& col) = 0;
 
-			virtual void add_text(FontAtlas* f, const wchar_t* text, uint font_size, float scale, const Vec2f& pos, const Vec4c& col) = 0;
+			virtual void add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col) = 0;
 			virtual void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
 			virtual const Vec4f& scissor() = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;

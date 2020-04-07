@@ -491,7 +491,7 @@ namespace flame
 		inline Entity* e_button(const wchar_t* text, void(*on_clicked)(void* c) = nullptr, const Mail& _capture = Mail(), bool use_style = true)
 		{
 			auto e = e_empty();
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			auto cer = c_event_receiver();
 			if (on_clicked)
@@ -551,7 +551,7 @@ namespace flame
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ += Vec2f(padding) * 2.f;
-			ce->inner_padding_ = Vec4f(padding);
+			ce->padding_ = Vec4f(padding);
 			c_image()->id = id;
 			return e;
 		}
@@ -563,7 +563,7 @@ namespace flame
 			c_timer()->interval = 0.5f;
 			auto ce = c_element();
 			ce->size_.x() = width + 8.f;
-			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			ce->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			ce->color_ = style_4c(FrameColorNormal);
 			ce->frame_color_ = style_4c(ForegroundColor);
 			ce->frame_thickness_ = 2.f;
@@ -654,7 +654,7 @@ namespace flame
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size_ = size;
-			ce->inner_padding_ = Vec4f(padding);
+			ce->padding_ = Vec4f(padding);
 			ce->clip_flags = ClipChildren;
 			if (size == 0.f)
 				c_aligner(SizeFitParent, SizeFitParent);
@@ -780,7 +780,7 @@ namespace flame
 		{
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->inner_padding_ = Vec4f(padding);
+			ce->padding_ = Vec4f(padding);
 			c_event_receiver();
 			if (fit_parent)
 				c_aligner(SizeFitParent, SizeFitParent);
@@ -801,7 +801,7 @@ namespace flame
 		inline Entity* e_tree_leaf(const wchar_t* text)
 		{
 			auto e = e_empty();
-			c_element()->inner_padding_ = Vec4f(style_1u(FontSize) + 4.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(style_1u(FontSize) + 4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
@@ -825,7 +825,7 @@ namespace flame
 			push_parent(e);
 			{
 				auto e = e_empty();
-				c_element()->inner_padding_ = Vec4f(style_1u(FontSize) + 4.f, 2.f, 4.f, 2.f);
+				c_element()->padding_ = Vec4f(style_1u(FontSize) + 4.f, 2.f, 4.f, 2.f);
 				c_text()->set_text(text);
 				c_event_receiver();
 				auto cs = c_style_color2();
@@ -841,7 +841,7 @@ namespace flame
 				push_parent(e);
 				{
 					e_empty();
-					c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
+					c_element()->padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
 					c_text()->set_text(collapsed ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN);
 					c_event_receiver();
 					auto cs = c_style_text_color();
@@ -854,7 +854,7 @@ namespace flame
 			}
 			auto es = e_empty();
 			es->set_visible(!collapsed);
-			c_element()->inner_padding_ = Vec4f(style_1u(FontSize) * 0.5f, 0.f, 0.f, 0.f);
+			c_element()->padding_ = Vec4f(style_1u(FontSize) * 0.5f, 0.f, 0.f, 0.f);
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			pop_parent();
 			push_parent(es);
@@ -872,7 +872,7 @@ namespace flame
 			e->gene = e;
 			auto ce = c_element();
 			ce->size_ = Vec2f(8.f, style_1u(FontSize) + 4.f);
-			ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
+			ce->padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
 			ce->frame_color_ = style_4c(TextColorNormal);
 			ce->frame_thickness_ = 2.f;
 			c_text()->auto_width_ = false;
@@ -888,7 +888,7 @@ namespace flame
 			auto ccb = c_combobox();
 			push_parent(e);
 			e_empty();
-			c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(Icon_ANGLE_DOWN);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
@@ -915,7 +915,7 @@ namespace flame
 		inline Entity* e_combobox_item(const wchar_t* text)
 		{
 			auto e = e_empty();
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
@@ -950,7 +950,7 @@ namespace flame
 		inline Entity* e_begin_menubar_menu(const wchar_t* text, bool transparent = true)
 		{
 			auto e = e_empty();
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeMenubar);
@@ -973,7 +973,7 @@ namespace flame
 		{
 			auto e = e_empty();
 			e->gene = e;
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeMain);
@@ -995,7 +995,7 @@ namespace flame
 		inline Entity* e_begin_sub_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeSub);
@@ -1009,7 +1009,7 @@ namespace flame
 			c_layout();
 			push_parent(e);
 			e_empty();
-			c_element()->inner_padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(0.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(Icon_CARET_RIGHT);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
@@ -1025,7 +1025,7 @@ namespace flame
 		inline Entity* e_menu_item(const wchar_t* text, void(*func)(void* c), const Mail& _capture, bool close_menu = true)
 		{
 			auto e = e_empty();
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			struct Capture
 			{
@@ -1087,7 +1087,7 @@ namespace flame
 			{
 				e_empty();
 				auto ce = c_element();
-				ce->inner_padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
+				ce->padding_ = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
 				ce->color_ = style_4c(SelectedTabColorNormal);
 				c_text()->set_text(title);
 				c_aligner(SizeGreedy, SizeFixed);
@@ -1107,7 +1107,7 @@ namespace flame
 				}
 
 				el = e_empty();
-				c_element()->inner_padding_ = Vec4f(8.f, 4.f, 8.f, 4.f);
+				c_element()->padding_ = Vec4f(8.f, 4.f, 8.f, 4.f);
 				c_layout(LayoutVertical)->item_padding = 4.f;
 
 				e_empty();
@@ -1148,7 +1148,7 @@ namespace flame
 			auto e = e_empty();
 			e->set_name("docker_static_container");
 			auto ce = c_element();
-			ce->inner_padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
+			ce->padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
 			ce->color_ = style_4c(BackgroundColor);
 			c_event_receiver();
 			c_aligner(SizeFitParent, SizeFitParent);
@@ -1208,7 +1208,7 @@ namespace flame
 			push_parent(current_parent()->child(0));
 			auto et = e_empty();
 			et->set_name("docker_tab");
-			c_element()->inner_padding_ = Vec4f(4.f, 2.f, style_1u(FontSize) + 6.f, 2.f);
+			c_element()->padding_ = Vec4f(4.f, 2.f, style_1u(FontSize) + 6.f, 2.f);
 			c_text()->set_text(title);
 			c_event_receiver();
 			auto csb = c_style_color2();
@@ -1266,7 +1266,7 @@ namespace flame
 			push_parent(l);
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->inner_padding_ = Vec4f(8.f);
+			ce->padding_ = Vec4f(8.f);
 			ce->frame_thickness_ = 2.f;
 			ce->color_ = style_4c(BackgroundColor);
 			ce->frame_color_  = col3_inv(style_4c(BackgroundColor));

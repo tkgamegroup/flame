@@ -5,7 +5,7 @@ cConsole::cConsole() :
 {
 	auto e_page = utils::e_begin_docker_page(L"Console").second;
 	{
-		e_page->get_component(cElement)->inner_padding_ = Vec4f(8.f);
+		e_page->get_component(cElement)->padding_ = Vec4f(8.f);
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;

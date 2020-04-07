@@ -161,8 +161,6 @@ namespace flame
 						auto atlas = text->font_atlas;
 						auto str = text->text();
 						auto scale = element->global_scale;
-						if (atlas->draw_type == graphics::FontDrawSdf)
-							scale *= text->scale_;
 						auto font_size = text->font_size_;
 						auto line_space = font_size * scale;
 						auto y = element->global_pos.y();
@@ -214,21 +212,11 @@ namespace flame
 			if (show_cursor && !element->clipped)
 			{
 				auto font_atlas = text->font_atlas;
+				auto font_size = text->font_size_ * element->global_scale;
 
-				if (font_atlas->draw_type == graphics::FontDrawSdf)
-				{
-					canvas->add_text(font_atlas, L"|", 0, text->scale_ * element->global_scale, element->global_pos +
-						Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
-						Vec2f(font_atlas->text_offset(0, text->text(), text->text() + cursor)) * text->scale_ * element->global_scale,
-						text->color_.new_proply<3>(element->alpha_));
-				}
-				else
-				{
-					canvas->add_text(font_atlas, L"|", text->font_size_ * element->global_scale, 1.f, element->global_pos +
-						Vec2f(element->inner_padding_[0], element->inner_padding_[1]) * element->global_scale +
-						Vec2f(font_atlas->text_offset(text->font_size_ * element->global_scale, text->text(), text->text() + cursor)),
-						text->color_.new_proply<3>(element->alpha_));
-				}
+				canvas->add_text(font_atlas, L"|", font_size, element->content_min() +
+					Vec2f(font_atlas->text_offset(font_size, text->text(), text->text() + cursor)),
+					text->color_.new_proply<3>(element->alpha_));
 			}
 		}
 	};

@@ -63,27 +63,13 @@
 		<node type="flame::graphics::R_VertexInputBuffer" id="vib" pos="2013.05;1283.71" />
 		<node type="Array(1+flame::graphics::VertexInputBuffer*)" id="vibs" pos="2283.05;1315.71" />
 		<node type="flame::graphics::R_VertexInputInfo" id="vi" pos="2384.83;1369.37" />
-		<node type="Array(2+flame::StringW)" id="pl_element_shs" pos="2690.57;794.81">
+		<node type="Array(2+flame::StringW)" id="pl_shs" pos="2690.57;794.81">
 			<datas>
 				<data name="0" value="element.vert" />
 				<data name="1" value="element.frag" />
 			</datas>
 		</node>
-		<node type="Array(2+flame::StringW)" id="pl_text_lcd_shs" pos="2705.50;1208.07">
-			<datas>
-				<data name="0" value="element.vert" />
-				<data name="1" value="text_lcd.frag" />
-			</datas>
-		</node>
-		<node type="Array(2+flame::StringW)" id="pl_text_sdf_shs" pos="2670.71;1602.75">
-			<datas>
-				<data name="0" value="element.vert" />
-				<data name="1" value="text_sdf.frag" />
-			</datas>
-		</node>
-		<node type="flame::graphics::R_Pipeline" id="pl_element" pos="2877.23;827.38" />
-		<node type="flame::graphics::R_Pipeline" id="pl_text_lcd" pos="2878.06;1223.97" />
-		<node type="flame::graphics::R_Pipeline" id="pl_text_sdf" pos="2883.68;1621.44" />
+		<node type="flame::graphics::R_Pipeline" id="pl" pos="2877.23;827.38" />
 		<node type="flame::graphics::R_Image" id="img_white" pos="777.12;1418.24">
 			<datas>
 				<data name="usage" value="ImageUsageTransferDst;ImageUsageSampled" />
@@ -133,30 +119,18 @@
 		<link out="vias.out" in="vib.attributes" />
 		<link out="vib.out" in="vibs.0" />
 		<link out="vibs.out" in="vi.buffers" />
-		<link out="pl_element_shs.out" in="pl_element.shader_filenames" />
-		<link out="pll.out" in="pl_element.pll" />
-		<link out="rnf.rp" in="pl_element.renderpass" />
-		<link out="vi.out" in="pl_element.vi" />
-		<link out="sc.out" in="pl_element.sc" />
-		<link out="pl_text_lcd_shs.out" in="pl_text_lcd.shader_filenames" />
-		<link out="pll.out" in="pl_text_lcd.pll" />
-		<link out="rnf.rp" in="pl_text_lcd.renderpass" />
-		<link out="vi.out" in="pl_text_lcd.vi" />
-		<link out="sc.out" in="pl_text_lcd.sc" />
-		<link out="pl_text_sdf_shs.out" in="pl_text_sdf.shader_filenames" />
-		<link out="pll.out" in="pl_text_sdf.pll" />
-		<link out="rnf.rp" in="pl_text_sdf.renderpass" />
-		<link out="vi.out" in="pl_text_sdf.vi" />
-		<link out="sc.out" in="pl_text_sdf.sc" />
+		<link out="pl_shs.out" in="pl.shader_filenames" />
+		<link out="pll.out" in="pl.pll" />
+		<link out="rnf.rp" in="pl.renderpass" />
+		<link out="vi.out" in="pl.vi" />
+		<link out="sc.out" in="pl.sc" />
 		<link out="test_target.cbs" in="make_cmd.cbs" />
 		<link out="vtx_buf.out" in="make_cmd.vtx_buf" />
 		<link out="idx_buf.out" in="make_cmd.idx_buf" />
 		<link out="rnf.out" in="make_cmd.rnf" />
 		<link out="test_target.image_idx" in="make_cmd.image_idx" />
 		<link out="pll.out" in="make_cmd.pll" />
-		<link out="pl_element.out" in="make_cmd.pl_element" />
-		<link out="pl_text_lcd.out" in="make_cmd.pl_text_lcd" />
-		<link out="pl_text_sdf.out" in="make_cmd.pl_text_sdf" />
+		<link out="pl.out" in="make_cmd.pl" />
 		<link out="dsl.default_set" in="make_cmd.ds" />
 		<link out="imgs_binding.iv" in="make_cmd.white_iv" />
 	</links>

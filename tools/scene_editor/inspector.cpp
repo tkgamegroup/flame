@@ -6,7 +6,7 @@ void begin_item(const wchar_t* title)
 	utils::e_begin_layout(LayoutVertical, 4.f);
 	utils::e_text(title);
 	auto e_data = utils::e_empty();
-	utils::c_element()->inner_padding_.x() = utils::style_1u(utils::FontSize);
+	utils::c_element()->padding_.x() = utils::style_1u(utils::FontSize);
 	utils::c_layout(LayoutVertical)->item_padding = 2.f;
 	utils::e_end_layout();
 	utils::push_parent(e_data);
@@ -126,7 +126,7 @@ cInspector::cInspector() :
 {
 	auto e_page = utils::e_begin_docker_page(L"Inspector").second;
 	{
-		utils::current_entity()->get_component(cElement)->inner_padding_ = Vec4f(4.f);
+		utils::current_entity()->get_component(cElement)->padding_ = Vec4f(4.f);
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -228,7 +228,7 @@ void cInspector::refresh()
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
 			{
 				auto c_element = e_component->get_component(cElement);
-				c_element->inner_padding_ = Vec4f(4.f);
+				c_element->padding_ = Vec4f(4.f);
 				c_element->frame_thickness_ = 2.f;
 				c_element->frame_color_ = Vec4f(0, 0, 0, 255);
 			}
@@ -262,7 +262,7 @@ void cInspector::refresh()
 			e_component->add_component(c_dealer);
 
 			auto e_name = utils::e_text(s2w(component->name).c_str());
-			e_name->get_component(cElement)->inner_padding_.z() = 4.f + utils::style_1u(utils::FontSize);
+			e_name->get_component(cElement)->padding_.z() = 4.f + utils::style_1u(utils::FontSize);
 			e_name->get_component(cText)->color_ = Vec4c(30, 40, 160, 255);
 			utils::c_layout();
 			utils::push_parent(e_name);

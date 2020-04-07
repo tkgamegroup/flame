@@ -11,9 +11,6 @@ const auto img_id = 9;
 
 struct MyApp : App
 {
-	FontAtlas* font_atlas_lcd;
-	FontAtlas* font_atlas_sdf;
-
 	void create_widgets()
 	{
 		utils::set_current_root(root);
@@ -52,13 +49,7 @@ struct MyApp : App
 				utils::c_aligner(SizeFitParent, SizeFitParent);
 					utils::next_element_pos = Vec2f(16.f, 10.f);
 					utils::e_begin_layout(LayoutVertical, 16.f);
-						utils::e_text(L"Text Pixel");
-						utils::push_font_atlas(font_atlas_lcd);
-						utils::e_text(L"Text Lcd");
-						utils::pop_font_atlas();
-						utils::push_font_atlas(font_atlas_sdf);
-						utils::e_text(L"Text Sdf");
-						utils::pop_font_atlas();
+						utils::e_text(L"Text");
 						utils::next_entity = Entity::create();
 						utils::e_button(L"Click Me!", [](void* c) {
 							(*(Entity**)c)->get_component(cText)->set_text(L"Click Me! :)");
@@ -209,22 +200,12 @@ int main(int argc, char** args)
 
 	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
 
-	{
-		wchar_t* fonts[] = {
-			L"c:/windows/fonts/msyh.ttc",
-			L"../art/font_awesome.ttf"
-		};
-		app.font_atlas_lcd = FontAtlas::create(app.graphics_device, FontDrawLcd, 1, fonts);
-		app.canvas->add_font(app.font_atlas_lcd);
-		app.font_atlas_sdf = FontAtlas::create(app.graphics_device, FontDrawSdf, 1, fonts);
-		app.canvas->add_font(app.font_atlas_sdf);
-	}
 	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/9.png").c_str())));
 
 	utils::set_current_entity(app.root);
 	utils::c_event_receiver();
 	utils::c_layout();
-	utils::push_font_atlas(app.font_atlas_pixel);
+	utils::push_font_atlas(app.font_atlas);
 	app.create_widgets();
 
 	looper().loop([](void*) {

@@ -10,9 +10,6 @@
 #include <freetype/ftlcdfil.h>
 #include FT_OUTLINE_H
 
-#include <msdfgen.h>
-#include <msdfgen-ext.h>
-
 #include <flame/reflect_macros.h>
 
 namespace flame
@@ -81,7 +78,7 @@ namespace flame
 			Image* image;
 			Imageview* imageview;
 
-			FontAtlasPrivate(Device* d, FontDrawType _draw_type, uint font_count, const wchar_t* const* _fonts)
+			FontAtlasPrivate(Device* d, uint font_count, const wchar_t* const* _fonts)
 			{
 				for (auto i = 0; i < font_count; i++)
 				{
@@ -113,16 +110,11 @@ namespace flame
 					}
 				}
 
-				draw_type = _draw_type;
-
 				bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-				image = Image::create(d, draw_type == FontDrawPixel ? Format_R8_UNORM : Format_R8G8B8A8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
+				image = Image::create(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
 				image->init(Vec4c(0, 0, 0, 255));
-				if (draw_type == FontDrawPixel)
-					imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
-				else
-					imageview = Imageview::create(image);
+				imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
 
 				empty_glyph.reset(new_glyph());
 			}
@@ -151,9 +143,6 @@ namespace flame
 
 			Glyph* get_glyph(wchar_t unicode, uint font_size)
 			{
-				if (draw_type == FontDrawSdf)
-					font_size = sdf_font_size;
-
 				if (font_size == 0)
 					return empty_glyph.get();
 
@@ -179,111 +168,38 @@ namespace flame
 						FT_Request_Size(ft_face, &ft_req);
 						auto ascender = ft_face->size->metrics.ascender / 64;
 
-						FT_Load_Glyph(ft_face, glyph_index, draw_type == FontDrawLcd ? FT_LOAD_TARGET_LCD : FT_LOAD_DEFAULT);
+						FT_Load_Glyph(ft_face, glyph_index, FT_LOAD_DEFAULT);
 
 						auto ft_glyph = ft_face->glyph;
 						auto size = Vec2u(ft_glyph->bitmap.width, ft_glyph->bitmap.rows);
-						if (draw_type == FontDrawLcd)
-							size.x() /= 3;
 						g->size = size;
 						g->off = Vec2u(ft_glyph->bitmap_left, ascender + g->size.y() - ft_glyph->metrics.horiBearingY / 64.f);
 						g->advance = ft_glyph->advance.x / 64;
 
 						if (size > 0U)
 						{
-							auto n = bin_pack_root->find(size + (draw_type == FontDrawSdf ? sdf_range * 2 : 0));
+							auto n = bin_pack_root->find(size);
 							if (n)
 							{
 								auto& atlas_pos = n->pos;
 
-								switch (draw_type)
+								FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_NORMAL);
+
+								auto pitch_ft = ft_glyph->bitmap.pitch;
+								auto pitch_temp = size.x();
+								auto temp = new uchar[pitch_temp * size.y()];
+								for (auto y = 0; y < size.y(); y++)
 								{
-								case FontDrawPixel:
-								{
-									FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_NORMAL);
-
-									auto pitch_ft = ft_glyph->bitmap.pitch;
-									auto pitch_temp = size.x();
-									auto temp = new uchar[pitch_temp * size.y()];
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-											temp[y * pitch_temp + x] = ft_glyph->bitmap.buffer[y * pitch_ft + x];
-									}
-
-									image->set_pixels(atlas_pos, size, temp);
-
-									delete[] temp;
-								}
-								break;
-								case FontDrawLcd:
-								{
-									FT_Render_Glyph(ft_glyph, FT_RENDER_MODE_LCD);
-
-									auto pitch_ft = ft_glyph->bitmap.pitch;
-									auto pitch_temp = size.x() * 4;
-									auto temp = new uchar[pitch_temp * size.y()];
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											temp[y * pitch_temp + x * 4 + 0] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 0];
-											temp[y * pitch_temp + x * 4 + 1] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 1];
-											temp[y * pitch_temp + x * 4 + 2] = ft_glyph->bitmap.buffer[y * pitch_ft + x * 3 + 2];
-											temp[y * pitch_temp + x * 4 + 3] = 255;
-										}
-									}
-
-									image->set_pixels(atlas_pos, size, temp);
-
-									delete[] temp;
-								}
-								break;
-								case FontDrawSdf:
-								{
-									void* ptr = ft_face;
-
-									msdfgen::Shape shape;
-									msdfgen::loadGlyph(shape, (msdfgen::FontHandle*) & ptr, unicode);
-
-									size += sdf_range * 2;
-
-									shape.normalize();
-									msdfgen::edgeColoringSimple(shape, 3.f);
-									msdfgen::Bitmap<float, 3> bmp(size.x(), size.y());
-									msdfgen::generateMSDF(bmp, shape, sdf_range, 1.f, msdfgen::Vector2(-g->off.x(), g->off.y() - ascender) + sdf_range);
-
-									auto pitch_temp = size.x() * 4;
-									auto temp = new uchar[pitch_temp * size.y()];
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											auto src = bmp(x, y);
-											temp[y * pitch_temp + x * 4 + 0] = clamp(src[0] * 255.f, 0.f, 255.f);
-											temp[y * pitch_temp + x * 4 + 1] = clamp(src[1] * 255.f, 0.f, 255.f);
-											temp[y * pitch_temp + x * 4 + 2] = clamp(src[2] * 255.f, 0.f, 255.f);
-											temp[y * pitch_temp + x * 4 + 3] = 255.f;
-										}
-									}
-
-									image->set_pixels(atlas_pos, size, temp);
-
-									delete[] temp;
-								}
-								break;
+									for (auto x = 0; x < size.x(); x++)
+										temp[y * pitch_temp + x] = ft_glyph->bitmap.buffer[y * pitch_ft + x];
 								}
 
-								if (draw_type == FontDrawSdf)
-								{
-									g->uv0 = (Vec2f(atlas_pos.x(), atlas_pos.y()) + (float)sdf_range) / image->size;
-									g->uv1 = (Vec2f(atlas_pos.x() + size.x(), atlas_pos.y() + size.y()) - (float)sdf_range) / image->size;
-								}
-								else
-								{
-									g->uv0 = Vec2f(atlas_pos.x(), atlas_pos.y() + size.y()) / image->size;
-									g->uv1 = Vec2f(atlas_pos.x() + size.x(), atlas_pos.y()) / image->size;
-								}
+								image->set_pixels(atlas_pos, size, temp);
+
+								delete[] temp;
+
+								g->uv0 = Vec2f(atlas_pos.x(), atlas_pos.y() + size.y()) / image->size;
+								g->uv1 = Vec2f(atlas_pos.x() + size.x(), atlas_pos.y()) / image->size;
 							}
 							else
 								printf("font atlas is full\n");
@@ -297,9 +213,9 @@ namespace flame
 			}
 		};
 
-		FontAtlas* FontAtlas::create(Device* d, FontDrawType draw_type, uint font_count, const wchar_t* const* fonts)
+		FontAtlas* FontAtlas::create(Device* d, uint font_count, const wchar_t* const* fonts)
 		{
-			return new FontAtlasPrivate(d, draw_type, font_count, fonts);
+			return new FontAtlasPrivate(d, font_count, fonts);
 		}
 
 		void FontAtlas::destroy(FontAtlas* f)
@@ -322,7 +238,6 @@ namespace flame
 			BP::Node* n;
 
 			BASE0;
-			RV(FontDrawType, draw_type, i);
 			RV(Array<StringW>*, fonts, i);
 
 			BASE1;
@@ -331,7 +246,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
-				if (draw_type_s()->frame() > out_frame || fonts_s()->frame() > out_frame)
+				if (fonts_s()->frame() > out_frame)
 				{
 					if (out)
 						FontAtlas::destroy(out);
@@ -340,7 +255,7 @@ namespace flame
 					for (auto i = 0; i < _fonts.size(); i++)
 						_fonts[i] = fonts->at(i).v;
 					if (d && !_fonts.empty())
-						out = FontAtlas::create(d, draw_type, _fonts.size(), _fonts.data());
+						out = FontAtlas::create(d, _fonts.size(), _fonts.data());
 					else
 						printf("cannot create fontatlas\n");
 					out_s()->set_frame(frame);

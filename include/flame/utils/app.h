@@ -93,7 +93,7 @@ namespace flame
 		sound::Device* sound_device;
 		sound::Context* sound_context;
 
-		graphics::FontAtlas* font_atlas_pixel;
+		graphics::FontAtlas* font_atlas;
 
 		World* world;
 		sTimerManagement* s_timer_management;
@@ -133,7 +133,7 @@ namespace flame
 				msyh_path,
 				font_awesome_path.c_str(),
 			};
-			font_atlas_pixel = graphics::FontAtlas::create(graphics_device, graphics::FontDrawPixel, 2, fonts);
+			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
 
 			world = World::create();
 			world->add_object(main_window->w);
@@ -152,7 +152,7 @@ namespace flame
 			}, Mail::from_p(this));
 			world->add_system(s_2d_renderer);
 			canvas = s_2d_renderer->canvas;
-			canvas->add_font(font_atlas_pixel);
+			canvas->add_font(font_atlas);
 
 			root = world->root();
 			c_element_root = cElement::create();

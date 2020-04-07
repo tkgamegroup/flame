@@ -53,8 +53,7 @@ namespace flame
 		{
 			if (!element->clipped)
 			{
-				auto padding = element->inner_padding_ * element->global_scale;
-				auto pos = element->global_pos + Vec2f(padding[0], padding[1]);
+				auto pos = element->content_min();
 				auto cell_size = cell_size_ * element->global_scale;
 				for (auto y = 0; y < size_.y(); y++)
 				{
