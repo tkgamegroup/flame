@@ -16,11 +16,6 @@ void MyApp::create()
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	utils::style_set_to_light();
 
-	utils::set_current_entity(root);
-	utils::c_layout();
-
-	utils::push_font_atlas(app.font_atlas_pixel);
-	utils::set_current_root(root);
 	utils::push_parent(root);
 
 	utils::e_begin_layout(LayoutVertical, 0.f, false, false);

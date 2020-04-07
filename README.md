@@ -23,6 +23,10 @@ An ECS Game Engine Based On Reflection.
 
 - cmake flame
 
+- install Vulkan SDK
+
+- install OpenAL SDK
+
 - run ./set_env.bat (you need to restart your IDE to take that affect)
 
 - regsvr32 msdiaXXX.dll in visual studio's dia sdk i.e. "vs_path/DIA SDK/bin/amd64"

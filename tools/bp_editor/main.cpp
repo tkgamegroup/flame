@@ -844,12 +844,12 @@ bool MyApp::create(const char* filename)
 	TypeinfoDatabase::load(L"bp_editor.exe", true, true);
 
 	filepath = filename;
-	fileppath = app.filepath.parent_path();
+	fileppath = filepath.parent_path();
 	bp = BP::create_from_file(app.filepath.c_str(), true);
 	if (!bp)
 		return false;
 
-	app.windows[0]->w->set_title(("BP Editor - " + filepath.string()).c_str());
+	windows[0]->w->set_title(("BP Editor - " + filepath.string()).c_str());
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
@@ -859,9 +859,8 @@ bool MyApp::create(const char* filename)
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	utils::style_set_to_light();
 
-	utils::set_current_entity(root);
 	{
-		auto c_event_receiver = utils::c_event_receiver();
+		auto c_event_receiver = root->get_component(cEventReceiver);
 		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
 			if (is_key_down(action))
 			{
@@ -911,10 +910,7 @@ bool MyApp::create(const char* filename)
 		}, Mail());
 		s_event_dispatcher->next_focusing = c_event_receiver;
 	}
-	utils::c_layout();
 
-	utils::push_font_atlas(app.font_atlas);
-	utils::set_current_root(root);
 	utils::push_parent(root);
 
 		utils::e_begin_layout(LayoutVertical, 0.f, false, false);

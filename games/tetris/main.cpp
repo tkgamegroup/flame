@@ -1,7 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
-#include <flame/universe/utils/ui.h>
 #include <flame/universe/utils/typeinfo.h>
 #include <flame/network/network.h>
 #include <flame/utils/app.h>
@@ -2240,12 +2239,6 @@ int main(int argc, char **args)
 		app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
 		app.sound_hold_src->set_volume(sound_hold_volumn);
 	}
-
-	utils::set_current_entity(app.root);
-	utils::c_layout();
-
-	utils::push_font_atlas(app.font_atlas_pixel);
-	utils::set_current_root(app.root);
 
 	utils::push_parent(app.root);
 	{

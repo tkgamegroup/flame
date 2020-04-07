@@ -1,4 +1,3 @@
-#include <flame/universe/utils/ui.h>
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
 
@@ -14,13 +13,6 @@ int main(int argc, char** args)
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 
 	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
-
-	app.world->add_object(app.font_atlas_pixel);
-
-	utils::set_current_entity(app.root);
-	utils::c_event_receiver();
-	utils::c_layout();
-	utils::push_font_atlas(app.font_atlas_pixel);
 
 	utils::push_parent(app.root);
 
@@ -74,7 +66,7 @@ int main(int argc, char** args)
 						c_element->pos_.y() = 8.f;
 						e_text->add_component(c_element);
 
-						auto c_text = cText::create(app.font_atlas_pixel);
+						auto c_text = cText::create(app.font_atlas);
 						c_text->color_ = Vec4c(0, 0, 0, 255);
 						c_text->set_text(L"Hello World!");
 						e_text->add_component(c_text);

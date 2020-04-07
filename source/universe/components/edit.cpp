@@ -50,15 +50,63 @@ namespace flame
 			}
 		}
 
-		void flash_cursor(bool force = false)
+		void flash_cursor(int mode)
 		{
 			auto render = element->renderer;
 			if (render)
 				render->pending_update = true;
-			if (force)
+			if (mode == 1)
 				show_cursor = false;
+			else if (mode == 2)
+			{
+				timer->reset();
+				show_cursor = true;
+			}
 			else
 				show_cursor = !show_cursor;
+		}
+
+		int locate_cursor(const Vec2i& pos)
+		{
+			auto c_text = ((cTextPrivate*)text);
+			auto& str = c_text->text;
+			auto font_atlas = c_text->font_atlas;
+			auto font_size = c_text->font_size_ * element->global_scale;
+			auto p = element->content_min();
+
+			auto y = p.y();
+			auto i = 0;
+			for (; i < str.size(); )
+			{
+				if (pos.y() < y + font_size)
+				{
+					auto x = p.x();
+					while (true)
+					{
+						auto ch = str[i];
+						if (ch == '\n')
+							break;
+						auto w = font_atlas->get_glyph(ch, font_size)->advance;
+						if (pos.x() < x + w / 2)
+							break;
+						x += w;
+						i++;
+						if (i == str.size())
+							break;
+					}
+					break;
+				}
+
+				while (i < str.size())
+				{
+					if (str[i++] == '\n')
+					{
+						y += font_size;
+						break;
+					}
+				}
+			}
+			return i;
 		}
 
 		void on_component_added(Component* c) override
@@ -67,7 +115,7 @@ namespace flame
 			{
 				timer = (cTimer*)c;
 				timer->set_callback([](void* c) {
-					(*(cEditPrivate**)c)->flash_cursor();
+					(*(cEditPrivate**)c)->flash_cursor(0);
 				}, Mail::from_p(this), false);
 			}
 			else if (c->name_hash == FLAME_CHASH("cElement"))
@@ -85,8 +133,9 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
-					auto text = (cTextPrivate*)thiz->text;
-					auto str = text->text;
+					auto& cursor = thiz->cursor;
+					auto c_text = (cTextPrivate*)thiz->text;
+					auto str = c_text->text;
 					auto changed = false;
 
 					if (action == KeyStateNull)
@@ -94,17 +143,18 @@ namespace flame
 						switch (value)
 						{
 						case L'\b':
-							if (thiz->cursor > 0)
+							if (cursor > 0)
 							{
-								thiz->cursor--;
-								str.erase(str.begin() + thiz->cursor);
+								cursor--;
+								str.erase(str.begin() + cursor);
 								changed = true;
 							}
 							break;
 						case 22:
 						{
-							thiz->cursor = 0;
-							str = get_clipboard().v;
+							auto cb = get_clipboard();
+							str = str.substr(0, cursor) + cb.str() + str.substr(cursor);
+							cursor += cb.s;
 							changed = true;
 						}
 							break;
@@ -113,8 +163,8 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							str.insert(str.begin() + thiz->cursor, value);
-							thiz->cursor++;
+							str.insert(str.begin() + cursor, value);
+							cursor++;
 							changed = true;
 						}
 					}
@@ -123,23 +173,23 @@ namespace flame
 						switch (value)
 						{
 						case Key_Left:
-							if (thiz->cursor > 0)
-								thiz->cursor--;
+							if (cursor > 0)
+								cursor--;
 							break;
 						case Key_Right:
-							if (thiz->cursor < str.size())
-								thiz->cursor++;
+							if (cursor < str.size())
+								cursor++;
 							break;
 						case Key_Home:
-							thiz->cursor = 0;
+							cursor = 0;
 							break;
 						case Key_End:
-							thiz->cursor = str.size();
+							cursor = str.size();
 							break;
 						case Key_Del:
-							if (thiz->cursor < str.size())
+							if (cursor < str.size())
 							{
-								str.erase(str.begin() + thiz->cursor);
+								str.erase(str.begin() + cursor);
 								changed = true;
 							}
 							break;
@@ -147,7 +197,8 @@ namespace flame
 					}
 
 					if (changed)
-						text->set_text(str.c_str());
+						c_text->set_text(str.c_str());
+					thiz->flash_cursor(2);
 
 					return true;
 				}, Mail::from_p(this));
@@ -156,39 +207,8 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						auto thiz = *(cEditPrivate**)c;
-						auto element = thiz->element;
-						auto text = thiz->text;
-						auto atlas = text->font_atlas;
-						auto str = text->text();
-						auto scale = element->global_scale;
-						auto font_size = text->font_size_;
-						auto line_space = font_size * scale;
-						auto y = element->global_pos.y();
-						for (auto p = str; ; p++)
-						{
-							if (y < pos.y() && pos.y() < y + line_space)
-							{
-								auto x = element->global_pos.x();
-								for (;; p++)
-								{
-									if (!*p)
-										break;
-									if (*p == '\n' || *p == '\r')
-										break;
-									auto w = atlas->get_glyph(*p == '\t' ? ' ' : *p, font_size)->advance * scale;
-									if (x <= pos.x() && pos.x() < x + w)
-										break;
-									x += w;
-								}
-								thiz->cursor = p - str;
-								break;
-							}
-
-							if (!*p)
-								break;
-							if (*p == '\n')
-								y += line_space;
-						}
+						thiz->cursor = thiz->locate_cursor(pos);
+						thiz->flash_cursor(2);
 					}
 					return true;
 				}, Mail::from_p(this));
@@ -200,7 +220,7 @@ namespace flame
 					else
 					{
 						thiz->timer->stop();
-						thiz->flash_cursor(true);
+						thiz->flash_cursor(1);
 					}
 					return true;
 				}, Mail::from_p(this));
@@ -211,12 +231,16 @@ namespace flame
 		{
 			if (show_cursor && !element->clipped)
 			{
-				auto font_atlas = text->font_atlas;
-				auto font_size = text->font_size_ * element->global_scale;
+				auto c_text = (cTextPrivate*)text;
+				auto& str = c_text->text;
+				auto font_atlas = c_text->font_atlas;
+				auto font_size = c_text->font_size_ * element->global_scale;
 
-				canvas->add_text(font_atlas, L"|", font_size, element->content_min() +
-					Vec2f(font_atlas->text_offset(font_size, text->text(), text->text() + cursor)),
-					text->color_.new_proply<3>(element->alpha_));
+				std::vector<Vec2f> points;
+				points.push_back(element->content_min() + Vec2f(font_atlas->text_offset(font_size, str.c_str(), str.c_str() + cursor)));
+				points[0].x()++;
+				points.push_back(points[0] + Vec2f(0.f, font_size));
+				canvas->stroke(points.size(), points.data(), c_text->color_.new_proply<3>(element->alpha_), 2.f);
 			}
 		}
 	};

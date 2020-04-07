@@ -6,7 +6,6 @@
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/font.h>
 #include <flame/sound/device.h>
 #include <flame/sound/context.h>
 #include <flame/sound/buffer.h>
@@ -14,9 +13,7 @@
 #include <flame/universe/world.h>
 #include <flame/universe/systems/timer_management.h>
 #include <flame/universe/systems/layout_management.h>
-#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
-#include <flame/universe/components/element.h>
 #include <flame/universe/utils/ui.h>
 
 #include "../renderpath/canvas/canvas.h"
@@ -127,13 +124,14 @@ namespace flame
 
 			auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
 			const wchar_t* fonts[] = {
-				L"c:/windows/fonts/arial.ttf",
+				L"c:/windows/fonts/times.ttf",
 				font_awesome_path.c_str(),
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
 
 			world = World::create();
 			world->add_object(main_window->w);
+			world->add_object(font_atlas);
 			s_timer_management = sTimerManagement::create();
 			world->add_system(s_timer_management);
 			s_layout_management = sLayoutManagement::create();
@@ -152,8 +150,13 @@ namespace flame
 			canvas->add_font(font_atlas);
 
 			root = world->root();
-			c_element_root = cElement::create();
-			root->add_component(c_element_root);
+
+			utils::set_current_entity(root);
+			c_element_root = utils::c_element();
+			utils::c_event_receiver();
+			utils::c_layout();
+			utils::set_current_root(root);
+			utils::push_font_atlas(font_atlas);
 		}
 
 		void run()

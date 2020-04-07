@@ -69,7 +69,10 @@ namespace flame
 				{
 					auto fn = _fonts[i];
 					if (!std::filesystem::exists(fn))
+					{
+						wprintf(L"cannot find font: %s\n", fn);
 						continue;
+					}
 
 					id = hash_update(id, FLAME_HASH(fn));
 
