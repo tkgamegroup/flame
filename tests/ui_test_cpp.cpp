@@ -23,6 +23,7 @@ struct MyApp : App
 						utils::e_menu_item(L"Dark", [](void* c) {
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
+								app.root->remove_component(app.root->get_component(cMenu));
 								utils::style_set_to_dark();
 								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
 								app.create_widgets();
@@ -31,6 +32,7 @@ struct MyApp : App
 						utils::e_menu_item(L"Light", [](void* c) {
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
+								app.root->remove_component(app.root->get_component(cMenu));
 								utils::style_set_to_light();
 								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
 								app.create_widgets();
