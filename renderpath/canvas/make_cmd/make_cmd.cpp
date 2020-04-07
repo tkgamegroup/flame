@@ -44,7 +44,7 @@ struct CanvasPrivate : Canvas
 	void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness) override;
 	void fill(uint point_count, const Vec2f* points, const Vec4c& col) override;
 
-	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col) override;
+	void add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& pos, const Vec4c& col) override;
 	void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 	const Vec4f& scissor() override;
 	void set_scissor(const Vec4f& scissor) override;
@@ -293,7 +293,7 @@ struct R(MakeCmd)
 		}
 	}
 
-	void add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& _pos, const Vec4c& col)
+	void add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& _pos, const Vec4c& col)
 	{
 		auto pos = Vec2f(Vec2i(_pos));
 
@@ -309,8 +309,8 @@ struct R(MakeCmd)
 		auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 		auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
-		auto pstr = text;
-		while (*pstr)
+		auto pstr = text_begin;
+		while (pstr != text_end)
 		{
 			auto ch = *pstr;
 			if (ch == '\n')
@@ -520,9 +520,9 @@ void CanvasPrivate::fill(uint point_count, const Vec2f* points, const Vec4c& col
 	((MakeCmd*)mc)->fill(point_count, points, col);
 }
 
-void CanvasPrivate::add_text(FontAtlas* f, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col)
+void CanvasPrivate::add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& pos, const Vec4c& col)
 {
-	((MakeCmd*)mc)->add_text(f, text, font_size, pos, col);
+	((MakeCmd*)mc)->add_text(f, text_begin, text_end, font_size, pos, col);
 }
 
 void CanvasPrivate::add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

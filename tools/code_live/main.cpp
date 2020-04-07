@@ -27,7 +27,9 @@ int main(int argc, char** args)
 		utils::e_begin_splitter(SplitterHorizontal);
 			utils::e_begin_layout(LayoutVertical, 4.f);
 			utils::c_aligner(SizeFitParent, SizeFitParent);
-			utils::e_edit(100.f)->get_component(cText)->font_atlas = app.font_atlas_edit;
+			auto c_text = utils::e_edit(100.f)->get_component(cText);
+			c_text->font_atlas = app.font_atlas_edit;
+			c_text->font_size_ = 17;
 			utils::c_aligner(SizeFitParent, SizeFitParent);
 			utils::e_button(L"Run");
 			utils::e_end_layout();

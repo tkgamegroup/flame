@@ -1111,25 +1111,27 @@ namespace flame
 				w->key_listeners.call(KeyStateNull, (Key)wParam);
 				break;
 			case WM_LBUTTONDOWN:
-				w->mouse_listeners.call(KeyStateDown, Mouse_Left, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				SetCapture(hWnd);
+				w->mouse_listeners.call(KeyStateDown, Mouse_Left, Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam)));
 			break;
 			case WM_LBUTTONUP:
-				w->mouse_listeners.call(KeyStateUp, Mouse_Left, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				ReleaseCapture();
+				w->mouse_listeners.call(KeyStateUp, Mouse_Left, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
 			break;
 			case WM_MBUTTONDOWN:
-				w->mouse_listeners.call(KeyStateDown, Mouse_Middle, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				w->mouse_listeners.call(KeyStateDown, Mouse_Middle, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
 			break;
 			case WM_MBUTTONUP:
-				w->mouse_listeners.call(KeyStateUp, Mouse_Middle, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				w->mouse_listeners.call(KeyStateUp, Mouse_Middle, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
 			break;
 			case WM_RBUTTONDOWN:
-				w->mouse_listeners.call(KeyStateDown, Mouse_Right, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				w->mouse_listeners.call(KeyStateDown, Mouse_Right, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
 			break;
 			case WM_RBUTTONUP:
-				w->mouse_listeners.call(KeyStateUp, Mouse_Right, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				w->mouse_listeners.call(KeyStateUp, Mouse_Right, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
 			break;
 			case WM_MOUSEMOVE:
-				w->mouse_listeners.call(KeyStateNull, Mouse_Null, Vec2i(LOWORD(lParam), HIWORD(lParam)));
+				w->mouse_listeners.call(KeyStateNull, Mouse_Null, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
 			break;
 			case WM_MOUSEWHEEL:
 				w->mouse_listeners.call(KeyStateNull, Mouse_Middle, Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0));

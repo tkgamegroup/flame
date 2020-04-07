@@ -65,6 +65,8 @@ namespace flame
 
 			FontAtlasPrivate(Device* d, uint font_count, const wchar_t* const* _fonts)
 			{
+				canvas_slot_ = -1;
+
 				for (auto i = 0; i < font_count; i++)
 				{
 					auto fn = _fonts[i];

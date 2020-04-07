@@ -36,7 +36,7 @@ namespace flame
 		struct FontAtlas : Object
 		{
 			void* canvas_;
-			uint canvas_slot_;
+			int canvas_slot_;
 
 			FontAtlas() :
 				Object("FontAtlas")

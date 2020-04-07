@@ -21,7 +21,8 @@ namespace flame
 		cText* text;
 		cEventReceiver* event_receiver;
 
-		uint cursor;
+		uint select_start;
+		uint select_end; // end can be smaller than start
 
 		cEdit() :
 			Component("cEdit")

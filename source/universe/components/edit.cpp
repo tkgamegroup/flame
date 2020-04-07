@@ -1,4 +1,5 @@
 #include <flame/graphics/font.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/timer.h>
 #include <flame/universe/components/element.h>
@@ -7,6 +8,7 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
 #include <flame/universe/utils/style.h>
+#include <flame/universe/utils/event.h>
 
 #include "../renderpath/canvas/canvas.h"
 
@@ -28,7 +30,8 @@ namespace flame
 			text = nullptr;
 			event_receiver = nullptr;
 
-			cursor = 0;
+			select_start = 0;
+			select_end = 0;
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
@@ -133,7 +136,8 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
-					auto& cursor = thiz->cursor;
+					auto& select_start = thiz->select_start;
+					auto& select_end = thiz->select_end;
 					auto c_text = (cTextPrivate*)thiz->text;
 					auto str = c_text->text;
 					auto changed = false;
@@ -143,18 +147,20 @@ namespace flame
 						switch (value)
 						{
 						case L'\b':
-							if (cursor > 0)
+							if (select_start > 0)
 							{
-								cursor--;
-								str.erase(str.begin() + cursor);
+								select_start--;
+								select_end = select_start;
+								str.erase(str.begin() + select_start);
 								changed = true;
 							}
 							break;
 						case 22:
 						{
 							auto cb = get_clipboard();
-							str = str.substr(0, cursor) + cb.str() + str.substr(cursor);
-							cursor += cb.s;
+							str = str.substr(0, select_start) + cb.str() + str.substr(select_start);
+							select_start += cb.s;
+							select_end = select_start;
 							changed = true;
 						}
 							break;
@@ -163,8 +169,9 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							str.insert(str.begin() + cursor, value);
-							cursor++;
+							str.insert(str.begin() + select_start, value);
+							select_start++;
+							select_end = select_start;
 							changed = true;
 						}
 					}
@@ -173,23 +180,31 @@ namespace flame
 						switch (value)
 						{
 						case Key_Left:
-							if (cursor > 0)
-								cursor--;
+							if (select_start > 0)
+							{
+								select_start--;
+								select_end = select_start;
+							}
 							break;
 						case Key_Right:
-							if (cursor < str.size())
-								cursor++;
+							if (select_start < str.size())
+							{
+								select_start++;
+								select_end = select_start;
+							}
 							break;
 						case Key_Home:
-							cursor = 0;
+							select_start = 0;
+							select_end = select_start;
 							break;
 						case Key_End:
-							cursor = str.size();
+							select_start = str.size();
+							select_end = select_start;
 							break;
 						case Key_Del:
-							if (cursor < str.size())
+							if (select_start < str.size())
 							{
-								str.erase(str.begin() + cursor);
+								str.erase(str.begin() + select_start);
 								changed = true;
 							}
 							break;
@@ -204,10 +219,15 @@ namespace flame
 				}, Mail::from_p(this));
 
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					auto thiz = *(cEditPrivate**)c;
+					if (action == (KeyStateDown | KeyStateJust) && key == Mouse_Left)
 					{
-						auto thiz = *(cEditPrivate**)c;
-						thiz->cursor = thiz->locate_cursor(pos);
+						thiz->select_start = thiz->select_end = thiz->locate_cursor(pos);
+						thiz->flash_cursor(2);
+					}
+					else if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
+					{
+						thiz->select_end = thiz->locate_cursor(thiz->event_receiver->dispatcher->mouse_pos);
 						thiz->flash_cursor(2);
 					}
 					return true;
@@ -229,18 +249,51 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas)
 		{
-			if (show_cursor && !element->clipped)
+			if (!element->clipped)
 			{
 				auto c_text = (cTextPrivate*)text;
 				auto& str = c_text->text;
 				auto font_atlas = c_text->font_atlas;
 				auto font_size = c_text->font_size_ * element->global_scale;
+				auto p = element->content_min();
 
-				std::vector<Vec2f> points;
-				points.push_back(element->content_min() + Vec2f(font_atlas->text_offset(font_size, str.c_str(), str.c_str() + cursor)));
-				points[0].x()++;
-				points.push_back(points[0] + Vec2f(0.f, font_size));
-				canvas->stroke(points.size(), points.data(), c_text->color_.new_proply<3>(element->alpha_), 2.f);
+				if (select_start != select_end)
+				{
+					auto i = min(select_start, select_end);
+					auto end = max(select_start, select_end);
+					while (i < end)
+					{
+						auto left = i;
+						auto right = left + 1;
+						auto is_last_new_line = false;
+						while (right < end)
+						{
+							if (str[right] == '\n')
+								break;
+							right++;
+						}
+						i = right + 1;
+						
+						auto sb = str.c_str() + left, se = str.c_str() + right;
+						std::vector<Vec2f> points;
+						auto pos1 = Vec2f(font_atlas->text_offset(font_size, str.c_str(), sb));
+						auto pos2 = Vec2f(font_atlas->text_offset(font_size, str.c_str(), se));
+						if (right < end && str[right] == '\n')
+							pos2.x() += 4.f;
+						path_rect(points, pos1 + p, Vec2f(pos2.x() - pos1.x(), font_size));
+						canvas->fill(points.size(), points.data(), Vec4c(128, 128, 255, 255));
+						canvas->add_text(font_atlas, sb, se, font_size, pos1 + p, Vec4c(255));
+					}
+				}
+
+				if (show_cursor)
+				{
+					std::vector<Vec2f> points;
+					points.push_back(p + Vec2f(font_atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end)));
+					points[0].x() += 1.f;
+					points.push_back(points[0] + Vec2f(0.f, font_size));
+					canvas->stroke(points.size(), points.data(), c_text->color_.new_proply<3>(element->alpha_), 2.f);
+				}
 			}
 		}
 	};
