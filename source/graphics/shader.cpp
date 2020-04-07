@@ -6,10 +6,6 @@
 #include "image_private.h"
 #include "shader_private.h"
 
-#if defined(FLAME_VULKAN)
-#include <spirv_glsl.hpp>
-#endif
-
 #include <flame/reflect_macros.h>
 
 namespace flame
@@ -1144,102 +1140,6 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-				//spirv_cross::CompilerGLSL compiler((uint*)spv_file.first.get(), spv_file.second / sizeof(uint));
-				//auto resources = compiler.get_shader_resources();
-
-				//std::function<void(uint, Variable*)> get_v;
-				//get_v = [&](uint type_id, Variable* v) {
-				//	const auto* t = &compiler.get_type(type_id);
-				//	while (t->pointer)
-				//	{
-				//		type_id = t->parent_type;
-				//		t = &compiler.get_type(type_id);
-				//	}
-
-				//	assert(t->array.size() <= 1); // no support multidimensional array
-				//	v->count = t->array.empty() ? 1 : t->array[0];
-				//	if (t->array.empty())
-				//		v->array_stride = 0;
-				//	else
-				//		v->array_stride = compiler.get_decoration(type_id, spv::DecorationArrayStride);
-
-				//	if (t->basetype == spirv_cross::SPIRType::Struct)
-				//	{
-				//		v->type_name = compiler.get_name(type_id);
-				//		v->size = compiler.get_declared_struct_size(*t);
-				//		for (auto i = 0; i < t->member_types.size(); i++)
-				//		{
-				//			auto m = new Variable;
-				//			m->name = compiler.get_member_name(type_id, i);
-				//			m->offset = compiler.type_struct_member_offset(*t, i);
-				//			m->size = compiler.get_declared_struct_member_size(*t, i);
-				//			v->members.emplace_back(m);
-				//			get_v(t->member_types[i], m);
-				//		}
-				//}
-				//	else
-				//	{
-				//		std::string base_name;
-				//		switch (t->basetype)
-				//		{
-				//		case spirv_cross::SPIRType::SByte:
-				//			base_name = "char";
-				//			break;
-				//		case spirv_cross::SPIRType::UByte:
-				//			base_name = "uchar";
-				//			break;
-				//		case spirv_cross::SPIRType::Short:
-				//			base_name = "short";
-				//			break;
-				//		case spirv_cross::SPIRType::UShort:
-				//			base_name = "ushort";
-				//			break;
-				//		case spirv_cross::SPIRType::Int:
-				//			base_name = "int";
-				//			break;
-				//		case spirv_cross::SPIRType::UInt:
-				//			base_name = "uint";
-				//			break;
-				//		case spirv_cross::SPIRType::Float:
-				//			base_name = "float";
-				//			break;
-				//		case spirv_cross::SPIRType::SampledImage:
-				//			base_name = "SampledImage";
-				//			break;
-				//		default:
-				//			assert(0);
-				//		}
-				//		if (t->columns <= 1)
-				//		{
-				//			if (t->vecsize <= 1)
-				//				v->type_name = base_name;
-				//			else
-				//				v->type_name = "Vec(" + std::to_string(t->vecsize) + "+" + base_name + ")";
-				//		}
-				//		else
-				//			v->type_name = "Mat(" + std::to_string(t->vecsize) + "+" + std::to_string(t->columns) + "+" + base_name + ")";
-				//	}
-				//	};
-
-				//for (auto& src : resources.uniform_buffers)
-				//{
-				//	auto r = new Resource;
-				//	r->set = compiler.get_decoration(src.id, spv::DecorationDescriptorSet);
-				//	r->binding = compiler.get_decoration(src.id, spv::DecorationBinding);
-				//	r->name = src.name;
-				//	get_v(src.type_id, &r->v);
-				//	uniform_buffers.emplace_back(r);
-				//}
-
-				//assert(resources.push_constant_buffers.size() <= 1);
-				//if (!resources.push_constant_buffers.empty())
-				//{
-				//	auto& src = resources.push_constant_buffers[0];
-				//	push_constant.reset(new Resource);
-				//	push_constant->name = src.name;
-
-				//	get_v(src.type_id, &push_constant->v);
-				//}
 			}
 
 			return true;

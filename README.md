@@ -17,8 +17,6 @@ An ECS Game Engine Based On Reflection.
 
 - STB           - https://github.com/nothings/stb or https://gitee.com/tkgamegroup/stb
 
-- SPIRV-Cross   - https://github.com/KhronosGroup/SPIRV-Cross or https://gitee.com/tkgamegroup/SPIRV-Cross
-
 - OpenAL        - http://www.openal.org/
 
 # Build:
