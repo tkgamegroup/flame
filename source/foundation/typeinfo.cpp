@@ -58,6 +58,11 @@ namespace flame
 		return TypeInfo::get(tag, base_name.c_str(), is_array);
 	}
 
+	UdtInfo* VariableInfo::udt() const
+	{
+		return ((VariableInfoPrivate*)this)->udt;
+	}
+
 	const TypeInfo* VariableInfo::type() const
 	{
 		return ((VariableInfoPrivate*)this)->type;

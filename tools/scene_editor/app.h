@@ -72,7 +72,6 @@ struct cInspector : Component
 
 	cInspector();
 	~cInspector() override;
-	void update_data_tracker(uint component_hash, uint data_offset) const;
 	void refresh();
 };
 

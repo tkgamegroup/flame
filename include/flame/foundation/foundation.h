@@ -31,6 +31,14 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
 
+	template <class T, class ...Args>
+	T* new_object(Args... args)
+	{
+		auto ret = (T*)f_malloc(sizeof(T));
+		new (ret) T(args...);
+		return ret;
+	}
+
 	template <class CH>
 	struct String
 	{
@@ -152,7 +160,7 @@ namespace flame
 			v = (T*)f_malloc(sizeof(T) * s);
 			for (auto i = 0; i < s; i++)
 			{
-				new (&v[i])T;
+				new (&v[i]) T;
 				v[i] = rhs.v[i];
 			}
 		}

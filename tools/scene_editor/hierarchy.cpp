@@ -131,8 +131,7 @@ static void create_tree_node(Entity* e)
 	{
 		auto e_tree_node = utils::e_begin_tree_node(s2w(e->name()).c_str());
 		{
-			auto c_item = (cHierarchyItem*)f_malloc(sizeof(cHierarchyItem));
-			new (c_item) cHierarchyItem;
+			auto c_item = new_object<cHierarchyItem>();
 			c_item->e = e;
 			e_tree_node->child(0)->add_component(c_item);
 		}
@@ -146,8 +145,7 @@ static void create_tree_node(Entity* e)
 	{
 		auto e_tree_leaf = utils::e_tree_leaf(s2w(e->name()).c_str());
 		{
-			auto c_item = (cHierarchyItem*)f_malloc(sizeof(cHierarchyItem));
-			new (c_item) cHierarchyItem;
+			auto c_item = new_object<cHierarchyItem>();
 			c_item->e = e;
 			e_tree_leaf->add_component(c_item);
 		}
@@ -202,7 +200,7 @@ cHierarchy::~cHierarchy()
 	app.hierarchy = nullptr;
 }
 
-static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
+static Entity* _find_item(Entity* sub_tree, Entity* e)
 {
 	for (auto i = 0; i < sub_tree->child_count(); i++)
 	{
@@ -216,7 +214,7 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 		{
 			if (item->child(0)->get_component(cHierarchyItem)->e == e)
 				return item;
-			auto res = find_item_in_tree(item->child(1), e);
+			auto res = _find_item(item->child(1), e);
 			if (res)
 				return res;
 		}
@@ -226,11 +224,7 @@ static Entity* find_item_in_tree(Entity* sub_tree, Entity* e)
 
 void cHierarchy::refresh_selected()
 {
-	auto tree = e_tree->get_component(cTree);
-	if (!app.selected)
-		tree->set_selected(nullptr, false);
-	else
-		tree->set_selected(find_item(app.selected), false);
+	e_tree->get_component(cTree)->set_selected(app.selected ? find_item(app.selected) : nullptr, false);
 }
 
 void cHierarchy::refresh()
@@ -247,5 +241,5 @@ void cHierarchy::refresh()
 
 Entity* cHierarchy::find_item(Entity* e) const
 {
-	return find_item_in_tree(e_tree, e);
+	return _find_item(e_tree, e);
 }

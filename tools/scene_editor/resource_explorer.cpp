@@ -188,9 +188,9 @@ cResourceExplorer::cResourceExplorer() :
 							{
 								auto p = app.resource_explorer->curr_path / text;
 								std::filesystem::create_directory(p);
-								auto bp = BP::create();
-								bp->save_to_file(bp, (p / L"bp").c_str());
-								BP::destroy(bp);
+								std::ofstream file(p / L"bp");
+								file << "<BP />";
+								file.close();
 							}
 						}, Mail());
 					}, Mail());
@@ -234,7 +234,7 @@ Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_i
 	utils::push_parent(e_item);
 	utils::next_element_size = 64.f;
 	utils::e_image(img_id << 16);
-	utils::e_text(app.font_atlas_pixel->wrap_text(utils::style_1u(utils::FontSize), 64.f, title.c_str(), title.c_str() + title.size()).v);
+	utils::e_text(app.font_atlas->wrap_text(utils::style_1u(utils::FontSize), 64.f, title.c_str(), title.c_str() + title.size()).v);
 	utils::pop_parent();
 	return e_item;
 }
@@ -372,8 +372,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				auto e_image = item->child(0);
 				e_image->get_component(cImage)->color = Vec4c(100, 100, 100, 128);
 
-				auto c_thumbnail = (cThumbnail*)f_malloc(sizeof(cThumbnail));
-				new (c_thumbnail) cThumbnail;
+				auto c_thumbnail = new_object<cThumbnail>();
 				c_thumbnail->filename = std::filesystem::canonical(p).wstring();
 				e_image->add_component(c_thumbnail);
 			}

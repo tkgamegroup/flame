@@ -139,6 +139,8 @@ namespace flame
 
 	struct VariableInfo
 	{
+		FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
+
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 		FLAME_FOUNDATION_EXPORTS const char* name() const;
 		FLAME_FOUNDATION_EXPORTS uint name_hash() const;

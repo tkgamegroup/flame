@@ -7,6 +7,8 @@ namespace flame
 {
 	struct cDataTracker : Component
 	{
+		void* data;
+
 		cDataTracker() :
 			Component("cDataTracker")
 		{
@@ -19,17 +21,16 @@ namespace flame
 	{
 		cCombobox* combobox;
 
-		int* data;
 		EnumInfo* info;
 		void(*on_changed)(void* c, int v);
 		Mail capture;
 
-		cEnumSingleDataTracker(int* data, EnumInfo* info, void(*on_changed)(void* c, int v), const Mail& capture) :
-			data(data),
+		cEnumSingleDataTracker(void* _data, EnumInfo* info, void(*on_changed)(void* c, int v), const Mail& capture) :
 			info(info),
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cEnumSingleDataTracker() override
@@ -40,7 +41,7 @@ namespace flame
 		void update_view() override
 		{
 			auto idx = -1;
-			info->find_item(*data, &idx);
+			info->find_item(*(int*)data, &idx);
 			combobox->set_index(idx, INVALID_POINTER);
 		}
 
@@ -65,17 +66,16 @@ namespace flame
 	{
 		std::vector<cCheckbox*> checkboxs;
 
-		int* data;
 		EnumInfo* info;
 		void(*on_changed)(void* c, int v);
 		Mail capture;
 
-		cEnumMultiDataTracker(int* data, EnumInfo* info, void(*on_changed)(void* c, int v), const Mail& capture) :
-			data(data),
+		cEnumMultiDataTracker(void* _data, EnumInfo* info, void(*on_changed)(void* c, int v), const Mail& capture) :
 			info(info),
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cEnumMultiDataTracker() override
@@ -86,7 +86,7 @@ namespace flame
 		void update_view() override
 		{
 			for (auto i = 0; i < checkboxs.size(); i++)
-				checkboxs[i]->set_checked(*data & info->item(i)->value(), INVALID_POINTER);
+				checkboxs[i]->set_checked(*(int*)data & info->item(i)->value(), INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -109,7 +109,7 @@ namespace flame
 					if (hash == FLAME_CHASH("checked"))
 					{
 						auto& capture = *(Capture*)c;
-						auto v = *capture.thiz->data;
+						auto v = *(int*)capture.thiz->data;
 						auto f = capture.thiz->info->item(capture.idx)->value();
 						if (capture.thiz->checkboxs[capture.idx]->checked)
 							v |= f;
@@ -127,15 +127,14 @@ namespace flame
 	{
 		cCheckbox* checkbox;
 
-		bool* data;
 		void(*on_changed)(void* c, bool v);
 		Mail capture;
 
-		cBoolDataTracker(bool* data, void(*on_changed)(void* c, bool v), const Mail& capture) :
-			data(data),
+		cBoolDataTracker(void* _data, void(*on_changed)(void* c, bool v), const Mail& capture) :
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cBoolDataTracker() override
@@ -145,7 +144,7 @@ namespace flame
 
 		void update_view() override
 		{
-			checkbox->set_checked(*data, INVALID_POINTER);
+			checkbox->set_checked(*(bool*)data, INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -171,20 +170,19 @@ namespace flame
 		cText* edit_text;
 		cText* drag_text;
 
-		T* data;
 		T drag_start;
 		bool drag_changed;
 		bool edit_changed;
 		void(*on_changed)(void* c, T v, bool exit_editing);
 		Mail capture;
 
-		cDigitalDataTracker(T* data, void(*on_changed)(void* c, T v, bool exit_editing), const Mail& capture) :
-			data(data),
+		cDigitalDataTracker(void* _data, void(*on_changed)(void* c, T v, bool exit_editing), const Mail& capture) :
 			drag_changed(false),
 			edit_changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cDigitalDataTracker() override
@@ -263,7 +261,7 @@ namespace flame
 				auto& capture = *(Capture*)c;
 				if (utils::is_active(capture.d_er) && is_mouse_move(action, key))
 				{
-					auto v = *capture.thiz->data;
+					auto v = *(T*)capture.thiz->data;
 					if (!capture.thiz->drag_changed)
 						capture.thiz->drag_start = v;
 					if constexpr (std::is_floating_point<T>::value)
@@ -280,8 +278,8 @@ namespace flame
 				auto& capture = *(Capture*)c;
 				if (capture.thiz->drag_changed && !utils::is_active(capture.d_er))
 				{
-					auto temp = *capture.thiz->data;
-					*capture.thiz->data = capture.thiz->drag_start;
+					auto temp = *(T*)capture.thiz->data;
+					*(T*)capture.thiz->data = capture.thiz->drag_start;
 					capture.thiz->on_changed(capture.thiz->capture.p, temp, true);
 					capture.thiz->drag_changed = false;
 				}
@@ -296,20 +294,19 @@ namespace flame
 		cText* edit_texts[N];
 		cText* drag_texts[N];
 
-		Vec<N, T>* data;
 		Vec<N, T> drag_start;
 		bool drag_changed;
 		bool edit_changed;
 		void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing);
 		Mail capture;
 
-		cDigitalVecDataTracker(Vec<N, T>* data, void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing), const Mail& capture) :
-			data(data),
+		cDigitalVecDataTracker(void* _data, void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing), const Mail& capture) :
 			drag_changed(false),
 			edit_changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cDigitalVecDataTracker() override
@@ -365,7 +362,7 @@ namespace flame
 							auto& capture = *(Capture*)c;
 							if (capture.thiz->edit_changed)
 							{
-								auto v = *capture.thiz->data;
+								auto v = *(Vec<N, T>*)capture.thiz->data;
 								try
 								{
 									v[capture.i] = sto<T>(capture.thiz->edit_texts[capture.i]->text());
@@ -409,7 +406,7 @@ namespace flame
 						auto& capture = *(Capture*)c;
 						if (utils::is_active(capture.d_er) && is_mouse_move(action, key))
 						{
-							auto v = *capture.thiz->data;
+							auto v = *(Vec<N, T>*)capture.thiz->data;
 							if (!capture.thiz->drag_changed)
 								capture.thiz->drag_start = v;
 							if constexpr (std::is_floating_point<T>::value)
@@ -426,8 +423,8 @@ namespace flame
 						auto& capture = *(Capture*)c;
 						if (capture.thiz->drag_changed && !utils::is_active(capture.d_er))
 						{
-							auto temp = *capture.thiz->data;
-							*capture.thiz->data = capture.thiz->drag_start;
+							auto temp = *(Vec<N, T>*)capture.thiz->data;
+							*(Vec<N, T>*)capture.thiz->data = capture.thiz->drag_start;
 							capture.thiz->on_changed(capture.thiz->capture.p, temp, true);
 							capture.thiz->drag_changed = false;
 						}
@@ -442,17 +439,16 @@ namespace flame
 	{
 		cText* text;
 
-		StringA* data;
 		bool changed;
 		void(*on_changed)(void* c, const char* v);
 		Mail capture;
 
-		cStringADataTracker(StringA* data, void(*on_changed)(void* c, const char* v), const Mail& capture) :
-			data(data),
+		cStringADataTracker(void* _data, void(*on_changed)(void* c, const char* v), const Mail& capture) :
 			changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cStringADataTracker() override
@@ -462,7 +458,7 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(data->v ? s2w(data->str()).c_str() : L"", INVALID_POINTER);
+			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -504,17 +500,16 @@ namespace flame
 	{
 		cText* text;
 
-		StringW* data;
 		bool changed;
 		void(*on_changed)(void* c, const wchar_t* v);
 		Mail capture;
 
-		cStringWDataTracker(StringW* data, void(*on_changed)(void* c, const wchar_t* v), const Mail& capture) :
-			data(data),
+		cStringWDataTracker(void* _data, void(*on_changed)(void* c, const wchar_t* v), const Mail& capture) :
 			changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
+			data = _data;
 		}
 
 		~cStringWDataTracker() override
@@ -524,7 +519,7 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(data->v ? data->v : L"", INVALID_POINTER);
+			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", INVALID_POINTER);
 		}
 
 		void on_added() override

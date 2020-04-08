@@ -26,6 +26,7 @@ namespace flame
 
 	struct VariableInfoPrivate : VariableInfo
 	{
+		UdtInfo* udt;
 		TypeInfoPrivate* type;
 		std::string name;
 		uint name_hash;
@@ -84,6 +85,7 @@ namespace flame
 		inline VariableInfoPrivate* add_variable(const TypeInfo* type, const std::string& name, uint flags, uint offset, uint size)
 		{
 			auto v = new VariableInfoPrivate;
+			v->udt = this;
 			v->type = (TypeInfoPrivate*)type;
 			v->name = name;
 			v->name_hash = FLAME_HASH(name.c_str());

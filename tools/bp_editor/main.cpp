@@ -677,28 +677,6 @@ void MyApp::save()
 	app.set_changed(false);
 }
 
-//auto n_rt = app.bp->find_node("test_rt");
-//if (!n_rt)
-//{
-//	n_rt = app.add_node("TestRenderTarget", "test_rt", Vec2f(0.f, 0.f));
-//	n_rt->used_by_editor = true;
-//}
-//{
-//	auto s = app.bp->find_input("rt_dst.type");
-//	if (s)
-//		s->link_to(n_rt->find_output("type"));
-//}
-//{
-//	auto s = app.bp->find_input("rt_dst.v");
-//	if (s)
-//		s->link_to(n_rt->find_output("view"));
-//}
-//{
-//	auto s = app.bp->find_input("make_cmd.cbs");
-//	if (s)
-//		s->link_to(n_rt->find_output("out"));
-//}
-
 void MyApp::update_gv()
 {
 	auto gv_filename = fileppath / L"bp.gv";

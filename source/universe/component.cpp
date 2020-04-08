@@ -4,7 +4,8 @@ namespace flame
 {
 	Component::Component(const char* name) :
 		Object(name),
-		entity(nullptr)
+		entity(nullptr),
+		user_data(nullptr)
 	{
 		data_changed_listeners.impl = ListenerHubImpl::create();
 	}

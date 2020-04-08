@@ -15,7 +15,7 @@ cEditor::cEditor() :
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
 			utils::e_text(L"Tool");
-			auto e_tool = utils::e_begin_combobox(50.f);
+			auto e_tool = utils::e_begin_combobox();
 				utils::e_combobox_item(L"Null");
 				utils::e_combobox_item(L"Move");
 				utils::e_combobox_item(L"Scale");
@@ -63,7 +63,8 @@ cEditor::cEditor() :
 				looper().add_event([](void* c, bool*) {
 					auto prev_selected = app.selected;
 					app.selected = nullptr;
-					app.editor->search_hover(app.prefab);
+					if (app.prefab)
+						app.editor->search_hover(app.prefab);
 					if (prev_selected != app.selected)
 					{
 						if (app.hierarchy)
@@ -78,10 +79,6 @@ cEditor::cEditor() :
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 		utils::push_parent(e_overlayer);
 		{
-			auto udt_element = find_udt(FLAME_CHASH("D#flame::Serializer_cElement"));
-			assert(udt_element);
-			auto element_pos_offset = udt_element->find_variable("pos")->offset();
-
 			auto e_transform_tool = utils::e_empty();
 			c_transform_tool_element = utils::c_element();
 			c_transform_tool_element->size_ = 20.f;
@@ -91,21 +88,15 @@ cEditor::cEditor() :
 				struct Capture
 				{
 					cEventReceiver* er;
-					uint off;
 				}capture;
 				capture.er = c_event_receiver;
-				capture.off = element_pos_offset;
 				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto& capture = *(Capture*)c;
 					if (utils::is_active(capture.er) && is_mouse_move(action, key) && app.selected)
 					{
 						auto e = app.selected->get_component(cElement);
 						if (e)
-						{
-						e->set_pos(Vec2f(pos), true);
-						if (app.inspector)
-							app.inspector->update_data_tracker(FLAME_CHASH("cElement"), capture.off);
-						}
+							e->set_pos(Vec2f(pos), true);
 					}
 					return true;
 				}, Mail::from_t(&capture));
@@ -131,21 +122,15 @@ cEditor::cEditor() :
 					struct Capture
 					{
 						cEventReceiver* er;
-						uint off;
 					}capture;
 					capture.er = c_event_receiver;
-					capture.off = element_pos_offset;
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 						if (utils::is_active(capture.er) && is_mouse_move(action, key) && app.selected)
 						{
 							auto e = app.selected->get_component(cElement);
 							if (e)
-							{
 								e->set_x(pos.x(), true);
-								if (app.inspector)
-									app.inspector->update_data_tracker(FLAME_CHASH("cElement"), capture.off);
-							}
 						}
 						return true;
 					}, Mail::from_t(&capture));
@@ -171,21 +156,15 @@ cEditor::cEditor() :
 					struct Capture
 					{
 						cEventReceiver* er;
-						uint off;
 					}capture;
 					capture.er = c_event_receiver;
-					capture.off = element_pos_offset;
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 						if (utils::is_active(capture.er) && is_mouse_move(action, key) && app.selected)
 						{
 							auto e = app.selected->get_component(cElement);
 							if (e)
-							{
 								e->set_y(pos.y(), true);
-								if (app.inspector)
-									app.inspector->update_data_tracker(FLAME_CHASH("cElement"), capture.off);
-							}
 						}
 						return true;
 					}, Mail::from_t(&capture));

@@ -10,6 +10,8 @@ namespace flame
 	{
 		Entity* entity;
 
+		void* user_data;
+
 		ListenerHub<bool(void* c, uint hash, void* sender)> data_changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS Component(const char* name);

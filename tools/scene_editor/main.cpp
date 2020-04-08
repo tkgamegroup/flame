@@ -13,6 +13,11 @@ void MyApp::create()
 
 	TypeinfoDatabase::load(L"scene_editor.exe", true, true);
 
+	pugi::xml_document window_layout;
+	pugi::xml_node window_layout_root;
+	if (window_layout.load_file(L"window_layout.xml"))
+		window_layout_root = window_layout.first_child();
+
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	utils::style_set_to_light();
 
@@ -78,6 +83,17 @@ void MyApp::create()
 	utils::e_end_menu_bar();
 
 	utils::e_begin_docker_static_container();
+	if (window_layout_root)
+	{
+		for (auto n_window : window_layout_root.child("static"))
+		{
+			std::string name = n_window.name();
+			utils::e_begin_docker();
+			if (name == "editor")
+				editor = new cEditor();
+			utils::e_end_docker();
+		}
+	}
 	utils::e_end_docker_static_container();
 
 	utils::e_end_layout();
