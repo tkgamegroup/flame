@@ -16,6 +16,26 @@ struct MyApp : App
 	Entity* e_result;
 	Entity* e_wait;
 
+	void* m;
+	typedef void(*F)(Entity*);
+	F f;
+
+	MyApp()
+	{
+		m = nullptr;
+		f = nullptr;
+	}
+
+	void clean_up()
+	{
+		e_result->remove_children(0, -1);
+		if (m)
+			free_module(m);
+
+		m = nullptr;
+		f = nullptr;
+	}
+
 	void compile_and_run()
 	{
 		auto code = w2s(c_code->text());
@@ -58,32 +78,19 @@ struct MyApp : App
 		cmd += L"\"" + (engine_path / L"bin/debug/flame_universe.lib").wstring() + L"\" ";
 		exec_and_redirect_to_std_output(nullptr, (wchar_t*)cmd.c_str());
 
-		typedef void(*F)(Entity*);
-		struct Capture
-		{
-			void* m;
-			F f;
-		}capture;
-		capture.m = nullptr;
-		capture.f = nullptr;
-
 		if (std::filesystem::exists(L"out.dll") && std::filesystem::last_write_time(L"out.dll") > std::filesystem::last_write_time(L"out.cpp"))
 		{
-			capture.m = load_module((get_curr_path().str() + L"/out.dll").c_str());
-			if (capture.m)
-				capture.f = (F)get_module_func(capture.m, "excute");
+			m = load_module((get_curr_path().str() + L"/out.dll").c_str());
+			if (m)
+				f = (F)get_module_func(m, "excute");
 		}
 
 		looper().add_event([](void* c, bool*) {
-			auto& capture = *(Capture*)c;
-			if (capture.m)
-			{
-				if (capture.f)
-					capture.f(app.e_result);
-				free_module(capture.m);
-			}
-			utils::remove_layer(app.e_wait->parent());
-		}, Mail::from_t(&capture));
+			auto app = *(MyApp**)c;
+			if (app->f)
+				app->f(app->e_result);
+			utils::remove_layer(app->e_wait->parent());
+		}, Mail::from_p(this));
 	}
 }app;
 
@@ -91,7 +98,7 @@ int main(int argc, char** args)
 {
 	app.engine_path = getenv("FLAME_PATH");
 
-	app.create("UI Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, app.engine_path);
+	app.create("Code Live", Vec2u(800, 400), WindowFrame | WindowResizable, true, app.engine_path);
 
 	const wchar_t* fonts[] = {
 		L"c:/windows/fonts/consola.ttf"
@@ -109,7 +116,7 @@ int main(int argc, char** args)
 			utils::c_aligner(SizeFitParent, SizeFitParent);
 			utils::e_button(L"Run", [](void*) {
 				looper().add_event([](void*, bool*) {
-					app.e_result->remove_children(0, -1);
+					app.clean_up();
 					app.e_wait = utils::e_begin_dialog();
 					auto c_text = utils::e_text(L"Compiling: 0")->get_component(cText);
 					auto c_timer = utils::c_timer();
