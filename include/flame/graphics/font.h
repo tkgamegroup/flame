@@ -95,7 +95,7 @@ namespace flame
 
 			StringW wrap_text(uint font_size, uint width, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
-				if (font_size <= width)
+				if (font_size > width)
 				{
 					assert(0);
 					return L"";

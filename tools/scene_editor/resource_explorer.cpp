@@ -114,10 +114,10 @@ cResourceExplorer::cResourceExplorer() :
 	Component("cResourceExplorer")
 {
 	auto canvas = app.canvas;
-	folder_img = Image::create_from_file(app.graphics_device, L"../art/ui/imgs/folder.png");
+	folder_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/folder.png").c_str());
 	folder_img_v = Imageview::create(folder_img);
 	folder_img_idx = canvas->set_image(-1, folder_img_v);
-	file_img = Image::create_from_file(app.graphics_device, L"../art/ui/imgs/file.png");
+	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/file.png").c_str());
 	file_img_v = Imageview::create(file_img);
 	file_img_idx = canvas->set_image(-1, file_img_v);
 	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
@@ -311,7 +311,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		looper().clear_events(FLAME_CHASH("update thumbnail"));
 
 		list->get_component(cList)->set_selected(nullptr, false);
-		list->remove_child(0, -1);
+		list->remove_children(0, -1);
 
 		std::vector<std::filesystem::path> dirs;
 		std::vector<std::filesystem::path> files;

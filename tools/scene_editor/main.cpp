@@ -7,8 +7,56 @@
 
 MyApp app;
 
+void add_window(pugi::xml_node n) 
+{
+	std::string name(n.name());
+	if (name == "layout")
+	{
+		utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical);
+		for (auto c : n.children())
+			add_window(c);
+		utils::e_end_docker_layout();
+	}
+	else if (name == "docker")
+	{
+		utils::e_begin_docker();
+		for (auto c : n.children())
+		{
+			if (c.name() == std::string("page"))
+			{
+				std::string window(c.attribute("name").value());
+				if (window == "editor")
+					app.editor = new cEditor;
+				else if (window == "resource_explorer")
+					app.resource_explorer = new cResourceExplorer;
+				else if (window == "hierarchy")
+					app.hierarchy = new cHierarchy;
+				else if (window == "inspector")
+					app.inspector = new cInspector;
+			}
+		}
+		utils::e_end_docker();
+	}
+}
+
 void MyApp::create()
 {
+	{
+		auto config = parse_ini_file(L"config.ini");
+		for (auto& e : config.get_section_entries(""))
+		{
+			if (e.key == "resource_path")
+				resource_path = e.value;
+			else if (e.key == "engine_path")
+			{
+				if (e.value == "{e}")
+					engine_path = getenv("FLAME_PATH");
+				else
+					engine_path = e.value;
+			}
+		}
+	}
+
 	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
 
 	TypeinfoDatabase::load(L"scene_editor.exe", true, true);
@@ -63,13 +111,13 @@ void MyApp::create()
 			}, Mail());
 		utils::e_end_menubar_menu();
 		utils::e_begin_menubar_menu(L"Window");
+		utils::e_menu_item(L"Editor", [](void* c) {
+			if (!app.editor)
+				app.editor = new cEditor;
+		}, Mail::from_p(this));
 		utils::e_menu_item(L"Resource Explorer", [](void* c) {
 			if (!app.resource_explorer)
 				app.resource_explorer = new cResourceExplorer;
-		}, Mail::from_p(this));
-		utils::e_menu_item(L"Scene Editor", [](void* c) {
-			if (!app.editor)
-				app.editor = new cEditor;
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Hierarchy", [](void* c) {
 			if (!app.hierarchy)
@@ -84,16 +132,7 @@ void MyApp::create()
 
 	utils::e_begin_docker_static_container();
 	if (window_layout_root)
-	{
-		for (auto n_window : window_layout_root.child("static"))
-		{
-			std::string name = n_window.name();
-			utils::e_begin_docker();
-			if (name == "editor")
-				editor = new cEditor();
-			utils::e_end_docker();
-		}
-	}
+		add_window(window_layout_root.child("static").first_child());
 	utils::e_end_docker_static_container();
 
 	utils::e_end_layout();

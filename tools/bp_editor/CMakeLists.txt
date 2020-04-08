@@ -4,7 +4,9 @@ if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml)
 	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml
 		"<layout>\n"
 		"	<static>\n"
-		"		<editor />\n"
+		"		<docker>\n"
+		"			<page name=\"editor\" />\n"
+		"		</docker>\n"
 		"	</static>\n"
 		"	<floating>\n"
 		"	</floating>\n"
