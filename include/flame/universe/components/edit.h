@@ -22,7 +22,13 @@ namespace flame
 		cEventReceiver* event_receiver;
 
 		uint select_start;
-		uint select_end; // end can be smaller than start
+		uint select_end; // can be smaller than start
+
+		void set_select(uint start, int length = 0)
+		{
+			select_start = start;
+			select_end = start + length;
+		}
 
 		cEdit() :
 			Component("cEdit")

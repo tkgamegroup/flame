@@ -81,7 +81,17 @@ namespace flame
 			auto i = 0;
 			for (; i < str.size(); )
 			{
-				if (pos.y() < y + font_size)
+				auto next = i;
+				while (next < str.size())
+				{
+					if (str[next++] == '\n')
+					{
+						y += font_size;
+						break;
+					}
+				}
+
+				if (pos.y() < y + font_size || next == str.size())
 				{
 					auto x = p.x();
 					while (true)
@@ -100,14 +110,7 @@ namespace flame
 					break;
 				}
 
-				while (i < str.size())
-				{
-					if (str[i++] == '\n')
-					{
-						y += font_size;
-						break;
-					}
-				}
+				i = next;
 			}
 			return i;
 		}

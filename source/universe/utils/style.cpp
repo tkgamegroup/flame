@@ -23,7 +23,7 @@ namespace flame
 
 		void style_set_to_light()
 		{
-			pop_style(FontSize); push_style_1u(FontSize, 14U);
+			pop_style(FontSize); push_style_1u(FontSize, 16U);
 			pop_style(BackgroundColor); push_style_4c(BackgroundColor, 240, 240, 240, 255);
 			pop_style(ForegroundColor); push_style_4c(ForegroundColor, 0, 0, 0, 255);
 			pop_style(TextColorNormal); push_style_4c(TextColorNormal, 0, 0, 0, 255);
@@ -53,7 +53,7 @@ namespace flame
 
 		void style_set_to_dark()
 		{
-			pop_style(FontSize); push_style_1u(FontSize, 14U);
+			pop_style(FontSize); push_style_1u(FontSize, 16U);
 			pop_style(BackgroundColor); push_style_4c(BackgroundColor, 40, 40, 40, 255);
 			pop_style(ForegroundColor); push_style_4c(ForegroundColor, 255, 255, 255, 255);
 			pop_style(TextColorNormal); push_style_4c(TextColorNormal, 255, 255, 255, 255);

@@ -35,7 +35,7 @@ cConsole::cConsole() :
 				auto cmd = std::wstring(input_text->text());
 				log += cmd + L"\n";
 				input_text->set_text(L"");
-				app.console->c_edit_input->cursor = 0;
+				app.console->c_edit_input->set_select(0);
 
 				auto tokens = SUW::split(cmd);
 

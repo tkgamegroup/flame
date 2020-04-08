@@ -68,13 +68,13 @@ static Vec4c type_color(TypeTag t)
 	switch (t)
 	{
 	case TypeEnumSingle:
-		return Vec4c(128, 128, 0, 255);
+		return Vec4c(23, 160, 93, 255);
 	case TypeEnumMulti:
-		return Vec4c(160, 128, 0, 255);
+		return Vec4c(23, 160, 93, 255);
 	case TypeData:
-		return Vec4c(0, 128, 128, 255);
+		return Vec4c(40, 58, 228, 255);
 	case TypePointer:
-		return Vec4c(255, 0, 0, 255);
+		return Vec4c(239, 94, 41, 255);
 	}
 	return Vec4c(0);
 }
@@ -252,7 +252,7 @@ struct cSlot : Component
 					if (!thiz->tip_info)
 					{
 						utils::push_parent(app.root);
-							thiz->tip_info = utils::e_begin_layout(LayoutVertical, 4.f);
+							thiz->tip_info = utils::e_begin_layout(LayoutVertical, 8.f);
 							auto c_element = thiz->tip_info->get_component(cElement);
 							c_element->pos_ = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
 							c_element->pivot_ = Vec2f(is_in ? 1.f : 0.f , 0.f);
@@ -260,15 +260,14 @@ struct cSlot : Component
 							c_element->frame_thickness_ = 2.f;
 							c_element->color_ = Vec4c(200, 200, 200, 255);
 							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
-								{
-									auto type = s->type();
-									auto tag = type->tag();
-									auto text = type_prefix(tag, type->is_array()) + s2w(type->base_name());
-									auto fail_message = s2w(s->fail_message());
-									if (!fail_message.empty())
-										text += L"\n\n" + fail_message;
-									utils::e_text(text.c_str())->get_component(cText)->color_ = type_color(tag);
-								}
+
+							auto type = s->type();
+							auto tag = type->tag();
+							utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color_ = type_color(tag);
+							auto fail_message = s2w(s->fail_message());
+							if (!fail_message.empty())
+								utils::e_text(fail_message.c_str())->get_component(cText)->color_ = Vec4c(255, 0, 0, 255);
+
 							utils::e_end_layout();
 						utils::pop_parent();
 					}
@@ -823,7 +822,7 @@ void cEditor::on_add_node(BP::Node* n)
 		utils::e_end_popup_menu();
 	utils::push_parent(e_node);
 		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->padding_ = Vec4f(8.f);
-			utils::push_style_1u(utils::FontSize, 21);
+			utils::push_style_1u(utils::FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 				if (c_node->n_type == 0)
 				{

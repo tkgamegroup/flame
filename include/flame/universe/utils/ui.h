@@ -639,8 +639,7 @@ namespace flame
 				{
 					capture.ee->set_visible(true);
 					capture.ed->set_visible(false);
-					auto edit = capture.ee->get_component(cEdit);
-					edit->select_start = edit->select_end = 0;
+					capture.ee->get_component(cEdit)->set_select(0);
 					auto er = capture.ee->get_component(cEventReceiver);
 					er->dispatcher->next_focusing = er;
 				}

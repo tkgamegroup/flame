@@ -185,7 +185,25 @@ namespace flame
 					if (out)
 						Buffer::destroy(out);
 					auto d = Device::default_one();
-					if (d && size > 0 && usage > 0 && mem_prop > 0)
+					auto ok = true;
+					if (!d)
+						ok = false;
+					if (!(size > 0))
+					{
+						size_s()->set_fail_message("x and y of size must bigger than 0");
+						ok = false;
+					}
+					if (usage == 0)
+					{
+						usage_s()->set_fail_message("usage cannot not be empty");
+						ok = false;
+					}
+					if (mem_prop == 0)
+					{
+						usage_s()->set_fail_message("mem prop cannot not be empty");
+						ok = false;
+					}
+					if (ok)
 					{
 						out = Buffer::create(d, size, usage, mem_prop);
 						if (mem_prop == (MemPropHost | MemPropHostCoherent))

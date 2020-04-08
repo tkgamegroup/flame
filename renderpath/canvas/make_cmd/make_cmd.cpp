@@ -401,11 +401,11 @@ struct R(MakeCmd)
 
 	__declspec(dllexport) void RF(update)(uint _frame)
 	{
+		vtx_end = vtx_buf ? (Vertex*)vtx_buf->mapped : nullptr;
+		idx_end = idx_buf ? (uint*)idx_buf->mapped : nullptr;
+
 		if (frame == -1)
 		{
-			vtx_end = (Vertex*)vtx_buf->mapped;
-			idx_end = (uint*)idx_buf->mapped;
-
 			clear_color = Vec4c(0, 0, 0, 255);
 
 			auto ds_layout = ds->layout();
@@ -421,10 +421,7 @@ struct R(MakeCmd)
 		}
 		else
 		{
-			vtx_end = (Vertex*)vtx_buf->mapped;
-			idx_end = (uint*)idx_buf->mapped;
-
-			if (cbs)
+			if (cbs && cbs->s > 0)
 			{
 				auto cb = cbs->at(image_idx);
 				if (rnf && pl)

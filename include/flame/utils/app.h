@@ -124,7 +124,7 @@ namespace flame
 
 			auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
 			const wchar_t* fonts[] = {
-				L"c:/windows/fonts/times.ttf",
+				L"c:/windows/fonts/msyh.ttc",
 				font_awesome_path.c_str(),
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
