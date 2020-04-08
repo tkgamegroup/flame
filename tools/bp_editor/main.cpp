@@ -922,7 +922,7 @@ bool MyApp::create(const char* filename)
 						app.save();
 					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_BOOK) + L"    Libraries").c_str(), [](void* c) {
-						utils::e_begin_dialog();
+						auto layer = utils::e_begin_dialog()->parent();
 							utils::e_text(L"Libraries");
 							utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f);
 							auto e_list = utils::e_begin_list(true);
@@ -983,9 +983,9 @@ bool MyApp::create(const char* filename)
 									}, Mail::from_p(e_item));
 								}
 							}, Mail::from_p(e_list));
-							utils::e_button(L"Close", [](void*) {
-								utils::remove_top_layer(app.root);
-							}, Mail());
+							utils::e_button(L"Close", [](void* c) {
+								utils::remove_layer(*(Entity**)c);
+							}, Mail::from_p(layer));
 							utils::e_end_layout();
 						utils::e_end_dialog();
 					}, Mail());

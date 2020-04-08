@@ -749,7 +749,7 @@ struct MyApp : App
 						utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 					else
 					{
-						utils::e_begin_dialog();
+						auto e_layer = utils::e_begin_dialog()->parent();
 							utils::e_text(L"Room Name");
 							{
 								auto c_text = utils::e_edit(100.f)->get_component(cText);
@@ -786,7 +786,7 @@ struct MyApp : App
 							utils::e_begin_layout(LayoutHorizontal, 4.f);
 							utils::c_aligner(AlignxMiddle, AlignyFree);
 								utils::e_button(L"OK", [](void* c) {
-									utils::remove_top_layer(app.root);
+									utils::remove_layer(*(Entity**)c);
 
 									if (!app.room_name.empty())
 									{
@@ -967,10 +967,10 @@ struct MyApp : App
 											app.create_game_scene();
 										}, Mail());
 									}
-								}, Mail());
+								}, Mail::from_p(e_layer));
 								utils::e_button(L"Cancel", [](void* c) {
-									utils::remove_top_layer(app.root);
-								}, Mail());
+									utils::remove_layer(*(Entity**)c);
+								}, Mail::from_p(e_layer));
 							utils::e_end_layout();
 						utils::e_end_dialog();
 					}
@@ -1562,35 +1562,37 @@ struct MyApp : App
 		{
 			if (key_states[key_map[KEY_PAUSE]] == (KeyStateDown | KeyStateJust))
 			{
-				if (!utils::get_top_layer(app.root, true, "paused"))
+				auto layer = app.root->last_child(FLAME_CHASH("layer_paused"));
+				if (!layer)
 				{
 					gaming = false;
 					players[my_room_index].e_count_down->set_visible(false);
 
-					utils::e_begin_dialog("paused");
+					auto layer = utils::e_begin_dialog()->parent();
+					layer->set_name("layer_paused");
 					utils::e_text(L"Paused");
 					utils::c_aligner(AlignxMiddle, AlignyFree);
-					utils::e_button(L"Resume", [](void*) {
-						utils::remove_top_layer(app.root);
+					utils::e_button(L"Resume", [](void* c) {
+						utils::remove_layer(*(Entity**)c);
 						app.begin_count_down();
-					}, Mail());
+					}, Mail::from_p(layer));
 					utils::c_aligner(AlignxMiddle, AlignyFree);
-					utils::e_button(L"Restart", [](void*) {
-						utils::remove_top_layer(app.root);
+					utils::e_button(L"Restart", [](void* c) {
+						utils::remove_layer(*(Entity**)c);
 						app.play_time = 0.f;
 						app.start_game();
-					}, Mail());
+					}, Mail::from_p(layer));
 					utils::c_aligner(AlignxMiddle, AlignyFree);
-					utils::e_button(L"Quit", [](void*) {
-						utils::remove_top_layer(app.root);
+					utils::e_button(L"Quit", [](void* c) {
+						utils::remove_layer(*(Entity**)c);
 						app.quit_game();
-					}, Mail());
+					}, Mail::from_p(layer));
 					utils::c_aligner(AlignxMiddle, AlignyFree);
 					utils::e_end_dialog();
 				}
 				else
 				{
-					utils::remove_top_layer(app.root);
+					utils::remove_layer(layer);
 					begin_count_down();
 				}
 			}
@@ -1722,22 +1724,22 @@ struct MyApp : App
 
 						if (game_mode != GameVS)
 						{
-							utils::e_begin_dialog();
+							auto layer = utils::e_begin_dialog()->parent();
 							utils::e_text(L"Game Over");
 							utils::c_aligner(AlignxMiddle, AlignyFree);
 							utils::e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
 							utils::e_text((L"Level: " + wfmt(L"%d", level)).c_str());
 							utils::e_text((L"Lines: " + wfmt(L"%d", lines)).c_str());
 							utils::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
-							utils::e_button(L"Quit", [](void*) {
-								utils::remove_top_layer(app.root);
+							utils::e_button(L"Quit", [](void* c) {
+								utils::remove_layer(*(Entity**)c);
 								app.quit_game();
-							}, Mail());
+							}, Mail::from_p(layer));
 							utils::c_aligner(AlignxMiddle, AlignyFree);
-							utils::e_button(L"Restart", [](void*) {
-								utils::remove_top_layer(app.root);
+							utils::e_button(L"Restart", [](void* c) {
+								utils::remove_layer(*(Entity**)c);
 								app.start_game();
-							}, Mail());
+							}, Mail::from_p(layer));
 							utils::c_aligner(AlignxMiddle, AlignyFree);
 							utils::e_end_dialog();
 						}

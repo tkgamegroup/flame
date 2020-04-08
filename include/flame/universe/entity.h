@@ -56,6 +56,23 @@ namespace flame
 			return _is_child_of(p, this);
 		}
 
+		inline Entity* first_child(uint name_hash_check = 0) const
+		{
+			auto c = child_count() > 0 ? child(0) : nullptr;
+			if (name_hash_check)
+				return c->name_hash() == name_hash_check ? c : nullptr;
+			return c;
+		}
+
+		inline Entity* last_child(uint name_hash_check = 0) const
+		{
+			auto n = child_count();
+			auto c = n > 0 ? child(n - 1) : nullptr;
+			if (name_hash_check)
+				return c->name_hash() == name_hash_check ? c : nullptr;
+			return c;
+		}
+
 		FLAME_UNIVERSE_EXPORTS Array<Component*> get_components() const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);

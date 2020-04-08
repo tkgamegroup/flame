@@ -60,7 +60,7 @@ namespace flame
 						menu->close();
 				}
 
-				utils::get_top_layer(root)->remove_child(items, false);
+				((Entity*)items->gene)->remove_child(items, false);
 			}
 		}
 
@@ -81,17 +81,23 @@ namespace flame
 		{
 			if (!opened)
 			{
+				struct Capture
+				{
+					Entity* l;
+					Entity* i;
+				}capture;
+
 				if (mode == ModeContext)
 				{
-					auto layer = utils::add_layer(root, "menu", 0, false);
+					auto layer = utils::add_layer(root);
+					layer->set_name("layer_menu");
+					layer->on_removed_listeners.add([](void* c) {
+						(*(Entity**)c)->remove_children(0, -1, false);
+						return true;
+					}, Mail::from_p(layer));
 					auto items_element = items->get_component(cElement);
 					items_element->set_pos(Vec2f(pos));
 					items_element->set_scale(element->global_scale);
-					struct Capture
-					{
-						Entity* l;
-						Entity* i;
-					}capture;
 					capture.l = layer;
 					capture.i = items;
 					looper().add_event([](void* c, bool*) {
@@ -107,17 +113,14 @@ namespace flame
 					if (p)
 						close_subs(p);
 
-					auto layer = root->child_count() ? root->child(root->child_count() - 1) : nullptr;
+					auto layer = root->last_child();
 					if (layer)
 					{
-						if (layer->name_hash() == FLAME_CHASH("layer_menu"))
-						{
-							if (layer->dying_)
-								return;
-						}
-						else
+						if (layer->name_hash() != FLAME_CHASH("layer_menu"))
 							layer = nullptr;
 					}
+					auto new_layer = !layer;
+
 					if (mode == ModeSub)
 						assert(layer);
 					else
@@ -125,11 +128,20 @@ namespace flame
 						if (mode == ModeMenubar)
 						{
 							if (!layer)
-								layer = utils::add_layer(root, "menu", p, false);
+								layer = utils::add_layer(root, p);
 						}
 						else
-							layer = utils::add_layer(root, "menu", entity, false);
+							layer = utils::add_layer(root, entity);
 					}
+					if (new_layer)
+					{
+						layer->set_name("layer_menu");
+						layer->on_removed_listeners.add([](void* c) {
+							(*(Entity**)c)->remove_children(0, -1, false);
+							return true;
+						}, Mail::from_p(layer));
+					}
+
 					auto items_element = items->get_component(cElement);
 					switch (mode)
 					{
@@ -141,11 +153,6 @@ namespace flame
 						break;
 					}
 					items_element->set_scale(element->global_scale);
-					struct Capture
-					{
-						Entity* l;
-						Entity* i;
-					}capture;
 					capture.l = layer;
 					capture.i = items;
 					looper().add_event([](void* c, bool*) {
@@ -242,8 +249,12 @@ namespace flame
 					if (c_items)
 					{
 						auto menu = (cMenuPrivate*)c_items->menu;
-						if (utils::get_top_layer(menu->root, true, "menu"))
-							menu->close_subs(menu->items);
+						auto layer = menu->root->last_child();
+						if (layer)
+						{
+							if (layer->name_hash() == FLAME_CHASH("layer_menu"))
+								menu->close_subs(menu->items);
+						}
 					}
 					return true;
 				}, Mail::from_p(this));

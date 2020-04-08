@@ -1029,20 +1029,20 @@ namespace flame
 			c_text()->set_text(text);
 			struct Capture
 			{
-				Entity* root;
+				Entity* e;
 				bool close;
 				void(*f)(void*);
 			}capture;
-			capture.root = current_root();
+			capture.e = e;
 			capture.close = close_menu;
 			capture.f = func;
 			c_event_receiver()->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
-					auto& m = *(Capture*)c;
-					if (m.close)
-						remove_top_layer(m.root);
-					m.f((char*)c + sizeof(Capture));
+					auto& capture = *(Capture*)c;
+					if (capture.close)
+						remove_layer((Entity*)capture.e->gene);
+					capture.f((char*)c + sizeof(Capture));
 				}
 				return true;
 			}, Mail::expand_original(&capture, _capture));
@@ -1258,9 +1258,9 @@ namespace flame
 			pop_parent();
 		}
 
-		inline Entity* e_begin_dialog(const char* layer_name_suffix = nullptr)
+		inline Entity* e_begin_dialog()
 		{
-			auto l = add_layer(current_root(), layer_name_suffix ? layer_name_suffix : "dialog", nullptr, true, Vec4c(0, 0, 0, 127));
+			auto l = add_layer(current_root(), nullptr, true, Vec4c(0, 0, 0, 127));
 			set_current_entity(l);
 			c_layout();
 			push_parent(l);
@@ -1285,10 +1285,11 @@ namespace flame
 		inline Entity* e_message_dialog(const wchar_t* message)
 		{
 			auto e = e_begin_dialog();
+			auto l = e->parent();
 			e_text(message);
 			e_button(L"OK", [](void* c) {
-				remove_top_layer(*(Entity**)c);
-			}, Mail::from_p(current_root()));
+				remove_layer(*(Entity**)c);
+			}, Mail::from_p(l));
 			c_aligner(AlignxMiddle, AlignyFree);
 			e_end_dialog();
 			return e;
@@ -1297,24 +1298,25 @@ namespace flame
 		inline Entity* e_confirm_dialog(const wchar_t* title, void (*callback)(void* c, bool yes), const Mail& _capture)
 		{
 			auto e = e_begin_dialog();
+			auto l = e->parent();
 			e_text(title);
 			e_begin_layout(LayoutHorizontal, 4.f);
 			c_aligner(AlignxMiddle, AlignyFree);
 			struct Capture
 			{
-				Entity* r;
+				Entity* l;
 				void(*f)(void*, bool);
 			}capture;
-			capture.r = current_root();
+			capture.l = l;
 			capture.f = callback;
 			e_button(L"OK", [](void* c) {
 				auto& m = *(Capture*)c;
-				remove_top_layer(m.r);
+				remove_layer(m.l);
 				m.f((char*)c + sizeof(Capture), true);
 			}, Mail::expand_original(&capture, _capture));
 			e_button(L"Cancel", [](void* c) {
 				auto& m = *(Capture*)c;
-				remove_top_layer(m.r);
+				remove_layer(m.l);
 				m.f((char*)c + sizeof(Capture), false);
 			}, Mail::expand_original(&capture, _capture));
 			f_free(_capture.p);
@@ -1326,6 +1328,7 @@ namespace flame
 		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(void* c, bool ok, const wchar_t* text), const Mail& _capture, const wchar_t* default_text = nullptr)
 		{
 			auto e = e_begin_dialog();
+			auto l = e->parent();
 			e_text(title);
 			auto ct = e_edit(100.f)->get_component(cText);
 			if (default_text)
@@ -1334,21 +1337,21 @@ namespace flame
 			c_aligner(AlignxMiddle, AlignyFree);
 			struct Capture
 			{
-				Entity* r;
+				Entity* l;
 				cText* t;
 				void(*f)(void*, bool, const wchar_t*);
 			}capture;
-			capture.r = current_root();
+			capture.l = l;
 			capture.t = ct;
 			capture.f = callback;
 			e_button(L"OK", [](void* c) {
 				auto& m = *(Capture*)c;
-				remove_top_layer(m.r);
+				remove_layer(m.l);
 				m.f((char*)c + sizeof(Capture), true, m.t->text());
 			}, Mail::expand_original(&capture, _capture));
 			e_button(L"Cancel", [](void* c) {
 				auto& m = *(Capture*)c;
-				remove_top_layer(m.r);
+				remove_layer(m.l);
 				m.f((char*)c + sizeof(Capture), false, nullptr);
 			}, Mail::expand_original(&capture, _capture));
 			f_free(_capture.p);

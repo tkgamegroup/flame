@@ -83,7 +83,8 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						auto thiz = *(cBringToFrontPrivate**)c;
-						if (!utils::get_top_layer(thiz->entity->parent()->parent(), true))
+						auto l = thiz->entity->parent()->parent()->last_child(0);
+						if (!l || !SUS::starts_with(l->name(), "layer_"))
 						{
 							looper().add_event([](void* c, bool*) {
 								auto p = (*(Entity**)c)->parent();

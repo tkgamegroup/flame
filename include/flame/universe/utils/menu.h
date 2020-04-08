@@ -19,7 +19,7 @@ namespace flame
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					return true;
 				else if (is_mouse_move(action, key))
-					return get_top_layer(menu->root, true, "menu");
+					return menu->root->last_child(FLAME_CHASH("layer_menu"));
 			}
 			return false;
 		}

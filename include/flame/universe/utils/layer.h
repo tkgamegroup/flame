@@ -14,55 +14,19 @@ namespace flame
 
 	namespace utils
 	{
-		inline Entity* get_top_layer(Entity* parent, bool check = false, const char* name_suffix = nullptr)
+		inline void remove_layer(Entity* l)
 		{
-			if (parent->child_count() == 0)
-				return nullptr;
-			auto l = parent->child(parent->child_count() - 1);
-			if (l->dying_)
-				return nullptr;
-			if (check)
-			{
-				if (name_suffix)
-				{
-					if (l->name() != std::string("layer_") + name_suffix)
-						return nullptr;
-				}
-				else
-				{
-					if (!SUS::starts_with(l->name(), "layer_"))
-						return nullptr;
-				}
-			}
-			return l;
-		}
-
-		inline void remove_top_layer(Entity* parent, bool take = true)
-		{
-			auto l = get_top_layer(parent, true);
-			if (!l)
-				return;
-
-			if (take)
-				l->remove_children(0, -1, false);
-
-			l->dying_ = true;
-			auto dp = l->get_component(cDataKeeper);
-			if (dp)
-				parent->world()->get_system(sEventDispatcher)->next_focusing = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
-
+			l->set_name("");
 			looper().add_event([](void* c, bool*) {
 				auto l = *(Entity**)c;
 				l->parent()->remove_child(l);
 			}, Mail::from_p(l));
 		}
 
-		inline Entity* add_layer(Entity* parent, const char* name_suffix /* layer_* */, void* gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
+		inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
 		{
 			auto l = Entity::create();
-			l->set_name((std::string("layer_") + name_suffix).c_str());
-			parent->add_child(l);
-			
+			l->set_name("layer");
 			{
 				auto ed = parent->world()->get_system(sEventDispatcher);
 				auto focusing = ed->next_focusing;
@@ -75,32 +39,36 @@ namespace flame
 					l->add_component(c_data_keeper);
 				}
 			}
+			l->on_removed_listeners.add([](void* c) {
+				auto l = *(Entity**)c;
+				auto dp = l->get_component(cDataKeeper);
+				if (dp)
+					l->world()->get_system(sEventDispatcher)->next_focusing = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
+				return true;
+			}, Mail::from_p(l));
+			parent->add_child(l);
+			l->gene = l;
 
 			auto c_element = cElement::create();
 			c_element->color_ = col;
 			l->add_component(c_element);
 
 			auto c_event_receiver = cEventReceiver::create();
-			if (gene)
+			if (pass_gene)
 			{
 				c_event_receiver->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
 					if (er->entity->gene == *(void**)c)
 						*pass = true;
 					return true;
-				}, Mail::from_p(gene));
+				}, Mail::from_p(pass_gene));
 			}
 			if (!modal)
 			{
 				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						auto e = *(Entity**)c;
-						auto l = get_top_layer(e);
-						if (l)
-							remove_top_layer(e);
-					}
+						remove_layer(*(Entity**)c);
 					return true;
-				}, Mail::from_p(parent));
+				}, Mail::from_p(l));
 			}
 			l->add_component(c_event_receiver);
 

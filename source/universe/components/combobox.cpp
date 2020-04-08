@@ -62,7 +62,7 @@ namespace flame
 						auto thiz = *(cComboboxItemPrivate**)c;
 						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
 						auto combobox = menu->entity->get_component(cCombobox);
-						utils::remove_top_layer(menu->root);
+						utils::remove_layer((Entity*)thiz->entity->gene);
 						combobox->set_index(thiz->index);
 					}
 					return true;
