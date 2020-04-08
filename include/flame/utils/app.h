@@ -1,6 +1,5 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>

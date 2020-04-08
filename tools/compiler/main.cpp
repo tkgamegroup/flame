@@ -38,7 +38,7 @@ int main(int argc, char **args)
 	}
 
 	{
-		// reflect the setup about xml and json libraries so that can use xml/json easily
+		// reflect the setup about xml and json libraries
 
 		std::ifstream cmake_caches(flame_path + "build/CMakeCache.txt");
 		while (!cmake_caches.eof())
@@ -53,9 +53,9 @@ int main(int argc, char **args)
 			if (std::regex_search(line, res, reg_pugixml_include_dir))
 				cmakelists << "target_include_directories(" << name << " PRIVATE \"" << res[1].str() << "\")\n";
 			else if (std::regex_search(line, res, reg_pugixml_debug_static_library_path))
-				cmakelists << "target_link_libraries(" << name << " \"" << res[1].str() << "\")\n";
+				cmakelists << "target_link_libraries(" << name << "debug \"" << res[1].str() << "\")\n";
 			else if (std::regex_search(line, res, reg_pugixml_release_static_library_path))
-				cmakelists << "target_link_libraries(" << name << " \"" << res[1].str() << "\")\n";
+				cmakelists << "target_link_libraries(" << name << "optimized \"" << res[1].str() << "\")\n";
 			else if (std::regex_search(line, res, reg_njson_include_dir))
 				cmakelists << "target_include_directories(" << name << " PRIVATE \"" << res[1].str() << "\")\n";
 		}

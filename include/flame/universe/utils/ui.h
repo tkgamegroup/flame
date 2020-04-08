@@ -10,7 +10,7 @@
 #include <flame/universe/components/edit.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>-
+#include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/list.h>

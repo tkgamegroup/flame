@@ -84,7 +84,13 @@ namespace flame
 
 	void* load_module(const wchar_t* module_name)
 	{
-		return LoadLibraryW(module_name);
+		auto ret = LoadLibraryW(module_name);
+		if (!ret)
+		{
+			auto ec = GetLastError();
+			printf("load module err: %d\n", ec);
+		}
+		return ret;
 	}
 
 	void* get_module_func(void* module, const char* name)
@@ -253,6 +259,7 @@ namespace flame
 		STARTUPINFOW start_info = {};
 		start_info.cb = sizeof(STARTUPINFOW);
 		start_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+		start_info.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 		start_info.dwFlags |= STARTF_USESTDHANDLES;
 		PROCESS_INFORMATION proc_info = {};
 		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
