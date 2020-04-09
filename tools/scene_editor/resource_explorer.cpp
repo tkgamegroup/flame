@@ -270,14 +270,15 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		}
 		std::reverse(stems.begin(), stems.end());
 
-		for (auto& s : stems)
+		for (auto i = 0; i < stems.size(); i++)
 		{
+			auto& s = stems[i];
 			struct Capture
 			{
 				wchar_t p[256];
 			}capture;
 			wcscpy_s(capture.p, s.c_str());
-			utils::e_button(s.filename().c_str(), [](void* c) {
+			utils::e_button(i == 0 ? s.c_str() : s.filename().c_str(), [](void* c) {
 				auto& capture = *(Capture*)c;
 				app.resource_explorer->navigate(capture.p);
 			}, Mail::from_t(&capture));

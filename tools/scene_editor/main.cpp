@@ -152,7 +152,7 @@ void MyApp::load(const std::filesystem::path& _filepath)
 	prefab = Entity::create_from_file(world, filepath.c_str());
 	selected = nullptr;
 	if (editor)
-		editor->e_scene->add_child(prefab);
+		editor->e_base->add_child(prefab);
 	if (hierarchy)
 		hierarchy->refresh();
 }

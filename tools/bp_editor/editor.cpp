@@ -445,7 +445,7 @@ cEditor::cEditor() :
 	tnp.second->add_component(this);
 	c_tab_text = tnp.first->get_component(cText);
 
-		utils::e_begin_layout()->get_component(cElement)->clip_flags = ClipChildren;
+		utils::e_begin_layout()->get_component(cElement)->clip_flags = ClipSelf | ClipChildren;
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 			{
 				auto c_element = utils::e_element()->get_component(cElement);
@@ -469,11 +469,10 @@ cEditor::cEditor() :
 					}
 
 					auto scale = base_element->global_scale;
-					auto extent = slot_bezier_extent * scale;
 					auto line_width = 3.f * scale;
 
 					{
-						const auto grid_size = 50.f * base_element->global_scale;
+						const auto grid_size = 50.f * scale;
 						auto pos = base_element->global_pos;
 						auto size = element->global_size + grid_size * 2.f;
 						auto grid_number = Vec2i(size / grid_size) + 2;
@@ -494,6 +493,7 @@ cEditor::cEditor() :
 						}
 					}
 
+					auto extent = slot_bezier_extent * scale;
 					auto range = rect(element->global_pos, element->global_size);
 					for (auto i = 0; i < app.bp->node_count(); i++)
 					{
