@@ -7,13 +7,11 @@
 
 #include "../renderpath/canvas/canvas.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	struct Serializer_Atlas
 	{
-		RV(StringW, filename, n);
+		FLAME_RV(StringW, filename, 0);
 
 		Object* create(World* w)
 		{
@@ -34,7 +32,7 @@ namespace flame
 
 	struct Serializer_FontAtlas
 	{
-		RV(StringW, fonts, n);
+		FLAME_RV(StringW, fonts, 0);
 
 		Object* create(World* w)
 		{

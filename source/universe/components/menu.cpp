@@ -25,9 +25,9 @@ namespace flame
 			items = Entity::create();
 			{
 				auto ce = cElement::create();
-				ce->frame_thickness_ = 1.f;
-				ce->color_ = utils::style_4c(utils::FrameColorNormal).new_replacely<3>(255);
-				ce->frame_color_ = utils::style_4c(utils::ForegroundColor);
+				ce->frame_thickness = 1.f;
+				ce->color = utils::style_4c(utils::FrameColorNormal).new_replacely<3>(255);
+				ce->frame_color = utils::style_4c(utils::ForegroundColor);
 				items->add_component(ce);
 				items->add_component(cLayout::create(LayoutVertical));
 				items->add_component(cMenuItems::create());

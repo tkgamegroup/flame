@@ -21,16 +21,15 @@ struct App
 
 	graphics::Canvas* canvas;
 
-	FontAtlas* font_atlas_pixel;
-	FontAtlas* font_atlas_sdf;
+	FontAtlas* font_atlas;
 
 	void draw()
 	{
 		std::vector<Vec2f> points;
 		path_rect(points, Vec2f(100.f), Vec2f(200.f));
 		canvas->fill(points.size(), points.data(), Vec4c(255));
-		canvas->add_text(font_atlas_pixel, L"Hello World  ", 14, 1.f, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
-		canvas->add_text(font_atlas_sdf, L"中文", 0, 0.375f, Vec2f(100, 100), Vec4c(0, 0, 0, 255));
+		canvas->add_text(font_atlas, L"Hello World  ", nullptr, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
+		canvas->add_text(font_atlas, L"中文", nullptr, 14, Vec2f(100, 100), Vec4c(0, 0, 0, 255));
 	}
 
 	void run()
@@ -91,16 +90,9 @@ int main(int argc, char** args)
 			L"c:/windows/fonts/consola.ttf",
 			font_awesome_path.c_str(),
 		};
-		app.font_atlas_pixel = FontAtlas::create(app.d, FontDrawPixel, 2, fonts);
+		app.font_atlas = FontAtlas::create(app.d, 2, fonts);
 	}
-	app.canvas->add_font(app.font_atlas_pixel);
-	{
-		const wchar_t* fonts[] = {
-			L"c:/windows/fonts/simsun.ttc"
-		};
-		app.font_atlas_sdf = FontAtlas::create(app.d, FontDrawSdf, 1, fonts);
-	}
-	app.canvas->add_font(app.font_atlas_sdf);
+	app.canvas->add_font(app.font_atlas);
 
 	looper().loop([](void*) {
 		app.run();

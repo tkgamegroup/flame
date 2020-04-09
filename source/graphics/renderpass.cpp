@@ -2,8 +2,6 @@
 #include "device_private.h"
 #include "renderpass_private.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	namespace graphics
@@ -160,25 +158,25 @@ namespace flame
 			delete (RenderpassPrivate*)r;
 		}
 
-		struct R(R_AttachmentInfo)
+		struct FLAME_R(R_AttachmentInfo)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Format, format, i);
-			RV(bool, clear, i);
-			RV(SampleCount, sample_count, i);
+			FLAME_B0;
+			FLAME_RV(Format, format, i);
+			FLAME_RV(bool, clear, i);
+			FLAME_RV(SampleCount, sample_count, i);
 
-			BASE1;
-			RV(AttachmentInfo, out, o);
+			FLAME_B1;
+			FLAME_RV(AttachmentInfo, out, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_AttachmentInfo)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_AttachmentInfo)()
 			{
 				format = Format_R8G8B8A8_UNORM;
 				clear = true;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				auto out_updated = false;
@@ -203,24 +201,24 @@ namespace flame
 
 		};
 
-		struct R(R_SubpassInfo)
+		struct FLAME_R(R_SubpassInfo)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Array<uint>*, color_attachments, i);
-			RV(Array<uint>*, resolve_attachments, i);
-			RV(int, depth_attachment, i);
+			FLAME_B0;
+			FLAME_RV(Array<uint>*, color_attachments, i);
+			FLAME_RV(Array<uint>*, resolve_attachments, i);
+			FLAME_RV(int, depth_attachment, i);
 
-			BASE1;
-			RV(SubpassInfo, out, o);
+			FLAME_B1;
+			FLAME_RV(SubpassInfo, out, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_SubpassInfo)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_SubpassInfo)()
 			{
 				depth_attachment = -1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				auto out_updated = false;
@@ -246,19 +244,19 @@ namespace flame
 			}
 		};
 
-		struct R(R_Renderpass)
+		struct FLAME_R(R_Renderpass)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Array<AttachmentInfo*>*, attachments, i);
-			RV(Array<SubpassInfo*>*, subpasses, i);
-			RV(Array<Vec2u>*, dependencies, i);
+			FLAME_B0;
+			FLAME_RV(Array<AttachmentInfo*>*, attachments, i);
+			FLAME_RV(Array<SubpassInfo*>*, subpasses, i);
+			FLAME_RV(Array<Vec2u>*, dependencies, i);
 
-			BASE1;
-			RV(Renderpass*, out, o);
+			FLAME_B1;
+			FLAME_RV(Renderpass*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (attachments_s()->frame() > out_frame || subpasses_s()->frame() > out_frame || dependencies_s()->frame() > out_frame)
@@ -293,7 +291,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Renderpass)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Renderpass)()
 			{
 				if (out)
 					Renderpass::destroy((Renderpass*)out);
@@ -361,18 +359,18 @@ namespace flame
 			delete (ClearvaluesPrivate*)c;
 		}
 
-		struct R(R_Clearvalues)
+		struct FLAME_R(R_Clearvalues)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Renderpass*, renderpass, i);
-			RV(Array<Vec4c>*, colors, i);
+			FLAME_B0;
+			FLAME_RV(Renderpass*, renderpass, i);
+			FLAME_RV(Array<Vec4c>*, colors, i);
 
-			BASE1;
-			RV(Clearvalues*, out, o);
+			FLAME_B1;
+			FLAME_RV(Clearvalues*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				auto out_updated = false;
@@ -408,7 +406,7 @@ namespace flame
 					out_s()->set_frame(frame);
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Clearvalues)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Clearvalues)()
 			{
 				if (out)
 					Clearvalues::destroy(out);
@@ -471,18 +469,18 @@ namespace flame
 			delete (FramebufferPrivate*)f;
 		}
 
-		struct R(R_Framebuffer)
+		struct FLAME_R(R_Framebuffer)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Renderpass*, renderpass, i);
-			RV(Array<Imageview*>*, views, i);
+			FLAME_B0;
+			FLAME_RV(Renderpass*, renderpass, i);
+			FLAME_RV(Array<Imageview*>*, views, i);
 
-			BASE1;
-			RV(Framebuffer*, out, o);
+			FLAME_B1;
+			FLAME_RV(Framebuffer*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (renderpass_s()->frame() > out_frame || views_s()->frame() > out_frame)
@@ -502,7 +500,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Framebuffer)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Framebuffer)()
 			{
 				if (out)
 					Framebuffer::destroy(out);
@@ -655,27 +653,27 @@ namespace flame
 			delete (RenderpassAndFramebufferPrivate*)s;
 		}
 
-		struct R(R_RenderTarget)
+		struct FLAME_R(R_RenderTarget)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(TargetType, type, i);
-			RV(void*, v, i);
-			RV(bool, clear, i);
-			RV(Vec4c, clear_color, i);
+			FLAME_B0;
+			FLAME_RV(TargetType, type, i);
+			FLAME_RV(void*, v, i);
+			FLAME_RV(bool, clear, i);
+			FLAME_RV(Vec4c, clear_color, i);
 
-			BASE1;
-			RV(RenderTarget, out, o);
-			RV(Image*, first_image, o);
+			FLAME_B1;
+			FLAME_RV(RenderTarget, out, o);
+			FLAME_RV(Image*, first_image, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_RenderTarget)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_RenderTarget)()
 			{
 				clear = false;
 				clear_color = Vec4c(0);
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				auto out_updated = false;
@@ -702,24 +700,24 @@ namespace flame
 			}
 		};
 
-		struct R(R_SubpassTargetInfo)
+		struct FLAME_R(R_SubpassTargetInfo)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Array<RenderTarget*>*, color_targets, i);
-			RV(Array<RenderTarget*>*, resolve_targets, i);
-			RV(RenderTarget*, depth_target, i);
+			FLAME_B0;
+			FLAME_RV(Array<RenderTarget*>*, color_targets, i);
+			FLAME_RV(Array<RenderTarget*>*, resolve_targets, i);
+			FLAME_RV(RenderTarget*, depth_target, i);
 
-			BASE1;
-			RV(SubpassTargetInfo, out, o);
+			FLAME_B1;
+			FLAME_RV(SubpassTargetInfo, out, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_SubpassTargetInfo)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_SubpassTargetInfo)()
 			{
 				depth_target = nullptr;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				auto out_updated = false;
@@ -745,20 +743,20 @@ namespace flame
 			}
 		};
 
-		struct R(R_RenderpassAndFramebuffer)
+		struct FLAME_R(R_RenderpassAndFramebuffer)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Array<SubpassTargetInfo*>*, passes, i);
+			FLAME_B0;
+			FLAME_RV(Array<SubpassTargetInfo*>*, passes, i);
 
-			BASE1;
-			RV(RenderpassAndFramebuffer*, out, o);
-			RV(Renderpass*, rp, o);
-			RV(Array<Framebuffer*>, fbs, o);
-			RV(Clearvalues*, cv, o);
+			FLAME_B1;
+			FLAME_RV(RenderpassAndFramebuffer*, out, o);
+			FLAME_RV(Renderpass*, rp, o);
+			FLAME_RV(Array<Framebuffer*>, fbs, o);
+			FLAME_RV(Clearvalues*, cv, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				const auto check_target = [&](const RenderTarget& t) {
 					switch (t.type)
@@ -834,7 +832,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_RenderpassAndFramebuffer)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_RenderpassAndFramebuffer)()
 			{
 				if (out)
 					RenderpassAndFramebuffer::destroy(out);

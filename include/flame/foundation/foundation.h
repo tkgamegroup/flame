@@ -16,14 +16,15 @@
 #include <thread>
 #include <mutex>
 
-#ifdef FLAME_WINDOWS
-#define LOGI(...) {printf(__VA_ARGS__);printf("\n");}
-#define LOGW(...) {printf(__VA_ARGS__);printf("\n");}
-#elif FLAME_ANDROID
-#include <android/log.h>
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "flame", __VA_ARGS__))
-#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "flame", __VA_ARGS__))
-#endif
+#define FLAME_R(name) name
+#define FLAME_B0 enum { base0 = __LINE__ }
+#define FLAME_B1 enum { base1 = __LINE__ }
+#define FLAME_BPS(cond, name) FLAME_BPS##cond(name)
+#define FLAME_BPS0(name)
+#define FLAME_BPSi(name) inline BP::Slot* name##_s() { return n->input(__LINE__ - base0 - 1); }
+#define FLAME_BPSo(name) inline BP::Slot* name##_s() { return n->output(__LINE__ - base1 - 1); }
+#define FLAME_RV(type, name, io, ...) type name; FLAME_BPS(io, name) // io can be i, o or 0, means input, output or none of them
+#define FLAME_RF(name) name
 
 namespace flame
 {

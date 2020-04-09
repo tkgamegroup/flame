@@ -4,25 +4,23 @@
 
 #include "../renderpath/canvas/canvas.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	cElementPrivate::cElementPrivate()
 	{
 		renderer = nullptr;
 
-		pos_ = 0.f;
-		size_ = 0.f;
-		scale_ = 1.f;
-		pivot_ = 0.f;
-		padding_ = Vec4f(0.f);
-		alpha_ = 1.f;
-		roundness_ = Vec4f(0.f);
+		pos = 0.f;
+		size = 0.f;
+		scale = 1.f;
+		pivot = 0.f;
+		padding = Vec4f(0.f);
+		alpha = 1.f;
+		roundness = Vec4f(0.f);
 		roundness_lod = 0;
-		frame_thickness_ = 0.f;
-		color_ = Vec4c(0);
-		frame_color_ = Vec4c(255);
+		frame_thickness = 0.f;
+		color = Vec4c(0);
+		frame_color = Vec4c(255);
 		clip_flags = 0;
 
 		global_pos = 0.f;
@@ -48,16 +46,16 @@ namespace flame
 		auto p = entity->parent();
 		if (!p)
 		{
-			global_scale = scale_;
-			global_size = size_ * global_scale;
-			global_pos = pos_;
+			global_scale = scale;
+			global_size = size * global_scale;
+			global_pos = pos;
 		}
 		else
 		{
 			auto p_element = p->get_component(cElement);
-			global_scale = p_element->global_scale * scale_;
-			global_size = size_ * global_scale;
-			global_pos = p_element->global_pos + p_element->global_scale * pos_ - pivot_ * global_size;
+			global_scale = p_element->global_scale * scale;
+			global_size = size * global_scale;
+			global_pos = p_element->global_pos + p_element->global_scale * pos - pivot * global_size;
 		}
 
 		if (global_pos != last_global_pos)
@@ -84,17 +82,17 @@ namespace flame
 	{
 		if (!clipped)
 		{
-			if (alpha_ > 0.f)
+			if (alpha > 0.f)
 			{
 				std::vector<Vec2f> points;
-				path_rect(points, global_pos, global_size, roundness_ * global_scale, roundness_lod);
-				if (color_.w() > 0)
-					canvas->fill(points.size(), points.data(), color_.new_proply<3>(alpha_));
-				auto ft = frame_thickness_ * global_scale;
-				if (ft > 0.f && frame_color_.w() > 0)
+				path_rect(points, global_pos, global_size, roundness * global_scale, roundness_lod);
+				if (color.w() > 0)
+					canvas->fill(points.size(), points.data(), color.new_proply<3>(alpha));
+				auto ft = frame_thickness * global_scale;
+				if (ft > 0.f && frame_color.w() > 0)
 				{
 					points.push_back(points[0]);
-					canvas->stroke(points.size(), points.data(), frame_color_.new_proply<3>(alpha_), ft);
+					canvas->stroke(points.size(), points.data(), frame_color.new_proply<3>(alpha), ft);
 				}
 			}
 		}
@@ -118,137 +116,67 @@ namespace flame
 			renderer->pending_update = true;
 	}
 
-	void cElement::set_x(float x, bool add, void* sender)
+	void cElementPrivate::on_position_changed()
 	{
-		if (add && x == 0.f)
+		if (renderer)
+			renderer->pending_update = true;
+	}
+
+	void cElement::set_pos(const Vec2f& p, void* sender)
+	{
+		if (p == pos)
 			return;
-		if (!add && x == pos_.x())
-			return;
-		if (add)
-			pos_.x() += x;
-		else
-			pos_.x() = x;
+		pos = p;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
-	void cElement::set_y(float y, bool add, void* sender)
+	void cElement::set_scale(float s, void* sender)
 	{
-		if (add && y == 0.f)
+		if (s == scale)
 			return;
-		if (!add && y == pos_.y())
-			return;
-		if (add)
-			pos_.y() += y;
-		else
-			pos_.y() = y;
-		data_changed(FLAME_CHASH("pos"), sender);
-	}
-
-	void cElement::set_pos(const Vec2f& p, bool add, void* sender)
-	{
-		if (add && p == 0.f)
-			return;
-		if (!add && p == pos_)
-			return;
-		if (add)
-			pos_ += p;
-		else
-			pos_ = p;
-		data_changed(FLAME_CHASH("pos"), sender);
-	}
-
-	void cElement::set_scale(float s, bool add, void* sender)
-	{
-		if (add && s == 0.f)
-			return;
-		if (!add && s == scale_)
-			return;
-		if (add)
-			scale_ += s;
-		else
-			scale_ = s;
+		scale = s;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
-	void cElement::set_width(float w, bool add, void* sender)
+	void cElement::set_size(const Vec2f& s, void* sender)
 	{
-		if (add && w == 0.f)
+		if (s == size)
 			return;
-		if (!add && w == size_.x())
-			return;
-		if (add)
-			size_.x() += w;
-		else
-			size_.x() = w;
+		size = s;
+		if (renderer)
+			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("size"), sender);
 	}
 
-	void cElement::set_height(float h, bool add, void* sender)
+	void cElement::set_alpha(float a, void* sender)
 	{
-		if (add && h == 0.f)
+		if (a == alpha)
 			return;
-		if (!add && h == size_.y())
-			return;
-		if (add)
-			size_.y() += h;
-		else
-			size_.y() = h;
-		data_changed(FLAME_CHASH("size"), sender);
-	}
-
-	void cElement::set_size(const Vec2f& s, bool add, void* sender)
-	{
-		if (add && s == 0.f)
-			return;
-		if (!add && s == size_)
-			return;
-		if (add)
-			size_ += s;
-		else
-			size_ = s;
-		data_changed(FLAME_CHASH("size"), sender);
-	}
-
-	void cElement::set_alpha(float a, bool add, void* sender)
-	{
-		if (add && a == 0.f)
-			return;
-		if (!add && a == alpha_)
-			return;
-		if (add)
-			alpha_ += a;
-		else
-			alpha_ = a;
+		alpha = a;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("alpha"), sender);
 	}
 
-	void cElement::set_roundness(const Vec4f& r, bool add, void* sender)
+	void cElement::set_roundness(const Vec4f& r, void* sender)
 	{
-		if (add && r == 0.f)
+		if (r == roundness)
 			return;
-		if (!add && r == roundness_)
-			return;
-		if (add)
-			roundness_ += r;
-		else
-			roundness_ = r;
+		roundness = r;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("roundness"), sender);
 	}
 
-	void cElement::set_frame_thickness(float t, bool add, void* sender)
+	void cElement::set_frame_thickness(float t, void* sender)
 	{
-		if (add && t == 0.f)
+		if (t == frame_thickness)
 			return;
-		if (!add && t == frame_thickness_)
-			return;
-		if (add)
-			frame_thickness_ += t;
-		else
-			frame_thickness_ = t;
+		frame_thickness = t;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("frame_thickness"), sender);
@@ -256,24 +184,19 @@ namespace flame
 
 	void cElement::set_color(const Vec4c& c, void* sender)
 	{
-		if (c == color_)
+		if (c == color)
 			return;
-		color_ = c;
+		color = c;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("color"), sender);
 	}
 
-	void cElement::set_frame_color(const Vec4c& c, bool add, void* sender)
+	void cElement::set_frame_color(const Vec4c& c, void* sender)
 	{
-		if (add && c == (uchar)0)
+		if (c == frame_color)
 			return;
-		if (!add && c == frame_color_)
-			return;
-		if (add)
-			frame_color_ += c;
-		else
-			frame_color_ = c;
+		frame_color = c;
 		if (renderer)
 			renderer->pending_update = true;
 		data_changed(FLAME_CHASH("frame_color"), sender);

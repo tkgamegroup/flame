@@ -189,7 +189,7 @@ namespace flame
 		for (auto& c : e->components)
 			c.second->on_position_changed();
 		for (auto& c : components)
-			c.second->on_child_position_changed(e);
+			c.second->on_child_position_changed();
 	}
 
 	void EntityPrivate::mark_dying()

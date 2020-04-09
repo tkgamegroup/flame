@@ -1,24 +1,22 @@
 #include <flame/universe/utils/typeinfo.h>
 #include "app.h"
 
-#include <flame/reflect_macros.h>
-
-struct R(TestRenderTarget)
+struct FLAME_R(TestRenderTarget)
 {
 	BP::Node* n;
 
 	uint prev_hash;
 
-	BASE0;
-	RV(App::Window*, w, i);
+	FLAME_B0;
+	FLAME_RV(App::Window*, w, i);
 
-	BASE1;
-	RV(TargetType, type, o);
-	RV(Array<Image*>, images, o);
-	RV(Array<Commandbuffer*>, cbs, o);
-	RV(uint, image_idx, o);
+	FLAME_B1;
+	FLAME_RV(TargetType, type, o);
+	FLAME_RV(Array<Image*>, images, o);
+	FLAME_RV(Array<Commandbuffer*>, cbs, o);
+	FLAME_RV(uint, image_idx, o);
 
-	__declspec(dllexport) void RF(active_update)(uint frame)
+	__declspec(dllexport) void FLAME_RF(active_update)(uint frame)
 	{
 		auto sc = w ? w->sc : nullptr;
 		auto hash = sc ? sc->hash() : -1;
@@ -195,12 +193,12 @@ struct cSlot : Component
 						utils::push_parent(app.root);
 						thiz->tip_link = utils::e_begin_layout(LayoutVertical, 4.f);
 						auto c_element = thiz->tip_link->get_component(cElement);
-						c_element->pos_ = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
-						c_element->pivot_ = Vec2f(0.5f, 1.f);
-						c_element->padding_ = 4.f;
-						c_element->frame_thickness_ = 2.f;
-						c_element->color_ = Vec4c(200, 200, 200, 255);
-						c_element->frame_color_ = Vec4c(0, 0, 0, 255);
+						c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
+						c_element->pivot = Vec2f(0.5f, 1.f);
+						c_element->padding = 4.f;
+						c_element->frame_thickness = 2.f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->frame_color = Vec4c(0, 0, 0, 255);
 						{
 							auto s_type = s->type();
 							auto o_type = oth->type();
@@ -254,12 +252,12 @@ struct cSlot : Component
 						utils::push_parent(app.root);
 							thiz->tip_info = utils::e_begin_layout(LayoutVertical, 8.f);
 							auto c_element = thiz->tip_info->get_component(cElement);
-							c_element->pos_ = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
-							c_element->pivot_ = Vec2f(is_in ? 1.f : 0.f , 0.f);
-							c_element->padding_ = 4.f;
-							c_element->frame_thickness_ = 2.f;
-							c_element->color_ = Vec4c(200, 200, 200, 255);
-							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
+							c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
+							c_element->pivot = Vec2f(is_in ? 1.f : 0.f , 0.f);
+							c_element->padding = 4.f;
+							c_element->frame_thickness = 2.f;
+							c_element->color = Vec4c(200, 200, 200, 255);
+							c_element->frame_color = Vec4c(0, 0, 0, 255);
 
 							auto type = s->type();
 							auto tag = type->tag();
@@ -378,7 +376,7 @@ struct cNode : Component
 					for (auto& s : app.selected_nodes)
 					{
 						auto e = ((Entity*)s->user_data)->get_component(cElement);
-						e->set_pos((Vec2f)pos / e->global_scale, true);
+						e->add_pos((Vec2f)pos / e->global_scale);
 					}
 					thiz->moved = true;
 				}
@@ -395,12 +393,12 @@ struct cNode : Component
 						utils::push_parent(app.root);
 							thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
 							auto c_element = thiz->tip->get_component(cElement);
-							c_element->pos_ = thiz->element->global_pos - Vec2f(0.f, 8.f);
-							c_element->pivot_ = Vec2f(0.f, 1.f);
-							c_element->padding_ = 4.f;
-							c_element->frame_thickness_ = 2.f;
-							c_element->color_ = Vec4c(200, 200, 200, 255);
-							c_element->frame_color_ = Vec4c(0, 0, 0, 255);
+							c_element->pos = thiz->element->global_pos - Vec2f(0.f, 8.f);
+							c_element->pivot = Vec2f(0.f, 1.f);
+							c_element->padding = 4.f;
+							c_element->frame_thickness = 2.f;
+							c_element->color = Vec4c(200, 200, 200, 255);
+							c_element->frame_color = Vec4c(0, 0, 0, 255);
 								auto n = thiz->n;
 								std::wstring str;
 								auto udt = n->udt();
@@ -422,7 +420,7 @@ struct cNode : Component
 				{
 					std::vector<Vec2f> poses;
 					for (auto& s : app.selected_nodes)
-						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos_);
+						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos);
 					app.set_nodes_pos(app.selected_nodes, poses);
 					thiz->moved = false;
 				}
@@ -785,12 +783,12 @@ void cEditor::on_add_node(BP::Node* n)
 	n->user_data = e_node;
 	{
 		auto c_element = utils::c_element();
-		c_element->pos_ = n->pos;
-		c_element->roundness_ = 8.f;
+		c_element->pos = n->pos;
+		c_element->roundness = 8.f;
 		c_element->roundness_lod = 2;
-		c_element->frame_thickness_ = 4.f;
-		c_element->color_ = Vec4c(255, 255, 255, 200);
-		c_element->frame_color_ = unselected_col;
+		c_element->frame_thickness = 4.f;
+		c_element->color = Vec4c(255, 255, 255, 200);
+		c_element->frame_color = unselected_col;
 		utils::c_event_receiver();
 		utils::c_layout(LayoutVertical)->fence = 1;
 	}
@@ -816,7 +814,7 @@ void cEditor::on_add_node(BP::Node* n)
 			}, Mail::from_p(n));
 		utils::e_end_popup_menu();
 	utils::push_parent(e_node);
-		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->padding_ = Vec4f(8.f);
+		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->padding = Vec4f(8.f);
 			utils::push_style_1u(utils::FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 				if (c_node->n_type == 0)
@@ -826,7 +824,7 @@ void cEditor::on_add_node(BP::Node* n)
 					if (last_colon != std::wstring::npos)
 						str = std::wstring(str.begin() + last_colon + 1, str.end());
 					auto e_text = utils::e_text(str.c_str());
-					e_text->get_component(cElement)->padding_ = Vec4f(4.f, 2.f, 4.f, 2.f);
+					e_text->get_component(cElement)->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 					e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
 				}
 			utils::e_end_layout();
@@ -1003,10 +1001,10 @@ void cEditor::on_add_node(BP::Node* n)
 						{
 							auto c_element = utils::c_element();
 							auto r = utils::style_1u(utils::FontSize);
-							c_element->size_ = r;
-							c_element->roundness_ = r * 0.4f;
+							c_element->size = r;
+							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
-							c_element->color_ = Vec4c(200, 200, 200, 255);
+							c_element->color = Vec4c(200, 200, 200, 255);
 						}
 						{
 							auto c_text = utils::c_text();
@@ -1074,7 +1072,7 @@ void cEditor::on_add_node(BP::Node* n)
 						if (!input->link() && tag != TypePointer)
 						{
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
-							e_data->get_component(cElement)->padding_ = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
+							e_data->get_component(cElement)->padding = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
 
 							std::vector<TypeinfoDatabase*> dbs;
 							dbs.resize(app.bp->library_count());
@@ -1207,10 +1205,10 @@ void cEditor::on_add_node(BP::Node* n)
 						{
 							auto c_element = utils::c_element();
 							auto r = utils::style_1u(utils::FontSize);
-							c_element->size_ = r;
-							c_element->roundness_ = r * 0.4f;
+							c_element->size = r;
+							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
-							c_element->color_ = Vec4c(200, 200, 200, 255);
+							c_element->color = Vec4c(200, 200, 200, 255);
 						}
 						utils::c_event_receiver();
 						auto c_slot = new_object<cSlot>();
@@ -1261,8 +1259,8 @@ void cEditor::on_add_node(BP::Node* n)
 						nn->set_id(id.c_str());
 					}
 				}, Mail::from_p(n))->get_component(cElement);
-				c_element->padding_ = Vec4f(5.f, 2.f, 5.f, 2.f);
-				c_element->roundness_ = 8.f;
+				c_element->padding = Vec4f(5.f, 2.f, 5.f, 2.f);
+				c_element->roundness = 8.f;
 				c_element->roundness_lod = 2;
 				utils::c_aligner(AlignxMiddle, AlignyFree);
 			}
@@ -1314,7 +1312,7 @@ void cEditor::base_scale(int v)
 	else
 	{
 		auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - c_base_element->global_pos) / ((scale - v) * 0.1f);
-		c_base_element->set_pos(float(v) * p * -0.1f, true);
+		c_base_element->add_pos(float(v) * p * -0.1f);
 		c_base_element->set_scale(scale * 0.1f);
 		c_scale_text->set_text((std::to_wstring(scale * 10) + L"%").c_str());
 	}
@@ -1322,7 +1320,7 @@ void cEditor::base_scale(int v)
 
 void cEditor::base_move(const Vec2f& p)
 {
-	c_base_element->set_pos(p, true);
+	c_base_element->add_pos(p);
 	base_moved = true;
 }
 
@@ -1413,10 +1411,10 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		}, Mail());
 		utils::next_element_pos = pos;
 		auto c_element = utils::c_element();
-		c_element->padding_ = 4.f;
-		c_element->frame_thickness_ = 2.f;
-		c_element->color_ = utils::style_4c(utils::BackgroundColor);
-		c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+		c_element->padding = 4.f;
+		c_element->frame_thickness = 2.f;
+		c_element->color = utils::style_4c(utils::BackgroundColor);
+		c_element->frame_color = utils::style_4c(utils::ForegroundColor);
 		utils::c_layout(LayoutVertical)->item_padding = 4.f;
 		utils::push_parent(utils::current_entity());
 			if (dragging_slot)

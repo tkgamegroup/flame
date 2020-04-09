@@ -10,8 +10,6 @@
 
 #include "../renderpath/canvas/canvas.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
@@ -39,7 +37,7 @@ namespace flame
 		{
 			assert(font_atlas->canvas_slot_ != -1);
 			canvas->add_text(font_atlas, text.c_str(), text.c_str() + text.size(), font_size_ * element->global_scale, element->content_min(),
-				color_.new_proply<3>(element->alpha_));
+				color_.new_proply<3>(element->alpha));
 		}
 	}
 

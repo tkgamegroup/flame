@@ -2,8 +2,6 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/foundation/typeinfo.h>
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	struct BPPrivate;
@@ -1403,18 +1401,18 @@ namespace flame
 		delete(BPPrivate*)bp;
 	}
 
-	struct R(R_MakeVec2i)
+	struct FLAME_R(R_MakeVec2i)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(int, x, i);
-		RV(int, y, i);
+		FLAME_B0;
+		FLAME_RV(int, x, i);
+		FLAME_RV(int, y, i);
 
-		BASE1;
-		RV(Vec2i, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec2i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			auto out_updated = false;
@@ -1433,127 +1431,19 @@ namespace flame
 		}
 	};
 
-	struct R(R_MakeVec3i)
+	struct FLAME_R(R_MakeVec3i)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(int, x, i);
-		RV(int, y, i);
-		RV(int, z, i);
+		FLAME_B0;
+		FLAME_RV(int, x, i);
+		FLAME_RV(int, y, i);
+		FLAME_RV(int, z, i);
 
-		BASE1;
-		RV(Vec3i, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec3i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct R(R_MakeVec4i)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(int, x, i);
-		RV(int, y, i);
-		RV(int, z, i);
-		RV(int, w, i);
-
-		BASE1;
-		RV(Vec4i, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (w_s()->frame() > out_frame)
-			{
-				out[3] = w;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct R(R_MakeVec2u)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(uint, x, i);
-		RV(uint, y, i);
-
-		BASE1;
-		RV(Vec2u, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct R(R_MakeVec3u)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(uint, x, i);
-		RV(uint, y, i);
-		RV(uint, z, i);
-
-		BASE1;
-		RV(Vec3u, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			auto out_updated = false;
@@ -1577,20 +1467,20 @@ namespace flame
 		}
 	};
 
-	struct R(R_MakeVec4u)
+	struct FLAME_R(R_MakeVec4i)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(uint, x, i);
-		RV(uint, y, i);
-		RV(uint, z, i);
-		RV(uint, w, i);
+		FLAME_B0;
+		FLAME_RV(int, x, i);
+		FLAME_RV(int, y, i);
+		FLAME_RV(int, z, i);
+		FLAME_RV(int, w, i);
 
-		BASE1;
-		RV(Vec4u, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec4i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			auto out_updated = false;
@@ -1619,18 +1509,18 @@ namespace flame
 		}
 	};
 
-	struct R(R_MakeVec2f)
+	struct FLAME_R(R_MakeVec2u)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(float, x, i);
-		RV(float, y, i);
+		FLAME_B0;
+		FLAME_RV(uint, x, i);
+		FLAME_RV(uint, y, i);
 
-		BASE1;
-		RV(Vec2f, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec2u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			auto out_updated = false;
@@ -1649,127 +1539,19 @@ namespace flame
 		}
 	};
 
-	struct R(R_MakeVec3f)
+	struct FLAME_R(R_MakeVec3u)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(float, x, i);
-		RV(float, y, i);
-		RV(float, z, i);
+		FLAME_B0;
+		FLAME_RV(uint, x, i);
+		FLAME_RV(uint, y, i);
+		FLAME_RV(uint, z, i);
 
-		BASE1;
-		RV(Vec3f, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec3u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct R(R_MakeVec4f)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(float, x, i);
-		RV(float, y, i);
-		RV(float, z, i);
-		RV(float, w, i);
-
-		BASE1;
-		RV(Vec4f, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (w_s()->frame() > out_frame)
-			{
-				out[3] = w;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct R(R_MakeVec2c)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(uchar, x, i);
-		RV(uchar, y, i);
-
-		BASE1;
-		RV(Vec2c, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct R(R_MakeVec3c)
-	{
-		BP::Node* n;
-
-		BASE0;
-		RV(uchar, x, i);
-		RV(uchar, y, i);
-		RV(uchar, z, i);
-
-		BASE1;
-		RV(Vec3c, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			auto out_updated = false;
@@ -1793,20 +1575,20 @@ namespace flame
 		}
 	};
 
-	struct R(R_MakeVec4c)
+	struct FLAME_R(R_MakeVec4u)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(uchar, x, i);
-		RV(uchar, y, i);
-		RV(uchar, z, i);
-		RV(uchar, w, i);
+		FLAME_B0;
+		FLAME_RV(uint, x, i);
+		FLAME_RV(uint, y, i);
+		FLAME_RV(uint, z, i);
+		FLAME_RV(uint, w, i);
 
-		BASE1;
-		RV(Vec4c, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec4u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			auto out_updated = false;
@@ -1835,17 +1617,233 @@ namespace flame
 		}
 	};
 
-	struct R(R_FloatToUint)
+	struct FLAME_R(R_MakeVec2f)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(float, in, i);
+		FLAME_B0;
+		FLAME_RV(float, x, i);
+		FLAME_RV(float, y, i);
 
-		BASE1;
-		RV(uint, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		{
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
+			{
+				out[0] = x;
+				out_updated = true;
+			}
+			if (y_s()->frame() > out_frame)
+			{
+				out[1] = y;
+				out_updated = true;
+			}
+			if (out_updated)
+				out_s()->set_frame(frame);
+		}
+	};
+
+	struct FLAME_R(R_MakeVec3f)
+	{
+		BP::Node* n;
+
+		FLAME_B0;
+		FLAME_RV(float, x, i);
+		FLAME_RV(float, y, i);
+		FLAME_RV(float, z, i);
+
+		FLAME_B1;
+		FLAME_RV(Vec3f, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		{
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
+			{
+				out[0] = x;
+				out_updated = true;
+			}
+			if (y_s()->frame() > out_frame)
+			{
+				out[1] = y;
+				out_updated = true;
+			}
+			if (z_s()->frame() > out_frame)
+			{
+				out[2] = z;
+				out_updated = true;
+			}
+			if (out_updated)
+				out_s()->set_frame(frame);
+		}
+	};
+
+	struct FLAME_R(R_MakeVec4f)
+	{
+		BP::Node* n;
+
+		FLAME_B0;
+		FLAME_RV(float, x, i);
+		FLAME_RV(float, y, i);
+		FLAME_RV(float, z, i);
+		FLAME_RV(float, w, i);
+
+		FLAME_B1;
+		FLAME_RV(Vec4f, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		{
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
+			{
+				out[0] = x;
+				out_updated = true;
+			}
+			if (y_s()->frame() > out_frame)
+			{
+				out[1] = y;
+				out_updated = true;
+			}
+			if (z_s()->frame() > out_frame)
+			{
+				out[2] = z;
+				out_updated = true;
+			}
+			if (w_s()->frame() > out_frame)
+			{
+				out[3] = w;
+				out_updated = true;
+			}
+			if (out_updated)
+				out_s()->set_frame(frame);
+		}
+	};
+
+	struct FLAME_R(R_MakeVec2c)
+	{
+		BP::Node* n;
+
+		FLAME_B0;
+		FLAME_RV(uchar, x, i);
+		FLAME_RV(uchar, y, i);
+
+		FLAME_B1;
+		FLAME_RV(Vec2c, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		{
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
+			{
+				out[0] = x;
+				out_updated = true;
+			}
+			if (y_s()->frame() > out_frame)
+			{
+				out[1] = y;
+				out_updated = true;
+			}
+			if (out_updated)
+				out_s()->set_frame(frame);
+		}
+	};
+
+	struct FLAME_R(R_MakeVec3c)
+	{
+		BP::Node* n;
+
+		FLAME_B0;
+		FLAME_RV(uchar, x, i);
+		FLAME_RV(uchar, y, i);
+		FLAME_RV(uchar, z, i);
+
+		FLAME_B1;
+		FLAME_RV(Vec3c, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		{
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
+			{
+				out[0] = x;
+				out_updated = true;
+			}
+			if (y_s()->frame() > out_frame)
+			{
+				out[1] = y;
+				out_updated = true;
+			}
+			if (z_s()->frame() > out_frame)
+			{
+				out[2] = z;
+				out_updated = true;
+			}
+			if (out_updated)
+				out_s()->set_frame(frame);
+		}
+	};
+
+	struct FLAME_R(R_MakeVec4c)
+	{
+		BP::Node* n;
+
+		FLAME_B0;
+		FLAME_RV(uchar, x, i);
+		FLAME_RV(uchar, y, i);
+		FLAME_RV(uchar, z, i);
+		FLAME_RV(uchar, w, i);
+
+		FLAME_B1;
+		FLAME_RV(Vec4c, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		{
+			auto out_frame = out_s()->frame();
+			auto out_updated = false;
+			if (x_s()->frame() > out_frame)
+			{
+				out[0] = x;
+				out_updated = true;
+			}
+			if (y_s()->frame() > out_frame)
+			{
+				out[1] = y;
+				out_updated = true;
+			}
+			if (z_s()->frame() > out_frame)
+			{
+				out[2] = z;
+				out_updated = true;
+			}
+			if (w_s()->frame() > out_frame)
+			{
+				out[3] = w;
+				out_updated = true;
+			}
+			if (out_updated)
+				out_s()->set_frame(frame);
+		}
+	};
+
+	struct FLAME_R(R_FloatToUint)
+	{
+		BP::Node* n;
+
+		FLAME_B0;
+		FLAME_RV(float, in, i);
+
+		FLAME_B1;
+		FLAME_RV(uint, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			if (in_s()->frame() > out_frame)
@@ -1856,18 +1854,18 @@ namespace flame
 		}
 	};
 
-	struct R(R_Add)
+	struct FLAME_R(R_Add)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(float, a, i);
-		RV(float, b, i);
+		FLAME_B0;
+		FLAME_RV(float, a, i);
+		FLAME_RV(float, b, i);
 
-		BASE1;
-		RV(float, out, o);
+		FLAME_B1;
+		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame)
@@ -1878,18 +1876,18 @@ namespace flame
 		}
 	};
 
-	struct R(R_Multiple)
+	struct FLAME_R(R_Multiple)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(float, a, i);
-		RV(float, b, i);
+		FLAME_B0;
+		FLAME_RV(float, a, i);
+		FLAME_RV(float, b, i);
 
-		BASE1;
-		RV(float, out, o);
+		FLAME_B1;
+		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame)
@@ -1900,15 +1898,15 @@ namespace flame
 		}
 	};
 
-	struct R(R_Time)
+	struct FLAME_R(R_Time)
 	{
 		BP::Node* n;
 
-		BASE1;
-		RV(float, delta, o);
-		RV(float, total, o);
+		FLAME_B1;
+		FLAME_RV(float, delta, o);
+		FLAME_RV(float, total, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			delta = looper().delta_time;
 			total = n->scene()->time;
@@ -1917,19 +1915,19 @@ namespace flame
 		}
 	};
 
-	struct R(R_LinearInterpolation1d)
+	struct FLAME_R(R_LinearInterpolation1d)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(float, a, i);
-		RV(float, b, i);
-		RV(float, t, i);
+		FLAME_B0;
+		FLAME_RV(float, a, i);
+		FLAME_RV(float, b, i);
+		FLAME_RV(float, t, i);
 
-		BASE1;
-		RV(float, out, o);
+		FLAME_B1;
+		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
@@ -1940,19 +1938,19 @@ namespace flame
 		}
 	};
 
-	struct R(R_LinearInterpolation2d)
+	struct FLAME_R(R_LinearInterpolation2d)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(Vec2f, a, i);
-		RV(Vec2f, b, i);
-		RV(float, t, i);
+		FLAME_B0;
+		FLAME_RV(Vec2f, a, i);
+		FLAME_RV(Vec2f, b, i);
+		FLAME_RV(float, t, i);
 
-		BASE1;
-		RV(Vec2f, out, o);
+		FLAME_B1;
+		FLAME_RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			auto out_frame = out_s()->frame();
 			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
@@ -1963,14 +1961,14 @@ namespace flame
 		}
 	};
 
-	struct R(R_KeyListener)
+	struct FLAME_R(R_KeyListener)
 	{
 		BP::Node* n;
 
-		BASE0;
-		RV(Key, key, i);
+		FLAME_B0;
+		FLAME_RV(Key, key, i);
 
-		FLAME_FOUNDATION_EXPORTS void RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 
 		}

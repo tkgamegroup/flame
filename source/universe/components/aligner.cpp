@@ -26,9 +26,9 @@ namespace flame
 			{
 				element = (cElement*)c;
 				if (min_width_ < 0.f && width_policy_ == SizeGreedy)
-					min_width_ = element->size_.x();
+					min_width_ = element->size.x();
 				if (min_height_ < 0.f && height_policy_ == SizeGreedy)
-					min_height_ = element->size_.y();
+					min_height_ = element->size.y();
 			}
 		}
 	};
@@ -107,7 +107,7 @@ namespace flame
 		if (v == using_padding_)
 			return;
 		using_padding_ = v;
-		data_changed(FLAME_CHASH("using_padding"), sender);
+		data_changed(FLAME_CHASH("using_padding_"), sender);
 	}
 
 }

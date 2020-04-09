@@ -293,7 +293,7 @@ namespace flame
 					points.push_back(p + Vec2f(font_atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end)));
 					points[0].x() += 1.f;
 					points.push_back(points[0] + Vec2f(0.f, font_size));
-					canvas->stroke(points.size(), points.data(), c_text->color_.new_proply<3>(element->alpha_), 2.f);
+					canvas->stroke(points.size(), points.data(), c_text->color_.new_proply<3>(element->alpha), 2.f);
 				}
 			}
 		}

@@ -50,7 +50,7 @@ namespace flame
 			l->gene = l;
 
 			auto c_element = cElement::create();
-			c_element->color_ = col;
+			c_element->color = col;
 			l->add_component(c_element);
 
 			auto c_event_receiver = cEventReceiver::create();

@@ -30,6 +30,7 @@ namespace flame
 		void on_child_visibility_changed() override;
 		void on_child_component_added(Component* c) override;
 		void on_child_component_removed(Component* c) override;
+		void on_child_position_changed() override;
 		void update();
 	};
 }

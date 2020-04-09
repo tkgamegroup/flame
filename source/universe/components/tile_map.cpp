@@ -4,8 +4,6 @@
 
 #include "../renderpath/canvas/canvas.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	struct Cell

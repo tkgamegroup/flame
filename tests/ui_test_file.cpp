@@ -27,8 +27,8 @@ int main(int argc, char** args)
 		auto e_scene = utils::e_element();
 		{
 			auto c_element = e_scene->get_component(cElement);
-			c_element->size_ = 500.f;
-			c_element->frame_thickness_ = 2.f;
+			c_element->size = 500.f;
+			c_element->frame_thickness = 2.f;
 		}
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
@@ -42,9 +42,9 @@ int main(int argc, char** args)
 					e_scene->add_child(e_box1);
 					{
 						auto c_element = cElement::create();
-						c_element->pos_ = 50.f;
-						c_element->size_ = 400.f;
-						c_element->color_ = Vec4c(255, 0, 0, 255);
+						c_element->pos = 50.f;
+						c_element->size = 400.f;
+						c_element->color = Vec4c(255, 0, 0, 255);
 						e_box1->add_component(c_element);
 					}
 
@@ -52,9 +52,9 @@ int main(int argc, char** args)
 					e_box1->add_child(e_box2);
 					{
 						auto c_element = cElement::create();
-						c_element->pos_ = 50.f;
-						c_element->size_ = 300.f;
-						c_element->color_ = Vec4c(255, 255, 0, 255);
+						c_element->pos = 50.f;
+						c_element->size = 300.f;
+						c_element->color = Vec4c(255, 255, 0, 255);
 						e_box2->add_component(c_element);
 					}
 
@@ -62,8 +62,8 @@ int main(int argc, char** args)
 					e_box2->add_child(e_text);
 					{
 						auto c_element = cElement::create();
-						c_element->pos_.x() = 12.f;
-						c_element->pos_.y() = 8.f;
+						c_element->pos.x() = 12.f;
+						c_element->pos.y() = 8.f;
 						e_text->add_component(c_element);
 
 						auto c_text = cText::create(app.font_atlas);

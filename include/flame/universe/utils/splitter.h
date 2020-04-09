@@ -13,7 +13,7 @@ namespace flame
 		inline void make_splitter(Entity* e, SplitterType type)
 		{
 			auto ce = cElement::create();
-			ce->size_ = 8.f;
+			ce->size = 8.f;
 			e->add_component(ce);
 			e->add_component(cEventReceiver::create());
 			auto cs = cStyleColor::create();

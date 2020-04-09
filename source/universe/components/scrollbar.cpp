@@ -115,34 +115,34 @@ namespace flame
 			if (type == ScrollbarVertical)
 			{
 				auto content_size = target_layout->content_size.y() + 20.f;
-				if (target_element->size_.y() > 0.f)
+				if (target_element->size.y() > 0.f)
 				{
-					if (content_size > target_element->size_.y())
-						element->set_height(target_element->size_.y() / content_size * scrollbar->element->size_.y());
+					if (content_size > target_element->size.y())
+						element->set_height(target_element->size.y() / content_size * scrollbar->element->size.y());
 					else
 						element->set_height(0.f);
 				}
 				else
 					element->set_height(0.f);
-				v += element->pos_.y();
-				element->set_y(element->size_.y() > 0.f ? clamp(v, 0.f, scrollbar->element->size_.y() - element->size_.y()) : 0.f);
-				target_layout->set_y_scroll_offset(-int(element->pos_.y() / scrollbar->element->size_.y() * content_size / step) * step);
+				v += element->pos.y();
+				element->set_y(element->size.y() > 0.f ? clamp(v, 0.f, scrollbar->element->size.y() - element->size.y()) : 0.f);
+				target_layout->set_y_scroll_offset(-int(element->pos.y() / scrollbar->element->size.y() * content_size / step) * step);
 			}
 			else
 			{
 				auto content_size = target_layout->content_size.x() + 20.f;
-				if (target_element->size_.x() > 0.f)
+				if (target_element->size.x() > 0.f)
 				{
-					if (content_size > target_element->size_.x())
-						element->set_width(target_element->size_.x() / content_size * scrollbar->element->size_.x());
+					if (content_size > target_element->size.x())
+						element->set_width(target_element->size.x() / content_size * scrollbar->element->size.x());
 					else
 						element->set_width(0.f);
 				}
 				else
 					element->set_width(0.f);
-				v += element->pos_.x();
-				element->set_x(element->size_.x() > 0.f ? clamp(v, 0.f, scrollbar->element->size_.x() - element->size_.x()) : 0.f);
-				target_layout->set_x_scroll_offset(-int(element->pos_.x() / scrollbar->element->size_.x() * content_size / step) * step);
+				v += element->pos.x();
+				element->set_x(element->size.x() > 0.f ? clamp(v, 0.f, scrollbar->element->size.x() - element->size.x()) : 0.f);
+				target_layout->set_x_scroll_offset(-int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step);
 			}
 			v = 0.f;
 		}

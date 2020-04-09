@@ -16,12 +16,12 @@ namespace flame
 		{
 			e->set_name("docker_floating_container");
 			auto ce = cElement::create();
-			ce->pos_ = pos;
-			ce->size_ = size + Vec2f(16.f, 28.f + style_1u(FontSize));
-			ce->padding_ = Vec4f(8.f, 16.f, 8.f, 8.f);
-			ce->frame_thickness_ = 2.f;
-			ce->color_ = style_4c(BackgroundColor);
-			ce->frame_color_ = style_4c(ForegroundColor);
+			ce->pos = pos;
+			ce->size = size + Vec2f(16.f, 28.f + style_1u(FontSize));
+			ce->padding = Vec4f(8.f, 16.f, 8.f, 8.f);
+			ce->frame_thickness = 2.f;
+			ce->color = style_4c(BackgroundColor);
+			ce->frame_color = style_4c(ForegroundColor);
 			e->add_component(ce);
 			e->add_component(cEventReceiver::create());
 			e->add_component(cLayout::create(LayoutFree));
@@ -46,8 +46,8 @@ namespace flame
 				auto e_sd = Entity::create();
 				e->add_child(e_sd);
 				auto ce = cElement::create();
-				ce->size_ = 8.f;
-				ce->color_ = style_4c(FrameColorHovering);
+				ce->size = 8.f;
+				ce->color = style_4c(FrameColorHovering);
 				e_sd->add_component(ce);
 				e_sd->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();
@@ -84,8 +84,8 @@ namespace flame
 		{
 			e->set_name("docker");
 			auto ce = cElement::create();
-			ce->frame_thickness_ = 1.f;
-			ce->frame_color_ = style_4c(ForegroundColor);
+			ce->frame_thickness = 1.f;
+			ce->frame_color = style_4c(ForegroundColor);
 			e->add_component(ce);
 			auto ca = cAligner::create();
 			ca->x_align_ = AlignxLeft;
@@ -118,7 +118,7 @@ namespace flame
 				ep->set_name("docker_pages");
 				e->add_child(ep);
 				auto ce = cElement::create();
-				ce->padding_ = 2.f;
+				ce->padding = 2.f;
 				ep->add_component(ce);
 				ep->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();

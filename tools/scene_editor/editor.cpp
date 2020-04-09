@@ -158,7 +158,7 @@ cEditor::cEditor() :
 							canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 255, 255), 6.f);
 
 							if (app.editor->tool_type > 0)
-								app.editor->c_transform_tool_element->set_pos(se->center() - element->global_pos - app.editor->c_transform_tool_element->size_ * 0.5f);
+								app.editor->c_transform_tool_element->set_pos(se->center() - element->global_pos - app.editor->c_transform_tool_element->size * 0.5f);
 						}
 					}
 					else
@@ -194,8 +194,8 @@ cEditor::cEditor() :
 			utils::push_parent(e_overlayer);
 				utils::e_empty();
 				c_transform_tool_element = utils::c_element();
-				c_transform_tool_element->size_ = 20.f;
-				c_transform_tool_element->frame_thickness_ = 2.f;
+				c_transform_tool_element->size = 20.f;
+				c_transform_tool_element->frame_thickness = 2.f;
 				{
 					auto c_event_receiver = utils::c_event_receiver();
 					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -204,7 +204,7 @@ cEditor::cEditor() :
 						{
 							auto e = app.selected->get_component(cElement);
 							if (e)
-								e->set_pos(Vec2f(pos), true);
+								e->add_pos(Vec2f(pos));
 						}
 						return true;
 					}, Mail::from_t(c_event_receiver));
@@ -221,9 +221,9 @@ cEditor::cEditor() :
 					utils::e_empty();
 					{
 						auto c_element = utils::c_element();
-						c_element->pos_ = Vec2f(25.f, 5.f);
-						c_element->size_ = Vec2f(20.f, 10.f);
-						c_element->frame_thickness_ = 2.f;
+						c_element->pos = Vec2f(25.f, 5.f);
+						c_element->size = Vec2f(20.f, 10.f);
+						c_element->frame_thickness = 2.f;
 
 						auto c_event_receiver = utils::c_event_receiver();
 						c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -248,9 +248,9 @@ cEditor::cEditor() :
 					utils::e_empty();
 					{
 						auto c_element = utils::c_element();
-						c_element->pos_ = Vec2f(5.f, 25.f);
-						c_element->size_ = Vec2f(10.f, 20.f);
-						c_element->frame_thickness_ = 2.f;
+						c_element->pos = Vec2f(5.f, 25.f);
+						c_element->size = Vec2f(10.f, 20.f);
+						c_element->frame_thickness = 2.f;
 
 						auto c_event_receiver = utils::c_event_receiver();
 						c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -320,7 +320,7 @@ void cEditor::base_scale(int v)
 	else
 	{
 		auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - c_base_element->global_pos) / ((scale - v) * 0.1f);
-		c_base_element->set_pos(float(v) * p * -0.1f, true);
+		c_base_element->add_pos(float(v) * p * -0.1f);
 		c_base_element->set_scale(scale * 0.1f);
 		c_scale_text->set_text((std::to_wstring(scale * 10) + L"%").c_str());
 	}
@@ -328,6 +328,6 @@ void cEditor::base_scale(int v)
 
 void cEditor::base_move(const Vec2f& p)
 {
-	c_base_element->set_pos(p, true);
+	c_base_element->add_pos(p);
 	base_moved = true;
 }

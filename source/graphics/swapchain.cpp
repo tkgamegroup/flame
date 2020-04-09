@@ -10,8 +10,6 @@
 #include <android_native_app_glue.h>
 #endif
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	namespace graphics
@@ -282,20 +280,20 @@ namespace flame
 			}
 		}
 
-		struct R(R_Swapchain)
+		struct FLAME_R(R_Swapchain)
 		{
 			BP::Node* n;
 
 			uint prev_hash;
 
-			BASE0;
-			RV(Swapchain*, sc, i);
+			FLAME_B0;
+			FLAME_RV(Swapchain*, sc, i);
 
-			BASE1;
-			RV(Array<Image*>, images, o);
-			RV(uint, image_idx, o);
+			FLAME_B1;
+			FLAME_RV(Array<Image*>, images, o);
+			FLAME_RV(uint, image_idx, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(active_update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(active_update)(uint frame)
 			{
 				if (sc->hash() != prev_hash)
 				{
@@ -311,7 +309,7 @@ namespace flame
 				image_idx_s()->set_frame(frame);
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Swapchain)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Swapchain)()
 			{
 			}
 		};

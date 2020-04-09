@@ -5,8 +5,6 @@
 #include <flame/graphics/shader.h>
 #include "graphics_private.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	struct SerializableNode;
@@ -82,13 +80,13 @@ namespace flame
 			uint hash;
 		};
 
-		struct R(BlendOptions)
+		struct FLAME_R(BlendOptions)
 		{
-			RV(bool, enable, n);
-			RV(BlendFactor, src_color, n);
-			RV(BlendFactor, dst_color, n);
-			RV(BlendFactor, src_alpha, n);
-			RV(BlendFactor, dst_alpha, n);
+			FLAME_RV(bool, enable, 0);
+			FLAME_RV(BlendFactor, src_color, 0);
+			FLAME_RV(BlendFactor, dst_color, 0);
+			FLAME_RV(BlendFactor, src_alpha, 0);
+			FLAME_RV(BlendFactor, dst_alpha, 0);
 
 			/*
 				if (Enable)

@@ -8,8 +8,6 @@
 #include "image_private.h"
 #include "shader_private.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	namespace graphics
@@ -621,14 +619,14 @@ namespace flame
 			delete (CommandbufferPrivate*)c;
 		}
 
-		struct R(R_Commandbuffer)
+		struct FLAME_R(R_Commandbuffer)
 		{
 			BP::Node* n;
 
-			BASE1;
-			RV(Commandbuffer*, out, o);
+			FLAME_B1;
+			FLAME_RV(Commandbuffer*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				if (out_s()->frame() == -1)
 				{
@@ -645,7 +643,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Commandbuffer)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Commandbuffer)()
 			{
 				if (out)
 					Commandbuffer::destroy((Commandbuffer*)out);
@@ -653,17 +651,17 @@ namespace flame
 
 		};
 
-		struct R(R_Commandbuffers)
+		struct FLAME_R(R_Commandbuffers)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(uint, size, i);
+			FLAME_B0;
+			FLAME_RV(uint, size, i);
 
-			BASE1;
-			RV(Array<Commandbuffer*>, out, o);
+			FLAME_B1;
+			FLAME_RV(Array<Commandbuffer*>, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				if (size_s()->frame() > out_s()->frame())
 				{
@@ -686,7 +684,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Commandbuffers)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Commandbuffers)()
 			{
 				for (auto i = 0; i < out.s; i++)
 					Commandbuffer::destroy(out[i]);

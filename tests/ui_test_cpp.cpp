@@ -57,8 +57,8 @@ struct MyApp : App
 						utils::next_element_size = 250.f;
 						{
 							auto c_element = utils::e_image(img_id << 16, 4.f)->get_component(cElement);
-							c_element->frame_thickness_ = 2.f;
-							c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+							c_element->frame_thickness = 2.f;
+							c_element->frame_color = utils::style_4c(utils::ForegroundColor);
 						}
 						utils::e_edit(100.f);
 					utils::e_end_layout();
@@ -67,8 +67,8 @@ struct MyApp : App
 					utils::e_begin_layout(LayoutVertical, 16.f);
 						{
 							auto c_element = utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f)->get_component(cElement);
-							c_element->frame_thickness_ = 2.f;
-							c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+							c_element->frame_thickness = 2.f;
+							c_element->frame_color = utils::style_4c(utils::ForegroundColor);
 							utils::e_begin_list(true);
 							for (auto i = 0; i < 10; i++)
 								utils::e_list_item((L"item" + std::to_wstring(i)).c_str());
@@ -78,8 +78,8 @@ struct MyApp : App
 
 						{
 							auto c_element = utils::e_begin_tree(false, 4.f)->get_component(cElement);
-							c_element->frame_thickness_ = 2.f;
-							c_element->frame_color_ = utils::style_4c(utils::ForegroundColor);
+							c_element->frame_thickness = 2.f;
+							c_element->frame_color = utils::style_4c(utils::ForegroundColor);
 								utils::e_begin_tree_node(L"A");
 									utils::e_tree_leaf(L"C");
 									utils::e_tree_leaf(L"D");
@@ -115,7 +115,7 @@ struct MyApp : App
 			utils::next_element_size = Vec2f(200.f, 200.f);
 			utils::e_begin_docker_floating_container();
 				utils::e_begin_docker();
-					utils::e_begin_docker_page(L"ResourceExplorer").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+					utils::e_begin_docker_page(L"ResourceExplorer").second->get_component(cElement)->color = utils::style_4c(utils::FrameColorNormal);
 						utils::e_text(L"flower.png  main.cpp");
 					utils::e_end_docker_page();
 				utils::e_end_docker();
@@ -126,18 +126,18 @@ struct MyApp : App
 			utils::e_begin_docker_floating_container();
 				utils::e_begin_docker_layout(LayoutHorizontal);
 					utils::e_begin_docker();
-						utils::e_begin_docker_page(L"TextEditor").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+						utils::e_begin_docker_page(L"TextEditor").second->get_component(cElement)->color = utils::style_4c(utils::FrameColorNormal);
 							utils::e_text(L"printf(\"Hello World!\\n\");");
 						utils::e_end_docker_page();
 					utils::e_end_docker();
 					utils::e_begin_docker_layout(LayoutVertical);
 						utils::e_begin_docker();
-							utils::e_begin_docker_page(L"Hierarchy").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+							utils::e_begin_docker_page(L"Hierarchy").second->get_component(cElement)->color = utils::style_4c(utils::FrameColorNormal);
 								utils::e_text(L"Node A\n--Node B");
 							utils::e_end_docker_page();
 						utils::e_end_docker();
 						utils::e_begin_docker();
-							utils::e_begin_docker_page(L"Inspector").second->get_component(cElement)->color_ = utils::style_4c(utils::FrameColorNormal);
+							utils::e_begin_docker_page(L"Inspector").second->get_component(cElement)->color = utils::style_4c(utils::FrameColorNormal);
 								utils::e_text(L"Name: James Bond\nID: 007");
 							utils::e_end_docker_page();
 						utils::e_end_docker();

@@ -8,8 +8,6 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	namespace graphics
@@ -207,17 +205,17 @@ namespace flame
 			return ((FontAtlasPrivate*)this)->imageview;
 		}
 
-		struct R(R_FontAtlas)
+		struct FLAME_R(R_FontAtlas)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Array<StringW>*, fonts, i);
+			FLAME_B0;
+			FLAME_RV(Array<StringW>*, fonts, i);
 
-			BASE1;
-			RV(FontAtlas*, out, o);
+			FLAME_B1;
+			FLAME_RV(FontAtlas*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (fonts_s()->frame() > out_frame)
@@ -236,7 +234,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_FontAtlas)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_FontAtlas)()
 			{
 				if (out)
 					FontAtlas::destroy(out);

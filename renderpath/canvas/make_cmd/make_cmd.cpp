@@ -6,8 +6,6 @@
 
 #include "../canvas.h"
 
-#include <flame/reflect_macros.h>
-
 using namespace flame;
 using namespace graphics;
 
@@ -66,23 +64,23 @@ struct Vertex
 	Vec4c col;
 };
 
-struct R(MakeCmd)
+struct FLAME_R(MakeCmd)
 {
 	BP::Node* n;
 
-	BASE0;
-	RV(Array<Commandbuffer*>*, cbs, i);
-	RV(Buffer*, vtx_buf, i);
-	RV(Buffer*, idx_buf, i);
-	RV(RenderpassAndFramebuffer*, rnf, i);
-	RV(uint, image_idx, i);
-	RV(Pipelinelayout*, pll, i);
-	RV(Pipeline*, pl, i);
-	RV(Descriptorset*, ds, i);
-	RV(Imageview*, white_iv, i);
+	FLAME_B0;
+	FLAME_RV(Array<Commandbuffer*>*, cbs, i);
+	FLAME_RV(Buffer*, vtx_buf, i);
+	FLAME_RV(Buffer*, idx_buf, i);
+	FLAME_RV(RenderpassAndFramebuffer*, rnf, i);
+	FLAME_RV(uint, image_idx, i);
+	FLAME_RV(Pipelinelayout*, pll, i);
+	FLAME_RV(Pipeline*, pl, i);
+	FLAME_RV(Descriptorset*, ds, i);
+	FLAME_RV(Imageview*, white_iv, i);
 
-	BASE1;
-	RV(Canvas*, canvas, o);
+	FLAME_B1;
+	FLAME_RV(Canvas*, canvas, o);
 
 	Vec4c clear_color;
 
@@ -107,7 +105,7 @@ struct R(MakeCmd)
 	{
 	}
 
-	__declspec(dllexport) RF(~MakeCmd)()
+	__declspec(dllexport) FLAME_RF(~MakeCmd)()
 	{
 		delete (CanvasPrivate*)canvas;
 		f_free(capture.p);
@@ -313,6 +311,8 @@ struct R(MakeCmd)
 		while (pstr != text_end)
 		{
 			auto ch = *pstr;
+			if (!ch)
+				break;
 			if (ch == '\n')
 			{
 				pos.y() += font_size;
@@ -399,7 +399,7 @@ struct R(MakeCmd)
 		idx_cnt += 6;
 	}
 
-	__declspec(dllexport) void RF(update)(uint _frame)
+	__declspec(dllexport) void FLAME_RF(update)(uint _frame)
 	{
 		vtx_end = vtx_buf ? (Vertex*)vtx_buf->mapped : nullptr;
 		idx_end = idx_buf ? (uint*)idx_buf->mapped : nullptr;

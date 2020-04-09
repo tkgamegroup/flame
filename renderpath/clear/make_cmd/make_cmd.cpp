@@ -2,21 +2,19 @@
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/renderpass.h>
 
-#include <flame/reflect_macros.h>
-
 using namespace flame;
 using namespace graphics;
 
-struct R(MakeCmd)
+struct FLAME_R(MakeCmd)
 {
 	BP::Node* n;
 
-	BASE0;
-	RV(Array<Commandbuffer*>*, cbs, i);
-	RV(RenderpassAndFramebuffer*, rnf, i);
-	RV(uint, image_idx, i);
+	FLAME_B0;
+	FLAME_RV(Array<Commandbuffer*>*, cbs, i);
+	FLAME_RV(RenderpassAndFramebuffer*, rnf, i);
+	FLAME_RV(uint, image_idx, i);
 
-	__declspec(dllexport) void RF(update)(uint _frame)
+	__declspec(dllexport) void FLAME_RF(update)(uint _frame)
 	{
 		if (cbs && rnf)
 		{

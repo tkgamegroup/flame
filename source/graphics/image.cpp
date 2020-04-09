@@ -8,8 +8,6 @@
 #include "commandbuffer_private.h"
 #include "shader_private.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	namespace graphics
@@ -427,24 +425,24 @@ namespace flame
 			delete (ImagePrivate*)i;
 		}
 
-		struct R(R_Image)
+		struct FLAME_R(R_Image)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Format, format, i);
-			RV(Vec2u, size, i);
-			RV(uint, level, i);
-			RV(uint, layer, i);
-			RV(SampleCount, sample_count, i);
-			RV(ImageUsage, usage, i, m);
-			RV(bool, init_with_color, i);
-			RV(Vec4c, init_color, i);
+			FLAME_B0;
+			FLAME_RV(Format, format, i);
+			FLAME_RV(Vec2u, size, i);
+			FLAME_RV(uint, level, i);
+			FLAME_RV(uint, layer, i);
+			FLAME_RV(SampleCount, sample_count, i);
+			FLAME_RV(ImageUsage, usage, i, m);
+			FLAME_RV(bool, init_with_color, i);
+			FLAME_RV(Vec4c, init_color, i);
 
-			BASE1;
-			RV(Image*, out, o);
+			FLAME_B1;
+			FLAME_RV(Image*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_Image)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_Image)()
 			{
 				format = Format_R8G8B8A8_UNORM;
 				size = 4;
@@ -453,7 +451,7 @@ namespace flame
 				usage = ImageUsageSampled;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (format_s()->frame() > out_frame || size_s()->frame() > out_frame || level_s()->frame() > out_frame || layer_s()->frame() > out_frame || sample_count_s()->frame() > out_frame || usage_s()->frame() > out_frame)
@@ -477,25 +475,25 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Image)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Image)()
 			{
 				if (out)
 					Image::destroy(out);
 			}
 		};
 
-		struct R(R_ImageInspector)
+		struct FLAME_R(R_ImageInspector)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Image*, in, i);
+			FLAME_B0;
+			FLAME_RV(Image*, in, i);
 
-			BASE1;
-			RV(Format, format, o);
-			RV(Vec2u, size, o);
+			FLAME_B1;
+			FLAME_RV(Format, format, o);
+			FLAME_RV(Vec2u, size, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto in_frame = in_s()->frame();
 				if (in_frame > format_s()->frame() || in_frame > size_s()->frame())
@@ -592,33 +590,33 @@ namespace flame
 			delete (ImageviewPrivate*)v;
 		}
 
-		struct R(R_Imageview)
+		struct FLAME_R(R_Imageview)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Image*, image, i);
-			RV(ImageviewType, type, i);
-			RV(uint, base_level, i);
-			RV(uint, level_count, i);
-			RV(uint, base_layer, i);
-			RV(uint, layer_count, i);
-			RV(Swizzle, swizzle_r, i);
-			RV(Swizzle, swizzle_g, i);
-			RV(Swizzle, swizzle_b, i);
-			RV(Swizzle, swizzle_a, i);
+			FLAME_B0;
+			FLAME_RV(Image*, image, i);
+			FLAME_RV(ImageviewType, type, i);
+			FLAME_RV(uint, base_level, i);
+			FLAME_RV(uint, level_count, i);
+			FLAME_RV(uint, base_layer, i);
+			FLAME_RV(uint, layer_count, i);
+			FLAME_RV(Swizzle, swizzle_r, i);
+			FLAME_RV(Swizzle, swizzle_g, i);
+			FLAME_RV(Swizzle, swizzle_b, i);
+			FLAME_RV(Swizzle, swizzle_a, i);
 
-			BASE1;
-			RV(Imageview*, out, o);
+			FLAME_B1;
+			FLAME_RV(Imageview*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_Imageview)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_Imageview)()
 			{
 				type = Imageview2D;
 				level_count = 1;
 				layer_count = 1;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (image_s()->frame() > out_frame || type_s()->frame() > out_frame || 
@@ -639,7 +637,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Imageview)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Imageview)()
 			{
 				if (out)
 					Imageview::destroy(out);
@@ -647,17 +645,17 @@ namespace flame
 
 		};
 
-		struct R(R_ImageviewGeneral)
+		struct FLAME_R(R_ImageviewGeneral)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Image*, image, i);
+			FLAME_B0;
+			FLAME_RV(Image*, image, i);
 
-			BASE1;
-			RV(Imageview*, out, o);
+			FLAME_B1;
+			FLAME_RV(Imageview*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				if (image_s()->frame() > out_s()->frame())
 				{
@@ -675,24 +673,24 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_ImageviewGeneral)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_ImageviewGeneral)()
 			{
 				if (out)
 					Imageview::destroy(out);
 			}
 		};
 
-		struct R(R_ImageviewsGeneral)
+		struct FLAME_R(R_ImageviewsGeneral)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(Array<Image*>*, images, i);
+			FLAME_B0;
+			FLAME_RV(Array<Image*>*, images, i);
 
-			BASE1;
-			RV(Array<Imageview*>, out, o);
+			FLAME_B1;
+			FLAME_RV(Array<Imageview*>, out, o);
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				if (images_s()->frame() > out_s()->frame())
 				{
@@ -714,7 +712,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_ImageviewsGeneral)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_ImageviewsGeneral)()
 			{
 				for (auto i = 0; i < out.s; i++)
 					Imageview::destroy(out[i]);

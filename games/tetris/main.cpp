@@ -306,9 +306,9 @@ struct MyApp : App
 		utils::next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
 		{
 			auto ce = utils::c_element();
-			ce->frame_thickness_ = 6.f * scale;
-			ce->color_ = Vec4c(30, 30, 30, 255);
-			ce->frame_color_ = Vec4c(255);
+			ce->frame_thickness = 6.f * scale;
+			ce->color = Vec4c(30, 30, 30, 255);
+			ce->frame_color = Vec4c(255);
 			ce->clip_flags = ClipChildren;;
 		}
 
@@ -337,8 +337,8 @@ struct MyApp : App
 			utils::next_element_size = Vec2f(block_size * 4 + 8.f);
 			{
 				auto ce = utils::c_element();
-				ce->padding_ = Vec4f(4.f);
-				ce->color_ = Vec4c(30, 30, 30, 255);
+				ce->padding = Vec4f(4.f);
+				ce->color = Vec4c(30, 30, 30, 255);
 			}
 			{
 				p.c_hold = cTileMap::create();
@@ -356,13 +356,13 @@ struct MyApp : App
 			utils::next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * array_size(p.c_next) + 8.f - 45.f);
 			{
 				auto ce = utils::c_element();
-				ce->color_ = Vec4c(30, 30, 30, 255);
+				ce->color = Vec4c(30, 30, 30, 255);
 			}
 			auto create_next_board = [&](int i, int base, float y_off, float block_size) {
 				utils::e_empty();
 				utils::next_element_pos = pos + Vec2f(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
 				utils::next_element_size = Vec2f(block_size * 4 + 8.f);
-				utils::c_element()->padding_ = Vec4f(4.f);
+				utils::c_element()->padding = Vec4f(4.f);
 				{
 					p.c_next[i] = cTileMap::create();
 					p.c_next[i]->cell_size_ = Vec2f(block_size);
@@ -702,7 +702,7 @@ struct MyApp : App
 	{
 		utils::push_parent(root);
 		utils::next_element_size = Vec2f(500.f, 0.f);
-		utils::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->padding_ = 8.f;
+		utils::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->padding = 8.f;
 		utils::c_aligner(SizeFixed, SizeFitParent)->x_align_ = AlignxMiddle;
 			utils::push_style_1u(utils::FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 8.f);
@@ -717,7 +717,7 @@ struct MyApp : App
 					}, Mail::from_p(c_text));
 				}
 			utils::e_end_layout();
-			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f)->get_component(cElement)->frame_thickness_ = 2.f;
+			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f)->get_component(cElement)->frame_thickness = 2.f;
 				auto e_room_list = utils::e_begin_list(true);
 				utils::e_end_list();
 			utils::e_end_scroll_view1();
@@ -1885,14 +1885,14 @@ struct MyApp : App
 										{
 											auto cell_size = c_main->cell_size_;
 											auto board_element = c_main->element;
-											auto pos = board_element->global_pos + Vec2f(board_element->padding_[0], board_element->padding_[1]);
+											auto pos = board_element->global_pos + Vec2f(board_element->padding[0], board_element->padding[1]);
 											pos.y() += i * cell_size.y();
 											utils::push_parent(root);
 											utils::next_element_pos = pos;
 											utils::next_element_size = Vec2f(cell_size.x() * board_width, cell_size.y());
 											utils::e_empty();
 											auto element = utils::c_element();
-											element->color_ = Vec4c(255);
+											element->color = Vec4c(255);
 											utils::pop_parent();
 
 											struct Capture
@@ -1907,11 +1907,11 @@ struct MyApp : App
 												capture.f--;
 												if (capture.f > 0)
 												{
-													capture.e->pos_.x() -= 10.f;
-													capture.e->size_.x() += 20.f;
-													capture.e->pos_.y() += 2.4f;
-													capture.e->size_.y() -= 4.8f;
-													capture.e->color_.a() = max(capture.e->color_.a() - 30, 0);
+													capture.e->pos.x() -= 10.f;
+													capture.e->size.x() += 20.f;
+													capture.e->pos.y() += 2.4f;
+													capture.e->size.y() -= 4.8f;
+													capture.e->color.a() = max(capture.e->color.a() - 30, 0);
 													*go_on = true;
 												}
 												else

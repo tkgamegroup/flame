@@ -33,6 +33,6 @@ namespace flame
 		virtual void on_visibility_changed() {}
 		virtual void on_child_visibility_changed() {}
 		virtual void on_position_changed() {}
-		virtual void on_child_position_changed(Entity* e) {}
+		virtual void on_child_position_changed() {}
 	};
 }

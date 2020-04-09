@@ -17,9 +17,9 @@ int main(int argc, char** args)
 
 	utils::push_parent(app.root);
 		utils::e_begin_splitter(SplitterHorizontal);
-		utils::e_element()->get_component(cElement)->color_ = Vec4c(255, 0, 0, 255);
+		utils::e_element()->get_component(cElement)->color = Vec4c(255, 0, 0, 255);
 		utils::c_aligner(SizeFitParent, SizeFitParent);
-		utils::e_element()->get_component(cElement)->color_ = Vec4c(0, 255, 0, 255);
+		utils::e_element()->get_component(cElement)->color = Vec4c(0, 255, 0, 255);
 		utils::c_aligner(SizeFitParent, SizeFitParent);
 		utils::e_end_splitter();
 	utils::pop_parent();

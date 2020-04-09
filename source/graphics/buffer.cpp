@@ -3,8 +3,6 @@
 #include "buffer_private.h"
 #include "commandbuffer_private.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	namespace graphics
@@ -160,24 +158,24 @@ namespace flame
 			delete (BufferPrivate*)b;
 		}
 
-		struct R(R_Buffer)
+		struct FLAME_R(R_Buffer)
 		{
 			BP::Node* n;
 
-			BASE0;
-			RV(uint, size, i);
-			RV(BufferUsage, usage, i, m);
-			RV(MemProp, mem_prop, i, m);
+			FLAME_B0;
+			FLAME_RV(uint, size, i);
+			FLAME_RV(BufferUsage, usage, i, m);
+			FLAME_RV(MemProp, mem_prop, i, m);
 
-			BASE1;
-			RV(Buffer*, out, o);
+			FLAME_B1;
+			FLAME_RV(Buffer*, out, o);
 
-			FLAME_GRAPHICS_EXPORTS RF(R_Buffer)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_Buffer)()
 			{
 				mem_prop = MemPropDevice;
 			}
 
-			FLAME_GRAPHICS_EXPORTS void RF(update)(uint frame)
+			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
 			{
 				auto out_frame = out_s()->frame();
 				if (size_s()->frame() > out_frame || usage_s()->frame() > out_frame || mem_prop_s()->frame() > out_frame)
@@ -215,7 +213,7 @@ namespace flame
 				}
 			}
 
-			FLAME_GRAPHICS_EXPORTS RF(~R_Buffer)()
+			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Buffer)()
 			{
 				if (out)
 					Buffer::destroy(out);

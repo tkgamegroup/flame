@@ -4,8 +4,6 @@
 
 #include "../renderpath/canvas/canvas.h"
 
-#include <flame/reflect_macros.h>
-
 namespace flame
 {
 	struct cImagePrivate : cImage
@@ -47,7 +45,7 @@ namespace flame
 			if (!element->clipped)
 			{
 				canvas->add_image(element->content_min(), element->content_size(), id, 
-					uv0, uv1, color.new_proply<3>(element->alpha_));
+					uv0, uv1, color.new_proply<3>(element->alpha));
 			}
 		}
 	};

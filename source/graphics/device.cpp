@@ -413,7 +413,7 @@ namespace flame
 			device_info.pEnabledFeatures = &features;
 			chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &v));
 
-			LOGI("vulkan initialized, gpu count: %d", gpu_count);
+			printf("vulkan initialized, gpu count: %d", gpu_count);
 
 			sp_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
 			sp_linear = Sampler::create(this, FilterLinear, FilterLinear, false);

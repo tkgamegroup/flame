@@ -22,5 +22,6 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 		void on_visibility_changed() override;
+		void on_position_changed() override;
 	};
 }
