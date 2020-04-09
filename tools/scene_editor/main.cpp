@@ -19,7 +19,11 @@ void add_window(pugi::xml_node n)
 	}
 	else if (name == "docker")
 	{
-		utils::e_begin_docker();
+		auto ca = utils::e_begin_docker()->get_component(cAligner);
+		if (utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal)
+			ca->width_factor_ = n.attribute("r").as_int();
+		else
+			ca->height_factor_ = n.attribute("r").as_int();
 		for (auto c : n.children())
 		{
 			if (c.name() == std::string("page"))
@@ -146,8 +150,11 @@ void MyApp::load(const std::filesystem::path& _filepath)
 	if (prefab)
 		prefab->parent()->remove_child(prefab);
 	prefab = Entity::create_from_file(world, filepath.c_str());
+	selected = nullptr;
 	if (editor)
 		editor->e_scene->add_child(prefab);
+	if (hierarchy)
+		hierarchy->refresh();
 }
 
 int main(int argc, char **args)

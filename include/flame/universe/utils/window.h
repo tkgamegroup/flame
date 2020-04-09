@@ -114,7 +114,9 @@ namespace flame
 				auto ep = Entity::create();
 				ep->set_name("docker_pages");
 				e->add_child(ep);
-				ep->add_component(cElement::create());
+				auto ce = cElement::create();
+				ce->padding_ = 2.f;
+				ep->add_component(ce);
 				ep->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();
 				ca->width_policy_ = SizeFitParent;

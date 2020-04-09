@@ -156,7 +156,7 @@ cResourceExplorer::cResourceExplorer() :
 		e_page->add_component(this);
 	}
 
-	base_path = L"..";
+	base_path = L"../../../tools/scene_editor";
 
 		address_bar = utils::e_empty();
 		utils::c_element();
@@ -229,12 +229,15 @@ cResourceExplorer::~cResourceExplorer()
 
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
 {
+	utils::push_style_4c(utils::FrameColorNormal, Vec4c(0));
 	auto e_item = utils::e_list_item(L"", false);
+	utils::pop_style(utils::FrameColorNormal);
 	utils::c_layout(LayoutVertical)->item_padding = 4.f;
 	utils::push_parent(e_item);
 	utils::next_element_size = 64.f;
 	utils::e_image(img_id << 16);
-	utils::e_text(app.font_atlas->wrap_text(utils::style_1u(utils::FontSize), 64.f, title.c_str(), title.c_str() + title.size()).v);
+	utils::e_text(app.font_atlas->wrap_text(utils::style_1u(utils::FontSize), 64.f, 
+		title.c_str(), title.c_str() + title.size()).v);
 	utils::pop_parent();
 	return e_item;
 }
@@ -330,7 +333,6 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			}
 		}
 		utils::push_parent(list);
-		utils::push_style_4c(utils::FrameColorNormal, Vec4c(0));
 		for (auto& p : dirs)
 		{
 			auto item = app.resource_explorer->create_listitem(p.filename().wstring(), app.resource_explorer->folder_img_idx);
@@ -394,7 +396,6 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			}
 			utils::pop_parent();
 		}
-		utils::pop_style(utils::FrameColorNormal);
 		utils::pop_parent();
 	}, Mail::from_p(this));
 }

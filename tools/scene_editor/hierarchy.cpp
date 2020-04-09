@@ -230,6 +230,7 @@ void cHierarchy::refresh_selected()
 void cHierarchy::refresh()
 {
 	e_tree->remove_children(0, -1);
+	e_tree->get_component(cTree)->selected = nullptr;
 	if (app.prefab)
 	{
 		utils::push_parent(e_tree);

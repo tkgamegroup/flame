@@ -1245,8 +1245,10 @@ namespace flame
 			{
 				auto ce = c_element();
 				ce->color_ = style_4c(BackgroundColor);
+				ce->frame_thickness_ = 1.f;
+				ce->frame_color_ = style_4c(ForegroundColor);
 				ce->clip_flags = ClipChildren;
-				c_aligner(SizeFitParent, SizeFitParent);
+				c_aligner(SizeFitParent, SizeFitParent)->using_padding_ = true;
 			}
 			pop_parent();
 			push_parent(ep);

@@ -268,15 +268,14 @@ namespace flame
 				}
 			}
 
-			if (dbclick_timer > 0.f)
-			{
-				dbclick_timer -= looper().delta_time;
-				if (dbclick_timer <= 0.f)
-					dbclick_timer = -1.f;
-			}
 		}
-		else
-			dbclick_timer = -1.f;
+
+		if (dbclick_timer > 0.f)
+		{
+			dbclick_timer -= looper().delta_time;
+			if (dbclick_timer <= 0.f)
+				dbclick_timer = -1.f;
+		}
 
 		if (focusing && focusing_state == FocusingAndActive)
 		{
@@ -349,6 +348,8 @@ namespace flame
 					e = e->parent();
 				}
 			}
+
+			dbclick_timer = -1.f;
 		}
 
 		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
