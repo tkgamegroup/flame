@@ -815,6 +815,38 @@ void MyApp::show_test_render_target(BP::Node* n)
 	}
 }
 
+void add_window(pugi::xml_node n)
+{
+	std::string name(n.name());
+	if (name == "layout")
+	{
+		utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical);
+		for (auto c : n.children())
+			add_window(c);
+		utils::e_end_docker_layout();
+	}
+	else if (name == "docker")
+	{
+		auto ca = utils::e_begin_docker()->get_component(cAligner);
+		if (utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal)
+			ca->width_factor_ = n.attribute("r").as_int();
+		else
+			ca->height_factor_ = n.attribute("r").as_int();
+		for (auto c : n.children())
+		{
+			if (c.name() == std::string("page"))
+			{
+				std::string window(c.attribute("name").value());
+				if (window == "editor")
+					app.editor = new cEditor;
+				else if (window == "console")
+					app.console = new cConsole;
+			}
+		}
+		utils::e_end_docker();
+	}
+}
+
 bool MyApp::create(const char* filename)
 {
 	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
@@ -1021,27 +1053,10 @@ bool MyApp::create(const char* filename)
 
 			utils::e_begin_docker_static_container();
 			if (window_layout_root)
-			{
-				for (auto n_window : window_layout_root.child("static"))
-				{
-					std::string name = n_window.name();
-					utils::e_begin_docker();
-					if (name == "editor")
-						editor = new cEditor();
-					utils::e_end_docker();
-				}
-			}
+				add_window(window_layout_root.child("static").first_child());
 			utils::e_end_docker_static_container();
 
 		utils::e_end_layout();
-
-		if (window_layout_root)
-		{
-			for (auto n_window : window_layout_root.child("floating"))
-			{
-
-			}
-		}
 
 		utils::push_style_1u(utils::FontSize, 30);
 		e_notification = utils::e_text(L"");

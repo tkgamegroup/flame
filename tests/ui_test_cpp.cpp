@@ -97,15 +97,15 @@ struct MyApp : App
 
 				utils::e_end_layout();
 
-				{
-					auto e = utils::e_text(L"");
-					e->on_destroyed_listeners.add([](void* c) {
-						looper().remove_event(*(void**)c);
-						return true;
-					}, Mail::from_p(add_fps_listener([](void* c, uint fps) {
-						(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-					}, Mail::from_p(e->get_component(cText)))));
-				}
+				//{
+				//	auto e = utils::e_text(L"");
+				//	e->on_destroyed_listeners.add([](void* c) {
+				//		looper().remove_event(*(void**)c);
+				//		return true;
+				//	}, Mail::from_p(add_fps_listener([](void* c, uint fps) {
+				//		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
+				//	}, Mail::from_p(e->get_component(cText)))));
+				//}
 			utils::e_end_layout();
 
 			//utils::e_begin_docker_static_container();

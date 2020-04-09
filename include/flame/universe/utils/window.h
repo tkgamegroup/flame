@@ -83,7 +83,10 @@ namespace flame
 		inline void make_docker(Entity* e)
 		{
 			e->set_name("docker");
-			e->add_component(cElement::create());
+			auto ce = cElement::create();
+			ce->frame_thickness_ = 1.f;
+			ce->frame_color_ = style_4c(ForegroundColor);
+			e->add_component(ce);
 			auto ca = cAligner::create();
 			ca->x_align_ = AlignxLeft;
 			ca->y_align_ = AlignyTop;

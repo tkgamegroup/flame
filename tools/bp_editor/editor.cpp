@@ -468,7 +468,6 @@ cEditor::cEditor() :
 						canvas->stroke(points.size(), points.data(), Vec4c(17, 193, 101, 255), 2.f);
 					}
 
-					auto range = rect(element->global_pos, element->global_size);
 					auto scale = base_element->global_scale;
 					auto extent = slot_bezier_extent * scale;
 					auto line_width = 3.f * scale;
@@ -495,6 +494,7 @@ cEditor::cEditor() :
 						}
 					}
 
+					auto range = rect(element->global_pos, element->global_size);
 					for (auto i = 0; i < app.bp->node_count(); i++)
 					{
 						auto n = app.bp->node(i);
@@ -1165,7 +1165,7 @@ void cEditor::on_add_node(BP::Node* n)
 									create_vec_edit<4, uchar>(this, input);
 									break;
 								case FLAME_CHASH("flame::StringA"):
-									utils::e_edit(50.f)£»
+									utils::e_edit(50.f);
 
 									e_data->add_component(new_object<cStringADataTracker>(input->data(), [](void* c, const char* v) {
 										app.set_data(*(BP::Slot**)c, (void*)v, true);
