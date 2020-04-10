@@ -79,7 +79,7 @@ int main(int argc, char** args)
 	app.sc->link_bp(bp, &app.cbs);
 	bp->update();
 	app.canvas = (Canvas*)bp->find_output("make_cmd.canvas")->data_p();
-	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	app.canvas->clear_color = Vec4c(100, 100, 100, 255);
 	app.canvas->set_draw([](void*) {
 		app.draw();
 	}, Mail());

@@ -5,11 +5,11 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	auto config = std::string(args[1]);
+	auto action = std::string(args[1]);
 
 	std::string name;
 	std::vector<std::string> libraries;
-	auto compile_otions = parse_ini_file(L"compile_otions.ini");
+	auto compile_otions = parse_ini_file(L"library_description.ini");
 	for (auto& e : compile_otions.get_section_entries(""))
 	{
 		if (e.key == "name")
@@ -33,8 +33,8 @@ int main(int argc, char **args)
 	cmakelists << "target_include_directories(" << name << " PRIVATE \"" << flame_path << "include\")\n";
 	for (auto& l : libraries)
 	{
-		cmakelists << "target_link_libraries(" << name << " debug \"" << flame_path << "bin/debug/" << l << "\")\n";
-		cmakelists << "target_link_libraries(" << name << " optimized \"" << flame_path << "bin/relwithdebinfo/" << l << "\")\n";
+		cmakelists << "target_link_libraries(" << name << " debug \"" << flame_path << "bin/debug/" << l << ".lib\")\n";
+		cmakelists << "target_link_libraries(" << name << " optimized \"" << flame_path << "bin/relwithdebinfo/" << l << ".lib\")\n";
 	}
 
 	{
@@ -53,9 +53,9 @@ int main(int argc, char **args)
 			if (std::regex_search(line, res, reg_pugixml_include_dir))
 				cmakelists << "target_include_directories(" << name << " PRIVATE \"" << res[1].str() << "\")\n";
 			else if (std::regex_search(line, res, reg_pugixml_debug_static_library_path))
-				cmakelists << "target_link_libraries(" << name << "debug \"" << res[1].str() << "\")\n";
+				cmakelists << "target_link_libraries(" << name << " debug \"" << res[1].str() << "\")\n";
 			else if (std::regex_search(line, res, reg_pugixml_release_static_library_path))
-				cmakelists << "target_link_libraries(" << name << "optimized \"" << res[1].str() << "\")\n";
+				cmakelists << "target_link_libraries(" << name << " optimized \"" << res[1].str() << "\")\n";
 			else if (std::regex_search(line, res, reg_njson_include_dir))
 				cmakelists << "target_include_directories(" << name << " PRIVATE \"" << res[1].str() << "\")\n";
 		}
@@ -69,7 +69,16 @@ int main(int argc, char **args)
 	cmake_cmd += L" -B build";
 	exec_and_redirect_to_std_output(nullptr, cmake_cmd.data());
 
-	exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/%s.sln\" /build %s", vs_path.c_str(), get_curr_path().v, s2w(name).c_str(), s2w(config).c_str()).data());
+	if (action != "p")
+	{
+
+		auto config = L"";
+		if (action == "d")
+			config = L"debug";
+		else if (action == "r")
+			config = L"relwithdebinfo";
+		exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/%s.sln\" /build %s", vs_path.c_str(), get_curr_path().v, s2w(name).c_str(), config).data());
+	}
 
 	system("pause");
 
