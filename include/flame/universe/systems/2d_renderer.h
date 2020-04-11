@@ -21,7 +21,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static s2DRenderer* create(const wchar_t* canvas_filename, void* dst, uint dst_hash, void* cbs);
+		FLAME_UNIVERSE_EXPORTS static s2DRenderer* create(graphics::Canvas* canvas);
 		FLAME_UNIVERSE_EXPORTS static void destroy(s2DRenderer* s);
 	};
 }

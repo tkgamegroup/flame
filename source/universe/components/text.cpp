@@ -1,3 +1,4 @@
+#include <flame/graphics/canvas.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/element.h>
@@ -7,8 +8,6 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/utils/style.h>
-
-#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {

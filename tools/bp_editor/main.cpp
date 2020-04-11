@@ -849,7 +849,10 @@ void add_window(pugi::xml_node n)
 
 bool MyApp::create(const char* filename)
 {
-	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
+	std::filesystem::path engine_path = getenv("FLAME_PATH");
+	set_engine_path(engine_path.c_str());
+
+	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, engine_path, true);
 
 	TypeinfoDatabase::load(L"bp_editor.exe", true, true);
 
@@ -866,7 +869,7 @@ bool MyApp::create(const char* filename)
 	if (window_layout.load_file(L"window_layout.xml"))
 		window_layout_root = window_layout.first_child();
 
-	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
 	utils::style_set_to_light();
 
 	{
@@ -874,46 +877,33 @@ bool MyApp::create(const char* filename)
 		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
 			if (is_key_down(action))
 			{
-				if (value >= Key_0 && value <= Key_9 &&
-					(app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown))
+				switch (value)
 				{
-					if (app.editor)
-					{
-						auto n = app.test_render_targets[value == Key_0 ? 9 : value - Key_1];
-						if (n)
-							app.show_test_render_target(n);
-					}
-				}
-				else
-				{
-					switch (value)
-					{
-					case Key_S:
-						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-							app.save();
-						break;
-					case Key_Z:
-						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-							undo();
-						break;
-					case Key_Y:
-						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-							redo();
-						break;
-					case Key_D:
-						if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-							duplicate_selected();
-						break;
-					case Key_Del:
-						remove_selected();
-						break;
-					case Key_F2:
-						app.update();
-						break;
-					case Key_F3:
-						app.c_auto_update->set_checked(true);
-						break;
-					}
+				case Key_S:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						app.save();
+					break;
+				case Key_Z:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						undo();
+					break;
+				case Key_Y:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						redo();
+					break;
+				case Key_D:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						duplicate_selected();
+					break;
+				case Key_Del:
+					remove_selected();
+					break;
+				case Key_F2:
+					app.update();
+					break;
+				case Key_F3:
+					app.c_auto_update->set_checked(true);
+					break;
 				}
 			}
 			return true;

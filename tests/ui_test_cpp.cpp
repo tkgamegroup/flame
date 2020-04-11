@@ -22,7 +22,7 @@ struct MyApp : App
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
 								utils::style_set_to_dark();
-								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
+								app.canvas->clear_color = Vec4f(utils::style_4c(utils::BackgroundColor)) / 255.f;
 								app.create_widgets();
 							}, Mail());
 						}, Mail());
@@ -30,7 +30,7 @@ struct MyApp : App
 							looper().add_event([](void*, bool*) {
 								app.root->remove_children(0, -1);
 								utils::style_set_to_light();
-								app.canvas->set_clear_color(utils::style_4c(utils::BackgroundColor));
+								app.canvas->clear_color = Vec4f(utils::style_4c(utils::BackgroundColor)) / 255.f;
 								app.create_widgets();
 							}, Mail());
 						}, Mail());
@@ -152,10 +152,11 @@ struct MyApp : App
 int main(int argc, char** args)
 {
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
+	set_engine_path(engine_path.c_str());
 
 	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
 
-	app.canvas->set_image(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/9.png").c_str())));
+	app.canvas->set_resource(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/9.png").c_str())));
 
 	utils::e_begin_popup_menu(false);
 		utils::next_entity = Entity::create();

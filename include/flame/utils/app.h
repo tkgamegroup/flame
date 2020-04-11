@@ -5,6 +5,8 @@
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/image.h>
+#include <flame/graphics/canvas.h>
 #include <flame/sound/device.h>
 #include <flame/sound/context.h>
 #include <flame/sound/buffer.h>
@@ -15,8 +17,6 @@
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/utils/ui.h>
 
-#include "../renderpath/canvas/canvas1.h"
-
 namespace flame
 {
 	struct App
@@ -24,13 +24,16 @@ namespace flame
 		struct Window
 		{
 			SysWindow* w;
+			graphics::Device* d;
 			graphics::Swapchain* sc;
-			bool sc_used;
-			Array<graphics::Commandbuffer*> cbs;
+			int img_idx;
+			bool sc_updated;
+			std::vector<graphics::Commandbuffer*> cbs;
+			graphics::Commandbuffer* curr_cb;
 			graphics::Fence* fence;
 			graphics::Semaphore* semaphore;
 
-			Window(const char* title, const Vec2u size, uint styles, graphics::Device* d, SysWindow* p = nullptr)
+			Window(const char* title, const Vec2u size, uint styles, graphics::Device* _d, SysWindow* p = nullptr)
 			{
 				w = SysWindow::create(title, size, styles, p);
 				w->destroy_listeners.add([](void* c) {
@@ -38,10 +41,11 @@ namespace flame
 					thiz->w = nullptr;
 					return true;
 				}, Mail::from_p(this));
+				d = _d;
 				sc = graphics::Swapchain::create(d, w);
-				sc_used = false;
+				sc_updated = false;
 				cbs.resize(sc->image_count());
-				for (auto i = 0; i < cbs.s; i++)
+				for (auto i = 0; i < cbs.size(); i++)
 					cbs[i] = graphics::Commandbuffer::create(d->gcp);
 				fence = graphics::Fence::create(d);
 				semaphore = graphics::Semaphore::create(d);
@@ -53,20 +57,22 @@ namespace flame
 					return;
 				graphics::Swapchain::destroy(sc);
 				SysWindow::destroy(w);
-				for (auto i = 0; i < cbs.s; i++)
+				for (auto i = 0; i < cbs.size(); i++)
 					graphics::Commandbuffer::destroy(cbs[i]);
 				graphics::Fence::destroy(fence);
 				graphics::Semaphore::destroy(semaphore);
 			}
 
-			void prepare_sc()
+			void update_sc()
 			{
-				if (!sc_used)
+				if (!sc_updated)
 				{
 					if (sc->image_count())
 					{
 						sc->acquire_image();
-						sc_used = true;
+						img_idx = sc->image_index();
+						curr_cb = cbs[img_idx];
+						sc_updated = true;
 					}
 				}
 			}
@@ -74,17 +80,18 @@ namespace flame
 			void render(graphics::Device* d)
 			{
 				fence->wait();
-				if (sc->image_count() && sc_used)
+				if (sc->image_count() && sc_updated)
 				{
-					d->gq->submit(1, &cbs[sc->image_index()], sc->image_avalible(), semaphore, fence);
+					d->gq->submit(1, &curr_cb, sc->image_avalible(), semaphore, fence);
 					d->gq->present(sc, semaphore);
-					sc_used = false;
+					sc_updated = false;
 				}
 			}
 		};
 
 		graphics::Device* graphics_device;
 		std::vector<std::unique_ptr<Window>> windows;
+		graphics::Canvas* canvas;
 
 		sound::Device* sound_device;
 		sound::Context* sound_context;
@@ -96,7 +103,6 @@ namespace flame
 		sLayoutManagement* s_layout_management;
 		sEventDispatcher* s_event_dispatcher;
 		s2DRenderer* s_2d_renderer;
-		graphics::Canvas* canvas;
 		Entity* root;
 		cElement* c_element_root;
 
@@ -112,6 +118,10 @@ namespace flame
 			windows.emplace_back(main_window);
 			if (maximized)
 				main_window->w->set_maximized(true);
+			main_window->w->resize_listeners.add([](void* c, const Vec2u&) {
+				(*(App**)c)->set_canvas_target();
+				return true;
+			}, Mail::from_p(this));
 			main_window->w->destroy_listeners.add([](void*) {
 				exit(0);
 				return true;
@@ -121,12 +131,16 @@ namespace flame
 			sound_context = sound::Context::create(sound_device);
 			sound_context->make_current();
 
+			canvas = graphics::Canvas::create(graphics_device);
+			set_canvas_target();
+
 			auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
 			const wchar_t* fonts[] = {
 				L"c:/windows/fonts/msyh.ttc",
 				font_awesome_path.c_str(),
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
+			canvas->add_font(font_atlas);
 
 			world = World::create();
 			world->add_object(main_window->w);
@@ -137,16 +151,17 @@ namespace flame
 			world->add_system(s_layout_management);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			s_2d_renderer = s2DRenderer::create((engine_path / L"renderpath/canvas/bp").c_str(), main_window->sc, FLAME_CHASH("Swapchain"), &main_window->cbs);
+			s_2d_renderer = s2DRenderer::create(canvas);
 			s_2d_renderer->before_update_listeners.add([](void* c) {
 				auto thiz = *(App**)c;
 				if (thiz->s_2d_renderer->pending_update)
-					thiz->windows[0]->prepare_sc();
+				{
+					thiz->windows[0]->update_sc();
+					thiz->canvas->prepare();
+				}
 				return true;
 			}, Mail::from_p(this));
 			world->add_system(s_2d_renderer);
-			canvas = s_2d_renderer->canvas;
-			canvas->add_font(font_atlas);
 
 			root = world->root();
 
@@ -156,6 +171,17 @@ namespace flame
 			utils::c_layout();
 			utils::set_current_root(root);
 			utils::push_font_atlas(font_atlas);
+		}
+
+		void set_canvas_target()
+		{
+			auto w = windows[0].get();
+
+			std::vector<graphics::Imageview*> vs(w->sc->image_count());
+			for (auto i = 0; i < vs.size(); i++)
+				vs[i] = w->sc->image(i)->default_view();
+
+			canvas->set_target(vs.size(), vs.data());
 		}
 
 		void run()
@@ -170,6 +196,9 @@ namespace flame
 
 			c_element_root->set_size(Vec2f(windows[0]->w->size));
 			world->update();
+			auto main_window = windows[0].get();
+			if (main_window->sc_updated)
+				canvas->record(main_window->curr_cb, main_window->img_idx);
 
 			for (auto it = windows.begin(); it != windows.end();)
 			{

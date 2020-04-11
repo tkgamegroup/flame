@@ -1,11 +1,10 @@
 #include <flame/serialize.h>
 #include <flame/graphics/device.h>
+#include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include <flame/universe/world.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include "../components/element_private.h"
-
-#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {
@@ -15,17 +14,8 @@ namespace flame
 		s2DRendererPrivate(graphics::Canvas* _canvas)
 		{
 			canvas = _canvas;
-			canvas->set_draw([](void* c) {
-				auto thiz = *(s2DRendererPrivate**)c;
-				thiz->do_render((EntityPrivate*)thiz->world_->root());
-			}, Mail::from_p(this));
 
 			pending_update = false;
-		}
-
-		~s2DRendererPrivate()
-		{
-			BP::destroy(canvas->scene);
 		}
 
 		void do_render(EntityPrivate* e)
@@ -89,13 +79,13 @@ namespace flame
 			if (!pending_update)
 				return;
 			pending_update = false;
-			canvas->scene->update();
+			do_render((EntityPrivate*)world_->root());
 		}
 	};
 
-	s2DRenderer* s2DRenderer::create(const wchar_t* canvas_filename, void* dst, uint dst_hash, void* cbs)
+	s2DRenderer* s2DRenderer::create(graphics::Canvas* canvas)
 	{
-		return new s2DRendererPrivate(graphics::Canvas::create(canvas_filename, dst, dst_hash, cbs));
+		return new s2DRendererPrivate(canvas);
 	}
 
 	void s2DRenderer::destroy(s2DRenderer* s)

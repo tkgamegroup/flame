@@ -22,6 +22,19 @@ struct App
 
 	FontAtlas* font_atlas;
 
+	void on_resize()
+	{
+		std::vector<Imageview*> vs(sc->image_count());
+		for (auto i = 0; i < vs.size(); i++)
+			vs[i] = sc->image(i)->default_view();
+
+		canvas->set_target(vs.size(), vs.data());
+
+		cbs.resize(vs.size());
+		for (auto i = 0; i < cbs.size(); i++)
+			cbs[i] = Commandbuffer::create(d->gcp);
+	}
+
 	void run()
 	{
 		if (!cbs.empty())
@@ -54,29 +67,20 @@ struct App
 int main(int argc, char** args)
 {
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
-
 	set_engine_path(engine_path.c_str());
 
-	app.w = SysWindow::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
+	app.w = SysWindow::create("Graphics Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.sc = Swapchain::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
-
 	app.canvas = Canvas::create(app.d);
 	app.canvas->clear_color = Vec4f(0.4f, 0.4f, 0.4f, 1.f);
-
-	{
-		std::vector<Imageview*> vs(app.sc->image_count());
-		for (auto i = 0; i < vs.size(); i++)
-			vs[i] = app.sc->image(i)->default_view();
-
-		app.canvas->set_target(vs.size(), vs.data());
-
-		app.cbs.resize(vs.size());
-		for (auto i = 0; i < app.cbs.size(); i++)
-			app.cbs[i] = Commandbuffer::create(app.d->gcp);
-	}
+	app.on_resize();
+	app.w->resize_listeners.add([](void*, const Vec2u&) {
+		app.on_resize();
+		return true;
+	}, Mail());
 
 	{
 		auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
