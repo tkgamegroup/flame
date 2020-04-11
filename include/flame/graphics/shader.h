@@ -24,9 +24,6 @@ namespace flame
 			DescriptorType type;
 			uint count;
 			const char* name;
-			Buffer* buffer;
-			Imageview* view;
-			Sampler* sampler;
 		};
 
 		struct Descriptorlayout
@@ -35,7 +32,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS const DescriptorBinding& get_binding(uint binding) const;
 			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, DescriptorBinding* const* bindings, bool create_default_set = false);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, const DescriptorBinding* bindings, bool create_default_set = false);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorlayout* l);
 		};
 
@@ -45,7 +42,6 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0);
 			FLAME_GRAPHICS_EXPORTS void set_image(uint binding, uint index, Imageview* v, Sampler* sampler);
-			FLAME_GRAPHICS_EXPORTS void set_image(uint binding, uint index, Imageview* v, Filter filter);
 
 			FLAME_GRAPHICS_EXPORTS static Descriptorset* create(Descriptorpool* p, Descriptorlayout* l);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorset* s);
@@ -66,16 +62,31 @@ namespace flame
 		struct VertexInputBuffer
 		{
 			uint attribute_count;
-			VertexInputAttribute* const* attributes;
+			const VertexInputAttribute* attributes;
 			VertexInputRate rate;
+
+			VertexInputBuffer() :
+				attribute_count(0),
+				attributes(nullptr),
+				rate(VertexInputRateVertex)
+			{
+			}
 		};
 
 		struct VertexInputInfo
 		{
 			uint buffer_count;
-			VertexInputBuffer* const* buffers;
+			const VertexInputBuffer* buffers;
 			PrimitiveTopology primitive_topology;
 			uint patch_control_points;
+
+			VertexInputInfo() :
+				buffer_count(0),
+				buffers(nullptr),
+				primitive_topology(PrimitiveTopologyTriangleList),
+				patch_control_points(0)
+			{
+			}
 		};
 
 		struct RasterInfo

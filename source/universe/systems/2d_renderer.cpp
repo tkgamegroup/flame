@@ -5,55 +5,10 @@
 #include <flame/universe/systems/2d_renderer.h>
 #include "../components/element_private.h"
 
-#include "../renderpath/canvas/canvas.h"
+#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {
-	struct Serializer_Atlas
-	{
-		FLAME_RV(StringW, filename, 0);
-
-		Object* create(World* w)
-		{
-			auto a = graphics::Atlas::load(graphics::Device::default_one(), filename.v);
-			auto renderer = w->get_system(s2DRenderer);
-			if (renderer)
-				renderer->canvas->add_atlas(a);
-			return a;
-		}
-
-		void destroy(Object* o)
-		{
-			auto a = (graphics::Atlas*)o;
-			((graphics::Canvas*)a->canvas_)->set_image(a->canvas_slot_, nullptr);
-			graphics::Atlas::destroy(a);
-		}
-	};
-
-	struct Serializer_FontAtlas
-	{
-		FLAME_RV(StringW, fonts, 0);
-
-		Object* create(World* w)
-		{
-			auto sp = SUW::split(fonts.str(), L';');
-			std::vector<const wchar_t*> fonts(sp.size());
-			for (auto i = 0; i < sp.size(); i++)
-				fonts[i] = sp[i].c_str();
-			auto f = graphics::FontAtlas::create(graphics::Device::default_one(), fonts.size(), fonts.data());
-			auto renderer = w->get_system(s2DRenderer);
-			if (renderer)
-				renderer->canvas->add_font(f);
-			return f;
-		}
-
-		void destroy(Object* o)
-		{
-			auto f = (graphics::FontAtlas*)o;
-			((graphics::Canvas*)f->canvas_)->set_image(f->canvas_slot_, nullptr);
-			graphics::FontAtlas::destroy(f);
-		}
-	};
 
 	struct s2DRendererPrivate : s2DRenderer
 	{

@@ -108,11 +108,10 @@ namespace flame
 			current_pipeline = nullptr;
 		}
 
-		void CommandbufferPrivate::begin_renderpass(Framebuffer* _f, Clearvalues* _cv)
+		void CommandbufferPrivate::begin_renderpass(Framebuffer* fb, uint clearvalue_count, const Vec4f* clearvalues)
 		{
-			auto r = (RenderpassPrivate*)_f->renderpass();
-			auto f = (FramebufferPrivate*)_f;
-			auto cv = (ClearvaluesPrivate*)_cv;
+			auto r = (RenderpassPrivate*)fb->renderpass();
+			auto f = (FramebufferPrivate*)fb;
 
 			current_renderpass = r;
 			current_subpass = 0;
@@ -128,8 +127,8 @@ namespace flame
 			info.renderArea.offset.y = 0;
 			info.renderArea.extent.width = f->image_size.x();
 			info.renderArea.extent.height = f->image_size.y();
-			info.clearValueCount = cv ? cv->v.size() : 0;
-			info.pClearValues = cv ? cv->v.data() : nullptr;
+			info.clearValueCount = clearvalue_count;
+			info.pClearValues = (VkClearValue*)clearvalues;
 
 			vkCmdBeginRenderPass(v, &info, VK_SUBPASS_CONTENTS_INLINE);
 #elif defined(FLAME_D3D12)
@@ -514,9 +513,9 @@ namespace flame
 			((CommandbufferPrivate*)this)->begin(once);
 		}
 
-		void Commandbuffer::begin_renderpass(Framebuffer* f, Clearvalues* cv)
+		void Commandbuffer::begin_renderpass(Framebuffer* fb, uint clearvalue_count, const Vec4f* clearvalues)
 		{
-			((CommandbufferPrivate*)this)->begin_renderpass(f, cv);
+			((CommandbufferPrivate*)this)->begin_renderpass(fb, clearvalue_count, clearvalues);
 		}
 
 		void Commandbuffer::end_renderpass()
@@ -618,78 +617,6 @@ namespace flame
 		{
 			delete (CommandbufferPrivate*)c;
 		}
-
-		struct FLAME_R(R_Commandbuffer)
-		{
-			BP::Node* n;
-
-			FLAME_B1;
-			FLAME_RV(Commandbuffer*, out, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				if (out_s()->frame() == -1)
-				{
-					auto d = Device::default_one();
-					if (d)
-						out = Commandbuffer::create(d->gcp);
-					else
-					{
-						printf("cannot create commandbuffer\n");
-
-						out = nullptr;
-					}
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Commandbuffer)()
-			{
-				if (out)
-					Commandbuffer::destroy((Commandbuffer*)out);
-			}
-
-		};
-
-		struct FLAME_R(R_Commandbuffers)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(uint, size, i);
-
-			FLAME_B1;
-			FLAME_RV(Array<Commandbuffer*>, out, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				if (size_s()->frame() > out_s()->frame())
-				{
-					for (auto i = 0; i < out.s; i++)
-						Commandbuffer::destroy(out[i]);
-					auto d = Device::default_one();
-					if (d && size > 0)
-					{
-						out.resize(size);
-						for (auto i = 0; i < size; i++)
-							out.v[i] = Commandbuffer::create(d->gcp);
-					}
-					else
-					{
-						printf("cannot create commandbuffers\n");
-
-						out.resize(0);
-					}
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Commandbuffers)()
-			{
-				for (auto i = 0; i < out.s; i++)
-					Commandbuffer::destroy(out[i]);
-			}
-		};
 
 		QueuePrivate::QueuePrivate(Device* _d, uint queue_family_idx)
 		{

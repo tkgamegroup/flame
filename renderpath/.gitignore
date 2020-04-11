@@ -1,8 +1,0 @@
-CMakeLists.txt
-*/bp.gv
-*/bp.graph
-*/bp.png
-*/bpres
-*.dll
-*.lib
-*.typeinfo

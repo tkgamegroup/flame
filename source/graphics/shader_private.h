@@ -41,7 +41,7 @@ namespace flame
 
 			uint hash;
 
-			DescriptorlayoutPrivate(Device* d, uint binding_count, DescriptorBinding* const* bindings, bool create_default_set);
+			DescriptorlayoutPrivate(Device* d, uint binding_count, const DescriptorBinding* bindings, bool create_default_set);
 			~DescriptorlayoutPrivate();
 		};
 
@@ -80,13 +80,13 @@ namespace flame
 			uint hash;
 		};
 
-		struct FLAME_R(BlendOptions)
+		struct BlendOptions
 		{
-			FLAME_RV(bool, enable, 0);
-			FLAME_RV(BlendFactor, src_color, 0);
-			FLAME_RV(BlendFactor, dst_color, 0);
-			FLAME_RV(BlendFactor, src_alpha, 0);
-			FLAME_RV(BlendFactor, dst_alpha, 0);
+			bool enable;
+			BlendFactor src_color;
+			BlendFactor dst_color;
+			BlendFactor src_alpha;
+			BlendFactor dst_alpha;
 
 			/*
 				if (Enable)

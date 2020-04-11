@@ -132,6 +132,9 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+
+			if (dv)
+				Imageview::destroy(dv);
 		}
 
 		void ImagePrivate::set_props()
@@ -175,13 +178,13 @@ namespace flame
 			data_size = pitch * size.y();
 		}
 
-		void ImagePrivate::init(const Vec4c& col)
+		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
 			auto cb = Commandbuffer::create(d->gcp);
 			cb->begin(true);
-			cb->change_image_layout(this, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->clear_image(this, col);
-			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->change_image_layout(this, current_layout, ImageLayoutTransferDst);
+			cb->clear_image(this, color);
+			cb->change_image_layout(this, ImageLayoutTransferDst, after_layout);
 			cb->end();
 			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
 			d->gq->wait_idle();
@@ -237,9 +240,14 @@ namespace flame
 			Buffer::destroy(stag_buf);
 		}
 
-		void Image::init(const Vec4c& col)
+		Imageview* Image::default_view() const
 		{
-			((ImagePrivate*)this)->init(col);
+			return ((ImagePrivate*)this)->dv;
+		}
+
+		void Image::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
+		{
+			((ImagePrivate*)this)->clear(current_layout, after_layout, color);
 		}
 
 		void Image::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
@@ -252,9 +260,10 @@ namespace flame
 			((ImagePrivate*)this)->set_pixels(offset, extent, src);
 		}
 
-		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data)
+		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view)
 		{
 			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
+			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
 
 			if (data)
 			{
@@ -279,9 +288,10 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage)
+		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
 		{
-			auto i = create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			auto i = (ImagePrivate*)create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
 
 			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 			staging_buffer->map();
@@ -303,7 +313,7 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create_from_file(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage)
+		Image* Image::create_from_file(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool default_view)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -415,106 +425,17 @@ namespace flame
 				printf("cannot save png that has more than 8bit per channel\n");
 		}
 
-		Image* Image::create_from_native(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native)
+		Image* Image::create_from_native(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view)
 		{
-			return new ImagePrivate(d, format, size, level, layer, native);
+			auto i = new ImagePrivate(d, format, size, level, layer, native);
+			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
+			return i;
 		}
 
 		void Image::destroy(Image* i)
 		{
 			delete (ImagePrivate*)i;
 		}
-
-		struct FLAME_R(R_Image)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(Format, format, i);
-			FLAME_RV(Vec2u, size, i);
-			FLAME_RV(uint, level, i);
-			FLAME_RV(uint, layer, i);
-			FLAME_RV(SampleCount, sample_count, i);
-			FLAME_RV(ImageUsage, usage, i, m);
-			FLAME_RV(bool, init_with_color, i);
-			FLAME_RV(Vec4c, init_color, i);
-
-			FLAME_B1;
-			FLAME_RV(Image*, out, o);
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_Image)()
-			{
-				format = Format_R8G8B8A8_UNORM;
-				size = 4;
-				level = 1;
-				layer = 1;
-				usage = ImageUsageSampled;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				auto out_frame = out_s()->frame();
-				if (format_s()->frame() > out_frame || size_s()->frame() > out_frame || level_s()->frame() > out_frame || layer_s()->frame() > out_frame || sample_count_s()->frame() > out_frame || usage_s()->frame() > out_frame)
-				{
-					if (out)
-						Image::destroy(out);
-					auto d = Device::default_one();
-					if (d && format != Format_Undefined && size.x() > 0 && size.y() > 0 && level > 0 && layer > 0)
-					{
-						out = Image::create(d, format, size, level, layer, sample_count, usage);
-						if (init_with_color)
-							out->init(init_color);
-					}
-					else
-					{
-						printf("cannot create image\n");
-
-						out = nullptr;
-					}
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Image)()
-			{
-				if (out)
-					Image::destroy(out);
-			}
-		};
-
-		struct FLAME_R(R_ImageInspector)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(Image*, in, i);
-
-			FLAME_B1;
-			FLAME_RV(Format, format, o);
-			FLAME_RV(Vec2u, size, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				auto in_frame = in_s()->frame();
-				if (in_frame > format_s()->frame() || in_frame > size_s()->frame())
-				{
-					if (in)
-					{
-						format = in->format;
-						size = in->size;
-					}
-					else
-					{
-						printf("cannot inspect image\n");
-
-						format = Format_Undefined;
-						size = Vec2u(0);
-					}
-					format_s()->set_frame(frame);
-					size_s()->set_frame(frame);
-				}
-			}
-		};
 
 		ImageviewPrivate::ImageviewPrivate(Image* _image, ImageviewType _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle _swizzle_r, Swizzle _swizzle_g, Swizzle _swizzle_b, Swizzle _swizzle_a) :
 			image((ImagePrivate*)_image)
@@ -589,135 +510,6 @@ namespace flame
 		{
 			delete (ImageviewPrivate*)v;
 		}
-
-		struct FLAME_R(R_Imageview)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(Image*, image, i);
-			FLAME_RV(ImageviewType, type, i);
-			FLAME_RV(uint, base_level, i);
-			FLAME_RV(uint, level_count, i);
-			FLAME_RV(uint, base_layer, i);
-			FLAME_RV(uint, layer_count, i);
-			FLAME_RV(Swizzle, swizzle_r, i);
-			FLAME_RV(Swizzle, swizzle_g, i);
-			FLAME_RV(Swizzle, swizzle_b, i);
-			FLAME_RV(Swizzle, swizzle_a, i);
-
-			FLAME_B1;
-			FLAME_RV(Imageview*, out, o);
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_Imageview)()
-			{
-				type = Imageview2D;
-				level_count = 1;
-				layer_count = 1;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				auto out_frame = out_s()->frame();
-				if (image_s()->frame() > out_frame || type_s()->frame() > out_frame || 
-					base_level_s()->frame() > out_frame || base_layer_s()->frame() > out_frame || layer_count_s()->frame() > out_frame || 
-					swizzle_r_s()->frame() > out_frame || swizzle_g_s()->frame() > out_frame || swizzle_b_s()->frame() > out_frame || swizzle_a_s()->frame() > out_frame)
-				{
-					if (out)
-						Imageview::destroy(out);
-					if (image && level_count > 0 && layer_count > 0)
-						out = Imageview::create(image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
-					else
-					{
-						printf("cannot create imageview\n");
-
-						out = nullptr;
-					}
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Imageview)()
-			{
-				if (out)
-					Imageview::destroy(out);
-			}
-
-		};
-
-		struct FLAME_R(R_ImageviewGeneral)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(Image*, image, i);
-
-			FLAME_B1;
-			FLAME_RV(Imageview*, out, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				if (image_s()->frame() > out_s()->frame())
-				{
-					if (out)
-						Imageview::destroy(out);
-					if (image)
-						out = Imageview::create(image);
-					else
-					{
-						printf("cannot create imageview general\n");
-
-						out = nullptr;
-					}
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_ImageviewGeneral)()
-			{
-				if (out)
-					Imageview::destroy(out);
-			}
-		};
-
-		struct FLAME_R(R_ImageviewsGeneral)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(Array<Image*>*, images, i);
-
-			FLAME_B1;
-			FLAME_RV(Array<Imageview*>, out, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				if (images_s()->frame() > out_s()->frame())
-				{
-					for (auto i = 0; i < out.s; i++)
-						Imageview::destroy(out[i]);
-					if (images && images->s)
-					{
-						out.resize(images->s);
-						for (auto i = 0; i < out.s; i++)
-							out.v[i] = Imageview::create(images->at(i));
-					}
-					else
-					{
-						printf("cannot create imageviews general\n");
-
-						out.resize(0);
-					}
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_ImageviewsGeneral)()
-			{
-				for (auto i = 0; i < out.s; i++)
-					Imageview::destroy(out[i]);
-			}
-		};
 
 		SamplerPrivate::SamplerPrivate(Device* _d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{

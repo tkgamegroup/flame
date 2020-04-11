@@ -39,11 +39,11 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-			RenderpassPrivate(Device* d, uint attachment_count, AttachmentInfo* const* attachments, uint subpass_count, SubpassInfo* const* subpasses, uint dependency_count, const Vec2u* _dependencies);
+			RenderpassPrivate(Device* d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies);
 			~RenderpassPrivate();
 		};
 
-		struct ClearvaluesPrivate : Clearvalues
+		struct ClearvaluesPrivate
 		{
 			RenderpassPrivate* rp;
 
@@ -70,17 +70,6 @@ namespace flame
 #endif
 			FramebufferPrivate(Device* d, Renderpass* rp, uint view_count, Imageview* const* views);
 			~FramebufferPrivate();
-		};
-
-		struct RenderpassAndFramebufferPrivate : RenderpassAndFramebuffer
-		{
-			RenderpassPrivate* rp;
-			std::vector<Imageview*> created_views;
-			std::vector<Framebuffer*> fbs;
-			ClearvaluesPrivate* cv;
-
-			RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes);
-			~RenderpassAndFramebufferPrivate();
 		};
 	}
 }

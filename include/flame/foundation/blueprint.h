@@ -165,8 +165,6 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update();
 
-		FLAME_FOUNDATION_EXPORTS void report_used_resource(const wchar_t* filename);
-
 		FLAME_FOUNDATION_EXPORTS Array<Slot*> failed_slots() const;
 
 		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, bool test_mode = false);

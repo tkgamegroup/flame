@@ -10,7 +10,7 @@
 #include <flame/universe/utils/style.h>
 #include <flame/universe/utils/event.h>
 
-#include "../renderpath/canvas/canvas.h"
+#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {

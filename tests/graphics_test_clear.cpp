@@ -4,6 +4,7 @@
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/commandbuffer.h>
 #include <flame/graphics/renderpass.h>
+#include <flame/graphics/image.h>
 
 using namespace flame;
 using namespace graphics;
@@ -13,21 +14,43 @@ struct App
 	SysWindow* w;
 	Device* d;
 	Swapchain* sc;
-	RenderpassAndFramebuffer* rnf;
+	Renderpass* rp;
+	std::vector<Framebuffer*> fbs;
+	std::vector<Commandbuffer*> cbs;
 	Fence* fence;
-	Array<Commandbuffer*> cbs;
 	Semaphore* render_finished;
+
+	void create_framebuffers()
+	{
+		for (auto fb : fbs)
+			Framebuffer::destroy(fb);
+		for (auto cb : cbs)
+			Commandbuffer::destroy(cb);
+		auto image_count = sc->image_count();
+		if (image_count > 0)
+		{
+			fbs.resize(image_count);
+			for (auto i = 0; i < image_count; i++)
+			{
+				auto v = sc->image(i)->default_view();
+				fbs[i] = Framebuffer::create(d, rp, 1, &v);
+			}
+			cbs.resize(image_count);
+			for (auto i = 0; i < image_count; i++)
+				cbs[i] = Commandbuffer::create(d->gcp);
+		}
+	}
 
 	void run()
 	{
-		if (sc->image_count())
+		if (!fbs.empty())
 			sc->acquire_image();
 
 		fence->wait();
 
-		if (sc->image_count())
+		if (!cbs.empty())
 		{
-			d->gq->submit(1, &cbs.v[sc->image_index()], sc->image_avalible(), render_finished, fence);
+			d->gq->submit(1, &cbs[sc->image_index()], sc->image_avalible(), render_finished, fence);
 			d->gq->present(sc, render_finished);
 		}
 	}
@@ -39,33 +62,24 @@ int main(int argc, char** args)
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);
 	{
-		Array<Image*> images;
-		images.resize(app.sc->image_count());
-		for (auto i = 0; i < images.s; i++)
-			images[i] = app.sc->image(i);
-		RenderTarget rt;
-		rt.type = TargetImages;
-		rt.v = &images;
-		rt.clear = true;
-		rt.clear_color = Vec4c(138, 213, 241, 255);
-		auto p_rt = &rt;
-		SubpassTargetInfo sp;
-		sp.color_target_count = 1;
-		sp.color_targets = &p_rt;
-		sp.depth_target = nullptr;
-		sp.resolve_target_count = 0;
-		sp.resolve_targets = nullptr;
-		auto p_sp = &sp;
-		app.rnf = RenderpassAndFramebuffer::create(app.d, 1, &p_sp);
+		AttachmentInfo att;
+		att.format = graphics::Swapchain::get_format();
+		SubpassInfo sp;
+		sp.color_attachment_count = 1;
+		uint col_refs[] = {
+			0
+		};
+		sp.color_attachments = col_refs;
+		app.rp = Renderpass::create(app.d, 1, &att, 1, &sp, 0, nullptr);
 	}
+	app.create_framebuffers();
 	app.fence = Fence::create(app.d);
 	app.cbs.resize(app.sc->image_count());
-	for (auto i = 0; i < app.cbs.s; i++)
+	for (auto i = 0; i < app.cbs.size(); i++)
 	{
-		auto cb = Commandbuffer::create(app.d->gcp);
-		app.cbs.v[i] = cb;
+		auto cb = app.cbs[i];
 		cb->begin();
-		cb->begin_renderpass(app.rnf->framebuffer(i), app.rnf->clearvalues());
+		cb->begin_renderpass(app.fbs[i], 1, &Vec4f(0.23f, 0.44f, 0.75f, 1.f));
 		cb->end_renderpass();
 		cb->end();
 	}

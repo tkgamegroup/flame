@@ -2,7 +2,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/tile_map.h>
 
-#include "../renderpath/canvas/canvas.h"
+#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {

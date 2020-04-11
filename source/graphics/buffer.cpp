@@ -157,68 +157,6 @@ namespace flame
 		{
 			delete (BufferPrivate*)b;
 		}
-
-		struct FLAME_R(R_Buffer)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(uint, size, i);
-			FLAME_RV(BufferUsage, usage, i, m);
-			FLAME_RV(MemProp, mem_prop, i, m);
-
-			FLAME_B1;
-			FLAME_RV(Buffer*, out, o);
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(R_Buffer)()
-			{
-				mem_prop = MemPropDevice;
-			}
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				auto out_frame = out_s()->frame();
-				if (size_s()->frame() > out_frame || usage_s()->frame() > out_frame || mem_prop_s()->frame() > out_frame)
-				{
-					if (out)
-						Buffer::destroy(out);
-					auto d = Device::default_one();
-					auto ok = true;
-					if (!d)
-						ok = false;
-					if (!(size > 0))
-					{
-						size_s()->set_fail_message("x and y of size must bigger than 0");
-						ok = false;
-					}
-					if (usage == 0)
-					{
-						usage_s()->set_fail_message("usage cannot not be empty");
-						ok = false;
-					}
-					if (mem_prop == 0)
-					{
-						usage_s()->set_fail_message("mem prop cannot not be empty");
-						ok = false;
-					}
-					if (ok)
-					{
-						out = Buffer::create(d, size, usage, mem_prop);
-						if (mem_prop == (MemPropHost | MemPropHostCoherent))
-							out->map();
-					}
-					else
-						out = nullptr;
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Buffer)()
-			{
-				if (out)
-					Buffer::destroy(out);
-			}
-		};
 	}
 }
 

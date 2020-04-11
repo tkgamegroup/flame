@@ -2,7 +2,7 @@
 #include <flame/universe/systems/2d_renderer.h>
 #include "element_private.h"
 
-#include "../renderpath/canvas/canvas.h"
+#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {

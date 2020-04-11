@@ -181,15 +181,6 @@ namespace flame
 			SwizzleA
 		};
 
-		enum TargetType
-		{
-			TargetImage, // Image*
-			TargetImageview, // Imageview*
-			TargetImages, // Array<Image*>*
-
-			TargetTypeMax = 0xffffffff
-		};
-
 		enum IndiceType
 		{
 			IndiceTypeUint,

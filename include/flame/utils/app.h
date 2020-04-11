@@ -15,7 +15,7 @@
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/utils/ui.h>
 
-#include "../renderpath/canvas/canvas.h"
+#include "../renderpath/canvas/canvas1.h"
 
 namespace flame
 {

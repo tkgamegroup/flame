@@ -101,7 +101,7 @@ namespace flame
 				bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
 				image = Image::create(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst);
-				image->init(Vec4c(0, 0, 0, 255));
+				image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
 				imageview = Imageview::create(image, Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR);
 
 				empty_glyph.reset(new_glyph());
@@ -204,42 +204,6 @@ namespace flame
 		{
 			return ((FontAtlasPrivate*)this)->imageview;
 		}
-
-		struct FLAME_R(R_FontAtlas)
-		{
-			BP::Node* n;
-
-			FLAME_B0;
-			FLAME_RV(Array<StringW>*, fonts, i);
-
-			FLAME_B1;
-			FLAME_RV(FontAtlas*, out, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(update)(uint frame)
-			{
-				auto out_frame = out_s()->frame();
-				if (fonts_s()->frame() > out_frame)
-				{
-					if (out)
-						FontAtlas::destroy(out);
-					auto d = Device::default_one();
-					std::vector<const wchar_t*> _fonts(fonts ? fonts->s : 0);
-					for (auto i = 0; i < _fonts.size(); i++)
-						_fonts[i] = fonts->at(i).v;
-					if (d && !_fonts.empty())
-						out = FontAtlas::create(d, _fonts.size(), _fonts.data());
-					else
-						printf("cannot create fontatlas\n");
-					out_s()->set_frame(frame);
-				}
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_FontAtlas)()
-			{
-				if (out)
-					FontAtlas::destroy(out);
-			}
-		};
 	}
 }
 

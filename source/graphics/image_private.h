@@ -13,19 +13,22 @@ namespace flame
 		struct ImagePrivate : Image
 		{
 			DevicePrivate* d;
+
 #if defined(FLAME_VULKAN)
 			VkDeviceMemory m;
 			VkImage v;
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
+			ImageviewPrivate* dv;
+
 			ImagePrivate(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage);
 			ImagePrivate(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
 			void set_props();
 
-			void init(const Vec4c& col);
+			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color);
 			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
 			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);
 		};

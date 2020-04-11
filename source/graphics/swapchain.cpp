@@ -261,58 +261,6 @@ namespace flame
 		{
 			delete (SwapchainPrivate*)s;
 		}
-
-		void Swapchain::link_bp(BP* bp, void* cbs)
-		{
-			bool ok;
-
-			auto n_scr = bp->add_node("flame::graphics::R_Swapchain", "swapchain");
-			n_scr->find_input("sc")->set_data_p(this);
-			bp->find_input("rt_dst.type")->set_data_i(TargetImages);
-			ok = bp->find_input("rt_dst.v")->link_to(n_scr->find_output("images"));
-			assert(ok);
-			bp->find_input("make_cmd.cbs")->set_data_p(cbs);
-			auto s_img_idx = bp->find_input("make_cmd.image_idx");
-			if (s_img_idx)
-			{
-				ok = s_img_idx->link_to(n_scr->find_output("image_idx"));
-				assert(ok);
-			}
-		}
-
-		struct FLAME_R(R_Swapchain)
-		{
-			BP::Node* n;
-
-			uint prev_hash;
-
-			FLAME_B0;
-			FLAME_RV(Swapchain*, sc, i);
-
-			FLAME_B1;
-			FLAME_RV(Array<Image*>, images, o);
-			FLAME_RV(uint, image_idx, o);
-
-			FLAME_GRAPHICS_EXPORTS void FLAME_RF(active_update)(uint frame)
-			{
-				if (sc->hash() != prev_hash)
-				{
-					images.resize(sc->image_count());
-					for (auto i = 0; i < images.s; i++)
-						images[i] = sc->image(i);
-					sc_s()->set_frame(frame);
-					images_s()->set_frame(frame);
-
-					prev_hash = sc->hash();
-				}
-				image_idx = sc->image_index();
-				image_idx_s()->set_frame(frame);
-			}
-
-			FLAME_GRAPHICS_EXPORTS FLAME_RF(~R_Swapchain)()
-			{
-			}
-		};
 	}
 }
 

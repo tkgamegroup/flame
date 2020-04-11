@@ -113,18 +113,6 @@ namespace flame
 			need_check_fail = false;
 		}
 
-		void update_resources_file()
-		{
-			if (test_mode)
-				return;
-			std::filesystem::path path(filename);
-			path.replace_filename(L"bpres");
-			std::ofstream file(path);
-			for (auto& r : used_resources)
-				file << r.string() << "\n";
-			file.close();
-		}
-
 		LibraryPrivate* add_library(const std::wstring& directory);
 		void remove_library(LibraryPrivate* m);
 		LibraryPrivate* find_library(const std::wstring& directory) const;
@@ -140,8 +128,6 @@ namespace flame
 
 		void add_to_pending_update(NodePrivate* n);
 		void update();
-
-		void report_used_resource(const std::wstring& filename);
 	};
 
 	LibraryPrivate::~LibraryPrivate()
@@ -510,7 +496,6 @@ namespace flame
 		libraries.emplace_back(m);
 
 		used_resources.push_back(dir + L"/build/{c}/" + name);
-		update_resources_file();
 
 		return m;
 	}
@@ -545,7 +530,6 @@ namespace flame
 						break;
 					}
 				}
-				update_resources_file();
 
 				libraries.erase(it);
 
@@ -916,21 +900,6 @@ namespace flame
 		time += looper().delta_time;
 	}
 
-	void BPPrivate::report_used_resource(const std::wstring& _fn)
-	{
-		std::filesystem::path fn(_fn);
-		fn = fn.lexically_relative(std::filesystem::path(filename).parent_path());
-
-		for (auto& r : used_resources)
-		{
-			if (r == fn)
-				return;
-		}
-
-		used_resources.push_back(fn);
-		update_resources_file();
-	}
-
 	const wchar_t* BP::Library::directory() const
 	{
 		return ((LibraryPrivate*)this)->directory.c_str();
@@ -1183,11 +1152,6 @@ namespace flame
 		((BPPrivate*)this)->update();
 	}
 
-	void BP::report_used_resource(const wchar_t* filename)
-	{
-		((BPPrivate*)this)->report_used_resource(filename);
-	}
-
 	Array<BP::Slot*> BP::failed_slots() const
 	{
 		return ((BPPrivate*)this)->failed_slots;
@@ -1276,7 +1240,6 @@ namespace flame
 		auto bp = new BPPrivate();
 		bp->filename = filename;
 		bp->test_mode = test_mode;
-		bp->update_resources_file();
 
 		for (auto& l_d : library_descs)
 			bp->add_library(l_d);
