@@ -178,6 +178,17 @@ namespace flame
 			data_size = pitch * size.y();
 		}
 
+		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
+		{
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin(true);
+			cb->change_image_layout(this, from, to);
+			cb->end();
+			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
+			d->gq->wait_idle();
+			Commandbuffer::destroy(cb);
+		}
+
 		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
 			auto cb = Commandbuffer::create(d->gcp);
@@ -243,6 +254,11 @@ namespace flame
 		Imageview* Image::default_view() const
 		{
 			return ((ImagePrivate*)this)->dv;
+		}
+
+		void Image::change_layout(ImageLayout from, ImageLayout to)
+		{
+			((ImagePrivate*)this)->change_layout(from, to);
 		}
 
 		void Image::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)

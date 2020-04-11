@@ -29,6 +29,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS Imageview* default_view() const;
 
+			FLAME_GRAPHICS_EXPORTS void change_layout(ImageLayout from, ImageLayout to);
 			FLAME_GRAPHICS_EXPORTS void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color);
 
 			// accepted formats for get/set pixels: Format_R8G8B8A8_UNORM, Format_R16G16B16A16_UNORM

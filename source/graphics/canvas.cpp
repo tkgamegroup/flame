@@ -124,7 +124,7 @@ namespace flame
 						L"element.vert",
 						L"element.frag"
 					};
-					pl = Pipeline::create(d, L"D:/flame/shaders", array_size(shaders), shaders, pll, rp, 0,
+					pl = Pipeline::create(d, (std::wstring(get_engine_path()) + L"/shaders").c_str(), array_size(shaders), shaders, pll, rp, 0,
 						&vi, Vec2u(0), nullptr, SampleCount_8);
 				}
 

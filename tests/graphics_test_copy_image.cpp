@@ -17,35 +17,44 @@ struct App
 	Device* d;
 	Swapchain* sc;
 	Image* img;
+
+	void on_resize()
+	{
+		if (sc->image_count() > 0)
+		{
+			sc->acquire_image();
+
+			auto dst = sc->image(sc->image_index());
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin();
+			cb->change_image_layout(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
+			ImageCopy cpy;
+			cpy.size = min(dst->size, img->size);
+			cb->copy_image(img, dst, 1, &cpy);
+			cb->change_image_layout(dst, ImageLayoutTransferDst, ImageLayoutPresent);
+			cb->end();
+			auto finished = Semaphore::create(d);
+			d->gq->submit(1, &cb, sc->image_avalible(), finished, nullptr);
+
+			d->gq->present(sc, finished);
+		}
+	}
 }app;
 
 int main(int argc, char** args)
 {
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 
-	app.w = SysWindow::create("Graphics Test", Vec2u(800, 600), WindowFrame);
+	app.w = SysWindow::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w, true);
 	app.img = Image::create_from_file(app.d, (engine_path / L"art/9.png").c_str(), ImageUsageTransferSrc, false);
-	
-	app.sc->acquire_image();
-
-	auto dst = app.sc->image(0);
-	auto cb = Commandbuffer::create(app.d->gcp);
-	cb->begin();
-	cb->change_image_layout(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
-	cb->change_image_layout(app.img, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-	ImageCopy cpy;
-	cpy.size = app.img->size;
-	cpy.src_off = 0;
-	cpy.dst_off = 0;
-	cb->copy_image(app.img, dst, 1, &cpy);
-	cb->change_image_layout(dst, ImageLayoutTransferDst, ImageLayoutPresent);
-	cb->end();
-	auto finished = Semaphore::create(app.d);
-	app.d->gq->submit(1, &cb, app.sc->image_avalible(), finished, nullptr);
-	
-	app.d->gq->present(app.sc, finished);
+	app.img->change_layout(ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+	app.on_resize();
+	app.w->resize_listeners.add([](void*, const Vec2u&) {
+		app.on_resize();
+		return true;
+	}, Mail());
 
 	looper().loop([](void*) {
 	}, Mail());

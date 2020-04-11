@@ -55,6 +55,8 @@ int main(int argc, char** args)
 {
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 
+	set_engine_path(engine_path.c_str());
+
 	app.w = SysWindow::create("Graphics Test", Vec2u(1280, 720), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);

@@ -20,24 +20,28 @@ struct App
 	Fence* fence;
 	Semaphore* render_finished;
 
-	void create_framebuffers()
+	void on_resize()
 	{
 		for (auto fb : fbs)
 			Framebuffer::destroy(fb);
 		for (auto cb : cbs)
 			Commandbuffer::destroy(cb);
 		auto image_count = sc->image_count();
-		if (image_count > 0)
+		fbs.resize(image_count);
+		for (auto i = 0; i < image_count; i++)
 		{
-			fbs.resize(image_count);
-			for (auto i = 0; i < image_count; i++)
-			{
-				auto v = sc->image(i)->default_view();
-				fbs[i] = Framebuffer::create(d, rp, 1, &v);
-			}
-			cbs.resize(image_count);
-			for (auto i = 0; i < image_count; i++)
-				cbs[i] = Commandbuffer::create(d->gcp);
+			auto v = sc->image(i)->default_view();
+			fbs[i] = Framebuffer::create(d, rp, 1, &v);
+		}
+		cbs.resize(image_count);
+		for (auto i = 0; i < image_count; i++)
+		{
+			auto cb = Commandbuffer::create(d->gcp);
+			cb->begin();
+			cb->begin_renderpass(app.fbs[i], 1, &Vec4f(0.23f, 0.44f, 0.75f, 1.f));
+			cb->end_renderpass();
+			cb->end();
+			cbs[i] = cb;
 		}
 	}
 
@@ -58,7 +62,7 @@ struct App
 
 int main(int argc, char** args)
 {
-	app.w = SysWindow::create("Graphics Test", Vec2u(800, 600), WindowFrame);
+	app.w = SysWindow::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);
 	{
@@ -72,18 +76,13 @@ int main(int argc, char** args)
 		sp.color_attachments = col_refs;
 		app.rp = Renderpass::create(app.d, 1, &att, 1, &sp, 0, nullptr);
 	}
-	app.create_framebuffers();
 	app.fence = Fence::create(app.d);
-	app.cbs.resize(app.sc->image_count());
-	for (auto i = 0; i < app.cbs.size(); i++)
-	{
-		auto cb = app.cbs[i];
-		cb->begin();
-		cb->begin_renderpass(app.fbs[i], 1, &Vec4f(0.23f, 0.44f, 0.75f, 1.f));
-		cb->end_renderpass();
-		cb->end();
-	}
 	app.render_finished = Semaphore::create(app.d);
+	app.on_resize();
+	app.w->resize_listeners.add([](void*, const Vec2u&) {
+		app.on_resize();
+		return true;
+	}, Mail());
 
 	looper().loop([](void*) {
 		app.run();

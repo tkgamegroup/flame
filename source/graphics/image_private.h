@@ -28,6 +28,7 @@ namespace flame
 
 			void set_props();
 
+			void change_layout(ImageLayout from, ImageLayout to);
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color);
 			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
 			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);

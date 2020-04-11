@@ -48,14 +48,10 @@ namespace flame
 			Vec2u dst_off;
 			Vec2u size;
 
-			ImageCopy()
-			{
-			}
-
-			ImageCopy(const Vec2u &_src_off, const Vec2u &_dst_off, const Vec2u &_size) :
-				src_off(_src_off),
-				dst_off(_dst_off),
-				size(_size)
+			ImageCopy() :
+				src_off(0),
+				dst_off(0),
+				size(0)
 			{
 			}
 		};

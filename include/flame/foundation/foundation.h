@@ -482,12 +482,14 @@ namespace flame
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
-	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
-	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
-	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
+	FLAME_FOUNDATION_EXPORTS void set_engine_path(const wchar_t* p);
+	FLAME_FOUNDATION_EXPORTS const wchar_t* get_engine_path();
 	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
 	FLAME_FOUNDATION_EXPORTS StringW get_app_path();
 	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
+	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
+	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
+	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
@@ -606,7 +608,7 @@ namespace flame
 		float delta_time; // second
 		float total_time; // second
 
-		FLAME_FOUNDATION_EXPORTS int loop(void (*idle_func)(void* c), const Mail& capture);
+		FLAME_FOUNDATION_EXPORTS int loop(void (*frame_callback)(void* c), const Mail& capture);
 
 		FLAME_FOUNDATION_EXPORTS void* add_event(void (*func)(void* c, bool* go_on), const Mail& capture, float interval = 0.f, uint id = 0);
 

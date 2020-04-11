@@ -1,4 +1,5 @@
 #include <flame/serialize.h>
+#include <flame/foundation/foundation.h>
 #include <flame/foundation/bitmap.h>
 
 #ifdef FLAME_WINDOWS
@@ -82,25 +83,16 @@ namespace flame
 		free(p);
 	}
 
-	void* load_module(const wchar_t* module_name)
+	std::wstring engine_path;
+
+	void set_engine_path(const wchar_t* p)
 	{
-		auto ret = LoadLibraryW(module_name);
-		if (!ret)
-		{
-			auto ec = GetLastError();
-			printf("load module err: %d\n", ec);
-		}
-		return ret;
+		engine_path = p;
 	}
 
-	void* get_module_func(void* module, const char* name)
+	const wchar_t* get_engine_path()
 	{
-		return GetProcAddress((HMODULE)module, name);
-	}
-
-	void free_module(void* library)
-	{
-		FreeLibrary((HMODULE)library);
+		return engine_path.c_str();
 	}
 
 	StringW get_curr_path()
@@ -122,6 +114,26 @@ namespace flame
 		SetCurrentDirectoryW(p);
 	}
 
+	void* load_module(const wchar_t* module_name)
+	{
+		auto ret = LoadLibraryW(module_name);
+		if (!ret)
+		{
+			auto ec = GetLastError();
+			printf("load module err: %d\n", ec);
+		}
+		return ret;
+	}
+
+	void* get_module_func(void* module, const char* name)
+	{
+		return GetProcAddress((HMODULE)module, name);
+	}
+
+	void free_module(void* library)
+	{
+		FreeLibrary((HMODULE)library);
+	}
 
 	void *get_hinst()
 	{
@@ -900,6 +912,8 @@ namespace flame
 		android_app* android_state;
 #endif
 
+		Vec2u pending_size;
+
 		bool dead;
 
 #ifdef FLAME_WINDOWS
@@ -1091,6 +1105,48 @@ namespace flame
 		((SysWindowPrivate*)this)->dead = true;
 	}
 
+	static std::vector<SysWindowPrivate*> windows;
+
+	static Looper _looper;
+
+	void (*frame_callback)(void* c);
+	static Mail frame_capture;
+
+	static ulonglong last_time;
+
+	bool one_frame()
+	{
+		for (auto it = windows.begin(); it != windows.end(); )
+		{
+			auto w = (SysWindowPrivate*)*it;
+
+			if (w->dead)
+			{
+				it = windows.erase(it);
+				delete w;
+			}
+			else
+				it++;
+		}
+
+		if (windows.empty())
+		{
+			f_free(frame_capture.p);
+			return false;
+		}
+
+		frame_callback(frame_capture.p);
+
+		_looper.frame++;
+		auto et = last_time;
+		last_time = get_now_ns();
+		et = last_time - et;
+		_looper.delta_time = et / 1000000000.f;
+		_looper.total_time += _looper.delta_time;
+
+		return true;
+	}
+
 #ifdef FLAME_WINDOWS
 	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
@@ -1098,6 +1154,15 @@ namespace flame
 
 		if (w)
 		{
+			auto resize = [=]() {
+				if (w->size != w->pending_size)
+				{
+					w->size = w->pending_size;
+					w->minimized = (w->size == 0U);
+					w->resize_listeners.call(w->size);
+				}
+			};
+
 			switch (message)
 			{
 			case WM_KEYDOWN:
@@ -1145,25 +1210,27 @@ namespace flame
 			break;
 			case WM_DESTROY:
 				w->dead = true;
+			case WM_ENTERSIZEMOVE:
+				SetTimer(hWnd, 0, 100, NULL);
+				break;
+			case WM_EXITSIZEMOVE:
+				KillTimer(hWnd, 0);
+				resize();
+				break;
+			case WM_TIMER:
+				if (wParam == 0)
+					resize();
+				one_frame();
+				break;
 			case WM_SIZE:
-			{
-				auto size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
-				w->minimized = (size.x() == 0 || size.y() == 0);
-				if (size != w->size)
-				{
-					w->size = size;
-					w->resize_listeners.call(size);
-				}
-			}
-			break;
+				w->pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+				break;
 			}
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 #endif
-
-	static std::vector<SysWindowPrivate*> windows;
 
 	SysWindow* SysWindow::create(const char* title, const Vec2u& size, WindowStyleFlags style, SysWindow* parent)
 	{
@@ -1270,14 +1337,13 @@ namespace flame
 		delete reinterpret_cast<SysWindowPrivate*>(w);
 	}
 
-	static Looper _looper;
-
-	static ulonglong last_time;
-
-	int Looper::loop(void (*idle_func)(void* c), const Mail& capture)
+	int Looper::loop(void (*_frame_callback)(void* c), const Mail& capture)
 	{
-		if (windows.size() == 0)
+		if (windows.empty())
 			return 1;
+
+		frame_callback = _frame_callback;
+		frame_capture = capture;
 
 		last_time = get_now_ns();
 		frame = 0;
@@ -1307,34 +1373,8 @@ namespace flame
 					w->destroy_event = true;
 			}
 #endif
-
-			for (auto it = windows.begin(); it != windows.end(); )
-			{
-				auto w = reinterpret_cast<SysWindowPrivate*>(*it);
-
-				if (w->dead)
-				{
-					it = windows.erase(it);
-					delete w;
-				}
-				else
-					it++;
-			}
-
-			if (windows.empty())
-			{
-				f_free(capture.p);
-				return 0;
-			}
-
-			idle_func(capture.p);
-
-			frame++;
-			auto et = last_time;
-			last_time = get_now_ns();
-			et = last_time - et;
-			delta_time = et / 1000000000.f;
-			total_time += delta_time;
+			if (!one_frame())
+				break;
 		}
 	}
 
