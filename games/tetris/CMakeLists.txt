@@ -1,13 +1,10 @@
+generate_config()
 file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 add_executable(tetris ${SOURCE_LIST})
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/config.ini 
-	"developing = 1\n"
-	"resource_path = \"${CMAKE_CURRENT_SOURCE_DIR}\"\n"
-	"engine_path = {e}\n"
-)
 set_target_properties(tetris PROPERTIES FOLDER "games")
 target_link_libraries(tetris flame_network)
 target_link_libraries(tetris flame_sound)
 target_link_libraries(tetris flame_universe)
 add_custom_command(TARGET tetris POST_BUILD COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/art & pack_atlas.bat)
 add_dependencies(tetris typeinfogen)
+add_dependencies(tetris texture_packer)

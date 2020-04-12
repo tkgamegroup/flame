@@ -1,5 +1,4 @@
-file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
-generate_rc()
+generate_config()
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml)
 	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml
 		"<layout>\n"
@@ -22,7 +21,8 @@ if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml)
 		"	</floating>\n"
 		"</layout>\n")
 endif()
-add_executable(bp_editor ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
+file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
+add_executable(bp_editor ${SOURCE_LIST})
 set_target_properties(bp_editor PROPERTIES FOLDER "tools")
 target_compile_definitions(bp_editor PRIVATE GRAPHVIZ_PATH="${GRAPHVIZ_PATH}")
 target_link_libraries(bp_editor flame_foundation)

@@ -151,10 +151,7 @@ struct MyApp : App
 
 int main(int argc, char** args)
 {
-	std::filesystem::path engine_path = getenv("FLAME_PATH");
-	set_engine_path(engine_path.c_str());
-
-	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
+	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true);
 
 	app.canvas->set_resource(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/9.png").c_str())));
 

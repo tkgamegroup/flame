@@ -87,9 +87,6 @@ struct cInspector : Component
 
 struct MyApp : App
 {
-	std::filesystem::path resource_path;
-	std::filesystem::path engine_path;
-
 	cEditor* editor;
 	cResourceExplorer* resource_explorer;
 	cHierarchy* hierarchy;

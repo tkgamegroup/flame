@@ -8,8 +8,6 @@ using namespace graphics;
 
 struct MyApp : App
 {
-	std::filesystem::path engine_path;
-
 	graphics::FontAtlas* font_atlas_edit;
 
 	cText* c_code;
@@ -96,9 +94,7 @@ struct MyApp : App
 
 int main(int argc, char** args)
 {
-	app.engine_path = getenv("FLAME_PATH");
-
-	app.create("Code Live", Vec2u(800, 400), WindowFrame | WindowResizable, true, app.engine_path);
+	app.create("Code Live", Vec2u(800, 400), WindowFrame | WindowResizable, true);
 
 	const wchar_t* fonts[] = {
 		L"c:/windows/fonts/consola.ttf"

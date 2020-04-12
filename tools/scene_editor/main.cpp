@@ -45,24 +45,7 @@ void add_window(pugi::xml_node n)
 
 void MyApp::create()
 {
-	{
-		auto config = parse_ini_file(L"config.ini");
-		for (auto& e : config.get_section_entries(""))
-		{
-			if (e.key == "resource_path")
-				resource_path = e.value;
-			else if (e.key == "engine_path")
-			{
-				if (e.value == "{e}")
-					engine_path = getenv("FLAME_PATH");
-				else
-					engine_path = e.value;
-			}
-		}
-	}
-	set_engine_path(engine_path.c_str());
-
-	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, engine_path, true);
+	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;

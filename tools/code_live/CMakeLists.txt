@@ -1,3 +1,4 @@
+generate_config()
 file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 add_executable(code_live ${SOURCE_LIST})
 set_target_properties(code_live PROPERTIES FOLDER "tools")

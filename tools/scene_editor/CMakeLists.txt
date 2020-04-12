@@ -1,8 +1,4 @@
-file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/config.ini 
-	"resource_path = \"${CMAKE_CURRENT_SOURCE_DIR}\"\n"
-	"engine_path = {e}\n"
-)
+generate_config()
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml)
 	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml
 		"<layout>\n"
@@ -30,6 +26,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/window_layout.xml)
 		"	</floating>\n"
 		"</layout>\n")
 endif()
+file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 add_executable(scene_editor ${SOURCE_LIST})
 set_target_properties(scene_editor PROPERTIES FOLDER "tools")
 target_link_libraries(scene_editor flame_foundation)

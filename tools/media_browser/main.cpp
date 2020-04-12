@@ -11,9 +11,7 @@ struct MyApp : App
 
 int main(int argc, char** args)
 {
-	std::filesystem::path engine_path = getenv("FLAME_PATH");
-
-	app.create("Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable, true, engine_path);
+	app.create("Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable, true);
 
 	utils::push_parent(app.root);
 		utils::e_begin_splitter(SplitterHorizontal);

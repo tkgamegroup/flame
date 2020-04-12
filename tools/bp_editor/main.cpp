@@ -840,10 +840,7 @@ bool MyApp::create(const char* filename)
 {
 	auto res = true;
 
-	std::filesystem::path engine_path = getenv("FLAME_PATH");
-	set_engine_path(engine_path.c_str());
-
-	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, engine_path, true);
+	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
 
 	if (filename[0])
 	{
