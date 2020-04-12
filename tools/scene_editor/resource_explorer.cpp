@@ -156,7 +156,7 @@ cResourceExplorer::cResourceExplorer() :
 		e_page->add_component(this);
 	}
 
-	base_path = L"../../../tools/scene_editor";
+	base_path = app.resource_path;
 
 		address_bar = utils::e_empty();
 		utils::c_element();
@@ -255,6 +255,8 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		address_bar->remove_children(0, -1);
 		utils::push_parent(address_bar);
 		utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
+		utils::push_style_4c(utils::ButtonColorHovering, utils::style_4c(utils::FrameColorHovering));
+		utils::push_style_4c(utils::ButtonColorActive, utils::style_4c(utils::FrameColorActive));
 
 		utils::e_button(Icon_LEVEL_UP, [](void* c) {
 			if (app.resource_explorer->curr_path != app.resource_explorer->base_path)
@@ -309,6 +311,8 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		}
 
 		utils::pop_style(utils::ButtonColorNormal);
+		utils::pop_style(utils::ButtonColorHovering);
+		utils::pop_style(utils::ButtonColorActive);
 		utils::pop_parent();
 
 		clear_all_works();
@@ -343,9 +347,11 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			}capture;
 			wcscpy_s(capture.p, p.c_str());
 			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto& capture = *(Capture*)c;
 				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
+				{
+					auto& capture = *(Capture*)c;
 					app.resource_explorer->navigate(capture.p);
+				}
 				return true;
 			}, Mail::from_t(&capture));
 			utils::push_parent(item);
@@ -382,12 +388,21 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			utils::push_parent(item);
 			if (ext == L".prefab")
 			{
-				utils::e_begin_popup_menu();
 				struct Capture
 				{
 					wchar_t p[256];
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
+				item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
+					{
+						auto& capture = *(Capture*)c;
+						app.resource_explorer->selected = capture.p;
+						app.load(app.resource_explorer->selected);
+					}
+					return true;
+				}, Mail::from_t(&capture));
+				utils::e_begin_popup_menu();
 				utils::e_menu_item(L"Open", [](void* c) {
 					auto& capture = *(Capture*)c;
 					app.resource_explorer->selected = capture.p;

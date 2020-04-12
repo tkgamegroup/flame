@@ -187,6 +187,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
+		FLAME_FOUNDATION_EXPORTS const char* base_name() const;
 
 		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
 		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;

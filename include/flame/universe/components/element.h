@@ -11,22 +11,22 @@ namespace flame
 
 	struct s2DRenderer;
 
-	struct FLAME_R(cElement) : Component
+	struct FLAME_R(cElement : Component)
 	{
 		s2DRenderer* renderer;
 
 		FLAME_RV(Vec2f, pos, 0);
-		Vec2f size;
-		float scale;
-		Vec2f pivot;
-		Vec4f padding; // L T R B
-		float alpha;
-		Vec4f roundness;
-		uint roundness_lod;
-		float frame_thickness;
-		Vec4c color;
-		Vec4c frame_color;
-		ClipFlags clip_flags;
+		FLAME_RV(Vec2f, size, 0);
+		FLAME_RV(float, scale, 0);
+		FLAME_RV(Vec2f, pivot, 0);
+		FLAME_RV(Vec4f, padding, 0); // L T R B
+		FLAME_RV(float, alpha, 0);
+		FLAME_RV(Vec4f, roundness, 0);
+		FLAME_RV(uint, roundness_lod, 0);
+		FLAME_RV(float, frame_thickness, 0);
+		FLAME_RV(Vec4c, color, 0);
+		FLAME_RV(Vec4c, frame_color, 0);
+		FLAME_RV(ClipFlags, clip_flags, 0);
 
 		Vec2f global_pos;
 		float global_scale;
@@ -110,14 +110,14 @@ namespace flame
 		ListenerHub<bool(void* c, graphics::Canvas * canvas)> cmds;
 
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_pos)(const Vec2f& p, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_scale(float s, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_size(const Vec2f& s, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_alpha(float a, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_roundness(const Vec4f& r, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_frame_thickness(float t, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_color(const Vec4c& c, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_frame_color(const Vec4c& c, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_scale)(float s, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_size)(const Vec2f& s, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_alpha)(float a, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const Vec4f& r, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_thickness)(float t, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_color)(const Vec4c& c, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c, void* sender = nullptr);
 
-		FLAME_UNIVERSE_EXPORTS static cElement* create();
+		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(create)();
 	};
 }

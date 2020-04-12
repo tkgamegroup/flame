@@ -79,6 +79,7 @@ namespace flame
 
 		const TypeInfoPrivate* type;
 		uint size;
+		std::string base_name;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 

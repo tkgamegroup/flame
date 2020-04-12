@@ -117,6 +117,7 @@ cInspector::~cInspector()
 void cInspector::refresh()
 {
 	e_layout->remove_children(0, -1);
+
 	utils::push_parent(e_layout);
 	if (!app.selected)
 		utils::e_text(L"Nothing Selected");
@@ -155,7 +156,7 @@ void cInspector::refresh()
 		{
 			auto component = components.v[i];
 
-			auto udt = find_udt(FLAME_HASH(component->name));
+			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + component->name).c_str()));
 
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
 			{

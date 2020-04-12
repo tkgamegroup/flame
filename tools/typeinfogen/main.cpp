@@ -294,6 +294,7 @@ int main(int argc, char **args)
 	DWORD dw;
 	wchar_t* pwname;
 
+	std::filesystem::path include_root;
 	std::filesystem::path source_root;
 	{
 		DWORD h;
@@ -305,7 +306,10 @@ int main(int argc, char **args)
 			{
 				void* d; uint s;
 				VerQueryValue(version_data, "\\StringFileInfo\\040904b0\\FileDescription", &d, &s);
-				source_root = (char*)d;
+				auto sp = SUS::split((char*)d, ';');
+				include_root = sp[0];
+				include_root.make_preferred();
+				source_root = sp[1];
 				source_root.make_preferred();
 			}
 			delete[] version_data;
@@ -326,7 +330,7 @@ int main(int argc, char **args)
 			auto p = fn.parent_path();
 			while (p.root_path() != p)
 			{
-				if (p == source_root)
+				if (p == include_root || p == source_root)
 				{
 					my_file = true;
 					break;
@@ -353,17 +357,18 @@ int main(int argc, char **args)
 	{
 		std::string name;
 		std::string full_name;
+		std::string base_name;
 		std::vector<DesiredVariable> variables;
 		std::vector<DesiredFunction> functions;
 	};
 	std::vector<DesiredUDT> desired_udts;
 
-	for (auto& cpp : my_sources)
+	for (auto& src : my_sources)
 	{
 		std::vector<std::string> lines;
-		std::vector<std::string> current_namespaces;
+		std::vector<std::pair<int, std::string>> current_namespaces;
 
-		std::ifstream file(cpp);
+		std::ifstream file(src);
 		while (!file.eof())
 		{
 			std::string line;
@@ -382,16 +387,19 @@ int main(int argc, char **args)
 			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]+)\))");
 			std::smatch res;
 			if (std::regex_search(lines[i], res, reg_ns))
-				current_namespaces.push_back(res[1].str());
+				current_namespaces.emplace_back(braces_level, res[1].str());
 			else if (std::regex_search(lines[i], res, reg_R))
 			{
 				auto str = res[1].str();
-				SUS::trim(str);
+				SUS::remove_spaces(str);
+				auto sp = SUS::split(str, ':');
 				DesiredUDT du;
-				du.name = str;
+				du.name = sp[0];
 				for (auto& ns : current_namespaces)
-					du.full_name += ns + "::";
-				du.full_name += str;
+					du.full_name += ns.second + "::";
+				du.full_name += du.name;
+				if (sp.size() > 1)
+					du.base_name = sp[1];
 
 				auto braces_level = 0;
 				for (i = i + 1; i < lines.size(); i++)
@@ -441,7 +449,7 @@ int main(int argc, char **args)
 			{
 				braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
 				braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
-				if (braces_level == 0 && !current_namespaces.empty())
+				if (!current_namespaces.empty() && braces_level == current_namespaces.back().first)
 					current_namespaces.erase(current_namespaces.end() - 1);
 			}
 		}
@@ -465,6 +473,7 @@ int main(int argc, char **args)
 				{
 					_udt->get_length(&ull);
 					auto u = db->add_udt(TypeInfo::get(TypeData, name.c_str()), ull);
+					u->base_name = du.base_name;
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -661,6 +670,7 @@ int main(int argc, char **args)
 		auto n_udt = n_udts.append_child("udt");
 		n_udt.append_attribute("name").set_value(u->type->name.c_str());
 		n_udt.append_attribute("size").set_value(u->size);
+		n_udt.append_attribute("base_name").set_value(u->base_name.c_str());
 
 		auto n_items = n_udt.append_child("variables");
 		for (auto& v : u->variables)

@@ -165,10 +165,18 @@ void MyApp::load(const std::filesystem::path& _filepath)
 		prefab->parent()->remove_child(prefab);
 	prefab = Entity::create_from_file(world, filepath.c_str());
 	selected = nullptr;
-	if (editor)
-		editor->e_base->add_child(prefab);
-	if (hierarchy)
-		hierarchy->refresh();
+	looper().add_event([](void*, bool*) {
+		if (app.editor)
+		{
+			auto e_base = app.editor->e_base;
+			e_base->remove_children(0, -1);
+			e_base->add_child(app.prefab);
+		}
+		if (app.hierarchy)
+			app.hierarchy->refresh();
+		if (app.inspector)
+			app.inspector->refresh();
+	}, Mail());
 }
 
 int main(int argc, char **args)

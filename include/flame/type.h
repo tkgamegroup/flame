@@ -99,6 +99,8 @@ namespace flame
 		return cvt.f;
 	}
 
+	typedef void* (*F_vp_v)();
+
 	template <class F, class ...Args>
 	auto cf(F f, Args... args) // call function
 	{

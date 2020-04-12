@@ -375,45 +375,32 @@ namespace flame
 		return new EntityPrivate;
 	}
 
-	static Entity* load_prefab(World* w, pugi::xml_node src)
+	static EntityPrivate* load_prefab(World* w, pugi::xml_node src)
 	{
-		auto e = Entity::create();
+		auto e = new EntityPrivate;
 		e->set_name(src.attribute("name").value());
-		e->set_visible(src.attribute("visible").as_bool());
+		e->visible_ = src.attribute("visible").as_bool();
 
 		for (auto n_c : src.child("components"))
 		{
-			auto udt = find_udt(FLAME_HASH((std::string("D#flame::Serializer_") + n_c.name()).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + n_c.name()).c_str()));
+			if (udt->base_name() != std::string("Component"))
+				udt = nullptr;
 			assert(udt);
-			auto object = malloc(udt->size());
 			auto module = udt->db()->module();
-			{
-				auto f = udt->find_function("ctor");
-				if (f && f->parameter_count() == 0)
-					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
-			}
+			auto f = udt->find_function("create");
+			assert(f);
+			auto component = cf(p2f<F_vp_v>((char*)module + (uint)f->rva()));
 			for (auto n_v : n_c)
 			{
 				auto v = udt->find_variable(n_v.name());
-				v->type()->unserialize(n_v.attribute("v").value(), (char*)object + v->offset());
-			}
-			void* component;
-			{
-				auto f = udt->find_function("create");
-				assert(f && check_function(f, "P#flame::Component", { "P#flame::World" }));
-				component = cmf(p2f<MF_vp_vp>((char*)module + (uint)f->rva()), object, w);
+				v->type()->unserialize(n_v.attribute("v").value(), (char*)component + v->offset());
 			}
 			e->add_component((Component*)component);
-			{
-				auto f = udt->find_function("dtor");
-				if (f)
-					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
-			}
-			free(object);
 		}
 
 		for (auto n_e : src.child("children"))
-			e->add_child(load_prefab(w, n_e));
+			e->add_child(load_prefab(w, n_e), -1);
 
 		return e;
 	}

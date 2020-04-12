@@ -537,7 +537,7 @@ namespace flame
 			cs->color_hovering[1] = style_4c(ButtonColorHovering);
 			cs->color_active[1] = style_4c(ButtonColorActive);
 			cs->style();
-			c_checkbox()->checked = checked;
+			c_checkbox()->set_checked(checked);
 			if (text[0])
 			{
 				e_text(text);
@@ -979,9 +979,9 @@ namespace flame
 			auto cm = c_menu(cMenu::ModeMain);
 			cm->root = current_root();
 			auto cs = c_style_color();
-			cs->color_normal = style_4c(FrameColorNormal);
-			cs->color_hovering = style_4c(FrameColorHovering);
-			cs->color_active = style_4c(FrameColorActive);
+			cs->color_normal = style_4c(ButtonColorNormal);
+			cs->color_hovering = style_4c(ButtonColorHovering);
+			cs->color_active = style_4c(ButtonColorActive);
 			cs->style();
 			push_parent(cm->items);
 			return e;

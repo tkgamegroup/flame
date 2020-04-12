@@ -208,6 +208,11 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->size;
 	}
 
+	const char* UdtInfo::base_name() const
+	{
+		return ((UdtInfoPrivate*)this)->base_name.c_str();
+	}
+
 	uint UdtInfo::variable_count() const
 	{
 		return ((UdtInfoPrivate*)this)->variables.size();
@@ -349,6 +354,7 @@ namespace flame
 		for (auto n_udt : file_root.child("udts"))
 		{
 			auto u = db->add_udt(TypeInfo::get(n_udt.attribute("name").value()), n_udt.attribute("size").as_uint());
+			u->base_name = n_udt.attribute("base_name").value();
 
 			for (auto n_variable : n_udt.child("variables"))
 			{

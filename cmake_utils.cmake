@@ -1,4 +1,4 @@
-function(generate_rc)
+function(generate_rc desc)
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/version.rc 
 	"1						VERSIONINFO\n"
 	"FILEVERSION            1,0,0,0\n"
@@ -8,7 +8,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/version.rc
 	"	BEGIN\n"
 	"		BLOCK \"040904b0\"\n"
 	"		BEGIN\n"
-	"			VALUE \"FileDescription\",	\"${CMAKE_CURRENT_SOURCE_DIR}\"\n"
+	"			VALUE \"FileDescription\",	\"${desc}\"\n"
 	"		END\n"
 	"	END\n"
 	"	BLOCK \"VarFileInfo\"\n"
