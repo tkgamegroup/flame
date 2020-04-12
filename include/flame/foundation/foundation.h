@@ -484,8 +484,10 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void set_engine_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS const wchar_t* get_engine_path();
+	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(void* c, const wchar_t* filename), const Mail& capture);
+	FLAME_FOUNDATION_EXPORTS void report_used_file(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
-	FLAME_FOUNDATION_EXPORTS StringW get_app_path();
+	FLAME_FOUNDATION_EXPORTS StringW get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
 	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);

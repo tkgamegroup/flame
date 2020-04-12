@@ -660,7 +660,7 @@ namespace flame
 					return false;
 				}
 
-				//execution_context->report_used_resource(spv_path.c_str());
+				report_used_file(spv_path.c_str());
 
 #if defined(FLAME_VULKAN)
 				VkShaderModuleCreateInfo shader_info;

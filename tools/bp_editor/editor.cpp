@@ -652,6 +652,7 @@ cEditor::cEditor() :
 	selecting = false;
 
 	dragging_slot = nullptr;
+	pending_link_slot = nullptr;
 
 	for (auto i = 0; i < app.bp->node_count(); i++)
 		on_add_node(app.bp->node(i));

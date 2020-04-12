@@ -83,7 +83,7 @@ namespace flame
 		free(p);
 	}
 
-	std::wstring engine_path;
+	static std::wstring engine_path;
 
 	void set_engine_path(const wchar_t* p)
 	{
@@ -95,6 +95,21 @@ namespace flame
 		return engine_path.c_str();
 	}
 
+	static void(*file_callback)(void*, const wchar_t*);
+	static Mail file_callback_capture;
+
+	void set_file_callback(void(*callback)(void* c, const wchar_t* filename), const Mail& capture)
+	{
+		file_callback = callback;
+		file_callback_capture = capture;
+	}
+
+	void report_used_file(const wchar_t* filename)
+	{
+		if (file_callback)
+			file_callback(file_callback_capture.p, filename);
+	}
+
 	StringW get_curr_path()
 	{
 		wchar_t buf[260];
@@ -102,10 +117,12 @@ namespace flame
 		return StringW(buf);
 	}
 
-	StringW get_app_path()
+	StringW get_app_path(bool has_name)
 	{
 		wchar_t buf[260];
 		GetModuleFileNameW(nullptr, buf, sizeof(buf));
+		if (has_name)
+			return StringW(buf);
 		return StringW(std::filesystem::path(buf).parent_path().wstring());
 	}
 
@@ -1020,6 +1037,7 @@ namespace flame
 			destroy_listeners.impl = ListenerHubImpl::create();
 
 			sizing = false;
+			pending_size = size;
 
 			dead = false;
 		}
@@ -1067,9 +1085,9 @@ namespace flame
 	void* SysWindow::get_native()
 	{
 #ifdef FLAME_WINDOWS
-		return reinterpret_cast<SysWindowPrivate*>(this)->hWnd;
+		return ((SysWindowPrivate*)this)->hWnd;
 #elif FLAME_ANDROID
-		return reinterpret_cast<WindowPrivate*>(this)->android_state;
+		return ((SysWindowPrivate*)this)->android_state;
 #endif
 	}
 
@@ -1153,7 +1171,7 @@ namespace flame
 #ifdef FLAME_WINDOWS
 	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		auto w = reinterpret_cast<SysWindowPrivate*>(GetWindowLongPtr(hWnd, 0));
+		auto w = (SysWindowPrivate*)GetWindowLongPtr(hWnd, 0);
 
 		if (w)
 		{
@@ -1252,17 +1270,15 @@ namespace flame
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
 			wcex.hIcon = 0;
-			auto flame_path = getenv("FLAME_PATH");
-			if (flame_path)
+			auto icon_fn = std::filesystem::path(getenv("FLAME_PATH")) / L"art\\ico.png";
+			if (std::filesystem::exists(icon_fn))
 			{
-				auto icon_image = Bitmap::create_from_file((std::filesystem::path(flame_path) / L"art/ico.png").c_str());
-				if (icon_image)
-				{
-					icon_image->swap_channel(0, 2);
-					wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x(), icon_image->size.y(), 1,
-						icon_image->bpp, nullptr, icon_image->data);
-					Bitmap::destroy(icon_image);
-				}
+				report_used_file(icon_fn.c_str());
+				auto icon_image = Bitmap::create_from_file(icon_fn.c_str());
+				icon_image->swap_channel(0, 2);
+				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->size.x(), icon_image->size.y(), 1,
+					icon_image->bpp, nullptr, icon_image->data);
+				Bitmap::destroy(icon_image);
 			}
 			wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 			wcex.hbrBackground = 0;
@@ -1339,9 +1355,9 @@ namespace flame
 			}
 		}
 #ifdef FLAME_WINDOWS
-		DestroyWindow(reinterpret_cast<SysWindowPrivate*>(w)->hWnd);
+		DestroyWindow(((SysWindowPrivate*)w)->hWnd);
 #endif
-		delete reinterpret_cast<SysWindowPrivate*>(w);
+		delete (SysWindowPrivate*)w;
 	}
 
 	int Looper::loop(void (*_frame_callback)(void* c), const Mail& capture)

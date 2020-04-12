@@ -157,7 +157,7 @@ namespace flame
 				auto thiz = *(App**)c;
 				if (thiz->s_2d_renderer->pending_update)
 				{
-					thiz->windows[0]->update_sc();
+					thiz->main_window->update_sc();
 					thiz->canvas->prepare();
 				}
 				return true;
@@ -176,11 +176,10 @@ namespace flame
 
 		void set_canvas_target()
 		{
-			auto w = windows[0].get();
-
-			std::vector<graphics::Imageview*> vs(w->sc->image_count());
+			auto sc = main_window->sc;
+			std::vector<graphics::Imageview*> vs(sc->image_count());
 			for (auto i = 0; i < vs.size(); i++)
-				vs[i] = w->sc->image(i)->default_view();
+				vs[i] = sc->image(i)->default_view();
 
 			canvas->set_target(vs.size(), vs.data());
 		}
@@ -195,7 +194,7 @@ namespace flame
 
 			looper().process_events();
 
-			c_element_root->set_size(Vec2f(windows[0]->w->size));
+			c_element_root->set_size(Vec2f(main_window->w->size));
 			world->update();
 			if (main_window->sc_updated)
 				canvas->record(main_window->curr_cb, main_window->img_idx);

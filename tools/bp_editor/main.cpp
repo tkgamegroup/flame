@@ -799,25 +799,6 @@ bool MyApp::auto_set_layout()
 	return true;
 }
 
-void MyApp::show_test_render_target(BP::Node* n)
-{
-	auto dp = ((Entity*)n->user_data)->get_component(cDataKeeper);
-	auto w = (App::Window*)dp->get_voidp_item(FLAME_CHASH("window"));
-	if (!w)
-	{
-		w = new App::Window("Test Render Target", Vec2u(400, 300), WindowFrame, graphics_device, windows[0]->w);
-		n->find_input("w")->set_data_p(w);
-		w->w->destroy_listeners.add([](void* c) {
-			auto n = *(BP::Node**)c;
-			((Entity*)n->user_data)->get_component(cDataKeeper)->set_voidp_item(FLAME_CHASH("window"), nullptr);
-			n->find_input("w")->set_data_p(nullptr);
-			return true;
-		}, Mail::from_p(n));
-		windows.emplace_back(w);
-		dp->set_voidp_item(FLAME_CHASH("window"), w);
-	}
-}
-
 void add_window(pugi::xml_node n)
 {
 	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
@@ -864,8 +845,6 @@ bool MyApp::create(const char* filename)
 
 	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, engine_path, true);
 
-	TypeinfoDatabase::load(L"bp_editor.exe", true, true);
-
 	if (filename[0])
 	{
 		filepath = filename;
@@ -885,7 +864,7 @@ bool MyApp::create(const char* filename)
 		assert(bp);
 	}
 
-	windows[0]->w->set_title(filepath.string().c_str());
+	main_winow->w->set_title(filepath.string().c_str());
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;

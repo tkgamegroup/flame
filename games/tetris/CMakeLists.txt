@@ -1,6 +1,7 @@
 file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 add_executable(tetris ${SOURCE_LIST})
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/config.ini 
+	"developing = 1\n"
 	"resource_path = \"${CMAKE_CURRENT_SOURCE_DIR}\"\n"
 	"engine_path = {e}\n"
 )

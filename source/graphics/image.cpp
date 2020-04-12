@@ -649,6 +649,7 @@ namespace flame
 			}
 
 			auto atlas = new AtlasPrivate(d, filename);
+			report_used_file(filename);
 
 			return atlas;
 		}

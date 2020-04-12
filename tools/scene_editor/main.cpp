@@ -64,8 +64,6 @@ void MyApp::create()
 
 	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, engine_path, true);
 
-	TypeinfoDatabase::load(L"scene_editor.exe", true, true);
-
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
 	if (window_layout.load_file(L"window_layout.xml"))

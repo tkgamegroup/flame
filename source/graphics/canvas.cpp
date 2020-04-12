@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include "device_private.h"
 #include <flame/graphics/buffer.h>
 #include <flame/graphics/renderpass.h>
@@ -124,7 +125,7 @@ namespace flame
 						L"element.vert",
 						L"element.frag"
 					};
-					pl = Pipeline::create(d, (std::wstring(get_engine_path()) + L"/shaders").c_str(), array_size(shaders), shaders, pll, rp, 0,
+					pl = Pipeline::create(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0,
 						&vi, Vec2u(0), nullptr, SampleCount_8);
 				}
 

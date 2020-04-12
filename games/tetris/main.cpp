@@ -88,6 +88,11 @@ struct Garbage
 
 struct MyApp : App
 {
+	bool developing;
+	std::filesystem::path resource_path;
+	std::filesystem::path engine_path;
+	std::vector<std::filesystem::path> used_files[2];
+
 	graphics::Atlas* atlas;
 
 	sound::Buffer* sound_move_buf;
@@ -172,6 +177,20 @@ struct MyApp : App
 		user_data << "left_right_speed = " << left_right_speed << "\n";
 		user_data << "soft_drop_speed = " << soft_drop_speed << "\n";
 		user_data.close();
+
+		if (developing)
+		{
+			std::ofstream pack_desc(resource_path / L"package_description.ini");
+			pack_desc << "src = \"\"\n";
+			pack_desc << "dst = \"{c}\"\n\n";
+			pack_desc << "[engine_items]\n";
+			for (auto& p : used_files[0])
+				pack_desc << "\"" << p.string() << "\"\n";
+			pack_desc << "[items]\n";
+			for (auto& p : used_files[1])
+				pack_desc << "\"" << p.string() << "\"\n";
+			pack_desc.close();
+		}
 	}
 
 	void create_home_scene()
@@ -2193,51 +2212,87 @@ struct MyApp : App
 
 int main(int argc, char **args)
 {
-	std::filesystem::path resource_path;
-	std::filesystem::path engine_path;
+	app.developing = true;
 	{
 		auto config = parse_ini_file(L"config.ini");
 		for (auto& e : config.get_section_entries(""))
 		{
-			if (e.key == "resource_path")
-				resource_path = e.value;
+			if (e.key == "developing")
+				app.developing = e.value != "0";
+			else if (e.key == "resource_path")
+				app.resource_path = e.value;
 			else if (e.key == "engine_path")
 			{
 				if (e.value == "{e}")
-					engine_path = getenv("FLAME_PATH");
+					app.engine_path = getenv("FLAME_PATH");
 				else
-					engine_path = e.value;
+					app.engine_path = e.value;
 			}
 		}
 	}
+	set_engine_path(app.engine_path.c_str());
+	if (app.developing)
+	{
+		set_file_callback([](void*, const wchar_t* _filename) {
+			std::filesystem::path filename = _filename;
+			auto i = -1;
+			{
+				auto p = filename.lexically_relative(app.resource_path);
+				if (!p.empty() && p.c_str()[0] != L'.')
+				{
+					filename = p;
+					i = 1;
+				}
+			}
+			if (i == -1)
+			{
+				auto p = filename.lexically_relative(app.engine_path);
+				if (!p.empty() && p.c_str()[0] != L'.')
+				{
+					filename = p;
+					i = 0;
+				}
+			}
+			if (i == -1)
+				return;
+			for (auto& p : app.used_files[i])
+			{
+				if (p == filename)
+					return;
+			}
+			app.used_files[i].push_back(filename);
+		}, Mail());
+		std::filesystem::path this_app = get_app_path(true).str();
+		report_used_file((this_app.parent_path().replace_filename(L"{c}") / this_app.filename()).c_str());
+	}
 
-	app.create("Tetris", Vec2u(800, 600), WindowFrame, false, engine_path);
+	app.create("Tetris", Vec2u(800, 600), WindowFrame, false, app.engine_path);
 
-	app.atlas = graphics::Atlas::load(app.graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
+	app.atlas = graphics::Atlas::load(app.graphics_device, (app.resource_path / L"art/atlas/main.atlas").c_str());
 	app.canvas->add_atlas(app.atlas);
 
 	{
-		app.sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
+		app.sound_move_buf = sound::Buffer::create_from_file((app.resource_path / L"art/move.wav").c_str());
 		app.sound_move_src = sound::Source::create(app.sound_move_buf);
 		app.sound_move_src->set_volume(sound_move_volumn);
 	}
 	{
-		app.sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/soft_drop.wav").c_str());
+		app.sound_soft_drop_buf = sound::Buffer::create_from_file((app.resource_path / L"art/soft_drop.wav").c_str());
 		app.sound_soft_drop_src = sound::Source::create(app.sound_soft_drop_buf);
 		app.sound_soft_drop_src->set_volume(sound_soft_drop_volumn);
 	}
 	{
-		app.sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/hard_drop.wav").c_str());
+		app.sound_hard_drop_buf = sound::Buffer::create_from_file((app.resource_path / L"art/hard_drop.wav").c_str());
 		app.sound_hard_drop_src = sound::Source::create(app.sound_hard_drop_buf);
 		app.sound_hard_drop_src->set_volume(sound_hard_drop_volumn);
 	}
 	{
-		app.sound_clear_buf = sound::Buffer::create_from_file((resource_path / L"art/clear.wav").c_str());
+		app.sound_clear_buf = sound::Buffer::create_from_file((app.resource_path / L"art/clear.wav").c_str());
 		app.sound_clear_src = sound::Source::create(app.sound_clear_buf);
 		app.sound_clear_src->set_volume(sound_clear_volumn);
 	}
 	{
-		app.sound_hold_buf = sound::Buffer::create_from_file((resource_path / L"art/hold.wav").c_str());
+		app.sound_hold_buf = sound::Buffer::create_from_file((app.resource_path / L"art/hold.wav").c_str());
 		app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
 		app.sound_hold_src->set_volume(sound_hold_volumn);
 	}

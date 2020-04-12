@@ -1,4 +1,5 @@
 #include <flame/serialize.h>
+#include <flame/foundation/foundation.h>
 #include "buffer_private.h"
 
 namespace flame
@@ -84,6 +85,7 @@ namespace flame
 				return nullptr;
 
 			auto b = new BufferPrivate(file);
+			report_used_file(filename);
 
 			fclose(file);
 

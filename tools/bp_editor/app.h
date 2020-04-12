@@ -146,8 +146,6 @@ struct MyApp : App
 	bool generate_graph_image();
 	bool auto_set_layout();
 
-	void show_test_render_target(BP::Node* n);
-
 	bool create(const char* filename);
 };
 

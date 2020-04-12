@@ -20,7 +20,7 @@ namespace flame
 
 		struct Font
 		{
-			std::wstring filename;
+			std::filesystem::path filename;
 			std::string font_file;
 			stbtt_fontinfo info;
 			uint ref_count;
@@ -77,7 +77,7 @@ namespace flame
 					id = hash_update(id, FLAME_HASH(fn));
 
 					Font* f = nullptr;
-					auto filename = std::filesystem::canonical(fn).wstring();
+					auto filename = std::filesystem::canonical(fn);
 					for (auto& _f : loaded_fonts)
 					{
 						if (_f->filename == filename)
@@ -89,6 +89,7 @@ namespace flame
 					if (!f)
 					{
 						f = new Font(filename);
+						report_used_file(filename.c_str());
 						loaded_fonts.emplace_back(f);
 					}
 					if (f)
