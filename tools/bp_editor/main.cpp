@@ -475,8 +475,11 @@ void MyApp::set_changed(bool v)
 	if (changed != v)
 	{
 		changed = v;
-		if (editor)
-			editor->on_bp_changed();
+
+		std::string title = filepath.string();
+		if (changed)
+			title += "*";
+		main_window->w->set_title(title.c_str());
 	}
 }
 
@@ -817,10 +820,17 @@ void MyApp::show_test_render_target(BP::Node* n)
 
 void add_window(pugi::xml_node n)
 {
+	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
+	auto r = n.attribute("r").as_int(1);
 	std::string name(n.name());
 	if (name == "layout")
 	{
-		utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical);
+		auto t = n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical;
+		auto ca = utils::e_begin_docker_layout(t)->get_component(cAligner);
+		if (parent_layout)
+			ca->width_factor_ = r;
+		else
+			ca->height_factor_ = r;
 		for (auto c : n.children())
 			add_window(c);
 		utils::e_end_docker_layout();
@@ -828,27 +838,27 @@ void add_window(pugi::xml_node n)
 	else if (name == "docker")
 	{
 		auto ca = utils::e_begin_docker()->get_component(cAligner);
-		if (utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal)
-			ca->width_factor_ = n.attribute("r").as_int();
+		if (parent_layout)
+			ca->width_factor_ = r;
 		else
-			ca->height_factor_ = n.attribute("r").as_int();
-		for (auto c : n.children())
-		{
-			if (c.name() == std::string("page"))
-			{
-				std::string window(c.attribute("name").value());
-				if (window == "editor")
-					app.editor = new cEditor;
-				else if (window == "console")
-					app.console = new cConsole;
-			}
-		}
+			ca->height_factor_ = r;
+		auto name = std::string(n.child("page").attribute("name").value());
+		if (name == "editor")
+			app.editor = new cEditor;
+		else if (name == "detail")
+			app.detail = new cDetail;
+		else if (name == "preview")
+			app.preview = new cPreview;
+		else if (name == "console")
+			app.console = new cConsole;
 		utils::e_end_docker();
 	}
 }
 
 bool MyApp::create(const char* filename)
 {
+	auto res = true;
+
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 	set_engine_path(engine_path.c_str());
 
@@ -856,13 +866,26 @@ bool MyApp::create(const char* filename)
 
 	TypeinfoDatabase::load(L"bp_editor.exe", true, true);
 
-	filepath = filename;
-	fileppath = filepath.parent_path();
-	bp = BP::create_from_file(app.filepath.c_str(), true);
+	if (filename[0])
+	{
+		filepath = filename;
+		fileppath = filepath.parent_path();
+		bp = BP::create_from_file(filepath.c_str(), true);
+	}
 	if (!bp)
-		return false;
+	{
+		res = false;
 
-	windows[0]->w->set_title(("BP Editor - " + filepath.string()).c_str());
+		filepath = std::filesystem::canonical(L"new.bp");
+		fileppath = filepath.parent_path();
+		std::ofstream new_bp(filepath);
+		new_bp << "<BP />\n";
+		new_bp.close();
+		bp = BP::create_from_file(filepath.c_str(), true);
+		assert(bp);
+	}
+
+	windows[0]->w->set_title(filepath.string().c_str());
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
@@ -1006,8 +1029,52 @@ bool MyApp::create(const char* filename)
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"View");
 					utils::e_menu_item(L"Editor", [](void* c) {
+						if (!app.editor)
+						{
+							utils::next_element_pos = Vec2f(100.f);
+							utils::next_element_size = Vec2f(400.f, 300.f);
+							utils::e_begin_docker_floating_container();
+								utils::e_begin_docker();
+									app.editor = new cEditor;
+								utils::e_end_docker();
+							utils::e_end_docker_floating_container();
+						}
+					}, Mail());
+					utils::e_menu_item(L"Detail", [](void* c) {
+						if (!app.detail)
+						{
+							utils::next_element_pos = Vec2f(100.f);
+							utils::next_element_size = Vec2f(400.f, 300.f);
+							utils::e_begin_docker_floating_container();
+								utils::e_begin_docker();
+									app.detail = new cDetail;
+								utils::e_end_docker();
+							utils::e_end_docker_floating_container();
+						}
+					}, Mail());
+					utils::e_menu_item(L"Preview", [](void* c) {
+						if (!app.preview)
+						{
+							utils::next_element_pos = Vec2f(100.f);
+							utils::next_element_size = Vec2f(400.f, 300.f);
+							utils::e_begin_docker_floating_container();
+								utils::e_begin_docker();
+									app.preview = new cPreview;
+								utils::e_end_docker();
+							utils::e_end_docker_floating_container();
+						}
 					}, Mail());
 					utils::e_menu_item(L"Console", [](void* c) {
+						if (!app.console)
+						{
+							utils::next_element_pos = Vec2f(100.f);
+							utils::next_element_size = Vec2f(400.f, 300.f);
+							utils::e_begin_docker_floating_container();
+								utils::e_begin_docker();
+									app.console = new cConsole;
+								utils::e_end_docker();
+							utils::e_end_docker_floating_container();
+						}
 					}, Mail());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Tools");
@@ -1070,18 +1137,14 @@ bool MyApp::create(const char* filename)
 
 	utils::pop_parent();
 
-	return true;
+	return res;
 }
 
 MyApp app;
 
 int main(int argc, char **args)
 {
-	if (argc < 2)
-		return 0;
-
-	if (!app.create(args[1]))
-		return 0;
+	app.create(argc > 1 ? args[1] : "");
 
 	looper().add_event([](void*, bool* go_on) {
 		if (app.auto_update)

@@ -33,9 +33,11 @@ namespace flame
 			graphics::Fence* fence;
 			graphics::Semaphore* semaphore;
 
-			Window(const char* title, const Vec2u size, uint styles, graphics::Device* _d, SysWindow* p = nullptr)
+			Window(const char* title, const Vec2u size, uint styles, graphics::Device* _d, SysWindow* p = nullptr, bool maximized = false)
 			{
 				w = SysWindow::create(title, size, styles, p);
+				if (maximized)
+					w->set_maximized(true);
 				w->destroy_listeners.add([](void* c) {
 					auto thiz = *(Window**)c;
 					thiz->w = nullptr;
@@ -91,6 +93,7 @@ namespace flame
 
 		graphics::Device* graphics_device;
 		std::vector<std::unique_ptr<Window>> windows;
+		Window* main_window;
 		graphics::Canvas* canvas;
 
 		sound::Device* sound_device;
@@ -114,10 +117,8 @@ namespace flame
 
 			graphics_device = graphics::Device::create(graphics_debug);
 
-			auto main_window = new Window(title, size, styles, graphics_device);
+			main_window = new Window(title, size, styles, graphics_device, nullptr, maximized);
 			windows.emplace_back(main_window);
-			if (maximized)
-				main_window->w->set_maximized(true);
 			main_window->w->resize_listeners.add([](void* c, const Vec2u&) {
 				(*(App**)c)->set_canvas_target();
 				return true;
@@ -196,7 +197,6 @@ namespace flame
 
 			c_element_root->set_size(Vec2f(windows[0]->w->size));
 			world->update();
-			auto main_window = windows[0].get();
 			if (main_window->sc_updated)
 				canvas->record(main_window->curr_cb, main_window->img_idx);
 

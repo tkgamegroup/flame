@@ -911,7 +911,8 @@ namespace flame
 #elif FLAME_ANDROID
 		android_app* android_state;
 #endif
-
+		
+		bool sizing;
 		Vec2u pending_size;
 
 		bool dead;
@@ -1018,6 +1019,8 @@ namespace flame
 			resize_listeners.impl = ListenerHubImpl::create();
 			destroy_listeners.impl = ListenerHubImpl::create();
 
+			sizing = false;
+
 			dead = false;
 		}
 #elif FLAME_ANDROID
@@ -1085,18 +1088,18 @@ namespace flame
 #ifdef FLAME_WINDOWS
 	void SysWindow::set_cursor(CursorType type)
 	{
-		reinterpret_cast<SysWindowPrivate*>(this)->set_cursor(type);
+		((SysWindowPrivate*)this)->set_cursor(type);
 	}
 
 	void SysWindow::set_pos(const Vec2i& _pos)
 	{
 		pos = _pos;
-		SetWindowPos(reinterpret_cast<SysWindowPrivate*>(this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		SetWindowPos(((SysWindowPrivate*)this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
 	void SysWindow::set_maximized(bool v)
 	{
-		reinterpret_cast<SysWindowPrivate*>(this)->set_maximized(v);
+		((SysWindowPrivate*)this)->set_maximized(v);
 	}
 #endif
 
@@ -1211,9 +1214,11 @@ namespace flame
 			case WM_DESTROY:
 				w->dead = true;
 			case WM_ENTERSIZEMOVE:
+				w->sizing = true;
 				SetTimer(hWnd, 0, 100, NULL);
 				break;
 			case WM_EXITSIZEMOVE:
+				w->sizing = false;
 				KillTimer(hWnd, 0);
 				resize();
 				break;
@@ -1224,6 +1229,8 @@ namespace flame
 				break;
 			case WM_SIZE:
 				w->pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+				if (!w->sizing)
+					resize();
 				break;
 			}
 		}

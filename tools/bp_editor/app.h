@@ -9,7 +9,6 @@ using namespace graphics;
 
 struct cEditor : Component
 {
-	cText* c_tab_text;
 	Entity* e_base;
 	cElement* c_base_element;
 	bool base_moved;
@@ -30,7 +29,6 @@ struct cEditor : Component
 	void on_select();
 	void on_id_changed(BP::Node* n);
 	void on_pos_changed(BP::Node* n);
-	void on_bp_changed();
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
@@ -39,6 +37,18 @@ struct cEditor : Component
 	void show_add_node_menu(const Vec2f& pos);
 	void clear_failed_flags();
 	void set_failed_flags();
+};
+
+struct cDetail : Component
+{
+	cDetail();
+	virtual ~cDetail() override;
+};
+
+struct cPreview : Component
+{
+	cPreview();
+	virtual ~cPreview() override;
 };
 
 struct cConsole : Component
@@ -93,18 +103,22 @@ struct MyApp : App
 	cCheckbox* c_auto_update;
 
 	cEditor* editor;
+	cDetail* detail;
+	cPreview* preview;
 	cConsole* console;
 
 	Entity* e_notification;
 
 	MyApp()
 	{
-		editor = nullptr;
-		console = nullptr;
-
 		bp = nullptr;
 		failed = false;
 		changed = false;
+
+		editor = nullptr;
+		console = nullptr;
+		detail = nullptr;
+		preview = nullptr;
 
 		auto_update = false;
 	}

@@ -392,15 +392,14 @@ struct cNode : Component
 cEditor::cEditor() :
 	Component("cEditor")
 {
-	auto tnp = utils::e_begin_docker_page(app.filepath.c_str());
+	auto e_page = utils::e_begin_docker_page(L"Editor").second;
 	{
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
 	}
-	tnp.second->add_component(this);
-	c_tab_text = tnp.first->get_component(cText);
+	e_page->add_component(this);
 
 		utils::e_begin_layout()->get_component(cElement)->clip_flags = ClipSelf | ClipChildren;
 		utils::c_aligner(SizeFitParent, SizeFitParent);
@@ -656,8 +655,6 @@ cEditor::cEditor() :
 
 	for (auto i = 0; i < app.bp->node_count(); i++)
 		on_add_node(app.bp->node(i));
-
-	on_bp_changed();
 }
 
 cEditor::~cEditor()
@@ -693,14 +690,6 @@ void cEditor::on_id_changed(BP::Node* n)
 void cEditor::on_pos_changed(BP::Node* n)
 {
 	((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
-}
-
-void cEditor::on_bp_changed()
-{
-	std::wstring title = L"editor";
-	if (app.changed)
-		title += L"*";
-	c_tab_text->set_text(title.c_str());
 }
 
 template <class T>

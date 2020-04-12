@@ -9,10 +9,16 @@ MyApp app;
 
 void add_window(pugi::xml_node n) 
 {
+	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
+	auto r = n.attribute("r").as_int(1);
 	std::string name(n.name());
 	if (name == "layout")
 	{
-		utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical);
+		auto ca = utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical)->get_component(cAligner);
+		if (parent_layout)
+			ca->width_factor_ = r;
+		else
+			ca->height_factor_ = r;
 		for (auto c : n.children())
 			add_window(c);
 		utils::e_end_docker_layout();
@@ -20,25 +26,19 @@ void add_window(pugi::xml_node n)
 	else if (name == "docker")
 	{
 		auto ca = utils::e_begin_docker()->get_component(cAligner);
-		if (utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal)
-			ca->width_factor_ = n.attribute("r").as_int();
+		if (parent_layout)
+			ca->width_factor_ = r;
 		else
-			ca->height_factor_ = n.attribute("r").as_int();
-		for (auto c : n.children())
-		{
-			if (c.name() == std::string("page"))
-			{
-				std::string window(c.attribute("name").value());
-				if (window == "editor")
-					app.editor = new cEditor;
-				else if (window == "resource_explorer")
-					app.resource_explorer = new cResourceExplorer;
-				else if (window == "hierarchy")
-					app.hierarchy = new cHierarchy;
-				else if (window == "inspector")
-					app.inspector = new cInspector;
-			}
-		}
+			ca->height_factor_ = r;
+		auto name = std::string(n.child("page").attribute("name").value());
+		if (name == "editor")
+			app.editor = new cEditor;
+		else if (name == "resource_explorer")
+			app.resource_explorer = new cResourceExplorer;
+		else if (name == "hierarchy")
+			app.hierarchy = new cHierarchy;
+		else if (name == "inspector")
+			app.inspector = new cInspector;
 		utils::e_end_docker();
 	}
 }
@@ -60,8 +60,9 @@ void MyApp::create()
 			}
 		}
 	}
+	set_engine_path(engine_path.c_str());
 
-	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, getenv("FLAME_PATH"), true);
+	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, engine_path, true);
 
 	TypeinfoDatabase::load(L"scene_editor.exe", true, true);
 
@@ -70,7 +71,7 @@ void MyApp::create()
 	if (window_layout.load_file(L"window_layout.xml"))
 		window_layout_root = window_layout.first_child();
 
-	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
 	utils::style_set_to_light();
 
 	utils::push_parent(root);
@@ -117,19 +118,51 @@ void MyApp::create()
 		utils::e_begin_menubar_menu(L"Window");
 		utils::e_menu_item(L"Editor", [](void* c) {
 			if (!app.editor)
-				app.editor = new cEditor;
+			{
+				utils::next_element_pos = Vec2f(100.f);
+				utils::next_element_size = Vec2f(400.f, 300.f);
+				utils::e_begin_docker_floating_container();
+					utils::e_begin_docker();
+						app.editor = new cEditor;
+					utils::e_end_docker();
+				utils::e_end_docker_floating_container();
+			}
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Resource Explorer", [](void* c) {
 			if (!app.resource_explorer)
-				app.resource_explorer = new cResourceExplorer;
+			{
+				utils::next_element_pos = Vec2f(100.f);
+				utils::next_element_size = Vec2f(400.f, 300.f);
+				utils::e_begin_docker_floating_container();
+					utils::e_begin_docker();
+						app.resource_explorer = new cResourceExplorer;
+					utils::e_end_docker();
+				utils::e_end_docker_floating_container();
+			}
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Hierarchy", [](void* c) {
 			if (!app.hierarchy)
-				app.hierarchy = new cHierarchy;
+			{
+				utils::next_element_pos = Vec2f(100.f);
+				utils::next_element_size = Vec2f(400.f, 300.f);
+				utils::e_begin_docker_floating_container();
+					utils::e_begin_docker();
+						app.hierarchy = new cHierarchy;
+					utils::e_end_docker();
+				utils::e_end_docker_floating_container();
+			}
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Inspector", [](void* c) {
 			if (!app.inspector)
-				app.inspector = new cInspector;
+			{
+				utils::next_element_pos = Vec2f(100.f);
+				utils::next_element_size = Vec2f(400.f, 300.f);
+				utils::e_begin_docker_floating_container();
+					utils::e_begin_docker();
+						app.inspector = new cInspector;
+					utils::e_end_docker();
+				utils::e_end_docker_floating_container();
+			}
 		}, Mail::from_p(this));
 		utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();
