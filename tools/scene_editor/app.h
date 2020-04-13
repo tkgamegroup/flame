@@ -11,14 +11,19 @@ using namespace graphics;
 struct cEditor : Component
 {
 	utils::_2DEditor edt;
-	cElement* c_transform_tool_element;
 
 	int tool_type;
+
+	cElement* gizmo;
+	cElement* gizmo_target;
+	void* gizmo_listener;
 
 	cEditor();
 	~cEditor() override;
 	Entity* search_hovering(const Vec4f& r);
 	void search_hovering_r(Entity* e, Entity*& s, const Vec4f& r);
+	void update_gizmo();
+	void on_select();
 };
 
 struct cResourceExplorer : Component

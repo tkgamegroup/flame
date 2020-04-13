@@ -19,10 +19,11 @@ cEditor::cEditor() :
 				utils::e_combobox_item(L"3D");
 			utils::e_end_combobox(0);
 			{
+				tool_type = 1;
 				auto c_combobox = utils::e_begin_combobox()->get_component(cCombobox);
 					utils::e_combobox_item(L"Select");
 					utils::e_combobox_item(L"Gizmo");
-				utils::e_end_combobox(1);
+				utils::e_end_combobox(tool_type);
 				c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
 					if (hash == FLAME_CHASH("index"))
 						app.editor->tool_type = (*(cCombobox**)c)->index;
@@ -38,8 +39,9 @@ cEditor::cEditor() :
 				app.select(app.editor->search_hovering(r));
 		}, Mail());
 
-			auto e_overlay = edt.overlay->entity;
 			{
+				auto e_overlay = edt.overlay->entity;
+
 				edt.overlay->cmds.add([](void* c, graphics::Canvas* canvas) {
 					auto element = *(cElement**)c;
 					if (!element->clipped && app.selected)
@@ -50,14 +52,9 @@ cEditor::cEditor() :
 							std::vector<Vec2f> points;
 							path_rect(points, se->global_pos, se->global_size);
 							points.push_back(points[0]);
-							canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 255, 255), 6.f);
-
-							if (app.editor->tool_type > 0)
-								app.editor->c_transform_tool_element->set_pos(se->center() - element->global_pos - app.editor->c_transform_tool_element->size * 0.5f);
+							canvas->stroke(points.size(), points.data(), Vec4c(0, 0, 0, 255), 2.f);
 						}
 					}
-					else
-						app.editor->c_transform_tool_element->set_pos(Vec2f(-200.f));
 					return true;
 				}, Mail::from_p(edt.overlay));
 				utils::set_current_entity(e_overlay);
@@ -71,71 +68,32 @@ cEditor::cEditor() :
 						app.select(app.editor->search_hovering(Vec4f(Vec2f(pos), Vec2f(pos))));
 					return true;
 				}, Mail());
-			}
-			utils::push_parent(e_overlay);
-				utils::e_empty();
-				c_transform_tool_element = utils::c_element();
-				c_transform_tool_element->size = 20.f;
-				c_transform_tool_element->frame_thickness = 2.f;
-				{
-					auto c_event_receiver = utils::c_event_receiver();
-					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto er = *(cEventReceiver**)c;
-						if (utils::is_active(er) && is_mouse_move(action, key) && app.selected)
-						{
-							auto e = app.selected->get_component(cElement);
-							if (e)
-								e->add_pos(Vec2f(pos));
-						}
-						return true;
-					}, Mail::from_t(c_event_receiver));
-				}
 
-				utils::push_parent(utils::current_entity());
-					utils::e_empty();
+				utils::push_parent(e_overlay);
+					gizmo = utils::e_element()->get_component(cElement);
+					gizmo->size = Vec2f(10.f);
+					gizmo->frame_thickness = 1.f;
+					gizmo->color = Vec4c(255);
+					gizmo->frame_color = Vec4c(0, 0, 0, 255);
+					gizmo->entity->set_visible(false);
 					{
-						auto c_element = utils::c_element();
-						c_element->pos = Vec2f(25.f, 5.f);
-						c_element->size = Vec2f(20.f, 10.f);
-						c_element->frame_thickness = 2.f;
-
 						auto c_event_receiver = utils::c_event_receiver();
 						c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-							auto er = *(cEventReceiver**)c;
-							if (utils::is_active(er) && is_mouse_move(action, key) && app.selected)
-							{
-								auto e = app.selected->get_component(cElement);
-								if (e)
-									e->set_x(pos.x(), true);
-							}
+							if (utils::is_active(*(cEventReceiver**)c) && is_mouse_move(action, key))
+								app.editor->gizmo_target->add_pos(Vec2f(pos));
 							return true;
-						}, Mail::from_t(c_event_receiver));
-					}
-					utils::e_empty();
-					{
-						auto c_element = utils::c_element();
-						c_element->pos = Vec2f(5.f, 25.f);
-						c_element->size = Vec2f(10.f, 20.f);
-						c_element->frame_thickness = 2.f;
-
-						auto c_event_receiver = utils::c_event_receiver();
-						c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-							auto er = *(cEventReceiver**)c;
-							if (utils::is_active(er) && is_mouse_move(action, key) && app.selected)
-							{
-								auto e = app.selected->get_component(cElement);
-								if (e)
-									e->set_y(pos.y(), true);
-							}
+						}, Mail::from_p(c_event_receiver));
+						c_event_receiver->state_listeners.add([](void*, EventReceiverStateFlags s) {
+							app.main_window->w->set_cursor(s ? CursorSizeAll : CursorArrow);
 							return true;
-						}, Mail::from_t(c_event_receiver));
+						}, Mail());
 					}
+					gizmo_target = nullptr;
+					gizmo_listener = nullptr;
 				utils::pop_parent();
-			utils::pop_parent();
+			}
 
 	utils::e_end_docker_page();
-
-	tool_type = 0;
 }
 
 cEditor::~cEditor()
@@ -168,4 +126,41 @@ void cEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 	auto element = e->get_component(cElement);
 	if (element && rect_overlapping(element->clipped_rect, r))
 		s = e;
+}
+
+void cEditor::update_gizmo()
+{
+	gizmo->set_pos((gizmo_target->pos + gizmo_target->size * 0.5f) * edt.base->scale + edt.base->pos - 5.f);
+}
+
+void cEditor::on_select()
+{
+	if (gizmo_target)
+		gizmo_target->data_changed_listeners.remove(gizmo_listener);
+	if (!app.selected)
+	{
+		gizmo->entity->set_visible(false);
+		gizmo_target = nullptr;
+		gizmo_listener = nullptr;
+	}
+	else
+	{
+		gizmo_target = app.selected->get_component(cElement);
+		if (gizmo_target)
+		{
+			gizmo->entity->set_visible(true);
+			update_gizmo();
+			gizmo_listener = gizmo_target->data_changed_listeners.add([](void* c, uint hash, void*) {
+				switch (hash)
+				{
+				case FLAME_CHASH("global_pos"):
+				case FLAME_CHASH("global_scale"):
+				case FLAME_CHASH("global_size"):
+					app.editor->update_gizmo();
+					break;
+				}
+				return true;
+			}, Mail());
+		}
+	}
 }

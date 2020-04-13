@@ -146,6 +146,11 @@ void MyApp::create()
 			}
 		}, Mail::from_p(this));
 		utils::e_end_menubar_menu();
+		utils::e_begin_menubar_menu(L"Tools");
+			utils::e_menu_item(L"Reflector", [](void* c) {
+				utils::e_reflector_window(app.s_event_dispatcher);
+			}, Mail());
+		utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();
 
 	utils::e_begin_docker_static_container();
@@ -163,6 +168,8 @@ void MyApp::select(Entity* e)
 	if (selected != e)
 	{
 		selected = e;
+		if (editor)
+			editor->on_select();
 		looper().add_event([](void*, bool*) {
 			if (app.hierarchy)
 				app.hierarchy->refresh_selected();

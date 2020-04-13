@@ -81,12 +81,6 @@ namespace flame
 		{
 			if (!opened)
 			{
-				struct Capture
-				{
-					Entity* l;
-					Entity* i;
-				}capture;
-
 				if (mode == ModeContext)
 				{
 					auto layer = utils::add_layer(root);
@@ -98,12 +92,7 @@ namespace flame
 					auto items_element = items->get_component(cElement);
 					items_element->set_pos(Vec2f(pos));
 					items_element->set_scale(element->global_scale);
-					capture.l = layer;
-					capture.i = items;
-					looper().add_event([](void* c, bool*) {
-						auto& capture = *(Capture*)c;
-						capture.l->add_child(capture.i);
-					}, Mail::from_t(&capture));
+					layer->add_child(items);
 
 					opened = true;
 				}
@@ -153,12 +142,7 @@ namespace flame
 						break;
 					}
 					items_element->set_scale(element->global_scale);
-					capture.l = layer;
-					capture.i = items;
-					looper().add_event([](void* c, bool*) {
-						auto& capture = *(Capture*)c;
-						capture.l->add_child(capture.i);
-					}, Mail::from_t(&capture));
+					layer->add_child(items);
 
 					opened = true;
 				}

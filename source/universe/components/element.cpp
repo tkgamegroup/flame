@@ -60,16 +60,19 @@ namespace flame
 		{
 			mark_dirty();
 			last_global_pos = global_pos;
+			data_changed(FLAME_CHASH("global_pos"), nullptr);
 		}
 		if (global_scale != last_global_scale)
 		{
 			mark_dirty();
 			last_global_scale = global_scale;
+			data_changed(FLAME_CHASH("global_scale"), nullptr);
 		}
 		if (global_size != last_global_size)
 		{
 			mark_dirty();
 			last_global_size = global_size;
+			data_changed(FLAME_CHASH("global_size"), nullptr);
 		}
 	}
 
@@ -95,6 +98,7 @@ namespace flame
 
 	void cElementPrivate::on_entered_world()
 	{
+		calc_geometry();
 		renderer = entity->world()->get_system(s2DRenderer);
 		renderer->pending_update = true;
 	}
@@ -107,6 +111,7 @@ namespace flame
 
 	void cElementPrivate::on_visibility_changed()
 	{
+		calc_geometry();
 		mark_dirty();
 	}
 
