@@ -17,7 +17,8 @@ struct cEditor : Component
 
 	cEditor();
 	~cEditor() override;
-	void search_hover(Entity* e);
+	Entity* search_hovering(const Vec4f& r);
+	void search_hovering_r(Entity* e, Entity*& s, const Vec4f& r);
 };
 
 struct cResourceExplorer : Component
@@ -100,6 +101,7 @@ struct MyApp : App
 
 	void create();
 
+	void select(Entity* e);
 	void load(const std::filesystem::path& _filepath);
 };
 

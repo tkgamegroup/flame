@@ -33,32 +33,9 @@ cEditor::cEditor() :
 
 		edt.create([](void*, const Vec4f& r) {
 			if (r.x() == r.z() && r.y() == r.z())
-			{
-				if (app.selected)
-				{
-					app.selected = nullptr;
-					if (app.hierarchy)
-						app.hierarchy->refresh_selected();
-					if (app.inspector)
-						app.inspector->refresh();
-				}
-			}
+				app.select(nullptr);
 			else
-			{
-				//std::vector<BP::Node*> nodes;
-				//for (auto i = 0; i < app.bp->node_count(); i++)
-				//{
-				//	auto n = app.bp->node(i);
-				//	auto e = ((Entity*)n->user_data)->get_component(cElement);
-				//	if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
-				//		nodes.push_back(n);
-				//}
-				//if (!nodes.empty())
-				//{
-				//	app.select(nodes);
-				//	return;
-				//}
-			}
+				app.select(app.editor->search_hovering(r));
 		}, Mail());
 
 			auto e_overlay = edt.overlay->entity;
@@ -91,21 +68,7 @@ cEditor::cEditor() :
 				}, Mail());
 				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						looper().add_event([](void* c, bool*) {
-							auto prev_selected = app.selected;
-							app.selected = nullptr;
-							if (app.prefab)
-								app.editor->search_hover(app.prefab);
-							if (prev_selected != app.selected)
-							{
-								if (app.hierarchy)
-									app.hierarchy->refresh_selected();
-								if (app.inspector)
-									app.inspector->refresh();
-							}
-						}, Mail());
-					}
+						app.select(app.editor->search_hovering(Vec4f(Vec2f(pos), Vec2f(pos))));
 					return true;
 				}, Mail());
 			}
@@ -180,7 +143,15 @@ cEditor::~cEditor()
 	app.editor = nullptr;
 }
 
-void cEditor::search_hover(Entity* e)
+Entity* cEditor::search_hovering(const Vec4f& r)
+{
+	Entity* s = nullptr;
+	if (app.prefab)
+		search_hovering_r(app.prefab, s, r);
+	return s;
+}
+
+void cEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 {
 	if (e->child_count() > 0)
 	{
@@ -188,13 +159,13 @@ void cEditor::search_hover(Entity* e)
 		{
 			auto c = e->child(i);
 			if (c->global_visibility)
-				search_hover(c);
+				search_hovering_r(c, s, r);
 		}
 	}
-	if (app.selected)
+	if (s)
 		return;
 
 	auto element = e->get_component(cElement);
-	if (element && rect_contains(element->clipped_rect, Vec2f(app.s_event_dispatcher->mouse_pos)))
-		app.selected = e;
+	if (element && rect_overlapping(element->clipped_rect, r))
+		s = e;
 }

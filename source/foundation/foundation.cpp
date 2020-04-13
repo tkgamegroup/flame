@@ -1029,7 +1029,7 @@ namespace flame
 					break;
 				}
 			}
-			cursor_type = CursorArrow;
+			cursor_type = CursorNone;
 
 			key_listeners.impl = ListenerHubImpl::create();
 			mouse_listeners.impl = ListenerHubImpl::create();
@@ -1280,7 +1280,7 @@ namespace flame
 					icon_image->bpp, nullptr, icon_image->data);
 				Bitmap::destroy(icon_image);
 			}
-			wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+			wcex.hCursor = NULL;
 			wcex.hbrBackground = 0;
 			wcex.lpszMenuName = 0;
 			wcex.lpszClassName = "flame_wnd";
@@ -1291,6 +1291,7 @@ namespace flame
 		}
 
 		auto w = new SysWindowPrivate(title, size, style, (SysWindowPrivate*)parent);
+		w->set_cursor(CursorArrow);
 		windows.push_back(w);
 		return w;
 	}

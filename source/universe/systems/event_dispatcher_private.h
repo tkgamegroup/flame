@@ -8,7 +8,6 @@ namespace flame
 {
 	struct sEventDispatcherPrivate : sEventDispatcher
 	{
-		SysWindow* window;
 		void* key_listener;
 		void* mouse_listener;
 

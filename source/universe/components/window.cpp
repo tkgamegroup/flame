@@ -105,6 +105,7 @@ namespace flame
 	struct cSizeDraggerPrivate : cSizeDragger
 	{
 		void* mouse_listener;
+		void* state_listener;
 
 		cSizeDraggerPrivate()
 		{
@@ -112,12 +113,16 @@ namespace flame
 			p_element = nullptr;
 
 			mouse_listener = nullptr;
+			state_listener = nullptr;
 		}
 
 		~cSizeDraggerPrivate()
 		{
 			if (!entity->dying_)
+			{
 				event_receiver->mouse_listeners.remove(mouse_listener);
+				event_receiver->state_listeners.remove(state_listener);
+			}
 		}
 
 		void on_added() override
@@ -136,6 +141,10 @@ namespace flame
 					auto thiz = (*(cSizeDraggerPrivate**)c);
 					if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
 						thiz->p_element->add_size(Vec2f(pos));
+					return true;
+				}, Mail::from_p(this));
+				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags s) {
+					(*(cSizeDraggerPrivate**)c)->event_receiver->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 					return true;
 				}, Mail::from_p(this));
 			}

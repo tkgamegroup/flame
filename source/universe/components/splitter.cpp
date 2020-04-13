@@ -9,6 +9,7 @@ namespace flame
 	struct cSplitterPrivate : cSplitter
 	{
 		void* mouse_listener;
+		void* state_listener;
 
 		cSplitterPrivate(SplitterType _type)
 		{
@@ -17,12 +18,16 @@ namespace flame
 			type = _type;
 
 			mouse_listener = nullptr;
+			state_listener = nullptr;
 		}
 
 		~cSplitterPrivate()
 		{
 			if (!entity->dying_)
+			{
 				event_receiver->mouse_listeners.remove(mouse_listener);
+				event_receiver->state_listeners.remove(state_listener);
+			}
 		}
 
 		void on_component_added(Component* c) override
@@ -87,6 +92,11 @@ namespace flame
 							}
 						}
 					}
+					return true;
+				}, Mail::from_p(this));
+				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags s) {
+					auto thiz = *(cSplitterPrivate**)c;
+					thiz->event_receiver->dispatcher->window->set_cursor(s ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
 					return true;
 				}, Mail::from_p(this));
 			}

@@ -18,6 +18,7 @@ namespace flame
 		void* key_listener;
 		void* mouse_listener;
 		void* focus_listener;
+		void* state_listener;
 		void* draw_cmd;
 
 		bool show_cursor;
@@ -35,6 +36,7 @@ namespace flame
 			key_listener = nullptr;
 			mouse_listener = nullptr;
 			focus_listener = nullptr;
+			state_listener = nullptr;
 			draw_cmd = nullptr;
 
 			show_cursor = false;
@@ -48,7 +50,8 @@ namespace flame
 				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
-				event_receiver->mouse_listeners.remove(focus_listener);
+				event_receiver->focus_listeners.remove(focus_listener);
+				event_receiver->state_listeners.remove(state_listener);
 			}
 		}
 
@@ -240,8 +243,14 @@ namespace flame
 					else
 					{
 						thiz->timer->stop();
+						thiz->set_select(0);
 						thiz->flash_cursor(1);
 					}
+					return true;
+				}, Mail::from_p(this));
+
+				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags s) {
+					(*(cEditPrivate**)c)->event_receiver->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
 					return true;
 				}, Mail::from_p(this));
 			}

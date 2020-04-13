@@ -153,7 +153,7 @@ int main(int argc, char** args)
 {
 	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true);
 
-	app.canvas->set_resource(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (engine_path / L"art/9.png").c_str())));
+	app.canvas->set_resource(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())));
 
 	utils::e_begin_popup_menu(false);
 		utils::next_entity = Entity::create();

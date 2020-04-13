@@ -158,6 +158,20 @@ void MyApp::create()
 	utils::pop_parent();
 }
 
+void MyApp::select(Entity* e)
+{
+	if (selected != e)
+	{
+		selected = e;
+		looper().add_event([](void*, bool*) {
+			if (app.hierarchy)
+				app.hierarchy->refresh_selected();
+			if (app.inspector)
+				app.inspector->refresh();
+		}, Mail());
+	}
+}
+
 void MyApp::load(const std::filesystem::path& _filepath)
 {
 	filepath = _filepath;
