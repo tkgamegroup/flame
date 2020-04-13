@@ -24,6 +24,9 @@ namespace flame
 		uint select_start;
 		uint select_end; // can be smaller than start
 
+		bool select_all_on_dbclicked;
+		bool select_all_on_focus;
+
 		void set_select(uint start, int length = 0)
 		{
 			select_start = start;

@@ -33,6 +33,9 @@ namespace flame
 			select_start = 0;
 			select_end = 0;
 
+			select_all_on_dbclicked = true;
+			select_all_on_focus = true;
+
 			key_listener = nullptr;
 			mouse_listener = nullptr;
 			focus_listener = nullptr;
@@ -310,13 +313,22 @@ namespace flame
 						thiz->select_end = thiz->locate_cursor(thiz->event_receiver->dispatcher->mouse_pos);
 						thiz->flash_cursor(2);
 					}
+					else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
+					{
+						thiz->set_select(0, thiz->text->text_length());
+						thiz->element->mark_dirty();
+					}
 					return true;
 				}, Mail::from_p(this));
 
 				focus_listener = event_receiver->focus_listeners.add([](void* c, bool focusing) {
 					auto thiz = *(cEditPrivate**)c;
 					if (focusing)
+					{
 						thiz->timer->start();
+						if (thiz->select_all_on_focus)
+							thiz->set_select(0, thiz->text->text_length());
+					}
 					else
 					{
 						thiz->timer->stop();

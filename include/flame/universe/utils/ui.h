@@ -623,17 +623,7 @@ namespace flame
 			capture.ee = ee;
 			capture.ed = ed;
 
-			auto eer = ee->get_component(cEventReceiver);
-			eer->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
-				{
-					auto e = *(cEdit**)c;
-					e->set_select(0, e->text->text_length());
-					e->element->mark_dirty();
-				}
-				return true;
-			}, Mail::from_p(ee->get_component(cEdit)));
-			eer->focus_listeners.add([](void* c, bool focusing) {
+			ee->get_component(cEventReceiver)->focus_listeners.add([](void* c, bool focusing) {
 				auto& capture = *(Capture*)c;
 				if (!focusing)
 				{
@@ -649,8 +639,6 @@ namespace flame
 				{
 					capture.ee->set_visible(true);
 					capture.ed->set_visible(false);
-					auto e = capture.ee->get_component(cEdit);
-					e->set_select(0, e->text->text_length());
 					auto er = capture.ee->get_component(cEventReceiver);
 					er->dispatcher->next_focusing = er;
 				}
