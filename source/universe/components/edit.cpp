@@ -84,13 +84,22 @@ namespace flame
 			for (; i < str.size(); )
 			{
 				auto next = i;
-				while (next < str.size())
+				while (true)
 				{
-					if (str[next++] == '\n')
+					if (str[next] == '\n')
+					{
+						next++;
 						break;
+					}
+					next++;
+					if (next == str.size())
+					{
+						next = -1;
+						break;
+					}
 				}
 
-				if (pos.y() < y + font_size || next == str.size())
+				if (pos.y() < y + font_size || next == -1)
 				{
 					auto x = p.x();
 					while (true)
@@ -98,6 +107,8 @@ namespace flame
 						auto ch = str[i];
 						if (ch == '\n')
 							break;
+						if (ch == '\t')
+							ch = ' ';
 						auto w = font_atlas->get_glyph(ch, font_size)->advance;
 						if (pos.x() < x + w / 2)
 							break;
@@ -141,30 +152,67 @@ namespace flame
 					auto thiz = *(cEditPrivate**)c;
 					auto& select_start = thiz->select_start;
 					auto& select_end = thiz->select_end;
+					auto low = min(select_start, select_end);
+					auto high = max(select_start, select_end);
 					auto c_text = (cTextPrivate*)thiz->text;
 					auto str = c_text->text;
 					auto changed = false;
+
+					auto line_start = [&](int p) {
+						p--;
+						do
+						{
+							if (p < 0)
+								return 0;
+							if (str[p] == '\n')
+								return p + 1;
+							p--;
+						} while (p >= 0);
+						return 0;
+					};
+					auto line_end = [&](int p) {
+						while (p < str.size())
+						{
+							if (str[p] == '\n')
+								return p;
+							p++;
+						}
+						return (int)str.size();
+					};
 
 					if (action == KeyStateNull)
 					{
 						switch (value)
 						{
 						case L'\b':
-							if (select_start > 0)
+							if (low == high)
 							{
-								select_start--;
-								select_end = select_start;
-								str.erase(str.begin() + select_start);
+								if (low > 0)
+								{
+									low--;
+									str.erase(str.begin() + low);
+									select_end = select_start = low;
+									changed = true;
+								}
+							}
+							else
+							{
+								str = str.substr(0, low) + str.substr(high);
+								select_end = select_start = low;
 								changed = true;
 							}
 							break;
 						case 22:
 						{
-							auto cb = get_clipboard();
-							str = str.substr(0, select_start) + cb.str() + str.substr(select_start);
-							select_start += cb.s;
-							select_end = select_start;
-							changed = true;
+							auto cb = get_clipboard().str();
+							cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
+							if (!cb.empty())
+							{
+								str = str.substr(0, low) + cb + str.substr(high);
+								high += cb.size() - (high - low);
+								select_end = select_start = high;
+								changed = true;
+							}
 						}
 							break;
 						case 27:
@@ -172,9 +220,9 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							str.insert(str.begin() + select_start, value);
-							select_start++;
-							select_end = select_start;
+							str = str.substr(0, low) + std::wstring(1, value) + str.substr(high);
+							high += 1 - (high - low);
+							select_end = select_start = high;
 							changed = true;
 						}
 					}
@@ -183,31 +231,56 @@ namespace flame
 						switch (value)
 						{
 						case Key_Left:
-							if (select_start > 0)
-							{
-								select_start--;
-								select_end = select_start;
-							}
+							if (low > 0)
+								low--;
+							select_end = select_start = low;
 							break;
 						case Key_Right:
-							if (select_start < str.size())
-							{
-								select_start++;
-								select_end = select_start;
-							}
+							if (high < str.size())
+								high++;
+							select_end = select_start = high;
+							break;
+						case Key_Up:
+						{
+							auto end_s = line_start(select_end);
+							auto low_s = low == select_end ? end_s : line_start(low);
+							auto up_s = line_start(low_s - 1);
+							if (low_s != up_s)
+								select_end = select_start = up_s + min((int)select_end - end_s, max(0, low_s - up_s - 1));
+							else
+								select_start = select_end;
+						}
+							break;
+						case Key_Down:
+						{
+							auto end_s = line_start(select_end);
+							auto high_e = line_end(high);
+							auto down_l = line_end(high_e + 1) - high_e - 1;
+							if (down_l >= 0)
+								select_end = select_start = high_e + 1 + min(down_l, (int)select_end - end_s);
+							else
+								select_start = select_end;
+						}
 							break;
 						case Key_Home:
-							select_start = 0;
-							select_end = select_start;
+							select_end = select_start = 0;
 							break;
 						case Key_End:
-							select_start = str.size();
-							select_end = select_start;
+							select_end = select_start = str.size();
 							break;
 						case Key_Del:
-							if (select_start < str.size())
+							if (low == high)
 							{
-								str.erase(str.begin() + select_start);
+								if (low < str.size())
+								{
+									str.erase(str.begin() + low);
+									changed = true;
+								}
+							}
+							else
+							{
+								str = str.substr(0, low) + str.substr(high);
+								select_end = select_start = low;
 								changed = true;
 							}
 							break;
@@ -268,26 +341,25 @@ namespace flame
 
 				if (select_start != select_end)
 				{
-					auto i = min(select_start, select_end);
-					auto end = max(select_start, select_end);
-					while (i < end)
+					auto low = min(select_start, select_end);
+					auto high = max(select_start, select_end);
+					while (low < high)
 					{
-						auto left = i;
-						auto right = left + 1;
-						auto is_last_new_line = false;
-						while (right < end)
+						auto left = low;
+						auto right = left;
+						while (right < high)
 						{
 							if (str[right] == '\n')
 								break;
 							right++;
 						}
-						i = right + 1;
+						low = right + 1;
 						
 						auto sb = str.c_str() + left, se = str.c_str() + right;
 						std::vector<Vec2f> points;
 						auto pos1 = Vec2f(font_atlas->text_offset(font_size, str.c_str(), sb));
 						auto pos2 = Vec2f(font_atlas->text_offset(font_size, str.c_str(), se));
-						if (right < end && str[right] == '\n')
+						if (right < high && str[right] == '\n')
 							pos2.x() += 4.f;
 						path_rect(points, pos1 + p, Vec2f(pos2.x() - pos1.x(), font_size));
 						canvas->fill(points.size(), points.data(), Vec4c(128, 128, 255, 255));
