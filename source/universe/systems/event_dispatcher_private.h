@@ -16,6 +16,7 @@ namespace flame
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete;
 		float dbclick_timer;
+		void* ev_reset_dbclick_timer;
 
 		cEventReceiverPrivate* mouse_event_checker;
 		Vec2i active_pos;

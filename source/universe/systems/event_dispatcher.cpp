@@ -30,6 +30,7 @@ namespace flame
 		for (auto i = 0; i < array_size(mouse_buttons); i++)
 			mouse_buttons[i] = KeyStateUp;
 		dbclick_timer = -1.f;
+		ev_reset_dbclick_timer = nullptr;
 
 		active_pos = Vec2i(0);
 
@@ -43,6 +44,8 @@ namespace flame
 			window->key_listeners.remove(key_listener);
 			window->mouse_listeners.remove(mouse_listener);
 		}
+		if (ev_reset_dbclick_timer)
+			looper().remove_event(ev_reset_dbclick_timer);
 	}
 
 	void sEventDispatcherPrivate::on_receiver_removed(cEventReceiver* er)
@@ -66,7 +69,6 @@ namespace flame
 		window = (SysWindow*)world_->find_object(FLAME_CHASH("SysWindow"), 0);
 		if (window)
 		{
-
 			key_listener = window->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 				auto thiz = *(sEventDispatcherPrivate**)c;
 
@@ -123,6 +125,17 @@ namespace flame
 				return true;
 			}, Mail::from_p(this));
 		}
+
+		ev_reset_dbclick_timer = looper().add_event([](void* c, bool* go_on) {
+			auto thiz = *(sEventDispatcherPrivate**)c;
+			if (thiz->dbclick_timer > 0.f)
+			{
+				thiz->dbclick_timer -= looper().delta_time;
+				if (thiz->dbclick_timer <= 0.f)
+					thiz->dbclick_timer = -1.f;
+			}
+			*go_on = true;
+		}, Mail::from_p(this));
 	}
 
 	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
@@ -268,13 +281,6 @@ namespace flame
 				}
 			}
 
-		}
-
-		if (dbclick_timer > 0.f)
-		{
-			dbclick_timer -= looper().delta_time;
-			if (dbclick_timer <= 0.f)
-				dbclick_timer = -1.f;
 		}
 
 		if (focusing && focusing_state == FocusingAndActive)

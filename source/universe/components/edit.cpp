@@ -202,6 +202,10 @@ namespace flame
 								changed = true;
 							}
 							break;
+						case 3:
+							if (low != high)
+								set_clipboard(str.substr(low, high).c_str());
+							break;
 						case 22:
 						{
 							auto cb = get_clipboard().str();
