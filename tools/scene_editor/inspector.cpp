@@ -181,7 +181,6 @@ struct cComponentTracker : Component
 	{
 		t->data_changed_listeners.remove(l);
 	}
-
 };
 
 void cInspector::refresh()

@@ -51,7 +51,7 @@ namespace flame
 		drag_and_drop_listeners.call(action, er, pos);
 	}
 
-	void cEventReceiverPrivate::set_state(EventReceiverStateFlags _state)
+	void cEventReceiverPrivate::set_state(EventReceiverState _state)
 	{
 		if (state != _state)
 		{

@@ -5,14 +5,14 @@
 
 namespace flame
 {
-	Vec4c get_color_2(EventReceiverStateFlags state, const std::vector<Vec4c>& colors)
+	Vec4c get_color_2(EventReceiverState state, const std::vector<Vec4c>& colors)
 	{
 		if ((state & EventReceiverHovering) || (state & EventReceiverActive))
 			return colors[1];
 		return colors[0];
 	}
 
-	Vec4c get_color_3(EventReceiverStateFlags state, const std::vector<Vec4c>& colors)
+	Vec4c get_color_3(EventReceiverState state, const std::vector<Vec4c>& colors)
 	{
 		auto lv = 0;
 		if (state & EventReceiverHovering)
@@ -51,7 +51,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleColorPrivate**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -104,7 +104,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleColor2Private**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -151,7 +151,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleTextColorPrivate**)c)->style();
 					return true;
 				}, Mail::from_p(this));
@@ -203,7 +203,7 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
+				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 					(*(cStyleTextColor2Private**)c)->style();
 					return true;
 				}, Mail::from_p(this));

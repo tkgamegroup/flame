@@ -83,7 +83,7 @@ cEditor::cEditor() :
 								app.editor->gizmo_target->add_pos(Vec2f(pos));
 							return true;
 						}, Mail::from_p(c_event_receiver));
-						c_event_receiver->state_listeners.add([](void*, EventReceiverStateFlags s) {
+						c_event_receiver->state_listeners.add([](void*, EventReceiverState s) {
 							app.main_window->w->set_cursor(s ? CursorSizeAll : CursorArrow);
 							return true;
 						}, Mail());

@@ -16,8 +16,6 @@ namespace flame
 		ClipChildren = 1 << 1
 	};
 
-	typedef uint ClipFlags;
-
 	enum FocusType
 	{
 		FocusByLeftButton,
@@ -38,8 +36,6 @@ namespace flame
 		EventReceiverHovering = 1 << 0,
 		EventReceiverActive = 1 << 1
 	};
-
-	typedef uint EventReceiverStateFlags;
 
 	enum Alignx
 	{

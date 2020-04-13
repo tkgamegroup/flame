@@ -274,7 +274,7 @@ namespace flame
 				}
 				return true;
 			}, Mail::from_t(&capture));
-			d_er->state_listeners.add([](void* c, EventReceiverStateFlags) {
+			d_er->state_listeners.add([](void* c, EventReceiverState) {
 				auto& capture = *(Capture*)c;
 				if (capture.thiz->drag_changed && !utils::is_active(capture.d_er))
 				{
@@ -419,7 +419,7 @@ namespace flame
 						}
 						return true;
 					}, Mail::from_t(&capture));
-					d_er->state_listeners.add([](void* c, EventReceiverStateFlags) {
+					d_er->state_listeners.add([](void* c, EventReceiverState) {
 						auto& capture = *(Capture*)c;
 						if (capture.thiz->drag_changed && !utils::is_active(capture.d_er))
 						{

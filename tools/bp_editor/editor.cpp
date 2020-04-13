@@ -368,7 +368,7 @@ struct cNode : Component
 				}
 				return true;
 			}, Mail::from_p(this));
-			event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags) {
+			event_receiver->state_listeners.add([](void* c, EventReceiverState) {
 				auto thiz = *(cNode**)c;
 				if (thiz->moved && !utils::is_active(thiz->event_receiver))
 				{

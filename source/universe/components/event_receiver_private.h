@@ -15,7 +15,7 @@ namespace flame
 		void on_key(KeyStateFlags action, uint value);
 		void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);
 		void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
-		void set_state(EventReceiverStateFlags state);
+		void set_state(EventReceiverState state);
 		void on_entered_world() override;
 		void on_left_world() override;
 		void on_component_added(Component* c) override;

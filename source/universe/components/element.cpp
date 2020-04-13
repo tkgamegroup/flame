@@ -19,7 +19,7 @@ namespace flame
 		frame_thickness = 0.f;
 		color = Vec4c(0);
 		frame_color = Vec4c(255);
-		clip_flags = 0;
+		clip_flags = (ClipFlag)0;
 
 		global_pos = 0.f;
 		global_scale = 0.f;

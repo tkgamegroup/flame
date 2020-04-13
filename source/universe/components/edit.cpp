@@ -249,7 +249,7 @@ namespace flame
 					return true;
 				}, Mail::from_p(this));
 
-				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags s) {
+				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState s) {
 					(*(cEditPrivate**)c)->event_receiver->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
 					return true;
 				}, Mail::from_p(this));

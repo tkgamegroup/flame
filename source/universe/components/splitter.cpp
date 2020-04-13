@@ -94,7 +94,7 @@ namespace flame
 					}
 					return true;
 				}, Mail::from_p(this));
-				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags s) {
+				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState s) {
 					auto thiz = *(cSplitterPrivate**)c;
 					thiz->event_receiver->dispatcher->window->set_cursor(s ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
 					return true;

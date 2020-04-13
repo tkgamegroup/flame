@@ -27,7 +27,7 @@ namespace flame
 		FLAME_RV(float, frame_thickness, 0);
 		FLAME_RV(Vec4c, color, 0);
 		FLAME_RV(Vec4c, frame_color, 0);
-		FLAME_RV(ClipFlags, clip_flags, 0);
+		FLAME_RV(ClipFlag, clip_flags, 0, m);
 
 		Vec2f global_pos;
 		float global_scale;

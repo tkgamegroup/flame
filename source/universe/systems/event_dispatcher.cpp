@@ -303,11 +303,11 @@ namespace flame
 		}
 
 		auto get_state = [&](cEventReceiver* er) {
-			EventReceiverStateFlags state = EventReceiverNormal;
+			EventReceiverState state = EventReceiverNormal;
 			if (er == hovering)
-				state |= EventReceiverHovering;
+				state = EventReceiverState(state | EventReceiverHovering);
 			if (er == focusing && focusing_state != FocusingNormal)
-				state |= EventReceiverActive;
+				state = EventReceiverState(state | EventReceiverActive);
 			return state;
 		};
 		if (prev_hovering)

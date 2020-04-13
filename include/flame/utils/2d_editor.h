@@ -38,7 +38,7 @@ namespace flame
 				utils::e_begin_layout();
 				utils::c_aligner(SizeFitParent, SizeFitParent);
 					element = utils::current_entity()->get_component(cElement);
-					element->clip_flags = ClipSelf | ClipChildren;
+					element->clip_flags = ClipFlag(ClipSelf | ClipChildren);
 					element->cmds.add([](void* c, graphics::Canvas* canvas) {
 						auto& edt = **(_2DEditor**)c;
 
@@ -123,7 +123,7 @@ namespace flame
 						}
 						return true;
 					}, Mail::expand_original(&capture, _capture));
-					event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
+					event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
 						auto& capture = *(Capture*)c;
 						auto& edt = *capture.thiz;
 						if (!(state & EventReceiverActive) && edt.selecting)
