@@ -1,6 +1,5 @@
 #include <flame/graphics/canvas.h>
 #include  "../world_private.h"
-#include <flame/universe/systems/2d_renderer.h>
 #include "element_private.h"
 
 namespace flame
@@ -59,20 +58,17 @@ namespace flame
 
 		if (global_pos != last_global_pos)
 		{
-			if (renderer)
-				renderer->pending_update = true;
+			mark_dirty();
 			last_global_pos = global_pos;
 		}
 		if (global_scale != last_global_scale)
 		{
-			if (renderer)
-				renderer->pending_update = true;
+			mark_dirty();
 			last_global_scale = global_scale;
 		}
 		if (global_size != last_global_size)
 		{
-			if (renderer)
-				renderer->pending_update = true;
+			mark_dirty();
 			last_global_size = global_size;
 		}
 	}
@@ -111,14 +107,12 @@ namespace flame
 
 	void cElementPrivate::on_visibility_changed()
 	{
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 	}
 
 	void cElementPrivate::on_position_changed()
 	{
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 	}
 
 	void cElement::set_pos(const Vec2f& p, void* sender)
@@ -126,8 +120,7 @@ namespace flame
 		if (p == pos)
 			return;
 		pos = p;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("pos"), sender);
 	}
 
@@ -136,8 +129,7 @@ namespace flame
 		if (s == scale)
 			return;
 		scale = s;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("scale"), sender);
 	}
 
@@ -146,8 +138,7 @@ namespace flame
 		if (s == size)
 			return;
 		size = s;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("size"), sender);
 	}
 
@@ -156,8 +147,7 @@ namespace flame
 		if (a == alpha)
 			return;
 		alpha = a;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("alpha"), sender);
 	}
 
@@ -166,8 +156,7 @@ namespace flame
 		if (r == roundness)
 			return;
 		roundness = r;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("roundness"), sender);
 	}
 
@@ -176,8 +165,7 @@ namespace flame
 		if (t == frame_thickness)
 			return;
 		frame_thickness = t;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("frame_thickness"), sender);
 	}
 
@@ -186,8 +174,7 @@ namespace flame
 		if (c == color)
 			return;
 		color = c;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("color"), sender);
 	}
 
@@ -196,8 +183,7 @@ namespace flame
 		if (c == frame_color)
 			return;
 		frame_color = c;
-		if (renderer)
-			renderer->pending_update = true;
+		mark_dirty();
 		data_changed(FLAME_CHASH("frame_color"), sender);
 	}
 

@@ -68,8 +68,8 @@ namespace flame
 		if (thiz->text == text)
 			return;
 		thiz->text = text;
-		if (element && element->renderer)
-			element->renderer->pending_update = true;
+		if (element)
+			element->mark_dirty();
 		data_changed(FLAME_CHASH("text"), sender);
 	}
 
@@ -78,8 +78,8 @@ namespace flame
 		if (s == font_size_)
 			return;
 		font_size_ = s;
-		if (element && element->renderer)
-			element->renderer->pending_update = true;
+		if (element)
+			element->mark_dirty();
 		data_changed(FLAME_CHASH("font_size"), sender);
 	}
 
@@ -88,8 +88,8 @@ namespace flame
 		if (c == color_)
 			return;
 		color_ = c;
-		if (element && element->renderer)
-			element->renderer->pending_update = true;
+		if (element)
+			element->mark_dirty();
 		data_changed(FLAME_CHASH("color"), sender);
 	}
 

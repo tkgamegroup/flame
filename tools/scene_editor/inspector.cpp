@@ -159,40 +159,39 @@ void cInspector::refresh()
 			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + component->name).c_str()));
 
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
-			{
-				auto c_element = e_component->get_component(cElement);
-				c_element->padding = Vec4f(4.f);
-				c_element->frame_thickness = 2.f;
-				c_element->frame_color = Vec4f(0, 0, 0, 255);
-			}
+			e_component->get_component(cElement)->padding = Vec4f(4.f);
 			utils::c_aligner(SizeFitParent, SizeFixed);
 
-			auto e_name = utils::e_text(s2w(component->name).c_str());
-			e_name->get_component(cElement)->padding.z() = 4.f + utils::style_1u(utils::FontSize);
-			e_name->get_component(cText)->color_ = Vec4c(30, 40, 160, 255);
-			utils::c_layout();
-			utils::push_parent(e_name);
-			struct Capture
-			{
-				Entity* e;
-				Component* c;
-			}capture;
-			capture.e = e_component;
-			capture.c = component;
-			utils::e_button(Icon_TIMES, [](void* c) {
-				auto& capture = *(Capture*)c;
-				Capture _capture;
-				_capture.e = capture.e;
-				_capture.c = capture.c;
-				looper().add_event([](void* c, bool*) {
+			utils::e_begin_layout(LayoutHorizontal, 4.f);
+			utils::e_text(s2w(component->name).c_str())->get_component(cText)->color_ = Vec4c(30, 40, 160, 255);
+				struct Capture
+				{
+					Entity* e;
+					Component* c;
+				}capture;
+				capture.e = e_component;
+				capture.c = component;
+				utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
+				utils::push_style_4c(utils::ButtonColorHovering, utils::style_4c(utils::FrameColorHovering));
+				utils::push_style_4c(utils::ButtonColorActive, utils::style_4c(utils::FrameColorActive));
+				utils::e_button(Icon_ANGLE_DOWN, [](void* c) {
+					
+				}, Mail::from_t(&capture));
+				utils::e_button(L"X", [](void* c) {
 					auto& capture = *(Capture*)c;
-					capture.e->parent()->remove_child(capture.e);
-					capture.c->entity->remove_component(capture.c);
-				}, Mail::from_t(&_capture));
-			}, Mail::from_t(&capture))
-				->get_component(cText)->color_ = Vec4c(200, 40, 20, 255);
-			utils::c_aligner(AlignxRight, AlignyFree);
-			utils::pop_parent();
+					Capture _capture;
+					_capture.e = capture.e;
+					_capture.c = capture.c;
+					looper().add_event([](void* c, bool*) {
+						auto& capture = *(Capture*)c;
+						capture.e->parent()->remove_child(capture.e);
+						capture.c->entity->remove_component(capture.c);
+					}, Mail::from_t(&_capture));
+				}, Mail::from_t(&capture));
+				utils::pop_style(utils::ButtonColorNormal);
+				utils::pop_style(utils::ButtonColorHovering);
+				utils::pop_style(utils::ButtonColorActive);
+			utils::e_end_layout();
 
 			for (auto i = 0; i < udt->variable_count(); i++)
 			{
@@ -239,59 +238,59 @@ void cInspector::refresh()
 					case FLAME_CHASH("int"):
 						create_edit<int>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(2+int)"):
+					case FLAME_CHASH("flame::Vec(2+int)"):
 						create_vec_edit<2, int>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(3+int)"):
+					case FLAME_CHASH("flame::Vec(3+int)"):
 						create_vec_edit<3, int>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(4+int)"):
+					case FLAME_CHASH("flame::Vec(4+int)"):
 						create_vec_edit<4, int>(pdata, v);
 						break;
 					case FLAME_CHASH("uint"):
 						create_edit<uint>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(2+uint)"):
+					case FLAME_CHASH("flame::Vec(2+uint)"):
 						create_vec_edit<2, uint>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(3+uint)"):
+					case FLAME_CHASH("flame::Vec(3+uint)"):
 						create_vec_edit<3, uint>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(4+uint)"):
+					case FLAME_CHASH("flame::Vec(4+uint)"):
 						create_vec_edit<4, uint>(pdata, v);
 						break;
 					case FLAME_CHASH("float"):
 						create_edit<float>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(2+float)"):
+					case FLAME_CHASH("flame::Vec(2+float)"):
 						create_vec_edit<2, float>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(3+float)"):
+					case FLAME_CHASH("flame::Vec(3+float)"):
 						create_vec_edit<3, float>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(4+float)"):
+					case FLAME_CHASH("flame::Vec(4+float)"):
 						create_vec_edit<4, float>(pdata, v);
 						break;
 					case FLAME_CHASH("uchar"):
 						create_edit<uchar>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(2+uchar)"):
+					case FLAME_CHASH("flame::Vec(2+uchar)"):
 						create_vec_edit<2, uchar>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(3+uchar)"):
+					case FLAME_CHASH("flame::Vec(3+uchar)"):
 						create_vec_edit<3, uchar>(pdata, v);
 						break;
-					case FLAME_CHASH("Vec(4+uchar)"):
+					case FLAME_CHASH("flame::Vec(4+uchar)"):
 						create_vec_edit<4, uchar>(pdata, v);
 						break;
-					case FLAME_CHASH("StringA"):
+					case FLAME_CHASH("flame::StringA"):
 						utils::e_edit(50.f);
 
 						e_data->add_component(new_object<cStringADataTracker>(pdata, [](void* c, const char* v) {
 							;
 						}, Mail::from_p(nullptr)));
 						break;
-					case FLAME_CHASH("StringW"):
+					case FLAME_CHASH("flame::StringW"):
 						utils::e_edit(50.f);
 
 						e_data->add_component(new_object<cStringWDataTracker>(pdata, [](void* c, const wchar_t* v) {

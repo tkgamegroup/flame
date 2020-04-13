@@ -3,24 +3,16 @@
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/utils/app.h>
+#include <flame/utils/2d_editor.h>
 
 using namespace flame;
 using namespace graphics;
 
 struct cEditor : Component
 {
-	Entity* e_base;
-	cElement* c_base_element;
-	bool base_moved;
-	uint scale;
-	cText* c_scale_text;
-
-	bool selecting;
-	Vec2f select_anchor_begin;
-	Vec2f select_anchor_end;
+	utils::_2DEditor edt;
 
 	BP::Slot* dragging_slot;
-	BP::Slot* pending_link_slot;
 	Vec2f dragging_slot_pos;
 
 	cEditor();
@@ -32,8 +24,6 @@ struct cEditor : Component
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
-	void base_scale(int v);
-	void base_move(const Vec2f& p);
 	void show_add_node_menu(const Vec2f& pos);
 	void clear_failed_flags();
 	void set_failed_flags();
@@ -150,3 +140,8 @@ struct MyApp : App
 };
 
 extern MyApp app;
+
+BP::Node* _add_node(const std::string& type, const std::string& id, const Vec2f& pos);
+void _remove_node(BP::Node* n);
+std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models);
+void _set_link(BP::Slot* in, BP::Slot* out);

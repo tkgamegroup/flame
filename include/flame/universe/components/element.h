@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -100,6 +101,12 @@ namespace flame
 		Vec2f content_size() const
 		{
 			return global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]) * global_scale;
+		}
+
+		void mark_dirty()
+		{
+			if (renderer)
+				renderer->pending_update = true;
 		}
 
 		cElement() :

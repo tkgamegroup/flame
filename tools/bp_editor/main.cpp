@@ -5,7 +5,7 @@
 
 #include "app.h"
 
-static BP::Node* _add_node(const std::string& type, const std::string& id, const Vec2f& pos)
+BP::Node* _add_node(const std::string& type, const std::string& id, const Vec2f& pos)
 {
 	auto n = app.bp->add_node(type.c_str(), id.c_str());
 	if (!n)
@@ -18,18 +18,19 @@ static BP::Node* _add_node(const std::string& type, const std::string& id, const
 	return n;
 }
 
-static void _remove_node(BP::Node* n)
+void _remove_node(BP::Node* n)
 {
 	if (app.editor)
 	{
 		looper().add_event([](void* c, bool*) {
-			app.editor->on_remove_node(*(BP::Node**)c);
+			auto n = *(BP::Node**)c;
+			app.editor->on_remove_node(n);
+			app.bp->remove_node(n);
 		}, Mail::from_p(n));
 	}
-	app.bp->remove_node(n);
 }
 
-static std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
+std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
 {
 	std::vector<BP::Node*> ret(models.size());
 	for (auto i = 0; i < models.size(); i++)
@@ -62,7 +63,7 @@ static std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& mod
 	return ret;
 }
 
-static void _set_link(BP::Slot* in, BP::Slot* out)
+void _set_link(BP::Slot* in, BP::Slot* out)
 {
 	looper().add_event([](void* c, bool*) {
 		auto n = *(BP::Node**)c;
@@ -852,7 +853,7 @@ bool MyApp::create(const char* filename)
 	{
 		res = false;
 
-		filepath = std::filesystem::canonical(L"new.bp");
+		filepath = std::filesystem::path(L"new.bp");
 		fileppath = filepath.parent_path();
 		std::ofstream new_bp(filepath);
 		new_bp << "<BP />\n";
@@ -861,7 +862,7 @@ bool MyApp::create(const char* filename)
 		assert(bp);
 	}
 
-	main_winow->w->set_title(filepath.string().c_str());
+	main_window->w->set_title(filepath.string().c_str());
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;

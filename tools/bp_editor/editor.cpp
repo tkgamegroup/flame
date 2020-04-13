@@ -103,13 +103,8 @@ struct cSlot : Component
 				auto thiz = *(cSlot**)c;
 				if (thiz->dragging)
 				{
-					if (is_mouse_scroll(action, key))
-						app.editor->base_scale((pos.x() > 0.f ? 1 : -1));
-					else if (is_mouse_move(action, key))
-					{
-						if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
-							app.editor->base_move(Vec2f(pos));
-					}
+					if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
+						app.editor->edt.event_receiver->on_mouse(action, key, pos);
 				}
 				return true;
 			}, Mail::from_p(this));
@@ -401,258 +396,162 @@ cEditor::cEditor() :
 	}
 	e_page->add_component(this);
 
-		utils::e_begin_layout()->get_component(cElement)->clip_flags = ClipSelf | ClipChildren;
-		utils::c_aligner(SizeFitParent, SizeFitParent);
+	edt.create([](void*, const Vec4f& r) {
+		if (r.x() == r.z() && r.y() == r.z())
+			app.deselect();
+		else
+		{
+			std::vector<BP::Node*> nodes;
+			for (auto i = 0; i < app.bp->node_count(); i++)
 			{
-				auto c_element = utils::e_element()->get_component(cElement);
-				c_element->cmds.add([](void* c, graphics::Canvas* canvas) {
-					auto element = *(cElement**)c;
-					auto base_element = app.editor->c_base_element;
+				auto n = app.bp->node(i);
+				auto e = ((Entity*)n->user_data)->get_component(cElement);
+				if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
+					nodes.push_back(n);
+			}
+			if (!nodes.empty())
+			{
+				app.select(nodes);
+				return;
+			}
 
-					if (element->clipped)
-						return true;
+			std::vector<BP::Slot*> links;
 
-					if (app.editor->selecting)
+			Vec2f lines[8];
+			lines[0] = Vec2f(r.x(), r.y());
+			lines[1] = Vec2f(r.z(), r.y());
+			lines[2] = Vec2f(r.x(), r.y());
+			lines[3] = Vec2f(r.x(), r.w());
+			lines[4] = Vec2f(r.z(), r.w());
+			lines[5] = Vec2f(r.x(), r.w());
+			lines[6] = Vec2f(r.z(), r.w());
+			lines[7] = Vec2f(r.z(), r.y());
+
+			auto& edt = app.editor->edt;
+
+			auto range = rect(edt.element->global_pos, edt.element->global_size);
+			auto scale = edt.base->global_scale;
+			auto extent = slot_bezier_extent * scale;
+			for (auto i = 0; i < app.bp->node_count(); i++)
+			{
+				auto n = app.bp->node(i);
+				for (auto j = 0; j < n->input_count(); j++)
+				{
+					auto input = n->input(j);
+					auto output = input->link();
+					if (!output)
+						continue;
+					auto p1 = ((cSlot*)output->user_data)->element->center();
+					auto p4 = ((cSlot*)input->user_data)->element->center();
+					auto p2 = p1 + Vec2f(extent, 0.f);
+					auto p3 = p4 - Vec2f(extent, 0.f);
+					auto bb = rect_from_points(p1, p2, p3, p4);
+					if (rect_overlapping(bb, range))
 					{
 						std::vector<Vec2f> points;
-						auto p0 = app.editor->c_base_element->global_pos;
-						auto s = app.editor->scale * 0.1f;
-						auto p1 = app.editor->select_anchor_begin * s + p0;
-						auto p2 = app.editor->select_anchor_end * s + p0;
-						path_rect(points, p1, p2 - p1);
-						points.push_back(points[0]);
-						canvas->stroke(points.size(), points.data(), Vec4c(17, 193, 101, 255), 2.f);
-					}
-
-					auto scale = base_element->global_scale;
-					auto line_width = 3.f * scale;
-
-					{
-						const auto grid_size = 50.f * scale;
-						auto pos = base_element->global_pos;
-						auto size = element->global_size + grid_size * 2.f;
-						auto grid_number = Vec2i(size / grid_size) + 2;
-						auto grid_offset = element->global_pos + (fract(pos / grid_size) - 1.f) * grid_size;
-						for (auto x = 0; x < grid_number.x(); x++)
+						path_bezier(points, p1, p2, p3, p4);
+						auto ok = false;
+						for (auto k = 0; k < points.size() - 1; k++)
 						{
-							std::vector<Vec2f> points;
-							points.push_back(grid_offset + Vec2f(x * grid_size, 0.f));
-							points.push_back(grid_offset + Vec2f(x * grid_size, size.y()));
-							canvas->stroke(points.size(), points.data(), Vec4c(200, 200, 200, 255), 1.f);
-						}
-						for (auto y = 0; y < grid_number.y(); y++)
-						{
-							std::vector<Vec2f> points;
-							points.push_back(grid_offset + Vec2f(0.f, y * grid_size));
-							points.push_back(grid_offset + Vec2f(size.x(), y * grid_size));
-							canvas->stroke(points.size(), points.data(), Vec4c(200, 200, 200, 255), 1.f);
-						}
-					}
-
-					auto extent = slot_bezier_extent * scale;
-					auto range = rect(element->global_pos, element->global_size);
-					for (auto i = 0; i < app.bp->node_count(); i++)
-					{
-						auto n = app.bp->node(i);
-						for (auto j = 0; j < n->input_count(); j++)
-						{
-							auto input = n->input(j);
-							auto output = input->link();
-							if (!output)
-								continue;
-							auto e1 = ((cSlot*)output->user_data)->element;
-							auto e2 = ((cSlot*)input->user_data)->element;
-							if (e1->entity->global_visibility && e2->entity->global_visibility)
+							for (auto m = 0; m < 8; m += 2)
 							{
-								auto p1 = e1->center();
-								auto p4 = e2->center();
-								auto p2 = p1 + Vec2f(extent, 0.f);
-								auto p3 = p4 - Vec2f(extent, 0.f);
-								auto bb = rect_from_points(p1, p2, p3, p4);
-								if (rect_overlapping(bb, range))
+								if (segment_intersect(lines[m], lines[m + 1], points[k], points[k + 1]))
 								{
-									std::vector<Vec2f> points;
-									path_bezier(points, p1, p2, p3, p4);
-									auto selected = false;
-									for (auto& s : app.selected_links)
-									{
-										if (s == input)
-										{
-											selected = true;
-											break;
-										}
-									}
-									canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+									links.push_back(input);
+									ok = true;
+									break;
 								}
+								if (ok)
+									break;
 							}
+							if (ok)
+								break;
 						}
 					}
-					auto ds = app.editor->dragging_slot;
-					if (ds)
-					{
-						auto e1 = ((cSlot*)ds->user_data)->element;
-						if (e1->entity->global_visibility)
-						{
-							auto p1 = e1->center();
-							auto p4 = app.editor->dragging_slot_pos;
-							auto is_in = ds->io() == BP::Slot::In;
-							auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
-							auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
-							auto bb = rect_from_points(p1, p2, p3, p4);
-							if (rect_overlapping(bb, range))
-							{
-								std::vector<Vec2f> points;
-								path_bezier(points, p1, p2, p3, p4);
-								canvas->stroke(points.size(), points.data(), selected_col, line_width);
-							}
-						}
-					}
-
-					return true;
-				}, Mail::from_p(c_element));
-				{
-					auto c_event_receiver = utils::c_event_receiver();
-					c_event_receiver->focus_type = FocusByLeftOrRightButton;
-					c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						if (is_mouse_scroll(action, key))
-							app.editor->base_scale((pos.x() > 0.f ? 1 : -1));
-						else if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						{
-							app.s_2d_renderer->pending_update = true;
-
-							app.deselect();
-
-							app.editor->selecting = true;
-							app.editor->select_anchor_begin = (Vec2f(pos) - app.editor->c_base_element->global_pos) / (app.editor->scale * 0.1f);
-							app.editor->select_anchor_end = app.editor->select_anchor_begin;
-						}
-						else if (is_mouse_down(action, key, true) && key == Mouse_Right)
-							app.editor->base_moved = false;
-						else if (is_mouse_up(action, key, true) && key == Mouse_Right)
-						{
-							if (!app.editor->base_moved)
-								app.editor->show_add_node_menu(Vec2f(pos));
-						}
-						else if (is_mouse_move(action, key))
-						{
-							if (app.editor->selecting)
-							{
-								app.s_2d_renderer->pending_update = true;
-
-								app.editor->select_anchor_end = (Vec2f(app.s_event_dispatcher->mouse_pos) - app.editor->c_base_element->global_pos) / (app.editor->scale * 0.1f);
-							}
-
-							if (app.s_event_dispatcher->mouse_buttons[Mouse_Right] & KeyStateDown)
-								app.editor->base_move(Vec2f(pos));
-						}
-						return true;
-					}, Mail());
-					c_event_receiver->state_listeners.add([](void* c, EventReceiverStateFlags state) {
-						if (!(state & EventReceiverActive) && app.editor->selecting)
-						{
-							app.s_2d_renderer->pending_update = true;
-
-							app.editor->selecting = false;
-							if (app.editor->select_anchor_begin == app.editor->select_anchor_end)
-								return true;
-
-							auto p0 = app.editor->c_base_element->global_pos;
-							auto s = app.editor->scale * 0.1f;
-							auto r = rect_from_points(app.editor->select_anchor_begin * s + p0, app.editor->select_anchor_end * s + p0);
-
-							std::vector<BP::Node*> nodes;
-							for (auto i = 0; i < app.bp->node_count(); i++)
-							{
-								auto n = app.bp->node(i);
-								auto e = ((Entity*)n->user_data)->get_component(cElement);
-								if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
-									nodes.push_back(n);
-							}
-							if (!nodes.empty())
-							{
-								app.select(nodes);
-								return true;
-							}
-
-							std::vector<BP::Slot*> links;
-
-							Vec2f lines[8];
-							lines[0] = Vec2f(r.x(), r.y());
-							lines[1] = Vec2f(r.z(), r.y());
-							lines[2] = Vec2f(r.x(), r.y());
-							lines[3] = Vec2f(r.x(), r.w());
-							lines[4] = Vec2f(r.z(), r.w());
-							lines[5] = Vec2f(r.x(), r.w());
-							lines[6] = Vec2f(r.z(), r.w());
-							lines[7] = Vec2f(r.z(), r.y());
-
-							auto element = *(cElement**)c;
-							auto range = rect(element->global_pos, element->global_size);
-							auto scale = app.editor->c_base_element->global_scale;
-							auto extent = slot_bezier_extent * scale;
-							for (auto i = 0; i < app.bp->node_count(); i++)
-							{
-								auto n = app.bp->node(i);
-								for (auto j = 0; j < n->input_count(); j++)
-								{
-									auto input = n->input(j);
-									auto output = input->link();
-									if (!output)
-										continue;
-									auto p1 = ((cSlot*)output->user_data)->element->center();
-									auto p4 = ((cSlot*)input->user_data)->element->center();
-									auto p2 = p1 + Vec2f(extent, 0.f);
-									auto p3 = p4 - Vec2f(extent, 0.f);
-									auto bb = rect_from_points(p1, p2, p3, p4);
-									if (rect_overlapping(bb, range))
-									{
-										std::vector<Vec2f> points;
-										path_bezier(points, p1, p2, p3, p4);
-										auto ok = false;
-										for (auto k = 0; k < points.size() - 1; k++)
-										{
-											for (auto m = 0; m < 8; m += 2)
-											{
-												if (segment_intersect(lines[m], lines[m + 1], points[k], points[k + 1]))
-												{
-													links.push_back(input);
-													ok = true;
-													break;
-												}
-												if (ok)
-													break;
-											}
-											if (ok)
-												break;
-										}
-									}
-								}
-							}
-
-							if (!links.empty())
-								app.select(links);
-						}
-						return true;
-					}, Mail::from_p(c_element));
 				}
-				utils::c_aligner(SizeFitParent, SizeFitParent);
-				utils::push_parent(utils::current_entity());
-					e_base = utils::e_empty();
-					c_base_element = utils::c_element();
-					base_moved = false;
-				utils::pop_parent();
 			}
-			scale = 10;
-			c_scale_text = utils::e_text(L"100%")->get_component(cText);
-			utils::c_aligner(AlignxLeft, AlignyBottom);
-		utils::e_end_layout();
+
+			if (!links.empty())
+				app.select(links);
+		}
+	}, Mail());
+	edt.element->cmds.add([](void*, graphics::Canvas* canvas) {
+		auto& edt = app.editor->edt;
+
+		auto scale = edt.base->global_scale;
+		auto extent = slot_bezier_extent * scale;
+		auto range = rect(edt.element->global_pos, edt.element->global_size);
+		auto line_width = 3.f * scale;
+		for (auto i = 0; i < app.bp->node_count(); i++)
+		{
+			auto n = app.bp->node(i);
+			for (auto j = 0; j < n->input_count(); j++)
+			{
+				auto input = n->input(j);
+				auto output = input->link();
+				if (!output)
+					continue;
+				auto e1 = ((cSlot*)output->user_data)->element;
+				auto e2 = ((cSlot*)input->user_data)->element;
+				if (e1->entity->global_visibility && e2->entity->global_visibility)
+				{
+					auto p1 = e1->center();
+					auto p4 = e2->center();
+					auto p2 = p1 + Vec2f(extent, 0.f);
+					auto p3 = p4 - Vec2f(extent, 0.f);
+					auto bb = rect_from_points(p1, p2, p3, p4);
+					if (rect_overlapping(bb, range))
+					{
+						std::vector<Vec2f> points;
+						path_bezier(points, p1, p2, p3, p4);
+						auto selected = false;
+						for (auto& s : app.selected_links)
+						{
+							if (s == input)
+							{
+								selected = true;
+								break;
+							}
+						}
+						canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+					}
+				}
+			}
+		}
+		auto ds = app.editor->dragging_slot;
+		if (ds)
+		{
+			auto e1 = ((cSlot*)ds->user_data)->element;
+			if (e1->entity->global_visibility)
+			{
+				auto p1 = e1->center();
+				auto p4 = app.editor->dragging_slot_pos;
+				auto is_in = ds->io() == BP::Slot::In;
+				auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
+				auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
+				auto bb = rect_from_points(p1, p2, p3, p4);
+				if (rect_overlapping(bb, range))
+				{
+					std::vector<Vec2f> points;
+					path_bezier(points, p1, p2, p3, p4);
+					canvas->stroke(points.size(), points.data(), selected_col, line_width);
+				}
+			}
+		}
+		return true;
+	}, Mail());
+	edt.event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		if (is_mouse_up(action, key, true) && key == Mouse_Right)
+		{
+			if (!app.editor->edt.moved)
+				app.editor->show_add_node_menu(Vec2f(pos));
+		}
+		return true;
+	}, Mail());
 
 	utils::e_end_docker_page();
 
-	selecting = false;
-
 	dragging_slot = nullptr;
-	pending_link_slot = nullptr;
 
 	for (auto i = 0; i < app.bp->node_count(); i++)
 		on_add_node(app.bp->node(i));
@@ -1073,7 +972,7 @@ void cEditor::on_add_node(BP::Node* n)
 	utils::pop_parent();
 
 	looper().add_event([](void* c, bool*) {
-		app.editor->e_base->add_child(*(Entity**)c);
+		app.editor->edt.base->entity->add_child(*(Entity**)c);
 	}, Mail::from_p(e_node));
 }
 
@@ -1086,26 +985,6 @@ void cEditor::on_remove_node(BP::Node* n)
 void cEditor::on_data_changed(BP::Slot* s)
 {
 	((cSlot*)s->user_data)->tracker->update_view();
-}
-
-void cEditor::base_scale(int v)
-{
-	scale += v;
-	if (scale < 1 || scale > 10)
-		scale -= v;
-	else
-	{
-		auto p = (Vec2f(app.s_event_dispatcher->mouse_pos) - c_base_element->global_pos) / ((scale - v) * 0.1f);
-		c_base_element->add_pos(float(v) * p * -0.1f);
-		c_base_element->set_scale(scale * 0.1f);
-		c_scale_text->set_text((std::to_wstring(scale * 10) + L"%").c_str());
-	}
-}
-
-void cEditor::base_move(const Vec2f& p)
-{
-	c_base_element->add_pos(p);
-	base_moved = true;
 }
 
 void cEditor::show_add_node_menu(const Vec2f& pos)
@@ -1189,7 +1068,6 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 
 	utils::push_parent(utils::add_layer(app.root, ""));
 		utils::e_empty()->on_removed_listeners.add([](void*) {
-			app.editor->pending_link_slot = app.editor->dragging_slot;
 			app.editor->dragging_slot = nullptr;
 			return true;
 		}, Mail());
@@ -1262,7 +1140,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						}
 					}capture;
 					capture.l = e_list;
-					capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
+					capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 					if (!dragging_slot)
 					{
 						utils::e_menu_item(L"Enum Single", [](void* c) {
@@ -1360,13 +1238,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								d.id = "";
 								d.pos = capture.p;
 								auto n = app.add_node(d);
-								auto s = app.editor->pending_link_slot;
+								auto s = app.editor->dragging_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output("out"));
+										_set_link(s, n->find_output("out"));
 									else
-										n->find_input("in")->link_to(s);
+										_set_link(n->find_input("in"), s);
 								}
 							}, Mail::from_t(&_capture));
 						}
@@ -1390,13 +1268,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									d.id = "";
 									d.pos = capture.p;
 									auto n = app.add_node(d);
-									auto s = app.editor->pending_link_slot;
+									auto s = app.editor->dragging_slot;
 									if (s)
 									{
 										if (s->io() == BP::Slot::In)
-											s->link_to(n->find_output("out"));
+											_set_link(s, n->find_output("out"));
 										else
-											n->find_input("in")->link_to(s);
+											_set_link(n->find_input("in"), s);
 									}
 								}, Mail::from_t(&_capture));
 							}
@@ -1419,13 +1297,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								d.id = "";
 								d.pos = capture.p;
 								auto n = app.add_node(d);
-								auto s = app.editor->pending_link_slot;
+								auto s = app.editor->dragging_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output("out"));
+										_set_link(s, n->find_output("out"));
 									else
-										n->find_input("0")->link_to(s);
+										_set_link(n->find_input("0"), s);
 								}
 							}, Mail::from_t(&_capture));
 						}
@@ -1437,7 +1315,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							const char* vs;
 							Vec2f p;
 						}capture;
-						capture.p = (Vec2f(pos) - c_base_element->global_pos) / (scale * 0.1f);
+						capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 						for (auto& t : node_types)
 						{
 							capture.us = t.first->type()->name() + 2;
@@ -1449,13 +1327,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								d.id = "";
 								d.pos = capture.p;
 								auto n = app.add_node(d);
-								auto s = app.editor->pending_link_slot;
+								auto s = app.editor->dragging_slot;
 								if (s)
 								{
 									if (s->io() == BP::Slot::In)
-										s->link_to(n->find_output(capture.vs));
+										_set_link(s, n->find_output(capture.vs));
 									else
-										n->find_input(capture.vs)->link_to(s);
+										_set_link(n->find_input(capture.vs), s);
 								}
 							}, Mail::from_t(&capture));
 						}
