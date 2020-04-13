@@ -114,6 +114,7 @@ namespace flame
 	typedef void(__Dummy__::* MF_v_vp)(void*);
 	typedef void(__Dummy__::* MF_v_u)(uint);
 	typedef void(__Dummy__::* MF_v_vp_u)(void*, uint);
+	typedef void(__Dummy__::* MF_v_b_vp)(bool, void*);
 	typedef void(__Dummy__::* MF_v_i_vp)(int, void*);
 	typedef void(__Dummy__::* MF_v_u_vp)(uint, void*);
 	typedef void(__Dummy__::* MF_v_f_vp)(float, void*);

@@ -21,11 +21,47 @@ template <class T>
 struct Setter;
 
 template <>
+struct Setter<bool>
+{
+	static void call(void* o, void* f, bool v, void* s)
+	{
+		cmf(p2f<MF_v_b_vp>(f), o, v, s);
+	}
+};
+
+template <>
 struct Setter<int>
 {
 	static void call(void* o, void* f, int v, void* s)
 	{
 		cmf(p2f<MF_v_i_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec2i>
+{
+	static void call(void* o, void* f, Vec2i* v, void* s)
+	{
+		cmf(p2f<MF_v_i2p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec3i>
+{
+	static void call(void* o, void* f, Vec3i* v, void* s)
+	{
+		cmf(p2f<MF_v_i3p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec4i>
+{
+	static void call(void* o, void* f, Vec4i* v, void* s)
+	{
+		cmf(p2f<MF_v_i4p_vp>(f), o, v, s);
 	}
 };
 
@@ -39,20 +75,38 @@ struct Setter<uint>
 };
 
 template <>
+struct Setter<Vec2u>
+{
+	static void call(void* o, void* f, Vec2u* v, void* s)
+	{
+		cmf(p2f<MF_v_u2p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec3u>
+{
+	static void call(void* o, void* f, Vec3u* v, void* s)
+	{
+		cmf(p2f<MF_v_u3p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec4u>
+{
+	static void call(void* o, void* f, Vec4u* v, void* s)
+	{
+		cmf(p2f<MF_v_u4p_vp>(f), o, v, s);
+	}
+};
+
+template <>
 struct Setter<float>
 {
 	static void call(void* o, void* f, float v, void* s)
 	{
 		cmf(p2f<MF_v_f_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<uchar>
-{
-	static void call(void* o, void* f, uchar v, void* s)
-	{
-		cmf(p2f<MF_v_c_vp>(f), o, v, s);
 	}
 };
 
@@ -66,6 +120,15 @@ struct Setter<Vec2f>
 };
 
 template <>
+struct Setter<Vec3f>
+{
+	static void call(void* o, void* f, Vec3f* v, void* s)
+	{
+		cmf(p2f<MF_v_f3p_vp>(f), o, v, s);
+	}
+};
+
+template <>
 struct Setter<Vec4f>
 {
 	static void call(void* o, void* f, Vec4f* v, void* s)
@@ -75,39 +138,64 @@ struct Setter<Vec4f>
 };
 
 template <>
+struct Setter<uchar>
+{
+	static void call(void* o, void* f, uchar v, void* s)
+	{
+		cmf(p2f<MF_v_c_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec2c>
+{
+	static void call(void* o, void* f, Vec2c* v, void* s)
+	{
+		cmf(p2f<MF_v_c2p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec3c>
+{
+	static void call(void* o, void* f, Vec3c* v, void* s)
+	{
+		cmf(p2f<MF_v_c3p_vp>(f), o, v, s);
+	}
+};
+
+template <>
 struct Setter<Vec4c>
 {
 	static void call(void* o, void* f, Vec4c* v, void* s)
 	{
-		cmf(p2f<MF_v_f4c_vp>(f), o, v, s);
+		cmf(p2f<MF_v_c4p_vp>(f), o, v, s);
 	}
 };
 
+struct SetterCapture
+{
+	void* p;
+	void* o;
+	void* f;
+};
+
 template <class T>
-void create_edit(void* pdata, void* o, void* f)
+void create_edit(SetterCapture* c)
 {
 	utils::e_drag_edit();
 
-	struct Capture
-	{
-		void* p;
-		void* o;
-		void* f;
-	}capture;
-	capture.p = pdata;
-	capture.o = o;
-	capture.f = f;
-	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(pdata, [](void* c, T v, bool exit_editing) {
-		auto& capture = *(Capture*)c;
+	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](void* c, T v, bool exit_editing) {
+		auto& capture = *(SetterCapture*)c;
 		if (capture.f)
 			Setter<T>::call(capture.o, capture.f, v, app.inspector);
 		else
 			*(T*)capture.p = v;
-	}, Mail::from_t(&capture)));
+	}, Mail::from_t(c)));
 }
 
 template <uint N, class T>
-void create_vec_edit(void* pdata, VariableInfo* v)
+void create_vec_edit(SetterCapture* c)
 {
 	for (auto i = 0; i < N; i++)
 	{
@@ -117,9 +205,13 @@ void create_vec_edit(void* pdata, VariableInfo* v)
 		utils::e_end_layout();
 	}
 
-	utils::current_parent()->add_component(new_object<cDigitalVecDataTracker<N, T>>(pdata, [](void* c, const Vec<N, T>& v, bool exit_editing) {
-		;
-	}, Mail::from_p(v)));
+	utils::current_parent()->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](void* c, const Vec<N, T>& v, bool exit_editing) {
+		auto& capture = *(SetterCapture*)c;
+		if (capture.f)
+			Setter<Vec<N, T>>::call(capture.o, capture.f, (Vec<N, T>*)&v, app.inspector);
+		else
+			*(Vec<N, T>*)capture.p = v;
+	}, Mail::from_t(c)));
 }
 
 cInspector::cInspector() :
@@ -303,6 +395,7 @@ void cInspector::refresh()
 				}
 				break;
 				case TypeData:
+				{
 					if (f_set)
 					{
 						if (f_set->return_type()->hash() != FLAME_CHASH("D#void") ||
@@ -318,6 +411,10 @@ void cInspector::refresh()
 						if (f_set)
 							f_set_addr = (char*)module + (uint)f_set->rva();
 					}
+					SetterCapture setter_capture;
+					setter_capture.p = pdata;
+					setter_capture.o = component;
+					setter_capture.f = f_set_addr;
 					switch (base_hash)
 					{
 					case FLAME_CHASH("bool"):
@@ -328,52 +425,52 @@ void cInspector::refresh()
 						}, Mail::from_p(nullptr)));
 						break;
 					case FLAME_CHASH("int"):
-						create_edit<int>(pdata, component, f_set_addr);
+						create_edit<int>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(2+int)"):
-						create_vec_edit<2, int>(pdata, v);
+						create_vec_edit<2, int>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(3+int)"):
-						create_vec_edit<3, int>(pdata, v);
+						create_vec_edit<3, int>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(4+int)"):
-						create_vec_edit<4, int>(pdata, v);
+						create_vec_edit<4, int>(&setter_capture);
 						break;
 					case FLAME_CHASH("uint"):
-						create_edit<uint>(pdata, component, f_set_addr);
+						create_edit<uint>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(2+uint)"):
-						create_vec_edit<2, uint>(pdata, v);
+						create_vec_edit<2, uint>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(3+uint)"):
-						create_vec_edit<3, uint>(pdata, v);
+						create_vec_edit<3, uint>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(4+uint)"):
-						create_vec_edit<4, uint>(pdata, v);
+						create_vec_edit<4, uint>(&setter_capture);
 						break;
 					case FLAME_CHASH("float"):
-						create_edit<float>(pdata, component, f_set_addr);
+						create_edit<float>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(2+float)"):
-						create_vec_edit<2, float>(pdata, v);
+						create_vec_edit<2, float>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(3+float)"):
-						create_vec_edit<3, float>(pdata, v);
+						create_vec_edit<3, float>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(4+float)"):
-						create_vec_edit<4, float>(pdata, v);
+						create_vec_edit<4, float>(&setter_capture);
 						break;
 					case FLAME_CHASH("uchar"):
-						create_edit<uchar>(pdata, component, f_set_addr);
+						create_edit<uchar>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(2+uchar)"):
-						create_vec_edit<2, uchar>(pdata, v);
+						create_vec_edit<2, uchar>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(3+uchar)"):
-						create_vec_edit<3, uchar>(pdata, v);
+						create_vec_edit<3, uchar>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::Vec(4+uchar)"):
-						create_vec_edit<4, uchar>(pdata, v);
+						create_vec_edit<4, uchar>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::StringA"):
 						utils::e_edit(50.f);
@@ -390,6 +487,7 @@ void cInspector::refresh()
 						}, Mail::from_p(nullptr)));
 						break;
 					}
+				}
 					break;
 				}
 

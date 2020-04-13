@@ -1,5 +1,3 @@
-
-
 #define EXPAND(...) __VA_ARGS__
 
 #define CONCATENATE_DETAIL(x, y) x##y

@@ -838,20 +838,20 @@ namespace flame
 		return !(lhs == rhs);
 	}
 
-	using Vec1f = Vec<1, float>;
-	using Vec2f = Vec<2, float>;
-	using Vec3f = Vec<3, float>;
-	using Vec4f = Vec<4, float>;
+	using Vec1i = Vec<1, int>;
+	using Vec2i = Vec<2, int>;
+	using Vec3i = Vec<3, int>;
+	using Vec4i = Vec<4, int>;
 
 	using Vec1u = Vec<1, uint>;
 	using Vec2u = Vec<2, uint>;
 	using Vec3u = Vec<3, uint>;
 	using Vec4u = Vec<4, uint>;
 
-	using Vec1i = Vec<1, int>;
-	using Vec2i = Vec<2, int>;
-	using Vec3i = Vec<3, int>;
-	using Vec4i = Vec<4, int>;
+	using Vec1f = Vec<1, float>;
+	using Vec2f = Vec<2, float>;
+	using Vec3f = Vec<3, float>;
+	using Vec4f = Vec<4, float>;
 
 	using Vec1c = Vec<1, uchar>;
 	using Vec2c = Vec<2, uchar>;
@@ -863,9 +863,18 @@ namespace flame
 	using Vec3b = Vec<3, bool>;
 	using Vec4b = Vec<4, bool>;
 
+	typedef void(__Dummy__::* MF_v_i2p_vp)(Vec2i*, void*);
+	typedef void(__Dummy__::* MF_v_i3p_vp)(Vec3i*, void*);
+	typedef void(__Dummy__::* MF_v_i4p_vp)(Vec4i*, void*);
+	typedef void(__Dummy__::* MF_v_u2p_vp)(Vec2u*, void*);
+	typedef void(__Dummy__::* MF_v_u3p_vp)(Vec3u*, void*);
+	typedef void(__Dummy__::* MF_v_u4p_vp)(Vec4u*, void*);
 	typedef void(__Dummy__::* MF_v_f2p_vp)(Vec2f*, void*);
+	typedef void(__Dummy__::* MF_v_f3p_vp)(Vec3f*, void*);
 	typedef void(__Dummy__::* MF_v_f4p_vp)(Vec4f*, void*);
-	typedef void(__Dummy__::* MF_v_f4c_vp)(Vec4c*, void*);
+	typedef void(__Dummy__::* MF_v_c2p_vp)(Vec2c*, void*);
+	typedef void(__Dummy__::* MF_v_c3p_vp)(Vec3c*, void*);
+	typedef void(__Dummy__::* MF_v_c4p_vp)(Vec4c*, void*);
 
 	template <uint N, uint M, class T>
 	struct Mat
