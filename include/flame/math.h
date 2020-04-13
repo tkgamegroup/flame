@@ -863,6 +863,10 @@ namespace flame
 	using Vec3b = Vec<3, bool>;
 	using Vec4b = Vec<4, bool>;
 
+	typedef void(__Dummy__::* MF_v_f2p_vp)(Vec2f*, void*);
+	typedef void(__Dummy__::* MF_v_f4p_vp)(Vec4f*, void*);
+	typedef void(__Dummy__::* MF_v_f4c_vp)(Vec4c*, void*);
+
 	template <uint N, uint M, class T>
 	struct Mat
 	{

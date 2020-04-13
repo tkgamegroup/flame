@@ -107,21 +107,25 @@ namespace flame
 		return (*f)(args...);
 	}
 
-	struct __f_Dummy
+	struct __Dummy__
 	{
 	};
-	typedef void(__f_Dummy::* MF_v_v)();
-	typedef void(__f_Dummy::* MF_v_vp)(void*);
-	typedef void(__f_Dummy::* MF_v_u)(uint);
-	typedef void(__f_Dummy::* MF_v_vp_u)(void*, uint);
-	typedef void* (__f_Dummy::* MF_vp_v)();
-	typedef void* (__f_Dummy::* MF_vp_vp)(void*);
-	typedef bool(__f_Dummy::* MF_b_v)();
+	typedef void(__Dummy__::* MF_v_v)();
+	typedef void(__Dummy__::* MF_v_vp)(void*);
+	typedef void(__Dummy__::* MF_v_u)(uint);
+	typedef void(__Dummy__::* MF_v_vp_u)(void*, uint);
+	typedef void(__Dummy__::* MF_v_i_vp)(int, void*);
+	typedef void(__Dummy__::* MF_v_u_vp)(uint, void*);
+	typedef void(__Dummy__::* MF_v_f_vp)(float, void*);
+	typedef void(__Dummy__::* MF_v_c_vp)(uchar, void*);
+	typedef void* (__Dummy__::* MF_vp_v)();
+	typedef void* (__Dummy__::* MF_vp_vp)(void*);
+	typedef bool(__Dummy__::* MF_b_v)();
 
 	template <class F, class ...Args>
 	auto cmf(F f, void* p, Args... args) // call member function at an address
 	{
-		return (*((__f_Dummy*)p).*f)(args...);
+		return (*((__Dummy__*)p).*f)(args...);
 	}
 
 	inline bool equal_and_not_null(void* a, void* b)

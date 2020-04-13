@@ -75,7 +75,6 @@ struct cHierarchy : Component
 struct cInspector : Component
 {
 	Entity* e_layout;
-	void* module;
 
 	cInspector();
 	~cInspector() override;

@@ -17,24 +17,93 @@ void end_item()
 	utils::pop_parent();
 }
 
-struct Setter
-{
-	void* addr;
+template <class T>
+struct Setter;
 
-	void unserialize(int offset)
+template <>
+struct Setter<int>
+{
+	static void call(void* o, void* f, int v, void* s)
 	{
-		//cmf(p2f<MF_v_vp_u>(unserialize_addr), );
+		cmf(p2f<MF_v_i_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<uint>
+{
+	static void call(void* o, void* f, uint v, void* s)
+	{
+		cmf(p2f<MF_v_u_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<float>
+{
+	static void call(void* o, void* f, float v, void* s)
+	{
+		cmf(p2f<MF_v_f_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<uchar>
+{
+	static void call(void* o, void* f, uchar v, void* s)
+	{
+		cmf(p2f<MF_v_c_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec2f>
+{
+	static void call(void* o, void* f, Vec2f* v, void* s)
+	{
+		cmf(p2f<MF_v_f2p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec4f>
+{
+	static void call(void* o, void* f, Vec4f* v, void* s)
+	{
+		cmf(p2f<MF_v_f4p_vp>(f), o, v, s);
+	}
+};
+
+template <>
+struct Setter<Vec4c>
+{
+	static void call(void* o, void* f, Vec4c* v, void* s)
+	{
+		cmf(p2f<MF_v_f4c_vp>(f), o, v, s);
 	}
 };
 
 template <class T>
-void create_edit(void* pdata, VariableInfo* v)
+void create_edit(void* pdata, void* o, void* f)
 {
 	utils::e_drag_edit();
 
+	struct Capture
+	{
+		void* p;
+		void* o;
+		void* f;
+	}capture;
+	capture.p = pdata;
+	capture.o = o;
+	capture.f = f;
 	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(pdata, [](void* c, T v, bool exit_editing) {
-		;
-	}, Mail::from_p(v)));
+		auto& capture = *(Capture*)c;
+		if (capture.f)
+			Setter<T>::call(capture.o, capture.f, v, app.inspector);
+		else
+			*(T*)capture.p = v;
+	}, Mail::from_t(&capture)));
 }
 
 template <uint N, class T>
@@ -66,8 +135,6 @@ cInspector::cInspector() :
 		e_page->add_component(this);
 	}
 
-	module = load_module(L"flame_universe.dll");
-
 	utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
 		e_layout = utils::e_empty();
 		{
@@ -85,34 +152,37 @@ cInspector::cInspector() :
 
 cInspector::~cInspector()
 {
-	free_module(module);
-
 	app.inspector = nullptr;
 }
 
-//void cInspector::update_data_tracker(uint component_hash, uint data_offset) const
-//{
-//	if (!app.selected)
-//		return;
-//	for (auto i = 2; i < e_layout->child_count(); i++)
-//	{
-//		auto e_component = e_layout->child(i);
-//		auto dealer = e_component->get_component(cComponentDealer);
-//		if (dealer && dealer->component->name_hash == component_hash)
-//		{
-//			for (auto j = 1; j < e_component->child_count(); j++)
-//			{
-//				auto e_data = e_component->child(j)->child(1);
-//				auto tracker = e_data->get_component(cDataTracker);
-//				if (tracker && tracker->data == (char*)dealer->dummy + data_offset)
-//				{
-//					dealer->serialize(data_offset);
-//					tracker->update_view();
-//				}
-//			}
-//		}
-//	}
-//}
+struct cComponentTracker : Component
+{
+	std::unordered_map<uint, cDataTracker*> vs;
+
+	Component* t;
+	void* l;
+
+	cComponentTracker(Component* t) :
+		t(t),
+		Component("cComponentTracker")
+	{
+		l = t->data_changed_listeners.add([](void* c, uint hash, void* sender) {
+			if (sender == app.inspector)
+				return true;
+			auto thiz = *(cComponentTracker**)c;
+			auto it = thiz->vs.find(hash);
+			if (it != thiz->vs.end())
+				it->second->update_view();
+			return true;
+		}, Mail::from_p(this));
+	}
+
+	~cComponentTracker()
+	{
+		t->data_changed_listeners.remove(l);
+	}
+
+};
 
 void cInspector::refresh()
 {
@@ -157,10 +227,15 @@ void cInspector::refresh()
 			auto component = components.v[i];
 
 			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + component->name).c_str()));
+			auto module = udt->db()->module();
 
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
 			e_component->get_component(cElement)->padding = Vec4f(4.f);
 			utils::c_aligner(SizeFitParent, SizeFixed);
+
+			auto c_component_tracker = new cComponentTracker(component);
+			c_component_tracker->id = FLAME_HASH(component->name);
+			e_component->add_component(c_component_tracker);
 
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 			utils::e_text(s2w(component->name).c_str())->get_component(cText)->color_ = Vec4c(30, 40, 160, 255);
@@ -203,6 +278,9 @@ void cInspector::refresh()
 				begin_item(s2w(v->name()).c_str());
 				auto e_data = utils::current_parent();
 
+				auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
+				void* f_set_addr = nullptr;
+
 				switch (type->tag())
 				{
 				case TypeEnumSingle:
@@ -226,6 +304,21 @@ void cInspector::refresh()
 				}
 				break;
 				case TypeData:
+					if (f_set)
+					{
+						if (f_set->return_type()->hash() != FLAME_CHASH("D#void") ||
+							f_set->parameter_count() != 2)
+							f_set = nullptr;
+						else
+						{
+							auto p1 = f_set->parameter_type(0);
+							auto p2 = f_set->parameter_type(1);
+							if (p1->base_hash() != base_hash || p2->hash() != FLAME_CHASH("P#void"))
+								f_set = nullptr;
+						}
+						if (f_set)
+							f_set_addr = (char*)module + (uint)f_set->rva();
+					}
 					switch (base_hash)
 					{
 					case FLAME_CHASH("bool"):
@@ -236,7 +329,7 @@ void cInspector::refresh()
 						}, Mail::from_p(nullptr)));
 						break;
 					case FLAME_CHASH("int"):
-						create_edit<int>(pdata, v);
+						create_edit<int>(pdata, component, f_set_addr);
 						break;
 					case FLAME_CHASH("flame::Vec(2+int)"):
 						create_vec_edit<2, int>(pdata, v);
@@ -248,7 +341,7 @@ void cInspector::refresh()
 						create_vec_edit<4, int>(pdata, v);
 						break;
 					case FLAME_CHASH("uint"):
-						create_edit<uint>(pdata, v);
+						create_edit<uint>(pdata, component, f_set_addr);
 						break;
 					case FLAME_CHASH("flame::Vec(2+uint)"):
 						create_vec_edit<2, uint>(pdata, v);
@@ -260,7 +353,7 @@ void cInspector::refresh()
 						create_vec_edit<4, uint>(pdata, v);
 						break;
 					case FLAME_CHASH("float"):
-						create_edit<float>(pdata, v);
+						create_edit<float>(pdata, component, f_set_addr);
 						break;
 					case FLAME_CHASH("flame::Vec(2+float)"):
 						create_vec_edit<2, float>(pdata, v);
@@ -272,7 +365,7 @@ void cInspector::refresh()
 						create_vec_edit<4, float>(pdata, v);
 						break;
 					case FLAME_CHASH("uchar"):
-						create_edit<uchar>(pdata, v);
+						create_edit<uchar>(pdata, component, f_set_addr);
 						break;
 					case FLAME_CHASH("flame::Vec(2+uchar)"):
 						create_vec_edit<2, uchar>(pdata, v);
@@ -300,6 +393,8 @@ void cInspector::refresh()
 					}
 					break;
 				}
+
+				c_component_tracker->vs[FLAME_HASH(v->name())] = e_data->get_component(cDataTracker);
 
 				end_item();
 			}

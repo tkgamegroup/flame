@@ -130,7 +130,7 @@ void cEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 
 void cEditor::update_gizmo()
 {
-	gizmo->set_pos((gizmo_target->pos + gizmo_target->size * 0.5f) * edt.base->scale + edt.base->pos - 5.f);
+	gizmo->set_pos((gizmo_target->pos + gizmo_target->size * gizmo_target->scale * 0.5f) * edt.base->scale + edt.base->pos - 5.f);
 }
 
 void cEditor::on_select()
