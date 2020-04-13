@@ -3,30 +3,21 @@
 #include <flame/serialize.h>
 #include <flame/graphics/image.h>
 #include <flame/utils/app.h>
+#include <flame/utils/2d_editor.h>
 
 using namespace flame;
 using namespace graphics;
 
 struct cEditor : Component
 {
-	Entity* e_base;
-	cElement* c_base_element;
-	bool base_moved;
-	uint scale;
-	cText* c_scale_text;
+	utils::_2DEditor edt;
 	cElement* c_transform_tool_element;
-
-	bool selecting;
-	Vec2f select_anchor_begin;
-	Vec2f select_anchor_end;
 
 	int tool_type;
 
 	cEditor();
 	~cEditor() override;
 	void search_hover(Entity* e);
-	void base_scale(int v);
-	void base_move(const Vec2f& p);
 };
 
 struct cResourceExplorer : Component

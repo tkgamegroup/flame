@@ -168,7 +168,7 @@ void MyApp::load(const std::filesystem::path& _filepath)
 	looper().add_event([](void*, bool*) {
 		if (app.editor)
 		{
-			auto e_base = app.editor->e_base;
+			auto e_base = app.editor->edt.base->entity;
 			e_base->remove_children(0, -1);
 			e_base->add_child(app.prefab);
 		}

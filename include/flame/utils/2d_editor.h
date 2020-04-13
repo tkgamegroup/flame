@@ -14,6 +14,7 @@ namespace flame
 
 			cElement* base;
 			bool moved;
+			cElement* overlay;
 			uint scale_level;
 			cText* scale_text;
 
@@ -43,18 +44,6 @@ namespace flame
 
 						if (edt.element->clipped)
 							return true;
-
-						if (edt.selecting)
-						{
-							std::vector<Vec2f> points;
-							auto p0 = edt.base->global_pos;
-							auto s = edt.scale_level * 0.1f;
-							auto p1 = edt.select_begin * s + p0;
-							auto p2 = edt.select_end * s + p0;
-							path_rect(points, p1, p2 - p1);
-							points.push_back(points[0]);
-							canvas->stroke(points.size(), points.data(), Vec4c(17, 193, 101, 255), 2.f);
-						}
 
 						{
 							const auto grid_size = 50.f * edt.base->global_scale;
@@ -151,6 +140,29 @@ namespace flame
 
 					base = utils::e_element()->get_component(cElement);
 					moved = false;
+
+					overlay = utils::e_element()->get_component(cElement);
+					overlay->cmds.add([](void* c, graphics::Canvas* canvas) {
+						auto& edt = **(_2DEditor**)c;
+
+						if (edt.element->clipped)
+							return true;
+
+						if (edt.selecting)
+						{
+							std::vector<Vec2f> points;
+							auto p0 = edt.base->global_pos;
+							auto s = edt.scale_level * 0.1f;
+							auto p1 = edt.select_begin * s + p0;
+							auto p2 = edt.select_end * s + p0;
+							path_rect(points, p1, p2 - p1);
+							points.push_back(points[0]);
+							canvas->stroke(points.size(), points.data(), Vec4c(17, 193, 101, 255), 2.f);
+						}
+
+						return true;
+					}, Mail::from_p(this));
+					utils::c_aligner(SizeFitParent, SizeFitParent);
 
 					scale_text = utils::e_text(L"100%")->get_component(cText);
 					utils::c_aligner(AlignxLeft, AlignyBottom);
