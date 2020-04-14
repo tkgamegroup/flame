@@ -106,7 +106,10 @@ int main(int argc, char** args)
 		utils::e_begin_splitter(SplitterHorizontal);
 			utils::e_begin_layout(LayoutVertical, 4.f);
 			utils::c_aligner(SizeFitParent, SizeFitParent);
-			app.c_code = utils::e_edit(100.f)->get_component(cText);
+			auto c_edit = utils::e_edit(100.f)->get_component(cEdit);
+			c_edit->select_all_on_dbclicked = false;
+			c_edit->select_all_on_focus = false;
+			app.c_code = c_edit->text;
 			app.c_code->font_atlas = app.font_atlas_edit;
 			app.c_code->font_size_ = 17;
 			utils::c_aligner(SizeFitParent, SizeFitParent);

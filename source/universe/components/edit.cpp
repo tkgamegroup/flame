@@ -161,6 +161,7 @@ namespace flame
 					auto& select_end = thiz->select_end;
 					auto low = min(select_start, select_end);
 					auto high = max(select_start, select_end);
+					auto ed = sEventDispatcher::current();
 
 					auto line_start = [&](int p) {
 						p--;
@@ -196,14 +197,14 @@ namespace flame
 									low--;
 									text.erase(text.begin() + low);
 									c_text->on_text_changed(thiz);
-									select_end = select_start = low;
+									select_start = select_end = low;
 								}
 							}
 							else
 							{
 								text = text.substr(0, low) + text.substr(high);
 								c_text->on_text_changed(thiz);
-								select_end = select_start = low;
+								select_start = select_end = low;
 							}
 							break;
 						case 3: // Ctrl+C
@@ -218,7 +219,7 @@ namespace flame
 							{
 								text = text.substr(0, low) + cb + text.substr(high);
 								c_text->on_text_changed(thiz);
-								select_end = select_start = high + cb.size() - (high - low);
+								select_start = select_end = high + cb.size() - (high - low);
 							}
 						}
 							break;
@@ -229,7 +230,7 @@ namespace flame
 						default:
 							text = text.substr(0, low) + std::wstring(1, value) + text.substr(high);
 							c_text->on_text_changed(thiz);
-							select_end = select_start = high + 1 - (high - low);
+							select_start = select_end = high + 1 - (high - low);
 						}
 					}
 					else if (action == KeyStateDown)
@@ -237,43 +238,83 @@ namespace flame
 						switch (value)
 						{
 						case Key_Left:
-							if (low > 0)
-								low--;
-							select_end = select_start = low;
+							if (ed->key_states[Key_Shift] & KeyStateDown)
+							{
+								if (select_end > 0)
+									select_end--;
+							}
+							else
+							{
+								if (low > 0)
+									low--;
+								select_start = select_end = low;
+							}
 							break;
 						case Key_Right:
-							if (high < len)
-								high++;
-							select_end = select_start = high;
+							if (ed->key_states[Key_Shift] & KeyStateDown)
+							{
+								if (select_end < len)
+									select_end++;
+							}
+							else
+							{
+								if (high < len)
+									high++;
+								select_start = select_end = high;
+							}
 							break;
 						case Key_Up:
 						{
-							auto end_s = line_start(select_end);
-							auto low_s = low == select_end ? end_s : line_start(low);
-							auto up_s = line_start(low_s - 1);
-							if (low_s != up_s)
-								select_end = select_start = up_s + min((int)select_end - end_s, max(0, low_s - up_s - 1));
+							if (ed->key_states[Key_Shift] & KeyStateDown)
+							{
+								auto end_s = line_start(select_end);
+								auto up_s = line_start(end_s - 1);
+								if (end_s != up_s)
+									select_end = up_s + min((int)select_end - end_s, max(0, end_s - up_s - 1));
+							}
 							else
-								select_start = select_end;
+							{
+								auto end_s = line_start(select_end);
+								auto low_s = low == select_end ? end_s : line_start(low);
+								auto up_s = line_start(low_s - 1);
+								if (low_s != up_s)
+									select_end = select_start = up_s + min((int)select_end - end_s, max(0, low_s - up_s - 1));
+								else
+									select_start = select_end;
+							}
 						}
 							break;
 						case Key_Down:
 						{
-							auto end_s = line_start(select_end);
-							auto high_e = line_end(high);
-							auto down_l = line_end(high_e + 1) - high_e - 1;
-							if (down_l >= 0)
-								select_end = select_start = high_e + 1 + min(down_l, (int)select_end - end_s);
+							if (ed->key_states[Key_Shift] & KeyStateDown)
+							{
+								auto end_s = line_start(select_end);
+								auto end_e = line_end(select_end);
+								auto down_l = line_end(end_e + 1) - end_e - 1;
+								if (down_l >= 0)
+									select_end = end_e + 1 + min(down_l, (int)select_end - end_s);
+							}
 							else
-								select_start = select_end;
+							{
+								auto end_s = line_start(select_end);
+								auto high_e = line_end(high);
+								auto down_l = line_end(high_e + 1) - high_e - 1;
+								if (down_l >= 0)
+									select_end = select_start = high_e + 1 + min(down_l, (int)select_end - end_s);
+								else
+									select_start = select_end;
+							}
 						}
 							break;
 						case Key_Home:
-
-							select_end = select_start = 0;
+							select_end = (ed->key_states[Key_Ctrl] & KeyStateDown) ? 0 : line_start(select_end);
+							if (!(ed->key_states[Key_Shift] & KeyStateDown))
+								select_start = select_end;
 							break;
 						case Key_End:
-							select_end = select_start = len;
+							select_end = (ed->key_states[Key_Ctrl] & KeyStateDown) ? len : line_end(select_end);
+							if (!(ed->key_states[Key_Shift] & KeyStateDown))
+								select_start = select_end;
 							break;
 						case Key_Del:
 							if (low == high)
@@ -288,7 +329,7 @@ namespace flame
 							{
 								text = text.substr(0, low) + text.substr(high);
 								c_text->on_text_changed(thiz);
-								select_end = select_start = low;
+								select_start = select_end = low;
 							}
 							break;
 						}
