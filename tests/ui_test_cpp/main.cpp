@@ -168,6 +168,7 @@ int main(int argc, char** args)
 		utils::e_menu_item(L"Help", [](void* c) {
 			wprintf(L"%s!\n", (*(Entity**)c)->get_component(cText)->text());
 		}, Mail::from_p(utils::next_entity));
+		utils::e_separator();
 		utils::e_begin_sub_menu(L"Add");
 			utils::next_entity = Entity::create();
 			utils::e_menu_item(L"Tree", [](void* c) {

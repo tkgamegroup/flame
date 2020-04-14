@@ -18,6 +18,7 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/components/extra_element_drawing.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/utils/entity.h>
 #include <flame/universe/utils/event.h>
@@ -411,6 +412,18 @@ namespace flame
 		inline cDockerStaticContainer* c_docker_static_container()
 		{
 			auto c = cDockerStaticContainer::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
+			current_entity()->add_component(c);
+			return c;
+		}
+
+		inline cExtraElementDrawing* c_extra_element_drawing()
+		{
+			auto c = cExtraElementDrawing::create();
 			if (next_component_id)
 			{
 				c->id = next_component_id;
@@ -1051,6 +1064,21 @@ namespace flame
 			cs->color_hovering = style_4c(FrameColorHovering);
 			cs->color_active = style_4c(FrameColorActive);
 			cs->style();
+			c_aligner(SizeGreedy, SizeFixed);
+			return e;
+		}
+
+		inline Entity* e_separator()
+		{
+			auto e = e_empty();
+			auto ce = c_element();
+			ce->size.y() = style_1u(FontSize) * 0.5f;
+			ce->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			ce->color = style_4c(FrameColorNormal);
+			auto ceed = c_extra_element_drawing();
+			ceed->draw_flags = ExtraDrawHorizontalLine;
+			ceed->thickness = 1.f;
+			ceed->color = style_4c(TextColorNormal).new_replacely<3>(128);
 			c_aligner(SizeGreedy, SizeFixed);
 			return e;
 		}

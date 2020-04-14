@@ -6,6 +6,7 @@
 namespace flame
 {
 	struct Entity;
+	struct World;
 
 	struct System : Object
 	{

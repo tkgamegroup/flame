@@ -6,6 +6,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/list.h>
 #include <flame/universe/components/window.h>
+#include <flame/universe/components/extra_element_drawing.h>
 #include <flame/universe/utils/splitter.h>
 
 namespace flame
@@ -47,8 +48,11 @@ namespace flame
 				e->add_child(e_sd);
 				auto ce = cElement::create();
 				ce->size = 8.f;
-				ce->color = style_4c(FrameColorHovering);
 				e_sd->add_component(ce);
+				auto ceed = cExtraElementDrawing::create();
+				ceed->color = style_4c(FrameColorHovering);
+				ceed->draw_flags = ExtraDrawFilledCornerSE;
+				e_sd->add_component(ceed);
 				e_sd->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();
 				ca->x_align_ = AlignxRight;

@@ -80,7 +80,10 @@ namespace flame
 		SplitterVertical
 	};
 
-	struct World;
-
-	// objects in universe module can have serialization through an reflected type, the type name is 'Serializer_' + object's name
+	enum ExtraDrawFlag
+	{
+		ExtraDrawFilledCornerSE = 1 << 0,
+		ExtraDrawHorizontalLine = 1 << 1,
+		ExtraDrawVerticalLine = 1 << 2
+	};
 }
