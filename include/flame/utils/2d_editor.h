@@ -81,7 +81,7 @@ namespace flame
 					event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 						auto& edt = *capture.thiz;
-						auto dp = edt.event_receiver->dispatcher;
+						auto dp = sEventDispatcher::current();
 						auto mp = Vec2f(dp->mouse_pos);
 						if (is_mouse_scroll(action, key))
 						{

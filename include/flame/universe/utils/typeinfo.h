@@ -237,16 +237,16 @@ namespace flame
 				}
 				return true;
 			}, Mail::from_p(this));
-			e_er->key_listeners.add([](void* c, KeyStateFlags action, int value) {
+			e_er->key_listeners.add([](void*, KeyStateFlags action, int value) {
 				if ((action == KeyStateDown && value == Key_Enter) ||
 					(action == KeyStateNull && (value == '\r' || value == '\n')))
 				{
 					auto r = utils::current_root();
-					(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+					sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
-			}, Mail::from_p(e_er), 0);
+			}, Mail(), 0);
 
 			auto d_er = drag_text->entity->get_component(cEventReceiver);
 			struct Capture
@@ -379,16 +379,16 @@ namespace flame
 						return true;
 					}, Mail::from_t(&capture));
 				}
-				e_er->key_listeners.add([](void* c, KeyStateFlags action, int value) {
+				e_er->key_listeners.add([](void*, KeyStateFlags action, int value) {
 					if ((action == KeyStateDown && value == Key_Enter) ||
 						(action == KeyStateNull && (value == '\r' || value == '\n')))
 					{
 						auto r = utils::current_root();
-						(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+						sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 						return false;
 					}
 					return true;
-				}, Mail::from_p(e_er), 0);
+				}, Mail(), 0);
 
 				auto d_er = drag_texts[i]->entity->get_component(cEventReceiver);
 
@@ -471,8 +471,8 @@ namespace flame
 				(*(cStringADataTracker**)c)->changed = true;
 				return true;
 			}, Mail::from_p(this));
-			auto event_receiver = text->entity->get_component(cEventReceiver);
-			event_receiver->focus_listeners.add([](void* c, bool focusing) {
+			auto er = text->entity->get_component(cEventReceiver);
+			er->focus_listeners.add([](void* c, bool focusing) {
 				if (!focusing)
 				{
 					auto thiz = *(cStringADataTracker**)c;
@@ -484,15 +484,15 @@ namespace flame
 				}
 				return true;
 			}, Mail::from_p(this));
-			event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
+			er->key_listeners.add([](void*, KeyStateFlags action, int value) {
 				if (action == KeyStateDown && value == Key_Enter)
 				{
 					auto r = utils::current_root();
-					(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+					sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
-			}, Mail::from_p(event_receiver));
+			}, Mail());
 		}
 	};
 
@@ -532,8 +532,8 @@ namespace flame
 				(*(cStringWDataTracker**)c)->changed = true;
 				return true;
 			}, Mail::from_p(this));
-			auto event_receiver = text->entity->get_component(cEventReceiver);
-			event_receiver->focus_listeners.add([](void* c, bool focusing) {
+			auto er = text->entity->get_component(cEventReceiver);
+			er->focus_listeners.add([](void* c, bool focusing) {
 				if (!focusing)
 				{
 					auto thiz = *(cStringWDataTracker**)c;
@@ -545,15 +545,15 @@ namespace flame
 				}
 				return true;
 			}, Mail::from_p(this));
-			event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
+			er->key_listeners.add([](void*, KeyStateFlags action, int value) {
 				if (action == KeyStateDown && value == Key_Enter)
 				{
 					auto r = utils::current_root();
-					(*(cEventReceiver**)c)->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+					sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
-			}, Mail::from_p(event_receiver));
+			}, Mail());
 		}
 	};
 

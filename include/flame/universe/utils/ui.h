@@ -639,8 +639,7 @@ namespace flame
 				{
 					capture.ee->set_visible(true);
 					capture.ed->set_visible(false);
-					auto er = capture.ee->get_component(cEventReceiver);
-					er->dispatcher->next_focusing = er;
+					sEventDispatcher::current()->next_focusing = capture.ee->get_component(cEventReceiver);
 				}
 				return true;
 			}, Mail::from_t(&capture));

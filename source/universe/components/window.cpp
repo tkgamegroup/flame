@@ -144,7 +144,7 @@ namespace flame
 					return true;
 				}, Mail::from_p(this));
 				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState s) {
-					(*(cSizeDraggerPrivate**)c)->event_receiver->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+					sEventDispatcher::current()->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 					return true;
 				}, Mail::from_p(this));
 			}

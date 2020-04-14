@@ -40,6 +40,13 @@ namespace flame
 		}
 	}
 
+	void cTextPrivate::on_text_changed(void* sender)
+	{
+		if (element)
+			element->mark_dirty();
+		data_changed(FLAME_CHASH("text"), sender);
+	}
+
 	void cTextPrivate::on_component_added(Component* c)
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
@@ -68,9 +75,7 @@ namespace flame
 		if (thiz->text == text)
 			return;
 		thiz->text = text;
-		if (element)
-			element->mark_dirty();
-		data_changed(FLAME_CHASH("text"), sender);
+		thiz->on_text_changed(sender);
 	}
 
 	void cText::set_font_size(uint s, void* sender)

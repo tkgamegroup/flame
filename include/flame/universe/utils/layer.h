@@ -28,7 +28,7 @@ namespace flame
 			auto l = Entity::create();
 			l->set_name("layer");
 			{
-				auto ed = parent->world()->get_system(sEventDispatcher);
+				auto ed = sEventDispatcher::current();
 				auto focusing = ed->next_focusing;
 				if (focusing == INVALID_POINTER)
 					focusing = ed->focusing;
@@ -43,7 +43,7 @@ namespace flame
 				auto l = *(Entity**)c;
 				auto dp = l->get_component(cDataKeeper);
 				if (dp)
-					l->world()->get_system(sEventDispatcher)->next_focusing = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
+					sEventDispatcher::current()->next_focusing = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
 				return true;
 			}, Mail::from_p(l));
 			parent->add_child(l);

@@ -153,13 +153,14 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
 					auto thiz = *(cEditPrivate**)c;
+					auto c_text = (cTextPrivate*)thiz->text;
+					auto& text = c_text->text;
+					auto str = text.c_str();
+					auto len = (int)text.size();
 					auto& select_start = thiz->select_start;
 					auto& select_end = thiz->select_end;
 					auto low = min(select_start, select_end);
 					auto high = max(select_start, select_end);
-					auto c_text = (cTextPrivate*)thiz->text;
-					auto str = c_text->text;
-					auto changed = false;
 
 					auto line_start = [&](int p) {
 						p--;
@@ -174,13 +175,13 @@ namespace flame
 						return 0;
 					};
 					auto line_end = [&](int p) {
-						while (p < str.size())
+						while (p < len)
 						{
 							if (str[p] == '\n')
 								return p;
 							p++;
 						}
-						return (int)str.size();
+						return len;
 					};
 
 					if (action == KeyStateNull)
@@ -193,32 +194,31 @@ namespace flame
 								if (low > 0)
 								{
 									low--;
-									str.erase(str.begin() + low);
+									text.erase(text.begin() + low);
+									c_text->on_text_changed(thiz);
 									select_end = select_start = low;
-									changed = true;
 								}
 							}
 							else
 							{
-								str = str.substr(0, low) + str.substr(high);
+								text = text.substr(0, low) + text.substr(high);
+								c_text->on_text_changed(thiz);
 								select_end = select_start = low;
-								changed = true;
 							}
 							break;
-						case 3:
+						case 3: // Ctrl+C
 							if (low != high)
-								set_clipboard(str.substr(low, high).c_str());
+								set_clipboard(text.substr(low, high).c_str());
 							break;
-						case 22:
+						case 22: // Ctrl+V
 						{
 							auto cb = get_clipboard().str();
 							cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
 							if (!cb.empty())
 							{
-								str = str.substr(0, low) + cb + str.substr(high);
-								high += cb.size() - (high - low);
-								select_end = select_start = high;
-								changed = true;
+								text = text.substr(0, low) + cb + text.substr(high);
+								c_text->on_text_changed(thiz);
+								select_end = select_start = high + cb.size() - (high - low);
 							}
 						}
 							break;
@@ -227,10 +227,9 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							str = str.substr(0, low) + std::wstring(1, value) + str.substr(high);
-							high += 1 - (high - low);
-							select_end = select_start = high;
-							changed = true;
+							text = text.substr(0, low) + std::wstring(1, value) + text.substr(high);
+							c_text->on_text_changed(thiz);
+							select_end = select_start = high + 1 - (high - low);
 						}
 					}
 					else if (action == KeyStateDown)
@@ -243,7 +242,7 @@ namespace flame
 							select_end = select_start = low;
 							break;
 						case Key_Right:
-							if (high < str.size())
+							if (high < len)
 								high++;
 							select_end = select_start = high;
 							break;
@@ -270,32 +269,31 @@ namespace flame
 						}
 							break;
 						case Key_Home:
+
 							select_end = select_start = 0;
 							break;
 						case Key_End:
-							select_end = select_start = str.size();
+							select_end = select_start = len;
 							break;
 						case Key_Del:
 							if (low == high)
 							{
-								if (low < str.size())
+								if (low < len)
 								{
-									str.erase(str.begin() + low);
-									changed = true;
+									text.erase(text.begin() + low);
+									c_text->on_text_changed(thiz);
 								}
 							}
 							else
 							{
-								str = str.substr(0, low) + str.substr(high);
+								text = text.substr(0, low) + text.substr(high);
+								c_text->on_text_changed(thiz);
 								select_end = select_start = low;
-								changed = true;
 							}
 							break;
 						}
 					}
 
-					if (changed)
-						c_text->set_text(str.c_str());
 					thiz->flash_cursor(2);
 
 					return true;
@@ -310,7 +308,7 @@ namespace flame
 					}
 					else if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
 					{
-						thiz->select_end = thiz->locate_cursor(thiz->event_receiver->dispatcher->mouse_pos);
+						thiz->select_end = thiz->locate_cursor(sEventDispatcher::current()->mouse_pos);
 						thiz->flash_cursor(2);
 					}
 					else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
@@ -338,10 +336,10 @@ namespace flame
 					return true;
 				}, Mail::from_p(this));
 
-				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState s) {
-					(*(cEditPrivate**)c)->event_receiver->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
+				state_listener = event_receiver->state_listeners.add([](void*, EventReceiverState s) {
+					sEventDispatcher::current()->window->set_cursor(s ? CursorIBeam : CursorArrow);
 					return true;
-				}, Mail::from_p(this));
+				}, Mail());
 			}
 		}
 

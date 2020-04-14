@@ -1,6 +1,6 @@
 get_filename_component(DIR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 file(GLOB_RECURSE INCLUDE_LIST "${INCLUDE_DIR}/${DIR}/*.h*")
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
+file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
 generate_rc("${INCLUDE_DIR}/${DIR};${CMAKE_CURRENT_SOURCE_DIR}")
 add_library(flame_universe SHARED ${INCLUDE_LIST} ${SOURCE_LIST} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 set_target_properties(flame_universe PROPERTIES FOLDER "flame")

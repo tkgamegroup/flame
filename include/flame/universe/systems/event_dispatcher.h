@@ -34,6 +34,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS cEventReceiver* get_next_mouse_hovering();
 		FLAME_UNIVERSE_EXPORTS void set_event_passthrough();
 
+		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* current();
 		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create();
 	};
 }

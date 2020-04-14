@@ -5,6 +5,8 @@
 
 namespace flame
 {
+	sEventDispatcherPrivate* _current = nullptr;
+
 	sEventDispatcherPrivate::sEventDispatcherPrivate()
 	{
 		window = nullptr;
@@ -238,6 +240,8 @@ namespace flame
 			return;
 		pending_update = false;
 
+		_current = this;
+
 		mouse_disp = mouse_pos - mouse_pos_prev;
 
 		auto prev_hovering = hovering;
@@ -386,6 +390,8 @@ namespace flame
 				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateNull, ch);
 		}
 
+		_current = nullptr;
+
 		keydown_inputs.clear();
 		keyup_inputs.clear();
 		char_inputs.clear();
@@ -396,6 +402,11 @@ namespace flame
 		mouse_scroll = 0;
 		for (auto i = 0; i < array_size(mouse_buttons); i++)
 			mouse_buttons[i] &= ~KeyStateJust;
+	}
+
+	sEventDispatcher* sEventDispatcher::current()
+	{
+		return _current;
 	}
 
 	sEventDispatcher* sEventDispatcher::create()
