@@ -18,8 +18,8 @@ namespace flame
 		width_fit_children = true;
 		height_fit_children = true;
 		fence = -1;
-		scroll_offset_ = Vec2f(0.f);
-		column_ = 0;
+		scroll_offset = Vec2f(0.f);
+		column = 0;
 
 		content_size = Vec2f(0.f);
 
@@ -67,13 +67,13 @@ namespace flame
 			if (!lock)
 				break;
 		case AlignxLeft:
-			_element->set_x(scroll_offset_.x() + padding[0], false, this);
+			_element->set_x(scroll_offset.x() + padding[0], false, this);
 			break;
 		case AlignxMiddle:
-			_element->set_x(scroll_offset_.x() + padding[0] + (w - _element->size.x()) * 0.5f, false, this);
+			_element->set_x(scroll_offset.x() + padding[0] + (w - _element->size.x()) * 0.5f, false, this);
 			break;
 		case AlignxRight:
-			_element->set_x(scroll_offset_.x() + element->size.x() - padding[1] - _element->size.x(), false, this);
+			_element->set_x(scroll_offset.x() + element->size.x() - padding[1] - _element->size.x(), false, this);
 			break;
 		}
 	}
@@ -98,13 +98,13 @@ namespace flame
 			if (!lock)
 				break;
 		case AlignyTop:
-			_element->set_y(scroll_offset_.y() + padding[0], false, this);
+			_element->set_y(scroll_offset.y() + padding[0], false, this);
 			break;
 		case AlignyMiddle:
-			_element->set_y(scroll_offset_.y() + padding[0] + (h - _element->size.y()) * 0.5f, false, this);
+			_element->set_y(scroll_offset.y() + padding[0] + (h - _element->size.y()) * 0.5f, false, this);
 			break;
 		case AlignyBottom:
-			_element->set_y(scroll_offset_.y() + element->size.y() - padding[1] - _element->size.y(), false, this);
+			_element->set_y(scroll_offset.y() + element->size.y() - padding[1] - _element->size.y(), false, this);
 			break;
 		}
 	}
@@ -203,19 +203,19 @@ namespace flame
 				management->add_to_update_list(this);
 			for (auto& al : als)
 			{
-				if (c == std::get<0>(al))
+				if (c == al.element)
 				{
-					std::get<0>(al) = nullptr;
+					al.element = nullptr;
 					return;
 				}
-				if (c == std::get<1>(al))
+				if (c == al.aligner)
 				{
-					std::get<1>(al) = nullptr;
+					al.aligner = nullptr;
 					return;
 				}
-				if (c == std::get<2>(al))
+				if (c == al.text)
 				{
-					std::get<2>(al) = nullptr;
+					al.text = nullptr;
 					return;
 				}
 			}
@@ -235,12 +235,12 @@ namespace flame
 		{
 			for (auto& al : als)
 			{
-				if (std::get<0>(al))
-					std::get<0>(al)->data_changed_listeners.remove(std::get<3>(al));
-				if (std::get<1>(al))
-					std::get<1>(al)->data_changed_listeners.remove(std::get<4>(al));
-				if (std::get<2>(al))
-					std::get<2>(al)->data_changed_listeners.remove(std::get<5>(al));
+				if (al.element)
+					al.element->data_changed_listeners.remove(al.element_listener);
+				if (al.aligner)
+					al.aligner->data_changed_listeners.remove(al.aligner_listener);
+				if (al.text)
+					al.text->data_changed_listeners.remove(al.text_listener);
 			}
 			als.clear();
 			for (auto i = 0; i < entity->child_count(); i++)
@@ -302,10 +302,10 @@ namespace flame
 							return true;
 						}, Mail::from_p(this));
 					}
-					als.emplace_back(element, aligner, text, 
+					als.push_back({ element, aligner, text,
 						element_data_listener,
 						aligner_data_listener,
-						text_data_listener);
+						text_data_listener });
 				}
 			}
 			als_dirty = false;
@@ -313,11 +313,11 @@ namespace flame
 
 		for (auto& al : als)
 		{
-			auto text = std::get<2>(al);
+			auto text = al.text;
 			if (text)
 			{
-				auto element = std::get<0>(al);
-				auto aligner = std::get<1>(al);
+				auto element = al.element;
+				auto aligner = al.aligner;
 
 				if (text->auto_width_ || text->auto_height_)
 				{
@@ -346,8 +346,8 @@ namespace flame
 		case LayoutFree:
 			for (auto al : als)
 			{
-				apply_h_free_layout(std::get<0>(al), std::get<1>(al));
-				apply_v_free_layout(std::get<0>(al), std::get<1>(al));
+				apply_h_free_layout(al.element, al.aligner);
+				apply_v_free_layout(al.element, al.aligner);
 			}
 			break;
 		case LayoutHorizontal:
@@ -360,8 +360,8 @@ namespace flame
 			for (auto i = 0; i < n; i++)
 			{
 				auto& al = als[i];
-				auto element = std::get<0>(al);
-				auto aligner = std::get<1>(al);
+				auto element = al.element;
+				auto aligner = al.aligner;
 
 				switch (aligner ? aligner->width_policy_ : SizeFixed)
 				{
@@ -408,8 +408,8 @@ namespace flame
 			for (auto i = 0; i < n; i++)
 			{
 				auto& al = als[i];
-				auto element = std::get<0>(al);
-				auto aligner = std::get<1>(al);
+				auto element = al.element;
+				auto aligner = al.aligner;
 
 				if (aligner)
 				{
@@ -419,15 +419,15 @@ namespace flame
 						element->set_width(aligner->min_width_ + w * aligner->width_factor_, false, this);
 				}
 				assert(!aligner || aligner->x_align_ == AlignxFree);
-				element->set_x(scroll_offset_.x() + x, false, this);
+				element->set_x(scroll_offset.x() + x, false, this);
 				x += element->size.x() + item_padding;
 			}
 			for (auto i = n; i < als.size(); i++)
-				apply_h_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
+				apply_h_free_layout(als[i].element, als[i].aligner, false);
 			for (auto i = 0; i < n; i++)
-				apply_v_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), true);
+				apply_v_free_layout(als[i].element, als[i].aligner, true);
 			for (auto i = n; i < als.size(); i++)
-				apply_v_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
+				apply_v_free_layout(als[i].element, als[i].aligner, false);
 		}
 			break;
 		case LayoutVertical:
@@ -440,8 +440,8 @@ namespace flame
 			for (auto i = 0; i < n; i++)
 			{
 				auto& al = als[i];
-				auto element = std::get<0>(al);
-				auto aligner = std::get<1>(al);
+				auto element = al.element;
+				auto aligner = al.aligner;
 
 				switch (aligner ? aligner->width_policy_ : SizeFixed)
 				{
@@ -480,9 +480,9 @@ namespace flame
 				use_children_height(h);
 
 			for (auto i = 0; i < n; i++)
-				apply_h_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), true);
+				apply_h_free_layout(als[i].element, als[i].aligner, true);
 			for (auto i = n; i < als.size(); i++)
-				apply_h_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
+				apply_h_free_layout(als[i].element, als[i].aligner, false);
 			h = element->size.y() - h;
 			if (h > 0.f && factor > 0)
 				h /= factor;
@@ -492,8 +492,8 @@ namespace flame
 			for (auto i = 0; i < n; i++)
 			{
 				auto& al = als[i];
-				auto element = std::get<0>(al);
-				auto aligner = std::get<1>(al);
+				auto element = al.element;
+				auto aligner = al.aligner;
 
 				if (aligner)
 				{
@@ -503,18 +503,18 @@ namespace flame
 						element->set_height(aligner->min_height_ + h * aligner->height_factor_, false, this);
 				}
 				assert(!aligner || aligner->y_align_ == AlignyFree);
-				element->set_y(scroll_offset_.y() + y, false, this);
+				element->set_y(scroll_offset.y() + y, false, this);
 				y += element->size.y() + item_padding;
 			}
 			for (auto i = n; i < als.size(); i++)
-				apply_v_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
+				apply_v_free_layout(als[i].element, als[i].aligner, false);
 		}
 			break;
 		case LayoutGrid:
 		{
 			auto n = min(fence, (uint)als.size());
 
-			if (column_ == 0)
+			if (column == 0)
 			{
 				set_content_size(Vec2f(0.f));
 				if (width_fit_children)
@@ -524,18 +524,18 @@ namespace flame
 				for (auto i = 0; i < n; i++)
 				{
 					auto& al = als[i];
-					auto element = std::get<0>(al);
-					auto aligner = std::get<1>(al);
+					auto element = al.element;
+					auto aligner = al.aligner;
 
 					assert(!aligner || (aligner->x_align_ == AlignxFree && aligner->y_align_ == AlignyFree));
 
-					element->set_x(scroll_offset_.x() + element->padding[0], false, this);
-					element->set_y(scroll_offset_.y() + element->padding[1], false, this);
+					element->set_x(scroll_offset.x() + element->padding[0], false, this);
+					element->set_y(scroll_offset.y() + element->padding[1], false, this);
 				}
 				for (auto i = n; i < als.size(); i++)
 				{
-					apply_h_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
-					apply_v_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
+					apply_h_free_layout(als[i].element, als[i].aligner, false);
+					apply_v_free_layout(als[i].element, als[i].aligner, false);
 				}
 			}
 			else
@@ -544,31 +544,28 @@ namespace flame
 				auto h = 0.f;
 				auto lw = 0.f;
 				auto lh = 0.f;
-				auto c = 0;
 				for (auto i = 0; i < n; i++)
 				{
 					auto& al = als[i];
-					auto element = std::get<0>(al);
-					auto aligner = std::get<1>(al);
+					auto element = al.element;
+					auto aligner = al.aligner;
 
 					assert(!aligner || (aligner->width_policy_ == SizeFixed && aligner->height_policy_ == SizeFixed));
 
 					lw += element->size.x() + item_padding;
 					lh = max(element->size.y(), lh);
 
-					c++;
-					if (c == column_)
+					if ((i + 1) % column == 0)
 					{
 						w = max(lw - item_padding, w);
 						h += lh + item_padding;
 						lw = 0.f;
 						lh = 0.f;
-						c = 0;
 					}
 				}
 				if (fence > 0 && !als.empty())
 				{
-					if (n % column_ != 0)
+					if (n % column != 0)
 					{
 						w = max(lw - item_padding, w);
 						h += lh + item_padding;
@@ -586,34 +583,31 @@ namespace flame
 				auto x = element->padding[0];
 				auto y = element->padding[1];
 				lh = 0.f;
-				c = 0;
 				for (auto i = 0; i < n; i++)
 				{
 					auto& al = als[i];
-					auto element = std::get<0>(al);
-					auto aligner = std::get<1>(al);
+					auto element = al.element;
+					auto aligner = al.aligner;
 
 					assert(!aligner || (aligner->x_align_ == AlignxFree && aligner->y_align_ == AlignyFree));
 
-					element->set_x(scroll_offset_.x() + x, false, this);
-					element->set_y(scroll_offset_.y() + y, false, this);
+					element->set_x(scroll_offset.x() + x, false, this);
+					element->set_y(scroll_offset.y() + y, false, this);
 
 					x += element->size.x() + item_padding;
 					lh = max(element->size.y(), lh);
 
-					c++;
-					if (c == column_)
+					if ((i + 1) % column == 0)
 					{
 						x = element->padding[0];
 						y += lh + item_padding;
 						lh = 0.f;
-						c = 0;
 					}
 				}
 				for (auto i = n; i < als.size(); i++)
 				{
-					apply_h_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
-					apply_v_free_layout(std::get<0>(als[i]), std::get<1>(als[i]), false);
+					apply_h_free_layout(als[i].element, als[i].aligner, false);
+					apply_v_free_layout(als[i].element, als[i].aligner, false);
 				}
 			}
 		}
@@ -623,9 +617,9 @@ namespace flame
 
 	void cLayout::set_x_scroll_offset(float x)
 	{
-		if (scroll_offset_.x() == x)
+		if (scroll_offset.x() == x)
 			return;
-		scroll_offset_.x() = x;
+		scroll_offset.x() = x;
 		auto thiz = (cLayoutPrivate*)this;
 		if (thiz->management)
 			thiz->management->add_to_update_list(thiz);
@@ -633,9 +627,9 @@ namespace flame
 
 	void cLayout::set_y_scroll_offset(float y)
 	{
-		if (scroll_offset_.y() == y)
+		if (scroll_offset.y() == y)
 			return;
-		scroll_offset_.y() = y;
+		scroll_offset.y() = y;
 		auto thiz = (cLayoutPrivate*)this;
 		if (thiz->management)
 			thiz->management->add_to_update_list(thiz);
@@ -643,9 +637,9 @@ namespace flame
 
 	void cLayout::set_column(uint c)
 	{
-		if (column_ == c)
+		if (column == c)
 			return;
-		column_ = c;
+		column = c;
 		auto thiz = (cLayoutPrivate*)this;
 		if (thiz->management)
 			thiz->management->add_to_update_list(thiz);

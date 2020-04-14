@@ -72,6 +72,8 @@ cEditor::cEditor() :
 				utils::push_parent(e_overlay);
 					gizmo = utils::e_element()->get_component(cElement);
 					gizmo->size = Vec2f(6.f);
+					gizmo->pivot = 0.5f;
+					gizmo->roundness = 3.f;
 					gizmo->frame_thickness = 1.f;
 					gizmo->color = Vec4c(255);
 					gizmo->frame_color = Vec4c(0, 0, 0, 255);
@@ -80,7 +82,7 @@ cEditor::cEditor() :
 						auto c_event_receiver = utils::c_event_receiver();
 						c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 							if (utils::is_active(*(cEventReceiver**)c) && is_mouse_move(action, key))
-								app.editor->gizmo_target->add_pos(Vec2f(pos));
+								app.editor->gizmo_target->add_pos(Vec2f(pos) / (app.editor->edt.scale_level * 0.1f));
 							return true;
 						}, Mail::from_p(c_event_receiver));
 						c_event_receiver->state_listeners.add([](void*, EventReceiverState s) {
@@ -130,7 +132,7 @@ void cEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 
 void cEditor::update_gizmo()
 {
-	gizmo->set_pos((gizmo_target->pos + gizmo_target->size * gizmo_target->scale * 0.5f) * edt.base->scale + edt.base->pos - 5.f);
+	gizmo->set_pos((gizmo_target->pos + gizmo_target->size * gizmo_target->scale * 0.5f) * edt.base->scale + edt.base->pos);
 }
 
 void cEditor::on_select()

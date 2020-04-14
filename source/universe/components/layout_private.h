@@ -12,8 +12,17 @@ namespace flame
 		bool pending_update;
 
 		void* element_data_listener;
-
-		std::vector<std::tuple<cElement*, cAligner*, cText*, void*, void*, void*>> als;
+		
+		struct Aligner
+		{
+			cElement* element;
+			cAligner* aligner;
+			cText* text;
+			void* element_listener;
+			void* aligner_listener;
+			void* text_listener;
+		};
+		std::vector<Aligner> als;
 		bool als_dirty;
 
 		cLayoutPrivate(LayoutType _type);

@@ -169,7 +169,7 @@ cResourceExplorer::cResourceExplorer() :
 
 				c_list_layout = e_list->get_component(cLayout);
 				c_list_layout->type = LayoutGrid;
-				c_list_layout->column_ = 4;
+				c_list_layout->column = 4;
 			}
 				utils::e_begin_popup_menu();
 					utils::e_menu_item(L"New Prefab", [](void* c) {

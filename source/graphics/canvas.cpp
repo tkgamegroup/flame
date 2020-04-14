@@ -165,17 +165,25 @@ namespace flame
 				if (img_ms)
 					Image::destroy(img_ms);
 
-				target_size = views[0]->image()->size;
-
-				img_ms = Image::create(d, Swapchain::get_format(), target_size, 1, 1, SampleCount_8, ImageUsageAttachment);
-				auto iv_ms = img_ms->default_view();
-				fbs.resize(views.size());
-				for (auto i = 0; i < fbs.size(); i++)
+				if (views.empty())
 				{
-					Imageview* vs[2];
-					vs[0] = iv_ms;
-					vs[1] = views[i];
-					fbs[i] = Framebuffer::create(d, rp, array_size(vs), vs);
+					target_size = 0.f;
+					img_ms = nullptr;
+					fbs.clear();
+				}
+				else
+				{
+					target_size = views[0]->image()->size;
+					img_ms = Image::create(d, Swapchain::get_format(), target_size, 1, 1, SampleCount_8, ImageUsageAttachment);
+					auto iv_ms = img_ms->default_view();
+					fbs.resize(views.size());
+					for (auto i = 0; i < fbs.size(); i++)
+					{
+						Imageview* vs[2];
+						vs[0] = iv_ms;
+						vs[1] = views[i];
+						fbs[i] = Framebuffer::create(d, rp, array_size(vs), vs);
+					}
 				}
 			}
 
