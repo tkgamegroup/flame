@@ -198,14 +198,11 @@ template <uint N, class T>
 void create_vec_edit(SetterCapture* c)
 {
 	for (auto i = 0; i < N; i++)
-	{
-		utils::e_begin_layout(LayoutHorizontal, 4.f);
 		utils::e_drag_edit();
-		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
-		utils::e_end_layout();
-	}
 
-	utils::current_parent()->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](void* c, const Vec<N, T>& v, bool exit_editing) {
+	auto p = utils::current_parent();
+	p->get_component(cLayout)->type = LayoutHorizontal;
+	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](void* c, const Vec<N, T>& v, bool exit_editing) {
 		auto& capture = *(SetterCapture*)c;
 		if (capture.f)
 			Setter<Vec<N, T>>::call(capture.o, capture.f, (Vec<N, T>*)&v, app.inspector);

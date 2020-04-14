@@ -43,7 +43,10 @@ namespace flame
 				auto l = *(Entity**)c;
 				auto dp = l->get_component(cDataKeeper);
 				if (dp)
-					sEventDispatcher::current()->next_focusing = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
+				{
+					auto er = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
+					er->dispatcher->next_focusing = er;
+				}
 				return true;
 			}, Mail::from_p(l));
 			parent->add_child(l);

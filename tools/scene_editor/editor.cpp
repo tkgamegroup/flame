@@ -71,7 +71,7 @@ cEditor::cEditor() :
 
 				utils::push_parent(e_overlay);
 					gizmo = utils::e_element()->get_component(cElement);
-					gizmo->size = Vec2f(10.f);
+					gizmo->size = Vec2f(6.f);
 					gizmo->frame_thickness = 1.f;
 					gizmo->color = Vec4c(255);
 					gizmo->frame_color = Vec4c(0, 0, 0, 255);

@@ -332,7 +332,7 @@ namespace flame
 		{
 			for (auto i = 0; i < N; i++)
 			{
-				auto e = entity->child(i)->child(0);
+				auto e = entity->child(i);
 				edit_texts[i] = e->child(0)->get_component(cText);
 				drag_texts[i] = e->child(1)->get_component(cText);
 			}

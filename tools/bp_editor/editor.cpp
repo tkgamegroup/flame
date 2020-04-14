@@ -71,15 +71,26 @@ struct cSlot : Component
 
 	void clear_tips()
 	{
-		if (tip_info)
-		{
-			auto e = tip_info;
-			tip_info = nullptr;
-			looper().add_event([](void* c, bool*) {
-				auto e = *(Entity**)c;
-				e->parent()->remove_child(e);
-			}, Mail::from_p(e));
-		}
+		looper().add_event([](void* c, bool*) {
+			auto thiz = *(cSlot**)c;
+			{
+				auto e = thiz->tip_info;
+				if (e)
+				{
+					thiz->tip_info = nullptr;
+					e->parent()->remove_child(e);
+				}
+			}
+			{
+				auto e = thiz->tip_link;
+				if (e)
+				{
+					thiz->tip_link = nullptr;
+					e->parent()->remove_child(e);
+				}
+			}
+			auto e = *(Entity**)c;
+		}, Mail::from_p(this));
 	}
 
 	void on_component_added(Component* c) override
@@ -144,7 +155,6 @@ struct cSlot : Component
 
 					if (!thiz->tip_link)
 					{
-						utils::push_parent(app.root);
 						thiz->tip_link = utils::e_begin_layout(LayoutVertical, 4.f);
 						auto c_element = thiz->tip_link->get_component(cElement);
 						c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
@@ -164,22 +174,16 @@ struct cSlot : Component
 							utils::e_text(str.c_str())->get_component(cText)->color_ = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
 						}
 						utils::e_end_layout();
-						utils::pop_parent();
+						looper().add_event([](void* c, bool*) {
+							app.root->add_child(*(Entity**)c);
+						}, Mail::from_p(thiz->tip_link));
 					}
 				}
 				else if (action == BeingOverEnd)
 				{
 					element->set_frame_thickness(0.f);
 
-					if (thiz->tip_link)
-					{
-						auto e = thiz->tip_link;
-						thiz->tip_link = nullptr;
-						looper().add_event([](void* c, bool*) {
-							auto e = *(Entity**)c;
-							e->parent()->remove_child(e);
-						}, Mail::from_p(e));
-					}
+					thiz->clear_tips();
 				}
 				else if (action == BeenDropped)
 				{
@@ -203,25 +207,24 @@ struct cSlot : Component
 				{
 					if (!thiz->tip_info)
 					{
-						utils::push_parent(app.root);
-							thiz->tip_info = utils::e_begin_layout(LayoutVertical, 8.f);
-							auto c_element = thiz->tip_info->get_component(cElement);
-							c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
-							c_element->pivot = Vec2f(is_in ? 1.f : 0.f , 0.f);
-							c_element->padding = 4.f;
-							c_element->frame_thickness = 2.f;
-							c_element->color = Vec4c(200, 200, 200, 255);
-							c_element->frame_color = Vec4c(0, 0, 0, 255);
-
-							auto type = s->type();
-							auto tag = type->tag();
-							utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color_ = type_color(tag);
-							auto fail_message = s2w(s->fail_message());
-							if (!fail_message.empty())
-								utils::e_text(fail_message.c_str())->get_component(cText)->color_ = Vec4c(255, 0, 0, 255);
-
-							utils::e_end_layout();
-						utils::pop_parent();
+						thiz->tip_info = utils::e_begin_layout(LayoutVertical, 8.f);
+						auto c_element = thiz->tip_info->get_component(cElement);
+						c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
+						c_element->pivot = Vec2f(is_in ? 1.f : 0.f , 0.f);
+						c_element->padding = 4.f;
+						c_element->frame_thickness = 2.f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->frame_color = Vec4c(0, 0, 0, 255);
+						auto type = s->type();
+						auto tag = type->tag();
+						utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color_ = type_color(tag);
+						auto fail_message = s2w(s->fail_message());
+						if (!fail_message.empty())
+							utils::e_text(fail_message.c_str())->get_component(cText)->color_ = Vec4c(255, 0, 0, 255);
+						utils::e_end_layout();
+						looper().add_event([](void* c, bool*) {
+							app.root->add_child(*(Entity**)c);
+						}, Mail::from_p(thiz->tip_info));
 					}
 				}
 
@@ -344,26 +347,27 @@ struct cNode : Component
 				{
 					if (!thiz->tip)
 					{
-						utils::push_parent(app.root);
-							thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
-							auto c_element = thiz->tip->get_component(cElement);
-							c_element->pos = thiz->element->global_pos - Vec2f(0.f, 8.f);
-							c_element->pivot = Vec2f(0.f, 1.f);
-							c_element->padding = 4.f;
-							c_element->frame_thickness = 2.f;
-							c_element->color = Vec4c(200, 200, 200, 255);
-							c_element->frame_color = Vec4c(0, 0, 0, 255);
-								auto n = thiz->n;
-								std::wstring str;
-								auto udt = n->udt();
-								if (udt)
-									str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + thiz->n_name;
-								else
-									str = node_type_prefix(thiz->n_type) + thiz->n_name;
-								str += L"\nID: " + s2w(n->id());
-								utils::e_text(str.c_str())->get_component(cText)->color_ = node_type_color(thiz->n_type);
-							utils::e_end_layout();
-						utils::pop_parent();
+						thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
+						auto c_element = thiz->tip->get_component(cElement);
+						c_element->pos = thiz->element->global_pos - Vec2f(0.f, 8.f);
+						c_element->pivot = Vec2f(0.f, 1.f);
+						c_element->padding = 4.f;
+						c_element->frame_thickness = 2.f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->frame_color = Vec4c(0, 0, 0, 255);
+							auto n = thiz->n;
+							std::wstring str;
+							auto udt = n->udt();
+							if (udt)
+								str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + thiz->n_name;
+							else
+								str = node_type_prefix(thiz->n_type) + thiz->n_name;
+							str += L"\nID: " + s2w(n->id());
+							utils::e_text(str.c_str())->get_component(cText)->color_ = node_type_color(thiz->n_type);
+						utils::e_end_layout();
+						looper().add_event([](void* c, bool*) {
+							app.root->add_child(*(Entity**)c);
+						}, Mail::from_p(thiz->tip));
 					}
 				}
 				return true;
@@ -609,14 +613,11 @@ template <uint N, class T>
 void create_vec_edit(cEditor* editor, BP::Slot* input)
 {
 	for (auto i = 0; i < N; i++)
-	{
-		utils::e_begin_layout(LayoutHorizontal, 4.f);
 		utils::e_drag_edit();
-		utils::e_text(s2w(Vec<N, T>::coord_name(i)).c_str());
-		utils::e_end_layout();
-	}
 
-	utils::current_parent()->add_component(new_object<cDigitalVecDataTracker<N, T>>(input->data(), [](void* c, const Vec<N, T>& v, bool exit_editing) {
+	auto p = utils::current_parent();
+	p->get_component(cLayout)->type = LayoutHorizontal;
+	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(input->data(), [](void* c, const Vec<N, T>& v, bool exit_editing) {
 		if (exit_editing)
 			app.set_data(*(BP::Slot**)c, (void*)&v, true);
 		else

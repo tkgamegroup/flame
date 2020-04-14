@@ -1069,6 +1069,11 @@ namespace flame
 			pop_parent();
 		}
 
+		inline void e_color_selector()
+		{
+
+		}
+
 		inline Entity* e_begin_window(const wchar_t* title, bool close_button = true)
 		{
 			Entity* el;

@@ -62,8 +62,9 @@ namespace flame
 			drag_overing = nullptr;
 		if (er == next_focusing)
 			next_focusing = (cEventReceiver*)INVALID_POINTER;
-		er->state = EventReceiverNormal;
-		er->state_listeners.call(EventReceiverNormal);
+		_current = this;
+		((cEventReceiverPrivate*)er)->set_state(EventReceiverNormal);
+		_current = nullptr;
 	}
 
 	void sEventDispatcherPrivate::on_added()
