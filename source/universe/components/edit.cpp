@@ -79,7 +79,7 @@ namespace flame
 			auto c_text = ((cTextPrivate*)text);
 			auto& str = c_text->text;
 			auto font_atlas = c_text->font_atlas;
-			auto font_size = c_text->font_size_ * element->global_scale;
+			auto font_size = c_text->font_size * element->global_scale;
 			auto p = element->content_min();
 
 			auto y = p.y();
@@ -391,7 +391,7 @@ namespace flame
 				auto c_text = (cTextPrivate*)text;
 				auto& str = c_text->text;
 				auto font_atlas = c_text->font_atlas;
-				auto font_size = c_text->font_size_ * element->global_scale;
+				auto font_size = c_text->font_size * element->global_scale;
 				auto p = element->content_min();
 
 				if (select_start != select_end)
@@ -428,7 +428,7 @@ namespace flame
 					points.push_back(p + Vec2f(font_atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end)));
 					points[0].x() += 1.f;
 					points.push_back(points[0] + Vec2f(0.f, font_size));
-					canvas->stroke(points.size(), points.data(), c_text->color_.new_proply<3>(element->alpha), 2.f);
+					canvas->stroke(points.size(), points.data(), c_text->color.new_proply<3>(element->alpha), 2.f);
 				}
 			}
 		}

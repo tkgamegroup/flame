@@ -575,14 +575,14 @@ namespace flame
 			next_component_id = FLAME_CHASH("edit");
 			c_timer()->interval = 0.5f;
 			auto ce = c_element();
-			ce->size.x() = width + 8.f;
+			ce->size = Vec2f(8.f + width, style_1u(FontSize) + 4.f);
 			ce->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 			ce->color = style_4c(FrameColorNormal);
 			ce->frame_color = style_4c(ForegroundColor);
 			ce->frame_thickness = 2.f;
 			ce->clip_flags = ClipSelf;
 			auto ct = c_text();
-			ct->auto_width_ = false;
+			ct->set_auto_size(false);
 			if (text)
 				ct->set_text(text);
 			c_event_receiver();
@@ -623,8 +623,6 @@ namespace flame
 			pop_style(ButtonColorNormal);
 			pop_style(ButtonColorHovering);
 			pop_style(ButtonColorActive);
-			ed->get_component(cElement)->size.x() = 58.f;
-			ed->get_component(cText)->auto_width_ = false;
 
 			e_end_layout();
 
@@ -882,11 +880,11 @@ namespace flame
 			auto e = e_empty();
 			e->gene = e;
 			auto ce = c_element();
-			ce->size = Vec2f(8.f, style_1u(FontSize) + 4.f);
+			ce->size = Vec2f(0.f, style_1u(FontSize) + 4.f);
 			ce->padding = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
 			ce->frame_color = style_4c(TextColorNormal);
 			ce->frame_thickness = 2.f;
-			c_text()->auto_width_ = false;
+			c_text()->set_auto_size(false);
 			c_event_receiver();
 			auto cs = c_style_color();
 			cs->color_normal = style_4c(FrameColorNormal);
@@ -915,9 +913,9 @@ namespace flame
 			for (auto i = 0; i < eis->child_count(); i++)
 			{
 				auto ct = eis->child(i)->get_component(cText);
-				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size_, ct->text()).x());
+				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text()).x());
 			}
-			ecb->get_component(cElement)->set_width(max_width + style_1u(FontSize), true);
+			ecb->get_component(cElement)->set_width(8.f + max_width + style_1u(FontSize), true);
 			if (idx != -1)
 				ecb->get_component(cCombobox)->set_index(idx, false);
 			pop_parent();
@@ -1267,7 +1265,7 @@ namespace flame
 					auto thiz = (*(cDockerTab**)c);
 					thiz->take_away(true);
 				}, Mail::from_p(thiz));
-			}, Mail::from_p(cdt), false)->get_component(cText)->color_ = style_4c(TabTextColorElse);
+			}, Mail::from_p(cdt), false)->get_component(cText)->color = style_4c(TabTextColorElse);
 			c_aligner(AlignxRight, AlignyFree);
 			pop_parent();
 			pop_parent();

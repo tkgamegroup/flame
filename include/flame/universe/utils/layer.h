@@ -28,7 +28,7 @@ namespace flame
 			auto l = Entity::create();
 			l->set_name("layer");
 			{
-				auto ed = sEventDispatcher::current();
+				auto ed = parent->world()->get_system(sEventDispatcher);
 				auto focusing = ed->next_focusing;
 				if (focusing == INVALID_POINTER)
 					focusing = ed->focusing;

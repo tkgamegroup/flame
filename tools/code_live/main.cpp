@@ -111,7 +111,7 @@ int main(int argc, char** args)
 			c_edit->select_all_on_focus = false;
 			app.c_code = c_edit->text;
 			app.c_code->font_atlas = app.font_atlas_edit;
-			app.c_code->font_size_ = 17;
+			app.c_code->font_size = 17;
 			utils::c_aligner(SizeFitParent, SizeFitParent);
 			utils::e_button(L"Run", [](void*) {
 				looper().add_event([](void*, bool*) {

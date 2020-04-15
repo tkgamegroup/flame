@@ -2,7 +2,6 @@
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/text.h>
 #include <flame/universe/components/aligner.h>
 #include "layout_private.h"
 
@@ -183,8 +182,7 @@ namespace flame
 	void cLayoutPrivate::on_child_component_added(Component* c)
 	{
 		if (c->name_hash == FLAME_CHASH("cElement") ||
-			c->name_hash == FLAME_CHASH("cAligner") ||
-			c->name_hash == FLAME_CHASH("cText"))
+			c->name_hash == FLAME_CHASH("cAligner"))
 		{
 			als_dirty = true;
 			if (management)
@@ -195,8 +193,7 @@ namespace flame
 	void cLayoutPrivate::on_child_component_removed(Component* c)
 	{
 		if (c->name_hash == FLAME_CHASH("cElement") ||
-			c->name_hash == FLAME_CHASH("cAligner") ||
-			c->name_hash == FLAME_CHASH("cText"))
+			c->name_hash == FLAME_CHASH("cAligner"))
 		{
 			als_dirty = true;
 			if (management)
@@ -211,11 +208,6 @@ namespace flame
 				if (c == al.aligner)
 				{
 					al.aligner = nullptr;
-					return;
-				}
-				if (c == al.text)
-				{
-					al.text = nullptr;
 					return;
 				}
 			}
@@ -239,8 +231,6 @@ namespace flame
 					al.element->data_changed_listeners.remove(al.element_listener);
 				if (al.aligner)
 					al.aligner->data_changed_listeners.remove(al.aligner_listener);
-				if (al.text)
-					al.text->data_changed_listeners.remove(al.text_listener);
 			}
 			als.clear();
 			for (auto i = 0; i < entity->child_count(); i++)
@@ -250,7 +240,6 @@ namespace flame
 				{
 					auto element = e->get_component(cElement);
 					auto aligner = e->get_component(cAligner);
-					auto text = e->get_component(cText);
 					void* element_data_listener = nullptr;
 					if (element)
 					{
@@ -282,63 +271,12 @@ namespace flame
 							return true;
 						}, Mail::from_p(this));
 					}
-					void* text_data_listener = nullptr;
-					if (text)
-					{
-						text_data_listener = text->data_changed_listeners.add([](void* c, uint hash, void* sender) {
-							auto thiz = *(cLayoutPrivate**)c;
-							if (sender == thiz)
-								return true;
-							switch (hash)
-							{
-							case FLAME_CHASH("text"):
-							case FLAME_CHASH("font_size"):
-							case FLAME_CHASH("auto_width"):
-							case FLAME_CHASH("auto_height"):
-								if (thiz->management)
-									thiz->management->add_to_update_list(thiz);
-								break;
-							}
-							return true;
-						}, Mail::from_p(this));
-					}
-					als.push_back({ element, aligner, text,
+					als.push_back({ element, aligner,
 						element_data_listener,
-						aligner_data_listener,
-						text_data_listener });
+						aligner_data_listener});
 				}
 			}
 			als_dirty = false;
-		}
-
-		for (auto& al : als)
-		{
-			auto text = al.text;
-			if (text)
-			{
-				auto element = al.element;
-				auto aligner = al.aligner;
-
-				if (text->auto_width_ || text->auto_height_)
-				{
-					auto font_atlas = text->font_atlas;
-					auto s = Vec2f(font_atlas->text_size(text->font_size_, text->text(), nullptr));
-					if (text->auto_width_)
-					{
-						auto w = s.x() + element->padding_h();
-						if (aligner && aligner->width_policy_ == SizeGreedy)
-							aligner->set_min_width(w);
-						element->set_width(w, false, this);
-					}
-					if (text->auto_height_)
-					{
-						auto h = s.y() + element->padding_v();
-						if (aligner && aligner->height_policy_ == SizeGreedy)
-							aligner->set_min_height(h);
-						element->set_height(h, false, this);
-					}
-				}
-			}
 		}
 
 		switch (type)

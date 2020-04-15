@@ -17,10 +17,8 @@ namespace flame
 		{
 			cElement* element;
 			cAligner* aligner;
-			cText* text;
 			void* element_listener;
 			void* aligner_listener;
-			void* text_listener;
 		};
 		std::vector<Aligner> als;
 		bool als_dirty;

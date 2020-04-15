@@ -6,7 +6,6 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
-#include <flame/universe/components/layout.h>
 #include <flame/universe/utils/style.h>
 
 namespace flame
@@ -14,12 +13,12 @@ namespace flame
 	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
 	{
 		element = nullptr;
+		aligner = nullptr;
 
 		font_atlas = _font_atlas;
-		font_size_ = utils::style_1u(utils::FontSize);
-		color_ = utils::style_4c(utils::TextColorNormal);
-		auto_width_ = true;
-		auto_height_ = true;
+		font_size = utils::style_1u(utils::FontSize);
+		color = utils::style_4c(utils::TextColorNormal);
+		auto_size = true;
 
 		draw_cmd = nullptr;
 	}
@@ -35,8 +34,19 @@ namespace flame
 		if (!element->clipped)
 		{
 			assert(font_atlas->canvas_slot_ != -1);
-			canvas->add_text(font_atlas, text.c_str(), text.c_str() + text.size(), font_size_ * element->global_scale, element->content_min(),
-				color_.new_proply<3>(element->alpha));
+			canvas->add_text(font_atlas, text.c_str(), nullptr, font_size * element->global_scale, element->content_min(),
+				color.new_proply<3>(element->alpha));
+		}
+	}
+
+	void cTextPrivate::set_size_auto()
+	{
+		auto s = Vec2f(font_atlas->text_size(font_size, text.c_str(), nullptr)) + element->padding_hv();
+		element->set_size(s, this);
+		if (aligner)
+		{
+			aligner->set_min_width(s.x(), this);
+			aligner->set_min_height(s.y(), this);
 		}
 	}
 
@@ -57,6 +67,8 @@ namespace flame
 				return true;
 			}, Mail::from_p(this));
 		}
+		else if (c->name_hash == FLAME_CHASH("cAligner"))
+			aligner = (cAligner*)c;
 	}
 
 	uint cText::text_length() const
@@ -75,45 +87,44 @@ namespace flame
 		if (thiz->text == text)
 			return;
 		thiz->text = text;
+		if (thiz->auto_size)
+			thiz->set_size_auto();
 		thiz->on_text_changed(sender);
 	}
 
 	void cText::set_font_size(uint s, void* sender)
 	{
-		if (s == font_size_)
+		if (s == font_size)
 			return;
-		font_size_ = s;
+		font_size = s;
 		if (element)
 			element->mark_dirty();
+		auto thiz = (cTextPrivate*)this;
+		if (thiz->auto_size)
+			thiz->set_size_auto();
 		data_changed(FLAME_CHASH("font_size"), sender);
 	}
 
 	void cText::set_color(const Vec4c& c, void* sender)
 	{
-		if (c == color_)
+		if (c == color)
 			return;
-		color_ = c;
+		color = c;
 		if (element)
 			element->mark_dirty();
 		data_changed(FLAME_CHASH("color"), sender);
 	}
 
-	void cText::set_auto_width(bool v, void* sender)
+	void cText::set_auto_size(bool v, void* sender)
 	{
-		if (v == auto_width_)
+		if (v == auto_size)
 			return;
-		auto_width_ = v;
-		data_changed(FLAME_CHASH("auto_width"), sender);
+		auto_size = v;
+		auto thiz = (cTextPrivate*)this;
+		if (thiz->auto_size)
+			thiz->set_size_auto();
+		data_changed(FLAME_CHASH("auto_size"), sender);
 	}
-
-	void cText::set_auto_height(bool v, void* sender)
-	{
-		if (v == auto_height_)
-			return;
-		auto_height_ = v;
-		data_changed(FLAME_CHASH("auto_height"), sender);
-	}
-
 
 	cText* cText::create(graphics::FontAtlas* font_atlas)
 	{

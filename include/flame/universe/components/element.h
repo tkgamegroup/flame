@@ -83,6 +83,11 @@ namespace flame
 			return padding[1] + padding[3];
 		}
 
+		Vec2f padding_hv() const
+		{
+			return Vec2f(padding_h(), padding_v());
+		}
+
 		Vec2f center() const
 		{
 			return global_pos + global_size * 0.5f;
