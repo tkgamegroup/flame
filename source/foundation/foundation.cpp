@@ -1063,15 +1063,13 @@ namespace flame
 		{
 			if (type == cursor_type)
 				return;
-			cursor_type = type;
 
 			if (cursor_type == CursorNone)
-				ShowCursor(false);
-			else
-			{
-				SetCursor(cursors[type]);
 				ShowCursor(true);
-			}
+			if (type == CursorNone)
+				ShowCursor(false);
+
+			cursor_type = type;
 		}
 
 		void set_maximized(bool v)
@@ -1249,6 +1247,9 @@ namespace flame
 				w->pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
 				if (!w->sizing)
 					resize();
+				break;
+			case WM_SETCURSOR:
+				SetCursor(w->cursors[w->cursor_type]);
 				break;
 			}
 		}
