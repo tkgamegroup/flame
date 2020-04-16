@@ -235,8 +235,8 @@ namespace flame
 				element->set_alpha(0.5f);
 				page_element->set_pos(Vec2f(element->pos.x(), element->pos.y() + element->global_size.y() + 8.f));
 				page_element->set_alpha(0.5f);
-				page_aligner->set_width_policy(SizeFixed);
-				page_aligner->set_height_policy(SizeFixed);
+				page_aligner->set_x_align_flags(0);
+				page_aligner->set_y_align_flags(0);
 				root->add_child(page);
 				root->add_child(entity);
 
@@ -261,13 +261,6 @@ namespace flame
 						auto idx = p->index_;
 						pp->remove_child(p);
 						pp->add_child(oth_docker, idx);
-						if (pp->name_hash() == FLAME_CHASH("docker_floating_container"))
-						{
-							auto ca = oth_docker->get_component(cAligner);
-							ca->set_x_align(AlignxLeft);
-							ca->set_y_align(AlignyTop);
-							ca->set_using_padding(true);
-						}
 					}
 				}
 			}
@@ -347,8 +340,8 @@ namespace flame
 								e_pages->add_child(e_page);
 								page_element->set_pos(Vec2f(0.f));
 								page_element->set_alpha(1.f);
-								page_aligner->set_width_policy(SizeFitParent);
-								page_aligner->set_height_policy(SizeFitParent);
+								page_aligner->set_x_align_flags(AlignMinMax);
+								page_aligner->set_y_align_flags(AlignMinMax);
 								thiz->page = nullptr;
 								thiz->page_element = nullptr;
 							}, Mail::from_p(thiz));
@@ -499,8 +492,8 @@ namespace flame
 								tab->element->set_alpha(1.f);
 								page_element->set_pos(Vec2f(0.f));
 								page_element->set_alpha(1.f);
-								page_aligner->set_width_policy(SizeFitParent);
-								page_aligner->set_height_policy(SizeFitParent);
+								page_aligner->set_x_align_flags(AlignMinMax);
+								page_aligner->set_y_align_flags(AlignMinMax);
 
 								thiz->drop_tab->page = nullptr;
 								thiz->drop_tab->page_element = nullptr;
@@ -663,8 +656,8 @@ namespace flame
 								if (is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
 								{
 									auto aligner = docker->get_component(cAligner);
-									aligner->set_x_align(AlignxFree);
-									aligner->set_y_align(AlignyFree);
+									//aligner->set_x_align_flags(0);
+									//aligner->set_y_align_flags(0);
 								}
 								else
 								{
@@ -674,8 +667,8 @@ namespace flame
 									layout_element->set_size(p_element->size);
 
 									auto aligner = layout->get_component(cAligner);
-									aligner->set_x_align(AlignxFree);
-									aligner->set_y_align(AlignyFree);
+									//aligner->set_x_align_flags(0);
+									//aligner->set_y_align_flags(0);
 									aligner->set_width_factor(p_element->size.x());
 									aligner->set_height_factor(p_element->size.y());
 
@@ -694,12 +687,6 @@ namespace flame
 								utils::make_docker(new_docker);
 								auto new_docker_element = new_docker->get_component(cElement);
 								auto new_docker_aligner = new_docker->get_component(cAligner);
-								{
-									auto ca = new_docker->get_component(cAligner);
-									ca->x_align_ = AlignxFree;
-									ca->y_align_ = AlignyFree;
-									ca->using_padding_ = false;
-								}
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
 
@@ -712,8 +699,8 @@ namespace flame
 								tab->element->set_alpha(1.f);
 								page_element->set_pos(Vec2f(0.f));
 								page_element->set_alpha(1.f);
-								page_aligner->set_width_policy(SizeFitParent);
-								page_aligner->set_height_policy(SizeFitParent);
+								page_aligner->set_x_align_flags(AlignMinMax);
+								page_aligner->set_y_align_flags(AlignMinMax);
 
 								auto e_splitter = layout->child(0);
 								auto splitter_element = e_splitter->get_component(cElement);
@@ -722,7 +709,7 @@ namespace flame
 								{
 									layout->get_component(cLayout)->type = LayoutHorizontal;
 									splitter->type = SplitterHorizontal;
-									e_splitter->get_component(cAligner)->set_height_policy(SizeFitParent);
+									e_splitter->get_component(cAligner)->set_y_align_flags(AlignMinMax);
 
 									auto w = (docker_element->size.x() - splitter_element->size.x()) * 0.5f;
 									docker_element->set_width(w);
@@ -740,7 +727,7 @@ namespace flame
 								{
 									layout->get_component(cLayout)->type = LayoutVertical;
 									splitter->type = SplitterVertical;
-									e_splitter->get_component(cAligner)->set_width_policy(SizeFitParent);
+									e_splitter->get_component(cAligner)->set_x_align_flags(AlignMinMax);
 
 									auto w = docker_element->size.x();
 									docker_element->set_width(w);
@@ -856,12 +843,6 @@ namespace flame
 
 								auto new_docker = Entity::create();
 								utils::make_docker(new_docker);
-								{
-									auto ca = new_docker->get_component(cAligner);
-									ca->x_align_ = AlignxFree;
-									ca->y_align_ = AlignyFree;
-									ca->using_padding_ = false;
-								}
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
 								thiz->entity->add_child(new_docker);
@@ -875,8 +856,8 @@ namespace flame
 								tab->element->set_alpha(1.f);
 								page_element->set_pos(Vec2f(0.f));
 								page_element->set_alpha(1.f);
-								page_aligner->set_width_policy(SizeFitParent);
-								page_aligner->set_height_policy(SizeFitParent);
+								page_aligner->set_x_align_flags(AlignMinMax);
+								page_aligner->set_y_align_flags(AlignMinMax);
 							}, Mail::from_p(thiz));
 						}
 					}

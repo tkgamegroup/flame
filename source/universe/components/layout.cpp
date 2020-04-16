@@ -46,73 +46,52 @@ namespace flame
 		data_changed(FLAME_CHASH("content_size"), this);
 	}
 
-	void cLayoutPrivate::apply_h_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
+	void cLayoutPrivate::apply_h_free_layout(const Aligner& a, bool free)
 	{
-		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->padding.xz() : Vec2f(0.f);
-		auto w = element->size.x() - padding[0] - padding[1];
-		switch (_aligner ? _aligner->width_policy_ : SizeFixed)
+		auto x_flags = a.aligner ? a.aligner->x_align_flags : (free ? (AlignFlag)0 : AlignMin);
+		auto p = (x_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.xz();
+		if (x_flags & AlignMinMax)
 		{
-		case SizeFitParent:
-			_element->set_width(w, false, this);
-			break;
-		case SizeGreedy:
-			if (w > _aligner->min_width_)
-				_element->set_width(w, false, this);
-			break;
+			auto w = element->size.x() - p.xy().sum();
+			if ((x_flags & AlignGreedy) && w > a.aligner->min_width)
+				a.element->set_width(w, false, this);
+			a.element->set_width(w, false, this);
+			a.element->set_x(p.x(), false, this);
 		}
-		switch (_aligner ? _aligner->x_align_ : AlignxFree)
-		{
-		case AlignxFree:
-			if (!lock)
-				break;
-		case AlignxLeft:
-			_element->set_x(scroll_offset.x() + padding[0], false, this);
-			break;
-		case AlignxMiddle:
-			_element->set_x(scroll_offset.x() + padding[0] + (w - _element->size.x()) * 0.5f, false, this);
-			break;
-		case AlignxRight:
-			_element->set_x(scroll_offset.x() + element->size.x() - padding[1] - _element->size.x(), false, this);
-			break;
-		}
+		if (x_flags & AlignMin)
+			a.element->set_x(p.x(), false, this);
+		else if (x_flags & AlignMax)
+			a.element->set_x(element->size.x() - p.y() - a.element->size.x(), false, this);
+		else if (x_flags & AlignMiddle)
+			a.element->set_x(p.x() + (element->size.x() - p.xy().sum() - a.element->size.x()) * 0.5f, false, this);
 	}
 
-	void cLayoutPrivate::apply_v_free_layout(cElement* _element, cAligner* _aligner, bool lock = false)
+	void cLayoutPrivate::apply_v_free_layout(const Aligner& a, bool free)
 	{
-		auto padding = (lock || (_aligner ? _aligner->using_padding_ : false)) ? element->padding.yw() : Vec2f(0.f);
-		auto h = element->size.y() - padding[0] - padding[1];
-		switch (_aligner ? _aligner->height_policy_ : SizeFixed)
+		auto y_flags = a.aligner ? a.aligner->y_align_flags : (free ? (AlignFlag)0 : AlignMin);
+		auto p = (y_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.yw();
+		if (y_flags & AlignMinMax)
 		{
-		case SizeFitParent:
-			_element->set_height(h, false, this);
-			break;
-		case SizeGreedy:
-			if (h > _aligner->min_height_)
-				_element->set_height(h, false, this);
-			break;
+			auto h = element->size.y() - p.xy().sum();
+			if ((y_flags & AlignGreedy) && h > a.aligner->min_height)
+				a.element->set_height(h, false, this);
+			a.element->set_height(h, false, this);
+			a.element->set_y(p.x(), false, this);
 		}
-		switch (_aligner ? _aligner->y_align_ : AlignyFree)
-		{
-		case AlignyFree:
-			if (!lock)
-				break;
-		case AlignyTop:
-			_element->set_y(scroll_offset.y() + padding[0], false, this);
-			break;
-		case AlignyMiddle:
-			_element->set_y(scroll_offset.y() + padding[0] + (h - _element->size.y()) * 0.5f, false, this);
-			break;
-		case AlignyBottom:
-			_element->set_y(scroll_offset.y() + element->size.y() - padding[1] - _element->size.y(), false, this);
-			break;
-		}
+		if (y_flags & AlignMin)
+			a.element->set_y(p.x(), false, this);
+		else if (y_flags & AlignMax)
+			a.element->set_y(element->size.y() - p.y() - a.element->size.y(), false, this);
+		else if (y_flags & AlignMiddle)
+			a.element->set_y(p.x() + (element->size.y() - p.xy().sum() - a.element->size.y()) * 0.5f, false, this);
 	}
 
 	void cLayoutPrivate::use_children_width(float w)
 	{
-		if (!aligner || aligner->width_policy_ == SizeFixed)
+		auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
+		if (!(x_flags & AlignMinMax))
 			element->set_width(w, false, this);
-		else if (aligner && aligner->width_policy_ == SizeGreedy)
+		else if (x_flags & AlignGreedy)
 		{
 			aligner->set_min_width(w);
 			element->set_width(max(element->size.x(), w), false, this);
@@ -121,9 +100,10 @@ namespace flame
 
 	void cLayoutPrivate::use_children_height(float h)
 	{
-		if (!aligner || aligner->height_policy_ == SizeFixed)
+		auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
+		if (!(y_flags & AlignMinMax))
 			element->set_height(h, false, this);
-		else if (aligner && aligner->height_policy_ == SizeGreedy)
+		else if (y_flags & AlignGreedy)
 		{
 			aligner->set_min_height(h);
 			element->set_height(max(element->size.y(), h), false, this);
@@ -202,11 +182,13 @@ namespace flame
 			{
 				if (c == al.element)
 				{
+					al.element->data_changed_listeners.remove(al.element_listener);
 					al.element = nullptr;
 					return;
 				}
 				if (c == al.aligner)
 				{
+					al.aligner->data_changed_listeners.remove(al.aligner_listener);
 					al.aligner = nullptr;
 					return;
 				}
@@ -238,12 +220,13 @@ namespace flame
 				auto e = entity->child(i);
 				if (e->global_visibility)
 				{
-					auto element = e->get_component(cElement);
-					auto aligner = e->get_component(cAligner);
-					void* element_data_listener = nullptr;
-					if (element)
+					Aligner a;
+					a.element = e->get_component(cElement);
+					a.aligner = e->get_component(cAligner);
+
+					if (a.element)
 					{
-						element_data_listener = element->data_changed_listeners.add([](void* c, uint hash, void* sender) {
+						a.element_listener = a.element->data_changed_listeners.add([](void* c, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
 								return true;
@@ -259,10 +242,9 @@ namespace flame
 							return true;
 						}, Mail::from_p(this));
 					}
-					void* aligner_data_listener = nullptr;
-					if (aligner)
+					if (a.aligner)
 					{
-						aligner_data_listener = aligner->data_changed_listeners.add([](void* c, uint hash, void* sender) {
+						a.aligner_listener = a.aligner->data_changed_listeners.add([](void* c, uint hash, void* sender) {
 							auto thiz = *(cLayoutPrivate**)c;
 							if (sender == thiz)
 								return true;
@@ -271,9 +253,7 @@ namespace flame
 							return true;
 						}, Mail::from_p(this));
 					}
-					als.push_back({ element, aligner,
-						element_data_listener,
-						aligner_data_listener});
+					als.push_back(a);
 				}
 			}
 			als_dirty = false;
@@ -282,10 +262,10 @@ namespace flame
 		switch (type)
 		{
 		case LayoutFree:
-			for (auto al : als)
+			for (auto i = 0; i < als.size(); i++)
 			{
-				apply_h_free_layout(al.element, al.aligner);
-				apply_v_free_layout(al.element, al.aligner);
+				apply_h_free_layout(als[i], true);
+				apply_v_free_layout(als[i], true);
 			}
 			break;
 		case LayoutHorizontal:
@@ -300,31 +280,24 @@ namespace flame
 				auto& al = als[i];
 				auto element = al.element;
 				auto aligner = al.aligner;
+				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
+				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
 
-				switch (aligner ? aligner->width_policy_ : SizeFixed)
+				if (x_flags & AlignMinMax)
 				{
-				case SizeFixed:
+					factor += aligner->width_factor;
+					if (x_flags & AlignGreedy)
+						w += aligner->min_width;
+				}
+				else
 					w += element->size.x();
-					break;
-				case SizeFitParent:
-					factor += aligner->width_factor_;
-					break;
-				case SizeGreedy:
-					factor += aligner->width_factor_;
-					w += aligner->min_width_;
-					break;
-				}
-				switch (aligner ? aligner->height_policy_ : SizeFixed)
+				if (y_flags & AlignMinMax)
 				{
-				case SizeFixed:
-					h = max(element->size.y(), h);
-					break;
-				case SizeFitParent:
-					break;
-				case SizeGreedy:
-					h = max(aligner->min_height_, h);
-					break;
+					if (y_flags & AlignGreedy)
+						h = max(aligner->min_height, h);
 				}
+				else
+					h = max(element->size.y(), h);
 				w += item_padding;
 			}
 			if (fence > 0 && !als.empty())
@@ -348,24 +321,28 @@ namespace flame
 				auto& al = als[i];
 				auto element = al.element;
 				auto aligner = al.aligner;
+				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
 
 				if (aligner)
 				{
-					if (aligner->width_policy_ == SizeFitParent)
-						element->set_width(w * aligner->width_factor_, false, this);
-					else if (aligner->width_policy_ == SizeGreedy)
-						element->set_width(aligner->min_width_ + w * aligner->width_factor_, false, this);
+					if (x_flags & AlignMinMax)
+					{
+						auto _w = w * aligner->width_factor;
+						if (x_flags & AlignGreedy)
+							_w += aligner->min_width;
+						element->set_width(_w, false, this);
+					}
 				}
-				assert(!aligner || aligner->x_align_ == AlignxFree);
 				element->set_x(scroll_offset.x() + x, false, this);
 				x += element->size.x() + item_padding;
 			}
-			for (auto i = n; i < als.size(); i++)
-				apply_h_free_layout(als[i].element, als[i].aligner, false);
 			for (auto i = 0; i < n; i++)
-				apply_v_free_layout(als[i].element, als[i].aligner, true);
+				apply_v_free_layout(als[i], false);
 			for (auto i = n; i < als.size(); i++)
-				apply_v_free_layout(als[i].element, als[i].aligner, false);
+			{
+				apply_h_free_layout(als[i], true);
+				apply_v_free_layout(als[i], true);
+			}
 		}
 			break;
 		case LayoutVertical:
@@ -380,31 +357,24 @@ namespace flame
 				auto& al = als[i];
 				auto element = al.element;
 				auto aligner = al.aligner;
+				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
+				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
 
-				switch (aligner ? aligner->width_policy_ : SizeFixed)
+				if (x_flags & AlignMinMax)
 				{
-				case SizeFixed:
+					if (x_flags & AlignGreedy)
+						w = max(aligner->min_width, w);
+				}
+				else
 					w = max(element->size.x(), w);
-					break;
-				case SizeFitParent:
-					break;
-				case SizeGreedy:
-					w = max(aligner->min_width_, w);
-					break;
-				}
-				switch (aligner ? aligner->height_policy_ : SizeFixed)
+				if (y_flags & AlignMinMax)
 				{
-				case SizeFixed:
-					h += element->size.y();
-					break;
-				case SizeFitParent:
-					factor += aligner->height_factor_;
-					break;
-				case SizeGreedy:
-					factor += aligner->height_factor_;
-					h += aligner->min_height_;
-					break;
+					factor += aligner->height_factor;
+					if (y_flags & AlignGreedy)
+						h += aligner->min_height;
 				}
+				else
+					h += element->size.y();
 				h += item_padding;
 			}
 			if (fence > 0 && !als.empty())
@@ -418,9 +388,7 @@ namespace flame
 				use_children_height(h);
 
 			for (auto i = 0; i < n; i++)
-				apply_h_free_layout(als[i].element, als[i].aligner, true);
-			for (auto i = n; i < als.size(); i++)
-				apply_h_free_layout(als[i].element, als[i].aligner, false);
+				apply_h_free_layout(als[i], false);
 			h = element->size.y() - h;
 			if (h > 0.f && factor > 0)
 				h /= factor;
@@ -432,20 +400,26 @@ namespace flame
 				auto& al = als[i];
 				auto element = al.element;
 				auto aligner = al.aligner;
+				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
 
 				if (aligner)
 				{
-					if (aligner->height_policy_ == SizeFitParent)
-						element->set_height(h * aligner->height_factor_, false, this);
-					else if (aligner->height_policy_ == SizeGreedy)
-						element->set_height(aligner->min_height_ + h * aligner->height_factor_, false, this);
+					if (y_flags & AlignMinMax)
+					{
+						auto _h = h * aligner->height_factor;
+						if (y_flags & AlignGreedy)
+							_h += aligner->min_height;
+						element->set_height(_h, false, this);
+					}
 				}
-				assert(!aligner || aligner->y_align_ == AlignyFree);
 				element->set_y(scroll_offset.y() + y, false, this);
 				y += element->size.y() + item_padding;
 			}
 			for (auto i = n; i < als.size(); i++)
-				apply_v_free_layout(als[i].element, als[i].aligner, false);
+			{
+				apply_h_free_layout(als[i], true);
+				apply_v_free_layout(als[i], true);
+			}
 		}
 			break;
 		case LayoutGrid:
@@ -465,15 +439,13 @@ namespace flame
 					auto element = al.element;
 					auto aligner = al.aligner;
 
-					assert(!aligner || (aligner->x_align_ == AlignxFree && aligner->y_align_ == AlignyFree));
-
-					element->set_x(scroll_offset.x() + element->padding[0], false, this);
-					element->set_y(scroll_offset.y() + element->padding[1], false, this);
+					element->set_x(scroll_offset.x() + element->padding.x(), false, this);
+					element->set_y(scroll_offset.y() + element->padding.y(), false, this);
 				}
 				for (auto i = n; i < als.size(); i++)
 				{
-					apply_h_free_layout(als[i].element, als[i].aligner, false);
-					apply_v_free_layout(als[i].element, als[i].aligner, false);
+					apply_h_free_layout(als[i], true);
+					apply_v_free_layout(als[i], true);
 				}
 			}
 			else
@@ -487,8 +459,6 @@ namespace flame
 					auto& al = als[i];
 					auto element = al.element;
 					auto aligner = al.aligner;
-
-					assert(!aligner || (aligner->width_policy_ == SizeFixed && aligner->height_policy_ == SizeFixed));
 
 					lw += element->size.x() + item_padding;
 					lh = max(element->size.y(), lh);
@@ -527,8 +497,6 @@ namespace flame
 					auto element = al.element;
 					auto aligner = al.aligner;
 
-					assert(!aligner || (aligner->x_align_ == AlignxFree && aligner->y_align_ == AlignyFree));
-
 					element->set_x(scroll_offset.x() + x, false, this);
 					element->set_y(scroll_offset.y() + y, false, this);
 
@@ -544,8 +512,8 @@ namespace flame
 				}
 				for (auto i = n; i < als.size(); i++)
 				{
-					apply_h_free_layout(als[i].element, als[i].aligner, false);
-					apply_v_free_layout(als[i].element, als[i].aligner, false);
+					apply_h_free_layout(als[i], true);
+					apply_v_free_layout(als[i], true);
 				}
 			}
 		}

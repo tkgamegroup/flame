@@ -15,7 +15,7 @@ struct MyApp : App
 		utils::push_parent(root);
 
 			utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_aligner(AlignMinMax, AlignMinMax);
 				utils::e_begin_menu_bar();
 					utils::e_begin_menubar_menu(L"Style");
 						utils::e_menu_item(L"Dark", [](void* c) {
@@ -44,7 +44,7 @@ struct MyApp : App
 				utils::e_end_menu_bar();
 
 				utils::e_begin_layout();
-				utils::c_aligner(SizeFitParent, SizeFitParent);
+				utils::c_aligner(AlignMinMax, AlignMinMax);
 					utils::next_element_pos = Vec2f(16.f, 10.f);
 					utils::e_begin_layout(LayoutVertical, 16.f);
 						utils::e_text(L"Text");
@@ -97,19 +97,7 @@ struct MyApp : App
 
 				utils::e_end_layout();
 
-				//{
-				//	auto e = utils::e_text(L"");
-				//	e->on_destroyed_listeners.add([](void* c) {
-				//		looper().remove_event(*(void**)c);
-				//		return true;
-				//	}, Mail::from_p(add_fps_listener([](void* c, uint fps) {
-				//		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-				//	}, Mail::from_p(e->get_component(cText)))));
-				//}
 			utils::e_end_layout();
-
-			//utils::e_begin_docker_static_container();
-			//utils::e_end_docker_static_container();
 
 			utils::next_element_pos = Vec2f(416.f, 300.f);
 			utils::next_element_size = Vec2f(200.f, 200.f);

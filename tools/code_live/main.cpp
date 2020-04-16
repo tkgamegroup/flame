@@ -105,14 +105,14 @@ int main(int argc, char** args)
 	utils::push_parent(app.root);
 		utils::e_begin_splitter(SplitterHorizontal);
 			utils::e_begin_layout(LayoutVertical, 4.f);
-			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_aligner(AlignMinMax, AlignMinMax);
 			auto c_edit = utils::e_edit(100.f)->get_component(cEdit);
 			c_edit->select_all_on_dbclicked = false;
 			c_edit->select_all_on_focus = false;
 			app.c_code = c_edit->text;
 			app.c_code->font_atlas = app.font_atlas_edit;
 			app.c_code->font_size = 17;
-			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_aligner(AlignMinMax, AlignMinMax);
 			utils::e_button(L"Run", [](void*) {
 				looper().add_event([](void*, bool*) {
 					app.clean_up();
@@ -141,7 +141,7 @@ int main(int argc, char** args)
 			utils::e_end_layout();
 
 			app.e_result = utils::e_element();
-			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_aligner(AlignMinMax, AlignMinMax);
 			utils::c_layout(LayoutVertical)->item_padding = 4.f;
 		utils::e_end_splitter();
 	utils::pop_parent();

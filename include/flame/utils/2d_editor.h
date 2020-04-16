@@ -36,7 +36,7 @@ namespace flame
 			void create(void(*select_callback)(void* c, const Vec4f& r), const Mail& _capture)
 			{
 				utils::e_begin_layout();
-				utils::c_aligner(SizeFitParent, SizeFitParent);
+				utils::c_aligner(AlignMinMax, AlignMinMax);
 					element = utils::current_entity()->get_component(cElement);
 					element->clip_flags = ClipFlag(ClipSelf | ClipChildren);
 					element->cmds.add([](void* c, graphics::Canvas* canvas) {
@@ -162,10 +162,10 @@ namespace flame
 
 						return true;
 					}, Mail::from_p(this));
-					utils::c_aligner(SizeFitParent, SizeFitParent);
+					utils::c_aligner(AlignMinMax, AlignMinMax);
 
 					scale_text = utils::e_text(L"100%")->get_component(cText);
-					utils::c_aligner(AlignxLeft, AlignyBottom);
+					utils::c_aligner(AlignMin, AlignMax);
 				utils::e_end_layout();
 			}
 		};

@@ -16,9 +16,9 @@ void add_window(pugi::xml_node n)
 	{
 		auto ca = utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical)->get_component(cAligner);
 		if (parent_layout)
-			ca->width_factor_ = r;
+			ca->width_factor = r;
 		else
-			ca->height_factor_ = r;
+			ca->height_factor = r;
 		for (auto c : n.children())
 			add_window(c);
 		utils::e_end_docker_layout();
@@ -27,9 +27,9 @@ void add_window(pugi::xml_node n)
 	{
 		auto ca = utils::e_begin_docker()->get_component(cAligner);
 		if (parent_layout)
-			ca->width_factor_ = r;
+			ca->width_factor = r;
 		else
-			ca->height_factor_ = r;
+			ca->height_factor = r;
 		auto name = std::string(n.child("page").attribute("name").value());
 		if (name == "editor")
 			app.editor = new cEditor;
@@ -58,7 +58,7 @@ void MyApp::create()
 	utils::push_parent(root);
 
 	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-	utils::c_aligner(SizeFitParent, SizeFitParent);
+	utils::c_aligner(AlignMinMax, AlignMinMax);
 
 	utils::e_begin_menu_bar();
 		utils::e_begin_menubar_menu(L"Scene");

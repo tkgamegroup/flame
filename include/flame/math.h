@@ -295,7 +295,7 @@ namespace flame
 
 		Vec<2, T> xy() const
 		{
-			static_assert(N > 2);
+			static_assert(N > 1);
 			return Vec<2, T>(v_[0], v_[1]);
 		}
 
@@ -528,21 +528,29 @@ namespace flame
 			return *this;
 		}
 
-		template <uint CH>
-		Vec<N, T> new_replacely(T m) const
+		T sum() const
 		{
-			static_assert(CH < N);
-			auto ret = *this;
-			ret[CH] = m;
+			auto ret = T(0);
+			for (auto i = 0; i < N; i++)
+				ret += v_[i];
 			return ret;
 		}
 
-		template <uint CH>
+		template <uint CN>
+		Vec<N, T> new_replacely(T m) const
+		{
+			static_assert(CN < N);
+			auto ret = *this;
+			ret[CN] = m;
+			return ret;
+		}
+
+		template <uint CN>
 		Vec<N, T> new_proply(float m) const
 		{
-			static_assert(CH < N);
+			static_assert(CN < N);
 			auto ret = *this;
-			ret[CH] *= m;
+			ret[CN] *= m;
 			return ret;
 		}
 	};

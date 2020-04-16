@@ -37,27 +37,14 @@ namespace flame
 		EventReceiverActive = 1 << 1
 	};
 
-	enum Alignx
+	enum AlignFlag
 	{
-		AlignxFree,
-		AlignxLeft,
-		AlignxMiddle,
-		AlignxRight
-	};
-
-	enum Aligny
-	{
-		AlignyFree,
-		AlignyTop,
-		AlignyMiddle,
-		AlignyBottom
-	};
-
-	enum SizePolicy
-	{
-		SizeFixed,
-		SizeFitParent,
-		SizeGreedy
+		AlignMin = 1 << 0,
+		AlignMax = 1 << 1,
+		AlignMiddle = 1 << 2,
+		AlignMinMax = 1 << 3,
+		AlignAbsolute = 1 << 4, // no padding
+		AlignGreedy = 1 << 5
 	};
 
 	enum LayoutType

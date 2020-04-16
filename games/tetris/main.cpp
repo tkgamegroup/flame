@@ -717,7 +717,7 @@ struct MyApp : App
 		utils::push_parent(root);
 		utils::next_element_size = Vec2f(500.f, 0.f);
 		utils::e_begin_layout(LayoutVertical, 8.f, false, false)->get_component(cElement)->padding = 8.f;
-		utils::c_aligner(SizeFixed, SizeFitParent)->x_align_ = AlignxMiddle;
+		utils::c_aligner(SizeFixed, AlignMinMax)->x_align_ = AlignxMiddle;
 			utils::push_style_1u(utils::FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 8.f);
 			utils::c_aligner(AlignxMiddle, AlignyFree);
@@ -736,7 +736,7 @@ struct MyApp : App
 				utils::e_end_list();
 			utils::e_end_scroll_view1();
 			utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 4;
-			utils::c_aligner(SizeFitParent, SizeFixed);
+			utils::c_aligner(AlignMinMax, SizeFixed);
 				utils::e_button(Icon_REFRESH, [](void* c) {
 					auto e_room_list = *(Entity**)c;
 					looper().add_event([](void* c, bool*) {

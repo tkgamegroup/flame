@@ -810,9 +810,9 @@ void add_window(pugi::xml_node n)
 		auto t = n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical;
 		auto ca = utils::e_begin_docker_layout(t)->get_component(cAligner);
 		if (parent_layout)
-			ca->width_factor_ = r;
+			ca->width_factor = r;
 		else
-			ca->height_factor_ = r;
+			ca->height_factor = r;
 		for (auto c : n.children())
 			add_window(c);
 		utils::e_end_docker_layout();
@@ -821,9 +821,9 @@ void add_window(pugi::xml_node n)
 	{
 		auto ca = utils::e_begin_docker()->get_component(cAligner);
 		if (parent_layout)
-			ca->width_factor_ = r;
+			ca->width_factor = r;
 		else
-			ca->height_factor_ = r;
+			ca->height_factor = r;
 		auto name = std::string(n.child("page").attribute("name").value());
 		if (name == "editor")
 			app.editor = new cEditor;
@@ -914,7 +914,7 @@ bool MyApp::create(const char* filename)
 	utils::push_parent(root);
 
 		utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-		utils::c_aligner(SizeFitParent, SizeFitParent);
+		utils::c_aligner(AlignMinMax, AlignMinMax);
 
 			utils::e_begin_menu_bar();
 				utils::e_begin_menubar_menu(L"Blueprint");
@@ -997,7 +997,7 @@ bool MyApp::create(const char* filename)
 					utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void* c) {
 						redo();
 					}, Mail());
-					utils::e_menu_item((std::wstring(Icon_CLONE) + L"    Duplicate").c_str(), [](void* c) {
+					utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](void* c) {
 						duplicate_selected();
 					}, Mail());
 					utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Remove").c_str(), [](void* c) {
@@ -1071,7 +1071,7 @@ bool MyApp::create(const char* filename)
 				auto c_element = utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cElement);
 				c_element->padding = 4.f;
 				c_element->color = utils::style_4c(utils::FrameColorNormal);
-				utils::c_aligner(SizeFitParent, SizeFixed);
+				utils::c_aligner(AlignMinMax, 0);
 				c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
 				c_auto_update->data_changed_listeners.add([](void* , uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
@@ -1099,8 +1099,8 @@ bool MyApp::create(const char* filename)
 			c_element->padding = Vec4f(20.f, 10.f, 20.f, 10.f);
 			c_element->color = Vec4c(0, 0, 0, 255);
 		}
-		e_notification->get_component(cText)->color_ = Vec4c(255);
-		utils::c_aligner(AlignxRight, AlignyBottom);
+		e_notification->get_component(cText)->color = Vec4c(255);
+		utils::c_aligner(AlignMax, AlignMax);
 		e_notification->set_visible(false);
 		{
 			auto c_timer = utils::c_timer();

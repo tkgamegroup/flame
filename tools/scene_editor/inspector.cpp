@@ -232,7 +232,7 @@ cInspector::cInspector() :
 			cl->item_padding = 4.f;
 			cl->width_fit_children = false;
 			cl->height_fit_children = false;
-			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_aligner(AlignMinMax, AlignMinMax);
 		}
 	utils::e_end_scroll_view1();
 
@@ -319,14 +319,14 @@ void cInspector::refresh()
 
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
 			e_component->get_component(cElement)->padding = Vec4f(4.f);
-			utils::c_aligner(SizeFitParent, SizeFixed);
+			utils::c_aligner(AlignMinMax, 0);
 
 			auto c_component_tracker = new cComponentTracker(component);
 			c_component_tracker->id = FLAME_HASH(component->name);
 			e_component->add_component(c_component_tracker);
 
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
-			utils::e_text(s2w(component->name).c_str())->get_component(cText)->color_ = Vec4c(30, 40, 160, 255);
+			utils::e_text(s2w(component->name).c_str())->get_component(cText)->color = Vec4c(30, 40, 160, 255);
 				struct Capture
 				{
 					Entity* e;

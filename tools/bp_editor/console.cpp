@@ -16,7 +16,7 @@ cConsole::cConsole() :
 
 		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
 			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
-			utils::c_aligner(SizeFitParent, SizeFitParent);
+			utils::c_aligner(AlignMinMax, AlignMinMax);
 			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
 			utils::e_end_layout();
 		utils::e_end_scroll_view1(utils::style_1u(utils::FontSize));
@@ -26,7 +26,7 @@ cConsole::cConsole() :
 		}, Mail());
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
-		utils::c_aligner(SizeFitParent, SizeFixed);
+		utils::c_aligner(AlignMinMax, 0);
 			c_edit_input = utils::e_edit(0.f)->get_component(cEdit);
 			utils::e_button(L"Exec", [](void* c) {
 				auto log_text = app.console->c_text_log;

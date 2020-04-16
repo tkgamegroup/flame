@@ -171,7 +171,7 @@ struct cSlot : Component
 								str = s2w(o_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(s_type->name());
 							else
 								str = s2w(s_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(o_type->name());
-							utils::e_text(str.c_str())->get_component(cText)->color_ = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+							utils::e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
 						}
 						utils::e_end_layout();
 						looper().add_event([](void* c, bool*) {
@@ -217,10 +217,10 @@ struct cSlot : Component
 						c_element->frame_color = Vec4c(0, 0, 0, 255);
 						auto type = s->type();
 						auto tag = type->tag();
-						utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color_ = type_color(tag);
+						utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
 						auto fail_message = s2w(s->fail_message());
 						if (!fail_message.empty())
-							utils::e_text(fail_message.c_str())->get_component(cText)->color_ = Vec4c(255, 0, 0, 255);
+							utils::e_text(fail_message.c_str())->get_component(cText)->color = Vec4c(255, 0, 0, 255);
 						utils::e_end_layout();
 						looper().add_event([](void* c, bool*) {
 							app.root->add_child(*(Entity**)c);
@@ -363,7 +363,7 @@ struct cNode : Component
 							else
 								str = node_type_prefix(thiz->n_type) + thiz->n_name;
 							str += L"\nID: " + s2w(n->id());
-							utils::e_text(str.c_str())->get_component(cText)->color_ = node_type_color(thiz->n_type);
+							utils::e_text(str.c_str())->get_component(cText)->color = node_type_color(thiz->n_type);
 						utils::e_end_layout();
 						looper().add_event([](void* c, bool*) {
 							app.root->add_child(*(Entity**)c);
@@ -674,7 +674,7 @@ void cEditor::on_add_node(BP::Node* n)
 						str = std::wstring(str.begin() + last_colon + 1, str.end());
 					auto e_text = utils::e_text(str.c_str());
 					e_text->get_component(cElement)->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-					e_text->get_component(cText)->color_ = node_type_color(c_node->n_type);
+					e_text->get_component(cText)->color = node_type_color(c_node->n_type);
 				}
 			utils::e_end_layout();
 			utils::pop_style(utils::FontSize);
@@ -682,10 +682,10 @@ void cEditor::on_add_node(BP::Node* n)
 			std::string type = n->type();
 
 			utils::e_begin_layout(LayoutHorizontal, 16.f);
-			utils::c_aligner(SizeGreedy, SizeFixed);
+			utils::c_aligner(AlignMinMax | AlignGreedy, 0);
 
 				utils::e_begin_layout(LayoutVertical);
-				utils::c_aligner(SizeGreedy, SizeFixed);
+				utils::c_aligner(AlignMinMax | AlignGreedy, 0);
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
@@ -704,9 +704,8 @@ void cEditor::on_add_node(BP::Node* n)
 						}
 						{
 							auto c_text = utils::c_text();
-							c_text->color_ = Vec4c(255, 0, 0, 255);
-							c_text->auto_width_ = false;
-							c_text->auto_height_ = false;
+							c_text->color = Vec4c(255, 0, 0, 255);
+							c_text->auto_size = false;
 						}
 						utils::c_event_receiver();
 						auto c_slot = new_object<cSlot>();
@@ -760,7 +759,7 @@ void cEditor::on_add_node(BP::Node* n)
 							}
 						utils::e_end_popup_menu();
 
-						utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color_ = type_color(input->type()->tag());
+						utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color = type_color(input->type()->tag());
 						utils::e_end_layout();
 
 						auto type = input->type();
@@ -888,14 +887,14 @@ void cEditor::on_add_node(BP::Node* n)
 				utils::e_end_layout();
 
 				utils::e_begin_layout(LayoutVertical);
-				utils::c_aligner(SizeGreedy, SizeFixed);
+				utils::c_aligner(AlignMinMax | AlignGreedy, 0);
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
 
 						utils::e_begin_layout(LayoutHorizontal);
-						utils::c_aligner(AlignxRight, AlignyFree);
-						utils::e_text(s2w(output->name()).c_str())->get_component(cText)->color_ = type_color(output->type()->tag());
+						utils::c_aligner(AlignMax, 0);
+						utils::e_text(s2w(output->name()).c_str())->get_component(cText)->color = type_color(output->type()->tag());
 
 						utils::e_empty();
 						{
@@ -958,7 +957,7 @@ void cEditor::on_add_node(BP::Node* n)
 				c_element->padding = Vec4f(5.f, 2.f, 5.f, 2.f);
 				c_element->roundness = 8.f;
 				c_element->roundness_lod = 2;
-				utils::c_aligner(AlignxMiddle, AlignyFree);
+				utils::c_aligner(AlignMiddle, 0);
 			}
 
 		utils::e_end_layout();
@@ -968,7 +967,7 @@ void cEditor::on_add_node(BP::Node* n)
 			*pass = true;
 			return true;
 		}, Mail());
-		utils::c_aligner(SizeFitParent, SizeFitParent);
+		utils::c_aligner(AlignMinMax, AlignMinMax);
 		utils::c_bring_to_front();
 	utils::pop_parent();
 
@@ -1081,13 +1080,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		utils::c_layout(LayoutVertical)->item_padding = 4.f;
 		utils::push_parent(utils::current_entity());
 			if (dragging_slot)
-				utils::e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color_ = type_color(tag);
+				utils::e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color = type_color(tag);
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 				utils::e_text(Icon_SEARCH);
 				auto c_text_search = utils::e_edit(300.f)->get_component(cText);
 			utils::e_end_layout();
 			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f);
-			utils::c_aligner(SizeGreedy, SizeFixed);
+			utils::c_aligner(AlignMinMax | AlignGreedy, 0);
 				auto e_list = utils::e_begin_list(true, 0.f);
 					struct Capture
 					{

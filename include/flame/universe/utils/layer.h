@@ -76,8 +76,8 @@ namespace flame
 			l->add_component(c_event_receiver);
 
 			auto c_aligner = cAligner::create();
-			c_aligner->width_policy_ = SizeFitParent;
-			c_aligner->height_policy_ = SizeFitParent;
+			c_aligner->x_align_flags = AlignMinMax;
+			c_aligner->y_align_flags = AlignMinMax;
 			l->add_component(c_aligner);
 
 			return l;

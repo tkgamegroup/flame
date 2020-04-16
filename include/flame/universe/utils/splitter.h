@@ -24,9 +24,9 @@ namespace flame
 			e->add_component(cSplitter::create(type));
 			auto ca = cAligner::create();
 			if (type == SplitterHorizontal)
-				ca->height_policy_ = SizeFitParent;
+				ca->y_align_flags = AlignMinMax;
 			else
-				ca->width_policy_ = SizeFitParent;
+				ca->x_align_flags = AlignMinMax;
 			e->add_component(ca);
 		}
 	}

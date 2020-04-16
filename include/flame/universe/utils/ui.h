@@ -163,7 +163,7 @@ namespace flame
 			return c;
 		}
 
-		inline cAligner* c_aligner(Alignx x, Aligny y)
+		inline cAligner* c_aligner(uint x_flags, uint y_flags)
 		{
 			auto c = cAligner::create();
 			if (next_component_id)
@@ -171,22 +171,8 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			c->x_align_ = x;
-			c->y_align_ = y;
-			current_entity()->add_component(c);
-			return c;
-		}
-
-		inline cAligner* c_aligner(SizePolicy width_policy, SizePolicy height_policy)
-		{
-			auto c = cAligner::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			c->width_policy_ = width_policy;
-			c->height_policy_ = height_policy;
+			c->x_align_flags = (AlignFlag)x_flags;
+			c->y_align_flags = (AlignFlag)y_flags;
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -587,7 +573,7 @@ namespace flame
 				ct->set_text(text);
 			c_event_receiver();
 			if (width == 0.f)
-				c_aligner(SizeFitParent, SizeFixed);
+				c_aligner(AlignMinMax, 0);
 			c_edit();
 			return e;
 		}
@@ -666,7 +652,7 @@ namespace flame
 			ce->padding = Vec4f(padding);
 			ce->clip_flags = ClipChildren;
 			if (size == 0.f)
-				c_aligner(SizeFitParent, SizeFitParent);
+				c_aligner(AlignMinMax, AlignMinMax);
 			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical);
 			cl->item_padding = 4.f;
 			cl->width_fit_children = false;
@@ -684,11 +670,11 @@ namespace flame
 				auto ce = c_element();
 				ce->size = 10.f;
 				ce->color = style_4c(ScrollbarColor);
-				auto ca = c_aligner(SizeFixed, SizeFixed);
+				auto ca = c_aligner(0, 0);
 				if (type == ScrollbarVertical)
-					ca->height_policy_ = SizeFitParent;
+					ca->y_align_flags = AlignMinMax;
 				else
-					ca->width_policy_ = SizeFitParent;
+					ca->x_align_flags = AlignMinMax;
 				c_event_receiver();
 				c_scrollbar();
 				push_parent(current_entity());
@@ -721,7 +707,7 @@ namespace flame
 						thumb->update(-pos.x() * 20.f);
 					return true;
 				}, Mail::from_p(ct));
-				c_aligner(SizeFitParent, SizeFitParent);
+				c_aligner(AlignMinMax, AlignMinMax);
 			}
 			pop_parent();
 		}
@@ -730,7 +716,7 @@ namespace flame
 		{
 			auto e = e_empty();
 			c_element();
-			c_aligner(SizeFitParent, SizeFitParent);
+			c_aligner(AlignMinMax, AlignMinMax);
 			c_layout(type == SplitterHorizontal ? LayoutHorizontal : LayoutVertical, false, false);
 			push_parent(e);
 			e_empty();
@@ -749,7 +735,7 @@ namespace flame
 			c_element();
 			c_event_receiver();
 			if (size_fit_parent)
-				c_aligner(SizeFitParent, SizeFitParent);
+				c_aligner(AlignMinMax, AlignMinMax);
 			auto cl = c_layout(LayoutVertical);
 			cl->item_padding = padding;
 			cl->width_fit_children = false;
@@ -780,7 +766,7 @@ namespace flame
 			cs->color_active[1] = style_4c(SelectedColorActive);
 			cs->style();
 			if (align)
-				c_aligner(SizeFitParent, SizeFixed);
+				c_aligner(AlignMinMax, 0);
 			c_list_item();
 			return e;
 		}
@@ -792,7 +778,7 @@ namespace flame
 			ce->padding = Vec4f(padding);
 			c_event_receiver();
 			if (fit_parent)
-				c_aligner(SizeFitParent, SizeFitParent);
+				c_aligner(AlignMinMax, AlignMinMax);
 			auto cl = c_layout(LayoutVertical);
 			cl->item_padding = 4.f;
 			cl->width_fit_children = !fit_parent;
@@ -899,7 +885,7 @@ namespace flame
 			e_empty();
 			c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(Icon_ANGLE_DOWN);
-			c_aligner(AlignxRight, AlignyFree);
+			c_aligner(AlignMax | AlignAbsolute, 0);
 			pop_parent();
 			push_parent(cm->items);
 			return e;
@@ -935,7 +921,7 @@ namespace flame
 			cs->color_hovering[1] = style_4c(SelectedColorHovering);
 			cs->color_active[1] = style_4c(SelectedColorActive);
 			cs->style();
-			c_aligner(SizeGreedy, SizeFixed);
+			c_aligner(AlignMinMax | AlignGreedy, 0);
 			c_combobox_item();
 			return e;
 		}
@@ -945,7 +931,7 @@ namespace flame
 			auto e = e_empty();
 			e->gene = e;
 			c_element()->color = style_4c(FrameColorNormal);
-			c_aligner(SizeFitParent, SizeFixed);
+			c_aligner(AlignMinMax, 0);
 			c_layout(LayoutHorizontal)->item_padding = 4.f;
 			push_parent(e);
 			return e;
@@ -1014,13 +1000,13 @@ namespace flame
 			cs->color_hovering = style_4c(FrameColorHovering);
 			cs->color_active = style_4c(FrameColorActive);
 			cs->style();
-			c_aligner(SizeGreedy, SizeFixed);
+			c_aligner(AlignMinMax | AlignGreedy, 0);
 			c_layout();
 			push_parent(e);
 			e_empty();
 			c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(Icon_CARET_RIGHT);
-			c_aligner(AlignxRight, AlignyFree);
+			c_aligner(AlignMax | AlignAbsolute, 0);
 			pop_parent();
 			push_parent(cm->items);
 			return e;
@@ -1062,7 +1048,7 @@ namespace flame
 			cs->color_hovering = style_4c(FrameColorHovering);
 			cs->color_active = style_4c(FrameColorActive);
 			cs->style();
-			c_aligner(SizeGreedy, SizeFixed);
+			c_aligner(AlignMinMax | AlignGreedy, 0);
 			return e;
 		}
 
@@ -1077,7 +1063,7 @@ namespace flame
 			ceed->draw_flags = ExtraDrawHorizontalLine;
 			ceed->thickness = 1.f;
 			ceed->color = style_4c(TextColorNormal).new_replacely<3>(128);
-			c_aligner(SizeGreedy, SizeFixed);
+			c_aligner(AlignMinMax | AlignGreedy, 0);
 			return e;
 		}
 
@@ -1119,7 +1105,7 @@ namespace flame
 				ce->padding = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
 				ce->color = style_4c(SelectedTabColorNormal);
 				c_text()->set_text(title);
-				c_aligner(SizeGreedy, SizeFixed);
+				c_aligner(AlignMinMax | AlignGreedy, 0);
 				if (close_button)
 				{
 					c_layout();
@@ -1131,7 +1117,7 @@ namespace flame
 							e->parent()->remove_child(e);
 						}, Mail::from_p(e));
 					}, Mail::from_p(e), false);
-					c_aligner(AlignxRight, AlignyFree);
+					c_aligner(AlignMax | AlignAbsolute, 0);
 					pop_parent();
 				}
 
@@ -1145,7 +1131,7 @@ namespace flame
 					*pass = true;
 					return true;
 				}, Mail());
-				c_aligner(SizeFitParent, SizeFitParent);
+				c_aligner(AlignMinMax, AlignMinMax);
 				c_bring_to_front();
 			}
 			pop_parent();
@@ -1176,11 +1162,9 @@ namespace flame
 		{
 			auto e = e_empty();
 			e->set_name("docker_static_container");
-			auto ce = c_element();
-			ce->padding = Vec4f(8.f, 16.f, 8.f, 8.f);
-			ce->color = style_4c(BackgroundColor);
+			c_element()->color = style_4c(BackgroundColor);
 			c_event_receiver();
-			c_aligner(SizeFitParent, SizeFitParent);
+			c_aligner(AlignMinMax, AlignMinMax);
 			c_layout(LayoutFree);
 			c_docker_static_container();
 			push_parent(e);
@@ -1196,13 +1180,6 @@ namespace flame
 		{
 			auto e = e_empty();
 			make_docker_layout(e, type);
-			if (!is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") }))
-			{
-				auto ca = e->get_component(cAligner);
-				ca->x_align_ = AlignxFree;
-				ca->y_align_ = AlignyFree;
-				ca->using_padding_ = false;
-			}
 			push_parent(e);
 			return e;
 		}
@@ -1216,13 +1193,6 @@ namespace flame
 		{
 			auto e = e_empty();
 			make_docker(e);
-			if (!is_one_of(current_parent()->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_staitc_container") }))
-			{
-				auto ca = e->get_component(cAligner);
-				ca->x_align_ = AlignxFree;
-				ca->y_align_ = AlignyFree;
-				ca->using_padding_ = false;
-			}
 			push_parent(e);
 			return e;
 		}
@@ -1266,7 +1236,7 @@ namespace flame
 					thiz->take_away(true);
 				}, Mail::from_p(thiz));
 			}, Mail::from_p(cdt), false)->get_component(cText)->color = style_4c(TabTextColorElse);
-			c_aligner(AlignxRight, AlignyFree);
+			c_aligner(AlignMax | AlignAbsolute, 0);
 			pop_parent();
 			pop_parent();
 			push_parent(current_parent()->child(1));
@@ -1275,10 +1245,7 @@ namespace flame
 				auto ce = c_element();
 				ce->color = style_4c(BackgroundColor);
 				ce->clip_flags = ClipChildren;
-				auto ca = c_aligner(SizeFitParent, SizeFitParent);
-				ca->x_align_ = AlignxLeft;
-				ca->y_align_ = AlignyTop;
-				ca->using_padding_ = true;
+				c_aligner(AlignMinMax, AlignMinMax);
 			}
 			pop_parent();
 			push_parent(ep);
@@ -1302,7 +1269,7 @@ namespace flame
 			ce->frame_thickness = 2.f;
 			ce->color = style_4c(BackgroundColor);
 			ce->frame_color  = col3_inv(style_4c(BackgroundColor));
-			c_aligner(AlignxMiddle, AlignyMiddle);
+			c_aligner(AlignMiddle, AlignMiddle);
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			pop_parent();
 			push_parent(e);
@@ -1322,7 +1289,7 @@ namespace flame
 			e_button(L"OK", [](void* c) {
 				remove_layer(*(Entity**)c);
 			}, Mail::from_p(l));
-			c_aligner(AlignxMiddle, AlignyFree);
+			c_aligner(AlignMiddle, 0);
 			e_end_dialog();
 			return e;
 		}
@@ -1333,7 +1300,7 @@ namespace flame
 			auto l = e->parent();
 			e_text(title);
 			e_begin_layout(LayoutHorizontal, 4.f);
-			c_aligner(AlignxMiddle, AlignyFree);
+			c_aligner(AlignMiddle, 0);
 			struct Capture
 			{
 				Entity* l;
@@ -1366,7 +1333,7 @@ namespace flame
 			if (default_text)
 				ct->set_text(default_text);
 			e_begin_layout(LayoutHorizontal, 4.f);
-			c_aligner(AlignxMiddle, AlignyFree);
+			c_aligner(AlignMiddle, 0);
 			struct Capture
 			{
 				Entity* l;

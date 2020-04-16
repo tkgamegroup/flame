@@ -38,8 +38,8 @@ namespace flame
 				}, Mail());
 				e_btf->add_component(cer);
 				auto ca = cAligner::create();
-				ca->width_policy_ = SizeFitParent;
-				ca->height_policy_ = SizeFitParent;
+				ca->x_align_flags = AlignMinMax;
+				ca->y_align_flags = AlignMinMax;
 				e_btf->add_component(ca);
 				e_btf->add_component(cBringToFront::create());
 			}
@@ -55,8 +55,8 @@ namespace flame
 				e_sd->add_component(ceed);
 				e_sd->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();
-				ca->x_align_ = AlignxRight;
-				ca->y_align_ = AlignyBottom;
+				ca->x_align_flags = AlignFlag(AlignMax | AlignAbsolute);
+				ca->y_align_flags = AlignFlag(AlignMax | AlignAbsolute);
 				e_sd->add_component(ca);
 				e_sd->add_component(cSizeDragger::create());
 			}
@@ -67,11 +67,8 @@ namespace flame
 			e->set_name("docker_layout");
 			e->add_component(cElement::create());
 			auto ca = cAligner::create();
-			ca->x_align_ = AlignxLeft;
-			ca->y_align_ = AlignyTop;
-			ca->width_policy_ = SizeFitParent;
-			ca->height_policy_ = SizeFitParent;
-			ca->using_padding_ = true;
+			ca->x_align_flags = AlignMinMax;
+			ca->y_align_flags = AlignMinMax;
 			e->add_component(ca);
 			auto cl = cLayout::create(type);
 			cl->width_fit_children = false;
@@ -92,11 +89,8 @@ namespace flame
 			ce->frame_color = style_4c(ForegroundColor);
 			e->add_component(ce);
 			auto ca = cAligner::create();
-			ca->x_align_ = AlignxLeft;
-			ca->y_align_ = AlignyTop;
-			ca->width_policy_ = SizeFitParent;
-			ca->height_policy_ = SizeFitParent;
-			ca->using_padding_ = true;
+			ca->x_align_flags = AlignMinMax;
+			ca->y_align_flags = AlignMinMax;
 			e->add_component(ca);
 			auto cl = cLayout::create(LayoutVertical);
 			cl->width_fit_children = false;
@@ -111,7 +105,7 @@ namespace flame
 				et->add_component(ce);
 				et->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();
-				ca->width_policy_ = SizeFitParent;
+				ca->x_align_flags = AlignMinMax;
 				et->add_component(ca);
 				et->add_component(cLayout::create(LayoutHorizontal));
 				et->add_component(cList::create(false));
@@ -126,8 +120,8 @@ namespace flame
 				ep->add_component(ce);
 				ep->add_component(cEventReceiver::create());
 				auto ca = cAligner::create();
-				ca->width_policy_ = SizeFitParent;
-				ca->height_policy_ = SizeFitParent;
+				ca->x_align_flags = AlignMinMax;
+				ca->y_align_flags = AlignMinMax;
 				ep->add_component(ca);
 				ep->add_component(cLayout::create(LayoutFree));
 				ep->add_component(cDockerPages::create());

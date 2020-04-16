@@ -75,12 +75,12 @@ namespace flame
 
 		float padding_h() const
 		{
-			return padding[0] + padding[2];
+			return padding.xz().sum();
 		}
 
 		float padding_v() const
 		{
-			return padding[1] + padding[3];
+			return padding.yw().sum();
 		}
 
 		Vec2f padding_hv() const
@@ -95,17 +95,17 @@ namespace flame
 
 		Vec2f content_min() const
 		{
-			return global_pos + Vec2f(padding[0], padding[1]) * global_scale;
+			return global_pos + padding.xy() * global_scale;
 		}
 
 		Vec2f content_max() const
 		{
-			return global_pos + global_size - Vec2f(padding[2], padding[3]) * global_scale;
+			return global_pos + global_size - padding.zw() *global_scale;
 		}
 
 		Vec2f content_size() const
 		{
-			return global_size - Vec2f(padding[0] + padding[2], padding[1] + padding[3]) * global_scale;
+			return global_size - Vec2f(padding.xz().sum(), padding.yw().sum()) * global_scale;
 		}
 
 		void mark_dirty()
