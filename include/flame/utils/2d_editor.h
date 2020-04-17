@@ -16,6 +16,7 @@ namespace flame
 			bool moved;
 			cElement* overlay;
 			uint scale_level;
+			uint scale_level_max;
 			cText* scale_text;
 
 			bool selecting;
@@ -28,6 +29,7 @@ namespace flame
 				base(nullptr),
 				moved(false),
 				scale_level(10),
+				scale_level_max(10),
 				scale_text(nullptr),
 				selecting(false)
 			{
@@ -81,13 +83,13 @@ namespace flame
 					event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
 						auto& edt = *capture.thiz;
-						auto dp = sEventDispatcher::current();
+						auto dp = cEventReceiver::current()->dispatcher;
 						auto mp = Vec2f(dp->mouse_pos);
 						if (is_mouse_scroll(action, key))
 						{
 							auto v = pos.x() > 0.f ? 1 : -1;
 							edt.scale_level += v;
-							if (edt.scale_level < 1 || edt.scale_level > 10)
+							if (edt.scale_level < 1 || edt.scale_level > edt.scale_level_max)
 								edt.scale_level -= v;
 							else
 							{

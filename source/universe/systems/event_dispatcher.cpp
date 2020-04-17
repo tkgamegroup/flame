@@ -5,8 +5,6 @@
 
 namespace flame
 {
-	sEventDispatcherPrivate* _current = nullptr;
-
 	sEventDispatcherPrivate::sEventDispatcherPrivate()
 	{
 		window = nullptr;
@@ -62,9 +60,7 @@ namespace flame
 			drag_overing = nullptr;
 		if (er == next_focusing)
 			next_focusing = (cEventReceiver*)INVALID_POINTER;
-		_current = this;
 		((cEventReceiverPrivate*)er)->set_state(EventReceiverNormal);
-		_current = nullptr;
 	}
 
 	void sEventDispatcherPrivate::on_added()
@@ -241,8 +237,6 @@ namespace flame
 			return;
 		pending_update = false;
 
-		_current = this;
-
 		mouse_disp = mouse_pos - mouse_pos_prev;
 
 		auto prev_hovering = hovering;
@@ -329,18 +323,18 @@ namespace flame
 		if (prev_hovering != hovering)
 		{
 			if (prev_hovering)
-				prev_hovering->hover_listeners.call(false);
+				((cEventReceiverPrivate*)prev_hovering)->on_hovering(false);
 			if (hovering)
-				hovering->hover_listeners.call(true);
+				((cEventReceiverPrivate*)hovering)->on_hovering(true);
 		}
 
 		if (prev_focusing != focusing)
 		{
 			if (prev_focusing)
-				prev_focusing->focus_listeners.call(false);
+				((cEventReceiverPrivate*)prev_focusing)->on_focusing(false);
 			if (focusing)
 			{
-				focusing->focus_listeners.call(true);
+				((cEventReceiverPrivate*)focusing)->on_focusing(true);
 
 				key_receiving = nullptr;
 				auto e = focusing->entity;
@@ -391,8 +385,6 @@ namespace flame
 				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateNull, ch);
 		}
 
-		_current = nullptr;
-
 		keydown_inputs.clear();
 		keyup_inputs.clear();
 		char_inputs.clear();
@@ -403,11 +395,6 @@ namespace flame
 		mouse_scroll = 0;
 		for (auto i = 0; i < array_size(mouse_buttons); i++)
 			mouse_buttons[i] &= ~KeyStateJust;
-	}
-
-	sEventDispatcher* sEventDispatcher::current()
-	{
-		return _current;
 	}
 
 	sEventDispatcher* sEventDispatcher::create()

@@ -77,6 +77,9 @@ void MyApp::create()
 			utils::e_menu_item(L"Save", [](void* c) {
 
 			}, Mail());
+			utils::e_menu_item(L"Close", [](void* c) {
+
+			}, Mail());
 			utils::e_end_menubar_menu();
 			utils::e_begin_menubar_menu(L"Edit");
 			utils::e_menu_item(L"Delete", [](void* c) {

@@ -242,46 +242,38 @@ namespace flame
 					(action == KeyStateNull && (value == '\r' || value == '\n')))
 				{
 					auto r = utils::current_root();
-					sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+					cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
 			}, Mail(), 0);
 
 			auto d_er = drag_text->entity->get_component(cEventReceiver);
-			struct Capture
-			{
-				cDigitalDataTracker* thiz;
-				cEventReceiver* d_er;
-			}capture;
-			capture.thiz = this;
-			capture.d_er = d_er;
-
 			d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto& capture = *(Capture*)c;
-				if (utils::is_active(capture.d_er) && is_mouse_move(action, key))
+				auto thiz = *(cDigitalDataTracker**)c;
+				if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
 				{
-					auto v = *(T*)capture.thiz->data;
-					if (!capture.thiz->drag_changed)
-						capture.thiz->drag_start = v;
+					auto v = *(T*)thiz->data;
+					if (!thiz->drag_changed)
+						thiz->drag_start = v;
 					if constexpr (std::is_floating_point<T>::value)
 						v += pos.x() * 0.05f;
 					else
 						v += pos.x();
-					capture.thiz->on_changed(capture.thiz->capture.p, v, false);
-					capture.thiz->drag_changed = true;
-					capture.thiz->update_view();
+					thiz->on_changed(thiz->capture.p, v, false);
+					thiz->drag_changed = true;
+					thiz->update_view();
 				}
 				return true;
-			}, Mail::from_t(&capture));
+			}, Mail::from_p(this));
 			d_er->state_listeners.add([](void* c, EventReceiverState) {
-				auto& capture = *(Capture*)c;
-				if (capture.thiz->drag_changed && !utils::is_active(capture.d_er))
+				auto thiz = *(cDigitalDataTracker**)c;
+				if (thiz->drag_changed && !utils::is_active(cEventReceiver::current()))
 				{
-					auto temp = *(T*)capture.thiz->data;
-					*(T*)capture.thiz->data = capture.thiz->drag_start;
-					capture.thiz->on_changed(capture.thiz->capture.p, temp, true);
-					capture.thiz->drag_changed = false;
+					auto temp = *(T*)thiz->data;
+					*(T*)thiz->data = thiz->drag_start;
+					thiz->on_changed(thiz->capture.p, temp, true);
+					thiz->drag_changed = false;
 				}
 				return true;
 			}, Mail::from_t(&capture));
@@ -384,7 +376,7 @@ namespace flame
 						(action == KeyStateNull && (value == '\r' || value == '\n')))
 					{
 						auto r = utils::current_root();
-						sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+						cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 						return false;
 					}
 					return true;
@@ -397,14 +389,12 @@ namespace flame
 					{
 						cDigitalVecDataTracker* thiz;
 						int i;
-						cEventReceiver* d_er;
 					}capture;
 					capture.thiz = this;
 					capture.i = i;
-					capture.d_er = d_er;
 					d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
-						if (utils::is_active(capture.d_er) && is_mouse_move(action, key))
+						if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
 						{
 							auto v = *(Vec<N, T>*)capture.thiz->data;
 							if (!capture.thiz->drag_changed)
@@ -421,7 +411,7 @@ namespace flame
 					}, Mail::from_t(&capture));
 					d_er->state_listeners.add([](void* c, EventReceiverState) {
 						auto& capture = *(Capture*)c;
-						if (capture.thiz->drag_changed && !utils::is_active(capture.d_er))
+						if (capture.thiz->drag_changed && !utils::is_active(cEventReceiver::current()))
 						{
 							auto temp = *(Vec<N, T>*)capture.thiz->data;
 							*(Vec<N, T>*)capture.thiz->data = capture.thiz->drag_start;
@@ -488,7 +478,7 @@ namespace flame
 				if (action == KeyStateDown && value == Key_Enter)
 				{
 					auto r = utils::current_root();
-					sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+					cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;
@@ -549,7 +539,7 @@ namespace flame
 				if (action == KeyStateDown && value == Key_Enter)
 				{
 					auto r = utils::current_root();
-					sEventDispatcher::current()->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
+					cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
 					return false;
 				}
 				return true;

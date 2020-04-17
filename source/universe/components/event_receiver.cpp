@@ -5,6 +5,8 @@
 
 namespace flame
 {
+	cEventReceiverPrivate* _current = nullptr;
+
 	cEventReceiverPrivate::cEventReceiverPrivate()
 	{
 		dispatcher = nullptr;
@@ -38,17 +40,23 @@ namespace flame
 
 	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)
 	{
+		_current = this;
 		key_listeners.call(action, value);
+		_current = nullptr;
 	}
 
 	void cEventReceiverPrivate::on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value)
 	{
+		_current = this;
 		mouse_listeners.call(action, key, value);
+		_current = nullptr;
 	}
 
 	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 	{
+		_current = this;
 		drag_and_drop_listeners.call(action, er, pos);
+		_current = nullptr;
 	}
 
 	void cEventReceiverPrivate::set_state(EventReceiverState _state)
@@ -56,8 +64,24 @@ namespace flame
 		if (state != _state)
 		{
 			state = _state;
+			_current = this;
 			state_listeners.call(state);
+			_current = nullptr;
 		}
+	}
+
+	void cEventReceiverPrivate::on_hovering(bool hovering)
+	{
+		_current = this;
+		hover_listeners.call(hovering);
+		_current = nullptr;
+	}
+
+	void cEventReceiverPrivate::on_focusing(bool focusing)
+	{
+		_current = this;
+		focus_listeners.call(focusing);
+		_current = nullptr;
 	}
 
 	void cEventReceiverPrivate::on_entered_world()
@@ -106,6 +130,11 @@ namespace flame
 	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 	{
 		((cEventReceiverPrivate*)this)->on_drag_and_drop(action, er, pos);
+	}
+
+	cEventReceiver* cEventReceiver::current()
+	{
+		return _current;
 	}
 
 	cEventReceiver* cEventReceiver::create()

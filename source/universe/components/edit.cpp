@@ -161,7 +161,7 @@ namespace flame
 					auto& select_end = thiz->select_end;
 					auto low = min(select_start, select_end);
 					auto high = max(select_start, select_end);
-					auto ed = sEventDispatcher::current();
+					auto ed = cEventReceiver::current()->dispatcher;
 
 					auto line_start = [&](int p) {
 						p--;
@@ -349,7 +349,7 @@ namespace flame
 					}
 					else if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
 					{
-						thiz->select_end = thiz->locate_cursor(sEventDispatcher::current()->mouse_pos);
+						thiz->select_end = thiz->locate_cursor(cEventReceiver::current()->dispatcher->mouse_pos);
 						thiz->flash_cursor(2);
 					}
 					else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
@@ -378,7 +378,7 @@ namespace flame
 				}, Mail::from_p(this));
 
 				state_listener = event_receiver->state_listeners.add([](void*, EventReceiverState s) {
-					sEventDispatcher::current()->window->set_cursor(s ? CursorIBeam : CursorArrow);
+					cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
 					return true;
 				}, Mail());
 			}

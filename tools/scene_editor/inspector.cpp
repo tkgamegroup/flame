@@ -337,9 +337,6 @@ void cInspector::refresh()
 				utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
 				utils::push_style_4c(utils::ButtonColorHovering, utils::style_4c(utils::FrameColorHovering));
 				utils::push_style_4c(utils::ButtonColorActive, utils::style_4c(utils::FrameColorActive));
-				utils::e_button(Icon_ANGLE_DOWN, [](void* c) {
-					
-				}, Mail::from_t(&capture));
 				utils::e_button(L"X", [](void* c) {
 					auto& capture = *(Capture*)c;
 					Capture _capture;

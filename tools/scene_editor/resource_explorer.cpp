@@ -115,15 +115,12 @@ cResourceExplorer::cResourceExplorer() :
 {
 	auto canvas = app.canvas;
 	folder_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/folder.png").c_str());
-	folder_img_v = Imageview::create(folder_img);
-	folder_img_idx = canvas->set_resource(-1, folder_img_v);
+	folder_img_idx = canvas->set_resource(-1, folder_img->default_view());
 	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/file.png").c_str());
-	file_img_v = Imageview::create(file_img);
-	file_img_idx = canvas->set_resource(-1, file_img_v);
+	file_img_idx = canvas->set_resource(-1, file_img->default_view());
 	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
 	thumbnails_img->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
-	thumbnails_img_v = Imageview::create(thumbnails_img);
-	thumbnails_img_idx = canvas->set_resource(-1, thumbnails_img_v, FilterNearest);
+	thumbnails_img_idx = canvas->set_resource(-1, thumbnails_img->default_view(), FilterNearest);
 	{
 		auto x = 0;
 		auto y = 0;
@@ -212,13 +209,10 @@ cResourceExplorer::~cResourceExplorer()
 {
 	auto canvas = app.canvas;
 	canvas->set_resource(folder_img_idx, nullptr);
-	Imageview::destroy(folder_img_v);
 	Image::destroy(folder_img);
 	canvas->set_resource(file_img_idx, nullptr);
-	Imageview::destroy(file_img_v);
 	Image::destroy(file_img);
 	canvas->set_resource(thumbnails_img_idx, nullptr);
-	Imageview::destroy(thumbnails_img_v);
 	Image::destroy(thumbnails_img);
 
 	destroy_event(ev_file_changed);
