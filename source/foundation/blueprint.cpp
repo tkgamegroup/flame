@@ -8,15 +8,6 @@ namespace flame
 	struct NodePrivate;
 	struct SlotPrivate;
 
-	struct LibraryPrivate : BP::Library
-	{
-		std::wstring directory;
-		void* module;
-		TypeinfoDatabase* db;
-
-		~LibraryPrivate();
-	};
-
 	struct SlotPrivate : BP::Slot
 	{
 		NodePrivate* node;
@@ -27,12 +18,9 @@ namespace flame
 		uint offset;
 		uint size;
 		std::string default_value;
-		int frame;
 		void* data;
 
 		std::vector<SlotPrivate*> links;
-
-		std::string fail_message;
 
 		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
 		SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi);
@@ -58,7 +46,6 @@ namespace flame
 		std::string id;
 		std::string type;
 		UdtInfo* udt;
-		bool active;
 
 		void* object;
 		void* module;
@@ -70,12 +57,10 @@ namespace flame
 		std::vector<std::unique_ptr<SlotPrivate>> outputs;
 
 		uint order;
-		bool in_pending_update;
-		bool in_update_list;
 
 		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
 		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
-			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr, bool active);
+			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
 
 		SlotPrivate* find_input(const std::string& name) const;
@@ -84,38 +69,22 @@ namespace flame
 		void update();
 	};
 
-	struct BPLibraries : BP
-	{
-		std::vector<std::unique_ptr<LibraryPrivate>> libraries;
-	};
-
-	struct BPPrivate : BPLibraries
+	struct BPPrivate : BP
 	{
 		std::wstring filename;
 
 		std::vector<std::unique_ptr<NodePrivate>> nodes;
 
-		std::vector<NodePrivate*> active_nodes;
-		std::vector<NodePrivate*> pending_update_nodes;
-		std::list<NodePrivate*> update_list;
-		bool need_update_hierarchy;
+		std::vector<NodePrivate*> update_list;
+		bool need_rebuild_update_list;
 
 		std::vector<std::filesystem::path> used_resources;
 
-		bool need_check_fail;
-		Array<Slot*> failed_slots;
-
 		BPPrivate()
 		{
-			frame = 0;
 			time = 0.f;
-			need_update_hierarchy = true;
-			need_check_fail = false;
+			need_rebuild_update_list = true;
 		}
-
-		LibraryPrivate* add_library(const std::wstring& directory);
-		void remove_library(LibraryPrivate* m);
-		LibraryPrivate* find_library(const std::wstring& directory) const;
 
 		bool check_or_create_id(std::string& id, const std::string& type) const;
 		NodePrivate* add_node(const std::string& type, const std::string& id);
@@ -126,14 +95,8 @@ namespace flame
 
 		void clear();
 
-		void add_to_pending_update(NodePrivate* n);
 		void update();
 	};
-
-	LibraryPrivate::~LibraryPrivate()
-	{
-		TypeinfoDatabase::destroy(db);
-	}
 
 	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value) :
 		node(node),
@@ -149,12 +112,7 @@ namespace flame
 		user_data = nullptr;
 
 		if (io == In)
-		{
 			links.push_back(nullptr);
-			frame = 0;
-		}
-		else /* if (type == Output) */
-			frame = -1;
 	}
 
 	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi) :
@@ -165,9 +123,6 @@ namespace flame
 
 	void SlotPrivate::set_data(const void* d)
 	{
-		frame = node->scene->frame;
-		node->scene->add_to_pending_update(node);
-		 
 		type->copy_from(d, data);
 	}
 
@@ -215,14 +170,6 @@ namespace flame
 			memcpy(data, &p, sizeof(void*));
 		}
 
-		frame = node->scene->frame;
-
-		auto scene = node->scene;
-		scene->need_update_hierarchy = true;
-		scene->add_to_pending_update(node);
-		if (target)
-			scene->add_to_pending_update(target->node);
-
 		return true;
 	}
 
@@ -231,16 +178,15 @@ namespace flame
 		return StringA(node->id + "." + name);
 	}
 
+	static BP::Node* _current_node = nullptr;
+
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
 		id(id),
 		type(udt->type()->name() + 2),
 		udt(udt),
-		active(false),
 		module(module),
-		order(0xffffffff),
-		in_pending_update(false),
-		in_update_list(false)
+		order(0xffffffff)
 	{
 		pos = Vec2f(0.f);
 		user_data = nullptr;
@@ -266,11 +212,9 @@ namespace flame
 
 		update_addr = nullptr;
 		{
-			auto f = find_not_null_and_only(udt->find_function("update"), udt->find_function("active_update"));
-			assert(f.first && check_function(f.first, "D#void", { "D#uint" }));
-			if (f.second == 1)
-				active = true;
-			update_addr = (char*)module + (uint)f.first->rva();
+			auto f = udt->find_function("update");
+			assert(f && check_function(f, "D#void", { "D#uint" }));
+			update_addr = (char*)module + (uint)f->rva();
 		}
 		assert(update_addr);
 
@@ -287,16 +231,13 @@ namespace flame
 	}
 
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
-		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr, bool active) :
+		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr) :
 		scene(scene),
 		id(id),
 		type(type),
 		udt(nullptr),
-		active(active),
 		module(nullptr),
-		order(0xffffffff),
-		in_pending_update(false),
-		in_update_list(false)
+		order(0xffffffff)
 	{
 		pos = Vec2f(0.f);
 		user_data = nullptr;
@@ -304,8 +245,6 @@ namespace flame
 		object = malloc(size);
 		memset(object, 0, size);
 
-		auto thiz = this;
-		memcpy(object, &thiz, sizeof(void*));
 		if (ctor_addr)
 			cmf(p2f<MF_v_v>(ctor_addr), object);
 
@@ -356,8 +295,6 @@ namespace flame
 	{
 		for (auto& in : inputs)
 		{
-			in->fail_message.clear();
-
 			auto out = in->links[0];
 			if (out)
 			{
@@ -365,188 +302,12 @@ namespace flame
 					memcpy(in->data, &out->data, sizeof(void*));
 				else
 					memcpy(in->data, out->data, in->size);
-				if (out->frame > in->frame)
-					in->frame = out->frame;
 			}
 		}
 
-		cmf(p2f<MF_v_u>(update_addr), object, scene->frame);
-	}
-
-	static void on_node_removed(NodePrivate* n)
-	{
-		auto scene = n->scene;
-		auto frame = scene->frame;
-
-		for (auto& i : n->inputs)
-		{
-			auto o = i->links[0];
-			if (o)
-			{
-				for (auto it = o->links.begin(); it != o->links.end(); it++)
-				{
-					if (*it == i.get())
-					{
-						o->links.erase(it);
-						break;
-					}
-				}
-			}
-		}
-		for (auto& o : n->outputs)
-		{
-			for (auto& l : o->links)
-			{
-				l->links[0] = nullptr;
-				l->frame = frame;
-				scene->add_to_pending_update(l->node);
-			}
-		}
-
-		if (n->in_pending_update)
-		{
-			for (auto it = scene->pending_update_nodes.begin(); it != scene->pending_update_nodes.end(); it++)
-			{
-				if (*it == n)
-				{
-					scene->pending_update_nodes.erase(it);
-					break;
-				}
-			}
-		}
-
-		if (n->active)
-		{
-			for (auto it = scene->active_nodes.begin(); it != scene->active_nodes.end(); it++)
-			{
-				if (*it == n)
-				{
-					scene->active_nodes.erase(it);
-					break;
-				}
-			}
-		}
-	}
-
-	LibraryPrivate* BPPrivate::add_library(const std::wstring& _dir)
-	{
-		auto dir = _dir;
-		std::replace(dir.begin(), dir.end(), '\\', '/');
-		if (dir.empty())
-			return nullptr;
-		if (dir.back() == '/')
-			dir.erase(dir.begin() + dir.size() - 1);
-
-		for (auto& l : libraries)
-		{
-			if (l->directory == dir)
-				return nullptr;
-		}
-
-		std::wstring name;
-		auto abs_dir = std::filesystem::path(filename).parent_path() / dir;
-		if (!std::filesystem::exists(abs_dir))
-			return nullptr;
-		auto compile_otions = parse_ini_file(abs_dir / L"compile_otions.ini");
-		for (auto& e : compile_otions.get_section_entries(""))
-		{
-			if (e.key == "name")
-			{
-				name = s2w(e.value) + L".dll";
-				break;
-			}
-		}
-		if (name.empty())
-			return nullptr;
-
-		std::wstring config_str;
-#ifdef NDEBUG
-		config_str = L"relwithdebinfo";
-#else
-		config_str = L"debug";
-#endif
-
-		auto abs_path = abs_dir / L"build" / config_str / name;
-		if (!std::filesystem::exists(abs_path))
-		{
-			auto compiler_path = std::filesystem::path(get_app_path().str()) / L"compiler.exe";
-			if (!std::filesystem::exists(compiler_path))
-			{
-				wprintf(L"cannot find library: %s, and cannot find compiler\n", dir.c_str());
-				return nullptr;
-			}
-			auto last_curr_path = get_curr_path();
-			set_curr_path(abs_dir.c_str());
-			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(compiler_path.wstring() + L" " + config_str).c_str());
-			set_curr_path(last_curr_path.v);
-		}
-
-		auto module = load_module(abs_path.c_str());
-		if (!module)
-		{
-			wprintf(L"cannot add library %s\n", dir.c_str());
-			return nullptr;
-		}
-
-		auto m = new LibraryPrivate;
-		m->directory = dir;
-		m->module = module;
-		m->db = TypeinfoDatabase::load(abs_path.c_str(), false, true);
-
-		libraries.emplace_back(m);
-
-		used_resources.push_back(dir + L"/build/{c}/" + name);
-
-		return m;
-	}
-
-	void BPPrivate::remove_library(LibraryPrivate* _l)
-	{
-		for (auto it = libraries.begin(); it != libraries.end(); it++)
-		{
-			auto l = it->get();
-			if (l == _l)
-			{
-				auto db = l->db;
-				auto& nodes = this->nodes;
-				for (auto n_it = nodes.begin(); n_it != nodes.end(); )
-				{
-					auto n = n_it->get();
-					auto udt = n->udt;
-					if (udt && udt->db() == db)
-					{
-						on_node_removed(n);
-						n_it = nodes.erase(n_it);
-					}
-					else
-						n_it++;
-				}
-
-				for (auto it = used_resources.begin(); it != used_resources.end(); it++)
-				{
-					if (*it == l->directory)
-					{
-						used_resources.erase(it);
-						break;
-					}
-				}
-
-				libraries.erase(it);
-
-				return;
-			}
-		}
-	}
-
-	LibraryPrivate* BPPrivate::find_library(const std::wstring& directory) const
-	{
-		auto& libraries = ((BPPrivate*)this)->libraries;
-		for (auto& l : libraries)
-		{
-			if (l->directory == directory)
-				return l.get();
-		}
-		return nullptr;
+		_current_node = this;
+		cmf(p2f<MF_v_v>(update_addr), object);
+		_current_node = nullptr;
 	}
 
 	bool BPPrivate::check_or_create_id(std::string& id, const std::string& type) const
@@ -587,18 +348,12 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				BP::Node* n;
-
 				int in;
 				int out;
 
-				void update(uint frame)
+				void update()
 				{
-					if (n->input(0)->frame() > n->output(0)->frame())
-					{
-						out = in;
-						n->output(0)->set_frame(frame);
-					}
+					out = in;
 				}
 			};
 #pragma pack()
@@ -606,7 +361,7 @@ namespace flame
 					{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
 				}, {
 					{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
-				}, nullptr, nullptr, f2v(&Dummy::update), false);
+				}, nullptr, nullptr, f2v(&Dummy::update));
 		};
 		std::string parameters;
 		switch (type_from_node_name(type, parameters))
@@ -622,8 +377,6 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				BP::Node* n;
-
 				uint type_hash;
 				uint type_size;
 
@@ -635,15 +388,11 @@ namespace flame
 					basic_type_dtor(type_hash, out);
 				}
 
-				void update(uint frame)
+				void update()
 				{
 					auto in = (char*)&type_size + sizeof(uint);
 					auto out = (char*)&type_size + sizeof(uint) + type_size;
-					if (n->input(0)->frame() > n->output(0)->frame())
-					{
-						basic_type_copy(type_hash, in, out, type_size);
-						n->output(0)->set_frame(frame);
-					}
+					basic_type_copy(type_hash, in, out, type_size);
 				}
 			};
 #pragma pack()
@@ -653,7 +402,7 @@ namespace flame
 					{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size, ""}
 				}, {
 					{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
-				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false);
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
 			auto obj = n->object;
 			*(uint*)((char*)obj + sizeof(void*)) = type_hash;
 			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
@@ -665,8 +414,6 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				BP::Node* n;
-
 				uint type_hash;
 				uint type_size;
 				uint size;
@@ -681,29 +428,21 @@ namespace flame
 					f_free(out.v);
 				}
 
-				void update(uint frame)
+				void update()
 				{
 					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-					auto out_frame = n->output(0)->frame();
-					if (out_frame == -1)
+					if (out.s != size)
 					{
 						out.s = size;
 						auto m_size = type_size * size;
 						out.v = (int*)f_malloc(m_size);
 						memset(out.v, 0, m_size);
 					}
-					auto is_out_updated = false;
 					for (auto i = 0; i < size; i++)
 					{
 						auto v = (char*)&size + sizeof(uint) + type_size * i;
-						if (n->input(0)->frame() > out_frame)
-						{
-							basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
-							is_out_updated = true;
-						}
+						basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
 					}
-					if (is_out_updated)
-						n->output(0)->set_frame(frame);
 				}
 			};
 #pragma pack()
@@ -728,7 +467,7 @@ namespace flame
 			}
 			n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
 					{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
-				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update), false);
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
 			auto obj = n->object;
 			*(uint*)((char*)obj + sizeof(void*)) = type_hash;
 			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
@@ -748,9 +487,8 @@ namespace flame
 		}
 
 		nodes.emplace_back(n);
-		if (n->active)
-			active_nodes.push_back(n);
-		need_update_hierarchy = true;
+
+		need_rebuild_update_list = true;
 
 		return n;
 	}
@@ -762,13 +500,32 @@ namespace flame
 			auto n = it->get();
 			if (n == _n)
 			{
-				on_node_removed(n);
+				for (auto& i : n->inputs)
+				{
+					auto o = i->links[0];
+					if (o)
+					{
+						for (auto it = o->links.begin(); it != o->links.end(); it++)
+						{
+							if (*it == i.get())
+							{
+								o->links.erase(it);
+								break;
+							}
+						}
+					}
+				}
+				for (auto& o : n->outputs)
+				{
+					for (auto& l : o->links)
+						l->links[0] = nullptr;
+				}
 				nodes.erase(it);
 				break;
 			}
 		}
 
-		need_update_hierarchy = true;
+		need_rebuild_update_list = true;
 	}
 
 	NodePrivate* BPPrivate::find_node(const std::string& id) const
@@ -801,21 +558,12 @@ namespace flame
 
 	void BPPrivate::clear()
 	{
-		libraries.clear();
 		nodes.clear();
-		need_update_hierarchy = true;
+		need_rebuild_update_list = true;
 		update_list.clear();
 	}
 
-	void BPPrivate::add_to_pending_update(NodePrivate* n)
-	{
-		if (n->in_pending_update)
-			return;
-		pending_update_nodes.push_back(n);
-		n->in_pending_update = true;
-	}
-
-	static void add_to_hierarchy(BPPrivate* scn, NodePrivate* n, uint& order)
+	static void get_order(BPPrivate* scn, NodePrivate* n, uint& order)
 	{
 		if (n->order != 0xffffffff)
 			return;
@@ -825,89 +573,38 @@ namespace flame
 			if (o)
 			{
 				auto nn = o->node;
-				add_to_hierarchy(scn, nn, order);
+				get_order(scn, nn, order);
 			}
 		}
 		n->order = order++;
 	}
 
-	static void add_to_update_list(BPPrivate* scn, NodePrivate* n)
-	{
-		if (n->in_update_list)
-			return;
-		std::list<NodePrivate*>::iterator it;
-		for (it = scn->update_list.begin(); it != scn->update_list.end(); it++)
-		{
-			if (n->order < (*it)->order)
-				break;
-		}
-		scn->update_list.insert(it, n);
-		n->in_update_list = true;
-	}
-
 	void BPPrivate::update()
 	{
-		if (need_update_hierarchy)
+		if (need_rebuild_update_list)
 		{
+			for (auto& n : nodes)
+				n->order = 0xffffffff;
 			auto order = 0U;
 			for (auto& n : nodes)
-				add_to_hierarchy(this, n.get(), order);
-		}
-
-		for (auto n : active_nodes)
-			add_to_update_list(this, n);
-		for (auto n : pending_update_nodes)
-		{
-			add_to_update_list(this, n);
-			n->in_pending_update = false;
-		}
-		pending_update_nodes.clear();
-
-		need_check_fail =  failed_slots.s > 0;
-		failed_slots.resize(0);
-		
-		while (!update_list.empty())
-		{
-			auto n = update_list.front();
-			update_list.erase(update_list.begin());
-			n->in_update_list = false;
-
-			n->update();
-
-			for (auto& o : n->outputs)
-			{
-				if (o->frame == frame)
-				{
-					for (auto& i : o->links)
-						add_to_update_list(this, i->node);
-				}
-			}
-		}
-
-		if (need_check_fail)
-		{
+				get_order(this, n.get(), order);
+			update_list.clear();
 			for (auto& n : nodes)
 			{
-				for (auto& in : n->inputs)
+				std::vector<NodePrivate*>::iterator it;
+				for (it = update_list.begin(); it != update_list.end(); it++)
 				{
-					if (!in->fail_message.empty())
-						failed_slots.push_back(in.get());
+					if (n->order < (*it)->order)
+						break;
 				}
+				update_list.emplace(it, n.get());
 			}
 		}
 
-		frame++;
+		for (auto n : update_list)
+			n->update();
+
 		time += looper().delta_time;
-	}
-
-	const wchar_t* BP::Library::directory() const
-	{
-		return ((LibraryPrivate*)this)->directory.c_str();
-	}
-
-	TypeinfoDatabase* BP::Library::db() const
-	{
-		return ((LibraryPrivate*)this)->db;
 	}
 
 	BP::Node* BP::Slot::node() const
@@ -950,16 +647,6 @@ namespace flame
 		return ((SlotPrivate*)this)->default_value.c_str();
 	}
 
-	int BP::Slot::frame() const
-	{
-		return ((SlotPrivate*)this)->frame;
-	}
-
-	void BP::Slot::set_frame(int frame)
-	{
-		((SlotPrivate*)this)->frame = frame;
-	}
-
 	void* BP::Slot::data() const
 	{
 		return ((SlotPrivate*)this)->data;
@@ -988,18 +675,6 @@ namespace flame
 	StringA BP::Slot::get_address() const
 	{
 		return ((SlotPrivate*)this)->get_address();
-	}
-
-	const char* BP::Slot::fail_message() const
-	{
-		return ((SlotPrivate*)this)->fail_message.c_str();
-	}
-
-	void BP::Slot::set_fail_message(const char* message)
-	{
-		auto thiz = (SlotPrivate*)this;
-		thiz->fail_message = message;
-		thiz->node->scene->need_check_fail = true;
 	}
 
 	BP *BP::Node::scene() const
@@ -1068,34 +743,14 @@ namespace flame
 		return ((NodePrivate*)this)->find_output(name);
 	}
 
+	BP::Node* BP::Node::current()
+	{
+		return _current_node;
+	}
+
 	const wchar_t* BP::filename() const
 	{
 		return ((BPPrivate*)this)->filename.c_str();
-	}
-
-	uint BP::library_count() const
-	{
-		return ((BPPrivate*)this)->libraries.size();
-	}
-
-	BP::Library* BP::library(uint idx) const
-	{
-		return ((BPPrivate*)this)->libraries[idx].get();
-	}
-
-	BP::Library* BP::add_library(const wchar_t* directory)
-	{
-		return ((BPPrivate*)this)->add_library(directory);
-	}
-
-	void BP::remove_library(BP::Library* m)
-	{
-		((BPPrivate*)this)->remove_library((LibraryPrivate*)m);
-	}
-
-	BP::Library* BP::find_library(const wchar_t* directory) const
-	{
-		return ((BPPrivate*)this)->find_library(directory);
 	}
 
 	uint BP::node_count() const
@@ -1110,16 +765,7 @@ namespace flame
 
 	BP::Node* BP::add_node(const char* type, const char* id)
 	{
-		auto thiz = (BPPrivate*)this;
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& l : thiz->libraries)
-			dbs.push_back(l->db);
-		extra_global_db_count = dbs.size();
-		extra_global_dbs = dbs.data();
-		auto n = thiz->add_node(type, id);
-		extra_global_db_count = 0;
-		extra_global_dbs = nullptr;
-		return n;
+		return ((BPPrivate*)this)->add_node(type, id);
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -1152,12 +798,7 @@ namespace flame
 		((BPPrivate*)this)->update();
 	}
 
-	Array<BP::Slot*> BP::failed_slots() const
-	{
-		return ((BPPrivate*)this)->failed_slots;
-	}
-
-	BP* BP::create_from_file(const wchar_t* filename, bool test_mode)
+	BP* BP::create_from_file(const wchar_t* filename)
 	{
 		auto s_filename = w2s(filename);
 		auto path = std::filesystem::path(filename);
@@ -1175,11 +816,6 @@ namespace flame
 			return nullptr;
 		}
 
-		std::vector<std::wstring> library_descs;
-
-		for (auto n_library : file_root.child("libraries"))
-			library_descs.push_back(s2w(n_library.attribute("directory").value()));
-
 		struct DataDesc
 		{
 			std::string name;
@@ -1196,14 +832,10 @@ namespace flame
 
 		for (auto n_node : file_root.child("nodes"))
 		{
-			auto id = n_node.attribute("id").value();
-			if (!test_mode && SUS::starts_with(id, "test_"))
-				continue;
-
 			NodeDesc node;
 
 			node.type = n_node.attribute("type").value();
-			node.id = id;
+			node.id = n_node.attribute("id").value();
 			node.pos = stof2(n_node.attribute("pos").value());
 
 			for (auto n_data : n_node.child("datas"))
@@ -1228,8 +860,6 @@ namespace flame
 		{
 			auto o_addr = n_link.attribute("out").value();
 			auto i_addr = n_link.attribute("in").value();
-			if (!test_mode && (SUS::starts_with(o_addr, "test_") || SUS::starts_with(i_addr, "test_")))
-				continue;
 
 			LinkDesc link;
 			link.out_addr = o_addr;
@@ -1239,16 +869,7 @@ namespace flame
 
 		auto bp = new BPPrivate();
 		bp->filename = filename;
-		bp->test_mode = test_mode;
 
-		for (auto& l_d : library_descs)
-			bp->add_library(l_d);
-
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& l : bp->libraries)
-			dbs.push_back(l->db);
-		extra_global_db_count = dbs.size();
-		extra_global_dbs = dbs.data();
 		for (auto& n_d : node_descs)
 		{
 			auto n = bp->add_node(n_d.type, n_d.id);
@@ -1265,8 +886,6 @@ namespace flame
 				}
 			}
 		}
-		extra_global_db_count = 0;
-		extra_global_dbs = nullptr;
 
 		for (auto& l_d : link_descs)
 		{
@@ -1295,18 +914,6 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("BP");
 
-		auto n_libraries = file_root.append_child("libraries");
-		for (auto& l : bp->libraries)
-		{
-			auto n_module = n_libraries.append_child("directory");
-			n_module.append_attribute("directory").set_value(w2s(l->directory).c_str());
-		}
-
-		std::vector<TypeinfoDatabase*> dbs;
-		for (auto& l : bp->libraries)
-			dbs.push_back(l->db);
-		extra_global_db_count = dbs.size();
-		extra_global_dbs = dbs.data();
 		auto n_nodes = file_root.append_child("nodes");
 		for (auto& n : bp->nodes)
 		{
@@ -1338,8 +945,6 @@ namespace flame
 				}
 			}
 		}
-		extra_global_db_count = 0;
-		extra_global_dbs = nullptr;
 
 		auto n_links = file_root.append_child("links");
 		for (auto& n : bp->nodes)
@@ -1366,570 +971,265 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec2i)
 	{
-		BP::Node* n;
+		FLAME_RV(int, x);
+		FLAME_RV(int, y);
 
-		FLAME_B0;
-		FLAME_RV(int, x, i);
-		FLAME_RV(int, y, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec2i, out, o);
+		FLAME_RV(Vec2i, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec3i)
 	{
-		BP::Node* n;
+		FLAME_RV(int, x);
+		FLAME_RV(int, y);
+		FLAME_RV(int, z);
 
-		FLAME_B0;
-		FLAME_RV(int, x, i);
-		FLAME_RV(int, y, i);
-		FLAME_RV(int, z, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec3i, out, o);
+		FLAME_RV(Vec3i, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec4i)
 	{
-		BP::Node* n;
+		FLAME_RV(int, x);
+		FLAME_RV(int, y);
+		FLAME_RV(int, z);
+		FLAME_RV(int, w);
 
-		FLAME_B0;
-		FLAME_RV(int, x, i);
-		FLAME_RV(int, y, i);
-		FLAME_RV(int, z, i);
-		FLAME_RV(int, w, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec4i, out, o);
+		FLAME_RV(Vec4i, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (w_s()->frame() > out_frame)
-			{
-				out[3] = w;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
+			out[3] = w;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec2u)
 	{
-		BP::Node* n;
+		FLAME_RV(uint, x);
+		FLAME_RV(uint, y);
 
-		FLAME_B0;
-		FLAME_RV(uint, x, i);
-		FLAME_RV(uint, y, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec2u, out, o);
+		FLAME_RV(Vec2u, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec3u)
 	{
-		BP::Node* n;
+		FLAME_RV(uint, x);
+		FLAME_RV(uint, y);
+		FLAME_RV(uint, z);
 
-		FLAME_B0;
-		FLAME_RV(uint, x, i);
-		FLAME_RV(uint, y, i);
-		FLAME_RV(uint, z, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec3u, out, o);
+		FLAME_RV(Vec3u, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec4u)
 	{
-		BP::Node* n;
+		FLAME_RV(uint, x);
+		FLAME_RV(uint, y);
+		FLAME_RV(uint, z);
+		FLAME_RV(uint, w);
 
-		FLAME_B0;
-		FLAME_RV(uint, x, i);
-		FLAME_RV(uint, y, i);
-		FLAME_RV(uint, z, i);
-		FLAME_RV(uint, w, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec4u, out, o);
+		FLAME_RV(Vec4u, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (w_s()->frame() > out_frame)
-			{
-				out[3] = w;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
+			out[3] = w;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec2f)
 	{
-		BP::Node* n;
+		FLAME_RV(float, x);
+		FLAME_RV(float, y);
 
-		FLAME_B0;
-		FLAME_RV(float, x, i);
-		FLAME_RV(float, y, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec2f, out, o);
+		FLAME_RV(Vec2f, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec3f)
 	{
-		BP::Node* n;
+		FLAME_RV(float, x);
+		FLAME_RV(float, y);
+		FLAME_RV(float, z);
 
-		FLAME_B0;
-		FLAME_RV(float, x, i);
-		FLAME_RV(float, y, i);
-		FLAME_RV(float, z, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec3f, out, o);
+		FLAME_RV(Vec3f, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec4f)
 	{
-		BP::Node* n;
+		FLAME_RV(float, x);
+		FLAME_RV(float, y);
+		FLAME_RV(float, z);
+		FLAME_RV(float, w);
 
-		FLAME_B0;
-		FLAME_RV(float, x, i);
-		FLAME_RV(float, y, i);
-		FLAME_RV(float, z, i);
-		FLAME_RV(float, w, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec4f, out, o);
+		FLAME_RV(Vec4f, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (w_s()->frame() > out_frame)
-			{
-				out[3] = w;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
+			out[3] = w;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec2c)
 	{
-		BP::Node* n;
+		FLAME_RV(uchar, x);
+		FLAME_RV(uchar, y);
 
-		FLAME_B0;
-		FLAME_RV(uchar, x, i);
-		FLAME_RV(uchar, y, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec2c, out, o);
+		FLAME_RV(Vec2c, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec3c)
 	{
-		BP::Node* n;
+		FLAME_RV(uchar, x);
+		FLAME_RV(uchar, y);
+		FLAME_RV(uchar, z);
 
-		FLAME_B0;
-		FLAME_RV(uchar, x, i);
-		FLAME_RV(uchar, y, i);
-		FLAME_RV(uchar, z, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec3c, out, o);
+		FLAME_RV(Vec3c, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
 		}
 	};
 
 	struct FLAME_R(R_MakeVec4c)
 	{
-		BP::Node* n;
+		FLAME_RV(uchar, x);
+		FLAME_RV(uchar, y);
+		FLAME_RV(uchar, z);
+		FLAME_RV(uchar, w);
 
-		FLAME_B0;
-		FLAME_RV(uchar, x, i);
-		FLAME_RV(uchar, y, i);
-		FLAME_RV(uchar, z, i);
-		FLAME_RV(uchar, w, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec4c, out, o);
+		FLAME_RV(Vec4c, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			auto out_updated = false;
-			if (x_s()->frame() > out_frame)
-			{
-				out[0] = x;
-				out_updated = true;
-			}
-			if (y_s()->frame() > out_frame)
-			{
-				out[1] = y;
-				out_updated = true;
-			}
-			if (z_s()->frame() > out_frame)
-			{
-				out[2] = z;
-				out_updated = true;
-			}
-			if (w_s()->frame() > out_frame)
-			{
-				out[3] = w;
-				out_updated = true;
-			}
-			if (out_updated)
-				out_s()->set_frame(frame);
-		}
-	};
-
-	struct FLAME_R(R_FloatToUint)
-	{
-		BP::Node* n;
-
-		FLAME_B0;
-		FLAME_RV(float, in, i);
-
-		FLAME_B1;
-		FLAME_RV(uint, out, o);
-
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
-		{
-			auto out_frame = out_s()->frame();
-			if (in_s()->frame() > out_frame)
-			{
-				out = in;
-				out_s()->set_frame(frame);
-			}
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
+			out[3] = w;
 		}
 	};
 
 	struct FLAME_R(R_Add)
 	{
-		BP::Node* n;
+		FLAME_RV(float, a);
+		FLAME_RV(float, b);
 
-		FLAME_B0;
-		FLAME_RV(float, a, i);
-		FLAME_RV(float, b, i);
-
-		FLAME_B1;
-		FLAME_RV(float, out, o);
+		FLAME_RV(float, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame)
-			{
-				out = a + b;
-				out_s()->set_frame(frame);
-			}
+			out = a + b;
 		}
 	};
 
 	struct FLAME_R(R_Multiple)
 	{
-		BP::Node* n;
+		FLAME_RV(float, a);
+		FLAME_RV(float, b);
 
-		FLAME_B0;
-		FLAME_RV(float, a, i);
-		FLAME_RV(float, b, i);
-
-		FLAME_B1;
-		FLAME_RV(float, out, o);
+		FLAME_RV(float, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame)
-			{
-				out = a * b;
-				out_s()->set_frame(frame);
-			}
+			out = a * b;
 		}
 	};
 
 	struct FLAME_R(R_Time)
 	{
-		BP::Node* n;
-
-		FLAME_B1;
-		FLAME_RV(float, delta, o);
-		FLAME_RV(float, total, o);
+		FLAME_RV(float, delta);
+		FLAME_RV(float, total);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
 			delta = looper().delta_time;
-			total = n->scene()->time;
-			delta_s()->set_frame(frame);
-			total_s()->set_frame(frame);
+			total = BP::Node::current()->scene()->time;
 		}
 	};
 
-	struct FLAME_R(R_LinearInterpolation1d)
+	struct FLAME_R(R_Linear1d)
 	{
-		BP::Node* n;
+		FLAME_RV(float, a);
+		FLAME_RV(float, b);
+		FLAME_RV(float, t);
 
-		FLAME_B0;
-		FLAME_RV(float, a, i);
-		FLAME_RV(float, b, i);
-		FLAME_RV(float, t, i);
-
-		FLAME_B1;
-		FLAME_RV(float, out, o);
+		FLAME_RV(float, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
-			{
-				out = a + (b - a) * clamp(t, 0.f, 1.f);
-				out_s()->set_frame(frame);
-			}
+			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
 	};
 
-	struct FLAME_R(R_LinearInterpolation2d)
+	struct FLAME_R(R_Linear2d)
 	{
-		BP::Node* n;
+		FLAME_RV(Vec2f, a);
+		FLAME_RV(Vec2f, b);
+		FLAME_RV(float, t);
 
-		FLAME_B0;
-		FLAME_RV(Vec2f, a, i);
-		FLAME_RV(Vec2f, b, i);
-		FLAME_RV(float, t, i);
-
-		FLAME_B1;
-		FLAME_RV(Vec2f, out, o);
+		FLAME_RV(Vec2f, out);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{
-			auto out_frame = out_s()->frame();
-			if (a_s()->frame() > out_frame || b_s()->frame() > out_frame || t_s()->frame() > out_frame)
-			{
-				out = a + (b - a) * clamp(t, 0.f, 1.f);
-				out_s()->set_frame(frame);
-			}
+			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
 	};
 
 	struct FLAME_R(R_KeyListener)
 	{
-		BP::Node* n;
-
-		FLAME_B0;
-		FLAME_RV(Key, key, i);
+		FLAME_RV(Key, key);
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
 		{

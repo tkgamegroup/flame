@@ -484,20 +484,6 @@ void MyApp::set_changed(bool v)
 	}
 }
 
-BP::Library* MyApp::add_library(const std::wstring& filename)
-{
-	auto l = bp->add_library(filename.c_str());
-	if (l)
-		set_changed(true);
-	return l;
-}
-
-void MyApp::remove_library(BP::Library* l)
-{
-	app.bp->remove_library(l);
-	app.set_changed(true);
-}
-
 BP::Node* MyApp::add_node(const NodeDesc& desc)
 {
 	auto n = _add_node(desc.type, desc.id, desc.pos);
@@ -647,28 +633,7 @@ void MyApp::set_data(BP::Slot* input, void* data, bool from_editor)
 
 void MyApp::update()
 {
-	if (failed)
-	{
-		if (editor)
-			editor->clear_failed_flags();
-	}
 	bp->update();
-
-	auto failed_slots = bp->failed_slots();
-	if (failed_slots.s > 0)
-	{
-		if (editor)
-			editor->set_failed_flags();
-		if (auto_update)
-		{
-			c_auto_update->set_checked(false);
-			utils::e_message_dialog(L"Updat Failed!\nauto update stopped");
-		}
-
-		failed = true;
-	}
-	else
-		failed = false;
 }
 
 void MyApp::save()
@@ -847,7 +812,7 @@ bool MyApp::create(const char* filename)
 	{
 		filepath = filename;
 		fileppath = filepath.parent_path();
-		bp = BP::create_from_file(filepath.c_str(), true);
+		bp = BP::create_from_file(filepath.c_str());
 	}
 	if (!bp)
 	{
@@ -858,7 +823,7 @@ bool MyApp::create(const char* filename)
 		std::ofstream new_bp(filepath);
 		new_bp << "<BP />\n";
 		new_bp.close();
-		bp = BP::create_from_file(filepath.c_str(), true);
+		bp = BP::create_from_file(filepath.c_str());
 		assert(bp);
 	}
 
@@ -920,74 +885,6 @@ bool MyApp::create(const char* filename)
 				utils::e_begin_menubar_menu(L"Blueprint");
 					utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
 						app.save();
-					}, Mail());
-					utils::e_menu_item((std::wstring(Icon_BOOK) + L"    Libraries").c_str(), [](void* c) {
-						auto layer = utils::e_begin_dialog()->parent();
-							utils::e_text(L"Libraries");
-							utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f);
-							auto e_list = utils::e_begin_list(true);
-							for (auto i = 0; i < app.bp->library_count(); i++)
-							{
-								auto l = app.bp->library(i);
-								utils::e_list_item(l->directory());
-								utils::c_data_keeper()->set_voidp_item(FLAME_CHASH("library"), l);
-							}
-							utils::e_end_list();
-							utils::e_end_scroll_view1();
-							utils::e_begin_layout(LayoutHorizontal, 4.f);
-							utils::e_button(L"Add", [](void* c) {
-								utils::e_input_dialog(L"directory", [](void* c, bool ok, const wchar_t* text) {
-									if (ok && text[0])
-									{
-										auto l = app.add_library(text);
-										if (!l)
-											utils::e_message_dialog(L"Failed");
-										else
-										{
-											utils::push_parent(*(Entity**)c);
-											utils::e_list_item(l->directory());
-											utils::c_data_keeper()->set_voidp_item(FLAME_CHASH("library"), l);
-											utils::pop_parent();
-										}
-									}
-								}, Mail::from_p(*(void**)c));
-							}, Mail::from_p(e_list));
-							utils::e_button(L"Remove", [](void* c) {
-								auto e_list = *(Entity**)c;
-								auto c_list = e_list->get_component(cList);
-								auto e_item = c_list->selected;
-								if (e_item)
-								{
-									auto l = (BP::Library*)e_item->get_component(cDataKeeper)->get_voidp_item(FLAME_CHASH("library"));
-									std::wstring str;
-									auto l_db = l->db();
-									for (auto i = 0; i < app.bp->node_count(); i++)
-									{
-										auto n = app.bp->node(i);
-										auto udt = n->udt();
-										if (udt && udt->db() == l_db)
-											str += L"id: " + s2w(n->id()) + L", type: " + s2w(n->type()) + L"\n";
-									}
-
-									utils::e_confirm_dialog((L"The node(s):\n" + str + L"will be removed, sure to remove the library?").c_str(), [](void* c, bool yes) {
-										if (yes)
-										{
-											auto e_item = *(void**)c;
-											looper().add_event([](void* c, bool*) {
-												auto e_item = *(Entity**)c;
-												auto l = (BP::Library*)e_item->get_component(cDataKeeper)->get_voidp_item(FLAME_CHASH("library"));
-												app.remove_library(l);
-												e_item->parent()->remove_child(e_item);
-											}, Mail::from_p(e_item));
-										}
-									}, Mail::from_p(e_item));
-								}
-							}, Mail::from_p(e_list));
-							utils::e_button(L"Close", [](void* c) {
-								utils::remove_layer(*(Entity**)c);
-							}, Mail::from_p(layer));
-							utils::e_end_layout();
-						utils::e_end_dialog();
 					}, Mail());
 				utils::e_end_menubar_menu();
 				utils::e_begin_menubar_menu(L"Edit");

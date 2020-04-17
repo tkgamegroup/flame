@@ -218,9 +218,6 @@ struct cSlot : Component
 						auto type = s->type();
 						auto tag = type->tag();
 						utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
-						auto fail_message = s2w(s->fail_message());
-						if (!fail_message.empty())
-							utils::e_text(fail_message.c_str())->get_component(cText)->color = Vec4c(255, 0, 0, 255);
 						utils::e_end_layout();
 						looper().add_event([](void* c, bool*) {
 							app.root->add_child(*(Entity**)c);
@@ -769,12 +766,6 @@ void cEditor::on_add_node(BP::Node* n)
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
 							e_data->get_component(cElement)->padding = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
 
-							std::vector<TypeinfoDatabase*> dbs;
-							dbs.resize(app.bp->library_count());
-							for (auto i = 0; i < dbs.size(); i++)
-								dbs[i] = app.bp->library(i)->db();
-							extra_global_db_count = dbs.size();
-							extra_global_dbs = dbs.data();
 							auto base_hash = type->base_hash();
 
 							switch (tag)
@@ -874,8 +865,6 @@ void cEditor::on_add_node(BP::Node* n)
 								}
 								break;
 							}
-							extra_global_db_count = 0;
-							extra_global_dbs = nullptr;
 							utils::e_end_layout();
 
 							c_slot->tracker = e_data->get_component(cDataTracker);
@@ -1056,12 +1045,6 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		for (auto j = 0; j < udts.s; j++)
 			add_udt(udts.v[j]);
 	}
-	for (auto i = 0; i < app.bp->library_count(); i++)
-	{
-		auto udts = app.bp->library(i)->db()->get_udts();
-		for (auto j = 0; j < udts.s; j++)
-			add_udt(udts.v[j]);
-	}
 	std::sort(node_types.begin(), node_types.end(), [](const auto& a, const auto& b) {
 		return std::string(a.first->type()->name()) < std::string(b.first->type()->name());
 	});
@@ -1099,12 +1082,6 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							for (auto i = 0; i < global_db_count(); i++)
 							{
 								auto enums = global_db(i)->get_enums();
-								for (auto j = 0; j < enums.s; j++)
-									enum_infos.push_back(enums.v[j]);
-							}
-							for (auto i = 0; i < app.bp->library_count(); i++)
-							{
-								auto enums = app.bp->library(i)->db()->get_enums();
 								for (auto j = 0; j < enums.s; j++)
 									enum_infos.push_back(enums.v[j]);
 							}
@@ -1361,32 +1338,5 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 			}
 			return true;
 		}, Mail::from_t(&capture));
-	}
-}
-
-void cEditor::clear_failed_flags()
-{
-	for (auto i = 0; i < app.bp->node_count(); i++)
-	{
-		auto n = app.bp->node(i);
-		for (auto j = 0; j < n->input_count(); j++)
-		{
-			auto in = n->input(j);
-			((cSlot*)in->user_data)->entity->get_component(cText)->set_text(L"");
-		}
-	}
-}
-
-void cEditor::set_failed_flags()
-{
-	for (auto i = 0; i < app.bp->node_count(); i++)
-	{
-		auto n = app.bp->node(i);
-		for (auto j = 0; j < n->input_count(); j++)
-		{
-			auto in = n->input(j);
-			if (in->fail_message()[0])
-				((cSlot*)in->user_data)->entity->get_component(cText)->set_text(Icon_TIMES);
-		}
 	}
 }

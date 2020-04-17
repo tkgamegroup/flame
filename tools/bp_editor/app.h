@@ -25,8 +25,6 @@ struct cEditor : Component
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
 	void show_add_node_menu(const Vec2f& pos);
-	void clear_failed_flags();
-	void set_failed_flags();
 };
 
 struct cDetail : Component
@@ -83,7 +81,6 @@ struct MyApp : App
 	std::filesystem::path filepath;
 	std::filesystem::path fileppath;
 	BP* bp;
-	bool failed;
 	bool changed;
 	bool auto_update;
 
@@ -102,7 +99,6 @@ struct MyApp : App
 	MyApp()
 	{
 		bp = nullptr;
-		failed = false;
 		changed = false;
 
 		editor = nullptr;
@@ -119,8 +115,6 @@ struct MyApp : App
 
 	void set_changed(bool v);
 
-	BP::Library* add_library(const std::wstring& filename);
-	void remove_library(BP::Library* l);
 	BP::Node* add_node(const NodeDesc& desc);
 	void remove_nodes(const std::vector<BP::Node*> nodes);
 	void set_node_id(BP::Node* n, const std::string& id);

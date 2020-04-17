@@ -39,13 +39,6 @@ cConsole::cConsole() :
 
 				auto tokens = SUW::split(cmd);
 
-				std::vector<TypeinfoDatabase*> dbs;
-				dbs.resize(app.bp->library_count());
-				for (auto i = 0; i < dbs.size(); i++)
-					dbs[i] = app.bp->library(i)->db();
-				extra_global_db_count = dbs.size();
-				extra_global_dbs = dbs.data();
-
 				if (tokens[0] == L"help")
 				{
 					log +=
@@ -72,12 +65,6 @@ cConsole::cConsole() :
 						for (auto i = 0; i < global_db_count(); i++)
 						{
 							auto udts = global_db(i)->get_udts();
-							for (auto i = 0; i < udts.s; i++)
-								all_udts.push_back(udts.v[i]);
-						}
-						for (auto& db : dbs)
-						{
-							auto udts = db->get_udts();
 							for (auto i = 0; i < udts.s; i++)
 								all_udts.push_back(udts.v[i]);
 						}
@@ -269,9 +256,6 @@ cConsole::cConsole() :
 				}
 				else
 					log += L"unknow command\n";
-
-				extra_global_db_count = 0;
-				extra_global_dbs = nullptr;
 
 				log_text->set_text(log.c_str());
 

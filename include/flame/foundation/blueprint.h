@@ -4,23 +4,9 @@
 
 namespace flame
 {
-	/*
-		- A blueprint(BP) is a scene that represents relations between objects.
-		- An object is called node and associated with an udt or a package that contains another scene.
-		- At least one input or output must exist in the reflected udts.
-		- The udt must have a update function, the function return nothing and takes no parameters
-		- Address: [node_id].[varible_name]
-	*/
-
 	struct BP
 	{
 		struct Node;
-
-		struct Library
-		{
-			FLAME_FOUNDATION_EXPORTS const wchar_t* directory() const;
-			FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
-		};
 
 		struct Slot
 		{
@@ -39,8 +25,6 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS uint size() const;
 			FLAME_FOUNDATION_EXPORTS const char* default_value() const;
 
-			FLAME_FOUNDATION_EXPORTS int frame() const;
-			FLAME_FOUNDATION_EXPORTS void set_frame(int frame);
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
 
@@ -78,9 +62,6 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS StringA get_address() const;
 
-			FLAME_FOUNDATION_EXPORTS const char* fail_message() const;
-			FLAME_FOUNDATION_EXPORTS void set_fail_message(const char* message);
-
 			void* user_data;
 		};
 
@@ -100,6 +81,8 @@ namespace flame
 
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
+
+			FLAME_FOUNDATION_EXPORTS static Node* current();
 
 			void* user_data;
 		};
@@ -141,33 +124,23 @@ namespace flame
 			return 0;
 		}
 
-		bool test_mode;
-		uint frame;
 		float time;
 
 		FLAME_FOUNDATION_EXPORTS const wchar_t* filename() const;
-
-		FLAME_FOUNDATION_EXPORTS uint library_count() const;
-		FLAME_FOUNDATION_EXPORTS Library* library(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Library* add_library(const wchar_t* directory);
-		FLAME_FOUNDATION_EXPORTS void remove_library(Library* m);
-		FLAME_FOUNDATION_EXPORTS Library* find_library(const wchar_t* directory) const;
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* type, const char* id);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
-		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address) const;
-		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address/* node.var*/) const;
+		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address/* node.var*/) const;
 
 		FLAME_FOUNDATION_EXPORTS void clear();
 
 		FLAME_FOUNDATION_EXPORTS void update();
 
-		FLAME_FOUNDATION_EXPORTS Array<Slot*> failed_slots() const;
-
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename, bool test_mode = false);
+		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const wchar_t* filename);
 		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
