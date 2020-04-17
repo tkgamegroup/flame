@@ -40,8 +40,8 @@ namespace flame
 		{
 			if (!element->clipped)
 			{
-				auto low = element->content_min();
-				auto high = element->content_max();
+				auto low = element->global_pos;
+				auto high = low + element->global_size;
 				if (draw_flags & ExtraDrawFilledCornerSE)
 				{
 					std::vector<Vec2f> points;

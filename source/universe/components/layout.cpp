@@ -13,12 +13,12 @@ namespace flame
 		aligner = nullptr;
 
 		type = _type;
+		column = 0;
 		item_padding = 0.f;
 		width_fit_children = true;
 		height_fit_children = true;
 		fence = -1;
 		scroll_offset = Vec2f(0.f);
-		column = 0;
 
 		content_size = Vec2f(0.f);
 
@@ -291,6 +291,7 @@ namespace flame
 				}
 				else
 					w += element->size.x();
+				w += item_padding;
 				if (y_flags & AlignMinMax)
 				{
 					if (y_flags & AlignGreedy)
@@ -298,7 +299,6 @@ namespace flame
 				}
 				else
 					h = max(element->size.y(), h);
-				w += item_padding;
 			}
 			if (fence > 0 && !als.empty())
 				w -= item_padding;
@@ -323,15 +323,12 @@ namespace flame
 				auto aligner = al.aligner;
 				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
 
-				if (aligner)
+				if (x_flags & AlignMinMax)
 				{
-					if (x_flags & AlignMinMax)
-					{
-						auto _w = w * aligner->width_factor;
-						if (x_flags & AlignGreedy)
-							_w += aligner->min_width;
-						element->set_width(_w, false, this);
-					}
+					auto _w = w * aligner->width_factor;
+					if (x_flags & AlignGreedy)
+						_w += aligner->min_width;
+					element->set_width(_w, false, this);
 				}
 				element->set_x(scroll_offset.x() + x, false, this);
 				x += element->size.x() + item_padding;
@@ -402,15 +399,12 @@ namespace flame
 				auto aligner = al.aligner;
 				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
 
-				if (aligner)
+				if (y_flags & AlignMinMax)
 				{
-					if (y_flags & AlignMinMax)
-					{
-						auto _h = h * aligner->height_factor;
-						if (y_flags & AlignGreedy)
-							_h += aligner->min_height;
-						element->set_height(_h, false, this);
-					}
+					auto _h = h * aligner->height_factor;
+					if (y_flags & AlignGreedy)
+						_h += aligner->min_height;
+					element->set_height(_h, false, this);
 				}
 				element->set_y(scroll_offset.y() + y, false, this);
 				y += element->size.y() + item_padding;

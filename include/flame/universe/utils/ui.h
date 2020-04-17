@@ -679,7 +679,6 @@ namespace flame
 				c_scrollbar();
 				push_parent(current_entity());
 			}
-			cScrollbarThumb* ct;
 			{
 				e_empty();
 				c_element()->size = 10.f;
@@ -689,11 +688,10 @@ namespace flame
 				cs->color_hovering = style_4c(ScrollbarThumbColorHovering);
 				cs->color_active = style_4c(ScrollbarThumbColorActive);
 				cs->style();
-				ct = c_scrollbar_thumb(type);
+				auto ct = c_scrollbar_thumb(type);
 				ct->step = step;
 				pop_parent();
-			}
-			{
+
 				e_empty();
 				c_element();
 				auto ce = c_event_receiver();

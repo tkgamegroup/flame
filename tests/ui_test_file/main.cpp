@@ -15,7 +15,7 @@ int main(int argc, char** args)
 	utils::push_parent(app.root);
 
 	utils::e_text(L"");
-	utils::c_aligner(AlignxLeft, AlignyBottom);
+	utils::c_aligner(AlignMin, AlignMax);
 	add_fps_listener([](void* c, uint fps) {
 		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
 	}, Mail::from_p(utils::current_entity()->get_component(cText)));
@@ -65,7 +65,7 @@ int main(int argc, char** args)
 						e_text->add_component(c_element);
 
 						auto c_text = cText::create(app.font_atlas);
-						c_text->color_ = Vec4c(0, 0, 0, 255);
+						c_text->color = Vec4c(0, 0, 0, 255);
 						c_text->set_text(L"Hello World!");
 						e_text->add_component(c_text);
 					}
