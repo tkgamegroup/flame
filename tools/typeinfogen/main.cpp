@@ -395,6 +395,7 @@ int main(int argc, char **args)
 				auto str = res[1].str();
 				SUS::remove_spaces(str);
 				auto sp = SUS::split(str, ',');
+				if (sp.size() > 0)
 				{
 					auto _sp = SUS::split(sp[0], ':');
 					du.name = _sp[0];
@@ -404,6 +405,7 @@ int main(int argc, char **args)
 					if (_sp.size() > 1)
 						du.base_name = _sp[1];
 				}
+				if (sp.size() > 1)
 				{
 					auto _sp = SUS::split(sp[1], ':');
 					if (_sp.size() == 2 && _sp[0] == "l")

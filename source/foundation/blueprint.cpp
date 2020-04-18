@@ -695,7 +695,9 @@ namespace flame
 		update_list.clear();
 	}
 
-	static void get_order(BPPrivate* scn, NodePrivate* n, uint& order)
+	static float bp_time = 0.f;
+
+	static void get_order(NodePrivate* n, uint& order)
 	{
 		if (n->order != 0xffffffff)
 			return;
@@ -705,35 +707,37 @@ namespace flame
 			if (o)
 			{
 				auto nn = o->node;
-				get_order(scn, nn, order);
+				get_order(nn, order);
 			}
 		}
 		n->order = order++;
 	}
 
-	static float bp_time = 0.f;
+	static void build_update_list(BPPrivate* s)
+	{
+		for (auto& n : s->nodes)
+			n->order = 0xffffffff;
+		auto order = 0U;
+		for (auto& n : s->nodes)
+			get_order(n.get(), order);
+		s->update_list.clear();
+		for (auto& n : s->nodes)
+		{
+			std::vector<NodePrivate*>::iterator it;
+			for (it = s->update_list.begin(); it != s->update_list.end(); it++)
+			{
+				if (n->order < (*it)->order)
+					break;
+			}
+			s->update_list.emplace(it, n.get());
+		}
+		s->need_rebuild_update_list = false;
+	}
 
 	void BPPrivate::update()
 	{
 		if (need_rebuild_update_list)
-		{
-			for (auto& n : nodes)
-				n->order = 0xffffffff;
-			auto order = 0U;
-			for (auto& n : nodes)
-				get_order(this, n.get(), order);
-			update_list.clear();
-			for (auto& n : nodes)
-			{
-				std::vector<NodePrivate*>::iterator it;
-				for (it = update_list.begin(); it != update_list.end(); it++)
-				{
-					if (n->order < (*it)->order)
-						break;
-				}
-				update_list.emplace(it, n.get());
-			}
-		}
+			build_update_list(this);
 
 		bp_time = time;
 
@@ -1069,19 +1073,20 @@ namespace flame
 			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());
 
 			pugi::xml_node n_datas;
-			for (auto& input : n->inputs)
+			for (auto& in : n->inputs)
 			{
-				if (input->links[0])
+				if (in->links[0])
 					continue;
-				auto type = input->type;
-				auto tag = type->tag();
-				if (input->default_value && memcmp(input->default_value, input->data, input->size))
+				auto type = in->type;
+				if (type->tag() == TypePointer)
 				{
+					if (in->default_value && memcmp(in->default_value, in->data, in->size) == 0)
+						continue;
 					if (!n_datas)
 						n_datas = n_node.append_child("datas");
 					auto n_data = n_datas.append_child("data");
-					n_data.append_attribute("name").set_value(input->name.c_str());
-					n_data.append_attribute("value").set_value(type->serialize(input->data, 6).c_str());
+					n_data.append_attribute("name").set_value(in->name.c_str());
+					n_data.append_attribute("value").set_value(type->serialize(in->data, 6).c_str());
 				}
 			}
 		}
@@ -1102,6 +1107,29 @@ namespace flame
 		}
 
 		file.save_file(filename);
+
+		std::ofstream code(filename + std::wstring(L".h"));
+		if (bp->need_rebuild_update_list)
+			build_update_list(bp);
+		for (auto i = bp->update_list.size() - 1; i >= 0; i--)
+		{
+			auto n = bp->update_list[i];
+			switch (n->object_type)
+			{
+			case ObjectRefWrite:
+				for (auto j = 0; j < n->input_count(); j++)
+				{
+					auto in = n->input(j);
+					auto out = in->link();
+					if (!out)
+					{
+
+					}
+				}
+				break;
+			}
+		}
+		code.close();
 	}
 
 	void BP::destroy(BP *bp)
