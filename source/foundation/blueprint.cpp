@@ -1078,7 +1078,7 @@ namespace flame
 				if (in->links[0])
 					continue;
 				auto type = in->type;
-				if (type->tag() == TypePointer)
+				if (type->tag() != TypePointer)
 				{
 					if (in->default_value && memcmp(in->default_value, in->data, in->size) == 0)
 						continue;
@@ -1111,20 +1111,36 @@ namespace flame
 		std::ofstream code(filename + std::wstring(L".h"));
 		if (bp->need_rebuild_update_list)
 			build_update_list(bp);
-		for (auto i = bp->update_list.size() - 1; i >= 0; i--)
+		for (auto n : bp->update_list)
 		{
-			auto n = bp->update_list[i];
 			switch (n->object_type)
 			{
 			case ObjectRefWrite:
-				for (auto j = 0; j < n->input_count(); j++)
+				for (auto& in : n->inputs)
 				{
-					auto in = n->input(j);
-					auto out = in->link();
+					auto out = (SlotPrivate*)in->links[0];
+					std::string value;
 					if (!out)
 					{
-
+						auto type = in->type;
+						if (type->tag() == TypePointer || (in->default_value && memcmp(in->default_value, in->data, in->size) == 0))
+							continue;
+						value = type->serialize(in->data, 6);
 					}
+					else
+						value = "_" + out->node->id + "_" + out->name;
+					code << n->udt->link_name() << "->";
+					if (in->setter)
+						code << "set_" << in->name << "(" << value << ");\n";
+					else
+						code << in->name << " = " << value << ";\n";
+				}
+				break;
+			case ObjectRefRead:
+				for (auto& out : n->outputs)
+				{
+					for (auto in : out->links)
+						code << "_" << in->node->id << "_" << in->name << " = " << "_" << n->id << "_" << out->name << ";\n";
 				}
 				break;
 			}
