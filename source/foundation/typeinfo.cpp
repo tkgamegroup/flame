@@ -93,9 +93,9 @@ namespace flame
 		return ((VariableInfoPrivate*)this)->flags;
 	}
 
-	const char* VariableInfo::default_value() const
+	const void* VariableInfo::default_value() const
 	{
-		return ((VariableInfoPrivate*)this)->default_value.c_str();
+		return ((VariableInfoPrivate*)this)->default_value;
 	}
 
 	const char* EnumItem::name() const
@@ -358,9 +358,11 @@ namespace flame
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
-				auto v = (VariableInfoPrivate*)u->add_variable(TypeInfo::get(n_variable.attribute("type").value()), n_variable.attribute("name").value(),
+				auto type = TypeInfo::get(n_variable.attribute("type").value());
+				auto v = (VariableInfoPrivate*)u->add_variable(type, n_variable.attribute("name").value(),
 					n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
-				v->default_value = n_variable.attribute("default_value").value();
+
+				type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
 			}
 
 			for (auto n_function : n_udt.child("functions"))

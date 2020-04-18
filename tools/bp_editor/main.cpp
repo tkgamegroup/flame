@@ -1005,7 +1005,9 @@ bool MyApp::create(const char* filename)
 				utils::e_button(L"Update (F2)", [](void*) {
 					app.update();
 				}, Mail());
-				utils::e_button(L"Reset Time");
+				utils::e_button(L"Reset Time", [](void*) {
+					app.bp->time = 0.f;
+				}, Mail());
 				utils::e_end_layout();
 			}
 

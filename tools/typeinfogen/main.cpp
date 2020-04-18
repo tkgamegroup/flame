@@ -412,17 +412,13 @@ int main(int argc, char **args)
 						DesiredVariable v;
 						v.flags = 0;
 						v.name = sp[1];
-						if (sp.size() > 2)
+						for (auto i = 2; i < sp.size(); i++)
 						{
-							auto io = sp[2][0];
-							if (io == 'i')
+							if (sp[i] == "i")
 								v.flags |= VariableFlagInput;
-							else if (io == 'o')
+							else if (sp[i] == "o")
 								v.flags |= VariableFlagOutput;
-						}
-						for (auto i = 3; i < sp.size(); i++)
-						{
-							if (sp[i] == "m")
+							else if (sp[i] == "m")
 								v.flags |= VariableFlagEnumMulti;
 						}
 						du.variables.push_back(v);
@@ -606,31 +602,18 @@ int main(int argc, char **args)
 							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);
 							for (auto& i : u->variables)
 							{
+								if (!i->default_value)
+									continue;
 								auto type = i->type;
 								auto tag = type->tag;
 								if (!type->is_array && tag != TypePointer && !(i->flags & VariableFlagOutput))
-									i->default_value = type->serialize((char*)obj + i->offset, 1);
+									memcpy(i->default_value, (char*)obj + i->offset, i->size);
 							}
 							if (dtor)
 								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
 
 							free(obj);
 							FreeLibrary(library);
-						}
-					}
-					else
-					{
-						for (auto& i : u->variables)
-						{
-							auto type = i->type;
-							auto tag = type->tag;
-							if (!type->is_array && tag == TypeData && !(i->flags & VariableFlagOutput))
-							{
-								auto d = new char[i->size];
-								memset(d, 0, i->size);
-								i->default_value = type->serialize(d, 1);
-								delete[] d;
-							}
 						}
 					}
 				}
@@ -682,8 +665,8 @@ int main(int argc, char **args)
 			n_variable.append_attribute("flags").set_value(v->flags);
 			n_variable.append_attribute("offset").set_value(v->offset);
 			n_variable.append_attribute("size").set_value(v->size);
-			if (!v->default_value.empty())
-				n_variable.append_attribute("default_value").set_value(v->default_value.c_str());
+			if (v->default_value)
+				n_variable.append_attribute("default_value").set_value(type->serialize(v->default_value, 2).c_str());
 		}
 
 		auto n_functions = n_udt.append_child("functions");

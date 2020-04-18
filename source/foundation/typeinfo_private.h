@@ -32,7 +32,12 @@ namespace flame
 		uint name_hash;
 		uint flags;
 		uint offset, size;
-		std::string default_value;
+		void* default_value;
+
+		~VariableInfoPrivate()
+		{
+			delete[] default_value;
+		}
 	};
 
 	struct EnumItemPrivate : EnumItem
@@ -93,6 +98,13 @@ namespace flame
 			v->flags = flags;
 			v->offset = offset;
 			v->size = size;
+			if (type->pod())
+			{
+				v->default_value = new char[size];
+				memset(v->default_value, 0, size);
+			}
+			else
+				v->default_value = nullptr;
 			variables.emplace_back(v);
 			return v;
 		}

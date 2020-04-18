@@ -17,13 +17,13 @@ namespace flame
 		std::string name;
 		uint offset;
 		uint size;
-		std::string default_value;
+		void* default_value;
 		void* data;
 		Setter* setter;
 
 		std::vector<SlotPrivate*> links;
 
-		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
+		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
 		SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi);
 		~SlotPrivate();
 
@@ -39,7 +39,6 @@ namespace flame
 		std::string name;
 		uint offset;
 		uint size;
-		std::string default_value;
 	};
 
 	struct NodePrivate : BP::Node
@@ -101,7 +100,7 @@ namespace flame
 		void update();
 	};
 
-	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value) :
+	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const void* _default_value) :
 		node(node),
 		io(io),
 		index(index),
@@ -109,10 +108,17 @@ namespace flame
 		name(name),
 		offset(offset),
 		size(size),
-		default_value(default_value),
 		setter(nullptr)
 	{
 		user_data = nullptr;
+
+		if (_default_value)
+		{
+			default_value = new char[size];
+			memcpy(default_value, _default_value, size);
+		}
+		else
+			default_value = nullptr;
 
 		data = (char*)node->object + offset;
 
@@ -128,6 +134,7 @@ namespace flame
 
 	SlotPrivate::~SlotPrivate()
 	{
+		delete[] default_value;
 		delete setter;
 	}
 
@@ -336,6 +343,7 @@ namespace flame
 						setter->s = scene;
 						input->setter = setter;
 					}
+					memcpy(input->default_value, input->data, input->size);
 					inputs.emplace_back(input);
 				}
 			}
@@ -368,12 +376,12 @@ namespace flame
 		for (auto i = 0; i < _inputs.size(); i++)
 		{
 			auto& d = _inputs[i];
-			inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, i, d.type, d.name, d.offset, d.size, d.default_value));
+			inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, i, d.type, d.name, d.offset, d.size, nullptr));
 		}
 		for (auto i = 0; i < _outputs.size(); i++)
 		{
 			auto& d = _outputs[i];
-			outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, i, d.type, d.name, d.offset, d.size, d.default_value));
+			outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, i, d.type, d.name, d.offset, d.size, nullptr));
 		}
 	}
 
@@ -477,9 +485,9 @@ namespace flame
 				};
 #pragma pack()
 				n = new NodePrivate(this, id, type, sizeof(Dummy), {
-						{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
+						{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) }
 					}, {
-						{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
+						{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) }
 					}, nullptr, nullptr, f2v(&Dummy::update));
 			};
 			std::string parameters;
@@ -518,9 +526,9 @@ namespace flame
 				auto type_hash = FLAME_HASH(parameters.c_str());
 				auto type_size = basic_type_size(type_hash);
 				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * 2, {
-						{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size, ""}
+						{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size }
 					}, {
-						{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
+						{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size }
 					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
 				auto& obj = *(Dummy*)n->object;
 				obj.type_hash = type_hash;
@@ -582,11 +590,11 @@ namespace flame
 				{
 					inputs.push_back({
 						TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
-						sizeof(Dummy) + type_size * i, type_size, ""
+						sizeof(Dummy) + type_size * i, type_size
 						});
 				}
 				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
-						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
+						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>) }
 					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
 				auto& obj = *(Dummy*)n->object;
 				obj.type_hash = type_hash;
@@ -765,9 +773,9 @@ namespace flame
 		return ((SlotPrivate*)this)->size;
 	}
 
-	const char* BP::Slot::default_value() const
+	const void* BP::Slot::default_value() const
 	{
-		return ((SlotPrivate*)this)->default_value.c_str();
+		return ((SlotPrivate*)this)->default_value;
 	}
 
 	void* BP::Slot::data() const
@@ -1062,17 +1070,13 @@ namespace flame
 					continue;
 				auto type = input->type;
 				auto tag = type->tag();
-				if (!type->is_array() && tag != TypePointer)
+				if (input->default_value && memcmp(input->default_value, input->data, input->size))
 				{
-					auto value_str = type->serialize(input->data, 2);
-					if (value_str != input->default_value)
-					{
-						if (!n_datas)
-							n_datas = n_node.append_child("datas");
-						auto n_data = n_datas.append_child("data");
-						n_data.append_attribute("name").set_value(input->name.c_str());
-						n_data.append_attribute("value").set_value(type->serialize(input->data, 2).c_str());
-					}
+					if (!n_datas)
+						n_datas = n_node.append_child("datas");
+					auto n_data = n_datas.append_child("data");
+					n_data.append_attribute("name").set_value(input->name.c_str());
+					n_data.append_attribute("value").set_value(type->serialize(input->data, 6).c_str());
 				}
 			}
 		}

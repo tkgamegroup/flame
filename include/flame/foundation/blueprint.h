@@ -30,7 +30,7 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS const char* name() const;
 			FLAME_FOUNDATION_EXPORTS uint offset() const;
 			FLAME_FOUNDATION_EXPORTS uint size() const;
-			FLAME_FOUNDATION_EXPORTS const char* default_value() const;
+			FLAME_FOUNDATION_EXPORTS const void* default_value() const;
 
 			FLAME_FOUNDATION_EXPORTS void* data() const;
 			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);

@@ -122,6 +122,19 @@ namespace flame
 			return TypeInfo::get_hash(tag, base_name, is_array);
 		}
 
+		inline bool pod() const
+		{
+			if (is_array())
+				return false;
+			auto t = tag();
+			if (t == TypePointer)
+				return false;
+			auto bh = base_hash();
+			if (t == TypeData && (bh == FLAME_CHASH("flame::StringA") || bh == FLAME_CHASH("flame::StringW")))
+				return false;
+			return true;
+		}
+
 		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);
 		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(const char* str);
 
@@ -147,7 +160,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS uint flags() const;
 		FLAME_FOUNDATION_EXPORTS uint offset() const;
 		FLAME_FOUNDATION_EXPORTS uint size() const;
-		FLAME_FOUNDATION_EXPORTS const char* default_value() const;
+		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
 	};
 
 	struct EnumItem
@@ -412,7 +425,8 @@ namespace flame
 		{
 			auto e = find_enum(base_hash());
 			assert(e);
-			return e->find_item(*(int*)src)->name();
+			auto i = e->find_item(*(int*)src);
+			return i ? i->name() : "";
 		}
 		case TypeEnumMulti:
 		{
@@ -499,7 +513,7 @@ namespace flame
 			assert(e);
 			e->find_item(src.c_str(), (int*)dst);
 		}
-		return;
+			return;
 		case TypeEnumMulti:
 		{
 			auto v = 0;
@@ -510,7 +524,7 @@ namespace flame
 				v |= e->find_item(t.c_str())->value();
 			*(int*)dst = v;
 		}
-		return;
+			return;
 		case TypeData:
 			switch (base_hash())
 			{

@@ -449,12 +449,9 @@ namespace flame
 					auto v = udt->variable(i);
 					auto type = v->type();
 					auto p = (char*)object + v->offset();
-					if (type->tag() == TypeData)
-					{
-						auto str = type->serialize(p, 2);
-						if (str != v->default_value())
-							n_c.append_child(v->name()).append_attribute("v").set_value(str.c_str());
-					}
+					auto dv = v->default_value();
+					if (dv && memcmp(dv, p, v->size()))
+						n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p, 6).c_str());
 				}
 				{
 					auto f = udt->find_function("dtor");
