@@ -71,26 +71,24 @@ struct cSlot : Component
 
 	void clear_tips()
 	{
-		looper().add_event([](void* c, bool*) {
-			auto thiz = *(cSlot**)c;
-			{
-				auto e = thiz->tip_info;
-				if (e)
-				{
-					thiz->tip_info = nullptr;
-					e->parent()->remove_child(e);
-				}
-			}
-			{
-				auto e = thiz->tip_link;
-				if (e)
-				{
-					thiz->tip_link = nullptr;
-					e->parent()->remove_child(e);
-				}
-			}
-			auto e = *(Entity**)c;
-		}, Mail::from_p(this));
+		if (tip_info)
+		{
+			auto e = tip_info;
+			tip_info = nullptr;
+			looper().add_event([](void* c, bool*) {
+				auto e = *(Entity**)c;
+				e->parent()->remove_child(e);
+			}, Mail::from_p(e));
+		}
+		if (tip_link)
+		{
+			auto e = tip_link;
+			tip_link = nullptr;
+			looper().add_event([](void* c, bool*) {
+				auto e = *(Entity**)c;
+				e->parent()->remove_child(e);
+			}, Mail::from_p(e));
+		}
 	}
 
 	void on_component_added(Component* c) override
@@ -730,8 +728,9 @@ void cEditor::on_add_node(BP::Node* n)
 									auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
 									type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
 									NodeDesc d;
-									d.type = type;
 									d.id = "";
+									d.type = type;
+									d.object_type = BP::ObjectReal;
 									d.pos = n->pos;
 									auto nn = app.add_node(d);
 									for (auto i = 0; i < n->input_count(); i++)
@@ -921,8 +920,9 @@ void cEditor::on_add_node(BP::Node* n)
 						auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
 						type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size + 1) + std::string(type.begin() + plus_pos, type.end());
 						NodeDesc d;
-						d.type = type;
 						d.id = "";
+						d.type = type;
+						d.object_type = BP::ObjectReal;
 						d.pos = n->pos;
 						auto nn = app.add_node(d);
 						for (auto i = 0; i < n->input_count(); i++)
@@ -992,61 +992,86 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		is_array = type->is_array();
 	}
 
-	std::vector<std::pair<UdtInfo*, VariableInfo*>> node_types;
-	auto add_udt = [&](UdtInfo* u) {
-		{
-			auto f = u->find_function("bp_update");
-			if (!f)
-				return;
-			if (!check_function(f, "D#void", { "D#uint" }))
-				return;
-		}
-		for (auto i = 0; i < u->variable_count(); i++)
-		{
-			auto v = u->variable(i);
-			auto flags = v->flags();
-			if (flags & VariableFlagInput)
-			{
-				if (!dragging_slot)
-				{
-					node_types.emplace_back(u, nullptr);
-					return;
-				}
-				if (dragging_slot->io() == BP::Slot::Out)
-				{
-					if (BP::Slot::can_link(v->type(), dragging_slot->type()))
-					{
-						node_types.emplace_back(u, v);
-						return;
-					}
-				}
-			}
-			if (flags & VariableFlagOutput)
-			{
-				if (!dragging_slot)
-				{
-					node_types.emplace_back(u, nullptr);
-					return;
-				}
-				if (dragging_slot->io() == BP::Slot::In)
-				{
-					if (BP::Slot::can_link(dragging_slot->type(), v->type()))
-					{
-						node_types.emplace_back(u, v);
-						return;
-					}
-				}
-			}
-		}
+	struct NodeType
+	{
+		UdtInfo* u;
+		VariableInfo* v;
+		BP::ObjectType t;
 	};
+	std::vector<NodeType> node_types;
 	for (auto i = 0; i < global_db_count(); i++)
 	{
 		auto udts = global_db(i)->get_udts();
 		for (auto j = 0; j < udts.s; j++)
-			add_udt(udts.v[j]);
+		{
+			auto u = udts[j];
+			auto f_update = u->find_function("bp_update");
+			if (f_update && check_function(f_update, "D#void", {}))
+			{
+				if (!dragging_slot)
+					node_types.push_back({ u, nullptr, BP::ObjectReal });
+				else
+				{
+					auto ds_io = dragging_slot->io();
+					auto ds_t = dragging_slot->type();
+					auto found = false;
+					for (auto k = 0; k < u->variable_count(); k++)
+					{
+						auto v = u->variable(k);
+						auto flags = v->flags();
+						if (ds_io == BP::Slot::Out && (flags & VariableFlagInput) && BP::Slot::can_link(v->type(), ds_t))
+						{
+							node_types.push_back({ u, v, BP::ObjectReal });
+							found = true;
+							break;
+						}
+						if (ds_io == BP::Slot::In && (flags & VariableFlagOutput) && BP::Slot::can_link(ds_t, v->type()))
+						{
+							node_types.push_back({ u, v, BP::ObjectReal });
+							found = true;
+							break;
+						}
+						if (found)
+							break;
+					}
+				}
+			}
+			else
+			{
+				if (!dragging_slot)
+				{
+					node_types.push_back({ u, nullptr, BP::ObjectRefRead });
+					node_types.push_back({ u, nullptr, BP::ObjectRefWrite });
+				}
+				else
+				{
+					auto ds_io = dragging_slot->io();
+					auto ds_t = dragging_slot->type();
+					auto found = false;
+					for (auto k = 0; k < u->variable_count(); k++)
+					{
+						auto v = u->variable(i);
+						if (ds_io == BP::Slot::Out && BP::Slot::can_link(v->type(), ds_t))
+						{
+							node_types.push_back({ u, v, BP::ObjectRefWrite });
+							found = true;
+							break;
+						}
+						if (ds_io == BP::Slot::In && BP::Slot::can_link(ds_t, v->type()))
+						{
+							node_types.push_back({ u, v, BP::ObjectRefRead });
+							found = true;
+							break;
+						}
+						if (found)
+							break;
+					}
+				}
+			}
+		}
 	}
 	std::sort(node_types.begin(), node_types.end(), [](const auto& a, const auto& b) {
-		return std::string(a.first->name()) < std::string(b.first->name());
+		return std::string(a.u->name()) < std::string(b.u->name());
 	});
 
 	utils::push_parent(utils::add_layer(app.root, ""));
@@ -1105,10 +1130,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								utils::e_menu_item(s2w(ei->name()).c_str(), [](void* c) {
 									auto& capture = *(Capture*)c;
 									NodeDesc d;
+									d.id = "";
 									d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
 									d.type += capture.s;
 									d.type += ")";
-									d.id = "";
+									d.object_type = BP::ObjectReal;
 									d.pos = capture.p;
 									app.add_node(d);
 								}, Mail::from_t(&capture));
@@ -1152,10 +1178,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
 										auto& capture = *(_Capture*)c;
 										NodeDesc d;
+										d.id = "";
 										d.type = "Variable(";
 										d.type += capture.s;
 										d.type += ")";
-										d.id = "";
+										d.object_type = BP::ObjectReal;
 										d.pos = capture.p;
 										app.add_node(d);
 									}, Mail::from_t(&_capture));
@@ -1181,10 +1208,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 									utils::e_menu_item(s2w(t).c_str(), [](void* c) {
 										auto& capture = *(_Capture*)c;
 										NodeDesc d;
+										d.id = "";
 										d.type = "Array(1+";
 										d.type += capture.s;
 										d.type += ")";
-										d.id = "";
+										d.object_type = BP::ObjectReal;
 										d.pos = capture.p;
 										app.add_node(d);
 									}, Mail::from_t(&_capture));
@@ -1209,10 +1237,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
 								NodeDesc d;
+								d.id = "";
 								d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
 								d.type += capture.s;
 								d.type += ")";
-								d.id = "";
+								d.object_type = BP::ObjectReal;
 								d.pos = capture.p;
 								auto n = app.add_node(d);
 								auto s = app.editor->dragging_slot;
@@ -1239,10 +1268,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](void* c) {
 									auto& capture = *(_Capture*)c;
 									NodeDesc d;
+									d.id = "";
 									d.type = "Variable(";
 									d.type += capture.s;
 									d.type += ")";
-									d.id = "";
+									d.object_type = BP::ObjectReal;
 									d.pos = capture.p;
 									auto n = app.add_node(d);
 									auto s = app.editor->dragging_slot;
@@ -1268,10 +1298,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](void* c) {
 								auto& capture = *(_Capture*)c;
 								NodeDesc d;
+								d.id = "";
 								d.type = "Array(1+";
 								d.type += capture.s;
 								d.type += ")";
-								d.id = "";
+								d.object_type = BP::ObjectReal;
 								d.pos = capture.p;
 								auto n = app.add_node(d);
 								auto s = app.editor->dragging_slot;
@@ -1288,6 +1319,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 					{
 						struct Capture
 						{
+							BP::ObjectType t;
 							const char* us;
 							const char* vs;
 							Vec2f p;
@@ -1295,11 +1327,18 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 						for (auto& t : node_types)
 						{
-							capture.us = t.first->name();
-							capture.vs = t.second ? t.second->name() : nullptr;
-							utils::e_menu_item(s2w(t.first->name()).c_str(), [](void* c) {
+							capture.t = t.t;
+							capture.us = t.u->name();
+							capture.vs = t.v ? t.v->name() : nullptr;
+							auto name = s2w(t.u->name());
+							if (capture.t == BP::ObjectRefRead)
+								name += L" (RefRead)";
+							else if (capture.t == BP::ObjectRefWrite)
+								name += L" (RefWrite)";
+							utils::e_menu_item(name.c_str(), [](void* c) {
 								auto& capture = *(Capture*)c;
 								NodeDesc d;
+								d.object_type = capture.t;
 								d.type = capture.us;
 								d.id = "";
 								d.pos = capture.p;

@@ -164,6 +164,7 @@ cConsole::cConsole() :
 						NodeDesc d;
 						d.id = tokens[3] == L"-" ? "" : w2s(tokens[3]);
 						d.type = w2s(tokens[2]);
+						d.object_type = BP::ObjectReal;
 						d.pos = 0.f;
 						auto n = app.add_node(d);
 						if (n)

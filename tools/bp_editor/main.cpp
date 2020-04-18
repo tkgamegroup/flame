@@ -5,9 +5,9 @@
 
 #include "app.h"
 
-BP::Node* _add_node(const std::string& id, const std::string& type, const Vec2f& pos)
+BP::Node* _add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
-	auto n = app.bp->add_node(id.c_str(), type.c_str());
+	auto n = app.bp->add_node(id.c_str(), type.c_str(), object_type);
 	if (!n)
 		return nullptr;
 	n->pos = pos;
@@ -24,8 +24,20 @@ void _remove_node(BP::Node* n)
 	{
 		looper().add_event([](void* c, bool*) {
 			auto n = *(BP::Node**)c;
+			std::vector<BP::Node*> ref_ns;
+			for (auto i = 0; i < n->output_count(); i++)
+			{
+				auto o = n->output(i);
+				for (auto j = 0; j < o->link_count(); j++)
+					ref_ns.push_back(o->link(j)->node());
+			}
 			app.editor->on_remove_node(n);
 			app.bp->remove_node(n);
+			for (auto n : ref_ns)
+			{
+				app.editor->on_remove_node(n);
+				app.editor->on_add_node(n);
+			}
 		}, Mail::from_p(n));
 	}
 }
@@ -36,7 +48,7 @@ std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = models[i];
-		ret[i] = _add_node("", n->type(), n->pos + Vec2f(20.f));
+		ret[i] = _add_node(n->object_type(), "", n->type(), n->pos + Vec2f(20.f));
 	}
 	for (auto i = 0; i < models.size(); i++)
 	{
@@ -175,7 +187,7 @@ struct Action_AddNode : Action
 
 	void redo() override
 	{
-		_add_node(desc.id.c_str(), desc.type.c_str(), desc.pos);
+		_add_node(desc.object_type, desc.id.c_str(), desc.type.c_str(), desc.pos);
 	}
 };
 
@@ -223,7 +235,7 @@ struct Action_RemoveNodes : Action
 	{
 		for (auto& s : savings)
 		{
-			auto n = _add_node(s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
+			auto n = _add_node(s.desc.object_type, s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
 			if (n)
 			{
 				for (auto i = 0; i < s.inputs.size(); i++)
@@ -486,11 +498,12 @@ void MyApp::set_changed(bool v)
 
 BP::Node* MyApp::add_node(const NodeDesc& desc)
 {
-	auto n = _add_node(desc.id, desc.type, desc.pos);
+	auto n = _add_node(desc.object_type, desc.id, desc.type, desc.pos);
 	if (!n)
 		return nullptr;
 
 	auto a = new Action_AddNode;
+	a->desc.object_type = desc.object_type;
 	a->desc.type = desc.type;
 	a->desc.id = n->id();
 	a->desc.pos = desc.pos;
@@ -509,6 +522,7 @@ void MyApp::remove_nodes(const std::vector<BP::Node*> nodes)
 	{
 		auto n = nodes[i];
 		auto& s = a->savings[i];
+		s.desc.object_type = n->object_type();
 		s.desc.type = n->type();
 		s.desc.id = n->id();
 		s.desc.pos = n->pos;
@@ -808,6 +822,16 @@ bool MyApp::create(const char* filename)
 
 	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
 
+	e_test = Entity::create();
+	{
+		auto ce = cElement::create();
+		ce->pos = 100.f;
+		ce->size = 100.f;
+		ce->color = Vec4c(0, 0, 0, 255);
+		cElement::set_current(ce);
+		e_test->add_component(ce);
+	}
+
 	if (filename[0])
 	{
 		filepath = filename;
@@ -820,9 +844,12 @@ bool MyApp::create(const char* filename)
 
 		filepath = std::filesystem::path(L"new.bp");
 		fileppath = filepath.parent_path();
-		std::ofstream new_bp(filepath);
-		new_bp << "<BP />\n";
-		new_bp.close();
+		if (!std::filesystem::exists(L"new.bp"))
+		{
+			std::ofstream new_bp(filepath);
+			new_bp << "<BP />\n";
+			new_bp.close();
+		}
 		bp = BP::create_from_file(filepath.c_str());
 		assert(bp);
 	}

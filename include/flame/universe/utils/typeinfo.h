@@ -276,7 +276,7 @@ namespace flame
 					thiz->drag_changed = false;
 				}
 				return true;
-			}, Mail::from_t(&capture));
+			}, Mail::from_p(this));
 		}
 	};
 

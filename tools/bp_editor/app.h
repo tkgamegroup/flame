@@ -55,6 +55,7 @@ struct NodeDesc
 {
 	std::string id;
 	std::string type;
+	BP::ObjectType object_type;
 	Vec2f pos;
 };
 
@@ -88,6 +89,8 @@ struct MyApp : App
 	std::vector<BP::Slot*> selected_links;
 
 	cCheckbox* c_auto_update;
+
+	Entity* e_test;
 
 	cEditor* editor;
 	cDetail* detail;
@@ -135,7 +138,7 @@ struct MyApp : App
 
 extern MyApp app;
 
-BP::Node* _add_node(const std::string& id, const std::string& type, const Vec2f& pos);
+BP::Node* _add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos);
 void _remove_node(BP::Node* n);
 std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models);
 void _set_link(BP::Slot* in, BP::Slot* out);

@@ -522,9 +522,9 @@ namespace flame
 					}, {
 						{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
 					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
-				auto obj = n->object;
-				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
-				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
+				auto& obj = *(Dummy*)n->object;
+				obj.type_hash = type_hash;
+				obj.type_size = type_size;
 			}
 				break;
 			case 'A':
@@ -588,10 +588,10 @@ namespace flame
 				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
 						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
 					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
-				auto obj = n->object;
-				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
-				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
-				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint) + sizeof(uint)) = size;
+				auto& obj = *(Dummy*)n->object;
+				obj.type_hash = type_hash;
+				obj.type_size = type_size;
+				obj.size = size;
 			}
 				break;
 			}
@@ -800,9 +800,14 @@ namespace flame
 		return ((SlotPrivate*)this)->get_address();
 	}
 
-	BP *BP::Node::scene() const
+	BP* BP::Node::scene() const
 	{
 		return ((NodePrivate*)this)->scene;
+	}
+
+	BP::ObjectType BP::Node::object_type() const
+	{
+		return ((NodePrivate*)this)->object_type;
 	}
 
 	const char* BP::Node::id() const
@@ -1109,6 +1114,20 @@ namespace flame
 		}
 	};
 
+	struct FLAME_R(R_BreakVec2i)
+	{
+		FLAME_RV(Vec2i, in, i);
+
+		FLAME_RV(int, x, o);
+		FLAME_RV(int, y, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+		}
+	};
+
 	struct FLAME_R(R_MakeVec3i)
 	{
 		FLAME_RV(int, x, i);
@@ -1122,6 +1141,22 @@ namespace flame
 			out[0] = x;
 			out[1] = y;
 			out[2] = z;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec3i)
+	{
+		FLAME_RV(Vec3i, in, i);
+
+		FLAME_RV(int, x, o);
+		FLAME_RV(int, y, o);
+		FLAME_RV(int, z, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
 		}
 	};
 
@@ -1143,6 +1178,24 @@ namespace flame
 		}
 	};
 
+	struct FLAME_R(R_BreakVec4i)
+	{
+		FLAME_RV(Vec4i, in, i);
+
+		FLAME_RV(int, x, o);
+		FLAME_RV(int, y, o);
+		FLAME_RV(int, z, o);
+		FLAME_RV(int, w, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
+			w = in[3];
+		}
+	};
+
 	struct FLAME_R(R_MakeVec2u)
 	{
 		FLAME_RV(uint, x, i);
@@ -1154,6 +1207,20 @@ namespace flame
 		{
 			out[0] = x;
 			out[1] = y;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec2u)
+	{
+		FLAME_RV(Vec2u, in, i);
+
+		FLAME_RV(uint, x, o);
+		FLAME_RV(uint, y, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
 		}
 	};
 
@@ -1170,6 +1237,22 @@ namespace flame
 			out[0] = x;
 			out[1] = y;
 			out[2] = z;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec3u)
+	{
+		FLAME_RV(Vec3u, in, i);
+
+		FLAME_RV(uint, x, o);
+		FLAME_RV(uint, y, o);
+		FLAME_RV(uint, z, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
 		}
 	};
 
@@ -1191,6 +1274,24 @@ namespace flame
 		}
 	};
 
+	struct FLAME_R(R_BreakVec4u)
+	{
+		FLAME_RV(Vec4u, in, i);
+
+		FLAME_RV(uint, x, o);
+		FLAME_RV(uint, y, o);
+		FLAME_RV(uint, z, o);
+		FLAME_RV(uint, w, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
+			w = in[3];
+		}
+	};
+
 	struct FLAME_R(R_MakeVec2f)
 	{
 		FLAME_RV(float, x, i);
@@ -1202,6 +1303,20 @@ namespace flame
 		{
 			out[0] = x;
 			out[1] = y;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec2f)
+	{
+		FLAME_RV(Vec2f, in, i);
+
+		FLAME_RV(float, x, o);
+		FLAME_RV(float, y, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
 		}
 	};
 
@@ -1218,6 +1333,22 @@ namespace flame
 			out[0] = x;
 			out[1] = y;
 			out[2] = z;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec3f)
+	{
+		FLAME_RV(Vec3f, in, i);
+
+		FLAME_RV(float, x, o);
+		FLAME_RV(float, y, o);
+		FLAME_RV(float, z, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
 		}
 	};
 
@@ -1239,6 +1370,24 @@ namespace flame
 		}
 	};
 
+	struct FLAME_R(R_BreakVec4f)
+	{
+		FLAME_RV(Vec4f, in, i);
+
+		FLAME_RV(float, x, o);
+		FLAME_RV(float, y, o);
+		FLAME_RV(float, z, o);
+		FLAME_RV(float, w, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
+			w = in[3];
+		}
+	};
+
 	struct FLAME_R(R_MakeVec2c)
 	{
 		FLAME_RV(uchar, x, i);
@@ -1250,6 +1399,20 @@ namespace flame
 		{
 			out[0] = x;
 			out[1] = y;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec2c)
+	{
+		FLAME_RV(Vec2c, in, i);
+
+		FLAME_RV(uchar, x, o);
+		FLAME_RV(uchar, y, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
 		}
 	};
 
@@ -1269,6 +1432,22 @@ namespace flame
 		}
 	};
 
+	struct FLAME_R(R_BreakVec3c)
+	{
+		FLAME_RV(Vec3c, in, i);
+
+		FLAME_RV(uchar, x, o);
+		FLAME_RV(uchar, y, o);
+		FLAME_RV(uchar, z, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
+		}
+	};
+
 	struct FLAME_R(R_MakeVec4c)
 	{
 		FLAME_RV(uchar, x, i);
@@ -1284,6 +1463,24 @@ namespace flame
 			out[1] = y;
 			out[2] = z;
 			out[3] = w;
+		}
+	};
+
+	struct FLAME_R(R_BreakVec4c)
+	{
+		FLAME_RV(Vec4c, in, i);
+
+		FLAME_RV(uchar, x, o);
+		FLAME_RV(uchar, y, o);
+		FLAME_RV(uchar, z, o);
+		FLAME_RV(uchar, w, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			x = in[0];
+			y = in[1];
+			z = in[2];
+			w = in[3];
 		}
 	};
 

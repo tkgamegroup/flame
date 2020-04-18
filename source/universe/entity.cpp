@@ -156,7 +156,7 @@ namespace flame
 			position = children.size();
 		for (auto i = position; i < children.size(); i++)
 			children[i]->index_ += 1;
-		children.insert(children.begin() + position, std::unique_ptr<EntityPrivate>(e));
+		children.emplace(children.begin() + position, e);
 		inherit(e, gene);
 		e->depth_ = depth_ + 1;
 		e->index_ = position;

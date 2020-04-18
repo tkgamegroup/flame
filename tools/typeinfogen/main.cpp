@@ -384,7 +384,7 @@ int main(int argc, char **args)
 			static std::regex reg_ns(R"(^namespace\s+(\w+))");
 			static std::regex reg_R(R"(FLAME_R\((.*)\))");
 			static std::regex reg_RV(R"(FLAME_RV\((.*)\))");
-			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]*)\))");
+			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]+)\))");
 			std::smatch res;
 			if (std::regex_search(lines[i], res, reg_ns))
 				current_namespaces.emplace_back(braces_level, res[1].str());

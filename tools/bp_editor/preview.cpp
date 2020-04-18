@@ -7,6 +7,8 @@ cPreview::cPreview() :
 	{
 		e_page->add_component(this);
 	}
+	
+	utils::current_parent()->add_child(app.e_test);
 
 	utils::e_end_docker_page();
 }
@@ -14,4 +16,5 @@ cPreview::cPreview() :
 cPreview::~cPreview()
 {
 	app.preview = nullptr;
+	app.e_test->parent()->remove_child(app.e_test, false);
 }
