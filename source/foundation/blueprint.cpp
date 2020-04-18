@@ -263,7 +263,8 @@ namespace flame
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
-					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+					if (v->type()->tag() == TypeData)
+						outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
 				}
 			}
 			else if (object_type == BP::ObjectRefWrite)
@@ -710,6 +711,8 @@ namespace flame
 		n->order = order++;
 	}
 
+	static float bp_time = 0.f;
+
 	void BPPrivate::update()
 	{
 		if (need_rebuild_update_list)
@@ -731,6 +734,8 @@ namespace flame
 				update_list.emplace(it, n.get());
 			}
 		}
+
+		bp_time = time;
 
 		for (auto n : update_list)
 			n->update();
@@ -1522,7 +1527,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			delta = looper().delta_time;
-			total = BP::Node::current()->scene()->time;
+			total = bp_time;
 		}
 	};
 

@@ -71,6 +71,7 @@ namespace flame
 		void* rva;
 		TypeInfoPrivate* return_type;
 		std::vector<TypeInfoPrivate*> parameter_types;
+		std::string code;
 
 		inline void add_parameter(const TypeInfo* type)
 		{
@@ -85,6 +86,7 @@ namespace flame
 		std::string name;
 		uint size;
 		std::string base_name;
+		std::string link_name;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
 

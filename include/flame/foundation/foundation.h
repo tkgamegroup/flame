@@ -16,9 +16,9 @@
 #include <thread>
 #include <mutex>
 
-#define FLAME_R(name) name
+#define FLAME_R(name, ...) name
 #define FLAME_RV(type, name, ...) type name;
-#define FLAME_RF(name) name
+#define FLAME_RF(name, ...) name
 
 namespace flame
 {

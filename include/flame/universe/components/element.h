@@ -12,7 +12,7 @@ namespace flame
 
 	struct s2DRenderer;
 
-	struct FLAME_R(cElement : Component)
+	struct FLAME_R(cElement : Component, l:element)
 	{
 		s2DRenderer* renderer;
 

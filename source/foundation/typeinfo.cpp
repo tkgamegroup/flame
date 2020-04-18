@@ -193,6 +193,11 @@ namespace flame
 		return ((FunctionInfoPrivate*)this)->parameter_types[idx];
 	}
 
+	const char* FunctionInfo::code() const
+	{
+		return ((FunctionInfoPrivate*)this)->code.c_str();
+	}
+
 	TypeinfoDatabase* UdtInfo::db() const
 	{
 		return ((UdtInfoPrivate*)this)->db;
@@ -211,6 +216,11 @@ namespace flame
 	const char* UdtInfo::base_name() const
 	{
 		return ((UdtInfoPrivate*)this)->base_name.c_str();
+	}
+
+	const char* UdtInfo::link_name() const
+	{
+		return ((UdtInfoPrivate*)this)->link_name.c_str();
 	}
 
 	uint UdtInfo::variable_count() const
@@ -315,7 +325,7 @@ namespace flame
 		std::filesystem::path module_path(module_filename);
 		if (!module_path.is_absolute())
 			module_path = get_app_path().str() / module_path;
-		auto typeinfo_path = std::filesystem::path(module_path);
+		auto typeinfo_path = module_path;
 		typeinfo_path.replace_extension(L".typeinfo");
 		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
 		{
@@ -355,6 +365,7 @@ namespace flame
 		{
 			auto u = db->add_udt(n_udt.attribute("name").value(), n_udt.attribute("size").as_uint());
 			u->base_name = n_udt.attribute("base_name").value();
+			u->link_name = n_udt.attribute("link_name").value();
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
@@ -380,6 +391,56 @@ namespace flame
 			db->module = load_module(db->module_name.c_str());
 		if (add_to_global)
 			global_dbs.push_back(db);
+
+		auto typeinfo_code_path = module_path;
+		typeinfo_code_path.replace_extension(L".typeinfo.code");
+		std::ifstream typeinfo_code(typeinfo_code_path);
+		if (typeinfo_code.good())
+		{
+			struct FunctionCode
+			{
+				std::string name;
+				std::string code;
+			};
+			std::vector<FunctionCode> function_codes;
+
+			while (!typeinfo_code.eof())
+			{
+				std::string line;
+				std::getline(typeinfo_code, line);
+				if (line.empty())
+					continue;
+
+				if (line.size() > 2 && line[0] == '#' && line[1] == '#')
+				{
+					FunctionCode fc;
+					fc.name = line.substr(2);
+					function_codes.push_back(fc);
+				}
+				else
+					function_codes.back().code += line + "\n";
+			}
+			typeinfo_code.close();
+
+			for (auto& u : db->udts)
+			{
+				for (auto& f : u.second->functions)
+				{
+					if (f->name == "bp_update")
+					{
+						auto n = u.second->name + "::" + f->name;
+						for (auto& fc : function_codes)
+						{
+							if (fc.name == n)
+							{
+								f->code = fc.code;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
 
 		return db;
 	}

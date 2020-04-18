@@ -223,8 +223,6 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	auto typeinfo_path = module_path;
-	typeinfo_path.replace_extension(L".typeinfo");
 	std::vector<std::filesystem::path> dependencies;
 	auto pdb_path = module_path;
 	pdb_path.replace_extension(L".pdb");
@@ -352,12 +350,14 @@ int main(int argc, char **args)
 	struct DesiredFunction
 	{
 		std::string name;
+		std::string code;
 	};
 	struct DesiredUDT
 	{
 		std::string name;
 		std::string full_name;
 		std::string base_name;
+		std::string link_name;
 		std::vector<DesiredVariable> variables;
 		std::vector<DesiredFunction> functions;
 	};
@@ -390,16 +390,25 @@ int main(int argc, char **args)
 				current_namespaces.emplace_back(braces_level, res[1].str());
 			else if (std::regex_search(lines[i], res, reg_R))
 			{
+				DesiredUDT du;
+
 				auto str = res[1].str();
 				SUS::remove_spaces(str);
-				auto sp = SUS::split(str, ':');
-				DesiredUDT du;
-				du.name = sp[0];
-				for (auto& ns : current_namespaces)
-					du.full_name += ns.second + "::";
-				du.full_name += du.name;
-				if (sp.size() > 1)
-					du.base_name = sp[1];
+				auto sp = SUS::split(str, ',');
+				{
+					auto _sp = SUS::split(sp[0], ':');
+					du.name = _sp[0];
+					for (auto& ns : current_namespaces)
+						du.full_name += ns.second + "::";
+					du.full_name += du.name;
+					if (_sp.size() > 1)
+						du.base_name = _sp[1];
+				}
+				{
+					auto _sp = SUS::split(sp[1], ':');
+					if (_sp.size() == 2 && _sp[0] == "l")
+						du.link_name = _sp[1];
+				}
 
 				auto braces_level = 0;
 				for (i = i + 1; i < lines.size(); i++)
@@ -409,27 +418,53 @@ int main(int argc, char **args)
 						auto str = res[1].str();
 						SUS::remove_spaces(str);
 						auto sp = SUS::split(str, ',');
-						DesiredVariable v;
-						v.flags = 0;
-						v.name = sp[1];
+						DesiredVariable dv;
+						dv.flags = 0;
+						dv.name = sp[1];
 						for (auto i = 2; i < sp.size(); i++)
 						{
 							if (sp[i] == "i")
-								v.flags |= VariableFlagInput;
+								dv.flags |= VariableFlagInput;
 							else if (sp[i] == "o")
-								v.flags |= VariableFlagOutput;
+								dv.flags |= VariableFlagOutput;
 							else if (sp[i] == "m")
-								v.flags |= VariableFlagEnumMulti;
+								dv.flags |= VariableFlagEnumMulti;
 						}
-						du.variables.push_back(v);
+						du.variables.push_back(dv);
 					}
 					else if (std::regex_search(lines[i], res, reg_RF))
 					{
 						auto str = res[1].str();
 						SUS::remove_spaces(str);
-						DesiredFunction f;
-						f.name = str;
-						du.functions.push_back(f);
+						DesiredFunction df;
+						df.name = str;
+
+						if (df.name == "bp_update")
+						{
+							std::vector<std::string> code_lines;
+							auto braces_level = 0;
+							for (i = i + 1; i < lines.size(); i++)
+							{
+								auto l = lines[i];
+								SUS::trim(l);
+								code_lines.push_back(l);
+
+								braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
+								braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
+								if (braces_level == 0)
+									break;
+							}
+
+							if (code_lines.size() >= 2 && code_lines.front() == "{" && code_lines.back() == "}")
+							{
+								code_lines.erase(code_lines.begin() + 0);
+								code_lines.erase(code_lines.end() - 1);
+							}
+							for (auto& l : code_lines)
+								df.code += l + "\n";
+						}
+
+						du.functions.push_back(df);
 					}
 					else
 					{
@@ -470,6 +505,7 @@ int main(int argc, char **args)
 					_udt->get_length(&ull);
 					auto u = db->add_udt(name, ull);
 					u->base_name = du.base_name;
+					u->link_name = du.link_name;
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -478,9 +514,9 @@ int main(int argc, char **args)
 					{
 						_variable->get_name(&pwname);
 						auto name = w2s(pwname);
-						for (auto& v : du.variables)
+						for (auto& dv : du.variables)
 						{
-							if (v.name == name)
+							if (dv.name == name)
 							{
 								IDiaSymbol* s_type;
 								_variable->get_type(&s_type);
@@ -488,7 +524,7 @@ int main(int argc, char **args)
 								_variable->get_offset(&l);
 								s_type->get_length(&ull);
 
-								auto desc = typeinfo_from_symbol(s_type, v.flags);
+								auto desc = typeinfo_from_symbol(s_type, dv.flags);
 								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 								{
 									auto hash = FLAME_HASH(desc.base_name.c_str());
@@ -501,21 +537,21 @@ int main(int argc, char **args)
 										IDiaSymbol* item;
 										while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
 										{
-											VARIANT v;
-											ZeroMemory(&v, sizeof(v));
+											VARIANT variant;
+											ZeroMemory(&variant, sizeof(variant));
 											item->get_name(&pwname);
-											item->get_value(&v);
+											item->get_value(&variant);
 
 											auto item_name = w2s(pwname);
 											if (!SUS::ends_with(item_name, "Max") && !SUS::ends_with(item_name, "Count"))
-												e->add_item(item_name, v.lVal);
+												e->add_item(item_name, variant.lVal);
 
 											item->Release();
 										}
 										items->Release();
 									}
 								}
-								u->add_variable(desc.get(), name, v.flags, l, ull);
+								u->add_variable(desc.get(), name, dv.flags, l, ull);
 
 								s_type->Release();
 
@@ -533,9 +569,9 @@ int main(int argc, char **args)
 					{
 						_function->get_name(&pwname);
 						auto name = w2s(pwname);
-						for (auto& f : du.functions)
+						for (auto& df : du.functions)
 						{
-							if (f.name == name)
+							if (df.name == name)
 							{
 								if (name == du.name)
 									name = "ctor";
@@ -571,6 +607,8 @@ int main(int argc, char **args)
 									s_parameters->Release();
 
 									s_function_type->Release();
+
+									f->code = df.code;
 								}
 
 								break;
@@ -654,6 +692,7 @@ int main(int argc, char **args)
 		n_udt.append_attribute("name").set_value(u->name.c_str());
 		n_udt.append_attribute("size").set_value(u->size);
 		n_udt.append_attribute("base_name").set_value(u->base_name.c_str());
+		n_udt.append_attribute("link_name").set_value(u->link_name.c_str());
 
 		auto n_items = n_udt.append_child("variables");
 		for (auto& v : u->variables)
@@ -685,10 +724,28 @@ int main(int argc, char **args)
 		}
 	}
 
-	file.save_file(typeinfo_path.string().c_str());
-
 	extra_global_db_count = 0;
 	extra_global_dbs = nullptr;
+
+	auto typeinfo_path = module_path;
+	typeinfo_path.replace_extension(L".typeinfo");
+	file.save_file(typeinfo_path.string().c_str());
+
+	auto typeinfo_code_path = module_path;
+	typeinfo_code_path.replace_extension(L".typeinfo.code");
+	std::ofstream typeinfo_code(typeinfo_code_path);
+	for (auto& u : db->udts)
+	{
+		for (auto& f : u.second->functions)
+		{
+			if (!f->code.empty())
+			{
+				typeinfo_code << "##" << u.second->name << "::" << f->name <<"\n";
+				typeinfo_code << f->code;
+			}
+		}
+	}
+	typeinfo_code.close();
 
 	delete db;
 
