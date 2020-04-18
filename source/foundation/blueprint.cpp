@@ -1522,6 +1522,18 @@ namespace flame
 		}
 	};
 
+	struct FLAME_R(R_Sin)
+	{
+		FLAME_RV(float, t, i);
+
+		FLAME_RV(float, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			out = sin(t * M_PI / 180.f);
+		}
+	};
+
 	struct FLAME_R(R_Linear1d)
 	{
 		FLAME_RV(float, a, i);

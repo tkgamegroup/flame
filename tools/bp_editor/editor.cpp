@@ -216,9 +216,30 @@ struct cSlot : Component
 						auto type = s->type();
 						auto tag = type->tag();
 						utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
+						{
+							auto text_value = utils::e_text(L"-")->get_component(cText);
+							utils::set_current_entity(thiz->tip_info);
+							auto timer = utils::c_timer();
+							timer->interval = 0.f;
+							struct Capture
+							{
+								const TypeInfo* t;
+								void* d;
+								cText* text;
+							}capture;
+							capture.t = s->type();
+							capture.d = s->data();
+							capture.text = text_value;
+							timer->set_callback([](void* c) {
+								auto& capture = *(Capture*)c;
+								capture.text->set_text(s2w(capture.t->serialize(capture.d, 2)).c_str());
+							}, Mail::from_t(&capture), false);
+						}
 						utils::e_end_layout();
 						looper().add_event([](void* c, bool*) {
-							app.root->add_child(*(Entity**)c);
+							auto tip_info = *(Entity**)c;
+							app.root->add_child(tip_info);
+							tip_info->get_component(cTimer)->start();
 						}, Mail::from_p(thiz->tip_info));
 					}
 				}
