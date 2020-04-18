@@ -384,7 +384,7 @@ int main(int argc, char **args)
 			static std::regex reg_ns(R"(^namespace\s+(\w+))");
 			static std::regex reg_R(R"(FLAME_R\((.*)\))");
 			static std::regex reg_RV(R"(FLAME_RV\((.*)\))");
-			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]+)\))");
+			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]*)\))");
 			std::smatch res;
 			if (std::regex_search(lines[i], res, reg_ns))
 				current_namespaces.emplace_back(braces_level, res[1].str());
@@ -472,7 +472,7 @@ int main(int argc, char **args)
 				if (!::flame::find_udt(hash))
 				{
 					_udt->get_length(&ull);
-					auto u = db->add_udt(TypeInfo::get(TypeData, name.c_str()), ull);
+					auto u = db->add_udt(name, ull);
 					u->base_name = du.base_name;
 
 					IDiaEnumSymbols* _variables;
@@ -668,7 +668,7 @@ int main(int argc, char **args)
 		auto u = _u.second.get();
 
 		auto n_udt = n_udts.append_child("udt");
-		n_udt.append_attribute("name").set_value(u->type->name.c_str());
+		n_udt.append_attribute("name").set_value(u->name.c_str());
 		n_udt.append_attribute("size").set_value(u->size);
 		n_udt.append_attribute("base_name").set_value(u->base_name.c_str());
 

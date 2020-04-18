@@ -99,6 +99,7 @@ namespace flame
 		return cvt.f;
 	}
 
+	typedef void (*F_v_v)();
 	typedef void* (*F_vp_v)();
 
 	template <class F, class ...Args>
@@ -129,20 +130,88 @@ namespace flame
 		return (*((__Dummy__*)p).*f)(args...);
 	}
 
-	inline bool equal_and_not_null(void* a, void* b)
+	struct Setter
 	{
-		return a && a == b;
-	}
+		void* o;
+		void* f;
+		void* s;
+
+		virtual ~Setter() {}
+		virtual void set(const void* v) = 0;
+	};
 
 	template <class T>
-	std::pair<T*, uchar> find_not_null_and_only(T* a, T* b)
+	struct Setter_t;
+
+	template <>
+	struct Setter_t<bool> : Setter
 	{
-		if (a && !b)
-			return std::make_pair(a, 0);
-		if (!a && b)
-			return std::make_pair(b, 1);
-		return std::make_pair(nullptr, 0);
-	}
+		static void set_s(void* o, void* f, bool v, void* s)
+		{
+			cmf(p2f<MF_v_b_vp>(f), o, v, s);
+		}
+
+		void set(const void* v) override
+		{
+			set_s(o, f, *(bool*)v, s);
+		}
+	};
+
+	template <>
+	struct Setter_t<int> : Setter
+	{
+		static void set_s(void* o, void* f, int v, void* s)
+		{
+			cmf(p2f<MF_v_i_vp>(f), o, v, s);
+		}
+
+		void set(const void* v) override
+		{
+			set_s(o, f, *(int*)v, s);
+		}
+	};
+
+	template <>
+	struct Setter_t<uint> : Setter
+	{
+		static void set_s(void* o, void* f, uint v, void* s)
+		{
+			cmf(p2f<MF_v_u_vp>(f), o, v, s);
+		}
+
+		void set(const void* v) override
+		{
+			set_s(o, f, *(uint*)v, s);
+		}
+	};
+
+	template <>
+	struct Setter_t<float> : Setter
+	{
+		static void set_s(void* o, void* f, float v, void* s)
+		{
+			cmf(p2f<MF_v_f_vp>(f), o, v, s);
+		}
+
+		void set(const void* v) override
+		{
+			set_s(o, f, *(float*)v, s);
+		}
+	};
+
+	template <>
+	struct Setter_t<uchar> : Setter
+	{
+		static void set_s(void* o, void* f, uchar v, void* s)
+		{
+			cmf(p2f<MF_v_c_vp>(f), o, v, s);
+		}
+
+		void set(const void* v) override
+		{
+			set_s(o, f, *(uchar*)v, s);
+		}
+	};
 
 	template <class T>
 	bool is_one_of(T v, const std::initializer_list<T>& l)

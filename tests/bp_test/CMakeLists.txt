@@ -1,0 +1,6 @@
+generate_config()
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
+add_executable(bp_test ${SOURCE_LIST})
+set_target_properties(bp_test PROPERTIES FOLDER "tests")
+target_link_libraries(bp_test flame_universe)
+add_dependencies(bp_test typeinfogen)

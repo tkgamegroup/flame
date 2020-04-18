@@ -77,7 +77,7 @@ namespace flame
 	{
 		TypeinfoDatabase* db;
 
-		const TypeInfoPrivate* type;
+		std::string name;
 		uint size;
 		std::string base_name;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
@@ -169,13 +169,13 @@ namespace flame
 			return e;
 		}
 
-		inline UdtInfoPrivate* add_udt(const TypeInfo* type, uint size)
+		inline UdtInfoPrivate* add_udt(const std::string name, uint size)
 		{
 			auto u = new UdtInfoPrivate;
-			u->type = (const TypeInfoPrivate*)type;
+			u->name = name;
 			u->db = this;
 			u->size = size;
-			udts.emplace(((const TypeInfoPrivate*)type)->hash, u);
+			udts.emplace(FLAME_HASH(name.c_str()), u);
 			return u;
 		}
 	};

@@ -5,9 +5,9 @@
 
 #include "app.h"
 
-BP::Node* _add_node(const std::string& type, const std::string& id, const Vec2f& pos)
+BP::Node* _add_node(const std::string& id, const std::string& type, const Vec2f& pos)
 {
-	auto n = app.bp->add_node(type.c_str(), id.c_str());
+	auto n = app.bp->add_node(id.c_str(), type.c_str());
 	if (!n)
 		return nullptr;
 	n->pos = pos;
@@ -36,7 +36,7 @@ std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = models[i];
-		ret[i] = _add_node(n->type(), "", n->pos + Vec2f(20.f));
+		ret[i] = _add_node("", n->type(), n->pos + Vec2f(20.f));
 	}
 	for (auto i = 0; i < models.size(); i++)
 	{
@@ -175,7 +175,7 @@ struct Action_AddNode : Action
 
 	void redo() override
 	{
-		_add_node(desc.type.c_str(), desc.id.c_str(), desc.pos);
+		_add_node(desc.id.c_str(), desc.type.c_str(), desc.pos);
 	}
 };
 
@@ -223,7 +223,7 @@ struct Action_RemoveNodes : Action
 	{
 		for (auto& s : savings)
 		{
-			auto n = _add_node(s.desc.type.c_str(), s.desc.id.c_str(), s.desc.pos);
+			auto n = _add_node(s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
 			if (n)
 			{
 				for (auto i = 0; i < s.inputs.size(); i++)
@@ -486,7 +486,7 @@ void MyApp::set_changed(bool v)
 
 BP::Node* MyApp::add_node(const NodeDesc& desc)
 {
-	auto n = _add_node(desc.type, desc.id, desc.pos);
+	auto n = _add_node(desc.id, desc.type, desc.pos);
 	if (!n)
 		return nullptr;
 

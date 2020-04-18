@@ -97,10 +97,9 @@ int main(int argc, char** args)
 
 	utils::pop_parent();
 
-	looper().loop([](void* c) {
-		auto app = (*(App**)c);
-		app->run();
-	}, Mail::from_p(&app));
+	looper().loop([](void*) {
+		app.run();
+	}, Mail());
 
 	return 0;
 }

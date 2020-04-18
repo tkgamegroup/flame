@@ -69,17 +69,17 @@ cConsole::cConsole() :
 								all_udts.push_back(udts.v[i]);
 						}
 						std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-							return std::string(a->type()->name()) < std::string(b->type()->name());
+							return std::string(a->name()) < std::string(b->name());
 						});
 						for (auto udt : all_udts)
-							log += s2w(udt->type()->name()) + L"\n";
+							log += s2w(udt->name()) + L"\n";
 					}
 					else if (tokens[1] == L"udt")
 					{
 						auto udt = find_udt(FLAME_HASH(w2s(tokens[2]).c_str()));
 						if (udt)
 						{
-							log += s2w(udt->type()->name()) + L"\n";
+							log += s2w(udt->name()) + L"\n";
 							std::vector<VariableInfo*> inputs;
 							std::vector<VariableInfo*> outputs;
 							for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
@@ -106,7 +106,7 @@ cConsole::cConsole() :
 						for (auto i = 0; i < app.bp->node_count(); i++)
 						{
 							auto n = app.bp->node(i);
-							log += wfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->type()->name()).c_str()) + L"\n";
+							log += wfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->name()).c_str()) + L"\n";
 						}
 					}
 					else if (tokens[1] == L"node")
@@ -162,8 +162,8 @@ cConsole::cConsole() :
 					if (tokens[1] == L"node")
 					{
 						NodeDesc d;
-						d.type = w2s(tokens[2]);
 						d.id = tokens[3] == L"-" ? "" : w2s(tokens[3]);
+						d.type = w2s(tokens[2]);
 						d.pos = 0.f;
 						auto n = app.add_node(d);
 						if (n)

@@ -19,11 +19,13 @@ namespace flame
 		uint size;
 		std::string default_value;
 		void* data;
+		Setter* setter;
 
 		std::vector<SlotPrivate*> links;
 
 		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const std::string& default_value);
 		SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi);
+		~SlotPrivate();
 
 		void set_data(const void* data);
 		bool link_to(SlotPrivate* target);
@@ -43,6 +45,7 @@ namespace flame
 	struct NodePrivate : BP::Node
 	{
 		BPPrivate* scene;
+		BP::ObjectType object_type;
 		std::string id;
 		std::string type;
 		UdtInfo* udt;
@@ -58,7 +61,7 @@ namespace flame
 
 		uint order;
 
-		NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module);
+		NodePrivate(BPPrivate* scene, BP::ObjectType object_type, const std::string& id, UdtInfo* udt, void* module);
 		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
 			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
@@ -86,8 +89,8 @@ namespace flame
 			need_rebuild_update_list = true;
 		}
 
-		bool check_or_create_id(std::string& id, const std::string& type) const;
-		NodePrivate* add_node(const std::string& type, const std::string& id);
+		bool check_or_create_id(std::string& id) const;
+		NodePrivate* add_node(const std::string& id, const std::string& type, BP::ObjectType object_type);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& address) const;
 		SlotPrivate* find_input(const std::string& address) const;
@@ -106,10 +109,12 @@ namespace flame
 		name(name),
 		offset(offset),
 		size(size),
-		default_value(default_value)
+		default_value(default_value),
+		setter(nullptr)
 	{
-		data = (char*)node->object + offset;
 		user_data = nullptr;
+
+		data = (char*)node->object + offset;
 
 		if (io == In)
 			links.push_back(nullptr);
@@ -121,9 +126,17 @@ namespace flame
 	{
 	}
 
+	SlotPrivate::~SlotPrivate()
+	{
+		delete setter;
+	}
+
 	void SlotPrivate::set_data(const void* d)
 	{
-		type->copy_from(d, data);
+		if (!setter)
+			type->copy_from(d, data);
+		else
+			setter->set(d);
 	}
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
@@ -180,63 +193,165 @@ namespace flame
 
 	static BP::Node* _current_node = nullptr;
 
-	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, UdtInfo* udt, void* module) :
+	NodePrivate::NodePrivate(BPPrivate* scene, BP::ObjectType object_type, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
+		object_type(object_type),
 		id(id),
-		type(udt->type()->name() + 2),
+		type(udt->name()),
 		udt(udt),
+		object(nullptr),
 		module(module),
+		dtor_addr(nullptr),
+		update_addr(nullptr),
 		order(0xffffffff)
 	{
 		pos = Vec2f(0.f);
 		user_data = nullptr;
 
-		auto size = udt->size();
-		object = malloc(size);
-		memset(object, 0, size);
-
-		auto thiz = this;
-		memcpy(object, &thiz, sizeof(void*));
+		if (object_type == BP::ObjectReal)
 		{
-			auto f = udt->find_function("ctor");
-			if (f && f->parameter_count() == 0)
-				cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
+			auto size = udt->size();
+			object = malloc(size);
+			memset(object, 0, size);
+
+			{
+				auto f = udt->find_function("ctor");
+				if (f && f->parameter_count() == 0)
+					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
+			}
+
+			{
+				auto f = udt->find_function("dtor");
+				if (f)
+					dtor_addr = (char*)module + (uint)f->rva();
+			}
+
+			{
+				auto f = udt->find_function("bp_update");
+				assert(f && check_function(f, "D#void", {}));
+				update_addr = (char*)module + (uint)f->rva();
+			}
+			assert(update_addr);
+
+			for (auto i = 0; i < udt->variable_count(); i++)
+			{
+				auto v = udt->variable(i);
+				if (v->flags() & VariableFlagOutput)
+					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+				else
+					inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, inputs.size(), v));
+			}
 		}
-
-		dtor_addr = nullptr;
+		else
 		{
-			auto f = udt->find_function("dtor");
-			if (f)
-				dtor_addr = (char*)module + (uint)f->rva();
-		}
+			{
+				auto f = udt->find_function("current");
+				assert(f && check_function(f, (std::string("P#") + udt->name()).c_str(), {}));
+				object = cf(p2f<F_vp_v>((char*)module + (uint)f->rva()));
+				assert(object);
+			}
 
-		update_addr = nullptr;
-		{
-			auto f = udt->find_function("update");
-			assert(f && check_function(f, "D#void", { "D#uint" }));
-			update_addr = (char*)module + (uint)f->rva();
-		}
-		assert(update_addr);
-
-		for (auto i = 0; i < udt->variable_count(); i++)
-		{
-			auto v = udt->variable(i);
-			auto flags = v->flags();
-			assert(flags);
-			if (flags & VariableFlagInput)
-				inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, inputs.size(), v));
-			else if (flags & VariableFlagOutput)
-				outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+			if (object_type == BP::ObjectRefRead)
+			{
+				for (auto i = 0; i < udt->variable_count(); i++)
+				{
+					auto v = udt->variable(i);
+					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+				}
+			}
+			else if (object_type == BP::ObjectRefWrite)
+			{
+				for (auto i = 0; i < udt->variable_count(); i++)
+				{
+					auto v = udt->variable(i);
+					auto type = v->type();
+					if (type->tag() != TypeData)
+						continue;
+					auto base_hash = type->base_hash();
+					auto input = new SlotPrivate(this, BP::Slot::In, inputs.size(), v);
+					auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
+					if (f_set && f_set->return_type()->hash() == FLAME_CHASH("D#void") &&
+						f_set->parameter_count() == 2 &&
+						f_set->parameter_type(0)->base_hash() == base_hash &&
+						f_set->parameter_type(1)->hash() == FLAME_CHASH("P#void"))
+					{
+						auto f_set_addr = (char*)module + (uint)f_set->rva();
+						Setter* setter = nullptr;
+						switch (base_hash)
+						{
+							case FLAME_CHASH("bool"):
+								setter = new Setter_t<bool>;
+								break;
+							case FLAME_CHASH("int"):
+								setter = new Setter_t<int>;
+								break;
+							case FLAME_CHASH("flame::Vec(2+int)"):
+								setter = new Setter_t<Vec2i>;
+								break;
+							case FLAME_CHASH("flame::Vec(3+int)"):
+								setter = new Setter_t<Vec3i>;
+								break;
+							case FLAME_CHASH("flame::Vec(4+int)"):
+								setter = new Setter_t<Vec4i>;
+								break;
+							case FLAME_CHASH("uint"):
+								setter = new Setter_t<uint>;
+								break;
+							case FLAME_CHASH("flame::Vec(2+uint)"):
+								setter = new Setter_t<Vec2u>;
+								break;
+							case FLAME_CHASH("flame::Vec(3+uint)"):
+								setter = new Setter_t<Vec3u>;
+								break;
+							case FLAME_CHASH("flame::Vec(4+unt)"):
+								setter = new Setter_t<Vec4u>;
+								break;
+							case FLAME_CHASH("float"):
+								setter = new Setter_t<float>;
+								break;
+							case FLAME_CHASH("flame::Vec(2+float)"):
+								setter = new Setter_t<Vec2f>;
+								break;
+							case FLAME_CHASH("flame::Vec(3+float)"):
+								setter = new Setter_t<Vec3f>;
+								break;
+							case FLAME_CHASH("flame::Vec(4+float)"):
+								setter = new Setter_t<Vec4f>;
+								break;
+							case FLAME_CHASH("uchar"):
+								setter = new Setter_t<uchar>;
+								break;
+							case FLAME_CHASH("flame::Vec(2+uchar)"):
+								setter = new Setter_t<Vec2c>;
+								break;
+							case FLAME_CHASH("flame::Vec(3+uchar)"):
+								setter = new Setter_t<Vec3c>;
+								break;
+							case FLAME_CHASH("flame::Vec(4+uchar)"):
+								setter = new Setter_t<Vec4c>;
+								break;
+						}
+						setter->o = object;
+						setter->f = f_set_addr;
+						setter->s = scene;
+						input->setter = setter;
+					}
+					inputs.emplace_back(input);
+				}
+			}
 		}
 	}
 
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
-		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* _dtor_addr, void* _update_addr) :
+		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* dtor_addr, void* update_addr) :
 		scene(scene),
+		object_type(BP::ObjectReal),
 		id(id),
 		type(type),
 		udt(nullptr),
 		module(nullptr),
+		dtor_addr(dtor_addr),
+		update_addr(update_addr),
 		order(0xffffffff)
 	{
 		pos = Vec2f(0.f);
@@ -248,8 +363,6 @@ namespace flame
 		if (ctor_addr)
 			cmf(p2f<MF_v_v>(ctor_addr), object);
 
-		dtor_addr = _dtor_addr;
-		update_addr = _update_addr;
 		assert(update_addr);
 
 		for (auto i = 0; i < _inputs.size(); i++)
@@ -266,9 +379,12 @@ namespace flame
 
 	NodePrivate::~NodePrivate()
 	{
-		if (dtor_addr)
-			cmf(p2f<MF_v_v>(dtor_addr), object);
-		free(object);
+		if (object_type == BP::ObjectReal)
+		{
+			if (dtor_addr)
+				cmf(p2f<MF_v_v>(dtor_addr), object);
+			free(object);
+		}
 	}
 
 	SlotPrivate* NodePrivate::find_input(const std::string& name) const
@@ -301,16 +417,24 @@ namespace flame
 				if (out->type->tag() == TypeData && in->type->tag() == TypePointer)
 					memcpy(in->data, &out->data, sizeof(void*));
 				else
-					memcpy(in->data, out->data, in->size);
+				{
+					if (in->setter)
+						in->setter->set(out->data);
+					else
+						memcpy(in->data, out->data, in->size);
+				}
 			}
 		}
 
-		_current_node = this;
-		cmf(p2f<MF_v_v>(update_addr), object);
-		_current_node = nullptr;
+		if (update_addr)
+		{
+			_current_node = this;
+			cmf(p2f<MF_v_v>(update_addr), object);
+			_current_node = nullptr;
+		}
 	}
 
-	bool BPPrivate::check_or_create_id(std::string& id, const std::string& type) const
+	bool BPPrivate::check_or_create_id(std::string& id) const
 	{
 		if (!id.empty())
 		{
@@ -319,24 +443,17 @@ namespace flame
 		}
 		else
 		{
-			auto prefix = type + "_";
-			auto last_colon = prefix.find_last_of(L':');
-			if (last_colon != std::string::npos)
-				prefix = std::string(prefix.begin() + last_colon + 1, prefix.end());
-			for (auto i = 0; i < nodes.size() + 1; i++)
-			{
-				id = prefix + std::to_string(i);
-				if (!find_node(id))
-					break;
-			}
+			id = std::to_string(::rand());
+			while (find_node(id))
+				id = std::to_string(::rand());
 		}
 		return true;
 	}
 
-	NodePrivate* BPPrivate::add_node(const std::string& type, const std::string& _id)
+	NodePrivate* BPPrivate::add_node(const std::string& _id, const std::string& type, BP::ObjectType object_type)
 	{
 		std::string id = _id;
-		if (!check_or_create_id(id, type))
+		if (!check_or_create_id(id))
 		{
 			printf("cannot add node, id repeated\n");
 			return nullptr;
@@ -344,138 +461,144 @@ namespace flame
 
 		NodePrivate* n = nullptr;
 
-		auto add_enum_node = [&](TypeTag tag, const std::string& enum_name) {
-#pragma pack(1)
-			struct Dummy
-			{
-				int in;
-				int out;
-
-				void update()
-				{
-					out = in;
-				}
-			};
-#pragma pack()
-			n = new NodePrivate(this, id, type, sizeof(Dummy), {
-					{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
-				}, {
-					{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
-				}, nullptr, nullptr, f2v(&Dummy::update));
-		};
-		std::string parameters;
-		switch (type_from_node_name(type, parameters))
+		if (object_type == ObjectReal)
 		{
-		case 'S':
-			add_enum_node(TypeEnumSingle, parameters);
-			break;
-		case 'M':
-			add_enum_node(TypeEnumMulti, parameters);
-			break;
-		case 'V':
-		{
+			auto add_enum_node = [&](TypeTag tag, const std::string& enum_name) {
 #pragma pack(1)
-			struct Dummy
-			{
-				uint type_hash;
-				uint type_size;
-
-				void dtor()
+				struct Dummy
 				{
-					auto in = (char*)&type_size + sizeof(uint);
-					auto out = (char*)&type_size + sizeof(uint) + type_size;
-					basic_type_dtor(type_hash, in);
-					basic_type_dtor(type_hash, out);
-				}
+					int in;
+					int out;
 
-				void update()
-				{
-					auto in = (char*)&type_size + sizeof(uint);
-					auto out = (char*)&type_size + sizeof(uint) + type_size;
-					basic_type_copy(type_hash, in, out, type_size);
-				}
-			};
-#pragma pack()
-			auto type_hash = FLAME_HASH(parameters.c_str());
-			auto type_size = basic_type_size(type_hash);
-			n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * 2, {
-					{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size, ""}
-				}, {
-					{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
-				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
-			auto obj = n->object;
-			*(uint*)((char*)obj + sizeof(void*)) = type_hash;
-			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
-		}
-		break;
-		case 'A':
-		{
-			auto sp = SUS::split(parameters, '+');
-#pragma pack(1)
-			struct Dummy
-			{
-				uint type_hash;
-				uint type_size;
-				uint size;
-
-				void dtor()
-				{
-					for (auto i = 0; i < size; i++)
-						basic_type_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
-					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-					for (auto i = 0; i < out.s; i++)
-						basic_type_dtor(type_hash, (char*)out.v + type_size * i);
-					f_free(out.v);
-				}
-
-				void update()
-				{
-					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-					if (out.s != size)
+					void update()
 					{
-						out.s = size;
-						auto m_size = type_size * size;
-						out.v = (int*)f_malloc(m_size);
-						memset(out.v, 0, m_size);
+						out = in;
 					}
-					for (auto i = 0; i < size; i++)
-					{
-						auto v = (char*)&size + sizeof(uint) + type_size * i;
-						basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
-					}
-				}
-			};
+				};
 #pragma pack()
-			auto tag = TypeData;
-			auto type_name = sp[1];
-			auto base_name = type_name;
-			if (type_name.back() == '*')
+				n = new NodePrivate(this, id, type, sizeof(Dummy), {
+						{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in), ""}
+					}, {
+						{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out), ""}
+					}, nullptr, nullptr, f2v(&Dummy::update));
+			};
+			std::string parameters;
+			switch (type_from_node_name(type, parameters))
 			{
-				base_name.erase(base_name.end() - 1);
-				tag = TypePointer;
-			}
-			auto type_hash = FLAME_HASH(base_name.c_str());
-			uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
-			auto size = stoi(sp[0]);
-			std::vector<SlotDesc> inputs;
-			for (auto i = 0; i < size; i++)
+			case 'S':
+				add_enum_node(TypeEnumSingle, parameters);
+				break;
+			case 'M':
+				add_enum_node(TypeEnumMulti, parameters);
+				break;
+			case 'V':
 			{
-				inputs.push_back({
-					TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
-					sizeof(Dummy) + type_size * i, type_size, ""
-					});
+#pragma pack(1)
+				struct Dummy
+				{
+					uint type_hash;
+					uint type_size;
+
+					void dtor()
+					{
+						auto in = (char*)&type_size + sizeof(uint);
+						auto out = (char*)&type_size + sizeof(uint) + type_size;
+						basic_type_dtor(type_hash, in);
+						basic_type_dtor(type_hash, out);
+					}
+
+					void update()
+					{
+						auto in = (char*)&type_size + sizeof(uint);
+						auto out = (char*)&type_size + sizeof(uint) + type_size;
+						basic_type_copy(type_hash, in, out, type_size);
+					}
+				};
+#pragma pack()
+				auto type_hash = FLAME_HASH(parameters.c_str());
+				auto type_size = basic_type_size(type_hash);
+				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * 2, {
+						{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size, ""}
+					}, {
+						{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size, ""}
+					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
+				auto obj = n->object;
+				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
+				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
 			}
-			n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
-					{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
-				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
-			auto obj = n->object;
-			*(uint*)((char*)obj + sizeof(void*)) = type_hash;
-			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
-			*(uint*)((char*)obj + sizeof(void*) + sizeof(uint) + sizeof(uint)) = size;
+				break;
+			case 'A':
+			{
+				auto sp = SUS::split(parameters, '+');
+#pragma pack(1)
+				struct Dummy
+				{
+					uint type_hash;
+					uint type_size;
+					uint size;
+
+					void dtor()
+					{
+						for (auto i = 0; i < size; i++)
+							basic_type_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
+						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+						for (auto i = 0; i < out.s; i++)
+							basic_type_dtor(type_hash, (char*)out.v + type_size * i);
+						f_free(out.v);
+					}
+
+					void update()
+					{
+						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+						if (out.s != size)
+						{
+							out.s = size;
+							auto m_size = type_size * size;
+							f_free(out.v);
+							out.v = (int*)f_malloc(m_size);
+							memset(out.v, 0, m_size);
+						}
+						for (auto i = 0; i < size; i++)
+						{
+							auto v = (char*)&size + sizeof(uint) + type_size * i;
+							basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+						}
+					}
+				};
+#pragma pack()
+				auto tag = TypeData;
+				auto type_name = sp[1];
+				auto base_name = type_name;
+				if (type_name.back() == '*')
+				{
+					base_name.erase(base_name.end() - 1);
+					tag = TypePointer;
+				}
+				auto type_hash = FLAME_HASH(base_name.c_str());
+				uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
+				auto size = stoi(sp[0]);
+				std::vector<SlotDesc> inputs;
+				for (auto i = 0; i < size; i++)
+				{
+					inputs.push_back({
+						TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
+						sizeof(Dummy) + type_size * i, type_size, ""
+						});
+				}
+				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
+						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>), "" }
+					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
+				auto obj = n->object;
+				*(uint*)((char*)obj + sizeof(void*)) = type_hash;
+				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint)) = type_size;
+				*(uint*)((char*)obj + sizeof(void*) + sizeof(uint) + sizeof(uint)) = size;
+			}
+				break;
+			}
 		}
-		break;
-		default:
-			auto udt = find_udt(FLAME_HASH(("D#" + type).c_str()));
+		if (!n)
+		{
+			auto udt = find_udt(FLAME_HASH(type.c_str()));
 
 			if (!udt)
 			{
@@ -483,7 +606,7 @@ namespace flame
 				return nullptr;
 			}
 
-			n = new NodePrivate(this, id, udt, udt->db()->module());
+			n = new NodePrivate(this, object_type, id, udt, udt->db()->module());
 		}
 
 		nodes.emplace_back(n);
@@ -763,9 +886,9 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node* BP::add_node(const char* type, const char* id)
+	BP::Node* BP::add_node(const char* id, const char* type, ObjectType object_type)
 	{
-		return ((BPPrivate*)this)->add_node(type, id);
+		return ((BPPrivate*)this)->add_node(id, type, object_type);
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -823,8 +946,9 @@ namespace flame
 		};
 		struct NodeDesc
 		{
-			std::string type;
+			ObjectType object_type;
 			std::string id;
+			std::string type;
 			Vec2f pos;
 			std::vector<DataDesc> datas;
 		};
@@ -834,8 +958,9 @@ namespace flame
 		{
 			NodeDesc node;
 
-			node.type = n_node.attribute("type").value();
+			node.object_type = (ObjectType)n_node.attribute("object_type").as_int();
 			node.id = n_node.attribute("id").value();
+			node.type = n_node.attribute("type").value();
 			node.pos = stof2(n_node.attribute("pos").value());
 
 			for (auto n_data : n_node.child("datas"))
@@ -872,7 +997,7 @@ namespace flame
 
 		for (auto& n_d : node_descs)
 		{
-			auto n = bp->add_node(n_d.type, n_d.id);
+			auto n = bp->add_node(n_d.id, n_d.type, n_d.object_type);
 			if (n)
 			{
 				n->pos = n_d.pos;
@@ -920,8 +1045,9 @@ namespace flame
 			auto udt = n->udt;
 
 			auto n_node = n_nodes.append_child("node");
-			n_node.append_attribute("type").set_value(n->type.c_str());
+			n_node.append_attribute("object_type").set_value(n->object_type);
 			n_node.append_attribute("id").set_value(n->id.c_str());
+			n_node.append_attribute("type").set_value(n->type.c_str());
 			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());
 
 			pugi::xml_node n_datas;
@@ -971,12 +1097,12 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec2i)
 	{
-		FLAME_RV(int, x);
-		FLAME_RV(int, y);
+		FLAME_RV(int, x, i);
+		FLAME_RV(int, y, i);
 
-		FLAME_RV(Vec2i, out);
+		FLAME_RV(Vec2i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -985,13 +1111,13 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec3i)
 	{
-		FLAME_RV(int, x);
-		FLAME_RV(int, y);
-		FLAME_RV(int, z);
+		FLAME_RV(int, x, i);
+		FLAME_RV(int, y, i);
+		FLAME_RV(int, z, i);
 
-		FLAME_RV(Vec3i, out);
+		FLAME_RV(Vec3i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1001,14 +1127,14 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec4i)
 	{
-		FLAME_RV(int, x);
-		FLAME_RV(int, y);
-		FLAME_RV(int, z);
-		FLAME_RV(int, w);
+		FLAME_RV(int, x, i);
+		FLAME_RV(int, y, i);
+		FLAME_RV(int, z, i);
+		FLAME_RV(int, w, i);
 
-		FLAME_RV(Vec4i, out);
+		FLAME_RV(Vec4i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1019,12 +1145,12 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec2u)
 	{
-		FLAME_RV(uint, x);
-		FLAME_RV(uint, y);
+		FLAME_RV(uint, x, i);
+		FLAME_RV(uint, y, i);
 
-		FLAME_RV(Vec2u, out);
+		FLAME_RV(Vec2u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1033,13 +1159,13 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec3u)
 	{
-		FLAME_RV(uint, x);
-		FLAME_RV(uint, y);
-		FLAME_RV(uint, z);
+		FLAME_RV(uint, x, i);
+		FLAME_RV(uint, y, i);
+		FLAME_RV(uint, z, i);
 
-		FLAME_RV(Vec3u, out);
+		FLAME_RV(Vec3u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1049,14 +1175,14 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec4u)
 	{
-		FLAME_RV(uint, x);
-		FLAME_RV(uint, y);
-		FLAME_RV(uint, z);
-		FLAME_RV(uint, w);
+		FLAME_RV(uint, x, i);
+		FLAME_RV(uint, y, i);
+		FLAME_RV(uint, z, i);
+		FLAME_RV(uint, w, i);
 
-		FLAME_RV(Vec4u, out);
+		FLAME_RV(Vec4u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1067,12 +1193,12 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec2f)
 	{
-		FLAME_RV(float, x);
-		FLAME_RV(float, y);
+		FLAME_RV(float, x, i);
+		FLAME_RV(float, y, i);
 
-		FLAME_RV(Vec2f, out);
+		FLAME_RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1081,13 +1207,13 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec3f)
 	{
-		FLAME_RV(float, x);
-		FLAME_RV(float, y);
-		FLAME_RV(float, z);
+		FLAME_RV(float, x, i);
+		FLAME_RV(float, y, i);
+		FLAME_RV(float, z, i);
 
-		FLAME_RV(Vec3f, out);
+		FLAME_RV(Vec3f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1097,14 +1223,14 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec4f)
 	{
-		FLAME_RV(float, x);
-		FLAME_RV(float, y);
-		FLAME_RV(float, z);
-		FLAME_RV(float, w);
+		FLAME_RV(float, x, i);
+		FLAME_RV(float, y, i);
+		FLAME_RV(float, z, i);
+		FLAME_RV(float, w, i);
 
-		FLAME_RV(Vec4f, out);
+		FLAME_RV(Vec4f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1115,12 +1241,12 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec2c)
 	{
-		FLAME_RV(uchar, x);
-		FLAME_RV(uchar, y);
+		FLAME_RV(uchar, x, i);
+		FLAME_RV(uchar, y, i);
 
-		FLAME_RV(Vec2c, out);
+		FLAME_RV(Vec2c, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1129,13 +1255,13 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec3c)
 	{
-		FLAME_RV(uchar, x);
-		FLAME_RV(uchar, y);
-		FLAME_RV(uchar, z);
+		FLAME_RV(uchar, x, i);
+		FLAME_RV(uchar, y, i);
+		FLAME_RV(uchar, z, i);
 
-		FLAME_RV(Vec3c, out);
+		FLAME_RV(Vec3c, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1145,14 +1271,14 @@ namespace flame
 
 	struct FLAME_R(R_MakeVec4c)
 	{
-		FLAME_RV(uchar, x);
-		FLAME_RV(uchar, y);
-		FLAME_RV(uchar, z);
-		FLAME_RV(uchar, w);
+		FLAME_RV(uchar, x, i);
+		FLAME_RV(uchar, y, i);
+		FLAME_RV(uchar, z, i);
+		FLAME_RV(uchar, w, i);
 
-		FLAME_RV(Vec4c, out);
+		FLAME_RV(Vec4c, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out[0] = x;
 			out[1] = y;
@@ -1163,12 +1289,12 @@ namespace flame
 
 	struct FLAME_R(R_Add)
 	{
-		FLAME_RV(float, a);
-		FLAME_RV(float, b);
+		FLAME_RV(float, a, i);
+		FLAME_RV(float, b, i);
 
-		FLAME_RV(float, out);
+		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + b;
 		}
@@ -1176,12 +1302,12 @@ namespace flame
 
 	struct FLAME_R(R_Multiple)
 	{
-		FLAME_RV(float, a);
-		FLAME_RV(float, b);
+		FLAME_RV(float, a, i);
+		FLAME_RV(float, b, i);
 
-		FLAME_RV(float, out);
+		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a * b;
 		}
@@ -1189,10 +1315,10 @@ namespace flame
 
 	struct FLAME_R(R_Time)
 	{
-		FLAME_RV(float, delta);
-		FLAME_RV(float, total);
+		FLAME_RV(float, delta, o);
+		FLAME_RV(float, total, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			delta = looper().delta_time;
 			total = BP::Node::current()->scene()->time;
@@ -1201,13 +1327,13 @@ namespace flame
 
 	struct FLAME_R(R_Linear1d)
 	{
-		FLAME_RV(float, a);
-		FLAME_RV(float, b);
-		FLAME_RV(float, t);
+		FLAME_RV(float, a, i);
+		FLAME_RV(float, b, i);
+		FLAME_RV(float, t, i);
 
-		FLAME_RV(float, out);
+		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
@@ -1215,13 +1341,13 @@ namespace flame
 
 	struct FLAME_R(R_Linear2d)
 	{
-		FLAME_RV(Vec2f, a);
-		FLAME_RV(Vec2f, b);
-		FLAME_RV(float, t);
+		FLAME_RV(Vec2f, a, i);
+		FLAME_RV(Vec2f, b, i);
+		FLAME_RV(float, t, i);
 
-		FLAME_RV(Vec2f, out);
+		FLAME_RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
@@ -1229,9 +1355,9 @@ namespace flame
 
 	struct FLAME_R(R_KeyListener)
 	{
-		FLAME_RV(Key, key);
+		FLAME_RV(Key, key, i);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(update)(uint frame)
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 
 		}

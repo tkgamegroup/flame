@@ -198,9 +198,9 @@ namespace flame
 		return ((UdtInfoPrivate*)this)->db;
 	}
 
-	const TypeInfo* UdtInfo::type() const
+	const char* UdtInfo::name() const
 	{
-		return ((UdtInfoPrivate*)this)->type;
+		return ((UdtInfoPrivate*)this)->name.c_str();
 	}
 
 	uint UdtInfo::size() const
@@ -353,7 +353,7 @@ namespace flame
 
 		for (auto n_udt : file_root.child("udts"))
 		{
-			auto u = db->add_udt(TypeInfo::get(n_udt.attribute("name").value()), n_udt.attribute("size").as_uint());
+			auto u = db->add_udt(n_udt.attribute("name").value(), n_udt.attribute("size").as_uint());
 			u->base_name = n_udt.attribute("base_name").value();
 
 			for (auto n_variable : n_udt.child("variables"))

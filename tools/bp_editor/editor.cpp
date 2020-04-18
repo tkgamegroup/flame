@@ -995,10 +995,10 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 	std::vector<std::pair<UdtInfo*, VariableInfo*>> node_types;
 	auto add_udt = [&](UdtInfo* u) {
 		{
-			auto f = find_not_null_and_only(u->find_function("update"), u->find_function("active_update"));
-			if (!f.first)
+			auto f = u->find_function("bp_update");
+			if (!f)
 				return;
-			if (!check_function(f.first, "D#void", { "D#uint" }))
+			if (!check_function(f, "D#void", { "D#uint" }))
 				return;
 		}
 		for (auto i = 0; i < u->variable_count(); i++)
@@ -1046,7 +1046,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 			add_udt(udts.v[j]);
 	}
 	std::sort(node_types.begin(), node_types.end(), [](const auto& a, const auto& b) {
-		return std::string(a.first->type()->name()) < std::string(b.first->type()->name());
+		return std::string(a.first->name()) < std::string(b.first->name());
 	});
 
 	utils::push_parent(utils::add_layer(app.root, ""));
@@ -1295,9 +1295,9 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 						for (auto& t : node_types)
 						{
-							capture.us = t.first->type()->name() + 2;
+							capture.us = t.first->name();
 							capture.vs = t.second ? t.second->name() : nullptr;
-							utils::e_menu_item(s2w(t.first->type()->name()).c_str(), [](void* c) {
+							utils::e_menu_item(s2w(t.first->name()).c_str(), [](void* c) {
 								auto& capture = *(Capture*)c;
 								NodeDesc d;
 								d.type = capture.us;

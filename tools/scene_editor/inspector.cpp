@@ -17,162 +17,6 @@ void end_item()
 	utils::pop_parent();
 }
 
-template <class T>
-struct Setter;
-
-template <>
-struct Setter<bool>
-{
-	static void call(void* o, void* f, bool v, void* s)
-	{
-		cmf(p2f<MF_v_b_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<int>
-{
-	static void call(void* o, void* f, int v, void* s)
-	{
-		cmf(p2f<MF_v_i_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec2i>
-{
-	static void call(void* o, void* f, Vec2i* v, void* s)
-	{
-		cmf(p2f<MF_v_i2p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec3i>
-{
-	static void call(void* o, void* f, Vec3i* v, void* s)
-	{
-		cmf(p2f<MF_v_i3p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec4i>
-{
-	static void call(void* o, void* f, Vec4i* v, void* s)
-	{
-		cmf(p2f<MF_v_i4p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<uint>
-{
-	static void call(void* o, void* f, uint v, void* s)
-	{
-		cmf(p2f<MF_v_u_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec2u>
-{
-	static void call(void* o, void* f, Vec2u* v, void* s)
-	{
-		cmf(p2f<MF_v_u2p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec3u>
-{
-	static void call(void* o, void* f, Vec3u* v, void* s)
-	{
-		cmf(p2f<MF_v_u3p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec4u>
-{
-	static void call(void* o, void* f, Vec4u* v, void* s)
-	{
-		cmf(p2f<MF_v_u4p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<float>
-{
-	static void call(void* o, void* f, float v, void* s)
-	{
-		cmf(p2f<MF_v_f_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec2f>
-{
-	static void call(void* o, void* f, Vec2f* v, void* s)
-	{
-		cmf(p2f<MF_v_f2p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec3f>
-{
-	static void call(void* o, void* f, Vec3f* v, void* s)
-	{
-		cmf(p2f<MF_v_f3p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec4f>
-{
-	static void call(void* o, void* f, Vec4f* v, void* s)
-	{
-		cmf(p2f<MF_v_f4p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<uchar>
-{
-	static void call(void* o, void* f, uchar v, void* s)
-	{
-		cmf(p2f<MF_v_c_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec2c>
-{
-	static void call(void* o, void* f, Vec2c* v, void* s)
-	{
-		cmf(p2f<MF_v_c2p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec3c>
-{
-	static void call(void* o, void* f, Vec3c* v, void* s)
-	{
-		cmf(p2f<MF_v_c3p_vp>(f), o, v, s);
-	}
-};
-
-template <>
-struct Setter<Vec4c>
-{
-	static void call(void* o, void* f, Vec4c* v, void* s)
-	{
-		cmf(p2f<MF_v_c4p_vp>(f), o, v, s);
-	}
-};
-
 struct SetterCapture
 {
 	void* p;
@@ -188,7 +32,7 @@ void create_edit(SetterCapture* c)
 	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](void* c, T v, bool exit_editing) {
 		auto& capture = *(SetterCapture*)c;
 		if (capture.f)
-			Setter<T>::call(capture.o, capture.f, v, app.inspector);
+			Setter_t<T>::set_s(capture.o, capture.f, v, app.inspector);
 		else
 			*(T*)capture.p = v;
 	}, Mail::from_t(c)));
@@ -205,7 +49,7 @@ void create_vec_edit(SetterCapture* c)
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](void* c, const Vec<N, T>& v, bool exit_editing) {
 		auto& capture = *(SetterCapture*)c;
 		if (capture.f)
-			Setter<Vec<N, T>>::call(capture.o, capture.f, (Vec<N, T>*)&v, app.inspector);
+			Setter_t<Vec<N, T>>::set_s(capture.o, capture.f, (Vec<N, T>*)&v, app.inspector);
 		else
 			*(Vec<N, T>*)capture.p = v;
 	}, Mail::from_t(c)));
@@ -392,17 +236,10 @@ void cInspector::refresh()
 				{
 					if (f_set)
 					{
-						if (f_set->return_type()->hash() != FLAME_CHASH("D#void") ||
-							f_set->parameter_count() != 2)
-							f_set = nullptr;
-						else
-						{
-							auto p1 = f_set->parameter_type(0);
-							auto p2 = f_set->parameter_type(1);
-							if (p1->base_hash() != base_hash || p2->hash() != FLAME_CHASH("P#void"))
-								f_set = nullptr;
-						}
-						if (f_set)
+						if (f_set->return_type()->hash() == FLAME_CHASH("D#void") &&
+							f_set->parameter_count() == 2 &&
+							f_set->parameter_type(0)->base_hash() == base_hash &&
+							f_set->parameter_type(1)->hash() == FLAME_CHASH("P#void"))
 							f_set_addr = (char*)module + (uint)f_set->rva();
 					}
 					SetterCapture setter_capture;
@@ -504,16 +341,16 @@ void cInspector::refresh()
 				for (auto i = 0; i < udts.s; i++)
 				{
 					auto u = udts.v[i];
-					if (std::string(u->type()->name()).compare(0, prefix.l, prefix.s) == 0)
+					if (std::string(u->name()).compare(0, prefix.l, prefix.s) == 0)
 						all_udts.push_back(u);
 				}
 			}
 			std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-				return std::string(a->type()->name()) < std::string(b->type()->name());
+				return std::string(a->name()) < std::string(b->name());
 			});
 			for (auto udt : all_udts)
 			{
-				utils::e_menu_item(s2w(udt->type()->name() + prefix.l).c_str(), [](void* c) {
+				utils::e_menu_item(s2w(udt->name() + prefix.l).c_str(), [](void* c) {
 					looper().add_event([](void* c, bool*) {
 						auto u = *(UdtInfo**)c;
 

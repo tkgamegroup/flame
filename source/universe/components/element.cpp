@@ -192,6 +192,18 @@ namespace flame
 		data_changed(FLAME_CHASH("frame_color"), sender);
 	}
 
+	cElement* _current;
+
+	void cElement::set_current(cElement* e)
+	{
+		_current = e;
+	}
+
+	cElement* cElement::current()
+	{
+		return _current;
+	}
+
 	cElement* cElement::create()
 	{
 		return new cElementPrivate();

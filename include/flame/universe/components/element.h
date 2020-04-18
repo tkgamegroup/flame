@@ -16,18 +16,18 @@ namespace flame
 	{
 		s2DRenderer* renderer;
 
-		FLAME_RV(Vec2f, pos, 0);
-		FLAME_RV(Vec2f, size, 0);
-		FLAME_RV(float, scale, 0);
-		FLAME_RV(Vec2f, pivot, 0);
-		FLAME_RV(Vec4f, padding, 0); // L T R B
-		FLAME_RV(float, alpha, 0);
-		FLAME_RV(Vec4f, roundness, 0);
-		FLAME_RV(uint, roundness_lod, 0);
-		FLAME_RV(float, frame_thickness, 0);
-		FLAME_RV(Vec4c, color, 0);
-		FLAME_RV(Vec4c, frame_color, 0);
-		FLAME_RV(ClipFlag, clip_flags, 0, m);
+		FLAME_RV(Vec2f, pos);
+		FLAME_RV(Vec2f, size);
+		FLAME_RV(float, scale);
+		FLAME_RV(Vec2f, pivot);
+		FLAME_RV(Vec4f, padding); // L T R B
+		FLAME_RV(float, alpha);
+		FLAME_RV(Vec4f, roundness);
+		FLAME_RV(uint, roundness_lod);
+		FLAME_RV(float, frame_thickness);
+		FLAME_RV(Vec4c, color);
+		FLAME_RV(Vec4c, frame_color);
+		FLAME_RV(ClipFlag, clip_flags, m);
 
 		Vec2f global_pos;
 		float global_scale;
@@ -131,6 +131,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f, void* sender = nullptr);
 
+		FLAME_UNIVERSE_EXPORTS static void set_current(cElement* e);
+		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(current)();
 		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(create)();
 	};
 }
