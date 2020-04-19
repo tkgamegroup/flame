@@ -1,5 +1,4 @@
 #include <flame/serialize.h>
-#include <flame/foundation/blueprint.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>

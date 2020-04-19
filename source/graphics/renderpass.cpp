@@ -1,4 +1,3 @@
-#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 

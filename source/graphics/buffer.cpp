@@ -1,4 +1,3 @@
-#include <flame/foundation/blueprint.h>
 #include "device_private.h"
 #include "buffer_private.h"
 #include "commandbuffer_private.h"

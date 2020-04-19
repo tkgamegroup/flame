@@ -78,7 +78,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS uint base_hash() const;
 		FLAME_FOUNDATION_EXPORTS uint hash() const;
 
-		inline static std::string make_str(TypeTag tag, const std::string& base_name, bool is_array = false)
+		static std::string make_str(TypeTag tag, const std::string& base_name, bool is_array = false)
 		{
 			std::string ret;
 			ret = type_tag(tag);
@@ -88,7 +88,7 @@ namespace flame
 			return ret;
 		}
 
-		inline static void break_str(const std::string& str, TypeTag& tag, std::string& base_name, bool& is_array)
+		static void break_str(const std::string& str, TypeTag& tag, std::string& base_name, bool& is_array)
 		{
 			auto pos_hash = str.find('#');
 			{
@@ -108,12 +108,12 @@ namespace flame
 			base_name = std::string(str.begin() + pos_hash + 1, str.end());
 		}
 
-		inline static uint get_hash(TypeTag tag, const std::string& base_name, bool is_array = false)
+		static uint get_hash(TypeTag tag, const std::string& base_name, bool is_array = false)
 		{
 			return FLAME_HASH(make_str(tag, base_name, is_array).c_str());
 		}
 
-		inline static uint get_hash(const std::string& str)
+		static uint get_hash(const std::string& str)
 		{
 			TypeTag tag;
 			std::string base_name;
@@ -122,7 +122,7 @@ namespace flame
 			return TypeInfo::get_hash(tag, base_name, is_array);
 		}
 
-		inline bool pod() const
+		bool is_pod() const
 		{
 			if (is_array())
 				return false;
@@ -133,6 +133,26 @@ namespace flame
 			if (t == TypeData && (bh == FLAME_CHASH("flame::StringA") || bh == FLAME_CHASH("flame::StringW")))
 				return false;
 			return true;
+		}
+
+		std::string get_cpp_name() const
+		{
+			std::string ret = tn_a2c(base_name());
+			static FLAME_SAL(str_flame, "flame::");
+			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
+				ret.erase(ret.begin(), ret.begin() + str_flame.l);
+			std::regex reg_vec(R"(Vec<([0-9]+),(\w+)>)");
+			std::smatch res;
+			if (std::regex_search(ret, res, reg_vec))
+			{
+				auto t = res[2].str();
+				ret = "Vec" + res[1].str() + (t == "uchar" ? 'c' : t[0]);
+			}
+			if (is_array())
+				ret = "Array<" + ret + ">";
+			if (tag() == TypePointer)
+				ret += "*";
+			return ret;
 		}
 
 		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);

@@ -1,5 +1,3 @@
-#include <flame/foundation/blueprint.h>
-#include <flame/foundation/typeinfo.h>
 #include "device_private.h"
 #include "renderpass_private.h"
 #include "buffer_private.h"
@@ -630,7 +628,6 @@ namespace flame
 						auto json = nlohmann::json::parse(res);
 						if (s.type == ShaderStageFrag)
 						{
-							auto info = find_udt(FLAME_CHASH("D#flame::graphics::BlendOptions"));
 							auto& bos = json["blend_options"];
 							for (auto i = 0; i < bos.size(); i++)
 							{

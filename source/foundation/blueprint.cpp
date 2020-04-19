@@ -1108,11 +1108,20 @@ namespace flame
 
 		file.save_file(filename);
 
-		std::ofstream code(filename + std::wstring(L".h"));
+		std::ofstream h_file(filename + std::wstring(L".h"));
 		if (bp->need_rebuild_update_list)
 			build_update_list(bp);
+		std::vector<std::pair<std::string, std::string>> decls;
+		std::vector<std::string> code_lines;
 		for (auto n : bp->update_list)
 		{
+			auto var_id = [](SlotPrivate* s) {
+				auto n = s->node;
+				if (n->object_type != ObjectReal)
+					return std::string(n->udt->link_name()) + "->" + (s->setter ? "set_" : "") + s->name;
+				return "_" + n->id + "_" + s->name;
+			};
+
 			switch (n->object_type)
 			{
 			case ObjectRefWrite:
@@ -1128,24 +1137,61 @@ namespace flame
 						value = type->serialize(in->data, 6);
 					}
 					else
-						value = "_" + out->node->id + "_" + out->name;
-					code << n->udt->link_name() << "->";
+						value = var_id(out);
+					auto line = var_id(in.get());
 					if (in->setter)
-						code << "set_" << in->name << "(" << value << ");\n";
+						line += "(" + value + ");";
 					else
-						code << in->name << " = " << value << ";\n";
+						line += " = " + value + ";";
+					code_lines.push_back(line);
 				}
 				break;
-			case ObjectRefRead:
+			case ObjectReal:
+			{
+				auto f = n->udt->find_function("bp_update");
+				assert(f && check_function(f, "D#void", {}));
+				std::string function_code = f->code();
 				for (auto& out : n->outputs)
 				{
-					for (auto in : out->links)
-						code << "_" << in->node->id << "_" << in->name << " = " << "_" << n->id << "_" << out->name << ";\n";
+					auto type = out->type;
+					auto id = var_id(out.get());
+
+					decls.emplace_back(type->get_cpp_name(), id);
+					std::regex reg("\\b" + out->name + "\\b");
+					function_code = std::regex_replace(function_code, reg, id);
 				}
+				for (auto& in : n->inputs)
+				{
+					auto out = (SlotPrivate*)in->links[0];
+					std::string value;
+					if (!out)
+					{
+						auto type = in->type;
+						value = type->serialize(in->data, 6);
+					}
+					else
+						value = var_id(out);
+					std::regex reg("\\b" + in->name + "\\b");
+					function_code = std::regex_replace(function_code, reg, value);
+				}
+				auto function_lines = SUS::split(function_code, '\n');
+				for (auto& l : function_lines)
+					code_lines.push_back(l);
+			}
 				break;
 			}
 		}
-		code.close();
+
+		for (auto& d : decls)
+		{
+
+		}
+
+		for (auto& d : decls)
+			h_file << d.first + " " + d.second + ";\n";
+		for (auto& l : code_lines)
+			h_file << l + "\n";
+		h_file.close();
 	}
 
 	void BP::destroy(BP *bp)
@@ -1162,8 +1208,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
+			out = Vec2i(x, y);
 		}
 	};
 
@@ -1191,9 +1236,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
+			out = Vec3i(x, y, z);
 		}
 	};
 
@@ -1224,10 +1267,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
-			out[3] = w;
+			out = Vec4i(x, y, z, w);
 		}
 	};
 
@@ -1258,8 +1298,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
+			out = Vec2u(x, y);
 		}
 	};
 
@@ -1287,9 +1326,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
+			out = Vec3u(x, y, z);
 		}
 	};
 
@@ -1320,10 +1357,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
-			out[3] = w;
+			out = Vec4u(x, y, z, w);
 		}
 	};
 
@@ -1354,8 +1388,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
+			out = Vec2f(x, y);
 		}
 	};
 
@@ -1383,9 +1416,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
+			out = Vec3f(x, y, z);
 		}
 	};
 
@@ -1416,10 +1447,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
-			out[3] = w;
+			out = Vec4f(x, y, z, w);
 		}
 	};
 
@@ -1450,8 +1478,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
+			out = Vec2c(x, y);
 		}
 	};
 
@@ -1479,9 +1506,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
+			out = Vec3c(x, y, z);
 		}
 	};
 
@@ -1512,10 +1537,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			out[0] = x;
-			out[1] = y;
-			out[2] = z;
-			out[3] = w;
+			out = Vec4c(x, y, z, w);
 		}
 	};
 

@@ -100,7 +100,7 @@ namespace flame
 			v->flags = flags;
 			v->offset = offset;
 			v->size = size;
-			if (type->pod())
+			if (type->is_pod())
 			{
 				v->default_value = new char[size];
 				memset(v->default_value, 0, size);
