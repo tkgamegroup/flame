@@ -707,7 +707,7 @@ int main(int argc, char **args)
 			n_variable.append_attribute("offset").set_value(v->offset);
 			n_variable.append_attribute("size").set_value(v->size);
 			if (v->default_value)
-				n_variable.append_attribute("default_value").set_value(type->serialize(v->default_value, 2).c_str());
+				n_variable.append_attribute("default_value").set_value(type->serialize(v->default_value).c_str());
 		}
 
 		auto n_functions = n_udt.append_child("functions");

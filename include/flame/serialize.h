@@ -30,10 +30,22 @@ namespace flame
 		return buf;
 	}
 
-	inline std::string to_string(float v, int precision = 6)
+	inline std::string to_string(float v)
 	{
 		char buf[20];
-		sprintf(buf, "%.*f", precision, v);
+		sprintf(buf, "%.6f", v);
+		auto len = (int)strlen(buf);
+		for (auto i = len - 1; i >= 0; i--)
+		{
+			auto ch = buf[i];
+			if (ch == '.')
+			{
+				buf[i + 1] = '0';
+				break;
+			}
+			if (ch == '0')
+				buf[i] = 0;
+		}
 		return buf;
 	}
 
@@ -44,35 +56,8 @@ namespace flame
 		return buf;
 	}
 
-	template <uint N>
-	inline std::string to_string(const Vec<N, uint>& v)
-	{
-		auto ret = to_string(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
-		return ret;
-	}
-
-	template <uint N>
-	inline std::string to_string(const Vec<N, int>& v)
-	{
-		auto ret = to_string(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
-		return ret;
-	}
-
-	template <uint N>
-	inline std::string to_string(const Vec<N, float>& v, int precision = 6)
-	{
-		auto ret = to_string(v[0], precision);
-		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i], precision);
-		return ret;
-	}
-
-	template <uint N>
-	inline std::string to_string(const Vec<N, uchar>& v)
+	template <uint N, class T>
+	inline std::string to_string(const Vec<N, T>& v)
 	{
 		auto ret = to_string(v[0]);
 		for (auto i = 1; i < N; i++)
@@ -95,10 +80,22 @@ namespace flame
 	}
 
 
-	inline std::wstring to_wstring(float v, int precision = 6)
+	inline std::wstring to_wstring(float v)
 	{
 		wchar_t buf[20];
-		swprintf(buf, L"%.*f", precision, v);
+		swprintf(buf, L"%.6f", v);
+		auto len = (int)wcslen(buf);
+		for (auto i = len - 1; i >= 0; i--)
+		{
+			auto ch = buf[i];
+			if (ch == L'.')
+			{
+				buf[i + 1] = '0';
+				break;
+			}
+			if (ch == L'0')
+				buf[i] = 0;
+		}
 		return buf;
 	}
 
@@ -109,35 +106,8 @@ namespace flame
 		return buf;
 	}
 
-	template <uint N>
-	inline std::wstring to_wstring(const Vec<N, uint>& v)
-	{
-		auto ret = to_wstring(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += L";" + to_wstring(v[i]);
-		return ret;
-	}
-
-	template <uint N>
-	inline std::wstring to_wstring(const Vec<N, int>& v)
-	{
-		auto ret = to_wstring(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += L";" + to_wstring(v[i]);
-		return ret;
-	}
-
-	template <uint N>
-	inline std::wstring to_wstring(const Vec<N, float>& v, int precision = 6)
-	{
-		auto ret = to_wstring(v[0], precision);
-		for (auto i = 1; i < N; i++)
-			ret += L";" + to_wstring(v[i], precision);
-		return ret;
-	}
-
-	template <uint N>
-	inline std::wstring to_wstring(const Vec<N, uchar>& v)
+	template <uint N, class T>
+	inline std::wstring to_wstring(const Vec<N, T>& v)
 	{
 		auto ret = to_wstring(v[0]);
 		for (auto i = 1; i < N; i++)

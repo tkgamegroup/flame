@@ -533,7 +533,7 @@ void MyApp::remove_nodes(const std::vector<BP::Node*> nodes)
 			auto& dst = s.inputs[j];
 			auto type = src->type();
 			if (type->tag() != TypePointer)
-				dst.data = type->serialize(src->data(), 2);
+				dst.data = type->serialize(src->data());
 			auto slot = src->link(0);
 			if (slot)
 				dst.link = slot->get_address().v;
@@ -634,8 +634,8 @@ void MyApp::set_data(BP::Slot* input, void* data, bool from_editor)
 
 	auto a = new Action_SetData;
 	a->input_addr = input->get_address().v;
-	a->prev_data = type->serialize(input->data(), 2);
-	a->after_data = type->serialize(data, 2);
+	a->prev_data = type->serialize(input->data());
+	a->after_data = type->serialize(data);
 	add_action(a);
 
 	input->set_data(data);

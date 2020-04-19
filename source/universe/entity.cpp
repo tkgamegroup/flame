@@ -451,7 +451,7 @@ namespace flame
 					auto p = (char*)object + v->offset();
 					auto dv = v->default_value();
 					if (dv && memcmp(dv, p, v->size()))
-						n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p, 6).c_str());
+						n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p).c_str());
 				}
 				{
 					auto f = udt->find_function("dtor");

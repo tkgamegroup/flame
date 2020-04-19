@@ -194,7 +194,7 @@ namespace flame
 		{
 			std::wstring str;
 			if constexpr (std::is_floating_point<T>::value)
-				str = to_wstring(*(T*)data, 2);
+				str = to_wstring(*(T*)data);
 			else
 				str = to_wstring(*(T*)data);
 			edit_text->set_text(str.c_str(), INVALID_POINTER);
@@ -312,7 +312,7 @@ namespace flame
 			{
 				std::wstring str;
 				if constexpr (std::is_floating_point<T>::value)
-					str = to_wstring((*(Vec<N, T>*)data)[i], 2);
+					str = to_wstring((*(Vec<N, T>*)data)[i]);
 				else
 					str = to_wstring((*(Vec<N, T>*)data)[i]);
 				edit_texts[i]->set_text(str.c_str(), INVALID_POINTER);

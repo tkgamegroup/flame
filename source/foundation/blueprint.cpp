@@ -1070,7 +1070,7 @@ namespace flame
 			n_node.append_attribute("object_type").set_value(n->object_type);
 			n_node.append_attribute("id").set_value(n->id.c_str());
 			n_node.append_attribute("type").set_value(n->type.c_str());
-			n_node.append_attribute("pos").set_value(to_string(n->pos, 2).c_str());
+			n_node.append_attribute("pos").set_value(to_string(n->pos).c_str());
 
 			pugi::xml_node n_datas;
 			for (auto& in : n->inputs)
@@ -1086,7 +1086,7 @@ namespace flame
 						n_datas = n_node.append_child("datas");
 					auto n_data = n_datas.append_child("data");
 					n_data.append_attribute("name").set_value(in->name.c_str());
-					n_data.append_attribute("value").set_value(type->serialize(in->data, 6).c_str());
+					n_data.append_attribute("value").set_value(type->serialize(in->data).c_str());
 				}
 			}
 		}
@@ -1111,8 +1111,19 @@ namespace flame
 		std::ofstream h_file(filename + std::wstring(L".h"));
 		if (bp->need_rebuild_update_list)
 			build_update_list(bp);
-		std::vector<std::pair<std::string, std::string>> decls;
-		std::vector<std::string> code_lines;
+		struct Var
+		{
+			std::string type;
+			std::string name;
+			int ref_count;
+		};
+		struct Line
+		{
+			int assign_var_idx; // -1 means it is not an assignment
+			std::string content;
+		};
+		std::vector<Var> vars;
+		std::vector<Line> lines;
 		for (auto n : bp->update_list)
 		{
 			auto var_id = [](SlotPrivate* s) {
@@ -1134,7 +1145,7 @@ namespace flame
 						auto type = in->type;
 						if (type->tag() == TypePointer || (in->default_value && memcmp(in->default_value, in->data, in->size) == 0))
 							continue;
-						value = type->serialize(in->data, 6);
+						value = type->serialize(in->data);
 					}
 					else
 						value = var_id(out);
@@ -1143,7 +1154,7 @@ namespace flame
 						line += "(" + value + ");";
 					else
 						line += " = " + value + ";";
-					code_lines.push_back(line);
+					lines.push_back({ -1, line });
 				}
 				break;
 			case ObjectReal:
@@ -1156,7 +1167,7 @@ namespace flame
 					auto type = out->type;
 					auto id = var_id(out.get());
 
-					decls.emplace_back(type->get_cpp_name(), id);
+					vars.push_back({ type->get_cpp_name(), id, 0 });
 					std::regex reg("\\b" + out->name + "\\b");
 					function_code = std::regex_replace(function_code, reg, id);
 				}
@@ -1167,30 +1178,80 @@ namespace flame
 					if (!out)
 					{
 						auto type = in->type;
-						value = type->serialize(in->data, 6);
+						value = type->serialize(in->data);
 					}
 					else
 						value = var_id(out);
-					std::regex reg("\\b" + in->name + "\\b");
+					std::regex reg(R"(\b)" + in->name + R"(\b)");
 					function_code = std::regex_replace(function_code, reg, value);
 				}
 				auto function_lines = SUS::split(function_code, '\n');
 				for (auto& l : function_lines)
-					code_lines.push_back(l);
+					lines.push_back({ -1, l });
 			}
 				break;
 			}
 		}
 
-		for (auto& d : decls)
+		for (auto i = 0; i < vars.size(); i++)
 		{
-
+			std::regex reg(R"(^)" + vars[i].name + R"( = (.*);)");
+			for (auto& l : lines)
+			{
+				if (l.assign_var_idx == -1)
+				{
+					std::smatch res;
+					if (std::regex_search(l.content, res, reg))
+					{
+						l.content = res[1].str();
+						l.assign_var_idx = i;
+					}
+				}
+			}
 		}
 
-		for (auto& d : decls)
-			h_file << d.first + " " + d.second + ";\n";
-		for (auto& l : code_lines)
-			h_file << l + "\n";
+		for (auto i = 0; i < lines.size(); i++)
+		{
+			auto& l = lines[i];
+			if (l.assign_var_idx != -1)
+			{
+				auto& v = vars[l.assign_var_idx];
+				std::regex reg(R"(\b)" + v.name + R"(\b)");
+				auto ref_count = 0, last_ref_line = -1;
+				for (auto j = i + 1; j < lines.size(); j++)
+				{
+					if (std::regex_search(lines[j].content, reg))
+					{
+						last_ref_line = j;
+						ref_count++;
+					}
+				}
+				v.ref_count += ref_count;
+				if (ref_count == 1)
+				{
+					lines[last_ref_line].content = std::regex_replace(lines[last_ref_line].content, reg, "(" + l.content + ")");
+					v.ref_count--;
+				}
+				if (ref_count <= 1)
+					l.content.clear();
+			}
+		}
+
+		for (auto& v : vars)
+		{
+			if (v.ref_count == 0)
+				continue;
+			h_file << v.type + " " + v.name + ";\n";
+		}
+		for (auto& l : lines)
+		{
+			if (l.content.empty())
+				continue;
+			if (l.assign_var_idx == -1)
+				h_file << l.content + "\n";
+			else
+				h_file << vars[l.assign_var_idx].name + " = " + l.content + ";\n";
+		}
 		h_file.close();
 	}
 

@@ -158,7 +158,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);
 		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(const char* str);
 
-		inline std::string serialize(const void* src, int precision) const;
+		inline std::string serialize(const void* src) const;
 		inline void unserialize(const std::string& src, void* dst) const;
 		inline void copy_from(const void* src, void* dst) const;
 	};
@@ -231,12 +231,12 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
 		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int* out_idx = nullptr) const;
 
-		inline void serialize(const void* src, int precision, nlohmann::json& dst) const
+		inline void serialize(const void* src, nlohmann::json& dst) const
 		{
 			for (auto i = 0; i < variable_count(); i++)
 			{
 				auto v = variable(i);
-				dst[v->name()] = v->type()->serialize((char*)src + v->offset(), precision);
+				dst[v->name()] = v->type()->serialize((char*)src + v->offset());
 			}
 		}
 
@@ -438,7 +438,7 @@ namespace flame
 		}
 	}
 
-	std::string TypeInfo::serialize(const void* src, int precision) const
+	std::string TypeInfo::serialize(const void* src) const
 	{
 		switch (tag())
 		{
@@ -495,15 +495,15 @@ namespace flame
 			case FLAME_CHASH("ulonglong"):
 				return std::to_string(*(ulonglong*)src);
 			case FLAME_CHASH("float"):
-				return to_string(*(float*)src, precision);
+				return to_string(*(float*)src);
 			case FLAME_CHASH("flame::Vec(1+float)"):
-				return to_string(*(Vec1f*)src, precision);
+				return to_string(*(Vec1f*)src);
 			case FLAME_CHASH("flame::Vec(2+float)"):
-				return to_string(*(Vec2f*)src, precision);
+				return to_string(*(Vec2f*)src);
 			case FLAME_CHASH("flame::Vec(3+float)"):
-				return to_string(*(Vec3f*)src, precision);
+				return to_string(*(Vec3f*)src);
 			case FLAME_CHASH("flame::Vec(4+float)"):
-				return to_string(*(Vec4f*)src, precision);
+				return to_string(*(Vec4f*)src);
 			case FLAME_CHASH("uchar"):
 				return std::to_string(*(uchar*)src);
 			case FLAME_CHASH("flame::Vec(1+uchar)"):

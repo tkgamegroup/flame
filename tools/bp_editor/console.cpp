@@ -124,7 +124,7 @@ cConsole::cConsole() :
 								if (input->link())
 									link_address = input->link()->get_address().str();
 								log += wfmt(L"[%s]", s2w(link_address).c_str()) + L"\n";
-								auto str = s2w(type->serialize(input->data(), 2));
+								auto str = s2w(type->serialize(input->data()));
 								if (str.empty())
 									str = L"-";
 								log += wfmt(L"   %s", str.c_str()) + L"\n";
@@ -135,7 +135,7 @@ cConsole::cConsole() :
 								auto output = n->output(i);
 								auto type = output->type();
 								log += s2w(output->name()) + L"\n";
-								auto str = s2w(type->serialize(output->data(), 2).c_str());
+								auto str = s2w(type->serialize(output->data()).c_str());
 								if (str.empty())
 									str = L"-";
 								log += wfmt(L"   %s", str.c_str()) + L"\n";
@@ -224,12 +224,12 @@ cConsole::cConsole() :
 						auto type = i->type();
 						if (type->tag() != TypePointer)
 						{
-							auto value_before = type->serialize(i->data(), 2);
+							auto value_before = type->serialize(i->data());
 							auto data = new char[i->size()];
 							type->unserialize(w2s(tokens[2]), data);
 							app.set_data(i, data, false);
 							delete[] data;
-							auto value_after = type->serialize(i->data(), 2);
+							auto value_after = type->serialize(i->data());
 							log += L"set value: " + tokens[1] + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
 						}
 						else

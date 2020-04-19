@@ -232,7 +232,7 @@ struct cSlot : Component
 							capture.text = text_value;
 							timer->set_callback([](void* c) {
 								auto& capture = *(Capture*)c;
-								capture.text->set_text(s2w(capture.t->serialize(capture.d, 2)).c_str());
+								capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
 							}, Mail::from_t(&capture), false);
 						}
 						utils::e_end_layout();
