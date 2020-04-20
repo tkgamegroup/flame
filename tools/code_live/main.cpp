@@ -36,7 +36,7 @@ struct MyApp : App
 
 	void compile_and_run()
 	{
-		auto code = w2s(c_code->text());
+		auto code = w2s(c_code->text.str());
 		std::ofstream file("out.cpp");
 		file << "#include <flame/universe/utils/ui.h>\n";
 		file << "using namespace flame;";

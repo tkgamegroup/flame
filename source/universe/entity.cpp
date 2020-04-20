@@ -383,7 +383,7 @@ namespace flame
 
 		for (auto n_c : src.child("components"))
 		{
-			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + n_c.name()).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("flame::") + n_c.name()).c_str()));
 			assert(udt && udt->base_name() == std::string("Component"));
 			auto module = udt->db()->module();
 			auto f = udt->find_function("create");
@@ -392,7 +392,24 @@ namespace flame
 			for (auto n_v : n_c)
 			{
 				auto v = udt->find_variable(n_v.name());
-				v->type()->unserialize(n_v.attribute("v").value(), (char*)component + v->offset());
+				auto type = v->type();
+				auto p = (char*)component + v->offset();
+				if (type->tag() == TypePointer)
+				{
+					auto name = type->base_name();
+					auto len = strlen(name);
+					for (auto i = len - 1; i >= 0; i--)
+					{
+						if (name[i] == ':')
+						{
+							name = name + i + 1;
+							break;
+						}
+					}
+					*(Object**)p = w->find_object(FLAME_HASH(name), n_v.attribute("v").as_uint());
+				}
+				else
+					type->unserialize(n_v.attribute("v").value(), p);
 			}
 			e->add_component((Component*)component);
 		}
@@ -422,22 +439,25 @@ namespace flame
 		if (!src->components.empty())
 		{
 			auto n_cs = n.append_child("components");
-			for (auto& _c : src->components)
+			for (auto& component : src->components)
 			{
-				auto c = _c.second.get();
+				auto n_c = n_cs.append_child(component.second->name);
 
-				auto n_c = n_cs.append_child(c->name);
-
-				auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + c->name).c_str()));
+				auto udt = find_udt(FLAME_HASH((std::string("flame::") + component.second->name).c_str()));
 				assert(udt && udt->base_name() == std::string("Component"));
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
 					auto type = v->type();
-					auto p = (char*)c + v->offset();
-					auto dv = v->default_value();
-					if (dv && memcmp(dv, p, v->size()))
-						n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p).c_str());
+					auto p = (char*)component.second.get() + v->offset();
+					if (type->tag() == TypePointer)
+						n_c.append_child(v->name()).append_attribute("v").set_value((*(Object**)p)->id);
+					else
+					{
+						auto dv = v->default_value();
+						if (!dv || memcmp(dv, p, v->size()) != 0)
+							n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p).c_str());
+					}
 				}
 			}
 		}

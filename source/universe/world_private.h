@@ -10,14 +10,13 @@ namespace flame
 
 	struct WorldPrivate : World
 	{
-		std::vector<std::pair<Object*, UdtInfo*>> objects;
+		std::vector<Object*> objects;
 
 		std::vector<std::unique_ptr<System>> systems;
 
 		std::unique_ptr<EntityPrivate> root;
 
 		WorldPrivate();
-		~WorldPrivate();
 		System* get_system_plain(uint name_hash) const;
 		void update();
 	};

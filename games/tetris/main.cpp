@@ -726,7 +726,7 @@ struct MyApp : App
 					auto c_text = utils::e_edit(300.f, app.my_name.c_str())->get_component(cText);
 					c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 						if (hash == FLAME_CHASH("text"))
-							app.my_name = (*(cText**)c)->text();
+							app.my_name = (*(cText**)c)->text.str();
 						return true;
 					}, Mail::from_p(c_text));
 				}
@@ -769,7 +769,7 @@ struct MyApp : App
 								auto c_text = utils::e_edit(100.f)->get_component(cText);
 								c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 									if (hash == FLAME_CHASH("text"))
-										app.room_name = (*(cText**)c)->text();
+										app.room_name = (*(cText**)c)->text.str();
 									return true;
 								}, Mail::from_p(c_text));
 							}

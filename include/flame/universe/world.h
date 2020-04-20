@@ -33,6 +33,4 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static World* create();
 		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);
 	};
-
-	FLAME_UNIVERSE_EXPORTS void load_res(World* w, const wchar_t* filename);
 }

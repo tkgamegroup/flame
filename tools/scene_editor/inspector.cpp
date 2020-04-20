@@ -130,7 +130,7 @@ void cInspector::refresh()
 		c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
-				auto text = (*(cText**)c)->text();
+				auto text = (*(cText**)c)->text.v;
 				app.selected->set_name(w2s(text).c_str());
 				if (app.hierarchy)
 				{
