@@ -35,9 +35,9 @@ void cDetail::on_after_select()
 				{
 					auto n = app.selected_nodes[0];
 					std::wstring str;
-					std::string parameters;
-					auto n_type = BP::type_from_node_name(n->type(), parameters);
-					auto n_name = n_type ? s2w(parameters) : s2w(n->type());
+					std::string n_type_parameters;
+					auto n_type = BP::break_node_type(n->type(), &n_type_parameters);
+					auto n_name = n_type ? s2w(n_type_parameters) : s2w(n->type());
 					auto udt = n->udt();
 					if (udt)
 						str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + n_name;

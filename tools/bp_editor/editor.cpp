@@ -533,11 +533,7 @@ void cEditor::on_add_node(BP::Node* n)
 	}
 		auto c_node = new_object<cNode>();
 		c_node->n = n;
-		char n_type;
-		{
-			std::string parameters;
-			n_type = BP::type_from_node_name(n->type(), parameters);
-		}
+		auto n_type = BP::break_node_type(n->type());
 		e_node->add_component(c_node);
 		utils::e_begin_popup_menu(false);
 			utils::e_menu_item(L"Duplicate", [](void* c) {

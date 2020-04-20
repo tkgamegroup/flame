@@ -469,7 +469,7 @@ namespace flame
 		if (object_type == ObjectReal)
 		{
 			std::string parameters;
-			switch (type_from_node_name(type, parameters))
+			switch (break_node_type(type, &parameters))
 			{
 			case 'S':
 			{
@@ -1133,7 +1133,6 @@ namespace flame
 
 		file.save_file(filename);
 
-		std::ofstream h_file(filename + std::wstring(L".h"));
 		if (bp->need_rebuild_update_list)
 			build_update_list(bp);
 		struct Var
@@ -1184,35 +1183,82 @@ namespace flame
 				break;
 			case ObjectReal:
 			{
-				auto f = n->udt->find_function("bp_update");
-				assert(f && check_function(f, "D#void", {}));
-				std::string function_code = f->code();
-				for (auto& out : n->outputs)
+				std::string parameters;
+				auto ntype = break_node_type(n->type, &parameters);
+				if (ntype == 0)
 				{
-					auto type = out->type;
-					auto id = var_id(out.get());
-
-					vars.push_back({ type->get_cpp_name(), id, 0 });
-					std::regex reg("\\b" + out->name + "\\b");
-					function_code = std::regex_replace(function_code, reg, id);
-				}
-				for (auto& in : n->inputs)
-				{
-					auto out = (SlotPrivate*)in->links[0];
-					std::string value;
-					if (!out)
+					auto f = n->udt->find_function("bp_update");
+					assert(f && check_function(f, "D#void", {}));
+					std::string function_code = f->code();
+					for (auto& out : n->outputs)
 					{
-						auto type = in->type;
-						value = type->serialize(in->data);
+						auto id = var_id(out.get());
+
+						vars.push_back({ out->type->get_cpp_name(), id, 0 });
+						std::regex reg("\\b" + out->name + "\\b");
+						function_code = std::regex_replace(function_code, reg, id);
 					}
-					else
-						value = var_id(out);
-					std::regex reg(R"(\b)" + in->name + R"(\b)");
-					function_code = std::regex_replace(function_code, reg, value);
+					for (auto& in : n->inputs)
+					{
+						auto out = (SlotPrivate*)in->links[0];
+						std::string value;
+						if (!out)
+							value = in->type->serialize(in->data);
+						else
+							value = var_id(out);
+						std::regex reg(R"(\b)" + in->name + R"(\b)");
+						function_code = std::regex_replace(function_code, reg, value);
+					}
+					auto function_lines = SUS::split(function_code, '\n');
+					for (auto& l : function_lines)
+						lines.push_back({ -1, l });
 				}
-				auto function_lines = SUS::split(function_code, '\n');
-				for (auto& l : function_lines)
-					lines.push_back({ -1, l });
+				else
+				{
+					switch (ntype)
+					{
+					case 'S':
+					case 'M':
+					{
+						auto out_id = "_" + n->id + "_out";
+						auto res_id = "_" + n->id + "_res";
+						vars.push_back({ "uint", out_id, 0 });
+						vars.push_back({ "float", res_id, 0 });
+						std::string in_value;
+						{
+							auto in = n->inputs[0].get();
+							auto out = (SlotPrivate*)in->links[0];
+							in_value = out ? var_id(out) : std::to_string(*(int*)in->data);
+							lines.push_back({ -1, out_id + " = " + in_value + ";" });
+						}
+						{
+							auto in = n->inputs[1].get();
+							auto out = (SlotPrivate*)in->links[0];
+							if (ntype == 'S')
+							{
+								if (!out)
+									lines.push_back({ -1, res_id + " = " + out_id + " == " + std::to_string(*(int*)in->data) + " ? 1.f : 0.f;" });
+								else
+									lines.push_back({ -1, res_id + " = " + in_value + " == " + var_id(out) + " ? 1.f : 0.f;" });
+							}
+							else
+							{
+								if (!out)
+									lines.push_back({ -1, res_id + " = (" + out_id + " & " + std::to_string(*(int*)in->data) + ") ? 1.f : 0.f;" });
+								else
+									lines.push_back({ -1, res_id + " = (" + in_value + " & " + var_id(out) + ") ? 1.f : 0.f;" });
+							}
+						}
+					}
+						break;
+					case 'V':
+						assert(0); // WIP
+						break;
+					case 'A':
+						assert(0); // WIP
+						break;
+					}
+				}
 			}
 				break;
 			}
@@ -1245,10 +1291,13 @@ namespace flame
 				auto ref_count = 0, last_ref_line = -1;
 				for (auto j = i + 1; j < lines.size(); j++)
 				{
-					if (std::regex_search(lines[j].content, reg))
+					std::smatch res;
+					auto str = lines[j].content;
+					while (std::regex_search(str, res, reg))
 					{
 						last_ref_line = j;
 						ref_count++;
+						str = res.suffix();
 					}
 				}
 				v.ref_count += ref_count;
@@ -1262,6 +1311,8 @@ namespace flame
 			}
 		}
 
+		std::ofstream h_file(filename + std::wstring(L".h"));
+		h_file << "// THIS FILE IS AUTO-GENERATED\n";
 		for (auto& v : vars)
 		{
 			if (v.ref_count == 0)

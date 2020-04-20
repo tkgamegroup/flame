@@ -100,13 +100,14 @@ namespace flame
 			void* user_data;
 		};
 
-		inline static char type_from_node_name(const std::string& name, std::string& parameters)
+		inline static char break_node_type(const std::string& name, std::string* parameters = nullptr)
 		{
 			{
 				static FLAME_SAL(prefix, "EnumSingle");
 				if (name.compare(0, prefix.l, prefix.s) == 0)
 				{
-					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					if (parameters)
+						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
 					return 'S';
 				}
 			}
@@ -114,7 +115,8 @@ namespace flame
 				static FLAME_SAL(prefix, "EnumMulti");
 				if (name.compare(0, prefix.l, prefix.s) == 0)
 				{
-					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					if (parameters)
+						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
 					return 'M';
 				}
 			}
@@ -122,7 +124,9 @@ namespace flame
 				static FLAME_SAL(prefix, "Variable");
 				if (name.compare(0, prefix.l, prefix.s) == 0)
 				{
-					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+
+					if (parameters)
+						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
 					return 'V';
 				}
 			}
@@ -130,7 +134,8 @@ namespace flame
 				static FLAME_SAL(prefix, "Array");
 				if (name.compare(0, prefix.l, prefix.s) == 0)
 				{
-					parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+					if (parameters)
+						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
 					return 'A';
 				}
 			}

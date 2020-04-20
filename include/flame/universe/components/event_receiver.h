@@ -7,7 +7,7 @@ namespace flame
 	struct sEventDispatcher;
 	struct cElement;
 
-	struct FLAME_R(cEventReceiver) : Component
+	struct FLAME_R(cEventReceiver : Component, l:event_receiver)
 	{
 		sEventDispatcher* dispatcher;
 		cElement* element;
