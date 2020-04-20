@@ -1071,7 +1071,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 					auto found = false;
 					for (auto k = 0; k < u->variable_count(); k++)
 					{
-						auto v = u->variable(i);
+						auto v = u->variable(k);
 						if (ds_io == BP::Slot::Out && BP::Slot::can_link(v->type(), ds_t))
 						{
 							node_types.push_back({ u, v, BP::ObjectRefWrite });

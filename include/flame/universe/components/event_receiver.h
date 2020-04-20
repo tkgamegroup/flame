@@ -7,14 +7,14 @@ namespace flame
 	struct sEventDispatcher;
 	struct cElement;
 
-	struct cEventReceiver : Component
+	struct FLAME_R(cEventReceiver) : Component
 	{
 		sEventDispatcher* dispatcher;
 		cElement* element;
 
 		FocusType focus_type;
 		uint drag_hash; // non-zero means it can be draged to drop
-		EventReceiverState state;
+		FLAME_RV(EventReceiverState, state, m);
 
 		ListenerHub<bool(void* c, cEventReceiver* er, bool* pass)>								pass_checkers;
 		ListenerHub<bool(void* c, KeyStateFlags action, int value)>								key_listeners;
@@ -36,6 +36,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
 
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* current();
-		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
+		FLAME_UNIVERSE_EXPORTS static void set_linked_object(cEventReceiver* e);
+		FLAME_UNIVERSE_EXPORTS static cEventReceiver* FLAME_RF(get_linked_object)();
+		FLAME_UNIVERSE_EXPORTS static cEventReceiver* FLAME_RF(create)();
 	};
 }

@@ -192,16 +192,16 @@ namespace flame
 		data_changed(FLAME_CHASH("frame_color"), sender);
 	}
 
-	cElement* _current;
+	cElement* _linked_object;
 
-	void cElement::set_current(cElement* e)
+	void cElement::set_linked_object(cElement* e)
 	{
-		_current = e;
+		_linked_object = e;
 	}
 
-	cElement* cElement::current()
+	cElement* cElement::get_linked_object()
 	{
-		return _current;
+		return _linked_object;
 	}
 
 	cElement* cElement::create()

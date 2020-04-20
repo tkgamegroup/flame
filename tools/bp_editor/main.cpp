@@ -829,8 +829,13 @@ bool MyApp::create(const char* filename)
 		ce->size = 100.f;
 		ce->pivot = 0.5f;
 		ce->color = Vec4c(0, 0, 0, 255);
-		cElement::set_current(ce);
+		cElement::set_linked_object(ce);
 		e_test->add_component(ce);
+	}
+	{
+		auto cer = cEventReceiver::create();
+		cEventReceiver::set_linked_object(cer);
+		e_test->add_component(cer);
 	}
 
 	if (filename[0])

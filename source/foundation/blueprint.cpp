@@ -252,7 +252,7 @@ namespace flame
 		else
 		{
 			{
-				auto f = udt->find_function("current");
+				auto f = udt->find_function("get_linked_object");
 				assert(f && check_function(f, (std::string("P#") + udt->name()).c_str(), {}));
 				object = cf(p2f<F_vp_v>((char*)module + (uint)f->rva()));
 				assert(object);
