@@ -45,7 +45,7 @@ namespace flame
 				if (dp)
 				{
 					auto er = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
-					er->dispatcher->next_focusing = er;
+					l->world()->get_system(sEventDispatcher)->next_focusing = er;
 				}
 				return true;
 			}, Mail::from_p(l));

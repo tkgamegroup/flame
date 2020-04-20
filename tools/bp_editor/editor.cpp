@@ -4,38 +4,6 @@
 static Vec4c unselected_col = Vec4c(0, 0, 0, 255);
 static Vec4c selected_col = Vec4c(0, 0, 145, 255);
 
-static const wchar_t* type_prefix(TypeTag t, bool is_array = false)
-{
-	switch (t)
-	{
-	case TypeEnumSingle:
-		return L"Enum Single\n";
-	case TypeEnumMulti:
-		return L"Enum Multi\n";
-	case TypeData:
-		return is_array ? L"Array\n" : L"Data\n";
-	case TypePointer:
-		return is_array ? L"Array Pointer\n" : L"Pointer\n";
-	}
-	return L"";
-}
-
-static Vec4c type_color(TypeTag t)
-{
-	switch (t)
-	{
-	case TypeEnumSingle:
-		return Vec4c(23, 160, 93, 255);
-	case TypeEnumMulti:
-		return Vec4c(23, 160, 93, 255);
-	case TypeData:
-		return Vec4c(40, 58, 228, 255);
-	case TypePointer:
-		return Vec4c(239, 94, 41, 255);
-	}
-	return Vec4c(0);
-}
-
 const auto slot_bezier_extent = 50.f;
 
 struct cSlot : Component
@@ -127,7 +95,7 @@ struct cSlot : Component
 				{
 					thiz->dragging = true;
 					app.editor->dragging_slot = s;
-					app.deselect();
+					app.select();
 				}
 				else if (action == DragOvering)
 				{
@@ -250,75 +218,19 @@ struct cSlot : Component
 	}
 };
 
-static const wchar_t* node_type_prefix(char t)
-{
-	switch (t)
-	{
-	case 'S':
-		return type_prefix(TypeEnumSingle);
-	case 'M':
-		return type_prefix(TypeEnumMulti);
-	case 'V':
-		return L"Variable\n";
-	case 'A':
-		return L"Array\n";
-	}
-	return L"";
-}
-
-static Vec4c node_type_color(char t)
-{
-	switch (t)
-	{
-	case 'S':
-		return type_color(TypeEnumSingle);
-	case 'M':
-		return type_color(TypeEnumMulti);
-	case 'V':
-		return Vec4c(0, 128, 0, 255);
-	case 'A':
-		return Vec4c(0, 0, 255, 255);
-	}
-	return Vec4c(128, 60, 220, 255);
-}
-
 struct cNode : Component
 {
 	cElement* element;
 	cEventReceiver* event_receiver;
 
 	BP::Node* n;
-	char n_type;
-	std::wstring n_name;
 
 	bool moved;
-
-	Entity* tip;
 
 	cNode() :
 		Component("cNode")
 	{
 		moved = false;
-
-		tip = nullptr;
-	}
-
-	~cNode() override
-	{
-		clear_tips();
-	}
-
-	void clear_tips()
-	{
-		if (tip)
-		{
-			auto e = tip;
-			tip = nullptr;
-			looper().add_event([](void* c, bool*) {
-				auto e = *(Entity**)c;
-				e->parent()->remove_child(e);
-			}, Mail::from_p(e));
-		}
 	}
 
 	void on_component_added(Component* c) override
@@ -355,39 +267,6 @@ struct cNode : Component
 				}
 				return true;
 			}, Mail::from_p(this));
-			event_receiver->hover_listeners.add([](void* c, bool hovering) {
-				auto thiz = *(cNode**)c;
-				if (!hovering)
-					thiz->clear_tips();
-				else
-				{
-					if (!thiz->tip)
-					{
-						thiz->tip = utils::e_begin_layout(LayoutVertical, 4.f);
-						auto c_element = thiz->tip->get_component(cElement);
-						c_element->pos = thiz->element->global_pos - Vec2f(0.f, 8.f);
-						c_element->pivot = Vec2f(0.f, 1.f);
-						c_element->padding = 4.f;
-						c_element->frame_thickness = 2.f;
-						c_element->color = Vec4c(200, 200, 200, 255);
-						c_element->frame_color = Vec4c(0, 0, 0, 255);
-							auto n = thiz->n;
-							std::wstring str;
-							auto udt = n->udt();
-							if (udt)
-								str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + thiz->n_name;
-							else
-								str = node_type_prefix(thiz->n_type) + thiz->n_name;
-							str += L"\nID: " + s2w(n->id());
-							utils::e_text(str.c_str())->get_component(cText)->color = node_type_color(thiz->n_type);
-						utils::e_end_layout();
-						looper().add_event([](void* c, bool*) {
-							app.root->add_child(*(Entity**)c);
-						}, Mail::from_p(thiz->tip));
-					}
-				}
-				return true;
-			}, Mail::from_p(this));
 			event_receiver->state_listeners.add([](void* c, EventReceiverState) {
 				auto thiz = *(cNode**)c;
 				if (thiz->moved && !utils::is_active(thiz->event_receiver))
@@ -418,7 +297,7 @@ cEditor::cEditor() :
 
 	edt.create([](void*, const Vec4f& r) {
 		if (r.x() == r.z() && r.y() == r.z())
-			app.deselect();
+			app.select();
 		else
 		{
 			std::vector<BP::Node*> nodes;
@@ -582,7 +461,7 @@ cEditor::~cEditor()
 	app.editor = nullptr;
 }
 
-void cEditor::on_deselect()
+void cEditor::on_before_select()
 {
 	for (auto& s : app.selected_nodes)
 	{
@@ -592,7 +471,7 @@ void cEditor::on_deselect()
 	}
 }
 
-void cEditor::on_select()
+void cEditor::on_after_select()
 {
 	for (auto& s : app.selected_nodes)
 	{
@@ -600,11 +479,6 @@ void cEditor::on_select()
 		if (e)
 			e->get_component(cElement)->set_frame_color(selected_col);
 	}
-}
-
-void cEditor::on_id_changed(BP::Node* n)
-{
-	((Entity*)n->user_data)->get_component(cNode)->clear_tips();
 }
 
 void cEditor::on_pos_changed(BP::Node* n)
@@ -659,20 +533,13 @@ void cEditor::on_add_node(BP::Node* n)
 	}
 		auto c_node = new_object<cNode>();
 		c_node->n = n;
+		char n_type;
 		{
 			std::string parameters;
-			c_node->n_type = BP::type_from_node_name(n->type(), parameters);
-			c_node->n_name = c_node->n_type ? s2w(parameters) : s2w(n->type());
+			n_type = BP::type_from_node_name(n->type(), parameters);
 		}
 		e_node->add_component(c_node);
 		utils::e_begin_popup_menu(false);
-			utils::e_menu_item(L"Change ID", [](void* c) {
-				auto n = *(BP::Node**)c;
-				utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
-					if (ok && text[0])
-						app.set_node_id(*(BP::Node**)c, w2s(text));
-				}, Mail::from_p(n), s2w(n->id()).c_str());
-			}, Mail::from_p(n));
 			utils::e_menu_item(L"Duplicate", [](void* c) {
 			}, Mail::from_p(n));
 			utils::e_menu_item(L"Delete", [](void* c) {
@@ -682,7 +549,7 @@ void cEditor::on_add_node(BP::Node* n)
 		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->padding = Vec4f(8.f);
 			utils::push_style_1u(utils::FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
-				if (c_node->n_type == 0)
+				if (n_type == 0)
 				{
 					auto str = s2w(n->type());
 					auto last_colon = str.find_last_of(L':');
@@ -690,7 +557,7 @@ void cEditor::on_add_node(BP::Node* n)
 						str = std::wstring(str.begin() + last_colon + 1, str.end());
 					auto e_text = utils::e_text(str.c_str());
 					e_text->get_component(cElement)->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-					e_text->get_component(cText)->color = node_type_color(c_node->n_type);
+					e_text->get_component(cText)->color = node_type_color(n_type);
 				}
 			utils::e_end_layout();
 			utils::pop_style(utils::FontSize);
@@ -733,14 +600,14 @@ void cEditor::on_add_node(BP::Node* n)
 							}, Mail::from_p(input));
 							utils::e_menu_item(L"Reset Value", [](void* c) {
 							}, Mail::from_p(input));
-							if (c_node->n_type == 'A')
+							if (n_type == 'A')
 							{
 								utils::e_menu_item(L"Remove Slot", [](void* c) {
 									auto input = *(BP::Slot**)c;
 									auto n = input->node();
 									if (n->input_count() == 1)
 										return;
-									app.deselect();
+									app.select();
 									auto idx = input->index();
 									std::string type = n->type();
 									std::string id = n->id();
@@ -928,11 +795,11 @@ void cEditor::on_add_node(BP::Node* n)
 				utils::e_end_layout();
 			utils::e_end_layout();
 
-			if (c_node->n_type == 'A')
+			if (n_type == 'A')
 			{
 				auto c_element = utils::e_button(L"+", [](void* c) {
 					auto n = *(BP::Node**)c;
-					app.deselect();
+					app.select();
 					std::string type = n->type();
 					std::string id = n->id();
 					{

@@ -8,6 +8,70 @@
 using namespace flame;
 using namespace graphics;
 
+inline const wchar_t* type_prefix(TypeTag t, bool is_array = false)
+{
+	switch (t)
+	{
+	case TypeEnumSingle:
+		return L"Enum Single\n";
+	case TypeEnumMulti:
+		return L"Enum Multi\n";
+	case TypeData:
+		return is_array ? L"Array\n" : L"Data\n";
+	case TypePointer:
+		return is_array ? L"Array Pointer\n" : L"Pointer\n";
+	}
+	return L"";
+}
+
+inline const wchar_t* node_type_prefix(char t)
+{
+	switch (t)
+	{
+	case 'S':
+		return type_prefix(TypeEnumSingle);
+	case 'M':
+		return type_prefix(TypeEnumMulti);
+	case 'V':
+		return L"Variable\n";
+	case 'A':
+		return L"Array\n";
+	}
+	return L"";
+}
+
+inline Vec4c type_color(TypeTag t)
+{
+	switch (t)
+	{
+	case TypeEnumSingle:
+		return Vec4c(23, 160, 93, 255);
+	case TypeEnumMulti:
+		return Vec4c(23, 160, 93, 255);
+	case TypeData:
+		return Vec4c(40, 58, 228, 255);
+	case TypePointer:
+		return Vec4c(239, 94, 41, 255);
+	}
+	return Vec4c(0);
+}
+
+inline Vec4c node_type_color(char t)
+{
+	switch (t)
+	{
+	case 'S':
+		return type_color(TypeEnumSingle);
+	case 'M':
+		return type_color(TypeEnumMulti);
+	case 'V':
+		return Vec4c(0, 128, 0, 255);
+	case 'A':
+		return Vec4c(0, 0, 255, 255);
+	}
+	return Vec4c(128, 60, 220, 255);
+}
+
 struct cEditor : Component
 {
 	utils::_2DEditor edt;
@@ -17,9 +81,8 @@ struct cEditor : Component
 
 	cEditor();
 	virtual ~cEditor() override;
-	void on_deselect();
-	void on_select();
-	void on_id_changed(BP::Node* n);
+	void on_before_select();
+	void on_after_select();
 	void on_pos_changed(BP::Node* n);
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
@@ -29,8 +92,11 @@ struct cEditor : Component
 
 struct cDetail : Component
 {
+	Entity* e_page;
+
 	cDetail();
 	virtual ~cDetail() override;
+	void on_after_select();
 };
 
 struct cPreview : Component
@@ -112,7 +178,7 @@ struct MyApp : App
 		auto_update = false;
 	}
 
-	void deselect();
+	void select();
 	void select(const std::vector<BP::Node*>& nodes);
 	void select(const std::vector<BP::Slot*>& links);
 

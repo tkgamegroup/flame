@@ -108,8 +108,9 @@ struct Action_ChangeNodeID : Action
 		if (n)
 		{
 			n->set_id(prev_id.c_str());
-			if (app.editor)
-				app.editor->on_id_changed(n);
+
+			if (app.detail)
+				app.detail->on_after_select();
 		}
 	}
 
@@ -119,8 +120,9 @@ struct Action_ChangeNodeID : Action
 		if (n)
 		{
 			n->set_id(after_id.c_str());
-			if (app.editor)
-				app.editor->on_id_changed(n);
+
+			if (app.detail)
+				app.detail->on_after_select();
 		}
 	}
 };
@@ -456,31 +458,46 @@ static void remove_selected()
 	}
 }
 
-void MyApp::deselect()
+void MyApp::select()
 {
 	if (editor)
-		editor->on_deselect();
+		editor->on_before_select();
 
 	selected_nodes.clear();
 	selected_links.clear();
+
+	if (detail)
+		detail->on_after_select();
+	if (editor)
+		editor->on_after_select();
 }
 
 void MyApp::select(const std::vector<BP::Node*>& nodes)
 {
-	deselect();
-	selected_nodes = nodes;
-
 	if (editor)
-		editor->on_select();
+		editor->on_before_select();
+
+	selected_nodes = nodes;
+	selected_links.clear();
+
+	if (detail)
+		detail->on_after_select();
+	if (editor)
+		editor->on_after_select();
 }
 
 void MyApp::select(const std::vector<BP::Slot*>& links)
 {
-	deselect();
-	selected_links = links;
-
 	if (editor)
-		editor->on_select();
+		editor->on_before_select();
+
+	selected_links = links;
+	selected_nodes.clear();
+
+	if (detail)
+		detail->on_after_select();
+	if (editor)
+		editor->on_after_select();
 }
 
 void MyApp::set_changed(bool v)
@@ -848,9 +865,9 @@ bool MyApp::create(const char* filename)
 	{
 		res = false;
 
-		filepath = std::filesystem::path(L"new.bp");
+		filepath = app.resource_path / L"new.bp";
 		fileppath = filepath.parent_path();
-		if (!std::filesystem::exists(L"new.bp"))
+		if (!std::filesystem::exists(filepath))
 		{
 			std::ofstream new_bp(filepath);
 			new_bp << "<BP />\n";
