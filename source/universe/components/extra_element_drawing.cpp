@@ -48,7 +48,7 @@ namespace flame
 					points.push_back(Vec2f(high.x(), low.y()));
 					points.push_back(Vec2f(low.x(), high.y()));
 					points.push_back(Vec2f(high.x(), high.y()));
-					canvas->fill(points.size(), points.data(), color.new_proply<3>(element->alpha));
+					canvas->fill(points.size(), points.data(), color.copy().factor_w(element->alpha));
 				}
 				if (draw_flags & ExtraDrawHorizontalLine)
 				{
@@ -56,7 +56,7 @@ namespace flame
 					std::vector<Vec2f> points;
 					points.push_back(Vec2f(low.x(), y));
 					points.push_back(Vec2f(high.x(), y));
-					canvas->stroke(points.size(), points.data(), color.new_proply<3>(element->alpha), thickness * element->global_scale);
+					canvas->stroke(points.size(), points.data(), color.copy().factor_w(element->alpha), thickness * element->global_scale);
 				}
 			}
 		}

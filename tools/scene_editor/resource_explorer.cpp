@@ -435,7 +435,7 @@ void cResourceExplorer::draw(graphics::Canvas* canvas)
 	}
 	else
 	{
-		auto w = c_list_element->size.x() - c_list_element->padding_h();
+		auto w = c_list_element->size.x() - c_list_element->padding.xz().sum();
 		c_list_layout->set_column(max(1U, uint(w / (c_list_layout->item_padding + 64.f))));
 	}
 }

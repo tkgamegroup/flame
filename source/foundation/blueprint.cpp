@@ -263,8 +263,7 @@ namespace flame
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
-					if (v->type()->tag() == TypeData)
-						outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
 				}
 			}
 			else if (object_type == BP::ObjectRefWrite)
@@ -472,33 +471,62 @@ namespace flame
 
 		if (object_type == ObjectReal)
 		{
-			auto add_enum_node = [&](TypeTag tag, const std::string& enum_name) {
-#pragma pack(1)
-				struct Dummy
-				{
-					int in;
-					int out;
-
-					void update()
-					{
-						out = in;
-					}
-				};
-#pragma pack()
-				n = new NodePrivate(this, id, type, sizeof(Dummy), {
-						{TypeInfo::get(tag, enum_name.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) }
-					}, {
-						{TypeInfo::get(tag, enum_name.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) }
-					}, nullptr, nullptr, f2v(&Dummy::update));
-			};
 			std::string parameters;
 			switch (type_from_node_name(type, parameters))
 			{
 			case 'S':
-				add_enum_node(TypeEnumSingle, parameters);
+			{
+#pragma pack(1)
+				struct Dummy
+				{
+					int in;
+					int chk;
+
+					int out;
+					float res;
+
+					void update()
+					{
+						out = in;
+						res = in == chk ? 1.f : 0.f;
+					}
+				};
+#pragma pack()
+				n = new NodePrivate(this, id, type, sizeof(Dummy), {
+						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
+						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
+					}, {
+						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) },
+						{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
+					}, nullptr, nullptr, f2v(&Dummy::update));
+			}
 				break;
 			case 'M':
-				add_enum_node(TypeEnumMulti, parameters);
+			{
+#pragma pack(1)
+				struct Dummy
+				{
+					int in;
+					int chk;
+
+					int out;
+					float res;
+
+					void update()
+					{
+						out = in;
+						res = (in & chk) ? 1.f : 0.f;
+					}
+				};
+#pragma pack()
+				n = new NodePrivate(this, id, type, sizeof(Dummy), {
+						{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
+						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
+					}, {
+						{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) },
+						{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
+					}, nullptr, nullptr, f2v(&Dummy::update));
+			}
 				break;
 			case 'V':
 			{
@@ -1695,6 +1723,20 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
+		}
+	};
+
+	struct FLAME_R(R_Trace)
+	{
+		FLAME_RV(float, target, i);
+		FLAME_RV(float, step, i);
+		FLAME_RV(float, v, i);
+
+		FLAME_RV(float, out, o);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			out = v + min(abs(target - v), step) * sign(target - v);
 		}
 	};
 

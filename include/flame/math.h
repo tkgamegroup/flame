@@ -317,6 +317,95 @@ namespace flame
 			return Vec<2, T>(v_[2], v_[3]);
 		}
 
+		Vec<N, T> copy() const
+		{
+			return *this;
+		}
+
+		Vec<N, T>& set_x(T v)
+		{
+			static_assert(N > 0);
+			v_[0] = v;
+			return *this;
+		}
+
+		Vec<N, T>& set_y(T v)
+		{
+			static_assert(N > 1);
+			v_[1] = v;
+			return *this;
+		}
+
+		Vec<N, T>& set_z(T v)
+		{
+			static_assert(N > 2);
+			v_[2] = v;
+			return *this;
+		}
+
+		Vec<N, T>& set_w(T v)
+		{
+			static_assert(N > 3);
+			v_[3] = v;
+			return *this;
+		}
+
+		Vec<N, T>& add_x(T v)
+		{
+			static_assert(N > 0);
+			v_[0] += v;
+			return *this;
+		}
+
+		Vec<N, T>& add_y(T v)
+		{
+			static_assert(N > 1);
+			v_[1] += v;
+			return *this;
+		}
+
+		Vec<N, T>& add_z(T v)
+		{
+			static_assert(N > 2);
+			v_[2] += v;
+			return *this;
+		}
+
+		Vec<N, T>& add_w(T v)
+		{
+			static_assert(N > 3);
+			v_[3] += v;
+			return *this;
+		}
+
+		Vec<N, T>& factor_x(float v)
+		{
+			static_assert(N > 0);
+			v_[0] *= v;
+			return *this;
+		}
+
+		Vec<N, T>& factor_y(float v)
+		{
+			static_assert(N > 1);
+			v_[1] *= v;
+			return *this;
+		}
+
+		Vec<N, T>& factor_z(float v)
+		{
+			static_assert(N > 2);
+			v_[2] *= v;
+			return *this;
+		}
+
+		Vec<N, T>& factor_w(float v)
+		{
+			static_assert(N > 3);
+			v_[3] *= v;
+			return *this;
+		}
+
 		T operator[](uint i) const
 		{
 			return v_[i];
@@ -533,24 +622,6 @@ namespace flame
 			auto ret = T(0);
 			for (auto i = 0; i < N; i++)
 				ret += v_[i];
-			return ret;
-		}
-
-		template <uint CN>
-		Vec<N, T> new_replacely(T m) const
-		{
-			static_assert(CN < N);
-			auto ret = *this;
-			ret[CN] = m;
-			return ret;
-		}
-
-		template <uint CN>
-		Vec<N, T> new_proply(float m) const
-		{
-			static_assert(CN < N);
-			auto ret = *this;
-			ret[CN] *= m;
 			return ret;
 		}
 	};
@@ -1398,7 +1469,19 @@ namespace flame
 	}
 
 	template <class T>
-	T min(const T& a, const T& b)
+	float sign(T v)
+	{
+		return v >= T(0) ? 1.f : -1.f;
+	}
+
+	template <class T>
+	T abs(T v)
+	{
+		return v >= T(0) ? v : -v;
+	}
+
+	template <class T>
+	T min(T a, T b)
 	{
 		return a < b ? a : b;
 	}
@@ -1419,7 +1502,7 @@ namespace flame
 	}
 
 	template <class T>
-	T max(const T& a, const T& b)
+	T max(T a, T b)
 	{
 		return a > b ? a : b;
 	}
@@ -1440,7 +1523,7 @@ namespace flame
 	}
 
 	template <class T>
-	T clamp(const T& v, const T& a, const T& b)
+	T clamp(T v, T a, T b)
 	{
 		if (v < a)
 			return a;

@@ -53,17 +53,16 @@ namespace flame
 		if (x_flags & AlignMinMax)
 		{
 			auto w = element->size.x() - p.xy().sum();
-			if ((x_flags & AlignGreedy) && w > a.aligner->min_width)
-				a.element->set_width(w, false, this);
-			a.element->set_width(w, false, this);
-			a.element->set_x(p.x(), false, this);
+			if (!(x_flags & AlignGreedy) || w > a.aligner->min_width)
+				a.element->set_width(w, this);
+			a.element->set_x(p.x(), this);
 		}
 		if (x_flags & AlignMin)
-			a.element->set_x(p.x(), false, this);
+			a.element->set_x(p.x(), this);
 		else if (x_flags & AlignMax)
-			a.element->set_x(element->size.x() - p.y() - a.element->size.x(), false, this);
+			a.element->set_x(element->size.x() - p.y() - a.element->size.x(), this);
 		else if (x_flags & AlignMiddle)
-			a.element->set_x(p.x() + (element->size.x() - p.xy().sum() - a.element->size.x()) * 0.5f, false, this);
+			a.element->set_x(p.x() + (element->size.x() - p.xy().sum() - a.element->size.x()) * 0.5f, this);
 	}
 
 	void cLayoutPrivate::apply_v_free_layout(const Aligner& a, bool free)
@@ -73,28 +72,27 @@ namespace flame
 		if (y_flags & AlignMinMax)
 		{
 			auto h = element->size.y() - p.xy().sum();
-			if ((y_flags & AlignGreedy) && h > a.aligner->min_height)
-				a.element->set_height(h, false, this);
-			a.element->set_height(h, false, this);
-			a.element->set_y(p.x(), false, this);
+			if (!(y_flags & AlignGreedy) || h > a.aligner->min_height)
+				a.element->set_height(h, this);
+			a.element->set_y(p.x(), this);
 		}
 		if (y_flags & AlignMin)
-			a.element->set_y(p.x(), false, this);
+			a.element->set_y(p.x(), this);
 		else if (y_flags & AlignMax)
-			a.element->set_y(element->size.y() - p.y() - a.element->size.y(), false, this);
+			a.element->set_y(element->size.y() - p.y() - a.element->size.y(), this);
 		else if (y_flags & AlignMiddle)
-			a.element->set_y(p.x() + (element->size.y() - p.xy().sum() - a.element->size.y()) * 0.5f, false, this);
+			a.element->set_y(p.x() + (element->size.y() - p.xy().sum() - a.element->size.y()) * 0.5f, this);
 	}
 
 	void cLayoutPrivate::use_children_width(float w)
 	{
 		auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
 		if (!(x_flags & AlignMinMax))
-			element->set_width(w, false, this);
+			element->set_width(w, this);
 		else if (x_flags & AlignGreedy)
 		{
 			aligner->set_min_width(w);
-			element->set_width(max(element->size.x(), w), false, this);
+			element->set_width(max(element->size.x(), w), this);
 		}
 	}
 
@@ -102,11 +100,11 @@ namespace flame
 	{
 		auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
 		if (!(y_flags & AlignMinMax))
-			element->set_height(h, false, this);
+			element->set_height(h, this);
 		else if (y_flags & AlignGreedy)
 		{
 			aligner->set_min_height(h);
-			element->set_height(max(element->size.y(), h), false, this);
+			element->set_height(max(element->size.y(), h), this);
 		}
 	}
 
@@ -303,8 +301,8 @@ namespace flame
 			if (fence > 0 && !als.empty())
 				w -= item_padding;
 			set_content_size(Vec2f(w, h));
-			w += element->padding_h();
-			h += element->padding_v();
+			w += element->padding.xz().sum();
+			h += element->padding.yw().sum();
 			if (width_fit_children)
 				use_children_width(w);
 			if (height_fit_children)
@@ -328,9 +326,9 @@ namespace flame
 					auto _w = w * aligner->width_factor;
 					if (x_flags & AlignGreedy)
 						_w += aligner->min_width;
-					element->set_width(_w, false, this);
+					element->set_width(_w, this);
 				}
-				element->set_x(scroll_offset.x() + x, false, this);
+				element->set_x(scroll_offset.x() + x, this);
 				x += element->size.x() + item_padding;
 			}
 			for (auto i = 0; i < n; i++)
@@ -377,8 +375,8 @@ namespace flame
 			if (fence > 0 && !als.empty())
 				h -= item_padding;
 			set_content_size(Vec2f(w, h));
-			w += element->padding_h();
-			h += element->padding_v();
+			w += element->padding.xz().sum();
+			h += element->padding.yw().sum();
 			if (width_fit_children)
 				use_children_width(w);
 			if (height_fit_children)
@@ -404,9 +402,9 @@ namespace flame
 					auto _h = h * aligner->height_factor;
 					if (y_flags & AlignGreedy)
 						_h += aligner->min_height;
-					element->set_height(_h, false, this);
+					element->set_height(_h, this);
 				}
-				element->set_y(scroll_offset.y() + y, false, this);
+				element->set_y(scroll_offset.y() + y, this);
 				y += element->size.y() + item_padding;
 			}
 			for (auto i = n; i < als.size(); i++)
@@ -424,17 +422,17 @@ namespace flame
 			{
 				set_content_size(Vec2f(0.f));
 				if (width_fit_children)
-					use_children_width(element->padding_h());
+					use_children_width(element->padding.xz().sum());
 				if (height_fit_children)
-					use_children_height(element->padding_v());
+					use_children_height(element->padding.yw().sum());
 				for (auto i = 0; i < n; i++)
 				{
 					auto& al = als[i];
 					auto element = al.element;
 					auto aligner = al.aligner;
 
-					element->set_x(scroll_offset.x() + element->padding.x(), false, this);
-					element->set_y(scroll_offset.y() + element->padding.y(), false, this);
+					element->set_x(scroll_offset.x() + element->padding.x(), this);
+					element->set_y(scroll_offset.y() + element->padding.y(), this);
 				}
 				for (auto i = n; i < als.size(); i++)
 				{
@@ -475,8 +473,8 @@ namespace flame
 					h -= item_padding;
 				}
 				set_content_size(Vec2f(w, h));
-				w += element->padding_h();
-				h += element->padding_v();
+				w += element->padding.xz().sum();
+				h += element->padding.yw().sum();
 				if (width_fit_children)
 					use_children_width(w);
 				if (height_fit_children)
@@ -491,8 +489,8 @@ namespace flame
 					auto element = al.element;
 					auto aligner = al.aligner;
 
-					element->set_x(scroll_offset.x() + x, false, this);
-					element->set_y(scroll_offset.y() + y, false, this);
+					element->set_x(scroll_offset.x() + x, this);
+					element->set_y(scroll_offset.y() + y, this);
 
 					x += element->size.x() + item_padding;
 					lh = max(element->size.y(), lh);

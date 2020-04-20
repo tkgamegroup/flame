@@ -54,8 +54,8 @@ void _2DGizmo::create()
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto x = pos.x() / thiz->base->scale;
-				thiz->target->set_x(x, true);
-				thiz->target->set_width(-x, true);
+				thiz->target->add_x(x);
+				thiz->target->add_width(-x);
 			}
 			return true;
 		}, Mail::from_p(this));
@@ -72,8 +72,8 @@ void _2DGizmo::create()
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto y = pos.y() / thiz->base->scale;
-				thiz->target->set_y(y, true);
-				thiz->target->set_height(-y, true);
+				thiz->target->add_y(y);
+				thiz->target->add_height(-y);
 			}
 			return true;
 		}, Mail::from_p(this));
@@ -90,7 +90,7 @@ void _2DGizmo::create()
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto x = pos.x() / thiz->base->scale;
-				thiz->target->set_width(x, true);
+				thiz->target->add_width(x);
 			}
 			return true;
 		}, Mail::from_p(this));
@@ -107,7 +107,7 @@ void _2DGizmo::create()
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto y = pos.y() / thiz->base->scale;
-				thiz->target->set_height(y, true);
+				thiz->target->add_height(y);
 			}
 			return true;
 		}, Mail::from_p(this));
@@ -142,7 +142,7 @@ void _2DGizmo::create()
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto p = Vec2f(pos) / thiz->base->scale;
-				thiz->target->set_y(p.y(), true);
+				thiz->target->add_y(p.y());
 				thiz->target->add_size(Vec2f(p.x(), -p.y()));
 			}
 			return true;
@@ -160,7 +160,7 @@ void _2DGizmo::create()
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto p = Vec2f(pos) / thiz->base->scale;
-				thiz->target->set_x(p.x(), true);
+				thiz->target->add_x(p.x());
 				thiz->target->add_size(Vec2f(-p.x(), p.y()));
 			}
 			return true;

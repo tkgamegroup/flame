@@ -43,7 +43,7 @@ namespace flame
 			if (!element->clipped)
 			{
 				canvas->add_image(element->content_min(), element->content_size(), id, 
-					uv0, uv1, color.new_proply<3>(element->alpha));
+					uv0, uv1, color.copy().factor_w(element->alpha));
 			}
 		}
 	};

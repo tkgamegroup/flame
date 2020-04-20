@@ -35,32 +35,43 @@ namespace flame
 		bool clipped;
 		Vec4f clipped_rect;
 
-		void set_x(float v, bool add = false, void* sender = nullptr)
+		void set_x(float v, void* sender = nullptr)
 		{
-			auto t = pos;
-			t.x() = add ? t.x() + v : v;
-			set_pos(t, sender);
+			set_pos(Vec2f(v, pos.y()), sender);
 		}
 
-		void set_y(float v, bool add = false, void* sender = nullptr)
+		void set_y(float v, void* sender = nullptr)
 		{
-			auto t = pos;
-			t.y() = add ? t.y() + v : v;
-			set_pos(t, sender);
+			set_pos(Vec2f(pos.x(), v), sender);
 		}
 
-		void set_width(float v, bool add = false, void* sender = nullptr)
+		void set_width(float v, void* sender = nullptr)
 		{
-			auto t = size;
-			t.x() = add ? t.x() + v : v;
-			set_size(t, sender);
+			set_size(Vec2f(v, size.y()), sender);
 		}
 
-		void set_height(float v, bool add = false, void* sender = nullptr)
+		void set_height(float v, void* sender = nullptr)
 		{
-			auto t = size;
-			t.y() = add ? t.y() + v : v;
-			set_size(t, sender);
+			set_size(Vec2f(size.x(), v), sender);
+		}
+		void add_x(float v, void* sender = nullptr)
+		{
+			set_pos(Vec2f(pos.x() + v, pos.y()), sender);
+		}
+
+		void add_y(float v, void* sender = nullptr)
+		{
+			set_pos(Vec2f(pos.x(), pos.y() + v), sender);
+		}
+
+		void add_width(float v, void* sender = nullptr)
+		{
+			set_size(Vec2f(size.x() + v, size.y()), sender);
+		}
+
+		void add_height(float v, void* sender = nullptr)
+		{
+			set_size(Vec2f(size.x(), size.y() + v), sender);
 		}
 
 		void add_pos(const Vec2f& p, void* sender = nullptr)
@@ -71,21 +82,6 @@ namespace flame
 		void add_size(const Vec2f& p, void* sender = nullptr)
 		{
 			set_size(size + p, sender);
-		}
-
-		float padding_h() const
-		{
-			return padding.xz().sum();
-		}
-
-		float padding_v() const
-		{
-			return padding.yw().sum();
-		}
-
-		Vec2f padding_hv() const
-		{
-			return Vec2f(padding_h(), padding_v());
 		}
 
 		Vec2f center() const
@@ -100,7 +96,7 @@ namespace flame
 
 		Vec2f content_max() const
 		{
-			return global_pos + global_size - padding.zw() *global_scale;
+			return global_pos + global_size - padding.zw() * global_scale;
 		}
 
 		Vec2f content_size() const

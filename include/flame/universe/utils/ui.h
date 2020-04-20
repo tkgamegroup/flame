@@ -899,7 +899,7 @@ namespace flame
 				auto ct = eis->child(i)->get_component(cText);
 				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text()).x());
 			}
-			ecb->get_component(cElement)->set_width(8.f + max_width + style_1u(FontSize), true);
+			ecb->get_component(cElement)->add_width(8.f + max_width + style_1u(FontSize));
 			if (idx != -1)
 				ecb->get_component(cCombobox)->set_index(idx, false);
 			pop_parent();
@@ -1060,7 +1060,7 @@ namespace flame
 			auto ceed = c_extra_element_drawing();
 			ceed->draw_flags = ExtraDrawHorizontalLine;
 			ceed->thickness = 1.f;
-			ceed->color = style_4c(TextColorNormal).new_replacely<3>(128);
+			ceed->color = style_4c(TextColorNormal).copy().set_w(128);
 			c_aligner(AlignMinMax | AlignGreedy, 0);
 			return e;
 		}

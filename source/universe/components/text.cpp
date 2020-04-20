@@ -35,13 +35,13 @@ namespace flame
 		{
 			assert(font_atlas->canvas_slot_ != -1);
 			canvas->add_text(font_atlas, text.c_str(), nullptr, font_size * element->global_scale, element->content_min(),
-				color.new_proply<3>(element->alpha));
+				color.copy().factor_w(element->alpha));
 		}
 	}
 
 	void cTextPrivate::set_size_auto()
 	{
-		auto s = Vec2f(font_atlas->text_size(font_size, text.c_str(), nullptr)) + element->padding_hv();
+		auto s = Vec2f(font_atlas->text_size(font_size, text.c_str(), nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
 		element->set_size(s, this);
 		if (aligner)
 		{
