@@ -103,6 +103,7 @@ void MyApp::create()
 		utils::e_menu_item(L"Editor", [](void* c) {
 			if (!app.editor)
 			{
+				utils::push_parent(app.root);
 				utils::next_element_pos = Vec2f(100.f);
 				utils::next_element_size = Vec2f(400.f, 300.f);
 				utils::e_begin_docker_floating_container();
@@ -110,11 +111,13 @@ void MyApp::create()
 						app.editor = new cEditor;
 					utils::e_end_docker();
 				utils::e_end_docker_floating_container();
+				utils::pop_parent();
 			}
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Resource Explorer", [](void* c) {
 			if (!app.resource_explorer)
 			{
+				utils::push_parent(app.root);
 				utils::next_element_pos = Vec2f(100.f);
 				utils::next_element_size = Vec2f(400.f, 300.f);
 				utils::e_begin_docker_floating_container();
@@ -122,11 +125,13 @@ void MyApp::create()
 						app.resource_explorer = new cResourceExplorer;
 					utils::e_end_docker();
 				utils::e_end_docker_floating_container();
+				utils::pop_parent();
 			}
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Hierarchy", [](void* c) {
 			if (!app.hierarchy)
 			{
+				utils::push_parent(app.root);
 				utils::next_element_pos = Vec2f(100.f);
 				utils::next_element_size = Vec2f(400.f, 300.f);
 				utils::e_begin_docker_floating_container();
@@ -134,11 +139,13 @@ void MyApp::create()
 						app.hierarchy = new cHierarchy;
 					utils::e_end_docker();
 				utils::e_end_docker_floating_container();
+				utils::pop_parent();
 			}
 		}, Mail::from_p(this));
 		utils::e_menu_item(L"Inspector", [](void* c) {
 			if (!app.inspector)
 			{
+				utils::push_parent(app.root);
 				utils::next_element_pos = Vec2f(100.f);
 				utils::next_element_size = Vec2f(400.f, 300.f);
 				utils::e_begin_docker_floating_container();
@@ -146,6 +153,7 @@ void MyApp::create()
 						app.inspector = new cInspector;
 					utils::e_end_docker();
 				utils::e_end_docker_floating_container();
+				utils::pop_parent();
 			}
 		}, Mail::from_p(this));
 		utils::e_end_menubar_menu();

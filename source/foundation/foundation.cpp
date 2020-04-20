@@ -202,6 +202,13 @@ namespace flame
 		CloseHandle((HANDLE)ev);
 	}
 
+	void debug_break()
+	{
+#ifdef _DEBUG
+		DebugBreak();
+#endif
+	}
+
 	void do_simple_dispatch_loop()
 	{
 		for (;;)

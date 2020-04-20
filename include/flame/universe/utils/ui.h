@@ -1201,7 +1201,7 @@ namespace flame
 			pop_parent();
 		}
 
-		inline std::pair<Entity*, Entity*> e_begin_docker_page(const wchar_t* title)
+		inline std::pair<Entity*, Entity*> e_begin_docker_page(const wchar_t* title, void(*on_close)(void* c) = nullptr, const Mail& _close_capture = Mail())
 		{
 			push_parent(current_parent()->child(0));
 			auto et = e_empty();
@@ -1228,14 +1228,24 @@ namespace flame
 			auto cdt = c_docker_tab();
 			cdt->root = current_root();
 			push_parent(et);
-			e_button(Icon_TIMES, [](void* c) {
-				auto thiz = (*(cDockerTab**)c);
-				looper().add_event([](void* c, bool*) {
-					auto thiz = (*(cDockerTab**)c);
-					thiz->take_away(true);
-				}, Mail::from_p(thiz));
-			}, Mail::from_p(cdt), false)->get_component(cText)->color = style_4c(TabTextColorElse);
-			c_aligner(AlignMax | AlignAbsolute, 0);
+			{
+				struct Capture
+				{
+					cDockerTab* t;
+					void(*f)(void*);
+				}capture;
+				capture.t = cdt;
+				capture.f = on_close;
+				e_button(Icon_TIMES, [](void* c) {
+					auto& capture = *(Capture*)c;
+					if (capture.f)
+						capture.f((char*)c + sizeof(Capture));
+					looper().add_event([](void* c, bool*) {
+						(*(cDockerTab**)c)->take_away(true);
+					}, Mail::from_p(capture.t));
+				}, Mail::expand_original(&capture, _close_capture), false)->get_component(cText)->color = style_4c(TabTextColorElse);
+				c_aligner(AlignMax | AlignAbsolute, 0);
+			}
 			pop_parent();
 			pop_parent();
 			push_parent(current_parent()->child(1));

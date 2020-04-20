@@ -250,11 +250,13 @@ namespace flame
 		const char* name;
 		const uint name_hash;
 		uint id;
+		uint debug_level;
 
 		Object(const char* name) :
 			name(name),
 			name_hash(FLAME_HASH(name)),
-			id(0)
+			id(0),
+			debug_level(0)
 		{
 		}
 	};
@@ -499,6 +501,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
+	FLAME_FOUNDATION_EXPORTS void debug_break();
 	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
 	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);

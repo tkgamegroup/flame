@@ -955,6 +955,7 @@ bool MyApp::create(const char* filename)
 					utils::e_menu_item(L"Editor", [](void* c) {
 						if (!app.editor)
 						{
+							utils::push_parent(app.root);
 							utils::next_element_pos = Vec2f(100.f);
 							utils::next_element_size = Vec2f(400.f, 300.f);
 							utils::e_begin_docker_floating_container();
@@ -962,11 +963,13 @@ bool MyApp::create(const char* filename)
 									app.editor = new cEditor;
 								utils::e_end_docker();
 							utils::e_end_docker_floating_container();
+							utils::pop_parent();
 						}
 					}, Mail());
 					utils::e_menu_item(L"Detail", [](void* c) {
 						if (!app.detail)
 						{
+							utils::push_parent(app.root);
 							utils::next_element_pos = Vec2f(100.f);
 							utils::next_element_size = Vec2f(400.f, 300.f);
 							utils::e_begin_docker_floating_container();
@@ -974,11 +977,13 @@ bool MyApp::create(const char* filename)
 									app.detail = new cDetail;
 								utils::e_end_docker();
 							utils::e_end_docker_floating_container();
+							utils::pop_parent();
 						}
 					}, Mail());
 					utils::e_menu_item(L"Preview", [](void* c) {
 						if (!app.preview)
 						{
+							utils::push_parent(app.root);
 							utils::next_element_pos = Vec2f(100.f);
 							utils::next_element_size = Vec2f(400.f, 300.f);
 							utils::e_begin_docker_floating_container();
@@ -986,11 +991,13 @@ bool MyApp::create(const char* filename)
 									app.preview = new cPreview;
 								utils::e_end_docker();
 							utils::e_end_docker_floating_container();
+							utils::pop_parent();
 						}
 					}, Mail());
 					utils::e_menu_item(L"Console", [](void* c) {
 						if (!app.console)
 						{
+							utils::push_parent(app.root);
 							utils::next_element_pos = Vec2f(100.f);
 							utils::next_element_size = Vec2f(400.f, 300.f);
 							utils::e_begin_docker_floating_container();
@@ -998,6 +1005,7 @@ bool MyApp::create(const char* filename)
 									app.console = new cConsole;
 								utils::e_end_docker();
 							utils::e_end_docker_floating_container();
+							utils::pop_parent();
 						}
 					}, Mail());
 				utils::e_end_menubar_menu();

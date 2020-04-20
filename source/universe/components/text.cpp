@@ -16,6 +16,8 @@ namespace flame
 		aligner = nullptr;
 
 		font_atlas = nullptr;
+		text.resize(1);
+		text.v[0] = 0;
 		font_size = utils::style_1u(utils::FontSize);
 		color = utils::style_4c(utils::TextColorNormal);
 		auto_size = true;
