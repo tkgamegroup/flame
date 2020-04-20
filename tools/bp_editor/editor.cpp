@@ -1390,11 +1390,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		capture.t = c_text_search;
 		c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
 			auto& capture = *(Capture*)c;
-			std::wstring str = capture.t->text();
+			auto str = capture.t->text.str();
 			for (auto i = 0; i < capture.l->child_count(); i++)
 			{
 				auto item = capture.l->child(i);
-				item->set_visible(str[0] ? (std::wstring(item->get_component(cText)->text()).find(str) != std::string::npos) : true);
+				item->set_visible(str[0] ? item->get_component(cText)->text.str().find(str) != std::string::npos : true);
 			}
 			return true;
 		}, Mail::from_t(&capture));

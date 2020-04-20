@@ -118,7 +118,7 @@ namespace flame
 		else
 		{
 			auto selected = items->child(index);
-			text->set_text(selected->get_component(cText)->text());
+			text->set_text(selected->get_component(cText)->text.v);
 			{
 				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(cComboboxItem);
 				if (comboboxitem)

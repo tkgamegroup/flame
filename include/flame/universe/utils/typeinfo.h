@@ -197,8 +197,8 @@ namespace flame
 				str = to_wstring(*(T*)data);
 			else
 				str = to_wstring(*(T*)data);
-			edit_text->set_text(str.c_str(), INVALID_POINTER);
-			drag_text->set_text(str.c_str(), INVALID_POINTER);
+			edit_text->set_text(str.c_str(), -1, INVALID_POINTER);
+			drag_text->set_text(str.c_str(), -1, INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -224,7 +224,7 @@ namespace flame
 						T v;
 						try
 						{
-							v = sto<T>(thiz->edit_text->text());
+							v = sto<T>(thiz->edit_text->text.v);
 						}
 						catch (...)
 						{
@@ -315,8 +315,8 @@ namespace flame
 					str = to_wstring((*(Vec<N, T>*)data)[i]);
 				else
 					str = to_wstring((*(Vec<N, T>*)data)[i]);
-				edit_texts[i]->set_text(str.c_str(), INVALID_POINTER);
-				drag_texts[i]->set_text(str.c_str(), INVALID_POINTER);
+				edit_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
+				drag_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
 			}
 		}
 
@@ -357,7 +357,7 @@ namespace flame
 								auto v = *(Vec<N, T>*)capture.thiz->data;
 								try
 								{
-									v[capture.i] = sto<T>(capture.thiz->edit_texts[capture.i]->text());
+									v[capture.i] = sto<T>(capture.thiz->edit_texts[capture.i]->text.v);
 								}
 								catch (...)
 								{
@@ -448,7 +448,7 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", INVALID_POINTER);
+			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", -1, INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -468,7 +468,7 @@ namespace flame
 					auto thiz = *(cStringADataTracker**)c;
 					if (thiz->changed)
 					{
-						thiz->on_changed(thiz->capture.p, w2s(thiz->text->text()).c_str());
+						thiz->on_changed(thiz->capture.p, w2s(thiz->text->text.str()).c_str());
 						thiz->changed = false;
 					}
 				}
@@ -509,7 +509,7 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", INVALID_POINTER);
+			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", -1, INVALID_POINTER);
 		}
 
 		void on_added() override
@@ -529,7 +529,7 @@ namespace flame
 					auto thiz = *(cStringWDataTracker**)c;
 					if (thiz->changed)
 					{
-						thiz->on_changed(thiz->capture.p, thiz->text->text());
+						thiz->on_changed(thiz->capture.p, thiz->text->text.v);
 						thiz->changed = false;
 					}
 				}

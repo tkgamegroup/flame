@@ -90,11 +90,8 @@ namespace flame
 			if (s != _s)
 			{
 				s = _s;
-				if (s > 0)
-				{
-					v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));
-					v[s] = 0;
-				}
+				v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));
+				v[s] = 0;
 			}
 		}
 
@@ -131,6 +128,13 @@ namespace flame
 		std::basic_string<CH> str()
 		{
 			return std::basic_string<CH>(v, s);
+		}
+
+		bool compare(const CH* str, uint len)
+		{
+			if (s != len)
+				return false;
+			return std::char_traits<CH>::compare(v, str, len) == 0;
 		}
 	};
 

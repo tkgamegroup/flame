@@ -30,9 +30,9 @@ cConsole::cConsole() :
 			c_edit_input = utils::e_edit(0.f)->get_component(cEdit);
 			utils::e_button(L"Exec", [](void* c) {
 				auto log_text = app.console->c_text_log;
-				std::wstring log = log_text->text();
+				auto log = log_text->text.str();
 				auto input_text = app.console->c_edit_input->text;
-				auto cmd = std::wstring(input_text->text());
+				auto cmd = input_text->text.str();
 				log += cmd + L"\n";
 				input_text->set_text(L"");
 				app.console->c_edit_input->set_select(0);

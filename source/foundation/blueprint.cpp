@@ -277,10 +277,7 @@ namespace flame
 					auto base_hash = type->base_hash();
 					auto input = new SlotPrivate(this, BP::Slot::In, inputs.size(), v);
 					auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
-					if (f_set && f_set->return_type()->hash() == FLAME_CHASH("D#void") &&
-						f_set->parameter_count() == 2 &&
-						f_set->parameter_type(0)->base_hash() == base_hash &&
-						f_set->parameter_type(1)->hash() == FLAME_CHASH("P#void"))
+					if (f_set)
 					{
 						auto f_set_addr = (char*)module + (uint)f_set->rva();
 						Setter* setter = nullptr;

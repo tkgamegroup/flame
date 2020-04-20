@@ -208,7 +208,7 @@ void cInspector::refresh()
 				auto e_data = utils::current_parent();
 
 				auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
-				void* f_set_addr = nullptr;
+				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva() : nullptr;
 
 				switch (type->tag())
 				{
@@ -234,14 +234,6 @@ void cInspector::refresh()
 				break;
 				case TypeData:
 				{
-					if (f_set)
-					{
-						if (f_set->return_type()->hash() == FLAME_CHASH("D#void") &&
-							f_set->parameter_count() == 2 &&
-							f_set->parameter_type(0)->base_hash() == base_hash &&
-							f_set->parameter_type(1)->hash() == FLAME_CHASH("P#void"))
-							f_set_addr = (char*)module + (uint)f_set->rva();
-					}
 					SetterCapture setter_capture;
 					setter_capture.p = pdata;
 					setter_capture.o = component;

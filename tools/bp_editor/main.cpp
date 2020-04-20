@@ -825,8 +825,9 @@ bool MyApp::create(const char* filename)
 	e_test = Entity::create();
 	{
 		auto ce = cElement::create();
-		ce->pos = 100.f;
+		ce->pos = 150.f;
 		ce->size = 100.f;
+		ce->pivot = 0.5f;
 		ce->color = Vec4c(0, 0, 0, 255);
 		cElement::set_current(ce);
 		e_test->add_component(ce);

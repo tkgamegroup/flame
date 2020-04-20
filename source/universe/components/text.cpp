@@ -10,12 +10,12 @@
 
 namespace flame
 {
-	cTextPrivate::cTextPrivate(graphics::FontAtlas* _font_atlas)
+	cTextPrivate::cTextPrivate()
 	{
 		element = nullptr;
 		aligner = nullptr;
 
-		font_atlas = _font_atlas;
+		font_atlas = nullptr;
 		font_size = utils::style_1u(utils::FontSize);
 		color = utils::style_4c(utils::TextColorNormal);
 		auto_size = true;
@@ -34,7 +34,7 @@ namespace flame
 		if (!element->clipped)
 		{
 			assert(font_atlas->canvas_slot_ != -1);
-			canvas->add_text(font_atlas, text.c_str(), nullptr, font_size * element->global_scale, element->content_min(),
+			canvas->add_text(font_atlas, text.v, nullptr, font_size * element->global_scale, element->content_min(),
 				color.copy().factor_w(element->alpha));
 		}
 	}
@@ -43,20 +43,13 @@ namespace flame
 	{
 		if (!element)
 			return;
-		auto s = Vec2f(font_atlas->text_size(font_size, text.c_str(), nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
+		auto s = Vec2f(font_atlas->text_size(font_size, text.v, nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
 		element->set_size(s, this);
 		if (aligner)
 		{
 			aligner->set_min_width(s.x(), this);
 			aligner->set_min_height(s.y(), this);
 		}
-	}
-
-	void cTextPrivate::on_text_changed(void* sender)
-	{
-		if (element)
-			element->mark_dirty();
-		data_changed(FLAME_CHASH("text"), sender);
 	}
 
 	void cTextPrivate::on_component_added(Component* c)
@@ -73,25 +66,22 @@ namespace flame
 			aligner = (cAligner*)c;
 	}
 
-	uint cText::text_length() const
-	{
-		return ((cTextPrivate*)this)->text.size();
-	}
-
-	const wchar_t* cText::text() const
-	{
-		return ((cTextPrivate*)this)->text.c_str();
-	}
-
-	void cText::set_text(const wchar_t* text, void* sender)
+	void cText::set_text(const wchar_t* text, int length, void* sender)
 	{
 		auto thiz = (cTextPrivate*)this;
-		if (thiz->text == text)
-			return;
-		thiz->text = text;
+		if (text)
+		{
+			if (length == -1)
+				length = wcslen(text);
+			if (thiz->text.compare(text, length))
+				return;
+			thiz->text.assign(text, length);
+		}
 		if (thiz->auto_size)
 			thiz->set_size_auto();
-		thiz->on_text_changed(sender);
+		if (element)
+			element->mark_dirty();
+		data_changed(FLAME_CHASH("text"), sender);
 	}
 
 	void cText::set_font_size(uint s, void* sender)
@@ -128,8 +118,8 @@ namespace flame
 		data_changed(FLAME_CHASH("auto_size"), sender);
 	}
 
-	cText* cText::create(graphics::FontAtlas* font_atlas)
+	cText* cText::create()
 	{
-		return new cTextPrivate(font_atlas);
+		return new cTextPrivate();
 	}
 }

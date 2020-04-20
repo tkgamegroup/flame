@@ -77,14 +77,15 @@ namespace flame
 		int locate_cursor(const Vec2i& pos)
 		{
 			auto c_text = ((cTextPrivate*)text);
-			auto& str = c_text->text;
+			const auto str = c_text->text.v;
+			auto len = c_text->text.s;
 			auto font_atlas = c_text->font_atlas;
 			auto font_size = c_text->font_size * element->global_scale;
 			auto p = element->content_min();
 
 			auto y = p.y();
 			auto i = 0;
-			for (; i < str.size(); )
+			for (; i < len; )
 			{
 				auto next = i;
 				while (true)
@@ -95,7 +96,7 @@ namespace flame
 						break;
 					}
 					next++;
-					if (next == str.size())
+					if (next == len)
 					{
 						next = -1;
 						break;
@@ -117,7 +118,7 @@ namespace flame
 							break;
 						x += w;
 						i++;
-						if (i == str.size())
+						if (i == len)
 							break;
 					}
 					break;
@@ -155,8 +156,8 @@ namespace flame
 					auto thiz = *(cEditPrivate**)c;
 					auto c_text = (cTextPrivate*)thiz->text;
 					auto& text = c_text->text;
-					auto str = text.c_str();
-					auto len = (int)text.size();
+					const auto str = text.v;
+					auto len = text.s;
 					auto& select_start = thiz->select_start;
 					auto& select_end = thiz->select_end;
 					auto low = min(select_start, select_end);
@@ -182,7 +183,7 @@ namespace flame
 								return p;
 							p++;
 						}
-						return len;
+						return (int)len;
 					};
 
 					if (action == KeyStateNull)
@@ -195,21 +196,25 @@ namespace flame
 								if (low > 0)
 								{
 									low--;
-									text.erase(text.begin() + low);
-									c_text->on_text_changed(thiz);
+									auto temp = text.str();
+									temp.erase(temp.begin() + low);
+									text = temp;
+									c_text->set_text(nullptr, -1, thiz);
 									select_start = select_end = low;
 								}
 							}
 							else
 							{
-								text = text.substr(0, low) + text.substr(high);
-								c_text->on_text_changed(thiz);
+								auto temp = text.str();
+								temp = temp.substr(0, low) + temp.substr(high);
+								text = temp;
+								c_text->set_text(nullptr, -1, thiz);
 								select_start = select_end = low;
 							}
 							break;
 						case 3: // Ctrl+C
 							if (low != high)
-								set_clipboard(text.substr(low, high).c_str());
+								set_clipboard(text.str().substr(low, high).c_str());
 							break;
 						case 22: // Ctrl+V
 						{
@@ -217,8 +222,10 @@ namespace flame
 							cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
 							if (!cb.empty())
 							{
-								text = text.substr(0, low) + cb + text.substr(high);
-								c_text->on_text_changed(thiz);
+								auto temp = text.str();
+								temp = temp.substr(0, low) + cb + temp.substr(high);
+								text = temp;
+								c_text->set_text(nullptr, -1, thiz);
 								select_start = select_end = high + cb.size() - (high - low);
 							}
 						}
@@ -228,8 +235,10 @@ namespace flame
 						case 13:
 							value = '\n';
 						default:
-							text = text.substr(0, low) + std::wstring(1, value) + text.substr(high);
-							c_text->on_text_changed(thiz);
+							auto temp = text.str();
+							temp = temp.substr(0, low) + std::wstring(1, value) + temp.substr(high);
+							text = temp;
+							c_text->set_text(nullptr, -1, thiz);
 							select_start = select_end = high + 1 - (high - low);
 						}
 					}
@@ -321,14 +330,18 @@ namespace flame
 							{
 								if (low < len)
 								{
-									text.erase(text.begin() + low);
-									c_text->on_text_changed(thiz);
+									auto temp = text.str();
+									temp.erase(temp.begin() + low);
+									text = temp;
+									c_text->set_text(nullptr, -1, thiz);
 								}
 							}
 							else
 							{
-								text = text.substr(0, low) + text.substr(high);
-								c_text->on_text_changed(thiz);
+								auto temp = text.str();
+								temp = temp.substr(0, low) + temp.substr(high);
+								text = temp;
+								c_text->set_text(nullptr, -1, thiz);
 								select_start = select_end = low;
 							}
 							break;
@@ -354,7 +367,7 @@ namespace flame
 					}
 					else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
 					{
-						thiz->set_select(0, thiz->text->text_length());
+						thiz->set_select(0, thiz->text->text.s);
 						thiz->element->mark_dirty();
 					}
 					return true;
@@ -366,7 +379,7 @@ namespace flame
 					{
 						thiz->timer->start();
 						if (thiz->select_all_on_focus)
-							thiz->set_select(0, thiz->text->text_length());
+							thiz->set_select(0, thiz->text->text.s);
 					}
 					else
 					{
@@ -389,7 +402,7 @@ namespace flame
 			if (!element->clipped)
 			{
 				auto c_text = (cTextPrivate*)text;
-				auto& str = c_text->text;
+				const auto str = c_text->text.v;
 				auto font_atlas = c_text->font_atlas;
 				auto font_size = c_text->font_size * element->global_scale;
 				auto p = element->content_min();
@@ -410,10 +423,10 @@ namespace flame
 						}
 						low = right + 1;
 						
-						auto sb = str.c_str() + left, se = str.c_str() + right;
+						auto sb = str + left, se = str + right;
 						std::vector<Vec2f> points;
-						auto pos1 = Vec2f(font_atlas->text_offset(font_size, str.c_str(), sb));
-						auto pos2 = Vec2f(font_atlas->text_offset(font_size, str.c_str(), se));
+						auto pos1 = Vec2f(font_atlas->text_offset(font_size, str, sb));
+						auto pos2 = Vec2f(font_atlas->text_offset(font_size, str, se));
 						if (right < high && str[right] == '\n')
 							pos2.x() += 4.f;
 						path_rect(points, pos1 + p, Vec2f(pos2.x() - pos1.x(), font_size));
@@ -425,7 +438,7 @@ namespace flame
 				if (show_cursor)
 				{
 					std::vector<Vec2f> points;
-					points.push_back(p + Vec2f(font_atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end)));
+					points.push_back(p + Vec2f(font_atlas->text_offset(font_size, str, str + select_end)));
 					points[0].x() += 1.f;
 					points.push_back(points[0] + Vec2f(0.f, font_size));
 					canvas->stroke(points.size(), points.data(), c_text->color.copy().factor_w(element->alpha), 2.f);

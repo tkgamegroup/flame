@@ -373,7 +373,8 @@ namespace flame
 				auto v = (VariableInfoPrivate*)u->add_variable(type, n_variable.attribute("name").value(),
 					n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
 
-				type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
+				if (v->default_value)
+					type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
 			}
 
 			for (auto n_function : n_udt.child("functions"))

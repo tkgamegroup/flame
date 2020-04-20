@@ -57,7 +57,8 @@ namespace flame
 
 		inline cText* c_text()
 		{
-			auto c = cText::create(current_font_atlas());
+			auto c = cText::create();
+			c->font_atlas = current_font_atlas();
 			if (next_component_id)
 			{
 				c->id = next_component_id;
@@ -897,7 +898,7 @@ namespace flame
 			for (auto i = 0; i < eis->child_count(); i++)
 			{
 				auto ct = eis->child(i)->get_component(cText);
-				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text()).x());
+				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text.v).x());
 			}
 			ecb->get_component(cElement)->add_width(8.f + max_width + style_1u(FontSize));
 			if (idx != -1)
@@ -1344,7 +1345,7 @@ namespace flame
 			e_button(L"OK", [](void* c) {
 				auto& m = *(Capture*)c;
 				remove_layer(m.l);
-				m.f((char*)c + sizeof(Capture), true, m.t->text());
+				m.f((char*)c + sizeof(Capture), true, m.t->text.v);
 			}, Mail::expand_original(&capture, _capture));
 			e_button(L"Cancel", [](void* c) {
 				auto& m = *(Capture*)c;
