@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<BP>
+	<nodes>
+		<node object_type="1" id="41" type="flame::cElement" pos="147.0;232.0" />
+		<node object_type="2" id="18467" type="flame::cElement" pos="1055.099976;194.0" />
+		<node object_type="0" id="6334" type="flame::R_BreakVec2f" pos="473.0;381.0" />
+		<node object_type="0" id="26500" type="flame::R_MakeVec2f" pos="881.099976;299.0" />
+		<node object_type="0" id="11478" type="flame::R_Multiple" pos="543.099976;183.0">
+			<datas>
+				<data name="b" value="100.0" />
+			</datas>
+		</node>
+		<node object_type="0" id="29358" type="flame::R_Time" pos="83.099998;99.0" />
+		<node object_type="0" id="26962" type="flame::R_Sin" pos="407.0;229.0" />
+		<node object_type="0" id="24464" type="flame::R_Multiple" pos="259.0;94.0">
+			<datas>
+				<data name="b" value="200.0" />
+			</datas>
+		</node>
+		<node object_type="0" id="5705" type="flame::R_Add" pos="722.099976;202.0">
+			<datas>
+				<data name="b" value="100.0" />
+			</datas>
+		</node>
+	</nodes>
+	<links>
+		<link out="26500.out" in="18467.pos" />
+		<link out="41.pos" in="6334.in" />
+		<link out="5705.out" in="26500.x" />
+		<link out="6334.y" in="26500.y" />
+		<link out="26962.out" in="11478.a" />
+		<link out="24464.out" in="26962.t" />
+		<link out="29358.total" in="24464.a" />
+		<link out="11478.out" in="5705.a" />
+	</links>
+</BP>

@@ -384,9 +384,7 @@ namespace flame
 		for (auto n_c : src.child("components"))
 		{
 			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + n_c.name()).c_str()));
-			if (udt->base_name() != std::string("Component"))
-				udt = nullptr;
-			assert(udt);
+			assert(udt && udt->base_name() == std::string("Component"));
 			auto module = udt->db()->module();
 			auto f = udt->find_function("create");
 			assert(f);
@@ -430,35 +428,17 @@ namespace flame
 
 				auto n_c = n_cs.append_child(c->name);
 
-				auto udt = find_udt(FLAME_HASH((std::string("D#flame::Serializer_") + c->name).c_str()));
-				assert(udt);
-				auto object = malloc(udt->size());
-				auto module = udt->db()->module();
-				{
-					auto f = udt->find_function("ctor");
-					if (f && f->parameter_count() == 0)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
-				}
-				{
-					auto f = udt->find_function("serialize");
-					assert(f && check_function(f, "D#void", { "P#flame::Component", "D#int" }));
-					cmf(p2f<MF_v_vp_u>((char*)module + (uint)f->rva()), object, c, -1);
-				}
+				auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + c->name).c_str()));
+				assert(udt && udt->base_name() == std::string("Component"));
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
 					auto type = v->type();
-					auto p = (char*)object + v->offset();
+					auto p = (char*)c + v->offset();
 					auto dv = v->default_value();
 					if (dv && memcmp(dv, p, v->size()))
 						n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p).c_str());
 				}
-				{
-					auto f = udt->find_function("dtor");
-					if (f)
-						cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
-				}
-				free(object);
 			}
 		}
 

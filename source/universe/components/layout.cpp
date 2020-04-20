@@ -53,7 +53,7 @@ namespace flame
 		if (x_flags & AlignMinMax)
 		{
 			auto w = element->size.x() - p.xy().sum();
-			if (!(x_flags & AlignGreedy) || w > a.aligner->min_width)
+			if (!(x_flags & AlignGreedy) || w >= a.aligner->min_width)
 				a.element->set_width(w, this);
 			a.element->set_x(p.x(), this);
 		}
@@ -72,7 +72,7 @@ namespace flame
 		if (y_flags & AlignMinMax)
 		{
 			auto h = element->size.y() - p.xy().sum();
-			if (!(y_flags & AlignGreedy) || h > a.aligner->min_height)
+			if (!(y_flags & AlignGreedy) || h >= a.aligner->min_height)
 				a.element->set_height(h, this);
 			a.element->set_y(p.x(), this);
 		}

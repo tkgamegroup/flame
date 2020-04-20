@@ -45,6 +45,8 @@ namespace flame
 			}
 			if (ch == '0')
 				buf[i] = 0;
+			else
+				break;
 		}
 		return buf;
 	}
@@ -95,6 +97,8 @@ namespace flame
 			}
 			if (ch == L'0')
 				buf[i] = 0;
+			else
+				break;
 		}
 		return buf;
 	}

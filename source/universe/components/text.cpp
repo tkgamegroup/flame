@@ -41,6 +41,8 @@ namespace flame
 
 	void cTextPrivate::set_size_auto()
 	{
+		if (!element)
+			return;
 		auto s = Vec2f(font_atlas->text_size(font_size, text.c_str(), nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
 		element->set_size(s, this);
 		if (aligner)
