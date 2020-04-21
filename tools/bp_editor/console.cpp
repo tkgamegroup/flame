@@ -14,12 +14,12 @@ cConsole::cConsole() :
 		e_page->add_component(this);
 	}
 
-		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+		utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
 			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
 			utils::c_aligner(AlignMinMax, AlignMinMax);
 			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
 			utils::e_end_layout();
-		utils::e_end_scroll_view1(utils::style_1u(utils::FontSize));
+		utils::e_end_scrollbar(utils::style_1u(utils::FontSize));
 
 		utils::e_button(L"Clear", [](void* c) {
 			app.console->c_text_log->set_text(L"");

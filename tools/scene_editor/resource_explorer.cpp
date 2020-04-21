@@ -159,7 +159,7 @@ cResourceExplorer::cResourceExplorer() :
 		utils::c_element();
 		utils::c_layout(LayoutHorizontal);
 
-		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+		utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
 			e_list = utils::e_begin_list(true);
 			{
 				c_list_element = e_list->get_component(cElement);
@@ -193,7 +193,7 @@ cResourceExplorer::cResourceExplorer() :
 					}, Mail());
 				utils::e_end_popup_menu();
 			utils::e_end_list();
-		utils::e_end_scroll_view1();
+		utils::e_end_scrollbar();
 
 	utils::e_end_docker_page();
 

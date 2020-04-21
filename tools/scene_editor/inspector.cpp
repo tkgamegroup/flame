@@ -68,7 +68,7 @@ cInspector::cInspector() :
 		e_page->add_component(this);
 	}
 
-	utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+	utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
 		e_layout = utils::e_empty();
 		{
 			utils::c_element()->clip_flags = ClipChildren;
@@ -78,7 +78,7 @@ cInspector::cInspector() :
 			cl->height_fit_children = false;
 			utils::c_aligner(AlignMinMax, AlignMinMax);
 		}
-	utils::e_end_scroll_view1();
+	utils::e_end_scrollbar();
 
 	refresh();
 }
@@ -158,7 +158,7 @@ void cInspector::refresh()
 		{
 			auto component = components.v[i];
 
-			auto udt = find_udt(FLAME_HASH((std::string("D#flame::") + component->name).c_str()));
+			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
 			auto module = udt->db()->module();
 
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);

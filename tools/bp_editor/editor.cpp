@@ -977,7 +977,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 				utils::e_text(Icon_SEARCH);
 				auto c_text_search = utils::e_edit(300.f)->get_component(cText);
 			utils::e_end_layout();
-			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f, 300.f), 4.f);
+			utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f, 300.f))->get_component(cElement)->padding = 4.f;
 			utils::c_aligner(AlignMinMax | AlignGreedy, 0);
 				auto e_list = utils::e_begin_list(true, 0.f);
 					struct Capture
@@ -1239,7 +1239,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						}
 					}
 				utils::e_end_list();
-			utils::e_end_scroll_view1();
+			utils::e_end_scrollbar();
 		utils::pop_parent();
 	utils::pop_parent();
 

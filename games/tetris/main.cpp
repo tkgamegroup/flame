@@ -731,10 +731,14 @@ struct MyApp : App
 					}, Mail::from_p(c_text));
 				}
 			utils::e_end_layout();
-			utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f), 4.f)->get_component(cElement)->frame_thickness = 2.f;
+			{
+				auto ce = utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f))->get_component(cElement);
+				ce->padding = 4.f;
+				ce->frame_thickness = 2.f;
+			}
 				auto e_room_list = utils::e_begin_list(true);
 				utils::e_end_list();
-			utils::e_end_scroll_view1();
+			utils::e_end_scrollbar();
 			utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = 4;
 			utils::c_aligner(AlignMinMax, 0);
 				utils::e_button(Icon_REFRESH, [](void* c) {

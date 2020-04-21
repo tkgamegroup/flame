@@ -66,15 +66,16 @@ struct MyApp : App
 					utils::next_element_pos = Vec2f(416.f, 10.f);
 					utils::e_begin_layout(LayoutVertical, 16.f);
 						{
-							auto c_element = utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(200.f, 100.f), 4.f)->get_component(cElement);
-							c_element->frame_thickness = 2.f;
-							c_element->frame_color = utils::style_4c(utils::ForegroundColor);
+							auto ce = utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(200.f, 100.f))->get_component(cElement);
+							ce->padding = 4.f;
+							ce->frame_thickness = 2.f;
+							ce->frame_color = utils::style_4c(utils::ForegroundColor);
+						}
 							utils::e_begin_list(true);
 							for (auto i = 0; i < 10; i++)
 								utils::e_list_item((L"item" + std::to_wstring(i)).c_str());
 							utils::e_end_list();
-							utils::e_end_scroll_view1();
-						}
+						utils::e_end_scrollbar();
 
 						{
 							auto c_element = utils::e_begin_tree(false, 4.f)->get_component(cElement);

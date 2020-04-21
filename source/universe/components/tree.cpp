@@ -187,7 +187,7 @@ namespace flame
 		{
 			auto e = entity->parent()->parent()->child(1);
 			e->set_visible(!e->visible_);
-			text->set_text(e->visible_ ? Icon_ANGLE_DOWN : Icon_CARET_RIGHT);
+			text->set_text(e->visible_ ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 		}
 
 		void on_added() override

@@ -164,7 +164,7 @@ cHierarchy::cHierarchy() :
 		e_page->add_component(this);
 	}
 
-		utils::e_begin_scroll_view1(ScrollbarVertical, Vec2f(0.f));
+		utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
 			e_tree = utils::e_begin_tree(true, 8.f);
 			{
 				auto c_tree = e_tree->get_component(cTree);
@@ -188,7 +188,7 @@ cHierarchy::cHierarchy() :
 				}, Mail::from_p(c_tree));
 			}
 			utils::e_end_tree();
-		utils::e_end_scroll_view1();
+		utils::e_end_scrollbar();
 
 		utils::e_end_docker_page();
 

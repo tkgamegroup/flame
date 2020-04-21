@@ -645,7 +645,7 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_scroll_view1(ScrollbarType type, const Vec2f size, float padding = 0.f)
+		inline Entity* e_begin_scrollbar(ScrollbarType type, const Vec2f size, float padding = 0.f)
 		{
 			auto e = e_empty();
 			auto ce = c_element();
@@ -654,16 +654,14 @@ namespace flame
 			ce->clip_flags = ClipChildren;
 			if (size == 0.f)
 				c_aligner(AlignMinMax, AlignMinMax);
-			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical);
+			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical, false, false);
 			cl->item_padding = 4.f;
-			cl->width_fit_children = false;
-			cl->height_fit_children = false;
 			cl->fence = 2;
 			push_parent(e);
 			return e;
 		}
 
-		inline void e_end_scroll_view1(float step = 1.f)
+		inline void e_end_scrollbar(float step = 1.f)
 		{
 			auto type = current_parent()->get_component(cLayout)->type == LayoutHorizontal ? ScrollbarVertical : ScrollbarHorizontal;
 			{
@@ -836,7 +834,7 @@ namespace flame
 				{
 					e_empty();
 					c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-					c_text()->set_text(collapsed ? Icon_CARET_RIGHT : Icon_ANGLE_DOWN);
+					c_text()->set_text(collapsed ? Icon_CARET_RIGHT : Icon_CARET_DOWN);
 					c_event_receiver();
 					auto cs = c_style_text_color();
 					cs->color_normal = style_4c(TextColorNormal);
@@ -1365,164 +1363,6 @@ namespace flame
 			f_free(_capture.p);
 			e_end_layout();
 			e_end_dialog();
-			return e;
-		}
-
-		inline Entity* e_reflector_window(sEventDispatcher* event_dispatcher)
-		{
-			push_parent(current_root());
-			auto e = e_begin_window(L"Reflector", false);
-			struct Capture
-			{
-				sEventDispatcher* event_dispatcher;
-				cText* txt_mouse;
-				bool recording;
-				Entity* e_window;
-				cText* txt_record;
-				cText* txt_hovering;
-				cText* txt_focusing;
-				cText* txt_drag_overing;
-			}capture;
-			capture.event_dispatcher = event_dispatcher;
-			capture.txt_mouse = e_text(nullptr)->get_component(cText);
-			capture.recording = true;
-			capture.e_window = e;
-			capture.txt_record = e_text(L"Recording (Esc)")->get_component(cText);
-			capture.txt_hovering = e_text(nullptr)->get_component(cText);
-			capture.txt_focusing = e_text(nullptr)->get_component(cText);
-			capture.txt_drag_overing = e_text(nullptr)->get_component(cText);
-
-			auto refresh = [](Entity* et) {
-				looper().add_event([](void* c, bool*) {
-					auto et = *(Entity**)c;
-					et->remove_children(0, -1);
-					std::function<void(Entity*, Entity*)> add_node = [&](Entity* src, Entity* et) {
-						if (src == et)
-							return;
-						auto cs = src->child_count();
-						auto e = src->get_component(cElement);
-						auto str = wfmt(L"%I64X (%.2f, %.2f)-(%.2f, %.2f)", (ulonglong)src,
-							e->global_pos.x(), e->global_pos.y(),
-							e->global_size.x(), e->global_size.y());
-						if (cs == 0)
-							e_tree_leaf(str.c_str());
-						else
-						{
-							e_begin_tree_node(str.c_str(), true);
-							for (auto i = 0; i < cs; i++)
-								add_node(src->child(i), et);
-							e_end_tree_node();
-						}
-					};
-					push_parent(et);
-					add_node(current_root(), et);
-					pop_parent();
-				}, Mail::from_p(et));
-			};
-
-			auto et = Entity::create();
-
-			{
-				struct Capture
-				{
-					decltype(refresh) refresh;
-					Entity* et;
-				}capture;
-				capture.refresh = refresh;
-				capture.et = et;
-				e_button(Icon_REFRESH, [](void* c) {
-					auto& capture = *(Capture*)c;
-					capture.refresh(capture.et);
-				}, Mail::from_t(&capture));
-			}
-
-			next_entity = et;
-			e_begin_tree(false, 4.f);
-			{
-				auto ce = et->get_component(cElement);
-				ce->frame_thickness = 2.f;
-				ce->frame_color = style_4c(ForegroundColor);
-			}
-			e_end_tree();
-
-			refresh(et);
-			
-
-			e_button(L"Close", [](void* c) {
-				auto e = *(void**)c;
-				looper().add_event([](void* c, bool*) {
-					auto e = *(Entity**)c;
-					e->parent()->remove_child(e);
-				}, Mail::from_p(e));
-			}, Mail::from_p(e));
-			e_end_window();
-			e->on_destroyed_listeners.add([](void* c) {
-				looper().remove_event(*(void**)c);
-				return true;
-			}, Mail::from_p(looper().add_event([](void* c, bool* go_on) {
-				auto& capture = *(Capture*)c;
-
-				if (capture.event_dispatcher->key_states[Key_Esc] == (KeyStateDown | KeyStateJust))
-				{
-					capture.recording = !capture.recording;
-					capture.txt_record->set_text(capture.recording ? L"Recording (Esc)" : L"Start Record (Esc)");
-				}
-
-				{
-					std::wstring str = L"Mouse: ";
-					str += to_wstring(capture.event_dispatcher->mouse_pos);
-					capture.txt_mouse->set_text(str.c_str());
-				}
-
-				if (capture.recording)
-				{
-					{
-						std::wstring str = L"Hovering: ";
-						auto hovering = capture.event_dispatcher->hovering;
-						auto e = hovering ? hovering->entity : nullptr;
-						if (e->is_child_of(capture.e_window))
-							e = nullptr;
-						str += wfmt(L"0x%016I64X", (ulonglong)e);
-						capture.txt_hovering->set_text(str.c_str());
-					}
-					{
-						auto color = style_4c(TextColorNormal);
-						std::wstring str = L"Focusing: ";
-						auto focusing = capture.event_dispatcher->focusing;
-						auto e = focusing ? focusing->entity : nullptr;
-						if (e->is_child_of(capture.e_window))
-							e = nullptr;
-						str += wfmt(L"0x%016I64X", (ulonglong)e);
-						if (e)
-						{
-							if (focusing == capture.event_dispatcher->hovering)
-								color = Vec4c(0, 255, 0, 255);
-							switch (capture.event_dispatcher->focusing_state)
-							{
-							case FocusingAndActive:
-								str += L" Active";
-								break;
-							case FocusingAndDragging:
-								str += L" Dragging";
-								break;
-							}
-						}
-						capture.txt_focusing->set_color(color);
-						capture.txt_focusing->set_text(str.c_str());
-					}
-					{
-						std::wstring str = L"Drag Overing: ";
-						auto drag_overing = capture.event_dispatcher->drag_overing;
-						auto e = drag_overing ? drag_overing->entity : nullptr;
-						if (e->is_child_of(capture.e_window))
-							e = nullptr;
-						str += wfmt(L"0x%016I64X", (ulonglong)e);
-						capture.txt_drag_overing->set_text(str.c_str());
-					}
-				}
-				*go_on = true;
-			}, Mail::from_t(&capture))));
-			pop_parent();
 			return e;
 		}
 	}
