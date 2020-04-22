@@ -19,6 +19,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS const char* get_stringa_item(uint hash);
 		FLAME_UNIVERSE_EXPORTS void remove_stringa_item(uint hash);
 
+		FLAME_UNIVERSE_EXPORTS void set_vec4f_item(uint hash, const Vec4f& v);
+		FLAME_UNIVERSE_EXPORTS Vec4f get_vec4f_item(uint hash);
+		FLAME_UNIVERSE_EXPORTS void remove_vec4f_item(uint hash);
+
 		FLAME_UNIVERSE_EXPORTS static cDataKeeper* create();
 	};
 }

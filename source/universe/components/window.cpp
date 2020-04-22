@@ -111,9 +111,8 @@ namespace flame
 		return new cBringToFrontPrivate;
 	}
 
-	Entity* cBringToFront::make()
+	void cBringToFront::make(Entity* e)
 	{
-		auto e = Entity::create();
 		e->add_component(cElement::create());
 		e->add_component(cEventReceiver::create());
 		auto ca = cAligner::create();
@@ -121,7 +120,6 @@ namespace flame
 		ca->y_align_flags = AlignMinMax;
 		e->add_component(ca);
 		e->add_component(cBringToFront::create());
-		return e;
 	}
 
 	struct cSizeDraggerPrivate : cSizeDragger
@@ -178,14 +176,13 @@ namespace flame
 		return new cSizeDraggerPrivate;
 	}
 
-	Entity* cSizeDragger::make(const Vec4c& hovering_color)
+	void cSizeDragger::make(Entity* e)
 	{
-		auto e = Entity::create();
 		auto ce = cElement::create();
 		ce->size = 8.f;
 		e->add_component(ce);
 		auto ceed = cExtraElementDrawing::create();
-		ceed->color = hovering_color;
+		ceed->color = get_style(FrameColorHovering).c;
 		ceed->draw_flags = ExtraDrawFilledCornerSE;
 		e->add_component(ceed);
 		e->add_component(cEventReceiver::create());
@@ -194,7 +191,6 @@ namespace flame
 		ca->y_align_flags = AlignFlag(AlignMax | AlignAbsolute);
 		e->add_component(ca);
 		e->add_component(cSizeDragger::create());
-		return e;
 	}
 
 	struct cDockerTabPrivate : cDockerTab
@@ -441,8 +437,12 @@ namespace flame
 		e->add_component(cEventReceiver::create());
 		e->add_component(cLayout::create(LayoutFree));
 		e->add_component(cMoveable::create());
-		e->add_child(cBringToFront::make());
-		e->add_child(cSizeDragger::make(get_style(FrameColorHovering).c));
+		auto e_btf = Entity::create();
+		cBringToFront::make(e_btf);
+		e->add_child(e_btf);
+		auto e_sd = Entity::create();
+		cSizeDragger::make(e_sd);
+		e->add_child(e_sd);
 	}
 
 	void cDockerTab::make_static_container(Entity* e)

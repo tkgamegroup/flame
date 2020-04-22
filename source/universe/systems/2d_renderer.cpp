@@ -78,8 +78,12 @@ namespace flame
 		{
 			if (!pending_update)
 				return;
-			pending_update = false;
 			do_render((EntityPrivate*)world_->root());
+		}
+
+		void after_update() override
+		{
+			pending_update = false;
 		}
 	};
 

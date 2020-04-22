@@ -377,7 +377,10 @@ namespace flame
 			for (auto& ch : char_inputs)
 				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateNull, ch);
 		}
+	}
 
+	void sEventDispatcherPrivate::after_update()
+	{
 		keydown_inputs.clear();
 		keyup_inputs.clear();
 		char_inputs.clear();

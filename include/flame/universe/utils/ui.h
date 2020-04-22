@@ -1132,12 +1132,16 @@ namespace flame
 
 		inline Entity* e_bring_to_front()
 		{
-			return cBringToFront::make();
+			auto e = e_empty();
+			cBringToFront::make(e);
+			return e;
 		}
 
 		inline Entity* e_size_dragger()
 		{
-			return cSizeDragger::make(style_4c(FrameColorHovering));
+			auto e = e_empty();
+			cSizeDragger::make(e);
+			return e;
 		}
 
 		inline Entity* e_begin_window(const wchar_t* title, bool close_button = true)
@@ -1202,7 +1206,6 @@ namespace flame
 		{
 			auto e = e_empty();
 			cDockerTab::make_floating_container(e, next_element_pos, next_element_size);
-			current_root()->add_child(e);
 			next_element_pos = next_element_size = 0.f;
 			push_parent(e);
 			return e;

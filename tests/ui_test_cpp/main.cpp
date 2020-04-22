@@ -41,7 +41,7 @@ struct MyApp : App
 					utils::e_begin_menubar_menu(L"Window");
 						utils::e_menu_item(L"Reflector", [](void* c) {
 							utils::next_element_pos = Vec2f(100.f);
-							utils::e_reflector_window(app.s_event_dispatcher);
+							utils::e_reflector_window();
 						}, Mail());
 					utils::e_end_menubar_menu();
 				utils::e_end_menu_bar();

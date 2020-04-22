@@ -19,6 +19,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS virtual ~System();
 
 		virtual void on_added() {}
+		virtual void before_update() {}
 		virtual void update() = 0;
+		virtual void after_update() {}
 	};
 }

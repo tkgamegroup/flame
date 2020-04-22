@@ -32,7 +32,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cBringToFront* create();
-		FLAME_UNIVERSE_EXPORTS static Entity* make();
+		FLAME_UNIVERSE_EXPORTS static void make(Entity* e);
 	};
 
 	struct cSizeDragger : Component 
@@ -46,7 +46,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
-		FLAME_UNIVERSE_EXPORTS static Entity* make(const Vec4c& hovering_color);
+		FLAME_UNIVERSE_EXPORTS static void make(Entity* e);
 	};
 
 	struct cDockerTab : Component

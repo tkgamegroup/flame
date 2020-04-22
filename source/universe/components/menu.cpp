@@ -75,7 +75,7 @@ namespace flame
 		{
 			if (mode == cMenu::ModeContext)
 			{
-				if (event_receiver->is_focusing_and_not_normal() && is_mouse_down(action, key, true) && key == Mouse_Right)
+				if (!event_receiver->is_focusing_and_not_normal() && is_mouse_down(action, key, true) && key == Mouse_Right)
 					return true;
 			}
 			else

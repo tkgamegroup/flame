@@ -43,9 +43,11 @@ namespace flame
 	{
 		for (auto& s : systems)
 		{
+			s->before_update();
 			s->before_update_listeners.call();
 			s->update();
 			s->after_update_listeners.call();
+			s->after_update();
 		}
 	}
 

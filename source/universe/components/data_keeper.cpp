@@ -6,6 +6,7 @@ namespace flame
 	{
 		std::map<uint, void*> voidp_datas;
 		std::map<uint, std::string> stringa_datas;
+		std::map<uint, Vec4f> vec4f_datas;
 	};
 
 	void cDataKeeper::set_voidp_item(uint hash, void* v)
@@ -37,6 +38,22 @@ namespace flame
 	void cDataKeeper::remove_stringa_item(uint hash)
 	{
 		auto& map = ((cDataKeeperPrivate*)this)->stringa_datas;
+		map.erase(map.find(hash));
+	}
+
+	void cDataKeeper::set_vec4f_item(uint hash, const Vec4f& v)
+	{
+		((cDataKeeperPrivate*)this)->vec4f_datas[hash] = v;
+	}
+
+	Vec4f cDataKeeper::get_vec4f_item(uint hash)
+	{
+		return ((cDataKeeperPrivate*)this)->vec4f_datas[hash];
+	}
+
+	void cDataKeeper::remove_vec4f_item(uint hash)
+	{
+		auto& map = ((cDataKeeperPrivate*)this)->vec4f_datas;
 		map.erase(map.find(hash));
 	}
 

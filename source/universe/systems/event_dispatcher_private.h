@@ -28,5 +28,6 @@ namespace flame
 		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
+		void after_update() override;
 	};
 }

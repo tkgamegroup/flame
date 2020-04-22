@@ -1021,7 +1021,7 @@ bool MyApp::create(const char* filename)
 						app.auto_set_layout();
 					}, Mail());
 					utils::e_menu_item(L"Reflector", [](void* c) {
-						utils::e_reflector_window(app.s_event_dispatcher);
+						utils::e_reflector_window();
 					}, Mail());
 				utils::e_end_menubar_menu();
 			utils::e_end_menu_bar();
