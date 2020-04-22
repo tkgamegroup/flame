@@ -8,7 +8,6 @@
 #include <flame/universe/components/menu.h>
 #include <flame/universe/components/combobox.h>
 #include <flame/universe/utils/layer.h>
-#include <flame/universe/utils/style.h>
 
 namespace flame
 {

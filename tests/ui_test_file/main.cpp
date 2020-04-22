@@ -1,6 +1,9 @@
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
 
+#include <flame/universe/utils/entity_impl.h>
+#include <flame/universe/utils/ui_impl.h>
+
 using namespace flame;
 using namespace graphics;
 

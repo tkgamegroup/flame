@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/systems/event_dispatcher.h>
@@ -10,10 +11,8 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/splitter.h>
 #include <flame/universe/components/window.h>
-#include <flame/universe/utils/event.h>
+#include <flame/universe/components/extra_element_drawing.h>
 #include <flame/universe/utils/layer.h>
-#include <flame/universe/utils/style.h>
-#include <flame/universe/utils/window.h>
 
 namespace flame
 {
@@ -44,7 +43,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMoveablePrivate**)c;
-					if (utils::is_active(thiz->event_receiver) && is_mouse_move(action, key))
+					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 						thiz->element->add_pos((Vec2f)pos / thiz->element->global_scale, thiz);
 					return true;
 				}, Mail::from_p(this));
@@ -56,21 +55,27 @@ namespace flame
 	{
 		return new cMoveablePrivate;
 	}
+
 	struct cBringToFrontPrivate : cBringToFront
 	{
+		void* pass_listener;
 		void* mouse_listener;
 
 		cBringToFrontPrivate()
 		{
 			event_receiver = nullptr;
 
+			pass_listener = nullptr;
 			mouse_listener = nullptr;
 		}
 
 		~cBringToFrontPrivate()
 		{
 			if (!entity->dying_)
+			{
+				event_receiver->pass_checkers.remove(pass_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
+			}
 		}
 
 		void on_component_added(Component* c) override
@@ -78,6 +83,10 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
+				pass_listener = event_receiver->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+					*pass = true;
+					return true;
+				}, Mail());
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -100,6 +109,19 @@ namespace flame
 	cBringToFront* cBringToFront::create()
 	{
 		return new cBringToFrontPrivate;
+	}
+
+	Entity* cBringToFront::make()
+	{
+		auto e = Entity::create();
+		e->add_component(cElement::create());
+		e->add_component(cEventReceiver::create());
+		auto ca = cAligner::create();
+		ca->x_align_flags = AlignMinMax;
+		ca->y_align_flags = AlignMinMax;
+		e->add_component(ca);
+		e->add_component(cBringToFront::create());
+		return e;
 	}
 
 	struct cSizeDraggerPrivate : cSizeDragger
@@ -139,7 +161,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSizeDraggerPrivate**)c);
-					if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
+					if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
 						thiz->p_element->add_size(Vec2f(pos));
 					return true;
 				}, Mail::from_p(this));
@@ -154,6 +176,25 @@ namespace flame
 	cSizeDragger* cSizeDragger::create()
 	{
 		return new cSizeDraggerPrivate;
+	}
+
+	Entity* cSizeDragger::make(const Vec4c& hovering_color)
+	{
+		auto e = Entity::create();
+		auto ce = cElement::create();
+		ce->size = 8.f;
+		e->add_component(ce);
+		auto ceed = cExtraElementDrawing::create();
+		ceed->color = hovering_color;
+		ceed->draw_flags = ExtraDrawFilledCornerSE;
+		e->add_component(ceed);
+		e->add_component(cEventReceiver::create());
+		auto ca = cAligner::create();
+		ca->x_align_flags = AlignFlag(AlignMax | AlignAbsolute);
+		ca->y_align_flags = AlignFlag(AlignMax | AlignAbsolute);
+		e->add_component(ca);
+		e->add_component(cSizeDragger::create());
+		return e;
 	}
 
 	struct cDockerTabPrivate : cDockerTab
@@ -289,7 +330,7 @@ namespace flame
 				event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cDockerTabPrivate**)c);
-					if (is_mouse_move(action, key) && utils::is_dragging(thiz->event_receiver) && thiz->page)
+					if (is_mouse_move(action, key) && thiz->event_receiver->is_dragging() && thiz->page)
 					{
 						thiz->element->add_pos(Vec2f(pos));
 						thiz->page_element->add_pos(Vec2f(pos));
@@ -320,11 +361,11 @@ namespace flame
 								auto page_aligner = e_page->get_component(cAligner);
 
 								auto e_container = Entity::create();
-								utils::make_docker_floating_container(e_container, thiz->drop_pos, page_element->size);
+								cDockerTab::make_floating_container(e_container, thiz->drop_pos, page_element->size);
 								thiz->root->add_child(e_container);
 
 								auto e_docker = Entity::create();
-								utils::make_docker(e_docker);
+								cDockerTab::make_docker(e_docker);
 								e_container->add_child(e_docker, 0);
 
 								auto e_tabbar = e_docker->child(0);
@@ -384,6 +425,103 @@ namespace flame
 	cDockerTab* cDockerTab::create()
 	{
 		return new cDockerTabPrivate;
+	}
+
+	void cDockerTab::make_floating_container(Entity* e, const Vec2f& pos, const Vec2f& size)
+	{
+		e->set_name("docker_floating_container");
+		auto ce = cElement::create();
+		ce->pos = pos;
+		ce->size = size + Vec2f(16.f, 28.f + get_style(FontSize).u[0]);
+		ce->padding = Vec4f(8.f, 16.f, 8.f, 8.f);
+		ce->frame_thickness = 2.f;
+		ce->color = get_style(BackgroundColor).c;
+		ce->frame_color = get_style(ForegroundColor).c;
+		e->add_component(ce);
+		e->add_component(cEventReceiver::create());
+		e->add_component(cLayout::create(LayoutFree));
+		e->add_component(cMoveable::create());
+		e->add_child(cBringToFront::make());
+		e->add_child(cSizeDragger::make(get_style(FrameColorHovering).c));
+	}
+
+	void cDockerTab::make_static_container(Entity* e)
+	{
+		e->set_name("docker_static_container");
+		auto ce = cElement::create();
+		ce->color = get_style(BackgroundColor).c;
+		e->add_component(ce);
+		e->add_component(cEventReceiver::create());
+		auto ca = cAligner::create();
+		ca->x_align_flags = AlignMinMax;
+		ca->y_align_flags = AlignMinMax;
+		e->add_component(ca);
+		e->add_component(cLayout::create(LayoutFree));
+		e->add_component(cDockerStaticContainer::create());
+	}
+
+	void cDockerTab::make_layout(Entity* e, LayoutType type)
+	{
+		e->set_name("docker_layout");
+		e->add_component(cElement::create());
+		auto ca = cAligner::create();
+		ca->x_align_flags = AlignMinMax;
+		ca->y_align_flags = AlignMinMax;
+		e->add_component(ca);
+		auto cl = cLayout::create(type);
+		cl->width_fit_children = false;
+		cl->height_fit_children = false;
+		e->add_component(cl);
+		auto es = Entity::create();
+		cSplitter::make(es, type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical);
+		e->add_child(es);
+	}
+
+	void cDockerTab::make_docker(Entity* e)
+	{
+		e->set_name("docker");
+		auto ce = cElement::create();
+		ce->frame_thickness = 1.f;
+		ce->frame_color = get_style(ForegroundColor).c;
+		e->add_component(ce);
+		auto ca = cAligner::create();
+		ca->x_align_flags = AlignMinMax;
+		ca->y_align_flags = AlignMinMax;
+		e->add_component(ca);
+		auto cl = cLayout::create(LayoutVertical);
+		cl->width_fit_children = false;
+		cl->height_fit_children = false;
+		e->add_component(cl);
+		{
+			auto et = Entity::create();
+			et->set_name("docker_tabbar");
+			e->add_child(et);
+			auto ce = cElement::create();
+			ce->clip_flags = ClipChildren;
+			et->add_component(ce);
+			et->add_component(cEventReceiver::create());
+			auto ca = cAligner::create();
+			ca->x_align_flags = AlignMinMax;
+			et->add_component(ca);
+			et->add_component(cLayout::create(LayoutHorizontal));
+			et->add_component(cList::create(false));
+			et->add_component(cDockerTabbar::create());
+		}
+		{
+			auto ep = Entity::create();
+			ep->set_name("docker_pages");
+			e->add_child(ep);
+			auto ce = cElement::create();
+			ce->padding = 2.f;
+			ep->add_component(ce);
+			ep->add_component(cEventReceiver::create());
+			auto ca = cAligner::create();
+			ca->x_align_flags = AlignMinMax;
+			ca->y_align_flags = AlignMinMax;
+			ep->add_component(ca);
+			ep->add_component(cLayout::create(LayoutFree));
+			ep->add_component(cDockerPages::create());
+		}
 	}
 
 	struct cDockerTabbarPrivate : cDockerTabbar
@@ -651,15 +789,9 @@ namespace flame
 								auto p = docker->parent();
 								auto docker_idx = docker->index_; LayoutFree;
 								auto layout = Entity::create();
-								utils::make_docker_layout(layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
+								cDockerTab::make_layout(layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
 
-								if (is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
-								{
-									auto aligner = docker->get_component(cAligner);
-									//aligner->set_x_align_flags(0);
-									//aligner->set_y_align_flags(0);
-								}
-								else
+								if (!is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
 								{
 									auto p_element = p->get_component(cElement);
 									auto layout_element = layout->get_component(cElement);
@@ -667,8 +799,6 @@ namespace flame
 									layout_element->set_size(p_element->size);
 
 									auto aligner = layout->get_component(cAligner);
-									//aligner->set_x_align_flags(0);
-									//aligner->set_y_align_flags(0);
 									aligner->set_width_factor(p_element->size.x());
 									aligner->set_height_factor(p_element->size.y());
 
@@ -684,7 +814,7 @@ namespace flame
 								p->add_child(layout, docker_idx);
 
 								auto new_docker = Entity::create();
-								utils::make_docker(new_docker);
+								cDockerTab::make_docker(new_docker);
 								auto new_docker_element = new_docker->get_component(cElement);
 								auto new_docker_aligner = new_docker->get_component(cAligner);
 								auto new_tabbar = new_docker->child(0);
@@ -842,7 +972,7 @@ namespace flame
 								auto page_aligner = e_page->get_component(cAligner);
 
 								auto new_docker = Entity::create();
-								utils::make_docker(new_docker);
+								cDockerTab::make_docker(new_docker);
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);
 								thiz->entity->add_child(new_docker);

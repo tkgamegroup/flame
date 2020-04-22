@@ -3,9 +3,9 @@
 cConsole::cConsole() :
 	Component("cConsole")
 {
+	utils::next_element_padding = 8.f;
 	auto e_page = utils::e_begin_docker_page(L"Console").second;
 	{
-		e_page->get_component(cElement)->padding = Vec4f(8.f);
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
@@ -14,12 +14,12 @@ cConsole::cConsole() :
 		e_page->add_component(this);
 	}
 
-		utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
+		utils::e_begin_scrollbar(ScrollbarVertical, true);
 			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
 			utils::c_aligner(AlignMinMax, AlignMinMax);
 			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
 			utils::e_end_layout();
-		utils::e_end_scrollbar(utils::style_1u(utils::FontSize));
+		utils::e_end_scrollbar(utils::style_1u(FontSize));
 
 		utils::e_button(L"Clear", [](void* c) {
 			app.console->c_text_log->set_text(L"");

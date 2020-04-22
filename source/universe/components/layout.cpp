@@ -5,6 +5,8 @@
 #include <flame/universe/components/aligner.h>
 #include "layout_private.h"
 
+#include <limits>
+
 namespace flame
 {
 	cLayoutPrivate::cLayoutPrivate(LayoutType _type)
@@ -17,7 +19,7 @@ namespace flame
 		item_padding = 0.f;
 		width_fit_children = true;
 		height_fit_children = true;
-		fence = -1;
+		fence = std::numeric_limits<int>::max();
 		scroll_offset = Vec2f(0.f);
 
 		content_size = Vec2f(0.f);
@@ -268,7 +270,7 @@ namespace flame
 			break;
 		case LayoutHorizontal:
 		{
-			auto n = min(fence, (uint)als.size());
+			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
 
 			auto w = 0.f;
 			auto h = 0.f;
@@ -298,7 +300,7 @@ namespace flame
 				else
 					h = max(element->size.y(), h);
 			}
-			if (fence > 0 && !als.empty())
+			if (fence != 0 && !als.empty())
 				w -= item_padding;
 			set_content_size(Vec2f(w, h));
 			w += element->padding.xz().sum();
@@ -342,7 +344,7 @@ namespace flame
 			break;
 		case LayoutVertical:
 		{
-			auto n = min(fence, (uint)als.size());
+			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
 
 			auto w = 0.f;
 			auto h = 0.f;
@@ -372,7 +374,7 @@ namespace flame
 					h += element->size.y();
 				h += item_padding;
 			}
-			if (fence > 0 && !als.empty())
+			if (fence != 0 && !als.empty())
 				h -= item_padding;
 			set_content_size(Vec2f(w, h));
 			w += element->padding.xz().sum();
@@ -416,7 +418,7 @@ namespace flame
 			break;
 		case LayoutGrid:
 		{
-			auto n = min(fence, (uint)als.size());
+			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
 
 			if (column == 0)
 			{
@@ -463,7 +465,7 @@ namespace flame
 						lh = 0.f;
 					}
 				}
-				if (fence > 0 && !als.empty())
+				if (fence != 0 && !als.empty())
 				{
 					if (n % column != 0)
 					{

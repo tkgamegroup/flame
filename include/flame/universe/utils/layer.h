@@ -1,6 +1,5 @@
 #pragma once
 
-#include <flame/serialize.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/components/data_keeper.h>

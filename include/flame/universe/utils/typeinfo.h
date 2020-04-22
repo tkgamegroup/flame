@@ -251,7 +251,7 @@ namespace flame
 			auto d_er = drag_text->entity->get_component(cEventReceiver);
 			d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cDigitalDataTracker**)c;
-				if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+				if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 				{
 					auto v = *(T*)thiz->data;
 					if (!thiz->drag_changed)
@@ -268,7 +268,7 @@ namespace flame
 			}, Mail::from_p(this));
 			d_er->state_listeners.add([](void* c, EventReceiverState) {
 				auto thiz = *(cDigitalDataTracker**)c;
-				if (thiz->drag_changed && !utils::is_active(cEventReceiver::current()))
+				if (thiz->drag_changed && !cEventReceiver::current()->is_active())
 				{
 					auto temp = *(T*)thiz->data;
 					*(T*)thiz->data = thiz->drag_start;
@@ -394,7 +394,7 @@ namespace flame
 					capture.i = i;
 					d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = *(Capture*)c;
-						if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+						if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 						{
 							auto v = *(Vec<N, T>*)capture.thiz->data;
 							if (!capture.thiz->drag_changed)
@@ -411,7 +411,7 @@ namespace flame
 					}, Mail::from_t(&capture));
 					d_er->state_listeners.add([](void* c, EventReceiverState) {
 						auto& capture = *(Capture*)c;
-						if (capture.thiz->drag_changed && !utils::is_active(cEventReceiver::current()))
+						if (capture.thiz->drag_changed && !cEventReceiver::current()->is_active())
 						{
 							auto temp = *(Vec<N, T>*)capture.thiz->data;
 							*(Vec<N, T>*)capture.thiz->data = capture.thiz->drag_start;

@@ -5,6 +5,8 @@
 
 namespace flame
 {
+	const StyleValue& (*get_style)(Style s) = nullptr;
+
 	Vec4c get_color_2(EventReceiverState state, const std::vector<Vec4c>& colors)
 	{
 		if ((state & EventReceiverHovering) || (state & EventReceiverActive))

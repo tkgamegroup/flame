@@ -4,7 +4,6 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/layout.h>
-#include <flame/universe/utils/style.h>
 
 namespace flame
 {

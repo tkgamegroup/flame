@@ -7,16 +7,16 @@ namespace flame
 {
 	namespace utils
 	{
-		FLAME_UNIVERSE_EXPORTS Entity* current_root();
-		FLAME_UNIVERSE_EXPORTS void set_current_root(Entity* e);
-		FLAME_UNIVERSE_EXPORTS Entity* current_entity();
-		FLAME_UNIVERSE_EXPORTS void set_current_entity(Entity* e);
-		FLAME_UNIVERSE_EXPORTS Entity* current_parent();
-		FLAME_UNIVERSE_EXPORTS void push_parent(Entity* parent);
-		FLAME_UNIVERSE_EXPORTS void pop_parent();
+		Entity* current_root();
+		void set_current_root(Entity* e);
+		Entity* current_entity();
+		void set_current_entity(Entity* e);
+		Entity* current_parent();
+		void push_parent(Entity* parent);
+		void pop_parent();
 
-		FLAME_UNIVERSE_EXPORTS extern Entity* next_entity;
-		FLAME_UNIVERSE_EXPORTS extern uint next_component_id;
+		extern Entity* next_entity;
+		extern uint next_component_id;
 
 		inline cTimer* c_timer()
 		{

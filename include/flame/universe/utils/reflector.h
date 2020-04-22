@@ -9,8 +9,15 @@ namespace flame
 		inline Entity* e_reflector_window(sEventDispatcher* event_dispatcher)
 		{
 			push_parent(current_root());
-			auto e = e_begin_window(L"Reflector", true);
-			e->get_component(cElement)->size = 300.f;
+			auto e_window = e_begin_window(L"Reflector");
+			auto e_layout = current_parent();
+			e_layout->get_component(cElement)->size = 300.f;
+			{
+				auto cl = e_layout->get_component(cLayout);
+				cl->width_fit_children = false;
+				cl->height_fit_children = false;
+				cl->fence = -1;
+			}
 
 			struct Capture
 			{
@@ -47,7 +54,7 @@ namespace flame
 			capture.event_dispatcher = event_dispatcher;
 			capture.txt_mouse = e_text(nullptr)->get_component(cText);
 			capture.recording = true;
-			capture.e_window = e;
+			capture.e_window = e_window;
 			capture.e_tree = Entity::create();
 			capture.txt_record = e_text(L"Recording (Esc)")->get_component(cText);
 			capture.txt_hovering = e_text(nullptr)->get_component(cText);
@@ -66,7 +73,8 @@ namespace flame
 			}, Mail::from_t(&capture));
 
 			next_entity = capture.e_tree;
-			e_begin_tree(false, 4.f);
+			next_element_padding = 4.f;
+			e_begin_tree(true);
 			{
 				auto ce = capture.e_tree->get_component(cElement);
 				ce->frame_thickness = 2.f;
@@ -78,8 +86,11 @@ namespace flame
 			capture.add_node(current_root());
 			pop_parent();
 
+			e_size_dragger();
+
 			e_end_window();
-			e->on_destroyed_listeners.add([](void* c) {
+
+			e_window->on_destroyed_listeners.add([](void* c) {
 				looper().remove_event(*(void**)c);
 				return true;
 			}, Mail::from_p(looper().add_event([](void* c, bool* go_on) {
@@ -146,7 +157,7 @@ namespace flame
 				*go_on = true;
 			}, Mail::from_t(&capture))));
 			pop_parent();
-			return e;
+			return e_window;
 		}
 	}
 }

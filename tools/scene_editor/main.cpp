@@ -2,8 +2,12 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
 #include <flame/universe/utils/ui.h>
+#include <flame/universe/utils/reflector.h>
 
 #include "app.h"
+
+#include <flame/universe/utils/entity_impl.h>
+#include <flame/universe/utils/ui_impl.h>
 
 MyApp app;
 

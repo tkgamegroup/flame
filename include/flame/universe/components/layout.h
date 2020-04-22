@@ -17,7 +17,7 @@ namespace flame
 		float item_padding;
 		bool width_fit_children;
 		bool height_fit_children;
-		uint fence; // children that exceed fence will under free layout
+		int fence;
 		Vec2f scroll_offset;
 
 		Vec2f content_size;

@@ -8,8 +8,6 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/edit.h>
-#include <flame/universe/utils/style.h>
-#include <flame/universe/utils/event.h>
 
 namespace flame
 {
@@ -360,7 +358,7 @@ namespace flame
 						thiz->select_start = thiz->select_end = thiz->locate_cursor(pos);
 						thiz->flash_cursor(2);
 					}
-					else if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
+					else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
 					{
 						thiz->select_end = thiz->locate_cursor(cEventReceiver::current()->dispatcher->mouse_pos);
 						thiz->flash_cursor(2);

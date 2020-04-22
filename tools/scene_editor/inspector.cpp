@@ -6,7 +6,7 @@ void begin_item(const wchar_t* title)
 	utils::e_begin_layout(LayoutVertical, 4.f);
 	utils::e_text(title);
 	auto e_data = utils::e_empty();
-	utils::c_element()->padding.x() = utils::style_1u(utils::FontSize);
+	utils::c_element()->padding.x() = utils::style_1u(FontSize);
 	utils::c_layout(LayoutVertical)->item_padding = 2.f;
 	utils::e_end_layout();
 	utils::push_parent(e_data);
@@ -58,9 +58,9 @@ void create_vec_edit(SetterCapture* c)
 cInspector::cInspector() :
 	Component("cInspector")
 {
+	utils::next_element_padding = 4.f;
 	auto e_page = utils::e_begin_docker_page(L"Inspector").second;
 	{
-		utils::current_entity()->get_component(cElement)->padding = Vec4f(4.f);
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -68,7 +68,7 @@ cInspector::cInspector() :
 		e_page->add_component(this);
 	}
 
-	utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
+	utils::e_begin_scrollbar(ScrollbarVertical, true);
 		e_layout = utils::e_empty();
 		{
 			utils::c_element()->clip_flags = ClipChildren;
@@ -161,8 +161,8 @@ void cInspector::refresh()
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
 			auto module = udt->db()->module();
 
+			utils::next_element_padding = 4.f;
 			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
-			e_component->get_component(cElement)->padding = Vec4f(4.f);
 			utils::c_aligner(AlignMinMax, 0);
 
 			auto c_component_tracker = new cComponentTracker(component);
@@ -178,9 +178,9 @@ void cInspector::refresh()
 				}capture;
 				capture.e = e_component;
 				capture.c = component;
-				utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
-				utils::push_style_4c(utils::ButtonColorHovering, utils::style_4c(utils::FrameColorHovering));
-				utils::push_style_4c(utils::ButtonColorActive, utils::style_4c(utils::FrameColorActive));
+				utils::push_style_4c(ButtonColorNormal, Vec4c(0));
+				utils::push_style_4c(ButtonColorHovering, utils::style_4c(FrameColorHovering));
+				utils::push_style_4c(ButtonColorActive, utils::style_4c(FrameColorActive));
 				utils::e_button(L"X", [](void* c) {
 					auto& capture = *(Capture*)c;
 					Capture _capture;
@@ -192,9 +192,9 @@ void cInspector::refresh()
 						capture.c->entity->remove_component(capture.c);
 					}, Mail::from_t(&_capture));
 				}, Mail::from_t(&capture));
-				utils::pop_style(utils::ButtonColorNormal);
-				utils::pop_style(utils::ButtonColorHovering);
-				utils::pop_style(utils::ButtonColorActive);
+				utils::pop_style(ButtonColorNormal);
+				utils::pop_style(ButtonColorHovering);
+				utils::pop_style(ButtonColorActive);
 			utils::e_end_layout();
 
 			for (auto i = 0; i < udt->variable_count(); i++)

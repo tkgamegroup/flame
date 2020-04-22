@@ -4,8 +4,6 @@
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
-#include <flame/universe/utils/event.h>
-#include <flame/universe/utils/style.h>
 
 namespace flame
 {
@@ -97,7 +95,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cScrollbarThumbPrivate**)c);
-					if (utils::is_active(thiz->event_receiver) && is_mouse_move(action, key))
+					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 					{
 						if (thiz->type == ScrollbarVertical)
 							thiz->update(pos.y());

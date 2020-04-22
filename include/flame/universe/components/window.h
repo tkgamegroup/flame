@@ -4,15 +4,8 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct FontAtlas;
-	}
-
 	struct cElement;
 	struct cEventReceiver;
-	struct cAligner;
-	struct cLayout;
 	struct cListItem;
 	struct cList;
 
@@ -39,6 +32,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cBringToFront* create();
+		FLAME_UNIVERSE_EXPORTS static Entity* make();
 	};
 
 	struct cSizeDragger : Component 
@@ -52,6 +46,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
+		FLAME_UNIVERSE_EXPORTS static Entity* make(const Vec4c& hovering_color);
 	};
 
 	struct cDockerTab : Component
@@ -74,6 +69,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void take_away(bool close);
 
 		FLAME_UNIVERSE_EXPORTS static cDockerTab* create();
+		FLAME_UNIVERSE_EXPORTS static void make_floating_container(Entity* e, const Vec2f& pos, const Vec2f& size);
+		FLAME_UNIVERSE_EXPORTS static void make_static_container(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static void make_layout(Entity* e, LayoutType type);
+		FLAME_UNIVERSE_EXPORTS static void make_docker(Entity* e);
 	};
 
 	struct cDockerTabbar : Component

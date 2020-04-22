@@ -2,6 +2,9 @@
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
 
+#include <flame/universe/utils/entity_impl.h>
+#include <flame/universe/utils/ui_impl.h>
+
 using namespace flame;
 using namespace graphics;
 
@@ -27,7 +30,7 @@ int main(int argc, char** args)
 	auto patch = utils::e_element()->get_component(cElement);
 	patch->pivot = 0.5f;
 	patch->color = Vec4c(255);
-	cElement::set_current(patch);
+	cElement::set_linked_object(patch);
 
 	utils::pop_parent();
 

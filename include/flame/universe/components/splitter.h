@@ -20,5 +20,6 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cSplitter* create(SplitterType type);
+		FLAME_UNIVERSE_EXPORTS static void make(Entity* e, SplitterType type);
 	};
 }

@@ -6,7 +6,6 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/aligner.h>
-#include <flame/universe/utils/style.h>
 
 namespace flame
 {
@@ -18,8 +17,8 @@ namespace flame
 		font_atlas = nullptr;
 		text.resize(1);
 		text.v[0] = 0;
-		font_size = utils::style_1u(utils::FontSize);
-		color = utils::style_4c(utils::TextColorNormal);
+		font_size = 0;
+		color = 0;
 		auto_size = true;
 
 		draw_cmd = nullptr;

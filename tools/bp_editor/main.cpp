@@ -6,6 +6,9 @@
 
 #include "app.h"
 
+#include <flame/universe/utils/entity_impl.h>
+#include <flame/universe/utils/ui_impl.h>
+
 BP::Node* _add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
 	auto n = app.bp->add_node(id.c_str(), type.c_str(), object_type);
@@ -1024,9 +1027,9 @@ bool MyApp::create(const char* filename)
 			utils::e_end_menu_bar();
 
 			{
-				auto c_element = utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cElement);
-				c_element->padding = 4.f;
-				c_element->color = utils::style_4c(utils::FrameColorNormal);
+				utils::next_element_padding = 4.f;
+				utils::next_element_color = utils::style_4c(FrameColorNormal);
+				utils::e_begin_layout(LayoutHorizontal, 8.f);
 				utils::c_aligner(AlignMinMax, 0);
 				c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
 				c_auto_update->data_changed_listeners.add([](void* , uint hash, void*) {
@@ -1050,13 +1053,10 @@ bool MyApp::create(const char* filename)
 
 		utils::e_end_layout();
 
-		utils::push_style_1u(utils::FontSize, 30);
+		utils::push_style_1u(FontSize, 30);
+		utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
+		utils::next_element_color = Vec4c(0, 0, 0, 255);
 		e_notification = utils::e_text(L"");
-		{
-			auto c_element = e_notification->get_component(cElement);
-			c_element->padding = Vec4f(20.f, 10.f, 20.f, 10.f);
-			c_element->color = Vec4c(0, 0, 0, 255);
-		}
 		e_notification->get_component(cText)->color = Vec4c(255);
 		utils::c_aligner(AlignMax, AlignMax);
 		e_notification->set_visible(false);
@@ -1068,7 +1068,7 @@ bool MyApp::create(const char* filename)
 				app.e_notification->set_visible(false);
 			}, Mail(), false);
 		}
-		utils::pop_style(utils::FontSize);
+		utils::pop_style(FontSize);
 
 	utils::pop_parent();
 

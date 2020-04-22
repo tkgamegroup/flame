@@ -164,8 +164,9 @@ cHierarchy::cHierarchy() :
 		e_page->add_component(this);
 	}
 
-		utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
-			e_tree = utils::e_begin_tree(true, 8.f);
+		utils::e_begin_scrollbar(ScrollbarVertical, true);
+			utils::next_element_padding = 8.f;
+			e_tree = utils::e_begin_tree(true);
 			{
 				auto c_tree = e_tree->get_component(cTree);
 				c_tree->data_changed_listeners.add([](void* c, uint hash, void*) {

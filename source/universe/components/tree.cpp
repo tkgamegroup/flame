@@ -9,7 +9,6 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
 #include <flame/universe/utils/layer.h>
-#include <flame/universe/utils/style.h>
 
 namespace flame
 {

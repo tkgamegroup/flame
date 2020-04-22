@@ -2,7 +2,7 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/splitter.h>
-#include <flame/universe/utils/event.h>
+#include <flame/universe/components/style.h>
 
 namespace flame
 {
@@ -37,7 +37,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = (*(cSplitterPrivate**)c);
-					if (utils::is_active(thiz->event_receiver) && is_mouse_move(action, key))
+					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 					{
 						auto parent = thiz->entity->parent();
 						auto idx = thiz->entity->index_;
@@ -106,5 +106,25 @@ namespace flame
 	cSplitter* cSplitter::create(SplitterType type)
 	{
 		return new cSplitterPrivate(type);
+	}
+
+	void cSplitter::make(Entity* e, SplitterType type)
+	{
+		auto ce = cElement::create();
+		ce->size = 8.f;
+		e->add_component(ce);
+		e->add_component(cEventReceiver::create());
+		auto cs = cStyleColor::create();
+		cs->color_normal = Vec4c(0);
+		cs->color_hovering = get_style(FrameColorHovering).c;
+		cs->color_active = get_style(FrameColorActive).c;
+		e->add_component(cs);
+		e->add_component(cSplitter::create(type));
+		auto ca = cAligner::create();
+		if (type == SplitterHorizontal)
+			ca->y_align_flags = AlignMinMax;
+		else
+			ca->x_align_flags = AlignMinMax;
+		e->add_component(ca);
 	}
 }

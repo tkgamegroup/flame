@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -27,6 +28,31 @@ namespace flame
 		cEventReceiver() :
 			Component("cEventReceiver")
 		{
+		}
+
+		bool is_hovering()
+		{
+			return dispatcher->hovering == this;
+		}
+
+		bool is_focusing()
+		{
+			return dispatcher->focusing == this;
+		}
+
+		bool is_focusing_and_not_normal()
+		{
+			return dispatcher->focusing == this && dispatcher->focusing_state != FocusingNormal;
+		}
+
+		bool is_active()
+		{
+			return dispatcher->focusing == this && dispatcher->focusing_state == FocusingAndActive;
+		}
+
+		bool is_dragging()
+		{
+			return dispatcher->focusing == this && dispatcher->focusing_state == FocusingAndDragging;
 		}
 
 		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drop_count, const uint* drops);

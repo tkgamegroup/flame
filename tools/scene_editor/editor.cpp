@@ -33,7 +33,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				thiz->target->add_pos(Vec2f(pos) / thiz->base->scale);
@@ -50,7 +50,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto x = pos.x() / thiz->base->scale;
@@ -68,7 +68,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto y = pos.y() / thiz->base->scale;
@@ -86,7 +86,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto x = pos.x() / thiz->base->scale;
@@ -103,7 +103,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto y = pos.y() / thiz->base->scale;
@@ -120,7 +120,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto p = Vec2f(pos) / thiz->base->scale;
@@ -138,7 +138,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto p = Vec2f(pos) / thiz->base->scale;
@@ -156,7 +156,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto p = Vec2f(pos) / thiz->base->scale;
@@ -174,7 +174,7 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (utils::is_active(cEventReceiver::current()) && is_mouse_move(action, key))
+			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				auto p = Vec2f(pos) / thiz->base->scale;

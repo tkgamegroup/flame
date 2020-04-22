@@ -7,8 +7,6 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/menu.h>
 #include <flame/universe/utils/layer.h>
-#include <flame/universe/utils/style.h>
-#include <flame/universe/utils/menu.h>
 
 namespace flame
 {
@@ -24,10 +22,7 @@ namespace flame
 			root = nullptr;
 			items = Entity::create();
 			{
-				auto ce = cElement::create();
-				ce->frame_thickness = 1.f;
-				ce->frame_color = utils::style_4c(utils::ForegroundColor);
-				items->add_component(ce);
+				items->add_component(cElement::create());
 				items->add_component(cLayout::create(LayoutVertical));
 				items->add_component(cMenuItems::create());
 			}
@@ -74,6 +69,23 @@ namespace flame
 						menu->close();
 				}
 			}
+		}
+
+		bool can_open(KeyStateFlags action, MouseKey key)
+		{
+			if (mode == cMenu::ModeContext)
+			{
+				if (event_receiver->is_focusing_and_not_normal() && is_mouse_down(action, key, true) && key == Mouse_Right)
+					return true;
+			}
+			else
+			{
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+					return true;
+				else if (is_mouse_move(action, key))
+					return root->last_child(FLAME_CHASH("layer_menu"));
+			}
+			return false;
 		}
 
 		void open(const Vec2f& pos)
@@ -157,7 +169,7 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = *(cMenuPrivate**)c;
-					if (utils::is_menu_can_open(thiz, action, key))
+					if (thiz->can_open(action, key))
 						thiz->open((Vec2f)pos);
 					return true;
 				}, Mail::from_p(this));

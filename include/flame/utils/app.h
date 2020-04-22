@@ -203,6 +203,8 @@ namespace flame
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
 			canvas->add_font(font_atlas);
 
+			get_style = utils::style;
+
 			world = World::create();
 			world->add_object(main_window->w);
 			world->add_object(font_atlas);

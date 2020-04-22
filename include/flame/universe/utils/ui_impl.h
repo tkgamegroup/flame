@@ -1,9 +1,35 @@
-#include <flame/universe/utils/style.h>
+#include <flame/universe/utils/ui.h>
 
 namespace flame
 {
 	namespace utils
 	{
+		static std::stack<graphics::FontAtlas*> _font_atlases;
+
+		graphics::FontAtlas* current_font_atlas()
+		{
+			return _font_atlases.top();
+		}
+
+		void push_font_atlas(graphics::FontAtlas* font_atlas)
+		{
+			_font_atlases.push(font_atlas);
+		}
+
+		void pop_font_atlas()
+		{
+			_font_atlases.pop();
+		}
+
+		Vec2f next_element_pos = Vec2f(0.f);
+		Vec2f next_element_size = Vec2f(0.f);
+		Vec4f next_element_padding = Vec4f(0.f);
+		Vec4f next_element_roundness = Vec4f(0.f);
+		uint next_element_roundness_lod = 0;
+		float next_element_frame_thickness = 0.f;
+		Vec4c next_element_color = Vec4c(0);
+		Vec4c next_element_frame_color = Vec4c(255);
+
 		std::stack<StyleValue> _styles[StyleCount];
 
 		const StyleValue& style(Style style)

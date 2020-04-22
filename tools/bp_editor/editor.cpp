@@ -256,7 +256,7 @@ struct cNode : Component
 					if (n)
 						app.select({ n });
 				}
-				else if (is_mouse_move(action, key) && utils::is_active(thiz->event_receiver))
+				else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
 				{
 					for (auto& s : app.selected_nodes)
 					{
@@ -269,7 +269,7 @@ struct cNode : Component
 			}, Mail::from_p(this));
 			event_receiver->state_listeners.add([](void* c, EventReceiverState) {
 				auto thiz = *(cNode**)c;
-				if (thiz->moved && !utils::is_active(thiz->event_receiver))
+				if (thiz->moved && !thiz->event_receiver->is_active())
 				{
 					std::vector<Vec2f> poses;
 					for (auto& s : app.selected_nodes)
@@ -542,8 +542,9 @@ void cEditor::on_add_node(BP::Node* n)
 			}, Mail::from_p(n));
 		utils::e_end_popup_menu();
 	utils::push_parent(e_node);
-		utils::e_begin_layout(LayoutVertical, 4.f)->get_component(cElement)->padding = Vec4f(8.f);
-			utils::push_style_1u(utils::FontSize, 20);
+		utils::next_element_padding = 8.f;
+		utils::e_begin_layout(LayoutVertical, 4.f);
+			utils::push_style_1u(FontSize, 20);
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 				if (n_type == 0)
 				{
@@ -551,12 +552,11 @@ void cEditor::on_add_node(BP::Node* n)
 					auto last_colon = str.find_last_of(L':');
 					if (last_colon != std::wstring::npos)
 						str = std::wstring(str.begin() + last_colon + 1, str.end());
-					auto e_text = utils::e_text(str.c_str());
-					e_text->get_component(cElement)->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-					e_text->get_component(cText)->color = node_type_color(n_type);
+					utils::next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+					utils::e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
 				}
 			utils::e_end_layout();
-			utils::pop_style(utils::FontSize);
+			utils::pop_style(FontSize);
 
 			std::string type = n->type();
 
@@ -575,7 +575,7 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::e_empty();
 						{
 							auto c_element = utils::c_element();
-							auto r = utils::style_1u(utils::FontSize);
+							auto r = utils::style_1u(FontSize);
 							c_element->size = r;
 							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
@@ -646,8 +646,8 @@ void cEditor::on_add_node(BP::Node* n)
 						auto tag = type->tag();
 						if (!input->link() && tag != TypePointer)
 						{
+							utils::next_element_padding = Vec4f(utils::style_1u(FontSize), 0.f, 0.f, 0.f);
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
-							e_data->get_component(cElement)->padding = Vec4f(utils::style_1u(utils::FontSize), 0.f, 0.f, 0.f);
 
 							auto base_hash = type->base_hash();
 
@@ -771,7 +771,7 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::e_empty();
 						{
 							auto c_element = utils::c_element();
-							auto r = utils::style_1u(utils::FontSize);
+							auto r = utils::style_1u(FontSize);
 							c_element->size = r;
 							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
@@ -793,7 +793,10 @@ void cEditor::on_add_node(BP::Node* n)
 
 			if (n_type == 'A')
 			{
-				auto c_element = utils::e_button(L"+", [](void* c) {
+				utils::next_element_padding = Vec4f(5.f, 2.f, 5.f, 2.f);
+				utils::next_element_roundness = 8.f;
+				utils::next_element_roundness_lod = 2;
+				utils::e_button(L"+", [](void* c) {
 					auto n = *(BP::Node**)c;
 					app.select();
 					std::string type = n->type();
@@ -826,10 +829,7 @@ void cEditor::on_add_node(BP::Node* n)
 						app.remove_nodes({ n });
 						nn->set_id(id.c_str());
 					}
-				}, Mail::from_p(n))->get_component(cElement);
-				c_element->padding = Vec4f(5.f, 2.f, 5.f, 2.f);
-				c_element->roundness = 8.f;
-				c_element->roundness_lod = 2;
+				}, Mail::from_p(n));
 				utils::c_aligner(AlignMiddle, 0);
 			}
 
@@ -959,16 +959,15 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 	});
 
 	utils::push_parent(utils::add_layer(app.root, ""));
-		utils::e_empty()->on_removed_listeners.add([](void*) {
+		utils::next_element_pos = pos;
+		utils::next_element_padding = 4.f;
+		utils::next_element_frame_thickness = 2.f;
+		utils::next_element_color = utils::style_4c(BackgroundColor);
+		utils::next_element_frame_color = utils::style_4c(ForegroundColor);
+		utils::e_element()->on_removed_listeners.add([](void*) {
 			app.editor->dragging_slot = nullptr;
 			return true;
 		}, Mail());
-		utils::next_element_pos = pos;
-		auto c_element = utils::c_element();
-		c_element->padding = 4.f;
-		c_element->frame_thickness = 2.f;
-		c_element->color = utils::style_4c(utils::BackgroundColor);
-		c_element->frame_color = utils::style_4c(utils::ForegroundColor);
 		utils::c_layout(LayoutVertical)->item_padding = 4.f;
 		utils::push_parent(utils::current_entity());
 			if (dragging_slot)
@@ -977,9 +976,11 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 				utils::e_text(Icon_SEARCH);
 				auto c_text_search = utils::e_edit(300.f)->get_component(cText);
 			utils::e_end_layout();
-			utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f, 300.f))->get_component(cElement)->padding = 4.f;
+			utils::next_element_size = Vec2f(0.f, 300.f);
+			utils::next_element_padding = 4.f;
+			utils::e_begin_scrollbar(ScrollbarVertical, false);
 			utils::c_aligner(AlignMinMax | AlignGreedy, 0);
-				auto e_list = utils::e_begin_list(true, 0.f);
+				auto e_list = utils::e_begin_list(true);
 					struct Capture
 					{
 						Entity* l;

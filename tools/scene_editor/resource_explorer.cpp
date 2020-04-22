@@ -141,8 +141,8 @@ cResourceExplorer::cResourceExplorer() :
 		}
 	}
 
+	utils::next_element_padding = 4.f;
 	auto e_page = utils::e_begin_docker_page(L"Resource Explorer").second;
-	e_page->get_component(cElement)->padding = 4.f;
 	{
 		auto c_layout = utils::c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
@@ -159,7 +159,7 @@ cResourceExplorer::cResourceExplorer() :
 		utils::c_element();
 		utils::c_layout(LayoutHorizontal);
 
-		utils::e_begin_scrollbar(ScrollbarVertical, Vec2f(0.f));
+		utils::e_begin_scrollbar(ScrollbarVertical, true);
 			e_list = utils::e_begin_list(true);
 			{
 				c_list_element = e_list->get_component(cElement);
@@ -223,14 +223,14 @@ cResourceExplorer::~cResourceExplorer()
 
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
 {
-	utils::push_style_4c(utils::FrameColorNormal, Vec4c(0));
+	utils::push_style_4c(FrameColorNormal, Vec4c(0));
 	auto e_item = utils::e_list_item(L"", false);
-	utils::pop_style(utils::FrameColorNormal);
+	utils::pop_style(FrameColorNormal);
 	utils::c_layout(LayoutVertical)->item_padding = 4.f;
 	utils::push_parent(e_item);
 	utils::next_element_size = 64.f;
 	utils::e_image(img_id << 16);
-	utils::e_text(app.font_atlas->wrap_text(utils::style_1u(utils::FontSize), 64.f, 
+	utils::e_text(app.font_atlas->wrap_text(utils::style_1u(FontSize), 64.f, 
 		title.c_str(), title.c_str() + title.size()).v);
 	utils::pop_parent();
 	return e_item;
@@ -248,9 +248,9 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 
 		address_bar->remove_children(0, -1);
 		utils::push_parent(address_bar);
-		utils::push_style_4c(utils::ButtonColorNormal, Vec4c(0));
-		utils::push_style_4c(utils::ButtonColorHovering, utils::style_4c(utils::FrameColorHovering));
-		utils::push_style_4c(utils::ButtonColorActive, utils::style_4c(utils::FrameColorActive));
+		utils::push_style_4c(ButtonColorNormal, Vec4c(0));
+		utils::push_style_4c(ButtonColorHovering, utils::style_4c(FrameColorHovering));
+		utils::push_style_4c(ButtonColorActive, utils::style_4c(FrameColorActive));
 
 		utils::e_button(Icon_LEVEL_UP, [](void* c) {
 			if (app.resource_explorer->curr_path != app.resource_explorer->base_path)
@@ -304,9 +304,9 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			}
 		}
 
-		utils::pop_style(utils::ButtonColorNormal);
-		utils::pop_style(utils::ButtonColorHovering);
-		utils::pop_style(utils::ButtonColorActive);
+		utils::pop_style(ButtonColorNormal);
+		utils::pop_style(ButtonColorHovering);
+		utils::pop_style(ButtonColorActive);
 		utils::pop_parent();
 
 		clear_all_works();
