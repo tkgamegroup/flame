@@ -62,7 +62,17 @@ namespace flame
 
 					e_begin_layout(LayoutHorizontal, 4.f);
 						e_text(title);
-						e_button(Icon_SHARE);
+						struct Capture
+						{
+							cReflector* thiz;
+							Entity** t;
+						}capture;
+						capture.thiz = this;
+						capture.t = &t.t;
+						e_button(Icon_SHARE, [](void* c) {
+							auto capture = *(Capture*)c;
+							capture.thiz->find_target_in_tree(capture.thiz->e_tree, *capture.t);
+						}, Mail::from_t(&capture));
 						e_toggle(Icon_SQUARE_O)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, uint hash, void*) {
 							if (hash == FLAME_CHASH("checked"))
 								**(bool**)c = ((cCheckbox*)Component::current())->checked;
@@ -84,6 +94,41 @@ namespace flame
 						return;
 					if (rect_contains(rect(element->global_pos, element->global_size), pos))
 						t_undering.t = e;
+				}
+
+				void find_target_in_tree(Entity* e, Entity* t)
+				{
+					auto dp = e->get_component(cDataKeeper);
+					if (dp && dp->get_voidp_item(FLAME_CHASH("entity")) == t)
+					{
+						c_tree->set_selected(e->parent());
+						return;
+					}
+
+					for (auto i = 0; i < e->child_count(); i++)
+						find_target_in_tree(e->child(i), t);
+				}
+
+				void add_node(Entity* src)
+				{
+					if (src == e_window)
+						return;
+					auto element = src->get_component(cElement);
+					auto geometry = Vec4f(element->global_pos, element->global_size);
+					auto item = e_begin_tree_node(wfmt(L"%I64X ", (ulonglong)src).c_str(), true)->child(0);
+					{
+						item->set_name("reflector_item");
+						auto dp = cDataKeeper::create();
+						dp->set_voidp_item(FLAME_CHASH("entity"), src);
+						dp->set_vec4f_item(FLAME_CHASH("geometry"), geometry);
+						item->add_component(dp);
+					}
+					e_text((L"name: " + s2w(src->name())).c_str());
+					e_text(wfmt(L"geometry: (%.0f, %.0f)-(%.0f, %.0f)", geometry.x(), geometry.y(), geometry.x() + geometry.z(), geometry.y() + geometry.w()).c_str());
+					auto cs = src->child_count();
+					for (auto i = 0; i < cs; i++)
+						add_node(src->child(i));
+					e_end_tree_node();
 				}
 
 				void create(Entity* _window)
@@ -242,27 +287,6 @@ namespace flame
 						(*(cReflector**)c)->processing_2d_renderer_event();
 						return true;
 					}, Mail::from_p(this));
-				}
-
-				void add_node(Entity* src)
-				{
-					if (src == e_window)
-						return;
-					auto element = src->get_component(cElement);
-					auto geometry = Vec4f(element->global_pos, element->global_size);
-					auto item = e_begin_tree_node(wfmt(L"%I64X ", (ulonglong)src).c_str(), true)->child(0);
-					{
-						item->set_name("reflector_item");
-						auto dp = cDataKeeper::create();
-						dp->set_vec4f_item(FLAME_CHASH("geometry"), geometry);
-						item->add_component(dp);
-					}
-					e_text((L"name: " + s2w(src->name())).c_str());
-					e_text(wfmt(L"geometry: (%.0f, %.0f)-(%.0f, %.0f)", geometry.x(), geometry.y(), geometry.x() + geometry.z(), geometry.y() + geometry.w()).c_str());
-					auto cs = src->child_count();
-					for (auto i = 0; i < cs; i++)
-						add_node(src->child(i));
-					e_end_tree_node();
 				}
 			};
 			auto c_reflector = new_object<cReflector>();

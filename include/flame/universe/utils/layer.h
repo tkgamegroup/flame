@@ -25,6 +25,7 @@ namespace flame
 		inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
 		{
 			auto l = Entity::create();
+			l->gene = l;
 			l->set_name("layer");
 			{
 				auto ed = parent->world()->get_system(sEventDispatcher);
@@ -48,8 +49,20 @@ namespace flame
 				}
 				return true;
 			}, Mail::from_p(l));
-			parent->add_child(l);
-			l->gene = l;
+
+			{
+				struct Capture
+				{
+					Entity* p;
+					Entity* l;
+				}capture;
+				capture.p = parent;
+				capture.l = l;
+				looper().add_event([](void* c, bool*) {
+					auto& capture = *(Capture*)c;
+					capture.p->add_child(capture.l);
+				}, Mail::from_t(&capture));
+			}
 
 			auto c_element = cElement::create();
 			c_element->color = col;
