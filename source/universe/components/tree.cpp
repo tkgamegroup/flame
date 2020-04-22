@@ -276,6 +276,21 @@ namespace flame
 		data_changed(FLAME_CHASH("selected"), sender);
 	}
 
+	static void expand(Entity* e, Entity* p)
+	{
+		if (e == p)
+			return;
+		e->set_visible(true);
+		expand(e->parent()->parent(), p);
+	}
+
+	void cTree::expand_to_selected()
+	{
+		if (!selected)
+			return;
+		expand(selected->parent(), entity);
+	}
+
 	cTree* cTree::create()
 	{
 		return new cTreePrivate;

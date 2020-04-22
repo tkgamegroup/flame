@@ -145,6 +145,8 @@ namespace flame
 
 	static void inherit(EntityPrivate* e, void* gene)
 	{
+		if (!gene)
+			return;
 		e->gene = gene;
 		for (auto& c : e->children)
 			inherit(c.get(), gene);

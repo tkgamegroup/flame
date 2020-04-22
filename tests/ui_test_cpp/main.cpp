@@ -182,6 +182,7 @@ int main(int argc, char** args)
 {
 	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true);
 
+	app.canvas->clear_color = Vec4f(utils::style_4c(BackgroundColor)) / 255.f;
 	app.canvas->set_resource(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())));
 
 	app.create_widgets();

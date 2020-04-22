@@ -72,6 +72,7 @@ namespace flame
 						e_button(Icon_SHARE, [](void* c) {
 							auto capture = *(Capture*)c;
 							capture.thiz->find_target_in_tree(capture.thiz->e_tree, *capture.t);
+							capture.thiz->c_tree->expand_to_selected();
 						}, Mail::from_t(&capture));
 						e_toggle(Icon_SQUARE_O)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, uint hash, void*) {
 							if (hash == FLAME_CHASH("checked"))
