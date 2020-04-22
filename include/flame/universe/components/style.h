@@ -40,15 +40,7 @@ namespace flame
 		StyleCount
 	};
 
-	union StyleValue
-	{
-		Vec4u u;
-		Vec4i i;
-		Vec4f f;
-		Vec4c c;
-	};
-
-	FLAME_UNIVERSE_EXPORTS extern const StyleValue& (*get_style)(Style s);
+	FLAME_UNIVERSE_EXPORTS extern const CommonValue& (*get_style)(Style s);
 
 	struct cStyleColor : Component
 	{

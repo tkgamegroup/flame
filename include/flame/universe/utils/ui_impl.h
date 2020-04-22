@@ -30,14 +30,14 @@ namespace flame
 		Vec4c next_element_color = Vec4c(0);
 		Vec4c next_element_frame_color = Vec4c(255);
 
-		std::stack<StyleValue> _styles[StyleCount];
+		std::stack<CommonValue> _styles[StyleCount];
 
-		const StyleValue& style(Style style)
+		const CommonValue& style(Style style)
 		{
 			return _styles[style].top();
 		}
 
-		void push_style(Style style, const StyleValue& v)
+		void push_style(Style style, const CommonValue& v)
 		{
 			_styles[style].push(v);
 		}
@@ -49,69 +49,69 @@ namespace flame
 
 		void style_set_to_light()
 		{
-			pop_style(FontSize); push_style_1u(FontSize, 16U);
-			pop_style(BackgroundColor); push_style_4c(BackgroundColor, 240, 240, 240, 255);
-			pop_style(ForegroundColor); push_style_4c(ForegroundColor, 0, 0, 0, 255);
-			pop_style(TextColorNormal); push_style_4c(TextColorNormal, 0, 0, 0, 255);
-			pop_style(TextColorElse); push_style_4c(TextColorElse, 0, 120, 205, 255);
-			pop_style(FrameColorNormal); push_style_4c(FrameColorNormal, 220, 220, 220, 255);
-			pop_style(FrameColorHovering); push_style_4c(FrameColorHovering, 230, 230, 230, 255);
-			pop_style(FrameColorActive); push_style_4c(FrameColorActive, 225, 225, 225, 255);
-			pop_style(ButtonColorNormal); push_style_4c(ButtonColorNormal, 86, 119, 252, 255);
-			pop_style(ButtonColorHovering); push_style_4c(ButtonColorHovering, 78, 108, 239, 255);
-			pop_style(ButtonColorActive); push_style_4c(ButtonColorActive, 69, 94, 222, 255);
-			pop_style(SelectedColorNormal); push_style_4c(SelectedColorNormal, 200, 220, 245, 255);
-			pop_style(SelectedColorHovering); push_style_4c(SelectedColorHovering, 205, 225, 250, 255);
-			pop_style(SelectedColorActive); push_style_4c(SelectedColorActive, 195, 215, 240, 255);
-			pop_style(ScrollbarColor); push_style_4c(ScrollbarColor, 245, 245, 245, 255);
-			pop_style(ScrollbarThumbColorNormal); push_style_4c(ScrollbarThumbColorNormal, 194, 195, 201, 255);
-			pop_style(ScrollbarThumbColorHovering); push_style_4c(ScrollbarThumbColorHovering, 104, 104, 104, 255);
-			pop_style(ScrollbarThumbColorActive); push_style_4c(ScrollbarThumbColorActive, 91, 91, 91, 255);
-			pop_style(TabColorNormal); push_style_4c(TabColorNormal, 0, 0, 0, 0);
-			pop_style(TabColorElse); push_style_4c(TabColorElse, 28, 151, 234, 255);
-			pop_style(TabTextColorNormal); push_style_4c(TabTextColorNormal, 0, 0, 0, 255);
-			pop_style(TabTextColorElse); push_style_4c(TabTextColorElse, 255, 255, 255, 255);
-			pop_style(SelectedTabColorNormal); push_style_4c(SelectedTabColorNormal, 0, 122, 204, 255);
-			pop_style(SelectedTabColorElse); push_style_4c(SelectedTabColorElse, 0, 122, 204, 255);
-			pop_style(SelectedTabTextColorNormal); push_style_4c(SelectedTabTextColorNormal, 255, 255, 255, 255);
-			pop_style(SelectedTabTextColorElse); push_style_4c(SelectedTabTextColorElse, 255, 255, 255, 255);
+			pop_style(FontSize); push_style(FontSize, common(Vec1u(16U)));
+			pop_style(BackgroundColor); push_style(BackgroundColor, common(Vec4c(240, 240, 240, 255)));
+			pop_style(ForegroundColor); push_style(ForegroundColor, common(Vec4c(0, 0, 0, 255)));
+			pop_style(TextColorNormal); push_style(TextColorNormal, common(Vec4c(0, 0, 0, 255)));
+			pop_style(TextColorElse); push_style(TextColorElse, common(Vec4c(0, 120, 205, 255)));
+			pop_style(FrameColorNormal); push_style(FrameColorNormal, common(Vec4c(220, 220, 220, 255)));
+			pop_style(FrameColorHovering); push_style(FrameColorHovering, common(Vec4c(230, 230, 230, 255)));
+			pop_style(FrameColorActive); push_style(FrameColorActive, common(Vec4c(225, 225, 225, 255)));
+			pop_style(ButtonColorNormal); push_style(ButtonColorNormal, common(Vec4c(86, 119, 252, 255)));
+			pop_style(ButtonColorHovering); push_style(ButtonColorHovering, common(Vec4c(78, 108, 239, 255)));
+			pop_style(ButtonColorActive); push_style(ButtonColorActive, common(Vec4c(69, 94, 222, 255)));
+			pop_style(SelectedColorNormal); push_style(SelectedColorNormal, common(Vec4c(200, 220, 245, 255)));
+			pop_style(SelectedColorHovering); push_style(SelectedColorHovering, common(Vec4c(205, 225, 250, 255)));
+			pop_style(SelectedColorActive); push_style(SelectedColorActive, common(Vec4c(195, 215, 240, 255)));
+			pop_style(ScrollbarColor); push_style(ScrollbarColor, common(Vec4c(245, 245, 245, 255)));
+			pop_style(ScrollbarThumbColorNormal); push_style(ScrollbarThumbColorNormal, common(Vec4c(194, 195, 201, 255)));
+			pop_style(ScrollbarThumbColorHovering); push_style(ScrollbarThumbColorHovering, common(Vec4c(104, 104, 104, 255)));
+			pop_style(ScrollbarThumbColorActive); push_style(ScrollbarThumbColorActive, common(Vec4c(91, 91, 91, 255)));
+			pop_style(TabColorNormal); push_style(TabColorNormal, common(Vec4c(0, 0, 0, 0)));
+			pop_style(TabColorElse); push_style(TabColorElse, common(Vec4c(28, 151, 234, 255)));
+			pop_style(TabTextColorNormal); push_style(TabTextColorNormal, common(Vec4c(0, 0, 0, 255)));
+			pop_style(TabTextColorElse); push_style(TabTextColorElse, common(Vec4c(255, 255, 255, 255)));
+			pop_style(SelectedTabColorNormal); push_style(SelectedTabColorNormal, common(Vec4c(0, 122, 204, 255)));
+			pop_style(SelectedTabColorElse); push_style(SelectedTabColorElse, common(Vec4c(0, 122, 204, 255)));
+			pop_style(SelectedTabTextColorNormal); push_style(SelectedTabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			pop_style(SelectedTabTextColorElse); push_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
 		}
 
 		void style_set_to_dark()
 		{
-			pop_style(FontSize); push_style_1u(FontSize, 16U);
-			pop_style(BackgroundColor); push_style_4c(BackgroundColor, 40, 40, 40, 255);
-			pop_style(ForegroundColor); push_style_4c(ForegroundColor, 255, 255, 255, 255);
-			pop_style(TextColorNormal); push_style_4c(TextColorNormal, 255, 255, 255, 255);
-			pop_style(TextColorElse); push_style_4c(TextColorElse, 180, 180, 180, 255);
-			pop_style(FrameColorNormal); push_style_4c(FrameColorNormal, 55, 55, 55, 255);
-			pop_style(FrameColorHovering); push_style_4c(FrameColorHovering, 65, 65, 65, 255);
-			pop_style(FrameColorActive); push_style_4c(FrameColorActive, 60, 60, 60, 255);
-			pop_style(ButtonColorNormal); push_style_4c(ButtonColorNormal, 86, 119, 252, 255);
-			pop_style(ButtonColorHovering); push_style_4c(ButtonColorHovering, 78, 108, 239, 255);
-			pop_style(ButtonColorActive); push_style_4c(ButtonColorActive, 69, 94, 222, 255);
-			pop_style(SelectedColorNormal); push_style_4c(SelectedColorNormal, 100, 110, 125, 255);
-			pop_style(SelectedColorHovering); push_style_4c(SelectedColorHovering, 105, 115, 130, 255);
-			pop_style(SelectedColorActive); push_style_4c(SelectedColorActive, 90, 105, 120, 255);
-			pop_style(ScrollbarColor); push_style_4c(ScrollbarColor, 62, 62, 66, 255);
-			pop_style(ScrollbarThumbColorNormal); push_style_4c(ScrollbarThumbColorNormal, 104, 104, 104, 255);
-			pop_style(ScrollbarThumbColorHovering); push_style_4c(ScrollbarThumbColorHovering, 158, 158, 158, 255);
-			pop_style(ScrollbarThumbColorActive); push_style_4c(ScrollbarThumbColorActive, 239, 235, 239, 255);
-			pop_style(TabColorNormal); push_style_4c(TabColorNormal, 0, 0, 0, 0);
-			pop_style(TabColorElse); push_style_4c(TabColorElse, 28, 151, 234, 255);
-			pop_style(TabTextColorNormal); push_style_4c(TabTextColorNormal, 255, 255, 255, 255);
-			pop_style(TabTextColorElse); push_style_4c(TabTextColorElse, 255, 255, 255, 255);
-			pop_style(SelectedTabColorNormal); push_style_4c(SelectedTabColorNormal, 0, 122, 204, 255);
-			pop_style(SelectedTabColorElse); push_style_4c(SelectedTabColorElse, 0, 122, 204, 255);
-			pop_style(SelectedTabTextColorNormal); push_style_4c(SelectedTabTextColorNormal, 255, 255, 255, 255);
-			pop_style(SelectedTabTextColorElse); push_style_4c(SelectedTabTextColorElse, 255, 255, 255, 255);
+			pop_style(FontSize); push_style(FontSize, common(Vec1u(16U)));
+			pop_style(BackgroundColor); push_style(BackgroundColor, common(Vec4c(40, 40, 40, 255)));
+			pop_style(ForegroundColor); push_style(ForegroundColor, common(Vec4c(255, 255, 255, 255)));
+			pop_style(TextColorNormal); push_style(TextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			pop_style(TextColorElse); push_style(TextColorElse, common(Vec4c(180, 180, 180, 255)));
+			pop_style(FrameColorNormal); push_style(FrameColorNormal, common(Vec4c(55, 55, 55, 255)));
+			pop_style(FrameColorHovering); push_style(FrameColorHovering, common(Vec4c(65, 65, 65, 255)));
+			pop_style(FrameColorActive); push_style(FrameColorActive, common(Vec4c(60, 60, 60, 255)));
+			pop_style(ButtonColorNormal); push_style(ButtonColorNormal, common(Vec4c(86, 119, 252, 255)));
+			pop_style(ButtonColorHovering); push_style(ButtonColorHovering, common(Vec4c(78, 108, 239, 255)));
+			pop_style(ButtonColorActive); push_style(ButtonColorActive, common(Vec4c(69, 94, 222, 255)));
+			pop_style(SelectedColorNormal); push_style(SelectedColorNormal, common(Vec4c(100, 110, 125, 255)));
+			pop_style(SelectedColorHovering); push_style(SelectedColorHovering, common(Vec4c(105, 115, 130, 255)));
+			pop_style(SelectedColorActive); push_style(SelectedColorActive, common(Vec4c(90, 105, 120, 255)));
+			pop_style(ScrollbarColor); push_style(ScrollbarColor, common(Vec4c(62, 62, 66, 255)));
+			pop_style(ScrollbarThumbColorNormal); push_style(ScrollbarThumbColorNormal, common(Vec4c(104, 104, 104, 255)));
+			pop_style(ScrollbarThumbColorHovering); push_style(ScrollbarThumbColorHovering, common(Vec4c(158, 158, 158, 255)));
+			pop_style(ScrollbarThumbColorActive); push_style(ScrollbarThumbColorActive, common(Vec4c(239, 235, 239, 255)));
+			pop_style(TabColorNormal); push_style(TabColorNormal, common(Vec4c(0, 0, 0, 0)));
+			pop_style(TabColorElse); push_style(TabColorElse, common(Vec4c(28, 151, 234, 255)));
+			pop_style(TabTextColorNormal); push_style(TabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			pop_style(TabTextColorElse); push_style(TabTextColorElse, common(Vec4c(255, 255, 255, 255)));
+			pop_style(SelectedTabColorNormal); push_style(SelectedTabColorNormal, common(Vec4c(0, 122, 204, 255)));
+			pop_style(SelectedTabColorElse); push_style(SelectedTabColorElse, common(Vec4c(0, 122, 204, 255)));
+			pop_style(SelectedTabTextColorNormal); push_style(SelectedTabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			pop_style(SelectedTabTextColorElse); push_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
 		}
 
 		struct _InitStyle
 		{
 			_InitStyle()
 			{
-				StyleValue sv;
+				CommonValue sv;
 				for (auto& s : _styles)
 					s.push(sv);
 				style_set_to_dark();

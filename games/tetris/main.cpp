@@ -196,11 +196,11 @@ struct MyApp : App
 		utils::push_parent(root);
 			utils::e_begin_layout(LayoutVertical, 8.f);
 			utils::c_aligner(AlignMiddle, AlignMiddle);
-				utils::push_style_1u(FontSize, 40);
+				utils::push_style(FontSize, common(Vec1u(40)));
 				utils::e_text(L"Tetris");
 				utils::c_aligner(AlignMiddle, 0);
 				utils::pop_style(FontSize);
-				utils::push_style_1u(FontSize, 20);
+				utils::push_style(FontSize, common(Vec1u(20)));
 				utils::e_button(L"Marathon", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
@@ -275,7 +275,7 @@ struct MyApp : App
 
 		utils::next_element_pos = pos + Vec2f(80.f, 40.f) * scale;
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
-			utils::push_style_1u(FontSize, 30 * scale);
+			utils::push_style(FontSize, common(Vec1u(30 * scale)));
 			p.c_name = utils::e_text([p]() {
 				switch (app.game_mode)
 				{
@@ -394,7 +394,7 @@ struct MyApp : App
 				create_next_board(i, 3, 16.f * 3.f + 4.f + (14.f * 3.f + 4.f) * 2, 12.f);
 
 			utils::next_element_pos = pos + Vec2f(180.f, 250.f);
-			utils::push_style_1u(FontSize, 80);
+			utils::push_style(FontSize, common(Vec1u(80)));
 			p.e_count_down = utils::e_text(L"");
 			p.e_count_down->set_visible(false);
 			{
@@ -423,7 +423,7 @@ struct MyApp : App
 
 		if (game_mode == GameVS)
 		{
-			utils::push_style_1u(FontSize, 60 * scale);
+			utils::push_style(FontSize, common(Vec1u(60 * scale)));
 			utils::next_element_pos = pos + Vec2f(150.f, 200.f) * scale;
 			p.c_ready = utils::e_text(L"Ready")->get_component(cText);
 			p.c_ready->entity->set_visible(false);
@@ -720,7 +720,7 @@ struct MyApp : App
 		utils::next_element_padding = 8.f;
 		utils::e_begin_layout(LayoutVertical, 8.f, false, false);
 		utils::c_aligner(AlignMiddle, AlignMinMax);
-			utils::push_style_1u(FontSize, 20);
+			utils::push_style(FontSize, common(Vec1u(20)));
 			utils::e_begin_layout(LayoutHorizontal, 8.f);
 			utils::c_aligner(AlignMiddle, 0);
 				utils::e_text(L"Your Name");
@@ -754,7 +754,7 @@ struct MyApp : App
 
 							utils::push_parent(e_room_list);
 							utils::e_list_item((L"Name:" + name + L" Host:" + host).c_str());
-							utils::c_data_keeper()->set_stringa_item(FLAME_CHASH("ip"), ip);
+							utils::c_data_keeper()->set_string_item(FLAME_CHASH("ip"), ip);
 							utils::pop_parent();
 						}, Mail::from_p(e_room_list));
 					}, Mail::from_p(e_room_list));
@@ -992,7 +992,7 @@ struct MyApp : App
 						if (app.my_name.empty())
 							utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 						else
-							app.join_room(selected->get_component(cDataKeeper)->get_stringa_item(FLAME_CHASH("ip")));
+							app.join_room(selected->get_component(cDataKeeper)->get_string_item(FLAME_CHASH("ip")));
 					}
 					else
 						utils::e_message_dialog(L"You Need To Select A Room");
@@ -1026,7 +1026,7 @@ struct MyApp : App
 		utils::push_parent(root);
 			utils::e_begin_layout(LayoutVertical, 8.f);
 			utils::c_aligner(AlignMiddle, AlignMiddle);
-				utils::push_style_1u(FontSize, 20);
+				utils::push_style(FontSize, common(Vec1u(20)));
 				utils::e_button(L"Key", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
@@ -1065,7 +1065,7 @@ struct MyApp : App
 		utils::push_parent(root);
 			utils::e_begin_layout(LayoutVertical, 8.f);
 			utils::c_aligner(AlignMiddle, AlignMiddle);
-				utils::push_style_1u(FontSize, 20);
+				utils::push_style(FontSize, common(Vec1u(20)));
 				auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 				for (auto i = 0; i < KEY_COUNT; i++)
 				{
@@ -1109,7 +1109,7 @@ struct MyApp : App
 		utils::push_parent(root);
 			utils::e_begin_layout(LayoutVertical, 8.f);
 			utils::c_aligner(AlignMiddle, AlignMiddle);
-				utils::push_style_1u(FontSize, 20);
+				utils::push_style(FontSize, common(Vec1u(20)));
 				struct Capture
 				{
 					cText* t;
@@ -1155,7 +1155,7 @@ struct MyApp : App
 		utils::push_parent(root);
 			utils::e_begin_layout(LayoutVertical, 8.f);
 			utils::c_aligner(AlignMiddle, AlignMiddle);
-				utils::push_style_1u(FontSize, 20);
+				utils::push_style(FontSize, common(Vec1u(20)));
 				utils::e_text(L"Small Number Means More Sensitivity Or Faster");
 				struct Capture
 				{
@@ -1237,7 +1237,7 @@ struct MyApp : App
 	void create_game_scene()
 	{
 		utils::push_parent(root);
-		utils::push_style_1u(FontSize, 20);
+		utils::push_style(FontSize, common(Vec1u(20)));
 
 			utils::e_empty();
 			utils::c_timer()->set_callback([](void*) {
@@ -1263,7 +1263,7 @@ struct MyApp : App
 					utils::next_element_pos = Vec2f(535.f, 330.f);
 					utils::e_text(L"SCORE")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
 
-					utils::push_style_1u(FontSize, 40);
+					utils::push_style(FontSize, common(Vec1u(40)));
 					utils::next_element_pos = Vec2f(535.f, 170.f);
 					c_text_time = utils::e_text(L"")->get_component(cText);
 					utils::next_element_pos = Vec2f(535.f, 230.f);
@@ -1275,7 +1275,7 @@ struct MyApp : App
 					utils::pop_style(FontSize);
 				}
 
-				utils::push_style_1u(FontSize, 28);
+				utils::push_style(FontSize, common(Vec1u(28)));
 				utils::next_element_pos = Vec2f(8.f, 230.f);
 				{
 					auto e = utils::e_text(L"");

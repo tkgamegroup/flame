@@ -6,7 +6,7 @@ void begin_item(const wchar_t* title)
 	utils::e_begin_layout(LayoutVertical, 4.f);
 	utils::e_text(title);
 	auto e_data = utils::e_empty();
-	utils::c_element()->padding.x() = utils::style_1u(FontSize);
+	utils::c_element()->padding.x() = utils::style(FontSize).u.x();
 	utils::c_layout(LayoutVertical)->item_padding = 2.f;
 	utils::e_end_layout();
 	utils::push_parent(e_data);
@@ -176,9 +176,9 @@ void cInspector::refresh()
 				}capture;
 				capture.e = e_component;
 				capture.c = component;
-				utils::push_style_4c(ButtonColorNormal, Vec4c(0));
-				utils::push_style_4c(ButtonColorHovering, utils::style_4c(FrameColorHovering));
-				utils::push_style_4c(ButtonColorActive, utils::style_4c(FrameColorActive));
+				utils::push_style(ButtonColorNormal, common(Vec4c(0)));
+				utils::push_style(ButtonColorHovering, common(utils::style(FrameColorHovering).c));
+				utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
 				utils::e_button(L"X", [](void* c) {
 					auto& capture = *(Capture*)c;
 					Capture _capture;

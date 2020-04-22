@@ -135,7 +135,7 @@ namespace flame
 
 							auto p0 = edt.base->global_pos;
 							auto s = edt.scale_level * 0.1f;
-							capture.f((char*)c + sizeof(Capture), rect_from_points(edt.select_begin* s + p0, edt.select_end* s + p0));
+							capture.f((char*)c + sizeof(Capture), rect_from_points(edt.select_begin * s + p0, edt.select_end * s + p0));
 						}
 						return true;
 					}, Mail::expand_original(&capture, _capture));
@@ -164,6 +164,10 @@ namespace flame
 
 						return true;
 					}, Mail::from_p(this));
+					utils::c_event_receiver()->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+						*pass = true;
+						return true;
+					}, Mail());
 					utils::c_aligner(AlignMinMax, AlignMinMax);
 
 					scale_text = utils::e_text(L"100%")->get_component(cText);

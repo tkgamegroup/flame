@@ -4,56 +4,39 @@ namespace flame
 {
 	struct cDataKeeperPrivate : cDataKeeper
 	{
-		std::map<uint, void*> voidp_datas;
-		std::map<uint, std::string> stringa_datas;
-		std::map<uint, Vec4f> vec4f_datas;
+		std::map<uint, CommonValue> common_datas;
+		std::map<uint, std::string> string_datas;
 	};
 
-	void cDataKeeper::set_voidp_item(uint hash, void* v)
+	void cDataKeeper::set_common_item(uint hash, const CommonValue& v)
 	{
-		((cDataKeeperPrivate*)this)->voidp_datas[hash] = v;
+		((cDataKeeperPrivate*)this)->common_datas[hash] = v;
 	}
 
-	void* cDataKeeper::get_voidp_item(uint hash)
+	CommonValue cDataKeeper::get_common_item(uint hash)
 	{
-		return ((cDataKeeperPrivate*)this)->voidp_datas[hash];
+		return ((cDataKeeperPrivate*)this)->common_datas[hash];
 	}
 
-	void cDataKeeper::remove_voidp_item(uint hash)
+	void cDataKeeper::remove_common_item(uint hash)
 	{
-		auto& map = ((cDataKeeperPrivate*)this)->voidp_datas;
+		auto& map = ((cDataKeeperPrivate*)this)->common_datas;
 		map.erase(map.find(hash));
 	}
 
-	void cDataKeeper::set_stringa_item(uint hash, const char* v)
+	void cDataKeeper::set_string_item(uint hash, const char* v)
 	{
-		((cDataKeeperPrivate*)this)->stringa_datas[hash] = v;
+		((cDataKeeperPrivate*)this)->string_datas[hash] = v;
 	}
 
-	const char* cDataKeeper::get_stringa_item(uint hash)
+	const char* cDataKeeper::get_string_item(uint hash)
 	{
-		return ((cDataKeeperPrivate*)this)->stringa_datas[hash].c_str();
+		return ((cDataKeeperPrivate*)this)->string_datas[hash].c_str();
 	}
 
-	void cDataKeeper::remove_stringa_item(uint hash)
+	void cDataKeeper::remove_string_item(uint hash)
 	{
-		auto& map = ((cDataKeeperPrivate*)this)->stringa_datas;
-		map.erase(map.find(hash));
-	}
-
-	void cDataKeeper::set_vec4f_item(uint hash, const Vec4f& v)
-	{
-		((cDataKeeperPrivate*)this)->vec4f_datas[hash] = v;
-	}
-
-	Vec4f cDataKeeper::get_vec4f_item(uint hash)
-	{
-		return ((cDataKeeperPrivate*)this)->vec4f_datas[hash];
-	}
-
-	void cDataKeeper::remove_vec4f_item(uint hash)
-	{
-		auto& map = ((cDataKeeperPrivate*)this)->vec4f_datas;
+		auto& map = ((cDataKeeperPrivate*)this)->string_datas;
 		map.erase(map.find(hash));
 	}
 

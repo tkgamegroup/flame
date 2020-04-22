@@ -2,7 +2,7 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
 #include <flame/universe/utils/ui.h>
-#include <flame/universe/utils/reflector.h>
+#include <flame/universe/utils/ui_reflector.h>
 
 #include "app.h"
 
@@ -163,7 +163,7 @@ void MyApp::create()
 		utils::e_end_menubar_menu();
 		utils::e_begin_menubar_menu(L"Tools");
 			utils::e_menu_item(L"Reflector", [](void* c) {
-				utils::e_reflector_window();
+				utils::e_ui_reflector_window();
 			}, Mail());
 		utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();

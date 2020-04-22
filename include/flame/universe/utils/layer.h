@@ -35,7 +35,7 @@ namespace flame
 				if (focusing)
 				{
 					auto c_data_keeper = cDataKeeper::create();
-					c_data_keeper->set_voidp_item(FLAME_CHASH("focusing"), focusing);
+					c_data_keeper->set_common_item(FLAME_CHASH("focusing"), common(focusing));
 					l->add_component(c_data_keeper);
 				}
 			}
@@ -44,7 +44,7 @@ namespace flame
 				auto dp = l->get_component(cDataKeeper);
 				if (dp)
 				{
-					auto er = (cEventReceiver*)dp->get_voidp_item(FLAME_CHASH("focusing"));
+					auto er = (cEventReceiver*)dp->get_common_item(FLAME_CHASH("focusing")).p;
 					l->world()->get_system(sEventDispatcher)->next_focusing = er;
 				}
 				return true;

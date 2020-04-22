@@ -942,6 +942,58 @@ namespace flame
 	using Vec3b = Vec<3, bool>;
 	using Vec4b = Vec<4, bool>;
 
+	union CommonValue
+	{
+		Vec4u u;
+		Vec4i i;
+		Vec4f f;
+		Vec4c c;
+		void* p;
+	};
+
+	template<uint N>
+	CommonValue common(const Vec<N, uint>& v)
+	{
+		CommonValue cv;
+		for (auto i = 0; i < N; i++)
+			cv.u[i] = v[i];
+		return cv;
+	}
+
+	template<uint N>
+	CommonValue common(const Vec<N, int>& v)
+	{
+		CommonValue cv;
+		for (auto i = 0; i < N; i++)
+			cv.i[i] = v[i];
+		return cv;
+	}
+
+	template<uint N>
+	CommonValue common(const Vec<N, float>& v)
+	{
+		CommonValue cv;
+		for (auto i = 0; i < N; i++)
+			cv.f[i] = v[i];
+		return cv;
+	}
+
+	template<uint N>
+	CommonValue common(const Vec<N, uchar>& v)
+	{
+		CommonValue cv;
+		for (auto i = 0; i < N; i++)
+			cv.c[i] = v[i];
+		return cv;
+	}
+
+	inline CommonValue common(void* p)
+	{
+		CommonValue cv;
+		cv.p = p;
+		return cv;
+	}
+
 	typedef void(__Dummy__::* MF_v_i2p_vp)(Vec2i*, void*);
 	typedef void(__Dummy__::* MF_v_i3p_vp)(Vec3i*, void*);
 	typedef void(__Dummy__::* MF_v_i4p_vp)(Vec4i*, void*);

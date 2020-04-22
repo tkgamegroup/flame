@@ -223,14 +223,14 @@ cResourceExplorer::~cResourceExplorer()
 
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
 {
-	utils::push_style_4c(FrameColorNormal, Vec4c(0));
+	utils::push_style(FrameColorNormal, common(Vec4c(0)));
 	auto e_item = utils::e_list_item(L"", false);
 	utils::pop_style(FrameColorNormal);
 	utils::c_layout(LayoutVertical)->item_padding = 4.f;
 	utils::push_parent(e_item);
 	utils::next_element_size = 64.f;
 	utils::e_image(img_id << 16);
-	utils::e_text(app.font_atlas->wrap_text(utils::style_1u(FontSize), 64.f, 
+	utils::e_text(app.font_atlas->wrap_text(utils::style(FontSize).u.x(), 64.f,
 		title.c_str(), title.c_str() + title.size()).v);
 	utils::pop_parent();
 	return e_item;
@@ -248,9 +248,9 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 
 		address_bar->remove_children(0, -1);
 		utils::push_parent(address_bar);
-		utils::push_style_4c(ButtonColorNormal, Vec4c(0));
-		utils::push_style_4c(ButtonColorHovering, utils::style_4c(FrameColorHovering));
-		utils::push_style_4c(ButtonColorActive, utils::style_4c(FrameColorActive));
+		utils::push_style(ButtonColorNormal, common(Vec4c(0)));
+		utils::push_style(ButtonColorHovering, common(utils::style(FrameColorHovering).c));
+		utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
 
 		utils::e_button(Icon_LEVEL_UP, [](void* c) {
 			if (app.resource_explorer->curr_path != app.resource_explorer->base_path)

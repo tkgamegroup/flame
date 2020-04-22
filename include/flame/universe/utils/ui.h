@@ -40,41 +40,9 @@ namespace flame
 		extern Vec4c next_element_color;
 		extern Vec4c next_element_frame_color;
 
-		const StyleValue& style(Style s);
+		const CommonValue& style(Style s);
 
-		inline uint style_1u(Style s)
-		{
-			return style(s).u[0];
-		}
-
-		inline const Vec4c& style_4c(Style s)
-		{
-			return style(s).c;
-		}
-
-		void push_style(Style s, const StyleValue& v);
-
-		inline void push_style_1u(Style s, uint x)
-		{
-			StyleValue sv;
-			sv.u = Vec4c(x, 0, 0, 0);
-			push_style(s, sv);
-		}
-
-		inline void push_style_4c(Style s, uchar x, uchar y, uchar z, uchar w)
-		{
-			StyleValue sv;
-			sv.c = Vec4c(x, y, z, w);
-			push_style(s, sv);
-		}
-
-		inline void push_style_4c(Style s, const Vec4c& v)
-		{
-			StyleValue sv;
-			sv.c = v;
-			push_style(s, sv);
-		}
-
+		void push_style(Style s, const CommonValue& v);
 		void pop_style(Style style);
 		void style_set_to_light();
 		void style_set_to_dark();
@@ -111,8 +79,8 @@ namespace flame
 		{
 			auto c = cText::create();
 			c->font_atlas = current_font_atlas();
-			c->font_size = style_1u(FontSize);
-			c->color = style_4c(TextColorNormal);
+			c->font_size = style(FontSize).u.x();
+			c->color = style(TextColorNormal).c;
 			if (next_component_id)
 			{
 				c->id = next_component_id;
@@ -376,7 +344,7 @@ namespace flame
 			}
 			auto ce = c->items->get_component(cElement);
 			ce->frame_thickness = 1.f;
-			ce->frame_color = style_4c(ForegroundColor);
+			ce->frame_color = style(ForegroundColor).c;
 			current_entity()->add_component(c);
 			return c;
 		}
@@ -556,9 +524,9 @@ namespace flame
 			if (use_style)
 			{
 				auto cs = c_style_color();
-				cs->color_normal = style_4c(ButtonColorNormal);
-				cs->color_hovering = style_4c(ButtonColorHovering);
-				cs->color_active = style_4c(ButtonColorActive);
+				cs->color_normal = style(ButtonColorNormal).c;
+				cs->color_hovering = style(ButtonColorHovering).c;
+				cs->color_active = style(ButtonColorActive).c;
 				cs->style();
 			}
 			return e;
@@ -572,15 +540,15 @@ namespace flame
 			auto ce = c_element();
 			ce->size = 16.f;
 			ce->frame_thickness = 3.f;
-			ce->frame_color = style_4c(TextColorNormal);
+			ce->frame_color = style(TextColorNormal).c;
 			c_event_receiver();
 			auto cs = c_style_color2();
-			cs->color_normal[0] = style_4c(FrameColorNormal);
-			cs->color_hovering[0] = style_4c(FrameColorHovering);
-			cs->color_active[0] = style_4c(FrameColorActive);
-			cs->color_normal[1] = style_4c(ButtonColorNormal);
-			cs->color_hovering[1] = style_4c(ButtonColorHovering);
-			cs->color_active[1] = style_4c(ButtonColorActive);
+			cs->color_normal[0] = style(FrameColorNormal).c;
+			cs->color_hovering[0] = style(FrameColorHovering).c;
+			cs->color_active[0] = style(FrameColorActive).c;
+			cs->color_normal[1] = style(ButtonColorNormal).c;
+			cs->color_hovering[1] = style(ButtonColorHovering).c;
+			cs->color_active[1] = style(ButtonColorActive).c;
 			cs->style();
 			c_checkbox()->set_checked(checked);
 			if (text[0])
@@ -598,12 +566,12 @@ namespace flame
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
-			cs->color_normal[0] = style_4c(FrameColorNormal);
-			cs->color_hovering[0] = style_4c(FrameColorHovering);
-			cs->color_active[0] = style_4c(FrameColorActive);
-			cs->color_normal[1] = style_4c(ButtonColorNormal);
-			cs->color_hovering[1] = style_4c(ButtonColorHovering);
-			cs->color_active[1] = style_4c(ButtonColorActive);
+			cs->color_normal[0] = style(FrameColorNormal).c;
+			cs->color_hovering[0] = style(FrameColorHovering).c;
+			cs->color_active[0] = style(FrameColorActive).c;
+			cs->color_normal[1] = style(ButtonColorNormal).c;
+			cs->color_hovering[1] = style(ButtonColorHovering).c;
+			cs->color_active[1] = style(ButtonColorActive).c;
 			cs->style();
 			c_checkbox()->set_checked(toggled);
 			return e;
@@ -623,10 +591,10 @@ namespace flame
 			next_component_id = FLAME_CHASH("edit");
 			c_timer()->interval = 0.5f;
 			auto ce = c_element();
-			ce->size = Vec2f(8.f + width, style_1u(FontSize) + 4.f);
+			ce->size = Vec2f(8.f + width, style(FontSize).u.x() + 4.f);
 			ce->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			ce->color = style_4c(FrameColorNormal);
-			ce->frame_color = style_4c(ForegroundColor);
+			ce->color = style(FrameColorNormal).c;
+			ce->frame_color = style(ForegroundColor).c;
 			ce->frame_thickness = 2.f;
 			ce->clip_flags = ClipSelf;
 			auto ct = c_text();
@@ -664,9 +632,9 @@ namespace flame
 
 			auto ee = e_edit(50.f);
 			ee->set_visible(false);
-			push_style_4c(ButtonColorNormal, style_4c(FrameColorNormal));
-			push_style_4c(ButtonColorHovering, style_4c(FrameColorHovering));
-			push_style_4c(ButtonColorActive, style_4c(FrameColorActive));
+			push_style(ButtonColorNormal, common(style(FrameColorNormal).c));
+			push_style(ButtonColorHovering, common(style(FrameColorHovering).c));
+			push_style(ButtonColorActive, common(style(FrameColorActive).c));
 			auto ed = e_button(L"");
 			pop_style(ButtonColorNormal);
 			pop_style(ButtonColorHovering);
@@ -726,7 +694,7 @@ namespace flame
 				e_empty();
 				auto ce = c_element();
 				ce->size = 10.f;
-				ce->color = style_4c(ScrollbarColor);
+				ce->color = style(ScrollbarColor).c;
 				auto ca = c_aligner(0, 0);
 				if (type == ScrollbarVertical)
 					ca->y_align_flags = AlignMinMax;
@@ -741,9 +709,9 @@ namespace flame
 				c_element()->size = 10.f;
 				c_event_receiver();
 				auto cs = c_style_color();
-				cs->color_normal = style_4c(ScrollbarThumbColorNormal);
-				cs->color_hovering = style_4c(ScrollbarThumbColorHovering);
-				cs->color_active = style_4c(ScrollbarThumbColorActive);
+				cs->color_normal = style(ScrollbarThumbColorNormal).c;
+				cs->color_hovering = style(ScrollbarThumbColorHovering).c;
+				cs->color_active = style(ScrollbarThumbColorActive).c;
 				cs->style();
 				auto ct = c_scrollbar_thumb(type);
 				ct->step = step;
@@ -815,12 +783,12 @@ namespace flame
 				c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
-			cs->color_normal[0] = style_4c(FrameColorNormal);
-			cs->color_hovering[0] = style_4c(FrameColorHovering);
-			cs->color_active[0] = style_4c(FrameColorActive);
-			cs->color_normal[1] = style_4c(SelectedColorNormal);
-			cs->color_hovering[1] = style_4c(SelectedColorHovering);
-			cs->color_active[1] = style_4c(SelectedColorActive);
+			cs->color_normal[0] = style(FrameColorNormal).c;
+			cs->color_hovering[0] = style(FrameColorHovering).c;
+			cs->color_active[0] = style(FrameColorActive).c;
+			cs->color_normal[1] = style(SelectedColorNormal).c;
+			cs->color_hovering[1] = style(SelectedColorHovering).c;
+			cs->color_active[1] = style(SelectedColorActive).c;
 			cs->style();
 			if (align)
 				c_aligner(AlignMinMax, 0);
@@ -858,16 +826,16 @@ namespace flame
 		inline Entity* e_tree_leaf(const wchar_t* text)
 		{
 			auto e = e_empty();
-			c_element()->padding = Vec4f(style_1u(FontSize) + 4.f, 2.f, 4.f, 2.f);
+			c_element()->padding = Vec4f(style(FontSize).u.x() + 4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
 			cs->color_normal[0] = Vec4c(0);
-			cs->color_hovering[0] = style_4c(FrameColorHovering);
-			cs->color_active[0] = style_4c(FrameColorActive);
-			cs->color_normal[1] = style_4c(SelectedColorNormal);
-			cs->color_hovering[1] = style_4c(SelectedColorHovering);
-			cs->color_active[1] = style_4c(SelectedColorActive);
+			cs->color_hovering[0] = style(FrameColorHovering).c;
+			cs->color_active[0] = style(FrameColorActive).c;
+			cs->color_normal[1] = style(SelectedColorNormal).c;
+			cs->color_hovering[1] = style(SelectedColorHovering).c;
+			cs->color_active[1] = style(SelectedColorActive).c;
 			cs->style();
 			c_tree_leaf();
 			return e;
@@ -882,16 +850,16 @@ namespace flame
 			push_parent(e);
 			{
 				auto e = e_empty();
-				c_element()->padding = Vec4f(style_1u(FontSize) + 4.f, 2.f, 4.f, 2.f);
+				c_element()->padding = Vec4f(style(FontSize).u.x() + 4.f, 2.f, 4.f, 2.f);
 				c_text()->set_text(text);
 				c_event_receiver();
 				auto cs = c_style_color2();
 				cs->color_normal[0] = Vec4c(0);
-				cs->color_hovering[0] = style_4c(FrameColorHovering);
-				cs->color_active[0] = style_4c(FrameColorActive);
-				cs->color_normal[1] = style_4c(SelectedColorNormal);
-				cs->color_hovering[1] = style_4c(SelectedColorHovering);
-				cs->color_active[1] = style_4c(SelectedColorActive);
+				cs->color_hovering[0] = style(FrameColorHovering).c;
+				cs->color_active[0] = style(FrameColorActive).c;
+				cs->color_normal[1] = style(SelectedColorNormal).c;
+				cs->color_hovering[1] = style(SelectedColorHovering).c;
+				cs->color_active[1] = style(SelectedColorActive).c;
 				cs->style();
 				c_layout();
 				c_tree_node_title();
@@ -902,8 +870,8 @@ namespace flame
 					c_text()->set_text(collapsed ? Icon_CARET_RIGHT : Icon_CARET_DOWN);
 					c_event_receiver();
 					auto cs = c_style_text_color();
-					cs->color_normal = style_4c(TextColorNormal);
-					cs->color_else = style_4c(TextColorElse);
+					cs->color_normal = style(TextColorNormal).c;
+					cs->color_else = style(TextColorElse).c;
 					cs->style();
 					c_tree_node_arrow();
 				}
@@ -911,7 +879,7 @@ namespace flame
 			}
 			auto es = e_empty();
 			es->set_visible(!collapsed);
-			c_element()->padding = Vec4f(style_1u(FontSize) * 0.5f, 0.f, 0.f, 0.f);
+			c_element()->padding = Vec4f(style(FontSize).u.x() * 0.5f, 0.f, 0.f, 0.f);
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			pop_parent();
 			push_parent(es);
@@ -928,16 +896,16 @@ namespace flame
 			auto e = e_empty();
 			e->gene = e;
 			auto ce = c_element();
-			ce->size = Vec2f(0.f, style_1u(FontSize) + 4.f);
-			ce->padding = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
-			ce->frame_color = style_4c(TextColorNormal);
+			ce->size = Vec2f(0.f, style(FontSize).u.x() + 4.f);
+			ce->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
+			ce->frame_color = style(TextColorNormal).c;
 			ce->frame_thickness = 2.f;
 			c_text()->set_auto_size(false);
 			c_event_receiver();
 			auto cs = c_style_color();
-			cs->color_normal = style_4c(FrameColorNormal);
-			cs->color_hovering = style_4c(FrameColorHovering);
-			cs->color_active = style_4c(FrameColorActive);
+			cs->color_normal = style(FrameColorNormal).c;
+			cs->color_hovering = style(FrameColorHovering).c;
+			cs->color_active = style(FrameColorActive).c;
 			cs->style();
 			c_layout();
 			auto cm = c_menu(cMenu::ModeMain);
@@ -963,7 +931,7 @@ namespace flame
 				auto ct = eis->child(i)->get_component(cText);
 				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text.v).x());
 			}
-			ecb->get_component(cElement)->add_width(8.f + max_width + style_1u(FontSize));
+			ecb->get_component(cElement)->add_width(8.f + max_width + style(FontSize).u.x());
 			if (idx != -1)
 				ecb->get_component(cCombobox)->set_index(idx, false);
 			pop_parent();
@@ -976,12 +944,12 @@ namespace flame
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cs = c_style_color2();
-			cs->color_normal[0] = style_4c(FrameColorNormal);
-			cs->color_hovering[0] = style_4c(FrameColorHovering);
-			cs->color_active[0] = style_4c(FrameColorActive);
-			cs->color_normal[1] = style_4c(SelectedColorNormal);
-			cs->color_hovering[1] = style_4c(SelectedColorHovering);
-			cs->color_active[1] = style_4c(SelectedColorActive);
+			cs->color_normal[0] = style(FrameColorNormal).c;
+			cs->color_hovering[0] = style(FrameColorHovering).c;
+			cs->color_active[0] = style(FrameColorActive).c;
+			cs->color_normal[1] = style(SelectedColorNormal).c;
+			cs->color_hovering[1] = style(SelectedColorHovering).c;
+			cs->color_active[1] = style(SelectedColorActive).c;
 			cs->style();
 			c_aligner(AlignMinMax | AlignGreedy, 0);
 			c_combobox_item();
@@ -992,7 +960,7 @@ namespace flame
 		{
 			auto e = e_empty();
 			e->gene = e;
-			c_element()->color = style_4c(FrameColorNormal);
+			c_element()->color = style(FrameColorNormal).c;
 			c_aligner(AlignMinMax, 0);
 			c_layout(LayoutHorizontal)->item_padding = 4.f;
 			push_parent(e);
@@ -1013,9 +981,9 @@ namespace flame
 			auto cm = c_menu(cMenu::ModeMenubar);
 			cm->root = current_root();
 			auto cs = c_style_color();
-			cs->color_normal = transparent ? Vec4c(0) : style_4c(FrameColorHovering);
-			cs->color_hovering = style_4c(FrameColorHovering);
-			cs->color_active = style_4c(FrameColorActive);
+			cs->color_normal = transparent ? Vec4c(0) : style(FrameColorHovering).c;
+			cs->color_hovering = style(FrameColorHovering).c;
+			cs->color_active = style(FrameColorActive).c;
 			cs->style();
 			push_parent(cm->items);
 			return e;
@@ -1036,9 +1004,9 @@ namespace flame
 			auto cm = c_menu(cMenu::ModeMain);
 			cm->root = current_root();
 			auto cs = c_style_color();
-			cs->color_normal = style_4c(ButtonColorNormal);
-			cs->color_hovering = style_4c(ButtonColorHovering);
-			cs->color_active = style_4c(ButtonColorActive);
+			cs->color_normal = style(ButtonColorNormal).c;
+			cs->color_hovering = style(ButtonColorHovering).c;
+			cs->color_active = style(ButtonColorActive).c;
 			cs->style();
 			push_parent(cm->items);
 			return e;
@@ -1052,15 +1020,15 @@ namespace flame
 		inline Entity* e_begin_sub_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
+			c_element()->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeSub);
 			cm->root = current_root();
 			auto cs = c_style_color();
-			cs->color_normal = style_4c(FrameColorNormal);
-			cs->color_hovering = style_4c(FrameColorHovering);
-			cs->color_active = style_4c(FrameColorActive);
+			cs->color_normal = style(FrameColorNormal).c;
+			cs->color_hovering = style(FrameColorHovering).c;
+			cs->color_active = style(FrameColorActive).c;
 			cs->style();
 			c_aligner(AlignMinMax | AlignGreedy, 0);
 			c_layout();
@@ -1106,9 +1074,9 @@ namespace flame
 			f_free(_capture.p);
 			c_menu_item();
 			auto cs = c_style_color();
-			cs->color_normal = style_4c(FrameColorNormal);
-			cs->color_hovering = style_4c(FrameColorHovering);
-			cs->color_active = style_4c(FrameColorActive);
+			cs->color_normal = style(FrameColorNormal).c;
+			cs->color_hovering = style(FrameColorHovering).c;
+			cs->color_active = style(FrameColorActive).c;
 			cs->style();
 			c_aligner(AlignMinMax | AlignGreedy, 0);
 			return e;
@@ -1118,13 +1086,13 @@ namespace flame
 		{
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->size.y() = style_1u(FontSize) * 0.5f;
+			ce->size.y() = style(FontSize).u.x() * 0.5f;
 			ce->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			ce->color = style_4c(FrameColorNormal);
+			ce->color = style(FrameColorNormal).c;
 			auto ceed = c_extra_element_drawing();
 			ceed->draw_flags = ExtraDrawHorizontalLine;
 			ceed->thickness = 1.f;
-			ceed->color = style_4c(TextColorNormal).copy().set_w(128);
+			ceed->color = style(TextColorNormal).c.copy().set_w(128);
 			c_aligner(AlignMinMax | AlignGreedy, 0);
 			return e;
 		}
@@ -1167,10 +1135,10 @@ namespace flame
 			Entity* el;
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->size += Vec2f(0.f, 4.f + style_1u(FontSize));
+			ce->size += Vec2f(0.f, 4.f + style(FontSize).u.x());
 			ce->frame_thickness = 2.f;
-			ce->color = style_4c(BackgroundColor);
-			ce->frame_color = style_4c(ForegroundColor);
+			ce->color = style(BackgroundColor).c;
+			ce->frame_color = style(ForegroundColor).c;
 			c_event_receiver();
 			c_layout(LayoutVertical)->fence = -1;
 			c_moveable();
@@ -1178,8 +1146,8 @@ namespace flame
 			{
 				e_empty();
 				auto ce = c_element();
-				ce->padding = Vec4f(4.f, 2.f, 4.f + style_1u(FontSize), 2.f);
-				ce->color = style_4c(SelectedTabColorNormal);
+				ce->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
+				ce->color = style(SelectedTabColorNormal).c;
 				c_text()->set_text(title);
 				c_aligner(AlignMinMax | AlignGreedy, 0);
 				if (close_button)
@@ -1278,22 +1246,22 @@ namespace flame
 			push_parent(current_parent()->child(0));
 			auto et = e_empty();
 			et->set_name("docker_tab");
-			c_element()->padding = Vec4f(4.f, 2.f, style_1u(FontSize) + 6.f, 2.f);
+			c_element()->padding = Vec4f(4.f, 2.f, style(FontSize).u.x() + 6.f, 2.f);
 			c_text()->set_text(title);
 			c_event_receiver();
 			auto csb = c_style_color2();
-			csb->color_normal[0] = style_4c(TabColorNormal);
-			csb->color_hovering[0] = style_4c(TabColorElse);
-			csb->color_active[0] = style_4c(TabColorElse);
-			csb->color_normal[1] = style_4c(SelectedTabColorNormal);
-			csb->color_hovering[1] = style_4c(SelectedTabColorElse);
-			csb->color_active[1] = style_4c(SelectedTabColorElse);
+			csb->color_normal[0] = style(TabColorNormal).c;
+			csb->color_hovering[0] = style(TabColorElse).c;
+			csb->color_active[0] = style(TabColorElse).c;
+			csb->color_normal[1] = style(SelectedTabColorNormal).c;
+			csb->color_hovering[1] = style(SelectedTabColorElse).c;
+			csb->color_active[1] = style(SelectedTabColorElse).c;
 			csb->style();
 			auto cst = c_style_text_color2();
-			cst->color_normal[0] = style_4c(TabTextColorNormal);
-			cst->color_else[0] = style_4c(TabTextColorElse);
-			cst->color_normal[1] = style_4c(SelectedTabTextColorNormal);
-			cst->color_else[1] = style_4c(SelectedTabTextColorElse);
+			cst->color_normal[0] = style(TabTextColorNormal).c;
+			cst->color_else[0] = style(TabTextColorElse).c;
+			cst->color_normal[1] = style(SelectedTabTextColorNormal).c;
+			cst->color_else[1] = style(SelectedTabTextColorElse).c;
 			cst->style();
 			c_list_item();
 			c_layout();
@@ -1308,7 +1276,7 @@ namespace flame
 				}capture;
 				capture.t = cdt;
 				capture.f = on_close;
-				push_style_4c(TextColorNormal, style_4c(TabTextColorElse));
+				push_style(TextColorNormal, common(style(TabTextColorElse).c));
 				e_button(Icon_TIMES, [](void* c) {
 					auto& capture = *(Capture*)c;
 					if (capture.f)
@@ -1326,7 +1294,7 @@ namespace flame
 			auto ep = e_empty();
 			{
 				auto ce = c_element();
-				ce->color = style_4c(BackgroundColor);
+				ce->color = style(BackgroundColor).c;
 				ce->clip_flags = ClipChildren;
 				c_aligner(AlignMinMax, AlignMinMax);
 			}
@@ -1350,8 +1318,8 @@ namespace flame
 			auto ce = c_element();
 			ce->padding = Vec4f(8.f);
 			ce->frame_thickness = 2.f;
-			ce->color = style_4c(BackgroundColor);
-			ce->frame_color  = col3_inv(style_4c(BackgroundColor));
+			ce->color = style(BackgroundColor).c;
+			ce->frame_color  = col3_inv(style(BackgroundColor).c);
 			c_aligner(AlignMiddle, AlignMiddle);
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			pop_parent();

@@ -544,7 +544,7 @@ void cEditor::on_add_node(BP::Node* n)
 	utils::push_parent(e_node);
 		utils::next_element_padding = 8.f;
 		utils::e_begin_layout(LayoutVertical, 4.f);
-			utils::push_style_1u(FontSize, 20);
+			utils::push_style(FontSize, common(Vec1u(20)));
 			utils::e_begin_layout(LayoutHorizontal, 4.f);
 				if (n_type == 0)
 				{
@@ -575,7 +575,7 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::e_empty();
 						{
 							auto c_element = utils::c_element();
-							auto r = utils::style_1u(FontSize);
+							auto r = utils::style(FontSize).u.x();
 							c_element->size = r;
 							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
@@ -646,7 +646,7 @@ void cEditor::on_add_node(BP::Node* n)
 						auto tag = type->tag();
 						if (!input->link() && tag != TypePointer)
 						{
-							utils::next_element_padding = Vec4f(utils::style_1u(FontSize), 0.f, 0.f, 0.f);
+							utils::next_element_padding = Vec4f(utils::style(FontSize).u.x(), 0.f, 0.f, 0.f);
 							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
 
 							auto base_hash = type->base_hash();
@@ -771,7 +771,7 @@ void cEditor::on_add_node(BP::Node* n)
 						utils::e_empty();
 						{
 							auto c_element = utils::c_element();
-							auto r = utils::style_1u(FontSize);
+							auto r = utils::style(FontSize).u.x();
 							c_element->size = r;
 							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
@@ -962,8 +962,8 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		utils::next_element_pos = pos;
 		utils::next_element_padding = 4.f;
 		utils::next_element_frame_thickness = 2.f;
-		utils::next_element_color = utils::style_4c(BackgroundColor);
-		utils::next_element_frame_color = utils::style_4c(ForegroundColor);
+		utils::next_element_color = utils::style(BackgroundColor).c;
+		utils::next_element_frame_color = utils::style(ForegroundColor).c;
 		utils::e_element()->on_removed_listeners.add([](void*) {
 			app.editor->dragging_slot = nullptr;
 			return true;

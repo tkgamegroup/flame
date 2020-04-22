@@ -11,17 +11,13 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_voidp_item(uint hash, void* v);
-		FLAME_UNIVERSE_EXPORTS void* get_voidp_item(uint hash);
-		FLAME_UNIVERSE_EXPORTS void remove_voidp_item(uint hash);
+		FLAME_UNIVERSE_EXPORTS void set_common_item(uint hash, const CommonValue& v);
+		FLAME_UNIVERSE_EXPORTS CommonValue get_common_item(uint hash);
+		FLAME_UNIVERSE_EXPORTS void remove_common_item(uint hash);
 
-		FLAME_UNIVERSE_EXPORTS void set_stringa_item(uint hash, const char* v);
-		FLAME_UNIVERSE_EXPORTS const char* get_stringa_item(uint hash);
-		FLAME_UNIVERSE_EXPORTS void remove_stringa_item(uint hash);
-
-		FLAME_UNIVERSE_EXPORTS void set_vec4f_item(uint hash, const Vec4f& v);
-		FLAME_UNIVERSE_EXPORTS Vec4f get_vec4f_item(uint hash);
-		FLAME_UNIVERSE_EXPORTS void remove_vec4f_item(uint hash);
+		FLAME_UNIVERSE_EXPORTS void set_string_item(uint hash, const char* v);
+		FLAME_UNIVERSE_EXPORTS const char* get_string_item(uint hash);
+		FLAME_UNIVERSE_EXPORTS void remove_string_item(uint hash);
 
 		FLAME_UNIVERSE_EXPORTS static cDataKeeper* create();
 	};

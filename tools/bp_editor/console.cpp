@@ -19,7 +19,7 @@ cConsole::cConsole() :
 			utils::c_aligner(AlignMinMax, AlignMinMax);
 			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
 			utils::e_end_layout();
-		utils::e_end_scrollbar(utils::style_1u(FontSize));
+		utils::e_end_scrollbar(utils::style(FontSize).u.x());
 
 		utils::e_button(L"Clear", [](void* c) {
 			app.console->c_text_log->set_text(L"");

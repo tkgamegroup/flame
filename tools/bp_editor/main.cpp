@@ -2,7 +2,7 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/image.h>
 #include <flame/universe/utils/ui.h>
-#include <flame/universe/utils/reflector.h>
+#include <flame/universe/utils/ui_reflector.h>
 
 #include "app.h"
 
@@ -447,6 +447,9 @@ static void remove_selected()
 	{
 		app.remove_nodes(app.selected_nodes);
 		app.selected_nodes.clear();
+
+		if (app.detail)
+			app.detail->on_after_select();
 	}
 	if (!app.selected_links.empty())
 	{
@@ -1021,14 +1024,14 @@ bool MyApp::create(const char* filename)
 						app.auto_set_layout();
 					}, Mail());
 					utils::e_menu_item(L"Reflector", [](void* c) {
-						utils::e_reflector_window();
+						utils::e_ui_reflector_window();
 					}, Mail());
 				utils::e_end_menubar_menu();
 			utils::e_end_menu_bar();
 
 			{
 				utils::next_element_padding = 4.f;
-				utils::next_element_color = utils::style_4c(FrameColorNormal);
+				utils::next_element_color = utils::style(FrameColorNormal).c;
 				utils::e_begin_layout(LayoutHorizontal, 8.f);
 				utils::c_aligner(AlignMinMax, 0);
 				c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
@@ -1053,7 +1056,7 @@ bool MyApp::create(const char* filename)
 
 		utils::e_end_layout();
 
-		utils::push_style_1u(FontSize, 30);
+		utils::push_style(FontSize, common(Vec1u(30)));
 		utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
 		utils::next_element_color = Vec4c(0, 0, 0, 255);
 		e_notification = utils::e_text(L"");
