@@ -724,14 +724,11 @@ struct MyApp : App
 			utils::e_begin_layout(LayoutHorizontal, 8.f);
 			utils::c_aligner(AlignMiddle, 0);
 				utils::e_text(L"Your Name");
-				{
-					auto c_text = utils::e_edit(300.f, app.my_name.c_str())->get_component(cText);
-					c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-						if (hash == FLAME_CHASH("text"))
-							app.my_name = (*(cText**)c)->text.str();
-						return true;
-					}, Mail::from_p(c_text));
-				}
+				utils::e_edit(300.f, app.my_name.c_str())->get_component(cText)->data_changed_listeners.add([](void*, uint hash, void*) {
+					if (hash == FLAME_CHASH("text"))
+						app.my_name = ((cText*)Component::current())->text.str();
+					return true;
+				}, Mail());
 			utils::e_end_layout();
 				utils::next_element_padding = 4.f;
 				utils::next_element_frame_thickness = 2.f;
@@ -769,34 +766,28 @@ struct MyApp : App
 					{
 						auto e_layer = utils::e_begin_dialog()->parent();
 							utils::e_text(L"Room Name");
-							{
-								auto c_text = utils::e_edit(100.f)->get_component(cText);
-								c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-									if (hash == FLAME_CHASH("text"))
-										app.room_name = (*(cText**)c)->text.str();
-									return true;
-								}, Mail::from_p(c_text));
-							}
+							utils::e_edit(100.f)->get_component(cText)->data_changed_listeners.add([](void*, uint hash, void*) {
+								if (hash == FLAME_CHASH("text"))
+									app.room_name = ((cText*)Component::current())->text.str();
+								return true;
+							}, Mail());
 							utils::e_text(L"Max People");
-							{
-								auto c_combobox = utils::e_begin_combobox()->get_component(cCombobox);
-								c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
-									if (hash == FLAME_CHASH("index"))
+							utils::e_begin_combobox()->get_component(cCombobox)->data_changed_listeners.add([](void*, uint hash, void*) {
+								if (hash == FLAME_CHASH("index"))
+								{
+									auto index = ((cCombobox*)Component::current())->index;
+									switch (index)
 									{
-										auto index = (*(cCombobox**)c)->index;
-										switch (index)
-										{
-										case 0:
-											app.room_max_people = 2;
-											break;
-										case 1:
-											app.room_max_people = 7;
-											break;
-										}
+									case 0:
+										app.room_max_people = 2;
+										break;
+									case 1:
+										app.room_max_people = 7;
+										break;
 									}
-									return true;
-								}, Mail::from_p(c_combobox));
-							}
+								}
+								return true;
+							}, Mail());
 							utils::e_combobox_item(L"2");
 							utils::e_combobox_item(L"7");
 							utils::e_end_combobox(0);

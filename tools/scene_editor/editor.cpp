@@ -273,15 +273,14 @@ cEditor::cEditor() :
 			utils::e_end_combobox(0);
 			{
 				tool_type = 1;
-				auto c_combobox = utils::e_begin_combobox()->get_component(cCombobox);
+				utils::e_begin_combobox()->get_component(cCombobox)->data_changed_listeners.add([](void*, uint hash, void*) {
+					if (hash == FLAME_CHASH("index"))
+						app.editor->tool_type = ((cCombobox*)Component::current())->index;
+					return true;
+				}, Mail());
 					utils::e_combobox_item(L"Select");
 					utils::e_combobox_item(L"Gizmo");
 				utils::e_end_combobox(tool_type);
-				c_combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
-					if (hash == FLAME_CHASH("index"))
-						app.editor->tool_type = (*(cCombobox**)c)->index;
-					return true;
-				}, Mail::from_p(c_combobox));
 			}
 		utils::e_end_layout();
 

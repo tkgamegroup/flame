@@ -17,11 +17,9 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS Component(const char* name);
 		FLAME_UNIVERSE_EXPORTS virtual ~Component();
 
-		void data_changed(uint hash, void* sender)
-		{
-			if (sender != INVALID_POINTER)
-				data_changed_listeners.call(hash, sender);
-		}
+		FLAME_UNIVERSE_EXPORTS void data_changed(uint hash, void* sender);
+
+		FLAME_UNIVERSE_EXPORTS static Component* current();
 
 		virtual void on_added() {}
 		virtual void on_entered_world() {}

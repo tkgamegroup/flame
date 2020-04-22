@@ -126,11 +126,10 @@ void cInspector::refresh()
 	else
 	{
 		begin_item(L"name");
-		auto c_text = utils::e_edit(100.f, s2w(app.selected->name()).c_str())->get_component(cText);
-		c_text->data_changed_listeners.add([](void* c, uint hash, void*) {
+		utils::e_edit(100.f, s2w(app.selected->name()).c_str())->get_component(cText)->data_changed_listeners.add([](void*, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
-				auto text = (*(cText**)c)->text.v;
+				auto text = ((cText*)Component::current())->text.v;
 				app.selected->set_name(w2s(text).c_str());
 				if (app.hierarchy)
 				{
@@ -142,15 +141,14 @@ void cInspector::refresh()
 				}
 			}
 			return true;
-		}, Mail::from_p(c_text));
+		}, Mail());
 		end_item();
 		begin_item(L"visible");
-		auto checkbox = utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox);
-		checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
+		utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](void*, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
-				app.selected->set_visible((*(cCheckbox**)c)->checked);
+				app.selected->set_visible(((cCheckbox*)Component::current())->checked);
 			return true;
-		}, Mail::from_p(checkbox));
+		}, Mail());
 		end_item();
 
 		auto components = app.selected->get_components();

@@ -1244,23 +1244,17 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		utils::pop_parent();
 	utils::pop_parent();
 
-	{
-		struct Capture
+	c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
+		if (hash == FLAME_CHASH("text"))
 		{
-			Entity* l;
-			cText* t;
-		}capture;
-		capture.l = e_list;
-		capture.t = c_text_search;
-		c_text_search->data_changed_listeners.add([](void* c, uint hash, void*) {
-			auto& capture = *(Capture*)c;
-			auto str = capture.t->text.str();
-			for (auto i = 0; i < capture.l->child_count(); i++)
+			auto l = *(Entity**)c;
+			auto str = ((cText*)Component::current())->text.str();
+			for (auto i = 0; i < l->child_count(); i++)
 			{
-				auto item = capture.l->child(i);
+				auto item = l->child(i);
 				item->set_visible(str[0] ? item->get_component(cText)->text.str().find(str) != std::string::npos : true);
 			}
-			return true;
-		}, Mail::from_t(&capture));
-	}
+		}
+		return true;
+	}, Mail::from_p(e_list));
 }

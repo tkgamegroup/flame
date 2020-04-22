@@ -11,7 +11,7 @@ namespace flame
 			push_parent(current_root());
 			auto e_window = e_begin_window(L"Reflector");
 			auto e_layout = current_parent();
-			e_layout->get_component(cElement)->size = 300.f;
+			e_layout->get_component(cElement)->size = 400.f;
 			{
 				auto cl = e_layout->get_component(cLayout);
 				cl->width_fit_children = false;
@@ -21,13 +21,21 @@ namespace flame
 
 			struct cReflector : Component
 			{
+				struct Target
+				{
+					Entity* t;
+
+					cText* text;
+					bool highlight;
+				};
+
 				bool recording;
 				cText* txt_mouse;
 				cText* txt_record;
-				cText* txt_under_mouse;
-				cText* txt_hovering;
-				cText* txt_focusing;
-				cText* txt_drag_overing;
+				Target t_undering;
+				Target t_hovering;
+				Target t_focusing;
+				Target t_drag_overing;
 				Entity* e_window;
 				Entity* e_tree;
 				cTree* c_tree;
@@ -48,6 +56,75 @@ namespace flame
 					s_2d_renderer->after_update_listeners.remove(s_2d_renderer_listener);
 				}
 
+				void make_target(const wchar_t* title, Target& t)
+				{
+					t.highlight = false;
+
+					e_begin_layout(LayoutHorizontal, 4.f);
+						e_text(title);
+						e_button(Icon_SHARE);
+						e_toggle(Icon_SQUARE_O)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, uint hash, void*) {
+							if (hash == FLAME_CHASH("checked"))
+								**(bool**)c = ((cCheckbox*)Component::current())->checked;
+							return true;
+						}, Mail::from_p(&t.highlight));
+						t.text = e_text(nullptr)->get_component(cText);
+					e_end_layout();
+				}
+
+				void find_undering_mouse(Entity* e, const Vec2f& pos)
+				{
+					for (auto i = (int)e->child_count() - 1; i >= 0; i--)
+						find_undering_mouse(e->child(i), pos);
+
+					if (t_undering.t)
+						return;
+					auto element = e->get_component(cElement);
+					if (!element)
+						return;
+					if (rect_contains(rect(element->global_pos, element->global_size), pos))
+						t_undering.t = e;
+				}
+
+				void create(Entity* _window)
+				{
+					recording = true;
+					txt_mouse = e_text(nullptr)->get_component(cText);
+					txt_record = e_text(L"Stop Recording (Esc)")->get_component(cText);
+					make_target(L"Undering", t_undering);
+					make_target(L"Hovering", t_hovering);
+					make_target(L"Focusing", t_focusing);
+					make_target(L"Drag Overing", t_drag_overing);
+					e_window = _window;
+					e_tree = Entity::create();
+
+					e_button(Icon_REFRESH, [](void* c) {
+						auto thiz = *(void**)c;
+						looper().add_event([](void* c, bool*) {
+							auto reflector = *(cReflector**)c;
+							reflector->c_tree->set_selected(nullptr);
+							reflector->e_tree->remove_children(0, -1);
+							push_parent(reflector->e_tree);
+							reflector->add_node(current_root());
+							pop_parent();
+						}, Mail::from_p(thiz));
+					}, Mail::from_p(this));
+
+					next_element_padding = 4.f;
+					next_element_frame_thickness = 2.f;
+					next_element_frame_color = style_4c(ForegroundColor);
+					e_begin_scrollbar(ScrollbarVertical, true);
+						next_entity = e_tree;
+						e_begin_tree(true);
+						e_end_tree();
+					e_end_scrollbar();
+					c_tree = e_tree->get_component(cTree);
+
+					push_parent(e_tree);
+					add_node(current_root());
+					pop_parent();
+				}
+
 				void processing_event_dispatcher_event()
 				{
 					if (s_event_dispatcher->key_states[Key_Esc] == (KeyStateDown | KeyStateJust))
@@ -64,24 +141,27 @@ namespace flame
 
 					if (recording)
 					{
+						t_undering.t = nullptr;
+						find_undering_mouse(current_root(), Vec2f(s_event_dispatcher->mouse_pos));
+						if (t_undering.t->is_child_of(e_window))
+							t_undering.t = nullptr;
+						t_undering.text->set_text(wfmt(L"0x%016I64X", (ulonglong)t_undering.t).c_str());
+
 						{
-							std::wstring str = L"Hovering: ";
 							auto hovering = s_event_dispatcher->hovering;
-							auto e = hovering ? hovering->entity : nullptr;
-							if (e->is_child_of(e_window))
-								e = nullptr;
-							str += wfmt(L"0x%016I64X", (ulonglong)e);
-							txt_hovering->set_text(str.c_str());
+							t_hovering.t = hovering ? hovering->entity : nullptr;
+							if (t_hovering.t->is_child_of(e_window))
+								t_hovering.t = nullptr;
+							t_hovering.text->set_text(wfmt(L"0x%016I64X", (ulonglong)t_hovering.t).c_str());
 						}
 						{
 							auto color = style_4c(TextColorNormal);
-							std::wstring str = L"Focusing: ";
 							auto focusing = s_event_dispatcher->focusing;
-							auto e = focusing ? focusing->entity : nullptr;
-							if (e->is_child_of(e_window))
-								e = nullptr;
-							str += wfmt(L"0x%016I64X", (ulonglong)e);
-							if (e)
+							t_focusing.t = focusing ? focusing->entity : nullptr;
+							if (t_focusing.t->is_child_of(e_window))
+								t_focusing.t = nullptr;
+							auto str = wfmt(L"0x%016I64X", (ulonglong)t_focusing.t);
+							if (t_focusing.t)
 							{
 								if (focusing == s_event_dispatcher->hovering)
 									color = Vec4c(0, 255, 0, 255);
@@ -95,17 +175,15 @@ namespace flame
 									break;
 								}
 							}
-							txt_focusing->set_color(color);
-							txt_focusing->set_text(str.c_str());
+							t_focusing.text->set_color(color);
+							t_focusing.text->set_text(str.c_str());
 						}
 						{
-							std::wstring str = L"Drag Overing: ";
 							auto drag_overing = s_event_dispatcher->drag_overing;
-							auto e = drag_overing ? drag_overing->entity : nullptr;
-							if (e->is_child_of(e_window))
-								e = nullptr;
-							str += wfmt(L"0x%016I64X", (ulonglong)e);
-							txt_drag_overing->set_text(str.c_str());
+							t_drag_overing.t = drag_overing ? drag_overing->entity : nullptr;
+							if (t_drag_overing.t->is_child_of(e_window))
+								t_drag_overing.t = nullptr;
+							t_drag_overing.text->set_text(wfmt(L"0x%016I64X", (ulonglong)t_drag_overing.t).c_str());
 						}
 					}
 				}
@@ -114,7 +192,7 @@ namespace flame
 				{
 					if (s_2d_renderer->pending_update)
 					{
-						auto highlight = [&](Entity* e) {
+						auto highlight1 = [&](Entity* e) {
 							if (e && e->name_hash() == FLAME_CHASH("reflector_item"))
 							{
 								auto dp = e->get_component(cDataKeeper);
@@ -125,11 +203,30 @@ namespace flame
 								s_2d_renderer->canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 0, 255), 3.f);
 							}
 						};
+						auto highlight2 = [&](Entity* e) {
+							if (!e)
+								return;
+							auto element = e->get_component(cElement);
+							if (!element)
+								return;
+							std::vector<Vec2f> points;
+							path_rect(points, element->global_pos, element->global_size);
+							points.push_back(points[0]);
+							s_2d_renderer->canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 0, 255), 3.f);
+						};
 						auto hovering = s_event_dispatcher->hovering;
 						if (hovering)
-							highlight(hovering->entity);
+							highlight1(hovering->entity);
 						if (c_tree->selected)
-							highlight(c_tree->selected->child(0));
+							highlight1(c_tree->selected->child(0));
+						if (t_undering.highlight)
+							highlight2(t_undering.t);
+						if (t_hovering.highlight)
+							highlight2(t_hovering.t);
+						if (t_focusing.highlight)
+							highlight2(t_focusing.t);
+						if (t_drag_overing.highlight)
+							highlight2(t_drag_overing.t);
 					}
 				}
 
@@ -169,45 +266,10 @@ namespace flame
 				}
 			};
 			auto c_reflector = new_object<cReflector>();
-
-			c_reflector->recording = true;
-			c_reflector->txt_mouse = e_text(nullptr)->get_component(cText);
-			c_reflector->txt_record = e_text(L"Stop Recording (Esc)")->get_component(cText);
-			c_reflector->txt_hovering = e_text(nullptr)->get_component(cText);
-			c_reflector->txt_focusing = e_text(nullptr)->get_component(cText);
-			c_reflector->txt_drag_overing = e_text(nullptr)->get_component(cText);
-			c_reflector->e_window = e_window;
-			c_reflector->e_tree = Entity::create();
-
-			e_button(Icon_REFRESH, [](void* c) {
-				auto thiz = *(void**)c;
-				looper().add_event([](void* c, bool*) {
-					auto reflector = *(cReflector**)c;
-					reflector->c_tree->set_selected(nullptr);
-					reflector->e_tree->remove_children(0, -1);
-					push_parent(reflector->e_tree);
-					reflector->add_node(current_root());
-					pop_parent();
-				}, Mail::from_p(thiz));
-			}, Mail::from_p(c_reflector));
-
-			next_element_padding = 4.f;
-			next_element_frame_thickness = 2.f;
-			next_element_frame_color = style_4c(ForegroundColor);
-			e_begin_scrollbar(ScrollbarVertical, true);
-				next_entity = c_reflector->e_tree;
-				e_begin_tree(true);
-				e_end_tree();
-			e_end_scrollbar();
-			c_reflector->c_tree = c_reflector->e_tree->get_component(cTree);
-
-			push_parent(c_reflector->e_tree);
-			c_reflector->add_node(current_root());
-			pop_parent();
+			c_reflector->create(e_window);
+			current_parent()->add_component(c_reflector);
 
 			e_size_dragger();
-
-			current_parent()->add_component(c_reflector);
 
 			e_end_window();
 

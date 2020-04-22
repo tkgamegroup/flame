@@ -14,4 +14,19 @@ namespace flame
 	{
 		ListenerHubImpl::destroy(data_changed_listeners.impl);
 	}
+
+	Component* _current;
+
+	void Component::data_changed(uint hash, void* sender)
+	{
+		_current = this;
+		if (sender != INVALID_POINTER)
+			data_changed_listeners.call(hash, sender);
+		_current = nullptr;
+	}
+
+	Component* Component::current()
+	{
+		return _current;
+	}
 }

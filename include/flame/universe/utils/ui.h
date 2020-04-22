@@ -591,6 +591,24 @@ namespace flame
 			return e;
 		}
 
+		inline Entity* e_toggle(const wchar_t* text, bool toggled = false)
+		{
+			auto e = e_empty();
+			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			c_text()->set_text(text);
+			c_event_receiver();
+			auto cs = c_style_color2();
+			cs->color_normal[0] = style_4c(FrameColorNormal);
+			cs->color_hovering[0] = style_4c(FrameColorHovering);
+			cs->color_active[0] = style_4c(FrameColorActive);
+			cs->color_normal[1] = style_4c(ButtonColorNormal);
+			cs->color_hovering[1] = style_4c(ButtonColorHovering);
+			cs->color_active[1] = style_4c(ButtonColorActive);
+			cs->style();
+			c_checkbox()->set_checked(toggled);
+			return e;
+		}
+
 		inline Entity* e_image(uint id)
 		{
 			auto e = e_empty();

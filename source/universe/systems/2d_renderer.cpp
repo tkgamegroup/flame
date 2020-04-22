@@ -8,7 +8,6 @@
 
 namespace flame
 {
-
 	struct s2DRendererPrivate : s2DRenderer
 	{
 		s2DRendererPrivate(graphics::Canvas* _canvas)
