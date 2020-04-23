@@ -271,17 +271,15 @@ cEditor::cEditor() :
 				utils::e_combobox_item(L"2D");
 				utils::e_combobox_item(L"3D");
 			utils::e_end_combobox(0);
-			{
-				tool_type = 1;
-				utils::e_begin_combobox()->get_component(cCombobox)->data_changed_listeners.add([](void*, uint hash, void*) {
-					if (hash == FLAME_CHASH("index"))
-						app.editor->tool_type = ((cCombobox*)Component::current())->index;
-					return true;
-				}, Mail());
-					utils::e_combobox_item(L"Select");
-					utils::e_combobox_item(L"Gizmo");
-				utils::e_end_combobox(tool_type);
-			}
+			tool_type = 1;
+			utils::e_begin_combobox();
+				utils::e_combobox_item(L"Select");
+				utils::e_combobox_item(L"Gizmo");
+			utils::e_end_combobox(tool_type)->get_component(cCombobox)->data_changed_listeners.add([](void*, uint hash, void*) {
+				if (hash == FLAME_CHASH("index"))
+					app.editor->tool_type = ((cCombobox*)Component::current())->index;
+				return true;
+			}, Mail());
 		utils::e_end_layout();
 
 		edt.create([](void*, const Vec4f& r) {
@@ -311,7 +309,7 @@ cEditor::cEditor() :
 					return true;
 				}, Mail::from_p(edt.overlay));
 				utils::set_current_entity(e_overlay);
-				auto c_event_receiver = utils::c_event_receiver();
+				auto c_event_receiver = e_overlay->get_component(cEventReceiver);
 				c_event_receiver->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
 					*pass = true;
 					return true;

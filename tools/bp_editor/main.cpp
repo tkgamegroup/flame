@@ -386,7 +386,7 @@ static void add_action(Action* a)
 	action_idx++;
 }
 
-void undo()
+static void undo()
 {
 	if (action_idx > 0)
 	{
@@ -403,7 +403,7 @@ void undo()
 	}
 }
 
-void redo()
+static void redo()
 {
 	if (action_idx < actions.size())
 	{
@@ -441,7 +441,7 @@ static void duplicate_selected()
 	app.set_changed(true);
 }
 
-static void remove_selected()
+static void delete_selected()
 {
 	if (!app.selected_nodes.empty())
 	{
@@ -463,6 +463,281 @@ static void remove_selected()
 
 		app.s_2d_renderer->pending_update = true;
 	}
+}
+
+static void add_window(pugi::xml_node n)
+{
+	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
+	auto r = n.attribute("r").as_int(1);
+	std::string name(n.name());
+	if (name == "layout")
+	{
+		auto t = n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical;
+		auto ca = utils::e_begin_docker_layout(t)->get_component(cAligner);
+		if (parent_layout)
+			ca->width_factor = r;
+		else
+			ca->height_factor = r;
+		for (auto c : n.children())
+			add_window(c);
+		utils::e_end_docker_layout();
+	}
+	else if (name == "docker")
+	{
+		auto ca = utils::e_begin_docker()->get_component(cAligner);
+		if (parent_layout)
+			ca->width_factor = r;
+		else
+			ca->height_factor = r;
+		auto name = std::string(n.child("page").attribute("name").value());
+		if (name == "editor")
+			app.editor = new cEditor;
+		else if (name == "detail")
+			app.detail = new cDetail;
+		else if (name == "preview")
+			app.preview = new cPreview;
+		else if (name == "console")
+			app.console = new cConsole;
+		utils::e_end_docker();
+	}
+}
+
+bool MyApp::create(const char* filename)
+{
+	auto res = true;
+
+	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
+
+	e_test = Entity::create();
+	{
+		auto ce = cElement::create();
+		ce->pos = 150.f;
+		ce->size = 100.f;
+		ce->pivot = 0.5f;
+		ce->color = Vec4c(0, 0, 0, 255);
+		cElement::set_linked_object(ce);
+		e_test->add_component(ce);
+	}
+	{
+		auto cer = cEventReceiver::create();
+		cEventReceiver::set_linked_object(cer);
+		e_test->add_component(cer);
+	}
+
+	if (filename[0])
+	{
+		filepath = filename;
+		fileppath = filepath.parent_path();
+		bp = BP::create_from_file(filepath.c_str());
+	}
+	if (!bp)
+	{
+		res = false;
+
+		filepath = app.resource_path / L"new.bp";
+		fileppath = filepath.parent_path();
+		if (!std::filesystem::exists(filepath))
+		{
+			std::ofstream new_bp(filepath);
+			new_bp << "<BP />\n";
+			new_bp.close();
+		}
+		bp = BP::create_from_file(filepath.c_str());
+		assert(bp);
+	}
+
+	main_window->w->set_title(filepath.string().c_str());
+
+	pugi::xml_document window_layout;
+	pugi::xml_node window_layout_root;
+	if (window_layout.load_file(L"window_layout.xml"))
+		window_layout_root = window_layout.first_child();
+
+	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
+	utils::style_set_to_light();
+
+	{
+		auto c_event_receiver = root->get_component(cEventReceiver);
+		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
+			if (is_key_down(action))
+			{
+				switch (value)
+				{
+				case Key_S:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						app.save();
+					break;
+				case Key_Z:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						undo();
+					break;
+				case Key_Y:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						redo();
+					break;
+				case Key_D:
+					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+						duplicate_selected();
+					break;
+				case Key_Del:
+					delete_selected();
+					break;
+				case Key_F2:
+					app.update();
+					break;
+				case Key_F3:
+					app.c_auto_update->set_checked(true);
+					break;
+				}
+			}
+			return true;
+		}, Mail());
+		s_event_dispatcher->next_focusing = c_event_receiver;
+	}
+
+	utils::push_parent(root);
+
+	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
+	utils::c_aligner(AlignMinMax, AlignMinMax);
+
+	utils::e_begin_menu_bar();
+	utils::e_begin_menubar_menu(L"Blueprint");
+	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
+		app.save();
+	}, Mail());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Edit");
+	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void*) {
+		undo();
+	}, Mail());
+	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void*) {
+		redo();
+	}, Mail());
+	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](void*) {
+		duplicate_selected();
+	}, Mail());
+	utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](void*) {
+		delete_selected();
+	}, Mail());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"View");
+	utils::e_menu_item(L"Editor", [](void*) {
+		if (!app.editor)
+		{
+			utils::push_parent(app.root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.editor = new cEditor;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Mail());
+	utils::e_menu_item(L"Detail", [](void*) {
+		if (!app.detail)
+		{
+			utils::push_parent(app.root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.detail = new cDetail;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Mail());
+	utils::e_menu_item(L"Preview", [](void*) {
+		if (!app.preview)
+		{
+			utils::push_parent(app.root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.preview = new cPreview;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Mail());
+	utils::e_menu_item(L"Console", [](void*) {
+		if (!app.console)
+		{
+			utils::push_parent(app.root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.console = new cConsole;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Mail());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Tools");
+	utils::e_menu_item(L"Generate Graph Image", [](void* c) {
+		app.generate_graph_image();
+	}, Mail());
+	utils::e_menu_item(L"Auto Set Layout", [](void* c) {
+		app.auto_set_layout();
+	}, Mail());
+	utils::e_menu_item(L"Reflector", [](void* c) {
+		utils::e_ui_reflector_window();
+	}, Mail());
+	utils::e_end_menubar_menu();
+	utils::e_end_menu_bar();
+
+	{
+		utils::next_element_padding = 4.f;
+		utils::next_element_color = utils::style(FrameColorNormal).c;
+		utils::e_begin_layout(LayoutHorizontal, 8.f);
+		utils::c_aligner(AlignMinMax, 0);
+		c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
+		c_auto_update->data_changed_listeners.add([](void*, uint hash, void*) {
+			if (hash == FLAME_CHASH("checked"))
+				app.auto_update = app.c_auto_update->checked;
+			return true;
+		}, Mail());
+		utils::e_button(L"Update (F2)", [](void*) {
+			app.update();
+		}, Mail());
+		utils::e_button(L"Reset Time", [](void*) {
+			app.bp->time = 0.f;
+		}, Mail());
+		utils::e_end_layout();
+	}
+
+	utils::e_begin_docker_static_container();
+	if (window_layout_root)
+		add_window(window_layout_root.child("static").first_child());
+	utils::e_end_docker_static_container();
+
+	utils::e_end_layout();
+
+	utils::push_style(FontSize, common(Vec1u(30)));
+	utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
+	utils::next_element_color = Vec4c(0, 0, 0, 255);
+	e_notification = utils::e_text(L"");
+	e_notification->get_component(cText)->color = Vec4c(255);
+	utils::c_aligner(AlignMax, AlignMax);
+	e_notification->set_visible(false);
+	{
+		auto c_timer = utils::c_timer();
+		c_timer->interval = 1.f;
+		c_timer->max_times = 1;
+		c_timer->set_callback([](void*) {
+			app.e_notification->set_visible(false);
+		}, Mail(), false);
+	}
+	utils::pop_style(FontSize);
+
+	utils::pop_parent();
+
+	return res;
 }
 
 void MyApp::select()
@@ -505,6 +780,16 @@ void MyApp::select(const std::vector<BP::Slot*>& links)
 		detail->on_after_select();
 	if (editor)
 		editor->on_after_select();
+}
+
+void MyApp::save()
+{
+	BP::save_to_file(app.bp, app.filepath.c_str());
+
+	actions.clear();
+	action_idx = 0;
+
+	app.set_changed(false);
 }
 
 void MyApp::set_changed(bool v)
@@ -674,16 +959,6 @@ void MyApp::update()
 	bp->update();
 }
 
-void MyApp::save()
-{
-	BP::save_to_file(app.bp, app.filepath.c_str());
-
-	actions.clear();
-	action_idx = 0;
-
-	app.set_changed(false);
-}
-
 void MyApp::update_gv()
 {
 	auto gv_filename = fileppath / L"bp.gv";
@@ -801,281 +1076,6 @@ bool MyApp::auto_set_layout()
 	}
 
 	return true;
-}
-
-void add_window(pugi::xml_node n)
-{
-	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
-	auto r = n.attribute("r").as_int(1);
-	std::string name(n.name());
-	if (name == "layout")
-	{
-		auto t = n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical;
-		auto ca = utils::e_begin_docker_layout(t)->get_component(cAligner);
-		if (parent_layout)
-			ca->width_factor = r;
-		else
-			ca->height_factor = r;
-		for (auto c : n.children())
-			add_window(c);
-		utils::e_end_docker_layout();
-	}
-	else if (name == "docker")
-	{
-		auto ca = utils::e_begin_docker()->get_component(cAligner);
-		if (parent_layout)
-			ca->width_factor = r;
-		else
-			ca->height_factor = r;
-		auto name = std::string(n.child("page").attribute("name").value());
-		if (name == "editor")
-			app.editor = new cEditor;
-		else if (name == "detail")
-			app.detail = new cDetail;
-		else if (name == "preview")
-			app.preview = new cPreview;
-		else if (name == "console")
-			app.console = new cConsole;
-		utils::e_end_docker();
-	}
-}
-
-bool MyApp::create(const char* filename)
-{
-	auto res = true;
-
-	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
-
-	e_test = Entity::create();
-	{
-		auto ce = cElement::create();
-		ce->pos = 150.f;
-		ce->size = 100.f;
-		ce->pivot = 0.5f;
-		ce->color = Vec4c(0, 0, 0, 255);
-		cElement::set_linked_object(ce);
-		e_test->add_component(ce);
-	}
-	{
-		auto cer = cEventReceiver::create();
-		cEventReceiver::set_linked_object(cer);
-		e_test->add_component(cer);
-	}
-
-	if (filename[0])
-	{
-		filepath = filename;
-		fileppath = filepath.parent_path();
-		bp = BP::create_from_file(filepath.c_str());
-	}
-	if (!bp)
-	{
-		res = false;
-
-		filepath = app.resource_path / L"new.bp";
-		fileppath = filepath.parent_path();
-		if (!std::filesystem::exists(filepath))
-		{
-			std::ofstream new_bp(filepath);
-			new_bp << "<BP />\n";
-			new_bp.close();
-		}
-		bp = BP::create_from_file(filepath.c_str());
-		assert(bp);
-	}
-
-	main_window->w->set_title(filepath.string().c_str());
-
-	pugi::xml_document window_layout;
-	pugi::xml_node window_layout_root;
-	if (window_layout.load_file(L"window_layout.xml"))
-		window_layout_root = window_layout.first_child();
-
-	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
-	utils::style_set_to_light();
-
-	{
-		auto c_event_receiver = root->get_component(cEventReceiver);
-		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
-			if (is_key_down(action))
-			{
-				switch (value)
-				{
-				case Key_S:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						app.save();
-					break;
-				case Key_Z:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						undo();
-					break;
-				case Key_Y:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						redo();
-					break;
-				case Key_D:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						duplicate_selected();
-					break;
-				case Key_Del:
-					remove_selected();
-					break;
-				case Key_F2:
-					app.update();
-					break;
-				case Key_F3:
-					app.c_auto_update->set_checked(true);
-					break;
-				}
-			}
-			return true;
-		}, Mail());
-		s_event_dispatcher->next_focusing = c_event_receiver;
-	}
-
-	utils::push_parent(root);
-
-		utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-		utils::c_aligner(AlignMinMax, AlignMinMax);
-
-			utils::e_begin_menu_bar();
-				utils::e_begin_menubar_menu(L"Blueprint");
-					utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
-						app.save();
-					}, Mail());
-				utils::e_end_menubar_menu();
-				utils::e_begin_menubar_menu(L"Edit");
-					utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void* c) {
-						undo();
-					}, Mail());
-					utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void* c) {
-						redo();
-					}, Mail());
-					utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](void* c) {
-						duplicate_selected();
-					}, Mail());
-					utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Remove").c_str(), [](void* c) {
-						remove_selected();
-					}, Mail());
-				utils::e_end_menubar_menu();
-				utils::e_begin_menubar_menu(L"View");
-					utils::e_menu_item(L"Editor", [](void* c) {
-						if (!app.editor)
-						{
-							utils::push_parent(app.root);
-							utils::next_element_pos = Vec2f(100.f);
-							utils::next_element_size = Vec2f(400.f, 300.f);
-							utils::e_begin_docker_floating_container();
-								utils::e_begin_docker();
-									app.editor = new cEditor;
-								utils::e_end_docker();
-							utils::e_end_docker_floating_container();
-							utils::pop_parent();
-						}
-					}, Mail());
-					utils::e_menu_item(L"Detail", [](void* c) {
-						if (!app.detail)
-						{
-							utils::push_parent(app.root);
-							utils::next_element_pos = Vec2f(100.f);
-							utils::next_element_size = Vec2f(400.f, 300.f);
-							utils::e_begin_docker_floating_container();
-								utils::e_begin_docker();
-									app.detail = new cDetail;
-								utils::e_end_docker();
-							utils::e_end_docker_floating_container();
-							utils::pop_parent();
-						}
-					}, Mail());
-					utils::e_menu_item(L"Preview", [](void* c) {
-						if (!app.preview)
-						{
-							utils::push_parent(app.root);
-							utils::next_element_pos = Vec2f(100.f);
-							utils::next_element_size = Vec2f(400.f, 300.f);
-							utils::e_begin_docker_floating_container();
-								utils::e_begin_docker();
-									app.preview = new cPreview;
-								utils::e_end_docker();
-							utils::e_end_docker_floating_container();
-							utils::pop_parent();
-						}
-					}, Mail());
-					utils::e_menu_item(L"Console", [](void* c) {
-						if (!app.console)
-						{
-							utils::push_parent(app.root);
-							utils::next_element_pos = Vec2f(100.f);
-							utils::next_element_size = Vec2f(400.f, 300.f);
-							utils::e_begin_docker_floating_container();
-								utils::e_begin_docker();
-									app.console = new cConsole;
-								utils::e_end_docker();
-							utils::e_end_docker_floating_container();
-							utils::pop_parent();
-						}
-					}, Mail());
-				utils::e_end_menubar_menu();
-				utils::e_begin_menubar_menu(L"Tools");
-					utils::e_menu_item(L"Generate Graph Image", [](void* c) {
-						app.generate_graph_image();
-					}, Mail());
-					utils::e_menu_item(L"Auto Set Layout", [](void* c) {
-						app.auto_set_layout();
-					}, Mail());
-					utils::e_menu_item(L"Reflector", [](void* c) {
-						utils::e_ui_reflector_window();
-					}, Mail());
-				utils::e_end_menubar_menu();
-			utils::e_end_menu_bar();
-
-			{
-				utils::next_element_padding = 4.f;
-				utils::next_element_color = utils::style(FrameColorNormal).c;
-				utils::e_begin_layout(LayoutHorizontal, 8.f);
-				utils::c_aligner(AlignMinMax, 0);
-				c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
-				c_auto_update->data_changed_listeners.add([](void* , uint hash, void*) {
-					if (hash == FLAME_CHASH("checked"))
-						app.auto_update = app.c_auto_update->checked;
-					return true;
-				}, Mail());
-				utils::e_button(L"Update (F2)", [](void*) {
-					app.update();
-				}, Mail());
-				utils::e_button(L"Reset Time", [](void*) {
-					app.bp->time = 0.f;
-				}, Mail());
-				utils::e_end_layout();
-			}
-
-			utils::e_begin_docker_static_container();
-			if (window_layout_root)
-				add_window(window_layout_root.child("static").first_child());
-			utils::e_end_docker_static_container();
-
-		utils::e_end_layout();
-
-		utils::push_style(FontSize, common(Vec1u(30)));
-		utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
-		utils::next_element_color = Vec4c(0, 0, 0, 255);
-		e_notification = utils::e_text(L"");
-		e_notification->get_component(cText)->color = Vec4c(255);
-		utils::c_aligner(AlignMax, AlignMax);
-		e_notification->set_visible(false);
-		{
-			auto c_timer = utils::c_timer();
-			c_timer->interval = 1.f;
-			c_timer->max_times = 1;
-			c_timer->set_callback([](void*) {
-				app.e_notification->set_visible(false);
-			}, Mail(), false);
-		}
-		utils::pop_style(FontSize);
-
-	utils::pop_parent();
-
-	return res;
 }
 
 MyApp app;

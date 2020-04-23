@@ -178,9 +178,13 @@ struct MyApp : App
 		auto_update = false;
 	}
 
+	bool create(const char* filename);
+
 	void select();
 	void select(const std::vector<BP::Node*>& nodes);
 	void select(const std::vector<BP::Slot*>& links);
+
+	void save();
 
 	void set_changed(bool v);
 
@@ -193,13 +197,9 @@ struct MyApp : App
 
 	void update();
 
-	void save();
-
 	void update_gv();
 	bool generate_graph_image();
 	bool auto_set_layout();
-
-	bool create(const char* filename);
 };
 
 extern MyApp app;

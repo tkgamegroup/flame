@@ -172,13 +172,11 @@ namespace flame
 
 		T drag_start;
 		bool drag_changed;
-		bool edit_changed;
 		void(*on_changed)(void* c, T v, bool exit_editing);
 		Mail capture;
 
 		cDigitalDataTracker(void* _data, void(*on_changed)(void* c, T v, bool exit_editing), const Mail& capture) :
 			drag_changed(false),
-			edit_changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -209,44 +207,28 @@ namespace flame
 
 			update_view();
 
-			edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
-				(*(cDigitalDataTracker**)c)->edit_changed = true;
-				return true;
-			}, Mail::from_p(this));
+			auto e_e = edit_text->entity->get_component(cEdit);
+			e_e->enter_to_throw_focus = true;
+			e_e->trigger_changed_on_lost_focus = true;
 
-			auto e_er = edit_text->entity->get_component(cEventReceiver);
-			e_er->focus_listeners.add([](void* c, bool focusing) {
-				if (!focusing)
+			edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
+				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = *(cDigitalDataTracker**)c;
-					if (thiz->edit_changed)
+					T v;
+					try
 					{
-						T v;
-						try
-						{
-							v = sto<T>(thiz->edit_text->text.v);
-						}
-						catch (...)
-						{
-							v = 0;
-						}
-						thiz->on_changed(thiz->capture.p, v, true);
-						thiz->update_view();
-						thiz->edit_changed = false;
+						v = sto<T>(((cText*)Component::current())->text.v);
 					}
+					catch (...)
+					{
+						v = 0;
+					}
+					thiz->on_changed(thiz->capture.p, v, true);
+					thiz->update_view();
 				}
 				return true;
 			}, Mail::from_p(this));
-			e_er->key_listeners.add([](void*, KeyStateFlags action, int value) {
-				if ((action == KeyStateDown && value == Key_Enter) ||
-					(action == KeyStateNull && (value == '\r' || value == '\n')))
-				{
-					auto r = utils::current_root();
-					cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
-					return false;
-				}
-				return true;
-			}, Mail(), 0);
 
 			auto d_er = drag_text->entity->get_component(cEventReceiver);
 			d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -288,13 +270,11 @@ namespace flame
 
 		Vec<N, T> drag_start;
 		bool drag_changed;
-		bool edit_changed;
 		void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing);
 		Mail capture;
 
 		cDigitalVecDataTracker(void* _data, void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing), const Mail& capture) :
 			drag_changed(false),
-			edit_changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -333,12 +313,9 @@ namespace flame
 
 			for (auto i = 0; i < N; i++)
 			{
-				edit_texts[i]->data_changed_listeners.add([](void* c, uint hash, void*) {
-					(*(cDigitalVecDataTracker**)c)->edit_changed = true;
-					return true;
-				}, Mail::from_p(this));
-
-				auto e_er = edit_texts[i]->entity->get_component(cEventReceiver);
+				auto e_e = edit_texts[i]->entity->get_component(cEdit);
+				e_e->enter_to_throw_focus = true;
+				e_e->trigger_changed_on_lost_focus = true;
 
 				{
 					struct Capture
@@ -347,40 +324,26 @@ namespace flame
 						int i;
 					}capture;
 					capture.thiz = this;
-					capture.i = i;
-					e_er->focus_listeners.add([](void* c, bool focusing) {
-						if (!focusing)
+					capture.i = i; 
+					edit_texts[i]->data_changed_listeners.add([](void* c, uint hash, void*) {
+						if (hash == FLAME_CHASH("text"))
 						{
 							auto& capture = *(Capture*)c;
-							if (capture.thiz->edit_changed)
+							auto v = *(Vec<N, T>*)capture.thiz->data;
+							try
 							{
-								auto v = *(Vec<N, T>*)capture.thiz->data;
-								try
-								{
-									v[capture.i] = sto<T>(capture.thiz->edit_texts[capture.i]->text.v);
-								}
-								catch (...)
-								{
-									v[capture.i] = 0;
-								}
-								capture.thiz->on_changed(capture.thiz->capture.p, v, true);
-								capture.thiz->update_view();
-								capture.thiz->edit_changed = false;
+								v[capture.i] = sto<T>(((cText*)Component::current())->text.v);
 							}
+							catch (...)
+							{
+								v[capture.i] = 0;
+							}
+							capture.thiz->on_changed(capture.thiz->capture.p, v, true);
+							capture.thiz->update_view();
 						}
 						return true;
 					}, Mail::from_t(&capture));
 				}
-				e_er->key_listeners.add([](void*, KeyStateFlags action, int value) {
-					if ((action == KeyStateDown && value == Key_Enter) ||
-						(action == KeyStateNull && (value == '\r' || value == '\n')))
-					{
-						auto r = utils::current_root();
-						cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
-						return false;
-					}
-					return true;
-				}, Mail(), 0);
 
 				auto d_er = drag_texts[i]->entity->get_component(cEventReceiver);
 
@@ -429,12 +392,10 @@ namespace flame
 	{
 		cText* text;
 
-		bool changed;
 		void(*on_changed)(void* c, const char* v);
 		Mail capture;
 
 		cStringADataTracker(void* _data, void(*on_changed)(void* c, const char* v), const Mail& capture) :
-			changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -457,32 +418,18 @@ namespace flame
 
 			update_view();
 
+			auto e_e = text->entity->get_component(cEdit);
+			e_e->enter_to_throw_focus = true;
+			e_e->trigger_changed_on_lost_focus = true;
+
 			text->data_changed_listeners.add([](void* c, uint hash, void*) {
-				(*(cStringADataTracker**)c)->changed = true;
-				return true;
-			}, Mail::from_p(this));
-			auto er = text->entity->get_component(cEventReceiver);
-			er->focus_listeners.add([](void* c, bool focusing) {
-				if (!focusing)
+				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = *(cStringADataTracker**)c;
-					if (thiz->changed)
-					{
-						thiz->on_changed(thiz->capture.p, w2s(thiz->text->text.str()).c_str());
-						thiz->changed = false;
-					}
+					thiz->on_changed(thiz->capture.p, w2s(((cText*)Component::current())->text.str()).c_str());
 				}
 				return true;
 			}, Mail::from_p(this));
-			er->key_listeners.add([](void*, KeyStateFlags action, int value) {
-				if (action == KeyStateDown && value == Key_Enter)
-				{
-					auto r = utils::current_root();
-					cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
-					return false;
-				}
-				return true;
-			}, Mail());
 		}
 	};
 
@@ -490,12 +437,10 @@ namespace flame
 	{
 		cText* text;
 
-		bool changed;
 		void(*on_changed)(void* c, const wchar_t* v);
 		Mail capture;
 
 		cStringWDataTracker(void* _data, void(*on_changed)(void* c, const wchar_t* v), const Mail& capture) :
-			changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -518,32 +463,18 @@ namespace flame
 
 			update_view();
 
+			auto e_e = text->entity->get_component(cEdit);
+			e_e->enter_to_throw_focus = true;
+			e_e->trigger_changed_on_lost_focus = true;
+
 			text->data_changed_listeners.add([](void* c, uint hash, void*) {
-				(*(cStringWDataTracker**)c)->changed = true;
-				return true;
-			}, Mail::from_p(this));
-			auto er = text->entity->get_component(cEventReceiver);
-			er->focus_listeners.add([](void* c, bool focusing) {
-				if (!focusing)
+				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = *(cStringWDataTracker**)c;
-					if (thiz->changed)
-					{
-						thiz->on_changed(thiz->capture.p, thiz->text->text.v);
-						thiz->changed = false;
-					}
+					thiz->on_changed(thiz->capture.p, ((cText*)Component::current())->text.v);
 				}
 				return true;
 			}, Mail::from_p(this));
-			er->key_listeners.add([](void*, KeyStateFlags action, int value) {
-				if (action == KeyStateDown && value == Key_Enter)
-				{
-					auto r = utils::current_root();
-					cEventReceiver::current()->dispatcher->next_focusing = r ? r->get_component(cEventReceiver) : nullptr;
-					return false;
-				}
-				return true;
-			}, Mail());
 		}
 	};
 

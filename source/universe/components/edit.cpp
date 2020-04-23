@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
+#include <flame/universe/world.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/components/timer.h>
@@ -20,6 +21,7 @@ namespace flame
 		void* draw_cmd;
 
 		bool show_cursor;
+		bool changed;
 
 		cEditPrivate()
 		{
@@ -33,6 +35,8 @@ namespace flame
 
 			select_all_on_dbclicked = true;
 			select_all_on_focus = true;
+			enter_to_throw_focus = false;
+			trigger_changed_on_lost_focus = false;
 
 			key_listener = nullptr;
 			mouse_listener = nullptr;
@@ -41,6 +45,7 @@ namespace flame
 			draw_cmd = nullptr;
 
 			show_cursor = false;
+			changed = false;
 		}
 
 		~cEditPrivate()
@@ -188,6 +193,13 @@ namespace flame
 					{
 						switch (value)
 						{
+						case 24: // Ctrl+X
+						case 3: // Ctrl+C
+							if (low == high)
+								break;
+							set_clipboard(text.str().substr(low, high - low).c_str());
+							if (value == 3)
+								break;
 						case L'\b':
 							if (low == high)
 							{
@@ -197,7 +209,10 @@ namespace flame
 									auto temp = text.str();
 									temp.erase(temp.begin() + low);
 									text = temp;
-									c_text->set_text(nullptr, -1, thiz);
+									if (thiz->trigger_changed_on_lost_focus)
+										thiz->changed = true;
+									else
+										c_text->set_text(nullptr, -1, thiz);
 									select_start = select_end = low;
 								}
 							}
@@ -206,13 +221,12 @@ namespace flame
 								auto temp = text.str();
 								temp = temp.substr(0, low) + temp.substr(high);
 								text = temp;
-								c_text->set_text(nullptr, -1, thiz);
+								if (thiz->trigger_changed_on_lost_focus)
+									thiz->changed = true;
+								else
+									c_text->set_text(nullptr, -1, thiz);
 								select_start = select_end = low;
 							}
-							break;
-						case 3: // Ctrl+C
-							if (low != high)
-								set_clipboard(text.str().substr(low, high).c_str());
 							break;
 						case 22: // Ctrl+V
 						{
@@ -223,20 +237,34 @@ namespace flame
 								auto temp = text.str();
 								temp = temp.substr(0, low) + cb + temp.substr(high);
 								text = temp;
-								c_text->set_text(nullptr, -1, thiz);
+								if (thiz->trigger_changed_on_lost_focus)
+									thiz->changed = true;
+								else
+									c_text->set_text(nullptr, -1, thiz);
 								select_start = select_end = high + cb.size() - (high - low);
 							}
 						}
 							break;
 						case 27:
 							break;
-						case 13:
+						case '\r':
+							break;
+						case '\n':
+							if (thiz->enter_to_throw_focus)
+							{
+								auto dp = thiz->event_receiver->dispatcher;
+								dp->next_focusing = dp->world_->root()->get_component(cEventReceiver);
+								break;
+							}
 							value = '\n';
 						default:
 							auto temp = text.str();
 							temp = temp.substr(0, low) + std::wstring(1, value) + temp.substr(high);
 							text = temp;
-							c_text->set_text(nullptr, -1, thiz);
+							if (thiz->trigger_changed_on_lost_focus)
+								thiz->changed = true;
+							else
+								c_text->set_text(nullptr, -1, thiz);
 							select_start = select_end = high + 1 - (high - low);
 						}
 					}
@@ -244,6 +272,13 @@ namespace flame
 					{
 						switch (value)
 						{
+						case Key_Enter:
+							if (thiz->enter_to_throw_focus)
+							{
+								auto dp = thiz->event_receiver->dispatcher;
+								dp->next_focusing = dp->world_->root()->get_component(cEventReceiver);
+							}
+							break;
 						case Key_Left:
 							if (ed->key_states[Key_Shift] & KeyStateDown)
 							{
@@ -331,7 +366,10 @@ namespace flame
 									auto temp = text.str();
 									temp.erase(temp.begin() + low);
 									text = temp;
-									c_text->set_text(nullptr, -1, thiz);
+									if (thiz->trigger_changed_on_lost_focus)
+										thiz->changed = true;
+									else
+										c_text->set_text(nullptr, -1, thiz);
 								}
 							}
 							else
@@ -339,7 +377,10 @@ namespace flame
 								auto temp = text.str();
 								temp = temp.substr(0, low) + temp.substr(high);
 								text = temp;
-								c_text->set_text(nullptr, -1, thiz);
+								if (thiz->trigger_changed_on_lost_focus)
+									thiz->changed = true;
+								else
+									c_text->set_text(nullptr, -1, thiz);
 								select_start = select_end = low;
 							}
 							break;
@@ -384,6 +425,11 @@ namespace flame
 						thiz->timer->stop();
 						thiz->set_select(0);
 						thiz->flash_cursor(1);
+						if (thiz->trigger_changed_on_lost_focus && thiz->changed)
+						{
+							thiz->text->set_text(nullptr, -1, thiz);
+							thiz->changed = false;
+						}
 					}
 					return true;
 				}, Mail::from_p(this));

@@ -100,14 +100,16 @@ struct cInspector : Component
 
 struct MyApp : App
 {
+	std::filesystem::path filepath;
+	Entity* prefab;
+	bool changed;
+
+	Entity* selected;
+
 	cEditor* editor;
 	cResourceExplorer* resource_explorer;
 	cHierarchy* hierarchy;
 	cInspector* inspector;
-
-	std::filesystem::path filepath;
-	Entity* prefab;
-	Entity* selected;
 
 	MyApp()
 	{
@@ -124,7 +126,8 @@ struct MyApp : App
 
 	void select(Entity* e);
 	void load(const std::filesystem::path& _filepath);
-	void close();
+	void save();
+
 };
 
 extern MyApp app;

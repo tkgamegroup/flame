@@ -26,6 +26,8 @@ namespace flame
 
 		bool select_all_on_dbclicked;
 		bool select_all_on_focus;
+		bool enter_to_throw_focus;
+		bool trigger_changed_on_lost_focus;
 
 		void set_select(uint start, int length = 0)
 		{

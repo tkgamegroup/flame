@@ -112,7 +112,8 @@ struct cComponentTracker : Component
 
 	~cComponentTracker()
 	{
-		t->data_changed_listeners.remove(l);
+		if (!entity->dying_)
+			t->data_changed_listeners.remove(l);
 	}
 };
 
@@ -126,7 +127,7 @@ void cInspector::refresh()
 	else
 	{
 		begin_item(L"name");
-		utils::e_edit(100.f, s2w(app.selected->name()).c_str())->get_component(cText)->data_changed_listeners.add([](void*, uint hash, void*) {
+		utils::e_edit(100.f, s2w(app.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](void*, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
 				auto text = ((cText*)Component::current())->text.v;

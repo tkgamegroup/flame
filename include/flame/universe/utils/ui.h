@@ -585,7 +585,7 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_edit(float width, const wchar_t* text = nullptr)
+		inline Entity* e_edit(float width, const wchar_t* text = nullptr, bool enter_to_throw_focus = false, bool trigger_changed_on_lost_focus = false)
 		{
 			auto e = e_empty();
 			next_component_id = FLAME_CHASH("edit");
@@ -604,7 +604,9 @@ namespace flame
 			c_event_receiver();
 			if (width == 0.f)
 				c_aligner(AlignMinMax, 0);
-			c_edit();
+			auto cedt = c_edit();
+			cedt->enter_to_throw_focus = enter_to_throw_focus;
+			cedt->trigger_changed_on_lost_focus = trigger_changed_on_lost_focus;
 			return e;
 		}
 
@@ -921,7 +923,7 @@ namespace flame
 			return e;
 		}
 
-		inline void e_end_combobox(int idx = -1)
+		inline Entity* e_end_combobox(int idx = -1)
 		{
 			auto eis = current_parent();
 			auto ecb = eis->get_component(cMenuItems)->menu->entity;
@@ -935,6 +937,7 @@ namespace flame
 			if (idx != -1)
 				ecb->get_component(cCombobox)->set_index(idx, false);
 			pop_parent();
+			return ecb;
 		}
 
 		inline Entity* e_combobox_item(const wchar_t* text)
