@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/canvas.h>
 #include <flame/universe/utils/ui.h>
 
@@ -92,7 +93,10 @@ namespace flame
 						capture.t = &t.target;
 						e_button(Icon_HAND_POINTER_O, [](void* c) {
 							auto capture = *(Capture*)c;
-							capture.thiz->find_target_in_tree(capture.thiz->e_tree, *capture.t);
+							Entity* ret = nullptr;
+							capture.thiz->find_target_in_tree(capture.thiz->e_tree, *capture.t, ret);
+							if (ret)
+								capture.thiz->c_tree->set_selected(ret);
 							capture.thiz->c_tree->expand_to_selected();
 						}, Mail::from_t(&capture));
 						e_toggle(Icon_SQUARE_O, highlight)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, uint hash, void*) {
@@ -126,17 +130,17 @@ namespace flame
 						t_undering.target = e;
 				}
 
-				void find_target_in_tree(Entity* e, Entity* t)
+				void find_target_in_tree(Entity* e, Entity* t, Entity*& ret)
 				{
 					auto dp = e->get_component(cDataKeeper);
 					if (dp && dp->get_common_item(FLAME_CHASH("entity")).p == t)
 					{
-						c_tree->set_selected(e);
+						ret = e;
 						return;
 					}
 
 					for (auto i = 0; i < e->child_count(); i++)
-						find_target_in_tree(e->child(i), t);
+						find_target_in_tree(e->child(i), t, ret);
 				}
 
 				void add_node(Entity* src)
@@ -145,10 +149,34 @@ namespace flame
 						return;
 					auto element = src->get_component(cElement);
 					next_entity = Entity::create();
+					auto geometry = Vec4f(element->global_pos, element->global_size);
 					auto dp = cDataKeeper::create();
 					dp->set_common_item(FLAME_CHASH("entity"), common(src));
-					dp->set_string_item(FLAME_CHASH("name"), src->name());
-					dp->set_common_item(FLAME_CHASH("geometry"), common(Vec4f(element->global_pos, element->global_size)));
+					dp->set_common_item(FLAME_CHASH("geometry"), common(geometry));
+					std::string desc = sfmt("name: %s\n", src->name());
+					auto components = src->get_components();
+					for (auto i = 0; i < components.s; i++)
+					{
+						auto c = components[i];
+						auto name = std::string(c->name);
+						desc += sfmt("[%s]\n", c->name);
+						if (name == "cElement")
+						{
+							auto ce = (cElement*)c;
+							desc += sfmt("pos: %.0f, %0.f\n", ce->pos.x(), ce->pos.y());
+							desc += sfmt("size: %.0f, %0.f\n", ce->size.x(), ce->size.y());
+							desc += sfmt("scale: %f\n", ce->scale);
+							desc += sfmt("global pos: %.0f, %0.f\n", ce->global_pos.x(), ce->global_pos.y());
+							desc += sfmt("global size: %.0f, %0.f\n", ce->global_size.x(), ce->global_size.y());
+							desc += sfmt("global scale: %f\n", ce->global_scale);
+						}
+						else if (name == "cAligner")
+						{
+							auto ca = (cAligner*)c;
+
+						}
+					}
+					dp->set_string_item(FLAME_CHASH("desc"), desc.c_str());
 					next_entity->add_component(dp);
 					auto cs = src->child_count();
 					auto title = wfmt(L"%I64X ", (ulonglong)src);
@@ -170,11 +198,37 @@ namespace flame
 					if (selected)
 					{
 						auto dp = selected->get_component(cDataKeeper);
-						auto geometry = dp->get_common_item(FLAME_CHASH("geometry")).f;
 						push_parent(e_detail);
-						e_text(wfmt(L"Name: %s\nGeometry: (%.0f, %.0f)-(%.0f, %.0f)", 
-							s2w(dp->get_string_item(FLAME_CHASH("name"))).c_str(),
-							geometry.x(), geometry.y(), geometry.x() + geometry.z(), geometry.y() + geometry.w()).c_str());
+						e_text(s2w(dp->get_string_item(FLAME_CHASH("desc"))).c_str());
+						struct Capture
+						{
+							cReflector* thiz;
+							Entity* e;
+						}capture;
+						capture.thiz = this;
+						capture.e = (Entity*)dp->get_common_item(FLAME_CHASH("entity")).p;
+						e_button(L"Debug cElelemnt In Renderer", [](void* c) {
+							auto& capture = *(Capture*)c;
+							Entity* ret = nullptr;
+							capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
+							if (ret)
+							{
+								auto ce = capture.e->get_component(cElement);
+								if (ce)
+									ce->debug_level = 1;
+							}
+						}, Mail::from_t(&capture));
+						e_button(L"Debug cLayout In Management", [](void* c) {
+							auto& capture = *(Capture*)c;
+							Entity* ret = nullptr;
+							capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
+							if (ret)
+							{
+								auto cl = capture.e->get_component(cLayout);
+								if (cl)
+									cl->debug_level = 1;
+							}
+						}, Mail::from_t(&capture));
 						pop_parent();
 					}
 				}
@@ -228,9 +282,11 @@ namespace flame
 						next_element_padding = 4.f;
 						next_element_frame_thickness = 2.f;
 						next_element_frame_color = style(ForegroundColor).c;
-						e_detail = e_begin_layout(LayoutVertical, 4.f, false, false);
-						c_aligner(AlignMinMax, AlignMinMax);
-						e_end_layout();
+						e_begin_scrollbar(ScrollbarVertical, true);
+							e_detail = e_begin_layout(LayoutVertical, 4.f, false, false);
+							c_aligner(AlignMinMax, AlignMinMax);
+							e_end_layout();
+						e_end_scrollbar();
 					e_end_splitter();
 
 					push_parent(e_tree);

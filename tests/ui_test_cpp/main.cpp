@@ -61,7 +61,7 @@ struct MyApp : App
 						utils::next_element_size = 258.f;
 						utils::next_element_padding = 4.f;
 						utils::next_element_frame_thickness = 2.f;
-						utils::next_element_frame_color = utils::style(BackgroundColor).c;
+						utils::next_element_frame_color = utils::style(ForegroundColor).c;
 						utils::e_image(img_id << 16);
 						utils::e_edit(100.f);
 					utils::e_end_layout();
@@ -71,7 +71,7 @@ struct MyApp : App
 						utils::next_element_size = Vec2f(200.f, 100.f);
 						utils::next_element_padding = 4.f;
 						utils::next_element_frame_thickness = 2.f;
-						utils::next_element_frame_color = utils::style(BackgroundColor).c;
+						utils::next_element_frame_color = utils::style(ForegroundColor).c;
 						utils::e_begin_scrollbar(ScrollbarVertical, false);
 							utils::e_begin_list(true);
 							for (auto i = 0; i < 10; i++)
@@ -81,7 +81,7 @@ struct MyApp : App
 						
 						utils::next_element_padding = 4.f;
 						utils::next_element_frame_thickness = 2.f;
-						utils::next_element_frame_color = utils::style(BackgroundColor).c;
+						utils::next_element_frame_color = utils::style(ForegroundColor).c;
 						utils::e_begin_tree(false);
 							utils::e_begin_tree_node(L"A");
 								utils::e_tree_leaf(L"C");
