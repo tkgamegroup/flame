@@ -25,7 +25,7 @@ struct App
 			sc->acquire_image();
 
 			auto dst = sc->image(sc->image_index());
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin();
 			cb->change_image_layout(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
 			ImageCopy cpy;
@@ -34,9 +34,9 @@ struct App
 			cb->change_image_layout(dst, ImageLayoutTransferDst, ImageLayoutPresent);
 			cb->end();
 			auto finished = Semaphore::create(d);
-			d->gq->submit(1, &cb, sc->image_avalible(), finished, nullptr);
+			Queue::get_default(QueueGraphics)->submit(1, &cb, sc->image_avalible(), finished, nullptr);
 
-			d->gq->present(sc, finished);
+			Queue::get_default(QueueGraphics)->present(sc, finished);
 		}
 	}
 }app;

@@ -24,18 +24,19 @@ namespace flame
 
 		struct Device
 		{
-			Descriptorpool* dp;
-			Sampler* sp_nearest;
-			Sampler* sp_linear;
-			Commandpool* gcp; // graphics command pool
-			Commandpool* tcp; // transfer command pool
-			Queue* gq; // graphics queue
-			Queue* tq; // transfer queue
+			Descriptorpool* default_descriptorpool;
+			Sampler* default_sampler_nearest;
+			Sampler* default_sampler_linear;
+			Commandpool* default_graphics_commandpool;
+			Queue* default_graphics_queue;
+			Commandpool* default_transfer_commandpool;
+			Queue* default_transfer_queue;
 
 			FLAME_GRAPHICS_EXPORTS bool has_feature(Feature f);
 
-			FLAME_GRAPHICS_EXPORTS static Device* default_one();
-			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug);
+			FLAME_GRAPHICS_EXPORTS static Device* get_default();
+			FLAME_GRAPHICS_EXPORTS static void set_default(Device* d);
+			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug, bool set_to_current = true);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Device* d);
 		};
 	}

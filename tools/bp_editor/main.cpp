@@ -545,7 +545,7 @@ bool MyApp::create(const char* filename)
 		assert(bp);
 	}
 
-	main_window->w->set_title(filepath.string().c_str());
+	main_window->sys_window->set_title(filepath.string().c_str());
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
@@ -800,7 +800,7 @@ void MyApp::set_changed(bool v)
 		std::string title = filepath.string();
 		if (changed)
 			title += "*";
-		main_window->w->set_title(title.c_str());
+		main_window->sys_window->set_title(title.c_str());
 	}
 }
 

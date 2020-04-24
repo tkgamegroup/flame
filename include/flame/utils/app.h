@@ -23,70 +23,70 @@ namespace flame
 	{
 		struct Window
 		{
-			SysWindow* w;
-			graphics::Device* d;
-			graphics::Swapchain* sc;
-			int img_idx;
-			bool sc_updated;
-			std::vector<graphics::Commandbuffer*> cbs;
-			graphics::Commandbuffer* curr_cb;
-			graphics::Fence* fence;
-			graphics::Semaphore* semaphore;
+			App* app;
 
-			Window(const char* title, const Vec2u size, uint styles, graphics::Device* _d, SysWindow* p = nullptr, bool maximized = false)
+			SysWindow* sys_window;
+			graphics::Swapchain* swapchain;
+			int swapchain_image_index;
+			std::vector<graphics::Commandbuffer*> swapchain_commandbuffers;
+			graphics::Fence* submit_fence;
+			graphics::Semaphore* render_finished_semaphore;
+
+			Window(App* _app, const char* title, const Vec2u size, uint styles, SysWindow* p = nullptr, bool maximized = false)
 			{
-				w = SysWindow::create(title, size, styles, p);
+				app = _app;
+				app->windows.emplace_back(this);
+
+				sys_window = SysWindow::create(title, size, styles, p);
 				if (maximized)
-					w->set_maximized(true);
-				w->destroy_listeners.add([](void* c) {
+					sys_window->set_maximized(true);
+				sys_window->destroy_listeners.add([](void* c) {
 					auto thiz = *(Window**)c;
-					thiz->w = nullptr;
+					thiz->sys_window = nullptr;
 					return true;
 				}, Mail::from_p(this));
-				d = _d;
-				sc = graphics::Swapchain::create(d, w);
-				sc_updated = false;
-				cbs.resize(sc->image_count());
-				for (auto i = 0; i < cbs.size(); i++)
-					cbs[i] = graphics::Commandbuffer::create(d->gcp);
-				fence = graphics::Fence::create(d);
-				semaphore = graphics::Semaphore::create(d);
+				swapchain = graphics::Swapchain::create(app->graphics_device, sys_window);
+				swapchain_image_index = -1;
+				swapchain_commandbuffers.resize(swapchain->image_count());
+				for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
+					swapchain_commandbuffers[i] = graphics::Commandbuffer::create(graphics::Commandpool::get_default(graphics::QueueGraphics));
+				submit_fence = graphics::Fence::create(app->graphics_device);
+				render_finished_semaphore = graphics::Semaphore::create(app->graphics_device);
 			}
 
 			~Window()
 			{
-				if (!w)
+				if (!sys_window)
 					return;
-				graphics::Swapchain::destroy(sc);
-				SysWindow::destroy(w);
-				for (auto i = 0; i < cbs.size(); i++)
-					graphics::Commandbuffer::destroy(cbs[i]);
-				graphics::Fence::destroy(fence);
-				graphics::Semaphore::destroy(semaphore);
+				graphics::Swapchain::destroy(swapchain);
+				SysWindow::destroy(sys_window);
+				for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
+					graphics::Commandbuffer::destroy(swapchain_commandbuffers[i]);
+				graphics::Fence::destroy(submit_fence);
+				graphics::Semaphore::destroy(render_finished_semaphore);
 			}
 
-			void update_sc()
+			void prepare_swapchain()
 			{
-				if (!sc_updated)
+				if (swapchain_image_index < 0)
 				{
-					if (sc->image_count())
+					if (swapchain->image_count())
 					{
-						sc->acquire_image();
-						img_idx = sc->image_index();
-						curr_cb = cbs[img_idx];
-						sc_updated = true;
+						swapchain->acquire_image();
+						swapchain_image_index = swapchain->image_index();
 					}
 				}
 			}
 
-			void render(graphics::Device* d)
+			void render()
 			{
-				fence->wait();
-				if (sc->image_count() && sc_updated)
+				submit_fence->wait();
+				if (swapchain->image_count() && swapchain_image_index >= 0)
 				{
-					d->gq->submit(1, &curr_cb, sc->image_avalible(), semaphore, fence);
-					d->gq->present(sc, semaphore);
-					sc_updated = false;
+					auto queue = graphics::Queue::get_default(graphics::QueueGraphics);
+					queue->submit(1, &swapchain_commandbuffers[swapchain_image_index], swapchain->image_avalible(), render_finished_semaphore, submit_fence);
+					queue->present(swapchain, render_finished_semaphore);
+					swapchain_image_index = -1;
 				}
 			}
 		};
@@ -177,13 +177,12 @@ namespace flame
 
 			graphics_device = graphics::Device::create(graphics_debug);
 
-			main_window = new Window(title, size, styles, graphics_device, nullptr, maximized);
-			windows.emplace_back(main_window);
-			main_window->w->resize_listeners.add([](void* c, const Vec2u&) {
+			main_window = new Window(this, title, size, styles, nullptr, maximized);
+			main_window->sys_window->resize_listeners.add([](void* c, const Vec2u&) {
 				(*(App**)c)->set_canvas_target();
 				return true;
 			}, Mail::from_p(this));
-			main_window->w->destroy_listeners.add([](void*) {
+			main_window->sys_window->destroy_listeners.add([](void*) {
 				exit(0);
 				return true;
 			}, Mail());
@@ -206,7 +205,7 @@ namespace flame
 			get_style = utils::style;
 
 			world = World::create();
-			world->add_object(main_window->w);
+			world->add_object(main_window->sys_window);
 			world->add_object(font_atlas);
 			s_timer_management = sTimerManagement::create();
 			world->add_system(s_timer_management);
@@ -219,7 +218,7 @@ namespace flame
 				auto thiz = *(App**)c;
 				if (thiz->s_2d_renderer->pending_update)
 				{
-					thiz->main_window->update_sc();
+					thiz->main_window->prepare_swapchain();
 					thiz->canvas->prepare();
 				}
 				return true;
@@ -238,7 +237,7 @@ namespace flame
 
 		void set_canvas_target()
 		{
-			auto sc = main_window->sc;
+			auto sc = main_window->swapchain;
 			std::vector<graphics::Imageview*> vs(sc->image_count());
 			for (auto i = 0; i < vs.size(); i++)
 				vs[i] = sc->image(i)->default_view();
@@ -256,19 +255,19 @@ namespace flame
 
 			looper().process_events();
 
-			c_element_root->set_size(Vec2f(main_window->w->size));
+			c_element_root->set_size(Vec2f(main_window->sys_window->size));
 			world->update();
-			if (main_window->sc_updated)
-				canvas->record(main_window->curr_cb, main_window->img_idx);
+			if (main_window->swapchain_image_index >= 0)
+				canvas->record(main_window->swapchain_commandbuffers[main_window->swapchain_image_index], main_window->swapchain_image_index);
 
 			for (auto it = windows.begin(); it != windows.end();)
 			{
 				auto w = it->get();
-				if (!w->w)
+				if (!w->sys_window)
 					it = windows.erase(it);
 				else
 				{
-					w->render(graphics_device);
+					w->render();
 					it++;
 				}
 			}

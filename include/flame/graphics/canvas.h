@@ -24,19 +24,19 @@ namespace flame
 			void add_atlas(Atlas* a)
 			{
 				a->canvas_ = this;
-				a->canvas_slot_ = set_resource(-1, a->imageview(), a->border ? FilterLinear : FilterNearest, a);
+				a->canvas_slot_ = set_resource(-1, a->imageview(), Sampler::get_default(a->border ? FilterLinear : FilterNearest), a);
 			}
 
 			void add_font(FontAtlas* f)
 			{
 				f->canvas_ = this;
-				f->canvas_slot_ = set_resource(-1, f->imageview(), FilterNearest);
+				f->canvas_slot_ = set_resource(-1, f->imageview(), Sampler::get_default(FilterNearest));
 			}
 
 			FLAME_GRAPHICS_EXPORTS void set_target(uint view_count, Imageview* const* views);
 
 			FLAME_GRAPHICS_EXPORTS Resource get_resource(uint slot);
-			FLAME_GRAPHICS_EXPORTS uint set_resource(int slot /* -1 to find an empty slot */, Imageview* v, Filter filter = FilterLinear, Atlas* atlas = nullptr);
+			FLAME_GRAPHICS_EXPORTS uint set_resource(int slot /* -1 to find an empty slot */, Imageview* v, Sampler* sp = nullptr, Atlas* atlas = nullptr);
 
 			FLAME_GRAPHICS_EXPORTS void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness);
 			FLAME_GRAPHICS_EXPORTS void fill(uint point_count, const Vec2f* points, const Vec4c& col);

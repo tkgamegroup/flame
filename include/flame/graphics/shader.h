@@ -15,6 +15,8 @@ namespace flame
 
 		struct Descriptorpool
 		{
+			FLAME_GRAPHICS_EXPORTS static Descriptorpool* get_default();
+			FLAME_GRAPHICS_EXPORTS static void set_default(Descriptorpool* p);
 			FLAME_GRAPHICS_EXPORTS static Descriptorpool* create(Device* d);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Descriptorpool* p);
 		};

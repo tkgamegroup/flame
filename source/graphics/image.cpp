@@ -179,25 +179,25 @@ namespace flame
 
 		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
 		{
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(this, from, to);
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 		}
 
 		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(this, current_layout, ImageLayoutTransferDst);
 			cb->clear_image(this, color);
 			cb->change_image_layout(this, ImageLayoutTransferDst, after_layout);
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 		}
 
@@ -209,14 +209,14 @@ namespace flame
 
 			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferDst, MemPropHost);
 
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
 			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 
 			stag_buf->map();
@@ -237,14 +237,14 @@ namespace flame
 			memcpy(stag_buf->mapped, src, stag_buf->size);
 			stag_buf->flush();
 
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 
 			Buffer::destroy(stag_buf);
@@ -287,15 +287,15 @@ namespace flame
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
 
-				auto cb = Commandbuffer::create(d->gcp);
+				auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 				cb->begin(true);
 				cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 				BufferImageCopy copy(i->size);
 				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
-				d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-				d->gq->wait_idle();
+				Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+				Queue::get_default(QueueGraphics)->wait_idle();
 				Commandbuffer::destroy(cb);
 				Buffer::destroy(staging_buffer);
 			}
@@ -313,15 +313,15 @@ namespace flame
 			memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
 			staging_buffer->unmap();
 
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 			BufferImageCopy copy(bmp->size);
 			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 			Buffer::destroy(staging_buffer);
 
@@ -413,14 +413,14 @@ namespace flame
 
 			auto i = Image::create(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->copy_buffer_to_image(staging_buffer, i, buffer_copy_regions.size(), buffer_copy_regions.data());
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 
 			Buffer::destroy(staging_buffer);
@@ -563,6 +563,24 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+		}
+
+		static Sampler* _default_sampler_nearest;
+		static Sampler* _default_sampler_linear;
+
+		Sampler* Sampler::get_default(Filter filter)
+		{
+			if (filter == FilterNearest)
+				return _default_sampler_nearest;
+			else if (filter == FilterLinear)
+				return _default_sampler_linear;
+			return nullptr;
+		}
+
+		void Sampler::set_default(Sampler* nearest, Sampler* linear)
+		{
+			_default_sampler_nearest = nearest;
+			_default_sampler_linear = linear;
 		}
 
 		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)

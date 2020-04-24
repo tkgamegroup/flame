@@ -415,21 +415,13 @@ namespace flame
 
 			printf("vulkan initialized, gpu count: %d\n", gpu_count);
 
-			sp_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
-			sp_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
-			gcp = Commandpool::create(this, gq_idx);
-			gq = Queue::create(this, gq_idx);
-			if (tq_idx > 0)
-			{
-				tcp = Commandpool::create(this, tq_idx);
-				tq = Queue::create(this, tq_idx);
-			}
-			else
-			{
-				tcp = nullptr;
-				tq = nullptr;
-			}
-			dp = Descriptorpool::create(this);
+			default_descriptorpool = Descriptorpool::create(this);
+			default_sampler_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
+			default_sampler_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
+			default_graphics_commandpool = Commandpool::create(this, gq_idx);
+			default_graphics_queue = Queue::create(this, gq_idx);
+			default_transfer_commandpool = tq_idx > 0 ? Commandpool::create(this, tq_idx) : nullptr;
+			default_transfer_queue = tq_idx > 0 ? Queue::create(this, tq_idx) : nullptr;
 
 #elif defined(FLAME_D3D12)
 
@@ -515,18 +507,29 @@ namespace flame
 			return ((DevicePrivate*)this)->has_feature(f);
 		}
 
-		static Device* default_device;
+		static Device* _default;
 
-		Device* Device::default_one()
+		Device* Device::get_default()
 		{
-			return default_device;
+			return _default;
 		}
 
-		Device* Device::create(bool debug)
+		void Device::set_default(Device* d)
+		{
+			_default = d;
+		}
+
+		Device* Device::create(bool debug, bool set_to_default)
 		{
 			auto d = new DevicePrivate(debug);
-			if (!default_device)
-				default_device = d;
+			if (set_to_default)
+			{
+				_default = d;
+				Descriptorpool::set_default(d->default_descriptorpool);
+				Sampler::set_default(d->default_sampler_nearest, d->default_sampler_linear);
+				Commandpool::set_default(d->default_graphics_commandpool, d->default_transfer_commandpool);
+				Queue::set_default(d->default_graphics_queue, d->default_transfer_queue);
+			}
 			return d;
 		}
 

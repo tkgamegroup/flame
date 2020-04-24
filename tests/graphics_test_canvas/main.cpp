@@ -32,7 +32,7 @@ struct App
 
 		cbs.resize(vs.size());
 		for (auto i = 0; i < cbs.size(); i++)
-			cbs[i] = Commandbuffer::create(d->gcp);
+			cbs[i] = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 	}
 
 	void run()
@@ -57,8 +57,8 @@ struct App
 
 		if (!cbs.empty())
 		{
-			d->gq->submit(1, &cb, sc->image_avalible(), render_finished, fence);
-			d->gq->present(sc, render_finished);
+			Queue::get_default(QueueGraphics)->submit(1, &cb, sc->image_avalible(), render_finished, fence);
+			Queue::get_default(QueueGraphics)->present(sc, render_finished);
 		}
 	}
 

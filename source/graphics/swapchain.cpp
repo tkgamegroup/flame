@@ -54,7 +54,7 @@ namespace flame
 
 		void SwapchainPrivate::update()
 		{
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->wait_idle();
 
 			for (auto i : images)
 				Image::destroy(i);

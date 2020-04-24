@@ -139,10 +139,10 @@ namespace flame
 				resources.resize(resource_count, { img_white->default_view(), nullptr, Vec2f(0.5f) });
 
 				img_ms = nullptr;
-				ds = Descriptorset::create(d->dp, dsl);
+				ds = Descriptorset::create(Descriptorpool::get_default(), dsl);
 				{
 					auto iv_white = img_white->default_view();
-					auto sp = d->sp_linear;
+					auto sp = Sampler::get_default(FilterLinear);
 					for (auto i = 0; i < resource_count; i++)
 						ds->set_image(0, i, iv_white, sp);
 				}
@@ -187,7 +187,7 @@ namespace flame
 				}
 			}
 
-			uint set_resource(int slot, Imageview* v, Filter filter, Atlas* atlas)
+			uint set_resource(int slot, Imageview* v, Sampler* sp, Atlas* atlas)
 			{
 				if (resources.empty())
 					return -1;
@@ -218,7 +218,7 @@ namespace flame
 					img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
 					white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
 				}
-				ds->set_image(0, slot, v, filter == FilterNearest ? d->sp_nearest : d->sp_linear);
+				ds->set_image(0, slot, v, sp ? sp : Sampler::get_default(FilterLinear));
 				resources[slot] = { v, atlas, white_uv  };
 				return slot;
 			}
@@ -540,9 +540,9 @@ namespace flame
 			return ((CanvasPrivate*)this)->resources[slot];
 		}
 
-		uint Canvas::set_resource(int slot, Imageview* v, Filter filter, Atlas* atlas)
+		uint Canvas::set_resource(int slot, Imageview* v, Sampler* sp, Atlas* atlas)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, v, filter, atlas);
+			return ((CanvasPrivate*)this)->set_resource(slot, v, sp, atlas);
 		}
 
 		void Canvas::stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness)

@@ -37,6 +37,24 @@ namespace flame
 #endif
 		}
 
+		Commandpool* _default_pool_graphics;
+		Commandpool* _default_pool_transfer;
+
+		Commandpool* Commandpool::get_default(QueueFamily family)
+		{
+			if (family == QueueGraphics)
+				return _default_pool_graphics;
+			else if (family == QueueTransfer)
+				return _default_pool_transfer;
+			return nullptr;
+		}
+
+		void Commandpool::set_default(Commandpool* graphics, Commandpool* transfer)
+		{
+			_default_pool_graphics = graphics;
+			_default_pool_transfer = transfer;
+		}
+
 		Commandpool* Commandpool::create(Device* d, int queue_family_idx)
 		{
 			return new CommandpoolPrivate(d, queue_family_idx);
@@ -711,6 +729,24 @@ namespace flame
 		void Queue::present(Swapchain* s, Semaphore* wait_semaphore)
 		{
 			((QueuePrivate*)this)->present(s, wait_semaphore);
+		}
+
+		Queue* _default_queue_graphics;
+		Queue* _default_queue_transfer;
+
+		Queue* Queue::get_default(QueueFamily family)
+		{
+			if (family == QueueGraphics)
+				return _default_queue_graphics;
+			else if (family == QueueTransfer)
+				return _default_queue_transfer;
+			return nullptr;
+		}
+
+		void Queue::set_default(Queue* graphics, Queue* transfer)
+		{
+			_default_queue_graphics = graphics;
+			_default_queue_transfer = transfer;
 		}
 
 		Queue* Queue::create(Device* d, uint queue_family_idx)

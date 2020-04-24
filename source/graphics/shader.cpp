@@ -41,6 +41,18 @@ namespace flame
 #endif
 		}
 
+		static Descriptorpool* _default_pool;
+
+		Descriptorpool* Descriptorpool::get_default()
+		{
+			return _default_pool;
+		}
+
+		void Descriptorpool::set_default(Descriptorpool* p)
+		{
+			_default_pool = p;
+		}
+
 		Descriptorpool* Descriptorpool::create(Device* d)
 		{
 			return new DescriptorpoolPrivate(d);
@@ -82,7 +94,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			default_set = create_default ? Descriptorset::create(d->dp, this) : nullptr;
+			default_set = create_default ? Descriptorset::create(Descriptorpool::get_default(), this) : nullptr;
 
 			hash = 0;
 			for (auto& b : bindings)

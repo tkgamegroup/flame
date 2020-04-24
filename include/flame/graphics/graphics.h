@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #ifdef FLAME_WINDOWS
 #ifdef FLAME_GRAPHICS_MODULE
@@ -76,38 +76,7 @@ namespace flame
 			SampleCountMax = 0xffffffff
 		};
 
-		enum ShaderStage
-		{
-			ShaderStageNone,
-			ShaderStageVert = 1 << 0,
-			ShaderStageTesc = 1 << 1,
-			ShaderStageTese = 1 << 2,
-			ShaderStageGeom = 1 << 3,
-			ShaderStageFrag = 1 << 4,
-			ShaderStageComp = 1 << 5,
-			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag,
-
-			ShaderStageMax = 0xffffffff
-		};
-
 		typedef uint ShaderStageFlags;
-
-		enum DescriptorType
-		{
-			DescriptorUniformBuffer,
-			DescriptorStorageBuffer,
-			DescriptorSampledImage,
-			DescriptorStorageImage,
-
-			DescriptorMax = 0xffffffff
-		};
-
-		enum PipelineType
-		{
-			PipelineNone,
-			PipelineGraphics,
-			PipelineCompute
-		};
 
 		enum BufferUsage
 		{
@@ -181,16 +150,39 @@ namespace flame
 			SwizzleA
 		};
 
-		enum IndiceType
-		{
-			IndiceTypeUint,
-			IndiceTypeUshort
-		};
-
 		enum Filter
 		{
 			FilterNearest,
 			FilterLinear
+		};
+
+		enum QueueFamily
+		{
+			QueueGraphics,
+			QueueTransfer
+		};
+
+		enum DescriptorType
+		{
+			DescriptorUniformBuffer,
+			DescriptorStorageBuffer,
+			DescriptorSampledImage,
+			DescriptorStorageImage,
+
+			DescriptorMax = 0xffffffff
+		};
+
+		enum PipelineType
+		{
+			PipelineNone,
+			PipelineGraphics,
+			PipelineCompute
+		};
+
+		enum IndiceType
+		{
+			IndiceTypeUint,
+			IndiceTypeUshort
 		};
 
 		enum VertexInputRate
@@ -238,6 +230,20 @@ namespace flame
 			CullModeFront,
 			CullModeBack,
 			CullModeFrontAndback,
+		};
+
+		enum ShaderStage
+		{
+			ShaderStageNone,
+			ShaderStageVert = 1 << 0,
+			ShaderStageTesc = 1 << 1,
+			ShaderStageTese = 1 << 2,
+			ShaderStageGeom = 1 << 3,
+			ShaderStageFrag = 1 << 4,
+			ShaderStageComp = 1 << 5,
+			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag,
+
+			ShaderStageMax = 0xffffffff
 		};
 
 		enum BlendFactor

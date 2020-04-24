@@ -66,6 +66,8 @@ namespace flame
 
 		struct Sampler
 		{
+			FLAME_GRAPHICS_EXPORTS static Sampler* get_default(Filter filter);
+			FLAME_GRAPHICS_EXPORTS static void set_default(Sampler* nearest, Sampler* linear);
 			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			FLAME_GRAPHICS_EXPORTS static void destroy(Sampler* s);
 		};

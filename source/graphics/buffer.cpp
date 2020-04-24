@@ -111,12 +111,12 @@ namespace flame
 			stag_buf->flush();
 			stag_buf->unmap();
 
-			auto cb = Commandbuffer::create(d->gcp);
+			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->copy_buffer(stag_buf, this, 1, &BufferCopy(0, 0, size));
 			cb->end();
-			d->gq->submit(1, &cb, nullptr, nullptr, nullptr);
-			d->gq->wait_idle();
+			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
+			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 
 			Buffer::destroy(stag_buf);

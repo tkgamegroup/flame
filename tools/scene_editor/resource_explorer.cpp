@@ -120,7 +120,7 @@ cResourceExplorer::cResourceExplorer() :
 	file_img_idx = canvas->set_resource(-1, file_img->default_view());
 	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
 	thumbnails_img->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
-	thumbnails_img_idx = canvas->set_resource(-1, thumbnails_img->default_view(), FilterNearest);
+	thumbnails_img_idx = canvas->set_resource(-1, thumbnails_img->default_view(), Sampler::get_default(FilterNearest));
 	{
 		auto x = 0;
 		auto y = 0;
