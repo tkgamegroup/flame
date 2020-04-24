@@ -4,7 +4,6 @@
 #include <flame/utils/fps.h>
 #include <flame/universe/utils/ui_reflector.h>
 
-#include <flame/universe/utils/entity_impl.h>
 #include <flame/universe/utils/ui_impl.h>
 
 using namespace flame;

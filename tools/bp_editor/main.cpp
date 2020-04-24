@@ -6,7 +6,6 @@
 
 #include "app.h"
 
-#include <flame/universe/utils/entity_impl.h>
 #include <flame/universe/utils/ui_impl.h>
 
 BP::Node* _add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos)

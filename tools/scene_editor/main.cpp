@@ -6,7 +6,6 @@
 
 #include "app.h"
 
-#include <flame/universe/utils/entity_impl.h>
 #include <flame/universe/utils/ui_impl.h>
 
 MyApp app;
@@ -18,7 +17,40 @@ struct Action
 	virtual void redo() = 0;
 };
 
-static void undo() 
+struct Action_ChangeEntityName : Action
+{
+	Entity* target;
+	std::string prev_id;
+	std::string after_id;
+
+	Action_ChangeEntityName()
+	{
+		name = L"Change Entity Name";
+	}
+
+	void undo() override
+	{
+
+	}
+
+	void redo() override
+	{
+
+	}
+};
+
+static std::vector<std::unique_ptr<Action>> actions;
+static auto action_idx = 0;
+
+static void add_action(Action* a)
+{
+	if (actions.size() > action_idx)
+		actions.erase(actions.begin() + action_idx, actions.end());
+	actions.emplace_back(a);
+	action_idx++;
+}
+
+static void undo()
 {
 
 }

@@ -10,7 +10,6 @@
 #include "key.h"
 #include "score.h"
 
-#include <flame/universe/utils/entity_impl.h>
 #include <flame/universe/utils/ui_impl.h>
 
 using namespace flame;

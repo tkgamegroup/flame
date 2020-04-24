@@ -188,6 +188,16 @@ namespace flame
 						}
 						return (int)len;
 					};
+					auto on_changed = [&]() {
+						if (thiz->trigger_changed_on_lost_focus)
+							thiz->changed = true;
+						else
+							c_text->set_text(nullptr, -1, thiz);
+					};
+					auto throw_focus = [&]() {
+						auto dp = thiz->event_receiver->dispatcher;
+						dp->next_focusing = dp->world_->root()->get_component(cEventReceiver);
+					};
 
 					if (action == KeyStateNull)
 					{
@@ -209,10 +219,7 @@ namespace flame
 									auto temp = text.str();
 									temp.erase(temp.begin() + low);
 									text = temp;
-									if (thiz->trigger_changed_on_lost_focus)
-										thiz->changed = true;
-									else
-										c_text->set_text(nullptr, -1, thiz);
+									on_changed();
 									select_start = select_end = low;
 								}
 							}
@@ -221,10 +228,7 @@ namespace flame
 								auto temp = text.str();
 								temp = temp.substr(0, low) + temp.substr(high);
 								text = temp;
-								if (thiz->trigger_changed_on_lost_focus)
-									thiz->changed = true;
-								else
-									c_text->set_text(nullptr, -1, thiz);
+								on_changed();
 								select_start = select_end = low;
 							}
 							break;
@@ -237,10 +241,7 @@ namespace flame
 								auto temp = text.str();
 								temp = temp.substr(0, low) + cb + temp.substr(high);
 								text = temp;
-								if (thiz->trigger_changed_on_lost_focus)
-									thiz->changed = true;
-								else
-									c_text->set_text(nullptr, -1, thiz);
+								on_changed();
 								select_start = select_end = high + cb.size() - (high - low);
 							}
 						}
@@ -252,8 +253,7 @@ namespace flame
 						case '\n':
 							if (thiz->enter_to_throw_focus)
 							{
-								auto dp = thiz->event_receiver->dispatcher;
-								dp->next_focusing = dp->world_->root()->get_component(cEventReceiver);
+								throw_focus();
 								break;
 							}
 							value = '\n';
@@ -261,10 +261,7 @@ namespace flame
 							auto temp = text.str();
 							temp = temp.substr(0, low) + std::wstring(1, value) + temp.substr(high);
 							text = temp;
-							if (thiz->trigger_changed_on_lost_focus)
-								thiz->changed = true;
-							else
-								c_text->set_text(nullptr, -1, thiz);
+							on_changed();
 							select_start = select_end = high + 1 - (high - low);
 						}
 					}
@@ -274,10 +271,7 @@ namespace flame
 						{
 						case Key_Enter:
 							if (thiz->enter_to_throw_focus)
-							{
-								auto dp = thiz->event_receiver->dispatcher;
-								dp->next_focusing = dp->world_->root()->get_component(cEventReceiver);
-							}
+								throw_focus();
 							break;
 						case Key_Left:
 							if (ed->key_states[Key_Shift] & KeyStateDown)
@@ -366,10 +360,7 @@ namespace flame
 									auto temp = text.str();
 									temp.erase(temp.begin() + low);
 									text = temp;
-									if (thiz->trigger_changed_on_lost_focus)
-										thiz->changed = true;
-									else
-										c_text->set_text(nullptr, -1, thiz);
+									on_changed();
 								}
 							}
 							else
@@ -377,10 +368,7 @@ namespace flame
 								auto temp = text.str();
 								temp = temp.substr(0, low) + temp.substr(high);
 								text = temp;
-								if (thiz->trigger_changed_on_lost_focus)
-									thiz->changed = true;
-								else
-									c_text->set_text(nullptr, -1, thiz);
+								on_changed();
 								select_start = select_end = low;
 							}
 							break;

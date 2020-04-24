@@ -1,4 +1,8 @@
+#pragma once
+
 #include <flame/universe/utils/ui.h>
+
+#include <flame/universe/utils/entity_impl.h>
 
 namespace flame
 {

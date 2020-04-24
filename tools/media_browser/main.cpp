@@ -2,7 +2,6 @@
 #include <flame/graphics/image.h>
 #include <flame/utils/app.h>
 
-#include <flame/universe/utils/entity_impl.h>
 #include <flame/universe/utils/ui_impl.h>
 
 using namespace flame;
