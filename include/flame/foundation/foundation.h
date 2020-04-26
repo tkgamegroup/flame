@@ -261,43 +261,78 @@ namespace flame
 		}
 	};
 
-	struct Mail
+	struct Capture
 	{
-		uint s;
-		void* p;
+		uint size;
+		void* _data;
+		void* _thiz;
+		void* _current;
 
-		Mail() :
-			s(0),
-			p(nullptr)
+		Capture() :
+			size(0),
+			_data(nullptr),
+			_thiz(nullptr),
+			_current(nullptr)
 		{
 		}
 
-		Mail(uint s, void* d = nullptr) :
-			s(s),
-			p(f_malloc(s))
+		template <class T>
+		Capture& set_data(T* p)
 		{
-			if (d)
-				memcpy(p, d, s);
+			assert(!_data);
+			size = sizeof(T);
+			_data = f_malloc(size);
+			memcpy(_data, p, size);
+			return *this;
 		}
 
-		template<class T>
-		static Mail from_t(T* p)
+		Capture& set_thiz(void* thiz)
 		{
-			return Mail(sizeof(T), p);
+			assert(!_thiz);
+			_thiz = thiz;
+			return *this;
 		}
 
-		static Mail from_p(void* p)
+		template <class T>
+		Capture& absorb(T* p, const Capture& original, bool kill_original = false)
 		{
-			return Mail(sizeof(void*), &p);
+			assert(!_data);
+			size = sizeof(T) + original.size;
+			_data = f_malloc(size);
+			memcpy(_data, p, sizeof(T));
+			memcpy((char*)_data + sizeof(T), original._data, original.size);
+			_thiz = original._thiz;
+			if (kill_original)
+				f_free(original._data);
+			return *this;
 		}
 
-		template<class T>
-		static Mail expand_original(T* p, const Mail& old)
+		template <class T>
+		Capture release()
 		{
-			auto ret = Mail(sizeof(T) + old.s);
-			memcpy(ret.p, p, sizeof(T));
-			memcpy((char*)ret.p + sizeof(T), old.p, old.s);
+			auto ret = Capture();
+			ret.size = size - sizeof(T);
+			ret._data = (char*)_data + sizeof(T);
+			ret._thiz = _thiz;
 			return ret;
+		}
+
+		template <class T>
+		T& data()
+		{
+			return *(T*)_data;
+		}
+
+		template <class T>
+		T* thiz()
+		{
+			return (T*)_thiz;
+		}
+
+		template <class T>
+		T* current()
+		{
+			return (T*)_current;
 		}
 	};
 
@@ -305,9 +340,9 @@ namespace flame
 	struct Closure
 	{
 		F* f;
-		Mail c;
+		Capture c;
 
-		Closure(F* f, const Mail& c) :
+		Closure(F* f, const Capture& c) :
 			f(f),
 			c(c)
 		{
@@ -315,13 +350,13 @@ namespace flame
 
 		~Closure()
 		{
-			f_free(c.p);
+			f_free(c._data);
 		}
 
 		template <class FF = F, class ...Args>
 		auto call(Args... args)
 		{
-			return ((FF*)f)(c.p, args...);
+			return ((FF*)f)(c, args...);
 		}
 	};
 
@@ -330,9 +365,9 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl *create();
 		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
 		FLAME_FOUNDATION_EXPORTS uint count();
-		FLAME_FOUNDATION_EXPORTS Closure<bool(void*)>& item(uint idx);
-		FLAME_FOUNDATION_EXPORTS void* add_plain(bool(*pf)(void* c), const Mail& capture, int pos);
-		FLAME_FOUNDATION_EXPORTS void remove_plain(void* c);
+		FLAME_FOUNDATION_EXPORTS Closure<bool(Capture&)>& item(uint idx);
+		FLAME_FOUNDATION_EXPORTS void* add_plain(bool(*pf)(Capture& c), const Capture& capture, int pos);
+		FLAME_FOUNDATION_EXPORTS void remove_plain(void* l);
 	};
 
 	template <class F>
@@ -340,14 +375,14 @@ namespace flame
 	{
 		ListenerHubImpl* impl;
 
-		void* add(F* pf, const Mail& capture, int pos = -1)
+		void* add(F* pf, const Capture& capture, int pos = -1)
 		{
-			return impl->add_plain((bool(*)(void* c))pf, capture, pos);
+			return impl->add_plain((bool(*)(Capture& c))pf, capture, pos);
 		}
 
-		void remove(void* c)
+		void remove(void* l)
 		{
-			impl->remove_plain(c);
+			impl->remove_plain(l);
 		}
 
 		template <class ...Args>
@@ -357,6 +392,21 @@ namespace flame
 			for (auto i = 0; i < count; i++)
 			{
 				if (!impl->item(i).call<F>(args...))
+					break;
+			}
+		}
+
+		template <class ...Args>
+		void call_with_current(void* current, Args... args)
+		{
+			auto count = impl->count();
+			for (auto i = 0; i < count; i++)
+			{
+				auto& closure = impl->item(i);
+				closure.c._current = current;
+				auto pass = closure.call<F>(args...);
+				closure.c._current = nullptr;
+				if (!pass)
 					break;
 			}
 		}
@@ -484,7 +534,7 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS void set_engine_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS const wchar_t* get_engine_path();
-	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(void* c, const wchar_t* filename), const Mail& capture);
+	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void report_used_file(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
 	FLAME_FOUNDATION_EXPORTS StringW get_app_path(bool has_name = false);
@@ -517,7 +567,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
 	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail& capture);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
 	enum FileChangeType
@@ -528,10 +578,10 @@ namespace flame
 		FileRenamed
 	};
 
-	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail& capture, bool all_changes = true, bool sync = true);
+	FLAME_FOUNDATION_EXPORTS void* /* event */ add_file_watcher(const wchar_t* path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), const Capture& capture, bool all_changes = true, bool sync = true);
 	// set_event to returned ev to end the file watching
 
-	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(void* c), const Mail& capture);
+	FLAME_FOUNDATION_EXPORTS void add_work(void (*function)(Capture& c), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void clear_all_works();
 	FLAME_FOUNDATION_EXPORTS void wait_all_works();
 
@@ -594,10 +644,10 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
-		ListenerHub<bool(void* c, KeyStateFlags action, int value)>							key_listeners;
-		ListenerHub<bool(void* c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
-		ListenerHub<bool(void* c, const Vec2u & size)>										resize_listeners;
-		ListenerHub<bool(void* c)>															destroy_listeners;
+		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>							key_listeners;
+		ListenerHub<bool(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
+		ListenerHub<bool(Capture& c, const Vec2u & size)>										resize_listeners;
+		ListenerHub<bool(Capture& c)>															destroy_listeners;
 
 		FLAME_FOUNDATION_EXPORTS void close();
 
@@ -611,9 +661,9 @@ namespace flame
 		float delta_time; // second
 		float total_time; // second
 
-		FLAME_FOUNDATION_EXPORTS int loop(void (*frame_callback)(void* c), const Mail& capture);
+		FLAME_FOUNDATION_EXPORTS int loop(void (*frame_callback)(Capture& c), const Capture& capture);
 
-		FLAME_FOUNDATION_EXPORTS void* add_event(void (*func)(void* c, bool* go_on), const Mail& capture, float interval = 0.f, uint id = 0);
+		FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c /* set capture's _current to invalid to keep event */ ), const Capture& capture, float interval = 0.f, uint id = 0);
 
 		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
 		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */

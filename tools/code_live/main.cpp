@@ -85,12 +85,12 @@ struct MyApp : App
 				f = (F)get_module_func(m, "excute");
 		}
 
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto app = *(MyApp**)c;
 			if (app->f)
 				app->f(app->e_result);
 			utils::remove_layer(app->e_wait->parent());
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 	}
 }app;
 
@@ -122,24 +122,24 @@ int main(int argc, char** args)
 					auto c_text = utils::e_text(L"Compiling: 0")->get_component(cText);
 					auto c_timer = utils::c_timer();
 					c_timer->interval = 1.f;
-					struct Capture
+					struct Capturing
 					{
 						cText* text;
 						uint time;
 					}capture;
 					capture.text = c_text;
 					capture.time = 0;
-					c_timer->set_callback([](void* c) {
-						auto& capture = *(Capture*)c;
+					c_timer->set_callback([](Capture& c) {
+						auto& capture = c.data<Capturing>();
 						capture.time++;
 						capture.text->set_text(wfmt(L"Compiling: %d", capture.time).c_str());
-					}, Mail::from_t(&capture));
+					}, Capture().set_data(&capture));
 					utils::e_end_dialog();
 					add_work([](void*) {
 						app.compile_and_run();
-					}, Mail());
-				}, Mail());
-			}, Mail());
+					}, Capture());
+				}, Capture());
+			}, Capture());
 			utils::e_end_layout();
 
 			app.e_result = utils::e_element();
@@ -150,7 +150,7 @@ int main(int argc, char** args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

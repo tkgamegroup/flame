@@ -35,8 +35,8 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = (*(cSplitterPrivate**)c);
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cSplitterPrivate>();
 					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 					{
 						auto parent = thiz->entity->parent();
@@ -93,12 +93,12 @@ namespace flame
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
-				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState s) {
-					auto thiz = *(cSplitterPrivate**)c;
-					cEventReceiver::current()->dispatcher->window->set_cursor(s ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
+				}, Capture().set_thiz(this));
+				state_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState s) {
+					auto thiz = c.thiz<cSplitterPrivate>();
+					c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? (thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};

@@ -206,8 +206,8 @@ struct MyApp : App
 						app.game_mode = GameSingleMarathon;
 						app.create_game_scene();
 						app.start_game();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"RTA", [](void*) {
 					looper().add_event([](void*, bool*) {
@@ -215,8 +215,8 @@ struct MyApp : App
 						app.game_mode = GameSingleRTA;
 						app.create_game_scene();
 						app.start_game();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"Practice", [](void*) {
 					looper().add_event([](void*, bool*) {
@@ -224,22 +224,22 @@ struct MyApp : App
 						app.game_mode = GameSinglePractice;
 						app.create_game_scene();
 						app.start_game();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"LAN", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_lan_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"Config", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::pop_style(FontSize);
 			utils::e_end_layout();
@@ -294,7 +294,7 @@ struct MyApp : App
 
 			if (my_room_index == 0 && player_index != my_room_index)
 			{
-				p.e_kick = utils::e_button(Icon_TIMES, [](void* c) {
+				p.e_kick = utils::e_button(Icon_TIMES, [](Capture& c) {
 					auto index = *(int*)c;
 
 					app.process_player_left(index);
@@ -314,7 +314,7 @@ struct MyApp : App
 							}
 						}
 					}
-				}, Mail::from_t(&player_index));
+				}, Capture().set_data(&player_index));
 			}
 		utils::e_end_layout();
 
@@ -400,7 +400,7 @@ struct MyApp : App
 				auto c_timer = utils::c_timer();
 				c_timer->interval = 1.f;
 				c_timer->max_times = 3;
-				c_timer->set_callback([](void* c) {
+				c_timer->set_callback([](Capture& c) {
 					auto timer = *(cTimer**)c;
 					if (timer->_times == timer->max_times)
 					{
@@ -409,7 +409,7 @@ struct MyApp : App
 					}
 					else
 						timer->entity->get_component(cText)->set_text(std::to_wstring(timer->max_times - timer->_times).c_str());
-				}, Mail::from_p(c_timer), false);
+				}, Capture().set_data(&c_timer), false);
 			}
 			utils::pop_style(FontSize);
 
@@ -435,7 +435,7 @@ struct MyApp : App
 
 	void process_player_entered(int index)
 	{
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto index = *(int*)c;
 			auto& p = app.players[index];
 			utils::push_parent(app.root);
@@ -444,36 +444,36 @@ struct MyApp : App
 					app.create_player_controls(index);
 				utils::pop_parent();
 			utils::pop_parent();
-		}, Mail::from_t(&index));
+		}, Capture().set_data(&index));
 	}
 
 	void process_player_disconnected(int index)
 	{
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto index = *(int*)c;
 			auto& p = app.players[index];
 			p.disconnected = true;
 			p.c_name->set_text((p.name + L" " + Icon_BOLT).c_str());
-		}, Mail::from_t(&index));
+		}, Capture().set_data(&index));
 	}
 
 	void process_player_left(int index)
 	{
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto index = *(int*)c;
 			auto& p = app.players[index];
 			p.reset();
 			app.root ->remove_child(p.e);
-		}, Mail::from_t(&index));
+		}, Capture().set_data(&index));
 	}
 
 	void process_player_ready(int index)
 	{
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto& p = app.players[*(int*)c];
 			p.ready = true;
 			p.c_ready->entity->set_visible(true);
-		}, Mail::from_t(&index));
+		}, Capture().set_data(&index));
 	}
 
 	void process_game_start()
@@ -481,20 +481,20 @@ struct MyApp : App
 		looper().add_event([](void*, bool*) {
 			app.room_gaming = true;
 			app.start_game();
-		}, Mail());
+		}, Capture());
 	}
 
 	void process_report_board(int index, const std::string& d)
 	{
-		struct Capture
+		struct Capturing
 		{
 			cTileMap* b;
 			std::string d;
 		}capture;
 		capture.b = app.players[index].c_main;
 		capture.d = d;
-		looper().add_event([](void* c, bool*) {
-			auto& capture = *(Capture*)c;
+		looper().add_event([](Capture& c) {
+			auto& capture = c.data<Capturing>();
 			for (auto y = 0; y < board_height; y++)
 			{
 				for (auto x = 0; x < board_width; x++)
@@ -503,32 +503,32 @@ struct MyApp : App
 					capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
 				}
 			}
-		}, Mail::from_t(&capture));
+		}, Capture().set_data(&capture));
 	}
 
 	void process_attack(int index, int value)
 	{
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto n = *(int*)c;
 			Garbage g;
 			g.time = 60;
 			g.lines = n;
 			app.garbages.push_back(g);
 			app.need_update_garbages_tip = true;
-		}, Mail::from_t(&value));
+		}, Capture().set_data(&value));
 	}
 
 	void process_dead(int index, int rank)
 	{
-		struct Capture
+		struct Capturing
 		{
 			int index;
 			int rank;
 		}capture;
 		capture.index = index;
 		capture.rank = rank;
-		looper().add_event([](void* c, bool*) {
-			auto& capture = *(Capture*)c;
+		looper().add_event([](Capture& c) {
+			auto& capture = c.data<Capturing>();
 			auto& p = app.players[capture.index];
 			std::wstring str;
 			switch (capture.rank)
@@ -547,7 +547,7 @@ struct MyApp : App
 			}
 			p.c_rank->set_text(str.c_str());
 			p.c_rank->entity->set_visible(true);
-		}, Mail::from_t(&capture));
+		}, Capture().set_data(&capture));
 	}
 
 	void process_gameover()
@@ -556,7 +556,7 @@ struct MyApp : App
 			app.room_gaming = false;
 			app.gaming = false;
 			app.e_start_or_ready->set_visible(true);
-		}, Mail());
+		}, Capture());
 	}
 
 	void join_room(const char* ip)
@@ -580,7 +580,7 @@ struct MyApp : App
 					app.root->remove_children(1, -1);
 					app.game_mode = GameVS;
 					app.create_game_scene();
-				}, Mail());
+				}, Capture());
 			}
 			else if (action == "player_entered")
 			{
@@ -617,11 +617,11 @@ struct MyApp : App
 				utils::e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](void*) {
 					looper().add_event([](void*, bool*) {
 						app.quit_game();
-					}, Mail());
+					}, Capture());
 					return true;
-				}, Mail());
-			}, Mail());
-		}, Mail());
+				}, Capture());
+			}, Capture());
+		}, Capture());
 		if (app.client)
 		{
 			nlohmann::json req;
@@ -727,7 +727,7 @@ struct MyApp : App
 					if (hash == FLAME_CHASH("text"))
 						app.my_name = ((cText*)Component::current())->text.str();
 					return true;
-				}, Mail());
+				}, Capture());
 			utils::e_end_layout();
 				utils::next_element_padding = 4.f;
 				utils::next_element_frame_thickness = 2.f;
@@ -737,15 +737,15 @@ struct MyApp : App
 			utils::e_end_scrollbar();
 			utils::e_begin_layout(LayoutHorizontal, 8.f)->get_component(cLayout)->fence = -1;
 			utils::c_aligner(AlignMinMax, 0);
-				utils::e_button(Icon_REFRESH, [](void* c) {
+				utils::e_button(Icon_REFRESH, [](Capture& c) {
 					auto e_room_list = *(Entity**)c;
-					looper().add_event([](void* c, bool*) {
+					looper().add_event([](Capture& c) {
 						auto e_room_list = *(Entity**)c;
 						e_room_list->remove_children(0, -1);
 						nlohmann::json req;
 						req["action"] = "get_room";
 						auto str = req.dump();
-						board_cast(2434, str.data(), str.size(), 1, [](void* c, const char* ip, const char* msg, uint size) {
+						board_cast(2434, str.data(), str.size(), 1, [](Capture& c, const char* ip, const char* msg, uint size) {
 							auto e_room_list = *(Entity**)c;
 							auto rep = nlohmann::json::parse(std::string(msg, size));
 							auto name = s2w(rep["name"].get<std::string>());
@@ -755,9 +755,9 @@ struct MyApp : App
 							utils::e_list_item((L"Name:" + name + L" Host:" + host).c_str());
 							utils::c_data_keeper()->set_string_item(FLAME_CHASH("ip"), ip);
 							utils::pop_parent();
-						}, Mail::from_p(e_room_list));
-					}, Mail::from_p(e_room_list));
-				}, Mail::from_p(e_room_list))->get_component(cEventReceiver)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
+						}, Capture().set_data(&e_room_list));
+					}, Capture().set_data(&e_room_list));
+				}, Capture().set_data(&e_room_list))->get_component(cEventReceiver)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
 				utils::e_button(L"Create Room", [](void*) {
 					if (app.my_name.empty())
 						utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
@@ -769,7 +769,7 @@ struct MyApp : App
 								if (hash == FLAME_CHASH("text"))
 									app.room_name = ((cText*)Component::current())->text.str();
 								return true;
-							}, Mail());
+							}, Capture());
 							utils::e_text(L"Max People");
 							utils::e_begin_combobox()->get_component(cCombobox)->data_changed_listeners.add([](void*, uint hash, void*) {
 								if (hash == FLAME_CHASH("index"))
@@ -786,14 +786,14 @@ struct MyApp : App
 									}
 								}
 								return true;
-							}, Mail());
+							}, Capture());
 							utils::e_combobox_item(L"2");
 							utils::e_combobox_item(L"7");
 							utils::e_end_combobox(0);
 							app.room_max_people = 2;
 							utils::e_begin_layout(LayoutHorizontal, 4.f);
 							utils::c_aligner(AlignMiddle, 0);
-								utils::e_button(L"OK", [](void* c) {
+								utils::e_button(L"OK", [](Capture& c) {
 									utils::remove_layer(*(Entity**)c);
 
 									if (!app.room_name.empty())
@@ -847,7 +847,7 @@ struct MyApp : App
 
 														p.id = id;
 														app.server->set_client(id,
-														[](void* c, const char* msg, uint size) {
+														[](Capture& c, const char* msg, uint size) {
 															auto index = *(int*)c;
 															auto& p = app.players[index];
 															auto req = nlohmann::json::parse(std::string(msg, size));
@@ -938,7 +938,7 @@ struct MyApp : App
 																}
 															}
 														},
-														[](void* c) {
+														[](Capture& c) {
 															auto index = *(int*)c;
 
 															app.process_player_disconnected(index);
@@ -961,29 +961,29 @@ struct MyApp : App
 
 															if (app.room_gaming)
 																app.people_dead(index);
-														}, Mail::from_t(&i));
+														}, Capture().set_data(&i));
 
 														break;
 													}
 												}
 											}
-										}, Mail());
+										}, Capture());
 										app.room_gaming = false;
 										looper().add_event([](void*, bool*) {
 											app.root->remove_children(1, -1);
 											app.game_mode = GameVS;
 											app.create_game_scene();
-										}, Mail());
+										}, Capture());
 									}
-								}, Mail::from_p(e_layer));
-								utils::e_button(L"Cancel", [](void* c) {
+								}, Capture().set_data(&e_layer));
+								utils::e_button(L"Cancel", [](Capture& c) {
 									utils::remove_layer(*(Entity**)c);
-								}, Mail::from_p(e_layer));
+								}, Capture().set_data(&e_layer));
 							utils::e_end_layout();
 						utils::e_end_dialog();
 					}
-				}, Mail());
-				utils::e_button(L"Join Room", [](void* c) {
+				}, Capture());
+				utils::e_button(L"Join Room", [](Capture& c) {
 					auto e_room_list = *(Entity**)c;
 					auto selected = e_room_list->get_component(cList)->selected;
 					if (selected)
@@ -995,8 +995,8 @@ struct MyApp : App
 					}
 					else
 						utils::e_message_dialog(L"You Need To Select A Room");
-				}, Mail::from_p(e_room_list));
-				utils::e_button(L"Direct Connect", [](void* c) {
+				}, Capture().set_data(&e_room_list));
+				utils::e_button(L"Direct Connect", [](Capture& c) {
 					if (app.my_name.empty())
 						utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 					else
@@ -1004,15 +1004,15 @@ struct MyApp : App
 						utils::e_input_dialog(L"IP", [](void*, bool ok, const wchar_t* text) {
 							if (ok)
 								app.join_room(w2s(text).c_str());
-						}, Mail());
+						}, Capture());
 					}
-				}, Mail::from_p(e_room_list));
+				}, Capture().set_data(&e_room_list));
 				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_home_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMax, AlignMin);
 			utils::e_end_layout();
 			utils::pop_style(FontSize);
@@ -1030,29 +1030,29 @@ struct MyApp : App
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_key_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"Sound", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_sound_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"Sensitiveness", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_sensitiveness_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_home_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::pop_style(FontSize);
 			utils::e_end_layout();
@@ -1070,7 +1070,7 @@ struct MyApp : App
 				{
 					utils::e_begin_layout(LayoutHorizontal, 4.f);
 					utils::e_text(key_names[i]);
-					struct Capture
+					struct Capturing
 					{
 						cText* t;
 						int i;
@@ -1078,16 +1078,16 @@ struct MyApp : App
 					auto e_edit = utils::e_edit(200.f, s2w(key_info->find_item(key_map[i])->name()).c_str());
 					capture.t = e_edit->get_component(cText);
 					capture.i = i;
-					e_edit->get_component(cEventReceiver)->key_listeners.add([](void* c, KeyStateFlags action, int value) {
+					e_edit->get_component(cEventReceiver)->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
 						if (action == KeyStateDown)
 						{
-							auto& capture = *(Capture*)c;
+							auto& capture = c.data<Capturing>();
 							key_map[capture.i] = (Key)value;
 							auto key_info = find_enum(FLAME_CHASH("flame::Key"));
 							capture.t->set_text(s2w(key_info->find_item((Key)value)->name()).c_str());
 						}
 						return false;
-					}, Mail::from_t(&capture), 0);
+					}, Capture().set_data(&capture), 0);
 					utils::c_aligner(AlignMinMax | AlignGreedy, 0);
 					utils::e_end_layout();
 				}
@@ -1095,8 +1095,8 @@ struct MyApp : App
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::pop_style(FontSize);
 			utils::e_end_layout();
@@ -1109,15 +1109,15 @@ struct MyApp : App
 			utils::e_begin_layout(LayoutVertical, 8.f);
 			utils::c_aligner(AlignMiddle, AlignMiddle);
 				utils::push_style(FontSize, common(Vec1u(20)));
-				struct Capture
+				struct Capturing
 				{
 					cText* t;
 					int v;
 				}capture;
 				utils::e_begin_layout(LayoutHorizontal, 4.f);
 					capture.t = utils::e_text(wfmt(L"FX %d", fx_volumn).c_str())->get_component(cText);
-					auto change_fx_volumn = [](void* c) {
-						auto& capture = *(Capture*)c;
+					auto change_fx_volumn = [](Capture& c) {
+						auto& capture = c.data<Capturing>();
 						auto v = fx_volumn + capture.v;
 						if (v >= 0 && v <= 10)
 						{
@@ -1133,16 +1133,16 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					utils::e_button(L"-", change_fx_volumn, Mail::from_t(&capture));
+					utils::e_button(L"-", change_fx_volumn, Capture().set_data(&capture));
 					capture.v = 1;
-					utils::e_button(L"+", change_fx_volumn, Mail::from_t(&capture));
+					utils::e_button(L"+", change_fx_volumn, Capture().set_data(&capture));
 				utils::e_end_layout();
 				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::pop_style(FontSize);
 			utils::e_end_layout();
@@ -1156,7 +1156,7 @@ struct MyApp : App
 			utils::c_aligner(AlignMiddle, AlignMiddle);
 				utils::push_style(FontSize, common(Vec1u(20)));
 				utils::e_text(L"Small Number Means More Sensitivity Or Faster");
-				struct Capture
+				struct Capturing
 				{
 					cText* t;
 					int v;
@@ -1164,8 +1164,8 @@ struct MyApp : App
 				utils::e_begin_layout(LayoutHorizontal, 4.f);
 					capture.t = utils::e_text(wfmt(L"Left Right Sensitiveness %d",
 						left_right_sensitiveness).c_str())->get_component(cText);
-					auto change_lr_sens = [](void* c) {
-						auto& capture = *(Capture*)c;
+					auto change_lr_sens = [](Capture& c) {
+						auto& capture = c.data<Capturing>();
 						auto v = left_right_sensitiveness + capture.v;
 						if (v >= 5 && v <= 30)
 						{
@@ -1174,15 +1174,15 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					utils::e_button(L"-", change_lr_sens, Mail::from_t(&capture));
+					utils::e_button(L"-", change_lr_sens, Capture().set_data(&capture));
 					capture.v = 1;
-					utils::e_button(L"+", change_lr_sens, Mail::from_t(&capture));
+					utils::e_button(L"+", change_lr_sens, Capture().set_data(&capture));
 				utils::e_end_layout();
 				utils::e_begin_layout(LayoutHorizontal, 4.f);
 					capture.t = utils::e_text(wfmt(L"Left Right Speed %d",
 						left_right_speed).c_str())->get_component(cText);
-					auto change_lr_sp = [](void* c) {
-						auto& capture = *(Capture*)c;
+					auto change_lr_sp = [](Capture& c) {
+						auto& capture = c.data<Capturing>();
 						auto v = left_right_speed + capture.v;
 						if (v >= 1 && v <= 10)
 						{
@@ -1191,15 +1191,15 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					utils::e_button(L"-", change_lr_sp, Mail::from_t(&capture));
+					utils::e_button(L"-", change_lr_sp, Capture().set_data(&capture));
 					capture.v = 1;
-					utils::e_button(L"+", change_lr_sp, Mail::from_t(&capture));
+					utils::e_button(L"+", change_lr_sp, Capture().set_data(&capture));
 				utils::e_end_layout();
 				utils::e_begin_layout(LayoutHorizontal, 4.f);
 					capture.t = utils::e_text(wfmt(L"Soft Drop Speed %d",
 						soft_drop_speed).c_str())->get_component(cText);
-					auto change_sd_sp = [](void* c) {
-						auto& capture = *(Capture*)c;
+					auto change_sd_sp = [](Capture& c) {
+						auto& capture = c.data<Capturing>();
 						auto v = soft_drop_speed + capture.v;
 						if (v >= 1 && v <= 10)
 						{
@@ -1208,16 +1208,16 @@ struct MyApp : App
 						}
 					};
 					capture.v = -1;
-					utils::e_button(L"-", change_sd_sp, Mail::from_t(&capture));
+					utils::e_button(L"-", change_sd_sp, Capture().set_data(&capture));
 					capture.v = 1;
-					utils::e_button(L"+", change_sd_sp, Mail::from_t(&capture));
+					utils::e_button(L"+", change_sd_sp, Capture().set_data(&capture));
 				utils::e_end_layout();
 				utils::e_button(L"Back", [](void*) {
 					looper().add_event([](void*, bool*) {
 						app.root->remove_children(1, -1);
 						app.create_config_scene();
-					}, Mail());
-				}, Mail());
+					}, Capture());
+				}, Capture());
 				utils::c_aligner(AlignMiddle, 0);
 				utils::pop_style(FontSize);
 			utils::e_end_layout();
@@ -1241,7 +1241,7 @@ struct MyApp : App
 			utils::e_empty();
 			utils::c_timer()->set_callback([](void*) {
 				app.do_game_logic();
-			}, Mail());
+			}, Capture());
 
 			if (game_mode == GameVS)
 				utils::e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());
@@ -1324,7 +1324,7 @@ struct MyApp : App
 								}
 							}
 						}
-					}, Mail());
+					}, Capture());
 				}
 				else
 				{
@@ -1340,7 +1340,7 @@ struct MyApp : App
 
 							app.process_player_ready(app.my_room_index);
 						}
-					}, Mail());
+					}, Capture());
 				}
 			}
 
@@ -1350,10 +1350,10 @@ struct MyApp : App
 					{
 						looper().add_event([](void*, bool*) {
 							app.quit_game();
-						}, Mail());
+						}, Capture());
 					}
-				}, Mail());
-			}, Mail());
+				}, Capture());
+			}, Capture());
 			utils::c_aligner(AlignMax, AlignMin);
 
 		utils::pop_style(FontSize);
@@ -1559,7 +1559,7 @@ struct MyApp : App
 		looper().add_event([](void*, bool*) {
 			app.root->remove_children(1, -1);
 			app.create_home_scene();
-		}, Mail());
+		}, Capture());
 	}
 
 	void do_game_logic()
@@ -1580,21 +1580,21 @@ struct MyApp : App
 					layer->set_name("layer_paused");
 					utils::e_text(L"Paused");
 					utils::c_aligner(AlignMiddle, 0);
-					utils::e_button(L"Resume", [](void* c) {
+					utils::e_button(L"Resume", [](Capture& c) {
 						utils::remove_layer(*(Entity**)c);
 						app.begin_count_down();
-					}, Mail::from_p(layer));
+					}, Capture().set_data(&layer));
 					utils::c_aligner(AlignMiddle, 0);
-					utils::e_button(L"Restart", [](void* c) {
+					utils::e_button(L"Restart", [](Capture& c) {
 						utils::remove_layer(*(Entity**)c);
 						app.play_time = 0.f;
 						app.start_game();
-					}, Mail::from_p(layer));
+					}, Capture().set_data(&layer));
 					utils::c_aligner(AlignMiddle, 0);
-					utils::e_button(L"Quit", [](void* c) {
+					utils::e_button(L"Quit", [](Capture& c) {
 						utils::remove_layer(*(Entity**)c);
 						app.quit_game();
-					}, Mail::from_p(layer));
+					}, Capture().set_data(&layer));
 					utils::c_aligner(AlignMiddle, 0);
 					utils::e_end_dialog();
 				}
@@ -1739,15 +1739,15 @@ struct MyApp : App
 							utils::e_text((L"Level: " + wfmt(L"%d", level)).c_str());
 							utils::e_text((L"Lines: " + wfmt(L"%d", lines)).c_str());
 							utils::e_text((L"Score: " + wfmt(L"%d", score)).c_str());
-							utils::e_button(L"Quit", [](void* c) {
+							utils::e_button(L"Quit", [](Capture& c) {
 								utils::remove_layer(*(Entity**)c);
 								app.quit_game();
-							}, Mail::from_p(layer));
+							}, Capture().set_data(&layer));
 							utils::c_aligner(AlignMiddle, 0);
-							utils::e_button(L"Restart", [](void* c) {
+							utils::e_button(L"Restart", [](Capture& c) {
 								utils::remove_layer(*(Entity**)c);
 								app.start_game();
-							}, Mail::from_p(layer));
+							}, Capture().set_data(&layer));
 							utils::c_aligner(AlignMiddle, 0);
 							utils::e_end_dialog();
 						}
@@ -1903,15 +1903,15 @@ struct MyApp : App
 											element->color = Vec4c(255);
 											utils::pop_parent();
 
-											struct Capture
+											struct Capturing
 											{
 												cElement* e;
 												uint f;
 											}capture;
 											capture.e = element;
 											capture.f = 5;
-											looper().add_event([](void* c, bool* go_on) {
-												auto& capture = *(Capture*)c;
+											looper().add_event([](Capture& c, bool* go_on) {
+												auto& capture = c.data<Capturing>();
 												capture.f--;
 												if (capture.f > 0)
 												{
@@ -1927,7 +1927,7 @@ struct MyApp : App
 													auto e = capture.e->entity;
 													e->parent()->remove_child(e);
 												}
-											}, Mail::from_t(&capture), 0.f);
+											}, Capture().set_data(&capture), 0.f);
 										}
 
 										l++;
@@ -1997,7 +1997,7 @@ struct MyApp : App
 										looper().clear_events(FLAME_CHASH("special_text"));
 										looper().add_event([](void*, bool*) {
 											app.c_text_special->entity->set_visible(false);
-										}, Mail(), 1.f, FLAME_CHASH("special_text"));
+										}, Capture(), 1.f, FLAME_CHASH("special_text"));
 									}
 
 									if (game_mode == GameVS && attack > 0)
@@ -2235,12 +2235,12 @@ int main(int argc, char **args)
 	utils::push_parent(app.root);
 	{
 		auto e = utils::e_text(L"");
-		e->on_destroyed_listeners.add([](void* c) {
+		e->on_destroyed_listeners.add([](Capture& c) {
 			looper().remove_event(*(void**)c);
 			return true;
-		}, Mail::from_p(add_fps_listener([](void* c, uint fps) {
+		}, Capture().set_data(&add_fps_listener([](Capture& c, uint fps) {
 			(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-		}, Mail::from_p(e->get_component(cText)))));
+		}, Capture().set_data(&e->get_component(cText)))));
 	}
 	utils::c_aligner(AlignMin, AlignMax);
 	utils::pop_parent();
@@ -2279,7 +2279,7 @@ int main(int argc, char **args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

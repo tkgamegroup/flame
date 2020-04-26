@@ -52,7 +52,7 @@ namespace flame
 		{
 			if (!entity->dying_)
 			{
-				timer->set_callback(nullptr, Mail());
+				timer->set_callback(nullptr, Capture());
 				element->cmds.remove(draw_cmd);
 				event_receiver->key_listeners.remove(key_listener);
 				event_receiver->mouse_listeners.remove(mouse_listener);
@@ -138,25 +138,25 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cTimer") && c->id == FLAME_CHASH("edit"))
 			{
 				timer = (cTimer*)c;
-				timer->set_callback([](void* c) {
-					(*(cEditPrivate**)c)->flash_cursor(0);
-				}, Mail::from_p(this), false);
+				timer->set_callback([](Capture& c) {
+					c.thiz<cEditPrivate>()->flash_cursor(0);
+				}, Capture().set_thiz(this), false);
 			}
 			else if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
-				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
-					(*(cEditPrivate**)c)->draw(canvas);
+				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
+					c.thiz<cEditPrivate>()->draw(canvas);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cText"))
 				text = (cText*)c;
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				key_listener = event_receiver->key_listeners.add([](void* c, KeyStateFlags action, int value) {
-					auto thiz = *(cEditPrivate**)c;
+				key_listener = event_receiver->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
+					auto thiz = c.thiz<cEditPrivate>();
 					auto c_text = (cTextPrivate*)thiz->text;
 					auto& text = c_text->text;
 					const auto str = text.v;
@@ -165,7 +165,7 @@ namespace flame
 					auto& select_end = thiz->select_end;
 					auto low = min(select_start, select_end);
 					auto high = max(select_start, select_end);
-					auto ed = cEventReceiver::current()->dispatcher;
+					auto ed = c.current<cEventReceiver>()->dispatcher;
 
 					auto line_start = [&](int p) {
 						p--;
@@ -378,10 +378,10 @@ namespace flame
 					thiz->flash_cursor(2);
 
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cEditPrivate**)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cEditPrivate>();
 					if (action == (KeyStateDown | KeyStateJust) && key == Mouse_Left)
 					{
 						thiz->select_start = thiz->select_end = thiz->locate_cursor(pos);
@@ -389,7 +389,7 @@ namespace flame
 					}
 					else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
 					{
-						thiz->select_end = thiz->locate_cursor(cEventReceiver::current()->dispatcher->mouse_pos);
+						thiz->select_end = thiz->locate_cursor(c.current<cEventReceiver>()->dispatcher->mouse_pos);
 						thiz->flash_cursor(2);
 					}
 					else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
@@ -398,10 +398,10 @@ namespace flame
 						thiz->element->mark_dirty();
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 
-				focus_listener = event_receiver->focus_listeners.add([](void* c, bool focusing) {
-					auto thiz = *(cEditPrivate**)c;
+				focus_listener = event_receiver->focus_listeners.add([](Capture& c, bool focusing) {
+					auto thiz = c.thiz<cEditPrivate>();
 					if (focusing)
 					{
 						thiz->timer->start();
@@ -420,12 +420,12 @@ namespace flame
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 
-				state_listener = event_receiver->state_listeners.add([](void*, EventReceiverState s) {
-					cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
+				state_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState s) {
+					c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
 					return true;
-				}, Mail());
+				}, Capture());
 			}
 		}
 

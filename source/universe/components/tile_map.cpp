@@ -39,10 +39,10 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
-				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
-					(*(cTileMapPrivate**)c)->draw(canvas);
+				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
+					c.thiz<cTileMapPrivate>()->draw(canvas);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 

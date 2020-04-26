@@ -31,7 +31,7 @@ struct _2DGizmo
 	void update_blocks();
 };
 
-struct cEditor : Component
+struct cSceneEditor : Component
 {
 	utils::_2DEditor edt;
 
@@ -39,8 +39,8 @@ struct cEditor : Component
 
 	_2DGizmo gizmo;
 
-	cEditor();
-	~cEditor() override;
+	cSceneEditor();
+	~cSceneEditor() override;
 	Entity* search_hovering(const Vec4f& r);
 	void search_hovering_r(Entity* e, Entity*& s, const Vec4f& r);
 	void on_select();
@@ -98,6 +98,13 @@ struct cInspector : Component
 	void refresh();
 };
 
+struct SceneEditor
+{
+
+};
+
+extern SceneEditor scene_editor;
+
 struct MyApp : App
 {
 	std::filesystem::path filepath;
@@ -106,7 +113,7 @@ struct MyApp : App
 
 	Entity* selected;
 
-	cEditor* editor;
+	cSceneEditor* editor;
 	cResourceExplorer* resource_explorer;
 	cHierarchy* hierarchy;
 	cInspector* inspector;

@@ -34,14 +34,14 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key))
 					{
-						auto thiz = *(cCheckboxPrivate**)c;
+						auto thiz = c.thiz<cCheckboxPrivate>();
 						thiz->set_checked(!thiz->checked);
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{

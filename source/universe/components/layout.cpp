@@ -127,8 +127,8 @@ namespace flame
 		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
-			element_data_listener = element->data_changed_listeners.add([](void* c, uint hash, void* sender) {
-				auto thiz = *(cLayoutPrivate**)c;
+			element_data_listener = element->data_changed_listeners.add([](Capture& c, uint hash, void* sender) {
+				auto thiz = c.thiz<cLayoutPrivate>();
 				if (sender == thiz)
 					return true;
 				switch (hash)
@@ -140,7 +140,7 @@ namespace flame
 						thiz->management->add_to_update_list(thiz);
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cAligner"))
 			aligner = (cAligner*)c;
@@ -226,8 +226,8 @@ namespace flame
 
 					if (a.element)
 					{
-						a.element_listener = a.element->data_changed_listeners.add([](void* c, uint hash, void* sender) {
-							auto thiz = *(cLayoutPrivate**)c;
+						a.element_listener = a.element->data_changed_listeners.add([](Capture& c, uint hash, void* sender) {
+							auto thiz = c.thiz<cLayoutPrivate>();
 							if (sender == thiz)
 								return true;
 							switch (hash)
@@ -240,18 +240,18 @@ namespace flame
 								break;
 							}
 							return true;
-						}, Mail::from_p(this));
+						}, Capture().set_thiz(this));
 					}
 					if (a.aligner)
 					{
-						a.aligner_listener = a.aligner->data_changed_listeners.add([](void* c, uint hash, void* sender) {
-							auto thiz = *(cLayoutPrivate**)c;
+						a.aligner_listener = a.aligner->data_changed_listeners.add([](Capture& c, uint hash, void* sender) {
+							auto thiz = c.thiz<cLayoutPrivate>();
 							if (sender == thiz)
 								return true;
 							if (thiz->management)
 								thiz->management->add_to_update_list(thiz);
 							return true;
-						}, Mail::from_p(this));
+						}, Capture().set_thiz(this));
 					}
 					als.push_back(a);
 				}

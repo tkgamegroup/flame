@@ -41,12 +41,12 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cMoveablePrivate**)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cMoveablePrivate>();
 					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 						thiz->element->add_pos((Vec2f)pos / thiz->element->global_scale, thiz);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -83,25 +83,25 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				pass_listener = event_receiver->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+				pass_listener = event_receiver->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
 					*pass = true;
 					return true;
-				}, Mail());
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				}, Capture());
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto thiz = *(cBringToFrontPrivate**)c;
+						auto thiz = c.thiz<cBringToFrontPrivate>();
 						auto l = thiz->entity->parent()->parent()->last_child(0);
 						if (!l || !SUS::starts_with(l->name(), "layer_"))
 						{
-							looper().add_event([](void* c, bool*) {
-								auto p = (*(Entity**)c)->parent();
+							looper().add_event([](Capture& c) {
+								auto p = c.data<Entity*>()->parent();
 								p->parent()->reposition_child(p, -1);
-							}, Mail::from_p(thiz->entity));
+							}, Capture().set_data(&thiz->entity));
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -157,16 +157,16 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = (*(cSizeDraggerPrivate**)c);
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cSizeDraggerPrivate>();
 					if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
 						thiz->p_element->add_size(Vec2f(pos));
 					return true;
-				}, Mail::from_p(this));
-				state_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState s) {
-					cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+				}, Capture().set_thiz(this));
+				state_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState s) {
+					c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -315,41 +315,41 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cElement"))
 			{
 				element = (cElement*)c;
-				draw_cmd = element->cmds.add([](void* c, graphics::Canvas* canvas) {
-					(*(cDockerTabPrivate**)c)->draw(canvas);
+				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
+					c.thiz<cDockerTabPrivate>()->draw(canvas);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = (*(cDockerTabPrivate**)c);
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cDockerTabPrivate>();
 					if (is_mouse_move(action, key) && thiz->event_receiver->is_dragging() && thiz->page)
 					{
 						thiz->element->add_pos(Vec2f(pos));
 						thiz->page_element->add_pos(Vec2f(pos));
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = (*(cDockerTabPrivate**)c);
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto thiz = c.thiz<cDockerTabPrivate>();
 					if (action == DragStart)
 					{
 						thiz->floating = true;
-						looper().add_event([](void* c, bool*) {
-							(*(cDockerTabPrivate**)c)->take_away(false);
-						}, Mail::from_p(thiz));
+						looper().add_event([](Capture& c) {
+							c.data<cDockerTabPrivate*>()->take_away(false);
+						}, Capture().set_data(&thiz));
 					}
 					else if (action == DragEnd)
 					{
 						if (!er || thiz->floating)
 						{
 							thiz->drop_pos = pos;
-							looper().add_event([](void* c, bool*) {
-								auto thiz = (*(cDockerTabPrivate**)c);
+							looper().add_event([](Capture& c) {
+								auto thiz = c.data<cDockerTabPrivate*>();
 
 								auto e_tab = thiz->entity;
 								auto e_page = thiz->page;
@@ -381,11 +381,11 @@ namespace flame
 								page_aligner->set_y_align_flags(AlignMinMax);
 								thiz->page = nullptr;
 								thiz->page_element = nullptr;
-							}, Mail::from_p(thiz));
+							}, Capture().set_data(&thiz));
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cListItem"))
 				list_item = (cListItem*)c;
@@ -586,8 +586,8 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = (*(cDockerTabbarPrivate**)c);
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto thiz = c.thiz<cDockerTabbarPrivate>();
 					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
 					{
 						if (action == BeingOvering)
@@ -612,8 +612,8 @@ namespace flame
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
 							thiz->drop_tab->floating = false;
-							looper().add_event([](void* c, bool*) {
-								auto thiz = *(cDockerTabbarPrivate**)c;
+							looper().add_event([](Capture& c) {
+								auto thiz = c.data<cDockerTabbarPrivate*>();
 								auto tabbar = thiz->entity;
 								auto tab = thiz->drop_tab;
 								auto e_tab = tab->entity;
@@ -639,17 +639,17 @@ namespace flame
 								thiz->drop_idx = 0;
 
 								thiz->list->set_selected(e_tab);
-							}, Mail::from_p(thiz));
+							}, Capture().set_data(&thiz));
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cList"))
 			{
 				list = (cList*)c;
-				selected_changed_listener = list->data_changed_listeners.add([](void* c, uint hash, void*) {
-					auto thiz = (*(cDockerTabbarPrivate**)c);
+				selected_changed_listener = list->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+					auto thiz = c.thiz<cDockerTabbarPrivate>();
 					if (hash == FLAME_CHASH("selected"))
 					{
 						auto tabbar = thiz->entity;
@@ -664,7 +664,7 @@ namespace flame
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -704,8 +704,8 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = (*(cDockerPagesPrivate**)c);
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto thiz = c.thiz<cDockerPagesPrivate>();
 					if (action == BeingOvering)
 					{
 						thiz->dock_side = Outside;
@@ -776,8 +776,8 @@ namespace flame
 						{
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_tab->floating = false;
-							looper().add_event([](void* c, bool*) {
-								auto thiz = (*(cDockerPagesPrivate**)c);
+							looper().add_event([](Capture& c) {
+								auto thiz = c.data<cDockerPagesPrivate*>();
 								auto tab = thiz->drop_tab;
 								auto e_tab = tab->entity;
 								auto e_page = tab->page;
@@ -892,11 +892,11 @@ namespace flame
 									layout->add_child(docker, 0);
 									layout->add_child(new_docker, 2);
 								}
-							}, Mail::from_p(thiz));
+							}, Capture().set_data(&thiz));
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -936,8 +936,8 @@ namespace flame
 			{
 				event_receiver = (cEventReceiver*)c;
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = (*(cDockerStaticContainerPrivate**)c);
+				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto thiz = c.thiz<cDockerStaticContainerPrivate>();
 					if (action == BeingOvering)
 					{
 						thiz->dock_side = Outside;
@@ -963,8 +963,8 @@ namespace flame
 						{
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_tab->floating = false;
-							looper().add_event([](void* c, bool*) {
-								auto thiz = (*(cDockerStaticContainerPrivate**)c);
+							looper().add_event([](Capture& c) {
+								auto thiz = c.data<cDockerStaticContainerPrivate*>();
 								auto tab = thiz->drop_tab;
 								auto e_tab = tab->entity;
 								auto e_page = tab->page;
@@ -988,11 +988,11 @@ namespace flame
 								page_element->set_alpha(1.f);
 								page_aligner->set_x_align_flags(AlignMinMax);
 								page_aligner->set_y_align_flags(AlignMinMax);
-							}, Mail::from_p(thiz));
+							}, Capture().set_data(&thiz));
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};

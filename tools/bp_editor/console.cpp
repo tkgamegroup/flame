@@ -21,14 +21,14 @@ cConsole::cConsole() :
 			utils::e_end_layout();
 		utils::e_end_scrollbar(utils::style(FontSize).u.x());
 
-		utils::e_button(L"Clear", [](void* c) {
+		utils::e_button(L"Clear", [](Capture& c) {
 			app.console->c_text_log->set_text(L"");
-		}, Mail());
+		}, Capture());
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
 		utils::c_aligner(AlignMinMax, 0);
 			c_edit_input = utils::e_edit(0.f)->get_component(cEdit);
-			utils::e_button(L"Exec", [](void* c) {
+			utils::e_button(L"Exec", [](Capture& c) {
 				auto log_text = app.console->c_text_log;
 				auto log = log_text->text.str();
 				auto input_text = app.console->c_edit_input->text;
@@ -260,7 +260,7 @@ cConsole::cConsole() :
 
 				log_text->set_text(log.c_str());
 
-			}, Mail());
+			}, Capture());
 		utils::e_end_layout();
 
 	utils::e_end_docker_page();

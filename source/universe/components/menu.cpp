@@ -96,10 +96,10 @@ namespace flame
 				{
 					auto layer = utils::add_layer(root);
 					layer->set_name("layer_menu");
-					layer->on_removed_listeners.add([](void* c) {
-						(*(Entity**)c)->remove_children(0, -1, false);
+					layer->on_removed_listeners.add([](Capture& c) {
+						c.data<Entity*>()->remove_children(0, -1, false);
 						return true;
-					}, Mail::from_p(layer));
+					}, Capture().set_data(&layer));
 					auto items_element = items->get_component(cElement);
 					items_element->set_pos(Vec2f(pos));
 					items_element->set_scale(element->global_scale);
@@ -136,10 +136,10 @@ namespace flame
 					if (new_layer)
 					{
 						layer->set_name("layer_menu");
-						layer->on_removed_listeners.add([](void* c) {
-							(*(Entity**)c)->remove_children(0, -1, false);
+						layer->on_removed_listeners.add([](Capture& c) {
+							c.data<Entity*>()->remove_children(0, -1, false);
 							return true;
-						}, Mail::from_p(layer));
+						}, Capture().set_data(&layer));
 					}
 
 					auto items_element = items->get_component(cElement);
@@ -167,12 +167,12 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cMenuPrivate**)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cMenuPrivate>();
 					if (thiz->can_open(action, key))
 						thiz->open((Vec2f)pos);
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -203,12 +203,12 @@ namespace flame
 		{
 			if (!on_removed_listener)
 			{
-				on_removed_listener = entity->on_removed_listeners.add([](void* c) {
-					auto thiz = *(cMenuItemsPrivate**)c;
+				on_removed_listener = entity->on_removed_listeners.add([](Capture& c) {
+					auto thiz = c.thiz<cMenuItemsPrivate>();
 					if (thiz->menu)
 						thiz->menu->opened = false;
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};
@@ -238,8 +238,8 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = *(cMenuItemPrivate**)c;
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cMenuItemPrivate>();
 					auto c_items = thiz->entity->parent()->get_component(cMenuItems);
 					if (c_items)
 					{
@@ -252,7 +252,7 @@ namespace flame
 						}
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 	};

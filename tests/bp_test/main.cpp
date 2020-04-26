@@ -20,9 +20,9 @@ int main(int argc, char** args)
 
 	utils::e_text(L"");
 	utils::c_aligner(AlignMin, AlignMax);
-	add_fps_listener([](void* c, uint fps) {
+	add_fps_listener([](Capture& c, uint fps) {
 		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, Mail::from_p(utils::current_entity()->get_component(cText)));
+	}, Capture().set_data(&utils::current_entity()->get_component(cText)));
 
 	utils::next_element_pos = 100.f;
 	utils::next_element_size = 10.f;
@@ -45,7 +45,7 @@ int main(int argc, char** args)
 	looper().loop([](void*) {
 		app.bp->update();
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

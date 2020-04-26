@@ -15,7 +15,7 @@ int main(int argc, char **args)
 			click = !click;
 			printf("%d\n", (int)click);
 		}
-	}, Mail());
+	}, Capture());
 
 	for (;;)
 	{

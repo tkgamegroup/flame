@@ -95,8 +95,6 @@ namespace flame
 			FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* name) const;
 			FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* name) const;
 
-			FLAME_FOUNDATION_EXPORTS static Node* current();
-
 			void* user_data;
 		};
 

@@ -20,17 +20,17 @@ struct cHierarchyItem : Component
 		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			element = (cElement*)c;
-			element->cmds.add([](void* c, graphics::Canvas* canvas) {
+			element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 				(*(cHierarchyItem**)c)->draw(canvas);
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
 			event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
-			event_receiver->drag_and_drop_listeners.add([](void* c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
 				auto thiz = *(cHierarchyItem**)c;
 				auto element = thiz->element;
 
@@ -48,7 +48,7 @@ struct cHierarchyItem : Component
 				{
 					if (!(thiz->entity->parent()->get_component(cTree) && thiz->drop_pos != 1))
 					{
-						struct Capture
+						struct Capturing
 						{
 							Entity* dst;
 							Entity* src;
@@ -71,8 +71,8 @@ struct cHierarchyItem : Component
 
 						if (ok)
 						{
-							looper().add_event([](void* c, bool*) {
-								auto& capture = *(Capture*)c;
+							looper().add_event([](Capture& c) {
+								auto& capture = c.data<Capturing>();
 
 								capture.src->parent()->remove_child(capture.src, false);
 
@@ -87,14 +87,14 @@ struct cHierarchyItem : Component
 								}
 
 								app.hierarchy->refresh();
-							}, Mail::from_t(&capture));
+							}, Capture().set_data(&capture));
 						}
 					}
 
 				}
 
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	}
 
@@ -169,8 +169,8 @@ cHierarchy::cHierarchy() :
 			e_tree = utils::e_begin_tree(true);
 			{
 				auto c_tree = e_tree->get_component(cTree);
-				c_tree->data_changed_listeners.add([](void* c, uint hash, void*) {
-					looper().add_event([](void* c, bool*) {
+				c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+					looper().add_event([](Capture& c) {
 						auto s = *(Entity**)c;
 						Entity* selected = nullptr;
 						if (s)
@@ -184,9 +184,9 @@ cHierarchy::cHierarchy() :
 						app.selected = selected;
 						if (app.inspector && different)
 							app.inspector->refresh();
-					}, Mail::from_p((*(cTree**)c)->selected));
+					}, Capture().set_data(&(*(cTree**)c)->selected));
 					return true;
-				}, Mail::from_p(c_tree));
+				}, Capture().set_data(&c_tree));
 			}
 			utils::e_end_tree();
 		utils::e_end_scrollbar();

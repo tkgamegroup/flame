@@ -17,6 +17,7 @@ namespace flame
 		std::unique_ptr<EntityPrivate> root;
 
 		WorldPrivate();
+		~WorldPrivate();
 		System* get_system_plain(uint name_hash) const;
 		void update();
 	};

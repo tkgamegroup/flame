@@ -16,10 +16,10 @@ namespace flame
 		inline void remove_layer(Entity* l)
 		{
 			l->set_name("");
-			looper().add_event([](void* c, bool*) {
-				auto l = *(Entity**)c;
+			looper().add_event([](Capture& c) {
+				auto l = c.data<Entity*>();
 				l->parent()->remove_child(l);
-			}, Mail::from_p(l));
+			}, Capture().set_data(&l));
 		}
 
 		inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
@@ -39,8 +39,8 @@ namespace flame
 					l->add_component(c_data_keeper);
 				}
 			}
-			l->on_removed_listeners.add([](void* c) {
-				auto l = *(Entity**)c;
+			l->on_removed_listeners.add([](Capture& c) {
+				auto l = c.data<Entity*>();
 				auto dp = l->get_component(cDataKeeper);
 				if (dp)
 				{
@@ -48,20 +48,20 @@ namespace flame
 					l->world()->get_system(sEventDispatcher)->next_focusing = er;
 				}
 				return true;
-			}, Mail::from_p(l));
+			}, Capture().set_data(&l));
 
 			{
-				struct Capture
+				struct Capturing
 				{
 					Entity* p;
 					Entity* l;
 				}capture;
 				capture.p = parent;
 				capture.l = l;
-				looper().add_event([](void* c, bool*) {
-					auto& capture = *(Capture*)c;
+				looper().add_event([](Capture& c) {
+					auto& capture = c.data<Capturing>();
 					capture.p->add_child(capture.l);
-				}, Mail::from_t(&capture));
+				}, Capture().set_data(&capture));
 			}
 
 			auto c_element = cElement::create();
@@ -71,19 +71,19 @@ namespace flame
 			auto c_event_receiver = cEventReceiver::create();
 			if (pass_gene)
 			{
-				c_event_receiver->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
-					if (er->entity->gene == *(void**)c)
+				c_event_receiver->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
+					if (er->entity->gene == c.data<void*>())
 						*pass = true;
 					return true;
-				}, Mail::from_p(pass_gene));
+				}, Capture().set_data(&pass_gene));
 			}
 			if (!modal)
 			{
-				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						remove_layer(*(Entity**)c);
+						remove_layer(c.data<Entity*>());
 					return true;
-				}, Mail::from_p(l));
+				}, Capture().set_data(&l));
 			}
 			l->add_component(c_event_receiver);
 

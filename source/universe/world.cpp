@@ -1,5 +1,6 @@
 #include <flame/foundation/typeinfo.h>
 #include "world_private.h"
+#include "entity_private.h"
 
 namespace flame
 {
@@ -8,6 +9,11 @@ namespace flame
 		root.reset(new EntityPrivate);
 		root->world = this;
 		root->global_visibility = true;
+	}
+
+	WorldPrivate::~WorldPrivate()
+	{
+		root->mark_dying();
 	}
 
 	void World::add_object(Object* o)

@@ -115,7 +115,7 @@ namespace flame
 		{
 		}
 
-		ListenerHub<bool(void* c, graphics::Canvas * canvas)> cmds;
+		ListenerHub<bool(Capture& c, graphics::Canvas * canvas)> cmds;
 
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_pos)(const Vec2f& p, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_scale)(float s, void* sender = nullptr);

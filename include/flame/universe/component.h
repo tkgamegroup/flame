@@ -12,14 +12,12 @@ namespace flame
 
 		void* user_data;
 
-		ListenerHub<bool(void* c, uint hash, void* sender)> data_changed_listeners;
+		ListenerHub<bool(Capture& c, uint hash, void* sender)> data_changed_listeners;
 
 		FLAME_UNIVERSE_EXPORTS Component(const char* name);
 		FLAME_UNIVERSE_EXPORTS virtual ~Component();
 
 		FLAME_UNIVERSE_EXPORTS void data_changed(uint hash, void* sender);
-
-		FLAME_UNIVERSE_EXPORTS static Component* current();
 
 		virtual void on_added() {}
 		virtual void on_entered_world() {}

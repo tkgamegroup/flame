@@ -47,15 +47,15 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 					{
-						auto thiz = *(cListItemPrivate**)c;
+						auto thiz = c.thiz<cListItemPrivate>();
 						if (thiz->list)
 							thiz->list->set_selected(thiz->entity);
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{
@@ -105,11 +105,11 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				if (select_air_when_clicked)
 				{
-					mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							(*(cListPrivate**)c)->set_selected(nullptr);
+							c.thiz<cListPrivate>()->set_selected(nullptr);
 						return true;
-					}, Mail::from_p(this));
+					}, Capture().set_thiz(this));
 				}
 			}
 		}

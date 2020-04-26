@@ -12,8 +12,8 @@ namespace flame
 
 	struct Entity
 	{
-		ListenerHub<bool(void* c)> on_removed_listeners;
-		ListenerHub<bool(void* c)> on_destroyed_listeners;
+		ListenerHub<bool(Capture& c)> on_removed_listeners;
+		ListenerHub<bool(Capture& c)> on_destroyed_listeners;
 
 		void* gene;
 

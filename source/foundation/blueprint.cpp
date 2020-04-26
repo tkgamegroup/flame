@@ -198,8 +198,6 @@ namespace flame
 		return StringA(node->id + "." + name);
 	}
 
-	static BP::Node* _current_node = nullptr;
-
 	NodePrivate::NodePrivate(BPPrivate* scene, BP::ObjectType object_type, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
 		object_type(object_type),
@@ -432,11 +430,7 @@ namespace flame
 		}
 
 		if (update_addr)
-		{
-			_current_node = this;
 			cmf(p2f<MF_v_v>(update_addr), object);
-			_current_node = nullptr;
-		}
 	}
 
 	bool BPPrivate::check_or_create_id(std::string& id) const
@@ -772,11 +766,6 @@ namespace flame
 		time += looper().delta_time;
 	}
 
-	BP::Node* BP::Slot::node() const
-	{
-		return ((SlotPrivate*)this)->node;
-	}
-
 	BP::Slot::IO BP::Slot::io() const
 	{
 		return ((SlotPrivate*)this)->io;
@@ -911,11 +900,6 @@ namespace flame
 	BP::Slot* BP::Node::find_output(const char* name) const
 	{
 		return ((NodePrivate*)this)->find_output(name);
-	}
-
-	BP::Node* BP::Node::current()
-	{
-		return _current_node;
 	}
 
 	const wchar_t* BP::filename() const

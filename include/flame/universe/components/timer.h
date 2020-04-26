@@ -23,7 +23,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void start(bool force_restart = true);
 		FLAME_UNIVERSE_EXPORTS void stop();
 		FLAME_UNIVERSE_EXPORTS void reset();
-		FLAME_UNIVERSE_EXPORTS void set_callback(void(*callback)(void* c), const Mail& capture, bool start = true);
+		FLAME_UNIVERSE_EXPORTS void set_callback(void(*callback)(Capture& c), const Capture& capture, bool start = true);
 
 		FLAME_UNIVERSE_EXPORTS static cTimer* create();
 	};

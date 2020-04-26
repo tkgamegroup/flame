@@ -132,6 +132,7 @@ void MyApp::create()
 
 	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
 	utils::style_set_to_light();
+
 	{
 		auto c_event_receiver = root->get_component(cEventReceiver);
 		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
@@ -173,7 +174,7 @@ void MyApp::create()
 				}
 			}
 			return true;
-		}, Mail());
+		}, Capture());
 		s_event_dispatcher->next_focusing = c_event_receiver;
 	}
 
@@ -194,31 +195,31 @@ void MyApp::create()
 						app.prefab->add_child(e);
 					if (app.hierarchy)
 						app.hierarchy->refresh();
-				}, Mail());
-			}, Mail());
-			utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
+				}, Capture());
+			}, Capture());
+			utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
 
-			}, Mail());
-			utils::e_menu_item(L"        Close", [](void* c) {
+			}, Capture());
+			utils::e_menu_item(L"        Close", [](Capture& c) {
 				app.load(L"");
-			}, Mail());
+			}, Capture());
 			utils::e_end_menubar_menu();
 			utils::e_begin_menubar_menu(L"Edit");
 			utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void*) {
 
-			}, Mail());
+			}, Capture());
 			utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void*) {
 
-			}, Mail());
+			}, Capture());
 			utils::e_menu_item((std::wstring(Icon_SCISSORS) + L"    Cut").c_str(), [](void*) {
-			}, Mail());
+			}, Capture());
 			utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Copy").c_str(), [](void*) {
-			}, Mail());
+			}, Capture());
 			utils::e_menu_item((std::wstring(Icon_CLIPBOARD) + L"   Paste").c_str(), [](void*) {
-			}, Mail());
-			utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](void* c) {
+			}, Capture());
+			utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture& c) {
 
-			}, Mail());
+			}, Capture());
 			utils::e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](void*) {
 				looper().add_event([](void*, bool*) {
 					if (app.selected)
@@ -230,8 +231,8 @@ void MyApp::create()
 						if (app.hierarchy)
 							app.hierarchy->refresh();
 					}
-				}, Mail());
-			}, Mail());
+				}, Capture());
+			}, Capture());
 		utils::e_end_menubar_menu();
 		utils::e_begin_menubar_menu(L"Window");
 		utils::e_menu_item(L"Editor", [](void*) {
@@ -247,7 +248,7 @@ void MyApp::create()
 				utils::e_end_docker_floating_container();
 				utils::pop_parent();
 			}
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		utils::e_menu_item(L"Resource Explorer", [](void*) {
 			if (!app.resource_explorer)
 			{
@@ -261,7 +262,7 @@ void MyApp::create()
 				utils::e_end_docker_floating_container();
 				utils::pop_parent();
 			}
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		utils::e_menu_item(L"Hierarchy", [](void*) {
 			if (!app.hierarchy)
 			{
@@ -275,7 +276,7 @@ void MyApp::create()
 				utils::e_end_docker_floating_container();
 				utils::pop_parent();
 			}
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		utils::e_menu_item(L"Inspector", [](void*) {
 			if (!app.inspector)
 			{
@@ -289,12 +290,12 @@ void MyApp::create()
 				utils::e_end_docker_floating_container();
 				utils::pop_parent();
 			}
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		utils::e_end_menubar_menu();
 		utils::e_begin_menubar_menu(L"Tools");
-			utils::e_menu_item(L"Reflector", [](void* c) {
+			utils::e_menu_item(L"Reflector", [](Capture& c) {
 				utils::e_ui_reflector_window();
-			}, Mail());
+			}, Capture());
 		utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();
 
@@ -320,7 +321,7 @@ void MyApp::select(Entity* e)
 				app.hierarchy->refresh_selected();
 			if (app.inspector)
 				app.inspector->refresh();
-		}, Mail());
+		}, Capture());
 	}
 }
 
@@ -342,7 +343,7 @@ void MyApp::load(const std::filesystem::path& _filepath)
 			app.hierarchy->refresh();
 		if (app.inspector)
 			app.inspector->refresh();
-	}, Mail());
+	}, Capture());
 }
 
 void MyApp::save()
@@ -356,7 +357,7 @@ int main(int argc, char **args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

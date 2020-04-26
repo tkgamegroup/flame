@@ -35,13 +35,13 @@ namespace flame
 			{
 			}
 
-			void create(void(*select_callback)(void* c, const Vec4f& r), const Mail& _capture)
+			void create(void(*select_callback)(Capture& c, const Vec4f& r), const Mail& _capture)
 			{
 				utils::e_begin_layout();
 				utils::c_aligner(AlignMinMax, AlignMinMax);
 					element = utils::current_entity()->get_component(cElement);
 					element->clip_flags = ClipFlag(ClipSelf | ClipChildren);
-					element->cmds.add([](void* c, graphics::Canvas* canvas) {
+					element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 						auto& edt = **(_2DEditor**)c;
 
 						if (edt.element->clipped)
@@ -70,18 +70,18 @@ namespace flame
 						}
 
 						return true;
-					}, Mail::from_p(this));
+					}, Capture().set_thiz(this));
 					event_receiver = utils::c_event_receiver();
 					event_receiver->focus_type = FocusByLeftOrRightButton;
-					struct Capture
+					struct Capturing
 					{
 						_2DEditor* thiz;
 						void(*f)(void*, const Vec4f&);
 					}capture;
 					capture.thiz = this;
 					capture.f = select_callback;
-					event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto& capture = *(Capture*)c;
+					event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						auto& capture = c.data<Capturing>();
 						auto& edt = *capture.thiz;
 						auto dp = cEventReceiver::current()->dispatcher;
 						auto mp = Vec2f(dp->mouse_pos);
@@ -124,9 +124,9 @@ namespace flame
 							}
 						}
 						return true;
-					}, Mail::expand_original(&capture, _capture));
-					event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-						auto& capture = *(Capture*)c;
+					}, Capture().absorb(&capture, _capture));
+					event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
+						auto& capture = c.data<Capturing>();
 						auto& edt = *capture.thiz;
 						if (!(state & EventReceiverActive) && edt.selecting)
 						{
@@ -138,13 +138,13 @@ namespace flame
 							capture.f((char*)c + sizeof(Capture), rect_from_points(edt.select_begin * s + p0, edt.select_end * s + p0));
 						}
 						return true;
-					}, Mail::expand_original(&capture, _capture));
+					}, Capture().absorb(&capture, _capture));
 
 					base = utils::e_element()->get_component(cElement);
 					moved = false;
 
 					overlay = utils::e_element()->get_component(cElement);
-					overlay->cmds.add([](void* c, graphics::Canvas* canvas) {
+					overlay->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 						auto& edt = **(_2DEditor**)c;
 
 						if (edt.element->clipped)
@@ -163,11 +163,11 @@ namespace flame
 						}
 
 						return true;
-					}, Mail::from_p(this));
-					utils::c_event_receiver()->pass_checkers.add([](void* c, cEventReceiver* er, bool* pass) {
+					}, Capture().set_thiz(this));
+					utils::c_event_receiver()->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
 						*pass = true;
 						return true;
-					}, Mail());
+					}, Capture());
 					utils::c_aligner(AlignMinMax, AlignMinMax);
 
 					scale_text = utils::e_text(L"100%")->get_component(cText);

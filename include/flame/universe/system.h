@@ -12,8 +12,8 @@ namespace flame
 	{
 		World* world_;
 
-		ListenerHub<bool(void* c)> before_update_listeners;
-		ListenerHub<bool(void* c)> after_update_listeners;
+		ListenerHub<bool(Capture& c)> before_update_listeners;
+		ListenerHub<bool(Capture& c)> after_update_listeners;
 
 		FLAME_UNIVERSE_EXPORTS System(const char* name);
 		FLAME_UNIVERSE_EXPORTS virtual ~System();

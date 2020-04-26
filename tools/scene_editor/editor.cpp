@@ -32,24 +32,24 @@ void _2DGizmo::create()
 	block_c = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
 				thiz->target->add_pos(Vec2f(pos) / thiz->base->scale);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeAll : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 
 	block_l = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -58,16 +58,16 @@ void _2DGizmo::create()
 				thiz->target->add_width(-x);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_t = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -76,16 +76,16 @@ void _2DGizmo::create()
 				thiz->target->add_height(-y);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_r = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -93,16 +93,16 @@ void _2DGizmo::create()
 				thiz->target->add_width(x);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_b = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -110,16 +110,16 @@ void _2DGizmo::create()
 				thiz->target->add_height(y);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_lt = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -128,16 +128,16 @@ void _2DGizmo::create()
 				thiz->target->add_size(-p);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_rt = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -146,16 +146,16 @@ void _2DGizmo::create()
 				thiz->target->add_size(Vec2f(p.x(), -p.y()));
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_lb = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -164,16 +164,16 @@ void _2DGizmo::create()
 				thiz->target->add_size(Vec2f(-p.x(), p.y()));
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 	block_rb = create_block();
 	{
 		auto er = utils::c_event_receiver();
-		er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = *(_2DGizmo**)c;
@@ -181,11 +181,11 @@ void _2DGizmo::create()
 				thiz->target->add_size(p);
 			}
 			return true;
-		}, Mail::from_p(this));
+		}, Capture().set_thiz(this));
 		er->state_listeners.add([](void*, EventReceiverState s) {
 			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 }
 
@@ -222,7 +222,7 @@ void _2DGizmo::on_select()
 			block_lb->entity->set_visible(true);
 			block_rb->entity->set_visible(true);
 			update_blocks();
-			listener = target->data_changed_listeners.add([](void* c, uint hash, void*) {
+			listener = target->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				switch (hash)
 				{
 				case FLAME_CHASH("global_pos"):
@@ -232,7 +232,7 @@ void _2DGizmo::on_select()
 					break;
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	}
 }
@@ -253,8 +253,8 @@ void _2DGizmo::update_blocks()
 	block_rb->set_pos(p + s);
 }
 
-cEditor::cEditor() :
-	Component("cEditor")
+cSceneEditor::cSceneEditor() :
+	Component("cSceneEditor")
 {
 	auto e_page = utils::e_begin_docker_page(L"Editor").second;
 	{
@@ -279,7 +279,7 @@ cEditor::cEditor() :
 				if (hash == FLAME_CHASH("index"))
 					app.editor->tool_type = ((cCombobox*)Component::current())->index;
 				return true;
-			}, Mail());
+			}, Capture());
 		utils::e_end_layout();
 
 		edt.create([](void*, const Vec4f& r) {
@@ -287,13 +287,13 @@ cEditor::cEditor() :
 				app.select(nullptr);
 			else
 				app.select(app.editor->search_hovering(r));
-		}, Mail());
+		}, Capture());
 		edt.scale_level_max = 20;
 
 			{
 				auto e_overlay = edt.overlay->entity;
 
-				edt.overlay->cmds.add([](void* c, graphics::Canvas* canvas) {
+				edt.overlay->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 					auto element = *(cElement**)c;
 					if (!element->clipped && app.selected)
 					{
@@ -307,18 +307,18 @@ cEditor::cEditor() :
 						}
 					}
 					return true;
-				}, Mail::from_p(edt.overlay));
+				}, Capture().set_data(&edt.overlay));
 				utils::set_current_entity(e_overlay);
 				auto c_event_receiver = e_overlay->get_component(cEventReceiver);
 				c_event_receiver->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
 					*pass = true;
 					return true;
-				}, Mail());
-				c_event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				}, Capture());
+				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						app.select(app.editor->search_hovering(Vec4f(Vec2f(pos), Vec2f(pos))));
 					return true;
-				}, Mail());
+				}, Capture());
 
 				utils::push_parent(e_overlay);
 					gizmo.create();
@@ -329,12 +329,12 @@ cEditor::cEditor() :
 	utils::e_end_docker_page();
 }
 
-cEditor::~cEditor()
+cSceneEditor::~cSceneEditor()
 {
 	app.editor = nullptr;
 }
 
-Entity* cEditor::search_hovering(const Vec4f& r)
+Entity* cSceneEditor::search_hovering(const Vec4f& r)
 {
 	Entity* s = nullptr;
 	if (app.prefab)
@@ -342,7 +342,7 @@ Entity* cEditor::search_hovering(const Vec4f& r)
 	return s;
 }
 
-void cEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
+void cSceneEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 {
 	if (e->child_count() > 0)
 	{
@@ -361,7 +361,7 @@ void cEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 		s = e;
 }
 
-void cEditor::on_select()
+void cSceneEditor::on_select()
 {
 	gizmo.on_select();
 }

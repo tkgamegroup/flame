@@ -25,7 +25,7 @@ void _remove_node(BP::Node* n)
 {
 	if (app.editor)
 	{
-		looper().add_event([](void* c, bool*) {
+		looper().add_event([](Capture& c) {
 			auto n = *(BP::Node**)c;
 			std::vector<BP::Node*> ref_ns;
 			for (auto i = 0; i < n->output_count(); i++)
@@ -41,7 +41,7 @@ void _remove_node(BP::Node* n)
 				app.editor->on_remove_node(n);
 				app.editor->on_add_node(n);
 			}
-		}, Mail::from_p(n));
+		}, Capture().set_data(&n));
 	}
 }
 
@@ -80,11 +80,11 @@ std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
 
 void _set_link(BP::Slot* in, BP::Slot* out)
 {
-	looper().add_event([](void* c, bool*) {
+	looper().add_event([](Capture& c) {
 		auto n = *(BP::Node**)c;
 		app.editor->on_remove_node(n);
 		app.editor->on_add_node(n);
-	}, Mail::from_p(in->node()));
+	}, Capture().set_data(&in->node()));
 	in->link_to(out);
 }
 
@@ -590,7 +590,7 @@ bool MyApp::create(const char* filename)
 				}
 			}
 			return true;
-		}, Mail());
+		}, Capture());
 		s_event_dispatcher->next_focusing = c_event_receiver;
 	}
 
@@ -601,23 +601,23 @@ bool MyApp::create(const char* filename)
 
 	utils::e_begin_menu_bar();
 	utils::e_begin_menubar_menu(L"Blueprint");
-	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](void* c) {
+	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
 		app.save();
-	}, Mail());
+	}, Capture());
 	utils::e_end_menubar_menu();
 	utils::e_begin_menubar_menu(L"Edit");
 	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void*) {
 		undo();
-	}, Mail());
+	}, Capture());
 	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void*) {
 		redo();
-	}, Mail());
+	}, Capture());
 	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](void*) {
 		duplicate_selected();
-	}, Mail());
+	}, Capture());
 	utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](void*) {
 		delete_selected();
-	}, Mail());
+	}, Capture());
 	utils::e_end_menubar_menu();
 	utils::e_begin_menubar_menu(L"View");
 	utils::e_menu_item(L"Editor", [](void*) {
@@ -633,7 +633,7 @@ bool MyApp::create(const char* filename)
 			utils::e_end_docker_floating_container();
 			utils::pop_parent();
 		}
-	}, Mail());
+	}, Capture());
 	utils::e_menu_item(L"Detail", [](void*) {
 		if (!app.detail)
 		{
@@ -647,7 +647,7 @@ bool MyApp::create(const char* filename)
 			utils::e_end_docker_floating_container();
 			utils::pop_parent();
 		}
-	}, Mail());
+	}, Capture());
 	utils::e_menu_item(L"Preview", [](void*) {
 		if (!app.preview)
 		{
@@ -661,7 +661,7 @@ bool MyApp::create(const char* filename)
 			utils::e_end_docker_floating_container();
 			utils::pop_parent();
 		}
-	}, Mail());
+	}, Capture());
 	utils::e_menu_item(L"Console", [](void*) {
 		if (!app.console)
 		{
@@ -675,18 +675,18 @@ bool MyApp::create(const char* filename)
 			utils::e_end_docker_floating_container();
 			utils::pop_parent();
 		}
-	}, Mail());
+	}, Capture());
 	utils::e_end_menubar_menu();
 	utils::e_begin_menubar_menu(L"Tools");
-	utils::e_menu_item(L"Generate Graph Image", [](void* c) {
+	utils::e_menu_item(L"Generate Graph Image", [](Capture& c) {
 		app.generate_graph_image();
-	}, Mail());
-	utils::e_menu_item(L"Auto Set Layout", [](void* c) {
+	}, Capture());
+	utils::e_menu_item(L"Auto Set Layout", [](Capture& c) {
 		app.auto_set_layout();
-	}, Mail());
-	utils::e_menu_item(L"Reflector", [](void* c) {
+	}, Capture());
+	utils::e_menu_item(L"Reflector", [](Capture& c) {
 		utils::e_ui_reflector_window();
-	}, Mail());
+	}, Capture());
 	utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();
 
@@ -700,13 +700,13 @@ bool MyApp::create(const char* filename)
 			if (hash == FLAME_CHASH("checked"))
 				app.auto_update = app.c_auto_update->checked;
 			return true;
-		}, Mail());
+		}, Capture());
 		utils::e_button(L"Update (F2)", [](void*) {
 			app.update();
-		}, Mail());
+		}, Capture());
 		utils::e_button(L"Reset Time", [](void*) {
 			app.bp->time = 0.f;
-		}, Mail());
+		}, Capture());
 		utils::e_end_layout();
 	}
 
@@ -730,7 +730,7 @@ bool MyApp::create(const char* filename)
 		c_timer->max_times = 1;
 		c_timer->set_callback([](void*) {
 			app.e_notification->set_visible(false);
-		}, Mail(), false);
+		}, Capture(), false);
 	}
 	utils::pop_style(FontSize);
 
@@ -1087,11 +1087,11 @@ int main(int argc, char **args)
 		if (app.auto_update)
 			app.update();
 		*go_on = true;
-	}, Mail(), 0.f);
+	}, Capture(), 0.f);
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

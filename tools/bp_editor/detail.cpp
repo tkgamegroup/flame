@@ -46,13 +46,13 @@ void cDetail::on_after_select()
 					utils::e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
 					utils::e_begin_layout(LayoutHorizontal, 4.f);
 						utils::e_text((L"ID: " + s2w(n->id())).c_str());
-						utils::e_button(L"change", [](void* c) {
+						utils::e_button(L"change", [](Capture& c) {
 							auto n = *(BP::Node**)c;
-							utils::e_input_dialog(L"ID", [](void* c, bool ok, const wchar_t* text) {
+							utils::e_input_dialog(L"ID", [](Capture& c, bool ok, const wchar_t* text) {
 								if (ok && text[0])
 									app.set_node_id(*(BP::Node**)c, w2s(text));
-							}, Mail::from_p(n), s2w(n->id()).c_str());
-						}, Mail::from_p(n));
+							}, Capture().set_data(&n), s2w(n->id()).c_str());
+						}, Capture().set_data(&n));
 					utils::e_end_layout();
 				}
 				else
@@ -70,5 +70,5 @@ void cDetail::on_after_select()
 			}
 		}
 		utils::pop_parent();
-	}, Mail());
+	}, Capture());
 }

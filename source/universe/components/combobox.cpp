@@ -55,17 +55,17 @@ namespace flame
 			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						auto thiz = *(cComboboxItemPrivate**)c;
+						auto thiz = c.thiz<cComboboxItemPrivate>();
 						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
 						auto combobox = menu->entity->get_component(cCombobox);
 						utils::remove_layer((Entity*)thiz->entity->gene);
 						combobox->set_index(thiz->index);
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
 			{

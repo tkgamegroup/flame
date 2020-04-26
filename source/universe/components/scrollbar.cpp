@@ -66,23 +66,23 @@ namespace flame
 		{
 			auto parent = entity->parent();
 			parent_element = parent->get_component(cElement);
-			parent_element_listener = parent_element->data_changed_listeners.add([](void* c, uint hash, void*) {
+			parent_element_listener = parent_element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("size"))
-					(*(cScrollbarThumbPrivate**)c)->update(0.f);
+					c.thiz<cScrollbarThumbPrivate>()->update(0.f);
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 			scrollbar = parent->get_component(cScrollbar);
 			target_layout = parent->parent()->child(0)->get_component(cLayout);
-			target_element_listener = target_layout->element->data_changed_listeners.add([](void* c, uint hash, void*) {
+			target_element_listener = target_layout->element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("size"))
-					(*(cScrollbarThumbPrivate**)c)->update(0.f);
+					c.thiz<cScrollbarThumbPrivate>()->update(0.f);
 				return true;
-			}, Mail::from_p(this));
-			target_layout_listener = target_layout->data_changed_listeners.add([](void* c, uint hash, void*) {
+			}, Capture().set_thiz(this));
+			target_layout_listener = target_layout->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("content_size"))
-					(*(cScrollbarThumbPrivate**)c)->update(0.f);
+					c.thiz<cScrollbarThumbPrivate>()->update(0.f);
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 			update(0.f);
 		}
 
@@ -93,8 +93,8 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = (*(cScrollbarThumbPrivate**)c);
+				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cScrollbarThumbPrivate>();
 					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 					{
 						if (thiz->type == ScrollbarVertical)
@@ -103,7 +103,7 @@ namespace flame
 							thiz->update(pos.x());
 					}
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 			}
 		}
 

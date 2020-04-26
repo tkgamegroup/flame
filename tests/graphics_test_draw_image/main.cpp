@@ -112,11 +112,11 @@ int main(int argc, char** args)
 	app.w->resize_listeners.add([](void*, const Vec2u& s) {
 		app.on_resize();
 		return true;
-	}, Mail());
+	}, Capture());
 	app.fence = Fence::create(app.d);
 	app.render_finished = Semaphore::create(app.d);
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 }

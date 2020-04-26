@@ -43,15 +43,15 @@ struct cThumbnail : Component
 	{
 		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
-			((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
+			((cElement*)c)->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 				(*(cThumbnail**)c)->draw(canvas);
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 		else if (c->name_hash == FLAME_CHASH("cImage"))
 		{
 			image = (cImage*)c;
-			add_work([](void* c) {
+			add_work([](Capture& c) {
 				auto thiz = *(cThumbnail**)c;
 				uint w, h;
 				char* data;
@@ -59,7 +59,7 @@ struct cThumbnail : Component
 				auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
 				bitmap->swap_channel(0, 2);
 				thiz->thumbnail = bitmap;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	}
 
@@ -87,7 +87,7 @@ struct cThumbnail : Component
 						app.resource_explorer->thumbnails_seats_occupied.push_back(std::move(app.resource_explorer->thumbnails_seats_free.front()));
 						app.resource_explorer->thumbnails_seats_free.erase(app.resource_explorer->thumbnails_seats_free.begin());
 
-						looper().add_event([](void* c, bool*) {
+						looper().add_event([](Capture& c) {
 							auto thiz = *(cThumbnail**)c;
 							auto image = thiz->image;
 							auto& thumbnails_img_size = app.resource_explorer->thumbnails_img->size;
@@ -102,7 +102,7 @@ struct cThumbnail : Component
 							image->uv0 = Vec2f(*thiz->seat) / thumbnails_img_size;
 							image->uv1 = Vec2f(*thiz->seat + thumbnail_size) / thumbnails_img_size;
 							image->color = Vec4c(255);
-						}, Mail::from_p(this), 0.f, FLAME_CHASH("update thumbnail"));
+						}, Capture().set_thiz(this), 0.f, FLAME_CHASH("update thumbnail"));
 					}
 				}
 			}
@@ -169,18 +169,18 @@ cResourceExplorer::cResourceExplorer() :
 				c_list_layout->column = 4;
 			}
 				utils::e_begin_popup_menu();
-					utils::e_menu_item(L"New Prefab", [](void* c) {
-						utils::e_input_dialog(L"name", [](void* c, bool ok, const wchar_t* text) {
+					utils::e_menu_item(L"New Prefab", [](Capture& c) {
+						utils::e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
 								auto e = Entity::create();
 								Entity::save_to_file(e, (app.resource_explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
 								Entity::destroy(e);
 							}
-						}, Mail());
-					}, Mail());
-					utils::e_menu_item(L"New BP", [](void* c) {
-						utils::e_input_dialog(L"name", [](void* c, bool ok, const wchar_t* text) {
+						}, Capture());
+					}, Capture());
+					utils::e_menu_item(L"New BP", [](Capture& c) {
+						utils::e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
 								auto p = app.resource_explorer->curr_path / text;
@@ -189,8 +189,8 @@ cResourceExplorer::cResourceExplorer() :
 								file << "<BP />";
 								file.close();
 							}
-						}, Mail());
-					}, Mail());
+						}, Capture());
+					}, Capture());
 				utils::e_end_popup_menu();
 			utils::e_end_list();
 		utils::e_end_scrollbar();
@@ -198,9 +198,9 @@ cResourceExplorer::cResourceExplorer() :
 	utils::e_end_docker_page();
 
 	ev_file_changed = create_event(false);
-	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](void* c, FileChangeType type, const wchar_t* filename) {
+	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](Capture& c, FileChangeType type, const wchar_t* filename) {
 		set_event(app.resource_explorer->ev_file_changed);
-	}, Mail(), true, false);
+	}, Capture(), true, false);
 
 	navigate(base_path);
 }
@@ -240,7 +240,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 {
 	curr_path = path;
 
-	looper().add_event([](void* c, bool*) {
+	looper().add_event([](Capture& c) {
 		auto& base_path = app.resource_explorer->base_path;
 		auto& curr_path = app.resource_explorer->curr_path;
 		auto address_bar = app.resource_explorer->address_bar;
@@ -252,10 +252,10 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		utils::push_style(ButtonColorHovering, common(utils::style(FrameColorHovering).c));
 		utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
 
-		utils::e_button(Icon_LEVEL_UP, [](void* c) {
+		utils::e_button(Icon_LEVEL_UP, [](Capture& c) {
 			if (app.resource_explorer->curr_path != app.resource_explorer->base_path)
 				app.resource_explorer->navigate(app.resource_explorer->curr_path.parent_path());
-		}, Mail());
+		}, Capture());
 
 		std::vector<std::filesystem::path> stems;
 		for (auto p = curr_path; ; p = p.parent_path())
@@ -269,15 +269,15 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		for (auto i = 0; i < stems.size(); i++)
 		{
 			auto& s = stems[i];
-			struct Capture
+			struct Capturing
 			{
 				wchar_t p[256];
 			}capture;
 			wcscpy_s(capture.p, s.c_str());
-			utils::e_button(i == 0 ? s.c_str() : s.filename().c_str(), [](void* c) {
-				auto& capture = *(Capture*)c;
+			utils::e_button(i == 0 ? s.c_str() : s.filename().c_str(), [](Capture& c) {
+				auto& capture = c.data<Capturing>();
 				app.resource_explorer->navigate(capture.p);
-			}, Mail::from_t(&capture));
+			}, Capture().set_data(&capture));
 
 			std::vector<std::filesystem::path> sub_dirs;
 			for (std::filesystem::directory_iterator end, it(s); it != end; it++)
@@ -290,15 +290,15 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				utils::e_begin_button_menu(Icon_CARET_RIGHT);
 				for (auto& p : sub_dirs)
 				{
-					struct Capture
+					struct Capturing
 					{
 						wchar_t p[256];
 					}capture;
 					wcscpy_s(capture.p, s.c_str());
-					utils::e_menu_item(p.filename().c_str(), [](void* c) {
-						auto& capture = *(Capture*)c;
+					utils::e_menu_item(p.filename().c_str(), [](Capture& c) {
+						auto& capture = c.data<Capturing>();
 						app.resource_explorer->navigate(capture.p);
-					}, Mail::from_t(&capture));
+					}, Capture().set_data(&capture));
 				}
 				utils::e_end_button_menu();
 			}
@@ -335,26 +335,26 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		for (auto& p : dirs)
 		{
 			auto item = app.resource_explorer->create_listitem(p.filename().wstring(), app.resource_explorer->folder_img_idx);
-			struct Capture
+			struct Capturing
 			{
 				wchar_t p[256];
 			}capture;
 			wcscpy_s(capture.p, p.c_str());
-			item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			item->get_component(cEventReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 				{
-					auto& capture = *(Capture*)c;
+					auto& capture = c.data<Capturing>();
 					app.resource_explorer->navigate(capture.p);
 				}
 				return true;
-			}, Mail::from_t(&capture));
+			}, Capture().set_data(&capture));
 			utils::push_parent(item);
 			utils::e_begin_popup_menu();
-			utils::e_menu_item(L"Open", [](void* c) {
-				auto& capture = *(Capture*)c;
+			utils::e_menu_item(L"Open", [](Capture& c) {
+				auto& capture = c.data<Capturing>();
 				app.resource_explorer->selected = capture.p;
 				app.resource_explorer->navigate(app.resource_explorer->selected);
-			}, Mail::from_t(&capture));
+			}, Capture().set_data(&capture));
 			utils::e_end_popup_menu();
 			utils::pop_parent();
 		}
@@ -382,42 +382,42 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			utils::push_parent(item);
 			if (ext == L".prefab")
 			{
-				struct Capture
+				struct Capturing
 				{
 					wchar_t p[256];
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
-				item->get_component(cEventReceiver)->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				item->get_component(cEventReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
-						auto& capture = *(Capture*)c;
+						auto& capture = c.data<Capturing>();
 						app.resource_explorer->selected = capture.p;
 						app.load(app.resource_explorer->selected);
 					}
 					return true;
-				}, Mail::from_t(&capture));
+				}, Capture().set_data(&capture));
 				utils::e_begin_popup_menu();
-				utils::e_menu_item(L"Open", [](void* c) {
-					auto& capture = *(Capture*)c;
+				utils::e_menu_item(L"Open", [](Capture& c) {
+					auto& capture = c.data<Capturing>();
 					app.resource_explorer->selected = capture.p;
 					app.load(app.resource_explorer->selected);
-				}, Mail::from_t(&capture));
+				}, Capture().set_data(&capture));
 				utils::e_end_popup_menu();
 			}
 			utils::pop_parent();
 		}
 		utils::pop_parent();
-	}, Mail::from_p(this));
+	}, Capture().set_thiz(this));
 }
 
 void cResourceExplorer::on_component_added(Component* c)
 {
 	if (c->name_hash == FLAME_CHASH("cElement"))
 	{
-		((cElement*)c)->cmds.add([](void* c, graphics::Canvas* canvas) {
+		((cElement*)c)->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 			app.resource_explorer->draw(canvas);
 			return true;
-		}, Mail());
+		}, Capture());
 	}
 }
 

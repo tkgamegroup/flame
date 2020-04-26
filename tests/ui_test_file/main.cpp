@@ -18,9 +18,9 @@ int main(int argc, char** args)
 
 	utils::e_text(L"");
 	utils::c_aligner(AlignMin, AlignMax);
-	add_fps_listener([](void* c, uint fps) {
+	add_fps_listener([](Capture& c, uint fps) {
 		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, Mail::from_p(utils::current_entity()->get_component(cText)));
+	}, Capture().set_data(&utils::current_entity()->get_component(cText)));
 
 	utils::next_element_pos = Vec2f(16.f, 28.f);
 	utils::e_begin_layout(LayoutVertical, 16.f);
@@ -32,9 +32,9 @@ int main(int argc, char** args)
 		}
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
-			utils::e_button(L"Create Sample Scene", [](void* c) {
+			utils::e_button(L"Create Sample Scene", [](Capture& c) {
 				auto e = *(void**)c;
-				looper().add_event([](void* c, bool*) {
+				looper().add_event([](Capture& c) {
 					auto e_scene = *(Entity**)c;
 					e_scene->remove_children(0, -1);
 
@@ -73,28 +73,28 @@ int main(int argc, char** args)
 						e_text->add_component(c_text);
 					}
 
-				}, Mail::from_p(e));
-			}, Mail::from_p(e_scene));
-			utils::e_button(L"Clear Scene", [](void* c) {
+				}, Capture().set_data(&e));
+			}, Capture().set_data(&e_scene));
+			utils::e_button(L"Clear Scene", [](Capture& c) {
 				auto e = *(void**)c;
-				looper().add_event([](void* c, bool*) {
+				looper().add_event([](Capture& c) {
 					(*(Entity**)c)->remove_children(0, -1);
-				}, Mail::from_p(e));
-			}, Mail::from_p(e_scene));
-			utils::e_button(L"Save Scene", [](void* c) {
+				}, Capture().set_data(&e));
+			}, Capture().set_data(&e_scene));
+			utils::e_button(L"Save Scene", [](Capture& c) {
 				auto e_scene = *(Entity**)c;
 				if (e_scene->child_count() > 0)
 					Entity::save_to_file(e_scene->child(0), L"test.prefab");
-			}, Mail::from_p(e_scene));
-			utils::e_button(L"Load Scene", [](void* c) {
+			}, Capture().set_data(&e_scene));
+			utils::e_button(L"Load Scene", [](Capture& c) {
 				auto e = *(void**)c;
-				looper().add_event([](void* c, bool*) {
+				looper().add_event([](Capture& c) {
 					auto e_scene = *(Entity**)c;
 					e_scene->remove_children(0, -1);
 					if (std::filesystem::exists(L"test.prefab"))
 						e_scene->add_child(Entity::create_from_file(e_scene->world(), L"test.prefab"));
-				}, Mail::from_p(e));
-			}, Mail::from_p(e_scene));
+				}, Capture().set_data(&e));
+			}, Capture().set_data(&e_scene));
 		utils::e_end_layout();
 	utils::e_end_layout();
 
@@ -102,7 +102,7 @@ int main(int argc, char** args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

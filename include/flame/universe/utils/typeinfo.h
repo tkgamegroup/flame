@@ -22,10 +22,10 @@ namespace flame
 		cCombobox* combobox;
 
 		EnumInfo* info;
-		void(*on_changed)(void* c, int v);
-		Mail capture;
+		void(*on_changed)(Capture& c, int v);
+		Capture capture;
 
-		cEnumSingleDataTracker(void* _data, EnumInfo* info, void(*on_changed)(void* c, int v), const Mail& capture) :
+		cEnumSingleDataTracker(void* _data, EnumInfo* info, void(*on_changed)(Capture& c, int v), const Capture& capture) :
 			info(info),
 			on_changed(on_changed),
 			capture(capture)
@@ -35,7 +35,7 @@ namespace flame
 
 		~cEnumSingleDataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -51,14 +51,14 @@ namespace flame
 
 			update_view();
 
-			combobox->data_changed_listeners.add([](void* c, uint hash, void*) {
+			combobox->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("index"))
 				{
 					auto thiz = *(cEnumSingleDataTracker**)c;
 					thiz->on_changed(thiz->capture.p, thiz->info->item(thiz->combobox->index)->value());
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	};
 
@@ -67,10 +67,10 @@ namespace flame
 		std::vector<cCheckbox*> checkboxs;
 
 		EnumInfo* info;
-		void(*on_changed)(void* c, int v);
-		Mail capture;
+		void(*on_changed)(Capture& c, int v);
+		Capture capture;
 
-		cEnumMultiDataTracker(void* _data, EnumInfo* info, void(*on_changed)(void* c, int v), const Mail& capture) :
+		cEnumMultiDataTracker(void* _data, EnumInfo* info, void(*on_changed)(Capture& c, int v), const Capture& capture) :
 			info(info),
 			on_changed(on_changed),
 			capture(capture)
@@ -80,7 +80,7 @@ namespace flame
 
 		~cEnumMultiDataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -98,17 +98,17 @@ namespace flame
 
 			for (auto i = 0; i < checkboxs.size(); i++)
 			{
-				struct Capture
+				struct Capturing
 				{
 					cEnumMultiDataTracker* thiz;
 					int idx;
 				}capture;
 				capture.thiz = this;
 				capture.idx = i;
-				checkboxs[i]->data_changed_listeners.add([](void* c, uint hash, void*) {
+				checkboxs[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
 					{
-						auto& capture = *(Capture*)c;
+						auto& capture = c.data<Capturing>();
 						auto v = *(int*)capture.thiz->data;
 						auto f = capture.thiz->info->item(capture.idx)->value();
 						if (capture.thiz->checkboxs[capture.idx]->checked)
@@ -118,7 +118,7 @@ namespace flame
 						capture.thiz->on_changed(capture.thiz->capture.p, v);
 					}
 					return true;
-				}, Mail::from_t(&capture));
+				}, Capture().set_data(&capture));
 			}
 		}
 	};
@@ -127,10 +127,10 @@ namespace flame
 	{
 		cCheckbox* checkbox;
 
-		void(*on_changed)(void* c, bool v);
-		Mail capture;
+		void(*on_changed)(Capture& c, bool v);
+		Capture capture;
 
-		cBoolDataTracker(void* _data, void(*on_changed)(void* c, bool v), const Mail& capture) :
+		cBoolDataTracker(void* _data, void(*on_changed)(Capture& c, bool v), const Capture& capture) :
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -139,7 +139,7 @@ namespace flame
 
 		~cBoolDataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -153,14 +153,14 @@ namespace flame
 
 			update_view();
 
-			checkbox->data_changed_listeners.add([](void* c, uint hash, void*) {
+			checkbox->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("checked"))
 				{
 					auto thiz = *(cBoolDataTracker**)c;
 					thiz->on_changed(thiz->capture.p, thiz->checkbox->checked);
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	};
 
@@ -172,10 +172,10 @@ namespace flame
 
 		T drag_start;
 		bool drag_changed;
-		void(*on_changed)(void* c, T v, bool exit_editing);
-		Mail capture;
+		void(*on_changed)(Capture& c, T v, bool exit_editing);
+		Capture capture;
 
-		cDigitalDataTracker(void* _data, void(*on_changed)(void* c, T v, bool exit_editing), const Mail& capture) :
+		cDigitalDataTracker(void* _data, void(*on_changed)(Capture& c, T v, bool exit_editing), const Capture& capture) :
 			drag_changed(false),
 			on_changed(on_changed),
 			capture(capture)
@@ -185,7 +185,7 @@ namespace flame
 
 		~cDigitalDataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -211,7 +211,7 @@ namespace flame
 			e_e->enter_to_throw_focus = true;
 			e_e->trigger_changed_on_lost_focus = true;
 
-			edit_text->data_changed_listeners.add([](void* c, uint hash, void*) {
+			edit_text->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = *(cDigitalDataTracker**)c;
@@ -228,10 +228,10 @@ namespace flame
 					thiz->update_view();
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 
 			auto d_er = drag_text->entity->get_component(cEventReceiver);
-			d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			d_er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = *(cDigitalDataTracker**)c;
 				if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 				{
@@ -247,8 +247,8 @@ namespace flame
 					thiz->update_view();
 				}
 				return true;
-			}, Mail::from_p(this));
-			d_er->state_listeners.add([](void* c, EventReceiverState) {
+			}, Capture().set_thiz(this));
+			d_er->state_listeners.add([](Capture& c, EventReceiverState) {
 				auto thiz = *(cDigitalDataTracker**)c;
 				if (thiz->drag_changed && !cEventReceiver::current()->is_active())
 				{
@@ -258,7 +258,7 @@ namespace flame
 					thiz->drag_changed = false;
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	};
 
@@ -270,10 +270,10 @@ namespace flame
 
 		Vec<N, T> drag_start;
 		bool drag_changed;
-		void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing);
-		Mail capture;
+		void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing);
+		Capture capture;
 
-		cDigitalVecDataTracker(void* _data, void(*on_changed)(void* c, const Vec<N, T>& v, bool exit_editing), const Mail& capture) :
+		cDigitalVecDataTracker(void* _data, void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing), const Capture& capture) :
 			drag_changed(false),
 			on_changed(on_changed),
 			capture(capture)
@@ -283,7 +283,7 @@ namespace flame
 
 		~cDigitalVecDataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -318,17 +318,17 @@ namespace flame
 				e_e->trigger_changed_on_lost_focus = true;
 
 				{
-					struct Capture
+					struct Capturing
 					{
 						cDigitalVecDataTracker* thiz;
 						int i;
 					}capture;
 					capture.thiz = this;
 					capture.i = i; 
-					edit_texts[i]->data_changed_listeners.add([](void* c, uint hash, void*) {
+					edit_texts[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 						if (hash == FLAME_CHASH("text"))
 						{
-							auto& capture = *(Capture*)c;
+							auto& capture = c.data<Capturing>();
 							auto v = *(Vec<N, T>*)capture.thiz->data;
 							try
 							{
@@ -342,21 +342,21 @@ namespace flame
 							capture.thiz->update_view();
 						}
 						return true;
-					}, Mail::from_t(&capture));
+					}, Capture().set_data(&capture));
 				}
 
 				auto d_er = drag_texts[i]->entity->get_component(cEventReceiver);
 
 				{
-					struct Capture
+					struct Capturing
 					{
 						cDigitalVecDataTracker* thiz;
 						int i;
 					}capture;
 					capture.thiz = this;
 					capture.i = i;
-					d_er->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto& capture = *(Capture*)c;
+					d_er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						auto& capture = c.data<Capturing>();
 						if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
 						{
 							auto v = *(Vec<N, T>*)capture.thiz->data;
@@ -371,9 +371,9 @@ namespace flame
 							capture.thiz->update_view();
 						}
 						return true;
-					}, Mail::from_t(&capture));
-					d_er->state_listeners.add([](void* c, EventReceiverState) {
-						auto& capture = *(Capture*)c;
+					}, Capture().set_data(&capture));
+					d_er->state_listeners.add([](Capture& c, EventReceiverState) {
+						auto& capture = c.data<Capturing>();
 						if (capture.thiz->drag_changed && !cEventReceiver::current()->is_active())
 						{
 							auto temp = *(Vec<N, T>*)capture.thiz->data;
@@ -382,7 +382,7 @@ namespace flame
 							capture.thiz->drag_changed = false;
 						}
 						return true;
-					}, Mail::from_t(&capture));
+					}, Capture().set_data(&capture));
 				}
 			}
 		}
@@ -392,10 +392,10 @@ namespace flame
 	{
 		cText* text;
 
-		void(*on_changed)(void* c, const char* v);
-		Mail capture;
+		void(*on_changed)(Capture& c, const char* v);
+		Capture capture;
 
-		cStringADataTracker(void* _data, void(*on_changed)(void* c, const char* v), const Mail& capture) :
+		cStringADataTracker(void* _data, void(*on_changed)(Capture& c, const char* v), const Capture& capture) :
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -404,7 +404,7 @@ namespace flame
 
 		~cStringADataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -422,14 +422,14 @@ namespace flame
 			e_e->enter_to_throw_focus = true;
 			e_e->trigger_changed_on_lost_focus = true;
 
-			text->data_changed_listeners.add([](void* c, uint hash, void*) {
+			text->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = *(cStringADataTracker**)c;
 					thiz->on_changed(thiz->capture.p, w2s(((cText*)Component::current())->text.str()).c_str());
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	};
 
@@ -437,10 +437,10 @@ namespace flame
 	{
 		cText* text;
 
-		void(*on_changed)(void* c, const wchar_t* v);
-		Mail capture;
+		void(*on_changed)(Capture& c, const wchar_t* v);
+		Capture capture;
 
-		cStringWDataTracker(void* _data, void(*on_changed)(void* c, const wchar_t* v), const Mail& capture) :
+		cStringWDataTracker(void* _data, void(*on_changed)(Capture& c, const wchar_t* v), const Capture& capture) :
 			on_changed(on_changed),
 			capture(capture)
 		{
@@ -449,7 +449,7 @@ namespace flame
 
 		~cStringWDataTracker() override
 		{
-			f_free(capture.p);
+			f_free(capture._data);
 		}
 
 		void update_view() override
@@ -467,14 +467,14 @@ namespace flame
 			e_e->enter_to_throw_focus = true;
 			e_e->trigger_changed_on_lost_focus = true;
 
-			text->data_changed_listeners.add([](void* c, uint hash, void*) {
+			text->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = *(cStringWDataTracker**)c;
 					thiz->on_changed(thiz->capture.p, ((cText*)Component::current())->text.v);
 				}
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	};
 

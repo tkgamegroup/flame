@@ -53,10 +53,10 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-					(*(cStyleColorPrivate**)c)->style();
+				state_changed_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
+					c.thiz<cStyleColorPrivate>()->style();
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 				style();
 			}
 		}
@@ -106,10 +106,10 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-					(*(cStyleColor2Private**)c)->style();
+				state_changed_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
+					c.thiz<cStyleColor2Private>()->style();
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 				style();
 			}
 		}
@@ -153,10 +153,10 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-					(*(cStyleTextColorPrivate**)c)->style();
+				state_changed_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
+					c.thiz<cStyleTextColorPrivate>()->style();
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 				style();
 			}
 		}
@@ -205,10 +205,10 @@ namespace flame
 			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 			{
 				event_receiver = (cEventReceiver*)c;
-				state_changed_listener = event_receiver->state_listeners.add([](void* c, EventReceiverState state) {
-					(*(cStyleTextColor2Private**)c)->style();
+				state_changed_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
+					c.thiz<cStyleTextColor2Private>()->style();
 					return true;
-				}, Mail::from_p(this));
+				}, Capture().set_thiz(this));
 				style();
 			}
 		}

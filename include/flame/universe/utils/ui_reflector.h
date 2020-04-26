@@ -80,30 +80,25 @@ namespace flame
 				{
 					t.target = nullptr;
 					t.highlight = highlight;
+					auto pt = &t;
 
 					e_begin_layout(LayoutHorizontal, 4.f);
 						e_text(title);
 						push_style(FontSize, common(Vec1u(11)));
-						struct Capture
-						{
-							cReflector* thiz;
-							Entity** t;
-						}capture;
-						capture.thiz = this;
-						capture.t = &t.target;
-						e_button(Icon_HAND_POINTER_O, [](void* c) {
-							auto capture = *(Capture*)c;
+						e_button(Icon_HAND_POINTER_O, [](Capture& c) {
+							auto pt = c.data<Target*>();
+							auto thiz = c.thiz<cReflector>();
 							Entity* ret = nullptr;
-							capture.thiz->find_target_in_tree(capture.thiz->e_tree, *capture.t, ret);
+							thiz->find_target_in_tree(thiz->e_tree, pt->target, ret);
 							if (ret)
-								capture.thiz->c_tree->set_selected(ret);
-							capture.thiz->c_tree->expand_to_selected();
-						}, Mail::from_t(&capture));
-						e_toggle(Icon_SQUARE_O, highlight)->get_component(cCheckbox)->data_changed_listeners.add([](void* c, uint hash, void*) {
+								thiz->c_tree->set_selected(ret);
+							thiz->c_tree->expand_to_selected();
+						}, Capture().set_data(&pt));
+						e_toggle(Icon_SQUARE_O, highlight)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 							if (hash == FLAME_CHASH("checked"))
-								**(bool**)c = ((cCheckbox*)Component::current())->checked;
+								c.data<Target*>()->highlight = c.current<cCheckbox>()->checked;
 							return true;
-						}, Mail::from_p(&t.highlight));
+						}, Capture().set_data(&pt));
 						pop_style(FontSize);
 						t.text = e_text(nullptr)->get_component(cText);
 					e_end_layout();
@@ -200,15 +195,15 @@ namespace flame
 						auto dp = selected->get_component(cDataKeeper);
 						push_parent(e_detail);
 						e_text(s2w(dp->get_string_item(FLAME_CHASH("desc"))).c_str());
-						struct Capture
+						struct Capturing
 						{
 							cReflector* thiz;
 							Entity* e;
 						}capture;
 						capture.thiz = this;
 						capture.e = (Entity*)dp->get_common_item(FLAME_CHASH("entity")).p;
-						e_button(L"Debug cElelemnt In Renderer", [](void* c) {
-							auto& capture = *(Capture*)c;
+						e_button(L"Debug cElelemnt In Renderer", [](Capture& c) {
+							auto& capture = c.data<Capturing>();
 							Entity* ret = nullptr;
 							capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
 							if (ret)
@@ -217,9 +212,9 @@ namespace flame
 								if (ce)
 									ce->debug_level = 1;
 							}
-						}, Mail::from_t(&capture));
-						e_button(L"Debug cLayout In Management", [](void* c) {
-							auto& capture = *(Capture*)c;
+						}, Capture().set_data(&capture));
+						e_button(L"Debug cLayout In Management", [](Capture& c) {
+							auto& capture = c.data<Capturing>();
 							Entity* ret = nullptr;
 							capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
 							if (ret)
@@ -228,7 +223,7 @@ namespace flame
 								if (cl)
 									cl->debug_level = 1;
 							}
-						}, Mail::from_t(&capture));
+						}, Capture().set_data(&capture));
 						pop_parent();
 					}
 				}
@@ -246,17 +241,16 @@ namespace flame
 					e_window = _window;
 					e_tree = Entity::create();
 
-					e_button(Icon_REFRESH, [](void* c) {
-						auto thiz = *(void**)c;
-						looper().add_event([](void* c, bool*) {
-							auto reflector = *(cReflector**)c;
+					e_button(Icon_REFRESH, [](Capture& c) {
+						looper().add_event([](Capture& c) {
+							auto reflector = c.thiz<cReflector>();
 							reflector->c_tree->set_selected(nullptr);
 							reflector->e_tree->remove_children(0, -1);
 							push_parent(reflector->e_tree);
 							reflector->add_node(current_root());
 							pop_parent();
-						}, Mail::from_p(thiz));
-					}, Mail::from_p(this));
+						}, Capture().set_thiz(c._thiz));
+					}, Capture().set_thiz(this));
 
 					e_begin_splitter(SplitterHorizontal);
 						next_element_padding = 4.f;
@@ -268,16 +262,15 @@ namespace flame
 							e_end_tree();
 						e_end_scrollbar();
 						c_tree = e_tree->get_component(cTree);
-						c_tree->data_changed_listeners.add([](void* c, uint hash, void*) {
+						c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 							if (hash == FLAME_CHASH("selected"))
 							{
-								auto thiz = *(void**)c;
-								looper().add_event([](void* c, bool*) {
-									(*(cReflector**)c)->refresh_detail();
-								}, Mail::from_p(thiz));
+								looper().add_event([](Capture& c) {
+									c.thiz<cReflector>()->refresh_detail();
+								}, Capture().set_thiz(c._thiz));
 							}
 							return true;
-						}, Mail::from_p(this));
+						}, Capture().set_thiz(this));
 
 						next_element_padding = 4.f;
 						next_element_frame_thickness = 2.f;
@@ -414,15 +407,15 @@ namespace flame
 				void on_entered_world() override
 				{
 					s_event_dispatcher = entity->world()->get_system(sEventDispatcher);
-					s_event_dispatcher_listener = s_event_dispatcher->after_update_listeners.add([](void* c) {
-						(*(cReflector**)c)->processing_event_dispatcher_event();
+					s_event_dispatcher_listener = s_event_dispatcher->after_update_listeners.add([](Capture& c) {
+						c.thiz<cReflector>()->processing_event_dispatcher_event();
 						return true;
-					}, Mail::from_p(this));
+					}, Capture().set_thiz(this));
 					s_2d_renderer = entity->world()->get_system(s2DRenderer);
-					s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](void* c) {
-						(*(cReflector**)c)->processing_2d_renderer_event();
+					s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](Capture& c) {
+						c.thiz<cReflector>()->processing_2d_renderer_event();
 						return true;
-					}, Mail::from_p(this));
+					}, Capture().set_thiz(this));
 				}
 			};
 			auto c_reflector = new_object<cReflector>();

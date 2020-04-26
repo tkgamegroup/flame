@@ -24,11 +24,10 @@ namespace flame
 		{
 			update();
 
-			resize_listener = w->resize_listeners.add([](void* c, const Vec2u& size) {
-				auto thiz = *(SwapchainPrivate**)c;
-				thiz->update();
+			resize_listener = w->resize_listeners.add([](Capture& c, const Vec2u& size) {
+				c.thiz<SwapchainPrivate>()->update();
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 
 			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
 		}

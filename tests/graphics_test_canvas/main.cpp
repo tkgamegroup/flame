@@ -80,7 +80,7 @@ int main(int argc, char** args)
 	app.w->resize_listeners.add([](void*, const Vec2u&) {
 		app.on_resize();
 		return true;
-	}, Mail());
+	}, Capture());
 
 	{
 		auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
@@ -94,7 +94,7 @@ int main(int argc, char** args)
 
 	looper().loop([](void*) {
 		app.run();
-	}, Mail());
+	}, Capture());
 
 	return 0;
 }

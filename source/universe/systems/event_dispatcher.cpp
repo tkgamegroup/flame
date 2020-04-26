@@ -65,8 +65,8 @@ namespace flame
 		window = (SysWindow*)world_->find_object(FLAME_CHASH("SysWindow"), 0);
 		if (window)
 		{
-			key_listener = window->key_listeners.add([](void* c, KeyStateFlags action, int value) {
-				auto thiz = *(sEventDispatcherPrivate**)c;
+			key_listener = window->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				if (action == KeyStateNull)
 				{
@@ -98,10 +98,10 @@ namespace flame
 				thiz->pending_update = true;
 
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 
-			mouse_listener = window->mouse_listeners.add([](void* c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(sEventDispatcherPrivate**)c;
+			mouse_listener = window->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				if (action == KeyStateNull)
 				{
@@ -119,7 +119,7 @@ namespace flame
 				thiz->pending_update = true;
 
 				return true;
-			}, Mail::from_p(this));
+			}, Capture().set_thiz(this));
 		}
 	}
 

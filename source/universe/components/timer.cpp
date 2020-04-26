@@ -15,7 +15,7 @@ namespace flame
 		_total_time = 0.f;
 		_times = 0;
 
-		callback.reset(new Closure<void(void*)>(nullptr, Mail()));
+		callback.reset(new Closure<void(Capture&)>(nullptr, Capture()));
 	}
 
 	cTimerPrivate::~cTimerPrivate()
@@ -82,7 +82,7 @@ namespace flame
 		((cTimerPrivate*)this)->reset();
 	}
 
-	void cTimer::set_callback(void(*callback)(void* c), const Mail& capture, bool _start)
+	void cTimer::set_callback(void(*callback)(Capture& c), const Capture& capture, bool _start)
 	{
 		stop();
 		((cTimerPrivate*)this)->callback.reset(new Closure(callback, capture));

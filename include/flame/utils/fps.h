@@ -4,23 +4,22 @@
 
 namespace flame
 {
-	inline void* add_fps_listener(void (*event)(void* c, uint fps), const Mail& _capture)
+	inline void* add_fps_listener(void (*callback)(Capture& c, uint fps), const Capture& _capture)
 	{
-		struct Capture
+		struct Capturing
 		{
 			uint last_frame;
-			void (*e)(void* c, uint fps);
+			void (*callback)(Capture& c, uint fps);
 		}capture;
 		capture.last_frame = 0;
-		capture.e = event;
-		auto ret = looper().add_event([](void* c, bool* go_on) {
-			auto& capture = *(Capture*)c;
+		capture.callback = callback;
+		auto ret = looper().add_event([](Capture& c) {
+			auto& capture = c.data<Capturing>();
 			auto frame = looper().frame;
-			capture.e((char*)c + sizeof(Capture), frame - capture.last_frame);
+			capture.callback(c.release<Capturing>(), frame - capture.last_frame);
 			capture.last_frame = frame;
-			*go_on = true;
-		}, Mail::expand_original(&capture, _capture), 1.f);
-		f_free(_capture.p);
+			c._current = INVALID_POINTER;
+		}, Capture().absorb(&capture, _capture, true), 1.f);
 		return ret;
 	}
 }

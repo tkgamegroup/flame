@@ -20,7 +20,7 @@ namespace flame
 {
 	struct ListenerHubImnplPrivate: ListenerHubImpl
 	{
-		std::vector<std::unique_ptr<Closure<bool(void* c)>>> listeners;
+		std::vector<std::unique_ptr<Closure<bool(Capture& c)>>> listeners;
 	};
 
 	ListenerHubImpl* ListenerHubImpl::create()
@@ -38,12 +38,12 @@ namespace flame
 		return ((ListenerHubImnplPrivate*)this)->listeners.size();
 	}
 
-	Closure<bool(void*)>& ListenerHubImpl::item(uint idx)
+	Closure<bool(Capture&)>& ListenerHubImpl::item(uint idx)
 	{
 		return *((ListenerHubImnplPrivate*)this)->listeners[idx].get();
 	}
 
-	void* ListenerHubImpl::add_plain(bool(*pf)(void* c), const Mail& capture, int pos)
+	void* ListenerHubImpl::add_plain(bool(*pf)(Capture& c), const Capture& capture, int pos)
 	{
 		auto thiz = (ListenerHubImnplPrivate*)this;
 		if (pos == -1)
@@ -53,12 +53,12 @@ namespace flame
 		return c;
 	}
 
-	void ListenerHubImpl::remove_plain(void* c)
+	void ListenerHubImpl::remove_plain(void* l)
 	{
 		auto& listeners = ((ListenerHubImnplPrivate*)this)->listeners;
 		for (auto it = listeners.begin(); it != listeners.end(); it++)
 		{
-			if (it->get() == c)
+			if (it->get() == l)
 			{
 				listeners.erase(it);
 				return;
@@ -95,10 +95,10 @@ namespace flame
 		return engine_path.c_str();
 	}
 
-	static void(*file_callback)(void*, const wchar_t*);
-	static Mail file_callback_capture;
+	static void(*file_callback)(Capture&, const wchar_t*);
+	static Capture file_callback_capture;
 
-	void set_file_callback(void(*callback)(void* c, const wchar_t* filename), const Mail& capture)
+	void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture)
 	{
 		file_callback = callback;
 		file_callback_capture = capture;
@@ -107,7 +107,7 @@ namespace flame
 	void report_used_file(const wchar_t* filename)
 	{
 		if (file_callback)
-			file_callback(file_callback_capture.p, filename);
+			file_callback(file_callback_capture, filename);
 	}
 
 	StringW get_curr_path()
@@ -679,7 +679,7 @@ namespace flame
 		bool modifier_shift;
 		bool modifier_ctrl;
 		bool modifier_alt;
-		std::unique_ptr<Closure<void(void* c, KeyStateFlags action)>> callback;
+		std::unique_ptr<Closure<void(Capture& c, KeyStateFlags action)>> callback;
 	};
 
 	static HHOOK global_key_hook = 0;
@@ -712,7 +712,7 @@ namespace flame
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(void* c, KeyStateFlags action), const Mail& capture)
+	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture)
 	{
 		auto l = new GlobalKeyListener;
 		l->key = key;
@@ -750,7 +750,7 @@ namespace flame
 		}
 	}
 
-	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail& capture)
+	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), Capture& capture)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		assert(dir_handle != INVALID_HANDLE_VALUE);
@@ -817,7 +817,7 @@ namespace flame
 				}
 
 				if (all_changes || type == FileModified)
-					callback(capture.p, type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
+					callback(capture, type, !path.empty() ? (path + L"\\" + p->FileName).c_str() : p->FileName);
 
 				if (p->NextEntryOffset <= 0)
 					break;
@@ -826,7 +826,7 @@ namespace flame
 			}
 		}
 
-		f_free(capture.p);
+		f_free(capture._data);
 
 		destroy_event(event_changed);
 		destroy_event(dir_handle);
@@ -835,7 +835,7 @@ namespace flame
 			destroy_event(event_end);
 	}
 
-	void* add_file_watcher(const wchar_t* _path, void (*callback)(void* c, FileChangeType type, const wchar_t* filename), const Mail& capture, bool all_changes, bool sync)
+	void* add_file_watcher(const wchar_t* _path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), const Capture& capture, bool all_changes, bool sync)
 	{
 		std::filesystem::path path = _path;
 
@@ -844,14 +844,14 @@ namespace flame
 			auto ev = create_event(false);
 
 			std::thread([=]() {
-				do_file_watch(ev, all_changes, path, callback, capture);
+				do_file_watch(ev, all_changes, path, callback, (Capture&)capture);
 			}).detach();
 
 			return ev;
 		}
 		else
 		{
-			do_file_watch(nullptr, all_changes, path, callback, capture);
+			do_file_watch(nullptr, all_changes, path, callback, (Capture&)capture);
 
 			return nullptr;
 		}
@@ -864,7 +864,7 @@ namespace flame
 	static std::condition_variable cv;
 	static auto workers = all_workers;
 
-	static std::vector<std::unique_ptr<Closure<void(void*)>>> works;
+	static std::vector<std::unique_ptr<Closure<void(Capture&)>>> works;
 
 	static void try_distribute_work()
 	{
@@ -890,7 +890,7 @@ namespace flame
 		}
 	}
 
-	void add_work(void (*function)(void* c), const Mail& capture)
+	void add_work(void (*function)(Capture& c), const Capture& capture)
 	{
 		mtx.lock();
 		works.emplace_back(new Closure(function, capture));
@@ -1135,8 +1135,8 @@ namespace flame
 
 	static Looper _looper;
 
-	void (*frame_callback)(void* c);
-	static Mail frame_capture;
+	void (*frame_callback)(Capture& c);
+	static Capture frame_capture;
 
 	static ulonglong last_time;
 
@@ -1157,11 +1157,11 @@ namespace flame
 
 		if (windows.empty())
 		{
-			f_free(frame_capture.p);
+			f_free(frame_capture._data);
 			return false;
 		}
 
-		frame_callback(frame_capture.p);
+		frame_callback(frame_capture);
 
 		_looper.frame++;
 		auto et = last_time;
@@ -1369,7 +1369,7 @@ namespace flame
 		delete (SysWindowPrivate*)w;
 	}
 
-	int Looper::loop(void (*_frame_callback)(void* c), const Mail& capture)
+	int Looper::loop(void (*_frame_callback)(Capture& c), const Capture& capture)
 	{
 		if (windows.empty())
 			return 1;
@@ -1415,24 +1415,30 @@ namespace flame
 		uint id;
 		float interval;
 		float rest;
-		std::unique_ptr<Closure<void(void* c, bool* go_on)>> event;
+		void(*callback)(Capture& c);
+		Capture capture;
+
+		~Event()
+		{
+			f_free(capture._data);
+		}
 	};
 
 	static std::list<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
-	void* Looper::add_event(void (*func)(void* c, bool* go_on), const Mail& capture, float interval, uint id)
+	void* Looper::add_event(void (*callback)(Capture& c), const Capture& capture, float interval, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
 		e->id = id;
 		e->interval = interval;
 		e->rest = interval;
-		auto c = new Closure(func, capture);
-		e->event.reset(c);
+		e->callback = callback;
+		e->capture = capture;
 		events.emplace_back(e);
 		event_mtx.unlock();
-		return c;
+		return e;
 	}
 
 	void Looper::remove_event(void* ret_by_add)
@@ -1440,7 +1446,7 @@ namespace flame
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
 		{
-			if ((*it)->event.get() == ret_by_add)
+			if ((*it).get() == ret_by_add)
 			{
 				events.erase(it);
 				break;
@@ -1474,9 +1480,9 @@ namespace flame
 			e->rest -= delta_time;
 			if (e->rest <= 0)
 			{
-				auto go_on = false;
-				e->event->call(&go_on);
-				if (!go_on)
+				e->capture._current = nullptr;
+				e->callback(e->capture);
+				if (e->capture._current != INVALID_POINTER)
 				{
 					it = events.erase(it);
 					continue;

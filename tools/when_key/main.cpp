@@ -36,13 +36,13 @@ int main(int argc, char **args)
 		}
 	}
 
-	struct Capture
+	struct Capturing
 	{
 		char cmd[256];
 	}capture;
 	strcpy_s(capture.cmd, args[2]);
-	add_global_key_listener(key, shift, ctrl, alt, [](void* c, KeyStateFlags action) {
-		auto& capture = *(Capture*)c;
+	add_global_key_listener(key, shift, ctrl, alt, [](Capture& c, KeyStateFlags action) {
+		auto& capture = c.data<Capturing>();
 
 		if (action == KeyStateDown)
 		{
@@ -50,7 +50,7 @@ int main(int argc, char **args)
 
 			system(capture.cmd);
 		}
-	}, Mail::from_t(&capture));
+	}, Capture().set_data(&capture));
 
 	do_simple_dispatch_loop();
 
