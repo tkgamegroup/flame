@@ -35,14 +35,14 @@ namespace flame
 			{
 			}
 
-			void create(void(*select_callback)(Capture& c, const Vec4f& r), const Mail& _capture)
+			void create(void(*select_callback)(Capture& c, const Vec4f& r), const Capture& _capture)
 			{
 				utils::e_begin_layout();
 				utils::c_aligner(AlignMinMax, AlignMinMax);
 					element = utils::current_entity()->get_component(cElement);
 					element->clip_flags = ClipFlag(ClipSelf | ClipChildren);
 					element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-						auto& edt = **(_2DEditor**)c;
+						auto& edt = *c.thiz<_2DEditor>();
 
 						if (edt.element->clipped)
 							return true;
@@ -75,15 +75,13 @@ namespace flame
 					event_receiver->focus_type = FocusByLeftOrRightButton;
 					struct Capturing
 					{
-						_2DEditor* thiz;
-						void(*f)(void*, const Vec4f&);
+						void(*f)(Capture&, const Vec4f&);
 					}capture;
-					capture.thiz = this;
 					capture.f = select_callback;
 					event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 						auto& capture = c.data<Capturing>();
-						auto& edt = *capture.thiz;
-						auto dp = cEventReceiver::current()->dispatcher;
+						auto& edt = *c.thiz<_2DEditor>();
+						auto dp = c.current<cEventReceiver>()->dispatcher;
 						auto mp = Vec2f(dp->mouse_pos);
 						if (is_mouse_scroll(action, key))
 						{
@@ -105,7 +103,7 @@ namespace flame
 							edt.select_begin = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 							edt.select_end = edt.select_begin;
 							edt.element->mark_dirty();
-							capture.f((char*)c + sizeof(Capture), Vec4f(0.f));
+							capture.f(c.release<Capturing>(), Vec4f(0.f));
 						}
 						else if (is_mouse_down(action, key, true) && key == Mouse_Right)
 							edt.moved = false;
@@ -124,7 +122,7 @@ namespace flame
 							}
 						}
 						return true;
-					}, Capture().absorb(&capture, _capture));
+					}, Capture().absorb(&capture, _capture).set_thiz(this));
 					event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
 						auto& capture = c.data<Capturing>();
 						auto& edt = *capture.thiz;
@@ -139,6 +137,7 @@ namespace flame
 						}
 						return true;
 					}, Capture().absorb(&capture, _capture));
+					f_free(_capture._data);
 
 					base = utils::e_element()->get_component(cElement);
 					moved = false;

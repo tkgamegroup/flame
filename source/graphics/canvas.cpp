@@ -11,6 +11,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		const auto spc = SampleCount_8;
+
 		enum CmdType
 		{
 			CmdDrawElement,
@@ -75,7 +77,7 @@ namespace flame
 					auto fmt = Swapchain::get_format();
 					AttachmentInfo atts[2];
 					auto& att_col = atts[0];
-					att_col.sample_count = SampleCount_8;
+					att_col.sample_count = spc;
 					att_col.format = fmt;
 					auto& att_dst = atts[1];
 					att_dst.format = fmt;
@@ -126,7 +128,7 @@ namespace flame
 						L"element.frag"
 					};
 					pl = Pipeline::create(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0,
-						&vi, Vec2u(0), nullptr, SampleCount_8);
+						&vi, Vec2u(0), nullptr, spc);
 				}
 
 				buf_vtx = Buffer::create(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent);
@@ -174,7 +176,7 @@ namespace flame
 				else
 				{
 					target_size = views[0]->image()->size;
-					img_ms = Image::create(d, Swapchain::get_format(), target_size, 1, 1, SampleCount_8, ImageUsageAttachment);
+					img_ms = Image::create(d, Swapchain::get_format(), target_size, 1, 1, spc, ImageUsageAttachment);
 					auto iv_ms = img_ms->default_view();
 					fbs.resize(views.size());
 					for (auto i = 0; i < fbs.size(); i++)
@@ -482,6 +484,8 @@ namespace flame
 				idx_end = (uint*)buf_idx->mapped;
 
 				curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
+
+				cmds.clear();
 			}
 
 			void record(Commandbuffer* cb, uint image_index)

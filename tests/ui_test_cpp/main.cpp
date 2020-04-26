@@ -195,6 +195,14 @@ struct MainWindow : App::Window
 
 		utils::pop_parent();
 	}
+
+	void on_update() override
+	{
+		if (swapchain_image_index > 0)
+		{
+
+		}
+	}
 };
 
 MainWindow* window = nullptr;

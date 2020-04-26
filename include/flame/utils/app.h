@@ -107,10 +107,7 @@ namespace flame
 					s_2d_renderer->before_update_listeners.add([](Capture& c) {
 						auto thiz = c.thiz<Window>();
 						if (thiz->s_2d_renderer->pending_update)
-						{
 							thiz->prepare_swapchain();
-							thiz->canvas->prepare();
-						}
 						return true;
 					}, Capture().set_thiz(this));
 					world->add_system(s_2d_renderer);
@@ -163,22 +160,30 @@ namespace flame
 						swapchain->acquire_image();
 						swapchain_image_index = swapchain->image_index();
 					}
+					if (canvas)
+						canvas->prepare();
 				}
 			}
 
-			void render()
+			void virtual on_update() {}
+
+			void update()
 			{
-				if (root_element)
-					root_element->set_size(Vec2f(sys_window->size));
 				if (world)
+				{
+					root_element->set_size(Vec2f(sys_window->size));
 					world->update();
+				}
+
+				on_update();
 
 				submit_fence->wait();
-				if (swapchain->image_count() && swapchain_image_index >= 0)
+				if (swapchain_image_index >= 0)
 				{
 					auto cb = swapchain_commandbuffers[swapchain_image_index];
 
-					canvas->record(cb, swapchain_image_index);
+					if (canvas)
+						canvas->record(cb, swapchain_image_index);
 
 					auto queue = graphics::Queue::get_default(graphics::QueueGraphics);
 					queue->submit(1, &cb, swapchain->image_avalible(), render_finished_semaphore, submit_fence);
@@ -298,7 +303,7 @@ namespace flame
 					it = windows.erase(it);
 				else
 				{
-					w->render();
+					w->update();
 					it++;
 				}
 			}
