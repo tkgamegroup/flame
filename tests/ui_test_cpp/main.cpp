@@ -198,9 +198,17 @@ struct MainWindow : App::Window
 
 	void on_update() override
 	{
-		if (swapchain_image_index > 0)
+		if (swapchain_image_index >= 0)
 		{
-
+			std::vector<Vec2f> points;
+			path_bezier(points, Vec2f(20.f, 500.f), Vec2f(70.f, 450.f), Vec2f(120.f, 550.f), Vec2f(170.f, 500.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f);
+			points.clear();
+			path_bezier(points, Vec2f(20.f, 550.f), Vec2f(70.f, 500.f), Vec2f(120.f, 600.f), Vec2f(170.f, 550.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f);
+			points.clear();
+			path_bezier(points, Vec2f(20.f, 600.f), Vec2f(70.f, 550.f), Vec2f(120.f, 650.f), Vec2f(170.f, 600.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f);
 		}
 	}
 };

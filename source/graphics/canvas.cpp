@@ -11,8 +11,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		const auto spc = SampleCount_8;
-
 		enum CmdType
 		{
 			CmdDrawElement,
@@ -55,7 +53,6 @@ namespace flame
 			std::vector<Resource> resources;
 			Buffer* buf_vtx;
 			Buffer* buf_idx;
-			Image* img_ms;
 			std::vector<Framebuffer*> fbs;
 			Descriptorset* ds;
 
@@ -75,25 +72,16 @@ namespace flame
 				if (!rp)
 				{
 					auto fmt = Swapchain::get_format();
-					AttachmentInfo atts[2];
-					auto& att_col = atts[0];
-					att_col.sample_count = spc;
-					att_col.format = fmt;
-					auto& att_dst = atts[1];
-					att_dst.format = fmt;
-					att_dst.clear = false;
+					AttachmentInfo att;
+					att.format = fmt;
+					att.clear = true;
 					SubpassInfo sp;
 					uint col_refs[] = {
 						0
 					};
 					sp.color_attachment_count = 1;
 					sp.color_attachments = col_refs;
-					uint dst_refs[] = {
-						1
-					};
-					sp.resolve_attachment_count = 1;
-					sp.resolve_attachments = dst_refs;
-					rp = Renderpass::create(d, array_size(atts), atts, 1, &sp, 0, nullptr);
+					rp = Renderpass::create(d, 1, &att, 1, &sp, 0, nullptr);
 				}
 				if (!dsl)
 				{
@@ -127,8 +115,7 @@ namespace flame
 						L"element.vert",
 						L"element.frag"
 					};
-					pl = Pipeline::create(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0,
-						&vi, Vec2u(0), nullptr, spc);
+					pl = Pipeline::create(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0, &vi);
 				}
 
 				buf_vtx = Buffer::create(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent);
@@ -140,7 +127,6 @@ namespace flame
 				img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
 				resources.resize(resource_count, { img_white->default_view(), nullptr, Vec2f(0.5f) });
 
-				img_ms = nullptr;
 				ds = Descriptorset::create(Descriptorpool::get_default(), dsl);
 				{
 					auto iv_white = img_white->default_view();
@@ -155,8 +141,6 @@ namespace flame
 				Buffer::destroy(buf_vtx);
 				Buffer::destroy(buf_idx);
 				Image::destroy(img_white);
-				if (img_ms)
-					Image::destroy(img_ms);
 				Descriptorset::destroy(ds);
 			}
 
@@ -164,28 +148,18 @@ namespace flame
 			{
 				for (auto f : fbs)
 					Framebuffer::destroy(f);
-				if (img_ms)
-					Image::destroy(img_ms);
 
 				if (views.empty())
 				{
 					target_size = 0.f;
-					img_ms = nullptr;
 					fbs.clear();
 				}
 				else
 				{
 					target_size = views[0]->image()->size;
-					img_ms = Image::create(d, Swapchain::get_format(), target_size, 1, 1, spc, ImageUsageAttachment);
-					auto iv_ms = img_ms->default_view();
 					fbs.resize(views.size());
 					for (auto i = 0; i < fbs.size(); i++)
-					{
-						Imageview* vs[2];
-						vs[0] = iv_ms;
-						vs[1] = views[i];
-						fbs[i] = Framebuffer::create(d, rp, array_size(vs), vs);
-					}
+						fbs[i] = Framebuffer::create(d, rp, 1, &views[i]);
 				}
 			}
 
