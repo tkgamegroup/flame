@@ -1,5 +1,6 @@
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
+#include <flame/universe/utils/ui_reflector.h>
 
 #include <flame/universe/utils/ui_impl.h>
 
@@ -10,17 +11,37 @@ struct MyApp : App
 {
 }app;
 
-int main(int argc, char** args)
+struct MainWindow : App::Window
 {
-	app.create("UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true);
+	MainWindow();
+};
 
-	utils::push_parent(app.root);
+MainWindow* main_window;
+
+MainWindow::MainWindow() :
+	App::Window(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+{
+	setup_as_main_window();
+
+	utils::set_current_root(root);
+	utils::set_current_entity(root);
+	
+	utils::push_parent(root);
+
+	utils::e_begin_menu_bar();
+		utils::e_begin_menubar_menu(L"Window");
+			utils::e_menu_item(L"Reflector", [](Capture& c) {
+				utils::next_element_pos = Vec2f(100.f);
+				utils::e_ui_reflector_window();
+			}, Capture());
+		utils::e_end_menubar_menu();
+	utils::e_end_menu_bar();
 
 	utils::e_text(L"");
 	utils::c_aligner(AlignMin, AlignMax);
 	add_fps_listener([](Capture& c, uint fps) {
-		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, Capture().set_data(&utils::current_entity()->get_component(cText)));
+		c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
+	}, Capture().set_thiz(utils::current_entity()->get_component(cText)));
 
 	utils::next_element_pos = Vec2f(16.f, 28.f);
 	utils::e_begin_layout(LayoutVertical, 16.f);
@@ -33,9 +54,8 @@ int main(int argc, char** args)
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
 			utils::e_button(L"Create Sample Scene", [](Capture& c) {
-				auto e = *(void**)c;
 				looper().add_event([](Capture& c) {
-					auto e_scene = *(Entity**)c;
+					auto e_scene = c.thiz<Entity>();
 					e_scene->remove_children(0, -1);
 
 					auto e_box1 = Entity::create();
@@ -68,39 +88,44 @@ int main(int argc, char** args)
 
 						auto c_text = cText::create();
 						c_text->font_atlas = app.font_atlas;
+						c_text->font_size = 16;
 						c_text->color = Vec4c(0, 0, 0, 255);
 						c_text->set_text(L"Hello World!");
 						e_text->add_component(c_text);
 					}
 
-				}, Capture().set_data(&e));
-			}, Capture().set_data(&e_scene));
+				}, Capture().set_thiz(c.thiz<Entity>()));
+			}, Capture().set_thiz(e_scene));
 			utils::e_button(L"Clear Scene", [](Capture& c) {
-				auto e = *(void**)c;
 				looper().add_event([](Capture& c) {
-					(*(Entity**)c)->remove_children(0, -1);
-				}, Capture().set_data(&e));
-			}, Capture().set_data(&e_scene));
+					c.thiz<Entity>()->remove_children(0, -1);
+				}, Capture().set_thiz(c.thiz<Entity>()));
+			}, Capture().set_thiz(e_scene));
 			utils::e_button(L"Save Scene", [](Capture& c) {
-				auto e_scene = *(Entity**)c;
+				auto e_scene = c.thiz<Entity>();
 				if (e_scene->child_count() > 0)
 					Entity::save_to_file(e_scene->child(0), L"test.prefab");
-			}, Capture().set_data(&e_scene));
+			}, Capture().set_thiz(e_scene));
 			utils::e_button(L"Load Scene", [](Capture& c) {
-				auto e = *(void**)c;
 				looper().add_event([](Capture& c) {
-					auto e_scene = *(Entity**)c;
+					auto e_scene = c.thiz<Entity>();
 					e_scene->remove_children(0, -1);
 					if (std::filesystem::exists(L"test.prefab"))
 						e_scene->add_child(Entity::create_from_file(e_scene->world(), L"test.prefab"));
-				}, Capture().set_data(&e));
-			}, Capture().set_data(&e_scene));
+				}, Capture().set_thiz(c.thiz<Entity>()));
+			}, Capture().set_thiz(e_scene));
 		utils::e_end_layout();
 	utils::e_end_layout();
 
 	utils::pop_parent();
+}
 
-	looper().loop([](void*) {
+int main(int argc, char** args)
+{
+	app.create();
+	main_window = new MainWindow();
+
+	looper().loop([](Capture&) {
 		app.run();
 	}, Capture());
 

@@ -62,6 +62,8 @@ namespace flame
 				c.thiz<cTextPrivate>()->draw(canvas);
 				return true;
 			}, Capture().set_thiz(this));
+			if (auto_size)
+				set_size_auto();
 		}
 		else if (c->name_hash == FLAME_CHASH("cAligner"))
 			aligner = (cAligner*)c;

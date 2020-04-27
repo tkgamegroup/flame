@@ -93,7 +93,7 @@ namespace flame
 							if (ret)
 								thiz->c_tree->set_selected(ret);
 							thiz->c_tree->expand_to_selected();
-						}, Capture().set_data(&pt));
+						}, Capture().set_data(&pt).set_thiz(this));
 						e_toggle(Icon_SQUARE_O, highlight)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 							if (hash == FLAME_CHASH("checked"))
 								c.data<Target*>()->highlight = c.current<cCheckbox>()->checked;
