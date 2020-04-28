@@ -125,7 +125,7 @@ namespace flame
 					}, Capture().absorb(&capture, _capture).set_thiz(this));
 					event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
 						auto& capture = c.data<Capturing>();
-						auto& edt = *capture.thiz;
+						auto& edt = *c.thiz<_2DEditor>();
 						if (!(state & EventReceiverActive) && edt.selecting)
 						{
 							edt.selecting = false;
@@ -133,10 +133,10 @@ namespace flame
 
 							auto p0 = edt.base->global_pos;
 							auto s = edt.scale_level * 0.1f;
-							capture.f((char*)c + sizeof(Capture), rect_from_points(edt.select_begin * s + p0, edt.select_end * s + p0));
+							capture.f(c.release<Capturing>(), rect_from_points(edt.select_begin * s + p0, edt.select_end * s + p0));
 						}
 						return true;
-					}, Capture().absorb(&capture, _capture));
+					}, Capture().absorb(&capture, _capture).set_thiz(this));
 					f_free(_capture._data);
 
 					base = utils::e_element()->get_component(cElement);
@@ -144,7 +144,7 @@ namespace flame
 
 					overlay = utils::e_element()->get_component(cElement);
 					overlay->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-						auto& edt = **(_2DEditor**)c;
+						auto& edt = *c.thiz<_2DEditor>();
 
 						if (edt.element->clipped)
 							return true;

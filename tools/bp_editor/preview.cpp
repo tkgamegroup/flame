@@ -3,7 +3,7 @@
 cPreview::cPreview() :
 	Component("cPreview")
 {
-	auto e_page = utils::e_begin_docker_page(L"Preview", [](void*) {
+	auto e_page = utils::e_begin_docker_page(L"Preview", [](Capture&) {
 		app.e_test->parent()->remove_child(app.e_test, false);
 	}).second;
 	{

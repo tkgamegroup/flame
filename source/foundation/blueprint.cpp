@@ -766,6 +766,11 @@ namespace flame
 		time += looper().delta_time;
 	}
 
+	BP::Node* BP::Slot::node() const
+	{
+		return ((SlotPrivate*)this)->node;
+	}
+
 	BP::Slot::IO BP::Slot::io() const
 	{
 		return ((SlotPrivate*)this)->io;

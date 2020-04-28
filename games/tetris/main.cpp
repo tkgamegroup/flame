@@ -87,11 +87,6 @@ struct Garbage
 	uint lines;
 };
 
-struct MainWindow : App::Window
-{
-	MainWindow();
-};
-
 struct MyApp : App
 {
 	graphics::Atlas* atlas;
@@ -153,6 +148,7 @@ struct MyApp : App
 
 	MyApp();
 	~MyApp();
+	void create();
 	void create_home_scene();
 	void create_player_controls(int player_index);
 	void process_player_entered(int index);
@@ -188,17 +184,39 @@ struct MyApp : App
 	void quit_game();
 }app;
 
+struct MainWindow : App::Window
+{
+	MainWindow();
+};
+
 MainWindow* main_window = nullptr;
 
 MainWindow::MainWindow() :
 	App::Window(&app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
 {
+	main_window = this;
+
 	setup_as_main_window();
 
 	utils::set_current_root(root);
 	utils::set_current_entity(root);
 
 	canvas->add_atlas(app.atlas);
+
+	utils::push_parent(root);
+	{
+		auto e = utils::e_text(L"");
+		e->on_destroyed_listeners.add([](Capture& c) {
+			looper().remove_event(c.thiz<void>());
+			return true;
+		}, Capture().set_thiz(add_fps_listener([](Capture& c, uint fps) {
+			c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
+		}, Capture().set_thiz(e->get_component(cText)))));
+	}
+	utils::c_aligner(AlignMin, AlignMax);
+	utils::pop_parent();
+
+	app.create_home_scene();
 }
 
 MyApp::MyApp()
@@ -241,6 +259,69 @@ MyApp::~MyApp()
 		for (auto& p : app.used_files[1])
 			pack_desc << "\"" << p.string() << "\"\n";
 		pack_desc.close();
+	}
+}
+
+void MyApp::create()
+{
+	App::create(false);
+
+	auto user_data = parse_ini_file(L"user_data.ini");
+	for (auto& e : user_data.get_section_entries(""))
+	{
+		if (e.key == "name")
+			my_name = s2w(e.value);
+	}
+	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	for (auto& e : user_data.get_section_entries("key"))
+	{
+		for (auto i = 0; i < KEY_COUNT; i++)
+		{
+			if (key_names[i] == s2w(e.key))
+				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value();
+		}
+	}
+	for (auto& e : user_data.get_section_entries("sound"))
+	{
+		if (e.key == "fx_volumn")
+			fx_volumn = std::stoi(e.value);
+	}
+	for (auto& e : user_data.get_section_entries("sensitiveness"))
+	{
+		if (e.key == "left_right_sensitiveness")
+			left_right_sensitiveness = std::stoi(e.value);
+		else if (e.key == "left_right_speed")
+			left_right_speed = std::stoi(e.value);
+		else if (e.key == "soft_drop_speed")
+			soft_drop_speed = std::stoi(e.value);
+	}
+
+	atlas = graphics::Atlas::load(graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
+
+	{
+		sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
+		sound_move_src = sound::Source::create(sound_move_buf);
+		sound_move_src->set_volume(sound_move_volumn);
+	}
+	{
+		sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/soft_drop.wav").c_str());
+		sound_soft_drop_src = sound::Source::create(sound_soft_drop_buf);
+		sound_soft_drop_src->set_volume(sound_soft_drop_volumn);
+	}
+	{
+		sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/hard_drop.wav").c_str());
+		sound_hard_drop_src = sound::Source::create(sound_hard_drop_buf);
+		sound_hard_drop_src->set_volume(sound_hard_drop_volumn);
+	}
+	{
+		sound_clear_buf = sound::Buffer::create_from_file((resource_path / L"art/clear.wav").c_str());
+		sound_clear_src = sound::Source::create(sound_clear_buf);
+		sound_clear_src->set_volume(sound_clear_volumn);
+	}
+	{
+		sound_hold_buf = sound::Buffer::create_from_file((resource_path / L"art/hold.wav").c_str());
+		sound_hold_src = sound::Source::create(sound_hold_buf);
+		sound_hold_src->set_volume(sound_hold_volumn);
 	}
 }
 
@@ -1050,7 +1131,7 @@ void MyApp::create_lan_scene()
 		else
 			utils::e_message_dialog(L"You Need To Select A Room");
 	}, Capture().set_thiz(e_room_list));
-	utils::e_button(L"Direct Connect", [](Capture& c) {
+	utils::e_button(L"Direct Connect", [](Capture&) {
 		if (app.my_name.empty())
 			utils::e_message_dialog(L"Your Name Cannot Not Be Empty");
 		else
@@ -1060,7 +1141,7 @@ void MyApp::create_lan_scene()
 					app.join_room(w2s(text).c_str());
 			}, Capture());
 		}
-	}, Capture().set_data(&e_room_list));
+	}, Capture());
 	utils::e_button(L"Back", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
@@ -2254,82 +2335,9 @@ void MyApp::do_game_logic()
 
 int main(int argc, char **args)
 {
-	app.create(false);
+	app.create();
 
-	auto user_data = parse_ini_file(L"user_data.ini");
-	for (auto& e : user_data.get_section_entries(""))
-	{
-		if (e.key == "name")
-			app.my_name = s2w(e.value);
-	}
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
-	for (auto& e : user_data.get_section_entries("key"))
-	{
-		for (auto i = 0; i < KEY_COUNT; i++)
-		{
-			if (key_names[i] == s2w(e.key))
-				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value();
-		}
-	}
-	for (auto& e : user_data.get_section_entries("sound"))
-	{
-		if (e.key == "fx_volumn")
-			fx_volumn = std::stoi(e.value);
-	}
-	for (auto& e : user_data.get_section_entries("sensitiveness"))
-	{
-		if (e.key == "left_right_sensitiveness")
-			left_right_sensitiveness = std::stoi(e.value);
-		else if (e.key == "left_right_speed")
-			left_right_speed = std::stoi(e.value);
-		else if (e.key == "soft_drop_speed")
-			soft_drop_speed = std::stoi(e.value);
-	}
-
-	app.atlas = graphics::Atlas::load(app.graphics_device, (app.resource_path / L"art/atlas/main.atlas").c_str());
-
-	{
-		app.sound_move_buf = sound::Buffer::create_from_file((app.resource_path / L"art/move.wav").c_str());
-		app.sound_move_src = sound::Source::create(app.sound_move_buf);
-		app.sound_move_src->set_volume(sound_move_volumn);
-	}
-	{
-		app.sound_soft_drop_buf = sound::Buffer::create_from_file((app.resource_path / L"art/soft_drop.wav").c_str());
-		app.sound_soft_drop_src = sound::Source::create(app.sound_soft_drop_buf);
-		app.sound_soft_drop_src->set_volume(sound_soft_drop_volumn);
-	}
-	{
-		app.sound_hard_drop_buf = sound::Buffer::create_from_file((app.resource_path / L"art/hard_drop.wav").c_str());
-		app.sound_hard_drop_src = sound::Source::create(app.sound_hard_drop_buf);
-		app.sound_hard_drop_src->set_volume(sound_hard_drop_volumn);
-	}
-	{
-		app.sound_clear_buf = sound::Buffer::create_from_file((app.resource_path / L"art/clear.wav").c_str());
-		app.sound_clear_src = sound::Source::create(app.sound_clear_buf);
-		app.sound_clear_src->set_volume(sound_clear_volumn);
-	}
-	{
-		app.sound_hold_buf = sound::Buffer::create_from_file((app.resource_path / L"art/hold.wav").c_str());
-		app.sound_hold_src = sound::Source::create(app.sound_hold_buf);
-		app.sound_hold_src->set_volume(sound_hold_volumn);
-	}
-
-	main_window = new MainWindow();
-
-	utils::push_parent(main_window->root);
-	{
-		auto e = utils::e_text(L"");
-		e->on_destroyed_listeners.add([](Capture& c) {
-			looper().remove_event(c.thiz<void>());
-			return true;
-		}, Capture().set_thiz(add_fps_listener([](Capture& c, uint fps) {
-			c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
-		}, Capture().set_thiz(e->get_component(cText)))));
-	}
-	utils::c_aligner(AlignMin, AlignMax);
-	utils::pop_parent();
-
-	app.create_home_scene();
+	new MainWindow();
 
 	looper().loop([](Capture&) {
 		app.run();

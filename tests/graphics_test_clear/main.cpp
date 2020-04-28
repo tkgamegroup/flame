@@ -79,12 +79,12 @@ int main(int argc, char** args)
 	app.fence = Fence::create(app.d);
 	app.render_finished = Semaphore::create(app.d);
 	app.on_resize();
-	app.w->resize_listeners.add([](void*, const Vec2u&) {
+	app.w->resize_listeners.add([](Capture&, const Vec2u&) {
 		app.on_resize();
 		return true;
 	}, Capture());
 
-	looper().loop([](void*) {
+	looper().loop([](Capture&) {
 		app.run();
 	}, Capture());
 }

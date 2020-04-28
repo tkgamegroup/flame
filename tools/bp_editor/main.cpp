@@ -26,7 +26,7 @@ void _remove_node(BP::Node* n)
 	if (app.editor)
 	{
 		looper().add_event([](Capture& c) {
-			auto n = *(BP::Node**)c;
+			auto n = c.thiz<BP::Node>();
 			std::vector<BP::Node*> ref_ns;
 			for (auto i = 0; i < n->output_count(); i++)
 			{
@@ -41,7 +41,7 @@ void _remove_node(BP::Node* n)
 				app.editor->on_remove_node(n);
 				app.editor->on_add_node(n);
 			}
-		}, Capture().set_data(&n));
+		}, Capture().set_thiz(n));
 	}
 }
 
@@ -81,10 +81,10 @@ std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models)
 void _set_link(BP::Slot* in, BP::Slot* out)
 {
 	looper().add_event([](Capture& c) {
-		auto n = *(BP::Node**)c;
+		auto n = c.thiz<BP::Node>();
 		app.editor->on_remove_node(n);
 		app.editor->on_add_node(n);
-	}, Capture().set_data(&in->node()));
+	}, Capture().set_thiz(in->node()));
 	in->link_to(out);
 }
 
@@ -314,7 +314,7 @@ struct Action_SetLinks : Action
 				_set_link(i, l.prev_output_addr.empty() ? nullptr : app.bp->find_output(l.prev_output_addr.c_str()));
 		}
 		
-		app.s_2d_renderer->pending_update = true;
+		main_window->s_2d_renderer->pending_update = true;
 	}
 
 	void redo() override
@@ -326,7 +326,7 @@ struct Action_SetLinks : Action
 				_set_link(i, l.after_output_addr.empty() ? nullptr : app.bp->find_output(l.after_output_addr.c_str()));
 		}
 
-		app.s_2d_renderer->pending_update = true;
+		main_window->s_2d_renderer->pending_update = true;
 	}
 };
 
@@ -460,7 +460,7 @@ static void delete_selected()
 
 		app.set_changed(true);
 
-		app.s_2d_renderer->pending_update = true;
+		main_window->s_2d_renderer->pending_update = true;
 	}
 }
 
@@ -501,11 +501,9 @@ static void add_window(pugi::xml_node n)
 	}
 }
 
-bool MyApp::create(const char* filename)
+void MyApp::create(const char* filename)
 {
-	auto res = true;
-
-	App::create("BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
+	App::create();
 
 	e_test = Entity::create();
 	{
@@ -531,8 +529,6 @@ bool MyApp::create(const char* filename)
 	}
 	if (!bp)
 	{
-		res = false;
-
 		filepath = app.resource_path / L"new.bp";
 		fileppath = filepath.parent_path();
 		if (!std::filesystem::exists(filepath))
@@ -544,199 +540,6 @@ bool MyApp::create(const char* filename)
 		bp = BP::create_from_file(filepath.c_str());
 		assert(bp);
 	}
-
-	main_window->sys_window->set_title(filepath.string().c_str());
-
-	pugi::xml_document window_layout;
-	pugi::xml_node window_layout_root;
-	if (window_layout.load_file(L"window_layout.xml"))
-		window_layout_root = window_layout.first_child();
-
-	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
-	utils::style_set_to_light();
-
-	{
-		auto c_event_receiver = root->get_component(cEventReceiver);
-		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
-			if (is_key_down(action))
-			{
-				switch (value)
-				{
-				case Key_S:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						app.save();
-					break;
-				case Key_Z:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						undo();
-					break;
-				case Key_Y:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						redo();
-					break;
-				case Key_D:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
-						duplicate_selected();
-					break;
-				case Key_Del:
-					delete_selected();
-					break;
-				case Key_F2:
-					app.update();
-					break;
-				case Key_F3:
-					app.c_auto_update->set_checked(true);
-					break;
-				}
-			}
-			return true;
-		}, Capture());
-		s_event_dispatcher->next_focusing = c_event_receiver;
-	}
-
-	utils::push_parent(root);
-
-	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-	utils::c_aligner(AlignMinMax, AlignMinMax);
-
-	utils::e_begin_menu_bar();
-	utils::e_begin_menubar_menu(L"Blueprint");
-	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
-		app.save();
-	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Edit");
-	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void*) {
-		undo();
-	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void*) {
-		redo();
-	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](void*) {
-		duplicate_selected();
-	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](void*) {
-		delete_selected();
-	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"View");
-	utils::e_menu_item(L"Editor", [](void*) {
-		if (!app.editor)
-		{
-			utils::push_parent(app.root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
-			app.editor = new cEditor;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
-		}
-	}, Capture());
-	utils::e_menu_item(L"Detail", [](void*) {
-		if (!app.detail)
-		{
-			utils::push_parent(app.root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
-			app.detail = new cDetail;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
-		}
-	}, Capture());
-	utils::e_menu_item(L"Preview", [](void*) {
-		if (!app.preview)
-		{
-			utils::push_parent(app.root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
-			app.preview = new cPreview;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
-		}
-	}, Capture());
-	utils::e_menu_item(L"Console", [](void*) {
-		if (!app.console)
-		{
-			utils::push_parent(app.root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
-			app.console = new cConsole;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
-		}
-	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Tools");
-	utils::e_menu_item(L"Generate Graph Image", [](Capture& c) {
-		app.generate_graph_image();
-	}, Capture());
-	utils::e_menu_item(L"Auto Set Layout", [](Capture& c) {
-		app.auto_set_layout();
-	}, Capture());
-	utils::e_menu_item(L"Reflector", [](Capture& c) {
-		utils::e_ui_reflector_window();
-	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_end_menu_bar();
-
-	{
-		utils::next_element_padding = 4.f;
-		utils::next_element_color = utils::style(FrameColorNormal).c;
-		utils::e_begin_layout(LayoutHorizontal, 8.f);
-		utils::c_aligner(AlignMinMax, 0);
-		c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
-		c_auto_update->data_changed_listeners.add([](void*, uint hash, void*) {
-			if (hash == FLAME_CHASH("checked"))
-				app.auto_update = app.c_auto_update->checked;
-			return true;
-		}, Capture());
-		utils::e_button(L"Update (F2)", [](void*) {
-			app.update();
-		}, Capture());
-		utils::e_button(L"Reset Time", [](void*) {
-			app.bp->time = 0.f;
-		}, Capture());
-		utils::e_end_layout();
-	}
-
-	utils::e_begin_docker_static_container();
-	if (window_layout_root)
-		add_window(window_layout_root.child("static").first_child());
-	utils::e_end_docker_static_container();
-
-	utils::e_end_layout();
-
-	utils::push_style(FontSize, common(Vec1u(30)));
-	utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
-	utils::next_element_color = Vec4c(0, 0, 0, 255);
-	e_notification = utils::e_text(L"");
-	e_notification->get_component(cText)->color = Vec4c(255);
-	utils::c_aligner(AlignMax, AlignMax);
-	e_notification->set_visible(false);
-	{
-		auto c_timer = utils::c_timer();
-		c_timer->interval = 1.f;
-		c_timer->max_times = 1;
-		c_timer->set_callback([](void*) {
-			app.e_notification->set_visible(false);
-		}, Capture(), false);
-	}
-	utils::pop_style(FontSize);
-
-	utils::pop_parent();
-
-	return res;
 }
 
 void MyApp::select()
@@ -1079,17 +882,224 @@ bool MyApp::auto_set_layout()
 
 MyApp app;
 
+MainWindow::MainWindow() :
+	App::Window(&app, true, true, "BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
+{
+	main_window = this;
+
+	setup_as_main_window();
+
+	utils::set_current_root(root);
+	utils::set_current_entity(root);
+
+	sys_window->set_title(app.filepath.string().c_str());
+
+	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
+	utils::style_set_to_light();
+
+	pugi::xml_document window_layout;
+	pugi::xml_node window_layout_root;
+	if (window_layout.load_file(L"window_layout.xml"))
+		window_layout_root = window_layout.first_child();
+
+	{
+		auto c_event_receiver = root->get_component(cEventReceiver);
+		c_event_receiver->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
+			if (is_key_down(action))
+			{
+				auto ed = c.current<cEventReceiver>()->dispatcher;
+				switch (value)
+				{
+				case Key_S:
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+						app.save();
+					break;
+				case Key_Z:
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+						undo();
+					break;
+				case Key_Y:
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+						redo();
+					break;
+				case Key_D:
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+						duplicate_selected();
+					break;
+				case Key_Del:
+					delete_selected();
+					break;
+				case Key_F2:
+					app.update();
+					break;
+				case Key_F3:
+					app.c_auto_update->set_checked(true);
+					break;
+				}
+			}
+			return true;
+		}, Capture());
+		s_event_dispatcher->next_focusing = c_event_receiver;
+	}
+
+	utils::push_parent(root);
+
+	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
+	utils::c_aligner(AlignMinMax, AlignMinMax);
+
+	utils::e_begin_menu_bar();
+	utils::e_begin_menubar_menu(L"Blueprint");
+	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
+		app.save();
+	}, Capture());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Edit");
+	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](Capture&) {
+		undo();
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](Capture&) {
+		redo();
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture&) {
+		duplicate_selected();
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](Capture&) {
+		delete_selected();
+	}, Capture());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"View");
+	utils::e_menu_item(L"Editor", [](Capture&) {
+		if (!app.editor)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.editor = new cEditor;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture());
+	utils::e_menu_item(L"Detail", [](Capture&) {
+		if (!app.detail)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.detail = new cDetail;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture());
+	utils::e_menu_item(L"Preview", [](Capture&) {
+		if (!app.preview)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.preview = new cPreview;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture());
+	utils::e_menu_item(L"Console", [](Capture&) {
+		if (!app.console)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.console = new cConsole;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Tools");
+	utils::e_menu_item(L"Generate Graph Image", [](Capture& c) {
+		app.generate_graph_image();
+	}, Capture());
+	utils::e_menu_item(L"Auto Set Layout", [](Capture& c) {
+		app.auto_set_layout();
+	}, Capture());
+	utils::e_menu_item(L"Reflector", [](Capture& c) {
+		utils::e_ui_reflector_window();
+	}, Capture());
+	utils::e_end_menubar_menu();
+	utils::e_end_menu_bar();
+
+	{
+		utils::next_element_padding = 4.f;
+		utils::next_element_color = utils::style(FrameColorNormal).c;
+		utils::e_begin_layout(LayoutHorizontal, 8.f);
+		utils::c_aligner(AlignMinMax, 0);
+		app.c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
+		app.c_auto_update->data_changed_listeners.add([](Capture&, uint hash, void*) {
+			if (hash == FLAME_CHASH("checked"))
+				app.auto_update = app.c_auto_update->checked;
+			return true;
+		}, Capture());
+		utils::e_button(L"Update (F2)", [](Capture&) {
+			app.update();
+		}, Capture());
+		utils::e_button(L"Reset Time", [](Capture&) {
+			app.bp->time = 0.f;
+		}, Capture());
+		utils::e_end_layout();
+	}
+
+	utils::e_begin_docker_static_container();
+	if (window_layout_root)
+		add_window(window_layout_root.child("static").first_child());
+	utils::e_end_docker_static_container();
+
+	utils::e_end_layout();
+
+	utils::push_style(FontSize, common(Vec1u(30)));
+	utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
+	utils::next_element_color = Vec4c(0, 0, 0, 255);
+	app.e_notification = utils::e_text(L"");
+	app.e_notification->get_component(cText)->color = Vec4c(255);
+	utils::c_aligner(AlignMax, AlignMax);
+	app.e_notification->set_visible(false);
+	{
+		auto c_timer = utils::c_timer();
+		c_timer->interval = 1.f;
+		c_timer->max_times = 1;
+		c_timer->set_callback([](Capture&) {
+			app.e_notification->set_visible(false);
+		}, Capture(), false);
+	}
+	utils::pop_style(FontSize);
+
+	utils::pop_parent();
+}
+
+MainWindow* main_window = nullptr;
+
 int main(int argc, char **args)
 {
 	app.create(argc > 1 ? args[1] : "");
 
-	looper().add_event([](void*, bool* go_on) {
+	new MainWindow;
+
+	looper().add_event([](Capture& c) {
 		if (app.auto_update)
 			app.update();
-		*go_on = true;
+		c._current = INVALID_POINTER;
 	}, Capture(), 0.f);
 
-	looper().loop([](void*) {
+	looper().loop([](Capture&) {
 		app.run();
 	}, Capture());
 

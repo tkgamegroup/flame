@@ -33,15 +33,15 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				thiz->target->add_pos(Vec2f(pos) / thiz->base->scale);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeAll : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeAll : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -50,17 +50,17 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto x = pos.x() / thiz->base->scale;
 				thiz->target->add_x(x);
 				thiz->target->add_width(-x);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -68,17 +68,17 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto y = pos.y() / thiz->base->scale;
 				thiz->target->add_y(y);
 				thiz->target->add_height(-y);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -86,16 +86,16 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto x = pos.x() / thiz->base->scale;
 				thiz->target->add_width(x);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -103,16 +103,16 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto y = pos.y() / thiz->base->scale;
 				thiz->target->add_height(y);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -120,17 +120,17 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto p = Vec2f(pos) / thiz->base->scale;
 				thiz->target->add_pos(p);
 				thiz->target->add_size(-p);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -138,17 +138,17 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto p = Vec2f(pos) / thiz->base->scale;
 				thiz->target->add_y(p.y());
 				thiz->target->add_size(Vec2f(p.x(), -p.y()));
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -156,17 +156,17 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto p = Vec2f(pos) / thiz->base->scale;
 				thiz->target->add_x(p.x());
 				thiz->target->add_size(Vec2f(-p.x(), p.y()));
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -174,16 +174,16 @@ void _2DGizmo::create()
 	{
 		auto er = utils::c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
-				auto thiz = *(_2DGizmo**)c;
+				auto thiz = c.thiz<_2DGizmo>();
 				auto p = Vec2f(pos) / thiz->base->scale;
 				thiz->target->add_size(p);
 			}
 			return true;
 		}, Capture().set_thiz(this));
-		er->state_listeners.add([](void*, EventReceiverState s) {
-			cEventReceiver::current()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+		er->state_listeners.add([](Capture& c, EventReceiverState s) {
+			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -228,7 +228,7 @@ void _2DGizmo::on_select()
 				case FLAME_CHASH("global_pos"):
 				case FLAME_CHASH("global_scale"):
 				case FLAME_CHASH("global_size"):
-					(*(_2DGizmo**)c)->update_blocks();
+					c.thiz<_2DGizmo>()->update_blocks();
 					break;
 				}
 				return true;
@@ -275,14 +275,14 @@ cSceneEditor::cSceneEditor() :
 			utils::e_begin_combobox();
 				utils::e_combobox_item(L"Select");
 				utils::e_combobox_item(L"Gizmo");
-			utils::e_end_combobox(tool_type)->get_component(cCombobox)->data_changed_listeners.add([](void*, uint hash, void*) {
+			utils::e_end_combobox(tool_type)->get_component(cCombobox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("index"))
-					app.editor->tool_type = ((cCombobox*)Component::current())->index;
+					app.editor->tool_type = c.current<cCombobox>()->index;
 				return true;
 			}, Capture());
 		utils::e_end_layout();
 
-		edt.create([](void*, const Vec4f& r) {
+		edt.create([](Capture&, const Vec4f& r) {
 			if (r.x() == r.z() && r.y() == r.z())
 				app.select(nullptr);
 			else
@@ -294,7 +294,7 @@ cSceneEditor::cSceneEditor() :
 				auto e_overlay = edt.overlay->entity;
 
 				edt.overlay->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-					auto element = *(cElement**)c;
+					auto element = c.thiz<cElement>();
 					if (!element->clipped && app.selected)
 					{
 						auto se = app.selected->get_component(cElement);
@@ -307,10 +307,10 @@ cSceneEditor::cSceneEditor() :
 						}
 					}
 					return true;
-				}, Capture().set_data(&edt.overlay));
+				}, Capture().set_thiz(edt.overlay));
 				utils::set_current_entity(e_overlay);
 				auto c_event_receiver = e_overlay->get_component(cEventReceiver);
-				c_event_receiver->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+				c_event_receiver->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
 					*pass = true;
 					return true;
 				}, Capture());

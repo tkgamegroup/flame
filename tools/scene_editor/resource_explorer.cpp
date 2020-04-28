@@ -44,7 +44,7 @@ struct cThumbnail : Component
 		if (c->name_hash == FLAME_CHASH("cElement"))
 		{
 			((cElement*)c)->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-				(*(cThumbnail**)c)->draw(canvas);
+				c.thiz<cThumbnail>()->draw(canvas);
 				return true;
 			}, Capture().set_thiz(this));
 		}
@@ -52,7 +52,7 @@ struct cThumbnail : Component
 		{
 			image = (cImage*)c;
 			add_work([](Capture& c) {
-				auto thiz = *(cThumbnail**)c;
+				auto thiz = c.thiz<cThumbnail>();
 				uint w, h;
 				char* data;
 				get_thumbnail(64, thiz->filename.c_str(), &w, &h, &data);
@@ -88,7 +88,7 @@ struct cThumbnail : Component
 						app.resource_explorer->thumbnails_seats_free.erase(app.resource_explorer->thumbnails_seats_free.begin());
 
 						looper().add_event([](Capture& c) {
-							auto thiz = *(cThumbnail**)c;
+							auto thiz = c.thiz<cThumbnail>();
 							auto image = thiz->image;
 							auto& thumbnails_img_size = app.resource_explorer->thumbnails_img->size;
 							auto& thumbnail_size = thiz->thumbnail->size;
@@ -113,7 +113,7 @@ struct cThumbnail : Component
 cResourceExplorer::cResourceExplorer() :
 	Component("cResourceExplorer")
 {
-	auto canvas = app.canvas;
+	auto canvas = main_window->canvas;
 	folder_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/folder.png").c_str());
 	folder_img_idx = canvas->set_resource(-1, folder_img->default_view());
 	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/file.png").c_str());
@@ -207,7 +207,7 @@ cResourceExplorer::cResourceExplorer() :
 
 cResourceExplorer::~cResourceExplorer()
 {
-	auto canvas = app.canvas;
+	auto canvas = main_window->canvas;
 	canvas->set_resource(folder_img_idx, nullptr);
 	Image::destroy(folder_img);
 	canvas->set_resource(file_img_idx, nullptr);

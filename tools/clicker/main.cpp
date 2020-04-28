@@ -9,7 +9,7 @@ static bool click = false;
 
 int main(int argc, char **args)
 {
-	add_global_key_listener(Key_P, false, true, false, [](void*, KeyStateFlags action) {
+	add_global_key_listener(Key_P, false, true, false, [](Capture&, KeyStateFlags action) {
 		if (action & KeyStateDown)
 		{
 			click = !click;

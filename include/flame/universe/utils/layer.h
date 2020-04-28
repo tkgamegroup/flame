@@ -17,9 +17,9 @@ namespace flame
 		{
 			l->set_name("");
 			looper().add_event([](Capture& c) {
-				auto l = c.data<Entity*>();
+				auto l = c.thiz<Entity>();
 				l->parent()->remove_child(l);
-			}, Capture().set_data(&l));
+			}, Capture().set_thiz(l));
 		}
 
 		inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
@@ -40,7 +40,7 @@ namespace flame
 				}
 			}
 			l->on_removed_listeners.add([](Capture& c) {
-				auto l = c.data<Entity*>();
+				auto l = c.thiz<Entity>();
 				auto dp = l->get_component(cDataKeeper);
 				if (dp)
 				{
@@ -48,7 +48,7 @@ namespace flame
 					l->world()->get_system(sEventDispatcher)->next_focusing = er;
 				}
 				return true;
-			}, Capture().set_data(&l));
+			}, Capture().set_thiz(l));
 
 			{
 				struct Capturing
@@ -81,9 +81,9 @@ namespace flame
 			{
 				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						remove_layer(c.data<Entity*>());
+						remove_layer(c.thiz<Entity>());
 					return true;
-				}, Capture().set_data(&l));
+				}, Capture().set_thiz(l));
 			}
 			l->add_component(c_event_receiver);
 

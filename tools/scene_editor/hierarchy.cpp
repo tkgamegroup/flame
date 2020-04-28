@@ -21,7 +21,7 @@ struct cHierarchyItem : Component
 		{
 			element = (cElement*)c;
 			element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-				(*(cHierarchyItem**)c)->draw(canvas);
+				c.thiz<cHierarchyItem>()->draw(canvas);
 				return true;
 			}, Capture().set_thiz(this));
 		}
@@ -31,7 +31,7 @@ struct cHierarchyItem : Component
 			event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
 			event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
 			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-				auto thiz = *(cHierarchyItem**)c;
+				auto thiz = c.thiz<cHierarchyItem>();
 				auto element = thiz->element;
 
 				if (action == BeingOvering)
@@ -171,7 +171,7 @@ cHierarchy::cHierarchy() :
 				auto c_tree = e_tree->get_component(cTree);
 				c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					looper().add_event([](Capture& c) {
-						auto s = *(Entity**)c;
+						auto s = c.thiz<Entity>();
 						Entity* selected = nullptr;
 						if (s)
 						{
@@ -184,9 +184,9 @@ cHierarchy::cHierarchy() :
 						app.selected = selected;
 						if (app.inspector && different)
 							app.inspector->refresh();
-					}, Capture().set_data(&(*(cTree**)c)->selected));
+					}, Capture().set_thiz(c.thiz<cTree>()->selected));
 					return true;
-				}, Capture().set_data(&c_tree));
+				}, Capture().set_thiz(c_tree));
 			}
 			utils::e_end_tree();
 		utils::e_end_scrollbar();

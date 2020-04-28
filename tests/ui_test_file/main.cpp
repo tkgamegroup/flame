@@ -21,6 +21,8 @@ MainWindow* main_window;
 MainWindow::MainWindow() :
 	App::Window(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
+	main_window = this;
+
 	setup_as_main_window();
 
 	utils::set_current_root(root);
@@ -123,7 +125,7 @@ MainWindow::MainWindow() :
 int main(int argc, char** args)
 {
 	app.create();
-	main_window = new MainWindow();
+	new MainWindow();
 
 	looper().loop([](Capture&) {
 		app.run();

@@ -30,7 +30,7 @@ void create_edit(SetterCapture* c)
 	utils::e_drag_edit();
 
 	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](Capture& c, T v, bool exit_editing) {
-		auto& capture = *(SetterCapture*)c;
+		auto& capture = c.data<SetterCapture>();
 		if (capture.f)
 			Setter_t<T>::set_s(capture.o, capture.f, v, app.inspector);
 		else
@@ -47,7 +47,7 @@ void create_vec_edit(SetterCapture* c)
 	auto p = utils::current_parent();
 	p->get_component(cLayout)->type = LayoutHorizontal;
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
-		auto& capture = *(SetterCapture*)c;
+		auto& capture = c.data<SetterCapture>();
 		if (capture.f)
 			Setter_t<Vec<N, T>>::set_s(capture.o, capture.f, (Vec<N, T>*)&v, app.inspector);
 		else
@@ -102,7 +102,7 @@ struct cComponentTracker : Component
 		l = t->data_changed_listeners.add([](Capture& c, uint hash, void* sender) {
 			if (sender == app.inspector)
 				return true;
-			auto thiz = *(cComponentTracker**)c;
+			auto thiz = c.thiz<cComponentTracker>();
 			auto it = thiz->vs.find(hash);
 			if (it != thiz->vs.end())
 				it->second->update_view();
@@ -127,10 +127,10 @@ void cInspector::refresh()
 	else
 	{
 		begin_item(L"name");
-		utils::e_edit(100.f, s2w(app.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](void*, uint hash, void*) {
+		utils::e_edit(100.f, s2w(app.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
-				auto text = ((cText*)Component::current())->text.v;
+				auto text = c.current<cText>()->text.v;
 				app.selected->set_name(w2s(text).c_str());
 				if (app.hierarchy)
 				{
@@ -145,9 +145,9 @@ void cInspector::refresh()
 		}, Capture());
 		end_item();
 		begin_item(L"visible");
-		utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](void*, uint hash, void*) {
+		utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
-				app.selected->set_visible(((cCheckbox*)Component::current())->checked);
+				app.selected->set_visible(c.current<cCheckbox>()->checked);
 			return true;
 		}, Capture());
 		end_item();
@@ -181,15 +181,11 @@ void cInspector::refresh()
 				utils::push_style(ButtonColorHovering, common(utils::style(FrameColorHovering).c));
 				utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
 				utils::e_button(L"X", [](Capture& c) {
-					auto& capture = c.data<Capturing>();
-					Capture _capture;
-					_capture.e = capture.e;
-					_capture.c = capture.c;
 					looper().add_event([](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						capture.e->parent()->remove_child(capture.e);
 						capture.c->entity->remove_component(capture.c);
-					}, Capture().set_data(&_capture));
+					}, Capture().set_data(&c.data<Capturing>()));
 				}, Capture().set_data(&capture));
 				utils::pop_style(ButtonColorNormal);
 				utils::pop_style(ButtonColorHovering);
@@ -218,7 +214,7 @@ void cInspector::refresh()
 
 					e_data->add_component(new_object<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
-					}, Capture().set_data(&nullptr)));
+					}, Capture()));
 				}
 				break;
 				case TypeEnumMulti:
@@ -228,7 +224,7 @@ void cInspector::refresh()
 
 					e_data->add_component(new_object<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
-					}, Capture().set_data(&nullptr)));
+					}, Capture()));
 				}
 				break;
 				case TypeData:
@@ -244,7 +240,7 @@ void cInspector::refresh()
 
 						e_data->add_component(new_object<cBoolDataTracker>(pdata, [](Capture& c, bool v) {
 							;
-						}, Capture().set_data(&nullptr)));
+						}, Capture()));
 						break;
 					case FLAME_CHASH("int"):
 						create_edit<int>(&setter_capture);
@@ -299,14 +295,14 @@ void cInspector::refresh()
 
 						e_data->add_component(new_object<cStringADataTracker>(pdata, [](Capture& c, const char* v) {
 							;
-						}, Capture().set_data(&nullptr)));
+						}, Capture()));
 						break;
 					case FLAME_CHASH("flame::StringW"):
 						utils::e_edit(50.f);
 
 						e_data->add_component(new_object<cStringWDataTracker>(pdata, [](Capture& c, const wchar_t* v) {
 							;
-						}, Capture().set_data(&nullptr)));
+						}, Capture()));
 						break;
 					}
 				}
@@ -343,7 +339,7 @@ void cInspector::refresh()
 			{
 				utils::e_menu_item(s2w(udt->name() + prefix.l).c_str(), [](Capture& c) {
 					looper().add_event([](Capture& c) {
-						auto u = *(UdtInfo**)c;
+						auto u = c.thiz<UdtInfo>();
 
 						auto dummy = malloc(u->size());
 						auto module = u->db()->module();
@@ -367,8 +363,8 @@ void cInspector::refresh()
 						free(dummy);
 
 						app.inspector->refresh();
-					}, Capture().set_data(&*(UdtInfo**)c));
-				}, Capture().set_data(&udt));
+					}, Capture().set_thiz(c.thiz<UdtInfo>()));
+				}, Capture().set_thiz(udt));
 			}
 		}
 		utils::e_end_button_menu();

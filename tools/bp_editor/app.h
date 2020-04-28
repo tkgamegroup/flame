@@ -178,7 +178,7 @@ struct MyApp : App
 		auto_update = false;
 	}
 
-	bool create(const char* filename);
+	void create(const char* filename);
 
 	void select();
 	void select(const std::vector<BP::Node*>& nodes);
@@ -203,6 +203,13 @@ struct MyApp : App
 };
 
 extern MyApp app;
+
+struct MainWindow : App::Window
+{
+	MainWindow();
+};
+
+extern MainWindow* main_window;
 
 BP::Node* _add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos);
 void _remove_node(BP::Node* n);

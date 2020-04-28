@@ -22,7 +22,7 @@ cDetail::~cDetail()
 
 void cDetail::on_after_select()
 {
-	looper().add_event([](void*, bool*) {
+	looper().add_event([](Capture&) {
 		app.detail->e_page->remove_children(0, -1);
 		utils::push_parent(app.detail->e_page);
 		if (app.selected_nodes.empty() && app.selected_links.empty())
@@ -47,12 +47,12 @@ void cDetail::on_after_select()
 					utils::e_begin_layout(LayoutHorizontal, 4.f);
 						utils::e_text((L"ID: " + s2w(n->id())).c_str());
 						utils::e_button(L"change", [](Capture& c) {
-							auto n = *(BP::Node**)c;
+							auto n = c.thiz<BP::Node>();
 							utils::e_input_dialog(L"ID", [](Capture& c, bool ok, const wchar_t* text) {
 								if (ok && text[0])
-									app.set_node_id(*(BP::Node**)c, w2s(text));
-							}, Capture().set_data(&n), s2w(n->id()).c_str());
-						}, Capture().set_data(&n));
+									app.set_node_id(c.thiz<BP::Node>(), w2s(text));
+							}, Capture().set_thiz(n), s2w(n->id()).c_str());
+						}, Capture().set_thiz(n));
 					utils::e_end_layout();
 				}
 				else

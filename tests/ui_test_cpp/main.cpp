@@ -13,33 +13,22 @@ const auto img_id = 9;
 
 struct MyApp : App
 {
+	void create();
+	void create_widgets();
 }app;
 
 struct MainWindow : App::Window
 {
 	MainWindow();
-	void create_widgets();
 	void on_update() override;
 };
 
 MainWindow* main_window = nullptr;
 
-MainWindow::MainWindow() :
-	App::Window(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+void MyApp::create_widgets()
 {
-	setup_as_main_window();
+	auto root = main_window->root;
 
-	utils::set_current_root(root);
-	utils::set_current_entity(root);
-
-	canvas->clear_color = Vec4f(utils::style(BackgroundColor).c) / 255.f;
-	canvas->set_resource(img_id, Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())->default_view());
-
-	create_widgets();
-}
-
-void MainWindow::create_widgets()
-{
 	utils::push_parent(root);
 
 	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
@@ -51,7 +40,7 @@ void MainWindow::create_widgets()
 						main_window->root->remove_children(0, -1);
 						utils::style_set_to_dark();
 						main_window->canvas->clear_color = Vec4f(utils::style(BackgroundColor).c) / 255.f;
-						main_window->create_widgets();
+						app.create_widgets();
 					}, Capture());
 				}, Capture());
 				utils::e_menu_item(L"Light", [](Capture& c) {
@@ -59,7 +48,7 @@ void MainWindow::create_widgets()
 						main_window->root->remove_children(0, -1);
 						utils::style_set_to_light();
 						main_window->canvas->clear_color = Vec4f(utils::style(BackgroundColor).c) / 255.f;
-						main_window->create_widgets();
+						app.create_widgets();
 					}, Capture());
 				}, Capture());
 			utils::e_end_menubar_menu();
@@ -201,6 +190,22 @@ void MainWindow::create_widgets()
 	utils::pop_parent();
 }
 
+MainWindow::MainWindow() :
+	App::Window(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+{
+	main_window = this;
+
+	setup_as_main_window();
+
+	utils::set_current_root(root);
+	utils::set_current_entity(root);
+
+	canvas->clear_color = Vec4f(utils::style(BackgroundColor).c) / 255.f;
+	canvas->set_resource(img_id, Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())->default_view());
+
+	app.create_widgets();
+}
+
 void MainWindow::on_update()
 {
 	if (swapchain_image_index >= 0)
@@ -220,7 +225,7 @@ void MainWindow::on_update()
 int main(int argc, char** args)
 {
 	app.create();
-	main_window = new MainWindow();
+	new MainWindow();
 
 	looper().loop([](Capture&) {
 		app.run();

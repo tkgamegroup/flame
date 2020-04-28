@@ -615,14 +615,14 @@ namespace flame
 			auto ce = c_element();
 			ce->size = 16.f;
 			ce->color = init_col;
-			c_event_receiver()->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			c_event_receiver()->mouse_listeners.add([](Capture&, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				push_parent(current_root());
 				e_begin_layout(LayoutVertical, 4.f);
 
 				e_end_layout();
 				pop_parent();
 				return true;
-			}, Capture().set_data(&ce));
+			}, Capture());
 			return e;
 		}
 
@@ -727,9 +727,9 @@ namespace flame
 				}, Capture());
 				ce->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_scroll(action, key))
-						c.data<cScrollbarThumb*>()->update(-pos.x() * 20.f);
+						c.thiz<cScrollbarThumb>()->update(-pos.x() * 20.f);
 					return true;
-				}, Capture().set_data(&ct));
+				}, Capture().set_thiz(ct));
 				c_aligner(AlignMinMax, AlignMinMax);
 			}
 			pop_parent();
@@ -1156,10 +1156,10 @@ namespace flame
 					push_parent(current_entity());
 					e_button(Icon_TIMES, [](Capture& c) {
 						looper().add_event([](Capture& c) {
-							auto e = c.data<Entity*>();
+							auto e = c.thiz<Entity>();
 							e->parent()->remove_child(e);
-						}, Capture().set_data(&c.data<Entity*>()));
-					}, Capture().set_data(&e), false);
+						}, Capture().set_thiz(c.thiz<Entity>()));
+					}, Capture().set_thiz(e), false);
 					c_aligner(AlignMax | AlignAbsolute, 0);
 					pop_parent();
 				}
@@ -1337,8 +1337,8 @@ namespace flame
 			auto l = e->parent();
 			e_text(message);
 			e_button(L"OK", [](Capture& c) {
-				remove_layer(c.data<Entity*>());
-			}, Capture().set_data(&l));
+				remove_layer(c.thiz<Entity>());
+			}, Capture().set_thiz(l));
 			c_aligner(AlignMiddle, 0);
 			e_end_dialog();
 			return e;

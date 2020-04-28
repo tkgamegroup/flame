@@ -138,3 +138,10 @@ struct MyApp : App
 };
 
 extern MyApp app;
+
+struct MainWindow : App::Window
+{
+	MainWindow();
+};
+
+extern MainWindow* main_window;

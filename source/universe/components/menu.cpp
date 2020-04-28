@@ -97,9 +97,9 @@ namespace flame
 					auto layer = utils::add_layer(root);
 					layer->set_name("layer_menu");
 					layer->on_removed_listeners.add([](Capture& c) {
-						c.data<Entity*>()->remove_children(0, -1, false);
+						c.thiz<Entity>()->remove_children(0, -1, false);
 						return true;
-					}, Capture().set_data(&layer));
+					}, Capture().set_thiz(layer));
 					auto items_element = items->get_component(cElement);
 					items_element->set_pos(Vec2f(pos));
 					items_element->set_scale(element->global_scale);
@@ -137,9 +137,9 @@ namespace flame
 					{
 						layer->set_name("layer_menu");
 						layer->on_removed_listeners.add([](Capture& c) {
-							c.data<Entity*>()->remove_children(0, -1, false);
+							c.thiz<Entity>()->remove_children(0, -1, false);
 							return true;
-						}, Capture().set_data(&layer));
+						}, Capture().set_thiz(layer));
 					}
 
 					auto items_element = items->get_component(cElement);

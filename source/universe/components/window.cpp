@@ -95,9 +95,9 @@ namespace flame
 						if (!l || !SUS::starts_with(l->name(), "layer_"))
 						{
 							looper().add_event([](Capture& c) {
-								auto p = c.data<Entity*>()->parent();
+								auto p = c.thiz<Entity>()->parent();
 								p->parent()->reposition_child(p, -1);
-							}, Capture().set_data(&thiz->entity));
+							}, Capture().set_thiz(thiz->entity));
 						}
 					}
 					return true;
@@ -340,8 +340,8 @@ namespace flame
 					{
 						thiz->floating = true;
 						looper().add_event([](Capture& c) {
-							c.data<cDockerTabPrivate*>()->take_away(false);
-						}, Capture().set_data(&thiz));
+							c.thiz<cDockerTabPrivate>()->take_away(false);
+						}, Capture().set_thiz(thiz));
 					}
 					else if (action == DragEnd)
 					{
@@ -349,7 +349,7 @@ namespace flame
 						{
 							thiz->drop_pos = pos;
 							looper().add_event([](Capture& c) {
-								auto thiz = c.data<cDockerTabPrivate*>();
+								auto thiz = c.thiz<cDockerTabPrivate>();
 
 								auto e_tab = thiz->entity;
 								auto e_page = thiz->page;
@@ -381,7 +381,7 @@ namespace flame
 								page_aligner->set_y_align_flags(AlignMinMax);
 								thiz->page = nullptr;
 								thiz->page_element = nullptr;
-							}, Capture().set_data(&thiz));
+							}, Capture().set_thiz(thiz));
 						}
 					}
 					return true;
@@ -613,7 +613,7 @@ namespace flame
 							thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
 							thiz->drop_tab->floating = false;
 							looper().add_event([](Capture& c) {
-								auto thiz = c.data<cDockerTabbarPrivate*>();
+								auto thiz = c.thiz<cDockerTabbarPrivate>();
 								auto tabbar = thiz->entity;
 								auto tab = thiz->drop_tab;
 								auto e_tab = tab->entity;
@@ -639,7 +639,7 @@ namespace flame
 								thiz->drop_idx = 0;
 
 								thiz->list->set_selected(e_tab);
-							}, Capture().set_data(&thiz));
+							}, Capture().set_thiz(thiz));
 						}
 					}
 					return true;
@@ -777,7 +777,7 @@ namespace flame
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_tab->floating = false;
 							looper().add_event([](Capture& c) {
-								auto thiz = c.data<cDockerPagesPrivate*>();
+								auto thiz = c.thiz<cDockerPagesPrivate>();
 								auto tab = thiz->drop_tab;
 								auto e_tab = tab->entity;
 								auto e_page = tab->page;
@@ -892,7 +892,7 @@ namespace flame
 									layout->add_child(docker, 0);
 									layout->add_child(new_docker, 2);
 								}
-							}, Capture().set_data(&thiz));
+							}, Capture().set_thiz(thiz));
 						}
 					}
 					return true;
@@ -964,7 +964,7 @@ namespace flame
 							thiz->drop_tab = er->entity->get_component(cDockerTab);
 							thiz->drop_tab->floating = false;
 							looper().add_event([](Capture& c) {
-								auto thiz = c.data<cDockerStaticContainerPrivate*>();
+								auto thiz = c.thiz<cDockerStaticContainerPrivate>();
 								auto tab = thiz->drop_tab;
 								auto e_tab = tab->entity;
 								auto e_page = tab->page;
@@ -988,7 +988,7 @@ namespace flame
 								page_element->set_alpha(1.f);
 								page_aligner->set_x_align_flags(AlignMinMax);
 								page_aligner->set_y_align_flags(AlignMinMax);
-							}, Capture().set_data(&thiz));
+							}, Capture().set_thiz(thiz));
 						}
 					}
 					return true;

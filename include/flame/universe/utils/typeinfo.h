@@ -208,17 +208,17 @@ namespace flame
 			edit_text->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
 				{
-					auto thiz = *(cDigitalDataTracker**)c;
+					auto thiz = c.thiz<cDigitalDataTracker>();
 					T v;
 					try
 					{
-						v = sto<T>(((cText*)Component::current())->text.v);
+						v = sto<T>(c.current<cText>()->text.v);
 					}
 					catch (...)
 					{
 						v = 0;
 					}
-					thiz->on_changed(thiz->capture.p, v, true);
+					thiz->on_changed(thiz->capture, v, true);
 					thiz->update_view();
 				}
 				return true;
@@ -226,9 +226,9 @@ namespace flame
 
 			auto d_er = drag_text->entity->get_component(cEventReceiver);
 			d_er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cDigitalDataTracker**)c;
-				if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
+				if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 				{
+					auto thiz = c.thiz<cDigitalDataTracker>();
 					auto v = *(T*)thiz->data;
 					if (!thiz->drag_changed)
 						thiz->drag_start = v;
@@ -236,19 +236,19 @@ namespace flame
 						v += pos.x() * 0.05f;
 					else
 						v += pos.x();
-					thiz->on_changed(thiz->capture.p, v, false);
+					thiz->on_changed(thiz->capture, v, false);
 					thiz->drag_changed = true;
 					thiz->update_view();
 				}
 				return true;
 			}, Capture().set_thiz(this));
 			d_er->state_listeners.add([](Capture& c, EventReceiverState) {
-				auto thiz = *(cDigitalDataTracker**)c;
-				if (thiz->drag_changed && !cEventReceiver::current()->is_active())
+				auto thiz = c.thiz<cDigitalDataTracker>();
+				if (thiz->drag_changed && !c.current<cEventReceiver>()->is_active())
 				{
 					auto temp = *(T*)thiz->data;
 					*(T*)thiz->data = thiz->drag_start;
-					thiz->on_changed(thiz->capture.p, temp, true);
+					thiz->on_changed(thiz->capture, temp, true);
 					thiz->drag_changed = false;
 				}
 				return true;
@@ -311,73 +311,57 @@ namespace flame
 				e_e->enter_to_throw_focus = true;
 				e_e->trigger_changed_on_lost_focus = true;
 
-				{
-					struct Capturing
+				edit_texts[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+					if (hash == FLAME_CHASH("text"))
 					{
-						cDigitalVecDataTracker* thiz;
-						int i;
-					}capture;
-					capture.thiz = this;
-					capture.i = i; 
-					edit_texts[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-						if (hash == FLAME_CHASH("text"))
+						auto i = c.data<int>();
+						auto thiz = c.thiz<cDigitalVecDataTracker>();
+						auto v = *(Vec<N, T>*)thiz->data;
+						try
 						{
-							auto& capture = c.data<Capturing>();
-							auto v = *(Vec<N, T>*)capture.thiz->data;
-							try
-							{
-								v[capture.i] = sto<T>(((cText*)Component::current())->text.v);
-							}
-							catch (...)
-							{
-								v[capture.i] = 0;
-							}
-							capture.thiz->on_changed(capture.thiz->capture.p, v, true);
-							capture.thiz->update_view();
+							v[i] = sto<T>(c.current<cText>()->text.v);
 						}
-						return true;
-					}, Capture().set_data(&capture));
-				}
+						catch (...)
+						{
+							v[i] = 0;
+						}
+						thiz->on_changed(thiz->capture, v, true);
+						thiz->update_view();
+					}
+					return true;
+				}, Capture().set_data(&i).set_thiz(this));
 
 				auto d_er = drag_texts[i]->entity->get_component(cEventReceiver);
 
-				{
-					struct Capturing
+				d_er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 					{
-						cDigitalVecDataTracker* thiz;
-						int i;
-					}capture;
-					capture.thiz = this;
-					capture.i = i;
-					d_er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						auto& capture = c.data<Capturing>();
-						if (cEventReceiver::current()->is_active() && is_mouse_move(action, key))
-						{
-							auto v = *(Vec<N, T>*)capture.thiz->data;
-							if (!capture.thiz->drag_changed)
-								capture.thiz->drag_start = v;
-							if constexpr (std::is_floating_point<T>::value)
-								v[capture.i] += pos.x() * 0.05f;
-							else
-								v[capture.i] += pos.x();
-							capture.thiz->on_changed(capture.thiz->capture.p, v, false);
-							capture.thiz->drag_changed = true;
-							capture.thiz->update_view();
-						}
-						return true;
-					}, Capture().set_data(&capture));
-					d_er->state_listeners.add([](Capture& c, EventReceiverState) {
-						auto& capture = c.data<Capturing>();
-						if (capture.thiz->drag_changed && !cEventReceiver::current()->is_active())
-						{
-							auto temp = *(Vec<N, T>*)capture.thiz->data;
-							*(Vec<N, T>*)capture.thiz->data = capture.thiz->drag_start;
-							capture.thiz->on_changed(capture.thiz->capture.p, temp, true);
-							capture.thiz->drag_changed = false;
-						}
-						return true;
-					}, Capture().set_data(&capture));
-				}
+						auto i = c.data<int>();
+						auto thiz = c.thiz<cDigitalVecDataTracker>();
+						auto v = *(Vec<N, T>*)thiz->data;
+						if (!thiz->drag_changed)
+							thiz->drag_start = v;
+						if constexpr (std::is_floating_point<T>::value)
+							v[i] += pos.x() * 0.05f;
+						else
+							v[i] += pos.x();
+						thiz->on_changed(thiz->capture, v, false);
+						thiz->drag_changed = true;
+						thiz->update_view();
+					}
+					return true;
+				}, Capture().set_data(&i).set_thiz(this));
+				d_er->state_listeners.add([](Capture& c, EventReceiverState) {
+					auto thiz = c.thiz<cDigitalVecDataTracker>();
+					if (thiz->drag_changed && !c.current<cEventReceiver>()->is_active())
+					{
+						auto temp = *(Vec<N, T>*)thiz->data;
+						*(Vec<N, T>*)thiz->data = thiz->drag_start;
+						thiz->on_changed(thiz->capture, temp, true);
+						thiz->drag_changed = false;
+					}
+					return true;
+				}, Capture().set_thiz(this));
 			}
 		}
 	};

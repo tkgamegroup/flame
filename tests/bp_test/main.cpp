@@ -14,15 +14,16 @@ struct MyApp : App
 
 int main(int argc, char** args)
 {
-	app.create("BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable, true);
+	app.create();
+	auto main_window = new App::Window(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 
-	utils::push_parent(app.root);
+	utils::push_parent(main_window->root);
 
 	utils::e_text(L"");
 	utils::c_aligner(AlignMin, AlignMax);
 	add_fps_listener([](Capture& c, uint fps) {
-		(*(cText**)c)->set_text(std::to_wstring(fps).c_str());
-	}, Capture().set_data(&utils::current_entity()->get_component(cText)));
+		c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
+	}, Capture().set_thiz(utils::current_entity()->get_component(cText)));
 
 	utils::next_element_pos = 100.f;
 	utils::next_element_size = 10.f;
@@ -42,7 +43,7 @@ int main(int argc, char** args)
 	na->find_input("b")->link_to(nt->find_output("total"));
 	nw->find_input("scale")->link_to(na->find_output("out"));
 
-	looper().loop([](void*) {
+	looper().loop([](Capture&) {
 		app.bp->update();
 		app.run();
 	}, Capture());

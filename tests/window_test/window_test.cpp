@@ -11,7 +11,7 @@ int main(int argc, char** args)
 		return true;
 	}, Capture().set_thiz(w));
 
-	looper().loop([](void*) {
+	looper().loop([](Capture&) {
 	}, Capture());
 
 	return 0;

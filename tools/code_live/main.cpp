@@ -85,26 +85,26 @@ struct MyApp : App
 				f = (F)get_module_func(m, "excute");
 		}
 
-		looper().add_event([](Capture& c) {
-			auto app = *(MyApp**)c;
-			if (app->f)
-				app->f(app->e_result);
-			utils::remove_layer(app->e_wait->parent());
+		looper().add_event([](Capture&) {
+			if (app.f)
+				app.f(app.e_result);
+			utils::remove_layer(app.e_wait->parent());
 		}, Capture().set_thiz(this));
 	}
 }app;
 
 int main(int argc, char** args)
 {
-	app.create("Code Live", Vec2u(800, 400), WindowFrame | WindowResizable, true);
+	app.create();
+	auto main_window = new App::Window(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable);
 
 	const wchar_t* fonts[] = {
 		L"c:/windows/fonts/consola.ttf"
 	};
 	app.font_atlas_edit = graphics::FontAtlas::create(app.graphics_device, 1, fonts);
-	app.canvas->add_font(app.font_atlas_edit);
+	main_window->canvas->add_font(app.font_atlas_edit);
 
-	utils::push_parent(app.root);
+	utils::push_parent(main_window->root);
 		utils::e_begin_splitter(SplitterHorizontal);
 			utils::e_begin_layout(LayoutVertical, 4.f);
 			utils::c_aligner(AlignMinMax, AlignMinMax);
@@ -115,8 +115,8 @@ int main(int argc, char** args)
 			app.c_code->font_atlas = app.font_atlas_edit;
 			app.c_code->font_size = 17;
 			utils::c_aligner(AlignMinMax, AlignMinMax);
-			utils::e_button(L"Run", [](void*) {
-				looper().add_event([](void*, bool*) {
+			utils::e_button(L"Run", [](Capture&) {
+				looper().add_event([](Capture&) {
 					app.clean_up();
 					app.e_wait = utils::e_begin_dialog();
 					auto c_text = utils::e_text(L"Compiling: 0")->get_component(cText);
@@ -135,7 +135,7 @@ int main(int argc, char** args)
 						capture.text->set_text(wfmt(L"Compiling: %d", capture.time).c_str());
 					}, Capture().set_data(&capture));
 					utils::e_end_dialog();
-					add_work([](void*) {
+					add_work([](Capture&) {
 						app.compile_and_run();
 					}, Capture());
 				}, Capture());
@@ -148,7 +148,7 @@ int main(int argc, char** args)
 		utils::e_end_splitter();
 	utils::pop_parent();
 
-	looper().loop([](void*) {
+	looper().loop([](Capture&) {
 		app.run();
 	}, Capture());
 

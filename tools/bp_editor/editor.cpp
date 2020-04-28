@@ -44,18 +44,18 @@ struct cSlot : Component
 			auto e = tip_info;
 			tip_info = nullptr;
 			looper().add_event([](Capture& c) {
-				auto e = *(Entity**)c;
+				auto e = c.thiz<Entity>();
 				e->parent()->remove_child(e);
-			}, Capture().set_data(&e));
+			}, Capture().set_thiz(e));
 		}
 		if (tip_link)
 		{
 			auto e = tip_link;
 			tip_link = nullptr;
 			looper().add_event([](Capture& c) {
-				auto e = *(Entity**)c;
+				auto e = c.thiz<Entity>();
 				e->parent()->remove_child(e);
-			}, Capture().set_data(&e));
+			}, Capture().set_thiz(e));
 		}
 	}
 
@@ -77,7 +77,7 @@ struct cSlot : Component
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
 			}
 			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cSlot**)c;
+				auto thiz = c.thiz<cSlot>();
 				if (thiz->dragging)
 				{
 					if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
@@ -86,7 +86,7 @@ struct cSlot : Component
 				return true;
 			}, Capture().set_thiz(this));
 			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-				auto thiz = *(cSlot**)c;
+				auto thiz = c.thiz<cSlot>();
 				auto element = thiz->element;
 				auto s = thiz->s;
 				auto is_in = s->io() == BP::Slot::In;
@@ -100,7 +100,7 @@ struct cSlot : Component
 				else if (action == DragOvering)
 				{
 					app.editor->dragging_slot_pos = Vec2f(pos);
-					app.s_2d_renderer->pending_update = true;
+					main_window->s_2d_renderer->pending_update = true;
 				}
 				else if (action == DragEnd)
 				{
@@ -109,7 +109,7 @@ struct cSlot : Component
 						app.editor->show_add_node_menu(Vec2f(pos));
 					else
 						app.editor->dragging_slot = nullptr;
-					app.s_2d_renderer->pending_update = true;
+					main_window->s_2d_renderer->pending_update = true;
 				}
 				else if (action == BeingOverStart)
 				{
@@ -141,8 +141,8 @@ struct cSlot : Component
 						}
 						utils::e_end_layout();
 						looper().add_event([](Capture& c) {
-							app.root->add_child(*(Entity**)c);
-						}, Capture().set_data(&thiz->tip_link));
+							main_window->root->add_child(c.thiz<Entity>());
+						}, Capture().set_thiz(&thiz->tip_link));
 					}
 				}
 				else if (action == BeingOverEnd)
@@ -163,7 +163,7 @@ struct cSlot : Component
 				return true;
 			}, Capture().set_thiz(this));
 			event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
-				auto thiz = *(cSlot**)c;
+				auto thiz = c.thiz<cSlot>();
 				auto s = thiz->s;
 				auto is_in = s->io() == BP::Slot::In;
 
@@ -205,10 +205,10 @@ struct cSlot : Component
 						}
 						utils::e_end_layout();
 						looper().add_event([](Capture& c) {
-							auto tip_info = *(Entity**)c;
-							app.root->add_child(tip_info);
+							auto tip_info = c.thiz<Entity>();
+							main_window->root->add_child(tip_info);
 							tip_info->get_component(cTimer)->start();
-						}, Capture().set_data(&thiz->tip_info));
+						}, Capture().set_thiz(thiz->tip_info));
 					}
 				}
 
@@ -241,7 +241,7 @@ struct cNode : Component
 		{
 			event_receiver = (cEventReceiver*)c;
 			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = *(cNode**)c;
+				auto thiz = c.thiz<cNode>();
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
 					auto n = thiz->n;
@@ -268,7 +268,7 @@ struct cNode : Component
 				return true;
 			}, Capture().set_thiz(this));
 			event_receiver->state_listeners.add([](Capture& c, EventReceiverState) {
-				auto thiz = *(cNode**)c;
+				auto thiz = c.thiz<cNode>();
 				if (thiz->moved && !thiz->event_receiver->is_active())
 				{
 					std::vector<Vec2f> poses;
@@ -295,7 +295,7 @@ cEditor::cEditor() :
 	}
 	e_page->add_component(this);
 
-	edt.create([](void*, const Vec4f& r) {
+	edt.create([](Capture&, const Vec4f& r) {
 		if (r.x() == r.z() && r.y() == r.z())
 			app.select();
 		else
@@ -374,7 +374,7 @@ cEditor::cEditor() :
 				app.select(links);
 		}
 	}, Capture());
-	edt.element->cmds.add([](void*, graphics::Canvas* canvas) {
+	edt.element->cmds.add([](Capture&, graphics::Canvas* canvas) {
 		auto& edt = app.editor->edt;
 
 		auto scale = edt.base->global_scale;
@@ -493,9 +493,9 @@ void create_edit(cEditor* editor, BP::Slot* input)
 
 	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(input->data(), [](Capture& c, T v, bool exit_editing) {
 		if (exit_editing)
-			app.set_data(*(BP::Slot**)c, &v, true);
+			app.set_data(c.thiz<BP::Slot>(), &v, true);
 		else
-			(*(BP::Slot**)c)->set_data(&v);
+			c.thiz<BP::Slot>()->set_data(&v);
 	}, Capture().set_data(&input)));
 }
 
@@ -509,9 +509,9 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 	p->get_component(cLayout)->type = LayoutHorizontal;
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(input->data(), [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
 		if (exit_editing)
-			app.set_data(*(BP::Slot**)c, (void*)&v, true);
+			app.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 		else
-			(*(BP::Slot**)c)->set_data((void*)&v);
+			c.thiz<BP::Slot>()->set_data((void*)&v);
 	}, Capture().set_data(&input)));
 }
 
@@ -537,9 +537,9 @@ void cEditor::on_add_node(BP::Node* n)
 		e_node->add_component(c_node);
 		utils::e_begin_popup_menu(false);
 			utils::e_menu_item(L"Duplicate", [](Capture& c) {
-			}, Capture().set_data(&n));
+			}, Capture());
 			utils::e_menu_item(L"Delete", [](Capture& c) {
-			}, Capture().set_data(&n));
+			}, Capture());
 		utils::e_end_popup_menu();
 	utils::push_parent(e_node);
 		utils::next_element_padding = 8.f;
@@ -581,11 +581,6 @@ void cEditor::on_add_node(BP::Node* n)
 							c_element->roundness_lod = 2;
 							c_element->color = Vec4c(200, 200, 200, 255);
 						}
-						{
-							auto c_text = utils::c_text();
-							c_text->color = Vec4c(255, 0, 0, 255);
-							c_text->auto_size = false;
-						}
 						utils::c_event_receiver();
 						auto c_slot = new_object<cSlot>();
 						c_slot->s = input;
@@ -599,7 +594,7 @@ void cEditor::on_add_node(BP::Node* n)
 							if (n_type == 'A')
 							{
 								utils::e_menu_item(L"Remove Slot", [](Capture& c) {
-									auto input = *(BP::Slot**)c;
+									auto input = c.thiz<BP::Slot>();
 									auto n = input->node();
 									if (n->input_count() == 1)
 										return;
@@ -659,7 +654,7 @@ void cEditor::on_add_node(BP::Node* n)
 								utils::create_enum_combobox(info);
 
 								e_data->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
-									app.set_data(*(BP::Slot**)c, &v, true);
+									app.set_data(c.thiz<BP::Slot>(), &v, true);
 								}, Capture().set_data(&input)));
 							}
 							break;
@@ -669,7 +664,7 @@ void cEditor::on_add_node(BP::Node* n)
 								utils::create_enum_checkboxs(info);
 
 								e_data->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
-									app.set_data(*(BP::Slot**)c, &v, true);
+									app.set_data(c.thiz<BP::Slot>(), &v, true);
 								}, Capture().set_data(&input)));
 							}
 							break;
@@ -680,8 +675,8 @@ void cEditor::on_add_node(BP::Node* n)
 									utils::e_checkbox(L"");
 
 									e_data->add_component(new_object<cBoolDataTracker>(input->data(), [](Capture& c, bool v) {
-										app.set_data(*(BP::Slot**)c, &v, true);
-									}, Capture().set_data(&input)));
+										app.set_data(c.thiz<BP::Slot>(), &v, true);
+									}, Capture().set_thiz(input)));
 									break;
 								case FLAME_CHASH("int"):
 									create_edit<int>(this, input);
@@ -735,15 +730,15 @@ void cEditor::on_add_node(BP::Node* n)
 									utils::e_edit(50.f);
 
 									e_data->add_component(new_object<cStringADataTracker>(input->data(), [](Capture& c, const char* v) {
-										app.set_data(*(BP::Slot**)c, (void*)v, true);
+										app.set_data(c.thiz<BP::Slot>(), (void*)v, true);
 									}, Capture().set_data(&input)));
 									break;
 								case FLAME_CHASH("flame::StringW"):
 									utils::e_edit(50.f);
 
 									e_data->add_component(new_object<cStringWDataTracker>(input->data(), [](Capture& c, const wchar_t* v) {
-										app.set_data(*(BP::Slot**)c, (void*)v, true);
-									}, Capture().set_data(&input)));
+										app.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+									}, Capture().set_thiz(input)));
 									break;
 								}
 								break;
@@ -784,7 +779,7 @@ void cEditor::on_add_node(BP::Node* n)
 						output->user_data = c_slot;
 						utils::e_begin_popup_menu(false);
 							utils::e_menu_item(L"Break Link(s)", [](Capture& c) {
-							}, Capture().set_data(&output));
+							}, Capture());
 						utils::e_end_popup_menu();
 						utils::e_end_layout();
 					}
@@ -797,7 +792,7 @@ void cEditor::on_add_node(BP::Node* n)
 				utils::next_element_roundness = 8.f;
 				utils::next_element_roundness_lod = 2;
 				utils::e_button(L"+", [](Capture& c) {
-					auto n = *(BP::Node**)c;
+					auto n = c.thiz<BP::Node>();
 					app.select();
 					std::string type = n->type();
 					std::string id = n->id();
@@ -829,14 +824,14 @@ void cEditor::on_add_node(BP::Node* n)
 						app.remove_nodes({ n });
 						nn->set_id(id.c_str());
 					}
-				}, Capture().set_data(&n));
+				}, Capture().set_thiz(n));
 				utils::c_aligner(AlignMiddle, 0);
 			}
 
 		utils::e_end_layout();
 		utils::e_empty();
 		utils::c_element();
-		utils::c_event_receiver()->pass_checkers.add([](void*, cEventReceiver*, bool* pass) {
+		utils::c_event_receiver()->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
 			*pass = true;
 			return true;
 		}, Capture());
@@ -845,8 +840,8 @@ void cEditor::on_add_node(BP::Node* n)
 	utils::pop_parent();
 
 	looper().add_event([](Capture& c) {
-		app.editor->edt.base->entity->add_child(*(Entity**)c);
-	}, Capture().set_data(&e_node));
+		app.editor->edt.base->entity->add_child(c.thiz<Entity>());
+	}, Capture().set_thiz(e_node));
 }
 
 void cEditor::on_remove_node(BP::Node* n)
@@ -958,13 +953,13 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 		return std::string(a.u->name()) < std::string(b.u->name());
 	});
 
-	utils::push_parent(utils::add_layer(app.root, ""));
+	utils::push_parent(utils::add_layer(main_window->root, ""));
 		utils::next_element_pos = pos;
 		utils::next_element_padding = 4.f;
 		utils::next_element_frame_thickness = 2.f;
 		utils::next_element_color = utils::style(BackgroundColor).c;
 		utils::next_element_frame_color = utils::style(ForegroundColor).c;
-		utils::e_element()->on_removed_listeners.add([](void*) {
+		utils::e_element()->on_removed_listeners.add([](Capture&) {
 			app.editor->dragging_slot = nullptr;
 			return true;
 		}, Capture());
@@ -1013,7 +1008,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 								capture.s = ei->name();
 								utils::push_parent(l);
 								utils::e_menu_item(s2w(ei->name()).c_str(), [](Capture& c) {
-									auto& capture = c.data<Capturing>();
+									auto& capture = c.data<_Capturing>();
 									NodeDesc d;
 									d.id = "";
 									d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
@@ -1049,7 +1044,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
-								struct _Mail
+								struct _Capturing
 								{
 									const char* s;
 									Vec2f p;
@@ -1079,7 +1074,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
-								struct _Mail
+								struct _Capturing
 								{
 									const char* s;
 									Vec2f p;
@@ -1110,7 +1105,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 					{
 						if (tag == TypeEnumSingle || tag == TypeEnumMulti)
 						{
-							struct _Mail
+							struct _Capturing
 							{
 								TypeTag t;
 								const char* s;
@@ -1143,7 +1138,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						{
 							if (basic_type_size(base_hash))
 							{
-								struct _Mail
+								struct _Capturing
 								{
 									const char* s;
 									Vec2f p;
@@ -1173,7 +1168,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 						}
 						else if (tag == TypePointer && is_array)
 						{
-							struct _Mail
+							struct _Capturing
 							{
 								const char* s;
 								Vec2f p;
@@ -1221,7 +1216,7 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 							else if (capture.t == BP::ObjectRefWrite)
 								name += L" (RefWrite)";
 							utils::e_menu_item(name.c_str(), [](Capture& c) {
-								auto& capture = c.data<Capturing>();
+								auto& capture = c.data<_Capturing>();
 								NodeDesc d;
 								d.object_type = capture.t;
 								d.type = capture.us;
@@ -1247,8 +1242,8 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 	c_text_search->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 		if (hash == FLAME_CHASH("text"))
 		{
-			auto l = *(Entity**)c;
-			auto str = ((cText*)Component::current())->text.str();
+			auto l = c.thiz<Entity>();
+			auto str = c.current<cText>()->text.str();
 			for (auto i = 0; i < l->child_count(); i++)
 			{
 				auto item = l->child(i);
@@ -1256,5 +1251,5 @@ void cEditor::show_add_node_menu(const Vec2f& pos)
 			}
 		}
 		return true;
-	}, Capture().set_data(&e_list));
+	}, Capture().set_thiz(e_list));
 }

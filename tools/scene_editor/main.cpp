@@ -8,8 +8,6 @@
 
 #include <flame/universe/utils/ui_impl.h>
 
-MyApp app;
-
 struct Action
 {
 	wchar_t* name;
@@ -110,7 +108,7 @@ void add_window(pugi::xml_node n)
 			ca->height_factor = r;
 		auto name = std::string(n.child("page").attribute("name").value());
 		if (name == "editor")
-			app.editor = new cEditor;
+			app.editor = new cSceneEditor;
 		else if (name == "resource_explorer")
 			app.resource_explorer = new cResourceExplorer;
 		else if (name == "hierarchy")
@@ -123,49 +121,106 @@ void add_window(pugi::xml_node n)
 
 void MyApp::create()
 {
-	App::create("Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, true, true);
+	App::create();
+}
+
+void MyApp::select(Entity* e)
+{
+	if (selected != e)
+	{
+		selected = e;
+		if (editor)
+			editor->on_select();
+		looper().add_event([](Capture&) {
+			if (app.hierarchy)
+				app.hierarchy->refresh_selected();
+			if (app.inspector)
+				app.inspector->refresh();
+		}, Capture());
+	}
+}
+
+void MyApp::load(const std::filesystem::path& _filepath)
+{
+	filepath = _filepath;
+	prefab = filepath.empty() ? nullptr : Entity::create_from_file(main_window->world, filepath.c_str());
+	selected = nullptr;
+	looper().add_event([](Capture&) {
+		if (app.editor)
+		{
+			app.editor->on_select();
+			auto e_base = app.editor->edt.base->entity;
+			e_base->remove_children(0, -1);
+			if (app.prefab)
+				e_base->add_child(app.prefab);
+		}
+		if (app.hierarchy)
+			app.hierarchy->refresh();
+		if (app.inspector)
+			app.inspector->refresh();
+	}, Capture());
+}
+
+void MyApp::save()
+{
+	if (prefab)
+		Entity::save_to_file(prefab, filepath.c_str());
+}
+
+MyApp app;
+
+MainWindow::MainWindow() :
+	App::Window(&app, true, true, "Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
+{
+	main_window = this;
+
+	setup_as_main_window();
+
+	utils::set_current_root(root);
+	utils::set_current_entity(root);
+
+	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
+	utils::style_set_to_light();
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
 	if (window_layout.load_file(L"window_layout.xml"))
 		window_layout_root = window_layout.first_child();
 
-	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
-	utils::style_set_to_light();
-
 	{
 		auto c_event_receiver = root->get_component(cEventReceiver);
-		c_event_receiver->key_listeners.add([](void*, KeyStateFlags action, int value) {
+		c_event_receiver->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
 			if (is_key_down(action))
 			{
+				auto ed = c.current<cEventReceiver>()->dispatcher;
 				switch (value)
 				{
 				case Key_S:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						app.save();
 					break;
 				case Key_Z:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						undo();
 					break;
 				case Key_Y:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						redo();
 					break;
 				case Key_X:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						cut_selected();
 					break;
 				case Key_C:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						copy_selected();
 					break;
 				case Key_V:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						paste();
 					break;
 				case Key_D:
-					if (app.s_event_dispatcher->key_states[Key_Ctrl] & KeyStateDown)
+					if (ed->key_states[Key_Ctrl] & KeyStateDown)
 						duplicate_selected();
 					break;
 				case Key_Del:
@@ -184,119 +239,119 @@ void MyApp::create()
 	utils::c_aligner(AlignMinMax, AlignMinMax);
 
 	utils::e_begin_menu_bar();
-		utils::e_begin_menubar_menu(L"Scene");
-			utils::e_menu_item(L"        New Entity", [](void*) {
-				looper().add_event([](void*, bool*) {
-					auto e = Entity::create();
-					e->set_name("unnamed");
-					if (app.selected)
-						app.selected->add_child(e);
-					else
-						app.prefab->add_child(e);
-					if (app.hierarchy)
-						app.hierarchy->refresh();
-				}, Capture());
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
+	utils::e_begin_menubar_menu(L"Scene");
+	utils::e_menu_item(L"        New Entity", [](Capture&) {
+		looper().add_event([](Capture&) {
+			auto e = Entity::create();
+			e->set_name("unnamed");
+			if (app.selected)
+				app.selected->add_child(e);
+			else
+				app.prefab->add_child(e);
+			if (app.hierarchy)
+				app.hierarchy->refresh();
+		}, Capture());
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
 
-			}, Capture());
-			utils::e_menu_item(L"        Close", [](Capture& c) {
-				app.load(L"");
-			}, Capture());
-			utils::e_end_menubar_menu();
-			utils::e_begin_menubar_menu(L"Edit");
-			utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](void*) {
+	}, Capture());
+	utils::e_menu_item(L"        Close", [](Capture& c) {
+		app.load(L"");
+	}, Capture());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Edit");
+	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](Capture&) {
 
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](void*) {
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](Capture&) {
 
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_SCISSORS) + L"    Cut").c_str(), [](void*) {
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Copy").c_str(), [](void*) {
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_CLIPBOARD) + L"   Paste").c_str(), [](void*) {
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture& c) {
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_SCISSORS) + L"    Cut").c_str(), [](Capture&) {
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Copy").c_str(), [](Capture&) {
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_CLIPBOARD) + L"   Paste").c_str(), [](Capture&) {
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture&) {
 
-			}, Capture());
-			utils::e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](void*) {
-				looper().add_event([](void*, bool*) {
-					if (app.selected)
-					{
-						app.selected = nullptr;
-						if (app.inspector)
-							app.inspector->refresh();
-						app.selected->parent()->remove_child(app.selected);
-						if (app.hierarchy)
-							app.hierarchy->refresh();
-					}
-				}, Capture());
-			}, Capture());
-		utils::e_end_menubar_menu();
-		utils::e_begin_menubar_menu(L"Window");
-		utils::e_menu_item(L"Editor", [](void*) {
-			if (!app.editor)
+	}, Capture());
+	utils::e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](Capture&) {
+		looper().add_event([](Capture&) {
+			if (app.selected)
 			{
-				utils::push_parent(app.root);
-				utils::next_element_pos = Vec2f(100.f);
-				utils::next_element_size = Vec2f(400.f, 300.f);
-				utils::e_begin_docker_floating_container();
-					utils::e_begin_docker();
-						app.editor = new cEditor;
-					utils::e_end_docker();
-				utils::e_end_docker_floating_container();
-				utils::pop_parent();
+				app.selected = nullptr;
+				if (app.inspector)
+					app.inspector->refresh();
+				app.selected->parent()->remove_child(app.selected);
+				if (app.hierarchy)
+					app.hierarchy->refresh();
 			}
-		}, Capture().set_thiz(this));
-		utils::e_menu_item(L"Resource Explorer", [](void*) {
-			if (!app.resource_explorer)
-			{
-				utils::push_parent(app.root);
-				utils::next_element_pos = Vec2f(100.f);
-				utils::next_element_size = Vec2f(400.f, 300.f);
-				utils::e_begin_docker_floating_container();
-					utils::e_begin_docker();
-						app.resource_explorer = new cResourceExplorer;
-					utils::e_end_docker();
-				utils::e_end_docker_floating_container();
-				utils::pop_parent();
-			}
-		}, Capture().set_thiz(this));
-		utils::e_menu_item(L"Hierarchy", [](void*) {
-			if (!app.hierarchy)
-			{
-				utils::push_parent(app.root);
-				utils::next_element_pos = Vec2f(100.f);
-				utils::next_element_size = Vec2f(400.f, 300.f);
-				utils::e_begin_docker_floating_container();
-					utils::e_begin_docker();
-						app.hierarchy = new cHierarchy;
-					utils::e_end_docker();
-				utils::e_end_docker_floating_container();
-				utils::pop_parent();
-			}
-		}, Capture().set_thiz(this));
-		utils::e_menu_item(L"Inspector", [](void*) {
-			if (!app.inspector)
-			{
-				utils::push_parent(app.root);
-				utils::next_element_pos = Vec2f(100.f);
-				utils::next_element_size = Vec2f(400.f, 300.f);
-				utils::e_begin_docker_floating_container();
-					utils::e_begin_docker();
-						app.inspector = new cInspector;
-					utils::e_end_docker();
-				utils::e_end_docker_floating_container();
-				utils::pop_parent();
-			}
-		}, Capture().set_thiz(this));
-		utils::e_end_menubar_menu();
-		utils::e_begin_menubar_menu(L"Tools");
-			utils::e_menu_item(L"Reflector", [](Capture& c) {
-				utils::e_ui_reflector_window();
-			}, Capture());
-		utils::e_end_menubar_menu();
+		}, Capture());
+	}, Capture());
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Window");
+	utils::e_menu_item(L"Editor", [](Capture&) {
+		if (!app.editor)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.editor = new cSceneEditor;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture().set_thiz(this));
+	utils::e_menu_item(L"Resource Explorer", [](Capture&) {
+		if (!app.resource_explorer)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.resource_explorer = new cResourceExplorer;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture().set_thiz(this));
+	utils::e_menu_item(L"Hierarchy", [](Capture&) {
+		if (!app.hierarchy)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.hierarchy = new cHierarchy;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture().set_thiz(this));
+	utils::e_menu_item(L"Inspector", [](Capture&) {
+		if (!app.inspector)
+		{
+			utils::push_parent(main_window->root);
+			utils::next_element_pos = Vec2f(100.f);
+			utils::next_element_size = Vec2f(400.f, 300.f);
+			utils::e_begin_docker_floating_container();
+			utils::e_begin_docker();
+			app.inspector = new cInspector;
+			utils::e_end_docker();
+			utils::e_end_docker_floating_container();
+			utils::pop_parent();
+		}
+	}, Capture().set_thiz(this));
+	utils::e_end_menubar_menu();
+	utils::e_begin_menubar_menu(L"Tools");
+	utils::e_menu_item(L"Reflector", [](Capture& c) {
+		utils::e_ui_reflector_window();
+	}, Capture());
+	utils::e_end_menubar_menu();
 	utils::e_end_menu_bar();
 
 	utils::e_begin_docker_static_container();
@@ -309,53 +364,15 @@ void MyApp::create()
 	utils::pop_parent();
 }
 
-void MyApp::select(Entity* e)
-{
-	if (selected != e)
-	{
-		selected = e;
-		if (editor)
-			editor->on_select();
-		looper().add_event([](void*, bool*) {
-			if (app.hierarchy)
-				app.hierarchy->refresh_selected();
-			if (app.inspector)
-				app.inspector->refresh();
-		}, Capture());
-	}
-}
-
-void MyApp::load(const std::filesystem::path& _filepath)
-{
-	filepath = _filepath;
-	prefab = filepath.empty() ? nullptr : Entity::create_from_file(world, filepath.c_str());
-	selected = nullptr;
-	looper().add_event([](void*, bool*) {
-		if (app.editor)
-		{
-			app.editor->on_select();
-			auto e_base = app.editor->edt.base->entity;
-			e_base->remove_children(0, -1);
-			if (app.prefab)
-				e_base->add_child(app.prefab);
-		}
-		if (app.hierarchy)
-			app.hierarchy->refresh();
-		if (app.inspector)
-			app.inspector->refresh();
-	}, Capture());
-}
-
-void MyApp::save()
-{
-
-}
+MainWindow* main_window = nullptr;
 
 int main(int argc, char **args)
 {
 	app.create();
 
-	looper().loop([](void*) {
+	new MainWindow;
+
+	looper().loop([](Capture&) {
 		app.run();
 	}, Capture());
 
