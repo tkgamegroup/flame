@@ -22,7 +22,7 @@ struct MainWindow : App::Window
 	void on_update() override;
 };
 
-MainWindow* main_window;
+MainWindow* main_window = nullptr;
 
 MainWindow::MainWindow() :
 	App::Window(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
@@ -33,7 +33,7 @@ MainWindow::MainWindow() :
 	utils::set_current_entity(root);
 
 	canvas->clear_color = Vec4f(utils::style(BackgroundColor).c) / 255.f;
-	canvas->set_resource(img_id, Imageview::create(Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())));
+	canvas->set_resource(img_id, Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())->default_view());
 
 	create_widgets();
 }

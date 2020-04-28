@@ -54,8 +54,8 @@ namespace flame
 			combobox->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("index"))
 				{
-					auto thiz = *(cEnumSingleDataTracker**)c;
-					thiz->on_changed(thiz->capture.p, thiz->info->item(thiz->combobox->index)->value());
+					auto thiz = c.thiz<cEnumSingleDataTracker>();
+					thiz->on_changed(thiz->capture, thiz->info->item(thiz->combobox->index)->value());
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -98,27 +98,21 @@ namespace flame
 
 			for (auto i = 0; i < checkboxs.size(); i++)
 			{
-				struct Capturing
-				{
-					cEnumMultiDataTracker* thiz;
-					int idx;
-				}capture;
-				capture.thiz = this;
-				capture.idx = i;
 				checkboxs[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
 					{
-						auto& capture = c.data<Capturing>();
-						auto v = *(int*)capture.thiz->data;
-						auto f = capture.thiz->info->item(capture.idx)->value();
-						if (capture.thiz->checkboxs[capture.idx]->checked)
+						auto idx = c.data<int>();
+						auto thiz = c.thiz<cEnumMultiDataTracker>();
+						auto v = *(int*)thiz->data;
+						auto f = thiz->info->item(idx)->value();
+						if (thiz->checkboxs[idx]->checked)
 							v |= f;
 						else
 							v &= ~f;
-						capture.thiz->on_changed(capture.thiz->capture.p, v);
+						thiz->on_changed(thiz->capture, v);
 					}
 					return true;
-				}, Capture().set_data(&capture));
+				}, Capture().set_data(&i).set_thiz(this));
 			}
 		}
 	};
@@ -156,8 +150,8 @@ namespace flame
 			checkbox->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("checked"))
 				{
-					auto thiz = *(cBoolDataTracker**)c;
-					thiz->on_changed(thiz->capture.p, thiz->checkbox->checked);
+					auto thiz = c.thiz<cBoolDataTracker>();
+					thiz->on_changed(thiz->capture, thiz->checkbox->checked);
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -425,8 +419,8 @@ namespace flame
 			text->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
 				{
-					auto thiz = *(cStringADataTracker**)c;
-					thiz->on_changed(thiz->capture.p, w2s(((cText*)Component::current())->text.str()).c_str());
+					auto thiz = c.thiz<cStringADataTracker>();
+					thiz->on_changed(thiz->capture, w2s(c.current<cText>()->text.str()).c_str());
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -470,8 +464,8 @@ namespace flame
 			text->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
 				{
-					auto thiz = *(cStringWDataTracker**)c;
-					thiz->on_changed(thiz->capture.p, ((cText*)Component::current())->text.v);
+					auto thiz = c.thiz<cStringWDataTracker>();
+					thiz->on_changed(thiz->capture, c.current<cText>()->text.v);
 				}
 				return true;
 			}, Capture().set_thiz(this));

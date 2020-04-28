@@ -205,7 +205,6 @@ namespace flame
 		graphics::FontAtlas* font_atlas;
 
 		std::vector<std::unique_ptr<Window>> windows;
-		Window* main_window;
 
 		void create(bool graphics_debug = true)
 		{

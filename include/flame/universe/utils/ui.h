@@ -75,12 +75,13 @@ namespace flame
 			return c;
 		}
 
-		inline cText* c_text()
+		inline cText* c_text(bool auto_size = true)
 		{
 			auto c = cText::create();
 			c->font_atlas = current_font_atlas();
 			c->font_size = style(FontSize).u.x();
 			c->color = style(TextColorNormal).c;
+			c->auto_size = auto_size;
 			if (next_component_id)
 			{
 				c->id = next_component_id;
@@ -596,8 +597,7 @@ namespace flame
 			ce->frame_color = style(ForegroundColor).c;
 			ce->frame_thickness = 2.f;
 			ce->clip_flags = ClipSelf;
-			auto ct = c_text();
-			ct->set_auto_size(false);
+			auto ct = c_text(false);
 			if (text)
 				ct->set_text(text);
 			c_event_receiver();
@@ -900,7 +900,7 @@ namespace flame
 			ce->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
 			ce->frame_color = style(TextColorNormal).c;
 			ce->frame_thickness = 2.f;
-			c_text()->set_auto_size(false);
+			c_text(false);
 			c_event_receiver();
 			auto cs = c_style_color();
 			cs->color_normal = style(FrameColorNormal).c;
