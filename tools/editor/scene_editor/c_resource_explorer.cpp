@@ -1,5 +1,7 @@
 #include <flame/foundation/bitmap.h>
+
 #include "scene_editor.h"
+#include "../bp_editor/bp_editor.h"
 
 struct cThumbnail : Component
 {
@@ -183,9 +185,7 @@ cResourceExplorer::cResourceExplorer() :
 						utils::e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
-								auto p = scene_editor.resource_explorer->curr_path / text;
-								std::filesystem::create_directory(p);
-								std::ofstream file(p / L"bp");
+								std::ofstream file((scene_editor.resource_explorer->curr_path / text).replace_extension(L".bp"));
 								file << "<BP />";
 								file.close();
 							}
@@ -390,7 +390,8 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					wchar_t p[256];
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
-				item->get_component(cEventReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto er = item->get_component(cEventReceiver);
+				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
 						auto& capture = c.data<Capturing>();
@@ -401,10 +402,32 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				utils::e_begin_popup_menu();
 				utils::e_menu_item(L"Open", [](Capture& c) {
-					auto& capture = c.data<Capturing>();
-					scene_editor.resource_explorer->selected = capture.p;
-					scene_editor.load(scene_editor.resource_explorer->selected);
+					c.thiz<cEventReceiver>()->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
+				}, Capture().set_thiz(er));
+				utils::e_end_popup_menu();
+			}
+			else if (ext == L".bp")
+			{
+				struct Capturing
+				{
+					wchar_t p[256];
+				}capture;
+				wcscpy_s(capture.p, p.c_str());
+				auto er = item->get_component(cEventReceiver);
+				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
+					{
+						auto& capture = c.data<Capturing>();
+						scene_editor.resource_explorer->selected = capture.p;
+						if (!bp_editor.window)
+							new BPEditorWindow(scene_editor.resource_explorer->selected);
+					}
+					return true;
 				}, Capture().set_data(&capture));
+				utils::e_begin_popup_menu();
+				utils::e_menu_item(L"Open", [](Capture& c) {
+					c.thiz<cEventReceiver>()->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
+				}, Capture().set_thiz(er));
 				utils::e_end_popup_menu();
 			}
 			utils::pop_parent();

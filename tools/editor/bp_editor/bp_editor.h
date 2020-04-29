@@ -142,7 +142,7 @@ struct BPEditorWindow : App::Window
 {
 	void* update_event;
 
-	BPEditorWindow();
+	BPEditorWindow(const std::filesystem::path& filename);
 	~BPEditorWindow() override;
 };
 
@@ -182,8 +182,6 @@ struct BPEditor
 
 		auto_update = false;
 	}
-
-	void create(const char* filename);
 
 	void select();
 	void select(const std::vector<BP::Node*>& nodes);

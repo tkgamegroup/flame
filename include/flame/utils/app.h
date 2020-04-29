@@ -14,6 +14,7 @@
 #include <flame/universe/world.h>
 #include <flame/universe/systems/timer_management.h>
 #include <flame/universe/systems/layout_management.h>
+#include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/utils/ui.h>
 
@@ -202,7 +203,7 @@ namespace flame
 
 		graphics::FontAtlas* font_atlas;
 
-		std::vector<std::unique_ptr<Window>> windows;
+		std::list<std::unique_ptr<Window>> windows;
 
 		void create(bool graphics_debug = true)
 		{

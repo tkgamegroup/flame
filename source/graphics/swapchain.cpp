@@ -28,6 +28,10 @@ namespace flame
 				c.thiz<SwapchainPrivate>()->update();
 				return true;
 			}, Capture().set_thiz(this));
+			w->destroy_listeners.add([](Capture& c) {
+				c.thiz<SwapchainPrivate>()->w = nullptr;
+				return true;
+			}, Capture().set_thiz(this));
 
 			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
 		}
@@ -36,7 +40,8 @@ namespace flame
 		{
 			Semaphore::destroy(image_avalible);
 
-			w->resize_listeners.remove(resize_listener);
+			if (w)
+				w->resize_listeners.remove(resize_listener);
 
 			for (auto i : images)
 				Image::destroy(i);

@@ -415,20 +415,47 @@ static void add_window(pugi::xml_node n)
 	}
 }
 
-BPEditorWindow::BPEditorWindow() :
+BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	App::Window(&app, true, true, "BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
 {
 	bp_editor.window = this;
 
-	setup_as_main_window();
-
 	utils::set_current_root(root);
 	utils::set_current_entity(root);
 
-	sys_window->set_title(bp_editor.filepath.string().c_str());
-
 	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
 	utils::style_set_to_light();
+
+	bp_editor.e_test = Entity::create();
+	{
+		auto ce = cElement::create();
+		ce->pos = 150.f;
+		ce->size = 100.f;
+		ce->pivot = 0.5f;
+		ce->color = Vec4c(0, 0, 0, 255);
+		cElement::set_linked_object(ce);
+		bp_editor.e_test->add_component(ce);
+	}
+	{
+		auto cer = cEventReceiver::create();
+		cEventReceiver::set_linked_object(cer);
+		bp_editor.e_test->add_component(cer);
+	}
+
+	if (!filename.empty())
+	{
+		bp_editor.filepath = filename;
+		bp_editor.fileppath = filename.parent_path();
+		bp_editor.bp = BP::create_from_file(filename.c_str());
+
+		sys_window->set_title(filename.string().c_str());
+	}
+
+	update_event = looper().add_event([](Capture& c) {
+		if (bp_editor.auto_update)
+			bp_editor.update();
+		c._current = INVALID_POINTER;
+	}, Capture(), 0.f);
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
@@ -616,58 +643,22 @@ BPEditorWindow::BPEditorWindow() :
 	utils::pop_style(FontSize);
 
 	utils::pop_parent();
-
-	update_event = looper().add_event([](Capture& c) {
-		if (bp_editor.auto_update)
-			bp_editor.update();
-		c._current = INVALID_POINTER;
-	}, Capture(), 0.f);
 }
 
 BPEditorWindow::~BPEditorWindow()
 {
 	bp_editor.window = nullptr;
 
+	{
+		auto p = bp_editor.e_test->parent();
+		if (p)
+			p->remove_child(bp_editor.e_test);
+		else
+			Entity::destroy(bp_editor.e_test);
+		bp_editor.e_test = nullptr;
+	}
+
 	looper().remove_event(update_event);
-}
-
-void BPEditor::create(const char* filename)
-{
-	e_test = Entity::create();
-	{
-		auto ce = cElement::create();
-		ce->pos = 150.f;
-		ce->size = 100.f;
-		ce->pivot = 0.5f;
-		ce->color = Vec4c(0, 0, 0, 255);
-		cElement::set_linked_object(ce);
-		e_test->add_component(ce);
-	}
-	{
-		auto cer = cEventReceiver::create();
-		cEventReceiver::set_linked_object(cer);
-		e_test->add_component(cer);
-	}
-
-	if (filename[0])
-	{
-		filepath = filename;
-		fileppath = filepath.parent_path();
-		bp = BP::create_from_file(filepath.c_str());
-	}
-	if (!bp)
-	{
-		filepath = app.resource_path / L"new.bp";
-		fileppath = filepath.parent_path();
-		if (!std::filesystem::exists(filepath))
-		{
-			std::ofstream new_bp(filepath);
-			new_bp << "<BP />\n";
-			new_bp.close();
-		}
-		bp = BP::create_from_file(filepath.c_str());
-		assert(bp);
-	}
 }
 
 void BPEditor::select()

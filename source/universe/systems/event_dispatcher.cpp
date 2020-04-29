@@ -120,6 +120,11 @@ namespace flame
 
 				return true;
 			}, Capture().set_thiz(this));
+
+			window->destroy_listeners.add([](Capture& c) {
+				c.thiz<sEventDispatcherPrivate>()->window = nullptr;
+				return true;
+			}, Capture().set_thiz(this));
 		}
 	}
 
