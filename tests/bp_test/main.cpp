@@ -1,8 +1,7 @@
 #include <flame/foundation/blueprint.h>
+#include <flame/universe/utils/ui.h>
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
-
-#include <flame/universe/utils/ui_impl.h>
 
 using namespace flame;
 using namespace graphics;
@@ -12,27 +11,47 @@ struct MyApp : App
 	BP* bp;
 }app;
 
-int main(int argc, char** args)
+struct MainWindow : App::Window
 {
-	app.create();
-	auto main_window = new App::Window(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	UI ui;
 
-	utils::push_parent(main_window->root);
+	MainWindow();
+};
 
-	utils::e_text(L"");
-	utils::c_aligner(AlignMin, AlignMax);
+MainWindow* main_window = nullptr;
+
+MainWindow::MainWindow() :
+	App::Window(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+{
+	main_window = this;
+
+	setup_as_main_window();
+
+	ui.init(world);
+
+	ui.parents.push(main_window->root);
+
+	ui.e_text(L"");
+	ui.c_aligner(AlignMin, AlignMax);
 	add_fps_listener([](Capture& c, uint fps) {
 		c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
-	}, Capture().set_thiz(utils::current_entity()->get_component(cText)));
+	}, Capture().set_thiz(ui.current_entity->get_component(cText)));
 
-	utils::next_element_pos = 100.f;
-	utils::next_element_size = 10.f;
-	auto patch = utils::e_element()->get_component(cElement);
+	ui.next_element_pos = 100.f;
+	ui.next_element_size = 10.f;
+	auto patch = ui.e_element()->get_component(cElement);
 	patch->pivot = 0.5f;
 	patch->color = Vec4c(255);
 	cElement::set_linked_object(patch);
 
-	utils::pop_parent();
+	ui.parents.pop();
+}
+
+int main(int argc, char** args)
+{
+	app.create();
+
+	new MainWindow;
 
 	app.bp = BP::create_from_file((app.resource_path / L"test.bp").c_str());
 	auto nr = app.bp->add_node("", "flame::cElement", BP::ObjectRefRead);

@@ -77,25 +77,25 @@ static void delete_selected()
 
 }
 
-void add_window(pugi::xml_node n)
+static void add_window(UI& ui, pugi::xml_node n)
 {
-	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
+	auto parent_layout = ui.parents.top()->get_component(cLayout)->type == LayoutHorizontal;
 	auto r = n.attribute("r").as_int(1);
 	std::string name(n.name());
 	if (name == "layout")
 	{
-		auto ca = utils::e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical)->get_component(cAligner);
+		auto ca = ui.e_begin_docker_layout(n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical)->get_component(cAligner);
 		if (parent_layout)
 			ca->width_factor = r;
 		else
 			ca->height_factor = r;
 		for (auto c : n.children())
-			add_window(c);
-		utils::e_end_docker_layout();
+			add_window(ui, c);
+		ui.e_end_docker_layout();
 	}
 	else if (name == "docker")
 	{
-		auto ca = utils::e_begin_docker()->get_component(cAligner);
+		auto ca = ui.e_begin_docker()->get_component(cAligner);
 		if (parent_layout)
 			ca->width_factor = r;
 		else
@@ -109,7 +109,7 @@ void add_window(pugi::xml_node n)
 			scene_editor.hierarchy = new cHierarchy;
 		else if (name == "inspector")
 			scene_editor.inspector = new cInspector;
-		utils::e_end_docker();
+		ui.e_end_docker();
 	}
 }
 
@@ -165,11 +165,10 @@ SceneEditorWindow::SceneEditorWindow() :
 
 	setup_as_main_window();
 
-	utils::set_current_root(root);
-	utils::set_current_entity(root);
-
 	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
-	utils::style_set_to_light();
+
+	ui.init(world);
+	ui.style_set_to_light();
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
@@ -222,14 +221,14 @@ SceneEditorWindow::SceneEditorWindow() :
 		s_event_dispatcher->next_focusing = c_event_receiver;
 	}
 
-	utils::push_parent(root);
+	ui.parents.push(root);
 
-	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-	utils::c_aligner(AlignMinMax, AlignMinMax);
+	ui.e_begin_layout(LayoutVertical, 0.f, false, false);
+	ui.c_aligner(AlignMinMax, AlignMinMax);
 
-	utils::e_begin_menu_bar();
-	utils::e_begin_menubar_menu(L"Scene");
-	utils::e_menu_item(L"        New Entity", [](Capture&) {
+	ui.e_begin_menu_bar();
+	ui.e_begin_menubar_menu(L"Scene");
+	ui.e_menu_item(L"        New Entity", [](Capture&) {
 		looper().add_event([](Capture&) {
 			auto e = Entity::create();
 			e->set_name("unnamed");
@@ -241,30 +240,30 @@ SceneEditorWindow::SceneEditorWindow() :
 				scene_editor.hierarchy->refresh();
 		}, Capture());
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
+	ui.e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
 
 	}, Capture());
-	utils::e_menu_item(L"        Close", [](Capture& c) {
+	ui.e_menu_item(L"        Close", [](Capture& c) {
 		scene_editor.load(L"");
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Edit");
-	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](Capture&) {
+	ui.e_end_menubar_menu();
+	ui.e_begin_menubar_menu(L"Edit");
+	ui.e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](Capture&) {
 
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](Capture&) {
 
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_SCISSORS) + L"    Cut").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_SCISSORS) + L"    Cut").c_str(), [](Capture&) {
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Copy").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_CLONE) + L"   Copy").c_str(), [](Capture&) {
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_CLIPBOARD) + L"   Paste").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_CLIPBOARD) + L"   Paste").c_str(), [](Capture&) {
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture&) {
 
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](Capture&) {
 		looper().add_event([](Capture&) {
 			if (scene_editor.selected)
 			{
@@ -277,80 +276,85 @@ SceneEditorWindow::SceneEditorWindow() :
 			}
 		}, Capture());
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Window");
-	utils::e_menu_item(L"Editor", [](Capture&) {
+	ui.e_end_menubar_menu();
+	ui.e_begin_menubar_menu(L"Window");
+	ui.e_menu_item(L"Editor", [](Capture&) {
 		if (!scene_editor.editor)
 		{
-			utils::push_parent(scene_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = scene_editor.window->ui;
+			ui.parents.push(scene_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			scene_editor.editor = new cSceneEditor;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture().set_thiz(this));
-	utils::e_menu_item(L"Resource Explorer", [](Capture&) {
+	ui.e_menu_item(L"Resource Explorer", [](Capture&) {
 		if (!scene_editor.resource_explorer)
 		{
-			utils::push_parent(scene_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = scene_editor.window->ui;
+			ui.parents.push(scene_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			scene_editor.resource_explorer = new cResourceExplorer;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture().set_thiz(this));
-	utils::e_menu_item(L"Hierarchy", [](Capture&) {
+	ui.e_menu_item(L"Hierarchy", [](Capture&) {
 		if (!scene_editor.hierarchy)
 		{
-			utils::push_parent(scene_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = scene_editor.window->ui;
+			ui.parents.push(scene_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			scene_editor.hierarchy = new cHierarchy;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture().set_thiz(this));
-	utils::e_menu_item(L"Inspector", [](Capture&) {
+	ui.e_menu_item(L"Inspector", [](Capture&) {
 		if (!scene_editor.inspector)
 		{
-			utils::push_parent(scene_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = scene_editor.window->ui;
+			ui.parents.push(scene_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			scene_editor.inspector = new cInspector;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture().set_thiz(this));
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Tools");
-	utils::e_menu_item(L"Reflector", [](Capture& c) {
-		utils::e_ui_reflector_window();
+	ui.e_end_menubar_menu();
+	ui.e_begin_menubar_menu(L"Tools");
+	ui.e_menu_item(L"Reflector", [](Capture& c) {
+		auto& ui = scene_editor.window->ui;
+		create_ui_reflector(ui);
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_end_menu_bar();
+	ui.e_end_menubar_menu();
+	ui.e_end_menu_bar();
 
-	utils::e_begin_docker_static_container();
+	ui.e_begin_docker_static_container();
 	if (window_layout_root)
-		add_window(window_layout_root.child("static").first_child());
-	utils::e_end_docker_static_container();
+		add_window(ui, window_layout_root.child("static").first_child());
+	ui.e_end_docker_static_container();
 
-	utils::e_end_layout();
+	ui.e_end_layout();
 
-	utils::pop_parent();
+	ui.parents.pop();
 }
 
 SceneEditorWindow::~SceneEditorWindow()

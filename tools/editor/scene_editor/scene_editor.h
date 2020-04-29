@@ -2,7 +2,6 @@
 
 #include <flame/serialize.h>
 #include <flame/graphics/image.h>
-#include <flame/utils/2d_editor.h>
 
 #include "../app.h"
 
@@ -31,7 +30,7 @@ struct _2DGizmo
 
 struct cSceneEditor : Component
 {
-	utils::_2DEditor edt;
+	_2DEditor edt;
 
 	int tool_type;
 
@@ -98,6 +97,8 @@ struct cInspector : Component
 
 struct SceneEditorWindow : App::Window
 {
+	UI ui;
+
 	SceneEditorWindow();
 	~SceneEditorWindow();
 };

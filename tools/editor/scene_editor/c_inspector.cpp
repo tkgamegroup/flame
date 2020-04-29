@@ -4,18 +4,18 @@
 
 void begin_item(const wchar_t* title)
 {
-	utils::e_begin_layout(LayoutVertical, 4.f);
-	utils::e_text(title);
-	auto e_data = utils::e_empty();
-	utils::c_element()->padding.x() = utils::style(FontSize).u.x();
-	utils::c_layout(LayoutVertical)->item_padding = 2.f;
-	utils::e_end_layout();
-	utils::push_parent(e_data);
+	ui.e_begin_layout(LayoutVertical, 4.f);
+	ui.e_text(title);
+	auto e_data = ui.e_empty();
+	ui.c_element()->padding.x() = ui.style(FontSize).u.x();
+	ui.c_layout(LayoutVertical)->item_padding = 2.f;
+	ui.e_end_layout();
+	ui.parents.push(e_data);
 }
 
 void end_item()
 {
-	utils::pop_parent();
+	ui.parents.pop();
 }
 
 struct SetterCapture
@@ -28,9 +28,9 @@ struct SetterCapture
 template <class T>
 void create_edit(SetterCapture* c)
 {
-	utils::e_drag_edit();
+	ui.e_drag_edit();
 
-	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](Capture& c, T v, bool exit_editing) {
+	ui.current_parent->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](Capture& c, T v, bool exit_editing) {
 		auto& capture = c.data<SetterCapture>();
 		if (capture.f)
 			Setter_t<T>::set_s(capture.o, capture.f, v, scene_editor.inspector);
@@ -43,9 +43,9 @@ template <uint N, class T>
 void create_vec_edit(SetterCapture* c)
 {
 	for (auto i = 0; i < N; i++)
-		utils::e_drag_edit();
+		ui.e_drag_edit();
 
-	auto p = utils::current_parent();
+	auto p = ui.current_parent;
 	p->get_component(cLayout)->type = LayoutHorizontal;
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
 		auto& capture = c.data<SetterCapture>();
@@ -59,27 +59,27 @@ void create_vec_edit(SetterCapture* c)
 cInspector::cInspector() :
 	Component("cInspector")
 {
-	utils::next_element_padding = 4.f;
-	auto e_page = utils::e_begin_docker_page(L"Inspector").second;
+	ui.next_element_padding = 4.f;
+	auto e_page = ui.e_begin_docker_page(L"Inspector").second;
 	{
-		auto c_layout = utils::c_layout(LayoutVertical);
+		auto c_layout = ui.c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 
 		e_page->add_component(this);
 	}
 
-	utils::e_begin_scrollbar(ScrollbarVertical, true);
-		e_layout = utils::e_empty();
+	ui.e_begin_scrollbar(ScrollbarVertical, true);
+		e_layout = ui.e_empty();
 		{
-			utils::c_element()->clip_flags = ClipChildren;
-			auto cl = utils::c_layout(LayoutVertical);
+			ui.c_element()->clip_flags = ClipChildren;
+			auto cl = ui.c_layout(LayoutVertical);
 			cl->item_padding = 4.f;
 			cl->width_fit_children = false;
 			cl->height_fit_children = false;
-			utils::c_aligner(AlignMinMax, AlignMinMax);
+			ui.c_aligner(AlignMinMax, AlignMinMax);
 		}
-	utils::e_end_scrollbar();
+	ui.e_end_scrollbar();
 
 	refresh();
 }
@@ -122,13 +122,13 @@ void cInspector::refresh()
 {
 	e_layout->remove_children(0, -1);
 
-	utils::push_parent(e_layout);
+	ui.parents.push(e_layout);
 	if (!scene_editor.selected)
-		utils::e_text(L"Nothing Selected");
+		ui.e_text(L"Nothing Selected");
 	else
 	{
 		begin_item(L"name");
-		utils::e_edit(100.f, s2w(scene_editor.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+		ui.e_edit(100.f, s2w(scene_editor.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
 				auto text = c.current<cText>()->text.v;
@@ -146,7 +146,7 @@ void cInspector::refresh()
 		}, Capture());
 		end_item();
 		begin_item(L"visible");
-		utils::e_checkbox(L"", scene_editor.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+		ui.e_checkbox(L"", scene_editor.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
 				scene_editor.selected->set_visible(c.current<cCheckbox>()->checked);
 			return true;
@@ -161,16 +161,16 @@ void cInspector::refresh()
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
 			auto module = udt->db()->module();
 
-			utils::next_element_padding = 4.f;
-			auto e_component = utils::e_begin_layout(LayoutVertical, 2.f);
-			utils::c_aligner(AlignMinMax, 0);
+			ui.next_element_padding = 4.f;
+			auto e_component = ui.e_begin_layout(LayoutVertical, 2.f);
+			ui.c_aligner(AlignMinMax, 0);
 
 			auto c_component_tracker = new cComponentTracker(component);
 			c_component_tracker->id = FLAME_HASH(component->name);
 			e_component->add_component(c_component_tracker);
 
-			utils::e_begin_layout(LayoutHorizontal, 4.f);
-			utils::e_text(s2w(component->name).c_str())->get_component(cText)->color = Vec4c(30, 40, 160, 255);
+			ui.e_begin_layout(LayoutHorizontal, 4.f);
+			ui.e_text(s2w(component->name).c_str())->get_component(cText)->color = Vec4c(30, 40, 160, 255);
 				struct Capturing
 				{
 					Entity* e;
@@ -178,20 +178,20 @@ void cInspector::refresh()
 				}capture;
 				capture.e = e_component;
 				capture.c = component;
-				utils::push_style(ButtonColorNormal, common(Vec4c(0)));
-				utils::push_style(ButtonColorHovering, common(utils::style(FrameColorHovering).c));
-				utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
-				utils::e_button(L"X", [](Capture& c) {
+				ui.push_style(ButtonColorNormal, common(Vec4c(0)));
+				ui.push_style(ButtonColorHovering, common(ui.style(FrameColorHovering).c));
+				ui.push_style(ButtonColorActive, common(ui.style(FrameColorActive).c));
+				ui.e_button(L"X", [](Capture& c) {
 					looper().add_event([](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						capture.e->parent()->remove_child(capture.e);
 						capture.c->entity->remove_component(capture.c);
 					}, Capture().set_data(&c.data<Capturing>()));
 				}, Capture().set_data(&capture));
-				utils::pop_style(ButtonColorNormal);
-				utils::pop_style(ButtonColorHovering);
-				utils::pop_style(ButtonColorActive);
-			utils::e_end_layout();
+				ui.pop_style(ButtonColorNormal);
+				ui.pop_style(ButtonColorHovering);
+				ui.pop_style(ButtonColorActive);
+			ui.e_end_layout();
 
 			for (auto i = 0; i < udt->variable_count(); i++)
 			{
@@ -201,7 +201,7 @@ void cInspector::refresh()
 				auto pdata = (char*)component + v->offset();
 
 				begin_item(s2w(v->name()).c_str());
-				auto e_data = utils::current_parent();
+				auto e_data = ui.current_parent;
 
 				auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
 				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva() : nullptr;
@@ -211,7 +211,7 @@ void cInspector::refresh()
 				case TypeEnumSingle:
 				{
 					auto info = find_enum(base_hash);
-					utils::create_enum_combobox(info);
+					ui.create_enum_combobox(info);
 
 					e_data->add_component(new_object<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
@@ -221,7 +221,7 @@ void cInspector::refresh()
 				case TypeEnumMulti:
 				{
 					auto info = find_enum(base_hash);
-					utils::create_enum_checkboxs(info);
+					ui.create_enum_checkboxs(info);
 
 					e_data->add_component(new_object<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
@@ -237,7 +237,7 @@ void cInspector::refresh()
 					switch (base_hash)
 					{
 					case FLAME_CHASH("bool"):
-						utils::e_checkbox(L"");
+						ui.e_checkbox(L"");
 
 						e_data->add_component(new_object<cBoolDataTracker>(pdata, [](Capture& c, bool v) {
 							;
@@ -292,14 +292,14 @@ void cInspector::refresh()
 						create_vec_edit<4, uchar>(&setter_capture);
 						break;
 					case FLAME_CHASH("flame::StringA"):
-						utils::e_edit(50.f);
+						ui.e_edit(50.f);
 
 						e_data->add_component(new_object<cStringADataTracker>(pdata, [](Capture& c, const char* v) {
 							;
 						}, Capture()));
 						break;
 					case FLAME_CHASH("flame::StringW"):
-						utils::e_edit(50.f);
+						ui.e_edit(50.f);
 
 						e_data->add_component(new_object<cStringWDataTracker>(pdata, [](Capture& c, const wchar_t* v) {
 							;
@@ -315,10 +315,10 @@ void cInspector::refresh()
 				end_item();
 			}
 
-			utils::e_end_layout();
+			ui.e_end_layout();
 		}
 
-		utils::e_begin_button_menu(L"Add Component");
+		ui.e_begin_button_menu(L"Add Component");
 		{
 			FLAME_SAL(prefix, "Serializer_c");
 			std::vector<UdtInfo*> all_udts;
@@ -338,7 +338,7 @@ void cInspector::refresh()
 			});
 			for (auto udt : all_udts)
 			{
-				utils::e_menu_item(s2w(udt->name() + prefix.l).c_str(), [](Capture& c) {
+				ui.e_menu_item(s2w(udt->name() + prefix.l).c_str(), [](Capture& c) {
 					looper().add_event([](Capture& c) {
 						auto u = c.thiz<UdtInfo>();
 
@@ -368,7 +368,7 @@ void cInspector::refresh()
 				}, Capture().set_thiz(udt));
 			}
 		}
-		utils::e_end_button_menu();
+		ui.e_end_button_menu();
 	}
-	utils::pop_parent();
+	ui.parents.pop();
 }

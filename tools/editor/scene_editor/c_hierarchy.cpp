@@ -129,7 +129,7 @@ static void create_tree_node(Entity* e)
 {
 	if (e->child_count() > 0)
 	{
-		auto e_tree_node = utils::e_begin_tree_node(s2w(e->name()).c_str());
+		auto e_tree_node = ui.e_begin_tree_node(s2w(e->name()).c_str());
 		{
 			auto c_item = new_object<cHierarchyItem>();
 			c_item->e = e;
@@ -139,11 +139,11 @@ static void create_tree_node(Entity* e)
 		auto e_sub_tree = e_tree_node->child(1);
 		for (auto i = 0; i < e->child_count(); i++)
 			create_tree_node(e->child(i));
-		utils::e_end_tree_node();
+		ui.e_end_tree_node();
 	}
 	else
 	{
-		auto e_tree_leaf = utils::e_tree_leaf(s2w(e->name()).c_str());
+		auto e_tree_leaf = ui.e_tree_leaf(s2w(e->name()).c_str());
 		{
 			auto c_item = new_object<cHierarchyItem>();
 			c_item->e = e;
@@ -155,18 +155,18 @@ static void create_tree_node(Entity* e)
 cHierarchy::cHierarchy() :
 	Component("cHierarchy")
 {
-	auto e_page = utils::e_begin_docker_page(L"Hierarchy").second;
+	auto e_page = ui.e_begin_docker_page(L"Hierarchy").second;
 	{
-		auto c_layout = utils::c_layout(LayoutVertical);
+		auto c_layout = ui.c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 
 		e_page->add_component(this);
 	}
 
-		utils::e_begin_scrollbar(ScrollbarVertical, true);
-			utils::next_element_padding = 8.f;
-			e_tree = utils::e_begin_tree(true);
+		ui.e_begin_scrollbar(ScrollbarVertical, true);
+			ui.next_element_padding = 8.f;
+			e_tree = ui.e_begin_tree(true);
 			{
 				auto c_tree = e_tree->get_component(cTree);
 				c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
@@ -188,10 +188,10 @@ cHierarchy::cHierarchy() :
 					return true;
 				}, Capture().set_thiz(c_tree));
 			}
-			utils::e_end_tree();
-		utils::e_end_scrollbar();
+			ui.e_end_tree();
+		ui.e_end_scrollbar();
 
-		utils::e_end_docker_page();
+		ui.e_end_docker_page();
 
 	refresh();
 }
@@ -234,9 +234,9 @@ void cHierarchy::refresh()
 	e_tree->get_component(cTree)->selected = nullptr;
 	if (scene_editor.prefab)
 	{
-		utils::push_parent(e_tree);
+		ui.parents.push(e_tree);
 		create_tree_node(scene_editor.prefab);
-		utils::pop_parent();
+		ui.parents.pop();
 	}
 	refresh_selected();
 }

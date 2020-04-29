@@ -19,7 +19,7 @@ _2DGizmo::_2DGizmo() :
 void _2DGizmo::create()
 {
 	auto create_block = []() {
-		auto b = utils::e_element()->get_component(cElement);
+		auto b = ui.e_element()->get_component(cElement);
 		b->size = Vec2f(8.f);
 		b->pivot = 0.5f;
 		b->frame_thickness = 2.f;
@@ -31,7 +31,7 @@ void _2DGizmo::create()
 
 	block_c = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -48,7 +48,7 @@ void _2DGizmo::create()
 
 	block_l = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -66,7 +66,7 @@ void _2DGizmo::create()
 	}
 	block_t = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -84,7 +84,7 @@ void _2DGizmo::create()
 	}
 	block_r = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -101,7 +101,7 @@ void _2DGizmo::create()
 	}
 	block_b = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -118,7 +118,7 @@ void _2DGizmo::create()
 	}
 	block_lt = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -136,7 +136,7 @@ void _2DGizmo::create()
 	}
 	block_rt = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -154,7 +154,7 @@ void _2DGizmo::create()
 	}
 	block_lb = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -172,7 +172,7 @@ void _2DGizmo::create()
 	}
 	block_rb = create_block();
 	{
-		auto er = utils::c_event_receiver();
+		auto er = ui.c_event_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
@@ -256,9 +256,9 @@ void _2DGizmo::update_blocks()
 cSceneEditor::cSceneEditor() :
 	Component("cSceneEditor")
 {
-	auto e_page = utils::e_begin_docker_page(L"Editor").second;
+	auto e_page = ui.e_begin_docker_page(L"Editor").second;
 	{
-		auto c_layout = utils::c_layout(LayoutVertical);
+		auto c_layout = ui.c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -266,21 +266,21 @@ cSceneEditor::cSceneEditor() :
 		e_page->add_component(this);
 	}
 	
-		utils::e_begin_layout(LayoutHorizontal, 4.f);
-			utils::e_begin_combobox();
-				utils::e_combobox_item(L"2D");
-				utils::e_combobox_item(L"3D");
-			utils::e_end_combobox(0);
+		ui.e_begin_layout(LayoutHorizontal, 4.f);
+			ui.e_begin_combobox();
+				ui.e_combobox_item(L"2D");
+				ui.e_combobox_item(L"3D");
+			ui.e_end_combobox(0);
 			tool_type = 1;
-			utils::e_begin_combobox();
-				utils::e_combobox_item(L"Select");
-				utils::e_combobox_item(L"Gizmo");
-			utils::e_end_combobox(tool_type)->get_component(cCombobox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+			ui.e_begin_combobox();
+				ui.e_combobox_item(L"Select");
+				ui.e_combobox_item(L"Gizmo");
+			ui.e_end_combobox(tool_type)->get_component(cCombobox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("index"))
 					scene_editor.editor->tool_type = c.current<cCombobox>()->index;
 				return true;
 			}, Capture());
-		utils::e_end_layout();
+		ui.e_end_layout();
 
 		edt.create([](Capture&, const Vec4f& r) {
 			if (r.x() == r.z() && r.y() == r.z())
@@ -308,7 +308,7 @@ cSceneEditor::cSceneEditor() :
 					}
 					return true;
 				}, Capture().set_thiz(edt.overlay));
-				utils::set_current_entity(e_overlay);
+				ui.set_current_entity(e_overlay);
 				auto c_event_receiver = e_overlay->get_component(cEventReceiver);
 				c_event_receiver->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
 					*pass = true;
@@ -320,13 +320,13 @@ cSceneEditor::cSceneEditor() :
 					return true;
 				}, Capture());
 
-				utils::push_parent(e_overlay);
+				ui.parents.push(e_overlay);
 					gizmo.create();
 					gizmo.base = edt.base;
-				utils::pop_parent();
+				ui.parents.pop();
 			}
 
-	utils::e_end_docker_page();
+	ui.e_end_docker_page();
 }
 
 cSceneEditor::~cSceneEditor()

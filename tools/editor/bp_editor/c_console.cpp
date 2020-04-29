@@ -3,10 +3,10 @@
 cConsole::cConsole() :
 	Component("cConsole")
 {
-	utils::next_element_padding = 8.f;
-	auto e_page = utils::e_begin_docker_page(L"Console").second;
+	ui.next_element_padding = 8.f;
+	auto e_page = ui.e_begin_docker_page(L"Console").second;
 	{
-		auto c_layout = utils::c_layout(LayoutVertical);
+		auto c_layout = ui.c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -14,21 +14,21 @@ cConsole::cConsole() :
 		e_page->add_component(this);
 	}
 
-		utils::e_begin_scrollbar(ScrollbarVertical, true);
-			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
-			utils::c_aligner(AlignMinMax, AlignMinMax);
-			c_text_log = utils::e_text(bp_editor.filepath.c_str())->get_component(cText);
-			utils::e_end_layout();
-		utils::e_end_scrollbar(utils::style(FontSize).u.x());
+		ui.e_begin_scrollbar(ScrollbarVertical, true);
+			ui.e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
+			ui.c_aligner(AlignMinMax, AlignMinMax);
+			c_text_log = ui.e_text(bp_editor.filepath.c_str())->get_component(cText);
+			ui.e_end_layout();
+		ui.e_end_scrollbar(ui.style(FontSize).u.x());
 
-		utils::e_button(L"Clear", [](Capture& c) {
+		ui.e_button(L"Clear", [](Capture& c) {
 			bp_editor.console->c_text_log->set_text(L"");
 		}, Capture());
 
-		utils::e_begin_layout(LayoutHorizontal, 4.f);
-		utils::c_aligner(AlignMinMax, 0);
-			c_edit_input = utils::e_edit(0.f)->get_component(cEdit);
-			utils::e_button(L"Exec", [](Capture& c) {
+		ui.e_begin_layout(LayoutHorizontal, 4.f);
+		ui.c_aligner(AlignMinMax, 0);
+			c_edit_input = ui.e_edit(0.f)->get_component(cEdit);
+			ui.e_button(L"Exec", [](Capture& c) {
 				auto log_text = bp_editor.console->c_text_log;
 				auto log = log_text->text.str();
 				auto input_text = bp_editor.console->c_edit_input->text;
@@ -261,9 +261,9 @@ cConsole::cConsole() :
 				log_text->set_text(log.c_str());
 
 			}, Capture());
-		utils::e_end_layout();
+		ui.e_end_layout();
 
-	utils::e_end_docker_page();
+	ui.e_end_docker_page();
 }
 
 cConsole::~cConsole()

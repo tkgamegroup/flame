@@ -378,26 +378,26 @@ static void delete_selected()
 	}
 }
 
-static void add_window(pugi::xml_node n)
+static void add_window(UI& ui, pugi::xml_node n)
 {
-	auto parent_layout = utils::current_parent()->get_component(cLayout)->type == LayoutHorizontal;
+	auto parent_layout = ui.parents.top()->get_component(cLayout)->type == LayoutHorizontal;
 	auto r = n.attribute("r").as_int(1);
 	std::string name(n.name());
 	if (name == "layout")
 	{
 		auto t = n.attribute("type").value() == std::string("h") ? LayoutHorizontal : LayoutVertical;
-		auto ca = utils::e_begin_docker_layout(t)->get_component(cAligner);
+		auto ca = ui.e_begin_docker_layout(t)->get_component(cAligner);
 		if (parent_layout)
 			ca->width_factor = r;
 		else
 			ca->height_factor = r;
 		for (auto c : n.children())
-			add_window(c);
-		utils::e_end_docker_layout();
+			add_window(ui, c);
+		ui.e_end_docker_layout();
 	}
 	else if (name == "docker")
 	{
-		auto ca = utils::e_begin_docker()->get_component(cAligner);
+		auto ca = ui.e_begin_docker()->get_component(cAligner);
 		if (parent_layout)
 			ca->width_factor = r;
 		else
@@ -411,7 +411,7 @@ static void add_window(pugi::xml_node n)
 			bp_editor.preview = new cPreview;
 		else if (name == "console")
 			bp_editor.console = new cConsole;
-		utils::e_end_docker();
+		ui.e_end_docker();
 	}
 }
 
@@ -420,11 +420,10 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 {
 	bp_editor.window = this;
 
-	utils::set_current_root(root);
-	utils::set_current_entity(root);
-
 	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
-	utils::style_set_to_light();
+
+	ui.init(world);
+	ui.style_set_to_light();
 
 	bp_editor.e_test = Entity::create();
 	{
@@ -502,147 +501,152 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		s_event_dispatcher->next_focusing = c_event_receiver;
 	}
 
-	utils::push_parent(root);
+	ui.parents.push(root);
 
-	utils::e_begin_layout(LayoutVertical, 0.f, false, false);
-	utils::c_aligner(AlignMinMax, AlignMinMax);
+	ui.e_begin_layout(LayoutVertical, 0.f, false, false);
+	ui.c_aligner(AlignMinMax, AlignMinMax);
 
-	utils::e_begin_menu_bar();
-	utils::e_begin_menubar_menu(L"Blueprint");
-	utils::e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
+	ui.e_begin_menu_bar();
+	ui.e_begin_menubar_menu(L"Blueprint");
+	ui.e_menu_item((std::wstring(Icon_FLOPPY_O) + L"    Save").c_str(), [](Capture& c) {
 		bp_editor.save();
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Edit");
-	utils::e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](Capture&) {
+	ui.e_end_menubar_menu();
+	ui.e_begin_menubar_menu(L"Edit");
+	ui.e_menu_item((std::wstring(Icon_UNDO) + L"    Undo").c_str(), [](Capture&) {
 		undo();
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_REPEAT) + L"    Redo").c_str(), [](Capture&) {
 		redo();
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_CLONE) + L"   Duplicate").c_str(), [](Capture&) {
 		duplicate_selected();
 	}, Capture());
-	utils::e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](Capture&) {
+	ui.e_menu_item((std::wstring(Icon_TIMES) + L"    Delete").c_str(), [](Capture&) {
 		delete_selected();
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"View");
-	utils::e_menu_item(L"Editor", [](Capture&) {
+	ui.e_end_menubar_menu();
+	ui.e_begin_menubar_menu(L"View");
+	ui.e_menu_item(L"Editor", [](Capture&) {
 		if (!bp_editor.editor)
 		{
-			utils::push_parent(bp_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = bp_editor.window->ui;
+			ui.parents.push(bp_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			bp_editor.editor = new cBPEditor;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture());
-	utils::e_menu_item(L"Detail", [](Capture&) {
+	ui.e_menu_item(L"Detail", [](Capture&) {
 		if (!bp_editor.detail)
 		{
-			utils::push_parent(bp_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = bp_editor.window->ui;
+			ui.parents.push(bp_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			bp_editor.detail = new cDetail;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture());
-	utils::e_menu_item(L"Preview", [](Capture&) {
+	ui.e_menu_item(L"Preview", [](Capture&) {
 		if (!bp_editor.preview)
 		{
-			utils::push_parent(bp_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = bp_editor.window->ui;
+			ui.parents.push(bp_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			bp_editor.preview = new cPreview;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture());
-	utils::e_menu_item(L"Console", [](Capture&) {
+	ui.e_menu_item(L"Console", [](Capture&) {
 		if (!bp_editor.console)
 		{
-			utils::push_parent(bp_editor.window->root);
-			utils::next_element_pos = Vec2f(100.f);
-			utils::next_element_size = Vec2f(400.f, 300.f);
-			utils::e_begin_docker_floating_container();
-			utils::e_begin_docker();
+			auto& ui = bp_editor.window->ui;
+			ui.parents.push(bp_editor.window->root);
+			ui.next_element_pos = Vec2f(100.f);
+			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.e_begin_docker_floating_container();
+			ui.e_begin_docker();
 			bp_editor.console = new cConsole;
-			utils::e_end_docker();
-			utils::e_end_docker_floating_container();
-			utils::pop_parent();
+			ui.e_end_docker();
+			ui.e_end_docker_floating_container();
+			ui.parents.pop();
 		}
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_begin_menubar_menu(L"Tools");
-	utils::e_menu_item(L"Generate Graph Image", [](Capture& c) {
+	ui.e_end_menubar_menu();
+	ui.e_begin_menubar_menu(L"Tools");
+	ui.e_menu_item(L"Generate Graph Image", [](Capture& c) {
 		bp_editor.generate_graph_image();
 	}, Capture());
-	utils::e_menu_item(L"Auto Set Layout", [](Capture& c) {
+	ui.e_menu_item(L"Auto Set Layout", [](Capture& c) {
 		bp_editor.auto_set_layout();
 	}, Capture());
-	utils::e_menu_item(L"Reflector", [](Capture& c) {
-		utils::e_ui_reflector_window();
+	ui.e_menu_item(L"Reflector", [](Capture& c) {
+		auto& ui = bp_editor.window->ui;
+		create_ui_reflector(ui);
 	}, Capture());
-	utils::e_end_menubar_menu();
-	utils::e_end_menu_bar();
+	ui.e_end_menubar_menu();
+	ui.e_end_menu_bar();
 
 	{
-		utils::next_element_padding = 4.f;
-		utils::next_element_color = utils::style(FrameColorNormal).c;
-		utils::e_begin_layout(LayoutHorizontal, 8.f);
-		utils::c_aligner(AlignMinMax, 0);
-		bp_editor.c_auto_update = utils::e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
+		ui.next_element_padding = 4.f;
+		ui.next_element_color = ui.style(FrameColorNormal).c;
+		ui.e_begin_layout(LayoutHorizontal, 8.f);
+		ui.c_aligner(AlignMinMax, 0);
+		bp_editor.c_auto_update = ui.e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
 		bp_editor.c_auto_update->data_changed_listeners.add([](Capture&, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
 				bp_editor.auto_update = bp_editor.c_auto_update->checked;
 			return true;
 		}, Capture());
-		utils::e_button(L"Update (F2)", [](Capture&) {
+		ui.e_button(L"Update (F2)", [](Capture&) {
 			bp_editor.update();
 		}, Capture());
-		utils::e_button(L"Reset Time", [](Capture&) {
+		ui.e_button(L"Reset Time", [](Capture&) {
 			bp_editor.bp->time = 0.f;
 		}, Capture());
-		utils::e_end_layout();
+		ui.e_end_layout();
 	}
 
-	utils::e_begin_docker_static_container();
+	ui.e_begin_docker_static_container();
 	if (window_layout_root)
-		add_window(window_layout_root.child("static").first_child());
-	utils::e_end_docker_static_container();
+		add_window(ui, window_layout_root.child("static").first_child());
+	ui.e_end_docker_static_container();
 
-	utils::e_end_layout();
+	ui.e_end_layout();
 
-	utils::push_style(FontSize, common(Vec1u(30)));
-	utils::next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
-	utils::next_element_color = Vec4c(0, 0, 0, 255);
-	bp_editor.e_notification = utils::e_text(L"");
+	ui.push_style(FontSize, common(Vec1u(30)));
+	ui.next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
+	ui.next_element_color = Vec4c(0, 0, 0, 255);
+	bp_editor.e_notification = ui.e_text(L"");
 	bp_editor.e_notification->get_component(cText)->color = Vec4c(255);
-	utils::c_aligner(AlignMax, AlignMax);
+	ui.c_aligner(AlignMax, AlignMax);
 	bp_editor.e_notification->set_visible(false);
 	{
-		auto c_timer = utils::c_timer();
+		auto c_timer = ui.c_timer();
 		c_timer->interval = 1.f;
 		c_timer->max_times = 1;
 		c_timer->set_callback([](Capture&) {
 			bp_editor.e_notification->set_visible(false);
 		}, Capture(), false);
 	}
-	utils::pop_style(FontSize);
+	ui.pop_style(FontSize);
 
-	utils::pop_parent();
+	ui.parents.pop();
 }
 
 BPEditorWindow::~BPEditorWindow()

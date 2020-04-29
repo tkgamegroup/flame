@@ -16,7 +16,9 @@
 #include <flame/universe/systems/layout_management.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/2d_renderer.h>
-#include <flame/universe/utils/ui.h>
+#include <flame/universe/components/element.h>
+#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/layout.h>
 
 namespace flame
 {
@@ -278,10 +280,6 @@ namespace flame
 				font_awesome_path.c_str(),
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
-
-			get_style = utils::style;
-
-			utils::push_font_atlas(font_atlas);
 		}
 
 		void run()

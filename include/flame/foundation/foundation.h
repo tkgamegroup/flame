@@ -314,6 +314,7 @@ namespace flame
 			ret.size = size - sizeof(T);
 			ret._data = (char*)_data + sizeof(T);
 			ret._thiz = _thiz;
+			ret._current = _current;
 			return ret;
 		}
 

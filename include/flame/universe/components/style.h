@@ -40,7 +40,21 @@ namespace flame
 		StyleCount
 	};
 
-	FLAME_UNIVERSE_EXPORTS extern const CommonValue& (*get_style)(Style s);
+	struct StyleGetter : Object
+	{
+		const CommonValue& (*pf)(Capture& c, Style s);
+		Capture c;
+
+		StyleGetter() :
+			Object("StyleGetter")
+		{
+		}
+
+		const CommonValue& get_style(Style s)
+		{
+			return pf(c, s);
+		}
+	};
 
 	struct cStyleColor : Component
 	{

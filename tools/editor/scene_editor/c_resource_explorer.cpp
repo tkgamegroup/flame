@@ -143,10 +143,10 @@ cResourceExplorer::cResourceExplorer() :
 		}
 	}
 
-	utils::next_element_padding = 4.f;
-	auto e_page = utils::e_begin_docker_page(L"Resource Explorer").second;
+	ui.next_element_padding = 4.f;
+	auto e_page = ui.e_begin_docker_page(L"Resource Explorer").second;
 	{
-		auto c_layout = utils::c_layout(LayoutVertical);
+		auto c_layout = ui.c_layout(LayoutVertical);
 		c_layout->item_padding = 4.f;
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
@@ -157,12 +157,12 @@ cResourceExplorer::cResourceExplorer() :
 
 	base_path = app.resource_path;
 
-		address_bar = utils::e_empty();
-		utils::c_element();
-		utils::c_layout(LayoutHorizontal);
+		address_bar = ui.e_empty();
+		ui.c_element();
+		ui.c_layout(LayoutHorizontal);
 
-		utils::e_begin_scrollbar(ScrollbarVertical, true);
-			e_list = utils::e_begin_list(true);
+		ui.e_begin_scrollbar(ScrollbarVertical, true);
+			e_list = ui.e_begin_list(true);
 			{
 				c_list_element = e_list->get_component(cElement);
 
@@ -170,9 +170,9 @@ cResourceExplorer::cResourceExplorer() :
 				c_list_layout->type = LayoutGrid;
 				c_list_layout->column = 4;
 			}
-				utils::e_begin_popup_menu();
-					utils::e_menu_item(L"New Prefab", [](Capture& c) {
-						utils::e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
+				ui.e_begin_popup_menu();
+					ui.e_menu_item(L"New Prefab", [](Capture& c) {
+						ui.e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
 								auto e = Entity::create();
@@ -181,8 +181,8 @@ cResourceExplorer::cResourceExplorer() :
 							}
 						}, Capture());
 					}, Capture());
-					utils::e_menu_item(L"New BP", [](Capture& c) {
-						utils::e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
+					ui.e_menu_item(L"New BP", [](Capture& c) {
+						ui.e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
 								std::ofstream file((scene_editor.resource_explorer->curr_path / text).replace_extension(L".bp"));
@@ -191,11 +191,11 @@ cResourceExplorer::cResourceExplorer() :
 							}
 						}, Capture());
 					}, Capture());
-				utils::e_end_popup_menu();
-			utils::e_end_list();
-		utils::e_end_scrollbar();
+				ui.e_end_popup_menu();
+			ui.e_end_list();
+		ui.e_end_scrollbar();
 
-	utils::e_end_docker_page();
+	ui.e_end_docker_page();
 
 	ev_file_changed = create_event(false);
 	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](Capture& c, FileChangeType type, const wchar_t* filename) {
@@ -226,16 +226,16 @@ cResourceExplorer::~cResourceExplorer()
 
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
 {
-	utils::push_style(FrameColorNormal, common(Vec4c(0)));
-	auto e_item = utils::e_list_item(L"", false);
-	utils::pop_style(FrameColorNormal);
-	utils::c_layout(LayoutVertical)->item_padding = 4.f;
-	utils::push_parent(e_item);
-	utils::next_element_size = 64.f;
-	utils::e_image(img_id << 16);
-	utils::e_text(app.font_atlas->wrap_text(utils::style(FontSize).u.x(), 64.f,
+	ui.push_style(FrameColorNormal, common(Vec4c(0)));
+	auto e_item = ui.e_list_item(L"", false);
+	ui.pop_style(FrameColorNormal);
+	ui.c_layout(LayoutVertical)->item_padding = 4.f;
+	ui.parents.push(e_item);
+	ui.next_element_size = 64.f;
+	ui.e_image(img_id << 16);
+	ui.e_text(app.font_atlas->wrap_text(ui.style(FontSize).u.x(), 64.f,
 		title.c_str(), title.c_str() + title.size()).v);
-	utils::pop_parent();
+	ui.parents.pop();
 	return e_item;
 }
 
@@ -250,12 +250,12 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		auto list = scene_editor.resource_explorer->e_list;
 
 		address_bar->remove_children(0, -1);
-		utils::push_parent(address_bar);
-		utils::push_style(ButtonColorNormal, common(Vec4c(0)));
-		utils::push_style(ButtonColorHovering, common(utils::style(FrameColorHovering).c));
-		utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
+		ui.parents.push(address_bar);
+		ui.push_style(ButtonColorNormal, common(Vec4c(0)));
+		ui.push_style(ButtonColorHovering, common(ui.style(FrameColorHovering).c));
+		ui.push_style(ButtonColorActive, common(ui.style(FrameColorActive).c));
 
-		utils::e_button(Icon_LEVEL_UP, [](Capture& c) {
+		ui.e_button(Icon_LEVEL_UP, [](Capture& c) {
 			if (scene_editor.resource_explorer->curr_path != scene_editor.resource_explorer->base_path)
 				scene_editor.resource_explorer->navigate(scene_editor.resource_explorer->curr_path.parent_path());
 		}, Capture());
@@ -277,7 +277,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				wchar_t p[256];
 			}capture;
 			wcscpy_s(capture.p, s.c_str());
-			utils::e_button(i == 0 ? s.c_str() : s.filename().c_str(), [](Capture& c) {
+			ui.e_button(i == 0 ? s.c_str() : s.filename().c_str(), [](Capture& c) {
 				auto& capture = c.data<Capturing>();
 				scene_editor.resource_explorer->navigate(capture.p);
 			}, Capture().set_data(&capture));
@@ -290,7 +290,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			}
 			if (!sub_dirs.empty())
 			{
-				utils::e_begin_button_menu(Icon_CARET_RIGHT);
+				ui.e_begin_button_menu(Icon_CARET_RIGHT);
 				for (auto& p : sub_dirs)
 				{
 					struct Capturing
@@ -298,19 +298,19 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 						wchar_t p[256];
 					}capture;
 					wcscpy_s(capture.p, s.c_str());
-					utils::e_menu_item(p.filename().c_str(), [](Capture& c) {
+					ui.e_menu_item(p.filename().c_str(), [](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						scene_editor.resource_explorer->navigate(capture.p);
 					}, Capture().set_data(&capture));
 				}
-				utils::e_end_button_menu();
+				ui.e_end_button_menu();
 			}
 		}
 
-		utils::pop_style(ButtonColorNormal);
-		utils::pop_style(ButtonColorHovering);
-		utils::pop_style(ButtonColorActive);
-		utils::pop_parent();
+		ui.pop_style(ButtonColorNormal);
+		ui.pop_style(ButtonColorHovering);
+		ui.pop_style(ButtonColorActive);
+		ui.parents.pop();
 
 		clear_all_works();
 		looper().clear_events(FLAME_CHASH("update thumbnail"));
@@ -334,7 +334,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					files.push_back(it->path());
 			}
 		}
-		utils::push_parent(list);
+		ui.parents.push(list);
 		for (auto& p : dirs)
 		{
 			auto item = scene_editor.resource_explorer->create_listitem(p.filename().wstring(), scene_editor.resource_explorer->folder_img_idx);
@@ -351,15 +351,15 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}
 				return true;
 			}, Capture().set_data(&capture));
-			utils::push_parent(item);
-			utils::e_begin_popup_menu();
-			utils::e_menu_item(L"Open", [](Capture& c) {
+			ui.parents.push(item);
+			ui.e_begin_popup_menu();
+			ui.e_menu_item(L"Open", [](Capture& c) {
 				auto& capture = c.data<Capturing>();
 				scene_editor.resource_explorer->selected = capture.p;
 				scene_editor.resource_explorer->navigate(scene_editor.resource_explorer->selected);
 			}, Capture().set_data(&capture));
-			utils::e_end_popup_menu();
-			utils::pop_parent();
+			ui.e_end_popup_menu();
+			ui.parents.pop();
 		}
 		for (auto& p : files)
 		{
@@ -382,7 +382,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				c_thumbnail->filename = std::filesystem::canonical(p).wstring();
 				e_image->add_component(c_thumbnail);
 			}
-			utils::push_parent(item);
+			ui.parents.push(item);
 			if (ext == L".prefab")
 			{
 				struct Capturing
@@ -400,11 +400,11 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					}
 					return true;
 				}, Capture().set_data(&capture));
-				utils::e_begin_popup_menu();
-				utils::e_menu_item(L"Open", [](Capture& c) {
+				ui.e_begin_popup_menu();
+				ui.e_menu_item(L"Open", [](Capture& c) {
 					c.thiz<cEventReceiver>()->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
 				}, Capture().set_thiz(er));
-				utils::e_end_popup_menu();
+				ui.e_end_popup_menu();
 			}
 			else if (ext == L".bp")
 			{
@@ -424,15 +424,15 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					}
 					return true;
 				}, Capture().set_data(&capture));
-				utils::e_begin_popup_menu();
-				utils::e_menu_item(L"Open", [](Capture& c) {
+				ui.e_begin_popup_menu();
+				ui.e_menu_item(L"Open", [](Capture& c) {
 					c.thiz<cEventReceiver>()->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
 				}, Capture().set_thiz(er));
-				utils::e_end_popup_menu();
+				ui.e_end_popup_menu();
 			}
-			utils::pop_parent();
+			ui.parents.pop();
 		}
-		utils::pop_parent();
+		ui.parents.pop();
 	}, Capture().set_thiz(this));
 }
 

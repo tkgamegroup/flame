@@ -122,7 +122,7 @@ struct cSlot : Component
 
 					if (!thiz->tip_link)
 					{
-						thiz->tip_link = utils::e_begin_layout(LayoutVertical, 4.f);
+						thiz->tip_link = ui.e_begin_layout(LayoutVertical, 4.f);
 						auto c_element = thiz->tip_link->get_component(cElement);
 						c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
 						c_element->pivot = Vec2f(0.5f, 1.f);
@@ -138,9 +138,9 @@ struct cSlot : Component
 								str = s2w(o_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(s_type->name());
 							else
 								str = s2w(s_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(o_type->name());
-							utils::e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+							ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
 						}
-						utils::e_end_layout();
+						ui.e_end_layout();
 						looper().add_event([](Capture& c) {
 							bp_editor.window->root->add_child(c.thiz<Entity>());
 						}, Capture().set_thiz(&thiz->tip_link));
@@ -174,7 +174,7 @@ struct cSlot : Component
 				{
 					if (!thiz->tip_info)
 					{
-						thiz->tip_info = utils::e_begin_layout(LayoutVertical, 8.f);
+						thiz->tip_info = ui.e_begin_layout(LayoutVertical, 8.f);
 						auto c_element = thiz->tip_info->get_component(cElement);
 						c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
 						c_element->pivot = Vec2f(is_in ? 1.f : 0.f , 0.f);
@@ -184,11 +184,11 @@ struct cSlot : Component
 						c_element->frame_color = Vec4c(0, 0, 0, 255);
 						auto type = s->type();
 						auto tag = type->tag();
-						utils::e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
+						ui.e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
 						{
-							auto text_value = utils::e_text(L"-")->get_component(cText);
-							utils::set_current_entity(thiz->tip_info);
-							auto timer = utils::c_timer();
+							auto text_value = ui.e_text(L"-")->get_component(cText);
+							ui.set_current_entity(thiz->tip_info);
+							auto timer = ui.c_timer();
 							timer->interval = 0.f;
 							struct Capturing
 							{
@@ -204,7 +204,7 @@ struct cSlot : Component
 								capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
 							}, Capture().set_data(&capture), false);
 						}
-						utils::e_end_layout();
+						ui.e_end_layout();
 						looper().add_event([](Capture& c) {
 							auto tip_info = c.thiz<Entity>();
 							bp_editor.window->root->add_child(tip_info);
@@ -287,9 +287,9 @@ struct cNode : Component
 cBPEditor::cBPEditor() :
 	Component("cBPEditor")
 {
-	auto e_page = utils::e_begin_docker_page(L"Editor").second;
+	auto e_page = ui.e_begin_docker_page(L"Editor").second;
 	{
-		auto c_layout = utils::c_layout(LayoutVertical);
+		auto c_layout = ui.c_layout(LayoutVertical);
 		c_layout->width_fit_children = false;
 		c_layout->height_fit_children = false;
 		c_layout->fence = 2;
@@ -449,7 +449,7 @@ cBPEditor::cBPEditor() :
 		return true;
 	}, Capture());
 
-	utils::e_end_docker_page();
+	ui.e_end_docker_page();
 
 	dragging_slot = nullptr;
 
@@ -490,9 +490,9 @@ void cBPEditor::on_pos_changed(BP::Node* n)
 template <class T>
 void create_edit(cBPEditor* editor, BP::Slot* input)
 {
-	utils::e_drag_edit();
+	ui.e_drag_edit();
 
-	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(input->data(), [](Capture& c, T v, bool exit_editing) {
+	ui.current_parent->add_component(new_object<cDigitalDataTracker<T>>(input->data(), [](Capture& c, T v, bool exit_editing) {
 		if (exit_editing)
 			bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 		else
@@ -504,9 +504,9 @@ template <uint N, class T>
 void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 {
 	for (auto i = 0; i < N; i++)
-		utils::e_drag_edit();
+		ui.e_drag_edit();
 
-	auto p = utils::current_parent();
+	auto p = ui.current_parent;
 	p->get_component(cLayout)->type = LayoutHorizontal;
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(input->data(), [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
 		if (exit_editing)
@@ -519,82 +519,82 @@ void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 void cBPEditor::on_add_node(BP::Node* n)
 {
 	auto e_node = Entity::create();
-	utils::set_current_entity(e_node);
+	ui.set_current_entity(e_node);
 	n->user_data = e_node;
 	{
-		auto c_element = utils::c_element();
+		auto c_element = ui.c_element();
 		c_element->pos = n->pos;
 		c_element->roundness = 8.f;
 		c_element->roundness_lod = 2;
 		c_element->frame_thickness = 4.f;
 		c_element->color = Vec4c(255, 255, 255, 200);
 		c_element->frame_color = unselected_col;
-		utils::c_event_receiver();
-		utils::c_layout(LayoutVertical)->fence = 1;
+		ui.c_event_receiver();
+		ui.c_layout(LayoutVertical)->fence = 1;
 	}
 		auto c_node = new_object<cNode>();
 		c_node->n = n;
 		auto n_type = BP::break_node_type(n->type());
 		e_node->add_component(c_node);
-		utils::e_begin_popup_menu(false);
-			utils::e_menu_item(L"Duplicate", [](Capture& c) {
+		ui.e_begin_popup_menu(false);
+			ui.e_menu_item(L"Duplicate", [](Capture& c) {
 			}, Capture());
-			utils::e_menu_item(L"Delete", [](Capture& c) {
+			ui.e_menu_item(L"Delete", [](Capture& c) {
 			}, Capture());
-		utils::e_end_popup_menu();
-	utils::push_parent(e_node);
-		utils::next_element_padding = 8.f;
-		utils::e_begin_layout(LayoutVertical, 4.f);
-			utils::push_style(FontSize, common(Vec1u(20)));
-			utils::e_begin_layout(LayoutHorizontal, 4.f);
+		ui.e_end_popup_menu();
+	ui.parents.push(e_node);
+		ui.next_element_padding = 8.f;
+		ui.e_begin_layout(LayoutVertical, 4.f);
+			ui.push_style(FontSize, common(Vec1u(20)));
+			ui.e_begin_layout(LayoutHorizontal, 4.f);
 				if (n_type == 0)
 				{
 					auto str = s2w(n->type());
 					auto last_colon = str.find_last_of(L':');
 					if (last_colon != std::wstring::npos)
 						str = std::wstring(str.begin() + last_colon + 1, str.end());
-					utils::next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-					utils::e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
+					ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+					ui.e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
 				}
-			utils::e_end_layout();
-			utils::pop_style(FontSize);
+			ui.e_end_layout();
+			ui.pop_style(FontSize);
 
 			std::string type = n->type();
 
-			utils::e_begin_layout(LayoutHorizontal, 16.f);
-			utils::c_aligner(AlignMinMax | AlignGreedy, 0);
+			ui.e_begin_layout(LayoutHorizontal, 16.f);
+			ui.c_aligner(AlignMinMax | AlignGreedy, 0);
 
-				utils::e_begin_layout(LayoutVertical);
-				utils::c_aligner(AlignMinMax | AlignGreedy, 0);
+				ui.e_begin_layout(LayoutVertical);
+				ui.c_aligner(AlignMinMax | AlignGreedy, 0);
 					for (auto i = 0; i < n->input_count(); i++)
 					{
 						auto input = n->input(i);
 
-						utils::e_begin_layout(LayoutVertical, 2.f);
+						ui.e_begin_layout(LayoutVertical, 2.f);
 
-						utils::e_begin_layout(LayoutHorizontal);
-						utils::e_empty();
+						ui.e_begin_layout(LayoutHorizontal);
+						ui.e_empty();
 						{
-							auto c_element = utils::c_element();
-							auto r = utils::style(FontSize).u.x();
+							auto c_element = ui.c_element();
+							auto r = ui.style(FontSize).u.x();
 							c_element->size = r;
 							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
 							c_element->color = Vec4c(200, 200, 200, 255);
 						}
-						utils::c_event_receiver();
+						ui.c_event_receiver();
 						auto c_slot = new_object<cSlot>();
 						c_slot->s = input;
 						input->user_data = c_slot;
-						utils::current_entity()->add_component(c_slot);
-						utils::e_begin_popup_menu(false);
-							utils::e_menu_item(L"Break Link(s)", [](Capture& c) {
+						ui.current_entity->add_component(c_slot);
+						ui.e_begin_popup_menu(false);
+							ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
 							}, Capture().set_data(&input));
-							utils::e_menu_item(L"Reset Value", [](Capture& c) {
+							ui.e_menu_item(L"Reset Value", [](Capture& c) {
 							}, Capture().set_data(&input));
 							if (n_type == 'A')
 							{
-								utils::e_menu_item(L"Remove Slot", [](Capture& c) {
+								ui.e_menu_item(L"Remove Slot", [](Capture& c) {
 									auto input = c.thiz<BP::Slot>();
 									auto n = input->node();
 									if (n->input_count() == 1)
@@ -633,17 +633,17 @@ void cBPEditor::on_add_node(BP::Node* n)
 									nn->set_id(id.c_str());
 								}, Capture().set_data(&input));
 							}
-						utils::e_end_popup_menu();
+						ui.e_end_popup_menu();
 
-						utils::e_text(s2w(input->name()).c_str())->get_component(cText)->color = type_color(input->type()->tag());
-						utils::e_end_layout();
+						ui.e_text(s2w(input->name()).c_str())->get_component(cText)->color = type_color(input->type()->tag());
+						ui.e_end_layout();
 
 						auto type = input->type();
 						auto tag = type->tag();
 						if (!input->link() && tag != TypePointer)
 						{
-							utils::next_element_padding = Vec4f(utils::style(FontSize).u.x(), 0.f, 0.f, 0.f);
-							auto e_data = utils::e_begin_layout(LayoutVertical, 2.f);
+							ui.next_element_padding = Vec4f(ui.style(FontSize).u.x(), 0.f, 0.f, 0.f);
+							auto e_data = ui.e_begin_layout(LayoutVertical, 2.f);
 
 							auto base_hash = type->base_hash();
 
@@ -652,7 +652,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 							case TypeEnumSingle:
 							{
 								auto info = find_enum(base_hash);
-								utils::create_enum_combobox(info);
+								ui.create_enum_combobox(info);
 
 								e_data->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
@@ -662,7 +662,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 							case TypeEnumMulti:
 							{
 								auto info = find_enum(base_hash);
-								utils::create_enum_checkboxs(info);
+								ui.create_enum_checkboxs(info);
 
 								e_data->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
@@ -673,7 +673,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								switch (base_hash)
 								{
 								case FLAME_CHASH("bool"):
-									utils::e_checkbox(L"");
+									ui.e_checkbox(L"");
 
 									e_data->add_component(new_object<cBoolDataTracker>(input->data(), [](Capture& c, bool v) {
 										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
@@ -728,14 +728,14 @@ void cBPEditor::on_add_node(BP::Node* n)
 									create_vec_edit<4, uchar>(this, input);
 									break;
 								case FLAME_CHASH("flame::StringA"):
-									utils::e_edit(50.f);
+									ui.e_edit(50.f);
 
 									e_data->add_component(new_object<cStringADataTracker>(input->data(), [](Capture& c, const char* v) {
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
 									}, Capture().set_data(&input)));
 									break;
 								case FLAME_CHASH("flame::StringW"):
-									utils::e_edit(50.f);
+									ui.e_edit(50.f);
 
 									e_data->add_component(new_object<cStringWDataTracker>(input->data(), [](Capture& c, const wchar_t* v) {
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
@@ -744,55 +744,55 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								break;
 							}
-							utils::e_end_layout();
+							ui.e_end_layout();
 
 							c_slot->tracker = e_data->get_component(cDataTracker);
 						}
 
-						utils::e_end_layout();
+						ui.e_end_layout();
 
 					}
-				utils::e_end_layout();
+				ui.e_end_layout();
 
-				utils::e_begin_layout(LayoutVertical);
-				utils::c_aligner(AlignMinMax | AlignGreedy, 0);
+				ui.e_begin_layout(LayoutVertical);
+				ui.c_aligner(AlignMinMax | AlignGreedy, 0);
 					for (auto i = 0; i < n->output_count(); i++)
 					{
 						auto output = n->output(i);
 
-						utils::e_begin_layout(LayoutHorizontal);
-						utils::c_aligner(AlignMax, 0);
-						utils::e_text(s2w(output->name()).c_str())->get_component(cText)->color = type_color(output->type()->tag());
+						ui.e_begin_layout(LayoutHorizontal);
+						ui.c_aligner(AlignMax, 0);
+						ui.e_text(s2w(output->name()).c_str())->get_component(cText)->color = type_color(output->type()->tag());
 
-						utils::e_empty();
+						ui.e_empty();
 						{
-							auto c_element = utils::c_element();
-							auto r = utils::style(FontSize).u.x();
+							auto c_element = ui.c_element();
+							auto r = ui.style(FontSize).u.x();
 							c_element->size = r;
 							c_element->roundness = r * 0.4f;
 							c_element->roundness_lod = 2;
 							c_element->color = Vec4c(200, 200, 200, 255);
 						}
-						utils::c_event_receiver();
+						ui.c_event_receiver();
 						auto c_slot = new_object<cSlot>();
 						c_slot->s = output;
-						utils::current_entity()->add_component(c_slot);
+						ui.current_entity->add_component(c_slot);
 						output->user_data = c_slot;
-						utils::e_begin_popup_menu(false);
-							utils::e_menu_item(L"Break Link(s)", [](Capture& c) {
+						ui.e_begin_popup_menu(false);
+							ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
 							}, Capture());
-						utils::e_end_popup_menu();
-						utils::e_end_layout();
+						ui.e_end_popup_menu();
+						ui.e_end_layout();
 					}
-				utils::e_end_layout();
-			utils::e_end_layout();
+				ui.e_end_layout();
+			ui.e_end_layout();
 
 			if (n_type == 'A')
 			{
-				utils::next_element_padding = Vec4f(5.f, 2.f, 5.f, 2.f);
-				utils::next_element_roundness = 8.f;
-				utils::next_element_roundness_lod = 2;
-				utils::e_button(L"+", [](Capture& c) {
+				ui.next_element_padding = Vec4f(5.f, 2.f, 5.f, 2.f);
+				ui.next_element_roundness = 8.f;
+				ui.next_element_roundness_lod = 2;
+				ui.e_button(L"+", [](Capture& c) {
 					auto n = c.thiz<BP::Node>();
 					bp_editor.select();
 					std::string type = n->type();
@@ -826,19 +826,19 @@ void cBPEditor::on_add_node(BP::Node* n)
 						nn->set_id(id.c_str());
 					}
 				}, Capture().set_thiz(n));
-				utils::c_aligner(AlignMiddle, 0);
+				ui.c_aligner(AlignMiddle, 0);
 			}
 
-		utils::e_end_layout();
-		utils::e_empty();
-		utils::c_element();
-		utils::c_event_receiver()->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
+		ui.e_end_layout();
+		ui.e_empty();
+		ui.c_element();
+		ui.c_event_receiver()->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
 			*pass = true;
 			return true;
 		}, Capture());
-		utils::c_aligner(AlignMinMax, AlignMinMax);
-		utils::c_bring_to_front();
-	utils::pop_parent();
+		ui.c_aligner(AlignMinMax, AlignMinMax);
+		ui.c_bring_to_front();
+	ui.parents.pop();
 
 	looper().add_event([](Capture& c) {
 		bp_editor.editor->edt.base->entity->add_child(c.thiz<Entity>());
@@ -954,29 +954,29 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		return std::string(a.u->name()) < std::string(b.u->name());
 	});
 
-	utils::push_parent(utils::add_layer(bp_editor.window->root, ""));
-		utils::next_element_pos = pos;
-		utils::next_element_padding = 4.f;
-		utils::next_element_frame_thickness = 2.f;
-		utils::next_element_color = utils::style(BackgroundColor).c;
-		utils::next_element_frame_color = utils::style(ForegroundColor).c;
-		utils::e_element()->on_removed_listeners.add([](Capture&) {
+	ui.parents.push(add_layer(bp_editor.window->root, ""));
+		ui.next_element_pos = pos;
+		ui.next_element_padding = 4.f;
+		ui.next_element_frame_thickness = 2.f;
+		ui.next_element_color = ui.style(BackgroundColor).c;
+		ui.next_element_frame_color = ui.style(ForegroundColor).c;
+		ui.e_element()->on_removed_listeners.add([](Capture&) {
 			bp_editor.editor->dragging_slot = nullptr;
 			return true;
 		}, Capture());
-		utils::c_layout(LayoutVertical)->item_padding = 4.f;
-		utils::push_parent(utils::current_entity());
+		ui.c_layout(LayoutVertical)->item_padding = 4.f;
+		ui.parents.push(ui.current_entity);
 			if (dragging_slot)
-				utils::e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color = type_color(tag);
-			utils::e_begin_layout(LayoutHorizontal, 4.f);
-				utils::e_text(Icon_SEARCH);
-				auto c_text_search = utils::e_edit(300.f)->get_component(cText);
-			utils::e_end_layout();
-			utils::next_element_size = Vec2f(0.f, 300.f);
-			utils::next_element_padding = 4.f;
-			utils::e_begin_scrollbar(ScrollbarVertical, false);
-			utils::c_aligner(AlignMinMax | AlignGreedy, 0);
-				auto e_list = utils::e_begin_list(true);
+				ui.e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color = type_color(tag);
+			ui.e_begin_layout(LayoutHorizontal, 4.f);
+				ui.e_text(Icon_SEARCH);
+				auto c_text_search = ui.e_edit(300.f)->get_component(cText);
+			ui.e_end_layout();
+			ui.next_element_size = Vec2f(0.f, 300.f);
+			ui.next_element_padding = 4.f;
+			ui.e_begin_scrollbar(ScrollbarVertical, false);
+			ui.c_aligner(AlignMinMax | AlignGreedy, 0);
+				auto e_list = ui.e_begin_list(true);
 					struct Capturing
 					{
 						Entity* l;
@@ -1007,8 +1007,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							for (auto ei : enum_infos)
 							{
 								capture.s = ei->name();
-								utils::push_parent(l);
-								utils::e_menu_item(s2w(ei->name()).c_str(), [](Capture& c) {
+								ui.parents.push(l);
+								ui.e_menu_item(s2w(ei->name()).c_str(), [](Capture& c) {
 									auto& capture = c.data<_Capturing>();
 									NodeDesc d;
 									d.id = "";
@@ -1019,7 +1019,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 									d.pos = capture.p;
 									bp_editor.add_node(d);
 								}, Capture().set_data(&capture));
-								utils::pop_parent();
+								ui.parents.pop();
 							}
 						}
 					}capture;
@@ -1027,21 +1027,21 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 					if (!dragging_slot)
 					{
-						utils::e_menu_item(L"Enum Single", [](Capture& c) {
+						ui.e_menu_item(L"Enum Single", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
 								capture.show_enums(TypeEnumSingle);
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
-						utils::e_menu_item(L"Enum Multi", [](Capture& c) {
+						ui.e_menu_item(L"Enum Multi", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
 								capture.show_enums(TypeEnumMulti);
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
-						utils::e_menu_item(L"Variable", [](Capture& c) {
+						ui.e_menu_item(L"Variable", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
@@ -1055,8 +1055,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								for (auto t : basic_types())
 								{
 									_capture.s = t;
-									utils::push_parent(capture.l);
-									utils::e_menu_item(s2w(t).c_str(), [](Capture& c) {
+									ui.parents.push(capture.l);
+									ui.e_menu_item(s2w(t).c_str(), [](Capture& c) {
 										auto& capture = c.data<_Capturing>();
 										NodeDesc d;
 										d.id = "";
@@ -1067,11 +1067,11 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 										d.pos = capture.p;
 										bp_editor.add_node(d);
 									}, Capture().set_data(&_capture));
-									utils::pop_parent();
+									ui.parents.pop();
 								}
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
-						utils::e_menu_item(L"Array", [](Capture& c) {
+						ui.e_menu_item(L"Array", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
@@ -1085,8 +1085,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								for (auto t : basic_types())
 								{
 									_capture.s = t;
-									utils::push_parent(capture.l);
-									utils::e_menu_item(s2w(t).c_str(), [](Capture& c) {
+									ui.parents.push(capture.l);
+									ui.e_menu_item(s2w(t).c_str(), [](Capture& c) {
 										auto& capture = c.data<_Capturing>();
 										NodeDesc d;
 										d.id = "";
@@ -1097,7 +1097,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 										d.pos = capture.p;
 										bp_editor.add_node(d);
 									}, Capture().set_data(&_capture));
-									utils::pop_parent();
+									ui.parents.pop();
 								}
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
@@ -1115,7 +1115,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							_capture.t = tag;
 							_capture.p = capture.p;
 							_capture.s = base_name;
-							utils::e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](Capture& c) {
+							ui.e_menu_item(((tag == TypeEnumSingle ? L"Enum Single: " : L"Enum Multi: ") + s2w(base_name)).c_str(), [](Capture& c) {
 								auto& capture = c.data<_Capturing>();
 								NodeDesc d;
 								d.id = "";
@@ -1146,7 +1146,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								}_capture;
 								_capture.p = capture.p;
 								_capture.s = base_name;
-								utils::e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](Capture& c) {
+								ui.e_menu_item((L"Variable: " + s2w(base_name)).c_str(), [](Capture& c) {
 									auto& capture = c.data<_Capturing>();
 									NodeDesc d;
 									d.id = "";
@@ -1176,7 +1176,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							}_capture;
 							_capture.p = capture.p;
 							_capture.s = base_name;
-							utils::e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](Capture& c) {
+							ui.e_menu_item((L"Array: " + s2w(base_name)).c_str(), [](Capture& c) {
 								auto& capture = c.data<_Capturing>();
 								NodeDesc d;
 								d.id = "";
@@ -1216,7 +1216,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								name += L" (RefRead)";
 							else if (capture.t == BP::ObjectRefWrite)
 								name += L" (RefWrite)";
-							utils::e_menu_item(name.c_str(), [](Capture& c) {
+							ui.e_menu_item(name.c_str(), [](Capture& c) {
 								auto& capture = c.data<_Capturing>();
 								NodeDesc d;
 								d.object_type = capture.t;
@@ -1235,10 +1235,10 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							}, Capture().set_data(&capture));
 						}
 					}
-				utils::e_end_list();
-			utils::e_end_scrollbar();
-		utils::pop_parent();
-	utils::pop_parent();
+				ui.e_end_list();
+			ui.e_end_scrollbar();
+		ui.parents.pop();
+	ui.parents.pop();
 
 	c_text_search->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 		if (hash == FLAME_CHASH("text"))

@@ -2,7 +2,6 @@
 
 #include <flame/serialize.h>
 #include <flame/foundation/blueprint.h>
-#include <flame/utils/2d_editor.h>
 
 #include "../app.h"
 
@@ -72,7 +71,7 @@ inline Vec4c node_type_color(char t)
 
 struct cBPEditor : Component
 {
-	utils::_2DEditor edt;
+	_2DEditor edt;
 
 	BP::Slot* dragging_slot;
 	Vec2f dragging_slot_pos;
@@ -140,6 +139,8 @@ struct NodeSaving
 
 struct BPEditorWindow : App::Window
 {
+	UI ui;
+
 	void* update_event;
 
 	BPEditorWindow(const std::filesystem::path& filename);

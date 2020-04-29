@@ -1,6 +1,8 @@
 #pragma once
 
 #include <flame/graphics/font.h>
+#include <flame/universe/components/timer.h>
+#include <flame/universe/components/data_keeper.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
@@ -20,32 +22,173 @@
 #include <flame/universe/components/window.h>
 #include <flame/universe/components/extra_element_drawing.h>
 #include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/utils/entity.h>
 #include <flame/universe/utils/layer.h>
 
 namespace flame
 {
-	namespace utils
+	struct UI
 	{
-		graphics::FontAtlas* current_font_atlas();
-		void push_font_atlas(graphics::FontAtlas* font_atlas);
-		void pop_font_atlas();
+		Entity* current_root;
+		Entity* current_entity;
+		std::stack<Entity*> parents;
+		std::stack<CommonValue> styles[StyleCount];
+		std::stack<graphics::FontAtlas*> font_atlases;
 
-		extern Vec2f next_element_pos;
-		extern Vec2f next_element_size;
-		extern Vec4f next_element_padding;
-		extern Vec4f next_element_roundness;
-		extern uint next_element_roundness_lod;
-		extern float next_element_frame_thickness;
-		extern Vec4c next_element_color;
-		extern Vec4c next_element_frame_color;
+		Entity* next_entity;
+		uint next_component_id;
+		Vec2f next_element_pos;
+		Vec2f next_element_size;
+		Vec4f next_element_padding;
+		Vec4f next_element_roundness;
+		uint next_element_roundness_lod;
+		float next_element_frame_thickness;
+		Vec4c next_element_color;
+		Vec4c next_element_frame_color;
 
-		const CommonValue& style(Style s);
+		UI()
+		{
+			current_root = current_entity = nullptr;
 
-		void push_style(Style s, const CommonValue& v);
-		void pop_style(Style style);
-		void style_set_to_light();
-		void style_set_to_dark();
+			next_entity = nullptr;
+			next_component_id = 0;
+			next_element_pos = 0.f;
+			next_element_padding = 0.f;
+			next_element_roundness = 0.f;
+			next_element_roundness_lod = 0;
+			next_element_frame_thickness = 0.f;
+			next_element_color = 0;
+			next_element_frame_color = Vec4c(255);
+		}
+
+		inline cTimer* c_timer()
+		{
+			auto c = cTimer::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
+			current_entity->add_component(c);
+			return c;
+		}
+
+		inline cDataKeeper* c_data_keeper()
+		{
+			auto c = cDataKeeper::create();
+			if (next_component_id)
+			{
+				c->id = next_component_id;
+				next_component_id = 0;
+			}
+			current_entity->add_component(c);
+			return c;
+		}
+
+		const CommonValue& style(Style s)
+		{
+			return styles[s].top();
+		}
+
+		void push_style(Style s, const CommonValue& cv)
+		{
+			styles[s].push(cv);
+		}
+
+		void pop_style(Style s)
+		{
+			styles[s].pop();
+		}
+
+		void change_style(Style s, const CommonValue& cv)
+		{
+			auto& style = styles[s];
+			if (style.empty())
+				style.push(cv);
+			else
+				style.top() = cv;
+		}
+
+		void style_set_to_light()
+		{
+			change_style(FontSize, common(Vec1u(16U)));
+			change_style(BackgroundColor, common(Vec4c(240, 240, 240, 255)));
+			change_style(ForegroundColor, common(Vec4c(0, 0, 0, 255)));
+			change_style(TextColorNormal, common(Vec4c(0, 0, 0, 255)));
+			change_style(TextColorElse, common(Vec4c(0, 120, 205, 255)));
+			change_style(FrameColorNormal, common(Vec4c(220, 220, 220, 255)));
+			change_style(FrameColorHovering, common(Vec4c(230, 230, 230, 255)));
+			change_style(FrameColorActive, common(Vec4c(225, 225, 225, 255)));
+			change_style(ButtonColorNormal, common(Vec4c(86, 119, 252, 255)));
+			change_style(ButtonColorHovering, common(Vec4c(78, 108, 239, 255)));
+			change_style(ButtonColorActive, common(Vec4c(69, 94, 222, 255)));
+			change_style(SelectedColorNormal, common(Vec4c(200, 220, 245, 255)));
+			change_style(SelectedColorHovering, common(Vec4c(205, 225, 250, 255)));
+			change_style(SelectedColorActive, common(Vec4c(195, 215, 240, 255)));
+			change_style(ScrollbarColor, common(Vec4c(245, 245, 245, 255)));
+			change_style(ScrollbarThumbColorNormal, common(Vec4c(194, 195, 201, 255)));
+			change_style(ScrollbarThumbColorHovering, common(Vec4c(104, 104, 104, 255)));
+			change_style(ScrollbarThumbColorActive, common(Vec4c(91, 91, 91, 255)));
+			change_style(TabColorNormal, common(Vec4c(0, 0, 0, 0)));
+			change_style(TabColorElse, common(Vec4c(28, 151, 234, 255)));
+			change_style(TabTextColorNormal, common(Vec4c(0, 0, 0, 255)));
+			change_style(TabTextColorElse, common(Vec4c(255, 255, 255, 255)));
+			change_style(SelectedTabColorNormal, common(Vec4c(0, 122, 204, 255)));
+			change_style(SelectedTabColorElse, common(Vec4c(0, 122, 204, 255)));
+			change_style(SelectedTabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			change_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
+		}
+
+		void style_set_to_dark()
+		{
+			change_style(FontSize, common(Vec1u(16U)));
+			change_style(BackgroundColor, common(Vec4c(40, 40, 40, 255)));
+			change_style(ForegroundColor, common(Vec4c(255, 255, 255, 255)));
+			change_style(TextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			change_style(TextColorElse, common(Vec4c(180, 180, 180, 255)));
+			change_style(FrameColorNormal, common(Vec4c(55, 55, 55, 255)));
+			change_style(FrameColorHovering, common(Vec4c(65, 65, 65, 255)));
+			change_style(FrameColorActive, common(Vec4c(60, 60, 60, 255)));
+			change_style(ButtonColorNormal, common(Vec4c(86, 119, 252, 255)));
+			change_style(ButtonColorHovering, common(Vec4c(78, 108, 239, 255)));
+			change_style(ButtonColorActive, common(Vec4c(69, 94, 222, 255)));
+			change_style(SelectedColorNormal, common(Vec4c(100, 110, 125, 255)));
+			change_style(SelectedColorHovering, common(Vec4c(105, 115, 130, 255)));
+			change_style(SelectedColorActive, common(Vec4c(90, 105, 120, 255)));
+			change_style(ScrollbarColor, common(Vec4c(62, 62, 66, 255)));
+			change_style(ScrollbarThumbColorNormal, common(Vec4c(104, 104, 104, 255)));
+			change_style(ScrollbarThumbColorHovering, common(Vec4c(158, 158, 158, 255)));
+			change_style(ScrollbarThumbColorActive, common(Vec4c(239, 235, 239, 255)));
+			change_style(TabColorNormal, common(Vec4c(0, 0, 0, 0)));
+			change_style(TabColorElse, common(Vec4c(28, 151, 234, 255)));
+			change_style(TabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			change_style(TabTextColorElse, common(Vec4c(255, 255, 255, 255)));
+			change_style(SelectedTabColorNormal, common(Vec4c(0, 122, 204, 255)));
+			change_style(SelectedTabColorElse, common(Vec4c(0, 122, 204, 255)));
+			change_style(SelectedTabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
+			change_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
+		}
+
+		void init(World* w)
+		{
+			auto root = w->root();
+
+			auto sg = new StyleGetter;
+			sg->pf = [](Capture& c, Style s) -> const CommonValue& {
+				return c.thiz<UI>()->style(s);
+			};
+			sg->c = Capture().set_thiz(this);
+			w->add_object(sg);
+			root->on_destroyed_listeners.add([](Capture& c) {
+				delete c.thiz<StyleGetter>();
+				return true;
+			}, Capture().set_thiz(sg));
+
+			style_set_to_dark();
+
+			font_atlases.push((graphics::FontAtlas*)w->find_object(FLAME_CHASH("FontAtlas"), 0));
+
+			current_root = current_entity = root;
+		}
 
 		inline cElement* c_element()
 		{
@@ -71,14 +214,14 @@ namespace flame
 			next_element_color = 0;
 			c->frame_color = next_element_frame_color;
 			next_element_frame_color = 255;
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
 		inline cText* c_text(bool auto_size = true)
 		{
 			auto c = cText::create();
-			c->font_atlas = current_font_atlas();
+			c->font_atlas = font_atlases.top();
 			c->font_size = style(FontSize).u.x();
 			c->color = style(TextColorNormal).c;
 			c->auto_size = auto_size;
@@ -87,7 +230,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -99,7 +242,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -111,7 +254,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -123,7 +266,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -135,7 +278,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -147,7 +290,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -159,7 +302,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -171,7 +314,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -183,7 +326,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -197,7 +340,7 @@ namespace flame
 			}
 			c->x_align_flags = (AlignFlag)x_flags;
 			c->y_align_flags = (AlignFlag)y_flags;
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -211,7 +354,7 @@ namespace flame
 			}
 			c->width_fit_children = width_fit_children;
 			c->height_fit_children = height_fit_children;
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -223,7 +366,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -235,7 +378,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -247,7 +390,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -259,7 +402,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -271,7 +414,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -283,7 +426,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -295,7 +438,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -307,7 +450,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -319,7 +462,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -331,7 +474,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -347,7 +490,7 @@ namespace flame
 			ce->padding = 1.f;
 			ce->frame_thickness = 1.f;
 			ce->frame_color = style(ForegroundColor).c;
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -359,7 +502,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -371,7 +514,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -383,7 +526,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -395,7 +538,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -407,7 +550,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -419,7 +562,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -431,7 +574,7 @@ namespace flame
 				c->id = next_component_id;
 				next_component_id = 0;
 			}
-			current_entity()->add_component(c);
+			current_entity->add_component(c);
 			return c;
 		}
 
@@ -445,7 +588,7 @@ namespace flame
 			}
 			else
 				e = Entity::create();
-			auto p = current_parent();
+			auto p = parents.top();
 			if (p)
 			{
 				auto pos = (int)p->child_count() - 1;
@@ -467,7 +610,7 @@ namespace flame
 				pos++;
 				p->add_child(e, pos);
 			}
-			set_current_entity(e);
+			current_entity = e;
 			return e;
 		}
 
@@ -484,13 +627,13 @@ namespace flame
 			c_element();
 			auto cl = c_layout(type, width_fit_children, height_fit_children);
 			cl->item_padding = item_padding;
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_layout()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_text(const wchar_t* text)
@@ -610,23 +753,6 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_colorpicker(const Vec4c& init_col)
-		{
-			auto e = e_empty();
-			auto ce = c_element();
-			ce->size = 16.f;
-			ce->color = init_col;
-			c_event_receiver()->mouse_listeners.add([](Capture&, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				push_parent(current_root());
-				e_begin_layout(LayoutVertical, 4.f);
-
-				e_end_layout();
-				pop_parent();
-				return true;
-			}, Capture());
-			return e;
-		}
-
 		inline Entity* e_drag_edit()
 		{
 			auto e = e_begin_layout(LayoutVertical);
@@ -685,13 +811,13 @@ namespace flame
 			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical, false, false);
 			cl->item_padding = 4.f;
 			cl->fence = 2;
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_scrollbar(float step = 1.f)
 		{
-			auto type = current_parent()->get_component(cLayout)->type == LayoutHorizontal ? ScrollbarVertical : ScrollbarHorizontal;
+			auto type = parents.top()->get_component(cLayout)->type == LayoutHorizontal ? ScrollbarVertical : ScrollbarHorizontal;
 			{
 				e_empty();
 				auto ce = c_element();
@@ -704,7 +830,7 @@ namespace flame
 					ca->x_align_flags = AlignMinMax;
 				c_event_receiver();
 				c_scrollbar();
-				push_parent(current_entity());
+				parents.push(current_entity);
 			}
 			{
 				e_empty();
@@ -717,7 +843,7 @@ namespace flame
 				cs->style();
 				auto ct = c_scrollbar_thumb(type);
 				ct->step = step;
-				pop_parent();
+				parents.pop();
 
 				e_empty();
 				c_element();
@@ -733,7 +859,7 @@ namespace flame
 				}, Capture().set_thiz(ct));
 				c_aligner(AlignMinMax, AlignMinMax);
 			}
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_splitter(SplitterType type)
@@ -742,15 +868,15 @@ namespace flame
 			c_element();
 			c_aligner(AlignMinMax, AlignMinMax);
 			c_layout(type == SplitterHorizontal ? LayoutHorizontal : LayoutVertical, false, false);
-			push_parent(e);
+			parents.push(e);
 			e_empty();
-			cSplitter::make(current_entity(), type);
+			cSplitter::make(current_entity, type);
 			return e;
 		}
 
 		inline void e_end_splitter()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_list(bool size_fit_parent)
@@ -767,13 +893,13 @@ namespace flame
 				cl->height_fit_children = false;
 			}
 			c_list();
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_list()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_list_item(const wchar_t* text, bool align = true)
@@ -815,13 +941,13 @@ namespace flame
 				cl->height_fit_children = false;
 			}
 			c_tree();
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_tree()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_tree_leaf(const wchar_t* text)
@@ -848,7 +974,7 @@ namespace flame
 			c_element();
 			c_layout(LayoutVertical)->item_padding = 4.f;
 			c_tree_node();
-			push_parent(e);
+			parents.push(e);
 			{
 				auto e = e_empty();
 				c_element()->padding = Vec4f(style(FontSize).u.x() + 4.f, 2.f, 4.f, 2.f);
@@ -864,7 +990,7 @@ namespace flame
 				cs->style();
 				c_layout();
 				c_tree_node_title();
-				push_parent(e);
+				parents.push(e);
 				{
 					e_empty();
 					c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
@@ -876,20 +1002,20 @@ namespace flame
 					cs->style();
 					c_tree_node_arrow();
 				}
-				pop_parent();
+				parents.pop();
 			}
 			auto es = e_empty();
 			es->set_visible(!collapsed);
 			c_element()->padding = Vec4f(style(FontSize).u.x() * 0.5f, 0.f, 0.f, 0.f);
 			c_layout(LayoutVertical)->item_padding = 4.f;
-			pop_parent();
-			push_parent(es);
+			parents.pop();
+			parents.push(es);
 			return e;
 		}
 
 		inline void e_end_tree_node()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_combobox()
@@ -910,21 +1036,21 @@ namespace flame
 			cs->style();
 			c_layout();
 			auto cm = c_menu(cMenu::ModeMain);
-			cm->root = current_root();
+			cm->root = current_root;
 			auto ccb = c_combobox();
-			push_parent(e);
+			parents.push(e);
 			e_empty();
 			c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(Icon_ANGLE_DOWN);
 			c_aligner(AlignMax | AlignAbsolute, 0);
-			pop_parent();
-			push_parent(cm->items);
+			parents.pop();
+			parents.push(cm->items);
 			return e;
 		}
 
 		inline Entity* e_end_combobox(int idx = -1)
 		{
-			auto eis = current_parent();
+			auto eis = parents.top();
 			auto ecb = eis->get_component(cMenuItems)->menu->entity;
 			auto max_width = 0U;
 			for (auto i = 0; i < eis->child_count(); i++)
@@ -935,7 +1061,7 @@ namespace flame
 			ecb->get_component(cElement)->add_width(8.f + max_width + style(FontSize).u.x());
 			if (idx != -1)
 				ecb->get_component(cCombobox)->set_index(idx, false);
-			pop_parent();
+			parents.pop();
 			return ecb;
 		}
 
@@ -965,13 +1091,13 @@ namespace flame
 			c_element()->color = style(FrameColorNormal).c;
 			c_aligner(AlignMinMax, 0);
 			c_layout(LayoutHorizontal)->item_padding = 4.f;
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_menu_bar()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_menubar_menu(const wchar_t* text, bool transparent = true)
@@ -981,19 +1107,19 @@ namespace flame
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeMenubar);
-			cm->root = current_root();
+			cm->root = current_root;
 			auto cs = c_style_color();
 			cs->color_normal = transparent ? Vec4c(0) : style(FrameColorHovering).c;
 			cs->color_hovering = style(FrameColorHovering).c;
 			cs->color_active = style(FrameColorActive).c;
 			cs->style();
-			push_parent(cm->items);
+			parents.push(cm->items);
 			return e;
 		}
 
 		inline void e_end_menubar_menu()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_button_menu(const wchar_t* text)
@@ -1004,19 +1130,19 @@ namespace flame
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeMain);
-			cm->root = current_root();
+			cm->root = current_root;
 			auto cs = c_style_color();
 			cs->color_normal = style(ButtonColorNormal).c;
 			cs->color_hovering = style(ButtonColorHovering).c;
 			cs->color_active = style(ButtonColorActive).c;
 			cs->style();
-			push_parent(cm->items);
+			parents.push(cm->items);
 			return e;
 		}
 
 		inline void e_end_button_menu()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_sub_menu(const wchar_t* text)
@@ -1026,7 +1152,7 @@ namespace flame
 			c_text()->set_text(text);
 			c_event_receiver();
 			auto cm = c_menu(cMenu::ModeSub);
-			cm->root = current_root();
+			cm->root = current_root;
 			auto cs = c_style_color();
 			cs->color_normal = style(FrameColorNormal).c;
 			cs->color_hovering = style(FrameColorHovering).c;
@@ -1034,19 +1160,19 @@ namespace flame
 			cs->style();
 			c_aligner(AlignMinMax | AlignGreedy, 0);
 			c_layout();
-			push_parent(e);
+			parents.push(e);
 			e_empty();
 			c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(Icon_CARET_RIGHT);
 			c_aligner(AlignMax | AlignAbsolute, 0);
-			pop_parent();
-			push_parent(cm->items);
+			parents.pop();
+			parents.push(cm->items);
 			return e;
 		}
 
 		inline void e_end_sub_menu()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_menu_item(const wchar_t* text, void(*func)(Capture& c), const Capture& _capture, bool close_menu = true)
@@ -1101,15 +1227,15 @@ namespace flame
 		inline void e_begin_popup_menu(bool attach_to_parent = true)
 		{
 			if (attach_to_parent)
-				set_current_entity(current_parent());
+				current_entity = parents.top();
 			auto cm = c_menu(cMenu::ModeContext);
-			cm->root = current_root();
-			push_parent(cm->items);
+			cm->root = current_root;
+			parents.push(cm->items);
 		}
 
 		inline void e_end_popup_menu()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline void e_color_selector()
@@ -1143,7 +1269,7 @@ namespace flame
 			c_event_receiver();
 			c_layout(LayoutVertical)->fence = -1;
 			c_moveable();
-			push_parent(e);
+			parents.push(e);
 			{
 				e_empty();
 				auto ce = c_element();
@@ -1154,7 +1280,7 @@ namespace flame
 				if (close_button)
 				{
 					c_layout();
-					push_parent(current_entity());
+					parents.push(current_entity);
 					e_button(Icon_TIMES, [](Capture& c) {
 						looper().add_event([](Capture& c) {
 							auto e = c.thiz<Entity>();
@@ -1162,7 +1288,7 @@ namespace flame
 						}, Capture().set_thiz(c.thiz<Entity>()));
 					}, Capture().set_thiz(e), false);
 					c_aligner(AlignMax | AlignAbsolute, 0);
-					pop_parent();
+					parents.pop();
 				}
 
 				el = e_empty();
@@ -1178,14 +1304,14 @@ namespace flame
 				c_aligner(AlignMinMax, AlignMinMax);
 				c_bring_to_front();
 			}
-			pop_parent();
-			push_parent(el);
+			parents.pop();
+			parents.push(el);
 			return e;
 		}
 
 		inline void e_end_window()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_docker_floating_container()
@@ -1193,57 +1319,57 @@ namespace flame
 			auto e = e_empty();
 			cDockerTab::make_floating_container(e, next_element_pos, next_element_size);
 			next_element_pos = next_element_size = 0.f;
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_docker_floating_container()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_docker_static_container()
 		{
 			auto e = e_empty();
 			cDockerTab::make_static_container(e);
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_docker_static_container()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_docker_layout(LayoutType type)
 		{
 			auto e = e_empty();
 			cDockerTab::make_layout(e, type);
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_docker_layout()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_docker()
 		{
 			auto e = e_empty();
 			cDockerTab::make_docker(e);
-			push_parent(e);
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_docker()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline std::pair<Entity*, Entity*> e_begin_docker_page(const wchar_t* title, void(*on_close)(Capture& c) = nullptr, const Capture& _close_capture = Capture())
 		{
-			push_parent(current_parent()->child(0));
+			parents.push(parents.top()->child(0));
 			auto et = e_empty();
 			et->set_name("docker_tab");
 			c_element()->padding = Vec4f(4.f, 2.f, style(FontSize).u.x() + 6.f, 2.f);
@@ -1266,8 +1392,8 @@ namespace flame
 			c_list_item();
 			c_layout();
 			auto cdt = c_docker_tab();
-			cdt->root = current_root();
-			push_parent(et);
+			cdt->root = current_root;
+			parents.push(et);
 			{
 				struct Capturing
 				{
@@ -1288,9 +1414,9 @@ namespace flame
 				c_aligner(AlignMax | AlignAbsolute, 0);
 				pop_style(TextColorNormal);
 			}
-			pop_parent();
-			pop_parent();
-			push_parent(current_parent()->child(1));
+			parents.pop();
+			parents.pop();
+			parents.push(parents.top()->child(1));
 			auto ep = e_empty();
 			{
 				auto ce = c_element();
@@ -1298,38 +1424,38 @@ namespace flame
 				ce->clip_flags = ClipChildren;
 				c_aligner(AlignMinMax, AlignMinMax);
 			}
-			pop_parent();
-			push_parent(ep);
+			parents.pop();
+			parents.push(ep);
 			return std::make_pair(et, ep);
 		}
 
 		inline void e_end_docker_page()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_begin_dialog()
 		{
-			auto l = add_layer(current_root(), nullptr, true, Vec4c(0, 0, 0, 127));
-			set_current_entity(l);
+			auto l = add_layer(current_root, nullptr, true, Vec4c(0, 0, 0, 127));
+			current_entity = l;
 			c_layout();
-			push_parent(l);
+			parents.push(l);
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->padding = Vec4f(8.f);
 			ce->frame_thickness = 2.f;
 			ce->color = style(BackgroundColor).c;
-			ce->frame_color  = col3_inv(style(BackgroundColor).c);
+			ce->frame_color = col3_inv(style(BackgroundColor).c);
 			c_aligner(AlignMiddle, AlignMiddle);
 			c_layout(LayoutVertical)->item_padding = 4.f;
-			pop_parent();
-			push_parent(e);
+			parents.pop();
+			parents.push(e);
 			return e;
 		}
 
 		inline void e_end_dialog()
 		{
-			pop_parent();
+			parents.pop();
 		}
 
 		inline Entity* e_message_dialog(const wchar_t* message)
@@ -1409,5 +1535,5 @@ namespace flame
 			e_end_dialog();
 			return e;
 		}
-	}
+	};
 }

@@ -94,7 +94,7 @@ namespace flame
 			{
 				if (mode == ModeContext)
 				{
-					auto layer = utils::add_layer(root);
+					auto layer = add_layer(root);
 					layer->set_name("layer_menu");
 					layer->on_removed_listeners.add([](Capture& c) {
 						c.thiz<Entity>()->remove_children(0, -1, false);
@@ -128,10 +128,10 @@ namespace flame
 						if (mode == ModeMenubar)
 						{
 							if (!layer)
-								layer = utils::add_layer(root, p);
+								layer = add_layer(root, p);
 						}
 						else
-							layer = utils::add_layer(root, entity);
+							layer = add_layer(root, entity);
 					}
 					if (new_layer)
 					{

@@ -1,12 +1,20 @@
 #include <flame/serialize.h>
 #include <flame/graphics/image.h>
+#include <flame/universe/utils/ui.h>
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
 
-#include <flame/universe/utils/ui_impl.h>
-
 using namespace flame;
 using namespace graphics;
+
+struct MainWindow : App::Window
+{
+	UI ui;
+
+	MainWindow();
+};
+
+MainWindow* main_window = nullptr;
 
 struct MyApp : App
 {
@@ -45,9 +53,9 @@ struct MyApp : App
 		file << "using namespace utils;";
 		file << "extern \"C\" __declspec(dllexport) void excute(Entity* e)\n{\n";
 		file << "	style_set_to_dark;";
-		file << "	push_parent(e);";
+		file << "	parents.push(e);";
 		file << code;
-		file << "	pop_parent();";
+		file << "	parents.pop();";
 		file << "\n}\n";
 		file.close();
 
@@ -88,39 +96,40 @@ struct MyApp : App
 		looper().add_event([](Capture&) {
 			if (app.f)
 				app.f(app.e_result);
-			utils::remove_layer(app.e_wait->parent());
+			remove_layer(app.e_wait->parent());
 		}, Capture().set_thiz(this));
 	}
 }app;
 
-int main(int argc, char** args)
+MainWindow::MainWindow() :
+	App::Window(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable)
 {
-	app.create();
-	auto main_window = new App::Window(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable);
+	main_window = this;
 
-	const wchar_t* fonts[] = {
-		L"c:/windows/fonts/consola.ttf"
-	};
-	app.font_atlas_edit = graphics::FontAtlas::create(app.graphics_device, 1, fonts);
-	main_window->canvas->add_font(app.font_atlas_edit);
+	canvas->add_font(app.font_atlas_edit);
 
-	utils::push_parent(main_window->root);
-		utils::e_begin_splitter(SplitterHorizontal);
-			utils::e_begin_layout(LayoutVertical, 4.f);
-			utils::c_aligner(AlignMinMax, AlignMinMax);
-			auto c_edit = utils::e_edit(100.f)->get_component(cEdit);
+	setup_as_main_window();
+
+	ui.init(world);
+
+	ui.parents.push(root);
+		ui.e_begin_splitter(SplitterHorizontal);
+			ui.e_begin_layout(LayoutVertical, 4.f);
+			ui.c_aligner(AlignMinMax, AlignMinMax);
+			auto c_edit = ui.e_edit(100.f)->get_component(cEdit);
 			c_edit->select_all_on_dbclicked = false;
 			c_edit->select_all_on_focus = false;
 			app.c_code = c_edit->text;
 			app.c_code->font_atlas = app.font_atlas_edit;
 			app.c_code->font_size = 17;
-			utils::c_aligner(AlignMinMax, AlignMinMax);
-			utils::e_button(L"Run", [](Capture&) {
+			ui.c_aligner(AlignMinMax, AlignMinMax);
+			ui.e_button(L"Run", [](Capture&) {
 				looper().add_event([](Capture&) {
+					auto& ui = main_window->ui;
 					app.clean_up();
-					app.e_wait = utils::e_begin_dialog();
-					auto c_text = utils::e_text(L"Compiling: 0")->get_component(cText);
-					auto c_timer = utils::c_timer();
+					app.e_wait = ui.e_begin_dialog();
+					auto c_text = ui.e_text(L"Compiling: 0")->get_component(cText);
+					auto c_timer = ui.c_timer();
 					c_timer->interval = 1.f;
 					struct Capturing
 					{
@@ -134,19 +143,31 @@ int main(int argc, char** args)
 						capture.time++;
 						capture.text->set_text(wfmt(L"Compiling: %d", capture.time).c_str());
 					}, Capture().set_data(&capture));
-					utils::e_end_dialog();
+					ui.e_end_dialog();
 					add_work([](Capture&) {
 						app.compile_and_run();
 					}, Capture());
 				}, Capture());
 			}, Capture());
-			utils::e_end_layout();
+			ui.e_end_layout();
 
-			app.e_result = utils::e_element();
-			utils::c_aligner(AlignMinMax, AlignMinMax);
-			utils::c_layout(LayoutVertical)->item_padding = 4.f;
-		utils::e_end_splitter();
-	utils::pop_parent();
+			app.e_result = ui.e_element();
+			ui.c_aligner(AlignMinMax, AlignMinMax);
+			ui.c_layout(LayoutVertical)->item_padding = 4.f;
+		ui.e_end_splitter();
+	ui.parents.pop();
+}
+
+int main(int argc, char** args)
+{
+	app.create();
+
+	const wchar_t* fonts[] = {
+		L"c:/windows/fonts/consola.ttf"
+	};
+	app.font_atlas_edit = graphics::FontAtlas::create(app.graphics_device, 1, fonts);
+
+	new MainWindow;
 
 	looper().loop([](Capture&) {
 		app.run();

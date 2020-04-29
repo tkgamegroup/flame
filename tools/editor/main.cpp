@@ -1,8 +1,6 @@
 #include "app.h"
 #include "scene_editor/scene_editor.h"
 
-#include <flame/universe/utils/ui_impl.h>
-
 void MyApp::create()
 {
 	App::create();
