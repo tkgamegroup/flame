@@ -963,28 +963,34 @@ namespace flame
 				win32_style |= WS_POPUP | WS_BORDER;
 			else
 			{
-				if (style & WindowFullscreen)
-					final_size = screen_size;
 				if (style & WindowFrame)
 					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 				if (style & WindowResizable)
 					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+				if (style & WindowFullscreen)
+					final_size = screen_size;
+				if (style & WindowMaximized)
+					win32_style |= WS_MAXIMIZE;
 			}
 
 			auto win32_ex_style = 0L;
 			if (style & WindowTopmost)
 				win32_ex_style |= WS_EX_TOPMOST;
 
-			RECT rect = { 0, 0, size.x(), size.y() };
-			AdjustWindowRect(&rect, win32_style, false);
-			final_size.x() = rect.right - rect.left;
-			final_size.y() = rect.bottom - rect.top;
-
+			{
+				RECT rect = { 0, 0, size.x(), size.y() };
+				AdjustWindowRect(&rect, win32_style, false);
+				final_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+			}
 			pos.x() = (screen_size.x() - final_size.x()) / 2;
 			pos.y() = (screen_size.y() - final_size.y()) / 2;
-
 			hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
 				pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+			{
+				RECT rect;
+				GetClientRect(hWnd, &rect);
+				size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+			}
 
 			SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
@@ -1119,11 +1125,6 @@ namespace flame
 		pos = _pos;
 		SetWindowPos(((SysWindowPrivate*)this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
-
-	void SysWindow::set_maximized(bool v)
-	{
-		((SysWindowPrivate*)this)->set_maximized(v);
-	}
 #endif
 
 	void SysWindow::close()
@@ -1197,43 +1198,43 @@ namespace flame
 				if (v > 0)
 					w->key_listeners.call(KeyStateDown, v);
 			}
-			break;
+				break;
 			case WM_KEYUP:
 			{
 				auto v = vk_code_to_key(wParam);
 				if (v > 0)
 					w->key_listeners.call(KeyStateUp, v);
 			}
-			break;
+				break;
 			case WM_CHAR:
 				w->key_listeners.call(KeyStateNull, (Key)wParam);
 				break;
 			case WM_LBUTTONDOWN:
 				SetCapture(hWnd);
 				w->mouse_listeners.call(KeyStateDown, Mouse_Left, Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam)));
-			break;
+				break;
 			case WM_LBUTTONUP:
 				ReleaseCapture();
 				w->mouse_listeners.call(KeyStateUp, Mouse_Left, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-			break;
+				break;
 			case WM_MBUTTONDOWN:
 				w->mouse_listeners.call(KeyStateDown, Mouse_Middle, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-			break;
+				break;
 			case WM_MBUTTONUP:
 				w->mouse_listeners.call(KeyStateUp, Mouse_Middle, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-			break;
+				break;
 			case WM_RBUTTONDOWN:
 				w->mouse_listeners.call(KeyStateDown, Mouse_Right, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-			break;
+				break;
 			case WM_RBUTTONUP:
 				w->mouse_listeners.call(KeyStateUp, Mouse_Right, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-			break;
+				break;
 			case WM_MOUSEMOVE:
 				w->mouse_listeners.call(KeyStateNull, Mouse_Null, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-			break;
+				break;
 			case WM_MOUSEWHEEL:
 				w->mouse_listeners.call(KeyStateNull, Mouse_Middle, Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0));
-			break;
+				break;
 			case WM_DESTROY:
 				w->dead = true;
 			case WM_ENTERSIZEMOVE:

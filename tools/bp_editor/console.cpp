@@ -1,4 +1,4 @@
-#include "app.h"
+#include "bp_editor.h"
 
 cConsole::cConsole() :
 	Component("cConsole")
@@ -17,25 +17,25 @@ cConsole::cConsole() :
 		utils::e_begin_scrollbar(ScrollbarVertical, true);
 			utils::e_begin_layout(LayoutVertical)->get_component(cElement)->clip_flags = ClipChildren;
 			utils::c_aligner(AlignMinMax, AlignMinMax);
-			c_text_log = utils::e_text(app.filepath.c_str())->get_component(cText);
+			c_text_log = utils::e_text(bp_editor.filepath.c_str())->get_component(cText);
 			utils::e_end_layout();
 		utils::e_end_scrollbar(utils::style(FontSize).u.x());
 
 		utils::e_button(L"Clear", [](Capture& c) {
-			app.console->c_text_log->set_text(L"");
+			bp_editor.console->c_text_log->set_text(L"");
 		}, Capture());
 
 		utils::e_begin_layout(LayoutHorizontal, 4.f);
 		utils::c_aligner(AlignMinMax, 0);
 			c_edit_input = utils::e_edit(0.f)->get_component(cEdit);
 			utils::e_button(L"Exec", [](Capture& c) {
-				auto log_text = app.console->c_text_log;
+				auto log_text = bp_editor.console->c_text_log;
 				auto log = log_text->text.str();
-				auto input_text = app.console->c_edit_input->text;
+				auto input_text = bp_editor.console->c_edit_input->text;
 				auto cmd = input_text->text.str();
 				log += cmd + L"\n";
 				input_text->set_text(L"");
-				app.console->c_edit_input->set_select(0);
+				bp_editor.console->c_edit_input->set_select(0);
 
 				auto tokens = SUW::split(cmd);
 
@@ -103,15 +103,15 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"nodes")
 					{
-						for (auto i = 0; i < app.bp->node_count(); i++)
+						for (auto i = 0; i < bp_editor.bp->node_count(); i++)
 						{
-							auto n = app.bp->node(i);
+							auto n = bp_editor.bp->node(i);
 							log += wfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->name()).c_str()) + L"\n";
 						}
 					}
 					else if (tokens[1] == L"node")
 					{
-						auto n = app.bp->find_node(w2s(tokens[2]).c_str());
+						auto n = bp_editor.bp->find_node(w2s(tokens[2]).c_str());
 						if (n)
 						{
 							log += L"[In]\n";
@@ -146,13 +146,13 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"graph")
 					{
-						if (!app.generate_graph_image())
+						if (!bp_editor.generate_graph_image())
 						{
-							exec(L"app.bp.png", L"", false);
+							exec(L"bp_editor.bp.png", L"", false);
 							log += L"ok\n";
 						}
 						else
-							log += L"app.bp.png not found, perhaps Graphviz is not available\n";
+							log += L"bp_editor.bp.png not found, perhaps Graphviz is not available\n";
 					}
 					else
 						log += L"unknow object to show\n";
@@ -166,7 +166,7 @@ cConsole::cConsole() :
 						d.type = w2s(tokens[2]);
 						d.object_type = BP::ObjectReal;
 						d.pos = 0.f;
-						auto n = app.add_node(d);
+						auto n = bp_editor.add_node(d);
 						if (n)
 						{
 							log += wfmt(L"node added: %s", s2w(n->id()).c_str()) + L"\n";
@@ -176,11 +176,11 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"link")
 					{
-						auto out = app.bp->find_output(w2s(tokens[2]).c_str());
-						auto in = app.bp->find_input(w2s(tokens[3]).c_str());
+						auto out = bp_editor.bp->find_output(w2s(tokens[2]).c_str());
+						auto in = bp_editor.bp->find_input(w2s(tokens[3]).c_str());
 						if (out && in)
 						{
-							app.set_links({ {in, out} });
+							bp_editor.set_links({ {in, out} });
 							log += wfmt(L"link added: %s -> %s", s2w(out->get_address().str()).c_str(), s2w(in->get_address().str()).c_str()) + L"\n";
 						}
 						else
@@ -193,10 +193,10 @@ cConsole::cConsole() :
 				{
 					if (tokens[1] == L"node")
 					{
-						auto n = app.bp->find_node(w2s(tokens[2]).c_str());
+						auto n = bp_editor.bp->find_node(w2s(tokens[2]).c_str());
 						if (n)
 						{
-							app.remove_nodes({ n });
+							bp_editor.remove_nodes({ n });
 							log += wfmt(L"node removed: %s", tokens[2].c_str()) + L"\n";
 						}
 						else
@@ -204,10 +204,10 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"link")
 					{
-						auto in = app.bp->find_input(w2s(tokens[2]).c_str());
+						auto in = bp_editor.bp->find_input(w2s(tokens[2]).c_str());
 						if (in)
 						{
-							app.set_links({ {in, nullptr} });
+							bp_editor.set_links({ {in, nullptr} });
 							log += wfmt(L"link removed: %s", tokens[2].c_str()) + L"\n";
 						}
 						else
@@ -218,7 +218,7 @@ cConsole::cConsole() :
 				}
 				else if (tokens[0] == L"set")
 				{
-					auto i = app.bp->find_input(w2s(tokens[1]).c_str());
+					auto i = bp_editor.bp->find_input(w2s(tokens[1]).c_str());
 					if (i)
 					{
 						auto type = i->type();
@@ -227,7 +227,7 @@ cConsole::cConsole() :
 							auto value_before = type->serialize(i->data());
 							auto data = new char[i->size()];
 							type->unserialize(w2s(tokens[2]), data);
-							app.set_data(i, data, false);
+							bp_editor.set_data(i, data, false);
 							delete[] data;
 							auto value_after = type->serialize(i->data());
 							log += L"set value: " + tokens[1] + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
@@ -240,20 +240,20 @@ cConsole::cConsole() :
 				}
 				else if (tokens[0] == L"update")
 				{
-					app.bp->update();
+					bp_editor.bp->update();
 					log += L"BP updated\n";
 				}
 				else if (tokens[0] == L"save")
 				{
-					app.save();
+					bp_editor.save();
 					log += L"file saved\n";
 				}
 				else if (tokens[0] == L"auto-set-layout")
 				{
-					if (app.auto_set_layout())
+					if (bp_editor.auto_set_layout())
 						log += L"ok\n";
 					else
-						log += L"app.bp.graph.txt not found\n";
+						log += L"bp_editor.bp.graph.txt not found\n";
 				}
 				else
 					log += L"unknow command\n";
@@ -268,5 +268,5 @@ cConsole::cConsole() :
 
 cConsole::~cConsole()
 {
-	app.console = nullptr;
+	bp_editor.console = nullptr;
 }

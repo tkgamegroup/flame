@@ -187,6 +187,7 @@ struct MyApp : App
 struct MainWindow : App::Window
 {
 	MainWindow();
+	~MainWindow() override;
 };
 
 MainWindow* main_window = nullptr;
@@ -217,6 +218,11 @@ MainWindow::MainWindow() :
 	utils::pop_parent();
 
 	app.create_home_scene();
+}
+
+MainWindow::~MainWindow()
+{
+	main_window = nullptr;
 }
 
 MyApp::MyApp()

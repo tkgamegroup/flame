@@ -1,4 +1,4 @@
-#include "app.h"
+#include "scene_editor.h"
 
 struct cHierarchyItem : Component
 {

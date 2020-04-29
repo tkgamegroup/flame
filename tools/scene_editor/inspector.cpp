@@ -1,5 +1,6 @@
 #include <flame/universe/utils/typeinfo.h>
-#include "app.h"
+
+#include "scene_editor.h"
 
 void begin_item(const wchar_t* title)
 {

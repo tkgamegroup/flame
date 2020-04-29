@@ -207,13 +207,16 @@ cResourceExplorer::cResourceExplorer() :
 
 cResourceExplorer::~cResourceExplorer()
 {
-	auto canvas = main_window->canvas;
-	canvas->set_resource(folder_img_idx, nullptr);
-	Image::destroy(folder_img);
-	canvas->set_resource(file_img_idx, nullptr);
-	Image::destroy(file_img);
-	canvas->set_resource(thumbnails_img_idx, nullptr);
-	Image::destroy(thumbnails_img);
+	if (main_window)
+	{
+		auto canvas = main_window->canvas;
+		canvas->set_resource(folder_img_idx, nullptr);
+		Image::destroy(folder_img);
+		canvas->set_resource(file_img_idx, nullptr);
+		Image::destroy(file_img);
+		canvas->set_resource(thumbnails_img_idx, nullptr);
+		Image::destroy(thumbnails_img);
+	}
 
 	destroy_event(ev_file_changed);
 	set_event(ev_end_file_watcher);

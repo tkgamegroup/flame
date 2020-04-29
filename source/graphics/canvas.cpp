@@ -260,13 +260,13 @@ namespace flame
 						auto p0 = points[i];
 						auto p1 = points[i + 1];
 
-						auto n0 = normals[i] * thickness * 0.5f;
-						auto n1 = normals[i + 1] * thickness * 0.5f;
+						auto n0 = normals[i] * thickness ;
+						auto n1 = normals[i + 1] * thickness ;
 
-						vtx_end->pos = p0 + n0; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p0 ; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 						vtx_end->pos = p0 - n0; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 						vtx_end->pos = p1 - n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p1 + n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p1 ; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 
 						*idx_end = vtx_cnt + 0; idx_end++;
 						*idx_end = vtx_cnt + 2; idx_end++;
@@ -278,14 +278,25 @@ namespace flame
 						vtx_cnt += 4;
 						idx_cnt += 6;
 					}
-					else if (!(closed && i + 1 == point_count - 1))
+					else if (closed && i == point_count - 2)
+					{
+						*idx_end = vtx_cnt - 1;		  idx_end++;
+						*idx_end = first_vtx_cnt + 1; idx_end++;
+						*idx_end = vtx_cnt - 2;		  idx_end++;
+						*idx_end = vtx_cnt - 1;		  idx_end++;
+						*idx_end = first_vtx_cnt + 0; idx_end++;
+						*idx_end = first_vtx_cnt + 1; idx_end++;
+
+						idx_cnt += 6;
+					}
+					else
 					{
 						auto p1 = points[i + 1];
 
-						auto n1 = normals[i + 1] * thickness * 0.5f;
+						auto n1 = normals[i + 1] * thickness ;
 
 						vtx_end->pos = p1 - n1; vtx_end->uv = uv; vtx_end->col = col;  vtx_end++;
-						vtx_end->pos = p1 + n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p1 ; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
 
 						*idx_end = vtx_cnt - 1; idx_end++;
 						*idx_end = vtx_cnt + 0; idx_end++;
@@ -295,17 +306,6 @@ namespace flame
 						*idx_end = vtx_cnt + 0; idx_end++;
 
 						vtx_cnt += 2;
-						idx_cnt += 6;
-					}
-					else
-					{
-						*idx_end = vtx_cnt - 1;		  idx_end++;
-						*idx_end = first_vtx_cnt + 1; idx_end++;
-						*idx_end = vtx_cnt - 2;		  idx_end++;
-						*idx_end = vtx_cnt - 1;		  idx_end++;
-						*idx_end = first_vtx_cnt + 0; idx_end++;
-						*idx_end = first_vtx_cnt + 1; idx_end++;
-
 						idx_cnt += 6;
 					}
 				}

@@ -14,6 +14,7 @@ struct MyApp : App
 struct MainWindow : App::Window
 {
 	MainWindow();
+	~MainWindow();
 };
 
 MainWindow* main_window;
@@ -120,6 +121,11 @@ MainWindow::MainWindow() :
 	utils::e_end_layout();
 
 	utils::pop_parent();
+}
+
+MainWindow::~MainWindow()
+{
+	main_window = nullptr;
 }
 
 int main(int argc, char** args)

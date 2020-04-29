@@ -590,7 +590,8 @@ namespace flame
 		WindowFrame = 1 << 0,
 		WindowResizable = 1 << 1,
 		WindowFullscreen = 1 << 2,
-		WindowTopmost = 1 << 3
+		WindowMaximized = 1 << 3,
+		WindowTopmost = 1 << 4
 	};
 
 	typedef uint WindowStyleFlags;
@@ -641,7 +642,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
 
 		FLAME_FOUNDATION_EXPORTS void set_pos(const Vec2i& pos);
-		FLAME_FOUNDATION_EXPORTS void set_maximized(bool v);
 #endif
 
 		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>							key_listeners;

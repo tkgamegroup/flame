@@ -65,9 +65,7 @@ namespace flame
 				auto graphics_device = app->graphics_device;
 				auto font_atlas = app->font_atlas;
 
-				sys_window = SysWindow::create(title, size, styles, p);
-				if (maximized)
-					sys_window->set_maximized(true);
+				sys_window = SysWindow::create(title, size, styles | (maximized ? WindowMaximized : 0), p);
 				sys_window->destroy_listeners.add([](Capture& c) {
 					c.thiz<Window>()->sys_window = nullptr;
 					return true;

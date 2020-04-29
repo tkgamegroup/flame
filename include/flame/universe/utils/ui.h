@@ -344,6 +344,7 @@ namespace flame
 				next_component_id = 0;
 			}
 			auto ce = c->items->get_component(cElement);
+			ce->padding = 1.f;
 			ce->frame_thickness = 1.f;
 			ce->frame_color = style(ForegroundColor).c;
 			current_entity()->add_component(c);
