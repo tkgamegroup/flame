@@ -4,7 +4,7 @@
 #include <flame/graphics/image.h>
 #include <flame/utils/2d_editor.h>
 
-#include "app.h"
+#include "../app.h"
 
 struct _2DGizmo
 {
@@ -101,8 +101,6 @@ struct SceneEditorWindow : App::Window
 	SceneEditorWindow();
 	~SceneEditorWindow();
 };
-
-extern SceneEditorWindow* main_window;
 
 struct SceneEditor
 {

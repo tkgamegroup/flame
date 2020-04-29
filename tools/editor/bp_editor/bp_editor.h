@@ -4,7 +4,7 @@
 #include <flame/foundation/blueprint.h>
 #include <flame/utils/2d_editor.h>
 
-#include "app.h"
+#include "../app.h"
 
 inline const wchar_t* type_prefix(TypeTag t, bool is_array = false)
 {
@@ -70,15 +70,15 @@ inline Vec4c node_type_color(char t)
 	return Vec4c(128, 60, 220, 255);
 }
 
-struct cEditor : Component
+struct cBPEditor : Component
 {
 	utils::_2DEditor edt;
 
 	BP::Slot* dragging_slot;
 	Vec2f dragging_slot_pos;
 
-	cEditor();
-	virtual ~cEditor() override;
+	cBPEditor();
+	virtual ~cBPEditor() override;
 	void on_before_select();
 	void on_after_select();
 	void on_pos_changed(BP::Node* n);
@@ -140,8 +140,10 @@ struct NodeSaving
 
 struct BPEditorWindow : App::Window
 {
+	void* update_event;
+
 	BPEditorWindow();
-	~BPEditorWindow();
+	~BPEditorWindow() override;
 };
 
 struct BPEditor
@@ -161,7 +163,7 @@ struct BPEditor
 
 	Entity* e_test;
 
-	cEditor* editor;
+	cBPEditor* editor;
 	cDetail* detail;
 	cPreview* preview;
 	cConsole* console;
@@ -197,8 +199,6 @@ struct BPEditor
 	void set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
 	void set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links);
 	void set_data(BP::Slot* input, void* data, bool from_editor);
-	void undo();
-	void redo();
 
 	void update();
 

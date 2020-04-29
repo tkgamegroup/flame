@@ -86,7 +86,7 @@ struct cHierarchyItem : Component
 									capture.dst->parent()->add_child(capture.src, idx);
 								}
 
-								app.hierarchy->refresh();
+								scene_editor.hierarchy->refresh();
 							}, Capture().set_data(&capture));
 						}
 					}
@@ -180,10 +180,10 @@ cHierarchy::cHierarchy() :
 							else
 								selected = s->child(0)->get_component(cHierarchyItem)->e;
 						}
-						auto different = selected != app.selected;
-						app.selected = selected;
-						if (app.inspector && different)
-							app.inspector->refresh();
+						auto different = selected != scene_editor.selected;
+						scene_editor.selected = selected;
+						if (scene_editor.inspector && different)
+							scene_editor.inspector->refresh();
 					}, Capture().set_thiz(c.thiz<cTree>()->selected));
 					return true;
 				}, Capture().set_thiz(c_tree));
@@ -198,7 +198,7 @@ cHierarchy::cHierarchy() :
 
 cHierarchy::~cHierarchy()
 {
-	app.hierarchy = nullptr;
+	scene_editor.hierarchy = nullptr;
 }
 
 static Entity* _find_item(Entity* sub_tree, Entity* e)
@@ -225,17 +225,17 @@ static Entity* _find_item(Entity* sub_tree, Entity* e)
 
 void cHierarchy::refresh_selected()
 {
-	e_tree->get_component(cTree)->set_selected(app.selected ? find_item(app.selected) : nullptr, false);
+	e_tree->get_component(cTree)->set_selected(scene_editor.selected ? find_item(scene_editor.selected) : nullptr, false);
 }
 
 void cHierarchy::refresh()
 {
 	e_tree->remove_children(0, -1);
 	e_tree->get_component(cTree)->selected = nullptr;
-	if (app.prefab)
+	if (scene_editor.prefab)
 	{
 		utils::push_parent(e_tree);
-		create_tree_node(app.prefab);
+		create_tree_node(scene_editor.prefab);
 		utils::pop_parent();
 	}
 	refresh_selected();

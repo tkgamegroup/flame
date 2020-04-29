@@ -193,7 +193,7 @@ void _2DGizmo::on_select()
 {
 	if (target)
 		target->data_changed_listeners.remove(listener);
-	if (!app.selected)
+	if (!scene_editor.selected)
 	{
 		block_c->entity->set_visible(false);
 		block_l->entity->set_visible(false);
@@ -209,7 +209,7 @@ void _2DGizmo::on_select()
 	}
 	else
 	{
-		target = app.selected->get_component(cElement);
+		target = scene_editor.selected->get_component(cElement);
 		if (target)
 		{
 			block_c->entity->set_visible(true);
@@ -277,16 +277,16 @@ cSceneEditor::cSceneEditor() :
 				utils::e_combobox_item(L"Gizmo");
 			utils::e_end_combobox(tool_type)->get_component(cCombobox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("index"))
-					app.editor->tool_type = c.current<cCombobox>()->index;
+					scene_editor.editor->tool_type = c.current<cCombobox>()->index;
 				return true;
 			}, Capture());
 		utils::e_end_layout();
 
 		edt.create([](Capture&, const Vec4f& r) {
 			if (r.x() == r.z() && r.y() == r.z())
-				app.select(nullptr);
+				scene_editor.select(nullptr);
 			else
-				app.select(app.editor->search_hovering(r));
+				scene_editor.select(scene_editor.editor->search_hovering(r));
 		}, Capture());
 		edt.scale_level_max = 20;
 
@@ -295,9 +295,9 @@ cSceneEditor::cSceneEditor() :
 
 				edt.overlay->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 					auto element = c.thiz<cElement>();
-					if (!element->clipped && app.selected)
+					if (!element->clipped && scene_editor.selected)
 					{
-						auto se = app.selected->get_component(cElement);
+						auto se = scene_editor.selected->get_component(cElement);
 						if (se)
 						{
 							std::vector<Vec2f> points;
@@ -316,7 +316,7 @@ cSceneEditor::cSceneEditor() :
 				}, Capture());
 				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						app.select(app.editor->search_hovering(Vec4f(Vec2f(pos), Vec2f(pos))));
+						scene_editor.select(scene_editor.editor->search_hovering(Vec4f(Vec2f(pos), Vec2f(pos))));
 					return true;
 				}, Capture());
 
@@ -331,14 +331,14 @@ cSceneEditor::cSceneEditor() :
 
 cSceneEditor::~cSceneEditor()
 {
-	app.editor = nullptr;
+	scene_editor.editor = nullptr;
 }
 
 Entity* cSceneEditor::search_hovering(const Vec4f& r)
 {
 	Entity* s = nullptr;
-	if (app.prefab)
-		search_hovering_r(app.prefab, s, r);
+	if (scene_editor.prefab)
+		search_hovering_r(scene_editor.prefab, s, r);
 	return s;
 }
 

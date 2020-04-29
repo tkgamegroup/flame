@@ -113,11 +113,6 @@ void add_window(pugi::xml_node n)
 	}
 }
 
-void SceneEditor::create()
-{
-	App::create();
-}
-
 void SceneEditor::select(Entity* e)
 {
 	if (selected != e)
@@ -137,7 +132,7 @@ void SceneEditor::select(Entity* e)
 void SceneEditor::load(const std::filesystem::path& _filepath)
 {
 	filepath = _filepath;
-	prefab = filepath.empty() ? nullptr : Entity::create_from_file(main_window->world, filepath.c_str());
+	prefab = filepath.empty() ? nullptr : Entity::create_from_file(scene_editor.window->world, filepath.c_str());
 	selected = nullptr;
 	looper().add_event([](Capture&) {
 		if (scene_editor.editor)
@@ -163,10 +158,10 @@ void SceneEditor::save()
 
 MyApp app;
 
-MainWindow::MainWindow() :
+SceneEditorWindow::SceneEditorWindow() :
 	App::Window(&app, true, true, "Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
 {
-	main_window = this;
+	scene_editor.window = this;
 
 	setup_as_main_window();
 
@@ -178,7 +173,7 @@ MainWindow::MainWindow() :
 
 	pugi::xml_document window_layout;
 	pugi::xml_node window_layout_root;
-	if (window_layout.load_file(L"window_layout.xml"))
+	if (window_layout.load_file(L"scene_editor_layout.xml"))
 		window_layout_root = window_layout.first_child();
 
 	{
@@ -287,7 +282,7 @@ MainWindow::MainWindow() :
 	utils::e_menu_item(L"Editor", [](Capture&) {
 		if (!scene_editor.editor)
 		{
-			utils::push_parent(main_window->root);
+			utils::push_parent(scene_editor.window->root);
 			utils::next_element_pos = Vec2f(100.f);
 			utils::next_element_size = Vec2f(400.f, 300.f);
 			utils::e_begin_docker_floating_container();
@@ -301,7 +296,7 @@ MainWindow::MainWindow() :
 	utils::e_menu_item(L"Resource Explorer", [](Capture&) {
 		if (!scene_editor.resource_explorer)
 		{
-			utils::push_parent(main_window->root);
+			utils::push_parent(scene_editor.window->root);
 			utils::next_element_pos = Vec2f(100.f);
 			utils::next_element_size = Vec2f(400.f, 300.f);
 			utils::e_begin_docker_floating_container();
@@ -315,7 +310,7 @@ MainWindow::MainWindow() :
 	utils::e_menu_item(L"Hierarchy", [](Capture&) {
 		if (!scene_editor.hierarchy)
 		{
-			utils::push_parent(main_window->root);
+			utils::push_parent(scene_editor.window->root);
 			utils::next_element_pos = Vec2f(100.f);
 			utils::next_element_size = Vec2f(400.f, 300.f);
 			utils::e_begin_docker_floating_container();
@@ -329,7 +324,7 @@ MainWindow::MainWindow() :
 	utils::e_menu_item(L"Inspector", [](Capture&) {
 		if (!scene_editor.inspector)
 		{
-			utils::push_parent(main_window->root);
+			utils::push_parent(scene_editor.window->root);
 			utils::next_element_pos = Vec2f(100.f);
 			utils::next_element_size = Vec2f(400.f, 300.f);
 			utils::e_begin_docker_floating_container();
@@ -358,9 +353,9 @@ MainWindow::MainWindow() :
 	utils::pop_parent();
 }
 
-MainWindow::~MainWindow()
+SceneEditorWindow::~SceneEditorWindow()
 {
-	main_window = nullptr;
+	scene_editor.window = nullptr;
 }
 
-MainWindow* main_window = nullptr;
+SceneEditor scene_editor;

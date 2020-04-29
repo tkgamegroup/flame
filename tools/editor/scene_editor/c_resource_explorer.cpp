@@ -1,5 +1,5 @@
 #include <flame/foundation/bitmap.h>
-#include "app.h"
+#include "scene_editor.h"
 
 struct cThumbnail : Component
 {
@@ -27,12 +27,12 @@ struct cThumbnail : Component
 
 	void return_seat()
 	{
-		for (auto it = app.resource_explorer->thumbnails_seats_occupied.begin(); it != app.resource_explorer->thumbnails_seats_occupied.end(); it++)
+		for (auto it = scene_editor.resource_explorer->thumbnails_seats_occupied.begin(); it != scene_editor.resource_explorer->thumbnails_seats_occupied.end(); it++)
 		{
 			if (it->get() == seat)
 			{
-				app.resource_explorer->thumbnails_seats_free.push_back(std::move(*it));
-				app.resource_explorer->thumbnails_seats_occupied.erase(it);
+				scene_editor.resource_explorer->thumbnails_seats_free.push_back(std::move(*it));
+				scene_editor.resource_explorer->thumbnails_seats_occupied.erase(it);
 				break;
 			}
 		}
@@ -81,24 +81,24 @@ struct cThumbnail : Component
 			{
 				if (!seat)
 				{
-					if (!app.resource_explorer->thumbnails_seats_free.empty())
+					if (!scene_editor.resource_explorer->thumbnails_seats_free.empty())
 					{
-						seat = app.resource_explorer->thumbnails_seats_free.front().get();
-						app.resource_explorer->thumbnails_seats_occupied.push_back(std::move(app.resource_explorer->thumbnails_seats_free.front()));
-						app.resource_explorer->thumbnails_seats_free.erase(app.resource_explorer->thumbnails_seats_free.begin());
+						seat = scene_editor.resource_explorer->thumbnails_seats_free.front().get();
+						scene_editor.resource_explorer->thumbnails_seats_occupied.push_back(std::move(scene_editor.resource_explorer->thumbnails_seats_free.front()));
+						scene_editor.resource_explorer->thumbnails_seats_free.erase(scene_editor.resource_explorer->thumbnails_seats_free.begin());
 
 						looper().add_event([](Capture& c) {
 							auto thiz = c.thiz<cThumbnail>();
 							auto image = thiz->image;
-							auto& thumbnails_img_size = app.resource_explorer->thumbnails_img->size;
+							auto& thumbnails_img_size = scene_editor.resource_explorer->thumbnails_img->size;
 							auto& thumbnail_size = thiz->thumbnail->size;
 
-							app.resource_explorer->thumbnails_img->set_pixels(*thiz->seat, thumbnail_size, thiz->thumbnail->data);
+							scene_editor.resource_explorer->thumbnails_img->set_pixels(*thiz->seat, thumbnail_size, thiz->thumbnail->data);
 
 							auto h = (64 - thumbnail_size.x()) * 0.5f;
 							auto v = (64 - thumbnail_size.y()) * 0.5f;
 							image->element->padding = Vec4f(h, v, h, v);
-							image->id = app.resource_explorer->thumbnails_img_idx << 16;
+							image->id = scene_editor.resource_explorer->thumbnails_img_idx << 16;
 							image->uv0 = Vec2f(*thiz->seat) / thumbnails_img_size;
 							image->uv1 = Vec2f(*thiz->seat + thumbnail_size) / thumbnails_img_size;
 							image->color = Vec4c(255);
@@ -113,7 +113,7 @@ struct cThumbnail : Component
 cResourceExplorer::cResourceExplorer() :
 	Component("cResourceExplorer")
 {
-	auto canvas = main_window->canvas;
+	auto canvas = scene_editor.window->canvas;
 	folder_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/folder.png").c_str());
 	folder_img_idx = canvas->set_resource(-1, folder_img->default_view());
 	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/file.png").c_str());
@@ -174,7 +174,7 @@ cResourceExplorer::cResourceExplorer() :
 							if (ok)
 							{
 								auto e = Entity::create();
-								Entity::save_to_file(e, (app.resource_explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
+								Entity::save_to_file(e, (scene_editor.resource_explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
 								Entity::destroy(e);
 							}
 						}, Capture());
@@ -183,7 +183,7 @@ cResourceExplorer::cResourceExplorer() :
 						utils::e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
-								auto p = app.resource_explorer->curr_path / text;
+								auto p = scene_editor.resource_explorer->curr_path / text;
 								std::filesystem::create_directory(p);
 								std::ofstream file(p / L"bp");
 								file << "<BP />";
@@ -199,7 +199,7 @@ cResourceExplorer::cResourceExplorer() :
 
 	ev_file_changed = create_event(false);
 	ev_end_file_watcher = add_file_watcher(base_path.c_str(), [](Capture& c, FileChangeType type, const wchar_t* filename) {
-		set_event(app.resource_explorer->ev_file_changed);
+		set_event(scene_editor.resource_explorer->ev_file_changed);
 	}, Capture(), true, false);
 
 	navigate(base_path);
@@ -207,9 +207,9 @@ cResourceExplorer::cResourceExplorer() :
 
 cResourceExplorer::~cResourceExplorer()
 {
-	if (main_window)
+	if (scene_editor.window)
 	{
-		auto canvas = main_window->canvas;
+		auto canvas = scene_editor.window->canvas;
 		canvas->set_resource(folder_img_idx, nullptr);
 		Image::destroy(folder_img);
 		canvas->set_resource(file_img_idx, nullptr);
@@ -221,7 +221,7 @@ cResourceExplorer::~cResourceExplorer()
 	destroy_event(ev_file_changed);
 	set_event(ev_end_file_watcher);
 
-	app.resource_explorer = nullptr;
+	scene_editor.resource_explorer = nullptr;
 }
 
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
@@ -244,10 +244,10 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 	curr_path = path;
 
 	looper().add_event([](Capture& c) {
-		auto& base_path = app.resource_explorer->base_path;
-		auto& curr_path = app.resource_explorer->curr_path;
-		auto address_bar = app.resource_explorer->address_bar;
-		auto list = app.resource_explorer->e_list;
+		auto& base_path = scene_editor.resource_explorer->base_path;
+		auto& curr_path = scene_editor.resource_explorer->curr_path;
+		auto address_bar = scene_editor.resource_explorer->address_bar;
+		auto list = scene_editor.resource_explorer->e_list;
 
 		address_bar->remove_children(0, -1);
 		utils::push_parent(address_bar);
@@ -256,8 +256,8 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		utils::push_style(ButtonColorActive, common(utils::style(FrameColorActive).c));
 
 		utils::e_button(Icon_LEVEL_UP, [](Capture& c) {
-			if (app.resource_explorer->curr_path != app.resource_explorer->base_path)
-				app.resource_explorer->navigate(app.resource_explorer->curr_path.parent_path());
+			if (scene_editor.resource_explorer->curr_path != scene_editor.resource_explorer->base_path)
+				scene_editor.resource_explorer->navigate(scene_editor.resource_explorer->curr_path.parent_path());
 		}, Capture());
 
 		std::vector<std::filesystem::path> stems;
@@ -279,7 +279,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			wcscpy_s(capture.p, s.c_str());
 			utils::e_button(i == 0 ? s.c_str() : s.filename().c_str(), [](Capture& c) {
 				auto& capture = c.data<Capturing>();
-				app.resource_explorer->navigate(capture.p);
+				scene_editor.resource_explorer->navigate(capture.p);
 			}, Capture().set_data(&capture));
 
 			std::vector<std::filesystem::path> sub_dirs;
@@ -300,7 +300,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					wcscpy_s(capture.p, s.c_str());
 					utils::e_menu_item(p.filename().c_str(), [](Capture& c) {
 						auto& capture = c.data<Capturing>();
-						app.resource_explorer->navigate(capture.p);
+						scene_editor.resource_explorer->navigate(capture.p);
 					}, Capture().set_data(&capture));
 				}
 				utils::e_end_button_menu();
@@ -337,7 +337,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		utils::push_parent(list);
 		for (auto& p : dirs)
 		{
-			auto item = app.resource_explorer->create_listitem(p.filename().wstring(), app.resource_explorer->folder_img_idx);
+			auto item = scene_editor.resource_explorer->create_listitem(p.filename().wstring(), scene_editor.resource_explorer->folder_img_idx);
 			struct Capturing
 			{
 				wchar_t p[256];
@@ -347,7 +347,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 				{
 					auto& capture = c.data<Capturing>();
-					app.resource_explorer->navigate(capture.p);
+					scene_editor.resource_explorer->navigate(capture.p);
 				}
 				return true;
 			}, Capture().set_data(&capture));
@@ -355,8 +355,8 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			utils::e_begin_popup_menu();
 			utils::e_menu_item(L"Open", [](Capture& c) {
 				auto& capture = c.data<Capturing>();
-				app.resource_explorer->selected = capture.p;
-				app.resource_explorer->navigate(app.resource_explorer->selected);
+				scene_editor.resource_explorer->selected = capture.p;
+				scene_editor.resource_explorer->navigate(scene_editor.resource_explorer->selected);
 			}, Capture().set_data(&capture));
 			utils::e_end_popup_menu();
 			utils::pop_parent();
@@ -372,7 +372,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				ext == L".mp4")
 				is_image_type = true;
 
-			auto item = app.resource_explorer->create_listitem(p.filename().wstring(), is_image_type ? 0 : app.resource_explorer->file_img_idx);
+			auto item = scene_editor.resource_explorer->create_listitem(p.filename().wstring(), is_image_type ? 0 : scene_editor.resource_explorer->file_img_idx);
 			if (is_image_type)
 			{
 				auto e_image = item->child(0);
@@ -394,16 +394,16 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
 						auto& capture = c.data<Capturing>();
-						app.resource_explorer->selected = capture.p;
-						app.load(app.resource_explorer->selected);
+						scene_editor.resource_explorer->selected = capture.p;
+						scene_editor.load(scene_editor.resource_explorer->selected);
 					}
 					return true;
 				}, Capture().set_data(&capture));
 				utils::e_begin_popup_menu();
 				utils::e_menu_item(L"Open", [](Capture& c) {
 					auto& capture = c.data<Capturing>();
-					app.resource_explorer->selected = capture.p;
-					app.load(app.resource_explorer->selected);
+					scene_editor.resource_explorer->selected = capture.p;
+					scene_editor.load(scene_editor.resource_explorer->selected);
 				}, Capture().set_data(&capture));
 				utils::e_end_popup_menu();
 			}
@@ -418,7 +418,7 @@ void cResourceExplorer::on_component_added(Component* c)
 	if (c->name_hash == FLAME_CHASH("cElement"))
 	{
 		((cElement*)c)->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-			app.resource_explorer->draw(canvas);
+			scene_editor.resource_explorer->draw(canvas);
 			return true;
 		}, Capture());
 	}

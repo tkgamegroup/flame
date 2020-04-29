@@ -458,7 +458,7 @@ namespace flame
 
 	namespace utils
 	{
-		void create_enum_combobox(EnumInfo* info)
+		inline void create_enum_combobox(EnumInfo* info)
 		{
 			e_begin_combobox();
 			for (auto i = 0; i < info->item_count(); i++)
@@ -466,7 +466,7 @@ namespace flame
 			e_end_combobox();
 		}
 
-		void create_enum_checkboxs(EnumInfo* info)
+		inline void create_enum_checkboxs(EnumInfo* info)
 		{
 			for (auto i = 0; i < info->item_count(); i++)
 				e_checkbox(s2w(info->item(i)->name()).c_str());

@@ -33,7 +33,7 @@ void create_edit(SetterCapture* c)
 	utils::current_parent()->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](Capture& c, T v, bool exit_editing) {
 		auto& capture = c.data<SetterCapture>();
 		if (capture.f)
-			Setter_t<T>::set_s(capture.o, capture.f, v, app.inspector);
+			Setter_t<T>::set_s(capture.o, capture.f, v, scene_editor.inspector);
 		else
 			*(T*)capture.p = v;
 	}, Capture().set_data(c)));
@@ -50,7 +50,7 @@ void create_vec_edit(SetterCapture* c)
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
 		auto& capture = c.data<SetterCapture>();
 		if (capture.f)
-			Setter_t<Vec<N, T>>::set_s(capture.o, capture.f, (Vec<N, T>*)&v, app.inspector);
+			Setter_t<Vec<N, T>>::set_s(capture.o, capture.f, (Vec<N, T>*)&v, scene_editor.inspector);
 		else
 			*(Vec<N, T>*)capture.p = v;
 	}, Capture().set_data(c)));
@@ -86,7 +86,7 @@ cInspector::cInspector() :
 
 cInspector::~cInspector()
 {
-	app.inspector = nullptr;
+	scene_editor.inspector = nullptr;
 }
 
 struct cComponentTracker : Component
@@ -101,7 +101,7 @@ struct cComponentTracker : Component
 		Component("cComponentTracker")
 	{
 		l = t->data_changed_listeners.add([](Capture& c, uint hash, void* sender) {
-			if (sender == app.inspector)
+			if (sender == scene_editor.inspector)
 				return true;
 			auto thiz = c.thiz<cComponentTracker>();
 			auto it = thiz->vs.find(hash);
@@ -123,19 +123,19 @@ void cInspector::refresh()
 	e_layout->remove_children(0, -1);
 
 	utils::push_parent(e_layout);
-	if (!app.selected)
+	if (!scene_editor.selected)
 		utils::e_text(L"Nothing Selected");
 	else
 	{
 		begin_item(L"name");
-		utils::e_edit(100.f, s2w(app.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+		utils::e_edit(100.f, s2w(scene_editor.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
 				auto text = c.current<cText>()->text.v;
-				app.selected->set_name(w2s(text).c_str());
-				if (app.hierarchy)
+				scene_editor.selected->set_name(w2s(text).c_str());
+				if (scene_editor.hierarchy)
 				{
-					auto item = app.hierarchy->find_item(app.selected);
+					auto item = scene_editor.hierarchy->find_item(scene_editor.selected);
 					if (item->get_component(cTreeNode))
 						item->child(0)->get_component(cText)->set_text(text);
 					else
@@ -146,14 +146,14 @@ void cInspector::refresh()
 		}, Capture());
 		end_item();
 		begin_item(L"visible");
-		utils::e_checkbox(L"", app.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+		utils::e_checkbox(L"", scene_editor.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
-				app.selected->set_visible(c.current<cCheckbox>()->checked);
+				scene_editor.selected->set_visible(c.current<cCheckbox>()->checked);
 			return true;
 		}, Capture());
 		end_item();
 
-		auto components = app.selected->get_components();
+		auto components = scene_editor.selected->get_components();
 		for (auto i = 0; i < components.s; i++)
 		{
 			auto component = components.v[i];
@@ -355,7 +355,7 @@ void cInspector::refresh()
 							assert(f && check_function(f, "P#flame::Component", {}));
 							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
 						}
-						app.selected->add_component((Component*)component);
+						scene_editor.selected->add_component((Component*)component);
 						{
 							auto f = u->find_function("dtor");
 							if (f)
@@ -363,7 +363,7 @@ void cInspector::refresh()
 						}
 						free(dummy);
 
-						app.inspector->refresh();
+						scene_editor.inspector->refresh();
 					}, Capture().set_thiz(c.thiz<UdtInfo>()));
 				}, Capture().set_thiz(udt));
 			}

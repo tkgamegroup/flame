@@ -83,17 +83,17 @@ namespace flame
 			if (alpha > 0.f)
 			{
 				std::vector<Vec2f> points;
-				auto p = Vec2i(global_pos);
-				auto s = Vec2i(global_size);
-				auto r = Vec4i(roundness * global_scale);
-				path_rect(points, Vec2f(p), Vec2f(s), Vec4f(r), roundness_lod);
+				auto p = floor(global_pos);
+				auto s = floor(global_size);
+				auto r = floor(roundness * global_scale);
+				path_rect(points, p, s, r, roundness_lod);
 				if (color.w() > 0)
 					canvas->fill(points.size(), points.data(), color.copy().factor_w(alpha));
 				auto ft = frame_thickness * global_scale;
 				if (ft > 0.f && frame_color.w() > 0)
 				{
 					points.clear();
-					path_rect(points, Vec2f(p) + 0.5f, Vec2f(s) - 0.5f, Vec4f(r), roundness_lod);
+					path_rect(points, p + 0.5f, s - 0.5f, r, roundness_lod);
 					points.push_back(points[0]);
 					canvas->stroke(points.size(), points.data(), frame_color.copy().factor_w(alpha), ft);
 				}

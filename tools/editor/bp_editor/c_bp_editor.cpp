@@ -284,8 +284,8 @@ struct cNode : Component
 	}
 };
 
-cEditor::cEditor() :
-	Component("cEditor")
+cBPEditor::cBPEditor() :
+	Component("cBPEditor")
 {
 	auto e_page = utils::e_begin_docker_page(L"Editor").second;
 	{
@@ -457,12 +457,12 @@ cEditor::cEditor() :
 		on_add_node(bp_editor.bp->node(i));
 }
 
-cEditor::~cEditor()
+cBPEditor::~cBPEditor()
 {
 	bp_editor.editor = nullptr;
 }
 
-void cEditor::on_before_select()
+void cBPEditor::on_before_select()
 {
 	for (auto& s : bp_editor.selected_nodes)
 	{
@@ -472,7 +472,7 @@ void cEditor::on_before_select()
 	}
 }
 
-void cEditor::on_after_select()
+void cBPEditor::on_after_select()
 {
 	for (auto& s : bp_editor.selected_nodes)
 	{
@@ -482,13 +482,13 @@ void cEditor::on_after_select()
 	}
 }
 
-void cEditor::on_pos_changed(BP::Node* n)
+void cBPEditor::on_pos_changed(BP::Node* n)
 {
 	((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 }
 
 template <class T>
-void create_edit(cEditor* editor, BP::Slot* input)
+void create_edit(cBPEditor* editor, BP::Slot* input)
 {
 	utils::e_drag_edit();
 
@@ -501,7 +501,7 @@ void create_edit(cEditor* editor, BP::Slot* input)
 }
 
 template <uint N, class T>
-void create_vec_edit(cEditor* editor, BP::Slot* input)
+void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 {
 	for (auto i = 0; i < N; i++)
 		utils::e_drag_edit();
@@ -516,7 +516,7 @@ void create_vec_edit(cEditor* editor, BP::Slot* input)
 	}, Capture().set_data(&input)));
 }
 
-void cEditor::on_add_node(BP::Node* n)
+void cBPEditor::on_add_node(BP::Node* n)
 {
 	auto e_node = Entity::create();
 	utils::set_current_entity(e_node);
@@ -845,18 +845,18 @@ void cEditor::on_add_node(BP::Node* n)
 	}, Capture().set_thiz(e_node));
 }
 
-void cEditor::on_remove_node(BP::Node* n)
+void cBPEditor::on_remove_node(BP::Node* n)
 {
 	auto e = (Entity*)n->user_data;
 	e->parent()->remove_child(e);
 }
 
-void cEditor::on_data_changed(BP::Slot* s)
+void cBPEditor::on_data_changed(BP::Slot* s)
 {
 	((cSlot*)s->user_data)->tracker->update_view();
 }
 
-void cEditor::show_add_node_menu(const Vec2f& pos)
+void cBPEditor::show_add_node_menu(const Vec2f& pos)
 {
 	const TypeInfo* type;
 	TypeTag tag;

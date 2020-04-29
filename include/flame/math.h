@@ -1593,16 +1593,24 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	T fract(T v)
+	template <uint N>
+	Vec<N, float> floor(const Vec<N, float>& v)
 	{
-		return v - floor(v);
+		Vec<N, float> ret;
+		for (auto i = 0; i < N; i++)
+			ret[i] = ::floor(v[i]);
+		return ret;
 	}
 
-	template <uint N, class T>
-	Vec<N, T> fract(const Vec<N, T>& v)
+	inline float fract(float v)
 	{
-		Vec<N, T> ret;
+		return v - ::floor(v);
+	}
+
+	template <uint N>
+	Vec<N, float> fract(const Vec<N, float>& v)
+	{
+		Vec<N, float> ret;
 		for (auto i = 0; i < N; i++)
 			ret[i] = fract(v[i]);
 		return ret;
@@ -1921,8 +1929,8 @@ namespace flame
 		const auto SC = 250;
 
 		auto v = _v / SC;
-		Vec<2, T> vf(fract(v.x()), fract(v.y()));
-		Vec<2, T> vi(floor(v.x()), floor(v.y()));
+		auto vf = fract(v);
+		auto vi = floor(v);
 
 		auto r0 = rand(vi);
 		auto r1 = rand(vi + Vec<2, T>(T(1), T(0)));
