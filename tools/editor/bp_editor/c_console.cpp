@@ -3,6 +3,8 @@
 cConsole::cConsole() :
 	Component("cConsole")
 {
+	auto& ui = bp_editor.window->ui;
+
 	ui.next_element_padding = 8.f;
 	auto e_page = ui.e_begin_docker_page(L"Console").second;
 	{

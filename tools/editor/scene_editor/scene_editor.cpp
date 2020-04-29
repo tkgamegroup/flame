@@ -77,8 +77,10 @@ static void delete_selected()
 
 }
 
-static void add_window(UI& ui, pugi::xml_node n)
+static void add_window(pugi::xml_node n)
 {
+	auto& ui = scene_editor.window->ui;
+
 	auto parent_layout = ui.parents.top()->get_component(cLayout)->type == LayoutHorizontal;
 	auto r = n.attribute("r").as_int(1);
 	std::string name(n.name());
@@ -90,7 +92,7 @@ static void add_window(UI& ui, pugi::xml_node n)
 		else
 			ca->height_factor = r;
 		for (auto c : n.children())
-			add_window(ui, c);
+			add_window(c);
 		ui.e_end_docker_layout();
 	}
 	else if (name == "docker")
@@ -349,7 +351,7 @@ SceneEditorWindow::SceneEditorWindow() :
 
 	ui.e_begin_docker_static_container();
 	if (window_layout_root)
-		add_window(ui, window_layout_root.child("static").first_child());
+		add_window(window_layout_root.child("static").first_child());
 	ui.e_end_docker_static_container();
 
 	ui.e_end_layout();

@@ -87,6 +87,7 @@ struct cSlot : Component
 				return true;
 			}, Capture().set_thiz(this));
 			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+				auto& ui = bp_editor.window->ui;
 				auto thiz = c.thiz<cSlot>();
 				auto element = thiz->element;
 				auto s = thiz->s;
@@ -164,6 +165,7 @@ struct cSlot : Component
 				return true;
 			}, Capture().set_thiz(this));
 			event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
+				auto& ui = bp_editor.window->ui;
 				auto thiz = c.thiz<cSlot>();
 				auto s = thiz->s;
 				auto is_in = s->io() == BP::Slot::In;
@@ -187,7 +189,7 @@ struct cSlot : Component
 						ui.e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
 						{
 							auto text_value = ui.e_text(L"-")->get_component(cText);
-							ui.set_current_entity(thiz->tip_info);
+							ui.current_entity = thiz->tip_info;
 							auto timer = ui.c_timer();
 							timer->interval = 0.f;
 							struct Capturing
@@ -287,6 +289,8 @@ struct cNode : Component
 cBPEditor::cBPEditor() :
 	Component("cBPEditor")
 {
+	auto& ui = bp_editor.window->ui;
+
 	auto e_page = ui.e_begin_docker_page(L"Editor").second;
 	{
 		auto c_layout = ui.c_layout(LayoutVertical);
@@ -296,7 +300,7 @@ cBPEditor::cBPEditor() :
 	}
 	e_page->add_component(this);
 
-	edt.create([](Capture&, const Vec4f& r) {
+	edt.create(ui, [](Capture&, const Vec4f& r) {
 		if (r.x() == r.z() && r.y() == r.z())
 			bp_editor.select();
 		else
@@ -490,9 +494,11 @@ void cBPEditor::on_pos_changed(BP::Node* n)
 template <class T>
 void create_edit(cBPEditor* editor, BP::Slot* input)
 {
+	auto& ui = bp_editor.window->ui;
+
 	ui.e_drag_edit();
 
-	ui.current_parent->add_component(new_object<cDigitalDataTracker<T>>(input->data(), [](Capture& c, T v, bool exit_editing) {
+	ui.parents.top()->add_component(new_object<cDigitalDataTracker<T>>(input->data(), [](Capture& c, T v, bool exit_editing) {
 		if (exit_editing)
 			bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 		else
@@ -503,10 +509,12 @@ void create_edit(cBPEditor* editor, BP::Slot* input)
 template <uint N, class T>
 void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 {
+	auto& ui = bp_editor.window->ui;
+
 	for (auto i = 0; i < N; i++)
 		ui.e_drag_edit();
 
-	auto p = ui.current_parent;
+	auto p = ui.parents.top();
 	p->get_component(cLayout)->type = LayoutHorizontal;
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(input->data(), [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
 		if (exit_editing)
@@ -518,8 +526,10 @@ void create_vec_edit(cBPEditor* editor, BP::Slot* input)
 
 void cBPEditor::on_add_node(BP::Node* n)
 {
+	auto& ui = bp_editor.window->ui;
+
 	auto e_node = Entity::create();
-	ui.set_current_entity(e_node);
+	ui.current_entity = e_node;
 	n->user_data = e_node;
 	{
 		auto c_element = ui.c_element();
@@ -652,7 +662,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 							case TypeEnumSingle:
 							{
 								auto info = find_enum(base_hash);
-								ui.create_enum_combobox(info);
+								create_enum_combobox(ui, info);
 
 								e_data->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
@@ -662,7 +672,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 							case TypeEnumMulti:
 							{
 								auto info = find_enum(base_hash);
-								ui.create_enum_checkboxs(info);
+								create_enum_checkboxs(ui, info);
 
 								e_data->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
@@ -954,6 +964,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		return std::string(a.u->name()) < std::string(b.u->name());
 	});
 
+	auto& ui = bp_editor.window->ui;
+
 	ui.parents.push(add_layer(bp_editor.window->root, ""));
 		ui.next_element_pos = pos;
 		ui.next_element_padding = 4.f;
@@ -984,6 +996,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 
 						void show_enums(TypeTag tag)
 						{
+							auto& ui = bp_editor.window->ui;
+
 							std::vector<EnumInfo*> enum_infos;
 							for (auto i = 0; i < global_db_count(); i++)
 							{
@@ -1044,6 +1058,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 						ui.e_menu_item(L"Variable", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
+								auto& ui = bp_editor.window->ui;
 								auto& capture = c.data<Capturing>();
 								struct _Capturing
 								{
@@ -1074,6 +1089,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 						ui.e_menu_item(L"Array", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							looper().add_event([](Capture& c) {
+								auto& ui = bp_editor.window->ui;
 								auto& capture = c.data<Capturing>();
 								struct _Capturing
 								{

@@ -4,6 +4,7 @@
 
 void begin_item(const wchar_t* title)
 {
+	auto& ui = scene_editor.window->ui;
 	ui.e_begin_layout(LayoutVertical, 4.f);
 	ui.e_text(title);
 	auto e_data = ui.e_empty();
@@ -15,6 +16,7 @@ void begin_item(const wchar_t* title)
 
 void end_item()
 {
+	auto& ui = scene_editor.window->ui;
 	ui.parents.pop();
 }
 
@@ -28,9 +30,11 @@ struct SetterCapture
 template <class T>
 void create_edit(SetterCapture* c)
 {
+	auto& ui = scene_editor.window->ui;
+
 	ui.e_drag_edit();
 
-	ui.current_parent->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](Capture& c, T v, bool exit_editing) {
+	ui.parents.top()->add_component(new_object<cDigitalDataTracker<T>>(c->p, [](Capture& c, T v, bool exit_editing) {
 		auto& capture = c.data<SetterCapture>();
 		if (capture.f)
 			Setter_t<T>::set_s(capture.o, capture.f, v, scene_editor.inspector);
@@ -42,10 +46,12 @@ void create_edit(SetterCapture* c)
 template <uint N, class T>
 void create_vec_edit(SetterCapture* c)
 {
+	auto& ui = scene_editor.window->ui;
+
 	for (auto i = 0; i < N; i++)
 		ui.e_drag_edit();
 
-	auto p = ui.current_parent;
+	auto p = ui.parents.top();
 	p->get_component(cLayout)->type = LayoutHorizontal;
 	p->add_component(new_object<cDigitalVecDataTracker<N, T>>(c->p, [](Capture& c, const Vec<N, T>& v, bool exit_editing) {
 		auto& capture = c.data<SetterCapture>();
@@ -59,6 +65,8 @@ void create_vec_edit(SetterCapture* c)
 cInspector::cInspector() :
 	Component("cInspector")
 {
+	auto& ui = scene_editor.window->ui;
+
 	ui.next_element_padding = 4.f;
 	auto e_page = ui.e_begin_docker_page(L"Inspector").second;
 	{
@@ -120,6 +128,8 @@ struct cComponentTracker : Component
 
 void cInspector::refresh()
 {
+	auto& ui = scene_editor.window->ui;
+
 	e_layout->remove_children(0, -1);
 
 	ui.parents.push(e_layout);
@@ -201,7 +211,7 @@ void cInspector::refresh()
 				auto pdata = (char*)component + v->offset();
 
 				begin_item(s2w(v->name()).c_str());
-				auto e_data = ui.current_parent;
+				auto e_data = ui.parents.top();
 
 				auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
 				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva() : nullptr;
@@ -211,7 +221,7 @@ void cInspector::refresh()
 				case TypeEnumSingle:
 				{
 					auto info = find_enum(base_hash);
-					ui.create_enum_combobox(info);
+					create_enum_combobox(ui, info);
 
 					e_data->add_component(new_object<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
@@ -221,7 +231,7 @@ void cInspector::refresh()
 				case TypeEnumMulti:
 				{
 					auto info = find_enum(base_hash);
-					ui.create_enum_checkboxs(info);
+					create_enum_checkboxs(ui, info);
 
 					e_data->add_component(new_object<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
 						;

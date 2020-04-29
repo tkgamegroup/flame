@@ -3,6 +3,8 @@
 cDetail::cDetail() :
 	Component("cDetail")
 {
+	auto& ui = bp_editor.window->ui;
+
 	e_page = ui.e_begin_docker_page(L"Detail").second;
 	{
 		ui.c_layout(LayoutVertical)->item_padding = 4.f;
@@ -23,6 +25,8 @@ cDetail::~cDetail()
 void cDetail::on_after_select()
 {
 	looper().add_event([](Capture&) {
+		auto& ui = bp_editor.window->ui;
+
 		bp_editor.detail->e_page->remove_children(0, -1);
 		ui.parents.push(bp_editor.detail->e_page);
 		if (bp_editor.selected_nodes.empty() && bp_editor.selected_links.empty())
@@ -47,6 +51,7 @@ void cDetail::on_after_select()
 					ui.e_begin_layout(LayoutHorizontal, 4.f);
 						ui.e_text((L"ID: " + s2w(n->id())).c_str());
 						ui.e_button(L"change", [](Capture& c) {
+							auto& ui = bp_editor.window->ui;
 							auto n = c.thiz<BP::Node>();
 							ui.e_input_dialog(L"ID", [](Capture& c, bool ok, const wchar_t* text) {
 								if (ok && text[0])

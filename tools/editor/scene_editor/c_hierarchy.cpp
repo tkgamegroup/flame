@@ -127,6 +127,7 @@ struct cHierarchyItem : Component
 
 static void create_tree_node(Entity* e)
 {
+	auto& ui = scene_editor.window->ui;
 	if (e->child_count() > 0)
 	{
 		auto e_tree_node = ui.e_begin_tree_node(s2w(e->name()).c_str());
@@ -155,6 +156,8 @@ static void create_tree_node(Entity* e)
 cHierarchy::cHierarchy() :
 	Component("cHierarchy")
 {
+	auto& ui = scene_editor.window->ui;
+
 	auto e_page = ui.e_begin_docker_page(L"Hierarchy").second;
 	{
 		auto c_layout = ui.c_layout(LayoutVertical);
@@ -230,6 +233,7 @@ void cHierarchy::refresh_selected()
 
 void cHierarchy::refresh()
 {
+	auto& ui = scene_editor.window->ui;
 	e_tree->remove_children(0, -1);
 	e_tree->get_component(cTree)->selected = nullptr;
 	if (scene_editor.prefab)

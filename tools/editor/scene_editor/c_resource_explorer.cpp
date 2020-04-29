@@ -143,6 +143,8 @@ cResourceExplorer::cResourceExplorer() :
 		}
 	}
 
+	auto& ui = scene_editor.window->ui;
+
 	ui.next_element_padding = 4.f;
 	auto e_page = ui.e_begin_docker_page(L"Resource Explorer").second;
 	{
@@ -172,6 +174,7 @@ cResourceExplorer::cResourceExplorer() :
 			}
 				ui.e_begin_popup_menu();
 					ui.e_menu_item(L"New Prefab", [](Capture& c) {
+						auto& ui = scene_editor.window->ui;
 						ui.e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
@@ -182,6 +185,7 @@ cResourceExplorer::cResourceExplorer() :
 						}, Capture());
 					}, Capture());
 					ui.e_menu_item(L"New BP", [](Capture& c) {
+						auto& ui = scene_editor.window->ui;
 						ui.e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
@@ -226,6 +230,7 @@ cResourceExplorer::~cResourceExplorer()
 
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
 {
+	auto& ui = scene_editor.window->ui;
 	ui.push_style(FrameColorNormal, common(Vec4c(0)));
 	auto e_item = ui.e_list_item(L"", false);
 	ui.pop_style(FrameColorNormal);
@@ -244,6 +249,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 	curr_path = path;
 
 	looper().add_event([](Capture& c) {
+		auto& ui = scene_editor.window->ui;
 		auto& base_path = scene_editor.resource_explorer->base_path;
 		auto& curr_path = scene_editor.resource_explorer->curr_path;
 		auto address_bar = scene_editor.resource_explorer->address_bar;

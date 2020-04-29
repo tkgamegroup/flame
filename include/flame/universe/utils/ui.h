@@ -588,7 +588,7 @@ namespace flame
 			}
 			else
 				e = Entity::create();
-			auto p = parents.top();
+			auto p = parents.empty() ? nullptr : parents.top();
 			if (p)
 			{
 				auto pos = (int)p->child_count() - 1;

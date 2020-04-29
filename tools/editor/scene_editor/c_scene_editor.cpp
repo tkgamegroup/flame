@@ -18,7 +18,9 @@ _2DGizmo::_2DGizmo() :
 
 void _2DGizmo::create()
 {
-	auto create_block = []() {
+	auto& ui = scene_editor.window->ui;
+
+	auto create_block = [&]() {
 		auto b = ui.e_element()->get_component(cElement);
 		b->size = Vec2f(8.f);
 		b->pivot = 0.5f;
@@ -256,6 +258,8 @@ void _2DGizmo::update_blocks()
 cSceneEditor::cSceneEditor() :
 	Component("cSceneEditor")
 {
+	auto& ui = scene_editor.window->ui;
+
 	auto e_page = ui.e_begin_docker_page(L"Editor").second;
 	{
 		auto c_layout = ui.c_layout(LayoutVertical);
@@ -282,7 +286,7 @@ cSceneEditor::cSceneEditor() :
 			}, Capture());
 		ui.e_end_layout();
 
-		edt.create([](Capture&, const Vec4f& r) {
+		edt.create(ui, [](Capture&, const Vec4f& r) {
 			if (r.x() == r.z() && r.y() == r.z())
 				scene_editor.select(nullptr);
 			else
@@ -308,7 +312,7 @@ cSceneEditor::cSceneEditor() :
 					}
 					return true;
 				}, Capture().set_thiz(edt.overlay));
-				ui.set_current_entity(e_overlay);
+				ui.current_entity = e_overlay;
 				auto c_event_receiver = e_overlay->get_component(cEventReceiver);
 				c_event_receiver->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
 					*pass = true;
