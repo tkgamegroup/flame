@@ -1511,4 +1511,214 @@ namespace flame
 	{
 		return _looper;
 	}
+
+	struct SchedulePrivate : Schedule
+	{
+		struct Group;
+
+		struct Item
+		{
+			enum Type
+			{
+				TypeGroup,
+				TypeEvent,
+			};
+
+			Type type;
+			int index;
+
+			Item(Type type, int index) :
+				type(type),
+				index(index)
+			{
+			}
+
+			virtual void excute(SchedulePrivate* s) = 0;
+			virtual ~Item() {}
+		};
+
+		struct Event : Item
+		{
+			Group* group;
+
+			float delay;
+			float duration;
+			float rest;
+			void(*callback)(Capture& c, float time, float duration);
+			Capture capture;
+
+			Event(Group* _group, int index) :
+				Item(Item::TypeEvent, index)
+			{
+				group = _group;
+			}
+
+			~Event() override
+			{
+				f_free(capture._data);
+			}
+
+			void add_to_looper(SchedulePrivate* s)
+			{
+				rest = duration;
+				callback(capture, -1.f, duration);
+				auto e = this;
+				looper().add_event([](Capture& c) {
+					auto e = c.data<Event*>();
+					e->rest -= looper().delta_time;
+					auto end = e->rest <= 0.f;
+					e->callback(e->capture, e->duration - max(e->rest, 0.f), e->duration);
+					if (!end)
+						c._current = INVALID_POINTER;
+					else
+					{
+						auto thiz = c.thiz<SchedulePrivate>();
+						auto index = e->index;
+						auto g = e->group;
+						if (g)
+						{
+							g->complete_count++;
+							if (g->complete_count < g->events.size())
+								return;
+							index = g->index;
+						}
+						index++;
+						if (index < thiz->items.size())
+							thiz->items[index]->excute(thiz);
+						else if (thiz->once)
+							Schedule::destroy(thiz);
+					}
+				}, Capture().set_data(&e).set_thiz(s));
+			}
+
+			void excute(SchedulePrivate* s) override
+			{
+				if (delay > 0.f)
+				{
+					looper().add_event([](Capture& c) {
+						c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
+					}, Capture().set_data(&s).set_thiz(this), delay);
+				}
+				else
+					add_to_looper(s);
+			}
+		};
+
+		struct Group : Item
+		{
+			std::vector<std::unique_ptr<Event>> events;
+			int complete_count;
+
+			Group(int index) :
+				Item(Item::TypeGroup, index)
+			{
+			}
+
+			void excute(SchedulePrivate* s) override
+			{
+				complete_count = 0;
+				for (auto& e : events)
+				{
+					if (e->delay > 0.f)
+					{
+						looper().add_event([](Capture& c) {
+							c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
+						}, Capture().set_data(&s).set_thiz(e.get()), e->delay);
+					}
+					else
+						e->add_to_looper(s);
+				}
+			}
+		};
+
+		bool once;
+		std::vector<std::unique_ptr<Item>> items;
+		Group* curr_group;
+
+		SchedulePrivate() :
+			curr_group(nullptr),
+			once(false)
+		{
+		}
+
+		void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
+		{
+			auto e = new Event(curr_group, curr_group ? curr_group->events.size() : items.size());
+			e->delay = delay;
+			e->duration = duration;
+			e->callback = callback;
+			e->capture = capture;
+			if (curr_group)
+				curr_group->events.emplace_back(e);
+			else
+				items.emplace_back(e);
+		}
+
+		void begin_group()
+		{
+			if (curr_group)
+				return;
+			auto g = new Group(items.size());
+			items.emplace_back(g);
+			curr_group = g;
+		}
+
+		void end_group()
+		{
+			if (!curr_group)
+				return;
+			if (curr_group->events.empty())
+				items.erase(items.end() - 1);
+			curr_group = nullptr;
+		}
+
+		void start()
+		{
+			if (items.empty())
+				return;
+			items.front()->excute(this);
+		}
+
+		void stop()
+		{
+
+		}
+	};
+
+	void Schedule::add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
+	{
+		((SchedulePrivate*)this)->add_event(delay, duration, callback, capture);
+	}
+
+	void Schedule::begin_group()
+	{
+		((SchedulePrivate*)this)->begin_group();
+	}
+
+	void Schedule::end_group()
+	{
+		((SchedulePrivate*)this)->end_group();
+	}
+
+	void Schedule::start()
+	{
+		((SchedulePrivate*)this)->start();
+	}
+
+	void Schedule::stop()
+	{
+		((SchedulePrivate*)this)->stop();
+	}
+
+	Schedule* Schedule::create(bool once)
+	{
+		auto s = new SchedulePrivate;
+		s->once = once;
+		return s;
+	}
+
+	void Schedule::destroy(Schedule* s)
+	{
+		delete (SchedulePrivate*)s;
+	}
 }

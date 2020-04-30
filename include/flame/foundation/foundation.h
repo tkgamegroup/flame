@@ -672,4 +672,16 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();
+
+	struct Schedule
+	{
+		FLAME_FOUNDATION_EXPORTS void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture);
+		FLAME_FOUNDATION_EXPORTS void begin_group();
+		FLAME_FOUNDATION_EXPORTS void end_group();
+		FLAME_FOUNDATION_EXPORTS void start();
+		FLAME_FOUNDATION_EXPORTS void stop();
+
+		FLAME_FOUNDATION_EXPORTS static Schedule* create(bool once = true);
+		FLAME_FOUNDATION_EXPORTS static void destroy(Schedule* s);
+	};
 }

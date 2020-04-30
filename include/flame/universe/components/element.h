@@ -110,6 +110,50 @@ namespace flame
 				renderer->pending_update = true;
 		}
 
+		void move_to(Schedule* s, float delay, float duration, const Vec2f& target)
+		{
+			struct Capturing
+			{
+				Vec2f a;
+				Vec2f b;
+			}capture;
+			capture.a = 0.f;
+			capture.b = target;
+			s->add_event(delay, duration, [](Capture& c, float time, float duration) {
+				auto& capture = c.data<Capturing>();
+				auto thiz = c.thiz<cElement>();
+				if (time == -1.f)
+				{
+					capture.a = thiz->pos;
+					return;
+				}
+				auto t = time / duration;
+				thiz->set_pos(capture.a * (1.f - t) + capture.b * t);
+			}, Capture().set_data(&capture).set_thiz(this));
+		}
+
+		void scale_to(Schedule* s, float delay, float duration, float target)
+		{
+			struct Capturing
+			{
+				float a;
+				float b;
+			}capture;
+			capture.a = 0.f;
+			capture.b = target;
+			s->add_event(delay, duration, [](Capture& c, float time, float duration) {
+				auto& capture = c.data<Capturing>();
+				auto thiz = c.thiz<cElement>();
+				if (time == -1.f)
+				{
+					capture.a = thiz->scale;
+					return;
+				}
+				auto t = time / duration;
+				thiz->set_scale(capture.a * (1.f - t) + capture.b * t);
+			}, Capture().set_data(&capture).set_thiz(this));
+		}
+
 		cElement() :
 			Component("cElement")
 		{
