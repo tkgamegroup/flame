@@ -641,9 +641,9 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	{
 		auto c_timer = ui.c_timer();
 		c_timer->interval = 1.f;
-		c_timer->max_times = 1;
-		c_timer->set_callback([](Capture&) {
+		c_timer->set_callback([](Capture& c) {
 			bp_editor.e_notification->set_visible(false);
+			c.current<cTimer>()->stop();
 		}, Capture(), false);
 	}
 	ui.pop_style(FontSize);

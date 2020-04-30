@@ -222,4 +222,26 @@ namespace flame
 		}
 		return false;
 	}
+
+	struct CountDown
+	{
+		bool is_frame;
+		union
+		{
+			uint frames;
+			float time;
+		}v;
+
+		CountDown(uint frames) :
+			is_frame(true)
+		{
+			v.frames = frames;
+		}
+
+		CountDown(float time) :
+			is_frame(false)
+		{
+			v.time = time;
+		}
+	};
 }

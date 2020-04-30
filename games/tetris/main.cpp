@@ -544,17 +544,20 @@ void MyApp::create_player_controls(int player_index)
 		{
 			auto c_timer = ui.c_timer();
 			c_timer->interval = 1.f;
-			c_timer->max_times = 3;
+			auto times = 3;
 			c_timer->set_callback([](Capture& c) {
-				auto timer = c.thiz<cTimer>();
-				if (timer->_times == timer->max_times)
+				auto& times = c.data<int>();
+				times--;
+				auto timer = c.current<cTimer>();
+				if (times == 0)
 				{
+					timer->stop();
 					timer->entity->set_visible(false);
 					app.gaming = true;
 				}
 				else
-					timer->entity->get_component(cText)->set_text(std::to_wstring(timer->max_times - timer->_times).c_str());
-			}, Capture().set_thiz(c_timer), false);
+					timer->entity->get_component(cText)->set_text(std::to_wstring(times).c_str());
+			}, Capture().set_data(&times), false);
 		}
 		ui.pop_style(FontSize);
 

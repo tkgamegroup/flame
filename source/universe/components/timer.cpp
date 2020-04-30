@@ -7,13 +7,8 @@ namespace flame
 		management(nullptr)
 	{
 		interval = 0.f;
-		max_time = -1.f;
-		max_times = -1;
 
-		_updating = false;
-		_time = 0.f;
-		_total_time = 0.f;
-		_times = 0;
+		_time = -1.f;
 
 		callback.reset(new Closure<void(Capture&)>(nullptr, Capture()));
 	}
@@ -25,14 +20,12 @@ namespace flame
 
 	void cTimerPrivate::reset()
 	{
-		_time = 0.f;
-		_total_time = 0.f;
-		_times = 0;
+		_time = -1.f;
 	}
 
 	void cTimerPrivate::start(bool force_restart)
 	{
-		if (_updating)
+		if (_time > 0.f)
 		{
 			if (force_restart)
 				reset();
@@ -43,7 +36,7 @@ namespace flame
 
 	void cTimerPrivate::stop()
 	{
-		if (_updating)
+		if (_time > 0.f)
 		{
 			reset();
 			management->remove_from_update_list(this);

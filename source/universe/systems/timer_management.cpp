@@ -7,20 +7,20 @@ namespace flame
 	{
 		std::vector<cTimerPrivate*> update_list;
 		bool updating;
-		bool need_clear;
+		bool need_clean;
 
 		sTimerManagementPrivate() :
 			updating(false),
-			need_clear(false)
+			need_clean(false)
 		{
 		}
 
 		void add_to_update_list(cTimerPrivate* t)
 		{
-			if (t->_updating)
+			if (t->_time > 0.f)
 				return;
 			update_list.push_back(t);
-			t->_updating = true;
+			t->_time = 0.f;
 			std::sort(update_list.begin(), update_list.end(), [](const auto& a, const auto& b) {
 				if (!a || !b)
 					return true;
@@ -30,9 +30,9 @@ namespace flame
 
 		void remove_from_update_list(cTimerPrivate* t)
 		{
-			if (!t->_updating)
+			if (t->_time < 0.f)
 				return;
-			t->_updating = false;
+			t->_time = -1;
 			t->reset();
 			for (auto it = update_list.begin(); it != update_list.end(); it++)
 			{
@@ -43,7 +43,7 @@ namespace flame
 					else
 					{
 						*it = nullptr;
-						need_clear = true;
+						need_clean = true;
 					}
 					return;
 				}
@@ -54,41 +54,19 @@ namespace flame
 		{
 			auto dt = looper().delta_time;
 			updating = true;
-			for (auto& t : update_list)
+			for (auto t : update_list)
 			{
 				if (!t)
 					continue;
 				t->_time += dt;
-				t->_total_time += dt;
 				if (t->_time >= t->interval)
 				{
 					t->_time = 0;
-					t->_times++;
+					t->callback->c._current = t;
 					t->callback->call();
 				}
-				if (t)
-				{
-					auto need_remove = false;
-					if (t->max_time > 0.f && t->_total_time >= t->max_time)
-					{
-						t->_total_time = t->max_time;
-						need_remove = true;
-					}
-					if (t->max_times > 0 && t->_times >= t->max_times)
-					{
-						t->_times = t->max_times;
-						need_remove = true;
-					}
-					if (need_remove)
-					{
-						t->_updating = false;
-						t->reset();
-						t = nullptr;
-						need_clear = true;
-					}
-				}
 			}
-			if (need_clear)
+			if (need_clean)
 			{
 				for (auto it = update_list.begin(); it != update_list.end();)
 				{

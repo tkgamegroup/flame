@@ -7,13 +7,8 @@ namespace flame
 	struct cTimer : Component
 	{
 		float interval;
-		float max_time;
-		int max_times;
 
-		bool _updating;
 		float _time;
-		float _total_time;
-		int _times;
 
 		cTimer() :
 			Component("cTimer")
