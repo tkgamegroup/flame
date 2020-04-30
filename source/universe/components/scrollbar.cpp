@@ -142,7 +142,6 @@ namespace flame
 				element->set_x(element->size.x() > 0.f ? clamp(v, 0.f, scrollbar->element->size.x() - element->size.x()) : 0.f);
 				target_layout->set_x_scroll_offset(-int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step);
 			}
-			v = 0.f;
 		}
 	};
 

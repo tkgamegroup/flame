@@ -208,10 +208,10 @@ MainWindow::MainWindow() :
 
 	setup_as_main_window();
 
+	ui.init(world);
+
 	canvas->clear_color = Vec4f(ui.style(BackgroundColor).c) / 255.f;
 	canvas->set_resource(img_id, Image::create_from_file(app.graphics_device, (app.engine_path / L"art/9.png").c_str())->default_view());
-
-	ui.init(world);
 
 	app.create_widgets();
 }

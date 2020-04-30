@@ -232,6 +232,12 @@ namespace flame
 			float time;
 		}v;
 
+		CountDown() :
+			is_frame(true)
+		{
+			v.frames = 0;
+		}
+
 		CountDown(uint frames) :
 			is_frame(true)
 		{

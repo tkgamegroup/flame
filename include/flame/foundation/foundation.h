@@ -664,7 +664,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS int loop(void (*frame_callback)(Capture& c), const Capture& capture);
 
-		FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, float interval = 0.f, uint id = 0);
+		FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0);
 
 		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
 		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */

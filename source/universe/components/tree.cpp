@@ -8,6 +8,7 @@
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/tree.h>
+#include <flame/universe/components/scrollbar.h>
 #include <flame/universe/utils/layer.h>
 
 namespace flame
@@ -289,6 +290,24 @@ namespace flame
 		if (!selected)
 			return;
 		expand(selected->parent(), entity);
+		looper().add_event([](Capture& c) {
+			auto thiz = c.thiz<cTreePrivate>();
+			auto selected = thiz->selected;
+			if (!selected)
+				return;
+			auto parent = thiz->entity->parent();
+			if (!parent || parent->child_count() < 2)
+				return;
+			auto e_scrollbar = parent->child(1);
+			auto c_scrollbar = e_scrollbar->get_component(cScrollbar);
+			if (!c_scrollbar)
+				return;
+			auto e_thumb = e_scrollbar->child(0);
+			auto e_tree = thiz->entity;
+			e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y() *
+				(selected->get_component(cElement)->global_pos.y() - e_tree->get_component(cElement)->global_pos.y()) / (e_tree->get_component(cLayout)->content_size.y() + 20.f));
+			e_thumb->get_component(cScrollbarThumb)->update(0.f);
+		}, Capture().set_thiz(this), 1U);
 	}
 
 	cTree* cTree::create()

@@ -1414,8 +1414,8 @@ namespace flame
 	struct Event
 	{
 		uint id;
-		float interval;
-		float rest;
+		CountDown interval;
+		CountDown rest;
 		void(*callback)(Capture& c);
 		Capture capture;
 
@@ -1428,7 +1428,7 @@ namespace flame
 	static std::list<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
-	void* Looper::add_event(void (*callback)(Capture& c), const Capture& capture, float interval, uint id)
+	void* Looper::add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
@@ -1478,8 +1478,21 @@ namespace flame
 		for (auto it = events.begin(); it != events.end();)
 		{
 			auto& e = *it;
-			e->rest -= delta_time;
-			if (e->rest <= 0)
+			auto excute = false;
+			if (e->rest.is_frame)
+			{
+				if (e->rest.v.frames == 0)
+					excute = true;
+				else
+					e->rest.v.frames--;
+			}
+			else
+			{
+				e->rest.v.time -= delta_time;
+				if (e->rest.v.time <= 0)
+					excute = true;
+			}
+			if (excute)
 			{
 				e->capture._current = nullptr;
 				e->callback(e->capture);
