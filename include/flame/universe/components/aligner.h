@@ -10,6 +10,7 @@ namespace flame
 	{
 		cElement* element;
 
+		FLAME_RV(Vec4f, margin); // L T R B
 		FLAME_RV(AlignFlag, x_align_flags, m);
 		FLAME_RV(AlignFlag, y_align_flags, m);
 		float min_width;

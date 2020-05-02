@@ -52,7 +52,7 @@ namespace flame
 	void cLayoutPrivate::apply_h_free_layout(const Aligner& a, bool free)
 	{
 		auto x_flags = a.aligner ? a.aligner->x_align_flags : (free ? (AlignFlag)0 : AlignMin);
-		auto p = (x_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.xz();
+		auto p = (x_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.xz() + (a.aligner ? a.aligner->margin.xz() : Vec2f(0.f));
 		if (x_flags & AlignMinMax)
 		{
 			auto w = element->size.x() - p.xy().sum();
@@ -71,7 +71,7 @@ namespace flame
 	void cLayoutPrivate::apply_v_free_layout(const Aligner& a, bool free)
 	{
 		auto y_flags = a.aligner ? a.aligner->y_align_flags : (free ? (AlignFlag)0 : AlignMin);
-		auto p = (y_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.yw();
+		auto p = (y_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.yw() + (a.aligner ? a.aligner->margin.yw() : Vec2f(0.f));
 		if (y_flags & AlignMinMax)
 		{
 			auto h = element->size.y() - p.xy().sum();

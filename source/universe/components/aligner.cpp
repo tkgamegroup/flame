@@ -9,6 +9,7 @@ namespace flame
 		{
 			element = nullptr;
 
+			margin = Vec4f(0.f);
 			x_align_flags = (AlignFlag)0;
 			y_align_flags = (AlignFlag)0;
 			min_width = -1.f;

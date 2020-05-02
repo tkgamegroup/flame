@@ -25,7 +25,7 @@ namespace flame
 
 	void cTimerPrivate::start(bool force_restart)
 	{
-		if (_time > 0.f)
+		if (_time != -1.f)
 		{
 			if (force_restart)
 				reset();
@@ -36,10 +36,10 @@ namespace flame
 
 	void cTimerPrivate::stop()
 	{
-		if (_time > 0.f)
+		if (_time != -1.f)
 		{
-			reset();
 			management->remove_from_update_list(this);
+			reset();
 		}
 	}
 

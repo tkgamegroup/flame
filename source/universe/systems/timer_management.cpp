@@ -17,7 +17,7 @@ namespace flame
 
 		void add_to_update_list(cTimerPrivate* t)
 		{
-			if (t->_time > 0.f)
+			if (t->_time != -1.f)
 				return;
 			update_list.push_back(t);
 			t->_time = 0.f;
@@ -30,7 +30,7 @@ namespace flame
 
 		void remove_from_update_list(cTimerPrivate* t)
 		{
-			if (t->_time < 0.f)
+			if (t->_time == -1.f)
 				return;
 			t->_time = -1;
 			t->reset();

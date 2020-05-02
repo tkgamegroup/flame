@@ -32,6 +32,17 @@ namespace flame
 			combobox(combobox)
 		{
 			data = _data;
+
+			update_view();
+
+			combobox->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+				if (hash == FLAME_CHASH("index"))
+				{
+					auto thiz = c.thiz<cEnumSingleDataTracker>();
+					thiz->on_changed(thiz->capture, thiz->info->item(thiz->combobox->index)->value());
+				}
+				return true;
+			}, Capture().set_thiz(this));
 		}
 
 		~cEnumSingleDataTracker() override
@@ -44,22 +55,6 @@ namespace flame
 			auto idx = -1;
 			info->find_item(*(int*)data, &idx);
 			combobox->set_index(idx, INVALID_POINTER);
-		}
-
-		void on_added() override
-		{
-			combobox = entity->child(0)->get_component(cCombobox);
-
-			update_view();
-
-			combobox->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-				if (hash == FLAME_CHASH("index"))
-				{
-					auto thiz = c.thiz<cEnumSingleDataTracker>();
-					thiz->on_changed(thiz->capture, thiz->info->item(thiz->combobox->index)->value());
-				}
-				return true;
-			}, Capture().set_thiz(this));
 		}
 	};
 
@@ -79,23 +74,6 @@ namespace flame
 		{
 			data = _data;
 			assert(checkboxes.size() == info->item_count());
-		}
-
-		~cEnumMultiDataTracker() override
-		{
-			f_free(capture._data);
-		}
-
-		void update_view() override
-		{
-			for (auto i = 0; i < checkboxes.size(); i++)
-				checkboxes[i]->set_checked(*(int*)data & info->item(i)->value(), INVALID_POINTER);
-		}
-
-		void on_added() override
-		{
-			for (auto i = 0; i < entity->child_count(); i++)
-				checkboxes.push_back(entity->child(i)->child(0)->get_component(cCheckbox));
 
 			update_view();
 
@@ -118,6 +96,17 @@ namespace flame
 				}, Capture().set_data(&i).set_thiz(this));
 			}
 		}
+
+		~cEnumMultiDataTracker() override
+		{
+			f_free(capture._data);
+		}
+
+		void update_view() override
+		{
+			for (auto i = 0; i < checkboxes.size(); i++)
+				checkboxes[i]->set_checked(*(int*)data & info->item(i)->value(), INVALID_POINTER);
+		}
 	};
 
 	struct cBoolDataTracker : cDataTracker
@@ -133,21 +122,6 @@ namespace flame
 			checkbox(checkbox)
 		{
 			data = _data;
-		}
-
-		~cBoolDataTracker() override
-		{
-			f_free(capture._data);
-		}
-
-		void update_view() override
-		{
-			checkbox->set_checked(*(bool*)data, INVALID_POINTER);
-		}
-
-		void on_added() override
-		{
-			checkbox = entity->child(0)->get_component(cCheckbox);
 
 			update_view();
 
@@ -159,6 +133,16 @@ namespace flame
 				}
 				return true;
 			}, Capture().set_thiz(this));
+		}
+
+		~cBoolDataTracker() override
+		{
+			f_free(capture._data);
+		}
+
+		void update_view() override
+		{
+			checkbox->set_checked(*(bool*)data, INVALID_POINTER);
 		}
 	};
 
@@ -181,29 +165,6 @@ namespace flame
 			drag_text(drag_text)
 		{
 			data = _data;
-		}
-
-		~cDigitalDataTracker() override
-		{
-			f_free(capture._data);
-		}
-
-		void update_view() override
-		{
-			std::wstring str;
-			if constexpr (std::is_floating_point<T>::value)
-				str = to_wstring(*(T*)data);
-			else
-				str = to_wstring(*(T*)data);
-			edit_text->set_text(str.c_str(), -1, INVALID_POINTER);
-			drag_text->set_text(str.c_str(), -1, INVALID_POINTER);
-		}
-
-		void on_added() override
-		{
-			auto e = entity->child(0);
-			edit_text = e->child(0)->get_component(cText);
-			drag_text = e->child(1)->get_component(cText);
 
 			update_view();
 
@@ -260,59 +221,43 @@ namespace flame
 				return true;
 			}, Capture().set_thiz(this));
 		}
-	};
 
-	template <uint N, class T>
-	struct cDigitalVecDataTracker : cDataTracker
-	{
-		cText* edit_texts[N];
-		cText* drag_texts[N];
-
-		Vec<N, T> drag_start;
-		bool drag_changed;
-		void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing);
-		Capture capture;
-
-		cDigitalVecDataTracker(void* _data, void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing), const Capture& capture, const std::array<cText* , N>& _edit_texts, const std::array<cText* , N>& _drag_texts) :
-			drag_changed(false),
-			on_changed(on_changed),
-			capture(capture)
-		{
-			data = _data;
-			for (auto i = 0; i < N; i++)
-			{
-				edit_texts[i] = _edit_texts[i];
-				drag_texts[i] = _drag_texts[i];
-			}
-		}
-
-		~cDigitalVecDataTracker() override
+		~cDigitalDataTracker() override
 		{
 			f_free(capture._data);
 		}
 
 		void update_view() override
 		{
-			for (auto i = 0; i < N; i++)
-			{
-				std::wstring str;
-				if constexpr (std::is_floating_point<T>::value)
-					str = to_wstring((*(Vec<N, T>*)data)[i]);
-				else
-					str = to_wstring((*(Vec<N, T>*)data)[i]);
-				edit_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
-				drag_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
-			}
+			std::wstring str;
+			if constexpr (std::is_floating_point<T>::value)
+				str = to_wstring(*(T*)data);
+			else
+				str = to_wstring(*(T*)data);
+			edit_text->set_text(str.c_str(), -1, INVALID_POINTER);
+			drag_text->set_text(str.c_str(), -1, INVALID_POINTER);
 		}
+	};
 
-		void on_added() override
+	template <uint N, class T>
+	struct cDigitalVecDataTracker : cDataTracker
+	{
+		std::array<cText*, N> edit_texts;
+		std::array<cText*, N> drag_texts;
+
+		Vec<N, T> drag_start;
+		bool drag_changed;
+		void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing);
+		Capture capture;
+
+		cDigitalVecDataTracker(void* _data, void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing), const Capture& capture, const std::array<cText* , N>& edit_texts, const std::array<cText* , N>& drag_texts) :
+			drag_changed(false),
+			on_changed(on_changed),
+			capture(capture),
+			edit_texts(edit_texts),
+			drag_texts(drag_texts)
 		{
-			for (auto i = 0; i < N; i++)
-			{
-				auto e = entity->child(i);
-				edit_texts[i] = e->child(0)->get_component(cText);
-				drag_texts[i] = e->child(1)->get_component(cText);
-			}
+			data = _data;
 
 			update_view();
 
@@ -375,6 +320,25 @@ namespace flame
 				}, Capture().set_thiz(this));
 			}
 		}
+
+		~cDigitalVecDataTracker() override
+		{
+			f_free(capture._data);
+		}
+
+		void update_view() override
+		{
+			for (auto i = 0; i < N; i++)
+			{
+				std::wstring str;
+				if constexpr (std::is_floating_point<T>::value)
+					str = to_wstring((*(Vec<N, T>*)data)[i]);
+				else
+					str = to_wstring((*(Vec<N, T>*)data)[i]);
+				edit_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
+				drag_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
+			}
+		}
 	};
 
 	struct cStringADataTracker : cDataTracker
@@ -390,21 +354,6 @@ namespace flame
 			text(text)
 		{
 			data = _data;
-		}
-
-		~cStringADataTracker() override
-		{
-			f_free(capture._data);
-		}
-
-		void update_view() override
-		{
-			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", -1, INVALID_POINTER);
-		}
-
-		void on_added() override
-		{
-			text = entity->child(0)->get_component(cText);
 
 			update_view();
 
@@ -421,6 +370,16 @@ namespace flame
 				return true;
 			}, Capture().set_thiz(this));
 		}
+
+		~cStringADataTracker() override
+		{
+			f_free(capture._data);
+		}
+
+		void update_view() override
+		{
+			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", -1, INVALID_POINTER);
+		}
 	};
 
 	struct cStringWDataTracker : cDataTracker
@@ -436,21 +395,6 @@ namespace flame
 			text(text)
 		{
 			data = _data;
-		}
-
-		~cStringWDataTracker() override
-		{
-			f_free(capture._data);
-		}
-
-		void update_view() override
-		{
-			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", -1, INVALID_POINTER);
-		}
-
-		void on_added() override
-		{
-			text = entity->child(0)->get_component(cText);
 
 			update_view();
 
@@ -467,9 +411,15 @@ namespace flame
 				return true;
 			}, Capture().set_thiz(this));
 		}
-	};
 
-	inline void create_enum_checkboxes(UI& ui, EnumInfo* info, bool text_after = true)
-	{
-	}
+		~cStringWDataTracker() override
+		{
+			f_free(capture._data);
+		}
+
+		void update_view() override
+		{
+			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", -1, INVALID_POINTER);
+		}
+	};
 }
