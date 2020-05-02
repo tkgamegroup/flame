@@ -168,7 +168,28 @@ namespace flame
 					else if (name == "cAligner")
 					{
 						auto ca = (cAligner*)c;
-
+						auto align_flag_info = find_enum(FLAME_CHASH("flame::AlignFlag"));
+						auto get_enum_str = [&](EnumInfo* info, int v) {
+							std::string ret;
+							for (auto i = 0; i < info->item_count(); i++)
+							{
+								auto item = info->item(i);
+								if (v & item->value())
+								{
+									ret += item->name();
+									ret += " ";
+								}								
+							}
+							return ret;
+						};
+						desc += sfmt("x flags: %s\n", get_enum_str(align_flag_info, ca->x_align_flags).c_str());
+						desc += sfmt("y flags: %s\n", get_enum_str(align_flag_info, ca->y_align_flags).c_str());
+					}
+					else if (name == "cLayout")
+					{
+						auto cl = (cLayout*)c;
+						auto layout_type_info = find_enum(FLAME_CHASH("flame::LayoutType"));
+						desc += sfmt("type: %s\n", layout_type_info->find_item(cl->type)->name());
 					}
 				}
 				dp->set_string_item(FLAME_CHASH("desc"), desc.c_str());

@@ -454,7 +454,7 @@ namespace flame
 		Key_NumLock,
 		Key_ScrollLock,
 
-		KeyCount
+		Key_Count
 	};
 
 	enum MouseKey
@@ -625,7 +625,7 @@ namespace flame
 		CursorUpArrwo,
 		CursorWait,
 
-		CursorCount
+		Cursor_Count
 	};
 
 	struct SysWindow;

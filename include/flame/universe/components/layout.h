@@ -10,21 +10,21 @@ namespace flame
 
 	struct sLayoutManagement;
 
-	struct cLayout : Component
+	struct FLAME_R(cLayout : Component)
 	{
 		sLayoutManagement* management;
 
 		cElement* element;
 		cAligner* aligner;
 
-		LayoutType type;
-		uint column;
-		float item_padding;
-		bool width_fit_children;
-		bool height_fit_children;
-		int fence;
-		Vec2f scroll_offset;
+		FLAME_RV(LayoutType, type);
+		FLAME_RV(uint, column);
+		FLAME_RV(float, item_padding);
+		FLAME_RV(bool, width_fit_children);
+		FLAME_RV(bool, height_fit_children);
+		FLAME_RV(int, fence);
 
+		Vec2f scroll_offset;
 		Vec2f content_size;
 
 		cLayout() :
@@ -42,6 +42,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_y_scroll_offset(float y);
 		FLAME_UNIVERSE_EXPORTS void set_column(uint c);
 
-		FLAME_UNIVERSE_EXPORTS static cLayout* create(LayoutType type);
+		FLAME_UNIVERSE_EXPORTS static cLayout* FLAME_RF(create)(LayoutType type);
 	};
 }

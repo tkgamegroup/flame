@@ -11,7 +11,7 @@ namespace flame
 	{
 		SysWindow* window;
 
-		KeyStateFlags key_states[KeyCount];
+		KeyStateFlags key_states[Key_Count];
 		KeyStateFlags mouse_buttons[3];
 		Vec2i mouse_pos, mouse_pos_prev, mouse_disp;
 		int mouse_scroll;

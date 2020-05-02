@@ -545,7 +545,7 @@ int main(int argc, char **args)
 											item->get_value(&variant);
 
 											auto item_name = w2s(pwname);
-											if (!SUS::ends_with(item_name, "Max") && !SUS::ends_with(item_name, "Count"))
+											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
 												e->add_item(item_name, variant.lVal);
 
 											item->Release();

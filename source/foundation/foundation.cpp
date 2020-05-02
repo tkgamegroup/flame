@@ -973,7 +973,7 @@ namespace flame
 #ifdef FLAME_WINDOWS
 		HWND hWnd;
 
-		HCURSOR cursors[CursorCount];
+		HCURSOR cursors[Cursor_Count];
 		CursorType cursor_type;
 #elif FLAME_ANDROID
 		android_app* android_state;
@@ -1037,7 +1037,7 @@ namespace flame
 
 			SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
-			for (auto i = 0; i < CursorCount; i++)
+			for (auto i = 0; i < Cursor_Count; i++)
 			{
 				switch ((CursorType)i)
 				{

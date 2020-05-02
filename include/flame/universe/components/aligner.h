@@ -6,12 +6,12 @@ namespace flame
 {
 	struct cElement;
 
-	struct cAligner : Component
+	struct FLAME_R(cAligner : Component)
 	{
 		cElement* element;
 
-		AlignFlag x_align_flags;
-		AlignFlag y_align_flags;
+		FLAME_RV(AlignFlag, x_align_flags, m);
+		FLAME_RV(AlignFlag, y_align_flags, m);
 		float min_width;
 		float min_height;
 		float width_factor;
@@ -29,6 +29,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void set_width_factor(float f, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void set_height_factor(float f, void* sender = nullptr);
 
-		FLAME_UNIVERSE_EXPORTS static cAligner* create();
+		FLAME_UNIVERSE_EXPORTS static cAligner* FLAME_RF(create)();
 	};
 }

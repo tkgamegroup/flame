@@ -22,8 +22,8 @@ namespace flame
 		width_fit_children = true;
 		height_fit_children = true;
 		fence = std::numeric_limits<int>::max();
-		scroll_offset = Vec2f(0.f);
 
+		scroll_offset = Vec2f(0.f);
 		content_size = Vec2f(0.f);
 
 		pending_update = false;
