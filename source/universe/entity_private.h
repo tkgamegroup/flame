@@ -17,6 +17,8 @@ namespace flame
 		std::unordered_map<uint, std::unique_ptr<Component>> components;
 		std::vector<std::unique_ptr<EntityPrivate>> children;
 
+		Array<void*> create_stack_frames;
+
 		EntityPrivate();
 		~EntityPrivate();
 		void set_visible(bool v);

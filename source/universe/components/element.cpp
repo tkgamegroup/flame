@@ -78,6 +78,14 @@ namespace flame
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
+#ifdef _DEBUG
+		if (debug_level > 0)
+		{
+			debug_break();
+			debug_level = 0;
+		}
+#endif
+
 		if (!clipped)
 		{
 			if (alpha > 0.f)

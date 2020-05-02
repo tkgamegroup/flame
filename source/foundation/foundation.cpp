@@ -750,6 +750,49 @@ namespace flame
 		}
 	}
 
+	Array<void*> get_stack_frames()
+	{
+		Array<void*> ret;
+		ret.resize(64);
+		auto n = CaptureStackBackTrace(0, 64, ret.v, nullptr);
+		ret.resize(n);
+		return ret;
+	}
+
+	Array<StackFrameInfo> get_stack_frame_infos(uint frame_count, void** frames)
+	{
+		Array<StackFrameInfo> ret;
+		ret.resize(frame_count);
+
+		auto process = GetCurrentProcess();
+		SymInitialize(process, nullptr, true); 
+
+		const auto MaxFunctionNameLength = 1024;
+
+		auto symbol = (SYMBOL_INFO*)new char[sizeof(SYMBOL_INFO) + MaxFunctionNameLength - 1];
+		symbol->MaxNameLen = MaxFunctionNameLength;
+		symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		auto line = (IMAGEHLP_LINE64*)new char[sizeof(IMAGEHLP_LINE64)];
+		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+		DWORD displacement;
+		for (auto i = 0; i < frame_count; i++)
+		{
+			auto frame = (DWORD64)frames[i];
+			SymFromAddr(process, frame, nullptr, symbol);
+			if (SymGetLineFromAddr64(process, (DWORD64)frame, &displacement, line))
+			{
+				auto& info = ret[i];
+				info.file = line->FileName;
+				info.line = line->LineNumber;
+				info.function = symbol->Name;
+			}
+		}
+		delete[] line;
+		delete[] symbol;
+
+		return ret;
+	}
+
 	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), Capture& capture)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);

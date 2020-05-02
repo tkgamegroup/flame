@@ -8,7 +8,6 @@ namespace flame
 
 	struct cLayoutPrivate : cLayout
 	{
-		sLayoutManagement* management;
 		bool pending_update;
 
 		void* element_data_listener;

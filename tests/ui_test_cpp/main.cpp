@@ -80,7 +80,10 @@ void MyApp::create_widgets()
 					c.current<cEventReceiver>()->entity->get_component(cText)->set_text(L"Click Me! :)");
 					printf("thank you for clicking me\n");
 				}, Capture());
-				ui.e_checkbox(L"Checkbox");
+				ui.e_begin_layout(LayoutHorizontal, 4.f);
+				ui.e_text(L"Checkbox");
+				ui.e_checkbox();
+				ui.e_end_layout();
 				ui.next_element_size = 258.f;
 				ui.next_element_padding = 4.f;
 				ui.next_element_frame_thickness = 2.f;

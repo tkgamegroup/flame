@@ -23,6 +23,10 @@ namespace flame
 
 		world = nullptr;
 		parent = nullptr;
+
+#ifdef _DEBUG
+		create_stack_frames = get_stack_frames();
+#endif
 	}
 
 	EntityPrivate::~EntityPrivate()
@@ -370,6 +374,11 @@ namespace flame
 	void Entity::remove_children(int from, int to, bool destroy)
 	{
 		((EntityPrivate*)this)->remove_children(from, to, destroy);
+	}
+
+	Array<void*> Entity::get_create_stack_frames() const
+	{
+		return ((EntityPrivate*)this)->create_stack_frames;
 	}
 
 	Entity* Entity::create()

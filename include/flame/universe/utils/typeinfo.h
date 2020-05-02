@@ -25,10 +25,11 @@ namespace flame
 		void(*on_changed)(Capture& c, int v);
 		Capture capture;
 
-		cEnumSingleDataTracker(void* _data, EnumInfo* info, void(*on_changed)(Capture& c, int v), const Capture& capture) :
+		cEnumSingleDataTracker(void* _data, EnumInfo* info, void(*on_changed)(Capture& c, int v), const Capture& capture, cCombobox* combobox) :
 			info(info),
 			on_changed(on_changed),
-			capture(capture)
+			capture(capture),
+			combobox(combobox)
 		{
 			data = _data;
 		}
@@ -64,18 +65,20 @@ namespace flame
 
 	struct cEnumMultiDataTracker : cDataTracker
 	{
-		std::vector<cCheckbox*> checkboxs;
+		std::vector<cCheckbox*> checkboxes;
 
 		EnumInfo* info;
 		void(*on_changed)(Capture& c, int v);
 		Capture capture;
 
-		cEnumMultiDataTracker(void* _data, EnumInfo* info, void(*on_changed)(Capture& c, int v), const Capture& capture) :
+		cEnumMultiDataTracker(void* _data, EnumInfo* info, void(*on_changed)(Capture& c, int v), const Capture& capture, const std::vector<cCheckbox*>& checkboxes) :
 			info(info),
 			on_changed(on_changed),
-			capture(capture)
+			capture(capture),
+			checkboxes(checkboxes)
 		{
 			data = _data;
+			assert(checkboxes.size() == info->item_count());
 		}
 
 		~cEnumMultiDataTracker() override
@@ -85,27 +88,27 @@ namespace flame
 
 		void update_view() override
 		{
-			for (auto i = 0; i < checkboxs.size(); i++)
-				checkboxs[i]->set_checked(*(int*)data & info->item(i)->value(), INVALID_POINTER);
+			for (auto i = 0; i < checkboxes.size(); i++)
+				checkboxes[i]->set_checked(*(int*)data & info->item(i)->value(), INVALID_POINTER);
 		}
 
 		void on_added() override
 		{
 			for (auto i = 0; i < entity->child_count(); i++)
-				checkboxs.push_back(entity->child(i)->child(0)->get_component(cCheckbox));
+				checkboxes.push_back(entity->child(i)->child(0)->get_component(cCheckbox));
 
 			update_view();
 
-			for (auto i = 0; i < checkboxs.size(); i++)
+			for (auto i = 0; i < checkboxes.size(); i++)
 			{
-				checkboxs[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+				checkboxes[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
 					{
 						auto idx = c.data<int>();
 						auto thiz = c.thiz<cEnumMultiDataTracker>();
 						auto v = *(int*)thiz->data;
 						auto f = thiz->info->item(idx)->value();
-						if (thiz->checkboxs[idx]->checked)
+						if (thiz->checkboxes[idx]->checked)
 							v |= f;
 						else
 							v &= ~f;
@@ -124,9 +127,10 @@ namespace flame
 		void(*on_changed)(Capture& c, bool v);
 		Capture capture;
 
-		cBoolDataTracker(void* _data, void(*on_changed)(Capture& c, bool v), const Capture& capture) :
+		cBoolDataTracker(void* _data, void(*on_changed)(Capture& c, bool v), const Capture& capture, cCheckbox* checkbox) :
 			on_changed(on_changed),
-			capture(capture)
+			capture(capture),
+			checkbox(checkbox)
 		{
 			data = _data;
 		}
@@ -169,10 +173,12 @@ namespace flame
 		void(*on_changed)(Capture& c, T v, bool exit_editing);
 		Capture capture;
 
-		cDigitalDataTracker(void* _data, void(*on_changed)(Capture& c, T v, bool exit_editing), const Capture& capture) :
+		cDigitalDataTracker(void* _data, void(*on_changed)(Capture& c, T v, bool exit_editing), const Capture& capture, cText* edit_text, cText* drag_text) :
 			drag_changed(false),
 			on_changed(on_changed),
-			capture(capture)
+			capture(capture),
+			edit_text(edit_text),
+			drag_text(drag_text)
 		{
 			data = _data;
 		}
@@ -267,12 +273,17 @@ namespace flame
 		void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing);
 		Capture capture;
 
-		cDigitalVecDataTracker(void* _data, void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing), const Capture& capture) :
+		cDigitalVecDataTracker(void* _data, void(*on_changed)(Capture& c, const Vec<N, T>& v, bool exit_editing), const Capture& capture, const std::array<cText* , N>& _edit_texts, const std::array<cText* , N>& _drag_texts) :
 			drag_changed(false),
 			on_changed(on_changed),
 			capture(capture)
 		{
 			data = _data;
+			for (auto i = 0; i < N; i++)
+			{
+				edit_texts[i] = _edit_texts[i];
+				drag_texts[i] = _drag_texts[i];
+			}
 		}
 
 		~cDigitalVecDataTracker() override
@@ -373,9 +384,10 @@ namespace flame
 		void(*on_changed)(Capture& c, const char* v);
 		Capture capture;
 
-		cStringADataTracker(void* _data, void(*on_changed)(Capture& c, const char* v), const Capture& capture) :
+		cStringADataTracker(void* _data, void(*on_changed)(Capture& c, const char* v), const Capture& capture, cText* text) :
 			on_changed(on_changed),
-			capture(capture)
+			capture(capture),
+			text(text)
 		{
 			data = _data;
 		}
@@ -418,9 +430,10 @@ namespace flame
 		void(*on_changed)(Capture& c, const wchar_t* v);
 		Capture capture;
 
-		cStringWDataTracker(void* _data, void(*on_changed)(Capture& c, const wchar_t* v), const Capture& capture) :
+		cStringWDataTracker(void* _data, void(*on_changed)(Capture& c, const wchar_t* v), const Capture& capture, cText* text) :
 			on_changed(on_changed),
-			capture(capture)
+			capture(capture),
+			text(text)
 		{
 			data = _data;
 		}
@@ -456,17 +469,7 @@ namespace flame
 		}
 	};
 
-	inline void create_enum_combobox(UI& ui, EnumInfo* info)
+	inline void create_enum_checkboxes(UI& ui, EnumInfo* info, bool text_after = true)
 	{
-		ui.e_begin_combobox();
-		for (auto i = 0; i < info->item_count(); i++)
-			ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
-		ui.e_end_combobox();
-	}
-
-	inline void create_enum_checkboxs(UI& ui, EnumInfo* info)
-	{
-		for (auto i = 0; i < info->item_count(); i++)
-			ui.e_checkbox(s2w(info->item(i)->name()).c_str());
 	}
 }

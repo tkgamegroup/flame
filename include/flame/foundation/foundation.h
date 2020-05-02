@@ -571,6 +571,16 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 
+	struct StackFrameInfo
+	{
+		StringA file;
+		uint line;
+		StringA function;
+	};
+
+	FLAME_FOUNDATION_EXPORTS Array<void*> get_stack_frames();
+	FLAME_FOUNDATION_EXPORTS Array<StackFrameInfo> get_stack_frame_infos(uint frame_count, void** frames);
+
 	enum FileChangeType
 	{
 		FileAdded,

@@ -26,12 +26,6 @@ namespace flame
 			if (!element)
 				return;
 
-			if (element->debug_level > 0)
-			{
-				debug_break();
-				element->debug_level = 0;
-			}
-
 			const auto& scissor = canvas->scissor();
 			auto r = rect(element->global_pos, element->global_size);
 			element->clipped = !rect_overlapping(scissor, r);

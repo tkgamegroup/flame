@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/universe/systems/layout_management.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -7,8 +8,12 @@ namespace flame
 	struct cElement;
 	struct cAligner;
 
+	struct sLayoutManagement;
+
 	struct cLayout : Component
 	{
+		sLayoutManagement* management;
+
 		cElement* element;
 		cAligner* aligner;
 
@@ -25,6 +30,12 @@ namespace flame
 		cLayout() :
 			Component("cLayout")
 		{
+		}
+
+		void mark_dirty()
+		{
+			if (management)
+				management->add_to_update_list(this);
 		}
 
 		FLAME_UNIVERSE_EXPORTS void set_x_scroll_offset(float x);

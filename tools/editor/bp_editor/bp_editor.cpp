@@ -609,7 +609,10 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		ui.next_element_color = ui.style(FrameColorNormal).c;
 		ui.e_begin_layout(LayoutHorizontal, 8.f);
 		ui.c_aligner(AlignMinMax, 0);
-		bp_editor.c_auto_update = ui.e_checkbox(L"Auto (F3)")->get_component(cCheckbox);
+		ui.e_begin_layout(LayoutHorizontal, 4.f);
+		ui.e_text(L"Auto (F3)");
+		bp_editor.c_auto_update = ui.e_checkbox()->get_component(cCheckbox);
+		ui.e_end_layout();
 		bp_editor.c_auto_update->data_changed_listeners.add([](Capture&, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
 				bp_editor.auto_update = bp_editor.c_auto_update->checked;

@@ -57,13 +57,6 @@ namespace flame
 			while (!update_list.empty())
 			{
 				auto l = update_list.back();
-				
-				if (l->debug_level > 0)
-				{
-					debug_break();
-					l->debug_level = 0;
-				}
-
 				update_list.erase(update_list.end() - 1);
 				l->pending_update = false;
 				if (l->entity->global_visibility)

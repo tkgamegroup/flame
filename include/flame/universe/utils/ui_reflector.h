@@ -195,6 +195,7 @@ namespace flame
 					auto dp = selected->get_component(cDataKeeper);
 					ui->parents.push(e_detail);
 					ui->e_text(s2w(dp->get_string_item(FLAME_CHASH("desc"))).c_str());
+
 					struct Capturing
 					{
 						cReflector* thiz;
@@ -202,7 +203,44 @@ namespace flame
 					}capture;
 					capture.thiz = this;
 					capture.e = (Entity*)dp->get_common_item(FLAME_CHASH("entity")).p;
-					ui->e_button(L"Debug cElelemnt In Renderer", [](Capture& c) {
+					ui->e_button(L"See Create Stack", [](Capture& c) {
+						auto& capture = c.data<Capturing>();
+						Entity* ret = nullptr;
+						capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
+						if (ret)
+						{
+							auto frames = capture.e->get_create_stack_frames();
+							auto infos = get_stack_frame_infos(frames.s, frames.v);
+
+							auto ui = capture.thiz->ui;
+							ui->e_begin_dialog();
+								//ui->e_begin_splitter(SplitterHorizontal);
+								ui->next_element_padding = 4.f;
+								ui->next_element_frame_thickness = 2.f;
+								ui->next_element_frame_color = ui->style(ForegroundColor).c;
+								//ui->e_begin_scrollbar(ScrollbarVertical, true);
+								ui->e_begin_list(false);
+								for (auto i = 0; i < infos.s; i++)
+								{
+									auto& info = infos[i];
+									ui->e_list_item(s2w(sfmt("%s\n%s: %d", info.function.v, info.file.v, info.line)).c_str(), false);
+								}
+								ui->e_end_list();
+								//ui->e_end_scrollbar();
+
+								//ui->next_element_padding = 4.f;
+								//ui->next_element_frame_thickness = 2.f;
+								//ui->next_element_frame_color = ui->style(ForegroundColor).c;
+								//ui->e_begin_scrollbar(ScrollbarVertical, true);
+								//ui->e_begin_layout(LayoutVertical, 4.f, false, false);
+								//ui->c_aligner(AlignMinMax, AlignMinMax);
+								//ui->e_end_layout();
+								//ui->e_end_scrollbar();
+								//ui->e_end_splitter();
+							ui->e_end_dialog();
+						}
+					}, Capture().set_data(&capture));
+					ui->e_button(L"Debug Drawing", [](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						Entity* ret = nullptr;
 						capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
@@ -210,10 +248,13 @@ namespace flame
 						{
 							auto ce = capture.e->get_component(cElement);
 							if (ce)
+							{
 								ce->debug_level = 1;
+								ce->mark_dirty();
+							}
 						}
 					}, Capture().set_data(&capture));
-					ui->e_button(L"Debug cLayout In Management", [](Capture& c) {
+					ui->e_button(L"Debug Layout", [](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						Entity* ret = nullptr;
 						capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
@@ -221,7 +262,10 @@ namespace flame
 						{
 							auto cl = capture.e->get_component(cLayout);
 							if (cl)
+							{
 								cl->debug_level = 1;
+								cl->mark_dirty();
+							}
 						}
 					}, Capture().set_data(&capture));
 					ui->parents.pop();

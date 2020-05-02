@@ -2,24 +2,6 @@
 
 #include "scene_editor.h"
 
-void begin_item(const wchar_t* title)
-{
-	auto& ui = scene_editor.window->ui;
-	ui.e_begin_layout(LayoutVertical, 4.f);
-	ui.e_text(title);
-	auto e_data = ui.e_empty();
-	ui.c_element()->padding.x() = ui.style(FontSize).u.x();
-	ui.c_layout(LayoutVertical)->item_padding = 2.f;
-	ui.e_end_layout();
-	ui.parents.push(e_data);
-}
-
-void end_item()
-{
-	auto& ui = scene_editor.window->ui;
-	ui.parents.pop();
-}
-
 struct SetterCapture
 {
 	void* p;
@@ -137,7 +119,8 @@ void cInspector::refresh()
 		ui.e_text(L"Nothing Selected");
 	else
 	{
-		begin_item(L"name");
+		ui.e_begin_layout(LayoutHorizontal, 4.f);
+		ui.e_text(L"name");
 		ui.e_edit(100.f, s2w(scene_editor.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
@@ -154,14 +137,16 @@ void cInspector::refresh()
 			}
 			return true;
 		}, Capture());
-		end_item();
-		begin_item(L"visible");
-		ui.e_checkbox(L"", scene_editor.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+		ui.e_end_layout();
+
+		ui.e_begin_layout(LayoutHorizontal, 4.f);
+		ui.e_text(L"visible");
+		ui.e_checkbox(scene_editor.selected->visible_)->get_component(cCheckbox)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("checked"))
 				scene_editor.selected->set_visible(c.current<cCheckbox>()->checked);
 			return true;
 		}, Capture());
-		end_item();
+		ui.e_end_layout();
 
 		auto components = scene_editor.selected->get_components();
 		for (auto i = 0; i < components.s; i++)
@@ -210,119 +195,133 @@ void cInspector::refresh()
 				auto base_hash = type->base_hash();
 				auto pdata = (char*)component + v->offset();
 
-				begin_item(s2w(v->name()).c_str());
-				auto e_data = ui.parents.top();
+				ui.e_begin_layout(LayoutHorizontal, 4.f);
+				ui.e_text(s2w(v->name()).c_str());
+
+				auto e_data = ui.e_begin_layout(LayoutVertical, 4.f);
 
 				auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
 				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva() : nullptr;
 
-				switch (type->tag())
-				{
-				case TypeEnumSingle:
-				{
-					auto info = find_enum(base_hash);
-					create_enum_combobox(ui, info);
+				//switch (type->tag())
+				//{
+				//case TypeEnumSingle:
+				//{
+				//	auto info = find_enum(base_hash);
+				//	ui.e_begin_combobox();
+				//	for (auto i = 0; i < info->item_count(); i++)
+				//		ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
+				//	ui.e_end_combobox();
 
-					e_data->add_component(new_object<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
-						;
-					}, Capture()));
-				}
-				break;
-				case TypeEnumMulti:
-				{
-					auto info = find_enum(base_hash);
-					create_enum_checkboxs(ui, info);
+				//	e_data->add_component(new_object<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
+				//		;
+				//	}, Capture()));
+				//}
+				//break;
+				//case TypeEnumMulti:
+				//{
+				//	auto info = find_enum(base_hash);
+				//	for (auto i = 0; i < info->item_count(); i++)
+				//	{
+				//		ui.e_begin_layout(LayoutHorizontal, 4.f);
+				//		auto str = s2w(info->item(i)->name());
+				//		ui.e_checkbox();
+				//		ui.e_text(str.c_str());
+				//		ui.e_end_layout();
+				//	}
 
-					e_data->add_component(new_object<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
-						;
-					}, Capture()));
-				}
-				break;
-				case TypeData:
-				{
-					SetterCapture setter_capture;
-					setter_capture.p = pdata;
-					setter_capture.o = component;
-					setter_capture.f = f_set_addr;
-					switch (base_hash)
-					{
-					case FLAME_CHASH("bool"):
-						ui.e_checkbox(L"");
+				//	e_data->add_component(new_object<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
+				//		;
+				//	}, Capture()));
+				//}
+				//break;
+				//case TypeData:
+				//{
+				//	SetterCapture setter_capture;
+				//	setter_capture.p = pdata;
+				//	setter_capture.o = component;
+				//	setter_capture.f = f_set_addr;
+				//	switch (base_hash)
+				//	{
+				//	case FLAME_CHASH("bool"):
+				//		ui.e_checkbox();
 
-						e_data->add_component(new_object<cBoolDataTracker>(pdata, [](Capture& c, bool v) {
-							;
-						}, Capture()));
-						break;
-					case FLAME_CHASH("int"):
-						create_edit<int>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(2+int)"):
-						create_vec_edit<2, int>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(3+int)"):
-						create_vec_edit<3, int>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(4+int)"):
-						create_vec_edit<4, int>(&setter_capture);
-						break;
-					case FLAME_CHASH("uint"):
-						create_edit<uint>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(2+uint)"):
-						create_vec_edit<2, uint>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(3+uint)"):
-						create_vec_edit<3, uint>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(4+uint)"):
-						create_vec_edit<4, uint>(&setter_capture);
-						break;
-					case FLAME_CHASH("float"):
-						create_edit<float>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(2+float)"):
-						create_vec_edit<2, float>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(3+float)"):
-						create_vec_edit<3, float>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(4+float)"):
-						create_vec_edit<4, float>(&setter_capture);
-						break;
-					case FLAME_CHASH("uchar"):
-						create_edit<uchar>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(2+uchar)"):
-						create_vec_edit<2, uchar>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(3+uchar)"):
-						create_vec_edit<3, uchar>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::Vec(4+uchar)"):
-						create_vec_edit<4, uchar>(&setter_capture);
-						break;
-					case FLAME_CHASH("flame::StringA"):
-						ui.e_edit(50.f);
+				//		e_data->add_component(new_object<cBoolDataTracker>(pdata, [](Capture& c, bool v) {
+				//			;
+				//		}, Capture()));
+				//		break;
+				//	case FLAME_CHASH("int"):
+				//		create_edit<int>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(2+int)"):
+				//		create_vec_edit<2, int>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(3+int)"):
+				//		create_vec_edit<3, int>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(4+int)"):
+				//		create_vec_edit<4, int>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("uint"):
+				//		create_edit<uint>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(2+uint)"):
+				//		create_vec_edit<2, uint>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(3+uint)"):
+				//		create_vec_edit<3, uint>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(4+uint)"):
+				//		create_vec_edit<4, uint>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("float"):
+				//		create_edit<float>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(2+float)"):
+				//		create_vec_edit<2, float>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(3+float)"):
+				//		create_vec_edit<3, float>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(4+float)"):
+				//		create_vec_edit<4, float>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("uchar"):
+				//		create_edit<uchar>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(2+uchar)"):
+				//		create_vec_edit<2, uchar>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(3+uchar)"):
+				//		create_vec_edit<3, uchar>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::Vec(4+uchar)"):
+				//		create_vec_edit<4, uchar>(&setter_capture);
+				//		break;
+				//	case FLAME_CHASH("flame::StringA"):
+				//		ui.e_edit(50.f);
 
-						e_data->add_component(new_object<cStringADataTracker>(pdata, [](Capture& c, const char* v) {
-							;
-						}, Capture()));
-						break;
-					case FLAME_CHASH("flame::StringW"):
-						ui.e_edit(50.f);
+				//		e_data->add_component(new_object<cStringADataTracker>(pdata, [](Capture& c, const char* v) {
+				//			;
+				//		}, Capture()));
+				//		break;
+				//	case FLAME_CHASH("flame::StringW"):
+				//		ui.e_edit(50.f);
 
-						e_data->add_component(new_object<cStringWDataTracker>(pdata, [](Capture& c, const wchar_t* v) {
-							;
-						}, Capture()));
-						break;
-					}
-				}
-					break;
-				}
+				//		e_data->add_component(new_object<cStringWDataTracker>(pdata, [](Capture& c, const wchar_t* v) {
+				//			;
+				//		}, Capture()));
+				//		break;
+				//	}
+				//}
+				//	break;
+				//}
 
 				c_component_tracker->vs[FLAME_HASH(v->name())] = e_data->get_component(cDataTracker);
 
-				end_item();
+				ui.e_end_layout();
+
+				ui.e_end_layout();
 			}
 
 			ui.e_end_layout();

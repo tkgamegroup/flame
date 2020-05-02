@@ -11,6 +11,8 @@ namespace flame
 {
 	cLayoutPrivate::cLayoutPrivate(LayoutType _type)
 	{
+		management = nullptr;
+		
 		element = nullptr;
 		aligner = nullptr;
 
@@ -24,7 +26,6 @@ namespace flame
 
 		content_size = Vec2f(0.f);
 
-		management = nullptr;
 		pending_update = false;
 
 		element_data_listener = nullptr;
@@ -205,6 +206,14 @@ namespace flame
 
 	void cLayoutPrivate::update()
 	{
+#ifdef _DEBUG
+		if (debug_level > 0)
+		{
+			debug_break();
+			debug_level = 0;
+		}
+#endif
+
 		if (als_dirty)
 		{
 			for (auto& al : als)

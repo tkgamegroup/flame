@@ -580,81 +580,80 @@ void cBPEditor::on_add_node(BP::Node* n)
 					{
 						auto input = n->input(i);
 
-						ui.e_begin_layout(LayoutVertical, 2.f);
+						ui.e_begin_layout(LayoutVertical, 4.f);
 
 						ui.e_begin_layout(LayoutHorizontal);
-						ui.e_empty();
-						{
-							auto c_element = ui.c_element();
-							auto r = ui.style(FontSize).u.x();
-							c_element->size = r;
-							c_element->roundness = r * 0.4f;
-							c_element->roundness_lod = 2;
-							c_element->color = Vec4c(200, 200, 200, 255);
-						}
-						ui.c_event_receiver();
-						auto c_slot = new_object<cSlot>();
-						c_slot->s = input;
-						input->user_data = c_slot;
-						ui.current_entity->add_component(c_slot);
-						ui.e_begin_popup_menu(false);
-							ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
-							}, Capture().set_data(&input));
-							ui.e_menu_item(L"Reset Value", [](Capture& c) {
-							}, Capture().set_data(&input));
-							if (n_type == 'A')
+							ui.e_empty();
 							{
-								ui.e_menu_item(L"Remove Slot", [](Capture& c) {
-									auto input = c.thiz<BP::Slot>();
-									auto n = input->node();
-									if (n->input_count() == 1)
-										return;
-									bp_editor.select();
-									auto idx = input->index();
-									std::string type = n->type();
-									std::string id = n->id();
-									auto left_pos = type.find('(');
-									auto plus_pos = type.find('+');
-									auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
-									type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
-									NodeDesc d;
-									d.id = "";
-									d.type = type;
-									d.object_type = BP::ObjectReal;
-									d.pos = n->pos;
-									auto nn = bp_editor.add_node(d);
-									for (auto i = 0; i < n->input_count(); i++)
-									{
-										if (i == idx)
-											continue;
-										auto src = n->input(i);
-										auto dst = nn->input(i > idx ? i - 1 : i);
-										dst->set_data(src->data());
-										dst->link_to(src->link());
-									}
-									for (auto i = 0; i < n->output_count(); i++)
-									{
-										auto src = n->output(i);
-										auto dst = nn->output(i);
-										for (auto j = 0; j < src->link_count(); j++)
-											src->link(j)->link_to(dst);
-									}
-									bp_editor.remove_nodes({ n });
-									nn->set_id(id.c_str());
-								}, Capture().set_data(&input));
+								auto c_element = ui.c_element();
+								auto r = ui.style(FontSize).u.x();
+								c_element->size = r;
+								c_element->roundness = r * 0.4f;
+								c_element->roundness_lod = 2;
+								c_element->color = Vec4c(200, 200, 200, 255);
 							}
-						ui.e_end_popup_menu();
+							ui.c_event_receiver();
+							auto c_slot = new_object<cSlot>();
+							c_slot->s = input;
+							input->user_data = c_slot;
+							ui.current_entity->add_component(c_slot);
+							ui.e_begin_popup_menu(false);
+								ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
+								}, Capture().set_data(&input));
+								ui.e_menu_item(L"Reset Value", [](Capture& c) {
+								}, Capture().set_data(&input));
+								if (n_type == 'A')
+								{
+									ui.e_menu_item(L"Remove Slot", [](Capture& c) {
+										auto input = c.thiz<BP::Slot>();
+										auto n = input->node();
+										if (n->input_count() == 1)
+											return;
+										bp_editor.select();
+										auto idx = input->index();
+										std::string type = n->type();
+										std::string id = n->id();
+										auto left_pos = type.find('(');
+										auto plus_pos = type.find('+');
+										auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
+										type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
+										NodeDesc d;
+										d.id = "";
+										d.type = type;
+										d.object_type = BP::ObjectReal;
+										d.pos = n->pos;
+										auto nn = bp_editor.add_node(d);
+										for (auto i = 0; i < n->input_count(); i++)
+										{
+											if (i == idx)
+												continue;
+											auto src = n->input(i);
+											auto dst = nn->input(i > idx ? i - 1 : i);
+											dst->set_data(src->data());
+											dst->link_to(src->link());
+										}
+										for (auto i = 0; i < n->output_count(); i++)
+										{
+											auto src = n->output(i);
+											auto dst = nn->output(i);
+											for (auto j = 0; j < src->link_count(); j++)
+												src->link(j)->link_to(dst);
+										}
+										bp_editor.remove_nodes({ n });
+										nn->set_id(id.c_str());
+									}, Capture().set_data(&input));
+								}
+							ui.e_end_popup_menu();
 
-						ui.e_text(s2w(input->name()).c_str())->get_component(cText)->color = type_color(input->type()->tag());
+							ui.push_style(TextColorNormal, common(type_color(input->type()->tag())));
+							auto e_name = ui.e_text(s2w(input->name()).c_str());
+							ui.pop_style(TextColorNormal);
 						ui.e_end_layout();
 
 						auto type = input->type();
 						auto tag = type->tag();
 						if (!input->link() && tag != TypePointer)
 						{
-							ui.next_element_padding = Vec4f(ui.style(FontSize).u.x(), 0.f, 0.f, 0.f);
-							auto e_data = ui.e_begin_layout(LayoutVertical, 2.f);
-
 							auto base_hash = type->base_hash();
 
 							switch (tag)
@@ -662,101 +661,110 @@ void cBPEditor::on_add_node(BP::Node* n)
 							case TypeEnumSingle:
 							{
 								auto info = find_enum(base_hash);
-								create_enum_combobox(ui, info);
+								ui.e_begin_combobox();
+								for (auto i = 0; i < info->item_count(); i++)
+									ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
+								ui.e_end_combobox();
 
-								e_data->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
-									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-								}, Capture().set_data(&input)));
+								//e_name->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
+								//	bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+								//}, Capture().set_data(&input)));
 							}
 							break;
 							case TypeEnumMulti:
 							{
 								auto info = find_enum(base_hash);
-								create_enum_checkboxs(ui, info);
+								for (auto i = 0; i < info->item_count(); i++)
+								{
+									ui.e_begin_layout(LayoutHorizontal, 4.f);
+									auto str = s2w(info->item(i)->name());
+									ui.e_checkbox();
+									ui.e_text(str.c_str());
+									ui.e_end_layout();
+								}
 
-								e_data->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
-									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-								}, Capture().set_data(&input)));
+								//e_name->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
+								//	bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+								//}, Capture().set_data(&input)));
 							}
 							break;
 							case TypeData:
-								switch (base_hash)
-								{
-								case FLAME_CHASH("bool"):
-									ui.e_checkbox(L"");
+								//switch (base_hash)
+								//{
+								//case FLAME_CHASH("bool"):
+								//	ui.e_checkbox();
 
-									e_data->add_component(new_object<cBoolDataTracker>(input->data(), [](Capture& c, bool v) {
-										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-									}, Capture().set_thiz(input)));
-									break;
-								case FLAME_CHASH("int"):
-									create_edit<int>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+int)"):
-									create_vec_edit<2, int>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+int)"):
-									create_vec_edit<3, int>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+int)"):
-									create_vec_edit<4, int>(this, input);
-									break;
-								case FLAME_CHASH("uint"):
-									create_edit<uint>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+uint)"):
-									create_vec_edit<2, uint>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+uint)"):
-									create_vec_edit<3, uint>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+uint)"):
-									create_vec_edit<4, uint>(this, input);
-									break;
-								case FLAME_CHASH("float"):
-									create_edit<float>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+float)"):
-									create_vec_edit<2, float>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+float)"):
-									create_vec_edit<3, float>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+float)"):
-									create_vec_edit<4, float>(this, input);
-									break;
-								case FLAME_CHASH("uchar"):
-									create_edit<uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(2+uchar)"):
-									create_vec_edit<2, uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(3+uchar)"):
-									create_vec_edit<3, uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::Vec(4+uchar)"):
-									create_vec_edit<4, uchar>(this, input);
-									break;
-								case FLAME_CHASH("flame::StringA"):
-									ui.e_edit(50.f);
+								//	e_name->add_component(new_object<cBoolDataTracker>(input->data(), [](Capture& c, bool v) {
+								//		bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+								//	}, Capture().set_thiz(input)));
+								//	break;
+								//case FLAME_CHASH("int"):
+								//	create_edit<int>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(2+int)"):
+								//	create_vec_edit<2, int>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(3+int)"):
+								//	create_vec_edit<3, int>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(4+int)"):
+								//	create_vec_edit<4, int>(this, input);
+								//	break;
+								//case FLAME_CHASH("uint"):
+								//	create_edit<uint>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(2+uint)"):
+								//	create_vec_edit<2, uint>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(3+uint)"):
+								//	create_vec_edit<3, uint>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(4+uint)"):
+								//	create_vec_edit<4, uint>(this, input);
+								//	break;
+								//case FLAME_CHASH("float"):
+								//	create_edit<float>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(2+float)"):
+								//	create_vec_edit<2, float>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(3+float)"):
+								//	create_vec_edit<3, float>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(4+float)"):
+								//	create_vec_edit<4, float>(this, input);
+								//	break;
+								//case FLAME_CHASH("uchar"):
+								//	create_edit<uchar>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(2+uchar)"):
+								//	create_vec_edit<2, uchar>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(3+uchar)"):
+								//	create_vec_edit<3, uchar>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::Vec(4+uchar)"):
+								//	create_vec_edit<4, uchar>(this, input);
+								//	break;
+								//case FLAME_CHASH("flame::StringA"):
+								//	ui.e_edit(50.f);
 
-									e_data->add_component(new_object<cStringADataTracker>(input->data(), [](Capture& c, const char* v) {
-										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
-									}, Capture().set_data(&input)));
-									break;
-								case FLAME_CHASH("flame::StringW"):
-									ui.e_edit(50.f);
+								//	e_name->add_component(new_object<cStringADataTracker>(input->data(), [](Capture& c, const char* v) {
+								//		bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+								//	}, Capture().set_data(&input)));
+								//	break;
+								//case FLAME_CHASH("flame::StringW"):
+								//	ui.e_edit(50.f);
 
-									e_data->add_component(new_object<cStringWDataTracker>(input->data(), [](Capture& c, const wchar_t* v) {
-										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
-									}, Capture().set_thiz(input)));
-									break;
-								}
+								//	e_name->add_component(new_object<cStringWDataTracker>(input->data(), [](Capture& c, const wchar_t* v) {
+								//		bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+								//	}, Capture().set_thiz(input)));
+								//	break;
+								//}
 								break;
 							}
-							ui.e_end_layout();
 
-							c_slot->tracker = e_data->get_component(cDataTracker);
+							c_slot->tracker = e_name->get_component(cDataTracker);
 						}
 
 						ui.e_end_layout();

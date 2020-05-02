@@ -676,10 +676,8 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_checkbox(const wchar_t* text, bool checked = false)
+		inline Entity* e_checkbox(bool checked = false)
 		{
-			if (text[0])
-				e_begin_layout(LayoutHorizontal, 4.f);
 			auto e = e_empty();
 			auto ce = c_element();
 			ce->size = 16.f;
@@ -695,11 +693,6 @@ namespace flame
 			cs->color_active[1] = style(ButtonColorActive).c;
 			cs->style();
 			c_checkbox()->set_checked(checked);
-			if (text[0])
-			{
-				e_text(text);
-				e_end_layout();
-			}
 			return e;
 		}
 
