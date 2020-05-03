@@ -564,9 +564,9 @@ void cBPEditor::on_add_node(BP::Node* n)
 							ui.current_entity->add_component(c_slot);
 							ui.e_begin_popup_menu(false);
 								ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
-								}, Capture().set_data(&input));
+								}, Capture().set_thiz(input));
 								ui.e_menu_item(L"Reset Value", [](Capture& c) {
-								}, Capture().set_data(&input));
+								}, Capture().set_thiz(input));
 								if (n_type == 'A')
 								{
 									ui.e_menu_item(L"Remove Slot", [](Capture& c) {
@@ -606,7 +606,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 										}
 										bp_editor.remove_nodes({ n });
 										nn->set_id(id.c_str());
-									}, Capture().set_data(&input));
+									}, Capture().set_thiz(input));
 								}
 							ui.e_end_popup_menu();
 
@@ -637,7 +637,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								e_name->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-								}, Capture().set_data(&input), combobox));
+								}, Capture().set_thiz(input), combobox));
 							}
 								break;
 							case TypeEnumMulti:
@@ -658,7 +658,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								e_name->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-								}, Capture().set_data(&input), checkboxes));
+								}, Capture().set_thiz(input), checkboxes));
 							}
 								break;
 							case TypeData:
@@ -691,7 +691,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 										else
 											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_data(&input), edit_text, drag_text));
+									}, Capture().set_thiz(input), edit_text, drag_text));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(2+int)"):
@@ -716,7 +716,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(3+int)"):
@@ -739,7 +739,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(4+int)"):
@@ -762,7 +762,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("uint"):
@@ -780,7 +780,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 										else
 											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_data(&input), edit_text, drag_text));
+									}, Capture().set_thiz(input), edit_text, drag_text));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(2+uint)"):
@@ -803,7 +803,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(3+uint)"):
@@ -826,7 +826,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(4+uint)"):
@@ -849,7 +849,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("float"):
@@ -867,7 +867,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 										else
 											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_data(&input), edit_text, drag_text));
+									}, Capture().set_thiz(input), edit_text, drag_text));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(2+float)"):
@@ -890,7 +890,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(3+float)"):
@@ -913,7 +913,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(4+float)"):
@@ -936,7 +936,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("uchar"):
@@ -954,7 +954,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 										else
 											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_data(&input), edit_text, drag_text));
+									}, Capture().set_thiz(input), edit_text, drag_text));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(2+uchar)"):
@@ -977,7 +977,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(3+uchar)"):
@@ -1000,7 +1000,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::Vec(4+uchar)"):
@@ -1023,7 +1023,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 										else
 											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_data(&input), edit_texts, drag_texts));
+									}, Capture().set_thiz(input), edit_texts, drag_texts));
 								}
 									break;
 								case FLAME_CHASH("flame::StringA"):
@@ -1035,7 +1035,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 									e_name->add_component(new_object<cStringADataTracker>(input->data(), [](Capture& c, const char* v) {
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
-									}, Capture().set_data(&input), text));
+									}, Capture().set_thiz(input), text));
 								}
 									break;
 								case FLAME_CHASH("flame::StringW"):

@@ -46,7 +46,7 @@ namespace flame
 		}
 
 		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
-		FLAME_UNIVERSE_EXPORTS static void make(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static void make(World* w, Entity* e);
 	};
 
 	struct cDockerTab : Component
@@ -69,10 +69,10 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void take_away(bool close);
 
 		FLAME_UNIVERSE_EXPORTS static cDockerTab* create();
-		FLAME_UNIVERSE_EXPORTS static void make_floating_container(Entity* e, const Vec2f& pos, const Vec2f& size);
-		FLAME_UNIVERSE_EXPORTS static void make_static_container(Entity* e);
-		FLAME_UNIVERSE_EXPORTS static void make_layout(Entity* e, LayoutType type);
-		FLAME_UNIVERSE_EXPORTS static void make_docker(Entity* e);
+		FLAME_UNIVERSE_EXPORTS static void make_floating_container(World* w, Entity* e, const Vec2f& pos, const Vec2f& size);
+		FLAME_UNIVERSE_EXPORTS static void make_static_container(World* w, Entity* e);
+		FLAME_UNIVERSE_EXPORTS static void make_layout(World* w, Entity* e, LayoutType type);
+		FLAME_UNIVERSE_EXPORTS static void make_docker(World* w, Entity* e);
 	};
 
 	struct cDockerTabbar : Component

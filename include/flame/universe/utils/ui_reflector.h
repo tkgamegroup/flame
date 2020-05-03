@@ -234,30 +234,37 @@ namespace flame
 							auto infos = get_stack_frame_infos(frames.s, frames.v);
 
 							auto ui = capture.thiz->ui;
-							ui->e_begin_dialog();
-								//ui->e_begin_splitter(SplitterHorizontal);
+							auto dialog = ui->e_begin_dialog();
+							dialog->get_component(cElement)->size = Vec2f(500.f, 300.f);
+							auto cl = dialog->get_component(cLayout);
+							cl->width_fit_children = false;
+							cl->height_fit_children = false;
+							cl->fence = -1;
+								ui->e_begin_splitter(SplitterVertical);
 								ui->next_element_padding = 4.f;
 								ui->next_element_frame_thickness = 2.f;
 								ui->next_element_frame_color = ui->style(ForegroundColor).c;
-								//ui->e_begin_scrollbar(ScrollbarVertical, true);
-								ui->e_begin_list(false);
+								ui->e_begin_scrollbar(ScrollbarVertical, true);
+								ui->e_begin_list(true);
 								for (auto i = 0; i < infos.s; i++)
 								{
 									auto& info = infos[i];
 									ui->e_list_item(s2w(sfmt("%s\n%s: %d", info.function.v, info.file.v, info.line)).c_str(), false);
 								}
 								ui->e_end_list();
-								//ui->e_end_scrollbar();
+								ui->e_end_scrollbar();
 
-								//ui->next_element_padding = 4.f;
-								//ui->next_element_frame_thickness = 2.f;
-								//ui->next_element_frame_color = ui->style(ForegroundColor).c;
-								//ui->e_begin_scrollbar(ScrollbarVertical, true);
-								//ui->e_begin_layout(LayoutVertical, 4.f, false, false);
-								//ui->c_aligner(AlignMinMax, AlignMinMax);
-								//ui->e_end_layout();
-								//ui->e_end_scrollbar();
-								//ui->e_end_splitter();
+								ui->next_element_padding = 4.f;
+								ui->next_element_frame_thickness = 2.f;
+								ui->next_element_frame_color = ui->style(ForegroundColor).c;
+								ui->e_begin_scrollbar(ScrollbarVertical, true);
+								ui->e_begin_layout(LayoutVertical, 4.f, false, false);
+								ui->c_aligner(AlignMinMax, AlignMinMax);
+								ui->e_end_layout();
+								ui->e_end_scrollbar();
+								ui->e_end_splitter();
+
+								ui->e_size_dragger();
 							ui->e_end_dialog();
 						}
 					}, Capture().set_data(&capture));

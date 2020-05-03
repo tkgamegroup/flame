@@ -109,9 +109,9 @@ namespace flame
 		return new cSplitterPrivate(type);
 	}
 
-	void cSplitter::make(Entity* e, SplitterType type)
+	void cSplitter::make(World* w, Entity* e, SplitterType type)
 	{
-		auto sg = (StyleGetter*)e->world()->find_object(FLAME_CHASH("StyleGetter"), 0);
+		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 		auto ce = cElement::create();
 		ce->size = 8.f;
 		e->add_component(ce);

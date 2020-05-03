@@ -863,7 +863,7 @@ namespace flame
 			c_layout(type == SplitterHorizontal ? LayoutHorizontal : LayoutVertical, false, false);
 			parents.push(e);
 			e_empty();
-			cSplitter::make(current_entity, type);
+			cSplitter::make(current_root->world(), current_entity, type);
 			return e;
 		}
 
@@ -1246,7 +1246,7 @@ namespace flame
 		inline Entity* e_size_dragger()
 		{
 			auto e = e_empty();
-			cSizeDragger::make(e);
+			cSizeDragger::make(current_root->world(), e);
 			return e;
 		}
 
@@ -1310,7 +1310,7 @@ namespace flame
 		inline Entity* e_begin_docker_floating_container()
 		{
 			auto e = e_empty();
-			cDockerTab::make_floating_container(e, next_element_pos, next_element_size);
+			cDockerTab::make_floating_container(current_root->world(), e, next_element_pos, next_element_size);
 			next_element_pos = next_element_size = 0.f;
 			parents.push(e);
 			return e;
@@ -1324,7 +1324,7 @@ namespace flame
 		inline Entity* e_begin_docker_static_container()
 		{
 			auto e = e_empty();
-			cDockerTab::make_static_container(e);
+			cDockerTab::make_static_container(current_root->world(), e);
 			parents.push(e);
 			return e;
 		}
@@ -1337,7 +1337,7 @@ namespace flame
 		inline Entity* e_begin_docker_layout(LayoutType type)
 		{
 			auto e = e_empty();
-			cDockerTab::make_layout(e, type);
+			cDockerTab::make_layout(current_root->world(), e, type);
 			parents.push(e);
 			return e;
 		}
@@ -1350,7 +1350,7 @@ namespace flame
 		inline Entity* e_begin_docker()
 		{
 			auto e = e_empty();
-			cDockerTab::make_docker(e);
+			cDockerTab::make_docker(current_root->world(), e);
 			parents.push(e);
 			return e;
 		}

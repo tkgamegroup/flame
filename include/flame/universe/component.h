@@ -4,8 +4,6 @@
 
 namespace flame
 {
-	struct Entity;
-
 	struct Component : Object
 	{
 		Entity* entity;
