@@ -895,7 +895,7 @@ namespace flame
 			parents.pop();
 		}
 
-		inline Entity* e_list_item(const wchar_t* text, bool align = true)
+		inline Entity* e_list_item(const wchar_t* text, uint align_flags = AlignMinMax)
 		{
 			auto e = e_empty();
 			c_element();
@@ -910,8 +910,8 @@ namespace flame
 			cs->color_hovering[1] = style(SelectedColorHovering).c;
 			cs->color_active[1] = style(SelectedColorActive).c;
 			cs->style();
-			if (align)
-				c_aligner(AlignMinMax, 0);
+			if (align_flags)
+				c_aligner(align_flags, 0);
 			c_list_item();
 			return e;
 		}

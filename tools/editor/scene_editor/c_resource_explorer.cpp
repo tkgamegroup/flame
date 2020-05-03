@@ -232,7 +232,7 @@ Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_i
 {
 	auto& ui = scene_editor.window->ui;
 	ui.push_style(FrameColorNormal, common(Vec4c(0)));
-	auto e_item = ui.e_list_item(L"", false);
+	auto e_item = ui.e_list_item(L"", 0);
 	ui.pop_style(FrameColorNormal);
 	ui.c_layout(LayoutVertical)->item_padding = 4.f;
 	ui.parents.push(e_item);

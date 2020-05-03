@@ -209,16 +209,33 @@ namespace flame
 #endif
 	}
 
-	void do_simple_dispatch_loop()
+	void do_simple_dispatch_loop(void(callback)(Capture& c), const Capture& capture)
 	{
-		for (;;)
+		if (callback)
 		{
-			MSG msg;
-			while (GetMessage(&msg, NULL, 0, 0))
+			for (;;)
 			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
+				MSG msg;
+				while (GetMessage(&msg, NULL, 0, 0))
+				{
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
 			}
+		}
+		else
+		{
+			for (;;)
+			{
+				MSG msg;
+				while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+				{
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
+				callback((Capture&)capture);
+			}
+			f_free(capture._data);
 		}
 	}
 
@@ -649,6 +666,192 @@ namespace flame
 		return KeyNull;
 	}
 
+	int key_to_vk_code(Key key)
+	{
+#ifdef FLAME_WINDOWS
+		switch (key)
+		{
+		case Key_Backspace:
+			return VK_BACK;
+		case Key_Tab:
+			return VK_TAB;
+		case Key_Enter:
+			return VK_RETURN;
+		case Key_Shift:
+			return VK_SHIFT;
+		case Key_Ctrl:
+			return VK_CONTROL;
+		case Key_Alt:
+			return VK_MENU;
+		case Key_Pause:
+			return VK_PAUSE;
+		case Key_CapsLock:
+			return VK_CAPITAL;
+		case Key_Esc:
+			return VK_ESCAPE;
+		case Key_Space:
+			return VK_SPACE;
+		case Key_PgUp:
+			return VK_PRIOR;
+		case Key_PgDn:
+			return VK_NEXT;
+		case Key_End:
+			return VK_END;
+		case Key_Home:
+			return VK_HOME;
+		case Key_Left:
+			return VK_LEFT;
+		case Key_Up:
+			return VK_UP;
+		case Key_Right:
+			return VK_RIGHT;
+		case Key_Down:
+			return VK_DOWN;
+		case Key_PrtSc:
+			return VK_SNAPSHOT;
+		case Key_Ins:
+			return VK_INSERT;
+		case Key_Del:
+			return VK_DELETE;
+		case Key_0:
+			return '0';
+		case Key_1:
+			return '1';
+		case Key_2:
+			return '2';
+		case Key_3:
+			return '3';
+		case Key_4:
+			return '4';
+		case Key_5:
+			return '5';
+		case Key_6:
+			return '6';
+		case Key_7:
+			return '7';
+		case Key_8:
+			return '8';
+		case Key_9:
+			return '9';
+		case Key_A:
+			return 'A';
+		case Key_B:
+			return 'B';
+		case Key_C:
+			return 'C';
+		case Key_D:
+			return 'D';
+		case Key_E:
+			return 'E';
+		case Key_F:
+			return 'F';
+		case Key_G:
+			return 'G';
+		case Key_H:
+			return 'H';
+		case Key_I:
+			return 'I';
+		case Key_J:
+			return 'J';
+		case Key_K:
+			return 'K';
+		case Key_L:
+			return 'L';
+		case Key_M:
+			return 'M';
+		case Key_N:
+			return 'N';
+		case Key_O:
+			return 'O';
+		case Key_P:
+			return 'P';
+		case Key_Q:
+			return 'Q';
+		case Key_R:
+			return 'R';
+		case Key_S:
+			return 'S';
+		case Key_T:
+			return 'T';
+		case Key_U:
+			return 'U';
+		case Key_V:
+			return 'V';
+		case Key_W:
+			return 'W';
+		case Key_X:
+			return 'X';
+		case Key_Y:
+			return 'Y';
+		case Key_Z:
+			return 'Z';
+		case Key_Numpad0:
+			return VK_NUMPAD0;
+		case Key_Numpad1:
+			return VK_NUMPAD1;
+		case Key_Numpad2:
+			return VK_NUMPAD2;
+		case Key_Numpad3:
+			return VK_NUMPAD3;
+		case Key_Numpad4:
+			return VK_NUMPAD4;
+		case Key_Numpad5:
+			return VK_NUMPAD5;
+		case Key_Numpad6:
+			return VK_NUMPAD6;
+		case Key_Numpad7:
+			return VK_NUMPAD7;
+		case Key_Numpad8:
+			return VK_NUMPAD8;
+		case Key_Numpad9:
+			return VK_NUMPAD9;
+		case Key_Add:
+			return VK_ADD;
+		case Key_Subtract:
+			return VK_SUBTRACT;
+		case Key_Multiply:
+			return VK_MULTIPLY;
+		case Key_Divide:
+			return VK_DIVIDE;
+		case Key_Separator:
+			return VK_SEPARATOR;
+		case Key_Decimal:
+			return VK_DECIMAL;
+		case Key_F1:
+			return VK_F1;
+		case Key_F2:
+			return VK_F2;
+		case Key_F3:
+			return VK_F3;
+		case Key_F4:
+			return VK_F4;
+		case Key_F5:
+			return VK_F5;
+		case Key_F6:
+			return VK_F6;
+		case Key_F7:
+			return VK_F7;
+		case Key_F8:
+			return VK_F8;
+		case Key_F9:
+			return VK_F9;
+		case Key_F10:
+			return VK_F10;
+		case Key_F11:
+			return VK_F11;
+		case Key_F12:
+			return VK_F12;
+		case Key_NumLock:
+			return VK_NUMLOCK;
+		case Key_ScrollLock:
+			return VK_SCROLL;
+		default:
+			return KeyNull;
+		}
+#endif
+		return KeyNull;
+	}
+
 	bool is_modifier_pressing(Key k, int left_or_right)
 	{
 #ifdef FLAME_WINDOWS
@@ -750,6 +953,65 @@ namespace flame
 		}
 	}
 
+	void send_global_key_event(KeyState action, Key key)
+	{
+		auto flags = -1;
+		switch (action)
+		{
+		case KeyStateDown:
+			flags = 0;
+			break;
+		case KeyStateUp:
+			flags = KEYEVENTF_KEYUP;
+			break;
+		}
+		if (flags != -1)
+			keybd_event(key_to_vk_code(key), 0, flags, 0);
+	}
+
+	void send_global_mouse_event(KeyState action, MouseKey key)
+	{
+		auto flags = -1;
+		switch (key)
+		{
+		case Mouse_Left:
+			switch (action)
+			{
+			case KeyStateDown:
+				flags = MOUSEEVENTF_LEFTDOWN;
+				break;
+			case KeyStateUp:
+				flags = MOUSEEVENTF_LEFTUP;
+				break;
+			}
+			break;
+		case Mouse_Right:
+			switch (action)
+			{
+			case KeyStateDown:
+				flags = MOUSEEVENTF_RIGHTDOWN;
+				break;
+			case KeyStateUp:
+				flags = MOUSEEVENTF_RIGHTUP;
+				break;
+			}
+			break;
+		case Mouse_Middle:
+			switch (action)
+			{
+			case KeyStateDown:
+				flags = MOUSEEVENTF_MIDDLEDOWN;
+				break;
+			case KeyStateUp:
+				flags = MOUSEEVENTF_MIDDLEUP;
+				break;
+			}
+			break;
+		}
+		if (flags != -1)
+			mouse_event(flags, 0, 0, 0, NULL);
+	}
+
 	Array<void*> get_stack_frames()
 	{
 		Array<void*> ret;
@@ -762,7 +1024,6 @@ namespace flame
 	Array<StackFrameInfo> get_stack_frame_infos(uint frame_count, void** frames)
 	{
 		Array<StackFrameInfo> ret;
-		ret.resize(frame_count);
 
 		auto process = GetCurrentProcess();
 		SymInitialize(process, nullptr, true); 
@@ -781,10 +1042,11 @@ namespace flame
 			SymFromAddr(process, frame, nullptr, symbol);
 			if (SymGetLineFromAddr64(process, (DWORD64)frame, &displacement, line))
 			{
-				auto& info = ret[i];
+				StackFrameInfo info;
 				info.file = line->FileName;
 				info.line = line->LineNumber;
 				info.function = symbol->Name;
+				ret.push_back(info);
 			}
 		}
 		delete[] line;

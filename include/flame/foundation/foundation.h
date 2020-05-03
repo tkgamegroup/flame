@@ -553,7 +553,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void debug_break();
-	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop();
+	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop(void(callback)(Capture& c) = nullptr, const Capture& capture = Capture());
 	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
@@ -570,6 +570,8 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
+	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyState action, Key key);
+	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(KeyState action, MouseKey key);
 
 	struct StackFrameInfo
 	{

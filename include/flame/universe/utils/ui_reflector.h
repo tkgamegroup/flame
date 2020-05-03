@@ -230,6 +230,8 @@ namespace flame
 						capture.thiz->find_target_in_tree(capture.thiz->e_tree, capture.e, ret);
 						if (ret)
 						{
+							capture.thiz->recording = false;
+
 							auto frames = capture.e->get_create_stack_frames();
 							auto infos = get_stack_frame_infos(frames.s, frames.v);
 
@@ -240,29 +242,53 @@ namespace flame
 							cl->width_fit_children = false;
 							cl->height_fit_children = false;
 							cl->fence = -1;
-								ui->e_begin_splitter(SplitterVertical);
-								ui->next_element_padding = 4.f;
-								ui->next_element_frame_thickness = 2.f;
-								ui->next_element_frame_color = ui->style(ForegroundColor).c;
+								auto e_list = Entity::create();
+
 								ui->e_begin_scrollbar(ScrollbarVertical, true);
+								ui->next_entity = e_list;
 								ui->e_begin_list(true);
 								for (auto i = 0; i < infos.s; i++)
 								{
 									auto& info = infos[i];
-									ui->e_list_item(s2w(sfmt("%s\n%s: %d", info.function.v, info.file.v, info.line)).c_str(), false);
+									ui->e_list_item(s2w(sfmt("%s\n%s: %d", info.function.v, info.file.v, info.line)).c_str(), AlignMinMax | AlignGreedy);
+									auto dk = ui->c_data_keeper();
+									dk->set_string_item(FLAME_CHASH("file"), info.file.v);
+									dk->set_common_item(FLAME_CHASH("line"), common(Vec1u(info.line)));
 								}
 								ui->e_end_list();
 								ui->e_end_scrollbar();
 
-								ui->next_element_padding = 4.f;
-								ui->next_element_frame_thickness = 2.f;
-								ui->next_element_frame_color = ui->style(ForegroundColor).c;
-								ui->e_begin_scrollbar(ScrollbarVertical, true);
-								ui->e_begin_layout(LayoutVertical, 4.f, false, false);
-								ui->c_aligner(AlignMinMax, AlignMinMax);
+								ui->e_begin_layout(LayoutHorizontal, 4.f)->get_component(cLayout)->fence = -1;
+								ui->c_aligner(AlignMinMax, 0);
+								ui->e_button(L"Open In Visual Studio", [](Capture& c) {
+									auto selected = c.thiz<Entity>()->get_component(cList)->selected;
+									if (selected)
+									{
+										auto dk = selected->get_component(cDataKeeper);
+										auto fn = dk->get_string_item(FLAME_CHASH("file"));
+										if (std::filesystem::exists(fn))
+										{
+											auto cmd = wfmt(L"/edit \"%s\"", s2w(fn).c_str());
+											exec(L"devenv", (wchar_t*)cmd.c_str(), true, true);
+											set_clipboard(std::to_wstring(dk->get_common_item(FLAME_CHASH("line")).u[0]).c_str());
+											looper().add_event([](Capture& c) {
+												send_global_key_event(KeyStateDown, Key_Ctrl);
+												send_global_key_event(KeyStateDown, Key_G);
+												send_global_key_event(KeyStateUp, Key_G);
+												send_global_key_event(KeyStateDown, Key_V);
+												send_global_key_event(KeyStateUp, Key_V);
+												send_global_key_event(KeyStateDown, Key_Enter);
+												send_global_key_event(KeyStateUp, Key_Enter);
+												send_global_key_event(KeyStateUp, Key_Ctrl);
+											}, Capture(), 2.f);
+										}
+									}
+								}, Capture().set_thiz(e_list));
+								ui->e_button(L"OK", [](Capture& c) {
+									remove_layer(c.thiz<Entity>());
+								}, Capture().set_thiz(dialog->parent()));
+								ui->c_aligner(AlignMax, 0);
 								ui->e_end_layout();
-								ui->e_end_scrollbar();
-								ui->e_end_splitter();
 
 								ui->e_size_dragger();
 							ui->e_end_dialog();

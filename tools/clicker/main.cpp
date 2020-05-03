@@ -1,8 +1,6 @@
 #include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 
-#include <Windows.h>
-
 using namespace flame;
 
 static bool click = false;
@@ -17,21 +15,14 @@ int main(int argc, char **args)
 		}
 	}, Capture());
 
-	for (;;)
-	{
-		MSG msg;
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		Sleep(100);
+	do_simple_dispatch_loop([](Capture&) {
+		sleep(100);
 		if (click)
 		{
-			mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, NULL);
-			mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, NULL);
+			send_global_mouse_event(KeyStateDown, Mouse_Left);
+			send_global_mouse_event(KeyStateUp, Mouse_Left);
 		}
-	}
+	}, Capture());
 
 	return 0;
 }
