@@ -25,6 +25,7 @@ struct _2DGizmo
 	_2DGizmo();
 	void create();
 	void on_select();
+	void show_blocks(bool v);
 	void update_blocks();
 };
 

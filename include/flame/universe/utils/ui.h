@@ -680,7 +680,7 @@ namespace flame
 		{
 			auto e = e_empty();
 			auto ce = c_element();
-			ce->size = 16.f;
+			ce->size = 4.f + style(FontSize).u[0];
 			ce->frame_thickness = 3.f;
 			ce->frame_color = style(TextColorNormal).c;
 			c_event_receiver();

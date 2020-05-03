@@ -197,15 +197,7 @@ void _2DGizmo::on_select()
 		target->data_changed_listeners.remove(listener);
 	if (!scene_editor.selected)
 	{
-		block_c->entity->set_visible(false);
-		block_l->entity->set_visible(false);
-		block_t->entity->set_visible(false);
-		block_r->entity->set_visible(false);
-		block_b->entity->set_visible(false);
-		block_lt->entity->set_visible(false);
-		block_rt->entity->set_visible(false);
-		block_lb->entity->set_visible(false);
-		block_rb->entity->set_visible(false);
+		show_blocks(false);
 		target = nullptr;
 		listener = nullptr;
 	}
@@ -214,16 +206,12 @@ void _2DGizmo::on_select()
 		target = scene_editor.selected->get_component(cElement);
 		if (target)
 		{
-			block_c->entity->set_visible(true);
-			block_l->entity->set_visible(true);
-			block_t->entity->set_visible(true);
-			block_r->entity->set_visible(true);
-			block_b->entity->set_visible(true);
-			block_lt->entity->set_visible(true);
-			block_rt->entity->set_visible(true);
-			block_lb->entity->set_visible(true);
-			block_rb->entity->set_visible(true);
-			update_blocks();
+			looper().add_event([](Capture& c) {
+				auto thiz = c.thiz<_2DGizmo>();
+				thiz->show_blocks(true);
+				if (thiz->target)
+					thiz->update_blocks();
+			}, Capture().set_thiz(this));
 			listener = target->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				switch (hash)
 				{
@@ -237,6 +225,19 @@ void _2DGizmo::on_select()
 			}, Capture().set_thiz(this));
 		}
 	}
+}
+
+void _2DGizmo::show_blocks(bool v)
+{
+	block_c->entity->set_visible(v);
+	block_l->entity->set_visible(v);
+	block_t->entity->set_visible(v);
+	block_r->entity->set_visible(v);
+	block_b->entity->set_visible(v);
+	block_lt->entity->set_visible(v);
+	block_rt->entity->set_visible(v);
+	block_lb->entity->set_visible(v);
+	block_rb->entity->set_visible(v);
 }
 
 void _2DGizmo::update_blocks()
