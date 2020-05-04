@@ -81,6 +81,8 @@ namespace flame
 		{
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
 			FLAME_FOUNDATION_EXPORTS ObjectType object_type() const;
+			FLAME_FOUNDATION_EXPORTS const Guid& guid() const;
+			FLAME_FOUNDATION_EXPORTS void set_guid(const Guid& guid);
 			FLAME_FOUNDATION_EXPORTS const char* id() const;
 			FLAME_FOUNDATION_EXPORTS bool set_id(const char* id);
 			FLAME_FOUNDATION_EXPORTS const char* type() const;
@@ -149,6 +151,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, const char* type, ObjectType object_type = ObjectReal);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
+		FLAME_FOUNDATION_EXPORTS Node* find_node(const Guid& guid) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address/* node.var*/) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address/* node.var*/) const;
 

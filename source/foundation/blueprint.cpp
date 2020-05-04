@@ -45,6 +45,7 @@ namespace flame
 	{
 		BPPrivate* scene;
 		BP::ObjectType object_type;
+		Guid guid;
 		std::string id;
 		std::string type;
 		UdtInfo* udt;
@@ -681,7 +682,7 @@ namespace flame
 
 	NodePrivate* BPPrivate::find_node(const std::string& id) const
 	{
-		for (auto& n : ((BPPrivate*)this)->nodes)
+		for (auto& n : nodes)
 		{
 			if (n->id == id)
 				return n.get();
@@ -846,6 +847,16 @@ namespace flame
 		return ((NodePrivate*)this)->object_type;
 	}
 
+	const Guid& BP::Node::guid() const
+	{
+		return ((NodePrivate*)this)->guid;
+	}
+
+	void BP::Node::set_guid(const Guid& guid)
+	{
+		((NodePrivate*)this)->guid = guid;
+	}
+
 	const char* BP::Node::id() const
 	{
 		return ((NodePrivate*)this)->id.c_str();
@@ -924,7 +935,9 @@ namespace flame
 
 	BP::Node* BP::add_node(const char* id, const char* type, ObjectType object_type)
 	{
-		return ((BPPrivate*)this)->add_node(id, type, object_type);
+		auto n = ((BPPrivate*)this)->add_node(id, type, object_type);
+		n->guid = generate_guid();
+		return n;
 	}
 
 	void BP::remove_node(BP::Node *n)
@@ -935,6 +948,16 @@ namespace flame
 	BP::Node* BP::find_node(const char* id) const
 	{
 		return ((BPPrivate*)this)->find_node(id);
+	}
+
+	BP::Node* BP::find_node(const Guid& guid) const
+	{
+		for (auto& n : ((BPPrivate*)this)->nodes)
+		{
+			if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
+				return n.get();
+		}
+		return nullptr;
 	}
 
 	BP::Slot* BP::find_input(const char* address) const

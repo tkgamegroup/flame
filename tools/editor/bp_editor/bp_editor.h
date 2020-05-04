@@ -113,6 +113,7 @@ struct cConsole : Component
 
 struct NodeDesc
 {
+	Guid guid;
 	std::string id;
 	std::string type;
 	BP::ObjectType object_type;

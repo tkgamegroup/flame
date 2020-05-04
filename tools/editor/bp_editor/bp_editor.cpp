@@ -11,7 +11,8 @@ struct Action
 
 struct Action_ChangeNodeID : Action
 {
-	std::string prev_id;
+	Guid guid;
+	std::string before_id;
 	std::string after_id;
 
 	Action_ChangeNodeID()
@@ -21,10 +22,10 @@ struct Action_ChangeNodeID : Action
 
 	void undo() override
 	{
-		auto n = bp_editor.bp->find_node(after_id.c_str());
+		auto n = bp_editor.bp->find_node(guid);
 		if (n)
 		{
-			n->set_id(prev_id.c_str());
+			n->set_id(before_id.c_str());
 
 			if (bp_editor.detail)
 				bp_editor.detail->on_after_select();
@@ -33,7 +34,7 @@ struct Action_ChangeNodeID : Action
 
 	void redo() override
 	{
-		auto n = bp_editor.bp->find_node(prev_id.c_str());
+		auto n = bp_editor.bp->find_node(guid);
 		if (n)
 		{
 			n->set_id(after_id.c_str());
@@ -48,8 +49,8 @@ struct Action_MoveNodes : Action
 {
 	struct Target
 	{
-		std::string id;
-		Vec2f prev_pos;
+		Guid guid;
+		Vec2f before_pos;
 		Vec2f after_pos;
 	};
 	std::vector<Target> targets;
@@ -63,10 +64,10 @@ struct Action_MoveNodes : Action
 	{
 		for (auto& t : targets)
 		{
-			auto n = bp_editor.bp->find_node(t.id.c_str());
+			auto n = bp_editor.bp->find_node(t.guid);
 			if (n)
 			{
-				n->pos = t.prev_pos;
+				n->pos = t.before_pos;
 				if (bp_editor.editor)
 					bp_editor.editor->on_pos_changed(n);
 			}
@@ -77,7 +78,7 @@ struct Action_MoveNodes : Action
 	{
 		for (auto& t : targets)
 		{
-			auto n = bp_editor.bp->find_node(t.id.c_str());
+			auto n = bp_editor.bp->find_node(t.guid);
 			if (n)
 			{
 				n->pos = t.after_pos;
@@ -99,21 +100,22 @@ struct Action_AddNode : Action
 
 	void undo() override
 	{
-		auto n = bp_editor.bp->find_node(desc.id.c_str());
+		auto n = bp_editor.bp->find_node(desc.guid);
 		if (n)
 			bp_editor._remove_node(n);
 	}
 
 	void redo() override
 	{
-		bp_editor._add_node(desc.object_type, desc.id.c_str(), desc.type.c_str(), desc.pos);
+		auto n = bp_editor._add_node(desc.object_type, desc.id.c_str(), desc.type.c_str(), desc.pos);
+		n->set_guid(desc.guid);
 	}
 };
 
 struct Action_DuplicateNodes : Action
 {
-	std::vector<std::string> models;
-	std::vector<std::string> duplications;
+	std::vector<Guid> models;
+	std::vector<Guid> duplications;
 
 	Action_DuplicateNodes()
 	{
@@ -124,7 +126,7 @@ struct Action_DuplicateNodes : Action
 	{
 		for (auto& d : duplications)
 		{
-			auto n = bp_editor.bp->find_node(d.c_str());
+			auto n = bp_editor.bp->find_node(d);
 			if (n)
 				bp_editor._remove_node(n);
 		}
@@ -134,10 +136,10 @@ struct Action_DuplicateNodes : Action
 	{
 		std::vector<BP::Node*> nodes(models.size());
 		for (auto i = 0; i < models.size(); i++)
-			nodes[i] = bp_editor.bp->find_node(models[i].c_str());
+			nodes[i] = bp_editor.bp->find_node(models[i]);
 		auto new_nodes = bp_editor._duplicate_nodes(nodes);
-		for (auto i = 0; i < models.size(); i++)
-			duplications[i] = new_nodes[i]->id();
+		for (auto i = 0; i < new_nodes.size(); i++)
+			new_nodes[i]->set_guid(duplications[i]);
 	}
 };
 
@@ -157,6 +159,7 @@ struct Action_RemoveNodes : Action
 			auto n = bp_editor._add_node(s.desc.object_type, s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
 			if (n)
 			{
+				n->set_guid(s.desc.guid);
 				for (auto i = 0; i < s.inputs.size(); i++)
 				{
 					auto& src = s.inputs[i];
@@ -197,7 +200,7 @@ struct Action_RemoveNodes : Action
 	{
 		for (auto& s : savings)
 		{
-			auto n = bp_editor.bp->find_node(s.desc.id.c_str());
+			auto n = bp_editor.bp->find_node(s.desc.guid);
 			if (n)
 				bp_editor._remove_node(n);
 		}
@@ -208,8 +211,9 @@ struct Action_SetLinks : Action
 {
 	struct LinkDesc
 	{
-		std::string input_addr;
-		std::string prev_output_addr;
+		Guid node_guid;
+		std::string input_name;
+		std::string before_output_addr;
 		std::string after_output_addr;
 	};
 	std::vector<LinkDesc> link_descs;
@@ -223,9 +227,9 @@ struct Action_SetLinks : Action
 	{
 		for (auto& l : link_descs)
 		{
-			auto i = bp_editor.bp->find_input(l.input_addr.c_str());
+			auto i = bp_editor.bp->find_node(l.node_guid)->find_input(l.input_name.c_str());
 			if (i)
-				bp_editor._set_link(i, l.prev_output_addr.empty() ? nullptr : bp_editor.bp->find_output(l.prev_output_addr.c_str()));
+				bp_editor._set_link(i, l.before_output_addr.empty() ? nullptr : bp_editor.bp->find_output(l.before_output_addr.c_str()));
 		}
 
 		bp_editor.window->s_2d_renderer->pending_update = true;
@@ -235,7 +239,7 @@ struct Action_SetLinks : Action
 	{
 		for (auto& l : link_descs)
 		{
-			auto i = bp_editor.bp->find_input(l.input_addr.c_str());
+			auto i = bp_editor.bp->find_node(l.node_guid)->find_input(l.input_name.c_str());
 			if (i)
 				bp_editor._set_link(i, l.after_output_addr.empty() ? nullptr : bp_editor.bp->find_output(l.after_output_addr.c_str()));
 		}
@@ -246,8 +250,9 @@ struct Action_SetLinks : Action
 
 struct Action_SetData : Action
 {
-	std::string input_addr;
-	std::string prev_data;
+	Guid node_guid;
+	std::string input_name;
+	std::string before_data;
 	std::string after_data;
 
 	Action_SetData()
@@ -257,12 +262,12 @@ struct Action_SetData : Action
 
 	void undo() override
 	{
-		auto s = bp_editor.bp->find_input(input_addr.c_str());
+		auto s = bp_editor.bp->find_node(node_guid)->find_input(input_name.c_str());
 		if (s)
 		{
 			auto type = s->type();
 			auto data = new char[s->size()];
-			type->unserialize(prev_data, data);
+			type->unserialize(before_data, data);
 			s->set_data((char*)data);
 			delete[] data;
 
@@ -273,7 +278,7 @@ struct Action_SetData : Action
 
 	void redo() override
 	{
-		auto s = bp_editor.bp->find_input(input_addr.c_str());
+		auto s = bp_editor.bp->find_node(node_guid)->find_input(input_name.c_str());
 		if (s)
 		{
 			auto type = s->type();
@@ -340,14 +345,14 @@ static void duplicate_selected()
 	auto a = new Action_DuplicateNodes;
 	a->models.resize(bp_editor.selected_nodes.size());
 	for (auto i = 0; i < bp_editor.selected_nodes.size(); i++)
-		a->models[i] = bp_editor.selected_nodes[i]->id();
+		a->models[i] = bp_editor.selected_nodes[i]->guid();
 
 	auto new_nodes = bp_editor._duplicate_nodes(bp_editor.selected_nodes);
 	bp_editor.select(new_nodes);
 
 	a->duplications.resize(new_nodes.size());
 	for (auto i = 0; i < new_nodes.size(); i++)
-		a->duplications[i] = new_nodes[i]->id();
+		a->duplications[i] = new_nodes[i]->guid();
 
 	add_action(a);
 
@@ -744,6 +749,7 @@ BP::Node* BPEditor::add_node(const NodeDesc& desc)
 	auto a = new Action_AddNode;
 	a->desc.object_type = desc.object_type;
 	a->desc.type = desc.type;
+	a->desc.guid = n->guid();
 	a->desc.id = n->id();
 	a->desc.pos = desc.pos;
 	add_action(a);
@@ -763,6 +769,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 		auto& s = a->savings[i];
 		s.desc.object_type = n->object_type();
 		s.desc.type = n->type();
+		s.desc.guid = n->guid();
 		s.desc.id = n->id();
 		s.desc.pos = n->pos;
 		s.inputs.resize(n->input_count());
@@ -811,13 +818,13 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 
 void BPEditor::set_node_id(BP::Node* n, const std::string& id)
 {
-	std::string prev_id = n->id();
+	std::string before_id = n->id();
 
 	if (!n->set_id(id.c_str()))
 		return;
 
 	auto a = new Action_ChangeNodeID;
-	a->prev_id = prev_id;
+	a->before_id = before_id;
 	a->after_id = id;
 	add_action(a);
 
@@ -832,8 +839,8 @@ void BPEditor::set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vec
 	{
 		auto& src = nodes[i];
 		auto& dst = a->targets[i];
-		dst.id = src->id();
-		dst.prev_pos = src->pos;
+		dst.guid = src->guid();
+		dst.before_pos = src->pos;
 		dst.after_pos = poses[i];
 	}
 	add_action(a);
@@ -852,10 +859,11 @@ void BPEditor::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& lin
 	{
 		auto& src = links[i];
 		auto& dst = a->link_descs[i];
-		dst.input_addr = src.first->get_address().v;
+		dst.node_guid = src.first->node()->guid();
+		dst.input_name = src.first->name();
 		auto prev = src.first->link(0);
 		if (prev)
-			dst.prev_output_addr = prev->get_address().v;
+			dst.before_output_addr = prev->get_address().v;
 		if (src.second)
 			dst.after_output_addr = src.second->get_address().v;
 	}
@@ -872,8 +880,9 @@ void BPEditor::set_data(BP::Slot* input, void* data, bool from_editor)
 	auto type = input->type();
 
 	auto a = new Action_SetData;
-	a->input_addr = input->get_address().v;
-	a->prev_data = type->serialize(input->data());
+	a->node_guid = input->node()->guid();
+	a->input_name = input->name();
+	a->before_data = type->serialize(input->data());
 	a->after_data = type->serialize(data);
 	add_action(a);
 

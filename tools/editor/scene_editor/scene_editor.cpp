@@ -11,8 +11,8 @@ struct Action
 
 struct Action_ChangeEntityName : Action
 {
-	Entity* target;
-	std::string prev_id;
+	Guid guid;
+	std::string before_id;
 	std::string after_id;
 
 	Action_ChangeEntityName()

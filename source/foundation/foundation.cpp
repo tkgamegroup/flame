@@ -83,6 +83,13 @@ namespace flame
 		free(p);
 	}
 
+	Guid generate_guid()
+	{
+		Guid ret;
+		CoCreateGuid((GUID*)&ret);
+		return ret;
+	}
+
 	static std::wstring engine_path;
 
 	void set_engine_path(const wchar_t* p)

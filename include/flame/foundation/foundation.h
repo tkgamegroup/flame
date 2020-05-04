@@ -34,6 +34,14 @@ namespace flame
 		return ret;
 	}
 
+	struct Guid
+	{
+		uint d1;
+		ushort d2;
+		ushort d3;
+		uchar d4[8];
+	};
+
 	template <class CH>
 	struct String
 	{
@@ -533,6 +541,7 @@ namespace flame
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}
 
+	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
 	FLAME_FOUNDATION_EXPORTS void set_engine_path(const wchar_t* p);
 	FLAME_FOUNDATION_EXPORTS const wchar_t* get_engine_path();
 	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
