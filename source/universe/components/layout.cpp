@@ -372,7 +372,7 @@ namespace flame
 						w = max(aligner->min_width, w);
 				}
 				else
-					w = max(element->size.x(), w);
+					w = max(element->size.x() + (aligner ? aligner->margin.xz().sum() : 0.f), w);
 				if (y_flags & AlignMinMax)
 				{
 					factor += aligner->height_factor;

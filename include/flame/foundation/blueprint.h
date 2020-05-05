@@ -6,11 +6,12 @@ namespace flame
 {
 	struct BP
 	{
-		enum ObjectType
+		enum NodeType
 		{
-			ObjectReal,
-			ObjectRefRead,
-			ObjectRefWrite
+			NodeReal,
+			NodeRefRead,
+			NodeRefWrite,
+			NodeGroup
 		};
 
 		struct Node;
@@ -80,7 +81,8 @@ namespace flame
 		struct Node
 		{
 			FLAME_FOUNDATION_EXPORTS BP* scene() const;
-			FLAME_FOUNDATION_EXPORTS ObjectType object_type() const;
+			FLAME_FOUNDATION_EXPORTS Node* group() const;
+			FLAME_FOUNDATION_EXPORTS NodeType node_type() const;
 			FLAME_FOUNDATION_EXPORTS const Guid& guid() const;
 			FLAME_FOUNDATION_EXPORTS void set_guid(const Guid& guid);
 			FLAME_FOUNDATION_EXPORTS const char* id() const;
@@ -148,10 +150,10 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS uint node_count() const;
 		FLAME_FOUNDATION_EXPORTS Node* node(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, const char* type, ObjectType object_type = ObjectReal);
+		FLAME_FOUNDATION_EXPORTS Node* add_node(Node* group, const char* id, const char* type, NodeType node_type = NodeReal);
 		FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
-		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
 		FLAME_FOUNDATION_EXPORTS Node* find_node(const Guid& guid) const;
+		FLAME_FOUNDATION_EXPORTS Node* find_node(const char* id) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_input(const char* address/* node.var*/) const;
 		FLAME_FOUNDATION_EXPORTS Slot* find_output(const char* address/* node.var*/) const;
 

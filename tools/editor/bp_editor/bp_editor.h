@@ -116,7 +116,7 @@ struct NodeDesc
 	Guid guid;
 	std::string id;
 	std::string type;
-	BP::ObjectType object_type;
+	BP::NodeType node_type;
 	Vec2f pos;
 };
 
@@ -206,7 +206,7 @@ struct BPEditor
 	bool generate_graph_image();
 	bool auto_set_layout();
 
-	BP::Node* _add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos);
+	BP::Node* _add_node(BP::NodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos);
 	void _remove_node(BP::Node* n);
 	std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models);
 	void _set_link(BP::Slot* in, BP::Slot* out);

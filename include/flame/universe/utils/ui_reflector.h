@@ -161,6 +161,7 @@ namespace flame
 						desc += sfmt("pos: %.0f, %0.f\n", ce->pos.x(), ce->pos.y());
 						desc += sfmt("size: %.0f, %0.f\n", ce->size.x(), ce->size.y());
 						desc += sfmt("scale: %f\n", ce->scale);
+						desc += sfmt("padding: %.0f, %.0f, %.0f, %.0f\n", ce->padding.x(), ce->padding.y(), ce->padding.z(), ce->padding.w());
 						desc += sfmt("global pos: %.0f, %0.f\n", ce->global_pos.x(), ce->global_pos.y());
 						desc += sfmt("global size: %.0f, %0.f\n", ce->global_size.x(), ce->global_size.y());
 						desc += sfmt("global scale: %f\n", ce->global_scale);
@@ -184,6 +185,7 @@ namespace flame
 						};
 						desc += sfmt("x flags: %s\n", get_enum_str(align_flag_info, ca->x_align_flags).c_str());
 						desc += sfmt("y flags: %s\n", get_enum_str(align_flag_info, ca->y_align_flags).c_str());
+						desc += sfmt("margin: %.0f, %.0f, %.0f, %.0f\n", ca->margin.x(), ca->margin.y(), ca->margin.z(), ca->margin.w());
 					}
 					else if (name == "cLayout")
 					{

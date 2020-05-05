@@ -107,7 +107,7 @@ struct Action_AddNode : Action
 
 	void redo() override
 	{
-		auto n = bp_editor._add_node(desc.object_type, desc.id.c_str(), desc.type.c_str(), desc.pos);
+		auto n = bp_editor._add_node(desc.node_type, desc.id.c_str(), desc.type.c_str(), desc.pos);
 		n->set_guid(desc.guid);
 	}
 };
@@ -156,7 +156,7 @@ struct Action_RemoveNodes : Action
 	{
 		for (auto& s : savings)
 		{
-			auto n = bp_editor._add_node(s.desc.object_type, s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
+			auto n = bp_editor._add_node(s.desc.node_type, s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
 			if (n)
 			{
 				n->set_guid(s.desc.guid);
@@ -742,12 +742,12 @@ void BPEditor::set_changed(bool v)
 
 BP::Node* BPEditor::add_node(const NodeDesc& desc)
 {
-	auto n = _add_node(desc.object_type, desc.id, desc.type, desc.pos);
+	auto n = _add_node(desc.node_type, desc.id, desc.type, desc.pos);
 	if (!n)
 		return nullptr;
 
 	auto a = new Action_AddNode;
-	a->desc.object_type = desc.object_type;
+	a->desc.node_type = desc.node_type;
 	a->desc.type = desc.type;
 	a->desc.guid = n->guid();
 	a->desc.id = n->id();
@@ -767,7 +767,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 	{
 		auto n = nodes[i];
 		auto& s = a->savings[i];
-		s.desc.object_type = n->object_type();
+		s.desc.node_type = n->node_type();
 		s.desc.type = n->type();
 		s.desc.guid = n->guid();
 		s.desc.id = n->id();
@@ -1017,9 +1017,9 @@ bool BPEditor::auto_set_layout()
 	return true;
 }
 
-BP::Node* BPEditor::_add_node(BP::ObjectType object_type, const std::string& id, const std::string& type, const Vec2f& pos)
+BP::Node* BPEditor::_add_node(BP::NodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
-	auto n = bp_editor.bp->add_node(id.c_str(), type.c_str(), object_type);
+	auto n = bp_editor.bp->add_node(nullptr, id.c_str(), type.c_str(), node_type);
 	if (!n)
 		return nullptr;
 	n->pos = pos;
@@ -1060,7 +1060,7 @@ std::vector<BP::Node*> BPEditor::_duplicate_nodes(const std::vector<BP::Node*>& 
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = models[i];
-		ret[i] = _add_node(n->object_type(), "", n->type(), n->pos + Vec2f(20.f));
+		ret[i] = _add_node(n->node_type(), "", n->type(), n->pos + Vec2f(20.f));
 	}
 	for (auto i = 0; i < models.size(); i++)
 	{

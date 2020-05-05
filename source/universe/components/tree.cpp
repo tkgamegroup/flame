@@ -277,12 +277,14 @@ namespace flame
 		data_changed(FLAME_CHASH("selected"), sender);
 	}
 
-	static void expand(Entity* e, Entity* p)
+	static void expand(Entity* e, Entity* r)
 	{
-		if (e == p)
+		if (e == r)
 			return;
 		e->set_visible(true);
-		expand(e->parent()->parent(), p);
+		auto p = e->parent();
+		p->child(0)->child(0)->get_component(cText)->set_text(Icon_CARET_DOWN);
+		expand(p->parent(), r);
 	}
 
 	void cTree::expand_to_selected()

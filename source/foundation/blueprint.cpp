@@ -5,8 +5,8 @@
 namespace flame
 {
 	struct BPPrivate;
-	struct NodePrivate;
 	struct SlotPrivate;
+	struct NodePrivate;
 
 	struct SlotPrivate : BP::Slot
 	{
@@ -44,7 +44,8 @@ namespace flame
 	struct NodePrivate : BP::Node
 	{
 		BPPrivate* scene;
-		BP::ObjectType object_type;
+		NodePrivate* group;
+		BP::NodeType node_type;
 		Guid guid;
 		std::string id;
 		std::string type;
@@ -61,8 +62,8 @@ namespace flame
 
 		uint order;
 
-		NodePrivate(BPPrivate* scene, BP::ObjectType object_type, const std::string& id, UdtInfo* udt, void* module);
-		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
+		NodePrivate(BPPrivate* scene, BP::NodeType node_type, const std::string& id, UdtInfo* udt, void* module);
+		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size,
 			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
 
@@ -89,8 +90,7 @@ namespace flame
 			need_rebuild_update_list = true;
 		}
 
-		bool check_or_create_id(std::string& id) const;
-		NodePrivate* add_node(const std::string& id, const std::string& type, BP::ObjectType object_type);
+		NodePrivate* add_node(NodePrivate* group, const std::string& id, const std::string& type, BP::NodeType node_type);
 		void remove_node(NodePrivate* n);
 		NodePrivate* find_node(const std::string& address) const;
 		SlotPrivate* find_input(const std::string& address) const;
@@ -199,9 +199,9 @@ namespace flame
 		return StringA(node->id + "." + name);
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* scene, BP::ObjectType object_type, const std::string& id, UdtInfo* udt, void* module) :
+	NodePrivate::NodePrivate(BPPrivate* scene, BP::NodeType node_type, const std::string& id, UdtInfo* udt, void* module) :
 		scene(scene),
-		object_type(object_type),
+		node_type(node_type),
 		id(id),
 		type(udt->name()),
 		udt(udt),
@@ -214,7 +214,7 @@ namespace flame
 		pos = Vec2f(0.f);
 		user_data = nullptr;
 
-		if (object_type == BP::ObjectReal)
+		if (node_type == BP::NodeReal)
 		{
 			auto size = udt->size();
 			object = malloc(size);
@@ -257,7 +257,7 @@ namespace flame
 				assert(object);
 			}
 
-			if (object_type == BP::ObjectRefRead)
+			if (node_type == BP::NodeRefRead)
 			{
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
@@ -265,7 +265,7 @@ namespace flame
 					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
 				}
 			}
-			else if (object_type == BP::ObjectRefWrite)
+			else if (node_type == BP::NodeRefWrite)
 			{
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
@@ -349,7 +349,7 @@ namespace flame
 	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
 		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* dtor_addr, void* update_addr) :
 		scene(scene),
-		object_type(BP::ObjectReal),
+		node_type(BP::NodeReal),
 		id(id),
 		type(type),
 		udt(nullptr),
@@ -383,7 +383,7 @@ namespace flame
 
 	NodePrivate::~NodePrivate()
 	{
-		if (object_type == BP::ObjectReal)
+		if (node_type == BP::NodeReal)
 		{
 			if (dtor_addr)
 				cmf(p2f<MF_v_v>(dtor_addr), object);
@@ -434,34 +434,37 @@ namespace flame
 			cmf(p2f<MF_v_v>(update_addr), object);
 	}
 
-	bool BPPrivate::check_or_create_id(std::string& id) const
+	bool check_or_create_id(BPPrivate* bp, std::string& id)
 	{
 		if (!id.empty())
 		{
-			if (find_node(id))
+			if (bp->find_node(id))
 				return false;
 		}
 		else
 		{
 			id = std::to_string(::rand());
-			while (find_node(id))
+			while (bp->find_node(id))
 				id = std::to_string(::rand());
 		}
 		return true;
 	}
 
-	NodePrivate* BPPrivate::add_node(const std::string& _id, const std::string& type, BP::ObjectType object_type)
+	NodePrivate* BPPrivate::add_node(NodePrivate* group, const std::string& _id, const std::string& type, BP::NodeType node_type)
 	{
 		std::string id = _id;
-		if (!check_or_create_id(id))
+		if (!check_or_create_id(this, id))
 		{
 			printf("cannot add node, id repeated\n");
 			return nullptr;
 		}
 
+		if (group && (node_type == NodeGroup || group->node_type != NodeGroup || group->scene != this))
+			return nullptr;
+
 		NodePrivate* n = nullptr;
 
-		if (object_type == ObjectReal)
+		if (node_type == NodeReal)
 		{
 			std::string parameters;
 			switch (break_node_type(type, &parameters))
@@ -625,6 +628,20 @@ namespace flame
 				break;
 			}
 		}
+		else if (node_type == NodeGroup)
+		{
+#pragma pack(1)
+			struct Dummy
+			{
+				ListenerHub<void()>* signal;
+			};
+#pragma pack()
+			n = new NodePrivate(this, id, "", sizeof(Dummy), {
+					{ TypeInfo::get(TypePointer, "ListenerHub(void())"), "in", 0, sizeof(Dummy::signal) }
+				}, {
+					{}
+				}, nullptr, nullptr, nullptr);
+		}
 		if (!n)
 		{
 			auto udt = find_udt(FLAME_HASH(type.c_str()));
@@ -635,8 +652,10 @@ namespace flame
 				return nullptr;
 			}
 
-			n = new NodePrivate(this, object_type, id, udt, udt->db()->module());
+			n = new NodePrivate(this, node_type, id, udt, udt->db()->module());
 		}
+
+		n->guid = generate_guid();
 
 		nodes.emplace_back(n);
 
@@ -842,9 +861,14 @@ namespace flame
 		return ((NodePrivate*)this)->scene;
 	}
 
-	BP::ObjectType BP::Node::object_type() const
+	BP::Node* BP::Node::group() const
 	{
-		return ((NodePrivate*)this)->object_type;
+		return ((NodePrivate*)this)->group;
+	}
+
+	BP::NodeType BP::Node::node_type() const
+	{
+		return ((NodePrivate*)this)->node_type;
 	}
 
 	const Guid& BP::Node::guid() const
@@ -933,21 +957,14 @@ namespace flame
 		return ((BPPrivate*)this)->nodes[idx].get();
 	}
 
-	BP::Node* BP::add_node(const char* id, const char* type, ObjectType object_type)
+	BP::Node* BP::add_node(Node* group, const char* id, const char* type, NodeType node_type)
 	{
-		auto n = ((BPPrivate*)this)->add_node(id, type, object_type);
-		n->guid = generate_guid();
-		return n;
+		return ((BPPrivate*)this)->add_node((NodePrivate*)group, id, type, node_type);
 	}
 
 	void BP::remove_node(BP::Node *n)
 	{
 		((BPPrivate*)this)->remove_node((NodePrivate*)n);
-	}
-
-	BP::Node* BP::find_node(const char* id) const
-	{
-		return ((BPPrivate*)this)->find_node(id);
 	}
 
 	BP::Node* BP::find_node(const Guid& guid) const
@@ -958,6 +975,11 @@ namespace flame
 				return n.get();
 		}
 		return nullptr;
+	}
+
+	BP::Node* BP::find_node(const char* id) const
+	{
+		return ((BPPrivate*)this)->find_node(id);
 	}
 
 	BP::Slot* BP::find_input(const char* address) const
@@ -1005,7 +1027,8 @@ namespace flame
 		};
 		struct NodeDesc
 		{
-			ObjectType object_type;
+			NodeType node_type;
+			std::string group;
 			std::string id;
 			std::string type;
 			Vec2f pos;
@@ -1017,7 +1040,8 @@ namespace flame
 		{
 			NodeDesc node;
 
-			node.object_type = (ObjectType)n_node.attribute("object_type").as_int();
+			node.node_type = (NodeType)n_node.attribute("node_type").as_int();
+			node.group = n_node.attribute("group").value();
 			node.id = n_node.attribute("id").value();
 			node.type = n_node.attribute("type").value();
 			node.pos = stof2(n_node.attribute("pos").value());
@@ -1056,7 +1080,15 @@ namespace flame
 
 		for (auto& n_d : node_descs)
 		{
-			auto n = bp->add_node(n_d.id, n_d.type, n_d.object_type);
+			if (n_d.node_type != NodeGroup)
+				continue;
+		}
+		for (auto& n_d : node_descs)
+		{
+			if (n_d.node_type == NodeGroup)
+				continue;
+			auto g = n_d.group.empty() ? nullptr : bp->find_node(n_d.group);
+			auto n = bp->add_node(g, n_d.id, n_d.type, n_d.node_type);
 			if (n)
 			{
 				n->pos = n_d.pos;
@@ -1101,10 +1133,9 @@ namespace flame
 		auto n_nodes = file_root.append_child("nodes");
 		for (auto& n : bp->nodes)
 		{
-			auto udt = n->udt;
-
 			auto n_node = n_nodes.append_child("node");
-			n_node.append_attribute("object_type").set_value(n->object_type);
+			n_node.append_attribute("node_type").set_value(n->node_type);
+			n_node.append_attribute("group").set_value(n->group ? n->group->id.c_str() : "");
 			n_node.append_attribute("id").set_value(n->id.c_str());
 			n_node.append_attribute("type").set_value(n->type.c_str());
 			n_node.append_attribute("pos").set_value(to_string(n->pos).c_str());
@@ -1164,14 +1195,14 @@ namespace flame
 		{
 			auto var_id = [](SlotPrivate* s) {
 				auto n = s->node;
-				if (n->object_type != ObjectReal)
+				if (n->node_type != NodeReal)
 					return std::string(n->udt->link_name()) + "->" + (s->setter ? "set_" : "") + s->name;
 				return "_" + n->id + "_" + s->name;
 			};
 
-			switch (n->object_type)
+			switch (n->node_type)
 			{
-			case ObjectRefWrite:
+			case NodeRefWrite:
 				for (auto& in : n->inputs)
 				{
 					auto out = (SlotPrivate*)in->links[0];
@@ -1193,7 +1224,7 @@ namespace flame
 					lines.push_back({ -1, line });
 				}
 				break;
-			case ObjectReal:
+			case NodeReal:
 			{
 				std::string parameters;
 				auto ntype = break_node_type(n->type, &parameters);
