@@ -67,7 +67,7 @@ struct cSlot : Component
 		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
 		{
 			event_receiver = (cEventReceiver*)c;
-			if (s->io() == BP::Slot::In)
+			if (s->io == BP::Slot::In)
 			{
 				event_receiver->drag_hash = FLAME_CHASH("input_slot");
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
@@ -91,7 +91,7 @@ struct cSlot : Component
 				auto thiz = c.thiz<cSlot>();
 				auto element = thiz->element;
 				auto s = thiz->s;
-				auto is_in = s->io() == BP::Slot::In;
+				auto is_in = s->io == BP::Slot::In;
 
 				if (action == DragStart)
 				{
@@ -116,7 +116,7 @@ struct cSlot : Component
 				else if (action == BeingOverStart)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
-					auto ok = (is_in ? BP::Slot::can_link(s->type(), oth->type()) : BP::Slot::can_link(oth->type(), s->type()));
+					auto ok = (is_in ? BP::Slot::can_link(s->type, oth->type) : BP::Slot::can_link(oth->type, s->type));
 
 					element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
 					element->set_frame_thickness(2.f);
@@ -132,8 +132,8 @@ struct cSlot : Component
 						c_element->color = Vec4c(200, 200, 200, 255);
 						c_element->frame_color = Vec4c(0, 0, 0, 255);
 						{
-							auto s_type = s->type();
-							auto o_type = oth->type();
+							auto s_type = s->type;
+							auto o_type = oth->type;
 							std::wstring str;
 							if (is_in)
 								str = s2w(o_type->name()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(s_type->name());
@@ -156,7 +156,7 @@ struct cSlot : Component
 				else if (action == BeenDropped)
 				{
 					auto oth = er->entity->get_component(cSlot)->s;
-					if (s->io() == BP::Slot::In)
+					if (s->io == BP::Slot::In)
 						bp_editor.set_links({ {s, oth} });
 					else
 						bp_editor.set_links({ {oth, s} });
@@ -168,7 +168,7 @@ struct cSlot : Component
 				auto& ui = bp_editor.window->ui;
 				auto thiz = c.thiz<cSlot>();
 				auto s = thiz->s;
-				auto is_in = s->io() == BP::Slot::In;
+				auto is_in = s->io == BP::Slot::In;
 
 				if (!hovering)
 					thiz->clear_tips();
@@ -184,7 +184,7 @@ struct cSlot : Component
 						c_element->frame_thickness = 2.f;
 						c_element->color = Vec4c(200, 200, 200, 255);
 						c_element->frame_color = Vec4c(0, 0, 0, 255);
-						auto type = s->type();
+						auto type = s->type;
 						auto tag = type->tag();
 						ui.e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
 						{
@@ -198,8 +198,8 @@ struct cSlot : Component
 								void* d;
 								cText* text;
 							}capture;
-							capture.t = s->type();
-							capture.d = s->data();
+							capture.t = s->type;
+							capture.d = s->data;
 							capture.text = text_value;
 							timer->set_callback([](Capture& c) {
 								auto& capture = c.data<Capturing>();
@@ -219,6 +219,11 @@ struct cSlot : Component
 			}, Capture().set_thiz(this));
 		}
 	}
+};
+
+struct cUnit : Component
+{
+
 };
 
 struct cNode : Component
@@ -286,6 +291,18 @@ struct cNode : Component
 	}
 };
 
+struct cGroup : Component
+{
+	BP::Group* g;
+
+	_2DEditor edt;
+
+	cGroup() :
+		Component("cGroup")
+	{
+	}
+};
+
 cBPEditor::cBPEditor() :
 	Component("cBPEditor")
 {
@@ -306,9 +323,8 @@ cBPEditor::cBPEditor() :
 		else
 		{
 			std::vector<BP::Node*> nodes;
-			for (auto i = 0; i < bp_editor.bp->node_count(); i++)
+			for (auto n : bp_editor.bp->groups[0]->nodes)
 			{
-				auto n = bp_editor.bp->node(i);
 				auto e = ((Entity*)n->user_data)->get_component(cElement);
 				if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
 					nodes.push_back(n);
@@ -336,13 +352,11 @@ cBPEditor::cBPEditor() :
 			auto range = rect(edt.element->global_pos, edt.element->global_size);
 			auto scale = edt.base->global_scale;
 			auto extent = slot_bezier_extent * scale;
-			for (auto i = 0; i < bp_editor.bp->node_count(); i++)
+			for (auto n : bp_editor.bp->groups[0]->nodes)
 			{
-				auto n = bp_editor.bp->node(i);
-				for (auto j = 0; j < n->input_count(); j++)
+				for (auto input : n->inputs)
 				{
-					auto input = n->input(j);
-					auto output = input->link();
+					auto output = input->links[0];
 					if (!output)
 						continue;
 					auto p1 = ((cSlot*)output->user_data)->element->center();
@@ -386,13 +400,11 @@ cBPEditor::cBPEditor() :
 		auto extent = slot_bezier_extent * scale;
 		auto range = rect(edt.element->global_pos, edt.element->global_size);
 		auto line_width = 3.f * scale;
-		for (auto i = 0; i < bp_editor.bp->node_count(); i++)
+		for (auto n : bp_editor.bp->groups[0]->nodes)
 		{
-			auto n = bp_editor.bp->node(i);
-			for (auto j = 0; j < n->input_count(); j++)
+			for (auto input : n->inputs)
 			{
-				auto input = n->input(j);
-				auto output = input->link();
+				auto output = input->links[0];
 				if (!output)
 					continue;
 				auto e1 = ((cSlot*)output->user_data)->element;
@@ -430,7 +442,7 @@ cBPEditor::cBPEditor() :
 			{
 				auto p1 = e1->center();
 				auto p4 = bp_editor.editor->dragging_slot_pos;
-				auto is_in = ds->io() == BP::Slot::In;
+				auto is_in = ds->io == BP::Slot::In;
 				auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
 				auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
 				auto bb = rect_from_points(p1, p2, p3, p4);
@@ -457,8 +469,13 @@ cBPEditor::cBPEditor() :
 
 	dragging_slot = nullptr;
 
-	for (auto i = 0; i < bp_editor.bp->node_count(); i++)
-		on_add_node(bp_editor.bp->node(i));
+	for (auto g : bp_editor.bp->groups)
+	{
+		if (g->id != "")
+			on_add_group(g);
+		for (auto n : g->nodes)
+			on_add_node(n);
+	}
 }
 
 cBPEditor::~cBPEditor()
@@ -491,6 +508,68 @@ void cBPEditor::on_pos_changed(BP::Node* n)
 	((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 }
 
+void cBPEditor::on_add_group(BP::Group* g)
+{
+	auto& ui = bp_editor.window->ui;
+
+	auto e_group = Entity::create();
+	ui.current_entity = e_group;
+	g->user_data = e_group;
+	ui.next_element_pos = g->pos;
+	ui.next_element_size = 300.f;
+	ui.next_element_padding = 8.f;
+	ui.next_element_roundness = 8.f;
+	ui.next_element_roundness_lod = 2;
+	ui.next_element_frame_thickness = 4.f;
+	ui.next_element_color = Vec4c(255, 255, 255, 200);
+	ui.next_element_frame_color = unselected_col;
+	ui.c_element();
+	ui.c_event_receiver();
+	{
+		auto cl = ui.c_layout(LayoutVertical, 4.f);
+		cl->width_fit_children = false;
+		cl->height_fit_children = false;
+		cl->fence = -2;
+	}
+
+	auto c_group = new_object<cGroup>();
+	c_group->g = g;
+	e_group->add_component(c_group);
+
+	ui.parents.push(e_group);
+
+		//auto input = n->inputs[0];
+
+		//ui.next_element_size = ui.style(FontSize).u[0];
+		//ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+		//ui.next_element_roundness_lod = 2;
+		//ui.next_element_color = Vec4c(200, 200, 200, 255);
+		//ui.e_element();
+		//ui.c_event_receiver();
+		//auto c_slot = new_object<cSlot>();
+		//c_slot->s = input;
+		//input->user_data = c_slot;
+		//ui.current_entity->add_component(c_slot);
+		//ui.e_begin_popup_menu(false);
+		//ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
+		//}, Capture().set_thiz(input));
+		//ui.e_end_popup_menu();
+		//ui.push_style(TextColorNormal, common(type_color(input->type()->tag())));
+		//auto e_name = ui.e_text(s2w(input->name()).c_str());
+		//ui.pop_style(TextColorNormal);
+
+		c_group->edt.create(ui, [](Capture&, const Vec4f&) {
+		}, Capture());
+
+		ui.e_size_dragger();
+
+	ui.parents.pop();
+
+	looper().add_event([](Capture& c) {
+		bp_editor.editor->edt.base->entity->add_child(c.thiz<Entity>());
+	}, Capture().set_thiz(e_group));
+}
+
 void cBPEditor::on_add_node(BP::Node* n)
 {
 	auto& ui = bp_editor.window->ui;
@@ -507,12 +586,11 @@ void cBPEditor::on_add_node(BP::Node* n)
 	ui.next_element_frame_color = unselected_col;
 	ui.c_element();
 	ui.c_event_receiver();
-	auto node_layout = ui.c_layout(LayoutVertical, 4.f);
-	node_layout->fence = -1;
+	ui.c_layout(LayoutVertical, 4.f)->fence = -1;
 
 	auto c_node = new_object<cNode>();
 	c_node->n = n;
-	auto n_type = BP::break_node_type(n->type());
+	auto n_type = BP::break_node_type(n->type.v);
 	e_node->add_component(c_node);
 	ui.e_begin_popup_menu(false);
 		ui.e_menu_item(L"Duplicate", [](Capture& c) {
@@ -522,654 +600,615 @@ void cBPEditor::on_add_node(BP::Node* n)
 	ui.e_end_popup_menu();
 
 	ui.parents.push(e_node);
-		if (n->node_type() != BP::NodeGroup)
+
+		if (n_type == 0)
 		{
-			if (n_type == 0)
-			{
-				ui.push_style(FontSize, common(Vec1u(20)));
-				auto str = s2w(n->type());
-				auto last_colon = str.find_last_of(L':');
-				if (last_colon != std::wstring::npos)
-					str = std::wstring(str.begin() + last_colon + 1, str.end());
-				ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				ui.e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
-				ui.pop_style(FontSize);
-			}
+			ui.push_style(FontSize, common(Vec1u(20)));
+			auto str = s2w(n->type.v);
+			auto last_colon = str.find_last_of(L':');
+			if (last_colon != std::wstring::npos)
+				str = std::wstring(str.begin() + last_colon + 1, str.end());
+			ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			ui.e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
+			ui.pop_style(FontSize);
+		}
 
-			std::string type = n->type();
+		std::string type = n->type.v;
 
-			ui.e_begin_layout(LayoutHorizontal, 16.f);
+		ui.e_begin_layout(LayoutHorizontal, 16.f);
+		ui.c_aligner(AlignMinMax | AlignGreedy, 0);
+
+			ui.e_begin_layout(LayoutVertical, 4.f);
 			ui.c_aligner(AlignMinMax | AlignGreedy, 0);
-
-				ui.e_begin_layout(LayoutVertical, 4.f);
-				ui.c_aligner(AlignMinMax | AlignGreedy, 0);
-					for (auto i = 0; i < n->input_count(); i++)
-					{
-						auto input = n->input(i);
-
-						ui.e_begin_layout(LayoutHorizontal);
-							ui.e_element();
-							ui.next_element_size = ui.style(FontSize).u[0];
-							ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
-							ui.next_element_roundness_lod = 2;
-							ui.next_element_color = Vec4c(200, 200, 200, 255);
-							ui.c_event_receiver();
-							auto c_slot = new_object<cSlot>();
-							c_slot->s = input;
-							input->user_data = c_slot;
-							ui.current_entity->add_component(c_slot);
-							ui.e_begin_popup_menu(false);
-								ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
-								}, Capture().set_thiz(input));
-								ui.e_menu_item(L"Reset Value", [](Capture& c) {
-								}, Capture().set_thiz(input));
-								if (n_type == 'A')
-								{
-									ui.e_menu_item(L"Remove Slot", [](Capture& c) {
-										auto input = c.thiz<BP::Slot>();
-										auto n = input->node();
-										if (n->input_count() == 1)
-											return;
-										bp_editor.select();
-										auto idx = input->index();
-										std::string type = n->type();
-										std::string id = n->id();
-										auto left_pos = type.find('(');
-										auto plus_pos = type.find('+');
-										auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
-										type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
-										NodeDesc d;
-										d.id = "";
-										d.type = type;
-										d.node_type = BP::NodeReal;
-										d.pos = n->pos;
-										auto nn = bp_editor.add_node(d);
-										for (auto i = 0; i < n->input_count(); i++)
-										{
-											if (i == idx)
-												continue;
-											auto src = n->input(i);
-											auto dst = nn->input(i > idx ? i - 1 : i);
-											dst->set_data(src->data());
-											dst->link_to(src->link());
-										}
-										for (auto i = 0; i < n->output_count(); i++)
-										{
-											auto src = n->output(i);
-											auto dst = nn->output(i);
-											for (auto j = 0; j < src->link_count(); j++)
-												src->link(j)->link_to(dst);
-										}
-										bp_editor.remove_nodes({ n });
-										nn->set_id(id.c_str());
-									}, Capture().set_thiz(input));
-								}
-							ui.e_end_popup_menu();
-
-							ui.push_style(TextColorNormal, common(type_color(input->type()->tag())));
-							auto e_name = ui.e_text(s2w(input->name()).c_str());
-							ui.pop_style(TextColorNormal);
-						ui.e_end_layout();
-
-						auto type = input->type();
-						auto tag = type->tag();
-						if (!input->link() && tag != TypePointer)
-						{
-							auto base_hash = type->base_hash();
-
-							switch (tag)
-							{
-							case TypeEnumSingle:
-							{
-								cCombobox* combobox;
-
-								auto info = find_enum(base_hash);
-								combobox = ui.e_begin_combobox()->get_component(cCombobox);
-								ui.current_entity = combobox->entity;
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-								for (auto i = 0; i < info->item_count(); i++)
-									ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
-								ui.e_end_combobox();
-
-								e_name->add_component(new_object<cEnumSingleDataTracker>(input->data(), info, [](Capture& c, int v) {
-									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-								}, Capture().set_thiz(input), combobox));
-							}
-								break;
-							case TypeEnumMulti:
-							{
-								std::vector<cCheckbox*> checkboxes;
-
-								ui.e_begin_layout(LayoutVertical, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-								auto info = find_enum(base_hash);
-								for (auto i = 0; i < info->item_count(); i++)
-								{
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									checkboxes.push_back(ui.e_checkbox()->get_component(cCheckbox));
-									ui.e_text(s2w(info->item(i)->name()).c_str());
-									ui.e_end_layout();
-								}
-								ui.e_end_layout();
-
-								e_name->add_component(new_object<cEnumMultiDataTracker>(input->data(), info, [](Capture& c, int v) {
-									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-								}, Capture().set_thiz(input), checkboxes));
-							}
-								break;
-							case TypeData:
-								switch (base_hash)
-								{
-								case FLAME_CHASH("bool"):
-								{
-									cCheckbox* checkbox;
-
-									checkbox = ui.e_checkbox()->get_component(cCheckbox);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-
-									e_name->add_component(new_object<cBoolDataTracker>(input->data(), [](Capture& c, bool v) {
-										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-									}, Capture().set_thiz(input), checkbox));
-								}
-									break;
-								case FLAME_CHASH("int"):
-								{
-									cText* edit_text;
-									cText* drag_text;
-
-									auto e = ui.e_drag_edit();
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									edit_text = e->child(0)->get_component(cText);
-									drag_text = e->child(1)->get_component(cText);
-
-									e_name->add_component(new_object<cDigitalDataTracker<int>>(input->data(), [](Capture& c, int v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-										else
-											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_thiz(input), edit_text, drag_text));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(2+int)"):
-								{
-									std::array<cText*, 2> edit_texts;
-									std::array<cText*, 2> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 2; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									auto p = e_name;
-									p->get_component(cLayout)->type = LayoutHorizontal;
-									p->add_component(new_object<cDigitalVecDataTracker<2, int>>(input->data(), [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(3+int)"):
-								{
-									std::array<cText*, 3> edit_texts;
-									std::array<cText*, 3> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 3; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<3, int>>(input->data(), [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(4+int)"):
-								{
-									std::array<cText*, 4> edit_texts;
-									std::array<cText*, 4> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 4; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<4, int>>(input->data(), [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("uint"):
-								{
-									cText* edit_text;
-									cText* drag_text;
-
-									auto e = ui.e_drag_edit();
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									edit_text = e->child(0)->get_component(cText);
-									drag_text = e->child(1)->get_component(cText);
-
-									e_name->add_component(new_object<cDigitalDataTracker<uint>>(input->data(), [](Capture& c, uint v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-										else
-											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_thiz(input), edit_text, drag_text));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(2+uint)"):
-								{
-									std::array<cText*, 2> edit_texts;
-									std::array<cText*, 2> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 2; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<2, uint>>(input->data(), [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(3+uint)"):
-								{
-									std::array<cText*, 3> edit_texts;
-									std::array<cText*, 3> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 3; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<3, uint>>(input->data(), [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(4+uint)"):
-								{
-									std::array<cText*, 4> edit_texts;
-									std::array<cText*, 4> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 4; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<4, uint>>(input->data(), [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("float"):
-								{
-									cText* edit_text;
-									cText* drag_text;
-
-									auto e = ui.e_drag_edit();
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									edit_text = e->child(0)->get_component(cText);
-									drag_text = e->child(1)->get_component(cText);
-
-									e_name->add_component(new_object<cDigitalDataTracker<float>>(input->data(), [](Capture& c, float v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-										else
-											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_thiz(input), edit_text, drag_text));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(2+float)"):
-								{
-									std::array<cText*, 2> edit_texts;
-									std::array<cText*, 2> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 2; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<2, float>>(input->data(), [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(3+float)"):
-								{
-									std::array<cText*, 3> edit_texts;
-									std::array<cText*, 3> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 3; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<3, float>>(input->data(), [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(4+float)"):
-								{
-									std::array<cText*, 4> edit_texts;
-									std::array<cText*, 4> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 4; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<4, float>>(input->data(), [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("uchar"):
-								{
-									cText* edit_text;
-									cText* drag_text;
-
-									auto e = ui.e_drag_edit();
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									edit_text = e->child(0)->get_component(cText);
-									drag_text = e->child(1)->get_component(cText);
-
-									e_name->add_component(new_object<cDigitalDataTracker<uchar>>(input->data(), [](Capture& c, uchar v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
-										else
-											c.thiz<BP::Slot>()->set_data(&v);
-									}, Capture().set_thiz(input), edit_text, drag_text));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(2+uchar)"):
-								{
-									std::array<cText*, 2> edit_texts;
-									std::array<cText*, 2> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 2; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<2, uchar>>(input->data(), [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(3+uchar)"):
-								{
-									std::array<cText*, 3> edit_texts;
-									std::array<cText*, 3> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 3; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<3, uchar>>(input->data(), [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::Vec(4+uchar)"):
-								{
-									std::array<cText*, 4> edit_texts;
-									std::array<cText*, 4> drag_texts;
-
-									ui.e_begin_layout(LayoutHorizontal, 4.f);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-									for (auto i = 0; i < 4; i++)
-									{
-										auto e = ui.e_drag_edit();
-										edit_texts[i] = e->child(0)->get_component(cText);
-										drag_texts[i] = e->child(1)->get_component(cText);
-									}
-									ui.e_end_layout();
-
-									e_name->add_component(new_object<cDigitalVecDataTracker<4, uchar>>(input->data(), [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
-										if (exit_editing)
-											bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
-										else
-											c.thiz<BP::Slot>()->set_data((void*)&v);
-									}, Capture().set_thiz(input), edit_texts, drag_texts));
-								}
-									break;
-								case FLAME_CHASH("flame::StringA"):
-								{
-									cText* text;
-
-									text = ui.e_edit(50.f)->get_component(cText);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-
-									e_name->add_component(new_object<cStringADataTracker>(input->data(), [](Capture& c, const char* v) {
-										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
-									}, Capture().set_thiz(input), text));
-								}
-									break;
-								case FLAME_CHASH("flame::StringW"):
-								{
-									cText* text;
-
-									text = ui.e_edit(50.f)->get_component(cText);
-									ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-
-									e_name->add_component(new_object<cStringWDataTracker>(input->data(), [](Capture& c, const wchar_t* v) {
-										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
-									}, Capture().set_thiz(input), text));
-								}
-									break;
-								}
-								break;
-							}
-
-							c_slot->tracker = e_name->get_component(cDataTracker);
-						}
-					}
-				ui.e_end_layout();
-
-				ui.e_begin_layout(LayoutVertical);
-				ui.c_aligner(AlignMinMax | AlignGreedy, 0);
-					for (auto i = 0; i < n->output_count(); i++)
-					{
-						auto output = n->output(i);
-
-						ui.e_begin_layout(LayoutHorizontal);
-						ui.c_aligner(AlignMax, 0);
-						ui.e_text(s2w(output->name()).c_str())->get_component(cText)->color = type_color(output->type()->tag());
-
-						ui.e_element();
+				for (auto input : n->inputs)
+				{
+					ui.e_begin_layout(LayoutHorizontal);
 						ui.next_element_size = ui.style(FontSize).u[0];
 						ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
 						ui.next_element_roundness_lod = 2;
 						ui.next_element_color = Vec4c(200, 200, 200, 255);
+						ui.e_element();
 						ui.c_event_receiver();
 						auto c_slot = new_object<cSlot>();
-						c_slot->s = output;
+						c_slot->s = input;
+						input->user_data = c_slot;
 						ui.current_entity->add_component(c_slot);
-						output->user_data = c_slot;
 						ui.e_begin_popup_menu(false);
 							ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
-							}, Capture());
+							}, Capture().set_thiz(input));
+							ui.e_menu_item(L"Reset Value", [](Capture& c) {
+							}, Capture().set_thiz(input));
+							if (n_type == 'A')
+							{
+								ui.e_menu_item(L"Remove Slot", [](Capture& c) {
+									auto input = c.thiz<BP::Slot>();
+									auto n = (BP::Node*)input->parent;
+									if (n->inputs.s == 1)
+										return;
+									bp_editor.select();
+									auto idx = input->index;
+									std::string type = n->type.v;
+									std::string id = n->id.v;
+									auto left_pos = type.find('(');
+									auto plus_pos = type.find('+');
+									auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
+									type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size - 1) + std::string(type.begin() + plus_pos, type.end());
+									NodeDesc d;
+									d.id = "";
+									d.type = type;
+									d.node_type = BP::NodeReal;
+									d.pos = n->pos;
+									auto nn = bp_editor.add_node(d);
+									for (auto i = 0; i < n->inputs.s; i++)
+									{
+										if (i == idx)
+											continue;
+										auto src = n->inputs[i];
+										auto dst = nn->inputs[i > idx ? i - 1 : i];
+										dst->set_data(src->data);
+										dst->link_to(src->links[0]);
+									}
+									for (auto i = 0; i < n->outputs.s; i++)
+									{
+										auto src = n->outputs[i];
+										auto dst = nn->outputs[i];
+										for (auto l : src->links)
+											l->link_to(dst);
+									}
+									bp_editor.remove_nodes({ n });
+									nn->set_id(id.c_str());
+								}, Capture().set_thiz(input));
+							}
 						ui.e_end_popup_menu();
-						ui.e_end_layout();
-					}
-				ui.e_end_layout();
-			ui.e_end_layout();
 
-			if (n_type == 'A')
-			{
-				ui.next_element_padding = Vec4f(5.f, 2.f, 5.f, 2.f);
-				ui.next_element_roundness = 8.f;
-				ui.next_element_roundness_lod = 2;
-				ui.e_button(L"+", [](Capture& c) {
-					auto n = c.thiz<BP::Node>();
-					bp_editor.select();
-					std::string type = n->type();
-					std::string id = n->id();
+						ui.push_style(TextColorNormal, common(type_color(input->type->tag())));
+						auto e_name = ui.e_text(s2w(input->name.str()).c_str());
+						ui.pop_style(TextColorNormal);
+					ui.e_end_layout();
+
+					auto type = input->type;
+					auto tag = type->tag();
+					if (!input->links[0] && tag != TypePointer)
 					{
-						auto left_pos = type.find('(');
-						auto plus_pos = type.find('+');
-						auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
-						type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size + 1) + std::string(type.begin() + plus_pos, type.end());
-						NodeDesc d;
-						d.id = "";
-						d.type = type;
-						d.node_type = BP::NodeReal;
-						d.pos = n->pos;
-						auto nn = bp_editor.add_node(d);
-						for (auto i = 0; i < n->input_count(); i++)
+						auto base_hash = type->base_hash();
+
+						switch (tag)
 						{
-							auto src = n->input(i);
-							auto dst = nn->input(i);
-							dst->set_data(src->data());
-							dst->link_to(src->link());
-						}
-						for (auto i = 0; i < n->output_count(); i++)
+						case TypeEnumSingle:
 						{
-							auto src = n->output(i);
-							auto dst = nn->output(i);
-							for (auto j = 0; j < src->link_count(); j++)
-								src->link(j)->link_to(dst);
+							cCombobox* combobox;
+
+							auto info = find_enum(base_hash);
+							combobox = ui.e_begin_combobox()->get_component(cCombobox);
+							ui.current_entity = combobox->entity;
+							ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+							for (auto i = 0; i < info->item_count(); i++)
+								ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
+							ui.e_end_combobox();
+
+							e_name->add_component(new_object<cEnumSingleDataTracker>(input->data, info, [](Capture& c, int v) {
+								bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+							}, Capture().set_thiz(input), combobox));
 						}
-						bp_editor.remove_nodes({ n });
-						nn->set_id(id.c_str());
+							break;
+						case TypeEnumMulti:
+						{
+							std::vector<cCheckbox*> checkboxes;
+
+							ui.e_begin_layout(LayoutVertical, 4.f);
+							ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+							auto info = find_enum(base_hash);
+							for (auto i = 0; i < info->item_count(); i++)
+							{
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								checkboxes.push_back(ui.e_checkbox()->get_component(cCheckbox));
+								ui.e_text(s2w(info->item(i)->name()).c_str());
+								ui.e_end_layout();
+							}
+							ui.e_end_layout();
+
+							e_name->add_component(new_object<cEnumMultiDataTracker>(input->data, info, [](Capture& c, int v) {
+								bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+							}, Capture().set_thiz(input), checkboxes));
+						}
+							break;
+						case TypeData:
+							switch (base_hash)
+							{
+							case FLAME_CHASH("bool"):
+							{
+								cCheckbox* checkbox;
+
+								checkbox = ui.e_checkbox()->get_component(cCheckbox);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+
+								e_name->add_component(new_object<cBoolDataTracker>(input->data, [](Capture& c, bool v) {
+									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+								}, Capture().set_thiz(input), checkbox));
+							}
+								break;
+							case FLAME_CHASH("int"):
+							{
+								cText* edit_text;
+								cText* drag_text;
+
+								auto e = ui.e_drag_edit();
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								edit_text = e->child(0)->get_component(cText);
+								drag_text = e->child(1)->get_component(cText);
+
+								e_name->add_component(new_object<cDigitalDataTracker<int>>(input->data, [](Capture& c, int v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+									else
+										c.thiz<BP::Slot>()->set_data(&v);
+								}, Capture().set_thiz(input), edit_text, drag_text));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(2+int)"):
+							{
+								std::array<cText*, 2> edit_texts;
+								std::array<cText*, 2> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 2; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								auto p = e_name;
+								p->get_component(cLayout)->type = LayoutHorizontal;
+								p->add_component(new_object<cDigitalVecDataTracker<2, int>>(input->data, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(3+int)"):
+							{
+								std::array<cText*, 3> edit_texts;
+								std::array<cText*, 3> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 3; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<3, int>>(input->data, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(4+int)"):
+							{
+								std::array<cText*, 4> edit_texts;
+								std::array<cText*, 4> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 4; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<4, int>>(input->data, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("uint"):
+							{
+								cText* edit_text;
+								cText* drag_text;
+
+								auto e = ui.e_drag_edit();
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								edit_text = e->child(0)->get_component(cText);
+								drag_text = e->child(1)->get_component(cText);
+
+								e_name->add_component(new_object<cDigitalDataTracker<uint>>(input->data, [](Capture& c, uint v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+									else
+										c.thiz<BP::Slot>()->set_data(&v);
+								}, Capture().set_thiz(input), edit_text, drag_text));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(2+uint)"):
+							{
+								std::array<cText*, 2> edit_texts;
+								std::array<cText*, 2> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 2; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<2, uint>>(input->data, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(3+uint)"):
+							{
+								std::array<cText*, 3> edit_texts;
+								std::array<cText*, 3> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 3; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<3, uint>>(input->data, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(4+uint)"):
+							{
+								std::array<cText*, 4> edit_texts;
+								std::array<cText*, 4> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 4; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<4, uint>>(input->data, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("float"):
+							{
+								cText* edit_text;
+								cText* drag_text;
+
+								auto e = ui.e_drag_edit();
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								edit_text = e->child(0)->get_component(cText);
+								drag_text = e->child(1)->get_component(cText);
+
+								e_name->add_component(new_object<cDigitalDataTracker<float>>(input->data, [](Capture& c, float v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+									else
+										c.thiz<BP::Slot>()->set_data(&v);
+								}, Capture().set_thiz(input), edit_text, drag_text));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(2+float)"):
+							{
+								std::array<cText*, 2> edit_texts;
+								std::array<cText*, 2> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 2; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<2, float>>(input->data, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(3+float)"):
+							{
+								std::array<cText*, 3> edit_texts;
+								std::array<cText*, 3> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 3; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<3, float>>(input->data, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(4+float)"):
+							{
+								std::array<cText*, 4> edit_texts;
+								std::array<cText*, 4> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 4; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<4, float>>(input->data, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("uchar"):
+							{
+								cText* edit_text;
+								cText* drag_text;
+
+								auto e = ui.e_drag_edit();
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								edit_text = e->child(0)->get_component(cText);
+								drag_text = e->child(1)->get_component(cText);
+
+								e_name->add_component(new_object<cDigitalDataTracker<uchar>>(input->data, [](Capture& c, uchar v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
+									else
+										c.thiz<BP::Slot>()->set_data(&v);
+								}, Capture().set_thiz(input), edit_text, drag_text));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(2+uchar)"):
+							{
+								std::array<cText*, 2> edit_texts;
+								std::array<cText*, 2> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 2; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<2, uchar>>(input->data, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(3+uchar)"):
+							{
+								std::array<cText*, 3> edit_texts;
+								std::array<cText*, 3> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 3; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<3, uchar>>(input->data, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::Vec(4+uchar)"):
+							{
+								std::array<cText*, 4> edit_texts;
+								std::array<cText*, 4> drag_texts;
+
+								ui.e_begin_layout(LayoutHorizontal, 4.f);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								for (auto i = 0; i < 4; i++)
+								{
+									auto e = ui.e_drag_edit();
+									edit_texts[i] = e->child(0)->get_component(cText);
+									drag_texts[i] = e->child(1)->get_component(cText);
+								}
+								ui.e_end_layout();
+
+								e_name->add_component(new_object<cDigitalVecDataTracker<4, uchar>>(input->data, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
+									if (exit_editing)
+										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
+									else
+										c.thiz<BP::Slot>()->set_data((void*)&v);
+								}, Capture().set_thiz(input), edit_texts, drag_texts));
+							}
+								break;
+							case FLAME_CHASH("flame::StringA"):
+							{
+								cText* text;
+
+								text = ui.e_edit(50.f)->get_component(cText);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+
+								e_name->add_component(new_object<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
+									bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+								}, Capture().set_thiz(input), text));
+							}
+								break;
+							case FLAME_CHASH("flame::StringW"):
+							{
+								cText* text;
+
+								text = ui.e_edit(50.f)->get_component(cText);
+								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+
+								e_name->add_component(new_object<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
+									bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+								}, Capture().set_thiz(input), text));
+							}
+								break;
+							}
+							break;
+						}
+
+						c_slot->tracker = e_name->get_component(cDataTracker);
 					}
-				}, Capture().set_thiz(n));
-				ui.c_aligner(AlignMiddle, 0);
-			}
-		}
-		else
+				}
+			ui.e_end_layout();
+
+			ui.e_begin_layout(LayoutVertical);
+			ui.c_aligner(AlignMinMax | AlignGreedy, 0);
+				for (auto output : n->outputs)
+				{
+					ui.e_begin_layout(LayoutHorizontal);
+					ui.c_aligner(AlignMax, 0);
+					ui.e_text(s2w(output->name.str()).c_str())->get_component(cText)->color = type_color(output->type->tag());
+
+					ui.next_element_size = ui.style(FontSize).u[0];
+					ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+					ui.next_element_roundness_lod = 2;
+					ui.next_element_color = Vec4c(200, 200, 200, 255);
+					ui.e_element();
+					ui.c_event_receiver();
+					auto c_slot = new_object<cSlot>();
+					c_slot->s = output;
+					ui.current_entity->add_component(c_slot);
+					output->user_data = c_slot;
+					ui.e_begin_popup_menu(false);
+						ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
+						}, Capture());
+					ui.e_end_popup_menu();
+					ui.e_end_layout();
+				}
+			ui.e_end_layout();
+		ui.e_end_layout();
+
+		if (n_type == 'A')
 		{
-			auto input = n->input(0);
-
-			ui.e_begin_layout(LayoutVertical, 4.f, false, false);
-			ui.c_aligner(AlignMinMax, AlignMinMax);
-
-			ui.e_begin_layout(LayoutHorizontal);
-			ui.e_element();
-			ui.next_element_size = ui.style(FontSize).u[0];
-			ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+			ui.next_element_padding = Vec4f(5.f, 2.f, 5.f, 2.f);
+			ui.next_element_roundness = 8.f;
 			ui.next_element_roundness_lod = 2;
-			ui.next_element_color = Vec4c(200, 200, 200, 255);
-			ui.c_event_receiver();
-			auto c_slot = new_object<cSlot>();
-			c_slot->s = input;
-			input->user_data = c_slot;
-			ui.current_entity->add_component(c_slot);
-			ui.e_begin_popup_menu(false);
-			ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
-			}, Capture().set_thiz(input));
-			ui.e_end_popup_menu();
-			ui.push_style(TextColorNormal, common(type_color(input->type()->tag())));
-			auto e_name = ui.e_text(s2w(input->name()).c_str());
-			ui.pop_style(TextColorNormal);
-			ui.e_end_layout();
-
-
-
-			ui.e_end_layout();
+			ui.e_button(L"+", [](Capture& c) {
+				auto n = c.thiz<BP::Node>();
+				bp_editor.select();
+				std::string type = n->type.str();
+				std::string id = n->id.str();
+				{
+					auto left_pos = type.find('(');
+					auto plus_pos = type.find('+');
+					auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
+					type = std::string(type.begin(), type.begin() + left_pos + 1) + std::to_string(size + 1) + std::string(type.begin() + plus_pos, type.end());
+					NodeDesc d;
+					d.id = "";
+					d.type = type;
+					d.node_type = BP::NodeReal;
+					d.pos = n->pos;
+					auto nn = bp_editor.add_node(d);
+					for (auto i = 0; i < n->inputs.s; i++)
+					{
+						auto src = n->inputs[i];
+						auto dst = nn->inputs[i];
+						dst->set_data(src->data);
+						dst->link_to(src->links[0]);
+					}
+					for (auto i = 0; i < n->outputs.s; i++)
+					{
+						auto src = n->outputs[i];
+						auto dst = nn->outputs[i];
+						for (auto l : src->links)
+							l->link_to(dst);
+					}
+					bp_editor.remove_nodes({ n });
+					nn->set_id(id.c_str());
+				}
+			}, Capture().set_thiz(n));
+			ui.c_aligner(AlignMiddle, 0);
 		}
 
-		ui.e_empty();
-		ui.c_element();
-		ui.c_event_receiver()->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
-			*pass = true;
-			return true;
-		}, Capture());
-		ui.c_aligner(AlignMinMax | AlignAbsolute, AlignMinMax | AlignAbsolute);
-		ui.c_bring_to_front();
+		ui.e_bring_to_front();
 	ui.parents.pop();
 
 	looper().add_event([](Capture& c) {
-		bp_editor.editor->edt.base->entity->add_child(c.thiz<Entity>());
+		auto e_node = c.thiz<Entity>();
+		auto n = e_node->get_component(cNode)->n;
+		if (n->group->id != "")
+			((Entity*)n->group->user_data)->get_component(cGroup)->edt.base->entity->add_child(e_node);
+		else
+			bp_editor.editor->edt.base->entity->add_child(e_node);
 	}, Capture().set_thiz(e_node));
 }
 
@@ -1193,7 +1232,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 	bool is_array;
 	if (dragging_slot)
 	{
-		type = dragging_slot->type();
+		type = dragging_slot->type;
 		tag = type->tag();
 		base_name = type->base_name();
 		base_hash = type->base_hash();
@@ -1220,8 +1259,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					node_types.push_back({ u, nullptr, BP::NodeReal });
 				else
 				{
-					auto ds_io = dragging_slot->io();
-					auto ds_t = dragging_slot->type();
+					auto ds_io = dragging_slot->io;
+					auto ds_t = dragging_slot->type;
 					auto found = false;
 					for (auto k = 0; k < u->variable_count(); k++)
 					{
@@ -1253,8 +1292,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 				}
 				else
 				{
-					auto ds_io = dragging_slot->io();
-					auto ds_t = dragging_slot->type();
+					auto ds_io = dragging_slot->io;
+					auto ds_t = dragging_slot->type;
 					auto found = false;
 					for (auto k = 0; k < u->variable_count(); k++)
 					{
@@ -1462,7 +1501,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								auto s = bp_editor.editor->dragging_slot;
 								if (s)
 								{
-									if (s->io() == BP::Slot::In)
+									if (s->io == BP::Slot::In)
 										bp_editor._set_link(s, n->find_output("out"));
 									else
 										bp_editor._set_link(n->find_input("in"), s);
@@ -1493,7 +1532,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 									auto s = bp_editor.editor->dragging_slot;
 									if (s)
 									{
-										if (s->io() == BP::Slot::In)
+										if (s->io == BP::Slot::In)
 											bp_editor._set_link(s, n->find_output("out"));
 										else
 											bp_editor._set_link(n->find_input("in"), s);
@@ -1523,7 +1562,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								auto s = bp_editor.editor->dragging_slot;
 								if (s)
 								{
-									if (s->io() == BP::Slot::In)
+									if (s->io == BP::Slot::In)
 										bp_editor._set_link(s, n->find_output("out"));
 									else
 										bp_editor._set_link(n->find_input("0"), s);
@@ -1561,7 +1600,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								auto s = bp_editor.editor->dragging_slot;
 								if (s)
 								{
-									if (s->io() == BP::Slot::In)
+									if (s->io == BP::Slot::In)
 										bp_editor._set_link(s, n->find_output(capture.vs));
 									else
 										bp_editor._set_link(n->find_input(capture.vs), s);

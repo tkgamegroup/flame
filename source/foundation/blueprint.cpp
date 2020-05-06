@@ -7,30 +7,19 @@ namespace flame
 	struct BPPrivate;
 	struct SlotPrivate;
 	struct NodePrivate;
+	struct GroupPrivate;
+	struct BPPrivate;
 
 	struct SlotPrivate : BP::Slot
 	{
-		NodePrivate* node;
-		IO io;
-		uint index;
-		const TypeInfo* type;
-		std::string name;
-		uint offset;
-		uint size;
-		void* default_value;
-		void* data;
 		Setter* setter;
 
-		std::vector<SlotPrivate*> links;
-
-		SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
-		SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi);
+		SlotPrivate(BP::Unit* unit, IO io, uint index, TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
+		SlotPrivate(BP::Unit* unit, IO io, uint index, VariableInfo* vi);
 		~SlotPrivate();
 
 		void set_data(const void* data);
 		bool link_to(SlotPrivate* target);
-
-		StringA get_address() const;
 	};
 
 	struct SlotDesc
@@ -43,74 +32,59 @@ namespace flame
 
 	struct NodePrivate : BP::Node
 	{
-		BPPrivate* scene;
-		NodePrivate* group;
-		BP::NodeType node_type;
-		Guid guid;
-		std::string id;
-		std::string type;
-		UdtInfo* udt;
-
 		void* object;
 		void* module;
 
 		void* dtor_addr;
 		void* update_addr;
 
-		std::vector<std::unique_ptr<SlotPrivate>> inputs;
-		std::vector<std::unique_ptr<SlotPrivate>> outputs;
-
 		uint order;
 
-		NodePrivate(BPPrivate* scene, BP::NodeType node_type, const std::string& id, UdtInfo* udt, void* module);
-		NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size,
+		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, UdtInfo* udt, void* module);
+		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, const std::string& type, uint size,
 			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
 
-		SlotPrivate* find_input(const std::string& name) const;
-		SlotPrivate* find_output(const std::string& name) const;
+		void update();
+	};
+
+	struct GroupPrivate : BP::Group
+	{
+		std::unique_ptr<SlotPrivate> signal;
+
+		std::vector<NodePrivate*> update_list;
+		bool need_rebuild_update_list;
+
+		GroupPrivate(BPPrivate* scene, const std::string& id);
+		~GroupPrivate();
+
+		NodePrivate* add_node(const std::string& id, const std::string& type, BP::NodeType node_type);
+		void remove_node(NodePrivate* n);
 
 		void update();
 	};
 
 	struct BPPrivate : BP
 	{
-		std::wstring filename;
+		BPPrivate();
+		~BPPrivate();
 
-		std::vector<std::unique_ptr<NodePrivate>> nodes;
-
-		std::vector<NodePrivate*> update_list;
-		bool need_rebuild_update_list;
-
-		std::vector<std::filesystem::path> used_resources;
-
-		BPPrivate()
-		{
-			time = 0.f;
-			need_rebuild_update_list = true;
-		}
-
-		NodePrivate* add_node(NodePrivate* group, const std::string& id, const std::string& type, BP::NodeType node_type);
-		void remove_node(NodePrivate* n);
-		NodePrivate* find_node(const std::string& address) const;
-		SlotPrivate* find_input(const std::string& address) const;
-		SlotPrivate* find_output(const std::string& address) const;
-
-		void clear();
+		GroupPrivate* add_group(const std::string& id);
+		void remove_group(GroupPrivate* n);
 
 		void update();
 	};
 
-	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, const TypeInfo* type, const std::string& name, uint offset, uint size, const void* _default_value) :
-		node(node),
-		io(io),
-		index(index),
-		type(type),
-		name(name),
-		offset(offset),
-		size(size),
+	SlotPrivate::SlotPrivate(BP::Unit* unit, IO _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
 		setter(nullptr)
 	{
+		parent = unit;
+		io = _io;
+		index = _index;
+		type = _type;
+		name = _name;
+		offset = _offset;
+		size = _size;
 		user_data = nullptr;
 
 		if (_default_value)
@@ -121,14 +95,14 @@ namespace flame
 		else
 			default_value = nullptr;
 
-		data = (char*)node->object + offset;
+		data = unit->unit_type == BP::UnitNode ? (char*)((NodePrivate*)unit)->object + offset : nullptr;
 
 		if (io == In)
 			links.push_back(nullptr);
 	}
 
-	SlotPrivate::SlotPrivate(NodePrivate* node, IO io, uint index, VariableInfo* vi) :
-		SlotPrivate(node, io, index, vi->type(), vi->name(),
+	SlotPrivate::SlotPrivate(BP::Unit* unit, IO io, uint index, VariableInfo* vi) :
+		SlotPrivate(unit, io, index, (TypeInfo*)vi->type(), vi->name(),
 			vi->offset(), vi->size(), vi->default_value())
 	{
 	}
@@ -142,7 +116,7 @@ namespace flame
 	void SlotPrivate::set_data(const void* d)
 	{
 		if (!setter)
-			type->copy_from(d, data);
+			type->copy_from(d, data, size);
 		else
 			setter->set(d);
 	}
@@ -158,7 +132,7 @@ namespace flame
 		{
 			if (target->io == In)
 				return false;
-			if (node == target->node)
+			if (parent == target->parent)
 				return false;
 		}
 
@@ -171,11 +145,11 @@ namespace flame
 		if (links[0])
 		{
 			auto o = links[0];
-			for (auto it = o->links.begin(); it != o->links.end(); it++)
+			for (auto l : o->links)
 			{
-				if (*it == this)
+				if (l == this)
 				{
-					o->links.erase(it);
+					o->links.remove(&l - o->links.v);
 					break;
 				}
 			}
@@ -194,25 +168,21 @@ namespace flame
 		return true;
 	}
 
-	StringA SlotPrivate::get_address() const
-	{
-		return StringA(node->id + "." + name);
-	}
-
-	NodePrivate::NodePrivate(BPPrivate* scene, BP::NodeType node_type, const std::string& id, UdtInfo* udt, void* module) :
-		scene(scene),
-		node_type(node_type),
-		id(id),
-		type(udt->name()),
-		udt(udt),
+	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, UdtInfo* _udt, void* _module) :
 		object(nullptr),
-		module(module),
+		module(_module),
 		dtor_addr(nullptr),
 		update_addr(nullptr),
 		order(0xffffffff)
 	{
+		unit_type = BP::UnitNode;
+		id = _id;
 		pos = Vec2f(0.f);
 		user_data = nullptr;
+		node_type = _node_type;
+		group = _group;
+		type = _udt->name();
+		udt = _udt;
 
 		if (node_type == BP::NodeReal)
 		{
@@ -237,15 +207,14 @@ namespace flame
 				assert(f && check_function(f, "D#void", {}));
 				update_addr = (char*)module + (uint)f->rva();
 			}
-			assert(update_addr);
 
 			for (auto i = 0; i < udt->variable_count(); i++)
 			{
 				auto v = udt->variable(i);
 				if (v->flags() & VariableFlagOutput)
-					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+					outputs.push_back(new SlotPrivate(this, BP::Slot::Out, outputs.s, v));
 				else
-					inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, inputs.size(), v));
+					inputs.push_back(new SlotPrivate(this, BP::Slot::In, inputs.s, v));
 			}
 		}
 		else
@@ -262,7 +231,7 @@ namespace flame
 				for (auto i = 0; i < udt->variable_count(); i++)
 				{
 					auto v = udt->variable(i);
-					outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, outputs.size(), v));
+					outputs.push_back(new SlotPrivate(this, BP::Slot::Out, outputs.s, v));
 				}
 			}
 			else if (node_type == BP::NodeRefWrite)
@@ -274,7 +243,7 @@ namespace flame
 					if (type->tag() != TypeData)
 						continue;
 					auto base_hash = type->base_hash();
-					auto input = new SlotPrivate(this, BP::Slot::In, inputs.size(), v);
+					auto input = new SlotPrivate(this, BP::Slot::In, inputs.s, v);
 					auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
 					if (f_set)
 					{
@@ -336,30 +305,31 @@ namespace flame
 						}
 						setter->o = object;
 						setter->f = f_set_addr;
-						setter->s = scene;
+						setter->s = group->scene;
 						input->setter = setter;
 					}
 					memcpy(input->default_value, input->data, input->size);
-					inputs.emplace_back(input);
+					inputs.push_back(input);
 				}
 			}
 		}
 	}
 
-	NodePrivate::NodePrivate(BPPrivate* scene, const std::string& id, const std::string& type, uint size, 
+	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, const std::string& _type, uint size,
 		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* dtor_addr, void* update_addr) :
-		scene(scene),
-		node_type(BP::NodeReal),
-		id(id),
-		type(type),
-		udt(nullptr),
 		module(nullptr),
 		dtor_addr(dtor_addr),
 		update_addr(update_addr),
 		order(0xffffffff)
 	{
+		unit_type = BP::UnitNode;
+		id = _id;
 		pos = Vec2f(0.f);
 		user_data = nullptr;
+		node_type = _node_type;
+		group = _group;
+		type = _type;
+		udt = nullptr;
 
 		object = malloc(size);
 		memset(object, 0, size);
@@ -367,17 +337,15 @@ namespace flame
 		if (ctor_addr)
 			cmf(p2f<MF_v_v>(ctor_addr), object);
 
-		assert(update_addr);
-
 		for (auto i = 0; i < _inputs.size(); i++)
 		{
 			auto& d = _inputs[i];
-			inputs.emplace_back(new SlotPrivate(this, BP::Slot::In, i, d.type, d.name, d.offset, d.size, nullptr));
+			inputs.push_back(new SlotPrivate(this, BP::Slot::In, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
 		}
 		for (auto i = 0; i < _outputs.size(); i++)
 		{
 			auto& d = _outputs[i];
-			outputs.emplace_back(new SlotPrivate(this, BP::Slot::Out, i, d.type, d.name, d.offset, d.size, nullptr));
+			outputs.push_back(new SlotPrivate(this, BP::Slot::Out, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
 		}
 	}
 
@@ -389,32 +357,17 @@ namespace flame
 				cmf(p2f<MF_v_v>(dtor_addr), object);
 			free(object);
 		}
-	}
-
-	SlotPrivate* NodePrivate::find_input(const std::string& name) const
-	{
-		for (auto& input : ((NodePrivate*)this)->inputs)
-		{
-			if (name == input->name)
-				return input.get();
-		}
-		return nullptr;
-	}
-
-	SlotPrivate* NodePrivate::find_output(const std::string& name) const
-	{
-		for (auto& output : ((NodePrivate*)this)->outputs)
-		{
-			if (name == output->name)
-				return output.get();
-		}
-		return nullptr;
+		for (auto in : inputs)
+			delete (SlotPrivate*)in;
+		for (auto out : outputs)
+			delete (SlotPrivate*)out;
 	}
 
 	void NodePrivate::update()
 	{
-		for (auto& in : inputs)
+		for (auto _in : inputs)
 		{
+			auto in = (SlotPrivate*)_in;
 			auto out = in->links[0];
 			if (out)
 			{
@@ -434,23 +387,43 @@ namespace flame
 			cmf(p2f<MF_v_v>(update_addr), object);
 	}
 
-	bool check_or_create_id(BPPrivate* bp, std::string& id)
+	GroupPrivate::GroupPrivate(BPPrivate* _scene, const std::string& _id)
+	{
+		unit_type = BP::UnitGroup;
+		id = _id;
+		pos = Vec2f(0.f);
+		user_data = nullptr;
+		scene = _scene;
+
+		signal.reset(new SlotPrivate(this, BP::Slot::In, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, 8, ""));
+
+		need_rebuild_update_list = true;
+	}
+
+	GroupPrivate::~GroupPrivate()
+	{
+		for (auto n : nodes)
+			delete (NodePrivate*)n;
+	}
+
+
+	static bool check_or_create_id(GroupPrivate* group, std::string& id)
 	{
 		if (!id.empty())
 		{
-			if (bp->find_node(id))
+			if (group->find_node(id))
 				return false;
 		}
 		else
 		{
 			id = std::to_string(::rand());
-			while (bp->find_node(id))
+			while (group->find_node(id))
 				id = std::to_string(::rand());
 		}
 		return true;
 	}
 
-	NodePrivate* BPPrivate::add_node(NodePrivate* group, const std::string& _id, const std::string& type, BP::NodeType node_type)
+	NodePrivate* GroupPrivate::add_node(const std::string& _id, const std::string& type, BP::NodeType node_type)
 	{
 		std::string id = _id;
 		if (!check_or_create_id(this, id))
@@ -459,189 +432,170 @@ namespace flame
 			return nullptr;
 		}
 
-		if (group && (node_type == NodeGroup || group->node_type != NodeGroup || group->scene != this))
-			return nullptr;
-
 		NodePrivate* n = nullptr;
 
-		if (node_type == NodeReal)
+		std::string parameters;
+		switch (BP::break_node_type(type, &parameters))
 		{
-			std::string parameters;
-			switch (break_node_type(type, &parameters))
-			{
-			case 'S':
-			{
-#pragma pack(1)
-				struct Dummy
-				{
-					int in;
-					int chk;
-
-					int out;
-					float res;
-
-					void update()
-					{
-						out = in;
-						res = in == chk ? 1.f : 0.f;
-					}
-				};
-#pragma pack()
-				n = new NodePrivate(this, id, type, sizeof(Dummy), {
-						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
-						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
-					}, {
-						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) },
-						{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
-					}, nullptr, nullptr, f2v(&Dummy::update));
-			}
-				break;
-			case 'M':
-			{
-#pragma pack(1)
-				struct Dummy
-				{
-					int in;
-					int chk;
-
-					int out;
-					float res;
-
-					void update()
-					{
-						out = in;
-						res = (in & chk) ? 1.f : 0.f;
-					}
-				};
-#pragma pack()
-				n = new NodePrivate(this, id, type, sizeof(Dummy), {
-						{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
-						{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
-					}, {
-						{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) },
-						{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
-					}, nullptr, nullptr, f2v(&Dummy::update));
-			}
-				break;
-			case 'V':
-			{
-#pragma pack(1)
-				struct Dummy
-				{
-					uint type_hash;
-					uint type_size;
-
-					void dtor()
-					{
-						auto in = (char*)&type_size + sizeof(uint);
-						auto out = (char*)&type_size + sizeof(uint) + type_size;
-						basic_type_dtor(type_hash, in);
-						basic_type_dtor(type_hash, out);
-					}
-
-					void update()
-					{
-						auto in = (char*)&type_size + sizeof(uint);
-						auto out = (char*)&type_size + sizeof(uint) + type_size;
-						basic_type_copy(type_hash, in, out, type_size);
-					}
-				};
-#pragma pack()
-				auto type_hash = FLAME_HASH(parameters.c_str());
-				auto type_size = basic_type_size(type_hash);
-				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * 2, {
-						{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size }
-					}, {
-						{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size }
-					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
-				auto& obj = *(Dummy*)n->object;
-				obj.type_hash = type_hash;
-				obj.type_size = type_size;
-			}
-				break;
-			case 'A':
-			{
-				auto sp = SUS::split(parameters, '+');
-#pragma pack(1)
-				struct Dummy
-				{
-					uint type_hash;
-					uint type_size;
-					uint size;
-
-					void dtor()
-					{
-						for (auto i = 0; i < size; i++)
-							basic_type_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
-						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-						for (auto i = 0; i < out.s; i++)
-							basic_type_dtor(type_hash, (char*)out.v + type_size * i);
-						f_free(out.v);
-					}
-
-					void update()
-					{
-						auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
-						if (out.s != size)
-						{
-							out.s = size;
-							auto m_size = type_size * size;
-							f_free(out.v);
-							out.v = (int*)f_malloc(m_size);
-							memset(out.v, 0, m_size);
-						}
-						for (auto i = 0; i < size; i++)
-						{
-							auto v = (char*)&size + sizeof(uint) + type_size * i;
-							basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
-						}
-					}
-				};
-#pragma pack()
-				auto tag = TypeData;
-				auto type_name = sp[1];
-				auto base_name = type_name;
-				if (type_name.back() == '*')
-				{
-					base_name.erase(base_name.end() - 1);
-					tag = TypePointer;
-				}
-				auto type_hash = FLAME_HASH(base_name.c_str());
-				uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
-				auto size = stoi(sp[0]);
-				std::vector<SlotDesc> inputs;
-				for (auto i = 0; i < size; i++)
-				{
-					inputs.push_back({
-						TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
-						sizeof(Dummy) + type_size * i, type_size
-						});
-				}
-				n = new NodePrivate(this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
-						{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>) }
-					}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
-				auto& obj = *(Dummy*)n->object;
-				obj.type_hash = type_hash;
-				obj.type_size = type_size;
-				obj.size = size;
-			}
-				break;
-			}
-		}
-		else if (node_type == NodeGroup)
+		case 'S':
 		{
 #pragma pack(1)
 			struct Dummy
 			{
-				ListenerHub<void()>* signal;
+				int in;
+				int chk;
+
+				int out;
+				float res;
+
+				void update()
+				{
+					out = in;
+					res = in == chk ? 1.f : 0.f;
+				}
 			};
 #pragma pack()
-			n = new NodePrivate(this, id, "", sizeof(Dummy), {
-					{ TypeInfo::get(TypePointer, "ListenerHub(void())"), "in", 0, sizeof(Dummy::signal) }
+			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy), {
+					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
+					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
 				}, {
-					{}
-				}, nullptr, nullptr, nullptr);
+					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) },
+					{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
+				}, nullptr, nullptr, f2v(&Dummy::update));
 		}
+		break;
+		case 'M':
+		{
+#pragma pack(1)
+			struct Dummy
+			{
+				int in;
+				int chk;
+
+				int out;
+				float res;
+
+				void update()
+				{
+					out = in;
+					res = (in & chk) ? 1.f : 0.f;
+				}
+			};
+#pragma pack()
+			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy), {
+					{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
+					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
+				}, {
+					{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "out", offsetof(Dummy, out), sizeof(Dummy::out) },
+					{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
+				}, nullptr, nullptr, f2v(&Dummy::update));
+		}
+		break;
+		case 'V':
+		{
+#pragma pack(1)
+			struct Dummy
+			{
+				uint type_hash;
+				uint type_size;
+
+				void dtor()
+				{
+					auto in = (char*)&type_size + sizeof(uint);
+					auto out = (char*)&type_size + sizeof(uint) + type_size;
+					basic_type_dtor(type_hash, in);
+					basic_type_dtor(type_hash, out);
+				}
+
+				void update()
+				{
+					auto in = (char*)&type_size + sizeof(uint);
+					auto out = (char*)&type_size + sizeof(uint) + type_size;
+					basic_type_copy(type_hash, in, out, type_size);
+				}
+			};
+#pragma pack()
+			auto type_hash = FLAME_HASH(parameters.c_str());
+			auto type_size = basic_type_size(type_hash);
+			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy) + type_size * 2, {
+					{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size }
+				}, {
+					{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size }
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
+			auto& obj = *(Dummy*)n->object;
+			obj.type_hash = type_hash;
+			obj.type_size = type_size;
+		}
+		break;
+		case 'A':
+		{
+			auto sp = SUS::split(parameters, '+');
+#pragma pack(1)
+			struct Dummy
+			{
+				uint type_hash;
+				uint type_size;
+				uint size;
+
+				void dtor()
+				{
+					for (auto i = 0; i < size; i++)
+						basic_type_dtor(type_hash, (char*)&size + sizeof(uint) + type_size * i);
+					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+					for (auto i = 0; i < out.s; i++)
+						basic_type_dtor(type_hash, (char*)out.v + type_size * i);
+					f_free(out.v);
+				}
+
+				void update()
+				{
+					auto& out = *(Array<int>*)((char*)&size + sizeof(uint) + type_size * size);
+					if (out.s != size)
+					{
+						out.s = size;
+						auto m_size = type_size * size;
+						f_free(out.v);
+						out.v = (int*)f_malloc(m_size);
+						memset(out.v, 0, m_size);
+					}
+					for (auto i = 0; i < size; i++)
+					{
+						auto v = (char*)&size + sizeof(uint) + type_size * i;
+						basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+					}
+				}
+			};
+#pragma pack()
+			auto tag = TypeData;
+			auto type_name = sp[1];
+			auto base_name = type_name;
+			if (type_name.back() == '*')
+			{
+				base_name.erase(base_name.end() - 1);
+				tag = TypePointer;
+			}
+			auto type_hash = FLAME_HASH(base_name.c_str());
+			uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
+			auto size = stoi(sp[0]);
+			std::vector<SlotDesc> inputs;
+			for (auto i = 0; i < size; i++)
+			{
+				inputs.push_back({
+					TypeInfo::get(tag, base_name.c_str()), std::to_string(i),
+					sizeof(Dummy) + type_size * i, type_size
+					});
+			}
+			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
+					{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>) }
+				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
+			auto& obj = *(Dummy*)n->object;
+			obj.type_hash = type_hash;
+			obj.type_size = type_size;
+			obj.size = size;
+		}
+		break;
+		}
+
 		if (!n)
 		{
 			auto udt = find_udt(FLAME_HASH(type.c_str()));
@@ -652,46 +606,45 @@ namespace flame
 				return nullptr;
 			}
 
-			n = new NodePrivate(this, node_type, id, udt, udt->db()->module());
+			n = new NodePrivate(node_type, this, id, udt, udt->db()->module());
 		}
 
 		n->guid = generate_guid();
-
-		nodes.emplace_back(n);
+		nodes.push_back(n);
 
 		need_rebuild_update_list = true;
 
 		return n;
 	}
 
-	void BPPrivate::remove_node(NodePrivate* _n)
+	void GroupPrivate::remove_node(NodePrivate* _n)
 	{
-		for (auto it = nodes.begin(); it != nodes.end(); it++)
+		for (auto n : nodes)
 		{
-			auto n = it->get();
 			if (n == _n)
 			{
-				for (auto& i : n->inputs)
+				for (auto i : n->inputs)
 				{
 					auto o = i->links[0];
 					if (o)
 					{
-						for (auto it = o->links.begin(); it != o->links.end(); it++)
+						for (auto l : o->links)
 						{
-							if (*it == i.get())
+							if (l == i)
 							{
-								o->links.erase(it);
+								o->links.remove(&l - o->links.v);
 								break;
 							}
 						}
 					}
 				}
-				for (auto& o : n->outputs)
+				for (auto o : n->outputs)
 				{
-					for (auto& l : o->links)
+					for (auto l : o->links)
 						l->links[0] = nullptr;
 				}
-				nodes.erase(it);
+				delete (NodePrivate*)n;
+				nodes.remove(&n - nodes.v);
 				break;
 			}
 		}
@@ -699,136 +652,103 @@ namespace flame
 		need_rebuild_update_list = true;
 	}
 
-	NodePrivate* BPPrivate::find_node(const std::string& id) const
-	{
-		for (auto& n : nodes)
-		{
-			if (n->id == id)
-				return n.get();
-		}
-		return nullptr;
-	}
-
-	SlotPrivate* BPPrivate::find_input(const std::string& address) const
-	{
-		auto sp = SUS::split_lastone(address, '.');
-		auto n = find_node(sp[0]);
-		if (!n)
-			return nullptr;
-		return (SlotPrivate*)n->find_input(sp[1]);
-	}
-
-	SlotPrivate* BPPrivate::find_output(const std::string& address) const
-	{
-		auto sp = SUS::split_lastone(address, '.');
-		auto n = find_node(sp[0]);
-		if (!n)
-			return nullptr;
-		return (SlotPrivate*)n->find_output(sp[1]);
-	}
-
-	void BPPrivate::clear()
-	{
-		nodes.clear();
-		need_rebuild_update_list = true;
-		update_list.clear();
-	}
-
-	static float bp_time = 0.f;
-
 	static void get_order(NodePrivate* n, uint& order)
 	{
 		if (n->order != 0xffffffff)
 			return;
-		for (auto& i : n->inputs)
+		for (auto i : n->inputs)
 		{
 			auto o = i->links[0];
 			if (o)
 			{
-				auto nn = o->node;
-				get_order(nn, order);
+				auto u = o->parent;
+				if (u->unit_type == BP::UnitNode)
+					get_order((NodePrivate*)u, order);
 			}
 		}
 		n->order = order++;
 	}
 
-	static void build_update_list(BPPrivate* s)
+	static void build_update_list(GroupPrivate* g)
 	{
-		for (auto& n : s->nodes)
-			n->order = 0xffffffff;
+		for (auto n : g->nodes)
+			((NodePrivate*)n)->order = 0xffffffff;
 		auto order = 0U;
-		for (auto& n : s->nodes)
-			get_order(n.get(), order);
-		s->update_list.clear();
-		for (auto& n : s->nodes)
+		for (auto n : g->nodes)
+			get_order((NodePrivate*)n, order);
+		g->update_list.clear();
+		for (auto n : g->nodes)
 		{
 			std::vector<NodePrivate*>::iterator it;
-			for (it = s->update_list.begin(); it != s->update_list.end(); it++)
+			for (it = g->update_list.begin(); it != g->update_list.end(); it++)
 			{
-				if (n->order < (*it)->order)
+				if (((NodePrivate*)n)->order < (*it)->order)
 					break;
 			}
-			s->update_list.emplace(it, n.get());
+			g->update_list.emplace(it, (NodePrivate*)n);
 		}
-		s->need_rebuild_update_list = false;
+		g->need_rebuild_update_list = false;
 	}
 
-	void BPPrivate::update()
+	void GroupPrivate::update()
 	{
 		if (need_rebuild_update_list)
 			build_update_list(this);
 
-		bp_time = time;
-
 		for (auto n : update_list)
 			n->update();
+	}
+
+	GroupPrivate* BPPrivate::add_group(const std::string& _id)
+	{
+		if (find_group(_id))
+		{
+			printf("cannot add group, id repeated\n");
+			return nullptr;
+		}
+
+		auto g = new GroupPrivate(this, _id);
+		g->guid = generate_guid();
+		groups.push_back(g);
+
+		return g;
+	}
+
+	void BPPrivate::remove_group(GroupPrivate* _g)
+	{
+		for (auto g : groups)
+		{
+			if (g == _g)
+			{
+				delete (GroupPrivate*)g;
+				groups.remove(&g - groups.v);
+				break;
+			}
+		}
+	}
+
+	BPPrivate::BPPrivate()
+	{
+		time = 0.f;
+
+		add_group("");
+	}
+
+	BPPrivate::~BPPrivate()
+	{
+		for (auto g : groups)
+			delete (GroupPrivate*)g;
+	}
+
+	static float bp_time = 0.f;
+
+	void BPPrivate::update()
+	{
+		bp_time = time;
+
+		groups[0]->update();
 
 		time += looper().delta_time;
-	}
-
-	BP::Node* BP::Slot::node() const
-	{
-		return ((SlotPrivate*)this)->node;
-	}
-
-	BP::Slot::IO BP::Slot::io() const
-	{
-		return ((SlotPrivate*)this)->io;
-	}
-
-	uint BP::Slot::index() const
-	{
-		return ((SlotPrivate*)this)->index;
-	}
-
-	const TypeInfo* BP::Slot::type() const
-	{
-		return ((SlotPrivate*)this)->type;
-	}
-
-	const char* BP::Slot::name() const
-	{
-		return ((SlotPrivate*)this)->name.c_str();
-	}
-
-	uint BP::Slot::offset() const
-	{
-		return ((SlotPrivate*)this)->offset;
-	}
-
-	uint BP::Slot::size() const
-	{
-		return ((SlotPrivate*)this)->size;
-	}
-
-	const void* BP::Slot::default_value() const
-	{
-		return ((SlotPrivate*)this)->default_value;
-	}
-
-	void* BP::Slot::data() const
-	{
-		return ((SlotPrivate*)this)->data;
 	}
 
 	void BP::Slot::set_data(const void* d)
@@ -836,165 +756,34 @@ namespace flame
 		((SlotPrivate*)this)->set_data(d);
 	}
 
-	uint BP::Slot::link_count() const
-	{
-		return ((SlotPrivate*)this)->links.size();
-	}
-
-	BP::Slot* BP::Slot::link(int idx) const
-	{
-		return ((SlotPrivate*)this)->links[idx];
-	}
-
-	bool BP::Slot::link_to(BP::Slot*target)
+	bool BP::Slot::link_to(BP::Slot* target)
 	{
 		return ((SlotPrivate*)this)->link_to((SlotPrivate*)target);
 	}
 
-	StringA BP::Slot::get_address() const
+	BP::Node* BP::Group::add_node(const char* id, const char* type, NodeType node_type)
 	{
-		return ((SlotPrivate*)this)->get_address();
+		return ((GroupPrivate*)this)->add_node(id, type, node_type);
 	}
 
-	BP* BP::Node::scene() const
+	void BP::Group::remove_node(Node* n)
 	{
-		return ((NodePrivate*)this)->scene;
+		((GroupPrivate*)this)->remove_node((NodePrivate*)n);
 	}
 
-	BP::Node* BP::Node::group() const
+	void BP::Group::update()
 	{
-		return ((NodePrivate*)this)->group;
+		((GroupPrivate*)this)->update();
 	}
 
-	BP::NodeType BP::Node::node_type() const
+	BP::Group* BP::add_group(const char* id)
 	{
-		return ((NodePrivate*)this)->node_type;
+		return ((BPPrivate*)this)->add_group(id);
 	}
 
-	const Guid& BP::Node::guid() const
+	void BP::remove_group(BP::Group *g)
 	{
-		return ((NodePrivate*)this)->guid;
-	}
-
-	void BP::Node::set_guid(const Guid& guid)
-	{
-		((NodePrivate*)this)->guid = guid;
-	}
-
-	const char* BP::Node::id() const
-	{
-		return ((NodePrivate*)this)->id.c_str();
-	}
-
-	bool BP::Node::set_id(const char* id)
-	{
-		if (!id || !id[0])
-			return false;
-		auto thiz = (NodePrivate*)this;
-		if (thiz->id == id)
-			return true;
-		for (auto& n : thiz->scene->nodes)
-		{
-			if (n->id == id)
-				return false;
-		}
-		thiz->id = id;
-		return true;
-	}
-
-	const char* BP::Node::type() const
-	{
-		return ((NodePrivate*)this)->type.c_str();
-	}
-
-	UdtInfo* BP::Node::udt() const
-	{
-		return ((NodePrivate*)this)->udt;
-	}
-
-	uint BP::Node::input_count() const
-	{
-		return ((NodePrivate*)this)->inputs.size();
-	}
-
-	BP::Slot *BP::Node::input(uint idx) const
-	{
-		return ((NodePrivate*)this)->inputs[idx].get();
-	}
-
-	uint BP::Node::output_count() const
-	{
-		return ((NodePrivate*)this)->outputs.size();
-	}
-
-	BP::Slot* BP::Node::output(uint idx) const
-	{
-		return ((NodePrivate*)this)->outputs[idx].get();
-	}
-
-	BP::Slot* BP::Node::find_input(const char* name) const
-	{
-		return ((NodePrivate*)this)->find_input(name);
-	}
-
-	BP::Slot* BP::Node::find_output(const char* name) const
-	{
-		return ((NodePrivate*)this)->find_output(name);
-	}
-
-	const wchar_t* BP::filename() const
-	{
-		return ((BPPrivate*)this)->filename.c_str();
-	}
-
-	uint BP::node_count() const
-	{
-		return ((BPPrivate*)this)->nodes.size();
-	}
-
-	BP::Node* BP::node(uint idx) const
-	{
-		return ((BPPrivate*)this)->nodes[idx].get();
-	}
-
-	BP::Node* BP::add_node(Node* group, const char* id, const char* type, NodeType node_type)
-	{
-		return ((BPPrivate*)this)->add_node((NodePrivate*)group, id, type, node_type);
-	}
-
-	void BP::remove_node(BP::Node *n)
-	{
-		((BPPrivate*)this)->remove_node((NodePrivate*)n);
-	}
-
-	BP::Node* BP::find_node(const Guid& guid) const
-	{
-		for (auto& n : ((BPPrivate*)this)->nodes)
-		{
-			if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
-				return n.get();
-		}
-		return nullptr;
-	}
-
-	BP::Node* BP::find_node(const char* id) const
-	{
-		return ((BPPrivate*)this)->find_node(id);
-	}
-
-	BP::Slot* BP::find_input(const char* address) const
-	{
-		return ((BPPrivate*)this)->find_input(address);
-	}
-
-	BP::Slot* BP::find_output(const char* address) const
-	{
-		return ((BPPrivate*)this)->find_output(address);
-	}
-
-	void BP::clear()
-	{
-		((BPPrivate*)this)->clear();
+		((BPPrivate*)this)->remove_group((GroupPrivate*)g);
 	}
 
 	void BP::update()
@@ -1020,100 +809,50 @@ namespace flame
 			return nullptr;
 		}
 
-		struct DataDesc
-		{
-			std::string name;
-			std::string value;
-		};
-		struct NodeDesc
-		{
-			NodeType node_type;
-			std::string group;
-			std::string id;
-			std::string type;
-			Vec2f pos;
-			std::vector<DataDesc> datas;
-		};
-		std::vector<NodeDesc> node_descs;
-
-		for (auto n_node : file_root.child("nodes"))
-		{
-			NodeDesc node;
-
-			node.node_type = (NodeType)n_node.attribute("node_type").as_int();
-			node.group = n_node.attribute("group").value();
-			node.id = n_node.attribute("id").value();
-			node.type = n_node.attribute("type").value();
-			node.pos = stof2(n_node.attribute("pos").value());
-
-			for (auto n_data : n_node.child("datas"))
-			{
-				DataDesc data;
-				data.name = n_data.attribute("name").value();
-				data.value = n_data.attribute("value").value();
-				node.datas.push_back(data);
-			}
-
-			node_descs.push_back(node);
-		}
-
-		struct LinkDesc
-		{
-			std::string out_addr;
-			std::string in_addr;
-		};
-		std::vector<LinkDesc> link_descs;
-
-		for (auto n_link : file_root.child("links"))
-		{
-			auto o_addr = n_link.attribute("out").value();
-			auto i_addr = n_link.attribute("in").value();
-
-			LinkDesc link;
-			link.out_addr = o_addr;
-			link.in_addr = i_addr;
-			link_descs.push_back(link);
-		}
-
 		auto bp = new BPPrivate();
 		bp->filename = filename;
 
-		for (auto& n_d : node_descs)
+		for (auto n_group : file_root.child("groups"))
 		{
-			if (n_d.node_type != NodeGroup)
-				continue;
-		}
-		for (auto& n_d : node_descs)
-		{
-			if (n_d.node_type == NodeGroup)
-				continue;
-			auto g = n_d.group.empty() ? nullptr : bp->find_node(n_d.group);
-			auto n = bp->add_node(g, n_d.id, n_d.type, n_d.node_type);
-			if (n)
+			auto id = std::string(n_group.attribute("id").value());
+			auto g = id.empty() ? bp->groups[0] : bp->add_group(id);
+			if (g)
 			{
-				n->pos = n_d.pos;
-				for (auto& d_d : n_d.datas)
+				g->pos = stof2(n_group.attribute("pos").value());
+
+				for (auto n_node : n_group.child("nodes"))
 				{
-					auto input = n->find_input(d_d.name);
-					auto type = input->type;
-					auto tag = type->tag();
-					if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
-						type->unserialize(d_d.value, input->data);
+					auto n = g->add_node(n_node.attribute("id").value(), n_node.attribute("type").value(), (NodeType)n_node.attribute("node_type").as_int());
+					if (n)
+					{
+						n->pos = stof2(n_node.attribute("pos").value());
+						for (auto n_data : n_node.child("datas"))
+						{
+							auto input = n->find_input(n_data.attribute("name").value());
+							auto type = input->type;
+							auto tag = type->tag();
+							if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
+								type->unserialize(n_data.attribute("value").value(), input->data);
+						}
+					}
+				}
+
+				for (auto n_link : n_group.child("links"))
+				{
+					auto o_addr = std::string(n_link.attribute("out").value());
+					auto i_addr = std::string(n_link.attribute("in").value());
+
+					auto o = g->find_output(o_addr);
+					auto i = g->find_input(i_addr);
+					if (o && i)
+					{
+						if (!i->link_to(o))
+							printf("link type mismatch: %s - > %s\n", o_addr.c_str(), i_addr.c_str());
+					}
+					else
+						printf("cannot link: %s - > %s\n", o_addr.c_str(), i_addr.c_str());
 				}
 			}
-		}
-
-		for (auto& l_d : link_descs)
-		{
-			auto o = bp->find_output(l_d.out_addr);
-			auto i = bp->find_input(l_d.in_addr);
-			if (o && i)
-			{
-				if (!i->link_to(o))
-					printf("link type mismatch: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
-			}
-			else
-				printf("cannot link: %s - > %s\n", l_d.out_addr.c_str(), l_d.in_addr.c_str());
 		}
 
 		printf("end loading bp: %s\n", s_filename.c_str());
@@ -1130,248 +869,255 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("BP");
 
-		auto n_nodes = file_root.append_child("nodes");
-		for (auto& n : bp->nodes)
+		auto n_groups = file_root.append_child("groups");
+		for (auto& g : bp->groups)
 		{
-			auto n_node = n_nodes.append_child("node");
-			n_node.append_attribute("node_type").set_value(n->node_type);
-			n_node.append_attribute("group").set_value(n->group ? n->group->id.c_str() : "");
-			n_node.append_attribute("id").set_value(n->id.c_str());
-			n_node.append_attribute("type").set_value(n->type.c_str());
-			n_node.append_attribute("pos").set_value(to_string(n->pos).c_str());
+			auto n_group = n_groups.append_child("group");
+			n_group.append_attribute("id").set_value(g->id.v);
+			n_group.append_attribute("pos").set_value(to_string(g->pos).c_str());
 
-			pugi::xml_node n_datas;
-			for (auto& in : n->inputs)
+			auto n_nodes = n_group.append_child("nodes");
+			for (auto& n : g->nodes)
 			{
-				if (in->links[0])
-					continue;
-				auto type = in->type;
-				if (type->tag() != TypePointer)
+				auto n_node = n_nodes.append_child("node");
+				n_node.append_attribute("node_type").set_value(n->node_type);
+				n_node.append_attribute("id").set_value(n->id.v);
+				n_node.append_attribute("type").set_value(n->type.v);
+				n_node.append_attribute("pos").set_value(to_string(n->pos).c_str());
+
+				pugi::xml_node n_datas;
+				for (auto& in : n->inputs)
 				{
-					if (in->default_value && memcmp(in->default_value, in->data, in->size) == 0)
+					if (in->links[0])
 						continue;
-					if (!n_datas)
-						n_datas = n_node.append_child("datas");
-					auto n_data = n_datas.append_child("data");
-					n_data.append_attribute("name").set_value(in->name.c_str());
-					n_data.append_attribute("value").set_value(type->serialize(in->data).c_str());
+					auto type = in->type;
+					if (type->tag() != TypePointer)
+					{
+						if (in->default_value && memcmp(in->default_value, in->data, in->size) == 0)
+							continue;
+						if (!n_datas)
+							n_datas = n_node.append_child("datas");
+						auto n_data = n_datas.append_child("data");
+						n_data.append_attribute("name").set_value(in->name.v);
+						n_data.append_attribute("value").set_value(type->serialize(in->data).c_str());
+					}
 				}
 			}
-		}
 
-		auto n_links = file_root.append_child("links");
-		for (auto& n : bp->nodes)
-		{
-			for (auto& in : n->inputs)
+			auto n_links = n_group.append_child("links");
+			for (auto& n : g->nodes)
 			{
-				auto out = in->links[0];
-				if (out)
+				for (auto& in : n->inputs)
 				{
-					auto n_link = n_links.append_child("link");
-					n_link.append_attribute("out").set_value(out->get_address().v);
-					n_link.append_attribute("in").set_value(in->get_address().v);
+					auto out = in->links[0];
+					if (out)
+					{
+						auto n_link = n_links.append_child("link");
+						n_link.append_attribute("out").set_value(out->get_address().v);
+						n_link.append_attribute("in").set_value(in->get_address().v);
+					}
 				}
 			}
 		}
 
 		file.save_file(filename);
 
-		if (bp->need_rebuild_update_list)
-			build_update_list(bp);
-		struct Var
-		{
-			std::string type;
-			std::string name;
-			int ref_count;
-		};
-		struct Line
-		{
-			int assign_var_idx; // -1 means it is not an assignment
-			std::string content;
-		};
-		std::vector<Var> vars;
-		std::vector<Line> lines;
-		for (auto n : bp->update_list)
-		{
-			auto var_id = [](SlotPrivate* s) {
-				auto n = s->node;
-				if (n->node_type != NodeReal)
-					return std::string(n->udt->link_name()) + "->" + (s->setter ? "set_" : "") + s->name;
-				return "_" + n->id + "_" + s->name;
-			};
+		//if (bp->need_rebuild_update_list)
+		//	build_update_list(bp);
+		//struct Var
+		//{
+		//	std::string type;
+		//	std::string name;
+		//	int ref_count;
+		//};
+		//struct Line
+		//{
+		//	int assign_var_idx; // -1 means it is not an assignment
+		//	std::string content;
+		//};
+		//std::vector<Var> vars;
+		//std::vector<Line> lines;
+		//for (auto n : bp->update_list)
+		//{
+		//	auto var_id = [](SlotPrivate* s) {
+		//		auto n = s->node;
+		//		if (n->node_type != NodeReal)
+		//			return std::string(n->udt->link_name()) + "->" + (s->setter ? "set_" : "") + s->name;
+		//		return "_" + n->id + "_" + s->name;
+		//	};
 
-			switch (n->node_type)
-			{
-			case NodeRefWrite:
-				for (auto& in : n->inputs)
-				{
-					auto out = (SlotPrivate*)in->links[0];
-					std::string value;
-					if (!out)
-					{
-						auto type = in->type;
-						if (type->tag() == TypePointer || (in->default_value && memcmp(in->default_value, in->data, in->size) == 0))
-							continue;
-						value = type->serialize(in->data);
-					}
-					else
-						value = var_id(out);
-					auto line = var_id(in.get());
-					if (in->setter)
-						line += "(" + value + ");";
-					else
-						line += " = " + value + ";";
-					lines.push_back({ -1, line });
-				}
-				break;
-			case NodeReal:
-			{
-				std::string parameters;
-				auto ntype = break_node_type(n->type, &parameters);
-				if (ntype == 0)
-				{
-					auto f = n->udt->find_function("bp_update");
-					assert(f && check_function(f, "D#void", {}));
-					std::string function_code = f->code();
-					for (auto& out : n->outputs)
-					{
-						auto id = var_id(out.get());
+		//	switch (n->node_type)
+		//	{
+		//	case NodeRefWrite:
+		//		for (auto& in : n->inputs)
+		//		{
+		//			auto out = (SlotPrivate*)in->links[0];
+		//			std::string value;
+		//			if (!out)
+		//			{
+		//				auto type = in->type;
+		//				if (type->tag() == TypePointer || (in->default_value && memcmp(in->default_value, in->data, in->size) == 0))
+		//					continue;
+		//				value = type->serialize(in->data);
+		//			}
+		//			else
+		//				value = var_id(out);
+		//			auto line = var_id(in.get());
+		//			if (in->setter)
+		//				line += "(" + value + ");";
+		//			else
+		//				line += " = " + value + ";";
+		//			lines.push_back({ -1, line });
+		//		}
+		//		break;
+		//	case NodeReal:
+		//	{
+		//		std::string parameters;
+		//		auto ntype = break_node_type(n->type, &parameters);
+		//		if (ntype == 0)
+		//		{
+		//			auto f = n->udt->find_function("bp_update");
+		//			assert(f && check_function(f, "D#void", {}));
+		//			std::string function_code = f->code();
+		//			for (auto& out : n->outputs)
+		//			{
+		//				auto id = var_id(out.get());
 
-						vars.push_back({ out->type->get_cpp_name(), id, 0 });
-						std::regex reg("\\b" + out->name + "\\b");
-						function_code = std::regex_replace(function_code, reg, id);
-					}
-					for (auto& in : n->inputs)
-					{
-						auto out = (SlotPrivate*)in->links[0];
-						std::string value;
-						if (!out)
-							value = in->type->serialize(in->data);
-						else
-							value = var_id(out);
-						std::regex reg(R"(\b)" + in->name + R"(\b)");
-						function_code = std::regex_replace(function_code, reg, value);
-					}
-					auto function_lines = SUS::split(function_code, '\n');
-					for (auto& l : function_lines)
-						lines.push_back({ -1, l });
-				}
-				else
-				{
-					switch (ntype)
-					{
-					case 'S':
-					case 'M':
-					{
-						auto out_id = "_" + n->id + "_out";
-						auto res_id = "_" + n->id + "_res";
-						vars.push_back({ "uint", out_id, 0 });
-						vars.push_back({ "float", res_id, 0 });
-						std::string in_value;
-						{
-							auto in = n->inputs[0].get();
-							auto out = (SlotPrivate*)in->links[0];
-							in_value = out ? var_id(out) : std::to_string(*(int*)in->data);
-							lines.push_back({ -1, out_id + " = " + in_value + ";" });
-						}
-						{
-							auto in = n->inputs[1].get();
-							auto out = (SlotPrivate*)in->links[0];
-							if (ntype == 'S')
-							{
-								if (!out)
-									lines.push_back({ -1, res_id + " = " + out_id + " == " + std::to_string(*(int*)in->data) + " ? 1.f : 0.f;" });
-								else
-									lines.push_back({ -1, res_id + " = " + in_value + " == " + var_id(out) + " ? 1.f : 0.f;" });
-							}
-							else
-							{
-								if (!out)
-									lines.push_back({ -1, res_id + " = (" + out_id + " & " + std::to_string(*(int*)in->data) + ") ? 1.f : 0.f;" });
-								else
-									lines.push_back({ -1, res_id + " = (" + in_value + " & " + var_id(out) + ") ? 1.f : 0.f;" });
-							}
-						}
-					}
-						break;
-					case 'V':
-						assert(0); // WIP
-						break;
-					case 'A':
-						assert(0); // WIP
-						break;
-					}
-				}
-			}
-				break;
-			}
-		}
+		//				vars.push_back({ out->type->get_cpp_name(), id, 0 });
+		//				std::regex reg("\\b" + out->name + "\\b");
+		//				function_code = std::regex_replace(function_code, reg, id);
+		//			}
+		//			for (auto& in : n->inputs)
+		//			{
+		//				auto out = (SlotPrivate*)in->links[0];
+		//				std::string value;
+		//				if (!out)
+		//					value = in->type->serialize(in->data);
+		//				else
+		//					value = var_id(out);
+		//				std::regex reg(R"(\b)" + in->name + R"(\b)");
+		//				function_code = std::regex_replace(function_code, reg, value);
+		//			}
+		//			auto function_lines = SUS::split(function_code, '\n');
+		//			for (auto& l : function_lines)
+		//				lines.push_back({ -1, l });
+		//		}
+		//		else
+		//		{
+		//			switch (ntype)
+		//			{
+		//			case 'S':
+		//			case 'M':
+		//			{
+		//				auto out_id = "_" + n->id + "_out";
+		//				auto res_id = "_" + n->id + "_res";
+		//				vars.push_back({ "uint", out_id, 0 });
+		//				vars.push_back({ "float", res_id, 0 });
+		//				std::string in_value;
+		//				{
+		//					auto in = n->inputs[0].get();
+		//					auto out = (SlotPrivate*)in->links[0];
+		//					in_value = out ? var_id(out) : std::to_string(*(int*)in->data);
+		//					lines.push_back({ -1, out_id + " = " + in_value + ";" });
+		//				}
+		//				{
+		//					auto in = n->inputs[1].get();
+		//					auto out = (SlotPrivate*)in->links[0];
+		//					if (ntype == 'S')
+		//					{
+		//						if (!out)
+		//							lines.push_back({ -1, res_id + " = " + out_id + " == " + std::to_string(*(int*)in->data) + " ? 1.f : 0.f;" });
+		//						else
+		//							lines.push_back({ -1, res_id + " = " + in_value + " == " + var_id(out) + " ? 1.f : 0.f;" });
+		//					}
+		//					else
+		//					{
+		//						if (!out)
+		//							lines.push_back({ -1, res_id + " = (" + out_id + " & " + std::to_string(*(int*)in->data) + ") ? 1.f : 0.f;" });
+		//						else
+		//							lines.push_back({ -1, res_id + " = (" + in_value + " & " + var_id(out) + ") ? 1.f : 0.f;" });
+		//					}
+		//				}
+		//			}
+		//				break;
+		//			case 'V':
+		//				assert(0); // WIP
+		//				break;
+		//			case 'A':
+		//				assert(0); // WIP
+		//				break;
+		//			}
+		//		}
+		//	}
+		//		break;
+		//	}
+		//}
 
-		for (auto i = 0; i < vars.size(); i++)
-		{
-			std::regex reg(R"(^)" + vars[i].name + R"( = (.*);)");
-			for (auto& l : lines)
-			{
-				if (l.assign_var_idx == -1)
-				{
-					std::smatch res;
-					if (std::regex_search(l.content, res, reg))
-					{
-						l.content = res[1].str();
-						l.assign_var_idx = i;
-					}
-				}
-			}
-		}
+		//for (auto i = 0; i < vars.size(); i++)
+		//{
+		//	std::regex reg(R"(^)" + vars[i].name + R"( = (.*);)");
+		//	for (auto& l : lines)
+		//	{
+		//		if (l.assign_var_idx == -1)
+		//		{
+		//			std::smatch res;
+		//			if (std::regex_search(l.content, res, reg))
+		//			{
+		//				l.content = res[1].str();
+		//				l.assign_var_idx = i;
+		//			}
+		//		}
+		//	}
+		//}
 
-		for (auto i = 0; i < lines.size(); i++)
-		{
-			auto& l = lines[i];
-			if (l.assign_var_idx != -1)
-			{
-				auto& v = vars[l.assign_var_idx];
-				std::regex reg(R"(\b)" + v.name + R"(\b)");
-				auto ref_count = 0, last_ref_line = -1;
-				for (auto j = i + 1; j < lines.size(); j++)
-				{
-					std::smatch res;
-					auto str = lines[j].content;
-					while (std::regex_search(str, res, reg))
-					{
-						last_ref_line = j;
-						ref_count++;
-						str = res.suffix();
-					}
-				}
-				v.ref_count += ref_count;
-				if (ref_count == 1)
-				{
-					lines[last_ref_line].content = std::regex_replace(lines[last_ref_line].content, reg, "(" + l.content + ")");
-					v.ref_count--;
-				}
-				if (ref_count <= 1)
-					l.content.clear();
-			}
-		}
+		//for (auto i = 0; i < lines.size(); i++)
+		//{
+		//	auto& l = lines[i];
+		//	if (l.assign_var_idx != -1)
+		//	{
+		//		auto& v = vars[l.assign_var_idx];
+		//		std::regex reg(R"(\b)" + v.name + R"(\b)");
+		//		auto ref_count = 0, last_ref_line = -1;
+		//		for (auto j = i + 1; j < lines.size(); j++)
+		//		{
+		//			std::smatch res;
+		//			auto str = lines[j].content;
+		//			while (std::regex_search(str, res, reg))
+		//			{
+		//				last_ref_line = j;
+		//				ref_count++;
+		//				str = res.suffix();
+		//			}
+		//		}
+		//		v.ref_count += ref_count;
+		//		if (ref_count == 1)
+		//		{
+		//			lines[last_ref_line].content = std::regex_replace(lines[last_ref_line].content, reg, "(" + l.content + ")");
+		//			v.ref_count--;
+		//		}
+		//		if (ref_count <= 1)
+		//			l.content.clear();
+		//	}
+		//}
 
-		std::ofstream h_file(filename + std::wstring(L".h"));
-		h_file << "// THIS FILE IS AUTO-GENERATED\n";
-		for (auto& v : vars)
-		{
-			if (v.ref_count == 0)
-				continue;
-			h_file << v.type + " " + v.name + ";\n";
-		}
-		for (auto& l : lines)
-		{
-			if (l.content.empty())
-				continue;
-			if (l.assign_var_idx == -1)
-				h_file << l.content + "\n";
-			else
-				h_file << vars[l.assign_var_idx].name + " = " + l.content + ";\n";
-		}
-		h_file.close();
+		//std::ofstream h_file(filename + std::wstring(L".h"));
+		//h_file << "// THIS FILE IS AUTO-GENERATED\n";
+		//for (auto& v : vars)
+		//{
+		//	if (v.ref_count == 0)
+		//		continue;
+		//	h_file << v.type + " " + v.name + ";\n";
+		//}
+		//for (auto& l : lines)
+		//{
+		//	if (l.content.empty())
+		//		continue;
+		//	if (l.assign_var_idx == -1)
+		//		h_file << l.content + "\n";
+		//	else
+		//		h_file << vars[l.assign_var_idx].name + " = " + l.content + ";\n";
+		//}
+		//h_file.close();
 	}
 
 	void BP::destroy(BP *bp)

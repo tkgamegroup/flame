@@ -21,6 +21,16 @@ namespace flame
 		hover_listeners.impl = ListenerHubImpl::create();
 		focus_listeners.impl = ListenerHubImpl::create();
 		state_listeners.impl = ListenerHubImpl::create();
+		clicked_listeners.impl = ListenerHubImpl::create();
+
+		mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			if (is_mouse_clicked(action, key))
+			{
+				auto thiz = c.thiz<cEventReceiverPrivate>();
+				thiz->clicked_listeners.call_no_check_with_current(thiz);
+			}
+			return true;
+		}, Capture().set_thiz(this));
 
 		frame = -1;
 	}
@@ -34,6 +44,7 @@ namespace flame
 		ListenerHubImpl::destroy(hover_listeners.impl);
 		ListenerHubImpl::destroy(focus_listeners.impl);
 		ListenerHubImpl::destroy(state_listeners.impl);
+		ListenerHubImpl::destroy(clicked_listeners.impl);
 	}
 
 	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)

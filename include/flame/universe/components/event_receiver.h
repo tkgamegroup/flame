@@ -25,6 +25,8 @@ namespace flame
 		ListenerHub<bool(Capture& c, bool focusing)>												focus_listeners;
 		ListenerHub<bool(Capture& c, EventReceiverState state)>										state_listeners;
 
+		FLAME_RV(ListenerHub<void(Capture& c)>,														clicked_listeners);
+
 		cEventReceiver() :
 			Component("cEventReceiver")
 		{

@@ -54,10 +54,11 @@ int main(int argc, char** args)
 	new MainWindow;
 
 	app.bp = BP::create_from_file((app.resource_path / L"test.bp").c_str());
-	auto nr = app.bp->add_node("", "flame::cElement", BP::NodeRefRead);
-	auto nw = app.bp->add_node("", "flame::cElement", BP::NodeRefWrite);
-	auto nt = app.bp->add_node("", "flame::R_Time");
-	auto na = app.bp->add_node("", "flame::R_Add");
+	auto g = app.bp->groups[0];
+	auto nr = g->add_node("", "flame::cElement", BP::NodeRefRead);
+	auto nw = g->add_node("", "flame::cElement", BP::NodeRefWrite);
+	auto nt = g->add_node("", "flame::R_Time");
+	auto na = g->add_node("", "flame::R_Add");
 	na->find_input("a")->link_to(nr->find_output("scale"));
 	na->find_input("b")->link_to(nt->find_output("total"));
 	nw->find_input("scale")->link_to(na->find_output("out"));

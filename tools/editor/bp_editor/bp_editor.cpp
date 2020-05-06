@@ -108,7 +108,7 @@ struct Action_AddNode : Action
 	void redo() override
 	{
 		auto n = bp_editor._add_node(desc.node_type, desc.id.c_str(), desc.type.c_str(), desc.pos);
-		n->set_guid(desc.guid);
+		n->guid = desc.guid;
 	}
 };
 
@@ -139,7 +139,7 @@ struct Action_DuplicateNodes : Action
 			nodes[i] = bp_editor.bp->find_node(models[i]);
 		auto new_nodes = bp_editor._duplicate_nodes(nodes);
 		for (auto i = 0; i < new_nodes.size(); i++)
-			new_nodes[i]->set_guid(duplications[i]);
+			new_nodes[i]->guid = duplications[i];
 	}
 };
 
@@ -159,23 +159,23 @@ struct Action_RemoveNodes : Action
 			auto n = bp_editor._add_node(s.desc.node_type, s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
 			if (n)
 			{
-				n->set_guid(s.desc.guid);
+				n->guid = s.desc.guid;
 				for (auto i = 0; i < s.inputs.size(); i++)
 				{
 					auto& src = s.inputs[i];
-					auto dst = n->input(i);
-					auto type = dst->type();
+					auto dst = n->inputs[i];
+					auto type = dst->type;
 					if (type->tag() != TypePointer)
 					{
-						auto data = new char[dst->size()];
+						auto data = new char[dst->size];
 						type->unserialize(src.data, data);
 						dst->set_data((char*)data);
 						delete[] data;
 					}
 
-					if (!src.link.empty())
+					if (!src.link.slot_name.empty())
 					{
-						auto slot = bp_editor.bp->find_output(src.link.c_str());
+						auto slot = bp_editor.bp->find_node(src.link.node_guid)->find_output(src.link.slot_name.c_str());
 						if (slot)
 							dst->link_to(slot);
 					}
@@ -183,11 +183,11 @@ struct Action_RemoveNodes : Action
 				for (auto i = 0; i < s.outputs.size(); i++)
 				{
 					auto& src = s.outputs[i];
-					auto dst = n->output(i);
+					auto dst = n->outputs[i];
 
 					for (auto& a : src.links)
 					{
-						auto slot = bp_editor.bp->find_input(a.c_str());
+						auto slot = bp_editor.bp->find_node(a.node_guid)->find_input(a.slot_name.c_str());
 						if (slot)
 							slot->link_to(dst);
 					}
@@ -211,10 +211,9 @@ struct Action_SetLinks : Action
 {
 	struct LinkDesc
 	{
-		Guid node_guid;
-		std::string input_name;
-		std::string before_output_addr;
-		std::string after_output_addr;
+		LinkSaving input;
+		LinkSaving before_output_addr;
+		LinkSaving after_output_addr;
 	};
 	std::vector<LinkDesc> link_descs;
 
@@ -227,9 +226,9 @@ struct Action_SetLinks : Action
 	{
 		for (auto& l : link_descs)
 		{
-			auto i = bp_editor.bp->find_node(l.node_guid)->find_input(l.input_name.c_str());
+			auto i = bp_editor.bp->find_node(l.input.node_guid)->find_input(l.input.slot_name.c_str());
 			if (i)
-				bp_editor._set_link(i, l.before_output_addr.empty() ? nullptr : bp_editor.bp->find_output(l.before_output_addr.c_str()));
+				bp_editor._set_link(i, l.before_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->find_node(l.before_output_addr.node_guid)->find_output(l.before_output_addr.slot_name.c_str()));
 		}
 
 		bp_editor.window->s_2d_renderer->pending_update = true;
@@ -239,9 +238,9 @@ struct Action_SetLinks : Action
 	{
 		for (auto& l : link_descs)
 		{
-			auto i = bp_editor.bp->find_node(l.node_guid)->find_input(l.input_name.c_str());
+			auto i = bp_editor.bp->find_node(l.input.node_guid)->find_input(l.input.slot_name.c_str());
 			if (i)
-				bp_editor._set_link(i, l.after_output_addr.empty() ? nullptr : bp_editor.bp->find_output(l.after_output_addr.c_str()));
+				bp_editor._set_link(i, l.after_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->find_node(l.after_output_addr.node_guid)->find_output(l.after_output_addr.slot_name.c_str()));
 		}
 
 		bp_editor.window->s_2d_renderer->pending_update = true;
@@ -265,9 +264,8 @@ struct Action_SetData : Action
 		auto s = bp_editor.bp->find_node(node_guid)->find_input(input_name.c_str());
 		if (s)
 		{
-			auto type = s->type();
-			auto data = new char[s->size()];
-			type->unserialize(before_data, data);
+			auto data = new char[s->size];
+			s->type->unserialize(before_data, data);
 			s->set_data((char*)data);
 			delete[] data;
 
@@ -281,9 +279,8 @@ struct Action_SetData : Action
 		auto s = bp_editor.bp->find_node(node_guid)->find_input(input_name.c_str());
 		if (s)
 		{
-			auto type = s->type();
-			auto data = new char[s->size()];
-			type->unserialize(after_data, data);
+			auto data = new char[s->size];
+			s->type->unserialize(after_data, data);
 			s->set_data((char*)data);
 			delete[] data;
 
@@ -345,14 +342,14 @@ static void duplicate_selected()
 	auto a = new Action_DuplicateNodes;
 	a->models.resize(bp_editor.selected_nodes.size());
 	for (auto i = 0; i < bp_editor.selected_nodes.size(); i++)
-		a->models[i] = bp_editor.selected_nodes[i]->guid();
+		a->models[i] = bp_editor.selected_nodes[i]->guid;
 
 	auto new_nodes = bp_editor._duplicate_nodes(bp_editor.selected_nodes);
 	bp_editor.select(new_nodes);
 
 	a->duplications.resize(new_nodes.size());
 	for (auto i = 0; i < new_nodes.size(); i++)
-		a->duplications[i] = new_nodes[i]->guid();
+		a->duplications[i] = new_nodes[i]->guid;
 
 	add_action(a);
 
@@ -749,8 +746,9 @@ BP::Node* BPEditor::add_node(const NodeDesc& desc)
 	auto a = new Action_AddNode;
 	a->desc.node_type = desc.node_type;
 	a->desc.type = desc.type;
-	a->desc.guid = n->guid();
-	a->desc.id = n->id();
+	auto unit = n;
+	a->desc.guid = unit->guid;
+	a->desc.id = unit->id.v;
 	a->desc.pos = desc.pos;
 	add_action(a);
 
@@ -767,32 +765,36 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 	{
 		auto n = nodes[i];
 		auto& s = a->savings[i];
-		s.desc.node_type = n->node_type();
-		s.desc.type = n->type();
-		s.desc.guid = n->guid();
-		s.desc.id = n->id();
-		s.desc.pos = n->pos;
-		s.inputs.resize(n->input_count());
+		s.desc.node_type = n->node_type;
+		s.desc.type = n->type.v;
+		auto unit = n;
+		s.desc.guid = unit->guid;
+		s.desc.id = unit->id.v;
+		s.desc.pos = unit->pos;
+		s.inputs.resize(n->inputs.s);
 		for (auto j = 0; j < s.inputs.size(); j++)
 		{
-			auto src = n->input(j);
+			auto src = n->inputs[j];
 			auto& dst = s.inputs[j];
-			auto type = src->type();
+			auto type = src->type;
 			if (type->tag() != TypePointer)
-				dst.data = type->serialize(src->data());
-			auto slot = src->link(0);
+				dst.data = type->serialize(src->data);
+			auto slot = src->links[0];
 			if (slot)
-				dst.link = slot->get_address().v;
+			{
+				dst.link.node_guid = slot->parent->guid;
+				dst.link.slot_name = slot->name.v;
+			}
 		}
-		s.outputs.resize(n->output_count());
+		s.outputs.resize(n->outputs.s);
 		for (auto j = 0; j < s.outputs.size(); j++)
 		{
-			auto src = n->output(j);
+			auto src = n->outputs[j];
 			auto& dst = s.outputs[j];
-			for (auto k = 0; k < src->link_count(); k++)
+			for (auto k = 0; k < src->links.s; k++)
 			{
-				auto slot = src->link(k);
-				auto _n = slot->node();
+				auto slot = src->links[k];
+				auto _n = (BP::Node*)slot->parent;
 				auto existed = false;
 				for (auto& n : nodes)
 				{
@@ -804,7 +806,11 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 				}
 				if (existed)
 					continue;
-				dst.links.push_back(slot->get_address().v);
+
+				LinkSaving l;
+				l.node_guid = _n->guid;
+				l.slot_name = slot->name.v;
+				dst.links.push_back(l);
 			}
 		}
 	}
@@ -818,7 +824,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 
 void BPEditor::set_node_id(BP::Node* n, const std::string& id)
 {
-	std::string before_id = n->id();
+	std::string before_id = n->id.v;
 
 	if (!n->set_id(id.c_str()))
 		return;
@@ -839,7 +845,7 @@ void BPEditor::set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vec
 	{
 		auto& src = nodes[i];
 		auto& dst = a->targets[i];
-		dst.guid = src->guid();
+		dst.guid = src->guid;
 		dst.before_pos = src->pos;
 		dst.after_pos = poses[i];
 	}
@@ -859,13 +865,19 @@ void BPEditor::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& lin
 	{
 		auto& src = links[i];
 		auto& dst = a->link_descs[i];
-		dst.node_guid = src.first->node()->guid();
-		dst.input_name = src.first->name();
-		auto prev = src.first->link(0);
+		dst.input.node_guid = src.first->parent->guid;
+		dst.input.slot_name = src.first->name.v;
+		auto prev = src.first->links[0];
 		if (prev)
-			dst.before_output_addr = prev->get_address().v;
+		{
+			dst.before_output_addr.node_guid = prev->parent->guid;
+			dst.before_output_addr.slot_name = prev->name.v;
+		}
 		if (src.second)
-			dst.after_output_addr = src.second->get_address().v;
+		{
+			dst.after_output_addr.node_guid = src.second->parent->guid;
+			dst.after_output_addr.slot_name = src.second->name.v;
+		}
 	}
 	add_action(a);
 
@@ -877,12 +889,12 @@ void BPEditor::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& lin
 
 void BPEditor::set_data(BP::Slot* input, void* data, bool from_editor)
 {
-	auto type = input->type();
+	auto type = input->type;
 
 	auto a = new Action_SetData;
-	a->node_guid = input->node()->guid();
-	a->input_name = input->name();
-	a->before_data = type->serialize(input->data());
+	a->node_guid = input->parent->guid;
+	a->input_name = input->name.v;
+	a->before_data = type->serialize(input->data);
 	a->after_data = type->serialize(data);
 	add_action(a);
 
@@ -900,61 +912,61 @@ void BPEditor::update()
 
 void BPEditor::update_gv()
 {
-	auto gv_filename = fileppath / L"bp.gv";
-	if (!std::filesystem::exists(gv_filename) || std::filesystem::last_write_time(gv_filename) < std::filesystem::last_write_time(filepath))
-	{
-		if (!GRAPHVIZ_PATH[0])
-			assert(0);
+	//auto gv_filename = fileppath / L"bp.gv";
+	//if (!std::filesystem::exists(gv_filename) || std::filesystem::last_write_time(gv_filename) < std::filesystem::last_write_time(filepath))
+	//{
+	//	if (!GRAPHVIZ_PATH[0])
+	//		assert(0);
 
-		std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
-		for (auto i = 0; i < bp->node_count(); i++)
-		{
-			auto n = bp->node(i);
-			auto name = n->id();
-			auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, n->type());
-			for (auto j = 0; j < n->input_count(); j++)
-			{
-				auto input = n->input(j);
-				auto name = input->name();
-				str += sfmt("<%s>%s", name, name);
-				if (j != n->input_count() - 1)
-					str += "|";
-			}
-			str += "}|{";
-			for (auto j = 0; j < n->output_count(); j++)
-			{
-				auto output = n->output(j);
-				auto name = output->name();
-				str += sfmt("<%s>%s", name, name);
-				if (j != n->output_count() - 1)
-					str += "|";
-			}
-			str += "}}\"];\n";
+	//	std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
+	//	for (auto i = 0; i < bp->node_count(); i++)
+	//	{
+	//		auto n = bp->nodes(i);
+	//		auto name = n->id();
+	//		auto str = sfmt("\t%s[label = \"%s|%s|{{", name, name, n->type());
+	//		for (auto j = 0; j < n->input_count(); j++)
+	//		{
+	//			auto input = n->input(j);
+	//			auto name = input->name();
+	//			str += sfmt("<%s>%s", name, name);
+	//			if (j != n->input_count() - 1)
+	//				str += "|";
+	//		}
+	//		str += "}|{";
+	//		for (auto j = 0; j < n->output_count(); j++)
+	//		{
+	//			auto output = n->output(j);
+	//			auto name = output->name();
+	//			str += sfmt("<%s>%s", name, name);
+	//			if (j != n->output_count() - 1)
+	//				str += "|";
+	//		}
+	//		str += "}}\"];\n";
 
-			gv += str;
-		}
-		for (auto i = 0; i < bp->node_count(); i++)
-		{
-			auto n = bp->node(i);
+	//		gv += str;
+	//	}
+	//	for (auto i = 0; i < bp->node_count(); i++)
+	//	{
+	//		auto n = bp->node(i);
 
-			for (auto j = 0; j < n->input_count(); j++)
-			{
-				auto input = n->input(j);
-				if (input->link())
-				{
-					auto in_sp = SUS::split(input->get_address().str(), '.');
-					auto out_sp = SUS::split(input->link()->get_address().str(), '.');
+	//		for (auto j = 0; j < n->input_count(); j++)
+	//		{
+	//			auto input = n->input(j);
+	//			if (input->link())
+	//			{
+	//				auto in_sp = SUS::split(input->get_address().str(), '.');
+	//				auto out_sp = SUS::split(input->link()->get_address().str(), '.');
 
-					gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
-				}
-			}
-		}
-		gv += "}\n";
+	//				gv += "\t" + out_sp[0] + ":" + out_sp[1] + " -> " + in_sp[0] + ":" + in_sp[1] + ";\n";
+	//			}
+	//		}
+	//	}
+	//	gv += "}\n";
 
-		std::ofstream file(gv_filename);
-		file << gv;
-		file.close();
-	}
+	//	std::ofstream file(gv_filename);
+	//	file << gv;
+	//	file.close();
+	//}
 }
 
 const auto dot_path = s2w(GRAPHVIZ_PATH) + L"/bin/dot.exe";
@@ -971,55 +983,55 @@ bool BPEditor::generate_graph_image()
 
 bool BPEditor::auto_set_layout()
 {
-	update_gv();
-	auto graph_filename = fileppath / L"bp.graph";
-	if (!std::filesystem::exists(graph_filename) || std::filesystem::last_write_time(graph_filename) < std::filesystem::last_write_time(filepath))
-		exec(dot_path.c_str(), (wchar_t*)(L"-Tplain" + fileppath.wstring() + L"/bp.gv -y -o " + graph_filename.wstring()).c_str(), true);
-	if (!std::filesystem::exists(graph_filename))
-		return false;
+	//update_gv();
+	//auto graph_filename = fileppath / L"bp.graph";
+	//if (!std::filesystem::exists(graph_filename) || std::filesystem::last_write_time(graph_filename) < std::filesystem::last_write_time(filepath))
+	//	exec(dot_path.c_str(), (wchar_t*)(L"-Tplain" + fileppath.wstring() + L"/bp.gv -y -o " + graph_filename.wstring()).c_str(), true);
+	//if (!std::filesystem::exists(graph_filename))
+	//	return false;
 
-	auto str = get_file_content(L"bp.graph.txt");
-	for (auto it = str.begin(); it != str.end(); )
-	{
-		if (*it == '\\')
-		{
-			it = str.erase(it);
-			if (it != str.end())
-			{
-				if (*it == '\r')
-				{
-					it = str.erase(it);
-					if (it != str.end() && *it == '\n')
-						it = str.erase(it);
-				}
-				else if (*it == '\n')
-					it = str.erase(it);
-			}
-		}
-		else
-			it++;
-	}
+	//auto str = get_file_content(L"bp.graph.txt");
+	//for (auto it = str.begin(); it != str.end(); )
+	//{
+	//	if (*it == '\\')
+	//	{
+	//		it = str.erase(it);
+	//		if (it != str.end())
+	//		{
+	//			if (*it == '\r')
+	//			{
+	//				it = str.erase(it);
+	//				if (it != str.end() && *it == '\n')
+	//					it = str.erase(it);
+	//			}
+	//			else if (*it == '\n')
+	//				it = str.erase(it);
+	//		}
+	//	}
+	//	else
+	//		it++;
+	//}
 
-	std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
-	std::smatch res;
-	while (std::regex_search(str, res, reg_node))
-	{
-		auto n = bp->find_node(res[1].str().c_str());
-		if (n)
-		{
-			n->pos = Vec2f(std::stof(res[2].str().c_str()), std::stof(res[3].str().c_str())) * 100.f;
-			((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
-		}
+	//std::regex reg_node(R"(node ([\w]+) ([\d\.]+) ([\d\.]+))");
+	//std::smatch res;
+	//while (std::regex_search(str, res, reg_node))
+	//{
+	//	auto n = bp->find_node(res[1].str().c_str());
+	//	if (n)
+	//	{
+	//		n->pos = Vec2f(std::stof(res[2].str().c_str()), std::stof(res[3].str().c_str())) * 100.f;
+	//		((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
+	//	}
 
-		str = res.suffix();
-	}
+	//	str = res.suffix();
+	//}
 
 	return true;
 }
 
 BP::Node* BPEditor::_add_node(BP::NodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
-	auto n = bp_editor.bp->add_node(nullptr, id.c_str(), type.c_str(), node_type);
+	auto n = bp_editor.bp->groups[0]->add_node(id.c_str(), type.c_str(), node_type);
 	if (!n)
 		return nullptr;
 	n->pos = pos;
@@ -1037,14 +1049,13 @@ void BPEditor::_remove_node(BP::Node* n)
 		looper().add_event([](Capture& c) {
 			auto n = c.thiz<BP::Node>();
 			std::vector<BP::Node*> ref_ns;
-			for (auto i = 0; i < n->output_count(); i++)
+			for (auto o : n->outputs)
 			{
-				auto o = n->output(i);
-				for (auto j = 0; j < o->link_count(); j++)
-					ref_ns.push_back(o->link(j)->node());
+				for (auto l : o->links)
+					ref_ns.push_back((BP::Node*)l->parent);
 			}
 			bp_editor.editor->on_remove_node(n);
-			bp_editor.bp->remove_node(n);
+			bp_editor.bp->groups[0]->remove_node(n);
 			for (auto n : ref_ns)
 			{
 				bp_editor.editor->on_remove_node(n);
@@ -1060,28 +1071,28 @@ std::vector<BP::Node*> BPEditor::_duplicate_nodes(const std::vector<BP::Node*>& 
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = models[i];
-		ret[i] = _add_node(n->node_type(), "", n->type(), n->pos + Vec2f(20.f));
+		ret[i] = _add_node(n->node_type, "", n->type.v, n->pos + Vec2f(20.f));
 	}
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = ret[i];
-		for (auto j = 0; j < n->input_count(); j++)
+		for (auto j = 0; j < n->inputs.s; j++)
 		{
-			n->input(j)->set_data(models[i]->input(j)->data());
-			auto link = models[i]->input(j)->link(0);
+			n->inputs[j]->set_data(models[i]->inputs[j]->data);
+			auto link = models[i]->inputs[j]->links[0];
 			if (link)
 			{
-				auto nn = link->node();
+				auto nn = (BP::Node*)link->parent;
 				for (auto k = 0; k < models.size(); k++)
 				{
 					if (nn == models[k])
 					{
-						link = ret[k]->output(link->index());
+						link = ret[k]->outputs[link->index];
 						break;
 					}
 				}
 			}
-			n->input(j)->link_to(link);
+			n->inputs[j]->link_to(link);
 		}
 	}
 	return ret;
@@ -1093,7 +1104,7 @@ void BPEditor::_set_link(BP::Slot* in, BP::Slot* out)
 		auto n = c.thiz<BP::Node>();
 		bp_editor.editor->on_remove_node(n);
 		bp_editor.editor->on_add_node(n);
-	}, Capture().set_thiz(in->node()));
+	}, Capture().set_thiz(in->parent));
 	in->link_to(out);
 }
 

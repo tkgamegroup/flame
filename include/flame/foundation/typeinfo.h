@@ -160,7 +160,7 @@ namespace flame
 
 		inline std::string serialize(const void* src) const;
 		inline void unserialize(const std::string& src, void* dst) const;
-		inline void copy_from(const void* src, void* dst) const;
+		inline void copy_from(const void* src, void* dst, uint size = 0) const;
 	};
 
 	enum VariableFlags
@@ -518,10 +518,13 @@ namespace flame
 				return ((StringA*)src)->str();
 			case FLAME_CHASH("flame::StringW"):
 				return w2s(((StringW*)src)->str());
+			case FLAME_CHASH("ListenerHub"):
+				return "";
 			default:
 				assert(0);
 			}
 		}
+		return "";
 	}
 
 	void TypeInfo::unserialize(const std::string& src, void* dst) const
@@ -621,6 +624,8 @@ namespace flame
 			case FLAME_CHASH("flame::StringW"):
 				*(StringW*)dst = s2w(src);
 				break;
+			case FLAME_CHASH("ListenerHub"):
+				break;
 			default:
 				assert(0);
 			}
@@ -628,10 +633,10 @@ namespace flame
 		}
 	}
 
-	void TypeInfo::copy_from(const void* src, void* dst) const
+	void TypeInfo::copy_from(const void* src, void* dst, uint size) const
 	{
 		if (tag() == TypeData)
-			basic_type_copy(base_hash(), src, dst);
+			basic_type_copy(base_hash(), src, dst, size);
 		else if (tag() == TypeEnumSingle || tag() == TypeEnumMulti)
 			memcpy(dst, src, sizeof(int));
 		else if (tag() == TypePointer)

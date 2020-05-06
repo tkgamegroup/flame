@@ -653,18 +653,7 @@ namespace flame
 			c_text()->set_text(text);
 			auto cer = c_event_receiver();
 			if (on_clicked)
-			{
-				struct Capturing
-				{
-					void(*f)(Capture&);
-				}capture;
-				capture.f = on_clicked;
-				cer->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_clicked(action, key))
-						c.data<Capturing>().f(c.release<Capturing>());
-					return true;
-				}, Capture().absorb(&capture, _capture, true));
-			}
+				cer->clicked_listeners.add(on_clicked, _capture);
 			if (use_style)
 			{
 				auto cs = c_style_color();

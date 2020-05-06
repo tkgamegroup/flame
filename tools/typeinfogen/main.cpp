@@ -56,7 +56,6 @@ std::string format_type(const wchar_t* in, bool* is_array)
 			pos = str.find(str_stringw.s, 0, str_stringw.l);
 		}
 	}
-
 	{
 		FLAME_SAL(array_str, "flame::Array");
 		if (str.compare(0, array_str.l, array_str.s) == 0 && str.size() > array_str.l + 1)
@@ -66,6 +65,11 @@ std::string format_type(const wchar_t* in, bool* is_array)
 			str.erase(str.begin(), str.begin() + array_str.l + 1);
 			str.erase(str.end() - 1);
 		}
+	}
+	{
+		FLAME_SAL(listenerhub_str, "flame::ListenerHub");
+		if (str.compare(0, listenerhub_str.l, listenerhub_str.s) == 0)
+			str = "ListenerHub";
 	}
 
 	std::string head;
@@ -197,12 +201,10 @@ TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
-		auto tag = TypeData;
 		auto is_array = false;
 		auto name = format_type(pwname, &is_array);
-		return TypeInfoDesc(tag, name, is_array);
+		return TypeInfoDesc(TypeData, name, is_array);
 	}
-	break;
 	case SymTagFunctionArgType:
 	{
 		IDiaSymbol* s_arg_type;

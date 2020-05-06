@@ -81,6 +81,7 @@ struct cBPEditor : Component
 	void on_before_select();
 	void on_after_select();
 	void on_pos_changed(BP::Node* n);
+	void on_add_group(BP::Group* g);
 	void on_add_node(BP::Node* n);
 	void on_remove_node(BP::Node* n);
 	void on_data_changed(BP::Slot* s);
@@ -120,15 +121,21 @@ struct NodeDesc
 	Vec2f pos;
 };
 
+struct LinkSaving
+{
+	Guid node_guid;
+	std::string slot_name;
+};
+
 struct InputSaving
 {
 	std::string data;
-	std::string link;
+	LinkSaving link;
 };
 
 struct OutputSaving
 {
-	std::vector<std::string> links;
+	std::vector<LinkSaving> links;
 };
 
 struct NodeSaving

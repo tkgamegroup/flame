@@ -40,23 +40,23 @@ void cDetail::on_after_select()
 					auto n = bp_editor.selected_nodes[0];
 					std::wstring str;
 					std::string n_type_parameters;
-					auto n_type = BP::break_node_type(n->type(), &n_type_parameters);
-					auto n_name = n_type ? s2w(n_type_parameters) : s2w(n->type());
-					auto udt = n->udt();
+					auto n_type = BP::break_node_type(n->type.str(), &n_type_parameters);
+					auto n_name = n_type ? s2w(n_type_parameters) : s2w(n->type.str());
+					auto udt = n->udt;
 					if (udt)
 						str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + n_name;
 					else
 						str = node_type_prefix(n_type) + n_name;
 					ui.e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
 					ui.e_begin_layout(LayoutHorizontal, 4.f);
-						ui.e_text((L"ID: " + s2w(n->id())).c_str());
+						ui.e_text((L"ID: " + s2w(n->id.str())).c_str());
 						ui.e_button(L"change", [](Capture& c) {
 							auto& ui = bp_editor.window->ui;
 							auto n = c.thiz<BP::Node>();
 							ui.e_input_dialog(L"ID", [](Capture& c, bool ok, const wchar_t* text) {
 								if (ok && text[0])
 									bp_editor.set_node_id(c.thiz<BP::Node>(), w2s(text));
-							}, Capture().set_thiz(n), s2w(n->id()).c_str());
+							}, Capture().set_thiz(n), s2w(n->id.str()).c_str());
 						}, Capture().set_thiz(n));
 					ui.e_end_layout();
 				}
@@ -68,7 +68,7 @@ void cDetail::on_after_select()
 				if (bp_editor.selected_links.size() == 1)
 				{
 					auto l = bp_editor.selected_links[0];
-					ui.e_text(wfmt(L"%s -> %s", s2w(l->link()->get_address().v).c_str(), s2w(l->get_address().v).c_str()).c_str());
+					ui.e_text(wfmt(L"%s -> %s", s2w(l->links[0]->get_address().v).c_str(), s2w(l->get_address().v).c_str()).c_str());
 				}
 				else
 					ui.e_text(wfmt(L"%d links selected", (int)bp_editor.selected_links.size()).c_str());

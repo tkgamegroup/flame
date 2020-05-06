@@ -105,39 +105,34 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"nodes")
 					{
-						for (auto i = 0; i < bp_editor.bp->node_count(); i++)
-						{
-							auto n = bp_editor.bp->node(i);
-							log += wfmt(L"id:%s type:%s", s2w(n->id()).c_str(), s2w(n->udt()->name()).c_str()) + L"\n";
-						}
+						for (auto n : bp_editor.bp->groups[0]->nodes)
+							log += wfmt(L"id:%s type:%s", s2w(n->id.str()).c_str(), s2w(n->udt->name()).c_str()) + L"\n";
 					}
 					else if (tokens[1] == L"node")
 					{
-						auto n = bp_editor.bp->find_node(w2s(tokens[2]).c_str());
+						auto n = bp_editor.bp->groups[0]->find_node(w2s(tokens[2]).c_str());
 						if (n)
 						{
 							log += L"[In]\n";
-							for (auto i = 0; i < n->input_count(); i++)
+							for (auto input : n->inputs)
 							{
-								auto input = n->input(i);
-								auto type = input->type();
-								log += s2w(input->name()) + L"\n";
+								auto type = input->type;
+								log += s2w(input->name.str()) + L"\n";
 								std::string link_address;
-								if (input->link())
-									link_address = input->link()->get_address().str();
+								if (input->links[0])
+									link_address = input->links[0]->get_address().str();
 								log += wfmt(L"[%s]", s2w(link_address).c_str()) + L"\n";
-								auto str = s2w(type->serialize(input->data()));
+								auto str = s2w(type->serialize(input->data));
 								if (str.empty())
 									str = L"-";
 								log += wfmt(L"   %s", str.c_str()) + L"\n";
 							}
 							log += L"[Out]\n";
-							for (auto i = 0; i < n->output_count(); i++)
+							for (auto output : n->outputs)
 							{
-								auto output = n->output(i);
-								auto type = output->type();
-								log += s2w(output->name()) + L"\n";
-								auto str = s2w(type->serialize(output->data()).c_str());
+								auto type = output->type;
+								log += s2w(output->name.str()) + L"\n";
+								auto str = s2w(type->serialize(output->data).c_str());
 								if (str.empty())
 									str = L"-";
 								log += wfmt(L"   %s", str.c_str()) + L"\n";
@@ -171,15 +166,15 @@ cConsole::cConsole() :
 						auto n = bp_editor.add_node(d);
 						if (n)
 						{
-							log += wfmt(L"node added: %s", s2w(n->id()).c_str()) + L"\n";
+							log += wfmt(L"node added: %s", s2w(n->id.str()).c_str()) + L"\n";
 						}
 						else
 							log += L"bad udt name or id already exist\n";
 					}
 					else if (tokens[1] == L"link")
 					{
-						auto out = bp_editor.bp->find_output(w2s(tokens[2]).c_str());
-						auto in = bp_editor.bp->find_input(w2s(tokens[3]).c_str());
+						auto out = bp_editor.bp->groups[0]->find_output(w2s(tokens[2]).c_str());
+						auto in = bp_editor.bp->groups[0]->find_input(w2s(tokens[3]).c_str());
 						if (out && in)
 						{
 							bp_editor.set_links({ {in, out} });
@@ -195,7 +190,7 @@ cConsole::cConsole() :
 				{
 					if (tokens[1] == L"node")
 					{
-						auto n = bp_editor.bp->find_node(w2s(tokens[2]).c_str());
+						auto n = bp_editor.bp->groups[0]->find_node(w2s(tokens[2]).c_str());
 						if (n)
 						{
 							bp_editor.remove_nodes({ n });
@@ -206,7 +201,7 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"link")
 					{
-						auto in = bp_editor.bp->find_input(w2s(tokens[2]).c_str());
+						auto in = bp_editor.bp->groups[0]->find_input(w2s(tokens[2]).c_str());
 						if (in)
 						{
 							bp_editor.set_links({ {in, nullptr} });
@@ -220,18 +215,18 @@ cConsole::cConsole() :
 				}
 				else if (tokens[0] == L"set")
 				{
-					auto i = bp_editor.bp->find_input(w2s(tokens[1]).c_str());
+					auto i = bp_editor.bp->groups[0]->find_input(w2s(tokens[1]).c_str());
 					if (i)
 					{
-						auto type = i->type();
+						auto type = i->type;
 						if (type->tag() != TypePointer)
 						{
-							auto value_before = type->serialize(i->data());
-							auto data = new char[i->size()];
+							auto value_before = type->serialize(i->data);
+							auto data = new char[i->size];
 							type->unserialize(w2s(tokens[2]), data);
 							bp_editor.set_data(i, data, false);
 							delete[] data;
-							auto value_after = type->serialize(i->data());
+							auto value_after = type->serialize(i->data);
 							log += L"set value: " + tokens[1] + L", " + s2w(value_before) + L" -> " + s2w(value_after) + L"\n";
 						}
 						else

@@ -116,8 +116,8 @@ namespace flame
 		e->add_component(cElement::create());
 		e->add_component(cEventReceiver::create());
 		auto ca = cAligner::create();
-		ca->x_align_flags = AlignMinMax;
-		ca->y_align_flags = AlignMinMax;
+		ca->x_align_flags = AlignFlag(AlignMinMax | AlignAbsolute);
+		ca->y_align_flags = AlignFlag(AlignMinMax | AlignAbsolute);
 		e->add_component(ca);
 		e->add_component(cBringToFront::create());
 	}
@@ -426,7 +426,7 @@ namespace flame
 
 	void cDockerTab::make_floating_container(World* w, Entity* e, const Vec2f& pos, const Vec2f& size)
 	{
-		auto sg = (StyleGetter*)e->world()->find_object(FLAME_CHASH("StyleGetter"), 0);
+		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 		e->set_name("docker_floating_container");
 		auto ce = cElement::create();
 		ce->pos = pos;

@@ -133,6 +133,11 @@ namespace flame
 			assign(str.c_str(), str.size());
 		}
 
+		bool operator==(const std::basic_string<CH>& str)
+		{
+			return s == str.size() && std::char_traits<CH>::compare(v, str.c_str(), s) == 0;
+		}
+
 		std::basic_string<CH> str()
 		{
 			return std::basic_string<CH>(v, s);
@@ -152,6 +157,33 @@ namespace flame
 	template <class T>
 	struct Array
 	{
+		struct Iterator
+		{
+			T* ptr;
+
+			Iterator(T* ptr) : 
+				ptr(ptr) 
+			{
+			}
+
+			Iterator operator++() 
+			{ 
+				++ptr; 
+				return *this; 
+			}
+
+			bool operator!=(const Iterator& other) const
+			{ 
+				return ptr != other.ptr; 
+			}
+
+			const T& operator*() const 
+			{ 
+				return *ptr; 
+			}
+
+		};
+
 		uint s;
 		T* v;
 
@@ -246,10 +278,27 @@ namespace flame
 			rhs.v = nullptr;
 		}
 
+		Iterator begin() const
+		{
+			return Iterator(v);
+		}
+
+		Iterator end() const
+		{
+			return Iterator(v + s);
+		}
+
 		void push_back(const T& _v)
 		{
 			resize(s + 1);
 			v[s - 1] = _v;
+		}
+
+		void remove(uint offset, uint count = 1)
+		{
+			for (auto i = offset; i < s - count; i++)
+				v[i] = v[i + count];
+			resize(s - count);
 		}
 	};
 
@@ -371,7 +420,7 @@ namespace flame
 
 	struct ListenerHubImpl
 	{
-		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl *create();
+		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl* create();
 		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
 		FLAME_FOUNDATION_EXPORTS uint count();
 		FLAME_FOUNDATION_EXPORTS Closure<bool(Capture&)>& item(uint idx);
@@ -406,6 +455,14 @@ namespace flame
 		}
 
 		template <class ...Args>
+		void call_no_check(Args... args)
+		{
+			auto count = impl->count();
+			for (auto i = 0; i < count; i++)
+				impl->item(i).call<F>(args...);
+		}
+
+		template <class ...Args>
 		void call_with_current(void* current, Args... args)
 		{
 			auto count = impl->count();
@@ -417,6 +474,19 @@ namespace flame
 				closure.c._current = nullptr;
 				if (!pass)
 					break;
+			}
+		}
+
+		template <class ...Args>
+		void call_no_check_with_current(void* current, Args... args)
+		{
+			auto count = impl->count();
+			for (auto i = 0; i < count; i++)
+			{
+				auto& closure = impl->item(i);
+				closure.c._current = current;
+				closure.call<F>(args...);
+				closure.c._current = nullptr;
 			}
 		}
 	};
