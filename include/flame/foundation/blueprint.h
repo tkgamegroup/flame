@@ -135,6 +135,8 @@ namespace flame
 		{
 			BP* scene;
 
+			Slot* signal;
+
 			Array<Node*> nodes;
 
 			FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, const char* type, NodeType node_type = NodeReal);

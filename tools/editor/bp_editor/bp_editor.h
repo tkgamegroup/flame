@@ -214,7 +214,7 @@ struct BPEditor
 	bool auto_set_layout();
 
 	BP::Node* _add_node(BP::NodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos);
-	void _remove_node(BP::Node* n);
+	void _remove_nodes(const std::vector<BP::Node*>& nodes);
 	std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models);
 	void _set_link(BP::Slot* in, BP::Slot* out);
 };

@@ -402,34 +402,34 @@ cBPEditor::cBPEditor() :
 		auto line_width = 3.f * scale;
 		for (auto n : bp_editor.bp->groups[0]->nodes)
 		{
-			for (auto input : n->inputs)
+			for (auto output : n->outputs)
 			{
-				auto output = input->links[0];
-				if (!output)
-					continue;
-				auto e1 = ((cSlot*)output->user_data)->element;
-				auto e2 = ((cSlot*)input->user_data)->element;
-				if (e1->entity->global_visibility && e2->entity->global_visibility)
+				for (auto input : output->links)
 				{
-					auto p1 = e1->center();
-					auto p4 = e2->center();
-					auto p2 = p1 + Vec2f(extent, 0.f);
-					auto p3 = p4 - Vec2f(extent, 0.f);
-					auto bb = rect_from_points(p1, p2, p3, p4);
-					if (rect_overlapping(bb, range))
+					auto e1 = ((cSlot*)output->user_data)->element;
+					auto e2 = ((cSlot*)input->user_data)->element;
+					if (e1->entity->global_visibility && e2->entity->global_visibility)
 					{
-						std::vector<Vec2f> points;
-						path_bezier(points, p1, p2, p3, p4);
-						auto selected = false;
-						for (auto& s : bp_editor.selected_links)
+						auto p1 = e1->center();
+						auto p4 = e2->center();
+						auto p2 = p1 + Vec2f(extent, 0.f);
+						auto p3 = p4 - Vec2f(extent, 0.f);
+						auto bb = rect_from_points(p1, p2, p3, p4);
+						if (rect_overlapping(bb, range))
 						{
-							if (s == input)
+							std::vector<Vec2f> points;
+							path_bezier(points, p1, p2, p3, p4);
+							auto selected = false;
+							for (auto& s : bp_editor.selected_links)
 							{
-								selected = true;
-								break;
+								if (s == input)
+								{
+									selected = true;
+									break;
+								}
 							}
+							canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
 						}
-						canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
 					}
 				}
 			}
@@ -538,30 +538,34 @@ void cBPEditor::on_add_group(BP::Group* g)
 
 	ui.parents.push(e_group);
 
-		//auto input = n->inputs[0];
+		ui.e_begin_layout(LayoutHorizontal, 4.f);
+			auto input = g->signal;
 
-		//ui.next_element_size = ui.style(FontSize).u[0];
-		//ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
-		//ui.next_element_roundness_lod = 2;
-		//ui.next_element_color = Vec4c(200, 200, 200, 255);
-		//ui.e_element();
-		//ui.c_event_receiver();
-		//auto c_slot = new_object<cSlot>();
-		//c_slot->s = input;
-		//input->user_data = c_slot;
-		//ui.current_entity->add_component(c_slot);
-		//ui.e_begin_popup_menu(false);
-		//ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
-		//}, Capture().set_thiz(input));
-		//ui.e_end_popup_menu();
-		//ui.push_style(TextColorNormal, common(type_color(input->type()->tag())));
-		//auto e_name = ui.e_text(s2w(input->name()).c_str());
-		//ui.pop_style(TextColorNormal);
+			ui.next_element_size = ui.style(FontSize).u[0];
+			ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+			ui.next_element_roundness_lod = 2;
+			ui.next_element_color = Vec4c(200, 200, 200, 255);
+			ui.e_element();
+			ui.c_event_receiver();
+			auto c_slot = new_object<cSlot>();
+			c_slot->s = input;
+			input->user_data = c_slot;
+			ui.current_entity->add_component(c_slot);
+			ui.e_begin_popup_menu(false);
+			ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
+			}, Capture().set_thiz(input));
+			ui.e_end_popup_menu();
+			ui.push_style(TextColorNormal, common(type_color(input->type->tag())));
+			auto e_name = ui.e_text(s2w(input->name.str()).c_str());
+			ui.pop_style(TextColorNormal);
+		ui.e_end_layout();
 
 		c_group->edt.create(ui, [](Capture&, const Vec4f&) {
 		}, Capture());
 
 		ui.e_size_dragger();
+
+		ui.e_bring_to_front();
 
 	ui.parents.pop();
 
@@ -1105,7 +1109,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
 
 								e_name->add_component(new_object<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
-									bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+									StringA d = v;
+									bp_editor.set_data(c.thiz<BP::Slot>(), &d, true);
 								}, Capture().set_thiz(input), text));
 							}
 								break;
@@ -1117,7 +1122,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
 
 								e_name->add_component(new_object<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
-									bp_editor.set_data(c.thiz<BP::Slot>(), (void*)v, true);
+									StringW d = v;
+									bp_editor.set_data(c.thiz<BP::Slot>(), &d, true);
 								}, Capture().set_thiz(input), text));
 							}
 								break;

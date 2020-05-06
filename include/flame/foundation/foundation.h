@@ -95,7 +95,7 @@ namespace flame
 
 		void resize(uint _s)
 		{
-			if (s != _s)
+			if (s != _s || (s == 0 && v == nullptr))
 			{
 				s = _s;
 				v = (CH*)f_realloc(v, sizeof(CH) * (s + 1));

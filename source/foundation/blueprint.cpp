@@ -13,6 +13,7 @@ namespace flame
 	struct SlotPrivate : BP::Slot
 	{
 		Setter* setter;
+		void* listener;
 
 		SlotPrivate(BP::Unit* unit, IO io, uint index, TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
 		SlotPrivate(BP::Unit* unit, IO io, uint index, VariableInfo* vi);
@@ -50,8 +51,7 @@ namespace flame
 
 	struct GroupPrivate : BP::Group
 	{
-		std::unique_ptr<SlotPrivate> signal;
-
+		void* psignal;
 		std::vector<NodePrivate*> update_list;
 		bool need_rebuild_update_list;
 
@@ -76,7 +76,8 @@ namespace flame
 	};
 
 	SlotPrivate::SlotPrivate(BP::Unit* unit, IO _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
-		setter(nullptr)
+		setter(nullptr),
+		listener(nullptr)
 	{
 		parent = unit;
 		io = _io;
@@ -95,7 +96,7 @@ namespace flame
 		else
 			default_value = nullptr;
 
-		data = unit->unit_type == BP::UnitNode ? (char*)((NodePrivate*)unit)->object + offset : nullptr;
+		data = unit->unit_type == BP::UnitNode ? (char*)((NodePrivate*)unit)->object + offset : (char*)&((GroupPrivate*)unit)->psignal;
 
 		if (io == In)
 			links.push_back(nullptr);
@@ -145,25 +146,34 @@ namespace flame
 		if (links[0])
 		{
 			auto o = links[0];
-			for (auto l : o->links)
+			for (auto i = 0; i < o->links.s; i++)
 			{
-				if (l == this)
+				if (o->links[i] == this)
 				{
-					o->links.remove(&l - o->links.v);
+					o->links.remove(i);
 					break;
 				}
 			}
+			if (type->base_name() == std::string("ListenerHub"))
+				(*(ListenerHub<void(Capture&)>**)data)->remove(listener);
 		}
 
 		links[0] = target;
 		if (target)
+		{
 			target->links.push_back(this);
+			if (type->base_name() == std::string("ListenerHub"))
+			{
+				auto p = target->data;
+				memcpy(data, &p, sizeof(void*));
+				listener = (*(ListenerHub<void(Capture&)>**)data)->add([](Capture& c) {
+					c.thiz<BP::Group>()->update();
+				}, Capture().set_thiz(parent));
+			}
+		}
 
 		if (!target && type->tag() == TypePointer)
-		{
-			void* p = nullptr;
-			memcpy(data, &p, sizeof(void*));
-		}
+			memset(data, 0, sizeof(void*));
 
 		return true;
 	}
@@ -395,13 +405,14 @@ namespace flame
 		user_data = nullptr;
 		scene = _scene;
 
-		signal.reset(new SlotPrivate(this, BP::Slot::In, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, 8, ""));
+		signal = new SlotPrivate(this, BP::Slot::In, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, sizeof(void*), "");
 
 		need_rebuild_update_list = true;
 	}
 
 	GroupPrivate::~GroupPrivate()
 	{
+		delete (SlotPrivate*)signal;
 		for (auto n : nodes)
 			delete (NodePrivate*)n;
 	}
@@ -619,20 +630,21 @@ namespace flame
 
 	void GroupPrivate::remove_node(NodePrivate* _n)
 	{
-		for (auto n : nodes)
+		for (auto i = 0; i < nodes.s;i++)
 		{
+			auto n = nodes[i];
 			if (n == _n)
 			{
-				for (auto i : n->inputs)
+				for (auto in : n->inputs)
 				{
-					auto o = i->links[0];
+					auto o = in->links[0];
 					if (o)
 					{
-						for (auto l : o->links)
+						for (auto j = 0; j < o->links.s; j++)
 						{
-							if (l == i)
+							if (o->links[j] == in)
 							{
-								o->links.remove(&l - o->links.v);
+								o->links.remove(j);
 								break;
 							}
 						}
@@ -644,7 +656,7 @@ namespace flame
 						l->links[0] = nullptr;
 				}
 				delete (NodePrivate*)n;
-				nodes.remove(&n - nodes.v);
+				nodes.remove(i);
 				break;
 			}
 		}
@@ -1584,6 +1596,16 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 
+		}
+	};
+
+	struct FLAME_R(R_Print)
+	{
+		FLAME_RV(StringA, text, i);
+
+		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		{
+			printf("%s\n", text.v);
 		}
 	};
 }
