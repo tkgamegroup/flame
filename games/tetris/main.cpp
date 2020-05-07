@@ -638,10 +638,10 @@ void MyApp::process_report_board(int index, const std::string& d)
 	struct Capturing
 	{
 		cTileMap* b;
-		std::string d;
+		char d[1024];
 	}capture;
 	capture.b = app.players[index].c_main;
-	capture.d = d;
+	memcpy(capture.d, d.data(), d.size());
 	looper().add_event([](Capture& c) {
 		auto& capture = c.data<Capturing>();
 		for (auto y = 0; y < board_height; y++)
