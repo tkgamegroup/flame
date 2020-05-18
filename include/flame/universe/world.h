@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct TypeinfoDatabase;
+	struct TypeInfoDatabase;
 
 	struct Entity;
 	struct System;

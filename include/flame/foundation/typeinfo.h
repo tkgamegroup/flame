@@ -26,11 +26,12 @@ namespace flame
 		return names[tag];
 	}
 
+	struct TypeInfo;
 	struct EnumInfo;
 	struct VariableInfo;
 	struct FunctionInfo;
 	struct UdtInfo;
-	struct TypeinfoDatabase;
+	struct TypeInfoDatabase;
 
 	// type name archive:
 	// ¡¤ no space
@@ -69,14 +70,26 @@ namespace flame
 		return ret;
 	}
 
+	FLAME_FOUNDATION_EXPORTS extern HashMap<256, TypeInfo> typeinfos;
+
 	struct TypeInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeTag tag() const;
-		FLAME_FOUNDATION_EXPORTS bool is_array() const;
-		FLAME_FOUNDATION_EXPORTS const char* base_name() const;
-		FLAME_FOUNDATION_EXPORTS const char* name() const; // tag[A]#base, order matters
-		FLAME_FOUNDATION_EXPORTS uint base_hash() const;
-		FLAME_FOUNDATION_EXPORTS uint hash() const;
+		TypeTag tag;
+		bool is_array;
+		StringA base_name;
+		uint base_hash;
+		StringA name;  // tag[A]#base, order matters
+		uint hash;
+
+		TypeInfo(TypeTag tag, const std::string& base_name, bool is_array) :
+			tag(tag),
+			base_name(base_name),
+			is_array(is_array)
+		{
+			base_hash = FLAME_HASH(base_name.c_str());
+			name = make_str(tag, base_name, is_array);
+			hash = FLAME_HASH(name.v);
+		}
 
 		static std::string make_str(TypeTag tag, const std::string& base_name, bool is_array = false)
 		{
@@ -124,20 +137,18 @@ namespace flame
 
 		bool is_pod() const
 		{
-			if (is_array())
+			if (is_array)
 				return false;
-			auto t = tag();
-			if (t == TypePointer)
+			if (tag == TypePointer)
 				return false;
-			auto bh = base_hash();
-			if (t == TypeData && (bh == FLAME_CHASH("flame::StringA") || bh == FLAME_CHASH("flame::StringW")))
+			if (tag == TypeData && (base_hash == FLAME_CHASH("flame::StringA") || base_hash == FLAME_CHASH("flame::StringW")))
 				return false;
 			return true;
 		}
 
 		std::string get_cpp_name() const
 		{
-			std::string ret = tn_a2c(base_name());
+			std::string ret = tn_a2c(base_name.str());
 			static FLAME_SAL(str_flame, "flame::");
 			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
 				ret.erase(ret.begin(), ret.begin() + str_flame.l);
@@ -148,15 +159,32 @@ namespace flame
 				auto t = res[2].str();
 				ret = "Vec" + res[1].str() + (t == "uchar" ? 'c' : t[0]);
 			}
-			if (is_array())
+			if (is_array)
 				ret = "Array<" + ret + ">";
-			if (tag() == TypePointer)
+			if (tag == TypePointer)
 				ret += "*";
 			return ret;
 		}
 
-		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);
-		FLAME_FOUNDATION_EXPORTS static const TypeInfo* get(const char* str);
+		static TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false)
+		{
+			auto hash = FLAME_HASH(make_str(tag, base_name, is_array).c_str());
+			auto i = typeinfos.find(hash);
+			if (i)
+				return i;
+			i = f_new<TypeInfo>(tag, base_name, is_array);
+			typeinfos.add(hash, i);
+			return i;
+		}
+
+		static TypeInfo* TypeInfo::get(const std::string& str)
+		{
+			TypeTag tag;
+			std::string base_name;
+			bool is_array;
+			break_str(str, tag, base_name, is_array);
+			return TypeInfo::get(tag, base_name.c_str(), is_array);
+		}
 
 		inline std::string serialize(const void* src) const;
 		inline void unserialize(const std::string& src, void* dst) const;
@@ -172,155 +200,295 @@ namespace flame
 
 	struct VariableInfo
 	{
-		FLAME_FOUNDATION_EXPORTS UdtInfo* udt() const;
+		UdtInfo* udt;
+		TypeInfo* type;
+		StringA name;
+		uint name_hash;
+		uint flags;
+		uint offset;
+		uint size;
+		void* default_value;
 
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* type() const;
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS uint name_hash() const;
-		FLAME_FOUNDATION_EXPORTS uint flags() const;
-		FLAME_FOUNDATION_EXPORTS uint offset() const;
-		FLAME_FOUNDATION_EXPORTS uint size() const;
-		FLAME_FOUNDATION_EXPORTS const void* default_value() const;
+		VariableInfo(UdtInfo* udt, TypeInfo* type, const std::string& name, uint flags, uint offset, uint size) :
+			udt(udt),
+			type(type),
+			name(name),
+			flags(flags),
+			offset(offset),
+			size(size),
+			default_value(nullptr)
+		{
+			name_hash = FLAME_HASH(name.c_str());
+		}
+
+		~VariableInfo()
+		{
+			f_free(default_value);
+		}
 	};
 
 	struct EnumItem
 	{
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS int value() const;
+		StringA name;
+		int value;
+
+		EnumItem(const std::string& name, int value) :
+			name(name),
+			value(value)
+		{
+		}
 	};
 
 	struct EnumInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
+		TypeInfoDatabase* db;
+		StringA name;
+		Array<EnumItem*> items;
 
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
+		EnumInfo(TypeInfoDatabase* db, const std::string& name) :
+			db(db),
+			name(name)
+		{
+		}
 
-		FLAME_FOUNDATION_EXPORTS uint item_count() const;
-		FLAME_FOUNDATION_EXPORTS EnumItem* item(int idx) const;
-		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(const char* name, int* out_idx = nullptr) const;
-		FLAME_FOUNDATION_EXPORTS EnumItem* find_item(int value, int* out_idx = nullptr) const;
+		~EnumInfo()
+		{
+			for (auto i : items)
+				f_delete(i);
+		}
+
+		EnumItem* add_item(const std::string& name, int value)
+		{
+			auto i = f_new<EnumItem>(name, value);
+			items.push_back(i);
+			return i;
+		}
+
+		EnumItem* find_item(const std::string& name, int* out_idx = nullptr) const
+		{
+			for (auto i : items)
+			{
+				if (i->name == name)
+				{
+					if (out_idx)
+						*out_idx = i->value;
+					return i;
+				}
+			}
+			if (out_idx)
+				*out_idx = -1;
+			return nullptr;
+		}
+
+		EnumItem* find_item(int value, int* out_idx = nullptr) const
+		{
+			for (auto i = 0; i < items.s; i++)
+			{
+				auto item = items[i];
+				if (item->value == value)
+				{
+					if (out_idx)
+						*out_idx = i;
+					return item;
+				}
+			}
+			if (out_idx)
+				*out_idx = -1;
+			return nullptr;
+		}
 	};
 
 	struct FunctionInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
+		TypeInfoDatabase* db;
+		UdtInfo* udt;
+		StringA name;
+		void* rva;
+		TypeInfo* type;
+		Array<TypeInfo*> parameters;
+		StringA code;
 
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS void* rva() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* return_type() const;
+		FunctionInfo(TypeInfoDatabase* db, UdtInfo* udt, const std::string& name, void* rva, TypeInfo* type) :
+			db(db),
+			udt(udt),
+			name(name),
+			rva(rva),
+			type(type)
+		{
+		}
 
-		FLAME_FOUNDATION_EXPORTS uint parameter_count() const;
-		FLAME_FOUNDATION_EXPORTS const TypeInfo* parameter_type(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS const char* code() const;
+		void add_parameter(TypeInfo* type)
+		{
+			parameters.push_back(type);
+		}
 	};
 
 	struct UdtInfo
 	{
-		FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* db() const;
+		TypeInfoDatabase* db;
+		StringA name;
+		uint size;
+		StringA base_name;
+		Array<VariableInfo*> variables;
+		Array<FunctionInfo*> functions;
 
-		FLAME_FOUNDATION_EXPORTS const char* name() const;
-		FLAME_FOUNDATION_EXPORTS uint size() const;
-		FLAME_FOUNDATION_EXPORTS const char* base_name() const;
-		FLAME_FOUNDATION_EXPORTS const char* link_name() const;
+		UdtInfo(TypeInfoDatabase* db, const std::string& name, uint size, const std::string& base_name) :
+			db(db),
+			name(name),
+			size(size),
+			base_name(base_name)
+		{
+		}
 
-		FLAME_FOUNDATION_EXPORTS uint variable_count() const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* variable(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS VariableInfo* find_variable(const char* name, int* out_idx = nullptr) const;
+		~UdtInfo()
+		{
+			for (auto v : variables)
+				f_delete(v);
+			for (auto f : functions)
+				f_delete(f);
+		}
 
-		FLAME_FOUNDATION_EXPORTS uint function_count() const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* function(uint idx) const;
-		FLAME_FOUNDATION_EXPORTS FunctionInfo* find_function(const char* name, int* out_idx = nullptr) const;
+		VariableInfo* add_variable(TypeInfo* type, const std::string& name, uint flags, uint offset, uint size)
+		{
+			auto v = f_new<VariableInfo>(this, type, name, flags, offset, size);
+			if (type->is_pod())
+			{
+				v->default_value = new char[size];
+				memset(v->default_value, 0, size);
+			}
+			else
+				v->default_value = nullptr;
+			variables.push_back(v);
+			return v;
+		}
+
+		FunctionInfo* add_function(const std::string& name, void* rva, TypeInfo* type)
+		{
+			auto f = f_new<FunctionInfo>(db, this, name, rva, type);
+			functions.push_back(f);
+			return f;
+		}
+
+		VariableInfo* find_variable(const std::string& name, int* out_idx = nullptr) const
+		{
+			for (auto i = 0; i < variables.s; i++)
+			{
+				auto v = variables[i];
+				if (v->name == name)
+				{
+					if (out_idx)
+						*out_idx = i;
+					return v;
+				}
+			}
+			if (out_idx)
+				*out_idx = -1;
+			return nullptr;
+		}
+
+		FunctionInfo* find_function(const std::string& name, int* out_idx = nullptr) const
+		{
+			for (auto i = 0; i < functions.s; i++)
+			{
+				auto f = functions[i];
+				if (f->name == name)
+				{
+					if (out_idx)
+						*out_idx = i;
+					return f;
+				}
+			}
+			if (out_idx)
+				*out_idx = -1;
+			return nullptr;
+		}
 
 		inline void serialize(const void* src, nlohmann::json& dst) const
 		{
-			for (auto i = 0; i < variable_count(); i++)
-			{
-				auto v = variable(i);
-				dst[v->name()] = v->type()->serialize((char*)src + v->offset());
-			}
+			for (auto v : variables)
+				dst[v->name.str()] = v->type->serialize((char*)src + v->offset);
 		}
 
 		inline void unserialize(const nlohmann::json& src, const void* dst) const
 		{
-			for (auto i = 0; i < variable_count(); i++)
-			{
-				auto v = variable(i);
-				v->type()->unserialize(src[v->name()].get<std::string>(), (char*)dst + v->offset());
-			}
+			for (auto v : variables)
+				v->type->unserialize(src[v->name.str()].get<std::string>(), (char*)dst + v->offset);
 		}
 	};
 
-	struct TypeinfoDatabase
+	struct TypeInfoDatabase
 	{
-		FLAME_FOUNDATION_EXPORTS void* module() const;
-		FLAME_FOUNDATION_EXPORTS const wchar_t* module_name() const;
+		void* module;
+		StringW module_name;
+		HashMap<256, EnumInfo> enums;
+		HashMap<256, UdtInfo> udts;
 
-		FLAME_FOUNDATION_EXPORTS Array<EnumInfo*> get_enums();
-		FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint name_hash);
+		TypeInfoDatabase(const std::wstring& module_name) :
+			module_name(module_name)
+		{
+			module = nullptr;
+		}
 
-		FLAME_FOUNDATION_EXPORTS Array<UdtInfo*> get_udts();
-		FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint name_hash);
+		~TypeInfoDatabase()
+		{
+			if (module)
+				free_module(module);
+			for (auto e : enums.get_all())
+				f_delete(e);
+			for (auto u : udts.get_all())
+				f_delete(u);
+		}
 
-		FLAME_FOUNDATION_EXPORTS static TypeinfoDatabase* load(const wchar_t* module_filename, bool add_to_global, bool load_with_module);
-		FLAME_FOUNDATION_EXPORTS static void destroy(TypeinfoDatabase* db);
+		EnumInfo* add_enum(const std::string name)
+		{
+			auto e = f_new<EnumInfo>(this, name);
+			enums.add(FLAME_HASH(name.c_str()), e);
+			return e;
+		}
+
+		UdtInfo* add_udt(const std::string name, uint size, const std::string& base_name)
+		{
+			auto u = f_new<UdtInfo>(this, name, size, base_name);
+			udts.add(FLAME_HASH(name.c_str()), u);
+			return u;
+		}
+
+		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* module_filename, bool add_to_global, bool load_with_module);
+		FLAME_FOUNDATION_EXPORTS static void destroy(TypeInfoDatabase* db);
 	};
 
-	FLAME_FOUNDATION_EXPORTS uint global_db_count();
-	FLAME_FOUNDATION_EXPORTS TypeinfoDatabase* global_db(uint idx);
-	FLAME_FOUNDATION_EXPORTS extern uint extra_global_db_count;
-	FLAME_FOUNDATION_EXPORTS extern TypeinfoDatabase* const* extra_global_dbs;
+	FLAME_FOUNDATION_EXPORTS extern Array<TypeInfoDatabase*> global_typeinfo_databases;
 
-	inline EnumInfo* find_enum(uint name_hash)
+	inline EnumInfo* find_enum(uint hash)
 	{
-		for (auto i = 0; i < global_db_count(); i++)
+		for (auto db : global_typeinfo_databases)
 		{
-			auto db = global_db(i);
-			auto info = db->find_enum(name_hash);
-			if (info)
-				return info;
-		}
-		for (auto i = 0; i < extra_global_db_count; i++)
-		{
-			auto db = extra_global_dbs[i];
-			auto info = db->find_enum(name_hash);
+			auto info = db->enums.find(hash);
 			if (info)
 				return info;
 		}
 		return nullptr;
 	}
 
-	inline UdtInfo* find_udt(uint name_hash)
+	inline UdtInfo* find_udt(uint hash)
 	{
-		for (auto i = 0; i < global_db_count(); i++)
+		for (auto db : global_typeinfo_databases)
 		{
-			auto db = global_db(i);
-			auto info = db->find_udt(name_hash);
-			if (info)
-				return info;
-		}
-		for (auto i = 0; i < extra_global_db_count; i++)
-		{
-			auto db = extra_global_dbs[i];
-			auto info = db->find_udt(name_hash);
+			auto info = db->udts.find(hash);
 			if (info)
 				return info;
 		}
 		return nullptr;
 	}
 
-	inline bool check_function(FunctionInfo* info, const char* return_type, const std::vector<const char*>& parameter_types)
+	inline bool check_function(FunctionInfo* info, const char* type, const std::vector<const char*>& parameters)
 	{
-		TypeTag tag;
-		std::string base_name;
-		bool is_array;
-		TypeInfo::break_str(return_type, tag, base_name, is_array);
-		if (info->return_type()->hash() != TypeInfo::get_hash(tag, base_name, is_array) ||
-			info->parameter_count() != parameter_types.size())
+		if (info->type->hash != FLAME_HASH(type) ||
+			info->parameters.s != parameters.size())
 			return false;
-		for (auto i = 0; i < parameter_types.size(); i++)
+		for (auto i = 0; i < parameters.size(); i++)
 		{
-			TypeInfo::break_str(parameter_types[i], tag, base_name, is_array);
-			if (info->parameter_type(i)->hash() != TypeInfo::get_hash(tag, base_name, is_array))
+			if (info->parameters[i]->hash != FLAME_HASH(parameters[i]))
 				return false;
 		}
 		return true;
@@ -440,35 +608,35 @@ namespace flame
 
 	std::string TypeInfo::serialize(const void* src) const
 	{
-		switch (tag())
+		switch (tag)
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(base_hash());
+			auto e = find_enum(base_hash);
 			assert(e);
 			auto i = e->find_item(*(int*)src);
-			return i ? i->name() : "";
+			return i ? i->name.str() : "";
 		}
 		case TypeEnumMulti:
 		{
 			std::string str;
-			auto e = find_enum(base_hash());
+			auto e = find_enum(base_hash);
 			assert(e);
 			auto v = *(int*)src;
-			for (auto i = 0; i < e->item_count(); i++)
+			for (auto i = 0; i < e->items.s; i++)
 			{
 				if ((v & 1) == 1)
 				{
 					if (!str.empty())
 						str += ";";
-					str += e->find_item(1 << i)->name();
+					str += e->find_item(1 << i)->name.str();
 				}
 				v >>= 1;
 			}
 			return str;
 		}
 		case TypeData:
-			switch (base_hash())
+			switch (base_hash)
 			{
 			case FLAME_CHASH("bool"):
 				return *(bool*)src ? "1" : "0";
@@ -529,11 +697,11 @@ namespace flame
 
 	void TypeInfo::unserialize(const std::string& src, void* dst) const
 	{
-		switch (tag())
+		switch (tag)
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(base_hash());
+			auto e = find_enum(base_hash);
 			assert(e);
 			e->find_item(src.c_str(), (int*)dst);
 		}
@@ -541,16 +709,16 @@ namespace flame
 		case TypeEnumMulti:
 		{
 			auto v = 0;
-			auto e = find_enum(base_hash());
+			auto e = find_enum(base_hash);
 			assert(e);
 			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
-				v |= e->find_item(t.c_str())->value();
+				v |= e->find_item(t.c_str())->value;
 			*(int*)dst = v;
 		}
 			return;
 		case TypeData:
-			switch (base_hash())
+			switch (base_hash)
 			{
 			case FLAME_CHASH("bool"):
 				*(bool*)dst = (src != "0");
@@ -635,11 +803,11 @@ namespace flame
 
 	void TypeInfo::copy_from(const void* src, void* dst, uint size) const
 	{
-		if (tag() == TypeData)
-			basic_type_copy(base_hash(), src, dst, size);
-		else if (tag() == TypeEnumSingle || tag() == TypeEnumMulti)
+		if (tag == TypeData)
+			basic_type_copy(base_hash, src, dst, size);
+		else if (tag == TypeEnumSingle || tag == TypeEnumMulti)
 			memcpy(dst, src, sizeof(int));
-		else if (tag() == TypePointer)
+		else if (tag == TypePointer)
 			memcpy(dst, src, sizeof(void*));
 	}
 }

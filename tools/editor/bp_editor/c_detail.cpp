@@ -44,7 +44,7 @@ void cDetail::on_after_select()
 					auto n_name = n_type ? s2w(n_type_parameters) : s2w(n->type.str());
 					auto udt = n->udt;
 					if (udt)
-						str = L"UDT (" + std::wstring(udt->db()->module_name()) + L")\n" + n_name;
+						str = L"UDT (" + udt->db->module_name.str() + L")\n" + n_name;
 					else
 						str = node_type_prefix(n_type) + n_name;
 					ui.e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);

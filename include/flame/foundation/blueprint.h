@@ -68,10 +68,10 @@ namespace flame
 			{
 				if (in_type == out_out)
 					return true;
-				auto in_base_hash = in_type->base_hash();
-				auto out_tag = out_out->tag();
-				if (in_type->tag() == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
-					(in_base_hash == out_out->base_hash() || in_base_hash == FLAME_CHASH("void")))
+				auto in_base_hash = in_type->base_hash;
+				auto out_tag = out_out->tag;
+				if (in_type->tag == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
+					(in_base_hash == out_out->base_hash || in_base_hash == FLAME_CHASH("void")))
 					return true;
 
 				return false;

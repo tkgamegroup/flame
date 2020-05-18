@@ -172,12 +172,11 @@ namespace flame
 						auto align_flag_info = find_enum(FLAME_CHASH("flame::AlignFlag"));
 						auto get_enum_str = [&](EnumInfo* info, int v) {
 							std::string ret;
-							for (auto i = 0; i < info->item_count(); i++)
+							for (auto item : info->items)
 							{
-								auto item = info->item(i);
-								if (v & item->value())
+								if (v & item->value)
 								{
-									ret += item->name();
+									ret += item->name.str();
 									ret += " ";
 								}								
 							}
@@ -191,7 +190,7 @@ namespace flame
 					{
 						auto cl = (cLayout*)c;
 						auto layout_type_info = find_enum(FLAME_CHASH("flame::LayoutType"));
-						desc += sfmt("type: %s\n", layout_type_info->find_item(cl->type)->name());
+						desc += sfmt("type: %s\n", layout_type_info->find_item(cl->type)->name.v);
 					}
 				}
 				dp->set_string_item(FLAME_CHASH("desc"), desc.c_str());
@@ -519,7 +518,7 @@ namespace flame
 				}, Capture().set_thiz(this));
 			}
 		};
-		auto c_reflector = new_object<cReflector>();
+		auto c_reflector = f_new<cReflector>();
 		c_reflector->ui = &ui;
 		c_reflector->create(e_window);
 		ui.parents.top()->add_component(c_reflector);

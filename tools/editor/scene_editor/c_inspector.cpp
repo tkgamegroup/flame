@@ -116,7 +116,7 @@ void cInspector::refresh()
 			auto component = components.v[i];
 
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
-			auto module = udt->db()->module();
+			auto module = udt->db->module;
 
 			ui.e_begin_layout(LayoutHorizontal, 2.f);
 			ui.e_text(s2w(component->name).c_str())->get_component(cText)->color = Vec4c(30, 40, 160, 255);
@@ -150,25 +150,25 @@ void cInspector::refresh()
 			ui.e_end_layout();
 			ui.e_end_splitter();
 
-			for (auto i = 0; i < udt->variable_count(); i++)
+			for (auto v : udt->variables)
 			{
-				auto v = udt->variable(i);
-				auto type = v->type();
-				auto base_hash = type->base_hash();
-				auto pdata = (char*)component + v->offset();
+				auto type = v->type;
+				auto base_name = type->base_name.str();
+				auto base_hash = type->base_hash;
+				auto pdata = (char*)component + v->offset;
 
-				auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
-				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva() : nullptr;
+				auto f_set = udt->find_function("set_" + v->name.str());
+				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva : nullptr;
 
 				cDataTracker* tracker = nullptr;
 
 				ui.parents.push(e_name_list);
 				ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-				auto e_name = ui.e_text(s2w(v->name()).c_str());
+				auto e_name = ui.e_text(s2w(v->name.str()).c_str());
 				ui.c_aligner(AlignMinMax, 0);
 				ui.parents.pop();
 
-				switch (type->tag())
+				switch (type->tag)
 				{
 				case TypeEnumSingle:
 				{
@@ -177,12 +177,12 @@ void cInspector::refresh()
 					ui.parents.push(e_value_list);
 					auto info = find_enum(base_hash);
 					combobox = ui.e_begin_combobox()->get_component(cCombobox);
-					for (auto i = 0; i < info->item_count(); i++)
-						ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
+					for (auto i : info->items)
+						ui.e_combobox_item(s2w(i->name.str()).c_str());
 					ui.e_end_combobox();
 					ui.parents.pop();
 
-					e_name->add_component(new_object<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
+					e_name->add_component(f_new<cEnumSingleDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
 					}, Capture(), combobox));
 				}
@@ -198,11 +198,11 @@ void cInspector::refresh()
 					ui.parents.pop();
 
 					auto info = find_enum(base_hash);
-					for (auto i = 0; i < info->item_count(); i++)
+					for (auto i : info->items)
 					{
 						ui.parents.push(e_name_list);
 						ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-						ui.e_text(s2w(info->item(i)->name()).c_str());
+						ui.e_text(s2w(i->name.str()).c_str());
 						ui.c_aligner(AlignMinMax, 0);
 						ui.parents.pop();
 
@@ -211,7 +211,7 @@ void cInspector::refresh()
 						ui.parents.pop();
 					}
 
-					e_name->add_component(new_object<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
+					e_name->add_component(f_new<cEnumMultiDataTracker>(pdata, info, [](Capture& c, int v) {
 						;
 					}, Capture(), checkboxes));
 				}
@@ -238,7 +238,7 @@ void cInspector::refresh()
 						ui.c_aligner(AlignMinMax, 0);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cBoolDataTracker>(pdata, [](Capture& c, bool v) {
+						e_name->add_component(f_new<cBoolDataTracker>(pdata, [](Capture& c, bool v) {
 							;
 						}, Capture(), checkbox));
 					}
@@ -261,7 +261,7 @@ void cInspector::refresh()
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalDataTracker<int>>(pdata, [](Capture& c, int v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalDataTracker<int>>(pdata, [](Capture& c, int v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<int>::set_s(capture.o, capture.f, v, scene_editor.inspector);
@@ -294,7 +294,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<2, int>>(pdata, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<2, int>>(pdata, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<2, int>>::set_s(capture.o, capture.f, (Vec<2, int>*) & v, scene_editor.inspector);
@@ -327,7 +327,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<3, int>>(pdata, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<3, int>>(pdata, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<3, int>>::set_s(capture.o, capture.f, (Vec<3, int>*) & v, scene_editor.inspector);
@@ -360,7 +360,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<4, int>>(pdata, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<4, int>>(pdata, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<4, int>>::set_s(capture.o, capture.f, (Vec<4, int>*) & v, scene_editor.inspector);
@@ -387,7 +387,7 @@ void cInspector::refresh()
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalDataTracker<uint>>(pdata, [](Capture& c, uint v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalDataTracker<uint>>(pdata, [](Capture& c, uint v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<uint>::set_s(capture.o, capture.f, v, scene_editor.inspector);
@@ -420,7 +420,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<2, uint>>(pdata, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<2, uint>>(pdata, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<2, uint>>::set_s(capture.o, capture.f, (Vec<2, uint>*) & v, scene_editor.inspector);
@@ -453,7 +453,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<3, uint>>(pdata, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<3, uint>>(pdata, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<3, uint>>::set_s(capture.o, capture.f, (Vec<3, uint>*) & v, scene_editor.inspector);
@@ -486,7 +486,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<4, uint>>(pdata, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<4, uint>>(pdata, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<4, uint>>::set_s(capture.o, capture.f, (Vec<4, uint>*) & v, scene_editor.inspector);
@@ -513,7 +513,7 @@ void cInspector::refresh()
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalDataTracker<float>>(pdata, [](Capture& c, float v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalDataTracker<float>>(pdata, [](Capture& c, float v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<float>::set_s(capture.o, capture.f, v, scene_editor.inspector);
@@ -546,7 +546,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<2, float>>(pdata, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<2, float>>(pdata, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<2, float>>::set_s(capture.o, capture.f, (Vec<2, float>*) & v, scene_editor.inspector);
@@ -579,7 +579,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<3, float>>(pdata, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<3, float>>(pdata, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<3, float>>::set_s(capture.o, capture.f, (Vec<3, float>*) & v, scene_editor.inspector);
@@ -612,7 +612,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<4, float>>(pdata, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<4, float>>(pdata, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<4, float>>::set_s(capture.o, capture.f, (Vec<4, float>*) & v, scene_editor.inspector);
@@ -639,7 +639,7 @@ void cInspector::refresh()
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalDataTracker<uchar>>(pdata, [](Capture& c, uchar v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalDataTracker<uchar>>(pdata, [](Capture& c, uchar v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<uchar>::set_s(capture.o, capture.f, v, scene_editor.inspector);
@@ -672,7 +672,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<2, uchar>>(pdata, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<2, uchar>>(pdata, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<2, uchar>>::set_s(capture.o, capture.f, (Vec<2, uchar>*) & v, scene_editor.inspector);
@@ -705,7 +705,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<3, uchar>>(pdata, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<3, uchar>>(pdata, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<3, uchar>>::set_s(capture.o, capture.f, (Vec<3, uchar>*) & v, scene_editor.inspector);
@@ -738,7 +738,7 @@ void cInspector::refresh()
 						ui.e_end_layout();
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cDigitalVecDataTracker<4, uchar>>(pdata, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
+						e_name->add_component(f_new<cDigitalVecDataTracker<4, uchar>>(pdata, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
 							auto& capture = c.data<Capturing>();
 							if (capture.f)
 								Setter_t<Vec<4, uchar>>::set_s(capture.o, capture.f, (Vec<4, uchar>*) & v, scene_editor.inspector);
@@ -756,7 +756,7 @@ void cInspector::refresh()
 						ui.c_aligner(AlignMinMax, 0);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cStringADataTracker>(pdata, [](Capture& c, const char* v) {
+						e_name->add_component(f_new<cStringADataTracker>(pdata, [](Capture& c, const char* v) {
 							;
 						}, Capture(), text));
 					}
@@ -770,7 +770,7 @@ void cInspector::refresh()
 						ui.c_aligner(AlignMinMax, 0);
 						ui.parents.pop();
 
-						e_name->add_component(new_object<cStringWDataTracker>(pdata, [](Capture& c, const wchar_t* v) {
+						e_name->add_component(f_new<cStringWDataTracker>(pdata, [](Capture& c, const wchar_t* v) {
 							;
 						}, Capture(), text));
 					}
@@ -780,7 +780,7 @@ void cInspector::refresh()
 					break;
 				}
 
-				c_component_tracker->vs[FLAME_HASH(v->name())] = tracker;
+				c_component_tracker->vs[FLAME_HASH(v->name.v)] = tracker;
 			}
 		}
 
@@ -788,44 +788,41 @@ void cInspector::refresh()
 		{
 			FLAME_SAL(prefix, "Serializer_c");
 			std::vector<UdtInfo*> all_udts;
-			for (auto i = 0; i < global_db_count(); i++)
+			for (auto db : global_typeinfo_databases)
 			{
-				auto db = global_db(i);
-				auto udts = db->get_udts();
-				for (auto i = 0; i < udts.s; i++)
+				for (auto u : db->udts.get_all())
 				{
-					auto u = udts.v[i];
-					if (std::string(u->name()).compare(0, prefix.l, prefix.s) == 0)
+					if (u->name.str().compare(0, prefix.l, prefix.s) == 0)
 						all_udts.push_back(u);
 				}
 			}
 			std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-				return std::string(a->name()) < std::string(b->name());
+				return a->name.str() < b->name.str();
 			});
 			for (auto udt : all_udts)
 			{
-				ui.e_menu_item(s2w(udt->name() + prefix.l).c_str(), [](Capture& c) {
+				ui.e_menu_item(s2w(udt->name.v + prefix.l).c_str(), [](Capture& c) {
 					looper().add_event([](Capture& c) {
 						auto u = c.thiz<UdtInfo>();
 
-						auto dummy = malloc(u->size());
-						auto module = u->db()->module();
+						auto dummy = malloc(u->size);
+						auto module = u->db->module;
 						{
 							auto f = u->find_function("ctor");
-							if (f && f->parameter_count() == 0)
-								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+							if (f && f->parameters.s == 0)
+								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva), dummy);
 						}
 						void* component;
 						{
 							auto f = u->find_function("create");
 							assert(f && check_function(f, "P#flame::Component", {}));
-							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva()), dummy);
+							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva), dummy);
 						}
 						scene_editor.selected->add_component((Component*)component);
 						{
 							auto f = u->find_function("dtor");
 							if (f)
-								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), dummy);
+								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva), dummy);
 						}
 						free(dummy);
 

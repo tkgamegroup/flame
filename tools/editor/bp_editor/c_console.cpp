@@ -64,30 +64,28 @@ cConsole::cConsole() :
 					if (tokens[1] == L"udts")
 					{
 						std::vector<UdtInfo*> all_udts;
-						for (auto i = 0; i < global_db_count(); i++)
+						for (auto db : global_typeinfo_databases)
 						{
-							auto udts = global_db(i)->get_udts();
-							for (auto i = 0; i < udts.s; i++)
-								all_udts.push_back(udts.v[i]);
+							auto v = db->udts.get_all();
+							all_udts.insert(all_udts.end(), v.begin(), v.end());
 						}
 						std::sort(all_udts.begin(), all_udts.end(), [](UdtInfo* a, UdtInfo* b) {
-							return std::string(a->name()) < std::string(b->name());
+							return a->name.str() < b->name.str();
 						});
 						for (auto udt : all_udts)
-							log += s2w(udt->name()) + L"\n";
+							log += s2w(udt->name.str()) + L"\n";
 					}
 					else if (tokens[1] == L"udt")
 					{
 						auto udt = find_udt(FLAME_HASH(w2s(tokens[2]).c_str()));
 						if (udt)
 						{
-							log += s2w(udt->name()) + L"\n";
+							log += s2w(udt->name.str()) + L"\n";
 							std::vector<VariableInfo*> inputs;
 							std::vector<VariableInfo*> outputs;
-							for (auto i_i = 0; i_i < udt->variable_count(); i_i++)
+							for (auto vari : udt->variables)
 							{
-								auto vari = udt->variable(i_i);
-								auto flags = vari->flags();
+								auto flags = vari->flags;
 								if (flags & VariableFlagInput)
 									inputs.push_back(vari);
 								else if (flags & VariableFlagOutput)
@@ -95,10 +93,10 @@ cConsole::cConsole() :
 							}
 							log += L"[In]\n";
 							for (auto& i : inputs)
-								log += wfmt(L"name:%s flags:%d type:%s", s2w(i->name()).c_str(), i->flags(), s2w(i->type()->name()).c_str()) + L"\n";
+								log += wfmt(L"name:%s flags:%d type:%s", s2w(i->name.str()).c_str(), i->flags, s2w(i->type->name.str()).c_str()) + L"\n";
 							log += L"[Out]\n";
 							for (auto& o : outputs)
-								log += wfmt(L"name:%s flags:%d type:%s", s2w(o->name()).c_str(), o->flags(), s2w(o->type()->name()).c_str()) + L"\n";
+								log += wfmt(L"name:%s flags:%d type:%s", s2w(o->name.str()).c_str(), o->flags, s2w(o->type->name.str()).c_str()) + L"\n";
 						}
 						else
 							log += L"udt not found\n";
@@ -106,7 +104,7 @@ cConsole::cConsole() :
 					else if (tokens[1] == L"nodes")
 					{
 						for (auto n : bp_editor.bp->groups[0]->nodes)
-							log += wfmt(L"id:%s type:%s", s2w(n->id.str()).c_str(), s2w(n->udt->name()).c_str()) + L"\n";
+							log += wfmt(L"id:%s type:%s", s2w(n->id.str()).c_str(), s2w(n->udt->name.str()).c_str()) + L"\n";
 					}
 					else if (tokens[1] == L"node")
 					{
@@ -219,7 +217,7 @@ cConsole::cConsole() :
 					if (i)
 					{
 						auto type = i->type;
-						if (type->tag() != TypePointer)
+						if (type->tag != TypePointer)
 						{
 							auto value_before = type->serialize(i->data);
 							auto data = new char[i->size];

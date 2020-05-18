@@ -242,9 +242,9 @@ MyApp::~MyApp()
 	std::ofstream user_data(L"user_data.ini");
 	user_data << "name = " << w2s(my_name) << "\n";
 	user_data << "\n[key]\n";
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	auto key_info = find_enum("flame::Key");
 	for (auto i = 0; i < KEY_COUNT; i++)
-		user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->name() << "\n";
+		user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->name.str() << "\n";
 	user_data << "\n[sound]\n";
 	user_data << "fx_volumn = " << fx_volumn << "\n";
 	user_data << "\n[sensitiveness]\n";
@@ -278,13 +278,13 @@ void MyApp::create()
 		if (e.key == "name")
 			my_name = s2w(e.value);
 	}
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	auto key_info = find_enum("flame::Key");
 	for (auto& e : user_data.get_section_entries("key"))
 	{
 		for (auto i = 0; i < KEY_COUNT; i++)
 		{
 			if (key_names[i] == s2w(e.key))
-				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value();
+				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value;
 		}
 	}
 	for (auto& e : user_data.get_section_entries("sound"))
@@ -1228,7 +1228,7 @@ void MyApp::create_key_scene()
 	ui.e_begin_layout(LayoutVertical, 8.f);
 	ui.c_aligner(AlignMiddle, AlignMiddle);
 	ui.push_style(FontSize, common(Vec1u(20)));
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	auto key_info = find_enum("flame::Key");
 	for (auto i = 0; i < KEY_COUNT; i++)
 	{
 		ui.e_begin_layout(LayoutHorizontal, 4.f);
@@ -1238,7 +1238,7 @@ void MyApp::create_key_scene()
 			cText* t;
 			int i;
 		}capture;
-		auto e_edit = ui.e_edit(200.f, s2w(key_info->find_item(key_map[i])->name()).c_str());
+		auto e_edit = ui.e_edit(200.f, s2w(key_info->find_item(key_map[i])->name.str()).c_str());
 		capture.t = e_edit->get_component(cText);
 		capture.i = i;
 		e_edit->get_component(cEventReceiver)->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
@@ -1246,8 +1246,8 @@ void MyApp::create_key_scene()
 			{
 				auto& capture = c.data<Capturing>();
 				key_map[capture.i] = (Key)value;
-				auto key_info = find_enum(FLAME_CHASH("flame::Key"));
-				capture.t->set_text(s2w(key_info->find_item((Key)value)->name()).c_str());
+				auto key_info = find_enum("flame::Key");
+				capture.t->set_text(s2w(key_info->find_item((Key)value)->name.str()).c_str());
 			}
 			return false;
 		}, Capture().set_data(&capture), 0);

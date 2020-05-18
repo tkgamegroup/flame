@@ -103,8 +103,8 @@ namespace flame
 	}
 
 	SlotPrivate::SlotPrivate(BP::Unit* unit, IO io, uint index, VariableInfo* vi) :
-		SlotPrivate(unit, io, index, (TypeInfo*)vi->type(), vi->name(),
-			vi->offset(), vi->size(), vi->default_value())
+		SlotPrivate(unit, io, index, vi->type, vi->name.str(),
+			vi->offset, vi->size, vi->default_value)
 	{
 	}
 
@@ -154,7 +154,7 @@ namespace flame
 					break;
 				}
 			}
-			if (type->base_name() == std::string("ListenerHub"))
+			if (type->base_name == "ListenerHub")
 				(*(ListenerHub<void(Capture&)>**)data)->remove(listener);
 		}
 
@@ -162,7 +162,7 @@ namespace flame
 		if (target)
 		{
 			target->links.push_back(this);
-			if (type->base_name() == std::string("ListenerHub"))
+			if (type->base_name == "ListenerHub")
 			{
 				auto p = target->data;
 				memcpy(data, &p, sizeof(void*));
@@ -172,7 +172,7 @@ namespace flame
 			}
 		}
 
-		if (!target && type->tag() == TypePointer)
+		if (!target && type->tag == TypePointer)
 			memset(data, 0, sizeof(void*));
 
 		return true;
@@ -191,37 +191,36 @@ namespace flame
 		user_data = nullptr;
 		node_type = _node_type;
 		group = _group;
-		type = _udt->name();
+		type = _udt->name;
 		udt = _udt;
 
 		if (node_type == BP::NodeReal)
 		{
-			auto size = udt->size();
+			auto size = udt->size;
 			object = malloc(size);
 			memset(object, 0, size);
 
 			{
 				auto f = udt->find_function("ctor");
-				if (f && f->parameter_count() == 0)
-					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva()), object);
+				if (f && f->parameters.s == 0)
+					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva), object);
 			}
 
 			{
 				auto f = udt->find_function("dtor");
 				if (f)
-					dtor_addr = (char*)module + (uint)f->rva();
+					dtor_addr = (char*)module + (uint)f->rva;
 			}
 
 			{
 				auto f = udt->find_function("bp_update");
 				assert(f && check_function(f, "D#void", {}));
-				update_addr = (char*)module + (uint)f->rva();
+				update_addr = (char*)module + (uint)f->rva;
 			}
 
-			for (auto i = 0; i < udt->variable_count(); i++)
+			for (auto v :udt->variables)
 			{
-				auto v = udt->variable(i);
-				if (v->flags() & VariableFlagOutput)
+				if (v->flags & VariableFlagOutput)
 					outputs.push_back(new SlotPrivate(this, BP::Slot::Out, outputs.s, v));
 				else
 					inputs.push_back(new SlotPrivate(this, BP::Slot::In, inputs.s, v));
@@ -231,33 +230,29 @@ namespace flame
 		{
 			{
 				auto f = udt->find_function("get_linked_object");
-				assert(f && check_function(f, (std::string("P#") + udt->name()).c_str(), {}));
-				object = cf(p2f<F_vp_v>((char*)module + (uint)f->rva()));
+				assert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
+				object = cf(p2f<F_vp_v>((char*)module + (uint)f->rva));
 				assert(object);
 			}
 
 			if (node_type == BP::NodeRefRead)
 			{
-				for (auto i = 0; i < udt->variable_count(); i++)
-				{
-					auto v = udt->variable(i);
+				for (auto v : udt->variables)
 					outputs.push_back(new SlotPrivate(this, BP::Slot::Out, outputs.s, v));
-				}
 			}
 			else if (node_type == BP::NodeRefWrite)
 			{
-				for (auto i = 0; i < udt->variable_count(); i++)
+				for (auto v: udt->variables)
 				{
-					auto v = udt->variable(i);
-					auto type = v->type();
-					if (type->tag() != TypeData)
+					auto type = v->type;
+					if (type->tag != TypeData)
 						continue;
-					auto base_hash = type->base_hash();
+					auto base_hash = type->base_hash;
 					auto input = new SlotPrivate(this, BP::Slot::In, inputs.s, v);
-					auto f_set = udt->find_function((std::string("set_") + v->name()).c_str());
+					auto f_set = udt->find_function(("set_" + v->name.str()).c_str());
 					if (f_set)
 					{
-						auto f_set_addr = (char*)module + (uint)f_set->rva();
+						auto f_set_addr = (char*)module + (uint)f_set->rva;
 						Setter* setter = nullptr;
 						switch (base_hash)
 						{
@@ -381,7 +376,7 @@ namespace flame
 			auto out = in->links[0];
 			if (out)
 			{
-				if (out->type->tag() == TypeData && in->type->tag() == TypePointer)
+				if (out->type->tag == TypeData && in->type->tag == TypePointer)
 					memcpy(in->data, &out->data, sizeof(void*));
 				else
 				{
@@ -474,7 +469,7 @@ namespace flame
 					{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
 				}, nullptr, nullptr, f2v(&Dummy::update));
 		}
-		break;
+			break;
 		case 'M':
 		{
 #pragma pack(1)
@@ -501,7 +496,7 @@ namespace flame
 					{TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res) }
 				}, nullptr, nullptr, f2v(&Dummy::update));
 		}
-		break;
+			break;
 		case 'V':
 		{
 #pragma pack(1)
@@ -537,7 +532,7 @@ namespace flame
 			obj.type_hash = type_hash;
 			obj.type_size = type_size;
 		}
-		break;
+			break;
 		case 'A':
 		{
 			auto sp = SUS::split(parameters, '+');
@@ -604,7 +599,7 @@ namespace flame
 			obj.type_size = type_size;
 			obj.size = size;
 		}
-		break;
+			break;
 		}
 
 		if (!n)
@@ -617,7 +612,7 @@ namespace flame
 				return nullptr;
 			}
 
-			n = new NodePrivate(node_type, this, id, udt, udt->db()->module());
+			n = new NodePrivate(node_type, this, id, udt, udt->db->module);
 		}
 
 		n->guid = generate_guid();
@@ -728,12 +723,12 @@ namespace flame
 
 	void BPPrivate::remove_group(GroupPrivate* _g)
 	{
-		for (auto g : groups)
+		for (auto i = 0; i < groups.s; i++)
 		{
-			if (g == _g)
+			if (groups[i] == _g)
 			{
-				delete (GroupPrivate*)g;
-				groups.remove(&g - groups.v);
+				delete (GroupPrivate*)_g;
+				groups.remove(i);
 				break;
 			}
 		}
@@ -842,8 +837,8 @@ namespace flame
 						{
 							auto input = n->find_input(n_data.attribute("name").value());
 							auto type = input->type;
-							auto tag = type->tag();
-							if (!type->is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
+							auto tag = type->tag;
+							if (!type->is_array && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
 								type->unserialize(n_data.attribute("value").value(), input->data);
 						}
 					}
@@ -903,7 +898,7 @@ namespace flame
 					if (in->links[0])
 						continue;
 					auto type = in->type;
-					if (type->tag() != TypePointer)
+					if (type->tag != TypePointer)
 					{
 						if (in->default_value && memcmp(in->default_value, in->data, in->size) == 0)
 							continue;

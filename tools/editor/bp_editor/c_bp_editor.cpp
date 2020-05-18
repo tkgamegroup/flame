@@ -136,9 +136,9 @@ struct cSlot : Component
 							auto o_type = oth->type;
 							std::wstring str;
 							if (is_in)
-								str = s2w(o_type->name()) + (ok ? L"  =>  " : L"  』>  ") + s2w(s_type->name());
+								str = s2w(o_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(s_type->name.str());
 							else
-								str = s2w(s_type->name()) + (ok ? L"  =>  " : L"  』>  ") + s2w(o_type->name());
+								str = s2w(s_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(o_type->name.str());
 							ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
 						}
 						ui.e_end_layout();
@@ -185,8 +185,8 @@ struct cSlot : Component
 						c_element->color = Vec4c(200, 200, 200, 255);
 						c_element->frame_color = Vec4c(0, 0, 0, 255);
 						auto type = s->type;
-						auto tag = type->tag();
-						ui.e_text((type_prefix(tag, type->is_array()) + s2w(type->base_name())).c_str())->get_component(cText)->color = type_color(tag);
+						auto tag = type->tag;
+						ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
 						{
 							auto text_value = ui.e_text(L"-")->get_component(cText);
 							ui.current_entity = thiz->tip_info;
@@ -532,7 +532,7 @@ void cBPEditor::on_add_group(BP::Group* g)
 		cl->fence = -2;
 	}
 
-	auto c_group = new_object<cGroup>();
+	auto c_group = f_new<cGroup>();
 	c_group->g = g;
 	e_group->add_component(c_group);
 
@@ -547,7 +547,7 @@ void cBPEditor::on_add_group(BP::Group* g)
 			ui.next_element_color = Vec4c(200, 200, 200, 255);
 			ui.e_element();
 			ui.c_event_receiver();
-			auto c_slot = new_object<cSlot>();
+			auto c_slot = f_new<cSlot>();
 			c_slot->s = input;
 			input->user_data = c_slot;
 			ui.current_entity->add_component(c_slot);
@@ -555,7 +555,7 @@ void cBPEditor::on_add_group(BP::Group* g)
 			ui.e_menu_item(L"Break Link(s)", [](Capture& c) {
 			}, Capture().set_thiz(input));
 			ui.e_end_popup_menu();
-			ui.push_style(TextColorNormal, common(type_color(input->type->tag())));
+			ui.push_style(TextColorNormal, common(type_color(input->type->tag)));
 			auto e_name = ui.e_text(s2w(input->name.str()).c_str());
 			ui.pop_style(TextColorNormal);
 		ui.e_end_layout();
@@ -592,9 +592,9 @@ void cBPEditor::on_add_node(BP::Node* n)
 	ui.c_event_receiver();
 	ui.c_layout(LayoutVertical, 4.f)->fence = -1;
 
-	auto c_node = new_object<cNode>();
+	auto c_node = f_new<cNode>();
 	c_node->n = n;
-	auto n_type = BP::break_node_type(n->type.v);
+	auto n_type = BP::break_node_type(n->type.str());
 	e_node->add_component(c_node);
 	ui.e_begin_popup_menu(false);
 		ui.e_menu_item(L"Duplicate", [](Capture& c) {
@@ -608,7 +608,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 		if (n_type == 0)
 		{
 			ui.push_style(FontSize, common(Vec1u(20)));
-			auto str = s2w(n->type.v);
+			auto str = s2w(n->type.str());
 			auto last_colon = str.find_last_of(L':');
 			if (last_colon != std::wstring::npos)
 				str = std::wstring(str.begin() + last_colon + 1, str.end());
@@ -617,7 +617,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 			ui.pop_style(FontSize);
 		}
 
-		std::string type = n->type.v;
+		auto type = n->type.str();
 
 		ui.e_begin_layout(LayoutHorizontal, 16.f);
 		ui.c_aligner(AlignMinMax | AlignGreedy, 0);
@@ -633,7 +633,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 						ui.next_element_color = Vec4c(200, 200, 200, 255);
 						ui.e_element();
 						ui.c_event_receiver();
-						auto c_slot = new_object<cSlot>();
+						auto c_slot = f_new<cSlot>();
 						c_slot->s = input;
 						input->user_data = c_slot;
 						ui.current_entity->add_component(c_slot);
@@ -651,8 +651,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 										return;
 									bp_editor.select();
 									auto idx = input->index;
-									std::string type = n->type.v;
-									std::string id = n->id.v;
+									auto type = n->type.str();
+									auto id = n->id.str();
 									auto left_pos = type.find('(');
 									auto plus_pos = type.find('+');
 									auto size = std::stoi(std::string(type.begin() + left_pos + 1, type.begin() + plus_pos));
@@ -685,16 +685,17 @@ void cBPEditor::on_add_node(BP::Node* n)
 							}
 						ui.e_end_popup_menu();
 
-						ui.push_style(TextColorNormal, common(type_color(input->type->tag())));
+						ui.push_style(TextColorNormal, common(type_color(input->type->tag)));
 						auto e_name = ui.e_text(s2w(input->name.str()).c_str());
 						ui.pop_style(TextColorNormal);
 					ui.e_end_layout();
 
 					auto type = input->type;
-					auto tag = type->tag();
+					auto tag = type->tag;
 					if (!input->links[0] && tag != TypePointer)
 					{
-						auto base_hash = type->base_hash();
+						auto base_name = type->base_name.str();
+						auto base_hash = type->base_hash;
 
 						switch (tag)
 						{
@@ -706,11 +707,11 @@ void cBPEditor::on_add_node(BP::Node* n)
 							combobox = ui.e_begin_combobox()->get_component(cCombobox);
 							ui.current_entity = combobox->entity;
 							ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-							for (auto i = 0; i < info->item_count(); i++)
-								ui.e_combobox_item(s2w(info->item(i)->name()).c_str());
+							for (auto item : info->items)
+								ui.e_combobox_item(s2w(item->name.str()).c_str());
 							ui.e_end_combobox();
 
-							e_name->add_component(new_object<cEnumSingleDataTracker>(input->data, info, [](Capture& c, int v) {
+							e_name->add_component(f_new<cEnumSingleDataTracker>(input->data, info, [](Capture& c, int v) {
 								bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 							}, Capture().set_thiz(input), combobox));
 						}
@@ -722,16 +723,16 @@ void cBPEditor::on_add_node(BP::Node* n)
 							ui.e_begin_layout(LayoutVertical, 4.f);
 							ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
 							auto info = find_enum(base_hash);
-							for (auto i = 0; i < info->item_count(); i++)
+							for (auto item : info->items)
 							{
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
 								checkboxes.push_back(ui.e_checkbox()->get_component(cCheckbox));
-								ui.e_text(s2w(info->item(i)->name()).c_str());
+								ui.e_text(s2w(item->name.str()).c_str());
 								ui.e_end_layout();
 							}
 							ui.e_end_layout();
 
-							e_name->add_component(new_object<cEnumMultiDataTracker>(input->data, info, [](Capture& c, int v) {
+							e_name->add_component(f_new<cEnumMultiDataTracker>(input->data, info, [](Capture& c, int v) {
 								bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 							}, Capture().set_thiz(input), checkboxes));
 						}
@@ -746,7 +747,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								checkbox = ui.e_checkbox()->get_component(cCheckbox);
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
 
-								e_name->add_component(new_object<cBoolDataTracker>(input->data, [](Capture& c, bool v) {
+								e_name->add_component(f_new<cBoolDataTracker>(input->data, [](Capture& c, bool v) {
 									bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 								}, Capture().set_thiz(input), checkbox));
 							}
@@ -761,7 +762,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								edit_text = e->child(0)->get_component(cText);
 								drag_text = e->child(1)->get_component(cText);
 
-								e_name->add_component(new_object<cDigitalDataTracker<int>>(input->data, [](Capture& c, int v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalDataTracker<int>>(input->data, [](Capture& c, int v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 									else
@@ -786,7 +787,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								auto p = e_name;
 								p->get_component(cLayout)->type = LayoutHorizontal;
-								p->add_component(new_object<cDigitalVecDataTracker<2, int>>(input->data, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
+								p->add_component(f_new<cDigitalVecDataTracker<2, int>>(input->data, [](Capture& c, const Vec<2, int>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -809,7 +810,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<3, int>>(input->data, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<3, int>>(input->data, [](Capture& c, const Vec<3, int>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -832,7 +833,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<4, int>>(input->data, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<4, int>>(input->data, [](Capture& c, const Vec<4, int>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -850,7 +851,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								edit_text = e->child(0)->get_component(cText);
 								drag_text = e->child(1)->get_component(cText);
 
-								e_name->add_component(new_object<cDigitalDataTracker<uint>>(input->data, [](Capture& c, uint v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalDataTracker<uint>>(input->data, [](Capture& c, uint v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 									else
@@ -873,7 +874,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<2, uint>>(input->data, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<2, uint>>(input->data, [](Capture& c, const Vec<2, uint>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -896,7 +897,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<3, uint>>(input->data, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<3, uint>>(input->data, [](Capture& c, const Vec<3, uint>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -919,7 +920,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<4, uint>>(input->data, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<4, uint>>(input->data, [](Capture& c, const Vec<4, uint>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -937,7 +938,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								edit_text = e->child(0)->get_component(cText);
 								drag_text = e->child(1)->get_component(cText);
 
-								e_name->add_component(new_object<cDigitalDataTracker<float>>(input->data, [](Capture& c, float v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalDataTracker<float>>(input->data, [](Capture& c, float v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 									else
@@ -960,7 +961,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<2, float>>(input->data, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<2, float>>(input->data, [](Capture& c, const Vec<2, float>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -983,7 +984,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<3, float>>(input->data, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<3, float>>(input->data, [](Capture& c, const Vec<3, float>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -1006,7 +1007,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<4, float>>(input->data, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<4, float>>(input->data, [](Capture& c, const Vec<4, float>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -1024,7 +1025,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								edit_text = e->child(0)->get_component(cText);
 								drag_text = e->child(1)->get_component(cText);
 
-								e_name->add_component(new_object<cDigitalDataTracker<uchar>>(input->data, [](Capture& c, uchar v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalDataTracker<uchar>>(input->data, [](Capture& c, uchar v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), &v, true);
 									else
@@ -1047,7 +1048,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<2, uchar>>(input->data, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<2, uchar>>(input->data, [](Capture& c, const Vec<2, uchar>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -1070,7 +1071,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<3, uchar>>(input->data, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<3, uchar>>(input->data, [](Capture& c, const Vec<3, uchar>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -1093,7 +1094,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								}
 								ui.e_end_layout();
 
-								e_name->add_component(new_object<cDigitalVecDataTracker<4, uchar>>(input->data, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
+								e_name->add_component(f_new<cDigitalVecDataTracker<4, uchar>>(input->data, [](Capture& c, const Vec<4, uchar>& v, bool exit_editing) {
 									if (exit_editing)
 										bp_editor.set_data(c.thiz<BP::Slot>(), (void*)&v, true);
 									else
@@ -1108,7 +1109,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								text = ui.e_edit(50.f)->get_component(cText);
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
 
-								e_name->add_component(new_object<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
+								e_name->add_component(f_new<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
 									StringA d = v;
 									bp_editor.set_data(c.thiz<BP::Slot>(), &d, true);
 								}, Capture().set_thiz(input), text));
@@ -1121,7 +1122,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 								text = ui.e_edit(50.f)->get_component(cText);
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
 
-								e_name->add_component(new_object<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
+								e_name->add_component(f_new<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
 									StringW d = v;
 									bp_editor.set_data(c.thiz<BP::Slot>(), &d, true);
 								}, Capture().set_thiz(input), text));
@@ -1142,7 +1143,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 				{
 					ui.e_begin_layout(LayoutHorizontal);
 					ui.c_aligner(AlignMax, 0);
-					ui.e_text(s2w(output->name.str()).c_str())->get_component(cText)->color = type_color(output->type->tag());
+					ui.e_text(s2w(output->name.str()).c_str())->get_component(cText)->color = type_color(output->type->tag);
 
 					ui.next_element_size = ui.style(FontSize).u[0];
 					ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
@@ -1150,7 +1151,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 					ui.next_element_color = Vec4c(200, 200, 200, 255);
 					ui.e_element();
 					ui.c_event_receiver();
-					auto c_slot = new_object<cSlot>();
+					auto c_slot = f_new<cSlot>();
 					c_slot->s = output;
 					ui.current_entity->add_component(c_slot);
 					output->user_data = c_slot;
@@ -1239,10 +1240,10 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 	if (dragging_slot)
 	{
 		type = dragging_slot->type;
-		tag = type->tag();
-		base_name = type->base_name();
-		base_hash = type->base_hash();
-		is_array = type->is_array();
+		tag = type->tag;
+		base_name = type->base_name.v;
+		base_hash = type->base_hash;
+		is_array = type->is_array;
 	}
 
 	struct NodeType
@@ -1252,12 +1253,10 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		BP::NodeType t;
 	};
 	std::vector<NodeType> node_types;
-	for (auto i = 0; i < global_db_count(); i++)
+	for (auto db : global_typeinfo_databases)
 	{
-		auto udts = global_db(i)->get_udts();
-		for (auto j = 0; j < udts.s; j++)
+		for (auto u : db->udts.get_all())
 		{
-			auto u = udts[j];
 			auto f_update = u->find_function("bp_update");
 			if (f_update && check_function(f_update, "D#void", {}))
 			{
@@ -1268,17 +1267,16 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					auto ds_io = dragging_slot->io;
 					auto ds_t = dragging_slot->type;
 					auto found = false;
-					for (auto k = 0; k < u->variable_count(); k++)
+					for (auto v : u->variables)
 					{
-						auto v = u->variable(k);
-						auto flags = v->flags();
-						if (ds_io == BP::Slot::Out && (flags & VariableFlagInput) && BP::Slot::can_link(v->type(), ds_t))
+						auto flags = v->flags;
+						if (ds_io == BP::Slot::Out && (flags & VariableFlagInput) && BP::Slot::can_link(v->type, ds_t))
 						{
 							node_types.push_back({ u, v, BP::NodeReal });
 							found = true;
 							break;
 						}
-						if (ds_io == BP::Slot::In && (flags & VariableFlagOutput) && BP::Slot::can_link(ds_t, v->type()))
+						if (ds_io == BP::Slot::In && (flags & VariableFlagOutput) && BP::Slot::can_link(ds_t, v->type))
 						{
 							node_types.push_back({ u, v, BP::NodeReal });
 							found = true;
@@ -1301,16 +1299,15 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					auto ds_io = dragging_slot->io;
 					auto ds_t = dragging_slot->type;
 					auto found = false;
-					for (auto k = 0; k < u->variable_count(); k++)
+					for (auto v : u->variables)
 					{
-						auto v = u->variable(k);
-						if (ds_io == BP::Slot::Out && BP::Slot::can_link(v->type(), ds_t))
+						if (ds_io == BP::Slot::Out && BP::Slot::can_link(v->type, ds_t))
 						{
 							node_types.push_back({ u, v, BP::NodeRefWrite });
 							found = true;
 							break;
 						}
-						if (ds_io == BP::Slot::In && BP::Slot::can_link(ds_t, v->type()))
+						if (ds_io == BP::Slot::In && BP::Slot::can_link(ds_t, v->type))
 						{
 							node_types.push_back({ u, v, BP::NodeRefRead });
 							found = true;
@@ -1324,7 +1321,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		}
 	}
 	std::sort(node_types.begin(), node_types.end(), [](const auto& a, const auto& b) {
-		return std::string(a.u->name()) < std::string(b.u->name());
+		return a.u->name.str() < b.u->name.str();
 	});
 
 	auto& ui = bp_editor.window->ui;
@@ -1342,7 +1339,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		ui.c_layout(LayoutVertical)->item_padding = 4.f;
 		ui.parents.push(ui.current_entity);
 			if (dragging_slot)
-				ui.e_text((L"Filtered For: " + s2w(type->name())).c_str())->get_component(cText)->color = type_color(tag);
+				ui.e_text((L"Filtered For: " + s2w(type->name.str())).c_str())->get_component(cText)->color = type_color(tag);
 			ui.e_begin_layout(LayoutHorizontal, 4.f);
 				ui.e_text(Icon_SEARCH);
 				auto c_text_search = ui.e_edit(300.f)->get_component(cText);
@@ -1362,14 +1359,13 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							auto& ui = bp_editor.window->ui;
 
 							std::vector<EnumInfo*> enum_infos;
-							for (auto i = 0; i < global_db_count(); i++)
+							for (auto db : global_typeinfo_databases)
 							{
-								auto enums = global_db(i)->get_enums();
-								for (auto j = 0; j < enums.s; j++)
-									enum_infos.push_back(enums.v[j]);
+								for (auto e : db->enums.get_all())
+									enum_infos.push_back(e);
 							}
 							std::sort(enum_infos.begin(), enum_infos.end(), [](EnumInfo* a, EnumInfo* b) {
-								return std::string(a->name()) < std::string(b->name());
+								return a->name.str() < b->name.str();
 							});
 
 							struct _Capturing
@@ -1383,9 +1379,9 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							l->remove_children(0, -1);
 							for (auto ei : enum_infos)
 							{
-								capture.s = ei->name();
+								capture.s = ei->name.v;
 								ui.parents.push(l);
-								ui.e_menu_item(s2w(ei->name()).c_str(), [](Capture& c) {
+								ui.e_menu_item(s2w(ei->name.v).c_str(), [](Capture& c) {
 									auto& capture = c.data<_Capturing>();
 									NodeDesc d;
 									d.id = "";
@@ -1588,9 +1584,9 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 						for (auto& t : node_types)
 						{
 							capture.t = t.t;
-							capture.us = t.u->name();
-							capture.vs = t.v ? t.v->name() : nullptr;
-							auto name = s2w(t.u->name());
+							capture.us = t.u->name.v;
+							capture.vs = t.v ? t.v->name.v : nullptr;
+							auto name = s2w(t.u->name.str());
 							if (capture.t == BP::NodeRefRead)
 								name += L" (RefRead)";
 							else if (capture.t == BP::NodeRefWrite)

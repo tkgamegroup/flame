@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct TypeinfoDatabase;
+	struct TypeInfoDatabase;
 
 	struct World;
 	struct Component;

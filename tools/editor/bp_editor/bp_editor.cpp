@@ -172,7 +172,7 @@ struct Action_RemoveNodes : Action
 				auto& src = s.inputs[i];
 				auto dst = n->inputs[i];
 				auto type = dst->type;
-				if (type->tag() != TypePointer)
+				if (type->tag != TypePointer)
 				{
 					auto data = new char[dst->size];
 					type->unserialize(src.data, data);
@@ -759,7 +759,7 @@ BP::Node* BPEditor::add_node(const NodeDesc& desc)
 	a->desc.type = desc.type;
 	auto unit = n;
 	a->desc.guid = unit->guid;
-	a->desc.id = unit->id.v;
+	a->desc.id = unit->id.str();
 	a->desc.pos = desc.pos;
 	add_action(a);
 
@@ -777,10 +777,10 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 		auto n = nodes[i];
 		auto& s = a->savings[i];
 		s.desc.node_type = n->node_type;
-		s.desc.type = n->type.v;
+		s.desc.type = n->type.str();
 		auto unit = n;
 		s.desc.guid = unit->guid;
-		s.desc.id = unit->id.v;
+		s.desc.id = unit->id.str();
 		s.desc.pos = unit->pos;
 		s.inputs.resize(n->inputs.s);
 		for (auto j = 0; j < s.inputs.size(); j++)
@@ -788,13 +788,13 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 			auto src = n->inputs[j];
 			auto& dst = s.inputs[j];
 			auto type = src->type;
-			if (type->tag() != TypePointer)
+			if (type->tag != TypePointer)
 				dst.data = type->serialize(src->data);
 			auto slot = src->links[0];
 			if (slot)
 			{
 				dst.link.node_guid = slot->parent->guid;
-				dst.link.slot_name = slot->name.v;
+				dst.link.slot_name = slot->name.str();
 			}
 		}
 		s.outputs.resize(n->outputs.s);
@@ -820,7 +820,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 
 				LinkSaving l;
 				l.node_guid = _n->guid;
-				l.slot_name = slot->name.v;
+				l.slot_name = slot->name.str();
 				dst.links.push_back(l);
 			}
 		}
@@ -834,7 +834,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 
 void BPEditor::set_node_id(BP::Node* n, const std::string& id)
 {
-	std::string before_id = n->id.v;
+	auto before_id = n->id.str();
 
 	if (!n->set_id(id.c_str()))
 		return;
@@ -876,17 +876,17 @@ void BPEditor::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& lin
 		auto& src = links[i];
 		auto& dst = a->link_descs[i];
 		dst.input.node_guid = src.first->parent->guid;
-		dst.input.slot_name = src.first->name.v;
+		dst.input.slot_name = src.first->name.str();
 		auto prev = src.first->links[0];
 		if (prev)
 		{
 			dst.before_output_addr.node_guid = prev->parent->guid;
-			dst.before_output_addr.slot_name = prev->name.v;
+			dst.before_output_addr.slot_name = prev->name.str();
 		}
 		if (src.second)
 		{
 			dst.after_output_addr.node_guid = src.second->parent->guid;
-			dst.after_output_addr.slot_name = src.second->name.v;
+			dst.after_output_addr.slot_name = src.second->name.str();
 		}
 	}
 	add_action(a);
@@ -903,7 +903,7 @@ void BPEditor::set_data(BP::Slot* input, void* data, bool from_editor)
 
 	auto a = new Action_SetData;
 	a->node_guid = input->parent->guid;
-	a->input_name = input->name.v;
+	a->input_name = input->name.str();
 	a->before_data = type->serialize(input->data);
 	a->after_data = type->serialize(data);
 	add_action(a);

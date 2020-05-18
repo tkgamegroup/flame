@@ -39,7 +39,7 @@ namespace flame
 				if (hash == FLAME_CHASH("index"))
 				{
 					auto thiz = c.thiz<cEnumSingleDataTracker>();
-					thiz->on_changed(thiz->capture, thiz->info->item(thiz->combobox->index)->value());
+					thiz->on_changed(thiz->capture, thiz->info->items[thiz->combobox->index]->value);
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -73,7 +73,7 @@ namespace flame
 			checkboxes(checkboxes)
 		{
 			data = _data;
-			assert(checkboxes.size() == info->item_count());
+			assert(checkboxes.size() == info->items.s);
 
 			update_view();
 
@@ -85,7 +85,7 @@ namespace flame
 						auto idx = c.data<int>();
 						auto thiz = c.thiz<cEnumMultiDataTracker>();
 						auto v = *(int*)thiz->data;
-						auto f = thiz->info->item(idx)->value();
+						auto f = thiz->info->items[idx]->value;
 						if (thiz->checkboxes[idx]->checked)
 							v |= f;
 						else
@@ -105,7 +105,7 @@ namespace flame
 		void update_view() override
 		{
 			for (auto i = 0; i < checkboxes.size(); i++)
-				checkboxes[i]->set_checked(*(int*)data & info->item(i)->value(), INVALID_POINTER);
+				checkboxes[i]->set_checked(*(int*)data & info->items[i]->value, INVALID_POINTER);
 		}
 	};
 

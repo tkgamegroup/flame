@@ -395,20 +395,21 @@ namespace flame
 		for (auto n_c : src.child("components"))
 		{
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + n_c.name()).c_str()));
-			assert(udt && udt->base_name() == std::string("Component"));
-			auto module = udt->db()->module();
+			assert(udt && udt->base_name.str() == "Component");
+			auto module = udt->db->module;
 			auto f = udt->find_function("create");
 			assert(f);
-			auto component = cf(p2f<F_vp_v>((char*)module + (uint)f->rva()));
+			auto component = cf(p2f<F_vp_v>((char*)module + (uint)f->rva));
 			for (auto n_v : n_c)
 			{
 				auto v = udt->find_variable(n_v.name());
-				auto type = v->type();
-				auto p = (char*)component + v->offset();
-				if (type->tag() == TypePointer)
+				auto type = v->type;
+				auto p = (char*)component + v->offset;
+				if (type->tag == TypePointer)
 				{
-					auto name = type->base_name();
-					auto len = strlen(name);
+					auto& s = type->base_name;
+					auto name = s.v;
+					auto len = s.s;
 					for (auto i = len - 1; i >= 0; i--)
 					{
 						if (name[i] == ':')
@@ -455,19 +456,18 @@ namespace flame
 				auto n_c = n_cs.append_child(component.second->name);
 
 				auto udt = find_udt(FLAME_HASH((std::string("flame::") + component.second->name).c_str()));
-				assert(udt && udt->base_name() == std::string("Component"));
-				for (auto i = 0; i < udt->variable_count(); i++)
+				assert(udt && udt->base_name.str() == "Component");
+				for (auto v : udt->variables)
 				{
-					auto v = udt->variable(i);
-					auto type = v->type();
-					auto p = (char*)component.second.get() + v->offset();
-					if (type->tag() == TypePointer)
-						n_c.append_child(v->name()).append_attribute("v").set_value((*(Object**)p)->id);
+					auto type = v->type;
+					auto p = (char*)component.second.get() + v->offset;
+					if (type->tag == TypePointer)
+						n_c.append_child(v->name.v).append_attribute("v").set_value((*(Object**)p)->id);
 					else
 					{
-						auto dv = v->default_value();
-						if (!dv || memcmp(dv, p, v->size()) != 0)
-							n_c.append_child(v->name()).append_attribute("v").set_value(type->serialize(p).c_str());
+						auto dv = v->default_value;
+						if (!dv || memcmp(dv, p, v->size) != 0)
+							n_c.append_child(v->name.v).append_attribute("v").set_value(type->serialize(p).c_str());
 					}
 				}
 			}

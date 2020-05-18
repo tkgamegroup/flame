@@ -27,11 +27,18 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
 
 	template <class T, class ...Args>
-	T* new_object(Args... args)
+	T* f_new(Args... args)
 	{
 		auto ret = (T*)f_malloc(sizeof(T));
 		new (ret) T(args...);
 		return ret;
+	}
+
+	template <class T>
+	void f_delete(T* p)
+	{
+		p->~T();
+		f_free(p);
 	}
 
 	struct Guid
@@ -138,7 +145,7 @@ namespace flame
 			return s == str.size() && std::char_traits<CH>::compare(v, str.c_str(), s) == 0;
 		}
 
-		std::basic_string<CH> str()
+		std::basic_string<CH> str() const
 		{
 			return std::basic_string<CH>(v, s);
 		}
@@ -299,6 +306,71 @@ namespace flame
 			for (auto i = offset; i < s - count; i++)
 				v[i] = v[i + count];
 			resize(s - count);
+		}
+	};
+
+	template <uint BucketCount, class T>
+	struct HashMap
+	{
+		struct Item
+		{
+			uint h;
+			T* p;
+		};
+
+		Array<Item> buckets[BucketCount];
+
+		void add(uint h, T* p)
+		{
+			auto& bucket = buckets[h % BucketCount];
+			for (auto& i : bucket)
+			{
+				if (i.h == h)
+				{
+					assert(0);
+					return;
+				}
+			}
+			Item i;
+			i.h = h;
+			i.p = p;
+			bucket.push_back(i);
+		}
+
+		void remove(uint h)
+		{
+			auto& bucket = buckets[h % BucketCount];
+			for (auto i = 0; i < bucket.s; i++)
+			{
+				if (bucket[i].h == h)
+				{
+					bucket.remove(i);
+					return;
+				}
+			}
+			assert(0);
+		}
+
+		T* find(uint h)
+		{
+			auto& bucket = buckets[h % BucketCount];
+			for (auto& i : bucket)
+			{
+				if (i.h == h)
+					return i.p;
+			}
+			return nullptr;
+		}
+
+		std::vector<T*> get_all()
+		{
+			std::vector<T*> ret;
+			for (auto i = 0; i < BucketCount; i++)
+			{
+				for (auto& i : buckets[i])
+					ret.push_back(i.p);
+			}
+			return ret;
 		}
 	};
 

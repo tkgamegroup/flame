@@ -384,7 +384,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				auto e_image = item->child(0);
 				e_image->get_component(cImage)->color = Vec4c(100, 100, 100, 128);
 
-				auto c_thumbnail = new_object<cThumbnail>();
+				auto c_thumbnail = f_new<cThumbnail>();
 				c_thumbnail->filename = std::filesystem::canonical(p).wstring();
 				e_image->add_component(c_thumbnail);
 			}
