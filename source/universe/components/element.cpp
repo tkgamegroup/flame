@@ -28,10 +28,6 @@ namespace flame
 		clipped_rect = Vec4f(-1.f);
 
 		cmds.impl = ListenerHubImpl::create();
-
-		last_global_pos = 0.f;
-		last_global_scale = 0.f;
-		last_global_size = 0.f;
 	}
 
 	cElementPrivate::~cElementPrivate()
@@ -41,38 +37,42 @@ namespace flame
 
 	void cElementPrivate::calc_geometry()
 	{
+		float _global_scale;
+		Vec2f _global_size;
+		Vec2f _global_pos;
+
 		auto p = entity->parent();
 		if (!p)
 		{
-			global_scale = scale;
-			global_size = size * global_scale;
-			global_pos = pos;
+			_global_scale = scale;
+			_global_size = size * global_scale;
+			_global_pos = pos;
 		}
 		else
 		{
 			auto p_element = p->get_component(cElement);
-			global_scale = p_element->global_scale * scale;
-			global_size = size * global_scale;
-			global_pos = p_element->global_pos + p_element->global_scale * pos - pivot * global_size;
+			_global_scale = p_element->global_scale * scale;
+			_global_size = size * global_scale;
+			_global_pos = p_element->global_pos + p_element->global_scale * pos - pivot * global_size;
 		}
 
-		if (global_pos != last_global_pos)
+		if (global_scale != _global_scale)
 		{
 			mark_dirty();
-			last_global_pos = global_pos;
-			data_changed(FLAME_CHASH("global_pos"), nullptr);
-		}
-		if (global_scale != last_global_scale)
-		{
-			mark_dirty();
-			last_global_scale = global_scale;
+			global_scale = _global_scale;
 			data_changed(FLAME_CHASH("global_scale"), nullptr);
 		}
-		if (global_size != last_global_size)
+		if (global_size != _global_size)
 		{
 			mark_dirty();
-			last_global_size = global_size;
+			global_size = _global_size;
 			data_changed(FLAME_CHASH("global_size"), nullptr);
+		}
+		if (global_pos != _global_pos)
+		{
+			mark_dirty();
+			global_pos = _global_pos;
+			data_changed(FLAME_CHASH("global_pos"), nullptr);
 		}
 	}
 
