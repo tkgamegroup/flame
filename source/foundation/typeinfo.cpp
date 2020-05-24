@@ -7,14 +7,14 @@ namespace flame
 {
 	HashMap<256, TypeInfo> typeinfos;
 
-	TypeInfoDatabase* TypeInfoDatabase::load(const wchar_t* module_filename, bool add_to_global, bool load_with_module)
+	TypeInfoDatabase* TypeInfoDatabase::load(const wchar_t* library_filename, bool add_to_global, bool load_with_library)
 	{
-		std::filesystem::path module_path(module_filename);
-		if (!module_path.is_absolute())
-			module_path = get_app_path().str() / module_path;
-		auto typeinfo_path = module_path;
+		std::filesystem::path library_path(library_filename);
+		if (!library_path.is_absolute())
+			library_path = get_app_path().str() / library_path;
+		auto typeinfo_path = library_path;
 		typeinfo_path.replace_extension(L".typeinfo");
-		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(module_path))
+		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(library_path))
 		{
 			auto typeinfogen_path = std::filesystem::path(get_app_path().str()) / L"typeinfogen.exe";
 			if (!std::filesystem::exists(typeinfogen_path))
@@ -23,7 +23,7 @@ namespace flame
 				assert(0);
 				return nullptr;
 			}
-			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + module_path.wstring()).c_str());
+			exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + library_path.wstring()).c_str());
 		}
 
 		pugi::xml_document file;
@@ -35,7 +35,7 @@ namespace flame
 			return nullptr;
 		}
 
-		auto db = new TypeInfoDatabase(module_path);
+		auto db = new TypeInfoDatabase(library_path);
 		global_typeinfo_databases.push_back(db);
 
 		for (auto n_enum : file_root.child("enums"))
@@ -68,12 +68,12 @@ namespace flame
 			}
 		}
 
-		if (load_with_module)
-			db->module = load_module(db->module_name.v);
+		if (load_with_library)
+			db->library = load_library(db->library_name.v);
 		if (!add_to_global)
 			global_typeinfo_databases.remove(global_typeinfo_databases.s - 1);
 
-		auto typeinfo_code_path = module_path;
+		auto typeinfo_code_path = library_path;
 		typeinfo_code_path.replace_extension(L".typeinfo.code");
 		std::ifstream typeinfo_code(typeinfo_code_path);
 		if (typeinfo_code.good())

@@ -1192,7 +1192,7 @@ namespace flame
 
 		Mat() = default;
 
-		explicit Mat(T rhs)
+		explicit Mat(T v)
 		{
 			for (auto i = 0; i < M; i++)
 				v_[i] = Vec<N, T>(0);
@@ -1493,12 +1493,12 @@ namespace flame
 	}
 
 	template <class T>
-	Vec<3, T> axis(int idx)
+	Vec<3, T> axis(uint idx)
 	{
 		static Vec<3, T> axes[] = {
-			x_axis(),
-			y_axis(),
-			z_axis()
+			x_axis<T>(),
+			y_axis<T>(),
+			z_axis<T>()
 		};
 		return axes[idx];
 	}
@@ -1924,7 +1924,7 @@ namespace flame
 	}
 
 	template <class T>
-	T noise(const Vec<2, T>& v)
+	T noise(const Vec<2, T>& _v)
 	{
 		const auto SC = 250;
 
@@ -1946,7 +1946,7 @@ namespace flame
 	}
 
 	template <class T>
-	T fbm(const Vec<2, T>& v)
+	T fbm(const Vec<2, T>& _v)
 	{
 		auto v = _v;
 		auto r = T(0);
@@ -2117,7 +2117,7 @@ namespace flame
 	Vec<4, T> fited_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
 	{
 		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
-			return Vec4f<4, T>(T(0), T(0), T(1), T(1));
+			return Vec<4, T>(T(0), T(0), T(1), T(1));
 		if (size.x() <= desired_size.x() && size.y() <= desired_size.y())
 		{
 			Vec<4, T> ret;
@@ -2338,44 +2338,41 @@ namespace flame
 	// (x, y z) - (yaw pitch roll)
 
 	template <class T>
-	Vec<3, T> eulerYPR(const Vec<4, T>& quat)
+	Vec<3, T> eulerYPR(const Vec<4, T>& q)
 	{
-		auto sqw = quat.w() * quat.w();
-		auto sqx = quat.x() * quat.x();
-		auto sqy = quat.y() * quat.y();
-		auto sqz = quat.z() * quat.z();
+		Vec<3, T> ret;
 
-		auto unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
-		auto test = quat.x() * quat.y() + quat.z() * quat.w();
-		if (test > T(0.499) * unit)  // singularity at north pole
-			return Vec<3, T>(T(2) * atan2(quat.x(), quat.w()), M_PI / T(2), T(0)) * RAD_ANG;
-		if (test < T(-0.499) * unit)  // singularity at south pole
-		{
-			e.yaw = ;
-			e.pitch = ;
-			e.roll = 0;
-			return Vec<3, T>(-T(2) * atan2(quat.x(), quat.w()), -M_PI / T(2), T(0)) * RAD_ANG;
-		}
+		T sinr_cosp = 2 * (q.w() * q.x() + q.y() * q.z());
+		T cosr_cosp = 1 - 2 * (q.x() * q.x() + q.y() * q.y());
+		ret.z() = std::atan2(sinr_cosp, cosr_cosp); 
 
-		return Vec<3, T>(atan2(T(2) * quat.y() * quat.w() - T(2) * quat.x() * quat.z(), sqx - sqy - sqz + sqw),
-			asin(T(2) * test / unit),
-			atan2(T(2) * quat.x() * quat.w() - T(2) * quat.y() * quat.z(), -sqx + sqy - sqz + sqw)) * RAD_ANG;
+		T sinp = 2 * (q.w() * q.y() - q.z() * q.x());
+		if (std::abs(sinp) >= 1)
+			ret.y() = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+		else
+			ret.y() = std::asin(sinp);
+
+		T siny_cosp = 2 * (q.w() * q.z() + q.x() * q.y());
+		T cosy_cosp = 1 - 2 * (q.y() * q.y() + q.z() * q.z());
+		ret.x() = std::atan2(siny_cosp, cosy_cosp);
+
+		return ret;
 	}
 
 	template <class T>
-	Mat<3, 3, T> rotation(const Vec<3, T>& euler_ypr)
+	Mat<3, 3, T> rotation(const Vec<3, T>& e /* yaw pitch roll */)
 	{
 		Mat<3, 3, T> ret(T(1));
 
-		Mat3 mat_yaw(Vec3f(m[1]), e.yaw * ANG_RAD);
-		m[0] = mat_yaw * m[0];
-		m[2] = mat_yaw * m[2];
-		Mat3 mat_pitch(Vec3f(m[0]), e.pitch * ANG_RAD);
-		m[2] = mat_pitch * m[2];
-		m[1] = mat_pitch * m[1];
-		Mat3 mat_roll(Vec3f(m[2]), e.roll * ANG_RAD);
-		m[1] = mat_roll * m[1];
-		m[0] = mat_roll * m[0];
+		Mat<3, 3, T> mat_yaw(ret[1], e.x() * ANG_RAD);
+		ret[0] = mat_yaw * ret[0];
+		ret[2] = mat_yaw * ret[2];
+		Mat<3, 3, T> mat_pitch(ret[0], e.y() * ANG_RAD);
+		ret[2] = mat_pitch * ret[2];
+		ret[1] = mat_pitch * ret[1];
+		Mat<3, 3, T> mat_roll(ret[2], e.z() * ANG_RAD);
+		ret[1] = mat_roll * ret[1];
+		ret[0] = mat_roll * ret[0];
 
 		return ret;
 	}

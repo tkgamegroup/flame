@@ -138,23 +138,23 @@ namespace flame
 		SetCurrentDirectoryW(p);
 	}
 
-	void* load_module(const wchar_t* module_name)
+	void* load_library(const wchar_t* library_name)
 	{
-		auto ret = LoadLibraryW(module_name);
+		auto ret = LoadLibraryW(library_name);
 		if (!ret)
 		{
 			auto ec = GetLastError();
-			printf("load module err: %d\n", ec);
+			printf("load library err: %d\n", ec);
 		}
 		return ret;
 	}
 
-	void* get_module_func(void* module, const char* name)
+	void* get_library_func(void* library, const char* name)
 	{
-		return GetProcAddress((HMODULE)module, name);
+		return GetProcAddress((HMODULE)library, name);
 	}
 
-	void free_module(void* library)
+	void free_library(void* library)
 	{
 		FreeLibrary((HMODULE)library);
 	}
@@ -334,18 +334,18 @@ namespace flame
 		CloseHandle(proc_info.hThread);
 	}
 
-	StringW get_module_name(void* module)
+	StringW get_library_name(void* library)
 	{
 		wchar_t buf[260];
-		GetModuleFileNameW((HMODULE)module, buf, sizeof(buf));
+		GetModuleFileNameW((HMODULE)library, buf, sizeof(buf));
 		return StringW(buf);
 	}
 
-	void* get_module_from_address(void* addr)
+	void* get_library_from_address(void* addr)
 	{
-		HMODULE module = NULL;
-		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &module);
-		return module;
+		HMODULE library = NULL;
+		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &library);
+		return library;
 	}
 
 	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
@@ -375,7 +375,7 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	Array<StringW> get_module_dependencies(const wchar_t* filename)
+	Array<StringW> get_library_dependencies(const wchar_t* filename)
 	{
 		Array<StringW> ret;
 		auto path = std::filesystem::path(filename);

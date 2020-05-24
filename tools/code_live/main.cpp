@@ -38,7 +38,7 @@ struct MyApp : App
 	{
 		e_result->remove_children(0, -1);
 		if (m)
-			free_module(m);
+			free_library(m);
 
 		m = nullptr;
 		f = nullptr;
@@ -88,9 +88,9 @@ struct MyApp : App
 
 		if (std::filesystem::exists(L"out.dll") && std::filesystem::last_write_time(L"out.dll") > std::filesystem::last_write_time(L"out.cpp"))
 		{
-			m = load_module((get_curr_path().str() + L"/out.dll").c_str());
+			m = load_library((get_curr_path().str() + L"/out.dll").c_str());
 			if (m)
-				f = (F)get_module_func(m, "excute");
+				f = (F)get_library_func(m, "excute");
 		}
 
 		looper().add_event([](Capture&) {

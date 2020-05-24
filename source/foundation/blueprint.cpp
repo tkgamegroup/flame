@@ -34,14 +34,14 @@ namespace flame
 	struct NodePrivate : BP::Node
 	{
 		void* object;
-		void* module;
+		void* library;
 
 		void* dtor_addr;
 		void* update_addr;
 
 		uint order;
 
-		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, UdtInfo* udt, void* module);
+		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, UdtInfo* udt, void* library);
 		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, const std::string& type, uint size,
 			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
@@ -178,9 +178,9 @@ namespace flame
 		return true;
 	}
 
-	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, UdtInfo* _udt, void* _module) :
+	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, UdtInfo* _udt, void* _library) :
 		object(nullptr),
-		module(_module),
+		library(_library),
 		dtor_addr(nullptr),
 		update_addr(nullptr),
 		order(0xffffffff)
@@ -203,19 +203,19 @@ namespace flame
 			{
 				auto f = udt->find_function("ctor");
 				if (f && f->parameters.s == 0)
-					cmf(p2f<MF_v_v>((char*)module + (uint)f->rva), object);
+					cmf(p2f<MF_v_v>((char*)library + (uint)f->rva), object);
 			}
 
 			{
 				auto f = udt->find_function("dtor");
 				if (f)
-					dtor_addr = (char*)module + (uint)f->rva;
+					dtor_addr = (char*)library + (uint)f->rva;
 			}
 
 			{
 				auto f = udt->find_function("bp_update");
 				assert(f && check_function(f, "D#void", {}));
-				update_addr = (char*)module + (uint)f->rva;
+				update_addr = (char*)library + (uint)f->rva;
 			}
 
 			for (auto v :udt->variables)
@@ -231,7 +231,7 @@ namespace flame
 			{
 				auto f = udt->find_function("get_linked_object");
 				assert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
-				object = cf(p2f<F_vp_v>((char*)module + (uint)f->rva));
+				object = cf(p2f<F_vp_v>((char*)library + (uint)f->rva));
 				assert(object);
 			}
 
@@ -252,7 +252,7 @@ namespace flame
 					auto f_set = udt->find_function(("set_" + v->name.str()).c_str());
 					if (f_set)
 					{
-						auto f_set_addr = (char*)module + (uint)f_set->rva;
+						auto f_set_addr = (char*)library + (uint)f_set->rva;
 						Setter* setter = nullptr;
 						switch (base_hash)
 						{
@@ -322,7 +322,7 @@ namespace flame
 
 	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, const std::string& _type, uint size,
 		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* dtor_addr, void* update_addr) :
-		module(nullptr),
+		library(nullptr),
 		dtor_addr(dtor_addr),
 		update_addr(update_addr),
 		order(0xffffffff)
@@ -612,7 +612,7 @@ namespace flame
 				return nullptr;
 			}
 
-			n = new NodePrivate(node_type, this, id, udt, udt->db->module);
+			n = new NodePrivate(node_type, this, id, udt, udt->db->library);
 		}
 
 		n->guid = generate_guid();

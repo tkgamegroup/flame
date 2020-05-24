@@ -418,21 +418,21 @@ namespace flame
 
 	struct TypeInfoDatabase
 	{
-		void* module;
-		StringW module_name;
+		void* library;
+		StringW library_name;
 		HashMap<256, EnumInfo> enums;
 		HashMap<256, UdtInfo> udts;
 
-		TypeInfoDatabase(const std::wstring& module_name) :
-			module_name(module_name)
+		TypeInfoDatabase(const std::wstring& library_name) :
+			library_name(library_name)
 		{
-			module = nullptr;
+			library = nullptr;
 		}
 
 		~TypeInfoDatabase()
 		{
-			if (module)
-				free_module(module);
+			if (library)
+				free_library(library);
 			for (auto e : enums.get_all())
 				f_delete(e);
 			for (auto u : udts.get_all())
@@ -453,7 +453,7 @@ namespace flame
 			return u;
 		}
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* module_filename, bool add_to_global, bool load_with_module);
+		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* library_filename, bool add_to_global, bool load_with_library);
 		FLAME_FOUNDATION_EXPORTS static void destroy(TypeInfoDatabase* db);
 	};
 

@@ -218,18 +218,18 @@ TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 
 int main(int argc, char **args)
 {
-	std::filesystem::path module_path(args[1]);
-	if (!std::filesystem::exists(module_path))
+	std::filesystem::path library_path(args[1]);
+	if (!std::filesystem::exists(library_path))
 	{
-		printf("typeinfogen: module does not exist: %s\n", module_path.string().c_str());
+		printf("typeinfogen: library does not exist: %s\n", library_path.string().c_str());
 		return 0;
 	}
 
 	std::vector<std::filesystem::path> dependencies;
-	auto pdb_path = module_path;
+	auto pdb_path = library_path;
 	pdb_path.replace_extension(L".pdb");
 
-	auto arr_dep = get_module_dependencies(module_path.c_str());
+	auto arr_dep = get_library_dependencies(library_path.c_str());
 	for (auto i = 0; i < arr_dep.s; i++)
 	{
 		auto d = std::filesystem::path(arr_dep[i].str());
@@ -240,7 +240,7 @@ int main(int argc, char **args)
 				dependencies.push_back(d);
 		}
 	}
-	printf("generating typeinfo for %s: ", module_path.string().c_str());
+	printf("generating typeinfo for %s: ", library_path.string().c_str());
 
 	auto last_curr_path = get_curr_path();
 	set_curr_path(get_app_path().v);
@@ -283,7 +283,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	auto db = new TypeInfoDatabase(module_path);
+	auto db = new TypeInfoDatabase(library_path);
 	global_typeinfo_databases.push_back(db);
 
 	LONG l;
@@ -296,11 +296,11 @@ int main(int argc, char **args)
 	std::filesystem::path source_root;
 	{
 		DWORD h;
-		auto version_size = GetFileVersionInfoSizeW(module_path.c_str(), &h);
+		auto version_size = GetFileVersionInfoSizeW(library_path.c_str(), &h);
 		if (version_size > 0)
 		{
 			auto version_data = new char[version_size];
-			if (GetFileVersionInfoW(module_path.c_str(), h, version_size, version_data))
+			if (GetFileVersionInfoW(library_path.c_str(), h, version_size, version_data))
 			{
 				void* d; uint s;
 				VerQueryValue(version_data, "\\StringFileInfo\\040904b0\\FileDescription", &d, &s);
@@ -628,7 +628,7 @@ int main(int argc, char **args)
 					}
 					if (ctor)
 					{
-						auto library = LoadLibraryW(module_path.c_str());
+						auto library = LoadLibraryW(library_path.c_str());
 						if (library)
 						{
 							auto obj = malloc(u->size);
@@ -718,11 +718,11 @@ int main(int argc, char **args)
 
 	global_typeinfo_databases.remove(global_typeinfo_databases.s - 1);
 
-	auto typeinfo_path = module_path;
+	auto typeinfo_path = library_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 	file.save_file(typeinfo_path.string().c_str());
 
-	auto typeinfo_code_path = module_path;
+	auto typeinfo_code_path = library_path;
 	typeinfo_code_path.replace_extension(L".typeinfo.code");
 	std::ofstream typeinfo_code(typeinfo_code_path);
 	for (auto u : db->udts.get_all())

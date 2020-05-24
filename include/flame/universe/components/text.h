@@ -29,7 +29,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_text)(const wchar_t* text/* nullptr means no check and set (you need to set by yourself) */, int length = -1,  void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_text)(const wchar_t* text/* nullptr means no check (you need to set by yourself) */, int length = -1,  void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_font_size)(uint s, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_color)(const Vec4c& c, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_auto_size)(bool v, void* sender = nullptr);

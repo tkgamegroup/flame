@@ -116,7 +116,7 @@ void cInspector::refresh()
 			auto component = components.v[i];
 
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
-			auto module = udt->db->module;
+			auto library = udt->db->library;
 
 			ui.e_begin_layout(LayoutHorizontal, 2.f);
 			ui.e_text(s2w(component->name).c_str())->get_component(cText)->color = Vec4c(30, 40, 160, 255);
@@ -158,7 +158,7 @@ void cInspector::refresh()
 				auto pdata = (char*)component + v->offset;
 
 				auto f_set = udt->find_function("set_" + v->name.str());
-				auto f_set_addr = f_set ? (char*)module + (uint)f_set->rva : nullptr;
+				auto f_set_addr = f_set ? (char*)library + (uint)f_set->rva : nullptr;
 
 				cDataTracker* tracker = nullptr;
 
@@ -806,23 +806,23 @@ void cInspector::refresh()
 						auto u = c.thiz<UdtInfo>();
 
 						auto dummy = malloc(u->size);
-						auto module = u->db->module;
+						auto library = u->db->library;
 						{
 							auto f = u->find_function("ctor");
 							if (f && f->parameters.s == 0)
-								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva), dummy);
+								cmf(p2f<MF_v_v>((char*)library + (uint)f->rva), dummy);
 						}
 						void* component;
 						{
 							auto f = u->find_function("create");
 							assert(f && check_function(f, "P#flame::Component", {}));
-							component = cmf(p2f<MF_vp_v>((char*)module + (uint)f->rva), dummy);
+							component = cmf(p2f<MF_vp_v>((char*)library + (uint)f->rva), dummy);
 						}
 						scene_editor.selected->add_component((Component*)component);
 						{
 							auto f = u->find_function("dtor");
 							if (f)
-								cmf(p2f<MF_v_v>((char*)module + (uint)f->rva), dummy);
+								cmf(p2f<MF_v_v>((char*)library + (uint)f->rva), dummy);
 						}
 						free(dummy);
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <flame/graphics/device.h>
 #include "graphics_private.h"
 

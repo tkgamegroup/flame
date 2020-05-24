@@ -95,7 +95,7 @@ int main(int argc, char **args)
 		{
 			copy_binary_attachings(s, d);
 			std::vector<std::wstring> dependencies;
-			auto arr = get_module_dependencies(s.c_str());
+			auto arr = get_library_dependencies(s.c_str());
 			for (auto i = 0; i < arr.s; i++)
 			{
 				auto d = arr.v[i].str();
@@ -117,7 +117,7 @@ int main(int argc, char **args)
 				{
 					if (SUW::starts_with(d, L"flame_"))
 					{
-						auto arr = get_module_dependencies((s_p / d).c_str());
+						auto arr = get_library_dependencies((s_p / d).c_str());
 						for (auto i = 0; i < arr.s; i++)
 						{
 							auto dd = arr.v[i].str();

@@ -396,10 +396,10 @@ namespace flame
 		{
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + n_c.name()).c_str()));
 			assert(udt && udt->base_name.str() == "Component");
-			auto module = udt->db->module;
+			auto library = udt->db->library;
 			auto f = udt->find_function("create");
 			assert(f);
-			auto component = cf(p2f<F_vp_v>((char*)module + (uint)f->rva));
+			auto component = cf(p2f<F_vp_v>((char*)library + (uint)f->rva));
 			for (auto n_v : n_c)
 			{
 				auto v = udt->find_variable(n_v.name());

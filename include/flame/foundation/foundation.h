@@ -691,9 +691,9 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
 	FLAME_FOUNDATION_EXPORTS StringW get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
-	FLAME_FOUNDATION_EXPORTS void* load_module(const wchar_t* module_name);
-	FLAME_FOUNDATION_EXPORTS void* get_module_func(void* module, const char* name);
-	FLAME_FOUNDATION_EXPORTS void free_module(void* library);
+	FLAME_FOUNDATION_EXPORTS void* load_library(const wchar_t* library_name);
+	FLAME_FOUNDATION_EXPORTS void* get_library_func(void* library, const char* name);
+	FLAME_FOUNDATION_EXPORTS void free_library(void* library);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
@@ -709,9 +709,9 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
-	FLAME_FOUNDATION_EXPORTS StringW get_module_name(void* module);
-	FLAME_FOUNDATION_EXPORTS void* get_module_from_address(void* addr);
-	FLAME_FOUNDATION_EXPORTS Array<StringW> get_module_dependencies(const wchar_t* filename);
+	FLAME_FOUNDATION_EXPORTS StringW get_library_name(void* library);
+	FLAME_FOUNDATION_EXPORTS void* get_library_from_address(void* addr);
+	FLAME_FOUNDATION_EXPORTS Array<StringW> get_library_dependencies(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t* filename);
