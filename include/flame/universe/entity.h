@@ -53,17 +53,6 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
-		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint hash) const;
-
-		template <class T>
-		T* get_component_t(uint hash) const
-		{
-			return (T*)get_component_plain(hash);
-		}
-
-#define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
-#define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
-
 		inline bool is_child_of_r(const Entity* p, const Entity* e) const
 		{
 			if (!e)
@@ -94,7 +83,16 @@ namespace flame
 				return c->name.h == name_hash_check ? c : nullptr;
 			return c;
 		}
+		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint hash) const;
 
+		template <class T>
+		T* get_component_t(uint hash) const
+		{
+			return (T*)get_component_plain(hash);
+		}
+
+#define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
+#define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
 		FLAME_UNIVERSE_EXPORTS Array<Component*> get_components() const;
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);

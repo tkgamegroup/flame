@@ -11,8 +11,27 @@ namespace flame
 
 	struct World
 	{
-		FLAME_UNIVERSE_EXPORTS void add_object(Object* o);
-		FLAME_UNIVERSE_EXPORTS Object* find_object(uint name_hash, uint id);
+		Array<Object*> objects;
+
+		Array<System*> systems;
+		Entity* root;
+
+		FLAME_UNIVERSE_EXPORTS World();
+		FLAME_UNIVERSE_EXPORTS ~World();
+
+		Object* find_object(uint name_hash, uint id) const
+		{
+			const auto& objects = ((WorldPrivate*)this)->objects;
+			for (auto o : objects)
+			{
+				if (o->name_hash == name_hash)
+				{
+					if (!id || o->id == id)
+						return o;
+				}
+			}
+			return nullptr;
+		}
 
 		FLAME_UNIVERSE_EXPORTS System* get_system_plain(uint name_hash) const;
 
@@ -25,8 +44,6 @@ namespace flame
 #define get_system(T) get_system_t<T>(FLAME_CHASH(#T))
 
 		FLAME_UNIVERSE_EXPORTS void add_system(System* s);
-
-		FLAME_UNIVERSE_EXPORTS Entity* root() const;
 
 		FLAME_UNIVERSE_EXPORTS void update();
 

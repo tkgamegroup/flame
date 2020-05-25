@@ -1,6 +1,6 @@
 #include <flame/foundation/typeinfo.h>
-#include "world_private.h"
-#include "entity_private.h"
+#include <flame/universe/entity.h>
+#include <flame/universe/world.h>
 
 namespace flame
 {
@@ -14,25 +14,6 @@ namespace flame
 	WorldPrivate::~WorldPrivate()
 	{
 		root->mark_dying();
-	}
-
-	void World::add_object(Object* o)
-	{
-		((WorldPrivate*)this)->objects.push_back(o);
-	}
-
-	Object* World::find_object(uint name_hash, uint id)
-	{
-		const auto& objects = ((WorldPrivate*)this)->objects;
-		for (auto o : objects)
-		{
-			if (o->name_hash == name_hash)
-			{
-				if (!id || o->id == id)
-					return o;
-			}
-		}
-		return nullptr;
 	}
 
 	System* WorldPrivate::get_system_plain(uint name_hash) const

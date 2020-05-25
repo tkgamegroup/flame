@@ -1,43 +1,9 @@
 #include <flame/foundation/typeinfo.h>
-#include "entity_private.h"
+#include <flame/universe/entity.h>
 #include "world_private.h"
 
 namespace flame
 {
-	EntityPrivate::EntityPrivate()
-	{
-		on_removed_listeners.impl = ListenerHubImpl::create();
-		on_destroyed_listeners.impl = ListenerHubImpl::create();
-		event_listeners.impl = ListenerHubImpl::create();
-
-		gene = nullptr;
-
-		depth_ = 0;
-		index_ = 0;
-		created_frame_ = looper().frame;
-		dying_ = false;
-
-		visible_ = true;
-		global_visibility = false;
-
-		world = nullptr;
-		parent = nullptr;
-
-#ifdef _DEBUG
-		created_stack_frames_ = get_stack_frames();
-#endif
-	}
-
-	EntityPrivate::~EntityPrivate()
-	{
-		for (auto& c : children)
-			c->on_removed_listeners.call();
-		on_destroyed_listeners.call();
-		ListenerHubImpl::destroy(on_removed_listeners.impl);
-		ListenerHubImpl::destroy(on_destroyed_listeners.impl);
-		ListenerHubImpl::destroy(event_listeners.impl);
-	}
-
 	void EntityPrivate::set_visible(bool v)
 	{
 		if (visible_ == v)
@@ -282,6 +248,40 @@ namespace flame
 
 		for (auto& e : children)
 			e->update_visibility();
+	}
+
+	Entity::Entity()
+	{
+		on_removed_listeners.impl = ListenerHubImpl::create();
+		on_destroyed_listeners.impl = ListenerHubImpl::create();
+		event_listeners.impl = ListenerHubImpl::create();
+
+		gene = nullptr;
+
+		depth_ = 0;
+		index_ = 0;
+		created_frame_ = looper().frame;
+		dying_ = false;
+
+		visible_ = true;
+		global_visibility = false;
+
+		world = nullptr;
+		parent = nullptr;
+
+#ifdef _DEBUG
+		created_stack_frames_ = get_stack_frames();
+#endif
+	}
+
+	Entity::~Entity()
+	{
+		for (auto& c : children)
+			c->on_removed_listeners.call();
+		on_destroyed_listeners.call();
+		ListenerHubImpl::destroy(on_removed_listeners.impl);
+		ListenerHubImpl::destroy(on_destroyed_listeners.impl);
+		ListenerHubImpl::destroy(event_listeners.impl);
 	}
 
 	void Entity::set_visible(bool v)
