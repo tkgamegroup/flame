@@ -39,11 +39,17 @@ namespace flame
 		World* world;
 		Entity* parent;
 
+		HashMap<8, Component> components;
+		Array<Entity*> children;
+
 		uint depth_;
 		uint index_;
 		int created_frame_;
 		Array<void*> created_stack_frames_;
 		bool dying_;
+
+		FLAME_UNIVERSE_EXPORTS Entity();
+		FLAME_UNIVERSE_EXPORTS ~Entity();
 
 		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
