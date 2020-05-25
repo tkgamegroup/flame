@@ -8,7 +8,7 @@ namespace flame
 	struct sEventDispatcher;
 	struct cElement;
 
-	struct FLAME_R(cEventReceiver : Component, l:event_receiver)
+	struct FLAME_R(cEventReceiver : Component)
 	{
 		sEventDispatcher* dispatcher;
 		cElement* element;
@@ -64,7 +64,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
 
 		FLAME_UNIVERSE_EXPORTS static void set_linked_object(cEventReceiver* e);
-		FLAME_UNIVERSE_EXPORTS static cEventReceiver* FLAME_RF(get_linked_object)();
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* FLAME_RF(create)();
 	};
 }

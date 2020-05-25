@@ -18,16 +18,14 @@ namespace flame
 			height_factor = 1.f;
 		}
 
-		void on_component_added(Component* c) override
+		void on_added() override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-			{
-				element = (cElement*)c;
-				if (x_align_flags & AlignGreedy && min_width < 0.f)
-					min_width = element->size.x();
-				if (y_align_flags & AlignGreedy && min_height < 0.f)
-					min_height = element->size.y();
-			}
+			element = entity->get_component(cElement);
+			assert(element);
+			if (x_align_flags & AlignGreedy && min_width < 0.f)
+				min_width = element->size.x();
+			if (y_align_flags & AlignGreedy && min_height < 0.f)
+				min_height = element->size.y();
 		}
 	};
 

@@ -8,6 +8,7 @@ namespace flame
 	{
 		on_removed_listeners.impl = ListenerHubImpl::create();
 		on_destroyed_listeners.impl = ListenerHubImpl::create();
+		event_listeners.impl = ListenerHubImpl::create();
 
 		gene = nullptr;
 
@@ -23,7 +24,7 @@ namespace flame
 		parent = nullptr;
 
 #ifdef _DEBUG
-		create_stack_frames = get_stack_frames();
+		created_stack_frames_ = get_stack_frames();
 #endif
 	}
 
@@ -34,6 +35,7 @@ namespace flame
 		on_destroyed_listeners.call();
 		ListenerHubImpl::destroy(on_removed_listeners.impl);
 		ListenerHubImpl::destroy(on_destroyed_listeners.impl);
+		ListenerHubImpl::destroy(event_listeners.impl);
 	}
 
 	void EntityPrivate::set_visible(bool v)
@@ -347,11 +349,6 @@ namespace flame
 		((EntityPrivate*)this)->remove_children(from, to, destroy);
 	}
 
-	Array<void*> Entity::get_create_stack_frames() const
-	{
-		return ((EntityPrivate*)this)->create_stack_frames;
-	}
-
 	Entity* Entity::create()
 	{
 		return new EntityPrivate;
@@ -416,7 +413,7 @@ namespace flame
 	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
 	{
 		auto n = dst.append_child("entity");
-		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
+		n.append_attribute("name").set_value(src->name.s ? "unnamed" : src->name.v);
 		n.append_attribute("visible").set_value(src->visible_ );
 
 		if (!src->components.empty())

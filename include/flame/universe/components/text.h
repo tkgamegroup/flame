@@ -16,7 +16,6 @@ namespace flame
 	struct FLAME_R(cText : Component)
 	{
 		cElement* element;
-		cAligner* aligner;
 
 		FLAME_RV(graphics::FontAtlas*, font_atlas);
 		FLAME_RV(StringW, text);

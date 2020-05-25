@@ -129,18 +129,6 @@ namespace flame
 		((cEventReceiverPrivate*)this)->on_drag_and_drop(action, er, pos);
 	}
 
-	cEventReceiver* _linked_object;
-
-	void cEventReceiver::set_linked_object(cEventReceiver* e)
-	{
-		_linked_object = e;
-	}
-
-	cEventReceiver* cEventReceiver::get_linked_object()
-	{
-		return _linked_object;
-	}
-
 	cEventReceiver* cEventReceiver::create()
 	{
 		return new cEventReceiverPrivate();

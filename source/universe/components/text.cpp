@@ -12,7 +12,6 @@ namespace flame
 	cTextPrivate::cTextPrivate()
 	{
 		element = nullptr;
-		aligner = nullptr;
 
 		font_atlas = nullptr;
 		text.resize(1);
@@ -46,6 +45,7 @@ namespace flame
 			return;
 		auto s = Vec2f(font_atlas->text_size(font_size, text.v, nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
 		element->set_size(s, this);
+		auto aligner = entity->get_component(cAligner);
 		if (aligner)
 		{
 			aligner->set_min_width(s.x(), this);
@@ -65,8 +65,6 @@ namespace flame
 			if (element->management && auto_size)
 				element->management->add_to_sizing_list(element);
 		}
-		else if (c->name_hash == FLAME_CHASH("cAligner"))
-			aligner = (cAligner*)c;
 	}
 
 	void cTextPrivate::on_visibility_changed()

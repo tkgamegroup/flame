@@ -228,12 +228,13 @@ namespace flame
 		}
 		else
 		{
-			{
-				auto f = udt->find_function("get_linked_object");
-				assert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
-				object = cf(p2f<F_vp_v>((char*)library + (uint)f->rva));
-				assert(object);
-			}
+			// TODO
+			//{
+			//	auto f = udt->find_function("get_linked_object");
+			//	assert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
+			//	object = cf(p2f<F_vp_v>((char*)library + (uint)f->rva));
+			//	assert(object);
+			//}
 
 			if (node_type == BP::NodeRefRead)
 			{

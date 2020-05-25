@@ -13,7 +13,7 @@ namespace flame
 
 	struct s2DRenderer;
 
-	struct FLAME_R(cElement : Component, l:element)
+	struct FLAME_R(cElement : Component)
 	{
 		s2DRenderer* renderer;
 		sLayoutManagement* management;
@@ -174,7 +174,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f, void* sender = nullptr);
 
 		FLAME_UNIVERSE_EXPORTS static void set_linked_object(cElement* e);
-		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(get_linked_object)();
 		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(create)();
 	};
 }
