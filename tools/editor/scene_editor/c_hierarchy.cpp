@@ -46,7 +46,7 @@ struct cHierarchyItem : Component
 				}
 				else if (action == BeenDropped)
 				{
-					if (!(thiz->entity->parent()->get_component(cTree) && thiz->drop_pos != 1))
+					if (!(thiz->entity->parent->get_component(cTree) && thiz->drop_pos != 1))
 					{
 						struct Capturing
 						{
@@ -59,7 +59,7 @@ struct cHierarchyItem : Component
 						capture.i = thiz->drop_pos;
 
 						auto ok = true;
-						auto p = capture.src->parent();
+						auto p = capture.src->parent;
 						while (p)
 						{
 							if (p == capture.dst)
@@ -74,7 +74,7 @@ struct cHierarchyItem : Component
 							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
 
-								capture.src->parent()->remove_child(capture.src, false);
+								capture.src->parent->remove_child(capture.src, false);
 
 								if (capture.i == 1)
 									capture.dst->add_child(capture.src);
@@ -83,7 +83,7 @@ struct cHierarchyItem : Component
 									auto idx = capture.dst->index_;
 									if (capture.i == 2)
 										idx++;
-									capture.dst->parent()->add_child(capture.src, idx);
+									capture.dst->parent->add_child(capture.src, idx);
 								}
 
 								scene_editor.hierarchy->refresh();
@@ -130,7 +130,7 @@ static void create_tree_node(Entity* e)
 	auto& ui = scene_editor.window->ui;
 	if (e->child_count() > 0)
 	{
-		auto e_tree_node = ui.e_begin_tree_node(s2w(e->name()).c_str());
+		auto e_tree_node = ui.e_begin_tree_node(s2w(e->name.v).c_str());
 		{
 			auto c_item = f_new<cHierarchyItem>();
 			c_item->e = e;
@@ -144,7 +144,7 @@ static void create_tree_node(Entity* e)
 	}
 	else
 	{
-		auto e_tree_leaf = ui.e_tree_leaf(s2w(e->name()).c_str());
+		auto e_tree_leaf = ui.e_tree_leaf(s2w(e->name.v).c_str());
 		{
 			auto c_item = f_new<cHierarchyItem>();
 			c_item->e = e;

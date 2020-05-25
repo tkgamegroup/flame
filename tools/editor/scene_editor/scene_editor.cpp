@@ -233,7 +233,7 @@ SceneEditorWindow::SceneEditorWindow() :
 	ui.e_menu_item(L"        New Entity", [](Capture&) {
 		looper().add_event([](Capture&) {
 			auto e = Entity::create();
-			e->set_name("unnamed");
+			e->name = "unnamed";
 			if (scene_editor.selected)
 				scene_editor.selected->add_child(e);
 			else
@@ -272,7 +272,7 @@ SceneEditorWindow::SceneEditorWindow() :
 				scene_editor.selected = nullptr;
 				if (scene_editor.inspector)
 					scene_editor.inspector->refresh();
-				scene_editor.selected->parent()->remove_child(scene_editor.selected);
+				scene_editor.selected->parent->remove_child(scene_editor.selected);
 				if (scene_editor.hierarchy)
 					scene_editor.hierarchy->refresh();
 			}

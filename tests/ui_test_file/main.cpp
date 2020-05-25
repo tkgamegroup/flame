@@ -114,7 +114,7 @@ MainWindow::MainWindow() :
 					auto e_scene = c.thiz<Entity>();
 					e_scene->remove_children(0, -1);
 					if (std::filesystem::exists(L"test.prefab"))
-						e_scene->add_child(Entity::create_from_file(e_scene->world(), L"test.prefab"));
+						e_scene->add_child(Entity::create_from_file(e_scene->world, L"test.prefab"));
 				}, Capture().set_thiz(c.thiz<Entity>()));
 			}, Capture().set_thiz(e_scene));
 		ui.e_end_layout();

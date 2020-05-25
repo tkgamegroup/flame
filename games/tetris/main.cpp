@@ -920,7 +920,7 @@ void MyApp::create_lan_scene()
 			ui.e_message_dialog(L"Your Name Cannot Not Be Empty");
 		else
 		{
-			auto e_layer = ui.e_begin_dialog()->parent();
+			auto e_layer = ui.e_begin_dialog()->parent;
 			ui.e_text(L"Room Name");
 			ui.e_edit(100.f)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
@@ -1746,8 +1746,8 @@ void MyApp::do_game_logic()
 				gaming = false;
 				players[my_room_index].e_count_down->set_visible(false);
 
-				auto layer = ui.e_begin_dialog()->parent();
-				layer->set_name("layer_paused");
+				auto layer = ui.e_begin_dialog()->parent;
+				layer->name = "layer_paused";
 				ui.e_text(L"Paused");
 				ui.c_aligner(AlignMiddle, 0);
 				ui.e_button(L"Resume", [](Capture& c) {
@@ -1902,7 +1902,7 @@ void MyApp::do_game_logic()
 
 					if (game_mode != GameVS)
 					{
-						auto layer = ui.e_begin_dialog()->parent();
+						auto layer = ui.e_begin_dialog()->parent;
 						ui.e_text(L"Game Over");
 						ui.c_aligner(AlignMiddle, 0);
 						ui.e_text((L"Time: " + wfmt(L"%02d:%02d", (int)play_time / 60, ((int)play_time) % 60)).c_str());
@@ -2095,7 +2095,7 @@ void MyApp::do_game_logic()
 											else
 											{
 												auto e = capture.e->entity;
-												e->parent()->remove_child(e);
+												e->parent->remove_child(e);
 											}
 										}, Capture().set_data(&capture), 0.f);
 									}

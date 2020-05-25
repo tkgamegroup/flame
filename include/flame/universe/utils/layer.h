@@ -13,10 +13,10 @@ namespace flame
 
 	inline void remove_layer(Entity* l)
 	{
-		l->set_name("");
+		l->name = "";
 		looper().add_event([](Capture& c) {
 			auto l = c.thiz<Entity>();
-			l->parent()->remove_child(l);
+			l->parent->remove_child(l);
 		}, Capture().set_thiz(l));
 	}
 
@@ -24,9 +24,9 @@ namespace flame
 	{
 		auto l = Entity::create();
 		l->gene = l;
-		l->set_name("layer");
+		l->name = "layer";
 		{
-			auto ed = parent->world()->get_system(sEventDispatcher);
+			auto ed = parent->world->get_system(sEventDispatcher);
 			auto focusing = ed->next_focusing;
 			if (focusing == INVALID_POINTER)
 				focusing = ed->focusing;
@@ -43,7 +43,7 @@ namespace flame
 			if (dp)
 			{
 				auto er = (cEventReceiver*)dp->get_common_item(FLAME_CHASH("focusing")).p;
-				l->world()->get_system(sEventDispatcher)->next_focusing = er;
+				l->world->get_system(sEventDispatcher)->next_focusing = er;
 			}
 			return true;
 		}, Capture().set_thiz(l));

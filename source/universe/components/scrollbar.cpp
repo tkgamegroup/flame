@@ -64,7 +64,7 @@ namespace flame
 
 		void on_added() override
 		{
-			auto parent = entity->parent();
+			auto parent = entity->parent;
 			parent_element = parent->get_component(cElement);
 			parent_element_listener = parent_element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("size"))
@@ -72,7 +72,7 @@ namespace flame
 				return true;
 			}, Capture().set_thiz(this));
 			scrollbar = parent->get_component(cScrollbar);
-			target_layout = parent->parent()->child(0)->get_component(cLayout);
+			target_layout = parent->parent->child(0)->get_component(cLayout);
 			target_element_listener = target_layout->element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("size"))
 					c.thiz<cScrollbarThumbPrivate>()->update(0.f);

@@ -96,7 +96,7 @@ struct MyApp : App
 		looper().add_event([](Capture&) {
 			if (app.f)
 				app.f(app.e_result);
-			remove_layer(app.e_wait->parent());
+			remove_layer(app.e_wait->parent);
 		}, Capture().set_thiz(this));
 	}
 }app;

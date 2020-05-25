@@ -83,7 +83,7 @@ namespace flame
 
 	void cEventReceiverPrivate::on_entered_world()
 	{
-		dispatcher = entity->world()->get_system(sEventDispatcher);
+		dispatcher = entity->world->get_system(sEventDispatcher);
 		dispatcher->pending_update = true;
 	}
 

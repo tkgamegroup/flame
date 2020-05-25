@@ -95,7 +95,7 @@ namespace flame
 				if (mode == ModeContext)
 				{
 					auto layer = add_layer(root);
-					layer->set_name("layer_menu");
+					layer->name = "layer_menu";
 					layer->on_removed_listeners.add([](Capture& c) {
 						c.thiz<Entity>()->remove_children(0, -1, false);
 						return true;
@@ -109,14 +109,14 @@ namespace flame
 				}
 				else
 				{
-					auto p = entity->parent();
+					auto p = entity->parent;
 					if (p)
 						close_subs(p);
 
 					auto layer = root->last_child();
 					if (layer)
 					{
-						if (layer->name_hash() != FLAME_CHASH("layer_menu"))
+						if (layer->name.h != FLAME_CHASH("layer_menu"))
 							layer = nullptr;
 					}
 					auto new_layer = !layer;
@@ -135,7 +135,7 @@ namespace flame
 					}
 					if (new_layer)
 					{
-						layer->set_name("layer_menu");
+						layer->name = "layer_menu";
 						layer->on_removed_listeners.add([](Capture& c) {
 							c.thiz<Entity>()->remove_children(0, -1, false);
 							return true;
@@ -240,14 +240,14 @@ namespace flame
 				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					auto thiz = c.thiz<cMenuItemPrivate>();
-					auto c_items = thiz->entity->parent()->get_component(cMenuItems);
+					auto c_items = thiz->entity->parent->get_component(cMenuItems);
 					if (c_items)
 					{
 						auto menu = (cMenuPrivate*)c_items->menu;
 						auto layer = menu->root->last_child();
 						if (layer)
 						{
-							if (layer->name_hash() == FLAME_CHASH("layer_menu"))
+							if (layer->name.h == FLAME_CHASH("layer_menu"))
 								menu->close_subs(menu->items);
 						}
 					}

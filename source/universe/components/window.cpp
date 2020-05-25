@@ -91,12 +91,12 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						auto thiz = c.thiz<cBringToFrontPrivate>();
-						auto l = thiz->entity->parent()->parent()->last_child(0);
-						if (!l || !SUS::starts_with(l->name(), "layer_"))
+						auto l = thiz->entity->parent->parent->last_child(0);
+						if (!l || !SUS::starts_with(l->name.v, "layer_"))
 						{
 							looper().add_event([](Capture& c) {
-								auto p = c.thiz<Entity>()->parent();
-								p->parent()->reposition_child(p, -1);
+								auto p = c.thiz<Entity>()->parent;
+								p->parent->reposition_child(p, -1);
 							}, Capture().set_thiz(thiz->entity));
 						}
 					}
@@ -147,7 +147,7 @@ namespace flame
 
 		void on_added() override
 		{
-			auto p = entity->parent();
+			auto p = entity->parent;
 			if (p)
 				p_element = p->get_component(cElement);
 		}
@@ -242,11 +242,11 @@ namespace flame
 
 		void take_away(bool close)
 		{
-			auto tabbar = entity->parent();
-			if (tabbar->name_hash() != FLAME_CHASH("docker_tabbar"))
+			auto tabbar = entity->parent;
+			if (tabbar->name.h != FLAME_CHASH("docker_tabbar"))
 				return;
 
-			auto docker = tabbar->parent();
+			auto docker = tabbar->parent;
 			auto pages = docker->child(1);
 			page = pages->child(entity->index_);
 			page_element = page->get_component(cElement);
@@ -284,18 +284,18 @@ namespace flame
 
 			if (tabbar->child_count() == 0)
 			{
-				auto p = docker->parent();
+				auto p = docker->parent;
 				if (p)
 				{
-					if (p->name_hash() == FLAME_CHASH("docker_floating_container"))
-						p->parent()->remove_child(p);
-					else if (p->name_hash() == FLAME_CHASH("docker_static_container"))
+					if (p->name.h == FLAME_CHASH("docker_floating_container"))
+						p->parent->remove_child(p);
+					else if (p->name.h == FLAME_CHASH("docker_static_container"))
 						p->remove_children(0, -1);
-					else if (p->name_hash() == FLAME_CHASH("docker_layout"))
+					else if (p->name.h == FLAME_CHASH("docker_layout"))
 					{
 						auto oth_docker = p->child(docker->index_ == 0 ? 2 : 0);
 						p->remove_child(oth_docker, false);
-						auto pp = p->parent();
+						auto pp = p->parent;
 						auto idx = p->index_;
 						pp->remove_child(p);
 						pp->add_child(oth_docker, idx);
@@ -306,7 +306,7 @@ namespace flame
 
 		void on_added() override
 		{
-			auto p = entity->parent();
+			auto p = entity->parent;
 			if (p && p->child_count() == 1)
 				p->get_component(cDockerTabbar)->list->set_selected(entity);
 		}
@@ -355,7 +355,7 @@ namespace flame
 								auto e_page = thiz->page;
 								auto page_element = thiz->page_element;
 								auto page_aligner = e_page->get_component(cAligner);
-								auto w = thiz->root->world();
+								auto w = thiz->root->world;
 
 								auto e_container = Entity::create();
 								cDockerTab::make_floating_container(w, e_container, thiz->drop_pos, page_element->size);
@@ -427,7 +427,7 @@ namespace flame
 	void cDockerTab::make_floating_container(World* w, Entity* e, const Vec2f& pos, const Vec2f& size)
 	{
 		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
-		e->set_name("docker_floating_container");
+		e->name = "docker_floating_container";
 		auto ce = cElement::create();
 		ce->pos = pos;
 		ce->size = size + Vec2f(16.f, 28.f + sg->get_style(FontSize).u[0]);
@@ -450,7 +450,7 @@ namespace flame
 	void cDockerTab::make_static_container(World* w, Entity* e)
 	{
 		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
-		e->set_name("docker_static_container");
+		e->name = "docker_static_container";
 		auto ce = cElement::create();
 		ce->color = sg->get_style(BackgroundColor).c;
 		e->add_component(ce);
@@ -465,7 +465,7 @@ namespace flame
 
 	void cDockerTab::make_layout(World* w, Entity* e, LayoutType type)
 	{
-		e->set_name("docker_layout");
+		e->name = "docker_layout";
 		e->add_component(cElement::create());
 		auto ca = cAligner::create();
 		ca->x_align_flags = AlignMinMax;
@@ -483,7 +483,7 @@ namespace flame
 	void cDockerTab::make_docker(World* w, Entity* e)
 	{
 		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
-		e->set_name("docker");
+		e->name = "docker";
 		auto ce = cElement::create();
 		ce->frame_thickness = 1.f;
 		ce->frame_color = sg->get_style(ForegroundColor).c;
@@ -498,7 +498,7 @@ namespace flame
 		e->add_component(cl);
 		{
 			auto et = Entity::create();
-			et->set_name("docker_tabbar");
+			et->name = "docker_tabbar";
 			e->add_child(et);
 			auto ce = cElement::create();
 			ce->clip_flags = ClipChildren;
@@ -513,7 +513,7 @@ namespace flame
 		}
 		{
 			auto ep = Entity::create();
-			ep->set_name("docker_pages");
+			ep->name = "docker_pages";
 			e->add_child(ep);
 			auto ce = cElement::create();
 			ce->padding = 2.f;
@@ -629,7 +629,7 @@ namespace flame
 								tab->root->remove_child(e_page, false);
 								tab->list_item->list = thiz->list;
 								tabbar->add_child(e_tab, thiz->drop_idx);
-								tabbar->parent()->child(1)->add_child(e_page);
+								tabbar->parent->child(1)->add_child(e_page);
 
 								tab->element->set_alpha(1.f);
 								page_element->set_pos(Vec2f(0.f));
@@ -657,7 +657,7 @@ namespace flame
 					if (hash == FLAME_CHASH("selected"))
 					{
 						auto tabbar = thiz->entity;
-						auto docker = tabbar->parent();
+						auto docker = tabbar->parent;
 						auto pages = docker->child(1);
 						if (pages->child_count() > 0)
 						{
@@ -773,7 +773,7 @@ namespace flame
 					{
 						if (thiz->dock_side == SideCenter)
 						{
-							auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent()->child(0)->get_component(cEventReceiver);
+							auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent->child(0)->get_component(cEventReceiver);
 							tabbar_er->on_drag_and_drop(BeenDropped, er, Vec2i(0, 99999));
 						}
 						else if (thiz->dock_side != Outside)
@@ -787,19 +787,19 @@ namespace flame
 								auto e_page = tab->page;
 								auto page_element = tab->page_element;
 								auto page_aligner = e_page->get_component(cAligner);
-								auto docker = thiz->entity->parent();
+								auto docker = thiz->entity->parent;
 								auto docker_element = docker->get_component(cElement);
 								auto docker_aligner = docker->get_component(cAligner);
-								auto p = docker->parent();
+								auto p = docker->parent;
 								auto docker_idx = docker->index_; LayoutFree;
-								auto w = thiz->entity->world();
+								auto w = thiz->entity->world;
 
 								auto layout = Entity::create();
 								p->remove_child(docker, false);
 								cDockerTab::make_layout(w, layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
 								p->add_child(layout, docker_idx);
 
-								if (!is_one_of(p->name_hash(), { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
+								if (!is_one_of(p->name.h, { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
 								{
 									auto p_element = p->get_component(cElement);
 									auto layout_element = layout->get_component(cElement);
@@ -971,7 +971,7 @@ namespace flame
 								auto page_aligner = e_page->get_component(cAligner);
 
 								auto new_docker = Entity::create();
-								cDockerTab::make_docker(thiz->entity->world(), new_docker);
+								cDockerTab::make_docker(thiz->entity->world, new_docker);
 								thiz->entity->add_child(new_docker);
 								auto new_tabbar = new_docker->child(0);
 								auto new_pages = new_docker->child(1);

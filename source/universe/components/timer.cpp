@@ -45,7 +45,7 @@ namespace flame
 
 	void cTimerPrivate::on_entered_world()
 	{
-		management = entity->world()->get_system(sTimerManagement);
+		management = entity->world->get_system(sTimerManagement);
 	}
 
 	void cTimerPrivate::on_left_world()

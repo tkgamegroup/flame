@@ -40,7 +40,7 @@ namespace flame
 					auto thiz = c.thiz<cSplitterPrivate>();
 					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
 					{
-						auto parent = thiz->entity->parent();
+						auto parent = thiz->entity->parent;
 						auto idx = thiz->entity->index_;
 						if (idx > 0 && idx < parent->child_count() - 1)
 						{

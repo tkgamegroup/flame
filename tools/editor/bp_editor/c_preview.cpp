@@ -7,7 +7,7 @@ cPreview::cPreview() :
 
 	auto e_page = ui.e_begin_docker_page(L"Preview", [](Capture&) {
 		if (bp_editor.e_test)
-			bp_editor.e_test->parent()->remove_child(bp_editor.e_test, false);
+			bp_editor.e_test->parent->remove_child(bp_editor.e_test, false);
 	}).second;
 	{
 		e_page->add_component(this);

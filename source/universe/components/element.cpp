@@ -44,7 +44,7 @@ namespace flame
 		Vec2f _global_size;
 		Vec2f _global_pos;
 
-		auto p = entity->parent();
+		auto p = entity->parent;
 		if (!p)
 		{
 			_global_scale = scale;
@@ -115,7 +115,7 @@ namespace flame
 	void cElementPrivate::on_entered_world()
 	{
 		calc_geometry();
-		auto w = entity->world();
+		auto w = entity->world;
 		renderer = w->get_system(s2DRenderer);
 		renderer->pending_update = true;
 		management = w->get_system(sLayoutManagement);

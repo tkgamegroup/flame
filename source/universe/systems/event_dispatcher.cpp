@@ -344,7 +344,7 @@ namespace flame
 						key_receiving = er;
 						break;
 					}
-					e = e->parent();
+					e = e->parent;
 				}
 			}
 

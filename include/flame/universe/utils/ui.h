@@ -852,7 +852,7 @@ namespace flame
 			c_layout(type == SplitterHorizontal ? LayoutHorizontal : LayoutVertical, false, false);
 			parents.push(e);
 			e_empty();
-			cSplitter::make(current_root->world(), current_entity, type);
+			cSplitter::make(current_root->world, current_entity, type);
 			return e;
 		}
 
@@ -1235,7 +1235,7 @@ namespace flame
 		inline Entity* e_size_dragger()
 		{
 			auto e = e_empty();
-			cSizeDragger::make(current_root->world(), e);
+			cSizeDragger::make(current_root->world, e);
 			return e;
 		}
 
@@ -1266,7 +1266,7 @@ namespace flame
 					e_button(Icon_TIMES, [](Capture& c) {
 						looper().add_event([](Capture& c) {
 							auto e = c.thiz<Entity>();
-							e->parent()->remove_child(e);
+							e->parent->remove_child(e);
 						}, Capture().set_thiz(c.thiz<Entity>()));
 					}, Capture().set_thiz(e), false);
 					c_aligner(AlignMax | AlignAbsolute, 0);
@@ -1299,7 +1299,7 @@ namespace flame
 		inline Entity* e_begin_docker_floating_container()
 		{
 			auto e = e_empty();
-			cDockerTab::make_floating_container(current_root->world(), e, next_element_pos, next_element_size);
+			cDockerTab::make_floating_container(current_root->world, e, next_element_pos, next_element_size);
 			next_element_pos = next_element_size = 0.f;
 			parents.push(e);
 			return e;
@@ -1313,7 +1313,7 @@ namespace flame
 		inline Entity* e_begin_docker_static_container()
 		{
 			auto e = e_empty();
-			cDockerTab::make_static_container(current_root->world(), e);
+			cDockerTab::make_static_container(current_root->world, e);
 			parents.push(e);
 			return e;
 		}
@@ -1326,7 +1326,7 @@ namespace flame
 		inline Entity* e_begin_docker_layout(LayoutType type)
 		{
 			auto e = e_empty();
-			cDockerTab::make_layout(current_root->world(), e, type);
+			cDockerTab::make_layout(current_root->world, e, type);
 			parents.push(e);
 			return e;
 		}
@@ -1339,7 +1339,7 @@ namespace flame
 		inline Entity* e_begin_docker()
 		{
 			auto e = e_empty();
-			cDockerTab::make_docker(current_root->world(), e);
+			cDockerTab::make_docker(current_root->world, e);
 			parents.push(e);
 			return e;
 		}
@@ -1353,7 +1353,7 @@ namespace flame
 		{
 			parents.push(parents.top()->child(0));
 			auto et = e_empty();
-			et->set_name("docker_tab");
+			et->name = "docker_tab";
 			c_element()->padding = Vec4f(4.f, 2.f, style(FontSize).u.x() + 6.f, 2.f);
 			c_text()->set_text(title);
 			c_event_receiver();
@@ -1443,7 +1443,7 @@ namespace flame
 		inline Entity* e_message_dialog(const wchar_t* message)
 		{
 			auto e = e_begin_dialog();
-			auto l = e->parent();
+			auto l = e->parent;
 			e_text(message);
 			e_button(L"OK", [](Capture& c) {
 				remove_layer(c.thiz<Entity>());
@@ -1456,7 +1456,7 @@ namespace flame
 		inline Entity* e_confirm_dialog(const wchar_t* title, void (*callback)(Capture& c, bool yes), const Capture& _capture)
 		{
 			auto e = e_begin_dialog();
-			auto l = e->parent();
+			auto l = e->parent;
 			e_text(title);
 			e_begin_layout(LayoutHorizontal, 4.f);
 			c_aligner(AlignMiddle, 0);
@@ -1486,7 +1486,7 @@ namespace flame
 		inline Entity* e_input_dialog(const wchar_t* title, void (*callback)(Capture& c, bool ok, const wchar_t* text), const Capture& _capture, const wchar_t* default_text = nullptr)
 		{
 			auto e = e_begin_dialog();
-			auto l = e->parent();
+			auto l = e->parent;
 			e_text(title);
 			auto ct = e_edit(100.f)->get_component(cText);
 			if (default_text)

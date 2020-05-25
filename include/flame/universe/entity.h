@@ -25,9 +25,10 @@ namespace flame
 		bool visible_;
 		bool global_visibility;
 
-		FLAME_UNIVERSE_EXPORTS const char* name() const;
-		FLAME_UNIVERSE_EXPORTS uint name_hash() const;
-		FLAME_UNIVERSE_EXPORTS void set_name(const char* name) const;
+		World* world;
+		Entity* parent;
+
+		StringAH name;
 
 		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
@@ -48,7 +49,7 @@ namespace flame
 				return false;
 			if (p == e)
 				return true;
-			return _is_child_of(p, e->parent());
+			return _is_child_of(p, e->parent);
 		}
 
 		inline bool is_child_of(const Entity* p) const
@@ -60,7 +61,7 @@ namespace flame
 		{
 			auto c = child_count() > 0 ? child(0) : nullptr;
 			if (name_hash_check)
-				return c->name_hash() == name_hash_check ? c : nullptr;
+				return c->name.h == name_hash_check ? c : nullptr;
 			return c;
 		}
 
@@ -69,7 +70,7 @@ namespace flame
 			auto n = child_count();
 			auto c = n > 0 ? child(n - 1) : nullptr;
 			if (name_hash_check)
-				return c->name_hash() == name_hash_check ? c : nullptr;
+				return c->name.h == name_hash_check ? c : nullptr;
 			return c;
 		}
 
@@ -77,8 +78,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
 		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
 
-		FLAME_UNIVERSE_EXPORTS World* world() const;
-		FLAME_UNIVERSE_EXPORTS Entity* parent() const;
 		FLAME_UNIVERSE_EXPORTS uint child_count() const;
 		FLAME_UNIVERSE_EXPORTS Entity* child(uint index) const;
 		FLAME_UNIVERSE_EXPORTS Entity* find_child(const char* name) const;

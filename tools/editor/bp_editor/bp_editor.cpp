@@ -672,7 +672,7 @@ BPEditorWindow::~BPEditorWindow()
 	bp_editor.window = nullptr;
 
 	{
-		auto p = bp_editor.e_test->parent();
+		auto p = bp_editor.e_test->parent;
 		if (p)
 			p->remove_child(bp_editor.e_test);
 		else

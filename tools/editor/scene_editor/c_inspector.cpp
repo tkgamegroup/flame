@@ -83,11 +83,11 @@ void cInspector::refresh()
 	{
 		ui.e_begin_layout(LayoutHorizontal, 2.f);
 		ui.e_text(L"name");
-		ui.e_edit(100.f, s2w(scene_editor.selected->name()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+		ui.e_edit(100.f, s2w(scene_editor.selected->name.str()).c_str(), true, true)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 			if (hash == FLAME_CHASH("text"))
 			{
 				auto text = c.current<cText>()->text.v;
-				scene_editor.selected->set_name(w2s(text).c_str());
+				scene_editor.selected->name = w2s(text);
 				if (scene_editor.hierarchy)
 				{
 					auto item = scene_editor.hierarchy->find_item(scene_editor.selected);

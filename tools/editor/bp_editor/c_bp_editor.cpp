@@ -46,7 +46,7 @@ struct cSlot : Component
 			tip_info = nullptr;
 			looper().add_event([](Capture& c) {
 				auto e = c.thiz<Entity>();
-				e->parent()->remove_child(e);
+				e->parent->remove_child(e);
 			}, Capture().set_thiz(e));
 		}
 		if (tip_link)
@@ -55,7 +55,7 @@ struct cSlot : Component
 			tip_link = nullptr;
 			looper().add_event([](Capture& c) {
 				auto e = c.thiz<Entity>();
-				e->parent()->remove_child(e);
+				e->parent->remove_child(e);
 			}, Capture().set_thiz(e));
 		}
 	}
@@ -1222,7 +1222,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 void cBPEditor::on_remove_node(BP::Node* n)
 {
 	auto e = (Entity*)n->user_data;
-	e->parent()->remove_child(e);
+	e->parent->remove_child(e);
 }
 
 void cBPEditor::on_data_changed(BP::Slot* s)

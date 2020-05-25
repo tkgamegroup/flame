@@ -148,7 +148,7 @@ namespace flame
 				auto dp = cDataKeeper::create();
 				dp->set_common_item(FLAME_CHASH("entity"), common(src));
 				dp->set_common_item(FLAME_CHASH("geometry"), common(geometry));
-				std::string desc = sfmt("name: %s\n", src->name());
+				std::string desc = sfmt("name: %s\n", src->name.v);
 				auto components = src->get_components();
 				for (auto i = 0; i < components.s; i++)
 				{
@@ -198,10 +198,10 @@ namespace flame
 				auto cs = src->child_count();
 				auto title = wfmt(L"%I64X ", (ulonglong)src);
 				if (cs == 0)
-					ui->e_tree_leaf(title.c_str())->set_name("ui_reflector_item_leaf");
+					ui->e_tree_leaf(title.c_str())->name = "ui_reflector_item_leaf";
 				else
 				{
-					ui->e_begin_tree_node(title.c_str(), true)->child(0)->set_name("ui_reflector_item_title");
+					ui->e_begin_tree_node(title.c_str(), true)->child(0)->name = "ui_reflector_item_title";
 					for (auto i = 0; i < cs; i++)
 						add_node(src->child(i));
 					ui->e_end_tree_node();
@@ -287,7 +287,7 @@ namespace flame
 								}, Capture().set_thiz(e_list));
 								ui->e_button(L"OK", [](Capture& c) {
 									remove_layer(c.thiz<Entity>());
-								}, Capture().set_thiz(dialog->parent()));
+								}, Capture().set_thiz(dialog->parent));
 								ui->c_aligner(AlignMax, 0);
 								ui->e_end_layout();
 
@@ -466,10 +466,10 @@ namespace flame
 						if (!e)
 							return;
 						cDataKeeper* dp = nullptr;
-						if (e->name_hash() == FLAME_CHASH("ui_reflector_item_leaf"))
+						if (e->name.h == FLAME_CHASH("ui_reflector_item_leaf"))
 							dp = e->get_component(cDataKeeper);
-						else if (e->name_hash() == FLAME_CHASH("ui_reflector_item_title"))
-							dp = e->parent()->get_component(cDataKeeper);
+						else if (e->name.h == FLAME_CHASH("ui_reflector_item_title"))
+							dp = e->parent->get_component(cDataKeeper);
 						if (dp)
 						{
 							auto rect = dp->get_common_item(FLAME_CHASH("geometry")).f;
@@ -506,12 +506,12 @@ namespace flame
 
 			void on_entered_world() override
 			{
-				s_event_dispatcher = entity->world()->get_system(sEventDispatcher);
+				s_event_dispatcher = entity->world->get_system(sEventDispatcher);
 				s_event_dispatcher_listener = s_event_dispatcher->after_update_listeners.add([](Capture& c) {
 					c.thiz<cReflector>()->processing_event_dispatcher_event();
 					return true;
 				}, Capture().set_thiz(this));
-				s_2d_renderer = entity->world()->get_system(s2DRenderer);
+				s_2d_renderer = entity->world->get_system(s2DRenderer);
 				s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](Capture& c) {
 					c.thiz<cReflector>()->processing_2d_renderer_event();
 					return true;

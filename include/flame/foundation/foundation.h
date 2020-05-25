@@ -161,6 +161,71 @@ namespace flame
 	using StringA = String<char>;
 	using StringW = String<wchar_t>;
 
+	struct StringAH : StringA
+	{
+		uint h;
+
+		StringAH() :
+			StringA()
+		{
+			h = 0;
+		}
+
+		StringAH(const StringA& rhs) :
+			StringA(rhs)
+		{
+			h = FLAME_HASH(v);
+		}
+
+		StringAH(StringA&& rhs) :
+			StringA(rhs)
+		{
+			h = FLAME_HASH(v);
+		}
+
+		StringAH(const char* str, uint _s) :
+			StringA(str, _s)
+		{
+			h = FLAME_HASH(v);
+		}
+
+		StringAH(const char* str) :
+			StringA(str)
+		{
+			h = FLAME_HASH(v);
+		}
+
+		StringAH(const std::basic_string<char>& str) :
+			StringA(str)
+		{
+			h = FLAME_HASH(v);
+		}
+
+		void operator=(const StringA& rhs)
+		{
+			StringA::operator=(rhs);
+			h = FLAME_HASH(v);
+		}
+
+		void operator=(StringA&& rhs)
+		{
+			StringA::operator=(rhs);
+			h = FLAME_HASH(v);
+		}
+
+		void operator=(const char* str)
+		{
+			StringA::operator=(str);
+			h = FLAME_HASH(v);
+		}
+
+		void operator=(const std::basic_string<char>& str)
+		{
+			StringA::operator=(str);
+			h = FLAME_HASH(v);
+		}
+	};
+
 	template <class T>
 	struct Array
 	{

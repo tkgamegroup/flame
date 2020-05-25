@@ -44,7 +44,7 @@ namespace flame
 		{
 			if (index == -1)
 			{
-				auto items = entity->parent();
+				auto items = entity->parent;
 				if (items)
 					index = items->child_count() - 1;
 			}
@@ -59,7 +59,7 @@ namespace flame
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
 						auto thiz = c.thiz<cComboboxItemPrivate>();
-						auto menu = thiz->entity->parent()->get_component(cMenuItems)->menu;
+						auto menu = thiz->entity->parent->get_component(cMenuItems)->menu;
 						auto combobox = menu->entity->get_component(cCombobox);
 						remove_layer((Entity*)thiz->entity->gene);
 						combobox->set_index(thiz->index);

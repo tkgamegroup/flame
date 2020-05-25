@@ -19,8 +19,6 @@ namespace flame
 		visible_ = true;
 		global_visibility = false;
 
-		name_hash = 0;
-
 		world = nullptr;
 		parent = nullptr;
 
@@ -85,7 +83,7 @@ namespace flame
 		c->on_added();
 		if (parent)
 		{
-			for (auto& _c : parent->components)
+			for (auto& _c : ((EntityPrivate*)parent)->components)
 				_c.second->on_child_component_added(c);
 		}
 	}
@@ -102,7 +100,7 @@ namespace flame
 			}
 			if (parent)
 			{
-				for (auto& _c : parent->components)
+				for (auto& _c : ((EntityPrivate*)parent)->components)
 					_c.second->on_child_component_removed(c);
 			}
 			components.erase(it);
@@ -275,30 +273,13 @@ namespace flame
 				c.second->on_visibility_changed();
 			if (parent)
 			{
-				for (auto& c : parent->components)
+				for (auto& c : ((EntityPrivate*)parent)->components)
 					c.second->on_child_visibility_changed();
 			}
 		}
 
 		for (auto& e : children)
 			e->update_visibility();
-	}
-
-	const char* Entity::name() const
-	{
-		return ((EntityPrivate*)this)->name.c_str();
-	}
-
-	uint Entity::name_hash() const
-	{
-		return ((EntityPrivate*)this)->name_hash;
-	}
-
-	void Entity::set_name(const char* name) const
-	{
-		auto thiz = ((EntityPrivate*)this);
-		thiz->name = name;
-		thiz->name_hash = FLAME_HASH(name);
 	}
 
 	void Entity::set_visible(bool v)
@@ -324,16 +305,6 @@ namespace flame
 	void Entity::remove_component(Component* c)
 	{
 		((EntityPrivate*)this)->remove_component(c);
-	}
-
-	World* Entity::world() const
-	{
-		return ((EntityPrivate*)this)->world;
-	}
-
-	Entity* Entity::parent() const
-	{
-		return ((EntityPrivate*)this)->parent;
 	}
 
 	uint Entity::child_count() const
@@ -389,7 +360,7 @@ namespace flame
 	static EntityPrivate* load_prefab(World* w, pugi::xml_node src)
 	{
 		auto e = new EntityPrivate;
-		e->set_name(src.attribute("name").value());
+		e->name = src.attribute("name").value();
 		e->visible_ = src.attribute("visible").as_bool();
 
 		for (auto n_c : src.child("components"))

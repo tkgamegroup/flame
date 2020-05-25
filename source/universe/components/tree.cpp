@@ -15,13 +15,13 @@ namespace flame
 {
 	cTree* get_tree(Entity* e)
 	{
-		auto p = e->parent();
+		auto p = e->parent;
 		if (!p)
 			return nullptr;
 		auto t = p->get_component(cTree);
 		if (t)
 			return t;
-		return p->parent()->get_component(cTreeNode)->tree;
+		return p->parent->get_component(cTreeNode)->tree;
 	}
 
 	struct cTreeLeafPrivate : cTreeLeaf
@@ -133,7 +133,7 @@ namespace flame
 
 		void on_added() override
 		{
-			tree = entity->parent()->get_component(cTreeNode)->tree;
+			tree = entity->parent->get_component(cTreeNode)->tree;
 		}
 
 		void on_component_added(Component* c) override
@@ -145,7 +145,7 @@ namespace flame
 					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
 					{
 						auto thiz = c.thiz<cTreeNodeTitlePrivate>();
-						thiz->tree->set_selected(thiz->entity->parent());
+						thiz->tree->set_selected(thiz->entity->parent);
 					}
 					return true;
 				}, Capture().set_thiz(this));
@@ -185,14 +185,14 @@ namespace flame
 
 		void toggle_collapse()
 		{
-			auto e = entity->parent()->parent()->child(1);
+			auto e = entity->parent->parent->child(1);
 			e->set_visible(!e->visible_);
 			text->set_text(e->visible_ ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 		}
 
 		void on_added() override
 		{
-			tree = entity->parent()->parent()->get_component(cTreeNode)->tree;
+			tree = entity->parent->parent->get_component(cTreeNode)->tree;
 		}
 
 		void on_component_added(Component* c) override
@@ -282,22 +282,22 @@ namespace flame
 		if (e == r)
 			return;
 		e->set_visible(true);
-		auto p = e->parent();
+		auto p = e->parent;
 		p->child(0)->child(0)->get_component(cText)->set_text(Icon_CARET_DOWN);
-		expand(p->parent(), r);
+		expand(p->parent, r);
 	}
 
 	void cTree::expand_to_selected()
 	{
 		if (!selected)
 			return;
-		expand(selected->parent(), entity);
+		expand(selected->parent, entity);
 		looper().add_event([](Capture& c) {
 			auto thiz = c.thiz<cTreePrivate>();
 			auto selected = thiz->selected;
 			if (!selected)
 				return;
-			auto parent = thiz->entity->parent();
+			auto parent = thiz->entity->parent;
 			if (!parent || parent->child_count() < 2)
 				return;
 			auto e_scrollbar = parent->child(1);
