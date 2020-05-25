@@ -11,8 +11,7 @@ namespace flame
 
 	struct cElementPrivate : cElement
 	{
-		bool pending_update_size;
-		bool pending_update_geometry;
+		bool pending_sizing;
 
 		cElementPrivate();
 		~cElementPrivate();

@@ -40,7 +40,7 @@ namespace flame
 		}
 	}
 
-	void cTextPrivate::set_size_auto()
+	void cTextPrivate::auto_set_size()
 	{
 		if (!element)
 			return;
@@ -62,11 +62,17 @@ namespace flame
 				c.thiz<cTextPrivate>()->draw(canvas);
 				return true;
 			}, Capture().set_thiz(this));
-			if (auto_size)
-				set_size_auto();
+			if (element->management && auto_size)
+				element->management->add_to_sizing_list(element);
 		}
 		else if (c->name_hash == FLAME_CHASH("cAligner"))
 			aligner = (cAligner*)c;
+	}
+
+	void cTextPrivate::on_visibility_changed()
+	{
+		if (element->management && auto_size)
+			element->management->add_to_sizing_list(element);
 	}
 
 	void cText::set_text(const wchar_t* text, int length, void* sender)
@@ -80,10 +86,12 @@ namespace flame
 				return;
 			thiz->text.assign(text, length);
 		}
-		if (thiz->auto_size)
-			thiz->set_size_auto();
 		if (element)
+		{
 			element->mark_dirty();
+			if (element->management && auto_size)
+				element->management->add_to_sizing_list(element);
+		}
 		data_changed(FLAME_CHASH("text"), sender);
 	}
 
@@ -93,10 +101,11 @@ namespace flame
 			return;
 		font_size = s;
 		if (element)
+		{
 			element->mark_dirty();
-		auto thiz = (cTextPrivate*)this;
-		if (thiz->auto_size)
-			thiz->set_size_auto();
+			if (element->management && auto_size)
+				element->management->add_to_sizing_list(element);
+		}
 		data_changed(FLAME_CHASH("font_size"), sender);
 	}
 
@@ -106,7 +115,11 @@ namespace flame
 			return;
 		color = c;
 		if (element)
+		{
 			element->mark_dirty();
+			if (element->management && auto_size)
+				element->management->add_to_sizing_list(element);
+		}
 		data_changed(FLAME_CHASH("color"), sender);
 	}
 
@@ -117,7 +130,14 @@ namespace flame
 		auto_size = v;
 		auto thiz = (cTextPrivate*)this;
 		if (thiz->auto_size)
-			thiz->set_size_auto();
+		{
+			if (element)
+			{
+				element->mark_dirty();
+				if (element->management)
+					element->management->add_to_sizing_list(element);
+			}
+		}
 		data_changed(FLAME_CHASH("auto_size"), sender);
 	}
 

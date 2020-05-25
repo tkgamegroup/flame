@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/universe/systems/2d_renderer.h>
+#include <flame/universe/systems/layout_management.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -15,6 +16,7 @@ namespace flame
 	struct FLAME_R(cElement : Component, l:element)
 	{
 		s2DRenderer* renderer;
+		sLayoutManagement* management;
 
 		FLAME_RV(Vec2f, pos);
 		FLAME_RV(Vec2f, size);

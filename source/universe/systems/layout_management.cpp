@@ -2,6 +2,7 @@
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include "../components/element_private.h"
+#include "../components/text_private.h"
 #include <flame/universe/components/aligner.h>
 #include "../components/layout_private.h"
 
@@ -9,7 +10,34 @@ namespace flame
 {
 	struct sLayoutManagementPrivate : sLayoutManagement
 	{
+		std::vector<cElementPrivate*> sizing_list;
 		std::vector<cLayoutPrivate*> update_list;
+
+		void add_to_sizing_list(cElementPrivate* e)
+		{
+			if (e->pending_sizing)
+				return;
+			sizing_list.push_back(e);
+			e->pending_sizing = true;
+			std::sort(sizing_list.begin(), sizing_list.end(), [](const auto& a, const auto& b) {
+				return a->entity->depth_ < b->entity->depth_;
+			});
+		}
+
+		void remove_from_sizing_list(cElementPrivate* e)
+		{
+			if (!e->pending_sizing)
+				return;
+			e->pending_sizing = false;
+			for (auto it = sizing_list.begin(); it != sizing_list.end(); it++)
+			{
+				if ((*it) == e)
+				{
+					sizing_list.erase(it);
+					return;
+				}
+			}
+		}
 
 		void add_to_update_list(cLayoutPrivate* l)
 		{
@@ -54,6 +82,20 @@ namespace flame
 
 		void update() override
 		{
+			while (!sizing_list.empty())
+			{
+				auto e = sizing_list.back();
+				sizing_list.erase(sizing_list.end() - 1);
+				e->pending_sizing = false;
+				auto ee = e->entity;
+				if (ee->global_visibility)
+				{
+					auto t = (cTextPrivate*)ee->get_component(cText);
+					if (t)
+						t->auto_set_size();
+				}
+			}
+
 			while (!update_list.empty())
 			{
 				auto l = update_list.back();
@@ -66,6 +108,16 @@ namespace flame
 			calc_geometry((EntityPrivate*)world_->root());
 		}
 	};
+
+	void sLayoutManagement::add_to_sizing_list(cElement* e)
+	{
+		((sLayoutManagementPrivate*)this)->add_to_sizing_list((cElementPrivate*)e);
+	}
+
+	void sLayoutManagement::remove_from_sizing_list(cElement* e)
+	{
+		((sLayoutManagementPrivate*)this)->remove_from_sizing_list((cElementPrivate*)e);
+	}
 
 	void sLayoutManagement::add_to_update_list(cLayout* l)
 	{
