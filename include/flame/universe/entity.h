@@ -20,11 +20,14 @@ namespace flame
 			EventRemoved,
 			EventPositionChanged,
 			EventEnteredWorld,
-			EventLeftWorld,
 			EventComponentAdded,
 			EventComponentRemoved,
+			EventChildVisibilityChanged,
 			EventChildAdded,
-			EventChildRemoved
+			EventChildRemoved,
+			EventChildPositionChanged,
+			EventChildComponentAdded,
+			EventChildComponentRemoved
 		};
 
 		ListenerHub<bool(Capture& c, Event e, void* t)> event_listeners;
@@ -53,6 +56,17 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS void set_visible(bool v);
 
+		template <class T>
+		T* get_component_t(uint hash) const
+		{
+			return (T*)components.find(hash);
+		}
+
+#define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
+#define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
+		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
+		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
+
 		inline bool is_child_of_r(const Entity* p, const Entity* e) const
 		{
 			if (!e)
@@ -69,7 +83,7 @@ namespace flame
 
 		inline Entity* first_child(uint name_hash_check = 0) const
 		{
-			auto c = child_count() > 0 ? child(0) : nullptr;
+			auto c = children.s > 0 ? children[0] : nullptr;
 			if (c && name_hash_check)
 				return c->name.h == name_hash_check ? c : nullptr;
 			return c;
@@ -77,30 +91,32 @@ namespace flame
 
 		inline Entity* last_child(uint name_hash_check = 0) const
 		{
-			auto n = child_count();
-			auto c = n > 0 ? child(n - 1) : nullptr;
+			auto c = children.s > 0 ? children[children.s - 1] : nullptr;
 			if (c && name_hash_check)
 				return c->name.h == name_hash_check ? c : nullptr;
 			return c;
 		}
-		FLAME_UNIVERSE_EXPORTS Component* get_component_plain(uint hash) const;
 
-		template <class T>
-		T* get_component_t(uint hash) const
+		Entity* find_child(const std::string& name) const
 		{
-			return (T*)get_component_plain(hash);
+			for (auto e : children)
+			{
+				if (e->name == name)
+					return e;
+			}
+			return nullptr;
 		}
 
-#define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
-#define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
-		FLAME_UNIVERSE_EXPORTS Array<Component*> get_components() const;
-		FLAME_UNIVERSE_EXPORTS void add_component(Component* c);
-		FLAME_UNIVERSE_EXPORTS void remove_component(Component* c);
+		int find_child(Entity* e) const
+		{
+			for (auto i = 0; i < children.s; i++)
+			{
+				if (children[i] == e)
+					return i;
+			}
+			return -1;
+		}
 
-		FLAME_UNIVERSE_EXPORTS uint child_count() const;
-		FLAME_UNIVERSE_EXPORTS Entity* child(uint index) const;
-		FLAME_UNIVERSE_EXPORTS Entity* find_child(const char* name) const;
-		FLAME_UNIVERSE_EXPORTS int find_child(Entity* e) const;
 		FLAME_UNIVERSE_EXPORTS void add_child(Entity* e, int position = -1); /* -1 is end */
 		FLAME_UNIVERSE_EXPORTS void reposition_child(Entity* e, int position); /* -1 is last */
 		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);

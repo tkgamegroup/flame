@@ -1,44 +1,56 @@
 #include <flame/foundation/typeinfo.h>
+#include <flame/universe/component.h>
 #include <flame/universe/entity.h>
-#include "world_private.h"
+#include <flame/universe/world.h>
 
 namespace flame
 {
-	void EntityPrivate::set_visible(bool v)
+	Entity::Entity()
+	{
+		event_listeners.impl = ListenerHubImpl::create();
+	}
+
+	Entity::~Entity()
+	{
+		ListenerHubImpl::destroy(event_listeners.impl);
+	}
+
+	static void update_visibility(Entity* e)
+	{
+		auto prev_visibility = e->global_visibility;
+		if (!e->parent)
+			e->global_visibility = e->visible_;
+		else
+			e->global_visibility = e->visible_ && e->parent->global_visibility;
+		if (e->global_visibility != prev_visibility)
+		{
+			for (auto c : e->event_info_targets)
+				c->on_event(Entity::EventVisibilityChanged, nullptr);
+			if (e->parent)
+			{
+				for (auto c : e->parent->event_info_targets)
+					c->on_event(Entity::EventChildVisibilityChanged, nullptr);
+			}
+		}
+
+		for (auto c : e->children)
+			update_visibility(c);
+	}
+
+	void Entity::set_visible(bool v)
 	{
 		if (visible_ == v)
 			return;
 		visible_ = v;
-		update_visibility();
+		update_visibility(this);
 	}
 
-	Component* EntityPrivate::get_component_plain(uint hash)
-	{
-		auto it = components.find(hash);
-		if (it == components.end())
-			return nullptr;
-		return it->second.get();
-	}
-
-	Array<Component*> EntityPrivate::get_components()
-	{
-		auto ret = Array<Component*>();
-		ret.resize(components.size());
-		auto i = 0;
-		for (auto& c : components)
-		{
-			ret[i] = c.second.get();
-			i++;
-		}
-		return ret;
-	}
-
-	void EntityPrivate::add_component(Component* c)
+	void Entity::add_component(Component* c)
 	{
 		auto hash = c->name_hash;
 		if (c->id)
 			hash = hash_update(hash, c->id);
-		assert(!get_component_plain(hash));
+		assert(!components.find(hash));
 
 		c->entity = this;
 		if (world)
@@ -47,16 +59,16 @@ namespace flame
 			_c.second->on_component_added(c);
 		for (auto& _c : components)
 			c->on_component_added(_c.second.get());
-		components[hash].reset(c);
+		components.add(hash, c);
 		c->on_added();
 		if (parent)
 		{
-			for (auto& _c : ((EntityPrivate*)parent)->components)
+			for (auto& _c : ((Entity*)parent)->components)
 				_c.second->on_child_component_added(c);
 		}
 	}
 
-	void EntityPrivate::remove_component(Component* c)
+	void Entity::remove_component(Component* c)
 	{
 		auto it = components.find(c->name_hash);
 		if (it != components.end())
@@ -68,34 +80,14 @@ namespace flame
 			}
 			if (parent)
 			{
-				for (auto& _c : ((EntityPrivate*)parent)->components)
+				for (auto& _c : ((Entity*)parent)->components)
 					_c.second->on_child_component_removed(c);
 			}
 			components.erase(it);
 		}
 	}
 
-	EntityPrivate* EntityPrivate::find_child(const std::string& name) const
-	{
-		for (auto& e : children)
-		{
-			if (e->name == name)
-				return e.get();
-		}
-		return nullptr;
-	}
-
-	int EntityPrivate::find_child(EntityPrivate* e) const
-	{
-		for (auto i = 0; i < children.size(); i++)
-		{
-			if (children[i].get() == e)
-				return i;
-		}
-		return -1;
-	}
-
-	static void enter_world(World* w, EntityPrivate* e)
+	static void enter_world(World* w, Entity* e)
 	{
 		e->world = (WorldPrivate*)w;
 		for (auto& c : e->components)
@@ -104,7 +96,7 @@ namespace flame
 			enter_world(w, c.get());
 	}
 
-	static void leave_world(EntityPrivate* e)
+	static void leave_world(Entity* e)
 	{
 		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
 			leave_world(it->get());
@@ -113,7 +105,7 @@ namespace flame
 			c.second->on_left_world();
 	}
 
-	static void inherit(EntityPrivate* e, void* gene)
+	static void inherit(Entity* e, void* gene)
 	{
 		if (!gene)
 			return;
@@ -122,7 +114,7 @@ namespace flame
 			inherit(c.get(), gene);
 	}
 
-	void EntityPrivate::add_child(EntityPrivate* e, int position)
+	void Entity::add_child(Entity* e, int position)
 	{
 		if (position == -1)
 			position = children.size();
@@ -146,7 +138,7 @@ namespace flame
 			c.second->on_added();
 	}
 
-	void EntityPrivate::reposition_child(EntityPrivate* e, int position)
+	void Entity::reposition_child(Entity* e, int position)
 	{
 		if (position == -1)
 			position = children.size() - 1;
@@ -164,14 +156,14 @@ namespace flame
 			c.second->on_child_position_changed();
 	}
 
-	void EntityPrivate::mark_dying()
+	static void mark_dying(Entity* e)
 	{
-		dying_ = true;
-		for (auto& e : children)
-			e->mark_dying();
+		e->dying_ = true;
+		for (auto c : e->children)
+			mark_dying(c);
 	}
 
-	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
+	void Entity::remove_child(Entity* e, bool destroy)
 	{
 		for (auto it = children.begin(); it != children.end(); it++)
 		{
@@ -199,7 +191,7 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::remove_children(int from, int to, bool destroy)
+	void Entity::remove_children(int from, int to, bool destroy)
 	{
 		for (auto& c : components)
 		{
@@ -226,28 +218,6 @@ namespace flame
 				e->mark_dying();
 			children.erase(children.begin() + from);
 		}
-	}
-
-	void EntityPrivate::update_visibility()
-	{
-		auto prev_visibility = global_visibility;
-		if (!parent)
-			global_visibility = visible_;
-		else
-			global_visibility = visible_ && parent->global_visibility;
-		if (global_visibility != prev_visibility)
-		{
-			for (auto& c : components)
-				c.second->on_visibility_changed();
-			if (parent)
-			{
-				for (auto& c : ((EntityPrivate*)parent)->components)
-					c.second->on_child_visibility_changed();
-			}
-		}
-
-		for (auto& e : children)
-			e->update_visibility();
 	}
 
 	Entity::Entity()
@@ -286,77 +256,47 @@ namespace flame
 
 	void Entity::set_visible(bool v)
 	{
-		((EntityPrivate*)this)->set_visible(v);
-	}
-
-	Component* Entity::get_component_plain(uint name_hash) const
-	{
-		return ((EntityPrivate*)this)->get_component_plain(name_hash);
-	}
-
-	Array<Component*> Entity::get_components() const
-	{
-		return ((EntityPrivate*)this)->get_components();
+		((Entity*)this)->set_visible(v);
 	}
 
 	void Entity::add_component(Component* c)
 	{
-		((EntityPrivate*)this)->add_component(c);
+		((Entity*)this)->add_component(c);
 	}
 
 	void Entity::remove_component(Component* c)
 	{
-		((EntityPrivate*)this)->remove_component(c);
-	}
-
-	uint Entity::child_count() const
-	{
-		return ((EntityPrivate*)this)->children.size();
-	}
-
-	Entity* Entity::child(uint index) const
-	{
-		return ((EntityPrivate*)this)->children[index].get();
-	}
-
-	Entity* Entity::find_child(const char* name) const
-	{
-		return ((EntityPrivate*)this)->find_child(name);
-	}
-
-	int Entity::find_child(Entity* e) const
-	{
-		return ((EntityPrivate*)this)->find_child((EntityPrivate*)e);
+		((Entity*)this)->remove_component(c);
 	}
 
 	void Entity::add_child(Entity* e, int position)
 	{
-		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
+		((Entity*)this)->add_child((Entity*)e, position);
 	}
 
 	void Entity::reposition_child(Entity* e, int position)
 	{
-		((EntityPrivate*)this)->reposition_child((EntityPrivate*)e, position);
+		((Entity*)this)->reposition_child((Entity*)e, position);
 	}
 
 	void Entity::remove_child(Entity* e, bool destroy)
 	{
-		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
+		((Entity*)this)->remove_child((Entity*)e, destroy);
 	}
 
 	void Entity::remove_children(int from, int to, bool destroy)
 	{
-		((EntityPrivate*)this)->remove_children(from, to, destroy);
+		((Entity*)this)->remove_children(from, to, destroy);
 	}
 
 	Entity* Entity::create()
 	{
-		return new EntityPrivate;
+		return new Entity;
 	}
 
-	static EntityPrivate* load_prefab(World* w, pugi::xml_node src)
+	static Entity* load_prefab(World* w, pugi::xml_node src)
 	{
-		auto e = new EntityPrivate;
+		auto e = new Entity;
 		e->name = src.attribute("name").value();
 		e->visible_ = src.attribute("visible").as_bool();
 
@@ -410,7 +350,7 @@ namespace flame
 		return load_prefab(w, file_root.first_child());
 	}
 
-	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
+	static void save_prefab(pugi::xml_node dst, Entity* src)
 	{
 		auto n = dst.append_child("entity");
 		n.append_attribute("name").set_value(src->name.s ? "unnamed" : src->name.v);
@@ -454,15 +394,15 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file_root, (EntityPrivate*)e);
+		save_prefab(file_root, (Entity*)e);
 
 		file.save_file(filename);
 	}
 
 	void Entity::destroy(Entity* _e)
 	{
-		auto e = (EntityPrivate*)_e;
-		e->mark_dying();
+		auto e = (Entity*)_e;
+		mark_dying(e);
 		delete e;
 	}
 }

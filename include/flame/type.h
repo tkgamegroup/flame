@@ -212,17 +212,6 @@ namespace flame
 		}
 	};
 
-	template <class T>
-	bool is_one_of(T v, const std::initializer_list<T>& l)
-	{
-		for (auto& i : l)
-		{
-			if (v == i)
-				return true;
-		}
-		return false;
-	}
-
 	struct CountDown
 	{
 		bool is_frame;

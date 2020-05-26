@@ -799,7 +799,7 @@ namespace flame
 								cDockerTab::make_layout(w, layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
 								p->add_child(layout, docker_idx);
 
-								if (!is_one_of(p->name.h, { FLAME_CHASH("docker_floating_container"), FLAME_CHASH("docker_static_container") }))
+								if (p->name.h != FLAME_CHASH("docker_floating_container") && p->name.h != FLAME_CHASH("docker_static_container"))
 								{
 									auto p_element = p->get_component(cElement);
 									auto layout_element = layout->get_component(cElement);

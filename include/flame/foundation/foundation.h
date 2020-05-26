@@ -416,7 +416,7 @@ namespace flame
 			assert(0);
 		}
 
-		T* find(uint h)
+		T* find(uint h) const
 		{
 			auto& bucket = buckets[h % BucketCount];
 			for (auto& i : bucket)
@@ -427,7 +427,7 @@ namespace flame
 			return nullptr;
 		}
 
-		std::vector<T*> get_all()
+		std::vector<T*> get_all() const
 		{
 			std::vector<T*> ret;
 			for (auto i = 0; i < BucketCount; i++)
