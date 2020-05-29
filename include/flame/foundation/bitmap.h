@@ -63,5 +63,57 @@ namespace flame
 		}
 	};
 
-	FLAME_FOUNDATION_EXPORTS void pack_atlas(uint input_count, const wchar_t* const* inputs, const wchar_t* output, bool border);
+	struct BinPackTile
+	{
+		std::string id;
+		Bitmap* b;
+		Vec2i pos;
+	};
+
+	inline void bin_pack(const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
+	{
+		std::vector<BinPackTile> tiles;
+		for (auto& i : inputs)
+		{
+			BinPackTile t;
+			t.id = i.filename().string();
+			t.b = Bitmap::create_from_file(i.c_str());
+			t.pos = Vec2i(-1);
+			tiles.push_back(t);
+		}
+		std::sort(tiles.begin(), tiles.end(), [](const BinPackTile& a, const BinPackTile& b) {
+			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
+		});
+
+		auto size = Vec2u(1024);
+		auto tree = std::make_unique<BinPackNode>(size);
+
+		for (auto& t : tiles)
+		{
+			auto n = tree->find(t.b->size + Vec2i(border ? 2 : 0));
+			if (n)
+				t.pos = n->pos;
+		}
+
+		size = 0;
+		for (auto& t : tiles)
+		{
+			size.x() = max(t.pos.x() + t.b->size.x() + (border ? 1 : 0), size.x());
+			size.y() = max(t.pos.y() + t.b->size.y() + (border ? 1 : 0) + 1, size.y());
+		}
+
+		auto b = Bitmap::create(size, 4, 32);
+		for (auto& t : tiles)
+		{
+			if (t.pos >= 0)
+				t.b->copy_to(b, Vec2u(0), t.b->size, Vec2u(t.pos), border);
+		}
+
+		Bitmap::save_to_file(b, output.c_str());
+
+		callback(tiles);
+
+		for (auto& t : tiles)
+			Bitmap::destroy(t.b);
+	}
 }
