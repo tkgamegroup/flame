@@ -106,10 +106,10 @@ namespace flame
 
 			void find_undering(Entity* e, const Vec2f& pos)
 			{
-				for (auto i = (int)e->child_count() - 1; i >= 0; i--)
+				for (auto i = (int)e->children.s - 1; i >= 0; i--)
 				{
-					auto c = e->child(i);
-					if (c && c->get_component(cElement))
+					auto c = e->children[i];
+					if (c->get_component(cElement))
 						find_undering(c, pos);
 				}
 
@@ -134,8 +134,8 @@ namespace flame
 					return;
 				}
 
-				for (auto i = 0; i < e->child_count(); i++)
-					find_target_in_tree(e->child(i), t, ret);
+				for (auto c : e->children)
+					find_target_in_tree(c, t, ret);
 			}
 
 			void add_node(Entity* src)
@@ -143,16 +143,14 @@ namespace flame
 				if (src == e_window)
 					return;
 				auto element = src->get_component(cElement);
-				ui->next_entity = Entity::create();
+				ui->next_entity = f_new<Entity>();
 				auto geometry = Vec4f(element->global_pos, element->global_size);
 				auto dp = cDataKeeper::create();
 				dp->set_common_item(FLAME_CHASH("entity"), common(src));
 				dp->set_common_item(FLAME_CHASH("geometry"), common(geometry));
 				std::string desc = sfmt("name: %s\n", src->name.v);
-				auto components = src->get_components();
-				for (auto i = 0; i < components.s; i++)
+				for (auto c : src->components.get_all())
 				{
-					auto c = components[i];
 					auto name = std::string(c->name);
 					desc += sfmt("[%s]\n", c->name);
 					if (name == "cElement")
@@ -195,15 +193,14 @@ namespace flame
 				}
 				dp->set_string_item(FLAME_CHASH("desc"), desc.c_str());
 				ui->next_entity->add_component(dp);
-				auto cs = src->child_count();
 				auto title = wfmt(L"%I64X ", (ulonglong)src);
-				if (cs == 0)
+				if (src->children.s == 0)
 					ui->e_tree_leaf(title.c_str())->name = "ui_reflector_item_leaf";
 				else
 				{
-					ui->e_begin_tree_node(title.c_str(), true)->child(0)->name = "ui_reflector_item_title";
-					for (auto i = 0; i < cs; i++)
-						add_node(src->child(i));
+					ui->e_begin_tree_node(title.c_str(), true)->children[0]->name = "ui_reflector_item_title";
+					for (auto c : src->children)
+						add_node(c);
 					ui->e_end_tree_node();
 				}
 			}
@@ -233,7 +230,7 @@ namespace flame
 						{
 							capture.thiz->recording = false;
 
-							auto frames = capture.e->get_create_stack_frames();
+							auto frames = capture.e->created_stack_;
 							auto infos = get_stack_frame_infos(frames.s, frames.v);
 
 							auto ui = capture.thiz->ui;
@@ -243,7 +240,7 @@ namespace flame
 							cl->width_fit_children = false;
 							cl->height_fit_children = false;
 							cl->fence = -1;
-								auto e_list = Entity::create();
+								auto e_list = f_new<Entity>();
 
 								ui->e_begin_scrollbar(ScrollbarVertical, true);
 								ui->next_entity = e_list;
@@ -338,7 +335,7 @@ namespace flame
 				make_target(L"Focusing", t_focusing);
 				make_target(L"Drag Overing", t_drag_overing);
 				e_window = _window;
-				e_tree = Entity::create();
+				e_tree = f_new<Entity>();
 
 				ui->e_button(Icon_REFRESH, [](Capture& c) {
 					looper().add_event([](Capture& c) {
@@ -504,18 +501,21 @@ namespace flame
 				}
 			}
 
-			void on_entered_world() override
+			void on_event(Entity::Event e, void* t) override
 			{
-				s_event_dispatcher = entity->world->get_system(sEventDispatcher);
-				s_event_dispatcher_listener = s_event_dispatcher->after_update_listeners.add([](Capture& c) {
-					c.thiz<cReflector>()->processing_event_dispatcher_event();
-					return true;
-				}, Capture().set_thiz(this));
-				s_2d_renderer = entity->world->get_system(s2DRenderer);
-				s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](Capture& c) {
-					c.thiz<cReflector>()->processing_2d_renderer_event();
-					return true;
-				}, Capture().set_thiz(this));
+				if (e == Entity::EventEnteredWorld)
+				{
+					s_event_dispatcher = entity->world->get_system(sEventDispatcher);
+					s_event_dispatcher_listener = s_event_dispatcher->after_update_listeners.add([](Capture& c) {
+						c.thiz<cReflector>()->processing_event_dispatcher_event();
+						return true;
+					}, Capture().set_thiz(this));
+					s_2d_renderer = entity->world->get_system(s2DRenderer);
+					s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](Capture& c) {
+						c.thiz<cReflector>()->processing_2d_renderer_event();
+						return true;
+					}, Capture().set_thiz(this));
+				}
 			}
 		};
 		auto c_reflector = f_new<cReflector>();

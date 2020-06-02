@@ -1,4 +1,4 @@
-#include "../entity_private.h"
+#include <flame/universe/entity.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/layout_management.h>
 #include "../components/element_private.h"
@@ -65,7 +65,7 @@ namespace flame
 			}
 		}
 
-		void calc_geometry(EntityPrivate* e)
+		void calc_geometry(Entity* e)
 		{
 			if (!e->global_visibility)
 				return;
@@ -76,8 +76,8 @@ namespace flame
 
 			element->calc_geometry();
 
-			for (auto& c : e->children)
-				calc_geometry(c.get());
+			for (auto c : e->children)
+				calc_geometry(c);
 		}
 
 		void update() override
@@ -105,7 +105,7 @@ namespace flame
 					l->update();
 			}
 
-			calc_geometry((EntityPrivate*)world_->root());
+			calc_geometry(world_->root);
 		}
 	};
 

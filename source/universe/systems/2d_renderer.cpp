@@ -1,7 +1,7 @@
 #include <flame/serialize.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/canvas.h>
-#include "../entity_private.h"
+#include <flame/universe/entity.h>
 #include <flame/universe/world.h>
 #include <flame/universe/systems/2d_renderer.h>
 #include "../components/element_private.h"
@@ -17,7 +17,7 @@ namespace flame
 			pending_update = false;
 		}
 
-		void do_render(EntityPrivate* e)
+		void do_render(Entity* e)
 		{
 			if (!e->global_visibility)
 				return;
@@ -41,8 +41,8 @@ namespace flame
 					element->draw(canvas);
 					canvas->set_scissor(scissor);
 					element->cmds.call(canvas);
-					for (auto& c : e->children)
-						do_render(c.get());
+					for (auto c : e->children)
+						do_render(c);
 					canvas->set_scissor(last_scissor);
 				}
 				else if (clip_flags == ClipSelf)
@@ -51,16 +51,16 @@ namespace flame
 					canvas->set_scissor(scissor);
 					element->cmds.call(canvas);
 					canvas->set_scissor(last_scissor);
-					for (auto& c : e->children)
-						do_render(c.get());
+					for (auto c : e->children)
+						do_render(c);
 				}
 				else if (clip_flags == ClipChildren)
 				{
 					element->draw(canvas);
 					element->cmds.call(canvas);
 					canvas->set_scissor(scissor);
-					for (auto& c : e->children)
-						do_render(c.get());
+					for (auto c : e->children)
+						do_render(c);
 					canvas->set_scissor(last_scissor);
 				}
 			}
@@ -68,8 +68,8 @@ namespace flame
 			{
 				element->draw(canvas);
 				element->cmds.call(canvas);
-				for (auto& c : e->children)
-					do_render(c.get());
+				for (auto c : e->children)
+					do_render(c);
 			}
 		}
 
@@ -77,7 +77,7 @@ namespace flame
 		{
 			if (!pending_update)
 				return;
-			do_render((EntityPrivate*)world_->root());
+			do_render(world_->root);
 		}
 
 		void after_update() override

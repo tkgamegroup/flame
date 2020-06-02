@@ -14,10 +14,18 @@ namespace flame
 			element = nullptr;
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
+			switch (e)
+			{
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					element = entity->get_component(cElement);
+					assert(element);
+				}
+				break;
+			}
 		}
 	};
 
@@ -62,48 +70,54 @@ namespace flame
 			}
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			auto parent = entity->parent;
-			parent_element = parent->get_component(cElement);
-			parent_element_listener = parent_element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-				if (hash == FLAME_CHASH("size"))
-					c.thiz<cScrollbarThumbPrivate>()->update(0.f);
-				return true;
-			}, Capture().set_thiz(this));
-			scrollbar = parent->get_component(cScrollbar);
-			target_layout = parent->parent->child(0)->get_component(cLayout);
-			target_element_listener = target_layout->element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-				if (hash == FLAME_CHASH("size"))
-					c.thiz<cScrollbarThumbPrivate>()->update(0.f);
-				return true;
-			}, Capture().set_thiz(this));
-			target_layout_listener = target_layout->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-				if (hash == FLAME_CHASH("content_size"))
-					c.thiz<cScrollbarThumbPrivate>()->update(0.f);
-				return true;
-			}, Capture().set_thiz(this));
-			update(0.f);
-		}
-
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = c.thiz<cScrollbarThumbPrivate>();
-					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
-					{
-						if (thiz->type == ScrollbarVertical)
-							thiz->update(pos.y());
-						else
-							thiz->update(pos.x());
-					}
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+			{
+				if (t == this)
+				{
+					element = entity->get_component(cElement);
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(element);
+					assert(event_receiver);
+
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						auto thiz = c.thiz<cScrollbarThumbPrivate>();
+						if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
+						{
+							if (thiz->type == ScrollbarVertical)
+								thiz->update(pos.y());
+							else
+								thiz->update(pos.x());
+						}
+						return true;
+					}, Capture().set_thiz(this));
+
+					auto parent = entity->parent;
+					parent_element = parent->get_component(cElement);
+					parent_element_listener = parent_element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+						if (hash == FLAME_CHASH("size"))
+							c.thiz<cScrollbarThumbPrivate>()->update(0.f);
+						return true;
+					}, Capture().set_thiz(this));
+					scrollbar = parent->get_component(cScrollbar);
+					target_layout = parent->parent->children[0]->get_component(cLayout);
+					target_element_listener = target_layout->element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+						if (hash == FLAME_CHASH("size"))
+							c.thiz<cScrollbarThumbPrivate>()->update(0.f);
+						return true;
+					}, Capture().set_thiz(this));
+					target_layout_listener = target_layout->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+						if (hash == FLAME_CHASH("content_size"))
+							c.thiz<cScrollbarThumbPrivate>()->update(0.f);
+						return true;
+					}, Capture().set_thiz(this));
+					update(0.f);
+				}
+			}
+				break;
 			}
 		}
 

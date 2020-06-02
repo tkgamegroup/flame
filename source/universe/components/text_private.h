@@ -11,7 +11,6 @@ namespace flame
 		cTextPrivate::~cTextPrivate();
 		void draw(graphics::Canvas* canvas);
 		void auto_set_size();
-		void on_component_added(Component* c) override;
-		void on_visibility_changed() override;
+		void on_event(Entity::Event e, void* t) override;
 	};
 }

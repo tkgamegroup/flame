@@ -26,11 +26,13 @@ namespace flame
 				element->cmds.remove(draw_cmd);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
+			if (e == Entity::EventComponentAdded && t == this)
 			{
-				element = (cElement*)c;
+				element = entity->get_component(cElement);
+				assert(element);
+
 				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 					c.thiz<cImagePrivate>()->draw(canvas);
 					return true;

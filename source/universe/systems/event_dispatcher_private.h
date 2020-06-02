@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../entity_private.h"
+#include <flame/universe/entity.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include "../components/event_receiver_private.h"
 
@@ -26,7 +26,7 @@ namespace flame
 		void on_receiver_removed(cEventReceiver* er);
 		void on_added() override;
 		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
-		void dispatch_mouse_recursively(EntityPrivate* e);
+		void dispatch_mouse_recursively(Entity* e);
 		void update() override;
 		void after_update() override;
 	};

@@ -1,5 +1,5 @@
 #include <flame/graphics/canvas.h>
-#include  "../world_private.h"
+#include <flame/universe/world.h>
 #include "element_private.h"
 
 namespace flame
@@ -112,30 +112,31 @@ namespace flame
 		}
 	}
 
-	void cElementPrivate::on_entered_world()
+	void cElementPrivate::on_event(Entity::Event e, void* t)
 	{
-		calc_geometry();
-		auto w = entity->world;
-		renderer = w->get_system(s2DRenderer);
-		renderer->pending_update = true;
-		management = w->get_system(sLayoutManagement);
-	}
-
-	void cElementPrivate::on_left_world()
-	{
-		renderer->pending_update = true;
-		renderer = nullptr;
-	}
-
-	void cElementPrivate::on_visibility_changed()
-	{
-		calc_geometry();
-		mark_dirty();
-	}
-
-	void cElementPrivate::on_position_changed()
-	{
-		mark_dirty();
+		switch (e)
+		{
+		case Entity::EventEnteredWorld:
+		{
+			calc_geometry();
+			auto w = entity->world;
+			renderer = w->get_system(s2DRenderer);
+			renderer->pending_update = true;
+			management = w->get_system(sLayoutManagement);
+		}
+			break;
+		case Entity::EventLeftWorld:
+			mark_dirty();
+			renderer = nullptr;
+			break;
+		case Entity::EventVisibilityChanged:
+			calc_geometry();
+			mark_dirty();
+			break;
+		case Entity::EventPositionChanged:
+			mark_dirty();
+			break;
+		}
 	}
 
 	void cElement::set_pos(const Vec2f& p, void* sender)

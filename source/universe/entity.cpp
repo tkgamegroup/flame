@@ -1,35 +1,67 @@
 #include <flame/foundation/typeinfo.h>
-#include <flame/universe/component.h>
-#include <flame/universe/entity.h>
-#include <flame/universe/world.h>
+#include "private.h"
 
 namespace flame
 {
 	Entity::Entity()
 	{
 		event_listeners.impl = ListenerHubImpl::create();
+
+		gene = nullptr;
+
+		depth_ = 0;
+		index_ = 0;
+		created_frame_ = looper().frame;
+		dying_ = false;
+
+		visible_ = true;
+		global_visibility = false;
+
+		world = nullptr;
+		parent = nullptr;
+
+#ifdef _DEBUG
+		created_stack_ = get_stack_frames();
+#endif
 	}
 
 	Entity::~Entity()
 	{
+		mark_dying(this);
+
+		for (auto c : children)
+		{
+			for (auto cc : c->components.get_all())
+				cc->on_event(EventRemoved, nullptr);
+			c->event_listeners.call(EventRemoved, nullptr);
+		}
+		for (auto c : components.get_all())
+			c->on_event(EventDestroyed, nullptr);
+		event_listeners.call(EventDestroyed, nullptr);
+
 		ListenerHubImpl::destroy(event_listeners.impl);
+
+		for (auto c : components.get_all())
+			f_delete(c);
+		for (auto c : children)
+			f_delete(c);
 	}
 
 	static void update_visibility(Entity* e)
 	{
 		auto prev_visibility = e->global_visibility;
-		if (!e->parent)
-			e->global_visibility = e->visible_;
-		else
-			e->global_visibility = e->visible_ && e->parent->global_visibility;
+		e->global_visibility = e->parent ? e->visible_ && e->parent->global_visibility : false;
 		if (e->global_visibility != prev_visibility)
 		{
-			for (auto c : e->event_info_targets)
+			for (auto c : e->components.get_all())
 				c->on_event(Entity::EventVisibilityChanged, nullptr);
-			if (e->parent)
+			e->event_listeners.call(Entity::EventVisibilityChanged, nullptr);
+			auto p = e->parent;
+			if (p)
 			{
-				for (auto c : e->parent->event_info_targets)
+				for (auto c : p->components.get_all())
 					c->on_event(Entity::EventChildVisibilityChanged, nullptr);
+				p->event_listeners.call(Entity::EventChildVisibilityChanged, e);
 			}
 		}
 
@@ -53,56 +85,60 @@ namespace flame
 		assert(!components.find(hash));
 
 		c->entity = this;
-		if (world)
-			c->on_entered_world();
-		for (auto& _c : components)
-			_c.second->on_component_added(c);
-		for (auto& _c : components)
-			c->on_component_added(_c.second.get());
 		components.add(hash, c);
-		c->on_added();
+		if (world)
+			c->on_event(EventEnteredWorld, nullptr);
+		for (auto cc : components.get_all())
+			cc->on_event(EventComponentAdded, c);
+		event_listeners.call(EventComponentAdded, c);
 		if (parent)
 		{
-			for (auto& _c : ((Entity*)parent)->components)
-				_c.second->on_child_component_added(c);
+			for (auto cc : parent->components.get_all())
+				cc->on_event(EventChildComponentAdded, c);
+			parent->event_listeners.call(EventChildComponentAdded, c);
 		}
 	}
 
 	void Entity::remove_component(Component* c)
 	{
-		auto it = components.find(c->name_hash);
-		if (it != components.end())
+		auto hash = c->name_hash;
+		if (c->id)
+			hash = hash_update(hash, c->id);
+		if (components.remove(hash))
 		{
-			for (auto& _c : components)
-			{
-				if (_c.second.get() != c)
-					_c.second->on_component_removed(c);
-			}
+			for (auto cc : components.get_all())
+				cc->on_event(EventComponentRemoved, c);
+			event_listeners.call(EventComponentRemoved, c);
 			if (parent)
 			{
-				for (auto& _c : ((Entity*)parent)->components)
-					_c.second->on_child_component_removed(c);
+				for (auto cc : parent->components.get_all())
+					cc->on_event(EventChildComponentRemoved, c);
+				parent->event_listeners.call(EventChildComponentRemoved, c);
 			}
-			components.erase(it);
+			f_delete(c);
 		}
+		else
+			assert(0);
 	}
 
 	static void enter_world(World* w, Entity* e)
 	{
-		e->world = (WorldPrivate*)w;
-		for (auto& c : e->components)
-			c.second->on_entered_world();
-		for (auto& c : e->children)
-			enter_world(w, c.get());
+		e->world = w;
+		for (auto c : e->components.get_all())
+			c->on_event(Entity::EventEnteredWorld, nullptr);
+		e->event_listeners.call(Entity::EventEnteredWorld, nullptr);
+		for (auto c : e->children)
+			enter_world(w, c);
 	}
 
 	static void leave_world(Entity* e)
 	{
-		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
-			leave_world(it->get());
+		for (auto i = e->children.s - 1; i >= 0; i--)
+			leave_world(e->children[i]);
 		e->world = nullptr;
-		for (auto& c : e->components)
-			c.second->on_left_world();
+		for (auto c : e->components.get_all())
+			c->on_event(Entity::EventLeftWorld, nullptr);
+		e->event_listeners.call(Entity::EventLeftWorld, nullptr);
 	}
 
 	static void inherit(Entity* e, void* gene)
@@ -110,82 +146,67 @@ namespace flame
 		if (!gene)
 			return;
 		e->gene = gene;
-		for (auto& c : e->children)
-			inherit(c.get(), gene);
+		for (auto c : e->children)
+			inherit(c, gene);
 	}
 
 	void Entity::add_child(Entity* e, int position)
 	{
 		if (position == -1)
-			position = children.size();
-		for (auto i = position; i < children.size(); i++)
+			position = children.s;
+		for (auto i = position; i < children.s; i++)
 			children[i]->index_ += 1;
-		children.emplace(children.begin() + position, e);
+		children.insert(position, e);
 		inherit(e, gene);
 		e->depth_ = depth_ + 1;
 		e->index_ = position;
 		e->parent = this;
+		update_visibility(e);
 		if (!e->world && world)
 			enter_world(world, e);
-		if (world)
-			e->update_visibility();
-		for (auto& c : components)
-		{
-			for (auto& _c : e->components)
-				c.second->on_child_component_added(_c.second.get());
-		}
-		for (auto& c : e->components)
-			c.second->on_added();
+		for (auto c : e->components.get_all())
+			c->on_event(Entity::EventAdded, nullptr);
+		e->event_listeners.call(Entity::EventAdded, nullptr);
+		for (auto c : components.get_all())
+			c->on_event(Entity::EventChildAdded, e);
+		event_listeners.call(Entity::EventChildAdded, e);
 	}
 
 	void Entity::reposition_child(Entity* e, int position)
 	{
 		if (position == -1)
-			position = children.size() - 1;
-		assert(position < children.size());
+			position = children.s - 1;
+		assert(position < children.s);
 		auto old_position = e->index_;
 		if (old_position == position)
 			return;
-		auto dst = children[position].get();
+		auto dst = children[position];
 		std::swap(children[old_position], children[position]);
 		dst->index_ = old_position;
 		e->index_ = position;
-		for (auto& c : e->components)
-			c.second->on_position_changed();
-		for (auto& c : components)
-			c.second->on_child_position_changed();
-	}
-
-	static void mark_dying(Entity* e)
-	{
-		e->dying_ = true;
-		for (auto c : e->children)
-			mark_dying(c);
+		for (auto c : e->components.get_all())
+			c->on_event(Entity::EventPositionChanged, nullptr);
+		e->event_listeners.call(Entity::EventPositionChanged, nullptr);
+		for (auto c : dst->components.get_all())
+			c->on_event(Entity::EventPositionChanged, nullptr);
+		dst->event_listeners.call(Entity::EventPositionChanged, nullptr);
+		for (auto c : components.get_all())
+		{
+			c->on_event(Entity::EventChildPositionChanged, e);
+			c->on_event(Entity::EventChildPositionChanged, dst);
+		}
+		event_listeners.call(Entity::EventChildPositionChanged, e);
+		event_listeners.call(Entity::EventChildPositionChanged, dst);
 	}
 
 	void Entity::remove_child(Entity* e, bool destroy)
 	{
-		for (auto it = children.begin(); it != children.end(); it++)
+		for (auto i = 0; i < children.s; i++)
 		{
-			if (it->get() == e)
+			auto ee = children[i];
+			if (ee == e)
 			{
-				for (auto _it = it + 1; _it != children.end(); _it++)
-					(*_it)->index_ -= 1;
-				for (auto& c : components)
-				{
-					for (auto& _c : e->components)
-						c.second->on_child_component_removed(_c.second.get());
-				}
-				e->on_removed_listeners.call();
-				leave_world(e);
-				if (!destroy)
-				{
-					e->parent = nullptr;
-					it->release();
-				}
-				else
-					e->mark_dying();
-				children.erase(it);
+				remove_children(i, i, destroy);
 				return;
 			}
 		}
@@ -193,105 +214,29 @@ namespace flame
 
 	void Entity::remove_children(int from, int to, bool destroy)
 	{
-		for (auto& c : components)
-		{
-			for (auto& e : children)
-			{
-				for (auto& _c : e->components)
-					c.second->on_child_component_removed(_c.second.get());
-			}
-		}
 		if (to == -1)
-			to = children.size() - 1;
-		auto count = to - from + 1;
-		for (auto i = 0; i < count; i++)
+			to = children.s - 1;
+		std::vector<Entity*> es;
+		for (auto i = from; i <= to; i++)
+			es.push_back(children[i]);
+		children.remove(from, es.size());
+		for (auto e : es)
 		{
-			auto& e = children[from];
-			e->on_removed_listeners.call();
-			leave_world(e.get());
-			if (!destroy)
+			leave_world(e);
+			for (auto c : e->components.get_all())
+				c->on_event(Entity::EventRemoved, nullptr);
+			e->event_listeners.call(Entity::EventRemoved, nullptr);
+			for (auto c : components.get_all())
+				c->on_event(Entity::EventChildRemoved, e);
+			event_listeners.call(Entity::EventChildRemoved, e);
+			if (destroy)
 			{
-				e->parent = nullptr;
-				e.release();
+				mark_dying(e);
+				f_delete(e);
 			}
 			else
-				e->mark_dying();
-			children.erase(children.begin() + from);
+				e->parent = nullptr;
 		}
-	}
-
-	Entity::Entity()
-	{
-		on_removed_listeners.impl = ListenerHubImpl::create();
-		on_destroyed_listeners.impl = ListenerHubImpl::create();
-		event_listeners.impl = ListenerHubImpl::create();
-
-		gene = nullptr;
-
-		depth_ = 0;
-		index_ = 0;
-		created_frame_ = looper().frame;
-		dying_ = false;
-
-		visible_ = true;
-		global_visibility = false;
-
-		world = nullptr;
-		parent = nullptr;
-
-#ifdef _DEBUG
-		created_stack_frames_ = get_stack_frames();
-#endif
-	}
-
-	Entity::~Entity()
-	{
-		for (auto& c : children)
-			c->on_removed_listeners.call();
-		on_destroyed_listeners.call();
-		ListenerHubImpl::destroy(on_removed_listeners.impl);
-		ListenerHubImpl::destroy(on_destroyed_listeners.impl);
-		ListenerHubImpl::destroy(event_listeners.impl);
-	}
-
-	void Entity::set_visible(bool v)
-	{
-		((Entity*)this)->set_visible(v);
-	}
-
-	void Entity::add_component(Component* c)
-	{
-		((Entity*)this)->add_component(c);
-	}
-
-	void Entity::remove_component(Component* c)
-	{
-		((Entity*)this)->remove_component(c);
-	}
-
-	void Entity::add_child(Entity* e, int position)
-	{
-		((Entity*)this)->add_child((Entity*)e, position);
-	}
-
-	void Entity::reposition_child(Entity* e, int position)
-	{
-		((Entity*)this)->reposition_child((Entity*)e, position);
-	}
-
-	void Entity::remove_child(Entity* e, bool destroy)
-	{
-		((Entity*)this)->remove_child((Entity*)e, destroy);
-	}
-
-	void Entity::remove_children(int from, int to, bool destroy)
-	{
-		((Entity*)this)->remove_children(from, to, destroy);
-	}
-
-	Entity* Entity::create()
-	{
-		return new Entity;
 	}
 
 	static Entity* load_prefab(World* w, pugi::xml_node src)
@@ -356,19 +301,20 @@ namespace flame
 		n.append_attribute("name").set_value(src->name.s ? "unnamed" : src->name.v);
 		n.append_attribute("visible").set_value(src->visible_ );
 
-		if (!src->components.empty())
+		auto components = src->components.get_all();
+		if (!components.empty())
 		{
 			auto n_cs = n.append_child("components");
-			for (auto& component : src->components)
+			for (auto component : components)
 			{
-				auto n_c = n_cs.append_child(component.second->name);
+				auto n_c = n_cs.append_child(component->name);
 
-				auto udt = find_udt(FLAME_HASH((std::string("flame::") + component.second->name).c_str()));
+				auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
 				assert(udt && udt->base_name.str() == "Component");
 				for (auto v : udt->variables)
 				{
 					auto type = v->type;
-					auto p = (char*)component.second.get() + v->offset;
+					auto p = (char*)component + v->offset;
 					if (type->tag == TypePointer)
 						n_c.append_child(v->name.v).append_attribute("v").set_value((*(Object**)p)->id);
 					else
@@ -381,11 +327,11 @@ namespace flame
 			}
 		}
 
-		if (!src->children.empty())
+		if (src->children.s > 0)
 		{
 			auto n_es = n.append_child("children");
-			for (auto& e : src->children)
-				save_prefab(n_es, e.get());
+			for (auto e : src->children)
+				save_prefab(n_es, e);
 		}
 	}
 
@@ -397,12 +343,5 @@ namespace flame
 		save_prefab(file_root, (Entity*)e);
 
 		file.save_file(filename);
-	}
-
-	void Entity::destroy(Entity* _e)
-	{
-		auto e = (Entity*)_e;
-		mark_dying(e);
-		delete e;
 	}
 }

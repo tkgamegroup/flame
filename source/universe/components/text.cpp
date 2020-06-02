@@ -53,24 +53,29 @@ namespace flame
 		}
 	}
 
-	void cTextPrivate::on_component_added(Component* c)
+	void cTextPrivate::on_event(Entity::Event e, void* t)
 	{
-		if (c->name_hash == FLAME_CHASH("cElement"))
+		switch (e)
 		{
-			element = (cElement*)c;
-			draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-				c.thiz<cTextPrivate>()->draw(canvas);
-				return true;
-			}, Capture().set_thiz(this));
+		case Entity::EventComponentAdded:
+			if (t == this)
+			{
+				element = entity->get_component(cElement);
+				assert(element);
+
+				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
+					c.thiz<cTextPrivate>()->draw(canvas);
+					return true;
+				}, Capture().set_thiz(this));
+				if (element->management && auto_size)
+					element->management->add_to_sizing_list(element);
+			}
+			break;
+		case Entity::EventVisibilityChanged:
 			if (element->management && auto_size)
 				element->management->add_to_sizing_list(element);
+			break;
 		}
-	}
-
-	void cTextPrivate::on_visibility_changed()
-	{
-		if (element->management && auto_size)
-			element->management->add_to_sizing_list(element);
 	}
 
 	void cText::set_text(const wchar_t* text, int length, void* sender)

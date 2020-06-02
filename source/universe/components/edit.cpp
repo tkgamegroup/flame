@@ -133,28 +133,28 @@ namespace flame
 			return i;
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cTimer") && c->id == FLAME_CHASH("edit"))
+			if (e == Entity::EventComponentAdded && t == this)
 			{
-				timer = (cTimer*)c;
+				timer = entity->get_id_component(cTimer, FLAME_CHASH("edit"));
+				element = entity->get_component(cElement);
+				text = entity->get_component(cText);
+				event_receiver = entity->get_component(cEventReceiver);
+				assert(timer);
+				assert(element);
+				assert(text);
+				assert(event_receiver);
+
 				timer->set_callback([](Capture& c) {
 					c.thiz<cEditPrivate>()->flash_cursor(0);
 				}, Capture().set_thiz(this), false);
-			}
-			else if (c->name_hash == FLAME_CHASH("cElement"))
-			{
-				element = (cElement*)c;
+
 				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
 					c.thiz<cEditPrivate>()->draw(canvas);
 					return true;
 				}, Capture().set_thiz(this));
-			}
-			else if (c->name_hash == FLAME_CHASH("cText"))
-				text = (cText*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
+
 				key_listener = event_receiver->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
 					auto thiz = c.thiz<cEditPrivate>();
 					auto c_text = (cTextPrivate*)thiz->text;
@@ -196,7 +196,7 @@ namespace flame
 					};
 					auto throw_focus = [&]() {
 						auto dp = thiz->event_receiver->dispatcher;
-						dp->next_focusing = dp->world_->root()->get_component(cEventReceiver);
+						dp->next_focusing = dp->world_->root->get_component(cEventReceiver);
 					};
 
 					if (action == KeyStateNull)
@@ -245,7 +245,7 @@ namespace flame
 								select_start = select_end = high + cb.size() - (high - low);
 							}
 						}
-							break;
+						break;
 						case 27:
 							break;
 						case '\r':
@@ -319,7 +319,7 @@ namespace flame
 									select_start = select_end;
 							}
 						}
-							break;
+						break;
 						case Key_Down:
 						{
 							if (ed->key_states[Key_Shift] & KeyStateDown)
@@ -341,7 +341,7 @@ namespace flame
 									select_start = select_end;
 							}
 						}
-							break;
+						break;
 						case Key_Home:
 							select_end = (ed->key_states[Key_Ctrl] & KeyStateDown) ? 0 : line_start(select_end);
 							if (!(ed->key_states[Key_Shift] & KeyStateDown))

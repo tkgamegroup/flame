@@ -81,29 +81,31 @@ namespace flame
 		focus_listeners.call_with_current(this, focusing);
 	}
 
-	void cEventReceiverPrivate::on_entered_world()
+	void cEventReceiverPrivate::on_event(Entity::Event e, void* t)
 	{
-		dispatcher = entity->world->get_system(sEventDispatcher);
-		dispatcher->pending_update = true;
-	}
-
-	void cEventReceiverPrivate::on_left_world()
-	{
-		((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
-		dispatcher->pending_update = true;
-		dispatcher = nullptr;
-	}
-
-	void cEventReceiverPrivate::on_component_added(Component* c)
-	{
-		if (c->name_hash == FLAME_CHASH("cElement"))
-			element = (cElement*)c;
-	}
-
-	void cEventReceiverPrivate::on_visibility_changed()
-	{
-		if (dispatcher)
+		switch (e)
+		{
+		case Entity::EventEnteredWorld:
+			dispatcher = entity->world->get_system(sEventDispatcher);
 			dispatcher->pending_update = true;
+			break;
+		case Entity::EventLeftWorld:
+			((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
+			dispatcher->pending_update = true;
+			dispatcher = nullptr;
+			break;
+		case Entity::EventComponentAdded:
+			if (t == this)
+			{
+				element = entity->get_component(cElement);
+				assert(element);
+			}
+			break;
+		case Entity::EventVisibilityChanged:
+			if (dispatcher)
+				dispatcher->pending_update = true;
+			break;
+		}
 	}
 
 	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)

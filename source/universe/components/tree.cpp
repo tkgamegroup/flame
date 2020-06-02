@@ -1,5 +1,5 @@
 #include <flame/graphics/font.h>
-#include "../entity_private.h"
+#include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/text.h>
@@ -52,31 +52,36 @@ namespace flame
 			}
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			tree = get_tree(entity);
-		}
+			switch (e)
+			{
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
 
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-					{
-						auto thiz = c.thiz<cTreeLeafPrivate>();
-						thiz->tree->set_selected(thiz->entity);
-					}
-					return true;
-				}, Capture().set_thiz(this));
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
+						{
+							auto thiz = c.thiz<cTreeLeafPrivate>();
+							thiz->tree->set_selected(thiz->entity);
+						}
+						return true;
+					}, Capture().set_thiz(this));
+
+					tree = get_tree(entity);
+				}
+				break;
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
-			{
-				style = (cStyleColor2*)c;
-				style->level = 0;
-				do_style(false);
-			}
+			// TODO
+			//else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
+			//{
+			//style = (cStyleColor2*)c;
+			//style->level = 0;
+			//do_style(false);
+			//}
 		}
 	};
 
@@ -92,9 +97,15 @@ namespace flame
 			tree = nullptr;
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			tree = get_tree(entity);
+			switch (e)
+			{
+			case Entity::EventComponentAdded:
+				if (t == this)
+					tree = get_tree(entity);
+				break;
+			}
 		}
 	};
 
@@ -131,31 +142,37 @@ namespace flame
 			}
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			tree = entity->parent->get_component(cTreeNode)->tree;
-		}
+			switch (e)
+			{
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
 
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-					{
-						auto thiz = c.thiz<cTreeNodeTitlePrivate>();
-						thiz->tree->set_selected(thiz->entity->parent);
-					}
-					return true;
-				}, Capture().set_thiz(this));
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
+						{
+							auto thiz = c.thiz<cTreeNodeTitlePrivate>();
+							thiz->tree->set_selected(thiz->entity->parent);
+						}
+						return true;
+					}, Capture().set_thiz(this));
+
+					tree = entity->parent->get_component(cTreeNode)->tree;
+				}
+				break;
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
-			{
-				style = (cStyleColor2*)c;
-				style->level = 0;
-				((cTreeNodeTitlePrivate*)this)->do_style(false);
-			}
+
+			// TODO
+			//else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
+			//{
+			//style = (cStyleColor2*)c;
+			//style->level = 0;
+			//((cTreeNodeTitlePrivate*)this)->do_style(false);
+			//}
 		}
 	};
 
@@ -185,28 +202,30 @@ namespace flame
 
 		void toggle_collapse()
 		{
-			auto e = entity->parent->parent->child(1);
+			auto e = entity->parent->parent->children[1];
 			e->set_visible(!e->visible_);
 			text->set_text(e->visible_ ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			tree = entity->parent->parent->get_component(cTreeNode)->tree;
-		}
-
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cText"))
-				text = (cText*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						c.thiz<cTreeNodeArrowPrivate>()->toggle_collapse();
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
+
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							c.thiz<cTreeNodeArrowPrivate>()->toggle_collapse();
+						return true;
+					}, Capture().set_thiz(this));
+
+					tree = entity->parent->parent->get_component(cTreeNode)->tree;
+				}
+				break;
 			}
 		}
 	};
@@ -233,16 +252,23 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						c.thiz<cTreePrivate>()->set_selected(nullptr);
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
+
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
+							c.thiz<cTreePrivate>()->set_selected(nullptr);
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
 		}
 	};
@@ -256,7 +282,7 @@ namespace flame
 				treeleaf->do_style(false);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->child(0)->get_component(cTreeNodeTitle);
+				auto treenodetitle = (cTreeNodeTitlePrivate*)selected->children[0]->get_component(cTreeNodeTitle);
 				if (treenodetitle)
 					treenodetitle->do_style(false);
 			}
@@ -268,7 +294,7 @@ namespace flame
 				treeleaf->do_style(true);
 			else
 			{
-				auto treenodetitle = (cTreeNodeTitlePrivate*)e->child(0)->get_component(cTreeNodeTitle);
+				auto treenodetitle = (cTreeNodeTitlePrivate*)e->children[0]->get_component(cTreeNodeTitle);
 				if (treenodetitle)
 					treenodetitle->do_style(true);
 			}
@@ -283,7 +309,7 @@ namespace flame
 			return;
 		e->set_visible(true);
 		auto p = e->parent;
-		p->child(0)->child(0)->get_component(cText)->set_text(Icon_CARET_DOWN);
+		p->children[0]->children[0]->get_component(cText)->set_text(Icon_CARET_DOWN);
 		expand(p->parent, r);
 	}
 
@@ -298,13 +324,13 @@ namespace flame
 			if (!selected)
 				return;
 			auto parent = thiz->entity->parent;
-			if (!parent || parent->child_count() < 2)
+			if (!parent || parent->children.s < 2)
 				return;
-			auto e_scrollbar = parent->child(1);
+			auto e_scrollbar = parent->children[1];
 			auto c_scrollbar = e_scrollbar->get_component(cScrollbar);
 			if (!c_scrollbar)
 				return;
-			auto e_thumb = e_scrollbar->child(0);
+			auto e_thumb = e_scrollbar->children[0];
 			auto e_tree = thiz->entity;
 			auto c_tree_layout = e_tree->get_component(cLayout);
 			e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y() *

@@ -20,6 +20,7 @@ namespace flame
 			EventRemoved,
 			EventPositionChanged,
 			EventEnteredWorld,
+			EventLeftWorld,
 			EventComponentAdded,
 			EventComponentRemoved,
 			EventChildVisibilityChanged,
@@ -48,7 +49,7 @@ namespace flame
 		uint depth_;
 		uint index_;
 		int created_frame_;
-		Array<void*> created_stack_frames_;
+		Array<void*> created_stack_;
 		bool dying_;
 
 		FLAME_UNIVERSE_EXPORTS Entity();
@@ -122,9 +123,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);
 		FLAME_UNIVERSE_EXPORTS void remove_children(int from, int to /* -1 is end */, bool destroy = true);
 
-		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, const wchar_t* filename);
 		FLAME_UNIVERSE_EXPORTS static void save_to_file(Entity* e, const wchar_t* filename);
-		FLAME_UNIVERSE_EXPORTS static void destroy(Entity* w);
 	};
 }

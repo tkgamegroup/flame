@@ -96,8 +96,8 @@ namespace flame
 				if (has_world)
 				{
 					world = World::create();
-					world->add_object(sys_window);
-					world->add_object(font_atlas);
+					world->objects.push_back(sys_window);
+					world->objects.push_back(font_atlas);
 					s_timer_management = sTimerManagement::create();
 					world->add_system(s_timer_management);
 					s_layout_management = sLayoutManagement::create();
@@ -113,7 +113,7 @@ namespace flame
 					}, Capture().set_thiz(this));
 					world->add_system(s_2d_renderer);
 
-					root = world->root();
+					root = world->root;
 					root_element = cElement::create();
 					root->add_component(root_element);
 					root->add_component(cEventReceiver::create());

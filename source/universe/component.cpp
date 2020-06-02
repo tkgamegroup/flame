@@ -19,10 +19,17 @@ namespace flame
 	{
 		if (sender != INVALID_POINTER)
 		{
-			for (auto c : sibling_data_changed_info_targets)
-				c->on_sibling_data_changed(this, hash, sender);
-			for (auto c : parent_data_changed_info_targets)
-				c->on_child_data_changed(this, hash, sender);
+			for (auto c : entity->components.get_all())
+			{
+				if (c != this)
+					c->on_sibling_data_changed(this, hash, sender);
+			}
+			auto p = entity->parent;
+			if (p)
+			{
+				for (auto c : p->components.get_all())
+					c->on_child_data_changed(this, hash, sender);
+			}
 			data_changed_listeners.call_with_current(this, hash, sender);
 		}
 	}

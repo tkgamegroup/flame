@@ -40,21 +40,13 @@ namespace flame
 			}
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (index == -1)
+			if (e == Entity::EventComponentAdded && t == this)
 			{
-				auto items = entity->parent;
-				if (items)
-					index = items->child_count() - 1;
-			}
-		}
+				event_receiver = entity->get_component(cEventReceiver);
+				assert(event_receiver);
 
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
 				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
@@ -66,12 +58,20 @@ namespace flame
 					}
 					return true;
 				}, Capture().set_thiz(this));
-			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
-			{
-				style = (cStyleColor2*)c;
-				style->level = 0;
-				do_style(false);
+
+				if (index == -1)
+				{
+					auto items = entity->parent;
+					if (items)
+						index = items->children.s - 1;
+				}
+				// TODO
+				//else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
+				//{
+				//	style = (cStyleColor2*)c;
+				//	style->level = 0;
+				//	do_style(false);
+				//}
 			}
 		}
 	};
@@ -93,10 +93,13 @@ namespace flame
 			index = -1;
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cText"))
-				text = (cText*)c;
+			if (e == Entity::EventComponentAdded && t == this)
+			{
+				text = entity->get_component(cText);
+				assert(text);
+			}
 		}
 	};
 
@@ -107,7 +110,7 @@ namespace flame
 		auto items = entity->get_component(cMenu)->items;
 		if (index != -1)
 		{
-			auto comboboxitem = (cComboboxItemPrivate*)items->child(index)->get_component(cComboboxItem);
+			auto comboboxitem = (cComboboxItemPrivate*)items->children[index]->get_component(cComboboxItem);
 			if (comboboxitem)
 				comboboxitem->do_style(false);
 		}
@@ -116,7 +119,7 @@ namespace flame
 			text->set_text(L"");
 		else
 		{
-			auto selected = items->child(index);
+			auto selected = items->children[index];
 			text->set_text(selected->get_component(cText)->text.v);
 			{
 				auto comboboxitem = (cComboboxItemPrivate*)selected->get_component(cComboboxItem);
