@@ -34,19 +34,24 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = c.thiz<cMoveablePrivate>();
-					if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
-						thiz->element->add_pos((Vec2f)pos / thiz->element->global_scale, thiz);
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
+
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						auto thiz = c.thiz<cMoveablePrivate>();
+						if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
+							thiz->element->add_pos((Vec2f)pos / thiz->element->global_scale, thiz);
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
 		}
 	};
@@ -78,30 +83,37 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				pass_listener = event_receiver->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
-					*pass = true;
-					return true;
-				}, Capture());
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						auto thiz = c.thiz<cBringToFrontPrivate>();
-						auto l = thiz->entity->parent->parent->last_child(0);
-						if (!l || !SUS::starts_with(l->name.v, "layer_"))
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
+
+					pass_listener = event_receiver->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
+						*pass = true;
+						return true;
+					}, Capture());
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						{
-							looper().add_event([](Capture& c) {
-								auto p = c.thiz<Entity>()->parent;
-								p->parent->reposition_child(p, -1);
-							}, Capture().set_thiz(thiz->entity));
+							auto thiz = c.thiz<cBringToFrontPrivate>();
+							auto l = thiz->entity->parent->parent->last_child(0);
+							if (!l || !SUS::starts_with(l->name.v, "layer_"))
+							{
+								looper().add_event([](Capture& c) {
+									auto p = c.thiz<Entity>()->parent;
+									p->parent->reposition_child(p, -1);
+								}, Capture().set_thiz(thiz->entity));
+							}
 						}
-					}
-					return true;
-				}, Capture().set_thiz(this));
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
 		}
 	};
@@ -145,28 +157,32 @@ namespace flame
 			}
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			auto p = entity->parent;
-			if (p)
-				p_element = p->get_component(cElement);
-		}
-
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = c.thiz<cSizeDraggerPrivate>();
-					if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
-						thiz->p_element->add_size(Vec2f(pos));
-					return true;
-				}, Capture().set_thiz(this));
-				state_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState s) {
-					c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
+
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						auto thiz = c.thiz<cSizeDraggerPrivate>();
+						if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
+							thiz->p_element->add_size(Vec2f(pos));
+						return true;
+					}, Capture().set_thiz(this));
+					state_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState s) {
+						c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+						return true;
+					}, Capture().set_thiz(this));
+
+					auto p = entity->parent;
+					if (p)
+						p_element = p->get_component(cElement);
+				}
+				break;
 			}
 		}
 	};
@@ -247,15 +263,15 @@ namespace flame
 				return;
 
 			auto docker = tabbar->parent;
-			auto pages = docker->child(1);
-			page = pages->child(entity->index_);
+			auto pages = docker->children[1];
+			page = pages->children[entity->index_];
 			page_element = page->get_component(cElement);
 			auto page_aligner = page->get_component(cAligner);
 			auto list = list_item->list;
 			list_item->list = nullptr;
 
-			if (tabbar->child_count() > 1 && list && list->selected == entity)
-				list->set_selected(list->entity->child(0));
+			if (tabbar->children.s > 1 && list && list->selected == entity)
+				list->set_selected(list->entity->children[0]);
 
 			if (close)
 			{
@@ -282,7 +298,7 @@ namespace flame
 				dp->focusing_state = FocusingAndDragging;
 			}
 
-			if (tabbar->child_count() == 0)
+			if (tabbar->children.s == 0)
 			{
 				auto p = docker->parent;
 				if (p)
@@ -293,7 +309,7 @@ namespace flame
 						p->remove_children(0, -1);
 					else if (p->name.h == FLAME_CHASH("docker_layout"))
 					{
-						auto oth_docker = p->child(docker->index_ == 0 ? 2 : 0);
+						auto oth_docker = p->children[docker->index_ == 0 ? 2 : 0];
 						p->remove_child(oth_docker, false);
 						auto pp = p->parent;
 						auto idx = p->index_;
@@ -304,92 +320,94 @@ namespace flame
 			}
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			auto p = entity->parent;
-			if (p && p->child_count() == 1)
-				p->get_component(cDockerTabbar)->list->set_selected(entity);
-		}
-
-		void on_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
+			switch (e)
 			{
-				element = (cElement*)c;
-				draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-					c.thiz<cDockerTabPrivate>()->draw(canvas);
-					return true;
-				}, Capture().set_thiz(this));
-			}
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-			{
-				event_receiver = (cEventReceiver*)c;
-				event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = c.thiz<cDockerTabPrivate>();
-					if (is_mouse_move(action, key) && thiz->event_receiver->is_dragging() && thiz->page)
-					{
-						thiz->element->add_pos(Vec2f(pos));
-						thiz->page_element->add_pos(Vec2f(pos));
-					}
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					element = entity->get_component(cElement);
+					event_receiver = entity->get_component(cEventReceiver);
+					list_item = entity->get_component(cListItem);
+					assert(element);
+					assert(event_receiver);
+					assert(list_item);
 
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = c.thiz<cDockerTabPrivate>();
-					if (action == DragStart)
-					{
-						thiz->floating = true;
-						looper().add_event([](Capture& c) {
-							c.thiz<cDockerTabPrivate>()->take_away(false);
-						}, Capture().set_thiz(thiz));
-					}
-					else if (action == DragEnd)
-					{
-						if (!er || thiz->floating)
+					draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
+						c.thiz<cDockerTabPrivate>()->draw(canvas);
+						return true;
+					}, Capture().set_thiz(this));
+
+					event_receiver->drag_hash = FLAME_CHASH("cDockerTab");
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						auto thiz = c.thiz<cDockerTabPrivate>();
+						if (is_mouse_move(action, key) && thiz->event_receiver->is_dragging() && thiz->page)
 						{
-							thiz->drop_pos = pos;
+							thiz->element->add_pos(Vec2f(pos));
+							thiz->page_element->add_pos(Vec2f(pos));
+						}
+						return true;
+					}, Capture().set_thiz(this));
+					drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+						auto thiz = c.thiz<cDockerTabPrivate>();
+						if (action == DragStart)
+						{
+							thiz->floating = true;
 							looper().add_event([](Capture& c) {
-								auto thiz = c.thiz<cDockerTabPrivate>();
-								auto e_tab = thiz->entity;
-								auto e_page = thiz->page;
-								auto page_element = thiz->page_element;
-								auto page_aligner = e_page->get_component(cAligner);
-								auto w = thiz->root->world;
-
-								auto e_container = Entity::create();
-								cDockerTab::make_floating_container(w, e_container, thiz->drop_pos, page_element->size);
-								thiz->root->add_child(e_container);
-
-								auto e_docker = Entity::create();
-								cDockerTab::make_docker(w, e_docker);
-								e_container->add_child(e_docker, 0);
-
-								auto e_tabbar = e_docker->child(0);
-								auto e_pages = e_docker->child(1);
-
-								thiz->root->remove_child(e_tab, false);
-								thiz->root->remove_child(e_page, false);
-								thiz->list_item->list = e_tabbar->get_component(cList);
-								e_tabbar->add_child(e_tab);
-								auto element = thiz->element;
-								element->set_pos(Vec2f(0.f));
-								element->set_alpha(1.f);
-								e_pages->add_child(e_page);
-								page_element->set_pos(Vec2f(0.f));
-								page_element->set_alpha(1.f);
-								page_aligner->set_x_align_flags(AlignMinMax);
-								page_aligner->set_y_align_flags(AlignMinMax);
-								thiz->page = nullptr;
-								thiz->page_element = nullptr;
+								c.thiz<cDockerTabPrivate>()->take_away(false);
 							}, Capture().set_thiz(thiz));
 						}
-					}
-					return true;
-				}, Capture().set_thiz(this));
+						else if (action == DragEnd)
+						{
+							if (!er || thiz->floating)
+							{
+								thiz->drop_pos = pos;
+								looper().add_event([](Capture& c) {
+									auto thiz = c.thiz<cDockerTabPrivate>();
+									auto e_tab = thiz->entity;
+									auto e_page = thiz->page;
+									auto page_element = thiz->page_element;
+									auto page_aligner = e_page->get_component(cAligner);
+									auto w = thiz->root->world;
+
+									auto e_container = f_new<Entity>();
+									cDockerTab::make_floating_container(w, e_container, thiz->drop_pos, page_element->size);
+									thiz->root->add_child(e_container);
+
+									auto e_docker = f_new<Entity>();
+									cDockerTab::make_docker(w, e_docker);
+									e_container->add_child(e_docker, 0);
+
+									auto e_tabbar = e_docker->children[0];
+									auto e_pages = e_docker->children[1];
+
+									thiz->root->remove_child(e_tab, false);
+									thiz->root->remove_child(e_page, false);
+									thiz->list_item->list = e_tabbar->get_component(cList);
+									e_tabbar->add_child(e_tab);
+									auto element = thiz->element;
+									element->set_pos(Vec2f(0.f));
+									element->set_alpha(1.f);
+									e_pages->add_child(e_page);
+									page_element->set_pos(Vec2f(0.f));
+									page_element->set_alpha(1.f);
+									page_aligner->set_x_align_flags(AlignMinMax);
+									page_aligner->set_y_align_flags(AlignMinMax);
+									thiz->page = nullptr;
+									thiz->page_element = nullptr;
+								}, Capture().set_thiz(thiz));
+							}
+						}
+						return true;
+					}, Capture().set_thiz(this));
+
+					auto p = entity->parent;
+					if (p && p->children.s == 1)
+						p->get_component(cDockerTabbar)->list->set_selected(entity);
+				}
+				break;
 			}
-			else if (c->name_hash == FLAME_CHASH("cListItem"))
-				list_item = (cListItem*)c;
 		}
 
 		void draw(graphics::Canvas* canvas)
@@ -439,10 +457,10 @@ namespace flame
 		e->add_component(cEventReceiver::create());
 		e->add_component(cLayout::create(LayoutFree));
 		e->add_component(cMoveable::create());
-		auto e_btf = Entity::create();
+		auto e_btf = f_new<Entity>();
 		cBringToFront::make(e_btf);
 		e->add_child(e_btf);
-		auto e_sd = Entity::create();
+		auto e_sd = f_new<Entity>();
 		cSizeDragger::make(w, e_sd);
 		e->add_child(e_sd);
 	}
@@ -475,7 +493,7 @@ namespace flame
 		cl->width_fit_children = false;
 		cl->height_fit_children = false;
 		e->add_component(cl);
-		auto es = Entity::create();
+		auto es = f_new<Entity>();
 		cSplitter::make(w, es, type == LayoutHorizontal ? SplitterHorizontal : SplitterVertical);
 		e->add_child(es);
 	}
@@ -497,7 +515,7 @@ namespace flame
 		cl->height_fit_children = false;
 		e->add_component(cl);
 		{
-			auto et = Entity::create();
+			auto et = f_new<Entity>();
 			et->name = "docker_tabbar";
 			e->add_child(et);
 			auto ce = cElement::create();
@@ -512,7 +530,7 @@ namespace flame
 			et->add_component(cDockerTabbar::create());
 		}
 		{
-			auto ep = Entity::create();
+			auto ep = f_new<Entity>();
 			ep->name = "docker_pages";
 			e->add_child(ep);
 			auto ce = cElement::create();
@@ -557,9 +575,9 @@ namespace flame
 
 		uint calc_pos(float x, float* out)
 		{
-			for (auto i = 0; i < entity->child_count(); i++)
+			for (auto i = 0; i < entity->children.s; i++)
 			{
-				auto element = entity->child(i)->get_component(cElement);
+				auto element = entity->children[i]->get_component(cElement);
 				auto half = element->global_pos.x() + element->size.x() * 0.5f;
 				if (x >= element->global_pos.x() && x < half)
 				{
@@ -576,99 +594,105 @@ namespace flame
 			}
 			if (out)
 			{
-				auto element = entity->child(entity->child_count() - 1)->get_component(cElement);
+				auto element = entity->children[entity->children.s - 1]->get_component(cElement);
 				*out = element->global_pos.x() + element->global_size.x();
 			}
-			return entity->child_count();
+			return entity->children.s;
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = c.thiz<cDockerTabbarPrivate>();
-					if (thiz->entity->child_count() > 0) // a valid docker tabbar must have at least one item
-					{
-						if (action == BeingOvering)
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					element = entity->get_component(cElement);
+					event_receiver = entity->get_component(cEventReceiver);
+					list = entity->get_component(cList);
+					assert(element);
+					assert(event_receiver);
+					assert(list);
+
+					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
+					drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+						auto thiz = c.thiz<cDockerTabbarPrivate>();
+						if (thiz->entity->children.s > 0) // a valid docker tabbar must have at least one item
 						{
-							float show_drop_pos;
-							auto idx = thiz->calc_pos(pos.x(), &show_drop_pos);
-							if (idx == thiz->entity->child_count())
-								show_drop_pos -= 10.f;
-							else if (idx != 0)
-								show_drop_pos -= 5.f;
-							auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
-							drop_tab->drop_tips.clear();
-							drop_tab->overing = thiz->event_receiver;
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = false;
-							primitive.pos = Vec2f(show_drop_pos, thiz->element->global_pos.y());
-							primitive.size = Vec2f(10.f, thiz->element->global_size.y());
-							drop_tab->drop_tips.push_back(primitive);
+							if (action == BeingOvering)
+							{
+								float show_drop_pos;
+								auto idx = thiz->calc_pos(pos.x(), &show_drop_pos);
+								if (idx == thiz->entity->children.s)
+									show_drop_pos -= 10.f;
+								else if (idx != 0)
+									show_drop_pos -= 5.f;
+								auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
+								drop_tab->drop_tips.clear();
+								drop_tab->overing = thiz->event_receiver;
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = false;
+								primitive.pos = Vec2f(show_drop_pos, thiz->element->global_pos.y());
+								primitive.size = Vec2f(10.f, thiz->element->global_size.y());
+								drop_tab->drop_tips.push_back(primitive);
+							}
+							else if (action == BeenDropped)
+							{
+								thiz->drop_tab = er->entity->get_component(cDockerTab);
+								thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
+								thiz->drop_tab->floating = false;
+								looper().add_event([](Capture& c) {
+									auto thiz = c.thiz<cDockerTabbarPrivate>();
+									auto tabbar = thiz->entity;
+									auto tab = thiz->drop_tab;
+									auto e_tab = tab->entity;
+									auto e_page = tab->page;
+									auto page_element = tab->page_element;
+									auto page_aligner = e_page->get_component(cAligner);
+
+									tab->root->remove_child(e_tab, false);
+									tab->root->remove_child(e_page, false);
+									tab->list_item->list = thiz->list;
+									tabbar->add_child(e_tab, thiz->drop_idx);
+									tabbar->parent->children[1]->add_child(e_page);
+
+									tab->element->set_alpha(1.f);
+									page_element->set_pos(Vec2f(0.f));
+									page_element->set_alpha(1.f);
+									page_aligner->set_x_align_flags(AlignMinMax);
+									page_aligner->set_y_align_flags(AlignMinMax);
+
+									thiz->drop_tab->page = nullptr;
+									thiz->drop_tab->page_element = nullptr;
+									thiz->drop_tab = nullptr;
+									thiz->drop_idx = 0;
+
+									thiz->list->set_selected(e_tab);
+								}, Capture().set_thiz(thiz));
+							}
 						}
-						else if (action == BeenDropped)
+						return true;
+					}, Capture().set_thiz(this));
+
+					selected_changed_listener = list->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+						auto thiz = c.thiz<cDockerTabbarPrivate>();
+						if (hash == FLAME_CHASH("selected"))
 						{
-							thiz->drop_tab = er->entity->get_component(cDockerTab);
-							thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
-							thiz->drop_tab->floating = false;
-							looper().add_event([](Capture& c) {
-								auto thiz = c.thiz<cDockerTabbarPrivate>();
-								auto tabbar = thiz->entity;
-								auto tab = thiz->drop_tab;
-								auto e_tab = tab->entity;
-								auto e_page = tab->page;
-								auto page_element = tab->page_element;
-								auto page_aligner = e_page->get_component(cAligner);
-
-								tab->root->remove_child(e_tab, false);
-								tab->root->remove_child(e_page, false);
-								tab->list_item->list = thiz->list;
-								tabbar->add_child(e_tab, thiz->drop_idx);
-								tabbar->parent->child(1)->add_child(e_page);
-
-								tab->element->set_alpha(1.f);
-								page_element->set_pos(Vec2f(0.f));
-								page_element->set_alpha(1.f);
-								page_aligner->set_x_align_flags(AlignMinMax);
-								page_aligner->set_y_align_flags(AlignMinMax);
-
-								thiz->drop_tab->page = nullptr;
-								thiz->drop_tab->page_element = nullptr;
-								thiz->drop_tab = nullptr;
-								thiz->drop_idx = 0;
-
-								thiz->list->set_selected(e_tab);
-							}, Capture().set_thiz(thiz));
+							auto tabbar = thiz->entity;
+							auto docker = tabbar->parent;
+							auto pages = docker->children[1];
+							if (pages->children.s > 0)
+							{
+								auto idx = thiz->list->selected->index_;
+								for (auto i : pages->children)
+									i->set_visible(false);
+								pages->children[idx]->set_visible(true);
+							}
 						}
-					}
-					return true;
-				}, Capture().set_thiz(this));
-			}
-			else if (c->name_hash == FLAME_CHASH("cList"))
-			{
-				list = (cList*)c;
-				selected_changed_listener = list->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-					auto thiz = c.thiz<cDockerTabbarPrivate>();
-					if (hash == FLAME_CHASH("selected"))
-					{
-						auto tabbar = thiz->entity;
-						auto docker = tabbar->parent;
-						auto pages = docker->child(1);
-						if (pages->child_count() > 0)
-						{
-							auto idx = thiz->list->selected->index_;
-							for (auto i = 0; i < pages->child_count(); i++)
-								pages->child(i)->set_visible(false);
-							pages->child(idx)->set_visible(true);
-						}
-					}
-					return true;
-				}, Capture().set_thiz(this));
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
 		}
 	};
@@ -700,202 +724,209 @@ namespace flame
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = c.thiz<cDockerPagesPrivate>();
-					if (action == BeingOvering)
-					{
-						thiz->dock_side = Outside;
-						auto center = thiz->element->center();
-						if (rect_contains(Vec4f(center + Vec2f(-25.f, -25.f), center + Vec2f(25.f, 25.f)), (Vec2f)pos))
-							thiz->dock_side = SideCenter;
-						else if (rect_contains(Vec4f(center + Vec2f(-55.f, -25.f), center + Vec2f(-30.f, 25.f)), (Vec2f)pos))
-							thiz->dock_side = SideW;
-						else if (rect_contains(Vec4f(center + Vec2f(30.f, -25.f), center + Vec2f(55.f, 25.f)), (Vec2f)pos))
-							thiz->dock_side = SideE;
-						else if (rect_contains(Vec4f(center + Vec2f(-25.f, -55.f), center + Vec2f(25.f, -30.f)), (Vec2f)pos))
-							thiz->dock_side = SideN;
-						else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), (Vec2f)pos))
-							thiz->dock_side = SideS;
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					element = entity->get_component(cElement);
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(element);
+					assert(event_receiver);
 
-						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
-						drop_tab->drop_tips.clear();
-						drop_tab->overing = thiz->event_receiver;
+					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
+					drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+						auto thiz = c.thiz<cDockerPagesPrivate>();
+						if (action == BeingOvering)
 						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = thiz->dock_side == SideCenter;
-							primitive.pos = center + Vec2f(-25.f);
-							primitive.size = Vec2f(50.f, 50.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
-						}
-						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = thiz->dock_side == SideW;
-							primitive.pos = center + Vec2f(-55.f, -25.f);
-							primitive.size = Vec2f(25.f, 50.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
-						}
-						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = thiz->dock_side == SideE;
-							primitive.pos = center + Vec2f(30.f, -25.f);
-							primitive.size = Vec2f(25.f, 50.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
-						}
-						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = thiz->dock_side == SideN;
-							primitive.pos = center + Vec2f(-25.f, -55.f);
-							primitive.size = Vec2f(50.f, 25.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
-						}
-						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = thiz->dock_side == SideS;
-							primitive.pos = center + Vec2f(-25.f, 30.f);
-							primitive.size = Vec2f(50.f, 25.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
-						}
-					}
-					else if (action == BeenDropped)
-					{
-						if (thiz->dock_side == SideCenter)
-						{
-							auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent->child(0)->get_component(cEventReceiver);
-							tabbar_er->on_drag_and_drop(BeenDropped, er, Vec2i(0, 99999));
-						}
-						else if (thiz->dock_side != Outside)
-						{
-							thiz->drop_tab = er->entity->get_component(cDockerTab);
-							thiz->drop_tab->floating = false;
-							looper().add_event([](Capture& c) {
-								auto thiz = c.thiz<cDockerPagesPrivate>();
-								auto tab = thiz->drop_tab;
-								auto e_tab = tab->entity;
-								auto e_page = tab->page;
-								auto page_element = tab->page_element;
-								auto page_aligner = e_page->get_component(cAligner);
-								auto docker = thiz->entity->parent;
-								auto docker_element = docker->get_component(cElement);
-								auto docker_aligner = docker->get_component(cAligner);
-								auto p = docker->parent;
-								auto docker_idx = docker->index_; LayoutFree;
-								auto w = thiz->entity->world;
+							thiz->dock_side = Outside;
+							auto center = thiz->element->center();
+							if (rect_contains(Vec4f(center + Vec2f(-25.f, -25.f), center + Vec2f(25.f, 25.f)), (Vec2f)pos))
+								thiz->dock_side = SideCenter;
+							else if (rect_contains(Vec4f(center + Vec2f(-55.f, -25.f), center + Vec2f(-30.f, 25.f)), (Vec2f)pos))
+								thiz->dock_side = SideW;
+							else if (rect_contains(Vec4f(center + Vec2f(30.f, -25.f), center + Vec2f(55.f, 25.f)), (Vec2f)pos))
+								thiz->dock_side = SideE;
+							else if (rect_contains(Vec4f(center + Vec2f(-25.f, -55.f), center + Vec2f(25.f, -30.f)), (Vec2f)pos))
+								thiz->dock_side = SideN;
+							else if (rect_contains(Vec4f(center + Vec2f(-25.f, 30.f), center + Vec2f(25.f, 55.f)), (Vec2f)pos))
+								thiz->dock_side = SideS;
 
-								auto layout = Entity::create();
-								p->remove_child(docker, false);
-								cDockerTab::make_layout(w, layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
-								p->add_child(layout, docker_idx);
+							auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
+							drop_tab->drop_tips.clear();
+							drop_tab->overing = thiz->event_receiver;
+							{
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = thiz->dock_side == SideCenter;
+								primitive.pos = center + Vec2f(-25.f);
+								primitive.size = Vec2f(50.f, 50.f);
+								std::vector<Vec2f> points;
+								drop_tab->drop_tips.push_back(primitive);
+							}
+							{
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = thiz->dock_side == SideW;
+								primitive.pos = center + Vec2f(-55.f, -25.f);
+								primitive.size = Vec2f(25.f, 50.f);
+								std::vector<Vec2f> points;
+								drop_tab->drop_tips.push_back(primitive);
+							}
+							{
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = thiz->dock_side == SideE;
+								primitive.pos = center + Vec2f(30.f, -25.f);
+								primitive.size = Vec2f(25.f, 50.f);
+								std::vector<Vec2f> points;
+								drop_tab->drop_tips.push_back(primitive);
+							}
+							{
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = thiz->dock_side == SideN;
+								primitive.pos = center + Vec2f(-25.f, -55.f);
+								primitive.size = Vec2f(50.f, 25.f);
+								std::vector<Vec2f> points;
+								drop_tab->drop_tips.push_back(primitive);
+							}
+							{
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = thiz->dock_side == SideS;
+								primitive.pos = center + Vec2f(-25.f, 30.f);
+								primitive.size = Vec2f(50.f, 25.f);
+								std::vector<Vec2f> points;
+								drop_tab->drop_tips.push_back(primitive);
+							}
+						}
+						else if (action == BeenDropped)
+						{
+							if (thiz->dock_side == SideCenter)
+							{
+								auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent->children[0]->get_component(cEventReceiver);
+								tabbar_er->on_drag_and_drop(BeenDropped, er, Vec2i(0, 99999));
+							}
+							else if (thiz->dock_side != Outside)
+							{
+								thiz->drop_tab = er->entity->get_component(cDockerTab);
+								thiz->drop_tab->floating = false;
+								looper().add_event([](Capture& c) {
+									auto thiz = c.thiz<cDockerPagesPrivate>();
+									auto tab = thiz->drop_tab;
+									auto e_tab = tab->entity;
+									auto e_page = tab->page;
+									auto page_element = tab->page_element;
+									auto page_aligner = e_page->get_component(cAligner);
+									auto docker = thiz->entity->parent;
+									auto docker_element = docker->get_component(cElement);
+									auto docker_aligner = docker->get_component(cAligner);
+									auto p = docker->parent;
+									auto docker_idx = docker->index_; LayoutFree;
+									auto w = thiz->entity->world;
 
-								if (p->name.h != FLAME_CHASH("docker_floating_container") && p->name.h != FLAME_CHASH("docker_static_container"))
-								{
-									auto p_element = p->get_component(cElement);
-									auto layout_element = layout->get_component(cElement);
+									auto layout = f_new<Entity>();
+									p->remove_child(docker, false);
+									cDockerTab::make_layout(w, layout, (thiz->dock_side == SideW || thiz->dock_side == SideE) ? LayoutHorizontal : LayoutVertical);
+									p->add_child(layout, docker_idx);
 
-									layout_element->set_size(p_element->size);
-
-									auto aligner = layout->get_component(cAligner);
-									aligner->set_width_factor(p_element->size.x());
-									aligner->set_height_factor(p_element->size.y());
-
+									if (p->name.h != FLAME_CHASH("docker_floating_container") && p->name.h != FLAME_CHASH("docker_static_container"))
 									{
-										auto oth = p->child(docker_idx == 0 ? 2 : 0);
-										auto element = oth->get_component(cElement);
-										auto aligner = oth->get_component(cAligner);
-										aligner->set_width_factor(element->size.x());
-										aligner->set_height_factor(element->size.y());
+										auto p_element = p->get_component(cElement);
+										auto layout_element = layout->get_component(cElement);
+
+										layout_element->set_size(p_element->size);
+
+										auto aligner = layout->get_component(cAligner);
+										aligner->set_width_factor(p_element->size.x());
+										aligner->set_height_factor(p_element->size.y());
+
+										{
+											auto oth = p->children[docker_idx == 0 ? 2 : 0];
+											auto element = oth->get_component(cElement);
+											auto aligner = oth->get_component(cAligner);
+											aligner->set_width_factor(element->size.x());
+											aligner->set_height_factor(element->size.y());
+										}
 									}
-								}
 
-								auto new_docker = Entity::create();
-								cDockerTab::make_docker(w, new_docker);
-								switch (thiz->dock_side)
-								{
-								case SideW:
-								case SideN:
-									layout->add_child(new_docker, 0);
-									layout->add_child(docker, 2);
-									break;
-								case SideE:
-								case SideS:
-									layout->add_child(docker, 0);
-									layout->add_child(new_docker, 2);
-									break;
-								}
-								auto new_docker_element = new_docker->get_component(cElement);
-								auto new_docker_aligner = new_docker->get_component(cAligner);
-								auto new_tabbar = new_docker->child(0);
-								auto new_pages = new_docker->child(1);
+									auto new_docker = f_new<Entity>();
+									cDockerTab::make_docker(w, new_docker);
+									switch (thiz->dock_side)
+									{
+									case SideW:
+									case SideN:
+										layout->add_child(new_docker, 0);
+										layout->add_child(docker, 2);
+										break;
+									case SideE:
+									case SideS:
+										layout->add_child(docker, 0);
+										layout->add_child(new_docker, 2);
+										break;
+									}
+									auto new_docker_element = new_docker->get_component(cElement);
+									auto new_docker_aligner = new_docker->get_component(cAligner);
+									auto new_tabbar = new_docker->children[0];
+									auto new_pages = new_docker->children[1];
 
-								tab->root->remove_child(e_tab, false);
-								tab->root->remove_child(e_page, false);
-								tab->list_item->list = (cList*)new_tabbar->get_component(cList);
-								new_tabbar->add_child(e_tab);
-								new_pages->add_child(e_page);
+									tab->root->remove_child(e_tab, false);
+									tab->root->remove_child(e_page, false);
+									tab->list_item->list = (cList*)new_tabbar->get_component(cList);
+									new_tabbar->add_child(e_tab);
+									new_pages->add_child(e_page);
 
-								tab->element->set_alpha(1.f);
-								page_element->set_pos(Vec2f(0.f));
-								page_element->set_alpha(1.f);
-								page_aligner->set_x_align_flags(AlignMinMax);
-								page_aligner->set_y_align_flags(AlignMinMax);
+									tab->element->set_alpha(1.f);
+									page_element->set_pos(Vec2f(0.f));
+									page_element->set_alpha(1.f);
+									page_aligner->set_x_align_flags(AlignMinMax);
+									page_aligner->set_y_align_flags(AlignMinMax);
 
-								auto e_splitter = layout->child(1);
-								auto splitter_element = e_splitter->get_component(cElement);
-								auto splitter = e_splitter->get_component(cSplitter);
-								if (thiz->dock_side == SideW || thiz->dock_side == SideE)
-								{
-									layout->get_component(cLayout)->type = LayoutHorizontal;
-									splitter->type = SplitterHorizontal;
-									e_splitter->get_component(cAligner)->set_y_align_flags(AlignMinMax);
+									auto e_splitter = layout->children[1];
+									auto splitter_element = e_splitter->get_component(cElement);
+									auto splitter = e_splitter->get_component(cSplitter);
+									if (thiz->dock_side == SideW || thiz->dock_side == SideE)
+									{
+										layout->get_component(cLayout)->type = LayoutHorizontal;
+										splitter->type = SplitterHorizontal;
+										e_splitter->get_component(cAligner)->set_y_align_flags(AlignMinMax);
 
-									auto w = (docker_element->size.x() - splitter_element->size.x()) * 0.5f;
-									docker_element->set_width(w);
-									new_docker_element->set_width(w);
-									docker_aligner->set_width_factor(w);
-									new_docker_aligner->set_width_factor(w);
+										auto w = (docker_element->size.x() - splitter_element->size.x()) * 0.5f;
+										docker_element->set_width(w);
+										new_docker_element->set_width(w);
+										docker_aligner->set_width_factor(w);
+										new_docker_aligner->set_width_factor(w);
 
-									auto h = docker_element->size.y() * 0.5f;
-									docker_element->set_height(h);
-									new_docker_element->set_height(h);
-									docker_aligner->set_height_factor(h);
-									new_docker_aligner->set_height_factor(h);
-								}
-								else
-								{
-									layout->get_component(cLayout)->type = LayoutVertical;
-									splitter->type = SplitterVertical;
-									e_splitter->get_component(cAligner)->set_x_align_flags(AlignMinMax);
+										auto h = docker_element->size.y() * 0.5f;
+										docker_element->set_height(h);
+										new_docker_element->set_height(h);
+										docker_aligner->set_height_factor(h);
+										new_docker_aligner->set_height_factor(h);
+									}
+									else
+									{
+										layout->get_component(cLayout)->type = LayoutVertical;
+										splitter->type = SplitterVertical;
+										e_splitter->get_component(cAligner)->set_x_align_flags(AlignMinMax);
 
-									auto w = docker_element->size.x();
-									docker_element->set_width(w);
-									new_docker_element->set_width(w);
-									docker_aligner->set_width_factor(w);
-									new_docker_aligner->set_width_factor(w);
+										auto w = docker_element->size.x();
+										docker_element->set_width(w);
+										new_docker_element->set_width(w);
+										docker_aligner->set_width_factor(w);
+										new_docker_aligner->set_width_factor(w);
 
-									auto h = (docker_element->size.y() - splitter_element->size.y()) * 0.5f;
-									docker_element->set_height(h);
-									new_docker_element->set_height(h);
-									docker_aligner->set_height_factor(h);
-									new_docker_aligner->set_height_factor(h);
-								}
+										auto h = (docker_element->size.y() - splitter_element->size.y()) * 0.5f;
+										docker_element->set_height(h);
+										new_docker_element->set_height(h);
+										docker_aligner->set_height_factor(h);
+										new_docker_aligner->set_height_factor(h);
+									}
 
-							}, Capture().set_thiz(thiz));
+								}, Capture().set_thiz(thiz));
+							}
 						}
-					}
-					return true;
-				}, Capture().set_thiz(this));
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
 		}
 	};
@@ -927,71 +958,78 @@ namespace flame
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
-				drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto thiz = c.thiz<cDockerStaticContainerPrivate>();
-					if (action == BeingOvering)
-					{
-						thiz->dock_side = Outside;
-						auto center = thiz->element->center();
-						if (rect_contains(Vec4f(center + Vec2f(-25.f, -25.f), center + Vec2f(25.f, 25.f)), (Vec2f)pos))
-							thiz->dock_side = SideCenter;
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					element = entity->get_component(cElement);
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(element);
+					assert(event_receiver);
 
-						auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
-						drop_tab->drop_tips.clear();
-						drop_tab->overing = thiz->event_receiver;
+					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cDockerTab"));
+					drag_and_drop_listener = event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+						auto thiz = c.thiz<cDockerStaticContainerPrivate>();
+						if (action == BeingOvering)
 						{
-							cDockerTabPrivate::DropTip primitive;
-							primitive.highlighted = thiz->dock_side == SideCenter;
-							primitive.pos = center + Vec2f(-25.f);
-							primitive.size = Vec2f(50.f, 50.f);
-							std::vector<Vec2f> points;
-							drop_tab->drop_tips.push_back(primitive);
+							thiz->dock_side = Outside;
+							auto center = thiz->element->center();
+							if (rect_contains(Vec4f(center + Vec2f(-25.f, -25.f), center + Vec2f(25.f, 25.f)), (Vec2f)pos))
+								thiz->dock_side = SideCenter;
+
+							auto drop_tab = (cDockerTabPrivate*)er->entity->get_component(cDockerTab);
+							drop_tab->drop_tips.clear();
+							drop_tab->overing = thiz->event_receiver;
+							{
+								cDockerTabPrivate::DropTip primitive;
+								primitive.highlighted = thiz->dock_side == SideCenter;
+								primitive.pos = center + Vec2f(-25.f);
+								primitive.size = Vec2f(50.f, 50.f);
+								std::vector<Vec2f> points;
+								drop_tab->drop_tips.push_back(primitive);
+							}
 						}
-					}
-					else if (action == BeenDropped)
-					{
-						if (thiz->dock_side == SideCenter)
+						else if (action == BeenDropped)
 						{
-							thiz->drop_tab = er->entity->get_component(cDockerTab);
-							thiz->drop_tab->floating = false;
-							looper().add_event([](Capture& c) {
-								auto thiz = c.thiz<cDockerStaticContainerPrivate>();
-								auto tab = thiz->drop_tab;
-								auto e_tab = tab->entity;
-								auto e_page = tab->page;
-								auto page_element = tab->page_element;
-								auto page_aligner = e_page->get_component(cAligner);
+							if (thiz->dock_side == SideCenter)
+							{
+								thiz->drop_tab = er->entity->get_component(cDockerTab);
+								thiz->drop_tab->floating = false;
+								looper().add_event([](Capture& c) {
+									auto thiz = c.thiz<cDockerStaticContainerPrivate>();
+									auto tab = thiz->drop_tab;
+									auto e_tab = tab->entity;
+									auto e_page = tab->page;
+									auto page_element = tab->page_element;
+									auto page_aligner = e_page->get_component(cAligner);
 
-								auto new_docker = Entity::create();
-								cDockerTab::make_docker(thiz->entity->world, new_docker);
-								thiz->entity->add_child(new_docker);
-								auto new_tabbar = new_docker->child(0);
-								auto new_pages = new_docker->child(1);
+									auto new_docker = f_new<Entity>();
+									cDockerTab::make_docker(thiz->entity->world, new_docker);
+									thiz->entity->add_child(new_docker);
+									auto new_tabbar = new_docker->children[0];
+									auto new_pages = new_docker->children[1];
 
-								tab->root->remove_child(e_tab, false);
-								tab->root->remove_child(e_page, false);
-								tab->list_item->list = (cList*)new_tabbar->get_component(cList);
-								new_tabbar->add_child(e_tab);
-								new_pages->add_child(e_page);
+									tab->root->remove_child(e_tab, false);
+									tab->root->remove_child(e_page, false);
+									tab->list_item->list = (cList*)new_tabbar->get_component(cList);
+									new_tabbar->add_child(e_tab);
+									new_pages->add_child(e_page);
 
-								tab->element->set_alpha(1.f);
-								page_element->set_pos(Vec2f(0.f));
-								page_element->set_alpha(1.f);
-								page_aligner->set_x_align_flags(AlignMinMax);
-								page_aligner->set_y_align_flags(AlignMinMax);
-							}, Capture().set_thiz(thiz));
+									tab->element->set_alpha(1.f);
+									page_element->set_pos(Vec2f(0.f));
+									page_element->set_alpha(1.f);
+									page_aligner->set_x_align_flags(AlignMinMax);
+									page_aligner->set_y_align_flags(AlignMinMax);
+								}, Capture().set_thiz(thiz));
+							}
 						}
-					}
-					return true;
-				}, Capture().set_thiz(this));
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
 		}
 	};

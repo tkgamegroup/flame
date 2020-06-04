@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/universe/universe.h>
+#include <flame/universe/system.h>
 
 namespace flame
 {
@@ -21,7 +22,6 @@ namespace flame
 
 		Object* find_object(uint name_hash, uint id) const
 		{
-			const auto& objects = ((WorldPrivate*)this)->objects;
 			for (auto o : objects)
 			{
 				if (o->name_hash == name_hash)
@@ -33,7 +33,15 @@ namespace flame
 			return nullptr;
 		}
 
-		FLAME_UNIVERSE_EXPORTS System* get_system_plain(uint name_hash) const;
+		System* get_system_plain(uint name_hash) const
+		{
+			for (auto s : systems)
+			{
+				if (s->name_hash == name_hash)
+					return s;
+			}
+			return nullptr;
+		}
 
 		template <class T>
 		T* get_system_t(uint name_hash) const

@@ -22,7 +22,7 @@ namespace flame
 
 	inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
 	{
-		auto l = Entity::create();
+		auto l = f_new<Entity>();
 		l->gene = l;
 		l->name = "layer";
 		{
@@ -37,13 +37,16 @@ namespace flame
 				l->add_component(c_data_keeper);
 			}
 		}
-		l->on_removed_listeners.add([](Capture& c) {
-			auto l = c.thiz<Entity>();
-			auto dp = l->get_component(cDataKeeper);
-			if (dp)
+		l->event_listeners.add([](Capture& c, Entity::Event e, void*) {
+			if (e == Entity::EventRemoved)
 			{
-				auto er = (cEventReceiver*)dp->get_common_item(FLAME_CHASH("focusing")).p;
-				l->world->get_system(sEventDispatcher)->next_focusing = er;
+				auto l = c.thiz<Entity>();
+				auto dp = l->get_component(cDataKeeper);
+				if (dp)
+				{
+					auto er = (cEventReceiver*)dp->get_common_item(FLAME_CHASH("focusing")).p;
+					l->world->get_system(sEventDispatcher)->next_focusing = er;
+				}
 			}
 			return true;
 		}, Capture().set_thiz(l));

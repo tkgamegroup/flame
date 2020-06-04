@@ -360,10 +360,18 @@ namespace flame
 			return Iterator(v + s);
 		}
 
+		void insert(uint pos, const T& _v)
+		{
+			assert(pos <= s);
+			resize(s + 1);
+			for (auto i = s - 1; i > pos; i--)
+				v[i] = v[i - 1];
+			v[pos] = _v;
+		}
+
 		void push_back(const T& _v)
 		{
-			resize(s + 1);
-			v[s - 1] = _v;
+			insert(s, _v);
 		}
 
 		void remove(uint offset, uint count = 1)
@@ -402,7 +410,7 @@ namespace flame
 			bucket.push_back(i);
 		}
 
-		void remove(uint h)
+		bool remove(uint h)
 		{
 			auto& bucket = buckets[h % BucketCount];
 			for (auto i = 0; i < bucket.s; i++)
@@ -410,10 +418,10 @@ namespace flame
 				if (bucket[i].h == h)
 				{
 					bucket.remove(i);
-					return;
+					return true;
 				}
 			}
-			assert(0);
+			return false;
 		}
 
 		T* find(uint h) const
@@ -432,8 +440,8 @@ namespace flame
 			std::vector<T*> ret;
 			for (auto i = 0; i < BucketCount; i++)
 			{
-				for (auto& i : buckets[i])
-					ret.push_back(i.p);
+				for (auto& v : buckets[i])
+					ret.push_back(v.p);
 			}
 			return ret;
 		}

@@ -61,7 +61,7 @@ MainWindow::MainWindow() :
 					auto e_scene = c.thiz<Entity>();
 					e_scene->remove_children(0, -1);
 
-					auto e_box1 = Entity::create();
+					auto e_box1 = f_new<Entity>();
 					e_scene->add_child(e_box1);
 					{
 						auto c_element = cElement::create();
@@ -71,7 +71,7 @@ MainWindow::MainWindow() :
 						e_box1->add_component(c_element);
 					}
 
-					auto e_box2 = Entity::create();
+					auto e_box2 = f_new<Entity>();
 					e_box1->add_child(e_box2);
 					{
 						auto c_element = cElement::create();
@@ -81,7 +81,7 @@ MainWindow::MainWindow() :
 						e_box2->add_component(c_element);
 					}
 
-					auto e_text = Entity::create();
+					auto e_text = f_new<Entity>();
 					e_box2->add_child(e_text);
 					{
 						auto c_element = cElement::create();
@@ -106,8 +106,8 @@ MainWindow::MainWindow() :
 			}, Capture().set_thiz(e_scene));
 			ui.e_button(L"Save Scene", [](Capture& c) {
 				auto e_scene = c.thiz<Entity>();
-				if (e_scene->child_count() > 0)
-					Entity::save_to_file(e_scene->child(0), L"test.prefab");
+				if (e_scene->children.s > 0)
+					Entity::save_to_file(e_scene->children[0], L"test.prefab");
 			}, Capture().set_thiz(e_scene));
 			ui.e_button(L"Load Scene", [](Capture& c) {
 				looper().add_event([](Capture& c) {

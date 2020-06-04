@@ -170,16 +170,17 @@ namespace flame
 
 		void init(World* w)
 		{
-			auto root = w->root();
+			auto root = w->root;
 
 			auto sg = new StyleGetter;
 			sg->pf = [](Capture& c, Style s) -> const CommonValue& {
 				return c.thiz<UI>()->style(s);
 			};
 			sg->c = Capture().set_thiz(this);
-			w->add_object(sg);
-			root->on_destroyed_listeners.add([](Capture& c) {
-				delete c.thiz<StyleGetter>();
+			w->objects.push_back(sg);
+			root->event_listeners.add([](Capture& c, Entity::Event e, void* t) {
+				if (e == Entity::EventRemoved)
+					delete c.thiz<StyleGetter>();
 				return true;
 			}, Capture().set_thiz(sg));
 
@@ -587,14 +588,14 @@ namespace flame
 				next_entity = nullptr;
 			}
 			else
-				e = Entity::create();
+				e = f_new<Entity>();
 			auto p = parents.empty() ? nullptr : parents.top();
 			if (p)
 			{
-				auto pos = (int)p->child_count() - 1;
+				auto pos = (int)p->children.s - 1;
 				while (pos >= 0)
 				{
-					auto c = p->child(pos);
+					auto c = p->children[pos];
 					if (c->get_component(cBringToFront) || c->get_component(cSizeDragger))
 						pos--;
 					else if (c->get_component(cSplitter))
@@ -1035,9 +1036,9 @@ namespace flame
 			auto eis = parents.top();
 			auto ecb = eis->get_component(cMenuItems)->menu->entity;
 			auto max_width = 0U;
-			for (auto i = 0; i < eis->child_count(); i++)
+			for (auto c : eis->children)
 			{
-				auto ct = eis->child(i)->get_component(cText);
+				auto ct = c->get_component(cText);
 				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text.v).x());
 			}
 			ecb->get_component(cElement)->add_width(8.f + max_width + style(FontSize).u.x());
@@ -1351,7 +1352,7 @@ namespace flame
 
 		inline std::pair<Entity*, Entity*> e_begin_docker_page(const wchar_t* title, void(*on_close)(Capture& c) = nullptr, const Capture& _close_capture = Capture())
 		{
-			parents.push(parents.top()->child(0));
+			parents.push(parents.top()->children[0]);
 			auto et = e_empty();
 			et->name = "docker_tab";
 			c_element()->padding = Vec4f(4.f, 2.f, style(FontSize).u.x() + 6.f, 2.f);
@@ -1398,7 +1399,7 @@ namespace flame
 			}
 			parents.pop();
 			parents.pop();
-			parents.push(parents.top()->child(1));
+			parents.push(parents.top()->children[1]);
 			auto ep = e_empty();
 			{
 				auto ce = c_element();

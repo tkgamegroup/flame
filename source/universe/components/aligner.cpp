@@ -18,14 +18,17 @@ namespace flame
 			height_factor = 1.f;
 		}
 
-		void on_added() override
+		void on_event(Entity::Event e, void* t) override
 		{
-			element = entity->get_component(cElement);
-			assert(element);
-			if (x_align_flags & AlignGreedy && min_width < 0.f)
-				min_width = element->size.x();
-			if (y_align_flags & AlignGreedy && min_height < 0.f)
-				min_height = element->size.y();
+			if (e == Entity::EventComponentAdded && t == this)
+			{
+				element = entity->get_component(cElement);
+				assert(element);
+				if (x_align_flags & AlignGreedy && min_width < 0.f)
+					min_width = element->size.x();
+				if (y_align_flags & AlignGreedy && min_height < 0.f)
+					min_height = element->size.y();
+			}
 		}
 	};
 

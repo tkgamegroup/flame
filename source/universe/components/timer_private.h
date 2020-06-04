@@ -14,8 +14,6 @@ namespace flame
 		void reset();
 		void start(bool force_restart);
 		void stop();
-		void on_entered_world() override;
-		void on_left_world() override;
-		void on_visibility_changed() override;
+		void on_event(Entity::Event e, void* t) override;
 	};
 }

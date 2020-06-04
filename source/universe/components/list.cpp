@@ -42,33 +42,42 @@ namespace flame
 			}
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-					{
-						auto thiz = c.thiz<cListItemPrivate>();
-						if (thiz->list)
-							thiz->list->set_selected(thiz->entity);
-					}
-					return true;
-				}, Capture().set_thiz(this));
+			case Entity::EventComponentAdded:
+				if (t == this)
+				{
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
+
+					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+						if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
+						{
+							auto thiz = c.thiz<cListItemPrivate>();
+							if (thiz->list)
+								thiz->list->set_selected(thiz->entity);
+						}
+						return true;
+					}, Capture().set_thiz(this));
+				}
+				break;
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
-			{
-				background_style = (cStyleColor2*)c;
-				background_style->level = 0;
-				do_style(false);
-			}
-			else if (c->name_hash == FLAME_CHASH("cStyleTextColor2"))
-			{
-				text_style = (cStyleTextColor2*)c;
-				text_style->level = 0;
-				do_style(false);
-			}
+
+			// TODO
+			//else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
+			//{
+			//	background_style = (cStyleColor2*)c;
+			//	background_style->level = 0;
+			//	do_style(false);
+			//}
+			//else if (c->name_hash == FLAME_CHASH("cStyleTextColor2"))
+			//{
+			//	text_style = (cStyleTextColor2*)c;
+			//	text_style->level = 0;
+			//	do_style(false);
+			//}
 		}
 	};
 
@@ -98,26 +107,31 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			switch (e)
 			{
-				event_receiver = (cEventReceiver*)c;
-				if (select_air_when_clicked)
+			case Entity::EventComponentAdded:
+				if (t == this)
 				{
-					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-							c.thiz<cListPrivate>()->set_selected(nullptr);
-						return true;
-					}, Capture().set_thiz(this));
-				}
-			}
-		}
+					event_receiver = entity->get_component(cEventReceiver);
+					assert(event_receiver);
 
-		void on_child_component_added(Component* c) override
-		{
-			if (c->name_hash == FLAME_CHASH("cListItem"))
-				((cListItem*)c)->list = this;
+					if (select_air_when_clicked)
+					{
+						mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+							if (is_mouse_down(action, key, true) && key == Mouse_Left)
+								c.thiz<cListPrivate>()->set_selected(nullptr);
+							return true;
+						}, Capture().set_thiz(this));
+					}
+				}
+				break;
+			case Entity::EventChildComponentAdded:
+				if (((Component*)t)->name_hash == FLAME_CHASH("cListItem"))
+					((cListItem*)t)->list = this;
+				break;
+			}
 		}
 	};
 

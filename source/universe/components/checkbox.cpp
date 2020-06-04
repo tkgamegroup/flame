@@ -27,28 +27,28 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_component_added(Component* c) override
+		void on_event(Entity::Event e, void* t) override
 		{
-			if (c->name_hash == FLAME_CHASH("cElement"))
-				element = (cElement*)c;
-			else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+			if (e == Entity::EventComponentAdded && t == this)
 			{
-				event_receiver = (cEventReceiver*)c;
-				mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_clicked(action, key))
-					{
-						auto thiz = c.thiz<cCheckboxPrivate>();
-						thiz->set_checked(!thiz->checked);
-					}
-					return true;
+				element = entity->get_component(cElement);
+				event_receiver = entity->get_component(cEventReceiver);
+				assert(element);
+				assert(event_receiver);
+
+				mouse_listener = event_receiver->clicked_listeners.add([](Capture& c) {
+					auto thiz = c.thiz<cCheckboxPrivate>();
+					thiz->set_checked(!thiz->checked);
 				}, Capture().set_thiz(this));
 			}
-			else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
-			{
-				style = (cStyleColor2*)c;
-				style->level = checked ? 1 : 0;
-				do_style();
-			}
+
+			// TODO
+			//else if (c->name_hash == FLAME_CHASH("cStyleColor2"))
+			//{
+			//	style = (cStyleColor2*)c;
+			//	style->level = checked ? 1 : 0;
+			//	do_style();
+			//}
 		}
 
 		void do_style()

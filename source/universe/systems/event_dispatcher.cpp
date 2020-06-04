@@ -210,11 +210,11 @@ namespace flame
 		er->frame = looper().frame;
 	}
 
-	void sEventDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
+	void sEventDispatcherPrivate::dispatch_mouse_recursively(Entity* e)
 	{
-		for (auto i = (int)e->children.size() - 1; i >= 0; i--)
+		for (auto i = (int)e->children.s - 1; i >= 0; i--)
 		{
-			auto c = e->children[i].get();
+			auto c = e->children[i];
 			if (c->global_visibility && e->get_component(cElement))
 				dispatch_mouse_recursively(c);
 		}
@@ -288,7 +288,7 @@ namespace flame
 		mouse_event_checker = nullptr;
 		if (focusing && focusing_state != FocusingNormal)
 			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
-		dispatch_mouse_recursively((EntityPrivate*)world_->root());
+		dispatch_mouse_recursively(world_->root);
 
 		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mouse_pos)))
 		{

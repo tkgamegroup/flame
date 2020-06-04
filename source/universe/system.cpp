@@ -1,4 +1,4 @@
-#include "entity_private.h"
+#include <flame/universe/entity.h>
 #include <flame/universe/system.h>
 
 namespace flame

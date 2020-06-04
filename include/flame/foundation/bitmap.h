@@ -6,23 +6,24 @@ namespace flame
 {
 	struct Bitmap
 	{
-		Vec2u size;
-		uint channel;
-		uint bpp;
-		uint pitch;
-		uchar* data;
-		uint data_size;
-		bool srgb;
+		virtual void release() = 0;
 
-		FLAME_FOUNDATION_EXPORTS void add_alpha_channel();
-		FLAME_FOUNDATION_EXPORTS void swap_channel(uint ch1, uint ch2);
-		FLAME_FOUNDATION_EXPORTS void copy_to(Bitmap* b, const Vec2u& src_off, const Vec2u& cpy_size, const Vec2u& dst_off, bool border = false);
+		virtual uint get_width() const = 0;
+		virtual uint get_height() const = 0;
+		virtual uint get_channel() const = 0;
+		virtual uint get_byte_per_channel() const = 0;
+		virtual uint get_pitch() const = 0;
+		virtual uchar* get_data() const = 0;
+		virtual uint get_size() const = 0;
+		virtual bool get_srgb() const = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const Vec2u& size, uint channel, uint bpp, uchar* data = nullptr, bool move = false);
+		virtual void add_alpha_channel() = 0;
+		virtual void swap_channel(uint ch1, uint ch2) = 0;
+		virtual void copy_to(Bitmap* dst, uint width, uint height, uint src_x = 0, uint src_y = 0, uint dst_x = 0, uint dst_y = 0, bool border = false) = 0;
+		virtual void save_to_file(const wchar_t* filename) = 0;
+
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(uint width, uint height, uint channel, uint bype_per_channel = 1, uchar* data = nullptr);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_file(const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_gif(const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static void save_to_file(Bitmap* b, const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(Bitmap* b);
 	};
 
 	struct BinPackNode
