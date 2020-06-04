@@ -12,6 +12,45 @@ namespace flame
 		struct Device;
 		struct Imageview;
 
+		inline Format get_image_format(uint channel, uint byte_per_channel)
+		{
+			switch (channel)
+			{
+			case 0:
+				switch (byte_per_channel)
+				{
+				case 1:
+					return Format_R8_UNORM;
+				default:
+					return Format_Undefined;
+
+				}
+				break;
+			case 1:
+				switch (byte_per_channel)
+				{
+				case 1:
+					return Format_R8_UNORM;
+				case 2:
+					return Format_R16_UNORM;
+				default:
+					return Format_Undefined;
+				}
+				break;
+			case 4:
+				switch (byte_per_channel)
+				{
+				case 1:
+					return Format_R8G8B8A8_UNORM;
+				default:
+					return Format_Undefined;
+				}
+				break;
+			default:
+				return Format_Undefined;
+			}
+		}
+
 		struct Image
 		{
 			Format format;
@@ -24,8 +63,6 @@ namespace flame
 			uint bpp;
 			uint pitch;
 			uint data_size;
-
-			FLAME_GRAPHICS_EXPORTS static Format find_format(uint channel, uint bpp);
 
 			FLAME_GRAPHICS_EXPORTS Imageview* default_view() const;
 

@@ -36,7 +36,7 @@ int main(int argc, char **args)
 			file << "border = " << (border ? "1" : "0") << "\n";
 			file << "\n[tiles]\n";
 			for (auto& t : tiles)
-				file << t.id + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), t.b->size)) + "\n";
+				file << t.id + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), Vec2u(t.b->get_width(), t.b->get_height()))) + "\n";
 			file.close();
 		});
 	}
@@ -64,8 +64,8 @@ int main(int argc, char **args)
 					res[t.id] = nlohmann::json{
 						{"x", t.pos.x()},
 						{"y", t.pos.y()},
-						{"w", t.b->size.x()},
-						{"h", t.b->size.y()}
+						{"w", t.b->get_width()},
+						{"h", t.b->get_height()}
 					};
 				}
 			}

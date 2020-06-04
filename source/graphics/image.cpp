@@ -11,45 +11,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		Format Image::find_format(uint channel, uint bpp)
-		{
-			switch (channel)
-			{
-			case 0:
-				switch (bpp)
-				{
-				case 8:
-					return Format_R8_UNORM;
-				default:
-					return Format_Undefined;
-
-				}
-				break;
-			case 1:
-				switch (bpp)
-				{
-				case 8:
-					return Format_R8_UNORM;
-				case 16:
-					return Format_R16_UNORM;
-				default:
-					return Format_Undefined;
-				}
-				break;
-			case 4:
-				switch (bpp)
-				{
-				case 32:
-					return Format_R8G8B8A8_UNORM;
-				default:
-					return Format_Undefined;
-				}
-				break;
-			default:
-				return Format_Undefined;
-			}
-		}
-
 		ImagePrivate::ImagePrivate(Device* _d, Format _format, const Vec2u& _size, uint _level, uint _layer, SampleCount _sample_count, ImageUsageFlags usage)
 		{
 			format = _format;
@@ -173,7 +134,7 @@ namespace flame
 				bpp = 0;
 				assert(0);
 			}
-			pitch = get_pitch(size.x() * bpp / 8);
+			pitch = image_pitch(size.x() * bpp / 8);
 			data_size = pitch * size.y();
 		}
 
@@ -305,18 +266,18 @@ namespace flame
 
 		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
 		{
-			auto i = (ImagePrivate*)create(d, find_format(bmp->channel, bmp->bpp), bmp->size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			auto i = (ImagePrivate*)create(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
 
-			auto staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+			auto staging_buffer = Buffer::create(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 			staging_buffer->map();
-			memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
+			memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
 			staging_buffer->unmap();
 
 			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-			BufferImageCopy copy(bmp->size);
+			BufferImageCopy copy(i->size);
 			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
@@ -392,21 +353,22 @@ namespace flame
 			else
 			{
 				auto bmp = Bitmap::create_from_file(filename);
-				if (bmp->channel == 3)
+				auto channel = bmp->get_channel();
+				if (channel == 3)
 					bmp->add_alpha_channel();
 
-				width = bmp->size.x();
-				height = bmp->size.y();
+				width = bmp->get_width();
+				height = bmp->get_height();
 				level = layer = 1;
 
-				fmt = find_format(bmp->channel, bmp->bpp);
+				fmt = get_image_format(channel, bmp->get_byte_per_channel());
 
-				staging_buffer = Buffer::create(d, bmp->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				staging_buffer = Buffer::create(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 				staging_buffer->map();
-				memcpy(staging_buffer->mapped, bmp->data, staging_buffer->size);
+				memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
 				staging_buffer->unmap();
 
-				Bitmap::destroy(bmp);
+				bmp->release();
 
 				buffer_copy_regions.push_back(BufferImageCopy(Vec2u(width, height)));
 			}
@@ -432,9 +394,10 @@ namespace flame
 		{
 			if (i->bpp / i->channel <= 8)
 			{
-				auto bmp = Bitmap::create(i->size, i->channel, i->bpp);
-				i->get_pixels(Vec2u(0), i->size, bmp->data);
-				Bitmap::save_to_file(bmp, filename);
+				auto bmp = Bitmap::create(i->size.x(), i->size.y(), i->channel, i->bpp / i->channel / 8);
+				i->get_pixels(Vec2u(0), i->size, bmp->get_data());
+				bmp->save_to_file(filename);
+				bmp->release();
 			}
 			else
 				printf("cannot save png that has more than 8bit per channel\n");

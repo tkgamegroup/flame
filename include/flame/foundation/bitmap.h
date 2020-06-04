@@ -73,6 +73,9 @@ namespace flame
 
 	inline void bin_pack(const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
 	{
+		auto b1 = border ? 1U : 0U;
+		auto b2 = b1 << 1;
+
 		std::vector<BinPackTile> tiles;
 		for (auto& i : inputs)
 		{
@@ -83,7 +86,7 @@ namespace flame
 			tiles.push_back(t);
 		}
 		std::sort(tiles.begin(), tiles.end(), [](const BinPackTile& a, const BinPackTile& b) {
-			return max(a.b->size.x(), a.b->size.y()) > max(b.b->size.x(), b.b->size.y());
+			return max(a.b->get_width(), a.b->get_height()) > max(b.b->get_width(), b.b->get_height());
 		});
 
 		auto size = Vec2u(1024);
@@ -91,7 +94,7 @@ namespace flame
 
 		for (auto& t : tiles)
 		{
-			auto n = tree->find(t.b->size + Vec2i(border ? 2 : 0));
+			auto n = tree->find(Vec2u(t.b->get_width(), t.b->get_height()) + b2);
 			if (n)
 				t.pos = n->pos;
 		}
@@ -99,22 +102,22 @@ namespace flame
 		size = 0;
 		for (auto& t : tiles)
 		{
-			size.x() = max(t.pos.x() + t.b->size.x() + (border ? 1 : 0), size.x());
-			size.y() = max(t.pos.y() + t.b->size.y() + (border ? 1 : 0) + 1, size.y());
+			size.x() = max(t.pos.x() + t.b->get_width() + b1, size.x());
+			size.y() = max(t.pos.y() + t.b->get_height() + b1 + 1, size.y()); // stage 1 line to store a white pixel
 		}
 
-		auto b = Bitmap::create(size, 4, 32);
+		auto b = Bitmap::create(size.x(), size.y(), 4);
 		for (auto& t : tiles)
 		{
 			if (t.pos >= 0)
-				t.b->copy_to(b, Vec2u(0), t.b->size, Vec2u(t.pos), border);
+				t.b->copy_to(b, t.b->get_width(), t.b->get_height(), 0, 0, t.pos.x(), t.pos.y(), border);
 		}
 
-		Bitmap::save_to_file(b, output.c_str());
+		b->save_to_file(output.c_str());
 
 		callback(tiles);
 
 		for (auto& t : tiles)
-			Bitmap::destroy(t.b);
+			t.b->release();
 	}
 }
