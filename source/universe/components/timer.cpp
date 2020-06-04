@@ -43,18 +43,18 @@ namespace flame
 		}
 	}
 
-	void cTimerPrivate::on_event(Entity::Event e, void* t)
+	void cTimerPrivate::on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventEnteredWorld:
+		case EntityEnteredWorld:
 			management = entity->world->get_system(sTimerManagement);
 		break;
-		case Entity::EventLeftWorld:
+		case EntityLeftWorld:
 			stop();
 			management = nullptr;
 			break;
-		case Entity::EventVisibilityChanged:
+		case EntityVisibilityChanged:
 			if (!entity->global_visibility)
 				stop();
 			break;

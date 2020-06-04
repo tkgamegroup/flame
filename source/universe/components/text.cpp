@@ -53,11 +53,11 @@ namespace flame
 		}
 	}
 
-	void cTextPrivate::on_event(Entity::Event e, void* t)
+	void cTextPrivate::on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				element = entity->get_component(cElement);
@@ -71,7 +71,7 @@ namespace flame
 					element->management->add_to_sizing_list(element);
 			}
 			break;
-		case Entity::EventVisibilityChanged:
+		case EntityVisibilityChanged:
 			if (element->management && auto_size)
 				element->management->add_to_sizing_list(element);
 			break;

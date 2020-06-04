@@ -15,11 +15,11 @@ struct cHierarchyItem : Component
 		drop_pos = -1;
 	}
 
-	void on_event(Entity::Event e, void* t)
+	void on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				element = entity->get_component(cElement);

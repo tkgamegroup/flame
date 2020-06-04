@@ -57,8 +57,8 @@ struct cComponentTracker : Component
 				it->second->update_view();
 			return true;
 		}, Capture().set_thiz(this));
-		t->entity->event_listeners.add([](Capture& c, Entity::Event e, void* t) {
-			if (e == Entity::EventDestroyed)
+		t->entity->event_listeners.add([](Capture& c, EntityEvent e, void* t) {
+			if (e == EntityDestroyed)
 				c.thiz<cComponentTracker>()->t = nullptr;
 			return true;
 		}, Capture().set_thiz(this));

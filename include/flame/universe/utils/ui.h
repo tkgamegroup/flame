@@ -178,8 +178,8 @@ namespace flame
 			};
 			sg->c = Capture().set_thiz(this);
 			w->objects.push_back(sg);
-			root->event_listeners.add([](Capture& c, Entity::Event e, void* t) {
-				if (e == Entity::EventRemoved)
+			root->event_listeners.add([](Capture& c, EntityEvent e, void* t) {
+				if (e == EntityRemoved)
 					delete c.thiz<StyleGetter>();
 				return true;
 			}, Capture().set_thiz(sg));

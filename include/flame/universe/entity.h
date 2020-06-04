@@ -10,28 +10,28 @@ namespace flame
 	struct World;
 	struct Component;
 
+	enum EntityEvent
+	{
+		EntityDestroyed,
+		EntityVisibilityChanged,
+		EntityAdded,
+		EntityRemoved,
+		EntityPositionChanged,
+		EntityEnteredWorld,
+		EntityLeftWorld,
+		EntityComponentAdded,
+		EntityComponentRemoved,
+		EntityChildVisibilityChanged,
+		EntityChildAdded,
+		EntityChildRemoved,
+		EntityChildPositionChanged,
+		EntityChildComponentAdded,
+		EntityChildComponentRemoved
+	};
+
 	struct Entity
 	{
-		enum Event
-		{
-			EventDestroyed,
-			EventVisibilityChanged,
-			EventAdded,
-			EventRemoved,
-			EventPositionChanged,
-			EventEnteredWorld,
-			EventLeftWorld,
-			EventComponentAdded,
-			EventComponentRemoved,
-			EventChildVisibilityChanged,
-			EventChildAdded,
-			EventChildRemoved,
-			EventChildPositionChanged,
-			EventChildComponentAdded,
-			EventChildComponentRemoved
-		};
-
-		ListenerHub<bool(Capture& c, Event e, void* t)> event_listeners;
+		ListenerHub<bool(Capture& c, EntityEvent e, void* t)> event_listeners;
 
 		StringAH name;
 

@@ -37,8 +37,8 @@ namespace flame
 				l->add_component(c_data_keeper);
 			}
 		}
-		l->event_listeners.add([](Capture& c, Entity::Event e, void*) {
-			if (e == Entity::EventRemoved)
+		l->event_listeners.add([](Capture& c, EntityEvent e, void*) {
+			if (e == EntityRemoved)
 			{
 				auto l = c.thiz<Entity>();
 				auto dp = l->get_component(cDataKeeper);

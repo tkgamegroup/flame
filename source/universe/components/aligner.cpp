@@ -18,9 +18,9 @@ namespace flame
 			height_factor = 1.f;
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
-			if (e == Entity::EventComponentAdded && t == this)
+			if (e == EntityComponentAdded && t == this)
 			{
 				element = entity->get_component(cElement);
 				assert(element);

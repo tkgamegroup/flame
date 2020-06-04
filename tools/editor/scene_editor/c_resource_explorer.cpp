@@ -41,11 +41,11 @@ struct cThumbnail : Component
 		seat = nullptr;
 	}
 
-	void on_event(Entity::Event e, void* t)
+	void on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				entity->get_component(cElement)->cmds.add([](Capture& c, graphics::Canvas* canvas) {

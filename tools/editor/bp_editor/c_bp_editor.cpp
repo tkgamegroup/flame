@@ -60,11 +60,11 @@ struct cSlot : Component
 		}
 	}
 
-	void on_event(Entity::Event e, void* t)
+	void on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				element = entity->get_component(cElement);
@@ -241,11 +241,11 @@ struct cNode : Component
 		moved = false;
 	}
 
-	void on_event(Entity::Event e, void* t)
+	void on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				element = entity->get_component(cElement);
@@ -1337,8 +1337,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		ui.next_element_frame_thickness = 2.f;
 		ui.next_element_color = ui.style(BackgroundColor).c;
 		ui.next_element_frame_color = ui.style(ForegroundColor).c;
-		ui.e_element()->event_listeners.add([](Capture&, Entity::Event e, void* t) {
-			if (e == Entity::EventRemoved)
+		ui.e_element()->event_listeners.add([](Capture&, EntityEvent e, void* t) {
+			if (e == EntityRemoved)
 				bp_editor.editor->dragging_slot = nullptr;
 			return true;
 		}, Capture());

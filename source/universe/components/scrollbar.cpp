@@ -14,11 +14,11 @@ namespace flame
 			element = nullptr;
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					element = entity->get_component(cElement);
@@ -70,11 +70,11 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 			{
 				if (t == this)
 				{

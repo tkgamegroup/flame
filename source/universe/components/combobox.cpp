@@ -40,9 +40,9 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
-			if (e == Entity::EventComponentAdded && t == this)
+			if (e == EntityComponentAdded && t == this)
 			{
 				event_receiver = entity->get_component(cEventReceiver);
 				assert(event_receiver);
@@ -93,9 +93,9 @@ namespace flame
 			index = -1;
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
-			if (e == Entity::EventComponentAdded && t == this)
+			if (e == EntityComponentAdded && t == this)
 			{
 				text = entity->get_component(cText);
 				assert(text);

@@ -14,6 +14,6 @@ namespace flame
 		void reset();
 		void start(bool force_restart);
 		void stop();
-		void on_event(Entity::Event e, void* t) override;
+		void on_event(EntityEvent e, void* t) override;
 	};
 }

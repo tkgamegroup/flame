@@ -81,27 +81,27 @@ namespace flame
 		focus_listeners.call_with_current(this, focusing);
 	}
 
-	void cEventReceiverPrivate::on_event(Entity::Event e, void* t)
+	void cEventReceiverPrivate::on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventEnteredWorld:
+		case EntityEnteredWorld:
 			dispatcher = entity->world->get_system(sEventDispatcher);
 			dispatcher->pending_update = true;
 			break;
-		case Entity::EventLeftWorld:
+		case EntityLeftWorld:
 			((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
 			dispatcher->pending_update = true;
 			dispatcher = nullptr;
 			break;
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				element = entity->get_component(cElement);
 				assert(element);
 			}
 			break;
-		case Entity::EventVisibilityChanged:
+		case EntityVisibilityChanged:
 			if (dispatcher)
 				dispatcher->pending_update = true;
 			break;

@@ -501,9 +501,9 @@ namespace flame
 				}
 			}
 
-			void on_event(Entity::Event e, void* t) override
+			void on_event(EntityEvent e, void* t) override
 			{
-				if (e == Entity::EventEnteredWorld)
+				if (e == EntityEnteredWorld)
 				{
 					s_event_dispatcher = entity->world->get_system(sEventDispatcher);
 					s_event_dispatcher_listener = s_event_dispatcher->after_update_listeners.add([](Capture& c) {

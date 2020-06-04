@@ -96,8 +96,8 @@ namespace flame
 				{
 					auto layer = add_layer(root);
 					layer->name = "layer_menu";
-					layer->event_listeners.add([](Capture& c, Entity::Event e, void* t) {
-						if (e == Entity::EventRemoved)
+					layer->event_listeners.add([](Capture& c, EntityEvent e, void* t) {
+						if (e == EntityRemoved)
 							c.thiz<Entity>()->remove_children(0, -1, false);
 						return true;
 					}, Capture().set_thiz(layer));
@@ -137,8 +137,8 @@ namespace flame
 					if (new_layer)
 					{
 						layer->name = "layer_menu";
-						layer->event_listeners.add([](Capture& c, Entity::Event e, void* t) {
-							if (e == Entity::EventRemoved)
+						layer->event_listeners.add([](Capture& c, EntityEvent e, void* t) {
+							if (e == EntityRemoved)
 								c.thiz<Entity>()->remove_children(0, -1, false);
 							return true;
 						}, Capture().set_thiz(layer));
@@ -162,11 +162,11 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					element = entity->get_component(cElement);
@@ -198,11 +198,11 @@ namespace flame
 			menu = nullptr;
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventRemoved:
+			case EntityRemoved:
 				if (menu)
 					menu->opened = false;
 				break;
@@ -230,11 +230,11 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					event_receiver = entity->get_component(cEventReceiver);

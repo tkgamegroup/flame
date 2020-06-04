@@ -105,19 +105,19 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::on_event(Entity::Event e, void* t)
+	void cLayoutPrivate::on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventEnteredWorld:
+		case EntityEnteredWorld:
 			management = entity->world->get_system(sLayoutManagement);
 			management->add_to_update_list(this);
 			break;
-		case Entity::EventLeftWorld:
+		case EntityLeftWorld:
 			management->remove_from_update_list(this);
 			management = nullptr;
 			break;
-		case Entity::EventComponentAdded:
+		case EntityComponentAdded:
 			if (t == this)
 			{
 				element = entity->get_component(cElement);
@@ -128,18 +128,18 @@ namespace flame
 			else if (((Component*)t)->name_hash == FLAME_CHASH("cAligner"))
 				aligner = (cAligner*)t;
 			break;
-		case Entity::EventComponentRemoved:
+		case EntityComponentRemoved:
 			if (((Component*)t)->name_hash == FLAME_CHASH("cAligner"))
 				aligner = nullptr;
 			break;
-		case Entity::EventVisibilityChanged:
-		case Entity::EventChildVisibilityChanged:
-		case Entity::EventChildPositionChanged:
+		case EntityVisibilityChanged:
+		case EntityChildVisibilityChanged:
+		case EntityChildPositionChanged:
 			if (management)
 				management->add_to_update_list(this);
 			break;
-		case Entity::EventChildComponentAdded:
-		case Entity::EventChildComponentRemoved:
+		case EntityChildComponentAdded:
+		case EntityChildComponentRemoved:
 		{
 			auto h = ((Component*)t)->name_hash;
 			if (h == FLAME_CHASH("cElement") ||

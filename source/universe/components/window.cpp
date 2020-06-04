@@ -34,11 +34,11 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					event_receiver = entity->get_component(cEventReceiver);
@@ -83,11 +83,11 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					event_receiver = entity->get_component(cEventReceiver);
@@ -157,11 +157,11 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					event_receiver = entity->get_component(cEventReceiver);
@@ -320,11 +320,11 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					element = entity->get_component(cElement);
@@ -600,11 +600,11 @@ namespace flame
 			return entity->children.s;
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					element = entity->get_component(cElement);
@@ -724,11 +724,11 @@ namespace flame
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					element = entity->get_component(cElement);
@@ -958,11 +958,11 @@ namespace flame
 				event_receiver->drag_and_drop_listeners.remove(drag_and_drop_listener);
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					element = entity->get_component(cElement);

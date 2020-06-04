@@ -18,6 +18,6 @@ namespace flame
 		void set_state(EventReceiverState state);
 		void on_hovering(bool hovering);
 		void on_focusing(bool focusing);
-		void on_event(Entity::Event e, void* t) override;
+		void on_event(EntityEvent e, void* t) override;
 	};
 }

@@ -112,11 +112,11 @@ namespace flame
 		}
 	}
 
-	void cElementPrivate::on_event(Entity::Event e, void* t)
+	void cElementPrivate::on_event(EntityEvent e, void* t)
 	{
 		switch (e)
 		{
-		case Entity::EventEnteredWorld:
+		case EntityEnteredWorld:
 		{
 			calc_geometry();
 			auto w = entity->world;
@@ -125,15 +125,15 @@ namespace flame
 			management = w->get_system(sLayoutManagement);
 		}
 			break;
-		case Entity::EventLeftWorld:
+		case EntityLeftWorld:
 			mark_dirty();
 			renderer = nullptr;
 			break;
-		case Entity::EventVisibilityChanged:
+		case EntityVisibilityChanged:
 			calc_geometry();
 			mark_dirty();
 			break;
-		case Entity::EventPositionChanged:
+		case EntityPositionChanged:
 			mark_dirty();
 			break;
 		}

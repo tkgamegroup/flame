@@ -133,9 +133,9 @@ namespace flame
 			return i;
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
-			if (e == Entity::EventComponentAdded && t == this)
+			if (e == EntityComponentAdded && t == this)
 			{
 				timer = entity->get_id_component(cTimer, FLAME_CHASH("edit"));
 				element = entity->get_component(cElement);

@@ -17,6 +17,6 @@ namespace flame
 		~cElementPrivate();
 		void calc_geometry();
 		void draw(graphics::Canvas* canvas);
-		void on_event(Entity::Event e, void* t) override;
+		void on_event(EntityEvent e, void* t) override;
 	};
 }

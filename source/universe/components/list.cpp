@@ -42,11 +42,11 @@ namespace flame
 			}
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					event_receiver = entity->get_component(cEventReceiver);
@@ -107,11 +107,11 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
 			switch (e)
 			{
-			case Entity::EventComponentAdded:
+			case EntityComponentAdded:
 				if (t == this)
 				{
 					event_receiver = entity->get_component(cEventReceiver);
@@ -127,7 +127,7 @@ namespace flame
 					}
 				}
 				break;
-			case Entity::EventChildComponentAdded:
+			case EntityChildComponentAdded:
 				if (((Component*)t)->name_hash == FLAME_CHASH("cListItem"))
 					((cListItem*)t)->list = this;
 				break;

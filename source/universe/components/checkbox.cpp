@@ -27,9 +27,9 @@ namespace flame
 				event_receiver->mouse_listeners.remove(mouse_listener);
 		}
 
-		void on_event(Entity::Event e, void* t) override
+		void on_event(EntityEvent e, void* t) override
 		{
-			if (e == Entity::EventComponentAdded && t == this)
+			if (e == EntityComponentAdded && t == this)
 			{
 				element = entity->get_component(cElement);
 				event_receiver = entity->get_component(cEventReceiver);

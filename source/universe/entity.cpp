@@ -54,14 +54,14 @@ namespace flame
 		if (e->global_visibility != prev_visibility)
 		{
 			for (auto c : e->components.get_all())
-				c->on_event(Entity::EventVisibilityChanged, nullptr);
-			e->event_listeners.call(Entity::EventVisibilityChanged, nullptr);
+				c->on_event(EntityVisibilityChanged, nullptr);
+			e->event_listeners.call(EntityVisibilityChanged, nullptr);
 			auto p = e->parent;
 			if (p)
 			{
 				for (auto c : p->components.get_all())
-					c->on_event(Entity::EventChildVisibilityChanged, nullptr);
-				p->event_listeners.call(Entity::EventChildVisibilityChanged, e);
+					c->on_event(EntityChildVisibilityChanged, nullptr);
+				p->event_listeners.call(EntityChildVisibilityChanged, e);
 			}
 		}
 
@@ -125,8 +125,8 @@ namespace flame
 	{
 		e->world = w;
 		for (auto c : e->components.get_all())
-			c->on_event(Entity::EventEnteredWorld, nullptr);
-		e->event_listeners.call(Entity::EventEnteredWorld, nullptr);
+			c->on_event(EntityEnteredWorld, nullptr);
+		e->event_listeners.call(EntityEnteredWorld, nullptr);
 		for (auto c : e->children)
 			enter_world(w, c);
 	}
@@ -137,8 +137,8 @@ namespace flame
 			leave_world(e->children[i]);
 		e->world = nullptr;
 		for (auto c : e->components.get_all())
-			c->on_event(Entity::EventLeftWorld, nullptr);
-		e->event_listeners.call(Entity::EventLeftWorld, nullptr);
+			c->on_event(EntityLeftWorld, nullptr);
+		e->event_listeners.call(EntityLeftWorld, nullptr);
 	}
 
 	static void inherit(Entity* e, void* gene)
@@ -165,11 +165,11 @@ namespace flame
 		if (!e->world && world)
 			enter_world(world, e);
 		for (auto c : e->components.get_all())
-			c->on_event(Entity::EventAdded, nullptr);
-		e->event_listeners.call(Entity::EventAdded, nullptr);
+			c->on_event(EntityAdded, nullptr);
+		e->event_listeners.call(EntityAdded, nullptr);
 		for (auto c : components.get_all())
-			c->on_event(Entity::EventChildAdded, e);
-		event_listeners.call(Entity::EventChildAdded, e);
+			c->on_event(EntityChildAdded, e);
+		event_listeners.call(EntityChildAdded, e);
 	}
 
 	void Entity::reposition_child(Entity* e, int position)
@@ -185,18 +185,18 @@ namespace flame
 		dst->index_ = old_position;
 		e->index_ = position;
 		for (auto c : e->components.get_all())
-			c->on_event(Entity::EventPositionChanged, nullptr);
-		e->event_listeners.call(Entity::EventPositionChanged, nullptr);
+			c->on_event(EntityPositionChanged, nullptr);
+		e->event_listeners.call(EntityPositionChanged, nullptr);
 		for (auto c : dst->components.get_all())
-			c->on_event(Entity::EventPositionChanged, nullptr);
-		dst->event_listeners.call(Entity::EventPositionChanged, nullptr);
+			c->on_event(EntityPositionChanged, nullptr);
+		dst->event_listeners.call(EntityPositionChanged, nullptr);
 		for (auto c : components.get_all())
 		{
-			c->on_event(Entity::EventChildPositionChanged, e);
-			c->on_event(Entity::EventChildPositionChanged, dst);
+			c->on_event(EntityChildPositionChanged, e);
+			c->on_event(EntityChildPositionChanged, dst);
 		}
-		event_listeners.call(Entity::EventChildPositionChanged, e);
-		event_listeners.call(Entity::EventChildPositionChanged, dst);
+		event_listeners.call(EntityChildPositionChanged, e);
+		event_listeners.call(EntityChildPositionChanged, dst);
 	}
 
 	void Entity::remove_child(Entity* e, bool destroy)
@@ -224,11 +224,11 @@ namespace flame
 		{
 			leave_world(e);
 			for (auto c : e->components.get_all())
-				c->on_event(Entity::EventRemoved, nullptr);
-			e->event_listeners.call(Entity::EventRemoved, nullptr);
+				c->on_event(EntityRemoved, nullptr);
+			e->event_listeners.call(EntityRemoved, nullptr);
 			for (auto c : components.get_all())
-				c->on_event(Entity::EventChildRemoved, e);
-			event_listeners.call(Entity::EventChildRemoved, e);
+				c->on_event(EntityChildRemoved, e);
+			event_listeners.call(EntityChildRemoved, e);
 			if (destroy)
 			{
 				mark_dying(e);
