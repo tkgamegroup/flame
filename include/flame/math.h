@@ -88,7 +88,7 @@ namespace flame
 		}
 	};
 
-	inline uint get_pitch(uint b)
+	inline uint image_pitch(uint b)
 	{
 		return (uint)ceil((b / 4.f)) * 4U;
 	}

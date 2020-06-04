@@ -58,7 +58,7 @@ struct cThumbnail : Component
 				uint w, h;
 				char* data;
 				get_thumbnail(64, thiz->filename.c_str(), &w, &h, &data);
-				auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data, true);
+				auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data);
 				bitmap->swap_channel(0, 2);
 				thiz->thumbnail = bitmap;
 			}, Capture().set_thiz(this));

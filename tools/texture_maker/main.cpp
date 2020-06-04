@@ -13,7 +13,7 @@ int main(int argc, char **args)
 	{
 		auto size = stou2(args[2]);
 		auto color = stoc4(args[3]);
-		b = Bitmap::create(size, 4, 32, (uchar*)INVALID_POINTER);
+		b = Bitmap::create(size, 4, 32);
 		for (auto i = 0; i < size.y(); i++)
 		{
 			for (auto j = 0; j < size.x(); j++)
@@ -29,7 +29,7 @@ int main(int argc, char **args)
 		auto spacing = std::stoul(args[5]);
 		auto foreground_color = stoc4(args[6]);
 		auto background_color = stoc4(args[7]);
-		b = Bitmap::create(size, 4, 32, (uchar*)INVALID_POINTER);
+		b = Bitmap::create(size, 4, 32);
 		for (auto i = 0; i < size.y(); i++)
 		{
 			for (auto j = 0; j < size.x(); j++)
@@ -50,7 +50,7 @@ int main(int argc, char **args)
 		auto spacing = std::stoul(args[5]);
 		auto foreground_color = stoc4(args[6]);
 		auto background_color = stoc4(args[7]);
-		b = Bitmap::create(size, 4, 32, (uchar*)INVALID_POINTER);
+		b = Bitmap::create(size, 4, 32);
 		for (auto i = 0; i < size.y(); i++)
 		{
 			for (auto j = 0; j < size.x(); j++)
@@ -72,7 +72,7 @@ int main(int argc, char **args)
 		auto brick_height = std::stoul(args[6]);
 		auto foreground_color = stoc4(args[7]);
 		auto background_color = stoc4(args[8]);
-		b = Bitmap::create(size, 4, 32, (uchar*)INVALID_POINTER);
+		b = Bitmap::create(size, 4, 32);
 		for (auto i = 0; i < size.y(); i++)
 		{
 			for (auto j = 0; j < size.x(); j++)
