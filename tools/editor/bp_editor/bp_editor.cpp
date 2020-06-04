@@ -92,7 +92,7 @@ struct Action_MoveNodes : Action
 struct Action_AddNode : Action
 {
 	NodeDesc desc;
-	BP::Slot::IO init_link_io;
+	bpSlotType init_link_io;
 	LinkSaving init_link_src;
 	LinkSaving init_link_dst;
 
@@ -440,7 +440,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	ui.init(world);
 	ui.style_set_to_light();
 
-	bp_editor.e_test = Entity::create();
+	bp_editor.e_test = f_new<Entity>();
 	{
 		auto ce = cElement::create();
 		ce->pos = 150.f;
@@ -676,7 +676,7 @@ BPEditorWindow::~BPEditorWindow()
 		if (p)
 			p->remove_child(bp_editor.e_test);
 		else
-			Entity::destroy(bp_editor.e_test);
+			f_delete(bp_editor.e_test);
 		bp_editor.e_test = nullptr;
 	}
 
@@ -1039,7 +1039,7 @@ bool BPEditor::auto_set_layout()
 	return true;
 }
 
-BP::Node* BPEditor::_add_node(BP::NodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
+BP::Node* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
 	auto n = bp_editor.bp->groups[0]->add_node(id.c_str(), type.c_str(), node_type);
 	if (!n)
@@ -1132,7 +1132,7 @@ std::vector<BP::Node*> BPEditor::_duplicate_nodes(const std::vector<BP::Node*>& 
 
 void BPEditor::_set_link(BP::Slot* in, BP::Slot* out)
 {
-	if (auto unit = in->parent; bp_editor.editor && unit->unit_type == BP::UnitNode)
+	if (auto unit = in->parent; bp_editor.editor && unit->unit_type == bpUnitNode)
 	{
 		looper().add_event([](Capture& c) {
 			auto n = c.thiz<BP::Node>();

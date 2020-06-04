@@ -57,8 +57,9 @@ struct cComponentTracker : Component
 				it->second->update_view();
 			return true;
 		}, Capture().set_thiz(this));
-		t->entity->on_destroyed_listeners.add([](Capture& c) {
-			c.thiz<cComponentTracker>()->t = nullptr;
+		t->entity->event_listeners.add([](Capture& c, Entity::Event e, void* t) {
+			if (e == Entity::EventDestroyed)
+				c.thiz<cComponentTracker>()->t = nullptr;
 			return true;
 		}, Capture().set_thiz(this));
 	}
@@ -92,7 +93,7 @@ void cInspector::refresh()
 				{
 					auto item = scene_editor.hierarchy->find_item(scene_editor.selected);
 					if (item->get_component(cTreeNode))
-						item->child(0)->get_component(cText)->set_text(text);
+						item->children[0]->get_component(cText)->set_text(text);
 					else
 						item->get_component(cText)->set_text(text);
 				}
@@ -110,11 +111,8 @@ void cInspector::refresh()
 		}, Capture());
 		ui.e_end_layout();
 
-		auto components = scene_editor.selected->get_components();
-		for (auto i = 0; i < components.s; i++)
+		for (auto component : scene_editor.selected->components.get_all())
 		{
-			auto component = components.v[i];
-
 			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
 			auto library = udt->db->library;
 
@@ -253,10 +251,10 @@ void cInspector::refresh()
 						e->get_component(cLayout)->width_fit_children = false;
 						ui.current_entity = e;
 						ui.c_aligner(AlignMinMax, 0);
-						ui.current_entity = e->child(0);
+						ui.current_entity = e->children[0];
 						ui.c_aligner(AlignMinMax, 0);
 						edit_text = ui.current_entity->get_component(cText);
-						ui.current_entity = e->child(1);
+						ui.current_entity = e->children[1];
 						ui.c_aligner(AlignMinMax, 0);
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
@@ -284,10 +282,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -317,10 +315,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -350,10 +348,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -379,10 +377,10 @@ void cInspector::refresh()
 						e->get_component(cLayout)->width_fit_children = false;
 						ui.current_entity = e;
 						ui.c_aligner(AlignMinMax, 0);
-						ui.current_entity = e->child(0);
+						ui.current_entity = e->children[0];
 						ui.c_aligner(AlignMinMax, 0);
 						edit_text = ui.current_entity->get_component(cText);
-						ui.current_entity = e->child(1);
+						ui.current_entity = e->children[1];
 						ui.c_aligner(AlignMinMax, 0);
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
@@ -410,10 +408,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -443,10 +441,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -476,10 +474,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -505,10 +503,10 @@ void cInspector::refresh()
 						e->get_component(cLayout)->width_fit_children = false;
 						ui.current_entity = e;
 						ui.c_aligner(AlignMinMax, 0);
-						ui.current_entity = e->child(0);
+						ui.current_entity = e->children[0];
 						ui.c_aligner(AlignMinMax, 0);
 						edit_text = ui.current_entity->get_component(cText);
-						ui.current_entity = e->child(1);
+						ui.current_entity = e->children[1];
 						ui.c_aligner(AlignMinMax, 0);
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
@@ -536,10 +534,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -569,10 +567,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -602,10 +600,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -631,10 +629,10 @@ void cInspector::refresh()
 						e->get_component(cLayout)->width_fit_children = false;
 						ui.current_entity = e;
 						ui.c_aligner(AlignMinMax, 0);
-						ui.current_entity = e->child(0);
+						ui.current_entity = e->children[0];
 						ui.c_aligner(AlignMinMax, 0);
 						edit_text = ui.current_entity->get_component(cText);
-						ui.current_entity = e->child(1);
+						ui.current_entity = e->children[1];
 						ui.c_aligner(AlignMinMax, 0);
 						drag_text = ui.current_entity->get_component(cText);
 						ui.parents.pop();
@@ -662,10 +660,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -695,10 +693,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}
@@ -728,10 +726,10 @@ void cInspector::refresh()
 							e->get_component(cLayout)->width_fit_children = false;
 							ui.current_entity = e;
 							ui.c_aligner(AlignMinMax, 0);
-							ui.current_entity = e->child(0);
+							ui.current_entity = e->children[0];
 							ui.c_aligner(AlignMinMax, 0);
 							edit_texts[i] = ui.current_entity->get_component(cText);
-							ui.current_entity = e->child(1);
+							ui.current_entity = e->children[1];
 							ui.c_aligner(AlignMinMax, 0);
 							drag_texts[i] = ui.current_entity->get_component(cText);
 						}

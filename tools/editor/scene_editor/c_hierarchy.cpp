@@ -15,86 +15,85 @@ struct cHierarchyItem : Component
 		drop_pos = -1;
 	}
 
-	virtual void on_component_added(Component* c) override
+	void on_event(Entity::Event e, void* t)
 	{
-		if (c->name_hash == FLAME_CHASH("cElement"))
+		switch (e)
 		{
-			element = (cElement*)c;
-			element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-				c.thiz<cHierarchyItem>()->draw(canvas);
-				return true;
-			}, Capture().set_thiz(this));
-		}
-		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
-		{
-			event_receiver = (cEventReceiver*)c;
-			event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
-			event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
-			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-				auto thiz = c.thiz<cHierarchyItem>();
-				auto element = thiz->element;
+		case Entity::EventComponentAdded:
+			if (t == this)
+			{
+				element = entity->get_component(cElement);
+				event_receiver = entity->get_component(cEventReceiver);
 
-				if (action == BeingOvering)
-				{
-					auto h = element->global_size.y() * 0.3f;
-					if (pos.y() < element->global_pos.y() + h)
-						thiz->drop_pos = 0;
-					else if (pos.y() > element->global_pos.y() + element->global_size.y() - h)
-						thiz->drop_pos = 2;
-					else
-						thiz->drop_pos = 1;
-				}
-				else if (action == BeenDropped)
-				{
-					if (!(thiz->entity->parent->get_component(cTree) && thiz->drop_pos != 1))
+				event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
+				event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto thiz = c.thiz<cHierarchyItem>();
+					auto element = thiz->element;
+
+					if (action == BeingOvering)
 					{
-						struct Capturing
+						auto h = element->global_size.y() * 0.3f;
+						if (pos.y() < element->global_pos.y() + h)
+							thiz->drop_pos = 0;
+						else if (pos.y() > element->global_pos.y() + element->global_size.y() - h)
+							thiz->drop_pos = 2;
+						else
+							thiz->drop_pos = 1;
+					}
+					else if (action == BeenDropped)
+					{
+						if (!(thiz->entity->parent->get_component(cTree) && thiz->drop_pos != 1))
 						{
-							Entity* dst;
-							Entity* src;
-							int i;
-						}capture;
-						capture.dst = thiz->e;
-						capture.src = er->entity->get_component(cHierarchyItem)->e;
-						capture.i = thiz->drop_pos;
-
-						auto ok = true;
-						auto p = capture.src->parent;
-						while (p)
-						{
-							if (p == capture.dst)
+							struct Capturing
 							{
-								ok = false;
-								break;
+								Entity* dst;
+								Entity* src;
+								int i;
+							}capture;
+							capture.dst = thiz->e;
+							capture.src = er->entity->get_component(cHierarchyItem)->e;
+							capture.i = thiz->drop_pos;
+
+							auto ok = true;
+							auto p = capture.src->parent;
+							while (p)
+							{
+								if (p == capture.dst)
+								{
+									ok = false;
+									break;
+								}
+							}
+
+							if (ok)
+							{
+								looper().add_event([](Capture& c) {
+									auto& capture = c.data<Capturing>();
+
+									capture.src->parent->remove_child(capture.src, false);
+
+									if (capture.i == 1)
+										capture.dst->add_child(capture.src);
+									else
+									{
+										auto idx = capture.dst->index_;
+										if (capture.i == 2)
+											idx++;
+										capture.dst->parent->add_child(capture.src, idx);
+									}
+
+									scene_editor.hierarchy->refresh();
+								}, Capture().set_data(&capture));
 							}
 						}
 
-						if (ok)
-						{
-							looper().add_event([](Capture& c) {
-								auto& capture = c.data<Capturing>();
-
-								capture.src->parent->remove_child(capture.src, false);
-
-								if (capture.i == 1)
-									capture.dst->add_child(capture.src);
-								else
-								{
-									auto idx = capture.dst->index_;
-									if (capture.i == 2)
-										idx++;
-									capture.dst->parent->add_child(capture.src, idx);
-								}
-
-								scene_editor.hierarchy->refresh();
-							}, Capture().set_data(&capture));
-						}
 					}
 
-				}
-
-				return true;
-			}, Capture().set_thiz(this));
+					return true;
+				}, Capture().set_thiz(this));
+			}
+			break;
 		}
 	}
 
@@ -128,18 +127,18 @@ struct cHierarchyItem : Component
 static void create_tree_node(Entity* e)
 {
 	auto& ui = scene_editor.window->ui;
-	if (e->child_count() > 0)
+	if (e->children.s > 0)
 	{
 		auto e_tree_node = ui.e_begin_tree_node(s2w(e->name.v).c_str());
 		{
 			auto c_item = f_new<cHierarchyItem>();
 			c_item->e = e;
-			e_tree_node->child(0)->add_component(c_item);
+			e_tree_node->children[0]->add_component(c_item);
 		}
 
-		auto e_sub_tree = e_tree_node->child(1);
-		for (auto i = 0; i < e->child_count(); i++)
-			create_tree_node(e->child(i));
+		auto e_sub_tree = e_tree_node->children[1];
+		for (auto i = 0; i < e->children.s; i++)
+			create_tree_node(e->children[i]);
 		ui.e_end_tree_node();
 	}
 	else
@@ -181,7 +180,7 @@ cHierarchy::cHierarchy() :
 							if (s->get_component(cTreeLeaf))
 								selected = s->get_component(cHierarchyItem)->e;
 							else
-								selected = s->child(0)->get_component(cHierarchyItem)->e;
+								selected = s->children[0]->get_component(cHierarchyItem)->e;
 						}
 						auto different = selected != scene_editor.selected;
 						scene_editor.selected = selected;
@@ -206,9 +205,9 @@ cHierarchy::~cHierarchy()
 
 static Entity* _find_item(Entity* sub_tree, Entity* e)
 {
-	for (auto i = 0; i < sub_tree->child_count(); i++)
+	for (auto i = 0; i < sub_tree->children.s; i++)
 	{
-		auto item = sub_tree->child(i);
+		auto item = sub_tree->children[i];
 		if (item->get_component(cTreeLeaf))
 		{
 			if (item->get_component(cHierarchyItem)->e == e)
@@ -216,9 +215,9 @@ static Entity* _find_item(Entity* sub_tree, Entity* e)
 		}
 		else
 		{
-			if (item->child(0)->get_component(cHierarchyItem)->e == e)
+			if (item->children[0]->get_component(cHierarchyItem)->e == e)
 				return item;
-			auto res = _find_item(item->child(1), e);
+			auto res = _find_item(item->children[1], e);
 			if (res)
 				return res;
 		}

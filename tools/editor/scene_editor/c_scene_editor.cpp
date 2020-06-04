@@ -349,11 +349,11 @@ Entity* cSceneEditor::search_hovering(const Vec4f& r)
 
 void cSceneEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
 {
-	if (e->child_count() > 0)
+	if (e->children.s > 0)
 	{
-		for (auto i = (int)e->child_count() - 1; i >= 0; i--)
+		for (auto i = (int)e->children.s - 1; i >= 0; i--)
 		{
-			auto c = e->child(i);
+			auto c = e->children[i];
 			if (c->global_visibility)
 				search_hovering_r(c, s, r);
 		}

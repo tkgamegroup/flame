@@ -60,170 +60,170 @@ struct cSlot : Component
 		}
 	}
 
-	void on_component_added(Component* c) override
+	void on_event(Entity::Event e, void* t)
 	{
-		if (c->name_hash == FLAME_CHASH("cElement"))
-			element = (cElement*)c;
-		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+		switch (e)
 		{
-			event_receiver = (cEventReceiver*)c;
-			if (s->io == BP::Slot::In)
+		case Entity::EventComponentAdded:
+			if (t == this)
 			{
-				event_receiver->drag_hash = FLAME_CHASH("input_slot");
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
-			}
-			else
-			{
-				event_receiver->drag_hash = FLAME_CHASH("output_slot");
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
-			}
-			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = c.thiz<cSlot>();
-				if (thiz->dragging)
-				{
-					if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
-						bp_editor.editor->edt.event_receiver->on_mouse(action, key, pos);
-				}
-				return true;
-			}, Capture().set_thiz(this));
-			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-				auto& ui = bp_editor.window->ui;
-				auto thiz = c.thiz<cSlot>();
-				auto element = thiz->element;
-				auto s = thiz->s;
-				auto is_in = s->io == BP::Slot::In;
+				element = entity->get_component(cElement);
+				event_receiver = entity->get_component(cEventReceiver);
 
-				if (action == DragStart)
+				if (s->io == bpSlotIn)
 				{
-					thiz->dragging = true;
-					bp_editor.editor->dragging_slot = s;
-					bp_editor.select();
+					event_receiver->drag_hash = FLAME_CHASH("input_slot");
+					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
 				}
-				else if (action == DragOvering)
-				{
-					bp_editor.editor->dragging_slot_pos = Vec2f(pos);
-					bp_editor.window->s_2d_renderer->pending_update = true;
-				}
-				else if (action == DragEnd)
-				{
-					thiz->dragging = false;
-					if (!er)
-						bp_editor.editor->show_add_node_menu(Vec2f(pos));
-					else
-						bp_editor.editor->dragging_slot = nullptr;
-					bp_editor.window->s_2d_renderer->pending_update = true;
-				}
-				else if (action == BeingOverStart)
-				{
-					auto oth = er->entity->get_component(cSlot)->s;
-					auto ok = (is_in ? BP::Slot::can_link(s->type, oth->type) : BP::Slot::can_link(oth->type, s->type));
-
-					element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
-					element->set_frame_thickness(2.f);
-
-					if (!thiz->tip_link)
-					{
-						thiz->tip_link = ui.e_begin_layout(LayoutVertical, 4.f);
-						auto c_element = thiz->tip_link->get_component(cElement);
-						c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
-						c_element->pivot = Vec2f(0.5f, 1.f);
-						c_element->padding = 4.f;
-						c_element->frame_thickness = 2.f;
-						c_element->color = Vec4c(200, 200, 200, 255);
-						c_element->frame_color = Vec4c(0, 0, 0, 255);
-						{
-							auto s_type = s->type;
-							auto o_type = oth->type;
-							std::wstring str;
-							if (is_in)
-								str = s2w(o_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(s_type->name.str());
-							else
-								str = s2w(s_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(o_type->name.str());
-							ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
-						}
-						ui.e_end_layout();
-						looper().add_event([](Capture& c) {
-							bp_editor.window->root->add_child(c.thiz<Entity>());
-						}, Capture().set_thiz(thiz->tip_link));
-					}
-				}
-				else if (action == BeingOverEnd)
-				{
-					element->set_frame_thickness(0.f);
-
-					thiz->clear_tips();
-				}
-				else if (action == BeenDropped)
-				{
-					auto oth = er->entity->get_component(cSlot)->s;
-					if (s->io == BP::Slot::In)
-						bp_editor.set_links({ {s, oth} });
-					else
-						bp_editor.set_links({ {oth, s} });
-				}
-
-				return true;
-			}, Capture().set_thiz(this));
-			event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
-				auto& ui = bp_editor.window->ui;
-				auto thiz = c.thiz<cSlot>();
-				auto s = thiz->s;
-				auto is_in = s->io == BP::Slot::In;
-
-				if (!hovering)
-					thiz->clear_tips();
 				else
 				{
-					if (!thiz->tip_info)
-					{
-						thiz->tip_info = ui.e_begin_layout(LayoutVertical, 8.f);
-						auto c_element = thiz->tip_info->get_component(cElement);
-						c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
-						c_element->pivot = Vec2f(is_in ? 1.f : 0.f , 0.f);
-						c_element->padding = 4.f;
-						c_element->frame_thickness = 2.f;
-						c_element->color = Vec4c(200, 200, 200, 255);
-						c_element->frame_color = Vec4c(0, 0, 0, 255);
-						auto type = s->type;
-						auto tag = type->tag;
-						ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
-						{
-							auto text_value = ui.e_text(L"-")->get_component(cText);
-							ui.current_entity = thiz->tip_info;
-							auto timer = ui.c_timer();
-							timer->interval = 0.f;
-							struct Capturing
-							{
-								const TypeInfo* t;
-								void* d;
-								cText* text;
-							}capture;
-							capture.t = s->type;
-							capture.d = s->data;
-							capture.text = text_value;
-							timer->set_callback([](Capture& c) {
-								auto& capture = c.data<Capturing>();
-								capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
-							}, Capture().set_data(&capture), false);
-						}
-						ui.e_end_layout();
-						looper().add_event([](Capture& c) {
-							auto tip_info = c.thiz<Entity>();
-							bp_editor.window->root->add_child(tip_info);
-							tip_info->get_component(cTimer)->start();
-						}, Capture().set_thiz(thiz->tip_info));
-					}
+					event_receiver->drag_hash = FLAME_CHASH("output_slot");
+					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
 				}
+				event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cSlot>();
+					if (thiz->dragging)
+					{
+						if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
+							bp_editor.editor->edt.event_receiver->on_mouse(action, key, pos);
+					}
+					return true;
+				}, Capture().set_thiz(this));
+				event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+					auto& ui = bp_editor.window->ui;
+					auto thiz = c.thiz<cSlot>();
+					auto element = thiz->element;
+					auto s = thiz->s;
+					auto is_in = s->io == bpSlotIn;
 
-				return true;
-			}, Capture().set_thiz(this));
+					if (action == DragStart)
+					{
+						thiz->dragging = true;
+						bp_editor.editor->dragging_slot = s;
+						bp_editor.select();
+					}
+					else if (action == DragOvering)
+					{
+						bp_editor.editor->dragging_slot_pos = Vec2f(pos);
+						bp_editor.window->s_2d_renderer->pending_update = true;
+					}
+					else if (action == DragEnd)
+					{
+						thiz->dragging = false;
+						if (!er)
+							bp_editor.editor->show_add_node_menu(Vec2f(pos));
+						else
+							bp_editor.editor->dragging_slot = nullptr;
+						bp_editor.window->s_2d_renderer->pending_update = true;
+					}
+					else if (action == BeingOverStart)
+					{
+						auto oth = er->entity->get_component(cSlot)->s;
+						auto ok = (is_in ? BP::Slot::can_link(s->type, oth->type) : BP::Slot::can_link(oth->type, s->type));
+
+						element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
+						element->set_frame_thickness(2.f);
+
+						if (!thiz->tip_link)
+						{
+							thiz->tip_link = ui.e_begin_layout(LayoutVertical, 4.f);
+							auto c_element = thiz->tip_link->get_component(cElement);
+							c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
+							c_element->pivot = Vec2f(0.5f, 1.f);
+							c_element->padding = 4.f;
+							c_element->frame_thickness = 2.f;
+							c_element->color = Vec4c(200, 200, 200, 255);
+							c_element->frame_color = Vec4c(0, 0, 0, 255);
+							{
+								auto s_type = s->type;
+								auto o_type = oth->type;
+								std::wstring str;
+								if (is_in)
+									str = s2w(o_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(s_type->name.str());
+								else
+									str = s2w(s_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(o_type->name.str());
+								ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+							}
+							ui.e_end_layout();
+							looper().add_event([](Capture& c) {
+								bp_editor.window->root->add_child(c.thiz<Entity>());
+							}, Capture().set_thiz(thiz->tip_link));
+						}
+					}
+					else if (action == BeingOverEnd)
+					{
+						element->set_frame_thickness(0.f);
+
+						thiz->clear_tips();
+					}
+					else if (action == BeenDropped)
+					{
+						auto oth = er->entity->get_component(cSlot)->s;
+						if (s->io == bpSlotIn)
+							bp_editor.set_links({ {s, oth} });
+						else
+							bp_editor.set_links({ {oth, s} });
+					}
+
+					return true;
+				}, Capture().set_thiz(this));
+				event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
+					auto& ui = bp_editor.window->ui;
+					auto thiz = c.thiz<cSlot>();
+					auto s = thiz->s;
+					auto is_in = s->io == bpSlotIn;
+
+					if (!hovering)
+						thiz->clear_tips();
+					else
+					{
+						if (!thiz->tip_info)
+						{
+							thiz->tip_info = ui.e_begin_layout(LayoutVertical, 8.f);
+							auto c_element = thiz->tip_info->get_component(cElement);
+							c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
+							c_element->pivot = Vec2f(is_in ? 1.f : 0.f, 0.f);
+							c_element->padding = 4.f;
+							c_element->frame_thickness = 2.f;
+							c_element->color = Vec4c(200, 200, 200, 255);
+							c_element->frame_color = Vec4c(0, 0, 0, 255);
+							auto type = s->type;
+							auto tag = type->tag;
+							ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
+							{
+								auto text_value = ui.e_text(L"-")->get_component(cText);
+								ui.current_entity = thiz->tip_info;
+								auto timer = ui.c_timer();
+								timer->interval = 0.f;
+								struct Capturing
+								{
+									const TypeInfo* t;
+									void* d;
+									cText* text;
+								}capture;
+								capture.t = s->type;
+								capture.d = s->data;
+								capture.text = text_value;
+								timer->set_callback([](Capture& c) {
+									auto& capture = c.data<Capturing>();
+									capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
+								}, Capture().set_data(&capture), false);
+							}
+							ui.e_end_layout();
+							looper().add_event([](Capture& c) {
+								auto tip_info = c.thiz<Entity>();
+								bp_editor.window->root->add_child(tip_info);
+								tip_info->get_component(cTimer)->start();
+							}, Capture().set_thiz(thiz->tip_info));
+						}
+					}
+
+					return true;
+				}, Capture().set_thiz(this));
+			}
+			break;
 		}
 	}
-};
-
-struct cUnit : Component
-{
-
 };
 
 struct cNode : Component
@@ -241,52 +241,57 @@ struct cNode : Component
 		moved = false;
 	}
 
-	void on_component_added(Component* c) override
+	void on_event(Entity::Event e, void* t)
 	{
-		if (c->name_hash == FLAME_CHASH("cElement"))
-			element = (cElement*)c;
-		else if (c->name_hash == FLAME_CHASH("cEventReceiver"))
+		switch (e)
 		{
-			event_receiver = (cEventReceiver*)c;
-			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				auto thiz = c.thiz<cNode>();
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					auto n = thiz->n;
-					for (auto& s : bp_editor.selected_nodes)
+		case Entity::EventComponentAdded:
+			if (t == this)
+			{
+				element = entity->get_component(cElement);
+				event_receiver = entity->get_component(cEventReceiver);
+
+				event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+					auto thiz = c.thiz<cNode>();
+					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 					{
-						if (n == s)
+						auto n = thiz->n;
+						for (auto& s : bp_editor.selected_nodes)
 						{
-							n = nullptr;
-							break;
+							if (n == s)
+							{
+								n = nullptr;
+								break;
+							}
 						}
+						if (n)
+							bp_editor.select({ n });
 					}
-					if (n)
-						bp_editor.select({ n });
-				}
-				else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
-				{
-					for (auto& s : bp_editor.selected_nodes)
+					else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
 					{
-						auto e = ((Entity*)s->user_data)->get_component(cElement);
-						e->add_pos((Vec2f)pos / e->global_scale);
+						for (auto& s : bp_editor.selected_nodes)
+						{
+							auto e = ((Entity*)s->user_data)->get_component(cElement);
+							e->add_pos((Vec2f)pos / e->global_scale);
+						}
+						thiz->moved = true;
 					}
-					thiz->moved = true;
-				}
-				return true;
-			}, Capture().set_thiz(this));
-			event_receiver->state_listeners.add([](Capture& c, EventReceiverState) {
-				auto thiz = c.thiz<cNode>();
-				if (thiz->moved && !thiz->event_receiver->is_active())
-				{
-					std::vector<Vec2f> poses;
-					for (auto& s : bp_editor.selected_nodes)
-						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos);
-					bp_editor.set_nodes_pos(bp_editor.selected_nodes, poses);
-					thiz->moved = false;
-				}
-				return true;
-			}, Capture().set_thiz(this));
+					return true;
+				}, Capture().set_thiz(this));
+				event_receiver->state_listeners.add([](Capture& c, EventReceiverState) {
+					auto thiz = c.thiz<cNode>();
+					if (thiz->moved && !thiz->event_receiver->is_active())
+					{
+						std::vector<Vec2f> poses;
+						for (auto& s : bp_editor.selected_nodes)
+							poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos);
+						bp_editor.set_nodes_pos(bp_editor.selected_nodes, poses);
+						thiz->moved = false;
+					}
+					return true;
+				}, Capture().set_thiz(this));
+			}
+			break;
 		}
 	}
 };
@@ -442,7 +447,7 @@ cBPEditor::cBPEditor() :
 			{
 				auto p1 = e1->center();
 				auto p4 = bp_editor.editor->dragging_slot_pos;
-				auto is_in = ds->io == BP::Slot::In;
+				auto is_in = ds->io == bpSlotIn;
 				auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
 				auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
 				auto bb = rect_from_points(p1, p2, p3, p4);
@@ -512,7 +517,7 @@ void cBPEditor::on_add_group(BP::Group* g)
 {
 	auto& ui = bp_editor.window->ui;
 
-	auto e_group = Entity::create();
+	auto e_group = f_new<Entity>();
 	ui.current_entity = e_group;
 	g->user_data = e_group;
 	ui.next_element_pos = g->pos;
@@ -578,7 +583,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 {
 	auto& ui = bp_editor.window->ui;
 
-	auto e_node = Entity::create();
+	auto e_node = f_new<Entity>();
 	ui.current_entity = e_node;
 	n->user_data = e_node;
 	ui.next_element_pos = n->pos;
@@ -660,7 +665,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 									NodeDesc d;
 									d.id = "";
 									d.type = type;
-									d.node_type = BP::NodeReal;
+									d.node_type = bpNodeReal;
 									d.pos = n->pos;
 									auto nn = bp_editor.add_node(d);
 									for (auto i = 0; i < n->inputs.s; i++)
@@ -759,8 +764,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								auto e = ui.e_drag_edit();
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-								edit_text = e->child(0)->get_component(cText);
-								drag_text = e->child(1)->get_component(cText);
+								edit_text = e->children[0]->get_component(cText);
+								drag_text = e->children[1]->get_component(cText);
 
 								e_name->add_component(f_new<cDigitalDataTracker<int>>(input->data, [](Capture& c, int v, bool exit_editing) {
 									if (exit_editing)
@@ -780,8 +785,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -805,8 +810,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -828,8 +833,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -848,8 +853,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								auto e = ui.e_drag_edit();
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-								edit_text = e->child(0)->get_component(cText);
-								drag_text = e->child(1)->get_component(cText);
+								edit_text = e->children[0]->get_component(cText);
+								drag_text = e->children[1]->get_component(cText);
 
 								e_name->add_component(f_new<cDigitalDataTracker<uint>>(input->data, [](Capture& c, uint v, bool exit_editing) {
 									if (exit_editing)
@@ -869,8 +874,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -892,8 +897,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -915,8 +920,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -935,8 +940,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								auto e = ui.e_drag_edit();
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-								edit_text = e->child(0)->get_component(cText);
-								drag_text = e->child(1)->get_component(cText);
+								edit_text = e->children[0]->get_component(cText);
+								drag_text = e->children[1]->get_component(cText);
 
 								e_name->add_component(f_new<cDigitalDataTracker<float>>(input->data, [](Capture& c, float v, bool exit_editing) {
 									if (exit_editing)
@@ -956,8 +961,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -979,8 +984,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -1002,8 +1007,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -1022,8 +1027,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 
 								auto e = ui.e_drag_edit();
 								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
-								edit_text = e->child(0)->get_component(cText);
-								drag_text = e->child(1)->get_component(cText);
+								edit_text = e->children[0]->get_component(cText);
+								drag_text = e->children[1]->get_component(cText);
 
 								e_name->add_component(f_new<cDigitalDataTracker<uchar>>(input->data, [](Capture& c, uchar v, bool exit_editing) {
 									if (exit_editing)
@@ -1043,8 +1048,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -1066,8 +1071,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -1089,8 +1094,8 @@ void cBPEditor::on_add_node(BP::Node* n)
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
-									edit_texts[i] = e->child(0)->get_component(cText);
-									drag_texts[i] = e->child(1)->get_component(cText);
+									edit_texts[i] = e->children[0]->get_component(cText);
+									drag_texts[i] = e->children[1]->get_component(cText);
 								}
 								ui.e_end_layout();
 
@@ -1182,7 +1187,7 @@ void cBPEditor::on_add_node(BP::Node* n)
 					NodeDesc d;
 					d.id = "";
 					d.type = type;
-					d.node_type = BP::NodeReal;
+					d.node_type = bpNodeReal;
 					d.pos = n->pos;
 					auto nn = bp_editor.add_node(d);
 					for (auto i = 0; i < n->inputs.s; i++)
@@ -1250,7 +1255,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 	{
 		UdtInfo* u;
 		VariableInfo* v;
-		BP::NodeType t;
+		bpNodeType t;
 	};
 	std::vector<NodeType> node_types;
 	for (auto db : global_typeinfo_databases)
@@ -1261,7 +1266,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 			if (f_update && check_function(f_update, "D#void", {}))
 			{
 				if (!dragging_slot)
-					node_types.push_back({ u, nullptr, BP::NodeReal });
+					node_types.push_back({ u, nullptr, bpNodeReal });
 				else
 				{
 					auto ds_io = dragging_slot->io;
@@ -1270,15 +1275,15 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					for (auto v : u->variables)
 					{
 						auto flags = v->flags;
-						if (ds_io == BP::Slot::Out && (flags & VariableFlagInput) && BP::Slot::can_link(v->type, ds_t))
+						if (ds_io == bpSlotOut && (flags & VariableFlagInput) && BP::Slot::can_link(v->type, ds_t))
 						{
-							node_types.push_back({ u, v, BP::NodeReal });
+							node_types.push_back({ u, v, bpNodeReal });
 							found = true;
 							break;
 						}
-						if (ds_io == BP::Slot::In && (flags & VariableFlagOutput) && BP::Slot::can_link(ds_t, v->type))
+						if (ds_io == bpSlotIn && (flags & VariableFlagOutput) && BP::Slot::can_link(ds_t, v->type))
 						{
-							node_types.push_back({ u, v, BP::NodeReal });
+							node_types.push_back({ u, v, bpNodeReal });
 							found = true;
 							break;
 						}
@@ -1291,8 +1296,8 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 			{
 				if (!dragging_slot)
 				{
-					node_types.push_back({ u, nullptr, BP::NodeRefRead });
-					node_types.push_back({ u, nullptr, BP::NodeRefWrite });
+					node_types.push_back({ u, nullptr, bpNodeRefRead });
+					node_types.push_back({ u, nullptr, bpNodeRefWrite });
 				}
 				else
 				{
@@ -1301,15 +1306,15 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					auto found = false;
 					for (auto v : u->variables)
 					{
-						if (ds_io == BP::Slot::Out && BP::Slot::can_link(v->type, ds_t))
+						if (ds_io == bpSlotOut && BP::Slot::can_link(v->type, ds_t))
 						{
-							node_types.push_back({ u, v, BP::NodeRefWrite });
+							node_types.push_back({ u, v, bpNodeRefWrite });
 							found = true;
 							break;
 						}
-						if (ds_io == BP::Slot::In && BP::Slot::can_link(ds_t, v->type))
+						if (ds_io == bpSlotIn && BP::Slot::can_link(ds_t, v->type))
 						{
-							node_types.push_back({ u, v, BP::NodeRefRead });
+							node_types.push_back({ u, v, bpNodeRefRead });
 							found = true;
 							break;
 						}
@@ -1332,8 +1337,9 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		ui.next_element_frame_thickness = 2.f;
 		ui.next_element_color = ui.style(BackgroundColor).c;
 		ui.next_element_frame_color = ui.style(ForegroundColor).c;
-		ui.e_element()->on_removed_listeners.add([](Capture&) {
-			bp_editor.editor->dragging_slot = nullptr;
+		ui.e_element()->event_listeners.add([](Capture&, Entity::Event e, void* t) {
+			if (e == Entity::EventRemoved)
+				bp_editor.editor->dragging_slot = nullptr;
 			return true;
 		}, Capture());
 		ui.c_layout(LayoutVertical)->item_padding = 4.f;
@@ -1388,7 +1394,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 									d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
 									d.type += capture.s;
 									d.type += ")";
-									d.node_type = BP::NodeReal;
+									d.node_type = bpNodeReal;
 									d.pos = capture.p;
 									bp_editor.add_node(d);
 								}, Capture().set_data(&capture));
@@ -1437,7 +1443,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 										d.type = "Variable(";
 										d.type += capture.s;
 										d.type += ")";
-										d.node_type = BP::NodeReal;
+										d.node_type = bpNodeReal;
 										d.pos = capture.p;
 										bp_editor.add_node(d);
 									}, Capture().set_data(&_capture));
@@ -1468,7 +1474,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 										d.type = "Array(1+";
 										d.type += capture.s;
 										d.type += ")";
-										d.node_type = BP::NodeReal;
+										d.node_type = bpNodeReal;
 										d.pos = capture.p;
 										bp_editor.add_node(d);
 									}, Capture().set_data(&_capture));
@@ -1497,13 +1503,13 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								d.type = capture.t == TypeEnumSingle ? "EnumSingle(" : "EnumMulti(";
 								d.type += capture.s;
 								d.type += ")";
-								d.node_type = BP::NodeReal;
+								d.node_type = bpNodeReal;
 								d.pos = capture.p;
 								auto n = bp_editor.add_node(d);
 								auto s = bp_editor.editor->dragging_slot;
 								if (s)
 								{
-									if (s->io == BP::Slot::In)
+									if (s->io == bpSlotIn)
 										bp_editor._set_link(s, n->find_output("out"));
 									else
 										bp_editor._set_link(n->find_input("in"), s);
@@ -1528,13 +1534,13 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 									d.type = "Variable(";
 									d.type += capture.s;
 									d.type += ")";
-									d.node_type = BP::NodeReal;
+									d.node_type = bpNodeReal;
 									d.pos = capture.p;
 									auto n = bp_editor.add_node(d);
 									auto s = bp_editor.editor->dragging_slot;
 									if (s)
 									{
-										if (s->io == BP::Slot::In)
+										if (s->io == bpSlotIn)
 											bp_editor._set_link(s, n->find_output("out"));
 										else
 											bp_editor._set_link(n->find_input("in"), s);
@@ -1558,13 +1564,13 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								d.type = "Array(1+";
 								d.type += capture.s;
 								d.type += ")";
-								d.node_type = BP::NodeReal;
+								d.node_type = bpNodeReal;
 								d.pos = capture.p;
 								auto n = bp_editor.add_node(d);
 								auto s = bp_editor.editor->dragging_slot;
 								if (s)
 								{
-									if (s->io == BP::Slot::In)
+									if (s->io == bpSlotIn)
 										bp_editor._set_link(s, n->find_output("out"));
 									else
 										bp_editor._set_link(n->find_input("0"), s);
@@ -1575,7 +1581,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					{
 						struct _Capturing
 						{
-							BP::NodeType t;
+							bpNodeType t;
 							const char* us;
 							const char* vs;
 							Vec2f p;
@@ -1587,9 +1593,9 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							capture.us = t.u->name.v;
 							capture.vs = t.v ? t.v->name.v : nullptr;
 							auto name = s2w(t.u->name.str());
-							if (capture.t == BP::NodeRefRead)
+							if (capture.t == bpNodeRefRead)
 								name += L" (RefRead)";
-							else if (capture.t == BP::NodeRefWrite)
+							else if (capture.t == bpNodeRefWrite)
 								name += L" (RefWrite)";
 							ui.e_menu_item(name.c_str(), [](Capture& c) {
 								auto& capture = c.data<_Capturing>();
@@ -1602,7 +1608,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								auto s = bp_editor.editor->dragging_slot;
 								if (s)
 								{
-									if (s->io == BP::Slot::In)
+									if (s->io == bpSlotIn)
 										bp_editor._set_link(s, n->find_output(capture.vs));
 									else
 										bp_editor._set_link(n->find_input(capture.vs), s);
@@ -1620,9 +1626,9 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 		{
 			auto l = c.thiz<Entity>();
 			auto str = c.current<cText>()->text.str();
-			for (auto i = 0; i < l->child_count(); i++)
+			for (auto i = 0; i < l->children.s; i++)
 			{
-				auto item = l->child(i);
+				auto item = l->children[i];
 				item->set_visible(str[0] ? item->get_component(cText)->text.str().find(str) != std::string::npos : true);
 			}
 		}

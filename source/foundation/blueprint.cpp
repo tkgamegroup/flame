@@ -15,8 +15,8 @@ namespace flame
 		Setter* setter;
 		void* listener;
 
-		SlotPrivate(BP::Unit* unit, IO io, uint index, TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
-		SlotPrivate(BP::Unit* unit, IO io, uint index, VariableInfo* vi);
+		SlotPrivate(BP::Unit* unit, bpSlotType io, uint index, TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
+		SlotPrivate(BP::Unit* unit, bpSlotType io, uint index, VariableInfo* vi);
 		~SlotPrivate();
 
 		void set_data(const void* data);
@@ -41,8 +41,8 @@ namespace flame
 
 		uint order;
 
-		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, UdtInfo* udt, void* library);
-		NodePrivate(BP::NodeType node_type, GroupPrivate* group, const std::string& id, const std::string& type, uint size,
+		NodePrivate(bpNodeType node_type, GroupPrivate* group, const std::string& id, UdtInfo* udt, void* library);
+		NodePrivate(bpNodeType node_type, GroupPrivate* group, const std::string& id, const std::string& type, uint size,
 			const std::vector<SlotDesc>& inputs, const std::vector<SlotDesc>& outputs, void* ctor_addr, void* dtor_addr, void* update_addr);
 		~NodePrivate();
 
@@ -58,7 +58,7 @@ namespace flame
 		GroupPrivate(BPPrivate* scene, const std::string& id);
 		~GroupPrivate();
 
-		NodePrivate* add_node(const std::string& id, const std::string& type, BP::NodeType node_type);
+		NodePrivate* add_node(const std::string& id, const std::string& type, bpNodeType node_type);
 		void remove_node(NodePrivate* n);
 
 		void update();
@@ -75,7 +75,7 @@ namespace flame
 		void update();
 	};
 
-	SlotPrivate::SlotPrivate(BP::Unit* unit, IO _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
+	SlotPrivate::SlotPrivate(BP::Unit* unit, bpSlotType _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
 		setter(nullptr),
 		listener(nullptr)
 	{
@@ -96,13 +96,13 @@ namespace flame
 		else
 			default_value = nullptr;
 
-		data = unit->unit_type == BP::UnitNode ? (char*)((NodePrivate*)unit)->object + offset : (char*)&((GroupPrivate*)unit)->psignal;
+		data = unit->unit_type == bpUnitNode ? (char*)((NodePrivate*)unit)->object + offset : (char*)&((GroupPrivate*)unit)->psignal;
 
-		if (io == In)
+		if (io == bpSlotIn)
 			links.push_back(nullptr);
 	}
 
-	SlotPrivate::SlotPrivate(BP::Unit* unit, IO io, uint index, VariableInfo* vi) :
+	SlotPrivate::SlotPrivate(BP::Unit* unit, bpSlotType io, uint index, VariableInfo* vi) :
 		SlotPrivate(unit, io, index, vi->type, vi->name.str(),
 			vi->offset, vi->size, vi->default_value)
 	{
@@ -124,14 +124,14 @@ namespace flame
 
 	bool SlotPrivate::link_to(SlotPrivate* target)
 	{
-		assert(io == In);
+		assert(io == bpSlotIn);
 
 		if (links[0] == target)
 			return true;
 
 		if (target)
 		{
-			if (target->io == In)
+			if (target->io == bpSlotIn)
 				return false;
 			if (parent == target->parent)
 				return false;
@@ -178,14 +178,14 @@ namespace flame
 		return true;
 	}
 
-	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, UdtInfo* _udt, void* _library) :
+	NodePrivate::NodePrivate(bpNodeType _node_type, GroupPrivate* _group, const std::string& _id, UdtInfo* _udt, void* _library) :
 		object(nullptr),
 		library(_library),
 		dtor_addr(nullptr),
 		update_addr(nullptr),
 		order(0xffffffff)
 	{
-		unit_type = BP::UnitNode;
+		unit_type = bpUnitNode;
 		id = _id;
 		pos = Vec2f(0.f);
 		user_data = nullptr;
@@ -194,7 +194,7 @@ namespace flame
 		type = _udt->name;
 		udt = _udt;
 
-		if (node_type == BP::NodeReal)
+		if (node_type == bpNodeReal)
 		{
 			auto size = udt->size;
 			object = malloc(size);
@@ -221,9 +221,9 @@ namespace flame
 			for (auto v :udt->variables)
 			{
 				if (v->flags & VariableFlagOutput)
-					outputs.push_back(new SlotPrivate(this, BP::Slot::Out, outputs.s, v));
+					outputs.push_back(new SlotPrivate(this, bpSlotOut, outputs.s, v));
 				else
-					inputs.push_back(new SlotPrivate(this, BP::Slot::In, inputs.s, v));
+					inputs.push_back(new SlotPrivate(this, bpSlotIn, inputs.s, v));
 			}
 		}
 		else
@@ -236,12 +236,12 @@ namespace flame
 			//	assert(object);
 			//}
 
-			if (node_type == BP::NodeRefRead)
+			if (node_type == bpNodeRefRead)
 			{
 				for (auto v : udt->variables)
-					outputs.push_back(new SlotPrivate(this, BP::Slot::Out, outputs.s, v));
+					outputs.push_back(new SlotPrivate(this, bpSlotOut, outputs.s, v));
 			}
-			else if (node_type == BP::NodeRefWrite)
+			else if (node_type == bpNodeRefWrite)
 			{
 				for (auto v: udt->variables)
 				{
@@ -249,7 +249,7 @@ namespace flame
 					if (type->tag != TypeData)
 						continue;
 					auto base_hash = type->base_hash;
-					auto input = new SlotPrivate(this, BP::Slot::In, inputs.s, v);
+					auto input = new SlotPrivate(this, bpSlotIn, inputs.s, v);
 					auto f_set = udt->find_function(("set_" + v->name.str()).c_str());
 					if (f_set)
 					{
@@ -321,14 +321,14 @@ namespace flame
 		}
 	}
 
-	NodePrivate::NodePrivate(BP::NodeType _node_type, GroupPrivate* _group, const std::string& _id, const std::string& _type, uint size,
+	NodePrivate::NodePrivate(bpNodeType _node_type, GroupPrivate* _group, const std::string& _id, const std::string& _type, uint size,
 		const std::vector<SlotDesc>& _inputs, const std::vector<SlotDesc>& _outputs, void* ctor_addr, void* dtor_addr, void* update_addr) :
 		library(nullptr),
 		dtor_addr(dtor_addr),
 		update_addr(update_addr),
 		order(0xffffffff)
 	{
-		unit_type = BP::UnitNode;
+		unit_type = bpUnitNode;
 		id = _id;
 		pos = Vec2f(0.f);
 		user_data = nullptr;
@@ -346,18 +346,18 @@ namespace flame
 		for (auto i = 0; i < _inputs.size(); i++)
 		{
 			auto& d = _inputs[i];
-			inputs.push_back(new SlotPrivate(this, BP::Slot::In, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
+			inputs.push_back(new SlotPrivate(this, bpSlotIn, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
 		}
 		for (auto i = 0; i < _outputs.size(); i++)
 		{
 			auto& d = _outputs[i];
-			outputs.push_back(new SlotPrivate(this, BP::Slot::Out, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
+			outputs.push_back(new SlotPrivate(this, bpSlotOut, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
 		}
 	}
 
 	NodePrivate::~NodePrivate()
 	{
-		if (node_type == BP::NodeReal)
+		if (node_type == bpNodeReal)
 		{
 			if (dtor_addr)
 				cmf(p2f<MF_v_v>(dtor_addr), object);
@@ -395,13 +395,13 @@ namespace flame
 
 	GroupPrivate::GroupPrivate(BPPrivate* _scene, const std::string& _id)
 	{
-		unit_type = BP::UnitGroup;
+		unit_type = bpUnitGroup;
 		id = _id;
 		pos = Vec2f(0.f);
 		user_data = nullptr;
 		scene = _scene;
 
-		signal = new SlotPrivate(this, BP::Slot::In, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, sizeof(void*), "");
+		signal = new SlotPrivate(this, bpSlotIn, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, sizeof(void*), "");
 
 		need_rebuild_update_list = true;
 	}
@@ -430,7 +430,7 @@ namespace flame
 		return true;
 	}
 
-	NodePrivate* GroupPrivate::add_node(const std::string& _id, const std::string& type, BP::NodeType node_type)
+	NodePrivate* GroupPrivate::add_node(const std::string& _id, const std::string& type, bpNodeType node_type)
 	{
 		std::string id = _id;
 		if (!check_or_create_id(this, id))
@@ -462,7 +462,7 @@ namespace flame
 				}
 			};
 #pragma pack()
-			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy), {
+			n = new NodePrivate(bpNodeReal, this, id, type, sizeof(Dummy), {
 					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
 					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
 				}, {
@@ -489,7 +489,7 @@ namespace flame
 				}
 			};
 #pragma pack()
-			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy), {
+			n = new NodePrivate(bpNodeReal, this, id, type, sizeof(Dummy), {
 					{TypeInfo::get(TypeEnumMulti, parameters.c_str()), "in", offsetof(Dummy, in), sizeof(Dummy::in) },
 					{TypeInfo::get(TypeEnumSingle, parameters.c_str()), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk) }
 				}, {
@@ -524,7 +524,7 @@ namespace flame
 #pragma pack()
 			auto type_hash = FLAME_HASH(parameters.c_str());
 			auto type_size = basic_type_size(type_hash);
-			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy) + type_size * 2, {
+			n = new NodePrivate(bpNodeReal, this, id, type, sizeof(Dummy) + type_size * 2, {
 					{TypeInfo::get(TypeData, parameters.c_str()), "in", sizeof(Dummy), type_size }
 				}, {
 					{TypeInfo::get(TypeData, parameters.c_str()), "out", sizeof(Dummy) + type_size, type_size }
@@ -592,7 +592,7 @@ namespace flame
 					sizeof(Dummy) + type_size * i, type_size
 					});
 			}
-			n = new NodePrivate(BP::NodeReal, this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
+			n = new NodePrivate(bpNodeReal, this, id, type, sizeof(Dummy) + type_size * size + sizeof(Array<int>), inputs, {
 					{ TypeInfo::get(TypeData, type_name.c_str(), true), "out", sizeof(Dummy) + type_size * size, sizeof(Array<int>) }
 				}, nullptr, f2v(&Dummy::dtor), f2v(&Dummy::update));
 			auto& obj = *(Dummy*)n->object;
@@ -670,7 +670,7 @@ namespace flame
 			if (o)
 			{
 				auto u = o->parent;
-				if (u->unit_type == BP::UnitNode)
+				if (u->unit_type == bpUnitNode)
 					get_order((NodePrivate*)u, order);
 			}
 		}
@@ -769,7 +769,7 @@ namespace flame
 		return ((SlotPrivate*)this)->link_to((SlotPrivate*)target);
 	}
 
-	BP::Node* BP::Group::add_node(const char* id, const char* type, NodeType node_type)
+	BP::Node* BP::Group::add_node(const char* id, const char* type, bpNodeType node_type)
 	{
 		return ((GroupPrivate*)this)->add_node(id, type, node_type);
 	}
@@ -830,7 +830,7 @@ namespace flame
 
 				for (auto n_node : n_group.child("nodes"))
 				{
-					auto n = g->add_node(n_node.attribute("id").value(), n_node.attribute("type").value(), (NodeType)n_node.attribute("node_type").as_int());
+					auto n = g->add_node(n_node.attribute("id").value(), n_node.attribute("type").value(), (bpNodeType)n_node.attribute("node_type").as_int());
 					if (n)
 					{
 						n->pos = stof2(n_node.attribute("pos").value());

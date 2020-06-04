@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 
 namespace flame

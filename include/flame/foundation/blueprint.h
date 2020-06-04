@@ -4,21 +4,27 @@
 
 namespace flame
 {
+	enum bpUnitType
+	{
+		bpUnitNode,
+		bpUnitGroup
+	};
+
+	enum bpNodeType
+	{
+		bpNodeReal,
+		bpNodeRefRead,
+		bpNodeRefWrite
+	};
+
+	enum bpSlotType
+	{
+		bpSlotIn,
+		bpSlotOut
+	};
+
 	struct BP
 	{
-		enum UnitType
-		{
-			UnitNode,
-			UnitGroup
-		};
-
-		enum NodeType
-		{
-			NodeReal,
-			NodeRefRead,
-			NodeRefWrite
-		};
-
 		struct Slot;
 		struct Unit;
 		struct Node;
@@ -26,14 +32,9 @@ namespace flame
 
 		struct Slot
 		{
-			enum IO
-			{
-				In,
-				Out
-			};
 
 			Unit* parent;
-			IO io;
+			bpSlotType io;
 			uint index;
 			TypeInfo* type;
 			StringA name;
@@ -91,7 +92,7 @@ namespace flame
 
 		struct Unit
 		{
-			UnitType unit_type;
+			bpUnitType unit_type;
 			Guid guid;
 			StringA id;
 			Vec2f pos;
@@ -103,7 +104,7 @@ namespace flame
 		struct Node : Unit
 		{
 			Group* group;
-			NodeType node_type;
+			bpNodeType node_type;
 			StringA type;
 			UdtInfo* udt;
 
@@ -139,7 +140,7 @@ namespace flame
 
 			Array<Node*> nodes;
 
-			FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, const char* type, NodeType node_type = NodeReal);
+			FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, const char* type, bpNodeType node_type = bpNodeReal);
 			FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
 
 			Node* find_node(const Guid& guid) const
@@ -278,7 +279,7 @@ namespace flame
 			return false;
 		if (id == _id)
 			return true;
-		if (unit_type == UnitNode)
+		if (unit_type == bpUnitNode)
 		{
 			for (auto n : ((BP::Node*)this)->group->nodes)
 			{

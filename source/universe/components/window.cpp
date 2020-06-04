@@ -101,7 +101,7 @@ namespace flame
 						if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						{
 							auto thiz = c.thiz<cBringToFrontPrivate>();
-							auto l = thiz->entity->parent->parent->last_child(0);
+							auto l = thiz->entity->parent->parent->last_child();
 							if (!l || !SUS::starts_with(l->name.v, "layer_"))
 							{
 								looper().add_event([](Capture& c) {

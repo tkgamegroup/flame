@@ -22,7 +22,7 @@ struct cThumbnail : Component
 	~cThumbnail()
 	{
 		if (thumbnail)
-			Bitmap::destroy(thumbnail);
+			thumbnail->release();
 		if (seat)
 			return_seat();
 	}
@@ -41,27 +41,30 @@ struct cThumbnail : Component
 		seat = nullptr;
 	}
 
-	virtual void on_component_added(Component* c) override
+	void on_event(Entity::Event e, void* t)
 	{
-		if (c->name_hash == FLAME_CHASH("cElement"))
+		switch (e)
 		{
-			((cElement*)c)->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-				c.thiz<cThumbnail>()->draw(canvas);
-				return true;
-			}, Capture().set_thiz(this));
-		}
-		else if (c->name_hash == FLAME_CHASH("cImage"))
-		{
-			image = (cImage*)c;
-			add_work([](Capture& c) {
-				auto thiz = c.thiz<cThumbnail>();
-				uint w, h;
-				char* data;
-				get_thumbnail(64, thiz->filename.c_str(), &w, &h, &data);
-				auto bitmap = Bitmap::create(Vec2u(w, h), 4, 32, (uchar*)data);
-				bitmap->swap_channel(0, 2);
-				thiz->thumbnail = bitmap;
-			}, Capture().set_thiz(this));
+		case Entity::EventComponentAdded:
+			if (t == this)
+			{
+				entity->get_component(cElement)->cmds.add([](Capture& c, graphics::Canvas* canvas) {
+					c.thiz<cThumbnail>()->draw(canvas);
+					return true;
+				}, Capture().set_thiz(this));
+				image = entity->get_component(cImage);
+
+				add_work([](Capture& c) {
+					auto thiz = c.thiz<cThumbnail>();
+					uint w, h;
+					char* data;
+					get_thumbnail(64, thiz->filename.c_str(), &w, &h, &data);
+					auto bitmap = Bitmap::create(w, h, 4, 1, (uchar*)data);
+					bitmap->swap_channel(0, 2);
+					thiz->thumbnail = bitmap;
+				}, Capture().set_thiz(this));
+			}
+			break;
 		}
 	}
 
@@ -93,9 +96,9 @@ struct cThumbnail : Component
 							auto thiz = c.thiz<cThumbnail>();
 							auto image = thiz->image;
 							auto& thumbnails_img_size = scene_editor.resource_explorer->thumbnails_img->size;
-							auto& thumbnail_size = thiz->thumbnail->size;
+							auto& thumbnail_size = Vec2u(thiz->thumbnail->get_width(), thiz->thumbnail->get_height());
 
-							scene_editor.resource_explorer->thumbnails_img->set_pixels(*thiz->seat, thumbnail_size, thiz->thumbnail->data);
+							scene_editor.resource_explorer->thumbnails_img->set_pixels(*thiz->seat, thumbnail_size, thiz->thumbnail->get_data());
 
 							auto h = (64 - thumbnail_size.x()) * 0.5f;
 							auto v = (64 - thumbnail_size.y()) * 0.5f;
@@ -178,9 +181,9 @@ cResourceExplorer::cResourceExplorer() :
 						ui.e_input_dialog(L"name", [](Capture& c, bool ok, const wchar_t* text) {
 							if (ok)
 							{
-								auto e = Entity::create();
+								auto e = f_new<Entity>();
 								Entity::save_to_file(e, (scene_editor.resource_explorer->curr_path / std::filesystem::path(text).replace_extension(L".prefab")).c_str());
-								Entity::destroy(e);
+								f_delete(e);
 							}
 						}, Capture());
 					}, Capture());
@@ -381,7 +384,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			auto item = scene_editor.resource_explorer->create_listitem(p.filename().wstring(), is_image_type ? 0 : scene_editor.resource_explorer->file_img_idx);
 			if (is_image_type)
 			{
-				auto e_image = item->child(0);
+				auto e_image = item->children[0];
 				e_image->get_component(cImage)->color = Vec4c(100, 100, 100, 128);
 
 				auto c_thumbnail = f_new<cThumbnail>();
