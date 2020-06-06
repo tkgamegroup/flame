@@ -10,19 +10,6 @@ namespace flame
 	struct GroupPrivate;
 	struct BPPrivate;
 
-	struct SlotPrivate : BP::Slot
-	{
-		Setter* setter;
-		void* listener;
-
-		SlotPrivate(BP::Unit* unit, bpSlotType io, uint index, TypeInfo* type, const std::string& name, uint offset, uint size, const void* default_value);
-		SlotPrivate(BP::Unit* unit, bpSlotType io, uint index, VariableInfo* vi);
-		~SlotPrivate();
-
-		void set_data(const void* data);
-		bool link_to(SlotPrivate* target);
-	};
-
 	struct SlotDesc
 	{
 		const TypeInfo* type;
@@ -64,6 +51,58 @@ namespace flame
 		void update();
 	};
 
+	struct SlotPrivate : BP::Slot
+	{
+		Setter* setter;
+		void* listener;
+
+		SlotPrivate(BP::Node* _node, BP::Group* _group, bpSlotIO _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
+			setter(nullptr),
+			listener(nullptr)
+		{
+			node = _node;
+			group = _group;
+			io = _io;
+			index = _index;
+			type = _type;
+			name = _name;
+			offset = _offset;
+			size = _size;
+			user_data = nullptr;
+
+			if (_default_value)
+			{
+				default_value = new char[size];
+				memcpy(default_value, _default_value, size);
+			}
+			else
+				default_value = nullptr;
+
+			if (node)
+				data = (char*)((NodePrivate*)node)->object + offset;
+			if (group)
+				data = ((GroupPrivate*)group)->psignal;
+
+			if (io == bpSlotIn)
+				links.push_back(nullptr);
+		}
+
+		SlotPrivate(BP::Node* node, BP::Group* group, bpSlotIO io, uint index, VariableInfo* vi) :
+			SlotPrivate(node, group, io, index, vi->type, vi->name.str(),
+				vi->offset, vi->size, vi->default_value)
+		{
+		}
+
+		~SlotPrivate()
+		{
+			delete[] default_value;
+			delete setter;
+		}
+
+		void set_data(const void* data);
+		bool link_to(SlotPrivate* target);
+	};
+
 	struct BPPrivate : BP
 	{
 		BPPrivate();
@@ -74,45 +113,6 @@ namespace flame
 
 		void update();
 	};
-
-	SlotPrivate::SlotPrivate(BP::Unit* unit, bpSlotType _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
-		setter(nullptr),
-		listener(nullptr)
-	{
-		parent = unit;
-		io = _io;
-		index = _index;
-		type = _type;
-		name = _name;
-		offset = _offset;
-		size = _size;
-		user_data = nullptr;
-
-		if (_default_value)
-		{
-			default_value = new char[size];
-			memcpy(default_value, _default_value, size);
-		}
-		else
-			default_value = nullptr;
-
-		data = unit->unit_type == bpUnitNode ? (char*)((NodePrivate*)unit)->object + offset : (char*)&((GroupPrivate*)unit)->psignal;
-
-		if (io == bpSlotIn)
-			links.push_back(nullptr);
-	}
-
-	SlotPrivate::SlotPrivate(BP::Unit* unit, bpSlotType io, uint index, VariableInfo* vi) :
-		SlotPrivate(unit, io, index, vi->type, vi->name.str(),
-			vi->offset, vi->size, vi->default_value)
-	{
-	}
-
-	SlotPrivate::~SlotPrivate()
-	{
-		delete[] default_value;
-		delete setter;
-	}
 
 	void SlotPrivate::set_data(const void* d)
 	{
@@ -125,6 +125,8 @@ namespace flame
 	bool SlotPrivate::link_to(SlotPrivate* target)
 	{
 		assert(io == bpSlotIn);
+		if (io == bpSlotIn)
+			return false;
 
 		if (links[0] == target)
 			return true;
@@ -133,7 +135,7 @@ namespace flame
 		{
 			if (target->io == bpSlotIn)
 				return false;
-			if (parent == target->parent)
+			if (node && node == target->node)
 				return false;
 		}
 
@@ -168,7 +170,7 @@ namespace flame
 				memcpy(data, &p, sizeof(void*));
 				listener = (*(ListenerHub<void(Capture&)>**)data)->add([](Capture& c) {
 					c.thiz<BP::Group>()->update();
-				}, Capture().set_thiz(parent));
+				}, Capture().set_thiz(group));
 			}
 		}
 
@@ -221,9 +223,9 @@ namespace flame
 			for (auto v :udt->variables)
 			{
 				if (v->flags & VariableFlagOutput)
-					outputs.push_back(new SlotPrivate(this, bpSlotOut, outputs.s, v));
+					outputs.push_back(new SlotPrivate(this, nullptr, bpSlotOut, outputs.s, v));
 				else
-					inputs.push_back(new SlotPrivate(this, bpSlotIn, inputs.s, v));
+					inputs.push_back(new SlotPrivate(this, nullptr, bpSlotIn, inputs.s, v));
 			}
 		}
 		else
@@ -239,7 +241,7 @@ namespace flame
 			if (node_type == bpNodeRefRead)
 			{
 				for (auto v : udt->variables)
-					outputs.push_back(new SlotPrivate(this, bpSlotOut, outputs.s, v));
+					outputs.push_back(new SlotPrivate(this, nullptr, bpSlotOut, outputs.s, v));
 			}
 			else if (node_type == bpNodeRefWrite)
 			{
@@ -249,7 +251,7 @@ namespace flame
 					if (type->tag != TypeData)
 						continue;
 					auto base_hash = type->base_hash;
-					auto input = new SlotPrivate(this, bpSlotIn, inputs.s, v);
+					auto input = new SlotPrivate(this, nullptr, bpSlotIn, inputs.s, v);
 					auto f_set = udt->find_function(("set_" + v->name.str()).c_str());
 					if (f_set)
 					{
@@ -346,12 +348,12 @@ namespace flame
 		for (auto i = 0; i < _inputs.size(); i++)
 		{
 			auto& d = _inputs[i];
-			inputs.push_back(new SlotPrivate(this, bpSlotIn, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
+			inputs.push_back(new SlotPrivate(this, nullptr, bpSlotIn, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
 		}
 		for (auto i = 0; i < _outputs.size(); i++)
 		{
 			auto& d = _outputs[i];
-			outputs.push_back(new SlotPrivate(this, bpSlotOut, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
+			outputs.push_back(new SlotPrivate(this, nullptr, bpSlotOut, i, (TypeInfo*)d.type, d.name, d.offset, d.size, nullptr));
 		}
 	}
 
@@ -401,7 +403,7 @@ namespace flame
 		user_data = nullptr;
 		scene = _scene;
 
-		signal = new SlotPrivate(this, bpSlotIn, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, sizeof(void*), "");
+		signal = new SlotPrivate(nullptr, this, bpSlotIn, 0, (TypeInfo*)TypeInfo::get(TypePointer, "ListenerHub"), "signal", 0, sizeof(void*), "");
 
 		need_rebuild_update_list = true;
 	}
@@ -669,9 +671,9 @@ namespace flame
 			auto o = i->links[0];
 			if (o)
 			{
-				auto u = o->parent;
-				if (u->unit_type == bpUnitNode)
-					get_order((NodePrivate*)u, order);
+				auto n = o->node;
+				if (n)
+					get_order((NodePrivate*)n, order);
 			}
 		}
 		n->order = order++;

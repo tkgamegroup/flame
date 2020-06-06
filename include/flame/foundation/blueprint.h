@@ -17,7 +17,7 @@ namespace flame
 		bpNodeRefWrite
 	};
 
-	enum bpSlotType
+	enum bpSlotIO
 	{
 		bpSlotIn,
 		bpSlotOut
@@ -32,9 +32,9 @@ namespace flame
 
 		struct Slot
 		{
-
-			Unit* parent;
-			bpSlotType io;
+			Node* node;
+			Group* group;
+			bpSlotIO io;
 			uint index;
 			TypeInfo* type;
 			StringA name;
@@ -84,7 +84,12 @@ namespace flame
 
 			StringA get_address() const
 			{
-				return StringA(std::string(parent->id.v) + "." + name.v);
+				std::string str;
+				if (node)
+					str = node->id.str();
+				if (group)
+					str = group->id.str();
+				return StringA(str + "." + name.v);
 			}
 
 			void* user_data;

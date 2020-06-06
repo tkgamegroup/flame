@@ -32,12 +32,12 @@ namespace flame
 		for (auto c : children)
 		{
 			for (auto cc : c->components.get_all())
-				cc->on_event(EventRemoved, nullptr);
-			c->event_listeners.call(EventRemoved, nullptr);
+				cc->on_event(EntityRemoved, nullptr);
+			c->event_listeners.call(EntityRemoved, nullptr);
 		}
 		for (auto c : components.get_all())
-			c->on_event(EventDestroyed, nullptr);
-		event_listeners.call(EventDestroyed, nullptr);
+			c->on_event(EntityDestroyed, nullptr);
+		event_listeners.call(EntityDestroyed, nullptr);
 
 		ListenerHubImpl::destroy(event_listeners.impl);
 
@@ -87,15 +87,15 @@ namespace flame
 		c->entity = this;
 		components.add(hash, c);
 		if (world)
-			c->on_event(EventEnteredWorld, nullptr);
+			c->on_event(EntityEnteredWorld, nullptr);
 		for (auto cc : components.get_all())
-			cc->on_event(EventComponentAdded, c);
-		event_listeners.call(EventComponentAdded, c);
+			cc->on_event(EntityComponentAdded, c);
+		event_listeners.call(EntityComponentAdded, c);
 		if (parent)
 		{
 			for (auto cc : parent->components.get_all())
-				cc->on_event(EventChildComponentAdded, c);
-			parent->event_listeners.call(EventChildComponentAdded, c);
+				cc->on_event(EntityChildComponentAdded, c);
+			parent->event_listeners.call(EntityChildComponentAdded, c);
 		}
 	}
 
@@ -107,13 +107,13 @@ namespace flame
 		if (components.remove(hash))
 		{
 			for (auto cc : components.get_all())
-				cc->on_event(EventComponentRemoved, c);
-			event_listeners.call(EventComponentRemoved, c);
+				cc->on_event(EntityComponentRemoved, c);
+			event_listeners.call(EntityComponentRemoved, c);
 			if (parent)
 			{
 				for (auto cc : parent->components.get_all())
-					cc->on_event(EventChildComponentRemoved, c);
-				parent->event_listeners.call(EventChildComponentRemoved, c);
+					cc->on_event(EntityChildComponentRemoved, c);
+				parent->event_listeners.call(EntityChildComponentRemoved, c);
 			}
 			f_delete(c);
 		}
