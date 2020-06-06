@@ -45,11 +45,12 @@ namespace flame
 				if (dp)
 				{
 					auto er = (cEventReceiver*)dp->get_common_item(FLAME_CHASH("focusing")).p;
-					l->world->get_system(sEventDispatcher)->next_focusing = er;
+					auto w = c.data<World*>();
+					w->get_system(sEventDispatcher)->next_focusing = er;
 				}
 			}
 			return true;
-		}, Capture().set_thiz(l));
+		}, Capture().set_thiz(l).set_data(&l->world));
 
 		{
 			struct Capturing

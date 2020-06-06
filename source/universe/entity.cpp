@@ -133,7 +133,7 @@ namespace flame
 
 	static void leave_world(Entity* e)
 	{
-		for (auto i = e->children.s - 1; i >= 0; i--)
+		for (auto i = (int)e->children.s - 1; i >= 0; i--)
 			leave_world(e->children[i]);
 		e->world = nullptr;
 		for (auto c : e->components.get_all())
