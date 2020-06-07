@@ -5,7 +5,6 @@
 namespace flame
 {
 	struct SysWindow;
-	struct BP;
 
 	namespace graphics
 	{

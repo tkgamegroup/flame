@@ -40,7 +40,7 @@ void cDetail::on_after_select()
 					auto n = bp_editor.selected_nodes[0];
 					std::wstring str;
 					std::string n_type_parameters;
-					auto n_type = BP::break_node_type(n->type.str(), &n_type_parameters);
+					auto n_type = break_bp_node_type(n->type.str(), &n_type_parameters);
 					auto n_name = n_type ? s2w(n_type_parameters) : s2w(n->type.str());
 					auto udt = n->udt;
 					if (udt)
@@ -52,10 +52,10 @@ void cDetail::on_after_select()
 						ui.e_text((L"ID: " + s2w(n->id.str())).c_str());
 						ui.e_button(L"change", [](Capture& c) {
 							auto& ui = bp_editor.window->ui;
-							auto n = c.thiz<BP::Node>();
+							auto n = c.thiz<bpNode>();
 							ui.e_input_dialog(L"ID", [](Capture& c, bool ok, const wchar_t* text) {
 								if (ok && text[0])
-									bp_editor.set_node_id(c.thiz<BP::Node>(), w2s(text));
+									bp_editor.set_node_id(c.thiz<bpNode>(), w2s(text));
 							}, Capture().set_thiz(n), s2w(n->id.str()).c_str());
 						}, Capture().set_thiz(n));
 					ui.e_end_layout();

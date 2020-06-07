@@ -73,18 +73,17 @@ struct cBPEditor : Component
 {
 	_2DEditor edt;
 
-	BP::Slot* dragging_slot;
+	bpSlot* dragging_slot;
 	Vec2f dragging_slot_pos;
 
 	cBPEditor();
 	virtual ~cBPEditor() override;
 	void on_before_select();
 	void on_after_select();
-	void on_pos_changed(BP::Node* n);
-	void on_add_group(BP::Group* g);
-	void on_add_node(BP::Node* n);
-	void on_remove_node(BP::Node* n);
-	void on_data_changed(BP::Slot* s);
+	void on_pos_changed(bpNode* n);
+	void on_add_node(bpNode* n);
+	void on_remove_node(bpNode* n);
+	void on_data_changed(bpSlot* s);
 	void show_add_node_menu(const Vec2f& pos);
 };
 
@@ -161,12 +160,12 @@ struct BPEditor
 
 	std::filesystem::path filepath;
 	std::filesystem::path fileppath;
-	BP* bp;
+	bpScene* bp;
 	bool changed;
 	bool auto_update;
 
-	std::vector<BP::Node*> selected_nodes;
-	std::vector<BP::Slot*> selected_links;
+	std::vector<bpNode*> selected_nodes;
+	std::vector<bpSlot*> selected_links;
 
 	cCheckbox* c_auto_update;
 
@@ -193,19 +192,19 @@ struct BPEditor
 	}
 
 	void select();
-	void select(const std::vector<BP::Node*>& nodes);
-	void select(const std::vector<BP::Slot*>& links);
+	void select(const std::vector<bpNode*>& nodes);
+	void select(const std::vector<bpSlot*>& links);
 
 	void save();
 
 	void set_changed(bool v);
 
-	BP::Node* add_node(const NodeDesc& desc);
-	void remove_nodes(const std::vector<BP::Node*> nodes);
-	void set_node_id(BP::Node* n, const std::string& id);
-	void set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& pos);
-	void set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links);
-	void set_data(BP::Slot* input, void* data, bool from_editor);
+	bpNode* add_node(const NodeDesc& desc);
+	void remove_nodes(const std::vector<bpNode*> nodes);
+	void set_node_id(bpNode* n, const std::string& id);
+	void set_nodes_pos(const std::vector<bpNode*>& nodes, const std::vector<Vec2f>& pos);
+	void set_links(const std::vector<std::pair<bpSlot*, bpSlot*>>& links);
+	void set_data(bpSlot* input, void* data, bool from_editor);
 
 	void update();
 
@@ -213,10 +212,10 @@ struct BPEditor
 	bool generate_graph_image();
 	bool auto_set_layout();
 
-	BP::Node* _add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos);
-	void _remove_nodes(const std::vector<BP::Node*>& nodes);
-	std::vector<BP::Node*> _duplicate_nodes(const std::vector<BP::Node*>& models);
-	void _set_link(BP::Slot* in, BP::Slot* out);
+	bpNode* _add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos);
+	void _remove_nodes(const std::vector<bpNode*>& nodes);
+	std::vector<bpNode*> _duplicate_nodes(const std::vector<bpNode*>& models);
+	void _set_link(bpSlot* in, bpSlot* out);
 };
 
 extern BPEditor bp_editor;

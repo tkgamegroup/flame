@@ -127,7 +127,7 @@ struct Action_DuplicateNodes : Action
 
 	void undo() override
 	{
-		std::vector<BP::Node*> nodes;
+		std::vector<bpNode*> nodes;
 		for (auto& d : duplications)
 			nodes.push_back(bp_editor.bp->find_node(d));
 		bp_editor._remove_nodes(nodes);
@@ -135,7 +135,7 @@ struct Action_DuplicateNodes : Action
 
 	void redo() override
 	{
-		std::vector<BP::Node*> nodes(models.size());
+		std::vector<bpNode*> nodes(models.size());
 		for (auto i = 0; i < models.size(); i++)
 			nodes[i] = bp_editor.bp->find_node(models[i]);
 		auto new_nodes = bp_editor._duplicate_nodes(nodes);
@@ -155,7 +155,7 @@ struct Action_RemoveNodes : Action
 
 	void undo() override
 	{
-		std::vector<BP::Node*> nodes;
+		std::vector<bpNode*> nodes;
 		for (auto& s : savings)
 		{
 			auto n = bp_editor._add_node(s.desc.node_type, s.desc.id.c_str(), s.desc.type.c_str(), s.desc.pos);
@@ -194,7 +194,7 @@ struct Action_RemoveNodes : Action
 					if (bp_editor.editor)
 					{
 						looper().add_event([](Capture& c) {
-							auto n = c.thiz<BP::Node>();
+							auto n = c.thiz<bpNode>();
 							bp_editor.editor->on_remove_node(n);
 							bp_editor.editor->on_add_node(n);
 						}, Capture().set_thiz(n));
@@ -207,7 +207,7 @@ struct Action_RemoveNodes : Action
 
 	void redo() override
 	{
-		std::vector<BP::Node*> nodes;
+		std::vector<bpNode*> nodes;
 		for (auto& s : savings)
 			nodes.push_back(bp_editor.bp->find_node(s.desc.guid));
 		bp_editor._remove_nodes(nodes);
@@ -379,7 +379,7 @@ static void delete_selected()
 	}
 	if (!bp_editor.selected_links.empty())
 	{
-		std::vector<std::pair<BP::Slot*, BP::Slot*>> links(bp_editor.selected_links.size());
+		std::vector<std::pair<bpSlot*, bpSlot*>> links(bp_editor.selected_links.size());
 		for (auto i = 0; i < bp_editor.selected_links.size(); i++)
 			links[i] = { bp_editor.selected_links[i], nullptr };
 		bp_editor.set_links(links);
@@ -697,7 +697,7 @@ void BPEditor::select()
 		editor->on_after_select();
 }
 
-void BPEditor::select(const std::vector<BP::Node*>& nodes)
+void BPEditor::select(const std::vector<bpNode*>& nodes)
 {
 	if (editor)
 		editor->on_before_select();
@@ -711,7 +711,7 @@ void BPEditor::select(const std::vector<BP::Node*>& nodes)
 		editor->on_after_select();
 }
 
-void BPEditor::select(const std::vector<BP::Slot*>& links)
+void BPEditor::select(const std::vector<bpSlot*>& links)
 {
 	if (editor)
 		editor->on_before_select();
@@ -748,7 +748,7 @@ void BPEditor::set_changed(bool v)
 	}
 }
 
-BP::Node* BPEditor::add_node(const NodeDesc& desc)
+bpNode* BPEditor::add_node(const NodeDesc& desc)
 {
 	auto n = _add_node(desc.node_type, desc.id, desc.type, desc.pos);
 	if (!n)
@@ -768,7 +768,7 @@ BP::Node* BPEditor::add_node(const NodeDesc& desc)
 	return n;
 }
 
-void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
+void BPEditor::remove_nodes(const std::vector<bpNode*> nodes)
 {
 	auto a = new Action_RemoveNodes;
 	a->savings.resize(nodes.size());
@@ -805,7 +805,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 			for (auto k = 0; k < src->links.s; k++)
 			{
 				auto slot = src->links[k];
-				auto _n = (BP::Node*)slot->node;
+				auto _n = (bpNode*)slot->node;
 				auto existed = false;
 				for (auto& n : nodes)
 				{
@@ -832,7 +832,7 @@ void BPEditor::remove_nodes(const std::vector<BP::Node*> nodes)
 	set_changed(true);
 }
 
-void BPEditor::set_node_id(BP::Node* n, const std::string& id)
+void BPEditor::set_node_id(bpNode* n, const std::string& id)
 {
 	auto before_id = n->id.str();
 
@@ -847,7 +847,7 @@ void BPEditor::set_node_id(BP::Node* n, const std::string& id)
 	set_changed(true);
 }
 
-void BPEditor::set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vector<Vec2f>& poses)
+void BPEditor::set_nodes_pos(const std::vector<bpNode*>& nodes, const std::vector<Vec2f>& poses)
 {
 	auto a = new Action_MoveNodes;
 	a->targets.resize(nodes.size());
@@ -867,7 +867,7 @@ void BPEditor::set_nodes_pos(const std::vector<BP::Node*>& nodes, const std::vec
 	set_changed(true);
 }
 
-void BPEditor::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& links)
+void BPEditor::set_links(const std::vector<std::pair<bpSlot*, bpSlot*>>& links)
 {
 	auto a = new Action_SetLinks;
 	a->link_descs.resize(links.size());
@@ -897,7 +897,7 @@ void BPEditor::set_links(const std::vector<std::pair<BP::Slot*, BP::Slot*>>& lin
 	set_changed(true);
 }
 
-void BPEditor::set_data(BP::Slot* input, void* data, bool from_editor)
+void BPEditor::set_data(bpSlot* input, void* data, bool from_editor)
 {
 	auto type = input->type;
 
@@ -1039,7 +1039,7 @@ bool BPEditor::auto_set_layout()
 	return true;
 }
 
-BP::Node* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
+bpNode* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
 	auto n = bp_editor.bp->groups[0]->add_node(id.c_str(), type.c_str(), node_type);
 	if (!n)
@@ -1052,11 +1052,11 @@ BP::Node* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const
 	return n;
 }
 
-void BPEditor::_remove_nodes(const std::vector<BP::Node*>& nodes)
+void BPEditor::_remove_nodes(const std::vector<bpNode*>& nodes)
 {
 	if (bp_editor.editor)
 	{
-		std::vector<BP::Node*> refresh_ns;
+		std::vector<bpNode*> refresh_ns;
 		for (auto n : nodes)
 		{
 			for (auto o : n->outputs)
@@ -1081,7 +1081,7 @@ void BPEditor::_remove_nodes(const std::vector<BP::Node*>& nodes)
 		for (auto n : nodes)
 		{
 			looper().add_event([](Capture& c) {
-				auto n = c.thiz<BP::Node>();
+				auto n = c.thiz<bpNode>();
 				bp_editor.editor->on_remove_node(n);
 				n->group->remove_node(n);
 			}, Capture().set_thiz(n));
@@ -1089,7 +1089,7 @@ void BPEditor::_remove_nodes(const std::vector<BP::Node*>& nodes)
 		for (auto n : refresh_ns)
 		{
 			looper().add_event([](Capture& c) {
-				auto n = c.thiz<BP::Node>();
+				auto n = c.thiz<bpNode>();
 				bp_editor.editor->on_remove_node(n);
 				bp_editor.editor->on_add_node(n);
 			}, Capture().set_thiz(n));
@@ -1097,9 +1097,9 @@ void BPEditor::_remove_nodes(const std::vector<BP::Node*>& nodes)
 	}
 }
 
-std::vector<BP::Node*> BPEditor::_duplicate_nodes(const std::vector<BP::Node*>& models)
+std::vector<bpNode*> BPEditor::_duplicate_nodes(const std::vector<bpNode*>& models)
 {
-	std::vector<BP::Node*> ret(models.size());
+	std::vector<bpNode*> ret(models.size());
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = models[i];
@@ -1130,12 +1130,12 @@ std::vector<BP::Node*> BPEditor::_duplicate_nodes(const std::vector<BP::Node*>& 
 	return ret;
 }
 
-void BPEditor::_set_link(BP::Slot* in, BP::Slot* out)
+void BPEditor::_set_link(bpSlot* in, bpSlot* out)
 {
 	if (auto node = in->node; bp_editor.editor)
 	{
 		looper().add_event([](Capture& c) {
-			auto n = c.thiz<BP::Node>();
+			auto n = c.thiz<bpNode>();
 			bp_editor.editor->on_remove_node(n);
 			bp_editor.editor->on_add_node(n);
 		}, Capture().set_thiz(node));

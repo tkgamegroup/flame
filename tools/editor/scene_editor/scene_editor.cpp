@@ -232,7 +232,7 @@ SceneEditorWindow::SceneEditorWindow() :
 	ui.e_begin_menubar_menu(L"Scene");
 	ui.e_menu_item(L"        New Entity", [](Capture&) {
 		looper().add_event([](Capture&) {
-			auto e = Entity::create();
+			auto e = f_new<Entity>();
 			e->name = "unnamed";
 			if (scene_editor.selected)
 				scene_editor.selected->add_child(e);

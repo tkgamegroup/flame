@@ -103,12 +103,12 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"nodes")
 					{
-						for (auto n : bp_editor.bp->groups[0]->nodes)
+						for (auto n : bp_editor.bp->root->children)
 							log += wfmt(L"id:%s type:%s", s2w(n->id.str()).c_str(), s2w(n->udt->name.str()).c_str()) + L"\n";
 					}
 					else if (tokens[1] == L"node")
 					{
-						auto n = bp_editor.bp->groups[0]->find_node(w2s(tokens[2]).c_str());
+						auto n = bp_editor.bp->root->find_node(w2s(tokens[2]).c_str());
 						if (n)
 						{
 							log += L"[In]\n";
@@ -171,8 +171,8 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"link")
 					{
-						auto out = bp_editor.bp->groups[0]->find_output(w2s(tokens[2]).c_str());
-						auto in = bp_editor.bp->groups[0]->find_input(w2s(tokens[3]).c_str());
+						auto out = bp_editor.bp->root->find_output(w2s(tokens[2]).c_str());
+						auto in = bp_editor.bp->root->find_input(w2s(tokens[3]).c_str());
 						if (out && in)
 						{
 							bp_editor.set_links({ {in, out} });
@@ -188,7 +188,7 @@ cConsole::cConsole() :
 				{
 					if (tokens[1] == L"node")
 					{
-						auto n = bp_editor.bp->groups[0]->find_node(w2s(tokens[2]).c_str());
+						auto n = bp_editor.bp->root->find_node(w2s(tokens[2]).c_str());
 						if (n)
 						{
 							bp_editor.remove_nodes({ n });
@@ -199,7 +199,7 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"link")
 					{
-						auto in = bp_editor.bp->groups[0]->find_input(w2s(tokens[2]).c_str());
+						auto in = bp_editor.bp->root->find_input(w2s(tokens[2]).c_str());
 						if (in)
 						{
 							bp_editor.set_links({ {in, nullptr} });
@@ -213,7 +213,7 @@ cConsole::cConsole() :
 				}
 				else if (tokens[0] == L"set")
 				{
-					auto i = bp_editor.bp->groups[0]->find_input(w2s(tokens[1]).c_str());
+					auto i = bp_editor.bp->root->find_input(w2s(tokens[1]).c_str());
 					if (i)
 					{
 						auto type = i->type;

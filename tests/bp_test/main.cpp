@@ -55,8 +55,8 @@ int main(int argc, char** args)
 
 	app.bp = BP::create_from_file((app.resource_path / L"test.bp").c_str());
 	auto g = app.bp->groups[0];
-	auto nr = g->add_node("", "flame::cElement", BP::NodeRefRead);
-	auto nw = g->add_node("", "flame::cElement", BP::NodeRefWrite);
+	auto nr = g->add_node("", "flame::cElement", bpNodeRefRead);
+	auto nw = g->add_node("", "flame::cElement", bpNodeRefWrite);
 	auto nt = g->add_node("", "flame::R_Time");
 	auto na = g->add_node("", "flame::R_Add");
 	na->find_input("a")->link_to(nr->find_output("scale"));

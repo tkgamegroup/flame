@@ -4,10 +4,10 @@
 
 namespace flame
 {
-	enum bpUnitType
+	enum bpSlotIO
 	{
-		bpUnitNode,
-		bpUnitGroup
+		bpSlotIn,
+		bpSlotOut
 	};
 
 	enum bpNodeType
@@ -17,289 +17,238 @@ namespace flame
 		bpNodeRefWrite
 	};
 
-	enum bpSlotIO
+	struct bpNode;
+	struct bpScene;
+
+	struct bpSlot
 	{
-		bpSlotIn,
-		bpSlotOut
+		bpNode* node;
+		bpSlotIO io;
+		uint index;
+		TypeInfo* type;
+		StringA name;
+		uint offset;
+		uint size;
+		void* default_value;
+		void* data;
+
+		FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
+
+		void* data_p()
+		{
+			return *(void**)data;
+		}
+
+		void set_data_i(int i)
+		{
+			set_data(&i);
+		}
+
+		void set_data_f(float f)
+		{
+			set_data(&f);
+		}
+
+		void set_data_p(const void* p)
+		{
+			set_data(&p);
+		}
+
+		static bool can_link(const TypeInfo* in_type, const TypeInfo* out_out)
+		{
+			if (in_type == out_out)
+				return true;
+			auto in_base_hash = in_type->base_hash;
+			auto out_tag = out_out->tag;
+			if (in_type->tag == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
+				(in_base_hash == out_out->base_hash || in_base_hash == FLAME_CHASH("void")))
+				return true;
+
+			return false;
+		}
+
+		Array<bpSlot*> links;
+
+		FLAME_FOUNDATION_EXPORTS bool link_to(bpSlot* target);
+
+		StringA get_address() const;
+
+		void* user_data;
 	};
 
-	struct BP
+	struct bpNode
 	{
-		struct Slot;
-		struct Unit;
-		struct Node;
-		struct Group;
+		bpScene* scene;
+		bpNode* parent;
 
-		struct Slot
+		Guid guid;
+		StringA id;
+		Vec2f pos;
+
+		bpNodeType node_type;
+		StringA type;
+		UdtInfo* udt;
+
+		Array<bpSlot*> inputs;
+		Array<bpSlot*> outputs;
+
+		Array<bpNode*> children;
+
+		void* user_data;
+
+		inline bool set_id(const std::string& _id);
+
+		bpSlot* find_input(const std::string& name) const
 		{
-			Node* node;
-			Group* group;
-			bpSlotIO io;
-			uint index;
-			TypeInfo* type;
-			StringA name;
-			uint offset;
-			uint size;
-			void* default_value;
-			void* data;
-
-			FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
-
-			void* data_p()
+			for (auto in : inputs)
 			{
-				return *(void**)data;
-			}
-
-			void set_data_i(int i)
-			{
-				set_data(&i);
-			}
-
-			void set_data_f(float f)
-			{
-				set_data(&f);
-			}
-
-			void set_data_p(const void* p)
-			{
-				set_data(&p);
-			}
-
-			static bool can_link(const TypeInfo* in_type, const TypeInfo* out_out)
-			{
-				if (in_type == out_out)
-					return true;
-				auto in_base_hash = in_type->base_hash;
-				auto out_tag = out_out->tag;
-				if (in_type->tag == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
-					(in_base_hash == out_out->base_hash || in_base_hash == FLAME_CHASH("void")))
-					return true;
-
-				return false;
-			}
-
-			Array<Slot*> links;
-
-			FLAME_FOUNDATION_EXPORTS bool link_to(Slot* target);
-
-			StringA get_address() const
-			{
-				std::string str;
-				if (node)
-					str = node->id.str();
-				if (group)
-					str = group->id.str();
-				return StringA(str + "." + name.v);
-			}
-
-			void* user_data;
-		};
-
-		struct Unit
-		{
-			bpUnitType unit_type;
-			Guid guid;
-			StringA id;
-			Vec2f pos;
-			void* user_data;
-
-			inline bool set_id(const std::string& _id);
-		};
-
-		struct Node : Unit
-		{
-			Group* group;
-			bpNodeType node_type;
-			StringA type;
-			UdtInfo* udt;
-
-			Array<Slot*> inputs;
-			Array<Slot*> outputs;
-
-			Slot* find_input(const std::string& name) const
-			{
-				for (auto in : inputs)
-				{
-					if (in->name == name)
-						return in;
-				}
-				return nullptr;
-			}
-
-			Slot* find_output(const std::string& name) const
-			{
-				for (auto out : outputs)
-				{
-					if (out->name == name)
-						return out;
-				}
-				return nullptr;
-			}
-		};
-
-		struct Group : Unit
-		{
-			BP* scene;
-
-			Slot* signal;
-
-			Array<Node*> nodes;
-
-			FLAME_FOUNDATION_EXPORTS Node* add_node(const char* id, const char* type, bpNodeType node_type = bpNodeReal);
-			FLAME_FOUNDATION_EXPORTS void remove_node(Node* n);
-
-			Node* find_node(const Guid& guid) const
-			{
-				for (auto n : nodes)
-				{
-					if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
-						return n;
-				}
-				return nullptr;
-			}
-
-			Node* find_node(const std::string& id) const
-			{
-				for (auto n : nodes)
-				{
-					if (n->id == id)
-						return n;
-				}
-				return nullptr;
-			}
-
-			Slot* find_input(const std::string& address/* node.var */) const
-			{
-				auto sp = SUS::split_lastone(address, '.');
-				auto n = find_node(sp[0]);
-				if (!n)
-					return nullptr;
-				return n->find_input(sp[1]);
-			}
-
-			Slot* find_output(const std::string& address/* node.var */) const
-			{
-				auto sp = SUS::split_lastone(address, '.');
-				auto n = find_node(sp[0]);
-				if (!n)
-					return nullptr;
-				return n->find_output(sp[1]);
-			}
-
-			FLAME_FOUNDATION_EXPORTS void update();
-		};
-
-		inline static char break_node_type(const std::string& name, std::string* parameters = nullptr)
-		{
-			{
-				static FLAME_SAL(prefix, "EnumSingle");
-				if (name.compare(0, prefix.l, prefix.s) == 0)
-				{
-					if (parameters)
-						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-					return 'S';
-				}
-			}
-			{
-				static FLAME_SAL(prefix, "EnumMulti");
-				if (name.compare(0, prefix.l, prefix.s) == 0)
-				{
-					if (parameters)
-						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-					return 'M';
-				}
-			}
-			{
-				static FLAME_SAL(prefix, "Variable");
-				if (name.compare(0, prefix.l, prefix.s) == 0)
-				{
-
-					if (parameters)
-						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-					return 'V';
-				}
-			}
-			{
-				static FLAME_SAL(prefix, "Array");
-				if (name.compare(0, prefix.l, prefix.s) == 0)
-				{
-					if (parameters)
-						*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-					return 'A';
-				}
-			}
-			return 0;
-		}
-
-		float time;
-
-		StringW filename;
-
-		Array<Group*> groups;
-
-		FLAME_FOUNDATION_EXPORTS Group* add_group(const char* id);
-		FLAME_FOUNDATION_EXPORTS void remove_group(Group* g);
-
-		Group* find_group(const Guid& guid) const
-		{
-			for (auto g : groups)
-			{
-				if (memcmp(&g->guid, &guid, sizeof(Guid)) == 0)
-					return g;
+				if (in->name == name)
+					return in;
 			}
 			return nullptr;
 		}
 
-		Group* find_group(const std::string& id) const
+		bpSlot* find_output(const std::string& name) const
 		{
-			for (auto g : groups)
+			for (auto out : outputs)
 			{
-				if (g->id == id)
-					return g;
+				if (out->name == name)
+					return out;
 			}
 			return nullptr;
 		}
 
-		Node* find_node(const Guid& guid) const
+		// TODO
+		//bpSlot* find_input(const std::string& address/* node.var */) const
+		//{
+		//	auto sp = SUS::split_lastone(address, '.');
+		//	auto n = find_node(sp[0]);
+		//	if (!n)
+		//		return nullptr;
+		//	return n->find_input(sp[1]);
+		//}
+
+		// TODO
+		//bpSlot* find_output(const std::string& address/* node.var */) const
+		//{
+		//	auto sp = SUS::split_lastone(address, '.');
+		//	auto n = find_node(sp[0]);
+		//	if (!n)
+		//		return nullptr;
+		//	return n->find_output(sp[1]);
+		//}
+
+		FLAME_FOUNDATION_EXPORTS bpNode* add_node(const char* id, const char* type, bpNodeType node_type = bpNodeReal);
+		FLAME_FOUNDATION_EXPORTS void remove_node(bpNode* n);
+
+		bpNode* find_node(const Guid& guid) const
 		{
-			for (auto g : groups)
+			for (auto n : children)
 			{
-				auto n = g->find_node(guid);
-				if (n)
+				if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
 					return n;
+				auto res = n->find_node(guid);
+				if (res)
+					return res;
+			}
+			return nullptr;
+		}
+
+		bpNode* find_node(const std::string& id) const
+		{
+			for (auto n : children)
+			{
+				if (n->id == id)
+					return n;
+				auto res = n->find_node(id);
+				if (res)
+					return res;
 			}
 			return nullptr;
 		}
 
 		FLAME_FOUNDATION_EXPORTS void update();
-
-		FLAME_FOUNDATION_EXPORTS static BP* create_from_file(const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static void save_to_file(BP* bp, const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(BP* bp);
 	};
 
-	bool BP::Unit::set_id(const std::string& _id)
+	inline static char break_bp_node_type(const std::string& name, std::string* parameters = nullptr)
+	{
+		{
+			static FLAME_SAL(prefix, "EnumSingle");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'S';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "EnumMulti");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'M';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "Variable");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'V';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "Array");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'A';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "Group");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = "";
+				return 'G';
+			}
+		}
+		return 0;
+	}
+
+	struct bpScene
+	{
+		float time;
+
+		StringW filename;
+
+		bpNode* root;
+
+		FLAME_FOUNDATION_EXPORTS void update();
+
+		FLAME_FOUNDATION_EXPORTS static bpScene* create_from_file(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static void save_to_file(bpScene* bp, const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static void destroy(bpScene* bp);
+	};
+
+	StringA bpSlot::get_address() const
+	{
+		return StringA(node->id.str() + "." + name.v);
+	}
+
+	bool bpNode::set_id(const std::string& _id)
 	{
 		if (_id.empty())
 			return false;
 		if (id == _id)
 			return true;
-		if (unit_type == bpUnitNode)
-		{
-			for (auto n : ((BP::Node*)this)->group->nodes)
-			{
-				if (n->id == _id)
-					return false;
-			}
-		}
-		else
-		{
-			for (auto g : ((Group*)this)->scene->groups)
-			{
-				if (g->id == _id)
-					return false;
-			}
-		}
+		if (scene->root->find_node(_id))
+			return false;
 		id = _id;
 		return true;
 	}
