@@ -11,8 +11,6 @@ namespace flame
 
 	struct cElementPrivate : cElement
 	{
-		bool pending_sizing;
-
 		cElementPrivate();
 		~cElementPrivate();
 		void calc_geometry();

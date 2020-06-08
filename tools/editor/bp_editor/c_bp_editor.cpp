@@ -237,10 +237,15 @@ struct cNode : Component
 
 	_2DEditor edt;
 
+	bpSlot* dragging_slot;
+	Vec2f dragging_slot_pos;
+
 	cNode() :
 		Component("cNode")
 	{
 		moved = false;
+
+		dragging_slot = nullptr;
 	}
 
 	void on_event(EntityEvent e, void* t)
@@ -318,7 +323,7 @@ cBPEditor::cBPEditor() :
 		else
 		{
 			std::vector<bpNode*> nodes;
-			for (auto n : bp_editor.bp->groups[0]->nodes)
+			for (auto n : bp_editor.bp->root->children)
 			{
 				auto e = ((Entity*)n->user_data)->get_component(cElement);
 				if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
@@ -347,7 +352,7 @@ cBPEditor::cBPEditor() :
 			auto range = rect(edt.element->global_pos, edt.element->global_size);
 			auto scale = edt.base->global_scale;
 			auto extent = slot_bezier_extent * scale;
-			for (auto n : bp_editor.bp->groups[0]->nodes)
+			for (auto n : bp_editor.bp->root->children)
 			{
 				for (auto input : n->inputs)
 				{
@@ -395,7 +400,7 @@ cBPEditor::cBPEditor() :
 		auto extent = slot_bezier_extent * scale;
 		auto range = rect(edt.element->global_pos, edt.element->global_size);
 		auto line_width = 3.f * scale;
-		for (auto n : bp_editor.bp->groups[0]->nodes)
+		for (auto n : bp_editor.bp->root->children)
 		{
 			for (auto output : n->outputs)
 			{
@@ -468,7 +473,7 @@ cBPEditor::cBPEditor() :
 	{
 		if (g->id != "")
 			on_add_group(g);
-		for (auto n : g->nodes)
+		for (auto n : g->children)
 			on_add_node(n);
 	}
 }
@@ -503,8 +508,9 @@ void cBPEditor::on_pos_changed(bpNode* n)
 	((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 }
 
-void cBPEditor::on_add_group(bpGroup* g)
+void cBPEditor::on_add_node(bpNode* n)
 {
+	/* TODO
 	auto& ui = bp_editor.window->ui;
 
 	auto e_group = f_new<Entity>();
@@ -567,10 +573,8 @@ void cBPEditor::on_add_group(bpGroup* g)
 	looper().add_event([](Capture& c) {
 		bp_editor.editor->edt.base->entity->add_child(c.thiz<Entity>());
 	}, Capture().set_thiz(e_group));
-}
+	*/
 
-void cBPEditor::on_add_node(bpNode* n)
-{
 	auto& ui = bp_editor.window->ui;
 
 	auto e_node = f_new<Entity>();
@@ -589,7 +593,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 	auto c_node = f_new<cNode>();
 	c_node->n = n;
-	auto n_type = BP::break_node_type(n->type.str());
+	auto n_type = break_bp_node_type(n->type.str());
 	e_node->add_component(c_node);
 	ui.e_begin_popup_menu(false);
 		ui.e_menu_item(L"Duplicate", [](Capture& c) {
@@ -641,7 +645,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							{
 								ui.e_menu_item(L"Remove Slot", [](Capture& c) {
 									auto input = c.thiz<bpSlot>();
-									auto n = (bpNode*)input->parent;
+									auto n = (bpNode*)input->node;
 									if (n->inputs.s == 1)
 										return;
 									bp_editor.select();

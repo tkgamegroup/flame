@@ -34,6 +34,7 @@ namespace flame
 			{
 				auto c_data_keeper = cDataKeeper::create();
 				c_data_keeper->set_common_item(FLAME_CHASH("focusing"), common(focusing));
+				c_data_keeper->set_common_item(FLAME_CHASH("world"), common(parent->world));
 				l->add_component(c_data_keeper);
 			}
 		}
@@ -45,12 +46,12 @@ namespace flame
 				if (dp)
 				{
 					auto er = (cEventReceiver*)dp->get_common_item(FLAME_CHASH("focusing")).p;
-					auto w = c.data<World*>();
+					auto w = (World*)dp->get_common_item(FLAME_CHASH("world")).p;
 					w->get_system(sEventDispatcher)->next_focusing = er;
 				}
 			}
 			return true;
-		}, Capture().set_thiz(l).set_data(&l->world));
+		}, Capture().set_thiz(l));
 
 		{
 			struct Capturing

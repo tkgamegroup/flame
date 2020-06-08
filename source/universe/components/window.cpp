@@ -41,7 +41,9 @@ namespace flame
 			case EntityComponentAdded:
 				if (t == this)
 				{
+					element = entity->get_component(cElement);
 					event_receiver = entity->get_component(cEventReceiver);
+					assert(element);
 					assert(event_receiver);
 
 					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -102,7 +104,7 @@ namespace flame
 						{
 							auto thiz = c.thiz<cBringToFrontPrivate>();
 							auto l = thiz->entity->parent->parent->last_child();
-							if (!l || !SUS::starts_with(l->name.v, "layer_"))
+							if (!l || !SUS::starts_with(l->name.str(), "layer_"))
 							{
 								looper().add_event([](Capture& c) {
 									auto p = c.thiz<Entity>()->parent;

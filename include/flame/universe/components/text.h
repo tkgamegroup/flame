@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/graphics/font.h>
+#include <flame/universe/systems/layout_management.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -15,6 +16,8 @@ namespace flame
 
 	struct FLAME_R(cText : Component)
 	{
+		sLayoutManagement* management;
+
 		cElement* element;
 
 		FLAME_RV(graphics::FontAtlas*, font_atlas);

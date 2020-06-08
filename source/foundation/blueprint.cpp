@@ -1,90 +1,47 @@
 #include <flame/serialize.h>
-#include <flame/foundation/blueprint.h>
+#include "blueprint_private.h"
 #include <flame/foundation/typeinfo.h>
 
 namespace flame
 {
-	struct bpSlotPrivate;
-	struct bpNodePrivate;
-	struct bpScenePrivate;
-
-	struct bpNodePrivate : bpNode
+	bpSlotPrivate::bpSlotPrivate(bpNode* _node, bpSlotIO _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
+		setter(nullptr),
+		listener(nullptr)
 	{
-		void* object;
-		void* library;
+		node = _node;
+		io = _io;
+		index = _index;
+		type = _type;
+		name = _name;
+		offset = _offset;
+		size = _size;
+		user_data = nullptr;
 
-		void* dtor_addr;
-		void* update_addr;
+		if (_default_value)
+		{
+			default_value = new char[size];
+			memcpy(default_value, _default_value, size);
+		}
+		else
+			default_value = nullptr;
 
-		uint order;
+		data = (char*)((bpNodePrivate*)node)->object + offset;
 
-		std::vector<bpNodePrivate*> update_list;
-		bool need_rebuild_update_list;
+		if (io == bpSlotIn)
+			links.push_back(nullptr);
+	}
 
-		bpNodePrivate(bpNodeType _node_type, bpNodePrivate* parent, const std::string& id, const std::string& type);
-		~bpNodePrivate();
-
-		bpNodePrivate* add_node(const std::string& id, const std::string& type, bpNodeType node_type);
-		void remove_node(bpNodePrivate* n);
-
-		void update();
-	};
-
-	struct bpSlotPrivate : bpSlot
+	bpSlotPrivate::bpSlotPrivate(bpNode* node, bpSlotIO io, uint index, VariableInfo* vi) :
+		bpSlotPrivate(node, io, index, vi->type, vi->name.str(),
+			vi->offset, vi->size, vi->default_value)
 	{
-		Setter* setter;
-		void* listener;
+	}
 
-		bpSlotPrivate(bpNode* _node, bpSlotIO _io, uint _index, TypeInfo* _type, const std::string& _name, uint _offset, uint _size, const void* _default_value) :
-			setter(nullptr),
-			listener(nullptr)
-		{
-			node = _node;
-			io = _io;
-			index = _index;
-			type = _type;
-			name = _name;
-			offset = _offset;
-			size = _size;
-			user_data = nullptr;
-
-			if (_default_value)
-			{
-				default_value = new char[size];
-				memcpy(default_value, _default_value, size);
-			}
-			else
-				default_value = nullptr;
-
-			data = (char*)((bpNodePrivate*)node)->object + offset;
-
-			if (io == bpSlotIn)
-				links.push_back(nullptr);
-		}
-
-		bpSlotPrivate(bpNode* node, bpSlotIO io, uint index, VariableInfo* vi) :
-			bpSlotPrivate(node, io, index, vi->type, vi->name.str(),
-				vi->offset, vi->size, vi->default_value)
-		{
-		}
-
-		~bpSlotPrivate()
-		{
-			delete[] default_value;
-			delete setter;
-		}
-
-		void set_data(const void* data);
-		bool link_to(bpSlotPrivate* target);
-	};
-
-	struct bpScenePrivate : bpScene
+	bpSlotPrivate::~bpSlotPrivate()
 	{
-		bpScenePrivate();
-		~bpScenePrivate();
-
-		void update();
-	};
+		delete[] default_value;
+		delete setter;
+	}
 
 	void bpSlotPrivate::set_data(const void* d)
 	{

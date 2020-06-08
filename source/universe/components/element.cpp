@@ -7,7 +7,6 @@ namespace flame
 	cElementPrivate::cElementPrivate()
 	{
 		renderer = nullptr;
-		management = nullptr;
 
 		pos = 0.f;
 		size = 0.f;
@@ -29,8 +28,6 @@ namespace flame
 		clipped_rect = Vec4f(-1.f);
 
 		cmds.impl = ListenerHubImpl::create();
-
-		pending_sizing = false;
 	}
 
 	cElementPrivate::~cElementPrivate()
@@ -119,10 +116,8 @@ namespace flame
 		case EntityEnteredWorld:
 		{
 			calc_geometry();
-			auto w = entity->world;
-			renderer = w->get_system(s2DRenderer);
+			renderer = entity->world->get_system(s2DRenderer);
 			renderer->pending_update = true;
-			management = w->get_system(sLayoutManagement);
 		}
 			break;
 		case EntityLeftWorld:

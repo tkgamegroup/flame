@@ -22,7 +22,7 @@ struct Action_ChangeNodeID : Action
 
 	void undo() override
 	{
-		auto n = bp_editor.bp->find_node(guid);
+		auto n = bp_editor.bp->root->find_node(guid);
 		if (n)
 		{
 			n->set_id(before_id.c_str());
@@ -34,7 +34,7 @@ struct Action_ChangeNodeID : Action
 
 	void redo() override
 	{
-		auto n = bp_editor.bp->find_node(guid);
+		auto n = bp_editor.bp->root->find_node(guid);
 		if (n)
 		{
 			n->set_id(after_id.c_str());
@@ -64,7 +64,7 @@ struct Action_MoveNodes : Action
 	{
 		for (auto& t : targets)
 		{
-			auto n = bp_editor.bp->find_node(t.guid);
+			auto n = bp_editor.bp->root->find_node(t.guid);
 			if (n)
 			{
 				n->pos = t.before_pos;
@@ -78,7 +78,7 @@ struct Action_MoveNodes : Action
 	{
 		for (auto& t : targets)
 		{
-			auto n = bp_editor.bp->find_node(t.guid);
+			auto n = bp_editor.bp->root->find_node(t.guid);
 			if (n)
 			{
 				n->pos = t.after_pos;
@@ -103,7 +103,7 @@ struct Action_AddNode : Action
 
 	void undo() override
 	{
-		auto n = bp_editor.bp->find_node(desc.guid);
+		auto n = bp_editor.bp->root->find_node(desc.guid);
 		if (n)
 			bp_editor._remove_nodes({ n });
 	}
@@ -129,7 +129,7 @@ struct Action_DuplicateNodes : Action
 	{
 		std::vector<bpNode*> nodes;
 		for (auto& d : duplications)
-			nodes.push_back(bp_editor.bp->find_node(d));
+			nodes.push_back(bp_editor.bp->root->find_node(d));
 		bp_editor._remove_nodes(nodes);
 	}
 
@@ -137,7 +137,7 @@ struct Action_DuplicateNodes : Action
 	{
 		std::vector<bpNode*> nodes(models.size());
 		for (auto i = 0; i < models.size(); i++)
-			nodes[i] = bp_editor.bp->find_node(models[i]);
+			nodes[i] = bp_editor.bp->root->find_node(models[i]);
 		auto new_nodes = bp_editor._duplicate_nodes(nodes);
 		for (auto i = 0; i < new_nodes.size(); i++)
 			new_nodes[i]->guid = duplications[i];
@@ -181,7 +181,7 @@ struct Action_RemoveNodes : Action
 				}
 
 				if (!src.link.slot_name.empty())
-					dst->link_to(bp_editor.bp->find_node(src.link.node_guid)->find_output(src.link.slot_name.c_str()));
+					dst->link_to(bp_editor.bp->root->find_node(src.link.node_guid)->find_output(src.link.slot_name.c_str()));
 			}
 			for (auto i = 0; i < s.outputs.size(); i++)
 			{
@@ -190,7 +190,7 @@ struct Action_RemoveNodes : Action
 
 				for (auto& a : src.links)
 				{
-					auto n = bp_editor.bp->find_node(a.node_guid);
+					auto n = bp_editor.bp->root->find_node(a.node_guid);
 					if (bp_editor.editor)
 					{
 						looper().add_event([](Capture& c) {
@@ -209,7 +209,7 @@ struct Action_RemoveNodes : Action
 	{
 		std::vector<bpNode*> nodes;
 		for (auto& s : savings)
-			nodes.push_back(bp_editor.bp->find_node(s.desc.guid));
+			nodes.push_back(bp_editor.bp->root->find_node(s.desc.guid));
 		bp_editor._remove_nodes(nodes);
 	}
 };
@@ -233,9 +233,9 @@ struct Action_SetLinks : Action
 	{
 		for (auto& l : link_descs)
 		{
-			auto i = bp_editor.bp->find_node(l.input.node_guid)->find_input(l.input.slot_name.c_str());
+			auto i = bp_editor.bp->root->find_node(l.input.node_guid)->find_input(l.input.slot_name.c_str());
 			if (i)
-				bp_editor._set_link(i, l.before_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->find_node(l.before_output_addr.node_guid)->find_output(l.before_output_addr.slot_name.c_str()));
+				bp_editor._set_link(i, l.before_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->root->find_node(l.before_output_addr.node_guid)->find_output(l.before_output_addr.slot_name.c_str()));
 		}
 
 		bp_editor.window->s_2d_renderer->pending_update = true;
@@ -245,9 +245,9 @@ struct Action_SetLinks : Action
 	{
 		for (auto& l : link_descs)
 		{
-			auto i = bp_editor.bp->find_node(l.input.node_guid)->find_input(l.input.slot_name.c_str());
+			auto i = bp_editor.bp->root->find_node(l.input.node_guid)->find_input(l.input.slot_name.c_str());
 			if (i)
-				bp_editor._set_link(i, l.after_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->find_node(l.after_output_addr.node_guid)->find_output(l.after_output_addr.slot_name.c_str()));
+				bp_editor._set_link(i, l.after_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->root->find_node(l.after_output_addr.node_guid)->find_output(l.after_output_addr.slot_name.c_str()));
 		}
 
 		bp_editor.window->s_2d_renderer->pending_update = true;
@@ -268,7 +268,7 @@ struct Action_SetData : Action
 
 	void undo() override
 	{
-		auto s = bp_editor.bp->find_node(node_guid)->find_input(input_name.c_str());
+		auto s = bp_editor.bp->root->find_node(node_guid)->find_input(input_name.c_str());
 		if (s)
 		{
 			auto data = new char[s->size];
@@ -283,7 +283,7 @@ struct Action_SetData : Action
 
 	void redo() override
 	{
-		auto s = bp_editor.bp->find_node(node_guid)->find_input(input_name.c_str());
+		auto s = bp_editor.bp->root->find_node(node_guid)->find_input(input_name.c_str());
 		if (s)
 		{
 			auto data = new char[s->size];
@@ -460,7 +460,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	{
 		bp_editor.filepath = filename;
 		bp_editor.fileppath = filename.parent_path();
-		bp_editor.bp = BP::create_from_file(filename.c_str());
+		bp_editor.bp = bpScene::create_from_file(filename.c_str());
 
 		sys_window->set_title(filename.string().c_str());
 	}
@@ -727,7 +727,7 @@ void BPEditor::select(const std::vector<bpSlot*>& links)
 
 void BPEditor::save()
 {
-	BP::save_to_file(bp_editor.bp, bp_editor.filepath.c_str());
+	bpScene::save_to_file(bp_editor.bp, bp_editor.filepath.c_str());
 
 	actions.clear();
 	action_idx = 0;
@@ -1026,7 +1026,7 @@ bool BPEditor::auto_set_layout()
 	//std::smatch res;
 	//while (std::regex_search(str, res, reg_node))
 	//{
-	//	auto n = bp->find_node(res[1].str().c_str());
+	//	auto n = bp->root->find_node(res[1].str().c_str());
 	//	if (n)
 	//	{
 	//		n->pos = Vec2f(std::stof(res[2].str().c_str()), std::stof(res[3].str().c_str())) * 100.f;
@@ -1041,7 +1041,7 @@ bool BPEditor::auto_set_layout()
 
 bpNode* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
 {
-	auto n = bp_editor.bp->groups[0]->add_node(id.c_str(), type.c_str(), node_type);
+	auto n = bp_editor.bp->root->add_node(id.c_str(), type.c_str(), node_type);
 	if (!n)
 		return nullptr;
 	n->pos = pos;
@@ -1083,7 +1083,7 @@ void BPEditor::_remove_nodes(const std::vector<bpNode*>& nodes)
 			looper().add_event([](Capture& c) {
 				auto n = c.thiz<bpNode>();
 				bp_editor.editor->on_remove_node(n);
-				n->group->remove_node(n);
+				n->parent->remove_node(n);
 			}, Capture().set_thiz(n));
 		}
 		for (auto n : refresh_ns)

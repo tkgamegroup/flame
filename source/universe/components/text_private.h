@@ -5,7 +5,7 @@ namespace flame
 	struct cTextPrivate : cText
 	{
 		void* draw_cmd;
-		bool peeding_sizing;
+		bool pending_sizing;
 
 		cTextPrivate();
 		cTextPrivate::~cTextPrivate();

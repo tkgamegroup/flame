@@ -219,10 +219,13 @@ namespace flame
 		std::vector<Entity*> es;
 		for (auto i = from; i <= to; i++)
 			es.push_back(children[i]);
+		for (auto i = to + 1; i < children.s; i++)
+			children[i]->index_ -= 1;
 		children.remove(from, es.size());
 		for (auto e : es)
 		{
-			leave_world(e);
+			if (e->world)
+				leave_world(e);
 			for (auto c : e->components.get_all())
 				c->on_event(EntityRemoved, nullptr);
 			e->event_listeners.call(EntityRemoved, nullptr);

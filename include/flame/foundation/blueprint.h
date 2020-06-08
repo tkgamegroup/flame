@@ -20,6 +20,57 @@ namespace flame
 	struct bpNode;
 	struct bpScene;
 
+	inline char break_bp_node_type(const std::string& name, std::string* parameters = nullptr)
+	{
+		{
+			static FLAME_SAL(prefix, "EnumSingle");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'S';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "EnumMulti");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'M';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "Variable");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'V';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "Array");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
+				return 'A';
+			}
+		}
+		{
+			static FLAME_SAL(prefix, "Group");
+			if (name.compare(0, prefix.l, prefix.s) == 0)
+			{
+				if (parameters)
+					*parameters = "";
+				return 'G';
+			}
+		}
+		return 0;
+	}
+
 	struct bpSlot
 	{
 		bpNode* node;
@@ -169,57 +220,6 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void update();
 	};
-
-	inline static char break_bp_node_type(const std::string& name, std::string* parameters = nullptr)
-	{
-		{
-			static FLAME_SAL(prefix, "EnumSingle");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'S';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "EnumMulti");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'M';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "Variable");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'V';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "Array");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'A';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "Group");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = "";
-				return 'G';
-			}
-		}
-		return 0;
-	}
 
 	struct bpScene
 	{

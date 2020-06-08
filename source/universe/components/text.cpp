@@ -11,6 +11,8 @@ namespace flame
 {
 	cTextPrivate::cTextPrivate()
 	{
+		management = nullptr;
+
 		element = nullptr;
 
 		font_atlas = nullptr;
@@ -21,6 +23,7 @@ namespace flame
 		auto_size = true;
 
 		draw_cmd = nullptr;
+		pending_sizing = false;
 	}
 
 	cTextPrivate::cTextPrivate::~cTextPrivate()
@@ -67,13 +70,18 @@ namespace flame
 					c.thiz<cTextPrivate>()->draw(canvas);
 					return true;
 				}, Capture().set_thiz(this));
-				if (element->management && auto_size)
-					element->management->add_to_sizing_list(element);
+				if (management && auto_size)
+					management->add_to_sizing_list(this);
 			}
 			break;
+		case EntityEnteredWorld:
+			management = entity->world->get_system(sLayoutManagement);
+			if (auto_size)
+				management->add_to_sizing_list(this);
+			break;
 		case EntityVisibilityChanged:
-			if (element->management && auto_size)
-				element->management->add_to_sizing_list(element);
+			if (management && auto_size)
+				management->add_to_sizing_list(this);
 			break;
 		}
 	}
@@ -92,8 +100,8 @@ namespace flame
 		if (element)
 		{
 			element->mark_dirty();
-			if (element->management && auto_size)
-				element->management->add_to_sizing_list(element);
+			if (management && auto_size)
+				management->add_to_sizing_list(this);
 		}
 		data_changed(FLAME_CHASH("text"), sender);
 	}
@@ -106,8 +114,8 @@ namespace flame
 		if (element)
 		{
 			element->mark_dirty();
-			if (element->management && auto_size)
-				element->management->add_to_sizing_list(element);
+			if (management && auto_size)
+				management->add_to_sizing_list(this);
 		}
 		data_changed(FLAME_CHASH("font_size"), sender);
 	}
@@ -120,8 +128,8 @@ namespace flame
 		if (element)
 		{
 			element->mark_dirty();
-			if (element->management && auto_size)
-				element->management->add_to_sizing_list(element);
+			if (management && auto_size)
+				management->add_to_sizing_list(this);
 		}
 		data_changed(FLAME_CHASH("color"), sender);
 	}
@@ -137,8 +145,8 @@ namespace flame
 			if (element)
 			{
 				element->mark_dirty();
-				if (element->management)
-					element->management->add_to_sizing_list(element);
+				if (management && auto_size)
+					management->add_to_sizing_list(this);
 			}
 		}
 		data_changed(FLAME_CHASH("auto_size"), sender);

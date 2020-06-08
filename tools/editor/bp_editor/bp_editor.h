@@ -71,11 +71,6 @@ inline Vec4c node_type_color(char t)
 
 struct cBPEditor : Component
 {
-	_2DEditor edt;
-
-	bpSlot* dragging_slot;
-	Vec2f dragging_slot_pos;
-
 	cBPEditor();
 	virtual ~cBPEditor() override;
 	void on_before_select();

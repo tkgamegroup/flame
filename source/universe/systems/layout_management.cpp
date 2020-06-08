@@ -10,28 +10,28 @@ namespace flame
 {
 	struct sLayoutManagementPrivate : sLayoutManagement
 	{
-		std::vector<cElementPrivate*> sizing_list;
+		std::vector<cTextPrivate*> sizing_list;
 		std::vector<cLayoutPrivate*> update_list;
 
-		void add_to_sizing_list(cElementPrivate* e)
+		void add_to_sizing_list(cTextPrivate* t)
 		{
-			if (e->pending_sizing)
+			if (t->pending_sizing)
 				return;
-			sizing_list.push_back(e);
-			e->pending_sizing = true;
+			sizing_list.push_back(t);
+			t->pending_sizing = true;
 			std::sort(sizing_list.begin(), sizing_list.end(), [](const auto& a, const auto& b) {
 				return a->entity->depth_ < b->entity->depth_;
 			});
 		}
 
-		void remove_from_sizing_list(cElementPrivate* e)
+		void remove_from_sizing_list(cTextPrivate* t)
 		{
-			if (!e->pending_sizing)
+			if (!t->pending_sizing)
 				return;
-			e->pending_sizing = false;
+			t->pending_sizing = false;
 			for (auto it = sizing_list.begin(); it != sizing_list.end(); it++)
 			{
-				if ((*it) == e)
+				if ((*it) == t)
 				{
 					sizing_list.erase(it);
 					return;
@@ -109,14 +109,14 @@ namespace flame
 		}
 	};
 
-	void sLayoutManagement::add_to_sizing_list(cElement* e)
+	void sLayoutManagement::add_to_sizing_list(cText* t)
 	{
-		((sLayoutManagementPrivate*)this)->add_to_sizing_list((cElementPrivate*)e);
+		((sLayoutManagementPrivate*)this)->add_to_sizing_list((cTextPrivate*)t);
 	}
 
-	void sLayoutManagement::remove_from_sizing_list(cElement* e)
+	void sLayoutManagement::remove_from_sizing_list(cText* t)
 	{
-		((sLayoutManagementPrivate*)this)->remove_from_sizing_list((cElementPrivate*)e);
+		((sLayoutManagementPrivate*)this)->remove_from_sizing_list((cTextPrivate*)t);
 	}
 
 	void sLayoutManagement::add_to_update_list(cLayout* l)
