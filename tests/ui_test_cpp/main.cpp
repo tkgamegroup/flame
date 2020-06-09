@@ -16,7 +16,7 @@ struct MyApp : App
 	void create_widgets();
 }app;
 
-struct MainWindow : App::Window
+struct MainWindow : Form
 {
 	UI ui;
 
@@ -205,7 +205,7 @@ void MyApp::create_widgets()
 }
 
 MainWindow::MainWindow() :
-	App::Window(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+	Form(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 

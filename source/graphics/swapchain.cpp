@@ -15,7 +15,7 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(Device* _d, SysWindow* w, bool add_trans_dst_usage) :
+		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* w, bool add_trans_dst_usage) :
 			d((DevicePrivate*)_d),
 			w(w),
 			add_trans_dst_usage(add_trans_dst_usage),
@@ -80,7 +80,7 @@ namespace flame
 
 #endif
 
-			auto size = w->size;
+			auto size = w->get_size();
 			if (size != 0U)
 			{
 				uint image_count = 3;
@@ -220,7 +220,7 @@ namespace flame
 			return swapchain_format;
 		}
 
-		SysWindow* Swapchain::window() const
+		Window* Swapchain::window() const
 		{
 			return ((SwapchainPrivate*)this)->w;
 		}
@@ -255,7 +255,7 @@ namespace flame
 			return ((SwapchainPrivate*)this)->hash;
 		}
 
-		Swapchain *Swapchain::create(Device *d, SysWindow* w, bool add_trans_dst_usage)
+		Swapchain *Swapchain::create(Device *d, Window* w, bool add_trans_dst_usage)
 		{
 			return new SwapchainPrivate(d, w, add_trans_dst_usage);
 		}

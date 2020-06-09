@@ -139,7 +139,7 @@ struct NodeSaving
 	std::vector<OutputSaving> outputs;
 };
 
-struct BPEditorWindow : App::Window
+struct BPEditorWindow : App::Form
 {
 	UI ui;
 

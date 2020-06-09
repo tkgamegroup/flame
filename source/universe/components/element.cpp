@@ -32,7 +32,7 @@ namespace flame
 
 	cElementPrivate::~cElementPrivate()
 	{
-		ListenerHubImpl::destroy(cmds.impl);
+		cmds.impl->release();
 	}
 
 	void cElementPrivate::calc_geometry()

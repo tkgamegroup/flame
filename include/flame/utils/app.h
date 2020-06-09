@@ -22,178 +22,39 @@
 
 namespace flame
 {
+	struct App;
+
+	struct Form
+	{
+		Window* window;
+		graphics::Swapchain* swapchain;
+		int swapchain_image_index;
+		std::vector<graphics::Commandbuffer*> swapchain_commandbuffers;
+		graphics::Fence* submit_fence;
+		graphics::Semaphore* render_finished_semaphore;
+
+		graphics::Canvas* canvas;
+
+		World* world;
+		sTimerManagement* s_timer_management;
+		sLayoutManagement* s_layout_management;
+		sEventDispatcher* s_event_dispatcher;
+		s2DRenderer* s_2d_renderer;
+		Entity* root;
+		cElement* root_element;
+
+		Form();
+		Form(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p = nullptr, bool maximized = false);
+		virtual ~Form();
+		void setup_as_main_window();
+		void set_canvas_target();
+		void prepare_swapchain();
+		void virtual on_update() {}
+		void update();
+	};
+
 	struct App
 	{
-		struct Window
-		{
-			SysWindow* sys_window;
-			graphics::Swapchain* swapchain;
-			int swapchain_image_index;
-			std::vector<graphics::Commandbuffer*> swapchain_commandbuffers;
-			graphics::Fence* submit_fence;
-			graphics::Semaphore* render_finished_semaphore;
-
-			graphics::Canvas* canvas;
-
-			World* world;
-			sTimerManagement* s_timer_management;
-			sLayoutManagement* s_layout_management;
-			sEventDispatcher* s_event_dispatcher;
-			s2DRenderer* s_2d_renderer;
-			Entity* root;
-			cElement* root_element;
-
-			Window() :
-				sys_window(nullptr),
-				swapchain(nullptr),
-				swapchain_image_index(-1),
-				submit_fence(nullptr),
-				render_finished_semaphore(nullptr),
-				canvas(nullptr),
-				world(nullptr),
-				s_timer_management(nullptr),
-				s_layout_management(nullptr),
-				s_event_dispatcher(nullptr),
-				s_2d_renderer(nullptr),
-				root(nullptr),
-				root_element(nullptr)
-			{
-			}
-
-			Window(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, SysWindow* p = nullptr, bool maximized = false) :
-				Window()
-			{
-				app->windows.emplace_back(this);
-
-				auto graphics_device = app->graphics_device;
-				auto font_atlas = app->font_atlas;
-
-				sys_window = SysWindow::create(title, size, styles | (maximized ? WindowMaximized : 0), p);
-				sys_window->destroy_listeners.add([](Capture& c) {
-					c.thiz<Window>()->sys_window = nullptr;
-					return true;
-				}, Capture().set_thiz(this));
-				swapchain = graphics::Swapchain::create(graphics_device, sys_window);
-				swapchain_commandbuffers.resize(swapchain->image_count());
-				for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
-					swapchain_commandbuffers[i] = graphics::Commandbuffer::create(graphics::Commandpool::get_default(graphics::QueueGraphics));
-				submit_fence = graphics::Fence::create(graphics_device);
-				render_finished_semaphore = graphics::Semaphore::create(graphics_device);
-
-				if (has_world)
-					has_canvas = true;
-				if (has_canvas)
-				{
-					canvas = graphics::Canvas::create(graphics_device);
-					set_canvas_target();
-					canvas->add_font(font_atlas);
-
-					sys_window->resize_listeners.add([](Capture& c, const Vec2u&) {
-						c.thiz<Window>()->set_canvas_target();
-						return true;
-					}, Capture().set_thiz(this));
-				}
-				if (has_world)
-				{
-					world = World::create();
-					world->objects.push_back(sys_window);
-					world->objects.push_back(font_atlas);
-					s_timer_management = sTimerManagement::create();
-					world->add_system(s_timer_management);
-					s_layout_management = sLayoutManagement::create();
-					world->add_system(s_layout_management);
-					s_event_dispatcher = sEventDispatcher::create();
-					world->add_system(s_event_dispatcher);
-					s_2d_renderer = s2DRenderer::create(canvas);
-					s_2d_renderer->before_update_listeners.add([](Capture& c) {
-						auto thiz = c.thiz<Window>();
-						if (thiz->s_2d_renderer->pending_update)
-							thiz->prepare_swapchain();
-						return true;
-					}, Capture().set_thiz(this));
-					world->add_system(s_2d_renderer);
-
-					root = world->root;
-					root_element = cElement::create();
-					root->add_component(root_element);
-					root->add_component(cEventReceiver::create());
-					root->add_component(cLayout::create(LayoutFree));
-				}
-			}
-
-			virtual ~Window()
-			{
-				if (sys_window)
-					SysWindow::destroy(sys_window);
-				graphics::Swapchain::destroy(swapchain);
-				for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
-					graphics::Commandbuffer::destroy(swapchain_commandbuffers[i]);
-				graphics::Fence::destroy(submit_fence);
-				graphics::Semaphore::destroy(render_finished_semaphore);
-				if (canvas)
-					graphics::Canvas::destroy(canvas);
-				if (world)
-					World::destroy(world);
-			}
-
-			void setup_as_main_window()
-			{
-				sys_window->destroy_listeners.add([](Capture&) {
-					exit(0);
-					return true;
-				}, Capture());
-			}
-
-			void set_canvas_target()
-			{
-				std::vector<graphics::Imageview*> vs(swapchain->image_count());
-				for (auto i = 0; i < vs.size(); i++)
-					vs[i] = swapchain->image(i)->default_view();
-				canvas->set_target(vs.size(), vs.data());
-			}
-
-			void prepare_swapchain()
-			{
-				if (swapchain_image_index < 0)
-				{
-					if (swapchain->image_count())
-					{
-						swapchain->acquire_image();
-						swapchain_image_index = swapchain->image_index();
-					}
-					if (canvas)
-						canvas->prepare();
-				}
-			}
-
-			void virtual on_update() {}
-
-			void update()
-			{
-				if (world)
-				{
-					root_element->set_size(Vec2f(sys_window->size));
-					world->update();
-				}
-
-				on_update();
-
-				submit_fence->wait();
-				if (swapchain_image_index >= 0)
-				{
-					auto cb = swapchain_commandbuffers[swapchain_image_index];
-
-					if (canvas)
-						canvas->record(cb, swapchain_image_index);
-
-					auto queue = graphics::Queue::get_default(graphics::QueueGraphics);
-					queue->submit(1, &cb, swapchain->image_avalible(), render_finished_semaphore, submit_fence);
-					queue->present(swapchain, render_finished_semaphore);
-					swapchain_image_index = -1;
-				}
-			}
-		};
-
 		bool developing;
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
@@ -205,104 +66,255 @@ namespace flame
 
 		graphics::FontAtlas* font_atlas;
 
-		std::list<std::unique_ptr<Window>> windows;
+		std::list<std::unique_ptr<Form>> windows;
 
-		void create(bool graphics_debug = true)
-		{
-			developing = false;
-			{
-				auto config = parse_ini_file(L"config.ini");
-				for (auto& e : config.get_section_entries(""))
-				{
-					if (e.key == "developing")
-						developing = e.value != "0";
-					else if (e.key == "resource_path")
-						resource_path = e.value;
-					else if (e.key == "engine_path")
-					{
-						if (e.value == "{e}")
-							engine_path = getenv("FLAME_PATH");
-						else
-							engine_path = e.value;
-					}
-				}
-			}
-			set_engine_path(engine_path.c_str());
-			if (developing)
-			{
-				set_file_callback([](Capture& c, const wchar_t* _filename) {
-					auto& app = *c.thiz<App>();
-					std::filesystem::path filename = _filename;
-					auto i = -1;
-					{
-						auto p = filename.lexically_relative(app.resource_path);
-						if (!p.empty() && p.c_str()[0] != L'.')
-						{
-							filename = p;
-							i = 1;
-						}
-					}
-					if (i == -1)
-					{
-						auto p = filename.lexically_relative(app.engine_path);
-						if (!p.empty() && p.c_str()[0] != L'.')
-						{
-							filename = p;
-							i = 0;
-						}
-					}
-					if (i == -1)
-						return;
-					for (auto& p : app.used_files[i])
-					{
-						if (p == filename)
-							return;
-					}
-					app.used_files[i].push_back(filename);
-				}, Capture().set_thiz(this));
-				std::filesystem::path this_app = get_app_path(true).str();
-				report_used_file((this_app.parent_path().replace_filename(L"{c}") / this_app.filename()).c_str());
-			}
-
-			TypeInfoDatabase::load(L"flame_foundation.dll", true, true);
-			TypeInfoDatabase::load(L"flame_graphics.dll", true, true);
-			TypeInfoDatabase::load(L"flame_universe.dll", true, true);
-
-			graphics_device = graphics::Device::create(graphics_debug);
-
-			sound_device = sound::Device::create_player();
-			sound_context = sound::Context::create(sound_device);
-			sound_context->make_current();
-
-			auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
-			const wchar_t* fonts[] = {
-				L"c:/windows/fonts/msyh.ttc",
-				font_awesome_path.c_str(),
-			};
-			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
-		}
-
-		void run()
-		{
-			{
-				uint dt = looper().delta_time * 1000;
-				if (dt < 16)
-					sleep(16 - dt);
-			}
-
-			looper().process_events();
-
-			for (auto it = windows.begin(); it != windows.end();)
-			{
-				auto w = it->get();
-				if (!w->sys_window)
-					it = windows.erase(it);
-				else
-				{
-					w->update();
-					it++;
-				}
-			}
-		}
+		void create(bool graphics_debug = true);
+		void run();
 	};
+
+	Form::Form() :
+		window(nullptr),
+		swapchain(nullptr),
+		swapchain_image_index(-1),
+		submit_fence(nullptr),
+		render_finished_semaphore(nullptr),
+		canvas(nullptr),
+		world(nullptr),
+		s_timer_management(nullptr),
+		s_layout_management(nullptr),
+		s_event_dispatcher(nullptr),
+		s_2d_renderer(nullptr),
+		root(nullptr),
+		root_element(nullptr)
+	{
+	}
+
+	Form::Form(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p, bool maximized) :
+		Form()
+	{
+		app->windows.emplace_back(this);
+
+		auto graphics_device = app->graphics_device;
+		auto font_atlas = app->font_atlas;
+
+		window = Window::create(title, size, styles | (maximized ? WindowMaximized : 0), p);
+		window->destroy_listeners.add([](Capture& c) {
+			c.thiz<Form>()->window = nullptr;
+			return true;
+		}, Capture().set_thiz(this));
+		swapchain = graphics::Swapchain::create(graphics_device, window);
+		swapchain_commandbuffers.resize(swapchain->image_count());
+		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
+			swapchain_commandbuffers[i] = graphics::Commandbuffer::create(graphics::Commandpool::get_default(graphics::QueueGraphics));
+		submit_fence = graphics::Fence::create(graphics_device);
+		render_finished_semaphore = graphics::Semaphore::create(graphics_device);
+
+		if (has_world)
+			has_canvas = true;
+		if (has_canvas)
+		{
+			canvas = graphics::Canvas::create(graphics_device);
+			set_canvas_target();
+			canvas->add_font(font_atlas);
+
+			window->resize_listeners.add([](Capture& c, const Vec2u&) {
+				c.thiz<Form>()->set_canvas_target();
+				return true;
+			}, Capture().set_thiz(this));
+		}
+		if (has_world)
+		{
+			world = World::create();
+			world->objects.push_back(window);
+			world->objects.push_back(font_atlas);
+			s_timer_management = sTimerManagement::create();
+			world->add_system(s_timer_management);
+			s_layout_management = sLayoutManagement::create();
+			world->add_system(s_layout_management);
+			s_event_dispatcher = sEventDispatcher::create();
+			world->add_system(s_event_dispatcher);
+			s_2d_renderer = s2DRenderer::create(canvas);
+			s_2d_renderer->before_update_listeners.add([](Capture& c) {
+				auto thiz = c.thiz<Form>();
+				if (thiz->s_2d_renderer->pending_update)
+					thiz->prepare_swapchain();
+				return true;
+			}, Capture().set_thiz(this));
+			world->add_system(s_2d_renderer);
+
+			root = world->root;
+			root_element = cElement::create();
+			root->add_component(root_element);
+			root->add_component(cEventReceiver::create());
+			root->add_component(cLayout::create(LayoutFree));
+		}
+	}
+
+	Form::~Form()
+	{
+		if (window)
+			window->release();
+		graphics::Swapchain::destroy(swapchain);
+		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
+			graphics::Commandbuffer::destroy(swapchain_commandbuffers[i]);
+		graphics::Fence::destroy(submit_fence);
+		graphics::Semaphore::destroy(render_finished_semaphore);
+		if (canvas)
+			graphics::Canvas::destroy(canvas);
+		if (world)
+			World::destroy(world);
+	}
+
+	void Form::setup_as_main_window()
+	{
+		window->destroy_listeners.add([](Capture&) {
+			exit(0);
+			return true;
+		}, Capture());
+	}
+
+	void Form::set_canvas_target()
+	{
+		std::vector<graphics::Imageview*> vs(swapchain->image_count());
+		for (auto i = 0; i < vs.size(); i++)
+			vs[i] = swapchain->image(i)->default_view();
+		canvas->set_target(vs.size(), vs.data());
+	}
+
+	void Form::prepare_swapchain()
+	{
+		if (swapchain_image_index < 0)
+		{
+			if (swapchain->image_count())
+			{
+				swapchain->acquire_image();
+				swapchain_image_index = swapchain->image_index();
+			}
+			if (canvas)
+				canvas->prepare();
+		}
+	}
+
+	void Form::update()
+	{
+		if (world)
+		{
+			root_element->set_size(Vec2f(window->get_size()));
+			world->update();
+		}
+
+		on_update();
+
+		submit_fence->wait();
+		if (swapchain_image_index >= 0)
+		{
+			auto cb = swapchain_commandbuffers[swapchain_image_index];
+
+			if (canvas)
+				canvas->record(cb, swapchain_image_index);
+
+			auto queue = graphics::Queue::get_default(graphics::QueueGraphics);
+			queue->submit(1, &cb, swapchain->image_avalible(), render_finished_semaphore, submit_fence);
+			queue->present(swapchain, render_finished_semaphore);
+			swapchain_image_index = -1;
+		}
+	}
+
+	void App::create(bool graphics_debug)
+	{
+		developing = false;
+		{
+			auto config = parse_ini_file(L"config.ini");
+			for (auto& e : config.get_section_entries(""))
+			{
+				if (e.key == "developing")
+					developing = e.value != "0";
+				else if (e.key == "resource_path")
+					resource_path = e.value;
+				else if (e.key == "engine_path")
+				{
+					if (e.value == "{e}")
+						engine_path = getenv("FLAME_PATH");
+					else
+						engine_path = e.value;
+				}
+			}
+		}
+		set_engine_path(engine_path.c_str());
+		if (developing)
+		{
+			set_file_callback([](Capture& c, const wchar_t* _filename) {
+				auto& app = *c.thiz<App>();
+				std::filesystem::path filename = _filename;
+				auto i = -1;
+				{
+					auto p = filename.lexically_relative(app.resource_path);
+					if (!p.empty() && p.c_str()[0] != L'.')
+					{
+						filename = p;
+						i = 1;
+					}
+				}
+				if (i == -1)
+				{
+					auto p = filename.lexically_relative(app.engine_path);
+					if (!p.empty() && p.c_str()[0] != L'.')
+					{
+						filename = p;
+						i = 0;
+					}
+				}
+				if (i == -1)
+					return;
+				for (auto& p : app.used_files[i])
+				{
+					if (p == filename)
+						return;
+				}
+				app.used_files[i].push_back(filename);
+			}, Capture().set_thiz(this));
+			std::filesystem::path this_app = get_app_path(true).str();
+			report_used_file((this_app.parent_path().replace_filename(L"{c}") / this_app.filename()).c_str());
+		}
+
+		TypeInfoDatabase::load(L"flame_foundation.dll", true, true);
+		TypeInfoDatabase::load(L"flame_graphics.dll", true, true);
+		TypeInfoDatabase::load(L"flame_universe.dll", true, true);
+
+		graphics_device = graphics::Device::create(graphics_debug);
+
+		sound_device = sound::Device::create_player();
+		sound_context = sound::Context::create(sound_device);
+		sound_context->make_current();
+
+		auto font_awesome_path = engine_path / L"art/font_awesome.ttf";
+		const wchar_t* fonts[] = {
+			L"c:/windows/fonts/msyh.ttc",
+			font_awesome_path.c_str(),
+		};
+		font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
+	}
+
+	void App::run()
+	{
+		{
+			uint dt = looper().delta_time * 1000;
+			if (dt < 16)
+				sleep(16 - dt);
+		}
+
+		looper().process_events();
+
+		for (auto it = windows.begin(); it != windows.end();)
+		{
+			auto w = it->get();
+			if (!w->window)
+				it = windows.erase(it);
+			else
+			{
+				w->update();
+				it++;
+			}
+		}
+	}
 }

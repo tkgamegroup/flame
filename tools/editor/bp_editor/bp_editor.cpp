@@ -431,7 +431,7 @@ static void add_window(pugi::xml_node n)
 }
 
 BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
-	App::Window(&app, true, true, "BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
+	App::Form(&app, true, true, "BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
 {
 	bp_editor.window = this;
 

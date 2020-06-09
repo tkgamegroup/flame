@@ -12,7 +12,7 @@ namespace flame
 
 	Component::~Component()
 	{
-		ListenerHubImpl::destroy(data_changed_listeners.impl);
+		data_changed_listeners.impl->release();
 	}
 
 	void Component::data_changed(uint hash, void* sender)

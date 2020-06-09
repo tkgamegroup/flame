@@ -11,7 +11,7 @@ using namespace graphics;
 
 struct App
 {
-	SysWindow* w;
+	Window* w;
 	Device* d;
 	Swapchain* sc;
 	Fence* fence;
@@ -69,7 +69,7 @@ int main(int argc, char** args)
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 	set_engine_path(engine_path.c_str());
 
-	app.w = SysWindow::create("Graphics Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.sc = Swapchain::create(app.d, app.w);

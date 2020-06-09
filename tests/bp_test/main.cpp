@@ -11,7 +11,7 @@ struct MyApp : App
 	BP* bp;
 }app;
 
-struct MainWindow : App::Window
+struct MainWindow : App::Form
 {
 	UI ui;
 
@@ -21,7 +21,7 @@ struct MainWindow : App::Window
 MainWindow* main_window = nullptr;
 
 MainWindow::MainWindow() :
-	App::Window(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+	App::Form(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 

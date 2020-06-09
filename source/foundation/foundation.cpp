@@ -1,10 +1,9 @@
 #include <flame/serialize.h>
-#include <flame/foundation/foundation.h>
+#include "foundation_private.h"
 #include <flame/foundation/bitmap.h>
 
 #ifdef FLAME_WINDOWS
 #define NOMINMAX
-#include <Windows.h>
 #include <process.h>
 #include <shellapi.h>
 #include <ShlObj.h>
@@ -12,50 +11,36 @@
 #include <CommCtrl.h>
 #include <thumbcache.h>
 #include <ImageHlp.h>
-#elif FLAME_ANDROID
-#include <android_native_app_glue.h>
 #endif
 
 namespace flame
 {
-	struct ListenerHubImnplPrivate: ListenerHubImpl
+	void ListenerHubImnplPrivate::release()
 	{
-		std::vector<std::unique_ptr<Closure<bool(Capture& c)>>> listeners;
-	};
-
-	ListenerHubImpl* ListenerHubImpl::create()
-	{
-		return new ListenerHubImnplPrivate;
+		delete this;
 	}
 
-	void ListenerHubImpl::destroy(ListenerHubImpl* h)
+	uint ListenerHubImnplPrivate::count() const
 	{
-		delete (ListenerHubImnplPrivate*)h;
+		return listeners.size();
 	}
 
-	uint ListenerHubImpl::count()
+	Closure<bool(Capture&)>& ListenerHubImnplPrivate::item(uint idx) const
 	{
-		return ((ListenerHubImnplPrivate*)this)->listeners.size();
+		return *listeners[idx].get();
 	}
 
-	Closure<bool(Capture&)>& ListenerHubImpl::item(uint idx)
+	void* ListenerHubImnplPrivate::add(bool(*pf)(Capture& c), const Capture& capture, int pos)
 	{
-		return *((ListenerHubImnplPrivate*)this)->listeners[idx].get();
-	}
-
-	void* ListenerHubImpl::add_plain(bool(*pf)(Capture& c), const Capture& capture, int pos)
-	{
-		auto thiz = (ListenerHubImnplPrivate*)this;
 		if (pos == -1)
-			pos = thiz->listeners.size();
+			pos = listeners.size();
 		auto c = new Closure(pf, capture);
-		thiz->listeners.emplace(thiz->listeners.begin() + pos, c);
+		listeners.emplace(listeners.begin() + pos, c);
 		return c;
 	}
 
-	void ListenerHubImpl::remove_plain(void* l)
+	void ListenerHubImnplPrivate::remove(void* l)
 	{
-		auto& listeners = ((ListenerHubImnplPrivate*)this)->listeners;
 		for (auto it = listeners.begin(); it != listeners.end(); it++)
 		{
 			if (it->get() == l)
@@ -64,6 +49,11 @@ namespace flame
 				return;
 			}
 		}
+	}
+
+	ListenerHubImpl* ListenerHubImpl::create()
+	{
+		return new ListenerHubImnplPrivate;
 	}
 
 	void* f_malloc(uint size)
@@ -1235,216 +1225,220 @@ namespace flame
 		KeyEventUp
 	};
 
-	struct SysWindowPrivate : SysWindow
-	{
-		std::string title;
+	static std::vector<WindowPrivate*> windows;
 
 #ifdef FLAME_WINDOWS
-		HWND hWnd;
+	WindowPrivate::WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent)
+	{
+		title = _title;
 
-		HCURSOR cursors[Cursor_Count];
-		CursorType cursor_type;
+		hWnd = 0;
+
+		size = _size;
+		style = _style;
+
+		assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+
+		Vec2u final_size;
+		auto screen_size = get_screen_size();
+
+		auto win32_style = WS_VISIBLE;
+		if (style == 0)
+			win32_style |= WS_POPUP | WS_BORDER;
+		else
+		{
+			if (style & WindowFrame)
+				win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+			if (style & WindowResizable)
+				win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+			if (style & WindowFullscreen)
+				final_size = screen_size;
+			if (style & WindowMaximized)
+				win32_style |= WS_MAXIMIZE;
+		}
+
+		auto win32_ex_style = 0L;
+		if (style & WindowTopmost)
+			win32_ex_style |= WS_EX_TOPMOST;
+
+		{
+			RECT rect = { 0, 0, size.x(), size.y() };
+			AdjustWindowRect(&rect, win32_style, false);
+			final_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+		}
+		pos.x() = (screen_size.x() - final_size.x()) / 2;
+		pos.y() = (screen_size.y() - final_size.y()) / 2;
+		hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
+			pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+		{
+			RECT rect;
+			GetClientRect(hWnd, &rect);
+			size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+		}
+
+		SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
+
+		for (auto i = 0; i < Cursor_Count; i++)
+		{
+			switch ((CursorType)i)
+			{
+			case CursorAppStarting:
+				cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
+				break;
+			case CursorArrow:
+				cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
+				break;
+			case CursorCross:
+				cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
+				break;
+			case CursorHand:
+				cursors[i] = LoadCursorA(nullptr, IDC_HAND);
+				break;
+			case CursorHelp:
+				cursors[i] = LoadCursorA(nullptr, IDC_HELP);
+				break;
+			case CursorIBeam:
+				cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
+				break;
+			case CursorNo:
+				cursors[i] = LoadCursorA(nullptr, IDC_NO);
+				break;
+			case CursorSizeAll:
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
+				break;
+			case CursorSizeNESW:
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
+				break;
+			case CursorSizeNS:
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
+				break;
+			case CursorSizeNWSE:
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
+				break;
+			case CursorSizeWE:
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
+				break;
+			case CursorUpArrwo:
+				cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
+				break;
+			case CursorWait:
+				cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
+				break;
+			}
+		}
+		cursor_type = CursorNone;
+
+		key_listeners.impl = ListenerHubImpl::create();
+		mouse_listeners.impl = ListenerHubImpl::create();
+		resize_listeners.impl = ListenerHubImpl::create();
+		destroy_listeners.impl = ListenerHubImpl::create();
+
+		sizing = false;
+		pending_size = size;
+
+		dead = false;
+	}
 #elif FLAME_ANDROID
-		android_app* android_state;
+	WindowPrivate::WindowPrivate(android_app* android_state) :
+		android_state(android_state)
+	{
+	}
 #endif
-		
-		bool sizing;
-		Vec2u pending_size;
+	WindowPrivate::~WindowPrivate()
+	{
+		destroy_listeners.call();
 
-		bool dead;
+		key_listeners.impl->release();
+		mouse_listeners.impl->release();
+		resize_listeners.impl->release();
+		destroy_listeners.impl->release();
+	}
 
-#ifdef FLAME_WINDOWS
-		SysWindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, SysWindowPrivate* parent)
+	void WindowPrivate::release() 
+	{
+		for (auto it = windows.begin(); it != windows.end(); it++)
 		{
-			title = _title;
-
-			minimized = false;
-
-			hWnd = 0;
-
-			size = _size;
-			style = _style;
-
-			assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
-
-			Vec2u final_size;
-			auto screen_size = get_screen_size();
-
-			auto win32_style = WS_VISIBLE;
-			if (style == 0)
-				win32_style |= WS_POPUP | WS_BORDER;
-			else
+			if ((*it) == this)
 			{
-				if (style & WindowFrame)
-					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-				if (style & WindowResizable)
-					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-				if (style & WindowFullscreen)
-					final_size = screen_size;
-				if (style & WindowMaximized)
-					win32_style |= WS_MAXIMIZE;
+				windows.erase(it);
+				break;
 			}
-
-			auto win32_ex_style = 0L;
-			if (style & WindowTopmost)
-				win32_ex_style |= WS_EX_TOPMOST;
-
-			{
-				RECT rect = { 0, 0, size.x(), size.y() };
-				AdjustWindowRect(&rect, win32_style, false);
-				final_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
-			}
-			pos.x() = (screen_size.x() - final_size.x()) / 2;
-			pos.y() = (screen_size.y() - final_size.y()) / 2;
-			hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
-				pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
-			{
-				RECT rect;
-				GetClientRect(hWnd, &rect);
-				size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
-			}
-
-			SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
-
-			for (auto i = 0; i < Cursor_Count; i++)
-			{
-				switch ((CursorType)i)
-				{
-				case CursorAppStarting:
-					cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
-					break;
-				case CursorArrow:
-					cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
-					break;
-				case CursorCross:
-					cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
-					break;
-				case CursorHand:
-					cursors[i] = LoadCursorA(nullptr, IDC_HAND);
-					break;
-				case CursorHelp:
-					cursors[i] = LoadCursorA(nullptr, IDC_HELP);
-					break;
-				case CursorIBeam:
-					cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
-					break;
-				case CursorNo:
-					cursors[i] = LoadCursorA(nullptr, IDC_NO);
-					break;
-				case CursorSizeAll:
-					cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
-					break;
-				case CursorSizeNESW:
-					cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
-					break;
-				case CursorSizeNS:
-					cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
-					break;
-				case CursorSizeNWSE:
-					cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
-					break;
-				case CursorSizeWE:
-					cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
-					break;
-				case CursorUpArrwo:
-					cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
-					break;
-				case CursorWait:
-					cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
-					break;
-				}
-			}
-			cursor_type = CursorNone;
-
-			key_listeners.impl = ListenerHubImpl::create();
-			mouse_listeners.impl = ListenerHubImpl::create();
-			resize_listeners.impl = ListenerHubImpl::create();
-			destroy_listeners.impl = ListenerHubImpl::create();
-
-			sizing = false;
-			pending_size = size;
-
-			dead = false;
 		}
+#ifdef FLAME_WINDOWS
+		DestroyWindow(hWnd);
+#endif
+		delete this;
+	}
+
+	void* WindowPrivate::get_native() 
+	{
+#ifdef FLAME_WINDOWS
+		return hWnd;
 #elif FLAME_ANDROID
-		WindowPrivate(android_app* android_state) :
-			android_state(android_state)
-		{
-		}
-#endif
-
-		~SysWindowPrivate()
-		{
-			destroy_listeners.call();
-
-			ListenerHubImpl::destroy(key_listeners.impl);
-			ListenerHubImpl::destroy(mouse_listeners.impl);
-			ListenerHubImpl::destroy(resize_listeners.impl);
-			ListenerHubImpl::destroy(destroy_listeners.impl);
-		}
-
-#ifdef FLAME_WINDOWS
-		void set_cursor(CursorType type)
-		{
-			if (type == cursor_type)
-				return;
-
-			if (cursor_type == CursorNone)
-				ShowCursor(true);
-			if (type == CursorNone)
-				ShowCursor(false);
-
-			cursor_type = type;
-		}
-
-		void set_maximized(bool v)
-		{
-			ShowWindow(hWnd, v ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
-		}
-#endif
-
-	};
-
-	void* SysWindow::get_native()
-	{
-#ifdef FLAME_WINDOWS
-		return ((SysWindowPrivate*)this)->hWnd;
-#elif FLAME_ANDROID
-		return ((SysWindowPrivate*)this)->android_state;
+		return android_state;
 #endif
 	}
 
-	const char* SysWindow::title()
+	Vec2i WindowPrivate::get_pos() const
 	{
-		return ((SysWindowPrivate*)this)->title.c_str();
+		return pos;
 	}
 
-	const void SysWindow::set_title(const char* _title)
-	{
-		auto thiz = (SysWindowPrivate*)this;
-		thiz->title = _title;
-		SetWindowTextA(thiz->hWnd, _title);
-	}
-
-#ifdef FLAME_WINDOWS
-	void SysWindow::set_cursor(CursorType type)
-	{
-		((SysWindowPrivate*)this)->set_cursor(type);
-	}
-
-	void SysWindow::set_pos(const Vec2i& _pos)
+	void WindowPrivate::set_pos(const Vec2i& _pos)
 	{
 		pos = _pos;
-		SetWindowPos(((SysWindowPrivate*)this)->hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		SetWindowPos(hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
-#endif
 
-	void SysWindow::close()
+	Vec2u WindowPrivate::get_size() const
 	{
-		((SysWindowPrivate*)this)->dead = true;
+		return size;
 	}
 
-	static std::vector<SysWindowPrivate*> windows;
+	void WindowPrivate::set_size(const Vec2u& size)
+	{
+	}
+
+	const char* WindowPrivate::get_title() const
+	{
+		return title.c_str();
+	}
+
+	void WindowPrivate::set_title(const char* _title)
+	{
+		title = _title;
+		SetWindowTextA(hWnd, _title);
+	}
+
+	int WindowPrivate::get_style() const 
+	{
+		return style;
+	}
+
+	CursorType WindowPrivate::get_cursor() 
+	{
+		return cursor_type;
+	}
+
+	void WindowPrivate::set_cursor(CursorType type) 
+	{
+#ifdef FLAME_WINDOWS
+		if (type == cursor_type)
+			return;
+
+		if (cursor_type == CursorNone)
+			ShowCursor(true);
+		if (type == CursorNone)
+			ShowCursor(false);
+
+		cursor_type = type;
+#endif
+	}
+
+	void WindowPrivate::close() 
+	{
+		dead = true;
+	}
 
 	static Looper _looper;
 
@@ -1457,7 +1451,7 @@ namespace flame
 	{
 		for (auto it = windows.begin(); it != windows.end(); )
 		{
-			auto w = (SysWindowPrivate*)*it;
+			auto w = (WindowPrivate*)*it;
 
 			if (w->dead)
 			{
@@ -1489,7 +1483,7 @@ namespace flame
 #ifdef FLAME_WINDOWS
 	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		auto w = (SysWindowPrivate*)GetWindowLongPtr(hWnd, 0);
+		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
 
 		if (w)
 		{
@@ -1497,7 +1491,6 @@ namespace flame
 				if (w->size != w->pending_size)
 				{
 					w->size = w->pending_size;
-					w->minimized = (w->size == 0U);
 					w->resize_listeners.call(w->size);
 				}
 			};
@@ -1578,7 +1571,7 @@ namespace flame
 	}
 #endif
 
-	SysWindow* SysWindow::create(const char* title, const Vec2u& size, WindowStyleFlags style, SysWindow* parent)
+	Window* Window::create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1611,7 +1604,7 @@ namespace flame
 			initialized = true;
 		}
 
-		auto w = new SysWindowPrivate(title, size, style, (SysWindowPrivate*)parent);
+		auto w = new WindowPrivate(title, size, style, (WindowPrivate*)parent);
 		w->set_cursor(CursorArrow);
 		windows.push_back(w);
 		return w;
@@ -1665,22 +1658,6 @@ namespace flame
 		return w;
 	}
 #endif
-
-	void SysWindow::destroy(SysWindow* w)
-	{
-		for (auto it = windows.begin(); it != windows.end(); it++)
-		{
-			if ((*it) == w)
-			{
-				windows.erase(it);
-				break;
-			}
-		}
-#ifdef FLAME_WINDOWS
-		DestroyWindow(((SysWindowPrivate*)w)->hWnd);
-#endif
-		delete (SysWindowPrivate*)w;
-	}
 
 	int Looper::loop(void (*_frame_callback)(Capture& c), const Capture& capture)
 	{

@@ -37,14 +37,14 @@ namespace flame
 
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
-		ListenerHubImpl::destroy(pass_checkers.impl);
-		ListenerHubImpl::destroy(key_listeners.impl);
-		ListenerHubImpl::destroy(mouse_listeners.impl);
-		ListenerHubImpl::destroy(drag_and_drop_listeners.impl);
-		ListenerHubImpl::destroy(hover_listeners.impl);
-		ListenerHubImpl::destroy(focus_listeners.impl);
-		ListenerHubImpl::destroy(state_listeners.impl);
-		ListenerHubImpl::destroy(clicked_listeners.impl);
+		pass_checkers.impl->release();
+		key_listeners.impl->release();
+		mouse_listeners.impl->release();
+		drag_and_drop_listeners.impl->release();
+		hover_listeners.impl->release();
+		focus_listeners.impl->release();
+		state_listeners.impl->release();
+		clicked_listeners.impl->release();
 	}
 
 	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)

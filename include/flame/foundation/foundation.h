@@ -565,12 +565,14 @@ namespace flame
 
 	struct ListenerHubImpl
 	{
+		virtual void release() = 0;
+
+		virtual uint count() const = 0;
+		virtual Closure<bool(Capture&)>& item(uint idx) const = 0;
+		virtual void* add(bool(*pf)(Capture& c), const Capture& capture, int pos) = 0;
+		virtual void remove(void* l) = 0;
+
 		FLAME_FOUNDATION_EXPORTS static ListenerHubImpl* create();
-		FLAME_FOUNDATION_EXPORTS static void destroy(ListenerHubImpl* h);
-		FLAME_FOUNDATION_EXPORTS uint count();
-		FLAME_FOUNDATION_EXPORTS Closure<bool(Capture&)>& item(uint idx);
-		FLAME_FOUNDATION_EXPORTS void* add_plain(bool(*pf)(Capture& c), const Capture& capture, int pos);
-		FLAME_FOUNDATION_EXPORTS void remove_plain(void* l);
 	};
 
 	template <class F>
@@ -580,12 +582,12 @@ namespace flame
 
 		void* add(F* pf, const Capture& capture, int pos = -1)
 		{
-			return impl->add_plain((bool(*)(Capture& c))pf, capture, pos);
+			return impl->add((bool(*)(Capture& c))pf, capture, pos);
 		}
 
 		void remove(void* l)
 		{
-			impl->remove_plain(l);
+			impl->remove(l);
 		}
 
 		template <class ...Args>
@@ -635,6 +637,7 @@ namespace flame
 			}
 		}
 	};
+
 	enum KeyState
 	{
 		KeyStateNull,
@@ -854,42 +857,40 @@ namespace flame
 		Cursor_Count
 	};
 
-	struct SysWindow;
-	typedef SysWindow* SysWindowPtr;
+	struct Window;
 
-	struct SysWindow : Object
+	struct Window : Object
 	{
-		Vec2i pos;
-		Vec2u size;
-		int style;
+		virtual void release() = 0;
 
-		bool minimized;
+		virtual void* get_native() = 0;
 
-		SysWindow() :
-			Object("SysWindow")
+		virtual Vec2i get_pos() const = 0;
+		virtual void set_pos(const Vec2i& pos) = 0;
+		virtual Vec2u get_size() const = 0;
+		virtual void set_size(const Vec2u& size) = 0;
+
+		virtual const char* get_title() const = 0;
+		virtual void set_title(const char* title) = 0;
+
+		virtual int get_style() const = 0;
+
+		virtual CursorType get_cursor() = 0;
+		virtual void set_cursor(CursorType type) = 0;
+
+		virtual void close() = 0;
+
+		Window() :
+			Object("Window")
 		{
 		}
-
-		FLAME_FOUNDATION_EXPORTS void* get_native();
-
-		FLAME_FOUNDATION_EXPORTS const char* title();
-		FLAME_FOUNDATION_EXPORTS const void set_title(const char* title);
-
-#ifdef FLAME_WINDOWS
-		FLAME_FOUNDATION_EXPORTS void set_cursor(CursorType type);
-
-		FLAME_FOUNDATION_EXPORTS void set_pos(const Vec2i& pos);
-#endif
 
 		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>							key_listeners;
 		ListenerHub<bool(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
 		ListenerHub<bool(Capture& c, const Vec2u & size)>										resize_listeners;
 		ListenerHub<bool(Capture& c)>															destroy_listeners;
 
-		FLAME_FOUNDATION_EXPORTS void close();
-
-		FLAME_FOUNDATION_EXPORTS static SysWindow* create(const char* title, const Vec2u& size, WindowStyleFlags style, SysWindow* parent = nullptr);
-		FLAME_FOUNDATION_EXPORTS static void destroy(SysWindow* s);
+		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent = nullptr);
 	};
 
 	struct Looper

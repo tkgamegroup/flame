@@ -183,7 +183,7 @@ struct MyApp : App
 	void quit_game();
 }app;
 
-struct MainWindow : App::Window
+struct MainWindow : App::Form
 {
 	UI ui;
 
@@ -194,7 +194,7 @@ struct MainWindow : App::Window
 MainWindow* main_window = nullptr;
 
 MainWindow::MainWindow() :
-	App::Window(&app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
+	App::Form(&app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
 {
 	main_window = this;
 

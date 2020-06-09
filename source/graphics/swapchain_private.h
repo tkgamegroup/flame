@@ -11,7 +11,7 @@ namespace flame
 
 		struct SwapchainPrivate : Swapchain
 		{
-			SysWindow* w;
+			Window* w;
 
 			DevicePrivate* d;
 			bool add_trans_dst_usage;
@@ -31,7 +31,7 @@ namespace flame
 
 			void* resize_listener;
 
-			SwapchainPrivate(Device *d, SysWindow* w, bool add_trans_dst_usage);
+			SwapchainPrivate(Device *d, Window* w, bool add_trans_dst_usage);
 			~SwapchainPrivate();
 
 			void update();

@@ -11,7 +11,7 @@ using namespace graphics;
 
 struct App
 {
-	SysWindow* w;
+	Window* w;
 	Device* d;
 	Swapchain* sc;
 	Renderpass* rp;
@@ -62,7 +62,7 @@ struct App
 
 int main(int argc, char** args)
 {
-	app.w = SysWindow::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
+	app.w = Window::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);
 	{

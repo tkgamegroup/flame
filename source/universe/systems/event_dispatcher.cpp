@@ -62,7 +62,7 @@ namespace flame
 
 	void sEventDispatcherPrivate::on_added()
 	{
-		window = (SysWindow*)world_->find_object(FLAME_CHASH("SysWindow"), 0);
+		window = (Window*)world_->find_object(FLAME_CHASH("Window"), 0);
 		if (window)
 		{
 			key_listener = window->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {

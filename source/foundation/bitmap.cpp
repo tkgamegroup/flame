@@ -1,5 +1,5 @@
 #include <flame/serialize.h>
-#include <flame/foundation/bitmap.h>
+#include "bitmap_private.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -8,129 +8,117 @@
 
 namespace flame
 {
-	struct BitmapPrivate : Bitmap
+	BitmapPrivate::~BitmapPrivate()
 	{
-		uint width;
-		uint height;
-		uint channel;
-		uint byte_per_channel;
-		uint pitch;
-		uchar* data;
-		uint size;
-		bool srgb;
+		delete[] data;
+	}
 
-		~BitmapPrivate() 
-		{ 
-			delete[] data; 
-		}
+	void BitmapPrivate::release() { delete this; }
+	uint BitmapPrivate::get_width() const { return width; }
+	uint BitmapPrivate::get_height() const { return height; }
+	uint BitmapPrivate::get_channel() const { return channel; }
+	uint BitmapPrivate::get_byte_per_channel() const { return byte_per_channel; }
+	uint BitmapPrivate::get_pitch() const { return pitch; }
+	uchar* BitmapPrivate::get_data() const { return data; }
+	uint BitmapPrivate::get_size() const { return size; }
+	bool BitmapPrivate::get_srgb() const { return srgb; }
 
-		void release() override { delete this; }
-		uint get_width() const override { return width; }
-		uint get_height() const override { return height; }
-		uint get_channel() const override { return channel; }
-		uint get_byte_per_channel() const override { return byte_per_channel; }
-		uint get_pitch() const override { return pitch; }
-		uchar* get_data() const override { return data; }
-		uint get_size() const override { return size; }
-		bool get_srgb() const override { return srgb; }
+	void BitmapPrivate::add_alpha_channel()
+	{
+		assert(channel == 3 && byte_per_channel == 1);
+		if (channel != 3 || byte_per_channel != 1)
+			return;
 
-		void add_alpha_channel() override
+		auto new_data = new uchar[width * height * 4];
+		auto dst = new_data;
+		for (auto j = 0; j < height; j++)
 		{
-			assert(channel == 3 && byte_per_channel == 1);
-			if (channel != 3 || byte_per_channel != 1)
-				return;
-
-			auto new_data = new uchar[width * height * 4];
-			auto dst = new_data;
-			for (auto j = 0; j < height; j++)
+			auto src = data + j * pitch;
+			for (auto i = 0; i < width; i++)
 			{
-				auto src = data + j * pitch;
-				for (auto i = 0; i < width; i++)
-				{
-					*dst++ = *src++;
-					*dst++ = *src++;
-					*dst++ = *src++;
-					*dst++ = 255;
-				}
-			}
-			channel = 4;
-			pitch = image_pitch(width * channel * byte_per_channel);
-			size = pitch * height;
-			delete[]data;
-			data = new_data;
-		}
-
-		void Bitmap::swap_channel(uint ch1, uint ch2)
-		{
-			assert(byte_per_channel == 1 && ch1 < channel && ch2 < channel);
-			if (byte_per_channel != 1 || ch1 >= channel || ch2 >= channel)
-				return;
-
-			for (auto j = 0; j < height; j++)
-			{
-				auto line = data + j * pitch;
-				for (auto i = 0; i < width; i++)
-				{
-					auto p = line + i * channel;
-					std::swap(p[ch1], p[ch2]);
-				}
+				*dst++ = *src++;
+				*dst++ = *src++;
+				*dst++ = *src++;
+				*dst++ = 255;
 			}
 		}
+		channel = 4;
+		pitch = image_pitch(width * channel * byte_per_channel);
+		size = pitch * height;
+		delete[]data;
+		data = new_data;
+	}
 
-		void copy_to(Bitmap* _dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border) override
+	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
+	{
+		assert(byte_per_channel == 1 && ch1 < channel&& ch2 < channel);
+		if (byte_per_channel != 1 || ch1 >= channel || ch2 >= channel)
+			return;
+
+		for (auto j = 0; j < height; j++)
 		{
-			auto dst = (BitmapPrivate*)_dst;
-			auto b1 = border ? 1 : 0;
-			auto b2 = b1 << 1;
-			assert(byte_per_channel == 1 &&
-				channel == dst->channel &&
-				byte_per_channel == dst->byte_per_channel &&
-				src_x + w < width&& src_y + h < height&&
-				_dst_x + w + b2 < dst->width && _dst_y + h + b2 < dst->height);
-			if (byte_per_channel != 1 ||
-				channel != dst->channel ||
-				byte_per_channel != dst->byte_per_channel ||
-				src_x + w >= width || src_y + h >= height ||
-				_dst_x + w + b2 >= dst->width || _dst_y + h + b2 >= dst->height)
-				return;
+			auto line = data + j * pitch;
+			for (auto i = 0; i < width; i++)
+			{
+				auto p = line + i * channel;
+				std::swap(p[ch1], p[ch2]);
+			}
+		}
+	}
 
-			auto dst_x = _dst_x + b1;
-			auto dst_y = _dst_y + b2;
-			auto dst_data = dst->data;
-			auto dst_pitch = dst->pitch;
+	void BitmapPrivate::copy_to(Bitmap* _dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
+	{
+		auto dst = (BitmapPrivate*)_dst;
+		auto b1 = border ? 1 : 0;
+		auto b2 = b1 << 1;
+		assert(byte_per_channel == 1 &&
+			channel == dst->channel &&
+			byte_per_channel == dst->byte_per_channel &&
+			src_x + w < width&& src_y + h < height&&
+			_dst_x + w + b2 < dst->width&& _dst_y + h + b2 < dst->height);
+		if (byte_per_channel != 1 ||
+			channel != dst->channel ||
+			byte_per_channel != dst->byte_per_channel ||
+			src_x + w >= width || src_y + h >= height ||
+			_dst_x + w + b2 >= dst->width || _dst_y + h + b2 >= dst->height)
+			return;
+
+		auto dst_x = _dst_x + b1;
+		auto dst_y = _dst_y + b2;
+		auto dst_data = dst->data;
+		auto dst_pitch = dst->pitch;
+		for (auto i = 0; i < h; i++)
+		{
+			auto src_line = data + (src_y + i) * pitch + src_x * channel;
+			auto dst_line = dst_data + (dst_y + i) * dst_pitch + dst_x * channel;
+			memcpy(dst_line, src_line, w * channel);
+		}
+
+		if (border)
+		{
+			memcpy(dst->data + (dst_y - 1) * dst_pitch + dst_x * channel, data + src_y * pitch + src_x * channel, w * channel); // top line
+			memcpy(dst->data + (dst_y + h) * dst_pitch + dst_x * channel, data + (src_y + h - 1) * pitch + src_x * channel, w * channel); // bottom line
 			for (auto i = 0; i < h; i++)
-			{
-				auto src_line = data + (src_y + i) * pitch + src_x * channel;
-				auto dst_line = dst_data + (dst_y + i) * dst_pitch + dst_x * channel;
-				memcpy(dst_line, src_line, w * channel);
-			}
+				memcpy(dst->data + (dst_y + i) * dst_pitch + (dst_x - 1) * channel, data + (src_y + i) * pitch + src_x * channel, channel); // left line
+			for (auto i = 0; i < h; i++)
+				memcpy(dst->data + (dst_y + i) * dst_pitch + (dst_x + w) * channel, data + (src_y + i) * pitch + (src_x + w - 1) * channel, channel); // left line
 
-			if (border)
-			{
-				memcpy(dst->data + (dst_y - 1) * dst_pitch + dst_x * channel, data + src_y * pitch + src_x * channel, w * channel); // top line
-				memcpy(dst->data + (dst_y + h) * dst_pitch + dst_x * channel, data + (src_y + h - 1) * pitch + src_x * channel, w * channel); // bottom line
-				for (auto i = 0; i < h; i++)
-					memcpy(dst->data + (dst_y + i) * dst_pitch + (dst_x - 1) * channel, data + (src_y + i) * pitch + src_x * channel, channel); // left line
-				for (auto i = 0; i < h; i++)
-					memcpy(dst->data + (dst_y + i) * dst_pitch + (dst_x + w) * channel, data + (src_y + i) * pitch + (src_x + w - 1) * channel, channel); // left line
-
-				memcpy(dst->data + (dst_y - 1) * dst_pitch + (dst_x - 1) * channel, data + src_y * pitch + src_x * channel, channel); // left top corner
-				memcpy(dst->data + (dst_y - 1) * dst_pitch + (dst_x + w) * channel, data + src_y * pitch + (src_x + w - 1) * channel, channel); // right top corner
-				memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x - 1) * channel, data + (src_y + h - 1) * pitch + src_x * channel, channel); // left bottom corner
-				memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x + w) * channel, data + (src_y + h - 1) * pitch + (src_x + w - 1) * channel, channel); // right bottom corner
-			}
+			memcpy(dst->data + (dst_y - 1) * dst_pitch + (dst_x - 1) * channel, data + src_y * pitch + src_x * channel, channel); // left top corner
+			memcpy(dst->data + (dst_y - 1) * dst_pitch + (dst_x + w) * channel, data + src_y * pitch + (src_x + w - 1) * channel, channel); // right top corner
+			memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x - 1) * channel, data + (src_y + h - 1) * pitch + src_x * channel, channel); // left bottom corner
+			memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x + w) * channel, data + (src_y + h - 1) * pitch + (src_x + w - 1) * channel, channel); // right bottom corner
 		}
+	}
 
-		void save_to_file(const wchar_t* filename) override
-		{
-			auto ext = std::filesystem::path(filename).extension();
+	void BitmapPrivate::save_to_file(const wchar_t* filename)
+	{
+		auto ext = std::filesystem::path(filename).extension();
 
-			if (ext == L".png")
-				stbi_write_png(w2s(filename).c_str(), width, height, channel, data, pitch);
-			else if (ext == L".bmp")
-				stbi_write_bmp(w2s(filename).c_str(), width, height, channel, data);
-		}
-	};
+		if (ext == L".png")
+			stbi_write_png(w2s(filename).c_str(), width, height, channel, data, pitch);
+		else if (ext == L".bmp")
+			stbi_write_bmp(w2s(filename).c_str(), width, height, channel, data);
+	}
 
 	Bitmap* Bitmap::create(uint width, uint height, uint channel, uint byte_per_channel, uchar* data)
 	{
@@ -167,5 +155,4 @@ namespace flame
 		fclose(file);
 		return b;
 	}
-
 }

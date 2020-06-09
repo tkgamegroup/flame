@@ -39,7 +39,7 @@ namespace flame
 			c->on_event(EntityDestroyed, nullptr);
 		event_listeners.call(EntityDestroyed, nullptr);
 
-		ListenerHubImpl::destroy(event_listeners.impl);
+		event_listeners.impl->release();
 
 		for (auto c : components.get_all())
 			f_delete(c);

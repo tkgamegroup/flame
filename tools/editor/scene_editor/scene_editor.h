@@ -96,7 +96,7 @@ struct cInspector : Component
 	void refresh();
 };
 
-struct SceneEditorWindow : App::Window
+struct SceneEditorWindow : App::Form
 {
 	UI ui;
 

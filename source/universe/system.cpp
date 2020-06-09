@@ -13,7 +13,7 @@ namespace flame
 
 	System::~System()
 	{
-		ListenerHubImpl::destroy(before_update_listeners.impl);
-		ListenerHubImpl::destroy(after_update_listeners.impl);
+		before_update_listeners.impl->release();
+		after_update_listeners.impl->release();
 	}
 }

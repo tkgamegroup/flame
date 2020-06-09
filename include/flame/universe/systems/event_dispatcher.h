@@ -4,12 +4,12 @@
 
 namespace flame
 {
-	struct SysWindow;
+	struct Window;
 	struct cEventReceiver;
 
 	struct sEventDispatcher : System
 	{
-		SysWindow* window;
+		Window* window;
 
 		KeyStateFlags key_states[Key_Count];
 		KeyStateFlags mouse_buttons[3];

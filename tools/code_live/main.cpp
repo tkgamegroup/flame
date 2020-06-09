@@ -7,7 +7,7 @@
 using namespace flame;
 using namespace graphics;
 
-struct MainWindow : App::Window
+struct MainWindow : App::Form
 {
 	UI ui;
 
@@ -102,7 +102,7 @@ struct MyApp : App
 }app;
 
 MainWindow::MainWindow() :
-	App::Window(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable)
+	App::Form(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable)
 {
 	main_window = this;
 

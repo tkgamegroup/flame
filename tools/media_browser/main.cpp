@@ -6,7 +6,7 @@
 using namespace flame;
 using namespace graphics;
 
-struct MainWindow : App::Window
+struct MainWindow : App::Form
 {
 	UI ui;
 
@@ -20,7 +20,7 @@ struct MyApp : App
 }app;
 
 MainWindow::MainWindow() :
-	App::Window(&app, true, true, "Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable)
+	App::Form(&app, true, true, "Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
