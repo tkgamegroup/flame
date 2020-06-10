@@ -40,6 +40,11 @@ namespace flame
 		HCURSOR cursors[Cursor_Count];
 #endif
 
+		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, int)>>> key_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, MouseKey, const Vec2i&)>>> mouse_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2u&)>>> resize_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&)>>> destroy_listeners;
+
 		bool sizing;
 		Vec2u pending_size;
 
@@ -51,6 +56,10 @@ namespace flame
 		WindowPrivate(android_app* android_state);
 #endif
 		~WindowPrivate();
+
+#ifdef FLAME_WINDOWS
+		void wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
+#endif
 
 		void release() override;
 
@@ -70,5 +79,14 @@ namespace flame
 		void set_cursor(CursorType type) override;
 
 		void close() override;
+
+		void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) override;
+		void remove_key_listener(void* ret) override;
+		void* add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_listener(void* ret) override;
+		void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) override;
+		void remove_resize_listener(void* ret) override;
+		void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) override;
+		void remove_destroy_listener(void* ret) override;
 	};
 }

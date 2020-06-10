@@ -98,9 +98,8 @@ namespace flame
 		auto font_atlas = app->font_atlas;
 
 		window = Window::create(title, size, styles | (maximized ? WindowMaximized : 0), p);
-		window->destroy_listeners.add([](Capture& c) {
+		window->add_destroy_listener([](Capture& c) {
 			c.thiz<Form>()->window = nullptr;
-			return true;
 		}, Capture().set_thiz(this));
 		swapchain = graphics::Swapchain::create(graphics_device, window);
 		swapchain_commandbuffers.resize(swapchain->image_count());
@@ -117,9 +116,8 @@ namespace flame
 			set_canvas_target();
 			canvas->add_font(font_atlas);
 
-			window->resize_listeners.add([](Capture& c, const Vec2u&) {
+			window->add_resize_listener([](Capture& c, const Vec2u&) {
 				c.thiz<Form>()->set_canvas_target();
-				return true;
 			}, Capture().set_thiz(this));
 		}
 		if (has_world)
@@ -167,9 +165,8 @@ namespace flame
 
 	void Form::setup_as_main_window()
 	{
-		window->destroy_listeners.add([](Capture&) {
+		window->add_destroy_listener([](Capture&) {
 			exit(0);
-			return true;
 		}, Capture());
 	}
 

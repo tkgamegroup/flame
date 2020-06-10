@@ -1227,6 +1227,46 @@ namespace flame
 
 	static std::vector<WindowPrivate*> windows;
 
+	static Looper _looper;
+
+	void (*frame_callback)(Capture& c);
+	static Capture frame_capture;
+
+	static ulonglong last_time;
+
+	bool one_frame()
+	{
+		for (auto it = windows.begin(); it != windows.end(); )
+		{
+			auto w = (WindowPrivate*)*it;
+
+			if (w->dead)
+			{
+				it = windows.erase(it);
+				delete w;
+			}
+			else
+				it++;
+		}
+
+		if (windows.empty())
+		{
+			f_free(frame_capture._data);
+			return false;
+		}
+
+		frame_callback(frame_capture);
+
+		_looper.frame++;
+		auto et = last_time;
+		last_time = get_now_ns();
+		et = last_time - et;
+		_looper.delta_time = et / 1000000000.f;
+		_looper.total_time += _looper.delta_time;
+
+		return true;
+	}
+
 #ifdef FLAME_WINDOWS
 	WindowPrivate::WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent)
 	{
@@ -1328,11 +1368,6 @@ namespace flame
 		}
 		cursor_type = CursorNone;
 
-		key_listeners.impl = ListenerHubImpl::create();
-		mouse_listeners.impl = ListenerHubImpl::create();
-		resize_listeners.impl = ListenerHubImpl::create();
-		destroy_listeners.impl = ListenerHubImpl::create();
-
 		sizing = false;
 		pending_size = size;
 
@@ -1346,12 +1381,130 @@ namespace flame
 #endif
 	WindowPrivate::~WindowPrivate()
 	{
-		destroy_listeners.call();
+		for (auto& l : destroy_listeners)
+			l->call();
+	}
 
-		key_listeners.impl->release();
-		mouse_listeners.impl->release();
-		resize_listeners.impl->release();
-		destroy_listeners.impl->release();
+	void WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
+	{
+		auto resize = [=]() {
+			if (size != pending_size)
+			{
+				size = pending_size;
+				for (auto& l : resize_listeners)
+					l->call(size);
+			}
+		};
+
+		switch (message)
+		{
+		case WM_KEYDOWN:
+		{
+			auto v = vk_code_to_key(wParam);
+			if (v > 0)
+			{
+				for (auto& l : key_listeners)
+					l->call(KeyStateDown, v);
+			}
+		}
+			break;
+		case WM_KEYUP:
+		{
+			auto v = vk_code_to_key(wParam);
+			if (v > 0)
+			{
+				for (auto& l : key_listeners)
+					l->call(KeyStateUp, v);
+			}
+		}
+			break;
+		case WM_CHAR:
+			for (auto& l : key_listeners)
+				l->call(KeyStateNull, (Key)wParam);
+			break;
+		case WM_LBUTTONDOWN:
+		{
+			SetCapture(hWnd);
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateDown, Mouse_Left, pos);
+		}
+			break;
+		case WM_LBUTTONUP:
+		{
+			ReleaseCapture();
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateUp, Mouse_Left, pos);
+		}
+			break;
+		case WM_MBUTTONDOWN:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateDown, Mouse_Middle, pos);
+		}
+			break;
+		case WM_MBUTTONUP:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateUp, Mouse_Middle, pos);
+		}
+			break;
+		case WM_RBUTTONDOWN:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateDown, Mouse_Right, pos);
+		}
+			break;
+		case WM_RBUTTONUP:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateUp, Mouse_Right, pos);
+		}
+			break;
+		case WM_MOUSEMOVE:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateNull, Mouse_Null, pos);
+		}
+			break;
+		case WM_MOUSEWHEEL:
+		{
+			auto v = Vec2i((int)HIWORD(wParam) > 0 ? 1 : -1, 0);
+			for (auto& l : mouse_listeners)
+				l->call(KeyStateNull, Mouse_Middle, v);
+		}
+			break;
+		case WM_DESTROY:
+			dead = true;
+		case WM_ENTERSIZEMOVE:
+			sizing = true;
+			SetTimer(hWnd, 0, 100, NULL);
+			break;
+		case WM_EXITSIZEMOVE:
+			sizing = false;
+			KillTimer(hWnd, 0);
+			resize();
+			break;
+		case WM_TIMER:
+			if (wParam == 0)
+				resize();
+			one_frame();
+			break;
+		case WM_SIZE:
+			pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+			if (!sizing)
+				resize();
+			break;
+		case WM_SETCURSOR:
+			SetCursor(cursors[cursor_type]);
+			break;
+		}
 	}
 
 	void WindowPrivate::release() 
@@ -1440,132 +1593,88 @@ namespace flame
 		dead = true;
 	}
 
-	static Looper _looper;
-
-	void (*frame_callback)(Capture& c);
-	static Capture frame_capture;
-
-	static ulonglong last_time;
-
-	bool one_frame()
+	void* WindowPrivate::add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture)
 	{
-		for (auto it = windows.begin(); it != windows.end(); )
-		{
-			auto w = (WindowPrivate*)*it;
+		auto c = new Closure(callback, capture);
+		key_listeners.emplace_back(c);
+		return c;
+	}
 
-			if (w->dead)
+	void WindowPrivate::remove_key_listener(void* ret)
+	{
+		for (auto it = key_listeners.begin(); it != key_listeners.end(); it++)
+		{
+			if (it->get() == ret)
 			{
-				it = windows.erase(it);
-				delete w;
+				key_listeners.erase(it);
+				return;
 			}
-			else
-				it++;
 		}
+	}
 
-		if (windows.empty())
+	void* WindowPrivate::add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_listener(void* ret)
+	{
+		for (auto it = mouse_listeners.begin(); it != mouse_listeners.end(); it++)
 		{
-			f_free(frame_capture._data);
-			return false;
+			if (it->get() == ret)
+			{
+				mouse_listeners.erase(it);
+				return;
+			}
 		}
+	}
 
-		frame_callback(frame_capture);
+	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		resize_listeners.emplace_back(c);
+		return c;
+	}
 
-		_looper.frame++;
-		auto et = last_time;
-		last_time = get_now_ns();
-		et = last_time - et;
-		_looper.delta_time = et / 1000000000.f;
-		_looper.total_time += _looper.delta_time;
+	void WindowPrivate::remove_resize_listener(void* ret)
+	{
+		for (auto it = resize_listeners.begin(); it != resize_listeners.end(); it++)
+		{
+			if (it->get() == ret)
+			{
+				resize_listeners.erase(it);
+				return;
+			}
+		}
+	}
 
-		return true;
+	void* WindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		destroy_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_destroy_listener(void* ret)
+	{
+		for (auto it = destroy_listeners.begin(); it != destroy_listeners.end(); it++)
+		{
+			if (it->get() == ret)
+			{
+				destroy_listeners.erase(it);
+				return;
+			}
+		}
 	}
 
 #ifdef FLAME_WINDOWS
-	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
-
 		if (w)
-		{
-			auto resize = [=]() {
-				if (w->size != w->pending_size)
-				{
-					w->size = w->pending_size;
-					w->resize_listeners.call(w->size);
-				}
-			};
-
-			switch (message)
-			{
-			case WM_KEYDOWN:
-			{
-				auto v = vk_code_to_key(wParam);
-				if (v > 0)
-					w->key_listeners.call(KeyStateDown, v);
-			}
-				break;
-			case WM_KEYUP:
-			{
-				auto v = vk_code_to_key(wParam);
-				if (v > 0)
-					w->key_listeners.call(KeyStateUp, v);
-			}
-				break;
-			case WM_CHAR:
-				w->key_listeners.call(KeyStateNull, (Key)wParam);
-				break;
-			case WM_LBUTTONDOWN:
-				SetCapture(hWnd);
-				w->mouse_listeners.call(KeyStateDown, Mouse_Left, Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam)));
-				break;
-			case WM_LBUTTONUP:
-				ReleaseCapture();
-				w->mouse_listeners.call(KeyStateUp, Mouse_Left, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-				break;
-			case WM_MBUTTONDOWN:
-				w->mouse_listeners.call(KeyStateDown, Mouse_Middle, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-				break;
-			case WM_MBUTTONUP:
-				w->mouse_listeners.call(KeyStateUp, Mouse_Middle, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-				break;
-			case WM_RBUTTONDOWN:
-				w->mouse_listeners.call(KeyStateDown, Mouse_Right, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-				break;
-			case WM_RBUTTONUP:
-				w->mouse_listeners.call(KeyStateUp, Mouse_Right, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-				break;
-			case WM_MOUSEMOVE:
-				w->mouse_listeners.call(KeyStateNull, Mouse_Null, Vec2i((short)LOWORD(lParam), (short)HIWORD(lParam)));
-				break;
-			case WM_MOUSEWHEEL:
-				w->mouse_listeners.call(KeyStateNull, Mouse_Middle, Vec2i((short)HIWORD(wParam) > 0 ? 1 : -1, 0));
-				break;
-			case WM_DESTROY:
-				w->dead = true;
-			case WM_ENTERSIZEMOVE:
-				w->sizing = true;
-				SetTimer(hWnd, 0, 100, NULL);
-				break;
-			case WM_EXITSIZEMOVE:
-				w->sizing = false;
-				KillTimer(hWnd, 0);
-				resize();
-				break;
-			case WM_TIMER:
-				if (wParam == 0)
-					resize();
-				one_frame();
-				break;
-			case WM_SIZE:
-				w->pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
-				if (!w->sizing)
-					resize();
-				break;
-			case WM_SETCURSOR:
-				SetCursor(w->cursors[w->cursor_type]);
-				break;
-			}
-		}
+			w->wnd_proc(message, wParam, lParam);
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -1579,7 +1688,7 @@ namespace flame
 			WNDCLASSEXA wcex;
 			wcex.cbSize = sizeof(WNDCLASSEXA);
 			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wcex.lpfnWndProc = _wnd_proc;
+			wcex.lpfnWndProc = wnd_proc;
 			wcex.cbClsExtra = 0;
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();

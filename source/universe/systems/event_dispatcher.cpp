@@ -40,8 +40,8 @@ namespace flame
 	{
 		if (window)
 		{
-			window->key_listeners.remove(key_listener);
-			window->mouse_listeners.remove(mouse_listener);
+			window->remove_key_listener(key_listener);
+			window->remove_mouse_listener(mouse_listener);
 		}
 	}
 
@@ -65,7 +65,7 @@ namespace flame
 		window = (Window*)world_->find_object(FLAME_CHASH("Window"), 0);
 		if (window)
 		{
-			key_listener = window->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
+			key_listener = window->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				if (action == KeyStateNull)
@@ -96,11 +96,9 @@ namespace flame
 				}
 
 				thiz->pending_update = true;
-
-				return true;
 			}, Capture().set_thiz(this));
 
-			mouse_listener = window->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			mouse_listener = window->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				if (action == KeyStateNull)
@@ -117,13 +115,10 @@ namespace flame
 				}
 
 				thiz->pending_update = true;
-
-				return true;
 			}, Capture().set_thiz(this));
 
-			window->destroy_listeners.add([](Capture& c) {
+			window->add_destroy_listener([](Capture& c) {
 				c.thiz<sEventDispatcherPrivate>()->window = nullptr;
-				return true;
 			}, Capture().set_thiz(this));
 		}
 	}

@@ -690,7 +690,7 @@ namespace flame
 		Mouse_Right,
 		Mouse_Middle,
 
-		MouseKey_count
+		MouseKey_Count
 	};
 
 	enum DragAndDrop
@@ -861,6 +861,11 @@ namespace flame
 
 	struct Window : Object
 	{
+		Window() :
+			Object("Window")
+		{
+		}
+
 		virtual void release() = 0;
 
 		virtual void* get_native() = 0;
@@ -880,15 +885,14 @@ namespace flame
 
 		virtual void close() = 0;
 
-		Window() :
-			Object("Window")
-		{
-		}
-
-		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>							key_listeners;
-		ListenerHub<bool(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i & pos)>	mouse_listeners;
-		ListenerHub<bool(Capture& c, const Vec2u & size)>										resize_listeners;
-		ListenerHub<bool(Capture& c)>															destroy_listeners;
+		virtual void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) = 0;
+		virtual void remove_key_listener(void* ret) = 0;
+		virtual void* add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_listener(void* ret) = 0;
+		virtual void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) = 0;
+		virtual void remove_resize_listener(void* ret) = 0;
+		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
+		virtual void remove_destroy_listener(void* ret) = 0;
 
 		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent = nullptr);
 	};

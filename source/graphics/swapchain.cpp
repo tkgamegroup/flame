@@ -24,13 +24,11 @@ namespace flame
 		{
 			update();
 
-			resize_listener = w->resize_listeners.add([](Capture& c, const Vec2u& size) {
+			resize_listener = w->add_resize_listener([](Capture& c, const Vec2u& size) {
 				c.thiz<SwapchainPrivate>()->update();
-				return true;
 			}, Capture().set_thiz(this));
-			w->destroy_listeners.add([](Capture& c) {
+			w->add_destroy_listener([](Capture& c) {
 				c.thiz<SwapchainPrivate>()->w = nullptr;
-				return true;
 			}, Capture().set_thiz(this));
 
 			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
@@ -41,7 +39,7 @@ namespace flame
 			Semaphore::destroy(image_avalible);
 
 			if (w)
-				w->resize_listeners.remove(resize_listener);
+				w->remove_resize_listener(resize_listener);
 
 			for (auto i : images)
 				Image::destroy(i);
