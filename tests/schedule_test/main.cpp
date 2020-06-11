@@ -5,22 +5,22 @@
 using namespace flame;
 using namespace graphics;
 
-struct MainWindow : App::Form
+struct MainForm : GraphicsWindow
 {
 	UI ui;
 
-	MainWindow();
-	~MainWindow();
+	MainForm();
+	~MainForm();
 };
 
-MainWindow* main_window;
+MainForm* main_window;
 
 struct MyApp : App
 {
 }app;
 
-MainWindow::MainWindow() :
-	App::Form(&app, true, true, "Schedule Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+MainForm::MainForm() :
+	GraphicsWindow(&app, true, true, "Schedule Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -62,7 +62,7 @@ MainWindow::MainWindow() :
 	ui.parents.pop();
 }
 
-MainWindow::~MainWindow()
+MainForm::~MainForm()
 {
 	main_window = nullptr;
 }
@@ -70,7 +70,7 @@ MainWindow::~MainWindow()
 int main(int argc, char** args)
 {
 	app.create();
-	new MainWindow();
+	new MainForm();
 
 	looper().loop([](Capture&) {
 		app.run();

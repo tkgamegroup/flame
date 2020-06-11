@@ -11,17 +11,17 @@ struct MyApp : App
 	BP* bp;
 }app;
 
-struct MainWindow : App::Form
+struct MainForm : GraphicsWindow
 {
 	UI ui;
 
-	MainWindow();
+	MainForm();
 };
 
-MainWindow* main_window = nullptr;
+MainForm* main_window = nullptr;
 
-MainWindow::MainWindow() :
-	App::Form(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+MainForm::MainForm() :
+	GraphicsWindow(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -51,7 +51,7 @@ int main(int argc, char** args)
 {
 	app.create();
 
-	new MainWindow;
+	new MainForm;
 
 	app.bp = BP::create_from_file((app.resource_path / L"test.bp").c_str());
 	auto g = app.bp->groups[0];

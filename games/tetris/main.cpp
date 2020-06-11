@@ -183,18 +183,18 @@ struct MyApp : App
 	void quit_game();
 }app;
 
-struct MainWindow : App::Form
+struct MainForm : GraphicsWindow
 {
 	UI ui;
 
-	MainWindow();
-	~MainWindow() override;
+	MainForm();
+	~MainForm() override;
 };
 
-MainWindow* main_window = nullptr;
+MainForm* main_window = nullptr;
 
-MainWindow::MainWindow() :
-	App::Form(&app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
+MainForm::MainForm() :
+	GraphicsWindow(&app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
 {
 	main_window = this;
 
@@ -207,8 +207,9 @@ MainWindow::MainWindow() :
 	ui.parents.push(root);
 	{
 		auto e = ui.e_text(L"");
-		e->on_destroyed_listeners.add([](Capture& c) {
-			looper().remove_event(c.thiz<void>());
+		e->event_listeners.add([](Capture& c, EntityEvent e, void*) {
+			if (e == EntityDestroyed)
+				looper().remove_event(c.thiz<void>());
 			return true;
 		}, Capture().set_thiz(add_fps_listener([](Capture& c, uint fps) {
 			c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
@@ -220,7 +221,7 @@ MainWindow::MainWindow() :
 	app.create_home_scene();
 }
 
-MainWindow::~MainWindow()
+MainForm::~MainForm()
 {
 	main_window = nullptr;
 }
@@ -765,10 +766,13 @@ void MyApp::join_room(const char* ip)
 	[](Capture&) {
 		looper().add_event([](Capture&) {
 			auto& ui = main_window->ui;
-			ui.e_message_dialog(L"Host Has Disconnected")->on_removed_listeners.add([](Capture&) {
-				looper().add_event([](Capture&) {
-					app.quit_game();
-				}, Capture());
+			ui.e_message_dialog(L"Host Has Disconnected")->event_listeners.add([](Capture&, EntityEvent e, void*) {
+				if (e == EntityDestroyed)
+				{
+					looper().add_event([](Capture&) {
+						app.quit_game();
+					}, Capture());
+				}
 				return true;
 			}, Capture());
 		}, Capture());
@@ -2360,7 +2364,7 @@ void MyApp::do_game_logic()
 				if (g.time == 0)
 				{
 					for (auto j = 0; j < g.lines; j++)
-						e_garbage->child(idx + j)->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
+						e_garbage->children[idx + j]->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
 				}
 				idx += g.lines;
 			}
@@ -2372,7 +2376,7 @@ int main(int argc, char **args)
 {
 	app.create();
 
-	new MainWindow();
+	new MainForm();
 
 	looper().loop([](Capture&) {
 		app.run();

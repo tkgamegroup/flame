@@ -7,14 +7,14 @@
 using namespace flame;
 using namespace graphics;
 
-struct MainWindow : App::Form
+struct MainForm : GraphicsWindow
 {
 	UI ui;
 
-	MainWindow();
+	MainForm();
 };
 
-MainWindow* main_window = nullptr;
+MainForm* main_window = nullptr;
 
 struct MyApp : App
 {
@@ -101,8 +101,8 @@ struct MyApp : App
 	}
 }app;
 
-MainWindow::MainWindow() :
-	App::Form(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable)
+MainForm::MainForm() :
+	GraphicsWindow(&app, true, true, "Code Live", Vec2u(800, 400), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -167,7 +167,7 @@ int main(int argc, char** args)
 	};
 	app.font_atlas_edit = graphics::FontAtlas::create(app.graphics_device, 1, fonts);
 
-	new MainWindow;
+	new MainForm;
 
 	looper().loop([](Capture&) {
 		app.run();

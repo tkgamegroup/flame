@@ -161,7 +161,7 @@ void SceneEditor::save()
 MyApp app;
 
 SceneEditorWindow::SceneEditorWindow() :
-	App::Form(&app, true, true, "Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
+	GraphicsWindow(&app, true, true, "Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
 {
 	scene_editor.window = this;
 

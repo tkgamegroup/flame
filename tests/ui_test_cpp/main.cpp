@@ -16,16 +16,16 @@ struct MyApp : App
 	void create_widgets();
 }app;
 
-struct MainWindow : Form
+struct MainForm : GraphicsWindow
 {
 	UI ui;
 
-	MainWindow();
-	~MainWindow() override;
+	MainForm();
+	~MainForm() override;
 	void on_update() override;
 };
 
-MainWindow* main_window = nullptr;
+MainForm* main_window = nullptr;
 
 void MyApp::create()
 {
@@ -204,8 +204,8 @@ void MyApp::create_widgets()
 	ui.parents.pop();
 }
 
-MainWindow::MainWindow() :
-	Form(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+MainForm::MainForm() :
+	GraphicsWindow(&app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -219,12 +219,12 @@ MainWindow::MainWindow() :
 	app.create_widgets();
 }
 
-MainWindow::~MainWindow()
+MainForm::~MainForm()
 {
 	main_window = nullptr;
 }
 
-void MainWindow::on_update()
+void MainForm::on_update()
 {
 	if (swapchain_image_index >= 0)
 	{
@@ -250,7 +250,7 @@ void MainWindow::on_update()
 int main(int argc, char** args)
 {
 	app.create();
-	new MainWindow();
+	new MainForm();
 
 	looper().loop([](Capture&) {
 		app.run();

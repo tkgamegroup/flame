@@ -780,14 +780,15 @@ namespace flame
 			auto n_links = n_group.append_child("links");
 			for (auto n : parent->children)
 			{
+				auto nid = n->id.str();
 				for (auto& in : n->inputs)
 				{
 					auto out = in->links[0];
 					if (out)
 					{
 						auto n_link = n_links.append_child("link");
-						n_link.append_attribute("out").set_value(out->get_address().v);
-						n_link.append_attribute("in").set_value(in->get_address().v);
+						n_link.append_attribute("out").set_value((out->node->id.str() + "." + out->name.str()).c_str());
+						n_link.append_attribute("in").set_value((nid + "." + in->name.str()).c_str());
 					}
 				}
 			}

@@ -6,21 +6,21 @@
 using namespace flame;
 using namespace graphics;
 
-struct MainWindow : App::Form
+struct MainForm : GraphicsWindow
 {
 	UI ui;
 
-	MainWindow();
+	MainForm();
 };
 
-MainWindow* main_window;
+MainForm* main_window;
 
 struct MyApp : App
 {
 }app;
 
-MainWindow::MainWindow() :
-	App::Form(&app, true, true, "Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable)
+MainForm::MainForm() :
+	GraphicsWindow(&app, true, true, "Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -42,7 +42,7 @@ int main(int argc, char** args)
 {
 	app.create();
 
-	new MainWindow;
+	new MainForm;
 
 	looper().loop([](Capture&) {
 		app.run();

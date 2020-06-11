@@ -24,7 +24,7 @@ namespace flame
 {
 	struct App;
 
-	struct Form
+	struct GraphicsWindow
 	{
 		Window* window;
 		graphics::Swapchain* swapchain;
@@ -43,9 +43,9 @@ namespace flame
 		Entity* root;
 		cElement* root_element;
 
-		Form();
-		Form(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p = nullptr, bool maximized = false);
-		virtual ~Form();
+		GraphicsWindow();
+		GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p = nullptr, bool maximized = false);
+		virtual ~GraphicsWindow();
 		void setup_as_main_window();
 		void set_canvas_target();
 		void prepare_swapchain();
@@ -66,13 +66,13 @@ namespace flame
 
 		graphics::FontAtlas* font_atlas;
 
-		std::list<std::unique_ptr<Form>> windows;
+		std::list<std::unique_ptr<GraphicsWindow>> windows;
 
 		void create(bool graphics_debug = true);
 		void run();
 	};
 
-	Form::Form() :
+	GraphicsWindow::GraphicsWindow() :
 		window(nullptr),
 		swapchain(nullptr),
 		swapchain_image_index(-1),
@@ -89,8 +89,8 @@ namespace flame
 	{
 	}
 
-	Form::Form(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p, bool maximized) :
-		Form()
+	GraphicsWindow::GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p, bool maximized) :
+		GraphicsWindow()
 	{
 		app->windows.emplace_back(this);
 
@@ -99,7 +99,7 @@ namespace flame
 
 		window = Window::create(title, size, styles | (maximized ? WindowMaximized : 0), p);
 		window->add_destroy_listener([](Capture& c) {
-			c.thiz<Form>()->window = nullptr;
+			c.thiz<GraphicsWindow>()->window = nullptr;
 		}, Capture().set_thiz(this));
 		swapchain = graphics::Swapchain::create(graphics_device, window);
 		swapchain_commandbuffers.resize(swapchain->image_count());
@@ -117,7 +117,7 @@ namespace flame
 			canvas->add_font(font_atlas);
 
 			window->add_resize_listener([](Capture& c, const Vec2u&) {
-				c.thiz<Form>()->set_canvas_target();
+				c.thiz<GraphicsWindow>()->set_canvas_target();
 			}, Capture().set_thiz(this));
 		}
 		if (has_world)
@@ -133,7 +133,7 @@ namespace flame
 			world->add_system(s_event_dispatcher);
 			s_2d_renderer = s2DRenderer::create(canvas);
 			s_2d_renderer->before_update_listeners.add([](Capture& c) {
-				auto thiz = c.thiz<Form>();
+				auto thiz = c.thiz<GraphicsWindow>();
 				if (thiz->s_2d_renderer->pending_update)
 					thiz->prepare_swapchain();
 				return true;
@@ -148,7 +148,7 @@ namespace flame
 		}
 	}
 
-	Form::~Form()
+	GraphicsWindow::~GraphicsWindow()
 	{
 		if (window)
 			window->release();
@@ -163,14 +163,14 @@ namespace flame
 			World::destroy(world);
 	}
 
-	void Form::setup_as_main_window()
+	void GraphicsWindow::setup_as_main_window()
 	{
 		window->add_destroy_listener([](Capture&) {
 			exit(0);
 		}, Capture());
 	}
 
-	void Form::set_canvas_target()
+	void GraphicsWindow::set_canvas_target()
 	{
 		std::vector<graphics::Imageview*> vs(swapchain->image_count());
 		for (auto i = 0; i < vs.size(); i++)
@@ -178,7 +178,7 @@ namespace flame
 		canvas->set_target(vs.size(), vs.data());
 	}
 
-	void Form::prepare_swapchain()
+	void GraphicsWindow::prepare_swapchain()
 	{
 		if (swapchain_image_index < 0)
 		{
@@ -192,7 +192,7 @@ namespace flame
 		}
 	}
 
-	void Form::update()
+	void GraphicsWindow::update()
 	{
 		if (world)
 		{
