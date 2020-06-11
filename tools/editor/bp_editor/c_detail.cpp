@@ -40,7 +40,7 @@ void cDetail::on_after_select()
 					auto n = bp_editor.selected_nodes[0];
 					std::wstring str;
 					std::string n_type_parameters;
-					auto n_type = break_bp_node_type(n->type.str(), &n_type_parameters);
+					auto n_type = bp_break_node_type(n->type.str(), &n_type_parameters);
 					auto n_name = n_type ? s2w(n_type_parameters) : s2w(n->type.str());
 					auto udt = n->udt;
 					if (udt)

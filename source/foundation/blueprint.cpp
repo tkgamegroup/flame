@@ -125,7 +125,7 @@ namespace flame
 		udt = nullptr;
 
 		std::string parameters;
-		auto t = break_bp_node_type(_type, &parameters);
+		auto t = bp_break_node_type(_type, &parameters);
 		if (t != 0)
 		{
 			assert(_node_type == bpNodeReal);

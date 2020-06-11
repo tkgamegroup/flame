@@ -593,7 +593,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 	auto c_node = f_new<cNode>();
 	c_node->n = n;
-	auto n_type = break_bp_node_type(n->type.str());
+	auto n_type = bp_break_node_type(n->type.str());
 	e_node->add_component(c_node);
 	ui.e_begin_popup_menu(false);
 		ui.e_menu_item(L"Duplicate", [](Capture& c) {

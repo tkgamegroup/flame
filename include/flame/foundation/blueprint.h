@@ -20,7 +20,7 @@ namespace flame
 	struct bpNode;
 	struct bpScene;
 
-	inline char break_bp_node_type(const std::string& name, std::string* parameters = nullptr)
+	inline char bp_break_node_type(const std::string& name, std::string* parameters = nullptr)
 	{
 		{
 			static FLAME_SAL(prefix, "EnumSingle");
@@ -122,8 +122,6 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS bool link_to(bpSlot* target);
 
-		StringA get_address() const;
-
 		void* user_data;
 	};
 
@@ -168,26 +166,6 @@ namespace flame
 			}
 			return nullptr;
 		}
-
-		// TODO
-		//bpSlot* find_input(const std::string& address/* node.var */) const
-		//{
-		//	auto sp = SUS::split_lastone(address, '.');
-		//	auto n = find_node(sp[0]);
-		//	if (!n)
-		//		return nullptr;
-		//	return n->find_input(sp[1]);
-		//}
-
-		// TODO
-		//bpSlot* find_output(const std::string& address/* node.var */) const
-		//{
-		//	auto sp = SUS::split_lastone(address, '.');
-		//	auto n = find_node(sp[0]);
-		//	if (!n)
-		//		return nullptr;
-		//	return n->find_output(sp[1]);
-		//}
 
 		FLAME_FOUNDATION_EXPORTS bpNode* add_node(const char* id, const char* type, bpNodeType node_type = bpNodeReal);
 		FLAME_FOUNDATION_EXPORTS void remove_node(bpNode* n);
@@ -236,18 +214,13 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void destroy(bpScene* bp);
 	};
 
-	StringA bpSlot::get_address() const
-	{
-		return StringA(node->id.str() + "." + name.v);
-	}
-
 	bool bpNode::set_id(const std::string& _id)
 	{
 		if (_id.empty())
 			return false;
 		if (id == _id)
 			return true;
-		if (scene->root->find_node(_id))
+		if (parent->find_node(_id))
 			return false;
 		id = _id;
 		return true;
