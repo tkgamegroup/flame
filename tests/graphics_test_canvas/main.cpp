@@ -77,9 +77,8 @@ int main(int argc, char** args)
 	app.canvas = Canvas::create(app.d);
 	app.canvas->clear_color = Vec4f(0.4f, 0.4f, 0.4f, 1.f);
 	app.on_resize();
-	app.w->resize_listeners.add([](Capture&, const Vec2u&) {
+	app.w->add_resize_listener([](Capture&, const Vec2u&) {
 		app.on_resize();
-		return true;
 	}, Capture());
 
 	{

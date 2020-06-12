@@ -34,8 +34,6 @@ namespace flame
 	struct TypeInfoDatabase;
 
 	// type name archive:
-	// ， no space
-	// ， 'unsigned ' will be replaced to 'u'
 	// ， '< ' will be replaced to '('
 	// ， '> ' will be replaced to ')'
 	// ， ', ' will be replaced to '+'
@@ -76,9 +74,9 @@ namespace flame
 	{
 		TypeTag tag;
 		bool is_array;
-		StringA base_name;
+		StringA base_name; // no space, 'unsigned ' will be replace to 'u'
 		uint base_hash;
-		StringA name;  // tag[A]#base, order matters
+		StringA name;  // tag[A]#base
 		uint hash;
 
 		TypeInfo(TypeTag tag, const std::string& base_name, bool is_array) :
@@ -663,6 +661,7 @@ namespace flame
 			case FLAME_CHASH("ulonglong"):
 				return std::to_string(*(ulonglong*)src);
 			case FLAME_CHASH("float"):
+
 				return to_string(*(float*)src);
 			case FLAME_CHASH("flame::Vec(1+float)"):
 				return to_string(*(Vec1f*)src);

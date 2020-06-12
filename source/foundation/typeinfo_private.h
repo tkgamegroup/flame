@@ -4,5 +4,7 @@
 
 namespace flame
 {
-
+	struct TypeInfoPrivate
+	{
+	};
 }

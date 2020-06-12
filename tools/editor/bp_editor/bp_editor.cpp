@@ -447,12 +447,12 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		ce->size = 100.f;
 		ce->pivot = 0.5f;
 		ce->color = Vec4c(0, 0, 0, 255);
-		cElement::set_linked_object(ce);
+		//cElement::set_linked_object(ce);
 		bp_editor.e_test->add_component(ce);
 	}
 	{
 		auto cer = cEventReceiver::create();
-		cEventReceiver::set_linked_object(cer);
+		//cEventReceiver::set_linked_object(cer);
 		bp_editor.e_test->add_component(cer);
 	}
 
@@ -462,7 +462,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		bp_editor.fileppath = filename.parent_path();
 		bp_editor.bp = bpScene::create_from_file(filename.c_str());
 
-		sys_window->set_title(filename.string().c_str());
+		window->set_title(filename.string().c_str());
 	}
 
 	update_event = looper().add_event([](Capture& c) {
@@ -744,7 +744,7 @@ void BPEditor::set_changed(bool v)
 		std::string title = filepath.string();
 		if (changed)
 			title += "*";
-		bp_editor.window->sys_window->set_title(title.c_str());
+		bp_editor.window->window->set_title(title.c_str());
 	}
 }
 

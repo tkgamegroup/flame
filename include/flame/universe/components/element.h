@@ -171,7 +171,6 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c, void* sender = nullptr);
 		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f, void* sender = nullptr);
 
-		FLAME_UNIVERSE_EXPORTS static void set_linked_object(cElement* e);
 		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(create)();
 	};
 }

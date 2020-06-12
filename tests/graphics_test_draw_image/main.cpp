@@ -109,9 +109,8 @@ int main(int argc, char** args)
 		app.pl = Pipeline::create(app.d, (engine_path / L"shaders").c_str(), 2, shaders, app.pll, app.rp, 0);
 	}
 	app.on_resize();
-	app.w->resize_listeners.add([](Capture&, const Vec2u& s) {
+	app.w->add_resize_listener([](Capture&, const Vec2u& s) {
 		app.on_resize();
-		return true;
 	}, Capture());
 	app.fence = Fence::create(app.d);
 	app.render_finished = Semaphore::create(app.d);

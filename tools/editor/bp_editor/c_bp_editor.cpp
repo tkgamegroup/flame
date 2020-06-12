@@ -7,6 +7,8 @@ static Vec4c selected_col = Vec4c(0, 0, 145, 255);
 
 const auto slot_bezier_extent = 50.f;
 
+struct cNode;
+
 struct cSlot : Component
 {
 	cElement* element;
@@ -20,210 +22,12 @@ struct cSlot : Component
 	Entity* tip_info;
 	Entity* tip_link;
 
-	cSlot() :
-		Component("cSlot")
-	{
-		element = nullptr;
-		event_receiver = nullptr;
-		tracker = nullptr;
+	cNode* group;
 
-		dragging = false;
-
-		tip_info = nullptr;
-		tip_link = nullptr;
-	}
-
-	~cSlot() override
-	{
-		clear_tips();
-	}
-
-	void clear_tips()
-	{
-		if (tip_info)
-		{
-			auto e = tip_info;
-			tip_info = nullptr;
-			looper().add_event([](Capture& c) {
-				auto e = c.thiz<Entity>();
-				e->parent->remove_child(e);
-			}, Capture().set_thiz(e));
-		}
-		if (tip_link)
-		{
-			auto e = tip_link;
-			tip_link = nullptr;
-			looper().add_event([](Capture& c) {
-				auto e = c.thiz<Entity>();
-				e->parent->remove_child(e);
-			}, Capture().set_thiz(e));
-		}
-	}
-
-	void on_event(EntityEvent e, void* t)
-	{
-		switch (e)
-		{
-		case EntityComponentAdded:
-			if (t == this)
-			{
-				element = entity->get_component(cElement);
-				event_receiver = entity->get_component(cEventReceiver);
-
-				if (s->io == bpSlotIn)
-				{
-					event_receiver->drag_hash = FLAME_CHASH("input_slot");
-					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
-				}
-				else
-				{
-					event_receiver->drag_hash = FLAME_CHASH("output_slot");
-					event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
-				}
-				event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = c.thiz<cSlot>();
-					if (thiz->dragging)
-					{
-						if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
-							bp_editor.editor->edt.event_receiver->on_mouse(action, key, pos);
-					}
-					return true;
-				}, Capture().set_thiz(this));
-				event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
-					auto& ui = bp_editor.window->ui;
-					auto thiz = c.thiz<cSlot>();
-					auto element = thiz->element;
-					auto s = thiz->s;
-					auto is_in = s->io == bpSlotIn;
-
-					if (action == DragStart)
-					{
-						thiz->dragging = true;
-						bp_editor.editor->dragging_slot = s;
-						bp_editor.select();
-					}
-					else if (action == DragOvering)
-					{
-						bp_editor.editor->dragging_slot_pos = Vec2f(pos);
-						bp_editor.window->s_2d_renderer->pending_update = true;
-					}
-					else if (action == DragEnd)
-					{
-						thiz->dragging = false;
-						if (!er)
-							bp_editor.editor->show_add_node_menu(Vec2f(pos));
-						else
-							bp_editor.editor->dragging_slot = nullptr;
-						bp_editor.window->s_2d_renderer->pending_update = true;
-					}
-					else if (action == BeingOverStart)
-					{
-						auto oth = er->entity->get_component(cSlot)->s;
-						auto ok = (is_in ? bpSlot::can_link(s->type, oth->type) : bpSlot::can_link(oth->type, s->type));
-
-						element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
-						element->set_frame_thickness(2.f);
-
-						if (!thiz->tip_link)
-						{
-							thiz->tip_link = ui.e_begin_layout(LayoutVertical, 4.f);
-							auto c_element = thiz->tip_link->get_component(cElement);
-							c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
-							c_element->pivot = Vec2f(0.5f, 1.f);
-							c_element->padding = 4.f;
-							c_element->frame_thickness = 2.f;
-							c_element->color = Vec4c(200, 200, 200, 255);
-							c_element->frame_color = Vec4c(0, 0, 0, 255);
-							{
-								auto s_type = s->type;
-								auto o_type = oth->type;
-								std::wstring str;
-								if (is_in)
-									str = s2w(o_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(s_type->name.str());
-								else
-									str = s2w(s_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(o_type->name.str());
-								ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
-							}
-							ui.e_end_layout();
-							looper().add_event([](Capture& c) {
-								bp_editor.window->root->add_child(c.thiz<Entity>());
-							}, Capture().set_thiz(thiz->tip_link));
-						}
-					}
-					else if (action == BeingOverEnd)
-					{
-						element->set_frame_thickness(0.f);
-
-						thiz->clear_tips();
-					}
-					else if (action == BeenDropped)
-					{
-						auto oth = er->entity->get_component(cSlot)->s;
-						if (s->io == bpSlotIn)
-							bp_editor.set_links({ {s, oth} });
-						else
-							bp_editor.set_links({ {oth, s} });
-					}
-
-					return true;
-				}, Capture().set_thiz(this));
-				event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
-					auto& ui = bp_editor.window->ui;
-					auto thiz = c.thiz<cSlot>();
-					auto s = thiz->s;
-					auto is_in = s->io == bpSlotIn;
-
-					if (!hovering)
-						thiz->clear_tips();
-					else
-					{
-						if (!thiz->tip_info)
-						{
-							thiz->tip_info = ui.e_begin_layout(LayoutVertical, 8.f);
-							auto c_element = thiz->tip_info->get_component(cElement);
-							c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
-							c_element->pivot = Vec2f(is_in ? 1.f : 0.f, 0.f);
-							c_element->padding = 4.f;
-							c_element->frame_thickness = 2.f;
-							c_element->color = Vec4c(200, 200, 200, 255);
-							c_element->frame_color = Vec4c(0, 0, 0, 255);
-							auto type = s->type;
-							auto tag = type->tag;
-							ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
-							{
-								auto text_value = ui.e_text(L"-")->get_component(cText);
-								ui.current_entity = thiz->tip_info;
-								auto timer = ui.c_timer();
-								timer->interval = 0.f;
-								struct Capturing
-								{
-									const TypeInfo* t;
-									void* d;
-									cText* text;
-								}capture;
-								capture.t = s->type;
-								capture.d = s->data;
-								capture.text = text_value;
-								timer->set_callback([](Capture& c) {
-									auto& capture = c.data<Capturing>();
-									capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
-								}, Capture().set_data(&capture), false);
-							}
-							ui.e_end_layout();
-							looper().add_event([](Capture& c) {
-								auto tip_info = c.thiz<Entity>();
-								bp_editor.window->root->add_child(tip_info);
-								tip_info->get_component(cTimer)->start();
-							}, Capture().set_thiz(thiz->tip_info));
-						}
-					}
-
-					return true;
-				}, Capture().set_thiz(this));
-			}
-			break;
-		}
-	}
+	cSlot();
+	~cSlot() override;
+	void clear_tips();
+	void on_event(EntityEvent e, void* t);
 };
 
 struct cNode : Component
@@ -240,68 +44,276 @@ struct cNode : Component
 	bpSlot* dragging_slot;
 	Vec2f dragging_slot_pos;
 
-	cNode() :
-		Component("cNode")
-	{
-		moved = false;
-
-		dragging_slot = nullptr;
-	}
-
-	void on_event(EntityEvent e, void* t)
-	{
-		switch (e)
-		{
-		case EntityComponentAdded:
-			if (t == this)
-			{
-				element = entity->get_component(cElement);
-				event_receiver = entity->get_component(cEventReceiver);
-
-				event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					auto thiz = c.thiz<cNode>();
-					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-					{
-						auto n = thiz->n;
-						for (auto& s : bp_editor.selected_nodes)
-						{
-							if (n == s)
-							{
-								n = nullptr;
-								break;
-							}
-						}
-						if (n)
-							bp_editor.select({ n });
-					}
-					else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
-					{
-						for (auto& s : bp_editor.selected_nodes)
-						{
-							auto e = ((Entity*)s->user_data)->get_component(cElement);
-							e->add_pos((Vec2f)pos / e->global_scale);
-						}
-						thiz->moved = true;
-					}
-					return true;
-				}, Capture().set_thiz(this));
-				event_receiver->state_listeners.add([](Capture& c, EventReceiverState) {
-					auto thiz = c.thiz<cNode>();
-					if (thiz->moved && !thiz->event_receiver->is_active())
-					{
-						std::vector<Vec2f> poses;
-						for (auto& s : bp_editor.selected_nodes)
-							poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos);
-						bp_editor.set_nodes_pos(bp_editor.selected_nodes, poses);
-						thiz->moved = false;
-					}
-					return true;
-				}, Capture().set_thiz(this));
-			}
-			break;
-		}
-	}
+	cNode();
+	void on_event(EntityEvent e, void* t);
 };
+
+cSlot::cSlot() :
+	Component("cSlot")
+{
+	element = nullptr;
+	event_receiver = nullptr;
+	tracker = nullptr;
+
+	dragging = false;
+
+	tip_info = nullptr;
+	tip_link = nullptr;
+}
+
+cSlot::~cSlot()
+{
+	clear_tips();
+}
+
+void cSlot::clear_tips()
+{
+	if (tip_info)
+	{
+		auto e = tip_info;
+		tip_info = nullptr;
+		looper().add_event([](Capture& c) {
+			auto e = c.thiz<Entity>();
+			e->parent->remove_child(e);
+		}, Capture().set_thiz(e));
+	}
+	if (tip_link)
+	{
+		auto e = tip_link;
+		tip_link = nullptr;
+		looper().add_event([](Capture& c) {
+			auto e = c.thiz<Entity>();
+			e->parent->remove_child(e);
+		}, Capture().set_thiz(e));
+	}
+}
+
+void cSlot::on_event(EntityEvent e, void* t)
+{
+	switch (e)
+	{
+	case EntityComponentAdded:
+		if (t == this)
+		{
+			element = entity->get_component(cElement);
+			event_receiver = entity->get_component(cEventReceiver);
+
+			if (s->io == bpSlotIn)
+			{
+				event_receiver->drag_hash = FLAME_CHASH("input_slot");
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
+			}
+			else
+			{
+				event_receiver->drag_hash = FLAME_CHASH("output_slot");
+				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
+			}
+			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto thiz = c.thiz<cSlot>();
+				if (thiz->dragging)
+				{
+					if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
+						thiz->group->edt.event_receiver->on_mouse(action, key, pos);
+				}
+				return true;
+			}, Capture().set_thiz(this));
+			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+				auto& ui = bp_editor.window->ui;
+				auto thiz = c.thiz<cSlot>();
+				auto element = thiz->element;
+				auto s = thiz->s;
+				auto is_in = s->io == bpSlotIn;
+
+				if (action == DragStart)
+				{
+					thiz->dragging = true;
+					thiz->group->dragging_slot = s;
+					bp_editor.select();
+				}
+				else if (action == DragOvering)
+				{
+					thiz->group->dragging_slot_pos = Vec2f(pos);
+					bp_editor.window->s_2d_renderer->pending_update = true;
+				}
+				else if (action == DragEnd)
+				{
+					thiz->dragging = false;
+					if (!er)
+						bp_editor.editor->show_add_node_menu(Vec2f(pos));
+					else
+						thiz->group->dragging_slot = nullptr;
+					bp_editor.window->s_2d_renderer->pending_update = true;
+				}
+				else if (action == BeingOverStart)
+				{
+					auto oth = er->entity->get_component(cSlot)->s;
+					auto ok = (is_in ? bpSlot::can_link(s->type, oth->type) : bpSlot::can_link(oth->type, s->type));
+
+					element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
+					element->set_frame_thickness(2.f);
+
+					if (!thiz->tip_link)
+					{
+						thiz->tip_link = ui.e_begin_layout(LayoutVertical, 4.f);
+						auto c_element = thiz->tip_link->get_component(cElement);
+						c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
+						c_element->pivot = Vec2f(0.5f, 1.f);
+						c_element->padding = 4.f;
+						c_element->frame_thickness = 2.f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->frame_color = Vec4c(0, 0, 0, 255);
+						{
+							auto s_type = s->type;
+							auto o_type = oth->type;
+							std::wstring str;
+							if (is_in)
+								str = s2w(o_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(s_type->name.str());
+							else
+								str = s2w(s_type->name.str()) + (ok ? L"  =>  " : L"  』>  ") + s2w(o_type->name.str());
+							ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+						}
+						ui.e_end_layout();
+						looper().add_event([](Capture& c) {
+							bp_editor.window->root->add_child(c.thiz<Entity>());
+						}, Capture().set_thiz(thiz->tip_link));
+					}
+				}
+				else if (action == BeingOverEnd)
+				{
+					element->set_frame_thickness(0.f);
+
+					thiz->clear_tips();
+				}
+				else if (action == BeenDropped)
+				{
+					auto oth = er->entity->get_component(cSlot)->s;
+					if (s->io == bpSlotIn)
+						bp_editor.set_links({ {s, oth} });
+					else
+						bp_editor.set_links({ {oth, s} });
+				}
+
+				return true;
+			}, Capture().set_thiz(this));
+			event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
+				auto& ui = bp_editor.window->ui;
+				auto thiz = c.thiz<cSlot>();
+				auto s = thiz->s;
+				auto is_in = s->io == bpSlotIn;
+
+				if (!hovering)
+					thiz->clear_tips();
+				else
+				{
+					if (!thiz->tip_info)
+					{
+						thiz->tip_info = ui.e_begin_layout(LayoutVertical, 8.f);
+						auto c_element = thiz->tip_info->get_component(cElement);
+						c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
+						c_element->pivot = Vec2f(is_in ? 1.f : 0.f, 0.f);
+						c_element->padding = 4.f;
+						c_element->frame_thickness = 2.f;
+						c_element->color = Vec4c(200, 200, 200, 255);
+						c_element->frame_color = Vec4c(0, 0, 0, 255);
+						auto type = s->type;
+						auto tag = type->tag;
+						ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
+						{
+							auto text_value = ui.e_text(L"-")->get_component(cText);
+							ui.current_entity = thiz->tip_info;
+							auto timer = ui.c_timer();
+							timer->interval = 0.f;
+							struct Capturing
+							{
+								const TypeInfo* t;
+								void* d;
+								cText* text;
+							}capture;
+							capture.t = s->type;
+							capture.d = s->data;
+							capture.text = text_value;
+							timer->set_callback([](Capture& c) {
+								auto& capture = c.data<Capturing>();
+								capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
+							}, Capture().set_data(&capture), false);
+						}
+						ui.e_end_layout();
+						looper().add_event([](Capture& c) {
+							auto tip_info = c.thiz<Entity>();
+							bp_editor.window->root->add_child(tip_info);
+							tip_info->get_component(cTimer)->start();
+						}, Capture().set_thiz(thiz->tip_info));
+					}
+				}
+
+				return true;
+			}, Capture().set_thiz(this));
+		}
+		break;
+	}
+}
+
+cNode::cNode() :
+	Component("cNode")
+{
+	moved = false;
+
+	dragging_slot = nullptr;
+}
+
+void cNode::on_event(EntityEvent e, void* t)
+{
+	switch (e)
+	{
+	case EntityComponentAdded:
+		if (t == this)
+		{
+			element = entity->get_component(cElement);
+			event_receiver = entity->get_component(cEventReceiver);
+
+			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto thiz = c.thiz<cNode>();
+				if (is_mouse_down(action, key, true) && key == Mouse_Left)
+				{
+					auto n = thiz->n;
+					for (auto& s : bp_editor.selected_nodes)
+					{
+						if (n == s)
+						{
+							n = nullptr;
+							break;
+						}
+					}
+					if (n)
+						bp_editor.select({ n });
+				}
+				else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
+				{
+					for (auto& s : bp_editor.selected_nodes)
+					{
+						auto e = ((Entity*)s->user_data)->get_component(cElement);
+						e->add_pos((Vec2f)pos / e->global_scale);
+					}
+					thiz->moved = true;
+				}
+				return true;
+			}, Capture().set_thiz(this));
+			event_receiver->state_listeners.add([](Capture& c, EventReceiverState) {
+				auto thiz = c.thiz<cNode>();
+				if (thiz->moved && !thiz->event_receiver->is_active())
+				{
+					std::vector<Vec2f> poses;
+					for (auto& s : bp_editor.selected_nodes)
+						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos);
+					bp_editor.set_nodes_pos(bp_editor.selected_nodes, poses);
+					thiz->moved = false;
+				}
+				return true;
+			}, Capture().set_thiz(this));
+		}
+		break;
+	}
+}
 
 cBPEditor::cBPEditor() :
 	Component("cBPEditor")
@@ -467,8 +479,6 @@ cBPEditor::cBPEditor() :
 
 	ui.e_end_docker_page();
 
-	dragging_slot = nullptr;
-
 	for (auto g : bp_editor.bp->groups)
 	{
 		if (g->id != "")
@@ -513,29 +523,13 @@ void cBPEditor::on_add_node(bpNode* n)
 	/* TODO
 	auto& ui = bp_editor.window->ui;
 
-	auto e_group = f_new<Entity>();
-	ui.current_entity = e_group;
-	g->user_data = e_group;
-	ui.next_element_pos = g->pos;
 	ui.next_element_size = 300.f;
-	ui.next_element_padding = 8.f;
-	ui.next_element_roundness = 8.f;
-	ui.next_element_roundness_lod = 2;
-	ui.next_element_frame_thickness = 4.f;
-	ui.next_element_color = Vec4c(255, 255, 255, 200);
-	ui.next_element_frame_color = unselected_col;
-	ui.c_element();
-	ui.c_event_receiver();
 	{
 		auto cl = ui.c_layout(LayoutVertical, 4.f);
 		cl->width_fit_children = false;
 		cl->height_fit_children = false;
 		cl->fence = -2;
 	}
-
-	auto c_group = f_new<cGroup>();
-	c_group->g = g;
-	e_group->add_component(c_group);
 
 	ui.parents.push(e_group);
 
@@ -634,6 +628,7 @@ void cBPEditor::on_add_node(bpNode* n)
 						ui.c_event_receiver();
 						auto c_slot = f_new<cSlot>();
 						c_slot->s = input;
+						c_slot->group = c_node;
 						input->user_data = c_slot;
 						ui.current_entity->add_component(c_slot);
 						ui.e_begin_popup_menu(false);
@@ -1152,6 +1147,7 @@ void cBPEditor::on_add_node(bpNode* n)
 					ui.c_event_receiver();
 					auto c_slot = f_new<cSlot>();
 					c_slot->s = output;
+					c_slot->group = c_node;
 					ui.current_entity->add_component(c_slot);
 					output->user_data = c_slot;
 					ui.e_begin_popup_menu(false);
@@ -1211,10 +1207,7 @@ void cBPEditor::on_add_node(bpNode* n)
 	looper().add_event([](Capture& c) {
 		auto e_node = c.thiz<Entity>();
 		auto n = e_node->get_component(cNode)->n;
-		if (n->group->id != "")
-			((Entity*)n->group->user_data)->get_component(cGroup)->edt.base->entity->add_child(e_node);
-		else
-			bp_editor.editor->edt.base->entity->add_child(e_node);
+		((Entity*)n->parent->user_data)->get_component(cNode)->edt.base->entity->add_child(e_node);
 	}, Capture().set_thiz(e_node));
 }
 

@@ -51,9 +51,8 @@ int main(int argc, char** args)
 	app.img = Image::create_from_file(app.d, (engine_path / L"art/9.png").c_str(), ImageUsageTransferSrc, false);
 	app.img->change_layout(ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
 	app.on_resize();
-	app.w->resize_listeners.add([](Capture&, const Vec2u&) {
+	app.w->add_resize_listener([](Capture&, const Vec2u&) {
 		app.on_resize();
-		return true;
 	}, Capture());
 
 	looper().loop([](Capture&) {
