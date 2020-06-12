@@ -74,13 +74,13 @@ namespace flame
 		assert(byte_per_channel == 1 &&
 			channel == dst->channel &&
 			byte_per_channel == dst->byte_per_channel &&
-			src_x + w < width&& src_y + h < height&&
-			_dst_x + w + b2 < dst->width&& _dst_y + h + b2 < dst->height);
+			src_x + w <= width && src_y + h <= height &&
+			_dst_x + w + b2 <= dst->width && _dst_y + h + b2 <= dst->height);
 		if (byte_per_channel != 1 ||
 			channel != dst->channel ||
 			byte_per_channel != dst->byte_per_channel ||
-			src_x + w >= width || src_y + h >= height ||
-			_dst_x + w + b2 >= dst->width || _dst_y + h + b2 >= dst->height)
+			src_x + w > width || src_y + h > height ||
+			_dst_x + w + b2 > dst->width || _dst_y + h + b2 > dst->height)
 			return;
 
 		auto dst_x = _dst_x + b1;

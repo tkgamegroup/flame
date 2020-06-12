@@ -1,1 +1,1 @@
-"../../../bin/debug/texture_packer" -oatlas/main.png
+"../../../bin/debug/texture_packer" -oatlas/main.atlas

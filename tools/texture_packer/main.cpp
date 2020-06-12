@@ -28,11 +28,13 @@ int main(int argc, char **args)
 	auto image_path = output;
 	image_path.replace_extension(L".png");
 	auto ext = output.extension();
+	if (auto p = output.parent_path(); !std::filesystem::exists(p))
+		std::filesystem::create_directories(p);
 	if (ext == L".atlas")
 	{
 		bin_pack(inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
 			std::ofstream file(output);
-			file << "image = \"" << output.filename().string() << "\"\n";
+			file << "image = \"" << image_path.filename().string() << "\"\n";
 			file << "border = " << (border ? "1" : "0") << "\n";
 			file << "\n[tiles]\n";
 			for (auto& t : tiles)
