@@ -542,24 +542,6 @@ void MyApp::create_player_controls(int player_index)
 		ui.push_style(FontSize, common(Vec1u(80)));
 		p.e_count_down = ui.e_text(L"");
 		p.e_count_down->set_visible(false);
-		{
-			auto c_timer = ui.c_timer();
-			c_timer->interval = 1.f;
-			auto times = 3;
-			c_timer->set_callback([](Capture& c) {
-				auto& times = c.data<int>();
-				times--;
-				auto timer = c.current<cTimer>();
-				if (times == 0)
-				{
-					timer->stop();
-					timer->entity->set_visible(false);
-					app.gaming = true;
-				}
-				else
-					timer->entity->get_component(cText)->set_text(std::to_wstring(times).c_str());
-			}, Capture().set_data(&times), false);
-		}
 		ui.pop_style(FontSize);
 
 		if (game_mode == GameVS)
@@ -1535,11 +1517,26 @@ void MyApp::create_game_scene()
 void MyApp::begin_count_down()
 {
 	auto e_count_down = players[my_room_index].e_count_down;
-	{
-		e_count_down->get_component(cTimer)->start();
-		e_count_down->set_visible(true);
-	}
+	e_count_down->set_visible(true);
 	e_count_down->get_component(cText)->set_text(L"3");
+	auto t = 3;
+	looper().clear_events(FLAME_CHASH("count_down"));
+	looper().add_event([](Capture& c) {
+		auto& t = c.data<int>();
+		t--;
+
+		auto e = c.thiz<Entity>();
+		if (t == 0)
+		{
+			e->set_visible(false);
+			app.gaming = true;
+		}
+		else
+		{
+			c._current = INVALID_POINTER;
+			e->get_component(cText)->set_text(std::to_wstring(t).c_str());
+		}
+	}, Capture().set_thiz(e_count_down).set_data(&t), 1.f, FLAME_CHASH("count_down"));
 }
 
 void MyApp::update_status()

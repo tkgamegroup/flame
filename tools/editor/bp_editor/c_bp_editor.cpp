@@ -329,163 +329,9 @@ cBPEditor::cBPEditor() :
 	}
 	e_page->add_component(this);
 
-	edt.create(ui, [](Capture&, const Vec4f& r) {
-		if (r.x() == r.z() && r.y() == r.z())
-			bp_editor.select();
-		else
-		{
-			std::vector<bpNode*> nodes;
-			for (auto n : bp_editor.bp->root->children)
-			{
-				auto e = ((Entity*)n->user_data)->get_component(cElement);
-				if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
-					nodes.push_back(n);
-			}
-			if (!nodes.empty())
-			{
-				bp_editor.select(nodes);
-				return;
-			}
-
-			std::vector<bpSlot*> links;
-
-			Vec2f lines[8];
-			lines[0] = Vec2f(r.x(), r.y());
-			lines[1] = Vec2f(r.z(), r.y());
-			lines[2] = Vec2f(r.x(), r.y());
-			lines[3] = Vec2f(r.x(), r.w());
-			lines[4] = Vec2f(r.z(), r.w());
-			lines[5] = Vec2f(r.x(), r.w());
-			lines[6] = Vec2f(r.z(), r.w());
-			lines[7] = Vec2f(r.z(), r.y());
-
-			auto& edt = bp_editor.editor->edt;
-
-			auto range = rect(edt.element->global_pos, edt.element->global_size);
-			auto scale = edt.base->global_scale;
-			auto extent = slot_bezier_extent * scale;
-			for (auto n : bp_editor.bp->root->children)
-			{
-				for (auto input : n->inputs)
-				{
-					auto output = input->links[0];
-					if (!output)
-						continue;
-					auto p1 = ((cSlot*)output->user_data)->element->center();
-					auto p4 = ((cSlot*)input->user_data)->element->center();
-					auto p2 = p1 + Vec2f(extent, 0.f);
-					auto p3 = p4 - Vec2f(extent, 0.f);
-					auto bb = rect_from_points(p1, p2, p3, p4);
-					if (rect_overlapping(bb, range))
-					{
-						std::vector<Vec2f> points;
-						path_bezier(points, p1, p2, p3, p4);
-						auto ok = false;
-						for (auto k = 0; k < points.size() - 1; k++)
-						{
-							for (auto m = 0; m < 8; m += 2)
-							{
-								if (segment_intersect(lines[m], lines[m + 1], points[k], points[k + 1]))
-								{
-									links.push_back(input);
-									ok = true;
-									break;
-								}
-								if (ok)
-									break;
-							}
-							if (ok)
-								break;
-						}
-					}
-				}
-			}
-
-			if (!links.empty())
-				bp_editor.select(links);
-		}
-	}, Capture());
-	edt.element->cmds.add([](Capture&, graphics::Canvas* canvas) {
-		auto& edt = bp_editor.editor->edt;
-
-		auto scale = edt.base->global_scale;
-		auto extent = slot_bezier_extent * scale;
-		auto range = rect(edt.element->global_pos, edt.element->global_size);
-		auto line_width = 3.f * scale;
-		for (auto n : bp_editor.bp->root->children)
-		{
-			for (auto output : n->outputs)
-			{
-				for (auto input : output->links)
-				{
-					auto e1 = ((cSlot*)output->user_data)->element;
-					auto e2 = ((cSlot*)input->user_data)->element;
-					if (e1->entity->global_visibility && e2->entity->global_visibility)
-					{
-						auto p1 = e1->center();
-						auto p4 = e2->center();
-						auto p2 = p1 + Vec2f(extent, 0.f);
-						auto p3 = p4 - Vec2f(extent, 0.f);
-						auto bb = rect_from_points(p1, p2, p3, p4);
-						if (rect_overlapping(bb, range))
-						{
-							std::vector<Vec2f> points;
-							path_bezier(points, p1, p2, p3, p4);
-							auto selected = false;
-							for (auto& s : bp_editor.selected_links)
-							{
-								if (s == input)
-								{
-									selected = true;
-									break;
-								}
-							}
-							canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
-						}
-					}
-				}
-			}
-		}
-		auto ds = bp_editor.editor->dragging_slot;
-		if (ds)
-		{
-			auto e1 = ((cSlot*)ds->user_data)->element;
-			if (e1->entity->global_visibility)
-			{
-				auto p1 = e1->center();
-				auto p4 = bp_editor.editor->dragging_slot_pos;
-				auto is_in = ds->io == bpSlotIn;
-				auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
-				auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
-				auto bb = rect_from_points(p1, p2, p3, p4);
-				if (rect_overlapping(bb, range))
-				{
-					std::vector<Vec2f> points;
-					path_bezier(points, p1, p2, p3, p4);
-					canvas->stroke(points.size(), points.data(), selected_col, line_width);
-				}
-			}
-		}
-		return true;
-	}, Capture());
-	edt.event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-		if (is_mouse_up(action, key, true) && key == Mouse_Right)
-		{
-			if (!bp_editor.editor->edt.moved)
-				bp_editor.editor->show_add_node_menu(Vec2f(pos));
-		}
-		return true;
-	}, Capture());
+	on_add_node(bp_editor.bp->root);
 
 	ui.e_end_docker_page();
-
-	for (auto g : bp_editor.bp->groups)
-	{
-		if (g->id != "")
-			on_add_group(g);
-		for (auto n : g->children)
-			on_add_node(n);
-	}
 }
 
 cBPEditor::~cBPEditor()
@@ -521,8 +367,6 @@ void cBPEditor::on_pos_changed(bpNode* n)
 void cBPEditor::on_add_node(bpNode* n)
 {
 	/* TODO
-	auto& ui = bp_editor.window->ui;
-
 	ui.next_element_size = 300.f;
 	{
 		auto cl = ui.c_layout(LayoutVertical, 4.f);
@@ -555,7 +399,152 @@ void cBPEditor::on_add_node(bpNode* n)
 			ui.pop_style(TextColorNormal);
 		ui.e_end_layout();
 
-		c_group->edt.create(ui, [](Capture&, const Vec4f&) {
+		edt.create(ui, [](Capture&, const Vec4f& r) {
+			if (r.x() == r.z() && r.y() == r.z())
+				bp_editor.select();
+			else
+			{
+				std::vector<bpNode*> nodes;
+				for (auto n : bp_editor.bp->root->children)
+				{
+					auto e = ((Entity*)n->user_data)->get_component(cElement);
+					if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
+						nodes.push_back(n);
+				}
+				if (!nodes.empty())
+				{
+					bp_editor.select(nodes);
+					return;
+				}
+
+				std::vector<bpSlot*> links;
+
+				Vec2f lines[8];
+				lines[0] = Vec2f(r.x(), r.y());
+				lines[1] = Vec2f(r.z(), r.y());
+				lines[2] = Vec2f(r.x(), r.y());
+				lines[3] = Vec2f(r.x(), r.w());
+				lines[4] = Vec2f(r.z(), r.w());
+				lines[5] = Vec2f(r.x(), r.w());
+				lines[6] = Vec2f(r.z(), r.w());
+				lines[7] = Vec2f(r.z(), r.y());
+
+				auto& edt = bp_editor.editor->edt;
+
+				auto range = rect(edt.element->global_pos, edt.element->global_size);
+				auto scale = edt.base->global_scale;
+				auto extent = slot_bezier_extent * scale;
+				for (auto n : bp_editor.bp->root->children)
+				{
+					for (auto input : n->inputs)
+					{
+						auto output = input->links[0];
+						if (!output)
+							continue;
+						auto p1 = ((cSlot*)output->user_data)->element->center();
+						auto p4 = ((cSlot*)input->user_data)->element->center();
+						auto p2 = p1 + Vec2f(extent, 0.f);
+						auto p3 = p4 - Vec2f(extent, 0.f);
+						auto bb = rect_from_points(p1, p2, p3, p4);
+						if (rect_overlapping(bb, range))
+						{
+							std::vector<Vec2f> points;
+							path_bezier(points, p1, p2, p3, p4);
+							auto ok = false;
+							for (auto k = 0; k < points.size() - 1; k++)
+							{
+								for (auto m = 0; m < 8; m += 2)
+								{
+									if (segment_intersect(lines[m], lines[m + 1], points[k], points[k + 1]))
+									{
+										links.push_back(input);
+										ok = true;
+										break;
+									}
+									if (ok)
+										break;
+								}
+								if (ok)
+									break;
+							}
+						}
+					}
+				}
+
+				if (!links.empty())
+					bp_editor.select(links);
+			}
+		}, Capture());
+		edt.element->cmds.add([](Capture&, graphics::Canvas* canvas) {
+			auto& edt = bp_editor.editor->edt;
+
+			auto scale = edt.base->global_scale;
+			auto extent = slot_bezier_extent * scale;
+			auto range = rect(edt.element->global_pos, edt.element->global_size);
+			auto line_width = 3.f * scale;
+			for (auto n : bp_editor.bp->root->children)
+			{
+				for (auto output : n->outputs)
+				{
+					for (auto input : output->links)
+					{
+						auto e1 = ((cSlot*)output->user_data)->element;
+						auto e2 = ((cSlot*)input->user_data)->element;
+						if (e1->entity->global_visibility && e2->entity->global_visibility)
+						{
+							auto p1 = e1->center();
+							auto p4 = e2->center();
+							auto p2 = p1 + Vec2f(extent, 0.f);
+							auto p3 = p4 - Vec2f(extent, 0.f);
+							auto bb = rect_from_points(p1, p2, p3, p4);
+							if (rect_overlapping(bb, range))
+							{
+								std::vector<Vec2f> points;
+								path_bezier(points, p1, p2, p3, p4);
+								auto selected = false;
+								for (auto& s : bp_editor.selected_links)
+								{
+									if (s == input)
+									{
+										selected = true;
+										break;
+									}
+								}
+								canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+							}
+						}
+					}
+				}
+			}
+			auto ds = bp_editor.editor->dragging_slot;
+			if (ds)
+			{
+				auto e1 = ((cSlot*)ds->user_data)->element;
+				if (e1->entity->global_visibility)
+				{
+					auto p1 = e1->center();
+					auto p4 = bp_editor.editor->dragging_slot_pos;
+					auto is_in = ds->io == bpSlotIn;
+					auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
+					auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
+					auto bb = rect_from_points(p1, p2, p3, p4);
+					if (rect_overlapping(bb, range))
+					{
+						std::vector<Vec2f> points;
+						path_bezier(points, p1, p2, p3, p4);
+						canvas->stroke(points.size(), points.data(), selected_col, line_width);
+					}
+				}
+			}
+			return true;
+		}, Capture());
+		edt.event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			if (is_mouse_up(action, key, true) && key == Mouse_Right)
+			{
+				if (!bp_editor.editor->edt.moved)
+					bp_editor.editor->show_add_node_menu(Vec2f(pos));
+			}
+			return true;
 		}, Capture());
 
 		ui.e_size_dragger();
@@ -564,9 +553,6 @@ void cBPEditor::on_add_node(bpNode* n)
 
 	ui.parents.pop();
 
-	looper().add_event([](Capture& c) {
-		bp_editor.editor->edt.base->entity->add_child(c.thiz<Entity>());
-	}, Capture().set_thiz(e_group));
 	*/
 
 	auto& ui = bp_editor.window->ui;
@@ -1209,6 +1195,14 @@ void cBPEditor::on_add_node(bpNode* n)
 		auto n = e_node->get_component(cNode)->n;
 		((Entity*)n->parent->user_data)->get_component(cNode)->edt.base->entity->add_child(e_node);
 	}, Capture().set_thiz(e_node));
+
+	for (auto g : bp_editor.bp->groups)
+	{
+		if (g->id != "")
+			on_add_group(g);
+		for (auto n : g->children)
+			on_add_node(n);
+	}
 }
 
 void cBPEditor::on_remove_node(bpNode* n)
