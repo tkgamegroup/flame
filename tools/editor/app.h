@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/universe/utils/ui.h>
+#include <flame/universe/ui/ui.h>
 #include <flame/utils/app.h>
 
 using namespace flame;

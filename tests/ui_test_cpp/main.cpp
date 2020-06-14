@@ -2,8 +2,8 @@
 #include <flame/graphics/image.h>
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
-#include <flame/universe/utils/ui.h>
-#include <flame/universe/utils/ui_reflector.h>
+#include <flame/universe/ui/ui.h>
+#include <flame/universe/ui/reflector.h>
 
 using namespace flame;
 using namespace graphics;

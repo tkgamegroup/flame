@@ -2,7 +2,7 @@
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/canvas.h>
-#include <flame/universe/utils/ui.h>
+#include <flame/universe/ui/ui.h>
 
 namespace flame
 {
