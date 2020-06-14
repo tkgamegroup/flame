@@ -33,41 +33,6 @@ namespace flame
 	struct UdtInfo;
 	struct TypeInfoDatabase;
 
-	// type name archive:
-	// ¡¤ '< ' will be replaced to '('
-	// ¡¤ '> ' will be replaced to ')'
-	// ¡¤ ', ' will be replaced to '+'
-
-	inline std::string tn_c2a(const std::string& name) // type name code to archive
-	{
-		auto ret = name;
-		for (auto& ch : ret)
-		{
-			if (ch == '<')
-				ch = '(';
-			else if (ch == '>')
-				ch = ')';
-			else if (ch == ',')
-				ch = '+';
-		}
-		return ret;
-	}
-
-	inline std::string tn_a2c(const std::string& name) // type name archive to code
-	{
-		auto ret = name;
-		for (auto& ch : ret)
-		{
-			if (ch == '(')
-				ch = '<';
-			else if (ch == ')')
-				ch = '>';
-			else if (ch == '+')
-				ch = ',';
-		}
-		return ret;
-	}
-
 	FLAME_FOUNDATION_EXPORTS extern HashMap<256, TypeInfo> typeinfos;
 
 	struct TypeInfo
@@ -146,7 +111,7 @@ namespace flame
 
 		std::string get_cpp_name() const
 		{
-			std::string ret = tn_a2c(base_name.str());
+			std::string ret = base_name.str();
 			static FLAME_SAL(str_flame, "flame::");
 			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
 				ret.erase(ret.begin(), ret.begin() + str_flame.l);
@@ -492,38 +457,6 @@ namespace flame
 		return true;
 	}
 
-	inline auto& basic_types()
-	{
-		static const char* types[] = {
-			"bool",
-			"int",
-			"uint",
-			"flame::Vec(1+int)",
-			"flame::Vec(2+int)",
-			"flame::Vec(3+int)",
-			"flame::Vec(4+int)",
-			"flame::Vec(1+uint)",
-			"flame::Vec(2+uint)",
-			"flame::Vec(3+uint)",
-			"flame::Vec(4+uint)",
-			"longlong",
-			"ulonglong",
-			"float",
-			"flame::Vec(1+float)",
-			"flame::Vec(2+float)",
-			"flame::Vec(3+float)",
-			"flame::Vec(4+float)",
-			"uchar",
-			"flame::Vec(1+uchar)",
-			"flame::Vec(2+uchar)",
-			"flame::Vec(3+uchar)",
-			"flame::Vec(4+uchar)",
-			"flame::StringA",
-			"flame::StringW"
-		};
-		return types;
-	}
-
 	inline uint basic_type_size(uint type_hash)
 	{
 		switch (type_hash)
@@ -533,40 +466,40 @@ namespace flame
 		case FLAME_CHASH("int"):
 		case FLAME_CHASH("uint"):
 			return sizeof(int);
-		case FLAME_CHASH("flame::Vec(1+int)"):
-		case FLAME_CHASH("flame::Vec(1+uint)"):
+		case FLAME_CHASH("flame::Vec<1,int>"):
+		case FLAME_CHASH("flame::Vec<1,uint>"):
 			return sizeof(Vec1i);
-		case FLAME_CHASH("flame::Vec(2+int)"):
-		case FLAME_CHASH("flame::Vec(2+uint)"):
+		case FLAME_CHASH("flame::Vec<2,int>"):
+		case FLAME_CHASH("flame::Vec<2,uint>"):
 			return sizeof(Vec2i);
-		case FLAME_CHASH("flame::Vec(3+int)"):
-		case FLAME_CHASH("flame::Vec(3+uint)"):
+		case FLAME_CHASH("flame::Vec<3,int>"):
+		case FLAME_CHASH("flame::Vec<3,uint>"):
 			return sizeof(Vec3i);
-		case FLAME_CHASH("flame::Vec(4+int)"):
-		case FLAME_CHASH("flame::Vec(4+uint)"):
+		case FLAME_CHASH("flame::Vec<4,int>"):
+		case FLAME_CHASH("flame::Vec<4,uint>"):
 			return sizeof(Vec4i);
-		case FLAME_CHASH("longlong"):
-		case FLAME_CHASH("ulonglong"):
+		case FLAME_CHASH("int64"):
+		case FLAME_CHASH("uint64"):
 			return sizeof(longlong);
 		case FLAME_CHASH("float"):
 			return sizeof(float);
-		case FLAME_CHASH("flame::Vec(1+float)"):
+		case FLAME_CHASH("flame::Vec<1,float>"):
 			return sizeof(Vec1f);
-		case FLAME_CHASH("flame::Vec(2+float)"):
+		case FLAME_CHASH("flame::Vec<2,float>"):
 			return sizeof(Vec2f);
-		case FLAME_CHASH("flame::Vec(3+float)"):
+		case FLAME_CHASH("flame::Vec<3,float>"):
 			return sizeof(Vec3f);
-		case FLAME_CHASH("flame::Vec(4+float)"):
+		case FLAME_CHASH("flame::Vec<4,float>"):
 			return sizeof(Vec4f);
 		case FLAME_CHASH("uchar"):
 			return sizeof(uchar);
-		case FLAME_CHASH("flame::Vec(1+uchar)"):
+		case FLAME_CHASH("flame::Vec<1,uchar>"):
 			return sizeof(Vec1c);
-		case FLAME_CHASH("flame::Vec(2+uchar)"):
+		case FLAME_CHASH("flame::Vec<2,uchar>"):
 			return sizeof(Vec2c);
-		case FLAME_CHASH("flame::Vec(3+uchar)"):
+		case FLAME_CHASH("flame::Vec<3,uchar>"):
 			return sizeof(Vec3c);
-		case FLAME_CHASH("flame::Vec(4+uchar)"):
+		case FLAME_CHASH("flame::Vec<4,uchar>"):
 			return sizeof(Vec4c);
 		case FLAME_CHASH("flame::StringA"):
 			return sizeof(StringA);
@@ -640,46 +573,45 @@ namespace flame
 				return *(bool*)src ? "1" : "0";
 			case FLAME_CHASH("int"):
 				return std::to_string(*(int*)src);
-			case FLAME_CHASH("flame::Vec(1+int)"):
+			case FLAME_CHASH("flame::Vec<1,int>"):
 				return to_string(*(Vec1i*)src);
-			case FLAME_CHASH("flame::Vec(2+int)"):
+			case FLAME_CHASH("flame::Vec<2,int>"):
 				return to_string(*(Vec2i*)src);
-			case FLAME_CHASH("flame::Vec(3+int)"):
+			case FLAME_CHASH("flame::Vec<3,int>"):
 				return to_string(*(Vec3i*)src);
-			case FLAME_CHASH("flame::Vec(4+int)"):
+			case FLAME_CHASH("flame::Vec<4,int>"):
 				return to_string(*(Vec4i*)src);
 			case FLAME_CHASH("uint"):
 				return std::to_string(*(uint*)src);
-			case FLAME_CHASH("flame::Vec(1+uint)"):
+			case FLAME_CHASH("flame::Vec<1,uint>"):
 				return to_string(*(Vec1u*)src);
-			case FLAME_CHASH("flame::Vec(2+uint)"):
+			case FLAME_CHASH("flame::Vec<2,uint>"):
 				return to_string(*(Vec2u*)src);
-			case FLAME_CHASH("flame::Vec(3+uint)"):
+			case FLAME_CHASH("flame::Vec<3,uint>"):
 				return to_string(*(Vec3u*)src);
-			case FLAME_CHASH("flame::Vec(4+uint)"):
+			case FLAME_CHASH("flame::Vec<4,uint>"):
 				return to_string(*(Vec4u*)src);
 			case FLAME_CHASH("ulonglong"):
 				return std::to_string(*(ulonglong*)src);
 			case FLAME_CHASH("float"):
-
 				return to_string(*(float*)src);
-			case FLAME_CHASH("flame::Vec(1+float)"):
+			case FLAME_CHASH("flame::Vec<1,float>"):
 				return to_string(*(Vec1f*)src);
-			case FLAME_CHASH("flame::Vec(2+float)"):
+			case FLAME_CHASH("flame::Vec<2,float>"):
 				return to_string(*(Vec2f*)src);
-			case FLAME_CHASH("flame::Vec(3+float)"):
+			case FLAME_CHASH("flame::Vec<3,float>"):
 				return to_string(*(Vec3f*)src);
-			case FLAME_CHASH("flame::Vec(4+float)"):
+			case FLAME_CHASH("flame::Vec<4,float>"):
 				return to_string(*(Vec4f*)src);
 			case FLAME_CHASH("uchar"):
 				return std::to_string(*(uchar*)src);
-			case FLAME_CHASH("flame::Vec(1+uchar)"):
+			case FLAME_CHASH("flame::Vec<1,uchar>"):
 				return to_string(*(Vec1c*)src);
-			case FLAME_CHASH("flame::Vec(2+uchar)"):
+			case FLAME_CHASH("flame::Vec<2,uchar>"):
 				return to_string(*(Vec2c*)src);
-			case FLAME_CHASH("flame::Vec(3+uchar)"):
+			case FLAME_CHASH("flame::Vec<3,uchar>"):
 				return to_string(*(Vec3c*)src);
-			case FLAME_CHASH("flame::Vec(4+uchar)"):
+			case FLAME_CHASH("flame::Vec<4,uchar>"):
 				return to_string(*(Vec4c*)src);
 			case FLAME_CHASH("flame::StringA"):
 				return ((StringA*)src)->str();
@@ -725,31 +657,31 @@ namespace flame
 			case FLAME_CHASH("int"):
 				*(int*)dst = std::stoi(src);
 				break;
-			case FLAME_CHASH("flame::Vec(1+int)"):
+			case FLAME_CHASH("flame::Vec<1,int>"):
 				*(Vec1u*)dst = std::stoi(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(2+int)"):
+			case FLAME_CHASH("flame::Vec<2,int>"):
 				*(Vec2u*)dst = stoi2(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(3+int)"):
+			case FLAME_CHASH("flame::Vec<3,int>"):
 				*(Vec3u*)dst = stoi3(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(4+int)"):
+			case FLAME_CHASH("flame::Vec<4,int>"):
 				*(Vec4u*)dst = stoi4(src.c_str());
 				break;
 			case FLAME_CHASH("uint"):
 				*(uint*)dst = std::stoul(src);
 				break;
-			case FLAME_CHASH("flame::Vec(1+uint)"):
+			case FLAME_CHASH("flame::Vec<1,uint>"):
 				*(Vec1u*)dst = std::stoul(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(2+uint)"):
+			case FLAME_CHASH("flame::Vec<2,uint>"):
 				*(Vec2u*)dst = stou2(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(3+uint)"):
+			case FLAME_CHASH("flame::Vec<3,uint>"):
 				*(Vec3u*)dst = stou3(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(4+uint)"):
+			case FLAME_CHASH("flame::Vec<4,uint>"):
 				*(Vec4u*)dst = stou4(src.c_str());
 				break;
 			case FLAME_CHASH("ulonglong"):
@@ -758,31 +690,31 @@ namespace flame
 			case FLAME_CHASH("float"):
 				*(float*)dst = std::stof(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(1+float)"):
+			case FLAME_CHASH("flame::Vec<1,float>"):
 				*(Vec1f*)dst = std::stof(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(2+float)"):
+			case FLAME_CHASH("flame::Vec<2,float>"):
 				*(Vec2f*)dst = stof2(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(3+float)"):
+			case FLAME_CHASH("flame::Vec<3,float>"):
 				*(Vec3f*)dst = stof3(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(4+float)"):
+			case FLAME_CHASH("flame::Vec<4,float>"):
 				*(Vec4f*)dst = stof4(src.c_str());
 				break;
 			case FLAME_CHASH("uchar"):
 				*(uchar*)dst = std::stoul(src);
 				break;
-			case FLAME_CHASH("flame::Vec(1+uchar)"):
+			case FLAME_CHASH("flame::Vec<1,uchar>"):
 				*(Vec1c*)dst = std::stoul(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(2+uchar)"):
+			case FLAME_CHASH("flame::Vec<2,uchar>"):
 				*(Vec2c*)dst = stoc2(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(3+uchar)"):
+			case FLAME_CHASH("flame::Vec<3,uchar>"):
 				*(Vec3c*)dst = stoc3(src.c_str());
 				break;
-			case FLAME_CHASH("flame::Vec(4+uchar)"):
+			case FLAME_CHASH("flame::Vec<4,uchar>"):
 				*(Vec4c*)dst = stoc4(src.c_str());
 				break;
 			case FLAME_CHASH("flame::StringA"):

@@ -1600,11 +1600,11 @@ namespace flame
 		return c;
 	}
 
-	void WindowPrivate::remove_key_listener(void* ret)
+	void WindowPrivate::remove_key_listener(void* lis)
 	{
 		for (auto it = key_listeners.begin(); it != key_listeners.end(); it++)
 		{
-			if (it->get() == ret)
+			if (it->get() == lis)
 			{
 				key_listeners.erase(it);
 				return;
@@ -1619,11 +1619,11 @@ namespace flame
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_listener(void* ret)
+	void WindowPrivate::remove_mouse_listener(void* lis)
 	{
 		for (auto it = mouse_listeners.begin(); it != mouse_listeners.end(); it++)
 		{
-			if (it->get() == ret)
+			if (it->get() == lis)
 			{
 				mouse_listeners.erase(it);
 				return;
@@ -1638,11 +1638,11 @@ namespace flame
 		return c;
 	}
 
-	void WindowPrivate::remove_resize_listener(void* ret)
+	void WindowPrivate::remove_resize_listener(void* lis)
 	{
 		for (auto it = resize_listeners.begin(); it != resize_listeners.end(); it++)
 		{
-			if (it->get() == ret)
+			if (it->get() == lis)
 			{
 				resize_listeners.erase(it);
 				return;
@@ -1657,11 +1657,11 @@ namespace flame
 		return c;
 	}
 
-	void WindowPrivate::remove_destroy_listener(void* ret)
+	void WindowPrivate::remove_destroy_listener(void* lis)
 	{
 		for (auto it = destroy_listeners.begin(); it != destroy_listeners.end(); it++)
 		{
-			if (it->get() == ret)
+			if (it->get() == lis)
 			{
 				destroy_listeners.erase(it);
 				return;
@@ -1840,12 +1840,18 @@ namespace flame
 		return e;
 	}
 
-	void Looper::remove_event(void* ret_by_add)
+	void Looper::reset_event(void* _ev)
+	{
+		auto ev = (Event*)_ev;
+		ev->rest = ev->interval;
+	}
+
+	void Looper::remove_event(void* ev)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
 		{
-			if ((*it).get() == ret_by_add)
+			if ((*it).get() == ev)
 			{
 				events.erase(it);
 				break;

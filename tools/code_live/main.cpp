@@ -129,8 +129,7 @@ MainForm::MainForm() :
 					app.clean_up();
 					app.e_wait = ui.e_begin_dialog();
 					auto c_text = ui.e_text(L"Compiling: 0")->get_component(cText);
-					auto c_timer = ui.c_timer();
-					c_timer->interval = 1.f;
+					ui.e_end_dialog();
 					struct Capturing
 					{
 						cText* text;
@@ -138,12 +137,16 @@ MainForm::MainForm() :
 					}capture;
 					capture.text = c_text;
 					capture.time = 0;
-					c_timer->set_callback([](Capture& c) {
+					looper().add_event([](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						capture.time++;
 						capture.text->set_text(wfmt(L"Compiling: %d", capture.time).c_str());
-					}, Capture().set_data(&capture));
-					ui.e_end_dialog();
+					}, Capture().set_data(&capture), 1.f, FLAME_CHASH("update_dialog"));
+					app.e_wait->event_listeners.add([](Capture& c, EntityEvent e, void*) {
+						if (e == EntityDestroyed)
+							looper().clear_events(FLAME_CHASH("update_dialog"));
+						return true;
+					}, Capture());
 					add_work([](Capture&) {
 						app.compile_and_run();
 					}, Capture());

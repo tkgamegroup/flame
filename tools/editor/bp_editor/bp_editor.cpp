@@ -322,8 +322,11 @@ static void undo()
 			bp_editor.set_changed(false);
 
 		bp_editor.e_notification->set_visible(true);
-		bp_editor.e_notification->get_component(cTimer)->start();
 		bp_editor.e_notification->get_component(cText)->set_text((std::wstring(L"Undo ") + a->name).c_str());
+		looper().clear_events(FLAME_CHASH("hide_notification"));
+		looper().add_event([](Capture& c) {
+			bp_editor.e_notification->set_visible(false);
+		}, Capture(), 1.f, FLAME_CHASH("hide_notification"));
 	}
 }
 
@@ -340,8 +343,11 @@ static void redo()
 		bp_editor.set_changed(true);
 
 		bp_editor.e_notification->set_visible(true);
-		bp_editor.e_notification->get_component(cTimer)->start();
 		bp_editor.e_notification->get_component(cText)->set_text((std::wstring(L"Redo ") + a->name).c_str());
+		looper().clear_events(FLAME_CHASH("hide_notification"));
+		looper().add_event([](Capture& c) {
+			bp_editor.e_notification->set_visible(false);
+		}, Capture(), 1.f, FLAME_CHASH("hide_notification"));
 	}
 }
 
@@ -654,14 +660,6 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	bp_editor.e_notification->get_component(cText)->color = Vec4c(255);
 	ui.c_aligner(AlignMax, AlignMax);
 	bp_editor.e_notification->set_visible(false);
-	{
-		auto c_timer = ui.c_timer();
-		c_timer->interval = 1.f;
-		c_timer->set_callback([](Capture& c) {
-			bp_editor.e_notification->set_visible(false);
-			c.current<cTimer>()->stop();
-		}, Capture(), false);
-	}
 	ui.pop_style(FontSize);
 
 	ui.parents.pop();

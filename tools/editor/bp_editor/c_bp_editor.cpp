@@ -2,6 +2,34 @@
 
 #include "bp_editor.h"
 
+static const char* basic_types[] = {
+	"bool",
+	"int",
+	"uint",
+	"flame::Vec<1,int>",
+	"flame::Vec<2,int>",
+	"flame::Vec<3,int>",
+	"flame::Vec<4,int>",
+	"flame::Vec<1,uint>",
+	"flame::Vec<2,uint>",
+	"flame::Vec<3,uint>",
+	"flame::Vec<4,uint>",
+	"int64",
+	"uint64",
+	"float",
+	"flame::Vec<1,float>",
+	"flame::Vec<2,float>",
+	"flame::Vec<3,float>",
+	"flame::Vec<4,float>",
+	"uchar",
+	"flame::Vec<1,uchar>",
+	"flame::Vec<2,uchar>",
+	"flame::Vec<3,uchar>",
+	"flame::Vec<4,uchar>",
+	"flame::StringA",
+	"flame::StringW"
+};
+
 static Vec4c unselected_col = Vec4c(0, 0, 0, 255);
 static Vec4c selected_col = Vec4c(0, 0, 145, 255);
 
@@ -218,31 +246,32 @@ void cSlot::on_event(EntityEvent e, void* t)
 						auto type = s->type;
 						auto tag = type->tag;
 						ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
-						{
-							auto text_value = ui.e_text(L"-")->get_component(cText);
-							ui.current_entity = thiz->tip_info;
-							auto timer = ui.c_timer();
-							timer->interval = 0.f;
-							struct Capturing
-							{
-								const TypeInfo* t;
-								void* d;
-								cText* text;
-							}capture;
-							capture.t = s->type;
-							capture.d = s->data;
-							capture.text = text_value;
-							timer->set_callback([](Capture& c) {
-								auto& capture = c.data<Capturing>();
-								capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
-							}, Capture().set_data(&capture), false);
-						}
+						auto text_value = ui.e_text(L"-")->get_component(cText);
+						ui.current_entity = thiz->tip_info;
 						ui.e_end_layout();
+						thiz->tip_info->event_listeners.add([](Capture& c, EntityEvent e, void*) {
+							if (e == EntityDestroyed)
+								looper().clear_events(FLAME_CHASH("update_tip"));
+							return true;
+						}, Capture());
 						looper().add_event([](Capture& c) {
 							auto tip_info = c.thiz<Entity>();
 							bp_editor.window->root->add_child(tip_info);
-							tip_info->get_component(cTimer)->start();
-						}, Capture().set_thiz(thiz->tip_info));
+						}, Capture().set_thiz(thiz->tip_info), 0.f, FLAME_CHASH("update_tip"));
+						struct Capturing
+						{
+							const TypeInfo* t;
+							void* d;
+							cText* text;
+						}capture;
+						capture.t = s->type;
+						capture.d = s->data;
+						capture.text = text_value;
+						looper().add_event([](Capture& c) {
+							auto& capture = c.data<Capturing>();
+							capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
+							c._current = INVALID_POINTER;
+						}, Capture().set_data(&capture), 0.f);
 					}
 				}
 
@@ -750,7 +779,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_text, drag_text));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(2+int)"):
+							case FLAME_CHASH("flame::Vec<2,int>"):
 							{
 								std::array<cText*, 2> edit_texts;
 								std::array<cText*, 2> drag_texts;
@@ -775,7 +804,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(3+int)"):
+							case FLAME_CHASH("flame::Vec<3,int>"):
 							{
 								std::array<cText*, 3> edit_texts;
 								std::array<cText*, 3> drag_texts;
@@ -798,7 +827,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(4+int)"):
+							case FLAME_CHASH("flame::Vec<4,int>"):
 							{
 								std::array<cText*, 4> edit_texts;
 								std::array<cText*, 4> drag_texts;
@@ -839,7 +868,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_text, drag_text));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(2+uint)"):
+							case FLAME_CHASH("flame::Vec<2,uint>"):
 							{
 								std::array<cText*, 2> edit_texts;
 								std::array<cText*, 2> drag_texts;
@@ -862,7 +891,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(3+uint)"):
+							case FLAME_CHASH("flame::Vec<3,uint>"):
 							{
 								std::array<cText*, 3> edit_texts;
 								std::array<cText*, 3> drag_texts;
@@ -885,7 +914,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(4+uint)"):
+							case FLAME_CHASH("flame::Vec<4,uint>"):
 							{
 								std::array<cText*, 4> edit_texts;
 								std::array<cText*, 4> drag_texts;
@@ -926,7 +955,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_text, drag_text));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(2+float)"):
+							case FLAME_CHASH("flame::Vec<2,float>"):
 							{
 								std::array<cText*, 2> edit_texts;
 								std::array<cText*, 2> drag_texts;
@@ -949,7 +978,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(3+float)"):
+							case FLAME_CHASH("flame::Vec<3,float>"):
 							{
 								std::array<cText*, 3> edit_texts;
 								std::array<cText*, 3> drag_texts;
@@ -972,7 +1001,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(4+float)"):
+							case FLAME_CHASH("flame::Vec<4,float>"):
 							{
 								std::array<cText*, 4> edit_texts;
 								std::array<cText*, 4> drag_texts;
@@ -1013,7 +1042,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_text, drag_text));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(2+uchar)"):
+							case FLAME_CHASH("flame::Vec<2,uchar>"):
 							{
 								std::array<cText*, 2> edit_texts;
 								std::array<cText*, 2> drag_texts;
@@ -1036,7 +1065,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(3+uchar)"):
+							case FLAME_CHASH("flame::Vec<3,uchar>"):
 							{
 								std::array<cText*, 3> edit_texts;
 								std::array<cText*, 3> drag_texts;
@@ -1059,7 +1088,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								}, Capture().set_thiz(input), edit_texts, drag_texts));
 							}
 								break;
-							case FLAME_CHASH("flame::Vec(4+uchar)"):
+							case FLAME_CHASH("flame::Vec<4,uchar>"):
 							{
 								std::array<cText*, 4> edit_texts;
 								std::array<cText*, 4> drag_texts;
@@ -1413,7 +1442,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								}_capture;
 								_capture.p = capture.p;
 								capture.l->remove_children(0, -1);
-								for (auto t : basic_types())
+								for (auto t : basic_types)
 								{
 									_capture.s = t;
 									ui.parents.push(capture.l);
@@ -1444,7 +1473,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								}_capture;
 								_capture.p = capture.p;
 								capture.l->remove_children(0, -1);
-								for (auto t : basic_types())
+								for (auto t : basic_types)
 								{
 									_capture.s = t;
 									ui.parents.push(capture.l);

@@ -398,49 +398,49 @@ namespace flame
 							case FLAME_CHASH("int"):
 								setter = new Setter_t<int>;
 								break;
-							case FLAME_CHASH("flame::Vec(2+int)"):
+							case FLAME_CHASH("flame::Vec<2,int>"):
 								setter = new Setter_t<Vec2i>;
 								break;
-							case FLAME_CHASH("flame::Vec(3+int)"):
+							case FLAME_CHASH("flame::Vec<3,int>"):
 								setter = new Setter_t<Vec3i>;
 								break;
-							case FLAME_CHASH("flame::Vec(4+int)"):
+							case FLAME_CHASH("flame::Vec<4,int>"):
 								setter = new Setter_t<Vec4i>;
 								break;
 							case FLAME_CHASH("uint"):
 								setter = new Setter_t<uint>;
 								break;
-							case FLAME_CHASH("flame::Vec(2+uint)"):
+							case FLAME_CHASH("flame::Vec<2,uint>"):
 								setter = new Setter_t<Vec2u>;
 								break;
-							case FLAME_CHASH("flame::Vec(3+uint)"):
+							case FLAME_CHASH("flame::Vec<3,uint>"):
 								setter = new Setter_t<Vec3u>;
 								break;
-							case FLAME_CHASH("flame::Vec(4+unt)"):
+							case FLAME_CHASH("flame::Vec<4,unt>"):
 								setter = new Setter_t<Vec4u>;
 								break;
 							case FLAME_CHASH("float"):
 								setter = new Setter_t<float>;
 								break;
-							case FLAME_CHASH("flame::Vec(2+float)"):
+							case FLAME_CHASH("flame::Vec<2,float>"):
 								setter = new Setter_t<Vec2f>;
 								break;
-							case FLAME_CHASH("flame::Vec(3+float)"):
+							case FLAME_CHASH("flame::Vec<3,float>"):
 								setter = new Setter_t<Vec3f>;
 								break;
-							case FLAME_CHASH("flame::Vec(4+float)"):
+							case FLAME_CHASH("flame::Vec<4,float>"):
 								setter = new Setter_t<Vec4f>;
 								break;
 							case FLAME_CHASH("uchar"):
 								setter = new Setter_t<uchar>;
 								break;
-							case FLAME_CHASH("flame::Vec(2+uchar)"):
+							case FLAME_CHASH("flame::Vec<2,uchar>"):
 								setter = new Setter_t<Vec2c>;
 								break;
-							case FLAME_CHASH("flame::Vec(3+uchar)"):
+							case FLAME_CHASH("flame::Vec<3,uchar>"):
 								setter = new Setter_t<Vec3c>;
 								break;
-							case FLAME_CHASH("flame::Vec(4+uchar)"):
+							case FLAME_CHASH("flame::Vec<4,uchar>"):
 								setter = new Setter_t<Vec4c>;
 								break;
 							}

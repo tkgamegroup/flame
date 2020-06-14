@@ -1392,9 +1392,16 @@ void MyApp::create_game_scene()
 	ui.push_style(FontSize, common(Vec1u(20)));
 
 	ui.e_empty();
-	ui.c_timer()->set_callback([](Capture&) {
-		app.do_game_logic();
-	}, Capture());
+	{
+		auto ev = looper().add_event([](Capture& c) {
+			c._current = INVALID_POINTER;
+		}, Capture());
+		ui.current_entity->event_listeners.add([](Capture& c, EntityEvent e, void*) {
+			if (e == EntityRemoved)
+				looper().remove_event(c.data<void*>());
+			return true;
+		}, Capture().set_data(&ev));
+	}
 
 	if (game_mode == GameVS)
 		ui.e_text(wfmt(L"Room: %s", room_name.c_str()).c_str());

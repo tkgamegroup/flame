@@ -268,7 +268,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_text, drag_text));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(2+int)"):
+					case FLAME_CHASH("flame::Vec<2,int>"):
 					{
 						std::array<cText*, 2> edit_texts;
 						std::array<cText*, 2> drag_texts;
@@ -301,7 +301,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(3+int)"):
+					case FLAME_CHASH("flame::Vec<3,int>"):
 					{
 						std::array<cText*, 3> edit_texts;
 						std::array<cText*, 3> drag_texts;
@@ -334,7 +334,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(4+int)"):
+					case FLAME_CHASH("flame::Vec<4,int>"):
 					{
 						std::array<cText*, 4> edit_texts;
 						std::array<cText*, 4> drag_texts;
@@ -394,7 +394,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_text, drag_text));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(2+uint)"):
+					case FLAME_CHASH("flame::Vec<2,uint>"):
 					{
 						std::array<cText*, 2> edit_texts;
 						std::array<cText*, 2> drag_texts;
@@ -427,7 +427,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(3+uint)"):
+					case FLAME_CHASH("flame::Vec<3,uint>"):
 					{
 						std::array<cText*, 3> edit_texts;
 						std::array<cText*, 3> drag_texts;
@@ -460,7 +460,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(4+uint)"):
+					case FLAME_CHASH("flame::Vec<4,uint>"):
 					{
 						std::array<cText*, 4> edit_texts;
 						std::array<cText*, 4> drag_texts;
@@ -520,7 +520,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_text, drag_text));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(2+float)"):
+					case FLAME_CHASH("flame::Vec<2,float>"):
 					{
 						std::array<cText*, 2> edit_texts;
 						std::array<cText*, 2> drag_texts;
@@ -553,7 +553,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(3+float)"):
+					case FLAME_CHASH("flame::Vec<3,float>"):
 					{
 						std::array<cText*, 3> edit_texts;
 						std::array<cText*, 3> drag_texts;
@@ -586,7 +586,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(4+float)"):
+					case FLAME_CHASH("flame::Vec<4,float>"):
 					{
 						std::array<cText*, 4> edit_texts;
 						std::array<cText*, 4> drag_texts;
@@ -646,7 +646,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_text, drag_text));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(2+uchar)"):
+					case FLAME_CHASH("flame::Vec<2,uchar>"):
 					{
 						std::array<cText*, 2> edit_texts;
 						std::array<cText*, 2> drag_texts;
@@ -679,7 +679,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(3+uchar)"):
+					case FLAME_CHASH("flame::Vec<3,uchar>"):
 					{
 						std::array<cText*, 3> edit_texts;
 						std::array<cText*, 3> drag_texts;
@@ -712,7 +712,7 @@ void cInspector::refresh()
 						}, Capture().set_data(&capture), edit_texts, drag_texts));
 					}
 						break;
-					case FLAME_CHASH("flame::Vec(4+uchar)"):
+					case FLAME_CHASH("flame::Vec<4,uchar>"):
 					{
 						std::array<cText*, 4> edit_texts;
 						std::array<cText*, 4> drag_texts;

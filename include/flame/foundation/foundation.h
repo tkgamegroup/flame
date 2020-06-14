@@ -886,13 +886,13 @@ namespace flame
 		virtual void close() = 0;
 
 		virtual void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) = 0;
-		virtual void remove_key_listener(void* ret) = 0;
+		virtual void remove_key_listener(void* lis) = 0;
 		virtual void* add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) = 0;
-		virtual void remove_mouse_listener(void* ret) = 0;
+		virtual void remove_mouse_listener(void* lis) = 0;
 		virtual void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) = 0;
-		virtual void remove_resize_listener(void* ret) = 0;
+		virtual void remove_resize_listener(void* lis) = 0;
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
-		virtual void remove_destroy_listener(void* ret) = 0;
+		virtual void remove_destroy_listener(void* lis) = 0;
 
 		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent = nullptr);
 	};
@@ -906,8 +906,8 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS int loop(void (*frame_callback)(Capture& c), const Capture& capture);
 
 		FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0);
-
-		FLAME_FOUNDATION_EXPORTS void remove_event(void* ret_by_add);
+		FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
+		FLAME_FOUNDATION_EXPORTS void remove_event(void* ev);
 		FLAME_FOUNDATION_EXPORTS void clear_events(int id = 0); /* id=-1 means all */
 		FLAME_FOUNDATION_EXPORTS void process_events();
 	};

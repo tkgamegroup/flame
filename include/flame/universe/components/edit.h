@@ -9,14 +9,12 @@ namespace flame
 		struct FontAtlas;
 	}
 
-	struct cTimer;
 	struct cElement;
 	struct cText;
 	struct cEventReceiver;
 
 	struct cEdit : Component
 	{
-		cTimer* timer;
 		cElement* element;
 		cText* text;
 		cEventReceiver* event_receiver;

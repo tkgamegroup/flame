@@ -25,7 +25,7 @@ std::string format_type(const wchar_t* in, bool* is_array)
 		auto pos = str.find(str_int64.s, 0, str_int64.l);
 		while (pos != std::string::npos)
 		{
-			str = str.replace(pos, str_int64.l, "longlong");
+			str = str.replace(pos, str_int64.l, "int64");
 			pos = str.find(str_int64.s, 0, str_int64.l);
 		}
 	}
@@ -87,7 +87,7 @@ std::string format_type(const wchar_t* in, bool* is_array)
 
 	SUS::remove_ch(str, ' ');
 
-	return tn_c2a(str);
+	return str;
 }
 
 struct TypeInfoDesc

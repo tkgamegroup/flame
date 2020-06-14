@@ -1,7 +1,6 @@
 #pragma once
 
 #include <flame/graphics/font.h>
-#include <flame/universe/components/timer.h>
 #include <flame/universe/components/data_keeper.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/text.h>
@@ -22,7 +21,7 @@
 #include <flame/universe/components/window.h>
 #include <flame/universe/components/extra_element_drawing.h>
 #include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/utils/layer.h>
+#include <flame/universe/ui/layer.h>
 
 namespace flame
 {
@@ -58,18 +57,6 @@ namespace flame
 			next_element_frame_thickness = 0.f;
 			next_element_color = 0;
 			next_element_frame_color = Vec4c(255);
-		}
-
-		inline cTimer* c_timer()
-		{
-			auto c = cTimer::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
 		}
 
 		inline cDataKeeper* c_data_keeper()
@@ -715,8 +702,6 @@ namespace flame
 		inline Entity* e_edit(float width, const wchar_t* text = nullptr, bool enter_to_throw_focus = false, bool trigger_changed_on_lost_focus = false)
 		{
 			auto e = e_empty();
-			next_component_id = FLAME_CHASH("edit");
-			c_timer()->interval = 0.5f;
 			auto ce = c_element();
 			ce->size = Vec2f(8.f + width, style(FontSize).u.x() + 4.f);
 			ce->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
