@@ -1859,7 +1859,7 @@ namespace flame
 		}
 	}
 
-	void Looper::clear_events(int id)
+	void Looper::remove_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)

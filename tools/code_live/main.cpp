@@ -144,7 +144,7 @@ MainForm::MainForm() :
 					}, Capture().set_data(&capture), 1.f, FLAME_CHASH("update_dialog"));
 					app.e_wait->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 						if (e == EntityDestroyed)
-							looper().clear_events(FLAME_CHASH("update_dialog"));
+							looper().remove_events(FLAME_CHASH("update_dialog"));
 						return true;
 					}, Capture());
 					add_work([](Capture&) {

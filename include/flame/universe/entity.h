@@ -123,6 +123,8 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS void remove_child(Entity* e, bool destroy = true);
 		FLAME_UNIVERSE_EXPORTS void remove_children(int from, int to /* -1 is end */, bool destroy = true);
 
+		FLAME_UNIVERSE_EXPORTS void load_shell(const wchar_t* filename);
+
 		FLAME_UNIVERSE_EXPORTS static Entity* create_from_file(World* w, const wchar_t* filename);
 		FLAME_UNIVERSE_EXPORTS static void save_to_file(Entity* e, const wchar_t* filename);
 	};

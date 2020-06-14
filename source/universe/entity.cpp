@@ -242,11 +242,10 @@ namespace flame
 		}
 	}
 
-	static Entity* load_prefab(World* w, pugi::xml_node src)
+	static void load_prefab(Entity* dst, pugi::xml_node src)
 	{
-		auto e = new Entity;
-		e->name = src.attribute("name").value();
-		e->visible_ = src.attribute("visible").as_bool();
+		dst->name = src.attribute("name").value();
+		dst->visible_ = src.attribute("visible").as_bool();
 
 		for (auto n_c : src.child("components"))
 		{
@@ -261,31 +260,43 @@ namespace flame
 				auto v = udt->find_variable(n_v.name());
 				auto type = v->type;
 				auto p = (char*)component + v->offset;
-				if (type->tag == TypePointer)
-				{
-					auto& s = type->base_name;
-					auto name = s.v;
-					auto len = s.s;
-					for (auto i = len - 1; i >= 0; i--)
-					{
-						if (name[i] == ':')
-						{
-							name = name + i + 1;
-							break;
-						}
-					}
-					*(Object**)p = w->find_object(FLAME_HASH(name), n_v.attribute("v").as_uint());
-				}
-				else
-					type->unserialize(n_v.attribute("v").value(), p);
+				//if (type->tag == TypePointer) // TODO
+				//{
+				//	auto& s = type->base_name;
+				//	auto name = s.v;
+				//	auto len = s.s;
+				//	for (auto i = len - 1; i >= 0; i--)
+				//	{
+				//		if (name[i] == ':')
+				//		{
+				//			name = name + i + 1;
+				//			break;
+				//		}
+				//	}
+				//	*(Object**)p = w->find_object(FLAME_HASH(name), n_v.attribute("v").as_uint());
+				//}
+				//else
+				type->unserialize(n_v.attribute("v").value(), p);
 			}
-			e->add_component((Component*)component);
+			dst->add_component((Component*)component);
 		}
 
 		for (auto n_e : src.child("children"))
-			e->add_child(load_prefab(w, n_e), -1);
+		{
+			auto c = new Entity;
+			dst->add_child(c);
+			load_prefab(c, n_e);
+		}
+	}
 
-		return e;
+	void Entity::load_shell(const wchar_t* filename)
+	{
+		pugi::xml_document file;
+		pugi::xml_node file_root;
+		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("prefab"))
+			return;
+
+		load_prefab(this, file_root.first_child());
 	}
 
 	Entity* Entity::create_from_file(World* w, const wchar_t* filename)
@@ -295,7 +306,8 @@ namespace flame
 		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("prefab"))
 			return nullptr;
 
-		return load_prefab(w, file_root.first_child());
+		return nullptr;
+		//return load_prefab(w, file_root.first_child()); TODO
 	}
 
 	static void save_prefab(pugi::xml_node dst, Entity* src)

@@ -322,7 +322,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		ui.parents.pop();
 
 		clear_all_works();
-		looper().clear_events(FLAME_CHASH("update thumbnail"));
+		looper().remove_events(FLAME_CHASH("update thumbnail"));
 
 		list->get_component(cList)->set_selected(nullptr, false);
 		list->remove_children(0, -1);

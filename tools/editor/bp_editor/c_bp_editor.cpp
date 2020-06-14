@@ -251,7 +251,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 						ui.e_end_layout();
 						thiz->tip_info->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 							if (e == EntityDestroyed)
-								looper().clear_events(FLAME_CHASH("update_tip"));
+								looper().remove_events(FLAME_CHASH("update_tip"));
 							return true;
 						}, Capture());
 						looper().add_event([](Capture& c) {
