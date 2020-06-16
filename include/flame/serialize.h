@@ -642,7 +642,7 @@ namespace flame
 		file.write((char*)v.data(), v.size());
 	}
 
-	inline longlong get_file_length(std::ifstream& f)
+	inline int64 get_file_length(std::ifstream& f)
 	{
 		f.seekg(0, std::ios::end);
 		auto s = f.tellg();
@@ -915,7 +915,7 @@ namespace flame
 	{
 		uint digest[5];
 		std::string buffer;
-		ulonglong transforms;
+		uint64 transforms;
 
 		enum { BLOCK_INTS = 16, BLOCK_BYTES = BLOCK_INTS * 4 };
 
@@ -957,7 +957,7 @@ namespace flame
 
 		void _final()
 		{
-			ulonglong total_bits = (transforms * BLOCK_BYTES + buffer.size()) * 8;
+			uint64 total_bits = (transforms * BLOCK_BYTES + buffer.size()) * 8;
 
 			buffer += (char)0x80;
 			size_t orig_size = buffer.size();
@@ -1059,7 +1059,7 @@ namespace flame
 			w = rol(w, 30);
 		}
 
-		static void transform(uint digest[], uint block[BLOCK_INTS], ulonglong& transforms)
+		static void transform(uint digest[], uint block[BLOCK_INTS], uint64& transforms)
 		{
 			uint a = digest[0];
 			uint b = digest[1];

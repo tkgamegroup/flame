@@ -71,159 +71,90 @@ namespace flame
 		return 0;
 	}
 
+	inline bool bp_can_link(const TypeInfo* in_type, const TypeInfo* out_out)
+	{
+		if (in_type == out_out)
+			return true;
+		auto in_base_hash = in_type->base_hash;
+		auto out_tag = out_out->tag;
+		if (in_type->tag == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
+			(in_base_hash == out_out->base_hash || in_base_hash == FLAME_CHASH("void")))
+			return true;
+
+		return false;
+	}
+
 	struct bpSlot
 	{
-		bpNode* node;
-		bpSlotIO io;
-		uint index;
-		TypeInfo* type;
-		StringA name;
-		uint offset;
-		uint size;
-		void* default_value;
-		void* data;
-
-		FLAME_FOUNDATION_EXPORTS void set_data(const void* data);
-
-		void* data_p()
-		{
-			return *(void**)data;
-		}
-
-		void set_data_i(int i)
-		{
-			set_data(&i);
-		}
-
-		void set_data_f(float f)
-		{
-			set_data(&f);
-		}
-
-		void set_data_p(const void* p)
-		{
-			set_data(&p);
-		}
-
-		static bool can_link(const TypeInfo* in_type, const TypeInfo* out_out)
-		{
-			if (in_type == out_out)
-				return true;
-			auto in_base_hash = in_type->base_hash;
-			auto out_tag = out_out->tag;
-			if (in_type->tag == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
-				(in_base_hash == out_out->base_hash || in_base_hash == FLAME_CHASH("void")))
-				return true;
-
-			return false;
-		}
-
-		Array<bpSlot*> links;
-
-		FLAME_FOUNDATION_EXPORTS bool link_to(bpSlot* target);
-
 		void* user_data;
+
+		virtual bpNode* get_node() const = 0;
+		virtual bpSlotIO get_io() const = 0;
+		virtual uint get_index() const = 0;
+		virtual TypeInfo* get_type() const = 0;
+		virtual const char* get_name() const = 0;
+		virtual uint get_offset() const = 0;
+		virtual uint get_size() const = 0;
+		virtual const void* get_data() const const = 0;
+		inline const void* get_data_p() const { return *(void**)get_data(); }
+		virtual void set_data(const void* data) = 0;
+		inline void set_data_i(int i) { set_data(&i); }
+		inline void set_data_f(float f) { set_data(&f); }
+		inline void set_data_p(const void* p) { set_data(&p); }
+		virtual const void* get_default_value() const = 0;
+
+		virtual uint get_link_count() const = 0;
+		virtual bpSlot* get_link(uint idx) const = 0;
+		virtual bool link_to(bpSlot* target) = 0;
 	};
 
 	struct bpNode
 	{
-		bpScene* scene;
-		bpNode* parent;
-
-		Guid guid;
-		StringA id;
-		Vec2f pos;
-
-		bpNodeType node_type;
-		StringA type;
-		UdtInfo* udt;
-
-		Array<bpSlot*> inputs;
-		Array<bpSlot*> outputs;
-
-		Array<bpNode*> children;
-
 		void* user_data;
 
-		inline bool set_id(const std::string& _id);
+		virtual bpScene* get_scene() const = 0;
+		virtual bpNode* get_parent() const = 0;
 
-		bpSlot* find_input(const std::string& name) const
-		{
-			for (auto in : inputs)
-			{
-				if (in->name == name)
-					return in;
-			}
-			return nullptr;
-		}
+		virtual Guid get_guid() const = 0;
+		virtual void set_guid(const Guid& guid) = 0;
+		virtual const char* get_id() const = 0;
+		virtual bool set_id(const char* id) = 0;
+		virtual Vec2f get_pos() const = 0;
+		virtual void set_pos(const Vec2f& pos) = 0;
 
-		bpSlot* find_output(const std::string& name) const
-		{
-			for (auto out : outputs)
-			{
-				if (out->name == name)
-					return out;
-			}
-			return nullptr;
-		}
+		virtual bpNodeType get_node_type() const = 0;
+		virtual const char* get_type() const = 0;
+		virtual UdtInfo* get_udt() const = 0;
 
-		FLAME_FOUNDATION_EXPORTS bpNode* add_node(const char* id, const char* type, bpNodeType node_type = bpNodeReal);
-		FLAME_FOUNDATION_EXPORTS void remove_node(bpNode* n);
+		virtual uint get_input_count() const = 0;
+		virtual bpSlot* get_input(uint idx) const = 0;
+		virtual bpSlot* find_input(const char* name) const = 0;
+		virtual uint get_output_count() const = 0;
+		virtual bpSlot* get_output(uint idx) const = 0;
+		virtual bpSlot* find_output(const char* name) const = 0;
 
-		bpNode* find_node(const Guid& guid) const
-		{
-			for (auto n : children)
-			{
-				if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
-					return n;
-				auto res = n->find_node(guid);
-				if (res)
-					return res;
-			}
-			return nullptr;
-		}
+		virtual uint get_child_count() const = 0;
+		virtual bpNode* get_child(uint idx) const = 0;
+		virtual bpNode* add_child(const char* id, const char* type, bpNodeType node_type = bpNodeReal) = 0;
+		virtual void remove_child(bpNode* n) = 0;
+		virtual bpNode* find_child(const char* name) const = 0;
+		virtual bpNode* find_child(const Guid& guid) const = 0;
 
-		bpNode* find_node(const std::string& id) const
-		{
-			for (auto n : children)
-			{
-				if (n->id == id)
-					return n;
-				auto res = n->find_node(id);
-				if (res)
-					return res;
-			}
-			return nullptr;
-		}
-
-		FLAME_FOUNDATION_EXPORTS void update();
+		virtual void update() = 0;
 	};
 
 	struct bpScene
 	{
-		float time;
+		virtual void release() = 0;
 
-		StringW filename;
+		virtual const wchar_t* get_filename() const = 0;
+		virtual float get_time() const = 0;
+		virtual bpNode* get_root() const = 0;
 
-		bpNode* root;
-
-		FLAME_FOUNDATION_EXPORTS void update();
+		virtual void update() = 0;
+		virtual void save() = 0;
 
 		FLAME_FOUNDATION_EXPORTS static bpScene* create_from_file(const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static void save_to_file(bpScene* bp, const wchar_t* filename);
-		FLAME_FOUNDATION_EXPORTS static void destroy(bpScene* bp);
 	};
-
-	bool bpNode::set_id(const std::string& _id)
-	{
-		if (_id.empty())
-			return false;
-		if (id == _id)
-			return true;
-		if (parent->find_node(_id))
-			return false;
-		id = _id;
-		return true;
-	}
 }
 

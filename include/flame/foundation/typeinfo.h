@@ -33,26 +33,14 @@ namespace flame
 	struct UdtInfo;
 	struct TypeInfoDatabase;
 
-	FLAME_FOUNDATION_EXPORTS extern HashMap<256, TypeInfo> typeinfos;
-
 	struct TypeInfo
 	{
-		TypeTag tag;
-		bool is_array;
-		StringA base_name; // no space, 'unsigned ' will be replace to 'u'
-		uint base_hash;
-		StringA name;  // tag[A]#base
-		uint hash;
-
-		TypeInfo(TypeTag tag, const std::string& base_name, bool is_array) :
-			tag(tag),
-			base_name(base_name),
-			is_array(is_array)
-		{
-			base_hash = FLAME_HASH(base_name.c_str());
-			name = make_str(tag, base_name, is_array);
-			hash = FLAME_HASH(name.v);
-		}
+		virtual TypeTag get_tag() const = 0;
+		virtual bool get_is_array() const = 0;
+		virtual const char* get_base_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
+		virtual uint get_base_hash() const = 0;
+		virtual const char* get_name() const = 0; // tag[A]#base
+		virtual uint get_hash() const = 0;
 
 		static std::string make_str(TypeTag tag, const std::string& base_name, bool is_array = false)
 		{
@@ -98,7 +86,7 @@ namespace flame
 			return TypeInfo::get_hash(tag, base_name, is_array);
 		}
 
-		bool is_pod() const
+		inline bool is_pod() const
 		{
 			if (is_array)
 				return false;
@@ -109,7 +97,7 @@ namespace flame
 			return true;
 		}
 
-		std::string get_cpp_name() const
+		inline std::string get_cpp_name() const
 		{
 			std::string ret = base_name.str();
 			static FLAME_SAL(str_flame, "flame::");
@@ -480,7 +468,7 @@ namespace flame
 			return sizeof(Vec4i);
 		case FLAME_CHASH("int64"):
 		case FLAME_CHASH("uint64"):
-			return sizeof(longlong);
+			return sizeof(int64);
 		case FLAME_CHASH("float"):
 			return sizeof(float);
 		case FLAME_CHASH("flame::Vec<1,float>"):
@@ -591,8 +579,8 @@ namespace flame
 				return to_string(*(Vec3u*)src);
 			case FLAME_CHASH("flame::Vec<4,uint>"):
 				return to_string(*(Vec4u*)src);
-			case FLAME_CHASH("ulonglong"):
-				return std::to_string(*(ulonglong*)src);
+			case FLAME_CHASH("uint64"):
+				return std::to_string(*(uint64*)src);
 			case FLAME_CHASH("float"):
 				return to_string(*(float*)src);
 			case FLAME_CHASH("flame::Vec<1,float>"):
@@ -684,8 +672,8 @@ namespace flame
 			case FLAME_CHASH("flame::Vec<4,uint>"):
 				*(Vec4u*)dst = stou4(src.c_str());
 				break;
-			case FLAME_CHASH("ulonglong"):
-				*(ulonglong*)dst = std::stoull(src);
+			case FLAME_CHASH("uint64"):
+				*(uint64*)dst = std::stoull(src);
 				break;
 			case FLAME_CHASH("float"):
 				*(float*)dst = std::stof(src.c_str());

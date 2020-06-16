@@ -754,7 +754,7 @@ namespace flame
 		return (action & KeyStateDown) && (action & KeyStateUp) && key == Mouse_Null;
 	}
 
-	inline ulonglong get_now_ns()
+	inline uint64 get_now_ns()
 	{
 		return std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
 	}

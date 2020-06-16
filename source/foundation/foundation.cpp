@@ -1232,7 +1232,7 @@ namespace flame
 	void (*frame_callback)(Capture& c);
 	static Capture frame_capture;
 
-	static ulonglong last_time;
+	static uint64 last_time;
 
 	bool one_frame()
 	{
@@ -1602,14 +1602,7 @@ namespace flame
 
 	void WindowPrivate::remove_key_listener(void* lis)
 	{
-		for (auto it = key_listeners.begin(); it != key_listeners.end(); it++)
-		{
-			if (it->get() == lis)
-			{
-				key_listeners.erase(it);
-				return;
-			}
-		}
+		find_and_erase(key_listeners, (decltype(key_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
@@ -1621,14 +1614,7 @@ namespace flame
 
 	void WindowPrivate::remove_mouse_listener(void* lis)
 	{
-		for (auto it = mouse_listeners.begin(); it != mouse_listeners.end(); it++)
-		{
-			if (it->get() == lis)
-			{
-				mouse_listeners.erase(it);
-				return;
-			}
-		}
+		find_and_erase(mouse_listeners, (decltype(mouse_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture)
@@ -1640,14 +1626,7 @@ namespace flame
 
 	void WindowPrivate::remove_resize_listener(void* lis)
 	{
-		for (auto it = resize_listeners.begin(); it != resize_listeners.end(); it++)
-		{
-			if (it->get() == lis)
-			{
-				resize_listeners.erase(it);
-				return;
-			}
-		}
+		find_and_erase(resize_listeners, (decltype(resize_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
@@ -1659,14 +1638,7 @@ namespace flame
 
 	void WindowPrivate::remove_destroy_listener(void* lis)
 	{
-		for (auto it = destroy_listeners.begin(); it != destroy_listeners.end(); it++)
-		{
-			if (it->get() == lis)
-			{
-				destroy_listeners.erase(it);
-				return;
-			}
-		}
+		find_and_erase(destroy_listeners, (decltype(destroy_listeners[0].get()))lis);
 	}
 
 #ifdef FLAME_WINDOWS

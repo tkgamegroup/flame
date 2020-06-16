@@ -193,7 +193,7 @@ namespace flame
 				}
 				dp->set_string_item(FLAME_CHASH("desc"), desc.c_str());
 				ui->next_entity->add_component(dp);
-				auto title = wfmt(L"%I64X ", (ulonglong)src);
+				auto title = wfmt(L"%I64X ", (uint64)src);
 				if (src->children.s == 0)
 					ui->e_tree_leaf(title.c_str())->name = "ui_reflector_item_leaf";
 				else
@@ -408,7 +408,7 @@ namespace flame
 						if (t_undering.target->is_child_of(e_window))
 							t_undering.target = nullptr;
 						t_undering.get_rect();
-						t_undering.text->set_text(wfmt(L"0x%016I64X", (ulonglong)t_undering.target).c_str());
+						t_undering.text->set_text(wfmt(L"0x%016I64X", (uint64)t_undering.target).c_str());
 					}
 
 					{
@@ -417,7 +417,7 @@ namespace flame
 						if (t_hovering.target->is_child_of(e_window))
 							t_hovering.target = nullptr;
 						t_hovering.get_rect();
-						t_hovering.text->set_text(wfmt(L"0x%016I64X", (ulonglong)t_hovering.target).c_str());
+						t_hovering.text->set_text(wfmt(L"0x%016I64X", (uint64)t_hovering.target).c_str());
 					}
 					{
 						auto color = ui->style(TextColorNormal).c;
@@ -426,7 +426,7 @@ namespace flame
 						if (t_focusing.target->is_child_of(e_window))
 							t_focusing.target = nullptr;
 						t_focusing.get_rect();
-						auto str = wfmt(L"0x%016I64X", (ulonglong)t_focusing.target);
+						auto str = wfmt(L"0x%016I64X", (uint64)t_focusing.target);
 						if (t_focusing.target)
 						{
 							if (focusing == s_event_dispatcher->hovering)
@@ -450,7 +450,7 @@ namespace flame
 						if (t_drag_overing.target->is_child_of(e_window))
 							t_drag_overing.target = nullptr;
 						t_drag_overing.get_rect();
-						t_drag_overing.text->set_text(wfmt(L"0x%016I64X", (ulonglong)t_drag_overing.target).c_str());
+						t_drag_overing.text->set_text(wfmt(L"0x%016I64X", (uint64)t_drag_overing.target).c_str());
 					}
 				}
 			}

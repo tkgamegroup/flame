@@ -149,7 +149,7 @@ TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 				name += "int";
 				return name;
 			case 8:
-				name += "longlong";
+				name += "int64";
 				return name;
 			}
 			break;

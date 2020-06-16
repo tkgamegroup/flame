@@ -152,7 +152,7 @@ namespace flame
 				bytes += new_bytes;
 			}
 
-			ulonglong length;
+			uint64 length;
 
 			if (payload_length <= 125)
 				length = payload_length;

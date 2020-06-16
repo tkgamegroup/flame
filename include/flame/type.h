@@ -17,8 +17,8 @@ namespace flame
 	typedef unsigned short		ushort;
 	typedef unsigned int		uint;
 	typedef unsigned long		ulong;
-	typedef long long			longlong;
-	typedef unsigned long long  ulonglong;
+	typedef long long			int64;
+	typedef unsigned long long  uint64;
 	typedef void*				voidptr;
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
@@ -34,6 +34,24 @@ namespace flame
 	{
 		static const uint value = N;
 	};
+
+	template <class T>
+	void find_and_erase(std::vector<T>& vec, T v)
+	{
+		auto it = std::find(vec.begin(), vec.end(), v);
+		if (it != vec.end())
+			vec.erase(it);
+	}
+
+	template <class T>
+	void find_and_erase(std::vector<std::unique_ptr<T>>& vec, T* v)
+	{
+		auto it = std::find_if(vec.begin(), vec.end(), [&](const auto& t) {
+			return t.get() == v;
+		});
+		if (it != vec.end())
+			vec.erase(it);
+	}
 
 	template <class CH>
 	struct _SAL // str and len

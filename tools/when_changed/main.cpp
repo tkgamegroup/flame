@@ -3,7 +3,7 @@
 
 using namespace flame;
 
-static ulonglong last_change_time = 0;
+static uint64 last_change_time = 0;
 
 int main(int argc, char **args)
 {

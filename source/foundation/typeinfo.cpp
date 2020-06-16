@@ -1,11 +1,21 @@
 #include <flame/serialize.h>
-#include <flame/foundation/typeinfo.h>
+#include "typeinfo_private.h"
 
 #include <Windows.h>
 
 namespace flame
 {
-	HashMap<256, TypeInfo> typeinfos;
+	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& base_name, bool is_array) :
+		tag(tag),
+		base_name(base_name),
+		is_array(is_array)
+	{
+		base_hash = FLAME_HASH(base_name.c_str());
+		name = make_str(tag, base_name, is_array);
+		hash = FLAME_HASH(name.v);
+	}
+
+	std::map<uint, std::unique_ptr<TypeInfoPrivate>> typeinfos;
 
 	TypeInfoDatabase* TypeInfoDatabase::load(const wchar_t* library_filename, bool add_to_global, bool load_with_library)
 	{
