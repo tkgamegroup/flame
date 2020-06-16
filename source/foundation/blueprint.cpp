@@ -62,9 +62,7 @@ namespace flame
 	const void* bpSlotPrivate::get_default_value() const { return default_value; }
 	uint bpSlotPrivate::get_links_count() const { return links.size(); }
 	bpSlot* bpSlotPrivate::get_link(uint idx) const { return links[idx]; }
-
 	bool bpSlotPrivate::link_to(bpSlot* target) { return _link_to((bpSlotPrivate*)target); }
-
 	bool bpSlotPrivate::_link_to(bpSlotPrivate* target)
 	{
 		assert(io == bpSlotIn);
@@ -335,7 +333,7 @@ namespace flame
 				printf("udt not found in add node: %s\n", type.c_str());
 			}
 
-			library = udt->get_database()->get_library();
+			library = (void*)udt->get_database()->get_library();
 
 			if (node_type == bpNodeReal)
 			{
@@ -361,9 +359,11 @@ namespace flame
 					update_addr = (char*)library + (uint)f->get_rva();
 				}
 
-				for (auto v : udt->variables)
+				auto vars_count = udt->get_variables_count();
+				for (auto i = 0; i < vars_count; i++)
 				{
-					if (v->flags & VariableFlagOutput)
+					auto v = udt->get_variable(i);
+					if (v->get_flags() & VariableFlagOutput)
 						outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, outputs.size(), v));
 					else
 						inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, inputs.size(), v));
@@ -381,22 +381,28 @@ namespace flame
 
 				if (node_type == bpNodeRefRead)
 				{
-					for (auto v : udt->variables)
+					auto vars_count = udt->get_variables_count();
+					for (auto i = 0; i < vars_count; i++)
+					{
+						auto v = udt->get_variable(i);
 						outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, outputs.size(), v));
+					}
 				}
 				else if (node_type == bpNodeRefWrite)
 				{
-					for (auto v : udt->variables)
+					auto vars_count = udt->get_variables_count();
+					for (auto i = 0; i < vars_count; i++)
 					{
-						auto type = v->type;
-						if (type->tag != TypeData)
+						auto v = udt->get_variable(i);
+						auto type = v->get_type();
+						if (type->get_tag() != TypeData)
 							continue;
-						auto base_hash = type->base_hash;
+						auto base_hash = type->get_base_hash();
 						auto input = new bpSlotPrivate(this, bpSlotIn, inputs.size(), v);
-						auto f_set = udt->find_function(("set_" + v->name.str()).c_str());
+						auto f_set = udt->find_function((std::string("set_") + v->get_name()).c_str());
 						if (f_set)
 						{
-							auto f_set_addr = (char*)library + (uint)f_set->rva;
+							auto f_set_addr = (char*)library + (uint)f_set->get_rva();
 							Setter* setter = nullptr;
 							switch (base_hash)
 							{
@@ -502,7 +508,7 @@ namespace flame
 
 	uint bpNodePrivate::get_inputs_count() const { return inputs.size(); }
 	bpSlot* bpNodePrivate::get_input(uint idx) const { return inputs[idx].get(); }
-	bpSlot* bpNodePrivate::find_input(const char* name) const { return _find_input(std::string(name)); }
+	bpSlot* bpNodePrivate::find_input(const char* name) const { return _find_input(name); }
 	bpSlotPrivate* bpNodePrivate::_find_input(const std::string& name) const
 	{
 		for (auto& in : inputs)
@@ -515,7 +521,7 @@ namespace flame
 
 	uint bpNodePrivate::get_outputs_count() const { return outputs.size(); }
 	bpSlot* bpNodePrivate::get_output(uint idx) const { return outputs[idx].get(); }
-	bpSlot* bpNodePrivate::find_output(const char* name) const { return _find_output(std::string(name)); }
+	bpSlot* bpNodePrivate::find_output(const char* name) const { return _find_output(name); }
 	bpSlotPrivate* bpNodePrivate::_find_output(const std::string& name) const
 	{
 		for (auto& out : outputs)
@@ -571,7 +577,7 @@ namespace flame
 			auto out = in->links[0];
 			if (out)
 			{
-				if (out->type->tag == TypeData && in->type->tag == TypePointer)
+				if (out->type->get_tag() == TypeData && in->type->get_tag() == TypePointer)
 					memcpy(in->data, &out->data, sizeof(void*));
 				else
 				{
@@ -662,7 +668,7 @@ namespace flame
 			need_rebuild_update_list = true;
 		}
 	}
-	bpNode* bpNodePrivate::find_child(const char* name) const { return _find_child(std::string(name)); }
+	bpNode* bpNodePrivate::find_child(const char* name) const { return _find_child(name); }
 	bpNodePrivate* bpNodePrivate::_find_child(const std::string& name) const
 	{
 		for (auto& n : children)
@@ -732,7 +738,7 @@ namespace flame
 					if (in->links[0])
 						continue;
 					auto type = in->type;
-					if (type->tag != TypePointer)
+					if (type->get_tag() != TypePointer)
 					{
 						if (in->default_value && memcmp(in->default_value, in->data, in->size) == 0)
 							continue;
@@ -998,10 +1004,10 @@ namespace flame
 					n->pos = stof2(n_node.attribute("pos").value());
 					for (auto n_data : n_node.child("datas"))
 					{
-						auto input = n->find_input(std::string(n_data.attribute("name").value()));
+						auto input = n->_find_input(std::string(n_data.attribute("name").value()));
 						auto type = input->type;
-						auto tag = type->tag;
-						if (!type->is_array && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
+						auto tag = type->get_tag();
+						if (!type->get_is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
 							type->unserialize(n_data.attribute("value").value(), input->data);
 					}
 				}
@@ -1016,8 +1022,8 @@ namespace flame
 				auto o_addr = std::string(n_link.attribute("out").value());
 				auto i_addr = std::string(n_link.attribute("in").value());
 
-				auto o = parent->find_output(o_addr);
-				auto i = parent->find_input(i_addr);
+				auto o = parent->_find_output(o_addr);
+				auto i = parent->_find_input(i_addr);
 				if (o && i)
 				{
 					if (!i->link_to(o))

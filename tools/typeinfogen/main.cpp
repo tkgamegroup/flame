@@ -545,14 +545,14 @@ int main(int argc, char **args)
 
 											auto item_name = w2s(pwname);
 											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
-												e->items.emplace_back(new EnumItemPrivate(item_name, variant.lVal));
+												e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), item_name, variant.lVal));
 
 											item->Release();
 										}
 										items->Release();
 									}
 								}
-								u->variables.emplace_back(new VariableInfoPrivate(u, desc.get(), name, dv.flags, l, ull));
+								u->variables.emplace_back(new VariableInfoPrivate(u, u->variables.size(), desc.get(), name, dv.flags, l, ull));
 
 								s_type->Release();
 
@@ -594,7 +594,7 @@ int main(int argc, char **args)
 									ret_type = typeinfo_from_symbol(s_return_type, 0);
 									s_return_type->Release();
 
-									auto f = new FunctionInfoPrivate(u, name, rva, ret_type.get());
+									auto f = new FunctionInfoPrivate(db, u, u->functions.size(), name, rva, (TypeInfoPrivate*)ret_type.get());
 									u->functions.emplace_back(f);
 
 									IDiaEnumSymbols* s_parameters;
@@ -624,7 +624,7 @@ int main(int argc, char **args)
 					FunctionInfoPrivate* dtor = nullptr;
 					for (auto& f : u->functions)
 					{
-						if (f->name == "ctor" && f->parameters.s == 0)
+						if (f->name == "ctor" && f->parameters.empty())
 							ctor = f.get();
 						else if (f->name == "dtor")
 							dtor = f.get();
@@ -645,8 +645,8 @@ int main(int argc, char **args)
 								if (!i->default_value)
 									continue;
 								auto type = i->type;
-								auto tag = type->tag;
-								if (!type->is_array && tag != TypePointer && !(i->flags & VariableFlagOutput))
+								auto tag = type->get_tag();
+								if (!type->get_is_array() && tag != TypePointer && !(i->flags & VariableFlagOutput))
 									memcpy(i->default_value, (char*)obj + i->offset, i->size);
 							}
 							if (dtor)

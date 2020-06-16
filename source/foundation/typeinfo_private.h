@@ -30,6 +30,7 @@ namespace flame
 	struct VariableInfoPrivate : VariableInfo
 	{
 		UdtInfoPrivate* udt;
+		uint index;
 		TypeInfo* type;
 		std::string name;
 		uint name_hash;
@@ -38,10 +39,11 @@ namespace flame
 		uint size;
 		void* default_value;
 
-		VariableInfoPrivate(UdtInfoPrivate* udt, TypeInfo* type, const std::string& name, uint flags, uint offset, uint size);
+		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfo* type, const std::string& name, uint flags, uint offset, uint size);
 		~VariableInfoPrivate();
 
 		UdtInfo* get_udt() const override;
+		uint get_index() const override;
 		TypeInfo* get_type() const override;
 		const char* get_name() const override;
 		uint get_name_hash() const override;
@@ -58,7 +60,7 @@ namespace flame
 		std::string name;
 		int value;
 
-		EnumItemPrivate(const std::string& name, int value);
+		EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value);
 
 		EnumInfo* get_enum() const override;
 		uint get_index() const override;
@@ -79,23 +81,27 @@ namespace flame
 		uint get_items_count() const override;
 		EnumItem* get_item(uint idx) const override;
 		EnumItem* find_item(const char* name) const override;
+		EnumItemPrivate* _find_item(const std::string& name) const;
 		EnumItem* find_item(int value) const override;
+		EnumItemPrivate* _find_item(int value) const;
 	};
 
 	struct FunctionInfoPrivate : FunctionInfo
 	{
 		TypeInfoDatabasePrivate* db;
 		UdtInfoPrivate* udt;
+		uint index;
 		std::string name;
 		void* rva;
 		TypeInfoPrivate* type;
 		std::vector<TypeInfo*> parameters;
 		std::string code;
 
-		FunctionInfoPrivate(TypeInfoDatabasePrivate* db, UdtInfoPrivate* udt, const std::string& name, void* rva, TypeInfoPrivate* type);
+		FunctionInfoPrivate(TypeInfoDatabasePrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, void* rva, TypeInfoPrivate* type);
 
 		TypeInfoDatabase* get_database() const override;
 		UdtInfo* get_udt() const override;
+		uint get_index() const override;
 		const char* get_name() const override;
 		const void* get_rva() const override;
 		TypeInfo* get_type() const override;
@@ -122,18 +128,20 @@ namespace flame
 		uint get_variables_count() const override;
 		VariableInfo* get_variable(uint idx) const override;
 		VariableInfo* find_variable(const char* name) const override;
+		VariableInfoPrivate* _find_variable(const std::string& name) const;
 		uint get_functions_count() const override;
 		FunctionInfo* get_function(uint idx) const override;
 		FunctionInfo* find_function(const char* name) const override;
+		FunctionInfoPrivate* _find_function(const std::string& name) const;
 	};
 
 	struct TypeInfoDatabasePrivate : TypeInfoDatabase
 	{
 		void* library;
 		std::wstring library_name;
-		std::map<uint, EnumInfoPrivate*> enums;
-		std::map<uint, FunctionInfoPrivate*> funs;
-		std::map<uint, UdtInfoPrivate*> udts;
+		std::map<uint, std::unique_ptr<EnumInfoPrivate>> enums;
+		std::map<uint, std::unique_ptr<FunctionInfoPrivate>> funs;
+		std::map<uint, std::unique_ptr<UdtInfoPrivate>> udts;
 
 		TypeInfoDatabasePrivate(const std::wstring& library_name);
 		~TypeInfoDatabasePrivate();

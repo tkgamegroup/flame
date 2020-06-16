@@ -144,6 +144,7 @@ namespace flame
 	struct VariableInfo
 	{
 		virtual UdtInfo* get_udt() const = 0;
+		virtual uint get_index() const = 0;
 		virtual TypeInfo* get_type() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_name_hash() const = 0;
@@ -176,6 +177,7 @@ namespace flame
 	{
 		virtual TypeInfoDatabase* get_database() const = 0;
 		virtual UdtInfo* get_udt() const = 0;
+		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual const void* get_rva() const = 0;
 		virtual TypeInfo* get_type() const = 0;
