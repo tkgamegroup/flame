@@ -75,10 +75,10 @@ namespace flame
 	{
 		if (in_type == out_out)
 			return true;
-		auto in_base_hash = in_type->base_hash;
-		auto out_tag = out_out->tag;
-		if (in_type->tag == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
-			(in_base_hash == out_out->base_hash || in_base_hash == FLAME_CHASH("void")))
+		auto in_base_hash = in_type->get_base_hash();
+		auto out_tag = out_out->get_tag();
+		if (in_type->get_tag() == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
+			(in_base_hash == out_out->get_base_hash() || in_base_hash == FLAME_CHASH("void")))
 			return true;
 
 		return false;
@@ -103,7 +103,7 @@ namespace flame
 		inline void set_data_p(const void* p) { set_data(&p); }
 		virtual const void* get_default_value() const = 0;
 
-		virtual uint get_link_count() const = 0;
+		virtual uint get_links_count() const = 0;
 		virtual bpSlot* get_link(uint idx) const = 0;
 		virtual bool link_to(bpSlot* target) = 0;
 	};
@@ -126,14 +126,14 @@ namespace flame
 		virtual const char* get_type() const = 0;
 		virtual UdtInfo* get_udt() const = 0;
 
-		virtual uint get_input_count() const = 0;
+		virtual uint get_inputs_count() const = 0;
 		virtual bpSlot* get_input(uint idx) const = 0;
 		virtual bpSlot* find_input(const char* name) const = 0;
-		virtual uint get_output_count() const = 0;
+		virtual uint get_outputs_count() const = 0;
 		virtual bpSlot* get_output(uint idx) const = 0;
 		virtual bpSlot* find_output(const char* name) const = 0;
 
-		virtual uint get_child_count() const = 0;
+		virtual uint get_children_count() const = 0;
 		virtual bpNode* get_child(uint idx) const = 0;
 		virtual bpNode* add_child(const char* id, const char* type, bpNodeType node_type = bpNodeReal) = 0;
 		virtual void remove_child(bpNode* n) = 0;

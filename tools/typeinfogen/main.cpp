@@ -1,5 +1,5 @@
 #include <flame/serialize.h>
-#include <flame/foundation/typeinfo.h>
+#include <flame/../../source/foundation/typeinfo_private.h>
 
 #include <Windows.h>
 #include <dia2.h>
@@ -283,8 +283,8 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	auto db = new TypeInfoDatabase(library_path);
-	global_typeinfo_databases.push_back(db);
+	auto db = new TypeInfoDatabasePrivate(library_path);
+	push_global_typeinfo_database(db);
 
 	LONG l;
 	ULONG ul;
@@ -500,10 +500,12 @@ int main(int argc, char **args)
 		{
 			if (du.full_name == name)
 			{
-				if (!find_udt(FLAME_HASH(name.c_str())))
+				auto udt_hash = FLAME_HASH(name.c_str());
+				if (!find_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
-					auto u = db->add_udt(name, ull, du.base_name);
+					auto u = new UdtInfoPrivate(db, name, ull, du.base_name);
+					db->udts.emplace(udt_hash, u);
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -525,9 +527,11 @@ int main(int argc, char **args)
 								auto desc = typeinfo_from_symbol(s_type, dv.flags);
 								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 								{
-									if (!find_enum(FLAME_HASH(desc.base_name.c_str())))
+									auto enum_hash = FLAME_HASH(desc.base_name.c_str());
+									if (!find_enum(enum_hash))
 									{
-										auto e = db->add_enum(desc.base_name);
+										auto e = new EnumInfoPrivate(db, desc.base_name);
+										db->enums.emplace(enum_hash, e);
 
 										IDiaEnumSymbols* items;
 										s_type->findChildren(SymTagNull, NULL, nsNone, &items);
@@ -541,14 +545,14 @@ int main(int argc, char **args)
 
 											auto item_name = w2s(pwname);
 											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
-												e->add_item(item_name, variant.lVal);
+												e->items.emplace_back(new EnumItemPrivate(item_name, variant.lVal));
 
 											item->Release();
 										}
 										items->Release();
 									}
 								}
-								u->add_variable(desc.get(), name, dv.flags, l, ull);
+								u->variables.emplace_back(new VariableInfoPrivate(u, desc.get(), name, dv.flags, l, ull));
 
 								s_type->Release();
 
@@ -590,14 +594,15 @@ int main(int argc, char **args)
 									ret_type = typeinfo_from_symbol(s_return_type, 0);
 									s_return_type->Release();
 
-									auto f = u->add_function(name, rva, ret_type.get());
+									auto f = new FunctionInfoPrivate(u, name, rva, ret_type.get());
+									u->functions.emplace_back(f);
 
 									IDiaEnumSymbols* s_parameters;
 									s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
 									IDiaSymbol* s_parameter;
 									while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 									{
-										f->add_parameter(typeinfo_from_symbol(s_parameter, 0).get());
+										f->parameters.emplace_back(typeinfo_from_symbol(s_parameter, 0).get());
 
 										s_parameter->Release();
 									}
@@ -615,14 +620,14 @@ int main(int argc, char **args)
 					}
 					_functions->Release();
 
-					FunctionInfo* ctor = nullptr;
-					FunctionInfo* dtor = nullptr;
-					for (auto f : u->functions)
+					FunctionInfoPrivate* ctor = nullptr;
+					FunctionInfoPrivate* dtor = nullptr;
+					for (auto& f : u->functions)
 					{
 						if (f->name == "ctor" && f->parameters.s == 0)
-							ctor = f;
+							ctor = f.get();
 						else if (f->name == "dtor")
-							dtor = f;
+							dtor = f.get();
 						if (ctor && dtor)
 							break;
 					}
@@ -664,59 +669,58 @@ int main(int argc, char **args)
 	auto file_root = file.append_child("typeinfo");
 
 	auto n_enums = file_root.append_child("enums");
-	for (auto e : db->enums.get_all())
+	for (auto& e : db->enums)
 	{
 		auto n_enum = n_enums.append_child("enum");
-		n_enum.append_attribute("name").set_value(e->name.v);
+		n_enum.append_attribute("name").set_value(e.second->name.c_str());
 
 		auto n_items = n_enum.append_child("items");
-		for (auto i : e->items)
+		for (auto& i : e.second->items)
 		{
 			auto n_item = n_items.append_child("item");
-			n_item.append_attribute("name").set_value(i->name.v);
+			n_item.append_attribute("name").set_value(i->name.c_str());
 			n_item.append_attribute("value").set_value(i->value);
 		}
 	}
 
 	auto n_udts = file_root.append_child("udts");
-	for (auto u : db->udts.get_all())
+	for (auto& u : db->udts)
 	{
 		auto n_udt = n_udts.append_child("udt");
-		n_udt.append_attribute("name").set_value(u->name.v);
-		n_udt.append_attribute("size").set_value(u->size);
-		n_udt.append_attribute("base_name").set_value(u->base_name.v);
+		n_udt.append_attribute("name").set_value(u.second->name.c_str());
+		n_udt.append_attribute("size").set_value(u.second->size);
+		n_udt.append_attribute("base_name").set_value(u.second->base_name.c_str());
 
 		auto n_items = n_udt.append_child("variables");
-		for (auto v : u->variables)
+		for (auto& v : u.second->variables)
 		{
 			auto n_variable = n_items.append_child("variable");
-			auto type = v->type;
-			n_variable.append_attribute("type").set_value(type->name.v);
-			n_variable.append_attribute("name").set_value(v->name.v);
+			n_variable.append_attribute("type").set_value(v->type->get_name());
+			n_variable.append_attribute("name").set_value(v->name.c_str());
 			n_variable.append_attribute("flags").set_value(v->flags);
 			n_variable.append_attribute("offset").set_value(v->offset);
 			n_variable.append_attribute("size").set_value(v->size);
 			if (v->default_value)
-				n_variable.append_attribute("default_value").set_value(type->serialize(v->default_value).c_str());
+				n_variable.append_attribute("default_value").set_value(v->type->serialize(v->default_value).c_str());
 		}
 
 		auto n_functions = n_udt.append_child("functions");
-		for (auto f : u->functions)
+		for (auto& f : u.second->functions)
 		{
 			auto n_function = n_functions.append_child("function");
-			n_function.append_attribute("name").set_value(f->name.v);
+			n_function.append_attribute("name").set_value(f->name.c_str());
 			n_function.append_attribute("rva").set_value((uint)f->rva);
-			n_function.append_attribute("return_type").set_value(f->type->name.v);
-			if (f->parameters.s != 0)
+			n_function.append_attribute("return_type").set_value(f->type->get_name());
+			if (!f->parameters.empty())
 			{
 				auto n_parameters = n_function.append_child("parameters");
 				for (auto p : f->parameters)
-					n_parameters.append_child("parameter").append_attribute("type").set_value(p->name.v);
+					n_parameters.append_child("parameter").append_attribute("type").set_value(p->get_name());
 			}
 		}
 	}
 
-	global_typeinfo_databases.remove(global_typeinfo_databases.s - 1);
+	pop_global_typeinfo_database();
 
 	auto typeinfo_path = library_path;
 	typeinfo_path.replace_extension(L".typeinfo");
@@ -725,14 +729,14 @@ int main(int argc, char **args)
 	auto typeinfo_code_path = library_path;
 	typeinfo_code_path.replace_extension(L".typeinfo.code");
 	std::ofstream typeinfo_code(typeinfo_code_path);
-	for (auto u : db->udts.get_all())
+	for (auto& u : db->udts)
 	{
-		for (auto f : u->functions)
+		for (auto& f : u.second->functions)
 		{
-			if (f->code.s != 0)
+			if (!f->code.empty())
 			{
-				typeinfo_code << "##" << u->name.str() << "::" << f->name.str() <<"\n";
-				typeinfo_code << f->code.str();
+				typeinfo_code << "##" << u.second->name << "::" << f->name <<"\n";
+				typeinfo_code << f->code;
 			}
 		}
 	}

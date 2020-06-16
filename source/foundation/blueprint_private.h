@@ -40,7 +40,7 @@ namespace flame
 		void set_data(const void* data) override;
 		const void* get_default_value() const override;
 
-		uint get_link_count() const override;
+		uint get_links_count() const override;
 		bpSlot* get_link(uint idx) const override;
 		bool link_to(bpSlot* target) override;
 		bool link_to(bpSlotPrivate* target);
@@ -93,16 +93,16 @@ namespace flame
 		const char* get_type() const override;
 		UdtInfo* get_udt() const override;
 
-		uint get_input_count() const override;
+		uint get_inputs_count() const override;
 		bpSlot* get_input(uint idx) const override;
 		bpSlot* find_input(const char* name) const override;
 		bpSlotPrivate* find_input(const std::string& name) const;
-		uint get_output_count() const override;
+		uint get_outputs_count() const override;
 		bpSlot* get_output(uint idx) const override;
 		bpSlot* find_output(const char* name) const override;
 		bpSlotPrivate* find_output(const std::string& name) const;
 
-		uint get_child_count() const override;
+		uint get_children_count() const override;
 		bpNode* get_child(uint idx) const override;
 		bpNode* add_child(const char* id, const char* type, bpNodeType node_type) override;
 		bpNodePrivate* add_child(const std::string& id, const std::string& type, bpNodeType node_type);

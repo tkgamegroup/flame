@@ -88,10 +88,12 @@ namespace flame
 
 		inline bool is_pod() const
 		{
-			if (is_array)
+			if (get_is_array())
 				return false;
+			auto tag = get_tag();
 			if (tag == TypePointer)
 				return false;
+			auto base_hash = get_base_hash();
 			if (tag == TypeData && (base_hash == FLAME_CHASH("flame::StringA") || base_hash == FLAME_CHASH("flame::StringW")))
 				return false;
 			return true;
@@ -99,7 +101,7 @@ namespace flame
 
 		inline std::string get_cpp_name() const
 		{
-			std::string ret = base_name.str();
+			auto ret = std::string(get_base_name());
 			static FLAME_SAL(str_flame, "flame::");
 			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
 				ret.erase(ret.begin(), ret.begin() + str_flame.l);
@@ -110,25 +112,15 @@ namespace flame
 				auto t = res[2].str();
 				ret = "Vec" + res[1].str() + (t == "uchar" ? 'c' : t[0]);
 			}
-			if (is_array)
+			if (get_is_array())
 				ret = "Array<" + ret + ">";
-			if (tag == TypePointer)
+			if (get_tag() == TypePointer)
 				ret += "*";
 			return ret;
 		}
 
-		static TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false)
-		{
-			auto hash = FLAME_HASH(make_str(tag, base_name, is_array).c_str());
-			auto i = typeinfos.find(hash);
-			if (i)
-				return i;
-			i = f_new<TypeInfo>(tag, base_name, is_array);
-			typeinfos.add(hash, i);
-			return i;
-		}
-
-		static TypeInfo* TypeInfo::get(const std::string& str)
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);
+		inline static TypeInfo* TypeInfo::get(const std::string& str)
 		{
 			TypeTag tag;
 			std::string base_name;
@@ -151,295 +143,109 @@ namespace flame
 
 	struct VariableInfo
 	{
-		UdtInfo* udt;
-		TypeInfo* type;
-		StringA name;
-		uint name_hash;
-		uint flags;
-		uint offset;
-		uint size;
-		void* default_value;
+		virtual UdtInfo* get_udt() const = 0;
+		virtual TypeInfo* get_type() const = 0;
+		virtual const char* get_name() const = 0;
+		virtual uint get_name_hash() const = 0;
+		virtual uint get_flags() const = 0;
+		virtual uint get_offset() const = 0;
+		virtual uint get_size() const = 0;
+		virtual const void* get_default_value() const = 0;
 
-		VariableInfo(UdtInfo* udt, TypeInfo* type, const std::string& name, uint flags, uint offset, uint size) :
-			udt(udt),
-			type(type),
-			name(name),
-			flags(flags),
-			offset(offset),
-			size(size),
-			default_value(nullptr)
-		{
-			name_hash = FLAME_HASH(name.c_str());
-		}
-
-		~VariableInfo()
-		{
-			f_free(default_value);
-		}
 	};
 
 	struct EnumItem
 	{
-		StringA name;
-		int value;
-
-		EnumItem(const std::string& name, int value) :
-			name(name),
-			value(value)
-		{
-		}
+		virtual EnumInfo* get_enum() const = 0;
+		virtual uint get_index() const = 0;
+		virtual const char* get_name() const = 0;
+		virtual int get_value() const = 0;
 	};
 
 	struct EnumInfo
 	{
-		TypeInfoDatabase* db;
-		StringA name;
-		Array<EnumItem*> items;
-
-		EnumInfo(TypeInfoDatabase* db, const std::string& name) :
-			db(db),
-			name(name)
-		{
-		}
-
-		~EnumInfo()
-		{
-			for (auto i : items)
-				f_delete(i);
-		}
-
-		EnumItem* add_item(const std::string& name, int value)
-		{
-			auto i = f_new<EnumItem>(name, value);
-			items.push_back(i);
-			return i;
-		}
-
-		EnumItem* find_item(const std::string& name, int* out_idx = nullptr) const
-		{
-			for (auto i : items)
-			{
-				if (i->name == name)
-				{
-					if (out_idx)
-						*out_idx = i->value;
-					return i;
-				}
-			}
-			if (out_idx)
-				*out_idx = -1;
-			return nullptr;
-		}
-
-		EnumItem* find_item(int value, int* out_idx = nullptr) const
-		{
-			for (auto i = 0; i < items.s; i++)
-			{
-				auto item = items[i];
-				if (item->value == value)
-				{
-					if (out_idx)
-						*out_idx = i;
-					return item;
-				}
-			}
-			if (out_idx)
-				*out_idx = -1;
-			return nullptr;
-		}
+		virtual TypeInfoDatabase* get_database() const = 0;
+		virtual const char* get_name() const = 0;
+		virtual uint get_items_count() const = 0;
+		virtual EnumItem* get_item(uint idx) const = 0;
+		virtual EnumItem* find_item(const char* name) const = 0;
+		virtual EnumItem* find_item(int value) const = 0;
 	};
 
 	struct FunctionInfo
 	{
-		TypeInfoDatabase* db;
-		UdtInfo* udt;
-		StringA name;
-		void* rva;
-		TypeInfo* type;
-		Array<TypeInfo*> parameters;
-		StringA code;
-
-		FunctionInfo(TypeInfoDatabase* db, UdtInfo* udt, const std::string& name, void* rva, TypeInfo* type) :
-			db(db),
-			udt(udt),
-			name(name),
-			rva(rva),
-			type(type)
-		{
-		}
-
-		void add_parameter(TypeInfo* type)
-		{
-			parameters.push_back(type);
-		}
+		virtual TypeInfoDatabase* get_database() const = 0;
+		virtual UdtInfo* get_udt() const = 0;
+		virtual const char* get_name() const = 0;
+		virtual const void* get_rva() const = 0;
+		virtual TypeInfo* get_type() const = 0;
+		virtual uint get_parameters_count() const = 0;
+		virtual TypeInfo* get_parameter(uint idx) const = 0;
+		virtual const char* get_code() const = 0;
 	};
 
 	struct UdtInfo
 	{
-		TypeInfoDatabase* db;
-		StringA name;
-		uint size;
-		StringA base_name;
-		Array<VariableInfo*> variables;
-		Array<FunctionInfo*> functions;
+		virtual TypeInfoDatabase* get_database() const = 0;
+		virtual const char* get_name() const = 0;
+		virtual uint get_size() const = 0;
+		virtual const char* get_base_name() const = 0; // base class name
 
-		UdtInfo(TypeInfoDatabase* db, const std::string& name, uint size, const std::string& base_name) :
-			db(db),
-			name(name),
-			size(size),
-			base_name(base_name)
-		{
-		}
-
-		~UdtInfo()
-		{
-			for (auto v : variables)
-				f_delete(v);
-			for (auto f : functions)
-				f_delete(f);
-		}
-
-		VariableInfo* add_variable(TypeInfo* type, const std::string& name, uint flags, uint offset, uint size)
-		{
-			auto v = f_new<VariableInfo>(this, type, name, flags, offset, size);
-			if (type->is_pod())
-			{
-				v->default_value = new char[size];
-				memset(v->default_value, 0, size);
-			}
-			else
-				v->default_value = nullptr;
-			variables.push_back(v);
-			return v;
-		}
-
-		FunctionInfo* add_function(const std::string& name, void* rva, TypeInfo* type)
-		{
-			auto f = f_new<FunctionInfo>(db, this, name, rva, type);
-			functions.push_back(f);
-			return f;
-		}
-
-		VariableInfo* find_variable(const std::string& name, int* out_idx = nullptr) const
-		{
-			for (auto i = 0; i < variables.s; i++)
-			{
-				auto v = variables[i];
-				if (v->name == name)
-				{
-					if (out_idx)
-						*out_idx = i;
-					return v;
-				}
-			}
-			if (out_idx)
-				*out_idx = -1;
-			return nullptr;
-		}
-
-		FunctionInfo* find_function(const std::string& name, int* out_idx = nullptr) const
-		{
-			for (auto i = 0; i < functions.s; i++)
-			{
-				auto f = functions[i];
-				if (f->name == name)
-				{
-					if (out_idx)
-						*out_idx = i;
-					return f;
-				}
-			}
-			if (out_idx)
-				*out_idx = -1;
-			return nullptr;
-		}
+		virtual uint get_variables_count() const = 0;
+		virtual VariableInfo* get_variable(uint idx) const = 0;
+		virtual VariableInfo* find_variable(const char* name) const = 0;
+		virtual uint get_functions_count() const = 0;
+		virtual FunctionInfo* get_function(uint idx) const = 0;
+		virtual FunctionInfo* find_function(const char* name) const = 0;
 
 		inline void serialize(const void* src, nlohmann::json& dst) const
 		{
-			for (auto v : variables)
-				dst[v->name.str()] = v->type->serialize((char*)src + v->offset);
+			auto count = get_variables_count();
+			for (auto i = 0; i < count; i++)
+			{
+				auto v = get_variable(i);
+				dst[v->get_name()] = v->get_type()->serialize((char*)src + v->get_offset());
+			}
 		}
 
 		inline void unserialize(const nlohmann::json& src, const void* dst) const
 		{
-			for (auto v : variables)
-				v->type->unserialize(src[v->name.str()].get<std::string>(), (char*)dst + v->offset);
+			auto count = get_variables_count();
+			for (auto i = 0; i < count; i++)
+			{
+				auto v = get_variable(i);
+				v->get_type()->unserialize(src[v->get_name()].get<std::string>(), (char*)dst + v->get_offset());
+			}
 		}
 	};
 
 	struct TypeInfoDatabase
 	{
-		void* library;
-		StringW library_name;
-		HashMap<256, EnumInfo> enums;
-		HashMap<256, UdtInfo> udts;
+		virtual void release() = 0;
 
-		TypeInfoDatabase(const std::wstring& library_name) :
-			library_name(library_name)
-		{
-			library = nullptr;
-		}
+		virtual const void* get_library() const = 0;
+		virtual const wchar_t* get_library_name() const = 0;
 
-		~TypeInfoDatabase()
-		{
-			if (library)
-				free_library(library);
-			for (auto e : enums.get_all())
-				f_delete(e);
-			for (auto u : udts.get_all())
-				f_delete(u);
-		}
-
-		EnumInfo* add_enum(const std::string name)
-		{
-			auto e = f_new<EnumInfo>(this, name);
-			enums.add(FLAME_HASH(name.c_str()), e);
-			return e;
-		}
-
-		UdtInfo* add_udt(const std::string name, uint size, const std::string& base_name)
-		{
-			auto u = f_new<UdtInfo>(this, name, size, base_name);
-			udts.add(FLAME_HASH(name.c_str()), u);
-			return u;
-		}
+		virtual EnumInfo* get_enum(uint hash) const = 0;
+		virtual UdtInfo* get_udt(uint hash) const = 0;
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* library_filename, bool add_to_global, bool load_with_library);
-		FLAME_FOUNDATION_EXPORTS static void destroy(TypeInfoDatabase* db);
 	};
 
-	FLAME_FOUNDATION_EXPORTS extern Array<TypeInfoDatabase*> global_typeinfo_databases;
+	FLAME_FOUNDATION_EXPORTS void push_global_typeinfo_database(TypeInfoDatabase* db);
+	FLAME_FOUNDATION_EXPORTS void pop_global_typeinfo_database();
 
-	inline EnumInfo* find_enum(uint hash)
-	{
-		for (auto db : global_typeinfo_databases)
-		{
-			auto info = db->enums.find(hash);
-			if (info)
-				return info;
-		}
-		return nullptr;
-	}
-
-	inline UdtInfo* find_udt(uint hash)
-	{
-		for (auto db : global_typeinfo_databases)
-		{
-			auto info = db->udts.find(hash);
-			if (info)
-				return info;
-		}
-		return nullptr;
-	}
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint hash);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint hash);
 
 	inline bool check_function(FunctionInfo* info, const char* type, const std::vector<const char*>& parameters)
 	{
-		if (info->type->hash != FLAME_HASH(type) ||
-			info->parameters.s != parameters.size())
+		if (info->get_type()->get_hash() != FLAME_HASH(type) ||
+			info->get_parameters_count() != parameters.size())
 			return false;
 		for (auto i = 0; i < parameters.size(); i++)
 		{
-			if (info->parameters[i]->hash != FLAME_HASH(parameters[i]))
+			if (info->get_parameter(i)->get_hash() != FLAME_HASH(parameters[i]))
 				return false;
 		}
 		return true;
@@ -527,14 +333,15 @@ namespace flame
 
 	std::string TypeInfo::serialize(const void* src) const
 	{
-		switch (tag)
+		auto base_hash = get_base_hash();
+		switch (get_tag())
 		{
 		case TypeEnumSingle:
 		{
 			auto e = find_enum(base_hash);
 			assert(e);
 			auto i = e->find_item(*(int*)src);
-			return i ? i->name.str() : "";
+			return i ? i->get_name() : "";
 		}
 		case TypeEnumMulti:
 		{
@@ -542,13 +349,14 @@ namespace flame
 			auto e = find_enum(base_hash);
 			assert(e);
 			auto v = *(int*)src;
-			for (auto i = 0; i < e->items.s; i++)
+			auto count = e->get_items_count();
+			for (auto i = 0; i < count; i++)
 			{
 				if ((v & 1) == 1)
 				{
 					if (!str.empty())
 						str += ";";
-					str += e->find_item(1 << i)->name.str();
+					str += e->find_item(1 << i)->get_name();
 				}
 				v >>= 1;
 			}
@@ -616,13 +424,14 @@ namespace flame
 
 	void TypeInfo::unserialize(const std::string& src, void* dst) const
 	{
-		switch (tag)
+		auto base_hash = get_base_hash();
+		switch (get_tag())
 		{
 		case TypeEnumSingle:
 		{
 			auto e = find_enum(base_hash);
 			assert(e);
-			e->find_item(src.c_str(), (int*)dst);
+			*(int*)dst = e->find_item(src.c_str())->get_value();
 		}
 			return;
 		case TypeEnumMulti:
@@ -632,7 +441,7 @@ namespace flame
 			assert(e);
 			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
-				v |= e->find_item(t.c_str())->value;
+				v |= e->find_item(t.c_str())->get_value();
 			*(int*)dst = v;
 		}
 			return;
@@ -722,8 +531,9 @@ namespace flame
 
 	void TypeInfo::copy_from(const void* src, void* dst, uint size) const
 	{
+		auto tag = get_tag();
 		if (tag == TypeData)
-			basic_type_copy(base_hash, src, dst, size);
+			basic_type_copy(get_base_hash(), src, dst, size);
 		else if (tag == TypeEnumSingle || tag == TypeEnumMulti)
 			memcpy(dst, src, sizeof(int));
 		else if (tag == TypePointer)
