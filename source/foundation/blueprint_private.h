@@ -43,7 +43,7 @@ namespace flame
 		uint get_links_count() const override;
 		bpSlot* get_link(uint idx) const override;
 		bool link_to(bpSlot* target) override;
-		bool link_to(bpSlotPrivate* target);
+		bool _link_to(bpSlotPrivate* target);
 	};
 
 	struct bpNodePrivate : bpNode
@@ -96,11 +96,11 @@ namespace flame
 		uint get_inputs_count() const override;
 		bpSlot* get_input(uint idx) const override;
 		bpSlot* find_input(const char* name) const override;
-		bpSlotPrivate* find_input(const std::string& name) const;
+		bpSlotPrivate* _find_input(const std::string& name) const;
 		uint get_outputs_count() const override;
 		bpSlot* get_output(uint idx) const override;
 		bpSlot* find_output(const char* name) const override;
-		bpSlotPrivate* find_output(const std::string& name) const;
+		bpSlotPrivate* _find_output(const std::string& name) const;
 
 		uint get_children_count() const override;
 		bpNode* get_child(uint idx) const override;
@@ -109,8 +109,9 @@ namespace flame
 		void remove_child(bpNode* n) override;
 		void remove_child(bpNodePrivate* n);
 		bpNode* find_child(const char* name) const override;
-		bpNodePrivate* find_child(const std::string& name) const;
+		bpNodePrivate* _find_child(const std::string& name) const;
 		bpNode* find_child(const Guid& guid) const override;
+		bpNodePrivate* _find_child(const Guid& guid) const;
 
 		void update();
 	};

@@ -63,9 +63,9 @@ namespace flame
 	uint bpSlotPrivate::get_links_count() const { return links.size(); }
 	bpSlot* bpSlotPrivate::get_link(uint idx) const { return links[idx]; }
 
-	bool bpSlotPrivate::link_to(bpSlot* target) { return link_to((bpSlotPrivate*)target); }
+	bool bpSlotPrivate::link_to(bpSlot* target) { return _link_to((bpSlotPrivate*)target); }
 
-	bool bpSlotPrivate::link_to(bpSlotPrivate* target)
+	bool bpSlotPrivate::_link_to(bpSlotPrivate* target)
 	{
 		assert(io == bpSlotIn);
 		if (io == bpSlotIn)
@@ -488,7 +488,7 @@ namespace flame
 			return false;
 		if (id == _id)
 			return true;
-		if (parent->find_child(_id))
+		if (parent->_find_child(_id))
 			return false;
 		id = _id;
 		return true;
@@ -502,8 +502,8 @@ namespace flame
 
 	uint bpNodePrivate::get_inputs_count() const { return inputs.size(); }
 	bpSlot* bpNodePrivate::get_input(uint idx) const { return inputs[idx].get(); }
-	bpSlot* bpNodePrivate::find_input(const char* name) const { return find_input(std::string(name)); }
-	bpSlotPrivate* bpNodePrivate::find_input(const std::string& name) const
+	bpSlot* bpNodePrivate::find_input(const char* name) const { return _find_input(std::string(name)); }
+	bpSlotPrivate* bpNodePrivate::_find_input(const std::string& name) const
 	{
 		for (auto& in : inputs)
 		{
@@ -515,8 +515,8 @@ namespace flame
 
 	uint bpNodePrivate::get_outputs_count() const { return outputs.size(); }
 	bpSlot* bpNodePrivate::get_output(uint idx) const { return outputs[idx].get(); }
-	bpSlot* bpNodePrivate::find_output(const char* name) const { return find_output(std::string(name)); }
-	bpSlotPrivate* bpNodePrivate::find_output(const std::string& name) const
+	bpSlot* bpNodePrivate::find_output(const char* name) const { return _find_output(std::string(name)); }
+	bpSlotPrivate* bpNodePrivate::_find_output(const std::string& name) const
 	{
 		for (auto& out : outputs)
 		{
@@ -597,13 +597,13 @@ namespace flame
 	{
 		if (!id.empty())
 		{
-			if (parent->find_child(id))
+			if (parent->_find_child(id))
 				return false;
 		}
 		else
 		{
 			id = std::to_string(::rand());
-			while (parent->find_child(id))
+			while (parent->_find_child(id))
 				id = std::to_string(::rand());
 		}
 		return true;
@@ -662,8 +662,8 @@ namespace flame
 			need_rebuild_update_list = true;
 		}
 	}
-	bpNode* bpNodePrivate::find_child(const char* name) const { return find_child(std::string(name)); }
-	bpNodePrivate* bpNodePrivate::find_child(const std::string& name) const
+	bpNode* bpNodePrivate::find_child(const char* name) const { return _find_child(std::string(name)); }
+	bpNodePrivate* bpNodePrivate::_find_child(const std::string& name) const
 	{
 		for (auto& n : children)
 		{
@@ -672,13 +672,14 @@ namespace flame
 		}
 		return nullptr;
 	}
-	bpNode* bpNodePrivate::find_child(const Guid& guid) const
+	bpNode* bpNodePrivate::find_child(const Guid& guid) const { return _find_child(guid); }
+	bpNodePrivate* bpNodePrivate::_find_child(const Guid& guid) const
 	{
 		for (auto& n : children)
 		{
 			if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
 				return n.get();
-			auto res = n->find_child(guid);
+			auto res = n->_find_child(guid);
 			if (res)
 				return res;
 		}

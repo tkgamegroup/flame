@@ -121,8 +121,10 @@ namespace flame
 		const char* get_base_name() const override; 
 		uint get_variables_count() const override;
 		VariableInfo* get_variable(uint idx) const override;
+		VariableInfo* find_variable(const char* name) const override;
 		uint get_functions_count() const override;
 		FunctionInfo* get_function(uint idx) const override;
+		FunctionInfo* find_function(const char* name) const override;
 	};
 
 	struct TypeInfoDatabasePrivate : TypeInfoDatabase

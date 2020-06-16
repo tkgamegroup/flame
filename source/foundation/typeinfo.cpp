@@ -88,6 +88,14 @@ namespace flame
 	const char* EnumInfoPrivate::get_name() const { return name.c_str(); }
 	uint EnumInfoPrivate::get_items_count() const { return items.size(); }
 	EnumItem* EnumInfoPrivate::get_item(uint idx) const { return items[idx].get(); }
+	EnumItem* EnumInfoPrivate::find_item(const char* name) const
+	{
+
+	}
+	EnumItem* EnumInfoPrivate::find_item(int value) const
+	{
+
+	}
 
 	//EnumItem* find_item(const std::string& name) const
 	//{
@@ -243,28 +251,29 @@ namespace flame
 			return nullptr;
 		}
 
-		auto db = new TypeInfoDatabase(library_path);
+		auto db = new TypeInfoDatabasePrivate(library_path);
 		global_typeinfo_databases.push_back(db);
 
 		for (auto n_enum : file_root.child("enums"))
 		{
-			auto e = db->add_enum(n_enum.attribute("name").value());
+			auto e = new EnumInfoPrivate(db, n_enum.attribute("name").value());
+			db->enums.emplace(FLAME_HASH(e->name.c_str()), e);
 
 			for (auto n_item : n_enum.child("items"))
-			{
-				e->add_item(n_item.attribute("name").value(), n_item.attribute("value").as_int());
-			}
+				e->items.emplace_back(new EnumItemPrivate(n_item.attribute("name").value(), n_item.attribute("value").as_int()));
 		}
 
 		for (auto n_udt : file_root.child("udts"))
 		{
-			auto u = db->add_udt(n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value());
+			auto u = new UdtInfoPrivate(db, n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value());
+			db->udts.emplace(FLAME_HASH(u->name.c_str()), u);
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
 				auto type = TypeInfo::get(n_variable.attribute("type").value());
-				auto v = u->add_variable(type, n_variable.attribute("name").value(),
+				auto v = new VariableInfoPrivate(u, type, n_variable.attribute("name").value(),
 					n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
+				u->variables.emplace_back(v);
 
 				if (v->default_value)
 					type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
@@ -272,16 +281,17 @@ namespace flame
 
 			for (auto n_function : n_udt.child("functions"))
 			{
-				auto f = u->add_function(n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfo::get(n_function.attribute("return_type").value()));
+				auto f = new FunctionInfoPrivate(db, u, n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), (TypeInfoPrivate*)TypeInfo::get(n_function.attribute("return_type").value()));
+				u->functions.emplace_back(f);
 				for (auto n_parameter : n_function.child("parameters"))
-					f->add_parameter(TypeInfo::get(n_parameter.attribute("type").value()));
+					f->parameters.push_back(TypeInfo::get(n_parameter.attribute("type").value()));
 			}
 		}
 
 		if (load_with_library)
-			db->library = load_library(db->library_name.v);
+			db->library = load_library(db->library_name.c_str());
 		if (!add_to_global)
-			global_typeinfo_databases.remove(global_typeinfo_databases.s - 1);
+			global_typeinfo_databases.erase(global_typeinfo_databases.begin() + global_typeinfo_databases.size() - 1);
 
 		auto typeinfo_code_path = library_path;
 		typeinfo_code_path.replace_extension(L".typeinfo.code");
@@ -313,13 +323,13 @@ namespace flame
 			}
 			typeinfo_code.close();
 
-			for (auto u : db->udts.get_all())
+			for (auto& u : db->udts)
 			{
-				for (auto f : u->functions)
+				for (auto& f : u.second->functions)
 				{
 					if (f->name == "bp_update")
 					{
-						auto n = u->name.str() + "::" + f->name.str();
+						auto n = u.second->name + "::" + f->name;
 						for (auto& fc : function_codes)
 						{
 							if (fc.name == n)
