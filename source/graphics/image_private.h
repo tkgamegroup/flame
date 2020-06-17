@@ -76,7 +76,7 @@ namespace flame
 #endif
 			int ref_count;
 
-			ImageviewPrivate(Image* image, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
+			ImageviewPrivate(ImagePrivate* image, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
 				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
 			~ImageviewPrivate();
 
@@ -117,29 +117,27 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			SamplerPrivate(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
+			SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();
 
 			void release() override;
 		};
 
-		struct AtlasTilePrivate : ImageAtlas::Tile
+		struct ImageTilePrivate : ImageTile
 		{
 			uint index;
 			std::wstring filename;
 			uint id;
 			Vec2i pos;
 			Vec2i size;
-			Vec2f uv0;
-			Vec2f uv1;
+			Vec4f uv;
 
 			uint get_index() const override;
 			const wchar_t* get_filename() const override;
 			uint get_id() const override;
 			Vec2i get_pos() const override;
 			Vec2i get_size() const override;
-			Vec2f get_uv0() const override;
-			Vec2f get_uv1() const override;
+			Vec4f get_uv() const override;
 		};
 
 		struct ImageAtlasPrivate : ImageAtlas
@@ -149,9 +147,9 @@ namespace flame
 			int slot;
 
 			ImagePrivate* image;
-			std::vector<std::unique_ptr<AtlasTilePrivate>> tiles;
+			std::vector<std::unique_ptr<ImageTilePrivate>> tiles;
 
-			ImageAtlasPrivate(Device* d, const std::wstring& atlas_filename);
+			ImageAtlasPrivate(DevicePrivate* d, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();
 
 			void release() override;
@@ -159,8 +157,8 @@ namespace flame
 			bool get_border() const override;
 
 			uint get_tiles_count() const override;
-			Tile* get_tile(uint idx) const override;
-			Tile* find_tile(uint id) const override;
+			ImageTile* get_tile(uint idx) const override;
+			ImageTile* find_tile(uint id) const override;
 		};
 	}
 }

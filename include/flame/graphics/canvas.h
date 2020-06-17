@@ -32,18 +32,6 @@ namespace flame
 			virtual void add_atlas(ImageAtlas* a) = 0;
 			virtual void add_font(FontAtlas* f) = 0;
 
-			//void add_atlas(ImageAtlas* a)
-			//{
-			//	a->canvas_ = this;
-			//	a->canvas_slot_ = set_resource(-1, a->imageview(), Sampler::get_default(a->border ? FilterLinear : FilterNearest), a);
-			//}
-
-			//void add_font(FontAtlas* f)
-			//{
-			//	f->canvas_ = this;
-			//	f->canvas_slot_ = set_resource(-1, f->imageview(), Sampler::get_default(FilterNearest));
-			//}
-
 			virtual void stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness) = 0;
 			virtual void fill(uint point_count, const Vec2f* points, const Vec4c& col) = 0;
 

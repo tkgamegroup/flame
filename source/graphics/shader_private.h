@@ -7,8 +7,6 @@
 
 namespace flame
 {
-	struct SerializableNode;
-
 	namespace graphics
 	{
 		struct DevicePrivate;
@@ -25,6 +23,8 @@ namespace flame
 
 			DescriptorpoolPrivate(Device* d);
 			~DescriptorpoolPrivate();
+
+			void release() override;
 		};
 
 		struct DescriptorlayoutPrivate : Descriptorlayout
@@ -41,8 +41,10 @@ namespace flame
 
 			uint hash;
 
-			DescriptorlayoutPrivate(Device* d, uint binding_count, const DescriptorBinding* bindings, bool create_default_set);
+			DescriptorlayoutPrivate(DevicePrivate* d, const std::span<DescriptorBinding>& bindings, bool create_default_set);
 			~DescriptorlayoutPrivate();
+
+			void release() override;
 		};
 
 		struct DescriptorsetPrivate : Descriptorset
@@ -55,8 +57,10 @@ namespace flame
 
 #endif
 
-			DescriptorsetPrivate(Descriptorpool* p, Descriptorlayout* l);
+			DescriptorsetPrivate(DescriptorpoolPrivate* p, DescriptorlayoutPrivate* l);
 			~DescriptorsetPrivate();
+
+			void release() override;
 
 			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range);
 			void set_image(uint binding, uint index, Imageview* iv, Sampler* sampler);
@@ -74,8 +78,10 @@ namespace flame
 			std::vector<DescriptorlayoutPrivate*> dsls;
 			uint pc_size;
 
-			PipelinelayoutPrivate(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
+			PipelinelayoutPrivate(DevicePrivate* d, const std::span<Descriptorlayout*>& descriptorlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
+
+			void release() override;
 
 			uint hash;
 		};
@@ -200,6 +206,8 @@ namespace flame
 			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states);
 			PipelinePrivate(DevicePrivate* d, const StageInfo& compute_stage_info, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
+
+			void release() override;
 		};
 	}
 }

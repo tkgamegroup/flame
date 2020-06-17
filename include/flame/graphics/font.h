@@ -20,20 +20,10 @@ namespace flame
 
 		struct Glyph
 		{
-			ushort unicode;
-			uint font_size;
-			Vec2i off;
-			Vec2u size;
-			Vec2f uv0;
-			Vec2f uv1;
-			int advance;
-		};
-
-		struct DecoratedChar
-		{
-			ushort code;
-			uint size;
-			Vec4c color;
+			virtual ushort get_code() const = 0;
+			virtual Vec2i get_off() const = 0;
+			virtual Vec2u get_size() const = 0;
+			virtual Vec4f get_uv() const = 0;
 		};
 
 		struct FontAtlas : Object
@@ -137,7 +127,7 @@ namespace flame
 				return ret;
 			}
 
-			virtual const Glyph* get_glyph(wchar_t unicode, uint font_size) = 0;
+			virtual Glyph* get_glyph(wchar_t unicode, uint font_size) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint fonts_count, const wchar_t* const* fonts);
 		};

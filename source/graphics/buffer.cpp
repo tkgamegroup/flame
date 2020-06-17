@@ -64,12 +64,6 @@ namespace flame
 #endif
 		}
 
-		void BufferPrivate::release() { delete this; }
-
-		uint BufferPrivate::get_size() const { return size; }
-
-		void* BufferPrivate::get_mapped() const { return mapped; }
-
 		void BufferPrivate::map(uint offset, uint _size)
 		{
 			if (mapped)
@@ -113,22 +107,20 @@ namespace flame
 
 		void BufferPrivate::copy_from_data(void* data)
 		{
-			auto stag_buf = new BufferPrivate(d, size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(d, size, BufferUsageTransferSrc, MemPropHost);
 
 			stag_buf->map();
 			memcpy(stag_buf->mapped, data, size);
 			stag_buf->flush();
 			stag_buf->unmap();
 
-			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = std::make_unique<CommandbufferPrivate>(d->default_graphics_commandpool.get());
 			cb->begin(true);
-			cb->copy_buffer(stag_buf, this, 1, &BufferCopy(0, 0, size));
+			cb->copy_buffer(stag_buf.get(), this, 1, &BufferCopy(0, 0, size));
 			cb->end();
-			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
-			Queue::get_default(QueueGraphics)->wait_idle();
-			Commandbuffer::destroy(cb);
-
-			delete stag_buf;
+			auto q = d->default_graphics_queue.get();
+			q->submit({ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
 		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data)

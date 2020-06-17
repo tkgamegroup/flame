@@ -15,21 +15,6 @@
 
 namespace flame
 {
-	void ListenerHubImnplPrivate::release()
-	{
-		delete this;
-	}
-
-	uint ListenerHubImnplPrivate::count() const
-	{
-		return listeners.size();
-	}
-
-	Closure<bool(Capture&)>& ListenerHubImnplPrivate::item(uint idx) const
-	{
-		return *listeners[idx].get();
-	}
-
 	void* ListenerHubImnplPrivate::add(bool(*pf)(Capture& c), const Capture& capture, int pos)
 	{
 		if (pos == -1)
@@ -1532,45 +1517,20 @@ namespace flame
 #endif
 	}
 
-	Vec2i WindowPrivate::get_pos() const
-	{
-		return pos;
-	}
-
 	void WindowPrivate::set_pos(const Vec2i& _pos)
 	{
 		pos = _pos;
 		SetWindowPos(hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	Vec2u WindowPrivate::get_size() const
-	{
-		return size;
-	}
-
 	void WindowPrivate::set_size(const Vec2u& size)
 	{
-	}
-
-	const char* WindowPrivate::get_title() const
-	{
-		return title.c_str();
 	}
 
 	void WindowPrivate::set_title(const char* _title)
 	{
 		title = _title;
 		SetWindowTextA(hWnd, _title);
-	}
-
-	int WindowPrivate::get_style() const 
-	{
-		return style;
-	}
-
-	CursorType WindowPrivate::get_cursor() 
-	{
-		return cursor_type;
 	}
 
 	void WindowPrivate::set_cursor(CursorType type) 
@@ -1586,11 +1546,6 @@ namespace flame
 
 		cursor_type = type;
 #endif
-	}
-
-	void WindowPrivate::close() 
-	{
-		dead = true;
 	}
 
 	void* WindowPrivate::add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture)
@@ -1669,7 +1624,7 @@ namespace flame
 			if (std::filesystem::exists(icon_fn))
 			{
 				report_used_file(icon_fn.c_str());
-				auto icon_image = Bitmap::create_from_file(icon_fn.c_str());
+				auto icon_image = Bitmap::create(icon_fn.c_str());
 				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
 					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());

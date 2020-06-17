@@ -13,16 +13,6 @@ namespace flame
 		delete[] data;
 	}
 
-	void BitmapPrivate::release() { delete this; }
-	uint BitmapPrivate::get_width() const { return width; }
-	uint BitmapPrivate::get_height() const { return height; }
-	uint BitmapPrivate::get_channel() const { return channel; }
-	uint BitmapPrivate::get_byte_per_channel() const { return byte_per_channel; }
-	uint BitmapPrivate::get_pitch() const { return pitch; }
-	uchar* BitmapPrivate::get_data() const { return data; }
-	uint BitmapPrivate::get_size() const { return size; }
-	bool BitmapPrivate::get_srgb() const { return srgb; }
-
 	void BitmapPrivate::add_alpha_channel()
 	{
 		assert(channel == 3 && byte_per_channel == 1);

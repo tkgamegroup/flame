@@ -126,13 +126,13 @@ namespace flame
 
 		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
 		{
-			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = std::make_unique<CommandbufferPrivate>(d->default_graphics_commandpool.get());
 			cb->begin(true);
 			cb->change_image_layout(this, from, to);
 			cb->end();
-			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
-			Queue::get_default(QueueGraphics)->wait_idle();
-			Commandbuffer::destroy(cb);
+			auto q = d->default_graphics_queue.get();
+			q->submit({ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
 		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
@@ -465,13 +465,12 @@ namespace flame
 			return new SamplerPrivate(d, mag_filter, min_filter, unnormalized_coordinates);
 		}
 
-		uint AtlasTilePrivate::get_index() const { return index; }
-		const wchar_t* AtlasTilePrivate::get_filename() const { return filename.c_str(); }
-		uint AtlasTilePrivate::get_id() const { return id; }
-		Vec2i AtlasTilePrivate::get_pos() const { return pos; }
-		Vec2i AtlasTilePrivate::get_size() const { return size; }
-		Vec2f AtlasTilePrivate::get_uv0() const { return uv0; }
-		Vec2f AtlasTilePrivate::get_uv1() const { return uv1; }
+		uint ImageTilePrivate::get_index() const { return index; }
+		const wchar_t* ImageTilePrivate::get_filename() const { return filename.c_str(); }
+		uint ImageTilePrivate::get_id() const { return id; }
+		Vec2i ImageTilePrivate::get_pos() const { return pos; }
+		Vec2i ImageTilePrivate::get_size() const { return size; }
+		Vec4f ImageTilePrivate::get_uv() const { return uv; }
 
 		ImageAtlasPrivate::ImageAtlasPrivate(Device* d, const std::wstring& filename) :
 			border(false),
@@ -496,7 +495,7 @@ namespace flame
 
 			for (auto& e : ini.get_section_entries("tiles"))
 			{
-				auto tile = new AtlasTilePrivate;
+				auto tile = new ImageTilePrivate;
 
 				std::string t;
 				std::stringstream ss(e.value);
@@ -526,8 +525,8 @@ namespace flame
 		bool ImageAtlasPrivate::get_border() const { return border; }
 
 		uint ImageAtlasPrivate::get_tiles_count() const { return tiles.size(); }
-		ImageAtlas::Tile* ImageAtlasPrivate::get_tile(uint idx) const { return tiles[idx].get(); }
-		ImageAtlas::Tile* ImageAtlasPrivate::find_tile(uint id) const
+		ImageTile* ImageAtlasPrivate::get_tile(uint idx) const { return tiles[idx].get(); }
+		ImageTile* ImageAtlasPrivate::find_tile(uint id) const
 		{
 			for (auto& t : tiles)
 			{

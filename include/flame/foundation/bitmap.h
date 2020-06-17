@@ -82,7 +82,7 @@ namespace flame
 		{
 			BinPackTile t;
 			t.id = i.filename().string();
-			t.b = Bitmap::create_from_file(i.c_str());
+			t.b = Bitmap::create(i.c_str());
 			t.pos = Vec2i(-1);
 			tiles.push_back(t);
 		}

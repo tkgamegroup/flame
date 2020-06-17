@@ -43,14 +43,6 @@ namespace flame
 		delete setter;
 	}
 
-	bpNode* bpSlotPrivate::get_node() const { return node; }
-	bpSlotIO bpSlotPrivate::get_io() const { return io; }
-	uint bpSlotPrivate::get_index() const { return index; }
-	TypeInfo* bpSlotPrivate::get_type() const { return type; }
-	const char* bpSlotPrivate::get_name() const { return name.c_str(); }
-	uint bpSlotPrivate::get_offset() const { return index;  }
-	uint bpSlotPrivate::get_size() const { return size; }
-	const void* bpSlotPrivate::get_data() const { return data; }
 	void bpSlotPrivate::set_data(const void* d)
 	{
 		if (!setter)
@@ -59,10 +51,6 @@ namespace flame
 			setter->set(d);
 	}
 
-	const void* bpSlotPrivate::get_default_value() const { return default_value; }
-	uint bpSlotPrivate::get_links_count() const { return links.size(); }
-	bpSlot* bpSlotPrivate::get_link(uint idx) const { return links[idx]; }
-	bool bpSlotPrivate::link_to(bpSlot* target) { return _link_to((bpSlotPrivate*)target); }
 	bool bpSlotPrivate::_link_to(bpSlotPrivate* target)
 	{
 		assert(io == bpSlotIn);
@@ -481,14 +469,7 @@ namespace flame
 		}
 	}
 
-	bpScene* bpNodePrivate::get_scene() const { return scene; }
-	bpNode* bpNodePrivate::get_parent() const { return parent; }
-
-	Guid bpNodePrivate::get_guid() const { return guid; }
-	void bpNodePrivate::set_guid(const Guid& _guid) { guid = _guid; }
-	const char* bpNodePrivate::get_id() const { return id.c_str(); }
-	bool bpNodePrivate::set_id(const char* _id) { return set_id(std::string(_id)); }
-	bool bpNodePrivate::set_id(const std::string& _id)
+	bool bpNodePrivate::_set_id(const std::string& _id)
 	{
 		if (_id.empty())
 			return false;
@@ -499,16 +480,7 @@ namespace flame
 		id = _id;
 		return true;
 	}
-	Vec2f bpNodePrivate::get_pos() const { return pos; }
-	void bpNodePrivate::set_pos(const Vec2f& _pos) { pos = _pos; }
 
-	bpNodeType bpNodePrivate::get_node_type() const { return node_type; }
-	const char* bpNodePrivate::get_type() const { return type.c_str(); }
-	UdtInfo* bpNodePrivate::get_udt() const { return udt; }
-
-	uint bpNodePrivate::get_inputs_count() const { return inputs.size(); }
-	bpSlot* bpNodePrivate::get_input(uint idx) const { return inputs[idx].get(); }
-	bpSlot* bpNodePrivate::find_input(const char* name) const { return _find_input(name); }
 	bpSlotPrivate* bpNodePrivate::_find_input(const std::string& name) const
 	{
 		for (auto& in : inputs)
@@ -519,9 +491,6 @@ namespace flame
 		return nullptr;
 	}
 
-	uint bpNodePrivate::get_outputs_count() const { return outputs.size(); }
-	bpSlot* bpNodePrivate::get_output(uint idx) const { return outputs[idx].get(); }
-	bpSlot* bpNodePrivate::find_output(const char* name) const { return _find_output(name); }
 	bpSlotPrivate* bpNodePrivate::_find_output(const std::string& name) const
 	{
 		for (auto& out : outputs)
@@ -615,10 +584,7 @@ namespace flame
 		return true;
 	}
 
-	uint bpNodePrivate::get_children_count() const { return children.size(); }
-	bpNode* bpNodePrivate::get_child(uint idx) const { return children[idx].get(); }
-	bpNode* bpNodePrivate::add_child(const char* id, const char* type, bpNodeType node_type) { return add_child(std::string(id), std::string(type), node_type); }
-	bpNodePrivate* bpNodePrivate::add_child(const std::string& _id, const std::string& type, bpNodeType node_type)
+	bpNodePrivate* bpNodePrivate::_add_child(const std::string& _id, const std::string& type, bpNodeType node_type)
 	{
 		std::string id = _id;
 		if (!check_or_create_id(this, id))
@@ -635,8 +601,7 @@ namespace flame
 
 		return n;
 	}
-	void bpNodePrivate::remove_child(bpNode* n) { remove_child((bpNodePrivate*)n); }
-	void bpNodePrivate::remove_child(bpNodePrivate* n)
+	void bpNodePrivate::_remove_child(bpNodePrivate* n)
 	{
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == n;
@@ -668,7 +633,6 @@ namespace flame
 			need_rebuild_update_list = true;
 		}
 	}
-	bpNode* bpNodePrivate::find_child(const char* name) const { return _find_child(name); }
 	bpNodePrivate* bpNodePrivate::_find_child(const std::string& name) const
 	{
 		for (auto& n : children)
@@ -678,7 +642,6 @@ namespace flame
 		}
 		return nullptr;
 	}
-	bpNode* bpNodePrivate::find_child(const Guid& guid) const { return _find_child(guid); }
 	bpNodePrivate* bpNodePrivate::_find_child(const Guid& guid) const
 	{
 		for (auto& n : children)
@@ -698,12 +661,6 @@ namespace flame
 
 		root.reset(new bpNodePrivate(this, nullptr, "root", bpNodeReal, "Group"));
 	}
-
-	void bpScenePrivate::release() { delete this; }
-
-	const wchar_t* bpScenePrivate::get_filename() const { return filename.c_str(); }
-	float bpScenePrivate::get_time() const { return time; }
-	bpNode* bpScenePrivate::get_root() const { return root.get(); }
 
 	static float bp_time = 0.f;
 
@@ -998,7 +955,7 @@ namespace flame
 		load_group = [&](pugi::xml_node n_group, bpNodePrivate* parent) {
 			for (auto n_node : n_group.child("nodes"))
 			{
-				auto n = parent->add_child(std::string(n_node.attribute("id").value()), std::string(n_node.attribute("type").value()), (bpNodeType)n_node.attribute("node_type").as_int());
+				auto n = parent->_add_child(std::string(n_node.attribute("id").value()), std::string(n_node.attribute("type").value()), (bpNodeType)n_node.attribute("node_type").as_int());
 				if (n)
 				{
 					n->pos = stof2(n_node.attribute("pos").value());

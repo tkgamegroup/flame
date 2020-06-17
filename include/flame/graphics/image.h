@@ -103,19 +103,18 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 		};
 
+		struct ImageTile
+		{
+			virtual uint get_index() const = 0;
+			virtual const wchar_t* get_filename() const = 0;
+			virtual uint get_id() const = 0;
+			virtual Vec2i get_pos() const = 0;
+			virtual Vec2i get_size() const = 0;
+			virtual Vec4f get_uv() const = 0;
+		};
+
 		struct ImageAtlas : Object
 		{
-			struct Tile
-			{
-				virtual uint get_index() const = 0;
-				virtual const wchar_t* get_filename() const = 0;
-				virtual uint get_id() const = 0;
-				virtual Vec2i get_pos() const = 0;
-				virtual Vec2i get_size() const = 0;
-				virtual Vec2f get_uv0() const = 0;
-				virtual Vec2f get_uv1() const = 0;
-			};
-
 			ImageAtlas() :
 				Object("ImageAtlas")
 			{
@@ -126,8 +125,8 @@ namespace flame
 			virtual bool get_border() const = 0;
 
 			virtual uint get_tiles_count() const = 0;
-			virtual Tile* get_tile(uint idx) const = 0;
-			virtual Tile* find_tile(uint id) const = 0;
+			virtual ImageTile* get_tile(uint idx) const = 0;
+			virtual ImageTile* find_tile(uint id) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static ImageAtlas* create(Device* d, const wchar_t* filename);
 		};

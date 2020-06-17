@@ -10,13 +10,13 @@ namespace flame
 		struct Image;
 		struct Imageview;
 
-		struct AttachmentInfo
+		struct RenderpassAttachmentInfo
 		{
 			Format format;
 			bool clear;
 			SampleCount sample_count;
 
-			AttachmentInfo() :
+			RenderpassAttachmentInfo() :
 				format(Format_R8G8B8A8_UNORM),
 				clear(true),
 				sample_count(SampleCount_1)
@@ -24,22 +24,39 @@ namespace flame
 			}
 		};
 
-		struct SubpassInfo
+		struct RenderpassSubpassInfo
 		{
-			uint color_attachment_count;
+			uint color_attachments_count;
 			const uint* color_attachments;
-			uint resolve_attachment_count;
+			uint resolve_attachments_count;
 			const uint* resolve_attachments;
 			int depth_attachment;
 
-			SubpassInfo() :
-				color_attachment_count(0),
+			RenderpassSubpassInfo() :
+				color_attachments_count(0),
 				color_attachments(nullptr),
-				resolve_attachment_count(0),
+				resolve_attachments_count(0),
 				resolve_attachments(nullptr),
 				depth_attachment(-1)
 			{
 			}
+		};
+
+		struct RenderpassAttachment
+		{
+			virtual uint get_index() const = 0;
+			virtual Format get_format() const = 0;
+			virtual bool get_clear() const = 0;
+			virtual SampleCount get_sample_count() const = 0;
+		};
+
+		struct RenderpassSubpass
+		{
+			virtual uint get_color_attachments_count() const = 0;
+			virtual RenderpassAttachment* get_color_attachment(uint idx) const = 0;
+			virtual uint get_resolve_attachments_count() const = 0;
+			virtual RenderpassAttachment* get_resolve_attachment(uint idx) const = 0;
+			virtual RenderpassAttachment* get_depth_attachment() const = 0;
 		};
 
 		struct Renderpass
@@ -47,20 +64,23 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual uint get_attachments_count() const = 0;
-			virtual const AttachmentInfo& get_attachment_info(uint idx) const = 0;
+			virtual RenderpassAttachment* get_attachment_info(uint idx) const = 0;
 			virtual uint get_subpasses_count() const = 0;
-			virtual const SubpassInfo& get_subpass_info(uint idx) const = 0;
+			virtual RenderpassSubpass* get_subpass_info(uint idx) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies);
+			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, 
+				uint attachments_count, const RenderpassAttachmentInfo* attachments, 
+				uint subpasses_count, const RenderpassSubpassInfo* subpasses, 
+				uint dependencies_count = 0, const Vec2u* dependencies = nullptr);
 		};
 
 		struct Framebuffer
 		{
 			virtual void release() = 0;
 
-			Vec2u image_size;
-
-			virtual Renderpass* renderpass() const;
+			virtual Renderpass* get_renderpass() const = 0;
+			virtual uint get_views_count() const = 0;
+			virtual Imageview* get_view(uint idx) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, Renderpass* rp, uint view_count, Imageview* const* views);
 		};

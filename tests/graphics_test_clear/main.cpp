@@ -66,9 +66,9 @@ int main(int argc, char** args)
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);
 	{
-		AttachmentInfo att;
+		RenderpassAttachmentInfo att;
 		att.format = graphics::Swapchain::get_format();
-		SubpassInfo sp;
+		RenderpassSubpassInfo sp;
 		sp.color_attachment_count = 1;
 		uint col_refs[] = {
 			0

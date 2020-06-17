@@ -5,7 +5,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		RenderpassPrivate::RenderpassPrivate(Device* _d, uint attachment_count, const AttachmentInfo* _attachments, uint subpass_count, const SubpassInfo* _subpasses, uint dependency_count, const Vec2u* _dependencies) :
+		RenderpassPrivate::RenderpassPrivate(Device* _d, uint attachment_count, const RenderpassAttachmentInfo* _attachments, uint subpass_count, const RenderpassSubpassInfo* _subpasses, uint dependency_count, const Vec2u* _dependencies) :
 			d((DevicePrivate*)_d)
 		{
 #if defined(FLAME_VULKAN)
@@ -55,23 +55,23 @@ namespace flame
 				dst.pDepthStencilAttachment = nullptr;
 				dst.preserveAttachmentCount = 0;
 				dst.pPreserveAttachments = nullptr;
-				if (src.color_attachment_count)
+				if (src.color_attachments_count > 0)
 				{
 					auto& v = vk_color_refs[i];
-					v.resize(src.color_attachment_count);
+					v.resize(src.color_attachments_count);
 					for (auto j = 0; j < v.size(); j++)
 					{
 						auto& r = v[j];
 						r.attachment = src.color_attachments[j];
 						r.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
-					dst.colorAttachmentCount = src.color_attachment_count;
+					dst.colorAttachmentCount = src.color_attachments_count;
 					dst.pColorAttachments = v.data();
 				}
-				if (src.resolve_attachment_count)
+				if (src.resolve_attachments_count > 0)
 				{
 					auto& v = vk_resolve_refs[i];
-					v.resize(src.resolve_attachment_count);
+					v.resize(src.resolve_attachments_count);
 					for (auto j = 0; j < v.size(); j++)
 					{
 						auto& r = v[j];
@@ -136,7 +136,7 @@ namespace flame
 
 		void RenderpassPrivate::release() { delete this; }
 
-		Renderpass* Renderpass::create(Device* d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
+		Renderpass* Renderpass::create(Device* d, uint attachment_count, const RenderpassAttachmentInfo* attachments, uint subpass_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
 		{
 			return new RenderpassPrivate(d, attachment_count, attachments, subpass_count, subpasses, dependency_count, dependencies);
 		}
@@ -195,9 +195,9 @@ namespace flame
 
 		//void RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes)
 		//{
-		//	std::vector<AttachmentInfo*> rp_attachments;
-		//	std::vector<SubpassInfo*> rp_subpasses;
-		//	std::vector<std::tuple<TargetType, void*, std::unique_ptr<AttachmentInfo>, Vec4c>> att_infos;
+		//	std::vector<RenderpassAttachmentInfo*> rp_attachments;
+		//	std::vector<RenderpassSubpassInfo*> rp_subpasses;
+		//	std::vector<std::tuple<TargetType, void*, std::unique_ptr<RenderpassAttachmentInfo>, Vec4c>> att_infos;
 		//	std::vector<std::unique_ptr<SubpassInfoPrivate>> sp_infos;
 		//	for (auto i = 0; i < pass_count; i++)
 		//	{
@@ -214,7 +214,7 @@ namespace flame
 		//			auto image = image_from_target(t.type, t.v);
 		//			assert(image);
 
-		//			auto att_info = new AttachmentInfo;
+		//			auto att_info = new RenderpassAttachmentInfo;
 		//			att_info->format = image->format;
 		//			att_info->clear = t.clear;
 		//			att_info->sample_count = image->sample_count;

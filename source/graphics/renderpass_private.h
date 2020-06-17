@@ -10,38 +10,32 @@ namespace flame
 	{
 		struct DevicePrivate;
 
-		struct SubpassInfoPrivate : SubpassInfo
+		struct RenderpassAttachmentPrivate : RenderpassAttachment
 		{
-			std::vector<uint> _color_attachments;
-			std::vector<uint> _resolve_attachments;
+			uint index;
+			Format format;
+			bool clear;
+			SampleCount sample_count;
+		};
 
-			void operator=(const SubpassInfo& info)
-			{
-				_color_attachments.resize(info.color_attachment_count);
-				for (auto i = 0; i < info.color_attachment_count; i++)
-					_color_attachments[i] = info.color_attachments[i];
-				_resolve_attachments.resize(info.resolve_attachment_count);
-				for (auto i = 0; i < info.resolve_attachment_count; i++)
-					_resolve_attachments[i] = info.resolve_attachments[i];
-				color_attachment_count = info.color_attachment_count;
-				color_attachments = _color_attachments.data();
-				resolve_attachment_count = info.resolve_attachment_count;
-				resolve_attachments = _resolve_attachments.data();
-				depth_attachment = info.depth_attachment;
-			}
+		struct RenderpassSubpassPrivate : RenderpassSubpass
+		{
+			std::vector<RenderpassAttachmentPrivate*> color_attachments;
+			std::vector<RenderpassAttachmentPrivate*> resolve_attachments;
+			RenderpassAttachmentPrivate* depth_attachment;
 		};
 
 		struct RenderpassPrivate : Renderpass
 		{
 			DevicePrivate* d;
 
-			std::vector<AttachmentInfo> attachments;
-			std::vector<SubpassInfoPrivate> subpasses;
+			std::vector<std::unique_ptr<RenderpassAttachmentPrivate>> attachments;
+			std::vector<std::unique_ptr<RenderpassSubpassPrivate>> subpasses;
 
 #if defined(FLAME_VULKAN)
 			VkRenderPass v;
 #endif
-			RenderpassPrivate(Device* d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies);
+			RenderpassPrivate(DevicePrivate* d, const std::span<RenderpassAttachmentInfo>& attachments, const std::span<RenderpassSubpassInfo>& subpasses, const std::span<Vec2u>& dependencies);
 			~RenderpassPrivate();
 
 			void release() override;
@@ -50,13 +44,15 @@ namespace flame
 		struct FramebufferPrivate : Framebuffer
 		{
 			DevicePrivate* d;
+
 			RenderpassPrivate* rp;
+			std::vector<ImageviewPrivate*> views;
 #if defined(FLAME_VULKAN)
 			VkFramebuffer v;
 #elif defined(FLAME_D3D12)
 
 #endif
-			FramebufferPrivate(Device* d, Renderpass* rp, uint view_count, Imageview* const* views);
+			FramebufferPrivate(DevicePrivate* d, RenderpassPrivate* rp, const std::span<ImageviewPrivate*>& views);
 			~FramebufferPrivate();
 
 			void release() override;

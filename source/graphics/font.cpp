@@ -11,7 +11,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		Font::Font(const std::wstring& _filename)
+		FontPrivate::FontPrivate(const std::wstring& _filename)
 		{
 			filename = _filename;
 			font_file = get_file_content(filename);
@@ -21,7 +21,7 @@ namespace flame
 			ref_count = 0;
 		}
 
-		static std::vector<std::unique_ptr<Font>> loaded_fonts;
+		static std::vector<std::unique_ptr<FontPrivate>> loaded_fonts;
 
 		Glyph* new_glyph()
 		{
@@ -49,7 +49,7 @@ namespace flame
 
 				id = hash_update(id, FLAME_HASH(fn));
 
-				Font* f = nullptr;
+				FontPrivate* f = nullptr;
 				auto filename = std::filesystem::canonical(fn);
 				for (auto& _f : loaded_fonts)
 				{
@@ -61,7 +61,7 @@ namespace flame
 				}
 				if (!f)
 				{
-					f = new Font(filename);
+					f = new FontPrivate(filename);
 					report_used_file(filename.c_str());
 					loaded_fonts.emplace_back(f);
 				}
@@ -102,7 +102,7 @@ namespace flame
 
 		void FontAtlasPrivate::release() { delete this; }
 
-		const Glyph* FontAtlasPrivate::get_glyph(wchar_t unicode, uint font_size)
+		Glyph* FontAtlasPrivate::get_glyph(wchar_t unicode, uint font_size)
 		{
 			if (font_size == 0)
 				return empty_glyph.get();

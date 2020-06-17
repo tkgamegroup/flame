@@ -15,10 +15,10 @@ namespace flame
 	{
 		std::vector<std::unique_ptr<Closure<bool(Capture& c)>>> listeners;
 
-		void release() override;
+		void release() override { delete this; }
 
-		uint count() const override;
-		Closure<bool(Capture&)>& item(uint idx) const override;
+		uint count() const override { return listeners.size(); }
+		Closure<bool(Capture&)>& item(uint idx) const override { return *listeners[idx].get(); }
 		void* add(bool(*pf)(Capture& c), const Capture& capture, int pos) override;
 		void remove(void* l) override;
 	};
@@ -65,20 +65,20 @@ namespace flame
 
 		void* get_native() override;
 
-		Vec2i get_pos() const override;
+		Vec2i get_pos() const override { return pos; }
 		void set_pos(const Vec2i& pos) override;
-		Vec2u get_size() const override;
+		Vec2u get_size() const override { return size; }
 		void set_size(const Vec2u& size) override;
 
-		const char* get_title() const override;
+		const char* get_title() const override { return title.c_str(); }
 		void set_title(const char* title) override;
 
-		int get_style() const override;
+		int get_style() const override { return style; }
 
-		CursorType get_cursor() override;
+		CursorType get_cursor() override { return cursor_type; }
 		void set_cursor(CursorType type) override;
 
-		void close() override;
+		void close() override { dead = true; }
 
 		void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) override;
 		void remove_key_listener(void* ret) override;

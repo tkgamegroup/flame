@@ -20,8 +20,10 @@ namespace flame
 			ID3D12CommandAllocator* v;
 #endif
 
-			CommandpoolPrivate(Device* d, int queue_family_idx);
+			CommandpoolPrivate(DevicePrivate* d, int queue_family_idx);
 			~CommandpoolPrivate();
+
+			void release() override;
 		};
 
 		struct CommandbufferPrivate : Commandbuffer
@@ -38,33 +40,36 @@ namespace flame
 			bool recording;
 #endif
 
-			CommandbufferPrivate(Commandpool* p, bool sub);
+			CommandbufferPrivate(CommandpoolPrivate* p, bool sub = false);
 			~CommandbufferPrivate();
 
-			void begin(bool once = false);
+			void release() override;
 
-			void begin_renderpass(Framebuffer* fb, uint clearvalue_count, const Vec4f* clearvalues);
-			void end_renderpass();
-			void set_viewport(const Vec4f& rect);
-			void set_scissor(const Vec4f& rect);
-			void bind_pipeline(Pipeline* p);
-			void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll);
-			void bind_vertexbuffer(Buffer* b, uint id);
-			void bind_indexbuffer(Buffer* b, IndiceType t);
-			void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll);
-			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
-			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
-			void dispatch(const Vec3u& v);
+			void begin(bool once = false) override;
 
-			void copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies);
-			void copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies);
-			void copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies);
-			void copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies);
-			void change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count);
+			void begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues) override;
+			void _begin_renderpass(FramebufferPrivate* fb, const std::span<Vec4f>& clearvalues);
+			void end_renderpass() override;
+			void set_viewport(const Vec4f& rect) override;
+			void set_scissor(const Vec4f& rect) override;
+			void bind_pipeline(Pipeline* p) override;
+			void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll) override;
+			void bind_vertexbuffer(Buffer* b, uint id) override;
+			void bind_indexbuffer(Buffer* b, IndiceType t) override;
+			void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll) override;
+			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;
+			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
+			void dispatch(const Vec3u& v) override;
 
-			void clear_image(ImagePrivate* i, const Vec4c& col);
+			void copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies) override;
+			void copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies) override;
+			void copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies) override;
+			void copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies) override;
+			void change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count) override;
 
-			void end();
+			void clear_image(Image* i, const Vec4c& col) override;
+
+			void end() override;
 		};
 
 		struct QueuePrivate : Queue
@@ -76,12 +81,14 @@ namespace flame
 			ID3D12CommandQueue* v;
 #endif
 
-			QueuePrivate(Device* d, uint queue_family_idx);
-			~QueuePrivate();
+			QueuePrivate(DevicePrivate* d, uint queue_family_idx);
 
-			void wait_idle();
-			void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence);
-			void present(Swapchain* s, Semaphore* wait_semaphore);
+			void release() override;
+
+			void wait_idle() override;
+			void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) override;
+			void _submit(const std::span<CommandbufferPrivate*>& cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence);
+			void present(Swapchain* s, Semaphore* wait_semaphore) override;
 		};
 	}
 }

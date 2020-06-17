@@ -25,10 +25,10 @@ namespace flame
 			if (!rp)
 			{
 				auto fmt = Swapchain::get_format();
-				AttachmentInfo att;
+				RenderpassAttachmentInfo att;
 				att.format = fmt;
 				att.clear = true;
-				SubpassInfo sp;
+				RenderpassSubpassInfo sp;
 				uint col_refs[] = {
 					0
 				};
@@ -463,3 +463,16 @@ namespace flame
 		}
 	}
 }
+
+
+//void add_atlas(ImageAtlas* a)
+//{
+//	a->canvas_ = this;
+//	a->canvas_slot_ = set_resource(-1, a->imageview(), Sampler::get_default(a->border ? FilterLinear : FilterNearest), a);
+//}
+
+//void add_font(FontAtlas* f)
+//{
+//	f->canvas_ = this;
+//	f->canvas_slot_ = set_resource(-1, f->imageview(), Sampler::get_default(FilterNearest));
+//}

@@ -18,13 +18,6 @@ namespace flame
 		hash = FLAME_HASH(name.c_str());
 	}
 
-	TypeTag TypeInfoPrivate::get_tag() const { return tag; }
-	bool TypeInfoPrivate::get_is_array() const { return is_array; }
-	const char* TypeInfoPrivate::get_base_name() const { return base_name.c_str(); }
-	uint TypeInfoPrivate::get_base_hash() const { return base_hash; }
-	const char* TypeInfoPrivate::get_name() const { return name.c_str(); }
-	uint TypeInfoPrivate::get_hash() const { return hash; }
-
 	TypeInfo* TypeInfo::get(TypeTag tag, const char* base_name, bool is_array)
 	{
 		auto hash = FLAME_HASH(make_str(tag, base_name, is_array).c_str());
@@ -59,16 +52,6 @@ namespace flame
 		delete[]default_value;
 	}
 
-	UdtInfo* VariableInfoPrivate::get_udt() const { return udt; }
-	uint VariableInfoPrivate::get_index() const { return index; }
-	TypeInfo* VariableInfoPrivate::get_type() const { return type; }
-	const char* VariableInfoPrivate::get_name() const { return name.c_str(); }
-	uint VariableInfoPrivate::get_name_hash() const { return name_hash; }
-	uint VariableInfoPrivate::get_flags() const { return flags; }
-	uint VariableInfoPrivate::get_offset() const { return offset; }
-	uint VariableInfoPrivate::get_size() const { return size; }
-	const void* VariableInfoPrivate::get_default_value() const { return default_value; }
-
 	EnumItemPrivate::EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
 		ei(ei),
 		index(index),
@@ -77,22 +60,12 @@ namespace flame
 	{
 	}
 
-	EnumInfo* EnumItemPrivate::get_enum() const { return ei; }
-	uint EnumItemPrivate::get_index() const { return index; }
-	const char* EnumItemPrivate::get_name() const { return name.c_str(); }
-	int EnumItemPrivate::get_value() const { return value; }
-
 	EnumInfoPrivate::EnumInfoPrivate(TypeInfoDatabasePrivate* db, const std::string& name) :
 		db(db),
 		name(name)
 	{
 	}
 
-	TypeInfoDatabase* EnumInfoPrivate::get_database() const { return db; }
-	const char* EnumInfoPrivate::get_name() const { return name.c_str(); }
-	uint EnumInfoPrivate::get_items_count() const { return items.size(); }
-	EnumItem* EnumInfoPrivate::get_item(uint idx) const { return items[idx].get(); }
-	EnumItem* EnumInfoPrivate::find_item(const char* name) const { return _find_item(name); }
 	EnumItemPrivate* EnumInfoPrivate::_find_item(const std::string& name) const
 	{
 		for (auto& i : items)
@@ -102,7 +75,6 @@ namespace flame
 		}
 		return nullptr;
 	}
-	EnumItem* EnumInfoPrivate::find_item(int value) const { return _find_item(value); }
 	EnumItemPrivate* EnumInfoPrivate::_find_item(int value) const
 	{
 		for (auto& i : items)
@@ -123,16 +95,6 @@ namespace flame
 	{
 	}
 
-	TypeInfoDatabase* FunctionInfoPrivate::get_database() const { return db; }
-	UdtInfo* FunctionInfoPrivate::get_udt() const { return udt; }
-	uint FunctionInfoPrivate::get_index() const { return index; }
-	const char* FunctionInfoPrivate::get_name() const { return name.c_str(); }
-	const void* FunctionInfoPrivate::get_rva() const { return rva; }
-	TypeInfo* FunctionInfoPrivate::get_type() const { return type; }
-	uint FunctionInfoPrivate::get_parameters_count() const { return parameters.size(); }
-	TypeInfo* FunctionInfoPrivate::get_parameter(uint idx) const { return parameters[idx]; }
-	const char* FunctionInfoPrivate::get_code() const { return code.c_str(); }
-
 	UdtInfoPrivate::UdtInfoPrivate(TypeInfoDatabasePrivate* db, const std::string& name, uint size, const std::string& base_name) :
 		db(db),
 		name(name),
@@ -141,13 +103,6 @@ namespace flame
 	{
 	}
 
-	TypeInfoDatabase* UdtInfoPrivate::get_database() const { return db; }
-	const char* UdtInfoPrivate::get_name() const { return name.c_str(); }
-	uint UdtInfoPrivate::get_size() const { return size; }
-	const char* UdtInfoPrivate::get_base_name() const { return base_name.c_str(); }
-	uint UdtInfoPrivate::get_variables_count() const { return variables.size(); }
-	VariableInfo* UdtInfoPrivate::get_variable(uint idx) const { return variables[idx].get(); }
-	VariableInfo* UdtInfoPrivate::find_variable(const char* name) const { return _find_variable(name); }
 	VariableInfoPrivate* UdtInfoPrivate::_find_variable(const std::string& name) const
 	{
 		for (auto& v : variables)
@@ -157,9 +112,6 @@ namespace flame
 		}
 		return nullptr;
 	}
-	uint UdtInfoPrivate::get_functions_count() const { return functions.size(); }
-	FunctionInfo* UdtInfoPrivate::get_function(uint idx) const { return functions[idx].get(); }
-	FunctionInfo* UdtInfoPrivate::find_function(const char* name) const { return _find_function(name); }
 	FunctionInfoPrivate* UdtInfoPrivate::_find_function(const std::string& name) const
 	{
 		for (auto& f : functions)
@@ -181,11 +133,6 @@ namespace flame
 		if (library)
 			free_library(library);
 	}
-
-	void TypeInfoDatabasePrivate::release() { delete this; }
-
-	const void* TypeInfoDatabasePrivate::get_library() const { return library; }
-	const wchar_t* TypeInfoDatabasePrivate::get_library_name() const { return library_name.c_str(); }
 
 	EnumInfo* TypeInfoDatabasePrivate::get_enum(uint hash) const 
 	{

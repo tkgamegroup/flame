@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string>
 #include <vector>
+#include <span>
 #include <stack>
 #include <list>
 #include <map>

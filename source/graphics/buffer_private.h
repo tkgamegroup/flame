@@ -25,13 +25,13 @@ namespace flame
 			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing = false, void* data = nullptr);
 			~BufferPrivate();
 
-			void release() override;
+			void release() override { delete this; }
 
-			uint get_size() const override;
+			uint get_size() const override { return size; }
 
-			void* get_mapped() const override;
+			void* get_mapped() const override { return mapped; }
 
-			void map(uint offset = 0, uint _size = 0) override;
+			void map(uint offset = 0, uint size = 0) override;
 			void unmap() override;
 			void flush() override;
 

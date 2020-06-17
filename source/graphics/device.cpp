@@ -415,7 +415,7 @@ namespace flame
 
 			printf("vulkan initialized, gpu count: %d\n", gpu_count);
 
-			default_descriptorpool = Descriptorpool::create(this);
+			default_descriptorpool.reset(new DescriptorpoolPrivate(this));
 			default_sampler_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
 			default_sampler_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
 			default_graphics_commandpool = Commandpool::create(this, gq_idx);
@@ -467,22 +467,24 @@ namespace flame
 		{
 		}
 
-		uint DevicePrivate::find_memory_type(uint type_filter, MemPropFlags properties)
-		{
-			auto p = to_backend_flags<MemProp>(properties);
-#if defined(FLAME_VULKAN)
-			for (uint i = 0; i < mem_props.memoryTypeCount; i++)
-			{
-				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & p) == p)
-					return i;
-			}
-#elif defined(FLAME_D3D12)
+		void DevicePrivate::release() { delete this; }
 
-#endif
-			return -1;
+		static DevicePrivate* _default;
+
+		void DevicePrivate::set_default()
+		{
+			_default = this;
 		}
 
-		bool DevicePrivate::has_feature(Feature f)
+		Descriptorpool* DevicePrivate::get_default_descriptorpool() const { return default_descriptorpool; }
+		Sampler* DevicePrivate::get_default_sampler_nearest() const { return default_sampler_nearest; }
+		Sampler* DevicePrivate::get_default_sampler_linear() const { return default_sampler_linear; }
+		Commandpool* DevicePrivate::get_default_graphics_commandpool() const { return default_graphics_commandpool; }
+		Commandpool* DevicePrivate::get_default_transfer_commandpool() const { return default_transfer_commandpool; }
+		Queue* DevicePrivate::get_default_graphics_queue() const { return default_graphics_queue; }
+		Queue* DevicePrivate::get_default_transfer_queue() const { return default_transfer_queue; }
+
+		bool DevicePrivate::has_feature(Feature f) const
 		{
 #if defined(FLAME_VULKAN)
 			switch (f)
@@ -502,40 +504,32 @@ namespace flame
 			return false;
 		}
 
-		bool Device::has_feature(Feature f)
+		uint DevicePrivate::find_memory_type(uint type_filter, MemPropFlags properties)
 		{
-			return ((DevicePrivate*)this)->has_feature(f);
-		}
+			auto p = to_backend_flags<MemProp>(properties);
+#if defined(FLAME_VULKAN)
+			for (uint i = 0; i < mem_props.memoryTypeCount; i++)
+			{
+				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & p) == p)
+					return i;
+			}
+#elif defined(FLAME_D3D12)
 
-		static Device* _default;
+#endif
+			return -1;
+		}
 
 		Device* Device::get_default()
 		{
 			return _default;
 		}
 
-		void Device::set_default(Device* d)
-		{
-			_default = d;
-		}
-
 		Device* Device::create(bool debug, bool set_to_default)
 		{
 			auto d = new DevicePrivate(debug);
 			if (set_to_default)
-			{
 				_default = d;
-				Descriptorpool::set_default(d->default_descriptorpool);
-				Sampler::set_default(d->default_sampler_nearest, d->default_sampler_linear);
-				Commandpool::set_default(d->default_graphics_commandpool, d->default_transfer_commandpool);
-				Queue::set_default(d->default_graphics_queue, d->default_transfer_queue);
-			}
 			return d;
-		}
-
-		void Device::destroy(Device* d)
-		{
-			delete (DevicePrivate*)d;
 		}
 	}
 }

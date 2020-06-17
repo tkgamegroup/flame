@@ -22,8 +22,6 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Commandpool* get_default(QueueFamily family);
-			FLAME_GRAPHICS_EXPORTS static void set_default(Commandpool* graphics, Commandpool* transfer);
 			FLAME_GRAPHICS_EXPORTS static Commandpool* create(Device* d, int queue_family_idx);
 		};
 
@@ -83,30 +81,30 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS void begin(bool once = false);
+			virtual void begin(bool once = false) = 0;
 
-			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Framebuffer* fb, uint clearvalue_count, const Vec4f* clearvalues);
-			FLAME_GRAPHICS_EXPORTS void end_renderpass();
-			FLAME_GRAPHICS_EXPORTS void set_viewport(const Vec4f& rect);
-			FLAME_GRAPHICS_EXPORTS void set_scissor(const Vec4f& rect);
-			FLAME_GRAPHICS_EXPORTS void bind_pipeline(Pipeline* p);
-			FLAME_GRAPHICS_EXPORTS void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll = nullptr);
-			FLAME_GRAPHICS_EXPORTS void bind_vertexbuffer(Buffer* b, uint id);
-			FLAME_GRAPHICS_EXPORTS void bind_indexbuffer(Buffer* b, IndiceType t);
-			FLAME_GRAPHICS_EXPORTS void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll = nullptr);
-			FLAME_GRAPHICS_EXPORTS void draw(uint count, uint instance_count, uint first_vertex, uint first_instance);
-			FLAME_GRAPHICS_EXPORTS void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance);
-			FLAME_GRAPHICS_EXPORTS void dispatch(const Vec3u& v);
+			virtual void begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues) = 0;
+			virtual void end_renderpass() = 0;
+			virtual void set_viewport(const Vec4f& rect) = 0;
+			virtual void set_scissor(const Vec4f& rect) = 0;
+			virtual void bind_pipeline(Pipeline* p) = 0;
+			virtual void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll = nullptr) = 0;
+			virtual void bind_vertexbuffer(Buffer* b, uint id) = 0;
+			virtual void bind_indexbuffer(Buffer* b, IndiceType t) = 0;
+			virtual void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll = nullptr) = 0;
+			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
+			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
+			virtual void dispatch(const Vec3u& v) = 0;
 
-			FLAME_GRAPHICS_EXPORTS void copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies);
-			FLAME_GRAPHICS_EXPORTS void copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies);
-			FLAME_GRAPHICS_EXPORTS void copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies);
-			FLAME_GRAPHICS_EXPORTS void copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies);
-			FLAME_GRAPHICS_EXPORTS void change_image_layout(Image* t, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 0, uint base_layer = 0, uint layer_count = 0);
+			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies) = 0;
+			virtual void copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies) = 0;
+			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies) = 0;
+			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies) = 0;
+			virtual void change_image_layout(Image* t, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 0, uint base_layer = 0, uint layer_count = 0) = 0;
 
-			FLAME_GRAPHICS_EXPORTS void clear_image(Image* i, const Vec4c& col);
+			virtual void clear_image(Image* i, const Vec4c& col) = 0;
 
-			FLAME_GRAPHICS_EXPORTS void end();
+			virtual void end() = 0;
 
 			FLAME_GRAPHICS_EXPORTS  static Commandbuffer* create(Commandpool* p, bool sub = false);
 		};
@@ -115,12 +113,10 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS void wait_idle();
-			FLAME_GRAPHICS_EXPORTS void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence);
-			FLAME_GRAPHICS_EXPORTS void present(Swapchain* s, Semaphore* wait_semaphore);
+			virtual void wait_idle() = 0;
+			virtual void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
+			virtual void present(Swapchain* s, Semaphore* wait_semaphore) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Queue* get_default(QueueFamily family);
-			FLAME_GRAPHICS_EXPORTS static void set_default(Queue* graphics, Queue* transfer);
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* d, uint queue_family_idx);
 		};
 	}

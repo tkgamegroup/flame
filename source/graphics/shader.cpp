@@ -41,26 +41,11 @@ namespace flame
 #endif
 		}
 
-		static Descriptorpool* _default_pool;
-
-		Descriptorpool* Descriptorpool::get_default()
-		{
-			return _default_pool;
-		}
-
-		void Descriptorpool::set_default(Descriptorpool* p)
-		{
-			_default_pool = p;
-		}
+		void DescriptorpoolPrivate::release() { delete this; }
 
 		Descriptorpool* Descriptorpool::create(Device* d)
 		{
 			return new DescriptorpoolPrivate(d);
-		}
-
-		void Descriptorpool::destroy(Descriptorpool* p)
-		{
-			delete (DescriptorpoolPrivate*)p;
 		}
 
 		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, uint binding_count, const DescriptorBinding* _bindings, bool create_default) :
