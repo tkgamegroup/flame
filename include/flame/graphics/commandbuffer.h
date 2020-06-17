@@ -20,10 +20,11 @@ namespace flame
 
 		struct Commandpool
 		{
+			virtual void release() = 0;
+
 			FLAME_GRAPHICS_EXPORTS static Commandpool* get_default(QueueFamily family);
 			FLAME_GRAPHICS_EXPORTS static void set_default(Commandpool* graphics, Commandpool* transfer);
 			FLAME_GRAPHICS_EXPORTS static Commandpool* create(Device* d, int queue_family_idx);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Commandpool* p);
 		};
 
 		struct BufferCopy
@@ -80,6 +81,8 @@ namespace flame
 
 		struct Commandbuffer
 		{
+			virtual void release() = 0;
+
 			FLAME_GRAPHICS_EXPORTS void begin(bool once = false);
 
 			FLAME_GRAPHICS_EXPORTS void begin_renderpass(Framebuffer* fb, uint clearvalue_count, const Vec4f* clearvalues);
@@ -106,11 +109,12 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS void end();
 
 			FLAME_GRAPHICS_EXPORTS  static Commandbuffer* create(Commandpool* p, bool sub = false);
-			FLAME_GRAPHICS_EXPORTS  static void destroy(Commandbuffer* c);
 		};
 
 		struct Queue
 		{
+			virtual void release() = 0;
+
 			FLAME_GRAPHICS_EXPORTS void wait_idle();
 			FLAME_GRAPHICS_EXPORTS void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence);
 			FLAME_GRAPHICS_EXPORTS void present(Swapchain* s, Semaphore* wait_semaphore);
@@ -118,7 +122,6 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Queue* get_default(QueueFamily family);
 			FLAME_GRAPHICS_EXPORTS static void set_default(Queue* graphics, Queue* transfer);
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* d, uint queue_family_idx);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Queue* q);
 		};
 	}
 }

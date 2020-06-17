@@ -44,23 +44,25 @@ namespace flame
 
 		struct Renderpass
 		{
-			FLAME_GRAPHICS_EXPORTS uint attachment_count() const;
-			FLAME_GRAPHICS_EXPORTS const AttachmentInfo& attachment_info(uint idx) const;
-			FLAME_GRAPHICS_EXPORTS uint subpass_count() const;
-			FLAME_GRAPHICS_EXPORTS const SubpassInfo& subpass_info(uint idx) const;
+			virtual void release() = 0;
+
+			virtual uint get_attachments_count() const = 0;
+			virtual const AttachmentInfo& get_attachment_info(uint idx) const = 0;
+			virtual uint get_subpasses_count() const = 0;
+			virtual const SubpassInfo& get_subpass_info(uint idx) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Renderpass *r);
 		};
 
 		struct Framebuffer
 		{
+			virtual void release() = 0;
+
 			Vec2u image_size;
 
-			FLAME_GRAPHICS_EXPORTS Renderpass* renderpass() const;
+			virtual Renderpass* renderpass() const;
 
 			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, Renderpass* rp, uint view_count, Imageview* const* views);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Framebuffer* f);
 		};
 	}
 }

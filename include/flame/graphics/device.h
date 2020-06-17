@@ -24,6 +24,8 @@ namespace flame
 
 		struct Device
 		{
+			virtual void release() = 0;
+
 			Descriptorpool* default_descriptorpool;
 			Sampler* default_sampler_nearest;
 			Sampler* default_sampler_linear;
@@ -37,7 +39,6 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Device* get_default();
 			FLAME_GRAPHICS_EXPORTS static void set_default(Device* d);
 			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug, bool set_to_current = true);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Device* d);
 		};
 	}
 }

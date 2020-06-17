@@ -140,7 +140,7 @@ namespace flame
 		return b;
 	}
 
-	Bitmap* Bitmap::create_from_file(const wchar_t* filename)
+	Bitmap* Bitmap::create(const wchar_t* filename)
 	{
 		auto file = _wfopen(filename, L"rb");
 		if (!file)

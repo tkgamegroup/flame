@@ -973,7 +973,7 @@ namespace flame
 		//h_file.close();
 	}
 
-	bpScene* bpScene::create_from_file(const wchar_t* filename)
+	bpScene* bpScene::create(const wchar_t* filename)
 	{
 		auto s_filename = w2s(filename);
 		auto path = std::filesystem::path(filename);

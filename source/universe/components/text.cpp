@@ -36,7 +36,6 @@ namespace flame
 	{
 		if (!element->clipped)
 		{
-			assert(font_atlas->canvas_slot_ != -1);
 			canvas->add_text(font_atlas, text.v, nullptr, font_size * element->global_scale, element->content_min(),
 				color.copy().factor_w(element->alpha));
 		}

@@ -1,6 +1,6 @@
 #include "device_private.h"
 #include "synchronize_private.h"
-#include <flame/graphics/image.h>
+#include "image_private.h"
 #include <flame/graphics/renderpass.h>
 #include "commandbuffer_private.h"
 #include "swapchain_private.h"
@@ -15,10 +15,10 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* w, bool add_trans_dst_usage) :
+		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* w, ImageUsageFlags extra_usages = 0) :
 			d((DevicePrivate*)_d),
 			w(w),
-			add_trans_dst_usage(add_trans_dst_usage),
+			extra_usages(extra_usages),
 			s(nullptr),
 			v(nullptr)
 		{
@@ -31,18 +31,13 @@ namespace flame
 				c.thiz<SwapchainPrivate>()->w = nullptr;
 			}, Capture().set_thiz(this));
 
-			image_avalible = (SemaphorePrivate*)Semaphore::create(d);
+			image_avalible.reset(new SemaphorePrivate(d));
 		}
 
 		SwapchainPrivate::~SwapchainPrivate()
 		{
-			Semaphore::destroy(image_avalible);
-
 			if (w)
 				w->remove_resize_listener(resize_listener);
-
-			for (auto i : images)
-				Image::destroy(i);
 
 #if defined(FLAME_VULKAN)
 			if (v)
@@ -54,14 +49,30 @@ namespace flame
 #endif
 		}
 
+		void SwapchainPrivate::release() { delete this; }
+
+		Window* SwapchainPrivate::get_window() const { return w; }
+		uint SwapchainPrivate::get_images_count() const { return images.size(); }
+		Image* SwapchainPrivate::get_image(uint idx) const { return images[idx].get(); }
+		Semaphore* SwapchainPrivate::get_image_avalible() const { return image_avalible.get(); }
+
+		uint SwapchainPrivate::get_image_index() const { return image_index; }
+		void SwapchainPrivate::acquire_image()
+		{
+#if defined(FLAME_VULKAN)
+			chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, image_avalible->v, VK_NULL_HANDLE, &image_index));
+#elif defined(FLAME_D3D12)
+			image_index = v->GetCurrentBackBufferIndex();
+#endif
+		}
+
+		uint SwapchainPrivate::get_hash() const { return hash; }
+
 		void SwapchainPrivate::update()
 		{
 			Queue::get_default(QueueGraphics)->wait_idle();
 
-			for (auto i : images)
-				Image::destroy(i);
 			images.clear();
-
 
 #if defined(FLAME_VULKAN)
 			if (v)
@@ -141,7 +152,7 @@ namespace flame
 				swapchain_info.imageExtent.width = size.x();
 				swapchain_info.imageExtent.height = size.y();
 				swapchain_info.imageArrayLayers = 1;
-				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (add_trans_dst_usage ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : 0);
+				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (extra_usages ? get_backend_image_usage_flags(extra_usages) : 0);
 				swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 				swapchain_info.queueFamilyIndexCount = 0;
 				swapchain_info.pQueueFamilyIndices = nullptr;
@@ -196,7 +207,7 @@ namespace flame
 
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
-					images[i] = Image::create_from_native(d, swapchain_format, size, 1, 1, native_images[i]);
+					images[i].reset(new ImagePrivate(d, swapchain_format, size, 1, 1, native_images[i]));
 			}
 
 			hash = 0;
@@ -204,63 +215,14 @@ namespace flame
 				hash = hash_update(hash, ((uint*)&v)[i]);
 		}
 
-		void SwapchainPrivate::acquire_image()
-		{
-#if defined(FLAME_VULKAN)
-			chk_res(vkAcquireNextImageKHR(d->v, v, UINT64_MAX, image_avalible->v, VK_NULL_HANDLE, &image_index));
-#elif defined(FLAME_D3D12)
-			image_index = v->GetCurrentBackBufferIndex();
-#endif
-		}
-
 		Format Swapchain::get_format()
 		{
 			return swapchain_format;
 		}
 
-		Window* Swapchain::window() const
+		Swapchain *Swapchain::create(Device *d, Window* w, ImageUsageFlags extra_usages)
 		{
-			return ((SwapchainPrivate*)this)->w;
-		}
-
-		uint Swapchain::image_count() const
-		{
-			return ((SwapchainPrivate*)this)->images.size();
-		}
-
-		Image* Swapchain::image(uint idx) const
-		{
-			return ((SwapchainPrivate*)this)->images[idx];
-		}
-
-		Semaphore* Swapchain::image_avalible() const
-		{
-			return ((SwapchainPrivate*)this)->image_avalible;
-		}
-
-		uint Swapchain::image_index() const
-		{
-			return ((SwapchainPrivate*)this)->image_index;
-		}
-
-		void Swapchain::acquire_image()
-		{
-			((SwapchainPrivate*)this)->acquire_image();
-		}
-
-		uint Swapchain::hash() const
-		{
-			return ((SwapchainPrivate*)this)->hash;
-		}
-
-		Swapchain *Swapchain::create(Device *d, Window* w, bool add_trans_dst_usage)
-		{
-			return new SwapchainPrivate(d, w, add_trans_dst_usage);
-		}
-
-		void Swapchain::destroy(Swapchain *s)
-		{
-			delete (SwapchainPrivate*)s;
+			return new SwapchainPrivate(d, w, extra_usages);
 		}
 	}
 }

@@ -10,18 +10,18 @@ namespace flame
 
 		struct Semaphore
 		{
+			virtual void release() = 0;
+
 			FLAME_GRAPHICS_EXPORTS static Semaphore *create(Device *d);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Semaphore *s);
 		};
 
 		struct Fence
 		{
-			uint vl;
+			virtual void release() = 0;
+
+			virtual void wait() = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* d);
-			FLAME_GRAPHICS_EXPORTS static void destroy(Fence* s);
-
-			FLAME_GRAPHICS_EXPORTS void wait();
 		};
 	}
 }

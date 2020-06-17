@@ -242,7 +242,7 @@ Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_i
 	ui.next_element_size = 64.f;
 	ui.e_image(img_id << 16);
 	ui.e_text(app.font_atlas->wrap_text(ui.style(FontSize).u.x(), 64.f,
-		title.c_str(), title.c_str() + title.size()).v);
+		title.c_str(), title.c_str() + title.size()).c_str());
 	ui.parents.pop();
 	return e_item;
 }

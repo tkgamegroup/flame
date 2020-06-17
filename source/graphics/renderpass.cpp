@@ -134,74 +134,11 @@ namespace flame
 #endif
 		}
 
-		uint Renderpass::attachment_count() const
-		{
-			return ((RenderpassPrivate*)this)->attachments.size();
-		}
-
-		const AttachmentInfo& Renderpass::attachment_info(uint idx) const
-		{
-			return ((RenderpassPrivate*)this)->attachments[idx];
-		}
-
-		uint Renderpass::subpass_count() const
-		{
-			return ((RenderpassPrivate*)this)->subpasses.size();
-		}
-
-		const SubpassInfo& Renderpass::subpass_info(uint idx) const
-		{
-			return ((RenderpassPrivate*)this)->subpasses[idx];
-		}
+		void RenderpassPrivate::release() { delete this; }
 
 		Renderpass* Renderpass::create(Device* d, uint attachment_count, const AttachmentInfo* attachments, uint subpass_count, const SubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
 		{
 			return new RenderpassPrivate(d, attachment_count, attachments, subpass_count, subpasses, dependency_count, dependencies);
-		}
-
-		void Renderpass::destroy(Renderpass* r)
-		{
-			delete (RenderpassPrivate*)r;
-		}
-
-		ClearvaluesPrivate::ClearvaluesPrivate(Renderpass* _rp) :
-			rp((RenderpassPrivate*)_rp)
-		{
-			for (auto i = 0; i < rp->attachments.size(); i++)
-			{
-				auto fmt = rp->attachment_info(i).format;
-				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-#if defined(FLAME_VULKAN)
-					v.push_back({});
-#elif defined(FLAME_D3D12)
-					v.push_back(Vec4f(0.f));
-#endif
-				else
-#if defined(FLAME_VULKAN)
-					v.push_back({ 1, 0.f });
-#elif defined(FLAME_D3D12)
-					v.push_back(Vec4f(1.f, 0.f, 0.f, 0.f));
-#endif
-			}
-		}
-
-		ClearvaluesPrivate::~ClearvaluesPrivate()
-		{
-		}
-
-		void ClearvaluesPrivate::set(uint idx, const Vec4c& col)
-		{
-#if defined(FLAME_VULKAN)
-			v[idx].color.float32[0] = col.x() / 255.f;
-			v[idx].color.float32[1] = col.y() / 255.f;
-			v[idx].color.float32[2] = col.z() / 255.f;
-			v[idx].color.float32[3] = col.w() / 255.f;
-#elif defined(FLAME_D3D12)
-			v[idx].x() = col.x() / 255.0;
-			v[idx].y() = col.y() / 255.0;
-			v[idx].z() = col.z() / 255.0;
-			v[idx].w() = col.w() / 255.0;
-#endif
 		}
 
 		FramebufferPrivate::FramebufferPrivate(Device* _d, Renderpass* _rp, uint view_count, Imageview* const* views) :
@@ -244,6 +181,8 @@ namespace flame
 #endif
 		}
 
+		void FramebufferPrivate::release() { delete this; }
+
 		Renderpass* Framebuffer::renderpass() const
 		{
 			return ((FramebufferPrivate*)this)->rp;
@@ -252,11 +191,6 @@ namespace flame
 		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, uint view_count, Imageview* const* views)
 		{
 			return new FramebufferPrivate(d, rp, view_count, views);
-		}
-
-		void Framebuffer::destroy(Framebuffer* f)
-		{
-			delete (FramebufferPrivate*)f;
 		}
 
 		//void RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes)
@@ -312,7 +246,6 @@ namespace flame
 		//	}
 		//	rp = (RenderpassPrivate*)Renderpass::create(d, rp_attachments.size(), rp_attachments.data(), rp_subpasses.size(), rp_subpasses.data(), 0, nullptr);
 
-		//	cv = (ClearvaluesPrivate*)Clearvalues::create(rp);
 		//	for (auto i = 0; i < att_infos.size(); i++)
 		//		cv->set(i, std::get<3>(att_infos[i]));
 

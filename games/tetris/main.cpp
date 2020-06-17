@@ -88,7 +88,7 @@ struct Garbage
 
 struct MyApp : App
 {
-	graphics::Atlas* atlas;
+	graphics::ImageAtlas* atlas;
 
 	sound::Buffer* sound_move_buf;
 	sound::Buffer* sound_soft_drop_buf;
@@ -303,7 +303,7 @@ void MyApp::create()
 			soft_drop_speed = std::stoi(e.value);
 	}
 
-	atlas = graphics::Atlas::load(graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
+	atlas = graphics::ImageAtlas::load(graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
 
 	{
 		sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());

@@ -11,17 +11,14 @@ namespace flame
 {
 	namespace graphics
 	{
-		ImagePrivate::ImagePrivate(Device* _d, Format _format, const Vec2u& _size, uint _level, uint _layer, SampleCount _sample_count, ImageUsageFlags usage)
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format _format, const Vec2u& _size, uint _level, uint _layer, SampleCount _sample_count, ImageUsageFlags usage, bool default_view) :
+			d(d)
 		{
 			format = _format;
 			size = _size;
 			level = _level;
 			layer = _layer;
 			sample_count = _sample_count;
-
-			set_props();
-
-			d = (DevicePrivate*)_d;
 
 #if defined(FLAME_VULKAN)
 			VkImageCreateInfo imageInfo;
@@ -60,10 +57,11 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+			dv.reset(default_view ? new ImageviewPrivate(this) : nullptr);
 		}
 
-		ImagePrivate::ImagePrivate(Device* _d, Format _format, const Vec2u& _size, uint _level, uint _layer, void* native) :
-			d((DevicePrivate*)_d)
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format _format, const Vec2u& _size, uint _level, uint _layer, void* native, bool default_view) :
+			d(d)
 		{
 			format = _format;
 			size = _size;
@@ -71,14 +69,14 @@ namespace flame
 			layer = _layer;
 			sample_count = SampleCount_1;
 
-			set_props();
-
 #if defined(FLAME_VULKAN)
 			v = (VkImage)native;
 			m = 0;
 #elif defined(FLAME_D3D12)
 			v = (ID3D12Resource*)native;
 #endif
+
+			dv.reset(default_view ? new ImageviewPrivate(this) : nullptr);
 		}
 
 		ImagePrivate::~ImagePrivate()
@@ -92,50 +90,38 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			if (dv)
-				Imageview::destroy(dv);
 		}
 
-		void ImagePrivate::set_props()
+		void ImagePrivate::release() { delete this; }
+
+		Format ImagePrivate::get_format() const { return format; }
+		Vec2u ImagePrivate::get_size() const { return size; }
+		uint ImagePrivate::get_level() const { return level; }
+		uint ImagePrivate::get_layer() const { return layer; }
+		SampleCount ImagePrivate::get_sample_count() const { return sample_count; }
+
+		Imageview* ImagePrivate::get_default_view() const { return dv.get(); }
+
+		uint get_pixel_size(ImagePrivate* i)
 		{
-			switch (format)
+			switch (i->format)
 			{
 			case Format_R8_UNORM:
-				channel = 1;
-				bpp = 8;
-				break;
+				return 1;
 			case Format_R16_UNORM:
-				channel = 1;
-				bpp = 16;
-				break;
+				return 2;
 			case Format_R32_SFLOAT:
-				channel = 1;
-				bpp = 32;
-				break;
+				return 4;
 			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
-				channel = 4;
-				bpp = 32;
-				break;
+				return 4;
 			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
-				channel = 4;
-				bpp = 64;
-				break;
+				return 8;
 			case Format_R32G32B32A32_SFLOAT:
-				channel = 4;
-				bpp = 128;
-				break;
+				return 16;
 			case Format_Depth16:
-				channel = 1;
-				bpp = 16;
-				break;
-			default:
-				channel = 0;
-				bpp = 0;
-				assert(0);
+				return 2;
 			}
-			pitch = image_pitch(size.x() * bpp / 8);
-			data_size = pitch * size.y();
+			return 0;
 		}
 
 		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
@@ -166,14 +152,14 @@ namespace flame
 		{
 			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
-			auto data_size = (bpp / 8) * extent.x() * extent.y();
+			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
 
-			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferDst, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(d, data_size, BufferUsageTransferDst, MemPropHost);
 
 			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-			cb->copy_image_to_buffer(this, stag_buf, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
+			cb->copy_image_to_buffer(this, stag_buf.get(), 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
 			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
@@ -183,17 +169,15 @@ namespace flame
 			stag_buf->map();
 			memcpy(dst, stag_buf->mapped, stag_buf->size);
 			stag_buf->flush();
-
-			Buffer::destroy(stag_buf);
 		}
 
 		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
 		{
 			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
-			auto data_size = (bpp / 8) * extent.x() * extent.y();
+			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
 
-			auto stag_buf = Buffer::create(d, data_size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(d, data_size, BufferUsageTransferSrc, MemPropHost);
 			stag_buf->map();
 			memcpy(stag_buf->mapped, src, stag_buf->size);
 			stag_buf->flush();
@@ -201,49 +185,21 @@ namespace flame
 			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(stag_buf, this, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
+			cb->copy_buffer_to_image(stag_buf.get(), this, 1, &BufferImageCopy(Vec2u(extent), 0, 0, offset));
 			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
 			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
-
-			Buffer::destroy(stag_buf);
-		}
-
-		Imageview* Image::default_view() const
-		{
-			return ((ImagePrivate*)this)->dv;
-		}
-
-		void Image::change_layout(ImageLayout from, ImageLayout to)
-		{
-			((ImagePrivate*)this)->change_layout(from, to);
-		}
-
-		void Image::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
-		{
-			((ImagePrivate*)this)->clear(current_layout, after_layout, color);
-		}
-
-		void Image::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
-		{
-			((ImagePrivate*)this)->get_pixels(offset, extent, dst);
-		}
-
-		void Image::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
-		{
-			((ImagePrivate*)this)->set_pixels(offset, extent, src);
 		}
 
 		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view)
 		{
-			auto i = new ImagePrivate(d, format, size, level, layer, sample_count, usage);
-			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
+			auto i = new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage);
 
 			if (data)
 			{
-				auto staging_buffer = Buffer::create(d, i->data_size, BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				auto staging_buffer = std::make_unique<BufferPrivate>((DevicePrivate*)d, image_pitch(get_pixel_size(i) * size.x()) * size.y(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -252,24 +208,22 @@ namespace flame
 				cb->begin(true);
 				cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 				BufferImageCopy copy(i->size);
-				cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
+				cb->copy_buffer_to_image(staging_buffer.get(), i, 1, &copy);
 				cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
 				Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
 				Queue::get_default(QueueGraphics)->wait_idle();
 				Commandbuffer::destroy(cb);
-				Buffer::destroy(staging_buffer);
 			}
 
 			return i;
 		}
 
-		Image* Image::create_from_bitmap(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
+		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
 		{
-			auto i = (ImagePrivate*)create(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
-			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
+			auto i = new ImagePrivate((DevicePrivate*)d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
-			auto staging_buffer = Buffer::create(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+			auto staging_buffer = std::make_unique<BufferPrivate>((DevicePrivate*)d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
 			staging_buffer->map();
 			memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
 			staging_buffer->unmap();
@@ -278,18 +232,17 @@ namespace flame
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 			BufferImageCopy copy(i->size);
-			cb->copy_buffer_to_image(staging_buffer, i, 1, &copy);
+			cb->copy_buffer_to_image(staging_buffer.get(), i, 1, &copy);
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
 			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
-			Buffer::destroy(staging_buffer);
 
 			return i;
 		}
 
-		Image* Image::create_from_file(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool default_view)
+		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool default_view)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -301,7 +254,7 @@ namespace flame
 			int width, height, level, layer;
 			auto fmt = Format_Undefined;
 
-			Buffer* staging_buffer;
+			std::unique_ptr<BufferPrivate> staging_buffer;
 			std::vector<BufferImageCopy> buffer_copy_regions;
 
 			auto ext = path.extension().string();
@@ -336,13 +289,13 @@ namespace flame
 				//memcpy(staging_buffer->mapped, gli_texture.data(), staging_buffer->size);
 				//staging_buffer->unmap();
 
-				//auto offset = 0;
-				//for (auto i = 0; i < level; i++)
+				//auto offset override;
+				//for (auto i override; i < level; i++)
 				//{
 				//	BufferTextureCopy c;
 				//	c.buffer_offset = offset;
-				//	c.image_x = 0;
-				//	c.image_y = 0;
+				//	c.image_x override;
+				//	c.image_y override;
 				//	c.image_width = gli_texture.extent(i).x();
 				//	c.image_height = gli_texture.extent(i).y();
 				//	c.image_level = i;
@@ -352,7 +305,7 @@ namespace flame
 			}
 			else
 			{
-				auto bmp = Bitmap::create_from_file(filename);
+				auto bmp = Bitmap::create(filename);
 				auto channel = bmp->get_channel();
 				if (channel == 3)
 					bmp->add_alpha_channel();
@@ -363,7 +316,7 @@ namespace flame
 
 				fmt = get_image_format(channel, bmp->get_byte_per_channel());
 
-				staging_buffer = Buffer::create(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				staging_buffer.reset(new BufferPrivate((DevicePrivate*)d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent));
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
 				staging_buffer->unmap();
@@ -378,41 +331,14 @@ namespace flame
 			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin(true);
 			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(staging_buffer, i, buffer_copy_regions.size(), buffer_copy_regions.data());
+			cb->copy_buffer_to_image(staging_buffer.get(), i, buffer_copy_regions.size(), buffer_copy_regions.data());
 			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			Queue::get_default(QueueGraphics)->submit(1, &cb, nullptr, nullptr, nullptr);
 			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 
-			Buffer::destroy(staging_buffer);
-
 			return i;
-		}
-
-		void Image::save_to_png(Image* i, const wchar_t* filename)
-		{
-			if (i->bpp / i->channel <= 8)
-			{
-				auto bmp = Bitmap::create(i->size.x(), i->size.y(), i->channel, i->bpp / i->channel / 8);
-				i->get_pixels(Vec2u(0), i->size, bmp->get_data());
-				bmp->save_to_file(filename);
-				bmp->release();
-			}
-			else
-				printf("cannot save png that has more than 8bit per channel\n");
-		}
-
-		Image* Image::create_from_native(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view)
-		{
-			auto i = new ImagePrivate(d, format, size, level, layer, native);
-			i->dv = default_view ? (ImageviewPrivate*)Imageview::create(i) : nullptr;
-			return i;
-		}
-
-		void Image::destroy(Image* i)
-		{
-			delete (ImagePrivate*)i;
 		}
 
 		ImageviewPrivate::ImageviewPrivate(Image* _image, ImageviewType _type, uint _base_level, uint _level_count, uint _base_layer, uint _layer_count, Swizzle _swizzle_r, Swizzle _swizzle_g, Swizzle _swizzle_b, Swizzle _swizzle_a) :
@@ -474,19 +400,23 @@ namespace flame
 #endif
 		}
 
-		Image* Imageview::image() const
-		{
-			return ((ImageviewPrivate*)this)->image;
-		}
+		void ImageviewPrivate::release() { delete this; }
+
+		Image* ImageviewPrivate::get_image() const { return image; }
+
+		ImageviewType ImageviewPrivate::get_type() const { return type; }
+		uint ImageviewPrivate::get_base_level() const { return base_level; }
+		uint ImageviewPrivate::get_level_count() const { return level_count; }
+		uint ImageviewPrivate::get_base_layer() const { return base_layer; }
+		uint ImageviewPrivate::get_layer_count() const { return layer_count; }
+		Swizzle ImageviewPrivate::get_swizzle_r() const { return swizzle_r; }
+		Swizzle ImageviewPrivate::get_swizzle_g() const { return swizzle_g; }
+		Swizzle ImageviewPrivate::get_swizzle_b() const { return swizzle_b; }
+		Swizzle ImageviewPrivate::get_swizzle_a() const { return swizzle_a; }
 
 		Imageview* Imageview::create(Image* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a)
 		{
 			return new ImageviewPrivate(image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
-		}
-
-		void Imageview::destroy(Imageview* v)
-		{
-			delete (ImageviewPrivate*)v;
 		}
 
 		SamplerPrivate::SamplerPrivate(Device* _d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
@@ -509,9 +439,9 @@ namespace flame
 			info.compareEnable = VK_FALSE;
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
 			info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-			info.mipLodBias = 0.0f;
-			info.minLod = 0.0f;
-			info.maxLod = 0.0f;
+			info.mipLodBias = 0.f;
+			info.minLod = 0.f;
+			info.maxLod = 0.f;
 
 			chk_res(vkCreateSampler(d->v, &info, nullptr, &v));
 #elif defined(FLAME_D3D12)
@@ -528,41 +458,24 @@ namespace flame
 #endif
 		}
 
-		static Sampler* _default_sampler_nearest;
-		static Sampler* _default_sampler_linear;
-
-		Sampler* Sampler::get_default(Filter filter)
-		{
-			if (filter == FilterNearest)
-				return _default_sampler_nearest;
-			else if (filter == FilterLinear)
-				return _default_sampler_linear;
-			return nullptr;
-		}
-
-		void Sampler::set_default(Sampler* nearest, Sampler* linear)
-		{
-			_default_sampler_nearest = nearest;
-			_default_sampler_linear = linear;
-		}
+		void SamplerPrivate::release() { delete this; }
 
 		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
 		{
 			return new SamplerPrivate(d, mag_filter, min_filter, unnormalized_coordinates);
 		}
 
-		void Sampler::destroy(Sampler* s)
-		{
-			delete (SamplerPrivate*)s;
-		}
+		uint AtlasTilePrivate::get_index() const { return index; }
+		const wchar_t* AtlasTilePrivate::get_filename() const { return filename.c_str(); }
+		uint AtlasTilePrivate::get_id() const { return id; }
+		Vec2i AtlasTilePrivate::get_pos() const { return pos; }
+		Vec2i AtlasTilePrivate::get_size() const { return size; }
+		Vec2f AtlasTilePrivate::get_uv0() const { return uv0; }
+		Vec2f AtlasTilePrivate::get_uv1() const { return uv1; }
 
-		AtlasPrivate::~AtlasPrivate()
-		{
-			Imageview::destroy(imageview);
-			Image::destroy(image);
-		}
-
-		AtlasPrivate::AtlasPrivate(Device* d, const std::wstring& filename)
+		ImageAtlasPrivate::ImageAtlasPrivate(Device* d, const std::wstring& filename) :
+			border(false),
+			slot(-1)
 		{
 			id = FLAME_HASH(filename.c_str());
 
@@ -576,8 +489,7 @@ namespace flame
 					border = !(e.value == "0");
 			}
 
-			image = Image::create_from_file(d, image_filename.c_str());
-			imageview = Imageview::create(image);
+			image = (ImagePrivate*)Image::create(d, image_filename.c_str());
 
 			auto w = (float)image->size.x();
 			auto h = (float)image->size.y();
@@ -589,8 +501,7 @@ namespace flame
 				std::string t;
 				std::stringstream ss(e.value);
 				ss >> t;
-				tile->_filename = s2w(t);
-				tile->filename = tile->_filename.c_str();
+				tile->filename = s2w(t);
 				tile->id = FLAME_HASH(t.c_str());
 				ss >> t;
 				auto v = stou4(t.c_str());
@@ -605,22 +516,28 @@ namespace flame
 			}
 		}
 
-		Imageview* Atlas::imageview() const
+		ImageAtlasPrivate::~ImageAtlasPrivate()
 		{
-			return ((AtlasPrivate*)this)->imageview;
+			delete image;
 		}
 
-		uint Atlas::tile_count() const
+		void ImageAtlasPrivate::release() { delete this; }
+
+		bool ImageAtlasPrivate::get_border() const { return border; }
+
+		uint ImageAtlasPrivate::get_tiles_count() const { return tiles.size(); }
+		ImageAtlas::Tile* ImageAtlasPrivate::get_tile(uint idx) const { return tiles[idx].get(); }
+		ImageAtlas::Tile* ImageAtlasPrivate::find_tile(uint id) const
 		{
-			return ((AtlasPrivate*)this)->tiles.size();
+			for (auto& t : tiles)
+			{
+				if (t->id == id)
+					return t.get();
+			}
+			return nullptr;;
 		}
 
-		const Atlas::Tile& Atlas::tile(uint idx) const
-		{
-			return *((AtlasPrivate*)this)->tiles[idx];
-		}
-
-		Atlas* Atlas::load(Device* d, const wchar_t* filename)
+		ImageAtlas* ImageAtlas::create(Device* d, const wchar_t* filename)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -628,15 +545,10 @@ namespace flame
 				return nullptr;
 			}
 
-			auto atlas = new AtlasPrivate(d, filename);
+			auto atlas = new ImageAtlasPrivate(d, filename);
 			report_used_file(filename);
 
 			return atlas;
-		}
-
-		void Atlas::destroy(Atlas* a)
-		{
-			delete (AtlasPrivate*)a;
 		}
 	}
 }

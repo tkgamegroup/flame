@@ -11,7 +11,10 @@ namespace flame
 		struct Image;
 		struct Imageview;
 
-		FLAME_GRAPHICS_EXPORTS void get_latin_code_range(wchar_t& out_begin, wchar_t& out_end);
+		inline Vec2u get_latin_code_range()
+		{
+			return Vec2u(0x20, 0xff);
+		}
 
 		const Vec2u font_atlas_size = Vec2u(1024);
 
@@ -35,15 +38,14 @@ namespace flame
 
 		struct FontAtlas : Object
 		{
-			void* canvas_;
-			int canvas_slot_;
-
 			FontAtlas() :
 				Object("FontAtlas")
 			{
 			}
 
-			Vec2u text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			virtual void release() = 0;
+
+			inline Vec2u text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
 				auto off = Vec2u(0);
 
@@ -67,7 +69,7 @@ namespace flame
 				return off;
 			}
 
-			Vec2u text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			inline Vec2u text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
 				auto size = Vec2u(0, font_size);
 				auto x = 0U;
@@ -93,7 +95,7 @@ namespace flame
 				return size;
 			}
 
-			StringW wrap_text(uint font_size, uint width, const wchar_t* begin, const wchar_t* end = nullptr)
+			inline std::wstring wrap_text(uint font_size, uint width, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
 				if (font_size > width)
 				{
@@ -131,15 +133,13 @@ namespace flame
 					}
 					pstr++;
 				}
-				return StringW(ret);
+
+				return ret;
 			}
 
-			FLAME_GRAPHICS_EXPORTS Glyph* get_glyph(wchar_t unicode, uint font_size);
+			virtual const Glyph* get_glyph(wchar_t unicode, uint font_size) = 0;
 
-			FLAME_GRAPHICS_EXPORTS Imageview* imageview() const;
-
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint font_count, const wchar_t* const* fonts);
-			FLAME_GRAPHICS_EXPORTS static void destroy(FontAtlas* f);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint fonts_count, const wchar_t* const* fonts);
 		};
 	}
 

@@ -24,7 +24,7 @@ namespace flame
 		virtual void save_to_file(const wchar_t* filename) = 0;
 
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create(uint width, uint height, uint channel, uint bype_per_channel = 1, uchar* data = nullptr);
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create_from_file(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const wchar_t* filename);
 	};
 
 	struct BinPackNode

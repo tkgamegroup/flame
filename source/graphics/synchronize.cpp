@@ -22,14 +22,11 @@ namespace flame
 #endif
 		}
 
+		void Semaphore::release() { delete this; }
+
 		Semaphore* Semaphore::create(Device* d)
 		{
 			return new SemaphorePrivate(d);
-		}
-
-		void Semaphore::destroy(Semaphore* s)
-		{
-			delete (SemaphorePrivate*)s;
 		}
 
 		FencePrivate::FencePrivate(Device* _d) :
@@ -58,6 +55,8 @@ namespace flame
 #endif
 		}
 
+		void FencePrivate::release() { delete this; }
+
 		void FencePrivate::wait()
 		{
 #if defined(FLAME_VULKAN)
@@ -81,16 +80,6 @@ namespace flame
 		Fence* Fence::create(Device* d)
 		{
 			return new FencePrivate(d);
-		}
-
-		void Fence::destroy(Fence* s)
-		{
-			delete (FencePrivate*)s;
-		}
-
-		void Fence::wait()
-		{
-			((FencePrivate*)this)->wait();
 		}
 	}
 }

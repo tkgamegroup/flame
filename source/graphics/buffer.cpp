@@ -6,8 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(Device* _d, uint _size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing) :
-			d((DevicePrivate*)_d)
+		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data) :
+			d(d)
 		{
 			size = _size;
 			mapped = nullptr;
@@ -47,6 +47,8 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+			if (data)
+				copy_from_data(data);
 		}
 
 		BufferPrivate::~BufferPrivate()
@@ -61,6 +63,12 @@ namespace flame
 
 #endif
 		}
+
+		void BufferPrivate::release() { delete this; }
+
+		uint BufferPrivate::get_size() const { return size; }
+
+		void* BufferPrivate::get_mapped() const { return mapped; }
 
 		void BufferPrivate::map(uint offset, uint _size)
 		{
@@ -105,7 +113,8 @@ namespace flame
 
 		void BufferPrivate::copy_from_data(void* data)
 		{
-			auto stag_buf = Buffer::create(d, size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = new BufferPrivate(d, size, BufferUsageTransferSrc, MemPropHost);
+
 			stag_buf->map();
 			memcpy(stag_buf->mapped, data, size);
 			stag_buf->flush();
@@ -119,42 +128,12 @@ namespace flame
 			Queue::get_default(QueueGraphics)->wait_idle();
 			Commandbuffer::destroy(cb);
 
-			Buffer::destroy(stag_buf);
-		}
-
-		void Buffer::map(uint offset, uint _size)
-		{
-			((BufferPrivate*)this)->map(offset, _size);
-		}
-
-		void Buffer::unmap()
-		{
-			((BufferPrivate*)this)->unmap();
-		}
-
-		void Buffer::flush()
-		{
-			((BufferPrivate*)this)->flush();
-		}
-
-		void Buffer::copy_from_data(void* data)
-		{
-			((BufferPrivate*)this)->copy_from_data(data);
+			delete stag_buf;
 		}
 
 		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data)
 		{
-			auto b = new BufferPrivate(d, size, usage, mem_prop, sharing);
-
-			if (data)
-				b->copy_from_data(data);
-
-			return b;
-		}
-
-		void Buffer::destroy(Buffer* b)
-		{
-			delete (BufferPrivate*)b;
+			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop, sharing, data);
 		}
 	}
 }

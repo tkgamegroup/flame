@@ -495,7 +495,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageUsageFlags get_backend_image_usage_flags(ImageUsageFlags u, Format fmt, SampleCount sc)
+		inline VkImageUsageFlags get_backend_image_usage_flags(ImageUsageFlags u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
 		{
 			VkImageUsageFlags ret = 0;
 			if (u & ImageUsageTransferSrc)

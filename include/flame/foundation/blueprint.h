@@ -154,7 +154,7 @@ namespace flame
 		virtual void update() = 0;
 		virtual void save() = 0;
 
-		FLAME_FOUNDATION_EXPORTS static bpScene* create_from_file(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static bpScene* create(const wchar_t* filename);
 	};
 }
 

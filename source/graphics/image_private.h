@@ -13,6 +13,12 @@ namespace flame
 		struct ImagePrivate : Image
 		{
 			DevicePrivate* d;
+			
+			Format format;
+			Vec2u size;
+			uint level;
+			uint layer;
+			SampleCount sample_count;
 
 #if defined(FLAME_VULKAN)
 			VkDeviceMemory m;
@@ -20,13 +26,27 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
-			ImageviewPrivate* dv;
+			std::unique_ptr<ImageviewPrivate> dv;
 
-			ImagePrivate(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage);
-			ImagePrivate(Device* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool default_view = true);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view = true);
 			~ImagePrivate();
 
-			void set_props();
+			void release() override;
+
+			Format get_format() const override;
+			Vec2u get_size() const override;
+			uint get_level() const override;
+			uint get_layer() const override;
+			SampleCount get_sample_count() const override;
+
+			Imageview* get_default_view() const override;
+
+			void change_layout(ImageLayout from, ImageLayout to) override;
+			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
+
+			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;
+			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override;
 
 			void change_layout(ImageLayout from, ImageLayout to);
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color);
@@ -36,8 +56,19 @@ namespace flame
 
 		struct ImageviewPrivate : Imageview
 		{
-			ImagePrivate* image;
 			DevicePrivate* d;
+			ImagePrivate* image;
+
+			ImageviewType type;
+			uint base_level;
+			uint level_count;
+			uint base_layer;
+			uint layer_count;
+			Swizzle swizzle_r;
+			Swizzle swizzle_g;
+			Swizzle swizzle_b;
+			Swizzle swizzle_a;
+
 #if defined(FLAME_VULKAN)
 			VkImageView v;
 #elif defined(FLAME_D3D12)
@@ -45,8 +76,23 @@ namespace flame
 #endif
 			int ref_count;
 
-			ImageviewPrivate(Image* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a);
+			ImageviewPrivate(Image* image, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
+				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
 			~ImageviewPrivate();
+
+			void release() override;
+
+			ImageviewType get_type() const override;
+			uint get_base_level() const override;
+			uint get_level_count() const override;
+			uint get_base_layer() const override;
+			uint get_layer_count() const override;
+			Swizzle get_swizzle_r() const override;
+			Swizzle get_swizzle_g() const override;
+			Swizzle get_swizzle_b() const override;
+			Swizzle get_swizzle_a() const override;
+
+			Image* get_image() const override;
 		};
 
 		inline ImageAspectFlags aspect_from_format(Format fmt)
@@ -71,24 +117,50 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
 			SamplerPrivate(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();
+
+			void release() override;
 		};
 
-		struct AtlasTilePrivate : Atlas::Tile
+		struct AtlasTilePrivate : ImageAtlas::Tile
 		{
-			std::wstring _filename;
+			uint index;
+			std::wstring filename;
+			uint id;
+			Vec2i pos;
+			Vec2i size;
+			Vec2f uv0;
+			Vec2f uv1;
+
+			uint get_index() const override;
+			const wchar_t* get_filename() const override;
+			uint get_id() const override;
+			Vec2i get_pos() const override;
+			Vec2i get_size() const override;
+			Vec2f get_uv0() const override;
+			Vec2f get_uv1() const override;
 		};
 
-		struct AtlasPrivate : Atlas
+		struct ImageAtlasPrivate : ImageAtlas
 		{
-			Image* image;
-			Imageview* imageview;
+			bool border;
+
+			int slot;
+
+			ImagePrivate* image;
 			std::vector<std::unique_ptr<AtlasTilePrivate>> tiles;
 
-			AtlasPrivate(Device* d, const std::wstring& atlas_filename);
-			~AtlasPrivate();
+			ImageAtlasPrivate(Device* d, const std::wstring& atlas_filename);
+			~ImageAtlasPrivate();
+
+			void release() override;
+
+			bool get_border() const override;
+
+			uint get_tiles_count() const override;
+			Tile* get_tile(uint idx) const override;
+			Tile* find_tile(uint id) const override;
 		};
 	}
 }
