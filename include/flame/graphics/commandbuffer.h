@@ -96,10 +96,10 @@ namespace flame
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
 			virtual void dispatch(const Vec3u& v) = 0;
 
-			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies) = 0;
-			virtual void copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies) = 0;
-			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies) = 0;
-			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies) = 0;
+			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) = 0;
+			virtual void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) = 0;
+			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) = 0;
+			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) = 0;
 			virtual void change_image_layout(Image* t, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 0, uint base_layer = 0, uint layer_count = 0) = 0;
 
 			virtual void clear_image(Image* i, const Vec4c& col) = 0;
@@ -114,7 +114,7 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual void wait_idle() = 0;
-			virtual void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
+			virtual void submit(uint cbs_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
 			virtual void present(Swapchain* s, Semaphore* wait_semaphore) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* d, uint queue_family_idx);

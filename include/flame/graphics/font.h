@@ -16,7 +16,14 @@ namespace flame
 			return Vec2u(0x20, 0xff);
 		}
 
-		const Vec2u font_atlas_size = Vec2u(1024);
+		struct Font
+		{
+			virtual void release() = 0;
+
+			virtual const wchar_t* get_filename() const = 0;
+
+			FLAME_GRAPHICS_EXPORTS static Font* create(const wchar_t* filename);
+		};
 
 		struct Glyph
 		{
@@ -24,6 +31,7 @@ namespace flame
 			virtual Vec2i get_off() const = 0;
 			virtual Vec2u get_size() const = 0;
 			virtual Vec4f get_uv() const = 0;
+			virtual int get_advance() const = 0;
 		};
 
 		struct FontAtlas : Object
@@ -52,7 +60,7 @@ namespace flame
 					{
 						if (ch == '\t')
 							ch = ' ';
-						off.x() += get_glyph(ch, font_size)->advance;
+						off.x() += get_glyph(ch, font_size)->get_advance();
 					}
 					pstr++;
 				}
@@ -77,7 +85,7 @@ namespace flame
 					{
 						if (ch == '\t')
 							ch = ' ';
-						x += get_glyph(ch, font_size)->advance;
+						x += get_glyph(ch, font_size)->get_advance();
 						size.x() = max(size.x(), x);
 					}
 					pstr++;
@@ -111,7 +119,7 @@ namespace flame
 					case '\t':
 						ch = ' ';
 					default:
-						auto adv = get_glyph(ch, font_size)->advance;
+						auto adv = get_glyph(ch, font_size)->get_advance();
 						if (w + adv >= width)
 						{
 							w = adv;
@@ -129,7 +137,7 @@ namespace flame
 
 			virtual Glyph* get_glyph(wchar_t unicode, uint font_size) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint fonts_count, const wchar_t* const* fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint fonts_count, Font* const* fonts);
 		};
 	}
 

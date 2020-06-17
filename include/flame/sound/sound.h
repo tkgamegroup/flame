@@ -12,14 +12,14 @@ namespace flame
 {
 	namespace sound
 	{
-		inline uint get_sample_count(float duration, uint frequency)
+		inline uint get_samples_count(float duration, uint frequency)
 		{
 			return frequency * duration;
 		}
 
 		inline uint get_size(float duration, uint frequency, bool stereo, bool _16bit)
 		{
-			return get_sample_count(duration, frequency) * (stereo ? 2 : 1) * (_16bit ? 2 : 1);
+			return get_samples_count(duration, frequency) * (stereo ? 2 : 1) * (_16bit ? 2 : 1);
 		}
 
 		inline uint get_size(uint samples, bool stereo, bool _16bit)

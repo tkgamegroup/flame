@@ -10,6 +10,9 @@ namespace flame
 		struct RenderpassPrivate;
 		struct FramebufferPrivate;
 		struct PipelinePrivate;
+		struct PipelinelayoutPrivate;
+		struct SemaphorePrivate;
+		struct FencePrivate;
 
 		struct CommandpoolPrivate : Commandpool
 		{
@@ -48,26 +51,37 @@ namespace flame
 			void begin(bool once = false) override;
 
 			void begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues) override;
-			void _begin_renderpass(FramebufferPrivate* fb, const std::span<Vec4f>& clearvalues);
+			void _begin_renderpass(FramebufferPrivate* fb, std::span<Vec4f> clearvalues);
 			void end_renderpass() override;
 			void set_viewport(const Vec4f& rect) override;
 			void set_scissor(const Vec4f& rect) override;
-			void bind_pipeline(Pipeline* p) override;
-			void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll) override;
-			void bind_vertexbuffer(Buffer* b, uint id) override;
-			void bind_indexbuffer(Buffer* b, IndiceType t) override;
-			void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll) override;
+			void bind_pipeline(Pipeline* p) override { _bind_pipeline((PipelinePrivate*)p); }
+			void _bind_pipeline(PipelinePrivate* p);
+			void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll) override { _bind_descriptorset((DescriptorsetPrivate*)s, idx, (PipelinelayoutPrivate*)pll); }
+			void _bind_descriptorset(DescriptorsetPrivate* s, uint idx, PipelinelayoutPrivate* pll);
+			void bind_vertexbuffer(Buffer* b, uint id) override { _bind_vertexbuffer((BufferPrivate*)b, id); }
+			void _bind_vertexbuffer(BufferPrivate* b, uint id);
+			void bind_indexbuffer(Buffer* b, IndiceType t) override { _bind_indexbuffer((BufferPrivate*)b, t); }
+			void _bind_indexbuffer(BufferPrivate* b, IndiceType t);
+			void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll) override { _push_constant(offset, size, data, (PipelinelayoutPrivate*)pll); }
+			void _push_constant(uint offset, uint size, const void* data, PipelinelayoutPrivate* pll);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
 			void dispatch(const Vec3u& v) override;
 
-			void copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies) override;
-			void copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies) override;
-			void copy_buffer_to_image(Buffer* src, Image* dst, uint copy_count, BufferImageCopy* copies) override;
-			void copy_image_to_buffer(Image* src, Buffer* dst, uint copy_count, BufferImageCopy* copies) override;
+			void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) override;
+			void _copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies);
+			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override;
+			void _copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
+			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override;
+			void _copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
+			void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) override;
+			void _copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies);
 			void change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count) override;
+			void _change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count);
 
 			void clear_image(Image* i, const Vec4c& col) override;
+			void _clear_image(ImagePrivate* i, const Vec4c& col);
 
 			void end() override;
 		};
@@ -86,8 +100,8 @@ namespace flame
 			void release() override;
 
 			void wait_idle() override;
-			void submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) override;
-			void _submit(const std::span<CommandbufferPrivate*>& cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence);
+			void submit(uint cbs_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) override;
+			void _submit(std::span<CommandbufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence);
 			void present(Swapchain* s, Semaphore* wait_semaphore) override;
 		};
 	}

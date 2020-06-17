@@ -743,7 +743,7 @@ namespace flame
 	};
 
 	FLAME_FOUNDATION_EXPORTS Array<void*> get_stack_frames();
-	FLAME_FOUNDATION_EXPORTS Array<StackFrameInfo> get_stack_frame_infos(uint frame_count, void** frames);
+	FLAME_FOUNDATION_EXPORTS Array<StackFrameInfo> get_stack_frame_infos(uint frames_count, void** frames);
 
 	enum FileChangeType
 	{

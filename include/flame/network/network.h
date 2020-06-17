@@ -37,7 +37,7 @@ namespace flame
 	{
 		FLAME_NETWORK_EXPORTS bool send(uint client_idx, void* data, uint size);
 
-		FLAME_NETWORK_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint client_count);
+		FLAME_NETWORK_EXPORTS static FrameSyncServer* create(SocketType type, uint port, uint clients_count);
 		FLAME_NETWORK_EXPORTS static void destroy(FrameSyncServer* s);
 	};
 

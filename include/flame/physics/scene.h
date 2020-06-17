@@ -29,7 +29,7 @@ namespace flame
 			FLAME_PHYSICS_EXPORTS void set_trigger_callback(const TriggerCallback &callback);
 		};
 
-		FLAME_PHYSICS_EXPORTS Scene *create_scene(Device *d, float gravity, int thread_count);
+		FLAME_PHYSICS_EXPORTS Scene *create_scene(Device *d, float gravity, int threads_count);
 		FLAME_PHYSICS_EXPORTS void destroy_scene(Scene *s);
 	}
 }

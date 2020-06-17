@@ -27,6 +27,19 @@ namespace flame
 			void release() override;
 		};
 
+		struct DescriptorBindingPrivate : DescriptorBinding
+		{
+			uint index;
+			DescriptorType type;
+			uint count;
+			const char* name;
+
+			virtual uint get_index() const = 0;
+			virtual DescriptorType get_type() const = 0;
+			virtual uint get_count() const = 0;
+			virtual const char* get_name() const = 0;
+		};
+
 		struct DescriptorlayoutPrivate : Descriptorlayout
 		{
 			DevicePrivate* d;
@@ -41,10 +54,14 @@ namespace flame
 
 			uint hash;
 
-			DescriptorlayoutPrivate(DevicePrivate* d, const std::span<DescriptorBinding>& bindings, bool create_default_set);
+			DescriptorlayoutPrivate(DevicePrivate* d, std::span<DescriptorBinding> bindings, bool create_default_set);
 			~DescriptorlayoutPrivate();
 
 			void release() override;
+
+			virtual uint get_bindings_count() const = 0;
+			virtual DescriptorBinding* get_binding(uint binding) const = 0;
+			virtual Descriptorset* get_default_set() const = 0;
 		};
 
 		struct DescriptorsetPrivate : Descriptorset
@@ -74,16 +91,15 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
 			std::vector<DescriptorlayoutPrivate*> dsls;
 			uint pc_size;
 
-			PipelinelayoutPrivate(DevicePrivate* d, const std::span<Descriptorlayout*>& descriptorlayouts, uint push_constant_size);
+			uint hash;
+
+			PipelinelayoutPrivate(DevicePrivate* d, std::span<Descriptorlayout*> descriptorlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
 
 			void release() override;
-
-			uint hash;
 		};
 
 		struct BlendOptions
@@ -116,79 +132,69 @@ namespace flame
 			}
 		};
 
-		struct StageInfo
+		struct ShaderInOut
 		{
-			struct InOut
+			std::string name;
+			std::string type;
+		};
+
+		struct ShaderVariable
+		{
+			std::string type_name;
+			std::string name;
+			uint offset;
+			uint size;
+			uint count;
+			uint array_stride;
+
+			std::vector<std::unique_ptr<ShaderVariable>> members;
+
+			ShaderVariable() :
+				offset(0),
+				size(0),
+				count(0),
+				array_stride(0)
 			{
-				std::string name;
-				std::string type;
-			};
+			}
+		};
 
-			struct Variable
+		struct ShaderResource
+		{
+			uint location;
+			uint index;
+			uint set;
+			uint binding;
+			std::string name;
+
+			ShaderVariable v;
+
+			ShaderResource() :
+				location(0),
+				index(0),
+				set(0),
+				binding(0)
 			{
-				std::string type_name;
-				std::string name;
-				uint offset;
-				uint size;
-				uint count;
-				uint array_stride;
+			}
+		};
 
-				std::vector<std::unique_ptr<Variable>> members;
-
-				Variable() :
-					offset(0),
-					size(0),
-					count(0),
-					array_stride(0)
-				{
-				}
-			};
-
-			struct Resource
-			{
-				uint location;
-				uint index;
-				uint set;
-				uint binding;
-				std::string name;
-
-				Variable v;
-
-				Resource() :
-					location(0),
-					index(0),
-					set(0),
-					binding(0)
-				{
-				}
-			};
-
+		struct ShaderPrivate : Shader
+		{
 			std::filesystem::path path;
 			std::string prefix;
 			ShaderStage type;
 
-			std::vector<InOut> inputs;
-			std::vector<InOut> outputs;
+			std::vector<ShaderInOut> inputs;
+			std::vector<ShaderInOut> outputs;
 			std::vector<BlendOptions> blend_options;
-			std::vector<std::unique_ptr<Resource>> uniform_buffers;
-			std::unique_ptr<Resource> push_constant;
+			std::vector<std::unique_ptr<ShaderResource>> uniform_buffers;
+			std::unique_ptr<ShaderResource> push_constant;
 
 #if defined(FLAME_VULKAN)
 			VkShaderModule vk_shader_module;
 #elif defined(FLAME_D3D12)
 
 #endif
-
-			StageInfo(const std::wstring& fn)
-			{
-				auto sp = SUW::split(fn, L'$');
-				path = sp[0];
-				path.make_preferred();
-				if (sp.size() > 1)
-					prefix = w2s(sp[1]);
-				type = shader_stage_from_ext(path.extension());
-				vk_shader_module = 0;
-			}
+			ShaderPrivate(const std::filesystem::path& fn, const std::string& prefix);
 		};
 
 		struct PipelinePrivate : Pipeline
@@ -203,8 +209,8 @@ namespace flame
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states);
-			PipelinePrivate(DevicePrivate* d, const StageInfo& compute_stage_info, PipelinelayoutPrivate* pll);
+			PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> shaders, PipelinelayoutPrivate* pll, RenderpassPrivate* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, std::span<uint> dynamic_states);
+			PipelinePrivate(DevicePrivate* d, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
 
 			void release() override;

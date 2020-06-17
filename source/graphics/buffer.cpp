@@ -119,7 +119,8 @@ namespace flame
 			cb->copy_buffer(stag_buf.get(), this, 1, &BufferCopy(0, 0, size));
 			cb->end();
 			auto q = d->default_graphics_queue.get();
-			q->submit({ cb.get() }, nullptr, nullptr, nullptr);
+			CommandbufferPrivate* cbs[] = { cb.get() };
+			q->_submit(cbs, nullptr, nullptr, nullptr);
 			q->wait_idle();
 		}
 

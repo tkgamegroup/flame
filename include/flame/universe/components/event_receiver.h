@@ -57,7 +57,7 @@ namespace flame
 			return dispatcher->focusing == this && dispatcher->focusing_state == FocusingAndDragging;
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drop_count, const uint* drops);
+		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drops_count, const uint* drops);
 
 		FLAME_UNIVERSE_EXPORTS void on_key(KeyStateFlags action, uint value);
 		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);

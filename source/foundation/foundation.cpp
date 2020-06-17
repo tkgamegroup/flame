@@ -1003,7 +1003,7 @@ namespace flame
 		return ret;
 	}
 
-	Array<StackFrameInfo> get_stack_frame_infos(uint frame_count, void** frames)
+	Array<StackFrameInfo> get_stack_frame_infos(uint frames_count, void** frames)
 	{
 		Array<StackFrameInfo> ret;
 
@@ -1018,7 +1018,7 @@ namespace flame
 		auto line = (IMAGEHLP_LINE64*)new char[sizeof(IMAGEHLP_LINE64)];
 		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 		DWORD displacement;
-		for (auto i = 0; i < frame_count; i++)
+		for (auto i = 0; i < frames_count; i++)
 		{
 			auto frame = (DWORD64)frames[i];
 			SymFromAddr(process, frame, nullptr, symbol);

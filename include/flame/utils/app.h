@@ -99,7 +99,7 @@ namespace flame
 			c.thiz<GraphicsWindow>()->window = nullptr;
 		}, Capture().set_thiz(this));
 		swapchain = graphics::Swapchain::create(graphics_device, window);
-		swapchain_commandbuffers.resize(swapchain->image_count());
+		swapchain_commandbuffers.resize(swapchain->images_count());
 		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
 			swapchain_commandbuffers[i] = graphics::Commandbuffer::create(graphics::Commandpool::get_default(graphics::QueueGraphics));
 		submit_fence = graphics::Fence::create(graphics_device);
@@ -167,7 +167,7 @@ namespace flame
 
 	void GraphicsWindow::set_canvas_target()
 	{
-		std::vector<graphics::Imageview*> vs(swapchain->image_count());
+		std::vector<graphics::Imageview*> vs(swapchain->images_count());
 		for (auto i = 0; i < vs.size(); i++)
 			vs[i] = swapchain->image(i)->default_view();
 		canvas->set_target(vs.size(), vs.data());
@@ -177,7 +177,7 @@ namespace flame
 	{
 		if (swapchain_image_index < 0)
 		{
-			if (swapchain->image_count())
+			if (swapchain->images_count())
 			{
 				swapchain->acquire_image();
 				swapchain_image_index = swapchain->image_index();

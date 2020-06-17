@@ -37,17 +37,17 @@ namespace flame
 			SwapchainPrivate(Device *d, Window* w, ImageUsageFlags extra_usages = 0);
 			~SwapchainPrivate();
 
-			void release() override;
+			void release() override { delete this; }
 
-			Window* get_window() const override;
-			uint get_images_count() const override;
-			Image* get_image(uint idx) const override;
-			Semaphore* get_image_avalible() const override;
+			Window* get_window() const override { return window; }
+			uint get_images_count() const override { return images.size(); }
+			Image* get_image(uint idx) const override { return images[idx].get(); }
+			Semaphore* get_image_avalible() const override { return image_avalible.get(); }
 
-			uint get_image_index() const override;
+			uint get_image_index() const override { return image_index; }
 			void acquire_image() override;
 
-			uint get_hash() const override;
+			uint get_hash() const override { return hash; }
 
 			void update();
 		};

@@ -672,6 +672,17 @@ namespace flame
 			return true;
 		}
 
+		ShaderPrivate::ShaderPrivate(const std::filename::path& fn, const std::string& prefix)
+		{
+			auto sp = SUW::split(fn, L'$');
+			path = sp[0];
+			path.make_preferred();
+			if (sp.size() > 1)
+				prefix = w2s(sp[1]);
+			type = shader_stage_from_ext(path.extension());
+			vk_shader_module = 0;
+		}
+
 		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
 			d(d),
 			pll(pll)

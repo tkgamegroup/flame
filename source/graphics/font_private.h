@@ -2,20 +2,27 @@
 
 #include <flame/graphics/font.h>
 
+struct stbtt_fontinfo;
+
 namespace flame
 {
+	struct BinPackNode;
+
 	namespace graphics
 	{
 		struct ImagePrivate;
 
-		struct FontPrivate
+		struct FontPrivate : Font
 		{
 			std::filesystem::path filename;
-			std::string font_file;
-			stbtt_fontinfo info;
-			uint ref_count;
+			std::string file;
+			std::unique_ptr<stbtt_fontinfo> stbtt_info;
 
 			FontPrivate(const std::wstring& filename);
+
+			void release() override { delete this; }
+
+			const wchar_t* get_filename() const override { return filename.c_str(); }
 		};
 
 		struct GlyphPrivate : Glyph
@@ -25,6 +32,12 @@ namespace flame
 			Vec2u size;
 			Vec4f uv;
 			int advance;
+
+			ushort get_code() const override { return code; }
+			Vec2i get_off() const override { return off; }
+			Vec2u get_size() const override { return size; }
+			Vec4f get_uv() const override { return uv; }
+			int get_advance() const override { return advance; }
 		};
 
 		struct FontAtlasPrivate : FontAtlas
@@ -40,10 +53,10 @@ namespace flame
 			std::unique_ptr<ImagePrivate> image;
 			std::unique_ptr<ImageviewPrivate> view;
 
-			FontAtlasPrivate(DevicePrivate* d, uint font_count, const wchar_t* const* _fonts);
+			FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> fonts);
 			~FontAtlasPrivate();
 
-			void release() override;
+			void release() override { delete this; }
 
 			Glyph* get_glyph(wchar_t unicode, uint font_size) override;
 		};

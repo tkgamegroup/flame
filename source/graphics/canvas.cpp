@@ -2,10 +2,11 @@
 #include "device_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
-#include <flame/graphics/renderpass.h>
-#include <flame/graphics/shader.h>
-#include <flame/graphics/commandbuffer.h>
-#include <flame/graphics/swapchain.h>
+#include "font_private.h"
+#include "renderpass_private.h"
+#include "shader_private.h"
+#include "commandbuffer_private.h"
+#include "swapchain_private.h"
 #include "canvas_private.h"
 
 namespace flame
@@ -13,10 +14,10 @@ namespace flame
 	namespace graphics
 	{
 		const auto resource_count = 64U;
-		static Renderpass* rp = nullptr;
-		static Descriptorlayout* dsl = nullptr;
-		static Pipelinelayout* pll = nullptr;
-		static Pipeline* pl = nullptr;
+		static RenderpassPrivate* rp = nullptr;
+		static DescriptorlayoutPrivate* dsl = nullptr;
+		static PipelinelayoutPrivate* pll = nullptr;
+		static PipelinePrivate* pl = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
 			d(d),
@@ -32,9 +33,9 @@ namespace flame
 				uint col_refs[] = {
 					0
 				};
-				sp.color_attachment_count = 1;
+				sp.color_attachments_count = 1;
 				sp.color_attachments = col_refs;
-				rp = Renderpass::create(d, 1, &att, 1, &sp, 0, nullptr);
+				rp = new RenderpassPrivate(d, 1, &att, 1, &sp, 0, nullptr);
 			}
 			if (!dsl)
 			{
@@ -42,10 +43,10 @@ namespace flame
 				db.type = DescriptorSampledImage;
 				db.count = resource_count;
 				db.name = "images";
-				dsl = Descriptorlayout::create(d, 1, &db);
+				dsl = new DescriptorlayoutPrivate(d, 1, &db);
 			}
 			if (!pll)
-				pll = Pipelinelayout::create(d, 1, &dsl, 16);
+				pll = new PipelinelayoutPrivate(d, 1, &dsl, 16);
 			if (!pl)
 			{
 				VertexInputAttribute vias[3];
@@ -68,7 +69,7 @@ namespace flame
 					L"element.vert",
 					L"element.frag"
 				};
-				pl = Pipeline::create(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0, &vi);
+				pl = new PipelinePrivate(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0, &vi);
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));
@@ -78,47 +79,49 @@ namespace flame
 
 			img_white.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
-			resources.resize(resource_count, { img_white->dv.get(), nullptr, Vec2f(0.5f) });
-
-			ds = Descriptorset::create(Descriptorpool::get_default(), dsl);
+			resources.resize(resource_count);
+			auto iv_white = img_white->dv.get();
+			for (auto i = 0; i < resource_count; i++)
 			{
-				auto iv_white = img_white->default_view();
-				auto sp = Sampler::get_default(FilterLinear);
-				for (auto i = 0; i < resource_count; i++)
-					ds->set_image(0, i, iv_white, sp);
+				auto r = new CanvasResourcePrivate;
+				r->view = iv_white;
+				r->atlas = nullptr;
+				r->white_uv = 0.5f;
+				resources[i].reset(r);
 			}
+
+			ds.reset(new DescriptorsetPrivate(d->default_descriptorpool.get(), dsl));
+			auto sp = d->default_sampler_linear.get();
+			for (auto i = 0; i < resource_count; i++)
+				ds->set_image(0, i, iv_white, sp);
 		}
 
-		void CanvasPrivate::set_target(const std::vector<Imageview*>& views)
+		void CanvasPrivate::_set_target(std::span<ImageviewPrivate*> views)
 		{
-			for (auto f : fbs)
-				Framebuffer::destroy(f);
+			fbs.clear();
 
 			if (views.empty())
-			{
 				target_size = 0.f;
-				fbs.clear();
-			}
 			else
 			{
-				target_size = views[0]->image()->size;
+				target_size = views[0]->image->size;
 				fbs.resize(views.size());
 				for (auto i = 0; i < fbs.size(); i++)
-					fbs[i] = Framebuffer::create(d, rp, 1, &views[i]);
+					fbs[i].reset(new FramebufferPrivate(d, rp, 1, &views[i]));
 			}
 		}
 
-		uint CanvasPrivate::set_resource(int slot, Imageview* v, Sampler* sp, ImageAtlas* atlas)
+		uint CanvasPrivate::_set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas)
 		{
 			if (resources.empty())
 				return -1;
-			auto iv_white = img_white->default_view();
+			auto iv_white = img_white->dv.get();
 			if (slot == -1)
 			{
 				assert(v);
 				for (auto i = 0; i < resources.size(); i++)
 				{
-					if (resources[i].view == iv_white)
+					if (resources[i]->view == iv_white)
 					{
 						slot = i;
 						break;
@@ -126,22 +129,34 @@ namespace flame
 				}
 				assert(slot != -1);
 			}
-			Vec2f white_uv;
+			auto r = new CanvasResourcePrivate;
 			if (!v)
 			{
 				v = iv_white;
-				white_uv = 0.5f;
+				r->white_uv = 0.5f;
 				atlas = nullptr;
 			}
 			else
 			{
-				auto img = v->image();
+				auto img = v->image;
 				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
-				white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
+				r->white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
 			}
-			ds->set_image(0, slot, v, sp ? sp : Sampler::get_default(FilterLinear));
-			resources[slot] = { v, atlas, white_uv };
+			ds->set_image(0, slot, v, sp ? sp : d->default_sampler_linear.get());
+			r->view = v;
+			r->atlas = atlas;
+			resources[slot].reset(r);
 			return slot;
+		}
+
+		void CanvasPrivate::_add_atlas(ImageAtlasPrivate* a)
+		{
+			a->slot = _set_resource(-1, a->image->dv.get(), a->border ? d->default_sampler_linear.get() : d->default_sampler_nearest.get(), a);
+		}
+
+		void CanvasPrivate::_add_font(FontAtlasPrivate* f)
+		{
+			f->slot = _set_resource(-1, f->view.get(), d->default_sampler_nearest.get());
 		}
 
 		void CanvasPrivate::set_scissor(const Vec4f& _scissor)
@@ -177,7 +192,7 @@ namespace flame
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 			auto first_vtx_cnt = vtx_cnt;
-			auto uv = resources[cmds.back().v.draw_data.id].white_uv;
+			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
 
 			auto closed = points[0] == points[point_count - 1];
 
@@ -272,7 +287,7 @@ namespace flame
 			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-			auto uv = resources[cmds.back().v.draw_data.id].white_uv;
+			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
 
 			for (auto i = 0; i < point_count - 2; i++)
 			{
@@ -407,21 +422,21 @@ namespace flame
 			cmds.clear();
 		}
 
-		void CanvasPrivate::record(Commandbuffer* cb, uint image_index)
+		void CanvasPrivate::_record(CommandbufferPrivate* cb, uint image_index)
 		{
 			cb->begin();
-			cb->begin_renderpass(fbs[image_index], 1, &clear_color);
+			cb->_begin_renderpass(fbs[image_index].get(), { &clear_color, 1 });
 			if (idx_end != buf_idx->get_mapped())
 			{
 				cb->set_viewport(curr_scissor);
 				cb->set_scissor(curr_scissor);
-				cb->bind_vertexbuffer(buf_vtx, 0);
-				cb->bind_indexbuffer(buf_idx, IndiceTypeUint);
+				cb->bind_vertexbuffer(buf_vtx.get(), 0);
+				cb->bind_indexbuffer(buf_idx.get(), IndiceTypeUint);
 
 				auto scale = Vec2f(2.f / target_size.x(), 2.f / target_size.y());
 				cb->bind_pipeline(pl);
 				cb->push_constant(0, sizeof(Vec2f), &scale, pll);
-				cb->bind_descriptorset(ds, 0, pll);
+				cb->bind_descriptorset(ds.get(), 0, pll);
 
 				auto vtx_off = 0;
 				auto idx_off = 0;
@@ -449,30 +464,9 @@ namespace flame
 			cmds.clear();
 		}
 
-		void Canvas::set_target(uint view_count, Imageview* const* views)
-		{
-			std::vector<Imageview*> vs(view_count);
-			for (auto i = 0; i < view_count; i++)
-				vs[i] = views[i];
-			((CanvasPrivate*)this)->set_target(vs);
-		}
-
 		Canvas* Canvas::create(Device* d)
 		{
-			return new CanvasPrivate(d);
+			return new CanvasPrivate((DevicePrivate*)d);
 		}
 	}
 }
-
-
-//void add_atlas(ImageAtlas* a)
-//{
-//	a->canvas_ = this;
-//	a->canvas_slot_ = set_resource(-1, a->imageview(), Sampler::get_default(a->border ? FilterLinear : FilterNearest), a);
-//}
-
-//void add_font(FontAtlas* f)
-//{
-//	f->canvas_ = this;
-//	f->canvas_slot_ = set_resource(-1, f->imageview(), Sampler::get_default(FilterNearest));
-//}

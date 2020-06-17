@@ -11,8 +11,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		CommandpoolPrivate::CommandpoolPrivate(Device* _d, int queue_family_idx) :
-			d((DevicePrivate*)_d)
+		CommandpoolPrivate::CommandpoolPrivate(DevicePrivate* d, int queue_family_idx) :
+			d(d)
 		{
 #if defined(FLAME_VULKAN)
 			VkCommandPoolCreateInfo info;
@@ -41,7 +41,7 @@ namespace flame
 
 		Commandpool* Commandpool::create(Device* d, int queue_family_idx)
 		{
-			return new CommandpoolPrivate(d, queue_family_idx);
+			return new CommandpoolPrivate((DevicePrivate*)d, queue_family_idx);
 		}
 
 		CommandbufferPrivate::CommandbufferPrivate(CommandpoolPrivate* p, bool sub) :
@@ -108,10 +108,10 @@ namespace flame
 
 		void CommandbufferPrivate::begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues)
 		{
-			_begin_renderpass((FramebufferPrivate*)fb, std::span((Vec4f*)clearvalues, clearvalues_count));
+			_begin_renderpass((FramebufferPrivate*)fb, { (Vec4f*)clearvalues, clearvalues_count });
 		}
 
-		void CommandbufferPrivate::_begin_renderpass(FramebufferPrivate* fb, const std::span<Vec4f>& clearvalues)
+		void CommandbufferPrivate::_begin_renderpass(FramebufferPrivate* fb, std::span<Vec4f> clearvalues)
 		{
 			auto rp = fb->rp;
 
@@ -127,8 +127,9 @@ namespace flame
 			info.framebuffer = fb->v;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
-			info.renderArea.extent.width = fb->image_size.x();
-			info.renderArea.extent.height = fb->image_size.y();
+			auto size = fb->views[0]->image->size;
+			info.renderArea.extent.width = size.x();
+			info.renderArea.extent.height = size.y();
 			info.clearValueCount = clearvalues.size();
 			info.pClearValues = (VkClearValue*)clearvalues.data();
 
@@ -522,9 +523,9 @@ namespace flame
 			return new CommandbufferPrivate(p, sub);
 		}
 
-		QueuePrivate::QueuePrivate(Device* _d, uint queue_family_idx)
+		QueuePrivate::QueuePrivate(DevicePrivate* d, uint queue_family_idx) :
+			d(d)
 		{
-			d = (DevicePrivate*)_d;
 #if defined(FLAME_VULKAN)
 			vkGetDeviceQueue(d->v, queue_family_idx, 0, &v);
 #elif defined(FLAME_D3D12)
@@ -547,10 +548,10 @@ namespace flame
 
 		void QueuePrivate::submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
 		{
-			submit(cbs.size(), cbs.data(), wait_semaphore, signal_semaphore, signal_fence);
+			_submit({ (CommandbufferPrivate**)cbs, cb_count }, wait_semaphore, signal_semaphore, signal_fence);
 		}
 
-		void QueuePrivate::_submit(const std::span<CommandbufferPrivate*>& cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
+		void QueuePrivate::_submit(std::span<CommandbufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
 		{
 #if defined(FLAME_VULKAN)
 			VkSubmitInfo info;
@@ -560,10 +561,10 @@ namespace flame
 			info.pWaitDstStageMask = &wait_stage;
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
 			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->v : nullptr;
-			info.commandBufferCount = cb_count;
+			info.commandBufferCount = cbs.size();
 			std::vector<VkCommandBuffer> vk_cbs;
-			vk_cbs.resize(cb_count);
-			for (auto i = 0; i < cb_count; i++)
+			vk_cbs.resize(cbs.size());
+			for (auto i = 0; i < vk_cbs.size(); i++)
 				vk_cbs[i] = ((CommandbufferPrivate*)cbs[i])->v;
 			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;

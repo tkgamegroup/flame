@@ -49,14 +49,6 @@ namespace flame
 #endif
 		}
 
-		void SwapchainPrivate::release() { delete this; }
-
-		Window* SwapchainPrivate::get_window() const { return w; }
-		uint SwapchainPrivate::get_images_count() const { return images.size(); }
-		Image* SwapchainPrivate::get_image(uint idx) const { return images[idx].get(); }
-		Semaphore* SwapchainPrivate::get_image_avalible() const { return image_avalible.get(); }
-
-		uint SwapchainPrivate::get_image_index() const { return image_index; }
 		void SwapchainPrivate::acquire_image()
 		{
 #if defined(FLAME_VULKAN)
@@ -65,8 +57,6 @@ namespace flame
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
 		}
-
-		uint SwapchainPrivate::get_hash() const { return hash; }
 
 		void SwapchainPrivate::update()
 		{

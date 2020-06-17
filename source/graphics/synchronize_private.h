@@ -19,7 +19,7 @@ namespace flame
 			SemaphorePrivate(Device* d);
 			~SemaphorePrivate();
 
-			void release() override;
+			void release() override { delete this; }
 		};
 
 		struct FencePrivate : Fence
@@ -38,7 +38,7 @@ namespace flame
 			FencePrivate(Device* d);
 			~FencePrivate();
 
-			void release() override;
+			void release() override { delete this; }
 
 			void wait() override;
 		};

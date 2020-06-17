@@ -18,7 +18,7 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS uint tile_count() const;
+		FLAME_UNIVERSE_EXPORTS uint tiles_count() const;
 		FLAME_UNIVERSE_EXPORTS uint tile(uint idx) const;
 		FLAME_UNIVERSE_EXPORTS void add_tile(uint id);
 		FLAME_UNIVERSE_EXPORTS void remove_tile(uint id);

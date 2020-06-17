@@ -20,32 +20,40 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Descriptorpool* create(Device* d);
 		};
 
-		struct DescriptorBinding
+		struct DescriptorBindingInfo
 		{
 			DescriptorType type;
 			uint count;
 			const char* name;
 		};
 
+		struct DescriptorBinding
+		{
+			virtual uint get_index() const = 0;
+			virtual DescriptorType get_type() const = 0;
+			virtual uint get_count() const = 0;
+			virtual const char* get_name() const = 0;
+		};
+
 		struct Descriptorlayout
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS uint binding_count() const;
-			FLAME_GRAPHICS_EXPORTS const DescriptorBinding& get_binding(uint binding) const;
-			FLAME_GRAPHICS_EXPORTS Descriptorset* default_set() const;
+			virtual uint get_bindings_count() const = 0;
+			virtual DescriptorBinding* get_binding(uint binding) const = 0;
+			virtual Descriptorset* get_default_set() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint binding_count, const DescriptorBinding* bindings, bool create_default_set = false);
+			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint bindings_count, const DescriptorBindingInfo* bindings, bool create_default_set = false);
 		};
 
 		struct Descriptorset
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS Descriptorlayout* layout();
+			virtual Descriptorlayout* get_layout() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0);
-			FLAME_GRAPHICS_EXPORTS void set_image(uint binding, uint index, Imageview* v, Sampler* sampler);
+			virtual void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0) = 0;
+			virtual void set_image(uint binding, uint index, Imageview* v, Sampler* sampler) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Descriptorset* create(Descriptorpool* p, Descriptorlayout* l);
 		};
@@ -54,7 +62,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayouts_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
 		};
 
 		struct VertexInputAttribute
@@ -65,12 +73,12 @@ namespace flame
 
 		struct VertexInputBuffer
 		{
-			uint attribute_count;
+			uint attributes_count;
 			const VertexInputAttribute* attributes;
 			VertexInputRate rate;
 
 			VertexInputBuffer() :
-				attribute_count(0),
+				attributes_count(0),
 				attributes(nullptr),
 				rate(VertexInputRateVertex)
 			{
@@ -143,27 +151,39 @@ namespace flame
 			return ShaderStageNone;
 		}
 
-		// 'i_' or 'o_' will be eliminated to verify between stages
-		// for blend factor:
-		// 0 - zero
-		// 1 - one
-		// sc - src color
-		// dc - dst color
-		// sa - src alpha
-		// da - dst alpha
-		// 1msa - one minus src alpha
-		// s1c - src1 color
-		// 1ms1c - one minus src1 color
+		// stage variables:
+		//  'i_' or 'o_' will be eliminated to verify between stages
+
+		// blend factors:
+		//  0 - zero
+		//  1 - one
+		//  sc - src color
+		//  dc - dst color
+		//  sa - src alpha
+		//  da - dst alpha
+		//  1msa - one minus src alpha
+		//  s1c - src1 color
+		//  1ms1c - one minus src1 color
+
+		struct Shader
+		{
+			virtual void release() = 0;
+
+			virtual const wchar_t* get_filename() const = 0;
+			virtual const char* get_prefix() const = 0;
+
+			FLAME_GRAPHICS_EXPORTS static Shader* create(const wchar_t* filename, const char* prefix);
+		};
 
 		struct Pipeline
 		{
 			virtual void release() = 0;
 
-			PipelineType type;
+			virtual PipelineType get_type() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shader_count, const wchar_t* const* shader_filenames /* filename[:prefix] */, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count, Shader* const* shaders , Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
 				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
-				uint dynamic_state_count = 0, const uint* dynamic_states = nullptr);
+				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, const wchar_t* compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
 		};
 	}

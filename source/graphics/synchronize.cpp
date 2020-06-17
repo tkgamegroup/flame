@@ -22,8 +22,6 @@ namespace flame
 #endif
 		}
 
-		void Semaphore::release() { delete this; }
-
 		Semaphore* Semaphore::create(Device* d)
 		{
 			return new SemaphorePrivate(d);
@@ -54,8 +52,6 @@ namespace flame
 
 #endif
 		}
-
-		void FencePrivate::release() { delete this; }
 
 		void FencePrivate::wait()
 		{

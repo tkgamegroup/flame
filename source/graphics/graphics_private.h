@@ -226,7 +226,6 @@ namespace flame
 	namespace graphics
 	{
 #if defined(FLAME_VULKAN)
-
 		inline void chk_res(VkResult res)
 		{
 			assert(res == VK_SUCCESS || res == VK_ERROR_OUT_OF_DATE_KHR);
@@ -767,9 +766,7 @@ namespace flame
 				return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
 			}
 		}
-
 #elif defined(FLAME_D3D12)
-
 		inline DXGI_FORMAT to_backend(Format f)
 		{
 			switch (f)
@@ -823,7 +820,6 @@ namespace flame
 			}
 			return D3D12_RESOURCE_STATE_COMMON;
 		}
-
 #endif
 	}
 }
