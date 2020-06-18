@@ -6,6 +6,7 @@ namespace flame
 	namespace graphics
 	{
 		struct DevicePrivate;
+		struct BufferPrivate;
 		struct ImagePrivate;
 		struct RenderpassPrivate;
 		struct FramebufferPrivate;
@@ -70,18 +71,18 @@ namespace flame
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
 			void dispatch(const Vec3u& v) override;
 
-			void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) override;
+			void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) override { _copy_buffer((BufferPrivate*)src, (BufferPrivate*)dst, { copies, copies_count }); }
 			void _copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies);
-			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override;
+			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override { _copy_image((ImagePrivate*)src, (ImagePrivate*)dst, { copies, copies_count }); }
 			void _copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
-			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override;
+			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override { _copy_buffer_to_image((BufferPrivate*)src, (ImagePrivate*)dst, { copies, copies_count }); }
 			void _copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
-			void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) override;
+			void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) override { _copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count }); }
 			void _copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies);
-			void change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count) override;
+			void change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count) override { _change_image_layout((ImagePrivate*)i, from, to, base_level, level_count, base_layer, layer_count); }
 			void _change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count);
 
-			void clear_image(Image* i, const Vec4c& col) override;
+			void clear_image(Image* i, const Vec4c& col) override { _clear_image((ImagePrivate*)i, col); }
 			void _clear_image(ImagePrivate* i, const Vec4c& col);
 
 			void end() override;

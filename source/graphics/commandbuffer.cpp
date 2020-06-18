@@ -294,17 +294,17 @@ namespace flame
 				vk_copies[i].dstOffset = copies[i].dst_off;
 				vk_copies[i].size = copies[i].size;
 			}
-			vkCmdCopyBuffer(v, src->v, dst->v, copies.size(), vk_copies.data());
+			vkCmdCopyBuffer(v, src->v, dst->v, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::copy_image(Image* src, Image* dst, uint copy_count, ImageCopy* copies)
+		void CommandbufferPrivate::_copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
-			std::vector<VkImageCopy> vk_copies(copy_count);
-			for (auto i = 0; i < copy_count; i++)
+			std::vector<VkImageCopy> vk_copies(copies.size());
+			for (auto i = 0; i < vk_copies.size(); i++)
 			{
 				vk_copies[i].srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 				vk_copies[i].srcSubresource.mipLevel = 0;
@@ -324,15 +324,15 @@ namespace flame
 				vk_copies[i].extent.height = copies[i].size.y();
 				vk_copies[i].extent.depth = 1;
 			}
-			vkCmdCopyImage(v, ((ImagePrivate*)src)->v, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-				((ImagePrivate*)dst)->v, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copy_count, vk_copies.data());
+			vkCmdCopyImage(v, src->v, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v, 
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
 #if defined(FLAME_VULKAN)
-		VkBufferImageCopy to_vk_copy(const BufferImageCopy& cpy, VkImageAspectFlags aspect)
+		VkBufferImageCopy to_backend(const BufferImageCopy& cpy, VkImageAspectFlags aspect)
 		{
 			VkBufferImageCopy vk_cpy = {};
 			vk_cpy.bufferOffset = cpy.buffer_offset;
@@ -348,44 +348,38 @@ namespace flame
 		}
 #endif
 
-		void CommandbufferPrivate::copy_buffer_to_image(Buffer* _src, Image* _dst, uint copy_count, BufferImageCopy* copies)
+		void CommandbufferPrivate::_copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies)
 		{
-			auto src = (BufferPrivate*)_src;
-			auto dst = (ImagePrivate*)_dst;
 #if defined(FLAME_VULKAN)
 			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(dst->format));
 
-			std::vector<VkBufferImageCopy> vk_copies(copy_count);
-			for (auto i = 0; i < copy_count; i++)
-				vk_copies[i] = to_vk_copy(copies[i], aspect);
+			std::vector<VkBufferImageCopy> vk_copies(copies.size());
+			for (auto i = 0; i < vk_copies.size(); i++)
+				vk_copies[i] = to_backend(copies[i], aspect);
 			vkCmdCopyBufferToImage(v, src->v, dst->v,
-				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copy_count, vk_copies.data());
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::copy_image_to_buffer(Image* _src, Buffer* _dst, uint copy_count, BufferImageCopy* copies)
+		void CommandbufferPrivate::_copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies)
 		{
-			auto src = (ImagePrivate*)_src;
-			auto dst = (BufferPrivate*)_dst;
 #if defined(FLAME_VULKAN)
 			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(src->format));
 
-			std::vector<VkBufferImageCopy> vk_copies(copy_count);
-			for (auto i = 0; i < copy_count; i++)
-				vk_copies[i] = to_vk_copy(copies[i], aspect);
+			std::vector<VkBufferImageCopy> vk_copies(copies.size());
+			for (auto i = 0; i < vk_copies.size(); i++)
+				vk_copies[i] = to_backend(copies[i], aspect);
 			vkCmdCopyImageToBuffer(v, src->v,
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v, copy_count, vk_copies.data());
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::change_image_layout(Image* _i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
+		void CommandbufferPrivate::_change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
 		{
-			auto i = (ImagePrivate*)_i;
-
 			level_count = level_count == 0 ? i->level : level_count;
 			layer_count = layer_count == 0 ? i->layer : layer_count;
 
@@ -483,9 +477,8 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::clear_image(Image* _i, const Vec4c& col)
+		void CommandbufferPrivate::_clear_image(ImagePrivate* i, const Vec4c& col)
 		{
-			auto i = (ImagePrivate*)_i;
 #if defined(FLAME_VULKAN)
 			VkClearColorValue cv;
 			cv.float32[0] = col.x() / 255.f;
@@ -520,7 +513,7 @@ namespace flame
 
 		Commandbuffer* Commandbuffer::create(Commandpool* p, bool sub)
 		{
-			return new CommandbufferPrivate(p, sub);
+			return new CommandbufferPrivate((CommandpoolPrivate*)p, sub);
 		}
 
 		QueuePrivate::QueuePrivate(DevicePrivate* d, uint queue_family_idx) :
@@ -548,7 +541,7 @@ namespace flame
 
 		void QueuePrivate::submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
 		{
-			_submit({ (CommandbufferPrivate**)cbs, cb_count }, wait_semaphore, signal_semaphore, signal_fence);
+			_submit({ (CommandbufferPrivate**)cbs, cb_count }, (SemaphorePrivate*)wait_semaphore, (SemaphorePrivate*)signal_semaphore, (FencePrivate*)signal_fence);
 		}
 
 		void QueuePrivate::_submit(std::span<CommandbufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
@@ -565,7 +558,7 @@ namespace flame
 			std::vector<VkCommandBuffer> vk_cbs;
 			vk_cbs.resize(cbs.size());
 			for (auto i = 0; i < vk_cbs.size(); i++)
-				vk_cbs[i] = ((CommandbufferPrivate*)cbs[i])->v;
+				vk_cbs[i] = cbs[i]->v;
 			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
 			info.pSignalSemaphores = signal_semaphore ? &signal_semaphore->v : nullptr;
@@ -610,7 +603,7 @@ namespace flame
 
 		Queue* Queue::create(Device* d, uint queue_family_idx)
 		{
-			return new QueuePrivate(d, queue_family_idx);
+			return new QueuePrivate((DevicePrivate*)d, queue_family_idx);
 		}
 	}
 }

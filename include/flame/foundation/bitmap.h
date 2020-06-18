@@ -21,9 +21,9 @@ namespace flame
 		virtual void add_alpha_channel() = 0;
 		virtual void swap_channel(uint ch1, uint ch2) = 0;
 		virtual void copy_to(Bitmap* dst, uint width, uint height, uint src_x = 0, uint src_y = 0, uint dst_x = 0, uint dst_y = 0, bool border = false) = 0;
-		virtual void save_to_file(const wchar_t* filename) = 0;
+		virtual void save(const wchar_t* filename) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Bitmap* create(uint width, uint height, uint channel, uint bype_per_channel = 1, uchar* data = nullptr);
+		FLAME_FOUNDATION_EXPORTS static Bitmap* create(uint width, uint height, uint channel = 4, uint byte_per_channel = 1, uchar* data = nullptr);
 		FLAME_FOUNDATION_EXPORTS static Bitmap* create(const wchar_t* filename);
 	};
 
@@ -86,7 +86,7 @@ namespace flame
 			t.pos = Vec2i(-1);
 			tiles.push_back(t);
 		}
-		std::sort(tiles.begin(), tiles.end(), [](const BinPackTile& a, const BinPackTile& b) {
+		std::sort(tiles.begin(), tiles.end(), [](const auto& a, const auto& b) {
 			return max(a.b->get_width(), a.b->get_height()) > max(b.b->get_width(), b.b->get_height());
 		});
 
@@ -114,7 +114,7 @@ namespace flame
 				t.b->copy_to(b, t.b->get_width(), t.b->get_height(), 0, 0, t.pos.x(), t.pos.y(), border);
 		}
 
-		b->save_to_file(output.c_str());
+		b->save(output.c_str());
 
 		callback(tiles);
 
