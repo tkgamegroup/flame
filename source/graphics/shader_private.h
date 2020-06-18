@@ -20,7 +20,6 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-
 			DescriptorpoolPrivate(Device* d);
 			~DescriptorpoolPrivate();
 
@@ -34,10 +33,10 @@ namespace flame
 			uint count;
 			const char* name;
 
-			virtual uint get_index() const = 0;
-			virtual DescriptorType get_type() const = 0;
-			virtual uint get_count() const = 0;
-			virtual const char* get_name() const = 0;
+			uint get_index() const override;
+			DescriptorType get_type() const override;
+			uint get_count() const override;
+			const char* get_name() const override;
 		};
 
 		struct DescriptorlayoutPrivate : Descriptorlayout
@@ -54,14 +53,14 @@ namespace flame
 
 			uint hash;
 
-			DescriptorlayoutPrivate(DevicePrivate* d, std::span<DescriptorBinding> bindings, bool create_default_set);
+			DescriptorlayoutPrivate(DevicePrivate* d, std::span<DescriptorBindingInfo> bindings, bool create_default_set = false);
 			~DescriptorlayoutPrivate();
 
 			void release() override;
 
-			virtual uint get_bindings_count() const = 0;
-			virtual DescriptorBinding* get_binding(uint binding) const = 0;
-			virtual Descriptorset* get_default_set() const = 0;
+			uint get_bindings_count() const override;
+			DescriptorBinding* get_binding(uint binding) const override;
+			Descriptorset* get_default_set() const override;
 		};
 
 		struct DescriptorsetPrivate : Descriptorset
@@ -78,6 +77,8 @@ namespace flame
 			~DescriptorsetPrivate();
 
 			void release() override;
+
+			Descriptorlayout* get_layout() const override;
 
 			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range);
 			void set_image(uint binding, uint index, Imageview* iv, Sampler* sampler);
@@ -96,7 +97,7 @@ namespace flame
 
 			uint hash;
 
-			PipelinelayoutPrivate(DevicePrivate* d, std::span<Descriptorlayout*> descriptorlayouts, uint push_constant_size);
+			PipelinelayoutPrivate(DevicePrivate* d, std::span<DescriptorlayoutPrivate*> descriptorlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();
 
 			void release() override;
@@ -194,11 +195,18 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			ShaderPrivate(const std::filesystem::path& fn, const std::string& prefix);
+			ShaderPrivate(const std::filesystem::path& fn, const std::string& prefix = "");
+
+			void release() override;
+
+			const wchar_t* get_filename() const override;
+			const char* get_prefix() const override;
 		};
 
 		struct PipelinePrivate : Pipeline
 		{
+			PipelineType type;
+
 			DevicePrivate* d;
 			PipelinelayoutPrivate* pll;
 
@@ -209,11 +217,17 @@ namespace flame
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> shaders, PipelinelayoutPrivate* pll, RenderpassPrivate* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, std::span<uint> dynamic_states);
-			PipelinePrivate(DevicePrivate* d, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll);
+			PipelinePrivate(DevicePrivate* d, const std::filesystem::path& shader_dir, 
+				std::span<ShaderPrivate*> shaders, PipelinelayoutPrivate* pll, RenderpassPrivate* rp, 
+				uint subpass_idx, VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), 
+				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, 
+				std::span<uint> dynamic_states = {});
+			PipelinePrivate(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
 
 			void release() override;
+
+			PipelineType get_type() const override;
 		};
 	}
 }

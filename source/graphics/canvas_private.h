@@ -97,7 +97,7 @@ namespace flame
 
 			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness) override;
 			void fill(uint points_count, const Vec2f* points, const Vec4c& col) override;
-			void add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& pos, const Vec4c& col) override;
+			void add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& pos, const Vec4c& col) override { _add_text((FontAtlasPrivate*)f, { text_begin, size_t(text_end - text_begin) }, font_size, pos, col); }
 			void _add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col);
 			void add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 

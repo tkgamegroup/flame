@@ -16,9 +16,10 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::string file;
-			std::unique_ptr<stbtt_fontinfo> stbtt_info;
+			stbtt_fontinfo* stbtt_info;
 
 			FontPrivate(const std::wstring& filename);
+			~FontPrivate();
 
 			void release() override { delete this; }
 
@@ -58,7 +59,8 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Glyph* get_glyph(wchar_t unicode, uint font_size) override;
+			Glyph* get_glyph(wchar_t code, uint font_size) override { return _get_glyph(code, font_size); }
+			GlyphPrivate* _get_glyph(wchar_t code, uint font_size);
 		};
 	}
 }

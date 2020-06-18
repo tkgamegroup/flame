@@ -17,6 +17,8 @@ namespace flame
 		static RenderpassPrivate* rp = nullptr;
 		static DescriptorlayoutPrivate* dsl = nullptr;
 		static PipelinelayoutPrivate* pll = nullptr;
+		static ShaderPrivate* vert = nullptr;
+		static ShaderPrivate* frag = nullptr;
 		static PipelinePrivate* pl = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
@@ -35,18 +37,18 @@ namespace flame
 				};
 				sp.color_attachments_count = 1;
 				sp.color_attachments = col_refs;
-				rp = new RenderpassPrivate(d, 1, &att, 1, &sp, 0, nullptr);
+				rp = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
 			}
 			if (!dsl)
 			{
-				DescriptorBinding db;
+				DescriptorBindingInfo db;
 				db.type = DescriptorSampledImage;
 				db.count = resource_count;
 				db.name = "images";
-				dsl = new DescriptorlayoutPrivate(d, 1, &db);
+				dsl = new DescriptorlayoutPrivate(d, { &db, 1});
 			}
 			if (!pll)
-				pll = new PipelinelayoutPrivate(d, 1, &dsl, 16);
+				pll = new PipelinelayoutPrivate(d, { &dsl, 1 }, 16);
 			if (!pl)
 			{
 				VertexInputAttribute vias[3];
@@ -60,16 +62,18 @@ namespace flame
 				via3.format = Format_R8G8B8A8_UNORM;
 				via3.name = "color";
 				VertexInputBuffer vib;
-				vib.attribute_count = array_size(vias);
+				vib.attributes_count = array_size(vias);
 				vib.attributes = vias;
 				VertexInputInfo vi;
 				vi.buffer_count = 1;
 				vi.buffers = &vib;
-				const wchar_t* shaders[] = {
-					L"element.vert",
-					L"element.frag"
+				vert = new ShaderPrivate(L"element.vert");
+				frag = new ShaderPrivate(L"element.frag");
+				ShaderPrivate* shaders[] = {
+					vert,
+					frag
 				};
-				pl = new PipelinePrivate(d, (std::filesystem::path(get_engine_path()) / L"shaders").c_str(), array_size(shaders), shaders, pll, rp, 0, &vi);
+				pl = new PipelinePrivate(d, std::filesystem::path(get_engine_path()) / L"shaders", shaders, pll, rp, 0, &vi);
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));
@@ -107,7 +111,7 @@ namespace flame
 				target_size = views[0]->image->size;
 				fbs.resize(views.size());
 				for (auto i = 0; i < fbs.size(); i++)
-					fbs[i].reset(new FramebufferPrivate(d, rp, 1, &views[i]));
+					fbs[i].reset(new FramebufferPrivate(d, rp, { &views[i], 1 }));
 			}
 		}
 
@@ -304,15 +308,15 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& _pos, const Vec4c& col)
+		void CanvasPrivate::_add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& _pos, const Vec4c& col)
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 
-			if (cmds.empty() || cmds.back().type != CmdDrawElement || cmds.back().v.draw_data.id != f->canvas_slot_)
+			if (cmds.empty() || cmds.back().type != CmdDrawElement || cmds.back().v.draw_data.id != f->slot)
 			{
 				Cmd cmd;
 				cmd.type = CmdDrawElement;
-				cmd.v.draw_data.id = f->canvas_slot_;
+				cmd.v.draw_data.id = f->slot;
 				cmd.v.draw_data.vtx_cnt = 0;
 				cmd.v.draw_data.idx_cnt = 0;
 				cmds.push_back(cmd);
@@ -320,8 +324,8 @@ namespace flame
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
 
-			auto pstr = text_begin;
-			while (pstr != text_end)
+			auto pstr = text.begin();
+			while (pstr != text.end())
 			{
 				auto ch = *pstr;
 				if (!ch)
@@ -336,16 +340,20 @@ namespace flame
 					if (ch == '\t')
 						ch = ' ';
 
-					auto g = f->get_glyph(ch, font_size);
+					auto g = f->_get_glyph(ch, font_size);
 
 					auto p = pos + Vec2f(g->off);
 					auto size = Vec2f(g->size);
 					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), curr_scissor))
 					{
-						vtx_end->pos = p;						       vtx_end->uv = g->uv0;						  vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(g->uv0.x(), g->uv1.y());   vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = g->uv1;						  vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), 0.f);	   vtx_end->uv = Vec2f(g->uv1.x(), g->uv0.y());   vtx_end->col = col; vtx_end++;
+						auto uv = g->uv;
+						auto uv0 = Vec2f(uv.x(), uv.y());
+						auto uv1 = Vec2f(uv.z(), uv.w());
+
+						vtx_end->pos = p;						       vtx_end->uv = uv0;						vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = uv1;						vtx_end->col = col; vtx_end++;
+						vtx_end->pos = p + Vec2f(size.x(), 0.f);	   vtx_end->uv = Vec2f(uv1.x(), uv0.y());   vtx_end->col = col; vtx_end++;
 
 						*idx_end = vtx_cnt + 0; idx_end++;
 						*idx_end = vtx_cnt + 2; idx_end++;
@@ -384,17 +392,20 @@ namespace flame
 			}
 			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
 			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-			auto& img = resources[img_id];
-			auto atlas = img.atlas;
+			auto res = resources[img_id].get();
+			auto atlas = res->atlas;
 			if (atlas)
 			{
-				auto& tile = atlas->tile(id & 0xffff);
-				uv0 = mix(tile.uv0, tile.uv1, uv0);
-				uv1 = mix(tile.uv0, tile.uv1, uv1);
-				img_size = tile.size;
+				auto tile = atlas->tiles[id & 0xffff].get();
+				auto tuv = tile->uv;
+				auto tuv0 = Vec2f(tuv.x(), tuv.y());
+				auto tuv1 = Vec2f(tuv.z(), tuv.w());
+				uv0 = mix(tuv0, tuv1, uv0);
+				uv1 = mix(tuv0, tuv1, uv1);
+				img_size = tile->size;
 			}
 			else
-				img_size = img.view->image()->size;
+				img_size = res->view->image->size;
 
 			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
 			vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;

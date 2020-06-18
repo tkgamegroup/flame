@@ -39,10 +39,10 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Window* get_window() const override { return window; }
+			Window* get_window() const override { return w; }
 			uint get_images_count() const override { return images.size(); }
 			Image* get_image(uint idx) const override { return images[idx].get(); }
-			Semaphore* get_image_avalible() const override { return image_avalible.get(); }
+			Semaphore* get_image_avalible() const override { return (Semaphore*)image_avalible.get(); }
 
 			uint get_image_index() const override { return image_index; }
 			void acquire_image() override;

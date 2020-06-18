@@ -204,54 +204,54 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::bind_pipeline(Pipeline* p)
+		void CommandbufferPrivate::_bind_pipeline(PipelinePrivate* p)
 		{
 			if (current_pipeline == p)
 				return;
 
 			assert(p->type != PipelineNone);
-			current_pipeline = (PipelinePrivate*)p;
+			current_pipeline = p;
 #if defined(FLAME_VULKAN)
-			vkCmdBindPipeline(v, to_backend(p->type), ((PipelinePrivate*)p)->v);
+			vkCmdBindPipeline(v, to_backend(p->type), p->v);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll)
+		void CommandbufferPrivate::_bind_descriptorset(DescriptorsetPrivate* s, uint idx, PipelinelayoutPrivate* pll)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindDescriptorSets(v, to_backend(pll ? PipelineGraphics : current_pipeline->type), pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, idx, 1, &((DescriptorsetPrivate*)s)->v, 0, nullptr);
+			vkCmdBindDescriptorSets(v, to_backend(pll ? PipelineGraphics : current_pipeline->type), pll ? pll->v : current_pipeline->pll->v, idx, 1, &s->v, 0, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::bind_vertexbuffer(Buffer* b, uint id)
+		void CommandbufferPrivate::_bind_vertexbuffer(BufferPrivate* b, uint id)
 		{
 #if defined(FLAME_VULKAN)
 			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(v, id, 1, &((BufferPrivate*)b)->v, &offset);
+			vkCmdBindVertexBuffers(v, id, 1, &b->v, &offset);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::bind_indexbuffer(Buffer* b, IndiceType t)
+		void CommandbufferPrivate::_bind_indexbuffer(BufferPrivate* b, IndiceType t)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindIndexBuffer(v, ((BufferPrivate*)b)->v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(v, b->v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll)
+		void CommandbufferPrivate::_push_constant(uint offset, uint size, const void* data, PipelinelayoutPrivate* pll)
 		{
 			if (!pll)
 				pll = current_pipeline->pll;
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(v, pll ? ((PipelinelayoutPrivate*)pll)->v : current_pipeline->pll->v, to_backend_flags<ShaderStage>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(v, pll ? pll->v : current_pipeline->pll->v, to_backend_flags<ShaderStage>(ShaderStageAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -284,17 +284,17 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::copy_buffer(Buffer* src, Buffer* dst, uint copy_count, BufferCopy* copies)
+		void CommandbufferPrivate::_copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
-			std::vector<VkBufferCopy> vk_copies(copy_count);
-			for (auto i = 0; i < copy_count; i++)
+			std::vector<VkBufferCopy> vk_copies(copies.size());
+			for (auto i = 0; i < vk_copies.size(); i++)
 			{
 				vk_copies[i].srcOffset = copies[i].src_off;
 				vk_copies[i].dstOffset = copies[i].dst_off;
 				vk_copies[i].size = copies[i].size;
 			}
-			vkCmdCopyBuffer(v, ((BufferPrivate*)src)->v, ((BufferPrivate*)dst)->v, copy_count, vk_copies.data());
+			vkCmdCopyBuffer(v, src->v, dst->v, copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif

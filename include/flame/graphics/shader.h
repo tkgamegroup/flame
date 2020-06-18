@@ -181,8 +181,10 @@ namespace flame
 
 			virtual PipelineType get_type() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count, Shader* const* shaders , Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
-				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count, 
+				Shader* const* shaders , Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
+				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
+				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
 				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, const wchar_t* compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
 		};

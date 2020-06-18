@@ -9,6 +9,7 @@ namespace flame
 		struct ImagePrivate;
 		struct RenderpassPrivate;
 		struct FramebufferPrivate;
+		struct DescriptorsetPrivate;
 		struct PipelinePrivate;
 		struct PipelinelayoutPrivate;
 		struct SemaphorePrivate;
