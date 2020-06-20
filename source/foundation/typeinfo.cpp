@@ -18,7 +18,7 @@ namespace flame
 		hash = FLAME_HASH(name.c_str());
 	}
 
-	TypeInfo* TypeInfo::get(TypeTag tag, const char* base_name, bool is_array)
+	TypeInfoPrivate* TypeInfoPrivate::_get(TypeTag tag, const std::string& base_name, bool is_array)
 	{
 		auto hash = FLAME_HASH(make_str(tag, base_name, is_array).c_str());
 		auto it = typeinfos.find(hash);
@@ -29,7 +29,9 @@ namespace flame
 		return t;
 	}
 
-	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfo* type, const std::string& name, uint flags, uint offset, uint size) :
+	TypeInfo* TypeInfo::get(TypeTag tag, const char* base_name, bool is_array) { return TypeInfoPrivate::_get(tag, base_name, is_array); }
+
+	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset, uint size) :
 		udt(udt),
 		index(index),
 		type(type),
@@ -196,7 +198,7 @@ namespace flame
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
-				auto type = TypeInfo::get(n_variable.attribute("type").value());
+				auto type = TypeInfoPrivate::_get(n_variable.attribute("type").value());
 				auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
 					n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
 				u->variables.emplace_back(v);
@@ -207,10 +209,10 @@ namespace flame
 
 			for (auto n_function : n_udt.child("functions"))
 			{
-				auto f = new FunctionInfoPrivate(db, u, u->functions.size(), n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), (TypeInfoPrivate*)TypeInfo::get(n_function.attribute("return_type").value()));
+				auto f = new FunctionInfoPrivate(db, u, u->functions.size(), n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfoPrivate::_get(n_function.attribute("return_type").value()));
 				u->functions.emplace_back(f);
 				for (auto n_parameter : n_function.child("parameters"))
-					f->parameters.push_back(TypeInfo::get(n_parameter.attribute("type").value()));
+					f->parameters.push_back(TypeInfoPrivate::_get(n_parameter.attribute("type").value()));
 			}
 		}
 

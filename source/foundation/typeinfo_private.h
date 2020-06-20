@@ -19,6 +19,16 @@ namespace flame
 
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, bool is_array);
 
+		static TypeInfoPrivate* _get(TypeTag tag, const std::string& base_name, bool is_array = false);
+		static TypeInfoPrivate* _get(const std::string& str)
+		{
+			TypeTag tag;
+			std::string base_name;
+			bool is_array;
+			break_str(str, tag, base_name, is_array);
+			return TypeInfoPrivate::_get(tag, base_name, is_array);
+		}
+
 		TypeTag get_tag() const override { return tag; }
 		bool get_is_array() const override { return is_array; }
 		const char* get_base_name() const override { return base_name.c_str(); }
@@ -31,7 +41,7 @@ namespace flame
 	{
 		UdtInfoPrivate* udt;
 		uint index;
-		TypeInfo* type;
+		TypeInfoPrivate* type;
 		std::string name;
 		uint name_hash;
 		uint flags;
@@ -39,7 +49,7 @@ namespace flame
 		uint size;
 		void* default_value;
 
-		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfo* type, const std::string& name, uint flags, uint offset, uint size);
+		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset, uint size);
 		~VariableInfoPrivate();
 
 		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }

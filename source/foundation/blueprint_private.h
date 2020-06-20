@@ -4,46 +4,51 @@
 
 namespace flame
 {
+	struct TypeInfoPrivate;
+	struct VariableInfoPrivate;
+
 	struct bpSlotPrivate;
 	struct bpNodePrivate;
 	struct bpScenePrivate;
 
 	struct bpSlotPrivate : bpSlot
 	{
-		bpNodePrivate* node;
-		bpSlotIO io;
-		uint index;
-		TypeInfo* type;
-		std::string name;
-		uint offset;
-		uint size;
-		void* data;
-		void* default_value;
+		bpNodePrivate* _node;
+		bpSlotIO _io;
+		uint _index;
+		TypeInfoPrivate* _type;
+		std::string _name;
+		uint _offset;
+		uint _size;
+		void* _data = nullptr;
+		void* _default_value = nullptr;
 
-		std::vector<bpSlotPrivate*> links;
+		std::vector<bpSlotPrivate*> _links;
 
-		Setter* setter;
-		void* listener;
+		Setter* _setter = nullptr;
+		void* _listener = nullptr;
 
-		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, const std::string& name, uint offset, uint size, const void* _default_value);
-		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfo* vi);
+		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint size, const void* default_value);
+		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfoPrivate* vi);
 		~bpSlotPrivate();
 
-		bpNode* get_node() const override { return (bpNode*)node; }
-		bpSlotIO get_io() const override { return io; }
-		uint get_index() const override { return index; }
-		TypeInfo* get_type() const override { return type; }
-		const char* get_name() const override { return name.c_str(); }
-		uint get_offset() const override { return offset; }
-		uint get_size() const override { return size; }
-		const void* get_data() const override { return data; }
-		void set_data(const void* data) override;
-		const void* get_default_value() const override { return default_value; }
-
-		uint get_links_count() const override { return links.size(); }
-		bpSlot* get_link(uint idx) const override { return links[idx]; }
-		bool link_to(bpSlot* target) override { return _link_to((bpSlotPrivate*)target); }
+		void _set_data(const void* data);
 		bool _link_to(bpSlotPrivate* target);
+
+		bpNode* get_node() const override { return (bpNode*)_node; }
+		bpSlotIO get_io() const override { return _io; }
+		uint get_index() const override { return _index; }
+		TypeInfo* get_type() const override { return (TypeInfo*)_type; }
+		const char* get_name() const override { return _name.c_str(); }
+		uint get_offset() const override { return _offset; }
+		uint get_size() const override { return _size; }
+		const void* get_data() const override { return _data; }
+		void set_data(const void* data) override { _set_data(data); }
+		const void* get_default_value() const override { return _default_value; }
+
+		uint get_links_count() const override { return _links.size(); }
+		bpSlot* get_link(uint idx) const override { return _links[idx]; }
+		bool link_to(bpSlot* target) override { return _link_to((bpSlotPrivate*)target); }
 	};
 
 	struct bpNodePrivate : bpNode

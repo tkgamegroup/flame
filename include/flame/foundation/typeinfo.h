@@ -42,6 +42,39 @@ namespace flame
 		virtual const char* get_name() const = 0; // tag[A]#base
 		virtual uint get_hash() const = 0;
 
+		inline bool is_pod() const
+		{
+			if (get_is_array())
+				return false;
+			auto tag = get_tag();
+			if (tag == TypePointer)
+				return false;
+			auto base_hash = get_base_hash();
+			if (tag == TypeData && (base_hash == FLAME_CHASH("flame::StringA") || base_hash == FLAME_CHASH("flame::StringW")))
+				return false;
+			return true;
+		}
+
+		inline std::string get_cpp_name() const
+		{
+			auto ret = std::string(get_base_name());
+			static FLAME_SAL(str_flame, "flame::");
+			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
+				ret.erase(ret.begin(), ret.begin() + str_flame.l);
+			std::regex reg_vec(R"(Vec<([0-9]+),(\w+)>)");
+			std::smatch res;
+			if (std::regex_search(ret, res, reg_vec))
+			{
+				auto t = res[2].str();
+				ret = "Vec" + res[1].str() + (t == "uchar" ? 'c' : t[0]);
+			}
+			if (get_is_array())
+				ret = "Array<" + ret + ">";
+			if (get_tag() == TypePointer)
+				ret += "*";
+			return ret;
+		}
+
 		static std::string make_str(TypeTag tag, const std::string& base_name, bool is_array = false)
 		{
 			std::string ret;
@@ -84,39 +117,6 @@ namespace flame
 			bool is_array;
 			break_str(str, tag, base_name, is_array);
 			return TypeInfo::get_hash(tag, base_name, is_array);
-		}
-
-		inline bool is_pod() const
-		{
-			if (get_is_array())
-				return false;
-			auto tag = get_tag();
-			if (tag == TypePointer)
-				return false;
-			auto base_hash = get_base_hash();
-			if (tag == TypeData && (base_hash == FLAME_CHASH("flame::StringA") || base_hash == FLAME_CHASH("flame::StringW")))
-				return false;
-			return true;
-		}
-
-		inline std::string get_cpp_name() const
-		{
-			auto ret = std::string(get_base_name());
-			static FLAME_SAL(str_flame, "flame::");
-			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
-				ret.erase(ret.begin(), ret.begin() + str_flame.l);
-			std::regex reg_vec(R"(Vec<([0-9]+),(\w+)>)");
-			std::smatch res;
-			if (std::regex_search(ret, res, reg_vec))
-			{
-				auto t = res[2].str();
-				ret = "Vec" + res[1].str() + (t == "uchar" ? 'c' : t[0]);
-			}
-			if (get_is_array())
-				ret = "Array<" + ret + ">";
-			if (get_tag() == TypePointer)
-				ret += "*";
-			return ret;
 		}
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);
