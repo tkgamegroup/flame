@@ -37,6 +37,6 @@ int main(int argc, char** args)
 
 	};
 #undef ARGS
-	// test
+
 	return 0;
 }
