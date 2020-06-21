@@ -52,6 +52,7 @@ namespace flame
 
 		struct RenderpassSubpass
 		{
+			virtual uint get_index() const = 0;
 			virtual uint get_color_attachments_count() const = 0;
 			virtual RenderpassAttachment* get_color_attachment(uint idx) const = 0;
 			virtual uint get_resolve_attachments_count() const = 0;

@@ -39,7 +39,7 @@ namespace flame
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			alloc_info.pNext = nullptr;
 			alloc_info.allocationSize = mem_requirements.size;
-			alloc_info.memoryTypeIndex = d->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
+			alloc_info.memoryTypeIndex = d->_find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
 			chk_res(vkAllocateMemory(d->v, &alloc_info, nullptr, &_m));
 
@@ -109,19 +109,18 @@ namespace flame
 		{
 			auto stag_buf = std::make_unique<BufferPrivate>(_d, _size, BufferUsageTransferSrc, MemPropHost);
 
-			stag_buf->map();
+			stag_buf->_map();
 			memcpy(stag_buf->_mapped, data, _size);
-			stag_buf->flush();
-			stag_buf->unmap();
+			stag_buf->_flush();
+			stag_buf->_unmap();
 
-			auto cb = std::make_unique<CommandbufferPrivate>(_d->default_graphics_commandpool.get());
-			cb->begin(true);
-			cb->copy_buffer(stag_buf.get(), this, 1, &BufferCopy(0, 0, _size));
-			cb->end();
-			auto q = _d->default_graphics_queue.get();
-			CommandbufferPrivate* cbs[] = { cb.get() };
-			q->_submit(cbs, nullptr, nullptr, nullptr);
-			q->wait_idle();
+			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+			cb->_begin(true);
+			cb->_copy_buffer(stag_buf.get(), this, { &BufferCopy(0, 0, _size), 1 });
+			cb->_end();
+			auto q = _d->_graphics_queue.get();
+			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->_wait_idle();
 		}
 
 		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data)

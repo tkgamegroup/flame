@@ -331,11 +331,11 @@ namespace flame
 			instInfo.ppEnabledExtensionNames = instExtensions.data();
 			instInfo.enabledLayerCount = instLayers.size();
 			instInfo.ppEnabledLayerNames = instLayers.data();
-			chk_res(vkCreateInstance(&instInfo, nullptr, &instance));
+			chk_res(vkCreateInstance(&instInfo, nullptr, &_instance));
 
 			if (debug)
 			{
-				static auto _vkCreateDebugReportCallbackEXT = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
+				static auto _vkCreateDebugReportCallbackEXT = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(_instance, "vkCreateDebugReportCallbackEXT"));
 
 				VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
 				callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
@@ -345,32 +345,32 @@ namespace flame
 				callbackCreateInfo.pUserData = nullptr;
 
 				VkDebugReportCallbackEXT callback;
-				chk_res(_vkCreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback));
+				chk_res(_vkCreateDebugReportCallbackEXT(_instance, &callbackCreateInfo, nullptr, &callback));
 			}
 
 			uint32_t gpu_count = 0;
 			std::vector<VkPhysicalDevice> physical_devices;
-			chk_res(vkEnumeratePhysicalDevices(instance, &gpu_count, nullptr));
+			chk_res(vkEnumeratePhysicalDevices(_instance, &gpu_count, nullptr));
 			physical_devices.resize(gpu_count);
-			chk_res(vkEnumeratePhysicalDevices(instance, &gpu_count, physical_devices.data()));
-			physical_device = physical_devices[0];
+			chk_res(vkEnumeratePhysicalDevices(_instance, &gpu_count, physical_devices.data()));
+			_physical_device = physical_devices[0];
 
-			vkGetPhysicalDeviceProperties(physical_device, &props);
+			vkGetPhysicalDeviceProperties(_physical_device, &_props);
 			unsigned int queue_family_property_count = 0;
 			std::vector<VkQueueFamilyProperties> queue_family_properties;
-			vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_property_count, nullptr);
+			vkGetPhysicalDeviceQueueFamilyProperties(_physical_device, &queue_family_property_count, nullptr);
 			queue_family_properties.resize(queue_family_property_count);
-			vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_property_count, queue_family_properties.data());
+			vkGetPhysicalDeviceQueueFamilyProperties(_physical_device, &queue_family_property_count, queue_family_properties.data());
 
 			float queue_porities[1] = { 0.f };
 			std::vector<VkDeviceQueueCreateInfo> queue_infos;
 
-			gq_idx = -1;
+			_gq_idx = -1;
 			for (auto i = 0; i < queue_family_properties.size(); i++)
 			{
 				if (queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				{
-					gq_idx = i;
+					_gq_idx = i;
 					VkDeviceQueueCreateInfo queue_info = {};
 					queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 					queue_info.queueFamilyIndex = i;
@@ -381,13 +381,13 @@ namespace flame
 				}
 			}
 
-			tq_idx = -1;
+			_tq_idx = -1;
 			for (auto i = 0; i < queue_family_properties.size(); i++)
 			{
 				if (!(queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
 					(queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT))
 				{
-					tq_idx = i;
+					_tq_idx = i;
 					VkDeviceQueueCreateInfo queue_info = {};
 					queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 					queue_info.queueFamilyIndex = i;
@@ -399,9 +399,9 @@ namespace flame
 			}
 
 			VkPhysicalDeviceFeatures features;
-			vkGetPhysicalDeviceFeatures(physical_device, &features);
+			vkGetPhysicalDeviceFeatures(_physical_device, &features);
 
-			vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
+			vkGetPhysicalDeviceMemoryProperties(_physical_device, &_mem_props);
 
 			std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 			VkDeviceCreateInfo device_info = {};
@@ -411,17 +411,17 @@ namespace flame
 			device_info.enabledExtensionCount = device_extensions.size();
 			device_info.ppEnabledExtensionNames = device_extensions.data();
 			device_info.pEnabledFeatures = &features;
-			chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &v));
+			chk_res(vkCreateDevice(_physical_device, &device_info, nullptr, &_v));
 
 			printf("vulkan initialized, gpu count: %d\n", gpu_count);
 
-			default_descriptorpool.reset(new DescriptorpoolPrivate(this));
-			default_sampler_nearest = new Sampler(this, FilterNearest, FilterNearest, false);
-			default_sampler_linear = new Sampler(this, FilterLinear, FilterLinear, false);
-			default_graphics_commandpool = new Commandpool(this, gq_idx);
-			default_graphics_queue = new Queue(this, gq_idx);
-			default_transfer_commandpool = tq_idx > 0 ? new Commandpool(this, tq_idx) : nullptr;
-			default_transfer_queue = tq_idx > 0 ? new Queue(this, tq_idx) : nullptr;
+			_descriptorpool.reset(new DescriptorpoolPrivate(this));
+			_sampler_nearest = new Sampler(this, FilterNearest, FilterNearest, false);
+			_sampler_linear = new Sampler(this, FilterLinear, FilterLinear, false);
+			_graphics_commandpool = new Commandpool(this, _gq_idx);
+			_graphics_queue = new Queue(this, _gq_idx);
+			_transfer_commandpool = _tq_idx > 0 ? new Commandpool(this, _tq_idx) : nullptr;
+			_transfer_queue = _tq_idx > 0 ? new Queue(this, _tq_idx) : nullptr;
 
 #elif defined(FLAME_D3D12)
 
@@ -475,11 +475,11 @@ namespace flame
 			switch (f)
 			{
 			case FeatureTextureCompressionBC:
-				return features.textureCompressionBC;
+				return _features.textureCompressionBC;
 			case FeatureTextureCompressionASTC_LDR:
-				return features.textureCompressionASTC_LDR;
+				return _features.textureCompressionASTC_LDR;
 			case FeatureTextureCompressionETC2:
-				return features.textureCompressionETC2;
+				return _features.textureCompressionETC2;
 			default:
 				break;
 			}
@@ -493,9 +493,9 @@ namespace flame
 		{
 			auto p = to_backend_flags<MemProp>(properties);
 #if defined(FLAME_VULKAN)
-			for (uint i = 0; i < mem_props.memoryTypeCount; i++)
+			for (uint i = 0; i < _mem_props.memoryTypeCount; i++)
 			{
-				if ((type_filter & (1 << i)) && (mem_props.memoryTypes[i].propertyFlags & p) == p)
+				if ((type_filter & (1 << i)) && (_mem_props.memoryTypes[i].propertyFlags & p) == p)
 					return i;
 			}
 #elif defined(FLAME_D3D12)

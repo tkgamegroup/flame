@@ -65,40 +65,25 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayouts_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
 		};
 
-		struct VertexInputAttribute
+		struct VertexAttributeInfo
 		{
 			const char* name;
 			Format format;
 		};
 
-		struct VertexInputBuffer
+		struct VertexBufferInfo
 		{
-			uint attributes_count;
-			const VertexInputAttribute* attributes;
-			VertexInputRate rate;
-
-			VertexInputBuffer() :
-				attributes_count(0),
-				attributes(nullptr),
-				rate(VertexInputRateVertex)
-			{
-			}
+			uint attributes_count = 0;
+			const VertexAttributeInfo* attributes = nullptr;
+			VertexInputRate rate = VertexInputRateVertex;
 		};
 
-		struct VertexInputInfo
+		struct VertexInfo
 		{
-			uint buffer_count;
-			const VertexInputBuffer* buffers;
-			PrimitiveTopology primitive_topology;
-			uint patch_control_points;
-
-			VertexInputInfo() :
-				buffer_count(0),
-				buffers(nullptr),
-				primitive_topology(PrimitiveTopologyTriangleList),
-				patch_control_points(0)
-			{
-			}
+			uint buffers_count = 0;
+			const VertexBufferInfo* buffers = nullptr;
+			PrimitiveTopology primitive_topology = PrimitiveTopologyTriangleList;
+			uint patch_control_points = 0;
 		};
 
 		struct RasterInfo
@@ -183,7 +168,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count, 
 				Shader* const* shaders , Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
-				VertexInputInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
+				VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
 				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, const wchar_t* compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);

@@ -8,8 +8,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		DescriptorpoolPrivate::DescriptorpoolPrivate(Device* _d) :
-			d((DevicePrivate*)_d)
+		DescriptorpoolPrivate::DescriptorpoolPrivate(DevicePrivate* d) :
+			_d(d)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
@@ -26,7 +26,7 @@ namespace flame
 			descriptorPoolInfo.poolSizeCount = array_size(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 8;
-			chk_res(vkCreateDescriptorPool(((DevicePrivate*)d)->v, &descriptorPoolInfo, nullptr, &v));
+			chk_res(vkCreateDescriptorPool(_d->_v, &descriptorPoolInfo, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -35,28 +35,34 @@ namespace flame
 		DescriptorpoolPrivate::~DescriptorpoolPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyDescriptorPool(((DevicePrivate*)d)->v, v, nullptr);
+			vkDestroyDescriptorPool(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void DescriptorpoolPrivate::release() { delete this; }
-
 		Descriptorpool* Descriptorpool::create(Device* d)
 		{
-			return new DescriptorpoolPrivate(d);
+			return new DescriptorpoolPrivate((DevicePrivate*)d);
 		}
 
-		DescriptorlayoutPrivate::DescriptorlayoutPrivate(Device* _d, uint binding_count, const DescriptorBinding* _bindings, bool create_default) :
-			d((DevicePrivate*)_d)
+		DescriptorBindingPrivate::DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info) :
+			_index(index),
+			_type(info.type),
+			_count(info.count),
+			_name(info.name)
+		{
+		}
+
+		DescriptorlayoutPrivate::DescriptorlayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings, bool create_default_set) :
+			_d(d)
 		{
 #if defined(FLAME_VULKAN)
-			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(binding_count);
-			bindings.resize(binding_count);
-			for (auto i = 0; i < binding_count; i++)
+			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
+			_bindings.resize(bindings.size());
+			for (auto i = 0; i < bindings.size(); i++)
 			{
-				auto& src = _bindings[i];
+				auto& src = bindings[i];
 				auto& dst = vk_bindings[i];
 
 				dst.binding = i;
@@ -65,7 +71,7 @@ namespace flame
 				dst.stageFlags = to_backend_flags<ShaderStage>(ShaderStageAll);
 				dst.pImmutableSamplers = nullptr;
 
-				bindings[i] = src;
+				_bindings[i].reset(new DescriptorBindingPrivate(i, src));
 			}
 
 			VkDescriptorSetLayoutCreateInfo info;
@@ -75,70 +81,49 @@ namespace flame
 			info.bindingCount = vk_bindings.size();
 			info.pBindings = vk_bindings.data();
 
-			chk_res(vkCreateDescriptorSetLayout(((DevicePrivate*)d)->v, &info, nullptr, &v));
+			chk_res(vkCreateDescriptorSetLayout(_d->_v, &info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
-			default_set = create_default ? Descriptorset::create(Descriptorpool::get_default(), this) : nullptr;
+			if (create_default_set)
+				_default_set.reset(new DescriptorsetPrivate(_d->_descriptorpool.get(), this));
 
-			hash = 0;
+			_hash = 0;
 			for (auto& b : bindings)
 			{
-				hash_update(hash, b.type);
-				hash_update(hash, FLAME_HASH(b.name));
-				hash_update(hash, b.count);
+				hash_update(_hash, b.type);
+				hash_update(_hash, FLAME_HASH(b.name));
+				hash_update(_hash, b.count);
 			}
 		}
 
 		DescriptorlayoutPrivate::~DescriptorlayoutPrivate()
 		{
-			if (default_set)
-				Descriptorset::destroy(default_set);
 #if defined(FLAME_VULKAN)
-			vkDestroyDescriptorSetLayout(((DevicePrivate*)d)->v, v, nullptr);
+			vkDestroyDescriptorSetLayout(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		uint Descriptorlayout::binding_count() const
+		Descriptorlayout* Descriptorlayout::create(Device* d, uint binding_count, const DescriptorBindingInfo* bindings, bool create_default_set)
 		{
-			return ((DescriptorlayoutPrivate*)this)->bindings.size();
+			return new DescriptorlayoutPrivate((DevicePrivate*)d, { bindings, binding_count }, create_default_set);
 		}
 
-		const DescriptorBinding& Descriptorlayout::get_binding(uint binding) const
-		{
-			return ((DescriptorlayoutPrivate*)this)->bindings[binding];
-		}
-
-		Descriptorset* Descriptorlayout::default_set() const
-		{
-			return ((DescriptorlayoutPrivate*)this)->default_set;
-		}
-
-		Descriptorlayout* Descriptorlayout::create(Device* d, uint binding_count, const DescriptorBinding* bindings, bool create_default_set)
-		{
-			return new DescriptorlayoutPrivate(d, binding_count, bindings, create_default_set);
-		}
-
-		void Descriptorlayout::destroy(Descriptorlayout* l)
-		{
-			delete (DescriptorlayoutPrivate*)l;
-		}
-
-		DescriptorsetPrivate::DescriptorsetPrivate(Descriptorpool* _p, Descriptorlayout* _l) :
-			p((DescriptorpoolPrivate*)_p),
-			l((DescriptorlayoutPrivate*)_l)
+		DescriptorsetPrivate::DescriptorsetPrivate(DescriptorpoolPrivate* p, DescriptorlayoutPrivate* l) :
+			_p(p),
+			_l(l)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorSetAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 			info.pNext = nullptr;
-			info.descriptorPool = p->v;
+			info.descriptorPool = p->_v;
 			info.descriptorSetCount = 1;
-			info.pSetLayouts = &l->v;
+			info.pSetLayouts = &l->_v;
 
-			chk_res(vkAllocateDescriptorSets(p->d->v, &info, &v));
+			chk_res(vkAllocateDescriptorSets(p->_d->_v, &info, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -147,102 +132,82 @@ namespace flame
 		DescriptorsetPrivate::~DescriptorsetPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkFreeDescriptorSets(p->d->v, p->v, 1, &v));
+			chk_res(vkFreeDescriptorSets(_p->_d->_v, _p->_v, 1, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void DescriptorsetPrivate::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
+		void DescriptorsetPrivate::_set_buffer(uint binding, uint index, BufferPrivate* b, uint offset, uint range)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
-			i.buffer = ((BufferPrivate*)b)->v;
+			i.buffer = b->_v;
 			i.offset = offset;
-			i.range = range == 0 ? b->size : range;
+			i.range = range == 0 ? b->_size : range;
 
 			VkWriteDescriptorSet write;
 			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			write.pNext = nullptr;
-			write.dstSet = v;
+			write.dstSet = _v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(l->bindings[binding].type);
+			write.descriptorType = to_backend(_l->_bindings[binding]->_type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = &i;
 			write.pImageInfo = nullptr;
 			write.pTexelBufferView = nullptr;
 
-			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
+			vkUpdateDescriptorSets(_p->_d->_v, 1, &write, 0, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void DescriptorsetPrivate::set_image(uint binding, uint index, Imageview* iv, Sampler* sampler)
+		void DescriptorsetPrivate::_set_image(uint binding, uint index, ImageviewPrivate* iv, SamplerPrivate* sampler)
 		{
 #if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
-			i.imageView = ((ImageviewPrivate*)iv)->v;
+			i.imageView = iv->_v;
 			i.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			i.sampler = ((SamplerPrivate*)sampler)->v;
+			i.sampler = sampler->_v;
 
 			VkWriteDescriptorSet write;
 			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			write.pNext = nullptr;
-			write.dstSet = v;
+			write.dstSet = _v;
 			write.dstBinding = binding;
 			write.dstArrayElement = index;
-			write.descriptorType = to_backend(l->bindings[binding].type);
+			write.descriptorType = to_backend(_l->_bindings[binding]->_type);
 			write.descriptorCount = 1;
 			write.pBufferInfo = nullptr;
 			write.pImageInfo = &i;
 			write.pTexelBufferView = nullptr;
 
-			vkUpdateDescriptorSets(p->d->v, 1, &write, 0, nullptr);
+			vkUpdateDescriptorSets(_p->_d->_v, 1, &write, 0, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		Descriptorlayout* Descriptorset::layout()
-		{
-			return ((DescriptorsetPrivate*)this)->l;
-		}
-
-		void Descriptorset::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
-		{
-			((DescriptorsetPrivate*)this)->set_buffer(binding, index, b, offset, range);
-		}
-
-		void Descriptorset::set_image(uint binding, uint index, Imageview* v, Sampler* sampler)
-		{
-			((DescriptorsetPrivate*)this)->set_image(binding, index, v, sampler);
-		}
-
 		Descriptorset* Descriptorset::create(Descriptorpool* p, Descriptorlayout* l)
 		{
-			return new DescriptorsetPrivate(p, l);
+			return new DescriptorsetPrivate((DescriptorpoolPrivate*)p, (DescriptorlayoutPrivate*)l);
 		}
 
-		void Descriptorset::destroy(Descriptorset* s)
-		{
-			delete (DescriptorsetPrivate*)s;
-		}
-
-		PipelinelayoutPrivate::PipelinelayoutPrivate(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size) :
-			d((DevicePrivate*)d),
-			pc_size(push_constant_size)
+		PipelinelayoutPrivate::PipelinelayoutPrivate(DevicePrivate* d, std::span<DescriptorlayoutPrivate*> descriptorlayouts, uint push_constant_size) :
+			_d(d),
+			_pc_size(push_constant_size)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayout> vk_descriptorsetlayouts;
-			vk_descriptorsetlayouts.resize(descriptorlayout_count);
-			for (auto i = 0; i < descriptorlayout_count; i++)
-				vk_descriptorsetlayouts[i] = ((DescriptorlayoutPrivate*)descriptorlayouts[i])->v;
+			vk_descriptorsetlayouts.resize(descriptorlayouts.size());
+			for (auto i = 0; i < descriptorlayouts.size(); i++)
+				vk_descriptorsetlayouts[i] = descriptorlayouts[i]->_v;
 
 			VkPushConstantRange vk_pushconstant;
 			vk_pushconstant.offset = 0;
-			vk_pushconstant.size = pc_size;
+			vk_pushconstant.size = _pc_size;
 			vk_pushconstant.stageFlags = to_backend_flags<ShaderStage>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
@@ -251,28 +216,28 @@ namespace flame
 			info.pNext = nullptr;
 			info.setLayoutCount = vk_descriptorsetlayouts.size();
 			info.pSetLayouts = vk_descriptorsetlayouts.data();
-			info.pushConstantRangeCount = pc_size > 0 ? 1 : 0;
-			info.pPushConstantRanges = pc_size > 0 ? &vk_pushconstant : nullptr;
+			info.pushConstantRangeCount = _pc_size > 0 ? 1 : 0;
+			info.pPushConstantRanges = _pc_size > 0 ? &vk_pushconstant : nullptr;
 
-			chk_res(vkCreatePipelineLayout(((DevicePrivate*)d)->v, &info, nullptr, &v));
+			chk_res(vkCreatePipelineLayout(_d->_v, &info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			dsls.resize(descriptorlayout_count);
-			for (auto i = 0; i < dsls.size(); i++)
-				dsls[i] = (DescriptorlayoutPrivate*)descriptorlayouts[i];
+			_dsls.resize(descriptorlayouts.size());
+			for (auto i = 0; i < _dsls.size(); i++)
+				_dsls[i] = (DescriptorlayoutPrivate*)descriptorlayouts[i];
 
-			hash = 0;
-			for (auto& d : dsls)
-				hash_update(hash, d->hash);
-			hash_update(hash, pc_size);
+			_hash = 0;
+			for (auto d : _dsls)
+				hash_update(_hash, d->_hash);
+			hash_update(_hash, _pc_size);
 		}
 
 		PipelinelayoutPrivate::~PipelinelayoutPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyPipelineLayout(d->v, v, nullptr);
+			vkDestroyPipelineLayout(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -280,35 +245,33 @@ namespace flame
 
 		Pipelinelayout* Pipelinelayout::create(Device* d, uint descriptorlayout_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size)
 		{
-			return new PipelinelayoutPrivate(d, descriptorlayout_count, descriptorlayouts, push_constant_size);
+			return new PipelinelayoutPrivate((DevicePrivate*)d, { (DescriptorlayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
 		}
 
-		void Pipelinelayout::destroy(Pipelinelayout* l)
+		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::vector<ShaderPrivate>& shaders, PipelinelayoutPrivate* pll, const VertexInfo* vi)
 		{
-			delete (PipelinelayoutPrivate*)l;
-		}
+			static std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
+			static std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
+			static std::regex regex_pc(R"(\s*pushconstant)");
+			static std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
+			static std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
 
-		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, const VertexInputInfo* vi)
-		{
-			const std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
-			const std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
-			const std::regex regex_pc(R"(\s*pushconstant)");
-			const std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
-			const std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
+			std::vector<std::pair<void*, ShaderResource>> ret;
+			ret.resize(shaders.size());
 
 			auto hash = 0U;
-			for (auto& s : stage_infos)
+			for (auto& s : shaders)
 			{
-				hash = hash_update(hash, FLAME_HASH(s.path.c_str()));
-				hash = hash_update(hash, FLAME_HASH(s.prefix.c_str()));
+				hash = hash_update(hash, FLAME_HASH(s._filename.c_str()));
+				hash = hash_update(hash, FLAME_HASH(s._prefix.c_str()));
 			}
-			hash = hash_update(hash, pll->hash);
+			hash = hash_update(hash, pll->_hash);
 			if (vi)
 			{
-				for (auto i = 0; i < vi->buffer_count; i++)
+				for (auto i = 0; i < vi->buffers_count; i++)
 				{
 					auto& b = vi->buffers[i];
-					for (auto j = 0; j < b.attribute_count; j++)
+					for (auto j = 0; j < b.attributes_count; j++)
 					{
 						auto& a = b.attributes[j];
 						hash = hash_update(hash, a.format);
@@ -321,11 +284,13 @@ namespace flame
 			}
 			auto str_hash = std::to_wstring(hash);
 
-			for (auto i = 0; i < stage_infos.size(); i++)
+			for (auto i = 0; i < shaders.size(); i++)
 			{
-				auto& s = stage_infos[i];
+				auto& s = shaders[i];
+				auto& r = ret[i];
 
-				std::filesystem::path spv_path = dir / s.path;
+				auto shader_path = dir / s._filename;
+				auto spv_path = shader_path;
 				spv_path += L".";
 				spv_path += str_hash;
 				auto res_path = spv_path;
@@ -333,7 +298,6 @@ namespace flame
 				res_path += L".res";
 
 				auto ok = true;
-				auto shader_path = dir / s.path;
 				if (std::filesystem::exists(shader_path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(shader_path)))
 				{
 					wprintf(L"begin compiling shader:%s\n", shader_path.c_str());
@@ -342,9 +306,9 @@ namespace flame
 
 					std::string glsl_header = "#version 450 core\n"
 						"#extension GL_ARB_shading_language_420pack : enable\n";
-					if (s.type != ShaderStageComp)
+					if (s._type != ShaderStageComp)
 						glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
-					glsl_header += s.prefix + "\n";
+					glsl_header += s._prefix + "\n";
 
 					auto type_id = 0;
 
@@ -367,18 +331,18 @@ namespace flame
 
 							if (std::regex_search(line, res, regex_in))
 							{
-								StageInfo::InOut in;
+								ShaderInOut in;
 								in.type = res[1].str();
 								in.name = res[2].str();
-								if (s.type == ShaderStageVert)
+								if (s._type == ShaderStageVert)
 								{
 									auto location = 0;
 									if (vi)
 									{
-										for (auto i = 0; i < vi->buffer_count; i++)
+										for (auto i = 0; i < vi->buffers_count; i++)
 										{
 											auto& b = vi->buffers[i];
-											for (auto j = 0; j < b.attribute_count; j++)
+											for (auto j = 0; j < b.attributes_count; j++)
 											{
 												auto& a = b.attributes[j];
 												if (a.name == in.name)
@@ -396,25 +360,25 @@ namespace flame
 								}
 								else
 								{
-									auto& ps = stage_infos[i - 1];
-									for (auto j = 0; j < ps.outputs.size(); j++)
+									auto& ps = ret[i - 1].second;
+									for (auto j = 0; j < ps._outputs.size(); j++)
 									{
-										if (ps.outputs[j].name == in.name)
+										if (ps._outputs[j].name == in.name)
 										{
 											glsl_file << "layout (location = " + std::to_string(j) + +") in " + get_formated_type(in.type) + " i_" + in.name + ";\n";
 											break;
 										}
 									}
 								}
-								s.inputs.push_back(in);
+								r.second._inputs.push_back(in);
 							}
 							else if (std::regex_search(line, res, regex_out))
 							{
-								StageInfo::InOut out;
+								ShaderInOut out;
 								out.type = res[1].str();
 								out.name = res[2].str();
 								auto dual = false;
-								if (s.type == ShaderStageFrag)
+								if (s._type == ShaderStageFrag)
 								{
 									BlendOptions bo;
 									if (res[3].matched)
@@ -455,20 +419,20 @@ namespace flame
 												bo.dst_alpha = f;
 										}
 									}
-									s.blend_options.push_back(bo);
+									r.second._blend_options.push_back(bo);
 								}
 								if (dual)
 								{
-									glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 0) out " + get_formated_type(out.type) + " o_" + out.name + "0;\n";
-									glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +", index = 1) out " + get_formated_type(out.type) + " o_" + out.name + "1;\n";
+									glsl_file << "layout (location = " + std::to_string((int)r.second._outputs.size()) + +", index = 0) out " + get_formated_type(out.type) + " o_" + out.name + "0;\n";
+									glsl_file << "layout (location = " + std::to_string((int)r.second._outputs.size()) + +", index = 1) out " + get_formated_type(out.type) + " o_" + out.name + "1;\n";
 								}
 								else
-									glsl_file << "layout (location = " + std::to_string((int)s.outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
-								s.outputs.push_back(out);
+									glsl_file << "layout (location = " + std::to_string((int)r.second._outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
+								r.second._outputs.push_back(out);
 							}
 							else if (std::regex_search(line, res, regex_pc))
 							{
-								if (pll && pll->pc_size > 0)
+								if (pll && pll->_pc_size > 0)
 									glsl_file << "layout (push_constant) uniform pc_t\n";
 								else
 									glsl_file << "struct type_" + std::to_string(type_id++) + "\n";
@@ -480,12 +444,12 @@ namespace flame
 								if (pll)
 								{
 									auto name = res[1].str();
-									for (auto j = 0; j < pll->dsls.size(); j++)
+									for (auto j = 0; j < pll->_dsls.size(); j++)
 									{
-										auto dsl = pll->dsls[j];
-										for (auto k = 0; k < dsl->bindings.size(); k++)
+										auto dsl = pll->_dsls[j];
+										for (auto k = 0; k < dsl->_bindings.size(); k++)
 										{
-											if (dsl->bindings[k].name == name)
+											if (dsl->_bindings[k]->_name == name)
 											{
 												set = j;
 												binding = k;
@@ -508,12 +472,12 @@ namespace flame
 								if (pll)
 								{
 									auto name = res[1].str();
-									for (auto j = 0; j < pll->dsls.size(); j++)
+									for (auto j = 0; j < pll->_dsls.size(); j++)
 									{
-										auto dsl = pll->dsls[j];
-										for (auto k = 0; k < dsl->bindings.size(); k++)
+										auto dsl = pll->_dsls[j];
+										for (auto k = 0; k < dsl->_bindings.size(); k++)
 										{
-											if (dsl->bindings[k].name == name)
+											if (dsl->_bindings[k]->_name == name)
 											{
 												set = j;
 												binding = k;
@@ -543,7 +507,7 @@ namespace flame
 						std::filesystem::path glslc_path = vk_sdk_path;
 						glslc_path /= L"Bin/glslc.exe";
 
-						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s.type) + L" out.glsl -o" + spv_path.wstring());
+						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s._type) + L" out.glsl -o" + spv_path.wstring());
 
 						auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
 						std::filesystem::remove(L"out.glsl");
@@ -554,7 +518,7 @@ namespace flame
 
 							std::ofstream glsl_file(L"out.glsl");
 							glsl_file << glsl_header;
-							switch (s.type)
+							switch (s._type)
 							{
 							case ShaderStageVert:
 								glsl_file << "void main()\n"
@@ -595,12 +559,12 @@ namespace flame
 
 					{
 						nlohmann::json json;
-						if (s.type == ShaderStageFrag)
+						if (s._type == ShaderStageFrag)
 						{
 							auto& bos = json["blend_options"];
-							for (auto i = 0; i < s.blend_options.size(); i++)
+							for (auto i = 0; i < r.second._blend_options.size(); i++)
 							{
-								auto& src = s.blend_options[i];
+								auto& src = r.second._blend_options[i];
 								auto& dst = bos[i];
 								dst["enable"] = src.enable;
 								if (src.enable)
@@ -623,7 +587,7 @@ namespace flame
 					if (!res.empty())
 					{
 						auto json = nlohmann::json::parse(res);
-						if (s.type == ShaderStageFrag)
+						if (s._type == ShaderStageFrag)
 						{
 							auto& bos = json["blend_options"];
 							for (auto i = 0; i < bos.size(); i++)
@@ -638,7 +602,7 @@ namespace flame
 									dst.src_alpha = (BlendFactor)src["sa"].get<int>();
 									dst.dst_alpha = (BlendFactor)src["da"].get<int>();
 								}
-								s.blend_options.push_back(dst);
+								r.second._blend_options.push_back(dst);
 							}
 						}
 					}
@@ -663,7 +627,7 @@ namespace flame
 				shader_info.pNext = nullptr;
 				shader_info.codeSize = spv_file.size();
 				shader_info.pCode = (uint*)spv_file.data();
-				chk_res(vkCreateShaderModule(d->v, &shader_info, nullptr, &s.vk_shader_module));
+				chk_res(vkCreateShaderModule(d->_v, &shader_info, nullptr, (VkShaderModule*)&r.first));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -672,22 +636,19 @@ namespace flame
 			return true;
 		}
 
-		ShaderPrivate::ShaderPrivate(const std::filename::path& fn, const std::string& prefix)
+		ShaderPrivate::ShaderPrivate(const std::filesystem::path& filename, const std::string& prefix) :
+			_filename(filename),
+			_prefix(prefix)
 		{
-			auto sp = SUW::split(fn, L'$');
-			path = sp[0];
-			path.make_preferred();
-			if (sp.size() > 1)
-				prefix = w2s(sp[1]);
-			type = shader_stage_from_ext(path.extension());
-			vk_shader_module = 0;
+			_filename.make_preferred();
+			_type = shader_stage_from_ext(_filename.extension());
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<StageInfo>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<ShaderPrivate>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
 			d(d),
 			pll(pll)
 		{
-			type = PipelineGraphics;
+			_type = PipelineGraphics;
 
 #if defined(FLAME_VULKAN)
 			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
@@ -994,11 +955,6 @@ namespace flame
 				return nullptr;
 
 			return new PipelinePrivate((DevicePrivate*)d, compute_stage_info, (PipelinelayoutPrivate*)pll);
-		}
-
-		void Pipeline::destroy(Pipeline* p)
-		{
-			delete (PipelinePrivate*)p;
 		}
 	}
 }

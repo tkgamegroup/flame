@@ -21,9 +21,9 @@ namespace flame
 			info.pNext = nullptr;
 			info.queueFamilyIndex = queue_family_idx;
 
-			chk_res(vkCreateCommandPool(d->v, &info, nullptr, &_v));
+			chk_res(vkCreateCommandPool(d->_v, &info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
-			auto res = d->v->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&v));
+			auto res = d->_v->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
 #endif
 		}
@@ -31,7 +31,7 @@ namespace flame
 		CommandpoolPrivate::~CommandpoolPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyCommandPool(_d->v, _v, nullptr);
+			vkDestroyCommandPool(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -60,9 +60,9 @@ namespace flame
 			info.commandPool = p->_v;
 			info.commandBufferCount = 1;
 
-			chk_res(vkAllocateCommandBuffers(p->_d->v, &info, &_v));
+			chk_res(vkAllocateCommandBuffers(p->_d->_v, &info, &_v));
 #elif defined(FLAME_D3D12)
-			auto res = p->d->v->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, p->v, nullptr, IID_PPV_ARGS(&v));
+			auto res = p->_d->_v->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, p->_v, nullptr, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
 			recording = true;
 			end();
@@ -75,7 +75,7 @@ namespace flame
 		CommandbufferPrivate::~CommandbufferPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkFreeCommandBuffers(_p->_d->v, _p->_v, 1, &_v);
+			vkFreeCommandBuffers(_p->_d->_v, _p->_v, 1, &_v);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -97,7 +97,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 			if (recording)
 				return;
-			v->Reset(p->v, nullptr);
+			v->Reset(p->_v, nullptr);
 			recording = true;
 #endif
 			_current_renderpass = nullptr;
@@ -108,7 +108,7 @@ namespace flame
 
 		void CommandbufferPrivate::_begin_renderpass(FramebufferPrivate* fb, std::span<const Vec4f> clearvalues)
 		{
-			auto rp = fb->rp;
+			auto rp = fb->_rp;
 
 			_current_renderpass = rp;
 			_current_subpass = 0;
@@ -118,11 +118,11 @@ namespace flame
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			info.pNext = nullptr;
-			info.renderPass = rp->v;
-			info.framebuffer = fb->v;
+			info.renderPass = rp->_v;
+			info.framebuffer = fb->_v;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
-			auto size = fb->views[0]->image->size;
+			auto size = fb->_views[0]->_image->_size;
 			info.renderArea.extent.width = size.x();
 			info.renderArea.extent.height = size.y();
 			info.clearValueCount = clearvalues.size();
@@ -130,9 +130,9 @@ namespace flame
 
 			vkCmdBeginRenderPass(_v, &info, VK_SUBPASS_CONTENTS_INLINE);
 #elif defined(FLAME_D3D12)
-			auto& attachments = rp->info.attachments;
-			auto& subpass = rp->info.subpasses[current_subpass];
-			auto& views = fb->info.views;
+			auto& attachments = rp->_info.attachments;
+			auto& subpass = rp->_info.subpasses[current_subpass];
+			auto& views = fb->_info.views;
 			for (auto& idx : subpass.color_attachments)
 			{
 				auto& a = attachments[idx];
@@ -140,11 +140,11 @@ namespace flame
 				auto layout_from = ImageLayoutUndefined;
 				if (a.format >= Format_Swapchain_Begin && a.format <= Format_Swapchain_End)
 					layout_from = ImageLayoutPresent;
-				change_image_layout(view->i, layout_from, ImageLayoutAttachment);
-				auto descriptor = view->v->GetCPUDescriptorHandleForHeapStart();
+				change_image_layout(view->_i, layout_from, ImageLayoutAttachment);
+				auto descriptor = view->_v->GetCPUDescriptorHandleForHeapStart();
 				v->OMSetRenderTargets(1, &descriptor, false, nullptr);
 				if (a.clear)
-					v->ClearRenderTargetView(descriptor, &cv->v[idx].x(), 0, nullptr);
+					v->ClearRenderTargetView(descriptor, &cv->_v[idx].x(), 0, nullptr);
 		}
 #endif
 		}

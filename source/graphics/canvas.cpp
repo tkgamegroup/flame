@@ -435,19 +435,19 @@ namespace flame
 
 		void CanvasPrivate::_record(CommandbufferPrivate* cb, uint image_index)
 		{
-			cb->begin();
+			cb->_begin();
 			cb->_begin_renderpass(_fbs[image_index].get(), { &_clear_color, 1 });
 			if (_idx_end != _buf_idx->get_mapped())
 			{
-				cb->set_viewport(_curr_scissor);
-				cb->set_scissor(_curr_scissor);
-				cb->bind_vertexbuffer(_buf_vtx.get(), 0);
-				cb->bind_indexbuffer(_buf_idx.get(), IndiceTypeUint);
+				cb->_set_viewport(_curr_scissor);
+				cb->_set_scissor(_curr_scissor);
+				cb->_bind_vertexbuffer(_buf_vtx.get(), 0);
+				cb->_bind_indexbuffer(_buf_idx.get(), IndiceTypeUint);
 
 				auto scale = Vec2f(2.f / _target_size.x(), 2.f / _target_size.y());
-				cb->bind_pipeline(pl);
-				cb->push_constant(0, sizeof(Vec2f), &scale, pll);
-				cb->bind_descriptorset(_ds.get(), 0, pll);
+				cb->_bind_pipeline(pl);
+				cb->_push_constant(0, sizeof(Vec2f), &scale, pll);
+				cb->_bind_descriptorset(_ds.get(), 0, pll);
 
 				auto vtx_off = 0;
 				auto idx_off = 0;
@@ -458,19 +458,19 @@ namespace flame
 					case CmdDrawElement:
 						if (cmd.v.draw_data.idx_cnt > 0)
 						{
-							cb->draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
+							cb->_draw_indexed(cmd.v.draw_data.idx_cnt, idx_off, vtx_off, 1, cmd.v.draw_data.id);
 							vtx_off += cmd.v.draw_data.vtx_cnt;
 							idx_off += cmd.v.draw_data.idx_cnt;
 						}
 						break;
 					case CmdSetScissor:
-						cb->set_scissor(cmd.v.scissor);
+						cb->_set_scissor(cmd.v.scissor);
 						break;
 					}
 				}
 			}
-			cb->end_renderpass();
-			cb->end();
+			cb->_end_renderpass();
+			cb->_end();
 
 			_cmds.clear();
 		}

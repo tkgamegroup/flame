@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <string>
+#include <array>
 #include <vector>
 #include <span>
 #include <stack>

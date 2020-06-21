@@ -16,132 +16,88 @@ namespace flame
 			_filename = filename;
 			_file = get_file_content(filename);
 
-			stbtt_InitFont(&info, (uchar*)font_file.data(), stbtt_GetFontOffsetForIndex((uchar*)font_file.data(), 0));
+			_stbtt_info = new stbtt_fontinfo;
+			stbtt_InitFont(_stbtt_info, (uchar*)_file.data(), stbtt_GetFontOffsetForIndex((uchar*)_file.data(), 0));
+
+			report_used_file(filename.c_str());
 		}
 
-		static std::vector<std::unique_ptr<FontPrivate>> loaded_fonts;
-
-		Glyph* new_glyph()
+		FontPrivate::~FontPrivate()
 		{
-			auto g = new Glyph;
-			g->unicode = 0;
-			g->size = 0;
-			g->off = 0;
-			g->advance = 0;
-			g->uv0 = Vec2f(0.f);
-			g->uv1 = Vec2f(0.f);
-			return g;
+			delete _stbtt_info;
 		}
 
-		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* d, uint font_count, const wchar_t* const* _fonts) :
-			slot(-1)
+		Font* Font::create(const wchar_t* filename)
 		{
-			for (auto i = 0; i < font_count; i++)
-			{
-				auto fn = _fonts[i];
-				if (!std::filesystem::exists(fn))
-				{
-					wprintf(L"cannot find font: %s\n", fn);
-					continue;
-				}
-
-				id = hash_update(id, FLAME_HASH(fn));
-
-				FontPrivate* f = nullptr;
-				auto filename = std::filesystem::canonical(fn);
-				for (auto& _f : loaded_fonts)
-				{
-					if (_f->filename == filename)
-					{
-						f = _f.get();
-						break;
-					}
-				}
-				if (!f)
-				{
-					f = new FontPrivate(filename);
-					report_used_file(filename.c_str());
-					loaded_fonts.emplace_back(f);
-				}
-				if (f)
-				{
-					f->ref_count++;
-					fonts.push_back(f);
-				}
-			}
-
-			bin_pack_root.reset(new BinPackNode(font_atlas_size));
-
-			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, false));
-			image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
-			view.reset(new ImageviewPrivate(image.get(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
-
-			empty_glyph.reset(new_glyph());
+			if (!std::filesystem::exists(filename))
+				return nullptr;
+			return new FontPrivate(filename);
 		}
 
-		FontAtlasPrivate::~FontAtlasPrivate()
+		const auto font_atlas_size = Vec2u(1024);
+
+		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> fonts)
 		{
 			for (auto f : fonts)
 			{
-				f->ref_count--;
-				if (f->ref_count == 0)
-				{
-					for (auto it = loaded_fonts.begin(); it != loaded_fonts.end(); it++)
-					{
-						if (it->get() == f)
-						{
-							loaded_fonts.erase(it);
-							break;
-						}
-					}
-				}
+				id = hash_update(id, FLAME_HASH(f->_filename.c_str()));
+
+				_fonts.push_back(f);
 			}
+
+			_bin_pack_root.reset(new BinPackNode(font_atlas_size));
+
+			_image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, false));
+			_image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
+			_view.reset(new ImageviewPrivate(_image.get(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+
+			_empty_glyph.reset(new GlyphPrivate);
 		}
 
 		void FontAtlasPrivate::release() { delete this; }
 
-		Glyph* FontAtlasPrivate::get_glyph(wchar_t unicode, uint font_size)
+		GlyphPrivate* FontAtlasPrivate::_get_glyph(wchar_t code, uint size)
 		{
-			if (font_size == 0)
-				return empty_glyph.get();
+			if (size == 0)
+				return _empty_glyph.get();
 
-			auto hash = hash_update(unicode, font_size);
+			auto hash = hash_update(code, size);
 
-			if (!map[hash])
+			if (!_map[hash])
 			{
-				auto g = new_glyph();
-				g->unicode = unicode;
-				g->font_size = font_size;
-				map[hash].reset(g);
+				auto g = new GlyphPrivate;
+				g->_code = code;
+				g->_size = size;
+				_map[hash].reset(g);
 
-				for (auto font : fonts)
+				for (auto font : _fonts)
 				{
-					auto info = &font->info;
-					auto index = stbtt_FindGlyphIndex(info, unicode);
+					auto info = font->_stbtt_info;
+					auto index = stbtt_FindGlyphIndex(info, code);
 					if (index == 0)
 						continue;
 
-					auto scale = stbtt_ScaleForPixelHeight(info, font_size);
+					auto scale = stbtt_ScaleForPixelHeight(info, size);
 					auto x = 0, y = 0, w = 0, h = 0, ascent = 0, adv = 0;
 					auto bitmap = stbtt_GetGlyphBitmap(info, scale, scale, index, &w, &h, &x, &y);
 					stbtt_GetFontVMetrics(info, &ascent, 0, 0);
 					ascent *= scale;
 					stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
 					adv *= scale;
-					g->size = Vec2u(w, h);
-					g->off = Vec2u(x, ascent + h + y);
-					g->advance = adv;
+					g->_size = Vec2u(w, h);
+					g->_off = Vec2u(x, ascent + h + y);
+					g->_advance = adv;
 					if (bitmap)
 					{
-						auto n = bin_pack_root->find(g->size);
+						auto n = _bin_pack_root->find(g->_size);
 						if (n)
 						{
 							auto& atlas_pos = n->pos;
 
-							image->set_pixels(atlas_pos, g->size, bitmap);
+							_image->set_pixels(atlas_pos, g->_size, bitmap);
 
-							g->uv0 = Vec2f(atlas_pos.x(), atlas_pos.y() + g->size.y()) / image->size;
-							g->uv1 = Vec2f(atlas_pos.x() + g->size.x(), atlas_pos.y()) / image->size;
+							g->_uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->_size.y()) / _image->size,
+											Vec2f(atlas_pos.x() + g->_size.x(), atlas_pos.y()) / _image->size);
 						}
 						else
 							printf("font atlas is full\n");
@@ -152,12 +108,12 @@ namespace flame
 				}
 			}
 
-			return map[hash].get();
+			return _map[hash].get();
 		}
 
-		FontAtlas* FontAtlas::create(Device* d, uint font_count, const wchar_t* const* fonts)
+		FontAtlas* FontAtlas::create(Device* d, uint font_count, Font* const* fonts)
 		{
-			return new FontAtlasPrivate((DevicePrivate*)d, font_count, fonts);
+			return new FontAtlasPrivate((DevicePrivate*)d, { (FontPrivate**)fonts, font_count });
 		}
 	}
 }

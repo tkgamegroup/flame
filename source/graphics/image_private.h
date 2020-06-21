@@ -12,82 +12,93 @@ namespace flame
 
 		struct ImagePrivate : Image
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 			
-			Format format;
-			Vec2u size;
-			uint level;
-			uint layer;
-			SampleCount sample_count;
+			Format _format;
+			Vec2u _size;
+			uint _level;
+			uint _layer;
+			SampleCount _sample_count;
 
 #if defined(FLAME_VULKAN)
-			VkDeviceMemory m;
-			VkImage v;
+			VkDeviceMemory _m;
+			VkImage _v;
 #elif defined(FLAME_D3D12)
-			ID3D12Resource* v;
+			ID3D12Resource* _v;
 #endif
-			std::unique_ptr<ImageviewPrivate> dv;
+			std::unique_ptr<ImageviewPrivate> _dv;
 
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool default_view = true);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool default_view = true);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view = true);
 			~ImagePrivate();
 
-			void release() override;
+			void _change_layout(ImageLayout from, ImageLayout to);
+			void _clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color);
 
-			Format get_format() const override;
-			Vec2u get_size() const override;
-			uint get_level() const override;
-			uint get_layer() const override;
-			SampleCount get_sample_count() const override;
+			void _get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
+			void _set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);
 
-			Imageview* get_default_view() const override;
+			static ImagePrivate* _create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
+			static ImagePrivate* _create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
 
-			void change_layout(ImageLayout from, ImageLayout to) override;
-			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
+			void release() override { delete this; }
 
-			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;
-			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override;
+			Format get_format() const override { return _format; }
+			Vec2u get_size() const override { return _size; }
+			uint get_level() const override { return _level; }
+			uint get_layer() const override { return _layer; }
+			SampleCount get_sample_count() const override { return _sample_count; }
+
+			Imageview* get_default_view() const override { return _dv.get(); }
+
+			void change_layout(ImageLayout from, ImageLayout to) override { _change_layout(from, to); }
+			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override { _clear(current_layout, after_layout, color); }
+
+			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override { _get_pixels(offset, extent, dst); }
+			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override { _set_pixels(offset, extent, src); }
+
+			inline ImagePrivate* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool create_default_view) { return _create((DevicePrivate*)d, bmp, extra_usage, create_default_view); }
+			inline ImagePrivate* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool create_defalut_view) { return _create((DevicePrivate*)d, filename, extra_usage, create_defalut_view); }
 		};
 
 		struct ImageviewPrivate : Imageview
 		{
-			DevicePrivate* d;
-			ImagePrivate* image;
+			DevicePrivate* _d;
+			ImagePrivate* _image;
 
-			ImageviewType type;
-			uint base_level;
-			uint level_count;
-			uint base_layer;
-			uint layer_count;
-			Swizzle swizzle_r;
-			Swizzle swizzle_g;
-			Swizzle swizzle_b;
-			Swizzle swizzle_a;
+			ImageviewType _type;
+			uint _base_level;
+			uint _level_count;
+			uint _base_layer;
+			uint _layer_count;
+			Swizzle _swizzle_r;
+			Swizzle _swizzle_g;
+			Swizzle _swizzle_b;
+			Swizzle _swizzle_a;
 
 #if defined(FLAME_VULKAN)
-			VkImageView v;
+			VkImageView _v;
 #elif defined(FLAME_D3D12)
-			ID3D12DescriptorHeap* v;
+			ID3D12DescriptorHeap* _v;
 #endif
-			int ref_count;
 
 			ImageviewPrivate(ImagePrivate* image, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
 				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
 			~ImageviewPrivate();
 
-			void release() override;
+			void release() override { delete this; }
 
-			ImageviewType get_type() const override;
-			uint get_base_level() const override;
-			uint get_level_count() const override;
-			uint get_base_layer() const override;
-			uint get_layer_count() const override;
-			Swizzle get_swizzle_r() const override;
-			Swizzle get_swizzle_g() const override;
-			Swizzle get_swizzle_b() const override;
-			Swizzle get_swizzle_a() const override;
+			ImageviewType get_type() const override { return _type; }
+			uint get_base_level() const override { return _base_level; }
+			uint get_level_count() const override { return _level_count; }
+			uint get_base_layer() const override { return _base_layer; }
+			uint get_layer_count() const override { return _layer_count; }
+			Swizzle get_swizzle_r() const override { return _swizzle_r; }
+			Swizzle get_swizzle_g() const override { return _swizzle_g; }
+			Swizzle get_swizzle_b() const override { return _swizzle_b; }
+			Swizzle get_swizzle_a() const override { return _swizzle_a; }
 
-			Image* get_image() const override;
+			Image* get_image() const override { return _image; }
 		};
 
 		inline ImageAspectFlags aspect_from_format(Format fmt)
@@ -106,54 +117,56 @@ namespace flame
 
 		struct SamplerPrivate : Sampler
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 #if defined(FLAME_VULKAN)
-			VkSampler v;
+			VkSampler _v;
 #elif defined(FLAME_D3D12)
 
 #endif
 			SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();
 
-			void release() override;
+			void release() override { delete this; }
 		};
 
 		struct ImageTilePrivate : ImageTile
 		{
-			uint index;
-			std::wstring filename;
-			uint id;
-			Vec2i pos;
-			Vec2i size;
-			Vec4f uv;
+			uint _index;
+			std::wstring _filename;
+			uint _id;
+			Vec2i _pos;
+			Vec2i _size;
+			Vec4f _uv;
 
-			uint get_index() const override;
-			const wchar_t* get_filename() const override;
-			uint get_id() const override;
-			Vec2i get_pos() const override;
-			Vec2i get_size() const override;
-			Vec4f get_uv() const override;
+			uint get_index() const override { return _index; }
+			const wchar_t* get_filename() const override { return _filename.c_str(); }
+			uint get_id() const override { return _id; }
+			Vec2i get_pos() const override { return _pos; }
+			Vec2i get_size() const override { return _size; }
+			Vec4f get_uv() const override { return _uv; }
 		};
 
 		struct ImageAtlasPrivate : ImageAtlas
 		{
-			bool border;
+			bool _border = false;
 
-			int slot;
+			int _slot = -1;
 
-			ImagePrivate* image;
-			std::vector<std::unique_ptr<ImageTilePrivate>> tiles;
+			ImagePrivate* _image;
+			std::vector<std::unique_ptr<ImageTilePrivate>> _tiles;
 
 			ImageAtlasPrivate(DevicePrivate* d, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();
 
-			void release() override;
+			ImageTile* _find_tile(uint id) const;
 
-			bool get_border() const override;
+			void release() override { delete this; }
 
-			uint get_tiles_count() const override;
-			ImageTile* get_tile(uint idx) const override;
-			ImageTile* find_tile(uint id) const override;
+			bool get_border() const override { return _border; }
+
+			uint get_tiles_count() const override { return _tiles.size(); }
+			ImageTile* get_tile(uint idx) const override { return _tiles[idx].get(); }
+			ImageTile* find_tile(uint id) const override { return _find_tile(id); }
 		};
 	}
 }

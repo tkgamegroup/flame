@@ -66,7 +66,7 @@ namespace flame
 			void _copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
 			void _copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
 			void _copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies);
-			void _change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count);
+			void _change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 0, uint base_layer = 0, uint layer_count = 0);
 			void _clear_image(ImagePrivate* i, const Vec4c& col);
 			void _end();
 
