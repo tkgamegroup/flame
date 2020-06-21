@@ -22,8 +22,8 @@ namespace flame
 		static PipelinePrivate* pl = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
-			d(d),
-			clear_color(0.f, 0.f, 0.f, 1.f)
+			_d(d),
+			_clear_color(0.f, 0.f, 0.f, 1.f)
 		{
 			if (!rp)
 			{
@@ -76,56 +76,56 @@ namespace flame
 				pl = new PipelinePrivate(d, std::filesystem::path(get_engine_path()) / L"shaders", shaders, pll, rp, 0, &vi);
 			}
 
-			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));
-			buf_vtx->map();
-			buf_idx.reset(new BufferPrivate(d, 1048576, BufferUsageIndex, MemPropHost | MemPropHostCoherent));
-			buf_idx->map();
+			_buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));
+			_buf_vtx->map();
+			_buf_idx.reset(new BufferPrivate(d, 1048576, BufferUsageIndex, MemPropHost | MemPropHostCoherent));
+			_buf_idx->map();
 
-			img_white.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
-			img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
-			resources.resize(resource_count);
-			auto iv_white = img_white->dv.get();
+			_img_white.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
+			_img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
+			_resources.resize(resource_count);
+			auto iv_white = _img_white->dv.get();
 			for (auto i = 0; i < resource_count; i++)
 			{
 				auto r = new CanvasResourcePrivate;
-				r->view = iv_white;
-				r->atlas = nullptr;
-				r->white_uv = 0.5f;
-				resources[i].reset(r);
+				r->_view = iv_white;
+				r->_atlas = nullptr;
+				r->_white_uv = 0.5f;
+				_resources[i].reset(r);
 			}
 
-			ds.reset(new DescriptorsetPrivate(d->default_descriptorpool.get(), dsl));
+			_ds.reset(new DescriptorsetPrivate(d->default_descriptorpool.get(), dsl));
 			auto sp = d->default_sampler_linear.get();
 			for (auto i = 0; i < resource_count; i++)
-				ds->set_image(0, i, iv_white, sp);
+				_ds->set_image(0, i, iv_white, sp);
 		}
 
 		void CanvasPrivate::_set_target(std::span<ImageviewPrivate*> views)
 		{
-			fbs.clear();
+			_fbs.clear();
 
 			if (views.empty())
-				target_size = 0.f;
+				_target_size = 0.f;
 			else
 			{
-				target_size = views[0]->image->size;
-				fbs.resize(views.size());
-				for (auto i = 0; i < fbs.size(); i++)
-					fbs[i].reset(new FramebufferPrivate(d, rp, { &views[i], 1 }));
+				_target_size = views[0]->image->size;
+				_fbs.resize(views.size());
+				for (auto i = 0; i < _fbs.size(); i++)
+					_fbs[i].reset(new FramebufferPrivate(_d, rp, { &views[i], 1 }));
 			}
 		}
 
 		uint CanvasPrivate::_set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas)
 		{
-			if (resources.empty())
+			if (_resources.empty())
 				return -1;
-			auto iv_white = img_white->dv.get();
+			auto iv_white = _img_white->dv.get();
 			if (slot == -1)
 			{
 				assert(v);
-				for (auto i = 0; i < resources.size(); i++)
+				for (auto i = 0; i < _resources.size(); i++)
 				{
-					if (resources[i]->view == iv_white)
+					if (_resources[i]->_view == iv_white)
 					{
 						slot = i;
 						break;
@@ -137,30 +137,30 @@ namespace flame
 			if (!v)
 			{
 				v = iv_white;
-				r->white_uv = 0.5f;
+				r->_white_uv = 0.5f;
 				atlas = nullptr;
 			}
 			else
 			{
 				auto img = v->image;
 				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
-				r->white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
+				r->_white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
 			}
-			ds->set_image(0, slot, v, sp ? sp : d->default_sampler_linear.get());
-			r->view = v;
-			r->atlas = atlas;
-			resources[slot].reset(r);
+			_ds->set_image(0, slot, v, sp ? sp : _d->default_sampler_linear.get());
+			r->_view = v;
+			r->_atlas = atlas;
+			_resources[slot].reset(r);
 			return slot;
 		}
 
 		void CanvasPrivate::_add_atlas(ImageAtlasPrivate* a)
 		{
-			a->slot = _set_resource(-1, a->image->dv.get(), a->border ? d->default_sampler_linear.get() : d->default_sampler_nearest.get(), a);
+			a->slot = _set_resource(-1, a->image->dv.get(), a->border ? _d->default_sampler_linear.get() : _d->default_sampler_nearest.get(), a);
 		}
 
 		void CanvasPrivate::_add_font(FontAtlasPrivate* f)
 		{
-			f->slot = _set_resource(-1, f->view.get(), d->default_sampler_nearest.get());
+			f->slot = _set_resource(-1, f->view.get(), _d->default_sampler_nearest.get());
 		}
 
 		void CanvasPrivate::set_scissor(const Vec4f& _scissor)
@@ -168,15 +168,15 @@ namespace flame
 			auto scissor = Vec4f(
 				max(_scissor.x(), 0.f),
 				max(_scissor.y(), 0.f),
-				min(_scissor.z(), (float)target_size.x()),
-				min(_scissor.w(), (float)target_size.y()));
-			if (scissor == curr_scissor)
+				min(_scissor.z(), (float)_target_size.x()),
+				min(_scissor.w(), (float)_target_size.y()));
+			if (scissor == _curr_scissor)
 				return;
-			curr_scissor = scissor;
+			_curr_scissor = scissor;
 			Cmd cmd;
 			cmd.type = CmdSetScissor;
 			cmd.v.scissor = scissor;
-			cmds.push_back(cmd);
+			_cmds.push_back(cmd);
 		}
 
 		void CanvasPrivate::stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness)
@@ -184,19 +184,19 @@ namespace flame
 			if (point_count < 2)
 				return;
 
-			if (cmds.empty() || cmds.back().type == CmdSetScissor)
+			if (_cmds.empty() || _cmds.back().type == CmdSetScissor)
 			{
 				Cmd cmd;
 				cmd.type = CmdDrawElement;
 				cmd.v.draw_data.id = 0;
 				cmd.v.draw_data.vtx_cnt = 0;
 				cmd.v.draw_data.idx_cnt = 0;
-				cmds.push_back(cmd);
+				_cmds.push_back(cmd);
 			}
-			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
+			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
+			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
 			auto first_vtx_cnt = vtx_cnt;
-			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
+			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
 			auto closed = points[0] == points[point_count - 1];
 
@@ -227,29 +227,29 @@ namespace flame
 					auto n0 = normals[i] * thickness;
 					auto n1 = normals[i + 1] * thickness;
 
-					vtx_end->pos = p0; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
-					vtx_end->pos = p0 - n0; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
-					vtx_end->pos = p1 - n1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
-					vtx_end->pos = p1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+					_vtx_end->pos = p0; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+					_vtx_end->pos = p0 - n0; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+					_vtx_end->pos = p1 - n1; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+					_vtx_end->pos = p1; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
 
-					*idx_end = vtx_cnt + 0; idx_end++;
-					*idx_end = vtx_cnt + 2; idx_end++;
-					*idx_end = vtx_cnt + 1; idx_end++;
-					*idx_end = vtx_cnt + 0; idx_end++;
-					*idx_end = vtx_cnt + 3; idx_end++;
-					*idx_end = vtx_cnt + 2; idx_end++;
+					*_idx_end = vtx_cnt + 0; _idx_end++;
+					*_idx_end = vtx_cnt + 2; _idx_end++;
+					*_idx_end = vtx_cnt + 1; _idx_end++;
+					*_idx_end = vtx_cnt + 0; _idx_end++;
+					*_idx_end = vtx_cnt + 3; _idx_end++;
+					*_idx_end = vtx_cnt + 2; _idx_end++;
 
 					vtx_cnt += 4;
 					idx_cnt += 6;
 				}
 				else if (closed && i == point_count - 2)
 				{
-					*idx_end = vtx_cnt - 1;		  idx_end++;
-					*idx_end = first_vtx_cnt + 1; idx_end++;
-					*idx_end = vtx_cnt - 2;		  idx_end++;
-					*idx_end = vtx_cnt - 1;		  idx_end++;
-					*idx_end = first_vtx_cnt + 0; idx_end++;
-					*idx_end = first_vtx_cnt + 1; idx_end++;
+					*_idx_end = vtx_cnt - 1;		  _idx_end++;
+					*_idx_end = first_vtx_cnt + 1; _idx_end++;
+					*_idx_end = vtx_cnt - 2;		  _idx_end++;
+					*_idx_end = vtx_cnt - 1;		  _idx_end++;
+					*_idx_end = first_vtx_cnt + 0; _idx_end++;
+					*_idx_end = first_vtx_cnt + 1; _idx_end++;
 
 					idx_cnt += 6;
 				}
@@ -259,15 +259,15 @@ namespace flame
 
 					auto n1 = normals[i + 1] * thickness;
 
-					vtx_end->pos = p1 - n1; vtx_end->uv = uv; vtx_end->col = col;  vtx_end++;
-					vtx_end->pos = p1; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+					_vtx_end->pos = p1 - n1; _vtx_end->uv = uv; _vtx_end->col = col;  _vtx_end++;
+					_vtx_end->pos = p1; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
 
-					*idx_end = vtx_cnt - 1; idx_end++;
-					*idx_end = vtx_cnt + 0; idx_end++;
-					*idx_end = vtx_cnt - 2; idx_end++;
-					*idx_end = vtx_cnt - 1; idx_end++;
-					*idx_end = vtx_cnt + 1; idx_end++;
-					*idx_end = vtx_cnt + 0; idx_end++;
+					*_idx_end = vtx_cnt - 1; _idx_end++;
+					*_idx_end = vtx_cnt + 0; _idx_end++;
+					*_idx_end = vtx_cnt - 2; _idx_end++;
+					*_idx_end = vtx_cnt - 1; _idx_end++;
+					*_idx_end = vtx_cnt + 1; _idx_end++;
+					*_idx_end = vtx_cnt + 0; _idx_end++;
 
 					vtx_cnt += 2;
 					idx_cnt += 6;
@@ -280,28 +280,28 @@ namespace flame
 			if (point_count < 3)
 				return;
 
-			if (cmds.empty() || cmds.back().type == CmdSetScissor)
+			if (_cmds.empty() || _cmds.back().type == CmdSetScissor)
 			{
 				Cmd cmd;
 				cmd.type = CmdDrawElement;
 				cmd.v.draw_data.id = 0;
 				cmd.v.draw_data.vtx_cnt = 0;
 				cmd.v.draw_data.idx_cnt = 0;
-				cmds.push_back(cmd);
+				_cmds.push_back(cmd);
 			}
-			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
+			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
+			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
+			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
 			for (auto i = 0; i < point_count - 2; i++)
 			{
-				vtx_end->pos = points[0];	  vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
-				vtx_end->pos = points[i + 2]; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
-				vtx_end->pos = points[i + 1]; vtx_end->uv = uv; vtx_end->col = col; vtx_end++;
+				_vtx_end->pos = points[0];	  _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+				_vtx_end->pos = points[i + 2]; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+				_vtx_end->pos = points[i + 1]; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
 
-				*idx_end = vtx_cnt + 0; idx_end++;
-				*idx_end = vtx_cnt + 1; idx_end++;
-				*idx_end = vtx_cnt + 2; idx_end++;
+				*_idx_end = vtx_cnt + 0; _idx_end++;
+				*_idx_end = vtx_cnt + 1; _idx_end++;
+				*_idx_end = vtx_cnt + 2; _idx_end++;
 
 				vtx_cnt += 3;
 				idx_cnt += 3;
@@ -312,17 +312,17 @@ namespace flame
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 
-			if (cmds.empty() || cmds.back().type != CmdDrawElement || cmds.back().v.draw_data.id != f->slot)
+			if (_cmds.empty() || _cmds.back().type != CmdDrawElement || _cmds.back().v.draw_data.id != f->slot)
 			{
 				Cmd cmd;
 				cmd.type = CmdDrawElement;
 				cmd.v.draw_data.id = f->slot;
 				cmd.v.draw_data.vtx_cnt = 0;
 				cmd.v.draw_data.idx_cnt = 0;
-				cmds.push_back(cmd);
+				_cmds.push_back(cmd);
 			}
-			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
+			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
+			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
 
 			auto pstr = text.begin();
 			while (pstr != text.end())
@@ -344,23 +344,23 @@ namespace flame
 
 					auto p = pos + Vec2f(g->off);
 					auto size = Vec2f(g->size);
-					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), curr_scissor))
+					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), _curr_scissor))
 					{
 						auto uv = g->uv;
 						auto uv0 = Vec2f(uv.x(), uv.y());
 						auto uv1 = Vec2f(uv.z(), uv.w());
 
-						vtx_end->pos = p;						       vtx_end->uv = uv0;						vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(0.f, -size.y());	   vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), -size.y()); vtx_end->uv = uv1;						vtx_end->col = col; vtx_end++;
-						vtx_end->pos = p + Vec2f(size.x(), 0.f);	   vtx_end->uv = Vec2f(uv1.x(), uv0.y());   vtx_end->col = col; vtx_end++;
+						_vtx_end->pos = p;						       _vtx_end->uv = uv0;						_vtx_end->col = col; _vtx_end++;
+						_vtx_end->pos = p + Vec2f(0.f, -size.y());	   _vtx_end->uv = Vec2f(uv0.x(), uv1.y());	_vtx_end->col = col; _vtx_end++;
+						_vtx_end->pos = p + Vec2f(size.x(), -size.y()); _vtx_end->uv = uv1;						_vtx_end->col = col; _vtx_end++;
+						_vtx_end->pos = p + Vec2f(size.x(), 0.f);	   _vtx_end->uv = Vec2f(uv1.x(), uv0.y());   _vtx_end->col = col; _vtx_end++;
 
-						*idx_end = vtx_cnt + 0; idx_end++;
-						*idx_end = vtx_cnt + 2; idx_end++;
-						*idx_end = vtx_cnt + 1; idx_end++;
-						*idx_end = vtx_cnt + 0; idx_end++;
-						*idx_end = vtx_cnt + 3; idx_end++;
-						*idx_end = vtx_cnt + 2; idx_end++;
+						*_idx_end = vtx_cnt + 0; _idx_end++;
+						*_idx_end = vtx_cnt + 2; _idx_end++;
+						*_idx_end = vtx_cnt + 1; _idx_end++;
+						*_idx_end = vtx_cnt + 0; _idx_end++;
+						*_idx_end = vtx_cnt + 3; _idx_end++;
+						*_idx_end = vtx_cnt + 2; _idx_end++;
 
 						vtx_cnt += 4;
 						idx_cnt += 6;
@@ -381,19 +381,19 @@ namespace flame
 			Vec2f img_size;
 
 			auto img_id = (id & 0xffff0000) >> 16;
-			if (cmds.empty() || cmds.back().type != CmdDrawElement || cmds.back().v.draw_data.id != img_id)
+			if (_cmds.empty() || _cmds.back().type != CmdDrawElement || _cmds.back().v.draw_data.id != img_id)
 			{
 				Cmd cmd;
 				cmd.type = CmdDrawElement;
 				cmd.v.draw_data.id = img_id;
 				cmd.v.draw_data.vtx_cnt = 0;
 				cmd.v.draw_data.idx_cnt = 0;
-				cmds.push_back(cmd);
+				_cmds.push_back(cmd);
 			}
-			auto& vtx_cnt = cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = cmds.back().v.draw_data.idx_cnt;
-			auto res = resources[img_id].get();
-			auto atlas = res->atlas;
+			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
+			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
+			auto res = _resources[img_id].get();
+			auto atlas = res->_atlas;
 			if (atlas)
 			{
 				auto tile = atlas->tiles[id & 0xffff].get();
@@ -405,19 +405,19 @@ namespace flame
 				img_size = tile->size;
 			}
 			else
-				img_size = res->view->image->size;
+				img_size = res->_view->image->size;
 
-			vtx_end->pos = pos;									vtx_end->uv = uv0;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(0.f, size.y());			vtx_end->uv = Vec2f(uv0.x(), uv1.y());	vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(size.x(), size.y());		vtx_end->uv = uv1;						vtx_end->col = tint_col; vtx_end++;
-			vtx_end->pos = pos + Vec2f(size.x(), 0.f);			vtx_end->uv = Vec2f(uv1.x(), uv0.y());	vtx_end->col = tint_col; vtx_end++;
+			_vtx_end->pos = pos;									_vtx_end->uv = uv0;						_vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos + Vec2f(0.f, size.y());			_vtx_end->uv = Vec2f(uv0.x(), uv1.y());	_vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos + Vec2f(size.x(), size.y());		_vtx_end->uv = uv1;						_vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos + Vec2f(size.x(), 0.f);			_vtx_end->uv = Vec2f(uv1.x(), uv0.y());	_vtx_end->col = tint_col; _vtx_end++;
 
-			*idx_end = vtx_cnt + 0; idx_end++;
-			*idx_end = vtx_cnt + 2; idx_end++;
-			*idx_end = vtx_cnt + 1; idx_end++;
-			*idx_end = vtx_cnt + 0; idx_end++;
-			*idx_end = vtx_cnt + 3; idx_end++;
-			*idx_end = vtx_cnt + 2; idx_end++;
+			*_idx_end = vtx_cnt + 0; _idx_end++;
+			*_idx_end = vtx_cnt + 2; _idx_end++;
+			*_idx_end = vtx_cnt + 1; _idx_end++;
+			*_idx_end = vtx_cnt + 0; _idx_end++;
+			*_idx_end = vtx_cnt + 3; _idx_end++;
+			*_idx_end = vtx_cnt + 2; _idx_end++;
 
 			vtx_cnt += 4;
 			idx_cnt += 6;
@@ -425,33 +425,33 @@ namespace flame
 
 		void CanvasPrivate::prepare()
 		{
-			vtx_end = (Vertex*)buf_vtx->get_mapped();
-			idx_end = (uint*)buf_idx->get_mapped();
+			_vtx_end = (Vertex*)_buf_vtx->get_mapped();
+			_idx_end = (uint*)_buf_idx->get_mapped();
 
-			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
+			_curr_scissor = Vec4f(Vec2f(0.f), Vec2f(_target_size));
 
-			cmds.clear();
+			_cmds.clear();
 		}
 
 		void CanvasPrivate::_record(CommandbufferPrivate* cb, uint image_index)
 		{
 			cb->begin();
-			cb->_begin_renderpass(fbs[image_index].get(), { &clear_color, 1 });
-			if (idx_end != buf_idx->get_mapped())
+			cb->_begin_renderpass(_fbs[image_index].get(), { &_clear_color, 1 });
+			if (_idx_end != _buf_idx->get_mapped())
 			{
-				cb->set_viewport(curr_scissor);
-				cb->set_scissor(curr_scissor);
-				cb->bind_vertexbuffer(buf_vtx.get(), 0);
-				cb->bind_indexbuffer(buf_idx.get(), IndiceTypeUint);
+				cb->set_viewport(_curr_scissor);
+				cb->set_scissor(_curr_scissor);
+				cb->bind_vertexbuffer(_buf_vtx.get(), 0);
+				cb->bind_indexbuffer(_buf_idx.get(), IndiceTypeUint);
 
-				auto scale = Vec2f(2.f / target_size.x(), 2.f / target_size.y());
+				auto scale = Vec2f(2.f / _target_size.x(), 2.f / _target_size.y());
 				cb->bind_pipeline(pl);
 				cb->push_constant(0, sizeof(Vec2f), &scale, pll);
-				cb->bind_descriptorset(ds.get(), 0, pll);
+				cb->bind_descriptorset(_ds.get(), 0, pll);
 
 				auto vtx_off = 0;
 				auto idx_off = 0;
-				for (auto& cmd : cmds)
+				for (auto& cmd : _cmds)
 				{
 					switch (cmd.type)
 					{
@@ -472,7 +472,7 @@ namespace flame
 			cb->end_renderpass();
 			cb->end();
 
-			cmds.clear();
+			_cmds.clear();
 		}
 
 		Canvas* Canvas::create(Device* d)

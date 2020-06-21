@@ -9,15 +9,15 @@ namespace flame
 
 		struct BufferPrivate : Buffer
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 
-			uint size;
+			uint _size;
 
 			void* mapped;
 
 #if defined(FLAME_VULKAN)
-			VkBuffer v;
-			VkDeviceMemory m;
+			VkBuffer _v;
+			VkDeviceMemory _m;
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
@@ -27,7 +27,7 @@ namespace flame
 
 			void release() override { delete this; }
 
-			uint get_size() const override { return size; }
+			uint get_size() const override { return _size; }
 
 			void* get_mapped() const override { return mapped; }
 

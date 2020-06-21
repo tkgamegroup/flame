@@ -7,9 +7,9 @@ namespace flame
 	namespace graphics
 	{
 		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data) :
-			d(d)
+			_d(d)
 		{
-			size = _size;
+			_size = _size;
 			mapped = nullptr;
 
 #if defined(FLAME_VULKAN)
@@ -17,7 +17,7 @@ namespace flame
 			buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
-			buffer_info.size = size;
+			buffer_info.size = _size;
 			buffer_info.usage = to_backend_flags<BufferUsage>(usage);
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
@@ -27,13 +27,13 @@ namespace flame
 			};
 			buffer_info.pQueueFamilyIndices = sharing ? queue_family_idx : nullptr;
 
-			auto res = vkCreateBuffer(d->v, &buffer_info, nullptr, &v);
+			auto res = vkCreateBuffer(d->v, &buffer_info, nullptr, &_v);
 			assert(res == VK_SUCCESS);
 
 			VkMemoryRequirements mem_requirements;
-			vkGetBufferMemoryRequirements(d->v, v, &mem_requirements);
+			vkGetBufferMemoryRequirements(d->v, _v, &mem_requirements);
 
-			assert(size <= mem_requirements.size);
+			assert(_size <= mem_requirements.size);
 
 			VkMemoryAllocateInfo alloc_info;
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -41,9 +41,9 @@ namespace flame
 			alloc_info.allocationSize = mem_requirements.size;
 			alloc_info.memoryTypeIndex = d->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
-			chk_res(vkAllocateMemory(d->v, &alloc_info, nullptr, &m));
+			chk_res(vkAllocateMemory(d->v, &alloc_info, nullptr, &_m));
 
-			chk_res(vkBindBufferMemory(d->v, v, m, 0));
+			chk_res(vkBindBufferMemory(d->v, _v, _m, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -57,21 +57,21 @@ namespace flame
 				unmap();
 
 #if defined(FLAME_VULKAN)
-			vkFreeMemory(d->v, m, nullptr);
-			vkDestroyBuffer(d->v, v, nullptr);
+			vkFreeMemory(_d->v, _m, nullptr);
+			vkDestroyBuffer(_d->v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void BufferPrivate::map(uint offset, uint _size)
+		void BufferPrivate::map(uint offset, uint size)
 		{
 			if (mapped)
 				return;
-			if (_size == 0)
-				_size = size;
+			if (size == 0)
+				size = _size;
 #if defined(FLAME_VULKAN)
-			chk_res(vkMapMemory(d->v, m, offset, _size, 0, &mapped));
+			chk_res(vkMapMemory(_d->v, _m, offset, size, 0, &mapped));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -82,7 +82,7 @@ namespace flame
 			if (mapped)
 			{
 #if defined(FLAME_VULKAN)
-				vkUnmapMemory(d->v, m);
+				vkUnmapMemory(_d->v, _m);
 				mapped = nullptr;
 #elif defined(FLAME_D3D12)
 
@@ -96,10 +96,10 @@ namespace flame
 			VkMappedMemoryRange range;
 			range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			range.pNext = nullptr;
-			range.memory = m;
+			range.memory = _m;
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
-			chk_res(vkFlushMappedMemoryRanges(d->v, 1, &range));
+			chk_res(vkFlushMappedMemoryRanges(_d->v, 1, &range));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -107,18 +107,18 @@ namespace flame
 
 		void BufferPrivate::copy_from_data(void* data)
 		{
-			auto stag_buf = std::make_unique<BufferPrivate>(d, size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(_d, _size, BufferUsageTransferSrc, MemPropHost);
 
 			stag_buf->map();
-			memcpy(stag_buf->mapped, data, size);
+			memcpy(stag_buf->mapped, data, _size);
 			stag_buf->flush();
 			stag_buf->unmap();
 
-			auto cb = std::make_unique<CommandbufferPrivate>(d->default_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandbufferPrivate>(_d->default_graphics_commandpool.get());
 			cb->begin(true);
-			cb->copy_buffer(stag_buf.get(), this, 1, &BufferCopy(0, 0, size));
+			cb->copy_buffer(stag_buf.get(), this, 1, &BufferCopy(0, 0, _size));
 			cb->end();
-			auto q = d->default_graphics_queue.get();
+			auto q = _d->default_graphics_queue.get();
 			CommandbufferPrivate* cbs[] = { cb.get() };
 			q->_submit(cbs, nullptr, nullptr, nullptr);
 			q->wait_idle();

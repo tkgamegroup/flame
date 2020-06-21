@@ -12,7 +12,7 @@ namespace flame
 	namespace graphics
 	{
 		CommandpoolPrivate::CommandpoolPrivate(DevicePrivate* d, int queue_family_idx) :
-			d(d)
+			_d(d)
 		{
 #if defined(FLAME_VULKAN)
 			VkCommandPoolCreateInfo info;
@@ -21,7 +21,7 @@ namespace flame
 			info.pNext = nullptr;
 			info.queueFamilyIndex = queue_family_idx;
 
-			chk_res(vkCreateCommandPool(d->v, &info, nullptr, &v));
+			chk_res(vkCreateCommandPool(d->v, &info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 			auto res = d->v->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
@@ -31,7 +31,7 @@ namespace flame
 		CommandpoolPrivate::~CommandpoolPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyCommandPool(d->v, v, nullptr);
+			vkDestroyCommandPool(_d->v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -45,22 +45,22 @@ namespace flame
 		}
 
 		CommandbufferPrivate::CommandbufferPrivate(CommandpoolPrivate* p, bool sub) :
-			p(p)
+			_p(p)
 		{
-			current_renderpass = nullptr;
-			current_subpass = 0;
-			current_framebuffer = nullptr;
-			current_pipeline = nullptr;
+			_current_renderpass = nullptr;
+			_current_subpass = 0;
+			_current_framebuffer = nullptr;
+			_current_pipeline = nullptr;
 
 #if defined(FLAME_VULKAN)
 			VkCommandBufferAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 			info.pNext = nullptr;
 			info.level = !sub ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-			info.commandPool = p->v;
+			info.commandPool = p->_v;
 			info.commandBufferCount = 1;
 
-			chk_res(vkAllocateCommandBuffers(p->d->v, &info, &v));
+			chk_res(vkAllocateCommandBuffers(p->_d->v, &info, &_v));
 #elif defined(FLAME_D3D12)
 			auto res = p->d->v->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, p->v, nullptr, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
@@ -75,7 +75,7 @@ namespace flame
 		CommandbufferPrivate::~CommandbufferPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkFreeCommandBuffers(p->d->v, p->v, 1, &v);
+			vkFreeCommandBuffers(_p->_d->v, _p->_v, 1, &_v);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -93,17 +93,17 @@ namespace flame
 			info.pNext = nullptr;
 			info.pInheritanceInfo = nullptr;
 
-			chk_res(vkBeginCommandBuffer(v, &info));
+			chk_res(vkBeginCommandBuffer(_v, &info));
 #elif defined(FLAME_D3D12)
 			if (recording)
 				return;
 			v->Reset(p->v, nullptr);
 			recording = true;
 #endif
-			current_renderpass = nullptr;
-			current_subpass = 0;
-			current_framebuffer = nullptr;
-			current_pipeline = nullptr;
+			_current_renderpass = nullptr;
+			_current_subpass = 0;
+			_current_framebuffer = nullptr;
+			_current_pipeline = nullptr;
 		}
 
 		void CommandbufferPrivate::begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues)
@@ -115,9 +115,9 @@ namespace flame
 		{
 			auto rp = fb->rp;
 
-			current_renderpass = rp;
-			current_subpass = 0;
-			current_framebuffer = fb;
+			_current_renderpass = rp;
+			_current_subpass = 0;
+			_current_framebuffer = fb;
 
 #if defined(FLAME_VULKAN)
 			VkRenderPassBeginInfo info;
@@ -133,7 +133,7 @@ namespace flame
 			info.clearValueCount = clearvalues.size();
 			info.pClearValues = (VkClearValue*)clearvalues.data();
 
-			vkCmdBeginRenderPass(v, &info, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(_v, &info, VK_SUBPASS_CONTENTS_INLINE);
 #elif defined(FLAME_D3D12)
 			auto& attachments = rp->info.attachments;
 			auto& subpass = rp->info.subpasses[current_subpass];
@@ -157,7 +157,7 @@ namespace flame
 		void CommandbufferPrivate::end_renderpass()
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdEndRenderPass(v);
+			vkCmdEndRenderPass(_v);
 #elif defined(FLAME_D3D12)
 			auto& attachments = current_renderpass->info.attachments;
 			auto& subpass = current_renderpass->info.subpasses[current_subpass];
@@ -184,7 +184,7 @@ namespace flame
 			vp.y = rect.y();
 			vp.width = max(rect.z() - rect.x(), 1.f);
 			vp.height = max(rect.w() - rect.y(), 1.f);
-			vkCmdSetViewport(v, 0, 1, &vp);
+			vkCmdSetViewport(_v, 0, 1, &vp);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -198,7 +198,7 @@ namespace flame
 			sc.offset.y = max(0.f, rect.y());
 			sc.extent.width = max(0.f, rect.z() - rect.x());
 			sc.extent.height = max(0.f, rect.w() - rect.y());
-			vkCmdSetScissor(v, 0, 1, &sc);
+			vkCmdSetScissor(_v, 0, 1, &sc);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -206,13 +206,13 @@ namespace flame
 
 		void CommandbufferPrivate::_bind_pipeline(PipelinePrivate* p)
 		{
-			if (current_pipeline == p)
+			if (_current_pipeline == p)
 				return;
 
 			assert(p->type != PipelineNone);
-			current_pipeline = p;
+			_current_pipeline = p;
 #if defined(FLAME_VULKAN)
-			vkCmdBindPipeline(v, to_backend(p->type), p->v);
+			vkCmdBindPipeline(_v, to_backend(p->type), p->v);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -221,7 +221,7 @@ namespace flame
 		void CommandbufferPrivate::_bind_descriptorset(DescriptorsetPrivate* s, uint idx, PipelinelayoutPrivate* pll)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindDescriptorSets(v, to_backend(pll ? PipelineGraphics : current_pipeline->type), pll ? pll->v : current_pipeline->pll->v, idx, 1, &s->v, 0, nullptr);
+			vkCmdBindDescriptorSets(_v, to_backend(pll ? PipelineGraphics : _current_pipeline->type), pll ? pll->v : _current_pipeline->pll->v, idx, 1, &s->v, 0, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -231,7 +231,7 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(v, id, 1, &b->v, &offset);
+			vkCmdBindVertexBuffers(_v, id, 1, &b->v, &offset);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -240,7 +240,7 @@ namespace flame
 		void CommandbufferPrivate::_bind_indexbuffer(BufferPrivate* b, IndiceType t)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindIndexBuffer(v, b->v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(_v, b->v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -249,9 +249,9 @@ namespace flame
 		void CommandbufferPrivate::_push_constant(uint offset, uint size, const void* data, PipelinelayoutPrivate* pll)
 		{
 			if (!pll)
-				pll = current_pipeline->pll;
+				pll = _current_pipeline->pll;
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(v, pll ? pll->v : current_pipeline->pll->v, to_backend_flags<ShaderStage>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(_v, pll ? pll->v : _current_pipeline->pll->v, to_backend_flags<ShaderStage>(ShaderStageAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -260,7 +260,7 @@ namespace flame
 		void CommandbufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdDraw(v, count, instance_count, first_vertex, first_instance);
+			vkCmdDraw(_v, count, instance_count, first_vertex, first_instance);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -269,16 +269,16 @@ namespace flame
 		void CommandbufferPrivate::draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdDrawIndexed(v, count, instance_count, first_index, vertex_offset, first_instance);
+			vkCmdDrawIndexed(_v, count, instance_count, first_index, vertex_offset, first_instance);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void CommandbufferPrivate::dispatch(const Vec3u& _v)
+		void CommandbufferPrivate::dispatch(const Vec3u& v)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdDispatch(v, _v.x(), _v.y(), _v.z());
+			vkCmdDispatch(_v, v.x(), v.y(), v.z());
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -294,7 +294,7 @@ namespace flame
 				vk_copies[i].dstOffset = copies[i].dst_off;
 				vk_copies[i].size = copies[i].size;
 			}
-			vkCmdCopyBuffer(v, src->v, dst->v, vk_copies.size(), vk_copies.data());
+			vkCmdCopyBuffer(_v, src->v, dst->v, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -324,7 +324,7 @@ namespace flame
 				vk_copies[i].extent.height = copies[i].size.y();
 				vk_copies[i].extent.depth = 1;
 			}
-			vkCmdCopyImage(v, src->v, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v, 
+			vkCmdCopyImage(_v, src->v, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
@@ -356,7 +356,7 @@ namespace flame
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
 				vk_copies[i] = to_backend(copies[i], aspect);
-			vkCmdCopyBufferToImage(v, src->v, dst->v,
+			vkCmdCopyBufferToImage(_v, src->v, dst->v,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
@@ -371,7 +371,7 @@ namespace flame
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
 				vk_copies[i] = to_backend(copies[i], aspect);
-			vkCmdCopyImageToBuffer(v, src->v,
+			vkCmdCopyImageToBuffer(_v, src->v,
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
@@ -464,7 +464,7 @@ namespace flame
 				break;
 			}
 
-			vkCmdPipelineBarrier(v, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			vkCmdPipelineBarrier(_v, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
 #elif defined(FLAME_D3D12)
 			D3D12_RESOURCE_BARRIER barrier = {};
@@ -491,7 +491,7 @@ namespace flame
 			r.levelCount = 1;
 			r.baseArrayLayer = 0;
 			r.layerCount = 1;
-			vkCmdClearColorImage(v, i->v, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &r);
+			vkCmdClearColorImage(_v, i->v, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &r);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -500,7 +500,7 @@ namespace flame
 		void CommandbufferPrivate::end()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkEndCommandBuffer(v));
+			chk_res(vkEndCommandBuffer(_v));
 #elif defined(FLAME_D3D12)
 			if (recording)
 			{
@@ -517,10 +517,10 @@ namespace flame
 		}
 
 		QueuePrivate::QueuePrivate(DevicePrivate* d, uint queue_family_idx) :
-			d(d)
+			_d(d)
 		{
 #if defined(FLAME_VULKAN)
-			vkGetDeviceQueue(d->v, queue_family_idx, 0, &v);
+			vkGetDeviceQueue(d->v, queue_family_idx, 0, &_v);
 #elif defined(FLAME_D3D12)
 			D3D12_COMMAND_QUEUE_DESC desc = {};
 			auto res = d->v->CreateCommandQueue(&desc, IID_PPV_ARGS(&v));
@@ -533,7 +533,7 @@ namespace flame
 		void QueuePrivate::wait_idle()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkQueueWaitIdle(v));
+			chk_res(vkQueueWaitIdle(_v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -558,12 +558,12 @@ namespace flame
 			std::vector<VkCommandBuffer> vk_cbs;
 			vk_cbs.resize(cbs.size());
 			for (auto i = 0; i < vk_cbs.size(); i++)
-				vk_cbs[i] = cbs[i]->v;
+				vk_cbs[i] = cbs[i]->_v;
 			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
 			info.pSignalSemaphores = signal_semaphore ? &signal_semaphore->v : nullptr;
 
-			chk_res(vkQueueSubmit(v, 1, &info, signal_fence ? signal_fence->v : nullptr));
+			chk_res(vkQueueSubmit(_v, 1, &info, signal_fence ? signal_fence->v : nullptr));
 			if (signal_fence)
 				signal_fence->vl = 1;
 #elif defined(FLAME_D3D12)
@@ -594,7 +594,7 @@ namespace flame
 			info.swapchainCount = 1;
 			info.pSwapchains = &s->v;
 			info.pImageIndices = &s->image_index;
-			chk_res(vkQueuePresentKHR(v, &info));
+			chk_res(vkQueuePresentKHR(_v, &info));
 #elif defined(FLAME_D3D12)
 			auto res = ((SwapchainPrivate*)s)->v->Present(0, 0);
 			assert(SUCCEEDED(res));

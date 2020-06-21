@@ -18,9 +18,9 @@ namespace flame
 
 		struct CommandpoolPrivate : Commandpool
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 #if defined(FLAME_VULKAN)
-			VkCommandPool v;
+			VkCommandPool _v;
 #elif defined(FLAME_D3D12)
 			ID3D12CommandAllocator* v;
 #endif
@@ -33,16 +33,16 @@ namespace flame
 
 		struct CommandbufferPrivate : Commandbuffer
 		{
-			CommandpoolPrivate* p;
-			RenderpassPrivate* current_renderpass;
-			uint current_subpass;
-			FramebufferPrivate* current_framebuffer;
-			PipelinePrivate* current_pipeline;
+			CommandpoolPrivate* _p;
+			RenderpassPrivate* _current_renderpass;
+			uint _current_subpass;
+			FramebufferPrivate* _current_framebuffer;
+			PipelinePrivate* _current_pipeline;
 #if defined(FLAME_VULKAN)
-			VkCommandBuffer v;
+			VkCommandBuffer _v;
 #elif defined(FLAME_D3D12)
 			ID3D12GraphicsCommandList* v;
-			bool recording;
+			bool _recording;
 #endif
 
 			CommandbufferPrivate(CommandpoolPrivate* p, bool sub = false);
@@ -90,9 +90,9 @@ namespace flame
 
 		struct QueuePrivate : Queue
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 #if defined(FLAME_VULKAN)
-			VkQueue v;
+			VkQueue _v;
 #elif defined(FLAME_D3D12)
 			ID3D12CommandQueue* v;
 #endif
