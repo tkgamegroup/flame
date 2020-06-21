@@ -42,93 +42,6 @@ namespace flame
 		virtual const char* get_name() const = 0; // tag[A]#base
 		virtual uint get_hash() const = 0;
 
-		inline bool is_pod() const
-		{
-			if (get_is_array())
-				return false;
-			auto tag = get_tag();
-			if (tag == TypePointer)
-				return false;
-			auto base_hash = get_base_hash();
-			if (tag == TypeData && (base_hash == FLAME_CHASH("flame::StringA") || base_hash == FLAME_CHASH("flame::StringW")))
-				return false;
-			return true;
-		}
-
-		inline std::string get_cpp_name() const
-		{
-			auto ret = std::string(get_base_name());
-			static FLAME_SAL(str_flame, "flame::");
-			if (ret.compare(0, str_flame.l, str_flame.s) == 0)
-				ret.erase(ret.begin(), ret.begin() + str_flame.l);
-			std::regex reg_vec(R"(Vec<([0-9]+),(\w+)>)");
-			std::smatch res;
-			if (std::regex_search(ret, res, reg_vec))
-			{
-				auto t = res[2].str();
-				ret = "Vec" + res[1].str() + (t == "uchar" ? 'c' : t[0]);
-			}
-			if (get_is_array())
-				ret = "Array<" + ret + ">";
-			if (get_tag() == TypePointer)
-				ret += "*";
-			return ret;
-		}
-
-		static std::string make_str(TypeTag tag, const std::string& base_name, bool is_array = false)
-		{
-			std::string ret;
-			ret = type_tag(tag);
-			if (is_array)
-				ret += "A";
-			ret += "#" + base_name;
-			return ret;
-		}
-
-		static void break_str(const std::string& str, TypeTag& tag, std::string& base_name, bool& is_array)
-		{
-			auto pos_hash = str.find('#');
-			{
-				auto ch = str[0];
-				for (auto i = 0; i < TypeTagCount; i++)
-				{
-					if (type_tag((TypeTag)i) == ch)
-					{
-						tag = (TypeTag)i;
-						break;
-					}
-				}
-			}
-			is_array = false;
-			if (pos_hash > 1 && str[1] == 'A')
-				is_array = true;
-			base_name = std::string(str.begin() + pos_hash + 1, str.end());
-		}
-
-		static uint get_hash(TypeTag tag, const std::string& base_name, bool is_array = false)
-		{
-			return FLAME_HASH(make_str(tag, base_name, is_array).c_str());
-		}
-
-		static uint get_hash(const std::string& str)
-		{
-			TypeTag tag;
-			std::string base_name;
-			bool is_array;
-			break_str(str, tag, base_name, is_array);
-			return TypeInfo::get_hash(tag, base_name, is_array);
-		}
-
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* base_name, bool is_array = false);
-		inline static TypeInfo* TypeInfo::get(const std::string& str)
-		{
-			TypeTag tag;
-			std::string base_name;
-			bool is_array;
-			break_str(str, tag, base_name, is_array);
-			return TypeInfo::get(tag, base_name.c_str(), is_array);
-		}
-
 		inline std::string serialize(const void* src) const;
 		inline void unserialize(const std::string& src, void* dst) const;
 		inline void copy_from(const void* src, void* dst, uint size = 0) const;
@@ -227,9 +140,6 @@ namespace flame
 
 		virtual const void* get_library() const = 0;
 		virtual const wchar_t* get_library_name() const = 0;
-
-		virtual EnumInfo* get_enum(uint hash) const = 0;
-		virtual UdtInfo* get_udt(uint hash) const = 0;
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* library_filename, bool add_to_global, bool load_with_library);
 	};

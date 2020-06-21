@@ -9,146 +9,162 @@ namespace flame
 	std::vector<TypeInfoDatabasePrivate*> global_typeinfo_databases;
 
 	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& base_name, bool is_array) :
-		tag(tag),
-		base_name(base_name),
-		is_array(is_array)
+		_tag(tag),
+		_base_name(base_name),
+		_is_array(is_array)
 	{
-		base_hash = FLAME_HASH(base_name.c_str());
-		name = make_str(tag, base_name, is_array);
-		hash = FLAME_HASH(name.c_str());
+		_base_hash = FLAME_HASH(base_name.c_str());
+		_name = get_name(tag, base_name, is_array);
+		_hash = FLAME_HASH(_name.c_str());
+	}
+
+	std::string TypeInfoPrivate::get_name(TypeTag tag, const std::string& base_name, bool is_array)
+	{
+		std::string ret;
+		ret = type_tag(tag);
+		if (is_array)
+			ret += "A";
+		ret += "#" + base_name;
+		return ret;
 	}
 
 	TypeInfoPrivate* TypeInfoPrivate::_get(TypeTag tag, const std::string& base_name, bool is_array)
 	{
-		auto hash = FLAME_HASH(make_str(tag, base_name, is_array).c_str());
+		auto hash = FLAME_HASH(get_name(tag, base_name, is_array).c_str());
 		auto it = typeinfos.find(hash);
 		if (it != typeinfos.end())
 			return it->second.get();
 		auto t = new TypeInfoPrivate(tag, base_name, is_array);
-		typeinfos.emplace(t->hash, t);
+		typeinfos.emplace(hash, t);
 		return t;
 	}
 
-	TypeInfo* TypeInfo::get(TypeTag tag, const char* base_name, bool is_array) { return TypeInfoPrivate::_get(tag, base_name, is_array); }
+	TypeInfoPrivate* TypeInfoPrivate::_get(const std::string& str)
+	{
+		TypeTag tag;
+		auto pos_hash = str.find('#');
+		{
+			auto ch = str[0];
+			for (auto i = 0; i < TypeTagCount; i++)
+			{
+				if (type_tag((TypeTag)i) == ch)
+				{
+					tag = (TypeTag)i;
+					break;
+				}
+			}
+		}
+		auto is_array = false;
+		if (pos_hash > 1 && str[1] == 'A')
+			is_array = true;
+		auto base_name = std::string(str.begin() + pos_hash + 1, str.end());
+		return _get(tag, base_name, is_array);
+	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset, uint size) :
-		udt(udt),
-		index(index),
-		type(type),
-		name(name),
-		flags(flags),
-		offset(offset),
-		size(size),
-		default_value(nullptr)
+		_udt(udt),
+		_index(index),
+		_type(type),
+		_name(name),
+		_flags(flags),
+		_offset(offset),
+		_size(size),
+		_default_value(nullptr)
 	{
-		name_hash = FLAME_HASH(name.c_str());
-		if (type->is_pod())
+		_name_hash = FLAME_HASH(name.c_str());
+		if (!type->_is_array && type->_tag != TypePointer &&
+			!(type->_tag == TypeData && (type->_base_hash == FLAME_CHASH("flame::StringA") || type->_base_hash == FLAME_CHASH("flame::StringW"))))
 		{
-			default_value = new char[size];
-			memset(default_value, 0, size);
+			_default_value = new char[size];
+			memset(_default_value, 0, size);
 		}
 	}
 
 	VariableInfoPrivate::~VariableInfoPrivate()
 	{
-		delete[]default_value;
+		delete[]_default_value;
 	}
 
 	EnumItemPrivate::EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
-		ei(ei),
-		index(index),
-		name(name),
-		value(value)
+		_ei(ei),
+		_index(index),
+		_name(name),
+		_value(value)
 	{
 	}
 
 	EnumInfoPrivate::EnumInfoPrivate(TypeInfoDatabasePrivate* db, const std::string& name) :
-		db(db),
-		name(name)
+		_db(db),
+		_name(name)
 	{
 	}
 
 	EnumItemPrivate* EnumInfoPrivate::_find_item(const std::string& name) const
 	{
-		for (auto& i : items)
+		for (auto& i : _items)
 		{
-			if (i->name == name)
+			if (i->_name == name)
 				return i.get();
 		}
 		return nullptr;
 	}
 	EnumItemPrivate* EnumInfoPrivate::_find_item(int value) const
 	{
-		for (auto& i : items)
+		for (auto& i : _items)
 		{
-			if (i->value == value)
+			if (i->_value == value)
 				return i.get();
 		}
 		return nullptr;
 	}
 
 	FunctionInfoPrivate::FunctionInfoPrivate(TypeInfoDatabasePrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, void* rva, TypeInfoPrivate* type) :
-		db(db),
-		udt(udt),
-		index(index),
-		name(name),
-		rva(rva),
-		type(type)
+		_db(db),
+		_udt(udt),
+		_index(index),
+		_name(name),
+		_rva(rva),
+		_type(type)
 	{
 	}
 
 	UdtInfoPrivate::UdtInfoPrivate(TypeInfoDatabasePrivate* db, const std::string& name, uint size, const std::string& base_name) :
-		db(db),
-		name(name),
-		size(size),
-		base_name(base_name)
+		_db(db),
+		_name(name),
+		_size(size),
+		_base_name(base_name)
 	{
 	}
 
 	VariableInfoPrivate* UdtInfoPrivate::_find_variable(const std::string& name) const
 	{
-		for (auto& v : variables)
+		for (auto& v : _variables)
 		{
-			if (v->name == name)
+			if (v->_name == name)
 				return v.get();
 		}
 		return nullptr;
 	}
 	FunctionInfoPrivate* UdtInfoPrivate::_find_function(const std::string& name) const
 	{
-		for (auto& f : functions)
+		for (auto& f : _functions)
 		{
-			if (f->name == name)
+			if (f->_name == name)
 				return f.get();
 		}
 		return nullptr;
 	}
 
 	TypeInfoDatabasePrivate::TypeInfoDatabasePrivate(const std::wstring& library_name) :
-		library(nullptr),
-		library_name(library_name)
+		_library(nullptr),
+		_library_name(library_name)
 	{
 	}
 
 	TypeInfoDatabasePrivate::~TypeInfoDatabasePrivate()
 	{
-		if (library)
-			free_library(library);
-	}
-
-	EnumInfo* TypeInfoDatabasePrivate::get_enum(uint hash) const 
-	{
-		auto it = enums.find(hash);
-		if (it != enums.end())
-			return it->second.get();
-		return nullptr;
-	}
-	UdtInfo* TypeInfoDatabasePrivate::get_udt(uint hash) const
-	{
-		auto it = udts.find(hash);
-		if (it != udts.end())
-			return it->second.get();
-		return nullptr;
+		if (_library)
+			free_library(_library);
 	}
 
 	TypeInfoDatabase* TypeInfoDatabase::load(const wchar_t* library_filename, bool add_to_global, bool load_with_library)
@@ -185,39 +201,39 @@ namespace flame
 		for (auto n_enum : file_root.child("enums"))
 		{
 			auto e = new EnumInfoPrivate(db, n_enum.attribute("name").value());
-			db->enums.emplace(FLAME_HASH(e->name.c_str()), e);
+			db->_enums.emplace(FLAME_HASH(e->_name.c_str()), e);
 
 			for (auto n_item : n_enum.child("items"))
-				e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
+				e->_items.emplace_back(new EnumItemPrivate(e, e->_items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
 		}
 
 		for (auto n_udt : file_root.child("udts"))
 		{
 			auto u = new UdtInfoPrivate(db, n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value());
-			db->udts.emplace(FLAME_HASH(u->name.c_str()), u);
+			db->_udts.emplace(FLAME_HASH(u->_name.c_str()), u);
 
 			for (auto n_variable : n_udt.child("variables"))
 			{
 				auto type = TypeInfoPrivate::_get(n_variable.attribute("type").value());
-				auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
+				auto v = new VariableInfoPrivate(u, u->_variables.size(), type, n_variable.attribute("name").value(),
 					n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint(), n_variable.attribute("size").as_uint());
-				u->variables.emplace_back(v);
+				u->_variables.emplace_back(v);
 
-				if (v->default_value)
-					type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
+				if (v->_default_value)
+					type->unserialize(n_variable.attribute("default_value").value(), v->_default_value);
 			}
 
 			for (auto n_function : n_udt.child("functions"))
 			{
-				auto f = new FunctionInfoPrivate(db, u, u->functions.size(), n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfoPrivate::_get(n_function.attribute("return_type").value()));
-				u->functions.emplace_back(f);
+				auto f = new FunctionInfoPrivate(db, u, u->_functions.size(), n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfoPrivate::_get(n_function.attribute("return_type").value()));
+				u->_functions.emplace_back(f);
 				for (auto n_parameter : n_function.child("parameters"))
-					f->parameters.push_back(TypeInfoPrivate::_get(n_parameter.attribute("type").value()));
+					f->_parameters.push_back(TypeInfoPrivate::_get(n_parameter.attribute("type").value()));
 			}
 		}
 
 		if (load_with_library)
-			db->library = load_library(db->library_name.c_str());
+			db->_library = load_library(db->_library_name.c_str());
 		if (!add_to_global)
 			global_typeinfo_databases.erase(global_typeinfo_databases.begin() + global_typeinfo_databases.size() - 1);
 
@@ -251,18 +267,18 @@ namespace flame
 			}
 			typeinfo_code.close();
 
-			for (auto& u : db->udts)
+			for (auto& u : db->_udts)
 			{
-				for (auto& f : u.second->functions)
+				for (auto& f : u.second->_functions)
 				{
-					if (f->name == "bp_update")
+					if (f->_name == "bp_update")
 					{
-						auto n = u.second->name + "::" + f->name;
+						auto n = u.second->_name + "::" + f->_name;
 						for (auto& fc : function_codes)
 						{
 							if (fc.name == n)
 							{
-								f->code = fc.code;
+								f->_code = fc.code;
 								break;
 							}
 						}
@@ -274,32 +290,32 @@ namespace flame
 		return db;
 	}
 
-	void push_global_typeinfo_database(TypeInfoDatabase* db)
+	void _push_global_typeinfo_database(TypeInfoDatabasePrivate* db)
 	{
-		global_typeinfo_databases.push_back((TypeInfoDatabasePrivate*)db);
+		global_typeinfo_databases.push_back(db);
 	}
 
-	void pop_global_typeinfo_database()
+	void _pop_global_typeinfo_database()
 	{
 		global_typeinfo_databases.erase(global_typeinfo_databases.begin() + global_typeinfo_databases.size() - 1);
 	}
 
-	EnumInfo* find_enum(uint hash)
+	EnumInfoPrivate* _find_enum(uint hash)
 	{
 		for (auto db : global_typeinfo_databases)
 		{
-			auto it = db->enums.find(hash);
-			if (it != db->enums.end())
+			auto it = db->_enums.find(hash);
+			if (it != db->_enums.end())
 				return it->second.get();
 		}
 		return nullptr;
 	}
-	UdtInfo* find_udt(uint hash)
+	UdtInfoPrivate* _find_udt(uint hash)
 	{
 		for (auto db : global_typeinfo_databases)
 		{
-			auto it = db->udts.find(hash);
-			if (it != db->udts.end())
+			auto it = db->_udts.find(hash);
+			if (it != db->_udts.end())
 				return it->second.get();
 		}
 		return nullptr;

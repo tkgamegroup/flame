@@ -1,5 +1,5 @@
 #include <flame/serialize.h>
-#include <flame/../../source/foundation/typeinfo_private.h>
+#include "../../source/foundation/typeinfo_private.h"
 
 #include <Windows.h>
 #include <dia2.h>
@@ -90,30 +90,7 @@ std::string format_type(const wchar_t* in, bool* is_array)
 	return str;
 }
 
-struct TypeInfoDesc
-{
-	TypeTag tag;
-	bool is_array;
-	std::string base_name;
-
-	TypeInfoDesc()
-	{
-	}
-
-	TypeInfoDesc(TypeTag tag, const std::string& base_name, bool is_array = false) :
-		tag(tag),
-		is_array(is_array),
-		base_name(base_name)
-	{
-	}
-
-	TypeInfo* get()
-	{
-		return TypeInfo::get(tag, base_name.c_str(), is_array);
-	}
-};
-
-TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
+TypeInfoPrivate* typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 {
 	DWORD dw;
 	wchar_t* pwname;
@@ -172,9 +149,9 @@ TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 	{
 	case SymTagEnum:
 		s_type->get_name(&pwname);
-		return TypeInfoDesc((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
+		return TypeInfoPrivate::_get((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
 	case SymTagBaseType:
-		return TypeInfoDesc(TypeData, base_type_name(s_type));
+		return TypeInfoPrivate::_get(TypeData, base_type_name(s_type));
 	case SymTagPointerType:
 	{
 		std::string name;
@@ -196,14 +173,14 @@ TypeInfoDesc typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 			break;
 		}
 		pointer_type->Release();
-		return TypeInfoDesc(TypePointer, name, is_array);
+		return TypeInfoPrivate::_get(TypePointer, name, is_array);
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
 		auto is_array = false;
 		auto name = format_type(pwname, &is_array);
-		return TypeInfoDesc(TypeData, name, is_array);
+		return TypeInfoPrivate::_get(TypeData, name, is_array);
 	}
 	case SymTagFunctionArgType:
 	{
@@ -284,7 +261,7 @@ int main(int argc, char **args)
 	}
 
 	auto db = new TypeInfoDatabasePrivate(library_path);
-	push_global_typeinfo_database(db);
+	_push_global_typeinfo_database(db);
 
 	LONG l;
 	ULONG ul;
@@ -501,11 +478,11 @@ int main(int argc, char **args)
 			if (du.full_name == name)
 			{
 				auto udt_hash = FLAME_HASH(name.c_str());
-				if (!find_udt(udt_hash))
+				if (!_find_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
 					auto u = new UdtInfoPrivate(db, name, ull, du.base_name);
-					db->udts.emplace(udt_hash, u);
+					db->_udts.emplace(udt_hash, u);
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -525,13 +502,13 @@ int main(int argc, char **args)
 								s_type->get_length(&ull);
 
 								auto desc = typeinfo_from_symbol(s_type, dv.flags);
-								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+								if (desc->_tag == TypeEnumSingle || desc->_tag == TypeEnumMulti)
 								{
-									auto enum_hash = FLAME_HASH(desc.base_name.c_str());
-									if (!find_enum(enum_hash))
+									auto enum_hash = desc->_base_hash;
+									if (!_find_enum(enum_hash))
 									{
-										auto e = new EnumInfoPrivate(db, desc.base_name);
-										db->enums.emplace(enum_hash, e);
+										auto e = new EnumInfoPrivate(db, desc->_base_name);
+										db->_enums.emplace(enum_hash, e);
 
 										IDiaEnumSymbols* items;
 										s_type->findChildren(SymTagNull, NULL, nsNone, &items);
@@ -545,14 +522,14 @@ int main(int argc, char **args)
 
 											auto item_name = w2s(pwname);
 											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
-												e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), item_name, variant.lVal));
+												e->_items.emplace_back(new EnumItemPrivate(e, e->_items.size(), item_name, variant.lVal));
 
 											item->Release();
 										}
 										items->Release();
 									}
 								}
-								u->variables.emplace_back(new VariableInfoPrivate(u, u->variables.size(), desc.get(), name, dv.flags, l, ull));
+								u->_variables.emplace_back(new VariableInfoPrivate(u, u->_variables.size(), desc, name, dv.flags, l, ull));
 
 								s_type->Release();
 
@@ -580,7 +557,6 @@ int main(int argc, char **args)
 									name = "dtor";
 
 								void* rva;
-								TypeInfoDesc ret_type;
 
 								_function->get_relativeVirtualAddress(&dw);
 								rva = (void*)dw;
@@ -591,18 +567,18 @@ int main(int argc, char **args)
 
 									IDiaSymbol* s_return_type;
 									s_function_type->get_type(&s_return_type);
-									ret_type = typeinfo_from_symbol(s_return_type, 0);
+									auto ret_type = typeinfo_from_symbol(s_return_type, 0);
 									s_return_type->Release();
 
-									auto f = new FunctionInfoPrivate(db, u, u->functions.size(), name, rva, (TypeInfoPrivate*)ret_type.get());
-									u->functions.emplace_back(f);
+									auto f = new FunctionInfoPrivate(db, u, u->_functions.size(), name, rva, ret_type);
+									u->_functions.emplace_back(f);
 
 									IDiaEnumSymbols* s_parameters;
 									s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
 									IDiaSymbol* s_parameter;
 									while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 									{
-										f->parameters.emplace_back(typeinfo_from_symbol(s_parameter, 0).get());
+										f->_parameters.emplace_back(typeinfo_from_symbol(s_parameter, 0));
 
 										s_parameter->Release();
 									}
@@ -610,7 +586,7 @@ int main(int argc, char **args)
 
 									s_function_type->Release();
 
-									f->code = df.code;
+									f->_code = df.code;
 								}
 
 								break;
@@ -622,11 +598,11 @@ int main(int argc, char **args)
 
 					FunctionInfoPrivate* ctor = nullptr;
 					FunctionInfoPrivate* dtor = nullptr;
-					for (auto& f : u->functions)
+					for (auto& f : u->_functions)
 					{
-						if (f->name == "ctor" && f->parameters.empty())
+						if (f->_name == "ctor" && f->_parameters.empty())
 							ctor = f.get();
-						else if (f->name == "dtor")
+						else if (f->_name == "dtor")
 							dtor = f.get();
 						if (ctor && dtor)
 							break;
@@ -636,21 +612,21 @@ int main(int argc, char **args)
 						auto library = LoadLibraryW(library_path.c_str());
 						if (library)
 						{
-							auto obj = malloc(u->size);
-							memset(obj, 0, u->size);
+							auto obj = malloc(u->_size);
+							memset(obj, 0, u->_size);
 
-							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->rva)), obj);
-							for (auto& i : u->variables)
+							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->_rva)), obj);
+							for (auto& i : u->_variables)
 							{
-								if (!i->default_value)
+								if (!i->_default_value)
 									continue;
-								auto type = i->type;
-								auto tag = type->get_tag();
-								if (!type->get_is_array() && tag != TypePointer && !(i->flags & VariableFlagOutput))
-									memcpy(i->default_value, (char*)obj + i->offset, i->size);
+								auto type = i->_type;
+								auto tag = type->_tag;
+								if (!type->_is_array && tag != TypePointer && !(i->_flags & VariableFlagOutput))
+									memcpy(i->_default_value, (char*)obj + i->_offset, i->_size);
 							}
 							if (dtor)
-								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->rva)), obj);
+								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->_rva)), obj);
 
 							free(obj);
 							FreeLibrary(library);
@@ -669,53 +645,53 @@ int main(int argc, char **args)
 	auto file_root = file.append_child("typeinfo");
 
 	auto n_enums = file_root.append_child("enums");
-	for (auto& e : db->enums)
+	for (auto& e : db->_enums)
 	{
 		auto n_enum = n_enums.append_child("enum");
-		n_enum.append_attribute("name").set_value(e.second->name.c_str());
+		n_enum.append_attribute("name").set_value(e.second->_name.c_str());
 
 		auto n_items = n_enum.append_child("items");
-		for (auto& i : e.second->items)
+		for (auto& i : e.second->_items)
 		{
 			auto n_item = n_items.append_child("item");
-			n_item.append_attribute("name").set_value(i->name.c_str());
-			n_item.append_attribute("value").set_value(i->value);
+			n_item.append_attribute("name").set_value(i->_name.c_str());
+			n_item.append_attribute("value").set_value(i->_value);
 		}
 	}
 
 	auto n_udts = file_root.append_child("udts");
-	for (auto& u : db->udts)
+	for (auto& u : db->_udts)
 	{
 		auto n_udt = n_udts.append_child("udt");
-		n_udt.append_attribute("name").set_value(u.second->name.c_str());
-		n_udt.append_attribute("size").set_value(u.second->size);
-		n_udt.append_attribute("base_name").set_value(u.second->base_name.c_str());
+		n_udt.append_attribute("name").set_value(u.second->_name.c_str());
+		n_udt.append_attribute("size").set_value(u.second->_size);
+		n_udt.append_attribute("base_name").set_value(u.second->_base_name.c_str());
 
 		auto n_items = n_udt.append_child("variables");
-		for (auto& v : u.second->variables)
+		for (auto& v : u.second->_variables)
 		{
 			auto n_variable = n_items.append_child("variable");
-			n_variable.append_attribute("type").set_value(v->type->get_name());
-			n_variable.append_attribute("name").set_value(v->name.c_str());
-			n_variable.append_attribute("flags").set_value(v->flags);
-			n_variable.append_attribute("offset").set_value(v->offset);
-			n_variable.append_attribute("size").set_value(v->size);
-			if (v->default_value)
-				n_variable.append_attribute("default_value").set_value(v->type->serialize(v->default_value).c_str());
+			n_variable.append_attribute("type").set_value(v->_type->_name.c_str());
+			n_variable.append_attribute("name").set_value(v->_name.c_str());
+			n_variable.append_attribute("flags").set_value(v->_flags);
+			n_variable.append_attribute("offset").set_value(v->_offset);
+			n_variable.append_attribute("size").set_value(v->_size);
+			if (v->_default_value)
+				n_variable.append_attribute("default_value").set_value(v->_type->serialize(v->_default_value).c_str());
 		}
 
 		auto n_functions = n_udt.append_child("functions");
-		for (auto& f : u.second->functions)
+		for (auto& f : u.second->_functions)
 		{
 			auto n_function = n_functions.append_child("function");
-			n_function.append_attribute("name").set_value(f->name.c_str());
-			n_function.append_attribute("rva").set_value((uint)f->rva);
-			n_function.append_attribute("return_type").set_value(f->type->get_name());
-			if (!f->parameters.empty())
+			n_function.append_attribute("name").set_value(f->_name.c_str());
+			n_function.append_attribute("rva").set_value((uint)f->_rva);
+			n_function.append_attribute("return_type").set_value(f->_type->_name.c_str());
+			if (!f->_parameters.empty())
 			{
 				auto n_parameters = n_function.append_child("parameters");
-				for (auto p : f->parameters)
-					n_parameters.append_child("parameter").append_attribute("type").set_value(p->get_name());
+				for (auto& p : f->_parameters)
+					n_parameters.append_child("parameter").append_attribute("type").set_value(p->_name.c_str());
 			}
 		}
 	}
@@ -729,14 +705,14 @@ int main(int argc, char **args)
 	auto typeinfo_code_path = library_path;
 	typeinfo_code_path.replace_extension(L".typeinfo.code");
 	std::ofstream typeinfo_code(typeinfo_code_path);
-	for (auto& u : db->udts)
+	for (auto& u : db->_udts)
 	{
-		for (auto& f : u.second->functions)
+		for (auto& f : u.second->_functions)
 		{
-			if (!f->code.empty())
+			if (!f->_code.empty())
 			{
-				typeinfo_code << "##" << u.second->name << "::" << f->name <<"\n";
-				typeinfo_code << f->code;
+				typeinfo_code << "##" << u.second->_name << "::" << f->_name <<"\n";
+				typeinfo_code << f->_code;
 			}
 		}
 	}

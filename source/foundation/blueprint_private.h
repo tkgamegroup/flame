@@ -6,6 +6,7 @@ namespace flame
 {
 	struct TypeInfoPrivate;
 	struct VariableInfoPrivate;
+	struct UdtInfoPrivate;
 
 	struct bpSlotPrivate;
 	struct bpNodePrivate;
@@ -53,89 +54,97 @@ namespace flame
 
 	struct bpNodePrivate : bpNode
 	{
-		bpScenePrivate* scene;
-		bpNodePrivate* parent;
+		bpScenePrivate* _scene;
+		bpNodePrivate* _parent;
 
-		Guid guid;
-		std::string id;
-		Vec2f pos;
+		Guid _guid;
+		std::string _id;
+		Vec2f _pos = Vec2f(0.f);
 
-		bpNodeType node_type;
-		std::string type;
-		UdtInfo* udt;
+		bpNodeType _node_type;
+		std::string _type;
+		UdtInfoPrivate* _udt = nullptr;
 
-		std::vector<std::unique_ptr<bpSlotPrivate>> inputs;
-		std::vector<std::unique_ptr<bpSlotPrivate>> outputs;
+		std::vector<std::unique_ptr<bpSlotPrivate>> _inputs;
+		std::vector<std::unique_ptr<bpSlotPrivate>> _outputs;
 
-		std::vector<std::unique_ptr<bpNodePrivate>> children;
+		std::vector<std::unique_ptr<bpNodePrivate>> _children;
 
-		void* object;
-		void* library;
+		void* _object = nullptr;
+		void* _library = nullptr;
 
-		void* dtor_addr;
-		void* update_addr;
+		void* _dtor_addr = nullptr;
+		void* _update_addr = nullptr;
 
-		uint order;
+		uint _order = 0xffffffff;
 
-		std::vector<bpNodePrivate*> update_list;
-		bool need_rebuild_update_list;
+		std::vector<bpNodePrivate*> _update_list;
+		bool _need_rebuild_update_list = true;
 
 		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType node_type, const std::string& type);
 		~bpNodePrivate();
 
-		bpScene* get_scene() const override { return (bpScene*)scene; }
-		bpNode* get_parent() const override { return parent; }
-
-		Guid get_guid() const override { return guid; }
-		void set_guid(const Guid& _guid) override { guid = _guid; }
-		const char* get_id() const override { return id.c_str(); }
-		bool set_id(const char* id) override { return _set_id(id); }
 		bool _set_id(const std::string& id);
-		Vec2f get_pos() const override { return pos; }
-		void set_pos(const Vec2f& _pos) override { pos = _pos; }
 
-		bpNodeType get_node_type() const override { return node_type; }
-		const char* get_type() const override { return type.c_str(); }
-		UdtInfo* get_udt() const override { return udt; }
-
-		uint get_inputs_count() const override { return inputs.size(); }
-		bpSlot* get_input(uint idx) const override { return inputs[idx].get(); }
-		bpSlot* find_input(const char* name) const override { return _find_input(name); }
 		bpSlotPrivate* _find_input(const std::string& name) const;
-		uint get_outputs_count() const override { return outputs.size(); }
-		bpSlot* get_output(uint idx) const override { return outputs[idx].get(); }
-		bpSlot* find_output(const char* name) const override { return _find_output(name); }
 		bpSlotPrivate* _find_output(const std::string& name) const;
 
-		uint get_children_count() const override { return children.size(); }
-		bpNode* get_child(uint idx) const override { return children[idx].get(); }
-		bpNode* add_child(const char* id, const char* type, bpNodeType node_type) override { return _add_child(id, std::string(type), node_type); }
 		bpNodePrivate* _add_child(const std::string& id, const std::string& type, bpNodeType node_type);
-		void remove_child(bpNode* n) override { remove_child((bpNodePrivate*)n); }
 		void _remove_child(bpNodePrivate* n);
-		bpNode* find_child(const char* name) const override { return _find_child(name); }
 		bpNodePrivate* _find_child(const std::string& name) const;
-		bpNode* find_child(const Guid& guid) const override { return _find_child(guid); }
 		bpNodePrivate* _find_child(const Guid& guid) const;
 
-		void update();
+		void _update();
+
+		bpScene* get_scene() const override { return (bpScene*)_scene; }
+		bpNode* get_parent() const override { return _parent; }
+
+		Guid get_guid() const override { return _guid; }
+		void set_guid(const Guid& guid) override { _guid = guid; }
+		const char* get_id() const override { return _id.c_str(); }
+		bool set_id(const char* id) override { return _set_id(id); }
+		Vec2f get_pos() const override { return _pos; }
+		void set_pos(const Vec2f& pos) override { _pos = pos; }
+
+		bpNodeType get_node_type() const override { return _node_type; }
+		const char* get_type() const override { return _type.c_str(); }
+		UdtInfo* get_udt() const override { return (UdtInfo*)_udt; }
+
+		uint get_inputs_count() const override { return _inputs.size(); }
+		bpSlot* get_input(uint idx) const override { return _inputs[idx].get(); }
+		bpSlot* find_input(const char* name) const override { return _find_input(name); }
+		uint get_outputs_count() const override { return _outputs.size(); }
+		bpSlot* get_output(uint idx) const override { return _outputs[idx].get(); }
+		bpSlot* find_output(const char* name) const override { return _find_output(name); }
+
+		uint get_children_count() const override { return _children.size(); }
+		bpNode* get_child(uint idx) const override { return _children[idx].get(); }
+		bpNode* add_child(const char* id, const char* type, bpNodeType node_type) override { return _add_child(id, std::string(type), node_type); }
+		void remove_child(bpNode* n) override { remove_child((bpNodePrivate*)n); }
+		bpNode* find_child(const char* name) const override { return _find_child(name); }
+		bpNode* find_child(const Guid& guid) const override { return _find_child(guid); }
+
+		void update() override { _update(); }
 	};
 
 	struct bpScenePrivate : bpScene
 	{
-		std::filesystem::path filename;
-		float time;
-		std::unique_ptr<bpNodePrivate> root;
+		std::filesystem::path _filename;
+		float _time;
+		std::unique_ptr<bpNodePrivate> _root;
 
 		bpScenePrivate();
 
+		void _update();
+		void _save();
+
 		void release() override { delete this; }
 
-		const wchar_t* get_filename() const override { return filename.c_str(); }
-		float get_time() const override { return time; }
-		bpNode* get_root() const override { return root.get(); }
+		const wchar_t* get_filename() const override { return _filename.c_str(); }
+		float get_time() const override { return _time; }
+		bpNode* get_root() const override { return _root.get(); }
 
-		void update() override;
-		void save() override;
+		void update() override { _update(); }
+		void save() override { _save(); }
 	};
 }

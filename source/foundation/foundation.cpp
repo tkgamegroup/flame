@@ -1223,9 +1223,9 @@ namespace flame
 	{
 		for (auto it = windows.begin(); it != windows.end(); )
 		{
-			auto w = (WindowPrivate*)*it;
+			auto w = *it;
 
-			if (w->dead)
+			if (w->_dead)
 			{
 				it = windows.erase(it);
 				delete w;
@@ -1253,14 +1253,12 @@ namespace flame
 	}
 
 #ifdef FLAME_WINDOWS
-	WindowPrivate::WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent)
+	WindowPrivate::WindowPrivate(const std::string& title, const Vec2u& size, uint style, WindowPrivate* parent)
 	{
-		title = _title;
+		_title = title;
 
-		hWnd = 0;
-
-		size = _size;
-		style = _style;
+		_size = size;
+		_style = style;
 
 		assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
@@ -1291,72 +1289,68 @@ namespace flame
 			AdjustWindowRect(&rect, win32_style, false);
 			final_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
 		}
-		pos.x() = (screen_size.x() - final_size.x()) / 2;
-		pos.y() = (screen_size.y() - final_size.y()) / 2;
-		hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
-			pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+		_pos.x() = (screen_size.x() - final_size.x()) / 2;
+		_pos.y() = (screen_size.y() - final_size.y()) / 2;
+		_hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
+			_pos.x(), _pos.y(), final_size.x(), final_size.y(), parent ? parent->_hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 		{
 			RECT rect;
-			GetClientRect(hWnd, &rect);
-			size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+			GetClientRect(_hWnd, &rect);
+			_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
 		}
 
-		SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
+		SetWindowLongPtr(_hWnd, 0, (LONG_PTR)this);
 
 		for (auto i = 0; i < Cursor_Count; i++)
 		{
 			switch ((CursorType)i)
 			{
 			case CursorAppStarting:
-				cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
+				_cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
 				break;
 			case CursorArrow:
-				cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
+				_cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
 				break;
 			case CursorCross:
-				cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
+				_cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
 				break;
 			case CursorHand:
-				cursors[i] = LoadCursorA(nullptr, IDC_HAND);
+				_cursors[i] = LoadCursorA(nullptr, IDC_HAND);
 				break;
 			case CursorHelp:
-				cursors[i] = LoadCursorA(nullptr, IDC_HELP);
+				_cursors[i] = LoadCursorA(nullptr, IDC_HELP);
 				break;
 			case CursorIBeam:
-				cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
+				_cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
 				break;
 			case CursorNo:
-				cursors[i] = LoadCursorA(nullptr, IDC_NO);
+				_cursors[i] = LoadCursorA(nullptr, IDC_NO);
 				break;
 			case CursorSizeAll:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
+				_cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
 				break;
 			case CursorSizeNESW:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
+				_cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
 				break;
 			case CursorSizeNS:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
+				_cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
 				break;
 			case CursorSizeNWSE:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
+				_cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
 				break;
 			case CursorSizeWE:
-				cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
+				_cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
 				break;
 			case CursorUpArrwo:
-				cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
+				_cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
 				break;
 			case CursorWait:
-				cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
+				_cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
 				break;
 			}
 		}
-		cursor_type = CursorNone;
 
-		sizing = false;
-		pending_size = size;
-
-		dead = false;
+		_pending_size = size;
 	}
 #elif FLAME_ANDROID
 	WindowPrivate::WindowPrivate(android_app* android_state) :
@@ -1366,18 +1360,18 @@ namespace flame
 #endif
 	WindowPrivate::~WindowPrivate()
 	{
-		for (auto& l : destroy_listeners)
+		for (auto& l : _destroy_listeners)
 			l->call();
 	}
 
 	void WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto resize = [=]() {
-			if (size != pending_size)
+			if (_size != _pending_size)
 			{
-				size = pending_size;
-				for (auto& l : resize_listeners)
-					l->call(size);
+				_size = _pending_size;
+				for (auto& l : _resize_listeners)
+					l->call(_size);
 			}
 		};
 
@@ -1388,7 +1382,7 @@ namespace flame
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
 			{
-				for (auto& l : key_listeners)
+				for (auto& l : _key_listeners)
 					l->call(KeyStateDown, v);
 			}
 		}
@@ -1398,20 +1392,20 @@ namespace flame
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
 			{
-				for (auto& l : key_listeners)
+				for (auto& l : _key_listeners)
 					l->call(KeyStateUp, v);
 			}
 		}
 			break;
 		case WM_CHAR:
-			for (auto& l : key_listeners)
+			for (auto& l : _key_listeners)
 				l->call(KeyStateNull, (Key)wParam);
 			break;
 		case WM_LBUTTONDOWN:
 		{
-			SetCapture(hWnd);
+			SetCapture(_hWnd);
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateDown, Mouse_Left, pos);
 		}
 			break;
@@ -1419,61 +1413,61 @@ namespace flame
 		{
 			ReleaseCapture();
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateUp, Mouse_Left, pos);
 		}
 			break;
 		case WM_MBUTTONDOWN:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateDown, Mouse_Middle, pos);
 		}
 			break;
 		case WM_MBUTTONUP:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateUp, Mouse_Middle, pos);
 		}
 			break;
 		case WM_RBUTTONDOWN:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateDown, Mouse_Right, pos);
 		}
 			break;
 		case WM_RBUTTONUP:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateUp, Mouse_Right, pos);
 		}
 			break;
 		case WM_MOUSEMOVE:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateNull, Mouse_Null, pos);
 		}
 			break;
 		case WM_MOUSEWHEEL:
 		{
 			auto v = Vec2i((int)HIWORD(wParam) > 0 ? 1 : -1, 0);
-			for (auto& l : mouse_listeners)
+			for (auto& l : _mouse_listeners)
 				l->call(KeyStateNull, Mouse_Middle, v);
 		}
 			break;
 		case WM_DESTROY:
-			dead = true;
+			_dead = true;
 		case WM_ENTERSIZEMOVE:
-			sizing = true;
-			SetTimer(hWnd, 0, 100, NULL);
+			_sizing = true;
+			SetTimer(_hWnd, 0, 100, NULL);
 			break;
 		case WM_EXITSIZEMOVE:
-			sizing = false;
-			KillTimer(hWnd, 0);
+			_sizing = false;
+			KillTimer(_hWnd, 0);
 			resize();
 			break;
 		case WM_TIMER:
@@ -1482,12 +1476,12 @@ namespace flame
 			one_frame();
 			break;
 		case WM_SIZE:
-			pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
-			if (!sizing)
+			_pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+			if (!_sizing)
 				resize();
 			break;
 		case WM_SETCURSOR:
-			SetCursor(cursors[cursor_type]);
+			SetCursor(_cursors[_cursor_type]);
 			break;
 		}
 	}
@@ -1503,7 +1497,7 @@ namespace flame
 			}
 		}
 #ifdef FLAME_WINDOWS
-		DestroyWindow(hWnd);
+		DestroyWindow(_hWnd);
 #endif
 		delete this;
 	}
@@ -1511,89 +1505,89 @@ namespace flame
 	void* WindowPrivate::get_native() 
 	{
 #ifdef FLAME_WINDOWS
-		return hWnd;
+		return _hWnd;
 #elif FLAME_ANDROID
 		return android_state;
 #endif
 	}
 
-	void WindowPrivate::set_pos(const Vec2i& _pos)
+	void WindowPrivate::set_pos(const Vec2i& pos)
 	{
-		pos = _pos;
-		SetWindowPos(hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		 _pos = pos;
+		SetWindowPos(_hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
 	void WindowPrivate::set_size(const Vec2u& size)
 	{
 	}
 
-	void WindowPrivate::set_title(const char* _title)
+	void WindowPrivate::set_title(const char* title)
 	{
-		title = _title;
-		SetWindowTextA(hWnd, _title);
+		_title = title;
+		SetWindowTextA(_hWnd, title);
 	}
 
 	void WindowPrivate::set_cursor(CursorType type) 
 	{
 #ifdef FLAME_WINDOWS
-		if (type == cursor_type)
+		if (type == _cursor_type)
 			return;
 
-		if (cursor_type == CursorNone)
+		if (_cursor_type == CursorNone)
 			ShowCursor(true);
 		if (type == CursorNone)
 			ShowCursor(false);
 
-		cursor_type = type;
+		_cursor_type = type;
 #endif
 	}
 
 	void* WindowPrivate::add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		key_listeners.emplace_back(c);
+		_key_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_key_listener(void* lis)
 	{
-		find_and_erase(key_listeners, (decltype(key_listeners[0].get()))lis);
+		find_and_erase(_key_listeners, (decltype(_key_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		mouse_listeners.emplace_back(c);
+		_mouse_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_mouse_listener(void* lis)
 	{
-		find_and_erase(mouse_listeners, (decltype(mouse_listeners[0].get()))lis);
+		find_and_erase(_mouse_listeners, (decltype(_mouse_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		resize_listeners.emplace_back(c);
+		_resize_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_resize_listener(void* lis)
 	{
-		find_and_erase(resize_listeners, (decltype(resize_listeners[0].get()))lis);
+		find_and_erase(_resize_listeners, (decltype(_resize_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		destroy_listeners.emplace_back(c);
+		_destroy_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_destroy_listener(void* lis)
 	{
-		find_and_erase(destroy_listeners, (decltype(destroy_listeners[0].get()))lis);
+		find_and_erase(_destroy_listeners, (decltype(_destroy_listeners[0].get()))lis);
 	}
 
 #ifdef FLAME_WINDOWS
