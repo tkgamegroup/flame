@@ -76,21 +76,23 @@ namespace flame
 
 			CanvasPrivate(DevicePrivate* d);
 
+			void _set_target(std::span<ImageviewPrivate*> views);
+			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas = nullptr);
+			void _add_atlas(ImageAtlasPrivate* a);
+			void _add_font(FontAtlasPrivate* f);
+			void _record(CommandbufferPrivate* cb, uint image_index);
+
 			void release() override { delete this; }
 
 			Vec4f get_clear_color() const override { return _clear_color; }
 			void set_clear_color(const Vec4f& color) override { _clear_color = color; }
 
 			void set_target(uint views_count, Imageview* const* views) override { _set_target({ (ImageviewPrivate**)views, views_count }); }
-			void _set_target(std::span<ImageviewPrivate*> views);
 
 			CanvasResource* get_resource(uint slot) override { return _resources[slot].get(); }
 			uint set_resource(int slot, Imageview* v, Sampler* sp, ImageAtlas* atlas) override { return _set_resource(slot, (ImageviewPrivate*)v, (SamplerPrivate*)sp, (ImageAtlasPrivate*)atlas); }
-			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas = nullptr);
 			void add_atlas(ImageAtlas* a) override { _add_atlas((ImageAtlasPrivate*)a); }
-			void _add_atlas(ImageAtlasPrivate* a);
 			void add_font(FontAtlas* f) override { _add_font((FontAtlasPrivate*)f); }
-			void _add_font(FontAtlasPrivate* f);
 
 			Vec4f get_scissor() const override { return _curr_scissor; }
 			void set_scissor(const Vec4f& _scissor) override;
@@ -103,7 +105,6 @@ namespace flame
 
 			void prepare() override;
 			void record(Commandbuffer* cb, uint image_index) override { _record((CommandbufferPrivate*)cb, image_index); }
-			void _record(CommandbufferPrivate* cb, uint image_index);
 		};
 	}
 }

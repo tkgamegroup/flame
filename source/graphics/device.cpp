@@ -416,12 +416,12 @@ namespace flame
 			printf("vulkan initialized, gpu count: %d\n", gpu_count);
 
 			default_descriptorpool.reset(new DescriptorpoolPrivate(this));
-			default_sampler_nearest = Sampler::create(this, FilterNearest, FilterNearest, false);
-			default_sampler_linear = Sampler::create(this, FilterLinear, FilterLinear, false);
-			default_graphics_commandpool = Commandpool::create(this, gq_idx);
-			default_graphics_queue = Queue::create(this, gq_idx);
-			default_transfer_commandpool = tq_idx > 0 ? Commandpool::create(this, tq_idx) : nullptr;
-			default_transfer_queue = tq_idx > 0 ? Queue::create(this, tq_idx) : nullptr;
+			default_sampler_nearest = new Sampler(this, FilterNearest, FilterNearest, false);
+			default_sampler_linear = new Sampler(this, FilterLinear, FilterLinear, false);
+			default_graphics_commandpool = new Commandpool(this, gq_idx);
+			default_graphics_queue = new Queue(this, gq_idx);
+			default_transfer_commandpool = tq_idx > 0 ? new Commandpool(this, tq_idx) : nullptr;
+			default_transfer_queue = tq_idx > 0 ? new Queue(this, tq_idx) : nullptr;
 
 #elif defined(FLAME_D3D12)
 
@@ -476,13 +476,13 @@ namespace flame
 			_default = this;
 		}
 
-		Descriptorpool* DevicePrivate::get_default_descriptorpool() const { return default_descriptorpool; }
-		Sampler* DevicePrivate::get_default_sampler_nearest() const { return default_sampler_nearest; }
-		Sampler* DevicePrivate::get_default_sampler_linear() const { return default_sampler_linear; }
-		Commandpool* DevicePrivate::get_default_graphics_commandpool() const { return default_graphics_commandpool; }
-		Commandpool* DevicePrivate::get_default_transfer_commandpool() const { return default_transfer_commandpool; }
-		Queue* DevicePrivate::get_default_graphics_queue() const { return default_graphics_queue; }
-		Queue* DevicePrivate::get_default_transfer_queue() const { return default_transfer_queue; }
+		Descriptorpool* DevicePrivate::get_default_descriptorpool() const { return default_descriptorpool.get(); }
+		Sampler* DevicePrivate::get_default_sampler_nearest() const { return default_sampler_nearest.get(); }
+		Sampler* DevicePrivate::get_default_sampler_linear() const { return default_sampler_linear.get(); }
+		Commandpool* DevicePrivate::get_default_graphics_commandpool() const { return default_graphics_commandpool.get(); }
+		Commandpool* DevicePrivate::get_default_transfer_commandpool() const { return default_transfer_commandpool.get(); }
+		Queue* DevicePrivate::get_default_graphics_queue() const { return default_graphics_queue.get(); }
+		Queue* DevicePrivate::get_default_transfer_queue() const { return default_transfer_queue.get(); }
 
 		bool DevicePrivate::has_feature(Feature f) const
 		{

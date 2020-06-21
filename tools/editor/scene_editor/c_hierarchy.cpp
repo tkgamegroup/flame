@@ -68,7 +68,7 @@ struct cHierarchyItem : Component
 
 							if (ok)
 							{
-								looper().add_event([](Capture& c) {
+								get_looper()->add_event([](Capture& c) {
 									auto& capture = c.data<Capturing>();
 
 									capture.src->parent->remove_child(capture.src, false);
@@ -172,7 +172,7 @@ cHierarchy::cHierarchy() :
 			{
 				auto c_tree = e_tree->get_component(cTree);
 				c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-					looper().add_event([](Capture& c) {
+					get_looper()->add_event([](Capture& c) {
 						auto s = c.thiz<Entity>();
 						Entity* selected = nullptr;
 						if (s)

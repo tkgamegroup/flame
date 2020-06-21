@@ -13,9 +13,9 @@ namespace flame
 		}capture;
 		capture.last_frame = 0;
 		capture.callback = callback;
-		auto ret = looper().add_event([](Capture& c) {
+		auto ret = get_looper()->add_event([](Capture& c) {
 			auto& capture = c.data<Capturing>();
-			auto frame = looper().frame;
+			auto frame = get_looper()->frame;
 			capture.callback(c.release<Capturing>(), frame - capture.last_frame);
 			capture.last_frame = frame;
 			c._current = INVALID_POINTER;

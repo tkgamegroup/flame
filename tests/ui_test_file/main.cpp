@@ -57,7 +57,7 @@ MainForm::MainForm() :
 
 		ui.e_begin_layout(LayoutHorizontal, 4.f);
 			ui.e_button(L"Create Sample Scene", [](Capture& c) {
-				looper().add_event([](Capture& c) {
+				get_looper()->add_event([](Capture& c) {
 					auto e_scene = c.thiz<Entity>();
 					e_scene->remove_children(0, -1);
 
@@ -100,7 +100,7 @@ MainForm::MainForm() :
 				}, Capture().set_thiz(c.thiz<Entity>()));
 			}, Capture().set_thiz(e_scene));
 			ui.e_button(L"Clear Scene", [](Capture& c) {
-				looper().add_event([](Capture& c) {
+				get_looper()->add_event([](Capture& c) {
 					c.thiz<Entity>()->remove_children(0, -1);
 				}, Capture().set_thiz(c.thiz<Entity>()));
 			}, Capture().set_thiz(e_scene));
@@ -110,7 +110,7 @@ MainForm::MainForm() :
 					Entity::save_to_file(e_scene->children[0], L"test.prefab");
 			}, Capture().set_thiz(e_scene));
 			ui.e_button(L"Load Scene", [](Capture& c) {
-				looper().add_event([](Capture& c) {
+				get_looper()->add_event([](Capture& c) {
 					auto e_scene = c.thiz<Entity>();
 					e_scene->remove_children(0, -1);
 					if (std::filesystem::exists(L"test.prefab"))
@@ -133,7 +133,7 @@ int main(int argc, char** args)
 	app.create();
 	new MainForm();
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 

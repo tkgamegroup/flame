@@ -106,7 +106,7 @@ namespace flame
 							auto l = thiz->entity->parent->parent->last_child();
 							if (!l || !SUS::starts_with(l->name.str(), "layer_"))
 							{
-								looper().add_event([](Capture& c) {
+								get_looper()->add_event([](Capture& c) {
 									auto p = c.thiz<Entity>()->parent;
 									p->parent->reposition_child(p, -1);
 								}, Capture().set_thiz(thiz->entity));
@@ -356,7 +356,7 @@ namespace flame
 						if (action == DragStart)
 						{
 							thiz->floating = true;
-							looper().add_event([](Capture& c) {
+							get_looper()->add_event([](Capture& c) {
 								c.thiz<cDockerTabPrivate>()->take_away(false);
 							}, Capture().set_thiz(thiz));
 						}
@@ -365,7 +365,7 @@ namespace flame
 							if (!er || thiz->floating)
 							{
 								thiz->drop_pos = pos;
-								looper().add_event([](Capture& c) {
+								get_looper()->add_event([](Capture& c) {
 									auto thiz = c.thiz<cDockerTabPrivate>();
 									auto e_tab = thiz->entity;
 									auto e_page = thiz->page;
@@ -643,7 +643,7 @@ namespace flame
 								thiz->drop_tab = er->entity->get_component(cDockerTab);
 								thiz->drop_idx = thiz->calc_pos(pos.x(), nullptr);
 								thiz->drop_tab->floating = false;
-								looper().add_event([](Capture& c) {
+								get_looper()->add_event([](Capture& c) {
 									auto thiz = c.thiz<cDockerTabbarPrivate>();
 									auto tabbar = thiz->entity;
 									auto tab = thiz->drop_tab;
@@ -811,7 +811,7 @@ namespace flame
 							{
 								thiz->drop_tab = er->entity->get_component(cDockerTab);
 								thiz->drop_tab->floating = false;
-								looper().add_event([](Capture& c) {
+								get_looper()->add_event([](Capture& c) {
 									auto thiz = c.thiz<cDockerPagesPrivate>();
 									auto tab = thiz->drop_tab;
 									auto e_tab = tab->entity;
@@ -1000,7 +1000,7 @@ namespace flame
 							{
 								thiz->drop_tab = er->entity->get_component(cDockerTab);
 								thiz->drop_tab->floating = false;
-								looper().add_event([](Capture& c) {
+								get_looper()->add_event([](Capture& c) {
 									auto thiz = c.thiz<cDockerStaticContainerPrivate>();
 									auto tab = thiz->drop_tab;
 									auto e_tab = tab->entity;

@@ -1,4 +1,5 @@
 #include <flame/serialize.h>
+#include "foundation_private.h"
 #include "blueprint_private.h"
 #include "typeinfo_private.h"
 
@@ -651,7 +652,7 @@ namespace flame
 
 		_root->update();
 
-		_time += looper().delta_time;
+		_time += _looper->_delta_time;
 	}
 
 	void bpScenePrivate::_save()
@@ -1388,7 +1389,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			delta = looper().delta_time;
+			delta = _looper->_delta_time;
 			total = bp_time;
 		}
 	};

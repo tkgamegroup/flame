@@ -11,7 +11,7 @@ namespace flame
 
 		depth_ = 0;
 		index_ = 0;
-		created_frame_ = looper().frame;
+		created_frame_ = get_looper()->frame;
 		dying_ = false;
 
 		visible_ = true;

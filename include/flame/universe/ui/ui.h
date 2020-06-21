@@ -1250,7 +1250,7 @@ namespace flame
 					c_layout();
 					parents.push(current_entity);
 					e_button(Icon_TIMES, [](Capture& c) {
-						looper().add_event([](Capture& c) {
+						get_looper()->add_event([](Capture& c) {
 							auto e = c.thiz<Entity>();
 							e->parent->remove_child(e);
 						}, Capture().set_thiz(c.thiz<Entity>()));
@@ -1375,7 +1375,7 @@ namespace flame
 					auto& capture = c.data<Capturing>();
 					if (capture.f)
 						capture.f(c.release<Capturing>());
-					looper().add_event([](Capture& c) {
+					get_looper()->add_event([](Capture& c) {
 						c.data<cDockerTab*>()->take_away(true);
 					}, Capture().set_data(&capture.t));
 				}, Capture().absorb(&capture, _close_capture, true), false);

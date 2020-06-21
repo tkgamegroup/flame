@@ -10,7 +10,7 @@ namespace flame
 			_d(d)
 		{
 			_size = _size;
-			mapped = nullptr;
+			_mapped = nullptr;
 
 #if defined(FLAME_VULKAN)
 			VkBufferCreateInfo buffer_info;
@@ -53,7 +53,7 @@ namespace flame
 
 		BufferPrivate::~BufferPrivate()
 		{
-			if (mapped)
+			if (_mapped)
 				unmap();
 
 #if defined(FLAME_VULKAN)
@@ -66,12 +66,12 @@ namespace flame
 
 		void BufferPrivate::map(uint offset, uint size)
 		{
-			if (mapped)
+			if (_mapped)
 				return;
 			if (size == 0)
 				size = _size;
 #if defined(FLAME_VULKAN)
-			chk_res(vkMapMemory(_d->v, _m, offset, size, 0, &mapped));
+			chk_res(vkMapMemory(_d->v, _m, offset, size, 0, &_mapped));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -79,11 +79,11 @@ namespace flame
 
 		void BufferPrivate::unmap()
 		{
-			if (mapped)
+			if (_mapped)
 			{
 #if defined(FLAME_VULKAN)
 				vkUnmapMemory(_d->v, _m);
-				mapped = nullptr;
+				_mapped = nullptr;
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -110,7 +110,7 @@ namespace flame
 			auto stag_buf = std::make_unique<BufferPrivate>(_d, _size, BufferUsageTransferSrc, MemPropHost);
 
 			stag_buf->map();
-			memcpy(stag_buf->mapped, data, _size);
+			memcpy(stag_buf->_mapped, data, _size);
 			stag_buf->flush();
 			stag_buf->unmap();
 

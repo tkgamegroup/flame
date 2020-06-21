@@ -44,7 +44,7 @@ int main(int argc, char** args)
 
 	new MainForm;
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 

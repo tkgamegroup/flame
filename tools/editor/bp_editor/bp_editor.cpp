@@ -193,7 +193,7 @@ struct Action_RemoveNodes : Action
 					auto n = bp_editor.bp->root->find_node(a.node_guid);
 					if (bp_editor.editor)
 					{
-						looper().add_event([](Capture& c) {
+						get_looper()->add_event([](Capture& c) {
 							auto n = c.thiz<bpNode>();
 							bp_editor.editor->on_remove_node(n);
 							bp_editor.editor->on_add_node(n);
@@ -323,8 +323,8 @@ static void undo()
 
 		bp_editor.e_notification->set_visible(true);
 		bp_editor.e_notification->get_component(cText)->set_text((std::wstring(L"Undo ") + a->name).c_str());
-		looper().remove_events(FLAME_CHASH("hide_notification"));
-		looper().add_event([](Capture& c) {
+		get_looper()->remove_events(FLAME_CHASH("hide_notification"));
+		get_looper()->add_event([](Capture& c) {
 			bp_editor.e_notification->set_visible(false);
 		}, Capture(), 1.f, FLAME_CHASH("hide_notification"));
 	}
@@ -344,8 +344,8 @@ static void redo()
 
 		bp_editor.e_notification->set_visible(true);
 		bp_editor.e_notification->get_component(cText)->set_text((std::wstring(L"Redo ") + a->name).c_str());
-		looper().remove_events(FLAME_CHASH("hide_notification"));
-		looper().add_event([](Capture& c) {
+		get_looper()->remove_events(FLAME_CHASH("hide_notification"));
+		get_looper()->add_event([](Capture& c) {
 			bp_editor.e_notification->set_visible(false);
 		}, Capture(), 1.f, FLAME_CHASH("hide_notification"));
 	}
@@ -471,7 +471,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		window->set_title(filename.string().c_str());
 	}
 
-	update_event = looper().add_event([](Capture& c) {
+	update_event = get_looper()->add_event([](Capture& c) {
 		if (bp_editor.auto_update)
 			bp_editor.update();
 		c._current = INVALID_POINTER;
@@ -678,7 +678,7 @@ BPEditorWindow::~BPEditorWindow()
 		bp_editor.e_test = nullptr;
 	}
 
-	looper().remove_event(update_event);
+	get_looper()->remove_event(update_event);
 }
 
 void BPEditor::select()
@@ -1078,7 +1078,7 @@ void BPEditor::_remove_nodes(const std::vector<bpNode*>& nodes)
 		}
 		for (auto n : nodes)
 		{
-			looper().add_event([](Capture& c) {
+			get_looper()->add_event([](Capture& c) {
 				auto n = c.thiz<bpNode>();
 				bp_editor.editor->on_remove_node(n);
 				n->parent->remove_node(n);
@@ -1086,7 +1086,7 @@ void BPEditor::_remove_nodes(const std::vector<bpNode*>& nodes)
 		}
 		for (auto n : refresh_ns)
 		{
-			looper().add_event([](Capture& c) {
+			get_looper()->add_event([](Capture& c) {
 				auto n = c.thiz<bpNode>();
 				bp_editor.editor->on_remove_node(n);
 				bp_editor.editor->on_add_node(n);
@@ -1132,7 +1132,7 @@ void BPEditor::_set_link(bpSlot* in, bpSlot* out)
 {
 	if (auto node = in->node; bp_editor.editor)
 	{
-		looper().add_event([](Capture& c) {
+		get_looper()->add_event([](Capture& c) {
 			auto n = c.thiz<bpNode>();
 			bp_editor.editor->on_remove_node(n);
 			bp_editor.editor->on_add_node(n);

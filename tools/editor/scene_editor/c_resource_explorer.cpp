@@ -92,7 +92,7 @@ struct cThumbnail : Component
 						scene_editor.resource_explorer->thumbnails_seats_occupied.push_back(std::move(scene_editor.resource_explorer->thumbnails_seats_free.front()));
 						scene_editor.resource_explorer->thumbnails_seats_free.erase(scene_editor.resource_explorer->thumbnails_seats_free.begin());
 
-						looper().add_event([](Capture& c) {
+						get_looper()->add_event([](Capture& c) {
 							auto thiz = c.thiz<cThumbnail>();
 							auto image = thiz->image;
 							auto& thumbnails_img_size = scene_editor.resource_explorer->thumbnails_img->size;
@@ -251,7 +251,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 {
 	curr_path = path;
 
-	looper().add_event([](Capture& c) {
+	get_looper()->add_event([](Capture& c) {
 		auto& ui = scene_editor.window->ui;
 		auto& base_path = scene_editor.resource_explorer->base_path;
 		auto& curr_path = scene_editor.resource_explorer->curr_path;
@@ -322,7 +322,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 		ui.parents.pop();
 
 		clear_all_works();
-		looper().remove_events(FLAME_CHASH("update thumbnail"));
+		get_looper()->remove_events(FLAME_CHASH("update thumbnail"));
 
 		list->get_component(cList)->set_selected(nullptr, false);
 		list->remove_children(0, -1);

@@ -269,7 +269,7 @@ namespace flame
 											auto cmd = wfmt(L"/edit \"%s\"", s2w(fn).c_str());
 											exec(L"devenv", (wchar_t*)cmd.c_str(), true, true);
 											set_clipboard(std::to_wstring(dk->get_common_item(FLAME_CHASH("line")).u[0]).c_str());
-											looper().add_event([](Capture& c) {
+											get_looper()->add_event([](Capture& c) {
 												send_global_key_event(KeyStateDown, Key_Ctrl);
 												send_global_key_event(KeyStateDown, Key_G);
 												send_global_key_event(KeyStateUp, Key_G);
@@ -338,7 +338,7 @@ namespace flame
 				e_tree = f_new<Entity>();
 
 				ui->e_button(Icon_REFRESH, [](Capture& c) {
-					looper().add_event([](Capture& c) {
+					get_looper()->add_event([](Capture& c) {
 						auto reflector = c.thiz<cReflector>();
 						reflector->c_tree->set_selected(nullptr);
 						reflector->e_tree->remove_children(0, -1);
@@ -362,7 +362,7 @@ namespace flame
 				c_tree->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					if (hash == FLAME_CHASH("selected"))
 					{
-						looper().add_event([](Capture& c) {
+						get_looper()->add_event([](Capture& c) {
 							c.thiz<cReflector>()->refresh_detail();
 						}, Capture().set_thiz(c._thiz));
 					}

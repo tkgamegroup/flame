@@ -83,7 +83,7 @@ int main(int argc, char** args)
 		app.on_resize();
 	}, Capture());
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 }

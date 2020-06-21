@@ -60,7 +60,7 @@ namespace flame
 			}
 
 			if (flash_event)
-				looper().remove_event(flash_event);
+				get_looper()->remove_event(flash_event);
 		}
 
 		void flash_cursor(int mode)
@@ -73,7 +73,7 @@ namespace flame
 			else if (mode == 2)
 			{
 				if (flash_event)
-					looper().reset_event(flash_event);
+					get_looper()->reset_event(flash_event);
 				show_cursor = true;
 			}
 			else
@@ -404,7 +404,7 @@ namespace flame
 						auto thiz = c.thiz<cEditPrivate>();
 						if (focusing)
 						{
-							thiz->flash_event = looper().add_event([](Capture& c) {
+							thiz->flash_event = get_looper()->add_event([](Capture& c) {
 								c.thiz<cEditPrivate>()->flash_cursor(0);
 								c._current = INVALID_POINTER;
 							}, Capture().set_thiz(thiz), 0.5f);
@@ -413,7 +413,7 @@ namespace flame
 						}
 						else
 						{
-							looper().remove_event(thiz->flash_event);
+							get_looper()->remove_event(thiz->flash_event);
 							thiz->set_select(0);
 							thiz->flash_cursor(1);
 							if (thiz->trigger_changed_on_lost_focus && thiz->changed)
@@ -434,14 +434,14 @@ namespace flame
 			case EntityLeftWorld:
 				if (flash_event)
 				{
-					looper().remove_event(flash_event);
+					get_looper()->remove_event(flash_event);
 					flash_event = nullptr;
 				}
 				break;
 			case EntityVisibilityChanged:
 				if (flash_event && !entity->global_visibility)
 				{
-					looper().remove_event(flash_event);
+					get_looper()->remove_event(flash_event);
 					flash_event = nullptr;
 				}
 				break;

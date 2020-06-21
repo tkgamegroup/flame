@@ -290,12 +290,12 @@ namespace flame
 	void App::run()
 	{
 		{
-			uint dt = looper().delta_time * 1000;
+			uint dt = get_looper()->delta_time * 1000;
 			if (dt < 16)
 				sleep(16 - dt);
 		}
 
-		looper().process_events();
+		get_looper()->process_events();
 
 		for (auto it = windows.begin(); it != windows.end();)
 		{

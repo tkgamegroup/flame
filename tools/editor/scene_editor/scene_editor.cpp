@@ -122,7 +122,7 @@ void SceneEditor::select(Entity* e)
 		selected = e;
 		if (editor)
 			editor->on_select();
-		looper().add_event([](Capture&) {
+		get_looper()->add_event([](Capture&) {
 			if (scene_editor.hierarchy)
 				scene_editor.hierarchy->refresh_selected();
 			if (scene_editor.inspector)
@@ -136,7 +136,7 @@ void SceneEditor::load(const std::filesystem::path& _filepath)
 	filepath = _filepath;
 	prefab = filepath.empty() ? nullptr : Entity::create_from_file(scene_editor.window->world, filepath.c_str());
 	selected = nullptr;
-	looper().add_event([](Capture&) {
+	get_looper()->add_event([](Capture&) {
 		if (scene_editor.editor)
 		{
 			scene_editor.editor->on_select();
@@ -231,7 +231,7 @@ SceneEditorWindow::SceneEditorWindow() :
 	ui.e_begin_menu_bar();
 	ui.e_begin_menubar_menu(L"Scene");
 	ui.e_menu_item(L"        New Entity", [](Capture&) {
-		looper().add_event([](Capture&) {
+		get_looper()->add_event([](Capture&) {
 			auto e = f_new<Entity>();
 			e->name = "unnamed";
 			if (scene_editor.selected)
@@ -266,7 +266,7 @@ SceneEditorWindow::SceneEditorWindow() :
 
 	}, Capture());
 	ui.e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](Capture&) {
-		looper().add_event([](Capture&) {
+		get_looper()->add_event([](Capture&) {
 			if (scene_editor.selected)
 			{
 				scene_editor.selected = nullptr;

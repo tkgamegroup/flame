@@ -91,7 +91,7 @@ int main(int argc, char** args)
 	}
 	app.canvas->add_font(app.font_atlas);
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 

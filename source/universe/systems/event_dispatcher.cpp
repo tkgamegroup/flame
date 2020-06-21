@@ -202,7 +202,7 @@ namespace flame
 			}
 		}
 
-		er->frame = looper().frame;
+		er->frame = get_looper()->frame;
 	}
 
 	void sEventDispatcherPrivate::dispatch_mouse_recursively(Entity* e)
@@ -215,7 +215,7 @@ namespace flame
 		}
 
 		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
-		if (!er || er->frame >= (int)looper().frame)
+		if (!er || er->frame >= (int)get_looper()->frame)
 			return;
 
 		dispatch_mouse_single(er, false);
@@ -224,7 +224,7 @@ namespace flame
 	void sEventDispatcherPrivate::update()
 	{
 		if (dbclick_timer > 0.f)
-			dbclick_timer -= looper().delta_time;
+			dbclick_timer -= get_looper()->delta_time;
 
 		if (!pending_update)
 			return;

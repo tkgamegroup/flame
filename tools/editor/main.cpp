@@ -12,7 +12,7 @@ int main(int argc, char **args)
 
 	new SceneEditorWindow;
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 

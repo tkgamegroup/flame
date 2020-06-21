@@ -231,7 +231,7 @@ namespace flame
 		{
 #if defined(FLAME_VULKAN)
 			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(_v, id, 1, &b->v, &offset);
+			vkCmdBindVertexBuffers(_v, id, 1, &b->_v, &offset);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -240,7 +240,7 @@ namespace flame
 		void CommandbufferPrivate::_bind_indexbuffer(BufferPrivate* b, IndiceType t)
 		{
 #if defined(FLAME_VULKAN)
-			vkCmdBindIndexBuffer(_v, b->v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(_v, b->_v, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -294,7 +294,7 @@ namespace flame
 				vk_copies[i].dstOffset = copies[i].dst_off;
 				vk_copies[i].size = copies[i].size;
 			}
-			vkCmdCopyBuffer(_v, src->v, dst->v, vk_copies.size(), vk_copies.data());
+			vkCmdCopyBuffer(_v, src->_v, dst->_v, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -356,7 +356,7 @@ namespace flame
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
 				vk_copies[i] = to_backend(copies[i], aspect);
-			vkCmdCopyBufferToImage(_v, src->v, dst->v,
+			vkCmdCopyBufferToImage(_v, src->_v, dst->v,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
@@ -372,7 +372,7 @@ namespace flame
 			for (auto i = 0; i < vk_copies.size(); i++)
 				vk_copies[i] = to_backend(copies[i], aspect);
 			vkCmdCopyImageToBuffer(_v, src->v,
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->v, vk_copies.size(), vk_copies.data());
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->_v, vk_copies.size(), vk_copies.data());
 #elif defined(FLAME_D3D12)
 
 #endif

@@ -13,7 +13,7 @@ namespace flame
 
 			uint _size;
 
-			void* mapped;
+			void* _mapped;
 
 #if defined(FLAME_VULKAN)
 			VkBuffer _v;
@@ -29,7 +29,7 @@ namespace flame
 
 			uint get_size() const override { return _size; }
 
-			void* get_mapped() const override { return mapped; }
+			void* get_mapped() const override { return _mapped; }
 
 			void map(uint offset = 0, uint size = 0) override;
 			void unmap() override;

@@ -93,7 +93,7 @@ struct MyApp : App
 				f = (F)get_library_func(m, "excute");
 		}
 
-		looper().add_event([](Capture&) {
+		get_looper()->add_event([](Capture&) {
 			if (app.f)
 				app.f(app.e_result);
 			remove_layer(app.e_wait->parent);
@@ -124,7 +124,7 @@ MainForm::MainForm() :
 			app.c_code->font_size = 17;
 			ui.c_aligner(AlignMinMax, AlignMinMax);
 			ui.e_button(L"Run", [](Capture&) {
-				looper().add_event([](Capture&) {
+				get_looper()->add_event([](Capture&) {
 					auto& ui = main_window->ui;
 					app.clean_up();
 					app.e_wait = ui.e_begin_dialog();
@@ -137,14 +137,14 @@ MainForm::MainForm() :
 					}capture;
 					capture.text = c_text;
 					capture.time = 0;
-					looper().add_event([](Capture& c) {
+					get_looper()->add_event([](Capture& c) {
 						auto& capture = c.data<Capturing>();
 						capture.time++;
 						capture.text->set_text(wfmt(L"Compiling: %d", capture.time).c_str());
 					}, Capture().set_data(&capture), 1.f, FLAME_CHASH("update_dialog"));
 					app.e_wait->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 						if (e == EntityDestroyed)
-							looper().remove_events(FLAME_CHASH("update_dialog"));
+							get_looper()->remove_events(FLAME_CHASH("update_dialog"));
 						return true;
 					}, Capture());
 					add_work([](Capture&) {
@@ -172,7 +172,7 @@ int main(int argc, char** args)
 
 	new MainForm;
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 

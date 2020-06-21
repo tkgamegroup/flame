@@ -115,7 +115,7 @@ int main(int argc, char** args)
 	app.fence = Fence::create(app.d);
 	app.render_finished = Semaphore::create(app.d);
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.run();
 	}, Capture());
 }

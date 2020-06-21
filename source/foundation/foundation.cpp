@@ -1210,51 +1210,51 @@ namespace flame
 		KeyEventUp
 	};
 
-	static std::vector<WindowPrivate*> windows;
-
-	static Looper _looper;
-
-	void (*frame_callback)(Capture& c);
-	static Capture frame_capture;
-
-	static uint64 last_time;
-
-	bool one_frame()
+#ifdef FLAME_WINDOWS
+	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		for (auto it = windows.begin(); it != windows.end(); )
-		{
-			auto w = *it;
+		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
+		if (w)
+			w->_wnd_proc(message, wParam, lParam);
 
-			if (w->_dead)
-			{
-				it = windows.erase(it);
-				delete w;
-			}
-			else
-				it++;
-		}
-
-		if (windows.empty())
-		{
-			f_free(frame_capture._data);
-			return false;
-		}
-
-		frame_callback(frame_capture);
-
-		_looper.frame++;
-		auto et = last_time;
-		last_time = get_now_ns();
-		et = last_time - et;
-		_looper.delta_time = et / 1000000000.f;
-		_looper.total_time += _looper.delta_time;
-
-		return true;
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
+#endif
 
 #ifdef FLAME_WINDOWS
 	WindowPrivate::WindowPrivate(const std::string& title, const Vec2u& size, uint style, WindowPrivate* parent)
 	{
+		static bool initialized = false;
+		if (!initialized)
+		{
+			WNDCLASSEXA wcex;
+			wcex.cbSize = sizeof(WNDCLASSEXA);
+			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+			wcex.lpfnWndProc = wnd_proc;
+			wcex.cbClsExtra = 0;
+			wcex.cbWndExtra = sizeof(void*);
+			wcex.hInstance = (HINSTANCE)get_hinst();
+			wcex.hIcon = 0;
+			auto icon_fn = std::filesystem::path(getenv("FLAME_PATH")) / L"art\\ico.png";
+			if (std::filesystem::exists(icon_fn))
+			{
+				report_used_file(icon_fn.c_str());
+				auto icon_image = BitmapPrivate::_create(icon_fn.c_str());
+				icon_image->_swap_channel(0, 2);
+				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
+					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());
+				icon_image->release();
+			}
+			wcex.hCursor = NULL;
+			wcex.hbrBackground = 0;
+			wcex.lpszMenuName = 0;
+			wcex.lpszClassName = "flame_wnd";
+			wcex.hIconSm = wcex.hIcon;
+			RegisterClassExA(&wcex);
+
+			initialized = true;
+		}
+
 		_title = title;
 
 		_size = size;
@@ -1351,6 +1351,9 @@ namespace flame
 		}
 
 		_pending_size = size;
+
+		set_cursor(CursorArrow);
+		_looper->windows.emplace_back(this);
 	}
 #elif FLAME_ANDROID
 	WindowPrivate::WindowPrivate(android_app* android_state) :
@@ -1364,7 +1367,7 @@ namespace flame
 			l->call();
 	}
 
-	void WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
+	void WindowPrivate::_wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto resize = [=]() {
 			if (_size != _pending_size)
@@ -1473,7 +1476,7 @@ namespace flame
 		case WM_TIMER:
 			if (wParam == 0)
 				resize();
-			one_frame();
+			_looper->_one_frame();
 			break;
 		case WM_SIZE:
 			_pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
@@ -1486,23 +1489,7 @@ namespace flame
 		}
 	}
 
-	void WindowPrivate::release() 
-	{
-		for (auto it = windows.begin(); it != windows.end(); it++)
-		{
-			if ((*it) == this)
-			{
-				windows.erase(it);
-				break;
-			}
-		}
-#ifdef FLAME_WINDOWS
-		DestroyWindow(_hWnd);
-#endif
-		delete this;
-	}
-
-	void* WindowPrivate::get_native() 
+	void* WindowPrivate::_get_native() 
 	{
 #ifdef FLAME_WINDOWS
 		return _hWnd;
@@ -1511,23 +1498,23 @@ namespace flame
 #endif
 	}
 
-	void WindowPrivate::set_pos(const Vec2i& pos)
+	void WindowPrivate::_set_pos(const Vec2i& pos)
 	{
 		 _pos = pos;
 		SetWindowPos(_hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	void WindowPrivate::set_size(const Vec2u& size)
+	void WindowPrivate::_set_size(const Vec2u& size)
 	{
 	}
 
-	void WindowPrivate::set_title(const char* title)
+	void WindowPrivate::_set_title(const std::string& title)
 	{
 		_title = title;
-		SetWindowTextA(_hWnd, title);
+		SetWindowTextA(_hWnd, title.c_str());
 	}
 
-	void WindowPrivate::set_cursor(CursorType type) 
+	void WindowPrivate::_set_cursor(CursorType type) 
 	{
 #ifdef FLAME_WINDOWS
 		if (type == _cursor_type)
@@ -1540,6 +1527,12 @@ namespace flame
 
 		_cursor_type = type;
 #endif
+	}
+
+	void WindowPrivate::_close()
+	{
+		DestroyWindow(_hWnd);
+		_dead = true;
 	}
 
 	void* WindowPrivate::add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture)
@@ -1590,54 +1583,9 @@ namespace flame
 		find_and_erase(_destroy_listeners, (decltype(_destroy_listeners[0].get()))lis);
 	}
 
-#ifdef FLAME_WINDOWS
-	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-	{
-		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
-		if (w)
-			w->wnd_proc(message, wParam, lParam);
-
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-#endif
-
 	Window* Window::create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent)
 	{
-		static bool initialized = false;
-		if (!initialized)
-		{
-			WNDCLASSEXA wcex;
-			wcex.cbSize = sizeof(WNDCLASSEXA);
-			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wcex.lpfnWndProc = wnd_proc;
-			wcex.cbClsExtra = 0;
-			wcex.cbWndExtra = sizeof(void*);
-			wcex.hInstance = (HINSTANCE)get_hinst();
-			wcex.hIcon = 0;
-			auto icon_fn = std::filesystem::path(getenv("FLAME_PATH")) / L"art\\ico.png";
-			if (std::filesystem::exists(icon_fn))
-			{
-				report_used_file(icon_fn.c_str());
-				auto icon_image = BitmapPrivate::_create(icon_fn.c_str());
-				icon_image->_swap_channel(0, 2);
-				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
-					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());
-				icon_image->release();
-			}
-			wcex.hCursor = NULL;
-			wcex.hbrBackground = 0;
-			wcex.lpszMenuName = 0;
-			wcex.lpszClassName = "flame_wnd";
-			wcex.hIconSm = wcex.hIcon;
-			RegisterClassExA(&wcex);
-
-			initialized = true;
-		}
-
-		auto w = new WindowPrivate(title, size, style, (WindowPrivate*)parent);
-		w->set_cursor(CursorArrow);
-		windows.push_back(w);
-		return w;
+		return new WindowPrivate(title, size, style, (WindowPrivate*)parent);
 	}
 
 #ifdef FLAME_ANDROID
@@ -1678,7 +1626,7 @@ namespace flame
 		auto android_state = reinterpret_cast<android_app*>(android_state);
 		auto w = new WindowPrivate(android_state);
 		w->app = reinterpret_cast<ApplicationPrivate*>(app);
-		(reinterpret_cast<ApplicationPrivate*>(app))->windows.push_back(w);
+		((ApplicationPrivate*)app)->windows.push_back(w);
 
 		android_state->userData = w;
 		android_state->onAppCmd = android_handle_cmd;
@@ -1689,16 +1637,16 @@ namespace flame
 	}
 #endif
 
-	int Looper::loop(void (*_frame_callback)(Capture& c), const Capture& capture)
+	int LooperPrivate::_loop(void (*frame_callback)(Capture& c), const Capture& capture)
 	{
 		if (windows.empty())
 			return 1;
 
-		frame_callback = _frame_callback;
-		frame_capture = capture;
+		_frame_callback = frame_callback;
+		_frame_capture = capture;
 
-		last_time = get_now_ns();
-		frame = 0;
+		_last_time = get_now_ns();
+		_frame = 0;
 
 		for (;;)
 		{
@@ -1725,7 +1673,7 @@ namespace flame
 					w->destroy_event = true;
 			}
 #endif
-			if (!one_frame())
+			if (!_one_frame())
 				break;
 		}
 	}
@@ -1747,7 +1695,37 @@ namespace flame
 	static std::list<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
-	void* Looper::add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
+	bool LooperPrivate::_one_frame()
+	{
+		for (auto it = windows.begin(); it != windows.end(); )
+		{
+			auto w = it->get();
+
+			if (w->_dead)
+				it = windows.erase(it);
+			else
+				it++;
+		}
+
+		if (windows.empty())
+		{
+			f_free(_frame_capture._data);
+			return false;
+		}
+
+		_frame_callback(_frame_capture);
+
+		_frame++;
+		auto et = _last_time;
+		_last_time = get_now_ns();
+		et = _last_time - et;
+		_delta_time = et / 1000000000.f;
+		_total_time += _delta_time;
+
+		return true;
+	}
+
+	void* LooperPrivate::_add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
@@ -1761,13 +1739,13 @@ namespace flame
 		return e;
 	}
 
-	void Looper::reset_event(void* _ev)
+	void LooperPrivate::_reset_event(void* _ev)
 	{
 		auto ev = (Event*)_ev;
 		ev->rest = ev->interval;
 	}
 
-	void Looper::remove_event(void* ev)
+	void LooperPrivate::_remove_event(void* ev)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
@@ -1780,7 +1758,7 @@ namespace flame
 		}
 	}
 
-	void Looper::remove_events(int id)
+	void LooperPrivate::_remove_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
@@ -1797,7 +1775,7 @@ namespace flame
 		}
 	}
 
-	void Looper::process_events()
+	void LooperPrivate::_process_events()
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end();)
@@ -1813,7 +1791,7 @@ namespace flame
 			}
 			else
 			{
-				e->rest.v.time -= delta_time;
+				e->rest.v.time -= _delta_time;
 				if (e->rest.v.time <= 0)
 					excute = true;
 			}
@@ -1832,218 +1810,119 @@ namespace flame
 		}
 	}
 
-	Looper& looper()
+	LooperPrivate* _looper = new LooperPrivate;
+
+	Looper* get_looper()
 	{
 		return _looper;
 	}
 
-	struct SchedulePrivate : Schedule
+	void SchedulePrivate::Event::add_to_looper(SchedulePrivate* s)
 	{
-		struct Group;
-
-		struct Item
-		{
-			enum Type
-			{
-				TypeGroup,
-				TypeEvent,
-			};
-
-			Type type;
-			int index;
-
-			Item(Type type, int index) :
-				type(type),
-				index(index)
-			{
-			}
-
-			virtual void excute(SchedulePrivate* s) = 0;
-			virtual ~Item() {}
-		};
-
-		struct Event : Item
-		{
-			Group* group;
-
-			float delay;
-			float duration;
-			float rest;
-			void(*callback)(Capture& c, float time, float duration);
-			Capture capture;
-
-			Event(Group* _group, int index) :
-				Item(Item::TypeEvent, index)
-			{
-				group = _group;
-			}
-
-			~Event() override
-			{
-				f_free(capture._data);
-			}
-
-			void add_to_looper(SchedulePrivate* s)
-			{
-				rest = duration;
-				callback(capture, -1.f, duration);
-				auto e = this;
-				looper().add_event([](Capture& c) {
-					auto e = c.data<Event*>();
-					e->rest -= looper().delta_time;
-					auto end = e->rest <= 0.f;
-					e->callback(e->capture, e->duration - max(e->rest, 0.f), e->duration);
-					if (!end)
-						c._current = INVALID_POINTER;
-					else
-					{
-						auto thiz = c.thiz<SchedulePrivate>();
-						auto index = e->index;
-						auto g = e->group;
-						if (g)
-						{
-							g->complete_count++;
-							if (g->complete_count < g->events.size())
-								return;
-							index = g->index;
-						}
-						index++;
-						if (index < thiz->items.size())
-							thiz->items[index]->excute(thiz);
-						else if (thiz->once)
-							Schedule::destroy(thiz);
-					}
-				}, Capture().set_data(&e).set_thiz(s));
-			}
-
-			void excute(SchedulePrivate* s) override
-			{
-				if (delay > 0.f)
-				{
-					looper().add_event([](Capture& c) {
-						c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
-					}, Capture().set_data(&s).set_thiz(this), delay);
-				}
-				else
-					add_to_looper(s);
-			}
-		};
-
-		struct Group : Item
-		{
-			std::vector<std::unique_ptr<Event>> events;
-			int complete_count;
-
-			Group(int index) :
-				Item(Item::TypeGroup, index)
-			{
-			}
-
-			void excute(SchedulePrivate* s) override
-			{
-				complete_count = 0;
-				for (auto& e : events)
-				{
-					if (e->delay > 0.f)
-					{
-						looper().add_event([](Capture& c) {
-							c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
-						}, Capture().set_data(&s).set_thiz(e.get()), e->delay);
-					}
-					else
-						e->add_to_looper(s);
-				}
-			}
-		};
-
-		bool once;
-		std::vector<std::unique_ptr<Item>> items;
-		Group* curr_group;
-
-		SchedulePrivate() :
-			curr_group(nullptr),
-			once(false)
-		{
-		}
-
-		void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
-		{
-			auto e = new Event(curr_group, curr_group ? curr_group->events.size() : items.size());
-			e->delay = delay;
-			e->duration = duration;
-			e->callback = callback;
-			e->capture = capture;
-			if (curr_group)
-				curr_group->events.emplace_back(e);
+		rest = duration;
+		callback(capture, -1.f, duration);
+		auto e = this;
+		_looper->_add_event([](Capture& c) {
+			auto e = c.data<Event*>();
+			e->rest -= _looper->_delta_time;
+			auto end = e->rest <= 0.f;
+			e->callback(e->capture, e->duration - max(e->rest, 0.f), e->duration);
+			if (!end)
+				c._current = INVALID_POINTER;
 			else
-				items.emplace_back(e);
-		}
-
-		void begin_group()
-		{
-			if (curr_group)
-				return;
-			auto g = new Group(items.size());
-			items.emplace_back(g);
-			curr_group = g;
-		}
-
-		void end_group()
-		{
-			if (!curr_group)
-				return;
-			if (curr_group->events.empty())
-				items.erase(items.end() - 1);
-			curr_group = nullptr;
-		}
-
-		void start()
-		{
-			if (items.empty())
-				return;
-			items.front()->excute(this);
-		}
-
-		void stop()
-		{
-
-		}
-	};
-
-	void Schedule::add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
-	{
-		((SchedulePrivate*)this)->add_event(delay, duration, callback, capture);
+			{
+				auto thiz = c.thiz<SchedulePrivate>();
+				auto index = e->index;
+				auto g = e->group;
+				if (g)
+				{
+					g->complete_count++;
+					if (g->complete_count < g->events.size())
+						return;
+					index = g->index;
+				}
+				index++;
+				if (index < thiz->_items.size())
+					thiz->_items[index]->excute(thiz);
+				else if (thiz->_once)
+					delete thiz;
+			}
+		}, Capture().set_data(&e).set_thiz(s));
 	}
 
-	void Schedule::begin_group()
+	void SchedulePrivate::Event::excute(SchedulePrivate* s)
 	{
-		((SchedulePrivate*)this)->begin_group();
+		if (delay > 0.f)
+		{
+			_looper->_add_event([](Capture& c) {
+				c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
+			}, Capture().set_data(&s).set_thiz(this), delay);
+		}
+		else
+			add_to_looper(s);
 	}
 
-	void Schedule::end_group()
+	void SchedulePrivate::Group::excute(SchedulePrivate* s)
 	{
-		((SchedulePrivate*)this)->end_group();
+		complete_count = 0;
+		for (auto& e : events)
+		{
+			if (e->delay > 0.f)
+			{
+				_looper->_add_event([](Capture& c) {
+					c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
+				}, Capture().set_data(&s).set_thiz(e.get()), e->delay);
+			}
+			else
+				e->add_to_looper(s);
+		}
 	}
 
-	void Schedule::start()
+	void SchedulePrivate::_add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
 	{
-		((SchedulePrivate*)this)->start();
+		auto e = new Event(_curr_group, _curr_group ? _curr_group->events.size() : _items.size());
+		e->delay = delay;
+		e->duration = duration;
+		e->callback = callback;
+		e->capture = capture;
+		if (_curr_group)
+			_curr_group->events.emplace_back(e);
+		else
+			_items.emplace_back(e);
 	}
 
-	void Schedule::stop()
+	void SchedulePrivate::_begin_group()
 	{
-		((SchedulePrivate*)this)->stop();
+		if (_curr_group)
+			return;
+		auto g = new Group(_items.size());
+		_items.emplace_back(g);
+		_curr_group = g;
+	}
+
+	void SchedulePrivate::_end_group()
+	{
+		if (!_curr_group)
+			return;
+		if (_curr_group->events.empty())
+			_items.erase(_items.end() - 1);
+		_curr_group = nullptr;
+	}
+
+	void SchedulePrivate::_start()
+	{
+		if (_items.empty())
+			return;
+		_items.front()->excute(this);
+	}
+
+	void SchedulePrivate::_stop()
+	{
+
 	}
 
 	Schedule* Schedule::create(bool once)
 	{
-		auto s = new SchedulePrivate;
-		s->once = once;
-		return s;
-	}
-
-	void Schedule::destroy(Schedule* s)
-	{
-		delete (SchedulePrivate*)s;
+		return new SchedulePrivate(once);
 	}
 }

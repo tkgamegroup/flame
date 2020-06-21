@@ -63,7 +63,7 @@ int main(int argc, char** args)
 	na->find_input("b")->link_to(nt->find_output("total"));
 	nw->find_input("scale")->link_to(na->find_output("out"));
 
-	looper().loop([](Capture&) {
+	get_looper()->loop([](Capture&) {
 		app.bp->update();
 		app.run();
 	}, Capture());

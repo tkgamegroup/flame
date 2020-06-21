@@ -801,8 +801,6 @@ namespace flame
 		{
 		}
 
-		virtual void release() = 0;
-
 		virtual void* get_native() = 0;
 
 		virtual Vec2i get_pos() const = 0;
@@ -834,30 +832,31 @@ namespace flame
 
 	struct Looper
 	{
-		uint frame;
-		float delta_time; // second
-		float total_time; // second
+		virtual uint get_frame() const = 0;
+		virtual float get_delta_time() const = 0; // second
+		virtual float get_total_time() const = 0; // second
 
-		FLAME_FOUNDATION_EXPORTS int loop(void (*frame_callback)(Capture& c), const Capture& capture);
+		virtual int loop(void (*frame_callback)(Capture& c), const Capture& capture) = 0;
 
-		FLAME_FOUNDATION_EXPORTS void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0);
-		FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
-		FLAME_FOUNDATION_EXPORTS void remove_event(void* ev);
-		FLAME_FOUNDATION_EXPORTS void remove_events(int id = 0); /* id=-1 means all */
-		FLAME_FOUNDATION_EXPORTS void process_events();
+		virtual void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0) = 0;
+		virtual void reset_event(void* ev) = 0;
+		virtual void remove_event(void* ev) = 0;
+		virtual void remove_events(int id = 0) = 0; /* id=-1 means all */
+		virtual void process_events() = 0;
 	};
 
-	FLAME_FOUNDATION_EXPORTS Looper& looper();
+	FLAME_FOUNDATION_EXPORTS Looper* get_looper();
 
 	struct Schedule
 	{
-		FLAME_FOUNDATION_EXPORTS void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture);
-		FLAME_FOUNDATION_EXPORTS void begin_group();
-		FLAME_FOUNDATION_EXPORTS void end_group();
-		FLAME_FOUNDATION_EXPORTS void start();
-		FLAME_FOUNDATION_EXPORTS void stop();
+		virtual void release() = 0;
+
+		virtual void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture) = 0;
+		virtual void begin_group() = 0;
+		virtual void end_group() = 0;
+		virtual void start() = 0;
+		virtual void stop() = 0;
 
 		FLAME_FOUNDATION_EXPORTS static Schedule* create(bool once = true);
-		FLAME_FOUNDATION_EXPORTS static void destroy(Schedule* s);
 	};
 }

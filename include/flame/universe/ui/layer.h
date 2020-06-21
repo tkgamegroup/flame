@@ -14,7 +14,7 @@ namespace flame
 	inline void remove_layer(Entity* l)
 	{
 		l->name = "";
-		looper().add_event([](Capture& c) {
+		get_looper()->add_event([](Capture& c) {
 			auto l = c.thiz<Entity>();
 			l->parent->remove_child(l);
 		}, Capture().set_thiz(l));
@@ -61,7 +61,7 @@ namespace flame
 			}capture;
 			capture.p = parent;
 			capture.l = l;
-			looper().add_event([](Capture& c) {
+			get_looper()->add_event([](Capture& c) {
 				auto& capture = c.data<Capturing>();
 				capture.p->add_child(capture.l);
 			}, Capture().set_data(&capture));
