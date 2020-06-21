@@ -1239,7 +1239,7 @@ namespace flame
 			if (std::filesystem::exists(icon_fn))
 			{
 				report_used_file(icon_fn.c_str());
-				auto icon_image = BitmapPrivate::_create(icon_fn.c_str());
+				auto icon_image = BitmapPrivate::_create(icon_fn);
 				icon_image->_swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
 					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());

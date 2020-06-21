@@ -14,16 +14,16 @@ namespace flame
 
 		struct FontPrivate : Font
 		{
-			std::filesystem::path filename;
-			std::string file;
-			stbtt_fontinfo* stbtt_info;
+			std::filesystem::path _filename;
+			std::string _file;
+			stbtt_fontinfo* _stbtt_info;
 
 			FontPrivate(const std::wstring& filename);
 			~FontPrivate();
 
 			void release() override { delete this; }
 
-			const wchar_t* get_filename() const override { return filename.c_str(); }
+			const wchar_t* get_filename() const override { return _filename.c_str(); }
 		};
 
 		struct GlyphPrivate : Glyph

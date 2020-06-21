@@ -467,24 +467,9 @@ namespace flame
 		{
 		}
 
-		void DevicePrivate::release() { delete this; }
+		DevicePrivate* _default_device;
 
-		static DevicePrivate* _default;
-
-		void DevicePrivate::set_default()
-		{
-			_default = this;
-		}
-
-		Descriptorpool* DevicePrivate::get_default_descriptorpool() const { return default_descriptorpool.get(); }
-		Sampler* DevicePrivate::get_default_sampler_nearest() const { return default_sampler_nearest.get(); }
-		Sampler* DevicePrivate::get_default_sampler_linear() const { return default_sampler_linear.get(); }
-		Commandpool* DevicePrivate::get_default_graphics_commandpool() const { return default_graphics_commandpool.get(); }
-		Commandpool* DevicePrivate::get_default_transfer_commandpool() const { return default_transfer_commandpool.get(); }
-		Queue* DevicePrivate::get_default_graphics_queue() const { return default_graphics_queue.get(); }
-		Queue* DevicePrivate::get_default_transfer_queue() const { return default_transfer_queue.get(); }
-
-		bool DevicePrivate::has_feature(Feature f) const
+		bool DevicePrivate::_has_feature(Feature f) const
 		{
 #if defined(FLAME_VULKAN)
 			switch (f)
@@ -504,7 +489,7 @@ namespace flame
 			return false;
 		}
 
-		uint DevicePrivate::find_memory_type(uint type_filter, MemPropFlags properties)
+		uint DevicePrivate::_find_memory_type(uint type_filter, MemPropFlags properties)
 		{
 			auto p = to_backend_flags<MemProp>(properties);
 #if defined(FLAME_VULKAN)
@@ -521,14 +506,14 @@ namespace flame
 
 		Device* Device::get_default()
 		{
-			return _default;
+			return _default_device;
 		}
 
 		Device* Device::create(bool debug, bool set_to_default)
 		{
 			auto d = new DevicePrivate(debug);
 			if (set_to_default)
-				_default = d;
+				_default_device = d;
 			return d;
 		}
 	}

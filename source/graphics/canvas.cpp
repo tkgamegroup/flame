@@ -163,25 +163,9 @@ namespace flame
 			f->slot = _set_resource(-1, f->view.get(), _d->default_sampler_nearest.get());
 		}
 
-		void CanvasPrivate::set_scissor(const Vec4f& _scissor)
+		void CanvasPrivate::_stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness)
 		{
-			auto scissor = Vec4f(
-				max(_scissor.x(), 0.f),
-				max(_scissor.y(), 0.f),
-				min(_scissor.z(), (float)_target_size.x()),
-				min(_scissor.w(), (float)_target_size.y()));
-			if (scissor == _curr_scissor)
-				return;
-			_curr_scissor = scissor;
-			Cmd cmd;
-			cmd.type = CmdSetScissor;
-			cmd.v.scissor = scissor;
-			_cmds.push_back(cmd);
-		}
-
-		void CanvasPrivate::stroke(uint point_count, const Vec2f* points, const Vec4c& col, float thickness)
-		{
-			if (point_count < 2)
+			if (points.size() < 2)
 				return;
 
 			if (_cmds.empty() || _cmds.back().type == CmdSetScissor)
@@ -198,10 +182,10 @@ namespace flame
 			auto first_vtx_cnt = vtx_cnt;
 			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
-			auto closed = points[0] == points[point_count - 1];
+			auto closed = points[0] == points[points.size() - 1];
 
-			std::vector<Vec2f> normals(point_count);
-			for (auto i = 0; i < point_count - 1; i++)
+			std::vector<Vec2f> normals(points.size());
+			for (auto i = 0; i < points.size() - 1; i++)
 			{
 				auto d = normalize(points[i + 1] - points[i]);
 				auto normal = Vec2f(d.y(), -d.x());
@@ -211,13 +195,13 @@ namespace flame
 				else
 					normals[i] = normal;
 
-				if (closed && i + 1 == point_count - 1)
+				if (closed && i + 1 == points.size() - 1)
 					normals.front() = normals.back() = (normal + normals[0]) * 0.5f;
 				else
 					normals[i + 1] = normal;
 			}
 
-			for (auto i = 0; i < point_count - 1; i++)
+			for (auto i = 0; i < points.size() - 1; i++)
 			{
 				if (i == 0)
 				{
@@ -242,7 +226,7 @@ namespace flame
 					vtx_cnt += 4;
 					idx_cnt += 6;
 				}
-				else if (closed && i == point_count - 2)
+				else if (closed && i == points.size() - 2)
 				{
 					*_idx_end = vtx_cnt - 1;		  _idx_end++;
 					*_idx_end = first_vtx_cnt + 1; _idx_end++;
@@ -275,9 +259,9 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::fill(uint point_count, const Vec2f* points, const Vec4c& col)
+		void CanvasPrivate::_fill(std::span<const Vec2f> points, const Vec4c& col)
 		{
-			if (point_count < 3)
+			if (points.size() < 3)
 				return;
 
 			if (_cmds.empty() || _cmds.back().type == CmdSetScissor)
@@ -293,7 +277,7 @@ namespace flame
 			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
 			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
-			for (auto i = 0; i < point_count - 2; i++)
+			for (auto i = 0; i < points.size() - 2; i++)
 			{
 				_vtx_end->pos = points[0];	  _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
 				_vtx_end->pos = points[i + 2]; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
@@ -373,7 +357,7 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
+		void CanvasPrivate::_add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 			auto uv0 = _uv0;
@@ -423,7 +407,23 @@ namespace flame
 			idx_cnt += 6;
 		}
 
-		void CanvasPrivate::prepare()
+		void CanvasPrivate::_set_scissor(const Vec4f& _scissor)
+		{
+			auto scissor = Vec4f(
+				max(_scissor.x(), 0.f),
+				max(_scissor.y(), 0.f),
+				min(_scissor.z(), (float)_target_size.x()),
+				min(_scissor.w(), (float)_target_size.y()));
+			if (scissor == _curr_scissor)
+				return;
+			_curr_scissor = scissor;
+			Cmd cmd;
+			cmd.type = CmdSetScissor;
+			cmd.v.scissor = scissor;
+			_cmds.push_back(cmd);
+		}
+
+		void CanvasPrivate::_prepare()
 		{
 			_vtx_end = (Vertex*)_buf_vtx->get_mapped();
 			_idx_end = (uint*)_buf_idx->get_mapped();

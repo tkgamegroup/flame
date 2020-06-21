@@ -64,7 +64,7 @@ namespace flame
 #endif
 		}
 
-		void BufferPrivate::map(uint offset, uint size)
+		void BufferPrivate::_map(uint offset, uint size)
 		{
 			if (_mapped)
 				return;
@@ -77,7 +77,7 @@ namespace flame
 #endif
 		}
 
-		void BufferPrivate::unmap()
+		void BufferPrivate::_unmap()
 		{
 			if (_mapped)
 			{
@@ -90,7 +90,7 @@ namespace flame
 			}
 		}
 
-		void BufferPrivate::flush()
+		void BufferPrivate::_flush()
 		{
 #if defined(FLAME_VULKAN)
 			VkMappedMemoryRange range;
@@ -105,7 +105,7 @@ namespace flame
 #endif
 		}
 
-		void BufferPrivate::copy_from_data(void* data)
+		void BufferPrivate::_copy_from_data(void* data)
 		{
 			auto stag_buf = std::make_unique<BufferPrivate>(_d, _size, BufferUsageTransferSrc, MemPropHost);
 

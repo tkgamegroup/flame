@@ -77,9 +77,19 @@ namespace flame
 			CanvasPrivate(DevicePrivate* d);
 
 			void _set_target(std::span<ImageviewPrivate*> views);
+
 			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas = nullptr);
 			void _add_atlas(ImageAtlasPrivate* a);
 			void _add_font(FontAtlasPrivate* f);
+
+			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness);
+			void _fill(std::span<const Vec2f> points, const Vec4c& col);
+			void _add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col);
+			void _add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col);
+
+			void _set_scissor(const Vec4f& _scissor);
+
+			void _prepare();
 			void _record(CommandbufferPrivate* cb, uint image_index);
 
 			void release() override { delete this; }
@@ -94,16 +104,15 @@ namespace flame
 			void add_atlas(ImageAtlas* a) override { _add_atlas((ImageAtlasPrivate*)a); }
 			void add_font(FontAtlas* f) override { _add_font((FontAtlasPrivate*)f); }
 
+			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness) override { _stroke( { points, points_count}, col, thickness); }
+			void fill(uint points_count, const Vec2f* points, const Vec4c& col) override { _fill({ points, points_count }, col); }
+			void add_text(FontAtlas* f, const wchar_t* text, int text_len, uint font_size, const Vec2f& pos, const Vec4c& col) override { _add_text((FontAtlasPrivate*)f, { text, text_len == - 1 ? std::char_traits<wchar_t>::length(text) : text_len }, font_size, pos, col); }
+			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override { _add_image(pos, size, id, uv0, uv1, tint_col); }
+
 			Vec4f get_scissor() const override { return _curr_scissor; }
-			void set_scissor(const Vec4f& _scissor) override;
+			void set_scissor(const Vec4f& scissor) override { _set_scissor(scissor); }
 
-			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness) override;
-			void fill(uint points_count, const Vec2f* points, const Vec4c& col) override;
-			void add_text(FontAtlas* f, const wchar_t* text_begin, const wchar_t* text_end, uint font_size, const Vec2f& pos, const Vec4c& col) override { _add_text((FontAtlasPrivate*)f, { text_begin, size_t(text_end - text_begin) }, font_size, pos, col); }
-			void _add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col);
-			void add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
-
-			void prepare() override;
+			void prepare() override { _prepare(); }
 			void record(Commandbuffer* cb, uint image_index) override { _record((CommandbufferPrivate*)cb, image_index); }
 		};
 	}

@@ -13,6 +13,9 @@ namespace flame
 		struct SamplerPrivate;
 		struct CommandpoolPrivate;
 		struct QueuePrivate;
+		struct DevicePrivate;
+
+		extern DevicePrivate* _default_device;
 
 		struct DevicePrivate : Device
 		{
@@ -41,20 +44,22 @@ namespace flame
 			DevicePrivate(bool debug);
 			~DevicePrivate();
 
-			void release() override;
-			void set_default() override;
+			bool _has_feature(Feature f) const;
 
-			Descriptorpool* get_default_descriptorpool() const override;
-			Sampler* get_default_sampler_nearest() const override;
-			Sampler* get_default_sampler_linear() const override;
-			Commandpool* get_default_graphics_commandpool() const override;
-			Commandpool* get_default_transfer_commandpool() const override;
-			Queue* get_default_graphics_queue() const override;
-			Queue* get_default_transfer_queue() const override;
+			uint _find_memory_type(uint type_filter, MemPropFlags properties);
 
-			bool has_feature(Feature f) const override;
+			void release() override { delete this; }
+			void set_default() override { _default_device = this; }
 
-			uint find_memory_type(uint type_filter, MemPropFlags properties);
+			Descriptorpool* get_default_descriptorpool() const override { return default_descriptorpool.get(); }
+			Sampler* get_default_sampler_nearest() const override { return default_sampler_nearest.get(); }
+			Sampler* get_default_sampler_linear() const override { return default_sampler_linear.get(); }
+			Commandpool* get_default_graphics_commandpool() const override { return default_graphics_commandpool.get(); }
+			Commandpool* get_default_transfer_commandpool() const override { return default_transfer_commandpool.get(); }
+			Queue* get_default_graphics_queue() const override { return default_graphics_queue.get(); }
+			Queue* get_default_transfer_queue() const override { return default_transfer_queue.get(); }
+
+			bool has_feature(Feature f) const override { return _has_feature(f); }
 		};
 	}
 }

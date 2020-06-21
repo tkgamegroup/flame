@@ -83,7 +83,7 @@ namespace flame
 
 		void CommandbufferPrivate::release() { delete this; }
 
-		void CommandbufferPrivate::begin(bool once)
+		void CommandbufferPrivate::_begin(bool once)
 		{
 #if defined(FLAME_VULKAN)
 			VkCommandBufferBeginInfo info;
@@ -106,12 +106,7 @@ namespace flame
 			_current_pipeline = nullptr;
 		}
 
-		void CommandbufferPrivate::begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues)
-		{
-			_begin_renderpass((FramebufferPrivate*)fb, { (Vec4f*)clearvalues, clearvalues_count });
-		}
-
-		void CommandbufferPrivate::_begin_renderpass(FramebufferPrivate* fb, std::span<Vec4f> clearvalues)
+		void CommandbufferPrivate::_begin_renderpass(FramebufferPrivate* fb, std::span<const Vec4f> clearvalues)
 		{
 			auto rp = fb->rp;
 
@@ -154,7 +149,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::end_renderpass()
+		void CommandbufferPrivate::_end_renderpass()
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdEndRenderPass(_v);
@@ -174,7 +169,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::set_viewport(const Vec4f& rect)
+		void CommandbufferPrivate::_set_viewport(const Vec4f& rect)
 		{
 #if defined(FLAME_VULKAN)
 			VkViewport vp;
@@ -190,7 +185,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::set_scissor(const Vec4f& rect)
+		void CommandbufferPrivate::_set_scissor(const Vec4f& rect)
 		{
 #if defined(FLAME_VULKAN)
 			VkRect2D sc;
@@ -257,7 +252,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
+		void CommandbufferPrivate::_draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDraw(_v, count, instance_count, first_vertex, first_instance);
@@ -266,7 +261,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance)
+		void CommandbufferPrivate::_draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDrawIndexed(_v, count, instance_count, first_index, vertex_offset, first_instance);
@@ -275,7 +270,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::dispatch(const Vec3u& v)
+		void CommandbufferPrivate::_dispatch(const Vec3u& v)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdDispatch(_v, v.x(), v.y(), v.z());
@@ -497,7 +492,7 @@ namespace flame
 #endif
 		}
 
-		void CommandbufferPrivate::end()
+		void CommandbufferPrivate::_end()
 		{
 #if defined(FLAME_VULKAN)
 			chk_res(vkEndCommandBuffer(_v));
@@ -530,18 +525,13 @@ namespace flame
 
 		void QueuePrivate::release() { delete this; }
 
-		void QueuePrivate::wait_idle()
+		void QueuePrivate::_wait_idle()
 		{
 #if defined(FLAME_VULKAN)
 			chk_res(vkQueueWaitIdle(_v));
 #elif defined(FLAME_D3D12)
 
 #endif
-		}
-
-		void QueuePrivate::submit(uint cb_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
-		{
-			_submit({ (CommandbufferPrivate**)cbs, cb_count }, (SemaphorePrivate*)wait_semaphore, (SemaphorePrivate*)signal_semaphore, (FencePrivate*)signal_fence);
 		}
 
 		void QueuePrivate::_submit(std::span<CommandbufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
@@ -580,10 +570,8 @@ namespace flame
 #endif
 		}
 
-		void QueuePrivate::present(Swapchain* _s, Semaphore* _wait_semaphore)
+		void QueuePrivate::_present(SwapchainPrivate* sc, SemaphorePrivate* wait_semaphore)
 		{
-			auto wait_semaphore = (SemaphorePrivate*)_wait_semaphore;
-			auto s = (SwapchainPrivate*)_s;
 #if defined(FLAME_VULKAN)
 			VkPresentInfoKHR info;
 			info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -592,8 +580,8 @@ namespace flame
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
 			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->v : nullptr;
 			info.swapchainCount = 1;
-			info.pSwapchains = &s->v;
-			info.pImageIndices = &s->image_index;
+			info.pSwapchains = &sc->v;
+			info.pImageIndices = &sc->image_index;
 			chk_res(vkQueuePresentKHR(_v, &info));
 #elif defined(FLAME_D3D12)
 			auto res = ((SwapchainPrivate*)s)->v->Present(0, 0);

@@ -12,11 +12,12 @@ namespace flame
 		_width(width),
 		_height(height),
 		_channel(channel),
-		_byte_per_channel(byte_per_channel),
-		_pitch(image_pitch(width* channel* byte_per_channel)),
-		_size(_pitch* height),
-		_data(new uchar[_size])
+		_byte_per_channel(byte_per_channel)
 	{
+		_pitch = image_pitch(width * channel * byte_per_channel);
+		_size = _pitch * height;
+		_data = new uchar[_size];
+
 		if (!data)
 			memset(_data, 0, _size);
 		else

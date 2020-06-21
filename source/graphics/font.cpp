@@ -11,14 +11,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		FontPrivate::FontPrivate(const std::wstring& _filename)
+		FontPrivate::FontPrivate(const std::wstring& filename)
 		{
-			filename = _filename;
-			font_file = get_file_content(filename);
+			_filename = filename;
+			_file = get_file_content(filename);
 
 			stbtt_InitFont(&info, (uchar*)font_file.data(), stbtt_GetFontOffsetForIndex((uchar*)font_file.data(), 0));
-
-			ref_count = 0;
 		}
 
 		static std::vector<std::unique_ptr<FontPrivate>> loaded_fonts;
