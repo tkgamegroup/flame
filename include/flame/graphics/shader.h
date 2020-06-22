@@ -171,7 +171,7 @@ namespace flame
 				VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
 				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, const wchar_t* compute_shader_filename /* filename[:prefix] */, Pipelinelayout* pll);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, Pipelinelayout* pll);
 		};
 	}
 }

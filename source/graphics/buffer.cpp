@@ -22,16 +22,16 @@ namespace flame
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
 			uint queue_family_idx[] = {
-				(uint)d->gq_idx,
-				(uint)d->tq_idx
+				(uint)d->_gq_idx,
+				(uint)d->_tq_idx
 			};
 			buffer_info.pQueueFamilyIndices = sharing ? queue_family_idx : nullptr;
 
-			auto res = vkCreateBuffer(d->v, &buffer_info, nullptr, &_v);
+			auto res = vkCreateBuffer(d->_v, &buffer_info, nullptr, &_v);
 			assert(res == VK_SUCCESS);
 
 			VkMemoryRequirements mem_requirements;
-			vkGetBufferMemoryRequirements(d->v, _v, &mem_requirements);
+			vkGetBufferMemoryRequirements(d->_v, _v, &mem_requirements);
 
 			assert(_size <= mem_requirements.size);
 
@@ -41,9 +41,9 @@ namespace flame
 			alloc_info.allocationSize = mem_requirements.size;
 			alloc_info.memoryTypeIndex = d->_find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
-			chk_res(vkAllocateMemory(d->v, &alloc_info, nullptr, &_m));
+			chk_res(vkAllocateMemory(d->_v, &alloc_info, nullptr, &_m));
 
-			chk_res(vkBindBufferMemory(d->v, _v, _m, 0));
+			chk_res(vkBindBufferMemory(d->_v, _v, _m, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -57,8 +57,8 @@ namespace flame
 				unmap();
 
 #if defined(FLAME_VULKAN)
-			vkFreeMemory(_d->v, _m, nullptr);
-			vkDestroyBuffer(_d->v, _v, nullptr);
+			vkFreeMemory(_d->_v, _m, nullptr);
+			vkDestroyBuffer(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -71,7 +71,7 @@ namespace flame
 			if (size == 0)
 				size = _size;
 #if defined(FLAME_VULKAN)
-			chk_res(vkMapMemory(_d->v, _m, offset, size, 0, &_mapped));
+			chk_res(vkMapMemory(_d->_v, _m, offset, size, 0, &_mapped));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -82,7 +82,7 @@ namespace flame
 			if (_mapped)
 			{
 #if defined(FLAME_VULKAN)
-				vkUnmapMemory(_d->v, _m);
+				vkUnmapMemory(_d->_v, _m);
 				_mapped = nullptr;
 #elif defined(FLAME_D3D12)
 
@@ -99,7 +99,7 @@ namespace flame
 			range.memory = _m;
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
-			chk_res(vkFlushMappedMemoryRanges(_d->v, 1, &range));
+			chk_res(vkFlushMappedMemoryRanges(_d->_v, 1, &range));
 #elif defined(FLAME_D3D12)
 
 #endif

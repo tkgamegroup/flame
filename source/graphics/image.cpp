@@ -131,7 +131,7 @@ namespace flame
 			return 0;
 		}
 
-		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
+		void ImagePrivate::_change_layout(ImageLayout from, ImageLayout to)
 		{
 			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
@@ -142,7 +142,7 @@ namespace flame
 			q->_wait_idle();
 		}
 
-		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
+		void ImagePrivate::_clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
 			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
@@ -155,7 +155,7 @@ namespace flame
 			q->_wait_idle();
 		}
 
-		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
+		void ImagePrivate::_get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
 		{
 			assert(_format == Format_R8_UNORM || _format == Format_R8G8B8A8_UNORM || _format == Format_R16G16B16A16_UNORM);
 
@@ -178,7 +178,7 @@ namespace flame
 			stag_buf->_flush();
 		}
 
-		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
+		void ImagePrivate::_set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
 		{
 			assert(_format == Format_R8_UNORM || _format == Format_R8G8B8A8_UNORM || _format == Format_R16G16B16A16_UNORM);
 
@@ -478,7 +478,7 @@ namespace flame
 			delete _image;
 		}
 
-		ImageTile* ImageAtlasPrivate::find_tile(uint id) const
+		ImageTile* ImageAtlasPrivate::_find_tile(uint id) const
 		{
 			for (auto& t : _tiles)
 			{
