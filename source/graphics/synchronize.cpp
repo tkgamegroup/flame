@@ -5,20 +5,20 @@ namespace flame
 {
 	namespace graphics
 	{
-		SemaphorePrivate::SemaphorePrivate(Device* _d) :
-			d((DevicePrivate*)_d)
+		SemaphorePrivate::SemaphorePrivate(Device* d) :
+			_d((DevicePrivate*)d)
 		{
 #if defined(FLAME_VULKAN)
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-			chk_res(vkCreateSemaphore(d->v, &info, nullptr, &v));
+			chk_res(vkCreateSemaphore(_d->_v, &info, nullptr, &_v));
 #endif
 		}
 
 		SemaphorePrivate::~SemaphorePrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroySemaphore(d->v, v, nullptr);
+			vkDestroySemaphore(_d->_v, _v, nullptr);
 #endif
 		}
 
@@ -27,15 +27,15 @@ namespace flame
 			return new SemaphorePrivate(d);
 		}
 
-		FencePrivate::FencePrivate(Device* _d) :
-			d((DevicePrivate*)_d)
+		FencePrivate::FencePrivate(Device* d) :
+			_d((DevicePrivate*)d)
 		{
 #if defined(FLAME_VULKAN)
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-			chk_res(vkCreateFence(d->v, &info, nullptr, &v));
-			vl = 1;
+			chk_res(vkCreateFence(_d->_v, &info, nullptr, &_v));
+			_vl = 1;
 #elif defined(FLAME_D3D12)
 			auto res = d->v->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&v));
 			ev = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -47,20 +47,20 @@ namespace flame
 		FencePrivate::~FencePrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyFence(d->v, v, nullptr);
+			vkDestroyFence(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void FencePrivate::wait()
+		void FencePrivate::_wait()
 		{
 #if defined(FLAME_VULKAN)
-			if (vl > 0)
+			if (_vl > 0)
 			{
-				chk_res(vkWaitForFences(d->v, 1, &v, true, UINT64_MAX));
-				chk_res(vkResetFences(d->v, 1, &v));
-				vl = 0;
+				chk_res(vkWaitForFences(_d->_v, 1, &_v, true, UINT64_MAX));
+				chk_res(vkResetFences(_d->_v, 1, &_v));
+				_vl = 0;
 			}
 #elif defined(FLAME_D3D12)
 			if (v->GetCompletedValue() < vl)

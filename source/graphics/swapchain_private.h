@@ -12,42 +12,44 @@ namespace flame
 
 		struct SwapchainPrivate : Swapchain
 		{
-			Window* w;
+			Window* _w;
 
-			DevicePrivate* d;
+			DevicePrivate* _d;
 
-			ImageUsageFlags extra_usages;
+			ImageUsageFlags _extra_usages;
 
 #if defined(FLAME_VULKAN)
-			VkSurfaceKHR s;
-			VkSwapchainKHR v;
+			VkSurfaceKHR _s;
+			VkSwapchainKHR _v;
 #elif defined(FLAME_D3D12)
 			IDXGISwapChain3* v;
 #endif
 
-			std::vector<std::unique_ptr<ImagePrivate>> images;
-			std::unique_ptr<SemaphorePrivate> image_avalible;
+			std::vector<std::unique_ptr<ImagePrivate>> _images;
+			std::unique_ptr<SemaphorePrivate> _image_avalible;
 
-			uint image_index;
+			uint _image_index;
 
-			uint hash;
+			uint _hash;
 
 			void* resize_listener;
 
 			SwapchainPrivate(Device *d, Window* w, ImageUsageFlags extra_usages = 0);
 			~SwapchainPrivate();
 
+			void _acquire_image();
+
 			void release() override { delete this; }
 
-			Window* get_window() const override { return w; }
-			uint get_images_count() const override { return images.size(); }
-			Image* get_image(uint idx) const override { return images[idx].get(); }
-			Semaphore* get_image_avalible() const override { return (Semaphore*)image_avalible.get(); }
+			Window* get_window() const override { return _w; }
+			uint get_images_count() const override { return _images.size(); }
+			Image* get_image(uint idx) const override { return _images[idx].get(); }
+			Semaphore* get_image_avalible() const override { return (Semaphore*)_image_avalible.get(); }
 
-			uint get_image_index() const override { return image_index; }
-			void acquire_image() override;
+			uint get_image_index() const override { return _image_index; }
+			void acquire_image() override { _acquire_image(); }
 
-			uint get_hash() const override { return hash; }
+			uint get_hash() const override { return _hash; }
 
 			void update();
 		};

@@ -11,9 +11,9 @@ namespace flame
 
 		struct SemaphorePrivate : Semaphore
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 #if defined(FLAME_VULKAN)
-			VkSemaphore v;
+			VkSemaphore _v;
 #endif
 
 			SemaphorePrivate(Device* d);
@@ -24,23 +24,24 @@ namespace flame
 
 		struct FencePrivate : Fence
 		{
-			DevicePrivate* d;
+			DevicePrivate* _d;
 
-			uint vl;
+			uint _vl;
 
 #if defined(FLAME_VULKAN)
-			VkFence v;
+			VkFence _v;
 #elif defined(FLAME_D3D12)
 			ID3D12Fence* v;
 			HANDLE ev;
 #endif
-
 			FencePrivate(Device* d);
 			~FencePrivate();
 
+			void _wait();
+
 			void release() override { delete this; }
 
-			void wait() override;
+			void wait() override { _wait(); };
 		};
 	}
 }
