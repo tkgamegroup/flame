@@ -26,7 +26,7 @@ namespace flame
 				_depth_attachment = rp->_attachments[info.depth_attachment].get();
 		}
 
-		RenderpassPrivate::RenderpassPrivate(DevicePrivate* d, std::span<RenderpassAttachmentInfo> attachments, std::span<RenderpassSubpassInfo> subpasses, std::span<Vec2u> dependencies) :
+		RenderpassPrivate::RenderpassPrivate(DevicePrivate* d, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies) :
 			_d(d)
 		{
 #if defined(FLAME_VULKAN)
@@ -155,9 +155,9 @@ namespace flame
 #endif
 		}
 
-		Renderpass* Renderpass::create(Device* d, uint attachment_count, const RenderpassAttachmentInfo* attachments, uint subpass_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
+		Renderpass* Renderpass::create(Device* d, uint attachments_count, const RenderpassAttachmentInfo* attachments, uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
 		{
-			return new RenderpassPrivate((DevicePrivate*)d, attachment_count, attachments, subpass_count, subpasses, dependency_count, dependencies);
+			return new RenderpassPrivate((DevicePrivate*)d, { attachments, attachments_count }, { subpasses, subpasses_count }, { dependencies, dependency_count });
 		}
 
 		FramebufferPrivate::FramebufferPrivate(DevicePrivate* d, RenderpassPrivate* rp, std::span<ImageviewPrivate*> views) :
@@ -192,9 +192,9 @@ namespace flame
 #endif
 		}
 
-		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, uint view_count, Imageview* const* views)
+		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, uint views_count, Imageview* const* views)
 		{
-			return new FramebufferPrivate(d, rp, view_count, views);
+			return new FramebufferPrivate(d, rp, { (ImageviewPrivate**)views, views_count });
 		}
 
 		//void RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes)

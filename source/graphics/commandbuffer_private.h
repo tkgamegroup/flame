@@ -29,7 +29,7 @@ namespace flame
 			CommandpoolPrivate(DevicePrivate* d, int queue_family_idx);
 			~CommandpoolPrivate();
 
-			void release() override;
+			void release() override { delete this; }
 		};
 
 		struct CommandbufferPrivate : Commandbuffer
@@ -70,7 +70,7 @@ namespace flame
 			void _clear_image(ImagePrivate* i, const Vec4c& col);
 			void _end();
 
-			void release() override;
+			void release() override { delete this; }
 
 			void begin(bool once = false) override { _begin(once); }
 			void begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues) override { _begin_renderpass((FramebufferPrivate*)fb, { clearvalues, clearvalues_count }); }
@@ -109,7 +109,7 @@ namespace flame
 			void _submit(std::span<CommandbufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence);
 			void _present(SwapchainPrivate* s, SemaphorePrivate* wait_semaphore);
 
-			void release() override;
+			void release() override { delete this; }
 
 			void wait_idle() override { _wait_idle(); }
 			void submit(uint cbs_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) override { _submit({ (CommandbufferPrivate**)cbs, cbs_count }, (SemaphorePrivate*)wait_semaphore, (SemaphorePrivate*)signal_semaphore, (FencePrivate*)signal_fence); }

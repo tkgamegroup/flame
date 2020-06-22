@@ -37,8 +37,6 @@ namespace flame
 #endif
 		}
 
-		void CommandpoolPrivate::release() { delete this; }
-
 		Commandpool* Commandpool::create(Device* d, int queue_family_idx)
 		{
 			return new CommandpoolPrivate((DevicePrivate*)d, queue_family_idx);
@@ -80,8 +78,6 @@ namespace flame
 
 #endif
 		}
-
-		void CommandbufferPrivate::release() { delete this; }
 
 		void CommandbufferPrivate::_begin(bool once)
 		{
@@ -522,8 +518,6 @@ namespace flame
 			assert(SUCCEEDED(res));
 #endif
 		}
-
-		void QueuePrivate::release() { delete this; }
 
 		void QueuePrivate::_wait_idle()
 		{

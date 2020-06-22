@@ -11,6 +11,28 @@ namespace flame
 {
 	namespace graphics
 	{
+		static uint get_pixel_size(ImagePrivate* i)
+		{
+			switch (i->_format)
+			{
+			case Format_R8_UNORM:
+				return 1;
+			case Format_R16_UNORM:
+				return 2;
+			case Format_R32_SFLOAT:
+				return 4;
+			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
+				return 4;
+			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+				return 8;
+			case Format_R32G32B32A32_SFLOAT:
+				return 16;
+			case Format_Depth16:
+				return 2;
+			}
+			return 0;
+		}
+
 		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view) :
 			_d(d),
 			_format(format),
@@ -107,28 +129,6 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-		}
-
-		uint get_pixel_size(ImagePrivate* i)
-		{
-			switch (i->_format)
-			{
-			case Format_R8_UNORM:
-				return 1;
-			case Format_R16_UNORM:
-				return 2;
-			case Format_R32_SFLOAT:
-				return 4;
-			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
-				return 4;
-			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
-				return 8;
-			case Format_R32G32B32A32_SFLOAT:
-				return 16;
-			case Format_Depth16:
-				return 2;
-			}
-			return 0;
 		}
 
 		void ImagePrivate::_change_layout(ImageLayout from, ImageLayout to)

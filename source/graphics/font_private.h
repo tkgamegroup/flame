@@ -1,13 +1,12 @@
 #pragma once
 
+#include <flame/foundation/bitmap.h>
 #include <flame/graphics/font.h>
 
 struct stbtt_fontinfo;
 
 namespace flame
 {
-	struct BinPackNode;
-
 	namespace graphics
 	{
 		struct ImagePrivate;
