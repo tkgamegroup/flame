@@ -95,7 +95,7 @@ namespace flame
 			void release() override { delete this; }
 
 			Vec4f get_clear_color() const override { return _clear_color; }
-			void set_clear_color(const Vec4f& color) override { _clear_color = color; }
+			void set_clear_color(const Vec4c& color) override { _clear_color = Vec4f(color) / 255.f; }
 
 			void set_target(uint views_count, Imageview* const* views) override { _set_target({ (ImageviewPrivate**)views, views_count }); }
 
