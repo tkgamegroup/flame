@@ -11,6 +11,21 @@
 using namespace flame;
 using namespace graphics;
 
+const auto Width = 640;
+const auto Height = 360;
+const auto Ratio = (float)Width / (float)Height;
+const auto Fovy = 45.f;
+const auto TanFovy = tan(Fovy * ANG_RAD);
+const auto Focus = 1.f;
+const auto Far = 4.f;
+
+float random()
+{
+	return (float)rand() / (float)RAND_MAX;
+}
+
+float dt;
+
 struct App
 {
 	Window* w;
@@ -21,35 +36,6 @@ struct App
 	Semaphore* render_finished;
 
 	graphics::Canvas* canvas;
-
-	struct Drop
-	{
-		Vec2f p = Vec2f(0.f);
-		float yspeed = 1;
-
-		Drop()
-		{
-			p.x() = rand() % 640;
-			p.y() = rand() % 100 - 200;
-			yspeed = (rand() % 5000 + 1000) / 10.f;
-		}
-
-		void fall()
-		{
-			p.y() += yspeed * get_looper()->get_delta_time();
-			if (p.y() > 360.f)
-				p.y() = rand() % 100 - 200;
-		}
-
-		void show(graphics::Canvas* canvas)
-		{
-			std::vector<Vec2f> points;
-			path_rect(points, Vec2f(p.x() - 1.f, p.y()), Vec2f(2.f, 10.f));
-			canvas->fill(points.size(), points.data(), Vec4c(138, 43, 226, 255));
-		}
-	};
-
-	std::vector<Drop> drops;
 
 	void on_resize()
 	{
@@ -64,17 +50,70 @@ struct App
 			cbs[i] = Commandbuffer::create(d->get_graphics_commandpool());
 	}
 
+	struct Drop
+	{
+		Vec3f p;
+		float sp;
+		float end;
+
+		Drop()
+		{
+			reset();
+		}
+
+		void reset()
+		{
+			p.x() = (random() * 2.f - 1.f) * Ratio;
+			p.z() = Focus + (Far - Focus) * random();
+			end = -p.z() * TanFovy;
+			p.y() = -end + 0.1;
+			sp = random();
+		}
+
+		void fall()
+		{
+			sp += 0.8f * dt;
+			p.y() -= sp * dt;
+			if (p.y() < end)
+				reset();
+		}
+
+		void project(Vec3f& p)
+		{
+			p.x() = (p.x() / p.z() * Ratio + 1.f) * 0.5f * Width;
+			p.y() = (p.y() / p.z() * -1.f + 1.f) * 0.5f * Height;
+		}
+
+		void show(graphics::Canvas* canvas)
+		{
+			auto p1 = p;
+			auto p2 = p;
+			p2.y() -= 0.1;
+			
+			project(p1);
+			project(p2);
+			Vec2f points[] = {
+				Vec2f(p1),
+				Vec2f(p2),
+			};
+
+			canvas->stroke(2, points, Vec4c(138, 43, 226, 255), 4.f / p.z());
+		}
+	};
+
+	std::vector<Drop> drops;
+
 	void setup()
 	{
-		for (auto i = 0; i < 500; i++)
-		{
-			Drop d;
-			drops.push_back(d);
-		}
+		srand(time(0));
+
+		drops.resize(3000);
 	}
 
 	void run()
 	{
+		dt = get_looper()->get_delta_time();
+
 		if (!cbs.empty())
 			sc->acquire_image();
 
@@ -108,7 +147,7 @@ int main(int argc, char** args)
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 	set_engine_path(engine_path.c_str());
 
-	app.w = Window::create("Graphics Test", Vec2u(640, 360), WindowFrame);
+	app.w = Window::create("Graphics Test", Vec2u(Width, Height), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.sc = Swapchain::create(app.d, app.w);
