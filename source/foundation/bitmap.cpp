@@ -139,4 +139,7 @@ namespace flame
 		stbi_image_free(data);
 		return b;
 	}
+
+	Bitmap* Bitmap::create(uint width, uint height, uint channel, uint byte_per_channel, uchar* data) { return new BitmapPrivate(width, height, channel, byte_per_channel, data); }
+	Bitmap* Bitmap::create(const wchar_t* filename) { return BitmapPrivate::_create(filename); }
 }

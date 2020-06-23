@@ -537,7 +537,7 @@ namespace flame
 			VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			info.pWaitDstStageMask = &wait_stage;
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
-			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->v : nullptr;
+			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->_v : nullptr;
 			info.commandBufferCount = cbs.size();
 			std::vector<VkCommandBuffer> vk_cbs;
 			vk_cbs.resize(cbs.size());
@@ -545,11 +545,11 @@ namespace flame
 				vk_cbs[i] = cbs[i]->_v;
 			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
-			info.pSignalSemaphores = signal_semaphore ? &signal_semaphore->v : nullptr;
+			info.pSignalSemaphores = signal_semaphore ? &signal_semaphore->_v : nullptr;
 
-			chk_res(vkQueueSubmit(_v, 1, &info, signal_fence ? signal_fence->v : nullptr));
+			chk_res(vkQueueSubmit(_v, 1, &info, signal_fence ? signal_fence->_v : nullptr));
 			if (signal_fence)
-				signal_fence->vl = 1;
+				signal_fence->_vl = 1;
 #elif defined(FLAME_D3D12)
 			ID3D12CommandList* list[] = { ((CommandbufferPrivate*)c)->v };
 			v->ExecuteCommandLists(1, list);
@@ -572,10 +572,10 @@ namespace flame
 			info.pNext = nullptr;
 			info.pResults = nullptr;
 			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
-			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->v : nullptr;
+			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->_v : nullptr;
 			info.swapchainCount = 1;
-			info.pSwapchains = &sc->v;
-			info.pImageIndices = &sc->image_index;
+			info.pSwapchains = &sc->_v;
+			info.pImageIndices = &sc->_image_index;
 			chk_res(vkQueuePresentKHR(_v, &info));
 #elif defined(FLAME_D3D12)
 			auto res = ((SwapchainPrivate*)s)->v->Present(0, 0);

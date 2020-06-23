@@ -163,10 +163,4 @@ namespace flame
 
 	EnumInfoPrivate* _find_enum(uint hash);
 	UdtInfoPrivate* _find_udt(uint hash);
-
-	inline void push_global_typeinfo_database(TypeInfoDatabase* db) { _push_global_typeinfo_database((TypeInfoDatabasePrivate*)db); }
-	inline void pop_global_typeinfo_database() { _pop_global_typeinfo_database(); }
-
-	inline EnumInfo* find_enum(uint hash) { return _find_enum(hash); }
-	inline UdtInfo* find_udt(uint hash) { return _find_udt(hash); }
 }

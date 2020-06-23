@@ -587,9 +587,9 @@ namespace flame
 						if (s->_type == ShaderStageFrag)
 						{
 							auto& bos = json["blend_options"];
-							for (auto i = 0; i < bos.size(); i++)
+							for (auto j = 0; j < bos.size(); j++)
 							{
-								auto& src = bos[i];
+								auto& src = bos[j];
 								BlendOptions dst;
 								dst.enable = src["enable"].get<bool>();
 								if (dst.enable)
@@ -789,9 +789,9 @@ namespace flame
 				memset(&a, 0, sizeof(a));
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			if (shaders.back().s->_type == ShaderStageFrag)
+			if (_shaders.back().s->_type == ShaderStageFrag)
 			{
-				auto& bos = shaders.back().r._blend_options;
+				auto& bos = _shaders.back().r._blend_options;
 				for (auto i = 0; i < bos.size(); i++)
 				{
 					const auto& src = bos[i];
@@ -919,7 +919,7 @@ namespace flame
 			{
 				for (auto& ss : shaders)
 				{
-					if (s->_filename == s->_filename || s->_type == ss->_type)
+					if (ss != s && (ss->_filename == s->_filename || ss->_type == s->_type))
 						return nullptr;
 				}
 				if (s->_type == ShaderStageComp)
@@ -956,6 +956,18 @@ namespace flame
 				return nullptr;
 
 			return new PipelinePrivate(d, s, pll);
+		}
+
+		Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count,
+			Shader* const* shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
+			VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
+			uint dynamic_states_count, const uint* dynamic_states)
+		{
+			return PipelinePrivate::_create((DevicePrivate*)d, shader_dir, { (ShaderPrivate**)shaders, shaders_count }, (PipelinelayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, { dynamic_states , dynamic_states_count });
+		}
+		Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, Pipelinelayout* pll)
+		{
+			return PipelinePrivate::_create((DevicePrivate*)d, shader_dir, (ShaderPrivate*)compute_shader, (PipelinelayoutPrivate*)pll);
 		}
 	}
 }

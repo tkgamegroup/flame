@@ -16,7 +16,7 @@ namespace flame
 			VkSemaphore _v;
 #endif
 
-			SemaphorePrivate(Device* d);
+			SemaphorePrivate(DevicePrivate* d);
 			~SemaphorePrivate();
 
 			void release() override { delete this; }
@@ -34,7 +34,7 @@ namespace flame
 			ID3D12Fence* v;
 			HANDLE ev;
 #endif
-			FencePrivate(Device* d);
+			FencePrivate(DevicePrivate* d);
 			~FencePrivate();
 
 			void _wait();

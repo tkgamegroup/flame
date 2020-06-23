@@ -15,8 +15,8 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(Device* _d, Window* w, ImageUsageFlags extra_usages = 0) :
-			_d((DevicePrivate*)_d),
+		SwapchainPrivate::SwapchainPrivate(DevicePrivate* d, Window* w, ImageUsageFlags extra_usages) :
+			_d(d),
 			_w(w),
 			_extra_usages(extra_usages),
 			_s(nullptr),
@@ -52,7 +52,7 @@ namespace flame
 		void SwapchainPrivate::_acquire_image()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkAcquireNextImageKHR(_d->_v, _v, UINT64_MAX, _image_avalible->v, VK_NULL_HANDLE, &_image_index));
+			chk_res(vkAcquireNextImageKHR(_d->_v, _v, UINT64_MAX, _image_avalible->_v, VK_NULL_HANDLE, &_image_index));
 #elif defined(FLAME_D3D12)
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
@@ -212,7 +212,7 @@ namespace flame
 
 		Swapchain *Swapchain::create(Device *d, Window* w, ImageUsageFlags extra_usages)
 		{
-			return new SwapchainPrivate(d, w, extra_usages);
+			return new SwapchainPrivate((DevicePrivate*)d, w, extra_usages);
 		}
 	}
 }

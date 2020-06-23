@@ -183,6 +183,10 @@ namespace flame
 
 			chk_res(vkCreateFramebuffer(d->_v, &create_info, nullptr, &_v));
 #endif
+
+			_views.resize(views.size());
+			for (auto i = 0; i < views.size(); i++)
+				_views[i] = views[i];
 		}
 
 		FramebufferPrivate::~FramebufferPrivate()
@@ -194,7 +198,7 @@ namespace flame
 
 		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, uint views_count, Imageview* const* views)
 		{
-			return new FramebufferPrivate(d, rp, { (ImageviewPrivate**)views, views_count });
+			return new FramebufferPrivate((DevicePrivate*)d, (RenderpassPrivate*)rp, { (ImageviewPrivate**)views, views_count });
 		}
 
 		//void RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes)

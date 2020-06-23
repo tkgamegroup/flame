@@ -320,4 +320,10 @@ namespace flame
 		}
 		return nullptr;
 	}
+
+	void push_global_typeinfo_database(TypeInfoDatabase* db) { _push_global_typeinfo_database((TypeInfoDatabasePrivate*)db); }
+	void pop_global_typeinfo_database() { _pop_global_typeinfo_database(); }
+
+	EnumInfo* find_enum(uint hash) { return _find_enum(hash); }
+	UdtInfo* find_udt(uint hash) { return _find_udt(hash); }
 }

@@ -230,18 +230,6 @@ namespace flame
 			void release() override { delete this; }
 
 			PipelineType get_type() const override { return _type; }
-
-			inline Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count,
-				Shader* const* shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
-				VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
-				uint dynamic_states_count, const uint* dynamic_states)
-			{
-				return _create((DevicePrivate*)d, shader_dir, { (ShaderPrivate**)shaders, shaders_count }, (PipelinelayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, { dynamic_states , dynamic_states_count });
-			}
-			inline Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, Pipelinelayout* pll)
-			{
-				return _create((DevicePrivate*)d, shader_dir, (ShaderPrivate*)compute_shader, (PipelinelayoutPrivate*)pll);
-			}
 		};
 	}
 }

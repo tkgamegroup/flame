@@ -40,8 +40,5 @@ namespace flame
 		void swap_channel(uint ch1, uint ch2) override { _swap_channel(ch1, ch2); }
 		void copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override { _copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border); }
 		void save(const wchar_t* filename) override { _save(filename); }
-
-		Bitmap* create(uint width, uint height, uint channel, uint byte_per_channel, uchar* data) { return new BitmapPrivate(width, height, channel, byte_per_channel, data); }
-		Bitmap* create(const wchar_t* filename) { return _create(filename); }
 	};
 }

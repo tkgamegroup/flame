@@ -56,9 +56,6 @@ namespace flame
 
 			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override { _get_pixels(offset, extent, dst); }
 			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override { _set_pixels(offset, extent, src); }
-
-			inline ImagePrivate* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool create_default_view) { return _create((DevicePrivate*)d, bmp, extra_usage, create_default_view); }
-			inline ImagePrivate* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool create_defalut_view) { return _create((DevicePrivate*)d, filename, extra_usage, create_defalut_view); }
 		};
 
 		struct ImageviewPrivate : Imageview

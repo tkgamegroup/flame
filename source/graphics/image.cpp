@@ -321,10 +321,9 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view)
-		{
-			return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data, default_view);
-		}
+		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data, default_view); }
+		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool create_default_view) { return ImagePrivate::_create((DevicePrivate*)d, bmp, extra_usage, create_default_view); }
+		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool create_defalut_view) { return ImagePrivate::_create((DevicePrivate*)d, filename, extra_usage, create_defalut_view); }
 
 		ImageviewPrivate::ImageviewPrivate(ImagePrivate* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a) :
 			_image(image),
