@@ -31,12 +31,12 @@ struct App
 		{
 			p.x() = rand() % 640;
 			p.y() = rand() % 100 - 200;
-			yspeed = (rand() % 60) / 10.f + 4.f;
+			yspeed = (rand() % 5000 + 1000) / 10.f;
 		}
 
 		void fall()
 		{
-			p.y() += yspeed;
+			p.y() += yspeed * get_looper()->get_delta_time();
 			if (p.y() > 360.f)
 				p.y() = rand() % 100 - 200;
 		}
