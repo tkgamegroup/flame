@@ -11,6 +11,28 @@ namespace flame
 {
 	namespace graphics
 	{
+		static uint get_pixel_size(ImagePrivate* i)
+		{
+			switch (i->_format)
+			{
+			case Format_R8_UNORM:
+				return 1;
+			case Format_R16_UNORM:
+				return 2;
+			case Format_R32_SFLOAT:
+				return 4;
+			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
+				return 4;
+			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+				return 8;
+			case Format_R32G32B32A32_SFLOAT:
+				return 16;
+			case Format_Depth16:
+				return 2;
+			}
+			return 0;
+		}
+
 		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view) :
 			_d(d),
 			_format(format),
@@ -109,29 +131,7 @@ namespace flame
 #endif
 		}
 
-		uint get_pixel_size(ImagePrivate* i)
-		{
-			switch (i->_format)
-			{
-			case Format_R8_UNORM:
-				return 1;
-			case Format_R16_UNORM:
-				return 2;
-			case Format_R32_SFLOAT:
-				return 4;
-			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
-				return 4;
-			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
-				return 8;
-			case Format_R32G32B32A32_SFLOAT:
-				return 16;
-			case Format_Depth16:
-				return 2;
-			}
-			return 0;
-		}
-
-		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
+		void ImagePrivate::_change_layout(ImageLayout from, ImageLayout to)
 		{
 			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
@@ -142,7 +142,7 @@ namespace flame
 			q->_wait_idle();
 		}
 
-		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
+		void ImagePrivate::_clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
 			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
@@ -155,7 +155,7 @@ namespace flame
 			q->_wait_idle();
 		}
 
-		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
+		void ImagePrivate::_get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
 		{
 			assert(_format == Format_R8_UNORM || _format == Format_R8G8B8A8_UNORM || _format == Format_R16G16B16A16_UNORM);
 
@@ -178,7 +178,7 @@ namespace flame
 			stag_buf->_flush();
 		}
 
-		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
+		void ImagePrivate::_set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
 		{
 			assert(_format == Format_R8_UNORM || _format == Format_R8G8B8A8_UNORM || _format == Format_R16G16B16A16_UNORM);
 
@@ -478,7 +478,7 @@ namespace flame
 			delete _image;
 		}
 
-		ImageTile* ImageAtlasPrivate::find_tile(uint id) const
+		ImageTile* ImageAtlasPrivate::_find_tile(uint id) const
 		{
 			for (auto& t : _tiles)
 			{

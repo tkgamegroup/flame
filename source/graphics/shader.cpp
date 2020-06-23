@@ -248,7 +248,7 @@ namespace flame
 			return new PipelinelayoutPrivate((DevicePrivate*)d, { (DescriptorlayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
 		}
 
-		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::vector<ShaderPrivate>& shaders, PipelinelayoutPrivate* pll, const VertexInfo* vi)
+		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::span<CompiledShader> shaders, PipelinelayoutPrivate* pll, const VertexInfo* vi)
 		{
 			static std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
 			static std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
@@ -256,14 +256,11 @@ namespace flame
 			static std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
 			static std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
 
-			std::vector<std::pair<void*, ShaderResource>> ret;
-			ret.resize(shaders.size());
-
 			auto hash = 0U;
 			for (auto& s : shaders)
 			{
-				hash = hash_update(hash, FLAME_HASH(s._filename.c_str()));
-				hash = hash_update(hash, FLAME_HASH(s._prefix.c_str()));
+				hash = hash_update(hash, FLAME_HASH(s.s->_filename.c_str()));
+				hash = hash_update(hash, FLAME_HASH(s.s->_prefix.c_str()));
 			}
 			hash = hash_update(hash, pll->_hash);
 			if (vi)
@@ -286,10 +283,10 @@ namespace flame
 
 			for (auto i = 0; i < shaders.size(); i++)
 			{
-				auto& s = shaders[i];
-				auto& r = ret[i];
+				auto& s = shaders[i].s;
+				auto& r = shaders[i].r;
 
-				auto shader_path = dir / s._filename;
+				auto shader_path = dir / s->_filename;
 				auto spv_path = shader_path;
 				spv_path += L".";
 				spv_path += str_hash;
@@ -306,9 +303,9 @@ namespace flame
 
 					std::string glsl_header = "#version 450 core\n"
 						"#extension GL_ARB_shading_language_420pack : enable\n";
-					if (s._type != ShaderStageComp)
+					if (s->_type != ShaderStageComp)
 						glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
-					glsl_header += s._prefix + "\n";
+					glsl_header += s->_prefix + "\n";
 
 					auto type_id = 0;
 
@@ -334,7 +331,7 @@ namespace flame
 								ShaderInOut in;
 								in.type = res[1].str();
 								in.name = res[2].str();
-								if (s._type == ShaderStageVert)
+								if (s->_type == ShaderStageVert)
 								{
 									auto location = 0;
 									if (vi)
@@ -360,7 +357,7 @@ namespace flame
 								}
 								else
 								{
-									auto& ps = ret[i - 1].second;
+									auto& ps = shaders[i - 1].r;
 									for (auto j = 0; j < ps._outputs.size(); j++)
 									{
 										if (ps._outputs[j].name == in.name)
@@ -370,7 +367,7 @@ namespace flame
 										}
 									}
 								}
-								r.second._inputs.push_back(in);
+								r._inputs.push_back(in);
 							}
 							else if (std::regex_search(line, res, regex_out))
 							{
@@ -378,7 +375,7 @@ namespace flame
 								out.type = res[1].str();
 								out.name = res[2].str();
 								auto dual = false;
-								if (s._type == ShaderStageFrag)
+								if (s->_type == ShaderStageFrag)
 								{
 									BlendOptions bo;
 									if (res[3].matched)
@@ -419,16 +416,16 @@ namespace flame
 												bo.dst_alpha = f;
 										}
 									}
-									r.second._blend_options.push_back(bo);
+									r._blend_options.push_back(bo);
 								}
 								if (dual)
 								{
-									glsl_file << "layout (location = " + std::to_string((int)r.second._outputs.size()) + +", index = 0) out " + get_formated_type(out.type) + " o_" + out.name + "0;\n";
-									glsl_file << "layout (location = " + std::to_string((int)r.second._outputs.size()) + +", index = 1) out " + get_formated_type(out.type) + " o_" + out.name + "1;\n";
+									glsl_file << "layout (location = " + std::to_string((int)r._outputs.size()) + +", index = 0) out " + get_formated_type(out.type) + " o_" + out.name + "0;\n";
+									glsl_file << "layout (location = " + std::to_string((int)r._outputs.size()) + +", index = 1) out " + get_formated_type(out.type) + " o_" + out.name + "1;\n";
 								}
 								else
-									glsl_file << "layout (location = " + std::to_string((int)r.second._outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
-								r.second._outputs.push_back(out);
+									glsl_file << "layout (location = " + std::to_string((int)r._outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
+								r._outputs.push_back(out);
 							}
 							else if (std::regex_search(line, res, regex_pc))
 							{
@@ -507,7 +504,7 @@ namespace flame
 						std::filesystem::path glslc_path = vk_sdk_path;
 						glslc_path /= L"Bin/glslc.exe";
 
-						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s._type) + L" out.glsl -o" + spv_path.wstring());
+						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s->_type) + L" out.glsl -o" + spv_path.wstring());
 
 						auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
 						std::filesystem::remove(L"out.glsl");
@@ -518,7 +515,7 @@ namespace flame
 
 							std::ofstream glsl_file(L"out.glsl");
 							glsl_file << glsl_header;
-							switch (s._type)
+							switch (s->_type)
 							{
 							case ShaderStageVert:
 								glsl_file << "void main()\n"
@@ -559,12 +556,12 @@ namespace flame
 
 					{
 						nlohmann::json json;
-						if (s._type == ShaderStageFrag)
+						if (s->_type == ShaderStageFrag)
 						{
 							auto& bos = json["blend_options"];
-							for (auto i = 0; i < r.second._blend_options.size(); i++)
+							for (auto i = 0; i < r._blend_options.size(); i++)
 							{
-								auto& src = r.second._blend_options[i];
+								auto& src = r._blend_options[i];
 								auto& dst = bos[i];
 								dst["enable"] = src.enable;
 								if (src.enable)
@@ -587,7 +584,7 @@ namespace flame
 					if (!res.empty())
 					{
 						auto json = nlohmann::json::parse(res);
-						if (s._type == ShaderStageFrag)
+						if (s->_type == ShaderStageFrag)
 						{
 							auto& bos = json["blend_options"];
 							for (auto i = 0; i < bos.size(); i++)
@@ -602,7 +599,7 @@ namespace flame
 									dst.src_alpha = (BlendFactor)src["sa"].get<int>();
 									dst.dst_alpha = (BlendFactor)src["da"].get<int>();
 								}
-								r.second._blend_options.push_back(dst);
+								r._blend_options.push_back(dst);
 							}
 						}
 					}
@@ -627,7 +624,7 @@ namespace flame
 				shader_info.pNext = nullptr;
 				shader_info.codeSize = spv_file.size();
 				shader_info.pCode = (uint*)spv_file.data();
-				chk_res(vkCreateShaderModule(d->_v, &shader_info, nullptr, (VkShaderModule*)&r.first));
+				chk_res(vkCreateShaderModule(d->_v, &shader_info, nullptr, &shaders[i].m));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -644,9 +641,11 @@ namespace flame
 			_type = shader_stage_from_ext(_filename.extension());
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const std::vector<ShaderPrivate>& stage_infos, PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states) :
-			d(d),
-			pll(pll)
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::span<CompiledShader> shaders, PipelinelayoutPrivate* pll, 
+			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
+			DepthInfo* depth, std::span<const uint> dynamic_states) :
+			_d(d),
+			_pll(pll)
 		{
 			_type = PipelineGraphics;
 
@@ -657,31 +656,34 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
-			vk_stage_infos.resize(stage_infos.size());
-			for (auto i = 0; i < stage_infos.size(); i++)
+			vk_stage_infos.resize(shaders.size());
+			for (auto i = 0; i < shaders.size(); i++)
 			{
-				auto& src = stage_infos[i];
+				auto& src = shaders[i];
 				auto& dst = vk_stage_infos[i];
-				vk_shader_modules.push_back(src.vk_shader_module);
 				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				dst.flags = 0;
 				dst.pNext = nullptr;
 				dst.pSpecializationInfo = nullptr;
 				dst.pName = "main";
-				dst.stage = to_backend(src.type);
-				dst.module = src.vk_shader_module;
+				dst.stage = to_backend(src.s->_type);
+				dst.module = src.m;
 			}
+
+			_shaders.resize(shaders.size());
+			for (auto i = 0; i < shaders.size(); i++)
+				_shaders[i] = std::move(shaders[i]);
 
 			if (vi)
 			{
 				auto attribute_location = 0;
-				vk_vi_bindings.resize(vi->buffer_count);
+				vk_vi_bindings.resize(vi->buffers_count);
 				for (auto i = 0; i < vk_vi_bindings.size(); i++)
 				{
 					auto& src = vi->buffers[i];
 					auto& dst = vk_vi_bindings[i];
 					dst.binding = i;
-					for (auto j = 0; j < src.attribute_count; j++)
+					for (auto j = 0; j < src.attributes_count; j++)
 					{
 						auto& _src = src.attributes[j];
 						VkVertexInputAttributeDescription _dst;
@@ -781,15 +783,15 @@ namespace flame
 			depth_stencil_state.front = {};
 			depth_stencil_state.back = {};
 
-			vk_blend_attachment_states.resize(rp->subpass_info(subpass_idx).color_attachment_count);
+			vk_blend_attachment_states.resize(rp->_subpasses[subpass_idx]->_color_attachments.size());
 			for (auto& a : vk_blend_attachment_states)
 			{
 				memset(&a, 0, sizeof(a));
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			if (stage_infos.back().type == ShaderStageFrag)
+			if (shaders.back().s->_type == ShaderStageFrag)
 			{
-				auto& bos = stage_infos.back().blend_options;
+				auto& bos = shaders.back().r._blend_options;
 				for (auto i = 0; i < bos.size(); i++)
 				{
 					const auto& src = bos[i];
@@ -818,7 +820,7 @@ namespace flame
 			blend_state.attachmentCount = vk_blend_attachment_states.size();
 			blend_state.pAttachments = vk_blend_attachment_states.data();
 
-			for (auto i = 0; i < dynamic_state_count; i++)
+			for (auto i = 0; i < dynamic_states.size(); i++)
 				vk_dynamic_states.push_back(to_backend((DynamicState)dynamic_states[i]));
 			if (vp.x() == 0 && vp.y() == 0)
 			{
@@ -850,26 +852,27 @@ namespace flame
 			pipeline_info.pDepthStencilState = &depth_stencil_state;
 			pipeline_info.pColorBlendState = &blend_state;
 			pipeline_info.pDynamicState = vk_dynamic_states.size() ? &dynamic_state : nullptr;
-			pipeline_info.layout = pll->v;
-			pipeline_info.renderPass = rp ? ((RenderpassPrivate*)rp)->v : nullptr;
+			pipeline_info.layout = pll->_v;
+			pipeline_info.renderPass = rp ? rp->_v : nullptr;
 			pipeline_info.subpass = subpass_idx;
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 
-			chk_res(vkCreateGraphicsPipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
+			chk_res(vkCreateGraphicsPipelines(d->_v, 0, 1, &pipeline_info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, const StageInfo& compute_shader_info, PipelinelayoutPrivate* pll) :
-			d(d),
-			pll(pll)
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelinelayoutPrivate* pll) :
+			_d(d),
+			_pll(pll)
 		{
-			type = PipelineCompute;
+			_type = PipelineCompute;
 
 #if defined(FLAME_VULKAN)
-			vk_shader_modules.push_back(compute_shader_info.vk_shader_module);
+			_shaders.resize(1);
+			_shaders[0] = std::move(compute_shader);
 
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -882,13 +885,13 @@ namespace flame
 			pipeline_info.stage.pSpecializationInfo = nullptr;
 			pipeline_info.stage.pName = "main";
 			pipeline_info.stage.stage = to_backend(ShaderStageComp);
-			pipeline_info.stage.module = compute_shader_info.vk_shader_module;
+			pipeline_info.stage.module = compute_shader.m;
 
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
-			pipeline_info.layout = pll->v;
+			pipeline_info.layout = pll->_v;
 
-			chk_res(vkCreateComputePipelines(d->v, 0, 1, &pipeline_info, nullptr, &v));
+			chk_res(vkCreateComputePipelines(_d->_v, 0, 1, &pipeline_info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -897,64 +900,62 @@ namespace flame
 		PipelinePrivate::~PipelinePrivate()
 		{
 #if defined(FLAME_VULKAN)
-			for (auto v : vk_shader_modules)
-				vkDestroyShaderModule(d->v, v, nullptr);
+			for (auto& s : _shaders)
+				vkDestroyShaderModule(_d->_v, s.m, nullptr);
 
-			vkDestroyPipeline(d->v, v, nullptr);
+			vkDestroyPipeline(_d->_v, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		Pipeline* Pipeline::create(Device* d, const wchar_t* shader_dir, uint shader_count, const wchar_t* const* shader_filenames, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
-			VertexInputInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth, uint dynamic_state_count, const uint* dynamic_states)
+		PipelinePrivate* PipelinePrivate::_create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders,
+			PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
+			DepthInfo* depth, std::span<const uint> dynamic_states)
 		{
-			std::vector<StageInfo> stage_infos;
 			auto has_vert_stage = false;
 			auto tess_stage_count = 0;
-			for (auto i = 0; i < shader_count; i++)
+			for (auto& s : shaders)
 			{
-				StageInfo info(shader_filenames[i]);
-
-				for (auto& s : stage_infos)
+				for (auto& ss : shaders)
 				{
-					if (s.path == info.path || s.type == info.type)
+					if (s->_filename == s->_filename || s->_type == ss->_type)
 						return nullptr;
 				}
-				if (info.type == ShaderStageComp)
+				if (s->_type == ShaderStageComp)
 					return nullptr;
-				if (info.type == ShaderStageVert)
+				if (s->_type == ShaderStageVert)
 					has_vert_stage = true;
-				if (info.type == ShaderStageTesc || info.type == ShaderStageTese)
+				if (s->_type == ShaderStageTesc || s->_type == ShaderStageTese)
 					tess_stage_count++;
-
-				stage_infos.push_back(std::move(info));
 			}
 			if (!has_vert_stage || (tess_stage_count != 0 && tess_stage_count != 2))
 				return nullptr;
-			std::sort(stage_infos.begin(), stage_infos.end(), [](const auto& a, const auto& b) {
-				return (int)a.type < (int)b.type;
-			});
 
-			if (!compile_shaders((DevicePrivate*)d, shader_dir, stage_infos, (PipelinelayoutPrivate*)pll, vi))
+			std::vector<CompiledShader> ss;
+			ss.resize(shaders.size());
+			for (auto i = 0; i < shaders.size(); i++)
+				ss[i].s = shaders[i];
+			std::sort(ss.begin(), ss.end(), [](const auto& a, const auto& b) {
+				return (int)a.s->_type < (int)b.s->_type;
+			});
+			if (!compile_shaders(d, shader_dir, ss, pll, vi))
 				return nullptr;
 
-			return new PipelinePrivate((DevicePrivate*)d, stage_infos, (PipelinelayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, dynamic_state_count, dynamic_states);
+			return new PipelinePrivate(d, ss, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, dynamic_states);
 		}
 
-		Pipeline* Pipeline::create(Device* d, const wchar_t* shader_dir, const wchar_t* compute_shader_filename, Pipelinelayout* pll)
+		PipelinePrivate* PipelinePrivate::_create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll)
 		{
-			StageInfo compute_stage_info(compute_shader_filename);
-			if (compute_stage_info.type != ShaderStageComp)
+			if (compute_shader->_type != ShaderStageComp)
 				return nullptr;
 
-			std::vector<StageInfo> stage_infos;
-			stage_infos.push_back(std::move(compute_stage_info));
-
-			if (!compile_shaders((DevicePrivate*)d, shader_dir, stage_infos, (PipelinelayoutPrivate*)pll, nullptr))
+			CompiledShader s;
+			s.s = compute_shader;
+			if (!compile_shaders(d, shader_dir, { &s, 1 }, pll, nullptr))
 				return nullptr;
 
-			return new PipelinePrivate((DevicePrivate*)d, compute_stage_info, (PipelinelayoutPrivate*)pll);
+			return new PipelinePrivate(d, s, pll);
 		}
 	}
 }

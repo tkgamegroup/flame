@@ -15,6 +15,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <filesystem>
 
 #define FLAME_R(name, ...) name
 #define FLAME_RV(type, name, ...) type name;

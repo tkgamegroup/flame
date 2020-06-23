@@ -53,7 +53,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkRenderPass _v;
 #endif
-			RenderpassPrivate(DevicePrivate* d, std::span<RenderpassAttachmentInfo> attachments, std::span<RenderpassSubpassInfo> subpasses, std::span<Vec2u> dependencies = {});
+			RenderpassPrivate(DevicePrivate* d, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies = {});
 			~RenderpassPrivate();
 
 			void release() override { delete this; }

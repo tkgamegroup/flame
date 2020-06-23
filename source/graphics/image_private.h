@@ -49,7 +49,7 @@ namespace flame
 			uint get_layer() const override { return _layer; }
 			SampleCount get_sample_count() const override { return _sample_count; }
 
-			Imageview* get_default_view() const override { return _dv.get(); }
+			Imageview* get_default_view() const override { return (Imageview*)_dv.get(); }
 
 			void change_layout(ImageLayout from, ImageLayout to) override { _change_layout(from, to); }
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override { _clear(current_layout, after_layout, color); }

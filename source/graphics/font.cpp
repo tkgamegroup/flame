@@ -54,8 +54,6 @@ namespace flame
 			_empty_glyph.reset(new GlyphPrivate);
 		}
 
-		void FontAtlasPrivate::release() { delete this; }
-
 		GlyphPrivate* FontAtlasPrivate::_get_glyph(wchar_t code, uint size)
 		{
 			if (size == 0)
@@ -96,8 +94,8 @@ namespace flame
 
 							_image->set_pixels(atlas_pos, g->_size, bitmap);
 
-							g->_uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->_size.y()) / _image->size,
-											Vec2f(atlas_pos.x() + g->_size.x(), atlas_pos.y()) / _image->size);
+							g->_uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->_size.y()) / _image->_size,
+											Vec2f(atlas_pos.x() + g->_size.x(), atlas_pos.y()) / _image->_size);
 						}
 						else
 							printf("font atlas is full\n");

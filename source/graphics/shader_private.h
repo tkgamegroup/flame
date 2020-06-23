@@ -10,6 +10,8 @@ namespace flame
 	namespace graphics
 	{
 		struct DevicePrivate;
+		struct BufferPrivate;
+		struct ImagePrivate;
 		struct RenderpassPrivate;
 
 		struct DescriptorpoolPrivate : Descriptorpool
@@ -190,31 +192,56 @@ namespace flame
 			const char* get_prefix() const override { return _prefix.c_str(); }
 		};
 
+		struct CompiledShader
+		{
+			ShaderPrivate* s;
+			ShaderResource r;
+#if defined(FLAME_VULKAN)
+			VkShaderModule m;
+#elif defined(FLAME_D3D12)
+
+#endif
+		};
+
 		struct PipelinePrivate : Pipeline
 		{
 			PipelineType _type;
 
 			DevicePrivate* _d;
 			PipelinelayoutPrivate* _pll;
-			std::vector<ShaderPrivate*> _shaders;
-
+			std::vector<CompiledShader> _shaders;
 #if defined(FLAME_VULKAN)
-			std::vector<VkShaderModule> _vk_stage_modules;
+			VkPipeline _v;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, const std::filesystem::path& shader_dir, 
-				std::span<ShaderPrivate*> shaders, PipelinelayoutPrivate* pll, RenderpassPrivate* rp, 
-				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), 
-				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, 
-				std::span<uint> dynamic_states = {});
-			PipelinePrivate(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll);
+			PipelinePrivate(DevicePrivate* d, std::span<CompiledShader> shaders, PipelinelayoutPrivate* pll, RenderpassPrivate* rp,
+				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
+				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
+			PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelinelayoutPrivate* pll);
 			~PipelinePrivate();
+
+			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders, 
+				PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), 
+				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
+			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll);
 
 			void release() override { delete this; }
 
 			PipelineType get_type() const override { return _type; }
+
+			inline Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count,
+				Shader* const* shaders, Pipelinelayout* pll, Renderpass* rp, uint subpass_idx,
+				VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
+				uint dynamic_states_count, const uint* dynamic_states)
+			{
+				return _create((DevicePrivate*)d, shader_dir, { (ShaderPrivate**)shaders, shaders_count }, (PipelinelayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, { dynamic_states , dynamic_states_count });
+			}
+			inline Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, Pipelinelayout* pll)
+			{
+				return _create((DevicePrivate*)d, shader_dir, (ShaderPrivate*)compute_shader, (PipelinelayoutPrivate*)pll);
+			}
 		};
 	}
 }

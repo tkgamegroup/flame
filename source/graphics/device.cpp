@@ -416,12 +416,15 @@ namespace flame
 			printf("vulkan initialized, gpu count: %d\n", gpu_count);
 
 			_descriptorpool.reset(new DescriptorpoolPrivate(this));
-			_sampler_nearest = new Sampler(this, FilterNearest, FilterNearest, false);
-			_sampler_linear = new Sampler(this, FilterLinear, FilterLinear, false);
-			_graphics_commandpool = new Commandpool(this, _gq_idx);
-			_graphics_queue = new Queue(this, _gq_idx);
-			_transfer_commandpool = _tq_idx > 0 ? new Commandpool(this, _tq_idx) : nullptr;
-			_transfer_queue = _tq_idx > 0 ? new Queue(this, _tq_idx) : nullptr;
+			_sampler_nearest.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, false));
+			_sampler_linear.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, false));
+			_graphics_commandpool.reset(new CommandpoolPrivate(this, _gq_idx));
+			_graphics_queue.reset(new QueuePrivate(this, _gq_idx));
+			if (_tq_idx > 0)
+			{
+				_transfer_commandpool.reset(new CommandpoolPrivate(this, _tq_idx));
+				_transfer_queue.reset(new QueuePrivate(this, _tq_idx));
+			}
 
 #elif defined(FLAME_D3D12)
 

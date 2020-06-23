@@ -51,7 +51,7 @@ namespace flame
 				pll = new PipelinelayoutPrivate(d, { &dsl, 1 }, 16);
 			if (!pl)
 			{
-				VertexInputAttribute vias[3];
+				VertexAttributeInfo vias[3];
 				auto& via1 = vias[0];
 				via1.format = Format_R32G32_SFLOAT;
 				via1.name = "pos";
@@ -61,11 +61,11 @@ namespace flame
 				auto& via3 = vias[2];
 				via3.format = Format_R8G8B8A8_UNORM;
 				via3.name = "color";
-				VertexInputBuffer vib;
+				VertexBufferInfo vib;
 				vib.attributes_count = array_size(vias);
 				vib.attributes = vias;
-				VertexInputInfo vi;
-				vi.buffer_count = 1;
+				VertexInfo vi;
+				vi.buffers_count = 1;
 				vi.buffers = &vib;
 				vert = new ShaderPrivate(L"element.vert");
 				frag = new ShaderPrivate(L"element.frag");
@@ -73,7 +73,7 @@ namespace flame
 					vert,
 					frag
 				};
-				pl = new PipelinePrivate(d, std::filesystem::path(get_engine_path()) / L"shaders", shaders, pll, rp, 0, &vi);
+				pl = PipelinePrivate::_create(d, std::filesystem::path(get_engine_path()) / L"shaders", shaders, pll, rp, 0, &vi);
 			}
 
 			_buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));
@@ -84,7 +84,7 @@ namespace flame
 			_img_white.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			_img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
 			_resources.resize(resource_count);
-			auto iv_white = _img_white->dv.get();
+			auto iv_white = _img_white->_dv.get();
 			for (auto i = 0; i < resource_count; i++)
 			{
 				auto r = new CanvasResourcePrivate;
@@ -94,8 +94,8 @@ namespace flame
 				_resources[i].reset(r);
 			}
 
-			_ds.reset(new DescriptorsetPrivate(d->default_descriptorpool.get(), dsl));
-			auto sp = d->default_sampler_linear.get();
+			_ds.reset(new DescriptorsetPrivate(d->_descriptorpool.get(), dsl));
+			auto sp = d->_sampler_linear.get();
 			for (auto i = 0; i < resource_count; i++)
 				_ds->set_image(0, i, iv_white, sp);
 		}
@@ -108,7 +108,7 @@ namespace flame
 				_target_size = 0.f;
 			else
 			{
-				_target_size = views[0]->image->size;
+				_target_size = views[0]->_image->_size;
 				_fbs.resize(views.size());
 				for (auto i = 0; i < _fbs.size(); i++)
 					_fbs[i].reset(new FramebufferPrivate(_d, rp, { &views[i], 1 }));
@@ -119,7 +119,7 @@ namespace flame
 		{
 			if (_resources.empty())
 				return -1;
-			auto iv_white = _img_white->dv.get();
+			auto iv_white = _img_white->_dv.get();
 			if (slot == -1)
 			{
 				assert(v);
@@ -142,11 +142,11 @@ namespace flame
 			}
 			else
 			{
-				auto img = v->image;
-				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
-				r->_white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
+				auto img = v->_image;
+				img->set_pixels(img->_size - 1U, Vec2u(1), &Vec4c(255));
+				r->_white_uv = (Vec2f(img->_size - 1U) + 0.5f) / Vec2f(img->_size);
 			}
-			_ds->set_image(0, slot, v, sp ? sp : _d->default_sampler_linear.get());
+			_ds->set_image(0, slot, v, sp ? sp : _d->_sampler_linear.get());
 			r->_view = v;
 			r->_atlas = atlas;
 			_resources[slot].reset(r);
@@ -155,12 +155,12 @@ namespace flame
 
 		void CanvasPrivate::_add_atlas(ImageAtlasPrivate* a)
 		{
-			a->slot = _set_resource(-1, a->image->dv.get(), a->border ? _d->default_sampler_linear.get() : _d->default_sampler_nearest.get(), a);
+			a->_slot = _set_resource(-1, a->_image->_dv.get(), a->_border ? _d->_sampler_linear.get() : _d->_sampler_nearest.get(), a);
 		}
 
 		void CanvasPrivate::_add_font(FontAtlasPrivate* f)
 		{
-			f->slot = _set_resource(-1, f->view.get(), _d->default_sampler_nearest.get());
+			f->_slot = _set_resource(-1, f->_view.get(), _d->_sampler_nearest.get());
 		}
 
 		void CanvasPrivate::_stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness)
@@ -296,11 +296,11 @@ namespace flame
 		{
 			auto pos = Vec2f(Vec2i(_pos));
 
-			if (_cmds.empty() || _cmds.back().type != CmdDrawElement || _cmds.back().v.draw_data.id != f->slot)
+			if (_cmds.empty() || _cmds.back().type != CmdDrawElement || _cmds.back().v.draw_data.id != f->_slot)
 			{
 				Cmd cmd;
 				cmd.type = CmdDrawElement;
-				cmd.v.draw_data.id = f->slot;
+				cmd.v.draw_data.id = f->_slot;
 				cmd.v.draw_data.vtx_cnt = 0;
 				cmd.v.draw_data.idx_cnt = 0;
 				_cmds.push_back(cmd);
@@ -326,18 +326,18 @@ namespace flame
 
 					auto g = f->_get_glyph(ch, font_size);
 
-					auto p = pos + Vec2f(g->off);
-					auto size = Vec2f(g->size);
+					auto p = pos + Vec2f(g->_off);
+					auto size = Vec2f(g->_size);
 					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), _curr_scissor))
 					{
-						auto uv = g->uv;
+						auto uv = g->_uv;
 						auto uv0 = Vec2f(uv.x(), uv.y());
 						auto uv1 = Vec2f(uv.z(), uv.w());
 
-						_vtx_end->pos = p;						       _vtx_end->uv = uv0;						_vtx_end->col = col; _vtx_end++;
-						_vtx_end->pos = p + Vec2f(0.f, -size.y());	   _vtx_end->uv = Vec2f(uv0.x(), uv1.y());	_vtx_end->col = col; _vtx_end++;
+						_vtx_end->pos = p;								_vtx_end->uv = uv0;						_vtx_end->col = col; _vtx_end++;
+						_vtx_end->pos = p + Vec2f(0.f, -size.y());		_vtx_end->uv = Vec2f(uv0.x(), uv1.y());	_vtx_end->col = col; _vtx_end++;
 						_vtx_end->pos = p + Vec2f(size.x(), -size.y()); _vtx_end->uv = uv1;						_vtx_end->col = col; _vtx_end++;
-						_vtx_end->pos = p + Vec2f(size.x(), 0.f);	   _vtx_end->uv = Vec2f(uv1.x(), uv0.y());   _vtx_end->col = col; _vtx_end++;
+						_vtx_end->pos = p + Vec2f(size.x(), 0.f);		_vtx_end->uv = Vec2f(uv1.x(), uv0.y());	_vtx_end->col = col; _vtx_end++;
 
 						*_idx_end = vtx_cnt + 0; _idx_end++;
 						*_idx_end = vtx_cnt + 2; _idx_end++;
@@ -350,7 +350,7 @@ namespace flame
 						idx_cnt += 6;
 					}
 
-					pos.x() += g->advance;
+					pos.x() += g->_advance;
 				}
 
 				pstr++;
@@ -380,21 +380,21 @@ namespace flame
 			auto atlas = res->_atlas;
 			if (atlas)
 			{
-				auto tile = atlas->tiles[id & 0xffff].get();
-				auto tuv = tile->uv;
+				auto tile = atlas->_tiles[id & 0xffff].get();
+				auto tuv = tile->_uv;
 				auto tuv0 = Vec2f(tuv.x(), tuv.y());
 				auto tuv1 = Vec2f(tuv.z(), tuv.w());
 				uv0 = mix(tuv0, tuv1, uv0);
 				uv1 = mix(tuv0, tuv1, uv1);
-				img_size = tile->size;
+				img_size = tile->_size;
 			}
 			else
-				img_size = res->_view->image->size;
+				img_size = res->_view->_image->_size;
 
-			_vtx_end->pos = pos;									_vtx_end->uv = uv0;						_vtx_end->col = tint_col; _vtx_end++;
-			_vtx_end->pos = pos + Vec2f(0.f, size.y());			_vtx_end->uv = Vec2f(uv0.x(), uv1.y());	_vtx_end->col = tint_col; _vtx_end++;
-			_vtx_end->pos = pos + Vec2f(size.x(), size.y());		_vtx_end->uv = uv1;						_vtx_end->col = tint_col; _vtx_end++;
-			_vtx_end->pos = pos + Vec2f(size.x(), 0.f);			_vtx_end->uv = Vec2f(uv1.x(), uv0.y());	_vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos;							 _vtx_end->uv = uv0;					 _vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos + Vec2f(0.f, size.y());		 _vtx_end->uv = Vec2f(uv0.x(), uv1.y()); _vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos + Vec2f(size.x(), size.y()); _vtx_end->uv = uv1;					 _vtx_end->col = tint_col; _vtx_end++;
+			_vtx_end->pos = pos + Vec2f(size.x(), 0.f);		 _vtx_end->uv = Vec2f(uv1.x(), uv0.y()); _vtx_end->col = tint_col; _vtx_end++;
 
 			*_idx_end = vtx_cnt + 0; _idx_end++;
 			*_idx_end = vtx_cnt + 2; _idx_end++;
