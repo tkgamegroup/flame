@@ -19,11 +19,6 @@ const auto TanFovy = tan(Fovy * ANG_RAD);
 const auto Focus = 1.f;
 const auto Far = 4.f;
 
-float random()
-{
-	return (float)rand() / (float)RAND_MAX;
-}
-
 float dt;
 
 struct App

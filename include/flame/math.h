@@ -1848,6 +1848,11 @@ namespace flame
 			Vec<4, T>(0, 0, 0, 1)) * ret;
 	}
 
+	struct PerspectiveProjector
+	{
+
+	};
+
 	template <class T>
 	T segment_intersect(const Vec<2, T>& a, const Vec<2, T>& b, const Vec<2, T>& c, const Vec<2, T>& d)
 	{
@@ -1915,6 +1920,11 @@ namespace flame
 		int slices, int iters)
 	{
 		return bezier(bezier_closest(iters, pos, 0.f, T(1), slices, p0, p1, p2, p3), p0, p1, p2, p3);
+	}
+
+	float random()
+	{
+		return (float)::rand() / (float)RAND_MAX;
 	}
 
 	template <class T>
