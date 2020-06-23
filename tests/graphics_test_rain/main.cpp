@@ -108,6 +108,8 @@ struct App
 		srand(time(0));
 
 		drops.resize(3000);
+		for (auto& d : drops)
+			d.p.y() = random() * d.end * 2.f - d.end;
 	}
 
 	void run()
