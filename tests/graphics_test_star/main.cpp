@@ -11,7 +11,7 @@
 using namespace flame;
 using namespace graphics;
 
-PerspectiveProjector projector(640.f, 360.f, 45.f, 1.f, 4.f);
+PerspectiveProjector projector(500.f, 500.f, 45.f, 1.f, 4.f);
 
 float dt;
 
@@ -39,58 +39,46 @@ struct App
 			cbs[i] = Commandbuffer::create(d->get_graphics_commandpool());
 	}
 
-	struct Drop
+	struct Star
 	{
 		Vec3f p;
-		float sp;
-		float end;
 
-		Drop()
+		Star()
 		{
 			reset();
 		}
 
 		void reset()
 		{
-			p.x() = (random() * 2.f - 1.f) * projector._screen_ratio;
-			p.z() = projector._near + (projector._far - projector._near) * random();
-			end = -p.z() * projector._tan_fovy;
-			p.y() = -end + 0.1;
-			sp = random();
+			p.x() = (random() * 2.f - 1.f) * 4.f;
+			p.y() = (random() * 2.f - 1.f) * 4.f;
+			p.z() = projector._far;
 		}
 
-		void fall()
+		void move()
 		{
-			sp += 0.8f * dt;
-			p.y() -= sp * dt;
-			if (p.y() < end)
+			p.z() -= 1.5f * dt;
+			if (p.z() <= projector._near)
 				reset();
 		}
 
 		void show(graphics::Canvas* canvas)
 		{
-			auto p1 = p;
-			auto p2 = p;
-			p2.y() -= 0.1;
-			
-			Vec2f points[] = {
-				projector.project(p1),
-				projector.project(p2),
-			};
-
-			canvas->stroke(2, points, Vec4c(83, 209, 227, 255), 4.f / p.z());
+			std::vector<Vec2f> points;
+			path_circle(points, projector.project(p), 4.f / p.z());
+			canvas->fill(points.size(), points.data(), Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)));
 		}
 	};
 
-	std::vector<Drop> drops;
+	std::vector<Star> stars;
 
 	void setup()
 	{
 		srand(time(0));
 
-		drops.resize(3000);
-		for (auto& d : drops)
-			d.p.y() = random() * d.end * 2.f - d.end;
+		stars.resize(1000);
+		for (auto& s : stars)
+			s.p.z() = random() * (projector._far - projector._near) + projector._near;
 	}
 
 	void run()
@@ -105,10 +93,10 @@ struct App
 
 		canvas->prepare();
 
-		for (auto& d : drops)
+		for (auto& s : stars)
 		{
-			d.fall();
-			d.show(canvas);
+			s.move();
+			s.show(canvas);
 		}
 
 		canvas->record(cb, img_idx);
@@ -136,7 +124,7 @@ int main(int argc, char** args)
 	app.sc = Swapchain::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.canvas = Canvas::create(app.d);
-	app.canvas->set_clear_color(Vec4c(230, 230, 250, 1.f));
+	app.canvas->set_clear_color(Vec4c(0, 0, 0, 1.f));
 	app.on_resize();
 
 	app.setup();
