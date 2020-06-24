@@ -1922,7 +1922,7 @@ namespace flame
 		return bezier(bezier_closest(iters, pos, 0.f, T(1), slices, p0, p1, p2, p3), p0, p1, p2, p3);
 	}
 
-	float random()
+	inline float random()
 	{
 		return (float)::rand() / (float)RAND_MAX;
 	}

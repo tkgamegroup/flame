@@ -92,7 +92,7 @@ struct App
 				Vec2f(p2),
 			};
 
-			canvas->stroke(2, points, Vec4c(138, 43, 226, 255), 4.f / p.z());
+			canvas->stroke(2, points, Vec4c(83, 209, 227, 255), 4.f / p.z());
 		}
 	};
 
