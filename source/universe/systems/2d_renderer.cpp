@@ -26,7 +26,7 @@ namespace flame
 			if (!element)
 				return;
 
-			const auto& scissor = canvas->scissor();
+			auto scissor = canvas->get_scissor();
 			auto r = rect(element->global_pos, element->global_size);
 			element->clipped = !rect_overlapping(scissor, r);
 			element->clipped_rect = element->clipped ? Vec4f(-1.f) : Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
@@ -34,7 +34,7 @@ namespace flame
 			auto clip_flags = element->clip_flags;
 			if (clip_flags)
 			{
-				auto last_scissor = canvas->scissor();
+				auto last_scissor = canvas->get_scissor();
 				auto scissor = Vec4f(element->content_min(), element->content_max());
 				if (clip_flags == (ClipSelf | ClipChildren))
 				{

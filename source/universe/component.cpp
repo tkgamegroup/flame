@@ -7,12 +7,6 @@ namespace flame
 		entity(nullptr),
 		user_data(nullptr)
 	{
-		data_changed_listeners.impl = ListenerHubImpl::create();
-	}
-
-	Component::~Component()
-	{
-		data_changed_listeners.impl->release();
 	}
 
 	void Component::data_changed(uint hash, void* sender)

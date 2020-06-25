@@ -1,24 +1,15 @@
 #pragma once
 
 #include <flame/universe/universe.h>
-#include <flame/universe/system.h>
 
 namespace flame
 {
-	struct TypeInfoDatabase;
-
 	struct Entity;
 	struct System;
 
 	struct World
 	{
-		Array<Object*> objects;
-
-		Array<System*> systems;
-		Entity* root;
-
-		FLAME_UNIVERSE_EXPORTS World();
-		FLAME_UNIVERSE_EXPORTS ~World();
+		virtual void release() = 0;
 
 		Object* find_object(uint name_hash, uint id) const
 		{
@@ -51,11 +42,11 @@ namespace flame
 
 #define get_system(T) get_system_t<T>(FLAME_CHASH(#T))
 
-		FLAME_UNIVERSE_EXPORTS void add_system(System* s);
+		virtual void add_system(System* s) = 0;
+		virtual void remove_system(System* s) = 0;
 
-		FLAME_UNIVERSE_EXPORTS void update();
+		virtual void update();
 
 		FLAME_UNIVERSE_EXPORTS static World* create();
-		FLAME_UNIVERSE_EXPORTS static void destroy(World* w);
 	};
 }

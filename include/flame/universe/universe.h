@@ -73,4 +73,6 @@ namespace flame
 		ExtraDrawHorizontalLine = 1 << 1,
 		ExtraDrawVerticalLine = 1 << 2
 	};
+
+	FLAME_UNIVERSE_EXPORTS void set_allocator(void*(*allocate)(Capture& c, uint size), void(*deallocate)(Capture& c, void* p), const Capture& capture);
 }

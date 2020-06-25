@@ -1,5 +1,5 @@
 #include <flame/foundation/typeinfo.h>
-#include "private.h"
+#include "world_private.h"
 
 namespace flame
 {
