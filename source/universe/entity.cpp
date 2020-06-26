@@ -1,80 +1,69 @@
 #include <flame/foundation/typeinfo.h>
-#include "private.h"
+#include "entity_private.h"
 
 namespace flame
 {
-	Entity::Entity()
+	EntityPrivate::EntityPrivate()
 	{
-		event_listeners.impl = ListenerHubImpl::create();
-
-		gene = nullptr;
-
-		depth_ = 0;
-		index_ = 0;
-		created_frame_ = get_looper()->frame;
-		dying_ = false;
-
-		visible_ = true;
-		global_visibility = false;
-
-		world = nullptr;
-		parent = nullptr;
+		_created_frame = get_looper()->get_frame();
 
 #ifdef _DEBUG
-		created_stack_ = get_stack_frames();
+		//_created_stack_ = get_stack_frames(); TODO
 #endif
 	}
 
-	Entity::~Entity()
+	EntityPrivate::~EntityPrivate()
 	{
-		mark_dying(this);
+		mark_dying();
 
-		for (auto c : children)
-		{
-			for (auto cc : c->components.get_all())
-				cc->on_event(EntityRemoved, nullptr);
-			c->event_listeners.call(EntityRemoved, nullptr);
-		}
-		for (auto c : components.get_all())
-			c->on_event(EntityDestroyed, nullptr);
-		event_listeners.call(EntityDestroyed, nullptr);
-
-		event_listeners.impl->release();
-
-		for (auto c : components.get_all())
-			f_delete(c);
-		for (auto c : children)
-			f_delete(c);
+		// TODO
+		//for (auto c : children)
+		//{
+		//	for (auto cc : c->components.get_all())
+		//		cc->on_event(EntityRemoved, nullptr);
+		//	c->event_listeners.call(EntityRemoved, nullptr);
+		//}
+		//for (auto c : components.get_all())
+		//	c->on_event(EntityDestroyed, nullptr);
+		//event_listeners.call(EntityDestroyed, nullptr);
 	}
 
-	static void update_visibility(Entity* e)
+	void EntityPrivate::mark_dying()
 	{
-		auto prev_visibility = e->global_visibility;
-		e->global_visibility = e->parent ? e->visible_ && e->parent->global_visibility : false;
-		if (e->global_visibility != prev_visibility)
-		{
-			for (auto c : e->components.get_all())
-				c->on_event(EntityVisibilityChanged, nullptr);
-			e->event_listeners.call(EntityVisibilityChanged, nullptr);
-			auto p = e->parent;
-			if (p)
-			{
-				for (auto c : p->components.get_all())
-					c->on_event(EntityChildVisibilityChanged, nullptr);
-				p->event_listeners.call(EntityChildVisibilityChanged, e);
-			}
-		}
-
-		for (auto c : e->children)
-			update_visibility(c);
+		_dying = true;
+		for (auto& c : _children)
+			c->mark_dying();
 	}
 
-	void Entity::set_visible(bool v)
+	void EntityPrivate::update_visibility()
 	{
-		if (visible_ == v)
+		// TODO
+		//auto prev_visibility = e->global_visibility;
+		//e->global_visibility = e->parent ? e->visible_ && e->parent->global_visibility : false;
+		//if (e->global_visibility != prev_visibility)
+		//{
+		//	for (auto c : e->components.get_all())
+		//		c->on_event(EntityVisibilityChanged, nullptr);
+		//	e->event_listeners.call(EntityVisibilityChanged, nullptr);
+		//	auto p = e->parent;
+		//	if (p)
+		//	{
+		//		for (auto c : p->components.get_all())
+		//			c->on_event(EntityChildVisibilityChanged, nullptr);
+		//		p->event_listeners.call(EntityChildVisibilityChanged, e);
+		//	}
+		//}
+
+		//for (auto c : e->children)
+		//	update_visibility(c);
+	}
+
+	void EntityPrivate::set_visible(bool v)
+	{
+		if (_visible == v)
 			return;
-		visible_ = v;
-		update_visibility(this);
+		_visible = v;
+		update_visibility();
 	}
 
 	void Entity::add_component(Component* c)

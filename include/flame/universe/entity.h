@@ -49,6 +49,8 @@ namespace flame
 		virtual void add_component(Component* c) = 0;
 		virtual void remove_component(Component* c) = 0;
 
+		virtual void data_changed(Component* c, uint hash, void* sender) = 0;
+
 		//inline bool is_child_of_r(const Entity* p, const Entity* e) const
 		//{
 		//	if (!e)

@@ -4,8 +4,7 @@ namespace flame
 {
 	Component::Component(const char* name) :
 		Object(name),
-		entity(nullptr),
-		user_data(nullptr)
+		entity(nullptr)
 	{
 	}
 
