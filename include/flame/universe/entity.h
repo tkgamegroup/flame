@@ -27,7 +27,7 @@ namespace flame
 #define get_component(T) (T*)get_component_plain(FLAME_CHASH(#T))
 		virtual void add_component(Component* c) = 0;
 		virtual void remove_component(Component* c, bool destroy = true) = 0;
-		virtual void data_changed(Component* c, uint hash, void* sender) = 0;
+		virtual void data_changed(Component* c, uint hash) = 0;
 
 		virtual uint get_children_count() const = 0;
 		virtual Entity* get_child(uint idx) const = 0;

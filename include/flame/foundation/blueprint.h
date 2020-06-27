@@ -12,64 +12,23 @@ namespace flame
 
 	enum bpNodeType
 	{
-		bpNodeReal,
-		bpNodeRefRead,
-		bpNodeRefWrite
+		bpNodeEnumSingle,
+		bpNodeEnumMulti,
+		bpNodeVariable,
+		bpNodeArray,
+		bpNodeGroup,
+		bpNodeUdt
+	};
+
+	enum bpObjectRule
+	{
+		bpObjectEntity,
+		bpObjectRefRead,
+		bpObjectRefWrite
 	};
 
 	struct bpNode;
 	struct bpScene;
-
-	inline char bp_break_node_type(const std::string& name, std::string* parameters = nullptr)
-	{
-		{
-			static FLAME_SAL(prefix, "EnumSingle");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'S';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "EnumMulti");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'M';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "Variable");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'V';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "Array");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = std::string(name.begin() + prefix.l + 1, name.end() - 1);
-				return 'A';
-			}
-		}
-		{
-			static FLAME_SAL(prefix, "Group");
-			if (name.compare(0, prefix.l, prefix.s) == 0)
-			{
-				if (parameters)
-					*parameters = "";
-				return 'G';
-			}
-		}
-		return 0;
-	}
 
 	inline bool bp_can_link(const TypeInfo* in_type, const TypeInfo* out_out)
 	{
@@ -122,8 +81,9 @@ namespace flame
 		virtual Vec2f get_pos() const = 0;
 		virtual void set_pos(const Vec2f& pos) = 0;
 
-		virtual bpNodeType get_node_type() const = 0;
-		virtual const char* get_type() const = 0;
+		virtual bpNodeType get_type() const = 0;
+		virtual const char* get_type_parameter() const = 0;
+		virtual bpObjectRule get_object_rule() const = 0;
 		virtual UdtInfo* get_udt() const = 0;
 
 		virtual uint get_inputs_count() const = 0;
@@ -135,7 +95,7 @@ namespace flame
 
 		virtual uint get_children_count() const = 0;
 		virtual bpNode* get_child(uint idx) const = 0;
-		virtual bpNode* add_child(const char* id, const char* type, bpNodeType node_type = bpNodeReal) = 0;
+		virtual bpNode* add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule = bpObjectEntity) = 0;
 		virtual void remove_child(bpNode* n) = 0;
 		virtual bpNode* find_child(const char* name) const = 0;
 		virtual bpNode* find_child(const Guid& guid) const = 0;

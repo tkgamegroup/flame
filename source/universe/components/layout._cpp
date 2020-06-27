@@ -51,7 +51,7 @@ namespace flame
 		{
 			auto w = element->size.x() - p.xy().sum();
 			if (!(x_flags & AlignGreedy) || w >= a->min_width)
-				e->set_width(w, this);
+				e->set_width(w);
 			e->set_x(p.x(), this);
 		}
 		if (x_flags & AlignMin)
@@ -85,11 +85,11 @@ namespace flame
 	{
 		auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
 		if (!(x_flags & AlignMinMax))
-			element->set_width(w, this);
+			element->set_width(w);
 		else if (x_flags & AlignGreedy)
 		{
 			aligner->set_min_width(w);
-			element->set_width(max(element->size.x(), w), this);
+			element->set_width(max(element->size.x(), w));
 		}
 	}
 
@@ -162,7 +162,7 @@ namespace flame
 			case FLAME_CHASH("scale"):
 			case FLAME_CHASH("size"):
 			case FLAME_CHASH("inner_padding"):
-				if (management)
+				if (management && !updating)
 					management->add_to_update_list(this);
 				break;
 			}
@@ -200,6 +200,8 @@ namespace flame
 			debug_level = 0;
 		}
 #endif
+
+		updating = true;
 
 		std::vector<std::pair<cElement*, cAligner*>> als;
 		for (auto c : entity->children)
@@ -282,7 +284,7 @@ namespace flame
 					auto _w = w * aligner->width_factor;
 					if (x_flags & AlignGreedy)
 						_w += aligner->min_width;
-					element->set_width(_w, this);
+					element->set_width(_w);
 				}
 				element->set_x(scroll_offset.x() + x, this);
 				x += element->size.x() + item_padding;
@@ -467,6 +469,8 @@ namespace flame
 		}
 			break;
 		}
+
+		updating = false;
 	}
 
 	void cLayout::set_x_scroll_offset(float x)

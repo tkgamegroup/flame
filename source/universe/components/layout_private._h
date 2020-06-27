@@ -7,6 +7,7 @@ namespace flame
 	struct cLayoutPrivate : cLayout
 	{
 		bool pending_update;
+		bool updating = false;
 
 		cLayoutPrivate(LayoutType _type);
 		~cLayoutPrivate();

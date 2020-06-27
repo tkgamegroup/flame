@@ -45,7 +45,7 @@ namespace flame
 		Component* _get_component_plain(uint hash) const;
 		void _add_component(Component* c);
 		void _remove_component(Component* c, bool destroy = true);
-		void _data_changed(Component* c, uint hash, void* sender);
+		void _data_changed(Component* c, uint hash);
 
 		void _enter_world();
 		void _leave_world();
@@ -75,7 +75,7 @@ namespace flame
 		Component* get_component_plain(uint hash) const override { return _get_component_plain(hash); }
 		void add_component(Component * c) override { _add_component(c); }
 		void remove_component(Component* c, bool destroy) override { _remove_component(c, destroy); }
-		void data_changed(Component* c, uint hash, void* sender) override { _data_changed(c, hash, sender); }
+		void data_changed(Component* c, uint hash) override { _data_changed(c, hash); }
 
 		uint get_children_count() const override { return _children.size(); }
 		Entity* get_child(uint idx) const override { return _children[idx].get(); }

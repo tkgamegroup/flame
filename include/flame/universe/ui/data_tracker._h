@@ -9,6 +9,8 @@ namespace flame
 	{
 		void* data;
 
+		bool updating = false;
+
 		cDataTracker() :
 			Component("cDataTracker")
 		{
@@ -39,7 +41,8 @@ namespace flame
 				if (hash == FLAME_CHASH("index"))
 				{
 					auto thiz = c.thiz<cEnumSingleDataTracker>();
-					thiz->on_changed(thiz->capture, thiz->info->items[thiz->combobox->index]->value);
+					if (!thiz->updating)
+						thiz->on_changed(thiz->capture, thiz->info->items[thiz->combobox->index]->value);
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -54,7 +57,9 @@ namespace flame
 		{
 			auto idx = -1;
 			info->find_item(*(int*)data, &idx);
-			combobox->set_index(idx, INVALID_POINTER);
+			updating = true;
+			combobox->set_index(idx);
+			updating = false;
 		}
 	};
 
@@ -82,15 +87,18 @@ namespace flame
 				checkboxes[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					if (hash == FLAME_CHASH("checked"))
 					{
-						auto idx = c.data<int>();
 						auto thiz = c.thiz<cEnumMultiDataTracker>();
-						auto v = *(int*)thiz->data;
-						auto f = thiz->info->items[idx]->value;
-						if (thiz->checkboxes[idx]->checked)
-							v |= f;
-						else
-							v &= ~f;
-						thiz->on_changed(thiz->capture, v);
+						if (!thiz->updating)
+						{
+							auto idx = c.data<int>();
+							auto v = *(int*)thiz->data;
+							auto f = thiz->info->items[idx]->value;
+							if (thiz->checkboxes[idx]->checked)
+								v |= f;
+							else
+								v &= ~f;
+							thiz->on_changed(thiz->capture, v);
+						}
 					}
 					return true;
 				}, Capture().set_data(&i).set_thiz(this));
@@ -104,8 +112,10 @@ namespace flame
 
 		void update_view() override
 		{
+			updating = true;
 			for (auto i = 0; i < checkboxes.size(); i++)
-				checkboxes[i]->set_checked(*(int*)data & info->items[i]->value, INVALID_POINTER);
+				checkboxes[i]->set_checked(*(int*)data & info->items[i]->value);
+			updating = false;
 		}
 	};
 
@@ -129,7 +139,8 @@ namespace flame
 				if (hash == FLAME_CHASH("checked"))
 				{
 					auto thiz = c.thiz<cBoolDataTracker>();
-					thiz->on_changed(thiz->capture, thiz->checkbox->checked);
+					if (!thiz->updating)
+						thiz->on_changed(thiz->capture, thiz->checkbox->checked);
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -142,7 +153,9 @@ namespace flame
 
 		void update_view() override
 		{
-			checkbox->set_checked(*(bool*)data, INVALID_POINTER);
+			updating = true;
+			checkbox->set_checked(*(bool*)data);
+			updating = false;
 		}
 	};
 
@@ -176,17 +189,20 @@ namespace flame
 				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = c.thiz<cDigitalDataTracker>();
-					T v;
-					try
+					if (!thiz->updating)
 					{
-						v = sto<T>(c.current<cText>()->text.v);
+						T v;
+						try
+						{
+							v = sto<T>(c.current<cText>()->text.v);
+						}
+						catch (...)
+						{
+							v = 0;
+						}
+						thiz->on_changed(thiz->capture, v, true);
+						thiz->update_view();
 					}
-					catch (...)
-					{
-						v = 0;
-					}
-					thiz->on_changed(thiz->capture, v, true);
-					thiz->update_view();
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -196,22 +212,25 @@ namespace flame
 				if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 				{
 					auto thiz = c.thiz<cDigitalDataTracker>();
-					auto v = *(T*)thiz->data;
-					if (!thiz->drag_changed)
-						thiz->drag_start = v;
-					if constexpr (std::is_floating_point<T>::value)
-						v += pos.x() * 0.05f;
-					else
-						v += pos.x();
-					thiz->on_changed(thiz->capture, v, false);
-					thiz->drag_changed = true;
-					thiz->update_view();
+					if (!thiz->updating)
+					{
+						auto v = *(T*)thiz->data;
+						if (!thiz->drag_changed)
+							thiz->drag_start = v;
+						if constexpr (std::is_floating_point<T>::value)
+							v += pos.x() * 0.05f;
+						else
+							v += pos.x();
+						thiz->on_changed(thiz->capture, v, false);
+						thiz->drag_changed = true;
+						thiz->update_view();
+					}
 				}
 				return true;
 			}, Capture().set_thiz(this));
 			d_er->state_listeners.add([](Capture& c, EventReceiverState) {
 				auto thiz = c.thiz<cDigitalDataTracker>();
-				if (thiz->drag_changed && !c.current<cEventReceiver>()->is_active())
+				if (!thiz->updating && thiz->drag_changed && !c.current<cEventReceiver>()->is_active())
 				{
 					auto temp = *(T*)thiz->data;
 					*(T*)thiz->data = thiz->drag_start;
@@ -234,8 +253,10 @@ namespace flame
 				str = to_wstring(*(T*)data);
 			else
 				str = to_wstring(*(T*)data);
-			edit_text->set_text(str.c_str(), -1, INVALID_POINTER);
-			drag_text->set_text(str.c_str(), -1, INVALID_POINTER);
+			updating = true;
+			edit_text->set_text(str.c_str(), -1);
+			drag_text->set_text(str.c_str(), -1);
+			updating = false;
 		}
 	};
 
@@ -270,19 +291,22 @@ namespace flame
 				edit_texts[i]->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 					if (hash == FLAME_CHASH("text"))
 					{
-						auto i = c.data<int>();
 						auto thiz = c.thiz<cDigitalVecDataTracker>();
-						auto v = *(Vec<N, T>*)thiz->data;
-						try
+						if (!thiz->updating)
 						{
-							v[i] = sto<T>(c.current<cText>()->text.v);
+							auto i = c.data<int>();
+							auto v = *(Vec<N, T>*)thiz->data;
+							try
+							{
+								v[i] = sto<T>(c.current<cText>()->text.v);
+							}
+							catch (...)
+							{
+								v[i] = 0;
+							}
+							thiz->on_changed(thiz->capture, v, true);
+							thiz->update_view();
 						}
-						catch (...)
-						{
-							v[i] = 0;
-						}
-						thiz->on_changed(thiz->capture, v, true);
-						thiz->update_view();
 					}
 					return true;
 				}, Capture().set_data(&i).set_thiz(this));
@@ -292,24 +316,27 @@ namespace flame
 				d_er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 					if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 					{
-						auto i = c.data<int>();
 						auto thiz = c.thiz<cDigitalVecDataTracker>();
-						auto v = *(Vec<N, T>*)thiz->data;
-						if (!thiz->drag_changed)
-							thiz->drag_start = v;
-						if constexpr (std::is_floating_point<T>::value)
-							v[i] += pos.x() * 0.05f;
-						else
-							v[i] += pos.x();
-						thiz->on_changed(thiz->capture, v, false);
-						thiz->drag_changed = true;
-						thiz->update_view();
+						if (!thiz->updating)
+						{
+							auto i = c.data<int>();
+							auto v = *(Vec<N, T>*)thiz->data;
+							if (!thiz->drag_changed)
+								thiz->drag_start = v;
+							if constexpr (std::is_floating_point<T>::value)
+								v[i] += pos.x() * 0.05f;
+							else
+								v[i] += pos.x();
+							thiz->on_changed(thiz->capture, v, false);
+							thiz->drag_changed = true;
+							thiz->update_view();
+						}
 					}
 					return true;
 				}, Capture().set_data(&i).set_thiz(this));
 				d_er->state_listeners.add([](Capture& c, EventReceiverState) {
 					auto thiz = c.thiz<cDigitalVecDataTracker>();
-					if (thiz->drag_changed && !c.current<cEventReceiver>()->is_active())
+					if (!thiz->updating && thiz->drag_changed && !c.current<cEventReceiver>()->is_active())
 					{
 						auto temp = *(Vec<N, T>*)thiz->data;
 						*(Vec<N, T>*)thiz->data = thiz->drag_start;
@@ -335,8 +362,10 @@ namespace flame
 					str = to_wstring((*(Vec<N, T>*)data)[i]);
 				else
 					str = to_wstring((*(Vec<N, T>*)data)[i]);
-				edit_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
-				drag_texts[i]->set_text(str.c_str(), -1, INVALID_POINTER);
+				updating = true;
+				edit_texts[i]->set_text(str.c_str(), -1);
+				drag_texts[i]->set_text(str.c_str(), -1);
+				updating = false;
 			}
 		}
 	};
@@ -365,7 +394,8 @@ namespace flame
 				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = c.thiz<cStringADataTracker>();
-					thiz->on_changed(thiz->capture, w2s(c.current<cText>()->text.str()).c_str());
+					if (!thiz->updating)
+						thiz->on_changed(thiz->capture, w2s(c.current<cText>()->text.str()).c_str());
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -378,7 +408,9 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", -1, INVALID_POINTER);
+			updating = true;
+			text->set_text(((StringA*)data)->v ? s2w(((StringA*)data)->str()).c_str() : L"", -1);
+			updating = false;
 		}
 	};
 
@@ -406,7 +438,8 @@ namespace flame
 				if (hash == FLAME_CHASH("text"))
 				{
 					auto thiz = c.thiz<cStringWDataTracker>();
-					thiz->on_changed(thiz->capture, c.current<cText>()->text.v);
+					if (!thiz->updating)
+						thiz->on_changed(thiz->capture, c.current<cText>()->text.v);
 				}
 				return true;
 			}, Capture().set_thiz(this));
@@ -419,7 +452,9 @@ namespace flame
 
 		void update_view() override
 		{
-			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", -1, INVALID_POINTER);
+			updating = true;
+			text->set_text(((StringW*)data)->v ? ((StringW*)data)->v : L"", -1);
+			updating = false;
 		}
 	};
 }

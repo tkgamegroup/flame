@@ -142,20 +142,18 @@ namespace flame
 		_components.erase(it);
 	}
 
-	void EntityPrivate::_data_changed(Component* c, uint hash, void* sender)
+	void EntityPrivate::_data_changed(Component* c, uint hash)
 	{
 		assert(c->entity == this);
-		if (sender == INVALID_POINTER)
-			return;
 		for (auto cc : _local_data_changed_dispatch_list)
 		{
 			if (cc != c)
-				cc->on_entity_component_data_changed(c, hash, sender);
+				cc->on_entity_component_data_changed(c, hash);
 		}
 		if (_parent)
 		{
 			for (auto cc : _parent->_child_data_changed_dispatch_list)
-				cc->on_entity_child_component_data_changed(c, hash, sender);
+				cc->on_entity_child_component_data_changed(c, hash);
 		}
 	}
 

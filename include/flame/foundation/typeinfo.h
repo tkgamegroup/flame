@@ -11,20 +11,11 @@ namespace flame
 		TypeEnumMulti,
 		TypeData,
 		TypePointer,
+		TypeArrayOfData,
+		TypeArrayOfPointer,
 
 		TypeTagCount
 	};
-
-	inline char type_tag(TypeTag tag)
-	{
-		static char names[] = {
-			'S',
-			'M',
-			'D',
-			'P'
-		};
-		return names[tag];
-	}
 
 	struct TypeInfo;
 	struct EnumInfo;
@@ -36,16 +27,20 @@ namespace flame
 	struct TypeInfo
 	{
 		virtual TypeTag get_tag() const = 0;
-		virtual bool get_is_array() const = 0;
-		virtual const char* get_base_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
-		virtual uint get_base_hash() const = 0;
-		virtual const char* get_name() const = 0; // tag[A]#base
-		virtual uint get_hash() const = 0;
+		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
+		virtual uint get_name_hash() const = 0;
+		virtual uint get_size() const = 0;
+
+		virtual void* create() const = 0;
+		virtual void destroy(void* p) const = 0;
+		virtual void copy(const void* src, void* dst) const = 0;
 
 		inline std::string serialize(const void* src) const;
 		inline void unserialize(const std::string& src, void* dst) const;
 		inline void copy_from(const void* src, void* dst, uint size = 0) const;
 	};
+
+#define FLAME_TYPE_HASH(tag, name_hash) hash_update(name_hash, tag)
 
 	enum VariableFlags
 	{
@@ -63,7 +58,6 @@ namespace flame
 		virtual uint get_name_hash() const = 0;
 		virtual uint get_flags() const = 0;
 		virtual uint get_offset() const = 0;
-		virtual uint get_size() const = 0;
 		virtual const void* get_default_value() const = 0;
 
 	};
@@ -97,6 +91,19 @@ namespace flame
 		virtual uint get_parameters_count() const = 0;
 		virtual TypeInfo* get_parameter(uint idx) const = 0;
 		virtual const char* get_code() const = 0;
+
+		inline bool check_function(FunctionInfo* info, const char* type, const std::vector<const char*>& parameters)
+		{
+			if (info->get_type()->get_hash() != FLAME_HASH(type) ||
+				info->get_parameters_count() != parameters.size())
+				return false;
+			for (auto i = 0; i < parameters.size(); i++)
+			{
+				if (info->get_parameter(i)->get_hash() != FLAME_HASH(parameters[i]))
+					return false;
+			}
+			return true;
+		}
 	};
 
 	struct UdtInfo
@@ -141,27 +148,11 @@ namespace flame
 		virtual const void* get_library() const = 0;
 		virtual const wchar_t* get_library_name() const = 0;
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* library_filename, bool add_to_global, bool load_with_library);
+		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* library_filename, bool load_with_library);
 	};
-
-	FLAME_FOUNDATION_EXPORTS void push_global_typeinfo_database(TypeInfoDatabase* db);
-	FLAME_FOUNDATION_EXPORTS void pop_global_typeinfo_database();
 
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint hash);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint hash);
-
-	inline bool check_function(FunctionInfo* info, const char* type, const std::vector<const char*>& parameters)
-	{
-		if (info->get_type()->get_hash() != FLAME_HASH(type) ||
-			info->get_parameters_count() != parameters.size())
-			return false;
-		for (auto i = 0; i < parameters.size(); i++)
-		{
-			if (info->get_parameter(i)->get_hash() != FLAME_HASH(parameters[i]))
-				return false;
-		}
-		return true;
-	}
 
 	inline uint basic_type_size(uint type_hash)
 	{
@@ -245,12 +236,12 @@ namespace flame
 
 	std::string TypeInfo::serialize(const void* src) const
 	{
-		auto base_hash = get_base_hash();
+		auto name_hash = get_name_hash();
 		switch (get_tag())
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(base_hash);
+			auto e = find_enum(name_hash);
 			assert(e);
 			auto i = e->find_item(*(int*)src);
 			return i ? i->get_name() : "";
@@ -258,7 +249,7 @@ namespace flame
 		case TypeEnumMulti:
 		{
 			std::string str;
-			auto e = find_enum(base_hash);
+			auto e = find_enum(name_hash);
 			assert(e);
 			auto v = *(int*)src;
 			auto count = e->get_items_count();
@@ -275,7 +266,7 @@ namespace flame
 			return str;
 		}
 		case TypeData:
-			switch (base_hash)
+			switch (name_hash)
 			{
 			case FLAME_CHASH("bool"):
 				return *(bool*)src ? "1" : "0";
@@ -336,12 +327,12 @@ namespace flame
 
 	void TypeInfo::unserialize(const std::string& src, void* dst) const
 	{
-		auto base_hash = get_base_hash();
+		auto name_hash = get_name_hash();
 		switch (get_tag())
 		{
 		case TypeEnumSingle:
 		{
-			auto e = find_enum(base_hash);
+			auto e = find_enum(name_hash);
 			assert(e);
 			*(int*)dst = e->find_item(src.c_str())->get_value();
 		}
@@ -349,7 +340,7 @@ namespace flame
 		case TypeEnumMulti:
 		{
 			auto v = 0;
-			auto e = find_enum(base_hash);
+			auto e = find_enum(name_hash);
 			assert(e);
 			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
@@ -358,7 +349,7 @@ namespace flame
 		}
 			return;
 		case TypeData:
-			switch (base_hash)
+			switch (name_hash)
 			{
 			case FLAME_CHASH("bool"):
 				*(bool*)dst = (src != "0");
@@ -445,7 +436,7 @@ namespace flame
 	{
 		auto tag = get_tag();
 		if (tag == TypeData)
-			basic_type_copy(get_base_hash(), src, dst, size);
+			basic_type_copy(get_name_hash(), src, dst, size);
 		else if (tag == TypeEnumSingle || tag == TypeEnumMulti)
 			memcpy(dst, src, sizeof(int));
 		else if (tag == TypePointer)

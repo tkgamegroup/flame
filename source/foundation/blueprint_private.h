@@ -61,8 +61,9 @@ namespace flame
 		std::string _id;
 		Vec2f _pos = Vec2f(0.f);
 
-		bpNodeType _node_type;
-		std::string _type;
+		bpNodeType _type;
+		std::string _type_parameter;
+		bpObjectRule _object_rule;
 		UdtInfoPrivate* _udt = nullptr;
 
 		std::vector<std::unique_ptr<bpSlotPrivate>> _inputs;
@@ -81,7 +82,7 @@ namespace flame
 		std::vector<bpNodePrivate*> _update_list;
 		bool _need_rebuild_update_list = true;
 
-		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType node_type, const std::string& type);
+		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
 		~bpNodePrivate();
 
 		bool _set_id(const std::string& id);
@@ -89,7 +90,7 @@ namespace flame
 		bpSlotPrivate* _find_input(const std::string& name) const;
 		bpSlotPrivate* _find_output(const std::string& name) const;
 
-		bpNodePrivate* _add_child(const std::string& id, const std::string& type, bpNodeType node_type);
+		bpNodePrivate* _add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
 		void _remove_child(bpNodePrivate* n);
 		bpNodePrivate* _find_child(const std::string& name) const;
 		bpNodePrivate* _find_child(const Guid& guid) const;
@@ -106,8 +107,9 @@ namespace flame
 		Vec2f get_pos() const override { return _pos; }
 		void set_pos(const Vec2f& pos) override { _pos = pos; }
 
-		bpNodeType get_node_type() const override { return _node_type; }
-		const char* get_type() const override { return _type.c_str(); }
+		bpNodeType get_type() const override { return _type; }
+		const char* get_type_parameter() const override { return _type_parameter.c_str(); }
+		bpObjectRule get_object_rule() const override { return _object_rule; }
 		UdtInfo* get_udt() const override { return (UdtInfo*)_udt; }
 
 		uint get_inputs_count() const override { return _inputs.size(); }
@@ -119,7 +121,7 @@ namespace flame
 
 		uint get_children_count() const override { return _children.size(); }
 		bpNode* get_child(uint idx) const override { return _children[idx].get(); }
-		bpNode* add_child(const char* id, const char* type, bpNodeType node_type) override { return _add_child(id, std::string(type), node_type); }
+		bpNode* add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule) override { return _add_child(id, type, type_parameter, object_rule); }
 		void remove_child(bpNode* n) override { remove_child((bpNodePrivate*)n); }
 		bpNode* find_child(const char* name) const override { return _find_child(name); }
 		bpNode* find_child(const Guid& guid) const override { return _find_child(guid); }

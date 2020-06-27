@@ -63,7 +63,7 @@ namespace flame
 		virtual void on_entity_component_removed(Component* c) {}
 
 		// local data changed, other component on this component's entity data changed
-		virtual void on_entity_component_data_changed(Component* c, uint data_name_hash, void* sender) {}
+		virtual void on_entity_component_data_changed(Component* c, uint data_name_hash) {}
 
 		// local event, this component's entity added another entity
 		virtual void on_entity_added_child(Entity* e) {}
@@ -84,6 +84,6 @@ namespace flame
 		virtual void on_entity_child_component_removed(Component* c) {}
 
 		// child data changed, component on this component's entity's child data changed
-		virtual void on_entity_child_component_data_changed(Component* c, uint data_name_hash, void* sender) {}
+		virtual void on_entity_child_component_data_changed(Component* c, uint data_name_hash) {}
 	};
 }

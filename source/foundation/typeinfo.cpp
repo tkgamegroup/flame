@@ -8,57 +8,22 @@ namespace flame
 	std::map<uint, std::unique_ptr<TypeInfoPrivate>> typeinfos;
 	std::vector<TypeInfoDatabasePrivate*> global_typeinfo_databases;
 
-	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& base_name, bool is_array) :
+	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& name) :
 		_tag(tag),
-		_base_name(base_name),
-		_is_array(is_array)
+		_name(name)
 	{
-		_base_hash = FLAME_HASH(base_name.c_str());
-		_name = get_name(tag, base_name, is_array);
-		_hash = FLAME_HASH(_name.c_str());
+		_name_hash = FLAME_HASH(_name.c_str());
 	}
 
-	std::string TypeInfoPrivate::get_name(TypeTag tag, const std::string& base_name, bool is_array)
+	TypeInfoPrivate* TypeInfoPrivate::_get(TypeTag tag, const std::string& name)
 	{
-		std::string ret;
-		ret = type_tag(tag);
-		if (is_array)
-			ret += "A";
-		ret += "#" + base_name;
-		return ret;
-	}
-
-	TypeInfoPrivate* TypeInfoPrivate::_get(TypeTag tag, const std::string& base_name, bool is_array)
-	{
-		auto hash = FLAME_HASH(get_name(tag, base_name, is_array).c_str());
+		auto hash = FLAME_TYPE_HASH(tag, FLAME_HASH(name.c_str()));
 		auto it = typeinfos.find(hash);
 		if (it != typeinfos.end())
 			return it->second.get();
-		auto t = new TypeInfoPrivate(tag, base_name, is_array);
+		auto t = new TypeInfoPrivate(tag, name);
 		typeinfos.emplace(hash, t);
 		return t;
-	}
-
-	TypeInfoPrivate* TypeInfoPrivate::_get(const std::string& str)
-	{
-		TypeTag tag;
-		auto pos_hash = str.find('#');
-		{
-			auto ch = str[0];
-			for (auto i = 0; i < TypeTagCount; i++)
-			{
-				if (type_tag((TypeTag)i) == ch)
-				{
-					tag = (TypeTag)i;
-					break;
-				}
-			}
-		}
-		auto is_array = false;
-		if (pos_hash > 1 && str[1] == 'A')
-			is_array = true;
-		auto base_name = std::string(str.begin() + pos_hash + 1, str.end());
-		return _get(tag, base_name, is_array);
 	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset, uint size) :
@@ -72,9 +37,10 @@ namespace flame
 		_default_value(nullptr)
 	{
 		_name_hash = FLAME_HASH(name.c_str());
-		if (!type->_is_array && type->_tag != TypePointer &&
-			!(type->_tag == TypeData && (type->_base_hash == FLAME_CHASH("flame::StringA") || type->_base_hash == FLAME_CHASH("flame::StringW"))))
+		if (auto tags = std::array{ TypeEnumSingle, TypeEnumMulti, TypeData }; 
+			std::any_of(tags.begin(), tags.end(), type->_tag) && type->_name_hash != FLAME_CHASH("flame::StringA") && type->_name_hash != FLAME_CHASH("flame::StringW"))
 		{
+			if (type->_tag == TypeData)
 			_default_value = new char[size];
 			memset(_default_value, 0, size);
 		}
@@ -290,16 +256,6 @@ namespace flame
 		return db;
 	}
 
-	void _push_global_typeinfo_database(TypeInfoDatabasePrivate* db)
-	{
-		global_typeinfo_databases.push_back(db);
-	}
-
-	void _pop_global_typeinfo_database()
-	{
-		global_typeinfo_databases.erase(global_typeinfo_databases.begin() + global_typeinfo_databases.size() - 1);
-	}
-
 	EnumInfoPrivate* _find_enum(uint hash)
 	{
 		for (auto db : global_typeinfo_databases)
@@ -320,9 +276,6 @@ namespace flame
 		}
 		return nullptr;
 	}
-
-	void push_global_typeinfo_database(TypeInfoDatabase* db) { _push_global_typeinfo_database((TypeInfoDatabasePrivate*)db); }
-	void pop_global_typeinfo_database() { _pop_global_typeinfo_database(); }
 
 	EnumInfo* find_enum(uint hash) { return _find_enum(hash); }
 	UdtInfo* find_udt(uint hash) { return _find_udt(hash); }

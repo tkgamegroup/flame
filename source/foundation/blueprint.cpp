@@ -70,14 +70,12 @@ namespace flame
 				return false;
 		}
 
-		const auto& base_name = _type->_base_name;
-
 		{
 			auto o = _links[0];
 			if (o)
 			{
 				find_and_erase(o->_links, this);
-				if (base_name == "ListenerHub")
+				if (_type->_name == "ListenerHub")
 					(*(ListenerHub<void(Capture&)>**)_data)->remove(_listener);
 			}
 		}
@@ -86,7 +84,7 @@ namespace flame
 		if (target)
 		{
 			target->_links.push_back(this);
-			if (base_name == "ListenerHub")
+			if (_type->_name == "ListenerHub")
 			{
 				auto p = target->_data;
 				memcpy(_data, &p, sizeof(void*));
@@ -102,218 +100,208 @@ namespace flame
 		return true;
 	}
 
-	bpNodePrivate::bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType node_type, const std::string& type) :
+	bpNodePrivate::bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule) :
 		_scene(scene),
 		_parent(parent),
 		_id(id),
-		_node_type(node_type),
+		_object_rule(object_rule),
 		_type(type)
 	{
 		user_data = nullptr;
 
-		std::string parameters;
-		auto t = bp_break_node_type(type, &parameters);
-		if (t != 0)
+		switch (type)
 		{
-			assert(node_type == bpNodeReal);
-
-			switch (t)
-			{
-			case 'S':
-			{
+		case bpNodeEnumSingle:
+		{
+			assert(_object_rule == bpObjectEntity);
 #pragma pack(1)
-				struct Dummy
-				{
-					int in;
-					int chk;
-
-					int out;
-					float res;
-
-					void update()
-					{
-						out = in;
-						res = in == chk ? 1.f : 0.f;
-					}
-				};
-#pragma pack()
-				node_type = bpNodeReal;
-				auto size = _udt->_size;
-				_object = malloc(size);
-				memset(_object, 0, size);
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeEnumSingle, parameters), "in", offsetof(Dummy, in), sizeof(Dummy::in), nullptr));
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfoPrivate::_get(TypeEnumSingle, parameters), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk), nullptr));
-				_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeEnumSingle, parameters), "out", offsetof(Dummy, out), sizeof(Dummy::out), nullptr));
-				_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfoPrivate::_get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res), nullptr));
-				_update_addr = f2v(&Dummy::update);
-			}
-				break;
-			case 'M':
+			struct Dummy
 			{
-#pragma pack(1)
-				struct Dummy
+				int in;
+				int chk;
+
+				int out;
+				float res;
+
+				void update()
 				{
-					int in;
-					int chk;
-
-					int out;
-					float res;
-
-					void update()
-					{
-						out = in;
-						res = (in & chk) ? 1.f : 0.f;
-					}
-				};
-#pragma pack()
-				node_type = bpNodeReal;
-				auto size = sizeof(Dummy);
-				_object = malloc(size);
-				memset(_object, 0, size);
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeEnumMulti, parameters), "in", offsetof(Dummy, in), sizeof(Dummy::in), nullptr));
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfoPrivate::_get(TypeEnumSingle, parameters), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk), nullptr));
-				_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeEnumMulti, parameters), "out", offsetof(Dummy, out), sizeof(Dummy::out), nullptr));
-				_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfoPrivate::_get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res), nullptr));
-				_update_addr = f2v(&Dummy::update);
-			}
-				break;
-			case 'V':
-			{
-#pragma pack(1)
-				struct Dummy
-				{
-					uint type_hash;
-					uint type_size;
-
-					void dtor()
-					{
-						auto in = (char*)&type_size + sizeof(uint);
-						auto out = (char*)&type_size + sizeof(uint) + type_size;
-						basic_type_dtor(type_hash, in);
-						basic_type_dtor(type_hash, out);
-					}
-
-					void update()
-					{
-						auto in = (char*)&type_size + sizeof(uint);
-						auto out = (char*)&type_size + sizeof(uint) + type_size;
-						basic_type_copy(type_hash, in, out, type_size);
-					}
-				};
-#pragma pack()
-				auto type_hash = FLAME_HASH(parameters.c_str());
-				auto type_size = basic_type_size(type_hash);
-
-				node_type = bpNodeReal;
-				auto size = sizeof(Dummy) + type_size * 2;
-				_object = malloc(size);
-				memset(_object, 0, size);
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeData, parameters), "in", sizeof(Dummy), type_size, nullptr));
-				_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeData, parameters), "out", sizeof(Dummy) + type_size, type_size, nullptr));
-				_dtor_addr = f2v(&Dummy::dtor);
-				_update_addr = f2v(&Dummy::update);
-				auto& obj = *(Dummy*)_object;
-				obj.type_hash = type_hash;
-				obj.type_size = type_size;
-			}
-				break;
-			case 'A':
-			{
-				auto sp = SUS::split(parameters, '+');
-#pragma pack(1)
-				struct Dummy
-				{
-					uint type_hash;
-					uint type_size;
-					uint length;
-
-					void dtor()
-					{
-						for (auto i = 0; i < length; i++)
-							basic_type_dtor(type_hash, (char*)&length + sizeof(uint) + type_size * i);
-						auto& out = *(Array<int>*)((char*)&length + sizeof(uint) + type_size * length);
-						for (auto i = 0; i < out.s; i++)
-							basic_type_dtor(type_hash, (char*)out.v + type_size * i);
-						f_free(out.v);
-					}
-
-					void update()
-					{
-						auto& out = *(Array<int>*)((char*)&length + sizeof(uint) + type_size * length);
-						if (out.s != length)
-						{
-							out.s = length;
-							auto m_size = type_size * length;
-							f_free(out.v);
-							out.v = (int*)f_malloc(m_size);
-							memset(out.v, 0, m_size);
-						}
-						for (auto i = 0; i < length; i++)
-						{
-							auto v = (char*)&length + sizeof(uint) + type_size * i;
-							basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
-						}
-					}
-				};
-#pragma pack()
-				auto tag = TypeData;
-				auto type_name = sp[1];
-				auto base_name = type_name;
-				if (type_name.back() == '*')
-				{
-					base_name.erase(base_name.end() - 1);
-					tag = TypePointer;
+					out = in;
+					res = in == chk ? 1.f : 0.f;
 				}
-				auto type_hash = FLAME_HASH(base_name.c_str());
-				uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
-				auto length = stoi(sp[0]);
-				auto size = sizeof(Dummy) + type_size * length + sizeof(Array<int>);
-				_object = malloc(size);
-				memset(_object, 0, size);
-				for (auto i = 0; i < length; i++)
-					_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, TypeInfoPrivate::_get(tag, base_name), std::to_string(i), sizeof(Dummy) + type_size * i, type_size, nullptr));
-				_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeData, type_name, true), "out", sizeof(Dummy) + type_size * length, sizeof(Array<int>), nullptr));
-				_dtor_addr = f2v(&Dummy::dtor);
-				_update_addr = f2v(&Dummy::update);
-				auto& obj = *(Dummy*)_object;
-				obj.type_hash = type_hash;
-				obj.type_size = type_size;
-				obj.length = length;
-			}
-				break;
-			case 'G':
-			{
-#pragma pack(1)
-				struct Dummy
-				{
-					ListenerHub<void()>* signal;
-				};
+			};
 #pragma pack()
-				node_type = bpNodeReal;
-				auto size = sizeof(Dummy);
-				_object = malloc(size);
-				memset(_object, 0, size);
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), sizeof(Dummy::signal), nullptr));
-			}
-				break;
-			default:
-				assert(0);
-				printf("wrong type in add node: %s\n", type.c_str());
-			}
+			auto size = _udt->_size;
+			_object = malloc(size);
+			memset(_object, 0, size);
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "in", offsetof(Dummy, in), sizeof(Dummy::in), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "out", offsetof(Dummy, out), sizeof(Dummy::out), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfoPrivate::_get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res), nullptr));
+			_update_addr = f2v(&Dummy::update);
 		}
-		else
+			break;
+		case bpNodeEnumMulti:
 		{
-			_udt = _find_udt(FLAME_HASH(type.c_str()));
+			assert(_object_rule == bpObjectEntity);
+#pragma pack(1)
+			struct Dummy
+			{
+				int in;
+				int chk;
+
+				int out;
+				float res;
+
+				void update()
+				{
+					out = in;
+					res = (in & chk) ? 1.f : 0.f;
+				}
+			};
+#pragma pack()
+			auto size = sizeof(Dummy);
+			_object = malloc(size);
+			memset(_object, 0, size);
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeEnumMulti, type_parameter), "in", offsetof(Dummy, in), sizeof(Dummy::in), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeEnumMulti, type_parameter), "out", offsetof(Dummy, out), sizeof(Dummy::out), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfoPrivate::_get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res), nullptr));
+			_update_addr = f2v(&Dummy::update);
+		}
+			break;
+		case bpNodeVariable:
+		{
+			assert(_object_rule == bpObjectEntity);
+#pragma pack(1)
+			struct Dummy
+			{
+				uint type_hash;
+				uint type_size;
+
+				void dtor()
+				{
+					auto in = (char*)&type_size + sizeof(uint);
+					auto out = (char*)&type_size + sizeof(uint) + type_size;
+					basic_type_dtor(type_hash, in);
+					basic_type_dtor(type_hash, out);
+				}
+
+				void update()
+				{
+					auto in = (char*)&type_size + sizeof(uint);
+					auto out = (char*)&type_size + sizeof(uint) + type_size;
+					basic_type_copy(type_hash, in, out, type_size);
+				}
+			};
+#pragma pack()
+			auto type_hash = FLAME_HASH(type_parameter.c_str());
+			auto type_size = basic_type_size(type_hash);
+
+			auto size = sizeof(Dummy) + type_size * 2;
+			_object = malloc(size);
+			memset(_object, 0, size);
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeData, type_parameter), "in", sizeof(Dummy), type_size, nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeData, type_parameter), "out", sizeof(Dummy) + type_size, type_size, nullptr));
+			_dtor_addr = f2v(&Dummy::dtor);
+			_update_addr = f2v(&Dummy::update);
+			auto& obj = *(Dummy*)_object;
+			obj.type_hash = type_hash;
+			obj.type_size = type_size;
+		}
+			break;
+		case bpNodeArray:
+		{
+			assert(_object_rule == bpObjectEntity);
+			auto sp = SUS::split(type_parameter, ',');
+#pragma pack(1)
+			struct Dummy
+			{
+				uint type_hash;
+				uint type_size;
+				uint length;
+
+				void dtor()
+				{
+					for (auto i = 0; i < length; i++)
+						basic_type_dtor(type_hash, (char*)&length + sizeof(uint) + type_size * i);
+					auto& out = *(Array<int>*)((char*)&length + sizeof(uint) + type_size * length);
+					for (auto i = 0; i < out.s; i++)
+						basic_type_dtor(type_hash, (char*)out.v + type_size * i);
+					f_free(out.v);
+				}
+
+				void update()
+				{
+					auto& out = *(Array<int>*)((char*)&length + sizeof(uint) + type_size * length);
+					if (out.s != length)
+					{
+						out.s = length;
+						auto m_size = type_size * length;
+						f_free(out.v);
+						out.v = (int*)f_malloc(m_size);
+						memset(out.v, 0, m_size);
+					}
+					for (auto i = 0; i < length; i++)
+					{
+						auto v = (char*)&length + sizeof(uint) + type_size * i;
+						basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+					}
+				}
+			};
+#pragma pack()
+			auto tag = TypeData;
+			auto type_name = sp[1];
+			auto base_name = type_name;
+			if (type_name.back() == '*')
+			{
+				base_name.erase(base_name.end() - 1);
+				tag = TypePointer;
+			}
+			auto type_hash = FLAME_HASH(base_name.c_str());
+			uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
+			auto length = stoi(sp[0]);
+			auto size = sizeof(Dummy) + type_size * length + sizeof(Array<int>);
+			_object = malloc(size);
+			memset(_object, 0, size);
+			for (auto i = 0; i < length; i++)
+				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, TypeInfoPrivate::_get(tag, base_name), std::to_string(i), sizeof(Dummy) + type_size * i, type_size, nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeArrayOfData, type_name), "out", sizeof(Dummy) + type_size * length, sizeof(Array<int>), nullptr));
+			_dtor_addr = f2v(&Dummy::dtor);
+			_update_addr = f2v(&Dummy::update);
+			auto& obj = *(Dummy*)_object;
+			obj.type_hash = type_hash;
+			obj.type_size = type_size;
+			obj.length = length;
+		}
+			break;
+		case bpNodeGroup:
+		{
+			assert(_object_rule == bpObjectEntity);
+#pragma pack(1)
+			struct Dummy
+			{
+				ListenerHub<void()>* signal;
+			};
+#pragma pack()
+			auto size = sizeof(Dummy);
+			_object = malloc(size);
+			memset(_object, 0, size);
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), sizeof(Dummy::signal), nullptr));
+		}
+			break;
+		case bpNodeUdt:
+		{
+			_udt = _find_udt(FLAME_HASH(type_parameter.c_str()));
 
 			if (!_udt)
 			{
 				assert(0);
-				printf("udt not found in add node: %s\n", type.c_str());
+				printf("add node: udt not found: %s\n", type_parameter.c_str());
 			}
 
 			_library = (void*)_udt->_db->_library;
 
-			if (node_type == bpNodeReal)
+			if (_object_rule == bpObjectEntity)
 			{
 				auto size = _udt->_size;
 				_object = malloc(size);
@@ -355,26 +343,25 @@ namespace flame
 				//	assert(object);
 				//}
 
-				if (node_type == bpNodeRefRead)
+				if (_object_rule == bpObjectRefRead)
 				{
 					for (auto& v : _udt->_variables)
 						_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, _outputs.size(), v.get()));
 				}
-				else if (node_type == bpNodeRefWrite)
+				else if (_object_rule == bpObjectRefWrite)
 				{
 					for (auto& v : _udt->_variables)
 					{
 						auto type = v->_type;
 						if (type->_tag != TypeData)
 							continue;
-						auto base_hash = type->_base_hash;
 						auto input = new bpSlotPrivate(this, bpSlotIn, _inputs.size(), v.get());
 						auto f_set = _udt->_find_function((std::string("set_") + v->_name).c_str());
 						if (f_set)
 						{
 							auto f_set_addr = (char*)_library + (uint)f_set->_rva;
 							Setter* setter = nullptr;
-							switch (base_hash)
+							switch (type->_name_hash)
 							{
 							case FLAME_CHASH("bool"):
 								setter = new Setter_t<bool>;
@@ -439,11 +426,13 @@ namespace flame
 				}
 			}
 		}
+			break;
+		}
 	}
 
 	bpNodePrivate::~bpNodePrivate()
 	{
-		if (_node_type == bpNodeReal)
+		if (_object_rule == bpObjectEntity)
 		{
 			if (_dtor_addr)
 				cmf(p2f<MF_v_v>(_dtor_addr), _object);
@@ -566,7 +555,7 @@ namespace flame
 		return true;
 	}
 
-	bpNodePrivate* bpNodePrivate::_add_child(const std::string& _id, const std::string& type, bpNodeType node_type)
+	bpNodePrivate* bpNodePrivate::_add_child(const std::string& _id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule)
 	{
 		std::string id = _id;
 		if (!check_or_create_id(this, id))
@@ -575,7 +564,7 @@ namespace flame
 			return nullptr;
 		}
 
-		auto n = new bpNodePrivate(_scene, this, id, node_type, type);
+		auto n = new bpNodePrivate(_scene, this, id, type, type_parameter, _object_rule);
 		n->_guid = generate_guid();
 		_children.emplace_back(n);
 
@@ -641,7 +630,7 @@ namespace flame
 	{
 		_time = 0.f;
 
-		_root.reset(new bpNodePrivate(this, nullptr, "root", bpNodeReal, "Group"));
+		_root.reset(new bpNodePrivate(this, nullptr, "root", bpNodeGroup, "", bpObjectEntity));
 	}
 
 	static float bp_time = 0.f;
@@ -666,9 +655,10 @@ namespace flame
 			for (auto& n : parent->_children)
 			{
 				auto n_node = n_nodes.append_child("node");
-				n_node.append_attribute("node_type").set_value(n->_node_type);
 				n_node.append_attribute("id").set_value(n->_id.c_str());
-				n_node.append_attribute("type").set_value(n->_type.c_str());
+				n_node.append_attribute("type").set_value(n->_type);
+				n_node.append_attribute("type_parameter").set_value(n->_type_parameter.c_str());
+				n_node.append_attribute("object_rule").set_value(n->_object_rule);
 				n_node.append_attribute("pos").set_value(to_string(n->_pos).c_str());
 
 				pugi::xml_node n_datas;
@@ -764,8 +754,8 @@ namespace flame
 		//		break;
 		//	case NodeReal:
 		//	{
-		//		std::string parameters;
-		//		auto ntype = break_node_type(n->type, &parameters);
+		//		std::string type_parameter;
+		//		auto ntype = break_node_type(n->type, &type_parameter);
 		//		if (ntype == 0)
 		//		{
 		//			auto f = n->udt->find_function("bp_update");
@@ -953,7 +943,7 @@ namespace flame
 		load_group = [&](pugi::xml_node n_group, bpNodePrivate* parent) {
 			for (auto n_node : n_group.child("nodes"))
 			{
-				auto n = parent->_add_child(std::string(n_node.attribute("id").value()), std::string(n_node.attribute("type").value()), (bpNodeType)n_node.attribute("node_type").as_int());
+				auto n = parent->_add_child(std::string(n_node.attribute("id").value()), (bpNodeType)n_node.attribute("type_parameter").as_int(), std::string(n_node.attribute("type_parameter").value()), (bpObjectRule)n_node.attribute("object_rule").as_int());
 				if (n)
 				{
 					n->_pos = stof2(n_node.attribute("pos").value());

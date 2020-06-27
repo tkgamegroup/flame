@@ -11,24 +11,17 @@ namespace flame
 	struct TypeInfoPrivate : TypeInfo
 	{
 		TypeTag _tag;
-		bool _is_array;
-		std::string _base_name;
-		uint _base_hash;
 		std::string _name;
-		uint _hash;
+		uint _name_hash;
 
-		TypeInfoPrivate(TypeTag tag, const std::string& base_name, bool is_array);
+		TypeInfoPrivate(TypeTag tag, const std::string& base_name);
 
-		static std::string get_name(TypeTag tag, const std::string& base_name, bool is_array = false);
-		static TypeInfoPrivate* _get(TypeTag tag, const std::string& base_name, bool is_array = false);
+		static TypeInfoPrivate* _get(TypeTag tag, const std::string& name);
 		static TypeInfoPrivate* _get(const std::string& str);
 
 		TypeTag get_tag() const override { return _tag; }
-		bool get_is_array() const override { return _is_array; }
-		const char* get_base_name() const override { return _base_name.c_str(); }
-		uint get_base_hash() const override { return _base_hash; }
 		const char* get_name() const override { return _name.c_str(); }
-		uint get_hash() const override { return _hash; }
+		uint get_name_hash() const override { return _name_hash; }
 	};
 
 	struct VariableInfoPrivate : VariableInfo
@@ -157,9 +150,6 @@ namespace flame
 		const void* get_library() const override { return _library; }
 		const wchar_t* get_library_name() const override { return _library_name.c_str(); }
 	};
-
-	void _push_global_typeinfo_database(TypeInfoDatabasePrivate* db);
-	void _pop_global_typeinfo_database();
 
 	EnumInfoPrivate* _find_enum(uint hash);
 	UdtInfoPrivate* _find_udt(uint hash);

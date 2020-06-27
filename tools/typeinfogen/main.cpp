@@ -1,5 +1,5 @@
 #include <flame/serialize.h>
-#include "../../source/foundation/typeinfo_private.h"
+#include <flame/foundation/typeinfo.h>
 
 #include <Windows.h>
 #include <dia2.h>
@@ -90,7 +90,27 @@ std::string format_type(const wchar_t* in, bool* is_array)
 	return str;
 }
 
-TypeInfoPrivate* typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
+struct TypeInfoData
+{
+	TypeTag _tag;
+	bool _is_array;
+	std::string _base_name;
+	uint _base_hash;
+	std::string _name;
+	uint _hash;
+
+	TypeInfoData(TypeTag tag, const std::string& base_name, bool is_array = false) :
+		_tag(tag),
+		_base_name(base_name),
+		_is_array(is_array)
+	{
+		_base_hash = FLAME_HASH(base_name.c_str());
+		_name = TypeInfo::make_name(tag, base_name, is_array);
+		_hash = FLAME_HASH(_name.c_str());
+	}
+};
+
+TypeInfoData typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 {
 	DWORD dw;
 	wchar_t* pwname;
@@ -149,9 +169,9 @@ TypeInfoPrivate* typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 	{
 	case SymTagEnum:
 		s_type->get_name(&pwname);
-		return TypeInfoPrivate::_get((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
+		return TypeInfoData((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
 	case SymTagBaseType:
-		return TypeInfoPrivate::_get(TypeData, base_type_name(s_type));
+		return TypeInfoData(TypeData, base_type_name(s_type));
 	case SymTagPointerType:
 	{
 		std::string name;
@@ -173,14 +193,14 @@ TypeInfoPrivate* typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 			break;
 		}
 		pointer_type->Release();
-		return TypeInfoPrivate::_get(TypePointer, name, is_array);
+		return TypeInfoData(TypePointer, name, is_array);
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
 		auto is_array = false;
 		auto name = format_type(pwname, &is_array);
-		return TypeInfoPrivate::_get(TypeData, name, is_array);
+		return TypeInfoData(TypeData, name, is_array);
 	}
 	case SymTagFunctionArgType:
 	{
@@ -190,6 +210,7 @@ TypeInfoPrivate* typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 		s_arg_type->Release();
 		return ret;
 	}
+
 	}
 }
 
@@ -259,9 +280,6 @@ int main(int argc, char **args)
 		assert(0);
 		return 0;
 	}
-
-	auto db = new TypeInfoDatabasePrivate(library_path);
-	_push_global_typeinfo_database(db);
 
 	LONG l;
 	ULONG ul;
@@ -696,8 +714,6 @@ int main(int argc, char **args)
 		}
 	}
 
-	pop_global_typeinfo_database();
-
 	auto typeinfo_path = library_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 	file.save_file(typeinfo_path.string().c_str());
@@ -717,8 +733,6 @@ int main(int argc, char **args)
 		}
 	}
 	typeinfo_code.close();
-
-	delete db;
 
 	printf(" - done\n");
 

@@ -10,8 +10,8 @@
 #include <locale>
 #include <codecvt>
 #include <sstream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
 
 namespace flame
 {
@@ -79,7 +79,6 @@ namespace flame
 		swprintf(buf, L"%d", v);
 		return buf;
 	}
-
 
 	inline std::wstring to_wstring(float v)
 	{
