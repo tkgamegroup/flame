@@ -322,14 +322,10 @@ namespace flame
 	{
 		const char* name;
 		const uint name_hash;
-		uint id;
-		uint debug_level;
 
 		Object(const char* name) :
 			name(name),
-			name_hash(FLAME_HASH(name)),
-			id(0),
-			debug_level(0)
+			name_hash(FLAME_HASH(name))
 		{
 		}
 	};

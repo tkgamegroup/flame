@@ -433,7 +433,7 @@ namespace flame
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* d, const std::wstring& filename)
 		{
-			id = FLAME_HASH(filename.c_str());
+			//id = FLAME_HASH(filename.c_str()); TODO
 
 			std::wstring image_filename;
 			auto ini = parse_ini_file(filename);

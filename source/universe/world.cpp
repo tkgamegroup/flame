@@ -3,45 +3,55 @@
 
 namespace flame
 {
-	World::World()
+	WorldPrivate::WorldPrivate()
 	{
-		root = f_new<Entity>();
-		root->world = this;
-		root->global_visibility = true;
+		_root.reset(EntityPrivate::_create());
+		_root->_world = this;
+		_root->_global_visibility = true;
 	}
 
-	World::~World()
-	{
-		mark_dying(root);
-		f_delete(root);
-	}
+	//Object* find_object(uint name_hash, uint id) const
+	//{
+	//	for (auto o : objects)
+	//	{
+	//		if (o->name_hash == name_hash)
+	//		{
+	//			if (!id || o->id == id)
+	//				return o;
+	//		}
+	//	}
+	//	return nullptr;
+	//}
 
-	void World::update()
+	System* WorldPrivate::_get_system_plain(uint name_hash) const
 	{
-		for (auto s : systems)
+		for (auto& s : _systems)
 		{
-			s->before_update();
-			s->before_update_listeners.call();
-			s->update();
-			s->after_update_listeners.call();
-			s->after_update();
+			if (s->name_hash == name_hash)
+				return s.get();
 		}
+		return nullptr;
 	}
 
-	void World::add_system(System* s)
+	void WorldPrivate::_add_system(System* s)
 	{
-		s->world_ = this;
-		systems.push_back(s);
+		s->world = this;
+		_systems.emplace_back(s);
 		s->on_added();
+	}
+
+	void WorldPrivate::_remove_system(System* s)
+	{
+	}
+
+	void WorldPrivate::_update()
+	{
+		for (auto& s : _systems)
+			s->update();
 	}
 
 	World* World::create()
 	{
-		return new World();
-	}
-
-	void World::destroy(World* w)
-	{
-		delete (World*)w;
+		return new WorldPrivate;
 	}
 }

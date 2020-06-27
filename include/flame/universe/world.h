@@ -11,41 +11,14 @@ namespace flame
 	{
 		virtual void release() = 0;
 
-		Object* find_object(uint name_hash, uint id) const
-		{
-			for (auto o : objects)
-			{
-				if (o->name_hash == name_hash)
-				{
-					if (!id || o->id == id)
-						return o;
-				}
-			}
-			return nullptr;
-		}
+		//virtual Object* find_object(uint name_hash, uint id) const = 0;
 
-		System* get_system_plain(uint name_hash) const
-		{
-			for (auto s : systems)
-			{
-				if (s->name_hash == name_hash)
-					return s;
-			}
-			return nullptr;
-		}
-
-		template <class T>
-		T* get_system_t(uint name_hash) const
-		{
-			return (T*)get_system_plain(name_hash);
-		}
-
-#define get_system(T) get_system_t<T>(FLAME_CHASH(#T))
-
+		virtual System* get_system_plain(uint name_hash) const = 0;
+#define get_system(T) (T*)get_system_plain(FLAME_CHASH(#T))
 		virtual void add_system(System* s) = 0;
 		virtual void remove_system(System* s) = 0;
 
-		virtual void update();
+		virtual void update() = 0;
 
 		FLAME_UNIVERSE_EXPORTS static World* create();
 	};

@@ -40,7 +40,7 @@ namespace flame
 		{
 			for (auto f : fonts)
 			{
-				id = hash_update(id, FLAME_HASH(f->_filename.c_str()));
+				//id = hash_update(id, FLAME_HASH(f->_filename.c_str())); TODO
 
 				_fonts.push_back(f);
 			}

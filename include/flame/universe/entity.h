@@ -1,55 +1,39 @@
 #pragma once
 
-#include <flame/foundation/foundation.h>
 #include <flame/universe/universe.h>
 
 namespace flame
 {
-	struct TypeInfoDatabase;
-
 	struct World;
 	struct Component;
 
-	enum EntityEvent
-	{
-		EntityDestroyed,
-		EntityVisibilityChanged,
-		EntityAdded,
-		EntityRemoved,
-		EntityPositionChanged,
-		EntityEnteredWorld,
-		EntityLeftWorld,
-		EntityComponentAdded,
-		EntityComponentRemoved,
-		EntityChildVisibilityChanged,
-		EntityChildAdded,
-		EntityChildRemoved,
-		EntityChildPositionChanged,
-		EntityChildComponentAdded,
-		EntityChildComponentRemoved
-	};
-
 	struct Entity
 	{
+		// if it is a child, it will be removed first
 		virtual void release() = 0;
+
+		virtual const char* get_name() const = 0;
+		virtual uint get_name_hash() const = 0;
+		virtual void set_name(const char* name) = 0;
 
 		virtual bool get_visible() const = 0;
 		virtual void set_visible(bool v) = 0;
 
+		virtual World* get_world() const = 0;
+
+		virtual Entity* get_parent() const = 0;
+
 		virtual Component* get_component_plain(uint hash) const = 0;
-
-		template <class T>
-		T* get_component_t(uint hash) const
-		{
-			return (T*)get_component_plain(hash);
-		}
-
-#define get_component(T) get_component_t<T>(FLAME_CHASH(#T))
-#define get_id_component(T, id) get_component_t<T>(hash_update(FLAME_CHASH(#T), id))
+#define get_component(T) (T*)get_component_plain(FLAME_CHASH(#T))
 		virtual void add_component(Component* c) = 0;
-		virtual void remove_component(Component* c) = 0;
-
+		virtual void remove_component(Component* c, bool destroy = true) = 0;
 		virtual void data_changed(Component* c, uint hash, void* sender) = 0;
+
+		virtual uint get_children_count() const = 0;
+		virtual Entity* get_child(uint idx) const = 0;
+		virtual void add_child(Entity* e, int position = -1/* -1 is end */) = 0;
+		virtual void reposition_child(uint pos1, uint pos2) = 0;
+		virtual void remove_child(Entity* e, bool destroy = true) = 0;
 
 		//inline bool is_child_of_r(const Entity* p, const Entity* e) const
 		//{
@@ -101,13 +85,8 @@ namespace flame
 		//	return -1;
 		//}
 
-		virtual void add_child(Entity* e, int position = -1); /* -1 is end */
-		virtual void reposition_child(Entity* e, int position); /* -1 is last */
-		virtual void remove_child(Entity* e, bool destroy = true);
-		virtual void remove_children(int from, int to /* -1 is end */, bool destroy = true);
-
-		virtual void load(const wchar_t* filename);
-		virtual void save(const wchar_t* filename);
+		virtual void load(const wchar_t* filename) = 0;
+		virtual void save(const wchar_t* filename) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};

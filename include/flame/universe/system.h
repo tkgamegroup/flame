@@ -9,17 +9,21 @@ namespace flame
 
 	struct System : Object
 	{
-		World* world_;
+		World* world = nullptr;
 
-		ListenerHub<bool(Capture& c)> before_update_listeners;
-		ListenerHub<bool(Capture& c)> after_update_listeners;
+		System(const char* name) :
+			Object(name)
+		{
+		}
 
-		FLAME_UNIVERSE_EXPORTS System(const char* name);
-		FLAME_UNIVERSE_EXPORTS virtual ~System();
+		virtual ~System() {}
 
+		// this system added to world
 		virtual void on_added() {}
-		virtual void before_update() {}
+
+		// this system removed to world
+		virtual void on_removed() {}
+
 		virtual void update() = 0;
-		virtual void after_update() {}
 	};
 }
