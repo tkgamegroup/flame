@@ -5,7 +5,6 @@
 #include <pugixml.hpp>
 #include <nlohmann/json.hpp>
 
-#include <stdarg.h>
 #include <regex>
 #include <locale>
 #include <codecvt>
@@ -15,106 +14,156 @@
 
 namespace flame
 {
-	inline std::string to_string(int v)
+	inline int fmt(char* buf, int buf_size, int v)
 	{
-		char buf[20];
-		sprintf(buf, "%d", v);
-		return buf;
+		return sprintf_s(buf, buf_size, "%d", v);
 	}
 
-	inline std::string to_string(uint v)
+	inline int fmt(char* buf, int buf_size, uint v)
 	{
-		char buf[20];
-		sprintf(buf, "%d", v);
-		return buf;
+		return sprintf_s(buf, buf_size, "%d", v);
 	}
 
-	inline std::string to_string(float v)
+	inline int fmt(char* buf, int buf_size, float v)
 	{
-		char buf[20];
-		sprintf(buf, "%.6f", v);
-		auto len = (int)strlen(buf);
-		for (auto i = len - 1; i >= 0; i--)
+		auto ret = sprintf_s(buf, buf_size, "%.6f", v);
+		if (ret > 0)
 		{
-			auto ch = buf[i];
-			if (ch == '.')
+			for (ret--; ret >= 0; ret--)
 			{
-				buf[i + 1] = '0';
-				break;
+				auto ch = buf[ret];
+				if (ch == '.')
+				{
+					buf[ret + 1] = '0';
+					ret += 2;
+					break;
+				}
+				if (ch == '0')
+					buf[ret] = 0;
+				else
+				{
+					ret += 1;
+					break;
+				}
 			}
-			if (ch == '0')
-				buf[i] = 0;
-			else
-				break;
 		}
-		return buf;
+		return ret;
 	}
 
-	inline std::string to_string(uchar v)
+	inline void fmt(char* buf, int buf_size, uchar v)
+	{
+		sprintf_s(buf, buf_size, "%d", v);
+	}
+
+	template <uint N, class T>
+	inline void fmt(char* buf, int buf_size, const Vec<N, T>& v)
+	{
+		auto p = buf;
+		auto s = buf_size;
+		for (auto i = 0; i < N; i++)
+		{
+			auto ret = fmt(p, s, v[i]);
+			p += ret;
+			s -= ret;
+			if (i < N - 1)
+			{
+				*p = ';';
+				p++;
+				s--;
+			}
+		}
+	}
+
+	template <class T>
+	inline std::string to_string(T v)
 	{
 		char buf[20];
-		sprintf(buf, "%d", v);
+		fmt(buf, sizeof(buf), v);
 		return buf;
 	}
 
 	template <uint N, class T>
 	inline std::string to_string(const Vec<N, T>& v)
 	{
-		auto ret = to_string(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += ";" + to_string(v[i]);
+		char buf[20];
+		fmt(buf, sizeof(buf), v);
+		return buf;
+	}
+
+	inline int fmt(wchar_t* buf, int buf_size, int v)
+	{
+		return swprintf_s(buf, buf_size, L"%d", v);
+	}
+
+	inline int fmt(wchar_t* buf, int buf_size, uint v)
+	{
+		return swprintf_s(buf, buf_size, L"%d", v);
+	}
+
+	inline int fmt(wchar_t* buf, int buf_size, float v)
+	{
+		auto ret = swprintf_s(buf, buf_size, L"%.6f", v);
+		if (ret > 0)
+		{
+			for (ret--; ret >= 0; ret--)
+			{
+				auto ch = buf[ret];
+				if (ch == '.')
+				{
+					buf[ret + 1] = '0';
+					ret += 2;
+					break;
+				}
+				if (ch == '0')
+					buf[ret] = 0;
+				else
+				{
+					ret += 1;
+					break;
+				}
+			}
+		}
 		return ret;
 	}
 
-	inline std::wstring to_wstring(int v)
+	inline void fmt(wchar_t* buf, int buf_size, uchar v)
 	{
-		wchar_t buf[20];
-		swprintf(buf, L"%d", v);
-		return buf;
+		swprintf_s(buf, buf_size, L"%d", v);
 	}
 
-	inline std::wstring to_wstring(uint v)
+	template <uint N, class T>
+	inline void fmt(wchar_t* buf, int buf_size, const Vec<N, T>& v)
 	{
-		wchar_t buf[20];
-		swprintf(buf, L"%d", v);
-		return buf;
-	}
-
-	inline std::wstring to_wstring(float v)
-	{
-		wchar_t buf[20];
-		swprintf(buf, L"%.6f", v);
-		auto len = (int)wcslen(buf);
-		for (auto i = len - 1; i >= 0; i--)
+		auto p = buf;
+		auto s = buf_size;
+		for (auto i = 0; i < N; i++)
 		{
-			auto ch = buf[i];
-			if (ch == L'.')
+			auto ret = fmt(p, s, v[i]);
+			p += ret;
+			s -= ret;
+			if (i < N - 1)
 			{
-				buf[i + 1] = '0';
-				break;
+				*p = ';';
+				p++;
+				s--;
 			}
-			if (ch == L'0')
-				buf[i] = 0;
-			else
-				break;
 		}
-		return buf;
 	}
 
-	inline std::wstring to_wstring(uchar v)
+	template <class T>
+	inline std::wstring to_wstring(T v)
 	{
 		wchar_t buf[20];
-		swprintf(buf, L"%d", v);
+		fmt(buf, sizeof(buf), v);
 		return buf;
 	}
 
 	template <uint N, class T>
 	inline std::wstring to_wstring(const Vec<N, T>& v)
 	{
-		auto ret = to_wstring(v[0]);
-		for (auto i = 1; i < N; i++)
-			ret += L";" + to_wstring(v[i]);
-		return ret;
+		wchar_t buf[20];
+		fmt(buf, sizeof(buf), v);
+		return buf;
 	}
 
 	inline Vec2f stof2(const char* s)

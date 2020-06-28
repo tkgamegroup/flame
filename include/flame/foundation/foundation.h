@@ -764,7 +764,7 @@ namespace flame
 		virtual float get_delta_time() const = 0; // second
 		virtual float get_total_time() const = 0; // second
 
-		virtual int loop(void (*frame_callback)(Capture& c), const Capture& capture) = 0;
+		virtual int loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture) = 0;
 
 		virtual void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0) = 0;
 		virtual void reset_event(void* ev) = 0;

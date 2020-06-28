@@ -81,10 +81,8 @@ struct App
 			s.p.z() = random() * (projector._far - projector._near) + projector._near;
 	}
 
-	void run()
+	void run(float dt)
 	{
-		dt = get_looper()->get_delta_time();
-
 		if (!cbs.empty())
 			sc->acquire_image();
 
@@ -129,8 +127,8 @@ int main(int argc, char** args)
 
 	app.setup();
 
-	get_looper()->loop([](Capture&) {
-		app.run();
+	get_looper()->loop([](Capture&, float dt) {
+		app.run(dt);
 	}, Capture());
 
 	return 0;

@@ -1637,7 +1637,7 @@ namespace flame
 	}
 #endif
 
-	int LooperPrivate::_loop(void (*frame_callback)(Capture& c), const Capture& capture)
+	int LooperPrivate::_loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture)
 	{
 		if (windows.empty())
 			return 1;
@@ -1713,7 +1713,7 @@ namespace flame
 			return false;
 		}
 
-		_frame_callback(_frame_capture);
+		_frame_callback(_frame_capture, _delta_time);
 
 		_frame++;
 		auto et = _last_time;

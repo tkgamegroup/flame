@@ -34,10 +34,13 @@ namespace flame
 		virtual void* create() const = 0;
 		virtual void destroy(void* p) const = 0;
 		virtual void copy(const void* src, void* dst) const = 0;
+		virtual void serialize(char* buf, int buf_size, const void* src) const = 0;
+		virtual void unserialize(const char* src, void* dst) const = 0;
 
-		inline std::string serialize(const void* src) const;
-		inline void unserialize(const std::string& src, void* dst) const;
-		inline void copy_from(const void* src, void* dst, uint size = 0) const;
+		// name hash, not type hash
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get_basic_type(uint name_hash);
+		// in the callback: return a space that will be fill with the typeinfos, which size must bigger thant sizeof(void*) * size
+		FLAME_FOUNDATION_EXPORTS static void get_basic_types(TypeInfo** (*callback)(Capture& c, uint size), const Capture& capture);
 	};
 
 #define FLAME_TYPE_HASH(tag, name_hash) hash_update(name_hash, tag)
@@ -92,7 +95,9 @@ namespace flame
 		virtual TypeInfo* get_parameter(uint idx) const = 0;
 		virtual const char* get_code() const = 0;
 
-		inline bool check_function(FunctionInfo* info, const char* type, const std::vector<const char*>& parameters)
+		// first is return type, next followed by all parameters, parameters are end by 0
+		virtual bool check(uint type_hash, ...) const = 0;
+		inline bool check_function(const char* type, const std::vector<const char*>& parameters)
 		{
 			if (info->get_type()->get_hash() != FLAME_HASH(type) ||
 				info->get_parameters_count() != parameters.size())

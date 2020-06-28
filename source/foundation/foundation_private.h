@@ -101,13 +101,13 @@ namespace flame
 		float _total_time = 0.f;
 
 		std::vector<std::unique_ptr<WindowPrivate>> windows;
-		void (*_frame_callback)(Capture& c) = nullptr;
+		void (*_frame_callback)(Capture& c, float delta_time) = nullptr;
 		Capture _frame_capture = {};
 
 		uint64 _last_time = 0;
 
 		bool _one_frame();
-		int _loop(void (*frame_callback)(Capture& c), const Capture& capture);
+		int _loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture);
 
 		void* _add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0);
 		void _reset_event(void* ev);
@@ -119,7 +119,7 @@ namespace flame
 		float get_delta_time() const override { return _delta_time; }
 		float get_total_time() const override { return _total_time; }
 
-		int loop(void (*frame_callback)(Capture& c), const Capture& capture) override { return _loop(frame_callback, capture); }
+		int loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture) override { return _loop(frame_callback, capture); }
 
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id) override { return _add_event(callback, capture, interval, id); }
 		void reset_event(void* ev) override { _reset_event(ev); }
