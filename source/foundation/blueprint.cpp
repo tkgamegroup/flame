@@ -29,10 +29,10 @@ namespace flame
 	}
 
 	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfoPrivate* vi) :
-		bpSlotPrivate(node, io, index, vi->_type, vi->_name, vi->_offset, vi->_size, vi->_default_value)
+		bpSlotPrivate(node, io, index, vi->_type, vi->_name, vi->_offset, vi->_type->_size, vi->_default_value)
 	{
 	}
-
+	 
 	bpSlotPrivate::~bpSlotPrivate()
 	{
 		delete[]_default_value;
@@ -42,7 +42,7 @@ namespace flame
 	void bpSlotPrivate::_set_data(const void* d)
 	{
 		if (!_setter)
-			_type->copy_from(d, _data, _size);
+			_type->copy(d, _data);
 		else
 			_setter->set(d);
 	}
@@ -98,6 +98,19 @@ namespace flame
 			memset(_data, 0, sizeof(void*));
 
 		return true;
+	}
+
+	static void* next_var(void* &p, uint s)
+	{
+		auto ret = p;
+		p = (char*)p + s;
+		return ret;
+	}
+
+	template <class T>
+	static T* next_var(void*& p)
+	{
+		return (T*)next_var(p, sizeof(T));
 	}
 
 	bpNodePrivate::bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule) :
@@ -175,27 +188,28 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				uint type_hash;
-				uint type_size;
+				TypeInfoPrivate* type;
 
 				void dtor()
 				{
-					auto in = (char*)&type_size + sizeof(uint);
-					auto out = (char*)&type_size + sizeof(uint) + type_size;
-					basic_type_dtor(type_hash, in);
-					basic_type_dtor(type_hash, out);
+					auto p = var_end(&type);
+					auto in = next_var(p, type->_size);
+					auto out = next_var(p, type->_size);
+					type->destruct(in);
+					type->destruct(out);
 				}
 
 				void update()
 				{
-					auto in = (char*)&type_size + sizeof(uint);
-					auto out = (char*)&type_size + sizeof(uint) + type_size;
-					basic_type_copy(type_hash, in, out, type_size);
+					auto p = var_end(&type);
+					auto in = next_var(p, type->_size);
+					auto out = next_var(p, type->_size);
+					type->copy(in, out);
 				}
 			};
 #pragma pack()
-			auto type_hash = FLAME_HASH(type_parameter.c_str());
-			auto type_size = basic_type_size(type_hash);
+			auto type = TypeInfoPrivate::_get_basic_type(FLAME_HASH(type_parameter.c_str()));
+			auto type_size = type->_size;
 
 			auto size = sizeof(Dummy) + type_size * 2;
 			_object = malloc(size);
@@ -205,8 +219,7 @@ namespace flame
 			_dtor_addr = f2v(&Dummy::dtor);
 			_update_addr = f2v(&Dummy::update);
 			auto& obj = *(Dummy*)_object;
-			obj.type_hash = type_hash;
-			obj.type_size = type_size;
+			obj.type = type;
 		}
 			break;
 		case bpNodeArray:
@@ -216,35 +229,35 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				uint type_hash;
-				uint type_size;
+				TypeInfoPrivate* type;
 				uint length;
 
 				void dtor()
 				{
-					for (auto i = 0; i < length; i++)
-						basic_type_dtor(type_hash, (char*)&length + sizeof(uint) + type_size * i);
-					auto& out = *(Array<int>*)((char*)&length + sizeof(uint) + type_size * length);
+					auto p = var_end(&length);
+					auto& out = *next_var<Array<int>>(p);
 					for (auto i = 0; i < out.s; i++)
-						basic_type_dtor(type_hash, (char*)out.v + type_size * i);
+						type->destruct((char*)out.v + type->_size * i);
+					for (auto i = 0; i < length; i++)
+						type->destruct(next_var(p, type->_size));
 					f_free(out.v);
 				}
 
 				void update()
 				{
-					auto& out = *(Array<int>*)((char*)&length + sizeof(uint) + type_size * length);
+					auto p = var_end(&length);
+					auto& out = *next_var<Array<int>>(p);
 					if (out.s != length)
 					{
 						out.s = length;
-						auto m_size = type_size * length;
+						auto m_size = type->_size * length;
 						f_free(out.v);
 						out.v = (int*)f_malloc(m_size);
 						memset(out.v, 0, m_size);
 					}
 					for (auto i = 0; i < length; i++)
 					{
-						auto v = (char*)&length + sizeof(uint) + type_size * i;
-						basic_type_copy(type_hash, v, (char*)out.v + type_size * i, type_size);
+						type->copy(next_var(p, type->_size), (char*)out.v + type->_size * i);
 					}
 				}
 			};
@@ -257,20 +270,19 @@ namespace flame
 				base_name.erase(base_name.end() - 1);
 				tag = TypePointer;
 			}
-			auto type_hash = FLAME_HASH(base_name.c_str());
-			uint type_size = tag == TypeData ? basic_type_size(type_hash) : sizeof(void*);
+			auto type = TypeInfoPrivate::_get(tag, base_name);
+			uint type_size = type->_size;
 			auto length = stoi(sp[0]);
-			auto size = sizeof(Dummy) + type_size * length + sizeof(Array<int>);
+			auto size = sizeof(Dummy) + sizeof(Array<int>) + type_size * length;
 			_object = malloc(size);
 			memset(_object, 0, size);
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeArrayOfData, type_name), "out", sizeof(Dummy), sizeof(Array<int>), nullptr));
 			for (auto i = 0; i < length; i++)
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, TypeInfoPrivate::_get(tag, base_name), std::to_string(i), sizeof(Dummy) + type_size * i, type_size, nullptr));
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeArrayOfData, type_name), "out", sizeof(Dummy) + type_size * length, sizeof(Array<int>), nullptr));
+				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, TypeInfoPrivate::_get(tag, base_name), std::to_string(i), sizeof(Dummy) + sizeof(Array<int>) + type_size * i, type_size, nullptr));
 			_dtor_addr = f2v(&Dummy::dtor);
 			_update_addr = f2v(&Dummy::update);
 			auto& obj = *(Dummy*)_object;
-			obj.type_hash = type_hash;
-			obj.type_size = type_size;
+			obj.type = type;
 			obj.length = length;
 		}
 			break;
@@ -309,20 +321,20 @@ namespace flame
 
 				{
 					auto f = _udt->_find_function("ctor");
-					if (f && f->_parameters.size() == 0)
-						cmf(p2f<MF_v_v>((char*)_library + (uint)f->get_rva()), _object);
+					if (f && f->check(FLAME_TYPE_HASH_dn("void"), 0))
+						cmf(p2f<MF_v_v>((char*)_library + (uint)f->_rva), _object);
 				}
 
 				{
 					auto f = _udt->_find_function("dtor");
-					if (f)
-						_dtor_addr = (char*)_library + (uint)f->get_rva();
+					if (f && f->check(FLAME_TYPE_HASH_dn("void"), 0))
+						_dtor_addr = (char*)_library + (uint)f->_rva;
 				}
 
 				{
 					auto f = _udt->_find_function("bp_update");
-					assert(f && check_function(f, "D#void", {}));
-					_update_addr = (char*)_library + (uint)f->get_rva();
+					assert(f && f->check(FLAME_TYPE_HASH_dn("void"), 0));
+					_update_addr = (char*)_library + (uint)f->_rva;
 				}
 
 				for (auto& v : _udt->_variables)
@@ -417,7 +429,6 @@ namespace flame
 							}
 							setter->o = _object;
 							setter->f = f_set_addr;
-							setter->s = parent->_scene;
 							input->_setter = setter;
 						}
 						memcpy(input->_default_value, input->_data, input->_size);
@@ -667,7 +678,7 @@ namespace flame
 					if (in->_links[0])
 						continue;
 					auto type = in->_type;
-					if (type->get_tag() != TypePointer)
+					if (type->_tag != TypePointer)
 					{
 						if (in->_default_value && memcmp(in->_default_value, in->_data, in->_size) == 0)
 							continue;
@@ -675,7 +686,7 @@ namespace flame
 							n_datas = n_node.append_child("datas");
 						auto n_data = n_datas.append_child("data");
 						n_data.append_attribute("name").set_value(in->_name.c_str());
-						n_data.append_attribute("value").set_value(type->serialize(in->_data).c_str());
+						n_data.append_attribute("value").set_value(type->serialize_s(in->_data).c_str());
 					}
 				}
 
@@ -943,16 +954,16 @@ namespace flame
 		load_group = [&](pugi::xml_node n_group, bpNodePrivate* parent) {
 			for (auto n_node : n_group.child("nodes"))
 			{
-				auto n = parent->_add_child(std::string(n_node.attribute("id").value()), (bpNodeType)n_node.attribute("type_parameter").as_int(), std::string(n_node.attribute("type_parameter").value()), (bpObjectRule)n_node.attribute("object_rule").as_int());
+				auto n = parent->_add_child(n_node.attribute("id").value(), (bpNodeType)n_node.attribute("type").as_int(), n_node.attribute("type_parameter").value(), (bpObjectRule)n_node.attribute("object_rule").as_int());
 				if (n)
 				{
 					n->_pos = stof2(n_node.attribute("pos").value());
 					for (auto n_data : n_node.child("datas"))
 					{
-						auto input = n->_find_input(std::string(n_data.attribute("name").value()));
+						auto input = n->_find_input(n_data.attribute("name").value());
 						auto type = input->_type;
-						auto tag = type->get_tag();
-						if (!type->get_is_array() && (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData))
+						if (auto tags = std::array{ TypeEnumSingle, TypeEnumMulti, TypeData }; 
+							std::any_of(tags.begin(), tags.end(), type->_tag))
 							type->unserialize(n_data.attribute("value").value(), input->_data);
 					}
 				}
@@ -1435,16 +1446,6 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = v + min(abs(target - v), step) * sign(target - v);
-		}
-	};
-
-	struct FLAME_R(R_KeyListener)
-	{
-		FLAME_RV(Key, key, i);
-
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
-		{
-
 		}
 	};
 

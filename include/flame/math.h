@@ -917,6 +917,16 @@ namespace flame
 		return !(lhs == rhs);
 	}
 
+	using Vec1b = Vec<1, bool>;
+	using Vec2b = Vec<2, bool>;
+	using Vec3b = Vec<3, bool>;
+	using Vec4b = Vec<4, bool>;
+
+	using Vec1c = Vec<1, uchar>;
+	using Vec2c = Vec<2, uchar>;
+	using Vec3c = Vec<3, uchar>;
+	using Vec4c = Vec<4, uchar>;
+
 	using Vec1i = Vec<1, int>;
 	using Vec2i = Vec<2, int>;
 	using Vec3i = Vec<3, int>;
@@ -932,31 +942,21 @@ namespace flame
 	using Vec3f = Vec<3, float>;
 	using Vec4f = Vec<4, float>;
 
-	using Vec1c = Vec<1, uchar>;
-	using Vec2c = Vec<2, uchar>;
-	using Vec3c = Vec<3, uchar>;
-	using Vec4c = Vec<4, uchar>;
-
-	using Vec1b = Vec<1, bool>;
-	using Vec2b = Vec<2, bool>;
-	using Vec3b = Vec<3, bool>;
-	using Vec4b = Vec<4, bool>;
-
 	union CommonValue
 	{
-		Vec4u u;
-		Vec4i i;
-		Vec4f f;
 		Vec4c c;
+		Vec4i i;
+		Vec4u u;
+		Vec4f f;
 		void* p;
 	};
 
 	template<uint N>
-	CommonValue common(const Vec<N, uint>& v)
+	CommonValue common(const Vec<N, uchar>& v)
 	{
 		CommonValue cv;
 		for (auto i = 0; i < N; i++)
-			cv.u[i] = v[i];
+			cv.c[i] = v[i];
 		return cv;
 	}
 
@@ -970,20 +970,20 @@ namespace flame
 	}
 
 	template<uint N>
+	CommonValue common(const Vec<N, uint>& v)
+	{
+		CommonValue cv;
+		for (auto i = 0; i < N; i++)
+			cv.u[i] = v[i];
+		return cv;
+	}
+
+	template<uint N>
 	CommonValue common(const Vec<N, float>& v)
 	{
 		CommonValue cv;
 		for (auto i = 0; i < N; i++)
 			cv.f[i] = v[i];
-		return cv;
-	}
-
-	template<uint N>
-	CommonValue common(const Vec<N, uchar>& v)
-	{
-		CommonValue cv;
-		for (auto i = 0; i < N; i++)
-			cv.c[i] = v[i];
 		return cv;
 	}
 
@@ -994,184 +994,184 @@ namespace flame
 		return cv;
 	}
 
-	typedef void(__Dummy__::* MF_v_i2p_vp)(Vec2i*, void*);
-	typedef void(__Dummy__::* MF_v_i3p_vp)(Vec3i*, void*);
-	typedef void(__Dummy__::* MF_v_i4p_vp)(Vec4i*, void*);
-	typedef void(__Dummy__::* MF_v_u2p_vp)(Vec2u*, void*);
-	typedef void(__Dummy__::* MF_v_u3p_vp)(Vec3u*, void*);
-	typedef void(__Dummy__::* MF_v_u4p_vp)(Vec4u*, void*);
-	typedef void(__Dummy__::* MF_v_f2p_vp)(Vec2f*, void*);
-	typedef void(__Dummy__::* MF_v_f3p_vp)(Vec3f*, void*);
-	typedef void(__Dummy__::* MF_v_f4p_vp)(Vec4f*, void*);
-	typedef void(__Dummy__::* MF_v_c2p_vp)(Vec2c*, void*);
-	typedef void(__Dummy__::* MF_v_c3p_vp)(Vec3c*, void*);
-	typedef void(__Dummy__::* MF_v_c4p_vp)(Vec4c*, void*);
+	typedef void(__Dummy__::* MF_v_i2p)(Vec2i*);
+	typedef void(__Dummy__::* MF_v_i3p)(Vec3i*);
+	typedef void(__Dummy__::* MF_v_i4p)(Vec4i*);
+	typedef void(__Dummy__::* MF_v_u2p)(Vec2u*);
+	typedef void(__Dummy__::* MF_v_u3p)(Vec3u*);
+	typedef void(__Dummy__::* MF_v_u4p)(Vec4u*);
+	typedef void(__Dummy__::* MF_v_f2p)(Vec2f*);
+	typedef void(__Dummy__::* MF_v_f3p)(Vec3f*);
+	typedef void(__Dummy__::* MF_v_f4p)(Vec4f*);
+	typedef void(__Dummy__::* MF_v_c2p)(Vec2c*);
+	typedef void(__Dummy__::* MF_v_c3p)(Vec3c*);
+	typedef void(__Dummy__::* MF_v_c4p)(Vec4c*);
 
 	template <>
 	struct Setter_t<Vec2i> : Setter
 	{
-		static void set_s(void* o, void* f, Vec2i* v, void* s)
+		static void set_s(void* o, void* f, Vec2i* v)
 		{
-			cmf(p2f<MF_v_i2p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_i2p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec2i*)v, s);
+			set_s(o, f, (Vec2i*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec3i> : Setter
 	{
-		static void set_s(void* o, void* f, Vec3i* v, void* s)
+		static void set_s(void* o, void* f, Vec3i* v)
 		{
-			cmf(p2f<MF_v_i3p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_i3p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec3i*)v, s);
+			set_s(o, f, (Vec3i*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec4i> : Setter
 	{
-		static void set_s(void* o, void* f, Vec4i* v, void* s)
+		static void set_s(void* o, void* f, Vec4i* v)
 		{
-			cmf(p2f<MF_v_i4p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_i4p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec4i*)v, s);
+			set_s(o, f, (Vec4i*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec2u> : Setter
 	{
-		static void set_s(void* o, void* f, Vec2u* v, void* s)
+		static void set_s(void* o, void* f, Vec2u* v)
 		{
-			cmf(p2f<MF_v_u2p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_u2p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec2u*)v, s);
+			set_s(o, f, (Vec2u*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec3u> : Setter
 	{
-		static void set_s(void* o, void* f, Vec3u* v, void* s)
+		static void set_s(void* o, void* f, Vec3u* v)
 		{
-			cmf(p2f<MF_v_u3p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_u3p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec3u*)v, s);
+			set_s(o, f, (Vec3u*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec4u> : Setter
 	{
-		static void set_s(void* o, void* f, Vec4u* v, void* s)
+		static void set_s(void* o, void* f, Vec4u* v)
 		{
-			cmf(p2f<MF_v_u4p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_u4p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec4u*)v, s);
+			set_s(o, f, (Vec4u*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec2f> : Setter
 	{
-		static void set_s(void* o, void* f, Vec2f* v, void* s)
+		static void set_s(void* o, void* f, Vec2f* v)
 		{
-			cmf(p2f<MF_v_f2p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_f2p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec2f*)v, s);
+			set_s(o, f, (Vec2f*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec3f> : Setter
 	{
-		static void set_s(void* o, void* f, Vec3f* v, void* s)
+		static void set_s(void* o, void* f, Vec3f* v)
 		{
-			cmf(p2f<MF_v_f3p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_f3p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec3f*)v, s);
+			set_s(o, f, (Vec3f*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec4f> : Setter
 	{
-		static void set_s(void* o, void* f, Vec4f* v, void* s)
+		static void set_s(void* o, void* f, Vec4f* v)
 		{
-			cmf(p2f<MF_v_f4p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_f4p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec4f*)v, s);
+			set_s(o, f, (Vec4f*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec2c> : Setter
 	{
-		static void set_s(void* o, void* f, Vec2c* v, void* s)
+		static void set_s(void* o, void* f, Vec2c* v)
 		{
-			cmf(p2f<MF_v_c2p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_c2p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec2c*)v, s);
+			set_s(o, f, (Vec2c*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec3c> : Setter
 	{
-		static void set_s(void* o, void* f, Vec3c* v, void* s)
+		static void set_s(void* o, void* f, Vec3c* v)
 		{
-			cmf(p2f<MF_v_c3p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_c3p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec3c*)v, s);
+			set_s(o, f, (Vec3c*)v);
 		}
 	};
 
 	template <>
 	struct Setter_t<Vec4c> : Setter
 	{
-		static void set_s(void* o, void* f, Vec4c* v, void* s)
+		static void set_s(void* o, void* f, Vec4c* v)
 		{
-			cmf(p2f<MF_v_c4p_vp>(f), o, v, s);
+			cmf(p2f<MF_v_c4p>(f), o, v);
 		}
 
 		void set(const void* v) override
 		{
-			set_s(o, f, (Vec4c*)v, s);
+			set_s(o, f, (Vec4c*)v);
 		}
 	};
 

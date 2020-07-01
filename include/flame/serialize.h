@@ -14,6 +14,16 @@
 
 namespace flame
 {
+	inline void fmt(char* buf, int buf_size, uchar v)
+	{
+		sprintf_s(buf, buf_size, "%d", v);
+	}
+
+	inline int fmt(char* buf, int buf_size, bool v)
+	{
+		return sprintf_s(buf, buf_size, "%d", v ? "1" : "0");
+	}
+
 	inline int fmt(char* buf, int buf_size, int v)
 	{
 		return sprintf_s(buf, buf_size, "%d", v);
@@ -22,6 +32,16 @@ namespace flame
 	inline int fmt(char* buf, int buf_size, uint v)
 	{
 		return sprintf_s(buf, buf_size, "%d", v);
+	}
+
+	inline int fmt(char* buf, int buf_size, int64 v)
+	{
+		return sprintf_s(buf, buf_size, "%lld", v);
+	}
+
+	inline int fmt(char* buf, int buf_size, uint64 v)
+	{
+		return sprintf_s(buf, buf_size, "%llu", v);
 	}
 
 	inline int fmt(char* buf, int buf_size, float v)
@@ -48,11 +68,6 @@ namespace flame
 			}
 		}
 		return ret;
-	}
-
-	inline void fmt(char* buf, int buf_size, uchar v)
-	{
-		sprintf_s(buf, buf_size, "%d", v);
 	}
 
 	template <uint N, class T>
@@ -90,6 +105,16 @@ namespace flame
 		return buf;
 	}
 
+	inline int fmt(wchar_t* buf, int buf_size, bool v)
+	{
+		return swprintf_s(buf, buf_size, L"%d", v ? L"1" : L"0");
+	}
+
+	inline void fmt(wchar_t* buf, int buf_size, uchar v)
+	{
+		swprintf_s(buf, buf_size, L"%d", v);
+	}
+
 	inline int fmt(wchar_t* buf, int buf_size, int v)
 	{
 		return swprintf_s(buf, buf_size, L"%d", v);
@@ -98,6 +123,16 @@ namespace flame
 	inline int fmt(wchar_t* buf, int buf_size, uint v)
 	{
 		return swprintf_s(buf, buf_size, L"%d", v);
+	}
+
+	inline int fmt(wchar_t* buf, int buf_size, int64 v)
+	{
+		return swprintf_s(buf, buf_size, L"%lld", v);
+	}
+
+	inline int fmt(wchar_t* buf, int buf_size, uint64 v)
+	{
+		return swprintf_s(buf, buf_size, L"%llu", v);
 	}
 
 	inline int fmt(wchar_t* buf, int buf_size, float v)
@@ -124,11 +159,6 @@ namespace flame
 			}
 		}
 		return ret;
-	}
-
-	inline void fmt(wchar_t* buf, int buf_size, uchar v)
-	{
-		swprintf_s(buf, buf_size, L"%d", v);
 	}
 
 	template <uint N, class T>
@@ -251,7 +281,13 @@ namespace flame
 	}
 
 	template <class T>
-	T sto(const char* s); 
+	T sto(const char* s);
+
+	template <>
+	inline uchar sto<uchar>(const char* s)
+	{
+		return std::stoul(s);
+	}
 
 	template <>
 	inline int sto<int>(const char* s)
@@ -266,15 +302,21 @@ namespace flame
 	}
 
 	template <>
-	inline float sto<float>(const char* s)
+	inline int64 sto<int64>(const char* s)
 	{
-		return std::stof(s);
+		return std::stoll(s);
 	}
 
 	template <>
-	inline uchar sto<uchar>(const char* s)
+	inline uint64 sto<uint64>(const char* s)
 	{
-		return std::stoul(s);
+		return std::stoull(s);
+	}
+
+	template <>
+	inline float sto<float>(const char* s)
+	{
+		return std::stof(s);
 	}
 
 	inline Vec2f stof2(const wchar_t* s)
@@ -365,6 +407,12 @@ namespace flame
 	T sto(const wchar_t* s);
 
 	template <>
+	inline uchar sto<uchar>(const wchar_t* s)
+	{
+		return std::stoul(s);
+	}
+
+	template <>
 	inline int sto<int>(const wchar_t* s)
 	{
 		return std::stoi(s);
@@ -377,19 +425,25 @@ namespace flame
 	}
 
 	template <>
+	inline int64 sto<int64>(const wchar_t* s)
+	{
+		return std::stoll(s);
+	}
+
+	template <>
+	inline uint64 sto<uint64>(const wchar_t* s)
+	{
+		return std::stoull(s);
+	}
+
+	template <>
 	inline float sto<float>(const wchar_t* s)
 	{
 		return std::stof(s);
 	}
 
-	template <>
-	inline uchar sto<uchar>(const wchar_t* s)
-	{
-		return std::stoul(s);
-	}
-
 	template <class T>
-	T sto_s(const wchar_t* s)
+	T sto_t(const wchar_t* s)
 	{
 		try
 		{

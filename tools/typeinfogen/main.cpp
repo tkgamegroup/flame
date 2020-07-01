@@ -90,27 +90,19 @@ std::string format_type(const wchar_t* in, bool* is_array)
 	return str;
 }
 
-struct TypeInfoData
+struct TagAndName
 {
-	TypeTag _tag;
-	bool _is_array;
-	std::string _base_name;
-	uint _base_hash;
-	std::string _name;
-	uint _hash;
+	TypeTag tag;
+	std::string name;
 
-	TypeInfoData(TypeTag tag, const std::string& base_name, bool is_array = false) :
-		_tag(tag),
-		_base_name(base_name),
-		_is_array(is_array)
+	TagAndName(TypeTag t, const std::string& n) :
+		tag(t),
+		name(n)
 	{
-		_base_hash = FLAME_HASH(base_name.c_str());
-		_name = TypeInfo::make_name(tag, base_name, is_array);
-		_hash = FLAME_HASH(_name.c_str());
 	}
 };
 
-TypeInfoData typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
+TagAndName typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 {
 	DWORD dw;
 	wchar_t* pwname;
@@ -169,9 +161,9 @@ TypeInfoData typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 	{
 	case SymTagEnum:
 		s_type->get_name(&pwname);
-		return TypeInfoData((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
+		return TagAndName((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
 	case SymTagBaseType:
-		return TypeInfoData(TypeData, base_type_name(s_type));
+		return TagAndName(TypeData, base_type_name(s_type));
 	case SymTagPointerType:
 	{
 		std::string name;
@@ -193,14 +185,14 @@ TypeInfoData typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 			break;
 		}
 		pointer_type->Release();
-		return TypeInfoData(TypePointer, name, is_array);
+		return TagAndName(is_array ? TypeArrayOfPointer : TypePointer, name);
 	}
 	case SymTagUDT:
 	{
 		s_type->get_name(&pwname);
 		auto is_array = false;
 		auto name = format_type(pwname, &is_array);
-		return TypeInfoData(TypeData, name, is_array);
+		return TagAndName(is_array ? TypeArrayOfData : TypeData, name);
 	}
 	case SymTagFunctionArgType:
 	{
@@ -243,7 +235,7 @@ int main(int argc, char **args)
 	auto last_curr_path = get_curr_path();
 	set_curr_path(get_app_path().v);
 	for (auto& d : dependencies)
-		TypeInfoDatabase::load(d.c_str(), true, false);
+		TypeInfoDatabase::load(d.c_str());
 	set_curr_path(last_curr_path.v);
 
 	if (FAILED(CoInitialize(NULL)))
@@ -337,15 +329,19 @@ int main(int argc, char **args)
 	}
 	_source_files->Release();
 
-	struct DesiredVariable
+	struct DesiredEnum
 	{
 		std::string name;
-		uint flags;
 	};
 	struct DesiredFunction
 	{
 		std::string name;
 		std::string code;
+	};
+	struct DesiredVariable
+	{
+		std::string name;
+		uint flags;
 	};
 	struct DesiredUDT
 	{
@@ -355,6 +351,7 @@ int main(int argc, char **args)
 		std::vector<DesiredVariable> variables;
 		std::vector<DesiredFunction> functions;
 	};
+	std::vector<DesiredEnum> desired_enums;
 	std::vector<DesiredUDT> desired_udts;
 
 	for (auto& src : my_sources)
