@@ -957,13 +957,13 @@ namespace flame
 				auto n = parent->_add_child(n_node.attribute("id").value(), (bpNodeType)n_node.attribute("type").as_int(), n_node.attribute("type_parameter").value(), (bpObjectRule)n_node.attribute("object_rule").as_int());
 				if (n)
 				{
-					n->_pos = stof2(n_node.attribute("pos").value());
+					n->_pos = sto<Vec2f>(n_node.attribute("pos").value());
 					for (auto n_data : n_node.child("datas"))
 					{
 						auto input = n->_find_input(n_data.attribute("name").value());
 						auto type = input->_type;
-						if (auto tags = std::array{ TypeEnumSingle, TypeEnumMulti, TypeData }; 
-							std::any_of(tags.begin(), tags.end(), type->_tag))
+						auto tag = type->_tag;
+						if (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData)
 							type->unserialize(n_data.attribute("value").value(), input->_data);
 					}
 				}

@@ -480,6 +480,25 @@ int main(int argc, char **args)
 		file.close();
 	}
 
+	std::unordered_map<uint, uint> saved_enums;
+	std::unordered_map<uint, uint> saved_udts;
+
+	auto has_enum = [&](uint h) {
+		if (!find_enum(h))
+			return false;
+		return saved_enums.find(h) != saved_enums.end();
+	};
+	auto has_udt = [&](uint h) {
+		if (!find_udt(h))
+			return false;
+		return saved_udts.find(h) != saved_udts.end();
+	};
+
+	pugi::xml_document file;
+	auto file_root = file.append_child("typeinfo");
+	auto n_enums = file_root.append_child("enums");
+	auto n_udts = file_root.append_child("udts");
+
 	IDiaEnumSymbols* _udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
 	IDiaSymbol* _udt;
@@ -493,11 +512,14 @@ int main(int argc, char **args)
 			if (du.full_name == name)
 			{
 				auto udt_hash = FLAME_HASH(name.c_str());
-				if (!_find_udt(udt_hash))
+				if (!has_udt(udt_hash))
 				{
 					_udt->get_length(&ull);
-					auto u = new UdtInfoPrivate(db, name, ull, du.base_name);
-					db->_udts.emplace(udt_hash, u);
+
+					auto n_udt = n_udts.append_child("udt");
+					n_udt.append_attribute("name").set_value(name.c_str());
+					n_udt.append_attribute("size").set_value(ull);
+					n_udt.append_attribute("base_name").set_value(du.base_name.c_str());
 
 					IDiaEnumSymbols* _variables;
 					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
@@ -656,10 +678,6 @@ int main(int argc, char **args)
 	}
 	_udts->Release();
 
-	pugi::xml_document file;
-	auto file_root = file.append_child("typeinfo");
-
-	auto n_enums = file_root.append_child("enums");
 	for (auto& e : db->_enums)
 	{
 		auto n_enum = n_enums.append_child("enum");
@@ -674,14 +692,8 @@ int main(int argc, char **args)
 		}
 	}
 
-	auto n_udts = file_root.append_child("udts");
 	for (auto& u : db->_udts)
 	{
-		auto n_udt = n_udts.append_child("udt");
-		n_udt.append_attribute("name").set_value(u.second->_name.c_str());
-		n_udt.append_attribute("size").set_value(u.second->_size);
-		n_udt.append_attribute("base_name").set_value(u.second->_base_name.c_str());
-
 		auto n_items = n_udt.append_child("variables");
 		for (auto& v : u.second->_variables)
 		{

@@ -14,14 +14,14 @@
 
 namespace flame
 {
-	inline void fmt(char* buf, int buf_size, uchar v)
-	{
-		sprintf_s(buf, buf_size, "%d", v);
-	}
-
 	inline int fmt(char* buf, int buf_size, bool v)
 	{
 		return sprintf_s(buf, buf_size, "%d", v ? "1" : "0");
+	}
+
+	inline int fmt(char* buf, int buf_size, uchar v)
+	{
+		return sprintf_s(buf, buf_size, "%d", v);
 	}
 
 	inline int fmt(char* buf, int buf_size, int v)
@@ -71,13 +71,14 @@ namespace flame
 	}
 
 	template <uint N, class T>
-	inline void fmt(char* buf, int buf_size, const Vec<N, T>& v)
+	inline int fmt(char* buf, int buf_size, const Vec<N, T>& v)
 	{
 		auto p = buf;
 		auto s = buf_size;
+		auto ret = 0;
 		for (auto i = 0; i < N; i++)
 		{
-			auto ret = fmt(p, s, v[i]);
+			ret += fmt(p, s, v[i]);
 			p += ret;
 			s -= ret;
 			if (i < N - 1)
@@ -87,6 +88,7 @@ namespace flame
 				s--;
 			}
 		}
+		return ret;
 	}
 
 	template <class T>
@@ -110,9 +112,9 @@ namespace flame
 		return swprintf_s(buf, buf_size, L"%d", v ? L"1" : L"0");
 	}
 
-	inline void fmt(wchar_t* buf, int buf_size, uchar v)
+	inline int fmt(wchar_t* buf, int buf_size, uchar v)
 	{
-		swprintf_s(buf, buf_size, L"%d", v);
+		return swprintf_s(buf, buf_size, L"%d", v);
 	}
 
 	inline int fmt(wchar_t* buf, int buf_size, int v)
@@ -162,13 +164,14 @@ namespace flame
 	}
 
 	template <uint N, class T>
-	inline void fmt(wchar_t* buf, int buf_size, const Vec<N, T>& v)
+	inline int fmt(wchar_t* buf, int buf_size, const Vec<N, T>& v)
 	{
 		auto p = buf;
 		auto s = buf_size;
+		auto ret = 0;
 		for (auto i = 0; i < N; i++)
 		{
-			auto ret = fmt(p, s, v[i]);
+			ret += fmt(p, s, v[i]);
 			p += ret;
 			s -= ret;
 			if (i < N - 1)
@@ -178,6 +181,7 @@ namespace flame
 				s--;
 			}
 		}
+		return ret;
 	}
 
 	template <class T>
@@ -194,90 +198,6 @@ namespace flame
 		wchar_t buf[20];
 		fmt(buf, sizeof(buf), v);
 		return buf;
-	}
-
-	inline Vec2f stof2(const char* s)
-	{
-		Vec2f ret;
-		sscanf(s, "%f;%f", &ret.x(), &ret.y());
-		return ret;
-	}
-
-	inline Vec3f stof3(const char* s)
-	{
-		Vec3f ret;
-		sscanf(s, "%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
-		return ret;
-	}
-
-	inline Vec4f stof4(const char* s)
-	{
-		Vec4f ret;
-		sscanf(s, "%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return ret;
-	}
-
-	inline Vec2u stou2(const char* s)
-	{
-		Vec2u ret;
-		sscanf(s, "%u;%u", &ret.x(), &ret.y());
-		return ret;
-	}
-
-	inline Vec3u stou3(const char* s)
-	{
-		Vec3u ret;
-		sscanf(s, "%u;%u;%u", &ret.x(), &ret.y(), &ret.z());
-		return ret;
-	}
-
-	inline Vec4u stou4(const char* s)
-	{
-		Vec4u ret;
-		sscanf(s, "%u;%u;%u;%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return ret;
-	}
-
-	inline Vec2i stoi2(const char* s)
-	{
-		Vec2i ret;
-		sscanf(s, "%d;%d", &ret.x(), &ret.y());
-		return ret;
-	}
-
-	inline Vec3i stoi3(const char* s)
-	{
-		Vec3i ret;
-		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
-		return ret;
-	}
-
-	inline Vec4i stoi4(const char* s)
-	{
-		Vec4i ret;
-		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return ret;
-	}
-
-	inline Vec2c stoc2(const char* s)
-	{
-		Vec2i ret;
-		sscanf(s, "%d;%d", &ret.x(), &ret.y());
-		return Vec2c(ret);
-	}
-
-	inline Vec3c stoc3(const char* s)
-	{
-		Vec3i ret;
-		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
-		return Vec3c(ret);
-	}
-
-	inline Vec4c stoc4(const char* s)
-	{
-		Vec4i ret;
-		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return Vec4c(ret);
 	}
 
 	template <class T>
@@ -319,88 +239,132 @@ namespace flame
 		return std::stof(s);
 	}
 
-	inline Vec2f stof2(const wchar_t* s)
+	template <>
+	inline Vec1c sto<Vec1c>(const char* s)
 	{
-		Vec2f ret;
-		swscanf(s, L"%f;%f", &ret.x(), &ret.y());
-		return ret;
+		Vec1i ret;
+		sscanf(s, "%d", &ret.x());
+		return Vec1c(ret);
 	}
 
-	inline Vec3f stof3(const wchar_t* s)
-	{
-		Vec3f ret;
-		swscanf(s, L"%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
-		return ret;
-	}
-
-	inline Vec4f stof4(const wchar_t* s)
-	{
-		Vec4f ret;
-		swscanf(s, L"%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return ret;
-	}
-
-	inline Vec2u stou2(const wchar_t* s)
-	{
-		Vec2u ret;
-		swscanf(s, L"%u;%u", &ret.x(), &ret.y());
-		return ret;
-	}
-
-	inline Vec3u stou3(const wchar_t* s)
-	{
-		Vec3u ret;
-		swscanf(s, L"%u;%u;%u", &ret.x(), &ret.y(), &ret.z());
-		return ret;
-	}
-
-	inline Vec4u stou4(const wchar_t* s)
-	{
-		Vec4u ret;
-		swscanf(s, L"%u;%u;%u;%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return ret;
-	}
-
-	inline Vec2i stoi2(const wchar_t* s)
+	template <>
+	inline Vec2c sto<Vec2c>(const char* s)
 	{
 		Vec2i ret;
-		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
-		return ret;
-	}
-
-	inline Vec3i stoi3(const wchar_t* s)
-	{
-		Vec3i ret;
-		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
-		return ret;
-	}
-
-	inline Vec4i stoi4(const wchar_t* s)
-	{
-		Vec4i ret;
-		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
-		return ret;
-	}
-
-	inline Vec2c stoc2(const wchar_t* s)
-	{
-		Vec2i ret;
-		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
+		sscanf(s, "%d;%d", &ret.x(), &ret.y());
 		return Vec2c(ret);
 	}
 
-	inline Vec3c stoc3(const wchar_t* s)
+	template <>
+	inline Vec3c sto<Vec3c>(const char* s)
 	{
 		Vec3i ret;
-		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
 		return Vec3c(ret);
 	}
 
-	inline Vec4c stoc4(const wchar_t* s)
+	template <>
+	inline Vec4c sto<Vec4c>(const char* s)
 	{
 		Vec4i ret;
-		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return Vec4c(ret);
+	}
+
+	template <>
+	inline Vec1i sto<Vec1i>(const char* s)
+	{
+		Vec1i ret;
+		sscanf(s, "%d", &ret.x());
+		return ret;
+	}
+
+	template <>
+	inline Vec2i sto<Vec2i>(const char* s)
+	{
+		Vec2i ret;
+		sscanf(s, "%d;%d", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	template <>
+	inline Vec3i sto<Vec3i>(const char* s)
+	{
+		Vec3i ret;
+		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	template <>
+	inline Vec4i sto<Vec4i>(const char* s)
+	{
+		Vec4i ret;
+		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return ret;
+	}
+
+	template <>
+	inline Vec1u sto<Vec1u>(const char* s)
+	{
+		Vec1u ret;
+		sscanf(s, "%u", &ret.x());
+		return ret;
+	}
+
+	template <>
+	inline Vec2u sto<Vec2u>(const char* s)
+	{
+		Vec2u ret;
+		sscanf(s, "%u;%u", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	template <>
+	inline Vec3u sto<Vec3u>(const char* s)
+	{
+		Vec3u ret;
+		sscanf(s, "%u;%u;%u", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	template <>
+	inline Vec4u sto<Vec4u>(const char* s)
+	{
+		Vec4u ret;
+		sscanf(s, "%u;%u;%u;%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return ret;
+	}
+
+	template <>
+	inline Vec1f sto<Vec1f>(const char* s)
+	{
+		Vec1f ret;
+		sscanf(s, "%f", &ret.x());
+		return ret;
+	}
+
+	template <>
+	inline Vec2f sto<Vec2f>(const char* s)
+	{
+		Vec2f ret;
+		sscanf(s, "%f;%f", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	template <>
+	inline Vec3f sto<Vec3f>(const char* s)
+	{
+		Vec3f ret;
+		sscanf(s, "%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	template <>
+	inline Vec4f sto<Vec4f>(const char* s)
+	{
+		Vec4f ret;
+		sscanf(s, "%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return ret;
 	}
 
 	template <class T>
@@ -440,6 +404,134 @@ namespace flame
 	inline float sto<float>(const wchar_t* s)
 	{
 		return std::stof(s);
+	}
+
+	template <>
+	inline Vec1c sto<Vec1c>(const wchar_t* s)
+	{
+		Vec1i ret;
+		swscanf(s, L"%d", &ret.x());
+		return Vec1c(ret);
+	}
+
+	template <>
+	inline Vec2c sto<Vec2c>(const wchar_t* s)
+	{
+		Vec2i ret;
+		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
+		return Vec2c(ret);
+	}
+
+	template <>
+	inline Vec3c sto<Vec3c>(const wchar_t* s)
+	{
+		Vec3i ret;
+		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		return Vec3c(ret);
+	}
+
+	template <>
+	inline Vec4c sto<Vec4c>(const wchar_t* s)
+	{
+		Vec4i ret;
+		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return Vec4c(ret);
+	}
+
+	template <>
+	inline Vec1i sto<Vec1i>(const wchar_t* s)
+	{
+		Vec1i ret;
+		swscanf(s, L"%d", &ret.x());
+		return ret;
+	}
+
+	template <>
+	inline Vec2i sto<Vec2i>(const wchar_t* s)
+	{
+		Vec2i ret;
+		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	template <>
+	inline Vec3i sto<Vec3i>(const wchar_t* s)
+	{
+		Vec3i ret;
+		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	template <>
+	inline Vec4i sto<Vec4i>(const wchar_t* s)
+	{
+		Vec4i ret;
+		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return ret;
+	}
+
+	template <>
+	inline Vec1u sto<Vec1u>(const wchar_t* s)
+	{
+		Vec1u ret;
+		swscanf(s, L"%u", &ret.x());
+		return ret;
+	}
+
+	template <>
+	inline Vec2u sto<Vec2u>(const wchar_t* s)
+	{
+		Vec2u ret;
+		swscanf(s, L"%u;%u", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	template <>
+	inline Vec3u sto<Vec3u>(const wchar_t* s)
+	{
+		Vec3u ret;
+		swscanf(s, L"%u;%u;%u", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	template <>
+	inline Vec4u sto<Vec4u>(const wchar_t* s)
+	{
+		Vec4u ret;
+		swscanf(s, L"%u;%u;%u;%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return ret;
+	}
+
+	template <>
+	inline Vec1f sto<Vec1f>(const wchar_t* s)
+	{
+		Vec1f ret;
+		swscanf(s, L"%f", &ret.x());
+		return ret;
+	}
+
+	template <>
+	inline Vec2f sto<Vec2f>(const wchar_t* s)
+	{
+		Vec2f ret;
+		swscanf(s, L"%f;%f", &ret.x(), &ret.y());
+		return ret;
+	}
+
+	template <>
+	inline Vec3f sto<Vec3f>(const wchar_t* s)
+	{
+		Vec3f ret;
+		swscanf(s, L"%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
+		return ret;
+	}
+
+	template <>
+	inline Vec4f sto<Vec4f>(const wchar_t* s)
+	{
+		Vec4f ret;
+		swscanf(s, L"%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		return ret;
 	}
 
 	template <class T>

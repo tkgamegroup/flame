@@ -98,7 +98,7 @@ namespace flame
 		FunctionInfoPrivate(TypeInfoDatabasePrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, void* rva, TypeInfoPrivate* type);
 
 		bool _check_v(uint type_hash, char* ap) const;
-		bool _check(uint type_hash, ...) const { _check(type_hash, var_end(&type_hash)); }
+		bool _check(uint type_hash, ...) const { return _check(type_hash, var_end(&type_hash)); }
 
 		TypeInfoDatabase* get_database() const override { return (TypeInfoDatabase*)_db; }
 		UdtInfo* get_udt() const override { return (UdtInfo*)_udt; }
@@ -110,7 +110,7 @@ namespace flame
 		TypeInfo* get_parameter(uint idx) const override { return _parameters[idx]; }
 		const char* get_code() const override { return _code.c_str(); }
 
-		bool check(uint type_hash, ...) const override { _check(type_hash, var_end(&type_hash)); }
+		bool check(uint type_hash, ...) const override { return _check(type_hash, var_end(&type_hash)); }
 	};
 
 	struct UdtInfoPrivate : UdtInfo

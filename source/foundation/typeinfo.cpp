@@ -780,8 +780,9 @@ namespace flame
 		_default_value(nullptr)
 	{
 		_name_hash = FLAME_HASH(name.c_str());
-		if (auto tags = std::array{ TypeEnumSingle, TypeEnumMulti, TypeData }; 
-			std::any_of(tags.begin(), tags.end(), type->_tag) && type->_name_hash != FLAME_CHASH("flame::StringA") && type->_name_hash != FLAME_CHASH("flame::StringW"))
+		auto tag = type->_tag;
+		if ((tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData) && 
+			type->_name_hash != FLAME_CHASH("flame::StringA") && type->_name_hash != FLAME_CHASH("flame::StringW"))
 		{
 			if (type->_tag == TypeData)
 			{
