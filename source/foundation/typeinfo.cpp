@@ -762,12 +762,9 @@ namespace flame
 		return t;
 	}
 
-	TypeInfoPrivate* TypeInfoPrivate::_get_basic_type(uint name_hash)
-	{
-		auto it = basic_types.find(name_hash);
-		if (it != basic_types.end())
-			return it->second;
-		return nullptr;
+	TypeInfo* TypeInfo::get(TypeTag tag, const char* name)
+	{ 
+		return TypeInfoPrivate::_get(tag, name);
 	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset) :
@@ -780,17 +777,6 @@ namespace flame
 		_default_value(nullptr)
 	{
 		_name_hash = FLAME_HASH(name.c_str());
-		auto tag = type->_tag;
-		if ((tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData) && 
-			type->_name_hash != FLAME_CHASH("flame::StringA") && type->_name_hash != FLAME_CHASH("flame::StringW"))
-		{
-			if (type->_tag == TypeData)
-			{
-				auto size = type->_size;
-				_default_value = new char[size];
-				memset(_default_value, 0, size);
-			}
-		}
 	}
 
 	VariableInfoPrivate::~VariableInfoPrivate()
@@ -952,9 +938,12 @@ namespace flame
 				auto v = new VariableInfoPrivate(u, u->_variables.size(), type, n_variable.attribute("name").value(),
 					n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint());
 				u->_variables.emplace_back(v);
-
-				if (v->_default_value)
+				auto dv = n_variable.attribute("default_value");
+				if (dv)
+				{
+					v->_default_value = new char[type->_size];
 					type->unserialize(n_variable.attribute("default_value").value(), v->_default_value);
+				}
 			}
 
 			for (auto n_function : n_udt.child("functions"))

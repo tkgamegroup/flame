@@ -22,16 +22,9 @@ int main(int argc, char **args)
 		config = "relwithdebinfo";
 	std::transform(config.begin(), config.end(), config.begin(), ::tolower);
 
-	auto replace_config_str = [](const std::string& _s) {
-		static FLAME_SAL(str, "{c}");
-		auto s = _s;
-		auto pos = s.find(str.s, 0, str.l);
-		while (pos != std::string::npos)
-		{
-			s = s.replace(pos, str.l, config);
-			pos = s.find(str.s, 0, str.l);
-		}
-		return s;
+	auto replace_config_str = [](const std::string& s) {
+		static auto reg = std::regex(R"(\{c\})");
+		return std::regex_replace(s, reg, config);
 	};
 	auto description = parse_ini_file(L"package_description.ini");
 	for (auto& e : description.get_section_entries(""))

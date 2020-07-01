@@ -12,63 +12,38 @@ std::string format_type(const wchar_t* in, bool* is_array)
 	auto str = w2s(in);
 
 	{
-		static FLAME_SAL(str_unsigned, "unsigned ");
-		auto pos = str.find(str_unsigned.s, 0, str_unsigned.l);
-		while (pos != std::string::npos)
-		{
-			str = str.replace(pos, str_unsigned.l, "u");
-			pos = str.find(str_unsigned.s, 0, str_unsigned.l);
-		}
+		static auto reg = std::regex(R"(enum )");
+		str = std::regex_replace(str, reg, "");
 	}
 	{
-		static FLAME_SAL(str_int64, "__int64");
-		auto pos = str.find(str_int64.s, 0, str_int64.l);
-		while (pos != std::string::npos)
-		{
-			str = str.replace(pos, str_int64.l, "int64");
-			pos = str.find(str_int64.s, 0, str_int64.l);
-		}
+		static auto reg = std::regex(R"(unsigned )");
+		str = std::regex_replace(str, reg, "u");
 	}
 	{
-		static FLAME_SAL(str_enum, "enum ");
-		auto pos = str.find(str_enum.s, 0, str_enum.l);
-		while (pos != std::string::npos)
-		{
-			str = str.replace(pos, str_enum.l, "");
-			pos = str.find(str_enum.s, 0, str_enum.l);
-		}
+		static auto reg = std::regex(R"(__int64 )");
+		str = std::regex_replace(str, reg, "int64");
 	}
 	{
-		static FLAME_SAL(str_stringa, "flame::String<char>");
-		auto pos = str.find(str_stringa.s, 0, str_stringa.l);
-		while (pos != std::string::npos)
-		{
-			str = str.replace(pos, str_stringa.l, "flame::StringA");
-			pos = str.find(str_stringa.s, 0, str_stringa.l);
-		}
+		static auto reg = std::regex(R"(flame::String<char>)");
+		str = std::regex_replace(str, reg, "flame::StringA");
 	}
 	{
-		static FLAME_SAL(str_stringw, "flame::String<wchar_t>");
-		auto pos = str.find(str_stringw.s, 0, str_stringw.l);
-		while (pos != std::string::npos)
-		{
-			str = str.replace(pos, str_stringw.l, "flame::StringW");
-			pos = str.find(str_stringw.s, 0, str_stringw.l);
-		}
+		static auto reg = std::regex(R"(flame::String<wchar_t>)");
+		str = std::regex_replace(str, reg, "flame::StringW");
 	}
 	{
-		FLAME_SAL(array_str, "flame::Array");
-		if (str.compare(0, array_str.l, array_str.s) == 0 && str.size() > array_str.l + 1)
+		static auto array_str = std::string("flame::Array");
+		if (str.compare(0, array_str.size(), array_str.c_str()) == 0 && str.size() > array_str.size() + 1)
 		{
 			if (is_array)
 				*is_array = true;
-			str.erase(str.begin(), str.begin() + array_str.l + 1);
+			str.erase(str.begin(), str.begin() + array_str.size() + 1);
 			str.erase(str.end() - 1);
 		}
 	}
 	{
-		FLAME_SAL(listenerhub_str, "flame::ListenerHub");
-		if (str.compare(0, listenerhub_str.l, listenerhub_str.s) == 0)
+		static auto listenerhub_str = std::string("flame::ListenerHub");
+		if (str.compare(0, listenerhub_str.size(), listenerhub_str.c_str()) == 0)
 			str = "ListenerHub";
 	}
 
@@ -494,17 +469,25 @@ int main(int argc, char **args)
 		return saved_udts.find(h) != saved_udts.end();
 	};
 
+	auto library = LoadLibraryW(library_path.c_str());
+
+	auto typeinfo_path = library_path;
+	typeinfo_path.replace_extension(L".typeinfo");
 	pugi::xml_document file;
 	auto file_root = file.append_child("typeinfo");
-	auto n_enums = file_root.append_child("enums");
-	auto n_udts = file_root.append_child("udts");
+	pugi::xml_node n_enums;
+	pugi::xml_node n_udts;
 
-	IDiaEnumSymbols* _udts;
-	global->findChildren(SymTagUDT, NULL, nsNone, &_udts);
-	IDiaSymbol* _udt;
-	while (SUCCEEDED(_udts->Next(1, &_udt, &ul)) && (ul == 1))
+	auto typeinfo_code_path = library_path;
+	typeinfo_code_path.replace_extension(L".typeinfo.code");
+	std::ofstream typeinfo_code(typeinfo_code_path);
+
+	IDiaEnumSymbols* s_udts;
+	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
+	IDiaSymbol* s_udt;
+	while (SUCCEEDED(s_udts->Next(1, &s_udt, &ul)) && (ul == 1))
 	{
-		_udt->get_name(&pwname);
+		s_udt->get_name(&pwname);
 		auto name = w2s(pwname);
 
 		for (auto& du : desired_udts)
@@ -514,75 +497,27 @@ int main(int argc, char **args)
 				auto udt_hash = FLAME_HASH(name.c_str());
 				if (!has_udt(udt_hash))
 				{
-					_udt->get_length(&ull);
+					s_udt->get_length(&ull);
+					auto udt_size = ull;
 
+					if (!n_udts)
+						n_udts = file_root.append_child("udts");
 					auto n_udt = n_udts.append_child("udt");
 					n_udt.append_attribute("name").set_value(name.c_str());
-					n_udt.append_attribute("size").set_value(ull);
+					n_udt.append_attribute("size").set_value(udt_size);
 					n_udt.append_attribute("base_name").set_value(du.base_name.c_str());
 
-					IDiaEnumSymbols* _variables;
-					_udt->findChildren(SymTagData, NULL, nsNone, &_variables);
-					IDiaSymbol* _variable;
-					while (SUCCEEDED(_variables->Next(1, &_variable, &ul)) && (ul == 1))
+					DWORD ctor = 0;
+					DWORD dtor = 0;
+
+					pugi::xml_node n_functions;
+
+					IDiaEnumSymbols* s_functions;
+					s_udt->findChildren(SymTagFunction, NULL, nsNone, &s_functions);
+					IDiaSymbol* s_function;
+					while (SUCCEEDED(s_functions->Next(1, &s_function, &ul)) && (ul == 1))
 					{
-						_variable->get_name(&pwname);
-						auto name = w2s(pwname);
-						for (auto& dv : du.variables)
-						{
-							if (dv.name == name)
-							{
-								IDiaSymbol* s_type;
-								_variable->get_type(&s_type);
-
-								_variable->get_offset(&l);
-								s_type->get_length(&ull);
-
-								auto desc = typeinfo_from_symbol(s_type, dv.flags);
-								if (desc->_tag == TypeEnumSingle || desc->_tag == TypeEnumMulti)
-								{
-									auto enum_hash = desc->_base_hash;
-									if (!_find_enum(enum_hash))
-									{
-										auto e = new EnumInfoPrivate(db, desc->_base_name);
-										db->_enums.emplace(enum_hash, e);
-
-										IDiaEnumSymbols* items;
-										s_type->findChildren(SymTagNull, NULL, nsNone, &items);
-										IDiaSymbol* item;
-										while (SUCCEEDED(items->Next(1, &item, &ul)) && (ul == 1))
-										{
-											VARIANT variant;
-											ZeroMemory(&variant, sizeof(variant));
-											item->get_name(&pwname);
-											item->get_value(&variant);
-
-											auto item_name = w2s(pwname);
-											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
-												e->_items.emplace_back(new EnumItemPrivate(e, e->_items.size(), item_name, variant.lVal));
-
-											item->Release();
-										}
-										items->Release();
-									}
-								}
-								u->_variables.emplace_back(new VariableInfoPrivate(u, u->_variables.size(), desc, name, dv.flags, l, ull));
-
-								s_type->Release();
-
-								break;
-							}
-						}
-						_variable->Release();
-					}
-					_variables->Release();
-
-					IDiaEnumSymbols* _functions;
-					_udt->findChildren(SymTagFunction, NULL, nsNone, &_functions);
-					IDiaSymbol* _function;
-					while (SUCCEEDED(_functions->Next(1, &_function, &ul)) && (ul == 1))
-					{
-						_function->get_name(&pwname);
+						s_function->get_name(&pwname);
 						auto name = w2s(pwname);
 						for (auto& df : du.functions)
 						{
@@ -593,29 +528,40 @@ int main(int argc, char **args)
 								else if (name[0] == '~')
 									name = "dtor";
 
-								void* rva;
-
-								_function->get_relativeVirtualAddress(&dw);
-								rva = (void*)dw;
+								s_function->get_relativeVirtualAddress(&dw);
+								auto rva = dw;
 								if (rva)
 								{
 									IDiaSymbol* s_function_type;
-									_function->get_type(&s_function_type);
+									s_function->get_type(&s_function_type);
 
 									IDiaSymbol* s_return_type;
 									s_function_type->get_type(&s_return_type);
 									auto ret_type = typeinfo_from_symbol(s_return_type, 0);
 									s_return_type->Release();
 
-									auto f = new FunctionInfoPrivate(db, u, u->_functions.size(), name, rva, ret_type);
-									u->_functions.emplace_back(f);
+									if (!n_functions)
+										n_functions = n_udt.append_child("functions");
+									auto n_function = n_functions.append_child("function");
+									n_function.append_attribute("name").set_value(name.c_str());
+									n_function.append_attribute("rva").set_value(rva);
+									n_function.append_attribute("type_tag").set_value(ret_type.tag);
+									n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
+
+									pugi::xml_node n_parameters;
 
 									IDiaEnumSymbols* s_parameters;
 									s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
 									IDiaSymbol* s_parameter;
 									while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 									{
-										f->_parameters.emplace_back(typeinfo_from_symbol(s_parameter, 0));
+										auto desc = typeinfo_from_symbol(s_parameter, 0);
+
+										if (!n_parameters)
+											n_parameters = n_udt.append_child("functions");
+										auto n_parameter = n_parameters.append_child("parameter");
+										n_parameter.append_attribute("type_tag").set_value(desc.tag);
+										n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
 
 										s_parameter->Release();
 									}
@@ -623,125 +569,130 @@ int main(int argc, char **args)
 
 									s_function_type->Release();
 
-									f->_code = df.code;
+									if (name == "ctor" && !n_parameters)
+										ctor = rva;
+									else if (name == "dtor")
+										dtor = rva;
+
+									if (!df.code.empty())
+									{
+										typeinfo_code << "##" << du.full_name << "::" << name << "\n";
+										typeinfo_code << df.code;
+									}
 								}
 
 								break;
 							}
 						}
-						_function->Release();
+						s_function->Release();
 					}
-					_functions->Release();
+					s_functions->Release();
 
-					FunctionInfoPrivate* ctor = nullptr;
-					FunctionInfoPrivate* dtor = nullptr;
-					for (auto& f : u->_functions)
-					{
-						if (f->_name == "ctor" && f->_parameters.empty())
-							ctor = f.get();
-						else if (f->_name == "dtor")
-							dtor = f.get();
-						if (ctor && dtor)
-							break;
-					}
+					auto obj = malloc(udt_size);
+					memset(obj, 0, udt_size);
+
 					if (ctor)
+						cmf(p2f<MF_v_v>((char*)library + ctor), obj);
+
+					pugi::xml_node n_variables;
+
+					IDiaEnumSymbols* s_variables;
+					s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
+					IDiaSymbol* s_variable;
+					while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
 					{
-						auto library = LoadLibraryW(library_path.c_str());
-						if (library)
+						s_variable->get_name(&pwname);
+						auto name = w2s(pwname);
+						for (auto& dv : du.variables)
 						{
-							auto obj = malloc(u->_size);
-							memset(obj, 0, u->_size);
-
-							cmf(p2f<MF_v_v>((char*)library + (uint)(ctor->_rva)), obj);
-							for (auto& i : u->_variables)
+							if (dv.name == name)
 							{
-								if (!i->_default_value)
-									continue;
-								auto type = i->_type;
-								auto tag = type->_tag;
-								if (!type->_is_array && tag != TypePointer && !(i->_flags & VariableFlagOutput))
-									memcpy(i->_default_value, (char*)obj + i->_offset, i->_size);
-							}
-							if (dtor)
-								cmf(p2f<MF_v_v>((char*)library + (uint)(dtor->_rva)), obj);
+								IDiaSymbol* s_type;
+								s_variable->get_type(&s_type);
 
-							free(obj);
-							FreeLibrary(library);
+								s_variable->get_offset(&l);
+								auto offset = l;
+								s_type->get_length(&ull);
+
+								auto desc = typeinfo_from_symbol(s_type, dv.flags);
+								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+								{
+									auto enum_hash = FLAME_HASH(desc.name.c_str());
+									if (!has_enum(enum_hash))
+									{
+										if (!n_enums)
+											n_enums = file_root.append_child("enums");
+										auto n_enum = n_enums.append_child("enum");
+										n_enum.append_attribute("name").set_value(desc.name.c_str());
+
+										auto n_items = n_enum.append_child("items");
+
+										IDiaEnumSymbols* s_items;
+										s_type->findChildren(SymTagNull, NULL, nsNone, &s_items);
+										IDiaSymbol* s_item;
+										while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
+										{
+											VARIANT variant;
+											ZeroMemory(&variant, sizeof(variant));
+											s_item->get_name(&pwname);
+											s_item->get_value(&variant);
+
+											auto item_name = w2s(pwname);
+											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
+											{
+												auto n_item = n_items.append_child("item");
+												n_item.append_attribute("name").set_value(item_name.c_str());
+												n_item.append_attribute("value").set_value(variant.lVal);
+											}
+
+											s_item->Release();
+										}
+										s_items->Release();
+									}
+								}
+
+								if (!n_variables)
+									n_variables = n_udt.prepend_child("variables");
+								auto n_variable = n_variables.append_child("variable");
+								n_variable.append_attribute("type_tag").set_value(desc.tag);
+								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
+								n_variable.append_attribute("name").set_value(name.c_str());
+								n_variable.append_attribute("flags").set_value(dv.flags);
+								n_variable.append_attribute("offset").set_value(offset);
+
+								if ((desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti || desc.tag == TypeData) &&
+									desc.name != "flame::StringA" && desc.name != "flame::StringW" && !(dv.flags & VariableFlagOutput))
+								{
+									auto type = TypeInfo::get(desc.tag, desc.name.c_str());
+									n_variable.append_attribute("default_value").set_value(type->serialize_s((char*)obj + offset).c_str());
+								}
+
+								s_type->Release();
+
+								break;
+							}
 						}
+						s_variable->Release();
 					}
+					s_variables->Release();
+
+					if (dtor)
+						cmf(p2f<MF_v_v>((char*)library + dtor), obj);
+					free(obj);
 				}
 
 				break;
 			}
 		}
-		_udt->Release();
+		s_udt->Release();
 	}
-	_udts->Release();
+	s_udts->Release();
 
-	for (auto& e : db->_enums)
-	{
-		auto n_enum = n_enums.append_child("enum");
-		n_enum.append_attribute("name").set_value(e.second->_name.c_str());
-
-		auto n_items = n_enum.append_child("items");
-		for (auto& i : e.second->_items)
-		{
-			auto n_item = n_items.append_child("item");
-			n_item.append_attribute("name").set_value(i->_name.c_str());
-			n_item.append_attribute("value").set_value(i->_value);
-		}
-	}
-
-	for (auto& u : db->_udts)
-	{
-		auto n_items = n_udt.append_child("variables");
-		for (auto& v : u.second->_variables)
-		{
-			auto n_variable = n_items.append_child("variable");
-			n_variable.append_attribute("type").set_value(v->_type->_name.c_str());
-			n_variable.append_attribute("name").set_value(v->_name.c_str());
-			n_variable.append_attribute("flags").set_value(v->_flags);
-			n_variable.append_attribute("offset").set_value(v->_offset);
-			n_variable.append_attribute("size").set_value(v->_size);
-			if (v->_default_value)
-				n_variable.append_attribute("default_value").set_value(v->_type->serialize(v->_default_value).c_str());
-		}
-
-		auto n_functions = n_udt.append_child("functions");
-		for (auto& f : u.second->_functions)
-		{
-			auto n_function = n_functions.append_child("function");
-			n_function.append_attribute("name").set_value(f->_name.c_str());
-			n_function.append_attribute("rva").set_value((uint)f->_rva);
-			n_function.append_attribute("return_type").set_value(f->_type->_name.c_str());
-			if (!f->_parameters.empty())
-			{
-				auto n_parameters = n_function.append_child("parameters");
-				for (auto& p : f->_parameters)
-					n_parameters.append_child("parameter").append_attribute("type").set_value(p->_name.c_str());
-			}
-		}
-	}
-
-	auto typeinfo_path = library_path;
-	typeinfo_path.replace_extension(L".typeinfo");
 	file.save_file(typeinfo_path.string().c_str());
 
-	auto typeinfo_code_path = library_path;
-	typeinfo_code_path.replace_extension(L".typeinfo.code");
-	std::ofstream typeinfo_code(typeinfo_code_path);
-	for (auto& u : db->_udts)
-	{
-		for (auto& f : u.second->_functions)
-		{
-			if (!f->_code.empty())
-			{
-				typeinfo_code << "##" << u.second->_name << "::" << f->_name <<"\n";
-				typeinfo_code << f->_code;
-			}
-		}
-	}
 	typeinfo_code.close();
+
+	FreeLibrary(library);
 
 	printf(" - done\n");
 

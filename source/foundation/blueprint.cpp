@@ -74,7 +74,7 @@ namespace flame
 			auto o = _links[0];
 			if (o)
 			{
-				find_and_erase(o->_links, this);
+				erase_if(o->_links, this);
 				if (_type->_name == "ListenerHub")
 					(*(ListenerHub<void(Capture&)>**)_data)->remove(_listener);
 			}
@@ -208,7 +208,7 @@ namespace flame
 				}
 			};
 #pragma pack()
-			auto type = TypeInfoPrivate::_get_basic_type(FLAME_HASH(type_parameter.c_str()));
+			auto type = TypeInfoPrivate::_get(TypeData, type_parameter);
 			auto type_size = type->_size;
 
 			auto size = sizeof(Dummy) + type_size * 2;
@@ -778,9 +778,9 @@ namespace flame
 
 		//				auto type = out->type;
 		//				auto name = type->base_name;
-		//				static FLAME_SAL(str_flame, "flame::");
-		//				if (name.compare(0, str_flame.l, str_flame.s) == 0)
-		//					name.erase(name.begin(), name.begin() + str_flame.l);
+		//				static auto str_flame = std::string("flame::");
+		//				if (name.compare(0, str_flame.size(), str_flame.c_str()) == 0)
+		//					name.erase(name.begin(), name.begin() + str_flame.size());
 		//				std::regex reg_vec(R"(Vec<([0-9]+),(\w+)>)");
 		//				std::smatch res;
 		//				if (std::regex_search(name, res, reg_vec))

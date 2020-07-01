@@ -46,7 +46,7 @@ namespace flame
 	};
 
 	template <class T>
-	void find_and_erase(std::vector<T>& vec, T v)
+	void erase_if(std::vector<T>& vec, T v)
 	{
 		auto it = std::find(vec.begin(), vec.end(), v);
 		if (it != vec.end())
@@ -54,38 +54,13 @@ namespace flame
 	}
 
 	template <class T>
-	void find_and_erase(std::vector<std::unique_ptr<T>>& vec, T* v)
+	void erase_if(std::vector<std::unique_ptr<T>>& vec, T* v)
 	{
 		auto it = std::find_if(vec.begin(), vec.end(), [&](const auto& t) {
 			return t.get() == v;
 		});
 		if (it != vec.end())
 			vec.erase(it);
-	}
-
-	template <class CH>
-	struct _SAL // str and len
-	{
-		uint l;
-		const CH* s;
-
-		_SAL(uint l, const CH* s) :
-			l(l),
-			s(s)
-		{
-		}
-	};
-
-#define FLAME_SAL_S(x) EnsureConstU<__f_strlen(x)>::value, x
-#define FLAME_SAL(n, x) _SAL n(FLAME_SAL_S(x))
-
-	template <class CH>
-	constexpr uint __f_strlen(const CH* str)
-	{
-		auto p = str;
-		while (*p)
-			p++;
-		return p - str;
 	}
 
 	inline constexpr uint hash_update(uint h, uint v)

@@ -54,7 +54,7 @@ namespace flame
 		virtual void unserialize(const char* src, void* dst) const = 0;
 
 		// name hash, not type hash
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get_basic_type(uint name_hash);
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag, const char* name);
 		// in the callback: return a space that will be fill with the typeinfos, which size must bigger than sizeof(void*) * size
 		FLAME_FOUNDATION_EXPORTS static void get_basic_types(TypeInfo** (*callback)(Capture& c, uint size), const Capture& capture);
 	};

@@ -784,7 +784,7 @@ void cInspector::refresh()
 
 		ui.e_begin_button_menu(L"Add Component");
 		{
-			FLAME_SAL(prefix, "Serializer_c");
+			static auto prefix = std::string("Serializer_c");
 			std::vector<UdtInfo*> all_udts;
 			for (auto db : global_typeinfo_databases)
 			{

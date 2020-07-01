@@ -18,7 +18,6 @@ namespace flame
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, uint size);
 
 		static TypeInfoPrivate* _get(TypeTag tag, const std::string& name);
-		static TypeInfoPrivate* _get_basic_type(uint name_hash);
 
 		TypeTag get_tag() const override { return _tag; }
 		const char* get_name() const override { return _name.c_str(); }

@@ -129,13 +129,13 @@ namespace flame
 		}
 
 		if (c->_want_local_event)
-			find_and_erase(_local_event_dispatch_list, c);
+			erase_if(_local_event_dispatch_list, c);
 		if (c->_want_child_event)
-			find_and_erase(_child_event_dispatch_list, c);
+			erase_if(_child_event_dispatch_list, c);
 		if (c->_want_local_data_changed)
-			find_and_erase(_local_data_changed_dispatch_list, c);
+			erase_if(_local_data_changed_dispatch_list, c);
 		if (c->_want_child_data_changed)
-			find_and_erase(_child_data_changed_dispatch_list, c);
+			erase_if(_child_data_changed_dispatch_list, c);
 
 		if (!destroy)
 			it->second.release();
