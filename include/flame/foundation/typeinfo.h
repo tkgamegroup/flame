@@ -22,18 +22,12 @@ namespace flame
 	struct VariableInfo;
 	struct FunctionInfo;
 	struct UdtInfo;
-	struct TypeInfoDatabase;
-
-#define FLAME_TYPE_HASH(tag, name_hash) hash_update(name_hash, tag)
-#define FLAME_TYPE_HASH_n(tag, name) hash_update(FLAME_CHASH(name), tag)
-#define FLAME_TYPE_HASH_dn(name) FLAME_TYPE_HASH_n(TypeData, name)
-#define FLAME_TYPE_HASH_pn(name) FLAME_TYPE_HASH_n(TypePointer, name)
+	struct Library;
 
 	struct TypeInfo
 	{
 		virtual TypeTag get_tag() const = 0;
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
-		virtual uint get_name_hash() const = 0;
 		virtual uint get_size() const = 0;
 
 		virtual void construct(void* p) const = 0;
@@ -53,7 +47,6 @@ namespace flame
 		}
 		virtual void unserialize(const char* src, void* dst) const = 0;
 
-		// name hash, not type hash
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag, const char* name);
 		// in the callback: return a space that will be fill with the typeinfos, which size must bigger than sizeof(void*) * size
 		FLAME_FOUNDATION_EXPORTS static void get_basic_types(TypeInfo** (*callback)(Capture& c, uint size), const Capture& capture);
@@ -72,7 +65,6 @@ namespace flame
 		virtual uint get_index() const = 0;
 		virtual TypeInfo* get_type() const = 0;
 		virtual const char* get_name() const = 0;
-		virtual uint get_name_hash() const = 0;
 		virtual uint get_flags() const = 0;
 		virtual uint get_offset() const = 0;
 		virtual const void* get_default_value() const = 0;
@@ -89,7 +81,7 @@ namespace flame
 
 	struct EnumInfo
 	{
-		virtual TypeInfoDatabase* get_database() const = 0;
+		virtual Library* get_library() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_items_count() const = 0;
 		virtual EnumItem* get_item(uint idx) const = 0;
@@ -99,7 +91,7 @@ namespace flame
 
 	struct FunctionInfo
 	{
-		virtual TypeInfoDatabase* get_database() const = 0;
+		virtual Library* get_library() const = 0;
 		virtual UdtInfo* get_udt() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
@@ -109,13 +101,13 @@ namespace flame
 		virtual TypeInfo* get_parameter(uint idx) const = 0;
 		virtual const char* get_code() const = 0;
 
-		// first is return type, next followed by all parameters, parameters are end by 0
-		virtual bool check(uint type_hash, ...) const = 0;
+		// first is return type, next followed by all parameters, parameters are end by null
+		virtual bool check(TypeInfo* type, ...) const = 0;
 	};
 
 	struct UdtInfo
 	{
-		virtual TypeInfoDatabase* get_database() const = 0;
+		virtual Library* get_library() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_size() const = 0;
 		virtual const char* get_base_name() const = 0; // base class name
@@ -154,11 +146,11 @@ namespace flame
 
 		virtual const void* get_address() const = 0;
 		virtual const wchar_t* get_filename() const = 0;
-		virtual void* get_exported_function(const char* name);
+		virtual void* get_exported_function(const char* name) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Library* load(const wchar_t* filename);
+		FLAME_FOUNDATION_EXPORTS static Library* load(const wchar_t* filename, bool require_typeinfo = true);
 	};
 
-	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint hash);
-	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(uint hash);
+	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name);
+	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name);
 }

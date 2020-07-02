@@ -101,27 +101,6 @@ namespace flame
 		return StringW(std::filesystem::path(buf).parent_path().wstring());
 	}
 
-	void* load_library(const wchar_t* library_name)
-	{
-		auto ret = LoadLibraryW(library_name);
-		if (!ret)
-		{
-			auto ec = GetLastError();
-			printf("load library err: %d\n", ec);
-		}
-		return ret;
-	}
-
-	void* get_library_func(void* library, const char* name)
-	{
-		return GetProcAddress((HMODULE)library, name);
-	}
-
-	void free_library(void* library)
-	{
-		FreeLibrary((HMODULE)library);
-	}
-
 	void *get_hinst()
 	{
 		return GetModuleHandle(nullptr);

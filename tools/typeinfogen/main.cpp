@@ -210,7 +210,7 @@ int main(int argc, char **args)
 	auto last_curr_path = std::filesystem::current_path();
 	std::filesystem::current_path(get_app_path().str());
 	for (auto& d : dependencies)
-		TypeInfoDatabase::load(d.c_str());
+		Library::load(d.c_str());
 	std::filesystem::current_path(last_curr_path);
 
 	if (FAILED(CoInitialize(NULL)))

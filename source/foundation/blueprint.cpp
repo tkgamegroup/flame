@@ -303,7 +303,7 @@ namespace flame
 			break;
 		case bpNodeUdt:
 		{
-			_udt = _find_udt(FLAME_HASH(type_parameter.c_str()));
+			_udt = _find_udt(type_parameter);
 
 			if (!_udt)
 			{
@@ -311,7 +311,7 @@ namespace flame
 				printf("add node: udt not found: %s\n", type_parameter.c_str());
 			}
 
-			_library = (void*)_udt->_db->_library;
+			_library_address = (void*)_udt->_library->_address;
 
 			if (_object_rule == bpObjectEntity)
 			{
@@ -321,20 +321,20 @@ namespace flame
 
 				{
 					auto f = _udt->_find_function("ctor");
-					if (f && f->check(FLAME_TYPE_HASH_dn("void"), 0))
-						cmf(p2f<MF_v_v>((char*)_library + (uint)f->_rva), _object);
+					if (f && f->_check(TypeInfoPrivate::_get(TypeData, "void"), nullptr))
+						cmf(p2f<MF_v_v>((char*)_library_address + (uint)f->_rva), _object);
 				}
 
 				{
 					auto f = _udt->_find_function("dtor");
-					if (f && f->check(FLAME_TYPE_HASH_dn("void"), 0))
-						_dtor_addr = (char*)_library + (uint)f->_rva;
+					if (f && f->_check(TypeInfoPrivate::_get(TypeData, "void"), nullptr))
+						_dtor_addr = (char*)_library_address + (uint)f->_rva;
 				}
 
 				{
 					auto f = _udt->_find_function("bp_update");
-					assert(f && f->check(FLAME_TYPE_HASH_dn("void"), 0));
-					_update_addr = (char*)_library + (uint)f->_rva;
+					assert(f && f->_check(TypeInfoPrivate::_get(TypeData, "void"), nullptr));
+					_update_addr = (char*)_library_address + (uint)f->_rva;
 				}
 
 				for (auto& v : _udt->_variables)
@@ -371,62 +371,62 @@ namespace flame
 						auto f_set = _udt->_find_function((std::string("set_") + v->_name).c_str());
 						if (f_set)
 						{
-							auto f_set_addr = (char*)_library + (uint)f_set->_rva;
+							auto f_set_addr = (char*)_library_address + (uint)f_set->_rva;
 							Setter* setter = nullptr;
-							switch (type->_name_hash)
-							{
-							case FLAME_CHASH("bool"):
-								setter = new Setter_t<bool>;
-								break;
-							case FLAME_CHASH("int"):
-								setter = new Setter_t<int>;
-								break;
-							case FLAME_CHASH("flame::Vec<2,int>"):
-								setter = new Setter_t<Vec2i>;
-								break;
-							case FLAME_CHASH("flame::Vec<3,int>"):
-								setter = new Setter_t<Vec3i>;
-								break;
-							case FLAME_CHASH("flame::Vec<4,int>"):
-								setter = new Setter_t<Vec4i>;
-								break;
-							case FLAME_CHASH("uint"):
-								setter = new Setter_t<uint>;
-								break;
-							case FLAME_CHASH("flame::Vec<2,uint>"):
-								setter = new Setter_t<Vec2u>;
-								break;
-							case FLAME_CHASH("flame::Vec<3,uint>"):
-								setter = new Setter_t<Vec3u>;
-								break;
-							case FLAME_CHASH("flame::Vec<4,unt>"):
-								setter = new Setter_t<Vec4u>;
-								break;
-							case FLAME_CHASH("float"):
-								setter = new Setter_t<float>;
-								break;
-							case FLAME_CHASH("flame::Vec<2,float>"):
-								setter = new Setter_t<Vec2f>;
-								break;
-							case FLAME_CHASH("flame::Vec<3,float>"):
-								setter = new Setter_t<Vec3f>;
-								break;
-							case FLAME_CHASH("flame::Vec<4,float>"):
-								setter = new Setter_t<Vec4f>;
-								break;
-							case FLAME_CHASH("uchar"):
-								setter = new Setter_t<uchar>;
-								break;
-							case FLAME_CHASH("flame::Vec<2,uchar>"):
-								setter = new Setter_t<Vec2c>;
-								break;
-							case FLAME_CHASH("flame::Vec<3,uchar>"):
-								setter = new Setter_t<Vec3c>;
-								break;
-							case FLAME_CHASH("flame::Vec<4,uchar>"):
-								setter = new Setter_t<Vec4c>;
-								break;
-							}
+							//switch (type->_name_hash) // TODO
+							//{
+							//case FLAME_CHASH("bool"):
+							//	setter = new Setter_t<bool>;
+							//	break;
+							//case FLAME_CHASH("int"):
+							//	setter = new Setter_t<int>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<2,int>"):
+							//	setter = new Setter_t<Vec2i>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<3,int>"):
+							//	setter = new Setter_t<Vec3i>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<4,int>"):
+							//	setter = new Setter_t<Vec4i>;
+							//	break;
+							//case FLAME_CHASH("uint"):
+							//	setter = new Setter_t<uint>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<2,uint>"):
+							//	setter = new Setter_t<Vec2u>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<3,uint>"):
+							//	setter = new Setter_t<Vec3u>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<4,unt>"):
+							//	setter = new Setter_t<Vec4u>;
+							//	break;
+							//case FLAME_CHASH("float"):
+							//	setter = new Setter_t<float>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<2,float>"):
+							//	setter = new Setter_t<Vec2f>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<3,float>"):
+							//	setter = new Setter_t<Vec3f>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<4,float>"):
+							//	setter = new Setter_t<Vec4f>;
+							//	break;
+							//case FLAME_CHASH("uchar"):
+							//	setter = new Setter_t<uchar>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<2,uchar>"):
+							//	setter = new Setter_t<Vec2c>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<3,uchar>"):
+							//	setter = new Setter_t<Vec3c>;
+							//	break;
+							//case FLAME_CHASH("flame::Vec<4,uchar>"):
+							//	setter = new Setter_t<Vec4c>;
+							//	break;
+							//}
 							setter->o = _object;
 							setter->f = f_set_addr;
 							input->_setter = setter;

@@ -72,7 +72,7 @@ namespace flame
 		std::vector<std::unique_ptr<bpNodePrivate>> _children;
 
 		void* _object = nullptr;
-		void* _library = nullptr;
+		void* _library_address = nullptr;
 
 		void* _dtor_addr = nullptr;
 		void* _update_addr = nullptr;

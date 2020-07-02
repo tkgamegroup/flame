@@ -34,13 +34,10 @@ namespace flame
 	{
 		if (in_type == out_out)
 			return true;
-		auto in_name_hash = in_type->get_name_hash();
-		auto out_tag = out_out->get_tag();
-		if (in_type->get_tag() == TypePointer && (out_tag == TypeData || out_tag == TypePointer) &&
-			(in_name_hash == out_out->get_name_hash() || in_name_hash == FLAME_CHASH("void")))
-			return true;
-
-		return false;
+		if (in_type->get_tag() != TypePointer || in_type->get_tag() != TypeData)
+			return false;
+		auto in_name = std::string(in_type->get_name());
+		return in_name == out_out->get_name() || in_name == "void";
 	}
 
 	struct bpSlot
