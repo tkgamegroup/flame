@@ -292,7 +292,7 @@ namespace flame
 		{
 			uint dt = get_looper()->delta_time * 1000;
 			if (dt < 16)
-				sleep(16 - dt);
+				std::this_thread::sleep_for(std::chrono::milliseconds(16 - dt));
 		}
 
 		get_looper()->process_events();

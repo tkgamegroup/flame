@@ -77,7 +77,7 @@ int main(int argc, char **args)
 			config = L"debug";
 		else if (action == "r")
 			config = L"relwithdebinfo";
-		exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/%s.sln\" /build %s", vs_path.c_str(), get_curr_path().v, s2w(name).c_str(), config).data());
+		exec_and_redirect_to_std_output(nullptr, wfmt(L"%s/Common7/IDE/devenv.com \"%s/build/%s.sln\" /build %s", vs_path.c_str(), std::filesystem::current_path().c_str(), s2w(name).c_str(), config).data());
 	}
 
 	system("pause");

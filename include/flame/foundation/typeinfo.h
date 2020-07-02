@@ -148,14 +148,15 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoDatabase
+	struct Library
 	{
 		virtual void release() = 0;
 
-		virtual const void* get_library() const = 0;
-		virtual const wchar_t* get_library_name() const = 0;
+		virtual const void* get_address() const = 0;
+		virtual const wchar_t* get_filename() const = 0;
+		virtual void* get_exported_function(const char* name);
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfoDatabase* load(const wchar_t* library_filename);
+		FLAME_FOUNDATION_EXPORTS static Library* load(const wchar_t* filename);
 	};
 
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(uint hash);

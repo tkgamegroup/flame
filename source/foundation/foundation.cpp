@@ -92,13 +92,6 @@ namespace flame
 			file_callback(file_callback_capture, filename);
 	}
 
-	StringW get_curr_path()
-	{
-		wchar_t buf[260];
-		GetCurrentDirectoryW(sizeof(buf), buf);
-		return StringW(buf);
-	}
-
 	StringW get_app_path(bool has_name)
 	{
 		wchar_t buf[260];
@@ -106,11 +99,6 @@ namespace flame
 		if (has_name)
 			return StringW(buf);
 		return StringW(std::filesystem::path(buf).parent_path().wstring());
-	}
-
-	void set_curr_path(const wchar_t* p)
-	{
-		SetCurrentDirectoryW(p);
 	}
 
 	void* load_library(const wchar_t* library_name)
@@ -145,18 +133,6 @@ namespace flame
 		ret.x() = GetSystemMetrics(SM_CXSCREEN);
 		ret.y() = GetSystemMetrics(SM_CYSCREEN);
 		return ret;
-	}
-
-	void read_process_memory(void* process, void* address, uint size, void* dst)
-	{
-		SIZE_T ret_byte;
-		auto ok = ReadProcessMemory(process, address, dst, size, &ret_byte);
-		assert(ok);
-	}
-
-	void sleep(int time)
-	{
-		Sleep(time < 0 ? INFINITE : time);
 	}
 
 	void* create_event(bool signaled, bool manual)
@@ -309,20 +285,6 @@ namespace flame
 		CloseHandle(proc_info.hThread);
 	}
 
-	StringW get_library_name(void* library)
-	{
-		wchar_t buf[260];
-		GetModuleFileNameW((HMODULE)library, buf, sizeof(buf));
-		return StringW(buf);
-	}
-
-	void* get_library_from_address(void* addr)
-	{
-		HMODULE library = NULL;
-		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &library);
-		return library;
-	}
-
 	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
 	{
 		auto section = IMAGE_FIRST_SECTION(pNTHeader);
@@ -399,32 +361,6 @@ namespace flame
 		CloseClipboard();
 	}
 
-	void open_explorer_and_select(const wchar_t* filename)
-	{
-		auto pidl = ILCreateFromPathW(filename);
-		if (pidl)
-		{
-			SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
-			ILFree(pidl);
-		}
-	}
-
-	void move_to_trashbin(const wchar_t* filename)
-	{
-		SHFILEOPSTRUCTW sh_op;
-		sh_op.hwnd = 0;
-		sh_op.wFunc = FO_DELETE;
-		std::wstring dz_str(filename);
-		dz_str += L'\0';
-		sh_op.pFrom = dz_str.c_str();
-		sh_op.pTo = L"\0";
-		sh_op.fFlags = FOF_ALLOWUNDO;
-		sh_op.fAnyOperationsAborted = false;
-		sh_op.hNameMappings = nullptr;
-		sh_op.lpszProgressTitle = L"Deleting..";
-		auto result = SHFileOperationW(&sh_op);
-	}
-
 	void get_thumbnail(uint width, const wchar_t* _filename, uint* out_width, uint* out_height, char** out_data)
 	{
 		std::filesystem::path path(_filename);
@@ -462,7 +398,7 @@ namespace flame
 		shell_folder->Release();
 	}
 
-	Key vk_code_to_key(int vkCode)
+	static Key vk_code_to_key(int vkCode)
 	{
 #ifdef FLAME_WINDOWS
 		switch (vkCode)
@@ -832,30 +768,6 @@ namespace flame
 		}
 #endif
 		return KeyNull;
-	}
-
-	bool is_modifier_pressing(Key k, int left_or_right)
-	{
-#ifdef FLAME_WINDOWS
-		int kc;
-		switch (k)
-		{
-		case Key_Shift:
-			kc = left_or_right == 0 ? VK_LSHIFT : VK_RSHIFT;
-			break;
-		case Key_Ctrl:
-			kc = left_or_right == 0 ? VK_LCONTROL : VK_RCONTROL;
-			break;
-		case Key_Alt:
-			kc = left_or_right == 0 ? VK_LMENU : VK_RMENU;
-			break;
-		default:
-			return false;
-		}
-		return GetKeyState(kc) < 0;
-#else
-		return false;
-#endif
 	}
 
 	struct GlobalKeyListener

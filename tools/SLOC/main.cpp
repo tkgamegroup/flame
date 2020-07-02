@@ -148,16 +148,16 @@ int main(int argc, char **args)
 	if (extensions.empty())
 		add_default_extensions();
 
-	auto curr_path = get_curr_path();
+	auto curr_path = std::filesystem::current_path();
 
 	for (auto& i : special_excludes)
 	{
 		if (i.size() > 0 && !is_slash_chr(i[0]))
 			i = L"\\" + i;
-		i = curr_path.v + i;
+		i = curr_path.wstring() + i;
 	}
 
-	iter(curr_path.v);
+	iter(curr_path.wstring());
 
 	printf("total:%d\n", total_lines);
 	printf("empty:%d\n", empty_lines);

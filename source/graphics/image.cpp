@@ -460,7 +460,7 @@ namespace flame
 				tile->_filename = s2w(t);
 				tile->_id = FLAME_HASH(t.c_str());
 				ss >> t;
-				auto v = stou4(t.c_str());
+				auto v = sto<Vec4u>(t.c_str());
 				tile->_pos = Vec2i(v.x(), v.y());
 				tile->_size = Vec2i(v.z(), v.w());
 				tile->_uv.x() = tile->_pos.x() / w;

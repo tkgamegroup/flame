@@ -21,7 +21,7 @@ int main(int argc, char** args)
 	auto buffer = sound::Buffer::create_from_data(data);
 	auto source = sound::Source::create(buffer);
 	source->play();
-	sleep(1000);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 	return 0;
 }

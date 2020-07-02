@@ -74,7 +74,7 @@ int main(int argc, char** args)
 		auto buffer = sound::Buffer::create_from_data(data, freq, stereo, _16bit, dura);
 		auto source = sound::Source::create(buffer);
 		source->play();
-		sleep(dura * 1000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(int(dura * 1000)));
 		source->stop();
 		delete[]data;
 

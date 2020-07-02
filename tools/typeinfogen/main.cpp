@@ -207,11 +207,11 @@ int main(int argc, char **args)
 	}
 	printf("generating typeinfo for %s: ", library_path.string().c_str());
 
-	auto last_curr_path = get_curr_path();
-	set_curr_path(get_app_path().v);
+	auto last_curr_path = std::filesystem::current_path();
+	std::filesystem::current_path(get_app_path().str());
 	for (auto& d : dependencies)
 		TypeInfoDatabase::load(d.c_str());
-	set_curr_path(last_curr_path.v);
+	std::filesystem::current_path(last_curr_path);
 
 	if (FAILED(CoInitialize(NULL)))
 	{

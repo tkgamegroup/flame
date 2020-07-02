@@ -19,7 +19,7 @@ int main(int argc, char **args)
 				output = s2w(std::string(arg.begin() + 2, arg.end()));
 		}
 	}
-	for (std::filesystem::directory_iterator end, it(get_curr_path().v); it != end; it++)
+	for (std::filesystem::directory_iterator end, it(std::filesystem::current_path()); it != end; it++)
 	{
 		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
 			inputs.push_back(it->path());

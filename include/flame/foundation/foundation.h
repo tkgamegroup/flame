@@ -627,16 +627,9 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS const wchar_t* get_engine_path();
 	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void report_used_file(const wchar_t* filename);
-	FLAME_FOUNDATION_EXPORTS StringW get_curr_path();
 	FLAME_FOUNDATION_EXPORTS StringW get_app_path(bool has_name = false);
-	FLAME_FOUNDATION_EXPORTS void set_curr_path(const wchar_t* p);
-	FLAME_FOUNDATION_EXPORTS void* load_library(const wchar_t* library_name);
-	FLAME_FOUNDATION_EXPORTS void* get_library_func(void* library, const char* name);
-	FLAME_FOUNDATION_EXPORTS void free_library(void* library);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
-	FLAME_FOUNDATION_EXPORTS void read_process_memory(void* process, void* address, uint size, void* dst);
-	FLAME_FOUNDATION_EXPORTS void sleep(int time); // a time less than 0 means forever
 	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled, bool manual = false);
 	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
@@ -648,16 +641,10 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
-	FLAME_FOUNDATION_EXPORTS StringW get_library_name(void* library);
-	FLAME_FOUNDATION_EXPORTS void* get_library_from_address(void* addr);
 	FLAME_FOUNDATION_EXPORTS Array<StringW> get_library_dependencies(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
-	FLAME_FOUNDATION_EXPORTS void open_explorer_and_select(const wchar_t* filename);
-	FLAME_FOUNDATION_EXPORTS void move_to_trashbin(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
-	FLAME_FOUNDATION_EXPORTS Key vk_code_to_key(int vkCode);
-	FLAME_FOUNDATION_EXPORTS bool is_modifier_pressing(Key k /* accept: Key_Shift, Key_Ctrl and Key_Alt */, int left_or_right /* 0 or 1 */);
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyState action, Key key);
