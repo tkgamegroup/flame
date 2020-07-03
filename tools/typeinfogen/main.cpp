@@ -190,9 +190,44 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	std::vector<std::filesystem::path> dependencies;
 	auto pdb_path = library_path;
 	pdb_path.replace_extension(L".pdb");
+	auto typeinfo_path = library_path;
+	typeinfo_path.replace_extension(L".typeinfo");
+	auto code_path = library_path;
+	code_path.replace_extension(L".code");
+
+	std::vector<std::filesystem::path> source_dirs;
+
+	auto clear = false;
+	for (auto i = 2; i < argc; i++)
+	{
+		auto arg = args[i];
+		if (arg[0] == '-')
+		{
+			switch (arg[1])
+			{
+			case 'c':
+				clear = true;
+				break;
+			case 'd':
+				source_dirs.push_back(arg + 2);
+				break;
+			}
+		}
+	}
+
+	if (clear)
+	{
+		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(pdb_path) > std::filesystem::last_write_time(typeinfo_path))
+			std::filesystem::remove(pdb_path);
+		return 0;
+	}
+
+	for (auto& d : source_dirs)
+		d.make_preferred();
+
+	std::vector<std::filesystem::path> dependencies;
 
 	auto arr_dep = get_library_dependencies(library_path.c_str());
 	for (auto i = 0; i < arr_dep.s; i++)
@@ -254,27 +289,6 @@ int main(int argc, char **args)
 	DWORD dw;
 	wchar_t* pwname;
 
-	std::filesystem::path include_root;
-	std::filesystem::path source_root;
-	{
-		DWORD h;
-		auto version_size = GetFileVersionInfoSizeW(library_path.c_str(), &h);
-		if (version_size > 0)
-		{
-			auto version_data = new char[version_size];
-			if (GetFileVersionInfoW(library_path.c_str(), h, version_size, version_data))
-			{
-				void* d; uint s;
-				VerQueryValue(version_data, "\\StringFileInfo\\040904b0\\FileDescription", &d, &s);
-				auto sp = SUS::split((char*)d, ';');
-				include_root = sp[0];
-				include_root.make_preferred();
-				source_root = sp[1];
-				source_root.make_preferred();
-			}
-			delete[] version_data;
-		}
-	}
 	std::vector<std::filesystem::path> my_sources;
 	IDiaEnumSourceFiles* _source_files;
 	IDiaSourceFile* _source_file;
@@ -290,7 +304,15 @@ int main(int argc, char **args)
 			auto p = fn.parent_path();
 			while (p.root_path() != p)
 			{
-				if (p == include_root || p == source_root)
+				auto check_dir = [&](const std::filesystem::path& p) {
+					for (auto& d : source_dirs)
+					{
+						if (d == p)
+							return true;
+					}
+					return false;
+				};
+				if (check_dir(p))
 				{
 					my_file = true;
 					break;
@@ -455,32 +477,28 @@ int main(int argc, char **args)
 		file.close();
 	}
 
-	std::unordered_map<uint, uint> saved_enums;
-	std::unordered_map<uint, uint> saved_udts;
+	std::unordered_map<std::string, uint> saved_enums;
+	std::unordered_map<std::string, uint> saved_udts;
 
-	auto has_enum = [&](uint h) {
-		if (!find_enum(h))
+	auto has_enum = [&](const std::string& n) {
+		if (!find_enum(n.c_str()))
 			return false;
-		return saved_enums.find(h) != saved_enums.end();
+		return saved_enums.find(n) != saved_enums.end();
 	};
-	auto has_udt = [&](uint h) {
-		if (!find_udt(h))
+	auto has_udt = [&](const std::string& n) {
+		if (!find_udt(n.c_str()))
 			return false;
-		return saved_udts.find(h) != saved_udts.end();
+		return saved_udts.find(n) != saved_udts.end();
 	};
 
 	auto library = LoadLibraryW(library_path.c_str());
 
-	auto typeinfo_path = library_path;
-	typeinfo_path.replace_extension(L".typeinfo");
 	pugi::xml_document file;
 	auto file_root = file.append_child("typeinfo");
 	pugi::xml_node n_enums;
 	pugi::xml_node n_udts;
 
-	auto typeinfo_code_path = library_path;
-	typeinfo_code_path.replace_extension(L".typeinfo.code");
-	std::ofstream typeinfo_code(typeinfo_code_path);
+	std::ofstream typeinfo_code(code_path);
 
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
@@ -494,8 +512,7 @@ int main(int argc, char **args)
 		{
 			if (du.full_name == name)
 			{
-				auto udt_hash = FLAME_HASH(name.c_str());
-				if (!has_udt(udt_hash))
+				if (!has_udt(name))
 				{
 					s_udt->get_length(&ull);
 					auto udt_size = ull;
@@ -617,8 +634,7 @@ int main(int argc, char **args)
 								auto desc = typeinfo_from_symbol(s_type, dv.flags);
 								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 								{
-									auto enum_hash = FLAME_HASH(desc.name.c_str());
-									if (!has_enum(enum_hash))
+									if (!has_enum(desc.name))
 									{
 										if (!n_enums)
 											n_enums = file_root.append_child("enums");

@@ -53,14 +53,10 @@ namespace flame
 	template <class CH>
 	struct String
 	{
-		uint s;
-		CH* v;
+		uint s = 0;
+		CH* v = nullptr;
 
-		String() :
-			s(0),
-			v(nullptr)
-		{
-		}
+		String() {}
 
 		String(const String& rhs)
 		{
@@ -192,14 +188,10 @@ namespace flame
 
 		};
 
-		uint s;
-		T* v;
+		uint s = 0;
+		T* v = nullptr;
 
-		Array() :
-			s(0),
-			v(nullptr)
-		{
-		}
+		Array() {}
 
 		Array(const Array& rhs)
 		{
@@ -337,9 +329,7 @@ namespace flame
 		void* _thiz = nullptr;
 		void* _current = nullptr;
 
-		Capture()
-		{
-		}
+		Capture() {}
 
 		template <class T>
 		Capture& set_data(T* p)
@@ -636,8 +626,6 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void debug_break();
-	FLAME_FOUNDATION_EXPORTS void do_simple_dispatch_loop(void(callback)(Capture& c) = nullptr, const Capture& capture = Capture());
-	FLAME_FOUNDATION_EXPORTS bool is_file_occupied(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
 	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
@@ -751,7 +739,7 @@ namespace flame
 		virtual float get_delta_time() const = 0; // second
 		virtual float get_total_time() const = 0; // second
 
-		virtual int loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture) = 0;
+		virtual int loop(void (*frame_callback)(Capture& c, float delta_time) = nullptr, const Capture& capture = {}) = 0;
 
 		virtual void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0) = 0;
 		virtual void reset_event(void* ev) = 0;

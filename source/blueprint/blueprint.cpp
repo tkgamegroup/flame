@@ -1,23 +1,23 @@
 #include <flame/serialize.h>
-#include "foundation_private.h"
+#include <flame/foundation/foundation.h>
+#include <flame/foundation/typeinfo.h>
 #include "blueprint_private.h"
-#include "typeinfo_private.h"
 
 namespace flame
 {
-	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint size, const void* default_value) :
+	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, const std::string& name, uint offset, const void* default_value) :
 		_node(node),
 		_io(io),
 		_index(index),
 		_type(type),
 		_name(name),
-		_offset(offset),
-		_size(size)
+		_offset(offset)
 	{
 		user_data = nullptr;
 
 		if (default_value)
 		{
+			auto size = type->get_size();
 			_default_value = new char[size];
 			memcpy(_default_value, default_value, size);
 		}
@@ -28,8 +28,8 @@ namespace flame
 			_links.push_back(nullptr);
 	}
 
-	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfoPrivate* vi) :
-		bpSlotPrivate(node, io, index, vi->_type, vi->_name, vi->_offset, vi->_type->_size, vi->_default_value)
+	bpSlotPrivate::bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfo* vi) :
+		bpSlotPrivate(node, io, index, vi->get_type(), vi->get_name(), vi->get_offset(), vi->get_default_value())
 	{
 	}
 	 
@@ -75,7 +75,7 @@ namespace flame
 			if (o)
 			{
 				erase_if(o->_links, this);
-				if (_type->_name == "ListenerHub")
+				if (_type->get_name() == std::string("ListenerHub"))
 					(*(ListenerHub<void(Capture&)>**)_data)->remove(_listener);
 			}
 		}
@@ -84,7 +84,7 @@ namespace flame
 		if (target)
 		{
 			target->_links.push_back(this);
-			if (_type->_name == "ListenerHub")
+			if (_type->get_name() == std::string("ListenerHub"))
 			{
 				auto p = target->_data;
 				memcpy(_data, &p, sizeof(void*));
@@ -94,7 +94,7 @@ namespace flame
 			}
 		}
 
-		if (!target && _type->_tag == TypePointer)
+		if (!target && _type->get_tag() == TypePointer)
 			memset(_data, 0, sizeof(void*));
 
 		return true;
@@ -143,13 +143,13 @@ namespace flame
 				}
 			};
 #pragma pack()
-			auto size = _udt->_size;
+			auto size = _udt->get_size();
 			_object = malloc(size);
 			memset(_object, 0, size);
-			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "in", offsetof(Dummy, in), sizeof(Dummy::in), nullptr));
-			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk), nullptr));
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "out", offsetof(Dummy, out), sizeof(Dummy::out), nullptr));
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfoPrivate::_get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "in", offsetof(Dummy, in), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "chk", offsetof(Dummy, chk), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "out", offsetof(Dummy, out), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
 			_update_addr = f2v(&Dummy::update);
 		}
 			break;
@@ -175,10 +175,10 @@ namespace flame
 			auto size = sizeof(Dummy);
 			_object = malloc(size);
 			memset(_object, 0, size);
-			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeEnumMulti, type_parameter), "in", offsetof(Dummy, in), sizeof(Dummy::in), nullptr));
-			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfoPrivate::_get(TypeEnumSingle, type_parameter), "chk", offsetof(Dummy, chk), sizeof(Dummy::chk), nullptr));
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeEnumMulti, type_parameter), "out", offsetof(Dummy, out), sizeof(Dummy::out), nullptr));
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfoPrivate::_get(TypeData, "float"), "res", offsetof(Dummy, res), sizeof(Dummy::res), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypeEnumMulti, type_parameter.c_str()), "in", offsetof(Dummy, in), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "chk", offsetof(Dummy, chk), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumMulti, type_parameter.c_str()), "out", offsetof(Dummy, out), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
 			_update_addr = f2v(&Dummy::update);
 		}
 			break;
@@ -188,13 +188,14 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				TypeInfoPrivate* type;
+				TypeInfo* type;
 
 				void dtor()
 				{
 					auto p = var_end(&type);
-					auto in = next_var(p, type->_size);
-					auto out = next_var(p, type->_size);
+					auto size = type->get_size();
+					auto in = next_var(p, size);
+					auto out = next_var(p, size);
 					type->destruct(in);
 					type->destruct(out);
 				}
@@ -202,20 +203,21 @@ namespace flame
 				void update()
 				{
 					auto p = var_end(&type);
-					auto in = next_var(p, type->_size);
-					auto out = next_var(p, type->_size);
+					auto size = type->get_size();
+					auto in = next_var(p, size);
+					auto out = next_var(p, size);
 					type->copy(in, out);
 				}
 			};
 #pragma pack()
-			auto type = TypeInfoPrivate::_get(TypeData, type_parameter);
-			auto type_size = type->_size;
+			auto type = TypeInfo::get(TypeData, type_parameter.c_str());
+			auto type_size = type->get_size();
 
 			auto size = sizeof(Dummy) + type_size * 2;
 			_object = malloc(size);
 			memset(_object, 0, size);
-			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypeData, type_parameter), "in", sizeof(Dummy), type_size, nullptr));
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeData, type_parameter), "out", sizeof(Dummy) + type_size, type_size, nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, type, "in", sizeof(Dummy), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, type, "out", sizeof(Dummy) + type_size, nullptr));
 			_dtor_addr = f2v(&Dummy::dtor);
 			_update_addr = f2v(&Dummy::update);
 			auto& obj = *(Dummy*)_object;
@@ -229,35 +231,37 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				TypeInfoPrivate* type;
+				TypeInfo* type;
 				uint length;
 
 				void dtor()
 				{
 					auto p = var_end(&length);
+					auto size = type->get_size();
 					auto& out = *next_var<Array<int>>(p);
 					for (auto i = 0; i < out.s; i++)
-						type->destruct((char*)out.v + type->_size * i);
+						type->destruct((char*)out.v + size * i);
 					for (auto i = 0; i < length; i++)
-						type->destruct(next_var(p, type->_size));
+						type->destruct(next_var(p, size));
 					f_free(out.v);
 				}
 
 				void update()
 				{
 					auto p = var_end(&length);
+					auto size = type->get_size();
 					auto& out = *next_var<Array<int>>(p);
 					if (out.s != length)
 					{
 						out.s = length;
-						auto m_size = type->_size * length;
+						auto m_size = size * length;
 						f_free(out.v);
 						out.v = (int*)f_malloc(m_size);
 						memset(out.v, 0, m_size);
 					}
 					for (auto i = 0; i < length; i++)
 					{
-						type->copy(next_var(p, type->_size), (char*)out.v + type->_size * i);
+						type->copy(next_var(p, size), (char*)out.v + size * i);
 					}
 				}
 			};
@@ -270,15 +274,15 @@ namespace flame
 				base_name.erase(base_name.end() - 1);
 				tag = TypePointer;
 			}
-			auto type = TypeInfoPrivate::_get(tag, base_name);
-			uint type_size = type->_size;
+			auto type = TypeInfo::get(tag, base_name.c_str());
+			uint type_size = type->get_size();
 			auto length = stoi(sp[0]);
 			auto size = sizeof(Dummy) + sizeof(Array<int>) + type_size * length;
 			_object = malloc(size);
 			memset(_object, 0, size);
-			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfoPrivate::_get(TypeArrayOfData, type_name), "out", sizeof(Dummy), sizeof(Array<int>), nullptr));
+			_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeArrayOfData, type_name.c_str()), "out", sizeof(Dummy), nullptr));
 			for (auto i = 0; i < length; i++)
-				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, TypeInfoPrivate::_get(tag, base_name), std::to_string(i), sizeof(Dummy) + sizeof(Array<int>) + type_size * i, type_size, nullptr));
+				_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, type, std::to_string(i), sizeof(Dummy) + sizeof(Array<int>) + type_size * i, nullptr));
 			_dtor_addr = f2v(&Dummy::dtor);
 			_update_addr = f2v(&Dummy::update);
 			auto& obj = *(Dummy*)_object;
@@ -298,12 +302,12 @@ namespace flame
 			auto size = sizeof(Dummy);
 			_object = malloc(size);
 			memset(_object, 0, size);
-			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfoPrivate::_get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), sizeof(Dummy::signal), nullptr));
+			_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), nullptr));
 		}
 			break;
 		case bpNodeUdt:
 		{
-			_udt = _find_udt(type_parameter);
+			_udt = find_udt(type_parameter.c_str());
 
 			if (!_udt)
 			{
@@ -311,38 +315,40 @@ namespace flame
 				printf("add node: udt not found: %s\n", type_parameter.c_str());
 			}
 
-			_library_address = (void*)_udt->_library->_address;
+			_library_address = (void*)_udt->get_library()->get_address();
 
 			if (_object_rule == bpObjectEntity)
 			{
-				auto size = _udt->_size;
+				auto size = _udt->get_size();
 				_object = malloc(size);
 				memset(_object, 0, size);
 
 				{
-					auto f = _udt->_find_function("ctor");
-					if (f && f->_check(TypeInfoPrivate::_get(TypeData, "void"), nullptr))
-						cmf(p2f<MF_v_v>((char*)_library_address + (uint)f->_rva), _object);
+					auto f = _udt->find_function("ctor");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), nullptr))
+						cmf(p2f<MF_v_v>((char*)_library_address + (uint)f->get_rva()), _object);
 				}
 
 				{
-					auto f = _udt->_find_function("dtor");
-					if (f && f->_check(TypeInfoPrivate::_get(TypeData, "void"), nullptr))
-						_dtor_addr = (char*)_library_address + (uint)f->_rva;
+					auto f = _udt->find_function("dtor");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), nullptr))
+						_dtor_addr = (char*)_library_address + (uint)f->get_rva();
 				}
 
 				{
-					auto f = _udt->_find_function("bp_update");
-					assert(f && f->_check(TypeInfoPrivate::_get(TypeData, "void"), nullptr));
-					_update_addr = (char*)_library_address + (uint)f->_rva;
+					auto f = _udt->find_function("bp_update");
+					assert(f && f->check(TypeInfo::get(TypeData, "void"), nullptr));
+					_update_addr = (char*)_library_address + (uint)f->get_rva();
 				}
 
-				for (auto& v : _udt->_variables)
+				auto vars_count = _udt->get_variables_count();
+				for (auto i = 0; i < vars_count; i++)
 				{
-					if (v->_flags & VariableFlagOutput)
-						_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, _outputs.size(), v.get()));
+					auto v = _udt->get_variable(i);
+					if (v->get_flags() & VariableFlagOutput)
+						_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, _outputs.size(), v));
 					else
-						_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, _inputs.size(), v.get()));
+						_inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, _inputs.size(), v));
 				}
 			}
 			else
@@ -357,21 +363,24 @@ namespace flame
 
 				if (_object_rule == bpObjectRefRead)
 				{
-					for (auto& v : _udt->_variables)
-						_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, _outputs.size(), v.get()));
+					auto vars_count = _udt->get_variables_count();
+					for (auto i = 0; i < vars_count; i++)
+						_outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, _outputs.size(), _udt->get_variable(i)));
 				}
 				else if (_object_rule == bpObjectRefWrite)
 				{
-					for (auto& v : _udt->_variables)
+					auto vars_count = _udt->get_variables_count();
+					for (auto i = 0; i < vars_count; i++)
 					{
-						auto type = v->_type;
-						if (type->_tag != TypeData)
+						auto v = _udt->get_variable(i);
+						auto type = v->get_type();
+						if (type->get_tag() != TypeData)
 							continue;
-						auto input = new bpSlotPrivate(this, bpSlotIn, _inputs.size(), v.get());
-						auto f_set = _udt->_find_function((std::string("set_") + v->_name).c_str());
+						auto input = new bpSlotPrivate(this, bpSlotIn, _inputs.size(), v);
+						auto f_set = _udt->find_function((std::string("set_") + v->get_name()).c_str());
 						if (f_set)
 						{
-							auto f_set_addr = (char*)_library_address + (uint)f_set->_rva;
+							auto f_set_addr = (char*)_library_address + (uint)f_set->get_rva();
 							Setter* setter = nullptr;
 							//switch (type->_name_hash) // TODO
 							//{
@@ -431,7 +440,7 @@ namespace flame
 							setter->f = f_set_addr;
 							input->_setter = setter;
 						}
-						memcpy(input->_default_value, input->_data, input->_size);
+						memcpy(input->_default_value, input->_data, input->_type->get_size());
 						_inputs.emplace_back(input);
 					}
 				}
@@ -528,14 +537,14 @@ namespace flame
 			auto out = in->_links[0];
 			if (out)
 			{
-				if (out->_type->_tag == TypeData && in->_type->_tag == TypePointer)
+				if (out->_type->get_tag() == TypeData && in->_type->get_tag() == TypePointer)
 					memcpy(in->_data, &out->_data, sizeof(void*));
 				else
 				{
 					if (in->_setter)
 						in->_setter->set(out->_data);
 					else
-						memcpy(in->_data, out->_data, in->_size);
+						memcpy(in->_data, out->_data, in->_type->get_size());
 				}
 			}
 		}
@@ -652,7 +661,7 @@ namespace flame
 
 		_root->update();
 
-		_time += _looper->_delta_time;
+		_time += get_looper()->get_delta_time();
 	}
 
 	void bpScenePrivate::_save()
@@ -678,9 +687,9 @@ namespace flame
 					if (in->_links[0])
 						continue;
 					auto type = in->_type;
-					if (type->_tag != TypePointer)
+					if (type->get_tag() != TypePointer)
 					{
-						if (in->_default_value && memcmp(in->_default_value, in->_data, in->_size) == 0)
+						if (in->_default_value && memcmp(in->_default_value, in->_data, in->_type->get_size()) == 0)
 							continue;
 						if (!n_datas)
 							n_datas = n_node.append_child("datas");
@@ -962,7 +971,7 @@ namespace flame
 					{
 						auto input = n->_find_input(n_data.attribute("name").value());
 						auto type = input->_type;
-						auto tag = type->_tag;
+						auto tag = type->get_tag();
 						if (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData)
 							type->unserialize(n_data.attribute("value").value(), input->_data);
 					}
@@ -1390,7 +1399,7 @@ namespace flame
 
 		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
 		{
-			delta = _looper->_delta_time;
+			delta = get_looper()->get_delta_time();
 			total = bp_time;
 		}
 	};

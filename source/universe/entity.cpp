@@ -290,12 +290,12 @@ namespace flame
 
 		for (auto n_c : src.child("components"))
 		{
-			auto udt = find_udt(FLAME_HASH((std::string("flame::") + n_c.name()).c_str()));
+			auto udt = find_udt((std::string("flame::") + n_c.name()).c_str());
 			assert(udt && udt->get_base_name() == std::string("Component"));
-			auto library = udt->get_database()->get_library();
+			auto library_address = udt->get_database()->get_library();
 			auto f = udt->find_function("create");
 			assert(f);
-			auto component = cf(p2f<F_vp_v>((char*)library + (uint)f->get_rva()));
+			auto component = cf(p2f<F_vp_v>((char*)library_address + (uint)f->get_rva()));
 			for (auto n_v : n_c)
 			{
 				auto v = udt->find_variable(n_v.name());
@@ -355,7 +355,7 @@ namespace flame
 
 				auto n_c = n_cs.append_child(component->name);
 
-				auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
+				auto udt = find_udt((std::string("flame::") + component->name).c_str());
 				assert(udt && udt->get_base_name() == std::string("Component"));
 				auto variables_count = udt->get_variables_count();
 				for (auto i = 0; i < variables_count; i++)

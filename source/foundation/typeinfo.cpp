@@ -965,17 +965,17 @@ namespace flame
 				}
 			}
 
-			auto typeinfo_code_path = library_path;
-			typeinfo_code_path.replace_extension(L".typeinfo.code");
-			std::ifstream typeinfo_code(typeinfo_code_path);
-			if (typeinfo_code.good())
+			auto code_path = library_path;
+			code_path.replace_extension(L".code");
+			std::ifstream code_file(code_path);
+			if (code_file.good())
 			{
 				FunctionInfoPrivate* curr_func = nullptr;
 
-				while (!typeinfo_code.eof())
+				while (!code_file.eof())
 				{
 					std::string line;
-					std::getline(typeinfo_code, line);
+					std::getline(code_file, line);
 					if (line.empty())
 						continue;
 
@@ -994,7 +994,7 @@ namespace flame
 					else
 						curr_func->_code += line + "\n";
 				}
-				typeinfo_code.close();
+				code_file.close();
 			}
 
 			_has_typeinfo = true;

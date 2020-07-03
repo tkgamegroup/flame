@@ -52,7 +52,7 @@ int main(int argc, char **args)
 		}
 	}, Capture().set_data(&capture));
 
-	do_simple_dispatch_loop();
+	get_looper()->loop();
 
 	return 0;
 }

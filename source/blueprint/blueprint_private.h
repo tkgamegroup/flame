@@ -1,12 +1,12 @@
 #pragma once
 
-#include <flame/foundation/blueprint.h>
+#include <flame/blueprint/blueprint.h>
 
 namespace flame
 {
-	struct TypeInfoPrivate;
-	struct VariableInfoPrivate;
-	struct UdtInfoPrivate;
+	struct TypeInfo;
+	struct VariableInfo;
+	struct UdtInfo;
 
 	struct bpSlotPrivate;
 	struct bpNodePrivate;
@@ -17,10 +17,9 @@ namespace flame
 		bpNodePrivate* _node;
 		bpSlotIO _io;
 		uint _index;
-		TypeInfoPrivate* _type;
+		TypeInfo* _type;
 		std::string _name;
 		uint _offset;
-		uint _size;
 		void* _data = nullptr;
 		void* _default_value = nullptr;
 
@@ -29,8 +28,8 @@ namespace flame
 		Setter* _setter = nullptr;
 		void* _listener = nullptr;
 
-		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, uint size, const void* default_value);
-		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfoPrivate* vi);
+		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, const std::string& name, uint offset, const void* default_value);
+		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfo* vi);
 		~bpSlotPrivate();
 
 		void _set_data(const void* data);
@@ -42,7 +41,6 @@ namespace flame
 		TypeInfo* get_type() const override { return (TypeInfo*)_type; }
 		const char* get_name() const override { return _name.c_str(); }
 		uint get_offset() const override { return _offset; }
-		uint get_size() const override { return _size; }
 		const void* get_data() const override { return _data; }
 		void set_data(const void* data) override { _set_data(data); }
 		const void* get_default_value() const override { return _default_value; }
@@ -64,7 +62,7 @@ namespace flame
 		bpNodeType _type;
 		std::string _type_parameter;
 		bpObjectRule _object_rule;
-		UdtInfoPrivate* _udt = nullptr;
+		UdtInfo* _udt = nullptr;
 
 		std::vector<std::unique_ptr<bpSlotPrivate>> _inputs;
 		std::vector<std::unique_ptr<bpSlotPrivate>> _outputs;

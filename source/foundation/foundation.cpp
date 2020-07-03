@@ -146,47 +146,6 @@ namespace flame
 #endif
 	}
 
-	void do_simple_dispatch_loop(void(callback)(Capture& c), const Capture& capture)
-	{
-		if (callback)
-		{
-			for (;;)
-			{
-				MSG msg;
-				while (GetMessage(&msg, NULL, 0, 0))
-				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
-			}
-		}
-		else
-		{
-			for (;;)
-			{
-				MSG msg;
-				while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
-				callback((Capture&)capture);
-			}
-			f_free(capture._data);
-		}
-	}
-
-	bool is_file_occupied(const wchar_t* filename)
-	{
-		auto file = CreateFileW(filename, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-		if (GetLastError() == 0)
-		{
-			CloseHandle(file);
-			return false;
-		}
-		return true;
-	}
-
 	void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};
@@ -1530,6 +1489,19 @@ namespace flame
 
 	int LooperPrivate::_loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture)
 	{
+		if (!frame_callback)
+		{
+			for (;;)
+			{
+				MSG msg;
+				while (GetMessage(&msg, NULL, 0, 0))
+				{
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
+			}
+		}
+
 		if (windows.empty())
 			return 1;
 

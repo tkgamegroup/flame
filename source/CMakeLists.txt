@@ -1,4 +1,5 @@
 add_subdirectory(foundation)
+add_subdirectory(blueprint)
 add_subdirectory(network)
 add_subdirectory(graphics)
 add_subdirectory(universe)

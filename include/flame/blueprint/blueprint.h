@@ -1,5 +1,15 @@
 #pragma once
 
+#ifdef FLAME_WINDOWS
+#ifdef FLAME_BLUEPRINT_MODULE
+#define FLAME_BLUEPRINT_EXPORTS __declspec(dllexport)
+#else
+#define FLAME_BLUEPRINT_EXPORTS __declspec(dllimport)
+#endif
+#else
+#define FLAME_BLUEPRINT_EXPORTS
+#endif
+
 #include <flame/foundation/typeinfo.h>
 
 namespace flame
@@ -50,7 +60,6 @@ namespace flame
 		virtual TypeInfo* get_type() const = 0;
 		virtual const char* get_name() const = 0;
 		virtual uint get_offset() const = 0;
-		virtual uint get_size() const = 0;
 		virtual const void* get_data() const const = 0;
 		inline const void* get_data_p() const { return *(void**)get_data(); }
 		virtual void set_data(const void* data) = 0;
@@ -111,7 +120,7 @@ namespace flame
 		virtual void update() = 0;
 		virtual void save() = 0;
 
-		FLAME_FOUNDATION_EXPORTS static bpScene* create(const wchar_t* filename);
+		FLAME_BLUEPRINT_EXPORTS static bpScene* create(const wchar_t* filename);
 	};
 }
 
