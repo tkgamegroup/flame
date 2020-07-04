@@ -116,7 +116,7 @@ namespace flame
 		case EntityEnteredWorld:
 		{
 			calc_geometry();
-			renderer = entity->world->get_system(s2DRenderer);
+			renderer = entity->world->get_system(sElementRenderer);
 			renderer->pending_update = true;
 		}
 			break;

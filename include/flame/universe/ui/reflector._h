@@ -61,7 +61,7 @@ namespace flame
 			Entity* e_detail;
 
 			sEventDispatcher* s_event_dispatcher;
-			s2DRenderer* s_2d_renderer;
+			sElementRenderer* s_2d_renderer;
 			void* s_event_dispatcher_listener;
 			void* s_2d_renderer_listener;
 
@@ -510,7 +510,7 @@ namespace flame
 						c.thiz<cReflector>()->processing_event_dispatcher_event();
 						return true;
 					}, Capture().set_thiz(this));
-					s_2d_renderer = entity->world->get_system(s2DRenderer);
+					s_2d_renderer = entity->world->get_system(sElementRenderer);
 					s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](Capture& c) {
 						c.thiz<cReflector>()->processing_2d_renderer_event();
 						return true;

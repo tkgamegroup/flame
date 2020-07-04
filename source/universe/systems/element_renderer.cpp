@@ -3,12 +3,12 @@
 #include <flame/graphics/canvas.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/world.h>
-#include <flame/universe/systems/2d_renderer.h>
+#include "../systems/element_renderer_private.h"
 #include "../components/element_private.h"
 
 namespace flame
 {
-	struct s2DRendererPrivate : s2DRenderer
+	struct s2DRendererPrivate : sElementRenderer
 	{
 		s2DRendererPrivate(graphics::Canvas* _canvas)
 		{
@@ -86,12 +86,12 @@ namespace flame
 		}
 	};
 
-	s2DRenderer* s2DRenderer::create(graphics::Canvas* canvas)
+	sElementRenderer* sElementRenderer::create(graphics::Canvas* canvas)
 	{
 		return new s2DRendererPrivate(canvas);
 	}
 
-	void s2DRenderer::destroy(s2DRenderer* s)
+	void sElementRenderer::destroy(sElementRenderer* s)
 	{
 		delete (s2DRendererPrivate*)s;
 	}

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <flame/universe/systems/2d_renderer.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -10,11 +9,11 @@ namespace flame
 		struct Canvas;
 	}
 
-	struct s2DRenderer;
+	struct sElementRenderer;
 
 	struct FLAME_R(cElement : Component)
 	{
-		s2DRenderer* renderer;
+		sElementRenderer* renderer;
 
 		FLAME_RV(Vec2f, pos);
 		FLAME_RV(Vec2f, size);
@@ -35,53 +34,53 @@ namespace flame
 		bool clipped;
 		Vec4f clipped_rect;
 
-		void set_x(float v, void* sender = nullptr)
+		void set_x(float v)
 		{
-			set_pos(Vec2f(v, pos.y()), sender);
+			set_pos(Vec2f(v, pos.y()));
 		}
 
-		void set_y(float v, void* sender = nullptr)
+		void set_y(float v)
 		{
-			set_pos(Vec2f(pos.x(), v), sender);
+			set_pos(Vec2f(pos.x(), v));
 		}
 
-		void set_width(float v, void* sender = nullptr)
+		void set_width(float v)
 		{
-			set_size(Vec2f(v, size.y()), sender);
+			set_size(Vec2f(v, size.y()));
 		}
 
-		void set_height(float v, void* sender = nullptr)
+		void set_height(float v)
 		{
-			set_size(Vec2f(size.x(), v), sender);
+			set_size(Vec2f(size.x(), v));
 		}
-		void add_x(float v, void* sender = nullptr)
+		void add_x(float v)
 		{
-			set_pos(Vec2f(pos.x() + v, pos.y()), sender);
-		}
-
-		void add_y(float v, void* sender = nullptr)
-		{
-			set_pos(Vec2f(pos.x(), pos.y() + v), sender);
+			set_pos(Vec2f(pos.x() + v, pos.y()));
 		}
 
-		void add_width(float v, void* sender = nullptr)
+		void add_y(float v)
 		{
-			set_size(Vec2f(size.x() + v, size.y()), sender);
+			set_pos(Vec2f(pos.x(), pos.y() + v));
 		}
 
-		void add_height(float v, void* sender = nullptr)
+		void add_width(float v)
 		{
-			set_size(Vec2f(size.x(), size.y() + v), sender);
+			set_size(Vec2f(size.x() + v, size.y()));
 		}
 
-		void add_pos(const Vec2f& p, void* sender = nullptr)
+		void add_height(float v)
 		{
-			set_pos(pos + p, sender);
+			set_size(Vec2f(size.x(), size.y() + v));
 		}
 
-		void add_size(const Vec2f& p, void* sender = nullptr)
+		void add_pos(const Vec2f& p)
 		{
-			set_size(size + p, sender);
+			set_pos(pos + p);
+		}
+
+		void add_size(const Vec2f& p)
+		{
+			set_size(size + p);
 		}
 
 		Vec2f center() const
@@ -161,15 +160,15 @@ namespace flame
 
 		ListenerHub<bool(Capture& c, graphics::Canvas * canvas)> cmds;
 
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_pos)(const Vec2f& p, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_scale)(float s, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_size)(const Vec2f& s, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_alpha)(float a, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const Vec4f& r, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_thickness)(float t, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_color)(const Vec4c& c, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_pos)(const Vec2f& p);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_scale)(float s);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_size)(const Vec2f& s);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_alpha)(float a);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const Vec4f& r);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_thickness)(float t);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_color)(const Vec4c& c);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c);
+		FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f);
 
 		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(create)();
 	};

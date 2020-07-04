@@ -37,7 +37,7 @@ namespace flame
 		World* world;
 		sLayoutManagement* s_layout_management;
 		sEventDispatcher* s_event_dispatcher;
-		s2DRenderer* s_2d_renderer;
+		sElementRenderer* s_2d_renderer;
 		Entity* root;
 		cElement* root_element;
 
@@ -126,7 +126,7 @@ namespace flame
 			world->add_system(s_layout_management);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			s_2d_renderer = s2DRenderer::create(canvas);
+			s_2d_renderer = sElementRenderer::create(canvas);
 			s_2d_renderer->before_update_listeners.add([](Capture& c) { // TODO: add a system before s_2d_renderer to do detect
 				auto thiz = c.thiz<GraphicsWindow>();
 				if (thiz->s_2d_renderer->pending_update)

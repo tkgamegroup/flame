@@ -292,7 +292,7 @@ namespace flame
 		{
 			auto udt = find_udt((std::string("flame::") + n_c.name()).c_str());
 			assert(udt && udt->get_base_name() == std::string("Component"));
-			auto library_address = udt->get_database()->get_library();
+			auto library_address = udt->get_library()->get_address();
 			auto f = udt->find_function("create");
 			assert(f);
 			auto component = cf(p2f<F_vp_v>((char*)library_address + (uint)f->get_rva()));
@@ -369,8 +369,8 @@ namespace flame
 					else
 					{
 						auto dv = v->get_default_value();
-						if (!dv || memcmp(dv, p, v->get_size()) != 0)
-							n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize(p).c_str());
+						if (!dv || memcmp(dv, p, type->get_size()) != 0)
+							n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize_s(p).c_str());
 					}
 				}
 			}

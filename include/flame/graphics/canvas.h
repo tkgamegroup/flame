@@ -7,8 +7,10 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
+		struct Imageview;
 		struct ImageAtlas;
 		struct FontAtlas;
+		struct Sampler;
 		struct Commandbuffer;
 
 		struct CanvasResource
