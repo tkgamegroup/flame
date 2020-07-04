@@ -1,5 +1,4 @@
-﻿#include <flame/foundation/blueprint.h>
-#include <flame/graphics/device.h>
+﻿#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/synchronize.h>
@@ -48,13 +47,54 @@ struct App
 		auto cb = cbs[img_idx];
 
 		canvas->prepare();
+
 		{
 			std::vector<Vec2f> points;
-			path_rect(points, Vec2f(100.f), Vec2f(200.f));
+			path_rect(points, Vec2f(20.f), Vec2f(50.f));
 			canvas->fill(points.size(), points.data(), Vec4c(255));
 		}
-		canvas->add_text(font_atlas, L"Hello World  ", -1, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
-		canvas->add_text(font_atlas, L"中文", -1, 14, Vec2f(100, 100), Vec4c(0, 0, 0, 255));
+		{
+			std::vector<Vec2f> points;
+			points.push_back(Vec2f(20.f, 200.f));
+			points.push_back(Vec2f(10.f, 180.f));
+			points.push_back(Vec2f(110.f, 120.f));
+			points.push_back(Vec2f(100.f, 100.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 0.5f);
+		}
+		{
+			std::vector<Vec2f> points;
+			points.push_back(Vec2f(40.f, 200.f));
+			points.push_back(Vec2f(30.f, 180.f));
+			points.push_back(Vec2f(130.f, 120.f));
+			points.push_back(Vec2f(120.f, 100.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f);
+		}
+		{
+			std::vector<Vec2f> points;
+			points.push_back(Vec2f(60.f, 200.f));
+			points.push_back(Vec2f(50.f, 180.f));
+			points.push_back(Vec2f(150.f, 120.f));
+			points.push_back(Vec2f(140.f, 100.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f);
+		}
+		{
+			std::vector<Vec2f> points;
+			points.push_back(Vec2f(80.f, 200.f));
+			points.push_back(Vec2f(70.f, 180.f));
+			points.push_back(Vec2f(170.f, 120.f));
+			points.push_back(Vec2f(160.f, 100.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f);
+		}
+		{
+			std::vector<Vec2f> points;
+			points.push_back(Vec2f(100.f, 200.f));
+			points.push_back(Vec2f(90.f, 180.f));
+			points.push_back(Vec2f(190.f, 120.f));
+			points.push_back(Vec2f(180.f, 100.f));
+			canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f);
+		}
+		canvas->add_text(font_atlas, L"Hello World  ", -1, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
+
 		canvas->record(cb, img_idx);
 
 		fence->wait();
@@ -80,7 +120,7 @@ int main(int argc, char** args)
 	app.sc = Swapchain::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.canvas = Canvas::create(app.d);
-	app.canvas->set_clear_color(Vec4f(0.4f, 0.4f, 0.4f, 1.f));
+	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	app.on_resize();
 	app.w->add_resize_listener([](Capture&, const Vec2u&) {
 		app.on_resize();
@@ -95,7 +135,7 @@ int main(int argc, char** args)
 	}
 	app.canvas->add_font(app.font_atlas);
 
-	get_looper()->loop([](Capture&) {
+	get_looper()->loop([](Capture&, float) {
 		app.run();
 	}, Capture());
 

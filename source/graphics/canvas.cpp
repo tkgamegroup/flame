@@ -165,23 +165,56 @@ namespace flame
 			f->_slot = _set_resource(-1, f->_view.get(), _d->_sampler_nearest.get());
 		}
 
+		void CanvasPrivate::_add_draw_cmd(int id)
+		{
+			auto equal = [&]() {
+				if (_cmds.empty())
+					return false;
+				auto& back = _cmds.back();
+				if (back.type == CmdDrawElement && (id == -1 || back.v.draw_data.id == id))
+					return true;
+				return false;
+			};
+			if (equal())
+				return;
+			Cmd cmd;
+			cmd.type = CmdDrawElement;
+			cmd.v.draw_data.id = id == -1 ? 0 : id;
+			cmd.v.draw_data.vtx_cnt = 0;
+			cmd.v.draw_data.idx_cnt = 0;
+			_cmds.push_back(cmd);
+			auto& d = _cmds.back().v.draw_data;
+			_p_vtx_cnt = &d.vtx_cnt;
+			_p_idx_cnt = &d.idx_cnt;
+		}
+
+		void CanvasPrivate::_add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col)
+		{
+			auto& v = *_vtx_end;
+			v.pos = pos; 
+			v.uv = uv; v.col = col; 
+			_vtx_end++;
+
+			(*_p_vtx_cnt)++;
+		}
+
+		void CanvasPrivate::_add_idx(uint idx)
+		{
+			*_idx_end = idx;
+			_idx_end++;
+
+			(*_p_idx_cnt)++;
+		}
+
 		void CanvasPrivate::_stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness)
 		{
 			if (points.size() < 2)
 				return;
 
-			if (_cmds.empty() || _cmds.back().type == CmdSetScissor)
-			{
-				Cmd cmd;
-				cmd.type = CmdDrawElement;
-				cmd.v.draw_data.id = 0;
-				cmd.v.draw_data.vtx_cnt = 0;
-				cmd.v.draw_data.idx_cnt = 0;
-				_cmds.push_back(cmd);
-			}
-			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
-			auto first_vtx_cnt = vtx_cnt;
+			thickness *= 0.5f;
+
+			_add_draw_cmd();
+			auto vtx_cnt0 = *_p_vtx_cnt;
 			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
 			auto closed = points[0] == points[points.size() - 1];
@@ -193,70 +226,122 @@ namespace flame
 				auto normal = Vec2f(d.y(), -d.x());
 
 				if (i > 0)
-					normals[i] = (normal + normals[i]) * 0.5f;
+					normals[i] = normalize((normal + normals[i]) * 0.5f);
 				else
 					normals[i] = normal;
 
 				if (closed && i + 1 == points.size() - 1)
-					normals.front() = normals.back() = (normal + normals[0]) * 0.5f;
+					normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
 				else
 					normals[i + 1] = normal;
 			}
 
-			for (auto i = 0; i < points.size() - 1; i++)
+			static const auto feather = 0.5f;
+
+			if (thickness > feather)
 			{
-				if (i == 0)
+				auto col_t = col;
+				col_t.a() = 0;
+
+				for (auto i = 0; i < points.size() - 1; i++)
 				{
-					auto p0 = points[i];
-					auto p1 = points[i + 1];
+					if (i == 0)
+					{
+						auto p0 = points[i];
+						auto p1 = points[i + 1];
 
-					auto n0 = normals[i] * thickness;
-					auto n1 = normals[i + 1] * thickness;
+						auto n0 = normals[i];
+						auto n1 = normals[i + 1];
 
-					_vtx_end->pos = p0; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
-					_vtx_end->pos = p0 - n0; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
-					_vtx_end->pos = p1 - n1; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
-					_vtx_end->pos = p1; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+						auto vtx_cnt = *_p_vtx_cnt;
 
-					*_idx_end = vtx_cnt + 0; _idx_end++;
-					*_idx_end = vtx_cnt + 2; _idx_end++;
-					*_idx_end = vtx_cnt + 1; _idx_end++;
-					*_idx_end = vtx_cnt + 0; _idx_end++;
-					*_idx_end = vtx_cnt + 3; _idx_end++;
-					*_idx_end = vtx_cnt + 2; _idx_end++;
+						_add_vtx(p0 + n0 * (thickness + feather), uv, col_t);
+						_add_vtx(p0 + n0 * (thickness - feather), uv, col);
+						_add_vtx(p0 - n0 * (thickness - feather), uv, col);
+						_add_vtx(p0 - n0 * (thickness + feather), uv, col_t);
+						_add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
+						_add_vtx(p1 + n1 * (thickness - feather), uv, col);
+						_add_vtx(p1 - n1 * (thickness - feather), uv, col);
+						_add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
+						_add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 6); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 6);
+						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 5);
+						_add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 7); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 6); _add_idx(vtx_cnt + 7);
+					}
+					else if (closed && i == points.size() - 2)
+					{
+						auto vtx_cnt = *_p_vtx_cnt;
 
-					vtx_cnt += 4;
-					idx_cnt += 6;
+						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt0 + 2);
+						_add_idx(vtx_cnt - 4); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt - 4); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 3); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt0 + 3);
+					}
+					else
+					{
+						auto p1 = points[i + 1];
+
+						auto n1 = normals[i + 1];
+
+						auto vtx_cnt = *_p_vtx_cnt;
+
+						_add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
+						_add_vtx(p1 + n1 * (thickness - feather), uv, col);
+						_add_vtx(p1 - n1 * (thickness - feather), uv, col);
+						_add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
+						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 2);
+						_add_idx(vtx_cnt - 4); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt - 4); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
+					}
 				}
-				else if (closed && i == points.size() - 2)
+			}
+			else
+			{
+				auto col_c = col;
+				col_c.a() = (thickness / feather) * 255;
+				auto col_t = col;
+				col_t.a() = 0;
+
+				for (auto i = 0; i < points.size() - 1; i++)
 				{
-					*_idx_end = vtx_cnt - 1;		  _idx_end++;
-					*_idx_end = first_vtx_cnt + 1; _idx_end++;
-					*_idx_end = vtx_cnt - 2;		  _idx_end++;
-					*_idx_end = vtx_cnt - 1;		  _idx_end++;
-					*_idx_end = first_vtx_cnt + 0; _idx_end++;
-					*_idx_end = first_vtx_cnt + 1; _idx_end++;
+					if (i == 0)
+					{
+						auto p0 = points[i];
+						auto p1 = points[i + 1];
 
-					idx_cnt += 6;
-				}
-				else
-				{
-					auto p1 = points[i + 1];
+						auto n0 = normals[i];
+						auto n1 = normals[i + 1];
 
-					auto n1 = normals[i + 1] * thickness;
+						auto vtx_cnt = *_p_vtx_cnt;
 
-					_vtx_end->pos = p1 - n1; _vtx_end->uv = uv; _vtx_end->col = col;  _vtx_end++;
-					_vtx_end->pos = p1; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+						_add_vtx(p0 + n0 * thickness, uv, col_t);
+						_add_vtx(p0, uv, col_c);
+						_add_vtx(p0 - n0 * thickness, uv, col_t);
+						_add_vtx(p1 + n1 * thickness, uv, col_t);
+						_add_vtx(p1, uv, col_c);
+						_add_vtx(p1 - n1 * thickness, uv, col_t);
+						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 4);
+						_add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 5);
+					}
+					else if (closed && i == points.size() - 2)
+					{
+						auto vtx_cnt = *_p_vtx_cnt;
 
-					*_idx_end = vtx_cnt - 1; _idx_end++;
-					*_idx_end = vtx_cnt + 0; _idx_end++;
-					*_idx_end = vtx_cnt - 2; _idx_end++;
-					*_idx_end = vtx_cnt - 1; _idx_end++;
-					*_idx_end = vtx_cnt + 1; _idx_end++;
-					*_idx_end = vtx_cnt + 0; _idx_end++;
+						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt0 + 2);
+					}
+					else
+					{
+						auto p1 = points[i + 1];
 
-					vtx_cnt += 2;
-					idx_cnt += 6;
+						auto n1 = normals[i + 1];
+
+						auto vtx_cnt = *_p_vtx_cnt;
+
+						_add_vtx(p1 + n1 * thickness, uv, col_t);
+						_add_vtx(p1, uv, col_c);
+						_add_vtx(p1 - n1 * thickness, uv, col_t);
+						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 2);
+					}
 				}
 			}
 		}
@@ -266,49 +351,25 @@ namespace flame
 			if (points.size() < 3)
 				return;
 
-			if (_cmds.empty() || _cmds.back().type == CmdSetScissor)
-			{
-				Cmd cmd;
-				cmd.type = CmdDrawElement;
-				cmd.v.draw_data.id = 0;
-				cmd.v.draw_data.vtx_cnt = 0;
-				cmd.v.draw_data.idx_cnt = 0;
-				_cmds.push_back(cmd);
-			}
-			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
+			_add_draw_cmd();
 			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
 			for (auto i = 0; i < points.size() - 2; i++)
 			{
-				_vtx_end->pos = points[0];	  _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
-				_vtx_end->pos = points[i + 2]; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
-				_vtx_end->pos = points[i + 1]; _vtx_end->uv = uv; _vtx_end->col = col; _vtx_end++;
+				auto vtx_cnt = *_p_vtx_cnt;
 
-				*_idx_end = vtx_cnt + 0; _idx_end++;
-				*_idx_end = vtx_cnt + 1; _idx_end++;
-				*_idx_end = vtx_cnt + 2; _idx_end++;
-
-				vtx_cnt += 3;
-				idx_cnt += 3;
+				_add_vtx(points[0], uv, col);
+				_add_vtx(points[i + 1], uv, col);
+				_add_vtx(points[i + 2], uv, col);
+				_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1);
 			}
 		}
 
-		void CanvasPrivate::_add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& _pos, const Vec4c& col)
+		void CanvasPrivate::_add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col)
 		{
-			auto pos = Vec2f(Vec2i(_pos));
+			auto _pos = pos;
 
-			if (_cmds.empty() || _cmds.back().type != CmdDrawElement || _cmds.back().v.draw_data.id != f->_slot)
-			{
-				Cmd cmd;
-				cmd.type = CmdDrawElement;
-				cmd.v.draw_data.id = f->_slot;
-				cmd.v.draw_data.vtx_cnt = 0;
-				cmd.v.draw_data.idx_cnt = 0;
-				_cmds.push_back(cmd);
-			}
-			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
+			_add_draw_cmd(f->_slot);
 
 			auto pstr = text.begin();
 			while (pstr != text.end())
@@ -318,8 +379,8 @@ namespace flame
 					break;
 				if (ch == '\n')
 				{
-					pos.y() += font_size;
-					pos.x() = (int)_pos.x();
+					_pos.y() += font_size;
+					_pos.x() = pos.x();
 				}
 				else if (ch != '\r')
 				{
@@ -328,7 +389,7 @@ namespace flame
 
 					auto g = f->_get_glyph(ch, font_size);
 
-					auto p = pos + Vec2f(g->_off);
+					auto p = _pos + Vec2f(g->_off);
 					auto size = Vec2f(g->_size);
 					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), _curr_scissor))
 					{
@@ -336,48 +397,30 @@ namespace flame
 						auto uv0 = Vec2f(uv.x(), uv.y());
 						auto uv1 = Vec2f(uv.z(), uv.w());
 
-						_vtx_end->pos = p;								_vtx_end->uv = uv0;						_vtx_end->col = col; _vtx_end++;
-						_vtx_end->pos = p + Vec2f(0.f, -size.y());		_vtx_end->uv = Vec2f(uv0.x(), uv1.y());	_vtx_end->col = col; _vtx_end++;
-						_vtx_end->pos = p + Vec2f(size.x(), -size.y()); _vtx_end->uv = uv1;						_vtx_end->col = col; _vtx_end++;
-						_vtx_end->pos = p + Vec2f(size.x(), 0.f);		_vtx_end->uv = Vec2f(uv1.x(), uv0.y());	_vtx_end->col = col; _vtx_end++;
+						auto vtx_cnt = *_p_vtx_cnt;
 
-						*_idx_end = vtx_cnt + 0; _idx_end++;
-						*_idx_end = vtx_cnt + 2; _idx_end++;
-						*_idx_end = vtx_cnt + 1; _idx_end++;
-						*_idx_end = vtx_cnt + 0; _idx_end++;
-						*_idx_end = vtx_cnt + 3; _idx_end++;
-						*_idx_end = vtx_cnt + 2; _idx_end++;
-
-						vtx_cnt += 4;
-						idx_cnt += 6;
+						_add_vtx(p, uv0, col);
+						_add_vtx(p + Vec2f(0.f, -size.y()), Vec2f(uv0.x(), uv1.y()), col);
+						_add_vtx(p + Vec2f(size.x(), -size.y()), uv1, col);
+						_add_vtx(p + Vec2f(size.x(), 0.f), Vec2f(uv1.x(), uv0.y()), col);
+						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 2);
 					}
 
-					pos.x() += g->_advance;
+					_pos.x() += g->_advance;
 				}
 
 				pstr++;
 			}
 		}
 
-		void CanvasPrivate::_add_image(const Vec2f& _pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
+		void CanvasPrivate::_add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
 		{
-			auto pos = Vec2f(Vec2i(_pos));
 			auto uv0 = _uv0;
 			auto uv1 = _uv1;
 			Vec2f img_size;
 
 			auto img_id = (id & 0xffff0000) >> 16;
-			if (_cmds.empty() || _cmds.back().type != CmdDrawElement || _cmds.back().v.draw_data.id != img_id)
-			{
-				Cmd cmd;
-				cmd.type = CmdDrawElement;
-				cmd.v.draw_data.id = img_id;
-				cmd.v.draw_data.vtx_cnt = 0;
-				cmd.v.draw_data.idx_cnt = 0;
-				_cmds.push_back(cmd);
-			}
-			auto& vtx_cnt = _cmds.back().v.draw_data.vtx_cnt;
-			auto& idx_cnt = _cmds.back().v.draw_data.idx_cnt;
+			_add_draw_cmd(img_id);
 			auto res = _resources[img_id].get();
 			auto atlas = res->_atlas;
 			if (atlas)
@@ -393,20 +436,13 @@ namespace flame
 			else
 				img_size = res->_view->_image->_size;
 
-			_vtx_end->pos = pos;							 _vtx_end->uv = uv0;					 _vtx_end->col = tint_col; _vtx_end++;
-			_vtx_end->pos = pos + Vec2f(0.f, size.y());		 _vtx_end->uv = Vec2f(uv0.x(), uv1.y()); _vtx_end->col = tint_col; _vtx_end++;
-			_vtx_end->pos = pos + Vec2f(size.x(), size.y()); _vtx_end->uv = uv1;					 _vtx_end->col = tint_col; _vtx_end++;
-			_vtx_end->pos = pos + Vec2f(size.x(), 0.f);		 _vtx_end->uv = Vec2f(uv1.x(), uv0.y()); _vtx_end->col = tint_col; _vtx_end++;
+			auto vtx_cnt = *_p_vtx_cnt;
 
-			*_idx_end = vtx_cnt + 0; _idx_end++;
-			*_idx_end = vtx_cnt + 2; _idx_end++;
-			*_idx_end = vtx_cnt + 1; _idx_end++;
-			*_idx_end = vtx_cnt + 0; _idx_end++;
-			*_idx_end = vtx_cnt + 3; _idx_end++;
-			*_idx_end = vtx_cnt + 2; _idx_end++;
-
-			vtx_cnt += 4;
-			idx_cnt += 6;
+			_add_vtx(pos, uv0, tint_col);
+			_add_vtx(pos + Vec2f(0.f, size.y()), Vec2f(uv0.x(), uv1.y()), tint_col);
+			_add_vtx(pos + Vec2f(size.x(), size.y()), uv1, tint_col);
+			_add_vtx(pos + Vec2f(size.x(), 0.f), Vec2f(uv1.x(), uv0.y()), tint_col);
+			_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 2);
 		}
 
 		void CanvasPrivate::_set_scissor(const Vec4f& _scissor)

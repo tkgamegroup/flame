@@ -73,6 +73,8 @@ namespace flame
 			Vec4f _curr_scissor;
 
 			std::vector<Cmd> _cmds;
+			uint* _p_vtx_cnt;
+			uint* _p_idx_cnt;
 
 			CanvasPrivate(DevicePrivate* d);
 
@@ -81,6 +83,10 @@ namespace flame
 			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas = nullptr);
 			void _add_atlas(ImageAtlasPrivate* a);
 			void _add_font(FontAtlasPrivate* f);
+
+			void _add_draw_cmd(int id = -1);
+			void _add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
+			void _add_idx(uint idx);
 
 			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness);
 			void _fill(std::span<const Vec2f> points, const Vec4c& col);

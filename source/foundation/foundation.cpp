@@ -65,7 +65,7 @@ namespace flame
 		return ret;
 	}
 
-	static std::wstring engine_path;
+	static std::filesystem::path engine_path = getenv("FLAME_PATH");
 
 	void set_engine_path(const wchar_t* p)
 	{
@@ -74,7 +74,9 @@ namespace flame
 
 	void get_engine_path(wchar_t* dst)
 	{
-		wcsncpy(dst, engine_path.c_str(), engine_path.size());
+		auto path = engine_path.wstring();
+		wcsncpy(dst, path.c_str(), path.size());
+		dst[path.size()] = 0;
 	}
 
 	static void(*file_callback)(Capture&, const wchar_t*);
@@ -197,6 +199,7 @@ namespace flame
 		auto size = GlobalSize(hMemory) / sizeof(wchar_t) - 1;
 		auto dst = str_allocator((Capture&)capture, size);
 		wcsncpy(dst, (wchar_t*)GlobalLock(hMemory), size);
+		dst[size] = 0;
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 	}
