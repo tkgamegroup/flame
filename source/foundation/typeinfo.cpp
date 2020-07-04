@@ -62,7 +62,8 @@ namespace flame
 		{
 			const auto& str = _find_enum(_name)->_find_item(*(int*)src)->_name;
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -93,7 +94,8 @@ namespace flame
 				v >>= 1;
 			}
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -125,7 +127,8 @@ namespace flame
 		{
 			auto str = to_string(*(bool*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -144,7 +147,8 @@ namespace flame
 		{
 			auto str = to_string(*(uchar*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -163,7 +167,8 @@ namespace flame
 		{
 			auto str = to_string(*(int*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -182,7 +187,8 @@ namespace flame
 		{
 			auto str = to_string(*(uint*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -201,7 +207,8 @@ namespace flame
 		{
 			auto str = to_string(*(int64*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -220,7 +227,8 @@ namespace flame
 		{
 			auto str = to_string(*(uint64*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -239,7 +247,8 @@ namespace flame
 		{
 			auto str = to_string(*(float*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -258,7 +267,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec1c*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -277,7 +287,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec2c*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -296,7 +307,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec3c*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -315,7 +327,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec4c*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -334,7 +347,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec1i*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -353,7 +367,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec2i*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -372,7 +387,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec3i*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -391,7 +407,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec4i*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -410,7 +427,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec1u*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -429,7 +447,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec2u*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -448,7 +467,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec3u*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -467,7 +487,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec4u*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -486,7 +507,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec1f*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -505,7 +527,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec2f*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -524,7 +547,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec3f*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -543,7 +567,8 @@ namespace flame
 		{
 			auto str = to_string(*(Vec4f*)src);
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -573,7 +598,8 @@ namespace flame
 		{
 			const auto& str = *(StringA*)src;
 			auto buf = callback((Capture&)capture, str.s);
-			std::char_traits<char>::copy(buf, str.v, str.s);
+			strncpy(buf, str.v, str.s);
+			buf[str.s] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
@@ -603,7 +629,8 @@ namespace flame
 		{
 			auto str = w2s(((StringW*)src)->str());
 			auto buf = callback((Capture&)capture, str.size());
-			std::char_traits<char>::copy(buf, str.data(), str.size());
+			strncpy(buf, str.data(), str.size());
+			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{

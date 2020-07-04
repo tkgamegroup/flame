@@ -219,7 +219,7 @@ int main(int argc, char **args)
 
 	if (clear)
 	{
-		if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(pdb_path) > std::filesystem::last_write_time(typeinfo_path))
+		if (std::filesystem::exists(pdb_path) && (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(pdb_path) > std::filesystem::last_write_time(typeinfo_path)))
 			std::filesystem::remove(pdb_path);
 		return 0;
 	}

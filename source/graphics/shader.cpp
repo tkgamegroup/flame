@@ -506,11 +506,16 @@ namespace flame
 
 						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s->_type) + L" out.glsl -o" + spv_path.wstring());
 
-						auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
+						std::string output;
+						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), [](Capture& c, uint size) {
+							auto& output = *c.thiz<std::string>();
+							output.resize(size);
+							return output.data();
+						}, Capture().set_thiz(&output));
 						std::filesystem::remove(L"out.glsl");
 						if (!std::filesystem::exists(spv_path))
 						{
-							printf("compile error:\n%s\n", output.v);
+							printf("compile error:\n%s\n", output.c_str());
 							printf("trying to use fallback");
 
 							std::ofstream glsl_file(L"out.glsl");
@@ -534,11 +539,15 @@ namespace flame
 							}
 							glsl_file.close();
 
-							auto output = exec_and_get_output(glslc_path.c_str(), (wchar_t*)command_line.c_str());
+							exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), [](Capture& c, uint size) {
+								auto& output = *c.thiz<std::string>();
+								output.resize(size);
+								return output.data();
+							}, Capture().set_thiz(&output));
 							std::filesystem::remove(L"out.glsl");
 							if (!std::filesystem::exists(spv_path))
 							{
-								printf(" - failed\n error:\n%s", output.v);
+								printf(" - failed\n error:\n%s", output.c_str());
 								assert(0);
 								ok = false;
 							}

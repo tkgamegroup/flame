@@ -74,7 +74,7 @@ namespace flame
 
 	void get_engine_path(wchar_t* dst)
 	{
-		std::char_traits<wchar_t>::copy(dst, engine_path.c_str(), engine_path.size());
+		wcsncpy(dst, engine_path.c_str(), engine_path.size());
 	}
 
 	static void(*file_callback)(Capture&, const wchar_t*);
@@ -98,7 +98,8 @@ namespace flame
 		if (!has_name)
 		{
 			auto path = std::filesystem::path(dst).parent_path().wstring();
-			std::char_traits<wchar_t>::copy(dst, path.c_str(), path.size());
+			wcsncpy(dst, path.c_str(), path.size());
+			dst[path.size()] = 0;
 		}
 	}
 
@@ -195,7 +196,7 @@ namespace flame
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
 		auto size = GlobalSize(hMemory) / sizeof(wchar_t) - 1;
 		auto dst = str_allocator((Capture&)capture, size);
-		std::char_traits<wchar_t>::copy(dst, (wchar_t*)GlobalLock(hMemory), size);
+		wcsncpy(dst, (wchar_t*)GlobalLock(hMemory), size);
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 	}
