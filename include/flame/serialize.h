@@ -94,7 +94,7 @@ namespace flame
 	template <class T>
 	inline std::string to_string(T v)
 	{
-		char buf[20];
+		char buf[32];
 		fmt(buf, sizeof(buf), v);
 		return buf;
 	}
@@ -102,7 +102,7 @@ namespace flame
 	template <uint N, class T>
 	inline std::string to_string(const Vec<N, T>& v)
 	{
-		char buf[20];
+		char buf[32];
 		fmt(buf, sizeof(buf), v);
 		return buf;
 	}

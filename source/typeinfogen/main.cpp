@@ -224,6 +224,12 @@ int main(int argc, char **args)
 		return 0;
 	}
 
+	if (std::filesystem::exists(typeinfo_path) && std::filesystem::last_write_time(typeinfo_path) >= std::filesystem::last_write_time(library_path))
+	{
+		printf("typeinfo up to date\n");
+		return 0;
+	}
+
 	for (auto& d : source_dirs)
 		d.make_preferred();
 

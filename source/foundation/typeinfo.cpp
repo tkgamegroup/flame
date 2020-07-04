@@ -250,7 +250,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec1c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec1c() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<1,uchar>", sizeof(Vec1c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,uchar>", sizeof(Vec1c))
 		{
 		}
 
@@ -269,7 +269,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec2c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2c() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<2,uchar>", sizeof(Vec2c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uchar>", sizeof(Vec2c))
 		{
 		}
 
@@ -288,7 +288,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec3c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3c() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<3,uchar>", sizeof(Vec3c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uchar>", sizeof(Vec3c))
 		{
 		}
 
@@ -307,7 +307,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec4c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4c() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<4,uchar>", sizeof(Vec4c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uchar>", sizeof(Vec4c))
 		{
 		}
 
@@ -326,7 +326,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec1i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec1i() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<1,int>", sizeof(Vec1i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,int>", sizeof(Vec1i))
 		{
 		}
 
@@ -345,7 +345,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec2i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2i() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<2,int>", sizeof(Vec2i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,int>", sizeof(Vec2i))
 		{
 		}
 
@@ -364,7 +364,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec3i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3i() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<3,int>", sizeof(Vec3i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,int>", sizeof(Vec3i))
 		{
 		}
 
@@ -383,7 +383,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec4i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4i() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<4,int>", sizeof(Vec4i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,int>", sizeof(Vec4i))
 		{
 		}
 
@@ -402,7 +402,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec1u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec1u() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<1,uint>", sizeof(Vec1u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,uint>", sizeof(Vec1u))
 		{
 		}
 
@@ -421,7 +421,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec2u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2u() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<2,uint>", sizeof(Vec2u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uint>", sizeof(Vec2u))
 		{
 		}
 
@@ -440,7 +440,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec3u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3u() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<3,uint>", sizeof(Vec3u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uint>", sizeof(Vec3u))
 		{
 		}
 
@@ -459,7 +459,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec4u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4u() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<4,uint>", sizeof(Vec4u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uint>", sizeof(Vec4u))
 		{
 		}
 
@@ -478,7 +478,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec1f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec1f() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<1,float>", sizeof(Vec1f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,float>", sizeof(Vec1f))
 		{
 		}
 
@@ -497,7 +497,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec2f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2f() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<2,float>", sizeof(Vec2f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,float>", sizeof(Vec2f))
 		{
 		}
 
@@ -516,7 +516,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec3f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3f() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<3,float>", sizeof(Vec3f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,float>", sizeof(Vec3f))
 		{
 		}
 
@@ -535,7 +535,7 @@ namespace flame
 	struct TypeInfoPrivate_Vec4f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4f() :
-			TypeInfoPrivate_Pod(TypeData, "Vec<4,float>", sizeof(Vec4f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,float>", sizeof(Vec4f))
 		{
 		}
 
@@ -554,7 +554,7 @@ namespace flame
 	struct TypeInfoPrivate_StringA : TypeInfoPrivate
 	{
 		TypeInfoPrivate_StringA() :
-			TypeInfoPrivate(TypeData, "StringA", sizeof(StringA))
+			TypeInfoPrivate(TypeData, "flame::StringA", sizeof(StringA))
 		{
 		}
 
@@ -584,7 +584,7 @@ namespace flame
 	struct TypeInfoPrivate_StringW : TypeInfoPrivate
 	{
 		TypeInfoPrivate_StringW() :
-			TypeInfoPrivate(TypeData, "StringW", sizeof(StringW))
+			TypeInfoPrivate(TypeData, "flame::StringW", sizeof(StringW))
 		{
 		}
 
@@ -742,6 +742,16 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4f;
+				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				basic_types.push_back(t);
+			}
+			{
+				auto t = new TypeInfoPrivate_StringA;
+				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				basic_types.push_back(t);
+			}
+			{
+				auto t = new TypeInfoPrivate_StringW;
 				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
 				basic_types.push_back(t);
 			}
@@ -909,16 +919,6 @@ namespace flame
 				library_path = get_app_path().str() / library_path;
 			auto typeinfo_path = library_path;
 			typeinfo_path.replace_extension(L".typeinfo");
-			if (!std::filesystem::exists(typeinfo_path) || std::filesystem::last_write_time(typeinfo_path) < std::filesystem::last_write_time(library_path))
-			{
-				auto typeinfogen_path = std::filesystem::path(get_app_path().str()) / L"typeinfogen.exe";
-				if (!std::filesystem::exists(typeinfogen_path))
-				{
-					printf("typeinfo out of date: %s, and cannot find typeinfogen\n", typeinfo_path.string().c_str());
-					assert(0);
-				}
-				exec_and_redirect_to_std_output(nullptr, (wchar_t*)(typeinfogen_path.wstring() + L" " + library_path.wstring()).c_str());
-			}
 
 			pugi::xml_document file;
 			pugi::xml_node file_root;

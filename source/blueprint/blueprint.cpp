@@ -1013,7 +1013,7 @@ namespace flame
 
 		FLAME_RV(Vec2i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec2i(x, y);
 		}
@@ -1026,7 +1026,7 @@ namespace flame
 		FLAME_RV(int, x, o);
 		FLAME_RV(int, y, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1041,7 +1041,7 @@ namespace flame
 
 		FLAME_RV(Vec3i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec3i(x, y, z);
 		}
@@ -1055,7 +1055,7 @@ namespace flame
 		FLAME_RV(int, y, o);
 		FLAME_RV(int, z, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1072,7 +1072,7 @@ namespace flame
 
 		FLAME_RV(Vec4i, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec4i(x, y, z, w);
 		}
@@ -1087,7 +1087,7 @@ namespace flame
 		FLAME_RV(int, z, o);
 		FLAME_RV(int, w, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1103,7 +1103,7 @@ namespace flame
 
 		FLAME_RV(Vec2u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec2u(x, y);
 		}
@@ -1116,7 +1116,7 @@ namespace flame
 		FLAME_RV(uint, x, o);
 		FLAME_RV(uint, y, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1131,7 +1131,7 @@ namespace flame
 
 		FLAME_RV(Vec3u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec3u(x, y, z);
 		}
@@ -1145,7 +1145,7 @@ namespace flame
 		FLAME_RV(uint, y, o);
 		FLAME_RV(uint, z, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1162,7 +1162,7 @@ namespace flame
 
 		FLAME_RV(Vec4u, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec4u(x, y, z, w);
 		}
@@ -1177,7 +1177,7 @@ namespace flame
 		FLAME_RV(uint, z, o);
 		FLAME_RV(uint, w, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1193,7 +1193,7 @@ namespace flame
 
 		FLAME_RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec2f(x, y);
 		}
@@ -1206,7 +1206,7 @@ namespace flame
 		FLAME_RV(float, x, o);
 		FLAME_RV(float, y, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1221,7 +1221,7 @@ namespace flame
 
 		FLAME_RV(Vec3f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec3f(x, y, z);
 		}
@@ -1235,7 +1235,7 @@ namespace flame
 		FLAME_RV(float, y, o);
 		FLAME_RV(float, z, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1252,7 +1252,7 @@ namespace flame
 
 		FLAME_RV(Vec4f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec4f(x, y, z, w);
 		}
@@ -1267,7 +1267,7 @@ namespace flame
 		FLAME_RV(float, z, o);
 		FLAME_RV(float, w, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1283,7 +1283,7 @@ namespace flame
 
 		FLAME_RV(Vec2c, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec2c(x, y);
 		}
@@ -1296,7 +1296,7 @@ namespace flame
 		FLAME_RV(uchar, x, o);
 		FLAME_RV(uchar, y, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1311,7 +1311,7 @@ namespace flame
 
 		FLAME_RV(Vec3c, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec3c(x, y, z);
 		}
@@ -1325,7 +1325,7 @@ namespace flame
 		FLAME_RV(uchar, y, o);
 		FLAME_RV(uchar, z, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1342,7 +1342,7 @@ namespace flame
 
 		FLAME_RV(Vec4c, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = Vec4c(x, y, z, w);
 		}
@@ -1357,7 +1357,7 @@ namespace flame
 		FLAME_RV(uchar, z, o);
 		FLAME_RV(uchar, w, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			x = in[0];
 			y = in[1];
@@ -1373,7 +1373,7 @@ namespace flame
 
 		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + b;
 		}
@@ -1386,7 +1386,7 @@ namespace flame
 
 		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a * b;
 		}
@@ -1397,7 +1397,7 @@ namespace flame
 		FLAME_RV(float, delta, o);
 		FLAME_RV(float, total, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			delta = get_looper()->get_delta_time();
 			total = bp_time;
@@ -1410,7 +1410,7 @@ namespace flame
 
 		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = sin(t * M_PI / 180.f);
 		}
@@ -1424,7 +1424,7 @@ namespace flame
 
 		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
@@ -1438,7 +1438,7 @@ namespace flame
 
 		FLAME_RV(Vec2f, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
@@ -1452,7 +1452,7 @@ namespace flame
 
 		FLAME_RV(float, out, o);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			out = v + min(abs(target - v), step) * sign(target - v);
 		}
@@ -1462,7 +1462,7 @@ namespace flame
 	{
 		FLAME_RV(StringA, text, i);
 
-		FLAME_FOUNDATION_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
 		{
 			printf("%s\n", text.v);
 		}
