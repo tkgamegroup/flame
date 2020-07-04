@@ -72,9 +72,9 @@ namespace flame
 		engine_path = p;
 	}
 
-	const wchar_t* get_engine_path()
+	void get_engine_path(wchar_t* dst)
 	{
-		return engine_path.c_str();
+		std::char_traits<wchar_t>::copy(dst, engine_path.c_str(), engine_path.size());
 	}
 
 	static void(*file_callback)(Capture&, const wchar_t*);
@@ -92,13 +92,14 @@ namespace flame
 			file_callback(file_callback_capture, filename);
 	}
 
-	StringW get_app_path(bool has_name)
+	void get_app_path(wchar_t* dst, bool has_name)
 	{
-		wchar_t buf[260];
-		GetModuleFileNameW(nullptr, buf, sizeof(buf));
-		if (has_name)
-			return StringW(buf);
-		return StringW(std::filesystem::path(buf).parent_path().wstring());
+		GetModuleFileNameW(nullptr, dst, 260);
+		if (!has_name)
+		{
+			auto path = std::filesystem::path(dst).parent_path().wstring();
+			std::char_traits<wchar_t>::copy(dst, path.c_str(), path.size());
+		}
 	}
 
 	void *get_hinst()
@@ -139,90 +140,6 @@ namespace flame
 		CloseHandle((HANDLE)ev);
 	}
 
-	void debug_break()
-	{
-#ifdef _DEBUG
-		DebugBreak();
-#endif
-	}
-
-	void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
-	{
-		SHELLEXECUTEINFOW info = {};
-		info.cbSize = sizeof(SHELLEXECUTEINFOW);
-		info.fMask = SEE_MASK_NOCLOSEPROCESS;
-		info.lpVerb = L"open";
-		info.lpFile = filename;
-		info.nShow = show ? SW_SHOW : SW_HIDE;
-		info.lpParameters = parameters;
-		ShellExecuteExW(&info);
-		if (wait)
-			WaitForSingleObject(info.hProcess, INFINITE);
-	}
-
-	StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters)
-	{
-		bool ok;
-
-		HANDLE hChildStd_OUT_Rd = NULL;
-		HANDLE hChildStd_OUT_Wr = NULL;
-
-		SECURITY_ATTRIBUTES saAttr;
-		saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-		saAttr.bInheritHandle = TRUE;
-		saAttr.lpSecurityDescriptor = NULL;
-
-		ok = CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0);
-		assert(ok);
-
-		ok = SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
-		assert(ok);
-
-		STARTUPINFOW start_info = {};
-		start_info.cb = sizeof(STARTUPINFOW);
-		start_info.hStdError = hChildStd_OUT_Wr;
-		start_info.hStdOutput = hChildStd_OUT_Wr;
-		start_info.dwFlags |= STARTF_USESTDHANDLES;
-		PROCESS_INFORMATION proc_info = {};
-		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
-		{
-			auto e = GetLastError();
-			assert(0);
-		}
-
-		WaitForSingleObject(proc_info.hProcess, INFINITE);
-
-		CloseHandle(proc_info.hProcess);
-		CloseHandle(proc_info.hThread);
-
-		DWORD output_size;
-		StringA output;
-		PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &output_size, NULL);
-		output.resize(output_size);
-		PeekNamedPipe(hChildStd_OUT_Rd, (void*)output.v, output_size, NULL, NULL, NULL);
-		return output;
-	}
-
-	void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters)
-	{
-		STARTUPINFOW start_info = {};
-		start_info.cb = sizeof(STARTUPINFOW);
-		start_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-		start_info.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-		start_info.dwFlags |= STARTF_USESTDHANDLES;
-		PROCESS_INFORMATION proc_info = {};
-		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
-		{
-			auto e = GetLastError();
-			assert(0);
-		}
-
-		WaitForSingleObject(proc_info.hProcess, INFINITE);
-
-		CloseHandle(proc_info.hProcess);
-		CloseHandle(proc_info.hThread);
-	}
-
 	static PIMAGE_SECTION_HEADER get_enclosing_section_header(DWORD rva, PIMAGE_NT_HEADERS64 pNTHeader)
 	{
 		auto section = IMAGE_FIRST_SECTION(pNTHeader);
@@ -250,9 +167,8 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	Array<StringW> get_library_dependencies(const wchar_t* filename)
+	void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const char* filename), const Capture& capture)
 	{
-		Array<StringW> ret;
 		auto path = std::filesystem::path(filename);
 		auto image = ImageLoad(path.string().c_str(), path.parent_path().string().c_str());
 		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
@@ -265,26 +181,23 @@ namespace flame
 				if (importDesc->TimeDateStamp == 0 && importDesc->Name == 0)
 					break;
 
-				std::filesystem::path d = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
-				ret.push_back(d.c_str());
+				callback((Capture&)capture, (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress));
 
 				importDesc++;
 			}
 		}
 		ImageUnload(image);
-		return ret;
 	}
 
-	StringW get_clipboard()
+	void get_clipboard(wchar_t* (*str_allocator)(Capture& c, uint size), const Capture& capture)
 	{
 		OpenClipboard(NULL);
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
-		StringW output;
-		output.resize(GlobalSize(hMemory) / sizeof(wchar_t) - 1);
-		memcpy(output.v, GlobalLock(hMemory), sizeof(wchar_t)*output.s);
+		auto size = GlobalSize(hMemory) / sizeof(wchar_t) - 1;
+		auto dst = str_allocator((Capture&)capture, size);
+		std::char_traits<wchar_t>::copy(dst, (wchar_t*)GlobalLock(hMemory), size);
 		GlobalUnlock(hMemory);
 		CloseClipboard();
-		return output;
 	}
 
 	void set_clipboard(const wchar_t* s)
@@ -711,9 +624,9 @@ namespace flame
 	struct GlobalKeyListener
 	{
 		Key key;
-		bool modifier_shift;
-		bool modifier_ctrl;
-		bool modifier_alt;
+		bool ctrl;
+		bool shift;
+		bool alt;
 		std::unique_ptr<Closure<void(Capture& c, KeyStateFlags action)>> callback;
 	};
 
@@ -730,11 +643,11 @@ namespace flame
 		{
 			if (l->key != key)
 				continue;
-			if (l->modifier_shift && !(GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)))
+			if (l->ctrl && !(GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL)))
 				continue;
-			if (l->modifier_ctrl && !(GetAsyncKeyState(VK_LCONTROL) || GetAsyncKeyState(VK_RCONTROL)))
+			if (l->shift && !(GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)))
 				continue;
-			if (l->modifier_alt && !(GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU)))
+			if (l->alt && !(GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU)))
 				continue;
 			auto action = KeyStateNull;
 			if (wParam == WM_KEYDOWN)
@@ -747,13 +660,13 @@ namespace flame
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture)
+	void* add_global_key_listener(Key key, bool ctrl, bool shift, bool alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture)
 	{
 		auto l = new GlobalKeyListener;
 		l->key = key;
-		l->modifier_shift = modifier_shift;
-		l->modifier_ctrl = modifier_ctrl;
-		l->modifier_alt = modifier_alt;
+		l->ctrl = ctrl;
+		l->shift = shift;
+		l->alt = alt;
 		l->callback.reset(new Closure(callback, capture));
 
 		global_key_listeners.emplace_back(l);
@@ -844,19 +757,82 @@ namespace flame
 			mouse_event(flags, 0, 0, 0, NULL);
 	}
 
-	Array<void*> get_stack_frames()
+	void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
 	{
-		Array<void*> ret;
-		ret.resize(64);
-		auto n = CaptureStackBackTrace(0, 64, ret.v, nullptr);
-		ret.resize(n);
-		return ret;
+		SHELLEXECUTEINFOW info = {};
+		info.cbSize = sizeof(SHELLEXECUTEINFOW);
+		info.fMask = SEE_MASK_NOCLOSEPROCESS;
+		info.lpVerb = L"open";
+		info.lpFile = filename;
+		info.nShow = show ? SW_SHOW : SW_HIDE;
+		info.lpParameters = parameters;
+		ShellExecuteExW(&info);
+		if (wait)
+			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	Array<StackFrameInfo> get_stack_frame_infos(uint frames_count, void** frames)
+	void exec(const wchar_t* filename, wchar_t* parameters, char* (*str_allocator)(Capture& c, uint size), const Capture& capture)
 	{
-		Array<StackFrameInfo> ret;
+		bool ok;
+		HANDLE hChildStd_OUT_Rd = NULL;
+		HANDLE hChildStd_OUT_Wr = NULL;
+		if (str_allocator)
+		{
+			SECURITY_ATTRIBUTES saAttr;
+			saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+			saAttr.bInheritHandle = TRUE;
+			saAttr.lpSecurityDescriptor = NULL;
+			ok = CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0);
+			assert(ok);
+			ok = SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
+			assert(ok);
+		}
+		else
+			hChildStd_OUT_Wr = GetStdHandle(STD_OUTPUT_HANDLE);
 
+		STARTUPINFOW start_info = {};
+		start_info.cb = sizeof(STARTUPINFOW);
+		start_info.hStdError = hChildStd_OUT_Wr;
+		start_info.hStdOutput = hChildStd_OUT_Wr;
+		start_info.dwFlags |= STARTF_USESTDHANDLES;
+		PROCESS_INFORMATION proc_info = {};
+		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
+		{
+			auto e = GetLastError();
+			assert(0);
+		}
+
+		WaitForSingleObject(proc_info.hProcess, INFINITE);
+
+		CloseHandle(proc_info.hProcess);
+		CloseHandle(proc_info.hThread);
+
+		if (str_allocator)
+		{
+			DWORD size;
+			PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &size, NULL);
+			auto dst = str_allocator((Capture&)capture, size);
+			PeekNamedPipe(hChildStd_OUT_Rd, (void*)dst, size, NULL, NULL, NULL);
+		}
+	}
+
+	void debug_break()
+	{
+#ifdef _DEBUG
+		DebugBreak();
+#endif
+	}
+
+	void get_call_frames(void** (*array_allocator)(Capture& c, uint size), const Capture& capture)
+	{
+		void* buf[64];
+		auto n = CaptureStackBackTrace(0, array_size(buf), buf, nullptr);
+		auto dst = array_allocator((Capture&)capture, n);
+		memcpy(dst, buf, sizeof(void*) * n);
+	}
+
+	void get_call_frames_infos(uint frames_count, void** frames, StackFrameInfo* dst)
+	{
 		auto process = GetCurrentProcess();
 		SymInitialize(process, nullptr, true); 
 
@@ -874,17 +850,14 @@ namespace flame
 			SymFromAddr(process, frame, nullptr, symbol);
 			if (SymGetLineFromAddr64(process, (DWORD64)frame, &displacement, line))
 			{
-				StackFrameInfo info;
-				info.file = line->FileName;
+				auto& info = dst[i];
+				strcpy(info.file, line->FileName);
 				info.line = line->LineNumber;
-				info.function = symbol->Name;
-				ret.push_back(info);
+				strcpy(info.function, symbol->Name);
 			}
 		}
 		delete[] line;
 		delete[] symbol;
-
-		return ret;
 	}
 
 	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), Capture& capture)

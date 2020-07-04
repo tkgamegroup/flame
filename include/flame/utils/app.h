@@ -265,7 +265,9 @@ namespace flame
 				}
 				app.used_files[i].push_back(filename);
 			}, Capture().set_thiz(this));
-			std::filesystem::path this_app = get_app_path(true).str();
+			wchar_t app_path[260];
+			get_app_path(app_path, true);
+			auto this_app = std::filesystem::path(app_path);
 			report_used_file((this_app.parent_path().replace_filename(L"{c}") / this_app.filename()).c_str());
 		}
 

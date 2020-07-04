@@ -73,7 +73,9 @@ namespace flame
 					vert,
 					frag
 				};
-				pl = PipelinePrivate::_create(d, std::filesystem::path(get_engine_path()) / L"shaders", shaders, pll, rp, 0, &vi);
+				wchar_t engine_path[260];
+				get_engine_path(engine_path);
+				pl = PipelinePrivate::_create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll, rp, 0, &vi);
 			}
 
 			_buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));

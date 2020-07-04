@@ -87,49 +87,55 @@ int main(int argc, char **args)
 		if (ext == L".exe" || ext == L".dll")
 		{
 			copy_binary_attachings(s, d);
-			std::vector<std::wstring> dependencies;
-			auto arr = get_library_dependencies(s.c_str());
-			for (auto i = 0; i < arr.s; i++)
+			std::vector<std::filesystem::path> dependencies1;
+			std::vector<std::filesystem::path> dependencies2;
+			get_library_dependencies(s.c_str(), [](Capture& c, const char* filename) {
+				auto path = std::filesystem::path(filename);
+				auto& dependencies = *c.thiz<std::vector<std::filesystem::path>>();
+				for (auto& d : dependencies)
+				{
+					if (path == d)
+						return;
+				}
+			}, Capture().set_thiz(&dependencies2));
+			for (auto& d : dependencies2)
 			{
-				auto d = arr.v[i].str();
-				auto had = false;
-				for (auto& _d : dependencies)
+				if (std::filesystem::exists(s_p / d))
+					dependencies1.push_back(d);
+			}
+			dependencies2.clear();
+			for (auto& d : dependencies1)
+			{
+				if (SUW::starts_with(d, L"flame_"))
+				{
+					get_library_dependencies((s_p / d).c_str(), [](Capture& c, const char* filename) {
+						auto path = std::filesystem::path(filename);
+						auto& dependencies = *c.thiz<std::vector<std::filesystem::path>>();
+						for (auto& d : dependencies)
+						{
+							if (path == d)
+								return;
+						}
+					}, Capture().set_thiz(&dependencies2));
+				}
+			}
+			for (auto& d : dependencies2)
+			{
+				auto found = false;
+				for (auto& _d : dependencies1)
 				{
 					if (d == _d)
 					{
-						had = true;
+						found = true;
 						break;
 					}
 				}
-				if (!had && std::filesystem::exists(s_p / d))
-					dependencies.push_back(d);
+				if (found)
+					continue;
+				if (std::filesystem::exists(s_p / d))
+					dependencies1.push_back(d);
 			}
-			{
-				auto _dependencies = dependencies;
-				for (auto& d : _dependencies)
-				{
-					if (SUW::starts_with(d, L"flame_"))
-					{
-						auto arr = get_library_dependencies((s_p / d).c_str());
-						for (auto i = 0; i < arr.s; i++)
-						{
-							auto dd = arr.v[i].str();
-							auto had = false;
-							for (auto& _d : _dependencies)
-							{
-								if (dd == _d)
-								{
-									had = true;
-									break;
-								}
-							}
-							if (!had && std::filesystem::exists(s_p / dd))
-								dependencies.push_back(dd);
-						}
-					}
-				}
-			}
-			for (auto& d : dependencies)
+			for (auto& d : dependencies1)
 			{
 				auto ss = s_p / d;
 				auto dd = d_p / d;

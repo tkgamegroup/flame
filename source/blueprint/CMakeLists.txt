@@ -1,7 +1,6 @@
 get_filename_component(DIR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 file(GLOB_RECURSE INCLUDE_LIST "${INCLUDE_DIR}/${DIR}/*.h*")
 file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
-generate_rc("${INCLUDE_DIR}/${DIR};${CMAKE_CURRENT_SOURCE_DIR}")
 add_library(flame_blueprint SHARED ${INCLUDE_LIST} ${SOURCE_LIST})
 add_typeinfo_support(flame_blueprint "${INCLUDE_DIR}/${DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
 set_target_properties(flame_blueprint PROPERTIES FOLDER "flame")

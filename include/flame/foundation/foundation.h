@@ -613,11 +613,11 @@ namespace flame
 	}
 
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
+	FLAME_FOUNDATION_EXPORTS void get_engine_path(wchar_t* dst);
 	FLAME_FOUNDATION_EXPORTS void set_engine_path(const wchar_t* p);
-	FLAME_FOUNDATION_EXPORTS const wchar_t* get_engine_path();
 	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void report_used_file(const wchar_t* filename);
-	FLAME_FOUNDATION_EXPORTS StringW get_app_path(bool has_name = false);
+	FLAME_FOUNDATION_EXPORTS void get_app_path(wchar_t* dst, bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled, bool manual = false);
@@ -625,28 +625,29 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
-	FLAME_FOUNDATION_EXPORTS void debug_break();
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
-	FLAME_FOUNDATION_EXPORTS StringA exec_and_get_output(const wchar_t* filename, wchar_t* parameters);
-	FLAME_FOUNDATION_EXPORTS void exec_and_redirect_to_std_output(const wchar_t* filename, wchar_t* parameters);
-	FLAME_FOUNDATION_EXPORTS Array<StringW> get_library_dependencies(const wchar_t* filename);
-	FLAME_FOUNDATION_EXPORTS StringW get_clipboard();
+	FLAME_FOUNDATION_EXPORTS void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const char* filename), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void get_clipboard(wchar_t* (*str_allocator)(Capture& c, uint size), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool modifier_shift, bool modifier_ctrl, bool modifier_alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool ctrl, bool shift, bool alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyState action, Key key);
 	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(KeyState action, MouseKey key);
+	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
+	// if str_allocator is null then the output will be redirect to std output
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, char* (*str_allocator)(Capture& c, uint size) = nullptr, const Capture& capture = {});
+	FLAME_FOUNDATION_EXPORTS void debug_break();
 
 	struct StackFrameInfo
 	{
-		StringA file;
+		char file[260];
 		uint line;
-		StringA function;
+		char function[260];
 	};
 
-	FLAME_FOUNDATION_EXPORTS Array<void*> get_stack_frames();
-	FLAME_FOUNDATION_EXPORTS Array<StackFrameInfo> get_stack_frame_infos(uint frames_count, void** frames);
+	// max depth: 64
+	FLAME_FOUNDATION_EXPORTS void get_call_frames(void** (*array_allocator)(Capture& c, uint size), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void get_call_frames_infos(uint frames_count, void** frames, StackFrameInfo* dst);
 
 	enum FileChangeType
 	{

@@ -235,21 +235,25 @@ int main(int argc, char **args)
 
 	std::vector<std::filesystem::path> dependencies;
 
-	auto arr_dep = get_library_dependencies(library_path.c_str());
-	for (auto i = 0; i < arr_dep.s; i++)
-	{
-		auto d = std::filesystem::path(arr_dep[i].str());
-		if (SUW::starts_with(d, L"flame_"))
+	get_library_dependencies(library_path.c_str(), [](Capture& c, const char* filename) {
+		auto path = std::filesystem::path(filename);
+		if (SUW::starts_with(path, L"flame_"))
 		{
-			d.replace_extension(L".typeinfo");
-			if (std::filesystem::exists(d))
-				dependencies.push_back(d);
+			path.replace_extension(L".typeinfo");
+			if (std::filesystem::exists(path))
+			{
+				auto& dependencies = *c.thiz<std::vector<std::filesystem::path>>();
+				dependencies.push_back(path);
+			}
 		}
-	}
+	}, Capture().set_thiz(&dependencies));
+
 	printf("generating typeinfo for %s: ", library_path.string().c_str());
 
 	auto last_curr_path = std::filesystem::current_path();
-	std::filesystem::current_path(get_app_path().str());
+	wchar_t app_path[260];
+	get_app_path(app_path);
+	std::filesystem::current_path(app_path);
 	for (auto& d : dependencies)
 		Library::load(d.c_str());
 	std::filesystem::current_path(last_curr_path);

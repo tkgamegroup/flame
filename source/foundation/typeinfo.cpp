@@ -916,7 +916,11 @@ namespace flame
 		{
 			std::filesystem::path library_path(filename);
 			if (!library_path.is_absolute())
-				library_path = get_app_path().str() / library_path;
+			{
+				wchar_t app_path[260];
+				get_app_path(app_path);
+				library_path = app_path / library_path;
+			}
 			auto typeinfo_path = library_path;
 			typeinfo_path.replace_extension(L".typeinfo");
 

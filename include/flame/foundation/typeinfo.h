@@ -33,8 +33,7 @@ namespace flame
 		virtual void construct(void* p) const = 0;
 		virtual void destruct(void* p) const = 0;
 		virtual void copy(const void* src, void* dst) const = 0;
-		// in the callback: return a space that will be fill with the string, which size must bigger than size
-		virtual void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const = 0;
+		virtual void serialize(char* (*str_allocator)(Capture& c, uint size), const Capture& capture, const void* src) const = 0;
 		inline std::string serialize_s(const void* src) const
 		{
 			std::string str;

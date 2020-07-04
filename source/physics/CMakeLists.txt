@@ -1,6 +1,6 @@
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
-generate_rc("")
 add_library(flame_physics SHARED ${SOURCE_LIST})
+add_typeinfo_support(flame_physics "${INCLUDE_DIR}/${DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
 set_target_properties(flame_physics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_physics PRIVATE FLAME_PHYSICS_MODULE)
 target_include_directories(flame_physics PUBLIC "${CMAKE_SOURCE_DIR}/include")
