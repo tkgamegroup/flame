@@ -41,69 +41,73 @@ struct App
 	void run()
 	{
 		if (!cbs.empty())
+		{
 			sc->acquire_image();
 
-		auto img_idx = sc->get_image_index();
-		auto cb = cbs[img_idx];
+			auto img_idx = sc->get_image_index();
+			auto cb = cbs[img_idx];
 
-		canvas->prepare();
+			canvas->prepare();
 
-		{
-			std::vector<Vec2f> points;
-			path_rect(points, Vec2f(20.f), Vec2f(50.f));
-			canvas->fill(points.size(), points.data(), Vec4c(255));
-		}
-		{
-			std::vector<Vec2f> points;
-			points.push_back(Vec2f(20.f, 200.f));
-			points.push_back(Vec2f(10.f, 180.f));
-			points.push_back(Vec2f(110.f, 120.f));
-			points.push_back(Vec2f(100.f, 100.f));
-			canvas->stroke(points.size(), points.data(), Vec4c(255), 0.5f);
-		}
-		{
-			std::vector<Vec2f> points;
-			points.push_back(Vec2f(40.f, 200.f));
-			points.push_back(Vec2f(30.f, 180.f));
-			points.push_back(Vec2f(130.f, 120.f));
-			points.push_back(Vec2f(120.f, 100.f));
-			canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f);
-		}
-		{
-			std::vector<Vec2f> points;
-			points.push_back(Vec2f(60.f, 200.f));
-			points.push_back(Vec2f(50.f, 180.f));
-			points.push_back(Vec2f(150.f, 120.f));
-			points.push_back(Vec2f(140.f, 100.f));
-			canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f);
-		}
-		{
-			std::vector<Vec2f> points;
-			points.push_back(Vec2f(80.f, 200.f));
-			points.push_back(Vec2f(70.f, 180.f));
-			points.push_back(Vec2f(170.f, 120.f));
-			points.push_back(Vec2f(160.f, 100.f));
-			canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f);
-		}
-		{
-			std::vector<Vec2f> points;
-			points.push_back(Vec2f(100.f, 200.f));
-			points.push_back(Vec2f(90.f, 180.f));
-			points.push_back(Vec2f(190.f, 120.f));
-			points.push_back(Vec2f(180.f, 100.f));
-			canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f);
-		}
-		canvas->add_text(font_atlas, L"Hello World  ", -1, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
+			{
+				std::vector<Vec2f> points;
+				points.push_back(Vec2f(50.f, 20.f));
+				points.push_back(Vec2f(20.f, 70.f));
+				points.push_back(Vec2f(90.f, 80.f));
+				canvas->fill(points.size(), points.data(), Vec4c(255));
+			}
+			{
+				std::vector<Vec2f> points;
+				points.push_back(Vec2f(20.f, 200.f));
+				points.push_back(Vec2f(10.f, 180.f));
+				points.push_back(Vec2f(110.f, 120.f));
+				points.push_back(Vec2f(100.f, 100.f));
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 0.5f);
+			}
+			{
+				std::vector<Vec2f> points;
+				points.push_back(Vec2f(40.f, 200.f));
+				points.push_back(Vec2f(30.f, 180.f));
+				points.push_back(Vec2f(130.f, 120.f));
+				points.push_back(Vec2f(120.f, 100.f));
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f);
+			}
+			{
+				std::vector<Vec2f> points;
+				points.push_back(Vec2f(60.f, 200.f));
+				points.push_back(Vec2f(50.f, 180.f));
+				points.push_back(Vec2f(150.f, 120.f));
+				points.push_back(Vec2f(140.f, 100.f));
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f);
+			}
+			{
+				std::vector<Vec2f> points;
+				points.push_back(Vec2f(80.f, 200.f));
+				points.push_back(Vec2f(70.f, 180.f));
+				points.push_back(Vec2f(170.f, 120.f));
+				points.push_back(Vec2f(160.f, 100.f));
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f);
+			}
+			{
+				std::vector<Vec2f> points;
+				points.push_back(Vec2f(100.f, 200.f));
+				points.push_back(Vec2f(90.f, 180.f));
+				points.push_back(Vec2f(190.f, 120.f));
+				points.push_back(Vec2f(180.f, 100.f));
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f);
+			}
+			canvas->add_text(font_atlas, L"Hello World  ", -1, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 
-		canvas->record(cb, img_idx);
+			canvas->record(cb, img_idx);
 
-		fence->wait();
+			fence->wait();
 
-		if (!cbs.empty())
-		{
-			auto q = d->get_graphics_queue();
-			q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
-			q->present(sc, render_finished);
+			if (!cbs.empty())
+			{
+				auto q = d->get_graphics_queue();
+				q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
+				q->present(sc, render_finished);
+			}
 		}
 	}
 

@@ -206,6 +206,8 @@ namespace flame
 			(*_p_idx_cnt)++;
 		}
 
+		static const auto feather = 0.5f;
+
 		void CanvasPrivate::_stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness)
 		{
 			if (points.size() < 2)
@@ -235,8 +237,6 @@ namespace flame
 				else
 					normals[i + 1] = normal;
 			}
-
-			static const auto feather = 0.5f;
 
 			if (thickness > feather)
 			{
@@ -352,7 +352,66 @@ namespace flame
 				return;
 
 			_add_draw_cmd();
+			auto vtx_cnt0 = *_p_vtx_cnt;
 			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
+
+			std::vector<Vec2f> normals(points.size() + 1);
+			for (auto i = 0; i < points.size(); i++)
+			{
+				auto d = -normalize((i + 1 == points.size() ? points[0] : points[i + 1]) - points[i]);
+				auto normal = Vec2f(d.y(), -d.x());
+
+				if (i > 0)
+					normals[i] = normalize((normal + normals[i]) * 0.5f);
+				else
+					normals[i] = normal;
+
+				if (i + 1 == points.size())
+					normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
+				else
+					normals[i + 1] = normal;
+			}
+
+			auto col_t = col;
+			col_t.a() = 0;
+
+			for (auto i = 0; i < points.size(); i++)
+			{
+				if (i == 0)
+				{
+					auto p0 = points[i];
+					auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
+
+					auto n0 = normals[i];
+					auto n1 = normals[i + 1];
+
+					auto vtx_cnt = *_p_vtx_cnt;
+
+					_add_vtx(p0, uv, col);
+					_add_vtx(p0 + n0, uv, col_t);
+					_add_vtx(p1, uv, col);
+					_add_vtx(p1 + n1, uv, col_t);
+					_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
+				}
+				else if (i == points.size() - 1)
+				{
+					auto vtx_cnt = *_p_vtx_cnt;
+
+					_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
+				}
+				else
+				{
+					auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
+
+					auto n1 = normals[i + 1];
+
+					auto vtx_cnt = *_p_vtx_cnt;
+
+					_add_vtx(p1, uv, col);
+					_add_vtx(p1 + n1, uv, col_t);
+					_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+				}
+			}
 
 			for (auto i = 0; i < points.size() - 2; i++)
 			{
