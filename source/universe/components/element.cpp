@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	cElementPrivate::cElementPrivate()
+	/*cElementPrivate::cElementPrivate()
 	{
 		renderer = nullptr;
 
@@ -204,7 +204,7 @@ namespace flame
 		frame_color = c;
 		mark_dirty();
 		data_changed(FLAME_CHASH("frame_color"), sender);
-	}
+	}*/
 
 	cElement* cElement::create()
 	{

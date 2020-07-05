@@ -12,16 +12,13 @@ namespace flame
 
 	struct sElementRenderer : System
 	{
-		graphics::Canvas* canvas;
-
-		bool pending_update;
-
 		sElementRenderer() :
 			System("sElementRenderer")
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static sElementRenderer* create(graphics::Canvas* canvas);
-		FLAME_UNIVERSE_EXPORTS static void destroy(sElementRenderer* s);
+		virtual void release() = 0;
+
+		FLAME_UNIVERSE_EXPORTS static sElementRenderer* create();
 	};
 }

@@ -50,11 +50,11 @@ namespace flame
 		// local event, this component's entity's position changed
 		virtual void on_entity_position_changed() {}
 
-		// local event, this component's entity entered world
-		virtual void on_entity_entered_world() {}
+		// local event, this component's entity entered world or this component added to a entity that entered world
+		virtual void on_entered_world() {}
 
-		// local event, this component's entity left world
-		virtual void on_entity_left_world() {}
+		// local event, this component's entity left world or this component removed from a entity that entered world
+		virtual void on_left_world() {}
 
 		// local event, this component's entity added a component
 		virtual void on_entity_component_added(Component* c) {}

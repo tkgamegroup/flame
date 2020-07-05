@@ -87,9 +87,12 @@ namespace flame
 
 	void EntityPrivate::_add_component(Component* c)
 	{
+		assert(!c->entity);
 		assert(_components.find(c->name_hash) != _components.end());
 
 		c->entity = this;
+
+		c->on_added();
 
 		for (auto cc : _local_event_dispatch_list)
 			cc->on_entity_component_added(c);
@@ -102,7 +105,11 @@ namespace flame
 		_components.emplace(c->name_hash, c);
 
 		if (c->_want_local_event)
+		{
 			_local_event_dispatch_list.push_back(c);
+			if (_world)
+				c->on_entered_world();
+		}
 		if (c->_want_child_event)
 			_child_event_dispatch_list.push_back(c);
 		if (c->_want_local_data_changed)
@@ -129,7 +136,11 @@ namespace flame
 		}
 
 		if (c->_want_local_event)
+		{
 			erase_if(_local_event_dispatch_list, c);
+			if (_world)
+				c->on_left_world();
+		}
 		if (c->_want_child_event)
 			erase_if(_child_event_dispatch_list, c);
 		if (c->_want_local_data_changed)
@@ -160,7 +171,7 @@ namespace flame
 	void EntityPrivate::_enter_world()
 	{
 		for (auto c : _local_event_dispatch_list)
-			c->on_entity_entered_world();
+			c->on_entered_world();
 		for (auto& e : _children)
 		{
 			e->_world = _world;
@@ -174,7 +185,7 @@ namespace flame
 			(*it)->_leave_world();
 		_world = nullptr;
 		for (auto c : _local_event_dispatch_list)
-			c->on_entity_left_world();
+			c->on_left_world();
 	}
 
 	void EntityPrivate::_inherit()

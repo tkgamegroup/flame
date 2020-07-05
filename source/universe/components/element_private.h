@@ -9,12 +9,17 @@ namespace flame
 		struct Canvas;
 	}
 
+	struct sElementRenderer;
+
 	struct cElementPrivate : cElement
 	{
-		cElementPrivate();
-		~cElementPrivate();
-		void calc_geometry();
-		void draw(graphics::Canvas* canvas);
-		void on_event(EntityEvent e, void* t) override;
+		sElementRenderer* renderer;
+
+		//cElementPrivate();
+		//~cElementPrivate();
+
+		//void calc_geometry();
+		//void draw(graphics::Canvas* canvas);
+		//void on_event(EntityEvent e, void* t) override;
 	};
 }
