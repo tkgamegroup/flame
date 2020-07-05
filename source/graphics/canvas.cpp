@@ -208,7 +208,7 @@ namespace flame
 
 		static const auto feather = 0.5f;
 
-		void CanvasPrivate::_stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness)
+		void CanvasPrivate::_stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness, bool aa)
 		{
 			if (points.size() < 2)
 				return;
@@ -238,68 +238,117 @@ namespace flame
 					normals[i + 1] = normal;
 			}
 
-			if (thickness > feather)
+			if (aa)
 			{
-				auto col_t = col;
-				col_t.a() = 0;
-
-				for (auto i = 0; i < points.size() - 1; i++)
+				if (thickness > feather)
 				{
-					if (i == 0)
+					auto col_t = col;
+					col_t.a() = 0;
+
+					for (auto i = 0; i < points.size() - 1; i++)
 					{
-						auto p0 = points[i];
-						auto p1 = points[i + 1];
+						if (i == 0)
+						{
+							auto p0 = points[i];
+							auto p1 = points[i + 1];
 
-						auto n0 = normals[i];
-						auto n1 = normals[i + 1];
+							auto n0 = normals[i];
+							auto n1 = normals[i + 1];
 
-						auto vtx_cnt = *_p_vtx_cnt;
+							auto vtx_cnt = *_p_vtx_cnt;
 
-						_add_vtx(p0 + n0 * (thickness + feather), uv, col_t);
-						_add_vtx(p0 + n0 * (thickness - feather), uv, col);
-						_add_vtx(p0 - n0 * (thickness - feather), uv, col);
-						_add_vtx(p0 - n0 * (thickness + feather), uv, col_t);
-						_add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
-						_add_vtx(p1 + n1 * (thickness - feather), uv, col);
-						_add_vtx(p1 - n1 * (thickness - feather), uv, col);
-						_add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
-						_add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 6); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 6);
-						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 5);
-						_add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 7); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 6); _add_idx(vtx_cnt + 7);
+							_add_vtx(p0 + n0 * (thickness + feather), uv, col_t);
+							_add_vtx(p0 + n0 * (thickness - feather), uv, col);
+							_add_vtx(p0 - n0 * (thickness - feather), uv, col);
+							_add_vtx(p0 - n0 * (thickness + feather), uv, col_t);
+							_add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
+							_add_vtx(p1 + n1 * (thickness - feather), uv, col);
+							_add_vtx(p1 - n1 * (thickness - feather), uv, col);
+							_add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
+							_add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 6); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 6);
+							_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 5);
+							_add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 7); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 6); _add_idx(vtx_cnt + 7);
+						}
+						else if (closed && i == points.size() - 2)
+						{
+							auto vtx_cnt = *_p_vtx_cnt;
+
+							_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt0 + 2);
+							_add_idx(vtx_cnt - 4); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt - 4); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
+							_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 3); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt0 + 3);
+						}
+						else
+						{
+							auto p1 = points[i + 1];
+
+							auto n1 = normals[i + 1];
+
+							auto vtx_cnt = *_p_vtx_cnt;
+
+							_add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
+							_add_vtx(p1 + n1 * (thickness - feather), uv, col);
+							_add_vtx(p1 - n1 * (thickness - feather), uv, col);
+							_add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
+							_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 2);
+							_add_idx(vtx_cnt - 4); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt - 4); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+							_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
+						}
 					}
-					else if (closed && i == points.size() - 2)
+				}
+				else
+				{
+					auto col_c = col;
+					col_c.a() = (thickness / feather) * 255;
+					auto col_t = col;
+					col_t.a() = 0;
+
+					for (auto i = 0; i < points.size() - 1; i++)
 					{
-						auto vtx_cnt = *_p_vtx_cnt;
+						if (i == 0)
+						{
+							auto p0 = points[i];
+							auto p1 = points[i + 1];
 
-						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt0 + 2);
-						_add_idx(vtx_cnt - 4); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt - 4); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
-						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 3); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt0 + 3);
-					}
-					else
-					{
-						auto p1 = points[i + 1];
+							auto n0 = normals[i];
+							auto n1 = normals[i + 1];
 
-						auto n1 = normals[i + 1];
+							auto vtx_cnt = *_p_vtx_cnt;
 
-						auto vtx_cnt = *_p_vtx_cnt;
+							_add_vtx(p0 + n0 * thickness, uv, col_t);
+							_add_vtx(p0, uv, col_c);
+							_add_vtx(p0 - n0 * thickness, uv, col_t);
+							_add_vtx(p1 + n1 * thickness, uv, col_t);
+							_add_vtx(p1, uv, col_c);
+							_add_vtx(p1 - n1 * thickness, uv, col_t);
+							_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 4);
+							_add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 5);
+						}
+						else if (closed && i == points.size() - 2)
+						{
+							auto vtx_cnt = *_p_vtx_cnt;
 
-						_add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
-						_add_vtx(p1 + n1 * (thickness - feather), uv, col);
-						_add_vtx(p1 - n1 * (thickness - feather), uv, col);
-						_add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
-						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 2);
-						_add_idx(vtx_cnt - 4); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt - 4); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
-						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
+							_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
+							_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt0 + 2);
+						}
+						else
+						{
+							auto p1 = points[i + 1];
+
+							auto n1 = normals[i + 1];
+
+							auto vtx_cnt = *_p_vtx_cnt;
+
+							_add_vtx(p1 + n1 * thickness, uv, col_t);
+							_add_vtx(p1, uv, col_c);
+							_add_vtx(p1 - n1 * thickness, uv, col_t);
+							_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+							_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 2);
+						}
 					}
 				}
 			}
 			else
 			{
-				auto col_c = col;
-				col_c.a() = (thickness / feather) * 255;
-				auto col_t = col;
-				col_t.a() = 0;
-
 				for (auto i = 0; i < points.size() - 1; i++)
 				{
 					if (i == 0)
@@ -312,21 +361,17 @@ namespace flame
 
 						auto vtx_cnt = *_p_vtx_cnt;
 
-						_add_vtx(p0 + n0 * thickness, uv, col_t);
-						_add_vtx(p0, uv, col_c);
-						_add_vtx(p0 - n0 * thickness, uv, col_t);
-						_add_vtx(p1 + n1 * thickness, uv, col_t);
-						_add_vtx(p1, uv, col_c);
-						_add_vtx(p1 - n1 * thickness, uv, col_t);
-						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 4);
-						_add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 5); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 4); _add_idx(vtx_cnt + 5);
+						_add_vtx(p0 + n0 * thickness, uv, col);
+						_add_vtx(p0 - n0 * thickness, uv, col);
+						_add_vtx(p1 + n1 * thickness, uv, col);
+						_add_vtx(p1 - n1 * thickness, uv, col);
+						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
 					}
 					else if (closed && i == points.size() - 2)
 					{
 						auto vtx_cnt = *_p_vtx_cnt;
 
-						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
-						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 2); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt0 + 2);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
 					}
 					else
 					{
@@ -336,17 +381,15 @@ namespace flame
 
 						auto vtx_cnt = *_p_vtx_cnt;
 
-						_add_vtx(p1 + n1 * thickness, uv, col_t);
-						_add_vtx(p1, uv, col_c);
-						_add_vtx(p1 - n1 * thickness, uv, col_t);
-						_add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt - 3); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
-						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 2);
+						_add_vtx(p1 + n1 * thickness, uv, col);
+						_add_vtx(p1 - n1 * thickness, uv, col);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
 					}
 				}
 			}
 		}
 
-		void CanvasPrivate::_fill(std::span<const Vec2f> points, const Vec4c& col)
+		void CanvasPrivate::_fill(std::span<const Vec2f> points, const Vec4c& col, bool aa)
 		{
 			if (points.size() < 3)
 				return;
@@ -355,61 +398,64 @@ namespace flame
 			auto vtx_cnt0 = *_p_vtx_cnt;
 			auto uv = _resources[_cmds.back().v.draw_data.id]->_white_uv;
 
-			std::vector<Vec2f> normals(points.size() + 1);
-			for (auto i = 0; i < points.size(); i++)
+			if (aa)
 			{
-				auto d = -normalize((i + 1 == points.size() ? points[0] : points[i + 1]) - points[i]);
-				auto normal = Vec2f(d.y(), -d.x());
-
-				if (i > 0)
-					normals[i] = normalize((normal + normals[i]) * 0.5f);
-				else
-					normals[i] = normal;
-
-				if (i + 1 == points.size())
-					normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
-				else
-					normals[i + 1] = normal;
-			}
-
-			auto col_t = col;
-			col_t.a() = 0;
-
-			for (auto i = 0; i < points.size(); i++)
-			{
-				if (i == 0)
+				std::vector<Vec2f> normals(points.size() + 1);
+				for (auto i = 0; i < points.size(); i++)
 				{
-					auto p0 = points[i];
-					auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
+					auto d = -normalize((i + 1 == points.size() ? points[0] : points[i + 1]) - points[i]);
+					auto normal = Vec2f(d.y(), -d.x());
 
-					auto n0 = normals[i];
-					auto n1 = normals[i + 1];
+					if (i > 0)
+						normals[i] = normalize((normal + normals[i]) * 0.5f);
+					else
+						normals[i] = normal;
 
-					auto vtx_cnt = *_p_vtx_cnt;
-
-					_add_vtx(p0, uv, col);
-					_add_vtx(p0 + n0, uv, col_t);
-					_add_vtx(p1, uv, col);
-					_add_vtx(p1 + n1, uv, col_t);
-					_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
+					if (i + 1 == points.size())
+						normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
+					else
+						normals[i + 1] = normal;
 				}
-				else if (i == points.size() - 1)
+
+				auto col_t = col;
+				col_t.a() = 0;
+
+				for (auto i = 0; i < points.size(); i++)
 				{
-					auto vtx_cnt = *_p_vtx_cnt;
+					if (i == 0)
+					{
+						auto p0 = points[i];
+						auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
 
-					_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
-				}
-				else
-				{
-					auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
+						auto n0 = normals[i];
+						auto n1 = normals[i + 1];
 
-					auto n1 = normals[i + 1];
+						auto vtx_cnt = *_p_vtx_cnt;
 
-					auto vtx_cnt = *_p_vtx_cnt;
+						_add_vtx(p0, uv, col);
+						_add_vtx(p0 + n0, uv, col_t);
+						_add_vtx(p1, uv, col);
+						_add_vtx(p1 + n1, uv, col_t);
+						_add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 3); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 2); _add_idx(vtx_cnt + 3);
+					}
+					else if (i == points.size() - 1)
+					{
+						auto vtx_cnt = *_p_vtx_cnt;
 
-					_add_vtx(p1, uv, col);
-					_add_vtx(p1 + n1, uv, col_t);
-					_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt0 + 0); _add_idx(vtx_cnt0 + 1);
+					}
+					else
+					{
+						auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
+
+						auto n1 = normals[i + 1];
+
+						auto vtx_cnt = *_p_vtx_cnt;
+
+						_add_vtx(p1, uv, col);
+						_add_vtx(p1 + n1, uv, col_t);
+						_add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 1); _add_idx(vtx_cnt - 1); _add_idx(vtx_cnt - 2); _add_idx(vtx_cnt + 0); _add_idx(vtx_cnt + 1);
+					}
 				}
 			}
 

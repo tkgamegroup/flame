@@ -1,5 +1,4 @@
-﻿#include <flame/foundation/blueprint.h>
-#include <flame/graphics/device.h>
+﻿#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/synchronize.h>
@@ -93,9 +92,9 @@ struct App
 			d.p.y() = random() * d.end * 2.f - d.end;
 	}
 
-	void run(float dt)
+	void run(float delta_time)
 	{
-		dt = get_looper()->get_delta_time();
+		dt = delta_time;
 
 		if (!cbs.empty())
 			sc->acquire_image();
@@ -141,8 +140,8 @@ int main(int argc, char** args)
 
 	app.setup();
 
-	get_looper()->loop([](Capture&, float dt) {
-		app.run(dt);
+	get_looper()->loop([](Capture&, float delta_time) {
+		app.run(delta_time);
 	}, Capture());
 
 	return 0;

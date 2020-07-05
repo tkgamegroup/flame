@@ -88,8 +88,8 @@ namespace flame
 			void _add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
 			void _add_idx(uint idx);
 
-			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness);
-			void _fill(std::span<const Vec2f> points, const Vec4c& col);
+			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness, bool aa = true);
+			void _fill(std::span<const Vec2f> points, const Vec4c& col, bool aa = true);
 			void _add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col);
 			void _add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col);
 
@@ -110,8 +110,8 @@ namespace flame
 			void add_atlas(ImageAtlas* a) override { _add_atlas((ImageAtlasPrivate*)a); }
 			void add_font(FontAtlas* f) override { _add_font((FontAtlasPrivate*)f); }
 
-			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness) override { _stroke( { points, points_count}, col, thickness); }
-			void fill(uint points_count, const Vec2f* points, const Vec4c& col) override { _fill({ points, points_count }, col); }
+			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness, bool aa) override { _stroke( { points, points_count}, col, thickness, aa); }
+			void fill(uint points_count, const Vec2f* points, const Vec4c& col, bool aa) override { _fill({ points, points_count }, col, aa); }
 			void add_text(FontAtlas* f, const wchar_t* text, int text_len, uint font_size, const Vec2f& pos, const Vec4c& col) override { _add_text((FontAtlasPrivate*)f, { text, text_len == - 1 ? std::char_traits<wchar_t>::length(text) : text_len }, font_size, pos, col); }
 			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override { _add_image(pos, size, id, uv0, uv1, tint_col); }
 

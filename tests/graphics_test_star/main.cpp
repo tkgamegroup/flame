@@ -1,5 +1,4 @@
-﻿#include <flame/foundation/blueprint.h>
-#include <flame/graphics/device.h>
+﻿#include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/synchronize.h>
@@ -65,8 +64,8 @@ struct App
 		void show(graphics::Canvas* canvas)
 		{
 			std::vector<Vec2f> points;
-			path_circle(points, projector.project(p), 4.f / p.z());
-			canvas->fill(points.size(), points.data(), Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)));
+			path_circle(points, projector.project(p), 4.f / p.z(), 3);
+			canvas->fill(points.size(), points.data(), Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)), false);
 		}
 	};
 
@@ -81,8 +80,10 @@ struct App
 			s.p.z() = random() * (projector._far - projector._near) + projector._near;
 	}
 
-	void run(float dt)
+	void run(float delta_time)
 	{
+		dt = delta_time;
+
 		if (!cbs.empty())
 			sc->acquire_image();
 
@@ -127,8 +128,8 @@ int main(int argc, char** args)
 
 	app.setup();
 
-	get_looper()->loop([](Capture&, float dt) {
-		app.run(dt);
+	get_looper()->loop([](Capture&, float delta_time) {
+		app.run(delta_time);
 	}, Capture());
 
 	return 0;
