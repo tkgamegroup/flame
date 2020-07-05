@@ -491,13 +491,13 @@ int main(int argc, char **args)
 	std::unordered_map<std::string, uint> saved_udts;
 
 	auto has_enum = [&](const std::string& n) {
-		if (!find_enum(n.c_str()))
-			return false;
+		if (find_enum(n.c_str()))
+			return true;
 		return saved_enums.find(n) != saved_enums.end();
 	};
 	auto has_udt = [&](const std::string& n) {
-		if (!find_udt(n.c_str()))
-			return false;
+		if (find_udt(n.c_str()))
+			return true;
 		return saved_udts.find(n) != saved_udts.end();
 	};
 
@@ -524,6 +524,8 @@ int main(int argc, char **args)
 			{
 				if (!has_udt(name))
 				{
+					saved_udts.emplace(name, 0);
+
 					s_udt->get_length(&ull);
 					auto udt_size = ull;
 
@@ -646,6 +648,8 @@ int main(int argc, char **args)
 								{
 									if (!has_enum(desc.name))
 									{
+										saved_enums.emplace(desc.name, 0);
+
 										if (!n_enums)
 											n_enums = file_root.append_child("enums");
 										auto n_enum = n_enums.append_child("enum");

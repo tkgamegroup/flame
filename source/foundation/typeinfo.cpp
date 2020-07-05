@@ -648,9 +648,9 @@ namespace flame
 
 	static std::vector<TypeInfoPrivate*> basic_types;
 
-	struct _InitializeBasicTypes
+	struct _Initializer
 	{
-		_InitializeBasicTypes()
+		_Initializer()
 		{
 			{
 				auto t = new TypeInfoPrivate_void;
@@ -784,7 +784,7 @@ namespace flame
 			}
 		}
 	};
-	static _InitializeBasicTypes _initialize_basic_types;
+	static _Initializer _initializer;
 
 	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& name, uint size) :
 		_tag(tag),
