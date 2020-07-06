@@ -783,7 +783,18 @@ namespace flame
 				basic_types.push_back(t);
 			}
 
+			wchar_t app_name[260];
+			GetModuleFileNameW(nullptr, app_name, array_size(app_name));
+			get_library_dependencies(app_name, [](Capture& c, const char* filename) {
+				auto path = std::filesystem::path(filename);
+				if (SUW::starts_with(path, L"flame_"))
+				{
+					path.replace_extension(".typeinfo");
+					if (std::filesystem::exists(path))
+						Library::load(path.c_str());
+				}
 
+			}, Capture());
 		}
 	};
 	static _Initializer _initializer;

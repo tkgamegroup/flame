@@ -173,23 +173,40 @@ namespace flame
 	void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const char* filename), const Capture& capture)
 	{
 		auto path = std::filesystem::path(filename);
-		auto image = ImageLoad(path.string().c_str(), path.parent_path().string().c_str());
-		if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
+		auto parent_path = path.parent_path();
+		std::deque<std::filesystem::path> remains;
+		std::unordered_map<std::string, uint> toucheds;
+		remains.push_back(path.filename());
+		while (!remains.empty())
 		{
-			auto importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
-				image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress,
-				image->FileHeader, image->MappedAddress);
-			while (true)
+			auto lib_name = remains.front();
+			remains.pop_front();
+			if (!std::filesystem::exists(parent_path / lib_name))
+				continue;
+			auto image = ImageLoad(lib_name.string().c_str(), parent_path.string().c_str());
+			if (image->FileHeader->OptionalHeader.NumberOfRvaAndSizes >= 2)
 			{
-				if (importDesc->TimeDateStamp == 0 && importDesc->Name == 0)
-					break;
+				auto importDesc = (PIMAGE_IMPORT_DESCRIPTOR)get_ptr_from_rva(
+					image->FileHeader->OptionalHeader.DataDirectory[1].VirtualAddress,
+					image->FileHeader, image->MappedAddress);
+				while (true)
+				{
+					if (importDesc->TimeDateStamp == 0 && importDesc->Name == 0)
+						break;
 
-				callback((Capture&)capture, (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress));
+					auto pstr = (char*)get_ptr_from_rva(importDesc->Name, image->FileHeader, image->MappedAddress);
+					if (toucheds.find(pstr) == toucheds.end())
+					{
+						remains.push_back(pstr);
+						toucheds.emplace(pstr, 0);
+						callback((Capture&)capture, pstr);
+					}
 
-				importDesc++;
+					importDesc++;
+				}
 			}
+			ImageUnload(image);
 		}
-		ImageUnload(image);
 	}
 
 	void get_clipboard(wchar_t* (*str_allocator)(Capture& c, uint size), const Capture& capture)
