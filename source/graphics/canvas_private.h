@@ -88,8 +88,8 @@ namespace flame
 			void _add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
 			void _add_idx(uint idx);
 
-			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness, bool aa = true);
-			void _fill(std::span<const Vec2f> points, const Vec4c& col, bool aa = true);
+			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness, bool aa = false);
+			void _fill(std::span<const Vec2f> points, const Vec4c& col, bool aa = false);
 			void _add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col);
 			void _add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col);
 

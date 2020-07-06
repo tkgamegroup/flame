@@ -233,30 +233,16 @@ int main(int argc, char **args)
 	for (auto& d : source_dirs)
 		d.make_preferred();
 
-	std::vector<std::filesystem::path> dependencies;
-
-	get_library_dependencies(library_path.c_str(), [](Capture& c, const char* filename) {
-		auto path = std::filesystem::path(filename);
-		if (SUW::starts_with(path, L"flame_"))
-		{
-			path.replace_extension(L".typeinfo");
-			if (std::filesystem::exists(path))
-			{
-				auto& dependencies = *c.thiz<std::vector<std::filesystem::path>>();
-				dependencies.push_back(path);
-			}
-		}
-	}, Capture().set_thiz(&dependencies));
-
 	printf("generating typeinfo for %s: ", library_path.string().c_str());
 
-	auto last_curr_path = std::filesystem::current_path();
-	wchar_t app_path[260];
-	get_app_path(app_path);
-	std::filesystem::current_path(app_path);
-	for (auto& d : dependencies)
-		Library::load(d.c_str());
-	std::filesystem::current_path(last_curr_path);
+	std::unordered_map<std::string, uint> enums;
+	std::unordered_map<std::string, uint> udts;
+	auto has_enum = [&](const std::string& n) {
+		return enums.find(n) != enums.end();
+	};
+	auto has_udt = [&](const std::string& n) {
+		return udts.find(n) != udts.end();
+	};
 
 	if (FAILED(CoInitialize(NULL)))
 	{
@@ -487,20 +473,6 @@ int main(int argc, char **args)
 		file.close();
 	}
 
-	std::unordered_map<std::string, uint> saved_enums;
-	std::unordered_map<std::string, uint> saved_udts;
-
-	auto has_enum = [&](const std::string& n) {
-		if (find_enum(n.c_str()))
-			return true;
-		return saved_enums.find(n) != saved_enums.end();
-	};
-	auto has_udt = [&](const std::string& n) {
-		if (find_udt(n.c_str()))
-			return true;
-		return saved_udts.find(n) != saved_udts.end();
-	};
-
 	auto library = LoadLibraryW(library_path.c_str());
 
 	pugi::xml_document file;
@@ -524,7 +496,7 @@ int main(int argc, char **args)
 			{
 				if (!has_udt(name))
 				{
-					saved_udts.emplace(name, 0);
+					udts.emplace(name, 0);
 
 					s_udt->get_length(&ull);
 					auto udt_size = ull;
@@ -648,7 +620,7 @@ int main(int argc, char **args)
 								{
 									if (!has_enum(desc.name))
 									{
-										saved_enums.emplace(desc.name, 0);
+										enums.emplace(desc.name, 0);
 
 										if (!n_enums)
 											n_enums = file_root.append_child("enums");

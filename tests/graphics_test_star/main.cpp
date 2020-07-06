@@ -65,7 +65,7 @@ struct App
 		{
 			std::vector<Vec2f> points;
 			path_circle(points, projector.project(p), 4.f / p.z(), 3);
-			canvas->fill(points.size(), points.data(), Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)), false);
+			canvas->fill(points.size(), points.data(), Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)));
 		}
 	};
 

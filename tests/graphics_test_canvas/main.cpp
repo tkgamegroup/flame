@@ -54,7 +54,7 @@ struct App
 				points.push_back(Vec2f(50.f, 20.f));
 				points.push_back(Vec2f(20.f, 70.f));
 				points.push_back(Vec2f(90.f, 80.f));
-				canvas->fill(points.size(), points.data(), Vec4c(255));
+				canvas->fill(points.size(), points.data(), Vec4c(255), true);
 			}
 			{
 				std::vector<Vec2f> points;
@@ -62,7 +62,7 @@ struct App
 				points.push_back(Vec2f(10.f, 180.f));
 				points.push_back(Vec2f(110.f, 120.f));
 				points.push_back(Vec2f(100.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 0.5f);
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 0.5f, true);
 			}
 			{
 				std::vector<Vec2f> points;
@@ -70,7 +70,7 @@ struct App
 				points.push_back(Vec2f(30.f, 180.f));
 				points.push_back(Vec2f(130.f, 120.f));
 				points.push_back(Vec2f(120.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f);
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f, true);
 			}
 			{
 				std::vector<Vec2f> points;
@@ -78,7 +78,7 @@ struct App
 				points.push_back(Vec2f(50.f, 180.f));
 				points.push_back(Vec2f(150.f, 120.f));
 				points.push_back(Vec2f(140.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f);
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f, true);
 			}
 			{
 				std::vector<Vec2f> points;
@@ -86,7 +86,7 @@ struct App
 				points.push_back(Vec2f(70.f, 180.f));
 				points.push_back(Vec2f(170.f, 120.f));
 				points.push_back(Vec2f(160.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f);
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f, true);
 			}
 			{
 				std::vector<Vec2f> points;
@@ -94,7 +94,7 @@ struct App
 				points.push_back(Vec2f(90.f, 180.f));
 				points.push_back(Vec2f(190.f, 120.f));
 				points.push_back(Vec2f(180.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f);
+				canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f, true);
 			}
 			canvas->add_text(font_atlas, L"Hello World  ", -1, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 

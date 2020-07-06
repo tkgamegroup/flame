@@ -782,6 +782,8 @@ namespace flame
 				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
 				basic_types.push_back(t);
 			}
+
+
 		}
 	};
 	static _Initializer _initializer;
