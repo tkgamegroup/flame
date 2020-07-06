@@ -10,20 +10,22 @@ namespace flame
 		_root->_global_visibility = true;
 	}
 
-	//Object* find_object(uint name_hash, uint id) const
-	//{
-	//	for (auto o : objects)
-	//	{
-	//		if (o->name_hash == name_hash)
-	//		{
-	//			if (!id || o->id == id)
-	//				return o;
-	//		}
-	//	}
-	//	return nullptr;
-	//}
+	void WorldPrivate::_register_object(Object* o)
+	{
+		_objects.push_back(o);
+	}
 
-	System* WorldPrivate::_get_system_plain(uint name_hash) const
+	Object* WorldPrivate::_find_object(uint name_hash) const
+	{
+		for (auto o : _objects)
+		{
+			if (o->name_hash == name_hash)
+				return o;
+		}
+		return nullptr;
+	}
+
+	System* WorldPrivate::_get_system(uint name_hash) const
 	{
 		for (auto& s : _systems)
 		{
@@ -35,6 +37,7 @@ namespace flame
 
 	void WorldPrivate::_add_system(System* s)
 	{
+		assert(!s->world);
 		s->world = this;
 		_systems.emplace_back(s);
 		s->on_added();

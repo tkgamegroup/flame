@@ -7,9 +7,18 @@ namespace flame
 	struct FLAME_R(cElement : Component)
 	{
 		cElement() :
-			Component("cElement")
+			Component("cElement", true)
 		{
 		}
+
+		virtual float get_x() const = 0;
+		virtual void set_x(float x) = 0;
+		virtual float get_y() const = 0;
+		virtual void set_y(float y) = 0;
+		virtual float get_width() const = 0;
+		virtual void set_width(float w) = 0;
+		virtual float get_height() const = 0;
+		virtual void set_height(float h) = 0;
 
 		//FLAME_RV(Vec2f, pos);
 		//FLAME_RV(Vec2f, size);

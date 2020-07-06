@@ -42,7 +42,7 @@ namespace flame
 		void _update_visibility();
 		void _set_visible(bool v);
 
-		Component* _get_component_plain(uint hash) const;
+		Component* _get_component(uint hash) const;
 		void _add_component(Component* c);
 		void _remove_component(Component* c, bool destroy = true);
 		void _data_changed(Component* c, uint hash);
@@ -72,7 +72,7 @@ namespace flame
 
 		Entity* get_parent() const override { return _parent; }
 
-		Component* get_component_plain(uint hash) const override { return _get_component_plain(hash); }
+		Component* get_component(uint hash) const override { return _get_component(hash); }
 		void add_component(Component * c) override { _add_component(c); }
 		void remove_component(Component* c, bool destroy) override { _remove_component(c, destroy); }
 		void data_changed(Component* c, uint hash) override { _data_changed(c, hash); }

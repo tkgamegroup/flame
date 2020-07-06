@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
 
 namespace flame
@@ -20,8 +21,13 @@ namespace flame
 			virtual Vec2f get_white_uv() const = 0;
 		};
 
-		struct Canvas
+		struct Canvas : Object
 		{
+			Canvas() :
+				Object("Canvas")
+			{
+			}
+
 			virtual void release() = 0;
 
 			virtual Vec4f get_clear_color() const = 0;

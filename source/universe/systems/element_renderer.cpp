@@ -1,11 +1,8 @@
 //#include <flame/serialize.h>
 //#include <flame/graphics/device.h>
 //#include <flame/graphics/canvas.h>
-//#include <flame/universe/entity.h>
-//#include <flame/universe/world.h>
-//#include "../systems/element_renderer_private.h"
-//#include "../components/element_private.h"
 #include "../world_private.h"
+#include "../components/element_private.h"
 #include "element_renderer_private.h"
 
 namespace flame
@@ -15,9 +12,9 @@ namespace flame
 		if (!e->_global_visibility)
 			return;
 
-		//auto element = (cElementPrivate*)e->get_component(cElement);
-		//if (!element)
-		//	return;
+		auto element = (cElementPrivate*)e->get_component(FLAME_CHASH("cElement"));
+		if (!element)
+			return;
 
 		//auto scissor = canvas->get_scissor();
 		//auto r = rect(element->global_pos, element->global_size);
@@ -59,23 +56,32 @@ namespace flame
 		//}
 		//else
 		//{
-		//	element->draw(canvas);
-		//	element->cmds.call(canvas);
-		//	for (auto c : e->children)
-		//		do_render(c);
+			element->_draw(_canvas);
+			//element->cmds.call(canvas);
+			for (auto& c : e->_children)
+				_do_render(c.get());
 		//}
+	}
+
+	void sElementRendererPrivate::_on_added()
+	{
+		_canvas = (graphics::Canvas*)((WorldPrivate*)world)->_find_object(FLAME_CHASH("Canvas"));
 	}
 
 	void sElementRendererPrivate::_update()
 	{
-		if (!dirty)
+		if (!_dirty)
 			return;
 		_do_render(((WorldPrivate*)world)->_root.get());
-		dirty = false;
+		_dirty = false;
 	}
 
-	sElementRenderer* sElementRenderer::create()
+	sElementRendererPrivate* sElementRendererPrivate::_create()
 	{
-		return new sElementRendererPrivate;
+		auto ret = _allocate(sizeof(sElementRendererPrivate));
+		new (ret) sElementRendererPrivate;
+		return (sElementRendererPrivate*)ret;
 	}
+
+	sElementRenderer* sElementRenderer::create() { return sElementRendererPrivate::_create(); }
 }

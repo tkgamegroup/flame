@@ -77,7 +77,7 @@ namespace flame
 		_update_visibility();
 	}
 
-	Component* EntityPrivate::_get_component_plain(uint hash) const
+	Component* EntityPrivate::_get_component(uint hash) const
 	{
 		auto it = _components.find(hash);
 		if (it != _components.end())
@@ -88,7 +88,7 @@ namespace flame
 	void EntityPrivate::_add_component(Component* c)
 	{
 		assert(!c->entity);
-		assert(_components.find(c->name_hash) != _components.end());
+		assert(_components.find(c->name_hash) == _components.end());
 
 		c->entity = this;
 
