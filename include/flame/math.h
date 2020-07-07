@@ -1767,8 +1767,8 @@ namespace flame
 	template <class T>
 	Mat<2, 2, T> rotation(T rad)
 	{
-		const auto c = cos(rad);
-		const auto s = sin(rad);
+		auto c = cos(rad);
+		auto s = sin(rad);
 
 		return Mat<2, 2, T>(Vec<2, T>(c, s), Vec<2, T>(-s, c));
 	}
@@ -1776,8 +1776,8 @@ namespace flame
 	template <class T>
 	Mat<3, 3, T> rotation(const Vec<3, T>& axis, T rad)
 	{
-		const auto c = cos(rad);
-		const auto s = sin(rad);
+		auto c = cos(rad);
+		auto s = sin(rad);
 
 		Vec<3, T> temp((T(1) - c) * axis);
 

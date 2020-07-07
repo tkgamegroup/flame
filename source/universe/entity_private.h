@@ -44,7 +44,9 @@ namespace flame
 
 		Component* _get_component(uint hash) const;
 		void _add_component(Component* c);
+		void _info_component_removed(Component* c) const;
 		void _remove_component(Component* c, bool destroy = true);
+		void _remove_all_components(bool destroy = true);
 		void _data_changed(Component* c, uint hash);
 
 		void _enter_world();
@@ -52,7 +54,9 @@ namespace flame
 		void _inherit();
 		void _add_child(EntityPrivate* e, int position = -1);
 		void _reposition_child(uint pos1, uint pos2);
-		void _remove_child(EntityPrivate* e, bool destroyy = true);
+		void _info_child_removed(EntityPrivate* e) const;
+		void _remove_child(EntityPrivate* e, bool destroy = true);
+		void _remove_all_children(bool destroyy = true);
 
 		void _load(const std::filesystem::path& filename);
 		void _save(const std::filesystem::path& filename);
@@ -75,6 +79,7 @@ namespace flame
 		Component* get_component(uint hash) const override { return _get_component(hash); }
 		void add_component(Component * c) override { _add_component(c); }
 		void remove_component(Component* c, bool destroy) override { _remove_component(c, destroy); }
+		void remove_all_components(bool destroy) override { _remove_all_components(); }
 		void data_changed(Component* c, uint hash) override { _data_changed(c, hash); }
 
 		uint get_children_count() const override { return _children.size(); }
@@ -82,6 +87,7 @@ namespace flame
 		void add_child(Entity* e, int position) override { _add_child((EntityPrivate*)e, position); }
 		void reposition_child(uint pos1, uint pos2) override { _reposition_child(pos1, pos2); }
 		void remove_child(Entity* e, bool destroy) override { _remove_child((EntityPrivate*)e, destroy); }
+		void remove_all_children(bool destroyy) override { _remove_all_children(); }
 
 		void load(const wchar_t* filename) override { _load(filename); }
 		void save(const wchar_t* filename) override { _save(filename); }

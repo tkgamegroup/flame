@@ -35,6 +35,13 @@ namespace flame
 		void _set_y(float y);
 		void _set_width(float w);
 		void _set_height(float h);
+		void _set_pivotx(float p);
+		void _set_pivoty(float p);
+		void _set_scalex(float s);
+		void _set_scaley(float s);
+		void _set_rotation(float r);
+		void _set_skewx(float s);
+		void _set_skewy(float s);
 
 		void _update_transform();
 		const Mat<3, 2, float>& _get_transform();

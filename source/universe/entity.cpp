@@ -118,15 +118,8 @@ namespace flame
 			_child_data_changed_dispatch_list.push_back(c);
 	}
 
-	void EntityPrivate::_remove_component(Component* c, bool destroy)
+	void EntityPrivate::_info_component_removed(Component* c) const
 	{
-		auto it = _components.find(c->name_hash);
-		if (it == _components.end())
-		{
-			assert(0);
-			return;
-		}
-
 		for (auto cc : _local_event_dispatch_list)
 			cc->on_entity_component_removed(c);
 		if (_parent)
@@ -137,10 +130,24 @@ namespace flame
 
 		if (c->_want_local_event)
 		{
-			erase_if(_local_event_dispatch_list, c);
 			if (_world)
 				c->on_left_world();
 		}
+	}
+
+	void EntityPrivate::_remove_component(Component* c, bool destroy)
+	{
+		auto it = _components.find(c->name_hash);
+		if (it == _components.end())
+		{
+			assert(0);
+			return;
+		}
+
+		_info_component_removed(c);
+
+		if (c->_want_local_event)
+			erase_if(_local_event_dispatch_list, c);
 		if (c->_want_child_event)
 			erase_if(_child_event_dispatch_list, c);
 		if (c->_want_local_data_changed)
@@ -151,6 +158,24 @@ namespace flame
 		if (!destroy)
 			it->second.release();
 		_components.erase(it);
+	}
+
+	void EntityPrivate::_remove_all_components(bool destroy)
+	{
+		for (auto& c : _components)
+			_info_component_removed(c.second.get());
+
+		_local_event_dispatch_list.clear();
+		_child_event_dispatch_list.clear();
+		_local_data_changed_dispatch_list.clear();
+		_child_data_changed_dispatch_list.clear();
+
+		if (!destroy)
+		{
+			for (auto& c : _components)
+				c.second.release();
+		}
+		_components.clear();
 	}
 
 	void EntityPrivate::_data_changed(Component* c, uint hash)
@@ -259,17 +284,8 @@ namespace flame
 			c->on_entity_child_position_changed(b);
 	}
 
-	void EntityPrivate::_remove_child(EntityPrivate* e, bool destroy)
+	void EntityPrivate::_info_child_removed(EntityPrivate* e) const
 	{
-		auto it = std::find_if(_children.begin(), _children.end(), [&](const auto& t) {
-			return t.get() == e;
-		});
-		if (it == _children.end())
-		{
-			assert(0); // not found!
-			return;
-		}
-
 		for (auto i = 0; i < e->_index; i++)
 		{
 			auto ee = _children[i].get();
@@ -288,10 +304,37 @@ namespace flame
 			c->on_entity_removed();
 		for (auto c : _local_event_dispatch_list)
 			c->on_entity_removed_child(e);
+	}
+
+	void EntityPrivate::_remove_child(EntityPrivate* e, bool destroy)
+	{
+		auto it = std::find_if(_children.begin(), _children.end(), [&](const auto& t) {
+			return t.get() == e;
+		});
+		if (it == _children.end())
+		{
+			assert(0); // not found!
+			return;
+		}
+
+		_info_child_removed(e);
 
 		if (!destroy)
 			it->release();
 		_children.erase(it);
+	}
+
+	void EntityPrivate::_remove_all_children(bool destroy)
+	{
+		for (auto& c : _children)
+			_info_child_removed(c.get());
+
+		if (!destroy)
+		{
+			for (auto& c : _children)
+				c.release();
+		}
+		_children.clear();
 	}
 
 	static void load_prefab(EntityPrivate* dst, pugi::xml_node src)

@@ -38,6 +38,63 @@ namespace flame
 			_renderer->_dirty = true;
 	}
 
+	void cElementPrivate::_set_pivotx(float p)
+	{
+		_pivotx = p;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+	void cElementPrivate::_set_pivoty(float p)
+	{
+		_pivoty = p;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+	void cElementPrivate::_set_scalex(float s)
+	{
+		_scalex = s;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+	void cElementPrivate::_set_scaley(float s)
+	{
+		_scaley = s;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+	void cElementPrivate::_set_rotation(float r)
+	{
+		_rotation = r;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+	void cElementPrivate::_set_skewx(float s)
+	{
+		_skewx = s;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+	void cElementPrivate::_set_skewy(float s)
+	{
+		_skewy = s;
+		_transform_dirty = true;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
+
 	void cElementPrivate::_update_transform()
 	{
 		if (!_transform_dirty)
@@ -54,15 +111,53 @@ namespace flame
 		}
 
 		auto axis = Mat2f(base_transform);
-		auto rxsin = sin((_rotation + _skewy) * ANG_RAD);
-		auto rxcos = cos((_rotation + _skewy) * ANG_RAD);
-		auto rysin = sin((_rotation + _skewx) * ANG_RAD);
-		auto rycos = cos((_rotation + _skewx) * ANG_RAD);
-		axis[0] = Vec2f(axis[0].x() * rxcos - axis[0].y() * rxsin, axis[0].x() * rxsin + axis[0].y() * rxcos) * _scalex;
-		axis[1] = Vec2f(axis[0].x() * rycos - axis[0].y() * rysin, axis[0].x() * rysin + axis[0].y() * rycos) * _scaley;
+		auto c = Vec2f(base_transform[0][2], base_transform[1][2]) + 
+			axis[0] * _x + axis[1] * _y;
+		axis[0] = rotation((_rotation + _skewy) * ANG_RAD) * axis[0] * _scalex;
+		axis[1] = rotation((_rotation + _skewx) * ANG_RAD) * axis[1] * _scaley;
 
-		auto c = Vec2f(_pivotx * _width, _pivoty * _height);
+		auto w = axis[0] * _width;
+		auto h = axis[1] * _height;
+		_p00 = w * -_pivotx + h * -_pivoty + c;
+		_p10 = w * (1.f - _pivotx) + h * -_pivoty + c;
+		_p01 = w * -_pivotx + h * (1.f - _pivoty) + c;
+		_p11 = w * (1.f - _pivotx) + h * (1.f - _pivoty) + c;
+		_transform = Mat<3, 2, float>(Vec3f(axis[0], _p00.x()), Vec3f(axis[1], _p00.y()));
+	}
 
+	const Mat<3, 2, float>& cElementPrivate::_get_transform()
+	{
+		if (_transform_dirty)
+			_update_transform();
+		return _transform;
+	}
+
+	const Vec2f& cElementPrivate::_get_p00()
+	{
+		if (_transform_dirty)
+			_update_transform();
+		return _p00;
+	}
+
+	const Vec2f& cElementPrivate::_get_p10()
+	{
+		if (_transform_dirty)
+			_update_transform();
+		return _p10;
+	}
+
+	const Vec2f& cElementPrivate::_get_p11()
+	{
+		if (_transform_dirty)
+			_update_transform();
+		return _p11;
+	}
+
+	const Vec2f& cElementPrivate::_get_p01()
+	{
+		if (_transform_dirty)
+			_update_transform();
+		return _p01;
 	}
 
 	void cElementPrivate::_on_entered_world()

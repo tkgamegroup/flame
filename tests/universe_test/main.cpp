@@ -67,13 +67,18 @@ int main(int argc, char** args)
 	world->add_system(ser);
 
 	auto root = world->get_root();
-	root->load((std::filesystem::path(getenv("FLAME_PATH")) / "art/test.prefab").c_str());
-	//auto ce = cElement::create();
-	//ce->set_x(100.f);
-	//ce->set_y(50.f);
-	//ce->set_width(200.f);
-	//ce->set_height(100.f);
-	//root->add_component(ce);
+	auto prefab_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
+	root->load((prefab_path / "test.prefab").c_str());
+	add_file_watcher(prefab_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
+		auto path = std::filesystem::path(filename);
+		if (path.filename() == L"test.prefab")
+		{
+			auto root = c.thiz<Entity>();
+			root->remove_all_components();
+			root->remove_all_children();
+			root->load(filename);
+		}
+	}, Capture().set_thiz(root), false, false);
 
 	get_looper()->loop([](Capture&, float) {
 		if (!cbs.empty())
