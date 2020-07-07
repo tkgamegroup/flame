@@ -19,35 +19,69 @@ namespace flame
 		float _y = 0.f;
 		float _width = 0.f;
 		float _height = 0.f;
+		float _pivotx = 0.f;
+		float _pivoty = 0.f;
+		float _scalex = 1.f;
+		float _scaley = 1.f;
+		float _rotation = 0.f;
+		float _skewx = 0.f;
+		float _skewy = 0.f;
 
-		Vec4f _g = Vec4f(0.f);
-		bool _dirty = true;
-
-		//cElementPrivate();
-		//~cElementPrivate();
+		Mat<3, 2, float> _transform = Mat<3, 2, float>(1.f);
+		bool _transform_dirty = true;
+		Vec2f _p00, _p10, _p11, _p01;
 
 		void _set_x(float x);
 		void _set_y(float y);
 		void _set_width(float w);
 		void _set_height(float h);
 
-		Vec4f _get_g();
+		void _update_transform();
+		const Mat<3, 2, float>& _get_transform();
+		const Vec2f& _get_p00();
+		const Vec2f& _get_p10();
+		const Vec2f& _get_p11();
+		const Vec2f& _get_p01();
 
 		void _on_entered_world();
+
+		void _draw(graphics::Canvas* canvas);
 
 		static cElementPrivate* _create();
 
 		float get_x() const override { return _x; }
 		void set_x(float x) { _set_x(x); }
+
 		float get_y() const override { return _y; }
 		void set_y(float y) { _set_y(y); }
+
 		float get_width() const override { return _width; }
 		void set_width(float w) { _set_width(w); }
+
 		float get_height() const override { return _height; }
 		void set_height(float h) { _set_height(h); }
 
-		//void calc_geometry();
-		void _draw(graphics::Canvas* canvas);
+		float get_pivotx() const override { return _pivotx; }
+		void set_pivotx(float p) override { _set_pivotx(p); }
+
+		float get_pivoty() const override { return _pivoty; }
+		void set_pivoty(float p) override { _set_pivoty(p); }
+
+		float get_scalex() const override { return _scalex; }
+		void set_scalex(float s) override { _set_scalex(s); }
+
+		float get_scaley() const override { return _scaley; }
+		void set_scaley(float s) override { _set_scaley(s); }
+
+		float get_rotation() const override { return _rotation; }
+		void set_rotation(float r) override { _set_rotation(r); }
+
+		float get_skewx() const override { return _skewx; }
+		void set_skewx(float s) override { _set_skewx(s); }
+
+		float get_skewy() const override { return _skewy; }
+		void set_skewy(float s) override { _set_skewy(s); }
+
 		void on_entered_world() override { _on_entered_world(); }
 	};
 }

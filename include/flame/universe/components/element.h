@@ -13,16 +13,47 @@ namespace flame
 
 		virtual float get_x() const = 0;
 		virtual void set_x(float x) = 0;
+
 		virtual float get_y() const = 0;
 		virtual void set_y(float y) = 0;
+
 		virtual float get_width() const = 0;
 		virtual void set_width(float w) = 0;
+
 		virtual float get_height() const = 0;
 		virtual void set_height(float h) = 0;
 
-		//FLAME_RV(Vec2f, pos);
-		//FLAME_RV(Vec2f, size);
-		//FLAME_RV(float, scale);
+		// 0 - 1
+		virtual float get_pivotx() const = 0;
+		// 0 - 1
+		virtual void set_pivotx(float p) = 0;
+
+		// 0 - 1
+		virtual float get_pivoty() const = 0;
+		// 0 - 1
+		virtual void set_pivoty(float p) = 0;
+
+		virtual float get_scalex() const = 0;
+		virtual void set_scalex(float s) = 0;
+
+		virtual float get_scaley() const = 0;
+		virtual void set_scaley(float s) = 0;
+
+		// angle
+		virtual float get_rotation() const = 0;
+		// angle
+		virtual void set_rotation(float r) = 0;
+
+		// angle
+		virtual float get_skewx() const = 0;
+		// angle
+		virtual void set_skewx(float s) = 0;
+
+		// angle
+		virtual float get_skewy() const = 0;
+		// angle
+		virtual void set_skewy(float s) = 0;
+
 		//FLAME_RV(Vec2f, pivot);
 		//FLAME_RV(Vec4f, padding); // L T R B
 		//FLAME_RV(float, alpha);
@@ -39,25 +70,6 @@ namespace flame
 		//bool clipped;
 		//Vec4f clipped_rect;
 
-		//void set_x(float v)
-		//{
-		//	set_pos(Vec2f(v, pos.y()));
-		//}
-
-		//void set_y(float v)
-		//{
-		//	set_pos(Vec2f(pos.x(), v));
-		//}
-
-		//void set_width(float v)
-		//{
-		//	set_size(Vec2f(v, size.y()));
-		//}
-
-		//void set_height(float v)
-		//{
-		//	set_size(Vec2f(size.x(), v));
-		//}
 		//void add_x(float v)
 		//{
 		//	set_pos(Vec2f(pos.x() + v, pos.y()));
@@ -160,9 +172,6 @@ namespace flame
 
 		//ListenerHub<bool(Capture& c, graphics::Canvas * canvas)> cmds;
 
-		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_pos)(const Vec2f& p);
-		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_scale)(float s);
-		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_size)(const Vec2f& s);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_alpha)(float a);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const Vec4f& r);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_thickness)(float t);

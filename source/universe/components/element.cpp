@@ -6,39 +6,10 @@
 
 namespace flame
 {
-//	cElementPrivate::cElementPrivate()
-//	{
-//		renderer = nullptr;
-//
-//		scale = 1.f;
-//		pivot = 0.f;
-//		padding = Vec4f(0.f);
-//		alpha = 1.f;
-//		roundness = Vec4f(0.f);
-//		roundness_lod = 0;
-//		frame_thickness = 0.f;
-//		color = Vec4c(0);
-//		frame_color = Vec4c(255);
-//		clip_flags = (ClipFlag)0;
-//
-//		global_pos = 0.f;
-//		global_size = 0.f;
-//		global_scale = 0.f;
-//		clipped = false;
-//		clipped_rect = Vec4f(-1.f);
-//
-//		cmds.impl = ListenerHubImpl::create();
-//	}
-//
-//	cElementPrivate::~cElementPrivate()
-//	{
-//		cmds.impl->release();
-//	}
-
 	void cElementPrivate::_set_x(float x)
 	{
 		_x = x;
-		_dirty = true;
+		_transform_dirty = true;
 		if (_renderer)
 			_renderer->_dirty = true;
 	}
@@ -46,7 +17,7 @@ namespace flame
 	void cElementPrivate::_set_y(float y)
 	{
 		_y = y;
-		_dirty = true;
+		_transform_dirty = true;
 		if (_renderer)
 			_renderer->_dirty = true;
 	}
@@ -54,7 +25,7 @@ namespace flame
 	void cElementPrivate::_set_width(float w)
 	{
 		_width = w;
-		_dirty = true;
+		_transform_dirty = true;
 		if (_renderer)
 			_renderer->_dirty = true;
 	}
@@ -62,36 +33,36 @@ namespace flame
 	void cElementPrivate::_set_height(float h)
 	{
 		_height = h;
-		_dirty = true;
+		_transform_dirty = true;
 		if (_renderer)
 			_renderer->_dirty = true;
 	}
 
-	Vec4f cElementPrivate::_get_g()
+	void cElementPrivate::_update_transform()
 	{
-		if (_dirty)
-		{
-			_dirty = false;
+		if (!_transform_dirty)
+			return;
+		_transform_dirty = false;
 
-			auto p = ((EntityPrivate*)entity)->_parent;
-			if (!p)
-			{
-				_g.x() = _x;
-				_g.y() = _y;
-				_g.z() = _x + _width;
-				_g.w() = _y + _height;
-			}
-			else
-			{
-				auto pe = (cElementPrivate*)p->_get_component(FLAME_CHASH("cElement"));
-				_g.x() = pe->_x + _x;
-				_g.y() = pe->_y + _y;
-				_g.z() = _g.x() + _width;
-				_g.w() = _g.y() + _height;
-			}
+		auto base_transform = Mat<3, 2, float>(1.f);
+		auto p = ((EntityPrivate*)entity)->_parent;
+		if (p)
+		{
+			auto pe = (cElementPrivate*)p->_get_component(FLAME_CHASH("cElement"));
+			if (pe)
+				base_transform = pe->_get_transform();
 		}
 
-		return _g;
+		auto axis = Mat2f(base_transform);
+		auto rxsin = sin((_rotation + _skewy) * ANG_RAD);
+		auto rxcos = cos((_rotation + _skewy) * ANG_RAD);
+		auto rysin = sin((_rotation + _skewx) * ANG_RAD);
+		auto rycos = cos((_rotation + _skewx) * ANG_RAD);
+		axis[0] = Vec2f(axis[0].x() * rxcos - axis[0].y() * rxsin, axis[0].x() * rxsin + axis[0].y() * rxcos) * _scalex;
+		axis[1] = Vec2f(axis[0].x() * rycos - axis[0].y() * rysin, axis[0].x() * rysin + axis[0].y() * rycos) * _scaley;
+
+		auto c = Vec2f(_pivotx * _width, _pivoty * _height);
+
 	}
 
 	void cElementPrivate::_on_entered_world()
@@ -156,12 +127,11 @@ namespace flame
 //		{
 //			if (alpha > 0.f)
 //			{
-				auto g = _get_g();
 				std::vector<Vec2f> points;
-				points.push_back(Vec2f(g.x(), g.y()));
-				points.push_back(Vec2f(g.z(), g.y()));
-				points.push_back(Vec2f(g.z(), g.w()));
-				points.push_back(Vec2f(g.x(), g.w()));
+				points.push_back(_get_p00());
+				points.push_back(_get_p10());
+				points.push_back(_get_p11());
+				points.push_back(_get_p01());
 				canvas->fill(points.size(), points.data(), Vec4c(255));
 //				auto p = floor(global_pos);
 //				auto s = floor(global_size);

@@ -1453,26 +1453,17 @@ namespace flame
 		return ret;
 	}
 
-	template <uint N, uint M, class T>
-	Mat<N, M, T> operator/(T lhs, const Mat<N, M, T>& rhs)
-	{
-		Mat<N, M, T> ret(rhs);
-		for (auto i = 0; i < M; i++)
-			ret[i] /= lhs;
-		return ret;
-	}
+	using Mat2i = Mat<2, 2, int>;
+	using Mat3i = Mat<3, 3, int>;
+	using Mat4i = Mat<4, 4, int>;
 
-	using Mat2x2i = Mat<2, 2, int>;
-	using Mat3x3i = Mat<3, 3, int>;
-	using Mat4x4i = Mat<4, 4, int>;
+	using Mat2u = Mat<2, 2, uint>;
+	using Mat3u = Mat<3, 3, uint>;
+	using Mat4u = Mat<4, 4, uint>;
 
-	using Mat2x2u = Mat<2, 2, uint>;
-	using Mat3x3u = Mat<3, 3, uint>;
-	using Mat4x4u = Mat<4, 4, uint>;
-
-	using Mat2x2f = Mat<2, 2, float>;
-	using Mat3x3f = Mat<3, 3, float>;
-	using Mat4x4f = Mat<4, 4, float>;
+	using Mat2f = Mat<2, 2, float>;
+	using Mat3f = Mat<3, 3, float>;
+	using Mat4f = Mat<4, 4, float>;
 
 	template <class T>
 	Vec<3, T> x_axis()
