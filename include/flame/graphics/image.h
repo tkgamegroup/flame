@@ -106,8 +106,7 @@ namespace flame
 		struct ImageTile
 		{
 			virtual uint get_index() const = 0;
-			virtual const wchar_t* get_filename() const = 0;
-			virtual uint get_id() const = 0;
+			virtual const char* get_name() const = 0;
 			virtual Vec2i get_pos() const = 0;
 			virtual Vec2i get_size() const = 0;
 			virtual Vec4f get_uv() const = 0;
@@ -119,9 +118,7 @@ namespace flame
 
 			virtual bool get_border() const = 0;
 
-			virtual uint get_tiles_count() const = 0;
-			virtual ImageTile* get_tile(uint idx) const = 0;
-			virtual ImageTile* find_tile(uint id) const = 0;
+			virtual ImageTile* find_tile(const char* name) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static ImageAtlas* create(Device* d, const wchar_t* filename);
 		};

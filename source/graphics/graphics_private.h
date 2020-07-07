@@ -293,27 +293,28 @@ namespace flame
 
 		inline std::string to_glsl_typename(uint hash)
 		{
-			switch (hash)
-			{
-			case FLAME_CHASH("int"):
-				return "int";
-			case FLAME_CHASH("Vec(2+int)"):
-				return "ivec2";
-			case FLAME_CHASH("Vec(3+int)"):
-				return"ivec3";
-			case FLAME_CHASH("Vec(4+int)"):
-				return"ivec4";
-			case FLAME_CHASH("float"):
-				return"float";
-			case FLAME_CHASH("Vec(2+float)"):
-				return"vec2";
-			case FLAME_CHASH("Vec(3+float)"):
-				return"vec3";
-			case FLAME_CHASH("Vec(4+float)"):
-				return"vec4";
-			default:
-				assert(0);
-			}
+			//switch (hash)
+			//{
+			//case FLAME_CHASH("int"):
+			//	return "int";
+			//case FLAME_CHASH("Vec(2+int)"):
+			//	return "ivec2";
+			//case FLAME_CHASH("Vec(3+int)"):
+			//	return"ivec3";
+			//case FLAME_CHASH("Vec(4+int)"):
+			//	return"ivec4";
+			//case FLAME_CHASH("float"):
+			//	return"float";
+			//case FLAME_CHASH("Vec(2+float)"):
+			//	return"vec2";
+			//case FLAME_CHASH("Vec(3+float)"):
+			//	return"vec3";
+			//case FLAME_CHASH("Vec(4+float)"):
+			//	return"vec4";
+			//default:
+			//	assert(0);
+			//}
+			return "";
 		}
 
 		inline uint format_size(Format f)

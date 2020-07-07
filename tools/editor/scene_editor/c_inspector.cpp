@@ -113,7 +113,7 @@ void cInspector::refresh()
 
 		for (auto component : scene_editor.selected->components.get_all())
 		{
-			auto udt = find_udt(FLAME_HASH((std::string("flame::") + component->name).c_str()));
+			auto udt = find_udt((std::string("flame::") + component->name).c_str());
 			auto library = udt->db->library;
 
 			ui.e_begin_layout(LayoutHorizontal, 2.f);

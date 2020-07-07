@@ -455,8 +455,7 @@ namespace flame
 				std::string t;
 				std::stringstream ss(e.value);
 				ss >> t;
-				tile->_filename = s2w(t);
-				tile->_id = FLAME_HASH(t.c_str());
+				tile->_name = t;
 				ss >> t;
 				auto v = sto<Vec4u>(t.c_str());
 				tile->_pos = Vec2i(v.x(), v.y());
@@ -475,11 +474,11 @@ namespace flame
 			delete _image;
 		}
 
-		ImageTile* ImageAtlasPrivate::_find_tile(uint id) const
+		ImageTile* ImageAtlasPrivate::_find_tile(const std::string& name) const
 		{
 			for (auto& t : _tiles)
 			{
-				if (t->_id == id)
+				if (t->_name == name)
 					return t.get();
 			}
 			return nullptr;;

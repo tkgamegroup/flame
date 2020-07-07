@@ -24,8 +24,6 @@ namespace flame
 			virtual uint get_image_index() const = 0;
 			virtual void acquire_image() = 0;
 
-			virtual uint get_hash() const = 0;
-
 			FLAME_GRAPHICS_EXPORTS static Format get_format();
 
 			FLAME_GRAPHICS_EXPORTS static Swapchain* create(Device *d, Window* w, ImageUsageFlags extra_usages = 0);

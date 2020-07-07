@@ -199,10 +199,6 @@ namespace flame
 				for (auto i = 0; i < image_count; i++)
 					_images[i].reset(new ImagePrivate(_d, swapchain_format, size, 1, 1, native_images[i]));
 			}
-
-			_hash = 0;
-			for (auto i = 0; i < sizeof(_v); i += sizeof(uint))
-				_hash = hash_update(_hash, ((uint*)&_v)[i]);
 		}
 
 		Format Swapchain::get_format()

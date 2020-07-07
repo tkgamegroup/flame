@@ -313,11 +313,11 @@ namespace flame
 	struct Object
 	{
 		const char* name;
-		const uint name_hash;
+		const uint64 name_hash;
 
 		Object(const char* name) :
 			name(name),
-			name_hash(FLAME_HASH(name))
+			name_hash(std::hash<const char*>()(name))
 		{
 		}
 	};

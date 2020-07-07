@@ -243,7 +243,7 @@ MyApp::~MyApp()
 	std::ofstream user_data(L"user_data.ini");
 	user_data << "name = " << w2s(my_name) << "\n";
 	user_data << "\n[key]\n";
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	auto key_info = find_enum("flame::Key");
 	for (auto i = 0; i < KEY_COUNT; i++)
 		user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->name.str() << "\n";
 	user_data << "\n[sound]\n";
@@ -279,7 +279,7 @@ void MyApp::create()
 		if (e.key == "name")
 			my_name = s2w(e.value);
 	}
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	auto key_info = find_enum("flame::Key");
 	for (auto& e : user_data.get_section_entries("key"))
 	{
 		for (auto i = 0; i < KEY_COUNT; i++)
@@ -1377,11 +1377,11 @@ void MyApp::create_sensitiveness_scene()
 
 void MyApp::set_board_tiles(cTileMap* m)
 {
-	m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("grid.png")));
+	m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile("grid.png"));
 	for (auto i = 1; i <= 7; i++)
-		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH((std::to_string(i) + ".png").c_str())));
-	m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
-	m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("ghost.png")));
+		m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile((std::to_string(i) + ".png").c_str()));
+	m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile("gray.png"));
+	m->add_tile((atlas->canvas_slot_ << 16) + atlas->find_tile("ghost.png"));
 }
 
 void MyApp::create_game_scene()
@@ -2352,7 +2352,7 @@ void MyApp::do_game_logic()
 					{
 						ui.next_element_pos = Vec2f(0.f, -idx * 24.f - i * 4.f);
 						ui.next_element_size = Vec2f(24.f);
-						ui.e_image((atlas->canvas_slot_ << 16) + atlas->find_tile(FLAME_HASH("gray.png")));
+						ui.e_image((atlas->canvas_slot_ << 16) + atlas->find_tile("gray.png"));
 						idx++;
 					}
 				}

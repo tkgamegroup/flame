@@ -30,8 +30,6 @@ namespace flame
 
 			uint _image_index;
 
-			uint _hash;
-
 			void* resize_listener;
 
 			SwapchainPrivate(DevicePrivate *d, Window* w, ImageUsageFlags extra_usages = 0);
@@ -48,8 +46,6 @@ namespace flame
 
 			uint get_image_index() const override { return _image_index; }
 			void acquire_image() override { _acquire_image(); }
-
-			uint get_hash() const override { return _hash; }
 
 			void update();
 		};

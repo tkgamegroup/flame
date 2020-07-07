@@ -55,7 +55,7 @@ namespace flame
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> _bindings;
 			std::unique_ptr<Descriptorset> _default_set;
 
-			uint _hash;
+			uint64 _hash;
 
 			DescriptorlayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings, bool create_default_set = false);
 			~DescriptorlayoutPrivate();
@@ -102,7 +102,7 @@ namespace flame
 			std::vector<DescriptorlayoutPrivate*> _dsls;
 			uint _pc_size;
 
-			uint _hash;
+			uint64 _hash;
 
 			PipelinelayoutPrivate(DevicePrivate* d, std::span<DescriptorlayoutPrivate*> descriptorlayouts, uint push_constant_size);
 			~PipelinelayoutPrivate();

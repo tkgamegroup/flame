@@ -129,15 +129,13 @@ namespace flame
 		struct ImageTilePrivate : ImageTile
 		{
 			uint _index;
-			std::wstring _filename;
-			uint _id;
+			std::string _name;
 			Vec2i _pos;
 			Vec2i _size;
 			Vec4f _uv;
 
 			uint get_index() const override { return _index; }
-			const wchar_t* get_filename() const override { return _filename.c_str(); }
-			uint get_id() const override { return _id; }
+			const char* get_name() const override { return _name.c_str(); }
 			Vec2i get_pos() const override { return _pos; }
 			Vec2i get_size() const override { return _size; }
 			Vec4f get_uv() const override { return _uv; }
@@ -155,15 +153,13 @@ namespace flame
 			ImageAtlasPrivate(DevicePrivate* d, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();
 
-			ImageTile* _find_tile(uint id) const;
+			ImageTile* _find_tile(const std::string& name) const;
 
 			void release() override { delete this; }
 
 			bool get_border() const override { return _border; }
 
-			uint get_tiles_count() const override { return _tiles.size(); }
-			ImageTile* get_tile(uint idx) const override { return _tiles[idx].get(); }
-			ImageTile* find_tile(uint id) const override { return _find_tile(id); }
+			ImageTile* find_tile(const char* name) const override { return _find_tile(name); }
 		};
 	}
 }

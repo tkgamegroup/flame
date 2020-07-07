@@ -77,7 +77,7 @@ cConsole::cConsole() :
 					}
 					else if (tokens[1] == L"udt")
 					{
-						auto udt = find_udt(FLAME_HASH(w2s(tokens[2]).c_str()));
+						auto udt = find_udt(w2s(tokens[2]).c_str());
 						if (udt)
 						{
 							log += s2w(udt->name.str()) + L"\n";

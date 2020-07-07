@@ -90,11 +90,7 @@ namespace flame
 
 			_hash = 0;
 			for (auto& b : bindings)
-			{
-				hash_update(_hash, b.type);
-				hash_update(_hash, FLAME_HASH(b.name));
-				hash_update(_hash, b.count);
-			}
+				_hash = std::hash<int>()(b.type) ^ std::hash<const char*>()(b.name) ^ std::hash<int>()(b.count);
 		}
 
 		DescriptorlayoutPrivate::~DescriptorlayoutPrivate()
@@ -230,8 +226,8 @@ namespace flame
 
 			_hash = 0;
 			for (auto d : _dsls)
-				hash_update(_hash, d->_hash);
-			hash_update(_hash, _pc_size);
+				_hash = _hash ^ d->_hash;
+			_hash = _hash ^ std::hash<int>()(_pc_size);
 		}
 
 		PipelinelayoutPrivate::~PipelinelayoutPrivate()
@@ -256,13 +252,10 @@ namespace flame
 			static std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
 			static std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
 
-			auto hash = 0U;
+			auto hash = 0ULL;
 			for (auto& s : shaders)
-			{
-				hash = hash_update(hash, FLAME_HASH(s.s->_filename.c_str()));
-				hash = hash_update(hash, FLAME_HASH(s.s->_prefix.c_str()));
-			}
-			hash = hash_update(hash, pll->_hash);
+				hash = hash ^ std::hash<std::wstring>()(s.s->_filename) ^ std::hash<std::string>()(s.s->_prefix);
+			hash = hash ^ pll->_hash;
 			if (vi)
 			{
 				for (auto i = 0; i < vi->buffers_count; i++)
@@ -271,13 +264,11 @@ namespace flame
 					for (auto j = 0; j < b.attributes_count; j++)
 					{
 						auto& a = b.attributes[j];
-						hash = hash_update(hash, a.format);
-						hash = hash_update(hash, FLAME_HASH(a.name));
+						hash = hash ^ std::hash<int>()(a.format) ^ std::hash<const char*>()(a.name);
 					}
-					hash = hash_update(hash, b.rate);
+					hash = hash ^ std::hash<int>()(b.rate);
 				}
-				hash = hash_update(hash, vi->primitive_topology);
-				hash = hash_update(hash, vi->patch_control_points);
+				hash = hash ^ std::hash<int>()(vi->primitive_topology) ^ std::hash<int>()(vi->patch_control_points);
 			}
 			auto str_hash = std::to_wstring(hash);
 
