@@ -437,7 +437,7 @@ void cBPEditor::on_add_node(bpNode* n)
 				for (auto n : bp_editor.bp->root->children)
 				{
 					auto e = ((Entity*)n->user_data)->get_component(cElement);
-					if (rect_overlapping(r, rect(e->global_pos, e->global_size)))
+					if (rect_overlapping(r, rect(e->global_pos, e->global_pos + e->global_size)))
 						nodes.push_back(n);
 				}
 				if (!nodes.empty())
@@ -460,7 +460,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 				auto& edt = bp_editor.editor->edt;
 
-				auto range = rect(edt.element->global_pos, edt.element->global_size);
+				auto range = rect(edt.element->global_pos, edt.element->global_pos + edt.element->global_size);
 				auto scale = edt.base->global_scale;
 				auto extent = slot_bezier_extent * scale;
 				for (auto n : bp_editor.bp->root->children)
@@ -509,7 +509,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 			auto scale = edt.base->global_scale;
 			auto extent = slot_bezier_extent * scale;
-			auto range = rect(edt.element->global_pos, edt.element->global_size);
+			auto range = rect(edt.element->global_pos, edt.element->global_pos + edt.element->global_size);
 			auto line_width = 3.f * scale;
 			for (auto n : bp_editor.bp->root->children)
 			{

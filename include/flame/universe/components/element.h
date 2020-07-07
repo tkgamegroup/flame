@@ -54,6 +54,14 @@ namespace flame
 		// angle
 		virtual void set_skewy(float s) = 0;
 
+		virtual Vec2f get_p00() const = 0;
+		virtual Vec2f get_p10() const = 0;
+		virtual Vec2f get_p11() const = 0;
+		virtual Vec2f get_p01() const = 0;
+
+		virtual Vec3c get_fill_color() = 0;
+		virtual void set_fill_color(const Vec3c& c) = 0;
+
 		//FLAME_RV(Vec2f, pivot);
 		//FLAME_RV(Vec4f, padding); // L T R B
 		//FLAME_RV(float, alpha);

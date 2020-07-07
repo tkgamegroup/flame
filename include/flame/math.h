@@ -1991,9 +1991,9 @@ namespace flame
 	// Vec4f as Rect
 	// (x, y) - min, (z, w) - max
 	template <class T>
-	Vec<4, T> rect(const Vec<2, T>& base, const Vec<2, T>& ext)
+	Vec<4, T> rect(const Vec<2, T>& _min, const Vec<2, T>& _max)
 	{
-		return Vec<4, T>(base, base + ext);
+		return Vec<4, T>(_min, _max);
 	}
 
 	template <class T>
@@ -2015,28 +2015,16 @@ namespace flame
 	}
 
 	template <class T, class ...Args>
-	void rect_expand(Vec<4, T>& rect, const Vec<2, T>& p, Args... rest)
+	Vec<4, T> rect_from_points(std::span<Vec<2, T>> points)
 	{
-		rect_expand(rect, p);
-		rect_expand(rect, rest...);
-	}
-
-	template <class T>
-	Vec<4, T> rect_from_points(const Vec<2, T>& p1, const Vec<2, T>& p2)
-	{
-		Vec<4, T> ret;
-		ret.x() = min(p1.x(), p2.x());
-		ret.y() = min(p1.y(), p2.y());
-		ret.z() = max(p1.x(), p2.x());
-		ret.w() = max(p1.y(), p2.y());
-		return ret;
-	}
-
-	template <class T, class ...Args>
-	Vec<4, T> rect_from_points(const Vec<2, T>& p1, const Vec<2, T>& p2, Args... rest)
-	{
-		auto ret = rect_from_points(p1, p2);
-		rect_expand(ret, rest...);
+		auto ret = Vec<4, T>(0);
+		for (auto& p : points)
+		{
+			ret.x() = min(ret.x(), p.x());
+			ret.y() = min(ret.y(), p.y());
+			ret.z() = max(ret.z(), p.x());
+			ret.w() = max(ret.w(), p.y());
+		}
 		return ret;
 	}
 
@@ -2052,6 +2040,26 @@ namespace flame
 	{
 		return lhs.x() <= rhs.z() && lhs.z() >= rhs.x() &&
 			lhs.y() <= rhs.w() && lhs.w() >= rhs.y();
+	}
+
+	template <class T>
+	bool convex_contains(const Vec<2, T>& p, std::span<Vec<2, T>> points)
+	{
+		if (points.size() < 3)
+			return false;
+
+		if (cross(Vec3f(p - points[0], 0), Vec3f(points[1] - p, 0)).z() > 0.f)
+			return false;
+		if (cross(Vec3f(p - points[points.size() - 1], 0), Vec3f(points[0] - p, 0)).z() > 0.f)
+			return false;
+
+		for (auto i = 1; i < points.size() - 1; i++)
+		{
+			if (cross(Vec3f(p - points[i], 0), Vec3f(points[i + 1] - p, 0)).z() > 0.f)
+				return false;
+		}
+
+		return true;
 	}
 
 	template <class T>
@@ -2115,7 +2123,7 @@ namespace flame
 	}
 
 	template <class T>
-	Vec<4, T> fited_rect(const Vec<2, T>& desired_size, float xy_aspect)
+	Vec<4, T> fit_rect(const Vec<2, T>& desired_size, float xy_aspect)
 	{
 		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
 			return Vec<4, T>(T(0), T(0), T(1), T(1));
@@ -2140,7 +2148,7 @@ namespace flame
 	}
 
 	template <class T>
-	Vec<4, T> fited_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
+	Vec<4, T> fit_rect_no_zoom_in(const Vec<2, T>& desired_size, const Vec<2, T>& size)
 	{
 		if (desired_size.x() <= T(0) || desired_size.y() <= T(0))
 			return Vec<4, T>(T(0), T(0), T(1), T(1));
@@ -2156,7 +2164,7 @@ namespace flame
 			return ret;
 		}
 		else
-			return fited_rect(desired_size, size.x() / size.y());
+			return fit_rect(desired_size, size.x() / size.y());
 	}
 
 	inline Vec3c col3_inv(const Vec3c& col)

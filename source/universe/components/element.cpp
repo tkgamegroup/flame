@@ -160,6 +160,13 @@ namespace flame
 		return _p01;
 	}
 
+	void cElementPrivate::_set_fill_color(const Vec3c& c)
+	{
+		_fill_color = c;
+		if (_renderer)
+			_renderer->_dirty = true;
+	}
+
 	void cElementPrivate::_on_entered_world()
 	{
 		_renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->_world->_get_system(FLAME_CHASH("sElementRenderer"));
@@ -227,7 +234,7 @@ namespace flame
 				points.push_back(_get_p10());
 				points.push_back(_get_p11());
 				points.push_back(_get_p01());
-				canvas->fill(points.size(), points.data(), Vec4c(255));
+				canvas->fill(points.size(), points.data(), Vec4c(_fill_color, 255));
 //				auto p = floor(global_pos);
 //				auto s = floor(global_size);
 //				auto r = floor(roundness * global_scale);

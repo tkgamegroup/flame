@@ -31,6 +31,8 @@ namespace flame
 		bool _transform_dirty = true;
 		Vec2f _p00, _p10, _p11, _p01;
 
+		Vec3c _fill_color = Vec3c(255);
+
 		void _set_x(float x);
 		void _set_y(float y);
 		void _set_width(float w);
@@ -49,6 +51,8 @@ namespace flame
 		const Vec2f& _get_p10();
 		const Vec2f& _get_p11();
 		const Vec2f& _get_p01();
+
+		void _set_fill_color(const Vec3c& c);
 
 		void _on_entered_world();
 
@@ -88,6 +92,14 @@ namespace flame
 
 		float get_skewy() const override { return _skewy; }
 		void set_skewy(float s) override { _set_skewy(s); }
+
+		Vec2f get_p00() const override { return _p00; }
+		Vec2f get_p10() const override { return _p10; }
+		Vec2f get_p11() const override { return _p11; }
+		Vec2f get_p01() const override { return _p01; }
+
+		Vec3c get_fill_color() override { return _fill_color; }
+		void set_fill_color(const Vec3c& c) override { _set_fill_color(c); }
 
 		void on_entered_world() override { _on_entered_world(); }
 	};
