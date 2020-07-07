@@ -24,6 +24,7 @@ Semaphore* render_finished;
 graphics::Canvas* canvas;
 
 World* world;
+sElementRenderer* ser;
 
 void on_resize()
 {
@@ -62,7 +63,8 @@ int main(int argc, char** args)
 	world = World::create();
 	world->register_object(canvas, "Canvas");
 
-	world->add_system(sElementRenderer::create());
+	ser = sElementRenderer::create();
+	world->add_system(ser);
 
 	auto root = world->get_root();
 	auto ce = cElement::create();
@@ -82,6 +84,7 @@ int main(int argc, char** args)
 
 			canvas->prepare();
 
+			ser->mark_dirty();
 			world->update();
 
 			canvas->record(cb, img_idx);

@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+      <c:cElement x="100.0" y="50.0" width="200.0" height="100.0" />
+  </entity>
+</prefab>

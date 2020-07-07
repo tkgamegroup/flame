@@ -338,11 +338,31 @@ int main(int argc, char **args)
 	};
 	struct DesiredUDT
 	{
+		bool all = false;
 		std::string name;
 		std::string full_name;
 		std::string base_name;
 		std::vector<DesiredVariable> variables;
 		std::vector<DesiredFunction> functions;
+
+		const DesiredVariable* find_var(const std::string& name) const
+		{
+			for (auto& dv : variables)
+			{
+				if (dv.name == name)
+					return &dv;
+			}
+			return nullptr;
+		}
+		const DesiredFunction* find_fun(const std::string& name) const
+		{
+			for (auto& df : functions)
+			{
+				if (df.name == name)
+					return &df;
+			}
+			return nullptr;
+		}
 	};
 	std::vector<DesiredEnum> desired_enums;
 	std::vector<DesiredUDT> desired_udts;
@@ -391,9 +411,12 @@ int main(int argc, char **args)
 				}
 				if (sp.size() > 1)
 				{
-					auto _sp = SUS::split(sp[1], ':');
-					if (_sp.size() == 2 && _sp[0] == "d")
-						;
+					for (auto j = 1; j < sp.size(); j++)
+					{
+						auto specifier = sp[j];
+						if (specifier == "all")
+							du.all = true;
+					}
 				}
 
 				auto braces_level = 0;
@@ -520,69 +543,70 @@ int main(int argc, char **args)
 					{
 						s_function->get_name(&pwname);
 						auto name = w2s(pwname);
-						for (auto& df : du.functions)
+						auto df = du.find_fun(name);
+						if (df || du.all)
 						{
-							if (df.name == name)
+							if (name == du.name)
+								name = "ctor";
+							else if (name[0] == '~')
+								name = "dtor";
+
+							s_function->get_relativeVirtualAddress(&dw);
+							auto rva = dw;
+
+							auto vtb_idx = -1;
+							if (SUCCEEDED(s_function->get_virtualBaseDispIndex(&dw)))
+								vtb_idx = dw;
+
+							if (rva || vtb_idx != -1)
 							{
-								if (name == du.name)
-									name = "ctor";
-								else if (name[0] == '~')
-									name = "dtor";
+								IDiaSymbol* s_function_type;
+								s_function->get_type(&s_function_type);
 
-								s_function->get_relativeVirtualAddress(&dw);
-								auto rva = dw;
-								if (rva)
+								IDiaSymbol* s_return_type;
+								s_function_type->get_type(&s_return_type);
+								auto ret_type = typeinfo_from_symbol(s_return_type, 0);
+								s_return_type->Release();
+
+								if (!n_functions)
+									n_functions = n_udt.append_child("functions");
+								auto n_function = n_functions.append_child("function");
+								n_function.append_attribute("name").set_value(name.c_str());
+								n_function.append_attribute("rva").set_value(rva);
+								n_function.append_attribute("type_tag").set_value(ret_type.tag);
+								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
+
+								pugi::xml_node n_parameters;
+
+								IDiaEnumSymbols* s_parameters;
+								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
+								IDiaSymbol* s_parameter;
+								while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 								{
-									IDiaSymbol* s_function_type;
-									s_function->get_type(&s_function_type);
+									auto desc = typeinfo_from_symbol(s_parameter, 0);
 
-									IDiaSymbol* s_return_type;
-									s_function_type->get_type(&s_return_type);
-									auto ret_type = typeinfo_from_symbol(s_return_type, 0);
-									s_return_type->Release();
+									if (!n_parameters)
+										n_parameters = n_function.append_child("functions");
+									auto n_parameter = n_parameters.append_child("parameter");
+									n_parameter.append_attribute("type_tag").set_value(desc.tag);
+									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
 
-									if (!n_functions)
-										n_functions = n_udt.append_child("functions");
-									auto n_function = n_functions.append_child("function");
-									n_function.append_attribute("name").set_value(name.c_str());
-									n_function.append_attribute("rva").set_value(rva);
-									n_function.append_attribute("type_tag").set_value(ret_type.tag);
-									n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
-
-									pugi::xml_node n_parameters;
-
-									IDiaEnumSymbols* s_parameters;
-									s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
-									IDiaSymbol* s_parameter;
-									while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
-									{
-										auto desc = typeinfo_from_symbol(s_parameter, 0);
-
-										if (!n_parameters)
-											n_parameters = n_udt.append_child("functions");
-										auto n_parameter = n_parameters.append_child("parameter");
-										n_parameter.append_attribute("type_tag").set_value(desc.tag);
-										n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
-
-										s_parameter->Release();
-									}
-									s_parameters->Release();
-
-									s_function_type->Release();
-
-									if (name == "ctor" && !n_parameters)
-										ctor = rva;
-									else if (name == "dtor")
-										dtor = rva;
-
-									if (!df.code.empty())
-									{
-										typeinfo_code << "##" << du.full_name << "::" << name << "\n";
-										typeinfo_code << df.code;
-									}
+									s_parameter->Release();
 								}
+								s_parameters->Release();
 
-								break;
+								s_function_type->Release();
+
+								if (name == "ctor" && !n_parameters)
+									ctor = rva;
+								else if (name == "dtor")
+									dtor = rva;
+
+								if (df && !df->code.empty())
+								{
+									typeinfo_code << "##" << du.full_name << "::" << name << "\n";
+									typeinfo_code << df->code;
+								}
 							}
 						}
 						s_function->Release();
@@ -604,75 +628,73 @@ int main(int argc, char **args)
 					{
 						s_variable->get_name(&pwname);
 						auto name = w2s(pwname);
-						for (auto& dv : du.variables)
+						auto dv = du.find_var(name);
+						if (dv || du.all)
 						{
-							if (dv.name == name)
+							auto flags = dv ? dv->flags : 0;
+
+							IDiaSymbol* s_type;
+							s_variable->get_type(&s_type);
+
+							s_variable->get_offset(&l);
+							auto offset = l;
+							s_type->get_length(&ull);
+
+							auto desc = typeinfo_from_symbol(s_type, flags);
+							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 							{
-								IDiaSymbol* s_type;
-								s_variable->get_type(&s_type);
-
-								s_variable->get_offset(&l);
-								auto offset = l;
-								s_type->get_length(&ull);
-
-								auto desc = typeinfo_from_symbol(s_type, dv.flags);
-								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+								if (!has_enum(desc.name))
 								{
-									if (!has_enum(desc.name))
+									enums.emplace(desc.name, 0);
+
+									if (!n_enums)
+										n_enums = file_root.append_child("enums");
+									auto n_enum = n_enums.append_child("enum");
+									n_enum.append_attribute("name").set_value(desc.name.c_str());
+
+									auto n_items = n_enum.append_child("items");
+
+									IDiaEnumSymbols* s_items;
+									s_type->findChildren(SymTagNull, NULL, nsNone, &s_items);
+									IDiaSymbol* s_item;
+									while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
 									{
-										enums.emplace(desc.name, 0);
+										VARIANT variant;
+										ZeroMemory(&variant, sizeof(variant));
+										s_item->get_name(&pwname);
+										s_item->get_value(&variant);
 
-										if (!n_enums)
-											n_enums = file_root.append_child("enums");
-										auto n_enum = n_enums.append_child("enum");
-										n_enum.append_attribute("name").set_value(desc.name.c_str());
-
-										auto n_items = n_enum.append_child("items");
-
-										IDiaEnumSymbols* s_items;
-										s_type->findChildren(SymTagNull, NULL, nsNone, &s_items);
-										IDiaSymbol* s_item;
-										while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
+										auto item_name = w2s(pwname);
+										if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
 										{
-											VARIANT variant;
-											ZeroMemory(&variant, sizeof(variant));
-											s_item->get_name(&pwname);
-											s_item->get_value(&variant);
-
-											auto item_name = w2s(pwname);
-											if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
-											{
-												auto n_item = n_items.append_child("item");
-												n_item.append_attribute("name").set_value(item_name.c_str());
-												n_item.append_attribute("value").set_value(variant.lVal);
-											}
-
-											s_item->Release();
+											auto n_item = n_items.append_child("item");
+											n_item.append_attribute("name").set_value(item_name.c_str());
+											n_item.append_attribute("value").set_value(variant.lVal);
 										}
-										s_items->Release();
+
+										s_item->Release();
 									}
+									s_items->Release();
 								}
-
-								if (!n_variables)
-									n_variables = n_udt.prepend_child("variables");
-								auto n_variable = n_variables.append_child("variable");
-								n_variable.append_attribute("type_tag").set_value(desc.tag);
-								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
-								n_variable.append_attribute("name").set_value(name.c_str());
-								n_variable.append_attribute("flags").set_value(dv.flags);
-								n_variable.append_attribute("offset").set_value(offset);
-
-								if ((desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti || desc.tag == TypeData) &&
-									desc.name != "flame::StringA" && desc.name != "flame::StringW" && !(dv.flags & VariableFlagOutput))
-								{
-									auto type = TypeInfo::get(desc.tag, desc.name.c_str());
-									n_variable.append_attribute("default_value").set_value(type->serialize_s((char*)obj + offset).c_str());
-								}
-
-								s_type->Release();
-
-								break;
 							}
+
+							if (!n_variables)
+								n_variables = n_udt.prepend_child("variables");
+							auto n_variable = n_variables.append_child("variable");
+							n_variable.append_attribute("type_tag").set_value(desc.tag);
+							n_variable.append_attribute("type_name").set_value(desc.name.c_str());
+							n_variable.append_attribute("name").set_value(name.c_str());
+							n_variable.append_attribute("flags").set_value(flags);
+							n_variable.append_attribute("offset").set_value(offset);
+
+							if ((desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti || desc.tag == TypeData) &&
+								desc.name != "flame::StringA" && desc.name != "flame::StringW" && !(flags & VariableFlagOutput))
+							{
+								auto type = TypeInfo::get(desc.tag, desc.name.c_str());
+								n_variable.append_attribute("default_value").set_value(type->serialize_s((char*)obj + offset).c_str());
+							}
+
+							s_type->Release();
 						}
 						s_variable->Release();
 					}

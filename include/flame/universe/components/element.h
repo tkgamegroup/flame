@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct FLAME_R(cElement : Component)
+	struct FLAME_R(cElement : Component, all)
 	{
 		cElement() :
 			Component("cElement", true)

@@ -20,6 +20,8 @@ namespace flame
 
 		void release() override { delete this; }
 
+		void mark_dirty() override { _dirty = true; }
+
 		void on_added() override { _on_added(); }
 
 		void update() override { _update(); }
