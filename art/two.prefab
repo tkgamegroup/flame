@@ -1,6 +1,4 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity>
-      <cElement x="100.0" y="50.0" width="200.0" height="100.0" skewy="10" pivotx="0" />
-  </entity>
+  <entity src="one" cElement.x="100.0" cElement.y="50.0" />
 </prefab>

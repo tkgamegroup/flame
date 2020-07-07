@@ -68,10 +68,10 @@ int main(int argc, char** args)
 
 	auto root = world->get_root();
 	auto prefab_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-	root->load((prefab_path / "one.prefab").c_str());
+	root->load((prefab_path / "two.prefab").c_str());
 	add_file_watcher(prefab_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 		auto path = std::filesystem::path(filename);
-		if (path.filename() == L"one.prefab")
+		if (path.filename() == L"two.prefab")
 		{
 			auto root = c.thiz<Entity>();
 			root->remove_all_components();

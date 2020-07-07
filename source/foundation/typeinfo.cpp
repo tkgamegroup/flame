@@ -926,8 +926,9 @@ namespace flame
 			case 1:
 			{
 				auto p1 = _parameters[0];
-				if (p1->_tag == TypeData)
+				switch (p1->_tag)
 				{
+				case TypeData:
 					if (p1->_name == "float")
 					{
 						auto t = va_arg(ap, float*);
@@ -939,7 +940,22 @@ namespace flame
 						cmf(p2f<void(__Dummy__::*)(float)>(pf), obj, *t);
 						return;
 					}
+					break;
+				case TypePointer:
+					if (p1->_name == "flame::Vec<3,uchar>")
+					{
+						auto t = va_arg(ap, Vec3c*);
+						void* pf = nullptr;
+						if (_rva)
+							;
+						else
+							pf = *(void**)((*(char**)obj) + _voff);
+						cmf(p2f<void(__Dummy__::*)(Vec3c*)>(pf), obj, t);
+						return;
+					}
+					break;
 				}
+
 			}
 				break;
 			}
