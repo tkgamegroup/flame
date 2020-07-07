@@ -305,23 +305,23 @@ namespace flame
 			auto fc = udt->find_function("create");
 			if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 			{
-				auto c = cf(p2f<F_vp_v>(fc->get_library()->get_address() + fc->get_rva()));
+				Component* c = nullptr;
+				fc->call(nullptr, &c);
 				for (auto a : n_c.attributes())
 				{
 					auto fs = udt->find_function(("set_" + std::string(a.name())).c_str());
 					if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
 					{
 						auto type = fs->get_parameter(0);
-						float d;
-						type->unserialize(a.value(), &d);
-						auto vtb = *(char**)c;
-						auto vf = *(void**)(vtb + fs->get_voff());
-						cmf(p2f<MF_v_f>(vf), c, d);
+						void* d = new char[type->get_size()];
+						type->unserialize(a.value(), d);
+						fs->call(c, nullptr, d);
 					}
 				}
 				dst->add_component((Component*)c);
 			}
 		}
+
 		//for (auto n_c : src.child("components"))
 		//{
 		//	auto udt = find_udt((std::string("flame::") + n_c.name()).c_str());

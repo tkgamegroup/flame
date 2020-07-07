@@ -917,6 +917,50 @@ namespace flame
 		return c == _parameters.size();
 	}
 
+	void FunctionInfoPrivate::_call_v(void* obj, void* ret, char* ap) const
+	{
+		if (_type->_tag == TypeData && _type->_name == "void")
+		{
+			switch (_parameters.size())
+			{
+			case 1:
+			{
+				auto p1 = _parameters[0];
+				if (p1->_tag == TypeData)
+				{
+					if (p1->_name == "float")
+					{
+						auto t = va_arg(ap, float*);
+						void* pf = nullptr;
+						if (_rva)
+							;
+						else
+							pf = *(void**)((*(char**)obj) + _voff);
+						cmf(p2f<void(__Dummy__::*)(float)>(pf), obj, *t);
+						return;
+					}
+				}
+			}
+				break;
+			}
+		}
+		else if (_type->_tag == TypePointer)
+		{
+			switch (_parameters.size())
+			{
+			case 0:
+				if (!obj)
+				{
+					*(void**)ret = cf(p2f<void* (*)()>(_library->_address + _rva));
+					return;
+				}
+				break;
+			}
+		}
+
+		assert(0);
+	}
+
 	UdtInfoPrivate::UdtInfoPrivate(LibraryPrivate* library, const std::string& name, uint size, const std::string& base_name) :
 		_library(library),
 		_name(name),

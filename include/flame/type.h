@@ -102,8 +102,6 @@ namespace flame
 		return cvt.f;
 	}
 
-	typedef void* (*F_vp_v)();
-
 	template <class F, class ...Args>
 	auto cf(F f, Args... args) // call function
 	{
@@ -119,7 +117,6 @@ namespace flame
 	typedef void(__Dummy__::* MF_v_b)(bool);
 	typedef void(__Dummy__::* MF_v_i)(int);
 	typedef void(__Dummy__::* MF_v_u)(uint);
-	typedef void(__Dummy__::* MF_v_f)(float);
 	typedef void(__Dummy__::* MF_v_c)(uchar);
 	typedef void(__Dummy__::* MF_v_cp_i)(char*, int);
 	typedef void(__Dummy__::* MF_v_wp_i)(wchar_t*, int);
@@ -183,20 +180,6 @@ namespace flame
 		void set(const void* v) override
 		{
 			set_s(o, f, *(uint*)v);
-		}
-	};
-
-	template <>
-	struct Setter_t<float> : Setter
-	{
-		static void set_s(void* o, void* f, float v)
-		{
-			cmf(p2f<MF_v_f>(f), o, v);
-		}
-
-		void set(const void* v) override
-		{
-			set_s(o, f, *(float*)v);
 		}
 	};
 

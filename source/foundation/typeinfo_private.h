@@ -96,6 +96,9 @@ namespace flame
 		bool _check_v(TypeInfoPrivate* type, char* ap) const;
 		bool _check(TypeInfoPrivate* type, ...) const { return _check_v(type, (char*)var_end(&type)); }
 
+		void _call_v(void* obj, void* ret, char* ap) const;
+		void _call(void* obj, void* ret, ...) const { return _call_v(obj, ret, (char*)var_end(&ret)); }
+
 		Library* get_library() const override { return (Library*)_library; }
 		UdtInfo* get_udt() const override { return (UdtInfo*)_udt; }
 		uint get_index() const override { return _index; }
@@ -107,7 +110,9 @@ namespace flame
 		TypeInfo* get_parameter(uint idx) const override { return _parameters[idx]; }
 		const char* get_code() const override { return _code.c_str(); }
 
-		bool check(TypeInfo* type, ...) const override { return _check((TypeInfoPrivate*)type, var_end(&type)); }
+		bool check(TypeInfo* type, ...) const override { return _check_v((TypeInfoPrivate*)type, (char*)var_end(&type)); }
+
+		void call(void* obj, void* ret, ...) const override { return _call_v(obj, ret, (char*)var_end(&ret)); }
 	};
 
 	struct UdtInfoPrivate : UdtInfo
