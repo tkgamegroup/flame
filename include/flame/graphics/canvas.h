@@ -21,13 +21,8 @@ namespace flame
 			virtual Vec2f get_white_uv() const = 0;
 		};
 
-		struct Canvas : Object
+		struct Canvas
 		{
-			Canvas() :
-				Object("Canvas")
-			{
-			}
-
 			virtual void release() = 0;
 
 			virtual Vec4f get_clear_color() const = 0;

@@ -40,15 +40,10 @@ namespace flame
 		StyleCount
 	};
 
-	struct StyleGetter : Object
+	struct StyleGetter
 	{
 		const CommonValue& (*pf)(Capture& c, Style s);
 		Capture c;
-
-		StyleGetter() :
-			Object("StyleGetter")
-		{
-		}
 
 		const CommonValue& get_style(Style s)
 		{

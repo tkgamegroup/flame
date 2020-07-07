@@ -9,15 +9,15 @@ namespace flame
 {
 	struct WorldPrivate : World
 	{
-		std::vector<Object*> _objects;
+		std::vector<std::pair<void*, std::string>> _objects;
 
 		std::vector<std::unique_ptr<System, Delecter>> _systems;
 		std::unique_ptr<EntityPrivate, Delecter> _root;
 
 		WorldPrivate();
 
-		void _register_object(Object* o);
-		Object* _find_object(uint name_hash) const;
+		void _register_object(void* o, const std::string& name);
+		void* _find_object(const std::string& name) const;
 
 		System* _get_system(uint name_hash) const;
 		void _add_system(System* s);
@@ -27,8 +27,8 @@ namespace flame
 
 		void release() override { delete this; }
 
-		void register_object(Object* o) override { _register_object(o); }
-		Object* find_object(uint name_hash) const override { return _find_object(name_hash); }
+		void register_object(void* o, const char* name) override { _register_object(o, name); }
+		void* find_object(const char* name) const override { return _find_object(name); }
 
 		System* get_system(uint name_hash) const override { return _get_system(name_hash); }
 		void add_system(System* s) override { _add_system(s); }

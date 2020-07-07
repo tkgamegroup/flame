@@ -34,13 +34,8 @@ namespace flame
 			virtual int get_advance() const = 0;
 		};
 
-		struct FontAtlas : Object
+		struct FontAtlas
 		{
-			FontAtlas() :
-				Object("FontAtlas")
-			{
-			}
-
 			virtual void release() = 0;
 
 			inline Vec2u text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)

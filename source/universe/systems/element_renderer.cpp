@@ -65,7 +65,7 @@ namespace flame
 
 	void sElementRendererPrivate::_on_added()
 	{
-		_canvas = (graphics::Canvas*)((WorldPrivate*)world)->_find_object(FLAME_CHASH("Canvas"));
+		_canvas = (graphics::Canvas*)((WorldPrivate*)world)->_find_object("Canvas");
 	}
 
 	void sElementRendererPrivate::_update()

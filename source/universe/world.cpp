@@ -10,17 +10,17 @@ namespace flame
 		_root->_global_visibility = true;
 	}
 
-	void WorldPrivate::_register_object(Object* o)
+	void WorldPrivate::_register_object(void* o, const std::string& name)
 	{
-		_objects.push_back(o);
+		_objects.emplace_back(o, name);
 	}
 
-	Object* WorldPrivate::_find_object(uint name_hash) const
+	void* WorldPrivate::_find_object(const std::string& name) const
 	{
-		for (auto o : _objects)
+		for (auto& o : _objects)
 		{
-			if (o->name_hash == name_hash)
-				return o;
+			if (o.second == name)
+				return o.first;
 		}
 		return nullptr;
 	}

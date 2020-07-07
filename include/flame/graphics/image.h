@@ -113,13 +113,8 @@ namespace flame
 			virtual Vec4f get_uv() const = 0;
 		};
 
-		struct ImageAtlas : Object
+		struct ImageAtlas
 		{
-			ImageAtlas() :
-				Object("ImageAtlas")
-			{
-			}
-
 			virtual void release() = 0;
 
 			virtual bool get_border() const = 0;

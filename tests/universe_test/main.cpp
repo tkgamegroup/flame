@@ -60,7 +60,7 @@ int main(int argc, char** args)
 	}, Capture());
 
 	world = World::create();
-	world->register_object(canvas);
+	world->register_object(canvas, "Canvas");
 
 	world->add_system(sElementRenderer::create());
 
@@ -72,29 +72,29 @@ int main(int argc, char** args)
 	ce->set_height(100.f);
 	root->add_component(ce);
 
-	if (!cbs.empty())
-	{
-		sc->acquire_image();
-
-		auto img_idx = sc->get_image_index();
-		auto cb = cbs[img_idx];
-
-		canvas->prepare();
-
-		world->update();
-
-		canvas->record(cb, img_idx);
-
-		fence->wait();
-
+	get_looper()->loop([](Capture&, float) {
 		if (!cbs.empty())
 		{
-			auto q = d->get_graphics_queue();
-			q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
-			q->present(sc, render_finished);
+			sc->acquire_image();
+
+			auto img_idx = sc->get_image_index();
+			auto cb = cbs[img_idx];
+
+			canvas->prepare();
+
+			world->update();
+
+			canvas->record(cb, img_idx);
+
+			fence->wait();
+
+			if (!cbs.empty())
+			{
+				auto q = d->get_graphics_queue();
+				q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
+				q->present(sc, render_finished);
+			}
 		}
-	}
-	get_looper()->loop([](Capture&, float) {
 	}, Capture());
 
 	return 0;
