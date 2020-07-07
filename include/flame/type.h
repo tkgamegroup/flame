@@ -32,7 +32,6 @@ namespace flame
 		return sizeof(a) / sizeof(a[0]);
 	}
 
-
 	template <class T>
 	void* var_end(T* p)
 	{
@@ -111,91 +110,12 @@ namespace flame
 	struct __Dummy__
 	{
 	};
-	typedef void(__Dummy__::* MF_v_v)();
-	typedef void(__Dummy__::* MF_v_vp)(void*);
-	typedef void(__Dummy__::* MF_v_vp_u)(void*, uint);
-	typedef void(__Dummy__::* MF_v_b)(bool);
-	typedef void(__Dummy__::* MF_v_i)(int);
-	typedef void(__Dummy__::* MF_v_u)(uint);
-	typedef void(__Dummy__::* MF_v_c)(uchar);
-	typedef void(__Dummy__::* MF_v_cp_i)(char*, int);
-	typedef void(__Dummy__::* MF_v_wp_i)(wchar_t*, int);
-	typedef void* (__Dummy__::* MF_vp_v)();
-	typedef void* (__Dummy__::* MF_vp_vp)(void*);
 
 	template <class F, class ...Args>
 	auto cmf(F f, void* p, Args... args) // call member function at an address
 	{
 		return (*((__Dummy__*)p).*f)(args...);
 	}
-
-	struct Setter
-	{
-		void* o;
-		void* f;
-
-		virtual ~Setter() {}
-		virtual void set(const void* v) = 0;
-	};
-
-	template <class T>
-	struct Setter_t;
-
-	template <>
-	struct Setter_t<bool> : Setter
-	{
-		static void set_s(void* o, void* f, bool v)
-		{
-			cmf(p2f<MF_v_b>(f), o, v);
-		}
-
-		void set(const void* v) override
-		{
-			set_s(o, f, *(bool*)v);
-		}
-	};
-
-	template <>
-	struct Setter_t<int> : Setter
-	{
-		static void set_s(void* o, void* f, int v)
-		{
-			cmf(p2f<MF_v_i>(f), o, v);
-		}
-
-		void set(const void* v) override
-		{
-			set_s(o, f, *(int*)v);
-		}
-	};
-
-	template <>
-	struct Setter_t<uint> : Setter
-	{
-		static void set_s(void* o, void* f, uint v)
-		{
-			cmf(p2f<MF_v_u>(f), o, v);
-		}
-
-		void set(const void* v) override
-		{
-			set_s(o, f, *(uint*)v);
-		}
-	};
-
-	template <>
-	struct Setter_t<uchar> : Setter
-	{
-		static void set_s(void* o, void* f, uchar v)
-		{
-			cmf(p2f<MF_v_c>(f), o, v);
-		}
-
-		void set(const void* v) override
-		{
-			set_s(o, f, *(uchar*)v);
-		}
-	};
 
 	struct CountDown
 	{

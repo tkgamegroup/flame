@@ -39,25 +39,19 @@ namespace flame
 		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> fonts)
 		{
 			for (auto f : fonts)
-			{
-				//id = hash_update(id, FLAME_HASH(f->_filename.c_str())); TODO
-
 				_fonts.push_back(f);
-			}
 
 			_bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
 			_image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, false));
 			_image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
 			_view.reset(new ImageviewPrivate(_image.get(), Imageview2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
-
-			_empty_glyph.reset(new GlyphPrivate);
 		}
 
 		GlyphPrivate* FontAtlasPrivate::_get_glyph(wchar_t code, uint size)
 		{
 			if (size == 0)
-				return _empty_glyph.get();
+				return nullptr;
 
 			auto hash = hash_update(code, size);
 

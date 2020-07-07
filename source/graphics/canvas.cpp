@@ -522,7 +522,6 @@ namespace flame
 		{
 			auto uv0 = _uv0;
 			auto uv1 = _uv1;
-			Vec2f img_size;
 
 			auto img_id = (id & 0xffff0000) >> 16;
 			_add_draw_cmd(img_id);
@@ -536,10 +535,7 @@ namespace flame
 				auto tuv1 = Vec2f(tuv.z(), tuv.w());
 				uv0 = mix(tuv0, tuv1, uv0);
 				uv1 = mix(tuv0, tuv1, uv1);
-				img_size = tile->_size;
 			}
-			else
-				img_size = res->_view->_image->_size;
 
 			auto vtx_cnt = *_p_vtx_cnt;
 

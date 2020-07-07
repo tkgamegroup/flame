@@ -51,7 +51,7 @@ namespace flame
 
 				char reply[1024 * 16], time_str[128];
 				auto time = std::time(nullptr);
-				std::strftime(time_str, array_size(time_str), "%a, %d %b %Y %FLAME_HASH:%M:%S GMT", std::localtime(&time));
+				std::strftime(time_str, array_size(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
 				sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
 					"Content-Length: 0\r\n"
 					"Upgrade: websocket\r\n"

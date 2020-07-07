@@ -3,39 +3,34 @@
 
 #include <Windows.h>
 
-struct TypeInfoKey
+namespace flame
 {
-	int t;
-	std::string n;
-
-	TypeInfoKey(int t, const std::string& n) :
-		t(t),
-		n(n)
+	struct TypeInfoKey
 	{
-	}
+		int t;
+		std::string n;
 
-	bool operator==(const TypeInfoKey& rhs) const
-	{
-		return t == rhs.t && n == rhs.n;
-	}
-};
-
-namespace std
-{
-	template <>
-	struct hash<TypeInfoKey>
-	{
-		std::size_t operator()(const TypeInfoKey& k) const
+		TypeInfoKey(int t, const std::string& n) :
+			t(t),
+			n(n)
 		{
-			return hash<string>()(k.n) ^ hash<int>()(k.t);
+		}
+
+		bool operator==(const TypeInfoKey& rhs) const
+		{
+			return t == rhs.t && n == rhs.n;
 		}
 	};
 
-}
+	struct Hasher_TypeInfoKey
+	{
+		std::size_t operator()(const TypeInfoKey& k) const
+		{
+			return std::hash<std::string>()(k.n) ^ std::hash<int>()(k.t);
+		}
+	};
 
-namespace flame
-{
-	static std::unordered_map<TypeInfoKey, std::unique_ptr<TypeInfoPrivate>> typeinfos;
+	static std::unordered_map<TypeInfoKey, std::unique_ptr<TypeInfoPrivate>, Hasher_TypeInfoKey> typeinfos;
 
 	static std::unordered_map<std::string, std::unique_ptr<EnumInfoPrivate>> enums;
 	static std::unordered_map<std::string, std::unique_ptr<FunctionInfoPrivate>> functions;

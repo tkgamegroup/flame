@@ -187,6 +187,6 @@ namespace flame
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f);
 
-		FLAME_UNIVERSE_EXPORTS static cElement* FLAME_RF(create)();
+		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};
 }

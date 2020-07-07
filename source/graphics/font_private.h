@@ -40,13 +40,22 @@ namespace flame
 			int get_advance() const override { return _advance; }
 		};
 
+		struct GlyphKey
+		{
+
+		};
+
+		struct Hasher_GlyphKey
+		{
+
+		};
+
 		struct FontAtlasPrivate : FontAtlas
 		{
 			int _slot = -1;
 
 			std::vector<FontPrivate*> _fonts;
 
-			std::unique_ptr<GlyphPrivate> _empty_glyph;
 			std::unordered_map<uint, std::unique_ptr<GlyphPrivate>> _map;
 			std::unique_ptr<BinPackNode> _bin_pack_root;
 
