@@ -88,7 +88,7 @@ int main(int argc, char **args)
 		{
 			copy_binary_attachings(s, d);
 			std::vector<std::filesystem::path> dependencies;
-			get_library_dependencies(s.c_str(), [](Capture& c, const char* filename) {
+			get_library_dependencies(s.c_str(), [](Capture& c, const wchar_t* filename) {
 				auto& dependencies = *c.thiz<std::vector<std::filesystem::path>>();
 				dependencies.push_back(filename);
 			}, Capture().set_thiz(&dependencies));

@@ -85,21 +85,23 @@ namespace flame
 		UdtInfoPrivate* _udt;
 		uint _index;
 		std::string _name;
-		void* _rva;
+		uint _rva;
+		uint _voff;
 		TypeInfoPrivate* _type;
 		std::vector<TypeInfoPrivate*> _parameters;
 		std::string _code;
 
-		FunctionInfoPrivate(LibraryPrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, void* rva, TypeInfoPrivate* type);
+		FunctionInfoPrivate(LibraryPrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type);
 
 		bool _check_v(TypeInfoPrivate* type, char* ap) const;
-		bool _check(TypeInfoPrivate* type, ...) const { return _check(type, var_end(&type)); }
+		bool _check(TypeInfoPrivate* type, ...) const { return _check_v(type, (char*)var_end(&type)); }
 
 		Library* get_library() const override { return (Library*)_library; }
 		UdtInfo* get_udt() const override { return (UdtInfo*)_udt; }
 		uint get_index() const override { return _index; }
 		const char* get_name() const override { return _name.c_str(); }
-		const void* get_rva() const override { return _rva; }
+		uint get_rva() const override { return _rva; }
+		uint get_voff() const override { return _voff; }
 		TypeInfo* get_type() const override { return _type; }
 		uint get_parameters_count() const override { return _parameters.size(); }
 		TypeInfo* get_parameter(uint idx) const override { return _parameters[idx]; }
@@ -136,7 +138,7 @@ namespace flame
 
 	struct LibraryPrivate : Library
 	{
-		void* _address;
+		char* _address;
 		std::wstring _filename;
 		bool _has_typeinfo = false;
 		int _ref_count = 1;
@@ -150,7 +152,7 @@ namespace flame
 
 		void release() override { _release(); }
 
-		const void* get_address() const override { return _address; }
+		char* get_address() const override { return _address; }
 		const wchar_t* get_filename() const override { return _filename.c_str(); }
 		void* get_exported_function(const char* name) override { return _get_exported_function(name); }
 	};

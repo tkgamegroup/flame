@@ -67,12 +67,13 @@ int main(int argc, char** args)
 	world->add_system(ser);
 
 	auto root = world->get_root();
-	auto ce = cElement::create();
-	ce->set_x(100.f);
-	ce->set_y(50.f);
-	ce->set_width(200.f);
-	ce->set_height(100.f);
-	root->add_component(ce);
+	root->load((std::filesystem::path(getenv("FLAME_PATH")) / "art/test.prefab").c_str());
+	//auto ce = cElement::create();
+	//ce->set_x(100.f);
+	//ce->set_y(50.f);
+	//ce->set_width(200.f);
+	//ce->set_height(100.f);
+	//root->add_component(ce);
 
 	get_looper()->loop([](Capture&, float) {
 		if (!cbs.empty())

@@ -37,6 +37,11 @@ namespace flame
 {
 	static std::unordered_map<TypeInfoKey, std::unique_ptr<TypeInfoPrivate>> typeinfos;
 
+	static std::unordered_map<std::string, std::unique_ptr<EnumInfoPrivate>> enums;
+	static std::unordered_map<std::string, std::unique_ptr<FunctionInfoPrivate>> functions;
+	static std::unordered_map<std::string, std::unique_ptr<UdtInfoPrivate>> udts;
+	static std::vector<std::unique_ptr<LibraryPrivate>> libraries;
+
 	struct TypeInfoPrivate_Pod : TypeInfoPrivate
 	{
 		TypeInfoPrivate_Pod(TypeTag tag, const std::string& base_name, uint size) :
@@ -785,15 +790,11 @@ namespace flame
 
 			wchar_t app_name[260];
 			GetModuleFileNameW(nullptr, app_name, array_size(app_name));
-			get_library_dependencies(app_name, [](Capture& c, const char* filename) {
+			get_library_dependencies(app_name, [](Capture& c, const wchar_t* filename) {
 				auto path = std::filesystem::path(filename);
-				if (SUW::starts_with(path, L"flame_"))
-				{
-					path.replace_extension(".typeinfo");
-					if (std::filesystem::exists(path))
-						Library::load(path.c_str());
-				}
-
+				path.replace_extension(".typeinfo");
+				if (std::filesystem::exists(path))
+					Library::load(filename);
 			}, Capture());
 		}
 	};
@@ -884,12 +885,13 @@ namespace flame
 		return nullptr;
 	}
 
-	FunctionInfoPrivate::FunctionInfoPrivate(LibraryPrivate* library, UdtInfoPrivate* udt, uint index, const std::string& name, void* rva, TypeInfoPrivate* type) :
+	FunctionInfoPrivate::FunctionInfoPrivate(LibraryPrivate* library, UdtInfoPrivate* udt, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type) :
 		_library(library),
 		_udt(udt),
 		_index(index),
 		_name(name),
 		_rva(rva),
+		_voff(voff),
 		_type(type)
 	{
 	}
@@ -942,15 +944,10 @@ namespace flame
 		return nullptr;
 	}
 
-	static std::vector<std::unique_ptr<LibraryPrivate>> libraries;
-	static std::unordered_map<std::string, std::unique_ptr<EnumInfoPrivate>> enums;
-	static std::unordered_map<std::string, std::unique_ptr<FunctionInfoPrivate>> functions;
-	static std::unordered_map<std::string, std::unique_ptr<UdtInfoPrivate>> udts;
-
 	LibraryPrivate::LibraryPrivate(const std::wstring& filename, bool require_typeinfo) :
 		_filename(filename)
 	{
-		_address = LoadLibraryW(filename.c_str());
+		_address = (char*)LoadLibraryW(filename.c_str());
 
 		if (require_typeinfo)
 		{
@@ -1002,7 +999,9 @@ namespace flame
 
 				for (auto n_function : n_udt.child("functions"))
 				{
-					auto f = new FunctionInfoPrivate(this, u, u->_functions.size(), n_function.attribute("name").value(), (void*)n_function.attribute("rva").as_uint(), TypeInfoPrivate::_get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
+					auto f = new FunctionInfoPrivate(this, u, u->_functions.size(), n_function.attribute("name").value(), 
+						n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(),
+						TypeInfoPrivate::_get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
 					u->_functions.emplace_back(f);
 					for (auto n_parameter : n_function.child("parameters"))
 						f->_parameters.push_back(TypeInfoPrivate::_get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));

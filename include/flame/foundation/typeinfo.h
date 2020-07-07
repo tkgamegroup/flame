@@ -94,7 +94,8 @@ namespace flame
 		virtual UdtInfo* get_udt() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
-		virtual const void* get_rva() const = 0;
+		virtual uint get_rva() const = 0;
+		virtual uint get_voff() const = 0;
 		virtual TypeInfo* get_type() const = 0;
 		virtual uint get_parameters_count() const = 0;
 		virtual TypeInfo* get_parameter(uint idx) const = 0;
@@ -143,7 +144,7 @@ namespace flame
 	{
 		virtual void release() = 0;
 
-		virtual const void* get_address() const = 0;
+		virtual char* get_address() const = 0;
 		virtual const wchar_t* get_filename() const = 0;
 		virtual void* get_exported_function(const char* name) = 0;
 

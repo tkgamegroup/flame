@@ -554,11 +554,10 @@ int main(int argc, char **args)
 							s_function->get_relativeVirtualAddress(&dw);
 							auto rva = dw;
 
-							auto vtb_idx = -1;
-							if (SUCCEEDED(s_function->get_virtualBaseDispIndex(&dw)))
-								vtb_idx = dw;
+							s_function->get_virtualBaseOffset(&dw);
+							auto voff = dw;
 
-							if (rva || vtb_idx != -1)
+							if (rva || voff != 0)
 							{
 								IDiaSymbol* s_function_type;
 								s_function->get_type(&s_function_type);
@@ -573,6 +572,7 @@ int main(int argc, char **args)
 								auto n_function = n_functions.append_child("function");
 								n_function.append_attribute("name").set_value(name.c_str());
 								n_function.append_attribute("rva").set_value(rva);
+								n_function.append_attribute("voff").set_value(voff);
 								n_function.append_attribute("type_tag").set_value(ret_type.tag);
 								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
 
@@ -586,7 +586,7 @@ int main(int argc, char **args)
 									auto desc = typeinfo_from_symbol(s_parameter, 0);
 
 									if (!n_parameters)
-										n_parameters = n_function.append_child("functions");
+										n_parameters = n_function.append_child("parameters");
 									auto n_parameter = n_parameters.append_child("parameter");
 									n_parameter.append_attribute("type_tag").set_value(desc.tag);
 									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());

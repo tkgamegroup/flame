@@ -170,7 +170,7 @@ namespace flame
 		return (PVOID)(imageBase + rva - delta);
 	}
 
-	void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const char* filename), const Capture& capture)
+	void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture)
 	{
 		auto path = std::filesystem::path(filename);
 		auto parent_path = path.parent_path();
@@ -199,7 +199,7 @@ namespace flame
 					{
 						remains.push_back(pstr);
 						toucheds.emplace(pstr, 0);
-						callback((Capture&)capture, pstr);
+						callback((Capture&)capture, (parent_path / pstr).c_str());
 					}
 
 					importDesc++;

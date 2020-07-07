@@ -299,46 +299,69 @@ namespace flame
 		dst->_set_name(src.attribute("name").value());
 		dst->_visible = src.attribute("visible").as_bool();
 
-		for (auto n_c : src.child("components"))
+		for (auto n_c : src.children())
 		{
-			auto udt = find_udt((std::string("flame::") + n_c.name()).c_str());
-			assert(udt && udt->get_base_name() == std::string("Component"));
-			auto library_address = udt->get_library()->get_address();
-			auto f = udt->find_function("create");
-			assert(f);
-			auto component = cf(p2f<F_vp_v>((char*)library_address + (uint)f->get_rva()));
-			for (auto n_v : n_c)
+			auto udt = find_udt(("flame::" + std::string(n_c.name())).c_str());
+			auto fc = udt->find_function("create");
+			if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 			{
-				auto v = udt->find_variable(n_v.name());
-				auto type = v->get_type();
-				auto p = (char*)component + v->get_offset();
-				//if (type->tag == TypePointer) // TODO
-				//{
-				//	auto& s = type->base_name;
-				//	auto name = s.v;
-				//	auto len = s.s;
-				//	for (auto i = len - 1; i >= 0; i--)
-				//	{
-				//		if (name[i] == ':')
-				//		{
-				//			name = name + i + 1;
-				//			break;
-				//		}
-				//	}
-				//	*(Object**)p = w->find_object(FLAME_HASH(name), n_v.attribute("v").as_uint());
-				//}
-				//else
-				type->unserialize(n_v.attribute("v").value(), p);
+				auto c = cf(p2f<F_vp_v>(fc->get_library()->get_address() + fc->get_rva()));
+				for (auto a : n_c.attributes())
+				{
+					auto fs = udt->find_function(("set_" + std::string(a.name())).c_str());
+					if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
+					{
+						auto type = fs->get_parameter(0);
+						float d;
+						type->unserialize(a.value(), &d);
+						auto vtb = *(char**)c;
+						auto vf = *(void**)(vtb + fs->get_voff());
+						cmf(p2f<MF_v_f>(vf), c, d);
+					}
+				}
+				dst->add_component((Component*)c);
 			}
-			dst->_add_component((Component*)component);
 		}
+		//for (auto n_c : src.child("components"))
+		//{
+		//	auto udt = find_udt((std::string("flame::") + n_c.name()).c_str());
+		//	assert(udt && udt->get_base_name() == std::string("Component"));
+		//	auto library_address = udt->get_library()->get_address();
+		//	auto f = udt->find_function("create");
+		//	assert(f);
+		//	auto component = cf(p2f<F_vp_v>((char*)library_address + (uint)f->get_rva()));
+		//	for (auto n_v : n_c)
+		//	{
+		//		auto v = udt->find_variable(n_v.name());
+		//		auto type = v->get_type();
+		//		auto p = (char*)component + v->get_offset();
+		//		//if (type->tag == TypePointer) // TODO
+		//		//{
+		//		//	auto& s = type->base_name;
+		//		//	auto name = s.v;
+		//		//	auto len = s.s;
+		//		//	for (auto i = len - 1; i >= 0; i--)
+		//		//	{
+		//		//		if (name[i] == ':')
+		//		//		{
+		//		//			name = name + i + 1;
+		//		//			break;
+		//		//		}
+		//		//	}
+		//		//	*(Object**)p = w->find_object(FLAME_HASH(name), n_v.attribute("v").as_uint());
+		//		//}
+		//		//else
+		//		type->unserialize(n_v.attribute("v").value(), p);
+		//	}
+		//	dst->_add_component((Component*)component);
+		//}
 
-		for (auto n_e : src.child("children"))
-		{
-			auto e = EntityPrivate::_create();
-			dst->_add_child(e);
-			load_prefab(e, n_e);
-		}
+		//for (auto n_e : src.child("children"))
+		//{
+		//	auto e = EntityPrivate::_create();
+		//	dst->_add_child(e);
+		//	load_prefab(e, n_e);
+		//}
 	}
 
 	void EntityPrivate::_load(const std::filesystem::path& filename)
@@ -357,42 +380,42 @@ namespace flame
 		n.append_attribute("name").set_value(src->_name.empty() ? "unnamed" : src->_name.c_str());
 		n.append_attribute("visible").set_value(src->_visible);
 
-		if (!src->_components.empty())
-		{
-			auto n_cs = n.append_child("components");
-			for (auto& c : src->_components)
-			{
-				auto component = c.second.get();
+		//if (!src->_components.empty())
+		//{
+		//	auto n_cs = n.append_child("components");
+		//	for (auto& c : src->_components)
+		//	{
+		//		auto component = c.second.get();
 
-				auto n_c = n_cs.append_child(component->name);
+		//		auto n_c = n_cs.append_child(component->name);
 
-				auto udt = find_udt((std::string("flame::") + component->name).c_str());
-				assert(udt && udt->get_base_name() == std::string("Component"));
-				auto variables_count = udt->get_variables_count();
-				for (auto i = 0; i < variables_count; i++)
-				{
-					auto v = udt->get_variable(i);
-					auto type = v->get_type();
-					auto p = (char*)component + v->get_offset();
-					if (type->get_tag() == TypePointer)
-						//n_c.append_child(v->name.v).append_attribute("v").set_value((*(Object**)p)->id); TODO
-						;
-					else
-					{
-						auto dv = v->get_default_value();
-						if (!dv || memcmp(dv, p, type->get_size()) != 0)
-							n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize_s(p).c_str());
-					}
-				}
-			}
-		}
+		//		auto udt = find_udt((std::string("flame::") + component->name).c_str());
+		//		assert(udt && udt->get_base_name() == std::string("Component"));
+		//		auto variables_count = udt->get_variables_count();
+		//		for (auto i = 0; i < variables_count; i++)
+		//		{
+		//			auto v = udt->get_variable(i);
+		//			auto type = v->get_type();
+		//			auto p = (char*)component + v->get_offset();
+		//			if (type->get_tag() == TypePointer)
+		//				//n_c.append_child(v->name.v).append_attribute("v").set_value((*(Object**)p)->id); TODO
+		//				;
+		//			else
+		//			{
+		//				auto dv = v->get_default_value();
+		//				if (!dv || memcmp(dv, p, type->get_size()) != 0)
+		//					n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize_s(p).c_str());
+		//			}
+		//		}
+		//	}
+		//}
 
-		if (!src->_children.empty())
-		{
-			auto n_es = n.append_child("children");
-			for (auto& e : src->_children)
-				save_prefab(n_es, e.get());
-		}
+		//if (!src->_children.empty())
+		//{
+		//	auto n_es = n.append_child("children");
+		//	for (auto& e : src->_children)
+		//		save_prefab(n_es, e.get());
+		//}
 	}
 
 	void EntityPrivate::_save(const std::filesystem::path& filename)
