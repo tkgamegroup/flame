@@ -17,11 +17,13 @@ namespace flame
 		struct CanvasResourcePrivate : CanvasResource
 		{
 			ImageviewPrivate* _view;
-			ImageAtlasPrivate* _atlas;
-			Vec2f _white_uv;
+			ImageAtlasPrivate* _image_atlas = nullptr;
+			FontAtlasPrivate* _font_atlas = nullptr;
+			Vec2f _white_uv = Vec2f(0.5f);
 
 			Imageview* get_view() const override { return _view; }
-			ImageAtlas* get_atlas() const override { return _atlas; }
+			ImageAtlas* get_image_atlas() const override { return _image_atlas; }
+			FontAtlas* get_font_atlas() const override { return _font_atlas; }
 			Vec2f get_white_uv() const override { return _white_uv; }
 		};
 
@@ -80,7 +82,7 @@ namespace flame
 
 			void _set_target(std::span<ImageviewPrivate*> views);
 
-			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas = nullptr);
+			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
 			void _add_atlas(ImageAtlasPrivate* a);
 			void _add_font(FontAtlasPrivate* f);
 
@@ -90,8 +92,8 @@ namespace flame
 
 			void _stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness, bool aa = false);
 			void _fill(std::span<const Vec2f> points, const Vec4c& col, bool aa = false);
-			void _add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col);
-			void _add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col);
+			void _add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col);
+			void _add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col);
 
 			void _set_scissor(const Vec4f& _scissor);
 
@@ -106,14 +108,14 @@ namespace flame
 			void set_target(uint views_count, Imageview* const* views) override { _set_target({ (ImageviewPrivate**)views, views_count }); }
 
 			CanvasResource* get_resource(uint slot) override { return _resources[slot].get(); }
-			uint set_resource(int slot, Imageview* v, Sampler* sp, ImageAtlas* atlas) override { return _set_resource(slot, (ImageviewPrivate*)v, (SamplerPrivate*)sp, (ImageAtlasPrivate*)atlas); }
+			uint set_resource(int slot, Imageview* v, Sampler* sp, ImageAtlas* image_atlas, FontAtlas* font_atlas) override { return _set_resource(slot, (ImageviewPrivate*)v, (SamplerPrivate*)sp, (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas); }
 			void add_atlas(ImageAtlas* a) override { _add_atlas((ImageAtlasPrivate*)a); }
 			void add_font(FontAtlas* f) override { _add_font((FontAtlasPrivate*)f); }
 
 			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness, bool aa) override { _stroke( { points, points_count}, col, thickness, aa); }
 			void fill(uint points_count, const Vec2f* points, const Vec4c& col, bool aa) override { _fill({ points, points_count }, col, aa); }
-			void add_text(FontAtlas* f, const wchar_t* text, int text_len, uint font_size, const Vec2f& pos, const Vec4c& col) override { _add_text((FontAtlasPrivate*)f, { text, text_len == - 1 ? std::char_traits<wchar_t>::length(text) : text_len }, font_size, pos, col); }
-			void add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override { _add_image(pos, size, id, uv0, uv1, tint_col); }
+			void add_text(uint res_id, const wchar_t* text, uint size, const Vec2f& pos, const Vec4c& col) override { _add_text(res_id, text, size, pos, col); }
+			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override { _add_image(res_id, tile_id, pos, size, uv0, uv1, tint_col); }
 
 			Vec4f get_scissor() const override { return _curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override { _set_scissor(scissor); }

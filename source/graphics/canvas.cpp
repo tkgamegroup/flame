@@ -91,8 +91,6 @@ namespace flame
 			{
 				auto r = new CanvasResourcePrivate;
 				r->_view = iv_white;
-				r->_atlas = nullptr;
-				r->_white_uv = 0.5f;
 				_resources[i].reset(r);
 			}
 
@@ -117,7 +115,7 @@ namespace flame
 			}
 		}
 
-		uint CanvasPrivate::_set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* atlas)
+		uint CanvasPrivate::_set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas)
 		{
 			if (_resources.empty())
 				return -1;
@@ -136,21 +134,16 @@ namespace flame
 				assert(slot != -1);
 			}
 			auto r = new CanvasResourcePrivate;
-			if (!v)
-			{
-				v = iv_white;
-				r->_white_uv = 0.5f;
-				atlas = nullptr;
-			}
-			else
+			if (v)
 			{
 				auto img = v->_image;
 				img->set_pixels(img->_size - 1U, Vec2u(1), &Vec4c(255));
 				r->_white_uv = (Vec2f(img->_size - 1U) + 0.5f) / Vec2f(img->_size);
 			}
 			_ds->set_image(0, slot, v, sp ? sp : _d->_sampler_linear.get());
-			r->_view = v;
-			r->_atlas = atlas;
+			r->_view = v ? v : iv_white;
+			r->_image_atlas = image_atlas;
+			r->_font_atlas = font_atlas;
 			_resources[slot].reset(r);
 			return slot;
 		}
@@ -162,7 +155,7 @@ namespace flame
 
 		void CanvasPrivate::_add_font(FontAtlasPrivate* f)
 		{
-			f->_slot = _set_resource(-1, f->_view.get(), _d->_sampler_nearest.get());
+			f->_slot = _set_resource(-1, f->_view.get(), _d->_sampler_nearest.get(), nullptr, f);
 		}
 
 		void CanvasPrivate::_add_draw_cmd(int id)
@@ -470,16 +463,17 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::_add_text(FontAtlasPrivate* f, std::wstring_view text, uint font_size, const Vec2f& pos, const Vec4c& col)
+		void CanvasPrivate::_add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col)
 		{
+			auto atlas = _resources[res_id]->_font_atlas;
+
+			_add_draw_cmd(res_id);
+
 			auto _pos = pos;
 
-			_add_draw_cmd(f->_slot);
-
-			auto pstr = text.begin();
-			while (pstr != text.end())
+			while (*text)
 			{
-				auto ch = *pstr;
+				auto ch = *text;
 				if (!ch)
 					break;
 				if (ch == '\n')
@@ -492,7 +486,7 @@ namespace flame
 					if (ch == '\t')
 						ch = ' ';
 
-					auto g = f->_get_glyph(ch, font_size);
+					auto g = atlas->_get_glyph(ch, font_size);
 
 					auto p = _pos + Vec2f(g->_off);
 					auto size = Vec2f(g->_size);
@@ -514,28 +508,24 @@ namespace flame
 					_pos.x() += g->_advance;
 				}
 
-				pstr++;
+				text++;
 			}
 		}
 
-		void CanvasPrivate::_add_image(const Vec2f& pos, const Vec2f& size, uint id, const Vec2f& _uv0, const Vec2f& _uv1, const Vec4c& tint_col)
+		void CanvasPrivate::_add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col)
 		{
-			auto uv0 = _uv0;
-			auto uv1 = _uv1;
-
-			auto img_id = (id & 0xffff0000) >> 16;
-			_add_draw_cmd(img_id);
-			auto res = _resources[img_id].get();
-			auto atlas = res->_atlas;
+			auto atlas = _resources[res_id]->_image_atlas;
 			if (atlas)
 			{
-				auto tile = atlas->_tiles[id & 0xffff].get();
+				auto tile = atlas->_tiles[tile_id].get();
 				auto tuv = tile->_uv;
 				auto tuv0 = Vec2f(tuv.x(), tuv.y());
 				auto tuv1 = Vec2f(tuv.z(), tuv.w());
 				uv0 = mix(tuv0, tuv1, uv0);
 				uv1 = mix(tuv0, tuv1, uv1);
 			}
+
+			_add_draw_cmd(res_id);
 
 			auto vtx_cnt = *_p_vtx_cnt;
 

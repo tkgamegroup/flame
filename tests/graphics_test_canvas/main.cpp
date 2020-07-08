@@ -96,7 +96,7 @@ struct App
 				points.push_back(Vec2f(180.f, 100.f));
 				canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f, true);
 			}
-			canvas->add_text(font_atlas, L"Hello World  ", -1, 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
+			canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 
 			canvas->record(cb, img_idx);
 
@@ -125,11 +125,6 @@ int main(int argc, char** args)
 	app.fence = Fence::create(app.d);
 	app.canvas = Canvas::create(app.d);
 	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	app.on_resize();
-	app.w->add_resize_listener([](Capture&, const Vec2u&) {
-		app.on_resize();
-	}, Capture());
-
 	{
 		Font* fonts[] = {
 			Font::create(L"c:/windows/fonts/consola.ttf"),
@@ -138,6 +133,10 @@ int main(int argc, char** args)
 		app.font_atlas = FontAtlas::create(app.d, 2, fonts);
 	}
 	app.canvas->add_font(app.font_atlas);
+	app.on_resize();
+	app.w->add_resize_listener([](Capture&, const Vec2u&) {
+		app.on_resize();
+	}, Capture());
 
 	get_looper()->loop([](Capture&, float) {
 		app.run();

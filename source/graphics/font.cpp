@@ -55,6 +55,7 @@ namespace flame
 
 			auto key = GlyphKey(code, size);
 
+			GlyphPrivate* ret = nullptr;
 			auto it = _map.find(key);
 			if (it == _map.end())
 			{
@@ -62,6 +63,7 @@ namespace flame
 				g->_code = code;
 				g->_size = size;
 				_map[key].reset(g);
+				ret = g;
 
 				for (auto font : _fonts)
 				{
@@ -90,7 +92,7 @@ namespace flame
 							_image->set_pixels(atlas_pos, g->_size, bitmap);
 
 							g->_uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->_size.y()) / _image->_size,
-											Vec2f(atlas_pos.x() + g->_size.x(), atlas_pos.y()) / _image->_size);
+								Vec2f(atlas_pos.x() + g->_size.x(), atlas_pos.y()) / _image->_size);
 						}
 						else
 							printf("font atlas is full\n");
@@ -100,8 +102,10 @@ namespace flame
 					break;
 				}
 			}
+			else
+				ret = it->second.get();
 
-			return it->second.get();
+			return ret;
 		}
 
 		FontAtlas* FontAtlas::create(Device* d, uint font_count, Font* const* fonts)
