@@ -617,7 +617,7 @@ int main(int argc, char **args)
 					memset(obj, 0, udt_size);
 
 					if (ctor)
-						cmf(p2f<MF_v_v>((char*)library + ctor), obj);
+						cmf(p2f<void(__Dummy__::*)()>((char*)library + ctor), obj);
 
 					pugi::xml_node n_variables;
 
@@ -701,7 +701,7 @@ int main(int argc, char **args)
 					s_variables->Release();
 
 					if (dtor)
-						cmf(p2f<MF_v_v>((char*)library + dtor), obj);
+						cmf(p2f<void(__Dummy__::*)()>((char*)library + dtor), obj);
 					free(obj);
 				}
 

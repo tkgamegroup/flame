@@ -105,7 +105,7 @@ namespace flame
 		auto p = ((EntityPrivate*)entity)->_parent;
 		if (p)
 		{
-			auto pe = (cElementPrivate*)p->_get_component(FLAME_CHASH("cElement"));
+			auto pe = (cElementPrivate*)p->_get_component(std::hash<std::string>()("cElement"));
 			if (pe)
 				base_transform = pe->_get_transform();
 		}

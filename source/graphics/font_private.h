@@ -42,12 +42,27 @@ namespace flame
 
 		struct GlyphKey
 		{
+			ushort c;
+			uint s;
 
+			GlyphKey(ushort c, uint s) :
+				c(c),
+				s(s)
+			{
+			}
+
+			bool operator==(const GlyphKey& rhs) const
+			{
+				return c == rhs.c && s == rhs.s;
+			}
 		};
 
 		struct Hasher_GlyphKey
 		{
-
+			std::size_t operator()(const GlyphKey& k) const
+			{
+				return std::hash<short>()(k.c) ^ std::hash<int>()(k.s);
+			}
 		};
 
 		struct FontAtlasPrivate : FontAtlas
@@ -56,7 +71,7 @@ namespace flame
 
 			std::vector<FontPrivate*> _fonts;
 
-			std::unordered_map<uint, std::unique_ptr<GlyphPrivate>> _map;
+			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> _map;
 			std::unique_ptr<BinPackNode> _bin_pack_root;
 
 			std::unique_ptr<ImagePrivate> _image;

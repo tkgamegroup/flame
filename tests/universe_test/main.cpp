@@ -83,7 +83,7 @@ int main(int argc, char** args)
 	w->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 		if (is_mouse_move(action, key))
 		{
-			auto e = (cElement*)c.thiz<Entity>()->get_component(FLAME_CHASH("cElement"));
+			auto e = (cElement*)c.thiz<Entity>()->get_component(std::hash<std::string>()("cElement"));
 			auto a = e->get_p00();
 			auto b = e->get_p10();
 			auto c = e->get_p11();

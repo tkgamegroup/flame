@@ -90,7 +90,7 @@ namespace flame
 
 			_hash = 0;
 			for (auto& b : bindings)
-				_hash = std::hash<int>()(b.type) ^ std::hash<const char*>()(b.name) ^ std::hash<int>()(b.count);
+				_hash = std::hash<int>()(b.type) ^ std::hash<std::string>()(b.name) ^ std::hash<int>()(b.count);
 		}
 
 		DescriptorlayoutPrivate::~DescriptorlayoutPrivate()
@@ -264,7 +264,7 @@ namespace flame
 					for (auto j = 0; j < b.attributes_count; j++)
 					{
 						auto& a = b.attributes[j];
-						hash = hash ^ std::hash<int>()(a.format) ^ std::hash<const char*>()(a.name);
+						hash = hash ^ std::hash<int>()(a.format) ^ std::hash<std::string>()(a.name);
 					}
 					hash = hash ^ std::hash<int>()(b.rate);
 				}

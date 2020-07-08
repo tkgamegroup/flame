@@ -77,7 +77,7 @@ namespace flame
 		_update_visibility();
 	}
 
-	Component* EntityPrivate::_get_component(uint hash) const
+	Component* EntityPrivate::_get_component(uint64 hash) const
 	{
 		auto it = _components.find(hash);
 		if (it != _components.end())
@@ -376,7 +376,7 @@ namespace flame
 				auto sp = SUS::split(name, '.');
 				if (sp.size() > 1)
 				{
-					auto c = dst->_get_component(FLAME_HASH(sp[0].c_str()));
+					auto c = dst->_get_component(std::hash<std::string>()(sp[0]));
 					if (c)
 					{
 						auto udt = find_udt(("flame::" + sp[0]).c_str());

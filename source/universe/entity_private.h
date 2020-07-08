@@ -20,7 +20,7 @@ namespace flame
 		WorldPrivate* _world = nullptr;
 
 		EntityPrivate* _parent = nullptr;
-		std::unordered_map<uint, std::unique_ptr<Component, Delecter>> _components;
+		std::unordered_map<uint64, std::unique_ptr<Component, Delecter>> _components;
 		std::vector<std::unique_ptr<EntityPrivate, Delecter>> _children;
 		std::vector<Component*> _local_event_dispatch_list;
 		std::vector<Component*> _child_event_dispatch_list;
@@ -42,7 +42,7 @@ namespace flame
 		void _update_visibility();
 		void _set_visible(bool v);
 
-		Component* _get_component(uint hash) const;
+		Component* _get_component(uint64 hash) const;
 		void _add_component(Component* c);
 		void _info_component_removed(Component* c) const;
 		void _remove_component(Component* c, bool destroy = true);
@@ -76,7 +76,7 @@ namespace flame
 
 		Entity* get_parent() const override { return _parent; }
 
-		Component* get_component(uint hash) const override { return _get_component(hash); }
+		Component* get_component(uint64 hash) const override { return _get_component(hash); }
 		void add_component(Component * c) override { _add_component(c); }
 		void remove_component(Component* c, bool destroy) override { _remove_component(c, destroy); }
 		void remove_all_components(bool destroy) override { _remove_all_components(); }

@@ -53,14 +53,15 @@ namespace flame
 			if (size == 0)
 				return nullptr;
 
-			auto hash = hash_update(code, size);
+			auto key = GlyphKey(code, size);
 
-			if (!_map[hash])
+			auto it = _map.find(key);
+			if (it == _map.end())
 			{
 				auto g = new GlyphPrivate;
 				g->_code = code;
 				g->_size = size;
-				_map[hash].reset(g);
+				_map[key].reset(g);
 
 				for (auto font : _fonts)
 				{
@@ -100,7 +101,7 @@ namespace flame
 				}
 			}
 
-			return _map[hash].get();
+			return it->second.get();
 		}
 
 		FontAtlas* FontAtlas::create(Device* d, uint font_count, Font* const* fonts)

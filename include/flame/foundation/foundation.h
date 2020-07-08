@@ -317,7 +317,7 @@ namespace flame
 
 		Object(const char* name) :
 			name(name),
-			name_hash(std::hash<const char*>()(name))
+			name_hash(std::hash<std::string>()(name))
 		{
 		}
 	};
@@ -698,13 +698,8 @@ namespace flame
 
 	struct Window;
 
-	struct Window : Object
+	struct Window
 	{
-		Window() :
-			Object("Window")
-		{
-		}
-
 		virtual void* get_native() = 0;
 
 		virtual Vec2i get_pos() const = 0;

@@ -12,7 +12,7 @@ namespace flame
 		if (!e->_global_visibility)
 			return;
 
-		auto element = (cElementPrivate*)e->get_component(FLAME_CHASH("cElement"));
+		auto element = (cElementPrivate*)e->get_component(std::hash<std::string>()("cElement"));
 		if (!element)
 			return;
 
