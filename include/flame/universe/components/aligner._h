@@ -23,12 +23,12 @@ namespace flame
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS void set_x_align_flags(uint a, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_y_align_flags(uint a, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_min_width(float w, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_min_height(float h, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_width_factor(float f, void* sender = nullptr);
-		FLAME_UNIVERSE_EXPORTS void set_height_factor(float f, void* sender = nullptr);
+		FLAME_UNIVERSE_EXPORTS void set_x_align_flags(uint a);
+		FLAME_UNIVERSE_EXPORTS void set_y_align_flags(uint a);
+		FLAME_UNIVERSE_EXPORTS void set_min_width(float w);
+		FLAME_UNIVERSE_EXPORTS void set_min_height(float h);
+		FLAME_UNIVERSE_EXPORTS void set_width_factor(float f);
+		FLAME_UNIVERSE_EXPORTS void set_height_factor(float f);
 
 		FLAME_UNIVERSE_EXPORTS static cAligner* FLAME_RF(create)();
 	};
