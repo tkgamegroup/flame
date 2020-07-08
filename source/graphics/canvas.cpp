@@ -150,12 +150,12 @@ namespace flame
 
 		void CanvasPrivate::_add_atlas(ImageAtlasPrivate* a)
 		{
-			a->_slot = _set_resource(-1, a->_image->_dv.get(), a->_border ? _d->_sampler_linear.get() : _d->_sampler_nearest.get(), a);
+			_set_resource(-1, a->_image->_dv.get(), a->_border ? _d->_sampler_linear.get() : _d->_sampler_nearest.get(), a);
 		}
 
 		void CanvasPrivate::_add_font(FontAtlasPrivate* f)
 		{
-			f->_slot = _set_resource(-1, f->_view.get(), _d->_sampler_nearest.get(), nullptr, f);
+			_set_resource(-1, f->_view.get(), _d->_sampler_nearest.get(), nullptr, f);
 		}
 
 		void CanvasPrivate::_add_draw_cmd(int id)

@@ -10,88 +10,77 @@ namespace flame
 	{
 		_x = x;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_y(float y)
 	{
 		_y = y;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_width(float w)
 	{
 		_width = w;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_height(float h)
 	{
 		_height = h;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_pivotx(float p)
 	{
 		_pivotx = p;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_pivoty(float p)
 	{
 		_pivoty = p;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_scalex(float s)
 	{
 		_scalex = s;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_scaley(float s)
 	{
 		_scaley = s;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_rotation(float r)
 	{
 		_rotation = r;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_skewx(float s)
 	{
 		_skewx = s;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 	void cElementPrivate::_set_skewy(float s)
 	{
 		_skewy = s;
 		_transform_dirty = true;
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 
@@ -105,7 +94,7 @@ namespace flame
 		auto p = ((EntityPrivate*)entity)->_parent;
 		if (p)
 		{
-			auto pe = (cElementPrivate*)p->_get_component(std::hash<std::string>()("cElement"));
+			auto pe = (cElementPrivate*)p->_get_component(cElement::type_hash);
 			if (pe)
 				base_transform = pe->_get_transform();
 		}
@@ -163,6 +152,11 @@ namespace flame
 	void cElementPrivate::_set_fill_color(const Vec3c& c)
 	{
 		_fill_color = c;
+		_mark_dirty();
+	}
+
+	void cElementPrivate::_mark_dirty()
+	{
 		if (_renderer)
 			_renderer->_dirty = true;
 	}
@@ -170,8 +164,7 @@ namespace flame
 	void cElementPrivate::_on_entered_world()
 	{
 		_renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->_world->_get_system(sElementRenderer::type_hash);
-		if (_renderer)
-			_renderer->_dirty = true;
+		_mark_dirty();
 	}
 
 //	void cElementPrivate::calc_geometry()
@@ -235,6 +228,9 @@ namespace flame
 				points.push_back(_get_p11());
 				points.push_back(_get_p01());
 				canvas->fill(points.size(), points.data(), Vec4c(_fill_color, 255));
+
+				for (auto d : _drawers)
+					d->_draw(canvas);
 //				auto p = floor(global_pos);
 //				auto s = floor(global_size);
 //				auto r = floor(roundness * global_scale);

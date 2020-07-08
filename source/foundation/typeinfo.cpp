@@ -937,7 +937,18 @@ namespace flame
 					}
 					break;
 				case TypePointer:
-					if (p1->_name == "flame::Vec<3,uchar>")
+					if (p1->_name == "wchar_t")
+					{
+						auto t = va_arg(ap, wchar_t*);
+						void* pf = nullptr;
+						if (_rva)
+							;
+						else
+							pf = *(void**)((*(char**)obj) + _voff);
+						cmf(p2f<void(__Dummy__::*)(wchar_t*)>(pf), obj, t);
+						return;
+					}
+					else if (p1->_name == "flame::Vec<3,uchar>")
 					{
 						auto t = va_arg(ap, Vec3c*);
 						void* pf = nullptr;

@@ -65,19 +65,16 @@ namespace flame
 		virtual Vec3c get_fill_color() = 0;
 		virtual void set_fill_color(const Vec3c& c) = 0;
 
-		//FLAME_RV(Vec2f, pivot);
+		virtual void mark_dirty() = 0;
+
 		//FLAME_RV(Vec4f, padding); // L T R B
 		//FLAME_RV(float, alpha);
 		//FLAME_RV(Vec4f, roundness);
 		//FLAME_RV(uint, roundness_lod);
 		//FLAME_RV(float, frame_thickness);
-		//FLAME_RV(Vec4c, color);
 		//FLAME_RV(Vec4c, frame_color);
 		//FLAME_RV(ClipFlag, clip_flags, m);
 
-		//Vec2f global_pos;
-		//float global_scale;
-		//Vec2f global_size;
 		//bool clipped;
 		//Vec4f clipped_rect;
 
@@ -131,12 +128,6 @@ namespace flame
 		//	return global_size - Vec2f(padding.xz().sum(), padding.yw().sum()) * global_scale;
 		//}
 
-		//void mark_dirty()
-		//{
-		//	if (renderer)
-		//		renderer->pending_update = true;
-		//}
-
 		//void move_to(Schedule* s, float delay, float duration, const Vec2f& target)
 		//{
 		//	struct Capturing
@@ -181,12 +172,9 @@ namespace flame
 		//	}, Capture().set_data(&capture).set_thiz(this));
 		//}
 
-		//ListenerHub<bool(Capture& c, graphics::Canvas * canvas)> cmds;
-
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_alpha)(float a);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const Vec4f& r);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_thickness)(float t);
-		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_color)(const Vec4c& c);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_frame_color)(const Vec4c& c);
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_clip_flags)(uint f);
 

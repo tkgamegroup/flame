@@ -11,6 +11,11 @@ namespace flame
 
 	struct sElementRendererPrivate;
 
+	struct Drawer
+	{
+		virtual void _draw(graphics::Canvas* canvas) = 0;
+	};
+
 	struct cElementPrivate : cElement
 	{
 		sElementRendererPrivate* _renderer = nullptr;
@@ -33,6 +38,8 @@ namespace flame
 
 		Vec3c _fill_color = Vec3c(255);
 
+		std::vector<Drawer*> _drawers;
+
 		void _set_x(float x);
 		void _set_y(float y);
 		void _set_width(float w);
@@ -53,6 +60,8 @@ namespace flame
 		const Vec2f& _get_p01();
 
 		void _set_fill_color(const Vec3c& c);
+
+		void _mark_dirty();
 
 		void _on_entered_world();
 
@@ -100,6 +109,8 @@ namespace flame
 
 		Vec3c get_fill_color() override { return _fill_color; }
 		void set_fill_color(const Vec3c& c) override { _set_fill_color(c); }
+
+		void mark_dirty() override { _mark_dirty(); }
 
 		void on_entered_world() override { _on_entered_world(); }
 	};

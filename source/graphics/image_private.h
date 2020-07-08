@@ -145,8 +145,6 @@ namespace flame
 		{
 			bool _border = false;
 
-			int _slot = -1;
-
 			ImagePrivate* _image;
 			std::vector<std::unique_ptr<ImageTilePrivate>> _tiles;
 

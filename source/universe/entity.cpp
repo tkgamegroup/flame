@@ -338,10 +338,24 @@ namespace flame
 		{
 			auto type = fs->get_parameter(0);
 			if (type->get_tag() == TypePointer)
+			{
+				auto type_name = std::string(type->get_name());
+				if (type_name == "char")
+				{
+					fs->call(c, nullptr, value.c_str());
+					return;
+				}
+				if (type_name == "wchar_t")
+				{
+					fs->call(c, nullptr, s2w(value).c_str());
+					return;
+				}
 				type = TypeInfo::get(TypeData, type->get_name());
+			}
 			void* d = new char[type->get_size()];
 			type->unserialize(value.c_str(), d);
 			fs->call(c, nullptr, d);
+			delete[]d;
 		}
 	}
 

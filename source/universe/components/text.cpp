@@ -1,4 +1,3 @@
-//#include <flame/graphics/canvas.h>
 //#include <flame/universe/world.h>
 //#include <flame/universe/systems/2d_renderer.h>
 //#include <flame/universe/components/element.h>
@@ -6,15 +5,38 @@
 //#include <flame/universe/components/style.h>
 //#include <flame/universe/components/aligner.h>
 
+#include <flame/graphics/canvas.h>
+#include "../entity_private.h"
 #include "text_private.h"
 
 namespace flame
 {
+	void cTextPrivate::_set_string(const std::wstring& str)
+	{
+		_string = str;
+		if (_element)
+			_element->_mark_dirty();
+	}
+
+	void cTextPrivate::_on_added()
+	{
+		_element = (cElementPrivate*)((EntityPrivate*)entity)->_get_component(cElement::type_hash);
+		_element->_drawers.push_back(this);
+	}
+	void cTextPrivate::_on_removed()
+	{
+		Drawer* d = this;
+		erase_if(_element->_drawers, d);
+	}
+
+	void cTextPrivate::_draw(graphics::Canvas* canvas)
+	{
+		canvas->add_text(0, _string.c_str(), 14, _element->_get_p00(), Vec4c(0, 0, 0, 255));
+	}
+
 	//cTextPrivate::cTextPrivate()
 	//{
 	//	management = nullptr;
-
-	//	element = nullptr;
 
 	//	font_atlas = nullptr;
 	//	text.resize(1);
@@ -25,12 +47,6 @@ namespace flame
 
 	//	draw_cmd = nullptr;
 	//	pending_sizing = false;
-	//}
-
-	//cTextPrivate::cTextPrivate::~cTextPrivate()
-	//{
-	//	if (!entity->dying_)
-	//		element->cmds.remove(draw_cmd);
 	//}
 
 	//void cTextPrivate::draw(graphics::Canvas* canvas)
@@ -152,8 +168,12 @@ namespace flame
 	//	data_changed(FLAME_CHASH("auto_size"), sender);
 	//}
 
-	//cText* cText::create()
-	//{
-	//	return new cTextPrivate();
-	//}
+	cTextPrivate* cTextPrivate::_create()
+	{
+		auto ret = _allocate(sizeof(cTextPrivate));
+		new (ret) cTextPrivate;
+		return (cTextPrivate*)ret;
+	}
+
+	cText* cText::create() { return cTextPrivate::_create(); }
 }

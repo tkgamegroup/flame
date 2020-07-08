@@ -67,8 +67,6 @@ namespace flame
 
 		struct FontAtlasPrivate : FontAtlas
 		{
-			int _slot = -1;
-
 			std::vector<FontPrivate*> _fonts;
 
 			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> _map;

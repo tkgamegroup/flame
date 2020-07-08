@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+      <cElement />
+      <cText string="Hello World" />
+  </entity>
+</prefab>
