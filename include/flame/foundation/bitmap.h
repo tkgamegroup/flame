@@ -90,7 +90,7 @@ namespace flame
 			return max(a.b->get_width(), a.b->get_height()) > max(b.b->get_width(), b.b->get_height());
 		});
 
-		auto size = Vec2u(1024);
+		auto size = Vec2u(4096);
 		auto tree = std::make_unique<BinPackNode>(size);
 
 		for (auto& t : tiles)
