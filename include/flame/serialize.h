@@ -1177,9 +1177,9 @@ namespace flame
 			_final();
 
 			std::string result;
-			result.resize(sizeof(uint) * array_size(digest));
+			result.resize(sizeof(uint) * size(digest));
 			auto dst = &result[0];
-			for (auto i = 0; i < array_size(digest); i++)
+			for (auto i = 0; i < size(digest); i++)
 			{
 				for (auto j = 0; j < 4; j++)
 					dst[j] = ((char*)(&digest[i]))[4 - j - 1];
@@ -1196,7 +1196,7 @@ namespace flame
 			_final();
 
 			std::ostringstream result;
-			for (auto i = 0; i < array_size(digest); i++)
+			for (auto i = 0; i < size(digest); i++)
 			{
 				result << std::hex << std::setfill('0') << std::setw(8);
 				result << digest[i];

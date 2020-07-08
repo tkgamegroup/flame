@@ -25,11 +25,8 @@ namespace flame
 
 	const auto INVALID_POINTER = (void*)0x7fffffffffffffff;
 
-	template <class T>
-	constexpr uint array_size(const T& a)
-	{
-		return sizeof(a) / sizeof(a[0]);
-	}
+	template<class T, size_t N>
+	constexpr size_t size(T(&)[N]) { return N; }
 
 	template <class T>
 	void* var_end(T* p)
@@ -37,11 +34,23 @@ namespace flame
 		return (char*)p + sizeof(T);
 	}
 
-	template <uint N>
-	struct EnsureConstU
+	template <auto V>
+	struct S
 	{
-		static const uint value = N;
+		constexpr static decltype(V) v = V;
 	};
+
+	uint64 constexpr ch(char const* str)
+	{
+		auto ret = std::_FNV_offset_basis;
+		while (*str)
+		{
+			ret ^= *str;
+			ret *= std::_FNV_prime;
+			str++;
+		}
+		return ret;
+	}
 
 	template <class T>
 	void erase_if(std::vector<T>& vec, T v)
@@ -60,21 +69,6 @@ namespace flame
 		if (it != vec.end())
 			vec.erase(it);
 	}
-
-	inline constexpr uint hash_update(uint h, uint v)
-	{
-		return h ^ (v + 0x9e3779b9 + (h << 6) + (h >> 2));
-	}
-
-	template <class CH>
-	constexpr uint hash_str(const CH* str, uint seed)
-	{
-		return 0 == *str ? seed : hash_str(str + 1, hash_update(seed, *str));
-	}
-
-#define FLAME_HASH(x) (hash_str(x, 0))
-
-#define FLAME_CHASH(x) (EnsureConstU<hash_str(x, 0)>::value)
 
 	template <class F>
 	void* f2v(F f) // function to void pointer

@@ -93,10 +93,10 @@ namespace flame
 		float get_skewy() const override { return _skewy; }
 		void set_skewy(float s) override { _set_skewy(s); }
 
-		Vec2f get_p00() const override { return _p00; }
-		Vec2f get_p10() const override { return _p10; }
-		Vec2f get_p11() const override { return _p11; }
-		Vec2f get_p01() const override { return _p01; }
+		Vec2f get_p00() override { return _get_p00(); }
+		Vec2f get_p10() override { return _get_p10(); }
+		Vec2f get_p11() override { return _get_p11(); }
+		Vec2f get_p01() override { return _get_p01(); }
 
 		Vec3c get_fill_color() override { return _fill_color; }
 		void set_fill_color(const Vec3c& c) override { _set_fill_color(c); }

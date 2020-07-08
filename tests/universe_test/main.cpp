@@ -67,6 +67,7 @@ int main(int argc, char** args)
 	world->add_system(ser);
 
 	auto root = world->get_root();
+	root->get_component( S<ch("abc")>::v );
 	auto prefab_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
 	root->load((prefab_path / "two.prefab").c_str());
 	add_file_watcher(prefab_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {

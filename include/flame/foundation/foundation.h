@@ -310,18 +310,6 @@ namespace flame
 		}
 	};
 
-	struct Object
-	{
-		const char* name;
-		const uint64 name_hash;
-
-		Object(const char* name) :
-			name(name),
-			name_hash(std::hash<std::string>()(name))
-		{
-		}
-	};
-
 	struct Capture
 	{
 		uint size = 0;

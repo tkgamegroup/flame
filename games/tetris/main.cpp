@@ -513,7 +513,7 @@ void MyApp::create_player_controls(int player_index)
 
 		ui.e_empty();
 		ui.next_element_pos = pos + Vec2f(330.f, 100.f);
-		ui.next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * array_size(p.c_next) + 8.f - 45.f);
+		ui.next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * size(p.c_next) + 8.f - 45.f);
 		{
 			auto ce = ui.c_element();
 			ce->color = Vec4c(30, 30, 30, 255);
@@ -535,7 +535,7 @@ void MyApp::create_player_controls(int player_index)
 			create_next_board(i, 0, 0.f, 16.f);
 		for (auto i = 1; i < 3; i++)
 			create_next_board(i, 1, 16.f * 3.f + 4.f, 14.f);
-		for (auto i = 3; i < array_size(p.c_next); i++)
+		for (auto i = 3; i < size(p.c_next); i++)
 			create_next_board(i, 3, 16.f * 3.f + 4.f + (14.f * 3.f + 4.f) * 2, 12.f);
 
 		ui.next_element_pos = pos + Vec2f(180.f, 250.f);
@@ -1573,7 +1573,7 @@ void MyApp::start_game()
 			if (i == app.my_room_index)
 			{
 				p.c_hold->clear_cells(-1);
-				for (auto j = 0; j < array_size(p.c_next); j++)
+				for (auto j = 0; j < size(p.c_next); j++)
 					p.c_next[j]->clear_cells(-1);
 			}
 			if (game_mode == GameVS)
@@ -1849,7 +1849,7 @@ void MyApp::do_game_logic()
 						shuffle_pack(mino_pack_idx.x());
 						mino_pack_idx = Vec2i(1 - mino_pack_idx.x(), 0);
 					}
-					for (auto i = 0; i < array_size(c_next); i++)
+					for (auto i = 0; i < size(c_next); i++)
 					{
 						c_next[i]->clear_cells();
 						auto next_idx = mino_pack_idx;
@@ -2132,7 +2132,7 @@ void MyApp::do_game_logic()
 										Vec2i(+1, +1),
 									};
 									auto count = 0;
-									for (auto i = 0; i < array_size(judge_points); i++)
+									for (auto i = 0; i < size(judge_points); i++)
 									{
 										auto p = mino_pos + judge_points[i];
 										if (p.x() < 0 || p.x() >= board_width ||

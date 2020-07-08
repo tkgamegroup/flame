@@ -12,8 +12,11 @@ namespace flame
 
 	struct sElementRenderer : System
 	{
+		inline static auto type_name = "sElementRenderer";
+		inline static auto type_hash = ch(type_name);
+
 		sElementRenderer() :
-			System("sElementRenderer")
+			System(type_name, type_hash)
 		{
 		}
 

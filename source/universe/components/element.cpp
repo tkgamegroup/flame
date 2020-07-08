@@ -169,7 +169,7 @@ namespace flame
 
 	void cElementPrivate::_on_entered_world()
 	{
-		_renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->_world->_get_system(FLAME_CHASH("sElementRenderer"));
+		_renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->_world->_get_system(sElementRenderer::type_hash);
 		if (_renderer)
 			_renderer->_dirty = true;
 	}

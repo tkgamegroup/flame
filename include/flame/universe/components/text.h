@@ -8,8 +8,11 @@ namespace flame
 
 	struct FLAME_R(cText : Component, all)
 	{
+		inline static auto type_name = "cElement";
+		inline static auto type_hash = ch(type_name);
+
 		cText() :
-			Component("cText")
+			Component(type_name, type_hash)
 		{
 		}
 

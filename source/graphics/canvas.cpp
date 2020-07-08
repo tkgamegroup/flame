@@ -62,7 +62,7 @@ namespace flame
 				via3.format = Format_R8G8B8A8_UNORM;
 				via3.name = "color";
 				VertexBufferInfo vib;
-				vib.attributes_count = array_size(vias);
+				vib.attributes_count = size(vias);
 				vib.attributes = vias;
 				VertexInfo vi;
 				vi.buffers_count = 1;

@@ -23,7 +23,7 @@ namespace flame
 		}
 
 		uchar buf[1024 * 16];
-		auto ret = recv(fd, (char*)buf, array_size(buf), 0);
+		auto ret = recv(fd, (char*)buf, size(buf), 0);
 
 		auto p = buf;
 
@@ -51,7 +51,7 @@ namespace flame
 
 				char reply[1024 * 16], time_str[128];
 				auto time = std::time(nullptr);
-				std::strftime(time_str, array_size(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
+				std::strftime(time_str, size(time_str), "%a, %d %b %Y %H:%M:%S GMT", std::localtime(&time));
 				sprintf(reply, "HTTP/1.1 101 Switching Protocols\r\n"
 					"Content-Length: 0\r\n"
 					"Upgrade: websocket\r\n"
@@ -107,7 +107,7 @@ namespace flame
 	{
 		uchar buf[1024 * 64];
 
-		auto bytes = recv(fd, (char*)buf, array_size(buf), 0);
+		auto bytes = recv(fd, (char*)buf, size(buf), 0);
 		if (bytes <= 0)
 		{
 			closed = true;

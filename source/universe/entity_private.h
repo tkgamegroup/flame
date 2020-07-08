@@ -10,7 +10,6 @@ namespace flame
 	struct EntityPrivate : Entity
 	{
 		std::string _name;
-		uint _name_hash;
 
 		bool _visible = true;
 		bool _global_visibility = false;
@@ -36,8 +35,6 @@ namespace flame
 		~EntityPrivate();
 
 		void _release();
-
-		void _set_name(const std::string& name);
 
 		void _update_visibility();
 		void _set_visible(bool v);
@@ -66,8 +63,7 @@ namespace flame
 		void release() { _release(); }
 
 		const char* get_name() const override { return _name.c_str(); };
-		uint get_name_hash() const override { return _name_hash; };
-		void set_name(const char* name) override { return _set_name(name); }
+		void set_name(const char* name) override { _name = name; }
 
 		bool get_visible() const override { return _visible; }
 		void set_visible(bool v) override { _set_visible(v); }

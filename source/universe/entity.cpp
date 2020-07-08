@@ -36,12 +36,6 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::_set_name(const std::string& name)
-	{
-		_name = name;
-		_name_hash = FLAME_HASH(name.c_str());
-	}
-
 	void EntityPrivate::_update_visibility()
 	{
 		auto prev_visibility = _global_visibility;
@@ -88,7 +82,7 @@ namespace flame
 	void EntityPrivate::_add_component(Component* c)
 	{
 		assert(!c->entity);
-		assert(_components.find(c->name_hash) == _components.end());
+		assert(_components.find(c->type_hash) == _components.end());
 
 		c->entity = this;
 
@@ -102,7 +96,7 @@ namespace flame
 				cc->on_entity_child_component_added(c);
 		}
 
-		_components.emplace(c->name_hash, c);
+		_components.emplace(c->type_hash, c);
 
 		if (c->_want_local_event)
 		{
@@ -137,7 +131,7 @@ namespace flame
 
 	void EntityPrivate::_remove_component(Component* c, bool destroy)
 	{
-		auto it = _components.find(c->name_hash);
+		auto it = _components.find(c->type_hash);
 		if (it == _components.end())
 		{
 			assert(0);
@@ -362,7 +356,7 @@ namespace flame
 		{
 			auto name = std::string(a.name());
 			if (name == "name")
-				dst->_set_name(a.value());
+				dst->_name = a.value();
 			else if (name == "visible")
 				dst->_visible = a.as_bool();
 			else if (name == "src")

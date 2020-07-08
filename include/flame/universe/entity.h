@@ -13,7 +13,6 @@ namespace flame
 		virtual void release() = 0;
 
 		virtual const char* get_name() const = 0;
-		virtual uint get_name_hash() const = 0;
 		virtual void set_name(const char* name) = 0;
 
 		virtual bool get_visible() const = 0;

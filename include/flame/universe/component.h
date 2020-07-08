@@ -6,25 +6,29 @@ namespace flame
 {
 	struct Entity;
 
-	struct Component : Object
+	struct Component
 	{
+		const char* type_name;
+		const uint64 type_hash;
+
 		Entity* entity = nullptr;
 		bool _want_local_event;
 		bool _want_child_event;
 		bool _want_local_data_changed;
 		bool _want_child_data_changed;
 
-		Component(const char* name,
+		Component(const char* name, uint64 hash,
 			bool want_local_event = false,
 			bool want_child_event = false,
 			bool want_local_data_changed = false,
 			bool want_child_data_changed = false) :
-			Object(name)
+			type_name(name),
+			type_hash(hash),
+			_want_local_event(want_local_event),
+			_want_child_event(want_child_event),
+			_want_local_data_changed(want_local_data_changed),
+			_want_child_data_changed(want_child_data_changed)
 		{
-			_want_local_event = want_local_event;
-			_want_child_event = want_child_event;
-			_want_local_data_changed = want_local_data_changed;
-			_want_child_data_changed = want_child_data_changed;
 		}
 
 		virtual ~Component() {}

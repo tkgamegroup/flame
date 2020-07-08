@@ -7,12 +7,16 @@ namespace flame
 	struct Entity;
 	struct World;
 
-	struct System : Object
+	struct System
 	{
+		const char* type_name;
+		const uint64 type_hash;
+
 		World* world = nullptr;
 
-		System(const char* name) :
-			Object(name)
+		System(const char* name, uint64 hash) :
+			type_name(name),
+			type_hash(hash)
 		{
 		}
 

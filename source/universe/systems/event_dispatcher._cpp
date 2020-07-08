@@ -20,14 +20,14 @@ namespace flame
 		next_focusing = (cEventReceiver*)INVALID_POINTER;
 
 		char_input_compelete = true;
-		for (auto i = 0; i < array_size(key_states); i++)
+		for (auto i = 0; i < size(key_states); i++)
 			key_states[i] = KeyStateUp;
 
 		mouse_pos = Vec2i(0);
 		mouse_pos_prev = Vec2i(0);
 		mouse_disp = Vec2i(0);
 		mouse_scroll = 0;
-		for (auto i = 0; i < array_size(mouse_buttons); i++)
+		for (auto i = 0; i < size(mouse_buttons); i++)
 			mouse_buttons[i] = KeyStateUp;
 		dbclick_timer = -1.f;
 
@@ -181,7 +181,7 @@ namespace flame
 				((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
 			if (mouse_scroll != 0)
 				((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mouse_scroll, 0));
-			for (auto i = 0; i < array_size(mouse_buttons); i++)
+			for (auto i = 0; i < size(mouse_buttons); i++)
 			{
 				auto s = mouse_buttons[i];
 				if (s & KeyStateJust)
@@ -384,12 +384,12 @@ namespace flame
 		keydown_inputs.clear();
 		keyup_inputs.clear();
 		char_inputs.clear();
-		for (int i = 0; i < array_size(key_states); i++)
+		for (int i = 0; i < size(key_states); i++)
 			key_states[i] &= ~KeyStateJust;
 
 		mouse_pos_prev = mouse_pos;
 		mouse_scroll = 0;
-		for (auto i = 0; i < array_size(mouse_buttons); i++)
+		for (auto i = 0; i < size(mouse_buttons); i++)
 			mouse_buttons[i] &= ~KeyStateJust;
 	}
 

@@ -29,7 +29,7 @@ namespace flame
 	{
 		for (auto& s : _systems)
 		{
-			if (s->name_hash == name_hash)
+			if (s->type_hash == name_hash)
 				return s.get();
 		}
 		return nullptr;

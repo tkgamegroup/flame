@@ -6,8 +6,11 @@ namespace flame
 {
 	struct FLAME_R(cElement : Component, all)
 	{
+		inline static auto type_name = "cElement";
+		inline static auto type_hash = ch(type_name);
+
 		cElement() :
-			Component("cElement", true)
+			Component(type_name, type_hash, true)
 		{
 		}
 
@@ -54,10 +57,10 @@ namespace flame
 		// angle
 		virtual void set_skewy(float s) = 0;
 
-		virtual Vec2f get_p00() const = 0;
-		virtual Vec2f get_p10() const = 0;
-		virtual Vec2f get_p11() const = 0;
-		virtual Vec2f get_p01() const = 0;
+		virtual Vec2f get_p00() = 0;
+		virtual Vec2f get_p10() = 0;
+		virtual Vec2f get_p11() = 0;
+		virtual Vec2f get_p01() = 0;
 
 		virtual Vec3c get_fill_color() = 0;
 		virtual void set_fill_color(const Vec3c& c) = 0;

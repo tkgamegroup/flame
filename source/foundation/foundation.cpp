@@ -847,7 +847,7 @@ namespace flame
 	void get_call_frames(void** (*array_allocator)(Capture& c, uint size), const Capture& capture)
 	{
 		void* buf[64];
-		auto n = CaptureStackBackTrace(0, array_size(buf), buf, nullptr);
+		auto n = CaptureStackBackTrace(0, size(buf), buf, nullptr);
 		auto dst = array_allocator((Capture&)capture, n);
 		memcpy(dst, buf, sizeof(void*) * n);
 	}
