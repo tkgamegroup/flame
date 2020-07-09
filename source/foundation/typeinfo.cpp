@@ -46,7 +46,7 @@ namespace flame
 
 		void construct(void* p) const override {}
 		void destruct(void* p) const override {}
-		void copy(const void* src, void* dst) const override { memcpy(dst, src, _size); }
+		void copy(const void* src, void* dst) const override { memcpy(dst, src, size); }
 		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override {}
 		void unserialize(const char* src, void* dst) const override {}
 	};
@@ -60,14 +60,14 @@ namespace flame
 
 		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
 		{
-			const auto& str = _find_enum(_name)->_find_item(*(int*)src)->_name;
+			const auto& str = _find_enum(name)->_find_item(*(int*)src)->name;
 			auto buf = callback((Capture&)capture, str.size());
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
-			*(int*)dst = _find_enum(_name)->_find_item(src)->_value;
+			*(int*)dst = _find_enum(name)->_find_item(src)->value;
 		}
 	};
 
@@ -80,16 +80,16 @@ namespace flame
 
 		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
 		{
-			auto e = _find_enum(_name);
+			auto e = _find_enum(name);
 			std::string str;
 			auto v = *(int*)src;
-			for (auto i = 0; i < e->_items.size(); i++)
+			for (auto i = 0; i < e->items.size(); i++)
 			{
 				if ((v & 1) == 1)
 				{
 					if (i > 0)
 						str += ";";
-					str += e->_find_item(1 << i)->_name;
+					str += e->_find_item(1 << i)->name;
 				}
 				v >>= 1;
 			}
@@ -99,11 +99,11 @@ namespace flame
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
-			auto e = _find_enum(_name);
+			auto e = _find_enum(name);
 			auto v = 0;
 			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
-				v |= e->_find_item(t)->_value;
+				v |= e->_find_item(t)->value;
 			*(int*)dst = v;
 		}
 	};
@@ -654,132 +654,132 @@ namespace flame
 		{
 			{
 				auto t = new TypeInfoPrivate_void;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_bool;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uchar;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_int;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uint;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_int64;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uint64;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_float;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec1c;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec2c;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec3c;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4c;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec1i;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec2i;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec3i;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4i;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec1u;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec2u;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec3u;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4u;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec1f;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec2f;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec3f;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4f;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_StringA;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_StringW;
-				typeinfos.emplace(TypeInfoKey(t->_tag, t->_name), t);
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 
@@ -796,9 +796,9 @@ namespace flame
 	static _Initializer _initializer;
 
 	TypeInfoPrivate::TypeInfoPrivate(TypeTag tag, const std::string& name, uint size) :
-		_tag(tag),
-		_name(name),
-		_size(size)
+		tag(tag),
+		name(name),
+		size(size)
 	{
 	}
 
@@ -832,68 +832,68 @@ namespace flame
 	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset) :
-		_udt(udt),
-		_index(index),
-		_type(type),
-		_name(name),
-		_flags(flags),
-		_offset(offset),
-		_default_value(nullptr)
+		udt(udt),
+		index(index),
+		type(type),
+		name(name),
+		flags(flags),
+		offset(offset),
+		default_value(nullptr)
 	{
 	}
 
 	VariableInfoPrivate::~VariableInfoPrivate()
 	{
-		delete[]_default_value;
+		delete[]default_value;
 	}
 
 	EnumItemPrivate::EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :
-		_ei(ei),
-		_index(index),
-		_name(name),
-		_value(value)
+		ei(ei),
+		index(index),
+		name(name),
+		value(value)
 	{
 	}
 
 	EnumInfoPrivate::EnumInfoPrivate(LibraryPrivate* library, const std::string& name) :
-		_library(library),
-		_name(name)
+		library(library),
+		name(name)
 	{
 	}
 
 	EnumItemPrivate* EnumInfoPrivate::_find_item(const std::string& name) const
 	{
-		for (auto& i : _items)
+		for (auto& i : items)
 		{
-			if (i->_name == name)
+			if (i->name == name)
 				return i.get();
 		}
 		return nullptr;
 	}
 	EnumItemPrivate* EnumInfoPrivate::_find_item(int value) const
 	{
-		for (auto& i : _items)
+		for (auto& i : items)
 		{
-			if (i->_value == value)
+			if (i->value == value)
 				return i.get();
 		}
 		return nullptr;
 	}
 
 	FunctionInfoPrivate::FunctionInfoPrivate(LibraryPrivate* library, UdtInfoPrivate* udt, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type) :
-		_library(library),
-		_udt(udt),
-		_index(index),
-		_name(name),
-		_rva(rva),
-		_voff(voff),
-		_type(type)
+		library(library),
+		udt(udt),
+		index(index),
+		name(name),
+		rva(rva),
+		voff(voff),
+		type(type)
 	{
 	}
 
 	bool FunctionInfoPrivate::_check_v(TypeInfoPrivate* type, char* ap) const
 	{
-		if (_type != type)
+		if (type != type)
 			return false;
 		auto c = 0;
 		while (true)
@@ -901,7 +901,7 @@ namespace flame
 			auto t = va_arg(ap, TypeInfoPrivate*);
 			if (!t)
 				break;
-			auto p = _parameters[c];
+			auto p = parameters[c];
 			if (t != p)
 			{
 				c = -1;
@@ -909,53 +909,53 @@ namespace flame
 			}
 			c++;
 		}
-		return c == _parameters.size();
+		return c == parameters.size();
 	}
 
 	void FunctionInfoPrivate::_call_v(void* obj, void* ret, char* ap) const
 	{
-		if (_type->_tag == TypeData && _type->_name == "void")
+		if (type->tag == TypeData && type->name == "void")
 		{
-			switch (_parameters.size())
+			switch (parameters.size())
 			{
 			case 1:
 			{
-				auto p1 = _parameters[0];
-				switch (p1->_tag)
+				auto p1 = parameters[0];
+				switch (p1->tag)
 				{
 				case TypeData:
-					if (p1->_name == "float")
+					if (p1->name == "float")
 					{
 						auto t = va_arg(ap, float*);
 						void* pf = nullptr;
-						if (_rva)
+						if (rva)
 							;
 						else
-							pf = *(void**)((*(char**)obj) + _voff);
+							pf = *(void**)((*(char**)obj) + voff);
 						cmf(p2f<void(__Dummy__::*)(float)>(pf), obj, *t);
 						return;
 					}
 					break;
 				case TypePointer:
-					if (p1->_name == "wchar_t")
+					if (p1->name == "wchar_t")
 					{
 						auto t = va_arg(ap, wchar_t*);
 						void* pf = nullptr;
-						if (_rva)
+						if (rva)
 							;
 						else
-							pf = *(void**)((*(char**)obj) + _voff);
+							pf = *(void**)((*(char**)obj) + voff);
 						cmf(p2f<void(__Dummy__::*)(wchar_t*)>(pf), obj, t);
 						return;
 					}
-					else if (p1->_name == "flame::Vec<3,uchar>")
+					else if (p1->name == "flame::Vec<3,uchar>")
 					{
 						auto t = va_arg(ap, Vec3c*);
 						void* pf = nullptr;
-						if (_rva)
+						if (rva)
 							;
 						else
-							pf = *(void**)((*(char**)obj) + _voff);
+							pf = *(void**)((*(char**)obj) + voff);
 						cmf(p2f<void(__Dummy__::*)(Vec3c*)>(pf), obj, t);
 						return;
 					}
@@ -966,14 +966,14 @@ namespace flame
 				break;
 			}
 		}
-		else if (_type->_tag == TypePointer)
+		else if (type->tag == TypePointer)
 		{
-			switch (_parameters.size())
+			switch (parameters.size())
 			{
 			case 0:
 				if (!obj)
 				{
-					*(void**)ret = cf(p2f<void* (*)()>(_library->_address + _rva));
+					*(void**)ret = cf(p2f<void* (*)()>(library->_address + rva));
 					return;
 				}
 				break;
@@ -995,7 +995,7 @@ namespace flame
 	{
 		for (auto& v : _variables)
 		{
-			if (v->_name == name)
+			if (v->name == name)
 				return v.get();
 		}
 		return nullptr;
@@ -1004,7 +1004,7 @@ namespace flame
 	{
 		for (auto& f : _functions)
 		{
-			if (f->_name == name)
+			if (f->name == name)
 				return f.get();
 		}
 		return nullptr;
@@ -1038,10 +1038,10 @@ namespace flame
 			for (auto n_enum : file_root.child("enums"))
 			{
 				auto e = new EnumInfoPrivate(this, n_enum.attribute("name").value());
-				enums.emplace(e->_name, e);
+				enums.emplace(e->name, e);
 
 				for (auto n_item : n_enum.child("items"))
-					e->_items.emplace_back(new EnumItemPrivate(e, e->_items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
+					e->items.emplace_back(new EnumItemPrivate(e, e->items.size(), n_item.attribute("name").value(), n_item.attribute("value").as_int()));
 			}
 
 			for (auto n_udt : file_root.child("udts"))
@@ -1058,8 +1058,8 @@ namespace flame
 					auto dv = n_variable.attribute("default_value");
 					if (dv)
 					{
-						v->_default_value = new char[type->_size];
-						type->unserialize(n_variable.attribute("default_value").value(), v->_default_value);
+						v->default_value = new char[type->size];
+						type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
 					}
 				}
 
@@ -1070,7 +1070,7 @@ namespace flame
 						TypeInfoPrivate::_get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
 					u->_functions.emplace_back(f);
 					for (auto n_parameter : n_function.child("parameters"))
-						f->_parameters.push_back(TypeInfoPrivate::_get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
+						f->parameters.push_back(TypeInfoPrivate::_get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
 				}
 			}
 
@@ -1095,13 +1095,13 @@ namespace flame
 						{
 							for (auto& f : u.second->_functions)
 							{
-								if (name == u.second->_name + "::" + f->_name)
+								if (name == u.second->_name + "::" + f->name)
 									curr_func = f.get();
 							}
 						}
 					}
 					else
-						curr_func->_code += line + "\n";
+						curr_func->code += line + "\n";
 				}
 				code_file.close();
 			}
@@ -1119,7 +1119,7 @@ namespace flame
 		{
 			for (auto it = enums.begin(); it != enums.end();)
 			{
-				if (it->second->_library == this)
+				if (it->second->library == this)
 					it = enums.erase(it);
 				else
 					it++;
@@ -1171,7 +1171,7 @@ namespace flame
 	{
 		for (auto& e : enums)
 		{
-			if (e.second->_name == name)
+			if (e.second->name == name)
 				return e.second.get();
 		}
 		return nullptr;

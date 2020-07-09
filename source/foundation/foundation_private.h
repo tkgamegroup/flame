@@ -23,32 +23,37 @@ namespace flame
 		void remove(void* l) override;
 	};
 
+	struct WindowPrivate__;
+
 	struct WindowPrivate : Window
 	{
 #ifdef FLAME_WINDOWS
-		HWND _hWnd = 0;
+		HWND hWnd = 0;
 #elif FLAME_ANDROID
 		android_app* _android_state;
 #endif
 
-		Vec2i _pos;
-		Vec2u _size;
-		std::string _title;
-		int _style;
-		CursorType _cursor_type = CursorNone;
+		Vec2i pos;
+		Vec2u size;
+		std::string title;
+		int style;
+		CursorType cursor_type = CursorNone;
 #ifdef FLAME_WINDOWS
-		HCURSOR _cursors[Cursor_Count];
+		HCURSOR cursors[Cursor_Count];
 #endif
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, int)>>> _key_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, MouseKey, const Vec2i&)>>> _mouse_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2u&)>>> _resize_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&)>>> _destroy_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, int)>>> key_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, MouseKey, const Vec2i&)>>> mouse_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2u&)>>> resize_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&)>>> destroy_listeners;
 
-		bool _sizing = false;
-		Vec2u _pending_size;
+		bool sizing = false;
+		Vec2u pending_size;
 
-		bool _dead = false;
+		bool dead = false;
+
+		WindowPrivate__* operator->() { return (WindowPrivate__*)this; }
+		WindowPrivate__* operator->() const { return (WindowPrivate__*)this; }
 
 #ifdef FLAME_WINDOWS
 		WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent);
@@ -58,31 +63,25 @@ namespace flame
 		~WindowPrivate();
 
 #ifdef FLAME_WINDOWS
-		void _wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
+		void wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
 #endif
-		void* _get_native();
-		void _set_pos(const Vec2i& pos);
-		void _set_size(const Vec2u& size);
-		void _set_title(const std::string& title);
-		void _set_cursor(CursorType type);
-		void _close();
 
-		void* get_native() override { return _get_native(); }
+		void* get_native() override;
 
-		Vec2i get_pos() const override { return _pos; }
-		void set_pos(const Vec2i& pos) override { _set_pos(pos); }
-		Vec2u get_size() const override { return _size; }
-		void set_size(const Vec2u& size) override { _set_size(size); }
+		Vec2i get_pos() const override { return pos; }
+		void set_pos(const Vec2i& pos) override;
+		Vec2u get_size() const override { return size; }
+		void set_size(const Vec2u& size) override;
 
-		const char* get_title() const override { return _title.c_str(); }
-		void set_title(const char* title) override { _set_title(title); }
+		const char* get_title() const override { return title.c_str(); }
+		void set_title(const char* title) override;
 
-		int get_style() const override { return _style; }
+		int get_style() const override { return style; }
 
-		CursorType get_cursor() override { return _cursor_type; }
-		void set_cursor(CursorType type) override { _set_cursor(type); }
+		CursorType get_cursor() override { return cursor_type; }
+		void set_cursor(CursorType type) override;
 
-		void close() override {_close(); }
+		void close() override;
 
 		void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) override;
 		void remove_key_listener(void* ret) override;
@@ -94,38 +93,38 @@ namespace flame
 		void remove_destroy_listener(void* ret) override;
 	};
 
+	struct WindowPrivate__ : WindowPrivate
+	{
+		void set_title(const std::string& _title);
+	};
+
+	struct LooperPrivate__;
+
 	struct LooperPrivate : Looper
 	{
-		uint _frame = 0;
-		float _delta_time = 0.f;
-		float _total_time = 0.f;
+		uint frame = 0;
+		float delta_time = 0.f;
+		float total_time = 0.f;
 
 		std::vector<std::unique_ptr<WindowPrivate>> windows;
-		void (*_frame_callback)(Capture& c, float delta_time) = nullptr;
-		Capture _frame_capture = {};
+		void (*frame_callback)(Capture& c, float delta_time) = nullptr;
+		Capture frame_capture = {};
 
-		uint64 _last_time = 0;
+		uint64 last_time = 0;
 
-		bool _one_frame();
-		int _loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture);
+		uint get_frame() const override { return frame; }
+		float get_delta_time() const override { return delta_time; }
+		float get_total_time() const override { return total_time; }
 
-		void* _add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0);
-		void _reset_event(void* ev);
-		void _remove_event(void* ev);
-		void _remove_events(int id);
-		void _process_events();
+		bool one_frame();
 
-		uint get_frame() const override { return _frame; }
-		float get_delta_time() const override { return _delta_time; }
-		float get_total_time() const override { return _total_time; }
+		int loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture) override;
 
-		int loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture) override { return _loop(frame_callback, capture); }
-
-		void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id) override { return _add_event(callback, capture, interval, id); }
-		void reset_event(void* ev) override { _reset_event(ev); }
-		void remove_event(void* ev) override { _remove_event(ev); }
-		void remove_events(int id) override { _remove_events(id); }
-		void process_events() override { _process_events(); }
+		void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0) override;
+		void reset_event(void* ev) override;
+		void remove_event(void* ev) override;
+		void remove_events(int id) override;
+		void process_events() override;
 	};
 
 	extern LooperPrivate* _looper;
@@ -194,28 +193,21 @@ namespace flame
 			void excute(SchedulePrivate* s) override;
 		};
 
-		bool _once;
-		std::vector<std::unique_ptr<Item>> _items;
-		Group* _curr_group = nullptr;
+		bool once;
+		std::vector<std::unique_ptr<Item>> items;
+		Group* curr_group = nullptr;
 
 		SchedulePrivate(bool once) :
-			_once(once)
+			once(once)
 		{
 		}
 
-		void _add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture);
-		void _begin_group();
-		void _end_group();
-		void _start();
-		void _stop();
-
 		void release() override { delete this; }
 
-		void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture) override { _add_event(delay, duration, callback, capture); }
-		void begin_group() override { _begin_group(); }
-		void end_group() override { _end_group(); }
-		void start() override { _start(); }
-		void stop() override { _stop(); }
+		void add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture) override;
+		void begin_group() override;
+		void end_group() override;
+		void start() override;
+		void stop() override;
 	};
-
 }

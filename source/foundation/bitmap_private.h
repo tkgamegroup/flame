@@ -4,6 +4,8 @@
 
 namespace flame
 {
+	struct BitmapPrivate__;
+
 	struct BitmapPrivate : Bitmap
 	{
 		uint width;
@@ -15,15 +17,13 @@ namespace flame
 		uint size;
 		bool srgb;
 
+		BitmapPrivate__* operator->() { return (BitmapPrivate__*)this; }
+		BitmapPrivate__* operator->() const { return (BitmapPrivate__*)this; }
+
 		BitmapPrivate(uint width, uint height, uint channel = 4, uint byte_per_channel = 1, uchar* data = nullptr);
 		~BitmapPrivate();
 
 		void release() override { delete this; }
-
-		void _copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border);
-		void _save(const std::filesystem::path& filename);
-
-		static BitmapPrivate* _create(const std::filesystem::path& filename);
 
 		uint get_width() const override { return width; }
 		uint get_height() const override { return height; }
@@ -36,7 +36,15 @@ namespace flame
 
 		void add_alpha_channel() override;
 		void swap_channel(uint ch1, uint ch2) override;
-		void copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override { _copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border); }
-		void save(const wchar_t* filename) override { _save(filename); }
+		void copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override;
+		void save(const wchar_t* filename) override;
+	};
+
+	struct BitmapPrivate__ : BitmapPrivate
+	{
+		void copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border);
+		void save(const std::filesystem::path& filename);
+
+		static BitmapPrivate* create(const std::filesystem::path& filename);
 	};
 }

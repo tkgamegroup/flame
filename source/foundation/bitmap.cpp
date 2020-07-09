@@ -8,7 +8,7 @@
 
 namespace flame
 {
-	BitmapPrivate::BitmapPrivate(uint width, uint height, uint channel, uint byte_per_channel, uchar* data) :
+	BitmapPrivate::BitmapPrivate(uint width, uint height, uint channel, uint byte_per_channel, uchar* _data) :
 		width(width),
 		height(height),
 		channel(channel),
@@ -18,16 +18,16 @@ namespace flame
 		size = pitch * height;
 		data = new uchar[size];
 
-		if (!data)
+		if (!_data)
 			memset(data, 0, size);
 		else
-			memcpy(data, data, size);
+			memcpy(data, _data, size);
 		srgb = false;
 	}
 
 	BitmapPrivate::~BitmapPrivate()
 	{
-		delete[] data;
+		delete[]data;
 	}
 
 	void BitmapPrivate::add_alpha_channel()
@@ -73,7 +73,12 @@ namespace flame
 		}
 	}
 
-	void BitmapPrivate::_copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
+	void BitmapPrivate::copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border)
+	{ 
+		(*this)->copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border); 
+	}
+
+	void BitmapPrivate__::copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
 	{
 		auto b1 = border ? 1 : 0;
 		auto b2 = b1 << 1;
@@ -116,7 +121,12 @@ namespace flame
 		}
 	}
 
-	void BitmapPrivate::_save(const std::filesystem::path& filename)
+	void BitmapPrivate::save(const wchar_t* filename)
+	{ 
+		(*this)->save(filename); 
+	}
+
+	void BitmapPrivate__::save(const std::filesystem::path& filename)
 	{
 		auto ext = std::filesystem::path(filename).extension();
 
@@ -126,7 +136,7 @@ namespace flame
 			stbi_write_bmp(w2s(filename).c_str(), width, height, channel, data);
 	}
 
-	BitmapPrivate* BitmapPrivate::_create(const std::filesystem::path& filename)
+	BitmapPrivate* BitmapPrivate__::create(const std::filesystem::path& filename)
 	{
 		if (!std::filesystem::exists(filename))
 			return nullptr;
@@ -141,5 +151,5 @@ namespace flame
 	}
 
 	Bitmap* Bitmap::create(uint width, uint height, uint channel, uint byte_per_channel, uchar* data) { return new BitmapPrivate(width, height, channel, byte_per_channel, data); }
-	Bitmap* Bitmap::create(const wchar_t* filename) { return BitmapPrivate::_create(filename); }
+	Bitmap* Bitmap::create(const wchar_t* filename) { return BitmapPrivate__::create(filename); }
 }

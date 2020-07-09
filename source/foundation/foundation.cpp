@@ -15,6 +15,23 @@
 
 namespace flame
 {
+	void* f_malloc(uint size)
+	{
+		return malloc(size);
+	}
+
+	void* f_realloc(void* p, uint size)
+	{
+		if (!p)
+			return f_malloc(size);
+		return realloc(p, size);
+	}
+
+	void f_free(void* p)
+	{
+		free(p);
+	}
+
 	void* ListenerHubImnplPrivate::add(bool(*pf)(Capture& c), const Capture& capture, int pos)
 	{
 		if (pos == -1)
@@ -39,23 +56,6 @@ namespace flame
 	ListenerHubImpl* ListenerHubImpl::create()
 	{
 		return new ListenerHubImnplPrivate;
-	}
-
-	void* f_malloc(uint size)
-	{
-		return malloc(size);
-	}
-
-	void* f_realloc(void* p, uint size)
-	{
-		if (!p)
-			return f_malloc(size);
-		return realloc(p, size);
-	}
-
-	void f_free(void* p)
-	{
-		free(p);
 	}
 
 	Guid generate_guid()
@@ -1059,14 +1059,14 @@ namespace flame
 	{
 		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
 		if (w)
-			w->_wnd_proc(message, wParam, lParam);
+			w->wnd_proc(message, wParam, lParam);
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 #endif
 
 #ifdef FLAME_WINDOWS
-	WindowPrivate::WindowPrivate(const std::string& title, const Vec2u& size, uint style, WindowPrivate* parent)
+	WindowPrivate::WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1074,7 +1074,7 @@ namespace flame
 			WNDCLASSEXA wcex;
 			wcex.cbSize = sizeof(WNDCLASSEXA);
 			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wcex.lpfnWndProc = wnd_proc;
+			wcex.lpfnWndProc = ::flame::wnd_proc;
 			wcex.cbClsExtra = 0;
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
@@ -1083,8 +1083,8 @@ namespace flame
 			if (std::filesystem::exists(icon_fn))
 			{
 				report_used_file(icon_fn.c_str());
-				auto icon_image = BitmapPrivate::_create(icon_fn);
-				icon_image->_swap_channel(0, 2);
+				auto icon_image = BitmapPrivate__::create(icon_fn);
+				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
 					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());
 				icon_image->release();
@@ -1099,10 +1099,10 @@ namespace flame
 			initialized = true;
 		}
 
-		_title = title;
+		title = _title;
 
-		_size = size;
-		_style = style;
+		size = _size;
+		style = _style;
 
 		assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
@@ -1133,68 +1133,68 @@ namespace flame
 			AdjustWindowRect(&rect, win32_style, false);
 			final_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
 		}
-		_pos.x() = (screen_size.x() - final_size.x()) / 2;
-		_pos.y() = (screen_size.y() - final_size.y()) / 2;
-		_hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
-			_pos.x(), _pos.y(), final_size.x(), final_size.y(), parent ? parent->_hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+		pos.x() = (screen_size.x() - final_size.x()) / 2;
+		pos.y() = (screen_size.y() - final_size.y()) / 2;
+		hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
+			pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 		{
 			RECT rect;
-			GetClientRect(_hWnd, &rect);
-			_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+			GetClientRect(hWnd, &rect);
+			size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
 		}
 
-		SetWindowLongPtr(_hWnd, 0, (LONG_PTR)this);
+		SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
 		for (auto i = 0; i < Cursor_Count; i++)
 		{
 			switch ((CursorType)i)
 			{
 			case CursorAppStarting:
-				_cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
+				cursors[i] = LoadCursorA(nullptr, IDC_APPSTARTING);
 				break;
 			case CursorArrow:
-				_cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
+				cursors[i] = LoadCursorA(nullptr, IDC_ARROW);
 				break;
 			case CursorCross:
-				_cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
+				cursors[i] = LoadCursorA(nullptr, IDC_CROSS);
 				break;
 			case CursorHand:
-				_cursors[i] = LoadCursorA(nullptr, IDC_HAND);
+				cursors[i] = LoadCursorA(nullptr, IDC_HAND);
 				break;
 			case CursorHelp:
-				_cursors[i] = LoadCursorA(nullptr, IDC_HELP);
+				cursors[i] = LoadCursorA(nullptr, IDC_HELP);
 				break;
 			case CursorIBeam:
-				_cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
+				cursors[i] = LoadCursorA(nullptr, IDC_IBEAM);
 				break;
 			case CursorNo:
-				_cursors[i] = LoadCursorA(nullptr, IDC_NO);
+				cursors[i] = LoadCursorA(nullptr, IDC_NO);
 				break;
 			case CursorSizeAll:
-				_cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZEALL);
 				break;
 			case CursorSizeNESW:
-				_cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZENESW);
 				break;
 			case CursorSizeNS:
-				_cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZENS);
 				break;
 			case CursorSizeNWSE:
-				_cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZENWSE);
 				break;
 			case CursorSizeWE:
-				_cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
+				cursors[i] = LoadCursorA(nullptr, IDC_SIZEWE);
 				break;
 			case CursorUpArrwo:
-				_cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
+				cursors[i] = LoadCursorA(nullptr, IDC_UPARROW);
 				break;
 			case CursorWait:
-				_cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
+				cursors[i] = LoadCursorA(nullptr, IDC_WAIT);
 				break;
 			}
 		}
 
-		_pending_size = size;
+		pending_size = size;
 
 		set_cursor(CursorArrow);
 		_looper->windows.emplace_back(this);
@@ -1207,18 +1207,18 @@ namespace flame
 #endif
 	WindowPrivate::~WindowPrivate()
 	{
-		for (auto& l : _destroy_listeners)
+		for (auto& l : destroy_listeners)
 			l->call();
 	}
 
-	void WindowPrivate::_wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
+	void WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto resize = [=]() {
-			if (_size != _pending_size)
+			if (size != pending_size)
 			{
-				_size = _pending_size;
-				for (auto& l : _resize_listeners)
-					l->call(_size);
+				size = pending_size;
+				for (auto& l : resize_listeners)
+					l->call(size);
 			}
 		};
 
@@ -1229,7 +1229,7 @@ namespace flame
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
 			{
-				for (auto& l : _key_listeners)
+				for (auto& l : key_listeners)
 					l->call(KeyStateDown, v);
 			}
 		}
@@ -1239,20 +1239,20 @@ namespace flame
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
 			{
-				for (auto& l : _key_listeners)
+				for (auto& l : key_listeners)
 					l->call(KeyStateUp, v);
 			}
 		}
 			break;
 		case WM_CHAR:
-			for (auto& l : _key_listeners)
+			for (auto& l : key_listeners)
 				l->call(KeyStateNull, (Key)wParam);
 			break;
 		case WM_LBUTTONDOWN:
 		{
-			SetCapture(_hWnd);
+			SetCapture(hWnd);
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateDown, Mouse_Left, pos);
 		}
 			break;
@@ -1260,171 +1260,176 @@ namespace flame
 		{
 			ReleaseCapture();
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateUp, Mouse_Left, pos);
 		}
 			break;
 		case WM_MBUTTONDOWN:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateDown, Mouse_Middle, pos);
 		}
 			break;
 		case WM_MBUTTONUP:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateUp, Mouse_Middle, pos);
 		}
 			break;
 		case WM_RBUTTONDOWN:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateDown, Mouse_Right, pos);
 		}
 			break;
 		case WM_RBUTTONUP:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateUp, Mouse_Right, pos);
 		}
 			break;
 		case WM_MOUSEMOVE:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateNull, Mouse_Null, pos);
 		}
 			break;
 		case WM_MOUSEWHEEL:
 		{
 			auto v = Vec2i((int)HIWORD(wParam) > 0 ? 1 : -1, 0);
-			for (auto& l : _mouse_listeners)
+			for (auto& l : mouse_listeners)
 				l->call(KeyStateNull, Mouse_Middle, v);
 		}
 			break;
 		case WM_DESTROY:
-			_dead = true;
+			dead = true;
 		case WM_ENTERSIZEMOVE:
-			_sizing = true;
-			SetTimer(_hWnd, 0, 100, NULL);
+			sizing = true;
+			SetTimer(hWnd, 0, 100, NULL);
 			break;
 		case WM_EXITSIZEMOVE:
-			_sizing = false;
-			KillTimer(_hWnd, 0);
+			sizing = false;
+			KillTimer(hWnd, 0);
 			resize();
 			break;
 		case WM_TIMER:
 			if (wParam == 0)
 				resize();
-			_looper->_one_frame();
+			_looper->one_frame();
 			break;
 		case WM_SIZE:
-			_pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
-			if (!_sizing)
+			pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+			if (!sizing)
 				resize();
 			break;
 		case WM_SETCURSOR:
-			SetCursor(_cursors[_cursor_type]);
+			SetCursor(cursors[cursor_type]);
 			break;
 		}
 	}
 
-	void* WindowPrivate::_get_native() 
+	void* WindowPrivate::get_native() 
 	{
 #ifdef FLAME_WINDOWS
-		return _hWnd;
+		return hWnd;
 #elif FLAME_ANDROID
 		return android_state;
 #endif
 	}
 
-	void WindowPrivate::_set_pos(const Vec2i& pos)
+	void WindowPrivate::set_pos(const Vec2i& _pos)
 	{
-		 _pos = pos;
-		SetWindowPos(_hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		 pos = _pos;
+		SetWindowPos(hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	void WindowPrivate::_set_size(const Vec2u& size)
+	void WindowPrivate::set_size(const Vec2u& size)
 	{
 	}
 
-	void WindowPrivate::_set_title(const std::string& title)
+	void WindowPrivate::set_title(const char* _title)
 	{
-		_title = title;
-		SetWindowTextA(_hWnd, title.c_str());
+		(*this)->set_title(_title);
 	}
 
-	void WindowPrivate::_set_cursor(CursorType type) 
+	void WindowPrivate__::set_title(const std::string& _title)
+	{
+		title = _title;
+		SetWindowTextA(hWnd, title.c_str());
+	}
+
+	void WindowPrivate::set_cursor(CursorType type) 
 	{
 #ifdef FLAME_WINDOWS
-		if (type == _cursor_type)
+		if (type == cursor_type)
 			return;
 
-		if (_cursor_type == CursorNone)
+		if (cursor_type == CursorNone)
 			ShowCursor(true);
 		if (type == CursorNone)
 			ShowCursor(false);
 
-		_cursor_type = type;
+		cursor_type = type;
 #endif
 	}
 
-	void WindowPrivate::_close()
+	void WindowPrivate::close()
 	{
-		DestroyWindow(_hWnd);
-		_dead = true;
+		DestroyWindow(hWnd);
+		dead = true;
 	}
 
 	void* WindowPrivate::add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		_key_listeners.emplace_back(c);
+		key_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_key_listener(void* lis)
 	{
-		erase_if(_key_listeners, (decltype(_key_listeners[0].get()))lis);
+		erase_if(key_listeners, (decltype(key_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		_mouse_listeners.emplace_back(c);
+		mouse_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_mouse_listener(void* lis)
 	{
-		erase_if(_mouse_listeners, (decltype(_mouse_listeners[0].get()))lis);
+		erase_if(mouse_listeners, (decltype(mouse_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		_resize_listeners.emplace_back(c);
+		resize_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_resize_listener(void* lis)
 	{
-		erase_if(_resize_listeners, (decltype(_resize_listeners[0].get()))lis);
+		erase_if(resize_listeners, (decltype(resize_listeners[0].get()))lis);
 	}
 
 	void* WindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		_destroy_listeners.emplace_back(c);
+		destroy_listeners.emplace_back(c);
 		return c;
 	}
 
 	void WindowPrivate::remove_destroy_listener(void* lis)
 	{
-		erase_if(_destroy_listeners, (decltype(_destroy_listeners[0].get()))lis);
+		erase_if(destroy_listeners, (decltype(destroy_listeners[0].get()))lis);
 	}
 
 	Window* Window::create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent)
@@ -1481,9 +1486,9 @@ namespace flame
 	}
 #endif
 
-	int LooperPrivate::_loop(void (*frame_callback)(Capture& c, float delta_time), const Capture& capture)
+	int LooperPrivate::loop(void (*_frame_callback)(Capture& c, float delta_time), const Capture& capture)
 	{
-		if (!frame_callback)
+		if (!_frame_callback)
 		{
 			for (;;)
 			{
@@ -1499,11 +1504,11 @@ namespace flame
 		if (windows.empty())
 			return 1;
 
-		_frame_callback = frame_callback;
-		_frame_capture = capture;
+		frame_callback = _frame_callback;
+		frame_capture = capture;
 
-		_last_time = get_now_ns();
-		_frame = 0;
+		last_time = get_now_ns();
+		frame = 0;
 
 		for (;;)
 		{
@@ -1530,7 +1535,7 @@ namespace flame
 					w->destroy_event = true;
 			}
 #endif
-			if (!_one_frame())
+			if (!one_frame())
 				break;
 		}
 	}
@@ -1552,13 +1557,13 @@ namespace flame
 	static std::list<std::unique_ptr<Event>> events;
 	static std::recursive_mutex event_mtx;
 
-	bool LooperPrivate::_one_frame()
+	bool LooperPrivate::one_frame()
 	{
 		for (auto it = windows.begin(); it != windows.end(); )
 		{
 			auto w = it->get();
 
-			if (w->_dead)
+			if (w->dead)
 				it = windows.erase(it);
 			else
 				it++;
@@ -1566,23 +1571,23 @@ namespace flame
 
 		if (windows.empty())
 		{
-			f_free(_frame_capture._data);
+			f_free(frame_capture._data);
 			return false;
 		}
 
-		_frame_callback(_frame_capture, _delta_time);
+		frame_callback(frame_capture, delta_time);
 
-		_frame++;
-		auto et = _last_time;
-		_last_time = get_now_ns();
-		et = _last_time - et;
-		_delta_time = et / 1000000000.f;
-		_total_time += _delta_time;
+		frame++;
+		auto et = last_time;
+		last_time = get_now_ns();
+		et = last_time - et;
+		delta_time = et / 1000000000.f;
+		total_time += delta_time;
 
 		return true;
 	}
 
-	void* LooperPrivate::_add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
+	void* LooperPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval, uint id)
 	{
 		event_mtx.lock();
 		auto e = new Event;
@@ -1596,13 +1601,13 @@ namespace flame
 		return e;
 	}
 
-	void LooperPrivate::_reset_event(void* _ev)
+	void LooperPrivate::reset_event(void* _ev)
 	{
 		auto ev = (Event*)_ev;
 		ev->rest = ev->interval;
 	}
 
-	void LooperPrivate::_remove_event(void* ev)
+	void LooperPrivate::remove_event(void* ev)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end(); it++)
@@ -1615,7 +1620,7 @@ namespace flame
 		}
 	}
 
-	void LooperPrivate::_remove_events(int id)
+	void LooperPrivate::remove_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
@@ -1632,7 +1637,7 @@ namespace flame
 		}
 	}
 
-	void LooperPrivate::_process_events()
+	void LooperPrivate::process_events()
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		for (auto it = events.begin(); it != events.end();)
@@ -1648,7 +1653,7 @@ namespace flame
 			}
 			else
 			{
-				e->rest.v.time -= _delta_time;
+				e->rest.v.time -= delta_time;
 				if (e->rest.v.time <= 0)
 					excute = true;
 			}
@@ -1679,9 +1684,9 @@ namespace flame
 		rest = duration;
 		callback(capture, -1.f, duration);
 		auto e = this;
-		_looper->_add_event([](Capture& c) {
+		_looper->add_event([](Capture& c) {
 			auto e = c.data<Event*>();
-			e->rest -= _looper->_delta_time;
+			e->rest -= _looper->delta_time;
 			auto end = e->rest <= 0.f;
 			e->callback(e->capture, e->duration - max(e->rest, 0.f), e->duration);
 			if (!end)
@@ -1699,9 +1704,9 @@ namespace flame
 					index = g->index;
 				}
 				index++;
-				if (index < thiz->_items.size())
-					thiz->_items[index]->excute(thiz);
-				else if (thiz->_once)
+				if (index < thiz->items.size())
+					thiz->items[index]->excute(thiz);
+				else if (thiz->once)
 					delete thiz;
 			}
 		}, Capture().set_data(&e).set_thiz(s));
@@ -1711,7 +1716,7 @@ namespace flame
 	{
 		if (delay > 0.f)
 		{
-			_looper->_add_event([](Capture& c) {
+			_looper->add_event([](Capture& c) {
 				c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
 			}, Capture().set_data(&s).set_thiz(this), delay);
 		}
@@ -1726,7 +1731,7 @@ namespace flame
 		{
 			if (e->delay > 0.f)
 			{
-				_looper->_add_event([](Capture& c) {
+				_looper->add_event([](Capture& c) {
 					c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
 				}, Capture().set_data(&s).set_thiz(e.get()), e->delay);
 			}
@@ -1735,45 +1740,45 @@ namespace flame
 		}
 	}
 
-	void SchedulePrivate::_add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
+	void SchedulePrivate::add_event(float delay, float duration, void(*callback)(Capture& c, float time, float duration), const Capture& capture)
 	{
-		auto e = new Event(_curr_group, _curr_group ? _curr_group->events.size() : _items.size());
+		auto e = new Event(curr_group, curr_group ? curr_group->events.size() : items.size());
 		e->delay = delay;
 		e->duration = duration;
 		e->callback = callback;
 		e->capture = capture;
-		if (_curr_group)
-			_curr_group->events.emplace_back(e);
+		if (curr_group)
+			curr_group->events.emplace_back(e);
 		else
-			_items.emplace_back(e);
+			items.emplace_back(e);
 	}
 
-	void SchedulePrivate::_begin_group()
+	void SchedulePrivate::begin_group()
 	{
-		if (_curr_group)
+		if (curr_group)
 			return;
-		auto g = new Group(_items.size());
-		_items.emplace_back(g);
-		_curr_group = g;
+		auto g = new Group(items.size());
+		items.emplace_back(g);
+		curr_group = g;
 	}
 
-	void SchedulePrivate::_end_group()
+	void SchedulePrivate::end_group()
 	{
-		if (!_curr_group)
+		if (!curr_group)
 			return;
-		if (_curr_group->events.empty())
-			_items.erase(_items.end() - 1);
-		_curr_group = nullptr;
+		if (curr_group->events.empty())
+			items.erase(items.end() - 1);
+		curr_group = nullptr;
 	}
 
-	void SchedulePrivate::_start()
+	void SchedulePrivate::start()
 	{
-		if (_items.empty())
+		if (items.empty())
 			return;
-		_items.front()->excute(this);
+		items.front()->excute(this);
 	}
 
-	void SchedulePrivate::_stop()
+	void SchedulePrivate::stop()
 	{
 
 	}

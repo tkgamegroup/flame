@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity src="one" cElement.x="100.0" cElement.y="50.0" />
+  <entity src="one" cElement.x="200.0" cElement.y="150.0" />
 </prefab>
