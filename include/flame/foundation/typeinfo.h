@@ -102,7 +102,7 @@ namespace flame
 		virtual const char* get_code() const = 0;
 
 		// first is return type, next followed by all parameters, parameters are end by null
-		virtual bool check(TypeInfo* type, ...) const = 0;
+		virtual bool check(void* type, ...) const = 0;
 		// all parameters should be pointers
 		virtual void call(void *obj, void* ret, ...) const = 0;
 	};

@@ -60,14 +60,14 @@ namespace flame
 
 		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
 		{
-			const auto& str = _find_enum(name)->_find_item(*(int*)src)->name;
+			const auto& str = (*find_enum(name))->find_item(*(int*)src)->name;
 			auto buf = callback((Capture&)capture, str.size());
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
-			*(int*)dst = _find_enum(name)->_find_item(src)->value;
+			*(int*)dst = (*find_enum(name))->find_item(src)->value;
 		}
 	};
 
@@ -80,7 +80,7 @@ namespace flame
 
 		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
 		{
-			auto e = _find_enum(name);
+			auto e = find_enum(name);
 			std::string str;
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->items.size(); i++)
@@ -89,7 +89,7 @@ namespace flame
 				{
 					if (i > 0)
 						str += ";";
-					str += e->_find_item(1 << i)->name;
+					str += (*e)->find_item(1 << i)->name;
 				}
 				v >>= 1;
 			}
@@ -99,11 +99,11 @@ namespace flame
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
-			auto e = _find_enum(name);
+			auto e = find_enum(name);
 			auto v = 0;
 			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
-				v |= e->_find_item(t)->value;
+				v |= (*e)->find_item(t)->value;
 			*(int*)dst = v;
 		}
 	};
@@ -802,7 +802,7 @@ namespace flame
 	{
 	}
 
-	TypeInfoPrivate* TypeInfoPrivate::_get(TypeTag tag, const std::string& name)
+	TypeInfoPrivate* TypeInfoPrivate__::get(TypeTag tag, const std::string& name)
 	{
 		auto key = TypeInfoKey(tag, name);
 		auto it = typeinfos.find(key);
@@ -828,7 +828,7 @@ namespace flame
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const char* name)
 	{ 
-		return TypeInfoPrivate::_get(tag, name);
+		return TypeInfoPrivate__::get(tag, name);
 	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset) :
@@ -861,7 +861,12 @@ namespace flame
 	{
 	}
 
-	EnumItemPrivate* EnumInfoPrivate::_find_item(const std::string& name) const
+	EnumItem* EnumInfoPrivate::find_item(const char* name) const
+	{
+		return (*this)->find_item(name);
+	}
+
+	EnumItemPrivate* EnumInfoPrivate__::find_item(const std::string& name) const
 	{
 		for (auto& i : items)
 		{
@@ -870,7 +875,13 @@ namespace flame
 		}
 		return nullptr;
 	}
-	EnumItemPrivate* EnumInfoPrivate::_find_item(int value) const
+
+	EnumItem* EnumInfoPrivate::find_item(int value) const
+	{
+		return (*this)->find_item(value);
+	}
+
+	EnumItemPrivate* EnumInfoPrivate__::find_item(int value) const
 	{
 		for (auto& i : items)
 		{
@@ -891,10 +902,11 @@ namespace flame
 	{
 	}
 
-	bool FunctionInfoPrivate::_check_v(TypeInfoPrivate* type, char* ap) const
+	bool FunctionInfoPrivate::check(void* _type, ...) const
 	{
-		if (type != type)
+		if (type != _type)
 			return false;
+		auto ap = (char*)var_end(&_type);
 		auto c = 0;
 		while (true)
 		{
@@ -912,8 +924,9 @@ namespace flame
 		return c == parameters.size();
 	}
 
-	void FunctionInfoPrivate::_call_v(void* obj, void* ret, char* ap) const
+	void FunctionInfoPrivate::call(void* obj, void* ret, ...) const
 	{
+		auto ap = (char*)var_end(&ret);
 		if (type->tag == TypeData && type->name == "void")
 		{
 			switch (parameters.size())
@@ -973,7 +986,7 @@ namespace flame
 			case 0:
 				if (!obj)
 				{
-					*(void**)ret = cf(p2f<void* (*)()>(library->_address + rva));
+					*(void**)ret = cf(p2f<void* (*)()>(library->address + rva));
 					return;
 				}
 				break;
@@ -984,25 +997,36 @@ namespace flame
 	}
 
 	UdtInfoPrivate::UdtInfoPrivate(LibraryPrivate* library, const std::string& name, uint size, const std::string& base_name) :
-		_library(library),
-		_name(name),
-		_size(size),
-		_base_name(base_name)
+		library(library),
+		name(name),
+		size(size),
+		base_name(base_name)
 	{
 	}
 
-	VariableInfoPrivate* UdtInfoPrivate::_find_variable(const std::string& name) const
+	VariableInfo* UdtInfoPrivate::find_variable(const char* name) const
+	{ 
+		return (*this)->find_variable(name); 
+	}
+
+	VariableInfoPrivate* UdtInfoPrivate__::find_variable(const std::string& name) const
 	{
-		for (auto& v : _variables)
+		for (auto& v : variables)
 		{
 			if (v->name == name)
 				return v.get();
 		}
 		return nullptr;
 	}
-	FunctionInfoPrivate* UdtInfoPrivate::_find_function(const std::string& name) const
+
+	FunctionInfo* UdtInfoPrivate::find_function(const char* name) const
+	{ 
+		return (*this)->find_function(name); 
+	}
+
+	FunctionInfoPrivate* UdtInfoPrivate__::find_function(const std::string& name) const
 	{
-		for (auto& f : _functions)
+		for (auto& f : functions)
 		{
 			if (f->name == name)
 				return f.get();
@@ -1011,9 +1035,9 @@ namespace flame
 	}
 
 	LibraryPrivate::LibraryPrivate(const std::wstring& filename, bool require_typeinfo) :
-		_filename(filename)
+		filename(filename)
 	{
-		_address = (char*)LoadLibraryW(filename.c_str());
+		address = (char*)LoadLibraryW(filename.c_str());
 
 		if (require_typeinfo)
 		{
@@ -1047,14 +1071,14 @@ namespace flame
 			for (auto n_udt : file_root.child("udts"))
 			{
 				auto u = new UdtInfoPrivate(this, n_udt.attribute("name").value(), n_udt.attribute("size").as_uint(), n_udt.attribute("base_name").value());
-				udts.emplace(u->_name, u);
+				udts.emplace(u->name, u);
 
 				for (auto n_variable : n_udt.child("variables"))
 				{
-					auto type = TypeInfoPrivate::_get((TypeTag)n_variable.attribute("type_tag").as_int(), n_variable.attribute("type_name").value());
-					auto v = new VariableInfoPrivate(u, u->_variables.size(), type, n_variable.attribute("name").value(),
+					auto type = TypeInfoPrivate__::get((TypeTag)n_variable.attribute("type_tag").as_int(), n_variable.attribute("type_name").value());
+					auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
 						n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint());
-					u->_variables.emplace_back(v);
+					u->variables.emplace_back(v);
 					auto dv = n_variable.attribute("default_value");
 					if (dv)
 					{
@@ -1065,12 +1089,12 @@ namespace flame
 
 				for (auto n_function : n_udt.child("functions"))
 				{
-					auto f = new FunctionInfoPrivate(this, u, u->_functions.size(), n_function.attribute("name").value(), 
+					auto f = new FunctionInfoPrivate(this, u, u->functions.size(), n_function.attribute("name").value(), 
 						n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(),
-						TypeInfoPrivate::_get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
-					u->_functions.emplace_back(f);
+						TypeInfoPrivate__::get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
+					u->functions.emplace_back(f);
 					for (auto n_parameter : n_function.child("parameters"))
-						f->parameters.push_back(TypeInfoPrivate::_get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
+						f->parameters.push_back(TypeInfoPrivate__::get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
 				}
 			}
 
@@ -1093,9 +1117,9 @@ namespace flame
 						auto name = line.substr(2);
 						for (auto& u : udts)
 						{
-							for (auto& f : u.second->_functions)
+							for (auto& f : u.second->functions)
 							{
-								if (name == u.second->_name + "::" + f->name)
+								if (name == u.second->name + "::" + f->name)
 									curr_func = f.get();
 							}
 						}
@@ -1106,16 +1130,16 @@ namespace flame
 				code_file.close();
 			}
 
-			_has_typeinfo = true;
+			has_typeinfo = true;
 		}
 	}
 
 	LibraryPrivate::~LibraryPrivate()
 	{
-		if (_address)
-			FreeLibrary((HMODULE)_address);
+		if (address)
+			FreeLibrary((HMODULE)address);
 
-		if (_has_typeinfo)
+		if (has_typeinfo)
 		{
 			for (auto it = enums.begin(); it != enums.end();)
 			{
@@ -1126,7 +1150,7 @@ namespace flame
 			}
 			for (auto it = udts.begin(); it != udts.end();)
 			{
-				if (it->second->_library == this)
+				if (it->second->library == this)
 					it = udts.erase(it);
 				else
 					it++;
@@ -1136,8 +1160,8 @@ namespace flame
 
 	void LibraryPrivate::_release()
 	{
-		_ref_count--;
-		if (_ref_count == 0)
+		ref_count--;
+		if (ref_count == 0)
 		{
 			for (auto it = libraries.begin(); it != libraries.end(); it++)
 			{
@@ -1152,14 +1176,14 @@ namespace flame
 
 	void* LibraryPrivate::_get_exported_function(const char* name)
 	{
-		return GetProcAddress((HMODULE)_address, name);
+		return GetProcAddress((HMODULE)address, name);
 	}
 
 	Library* Library::load(const wchar_t* filename, bool require_typeinfo)
 	{
 		for (auto& l : libraries)
 		{
-			if (l->_filename == filename)
+			if (l->filename == filename)
 				return l.get();
 		}
 		auto library = new LibraryPrivate(filename, require_typeinfo);
@@ -1167,7 +1191,7 @@ namespace flame
 		return library;
 	}
 
-	EnumInfoPrivate* _find_enum(const std::string& name)
+	EnumInfoPrivate* find_enum(const std::string& name)
 	{
 		for (auto& e : enums)
 		{
@@ -1176,16 +1200,16 @@ namespace flame
 		}
 		return nullptr;
 	}
-	UdtInfoPrivate* _find_udt(const std::string& name)
+	UdtInfoPrivate* find_udt(const std::string& name)
 	{
 		for (auto& u : udts)
 		{
-			if (u.second->_name == name)
+			if (u.second->name == name)
 				return u.second.get();
 		}
 		return nullptr;
 	}
 
-	EnumInfo* find_enum(const char* name) { return _find_enum(name); }
-	UdtInfo* find_udt(const char* name) { return _find_udt(name); }
+	EnumInfo* find_enum(const char* name) { return find_enum(std::string(name)); }
+	UdtInfo* find_udt(const char* name) { return find_udt(std::string(name)); }
 }
