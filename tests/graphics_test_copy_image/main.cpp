@@ -3,7 +3,7 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
-#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/command.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
@@ -25,7 +25,7 @@ struct App
 			sc->acquire_image();
 
 			auto dst = sc->image(sc->image_index());
-			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin();
 			cb->change_image_layout(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
 			ImageCopy cpy;

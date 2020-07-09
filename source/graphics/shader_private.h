@@ -13,27 +13,28 @@ namespace flame
 		struct BufferPrivate;
 		struct ImagePrivate;
 		struct RenderpassPrivate;
+		struct DescriptorSetPrivate;
 
-		struct DescriptorpoolPrivate : Descriptorpool
+		struct DescriptorPoolPrivate : DescriptorPool
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkDescriptorPool _v;
+			VkDescriptorPool vk_descriptorpool;
 #elif defined(FLAME_D3D12)
 
 #endif
-			DescriptorpoolPrivate(DevicePrivate* d);
-			~DescriptorpoolPrivate();
+			DescriptorPoolPrivate(DevicePrivate* d);
+			~DescriptorPoolPrivate();
 
 			void release() override { delete this; }
 		};
 
 		struct DescriptorBindingPrivate : DescriptorBinding
 		{
-			uint _index;
-			DescriptorType _type;
-			uint _count;
-			std::string _name;
+			uint index;
+			DescriptorType type;
+			uint count;
+			std::string name;
 
 			DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info);
 
@@ -43,69 +44,69 @@ namespace flame
 			const char* get_name() const override { return _name.c_str(); }
 		};
 
-		struct DescriptorlayoutPrivate : Descriptorlayout
+		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkDescriptorSetLayout _v;
+			VkDescriptorSetLayout vk_descriptorsetlayout;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			std::vector<std::unique_ptr<DescriptorBindingPrivate>> _bindings;
-			std::unique_ptr<Descriptorset> _default_set;
+			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
+			std::unique_ptr<DescriptorSetPrivate> default_set;
 
-			uint64 _hash;
+			uint64 hash;
 
-			DescriptorlayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings, bool create_default_set = false);
-			~DescriptorlayoutPrivate();
+			DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings, bool create_default_set = false);
+			~DescriptorSetLayoutPrivate();
 
 			void release() override { delete this; }
 
 			uint get_bindings_count() const override { return _bindings.size(); }
 			DescriptorBinding* get_binding(uint binding) const override { return _bindings[binding].get(); }
-			Descriptorset* get_default_set() const override { return _default_set.get(); }
+			DescriptorSet* get_default_set() const override { return _default_set.get(); }
 		};
 
-		struct DescriptorsetPrivate : Descriptorset
+		struct DescriptorSetPrivate : DescriptorSet
 		{
-			DescriptorpoolPrivate* _p;
-			DescriptorlayoutPrivate* _l;
+			DescriptorPoolPrivate* descriptorpool;
+			DescriptorSetLayoutPrivate* descriptorlayout;
 #if defined(FLAME_VULKAN)
-			VkDescriptorSet _v;
+			VkDescriptorSet vk_descriptor_set;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			DescriptorsetPrivate(DescriptorpoolPrivate* p, DescriptorlayoutPrivate* l);
-			~DescriptorsetPrivate();
+			DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l);
+			~DescriptorSetPrivate();
 
 			void release() override { delete this; }
 
 			void _set_buffer(uint binding, uint index, BufferPrivate* b, uint offset = 0, uint range = 0);
-			void _set_image(uint binding, uint index, ImageviewPrivate* iv, SamplerPrivate* sampler);
+			void _set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sampler);
 
-			Descriptorlayout* get_layout() const override { return _l; }
+			DescriptorSetLayout* get_layout() const override { return _l; }
 
 			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range) override { _set_buffer(binding, index, (BufferPrivate*)b, offset, range); }
-			void set_image(uint binding, uint index, Imageview* v, Sampler* sampler) override { _set_image(binding, index, (ImageviewPrivate*)v, (SamplerPrivate*)sampler); }
+			void set_image(uint binding, uint index, ImageView* v, Sampler* sampler) override { _set_image(binding, index, (ImageViewPrivate*)v, (SamplerPrivate*)sampler); }
 		};
 
-		struct PipelinelayoutPrivate : Pipelinelayout
+		struct PipelineLayoutPrivate : PipelineLayout
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkPipelineLayout _v;
+			VkPipelineLayout vk_pipeline_layout;
 #elif defined(FLAME_D3D12)
 
 #endif
-			std::vector<DescriptorlayoutPrivate*> _dsls;
-			uint _pc_size;
+			std::vector<DescriptorSetLayoutPrivate*> descriptorlayouts;
+			uint push_cconstant_size;
 
-			uint64 _hash;
+			uint64 hash;
 
-			PipelinelayoutPrivate(DevicePrivate* d, std::span<DescriptorlayoutPrivate*> descriptorlayouts, uint push_constant_size);
-			~PipelinelayoutPrivate();
+			PipelineLayoutPrivate(DevicePrivate* d, std::span<DescriptorSetLayoutPrivate*> descriptorlayouts, uint push_constant_size);
+			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
 		};
@@ -171,18 +172,18 @@ namespace flame
 
 		struct ShaderResource
 		{
-			std::vector<ShaderInOut> _inputs;
-			std::vector<ShaderInOut> _outputs;
-			std::vector<BlendOptions> _blend_options;
-			std::vector<std::unique_ptr<ShaderResource>> _uniform_buffers;
-			std::unique_ptr<ShaderResource> _push_constant;
+			std::vector<ShaderInOut> inputs;
+			std::vector<ShaderInOut> outputs;
+			std::vector<BlendOptions> blend_options;
+			std::vector<std::unique_ptr<ShaderResource>> uniform_buffers;
+			std::unique_ptr<ShaderResource> push_constant;
 		};
 
 		struct ShaderPrivate : Shader
 		{
-			std::filesystem::path _filename;
-			std::string _prefix;
-			ShaderStage _type;
+			std::filesystem::path filename;
+			std::string prefix;
+			ShaderStage type;
 
 			ShaderPrivate(const std::filesystem::path& filename, const std::string& prefix = "");
 
@@ -205,27 +206,27 @@ namespace flame
 
 		struct PipelinePrivate : Pipeline
 		{
-			PipelineType _type;
+			PipelineType type;
 
-			DevicePrivate* _d;
-			PipelinelayoutPrivate* _pll;
-			std::vector<CompiledShader> _shaders;
+			DevicePrivate* device;
+			PipelineLayoutPrivate* pipeline_layout;
+			std::vector<CompiledShader> shaders;
 #if defined(FLAME_VULKAN)
-			VkPipeline _v;
+			VkPipeline vk_pipeline;
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, std::span<CompiledShader> shaders, PipelinelayoutPrivate* pll, RenderpassPrivate* rp,
+			PipelinePrivate(DevicePrivate* d, std::span<CompiledShader> shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
 				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
-			PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelinelayoutPrivate* pll);
+			PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelineLayoutPrivate* pll);
 			~PipelinePrivate();
 
 			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders, 
-				PipelinelayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), 
+				PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0),
 				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
-			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelinelayoutPrivate* pll);
+			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 
 			void release() override { delete this; }
 

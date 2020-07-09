@@ -13,10 +13,10 @@ namespace flame
 
 		struct RenderpassAttachmentPrivate : RenderpassAttachment
 		{
-			uint _index;
-			Format _format;
-			bool _clear;
-			SampleCount _sample_count;
+			uint index;
+			Format format;
+			bool clear;
+			SampleCount sample_count;
 
 			RenderpassAttachmentPrivate(uint index, const RenderpassAttachmentInfo& info);
 
@@ -28,10 +28,10 @@ namespace flame
 
 		struct RenderpassSubpassPrivate : RenderpassSubpass
 		{
-			uint _index;
-			std::vector<RenderpassAttachmentPrivate*> _color_attachments;
-			std::vector<RenderpassAttachmentPrivate*> _resolve_attachments;
-			RenderpassAttachmentPrivate* _depth_attachment = nullptr;
+			uint index;
+			std::vector<RenderpassAttachmentPrivate*> color_attachments;
+			std::vector<RenderpassAttachmentPrivate*> resolve_attachments;
+			RenderpassAttachmentPrivate* depth_attachment = nullptr;
 
 			RenderpassSubpassPrivate(RenderpassPrivate* rp, uint index, const RenderpassSubpassInfo& info);
 
@@ -45,13 +45,13 @@ namespace flame
 
 		struct RenderpassPrivate : Renderpass
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 
-			std::vector<std::unique_ptr<RenderpassAttachmentPrivate>> _attachments;
-			std::vector<std::unique_ptr<RenderpassSubpassPrivate>> _subpasses;
+			std::vector<std::unique_ptr<RenderpassAttachmentPrivate>> attachments;
+			std::vector<std::unique_ptr<RenderpassSubpassPrivate>> subpasses;
 
 #if defined(FLAME_VULKAN)
-			VkRenderPass _v;
+			VkRenderPass vk_renderpass;
 #endif
 			RenderpassPrivate(DevicePrivate* d, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies = {});
 			~RenderpassPrivate();
@@ -66,23 +66,23 @@ namespace flame
 
 		struct FramebufferPrivate : Framebuffer
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 
-			RenderpassPrivate* _rp;
-			std::vector<ImageviewPrivate*> _views;
+			RenderpassPrivate* renderpass;
+			std::vector<ImageViewPrivate*> views;
 #if defined(FLAME_VULKAN)
-			VkFramebuffer _v;
+			VkFramebuffer vk_framebuffer;
 #elif defined(FLAME_D3D12)
 
 #endif
-			FramebufferPrivate(DevicePrivate* d, RenderpassPrivate* rp, std::span<ImageviewPrivate*> views);
+			FramebufferPrivate(DevicePrivate* d, RenderpassPrivate* rp, std::span<ImageViewPrivate*> views);
 			~FramebufferPrivate();
 
 			void release() override { delete this; }
 
 			Renderpass* get_renderpass() const override { return _rp; }
 			uint get_views_count() const override { return _views.size(); }
-			Imageview* get_view(uint idx) const override { return _views[idx]; }
+			ImageView* get_view(uint idx) const override { return _views[idx]; }
 		};
 	}
 }

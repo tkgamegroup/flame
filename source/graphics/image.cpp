@@ -4,7 +4,7 @@
 #include "renderpass_private.h"
 #include "buffer_private.h"
 #include "image_private.h"
-#include "commandbuffer_private.h"
+#include "command_private.h"
 #include "shader_private.h"
 
 namespace flame
@@ -61,10 +61,10 @@ namespace flame
 			imageInfo.pQueueFamilyIndices = nullptr;
 			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-			chk_res(vkCreateImage(d->_v, &imageInfo, nullptr, &_v));
+			chk_res(vkCreateImage(d->vk_device, &imageInfo, nullptr, &_v));
 
 			VkMemoryRequirements memRequirements;
-			vkGetImageMemoryRequirements(d->_v, _v, &memRequirements);
+			vkGetImageMemoryRequirements(d->vk_device, _v, &memRequirements);
 
 			VkMemoryAllocateInfo allocInfo;
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -72,9 +72,9 @@ namespace flame
 			allocInfo.allocationSize = memRequirements.size;
 			allocInfo.memoryTypeIndex = d->_find_memory_type(memRequirements.memoryTypeBits, MemPropDevice);
 
-			chk_res(vkAllocateMemory(d->_v, &allocInfo, nullptr, &_m));
+			chk_res(vkAllocateMemory(d->vk_device, &allocInfo, nullptr, &_m));
 
-			chk_res(vkBindImageMemory(d->_v, _v, _m, 0));
+			chk_res(vkBindImageMemory(d->vk_device, _v, _m, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -88,7 +88,7 @@ namespace flame
 				memcpy(staging_buffer->_mapped, data, staging_buffer->_size);
 				staging_buffer->_unmap();
 
-				auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+				auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
 				cb->_begin(true);
 				cb->_change_image_layout(this, ImageLayoutUndefined, ImageLayoutTransferDst);
 				cb->_copy_buffer_to_image(staging_buffer.get(), this, { &BufferImageCopy(this->_size), 1 });
@@ -123,8 +123,8 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			if (_m != 0)
 			{
-				vkFreeMemory(_d->_v, _m, nullptr);
-				vkDestroyImage(_d->_v, _v, nullptr);
+				vkFreeMemory(device->vk_device, _m, nullptr);
+				vkDestroyImage(device->vk_device, _v, nullptr);
 			}
 #elif defined(FLAME_D3D12)
 
@@ -133,7 +133,7 @@ namespace flame
 
 		void ImagePrivate::_change_layout(ImageLayout from, ImageLayout to)
 		{
-			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
 			cb->_change_image_layout(this, from, to);
 			cb->_end();
@@ -144,7 +144,7 @@ namespace flame
 
 		void ImagePrivate::_clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
-			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
 			cb->_change_image_layout(this, current_layout, ImageLayoutTransferDst);
 			cb->_clear_image(this, color);
@@ -163,7 +163,7 @@ namespace flame
 
 			auto stag_buf = std::make_unique<BufferPrivate>(_d, data_size, BufferUsageTransferDst, MemPropHost);
 
-			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
 			cb->_change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
 			cb->_copy_image_to_buffer(this, stag_buf.get(), { &BufferImageCopy(Vec2u(extent), 0, 0, offset), 1 });
@@ -189,7 +189,7 @@ namespace flame
 			memcpy(stag_buf->_mapped, src, stag_buf->_size);
 			stag_buf->_flush();
 
-			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
 			cb->_begin(true);
 			cb->_change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 			cb->_copy_buffer_to_image(stag_buf.get(), this, { &BufferImageCopy(Vec2u(extent), 0, 0, offset), 1 });
@@ -209,7 +209,7 @@ namespace flame
 			memcpy(staging_buffer->_mapped, bmp->get_data(), staging_buffer->_size);
 			staging_buffer->_unmap();
 
-			auto cb = std::make_unique<CommandbufferPrivate>(d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(d->_graphics_commandpool.get());
 			cb->_begin(true);
 			cb->_change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->_copy_buffer_to_image(staging_buffer.get(), i, { &BufferImageCopy(i->_size), 1 });
@@ -308,7 +308,7 @@ namespace flame
 
 			auto i = new ImagePrivate(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
-			auto cb = std::make_unique<CommandbufferPrivate>(d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(d->_graphics_commandpool.get());
 			cb->_begin(true);
 			cb->_change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->_copy_buffer_to_image(staging_buffer.get(), i, { buffer_copy_regions.data(), buffer_copy_regions.size() });
@@ -356,13 +356,13 @@ namespace flame
 			info.subresourceRange.baseArrayLayer = base_layer;
 			info.subresourceRange.layerCount = layer_count;
 
-			chk_res(vkCreateImageView(_d->_v, &info, nullptr, &_v));
+			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 			desc.NumDescriptors = 1;
 			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-			auto d = image->_d->_v;
+			auto d = image->device->vk_device;
 			auto res = d->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&v));
 			assert(SUCCEEDED(res));
 
@@ -376,7 +376,7 @@ namespace flame
 		ImageviewPrivate::~ImageviewPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyImageView(_d->_v, _v, nullptr);
+			vkDestroyImageView(device->vk_device, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -411,7 +411,7 @@ namespace flame
 			info.minLod = 0.f;
 			info.maxLod = 0.f;
 
-			chk_res(vkCreateSampler(_d->_v, &info, nullptr, &_v));
+			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &_v));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -420,7 +420,7 @@ namespace flame
 		SamplerPrivate::~SamplerPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroySampler(_d->_v, _v, nullptr);
+			vkDestroySampler(device->vk_device, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif

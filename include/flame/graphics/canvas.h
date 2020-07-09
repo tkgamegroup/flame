@@ -8,15 +8,15 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
-		struct Imageview;
+		struct ImageView;
 		struct ImageAtlas;
 		struct FontAtlas;
 		struct Sampler;
-		struct Commandbuffer;
+		struct CommandBuffer;
 
 		struct CanvasResource
 		{
-			virtual Imageview* get_view() const = 0;
+			virtual ImageView* get_view() const = 0;
 			virtual ImageAtlas* get_image_atlas() const = 0;
 			virtual FontAtlas* get_font_atlas() const = 0;
 			virtual Vec2f get_white_uv() const = 0;
@@ -29,10 +29,10 @@ namespace flame
 			virtual Vec4f get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
 
-			virtual void set_target(uint views_count, Imageview* const* views) = 0;
+			virtual void set_target(uint views_count, ImageView* const* views) = 0;
 
 			virtual CanvasResource* get_resource(uint slot) = 0;
-			virtual uint set_resource(int slot /* -1 to find an empty slot */, Imageview* v, Sampler* sp = nullptr, ImageAtlas* image_atlas = nullptr, FontAtlas* font_atlas = nullptr) = 0;
+			virtual uint set_resource(int slot /* -1 to find an empty slot */, ImageView* v, Sampler* sp = nullptr, ImageAtlas* image_atlas = nullptr, FontAtlas* font_atlas = nullptr) = 0;
 			virtual void add_atlas(ImageAtlas* a) = 0;
 			virtual void add_font(FontAtlas* f) = 0;
 
@@ -45,7 +45,7 @@ namespace flame
 			virtual void set_scissor(const Vec4f& scissor) = 0;
 
 			virtual void prepare() = 0;
-			virtual void record(Commandbuffer* cb, uint image_index) = 0;
+			virtual void record(CommandBuffer* cb, uint image_index) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d);
 		};

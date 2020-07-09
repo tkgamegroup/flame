@@ -4,7 +4,7 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
-#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/command.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
 #include <flame/sound/device.h>
@@ -28,7 +28,7 @@ namespace flame
 		Window* window;
 		graphics::Swapchain* swapchain;
 		int swapchain_image_index;
-		std::vector<graphics::Commandbuffer*> swapchain_commandbuffers;
+		std::vector<graphics::CommandBuffer*> swapchain_commandbuffers;
 		graphics::Fence* submit_fence;
 		graphics::Semaphore* render_finished_semaphore;
 
@@ -101,7 +101,7 @@ namespace flame
 		swapchain = graphics::Swapchain::create(graphics_device, window);
 		swapchain_commandbuffers.resize(swapchain->images_count());
 		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
-			swapchain_commandbuffers[i] = graphics::Commandbuffer::create(graphics::Commandpool::get_default(graphics::QueueGraphics));
+			swapchain_commandbuffers[i] = graphics::CommandBuffer::create(graphics::Commandpool::get_default(graphics::QueueGraphics));
 		submit_fence = graphics::Fence::create(graphics_device);
 		render_finished_semaphore = graphics::Semaphore::create(graphics_device);
 
@@ -149,7 +149,7 @@ namespace flame
 			window->release();
 		graphics::Swapchain::destroy(swapchain);
 		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
-			graphics::Commandbuffer::destroy(swapchain_commandbuffers[i]);
+			graphics::CommandBuffer::destroy(swapchain_commandbuffers[i]);
 		graphics::Fence::destroy(submit_fence);
 		graphics::Semaphore::destroy(render_finished_semaphore);
 		if (canvas)

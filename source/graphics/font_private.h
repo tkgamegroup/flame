@@ -13,31 +13,31 @@ namespace flame
 
 		struct FontPrivate : Font
 		{
-			std::filesystem::path _filename;
-			std::string _file;
-			stbtt_fontinfo* _stbtt_info;
+			std::filesystem::path filename;
+			std::string file;
+			stbtt_fontinfo* stbtt_info;
 
 			FontPrivate(const std::wstring& filename);
 			~FontPrivate();
 
 			void release() override { delete this; }
 
-			const wchar_t* get_filename() const override { return _filename.c_str(); }
+			const wchar_t* get_filename() const override { return filename.c_str(); }
 		};
 
 		struct GlyphPrivate : Glyph
 		{
-			ushort _code = 0;
-			Vec2i _off = Vec2i(0);
-			Vec2u _size = Vec2u(0);
-			Vec4f _uv = Vec4f(0.f);
-			int _advance = 0;
+			ushort code = 0;
+			Vec2i off = Vec2i(0);
+			Vec2u size = Vec2u(0);
+			Vec4f uv = Vec4f(0.f);
+			int advance = 0;
 
-			ushort get_code() const override { return _code; }
-			Vec2i get_off() const override { return _off; }
-			Vec2u get_size() const override { return _size; }
-			Vec4f get_uv() const override { return _uv; }
-			int get_advance() const override { return _advance; }
+			ushort get_code() const override { return code; }
+			Vec2i get_off() const override { return off; }
+			Vec2u get_size() const override { return size; }
+			Vec4f get_uv() const override { return uv; }
+			int get_advance() const override { return advance; }
 		};
 
 		struct GlyphKey
@@ -67,13 +67,13 @@ namespace flame
 
 		struct FontAtlasPrivate : FontAtlas
 		{
-			std::vector<FontPrivate*> _fonts;
+			std::vector<FontPrivate*> fonts;
 
-			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> _map;
-			std::unique_ptr<BinPackNode> _bin_pack_root;
+			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> map;
+			std::unique_ptr<BinPackNode> bin_pack_root;
 
-			std::unique_ptr<ImagePrivate> _image;
-			std::unique_ptr<ImageviewPrivate> _view;
+			std::unique_ptr<ImagePrivate> image;
+			std::unique_ptr<ImageViewPrivate> view;
 
 			FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> fonts);
 

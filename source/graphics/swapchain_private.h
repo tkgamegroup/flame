@@ -12,23 +12,23 @@ namespace flame
 
 		struct SwapchainPrivate : Swapchain
 		{
-			Window* _w;
+			Window* window;
 
-			DevicePrivate* _d;
+			DevicePrivate* device;
 
-			ImageUsageFlags _extra_usages;
+			ImageUsageFlags extra_usages;
 
 #if defined(FLAME_VULKAN)
-			VkSurfaceKHR _s;
-			VkSwapchainKHR _v;
+			VkSurfaceKHR vk_surface;
+			VkSwapchainKHR vk_swapchain;
 #elif defined(FLAME_D3D12)
 			IDXGISwapChain3* v;
 #endif
 
-			std::vector<std::unique_ptr<ImagePrivate>> _images;
-			std::unique_ptr<SemaphorePrivate> _image_avalible;
+			std::vector<std::unique_ptr<ImagePrivate>> images;
+			std::unique_ptr<SemaphorePrivate> image_avalible;
 
-			uint _image_index;
+			uint image_index;
 
 			void* resize_listener;
 

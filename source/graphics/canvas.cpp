@@ -5,7 +5,7 @@
 #include "font_private.h"
 #include "renderpass_private.h"
 #include "shader_private.h"
-#include "commandbuffer_private.h"
+#include "command_private.h"
 #include "swapchain_private.h"
 #include "canvas_private.h"
 
@@ -16,7 +16,7 @@ namespace flame
 		const auto resource_count = 64U;
 		static RenderpassPrivate* rp = nullptr;
 		static DescriptorlayoutPrivate* dsl = nullptr;
-		static PipelinelayoutPrivate* pll = nullptr;
+		static PipelineLayoutPrivate* pll = nullptr;
 		static ShaderPrivate* vert = nullptr;
 		static ShaderPrivate* frag = nullptr;
 		static PipelinePrivate* pl = nullptr;
@@ -48,7 +48,7 @@ namespace flame
 				dsl = new DescriptorlayoutPrivate(d, { &db, 1});
 			}
 			if (!pll)
-				pll = new PipelinelayoutPrivate(d, { &dsl, 1 }, 16);
+				pll = new PipelineLayoutPrivate(d, { &dsl, 1 }, 16);
 			if (!pl)
 			{
 				VertexAttributeInfo vias[3];
@@ -94,7 +94,7 @@ namespace flame
 				_resources[i].reset(r);
 			}
 
-			_ds.reset(new DescriptorsetPrivate(d->_descriptorpool.get(), dsl));
+			_ds.reset(new DescriptorSetPrivate(d->_descriptorpool.get(), dsl));
 			auto sp = d->_sampler_linear.get();
 			for (auto i = 0; i < resource_count; i++)
 				_ds->set_image(0, i, iv_white, sp);
@@ -562,7 +562,7 @@ namespace flame
 			_cmds.clear();
 		}
 
-		void CanvasPrivate::_record(CommandbufferPrivate* cb, uint image_index)
+		void CanvasPrivate::_record(CommandBufferPrivate* cb, uint image_index)
 		{
 			cb->_begin();
 			cb->_begin_renderpass(_fbs[image_index].get(), { &_clear_color, 1 });

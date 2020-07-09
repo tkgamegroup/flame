@@ -9,15 +9,15 @@ namespace flame
 
 		struct BufferPrivate : Buffer
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 
-			uint _size;
+			uint size;
 
-			void* _mapped;
+			void* mapped = nullptr;
 
 #if defined(FLAME_VULKAN)
-			VkBuffer _v;
-			VkDeviceMemory _m;
+			VkBuffer vk_buffer;
+			VkDeviceMemory vk_memory;
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* v;
 #endif
@@ -25,23 +25,17 @@ namespace flame
 			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing = false, void* data = nullptr);
 			~BufferPrivate();
 
-			void _map(uint offset = 0, uint size = 0);
-			void _unmap();
-			void _flush();
-
-			void _copy_from_data(void* data);
-
 			void release() override { delete this; }
 
-			uint get_size() const override { return _size; }
+			uint get_size() const override { return size; }
 
-			void* get_mapped() const override { return _mapped; }
+			void* get_mapped() const override { return mapped; }
 
-			void map(uint offset = 0, uint size = 0) override { _map(offset, size); }
-			void unmap() override { _unmap(); }
-			void flush() override { _flush(); }
+			void map(uint offset = 0, uint size = 0) override;
+			void unmap() override;
+			void flush() override;
 
-			void copy_from_data(void* data) override { _copy_from_data(data); }
+			void copy_from_data(void* data) override;
 		};
 	}
 }

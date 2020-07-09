@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct Device;
 		struct Image;
-		struct Imageview;
+		struct ImageView;
 
 		struct RenderpassAttachmentInfo
 		{

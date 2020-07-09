@@ -10,7 +10,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Device;
-		struct Imageview;
+		struct ImageView;
 
 		inline Format get_image_format(uint channel, uint byte_per_channel)
 		{
@@ -61,7 +61,7 @@ namespace flame
 			virtual uint get_layer() const = 0;
 			virtual SampleCount get_sample_count() const = 0;
 
-			virtual Imageview* get_default_view() const = 0;
+			virtual ImageView* get_default_view() const = 0;
 
 			virtual void change_layout(ImageLayout from, ImageLayout to) = 0;
 			virtual void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) = 0;
@@ -76,13 +76,13 @@ namespace flame
 
 		};
 
-		struct Imageview
+		struct ImageView
 		{
 			virtual void release() = 0;
 
 			virtual Image* get_image() const = 0;
 
-			virtual ImageviewType get_type() const = 0;
+			virtual ImageViewType get_type() const = 0;
 			virtual uint get_base_level() const = 0;
 			virtual uint get_level_count() const = 0;
 			virtual uint get_base_layer() const = 0;
@@ -92,7 +92,7 @@ namespace flame
 			virtual Swizzle get_swizzle_b() const = 0;
 			virtual Swizzle get_swizzle_a() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Imageview* create(Image* i, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1, 
+			FLAME_GRAPHICS_EXPORTS static ImageView* create(Image* i, ImageViewType type = ImageView2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
 				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
 		};
 

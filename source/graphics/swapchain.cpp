@@ -2,7 +2,7 @@
 #include "synchronize_private.h"
 #include "image_private.h"
 #include <flame/graphics/renderpass.h>
-#include "commandbuffer_private.h"
+#include "command_private.h"
 #include "swapchain_private.h"
 
 #ifdef FLAME_ANDROID
@@ -41,7 +41,7 @@ namespace flame
 
 #if defined(FLAME_VULKAN)
 			if (_v)
-				vkDestroySwapchainKHR(_d->_v, _v, nullptr);
+				vkDestroySwapchainKHR(device->vk_device, _v, nullptr);
 			if (_s)
 				vkDestroySurfaceKHR(_d->_instance, _s, nullptr);
 #elif defined(FLAME_D3D12)
@@ -52,7 +52,7 @@ namespace flame
 		void SwapchainPrivate::_acquire_image()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkAcquireNextImageKHR(_d->_v, _v, UINT64_MAX, _image_avalible->_v, VK_NULL_HANDLE, &_image_index));
+			chk_res(vkAcquireNextImageKHR(device->vk_device, _v, UINT64_MAX, _image_avalible->_v, VK_NULL_HANDLE, &_image_index));
 #elif defined(FLAME_D3D12)
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
@@ -67,7 +67,7 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			if (_v)
 			{
-				vkDestroySwapchainKHR(_d->_v, _v, nullptr);
+				vkDestroySwapchainKHR(device->vk_device, _v, nullptr);
 				_v = nullptr;
 			}
 			if (_s)
@@ -151,12 +151,12 @@ namespace flame
 				swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 				swapchain_info.clipped = true;
 				swapchain_info.oldSwapchain = 0;
-				chk_res(vkCreateSwapchainKHR(_d->_v, &swapchain_info, nullptr, &_v));
+				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &_v));
 
 				std::vector<VkImage> native_images;
-				vkGetSwapchainImagesKHR(_d->_v, _v, &image_count, nullptr);
+				vkGetSwapchainImagesKHR(device->vk_device, _v, &image_count, nullptr);
 				native_images.resize(image_count);
-				vkGetSwapchainImagesKHR(_d->_v, _v, &image_count, native_images.data());
+				vkGetSwapchainImagesKHR(device->vk_device, _v, &image_count, native_images.data());
 
 #elif defined(FLAME_D3D12)
 

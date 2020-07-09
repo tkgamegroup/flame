@@ -8,25 +8,25 @@ namespace flame
 	namespace graphics
 	{
 		struct DevicePrivate;
-		struct ImageviewPrivate;
+		struct ImageViewPrivate;
 
 		struct ImagePrivate : Image
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 			
-			Format _format;
-			Vec2u _size;
-			uint _level;
-			uint _layer;
-			SampleCount _sample_count;
+			Format format;
+			Vec2u size;
+			uint level;
+			uint layer;
+			SampleCount sample_count;
 
 #if defined(FLAME_VULKAN)
-			VkDeviceMemory _m;
-			VkImage _v;
+			VkDeviceMemory vk_memory;
+			VkImage vk_image;
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* _v;
 #endif
-			std::unique_ptr<ImageviewPrivate> _dv;
+			std::unique_ptr<ImageViewPrivate> default_view;
 
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool default_view = true);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view = true);
@@ -49,7 +49,7 @@ namespace flame
 			uint get_layer() const override { return _layer; }
 			SampleCount get_sample_count() const override { return _sample_count; }
 
-			Imageview* get_default_view() const override { return (Imageview*)_dv.get(); }
+			ImageView* get_default_view() const override { return (ImageView*)_dv.get(); }
 
 			void change_layout(ImageLayout from, ImageLayout to) override { _change_layout(from, to); }
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override { _clear(current_layout, after_layout, color); }
@@ -58,34 +58,34 @@ namespace flame
 			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override { _set_pixels(offset, extent, src); }
 		};
 
-		struct ImageviewPrivate : Imageview
+		struct ImageViewPrivate : ImageView
 		{
-			DevicePrivate* _d;
-			ImagePrivate* _image;
+			DevicePrivate* device;
+			ImagePrivate* image;
 
-			ImageviewType _type;
-			uint _base_level;
-			uint _level_count;
-			uint _base_layer;
-			uint _layer_count;
-			Swizzle _swizzle_r;
-			Swizzle _swizzle_g;
-			Swizzle _swizzle_b;
-			Swizzle _swizzle_a;
+			ImageViewType type;
+			uint base_level;
+			uint level_count;
+			uint base_layer;
+			uint layer_count;
+			Swizzle swizzle_r;
+			Swizzle swizzle_g;
+			Swizzle swizzle_b;
+			Swizzle swizzle_a;
 
 #if defined(FLAME_VULKAN)
-			VkImageView _v;
+			VkImageView vk_image_view;
 #elif defined(FLAME_D3D12)
 			ID3D12DescriptorHeap* _v;
 #endif
 
-			ImageviewPrivate(ImagePrivate* image, ImageviewType type = Imageview2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
+			ImageViewPrivate(ImagePrivate* image, ImageViewType type = ImageView2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
 				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
-			~ImageviewPrivate();
+			~ImageViewPrivate();
 
 			void release() override { delete this; }
 
-			ImageviewType get_type() const override { return _type; }
+			ImageViewType get_type() const override { return _type; }
 			uint get_base_level() const override { return _base_level; }
 			uint get_level_count() const override { return _level_count; }
 			uint get_base_layer() const override { return _base_layer; }
@@ -114,9 +114,9 @@ namespace flame
 
 		struct SamplerPrivate : Sampler
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkSampler _v;
+			VkSampler vk_sampler;
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -128,11 +128,11 @@ namespace flame
 
 		struct ImageTilePrivate : ImageTile
 		{
-			uint _index;
-			std::string _name;
-			Vec2i _pos;
-			Vec2i _size;
-			Vec4f _uv;
+			uint index;
+			std::string name;
+			Vec2i pos;
+			Vec2i size;
+			Vec4f uv;
 
 			uint get_index() const override { return _index; }
 			const char* get_name() const override { return _name.c_str(); }
@@ -143,10 +143,10 @@ namespace flame
 
 		struct ImageAtlasPrivate : ImageAtlas
 		{
-			bool _border = false;
+			bool border = false;
 
-			ImagePrivate* _image;
-			std::vector<std::unique_ptr<ImageTilePrivate>> _tiles;
+			ImagePrivate* image;
+			std::vector<std::unique_ptr<ImageTilePrivate>> tiles;
 
 			ImageAtlasPrivate(DevicePrivate* d, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();

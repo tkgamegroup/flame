@@ -7,21 +7,21 @@ namespace flame
 		struct DevicePrivate;
 		struct BufferPrivate;
 		struct ImagePrivate;
-		struct ImageviewPrivate;
+		struct ImageViewPrivate;
 		struct ImageAtlasPrivate;
 		struct FontAtlasPrivate;
 		struct FramebufferPrivate;
-		struct DescriptorsetPrivate;
-		struct CommandbufferPrivate;
+		struct DescriptorSetPrivate;
+		struct CommandBufferPrivate;
 
 		struct CanvasResourcePrivate : CanvasResource
 		{
-			ImageviewPrivate* _view;
-			ImageAtlasPrivate* _image_atlas = nullptr;
-			FontAtlasPrivate* _font_atlas = nullptr;
-			Vec2f _white_uv = Vec2f(0.5f);
+			ImageViewPrivate* view;
+			ImageAtlasPrivate* image_atlas = nullptr;
+			FontAtlasPrivate* font_atlas = nullptr;
+			Vec2f white_uv = Vec2f(0.5f);
 
-			Imageview* get_view() const override { return _view; }
+			ImageView* get_view() const override { return _view; }
 			ImageAtlas* get_image_atlas() const override { return _image_atlas; }
 			FontAtlas* get_font_atlas() const override { return _font_atlas; }
 			Vec2f get_white_uv() const override { return _white_uv; }
@@ -57,32 +57,32 @@ namespace flame
 				Vec4c col;
 			};
 
-			DevicePrivate* _d;
+			DevicePrivate* device;
 
-			Vec4f _clear_color;
+			Vec4f clear_color;
 
-			std::unique_ptr<ImagePrivate> _img_white;
-			std::vector<std::unique_ptr<CanvasResourcePrivate>> _resources;
-			std::unique_ptr<BufferPrivate> _buf_vtx;
-			std::unique_ptr<BufferPrivate> _buf_idx;
-			std::vector<std::unique_ptr<FramebufferPrivate>> _fbs;
-			std::unique_ptr<DescriptorsetPrivate> _ds;
+			std::unique_ptr<ImagePrivate> img_white;
+			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
+			std::unique_ptr<BufferPrivate> buf_vtx;
+			std::unique_ptr<BufferPrivate> buf_idx;
+			std::vector<std::unique_ptr<FramebufferPrivate>> fbs;
+			std::unique_ptr<DescriptorSetPrivate> ds;
 
-			Vertex* _vtx_end;
-			uint* _idx_end;
+			Vertex* vtx_end;
+			uint* idx_end;
 
-			Vec2u _target_size;
-			Vec4f _curr_scissor;
+			Vec2u target_size;
+			Vec4f curr_scissor;
 
-			std::vector<Cmd> _cmds;
-			uint* _p_vtx_cnt;
-			uint* _p_idx_cnt;
+			std::vector<Cmd> cmds;
+			uint* p_vtx_cnt;
+			uint* p_idx_cnt;
 
 			CanvasPrivate(DevicePrivate* d);
 
-			void _set_target(std::span<ImageviewPrivate*> views);
+			void _set_target(std::span<ImageViewPrivate*> views);
 
-			uint _set_resource(int slot, ImageviewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
+			uint _set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
 			void _add_atlas(ImageAtlasPrivate* a);
 			void _add_font(FontAtlasPrivate* f);
 
@@ -98,17 +98,17 @@ namespace flame
 			void _set_scissor(const Vec4f& _scissor);
 
 			void _prepare();
-			void _record(CommandbufferPrivate* cb, uint image_index);
+			void _record(CommandBufferPrivate* cb, uint image_index);
 
 			void release() override { delete this; }
 
 			Vec4f get_clear_color() const override { return _clear_color; }
 			void set_clear_color(const Vec4c& color) override { _clear_color = Vec4f(color) / 255.f; }
 
-			void set_target(uint views_count, Imageview* const* views) override { _set_target({ (ImageviewPrivate**)views, views_count }); }
+			void set_target(uint views_count, ImageView* const* views) override { _set_target({ (ImageViewPrivate**)views, views_count }); }
 
 			CanvasResource* get_resource(uint slot) override { return _resources[slot].get(); }
-			uint set_resource(int slot, Imageview* v, Sampler* sp, ImageAtlas* image_atlas, FontAtlas* font_atlas) override { return _set_resource(slot, (ImageviewPrivate*)v, (SamplerPrivate*)sp, (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas); }
+			uint set_resource(int slot, ImageView* v, Sampler* sp, ImageAtlas* image_atlas, FontAtlas* font_atlas) override { return _set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas); }
 			void add_atlas(ImageAtlas* a) override { _add_atlas((ImageAtlasPrivate*)a); }
 			void add_font(FontAtlas* f) override { _add_font((FontAtlasPrivate*)f); }
 
@@ -121,7 +121,7 @@ namespace flame
 			void set_scissor(const Vec4f& scissor) override { _set_scissor(scissor); }
 
 			void prepare() override { _prepare(); }
-			void record(Commandbuffer* cb, uint image_index) override { _record((CommandbufferPrivate*)cb, image_index); }
+			void record(CommandBuffer* cb, uint image_index) override { _record((CommandBufferPrivate*)cb, image_index); }
 		};
 	}
 }

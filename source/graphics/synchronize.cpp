@@ -11,14 +11,14 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-			chk_res(vkCreateSemaphore(_d->_v, &info, nullptr, &_v));
+			chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &_v));
 #endif
 		}
 
 		SemaphorePrivate::~SemaphorePrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroySemaphore(_d->_v, _v, nullptr);
+			vkDestroySemaphore(device->vk_device, _v, nullptr);
 #endif
 		}
 
@@ -34,7 +34,7 @@ namespace flame
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-			chk_res(vkCreateFence(_d->_v, &info, nullptr, &_v));
+			chk_res(vkCreateFence(device->vk_device, &info, nullptr, &_v));
 			_vl = 1;
 #elif defined(FLAME_D3D12)
 			auto res = d->v->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&v));
@@ -47,7 +47,7 @@ namespace flame
 		FencePrivate::~FencePrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyFence(_d->_v, _v, nullptr);
+			vkDestroyFence(device->vk_device, _v, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -58,8 +58,8 @@ namespace flame
 #if defined(FLAME_VULKAN)
 			if (_vl > 0)
 			{
-				chk_res(vkWaitForFences(_d->_v, 1, &_v, true, UINT64_MAX));
-				chk_res(vkResetFences(_d->_v, 1, &_v));
+				chk_res(vkWaitForFences(device->vk_device, 1, &_v, true, UINT64_MAX));
+				chk_res(vkResetFences(device->vk_device, 1, &_v));
 				_vl = 0;
 			}
 #elif defined(FLAME_D3D12)

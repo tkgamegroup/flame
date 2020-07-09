@@ -126,13 +126,13 @@ namespace flame
 
 		typedef uint ImageAspectFlags;
 
-		enum ImageviewType
+		enum ImageViewType
 		{
-			Imageview1D,
-			Imageview2D,
-			Imageview3D,
-			ImageviewCube,
-			Imageview1DArray,
+			ImageView1D,
+			ImageView2D,
+			ImageView3D,
+			ImageViewCube,
+			ImageView1DArray,
 			ImageView2DArray,
 			ImageViewCubeArray,
 

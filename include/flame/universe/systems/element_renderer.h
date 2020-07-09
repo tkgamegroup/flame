@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Commandbuffer;
+		struct CommandBuffer;
 		struct Canvas;
 	}
 

@@ -11,9 +11,9 @@ namespace flame
 
 		struct SemaphorePrivate : Semaphore
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkSemaphore _v;
+			VkSemaphore vk_semaphore;
 #endif
 
 			SemaphorePrivate(DevicePrivate* d);
@@ -24,12 +24,12 @@ namespace flame
 
 		struct FencePrivate : Fence
 		{
-			DevicePrivate* _d;
+			DevicePrivate* device;
 
-			uint _vl;
+			uint value;
 
 #if defined(FLAME_VULKAN)
-			VkFence _v;
+			VkFence vk_fence;
 #elif defined(FLAME_D3D12)
 			ID3D12Fence* v;
 			HANDLE ev;

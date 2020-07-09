@@ -556,19 +556,19 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageViewType to_backend(ImageviewType t)
+		inline VkImageViewType to_backend(ImageViewType t)
 		{
 			switch (t)
 			{
-				case Imageview1D:
+				case ImageView1D:
 					return VK_IMAGE_VIEW_TYPE_1D;
-				case Imageview2D:
+				case ImageView2D:
 					return VK_IMAGE_VIEW_TYPE_2D;
-				case Imageview3D:
+				case ImageView3D:
 					return VK_IMAGE_VIEW_TYPE_3D;
-				case ImageviewCube:
+				case ImageViewCube:
 					return VK_IMAGE_VIEW_TYPE_CUBE;
-				case Imageview1DArray:
+				case ImageView1DArray:
 					return VK_IMAGE_VIEW_TYPE_1D_ARRAY;
 				case ImageView2DArray:
 					return VK_IMAGE_VIEW_TYPE_2D_ARRAY;

@@ -1,16 +1,15 @@
 #include "device_private.h"
 #include "buffer_private.h"
-#include "commandbuffer_private.h"
+#include "command_private.h"
 
 namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data) :
-			_d(d)
+		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data) :
+			device(d)
 		{
-			_size = size;
-			_mapped = nullptr;
+			size = _size;
 
 #if defined(FLAME_VULKAN)
 			VkBufferCreateInfo buffer_info;
@@ -22,16 +21,16 @@ namespace flame
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
 			uint queue_family_idx[] = {
-				(uint)d->_gq_idx,
-				(uint)d->_tq_idx
+				(uint)d->graphics_queue_index,
+				(uint)d->transfer_queue_index
 			};
 			buffer_info.pQueueFamilyIndices = sharing ? queue_family_idx : nullptr;
 
-			auto res = vkCreateBuffer(d->_v, &buffer_info, nullptr, &_v);
+			auto res = vkCreateBuffer(d->vk_device, &buffer_info, nullptr, &vk_buffer);
 			assert(res == VK_SUCCESS);
 
 			VkMemoryRequirements mem_requirements;
-			vkGetBufferMemoryRequirements(d->_v, _v, &mem_requirements);
+			vkGetBufferMemoryRequirements(d->vk_device, vk_buffer, &mem_requirements);
 
 			assert(_size <= mem_requirements.size);
 
@@ -41,9 +40,9 @@ namespace flame
 			alloc_info.allocationSize = mem_requirements.size;
 			alloc_info.memoryTypeIndex = d->_find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
-			chk_res(vkAllocateMemory(d->_v, &alloc_info, nullptr, &_m));
+			chk_res(vkAllocateMemory(d->vk_device, &alloc_info, nullptr, &vk_memory));
 
-			chk_res(vkBindBufferMemory(d->_v, _v, _m, 0));
+			chk_res(vkBindBufferMemory(d->vk_device, vk_buffer, _m, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -53,72 +52,72 @@ namespace flame
 
 		BufferPrivate::~BufferPrivate()
 		{
-			if (_mapped)
+			if (mapped)
 				unmap();
 
 #if defined(FLAME_VULKAN)
-			vkFreeMemory(_d->_v, _m, nullptr);
-			vkDestroyBuffer(_d->_v, _v, nullptr);
+			vkFreeMemory(device->vk_device, vk_memory, nullptr);
+			vkDestroyBuffer(device->vk_device, vk_buffer, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void BufferPrivate::_map(uint offset, uint size)
+		void BufferPrivate::map(uint offset, uint _size)
 		{
-			if (_mapped)
+			if (mapped)
 				return;
-			if (size == 0)
-				size = _size;
+			if (_size == 0)
+				_size = size;
 #if defined(FLAME_VULKAN)
-			chk_res(vkMapMemory(_d->_v, _m, offset, size, 0, &_mapped));
+			chk_res(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void BufferPrivate::_unmap()
+		void BufferPrivate::unmap()
 		{
-			if (_mapped)
+			if (mapped)
 			{
 #if defined(FLAME_VULKAN)
-				vkUnmapMemory(_d->_v, _m);
-				_mapped = nullptr;
+				vkUnmapMemory(device->vk_device, vk_memory);
+				mapped = nullptr;
 #elif defined(FLAME_D3D12)
 
 #endif
 			}
 		}
 
-		void BufferPrivate::_flush()
+		void BufferPrivate::flush()
 		{
 #if defined(FLAME_VULKAN)
 			VkMappedMemoryRange range;
 			range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			range.pNext = nullptr;
-			range.memory = _m;
+			range.memory = vk_memory;
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
-			chk_res(vkFlushMappedMemoryRanges(_d->_v, 1, &range));
+			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void BufferPrivate::_copy_from_data(void* data)
+		void BufferPrivate::copy_from_data(void* data)
 		{
-			auto stag_buf = std::make_unique<BufferPrivate>(_d, _size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(device->vk_device, size, BufferUsageTransferSrc, MemPropHost);
 
-			stag_buf->_map();
-			memcpy(stag_buf->_mapped, data, _size);
-			stag_buf->_flush();
-			stag_buf->_unmap();
+			stag_buf->map();
+			memcpy(stag_buf->mapped, data, size);
+			stag_buf->flush();
+			stag_buf->unmap();
 
-			auto cb = std::make_unique<CommandbufferPrivate>(_d->_graphics_commandpool.get());
+			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->_begin(true);
-			cb->_copy_buffer(stag_buf.get(), this, { &BufferCopy(0, 0, _size), 1 });
+			cb->_copy_buffer(stag_buf.get(), this, { &BufferCopy(0, 0, size), 1 });
 			cb->_end();
-			auto q = _d->_graphics_queue.get();
+			auto q = device->graphics_queue.get();
 			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
 			q->_wait_idle();
 		}

@@ -3,7 +3,7 @@
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/synchronize.h>
 #include <flame/graphics/swapchain.h>
-#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/command.h>
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 
@@ -16,7 +16,7 @@ struct App
 	Device* d;
 	Swapchain* sc;
 	Fence* fence;
-	std::vector<Commandbuffer*> cbs;
+	std::vector<CommandBuffer*> cbs;
 	Semaphore* render_finished;
 
 	graphics::Canvas* canvas;
@@ -35,7 +35,7 @@ struct App
 			cb->release();
 		cbs.resize(vs.size());
 		for (auto i = 0; i < cbs.size(); i++)
-			cbs[i] = Commandbuffer::create(d->get_graphics_commandpool());
+			cbs[i] = CommandBuffer::create(d->get_graphics_commandpool());
 	}
 
 	void run()

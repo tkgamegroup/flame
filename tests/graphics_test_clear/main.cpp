@@ -2,7 +2,7 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
-#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/command.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/image.h>
 
@@ -16,7 +16,7 @@ struct App
 	Swapchain* sc;
 	Renderpass* rp;
 	std::vector<Framebuffer*> fbs;
-	std::vector<Commandbuffer*> cbs;
+	std::vector<CommandBuffer*> cbs;
 	Fence* fence;
 	Semaphore* render_finished;
 
@@ -25,7 +25,7 @@ struct App
 		for (auto fb : fbs)
 			Framebuffer::destroy(fb);
 		for (auto cb : cbs)
-			Commandbuffer::destroy(cb);
+			CommandBuffer::destroy(cb);
 		auto image_count = sc->image_count();
 		fbs.resize(image_count);
 		for (auto i = 0; i < image_count; i++)
@@ -36,7 +36,7 @@ struct App
 		cbs.resize(image_count);
 		for (auto i = 0; i < image_count; i++)
 		{
-			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin();
 			cb->begin_renderpass(app.fbs[i], 1, &Vec4f(0.23f, 0.44f, 0.75f, 1.f));
 			cb->end_renderpass();

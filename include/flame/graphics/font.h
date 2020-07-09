@@ -9,7 +9,7 @@ namespace flame
 	{
 		struct Device;
 		struct Image;
-		struct Imageview;
+		struct ImageView;
 
 		inline Vec2u get_latin_code_range()
 		{

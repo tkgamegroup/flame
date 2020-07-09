@@ -11,13 +11,13 @@ namespace flame
 		struct Buffer;
 		struct Renderpass;
 		struct Sampler;
-		struct Descriptorset;
+		struct DescriptorSet;
 
-		struct Descriptorpool
+		struct DescriptorPool
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorpool* create(Device* d);
+			FLAME_GRAPHICS_EXPORTS static DescriptorPool* create(Device* d);
 		};
 
 		struct DescriptorBindingInfo
@@ -35,34 +35,34 @@ namespace flame
 			virtual const char* get_name() const = 0;
 		};
 
-		struct Descriptorlayout
+		struct DescriptorSetLayout
 		{
 			virtual void release() = 0;
 
 			virtual uint get_bindings_count() const = 0;
 			virtual DescriptorBinding* get_binding(uint binding) const = 0;
-			virtual Descriptorset* get_default_set() const = 0;
+			virtual DescriptorSet* get_default_set() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorlayout* create(Device* d, uint bindings_count, const DescriptorBindingInfo* bindings, bool create_default_set = false);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* d, uint bindings_count, const DescriptorBindingInfo* bindings, bool create_default_set = false);
 		};
 
-		struct Descriptorset
+		struct DescriptorSet
 		{
 			virtual void release() = 0;
 
-			virtual Descriptorlayout* get_layout() const = 0;
+			virtual DescriptorSetLayout* get_layout() const = 0;
 
 			virtual void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0) = 0;
 			virtual void set_image(uint binding, uint index, Imageview* v, Sampler* sampler) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Descriptorset* create(Descriptorpool* p, Descriptorlayout* l);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(Descriptorpool* p, DescriptorSetLayout* l);
 		};
 
-		struct Pipelinelayout
+		struct PipelineLayout
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipelinelayout* create(Device* d, uint descriptorlayouts_count, Descriptorlayout* const* descriptorlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* d, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size);
 		};
 
 		struct VertexAttributeInfo
@@ -167,11 +167,11 @@ namespace flame
 			virtual PipelineType get_type() const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count, 
-				Shader* const* shaders , Pipelinelayout* pll, Renderpass* rp, uint subpass_idx, 
+				Shader* const* shaders , PipelineLayout* pll, Renderpass* rp, uint subpass_idx, 
 				VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
 				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, Pipelinelayout* pll);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, PipelineLayout* pll);
 		};
 	}
 }

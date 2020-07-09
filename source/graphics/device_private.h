@@ -9,9 +9,9 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DescriptorpoolPrivate;
+		struct DescriptorPoolPrivate;
 		struct SamplerPrivate;
-		struct CommandpoolPrivate;
+		struct CommandPoolPrivate;
 		struct QueuePrivate;
 		struct DevicePrivate;
 
@@ -20,46 +20,44 @@ namespace flame
 		struct DevicePrivate : Device
 		{
 #if defined(FLAME_VULKAN)
-			VkInstance _instance;
-			VkPhysicalDevice _physical_device;
-			VkPhysicalDeviceProperties _props;
-			VkPhysicalDeviceFeatures _features; 
-			VkPhysicalDeviceMemoryProperties _mem_props;
-			VkDevice _v;
-			int _gq_idx;
-			int _tq_idx;
+			VkInstance vk_instance;
+			VkPhysicalDevice vk_physical_device;
+			VkPhysicalDeviceProperties vk_props;
+			VkPhysicalDeviceFeatures vk_features; 
+			VkPhysicalDeviceMemoryProperties vk_mem_props;
+			VkDevice vk_device;
+			int graphics_queue_index;
+			int transfer_queue_index;
 #elif defined(FLAME_D3D12)
 			IDXGIFactory4* factory; // just like instance
 			IDXGIAdapter1* adapter; // just like physical device
 			ID3D12Device4* v; // just like device
 #endif
-			std::unique_ptr<DescriptorpoolPrivate> _descriptorpool;
-			std::unique_ptr<SamplerPrivate> _sampler_nearest;
-			std::unique_ptr<SamplerPrivate> _sampler_linear;
-			std::unique_ptr<CommandpoolPrivate> _graphics_commandpool;
-			std::unique_ptr<CommandpoolPrivate> _transfer_commandpool;
-			std::unique_ptr<QueuePrivate> _graphics_queue;
-			std::unique_ptr<QueuePrivate> _transfer_queue;
+			std::unique_ptr<DescriptorPoolPrivate> descriptor_pool;
+			std::unique_ptr<SamplerPrivate> sampler_nearest;
+			std::unique_ptr<SamplerPrivate> sampler_linear;
+			std::unique_ptr<CommandPoolPrivate> graphics_command_pool;
+			std::unique_ptr<CommandPoolPrivate> transfer_command_pool;
+			std::unique_ptr<QueuePrivate> graphics_queue;
+			std::unique_ptr<QueuePrivate> transfer_queue;
 
 			DevicePrivate(bool debug);
 			~DevicePrivate();
 
-			bool _has_feature(Feature f) const;
-
-			uint _find_memory_type(uint type_filter, MemPropFlags properties);
+			uint find_memory_type(uint type_filter, MemPropFlags properties);
 
 			void release() override { delete this; }
 			void set_default() override { _default_device = this; }
 
-			Descriptorpool* get_descriptorpool() const override { return (Descriptorpool*)_descriptorpool.get(); }
-			Sampler* get_sampler_nearest() const override { return (Sampler*)_sampler_nearest.get(); }
-			Sampler* get_sampler_linear() const override { return (Sampler*)_sampler_linear.get(); }
-			Commandpool* get_graphics_commandpool() const override { return (Commandpool*)_graphics_commandpool.get(); }
-			Commandpool* get_transfer_commandpool() const override { return (Commandpool*)_transfer_commandpool.get(); }
-			Queue* get_graphics_queue() const override { return (Queue*)_graphics_queue.get(); }
-			Queue* get_transfer_queue() const override { return (Queue*)_transfer_queue.get(); }
+			DescriptorPool* get_descriptor_pool() const override { return (DescriptorPool*)descriptor_pool.get(); }
+			Sampler* get_sampler_nearest() const override { return (Sampler*)sampler_nearest.get(); }
+			Sampler* get_sampler_linear() const override { return (Sampler*)sampler_linear.get(); }
+			CommandPool* get_graphics_command_pool() const override { return (CommandPool*)graphics_command_pool.get(); }
+			CommandPool* get_transfer_command_pool() const override { return (CommandPool*)transfer_command_pool.get(); }
+			Queue* get_graphics_queue() const override { return (Queue*)graphics_queue.get(); }
+			Queue* get_transfer_queue() const override { return (Queue*)transfer_queue.get(); }
 
-			bool has_feature(Feature f) const override { return _has_feature(f); }
+			bool has_feature(Feature f) const override;
 		};
 	}
 }

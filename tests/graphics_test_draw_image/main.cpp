@@ -4,7 +4,7 @@
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
-#include <flame/graphics/commandbuffer.h>
+#include <flame/graphics/command.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/shader.h>
@@ -24,7 +24,7 @@ struct App
 	Pipelinelayout* pll;
 	Pipeline* pl;
 	std::vector<Framebuffer*> fbs;
-	std::vector<Commandbuffer*> cbs;
+	std::vector<CommandBuffer*> cbs;
 	Fence* fence;
 	Semaphore* render_finished;
 
@@ -33,7 +33,7 @@ struct App
 		for (auto fb : fbs)
 			Framebuffer::destroy(fb);
 		for (auto cb : cbs)
-			Commandbuffer::destroy(cb);
+			CommandBuffer::destroy(cb);
 		auto image_count = sc->image_count();
 		fbs.resize(image_count);
 		for (auto i = 0; i < image_count; i++)
@@ -45,7 +45,7 @@ struct App
 		auto vp = Vec4f(Vec2f(0.f), Vec2f(img->size));
 		for (auto i = 0; i < image_count; i++)
 		{
-			auto cb = Commandbuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin();
 			cb->begin_renderpass(fbs[i], 1, &Vec4f(0.f, 0.f, 0.f, 1.f));
 			cb->set_viewport(vp);

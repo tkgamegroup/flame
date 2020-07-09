@@ -12,17 +12,17 @@ namespace flame
 		struct Renderpass;
 		struct Framebuffer;
 		struct Pipeline;
-		struct Pipelinelayout;
-		struct Descriptorset;
+		struct PipelineLayout;
+		struct DescriptorSet;
 		struct Swapchain;
 		struct Semaphore;
 		struct Fence;
 
-		struct Commandpool
+		struct CommandPool
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Commandpool* create(Device* d, int queue_family_idx);
+			FLAME_GRAPHICS_EXPORTS static CommandPool* create(Device* d, int queue_family_idx);
 		};
 
 		struct BufferCopy
@@ -77,7 +77,7 @@ namespace flame
 			}
 		};
 
-		struct Commandbuffer
+		struct CommandBuffer
 		{
 			virtual void release() = 0;
 
@@ -88,10 +88,10 @@ namespace flame
 			virtual void set_viewport(const Vec4f& rect) = 0;
 			virtual void set_scissor(const Vec4f& rect) = 0;
 			virtual void bind_pipeline(Pipeline* p) = 0;
-			virtual void bind_descriptorset(Descriptorset* s, uint idx, Pipelinelayout* pll = nullptr) = 0;
-			virtual void bind_vertexbuffer(Buffer* b, uint id) = 0;
-			virtual void bind_indexbuffer(Buffer* b, IndiceType t) = 0;
-			virtual void push_constant(uint offset, uint size, const void* data, Pipelinelayout* pll = nullptr) = 0;
+			virtual void bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll = nullptr) = 0;
+			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;
+			virtual void bind_index_buffer(Buffer* b, IndiceType t) = 0;
+			virtual void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll = nullptr) = 0;
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
 			virtual void dispatch(const Vec3u& v) = 0;
@@ -106,7 +106,7 @@ namespace flame
 
 			virtual void end() = 0;
 
-			FLAME_GRAPHICS_EXPORTS  static Commandbuffer* create(Commandpool* p, bool sub = false);
+			FLAME_GRAPHICS_EXPORTS  static CommandBuffer* create(CommandPool* p, bool sub = false);
 		};
 
 		struct Queue
@@ -114,7 +114,7 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual void wait_idle() = 0;
-			virtual void submit(uint cbs_count, Commandbuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
+			virtual void submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
 			virtual void present(Swapchain* s, Semaphore* wait_semaphore) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* d, uint queue_family_idx);

@@ -31,8 +31,6 @@ namespace flame
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name);
 	};
 
-	struct VariableInfoPrivate__;
-
 	struct VariableInfoPrivate : VariableInfo
 	{
 		UdtInfoPrivate* udt;
@@ -42,9 +40,6 @@ namespace flame
 		uint flags;
 		uint offset;
 		void* default_value;
-
-		VariableInfoPrivate__* operator->() { return (VariableInfoPrivate__*)this; }
-		VariableInfoPrivate__* operator->() const { return (VariableInfoPrivate__*)this; }
 
 		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset);
 		~VariableInfoPrivate();
@@ -58,12 +53,6 @@ namespace flame
 		const void* get_default_value() const override { return default_value; }
 	};
 
-	struct VariableInfoPrivate__ : VariableInfoPrivate
-	{
-	};
-
-	struct EnumItemPrivate__;
-
 	struct EnumItemPrivate : EnumItem
 	{
 		EnumInfoPrivate* ei;
@@ -71,19 +60,12 @@ namespace flame
 		std::string name;
 		int value;
 
-		EnumItemPrivate__* operator->() { return (EnumItemPrivate__*)this; }
-		EnumItemPrivate__* operator->() const { return (EnumItemPrivate__*)this; }
-
 		EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value);
 
 		EnumInfo* get_enum() const override { return (EnumInfo*)ei; }
 		uint get_index() const override { return index; }
 		const char* get_name() const override { return name.c_str(); }
 		int get_value() const override { return value; }
-	};
-
-	struct EnumItemPrivate__ : EnumItemPrivate
-	{
 	};
 
 	struct EnumInfoPrivate__;
@@ -113,8 +95,6 @@ namespace flame
 		EnumItemPrivate* find_item(int value) const;
 	};
 
-	struct FunctionInfoPrivate__;
-
 	struct FunctionInfoPrivate : FunctionInfo
 	{
 		LibraryPrivate* library;
@@ -126,9 +106,6 @@ namespace flame
 		TypeInfoPrivate* type;
 		std::vector<TypeInfoPrivate*> parameters;
 		std::string code;
-
-		FunctionInfoPrivate__* operator->() { return (FunctionInfoPrivate__*)this; }
-		FunctionInfoPrivate__* operator->() const { return (FunctionInfoPrivate__*)this; }
 
 		FunctionInfoPrivate(LibraryPrivate* db, UdtInfoPrivate* udt, uint index, const std::string& name, uint rva, uint voff, TypeInfoPrivate* type);
 
@@ -146,10 +123,6 @@ namespace flame
 		bool check(void* type, ...) const override;
 
 		void call(void* obj, void* ret, ...) const override;
-	};
-
-	struct FunctionInfoPrivate__ : FunctionInfoPrivate
-	{
 	};
 
 	struct UdtInfoPrivate__;
@@ -186,17 +159,12 @@ namespace flame
 		FunctionInfoPrivate* find_function(const std::string& name) const;
 	};
 
-	struct LibraryPrivate__;
-
 	struct LibraryPrivate : Library
 	{
 		char* address;
 		std::wstring filename;
 		bool has_typeinfo = false;
 		int ref_count = 1;
-
-		LibraryPrivate__* operator->() { return (LibraryPrivate__*)this; }
-		LibraryPrivate__* operator->() const { return (LibraryPrivate__*)this; }
 
 		LibraryPrivate(const std::wstring& filename, bool require_typeinfo);
 		~LibraryPrivate();
@@ -210,10 +178,6 @@ namespace flame
 		char* get_address() const override { return address; }
 		const wchar_t* get_filename() const override { return filename.c_str(); }
 		void* get_exported_function(const char* name) override { return _get_exported_function(name); }
-	};
-
-	struct LibraryPrivate__ : LibraryPrivate
-	{
 	};
 
 	EnumInfoPrivate* find_enum(const std::string& name);

@@ -137,7 +137,7 @@ namespace flame
 			create_info.dependencyCount = vk_dependencies.size();
 			create_info.pDependencies = vk_dependencies.data();
 
-			chk_res(vkCreateRenderPass(d->_v, &create_info, nullptr, &_v));
+			chk_res(vkCreateRenderPass(d->vk_device, &create_info, nullptr, &_v));
 
 			_attachments.resize(attachments.size());
 			for (auto i = 0; i < attachments.size(); i++)
@@ -151,7 +151,7 @@ namespace flame
 		RenderpassPrivate::~RenderpassPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyRenderPass(_d->_v, _v, nullptr);
+			vkDestroyRenderPass(device->vk_device, _v, nullptr);
 #endif
 		}
 
@@ -181,7 +181,7 @@ namespace flame
 			create_info.attachmentCount = views.size();
 			create_info.pAttachments = vk_views.data();
 
-			chk_res(vkCreateFramebuffer(d->_v, &create_info, nullptr, &_v));
+			chk_res(vkCreateFramebuffer(d->vk_device, &create_info, nullptr, &_v));
 #endif
 
 			_views.resize(views.size());
@@ -192,7 +192,7 @@ namespace flame
 		FramebufferPrivate::~FramebufferPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyFramebuffer(_d->_v, _v, nullptr);
+			vkDestroyFramebuffer(device->vk_device, _v, nullptr);
 #endif
 		}
 
