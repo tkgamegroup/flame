@@ -80,10 +80,6 @@ namespace flame
 		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
 		~bpNodePrivate();
 
-		void _remove_child(bpNodePrivate* n);
-		bpNodePrivate* _find_child(const std::string& name) const;
-		bpNodePrivate* _find_child(const Guid& guid) const;
-
 		void _update();
 
 		bpScene* get_scene() const override { return (bpScene*)scene; }
@@ -114,32 +110,32 @@ namespace flame
 		uint get_children_count() const override { return children.size(); }
 		bpNode* get_child(uint idx) const override { return children[idx].get(); }
 		bpNodePrivate* add_child__(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
-		bpNode* add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule) override { return add_child(id, type, type_parameter, object_rule); }
-		void remove_child(bpNode* n) override { remove_child((bpNodePrivate*)n); }
-		bpNode* find_child(const char* name) const override { return _find_child(name); }
-		bpNode* find_child(const Guid& guid) const override { return _find_child(guid); }
+		bpNode* add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule) override { return add_child__(id, type, type_parameter, object_rule); }
+		void remove_child__(bpNodePrivate* n);
+		void remove_child(bpNode* n) override { remove_child__((bpNodePrivate*)n); }
+		bpNodePrivate* find_child__(const std::string& name) const;
+		bpNode* find_child(const char* name) const override { return find_child__(name); }
+		bpNodePrivate* find_child__(const Guid& guid) const;
+		bpNode* find_child(const Guid& guid) const override { return find_child__(guid); }
 
-		void update() override { _update(); }
+		void update() override;
 	};
 
 	struct bpScenePrivate : bpScene
 	{
-		std::filesystem::path _filename;
-		float _time;
-		std::unique_ptr<bpNodePrivate> _root;
+		std::filesystem::path filename;
+		float time;
+		std::unique_ptr<bpNodePrivate> root;
 
 		bpScenePrivate();
 
-		void _update();
-		void _save();
-
 		void release() override { delete this; }
 
-		const wchar_t* get_filename() const override { return _filename.c_str(); }
-		float get_time() const override { return _time; }
-		bpNode* get_root() const override { return _root.get(); }
+		const wchar_t* get_filename() const override { return filename.c_str(); }
+		float get_time() const override { return time; }
+		bpNode* get_root() const override { return root.get(); }
 
-		void update() override { _update(); }
-		void save() override { _save(); }
+		void update() override;
+		void save() override;
 	};
 }

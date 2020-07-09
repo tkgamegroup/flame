@@ -465,7 +465,7 @@ namespace flame
 			return false;
 		if (id == _id)
 			return true;
-		if (parent->_find_child(_id))
+		if (parent->find_child__(_id))
 			return false;
 		id = _id;
 		return true;
@@ -529,46 +529,17 @@ namespace flame
 		n->need_rebuild_update_list = false;
 	}
 
-	void bpNodePrivate::_update()
-	{
-		for (auto& in : inputs)
-		{
-			auto out = in->links[0];
-			if (out)
-			{
-				if (out->type->get_tag() == TypeData && in->type->get_tag() == TypePointer)
-					memcpy(in->data, &out->data, sizeof(void*));
-				else
-				{
-					//if (in->_setter)
-					//	in->_setter->set(out->data);
-					//else
-						memcpy(in->data, out->data, in->type->get_size());
-				}
-			}
-		}
-
-		if (update_addr)
-			cmf(p2f<void(__Dummy__::*)()>(update_addr), object);
-
-		if (need_rebuild_update_list)
-			build_update_list(this);
-
-		for (auto n : update_list)
-			n->_update();
-	}
-
 	static bool check_or_create_id(bpNodePrivate* parent, std::string& id)
 	{
 		if (!id.empty())
 		{
-			if (parent->_find_child(id))
+			if (parent->find_child__(id))
 				return false;
 		}
 		else
 		{
 			id = std::to_string(::rand());
-			while (parent->_find_child(id))
+			while (parent->find_child__(id))
 				id = std::to_string(::rand());
 		}
 		return true;
@@ -591,7 +562,7 @@ namespace flame
 
 		return n;
 	}
-	void bpNodePrivate::_remove_child(bpNodePrivate* n)
+	void bpNodePrivate::remove_child__(bpNodePrivate* n)
 	{
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == n;
@@ -623,7 +594,7 @@ namespace flame
 			need_rebuild_update_list = true;
 		}
 	}
-	bpNodePrivate* bpNodePrivate::_find_child(const std::string& name) const
+	bpNodePrivate* bpNodePrivate::find_child__(const std::string& name) const
 	{
 		for (auto& n : children)
 		{
@@ -632,38 +603,67 @@ namespace flame
 		}
 		return nullptr;
 	}
-	bpNodePrivate* bpNodePrivate::_find_child(const Guid& guid) const
+	bpNodePrivate* bpNodePrivate::find_child__(const Guid& guid) const
 	{
 		for (auto& n : children)
 		{
 			if (memcmp(&n->guid, &guid, sizeof(Guid)) == 0)
 				return n.get();
-			auto res = n->_find_child(guid);
+			auto res = n->find_child__(guid);
 			if (res)
 				return res;
 		}
 		return nullptr;
 	}
 
+	void bpNodePrivate::update()
+	{
+		for (auto& in : inputs)
+		{
+			auto out = in->links[0];
+			if (out)
+			{
+				if (out->type->get_tag() == TypeData && in->type->get_tag() == TypePointer)
+					memcpy(in->data, &out->data, sizeof(void*));
+				else
+				{
+					//if (in->_setter)
+					//	in->_setter->set(out->data);
+					//else
+					memcpy(in->data, out->data, in->type->get_size());
+				}
+			}
+		}
+
+		if (update_addr)
+			cmf(p2f<void(__Dummy__::*)()>(update_addr), object);
+
+		if (need_rebuild_update_list)
+			build_update_list(this);
+
+		for (auto n : update_list)
+			n->_update();
+	}
+
 	bpScenePrivate::bpScenePrivate()
 	{
-		_time = 0.f;
+		time = 0.f;
 
-		_root.reset(new bpNodePrivate(this, nullptr, "root", bpNodeGroup, "", bpObjectEntity));
+		root.reset(new bpNodePrivate(this, nullptr, "root", bpNodeGroup, "", bpObjectEntity));
 	}
 
 	static float bp_time = 0.f;
 
-	void bpScenePrivate::_update()
+	void bpScenePrivate::update()
 	{
-		bp_time = _time;
+		bp_time = time;
 
-		_root->update();
+		root->update();
 
-		_time += get_looper()->get_delta_time();
+		time += get_looper()->get_delta_time();
 	}
 
-	void bpScenePrivate::_save()
+	void bpScenePrivate::save()
 	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("BP");
@@ -719,9 +719,9 @@ namespace flame
 		};
 
 
-		save_group(file_root.append_child("group"), _root.get());
+		save_group(file_root.append_child("group"), root.get());
 
-		file.save_file(_filename.c_str());
+		file.save_file(filename.c_str());
 
 		//if (bp->need_rebuild_update_list)
 		//	build_update_list(bp);
@@ -956,7 +956,7 @@ namespace flame
 		}
 
 		auto bp = new bpScenePrivate();
-		bp->_filename = filename;
+		bp->filename = filename;
 		
 		std::function<void(pugi::xml_node, bpNodePrivate*)> load_group;
 		load_group = [&](pugi::xml_node n_group, bpNodePrivate* parent) {
@@ -998,7 +998,7 @@ namespace flame
 			}
 		};
 
-		load_group(file_root.child("group"), bp->_root.get());
+		load_group(file_root.child("group"), bp->root.get());
 
 		printf("end loading bp: %s\n", s_filename.c_str());
 
