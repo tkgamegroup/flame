@@ -8,26 +8,18 @@ namespace flame
 	struct EnumInfoPrivate;
 	struct LibraryPrivate;
 
-	struct TypeInfoPrivate__;
-
 	struct TypeInfoPrivate : TypeInfo
 	{
 		TypeTag tag;
 		std::string name;
 		uint size;
 
-		TypeInfoPrivate__* operator->() { return (TypeInfoPrivate__*)this; }
-		TypeInfoPrivate__* operator->() const { return (TypeInfoPrivate__*)this; }
-
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, uint size);
 
 		TypeTag get_tag() const override { return tag; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_size() const override { return size; }
-	};
 
-	struct TypeInfoPrivate__ : TypeInfoPrivate
-	{
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name);
 	};
 
@@ -68,16 +60,17 @@ namespace flame
 		int get_value() const override { return value; }
 	};
 
-	struct EnumInfoPrivate__;
+	struct EnumInfoBridge : EnumInfo 
+	{
+		EnumItem* find_item(const char* name) const override;
+		EnumItem* find_item(int value) const override;
+	};
 
-	struct EnumInfoPrivate : EnumInfo
+	struct EnumInfoPrivate : EnumInfoBridge
 	{
 		LibraryPrivate* library;
 		std::string name;
 		std::vector<std::unique_ptr<EnumItemPrivate>> items;
-
-		EnumInfoPrivate__* operator->() { return (EnumInfoPrivate__*)this; }
-		EnumInfoPrivate__* operator->() const { return (EnumInfoPrivate__*)this; }
 
 		EnumInfoPrivate(LibraryPrivate* db, const std::string& name);
 
@@ -85,12 +78,6 @@ namespace flame
 		const char* get_name() const override { return name.c_str(); }
 		uint get_items_count() const override { return items.size(); }
 		EnumItem* get_item(uint idx) const override { return items[idx].get(); }
-		EnumItem* find_item(const char* name) const override;
-		EnumItem* find_item(int value) const override;
-	};
-
-	struct EnumInfoPrivate__ : EnumInfoPrivate
-	{
 		EnumItemPrivate* find_item(const std::string& name) const;
 		EnumItemPrivate* find_item(int value) const;
 	};
@@ -125,9 +112,13 @@ namespace flame
 		void call(void* obj, void* ret, ...) const override;
 	};
 
-	struct UdtInfoPrivate__;
+	struct UdtInfoBridge : UdtInfo 
+	{
+		VariableInfo* find_variable(const char* name) const override;
+		FunctionInfo* find_function(const char* name) const override;
+	};
 
-	struct UdtInfoPrivate : UdtInfo
+	struct UdtInfoPrivate : UdtInfoBridge
 	{
 		LibraryPrivate* library;
 		std::string name;
@@ -135,9 +126,6 @@ namespace flame
 		std::string base_name;
 		std::vector<std::unique_ptr<VariableInfoPrivate>> variables;
 		std::vector<std::unique_ptr<FunctionInfoPrivate>> functions;
-
-		UdtInfoPrivate__* operator->() { return (UdtInfoPrivate__*)this; }
-		UdtInfoPrivate__* operator->() const { return (UdtInfoPrivate__*)this; }
 
 		UdtInfoPrivate(LibraryPrivate* db, const std::string& name, uint size, const std::string& base_name);
 
@@ -147,15 +135,9 @@ namespace flame
 		const char* get_base_name() const override { return base_name.c_str(); }
 		uint get_variables_count() const override { return variables.size(); }
 		VariableInfo* get_variable(uint idx) const override { return variables[idx].get(); }
-		VariableInfo* find_variable(const char* name) const override;
+		VariableInfoPrivate* find_variable(const std::string& name) const;
 		uint get_functions_count() const override { return functions.size(); }
 		FunctionInfo* get_function(uint idx) const override { return functions[idx].get(); }
-		FunctionInfo* find_function(const char* name) const override;
-	};
-
-	struct UdtInfoPrivate__ : UdtInfoPrivate
-	{
-		VariableInfoPrivate* find_variable(const std::string& name) const;
 		FunctionInfoPrivate* find_function(const std::string& name) const;
 	};
 

@@ -19,7 +19,7 @@ namespace flame
 		{
 			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkDescriptorPool vk_descriptorpool;
+			VkDescriptorPool vk_descriptor_pool;
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -38,17 +38,17 @@ namespace flame
 
 			DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info);
 
-			uint get_index() const override { return _index; }
-			DescriptorType get_type() const override { return _type; }
-			uint get_count() const override { return _count; }
-			const char* get_name() const override { return _name.c_str(); }
+			uint get_index() const override { return index; }
+			DescriptorType get_type() const override { return type; }
+			uint get_count() const override { return count; }
+			const char* get_name() const override { return name.c_str(); }
 		};
 
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
 			DevicePrivate* device;
 #if defined(FLAME_VULKAN)
-			VkDescriptorSetLayout vk_descriptorsetlayout;
+			VkDescriptorSetLayout vk_descriptor_set_layout;
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -63,15 +63,21 @@ namespace flame
 
 			void release() override { delete this; }
 
-			uint get_bindings_count() const override { return _bindings.size(); }
-			DescriptorBinding* get_binding(uint binding) const override { return _bindings[binding].get(); }
-			DescriptorSet* get_default_set() const override { return _default_set.get(); }
+			uint get_bindings_count() const override { return bindings.size(); }
+			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
+			DescriptorSet* get_default_set() const override { return (DescriptorSet*)default_set.get(); }
 		};
 
-		struct DescriptorSetPrivate : DescriptorSet
+		struct DescriptorSetBridge : DescriptorSet
 		{
-			DescriptorPoolPrivate* descriptorpool;
-			DescriptorSetLayoutPrivate* descriptorlayout;
+			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range) override;
+			void set_image(uint binding, uint index, ImageView* v, Sampler* sampler) override;
+		};
+
+		struct DescriptorSetPrivate : DescriptorSetBridge
+		{
+			DescriptorPoolPrivate* descriptor_pool;
+			DescriptorSetLayoutPrivate* descriptor_layout;
 #if defined(FLAME_VULKAN)
 			VkDescriptorSet vk_descriptor_set;
 #elif defined(FLAME_D3D12)
@@ -83,13 +89,10 @@ namespace flame
 
 			void release() override { delete this; }
 
-			void _set_buffer(uint binding, uint index, BufferPrivate* b, uint offset = 0, uint range = 0);
-			void _set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sampler);
+			DescriptorSetLayout* get_layout() const override { return descriptor_layout; }
 
-			DescriptorSetLayout* get_layout() const override { return _l; }
-
-			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range) override { _set_buffer(binding, index, (BufferPrivate*)b, offset, range); }
-			void set_image(uint binding, uint index, ImageView* v, Sampler* sampler) override { _set_image(binding, index, (ImageViewPrivate*)v, (SamplerPrivate*)sampler); }
+			void set_buffer(uint binding, uint index, BufferPrivate* b, uint offset = 0, uint range = 0);
+			void set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sampler);
 		};
 
 		struct PipelineLayoutPrivate : PipelineLayout
@@ -100,7 +103,7 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
-			std::vector<DescriptorSetLayoutPrivate*> descriptorlayouts;
+			std::vector<DescriptorSetLayoutPrivate*> descriptor_layouts;
 			uint push_cconstant_size;
 
 			uint64 hash;
@@ -189,8 +192,8 @@ namespace flame
 
 			void release() override { delete this; }
 
-			const wchar_t* get_filename() const override { return _filename.c_str(); }
-			const char* get_prefix() const override { return _prefix.c_str(); }
+			const wchar_t* get_filename() const override { return filename.c_str(); }
+			const char* get_prefix() const override { return prefix.c_str(); }
 		};
 
 		struct CompiledShader
@@ -230,7 +233,7 @@ namespace flame
 
 			void release() override { delete this; }
 
-			PipelineType get_type() const override { return _type; }
+			PipelineType get_type() const override { return type; }
 		};
 	}
 }

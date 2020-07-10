@@ -46,12 +46,12 @@ namespace flame
 			type->copy(d, data);
 	}
 
-	bool bpSlotPrivate::link_to(bpSlot* target) 
+	bool bpSlotBridge::link_to(bpSlot* target) 
 	{
-		return (*this)->link_to((bpSlotPrivate*)target);
+		return ((bpSlotPrivate*)this)->link_to((bpSlotPrivate*)target);
 	}
 
-	bool bpSlotPrivate__::link_to(bpSlotPrivate* target)
+	bool bpSlotPrivate::link_to(bpSlotPrivate* target)
 	{
 		assert(io == bpSlotIn);
 		if (io == bpSlotIn)
@@ -465,29 +465,29 @@ namespace flame
 		}
 	}
 
-	bool bpNodePrivate::set_id(const char* id) 
+	bool bpNodeBridge::set_id(const char* id) 
 	{ 
-		return (*this)->set_id(id); 
+		return ((bpNodePrivate*)this)->set_id(id); 
 	}
 
-	bool bpNodePrivate__::set_id(const std::string& _id)
+	bool bpNodePrivate::set_id(const std::string& _id)
 	{
 		if (_id.empty())
 			return false;
 		if (id == _id)
 			return true;
-		if ((*parent)->find_child(_id))
+		if (parent->find_child(_id))
 			return false;
 		id = _id;
 		return true;
 	}
 
-	bpSlot* bpNodePrivate::find_input(const char* name) const
+	bpSlot* bpNodeBridge::find_input(const char* name) const
 	{ 
-		return (*this)->find_input(name);
+		return ((bpNodePrivate*)this)->find_input(name);
 	}
 
-	bpSlotPrivate* bpNodePrivate__::find_input(const std::string& name) const
+	bpSlotPrivate* bpNodePrivate::find_input(const std::string& name) const
 	{
 		for (auto& in : inputs)
 		{
@@ -497,12 +497,12 @@ namespace flame
 		return nullptr;
 	}
 
-	bpSlot* bpNodePrivate::find_output(const char* name) const 
+	bpSlot* bpNodeBridge::find_output(const char* name) const
 	{ 
-		return (*this)->find_output(name);
+		return ((bpNodePrivate*)this)->find_output(name);
 	}
 
-	bpSlotPrivate* bpNodePrivate__::find_output(const std::string& name) const
+	bpSlotPrivate* bpNodePrivate::find_output(const std::string& name) const
 	{
 		for (auto& out : outputs)
 		{
@@ -554,24 +554,24 @@ namespace flame
 	{
 		if (!id.empty())
 		{
-			if ((*parent)->find_child(id))
+			if (parent->find_child(id))
 				return false;
 		}
 		else
 		{
 			id = std::to_string(::rand());
-			while ((*parent)->find_child(id))
+			while (parent->find_child(id))
 				id = std::to_string(::rand());
 		}
 		return true;
 	}
 
-	bpNode* bpNodePrivate::add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule)
+	bpNode* bpNodeBridge::add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule)
 	{ 
-		return (*this)->add_child(id, type, type_parameter, object_rule);
+		return ((bpNodePrivate*)this)->add_child(id, type, type_parameter, object_rule);
 	}
 
-	bpNodePrivate* bpNodePrivate__::add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule)
+	bpNodePrivate* bpNodePrivate::add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule)
 	{
 		auto _id = id;
 		if (!check_or_create_id(this, _id))
@@ -589,12 +589,12 @@ namespace flame
 		return n;
 	}
 
-	void bpNodePrivate::remove_child(bpNode* n)
+	void bpNodeBridge::remove_child(bpNode* n)
 	{ 
-		(*this)->remove_child((bpNodePrivate*)n);
+		((bpNodePrivate*)this)->remove_child((bpNodePrivate*)n);
 	}
 
-	void bpNodePrivate__::remove_child(bpNodePrivate* n)
+	void bpNodePrivate::remove_child(bpNodePrivate* n)
 	{
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == n;
@@ -627,12 +627,12 @@ namespace flame
 		}
 	}
 
-	bpNode* bpNodePrivate::find_child(const char* name) const
+	bpNode* bpNodeBridge::find_child(const char* name) const
 	{ 
-		return (*this)->find_child(name);
+		return ((bpNodePrivate*)this)->find_child(name);
 	}
 
-	bpNodePrivate* bpNodePrivate__::find_child(const std::string& name) const
+	bpNodePrivate* bpNodePrivate::find_child(const std::string& name) const
 	{
 		for (auto& n : children)
 		{
@@ -1001,13 +1001,13 @@ namespace flame
 		load_group = [&](pugi::xml_node n_group, bpNodePrivate* parent) {
 			for (auto n_node : n_group.child("nodes"))
 			{
-				auto n = (*parent)->add_child(n_node.attribute("id").value(), (bpNodeType)n_node.attribute("type").as_int(), n_node.attribute("type_parameter").value(), (bpObjectRule)n_node.attribute("object_rule").as_int());
+				auto n = parent->add_child(n_node.attribute("id").value(), (bpNodeType)n_node.attribute("type").as_int(), n_node.attribute("type_parameter").value(), (bpObjectRule)n_node.attribute("object_rule").as_int());
 				if (n)
 				{
 					n->pos = sto<Vec2f>(n_node.attribute("pos").value());
 					for (auto n_data : n_node.child("datas"))
 					{
-						auto input = (*n)->find_input(n_data.attribute("name").value());
+						auto input = n->find_input(n_data.attribute("name").value());
 						auto type = input->type;
 						auto tag = type->get_tag();
 						if (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData)
@@ -1025,11 +1025,11 @@ namespace flame
 				auto o_addr = std::string(n_link.attribute("out").value());
 				auto i_addr = std::string(n_link.attribute("in").value());
 
-				auto o = (*parent)->find_output(o_addr);
-				auto i = (*parent)->find_input(i_addr);
+				auto o = parent->find_output(o_addr);
+				auto i = parent->find_input(i_addr);
 				if (o && i)
 				{
-					if (!(*i)->link_to(o))
+					if (!i->link_to(o))
 						printf("link type mismatch: %s - > %s\n", o_addr.c_str(), i_addr.c_str());
 				}
 				else

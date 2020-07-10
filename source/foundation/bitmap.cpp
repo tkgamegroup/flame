@@ -73,12 +73,12 @@ namespace flame
 		}
 	}
 
-	void BitmapPrivate::copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border)
+	void BitmapBridge::copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border)
 	{ 
-		(*this)->copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border); 
+		((BitmapPrivate*)this)->copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border);
 	}
 
-	void BitmapPrivate__::copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
+	void BitmapPrivate::copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
 	{
 		auto b1 = border ? 1 : 0;
 		auto b2 = b1 << 1;
@@ -121,12 +121,12 @@ namespace flame
 		}
 	}
 
-	void BitmapPrivate::save(const wchar_t* filename)
+	void BitmapBridge::save(const wchar_t* filename)
 	{ 
-		(*this)->save(filename); 
+		((BitmapPrivate*)this)->save(filename);
 	}
 
-	void BitmapPrivate__::save(const std::filesystem::path& filename)
+	void BitmapPrivate::save(const std::filesystem::path& filename)
 	{
 		auto ext = std::filesystem::path(filename).extension();
 
@@ -136,7 +136,7 @@ namespace flame
 			stbi_write_bmp(w2s(filename).c_str(), width, height, channel, data);
 	}
 
-	BitmapPrivate* BitmapPrivate__::create(const std::filesystem::path& filename)
+	BitmapPrivate* BitmapPrivate::create(const std::filesystem::path& filename)
 	{
 		if (!std::filesystem::exists(filename))
 			return nullptr;
@@ -151,5 +151,5 @@ namespace flame
 	}
 
 	Bitmap* Bitmap::create(uint width, uint height, uint channel, uint byte_per_channel, uchar* data) { return new BitmapPrivate(width, height, channel, byte_per_channel, data); }
-	Bitmap* Bitmap::create(const wchar_t* filename) { return BitmapPrivate__::create(filename); }
+	Bitmap* Bitmap::create(const wchar_t* filename) { return BitmapPrivate::create(filename); }
 }

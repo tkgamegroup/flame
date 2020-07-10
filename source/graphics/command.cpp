@@ -97,12 +97,12 @@ namespace flame
 			current_pipeline = nullptr;
 		}
 
-		void CommandBufferPrivate::begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues)
+		void CommandBufferBridge::begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues)
 		{ 
-			(*this)->begin_renderpass((FramebufferPrivate*)fb, { clearvalues, clearvalues_count }); 
+			((CommandBufferPrivate*)this)->begin_renderpass((FramebufferPrivate*)fb, { clearvalues, clearvalues_count }); 
 		}
 
-		void CommandBufferPrivate__::begin_renderpass(FramebufferPrivate* fb, std::span<const Vec4f> clearvalues)
+		void CommandBufferPrivate::begin_renderpass(FramebufferPrivate* fb, std::span<const Vec4f> clearvalues)
 		{
 			auto rp = fb->renderpass;
 
@@ -195,12 +195,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::bind_pipeline(Pipeline* p)
+		void CommandBufferBridge::bind_pipeline(Pipeline* p)
 		{ 
-			(*this)->bind_pipeline((PipelinePrivate*)p); 
+			((CommandBufferPrivate*)this)->bind_pipeline((PipelinePrivate*)p);
 		}
 
-		void CommandBufferPrivate__::bind_pipeline(PipelinePrivate* p)
+		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* p)
 		{
 			if (current_pipeline == p)
 				return;
@@ -214,12 +214,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll)
+		void CommandBufferBridge::bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll)
 		{ 
-			(*this)->bind_descriptor_set((DescriptorSetPrivate*)s, idx, (PipelineLayoutPrivate*)pll); 
+			((CommandBufferPrivate*)this)->bind_descriptor_set((DescriptorSetPrivate*)s, idx, (PipelineLayoutPrivate*)pll);
 		}
 
-		void CommandBufferPrivate__::bind_descriptor_set(DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
+		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pll ? PipelineGraphics : current_pipeline->type), pll ? pll->vk_pipeline_layout : current_pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
@@ -228,12 +228,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::bind_vertex_buffer(Buffer* b, uint id)
+		void CommandBufferBridge::bind_vertex_buffer(Buffer* b, uint id)
 		{ 
-			(*this)->bind_vertex_buffer((BufferPrivate*)b, id); 
+			((CommandBufferPrivate*)this)->bind_vertex_buffer((BufferPrivate*)b, id);
 		}
 
-		void CommandBufferPrivate__::bind_vertex_buffer(BufferPrivate* b, uint id)
+		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* b, uint id)
 		{
 #if defined(FLAME_VULKAN)
 			VkDeviceSize offset = 0;
@@ -243,12 +243,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::bind_index_buffer(Buffer* b, IndiceType t)
+		void CommandBufferBridge::bind_index_buffer(Buffer* b, IndiceType t)
 		{ 
-			(*this)->bind_index_buffer((BufferPrivate*)b, t); 
+			((CommandBufferPrivate*)this)->bind_index_buffer((BufferPrivate*)b, t);
 		}
 
-		void CommandBufferPrivate__::bind_index_buffer(BufferPrivate* b, IndiceType t)
+		void CommandBufferPrivate::bind_index_buffer(BufferPrivate* b, IndiceType t)
 		{
 #if defined(FLAME_VULKAN)
 			vkCmdBindIndexBuffer(vk_command_buffer, b->vk_buffer, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
@@ -257,12 +257,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data, PipelineLayout* pll)
+		void CommandBufferBridge::push_constant(uint offset, uint size, const void* data, PipelineLayout* pll)
 		{ 
-			(*this)->push_constant(offset, size, data, (PipelineLayoutPrivate*)pll); 
+			((CommandBufferPrivate*)this)->push_constant(offset, size, data, (PipelineLayoutPrivate*)pll);
 		}
 
-		void CommandBufferPrivate__::push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll)
+		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll)
 		{
 			if (!pll)
 				pll = current_pipeline->pipeline_layout;
@@ -300,12 +300,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies)
+		void CommandBufferBridge::copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies)
 		{ 
-			(*this)->copy_buffer((BufferPrivate*)src, (BufferPrivate*)dst, { copies, copies_count }); 
+			((CommandBufferPrivate*)this)->copy_buffer((BufferPrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
 		}
 
-		void CommandBufferPrivate__::copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies)
+		void CommandBufferPrivate::copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkBufferCopy> vk_copies(copies.size());
@@ -321,12 +321,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies)
+		void CommandBufferBridge::copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies)
 		{ 
-			(*this)->copy_image((ImagePrivate*)src, (ImagePrivate*)dst, { copies, copies_count }); 
+			((CommandBufferPrivate*)this)->copy_image((ImagePrivate*)src, (ImagePrivate*)dst, { copies, copies_count });
 		}
 
-		void CommandBufferPrivate__::copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies)
+		void CommandBufferPrivate::copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
 			std::vector<VkImageCopy> vk_copies(copies.size());
@@ -373,12 +373,12 @@ namespace flame
 			return vk_cpy;
 		}
 #endif
-		void CommandBufferPrivate::copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies)
+		void CommandBufferBridge::copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies)
 		{ 
-			(*this)->copy_buffer_to_image((BufferPrivate*)src, (ImagePrivate*)dst, { copies, copies_count }); 
+			((CommandBufferPrivate*)this)->copy_buffer_to_image((BufferPrivate*)src, (ImagePrivate*)dst, { copies, copies_count });
 		}
 
-		void CommandBufferPrivate__::copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies)
+		void CommandBufferPrivate::copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
 			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(dst->format));
@@ -393,12 +393,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies)
+		void CommandBufferBridge::copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies)
 		{ 
-			(*this)->copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
+			((CommandBufferPrivate*)this)->copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
 		}
 
-		void CommandBufferPrivate__::copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies)
+		void CommandBufferPrivate::copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
 			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(src->format));
@@ -413,12 +413,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
+		void CommandBufferBridge::change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
 		{ 
-			(*this)->change_image_layout((ImagePrivate*)i, from, to, base_level, level_count, base_layer, layer_count); 
+			((CommandBufferPrivate*)this)->change_image_layout((ImagePrivate*)i, from, to, base_level, level_count, base_layer, layer_count);
 		}
 
-		void CommandBufferPrivate__::change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
+		void CommandBufferPrivate::change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
 		{
 			level_count = level_count == 0 ? i->level : level_count;
 			layer_count = layer_count == 0 ? i->layer : layer_count;
@@ -517,12 +517,12 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::clear_image(Image* i, const Vec4c& col)
+		void CommandBufferBridge::clear_image(Image* i, const Vec4c& col)
 		{ 
-			(*this)->clear_image((ImagePrivate*)i, col); 
+			((CommandBufferPrivate*)this)->clear_image((ImagePrivate*)i, col);
 		}
 
-		void CommandBufferPrivate__::clear_image(ImagePrivate* i, const Vec4c& col)
+		void CommandBufferPrivate::clear_image(ImagePrivate* i, const Vec4c& col)
 		{
 #if defined(FLAME_VULKAN)
 			VkClearColorValue cv;
@@ -582,12 +582,12 @@ namespace flame
 #endif
 		}
 
-		void QueuePrivate::submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
+		void QueueBridge::submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
 		{ 
-			(*this)->submit({ (CommandBufferPrivate**)cbs, cbs_count }, (SemaphorePrivate*)wait_semaphore, (SemaphorePrivate*)signal_semaphore, (FencePrivate*)signal_fence); 
+			((QueuePrivate*)this)->submit({ (CommandBufferPrivate**)cbs, cbs_count }, (SemaphorePrivate*)wait_semaphore, (SemaphorePrivate*)signal_semaphore, (FencePrivate*)signal_fence);
 		}
 
-		void QueuePrivate__::submit(std::span<CommandBufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
+		void QueuePrivate::submit(std::span<CommandBufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence)
 		{
 #if defined(FLAME_VULKAN)
 			VkSubmitInfo info;
@@ -623,12 +623,12 @@ namespace flame
 #endif
 		}
 
-		void QueuePrivate::present(Swapchain* s, Semaphore* wait_semaphore)
+		void QueueBridge::present(Swapchain* s, Semaphore* wait_semaphore)
 		{ 
-			(*this)->present((SwapchainPrivate*)s, (SemaphorePrivate*)wait_semaphore); 
+			((QueuePrivate*)this)->present((SwapchainPrivate*)s, (SemaphorePrivate*)wait_semaphore); 
 		}
 
-		void QueuePrivate__::present(SwapchainPrivate* sc, SemaphorePrivate* wait_semaphore)
+		void QueuePrivate::present(SwapchainPrivate* sc, SemaphorePrivate* wait_semaphore)
 		{
 #if defined(FLAME_VULKAN)
 			VkPresentInfoKHR info;

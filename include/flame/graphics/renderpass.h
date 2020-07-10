@@ -81,9 +81,9 @@ namespace flame
 
 			virtual Renderpass* get_renderpass() const = 0;
 			virtual uint get_views_count() const = 0;
-			virtual Imageview* get_view(uint idx) const = 0;
+			virtual ImageView* get_view(uint idx) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, Renderpass* rp, uint views_count, Imageview* const* views);
+			FLAME_GRAPHICS_EXPORTS static Framebuffer* create(Device* d, Renderpass* rp, uint views_count, ImageView* const* views);
 		};
 	}
 }

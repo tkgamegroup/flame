@@ -38,11 +38,11 @@ namespace flame
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			alloc_info.pNext = nullptr;
 			alloc_info.allocationSize = mem_requirements.size;
-			alloc_info.memoryTypeIndex = d->_find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
+			alloc_info.memoryTypeIndex = d->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
 			chk_res(vkAllocateMemory(d->vk_device, &alloc_info, nullptr, &vk_memory));
 
-			chk_res(vkBindBufferMemory(d->vk_device, vk_buffer, _m, 0));
+			chk_res(vkBindBufferMemory(d->vk_device, vk_buffer, vk_memory, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -106,7 +106,7 @@ namespace flame
 
 		void BufferPrivate::copy_from_data(void* data)
 		{
-			auto stag_buf = std::make_unique<BufferPrivate>(device->vk_device, size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(device, size, BufferUsageTransferSrc, MemPropHost);
 
 			stag_buf->map();
 			memcpy(stag_buf->mapped, data, size);
@@ -114,12 +114,12 @@ namespace flame
 			stag_buf->unmap();
 
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->_begin(true);
-			cb->_copy_buffer(stag_buf.get(), this, { &BufferCopy(0, 0, size), 1 });
-			cb->_end();
+			cb->begin(true);
+			cb->copy_buffer(stag_buf.get(), this, { &BufferCopy(0, 0, size), 1 });
+			cb->end();
 			auto q = device->graphics_queue.get();
-			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
 		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data)

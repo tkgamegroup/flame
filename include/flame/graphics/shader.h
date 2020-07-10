@@ -53,16 +53,16 @@ namespace flame
 			virtual DescriptorSetLayout* get_layout() const = 0;
 
 			virtual void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0) = 0;
-			virtual void set_image(uint binding, uint index, Imageview* v, Sampler* sampler) = 0;
+			virtual void set_image(uint binding, uint index, ImageView* v, Sampler* sampler) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(Descriptorpool* p, DescriptorSetLayout* l);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* p, DescriptorSetLayout* l);
 		};
 
 		struct PipelineLayout
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* d, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* d, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, uint push_constant_size);
 		};
 
 		struct VertexAttributeInfo

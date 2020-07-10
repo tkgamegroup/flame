@@ -13,7 +13,7 @@ namespace flame
 	{
 		static uint get_pixel_size(ImagePrivate* i)
 		{
-			switch (i->_format)
+			switch (i->format)
 			{
 			case Format_R8_UNORM:
 				return 1;
@@ -33,13 +33,13 @@ namespace flame
 			return 0;
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view) :
-			_d(d),
-			_format(format),
-			_size(size),
-			_level(level),
-			_layer(layer),
-			_sample_count(sample_count)
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool _default_view) :
+			device(d),
+			format(format),
+			size(size),
+			level(level),
+			layer(layer),
+			sample_count(sample_count)
 		{
 #if defined(FLAME_VULKAN)
 			VkImageCreateInfo imageInfo;
@@ -61,168 +61,167 @@ namespace flame
 			imageInfo.pQueueFamilyIndices = nullptr;
 			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-			chk_res(vkCreateImage(d->vk_device, &imageInfo, nullptr, &_v));
+			chk_res(vkCreateImage(d->vk_device, &imageInfo, nullptr, &vk_image));
 
 			VkMemoryRequirements memRequirements;
-			vkGetImageMemoryRequirements(d->vk_device, _v, &memRequirements);
+			vkGetImageMemoryRequirements(d->vk_device, vk_image, &memRequirements);
 
 			VkMemoryAllocateInfo allocInfo;
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.pNext = nullptr;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = d->_find_memory_type(memRequirements.memoryTypeBits, MemPropDevice);
+			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, MemPropDevice);
 
-			chk_res(vkAllocateMemory(d->vk_device, &allocInfo, nullptr, &_m));
+			chk_res(vkAllocateMemory(d->vk_device, &allocInfo, nullptr, &vk_memory));
 
-			chk_res(vkBindImageMemory(d->vk_device, _v, _m, 0));
+			chk_res(vkBindImageMemory(d->vk_device, vk_image, vk_memory, 0));
 #elif defined(FLAME_D3D12)
 
 #endif
-			if (default_view)
-				_dv.reset(new ImageviewPrivate(this));
+			if (_default_view)
+				default_view.reset(new ImageViewPrivate(this));
 
 			if (data)
 			{
 				auto staging_buffer = std::make_unique<BufferPrivate>(d, image_pitch(get_pixel_size(this) * size.x()) * size.y(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
-				staging_buffer->_map();
-				memcpy(staging_buffer->_mapped, data, staging_buffer->_size);
-				staging_buffer->_unmap();
+				staging_buffer->map();
+				memcpy(staging_buffer->mapped, data, staging_buffer->size);
+				staging_buffer->unmap();
 
-				auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
-				cb->_begin(true);
-				cb->_change_image_layout(this, ImageLayoutUndefined, ImageLayoutTransferDst);
-				cb->_copy_buffer_to_image(staging_buffer.get(), this, { &BufferImageCopy(this->_size), 1 });
-				cb->_change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-				cb->_end();
-				auto q = d->_graphics_queue.get();
-				q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-				q->_wait_idle();
+				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+				cb->begin(true);
+				cb->change_image_layout(this, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(staging_buffer.get(), this, { &BufferImageCopy(this->size), 1 });
+				cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->end();
+				auto q = d->graphics_queue.get();
+				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+				q->wait_idle();
 			}
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view) :
-			_d(d),
-			_format(format),
-			_size(size),
-			_level(level),
-			_layer(layer),
-			_sample_count(SampleCount_1)
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool _default_view) :
+			device(d),
+			format(format),
+			size(size),
+			level(level),
+			layer(layer),
+			sample_count(SampleCount_1)
 		{
 #if defined(FLAME_VULKAN)
-			_v = (VkImage)native;
-			_m = 0;
+			vk_image = (VkImage)native;
 #elif defined(FLAME_D3D12)
 			_v = (ID3D12Resource*)native;
 #endif
 
-			_dv.reset(default_view ? new ImageviewPrivate(this) : nullptr);
+			default_view.reset(_default_view ? new ImageViewPrivate(this) : nullptr);
 		}
 
 		ImagePrivate::~ImagePrivate()
 		{
 #if defined(FLAME_VULKAN)
-			if (_m != 0)
+			if (vk_memory != 0)
 			{
-				vkFreeMemory(device->vk_device, _m, nullptr);
-				vkDestroyImage(device->vk_device, _v, nullptr);
+				vkFreeMemory(device->vk_device, vk_memory, nullptr);
+				vkDestroyImage(device->vk_device, vk_image, nullptr);
 			}
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void ImagePrivate::_change_layout(ImageLayout from, ImageLayout to)
+		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
 		{
-			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
-			cb->_begin(true);
-			cb->_change_image_layout(this, from, to);
-			cb->_end();
-			auto q = _d->_graphics_queue.get();
-			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+			cb->begin(true);
+			cb->change_image_layout(this, from, to);
+			cb->end();
+			auto q = device->graphics_queue.get();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
-		void ImagePrivate::_clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
+		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
-			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
-			cb->_begin(true);
-			cb->_change_image_layout(this, current_layout, ImageLayoutTransferDst);
-			cb->_clear_image(this, color);
-			cb->_change_image_layout(this, ImageLayoutTransferDst, after_layout);
-			cb->_end();
-			auto q = _d->_graphics_queue.get();
-			q->_submit(std::array{ cb.get()}, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+			cb->begin(true);
+			cb->change_image_layout(this, current_layout, ImageLayoutTransferDst);
+			cb->clear_image(this, color);
+			cb->change_image_layout(this, ImageLayoutTransferDst, after_layout);
+			cb->end();
+			auto q = device->graphics_queue.get();
+			q->submit(std::array{ cb.get()}, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
-		void ImagePrivate::_get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
+		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
 		{
-			assert(_format == Format_R8_UNORM || _format == Format_R8G8B8A8_UNORM || _format == Format_R16G16B16A16_UNORM);
+			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
 			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
 
-			auto stag_buf = std::make_unique<BufferPrivate>(_d, data_size, BufferUsageTransferDst, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferDst, MemPropHost);
 
-			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
-			cb->_begin(true);
-			cb->_change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-			cb->_copy_image_to_buffer(this, stag_buf.get(), { &BufferImageCopy(Vec2u(extent), 0, 0, offset), 1 });
-			cb->_change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
-			cb->_end();
-			auto q = _d->_graphics_queue.get();
-			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+			cb->copy_image_to_buffer(this, stag_buf.get(), { &BufferImageCopy(Vec2u(extent), 0, 0, offset), 1 });
+			cb->change_image_layout(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+			cb->end();
+			auto q = device->graphics_queue.get();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 
-			stag_buf->_map();
-			memcpy(dst, stag_buf->_mapped, stag_buf->_size);
-			stag_buf->_flush();
+			stag_buf->map();
+			memcpy(dst, stag_buf->mapped, stag_buf->size);
+			stag_buf->flush();
 		}
 
-		void ImagePrivate::_set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
+		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
 		{
-			assert(_format == Format_R8_UNORM || _format == Format_R8G8B8A8_UNORM || _format == Format_R16G16B16A16_UNORM);
+			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
 
 			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
 
-			auto stag_buf = std::make_unique<BufferPrivate>(_d, data_size, BufferUsageTransferSrc, MemPropHost);
-			stag_buf->_map();
-			memcpy(stag_buf->_mapped, src, stag_buf->_size);
-			stag_buf->_flush();
+			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferSrc, MemPropHost);
+			stag_buf->map();
+			memcpy(stag_buf->mapped, src, stag_buf->size);
+			stag_buf->flush();
 
-			auto cb = std::make_unique<CommandBufferPrivate>(_d->_graphics_commandpool.get());
-			cb->_begin(true);
-			cb->_change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			cb->_copy_buffer_to_image(stag_buf.get(), this, { &BufferImageCopy(Vec2u(extent), 0, 0, offset), 1 });
-			cb->_change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->_end();
-			auto q = _d->_graphics_queue.get();
-			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+			cb->begin(true);
+			cb->change_image_layout(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(stag_buf.get(), this, { &BufferImageCopy(Vec2u(extent), 0, 0, offset), 1 });
+			cb->change_image_layout(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			auto q = device->graphics_queue.get();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
-		ImagePrivate* ImagePrivate::_create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
 		{
 			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
 			auto staging_buffer = std::make_unique<BufferPrivate>(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
-			staging_buffer->_map();
-			memcpy(staging_buffer->_mapped, bmp->get_data(), staging_buffer->_size);
-			staging_buffer->_unmap();
+			staging_buffer->map();
+			memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
+			staging_buffer->unmap();
 
-			auto cb = std::make_unique<CommandBufferPrivate>(d->_graphics_commandpool.get());
-			cb->_begin(true);
-			cb->_change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->_copy_buffer_to_image(staging_buffer.get(), i, { &BufferImageCopy(i->_size), 1 });
-			cb->_change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->_end();
-			auto q = d->_graphics_queue.get();
-			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
+			cb->begin(true);
+			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(staging_buffer.get(), i, { &BufferImageCopy(i->size), 1 });
+			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			auto q = d->graphics_queue.get();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::_create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage, bool default_view)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage, bool default_view)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -297,9 +296,9 @@ namespace flame
 				fmt = get_image_format(channel, bmp->get_byte_per_channel());
 
 				staging_buffer.reset(new BufferPrivate(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent));
-				staging_buffer->_map();
-				memcpy(staging_buffer->_mapped, bmp->get_data(), staging_buffer->_size);
-				staging_buffer->_unmap();
+				staging_buffer->map();
+				memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
+				staging_buffer->unmap();
 
 				bmp->release();
 
@@ -308,35 +307,35 @@ namespace flame
 
 			auto i = new ImagePrivate(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
-			auto cb = std::make_unique<CommandBufferPrivate>(d->_graphics_commandpool.get());
-			cb->_begin(true);
-			cb->_change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->_copy_buffer_to_image(staging_buffer.get(), i, { buffer_copy_regions.data(), buffer_copy_regions.size() });
-			cb->_change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->_end();
-			auto q = d->_graphics_queue.get();
-			q->_submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->_wait_idle();
+			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
+			cb->begin(true);
+			cb->change_image_layout(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(staging_buffer.get(), i, { buffer_copy_regions.data(), buffer_copy_regions.size() });
+			cb->change_image_layout(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->end();
+			auto q = d->graphics_queue.get();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 
 			return i;
 		}
 
 		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data, default_view); }
-		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool create_default_view) { return ImagePrivate::_create((DevicePrivate*)d, bmp, extra_usage, create_default_view); }
-		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool create_defalut_view) { return ImagePrivate::_create((DevicePrivate*)d, filename, extra_usage, create_defalut_view); }
+		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool create_default_view) { return ImagePrivate::create((DevicePrivate*)d, bmp, extra_usage, create_default_view); }
+		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool create_defalut_view) { return ImagePrivate::create((DevicePrivate*)d, filename, extra_usage, create_defalut_view); }
 
-		ImageviewPrivate::ImageviewPrivate(ImagePrivate* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a) :
-			_image(image),
-			_d(image->_d),
-			_type(type),
-			_base_level(base_level),
-			_level_count(level_count),
-			_base_layer(base_layer),
-			_layer_count(layer_count),
-			_swizzle_r(swizzle_r),
-			_swizzle_g(swizzle_g),
-			_swizzle_b(swizzle_b),
-			_swizzle_a(swizzle_a)
+		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, ImageViewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a) :
+			image(image),
+			device(image->device),
+			type(type),
+			base_level(base_level),
+			level_count(level_count),
+			base_layer(base_layer),
+			layer_count(layer_count),
+			swizzle_r(swizzle_r),
+			swizzle_g(swizzle_g),
+			swizzle_b(swizzle_b),
+			swizzle_a(swizzle_a)
 		{
 #if defined(FLAME_VULKAN)
 			VkImageViewCreateInfo info;
@@ -347,16 +346,16 @@ namespace flame
 			info.components.g = to_backend(swizzle_g);
 			info.components.b = to_backend(swizzle_b);
 			info.components.a = to_backend(swizzle_a);
-			info.image = image->_v;
+			info.image = image->vk_image;
 			info.viewType = to_backend(type);
-			info.format = to_backend(image->_format);
-			info.subresourceRange.aspectMask = to_backend_flags<ImageAspect>(aspect_from_format(image->_format));
+			info.format = to_backend(image->format);
+			info.subresourceRange.aspectMask = to_backend_flags<ImageAspect>(aspect_from_format(image->format));
 			info.subresourceRange.baseMipLevel = base_level;
 			info.subresourceRange.levelCount = level_count;
 			info.subresourceRange.baseArrayLayer = base_layer;
 			info.subresourceRange.layerCount = layer_count;
 
-			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &_v));
+			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &vk_image_view));
 #elif defined(FLAME_D3D12)
 			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -373,22 +372,22 @@ namespace flame
 #endif
 		}
 
-		ImageviewPrivate::~ImageviewPrivate()
+		ImageViewPrivate::~ImageViewPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroyImageView(device->vk_device, _v, nullptr);
+			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		Imageview* Imageview::create(Image* image, ImageviewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a)
+		ImageView* ImageView::create(Image* image, ImageViewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a)
 		{
-			return new ImageviewPrivate((ImagePrivate*)image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
+			return new ImageViewPrivate((ImagePrivate*)image, type, base_level, level_count, base_layer, layer_count, swizzle_r, swizzle_g, swizzle_b, swizzle_a);
 		}
 
 		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates) :
-			_d(d)
+			device(d)
 		{
 #if defined(FLAME_VULKAN)
 			VkSamplerCreateInfo info;
@@ -411,7 +410,7 @@ namespace flame
 			info.minLod = 0.f;
 			info.maxLod = 0.f;
 
-			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &_v));
+			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &vk_sampler));
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -420,7 +419,7 @@ namespace flame
 		SamplerPrivate::~SamplerPrivate()
 		{
 #if defined(FLAME_VULKAN)
-			vkDestroySampler(device->vk_device, _v, nullptr);
+			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -440,13 +439,13 @@ namespace flame
 				if (e.key == "image")
 					image_filename = std::filesystem::path(filename).parent_path() / e.value;
 				else if (e.key == "border")
-					_border = !(e.value == "0");
+					border = !(e.value == "0");
 			}
 
-			_image = ImagePrivate::_create(d, image_filename.c_str());
+			image = ImagePrivate::create(d, image_filename.c_str());
 
-			auto w = (float)_image->_size.x();
-			auto h = (float)_image->_size.y();
+			auto w = (float)image->size.x();
+			auto h = (float)image->size.y();
 
 			for (auto& e : ini.get_section_entries("tiles"))
 			{
@@ -455,30 +454,35 @@ namespace flame
 				std::string t;
 				std::stringstream ss(e.value);
 				ss >> t;
-				tile->_name = t;
+				tile->name = t;
 				ss >> t;
 				auto v = sto<Vec4u>(t.c_str());
-				tile->_pos = Vec2i(v.x(), v.y());
-				tile->_size = Vec2i(v.z(), v.w());
-				tile->_uv.x() = tile->_pos.x() / w;
-				tile->_uv.y() = tile->_pos.y() / h;
-				tile->_uv.z() = (tile->_pos.x() + tile->_size.x()) / w;
-				tile->_uv.w() = (tile->_pos.y() + tile->_size.y()) / h;
+				tile->pos = Vec2i(v.x(), v.y());
+				tile->size = Vec2i(v.z(), v.w());
+				tile->uv.x() = tile->pos.x() / w;
+				tile->uv.y() = tile->pos.y() / h;
+				tile->uv.z() = (tile->pos.x() + tile->size.x()) / w;
+				tile->uv.w() = (tile->pos.y() + tile->size.y()) / h;
 
-				_tiles.emplace_back(tile);
+				tiles.emplace_back(tile);
 			}
 		}
 
 		ImageAtlasPrivate::~ImageAtlasPrivate()
 		{
-			delete _image;
+			delete image;
 		}
 
-		ImageTile* ImageAtlasPrivate::_find_tile(const std::string& name) const
+		ImageTile* ImageAtlasBridge::find_tile(const char* name) const
+		{ 
+			return ((ImageAtlasPrivate*)this)->find_tile(name); 
+		}
+
+		ImageTilePrivate* ImageAtlasPrivate::find_tile(const std::string& name) const
 		{
-			for (auto& t : _tiles)
+			for (auto& t : tiles)
 			{
-				if (t->_name == name)
+				if (t->name == name)
 					return t.get();
 			}
 			return nullptr;;

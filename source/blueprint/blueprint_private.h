@@ -12,9 +12,12 @@ namespace flame
 	struct bpNodePrivate;
 	struct bpScenePrivate;
 
-	struct bpSlotPrivate__;
+	struct bpSlotBridge : bpSlot
+	{
+		bool link_to(bpSlot* target) override;
+	};
 
-	struct bpSlotPrivate : bpSlot
+	struct bpSlotPrivate : bpSlotBridge
 	{
 		bpNodePrivate* node;
 		bpSlotIO io;
@@ -28,9 +31,6 @@ namespace flame
 		std::vector<bpSlotPrivate*> links;
 
 		void* listener = nullptr;
-
-		bpSlotPrivate__* operator->() { return (bpSlotPrivate__*)this; }
-		bpSlotPrivate__* operator->() const { return (bpSlotPrivate__*)this; }
 
 		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, TypeInfo* type, const std::string& name, uint offset, const void* default_value);
 		bpSlotPrivate(bpNodePrivate* node, bpSlotIO io, uint index, VariableInfo* vi);
@@ -48,17 +48,22 @@ namespace flame
 
 		uint get_links_count() const override { return links.size(); }
 		bpSlot* get_link(uint idx) const override { return links[idx]; }
-		bool link_to(bpSlot* target) override;
-	};
-
-	struct bpSlotPrivate__ : bpSlotPrivate
-	{
 		bool link_to(bpSlotPrivate* target);
 	};
 
-	struct bpNodePrivate__;
+	struct bpNodeBridge : bpNode
+	{
+		bool set_id(const char* id) override;
 
-	struct bpNodePrivate : bpNode
+		bpSlot* find_input(const char* name) const override;
+		bpSlot* find_output(const char* name) const override;
+
+		bpNode* add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule) override;
+		void remove_child(bpNode* n) override;
+		bpNode* find_child(const char* name) const override;
+	};
+
+	struct bpNodePrivate : bpNodeBridge
 	{
 		bpScenePrivate* scene;
 		bpNodePrivate* parent;
@@ -88,9 +93,6 @@ namespace flame
 		std::vector<bpNodePrivate*> update_list;
 		bool need_rebuild_update_list = true;
 
-		bpNodePrivate__* operator->() { return (bpNodePrivate__*)this; }
-		bpNodePrivate__* operator->() const { return (bpNodePrivate__*)this; }
-
 		bpNodePrivate(bpScenePrivate* scene, bpNodePrivate* parent, const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
 		~bpNodePrivate();
 
@@ -100,7 +102,7 @@ namespace flame
 		Guid get_guid() const override { return guid; }
 		void set_guid(const Guid& _guid) override { guid = _guid; }
 		const char* get_id() const override { return id.c_str(); }
-		bool set_id(const char* id) override;
+		bool set_id(const std::string& id);
 		Vec2f get_pos() const override { return pos; }
 		void set_pos(const Vec2f& _pos) override { pos = _pos; }
 
@@ -111,43 +113,26 @@ namespace flame
 
 		uint get_inputs_count() const override { return inputs.size(); }
 		bpSlot* get_input(uint idx) const override { return inputs[idx].get(); }
-		bpSlot* find_input(const char* name) const override;
+		bpSlotPrivate* find_input(const std::string& name) const;
 		uint get_outputs_count() const override { return outputs.size(); }
 		bpSlot* get_output(uint idx) const override { return outputs[idx].get(); }
-		bpSlot* find_output(const char* name) const override;
+		bpSlotPrivate* find_output(const std::string& name) const;
 
 		uint get_children_count() const override { return children.size(); }
 		bpNode* get_child(uint idx) const override { return children[idx].get(); }
-		bpNode* add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule) override;
-		void remove_child(bpNode* n) override;
-		bpNode* find_child(const char* name) const override;
+		bpNodePrivate* add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
+		void remove_child(bpNodePrivate* n);
+		bpNodePrivate* find_child(const std::string& name) const;
 		bpNode* find_child(const Guid& guid) const override;
 
 		void update() override;
 	};
-
-	struct bpNodePrivate__ : bpNodePrivate
-	{
-		bool set_id(const std::string& id);
-
-		bpSlotPrivate* find_input(const std::string& name) const;
-		bpSlotPrivate* find_output(const std::string& name) const;
-
-		bpNodePrivate* add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule);
-		void remove_child(bpNodePrivate* n);
-		bpNodePrivate* find_child(const std::string& name) const;
-	};
-
-	struct bpScenePrivate__;
 
 	struct bpScenePrivate : bpScene
 	{
 		std::filesystem::path filename;
 		float time;
 		std::unique_ptr<bpNodePrivate> root;
-
-		bpScenePrivate__* operator->() { return (bpScenePrivate__*)this; }
-		bpScenePrivate__* operator->() const { return (bpScenePrivate__*)this; }
 
 		bpScenePrivate();
 
@@ -159,9 +144,5 @@ namespace flame
 
 		void update() override;
 		void save() override;
-	};
-
-	struct bpScenePrivate__ : bpScenePrivate
-	{
 	};
 }

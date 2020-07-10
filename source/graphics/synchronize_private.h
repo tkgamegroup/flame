@@ -37,11 +37,9 @@ namespace flame
 			FencePrivate(DevicePrivate* d);
 			~FencePrivate();
 
-			void _wait();
-
 			void release() override { delete this; }
 
-			void wait() override { _wait(); };
+			void wait() override;
 		};
 	}
 }

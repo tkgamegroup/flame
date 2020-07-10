@@ -21,8 +21,8 @@ namespace flame
 			SampleCount sample_count;
 
 #if defined(FLAME_VULKAN)
-			VkDeviceMemory vk_memory;
-			VkImage vk_image;
+			VkDeviceMemory vk_memory = 0;
+			VkImage vk_image = 0;
 #elif defined(FLAME_D3D12)
 			ID3D12Resource* _v;
 #endif
@@ -32,30 +32,24 @@ namespace flame
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view = true);
 			~ImagePrivate();
 
-			void _change_layout(ImageLayout from, ImageLayout to);
-			void _clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color);
-
-			void _get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst);
-			void _set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src);
-
-			static ImagePrivate* _create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
-			static ImagePrivate* _create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
-
 			void release() override { delete this; }
 
-			Format get_format() const override { return _format; }
-			Vec2u get_size() const override { return _size; }
-			uint get_level() const override { return _level; }
-			uint get_layer() const override { return _layer; }
-			SampleCount get_sample_count() const override { return _sample_count; }
+			Format get_format() const override { return format; }
+			Vec2u get_size() const override { return size; }
+			uint get_level() const override { return level; }
+			uint get_layer() const override { return layer; }
+			SampleCount get_sample_count() const override { return sample_count; }
 
-			ImageView* get_default_view() const override { return (ImageView*)_dv.get(); }
+			ImageView* get_default_view() const override { return (ImageView*)default_view.get(); }
 
-			void change_layout(ImageLayout from, ImageLayout to) override { _change_layout(from, to); }
-			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override { _clear(current_layout, after_layout, color); }
+			void change_layout(ImageLayout from, ImageLayout to) override;
+			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
 
-			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override { _get_pixels(offset, extent, dst); }
-			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override { _set_pixels(offset, extent, src); }
+			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;
+			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override;
+
+			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
+			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
 		};
 
 		struct ImageViewPrivate : ImageView
@@ -85,17 +79,17 @@ namespace flame
 
 			void release() override { delete this; }
 
-			ImageViewType get_type() const override { return _type; }
-			uint get_base_level() const override { return _base_level; }
-			uint get_level_count() const override { return _level_count; }
-			uint get_base_layer() const override { return _base_layer; }
-			uint get_layer_count() const override { return _layer_count; }
-			Swizzle get_swizzle_r() const override { return _swizzle_r; }
-			Swizzle get_swizzle_g() const override { return _swizzle_g; }
-			Swizzle get_swizzle_b() const override { return _swizzle_b; }
-			Swizzle get_swizzle_a() const override { return _swizzle_a; }
+			ImageViewType get_type() const override { return type; }
+			uint get_base_level() const override { return base_level; }
+			uint get_level_count() const override { return level_count; }
+			uint get_base_layer() const override { return base_layer; }
+			uint get_layer_count() const override { return layer_count; }
+			Swizzle get_swizzle_r() const override { return swizzle_r; }
+			Swizzle get_swizzle_g() const override { return swizzle_g; }
+			Swizzle get_swizzle_b() const override { return swizzle_b; }
+			Swizzle get_swizzle_a() const override { return swizzle_a; }
 
-			Image* get_image() const override { return _image; }
+			Image* get_image() const override { return image; }
 		};
 
 		inline ImageAspectFlags aspect_from_format(Format fmt)
@@ -134,14 +128,19 @@ namespace flame
 			Vec2i size;
 			Vec4f uv;
 
-			uint get_index() const override { return _index; }
-			const char* get_name() const override { return _name.c_str(); }
-			Vec2i get_pos() const override { return _pos; }
-			Vec2i get_size() const override { return _size; }
-			Vec4f get_uv() const override { return _uv; }
+			uint get_index() const override { return index; }
+			const char* get_name() const override { return name.c_str(); }
+			Vec2i get_pos() const override { return pos; }
+			Vec2i get_size() const override { return size; }
+			Vec4f get_uv() const override { return uv; }
 		};
 
-		struct ImageAtlasPrivate : ImageAtlas
+		struct ImageAtlasBridge : ImageAtlas
+		{
+			ImageTile* find_tile(const char* name) const override;
+		};
+
+		struct ImageAtlasPrivate : ImageAtlasBridge
 		{
 			bool border = false;
 
@@ -151,13 +150,11 @@ namespace flame
 			ImageAtlasPrivate(DevicePrivate* d, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();
 
-			ImageTile* _find_tile(const std::string& name) const;
-
 			void release() override { delete this; }
 
-			bool get_border() const override { return _border; }
+			bool get_border() const override { return border; }
 
-			ImageTile* find_tile(const char* name) const override { return _find_tile(name); }
+			ImageTilePrivate* find_tile(const std::string& name) const;
 		};
 	}
 }

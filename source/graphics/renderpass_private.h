@@ -20,10 +20,10 @@ namespace flame
 
 			RenderpassAttachmentPrivate(uint index, const RenderpassAttachmentInfo& info);
 
-			uint get_index() const override { return _index; }
-			Format get_format() const override { return _format; }
-			bool get_clear() const override { return _clear; }
-			SampleCount get_sample_count() const override { return _sample_count; }
+			uint get_index() const override { return index; }
+			Format get_format() const override { return format; }
+			bool get_clear() const override { return clear; }
+			SampleCount get_sample_count() const override { return sample_count; }
 		};
 
 		struct RenderpassSubpassPrivate : RenderpassSubpass
@@ -35,12 +35,12 @@ namespace flame
 
 			RenderpassSubpassPrivate(RenderpassPrivate* rp, uint index, const RenderpassSubpassInfo& info);
 
-			uint get_index() const override { return _index; }
-			uint get_color_attachments_count() const override { return _color_attachments.size(); }
-			RenderpassAttachment* get_color_attachment(uint idx) const override { return _color_attachments[idx]; }
-			uint get_resolve_attachments_count() const override { return _resolve_attachments.size(); }
-			RenderpassAttachment* get_resolve_attachment(uint idx) const override { return _resolve_attachments[idx]; }
-			RenderpassAttachment* get_depth_attachment() const override { return _depth_attachment; }
+			uint get_index() const override { return index; }
+			uint get_color_attachments_count() const override { return color_attachments.size(); }
+			RenderpassAttachment* get_color_attachment(uint idx) const override { return color_attachments[idx]; }
+			uint get_resolve_attachments_count() const override { return resolve_attachments.size(); }
+			RenderpassAttachment* get_resolve_attachment(uint idx) const override { return resolve_attachments[idx]; }
+			RenderpassAttachment* get_depth_attachment() const override { return depth_attachment; }
 		};
 
 		struct RenderpassPrivate : Renderpass
@@ -58,10 +58,10 @@ namespace flame
 
 			void release() override { delete this; }
 
-			uint get_attachments_count() const override { return _attachments.size(); }
-			RenderpassAttachment* get_attachment_info(uint idx) const override { return _attachments[idx].get(); }
-			uint get_subpasses_count() const override { return _subpasses.size(); }
-			RenderpassSubpass* get_subpass_info(uint idx) const override { return _subpasses[idx].get(); }
+			uint get_attachments_count() const override { return attachments.size(); }
+			RenderpassAttachment* get_attachment_info(uint idx) const override { return attachments[idx].get(); }
+			uint get_subpasses_count() const override { return subpasses.size(); }
+			RenderpassSubpass* get_subpass_info(uint idx) const override { return subpasses[idx].get(); }
 		};
 
 		struct FramebufferPrivate : Framebuffer
@@ -80,9 +80,9 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Renderpass* get_renderpass() const override { return _rp; }
-			uint get_views_count() const override { return _views.size(); }
-			ImageView* get_view(uint idx) const override { return _views[idx]; }
+			Renderpass* get_renderpass() const override { return renderpass; }
+			uint get_views_count() const override { return views.size(); }
+			ImageView* get_view(uint idx) const override { return views[idx]; }
 		};
 	}
 }

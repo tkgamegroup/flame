@@ -4,9 +4,13 @@
 
 namespace flame
 {
-	struct BitmapPrivate__;
+	struct BitmapBridge : Bitmap
+	{
+		void copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override;
+		void save(const wchar_t* filename) override;
+	};
 
-	struct BitmapPrivate : Bitmap
+	struct BitmapPrivate : BitmapBridge
 	{
 		uint width;
 		uint height;
@@ -16,9 +20,6 @@ namespace flame
 		uchar* data;
 		uint size;
 		bool srgb;
-
-		BitmapPrivate__* operator->() { return (BitmapPrivate__*)this; }
-		BitmapPrivate__* operator->() const { return (BitmapPrivate__*)this; }
 
 		BitmapPrivate(uint width, uint height, uint channel = 4, uint byte_per_channel = 1, uchar* data = nullptr);
 		~BitmapPrivate();
@@ -36,12 +37,6 @@ namespace flame
 
 		void add_alpha_channel() override;
 		void swap_channel(uint ch1, uint ch2) override;
-		void copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border) override;
-		void save(const wchar_t* filename) override;
-	};
-
-	struct BitmapPrivate__ : BitmapPrivate
-	{
 		void copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border);
 		void save(const std::filesystem::path& filename);
 

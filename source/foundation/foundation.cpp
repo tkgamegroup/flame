@@ -1083,7 +1083,7 @@ namespace flame
 			if (std::filesystem::exists(icon_fn))
 			{
 				report_used_file(icon_fn.c_str());
-				auto icon_image = BitmapPrivate__::create(icon_fn);
+				auto icon_image = BitmapPrivate::create(icon_fn);
 				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,
 					icon_image->get_channel() * icon_image->get_byte_per_channel() * 8, nullptr, icon_image->get_data());
@@ -1352,12 +1352,12 @@ namespace flame
 	{
 	}
 
-	void WindowPrivate::set_title(const char* _title)
+	void WindowBridge::set_title(const char* _title)
 	{
-		(*this)->set_title(_title);
+		((WindowPrivate*)this)->set_title(_title);
 	}
 
-	void WindowPrivate__::set_title(const std::string& _title)
+	void WindowPrivate::set_title(const std::string& _title)
 	{
 		title = _title;
 		SetWindowTextA(hWnd, title.c_str());

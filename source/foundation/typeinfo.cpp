@@ -60,14 +60,14 @@ namespace flame
 
 		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
 		{
-			const auto& str = (*find_enum(name))->find_item(*(int*)src)->name;
+			const auto& str = find_enum(name)->find_item(*(int*)src)->name;
 			auto buf = callback((Capture&)capture, str.size());
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
 		void unserialize(const char* src, void* dst) const override
 		{
-			*(int*)dst = (*find_enum(name))->find_item(src)->value;
+			*(int*)dst = find_enum(name)->find_item(src)->value;
 		}
 	};
 
@@ -89,7 +89,7 @@ namespace flame
 				{
 					if (i > 0)
 						str += ";";
-					str += (*e)->find_item(1 << i)->name;
+					str += e->find_item(1 << i)->name;
 				}
 				v >>= 1;
 			}
@@ -103,7 +103,7 @@ namespace flame
 			auto v = 0;
 			auto sp = SUS::split(src, ';');
 			for (auto& t : sp)
-				v |= (*e)->find_item(t)->value;
+				v |= e->find_item(t)->value;
 			*(int*)dst = v;
 		}
 	};
@@ -802,7 +802,12 @@ namespace flame
 	{
 	}
 
-	TypeInfoPrivate* TypeInfoPrivate__::get(TypeTag tag, const std::string& name)
+	TypeInfo* TypeInfo::get(TypeTag tag, const char* name)
+	{
+		return TypeInfoPrivate::get(tag, name);
+	}
+
+	TypeInfoPrivate* TypeInfoPrivate::get(TypeTag tag, const std::string& name)
 	{
 		auto key = TypeInfoKey(tag, name);
 		auto it = typeinfos.find(key);
@@ -824,11 +829,6 @@ namespace flame
 		assert(t);
 		typeinfos.emplace(key, t);
 		return t;
-	}
-
-	TypeInfo* TypeInfo::get(TypeTag tag, const char* name)
-	{ 
-		return TypeInfoPrivate__::get(tag, name);
 	}
 
 	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset) :
@@ -861,12 +861,12 @@ namespace flame
 	{
 	}
 
-	EnumItem* EnumInfoPrivate::find_item(const char* name) const
+	EnumItem* EnumInfoBridge::find_item(const char* name) const
 	{
-		return (*this)->find_item(name);
+		return ((EnumInfoPrivate*)this)->find_item(name);
 	}
 
-	EnumItemPrivate* EnumInfoPrivate__::find_item(const std::string& name) const
+	EnumItemPrivate* EnumInfoPrivate::find_item(const std::string& name) const
 	{
 		for (auto& i : items)
 		{
@@ -876,12 +876,12 @@ namespace flame
 		return nullptr;
 	}
 
-	EnumItem* EnumInfoPrivate::find_item(int value) const
+	EnumItem* EnumInfoBridge::find_item(int value) const
 	{
-		return (*this)->find_item(value);
+		return ((EnumInfoPrivate*)this)->find_item(value);
 	}
 
-	EnumItemPrivate* EnumInfoPrivate__::find_item(int value) const
+	EnumItemPrivate* EnumInfoPrivate::find_item(int value) const
 	{
 		for (auto& i : items)
 		{
@@ -1004,12 +1004,12 @@ namespace flame
 	{
 	}
 
-	VariableInfo* UdtInfoPrivate::find_variable(const char* name) const
+	VariableInfo* UdtInfoBridge::find_variable(const char* name) const
 	{ 
-		return (*this)->find_variable(name); 
+		return ((UdtInfoPrivate*)this)->find_variable(name); 
 	}
 
-	VariableInfoPrivate* UdtInfoPrivate__::find_variable(const std::string& name) const
+	VariableInfoPrivate* UdtInfoPrivate::find_variable(const std::string& name) const
 	{
 		for (auto& v : variables)
 		{
@@ -1019,12 +1019,12 @@ namespace flame
 		return nullptr;
 	}
 
-	FunctionInfo* UdtInfoPrivate::find_function(const char* name) const
+	FunctionInfo* UdtInfoBridge::find_function(const char* name) const
 	{ 
-		return (*this)->find_function(name); 
+		return ((UdtInfoPrivate*)this)->find_function(name);
 	}
 
-	FunctionInfoPrivate* UdtInfoPrivate__::find_function(const std::string& name) const
+	FunctionInfoPrivate* UdtInfoPrivate::find_function(const std::string& name) const
 	{
 		for (auto& f : functions)
 		{
@@ -1075,7 +1075,7 @@ namespace flame
 
 				for (auto n_variable : n_udt.child("variables"))
 				{
-					auto type = TypeInfoPrivate__::get((TypeTag)n_variable.attribute("type_tag").as_int(), n_variable.attribute("type_name").value());
+					auto type = TypeInfoPrivate::get((TypeTag)n_variable.attribute("type_tag").as_int(), n_variable.attribute("type_name").value());
 					auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
 						n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint());
 					u->variables.emplace_back(v);
@@ -1091,10 +1091,10 @@ namespace flame
 				{
 					auto f = new FunctionInfoPrivate(this, u, u->functions.size(), n_function.attribute("name").value(), 
 						n_function.attribute("rva").as_uint(), n_function.attribute("voff").as_uint(),
-						TypeInfoPrivate__::get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
+						TypeInfoPrivate::get((TypeTag)n_function.attribute("type_tag").as_int(), n_function.attribute("type_name").value()));
 					u->functions.emplace_back(f);
 					for (auto n_parameter : n_function.child("parameters"))
-						f->parameters.push_back(TypeInfoPrivate__::get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
+						f->parameters.push_back(TypeInfoPrivate::get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
 				}
 			}
 

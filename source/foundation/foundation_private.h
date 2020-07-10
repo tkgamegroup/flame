@@ -23,9 +23,12 @@ namespace flame
 		void remove(void* l) override;
 	};
 
-	struct WindowPrivate__;
+	struct WindowBridge : Window
+	{
+		void set_title(const char* title) override;
+	};
 
-	struct WindowPrivate : Window
+	struct WindowPrivate : WindowBridge
 	{
 #ifdef FLAME_WINDOWS
 		HWND hWnd = 0;
@@ -52,9 +55,6 @@ namespace flame
 
 		bool dead = false;
 
-		WindowPrivate__* operator->() { return (WindowPrivate__*)this; }
-		WindowPrivate__* operator->() const { return (WindowPrivate__*)this; }
-
 #ifdef FLAME_WINDOWS
 		WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent);
 #elif FLAME_ANDROID
@@ -74,7 +74,7 @@ namespace flame
 		void set_size(const Vec2u& size) override;
 
 		const char* get_title() const override { return title.c_str(); }
-		void set_title(const char* title) override;
+		void set_title(const std::string& _title);
 
 		int get_style() const override { return style; }
 
@@ -92,13 +92,6 @@ namespace flame
 		void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_destroy_listener(void* ret) override;
 	};
-
-	struct WindowPrivate__ : WindowPrivate
-	{
-		void set_title(const std::string& _title);
-	};
-
-	struct LooperPrivate__;
 
 	struct LooperPrivate : Looper
 	{

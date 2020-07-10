@@ -15,12 +15,10 @@ namespace flame
 	{
 		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(DevicePrivate* d, Window* w, ImageUsageFlags extra_usages) :
-			_d(d),
-			_w(w),
-			_extra_usages(extra_usages),
-			_s(nullptr),
-			_v(nullptr)
+		SwapchainPrivate::SwapchainPrivate(DevicePrivate* d, Window* w, ImageUsageFlags _extra_usages) :
+			device(d),
+			window(w),
+			extra_usages(_extra_usages)
 		{
 			update();
 
@@ -28,31 +26,31 @@ namespace flame
 				c.thiz<SwapchainPrivate>()->update();
 			}, Capture().set_thiz(this));
 			w->add_destroy_listener([](Capture& c) {
-				c.thiz<SwapchainPrivate>()->_w = nullptr;
+				c.thiz<SwapchainPrivate>()->window = nullptr;
 			}, Capture().set_thiz(this));
 
-			_image_avalible.reset(new SemaphorePrivate(_d));
+			image_avalible.reset(new SemaphorePrivate(device));
 		}
 
 		SwapchainPrivate::~SwapchainPrivate()
 		{
-			if (_w)
-				_w->remove_resize_listener(resize_listener);
+			if (window)
+				window->remove_resize_listener(resize_listener);
 
 #if defined(FLAME_VULKAN)
-			if (_v)
-				vkDestroySwapchainKHR(device->vk_device, _v, nullptr);
-			if (_s)
-				vkDestroySurfaceKHR(_d->_instance, _s, nullptr);
+			if (vk_swapchain)
+				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
+			if (vk_surface)
+				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
 #elif defined(FLAME_D3D12)
 
 #endif
 		}
 
-		void SwapchainPrivate::_acquire_image()
+		void SwapchainPrivate::acquire_image()
 		{
 #if defined(FLAME_VULKAN)
-			chk_res(vkAcquireNextImageKHR(device->vk_device, _v, UINT64_MAX, _image_avalible->_v, VK_NULL_HANDLE, &_image_index));
+			chk_res(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
 #elif defined(FLAME_D3D12)
 			image_index = v->GetCurrentBackBufferIndex();
 #endif
@@ -60,26 +58,26 @@ namespace flame
 
 		void SwapchainPrivate::update()
 		{
-			_d->_graphics_queue.get()->_wait_idle();
+			device->graphics_queue.get()->wait_idle();
 
-			_images.clear();
+			images.clear();
 
 #if defined(FLAME_VULKAN)
-			if (_v)
+			if (vk_swapchain)
 			{
-				vkDestroySwapchainKHR(device->vk_device, _v, nullptr);
-				_v = nullptr;
+				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
+				vk_swapchain = nullptr;
 			}
-			if (_s)
+			if (vk_surface)
 			{
-				vkDestroySurfaceKHR(_d->_instance, _s, nullptr);
-				_s = nullptr;
+				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
+				vk_surface = nullptr;
 			}
 #elif defined(FLAME_D3D12)
 
 #endif
 
-			auto size = _w->get_size();
+			auto size = window->get_size();
 			if (size != 0U)
 			{
 				uint image_count = 3;
@@ -92,8 +90,8 @@ namespace flame
 				surface_info.flags = 0;
 				surface_info.pNext = nullptr;
 				surface_info.hinstance = (HINSTANCE)get_hinst();
-				surface_info.hwnd = (HWND)_w->get_native();
-				chk_res(vkCreateWin32SurfaceKHR(_d->_instance, &surface_info, nullptr, &_s));
+				surface_info.hwnd = (HWND)window->get_native();
+				chk_res(vkCreateWin32SurfaceKHR(device->vk_instance, &surface_info, nullptr, &vk_surface));
 #else
 				VkAndroidSurfaceCreateInfoKHR surface_info;
 				surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
@@ -103,17 +101,17 @@ namespace flame
 #endif
 
 				VkBool32 surface_supported;
-				vkGetPhysicalDeviceSurfaceSupportKHR(_d->_physical_device, 0, _s, &surface_supported);
+				vkGetPhysicalDeviceSurfaceSupportKHR(device->vk_physical_device, 0, vk_surface, &surface_supported);
 				assert(surface_supported);
 
 				unsigned int present_mode_count = 0;
 				std::vector<VkPresentModeKHR> present_modes;
-				vkGetPhysicalDeviceSurfacePresentModesKHR(_d->_physical_device, _s, &present_mode_count, nullptr);
+				vkGetPhysicalDeviceSurfacePresentModesKHR(device->vk_physical_device, vk_surface, &present_mode_count, nullptr);
 				present_modes.resize(present_mode_count);
-				vkGetPhysicalDeviceSurfacePresentModesKHR(_d->_physical_device, _s, &present_mode_count, present_modes.data());
+				vkGetPhysicalDeviceSurfacePresentModesKHR(device->vk_physical_device, vk_surface, &present_mode_count, present_modes.data());
 
 				VkSurfaceCapabilitiesKHR surface_capabilities;
-				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_d->_physical_device, _s, &surface_capabilities);
+				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->vk_physical_device, vk_surface, &surface_capabilities);
 
 				size.x() = clamp(size.x(),
 					surface_capabilities.minImageExtent.width,
@@ -124,10 +122,10 @@ namespace flame
 
 				unsigned int surface_format_count = 0;
 				std::vector<VkSurfaceFormatKHR> surface_formats;
-				vkGetPhysicalDeviceSurfaceFormatsKHR(_d->_physical_device, _s, &surface_format_count, nullptr);
+				vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device, vk_surface, &surface_format_count, nullptr);
 				assert(surface_format_count > 0);
 				surface_formats.resize(surface_format_count);
-				vkGetPhysicalDeviceSurfaceFormatsKHR(_d->_physical_device, _s, &surface_format_count, surface_formats.data());
+				vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device, vk_surface, &surface_format_count, surface_formats.data());
 
 				swapchain_format = graphics::get_format(surface_formats[0].format, true);
 
@@ -135,14 +133,14 @@ namespace flame
 				swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 				swapchain_info.flags = 0;
 				swapchain_info.pNext = nullptr;
-				swapchain_info.surface = _s;
+				swapchain_info.surface = vk_surface;
 				swapchain_info.minImageCount = image_count;
 				swapchain_info.imageFormat = to_backend(swapchain_format);
 				swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
 				swapchain_info.imageExtent.width = size.x();
 				swapchain_info.imageExtent.height = size.y();
 				swapchain_info.imageArrayLayers = 1;
-				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (_extra_usages ? get_backend_image_usage_flags(_extra_usages) : 0);
+				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (extra_usages ? get_backend_image_usage_flags(extra_usages) : 0);
 				swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 				swapchain_info.queueFamilyIndexCount = 0;
 				swapchain_info.pQueueFamilyIndices = nullptr;
@@ -151,12 +149,12 @@ namespace flame
 				swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 				swapchain_info.clipped = true;
 				swapchain_info.oldSwapchain = 0;
-				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &_v));
+				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
 
 				std::vector<VkImage> native_images;
-				vkGetSwapchainImagesKHR(device->vk_device, _v, &image_count, nullptr);
+				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);
 				native_images.resize(image_count);
-				vkGetSwapchainImagesKHR(device->vk_device, _v, &image_count, native_images.data());
+				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
 #elif defined(FLAME_D3D12)
 
@@ -195,9 +193,9 @@ namespace flame
 				}
 #endif
 
-				_images.resize(image_count);
+				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
-					_images[i].reset(new ImagePrivate(_d, swapchain_format, size, 1, 1, native_images[i]));
+					images[i].reset(new ImagePrivate(device, swapchain_format, size, 1, 1, native_images[i]));
 			}
 		}
 
