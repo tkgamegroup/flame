@@ -9,80 +9,68 @@ namespace flame
 	void cElementPrivate::set_x(float _x)
 	{
 		x = _x;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_y(float _y)
 	{
 		y = _y;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_width(float w)
 	{
 		width = w;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_height(float h)
 	{
 		height = h;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_pivotx(float p)
 	{
 		pivotx = p;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_pivoty(float p)
 	{
 		pivoty = p;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_scalex(float s)
 	{
 		scalex = s;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_scaley(float s)
 	{
 		scaley = s;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_rotation(float r)
 	{
 		rotation = r;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_skewx(float s)
 	{
 		skewx = s;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_skewy(float s)
 	{
 		skewy = s;
-		transform_dirty = true;
-		mark_dirty();
+		mark_transform_dirty();
 	}
-
 
 	void cElementPrivate::update_transform()
 	{
@@ -152,10 +140,23 @@ namespace flame
 	void cElementPrivate::set_fill_color(const Vec3c& c)
 	{
 		fill_color = c;
-		mark_dirty();
+		mark_drawing_dirty();
 	}
 
-	void cElementPrivate::mark_dirty()
+	void cElementPrivate::mark_transform_dirty()
+	{
+		if (transform_dirty)
+			return;
+		transform_dirty = true;
+		mark_drawing_dirty();
+		for (auto& c : ((EntityPrivate*)entity)->children)
+		{
+			auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
+			e->mark_transform_dirty();
+		}
+	}
+
+	void cElementPrivate::mark_drawing_dirty()
 	{
 		if (renderer)
 			renderer->dirty = true;
@@ -164,7 +165,18 @@ namespace flame
 	void cElementPrivate::on_entered_world()
 	{
 		renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->world->get_system(sElementRenderer::type_hash);
-		mark_dirty();
+		mark_transform_dirty();
+	}
+
+	void cElementPrivate::on_left_world()
+	{
+		mark_transform_dirty();
+		renderer = nullptr;
+	}
+
+	void cElementPrivate::on_entity_position_changed()
+	{
+		mark_drawing_dirty();
 	}
 
 //	void cElementPrivate::calc_geometry()
@@ -190,19 +202,19 @@ namespace flame
 //
 //		if (global_scale != _global_scale)
 //		{
-//			mark_dirty();
+//			mark_drawing_dirty();
 //			global_scale = _global_scale;
 //			data_changed(FLAME_CHASH("global_scale"), nullptr);
 //		}
 //		if (global_size != _global_size)
 //		{
-//			mark_dirty();
+//			mark_drawing_dirty();
 //			global_size = _global_size;
 //			data_changed(FLAME_CHASH("global_size"), nullptr);
 //		}
 //		if (global_pos != _global_pos)
 //		{
-//			mark_dirty();
+//			mark_drawing_dirty();
 //			global_pos = _global_pos;
 //			data_changed(FLAME_CHASH("global_pos"), nullptr);
 //		}
@@ -261,15 +273,15 @@ namespace flame
 //		}
 //			break;
 //		case EntityLeftWorld:
-//			mark_dirty();
+//			mark_drawing_dirty();
 //			renderer = nullptr;
 //			break;
 //		case EntityVisibilityChanged:
 //			calc_geometry();
-//			mark_dirty();
+//			mark_drawing_dirty();
 //			break;
 //		case EntityPositionChanged:
-//			mark_dirty();
+//			mark_drawing_dirty();
 //			break;
 //		}
 //	}
@@ -279,7 +291,7 @@ namespace flame
 //		if (p == pos)
 //			return;
 //		pos = p;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("pos"), sender);
 //	}
 //
@@ -288,7 +300,7 @@ namespace flame
 //		if (s == scale)
 //			return;
 //		scale = s;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("scale"), sender);
 //	}
 //
@@ -297,7 +309,7 @@ namespace flame
 //		if (s == size)
 //			return;
 //		size = s;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("size"), sender);
 //	}
 //
@@ -306,7 +318,7 @@ namespace flame
 //		if (a == alpha)
 //			return;
 //		alpha = a;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("alpha"), sender);
 //	}
 //
@@ -315,7 +327,7 @@ namespace flame
 //		if (r == roundness)
 //			return;
 //		roundness = r;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("roundness"), sender);
 //	}
 //
@@ -324,7 +336,7 @@ namespace flame
 //		if (t == frame_thickness)
 //			return;
 //		frame_thickness = t;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("frame_thickness"), sender);
 //	}
 //
@@ -333,7 +345,7 @@ namespace flame
 //		if (c == color)
 //			return;
 //		color = c;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("color"), sender);
 //	}
 //
@@ -342,7 +354,7 @@ namespace flame
 //		if (c == frame_color)
 //			return;
 //		frame_color = c;
-//		mark_dirty();
+//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("frame_color"), sender);
 //	}
 

@@ -65,7 +65,8 @@ namespace flame
 		virtual Vec3c get_fill_color() = 0;
 		virtual void set_fill_color(const Vec3c& c) = 0;
 
-		virtual void mark_dirty() = 0;
+		virtual void mark_transform_dirty() = 0;
+		virtual void mark_drawing_dirty() = 0;
 
 		//FLAME_RV(Vec4f, padding); // L T R B
 		//FLAME_RV(float, alpha);

@@ -84,8 +84,11 @@ namespace flame
 		void set_fill_color(const Vec3c& c) override;
 
 		void on_entered_world() override;
+		void on_left_world() override;
+		void on_entity_position_changed() override;
 
-		void mark_dirty() override;
+		void mark_transform_dirty() override;
+		void mark_drawing_dirty() override;
 
 		void draw(graphics::Canvas* canvas);
 

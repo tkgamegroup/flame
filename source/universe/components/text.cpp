@@ -20,7 +20,7 @@ namespace flame
 	{
 		text = _text;
 		if (element)
-			element->mark_dirty();
+			element->mark_drawing_dirty();
 	}
 
 	void cTextPrivate::on_added()
