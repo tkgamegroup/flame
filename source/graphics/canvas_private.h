@@ -14,6 +14,8 @@ namespace flame
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
 
+		const auto resources_count = 64U;
+
 		struct CanvasResourcePrivate : CanvasResource
 		{
 			std::filesystem::path filename;
@@ -105,7 +107,7 @@ namespace flame
 
 			void set_target(std::span<ImageViewPrivate*> views);
 
-			CanvasResource* get_resource(uint slot) override { return resources[slot].get(); }
+			CanvasResource* get_resource(uint slot) override { return slot < resources_count ? resources[slot].get() : nullptr; }
 			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp = nullptr, const std::filesystem::path& filename = "", ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
 			void add_atlas(ImageAtlasPrivate* a);
 			void add_font(FontAtlasPrivate* f);

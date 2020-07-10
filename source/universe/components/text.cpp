@@ -28,6 +28,7 @@ namespace flame
 		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
 		element->drawers.push_back(this);
 	}
+
 	void cTextPrivate::on_removed()
 	{
 		Drawer* d = this;

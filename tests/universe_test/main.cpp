@@ -8,6 +8,7 @@
 #include <flame/graphics/canvas.h>
 #include <flame/universe/world.h>
 #include <flame/universe/entity.h>
+#include <flame/universe/res_map.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/systems/element_renderer.h>
 
@@ -42,6 +43,9 @@ void on_resize()
 		cbs[i] = CommandBuffer::create(d->get_graphics_command_pool());
 }
 
+auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
+auto test_prefab = L"4.prefab";
+
 int main(int argc, char** args)
 {
 	w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
@@ -49,6 +53,7 @@ int main(int argc, char** args)
 	render_finished = Semaphore::create(d);
 	sc = Swapchain::create(d, w);
 	fence = Fence::create(d);
+
 	canvas = Canvas::create(d);
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	{
@@ -58,6 +63,11 @@ int main(int argc, char** args)
 		font_atlas = FontAtlas::create(d, size(fonts), fonts);
 	}
 	canvas->add_font(font_atlas);
+	{
+		auto path = res_path / L"9.png";
+		canvas->set_resource(1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
+	}
+
 	on_resize();
 
 	set_allocator(
@@ -70,18 +80,17 @@ int main(int argc, char** args)
 
 	world = World::create();
 	world->register_object(canvas, "Canvas");
+	world->register_object(ResMap::create((res_path / L"res.ini").c_str()), "ResMap");
 
 	ser = sElementRenderer::create();
 	world->add_system(ser);
 
 	auto root = world->get_root();
-	root->get_component( S<ch("abc")>::v );
-	auto prefab_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-	root->load((prefab_path / "two.prefab").c_str());
+	root->load((res_path / test_prefab).c_str());
 
-	add_file_watcher(prefab_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
+	add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 		auto path = std::filesystem::path(filename);
-		if (path.filename() == L"two.prefab")
+		if (path.filename() == test_prefab)
 		{
 			auto root = c.thiz<Entity>();
 			root->remove_all_components();

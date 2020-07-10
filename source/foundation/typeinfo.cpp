@@ -950,7 +950,18 @@ namespace flame
 					}
 					break;
 				case TypePointer:
-					if (p1->name == "wchar_t")
+					if (p1->name == "char")
+					{
+						auto t = va_arg(ap, char*);
+						void* pf = nullptr;
+						if (rva)
+							;
+						else
+							pf = *(void**)((*(char**)obj) + voff);
+						cmf(p2f<void(__Dummy__::*)(char*)>(pf), obj, t);
+						return;
+					}
+					else if (p1->name == "wchar_t")
 					{
 						auto t = va_arg(ap, wchar_t*);
 						void* pf = nullptr;

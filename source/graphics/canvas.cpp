@@ -13,7 +13,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		const auto resource_count = 64U;
 		static RenderpassPrivate* rp = nullptr;
 		static DescriptorSetLayoutPrivate* dsl = nullptr;
 		static PipelineLayoutPrivate* pll = nullptr;
@@ -42,7 +41,7 @@ namespace flame
 			{
 				DescriptorBindingInfo db;
 				db.type = DescriptorSampledImage;
-				db.count = resource_count;
+				db.count = resources_count;
 				db.name = "images";
 				dsl = new DescriptorSetLayoutPrivate(d, { &db, 1});
 			}
@@ -84,9 +83,9 @@ namespace flame
 
 			img_white.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			img_white->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
-			resources.resize(resource_count);
+			resources.resize(resources_count);
 			auto iv_white = img_white->default_view.get();
-			for (auto i = 0; i < resource_count; i++)
+			for (auto i = 0; i < resources_count; i++)
 			{
 				auto r = new CanvasResourcePrivate;
 				r->view = iv_white;
@@ -95,7 +94,7 @@ namespace flame
 
 			ds.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), dsl));
 			auto sp = d->sampler_linear.get();
-			for (auto i = 0; i < resource_count; i++)
+			for (auto i = 0; i < resources_count; i++)
 				ds->set_image(0, i, iv_white, sp);
 		}
 
@@ -554,6 +553,7 @@ namespace flame
 
 		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col)
 		{
+			res_id = min(res_id, resources_count - 1);
 			auto atlas = resources[res_id]->image_atlas;
 			if (atlas)
 			{

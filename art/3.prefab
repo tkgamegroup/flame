@@ -2,6 +2,6 @@
 <prefab>
   <entity>
       <cElement />
-      <cText string="Hello World" />
+      <cText text="Hello World" />
   </entity>
 </prefab>
