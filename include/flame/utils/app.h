@@ -167,7 +167,7 @@ namespace flame
 
 	void GraphicsWindow::set_canvas_target()
 	{
-		std::vector<graphics::Imageview*> vs(swapchain->images_count());
+		std::vector<graphics::ImageView*> vs(swapchain->images_count());
 		for (auto i = 0; i < vs.size(); i++)
 			vs[i] = swapchain->image(i)->default_view();
 		canvas->set_target(vs.size(), vs.data());

@@ -25,7 +25,7 @@ struct App
 
 	void on_resize()
 	{
-		std::vector<Imageview*> vs(sc->get_images_count());
+		std::vector<ImageView*> vs(sc->get_images_count());
 		for (auto i = 0; i < vs.size(); i++)
 			vs[i] = sc->get_image(i)->get_default_view();
 
@@ -35,7 +35,7 @@ struct App
 			cb->release();
 		cbs.resize(vs.size());
 		for (auto i = 0; i < cbs.size(); i++)
-			cbs[i] = CommandBuffer::create(d->get_graphics_commandpool());
+			cbs[i] = CommandBuffer::create(d->get_graphics_command_pool());
 	}
 
 	void run()
