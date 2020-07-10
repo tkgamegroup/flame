@@ -604,7 +604,7 @@ namespace flame
 
 		void CanvasBridge::record(CommandBuffer* cb, uint image_index)
 		{ 
-			record((CommandBufferPrivate*)cb, image_index); 
+			((CanvasPrivate*)this)->record((CommandBufferPrivate*)cb, image_index);
 		}
 
 		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)

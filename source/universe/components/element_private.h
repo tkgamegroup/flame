@@ -13,105 +13,82 @@ namespace flame
 
 	struct Drawer
 	{
-		virtual void _draw(graphics::Canvas* canvas) = 0;
+		virtual void draw(graphics::Canvas* canvas) = 0;
 	};
 
 	struct cElementPrivate : cElement
 	{
-		sElementRendererPrivate* _renderer = nullptr;
+		sElementRendererPrivate* renderer = nullptr;
 
-		float _x = 0.f;
-		float _y = 0.f;
-		float _width = 0.f;
-		float _height = 0.f;
-		float _pivotx = 0.f;
-		float _pivoty = 0.f;
-		float _scalex = 1.f;
-		float _scaley = 1.f;
-		float _rotation = 0.f;
-		float _skewx = 0.f;
-		float _skewy = 0.f;
+		float x = 0.f;
+		float y = 0.f;
+		float width = 0.f;
+		float height = 0.f;
+		float pivotx = 0.f;
+		float pivoty = 0.f;
+		float scalex = 1.f;
+		float scaley = 1.f;
+		float rotation = 0.f;
+		float skewx = 0.f;
+		float skewy = 0.f;
 
-		Mat<3, 2, float> _transform = Mat<3, 2, float>(1.f);
-		bool _transform_dirty = true;
-		Vec2f _p00, _p10, _p11, _p01;
+		Mat<3, 2, float> transform = Mat<3, 2, float>(1.f);
+		bool transform_dirty = true;
+		Vec2f p00, p10, p11, p01;
 
-		Vec3c _fill_color = Vec3c(255);
+		Vec3c fill_color = Vec3c(255);
 
-		std::vector<Drawer*> _drawers;
+		std::vector<Drawer*> drawers;
 
-		void _set_x(float x);
-		void _set_y(float y);
-		void _set_width(float w);
-		void _set_height(float h);
-		void _set_pivotx(float p);
-		void _set_pivoty(float p);
-		void _set_scalex(float s);
-		void _set_scaley(float s);
-		void _set_rotation(float r);
-		void _set_skewx(float s);
-		void _set_skewy(float s);
+		float get_x() const override { return x; }
+		void set_x(float x) override;
 
-		void _update_transform();
-		const Mat<3, 2, float>& _get_transform();
-		const Vec2f& _get_p00();
-		const Vec2f& _get_p10();
-		const Vec2f& _get_p11();
-		const Vec2f& _get_p01();
+		float get_y() const override { return y; }
+		void set_y(float y) override;
 
-		void _set_fill_color(const Vec3c& c);
+		float get_width() const override { return width; }
+		void set_width(float w) override;
 
-		void _mark_dirty();
+		float get_height() const override { return height; }
+		void set_height(float h) override;
 
-		void _on_entered_world();
+		float get_pivotx() const override { return pivotx; }
+		void set_pivotx(float p) override;
 
-		void _draw(graphics::Canvas* canvas);
+		float get_pivoty() const override { return pivoty; }
+		void set_pivoty(float p) override;
 
-		static cElementPrivate* _create();
+		float get_scalex() const override { return scalex; }
+		void set_scalex(float s) override;
 
-		float get_x() const override { return _x; }
-		void set_x(float x) { _set_x(x); }
+		float get_scaley() const override { return scaley; }
+		void set_scaley(float s) override;
 
-		float get_y() const override { return _y; }
-		void set_y(float y) { _set_y(y); }
+		float get_rotation() const override { return rotation; }
+		void set_rotation(float r) override;
 
-		float get_width() const override { return _width; }
-		void set_width(float w) { _set_width(w); }
+		float get_skewx() const override { return skewx; }
+		void set_skewx(float s) override;
 
-		float get_height() const override { return _height; }
-		void set_height(float h) { _set_height(h); }
+		float get_skewy() const override { return skewy; }
+		void set_skewy(float s) override;
 
-		float get_pivotx() const override { return _pivotx; }
-		void set_pivotx(float p) override { _set_pivotx(p); }
+		void update_transform();
+		const Mat<3, 2, float>& get_transform();
+		Vec2f get_p00() override;
+		Vec2f get_p10() override;
+		Vec2f get_p11() override;
+		Vec2f get_p01() override;
 
-		float get_pivoty() const override { return _pivoty; }
-		void set_pivoty(float p) override { _set_pivoty(p); }
+		Vec3c get_fill_color() override { return fill_color; }
+		void set_fill_color(const Vec3c& c) override;
 
-		float get_scalex() const override { return _scalex; }
-		void set_scalex(float s) override { _set_scalex(s); }
+		void on_entered_world() override;
 
-		float get_scaley() const override { return _scaley; }
-		void set_scaley(float s) override { _set_scaley(s); }
+		void mark_dirty() override;
 
-		float get_rotation() const override { return _rotation; }
-		void set_rotation(float r) override { _set_rotation(r); }
+		void draw(graphics::Canvas* canvas);
 
-		float get_skewx() const override { return _skewx; }
-		void set_skewx(float s) override { _set_skewx(s); }
-
-		float get_skewy() const override { return _skewy; }
-		void set_skewy(float s) override { _set_skewy(s); }
-
-		Vec2f get_p00() override { return _get_p00(); }
-		Vec2f get_p10() override { return _get_p10(); }
-		Vec2f get_p11() override { return _get_p11(); }
-		Vec2f get_p01() override { return _get_p01(); }
-
-		Vec3c get_fill_color() override { return _fill_color; }
-		void set_fill_color(const Vec3c& c) override { _set_fill_color(c); }
-
-		void mark_dirty() override { _mark_dirty(); }
-
-		void on_entered_world() override { _on_entered_world(); }
+		static cElementPrivate* create();
 	};
 }

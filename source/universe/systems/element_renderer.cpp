@@ -7,9 +7,9 @@
 
 namespace flame
 {
-	void sElementRendererPrivate::_do_render(EntityPrivate* e)
+	void sElementRendererPrivate::do_render(EntityPrivate* e)
 	{
-		if (!e->_global_visibility)
+		if (!e->global_visibility)
 			return;
 
 		auto element = (cElementPrivate*)e->get_component(cElement::type_hash);
@@ -56,32 +56,32 @@ namespace flame
 		//}
 		//else
 		//{
-			element->_draw(_canvas);
+			element->draw(canvas);
 			//element->cmds.call(canvas);
-			for (auto& c : e->_children)
-				_do_render(c.get());
+			for (auto& c : e->children)
+				do_render(c.get());
 		//}
 	}
 
-	void sElementRendererPrivate::_on_added()
+	void sElementRendererPrivate::on_added()
 	{
-		_canvas = (graphics::Canvas*)((WorldPrivate*)world)->_find_object("Canvas");
+		canvas = (graphics::Canvas*)((WorldPrivate*)world)->find_object("Canvas");
 	}
 
-	void sElementRendererPrivate::_update()
+	void sElementRendererPrivate::update()
 	{
-		if (!_dirty)
+		if (!dirty)
 			return;
-		_do_render(((WorldPrivate*)world)->_root.get());
-		_dirty = false;
+		do_render(((WorldPrivate*)world)->root.get());
+		dirty = false;
 	}
 
-	sElementRendererPrivate* sElementRendererPrivate::_create()
+	sElementRendererPrivate* sElementRendererPrivate::create()
 	{
 		auto ret = _allocate(sizeof(sElementRendererPrivate));
 		new (ret) sElementRendererPrivate;
 		return (sElementRendererPrivate*)ret;
 	}
 
-	sElementRenderer* sElementRenderer::create() { return sElementRendererPrivate::_create(); }
+	sElementRenderer* sElementRenderer::create() { return sElementRendererPrivate::create(); }
 }

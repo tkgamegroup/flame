@@ -5,19 +5,29 @@ namespace flame
 {
 	WorldPrivate::WorldPrivate()
 	{
-		_root.reset(EntityPrivate::_create());
-		_root->_world = this;
-		_root->_global_visibility = true;
+		root.reset(EntityPrivate::create());
+		root->world = this;
+		root->global_visibility = true;
 	}
 
-	void WorldPrivate::_register_object(void* o, const std::string& name)
-	{
-		_objects.emplace_back(o, name);
+	void WorldBridge::register_object(void* o, const char* name)
+	{ 
+		((WorldPrivate*)this)->register_object(o, name);
 	}
 
-	void* WorldPrivate::_find_object(const std::string& name) const
+	void WorldPrivate::register_object(void* o, const std::string& name)
 	{
-		for (auto& o : _objects)
+		objects.emplace_back(o, name);
+	}
+
+	void* WorldBridge::find_object(const char* name) const
+	{
+		return ((WorldPrivate*)this)->find_object(name);
+	}
+
+	void* WorldPrivate::find_object(const std::string& name) const
+	{
+		for (auto& o : objects)
 		{
 			if (o.second == name)
 				return o.first;
@@ -25,9 +35,9 @@ namespace flame
 		return nullptr;
 	}
 
-	System* WorldPrivate::_get_system(uint name_hash) const
+	System* WorldPrivate::get_system(uint name_hash) const
 	{
-		for (auto& s : _systems)
+		for (auto& s : systems)
 		{
 			if (s->type_hash == name_hash)
 				return s.get();
@@ -35,21 +45,21 @@ namespace flame
 		return nullptr;
 	}
 
-	void WorldPrivate::_add_system(System* s)
+	void WorldPrivate::add_system(System* s)
 	{
 		assert(!s->world);
 		s->world = this;
-		_systems.emplace_back(s);
+		systems.emplace_back(s);
 		s->on_added();
 	}
 
-	void WorldPrivate::_remove_system(System* s)
+	void WorldPrivate::remove_system(System* s)
 	{
 	}
 
-	void WorldPrivate::_update()
+	void WorldPrivate::update()
 	{
-		for (auto& s : _systems)
+		for (auto& s : systems)
 			s->update();
 	}
 

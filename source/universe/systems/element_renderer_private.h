@@ -8,22 +8,18 @@ namespace flame
 
 	struct sElementRendererPrivate : sElementRenderer
 	{
-		graphics::Canvas* _canvas = nullptr;
+		graphics::Canvas* canvas = nullptr;
 
-		bool _dirty = false;
+		bool dirty = false;
 
-		void _do_render(EntityPrivate* e);
-		void _on_added();
-		void _update();
+		void mark_dirty() override { dirty = true; }
 
-		static sElementRendererPrivate* _create();
+		void on_added() override;
 
-		void release() override { delete this; }
+		void update() override;
 
-		void mark_dirty() override { _dirty = true; }
+		void do_render(EntityPrivate* e);
 
-		void on_added() override { _on_added(); }
-
-		void update() override { _update(); }
+		static sElementRendererPrivate* create();
 	};
 }

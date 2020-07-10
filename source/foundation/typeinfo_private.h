@@ -151,11 +151,9 @@ namespace flame
 		LibraryPrivate(const std::wstring& filename, bool require_typeinfo);
 		~LibraryPrivate();
 
-		void _release();
-
 		void* _get_exported_function(const char* name);
 
-		void release() override { _release(); }
+		void release() override;
 
 		char* get_address() const override { return address; }
 		const wchar_t* get_filename() const override { return filename.c_str(); }

@@ -5,20 +5,26 @@
 
 namespace flame
 {
-	struct cTextPrivate : cText, Drawer
+	struct cTextBridge : cText
 	{
-		std::wstring _string;
+		void set_text(const wchar_t* text) override;
+	};
 
-		cElementPrivate* _element = nullptr;
+	struct cTextPrivate : cTextBridge, Drawer
+	{
+		std::wstring text;
 
-		void _set_string(const std::wstring& str);
+		cElementPrivate* element = nullptr;
 
-		void _on_added();
-		void _on_removed();
+		const wchar_t* get_text() const override { return text.c_str(); }
+		void set_text(const std::wstring& text);
 
-		void _draw(graphics::Canvas* canvas) override;
+		void on_added() override;
+		void on_removed() override;
 
-		static cTextPrivate* _create();
+		void draw(graphics::Canvas* canvas) override;
+
+		static cTextPrivate* create();
 
 		//sLayoutManagement* management;
 
@@ -28,11 +34,5 @@ namespace flame
 		//cTextPrivate::~cTextPrivate();
 		//void auto_set_size();
 		//void on_event(EntityEvent e, void* t) override;
-
-		const wchar_t* get_string() const override { return _string.c_str(); }
-		void set_string(const wchar_t* str) override { _set_string(str); }
-
-		void on_added() override { _on_added(); }
-		void on_removed() override { _on_removed(); }
 	};
 }

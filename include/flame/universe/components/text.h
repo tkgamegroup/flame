@@ -14,8 +14,8 @@ namespace flame
 		{
 		}
 
-		virtual const wchar_t* get_string() const = 0;
-		virtual void set_string(const wchar_t* str) = 0;
+		virtual const wchar_t* get_text() const = 0;
+		virtual void set_text(const wchar_t* text) = 0;
 
 		//FLAME_RV(graphics::FontAtlas*, font_atlas);
 		//FLAME_RV(uint, font_size);

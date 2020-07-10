@@ -11,27 +11,32 @@
 
 namespace flame
 {
-	void cTextPrivate::_set_string(const std::wstring& str)
+	void cTextBridge::set_text(const wchar_t* text)
 	{
-		_string = str;
-		if (_element)
-			_element->_mark_dirty();
+		((cTextPrivate*)this)->set_text(text);
 	}
 
-	void cTextPrivate::_on_added()
+	void cTextPrivate::set_text(const std::wstring& _text)
 	{
-		_element = (cElementPrivate*)((EntityPrivate*)entity)->_get_component(cElement::type_hash);
-		_element->_drawers.push_back(this);
+		text = _text;
+		if (element)
+			element->mark_dirty();
 	}
-	void cTextPrivate::_on_removed()
+
+	void cTextPrivate::on_added()
+	{
+		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
+		element->drawers.push_back(this);
+	}
+	void cTextPrivate::on_removed()
 	{
 		Drawer* d = this;
-		erase_if(_element->_drawers, d);
+		erase_if(element->drawers, d);
 	}
 
-	void cTextPrivate::_draw(graphics::Canvas* canvas)
+	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(0, _string.c_str(), 14, _element->_get_p00(), Vec4c(0, 0, 0, 255));
+		canvas->add_text(0, text.c_str(), 14, element->get_p00(), Vec4c(0, 0, 0, 255));
 	}
 
 	//cTextPrivate::cTextPrivate()
@@ -168,12 +173,12 @@ namespace flame
 	//	data_changed(FLAME_CHASH("auto_size"), sender);
 	//}
 
-	cTextPrivate* cTextPrivate::_create()
+	cTextPrivate* cTextPrivate::create()
 	{
 		auto ret = _allocate(sizeof(cTextPrivate));
 		new (ret) cTextPrivate;
 		return (cTextPrivate*)ret;
 	}
 
-	cText* cText::create() { return cTextPrivate::_create(); }
+	cText* cText::create() { return cTextPrivate::create(); }
 }

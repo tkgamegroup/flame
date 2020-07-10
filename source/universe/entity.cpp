@@ -16,19 +16,19 @@ namespace flame
 
 	EntityPrivate::~EntityPrivate()
 	{
-		for (auto& e : _children)
+		for (auto& e : children)
 		{
-			for (auto c : e->_local_event_dispatch_list)
+			for (auto c : e->local_event_dispatch_list)
 				c->on_entity_removed();
 		}
-		for (auto c : _local_event_dispatch_list)
+		for (auto c : local_event_dispatch_list)
 			c->on_entity_destroyed();
 	}
 
-	void EntityPrivate::_release()
+	void EntityPrivate::release()
 	{
-		if (_parent)
-			_parent->_remove_child(this);
+		if (parent)
+			parent->remove_child(this);
 		else
 		{
 			this->~EntityPrivate();
@@ -36,299 +36,309 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::_update_visibility()
+	void EntityPrivate::update_visibility()
 	{
-		auto prev_visibility = _global_visibility;
-		if (_parent)
-			_global_visibility = _visible && _parent->_global_visibility;
+		auto prev_visibility = global_visibility;
+		if (parent)
+			global_visibility = visible && parent->global_visibility;
 		else
 		{
-			if (_world->_root.get() == this)
-				_global_visibility = true;
+			if (world->root.get() == this)
+				global_visibility = true;
 			else
-				_global_visibility = false;
+				global_visibility = false;
 		}
-		if (_global_visibility != prev_visibility)
+		if (global_visibility != prev_visibility)
 		{
-			for (auto c : _local_event_dispatch_list)
+			for (auto c : local_event_dispatch_list)
 				c->on_entity_visibility_changed();
-			if (_parent)
+			if (parent)
 			{
-				for (auto c : _parent->_child_event_dispatch_list)
+				for (auto c : parent->child_event_dispatch_list)
 					c->on_entity_child_visibility_changed(this);
 			}
 		}
 
-		for (auto& e : _children)
-			e->_update_visibility();
+		for (auto& e : children)
+			e->update_visibility();
 	}
 
-	void EntityPrivate::_set_visible(bool v)
+	void EntityPrivate::set_visible(bool v)
 	{
-		if (_visible == v)
+		if (visible == v)
 			return;
-		_visible = v;
-		_update_visibility();
+		visible = v;
+		update_visibility();
 	}
 
-	Component* EntityPrivate::_get_component(uint64 hash) const
+	Component* EntityPrivate::get_component(uint64 hash) const
 	{
-		auto it = _components.find(hash);
-		if (it != _components.end())
+		auto it = components.find(hash);
+		if (it != components.end())
 			return it->second.get();
 		return nullptr;
 	}
 
-	void EntityPrivate::_add_component(Component* c)
+	void EntityPrivate::add_component(Component* c)
 	{
 		assert(!c->entity);
-		assert(_components.find(c->type_hash) == _components.end());
+		assert(components.find(c->type_hash) == components.end());
 
 		c->entity = this;
 
 		c->on_added();
 
-		for (auto cc : _local_event_dispatch_list)
+		for (auto cc : local_event_dispatch_list)
 			cc->on_entity_component_added(c);
-		if (_parent)
+		if (parent)
 		{
-			for (auto cc : _parent->_child_event_dispatch_list)
+			for (auto cc : parent->child_event_dispatch_list)
 				cc->on_entity_child_component_added(c);
 		}
 
-		_components.emplace(c->type_hash, c);
+		components.emplace(c->type_hash, c);
 
 		if (c->_want_local_event)
 		{
-			_local_event_dispatch_list.push_back(c);
-			if (_world)
+			local_event_dispatch_list.push_back(c);
+			if (world)
 				c->on_entered_world();
 		}
 		if (c->_want_child_event)
-			_child_event_dispatch_list.push_back(c);
+			child_event_dispatch_list.push_back(c);
 		if (c->_want_local_data_changed)
-			_local_data_changed_dispatch_list.push_back(c);
+			local_data_changed_dispatch_list.push_back(c);
 		if (c->_want_child_data_changed)
-			_child_data_changed_dispatch_list.push_back(c);
+			child_data_changed_dispatch_list.push_back(c);
 	}
 
-	void EntityPrivate::_info_component_removed(Component* c) const
+	void EntityPrivate::info_component_removed(Component* c) const
 	{
-		for (auto cc : _local_event_dispatch_list)
+		for (auto cc : local_event_dispatch_list)
 			cc->on_entity_component_removed(c);
-		if (_parent)
+		if (parent)
 		{
-			for (auto cc : _parent->_child_event_dispatch_list)
+			for (auto cc : parent->child_event_dispatch_list)
 				cc->on_entity_child_component_removed(c);
 		}
 
 		if (c->_want_local_event)
 		{
-			if (_world)
+			if (world)
 				c->on_left_world();
 		}
 	}
 
-	void EntityPrivate::_remove_component(Component* c, bool destroy)
+	void EntityPrivate::remove_component(Component* c, bool destroy)
 	{
-		auto it = _components.find(c->type_hash);
-		if (it == _components.end())
+		auto it = components.find(c->type_hash);
+		if (it == components.end())
 		{
 			assert(0);
 			return;
 		}
 
-		_info_component_removed(c);
+		info_component_removed(c);
 
 		if (c->_want_local_event)
-			erase_if(_local_event_dispatch_list, c);
+			erase_if(local_event_dispatch_list, c);
 		if (c->_want_child_event)
-			erase_if(_child_event_dispatch_list, c);
+			erase_if(child_event_dispatch_list, c);
 		if (c->_want_local_data_changed)
-			erase_if(_local_data_changed_dispatch_list, c);
+			erase_if(local_data_changed_dispatch_list, c);
 		if (c->_want_child_data_changed)
-			erase_if(_child_data_changed_dispatch_list, c);
+			erase_if(child_data_changed_dispatch_list, c);
 
 		if (!destroy)
 			it->second.release();
-		_components.erase(it);
+		components.erase(it);
 	}
 
-	void EntityPrivate::_remove_all_components(bool destroy)
+	void EntityPrivate::remove_all_components(bool destroy)
 	{
-		for (auto& c : _components)
-			_info_component_removed(c.second.get());
+		for (auto& c : components)
+			info_component_removed(c.second.get());
 
-		_local_event_dispatch_list.clear();
-		_child_event_dispatch_list.clear();
-		_local_data_changed_dispatch_list.clear();
-		_child_data_changed_dispatch_list.clear();
+		local_event_dispatch_list.clear();
+		child_event_dispatch_list.clear();
+		local_data_changed_dispatch_list.clear();
+		child_data_changed_dispatch_list.clear();
 
 		if (!destroy)
 		{
-			for (auto& c : _components)
+			for (auto& c : components)
 				c.second.release();
 		}
-		_components.clear();
+		components.clear();
 	}
 
-	void EntityPrivate::_data_changed(Component* c, uint hash)
+	void EntityPrivate::data_changed(Component* c, uint hash)
 	{
 		assert(c->entity == this);
-		for (auto cc : _local_data_changed_dispatch_list)
+		for (auto cc : local_data_changed_dispatch_list)
 		{
 			if (cc != c)
 				cc->on_entity_component_data_changed(c, hash);
 		}
-		if (_parent)
+		if (parent)
 		{
-			for (auto cc : _parent->_child_data_changed_dispatch_list)
+			for (auto cc : parent->child_data_changed_dispatch_list)
 				cc->on_entity_child_component_data_changed(c, hash);
 		}
 	}
 
-	void EntityPrivate::_enter_world()
+	void EntityPrivate::enter_world()
 	{
-		for (auto c : _local_event_dispatch_list)
+		for (auto c : local_event_dispatch_list)
 			c->on_entered_world();
-		for (auto& e : _children)
+		for (auto& e : children)
 		{
-			e->_world = _world;
-			e->_enter_world();
+			e->world = world;
+			e->enter_world();
 		}
 	}
 
-	void EntityPrivate::_leave_world()
+	void EntityPrivate::leave_world()
 	{
-		for (auto it = _children.rbegin(); it != _children.rend(); it++)
-			(*it)->_leave_world();
-		_world = nullptr;
-		for (auto c : _local_event_dispatch_list)
+		for (auto it = children.rbegin(); it != children.rend(); it++)
+			(*it)->leave_world();
+		world = nullptr;
+		for (auto c : local_event_dispatch_list)
 			c->on_left_world();
 	}
 
-	void EntityPrivate::_inherit()
+	void EntityPrivate::inherit()
 	{
-		for (auto& e : _children)
+		for (auto& e : children)
 		{
-			e->_gene = _gene;
-			e->_inherit();
+			e->gene = gene;
+			e->inherit();
 		}
 	}
 
-	void EntityPrivate::_add_child(EntityPrivate* e, int position)
+	void EntityBridge::add_child(Entity* e, int position)
+	{ 
+		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
+	}
+
+	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
 		if (position == -1)
-			position = _children.size();
+			position = children.size();
 
-		for (auto i = position; i < _children.size(); i++)
+		for (auto i = position; i < children.size(); i++)
 		{
-			auto e = _children[i].get();
-			e->_index += 1;
-			for (auto c : e->_local_event_dispatch_list)
+			auto e = children[i].get();
+			e->index += 1;
+			for (auto c : e->local_event_dispatch_list)
 				c->on_entity_position_changed();
-			for (auto c : _child_event_dispatch_list)
+			for (auto c : child_event_dispatch_list)
 				c->on_entity_child_position_changed(e);
 		}
-		_children.emplace(_children.begin() + position, e);
+		children.emplace(children.begin() + position, e);
 
-		if (_gene)
+		if (gene)
 		{
-			e->_gene = _gene;
-			e->_inherit();
+			e->gene = gene;
+			e->inherit();
 		}
-		e->_parent = this;
-		e->_depth = _depth + 1;
-		e->_index = position;
-		e->_update_visibility();
+		e->parent = this;
+		e->depth = depth + 1;
+		e->index = position;
+		e->update_visibility();
 
-		if (e->_world != _world)
+		if (e->world != world)
 		{
-			e->_world = _world;
-			if (_world)
-				e->_enter_world();
+			e->world = world;
+			if (world)
+				e->enter_world();
 		}
 
-		for (auto c : e->_local_event_dispatch_list)
+		for (auto c : e->local_event_dispatch_list)
 			c->on_entity_added();
-		for (auto c : _local_event_dispatch_list)
+		for (auto c : local_event_dispatch_list)
 			c->on_entity_added_child(e);
 	}
 
-	void EntityPrivate::_reposition_child(uint pos1, uint pos2)
+	void EntityPrivate::reposition_child(uint pos1, uint pos2)
 	{
 		if (pos1 == pos2)
 			return;
-		assert(pos1 < _children.size() && pos2 < _children.size());
+		assert(pos1 < children.size() && pos2 < children.size());
 
-		auto a = _children[pos1].get();
-		auto b = _children[pos2].get();
-		a->_index = pos2;
-		b->_index = pos1;
-		std::swap(_children[pos1], _children[pos2]);
+		auto a = children[pos1].get();
+		auto b = children[pos2].get();
+		a->index = pos2;
+		b->index = pos1;
+		std::swap(children[pos1], children[pos2]);
 
-		for (auto c : a->_local_event_dispatch_list)
+		for (auto c : a->local_event_dispatch_list)
 			c->on_entity_position_changed();
-		for (auto c : b->_local_event_dispatch_list)
+		for (auto c : b->local_event_dispatch_list)
 			c->on_entity_position_changed();
 
-		for (auto c : _child_event_dispatch_list)
+		for (auto c : child_event_dispatch_list)
 			c->on_entity_child_position_changed(a);
-		for (auto c : _child_event_dispatch_list)
+		for (auto c : child_event_dispatch_list)
 			c->on_entity_child_position_changed(b);
 	}
 
-	void EntityPrivate::_info_child_removed(EntityPrivate* e) const
+	void EntityPrivate::info_child_removed(EntityPrivate* e) const
 	{
-		for (auto i = 0; i < e->_index; i++)
+		for (auto i = 0; i < e->index; i++)
 		{
-			auto ee = _children[i].get();
-			ee->_index -= 1;
-			for (auto c : ee->_local_event_dispatch_list)
+			auto ee = children[i].get();
+			ee->index -= 1;
+			for (auto c : ee->local_event_dispatch_list)
 				c->on_entity_position_changed();
-			for (auto c : _child_event_dispatch_list)
+			for (auto c : child_event_dispatch_list)
 				c->on_entity_child_position_changed(ee);
 		}
 
-		e->_parent = nullptr;
-		if (e->_world)
-			e->_leave_world();
+		e->parent = nullptr;
+		if (e->world)
+			e->leave_world();
 
-		for (auto c : e->_local_event_dispatch_list)
+		for (auto c : e->local_event_dispatch_list)
 			c->on_entity_removed();
-		for (auto c : _local_event_dispatch_list)
+		for (auto c : local_event_dispatch_list)
 			c->on_entity_removed_child(e);
 	}
 
-	void EntityPrivate::_remove_child(EntityPrivate* e, bool destroy)
+	void EntityBridge::remove_child(Entity* e, bool destroy)
+	{ 
+		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
+	}
+
+	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
-		auto it = std::find_if(_children.begin(), _children.end(), [&](const auto& t) {
+		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == e;
 		});
-		if (it == _children.end())
+		if (it == children.end())
 		{
 			assert(0); // not found!
 			return;
 		}
 
-		_info_child_removed(e);
+		info_child_removed(e);
 
 		if (!destroy)
 			it->release();
-		_children.erase(it);
+		children.erase(it);
 	}
 
-	void EntityPrivate::_remove_all_children(bool destroy)
+	void EntityPrivate::remove_all_children(bool destroy)
 	{
-		for (auto& c : _children)
-			_info_child_removed(c.get());
+		for (auto& c : children)
+			info_child_removed(c.get());
 
 		if (!destroy)
 		{
-			for (auto& c : _children)
+			for (auto& c : children)
 				c.release();
 		}
-		_children.clear();
+		children.clear();
 	}
 
 	static void set_attribute(Component* c, UdtInfo* udt, const std::string& name, const std::string& value)
@@ -370,21 +380,21 @@ namespace flame
 		{
 			auto name = std::string(a.name());
 			if (name == "name")
-				dst->_name = a.value();
+				dst->name = a.value();
 			else if (name == "visible")
-				dst->_visible = a.as_bool();
+				dst->visible = a.as_bool();
 			else if (name == "src")
 			{
 				auto path = std::filesystem::path(a.value());
 				path.replace_extension(L".prefab");
-				dst->_load(prefab_paths.empty() ? path : prefab_paths.top() / path);
+				dst->load(prefab_paths.empty() ? path : prefab_paths.top() / path);
 			}
 			else
 			{
 				auto sp = SUS::split(name, '.');
 				if (sp.size() > 1)
 				{
-					auto c = dst->_get_component(std::hash<std::string>()(sp[0]));
+					auto c = dst->get_component(std::hash<std::string>()(sp[0]));
 					if (c)
 					{
 						auto udt = find_udt(("flame::" + sp[0]).c_str());
@@ -399,8 +409,8 @@ namespace flame
 			auto name = std::string(n_c.name());
 			if (name == "entity")
 			{
-				auto e = EntityPrivate::_create();
-				dst->_add_child(e);
+				auto e = EntityPrivate::create();
+				dst->add_child(e);
 				load_prefab(e, n_c);
 			}
 			else
@@ -419,7 +429,12 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::_load(const std::filesystem::path& filename)
+	void EntityBridge::load(const wchar_t* filename)
+	{ 
+		((EntityPrivate*)this)->load(filename);
+	}
+
+	void EntityPrivate::load(const std::filesystem::path& filename)
 	{
 		pugi::xml_document file;
 		pugi::xml_node file_root;
@@ -438,13 +453,13 @@ namespace flame
 	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
 	{
 		auto n = dst.append_child("entity");
-		n.append_attribute("name").set_value(src->_name.empty() ? "unnamed" : src->_name.c_str());
-		n.append_attribute("visible").set_value(src->_visible);
+		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
+		n.append_attribute("visible").set_value(src->visible);
 
-		//if (!src->_components.empty())
+		//if (!src->components.empty())
 		//{
 		//	auto n_cs = n.append_child("components");
-		//	for (auto& c : src->_components)
+		//	for (auto& c : src->components)
 		//	{
 		//		auto component = c.second.get();
 
@@ -471,15 +486,20 @@ namespace flame
 		//	}
 		//}
 
-		//if (!src->_children.empty())
+		//if (!src->children.empty())
 		//{
 		//	auto n_es = n.append_child("children");
-		//	for (auto& e : src->_children)
+		//	for (auto& e : src->children)
 		//		save_prefab(n_es, e.get());
 		//}
 	}
 
-	void EntityPrivate::_save(const std::filesystem::path& filename)
+	void EntityBridge::save(const wchar_t* filename)
+	{ 
+		((EntityPrivate*)this)->save(filename);
+	}
+
+	void EntityPrivate::save(const std::filesystem::path& filename)
 	{
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
@@ -489,12 +509,12 @@ namespace flame
 		file.save_file(filename.c_str());
 	}
 
-	EntityPrivate* EntityPrivate::_create()
+	EntityPrivate* EntityPrivate::create()
 	{
 		auto ret = _allocate(sizeof(EntityPrivate));
 		new (ret) EntityPrivate;
 		return (EntityPrivate*)ret;
 	}
 
-	Entity* Entity::create() { return EntityPrivate::_create(); }
+	Entity* Entity::create() { return EntityPrivate::create(); }
 }

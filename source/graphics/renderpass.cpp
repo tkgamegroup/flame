@@ -173,12 +173,12 @@ namespace flame
 			create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			create_info.flags = 0;
 			create_info.pNext = nullptr;
-			auto first_image_size = views[0]->image->size;
+			auto first_image_size = _views[0]->image->size;
 			create_info.width = first_image_size.x();
 			create_info.height = first_image_size.y();
 			create_info.layers = 1;
 			create_info.renderPass = rp->vk_renderpass;
-			create_info.attachmentCount = views.size();
+			create_info.attachmentCount = raw_views.size();
 			create_info.pAttachments = raw_views.data();
 
 			chk_res(vkCreateFramebuffer(d->vk_device, &create_info, nullptr, &vk_framebuffer));

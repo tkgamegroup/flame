@@ -7,85 +7,75 @@ namespace flame
 {
 	struct WorldPrivate;
 
-	struct EntityPrivate : Entity
+	struct EntityBridge : Entity
 	{
-		std::string _name;
+		void add_child(Entity* e, int position) override;
+		void remove_child(Entity* e, bool destroy) override;
+		void load(const wchar_t* filename) override;
+		void save(const wchar_t* filename) override;
+	};
 
-		bool _visible = true;
-		bool _global_visibility = false;
+	struct EntityPrivate : EntityBridge
+	{
+		std::string name;
 
-		void* _gene = nullptr;
+		bool visible = true;
+		bool global_visibility = false;
 
-		WorldPrivate* _world = nullptr;
+		void* gene = nullptr;
 
-		EntityPrivate* _parent = nullptr;
-		std::unordered_map<uint64, std::unique_ptr<Component, Delecter>> _components;
-		std::vector<std::unique_ptr<EntityPrivate, Delecter>> _children;
-		std::vector<Component*> _local_event_dispatch_list;
-		std::vector<Component*> _child_event_dispatch_list;
-		std::vector<Component*> _local_data_changed_dispatch_list;
-		std::vector<Component*> _child_data_changed_dispatch_list;
+		WorldPrivate* world = nullptr;
 
-		uint _depth = 0;
-		uint _index = 0;
+		EntityPrivate* parent = nullptr;
+		std::unordered_map<uint64, std::unique_ptr<Component, Delecter>> components;
+		std::vector<std::unique_ptr<EntityPrivate, Delecter>> children;
+		std::vector<Component*> local_event_dispatch_list;
+		std::vector<Component*> child_event_dispatch_list;
+		std::vector<Component*> local_data_changed_dispatch_list;
+		std::vector<Component*> child_data_changed_dispatch_list;
+
+		uint depth = 0;
+		uint index = 0;
 		int _created_frame;
-		std::vector<void*> _created_stack;
+		std::vector<void*> created_stack;
 
 		EntityPrivate();
 		~EntityPrivate();
 
-		void _release();
+		void release() override;
 
-		void _update_visibility();
-		void _set_visible(bool v);
+		const char* get_name() const override { return name.c_str(); };
+		void set_name(const char* _name) override { name = _name; }
 
-		Component* _get_component(uint64 hash) const;
-		void _add_component(Component* c);
-		void _info_component_removed(Component* c) const;
-		void _remove_component(Component* c, bool destroy = true);
-		void _remove_all_components(bool destroy = true);
-		void _data_changed(Component* c, uint hash);
+		bool get_visible() const override { return visible; }
+		void update_visibility();
+		void set_visible(bool v) override;
 
-		void _enter_world();
-		void _leave_world();
-		void _inherit();
-		void _add_child(EntityPrivate* e, int position = -1);
-		void _reposition_child(uint pos1, uint pos2);
-		void _info_child_removed(EntityPrivate* e) const;
-		void _remove_child(EntityPrivate* e, bool destroy = true);
-		void _remove_all_children(bool destroyy = true);
+		World* get_world() const override { return (World*)world; }
 
-		void _load(const std::filesystem::path& filename);
-		void _save(const std::filesystem::path& filename);
+		Entity* get_parent() const override { return parent; }
 
-		static EntityPrivate* _create();
+		Component* get_component(uint64 hash) const override;
+		void add_component(Component* c);
+		void info_component_removed(Component* c) const;
+		void remove_component(Component* c, bool destroy = true);
+		void remove_all_components(bool destroy) override;
+		void data_changed(Component* c, uint hash) override;
 
-		void release() { _release(); }
+		uint get_children_count() const override { return children.size(); }
+		Entity* get_child(uint idx) const override { return children[idx].get(); }
+		void enter_world();
+		void leave_world();
+		void inherit();
+		void add_child(EntityPrivate* e, int position = -1);
+		void reposition_child(uint pos1, uint pos2) override;
+		void info_child_removed(EntityPrivate* e) const;
+		void remove_child(EntityPrivate* e, bool destroy = true);
+		void remove_all_children(bool destroy) override;
 
-		const char* get_name() const override { return _name.c_str(); };
-		void set_name(const char* name) override { _name = name; }
+		void load(const std::filesystem::path& filename);
+		void save(const std::filesystem::path& filename);
 
-		bool get_visible() const override { return _visible; }
-		void set_visible(bool v) override { _set_visible(v); }
-
-		World* get_world() const override { return (World*)_world; }
-
-		Entity* get_parent() const override { return _parent; }
-
-		Component* get_component(uint64 hash) const override { return _get_component(hash); }
-		void add_component(Component * c) override { _add_component(c); }
-		void remove_component(Component* c, bool destroy) override { _remove_component(c, destroy); }
-		void remove_all_components(bool destroy) override { _remove_all_components(); }
-		void data_changed(Component* c, uint hash) override { _data_changed(c, hash); }
-
-		uint get_children_count() const override { return _children.size(); }
-		Entity* get_child(uint idx) const override { return _children[idx].get(); }
-		void add_child(Entity* e, int position) override { _add_child((EntityPrivate*)e, position); }
-		void reposition_child(uint pos1, uint pos2) override { _reposition_child(pos1, pos2); }
-		void remove_child(Entity* e, bool destroy) override { _remove_child((EntityPrivate*)e, destroy); }
-		void remove_all_children(bool destroyy) override { _remove_all_children(); }
-
-		void load(const wchar_t* filename) override { _load(filename); }
-		void save(const wchar_t* filename) override { _save(filename); }
+		static EntityPrivate* create();
 	};
 }

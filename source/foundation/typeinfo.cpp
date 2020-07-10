@@ -1158,7 +1158,7 @@ namespace flame
 		}
 	}
 
-	void LibraryPrivate::_release()
+	void LibraryPrivate::release()
 	{
 		ref_count--;
 		if (ref_count == 0)

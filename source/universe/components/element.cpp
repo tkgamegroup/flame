@@ -6,165 +6,165 @@
 
 namespace flame
 {
-	void cElementPrivate::_set_x(float x)
+	void cElementPrivate::set_x(float _x)
 	{
-		_x = x;
-		_transform_dirty = true;
-		_mark_dirty();
+		x = _x;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_y(float y)
+	void cElementPrivate::set_y(float _y)
 	{
-		_y = y;
-		_transform_dirty = true;
-		_mark_dirty();
+		y = _y;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_width(float w)
+	void cElementPrivate::set_width(float w)
 	{
-		_width = w;
-		_transform_dirty = true;
-		_mark_dirty();
+		width = w;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_height(float h)
+	void cElementPrivate::set_height(float h)
 	{
-		_height = h;
-		_transform_dirty = true;
-		_mark_dirty();
+		height = h;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_pivotx(float p)
+	void cElementPrivate::set_pivotx(float p)
 	{
-		_pivotx = p;
-		_transform_dirty = true;
-		_mark_dirty();
+		pivotx = p;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_pivoty(float p)
+	void cElementPrivate::set_pivoty(float p)
 	{
-		_pivoty = p;
-		_transform_dirty = true;
-		_mark_dirty();
+		pivoty = p;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_scalex(float s)
+	void cElementPrivate::set_scalex(float s)
 	{
-		_scalex = s;
-		_transform_dirty = true;
-		_mark_dirty();
+		scalex = s;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_scaley(float s)
+	void cElementPrivate::set_scaley(float s)
 	{
-		_scaley = s;
-		_transform_dirty = true;
-		_mark_dirty();
+		scaley = s;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_rotation(float r)
+	void cElementPrivate::set_rotation(float r)
 	{
-		_rotation = r;
-		_transform_dirty = true;
-		_mark_dirty();
+		rotation = r;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_skewx(float s)
+	void cElementPrivate::set_skewx(float s)
 	{
-		_skewx = s;
-		_transform_dirty = true;
-		_mark_dirty();
+		skewx = s;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_set_skewy(float s)
+	void cElementPrivate::set_skewy(float s)
 	{
-		_skewy = s;
-		_transform_dirty = true;
-		_mark_dirty();
+		skewy = s;
+		transform_dirty = true;
+		mark_dirty();
 	}
 
 
-	void cElementPrivate::_update_transform()
+	void cElementPrivate::update_transform()
 	{
-		if (!_transform_dirty)
+		if (!transform_dirty)
 			return;
-		_transform_dirty = false;
+		transform_dirty = false;
 
 		auto base_transform = Mat<3, 2, float>(1.f);
-		auto p = ((EntityPrivate*)entity)->_parent;
+		auto p = ((EntityPrivate*)entity)->parent;
 		if (p)
 		{
-			auto pe = (cElementPrivate*)p->_get_component(cElement::type_hash);
+			auto pe = (cElementPrivate*)p->get_component(cElement::type_hash);
 			if (pe)
-				base_transform = pe->_get_transform();
+				base_transform = pe->get_transform();
 		}
 
 		auto axis = Mat2f(base_transform);
 		auto c = Vec2f(base_transform[0][2], base_transform[1][2]) + 
-			axis[0] * _x + axis[1] * _y;
-		axis[0] = rotation((_rotation + _skewy) * ANG_RAD) * axis[0] * _scalex;
-		axis[1] = rotation((_rotation + _skewx) * ANG_RAD) * axis[1] * _scaley;
+			axis[0] * x + axis[1] * y;
+		axis[0] = ::flame::rotation((rotation + skewy) * ANG_RAD) * axis[0] * scalex;
+		axis[1] = ::flame::rotation((rotation + skewx) * ANG_RAD) * axis[1] * scaley;
 
-		auto w = axis[0] * _width;
-		auto h = axis[1] * _height;
-		_p00 = w * -_pivotx + h * -_pivoty + c;
-		_p10 = w * (1.f - _pivotx) + h * -_pivoty + c;
-		_p01 = w * -_pivotx + h * (1.f - _pivoty) + c;
-		_p11 = w * (1.f - _pivotx) + h * (1.f - _pivoty) + c;
-		_transform = Mat<3, 2, float>(Vec3f(axis[0], _p00.x()), Vec3f(axis[1], _p00.y()));
+		auto w = axis[0] * width;
+		auto h = axis[1] * height;
+		p00 = w * -pivotx + h * -pivoty + c;
+		p10 = w * (1.f - pivotx) + h * -pivoty + c;
+		p01 = w * -pivotx + h * (1.f - pivoty) + c;
+		p11 = w * (1.f - pivotx) + h * (1.f - pivoty) + c;
+		transform = Mat<3, 2, float>(Vec3f(axis[0], p00.x()), Vec3f(axis[1], p00.y()));
 	}
 
-	const Mat<3, 2, float>& cElementPrivate::_get_transform()
+	const Mat<3, 2, float>& cElementPrivate::get_transform()
 	{
-		if (_transform_dirty)
-			_update_transform();
-		return _transform;
+		if (transform_dirty)
+			update_transform();
+		return transform;
 	}
 
-	const Vec2f& cElementPrivate::_get_p00()
+	Vec2f cElementPrivate::get_p00()
 	{
-		if (_transform_dirty)
-			_update_transform();
-		return _p00;
+		if (transform_dirty)
+			update_transform();
+		return p00;
 	}
 
-	const Vec2f& cElementPrivate::_get_p10()
+	Vec2f cElementPrivate::get_p10()
 	{
-		if (_transform_dirty)
-			_update_transform();
-		return _p10;
+		if (transform_dirty)
+			update_transform();
+		return p10;
 	}
 
-	const Vec2f& cElementPrivate::_get_p11()
+	Vec2f cElementPrivate::get_p11()
 	{
-		if (_transform_dirty)
-			_update_transform();
-		return _p11;
+		if (transform_dirty)
+			update_transform();
+		return p11;
 	}
 
-	const Vec2f& cElementPrivate::_get_p01()
+	Vec2f cElementPrivate::get_p01()
 	{
-		if (_transform_dirty)
-			_update_transform();
-		return _p01;
+		if (transform_dirty)
+			update_transform();
+		return p01;
 	}
 
-	void cElementPrivate::_set_fill_color(const Vec3c& c)
+	void cElementPrivate::set_fill_color(const Vec3c& c)
 	{
-		_fill_color = c;
-		_mark_dirty();
+		fill_color = c;
+		mark_dirty();
 	}
 
-	void cElementPrivate::_mark_dirty()
+	void cElementPrivate::mark_dirty()
 	{
-		if (_renderer)
-			_renderer->_dirty = true;
+		if (renderer)
+			renderer->dirty = true;
 	}
 
-	void cElementPrivate::_on_entered_world()
+	void cElementPrivate::on_entered_world()
 	{
-		_renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->_world->_get_system(sElementRenderer::type_hash);
-		_mark_dirty();
+		renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->world->get_system(sElementRenderer::type_hash);
+		mark_dirty();
 	}
 
 //	void cElementPrivate::calc_geometry()
@@ -208,7 +208,7 @@ namespace flame
 //		}
 //	}
 //
-	void cElementPrivate::_draw(graphics::Canvas* canvas)
+	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
 //#ifdef _DEBUG
 //		if (debug_level > 0)
@@ -223,14 +223,14 @@ namespace flame
 //			if (alpha > 0.f)
 //			{
 				std::vector<Vec2f> points;
-				points.push_back(_get_p00());
-				points.push_back(_get_p10());
-				points.push_back(_get_p11());
-				points.push_back(_get_p01());
-				canvas->fill(points.size(), points.data(), Vec4c(_fill_color, 255));
+				points.push_back(get_p00());
+				points.push_back(get_p10());
+				points.push_back(get_p11());
+				points.push_back(get_p01());
+				canvas->fill(points.size(), points.data(), Vec4c(fill_color, 255));
 
-				for (auto d : _drawers)
-					d->_draw(canvas);
+				for (auto d : drawers)
+					d->draw(canvas);
 //				auto p = floor(global_pos);
 //				auto s = floor(global_size);
 //				auto r = floor(roundness * global_scale);
@@ -346,12 +346,12 @@ namespace flame
 //		data_changed(FLAME_CHASH("frame_color"), sender);
 //	}
 
-	cElementPrivate* cElementPrivate::_create()
+	cElementPrivate* cElementPrivate::create()
 	{
 		auto ret = _allocate(sizeof(cElementPrivate));
 		new (ret) cElementPrivate;
 		return (cElementPrivate*)ret;
 	}
 
-	cElement* cElement::create() { return cElementPrivate::_create(); }
+	cElement* cElement::create() { return cElementPrivate::create(); }
 }

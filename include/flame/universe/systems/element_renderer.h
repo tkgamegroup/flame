@@ -20,8 +20,6 @@ namespace flame
 		{
 		}
 
-		virtual void release() = 0;
-
 		virtual void mark_dirty() = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sElementRenderer* create();

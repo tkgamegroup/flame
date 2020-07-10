@@ -7,35 +7,32 @@
 
 namespace flame
 {
-	struct WorldPrivate : World
+	struct WorldBridge : World
 	{
-		std::vector<std::pair<void*, std::string>> _objects;
+		void register_object(void* o, const char* name) override;
+		void* find_object(const char* name) const override;
+	};
 
-		std::vector<std::unique_ptr<System, Delecter>> _systems;
-		std::unique_ptr<EntityPrivate, Delecter> _root;
+	struct WorldPrivate : WorldBridge
+	{
+		std::vector<std::pair<void*, std::string>> objects;
+
+		std::vector<std::unique_ptr<System, Delecter>> systems;
+		std::unique_ptr<EntityPrivate, Delecter> root;
 
 		WorldPrivate();
 
-		void _register_object(void* o, const std::string& name);
-		void* _find_object(const std::string& name) const;
-
-		System* _get_system(uint name_hash) const;
-		void _add_system(System* s);
-		void _remove_system(System* s);
-
-		void _update();
-
 		void release() override { delete this; }
 
-		void register_object(void* o, const char* name) override { _register_object(o, name); }
-		void* find_object(const char* name) const override { return _find_object(name); }
+		void register_object(void* o, const std::string& name);
+		void* find_object(const std::string& name) const;
 
-		System* get_system(uint name_hash) const override { return _get_system(name_hash); }
-		void add_system(System* s) override { _add_system(s); }
-		void remove_system(System* s) override { _remove_system(s); }
+		System* get_system(uint name_hash) const override;
+		void add_system(System* s) override;
+		void remove_system(System* s) override;
 
-		Entity* get_root() const override { return _root.get(); }
+		Entity* get_root() const override { return root.get(); }
 
-		void update() override { _update(); }
+		void update() override;
 	};
 }
