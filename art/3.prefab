@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-      <cElement />
+      <cElement fill_color="255;255;0" />
       <cText text="Hello World" />
   </entity>
 </prefab>

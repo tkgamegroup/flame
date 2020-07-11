@@ -73,7 +73,7 @@ namespace flame
 				};
 				wchar_t engine_path[260];
 				get_engine_path(engine_path);
-				pl = PipelinePrivate::_create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll, rp, 0, &vi);
+				pl = PipelinePrivate::create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll, rp, 0, &vi);
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));

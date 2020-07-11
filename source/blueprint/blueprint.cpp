@@ -78,8 +78,9 @@ namespace flame
 			auto o = links[0];
 			if (o)
 			{
-				bpSlotPrivate* thiz = this;
-				erase_if(o->links, thiz);
+				std::erase_if(o->links, [&](const auto& i) {
+					return i == this;
+				});
 				if (type->get_name() == std::string("ListenerHub"))
 					(*(ListenerHub<void(Capture&)>**)data)->remove(listener);
 			}

@@ -141,13 +141,29 @@ namespace flame
 		info_component_removed(c);
 
 		if (c->_want_local_event)
-			erase_if(local_event_dispatch_list, c);
+		{
+			std::erase_if(local_event_dispatch_list, [&](const auto& i) {
+				return i == c;
+			});
+		}
 		if (c->_want_child_event)
-			erase_if(child_event_dispatch_list, c);
+		{
+			std::erase_if(child_event_dispatch_list, [&](const auto& i) {
+				return i == c;
+			});
+		}
 		if (c->_want_local_data_changed)
-			erase_if(local_data_changed_dispatch_list, c);
+		{
+			std::erase_if(local_data_changed_dispatch_list, [&](const auto& i) {
+				return i == c;
+			});
+		}
 		if (c->_want_child_data_changed)
-			erase_if(child_data_changed_dispatch_list, c);
+		{
+			std::erase_if(child_data_changed_dispatch_list, [&](const auto& i) {
+				return i == c;
+			});
+		}
 
 		if (!destroy)
 			it->second.release();

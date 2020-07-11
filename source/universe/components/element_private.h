@@ -4,17 +4,7 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct sElementRendererPrivate;
-
-	struct Drawer
-	{
-		virtual void draw(graphics::Canvas* canvas) = 0;
-	};
 
 	struct cElementPrivate : cElement
 	{

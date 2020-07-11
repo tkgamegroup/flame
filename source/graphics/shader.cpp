@@ -651,7 +651,7 @@ namespace flame
 			type = shader_stage_from_ext(_filename.extension());
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::span<CompiledShader> _shaders, PipelineLayoutPrivate* pll, 
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::vector<CompiledShader>& _shaders, PipelineLayoutPrivate* pll,
 			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
 			DepthInfo* depth, std::span<const uint> dynamic_states) :
 			device(d),
@@ -679,10 +679,6 @@ namespace flame
 				dst.stage = to_backend(src.s->type);
 				dst.module = src.m;
 			}
-
-			shaders.resize(_shaders.size());
-			for (auto i = 0; i < shaders.size(); i++)
-				shaders[i] = std::move(_shaders[i]);
 
 			if (vi)
 			{
@@ -872,6 +868,10 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+
+			shaders.resize(_shaders.size());
+			for (auto i = 0; i < shaders.size(); i++)
+				shaders[i] = std::move(_shaders[i]);
 		}
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelineLayoutPrivate* pll) :
@@ -881,9 +881,6 @@ namespace flame
 			type = PipelineCompute;
 
 #if defined(FLAME_VULKAN)
-			shaders.resize(1);
-			shaders[0] = std::move(compute_shader);
-
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 			pipeline_info.pNext = nullptr;
@@ -905,6 +902,9 @@ namespace flame
 #elif defined(FLAME_D3D12)
 
 #endif
+
+			shaders.resize(1);
+			shaders[0] = std::move(compute_shader);
 		}
 
 		PipelinePrivate::~PipelinePrivate()
@@ -919,7 +919,7 @@ namespace flame
 #endif
 		}
 
-		PipelinePrivate* PipelinePrivate::_create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders,
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders,
 			PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
 			DepthInfo* depth, std::span<const uint> dynamic_states)
 		{
@@ -955,7 +955,7 @@ namespace flame
 			return new PipelinePrivate(d, ss, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, dynamic_states);
 		}
 
-		PipelinePrivate* PipelinePrivate::_create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
 		{
 			if (compute_shader->type != ShaderStageComp)
 				return nullptr;
@@ -973,11 +973,12 @@ namespace flame
 			VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
 			uint dynamic_states_count, const uint* dynamic_states)
 		{
-			return PipelinePrivate::_create((DevicePrivate*)d, shader_dir, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, { dynamic_states , dynamic_states_count });
+			return PipelinePrivate::create((DevicePrivate*)d, shader_dir, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, { dynamic_states , dynamic_states_count });
 		}
+
 		Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, PipelineLayout* pll)
 		{
-			return PipelinePrivate::_create((DevicePrivate*)d, shader_dir, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
+			return PipelinePrivate::create((DevicePrivate*)d, shader_dir, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
 		}
 	}
 }

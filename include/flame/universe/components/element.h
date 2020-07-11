@@ -4,10 +4,20 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct FLAME_R(cElement : Component, all)
 	{
 		inline static auto type_name = "cElement";
 		inline static auto type_hash = ch(type_name);
+
+		struct Drawer
+		{
+			virtual void draw(graphics::Canvas* canvas) = 0;
+		};
 
 		cElement() :
 			Component(type_name, type_hash, true)

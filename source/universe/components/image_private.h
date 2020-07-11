@@ -12,7 +12,7 @@ namespace flame
 		void set_src(const char* src) override;
 	};
 
-	struct cImagePrivate : cImageBridge, Drawer
+	struct cImagePrivate : cImageBridge, cElement::Drawer
 	{
 		uint res_id = 0xffffffff;
 		uint tile_id = 0;

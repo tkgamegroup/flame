@@ -11,6 +11,7 @@
 #include <flame/universe/res_map.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/systems/element_renderer.h>
+#include <flame/universe/systems/type_setting.h>
 
 using namespace flame;
 using namespace graphics;
@@ -44,7 +45,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"4.prefab";
+auto test_prefab = L"3.prefab";
 
 int main(int argc, char** args)
 {
@@ -81,6 +82,8 @@ int main(int argc, char** args)
 	world = World::create();
 	world->register_object(canvas, "Canvas");
 	world->register_object(ResMap::create((res_path / L"res.ini").c_str()), "ResMap");
+
+	world->add_system(sTypeSetting::create());
 
 	ser = sElementRenderer::create();
 	world->add_system(ser);

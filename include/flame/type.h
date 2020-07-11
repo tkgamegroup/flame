@@ -52,24 +52,6 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	void erase_if(std::vector<T>& vec, T v)
-	{
-		auto it = std::find(vec.begin(), vec.end(), v);
-		if (it != vec.end())
-			vec.erase(it);
-	}
-
-	template <class T>
-	void erase_if(std::vector<std::unique_ptr<T>>& vec, T* v)
-	{
-		auto it = std::find_if(vec.begin(), vec.end(), [&](const auto& t) {
-			return t.get() == v;
-		});
-		if (it != vec.end())
-			vec.erase(it);
-	}
-
 	template <class F>
 	void* f2v(F f) // function to void pointer
 	{

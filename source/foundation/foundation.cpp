@@ -1393,7 +1393,9 @@ namespace flame
 
 	void WindowPrivate::remove_key_listener(void* lis)
 	{
-		erase_if(key_listeners, (decltype(key_listeners[0].get()))lis);
+		std::erase_if(key_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	void* WindowPrivate::add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
@@ -1405,7 +1407,9 @@ namespace flame
 
 	void WindowPrivate::remove_mouse_listener(void* lis)
 	{
-		erase_if(mouse_listeners, (decltype(mouse_listeners[0].get()))lis);
+		std::erase_if(mouse_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture)
@@ -1417,7 +1421,9 @@ namespace flame
 
 	void WindowPrivate::remove_resize_listener(void* lis)
 	{
-		erase_if(resize_listeners, (decltype(resize_listeners[0].get()))lis);
+		std::erase_if(resize_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	void* WindowPrivate::add_destroy_listener(void (*callback)(Capture& c), const Capture& capture)
@@ -1429,7 +1435,9 @@ namespace flame
 
 	void WindowPrivate::remove_destroy_listener(void* lis)
 	{
-		erase_if(destroy_listeners, (decltype(destroy_listeners[0].get()))lis);
+		std::erase_if(destroy_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	Window* Window::create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent)

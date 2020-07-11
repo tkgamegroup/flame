@@ -181,25 +181,6 @@ namespace flame
 
 //	void cElementPrivate::calc_geometry()
 //	{
-//		float _global_scale;
-//		Vec2f _global_size;
-//		Vec2f _global_pos;
-//
-//		auto p = entity->parent;
-//		if (!p)
-//		{
-//			_global_scale = scale;
-//			_global_size = size * global_scale;
-//			_global_pos = pos;
-//		}
-//		else
-//		{
-//			auto p_element = p->get_component(cElement);
-//			_global_scale = p_element->global_scale * scale;
-//			_global_size = size * global_scale;
-//			_global_pos = p_element->global_pos + p_element->global_scale * pos - pivot * global_size;
-//		}
-//
 //		if (global_scale != _global_scale)
 //		{
 //			mark_drawing_dirty();

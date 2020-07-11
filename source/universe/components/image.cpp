@@ -62,8 +62,9 @@ namespace flame
 
 	void cImagePrivate::on_removed()
 	{
-		Drawer* d = this;
-		erase_if(element->drawers, d);
+		std::erase_if(element->drawers, [&](const auto& i) {
+			return i == this;
+		});
 	}
 
 	void cImagePrivate::on_entered_world()

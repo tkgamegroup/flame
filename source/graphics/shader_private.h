@@ -220,16 +220,16 @@ namespace flame
 
 #endif
 
-			PipelinePrivate(DevicePrivate* d, std::span<CompiledShader> shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
+			PipelinePrivate(DevicePrivate* d, std::vector<CompiledShader>& shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
 				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
 			PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelineLayoutPrivate* pll);
 			~PipelinePrivate();
 
-			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders, 
+			static PipelinePrivate* create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders, 
 				PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0),
 				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
-			static PipelinePrivate* _create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+			static PipelinePrivate* create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 
 			void release() override { delete this; }
 

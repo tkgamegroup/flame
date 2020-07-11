@@ -1,12 +1,9 @@
 //#include <flame/universe/world.h>
-//#include <flame/universe/systems/2d_renderer.h>
-//#include <flame/universe/components/element.h>
-//#include <flame/universe/components/event_receiver.h>
-//#include <flame/universe/components/style.h>
 //#include <flame/universe/components/aligner.h>
 
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
+#include "../world_private.h"
 #include "text_private.h"
 
 namespace flame
@@ -20,19 +17,39 @@ namespace flame
 	{
 		text = _text;
 		if (element)
+		{
 			element->mark_drawing_dirty();
+			if (type_setting && true/*auto_size*/)
+				type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		}
 	}
 
 	void cTextPrivate::on_added()
 	{
 		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
 		element->drawers.push_back(this);
+		if (type_setting && true/*auto_size*/)
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
 	}
 
 	void cTextPrivate::on_removed()
 	{
-		Drawer* d = this;
-		erase_if(element->drawers, d);
+		std::erase_if(element->drawers, [&](const auto& i) {
+			return i == this;
+		});
+	}
+
+	void cTextPrivate::on_entered_world()
+	{
+		type_setting = (sTypeSettingPrivate*)((EntityPrivate*)entity)->world->get_system(sTypeSetting::type_hash);
+		//if (auto_size)
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+	}
+
+	void cTextPrivate::on_entity_visibility_changed()
+	{
+		if (type_setting && true/*auto_size*/)
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
@@ -40,19 +57,19 @@ namespace flame
 		canvas->add_text(0, text.c_str(), 14, element->get_p00(), Vec4c(0, 0, 0, 255));
 	}
 
+	Vec2f cTextPrivate::measure()
+	{
+		return Vec2f(text.size() * 14, 14);
+	}
+
 	//cTextPrivate::cTextPrivate()
 	//{
-	//	management = nullptr;
-
 	//	font_atlas = nullptr;
 	//	text.resize(1);
 	//	text.v[0] = 0;
 	//	font_size = 0;
 	//	color = 0;
 	//	auto_size = true;
-
-	//	draw_cmd = nullptr;
-	//	pending_sizing = false;
 	//}
 
 	//void cTextPrivate::draw(graphics::Canvas* canvas)
@@ -78,36 +95,6 @@ namespace flame
 	//	}
 	//}
 
-	//void cTextPrivate::on_event(EntityEvent e, void* t)
-	//{
-	//	switch (e)
-	//	{
-	//	case EntityComponentAdded:
-	//		if (t == this)
-	//		{
-	//			element = entity->get_component(cElement);
-	//			assert(element);
-
-	//			draw_cmd = element->cmds.add([](Capture& c, graphics::Canvas* canvas) {
-	//				c.thiz<cTextPrivate>()->draw(canvas);
-	//				return true;
-	//			}, Capture().set_thiz(this));
-	//			if (management && auto_size)
-	//				management->add_to_sizing_list(this);
-	//		}
-	//		break;
-	//	case EntityEnteredWorld:
-	//		management = entity->world->get_system(sLayoutManagement);
-	//		if (auto_size)
-	//			management->add_to_sizing_list(this);
-	//		break;
-	//	case EntityVisibilityChanged:
-	//		if (management && auto_size)
-	//			management->add_to_sizing_list(this);
-	//		break;
-	//	}
-	//}
-
 	//void cText::set_text(const wchar_t* text, int length, void* sender)
 	//{
 	//	auto thiz = (cTextPrivate*)this;
@@ -118,12 +105,6 @@ namespace flame
 	//		if (thiz->text.compare(text, length))
 	//			return;
 	//		thiz->text.assign(text, length);
-	//	}
-	//	if (element)
-	//	{
-	//		element->mark_dirty();
-	//		if (management && auto_size)
-	//			management->add_to_sizing_list(this);
 	//	}
 	//	data_changed(FLAME_CHASH("text"), sender);
 	//}
