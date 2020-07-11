@@ -1,9 +1,9 @@
-//#include <flame/graphics/font.h>
 //#include <flame/universe/world.h>
-//#include <flame/universe/systems/layout_management.h>
 //#include <flame/universe/components/element.h>
 //#include <flame/universe/components/aligner.h>
-//#include "layout_private.h"
+#include "../universe_private.h"
+#include "../systems/type_setting_private.h"
+#include "layout_private.h"
 //
 //#include <limits>
 
@@ -11,7 +11,6 @@ namespace flame
 {
 //	cLayoutPrivate::cLayoutPrivate(LayoutType _type)
 //	{
-//		type = _type;
 //		column = 0;
 //		item_padding = 0.f;
 //		width_fit_children = true;
@@ -20,14 +19,6 @@ namespace flame
 //
 //		scroll_offset = Vec2f(0.f);
 //		content_size = Vec2f(0.f);
-//
-//		pending_update = false;
-//	}
-//
-//	cLayoutPrivate::~cLayoutPrivate()
-//	{
-//		if (pending_update)
-//			management->remove_from_update_list(this);
 //	}
 //
 //	void cLayoutPrivate::set_content_size(const Vec2f& s)
@@ -120,14 +111,7 @@ namespace flame
 //
 //				aligner = entity->get_component(cAligner);
 //			}
-//			else if (((Component*)t)->name_hash == FLAME_CHASH("cAligner"))
-//				aligner = (cAligner*)t;
 //			break;
-//		case EntityComponentRemoved:
-//			if (((Component*)t)->name_hash == FLAME_CHASH("cAligner"))
-//				aligner = nullptr;
-//			break;
-//		case EntityVisibilityChanged:
 //		case EntityChildVisibilityChanged:
 //		case EntityChildPositionChanged:
 //			if (management)
@@ -186,8 +170,8 @@ namespace flame
 //		}
 //	}
 //
-//	void cLayoutPrivate::update()
-//	{
+	void cLayoutPrivate::update()
+	{
 //#ifdef _DEBUG
 //		if (debug_level > 0)
 //		{
@@ -196,7 +180,7 @@ namespace flame
 //		}
 //#endif
 //
-//		updating = true;
+		updating = true;
 //
 //		std::vector<std::pair<cElement*, cAligner*>> als;
 //		for (auto c : entity->children)
@@ -210,17 +194,17 @@ namespace flame
 //			}
 //		}
 //
-//		switch (type)
-//		{
-//		case LayoutFree:
+		switch (type)
+		{
+		case LayoutFree:
 //			for (auto& al : als)
 //			{
 //				apply_h_free_layout(al.first, al.second, true);
 //				apply_v_free_layout(al.first, al.second, true);
 //			}
-//			break;
-//		case LayoutHorizontal:
-//		{
+			break;
+		case LayoutHorizontal:
+		{
 //			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
 //
 //			auto w = 0.f;
@@ -291,10 +275,10 @@ namespace flame
 //				apply_h_free_layout(als[i].first, als[i].second, true);
 //				apply_v_free_layout(als[i].first, als[i].second, true);
 //			}
-//		}
-//			break;
-//		case LayoutVertical:
-//		{
+		}
+			break;
+		case LayoutVertical:
+		{
 //			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
 //
 //			auto w = 0.f;
@@ -365,10 +349,10 @@ namespace flame
 //				apply_h_free_layout(als[i].first, als[i].second, true);
 //				apply_v_free_layout(als[i].first, als[i].second, true);
 //			}
-//		}
-//			break;
-//		case LayoutGrid:
-//		{
+		}
+			break;
+		case LayoutGrid:
+		{
 //			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
 //
 //			if (column == 0)
@@ -461,12 +445,12 @@ namespace flame
 //					apply_v_free_layout(als[i].first, als[i].second, true);
 //				}
 //			}
-//		}
-//			break;
-//		}
+		}
+			break;
+		}
 //
-//		updating = false;
-//	}
+		updating = false;
+	}
 //
 //	void cLayout::set_x_scroll_offset(float x)
 //	{
@@ -497,4 +481,47 @@ namespace flame
 //		if (thiz->management)
 //			thiz->management->add_to_update_list(thiz);
 //	}
+
+	void cLayoutPrivate::set_type(LayoutType t)
+	{
+		if (type == t)
+			return;
+		type = t;
+		mark_dirty();
+	}
+
+	void cLayoutPrivate::mark_dirty()
+	{
+		if (type_setting)
+			type_setting->add_to_layouting_list(this);
+	}
+
+	void cLayoutPrivate::on_added()
+	{
+
+	}
+
+	void cLayoutPrivate::on_removed()
+	{
+
+	}
+
+	void cLayoutPrivate::on_entered_world()
+	{
+
+	}
+
+	void cLayoutPrivate::on_left_world()
+	{
+
+	}
+
+	cLayoutPrivate* cLayoutPrivate::create()
+	{
+		auto ret = _allocate(sizeof(cLayoutPrivate));
+		new (ret) cLayoutPrivate;
+		return (cLayoutPrivate*)ret;
+	}
+
+	cLayout* cLayout::create() { return cLayoutPrivate::create(); }
 }

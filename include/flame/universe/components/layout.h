@@ -10,14 +10,14 @@ namespace flame
 		inline static auto type_hash = ch(type_name);
 
 		cLayout() :
-			Component(type_name, type_hash)
+			Component(type_name, type_hash, true, true, true, true)
 		{
 		}
 
-		//sLayoutManagement* management;
+		virtual LayoutType get_type() const = 0;
+		virtual void set_type(LayoutType t) = 0;
 
-		//cElement* element;
-		//cAligner* aligner;
+		//sLayoutManagement* management;
 
 		//FLAME_RV(uint, column);
 		//FLAME_RV(float, item_padding);
@@ -28,11 +28,7 @@ namespace flame
 		//Vec2f scroll_offset;
 		//Vec2f content_size;
 
-		//void mark_dirty()
-		//{
-		//	if (management)
-		//		management->add_to_update_list(this);
-		//}
+		virtual void mark_dirty() = 0;
 
 		//FLAME_UNIVERSE_EXPORTS void set_x_scroll_offset(float x);
 		//FLAME_UNIVERSE_EXPORTS void set_y_scroll_offset(float y);

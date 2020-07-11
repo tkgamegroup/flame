@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	//struct cLayout;
+	struct cLayout;
 
 	struct sTypeSetting : System
 	{
@@ -25,8 +25,8 @@ namespace flame
 
 		virtual void add_to_sizing_list(AutoSizer* s, Entity* e) = 0;
 		virtual void remove_from_sizing_list(AutoSizer* s) = 0;
-		//FLAME_UNIVERSE_EXPORTS void add_to_update_list(cLayout* l);
-		//FLAME_UNIVERSE_EXPORTS void remove_from_update_list(cLayout* l);
+		virtual void add_to_layouting_list(cLayout* l) = 0;
+		virtual void remove_from_layouting_list(cLayout* l) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static sTypeSetting* create();
 	};

@@ -46,6 +46,13 @@ namespace flame
 			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
 	}
 
+	void cTextPrivate::on_left_world()
+	{
+		if (type_setting)
+			type_setting->remove_from_sizing_list(this);
+		type_setting = nullptr;
+	}
+
 	void cTextPrivate::on_entity_visibility_changed()
 	{
 		if (type_setting && true/*auto_size*/)
