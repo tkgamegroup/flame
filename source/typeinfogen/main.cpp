@@ -41,11 +41,6 @@ std::string format_type(const wchar_t* in, bool* is_array)
 			str.erase(str.end() - 1);
 		}
 	}
-	{
-		static auto listenerhub_str = std::string("flame::ListenerHub");
-		if (str.compare(0, listenerhub_str.size(), listenerhub_str.c_str()) == 0)
-			str = "ListenerHub";
-	}
 
 	std::string head;
 	std::string tail;

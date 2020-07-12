@@ -81,8 +81,8 @@ namespace flame
 				std::erase_if(o->links, [&](const auto& i) {
 					return i == this;
 				});
-				if (type->get_name() == std::string("ListenerHub"))
-					(*(ListenerHub<void(Capture&)>**)data)->remove(listener);
+				//if (type->get_name() == std::string("ListenerHub")) TODO
+				//	(*(ListenerHub<void(Capture&)>**)data)->remove(listener);
 			}
 		}
 
@@ -90,14 +90,14 @@ namespace flame
 		if (target)
 		{
 			target->links.push_back(this);
-			if (type->get_name() == std::string("ListenerHub"))
-			{
-				auto p = target->data;
-				memcpy(data, &p, sizeof(void*));
-				listener = (*(ListenerHub<void(Capture&)>**)data)->add([](Capture& c) {
-					c.thiz<bpNode>()->update();
-				}, Capture().set_thiz(node));
-			}
+			//if (type->get_name() == std::string("ListenerHub")) TODO
+			//{
+			//	auto p = target->data;
+			//	memcpy(data, &p, sizeof(void*));
+			//	listener = (*(ListenerHub<void(Capture&)>**)data)->add([](Capture& c) {
+			//		c.thiz<bpNode>()->update();
+			//	}, Capture().set_thiz(node));
+			//}
 		}
 
 		if (!target && type->get_tag() == TypePointer)
@@ -302,13 +302,13 @@ namespace flame
 #pragma pack(1)
 			struct Dummy
 			{
-				ListenerHub<void()>* signal;
+				//ListenerHub<void()>* signal; TODO
 			};
 #pragma pack()
 			auto size = sizeof(Dummy);
 			object = malloc(size);
 			memset(object, 0, size);
-			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), nullptr));
+			//inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, TypeInfo::get(TypePointer, "ListenerHub"), "signal", offsetof(Dummy, signal), nullptr)); TODO
 		}
 			break;
 		case bpNodeUdt:

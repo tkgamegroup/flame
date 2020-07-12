@@ -11,18 +11,6 @@
 
 namespace flame
 {
-	struct ListenerHubImnplPrivate : ListenerHubImpl
-	{
-		std::vector<std::unique_ptr<Closure<bool(Capture& c)>>> listeners;
-
-		void release() override { delete this; }
-
-		uint count() const override { return listeners.size(); }
-		Closure<bool(Capture&)>& item(uint idx) const override { return *listeners[idx].get(); }
-		void* add(bool(*pf)(Capture& c), const Capture& capture, int pos) override;
-		void remove(void* l) override;
-	};
-
 	struct WindowBridge : Window
 	{
 		void set_title(const char* title) override;

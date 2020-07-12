@@ -32,32 +32,6 @@ namespace flame
 		free(p);
 	}
 
-	void* ListenerHubImnplPrivate::add(bool(*pf)(Capture& c), const Capture& capture, int pos)
-	{
-		if (pos == -1)
-			pos = listeners.size();
-		auto c = new Closure(pf, capture);
-		listeners.emplace(listeners.begin() + pos, c);
-		return c;
-	}
-
-	void ListenerHubImnplPrivate::remove(void* l)
-	{
-		for (auto it = listeners.begin(); it != listeners.end(); it++)
-		{
-			if (it->get() == l)
-			{
-				listeners.erase(it);
-				return;
-			}
-		}
-	}
-
-	ListenerHubImpl* ListenerHubImpl::create()
-	{
-		return new ListenerHubImnplPrivate;
-	}
-
 	Guid generate_guid()
 	{
 		Guid ret;
