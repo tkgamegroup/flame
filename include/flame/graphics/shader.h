@@ -100,7 +100,7 @@ namespace flame
 			CompareOp compare_op;
 		};
 
-		inline std::wstring shader_stage_name(ShaderStage s)
+		inline std::wstring shader_stage_name(ShaderStageFlags s)
 		{
 			switch (s)
 			{
@@ -119,7 +119,7 @@ namespace flame
 			}
 		}
 
-		inline ShaderStage shader_stage_from_ext(const std::wstring& extension)
+		inline ShaderStageFlags shader_stage_from_ext(const std::wstring& extension)
 		{
 			if (extension == L".vert")
 				return ShaderStageVert;

@@ -479,16 +479,16 @@ namespace flame
 		}
 	};
 
-	enum KeyState
+	enum KeyStateFlags
 	{
 		KeyStateNull,
 		KeyStateUp = 1 << 0,
 		KeyStateDown = 1 << 1,
 		KeyStateJust = 1 << 2,
-		KeyStateDouble = 1 << 2,
+		KeyStateDouble = 1 << 2
 	};
 
-	typedef uint KeyStateFlags;
+	inline KeyStateFlags operator| (KeyStateFlags a, KeyStateFlags b) { return (KeyStateFlags)((int)a | (int)b); }
 
 	enum Key
 	{
@@ -619,8 +619,8 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool ctrl, bool shift, bool alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
-	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyState action, Key key);
-	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(KeyState action, MouseKey key);
+	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyStateFlags action, Key key);
+	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(KeyStateFlags action, MouseKey key);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	// if str_allocator is null then the output will be redirect to std output
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, char* (*str_allocator)(Capture& c, uint size) = nullptr, const Capture& capture = {});
@@ -652,7 +652,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void clear_all_works();
 	FLAME_FOUNDATION_EXPORTS void wait_all_works();
 
-	enum WindowStyle
+	enum WindowStyleFlags
 	{
 		WindowFrame = 1 << 0,
 		WindowResizable = 1 << 1,
@@ -661,7 +661,7 @@ namespace flame
 		WindowTopmost = 1 << 4
 	};
 
-	typedef uint WindowStyleFlags;
+	inline WindowStyleFlags operator| (WindowStyleFlags a, WindowStyleFlags b) { return (WindowStyleFlags)((int)a | (int)b); }
 
 	enum CursorType
 	{

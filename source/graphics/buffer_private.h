@@ -22,7 +22,7 @@ namespace flame
 			ID3D12Resource* v;
 #endif
 
-			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing = false, void* data = nullptr);
+			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing = false, void* data = nullptr);
 			~BufferPrivate();
 
 			void release() override { delete this; }

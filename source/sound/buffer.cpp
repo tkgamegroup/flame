@@ -46,9 +46,10 @@ namespace flame
 			fread(&wave_header, sizeof(RIFF_Header), 1, f);
 			while (fread(&riff_chunk, sizeof(RIFF_Chunk), 1, f) == 1)
 			{
-				if (SUS::starts_with(riff_chunk.name, "fmt"))
+				auto chunk_name = std::string(riff_chunk.name);
+				if (chunk_name.starts_with("fmt"))
 					fread(&fmt, riff_chunk.size, 1, f);
-				else if (SUS::starts_with(riff_chunk.name, "data"))
+				else if (chunk_name.starts_with("data"))
 				{
 					data_size = riff_chunk.size;
 					data_offset = ftell(f);

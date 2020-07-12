@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data) :
+		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing, void* data) :
 			device(d)
 		{
 			size = _size;
@@ -17,7 +17,7 @@ namespace flame
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
 			buffer_info.size = _size;
-			buffer_info.usage = to_backend_flags<BufferUsage>(usage);
+			buffer_info.usage = to_backend_flags<BufferUsageFlags>(usage);
 			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
 			uint queue_family_idx[] = {
@@ -106,7 +106,7 @@ namespace flame
 
 		void BufferPrivate::copy_from_data(void* data)
 		{
-			auto stag_buf = std::make_unique<BufferPrivate>(device, size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(device, size, BufferUsageTransferSrc, MemoryPropertyHost);
 
 			stag_buf->map();
 			memcpy(stag_buf->mapped, data, size);
@@ -122,7 +122,7 @@ namespace flame
 			q->wait_idle();
 		}
 
-		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing, void* data)
+		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing, void* data)
 		{
 			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop, sharing, data);
 		}

@@ -106,7 +106,7 @@ namespace flame
 		return 1.f / (a * z + b);
 	}
 
-	enum Axis
+	enum AxisFlags
 	{
 		AxisPosX = 1 << 0,
 		AxisNegX = 1 << 1,
@@ -116,7 +116,9 @@ namespace flame
 		AxisNegZ = 1 << 5
 	};
 
-	enum Side
+	inline AxisFlags operator| (AxisFlags a, AxisFlags b) { return (AxisFlags)((int)a | (int)b); }
+
+	enum SideFlags
 	{
 		Outside = 0,
 		SideN = 1 << 0,
@@ -130,6 +132,8 @@ namespace flame
 		SideCenter = 1 << 8,
 		Inside
 	};
+
+	inline SideFlags operator| (SideFlags a, SideFlags b) { return (SideFlags)((int)a | (int)b); }
 
 	template <uint N, class T>
 	struct Vec
@@ -1882,7 +1886,7 @@ namespace flame
 	}
 
 	template <class T>
-	Side rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
+	SideFlags rect_side(const Vec<4, T>& rect, const Vec<4, T>& p, T threshold)
 	{
 		if (p.x() < rect.z() && p.x() > rect.z() - threshold &&
 			p.y() > rect.y() && p.y() < rect.y() + threshold)
@@ -1914,7 +1918,7 @@ namespace flame
 	}
 
 	template <class T>
-	Vec<2, T> side_dir(Side s)
+	Vec<2, T> side_dir(SideFlags s)
 	{
 		switch (s)
 		{

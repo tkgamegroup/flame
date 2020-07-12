@@ -22,7 +22,7 @@ namespace flame
 
 			virtual void copy_from_data(void *data) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsageFlags usage, MemPropFlags mem_prop, bool sharing = false, void *data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing = false, void *data = nullptr);
 		};
 	}
 }

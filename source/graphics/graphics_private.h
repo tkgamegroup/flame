@@ -377,14 +377,14 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<MemProp>(uint p)
+		inline VkFlags to_backend_flags<MemoryPropertyFlags>(uint p)
 		{
 			VkMemoryPropertyFlags ret = 0;
-			if (p & MemPropDevice)
+			if (p & MemoryPropertyDevice)
 				ret |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-			if (p & MemPropHost)
+			if (p & MemoryPropertyHost)
 				ret |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-			if (p & MemPropHostCoherent)
+			if (p & MemoryPropertyCoherent)
 				ret |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 			return ret;
 		}
@@ -408,7 +408,7 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlagBits to_backend(ShaderStage t)
+		inline VkShaderStageFlagBits to_backend(ShaderStageFlags t)
 		{
 			switch (t)
 			{
@@ -428,7 +428,7 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<ShaderStage>(uint t)
+		inline VkFlags to_backend_flags<ShaderStageFlags>(uint t)
 		{
 			VkShaderStageFlags ret = 0;
 			if (t & ShaderStageVert)
@@ -475,7 +475,7 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<BufferUsage>(uint u)
+		inline VkFlags to_backend_flags<BufferUsageFlags>(uint u)
 		{
 			VkBufferUsageFlags ret = 0;
 			if (u & BufferUsageTransferSrc)
@@ -544,7 +544,7 @@ namespace flame
 		}
 
 		template <>
-		inline VkFlags to_backend_flags<ImageAspect>(uint a)
+		inline VkFlags to_backend_flags<ImageAspectFlags>(uint a)
 		{
 			VkImageAspectFlags ret = 0;
 			if (a & ImageAspectColor)

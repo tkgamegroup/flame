@@ -53,16 +53,16 @@ namespace flame
 			FormatMax = 0xffffffff
 		};
 
-		enum MemProp
+		enum MemoryPropertyFlags
 		{
-			MemPropDevice = 1 << 0,
-			MemPropHost = 1 << 1,
-			MemPropHostCoherent = 1 << 2,
+			MemoryPropertyDevice = 1 << 0,
+			MemoryPropertyHost = 1 << 1,
+			MemoryPropertyCoherent = 1 << 2,
 
-			MemPropMax = 0xffffffff
+			MemoryPropertyMax = 0xffffffff
 		};
 
-		typedef uint MemPropFlags;
+		inline MemoryPropertyFlags operator| (MemoryPropertyFlags a, MemoryPropertyFlags b) { return (MemoryPropertyFlags)((int)a | (int)b); }
 
 		enum SampleCount
 		{
@@ -76,10 +76,9 @@ namespace flame
 			SampleCountMax = 0xffffffff
 		};
 
-		typedef uint ShaderStageFlags;
-
-		enum BufferUsage
+		enum BufferUsageFlags
 		{
+			BufferUsageNone,
 			BufferUsageTransferSrc = 1 << 0,
 			BufferUsageTransferDst = 1 << 1,
 			BufferUsageUniform = 1 << 2,
@@ -91,10 +90,11 @@ namespace flame
 			BufferUsageMax = 0xffffffff
 		};
 
-		typedef uint BufferUsageFlags;
+		inline BufferUsageFlags operator| (BufferUsageFlags a, BufferUsageFlags b) { return (BufferUsageFlags)((int)a | (int)b); }
 
-		enum ImageUsage
+		enum ImageUsageFlags
 		{
+			ImageUsageNone,
 			ImageUsageTransferSrc = 1 << 0,
 			ImageUsageTransferDst = 1 << 1,
 			ImageUsageSampled = 1 << 2,
@@ -104,7 +104,7 @@ namespace flame
 			ImageUsageMax = 0xffffffff
 		};
 
-		typedef uint ImageUsageFlags;
+		inline ImageUsageFlags operator| (ImageUsageFlags a, ImageUsageFlags b) { return (ImageUsageFlags)((int)a | (int)b); }
 
 		enum ImageLayout
 		{
@@ -117,14 +117,14 @@ namespace flame
 			ImageLayoutPresent
 		};
 
-		enum ImageAspect
+		enum ImageAspectFlags
 		{
 			ImageAspectColor = 1 << 0,
 			ImageAspectDepth = 1 << 1,
 			ImageAspectStencil = 1 << 2
 		};
 
-		typedef uint ImageAspectFlags;
+		inline ImageAspectFlags operator| (ImageAspectFlags a, ImageAspectFlags b) { return (ImageAspectFlags)((int)a | (int)b); }
 
 		enum ImageViewType
 		{
@@ -188,7 +188,7 @@ namespace flame
 		enum VertexInputRate
 		{
 			VertexInputRateVertex,
-			VertexInputRateInstance,
+			VertexInputRateInstance
 		};
 
 		enum PrimitiveTopology
@@ -203,7 +203,7 @@ namespace flame
 			PrimitiveTopologyLineStripWithAdjacency,
 			PrimitiveTopologyTriangleListWithAdjacency,
 			PrimitiveTopologyTriangleStripWithAdjacency,
-			PrimitiveTopologyPatchList,
+			PrimitiveTopologyPatchList
 		};
 
 		enum PolygonMode
@@ -221,7 +221,7 @@ namespace flame
 			CompareOpGreaterOrEqual,
 			CompareOpEqual,
 			CompareOpNotEqual,
-			CompareOpAlways,
+			CompareOpAlways
 		};
 
 		enum CullMode
@@ -229,10 +229,10 @@ namespace flame
 			CullModeNone,
 			CullModeFront,
 			CullModeBack,
-			CullModeFrontAndback,
+			CullModeFrontAndback
 		};
 
-		enum ShaderStage
+		enum ShaderStageFlags
 		{
 			ShaderStageNone,
 			ShaderStageVert = 1 << 0,
@@ -245,6 +245,8 @@ namespace flame
 
 			ShaderStageMax = 0xffffffff
 		};
+
+		inline ShaderStageFlags operator| (ShaderStageFlags a, ShaderStageFlags b) { return (ShaderStageFlags)((int)a | (int)b); }
 
 		enum BlendFactor
 		{

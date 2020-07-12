@@ -10,11 +10,13 @@
 
 namespace flame
 {
-	enum ClipFlag
+	enum ClipFlags
 	{
 		ClipSelf = 1 << 0,
 		ClipChildren = 1 << 1
 	};
+
+	inline ClipFlags operator| (ClipFlags a, ClipFlags b) { return (ClipFlags)((int)a | (int)b); }
 
 	enum FocusType
 	{
@@ -37,7 +39,9 @@ namespace flame
 		EventReceiverActive = 1 << 1
 	};
 
-	enum AlignFlag
+	inline EventReceiverState operator| (EventReceiverState a, EventReceiverState b) { return (EventReceiverState)((int)a | (int)b); }
+
+	enum AlignFlags
 	{
 		AlignMin = 1 << 0,
 		AlignMax = 1 << 1,
@@ -46,6 +50,8 @@ namespace flame
 		AlignAbsolute = 1 << 4, // no padding
 		AlignGreedy = 1 << 5
 	};
+
+	inline AlignFlags operator| (AlignFlags a, AlignFlags b) { return (AlignFlags)((int)a | (int)b); }
 
 	enum LayoutType
 	{
@@ -67,12 +73,14 @@ namespace flame
 		SplitterVertical
 	};
 
-	enum ExtraDrawFlag
+	enum ExtraDrawFlags
 	{
 		ExtraDrawFilledCornerSE = 1 << 0,
 		ExtraDrawHorizontalLine = 1 << 1,
 		ExtraDrawVerticalLine = 1 << 2
 	};
+
+	inline ExtraDrawFlags operator| (ExtraDrawFlags a, ExtraDrawFlags b) { return (ExtraDrawFlags)((int)a | (int)b); }
 
 	FLAME_UNIVERSE_EXPORTS void set_allocator(void*(*allocate)(Capture& c, uint size), void(*deallocate)(Capture& c, void* p), const Capture& capture);
 }

@@ -54,9 +54,10 @@ namespace flame
 	enum VariableFlags
 	{
 		VariableFlagInput = 1 << 0,
-		VariableFlagOutput = 1 << 2,
-		VariableFlagEnumMulti = 1 << 3
+		VariableFlagOutput = 1 << 2
 	};
+
+	inline VariableFlags operator| (VariableFlags a, VariableFlags b) { return (VariableFlags)((int)a | (int)b); }
 
 	struct VariableInfo
 	{

@@ -48,8 +48,8 @@ namespace flame
 			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;
 			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override;
 
-			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
-			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true);
+			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone, bool create_defalut_view = true);
+			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = ImageUsageNone, bool create_defalut_view = true);
 		};
 
 		struct ImageViewPrivate : ImageView
@@ -98,10 +98,10 @@ namespace flame
 				return ImageAspectColor;
 			if (fmt >= Format_Depth_Begin && fmt <= Format_Depth_End)
 			{
-				int a = ImageAspectDepth;
+				auto a = (int)ImageAspectDepth;
 				if (fmt >= Format_DepthStencil_Begin && fmt <= Format_DepthStencil_End)
 					a |= ImageAspectStencil;
-				return a;
+				return (ImageAspectFlags)a;
 			}
 			return ImageAspectColor;
 		}

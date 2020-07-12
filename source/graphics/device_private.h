@@ -44,7 +44,7 @@ namespace flame
 			DevicePrivate(bool debug);
 			~DevicePrivate();
 
-			uint find_memory_type(uint type_filter, MemPropFlags properties);
+			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
 
 			void release() override { delete this; }
 			void set_default() override { _default_device = this; }

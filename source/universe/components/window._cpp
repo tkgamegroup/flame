@@ -104,7 +104,7 @@ namespace flame
 						{
 							auto thiz = c.thiz<cBringToFrontPrivate>();
 							auto l = thiz->entity->parent->parent->last_child();
-							if (!l || !SUS::starts_with(l->name.str(), "layer_"))
+							if (!l || !l->name.str().starts_with("layer_"))
 							{
 								get_looper()->add_event([](Capture& c) {
 									auto p = c.thiz<Entity>()->parent;

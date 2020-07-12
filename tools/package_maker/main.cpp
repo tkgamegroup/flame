@@ -94,7 +94,7 @@ int main(int argc, char **args)
 			}, Capture().set_thiz(&dependencies));
 			for (auto& d : dependencies)
 			{
-				if (SUW::starts_with(d, L"flame_"))
+				if (d.wstring().starts_with(L"flame_"))
 				{
 					auto ss = s_p / d;
 					auto dd = d_p / d;

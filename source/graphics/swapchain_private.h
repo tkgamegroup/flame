@@ -32,7 +32,7 @@ namespace flame
 
 			void* resize_listener;
 
-			SwapchainPrivate(DevicePrivate *d, Window* w, ImageUsageFlags extra_usages = 0);
+			SwapchainPrivate(DevicePrivate *d, Window* w, ImageUsageFlags extra_usages = ImageUsageNone);
 			~SwapchainPrivate();
 
 			void release() override { delete this; }

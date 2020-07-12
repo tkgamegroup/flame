@@ -135,8 +135,11 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 	switch (dw)
 	{
 	case SymTagEnum:
+	{
 		s_type->get_name(&pwname);
-		return TagAndName((flags & VariableFlagEnumMulti) ? TypeEnumMulti : TypeEnumSingle, format_type(pwname, nullptr));
+		auto name = format_type(pwname, nullptr);
+		return TagAndName(name.ends_with("Flags") ? TypeEnumMulti : TypeEnumSingle, name);
+	}
 	case SymTagBaseType:
 		return TagAndName(TypeData, base_type_name(s_type));
 	case SymTagPointerType:
@@ -436,8 +439,6 @@ int main(int argc, char **args)
 								dv.flags |= VariableFlagInput;
 							else if (sp[i] == "o")
 								dv.flags |= VariableFlagOutput;
-							else if (sp[i] == "m")
-								dv.flags |= VariableFlagEnumMulti;
 						}
 						du.variables.push_back(dv);
 					}
@@ -665,7 +666,7 @@ int main(int argc, char **args)
 										s_item->get_value(&variant);
 
 										auto item_name = w2s(pwname);
-										if (!SUS::ends_with(item_name, "_Max") && !SUS::ends_with(item_name, "_Count"))
+										if (!item_name.ends_with("_Max") && !item_name.ends_with("_Count"))
 										{
 											auto n_item = n_items.append_child("item");
 											n_item.append_attribute("name").set_value(item_name.c_str());

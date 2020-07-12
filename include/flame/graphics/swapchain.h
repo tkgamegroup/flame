@@ -26,7 +26,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Format get_format();
 
-			FLAME_GRAPHICS_EXPORTS static Swapchain* create(Device *d, Window* w, ImageUsageFlags extra_usages = 0);
+			FLAME_GRAPHICS_EXPORTS static Swapchain* create(Device *d, Window* w, ImageUsageFlags extra_usages = ImageUsageNone);
 		};
 	}
 }

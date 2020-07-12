@@ -78,7 +78,7 @@ namespace flame
 				dst.binding = i;
 				dst.descriptorType = to_backend(src.type);
 				dst.descriptorCount = src.count;
-				dst.stageFlags = to_backend_flags<ShaderStage>(ShaderStageAll);
+				dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 				dst.pImmutableSamplers = nullptr;
 
 				bindings[i].reset(new DescriptorBindingPrivate(i, src));
@@ -214,7 +214,7 @@ namespace flame
 			VkPushConstantRange pushconstant_range;
 			pushconstant_range.offset = 0;
 			pushconstant_range.size = push_cconstant_size;
-			pushconstant_range.stageFlags = to_backend_flags<ShaderStage>(ShaderStageAll);
+			pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

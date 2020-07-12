@@ -719,7 +719,7 @@ namespace flame
 		}
 	}
 
-	void send_global_key_event(KeyState action, Key key)
+	void send_global_key_event(KeyStateFlags action, Key key)
 	{
 		auto flags = -1;
 		switch (action)
@@ -735,7 +735,7 @@ namespace flame
 			keybd_event(key_to_vk_code(key), 0, flags, 0);
 	}
 
-	void send_global_mouse_event(KeyState action, MouseKey key)
+	void send_global_mouse_event(KeyStateFlags action, MouseKey key)
 	{
 		auto flags = -1;
 		switch (key)

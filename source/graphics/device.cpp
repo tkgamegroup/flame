@@ -492,9 +492,9 @@ namespace flame
 			return false;
 		}
 
-		uint DevicePrivate::find_memory_type(uint type_filter, MemPropFlags properties)
+		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
 		{
-			auto p = to_backend_flags<MemProp>(properties);
+			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
 #if defined(FLAME_VULKAN)
 			for (uint i = 0; i < vk_mem_props.memoryTypeCount; i++)
 			{

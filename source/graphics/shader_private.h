@@ -186,7 +186,7 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::string prefix;
-			ShaderStage type;
+			ShaderStageFlags type;
 
 			ShaderPrivate(const std::filesystem::path& filename, const std::string& prefix = "");
 

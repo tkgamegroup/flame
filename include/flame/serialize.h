@@ -557,16 +557,6 @@ namespace flame
 			return std::basic_string<CH>(str.begin(), str.begin() + length);
 		}
 
-		static bool starts_with(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
-		{
-			return str.size() >= oth.size() && str.compare(0, oth.size(), oth) == 0;
-		}
-
-		static bool ends_with(const std::basic_string<CH>& str, const std::basic_string<CH>& oth)
-		{
-			return str.size() >= oth.size() && str.compare(str.size() - oth.size(), oth.size(), oth) == 0;
-		}
-
 		static void trim(std::basic_string<CH>& str)
 		{
 			if (!str.empty())

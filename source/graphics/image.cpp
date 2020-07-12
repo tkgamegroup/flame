@@ -70,7 +70,7 @@ namespace flame
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.pNext = nullptr;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, MemPropDevice);
+			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
 
 			chk_res(vkAllocateMemory(d->vk_device, &allocInfo, nullptr, &vk_memory));
 
@@ -83,7 +83,7 @@ namespace flame
 
 			if (data)
 			{
-				auto staging_buffer = std::make_unique<BufferPrivate>(d, image_pitch(get_pixel_size(this) * size.x()) * size.y(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				auto staging_buffer = std::make_unique<BufferPrivate>(d, image_pitch(get_pixel_size(this) * size.x()) * size.y(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -160,7 +160,7 @@ namespace flame
 
 			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
 
-			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferDst, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferDst, MemoryPropertyHost);
 
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->begin(true);
@@ -183,7 +183,7 @@ namespace flame
 
 			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
 
-			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferSrc, MemPropHost);
+			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferSrc, MemoryPropertyHost);
 			stag_buf->map();
 			memcpy(stag_buf->mapped, src, stag_buf->size);
 			stag_buf->flush();
@@ -203,7 +203,7 @@ namespace flame
 		{
 			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
-			auto staging_buffer = std::make_unique<BufferPrivate>(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+			auto staging_buffer = std::make_unique<BufferPrivate>(d, bmp->get_size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
 			staging_buffer->map();
 			memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
 			staging_buffer->unmap();
@@ -263,7 +263,7 @@ namespace flame
 				//	break;
 				//}
 
-				//staging_buffer = create_buffer(d, gli_texture.size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent);
+				//staging_buffer = create_buffer(d, gli_texture.size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
 				//staging_buffer->_map();
 				//memcpy(staging_buffer->_mapped, gli_texture.data(), staging_buffer->_size);
 				//staging_buffer->_unmap();
@@ -295,7 +295,7 @@ namespace flame
 
 				fmt = get_image_format(channel, bmp->get_byte_per_channel());
 
-				staging_buffer.reset(new BufferPrivate(d, bmp->get_size(), BufferUsageTransferSrc, MemPropHost | MemPropHostCoherent));
+				staging_buffer.reset(new BufferPrivate(d, bmp->get_size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
 				staging_buffer->unmap();
@@ -349,7 +349,7 @@ namespace flame
 			info.image = image->vk_image;
 			info.viewType = to_backend(type);
 			info.format = to_backend(image->format);
-			info.subresourceRange.aspectMask = to_backend_flags<ImageAspect>(aspect_from_format(image->format));
+			info.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(image->format));
 			info.subresourceRange.baseMipLevel = base_level;
 			info.subresourceRange.levelCount = level_count;
 			info.subresourceRange.baseArrayLayer = base_layer;

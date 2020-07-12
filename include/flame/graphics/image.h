@@ -71,8 +71,8 @@ namespace flame
 			virtual void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool create_defalut_view = true);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage = 0, bool create_defalut_view = true); // default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage = 0, bool create_default_view = true); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone, bool create_defalut_view = true); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage = ImageUsageNone, bool create_default_view = true); // default usage: ShaderSampled, TransferDst
 
 		};
 

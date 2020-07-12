@@ -76,9 +76,9 @@ namespace flame
 				pl = PipelinePrivate::create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll, rp, 0, &vi);
 			}
 
-			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemPropHost | MemPropHostCoherent));
+			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));
 			buf_vtx->map();
-			buf_idx.reset(new BufferPrivate(d, 1048576, BufferUsageIndex, MemPropHost | MemPropHostCoherent));
+			buf_idx.reset(new BufferPrivate(d, 1048576, BufferUsageIndex, MemoryPropertyHost | MemoryPropertyCoherent));
 			buf_idx->map();
 
 			img_white.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(4), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));

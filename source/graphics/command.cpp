@@ -267,7 +267,7 @@ namespace flame
 			if (!pll)
 				pll = current_pipeline->pipeline_layout;
 #if defined(FLAME_VULKAN)
-			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout, to_backend_flags<ShaderStage>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 #elif defined(FLAME_D3D12)
 
 #endif
@@ -381,7 +381,7 @@ namespace flame
 		void CommandBufferPrivate::copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
-			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(dst->format));
+			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(dst->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
@@ -401,7 +401,7 @@ namespace flame
 		void CommandBufferPrivate::copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies)
 		{
 #if defined(FLAME_VULKAN)
-			auto aspect = to_backend_flags<ImageAspect>(aspect_from_format(src->format));
+			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(src->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
@@ -432,7 +432,7 @@ namespace flame
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.image = i->vk_image;
-			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspect>(aspect_from_format(i->format));
+			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(i->format));
 			barrier.subresourceRange.baseMipLevel = base_level;
 			barrier.subresourceRange.levelCount = level_count;
 			barrier.subresourceRange.baseArrayLayer = base_layer;
