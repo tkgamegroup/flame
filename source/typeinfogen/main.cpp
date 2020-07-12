@@ -506,6 +506,42 @@ int main(int argc, char **args)
 
 	std::ofstream typeinfo_code(code_path);
 
+	auto add_enum = [&](TagAndName& desc, IDiaSymbol* s_type) {
+		if (!has_enum(desc.name))
+		{
+			enums.emplace(desc.name, 0);
+
+			if (!n_enums)
+				n_enums = file_root.append_child("enums");
+			auto n_enum = n_enums.append_child("enum");
+			n_enum.append_attribute("name").set_value(desc.name.c_str());
+
+			auto n_items = n_enum.append_child("items");
+
+			IDiaEnumSymbols* s_items;
+			s_type->findChildren(SymTagNull, NULL, nsNone, &s_items);
+			IDiaSymbol* s_item;
+			while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
+			{
+				VARIANT variant;
+				ZeroMemory(&variant, sizeof(variant));
+				s_item->get_name(&pwname);
+				s_item->get_value(&variant);
+
+				auto item_name = w2s(pwname);
+				if (!item_name.ends_with("_Max") && !item_name.ends_with("_Count"))
+				{
+					auto n_item = n_items.append_child("item");
+					n_item.append_attribute("name").set_value(item_name.c_str());
+					n_item.append_attribute("value").set_value(variant.lVal);
+				}
+
+				s_item->Release();
+			}
+			s_items->Release();
+		}
+	};
+
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
 	IDiaSymbol* s_udt;
@@ -584,13 +620,20 @@ int main(int argc, char **args)
 								IDiaSymbol* s_parameter;
 								while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 								{
+									IDiaSymbol* s_type;
+									s_parameter->get_type(&s_type);
+
 									auto desc = typeinfo_from_symbol(s_parameter, 0);
+									if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+										add_enum(desc, s_type);
 
 									if (!n_parameters)
 										n_parameters = n_function.append_child("parameters");
 									auto n_parameter = n_parameters.append_child("parameter");
 									n_parameter.append_attribute("type_tag").set_value(desc.tag);
 									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
+
+									s_type->Release();
 
 									s_parameter->Release();
 								}
@@ -643,41 +686,7 @@ int main(int argc, char **args)
 
 							auto desc = typeinfo_from_symbol(s_type, flags);
 							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-							{
-								if (!has_enum(desc.name))
-								{
-									enums.emplace(desc.name, 0);
-
-									if (!n_enums)
-										n_enums = file_root.append_child("enums");
-									auto n_enum = n_enums.append_child("enum");
-									n_enum.append_attribute("name").set_value(desc.name.c_str());
-
-									auto n_items = n_enum.append_child("items");
-
-									IDiaEnumSymbols* s_items;
-									s_type->findChildren(SymTagNull, NULL, nsNone, &s_items);
-									IDiaSymbol* s_item;
-									while (SUCCEEDED(s_items->Next(1, &s_item, &ul)) && (ul == 1))
-									{
-										VARIANT variant;
-										ZeroMemory(&variant, sizeof(variant));
-										s_item->get_name(&pwname);
-										s_item->get_value(&variant);
-
-										auto item_name = w2s(pwname);
-										if (!item_name.ends_with("_Max") && !item_name.ends_with("_Count"))
-										{
-											auto n_item = n_items.append_child("item");
-											n_item.append_attribute("name").set_value(item_name.c_str());
-											n_item.append_attribute("value").set_value(variant.lVal);
-										}
-
-										s_item->Release();
-									}
-									s_items->Release();
-								}
-							}
+								add_enum(desc, s_type);
 
 							if (!n_variables)
 								n_variables = n_udt.prepend_child("variables");

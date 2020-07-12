@@ -936,6 +936,18 @@ namespace flame
 				auto p1 = parameters[0];
 				switch (p1->tag)
 				{
+				case TypeEnumSingle:
+				{
+					auto t = va_arg(ap, int*);
+					void* pf = nullptr;
+					if (rva)
+						;
+					else
+						pf = *(void**)((*(char**)obj) + voff);
+					cmf(p2f<void(__Dummy__::*)(int)>(pf), obj, *t);
+					return;
+				}
+					break;
 				case TypeData:
 					if (p1->name == "float")
 					{

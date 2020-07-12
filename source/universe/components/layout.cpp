@@ -1,7 +1,9 @@
 //#include <flame/universe/world.h>
 //#include <flame/universe/components/element.h>
 //#include <flame/universe/components/aligner.h>
-#include "../universe_private.h"
+#include "../world_private.h"
+#include "element_private.h"
+#include "aligner_private.h"
 #include "../systems/type_setting_private.h"
 #include "layout_private.h"
 //
@@ -28,48 +30,52 @@ namespace flame
 //		content_size = s;
 //		data_changed(FLAME_CHASH("content_size"), this);
 //	}
-//
-//	void cLayoutPrivate::apply_h_free_layout(cElement* e, cAligner* a, bool free)
-//	{
-//		auto x_flags = a ? a->x_align_flags : (free ? (AlignFlag)0 : AlignMin);
-//		auto p = (x_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.xz() + (a ? a->margin.xz() : Vec2f(0.f));
-//		if (x_flags & AlignMinMax)
-//		{
-//			auto w = element->size.x() - p.xy().sum();
-//			if (!(x_flags & AlignGreedy) || w >= a->min_width)
-//				e->set_width(w);
-//			e->set_x(p.x(), this);
-//		}
-//		if (x_flags & AlignMin)
-//			e->set_x(p.x(), this);
-//		else if (x_flags & AlignMax)
-//			e->set_x(element->size.x() - p.y() - e->size.x(), this);
-//		else if (x_flags & AlignMiddle)
-//			e->set_x(p.x() + (element->size.x() - p.xy().sum() - e->size.x()) * 0.5f, this);
-//	}
-//
-//	void cLayoutPrivate::apply_v_free_layout(cElement* e, cAligner* a, bool free)
-//	{
-//		auto y_flags = a ? a->y_align_flags : (free ? (AlignFlag)0 : AlignMin);
-//		auto p = (y_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.yw() + (a ? a->margin.yw() : Vec2f(0.f));
-//		if (y_flags & AlignMinMax)
-//		{
-//			auto h = element->size.y() - p.xy().sum();
-//			if (!(y_flags & AlignGreedy) || h >= a->min_height)
-//				e->set_height(h, this);
-//			e->set_y(p.x(), this);
-//		}
-//		if (y_flags & AlignMin)
-//			e->set_y(p.x(), this);
-//		else if (y_flags & AlignMax)
-//			e->set_y(element->size.y() - p.y() - e->size.y(), this);
-//		else if (y_flags & AlignMiddle)
-//			e->set_y(p.x() + (element->size.y() - p.xy().sum() - e->size.y()) * 0.5f, this);
-//	}
-//
+
+	void cLayoutPrivate::apply_h_free_layout(cElementPrivate* e, cAlignerPrivate* a, bool free)
+	{
+		//auto x_flags = a ? a->x_align_flags : (free ? (AlignFlags)0 : AlignMin);
+		auto x_flags = (AlignFlags)0;
+		//auto p = (x_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.xz() + (a ? a->margin.xz() : Vec2f(0.f));
+		auto p = Vec2f(0.f);
+		if (x_flags & AlignMinMax)
+		{
+			//auto w = element->size.x() - p.xy().sum();
+			//if (!(x_flags & AlignGreedy) || w >= a->min_width)
+			//	e->set_width(w);
+			//e->set_x(p.x());
+		}
+		if (x_flags & AlignMin)
+			e->set_x(p.x());
+		//else if (x_flags & AlignMax)
+		//	e->set_x(element->size.x() - p.y() - e->width);
+		//else if (x_flags & AlignMiddle)
+		//	e->set_x(p.x() + (element->size.x() - p.xy().sum() - e->width) * 0.5f);
+	}
+
+	void cLayoutPrivate::apply_v_free_layout(cElementPrivate* e, cAlignerPrivate* a, bool free)
+	{
+		//auto y_flags = a ? a->y_align_flags : (free ? (AlignFlags)0 : AlignMin);
+		auto y_flags = (AlignFlags)0;
+		//auto p = (y_flags & AlignAbsolute) ? Vec2f(0.f) : element->padding.yw() + (a ? a->margin.yw() : Vec2f(0.f));
+		auto p = Vec2f(0.f);
+		if (y_flags & AlignMinMax)
+		{
+			//auto h = element->size.y() - p.xy().sum();
+			//if (!(y_flags & AlignGreedy) || h >= a->min_height)
+			//	e->set_height(h);
+			//e->set_y(p.x());
+		}
+		if (y_flags & AlignMin)
+			e->set_y(p.x());
+		//else if (y_flags & AlignMax)
+		//	e->set_y(element->size.y() - p.y() - e->height);
+		//else if (y_flags & AlignMiddle)
+		//	e->set_y(p.x() + (element->size.y() - p.xy().sum() - e->height) * 0.5f);
+	}
+
 //	void cLayoutPrivate::use_children_width(float w)
 //	{
-//		auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
+//		auto x_flags = aligner ? aligner->x_align_flags : (AlignFlags)0;
 //		if (!(x_flags & AlignMinMax))
 //			element->set_width(w);
 //		else if (x_flags & AlignGreedy)
@@ -81,7 +87,7 @@ namespace flame
 //
 //	void cLayoutPrivate::use_children_height(float h)
 //	{
-//		auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
+//		auto y_flags = aligner ? aligner->y_align_flags : (AlignFlags)0;
 //		if (!(y_flags & AlignMinMax))
 //			element->set_height(h, this);
 //		else if (y_flags & AlignGreedy)
@@ -95,23 +101,6 @@ namespace flame
 //	{
 //		switch (e)
 //		{
-//		case EntityEnteredWorld:
-//			management = entity->world->get_system(sLayoutManagement);
-//			management->add_to_update_list(this);
-//			break;
-//		case EntityLeftWorld:
-//			management->remove_from_update_list(this);
-//			management = nullptr;
-//			break;
-//		case EntityComponentAdded:
-//			if (t == this)
-//			{
-//				element = entity->get_component(cElement);
-//				assert(element);
-//
-//				aligner = entity->get_component(cAligner);
-//			}
-//			break;
 //		case EntityChildVisibilityChanged:
 //		case EntityChildPositionChanged:
 //			if (management)
@@ -181,27 +170,27 @@ namespace flame
 //#endif
 //
 		updating = true;
-//
-//		std::vector<std::pair<cElement*, cAligner*>> als;
-//		for (auto c : entity->children)
-//		{
-//			if (c->global_visibility)
-//			{
-//				auto e = c->get_component(cElement);
-//				auto a = c->get_component(cAligner);
-//				if (e || a)
-//					als.emplace_back(e, a);
-//			}
-//		}
-//
+
+		std::vector<std::pair<cElementPrivate*, cAlignerPrivate*>> als;
+		for (auto& c : ((EntityPrivate*)entity)->children)
+		{
+			if (c->global_visibility)
+			{
+				auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
+				auto a = (cAlignerPrivate*)c->get_component(cAligner::type_hash);
+				if (e || a)
+					als.emplace_back(e, a);
+			}
+		}
+
 		switch (type)
 		{
 		case LayoutFree:
-//			for (auto& al : als)
-//			{
-//				apply_h_free_layout(al.first, al.second, true);
-//				apply_v_free_layout(al.first, al.second, true);
-//			}
+			for (auto& al : als)
+			{
+				apply_h_free_layout(al.first, al.second, true);
+				apply_v_free_layout(al.first, al.second, true);
+			}
 			break;
 		case LayoutHorizontal:
 		{
@@ -215,8 +204,8 @@ namespace flame
 //				auto& al = als[i];
 //				auto element = al.first;
 //				auto aligner = al.second;
-//				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
-//				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
+//				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlags)0;
+//				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlags)0;
 //
 //				if (x_flags & AlignMinMax)
 //				{
@@ -256,7 +245,7 @@ namespace flame
 //				auto& al = als[i];
 //				auto element = al.first;
 //				auto aligner = al.second;
-//				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
+//				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlags)0;
 //
 //				if (x_flags & AlignMinMax)
 //				{
@@ -280,17 +269,18 @@ namespace flame
 		case LayoutVertical:
 		{
 //			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
+			auto n = (int)als.size();
 //
-//			auto w = 0.f;
-//			auto h = 0.f;
-//			auto factor = 0.f;
+			auto w = 0.f;
+			auto h = 0.f;
+			auto factor = 0.f;
 //			for (auto i = 0; i < n; i++)
 //			{
 //				auto& al = als[i];
 //				auto element = al.first;
 //				auto aligner = al.second;
-//				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlag)0;
-//				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
+//				auto x_flags = aligner ? aligner->x_align_flags : (AlignFlags)0;
+//				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlags)0;
 //
 //				if (x_flags & AlignMinMax)
 //				{
@@ -327,12 +317,14 @@ namespace flame
 //			else
 //				h = 0.f;
 //			auto y = element->padding[1];
-//			for (auto i = 0; i < n; i++)
-//			{
-//				auto& al = als[i];
-//				auto element = al.first;
-//				auto aligner = al.second;
-//				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlag)0;
+			auto y = 0;
+			for (auto i = 0; i < n; i++)
+			{
+				auto& al = als[i];
+				auto element = al.first;
+				auto aligner = al.second;
+//				auto y_flags = aligner ? aligner->y_align_flags : (AlignFlags)0;
+				auto y_flags = (AlignFlags)0;
 //
 //				if (y_flags & AlignMinMax)
 //				{
@@ -342,8 +334,10 @@ namespace flame
 //					element->set_height(_h, this);
 //				}
 //				element->set_y(scroll_offset.y() + y, this);
+				element->set_y(y);
 //				y += element->size.y() + item_padding;
-//			}
+				y += element->height;
+			}
 //			for (auto i = n; i < als.size(); i++)
 //			{
 //				apply_h_free_layout(als[i].first, als[i].second, true);
@@ -508,12 +502,15 @@ namespace flame
 
 	void cLayoutPrivate::on_entered_world()
 	{
-
+		type_setting = (sTypeSettingPrivate*)((WorldPrivate*)((EntityPrivate*)entity)->world)->get_system(sTypeSetting::type_hash);
+		type_setting->add_to_layouting_list(this);
 	}
 
 	void cLayoutPrivate::on_left_world()
 	{
-
+		if (type_setting)
+			type_setting->remove_from_layouting_list(this);
+		type_setting = nullptr;
 	}
 
 	cLayoutPrivate* cLayoutPrivate::create()

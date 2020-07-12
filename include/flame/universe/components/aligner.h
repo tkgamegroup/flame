@@ -16,7 +16,7 @@ namespace flame
 		{
 		}
 
-		virtual AlignFlags get_x_align_flags() const = 0;
+		//virtual AlignFlags get_x_align_flags() const = 0;
 
 //		cElement* element;
 //
