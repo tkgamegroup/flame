@@ -78,6 +78,12 @@ namespace flame
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;
 
+		inline bool contains(const Vec2f& p)
+		{
+			Vec2f points[] = { get_p00(), get_p10(), get_p11(), get_p01() };
+			return convex_contains<float>(p, points);
+		}
+
 		//FLAME_RV(Vec4f, padding); // L T R B
 		//FLAME_RV(float, alpha);
 		//FLAME_RV(Vec4f, roundness);

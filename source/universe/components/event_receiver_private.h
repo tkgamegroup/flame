@@ -4,8 +4,11 @@
 
 namespace flame
 {
+	struct cElementPrivate;
+
 	struct cEventReceiverPrivate : cEventReceiver
 	{
+		cElementPrivate* element = nullptr;
 //		int frame;
 //
 //		std::vector<uint> acceptable_drops;
@@ -19,6 +22,8 @@ namespace flame
 //		void on_hovering(bool hovering);
 //		void on_focusing(bool focusing);
 //		void on_event(EntityEvent e, void* t) override;
+
+		void on_added() override;
 
 		static cEventReceiverPrivate* create();
 	};

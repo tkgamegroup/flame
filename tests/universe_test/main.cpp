@@ -106,12 +106,7 @@ int main(int argc, char** args)
 		if (is_mouse_move(action, key))
 		{
 			auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
-			auto a = e->get_p00();
-			auto b = e->get_p10();
-			auto c = e->get_p11();
-			auto d = e->get_p01();
-			Vec2f points[] = { a, b, c, d };
-			if (convex_contains<float>(Vec2f(pos), points))
+			if (e->contains(Vec2f(pos)))
 				e->set_fill_color(Vec3c(255, 0, 0));
 			else
 				e->set_fill_color(Vec3c(255, 255, 255));

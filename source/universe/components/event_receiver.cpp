@@ -1,7 +1,5 @@
-//#include <flame/universe/world.h>
-//#include "../systems/event_dispatcher_private.h"
-//#include <flame/universe/components/element.h>
-#include "../universe_private.h"
+#include "../world_private.h"
+#include "element_private.h"
 #include "event_receiver_private.h"
 //
 namespace flame
@@ -131,6 +129,11 @@ namespace flame
 //	{
 //		((cEventReceiverPrivate*)this)->on_drag_and_drop(action, er, pos);
 //	}
+
+	void cEventReceiverPrivate::on_added() 
+	{
+		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
+	}
 
 	cEventReceiverPrivate* cEventReceiverPrivate::create()
 	{

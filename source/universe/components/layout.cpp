@@ -1,11 +1,11 @@
-//#include <flame/universe/world.h>
 //#include <flame/universe/components/element.h>
 //#include <flame/universe/components/aligner.h>
+
 #include "../world_private.h"
 #include "element_private.h"
 #include "aligner_private.h"
-#include "../systems/type_setting_private.h"
 #include "layout_private.h"
+#include "../systems/type_setting_private.h"
 //
 //#include <limits>
 
@@ -492,12 +492,8 @@ namespace flame
 
 	void cLayoutPrivate::on_added()
 	{
-
-	}
-
-	void cLayoutPrivate::on_removed()
-	{
-
+		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
+		aligner = (cAlignerPrivate*)((EntityPrivate*)entity)->get_component(cAligner::type_hash);
 	}
 
 	void cLayoutPrivate::on_entered_world()

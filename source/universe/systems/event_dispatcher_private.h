@@ -1,35 +1,55 @@
 #pragma once
-//
-//#include <flame/universe/entity.h>
+
 #include <flame/universe/systems/event_dispatcher.h>
-//#include "../components/event_receiver_private.h"
 
 namespace flame
 {
+	struct EntityPrivate;
+	struct cEventReceiverPrivate;
+
 	struct sEventDispatcherPrivate : sEventDispatcher
 	{
 		Window* window = nullptr;
-//		void* key_listener;
-//		void* mouse_listener;
-//
+		void* key_listener = nullptr;
+		void* mouse_listener = nullptr;
+		void* destroy_listener = nullptr;
+
+		//		KeyStateFlags key_states[Key_Count];
+		//		KeyStateFlags mouse_buttons[3];
+		Vec2f mpos = Vec2f(0.f);
+		Vec2f mdisp = Vec2f(0.f);
+		Vec2f active_pos = Vec2f(0.f);
+		//		int mouse_scroll;
+		
+		cEventReceiverPrivate* hovering = nullptr;
+		cEventReceiverPrivate* focusing = nullptr;
+		//		FocusingState focusing_state;
+		//		cEventReceiver* key_receiving;
+		//		cEventReceiver* drag_overing;
+		//
+		//		cEventReceiver* next_focusing;
+
 //		std::vector<Key> keydown_inputs;
 //		std::vector<Key> keyup_inputs;
 //		std::vector<wchar_t> char_inputs;
 //		bool char_input_compelete;
 //		float dbclick_timer;
 //		void* ev_dbclick;
-//
+
 //		cEventReceiverPrivate* mouse_event_checker;
-//		Vec2i active_pos;
 //
+		bool dirty = false;
+
 //		sEventDispatcherPrivate();
 //		~sEventDispatcherPrivate();
 //		void on_receiver_removed(cEventReceiver* er);
-//		void on_added() override;
-//		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
-//		void dispatch_mouse_recursively(Entity* e);
+		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
+		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
 //		void after_update() override;
+
+		virtual void on_added() override;
+		virtual void on_removed() override;
 
 		static sEventDispatcherPrivate* create();
 	};

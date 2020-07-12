@@ -17,8 +17,6 @@ namespace flame
 		virtual LayoutType get_type() const = 0;
 		virtual void set_type(LayoutType t) = 0;
 
-		//sLayoutManagement* management;
-
 		//FLAME_RV(uint, column);
 		//FLAME_RV(float, item_padding);
 		//FLAME_RV(bool, width_fit_children);

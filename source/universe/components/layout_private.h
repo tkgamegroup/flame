@@ -15,6 +15,8 @@ namespace flame
 		bool pending_layouting = false;
 		bool updating = false;
 
+		cElementPrivate* element = nullptr;
+		cAlignerPrivate* aligner = nullptr;
 		sTypeSettingPrivate* type_setting = nullptr;
 
 	//	cLayoutPrivate(LayoutType _type);
@@ -35,7 +37,6 @@ namespace flame
 		void mark_dirty() override;
 
 		void on_added() override;
-		void on_removed() override;
 		void on_entered_world() override;
 		void on_left_world() override;
 

@@ -1,5 +1,8 @@
 //#include <flame/serialize.h>
-#include "../universe_private.h"
+
+#include "../world_private.h"
+#include "../components/element_private.h"
+#include "../components/event_receiver_private.h"
 #include "event_dispatcher_private.h"
 //#include <flame/universe/components/element.h>
 
@@ -7,11 +10,6 @@ namespace flame
 {
 //	sEventDispatcherPrivate::sEventDispatcherPrivate()
 //	{
-//		key_listener = nullptr;
-//		mouse_listener = nullptr;
-//
-//		hovering = nullptr;
-//		focusing = nullptr;
 //		focusing_state = FocusingNormal;
 //		key_receiving = nullptr;
 //		drag_overing = nullptr;
@@ -22,26 +20,10 @@ namespace flame
 //		for (auto i = 0; i < size(key_states); i++)
 //			key_states[i] = KeyStateUp;
 //
-//		mouse_pos = Vec2i(0);
-//		mouse_pos_prev = Vec2i(0);
-//		mouse_disp = Vec2i(0);
 //		mouse_scroll = 0;
 //		for (auto i = 0; i < size(mouse_buttons); i++)
 //			mouse_buttons[i] = KeyStateUp;
 //		dbclick_timer = -1.f;
-//
-//		active_pos = Vec2i(0);
-//
-//		pending_update = false;
-//	}
-//
-//	sEventDispatcherPrivate::~sEventDispatcherPrivate()
-//	{
-//		if (window)
-//		{
-//			window->remove_key_listener(key_listener);
-//			window->remove_mouse_listener(mouse_listener);
-//		}
 //	}
 //
 //	void sEventDispatcherPrivate::on_receiver_removed(cEventReceiver* er)
@@ -59,12 +41,12 @@ namespace flame
 //		((cEventReceiverPrivate*)er)->set_state(EventReceiverNormal);
 //	}
 //
-//	void sEventDispatcherPrivate::on_added()
-//	{
-//		window = (Window*)world_->find_object(FLAME_CHASH("Window"), 0);
-//		if (window)
-//		{
-//			key_listener = window->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
+	void sEventDispatcherPrivate::on_added()
+	{
+		window = (Window*)((WorldPrivate*)world)->find_object("Window");
+		if (window)
+		{
+			key_listener = window->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
 //				auto thiz = c.thiz<sEventDispatcherPrivate>();
 //
 //				if (action == KeyStateNull)
@@ -94,11 +76,11 @@ namespace flame
 //						thiz->keyup_inputs.push_back((Key)value);
 //				}
 //
-//				thiz->pending_update = true;
-//			}, Capture().set_thiz(this));
-//
-//			mouse_listener = window->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//				auto thiz = c.thiz<sEventDispatcherPrivate>();
+//				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+
+			mouse_listener = window->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
 //
 //				if (action == KeyStateNull)
 //				{
@@ -113,18 +95,29 @@ namespace flame
 //					thiz->mouse_pos = pos;
 //				}
 //
-//				thiz->pending_update = true;
-//			}, Capture().set_thiz(this));
-//
-//			window->add_destroy_listener([](Capture& c) {
-//				c.thiz<sEventDispatcherPrivate>()->window = nullptr;
-//			}, Capture().set_thiz(this));
-//		}
-//	}
-//
-//	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
-//	{
-//		auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+
+			destroy_listener = window->add_destroy_listener([](Capture& c) {
+				c.thiz<sEventDispatcherPrivate>()->window = nullptr;
+			}, Capture().set_thiz(this));
+		}
+	}
+
+	void sEventDispatcherPrivate::on_removed()
+	{
+		if (window)
+		{
+			window->remove_key_listener(key_listener);
+			window->remove_mouse_listener(mouse_listener);
+			window->remove_mouse_listener(destroy_listener);
+		}
+	}
+
+	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
+	{
+		//auto mouse_contained = er->element->contains(mouse_pos);
+		//auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
 //
 //		if ([&]() {
 //				if (!mouse_event_checker)
@@ -202,10 +195,10 @@ namespace flame
 //		}
 //
 //		er->frame = get_looper()->frame;
-//	}
-//
-//	void sEventDispatcherPrivate::dispatch_mouse_recursively(Entity* e)
-//	{
+	}
+
+	void sEventDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
+	{
 //		for (auto i = (int)e->children.s - 1; i >= 0; i--)
 //		{
 //			auto c = e->children[i];
@@ -218,17 +211,17 @@ namespace flame
 //			return;
 //
 //		dispatch_mouse_single(er, false);
-//	}
-//
+	}
+
 	void sEventDispatcherPrivate::update()
 	{
 //		if (dbclick_timer > 0.f)
 //			dbclick_timer -= get_looper()->delta_time;
-//
-//		if (!pending_update)
-//			return;
-//		pending_update = false;
-//
+
+		if (!dirty)
+			return;
+		dirty = false;
+
 //		mouse_disp = mouse_pos - mouse_pos_prev;
 //
 //		auto prev_hovering = hovering;
@@ -282,7 +275,7 @@ namespace flame
 //		mouse_event_checker = nullptr;
 //		if (focusing && focusing_state != FocusingNormal)
 //			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
-//		dispatch_mouse_recursively(world_->root);
+		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
 //
 //		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mouse_pos)))
 //		{

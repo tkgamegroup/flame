@@ -1,6 +1,6 @@
 #include <flame/graphics/canvas.h>
+
 #include "../world_private.h"
-#include "../entity_private.h"
 #include "../res_map_private.h"
 #include "image_private.h"
 
