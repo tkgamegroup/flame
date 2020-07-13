@@ -15,7 +15,7 @@ namespace flame
 		void* destroy_listener = nullptr;
 
 		//		KeyStateFlags key_states[Key_Count];
-		//		KeyStateFlags mouse_buttons[3];
+		KeyStateFlags mbtns[3];
 		Vec2f mpos = Vec2f(0.f);
 		Vec2f mdisp = Vec2f(0.f);
 		Vec2f active_pos = Vec2f(0.f);

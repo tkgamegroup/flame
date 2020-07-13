@@ -81,20 +81,24 @@ namespace flame
 
 			mouse_listener = window->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
-//
-//				if (action == KeyStateNull)
-//				{
-//					if (key == Mouse_Middle)
-//						thiz->mouse_scroll = pos.x();
-//					else if (key == Mouse_Null)
-//						thiz->mouse_pos = pos;
-//				}
-//				else
-//				{
-//					thiz->mouse_buttons[key] = action | KeyStateJust;
-//					thiz->mouse_pos = pos;
-//				}
-//
+
+				if (action == KeyStateNull)
+				{
+					if (key == Mouse_Middle)
+						;//thiz->mouse_scroll = pos.x();
+					else if (key == Mouse_Null)
+					{
+						thiz->mdisp += pos - thiz->mpos;
+						thiz->mpos = pos;
+					}
+				}
+				else
+				{
+					thiz->mbtns[key] = action | KeyStateJust;
+					thiz->mdisp += pos - thiz->mpos;
+					thiz->mpos = pos;
+				}
+
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
 
@@ -116,34 +120,36 @@ namespace flame
 
 	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
 	{
-		//auto mouse_contained = er->element->contains(mouse_pos);
+		auto mouse_contained = er->element->contains(mpos);
 		//auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
-//
-//		if ([&]() {
-//				if (!mouse_event_checker)
-//					return true;
-//				if (mouse_event_checker == INVALID_POINTER)
-//					return false;
-//				auto pass = false;
-//				mouse_event_checker->pass_checkers.call(er, &pass);
-//				return pass;
-//			}() && (force || mouse_contained))
-//		{
+
+		if ([&]() {
+				//if (!mouse_event_checker)
+				//	return true;
+				//if (mouse_event_checker == INVALID_POINTER)
+				//	return false;
+				//auto pass = false;
+				//mouse_event_checker->pass_checkers.call(er, &pass);
+				//return pass;
+				return true;
+			}() && (force || mouse_contained))
+		{
 //			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
 //
-//			if (mouse_event_checker == INVALID_POINTER && mouse_contained)
-//			{
-//				hovering = er;
-//
-//				auto left_just_down = mouse_buttons[Mouse_Left] == (KeyStateDown | KeyStateJust);
-//				auto right_just_down = mouse_buttons[Mouse_Right] == (KeyStateDown | KeyStateJust);
-//				if (left_just_down || right_just_down)
-//				{
-//					if (left_just_down)
-//						focusing = nullptr;
-//					if (hovering)
-//					{
-//						auto do_focus = false;
+			//if (mouse_event_checker == INVALID_POINTER && mouse_contained)
+			if (mouse_contained)
+			{
+				hovering = er;
+
+				auto left_just_down = mbtns[Mouse_Left] == (KeyStateDown | KeyStateJust);
+				auto right_just_down = mbtns[Mouse_Right] == (KeyStateDown | KeyStateJust);
+				if (left_just_down || right_just_down)
+				{
+					if (left_just_down)
+						focusing = nullptr;
+					if (hovering)
+					{
+						auto do_focus = false;
 //						switch (hovering->focus_type)
 //						{
 //						case FocusByLeftButton:
@@ -159,15 +165,19 @@ namespace flame
 //								do_focus = true;
 //							break;
 //						}
-//						if (do_focus)
-//						{
-//							focusing = hovering;
+						{ // TODO test
+							if (left_just_down)
+								do_focus = true;
+						}
+						if (do_focus)
+						{
+							focusing = hovering;
 //							focusing_state = FocusingAndActive;
 //							active_pos = mouse_pos;
-//						}
-//					}
-//				}
-//			}
+						}
+					}
+				}
+			}
 //
 //			if (mouse_disp != 0)
 //				((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
@@ -179,7 +189,7 @@ namespace flame
 //				if (s & KeyStateJust)
 //					((cEventReceiverPrivate*)er)->on_mouse(s, (MouseKey)i, mouse_pos);
 //			}
-//		}
+		}
 //
 //		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)
 //		{
@@ -199,18 +209,18 @@ namespace flame
 
 	void sEventDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
 	{
-//		for (auto i = (int)e->children.s - 1; i >= 0; i--)
-//		{
-//			auto c = e->children[i];
-//			if (c->global_visibility && e->get_component(cElement))
-//				dispatch_mouse_recursively(c);
-//		}
-//
-//		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver);
-//		if (!er || er->frame >= (int)get_looper()->frame)
-//			return;
-//
-//		dispatch_mouse_single(er, false);
+		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
+		{
+			auto c = it->get();
+			if (c->global_visibility && e->get_component(cElement::type_hash))
+				dispatch_mouse_recursively(c);
+		}
+
+		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
+		//if (!er || er->frame >= (int)get_looper()->frame)
+		//	return;
+
+		dispatch_mouse_single(er, false);
 	}
 
 	void sEventDispatcherPrivate::update()
@@ -276,17 +286,19 @@ namespace flame
 //		if (focusing && focusing_state != FocusingNormal)
 //			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
 		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
-//
-//		if (focusing && (mouse_buttons[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mouse_pos)))
-//		{
-//			auto disp = mouse_pos - active_pos;
-//			auto db = dbclick_timer > 0.f;
-//			((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
-//			if (db)
-//				dbclick_timer = -1.f;
-//			else if (disp == 0)
-//				dbclick_timer = 0.5f;
-//		}
+
+		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mpos)))
+		if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && focusing->element->contains(Vec2f(mpos)))
+		{
+			//auto disp = mouse_pos - active_pos;
+			//auto db = dbclick_timer > 0.f;
+			focusing->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
+			//((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
+			//if (db)
+			//	dbclick_timer = -1.f;
+			//else if (disp == 0)
+			//	dbclick_timer = 0.5f;
+		}
 //
 //		auto get_state = [&](cEventReceiver* er) {
 //			EventReceiverState state = EventReceiverNormal;
@@ -369,6 +381,11 @@ namespace flame
 //			for (auto& ch : char_inputs)
 //				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateNull, ch);
 //		}
+
+		{ // TODO test
+			for (int i = 0; i < size(mbtns); i++)
+				mbtns[i] = (KeyStateFlags)((int)mbtns[i] & ~KeyStateJust);
+		}
 	}
 //
 //	void sEventDispatcherPrivate::after_update()

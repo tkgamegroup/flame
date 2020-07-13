@@ -10,8 +10,10 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/res_map.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/systems/element_renderer.h>
+#include <flame/universe/components/event_receiver.h>
 #include <flame/universe/systems/type_setting.h>
+#include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/element_renderer.h>
 
 using namespace flame;
 using namespace graphics;
@@ -45,7 +47,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"5.prefab";
+auto test_prefab = L"6.prefab";
 
 int main(int argc, char** args)
 {
@@ -80,45 +82,54 @@ int main(int argc, char** args)
 	}, Capture());
 
 	world = World::create();
+	world->register_object(w, "Window");
 	world->register_object(canvas, "Canvas");
 	world->register_object(ResMap::create((res_path / L"res.ini").c_str()), "ResMap");
 
 	world->add_system(sTypeSetting::create());
-
+	world->add_system(sEventDispatcher::create());
 	ser = sElementRenderer::create();
 	world->add_system(ser);
 
 	auto root = world->get_root();
 	root->load((res_path / test_prefab).c_str());
+	{
+		auto er = (cEventReceiver*)root->get_component(cEventReceiver::type_hash);
+		er->add_mouse_listener([](Capture&, KeyStateFlags action, MouseKey key, const Vec2i&) {
+			if (is_mouse_clicked(action, key))
+				printf("clicked!\n");
+			return true;
+		}, Capture());
+	}
 
-	add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
-		auto path = std::filesystem::path(filename);
-		if (path.filename() == test_prefab)
-		{
-			auto root = c.thiz<Entity>();
-			root->remove_all_components();
-			root->remove_all_children();
-			root->load(filename);
-		}
-	}, Capture().set_thiz(root), false, false);
+	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
+	//	auto path = std::filesystem::path(filename);
+	//	if (path.filename() == test_prefab)
+	//	{
+	//		auto root = c.thiz<Entity>();
+	//		root->remove_all_components();
+	//		root->remove_all_children();
+	//		root->load(filename);
+	//	}
+	//}, Capture().set_thiz(root), false, false);
 
-	w->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-		if (is_mouse_move(action, key))
-		{
-			auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
-			if (e->contains(Vec2f(pos)))
-				e->set_fill_color(Vec3c(255, 0, 0));
-			else
-				e->set_fill_color(Vec3c(255, 255, 255));
-		}
-	}, Capture().set_thiz(root));
-	w->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
-		if (is_key_down(action) && value == Key_Right)
-		{
-			auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
-			e->set_x(e->get_x() + 1);
-		}
-	}, Capture().set_thiz(root));
+	//w->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+	//	if (is_mouse_move(action, key))
+	//	{
+	//		auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
+	//		if (e->contains(Vec2f(pos)))
+	//			e->set_fill_color(Vec3c(255, 0, 0));
+	//		else
+	//			e->set_fill_color(Vec3c(255, 255, 255));
+	//	}
+	//}, Capture().set_thiz(root));
+	//w->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
+	//	if (is_key_down(action) && value == Key_Right)
+	//	{
+	//		auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
+	//		e->set_x(e->get_x() + 1);
+	//	}
+	//}, Capture().set_thiz(root));
 
 	get_looper()->loop([](Capture&, float) {
 		if (!cbs.empty())

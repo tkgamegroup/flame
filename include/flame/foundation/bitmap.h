@@ -72,7 +72,7 @@ namespace flame
 		Vec2i pos;
 	};
 
-	inline void bin_pack(const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
+	inline void bin_pack(const Vec2u& size, const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
 	{
 		auto b1 = border ? 1U : 0U;
 		auto b2 = b1 << 1;
@@ -90,7 +90,6 @@ namespace flame
 			return max(a.b->get_width(), a.b->get_height()) > max(b.b->get_width(), b.b->get_height());
 		});
 
-		auto size = Vec2u(4096);
 		auto tree = std::make_unique<BinPackNode>(size);
 
 		for (auto& t : tiles)
@@ -100,14 +99,14 @@ namespace flame
 				t.pos = n->pos;
 		}
 
-		size = 0;
+		auto _size = Vec2u(0);
 		for (auto& t : tiles)
 		{
-			size.x() = max(t.pos.x() + t.b->get_width() + b1, size.x());
-			size.y() = max(t.pos.y() + t.b->get_height() + b1 + 1, size.y()); // stage 1 line to store a white pixel
+			_size.x() = max(t.pos.x() + t.b->get_width() + b1, _size.x());
+			_size.y() = max(t.pos.y() + t.b->get_height() + b1 + 1, _size.y()); // stage 1 line to store a white pixel
 		}
 
-		auto b = Bitmap::create(size.x(), size.y(), 4);
+		auto b = Bitmap::create(_size.x(), _size.y(), 4);
 		for (auto& t : tiles)
 		{
 			if (t.pos >= 0)

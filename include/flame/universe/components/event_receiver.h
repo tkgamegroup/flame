@@ -18,8 +18,7 @@ namespace flame
 		}
 
 //		sEventDispatcher* dispatcher;
-//		cElement* element;
-//
+
 //		FocusType focus_type;
 //		uint drag_hash; // non-zero means it can be draged to drop
 //		FLAME_RV(EventReceiverState, state, m);
@@ -64,7 +63,10 @@ namespace flame
 //		FLAME_UNIVERSE_EXPORTS void on_key(KeyStateFlags action, uint value);
 //		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);
 //		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
-//
+
+		virtual void* add_mouse_listener(bool (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_listener(void* lis) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};
 }

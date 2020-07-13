@@ -32,7 +32,7 @@ int main(int argc, char **args)
 		std::filesystem::create_directories(p);
 	if (ext == L".atlas")
 	{
-		bin_pack(inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
+		bin_pack(Vec2u(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
 			std::ofstream file(output);
 			file << "image = \"" << image_path.filename().string() << "\"\n";
 			file << "border = " << (border ? "1" : "0") << "\n";
@@ -44,7 +44,7 @@ int main(int argc, char **args)
 	}
 	else if (ext == L".json")
 	{
-		bin_pack(inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
+		bin_pack(Vec2u(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
 			nlohmann::json json;
 			{
 				auto& mc = json["mc"];
