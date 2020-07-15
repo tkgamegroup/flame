@@ -3,6 +3,5 @@
   <entity>
       <cElement width="250.0" height="250.0" />
 	  <cImage src="9" />
-	  
   </entity>
 </prefab>

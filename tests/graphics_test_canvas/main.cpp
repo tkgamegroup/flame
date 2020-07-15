@@ -1,4 +1,4 @@
-﻿#include <flame/graphics/device.h>
+﻿ #include <flame/graphics/device.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/renderpass.h>
 #include <flame/graphics/synchronize.h>
@@ -61,6 +61,8 @@ struct App
 				std::vector<Vec2f> points;
 				points.push_back(Vec2f(20.f, 200.f + i * 20.f));
 				points.push_back(Vec2f(50.f, 200.f + i * 20.f));
+				points.push_back(Vec2f(80.f, 180.f + i * 20.f));
+				points.push_back(Vec2f(100.f, 230.f + i * 20.f));
 				canvas->stroke(points.size(), points.data(), Vec4c(255), (i + 1) * 0.5f, true);
 			}
 			//canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
