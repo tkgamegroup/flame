@@ -43,7 +43,7 @@ void on_resize()
 		cb->release();
 	cbs.resize(vs.size());
 	for (auto i = 0; i < cbs.size(); i++)
-		cbs[i] = CommandBuffer::create(d->get_graphics_command_pool());
+		cbs[i] = CommandBuffer::create(d->get_command_pool(QueueGraphics));
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
@@ -150,7 +150,7 @@ int main(int argc, char** args)
 
 			if (!cbs.empty())
 			{
-				auto q = d->get_graphics_queue();
+				auto q = d->get_queue(QueueGraphics);
 				q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
 				q->present(sc, render_finished);
 			}

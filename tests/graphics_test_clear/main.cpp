@@ -23,20 +23,20 @@ struct App
 	void on_resize()
 	{
 		for (auto fb : fbs)
-			Framebuffer::destroy(fb);
+			fb->release();
 		for (auto cb : cbs)
-			CommandBuffer::destroy(cb);
-		auto image_count = sc->image_count();
+			cb->release();
+		auto image_count = sc->get_images_count();
 		fbs.resize(image_count);
 		for (auto i = 0; i < image_count; i++)
 		{
-			auto v = sc->image(i)->default_view();
+			auto v = sc->get_image(i)->get_default_view();
 			fbs[i] = Framebuffer::create(d, rp, 1, &v);
 		}
 		cbs.resize(image_count);
 		for (auto i = 0; i < image_count; i++)
 		{
-			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = CommandBuffer::create(d->get_command_pool(QueueGraphics));
 			cb->begin();
 			cb->begin_renderpass(app.fbs[i], 1, &Vec4f(0.23f, 0.44f, 0.75f, 1.f));
 			cb->end_renderpass();
@@ -54,8 +54,9 @@ struct App
 
 		if (!cbs.empty())
 		{
-			Queue::get_default(QueueGraphics)->submit(1, &cbs[sc->image_index()], sc->image_avalible(), render_finished, fence);
-			Queue::get_default(QueueGraphics)->present(sc, render_finished);
+			auto q = d->get_queue(QueueGraphics);
+			q->submit(1, &cbs[sc->get_image_index()], sc->get_image_avalible(), render_finished, fence);
+			q->present(sc, render_finished);
 		}
 	}
 }app;
@@ -69,7 +70,7 @@ int main(int argc, char** args)
 		RenderpassAttachmentInfo att;
 		att.format = graphics::Swapchain::get_format();
 		RenderpassSubpassInfo sp;
-		sp.color_attachment_count = 1;
+		sp.color_attachments_count = 1;
 		uint col_refs[] = {
 			0
 		};
@@ -83,7 +84,7 @@ int main(int argc, char** args)
 		app.on_resize();
 	}, Capture());
 
-	get_looper()->loop([](Capture&) {
+	get_looper()->loop([](Capture&, float) {
 		app.run();
 	}, Capture());
 }

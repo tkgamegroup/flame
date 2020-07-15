@@ -50,12 +50,39 @@ namespace flame
 			void set_default() override { _default_device = this; }
 
 			DescriptorPool* get_descriptor_pool() const override { return (DescriptorPool*)descriptor_pool.get(); }
-			Sampler* get_sampler_nearest() const override { return (Sampler*)sampler_nearest.get(); }
-			Sampler* get_sampler_linear() const override { return (Sampler*)sampler_linear.get(); }
-			CommandPool* get_graphics_command_pool() const override { return (CommandPool*)graphics_command_pool.get(); }
-			CommandPool* get_transfer_command_pool() const override { return (CommandPool*)transfer_command_pool.get(); }
-			Queue* get_graphics_queue() const override { return (Queue*)graphics_queue.get(); }
-			Queue* get_transfer_queue() const override { return (Queue*)transfer_queue.get(); }
+			Sampler* get_sampler(Filter filter) const override 
+			{
+				switch (filter)
+				{
+				case FilterNearest:
+					return (Sampler*)sampler_nearest.get();
+				case FilterLinear:
+					return (Sampler*)sampler_linear.get();
+				}
+				return nullptr;
+			}
+			CommandPool* get_command_pool(QueueFamily family) const override
+			{
+				switch (family)
+				{
+				case QueueGraphics:
+					return (CommandPool*)graphics_command_pool.get();
+				case QueueTransfer:
+					return (CommandPool*)transfer_command_pool.get();
+				}
+				return nullptr;
+			}
+			Queue* get_queue(QueueFamily family) const override
+			{
+				switch (family)
+				{
+				case QueueGraphics:
+					return (Queue*)graphics_queue.get();
+				case QueueTransfer:
+					return (Queue*)transfer_queue.get();
+				}
+				return nullptr;
+			}
 
 			bool has_feature(Feature f) const override;
 		};
