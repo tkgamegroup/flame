@@ -10,6 +10,15 @@
 
 namespace flame
 {
+	enum StateFlags
+	{
+		StateNone = 0,
+		StateHovering = 1 << 0,
+		StateActive = 1 << 1
+	};
+
+	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
+
 	enum ClipFlags
 	{
 		ClipSelf = 1 << 0,
@@ -24,22 +33,6 @@ namespace flame
 		FocusByRightButton,
 		FocusByLeftOrRightButton
 	};
-
-	enum FocusingState
-	{
-		FocusingNormal,
-		FocusingAndActive,
-		FocusingAndDragging
-	};
-
-	enum EventReceiverState
-	{
-		EventReceiverNormal = 0,
-		EventReceiverHovering = 1 << 0,
-		EventReceiverActive = 1 << 1
-	};
-
-	inline EventReceiverState operator| (EventReceiverState a, EventReceiverState b) { return (EventReceiverState)((int)a | (int)b); }
 
 	enum AlignFlags
 	{

@@ -56,47 +56,14 @@ struct App
 				points.push_back(Vec2f(90.f, 80.f));
 				canvas->fill(points.size(), points.data(), Vec4c(255), true);
 			}
+			for (auto i = 0; i < 5; i++)
 			{
 				std::vector<Vec2f> points;
-				points.push_back(Vec2f(20.f, 200.f));
-				points.push_back(Vec2f(10.f, 180.f));
-				points.push_back(Vec2f(110.f, 120.f));
-				points.push_back(Vec2f(100.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 0.5f, true);
+				points.push_back(Vec2f(20.f, 200.f + i * 20.f));
+				points.push_back(Vec2f(50.f, 200.f + i * 20.f));
+				canvas->stroke(points.size(), points.data(), Vec4c(255), (i + 1) * 0.5f, true);
 			}
-			{
-				std::vector<Vec2f> points;
-				points.push_back(Vec2f(40.f, 200.f));
-				points.push_back(Vec2f(30.f, 180.f));
-				points.push_back(Vec2f(130.f, 120.f));
-				points.push_back(Vec2f(120.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 1.f, true);
-			}
-			{
-				std::vector<Vec2f> points;
-				points.push_back(Vec2f(60.f, 200.f));
-				points.push_back(Vec2f(50.f, 180.f));
-				points.push_back(Vec2f(150.f, 120.f));
-				points.push_back(Vec2f(140.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 2.f, true);
-			}
-			{
-				std::vector<Vec2f> points;
-				points.push_back(Vec2f(80.f, 200.f));
-				points.push_back(Vec2f(70.f, 180.f));
-				points.push_back(Vec2f(170.f, 120.f));
-				points.push_back(Vec2f(160.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 3.f, true);
-			}
-			{
-				std::vector<Vec2f> points;
-				points.push_back(Vec2f(100.f, 200.f));
-				points.push_back(Vec2f(90.f, 180.f));
-				points.push_back(Vec2f(190.f, 120.f));
-				points.push_back(Vec2f(180.f, 100.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), 4.f, true);
-			}
-			canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
+			//canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 
 			canvas->record(cb, img_idx);
 

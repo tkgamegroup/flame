@@ -218,7 +218,7 @@ namespace flame
 			(*p_idx_cnt)++;
 		}
 
-		static const auto feather = 0.5f;
+		static const auto feather = 1.f;
 
 		void CanvasBridge::stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness, bool aa) 
 		{ 
@@ -331,12 +331,12 @@ namespace flame
 
 							auto vtx_cnt = *p_vtx_cnt;
 
-							add_vtx(p0 + n0 * thickness, uv, col_t);
+							add_vtx(p0 + n0 * feather, uv, col_t);
 							add_vtx(p0, uv, col_c);
-							add_vtx(p0 - n0 * thickness, uv, col_t);
-							add_vtx(p1 + n1 * thickness, uv, col_t);
+							add_vtx(p0 - n0 * feather, uv, col_t);
+							add_vtx(p1 + n1 * feather, uv, col_t);
 							add_vtx(p1, uv, col_c);
-							add_vtx(p1 - n1 * thickness, uv, col_t);
+							add_vtx(p1 - n1 * feather, uv, col_t);
 							add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
 							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
 						}
@@ -355,9 +355,9 @@ namespace flame
 
 							auto vtx_cnt = *p_vtx_cnt;
 
-							add_vtx(p1 + n1 * thickness, uv, col_t);
+							add_vtx(p1 + n1 * feather, uv, col_t);
 							add_vtx(p1, uv, col_c);
-							add_vtx(p1 - n1 * thickness, uv, col_t);
+							add_vtx(p1 - n1 * feather, uv, col_t);
 							add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
 							add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
 						}
@@ -455,9 +455,9 @@ namespace flame
 						auto vtx_cnt = *p_vtx_cnt;
 
 						add_vtx(p0, uv, col);
-						add_vtx(p0 + n0, uv, col_t);
+						add_vtx(p0 + n0 * feather, uv, col_t);
 						add_vtx(p1, uv, col);
-						add_vtx(p1 + n1, uv, col_t);
+						add_vtx(p1 + n1 * feather, uv, col_t);
 						add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
 					}
 					else if (i == points.size() - 1)
@@ -475,7 +475,7 @@ namespace flame
 						auto vtx_cnt = *p_vtx_cnt;
 
 						add_vtx(p1, uv, col);
-						add_vtx(p1 + n1, uv, col_t);
+						add_vtx(p1 + n1 * feather, uv, col_t);
 						add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
 					}
 				}
