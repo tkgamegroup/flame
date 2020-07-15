@@ -417,11 +417,23 @@ namespace flame
 				return;
 
 			add_draw_cmd();
-			auto vtx_cnt0 = *p_vtx_cnt;
 			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
+
+			for (auto i = 0; i < points.size() - 2; i++)
+			{
+				auto vtx_cnt = *p_vtx_cnt;
+
+				add_vtx(points[0], uv, col);
+				add_vtx(points[i + 1], uv, col);
+				add_vtx(points[i + 2], uv, col);
+				add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1);
+			}
 
 			if (aa)
 			{
+				auto vtx_cnt0 = *p_vtx_cnt;
+				auto _feather = feather * 2.f;
+
 				std::vector<Vec2f> normals(points.size() + 1);
 				for (auto i = 0; i < points.size(); i++)
 				{
@@ -455,9 +467,9 @@ namespace flame
 						auto vtx_cnt = *p_vtx_cnt;
 
 						add_vtx(p0, uv, col);
-						add_vtx(p0 + n0 * feather, uv, col_t);
+						add_vtx(p0 + n0 * _feather, uv, col_t);
 						add_vtx(p1, uv, col);
-						add_vtx(p1 + n1 * feather, uv, col_t);
+						add_vtx(p1 + n1 * _feather, uv, col_t);
 						add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
 					}
 					else if (i == points.size() - 1)
@@ -475,20 +487,10 @@ namespace flame
 						auto vtx_cnt = *p_vtx_cnt;
 
 						add_vtx(p1, uv, col);
-						add_vtx(p1 + n1 * feather, uv, col_t);
+						add_vtx(p1 + n1 * _feather, uv, col_t);
 						add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
 					}
 				}
-			}
-
-			for (auto i = 0; i < points.size() - 2; i++)
-			{
-				auto vtx_cnt = *p_vtx_cnt;
-
-				add_vtx(points[0], uv, col);
-				add_vtx(points[i + 1], uv, col);
-				add_vtx(points[i + 2], uv, col);
-				add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1);
 			}
 		}
 

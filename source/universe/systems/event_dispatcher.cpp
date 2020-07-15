@@ -217,8 +217,8 @@ namespace flame
 		}
 
 		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
-		//if (!er || er->frame >= (int)get_looper()->frame)
-		//	return;
+		if (!er /*|| er->frame >= (int)get_looper()->frame*/)
+			return;
 
 		dispatch_mouse_single(er, false);
 	}

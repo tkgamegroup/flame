@@ -47,7 +47,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"6.prefab";
+auto test_prefab = L"1.prefab";
 
 int main(int argc, char** args)
 {
@@ -93,14 +93,14 @@ int main(int argc, char** args)
 
 	auto root = world->get_root();
 	root->load((res_path / test_prefab).c_str());
-	{
-		auto er = (cEventReceiver*)root->get_component(cEventReceiver::type_hash);
-		er->add_mouse_listener([](Capture&, KeyStateFlags action, MouseKey key, const Vec2i&) {
-			if (is_mouse_clicked(action, key))
-				printf("clicked!\n");
-			return true;
-		}, Capture());
-	}
+	//{
+	//	auto er = (cEventReceiver*)root->get_component(cEventReceiver::type_hash);
+	//	er->add_mouse_listener([](Capture&, KeyStateFlags action, MouseKey key, const Vec2i&) {
+	//		if (is_mouse_clicked(action, key))
+	//			printf("clicked!\n");
+	//		return true;
+	//	}, Capture());
+	//}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);
