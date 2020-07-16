@@ -375,12 +375,15 @@ namespace flame
 
 				if (aa)
 				{
+					auto col_c = col;
+					if (thickness < feather)
+						col_c.a() *= (thickness / feather) * 255;
+					auto col_t = col;
+					col_t.a() = 0;
+
 					if (thickness > feather)
 					{
 						auto edge = thickness - feather;
-
-						auto col_t = col;
-						col_t.a() = 0;
 
 						for (auto i = 0; i < points.size() - 1; i++)
 						{
@@ -434,11 +437,6 @@ namespace flame
 					}
 					else
 					{
-						auto col_c = col;
-						col_c.a() = (thickness / feather) * 255;
-						auto col_t = col;
-						col_t.a() = 0;
-
 						for (auto i = 0; i < points.size() - 1; i++)
 						{
 							if (i == 0)
@@ -450,6 +448,8 @@ namespace flame
 								auto n1 = normals[1];
 
 								auto vtx_cnt = *p_vtx_cnt;
+
+								vtx_cnt = *p_vtx_cnt;
 
 								add_vtx(p0 + n0 * feather, uv, col_t);
 								add_vtx(p0, uv, col_c);
@@ -483,6 +483,43 @@ namespace flame
 							}
 						}
 					}
+
+					//if (!closed)
+					//{
+					//	auto ext = max(feather, thickness);
+
+					//	{
+					//		auto vtx_cnt = *p_vtx_cnt;
+
+					//		auto p0 = points[0];
+					//		auto p1 = points[1];
+
+					//		auto n0 = normals[0];
+
+					//		auto p = p0 - normalize(p1 - p0);
+					//		add_vtx(p + n0 * ext, uv, col_t);
+					//		add_vtx(p - n0 * ext, uv, col_t);
+					//		add_vtx(p0 + n0 * ext, uv, col_c);
+					//		add_vtx(p0 - n0 * ext, uv, col_c);
+					//		add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
+					//	}
+
+					//	{
+					//		auto vtx_cnt = *p_vtx_cnt;
+
+					//		auto p0 = points[points.size() - 2];
+					//		auto p1 = points[points.size() - 1];
+
+					//		auto n1 = normals[points.size() - 1];
+
+					//		auto p = p1 + normalize(p1 - p0);
+					//		add_vtx(p1 + n1 * ext, uv, col_c);
+					//		add_vtx(p1 - n1 * ext, uv, col_c);
+					//		add_vtx(p + n1 * ext, uv, col_t);
+					//		add_vtx(p - n1 * ext, uv, col_t);
+					//		add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
+					//	}
+					//}
 				}
 				else
 				{
