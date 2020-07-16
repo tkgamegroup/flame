@@ -88,15 +88,17 @@ namespace flame
 			std::vector<std::unique_ptr<FramebufferPrivate>> fbs;
 			std::unique_ptr<DescriptorSetPrivate> ds;
 
+			std::vector<std::vector<Vec2f>> paths;
+
 			Vertex* vtx_end;
 			uint* idx_end;
-
-			Vec2u target_size;
-			Vec4f curr_scissor;
 
 			std::vector<Cmd> cmds;
 			uint* p_vtx_cnt;
 			uint* p_idx_cnt;
+
+			Vec2u target_size;
+			Vec4f curr_scissor;
 
 			CanvasPrivate(DevicePrivate* d);
 

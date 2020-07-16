@@ -56,11 +56,13 @@ struct App
 				points.push_back(Vec2f(90.f, 80.f));
 				canvas->fill(points.size(), points.data(), Vec4c(255), true);
 			}
-			for (auto i = 0; i < 5; i++)
+			for (auto i = 0; i < 10; i++)
 			{
 				std::vector<Vec2f> points;
 				points.push_back(Vec2f(20.f, 200.f + i * 20.f));
 				points.push_back(Vec2f(50.f, 200.f + i * 20.f));
+				points.push_back(Vec2f(80.f, 180.f + i * 20.f));
+				points.push_back(Vec2f(100.f, 210.f + i * 20.f));
 				canvas->stroke(points.size(), points.data(), Vec4c(255), (i + 1) * 0.5f, true);
 			}
 			//canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));

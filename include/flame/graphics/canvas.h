@@ -37,8 +37,13 @@ namespace flame
 			virtual void add_atlas(ImageAtlas* a) = 0;
 			virtual void add_font(FontAtlas* f) = 0;
 
-			virtual void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness, bool aa = false) = 0;
-			virtual void fill(uint points_count, const Vec2f* points, const Vec4c& col, bool aa = false) = 0;
+			virtual void begin_path() = 0;
+			virtual void move_to(float x, float y) = 0;
+			virtual void line_to(float x, float y) = 0;
+			virtual void close_path() = 0;
+
+			virtual void stroke(const Vec4c& col, float thickness, bool aa = false) = 0;
+			virtual void fill(const Vec4c& col, bool aa = false) = 0;
 			virtual void add_text(uint res_id, const wchar_t* text, uint size, const Vec2f& pos, const Vec4c& col) = 0;
 			virtual void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
 
