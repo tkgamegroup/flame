@@ -215,12 +215,13 @@ namespace flame
 //		{
 //			if (alpha > 0.f)
 //			{
-				std::vector<Vec2f> points;
-				points.push_back(get_p00());
-				points.push_back(get_p10());
-				points.push_back(get_p11());
-				points.push_back(get_p01());
-				canvas->fill(points.size(), points.data(), Vec4c(fill_color, 255));
+				update_transform();
+				canvas->begin_path();
+				canvas->move_to(p00.x(), p00.y());
+				canvas->line_to(p10.x(), p10.y());
+				canvas->line_to(p11.x(), p11.y());
+				canvas->line_to(p01.x(), p01.y());
+				canvas->fill(Vec4c(fill_color, 255));
 
 				for (auto d : drawers)
 					d->draw(canvas);
