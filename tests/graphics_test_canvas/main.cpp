@@ -66,6 +66,7 @@ struct App
 				canvas->stroke(Vec4c(255), (i + 1) * 0.5f, true);
 				y += 45.f;
 			}
+
 			//canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 
 			canvas->record(cb, img_idx);

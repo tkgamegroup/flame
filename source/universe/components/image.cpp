@@ -22,11 +22,6 @@ namespace flame
 		src = "";
 	}
 
-	void cImageBridge::set_src(const char* src)
-	{
-		((cImagePrivate*)this)->set_src(src);
-	}
-
 	void cImagePrivate::set_src(const std::string& _src)
 	{
 		if (src == _src)

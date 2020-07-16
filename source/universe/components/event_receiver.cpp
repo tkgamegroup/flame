@@ -1,17 +1,14 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "event_receiver_private.h"
+#include "../systems/event_dispatcher_private.h"
 //
 namespace flame
 {
 //	cEventReceiverPrivate::cEventReceiverPrivate()
 //	{
-//		dispatcher = nullptr;
-//		element = nullptr;
-//
 //		focus_type = FocusByLeftButton;
 //		drag_hash = 0;
-//		state = EventReceiverNormal;
 //
 //		mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 //			if (is_mouse_clicked(action, key))
@@ -44,15 +41,6 @@ namespace flame
 //		drag_and_drop_listeners.call_with_current(this, action, er, pos);
 //	}
 //
-//	void cEventReceiverPrivate::set_state(EventReceiverState _state)
-//	{
-//		if (state != _state)
-//		{
-//			state = _state;
-//			state_listeners.call_with_current(this, state);
-//		}
-//	}
-//
 //	void cEventReceiverPrivate::on_hovering(bool hovering)
 //	{
 //		hover_listeners.call_with_current(this, hovering);
@@ -62,33 +50,49 @@ namespace flame
 //	{
 //		focus_listeners.call_with_current(this, focusing);
 //	}
-//
-//	void cEventReceiverPrivate::on_event(EntityEvent e, void* t)
-//	{
-//		switch (e)
-//		{
-//		case EntityEnteredWorld:
-//			dispatcher = entity->world->get_system(sEventDispatcher);
-//			dispatcher->pending_update = true;
-//			break;
-//		case EntityLeftWorld:
-//			((sEventDispatcherPrivate*)dispatcher)->on_receiver_removed(this);
-//			dispatcher->pending_update = true;
-//			dispatcher = nullptr;
-//			break;
-//		case EntityComponentAdded:
-//			if (t == this)
-//			{
-//				element = entity->get_component(cElement);
-//				assert(element);
-//			}
-//			break;
-//		case EntityVisibilityChanged:
-//			if (dispatcher)
-//				dispatcher->pending_update = true;
-//			break;
-//		}
-//	}
+
+	void cEventReceiverPrivate::on_entered_world()
+	{
+		dispatcher = (sEventDispatcherPrivate*)((EntityPrivate*)entity)->world->get_system(sEventDispatcherPrivate::type_hash);
+		mark_dirty();
+	}
+
+	void cEventReceiverPrivate::on_left_world()
+	{
+		if (dispatcher)
+		{
+			if (this == dispatcher->hovering)
+				dispatcher->hovering = nullptr;
+			if (this == dispatcher->focusing)
+			{
+				dispatcher->focusing = nullptr;
+				dispatcher->active = nullptr;
+				dispatcher->dragging = nullptr;
+			}
+			if (this == dispatcher->key_target)
+				dispatcher->key_target = nullptr;
+			if (this == dispatcher->drag_overing)
+				dispatcher->drag_overing = nullptr;
+			//if (er == next_focusing)
+			//	next_focusing = (cEventReceiver*)INVALID_POINTER;
+
+			((EntityPrivate*)entity)->set_state((StateFlags)((int)((EntityPrivate*)entity)->state & (~StateHovering) & (~StateActive)));
+		}
+		mark_dirty();
+		dispatcher = nullptr;
+	}
+
+	void cEventReceiverPrivate::on_entity_visibility_changed()
+	{
+		mark_dirty();
+	}
+
+	void cEventReceiverPrivate::mark_dirty() 
+	{
+		if (dispatcher)
+			dispatcher->dirty = true;
+	}
+
 //
 //	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
 //	{

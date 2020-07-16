@@ -174,6 +174,11 @@ namespace flame
 		renderer = nullptr;
 	}
 
+	void cElementPrivate::on_entity_visibility_changed()
+	{
+		mark_drawing_dirty();
+	}
+
 	void cElementPrivate::on_entity_position_changed()
 	{
 		mark_drawing_dirty();

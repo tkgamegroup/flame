@@ -22,6 +22,9 @@ namespace flame
 
 		virtual Entity* get_parent() const = 0;
 
+		virtual StateFlags get_state() const = 0;
+		virtual void set_state(StateFlags state) = 0;
+
 		virtual Component* get_component(uint64 hash) const = 0;
 		virtual void add_component(Component* c) = 0;
 		virtual void remove_component(Component* c, bool destroy = true) = 0;

@@ -17,19 +17,13 @@ namespace flame
 		{
 		}
 
-//		sEventDispatcher* dispatcher;
-
-//		FocusType focus_type;
 //		uint drag_hash; // non-zero means it can be draged to drop
-//		FLAME_RV(EventReceiverState, state, m);
 //
 //		ListenerHub<bool(Capture& c, cEventReceiver* er, bool* pass)>								pass_checkers;
 //		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>								key_listeners;
-//		ListenerHub<bool(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos)>			mouse_listeners;
 //		ListenerHub<bool(Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>		drag_and_drop_listeners;
 //		ListenerHub<bool(Capture& c, bool hovering)>												hover_listeners;
 //		ListenerHub<bool(Capture& c, bool focusing)>												focus_listeners;
-//		ListenerHub<bool(Capture& c, EventReceiverState state)>										state_listeners;
 //
 //		FLAME_RV(ListenerHub<void(Capture& c)>,														clicked_listeners);
 //

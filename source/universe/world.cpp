@@ -10,19 +10,9 @@ namespace flame
 		root->global_visibility = true;
 	}
 
-	void WorldBridge::register_object(void* o, const char* name)
-	{ 
-		((WorldPrivate*)this)->register_object(o, name);
-	}
-
 	void WorldPrivate::register_object(void* o, const std::string& name)
 	{
 		objects.emplace_back(o, name);
-	}
-
-	void* WorldBridge::find_object(const char* name) const
-	{
-		return ((WorldPrivate*)this)->find_object(name);
 	}
 
 	void* WorldPrivate::find_object(const std::string& name) const

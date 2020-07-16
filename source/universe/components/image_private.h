@@ -42,4 +42,9 @@ namespace flame
 
 		static cImagePrivate* create();
 	};
+
+	inline void cImageBridge::set_src(const char* src)
+	{
+		((cImagePrivate*)this)->set_src(src);
+	}
 }

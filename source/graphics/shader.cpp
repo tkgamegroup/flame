@@ -54,16 +54,6 @@ namespace flame
 		{
 		}
 
-		void DescriptorSetBridge::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
-		{ 
-			((DescriptorSetPrivate*)this)->set_buffer(binding, index, (BufferPrivate*)b, offset, range);
-		}
-
-		void DescriptorSetBridge::set_image(uint binding, uint index, ImageView* v, Sampler* sampler) 
-		{ 
-			((DescriptorSetPrivate*)this)->set_image(binding, index, (ImageViewPrivate*)v, (SamplerPrivate*)sampler);
-		}
-
 		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> _bindings, bool create_default_set) :
 			device(d)
 		{

@@ -10,10 +10,6 @@ namespace flame
 {
 //	sEventDispatcherPrivate::sEventDispatcherPrivate()
 //	{
-//		focusing_state = FocusingNormal;
-//		key_receiving = nullptr;
-//		drag_overing = nullptr;
-//
 //		next_focusing = (cEventReceiver*)INVALID_POINTER;
 //
 //		char_input_compelete = true;
@@ -25,22 +21,7 @@ namespace flame
 //			mouse_buttons[i] = KeyStateUp;
 //		dbclick_timer = -1.f;
 //	}
-//
-//	void sEventDispatcherPrivate::on_receiver_removed(cEventReceiver* er)
-//	{
-//		if (er == focusing)
-//			focusing = nullptr;
-//		if (er == hovering)
-//			hovering = nullptr;
-//		if (er == key_receiving)
-//			key_receiving = nullptr;
-//		if (er == drag_overing)
-//			drag_overing = nullptr;
-//		if (er == next_focusing)
-//			next_focusing = (cEventReceiver*)INVALID_POINTER;
-//		((cEventReceiverPrivate*)er)->set_state(EventReceiverNormal);
-//	}
-//
+
 	void sEventDispatcherPrivate::on_added()
 	{
 		window = (Window*)((WorldPrivate*)world)->find_object("Window");
@@ -234,8 +215,8 @@ namespace flame
 
 //		mouse_disp = mouse_pos - mouse_pos_prev;
 //
-//		auto prev_hovering = hovering;
-//		auto prev_focusing = focusing;
+		auto prev_hovering = hovering;
+		auto prev_focusing = focusing;
 //		auto prev_focusing_state = focusing_state;
 //		auto prev_drag_overing = drag_overing;
 //		auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
@@ -299,24 +280,25 @@ namespace flame
 			//else if (disp == 0)
 			//	dbclick_timer = 0.5f;
 		}
-//
-//		auto get_state = [&](cEventReceiver* er) {
-//			EventReceiverState state = EventReceiverNormal;
-//			if (er == hovering)
-//				state = EventReceiverState(state | EventReceiverHovering);
-//			if (er == focusing && focusing_state != FocusingNormal)
-//				state = EventReceiverState(state | EventReceiverActive);
-//			return state;
-//		};
-//		if (prev_hovering)
-//			((cEventReceiverPrivate*)prev_hovering)->set_state(get_state(prev_hovering));
-//		if (hovering)
-//			((cEventReceiverPrivate*)hovering)->set_state(get_state(hovering));
-//		if (prev_focusing)
-//			((cEventReceiverPrivate*)prev_focusing)->set_state(get_state(prev_focusing));
-//		if (focusing)
-//			((cEventReceiverPrivate*)focusing)->set_state(get_state(focusing));
-//
+
+		auto set_state = [&](cEventReceiver* er) {
+			auto e = (EntityPrivate*)er->entity;
+			auto s = (e->state & (~StateHovering) & (~StateActive));
+			if (er == hovering)
+				s |= StateHovering;
+			if (er == active)
+				s |= StateActive;
+			e->set_state((StateFlags)s);
+		};
+		if (prev_hovering)
+			set_state(prev_hovering);
+		if (hovering)
+			set_state(hovering);
+		if (prev_focusing)
+			set_state(prev_focusing);
+		if (focusing)
+			set_state(focusing);
+
 //		if (prev_hovering != hovering)
 //		{
 //			if (prev_hovering)

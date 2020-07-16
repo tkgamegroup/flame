@@ -35,4 +35,14 @@ namespace flame
 
 		void update() override;
 	};
+
+	inline void WorldBridge::register_object(void* o, const char* name)
+	{
+		((WorldPrivate*)this)->register_object(o, name);
+	}
+
+	inline void* WorldBridge::find_object(const char* name) const
+	{
+		return ((WorldPrivate*)this)->find_object(name);
+	}
 }

@@ -18,13 +18,6 @@ namespace flame
 		}
 	}
 
-	void ResMapBridge::get_res_path(const char* name, wchar_t* dst) const
-	{
-		auto path = ((ResMapPrivate*)this)->get_res_path(name).wstring();
-		std::char_traits<wchar_t>::copy(dst, path.c_str(), path.size());
-		dst[path.size()] = 0;
-	}
-
 	std::filesystem::path ResMapPrivate::get_res_path(const std::string& name) const
 	{
 		auto it = res.find(name);

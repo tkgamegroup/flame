@@ -81,6 +81,11 @@ namespace flame
 		void remove_destroy_listener(void* ret) override;
 	};
 
+	inline void WindowBridge::set_title(const char* _title)
+	{
+		((WindowPrivate*)this)->set_title(_title);
+	}
+
 	struct LooperPrivate : Looper
 	{
 		uint frame = 0;

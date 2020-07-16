@@ -1326,11 +1326,6 @@ namespace flame
 	{
 	}
 
-	void WindowBridge::set_title(const char* _title)
-	{
-		((WindowPrivate*)this)->set_title(_title);
-	}
-
 	void WindowPrivate::set_title(const std::string& _title)
 	{
 		title = _title;

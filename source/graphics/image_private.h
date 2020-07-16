@@ -156,6 +156,11 @@ namespace flame
 
 			ImageTilePrivate* find_tile(const std::string& name) const;
 		};
+
+		inline ImageTile* ImageAtlasBridge::find_tile(const char* name) const
+		{
+			return ((ImageAtlasPrivate*)this)->find_tile(name);
+		}
 	}
 }
 

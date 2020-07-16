@@ -38,4 +38,9 @@ namespace flame
 		//void auto_set_size();
 		//void on_event(EntityEvent e, void* t) override;
 	};
+
+	inline void cTextBridge::set_text(const wchar_t* text)
+	{
+		((cTextPrivate*)this)->set_text(text);
+	}
 }

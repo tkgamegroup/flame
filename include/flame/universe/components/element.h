@@ -52,20 +52,14 @@ namespace flame
 		virtual float get_scaley() const = 0;
 		virtual void set_scaley(float s) = 0;
 
-		// angle
 		virtual float get_rotation() const = 0;
-		// angle
-		virtual void set_rotation(float r) = 0;
+		virtual void set_rotation(float angle) = 0;
 
-		// angle
 		virtual float get_skewx() const = 0;
-		// angle
-		virtual void set_skewx(float s) = 0;
+		virtual void set_skewx(float angle) = 0;
 
-		// angle
 		virtual float get_skewy() const = 0;
-		// angle
-		virtual void set_skewy(float s) = 0;
+		virtual void set_skewy(float angle) = 0;
 
 		virtual Vec2f get_p00() = 0;
 		virtual Vec2f get_p10() = 0;

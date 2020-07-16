@@ -179,11 +179,6 @@ namespace flame
 				ds->set_image(0, i, iv_white, sp);
 		}
 
-		void CanvasBridge::set_target(uint views_count, ImageView* const* views)
-		{ 
-			((CanvasPrivate*)this)->set_target({ (ImageViewPrivate**)views, views_count });
-		}
-
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
 		{
 			fbs.clear();
@@ -197,11 +192,6 @@ namespace flame
 				for (auto i = 0; i < fbs.size(); i++)
 					fbs[i].reset(new FramebufferPrivate(device, rp, { &views[i], 1 }));
 			}
-		}
-
-		uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas)
-		{ 
-			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, filename ? filename : L"", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
 		}
 
 		uint CanvasPrivate::set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::filesystem::path& filename, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas)
@@ -238,19 +228,9 @@ namespace flame
 			return slot;
 		}
 
-		void CanvasBridge::add_atlas(ImageAtlas* a)
-		{ 
-			((CanvasPrivate*)this)->add_atlas((ImageAtlasPrivate*)a); 
-		}
-
 		void CanvasPrivate::add_atlas(ImageAtlasPrivate* a)
 		{
 			set_resource(-1, a->image->default_view.get(), a->border ? device->sampler_linear.get() : device->sampler_nearest.get(), "", a);
-		}
-
-		void CanvasBridge::add_font(FontAtlas* f)
-		{ 
-			((CanvasPrivate*)this)->add_font((FontAtlasPrivate*)f);
 		}
 
 		void CanvasPrivate::add_font(FontAtlasPrivate* f)
@@ -354,11 +334,6 @@ namespace flame
 					normals[i + 1] = normal;
 			}
 			return normals;
-		}
-
-		void CanvasBridge::stroke(const Vec4c& col, float thickness, bool aa) 
-		{ 
-			((CanvasPrivate*)this)->stroke(col, thickness, aa);
 		}
 
 		void CanvasPrivate::stroke(const Vec4c& col, float thickness, bool aa)
@@ -575,11 +550,6 @@ namespace flame
 			}
 		}
 
-		void CanvasBridge::fill(const Vec4c& col, bool aa)
-		{ 
-			((CanvasPrivate*)this)->fill(col, aa);
-		}
-
 		void CanvasPrivate::fill(const Vec4c& col, bool aa)
 		{
 			add_draw_cmd();
@@ -653,11 +623,6 @@ namespace flame
 			}
 		}
 
-		void CanvasBridge::add_text(uint res_id, const wchar_t* text, uint size, const Vec2f& pos, const Vec4c& col)
-		{ 
-			((CanvasPrivate*)this)->add_text(res_id, text, size, pos, col);
-		}
-
 		void CanvasPrivate::add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col)
 		{
 			auto atlas = resources[res_id]->font_atlas;
@@ -705,11 +670,6 @@ namespace flame
 
 				text++;
 			}
-		}
-
-		void CanvasBridge::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
-		{ 
-			((CanvasPrivate*)this)->add_image(res_id, tile_id, pos, size, uv0, uv1, tint_col);
 		}
 
 		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col)
@@ -761,11 +721,6 @@ namespace flame
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
 
 			cmds.clear();
-		}
-
-		void CanvasBridge::record(CommandBuffer* cb, uint image_index)
-		{ 
-			((CanvasPrivate*)this)->record((CommandBufferPrivate*)cb, image_index);
 		}
 
 		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)

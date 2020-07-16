@@ -51,6 +51,11 @@ namespace flame
 		bool link_to(bpSlotPrivate* target);
 	};
 
+	inline bool bpSlotBridge::link_to(bpSlot* target)
+	{
+		return ((bpSlotPrivate*)this)->link_to((bpSlotPrivate*)target);
+	}
+
 	struct bpNodeBridge : bpNode
 	{
 		bool set_id(const char* id) override;
@@ -127,6 +132,31 @@ namespace flame
 
 		void update() override;
 	};
+
+	inline bool bpNodeBridge::set_id(const char* id)
+	{
+		return ((bpNodePrivate*)this)->set_id(id);
+	}
+
+	inline bpSlot* bpNodeBridge::find_input(const char* name) const
+	{
+		return ((bpNodePrivate*)this)->find_input(name);
+	}
+
+	inline bpSlot* bpNodeBridge::find_output(const char* name) const
+	{
+		return ((bpNodePrivate*)this)->find_output(name);
+	}
+
+	inline bpNode* bpNodeBridge::add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule)
+	{
+		return ((bpNodePrivate*)this)->add_child(id, type, type_parameter, object_rule);
+	}
+
+	inline void bpNodeBridge::remove_child(bpNode* n)
+	{
+		((bpNodePrivate*)this)->remove_child((bpNodePrivate*)n);
+	}
 
 	struct bpScenePrivate : bpScene
 	{

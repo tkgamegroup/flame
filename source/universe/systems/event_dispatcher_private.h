@@ -23,11 +23,12 @@ namespace flame
 		
 		cEventReceiverPrivate* hovering = nullptr;
 		cEventReceiverPrivate* focusing = nullptr;
-		//		FocusingState focusing_state;
-		//		cEventReceiver* key_receiving;
-		//		cEventReceiver* drag_overing;
-		//
-		//		cEventReceiver* next_focusing;
+		cEventReceiverPrivate* active = nullptr;
+		cEventReceiverPrivate* dragging = nullptr;
+		cEventReceiverPrivate* key_target = nullptr;
+		cEventReceiverPrivate* drag_overing = nullptr;
+
+		//cEventReceiver* next_focusing;
 
 //		std::vector<Key> keydown_inputs;
 //		std::vector<Key> keyup_inputs;
@@ -42,7 +43,6 @@ namespace flame
 
 //		sEventDispatcherPrivate();
 //		~sEventDispatcherPrivate();
-//		void on_receiver_removed(cEventReceiver* er);
 		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;

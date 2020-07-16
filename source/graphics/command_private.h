@@ -91,6 +91,66 @@ namespace flame
 			void end() override;
 		};
 
+		inline void CommandBufferBridge::begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues)
+		{
+			((CommandBufferPrivate*)this)->begin_renderpass((FramebufferPrivate*)fb, { clearvalues, clearvalues_count });
+		}
+
+		inline void CommandBufferBridge::bind_pipeline(Pipeline* p)
+		{
+			((CommandBufferPrivate*)this)->bind_pipeline((PipelinePrivate*)p);
+		}
+
+		inline void CommandBufferBridge::bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll)
+		{
+			((CommandBufferPrivate*)this)->bind_descriptor_set((DescriptorSetPrivate*)s, idx, (PipelineLayoutPrivate*)pll);
+		}
+
+		inline void CommandBufferBridge::bind_vertex_buffer(Buffer* b, uint id)
+		{
+			((CommandBufferPrivate*)this)->bind_vertex_buffer((BufferPrivate*)b, id);
+		}
+
+		inline void CommandBufferBridge::bind_index_buffer(Buffer* b, IndiceType t)
+		{
+			((CommandBufferPrivate*)this)->bind_index_buffer((BufferPrivate*)b, t);
+		}
+
+		inline void CommandBufferBridge::push_constant(uint offset, uint size, const void* data, PipelineLayout* pll)
+		{
+			((CommandBufferPrivate*)this)->push_constant(offset, size, data, (PipelineLayoutPrivate*)pll);
+		}
+
+		inline void CommandBufferBridge::copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies)
+		{
+			((CommandBufferPrivate*)this)->copy_buffer((BufferPrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
+		}
+
+		inline void CommandBufferBridge::copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies)
+		{
+			((CommandBufferPrivate*)this)->copy_image((ImagePrivate*)src, (ImagePrivate*)dst, { copies, copies_count });
+		}
+
+		inline void CommandBufferBridge::copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies)
+		{
+			((CommandBufferPrivate*)this)->copy_buffer_to_image((BufferPrivate*)src, (ImagePrivate*)dst, { copies, copies_count });
+		}
+
+		inline void CommandBufferBridge::copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies)
+		{
+			((CommandBufferPrivate*)this)->copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
+		}
+
+		inline void CommandBufferBridge::change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
+		{
+			((CommandBufferPrivate*)this)->change_image_layout((ImagePrivate*)i, from, to, base_level, level_count, base_layer, layer_count);
+		}
+
+		inline void CommandBufferBridge::clear_image(Image* i, const Vec4c& col)
+		{
+			((CommandBufferPrivate*)this)->clear_image((ImagePrivate*)i, col);
+		}
+
 		struct QueueBridge : Queue
 		{
 			void submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) override;
@@ -114,5 +174,15 @@ namespace flame
 			void submit(std::span<CommandBufferPrivate*> cbs, SemaphorePrivate* wait_semaphore, SemaphorePrivate* signal_semaphore, FencePrivate* signal_fence);
 			void present(SwapchainPrivate* s, SemaphorePrivate* wait_semaphore);
 		};
+
+		inline void QueueBridge::submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence)
+		{
+			((QueuePrivate*)this)->submit({ (CommandBufferPrivate**)cbs, cbs_count }, (SemaphorePrivate*)wait_semaphore, (SemaphorePrivate*)signal_semaphore, (FencePrivate*)signal_fence);
+		}
+
+		inline void QueueBridge::present(Swapchain* s, Semaphore* wait_semaphore)
+		{
+			((QueuePrivate*)this)->present((SwapchainPrivate*)s, (SemaphorePrivate*)wait_semaphore);
+		}
 	}
 }

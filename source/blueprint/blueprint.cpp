@@ -46,11 +46,6 @@ namespace flame
 			type->copy(d, data);
 	}
 
-	bool bpSlotBridge::link_to(bpSlot* target) 
-	{
-		return ((bpSlotPrivate*)this)->link_to((bpSlotPrivate*)target);
-	}
-
 	bool bpSlotPrivate::link_to(bpSlotPrivate* target)
 	{
 		assert(io == bpSlotIn);
@@ -466,11 +461,6 @@ namespace flame
 		}
 	}
 
-	bool bpNodeBridge::set_id(const char* id) 
-	{ 
-		return ((bpNodePrivate*)this)->set_id(id); 
-	}
-
 	bool bpNodePrivate::set_id(const std::string& _id)
 	{
 		if (_id.empty())
@@ -483,11 +473,6 @@ namespace flame
 		return true;
 	}
 
-	bpSlot* bpNodeBridge::find_input(const char* name) const
-	{ 
-		return ((bpNodePrivate*)this)->find_input(name);
-	}
-
 	bpSlotPrivate* bpNodePrivate::find_input(const std::string& name) const
 	{
 		for (auto& in : inputs)
@@ -496,11 +481,6 @@ namespace flame
 				return in.get();
 		}
 		return nullptr;
-	}
-
-	bpSlot* bpNodeBridge::find_output(const char* name) const
-	{ 
-		return ((bpNodePrivate*)this)->find_output(name);
 	}
 
 	bpSlotPrivate* bpNodePrivate::find_output(const std::string& name) const
@@ -567,11 +547,6 @@ namespace flame
 		return true;
 	}
 
-	bpNode* bpNodeBridge::add_child(const char* id, bpNodeType type, const char* type_parameter, bpObjectRule object_rule)
-	{ 
-		return ((bpNodePrivate*)this)->add_child(id, type, type_parameter, object_rule);
-	}
-
 	bpNodePrivate* bpNodePrivate::add_child(const std::string& id, bpNodeType type, const std::string& type_parameter, bpObjectRule object_rule)
 	{
 		auto _id = id;
@@ -588,11 +563,6 @@ namespace flame
 		need_rebuild_update_list = true;
 
 		return n;
-	}
-
-	void bpNodeBridge::remove_child(bpNode* n)
-	{ 
-		((bpNodePrivate*)this)->remove_child((bpNodePrivate*)n);
 	}
 
 	void bpNodePrivate::remove_child(bpNodePrivate* n)

@@ -861,11 +861,6 @@ namespace flame
 	{
 	}
 
-	EnumItem* EnumInfoBridge::find_item(const char* name) const
-	{
-		return ((EnumInfoPrivate*)this)->find_item(name);
-	}
-
 	EnumItemPrivate* EnumInfoPrivate::find_item(const std::string& name) const
 	{
 		for (auto& i : items)
@@ -874,11 +869,6 @@ namespace flame
 				return i.get();
 		}
 		return nullptr;
-	}
-
-	EnumItem* EnumInfoBridge::find_item(int value) const
-	{
-		return ((EnumInfoPrivate*)this)->find_item(value);
 	}
 
 	EnumItemPrivate* EnumInfoPrivate::find_item(int value) const
@@ -1027,11 +1017,6 @@ namespace flame
 	{
 	}
 
-	VariableInfo* UdtInfoBridge::find_variable(const char* name) const
-	{ 
-		return ((UdtInfoPrivate*)this)->find_variable(name); 
-	}
-
 	VariableInfoPrivate* UdtInfoPrivate::find_variable(const std::string& name) const
 	{
 		for (auto& v : variables)
@@ -1040,11 +1025,6 @@ namespace flame
 				return v.get();
 		}
 		return nullptr;
-	}
-
-	FunctionInfo* UdtInfoBridge::find_function(const char* name) const
-	{ 
-		return ((UdtInfoPrivate*)this)->find_function(name);
 	}
 
 	FunctionInfoPrivate* UdtInfoPrivate::find_function(const std::string& name) const

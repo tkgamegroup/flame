@@ -82,6 +82,16 @@ namespace flame
 		EnumItemPrivate* find_item(int value) const;
 	};
 
+	inline EnumItem* EnumInfoBridge::find_item(const char* name) const
+	{
+		return ((EnumInfoPrivate*)this)->find_item(name);
+	}
+
+	inline EnumItem* EnumInfoBridge::find_item(int value) const
+	{
+		return ((EnumInfoPrivate*)this)->find_item(value);
+	}
+
 	struct FunctionInfoPrivate : FunctionInfo
 	{
 		LibraryPrivate* library;
@@ -140,6 +150,16 @@ namespace flame
 		FunctionInfo* get_function(uint idx) const override { return functions[idx].get(); }
 		FunctionInfoPrivate* find_function(const std::string& name) const;
 	};
+
+	inline VariableInfo* UdtInfoBridge::find_variable(const char* name) const
+	{
+		return ((UdtInfoPrivate*)this)->find_variable(name);
+	}
+
+	inline FunctionInfo* UdtInfoBridge::find_function(const char* name) const
+	{
+		return ((UdtInfoPrivate*)this)->find_function(name);
+	}
 
 	struct LibraryPrivate : Library
 	{

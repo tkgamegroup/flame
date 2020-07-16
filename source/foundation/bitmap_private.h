@@ -42,4 +42,14 @@ namespace flame
 
 		static BitmapPrivate* create(const std::filesystem::path& filename);
 	};
+
+	inline void BitmapBridge::copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border)
+	{
+		((BitmapPrivate*)this)->copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border);
+	}
+
+	inline void BitmapBridge::save(const wchar_t* filename)
+	{
+		((BitmapPrivate*)this)->save(filename);
+	}
 }

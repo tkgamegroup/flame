@@ -73,11 +73,6 @@ namespace flame
 		}
 	}
 
-	void BitmapBridge::copy_to(Bitmap* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border)
-	{ 
-		((BitmapPrivate*)this)->copy_to((BitmapPrivate*)dst, w, h, src_x, src_y, dst_x, dst_y, border);
-	}
-
 	void BitmapPrivate::copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint _dst_x, uint _dst_y, bool border)
 	{
 		auto b1 = border ? 1 : 0;
@@ -119,11 +114,6 @@ namespace flame
 			memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x - 1) * channel, data + (src_y + h - 1) * pitch + src_x * channel, channel); // left bottom corner
 			memcpy(dst->data + (dst_y + h) * dst_pitch + (dst_x + w) * channel, data + (src_y + h - 1) * pitch + (src_x + w - 1) * channel, channel); // right bottom corner
 		}
-	}
-
-	void BitmapBridge::save(const wchar_t* filename)
-	{ 
-		((BitmapPrivate*)this)->save(filename);
 	}
 
 	void BitmapPrivate::save(const std::filesystem::path& filename)

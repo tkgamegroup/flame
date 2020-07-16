@@ -8,11 +8,6 @@
 
 namespace flame
 {
-	void cTextBridge::set_text(const wchar_t* text)
-	{
-		((cTextPrivate*)this)->set_text(text);
-	}
-
 	void cTextPrivate::set_text(const std::wstring& _text)
 	{
 		text = _text;

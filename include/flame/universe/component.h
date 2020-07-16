@@ -45,6 +45,9 @@ namespace flame
 		// local event, this component's entity visibility changed
 		virtual void on_entity_visibility_changed() {}
 
+		// local event, this component's entity state changed
+		virtual void on_entity_state_changed() {}
+
 		// local event, this component's entity added to another entity
 		virtual void on_entity_added() {}
 

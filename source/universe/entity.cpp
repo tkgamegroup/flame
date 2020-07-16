@@ -71,6 +71,15 @@ namespace flame
 		update_visibility();
 	}
 
+	void EntityPrivate::set_state(StateFlags s)
+	{
+		if (state == s)
+			return;
+		state = s;
+		for (auto c : local_event_dispatch_list)
+			c->on_entity_state_changed();
+	}
+
 	Component* EntityPrivate::get_component(uint64 hash) const
 	{
 		auto it = components.find(hash);
@@ -232,11 +241,6 @@ namespace flame
 		}
 	}
 
-	void EntityBridge::add_child(Entity* e, int position)
-	{ 
-		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
-	}
-
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
 		if (position == -1)
@@ -319,11 +323,6 @@ namespace flame
 			c->on_entity_removed();
 		for (auto c : local_event_dispatch_list)
 			c->on_entity_removed_child(e);
-	}
-
-	void EntityBridge::remove_child(Entity* e, bool destroy)
-	{ 
-		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
 	}
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
@@ -445,11 +444,6 @@ namespace flame
 		}
 	}
 
-	void EntityBridge::load(const wchar_t* filename)
-	{ 
-		((EntityPrivate*)this)->load(filename);
-	}
-
 	void EntityPrivate::load(const std::filesystem::path& filename)
 	{
 		pugi::xml_document file;
@@ -508,11 +502,6 @@ namespace flame
 		//	for (auto& e : src->children)
 		//		save_prefab(n_es, e.get());
 		//}
-	}
-
-	void EntityBridge::save(const wchar_t* filename)
-	{ 
-		((EntityPrivate*)this)->save(filename);
 	}
 
 	void EntityPrivate::save(const std::filesystem::path& filename)

@@ -11,21 +11,6 @@
 
 namespace flame
 {
-	void sTypeSettingBridge::add_to_sizing_list(sTypeSetting::AutoSizer* s, Entity* e)
-	{
-		((sTypeSettingPrivate*)this)->add_to_sizing_list(s, (EntityPrivate*)e);
-	}
-
-	void sTypeSettingBridge::add_to_layouting_list(cLayout* l)
-	{
-		((sTypeSettingPrivate*)this)->add_to_layouting_list((cLayoutPrivate*)l);
-	}
-
-	void sTypeSettingBridge::remove_from_layouting_list(cLayout* l)
-	{
-		((sTypeSettingPrivate*)this)->remove_from_layouting_list((cLayoutPrivate*)l);
-	}
-
 	void sTypeSettingPrivate::add_to_sizing_list(sTypeSetting::AutoSizer* s, EntityPrivate* e)
 	{
 		if (s->pending_sizing)

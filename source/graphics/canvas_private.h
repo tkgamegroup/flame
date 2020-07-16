@@ -39,9 +39,6 @@ namespace flame
 			void add_atlas(ImageAtlas* a) override;
 			void add_font(FontAtlas* f) override;
 
-			void stroke(const Vec4c& col, float thickness, bool aa) override;
-			void fill(const Vec4c& col, bool aa) override;
-			void add_text(uint res_id, const wchar_t* text, uint size, const Vec2f& pos, const Vec4c& col) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
 			void record(CommandBuffer* cb, uint image_index) override;
@@ -123,9 +120,9 @@ namespace flame
 			void line_to(float x, float y) override;
 			void close_path() override;
 
-			void stroke(const Vec4c& col, float thickness, bool aa = false);
-			void fill(const Vec4c& col, bool aa = false);
-			void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col);
+			void stroke(const Vec4c& col, float thickness, bool aa = false) override;
+			void fill(const Vec4c& col, bool aa = false) override;
+			void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col);
 
 			Vec4f get_scissor() const override { return curr_scissor; }
@@ -135,5 +132,35 @@ namespace flame
 
 			void record(CommandBufferPrivate* cb, uint image_index);
 		};
+
+		inline void CanvasBridge::set_target(uint views_count, ImageView* const* views)
+		{
+			((CanvasPrivate*)this)->set_target({ (ImageViewPrivate**)views, views_count });
+		}
+
+		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas)
+		{
+			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, filename ? filename : L"", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
+		}
+
+		inline void CanvasBridge::add_atlas(ImageAtlas* a)
+		{
+			((CanvasPrivate*)this)->add_atlas((ImageAtlasPrivate*)a);
+		}
+
+		inline void CanvasBridge::add_font(FontAtlas* f)
+		{
+			((CanvasPrivate*)this)->add_font((FontAtlasPrivate*)f);
+		}
+
+		inline void CanvasBridge::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
+		{
+			((CanvasPrivate*)this)->add_image(res_id, tile_id, pos, size, uv0, uv1, tint_col);
+		}
+
+		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)
+		{
+			((CanvasPrivate*)this)->record((CommandBufferPrivate*)cb, image_index);
+		}
 	}
 }

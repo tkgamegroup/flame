@@ -25,8 +25,10 @@ namespace flame
 		void* gene = nullptr;
 
 		WorldPrivate* world = nullptr;
-
 		EntityPrivate* parent = nullptr;
+
+		StateFlags state = StateNone;
+
 		std::unordered_map<uint64, std::unique_ptr<Component, Delecter>> components;
 		std::vector<std::unique_ptr<EntityPrivate, Delecter>> children;
 		std::vector<Component*> local_event_dispatch_list;
@@ -55,6 +57,9 @@ namespace flame
 
 		Entity* get_parent() const override { return parent; }
 
+		StateFlags get_state() const override { return state; }
+		void set_state(StateFlags state) override;
+
 		Component* get_component(uint64 hash) const override;
 		void add_component(Component* c);
 		void info_component_removed(Component* c) const;
@@ -78,4 +83,24 @@ namespace flame
 
 		static EntityPrivate* create();
 	};
+
+	inline void EntityBridge::add_child(Entity* e, int position)
+	{
+		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
+	}
+
+	inline void EntityBridge::remove_child(Entity* e, bool destroy)
+	{
+		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
+	}
+
+	inline void EntityBridge::load(const wchar_t* filename)
+	{
+		((EntityPrivate*)this)->load(filename);
+	}
+
+	inline void EntityBridge::save(const wchar_t* filename)
+	{
+		((EntityPrivate*)this)->save(filename);
+	}
 }
