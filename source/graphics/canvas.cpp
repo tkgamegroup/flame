@@ -338,12 +338,18 @@ namespace flame
 				auto normal = Vec2f(d.y(), -d.x());
 
 				if (i > 0)
-					normals[i] = normalize((normal + normals[i]) * 0.5f);
+				{
+					auto n = normalize((normal + normals[i]) * 0.5f);
+					normals[i] = n / dot(n, normal);
+				}
 				else
 					normals[i] = normal;
 
 				if (closed && i + 1 == points.size() - 1)
-					normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
+				{
+					auto n = normalize((normal + normals[0]) * 0.5f);
+					normals.front() = normals.back() = n / dot(n, normal);
+				}
 				else
 					normals[i + 1] = normal;
 			}
@@ -376,8 +382,7 @@ namespace flame
 				if (aa)
 				{
 					auto col_c = col;
-					if (thickness < feather)
-						col_c.a() *= (thickness / feather) * 255;
+					col_c.a() *= min(thickness / feather, 1.f);
 					auto col_t = col;
 					col_t.a() = 0;
 
@@ -398,12 +403,12 @@ namespace flame
 								auto vtx_cnt = *p_vtx_cnt;
 
 								add_vtx(p0 + n0 * thickness, uv, col_t);
-								add_vtx(p0 + n0 * edge, uv, col);
-								add_vtx(p0 - n0 * edge, uv, col);
+								add_vtx(p0 + n0 * edge, uv, col_c);
+								add_vtx(p0 - n0 * edge, uv, col_c);
 								add_vtx(p0 - n0 * thickness, uv, col_t);
 								add_vtx(p1 + n1 * thickness, uv, col_t);
-								add_vtx(p1 + n1 * edge, uv, col);
-								add_vtx(p1 - n1 * edge, uv, col);
+								add_vtx(p1 + n1 * edge, uv, col_c);
+								add_vtx(p1 - n1 * edge, uv, col_c);
 								add_vtx(p1 - n1 * thickness, uv, col_t);
 								add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 6);
 								add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
@@ -426,8 +431,8 @@ namespace flame
 								auto vtx_cnt = *p_vtx_cnt;
 
 								add_vtx(p1 + n1 * thickness, uv, col_t);
-								add_vtx(p1 + n1 * edge, uv, col);
-								add_vtx(p1 - n1 * edge, uv, col);
+								add_vtx(p1 + n1 * edge, uv, col_c);
+								add_vtx(p1 - n1 * edge, uv, col_c);
 								add_vtx(p1 - n1 * thickness, uv, col_t);
 								add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
 								add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
@@ -484,42 +489,48 @@ namespace flame
 						}
 					}
 
-					//if (!closed)
-					//{
-					//	auto ext = max(feather, thickness);
+					if (!closed)
+					{
+						auto ext = max(feather, thickness);
 
-					//	{
-					//		auto vtx_cnt = *p_vtx_cnt;
+						{
+							auto vtx_cnt = *p_vtx_cnt;
 
-					//		auto p0 = points[0];
-					//		auto p1 = points[1];
+							auto p0 = points[0];
+							auto p1 = points[1];
 
-					//		auto n0 = normals[0];
+							auto n0 = normals[0];
 
-					//		auto p = p0 - normalize(p1 - p0);
-					//		add_vtx(p + n0 * ext, uv, col_t);
-					//		add_vtx(p - n0 * ext, uv, col_t);
-					//		add_vtx(p0 + n0 * ext, uv, col_c);
-					//		add_vtx(p0 - n0 * ext, uv, col_c);
-					//		add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-					//	}
+							auto p = p0 - normalize(p1 - p0);
+							add_vtx(p + n0 * ext, uv, col_t);
+							add_vtx(p - n0 * ext, uv, col_t);
+							add_vtx(p0 + n0 * ext, uv, col_t);
+							add_vtx(p0, uv, col_c);
+							add_vtx(p0 - n0 * ext, uv, col_t);
+							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
+							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4); 
+							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 0);
+						}
 
-					//	{
-					//		auto vtx_cnt = *p_vtx_cnt;
+						{
+							auto vtx_cnt = *p_vtx_cnt;
 
-					//		auto p0 = points[points.size() - 2];
-					//		auto p1 = points[points.size() - 1];
+							auto p0 = points[points.size() - 2];
+							auto p1 = points[points.size() - 1];
 
-					//		auto n1 = normals[points.size() - 1];
+							auto n1 = normals[points.size() - 1];
 
-					//		auto p = p1 + normalize(p1 - p0);
-					//		add_vtx(p1 + n1 * ext, uv, col_c);
-					//		add_vtx(p1 - n1 * ext, uv, col_c);
-					//		add_vtx(p + n1 * ext, uv, col_t);
-					//		add_vtx(p - n1 * ext, uv, col_t);
-					//		add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
-					//	}
-					//}
+							auto p = p1 + normalize(p1 - p0);
+							add_vtx(p1 + n1 * ext, uv, col_t);
+							add_vtx(p1, uv, col_c);
+							add_vtx(p1 - n1 * ext, uv, col_t);
+							add_vtx(p + n1 * ext, uv, col_t);
+							add_vtx(p - n1 * ext, uv, col_t);
+							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 2);
+							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 4);
+							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3);
+						}
+					}
 				}
 				else
 				{

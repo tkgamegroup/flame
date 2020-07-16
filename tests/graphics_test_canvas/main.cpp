@@ -50,19 +50,21 @@ struct App
 			canvas->prepare();
 
 			canvas->begin_path();
-			canvas->move_to(50.f, 20.f);
-			canvas->line_to(20.f, 70.f);
-			canvas->line_to(90.f, 80.f);
+			canvas->move_to(150.f, 20.f);
+			canvas->line_to(120.f, 70.f);
+			canvas->line_to(190.f, 80.f);
 			canvas->fill(Vec4c(255), true);
 
-			for (auto i = 0; i < 10; i++)
+			auto y = 50.f;
+			for (auto i = 0; i < 20; i++)
 			{
 				canvas->begin_path();
-				canvas->move_to(20.f, 200.f + i * 20.f);
-				canvas->line_to(50.f, 200.f + i * 20.f);
-				canvas->line_to(80.f, 180.f + i * 20.f);
-				canvas->line_to(100.f, 210.f + i * 20.f);
+				canvas->move_to(20.f, y);
+				canvas->line_to(50.f, y);
+				canvas->line_to(60.f, y - 20.f);
+				canvas->line_to(70.f, y + 20.f);
 				canvas->stroke(Vec4c(255), (i + 1) * 0.5f, true);
+				y += 45.f;
 			}
 			//canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 
@@ -86,7 +88,7 @@ int main(int argc, char** args)
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 	set_engine_path(engine_path.c_str());
 
-	app.w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	app.w = Window::create("Graphics Test", Vec2u(1280, 960), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.sc = Swapchain::create(app.d, app.w);
