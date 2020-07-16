@@ -26,12 +26,9 @@ namespace flame
 			virtual void set_default() = 0;
 
 			virtual DescriptorPool* get_descriptor_pool() const = 0;
-			virtual Sampler* get_sampler_nearest() const = 0;
-			virtual Sampler* get_sampler_linear() const = 0;
-			virtual CommandPool* get_graphics_command_pool() const = 0;
-			virtual CommandPool* get_transfer_command_pool() const = 0;
-			virtual Queue* get_graphics_queue() const = 0;
-			virtual Queue* get_transfer_queue() const = 0;
+			virtual Sampler* get_sampler(Filter filter) const = 0;
+			virtual CommandPool* get_command_pool(QueueFamily family) const = 0;
+			virtual Queue* get_queue(QueueFamily family) const = 0;
 
 			virtual bool has_feature(Feature f) const = 0;
 

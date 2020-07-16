@@ -13,6 +13,87 @@ namespace flame
 {
 	namespace graphics
 	{
+		/*
+		inline void path_move(std::vector<Vec2f>& points, float x, float y)
+		{
+			points.push_back(points.back() + Vec2f(x, y));
+		}
+
+		inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, float a1, float a2, uint lod = 0)
+		{
+			const uint pieces_num = 36;
+			static const Vec2f pieces[] = {
+				Vec2f(+1.000000f, +0.000000f), Vec2f(+0.984808f, +0.173648f), Vec2f(+0.939693f, +0.342020f), Vec2f(+0.866025f, +0.500000f), Vec2f(+0.766044f, +0.642788f), Vec2f(+0.642788f, +0.766044f),
+				Vec2f(+0.500000f, +0.866025f), Vec2f(+0.342020f, +0.939693f), Vec2f(+0.173648f, +0.984808f), Vec2f(+0.000000f, +1.000000f), Vec2f(-0.173648f, +0.984808f), Vec2f(-0.342020f, +0.939693f),
+				Vec2f(-0.500000f, +0.866025f), Vec2f(-0.642788f, +0.766044f), Vec2f(-0.766044f, +0.642788f), Vec2f(-0.866025f, +0.500000f), Vec2f(-0.939693f, +0.342020f), Vec2f(-0.984808f, +0.173648f),
+				Vec2f(-1.000000f, +0.000000f), Vec2f(-0.984808f, -0.173648f), Vec2f(-0.939693f, -0.342020f), Vec2f(-0.866025f, -0.500000f), Vec2f(-0.766044f, -0.642788f), Vec2f(-0.642788f, -0.766044f),
+				Vec2f(-0.500000f, -0.866025f), Vec2f(-0.342020f, -0.939693f), Vec2f(-0.173648f, -0.984808f), Vec2f(-0.000000f, -1.000000f), Vec2f(+0.173648f, -0.984808f), Vec2f(+0.342020f, -0.939693f),
+				Vec2f(+0.500000f, -0.866025f), Vec2f(+0.642788f, -0.766044f), Vec2f(+0.766044f, -0.642788f), Vec2f(+0.866025f, -0.500000f), Vec2f(+0.939693f, -0.342020f), Vec2f(+0.984808f, -0.173648f)
+			};
+			static_assert(size(pieces) == pieces_num);
+
+			int a = pieces_num * a1;
+			int b = pieces_num * a2;
+			lod += 1;
+			for (; a <= b; a += lod)
+				points.push_back(center + pieces[a % pieces_num] * radius);
+		}
+
+		// roundness: LT RT RB LB
+		inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, const Vec4f& roundness = Vec4f(0.f), uint lod = 0)
+		{
+			if (roundness[0] > 0.f)
+				path_arc(points, pos + Vec2f(roundness[0]), roundness[0], 0.5f, 0.75f, lod);
+			else
+				points.push_back(pos);
+			if (roundness[1] > 0.f)
+				path_arc(points, pos + Vec2f(size.x() - roundness[1], roundness[1]), roundness[1], 0.75f, 1.f, lod);
+			else
+				points.push_back(pos + Vec2f(size.x(), 0.f));
+			if (roundness[2] > 0.f)
+				path_arc(points, pos + size - Vec2f(roundness[2]), roundness[2], 0.f, 0.25f, lod);
+			else
+				points.push_back(pos + size);
+			if (roundness[3] > 0.f)
+				path_arc(points, pos + Vec2f(roundness[3], size.y() - roundness[3]), roundness[3], 0.25f, 0.5f, lod);
+			else
+				points.push_back(pos + Vec2f(0.f, size.y()));
+		}
+
+		inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius, uint lod = 0)
+		{
+			path_arc(points, center, radius, 0.f, 1.f, lod);
+		}
+
+		inline void path_bezier(std::vector<Vec2f>& points, const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level = 0)
+		{
+			auto dx = p4.x() - p1.x();
+			auto dy = p4.y() - p1.y();
+			auto d2 = ((p2.x() - p4.x()) * dy - (p2.y() - p4.y()) * dx);
+			auto d3 = ((p3.x() - p4.x()) * dy - (p3.y() - p4.y()) * dx);
+			d2 = (d2 >= 0) ? d2 : -d2;
+			d3 = (d3 >= 0) ? d3 : -d3;
+			if ((d2 + d3) * (d2 + d3) < 1.25f * (dx * dx + dy * dy))
+			{
+				if (points.empty())
+					points.push_back(p1);
+				points.push_back(p4);
+			}
+			else if (level < 10)
+			{
+				auto p12 = (p1 + p2) * 0.5f;
+				auto p23 = (p2 + p3) * 0.5f;
+				auto p34 = (p3 + p4) * 0.5f;
+				auto p123 = (p12 + p23) * 0.5f;
+				auto p234 = (p23 + p34) * 0.5f;
+				auto p1234 = (p123 + p234) * 0.5f;
+
+				path_bezier(points, p1, p12, p123, p1234, level + 1);
+				path_bezier(points, p1234, p234, p34, p4, level + 1);
+			}
+		}
+		*/
+
 		static RenderpassPrivate* rp = nullptr;
 		static DescriptorSetLayoutPrivate* dsl = nullptr;
 		static PipelineLayoutPrivate* pll = nullptr;
@@ -220,6 +301,27 @@ namespace flame
 
 		static const auto feather = 1.f;
 
+		std::vector<Vec2f> calculate_normals(std::span<const Vec2f> points, bool closed)
+		{
+			std::vector<Vec2f> normals(points.size());
+			for (auto i = 0; i < points.size() - 1; i++)
+			{
+				auto d = normalize(points[i + 1] - points[i]);
+				auto normal = Vec2f(d.y(), -d.x());
+
+				if (i > 0)
+					normals[i] = normalize((normal + normals[i]) * 0.5f);
+				else
+					normals[i] = normal;
+
+				if (closed && i + 1 == points.size() - 1)
+					normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
+				else
+					normals[i + 1] = normal;
+			}
+			return normals;
+		}
+
 		void CanvasBridge::stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness, bool aa) 
 		{ 
 			((CanvasPrivate*)this)->stroke({ points, points_count }, col, thickness, aa);
@@ -237,28 +339,14 @@ namespace flame
 			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
 
 			auto closed = points[0] == points[points.size() - 1];
-
-			std::vector<Vec2f> normals(points.size());
-			for (auto i = 0; i < points.size() - 1; i++)
-			{
-				auto d = normalize(points[i + 1] - points[i]);
-				auto normal = Vec2f(d.y(), -d.x());
-
-				if (i > 0)
-					normals[i] = normalize((normal + normals[i]) * 0.5f);
-				else
-					normals[i] = normal;
-
-				if (closed && i + 1 == points.size() - 1)
-					normals.front() = normals.back() = normalize((normal + normals[0]) * 0.5f);
-				else
-					normals[i + 1] = normal;
-			}
+			auto normals = calculate_normals(points, closed);
 
 			if (aa)
 			{
 				if (thickness > feather)
 				{
+					auto edge = thickness - feather;
+
 					auto col_t = col;
 					col_t.a() = 0;
 
@@ -266,22 +354,22 @@ namespace flame
 					{
 						if (i == 0)
 						{
-							auto p0 = points[i];
-							auto p1 = points[i + 1];
+							auto p0 = points[0];
+							auto p1 = points[1];
 
-							auto n0 = normals[i];
-							auto n1 = normals[i + 1];
+							auto n0 = normals[0];
+							auto n1 = normals[1];
 
 							auto vtx_cnt = *p_vtx_cnt;
 
-							add_vtx(p0 + n0 * (thickness + feather), uv, col_t);
-							add_vtx(p0 + n0 * (thickness - feather), uv, col);
-							add_vtx(p0 - n0 * (thickness - feather), uv, col);
-							add_vtx(p0 - n0 * (thickness + feather), uv, col_t);
-							add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
-							add_vtx(p1 + n1 * (thickness - feather), uv, col);
-							add_vtx(p1 - n1 * (thickness - feather), uv, col);
-							add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
+							add_vtx(p0 + n0 * thickness, uv, col_t);
+							add_vtx(p0 + n0 * edge, uv, col);
+							add_vtx(p0 - n0 * edge, uv, col);
+							add_vtx(p0 - n0 * thickness, uv, col_t);
+							add_vtx(p1 + n1 * thickness, uv, col_t);
+							add_vtx(p1 + n1 * edge, uv, col);
+							add_vtx(p1 - n1 * edge, uv, col);
+							add_vtx(p1 - n1 * thickness, uv, col_t);
 							add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 6);
 							add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 5); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 4); add_idx(vtx_cnt + 5);
 							add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 7); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 6); add_idx(vtx_cnt + 7);
@@ -302,10 +390,10 @@ namespace flame
 
 							auto vtx_cnt = *p_vtx_cnt;
 
-							add_vtx(p1 + n1 * (thickness + feather), uv, col_t);
-							add_vtx(p1 + n1 * (thickness - feather), uv, col);
-							add_vtx(p1 - n1 * (thickness - feather), uv, col);
-							add_vtx(p1 - n1 * (thickness + feather), uv, col_t);
+							add_vtx(p1 + n1 * thickness, uv, col_t);
+							add_vtx(p1 + n1 * edge, uv, col);
+							add_vtx(p1 - n1 * edge, uv, col);
+							add_vtx(p1 - n1 * thickness, uv, col_t);
 							add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 2);
 							add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 1);
 							add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 3); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 3);
@@ -323,11 +411,11 @@ namespace flame
 					{
 						if (i == 0)
 						{
-							auto p0 = points[i];
-							auto p1 = points[i + 1];
+							auto p0 = points[0];
+							auto p1 = points[1];
 
-							auto n0 = normals[i];
-							auto n1 = normals[i + 1];
+							auto n0 = normals[0];
+							auto n1 = normals[1];
 
 							auto vtx_cnt = *p_vtx_cnt;
 
@@ -370,11 +458,11 @@ namespace flame
 				{
 					if (i == 0)
 					{
-						auto p0 = points[i];
-						auto p1 = points[i + 1];
+						auto p0 = points[0];
+						auto p1 = points[1];
 
-						auto n0 = normals[i];
-						auto n1 = normals[i + 1];
+						auto n0 = normals[0];
+						auto n1 = normals[1];
 
 						auto vtx_cnt = *p_vtx_cnt;
 
@@ -458,11 +546,11 @@ namespace flame
 				{
 					if (i == 0)
 					{
-						auto p0 = points[i];
-						auto p1 = i + 1 == points.size() ? points[0] : points[i + 1];
+						auto p0 = points[0];
+						auto p1 = points[1];
 
-						auto n0 = normals[i];
-						auto n1 = normals[i + 1];
+						auto n0 = normals[0];
+						auto n1 = normals[1];
 
 						auto vtx_cnt = *p_vtx_cnt;
 
