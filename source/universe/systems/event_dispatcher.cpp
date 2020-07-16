@@ -220,7 +220,7 @@ namespace flame
 //		auto prev_focusing_state = focusing_state;
 //		auto prev_drag_overing = drag_overing;
 //		auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
-//		hovering = nullptr;
+		hovering = nullptr;
 //		drag_overing = nullptr;
 //
 //		if (next_focusing != INVALID_POINTER)

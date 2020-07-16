@@ -356,6 +356,16 @@ namespace flame
 		children.clear();
 	}
 
+	EntityPrivate* EntityPrivate::find_child(const std::string& name) const
+	{
+		for (auto& c : children)
+		{
+			if (c->name == name)
+				return c.get();
+		}
+		return nullptr;
+	}
+
 	static void set_attribute(Component* c, UdtInfo* udt, const std::string& name, const std::string& value)
 	{
 		auto fs = udt->find_function(("set_" + name).c_str());

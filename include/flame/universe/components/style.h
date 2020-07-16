@@ -10,6 +10,14 @@ namespace flame
 
 	struct FLAME_R(cStyle : Component, all)
 	{
+		inline static auto type_name = "cStyle";
+		inline static auto type_hash = ch(type_name);
+
+		cStyle() :
+			Component(type_name, type_hash, true)
+		{
+		}
+
 		virtual void add_rule(StateFlags state, const char* target, const char* variable, const void* value) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cStyle* create();

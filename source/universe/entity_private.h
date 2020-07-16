@@ -77,6 +77,7 @@ namespace flame
 		void info_child_removed(EntityPrivate* e) const;
 		void remove_child(EntityPrivate* e, bool destroy = true);
 		void remove_all_children(bool destroy) override;
+		EntityPrivate* find_child(const std::string& name) const;
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);

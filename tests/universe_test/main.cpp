@@ -11,6 +11,7 @@
 #include <flame/universe/res_map.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/style.h>
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/element_renderer.h>
@@ -47,7 +48,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"3.prefab";
+auto test_prefab = L"6.prefab";
 
 int main(int argc, char** args)
 {
@@ -101,6 +102,12 @@ int main(int argc, char** args)
 	//		return true;
 	//	}, Capture());
 	//}
+	{
+		auto s = cStyle::create();
+		root->add_component(s);
+		s->add_rule(StateNone, "cElement", "fill_color", &Vec3c(255, 255, 255));
+		s->add_rule(StateHovering, "cElement", "fill_color", &Vec3c(200, 200, 100));
+	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);

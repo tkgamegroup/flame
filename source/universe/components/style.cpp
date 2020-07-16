@@ -1,10 +1,73 @@
 //#include <flame/universe/components/element.h>
 //#include <flame/universe/components/text.h>
 //#include <flame/universe/components/event_receiver.h>
-//#include <flame/universe/components/style.h>
-//
-//namespace flame
-//{
+#include <flame/foundation/typeinfo.h>
+#include "../entity_private.h"
+#include "style_private.h"
+
+namespace flame
+{
+	void cStylePrivate::add_rule(StateFlags state, const std::string& target, const std::string& variable, const void* value)
+	{
+		auto e = (EntityPrivate*)entity;
+		auto address = target;
+		auto dotpos = address.find('.');
+		while (dotpos != std::string::npos)
+		{
+			if (dotpos == 0)
+				return;
+			e = e->find_child(address.substr(0, dotpos));
+			address = address.substr(dotpos + 1);
+			dotpos = address.find('.');
+		}
+		if (!e)
+			return;
+		auto component = e->get_component(std::hash<std::string>()(address));
+		if (!component)
+			return;
+
+		auto udt = find_udt((std::string("flame::") + component->type_name).c_str());
+		if (!udt)
+			return;
+
+		auto setter = udt->find_function(("set_" + variable).c_str());
+		if (!setter || setter->get_type() != TypeInfo::get(TypeData, "void") || setter->get_parameters_count() != 1)
+			return;
+
+		auto type = setter->get_parameter(0);
+		if (type->get_tag() == TypePointer)
+			type = TypeInfo::get(TypeData, type->get_name());
+
+		auto r = new Rule;
+		r->state = state;
+		r->target = component;
+		r->type = type;
+		r->setter = setter;
+		auto data_size = type->get_size();
+		r->data = new char[data_size];
+		memcpy(r->data, value, data_size);
+		rules.emplace_back(r);
+	}
+
+	void cStylePrivate::on_entity_state_changed()
+	{
+		auto s = ((EntityPrivate*)entity)->state;
+		for (auto& r : rules)
+		{
+			if (r->state == s)
+				r->setter->call(r->target, nullptr, r->data);
+		}
+	}
+
+	cStylePrivate* cStylePrivate::create()
+	{
+		auto ret = _allocate(sizeof(cStylePrivate));
+		new (ret) cStylePrivate;
+		return (cStylePrivate*)ret;
+	}
+
+	cStyle* cStyle::create() { return cStylePrivate::create(); }
+
 //	Vec4c get_color_2(EventReceiverState state, const std::vector<Vec4c>& colors)
 //	{
 //		if ((state & EventReceiverHovering) || (state & EventReceiverActive))
@@ -249,4 +312,4 @@
 //	{
 //		return new cStyleTextColor2Private;
 //	}
-//}
+}
