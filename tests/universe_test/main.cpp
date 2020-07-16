@@ -25,7 +25,7 @@ Fence* fence;
 std::vector<CommandBuffer*> cbs;
 Semaphore* render_finished;
 
-graphics::Canvas* canvas;
+Canvas* canvas;
 FontAtlas* font_atlas;
 
 World* world;

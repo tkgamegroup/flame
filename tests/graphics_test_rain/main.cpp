@@ -23,7 +23,7 @@ struct App
 	std::vector<CommandBuffer*> cbs;
 	Semaphore* render_finished;
 
-	graphics::Canvas* canvas;
+	Canvas* canvas;
 
 	void on_resize()
 	{
@@ -66,7 +66,7 @@ struct App
 				reset();
 		}
 
-		void show(graphics::Canvas* canvas)
+		void show(Canvas* canvas)
 		{
 			auto p1 = p;
 			auto p2 = p;

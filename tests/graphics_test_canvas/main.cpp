@@ -19,7 +19,7 @@ struct App
 	std::vector<CommandBuffer*> cbs;
 	Semaphore* render_finished;
 
-	graphics::Canvas* canvas;
+	Canvas* canvas;
 
 	FontAtlas* font_atlas;
 
@@ -49,21 +49,20 @@ struct App
 
 			canvas->prepare();
 
-			{
-				std::vector<Vec2f> points;
-				points.push_back(Vec2f(50.f, 20.f));
-				points.push_back(Vec2f(20.f, 70.f));
-				points.push_back(Vec2f(90.f, 80.f));
-				canvas->fill(points.size(), points.data(), Vec4c(255), true);
-			}
+			canvas->begin_path();
+			canvas->move_to(50.f, 20.f);
+			canvas->line_to(20.f, 70.f);
+			canvas->line_to(90.f, 80.f);
+			canvas->fill(Vec4c(255), true);
+
 			for (auto i = 0; i < 10; i++)
 			{
-				std::vector<Vec2f> points;
-				points.push_back(Vec2f(20.f, 200.f + i * 20.f));
-				points.push_back(Vec2f(50.f, 200.f + i * 20.f));
-				points.push_back(Vec2f(80.f, 180.f + i * 20.f));
-				points.push_back(Vec2f(100.f, 210.f + i * 20.f));
-				canvas->stroke(points.size(), points.data(), Vec4c(255), (i + 1) * 0.5f, true);
+				canvas->begin_path();
+				canvas->move_to(20.f, 200.f + i * 20.f);
+				canvas->line_to(50.f, 200.f + i * 20.f);
+				canvas->line_to(80.f, 180.f + i * 20.f);
+				canvas->line_to(100.f, 210.f + i * 20.f);
+				canvas->stroke(Vec4c(255), (i + 1) * 0.5f, true);
 			}
 			//canvas->add_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
 

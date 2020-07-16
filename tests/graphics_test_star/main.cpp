@@ -23,7 +23,7 @@ struct App
 	std::vector<CommandBuffer*> cbs;
 	Semaphore* render_finished;
 
-	graphics::Canvas* canvas;
+	Canvas* canvas;
 
 	void on_resize()
 	{
@@ -61,7 +61,7 @@ struct App
 				reset();
 		}
 
-		void show(graphics::Canvas* canvas)
+		void show(Canvas* canvas)
 		{
 			std::vector<Vec2f> points;
 			path_circle(points, projector.project(p), 4.f / p.z(), 3);

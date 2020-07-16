@@ -39,8 +39,8 @@ namespace flame
 			void add_atlas(ImageAtlas* a) override;
 			void add_font(FontAtlas* f) override;
 
-			void stroke(uint points_count, const Vec2f* points, const Vec4c& col, float thickness, bool aa) override;
-			void fill(uint points_count, const Vec2f* points, const Vec4c& col, bool aa) override;
+			void stroke(const Vec4c& col, float thickness, bool aa) override;
+			void fill(const Vec4c& col, bool aa) override;
 			void add_text(uint res_id, const wchar_t* text, uint size, const Vec2f& pos, const Vec4c& col) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
@@ -118,8 +118,13 @@ namespace flame
 			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
 			void add_idx(uint idx);
 
-			void stroke(std::span<const Vec2f> points, const Vec4c& col, float thickness, bool aa = false);
-			void fill(std::span<const Vec2f> points, const Vec4c& col, bool aa = false);
+			void begin_path() override;
+			void move_to(float x, float y) override;
+			void line_to(float x, float y) override;
+			void close_path() override;
+
+			void stroke(const Vec4c& col, float thickness, bool aa = false);
+			void fill(const Vec4c& col, bool aa = false);
 			void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col);
 			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col);
 
