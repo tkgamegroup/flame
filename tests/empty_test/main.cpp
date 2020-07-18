@@ -23,53 +23,43 @@
 //#define PACK_CAPTURE struct CONCATENATE(__CAPTURE__, FOR_EACH(CONCATENATE, ARGS)){FOR_EACH(DECLARE, ARGS)}CONCATENATE(__capture__, __LINE__);FOR_EACH(SET_TO_CAPTURE, ARGS)
 //#define EXPAND_CAPTURE auto& CONCATENATE(__capture__, __LINE__) = *(CONCATENATE(__CAPTURE__, FOR_EACH(CONCATENATE, ARGS))*)pdata; FOR_EACH(GET_FROM_CAPTURE, ARGS)
 
-//#include <stdio.h>
-//
-//extern "C" int f(void*);
+#include <stdio.h>
 
-extern "C" void printf(const char* v)
+extern "C" int f(void*);
+
+void fb()
 {
-	int cut = 1;
+	printf("abc\n");
 }
 
-//void fb(int v)
-//{
-//	fa(v);
-//}
+template <class F>
+void* f2a(F* f)
+{
+	union
+	{
+		F* f;
+		void* a;
+	}c;
+	c.f = f;
+	return c.a;
+}
+
+int main(int argc, char** args)
+{
+//	int a = 100;
+//	float b = 0.5f;
+//	char c = '@';
+//	long long d = 0xff;
 //
-//template <class F>
-//void* f2a(F* f)
-//{
-//	union
-//	{
-//		F* f;
-//		void* a;
-//	}c;
-//	c.f = f;
-//	return c.a;
-//}
+//#define ARGS a, b, c, d
+//	PACK_CAPTURE;
+//	auto lambda = [](void* pdata) {
+//		EXPAND_CAPTURE;
 //
-//int main2(int argc, char** args)
-//{
-//	//__asm
-//	//{
-//	//	call hello
-//	//}
-//
-////	int a = 100;
-////	float b = 0.5f;
-////	char c = '@';
-////	long long d = 0xff;
-////
-////#define ARGS a, b, c, d
-////	PACK_CAPTURE;
-////	auto lambda = [](void* pdata) {
-////		EXPAND_CAPTURE;
-////
-////	};
-////#undef ARGS
-//
-//	printf("%d\n", f(f2a(fb)));
-//
-//	return 0;
-//}
+//	};
+//#undef ARGS
+
+	f(f2a(fb));
+
+	return 0;
+}
