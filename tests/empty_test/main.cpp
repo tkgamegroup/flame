@@ -23,29 +23,6 @@
 //#define PACK_CAPTURE struct CONCATENATE(__CAPTURE__, FOR_EACH(CONCATENATE, ARGS)){FOR_EACH(DECLARE, ARGS)}CONCATENATE(__capture__, __LINE__);FOR_EACH(SET_TO_CAPTURE, ARGS)
 //#define EXPAND_CAPTURE auto& CONCATENATE(__capture__, __LINE__) = *(CONCATENATE(__CAPTURE__, FOR_EACH(CONCATENATE, ARGS))*)pdata; FOR_EACH(GET_FROM_CAPTURE, ARGS)
 
-#include <stdio.h>
-
-extern "C" int f(void*);
-
-void fb()
-{
-	printf("abc\n");
-}
-
-template <class F>
-void* f2a(F* f)
-{
-	union
-	{
-		F* f;
-		void* a;
-	}c;
-	c.f = f;
-	return c.a;
-}
-
-int main(int argc, char** args)
-{
 //	int a = 100;
 //	float b = 0.5f;
 //	char c = '@';
@@ -59,7 +36,30 @@ int main(int argc, char** args)
 //	};
 //#undef ARGS
 
-	f(f2a(fb));
+#include <stdio.h>
+
+template <class F>
+void* function2address(F* f)
+{
+	union
+	{
+		F* f;
+		void* a;
+	}c;
+	c.f = f;
+	return c.a;
+}
+
+extern "C" int fun_asm(void*);
+
+void fb()
+{
+	printf("abc\n");
+}
+
+int main(int argc, char** args)
+{
+	fun_asm(function2address(fb));
 
 	return 0;
 }
