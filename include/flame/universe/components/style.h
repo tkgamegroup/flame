@@ -23,14 +23,13 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cStyle* create();
 	};
 
-//
 //	struct cStyleColor : Component
 //	{
 //		cElement* element;
 //		cEventReceiver* event_receiver;
 //
 //		Vec4c color_normal;
-//		Vec4c color_hovering;
+//		Vec4c color_hovering; 
 //		Vec4c color_active;
 //
 //		cStyleColor() :

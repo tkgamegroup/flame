@@ -175,7 +175,6 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 		s_arg_type->Release();
 		return ret;
 	}
-
 	}
 }
 
@@ -603,6 +602,7 @@ int main(int argc, char **args)
 									n_functions = n_udt.append_child("functions");
 								auto n_function = n_functions.append_child("function");
 								n_function.append_attribute("name").set_value(name.c_str());
+								n_function.append_attribute("calling").set_value(dw);
 								n_function.append_attribute("rva").set_value(rva);
 								n_function.append_attribute("voff").set_value(voff);
 								n_function.append_attribute("type_tag").set_value(ret_type.tag);

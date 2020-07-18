@@ -94,14 +94,6 @@ int main(int argc, char** args)
 
 	auto root = world->get_root();
 	root->load((res_path / test_prefab).c_str());
-	//{
-	//	auto er = (cEventReceiver*)root->get_component(cEventReceiver::type_hash);
-	//	er->add_mouse_listener([](Capture&, KeyStateFlags action, MouseKey key, const Vec2i&) {
-	//		if (is_mouse_clicked(action, key))
-	//			printf("clicked!\n");
-	//		return true;
-	//	}, Capture());
-	//}
 	{
 		auto s = cStyle::create();
 		root->add_component(s);

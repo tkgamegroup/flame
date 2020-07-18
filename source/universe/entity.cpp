@@ -448,6 +448,11 @@ namespace flame
 					fc->call(nullptr, &c);
 					for (auto a : n_c.attributes())
 						set_attribute(c, udt, a.name(), a.value());
+					for (auto i : n_c.children())
+					{
+						auto fa = udt->find_function((std::string("add_") + i.name()).c_str());
+
+					}
 					dst->add_component((Component*)c);
 				}
 			}

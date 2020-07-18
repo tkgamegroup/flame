@@ -271,10 +271,6 @@ namespace flame
 			report_used_file((this_app.parent_path().replace_filename(L"{c}") / this_app.filename()).c_str());
 		}
 
-		Library::load(L"flame_foundation.dll", true, true);
-		Library::load(L"flame_graphics.dll", true, true);
-		Library::load(L"flame_universe.dll", true, true);
-
 		graphics_device = graphics::Device::create(graphics_debug);
 
 		sound_device = sound::Device::create_player();
