@@ -30,21 +30,11 @@ namespace flame
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
 		virtual uint get_size() const = 0;
 
-		virtual void construct(void* p) const = 0;
-		virtual void destruct(void* p) const = 0;
-		virtual void copy(const void* src, void* dst) const = 0;
-		virtual void serialize(char* (*str_allocator)(Capture& c, uint size), const Capture& capture, const void* src) const = 0;
-		inline std::string serialize_s(const void* src) const
-		{
-			std::string str;
-			serialize([](Capture& c, uint size) {
-				auto& str = *c.thiz<std::string>();
-				str.resize(size);
-				return str.data();
-			}, Capture().set_thiz(&str), src);
-			return str;
-		}
-		virtual void unserialize(const char* src, void* dst) const = 0;
+		virtual void* create() const = 0;
+		virtual void destroy(void* p) const = 0;
+		virtual void copy(void* dst, const void* src) const = 0;
+		virtual void serialize(void* str, const void* src) const = 0;
+		virtual void unserialize(void* dst, const char* src) const = 0;
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag, const char* name);
 		// in the callback: return a space that will be fill with the typeinfos, which size must bigger than sizeof(void*) * size
@@ -104,8 +94,7 @@ namespace flame
 
 		// first is return type, next followed by all parameters, parameters are end by null
 		virtual bool check(void* type, ...) const = 0;
-		// all parameters should be pointers
-		virtual void call(void *obj, void* ret, ...) const = 0;
+		virtual void call(void* obj, void* ret, void** parameters) const = 0;
 	};
 
 	struct UdtInfo
@@ -128,7 +117,9 @@ namespace flame
 			for (auto i = 0; i < count; i++)
 			{
 				auto v = get_variable(i);
-				dst[v->get_name()] = v->get_type()->serialize_s(src);
+				std::string str;
+				v->get_type()->serialize(&str, src);
+				dst[v->get_name()] = str;
 			}
 		}
 
@@ -138,7 +129,7 @@ namespace flame
 			for (auto i = 0; i < count; i++)
 			{
 				auto v = get_variable(i);
-				v->get_type()->unserialize(src[v->get_name()].get<std::string>().c_str(), (char*)dst + v->get_offset());
+				v->get_type()->unserialize((char*)dst + v->get_offset(), src[v->get_name()].get<std::string>().c_str());
 			}
 		}
 	};

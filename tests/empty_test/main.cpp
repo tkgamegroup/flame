@@ -39,27 +39,41 @@
 #include <stdio.h>
 
 template <class F>
-void* function2address(F* f)
+void* function2address(F f)
 {
 	union
 	{
-		F* f;
+		F f;
 		void* a;
 	}c;
 	c.f = f;
 	return c.a;
 }
 
-extern "C" int fun_asm(void*);
+extern "C" int fun_asm(void* f, void* o);
 
 void fb()
 {
 	printf("abc\n");
 }
 
+struct A
+{
+	int v;
+
+	void f()
+	{
+		printf("%d\n", v);
+	}
+};
+
 int main(int argc, char** args)
 {
-	fun_asm(function2address(fb));
+	A a;
+	a.v = 10;
+	a.f();
+
+	fun_asm(function2address(&A::f), &a);
 
 	return 0;
 }

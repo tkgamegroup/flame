@@ -696,7 +696,7 @@ int main(int argc, char **args)
 								desc.name != "flame::StringA" && desc.name != "flame::StringW" && !(flags & VariableFlagOutput))
 							{
 								auto type = TypeInfo::get(desc.tag, desc.name.c_str());
-								n_variable.append_attribute("default_value").set_value(type->serialize_s((char*)obj + offset).c_str());
+								n_variable.append_attribute("default_value").set_value(type->serialize((char*)obj + offset).c_str());
 							}
 
 							s_type->Release();

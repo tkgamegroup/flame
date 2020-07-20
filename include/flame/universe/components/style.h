@@ -18,7 +18,7 @@ namespace flame
 		{
 		}
 
-		virtual void add_rule(StateFlags state, const char* target, const char* variable, const void* value) = 0;
+		virtual void add_rule(StateFlags state, const char* rule) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cStyle* create();
 	};

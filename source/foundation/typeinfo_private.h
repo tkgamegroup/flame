@@ -119,7 +119,7 @@ namespace flame
 
 		bool check(void* type, ...) const override;
 
-		void call(void* obj, void* ret, ...) const override;
+		void call(void* obj, void* ret, void** parameters) const override;
 	};
 
 	struct UdtInfoBridge : UdtInfo 

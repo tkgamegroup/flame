@@ -7,22 +7,24 @@
 
 namespace flame
 {
-	void cStylePrivate::add_rule(StateFlags state, const std::string& target, const std::string& variable, const void* value)
+	void cStylePrivate::add_rule(StateFlags state, const std::string& rule)
 	{
-		auto e = (EntityPrivate*)entity;
-		auto address = target;
-		auto dotpos = address.find('.');
-		while (dotpos != std::string::npos)
-		{
-			if (dotpos == 0)
-				return;
-			e = e->find_child(address.substr(0, dotpos));
-			address = address.substr(dotpos + 1);
-			dotpos = address.find('.');
-		}
-		if (!e)
+		auto sp1 = SUS::split(rule, '=');
+		if (sp1.size() != 2)
 			return;
-		auto component = e->get_component(std::hash<std::string>()(address));
+
+		auto sp2 = SUS::split(sp1[0], '.');
+		if (sp2.size() < 2)
+			return;
+
+		auto e = (EntityPrivate*)entity;
+		for (auto i = 0; i < sp2.size() - 2; i++)
+		{
+			e = e->find_child(sp2[i]);
+			if (!e)
+				return;
+		}
+		auto component = e->get_component(std::hash<std::string>()(sp2[sp2.size() - 2]));
 		if (!component)
 			return;
 
@@ -30,7 +32,7 @@ namespace flame
 		if (!udt)
 			return;
 
-		auto setter = udt->find_function(("set_" + variable).c_str());
+		auto setter = udt->find_function(("set_" + sp2[sp2.size() - 1]).c_str());
 		if (!setter || setter->get_type() != TypeInfo::get(TypeData, "void") || setter->get_parameters_count() != 1)
 			return;
 
@@ -43,9 +45,8 @@ namespace flame
 		r->target = component;
 		r->type = type;
 		r->setter = setter;
-		auto data_size = type->get_size();
-		r->data = new char[data_size];
-		memcpy(r->data, value, data_size);
+		r->data = new char[type->get_size()];
+		type->unserialize(sp1[1].c_str(), r->data);
 		rules.emplace_back(r);
 	}
 
@@ -55,7 +56,10 @@ namespace flame
 		for (auto& r : rules)
 		{
 			if (r->state == s)
-				r->setter->call(r->target, nullptr, r->data);
+			{
+				void* parms[] = { r->data };
+				r->setter->call(r->target, nullptr, parms);
+			}
 		}
 	}
 

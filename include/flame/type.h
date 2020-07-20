@@ -53,7 +53,7 @@ namespace flame
 	}
 
 	template <class F>
-	void* f2v(F f) // function to void pointer
+	void* f2p(F f) // function to void pointer
 	{
 		union
 		{

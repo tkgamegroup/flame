@@ -26,6 +26,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
 	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
+	FLAME_FOUNDATION_EXPORTS char* f_stralloc(void* p, uint size);
 
 	template <class T, class ...Args>
 	T* f_new(Args... args)
@@ -41,6 +42,15 @@ namespace flame
 		p->~T();
 		f_free(p);
 	}
+
+	struct Delector
+	{
+		template <class T>
+		void operator()(T* p)
+		{
+			f_delete(p);
+		}
+	};
 
 	struct Guid
 	{

@@ -97,8 +97,8 @@ int main(int argc, char** args)
 	{
 		auto s = cStyle::create();
 		root->add_component(s);
-		s->add_rule(StateNone, "cElement", "fill_color", &Vec3c(255, 255, 255));
-		s->add_rule(StateHovering, "cElement", "fill_color", &Vec3c(200, 200, 100));
+		s->add_rule(StateNone, "cElement.fill_color=255;255;255");
+		s->add_rule(StateHovering, "cElement.fill_color=200;200;100");
 	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {

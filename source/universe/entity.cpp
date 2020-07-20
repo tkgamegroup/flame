@@ -377,19 +377,22 @@ namespace flame
 				auto type_name = std::string(type->get_name());
 				if (type_name == "char")
 				{
-					fs->call(c, nullptr, value.c_str());
+					void* parms[] = { (void*)value.c_str() };
+					fs->call(c, nullptr, parms);
 					return;
 				}
 				if (type_name == "wchar_t")
 				{
-					fs->call(c, nullptr, s2w(value).c_str());
+					void* parms[] = { (void*)s2w(value).c_str() };
+					fs->call(c, nullptr, parms);
 					return;
 				}
 				type = TypeInfo::get(TypeData, type->get_name());
 			}
 			void* d = new char[type->get_size()];
 			type->unserialize(value.c_str(), d);
-			fs->call(c, nullptr, d);
+			void* parms[] = { d };
+			fs->call(c, nullptr, parms);
 			delete[]d;
 		}
 	}
@@ -445,13 +448,21 @@ namespace flame
 				if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 				{
 					Component* c = nullptr;
-					fc->call(nullptr, &c);
+					fc->call(nullptr, &c, {});
 					for (auto a : n_c.attributes())
 						set_attribute(c, udt, a.name(), a.value());
 					for (auto i : n_c.children())
 					{
-						auto fa = udt->find_function((std::string("add_") + i.name()).c_str());
+						auto f = udt->find_function(i.name());
+						if (f)
+						{
+							auto sp = SUS::split(i.value(), ',');
+							std::vector<void*> parms(f->get_parameters_count());
+							for (auto i = 0; i < parms.size(); i++)
+							{
 
+							}
+						}
 					}
 					dst->add_component((Component*)c);
 				}
@@ -505,7 +516,7 @@ namespace flame
 		//			{
 		//				auto dv = v->get_default_value();
 		//				if (!dv || memcmp(dv, p, type->get_size()) != 0)
-		//					n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize_s(p).c_str());
+		//					n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize(p).c_str());
 		//			}
 		//		}
 		//	}

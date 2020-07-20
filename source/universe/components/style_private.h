@@ -9,7 +9,7 @@ namespace flame
 
 	struct cStyleBridge : cStyle
 	{
-		void add_rule(StateFlags state, const char* target, const char* variable, const void* value) override;
+		void add_rule(StateFlags state, const char* rule) override;
 	};
 
 	struct cStylePrivate : cStyleBridge
@@ -30,15 +30,15 @@ namespace flame
 
 		std::vector<std::unique_ptr<Rule>> rules;
 
-		void add_rule(StateFlags state, const std::string& target, const std::string& variable, const void* value);
+		void add_rule(StateFlags state, const std::string& rule);
 
 		void on_entity_state_changed() override;
 
 		static cStylePrivate* create();
 	};
 
-	void cStyleBridge::add_rule(StateFlags state, const char* target, const char* variable, const void* value)
+	void cStyleBridge::add_rule(StateFlags state, const char* rule)
 	{
-		((cStylePrivate*)this)->add_rule(state, target, variable, value);
+		((cStylePrivate*)this)->add_rule(state, rule);
 	}
 }

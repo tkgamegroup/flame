@@ -44,11 +44,11 @@ namespace flame
 		{
 		}
 
-		void construct(void* p) const override {}
-		void destruct(void* p) const override {}
-		void copy(const void* src, void* dst) const override { memcpy(dst, src, size); }
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override {}
-		void unserialize(const char* src, void* dst) const override {}
+		void* create() const override { return f_malloc(size); }
+		void destroy(void* p) const override { f_free(p); }
+		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
+		void serialize(void* str, const void* src) const override {}
+		void unserialize(void* dst, const char* src) const override {}
 	};
 
 	struct TypeInfoPrivate_EnumSingle : TypeInfoPrivate_Pod
@@ -58,14 +58,12 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			const auto& str = find_enum(name)->find_item(*(int*)src)->name;
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			const auto& s = find_enum(name)->find_item(*(int*)src)->name;
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(int*)dst = find_enum(name)->find_item(src)->value;
 		}
@@ -78,26 +76,24 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
 			auto e = find_enum(name);
-			std::string str;
+			std::string s;
 			auto v = *(int*)src;
 			for (auto i = 0; i < e->items.size(); i++)
 			{
 				if ((v & 1) == 1)
 				{
 					if (i > 0)
-						str += ";";
-					str += e->find_item(1 << i)->name;
+						s += ";";
+					s += e->find_item(1 << i)->name;
 				}
 				v >>= 1;
 			}
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			auto e = find_enum(name);
 			auto v = 0;
@@ -123,14 +119,12 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(bool*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(bool*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(bool*)dst = std::stoi(src) != 0;
 		}
@@ -143,14 +137,12 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(uchar*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(uchar*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(uchar*)dst = sto<uchar>(src);
 		}
@@ -170,7 +162,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(int*)dst = sto<int>(src);
 		}
@@ -190,7 +182,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(uint*)dst = sto<uint>(src);
 		}
@@ -210,7 +202,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(int64*)dst = sto<int64>(src);
 		}
@@ -230,7 +222,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(uint64*)dst = sto<uint64>(src);
 		}
@@ -250,7 +242,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(float*)dst = sto<float>(src);
 		}
@@ -270,7 +262,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec1c*)dst = sto<Vec1c>(src);
 		}
@@ -290,7 +282,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec2c*)dst = sto<Vec2c>(src);
 		}
@@ -310,7 +302,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec3c*)dst = sto<Vec3c>(src);
 		}
@@ -330,7 +322,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec4c*)dst = sto<Vec4c>(src);
 		}
@@ -350,7 +342,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec1i*)dst = sto<Vec1i>(src);
 		}
@@ -370,7 +362,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec2i*)dst = sto<Vec2i>(src);
 		}
@@ -390,7 +382,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec3i*)dst = sto<Vec3i>(src);
 		}
@@ -410,7 +402,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec4i*)dst = sto<Vec4i>(src);
 		}
@@ -430,7 +422,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec1u*)dst = sto<Vec1u>(src);
 		}
@@ -450,7 +442,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec2u*)dst = sto<Vec2u>(src);
 		}
@@ -470,7 +462,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec3u*)dst = sto<Vec3u>(src);
 		}
@@ -490,7 +482,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec4u*)dst = sto<Vec4u>(src);
 		}
@@ -510,7 +502,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec1f*)dst = sto<Vec1f>(src);
 		}
@@ -530,7 +522,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec2f*)dst = sto<Vec2f>(src);
 		}
@@ -550,7 +542,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec3f*)dst = sto<Vec3f>(src);
 		}
@@ -570,7 +562,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(Vec4f*)dst = sto<Vec4f>(src);
 		}
@@ -583,14 +575,14 @@ namespace flame
 		{
 		}
 
-		void construct(void* p) const override
+		void create(void* p) const override
 		{
 		}
-		void destruct(void* p) const override
+		void destroy(void* p) const override
 		{
 			((StringA*)p)->~String();
 		}
-		void copy(const void* src, void* dst) const override
+		void copy(void* dst, const void* src) const override
 		{
 			*(StringA*)dst = *(StringA*)src;
 		}
@@ -601,7 +593,7 @@ namespace flame
 			strncpy(buf, str.v, str.s);
 			buf[str.s] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(StringA*)dst = src;
 		}
@@ -614,14 +606,14 @@ namespace flame
 		{
 		}
 
-		void construct(void* p) const override
+		void create(void* p) const override
 		{
 		}
-		void destruct(void* p) const override
+		void destroy(void* p) const override
 		{
 			((StringW*)p)->~String();
 		}
-		void copy(const void* src, void* dst) const override
+		void copy(void* dst, const void* src) const override
 		{
 			*(StringW*)dst = *(StringW*)src;
 		}
@@ -632,7 +624,7 @@ namespace flame
 			strncpy(buf, str.data(), str.size());
 			buf[str.size()] = 0;
 		}
-		void unserialize(const char* src, void* dst) const override
+		void unserialize(void* dst, const char* src) const override
 		{
 			*(StringW*)dst = s2w(src);
 		}
@@ -642,6 +634,44 @@ namespace flame
 	{
 		TypeInfoPrivate_Pointer(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypePointer, base_name, sizeof(void*))
+		{
+		}
+	};
+
+	struct TypeInfoPrivate_charp : TypeInfoPrivate_Pointer
+	{
+		TypeInfoPrivate_charp() :
+			TypeInfoPrivate_Pointer("char")
+		{
+		}
+
+		void copy(void* dst, const void* src) const override
+		{
+			strcpy((char*)dst, (char*)src);
+		}
+		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		{
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+		}
+	};
+
+	struct TypeInfoPrivate_wcharp : TypeInfoPrivate_Pointer
+	{
+		TypeInfoPrivate_wcharp() :
+			TypeInfoPrivate_Pointer("wchar_t")
+		{
+		}
+
+		void copy(void* dst, const void* src) const override
+		{
+			wcscpy((wchar_t*)dst, (wchar_t*)src);
+		}
+		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override 
+		{
+		}
+		void unserialize(void* dst, const char* src) const override
 		{
 		}
 	};
@@ -844,6 +874,7 @@ namespace flame
 
 	VariableInfoPrivate::~VariableInfoPrivate()
 	{
+		type->destroy(default_value);
 		delete[]default_value;
 	}
 
@@ -914,99 +945,45 @@ namespace flame
 		return c == parameters.size();
 	}
 
-	void FunctionInfoPrivate::call(void* obj, void* ret, ...) const
+	extern "C" void __call(void* f, void* ret, void* list1, void* list2);
+
+	void FunctionInfoPrivate::call(void* obj, void* ret, void** parms) const
 	{
-		auto ap = (char*)var_end(&ret);
-		if (type->tag == TypeData && type->name == "void")
+		if (parameters.size() > 4 || type->size > sizeof(void*))
 		{
-			switch (parameters.size())
-			{
-			case 1:
-			{
-				auto p1 = parameters[0];
-				switch (p1->tag)
-				{
-				case TypeEnumSingle:
-				{
-					auto t = va_arg(ap, int*);
-					void* pf = nullptr;
-					if (rva)
-						;
-					else
-						pf = *(void**)((*(char**)obj) + voff);
-					cmf(p2f<void(__Dummy__::*)(int)>(pf), obj, *t);
-					return;
-				}
-					break;
-				case TypeData:
-					if (p1->name == "float")
-					{
-						auto t = va_arg(ap, float*);
-						void* pf = nullptr;
-						if (rva)
-							;
-						else
-							pf = *(void**)((*(char**)obj) + voff);
-						cmf(p2f<void(__Dummy__::*)(float)>(pf), obj, *t);
-						return;
-					}
-					break;
-				case TypePointer:
-					if (p1->name == "char")
-					{
-						auto t = va_arg(ap, char*);
-						void* pf = nullptr;
-						if (rva)
-							;
-						else
-							pf = *(void**)((*(char**)obj) + voff);
-						cmf(p2f<void(__Dummy__::*)(char*)>(pf), obj, t);
-						return;
-					}
-					else if (p1->name == "wchar_t")
-					{
-						auto t = va_arg(ap, wchar_t*);
-						void* pf = nullptr;
-						if (rva)
-							;
-						else
-							pf = *(void**)((*(char**)obj) + voff);
-						cmf(p2f<void(__Dummy__::*)(wchar_t*)>(pf), obj, t);
-						return;
-					}
-					else if (p1->name == "flame::Vec<3,uchar>")
-					{
-						auto t = va_arg(ap, Vec3c*);
-						void* pf = nullptr;
-						if (rva)
-							;
-						else
-							pf = *(void**)((*(char**)obj) + voff);
-						cmf(p2f<void(__Dummy__::*)(Vec3c*)>(pf), obj, t);
-						return;
-					}
-					break;
-				}
-
-			}
-				break;
-			}
+			assert(0);
+			return;
 		}
-		else if (type->tag == TypePointer)
+
+		auto idx = 0;
+		std::vector<void*> list1(4);
+		std::vector<float> list2(4);
+		if (obj)
+			list1[idx++] = obj;
+
+		auto _p = parms;
+		for (auto p : parameters)
 		{
-			switch (parameters.size())
+			switch (p->tag)
 			{
-			case 0:
-				if (!obj)
-				{
-					*(void**)ret = cf(p2f<void* (*)()>(library->address + rva));
-					return;
-				}
+			case TypeEnumSingle:
+			case TypeEnumMulti:
+				list1[idx++] = (void*)*((int*)*_p++);
+				break;
+			case TypeData:
+				if (p->name == "float")
+					list2[idx++] = *((float*)*_p++);
+				break;
+			case TypePointer:
+				list1[idx] = *_p++;
 				break;
 			}
 		}
 
-		assert(0);
+		void* r = nullptr;
+		__call(rva ? library->address + rva : *(void**)((*(char**)obj) + voff), &r, list1.data(), list2.data());
+		if (ret)
+			memcpy(ret, &r, type->size);
 	}
 
 	UdtInfoPrivate::UdtInfoPrivate(LibraryPrivate* library, const std::string& name, uint size, const std::string& base_name) :
@@ -1085,8 +1062,11 @@ namespace flame
 					auto dv = n_variable.attribute("default_value");
 					if (dv)
 					{
-						v->default_value = new char[type->size];
-						type->unserialize(n_variable.attribute("default_value").value(), v->default_value);
+						type->unserialize([](Capture& c, uint size) {
+							auto p = c.data<char**>();
+							*p = new char[size];
+							return *p;
+						}, Capture().set_data(&v->default_value), n_variable.attribute("default_value").value());
 					}
 				}
 
