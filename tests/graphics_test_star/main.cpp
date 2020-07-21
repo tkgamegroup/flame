@@ -63,9 +63,16 @@ struct App
 
 		void show(Canvas* canvas)
 		{
-			std::vector<Vec2f> points;
-			path_circle(points, projector.project(p), 4.f / p.z(), 3);
-			canvas->fill(points.size(), points.data(), Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)));
+			canvas->begin_path();
+			auto r = 4.f / p.z();
+			auto c = projector.project(p);
+			canvas->move_to(c.x() + r, c.y());
+			for (auto i = 60; i < 360; i += 60)
+			{
+				auto rad = i * ANG_RAD;
+				canvas->line_to(c.x() + cos(rad) * r, c.y() + sin(rad) * r);
+			}
+			canvas->fill(Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)));
 		}
 	};
 

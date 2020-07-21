@@ -47,7 +47,10 @@ namespace flame
 	void f_free(void* p)
 	{
 		if (!pf_deallocate)
+		{
 			free(p);
+			return;
+		}
 		pf_deallocate(p);
 	}
 

@@ -68,16 +68,12 @@ struct App
 
 		void show(Canvas* canvas)
 		{
-			auto p1 = p;
-			auto p2 = p;
-			p2.y() -= 0.1;
-			
-			Vec2f points[] = {
-				projector.project(p1),
-				projector.project(p2),
-			};
-
-			canvas->stroke(2, points, Vec4c(83, 209, 227, 255), 4.f / p.z());
+			canvas->begin_path();
+			auto c1 = projector.project(p);
+			auto c2 = projector.project(p - Vec3f(0.f, 0.1f, 0.f));
+			canvas->move_to(c1.x(), c1.y());
+			canvas->line_to(c2.x(), c2.y());
+			canvas->stroke(Vec4c(83, 209, 227, 255), 4.f / p.z());
 		}
 	};
 

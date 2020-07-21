@@ -14,11 +14,6 @@ namespace flame
 	namespace graphics
 	{
 		/*
-		inline void path_move(std::vector<Vec2f>& points, float x, float y)
-		{
-			points.push_back(points.back() + Vec2f(x, y));
-		}
-
 		inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, float a1, float a2, uint lod = 0)
 		{
 			const uint pieces_num = 36;
@@ -265,7 +260,8 @@ namespace flame
 		{
 			auto& v = *vtx_end;
 			v.pos = pos; 
-			v.uv = uv; v.col = col; 
+			v.uv = uv;
+			v.col = col; 
 			vtx_end++;
 
 			(*p_vtx_cnt)++;
