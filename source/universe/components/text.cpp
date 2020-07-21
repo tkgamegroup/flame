@@ -159,9 +159,7 @@ namespace flame
 
 	cTextPrivate* cTextPrivate::create()
 	{
-		auto ret = _allocate(sizeof(cTextPrivate));
-		new (ret) cTextPrivate;
-		return (cTextPrivate*)ret;
+		return f_new<cTextPrivate>();
 	}
 
 	cText* cText::create() { return cTextPrivate::create(); }

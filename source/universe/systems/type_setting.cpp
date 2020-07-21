@@ -87,9 +87,7 @@ namespace flame
 
 	sTypeSettingPrivate* sTypeSettingPrivate::create()
 	{
-		auto ret = _allocate(sizeof(sTypeSettingPrivate));
-		new (ret) sTypeSettingPrivate;
-		return (sTypeSettingPrivate*)ret;
+		return f_new<sTypeSettingPrivate>();
 	}
 
 	sTypeSetting* sTypeSetting::create() { return sTypeSettingPrivate::create(); }

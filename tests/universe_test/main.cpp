@@ -48,7 +48,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"6.prefab";
+auto test_prefab = L"7.prefab";
 
 int main(int argc, char** args)
 {
@@ -75,12 +75,20 @@ int main(int argc, char** args)
 	on_resize();
 
 	set_allocator(
-	[](Capture&, uint size) {
-		return (void*)(new char[size]);
+	[](uint size) {
+		return malloc(size);
 	},
-	[](Capture&, void* p) {
-		delete p;
-	}, Capture());
+	[](void* p) {
+		free(p);
+	},
+	[](void* p, uint size) {
+		return realloc(p, size);
+	},
+	[](void* p, uint size) {
+		auto& str = *(std::string*)p;
+		str.resize(size);
+		return str.data();
+	});
 
 	world = World::create();
 	world->register_object(w, "Window");
@@ -94,12 +102,6 @@ int main(int argc, char** args)
 
 	auto root = world->get_root();
 	root->load((res_path / test_prefab).c_str());
-	{
-		auto s = cStyle::create();
-		root->add_component(s);
-		s->add_rule(StateNone, "cElement.fill_color=255;255;255");
-		s->add_rule(StateHovering, "cElement.fill_color=200;200;100");
-	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);

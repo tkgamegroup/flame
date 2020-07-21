@@ -79,9 +79,7 @@ namespace flame
 
 	sElementRendererPrivate* sElementRendererPrivate::create()
 	{
-		auto ret = _allocate(sizeof(sElementRendererPrivate));
-		new (ret) sElementRendererPrivate;
-		return (sElementRendererPrivate*)ret;
+		return f_new<sElementRendererPrivate>();
 	}
 
 	sElementRenderer* sElementRenderer::create() { return sElementRendererPrivate::create(); }

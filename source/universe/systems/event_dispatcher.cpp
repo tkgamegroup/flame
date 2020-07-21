@@ -386,9 +386,7 @@ namespace flame
 
 	sEventDispatcherPrivate* sEventDispatcherPrivate::create()
 	{
-		auto ret = _allocate(sizeof(sEventDispatcherPrivate));
-		new (ret) sEventDispatcherPrivate;
-		return (sEventDispatcherPrivate*)ret;
+		return f_new<sEventDispatcherPrivate>();
 	}
 
 	sEventDispatcher* sEventDispatcher::create() { return sEventDispatcherPrivate::create(); }

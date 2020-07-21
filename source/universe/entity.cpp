@@ -369,28 +369,11 @@ namespace flame
 		if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
 		{
 			auto type = fs->get_parameter(0);
-			if (type->get_tag() == TypePointer)
-			{
-				auto type_name = std::string(type->get_name());
-				if (type_name == "char")
-				{
-					void* parms[] = { (void*)value.c_str() };
-					fs->call(c, nullptr, parms);
-					return;
-				}
-				if (type_name == "wchar_t")
-				{
-					void* parms[] = { (void*)s2w(value).c_str() };
-					fs->call(c, nullptr, parms);
-					return;
-				}
-				type = TypeInfo::get(TypeData, type->get_name());
-			}
-			void* d = new char[type->get_size()];
-			type->unserialize(value.c_str(), d);
+			void* d = type->create();
+			type->unserialize(d, value.c_str());
 			void* parms[] = { d };
 			fs->call(c, nullptr, parms);
-			delete[]d;
+			type->destroy(d);
 		}
 	}
 
@@ -446,6 +429,7 @@ namespace flame
 				{
 					Component* c = nullptr;
 					fc->call(nullptr, &c, {});
+					dst->add_component((Component*)c);
 					for (auto a : n_c.attributes())
 						set_attribute(c, udt, a.name(), a.value());
 					for (auto i : n_c.children())
@@ -453,15 +437,22 @@ namespace flame
 						auto f = udt->find_function(i.name());
 						if (f)
 						{
-							auto sp = SUS::split(i.value(), ',');
+							auto sp = SUS::split(i.child_value(), ',');
 							std::vector<void*> parms(f->get_parameters_count());
+							std::vector<std::pair<TypeInfo*, void*>> cleanups;
 							for (auto i = 0; i < parms.size(); i++)
 							{
-
+								auto type = f->get_parameter(i);
+								auto p = type->create();
+								type->unserialize(p, sp[i].c_str());
+								parms[i] = type->get_tag() == TypePointer ? *(void**)p : p;
+								cleanups.emplace_back(type, p);
 							}
+							f->call(c, nullptr, parms.data());
+							for (auto& c : cleanups)
+								c.first->destroy(c.second);
 						}
 					}
-					dst->add_component((Component*)c);
 				}
 			}
 		}
@@ -539,9 +530,7 @@ namespace flame
 
 	EntityPrivate* EntityPrivate::create()
 	{
-		auto ret = _allocate(sizeof(EntityPrivate));
-		new (ret) EntityPrivate;
-		return (EntityPrivate*)ret;
+		return f_new<EntityPrivate>();
 	}
 
 	Entity* Entity::create() { return EntityPrivate::create(); }

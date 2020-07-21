@@ -45,8 +45,8 @@ namespace flame
 		r->target = component;
 		r->type = type;
 		r->setter = setter;
-		r->data = new char[type->get_size()];
-		type->unserialize(sp1[1].c_str(), r->data);
+		r->data = type->create();
+		type->unserialize(r->data, sp1[1].c_str());
 		rules.emplace_back(r);
 	}
 

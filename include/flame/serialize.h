@@ -204,7 +204,19 @@ namespace flame
 	T sto(const char* s);
 
 	template <>
+	inline char sto<char>(const char* s)
+	{
+		return std::stoul(s);
+	}
+
+	template <>
 	inline uchar sto<uchar>(const char* s)
+	{
+		return std::stoul(s);
+	}
+
+	template <>
+	inline wchar_t sto<wchar_t>(const char* s)
 	{
 		return std::stoul(s);
 	}

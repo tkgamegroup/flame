@@ -30,6 +30,8 @@ namespace flame
 
 	void* f_malloc(uint size)
 	{
+		if (!pf_allocate)
+			return malloc(size);
 		return pf_allocate(size);
 	}
 
@@ -37,16 +39,26 @@ namespace flame
 	{
 		if (!p)
 			return f_malloc(size);
+		if (!pf_reallocate)
+			return realloc(p, size);
 		return pf_reallocate(p, size);
 	}
 
 	void f_free(void* p)
 	{
+		if (!pf_deallocate)
+			free(p);
 		pf_deallocate(p);
 	}
 
 	char* f_stralloc(void* p, uint size)
 	{
+		if (!pf_stralloc)
+		{
+			auto& str = *(std::string*)p;
+			str.resize(size);
+			return str.data();
+		}
 		return pf_stralloc(p, size);
 	}
 

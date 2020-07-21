@@ -130,6 +130,24 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoPrivate_char : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_char() :
+			TypeInfoPrivate_Pod(TypeData, "char", sizeof(char))
+		{
+		}
+
+		void serialize(void* str, const void* src) const override
+		{
+			auto s = to_string(*(char*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			*(char*)dst = sto<char>(src);
+		}
+	};
+
 	struct TypeInfoPrivate_uchar : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_uchar() :
@@ -145,6 +163,24 @@ namespace flame
 		void unserialize(void* dst, const char* src) const override
 		{
 			*(uchar*)dst = sto<uchar>(src);
+		}
+	};
+
+	struct TypeInfoPrivate_wchar : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_wchar() :
+			TypeInfoPrivate_Pod(TypeData, "wchar_t", sizeof(wchar_t))
+		{
+		}
+
+		void serialize(void* str, const void* src) const override
+		{
+			auto s = to_string(*(wchar_t*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			*(wchar_t*)dst = sto<wchar_t>(src);
 		}
 	};
 
@@ -604,8 +640,18 @@ namespace flame
 		}
 		void destroy(void* p) const override 
 		{
+			if (!p)
+				return;
 			base->destroy(*(void**)p);
 			f_free(p); 
+		}
+		void serialize(void* str, const void* src) const override
+		{
+			base->serialize(str, *(void**)src);
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			base->unserialize(*(void**)dst, src);
 		}
 	};
 
@@ -616,6 +662,20 @@ namespace flame
 		{
 		}
 
+		void* create() const override
+		{
+			auto ret = new char*;
+			*ret = new char[1];
+			*ret[0] = 0;
+			return ret;
+		}
+		void destroy(void* p) const override
+		{
+			if (!p)
+				return;
+			f_free(*(char**)p);
+			f_free(p);
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			strcpy((char*)dst, (char*)src);
@@ -626,6 +686,10 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
+			auto& p = *(char**)dst;
+			f_free(p);
+			p = new char[strlen(src) + 1];
+			strcpy(p, src);
 		}
 	};
 
@@ -636,6 +700,20 @@ namespace flame
 		{
 		}
 
+		void* create() const override
+		{
+			auto ret = new wchar_t*;
+			*ret = new wchar_t[1];
+			*ret[0] = 0;
+			return ret;
+		}
+		void destroy(void* p) const override
+		{
+			if (!p)
+				return;
+			f_free(*(wchar_t**)p);
+			f_free(p);
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			wcscpy((wchar_t*)dst, (wchar_t*)src);
@@ -647,6 +725,11 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
+			auto str = s2w(src);
+			auto& p = *(wchar_t**)dst;
+			f_free(p);
+			p = new wchar_t[str.size() + 1];
+			wcscpy(p, str.c_str());
 		}
 	};
 
@@ -667,7 +750,17 @@ namespace flame
 				basic_types.push_back(t);
 			}
 			{
+				auto t = new TypeInfoPrivate_char;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				basic_types.push_back(t);
+			}
+			{
 				auto t = new TypeInfoPrivate_uchar;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				basic_types.push_back(t);
+			}
+			{
+				auto t = new TypeInfoPrivate_wchar;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
@@ -786,6 +879,16 @@ namespace flame
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
+			{
+				auto t = new TypeInfoPrivate_charp;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				basic_types.push_back(t);
+			}
+			{
+				auto t = new TypeInfoPrivate_wcharp;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				basic_types.push_back(t);
+			}
 
 			wchar_t app_name[260];
 			GetModuleFileNameW(nullptr, app_name, size(app_name));
@@ -830,7 +933,8 @@ namespace flame
 			t = new TypeInfoPrivate_Pointer(name);
 			break;
 		}
-		assert(t);
+		if (!t)
+			return t;
 		typeinfos.emplace(key, t);
 		return t;
 	}
@@ -849,7 +953,6 @@ namespace flame
 	VariableInfoPrivate::~VariableInfoPrivate()
 	{
 		type->destroy(default_value);
-		delete[]default_value;
 	}
 
 	EnumItemPrivate::EnumItemPrivate(EnumInfoPrivate* ei, uint index, const std::string& name, int value) :

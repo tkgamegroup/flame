@@ -20,11 +20,11 @@ namespace flame
 			Component* target;
 			TypeInfo* type;
 			FunctionInfo* setter;
-			char* data = nullptr;
+			void* data = nullptr;
 
 			~Rule()
 			{
-				delete[]data;
+				type->destroy(data);
 			}
 		};
 
