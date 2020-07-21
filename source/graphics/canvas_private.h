@@ -80,7 +80,9 @@ namespace flame
 			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
 			std::unique_ptr<BufferPrivate> buf_vtx;
 			std::unique_ptr<BufferPrivate> buf_idx;
-			std::vector<std::unique_ptr<FramebufferPrivate>> fbs;
+			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_el;
+			std::unique_ptr<ImagePrivate> img_bk;
+			std::unique_ptr<FramebufferPrivate> fb_bk;
 			std::unique_ptr<DescriptorSetPrivate> ds;
 
 			std::vector<std::vector<Vec2f>> paths;
