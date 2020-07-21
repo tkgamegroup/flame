@@ -46,6 +46,8 @@ namespace flame
 		r->data = type->create();
 		type->unserialize(r->data, sp1[1].c_str());
 		rules.emplace_back(r);
+
+		on_entity_state_changed();
 	}
 
 	void cStylePrivate::on_entity_state_changed()

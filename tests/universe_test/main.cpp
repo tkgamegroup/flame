@@ -66,11 +66,6 @@ int main(int argc, char** args)
 		};
 		font_atlas = FontAtlas::create(d, size(fonts), fonts);
 	}
-	canvas->add_font(font_atlas);
-	{
-		auto path = res_path / L"9.png";
-		canvas->set_resource(-1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
-	}
 
 	on_resize();
 
@@ -93,7 +88,12 @@ int main(int argc, char** args)
 	world = World::create();
 	world->register_object(w, "Window");
 	world->register_object(canvas, "Canvas");
-	world->register_object(ResMap::create((res_path / L"res.ini").c_str()), "ResMap");
+	auto res = ResMap::create((res_path / L"res.ini").c_str());
+	res->traversal([](Capture&, const char*, const wchar_t* _path) {
+		auto path = std::filesystem::path(_path);
+		canvas->set_resource(-1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
+	}, Capture());
+	world->register_object(res, "ResMap");
 
 	world->add_system(sTypeSetting::create());
 	world->add_system(sEventDispatcher::create());

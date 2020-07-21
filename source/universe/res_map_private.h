@@ -19,6 +19,7 @@ namespace flame
 		void release() override { delete this; };
 
 		std::filesystem::path get_res_path(const std::string& name) const;
+		void traversal(void (*callback)(Capture& c, const char* name, const wchar_t* path), const Capture& capture) const override;
 	};
 
 	inline void ResMapBridge::get_res_path(const char* name, wchar_t* dst) const

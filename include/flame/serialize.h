@@ -918,7 +918,7 @@ namespace flame
 						ret.sections.push_back(section);
 					}
 
-					static std::regex reg_pair(R"(^(\w+)\s*=(.*))");
+					static std::regex reg_pair(R"(^([\*\w]+)\s*=(.*))");
 					static std::regex reg_quot(R"(^\"(.*)\"$)");
 					std::smatch res;
 					INI_Entry entry;
