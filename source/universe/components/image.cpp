@@ -87,9 +87,7 @@ namespace flame
 
 	cImagePrivate* cImagePrivate::create()
 	{
-		auto ret = _allocate(sizeof(cImagePrivate));
-		new (ret) cImagePrivate;
-		return (cImagePrivate*)ret;
+		return f_new<cImagePrivate>();
 	}
 
 	cImage* cImage::create() { return cImagePrivate::create(); }

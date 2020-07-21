@@ -511,9 +511,7 @@ namespace flame
 
 	cLayoutPrivate* cLayoutPrivate::create()
 	{
-		auto ret = _allocate(sizeof(cLayoutPrivate));
-		new (ret) cLayoutPrivate;
-		return (cLayoutPrivate*)ret;
+		return f_new<cLayoutPrivate>();
 	}
 
 	cLayout* cLayout::create() { return cLayoutPrivate::create(); }

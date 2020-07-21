@@ -138,9 +138,7 @@ namespace flame
 
 	cEventReceiverPrivate* cEventReceiverPrivate::create()
 	{
-		auto ret = _allocate(sizeof(cEventReceiverPrivate));
-		new (ret) cEventReceiverPrivate;
-		return (cEventReceiverPrivate*)ret;
+		return f_new<cEventReceiverPrivate>();
 	}
 
 	cEventReceiver* cEventReceiver::create() { return cEventReceiverPrivate::create(); }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <flame/universe/entity.h>
-#include "universe_private.h"
 
 namespace flame
 {
@@ -29,8 +28,8 @@ namespace flame
 
 		StateFlags state = StateNone;
 
-		std::unordered_map<uint64, std::unique_ptr<Component, Delecter>> components;
-		std::vector<std::unique_ptr<EntityPrivate, Delecter>> children;
+		std::unordered_map<uint64, std::unique_ptr<Component, Delector>> components;
+		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 		std::vector<Component*> local_event_dispatch_list;
 		std::vector<Component*> child_event_dispatch_list;
 		std::vector<Component*> local_data_changed_dispatch_list;

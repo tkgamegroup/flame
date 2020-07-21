@@ -1,5 +1,4 @@
 //#include <flame/universe/components/element.h>
-#include "../universe_private.h"
 #include "aligner_private.h"
 
 namespace flame
@@ -85,9 +84,7 @@ namespace flame
 
 	cAlignerPrivate* cAlignerPrivate::create()
 	{
-		auto ret = _allocate(sizeof(cAlignerPrivate));
-		new (ret) cAlignerPrivate;
-		return (cAlignerPrivate*)ret;
+		return f_new<cAlignerPrivate>();
 	}
 
 	cAligner* cAligner::create() { return cAlignerPrivate::create(); }

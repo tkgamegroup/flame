@@ -2,7 +2,6 @@
 
 #include <flame/universe/world.h>
 #include <flame/universe/system.h>
-#include "universe_private.h"
 #include "entity_private.h"
 
 namespace flame
@@ -17,8 +16,8 @@ namespace flame
 	{
 		std::vector<std::pair<void*, std::string>> objects;
 
-		std::vector<std::unique_ptr<System, Delecter>> systems;
-		std::unique_ptr<EntityPrivate, Delecter> root;
+		std::vector<std::unique_ptr<System, Delector>> systems;
+		std::unique_ptr<EntityPrivate, Delector> root;
 
 		WorldPrivate();
 

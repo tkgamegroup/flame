@@ -155,12 +155,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(int*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(int*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -175,12 +173,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(uint*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(uint*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -195,12 +191,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(int64*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(int64*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -215,12 +209,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(uint64*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(uint64*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -235,12 +227,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(float*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(float*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -255,12 +245,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec1c*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec1c*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -275,12 +263,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec2c*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec2c*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -295,12 +281,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec3c*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec3c*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -315,12 +299,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec4c*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec4c*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -335,12 +317,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec1i*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec1i*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -355,12 +335,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec2i*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec2i*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -375,12 +353,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec3i*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec3i*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -395,12 +371,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec4i*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec4i*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -415,12 +389,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec1u*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec1u*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -435,12 +407,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec2u*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec2u*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -455,12 +425,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec3u*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec3u*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -475,12 +443,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec4u*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec4u*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -495,12 +461,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec1f*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec1f*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -515,12 +479,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec2f*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec2f*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -535,12 +497,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec3f*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec3f*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -555,12 +515,10 @@ namespace flame
 		{
 		}
 
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = to_string(*(Vec4f*)src);
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			auto s = to_string(*(Vec4f*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -575,23 +533,22 @@ namespace flame
 		{
 		}
 
-		void create(void* p) const override
+		void* create() const override
 		{
+			return f_new<StringA>();
 		}
 		void destroy(void* p) const override
 		{
-			((StringA*)p)->~String();
+			f_delete((StringA*)p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
 			*(StringA*)dst = *(StringA*)src;
 		}
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			const auto& str = *(StringA*)src;
-			auto buf = callback((Capture&)capture, str.s);
-			strncpy(buf, str.v, str.s);
-			buf[str.s] = 0;
+			const auto& s = *(StringA*)src;
+			strcpy(f_stralloc(str, s.s), s.v);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -606,23 +563,22 @@ namespace flame
 		{
 		}
 
-		void create(void* p) const override
+		void* create() const override
 		{
+			return f_new<StringW>();
 		}
 		void destroy(void* p) const override
 		{
-			((StringW*)p)->~String();
+			f_delete((StringW*)p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
 			*(StringW*)dst = *(StringW*)src;
 		}
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
-			auto str = w2s(((StringW*)src)->str());
-			auto buf = callback((Capture&)capture, str.size());
-			strncpy(buf, str.data(), str.size());
-			buf[str.size()] = 0;
+			const auto s = w2s((*(StringW*)src).str());
+			strcpy(f_stralloc(str, s.size()), s.c_str());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -632,9 +588,24 @@ namespace flame
 
 	struct TypeInfoPrivate_Pointer : TypeInfoPrivate_Pod
 	{
+		TypeInfoPrivate* base;
+
 		TypeInfoPrivate_Pointer(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypePointer, base_name, sizeof(void*))
 		{
+			base = TypeInfoPrivate::get(TypeData, name);
+		}
+
+		void* create() const override 
+		{ 
+			auto ret = new void*;
+			*ret = base->create();
+			return ret; 
+		}
+		void destroy(void* p) const override 
+		{
+			base->destroy(*(void**)p);
+			f_free(p); 
 		}
 	};
 
@@ -649,8 +620,9 @@ namespace flame
 		{
 			strcpy((char*)dst, (char*)src);
 		}
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override
+		void serialize(void* str, const void* src) const override
 		{
+			strcpy(f_stralloc(str, strlen((char*)src)), (char*)src);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -668,8 +640,10 @@ namespace flame
 		{
 			wcscpy((wchar_t*)dst, (wchar_t*)src);
 		}
-		void serialize(char* (*callback)(Capture& c, uint size), const Capture& capture, const void* src) const override 
+		void serialize(void* str, const void* src) const override 
 		{
+			const auto s = w2s((wchar_t*)src);
+			strcpy(f_stralloc(str, s.size()), s.c_str());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -1062,11 +1036,8 @@ namespace flame
 					auto dv = n_variable.attribute("default_value");
 					if (dv)
 					{
-						type->unserialize([](Capture& c, uint size) {
-							auto p = c.data<char**>();
-							*p = new char[size];
-							return *p;
-						}, Capture().set_data(&v->default_value), n_variable.attribute("default_value").value());
+						v->default_value = type->create();
+						type->unserialize(v->default_value, dv.value());
 					}
 				}
 

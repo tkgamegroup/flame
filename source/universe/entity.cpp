@@ -30,10 +30,7 @@ namespace flame
 		if (parent)
 			parent->remove_child(this);
 		else
-		{
-			this->~EntityPrivate();
-			_deallocate(this);
-		}
+			f_delete(this);
 	}
 
 	void EntityPrivate::update_visibility()

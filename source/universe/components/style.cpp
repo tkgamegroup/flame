@@ -65,9 +65,7 @@ namespace flame
 
 	cStylePrivate* cStylePrivate::create()
 	{
-		auto ret = _allocate(sizeof(cStylePrivate));
-		new (ret) cStylePrivate;
-		return (cStylePrivate*)ret;
+		return f_new<cStylePrivate>();
 	}
 
 	cStyle* cStyle::create() { return cStylePrivate::create(); }

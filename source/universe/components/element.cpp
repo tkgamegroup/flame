@@ -347,9 +347,7 @@ namespace flame
 
 	cElementPrivate* cElementPrivate::create()
 	{
-		auto ret = _allocate(sizeof(cElementPrivate));
-		new (ret) cElementPrivate;
-		return (cElementPrivate*)ret;
+		return f_new<cElementPrivate>();
 	}
 
 	cElement* cElement::create() { return cElementPrivate::create(); }

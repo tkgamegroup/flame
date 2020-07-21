@@ -75,6 +75,4 @@ namespace flame
 	};
 
 	inline ExtraDrawFlags operator| (ExtraDrawFlags a, ExtraDrawFlags b) { return (ExtraDrawFlags)((int)a | (int)b); }
-
-	FLAME_UNIVERSE_EXPORTS void set_allocator(void*(*allocate)(Capture& c, uint size), void(*deallocate)(Capture& c, void* p), const Capture& capture);
 }
