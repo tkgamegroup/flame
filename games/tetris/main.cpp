@@ -200,7 +200,7 @@ MainForm::MainForm() :
 
 	setup_as_main_window();
 
-	canvas->add_atlas(app.atlas);
+	canvas->set_resource(-1, app.atlas->get_view(), app.graphics_device->get_sampler(app.atlas->get_border() ? graphics::FilterLinear : graphics::FilterNearest), L"", app.atlas, nullptr);
 
 	ui.init(world);
 

@@ -48,7 +48,7 @@ namespace flame
 			view.reset(new ImageViewPrivate(image.get(), ImageView2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
 		}
 
-		GlyphPrivate* FontAtlasPrivate::_get_glyph(wchar_t code, uint size)
+		GlyphPrivate* FontAtlasPrivate::get_glyph(wchar_t code, uint size)
 		{
 			if (size == 0)
 				return nullptr;

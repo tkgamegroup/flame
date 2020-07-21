@@ -34,8 +34,6 @@ namespace flame
 
 			virtual CanvasResource* get_resource(uint slot) = 0;
 			virtual uint set_resource(int slot /* -1 to find an empty slot */, ImageView* v, Sampler* sp = nullptr, const wchar_t* filename = nullptr, ImageAtlas* image_atlas = nullptr, FontAtlas* font_atlas = nullptr) = 0;
-			virtual void add_atlas(ImageAtlas* a) = 0;
-			virtual void add_font(FontAtlas* f) = 0;
 
 			virtual void begin_path() = 0;
 			virtual void move_to(float x, float y) = 0;

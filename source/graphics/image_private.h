@@ -155,7 +155,7 @@ namespace flame
 
 			bool get_border() const override { return border; }
 
-			ImageTilePrivate* get_tile(uint id) const;
+			ImageTilePrivate* get_tile(uint id) const override { return tiles[id].get(); }
 			ImageTilePrivate* find_tile(const std::string& name) const;
 		};
 

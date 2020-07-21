@@ -132,6 +132,8 @@ namespace flame
 
 			virtual Glyph* get_glyph(wchar_t unicode, uint font_size) = 0;
 
+			virtual ImageView* get_view() const = 0;
+
 			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint fonts_count, Font* const* fonts);
 		};
 	}

@@ -65,6 +65,11 @@ namespace flame
 			}
 		};
 
+		struct FontAtlasBridge : FontAtlas
+		{
+			Glyph* get_glyph(wchar_t code, uint size) override;
+		};
+
 		struct FontAtlasPrivate : FontAtlas
 		{
 			std::vector<FontPrivate*> fonts;
@@ -79,9 +84,14 @@ namespace flame
 
 			void release() override { delete this; }
 
-			GlyphPrivate* _get_glyph(wchar_t code, uint size);
+			GlyphPrivate* get_glyph(wchar_t code, uint size);
 
-			Glyph* get_glyph(wchar_t code, uint size) override { return _get_glyph(code, size); }
+			ImageView* get_view() const override { return view.get(); }
 		};
+
+		inline Glyph* FontAtlasBridge::get_glyph(wchar_t code, uint size)
+		{
+			return ((FontAtlasPrivate*)this)->get_glyph(code, size);
+		}
 	}
 }

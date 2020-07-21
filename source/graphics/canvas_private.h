@@ -36,8 +36,6 @@ namespace flame
 			void set_target(uint views_count, ImageView* const* views) override;
 
 			uint set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas) override;
-			void add_atlas(ImageAtlas* a) override;
-			void add_font(FontAtlas* f) override;
 
 			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
@@ -108,8 +106,6 @@ namespace flame
 
 			CanvasResource* get_resource(uint slot) override { return slot < resources_count ? resources[slot].get() : nullptr; }
 			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp = nullptr, const std::filesystem::path& filename = "", ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
-			void add_atlas(ImageAtlasPrivate* a);
-			void add_font(FontAtlasPrivate* f);
 
 			void add_draw_cmd(int id = -1);
 			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
@@ -141,16 +137,6 @@ namespace flame
 		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas)
 		{
 			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, filename ? filename : L"", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
-		}
-
-		inline void CanvasBridge::add_atlas(ImageAtlas* a)
-		{
-			((CanvasPrivate*)this)->add_atlas((ImageAtlasPrivate*)a);
-		}
-
-		inline void CanvasBridge::add_font(FontAtlas* f)
-		{
-			((CanvasPrivate*)this)->add_font((FontAtlasPrivate*)f);
 		}
 
 		inline void CanvasBridge::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)

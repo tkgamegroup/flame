@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-      <cElement width="20.0" height="20.0" />
+      <cElement />
       <cEventReceiver />
 	  <cImage/>
       <cStyle>

@@ -48,11 +48,11 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"4.prefab";
+auto test_prefab = L"8.prefab";
 
 int main(int argc, char** args)
 {
-	w = Window::create("Graphics Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	w = Window::create("Universe Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	d = Device::create(true);
 	render_finished = Semaphore::create(d);
 	sc = Swapchain::create(d, w);
@@ -65,7 +65,7 @@ int main(int argc, char** args)
 			Font::create(L"c:/windows/fonts/consola.ttf")
 		};
 		font_atlas = FontAtlas::create(d, size(fonts), fonts);
-		canvas->add_font(font_atlas);
+		canvas->set_resource(-1, font_atlas->get_view(), d->get_sampler(FilterNearest), L"", nullptr, font_atlas);
 	}
 
 	on_resize();

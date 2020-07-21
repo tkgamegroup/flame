@@ -223,16 +223,6 @@ namespace flame
 			return slot;
 		}
 
-		void CanvasPrivate::add_atlas(ImageAtlasPrivate* a)
-		{
-			set_resource(-1, a->image->default_view.get(), a->border ? device->sampler_linear.get() : device->sampler_nearest.get(), "", a);
-		}
-
-		void CanvasPrivate::add_font(FontAtlasPrivate* f)
-		{
-			set_resource(-1, f->view.get(), device->sampler_nearest.get(), "", nullptr, f);
-		}
-
 		void CanvasPrivate::add_draw_cmd(int id)
 		{
 			auto equal = [&]() {
@@ -642,7 +632,7 @@ namespace flame
 					if (ch == '\t')
 						ch = ' ';
 
-					auto g = atlas->_get_glyph(ch, font_size);
+					auto g = atlas->get_glyph(ch, font_size);
 
 					auto p = _pos + Vec2f(g->off);
 					auto size = Vec2f(g->size);

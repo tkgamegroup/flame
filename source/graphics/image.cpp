@@ -473,11 +473,6 @@ namespace flame
 			delete image;
 		}
 
-		ImageTilePrivate* ImageAtlasPrivate::get_tile(uint id) const
-		{
-			return tiles[id].get();
-		}
-
 		ImageTilePrivate* ImageAtlasPrivate::find_tile(const std::string& name) const
 		{
 			for (auto& t : tiles)
