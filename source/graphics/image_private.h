@@ -137,6 +137,7 @@ namespace flame
 
 		struct ImageAtlasBridge : ImageAtlas
 		{
+			ImageTile* get_tile(uint id) const override;
 			ImageTile* find_tile(const char* name) const override;
 		};
 
@@ -154,8 +155,14 @@ namespace flame
 
 			bool get_border() const override { return border; }
 
+			ImageTilePrivate* get_tile(uint id) const;
 			ImageTilePrivate* find_tile(const std::string& name) const;
 		};
+
+		inline ImageTile* ImageAtlasBridge::get_tile(uint id) const
+		{
+			return ((ImageAtlasPrivate*)this)->get_tile(id);
+		}
 
 		inline ImageTile* ImageAtlasBridge::find_tile(const char* name) const
 		{

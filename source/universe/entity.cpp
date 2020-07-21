@@ -371,7 +371,7 @@ namespace flame
 			auto type = fs->get_parameter(0);
 			void* d = type->create();
 			type->unserialize(d, value.c_str());
-			void* parms[] = { d };
+			void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
 			fs->call(c, nullptr, parms);
 			type->destroy(d);
 		}

@@ -3,7 +3,20 @@
 
 namespace flame
 {
-	ResMapPrivate::ResMapPrivate(const std::filesystem::path& filename)
+	std::filesystem::path ResMapPrivate::get_res_path(const std::string& name) const
+	{
+		auto it = res.find(name);
+		assert(it != res.end());
+		return it->second;
+	}
+
+	void ResMapPrivate::traversal(void (*callback)(Capture& c, const char* name, const wchar_t* path), const Capture& capture) const
+	{
+		for (auto& r : res)
+			callback((Capture&)capture, r.first.c_str(), r.second.c_str());
+	}
+
+	void ResMapPrivate::load(const std::filesystem::path& filename)
 	{
 		parent_path = filename.parent_path();
 		parent_path.make_preferred();
@@ -46,21 +59,8 @@ namespace flame
 		}
 	}
 
-	std::filesystem::path ResMapPrivate::get_res_path(const std::string& name) const
+	ResMap* ResMap::create()
 	{
-		auto it = res.find(name);
-		assert(it != res.end());
-		return it->second;
-	}
-
-	void ResMapPrivate::traversal(void (*callback)(Capture& c, const char* name, const wchar_t* path), const Capture& capture) const
-	{
-		for (auto& r : res)
-			callback((Capture&)capture, r.first.c_str(), r.second.c_str());
-	}
-
-	ResMap* ResMap::create(const wchar_t* filename)
-	{
-		return new ResMapPrivate(filename);
+		return new ResMapPrivate();
 	}
 }

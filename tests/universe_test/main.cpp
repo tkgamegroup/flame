@@ -48,7 +48,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"8.prefab";
+auto test_prefab = L"4.prefab";
 
 int main(int argc, char** args)
 {
@@ -65,6 +65,7 @@ int main(int argc, char** args)
 			Font::create(L"c:/windows/fonts/consola.ttf")
 		};
 		font_atlas = FontAtlas::create(d, size(fonts), fonts);
+		canvas->add_font(font_atlas);
 	}
 
 	on_resize();
@@ -88,7 +89,8 @@ int main(int argc, char** args)
 	world = World::create();
 	world->register_object(w, "Window");
 	world->register_object(canvas, "Canvas");
-	auto res = ResMap::create((res_path / L"res.ini").c_str());
+	auto res = ResMap::create();
+	res->load((res_path / L"res.ini").c_str());
 	res->traversal([](Capture&, const char*, const wchar_t* _path) {
 		auto path = std::filesystem::path(_path);
 		canvas->set_resource(-1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
@@ -114,16 +116,6 @@ int main(int argc, char** args)
 	//	}
 	//}, Capture().set_thiz(root), false, false);
 
-	//w->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-	//	if (is_mouse_move(action, key))
-	//	{
-	//		auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
-	//		if (e->contains(Vec2f(pos)))
-	//			e->set_fill_color(Vec3c(255, 0, 0));
-	//		else
-	//			e->set_fill_color(Vec3c(255, 255, 255));
-	//	}
-	//}, Capture().set_thiz(root));
 	//w->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
 	//	if (is_key_down(action) && value == Key_Right)
 	//	{

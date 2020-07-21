@@ -1,6 +1,7 @@
 //#include <flame/universe/world.h>
 //#include <flame/universe/components/aligner.h>
 
+#include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include "../world_private.h"
@@ -36,9 +37,11 @@ namespace flame
 
 	void cTextPrivate::on_entered_world()
 	{
-		type_setting = (sTypeSettingPrivate*)((EntityPrivate*)entity)->world->get_system(sTypeSetting::type_hash);
+		auto world = ((EntityPrivate*)entity)->world;
+		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
 		//if (auto_size)
 			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		canvas = (graphics::Canvas*)world->find_object("Canvas");
 	}
 
 	void cTextPrivate::on_left_world()
@@ -46,6 +49,7 @@ namespace flame
 		if (type_setting)
 			type_setting->remove_from_sizing_list(this);
 		type_setting = nullptr;
+		canvas = nullptr;
 	}
 
 	void cTextPrivate::on_entity_visibility_changed()
@@ -56,12 +60,14 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(0, text.c_str(), 14, element->get_p00(), Vec4c(0, 0, 0, 255));
+		canvas->add_text(0, text.c_str(), 14, element->p00, Vec4c(0, 0, 0, 255));
 	}
 
 	Vec2f cTextPrivate::measure()
 	{
-		return Vec2f(text.size() * 14, 14);
+		if (!canvas)
+			return Vec2f(0.f);
+		return Vec2f(canvas->get_resource(0)->get_font_atlas()->text_size(14, text.c_str()));
 	}
 
 	//cTextPrivate::cTextPrivate()
@@ -85,8 +91,6 @@ namespace flame
 
 	//void cTextPrivate::auto_set_size()
 	//{
-	//	if (!element)
-	//		return;
 	//	auto s = Vec2f(font_atlas->text_size(font_size, text.v, nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
 	//	element->set_size(s, this);
 	//	auto aligner = entity->get_component(cAligner);

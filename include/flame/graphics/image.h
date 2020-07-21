@@ -118,6 +118,7 @@ namespace flame
 
 			virtual bool get_border() const = 0;
 
+			virtual ImageTile* get_tile(uint id) const = 0;
 			virtual ImageTile* find_tile(const char* name) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static ImageAtlas* create(Device* d, const wchar_t* filename);

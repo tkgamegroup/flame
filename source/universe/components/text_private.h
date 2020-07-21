@@ -17,6 +17,7 @@ namespace flame
 
 		cElementPrivate* element = nullptr;
 		sTypeSettingPrivate* type_setting = nullptr;
+		graphics::Canvas* canvas;
 
 		const wchar_t* get_text() const override { return text.c_str(); }
 		void set_text(const std::wstring& text);
