@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+      <cElement width="20.0" height="20.0" />
+      <cEventReceiver />
+	  <cImage/>
+      <cStyle>
+	    <add_rule>StateHovering;StateActive,cImage.src=3</add_rule>
+	    <add_rule>StateHovering,cImage.src=2</add_rule>
+	    <add_rule>StateNone,cImage.src=1</add_rule>
+	  </cStyle>
+  </entity>
+</prefab>

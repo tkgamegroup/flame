@@ -4,8 +4,8 @@
       <cElement width="20.0" height="20.0" />
       <cEventReceiver />
       <cStyle>
+	    <add_rule>StateHovering,cElement.fill_color=100;180;200</add_rule>
 	    <add_rule>StateNone,cElement.fill_color=255;255;255</add_rule>
-	    <add_rule>StateHovering,cElement.fill_color=200;200;100</add_rule>
 	  </cStyle>
   </entity>
 </prefab>

@@ -153,7 +153,7 @@ namespace flame
 						if (do_focus)
 						{
 							focusing = hovering;
-//							focusing_state = FocusingAndActive;
+							active = focusing;
 //							active_pos = mouse_pos;
 						}
 					}
@@ -217,7 +217,7 @@ namespace flame
 //
 		auto prev_hovering = hovering;
 		auto prev_focusing = focusing;
-//		auto prev_focusing_state = focusing_state;
+		auto prev_active = active;
 //		auto prev_drag_overing = drag_overing;
 //		auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
 		hovering = nullptr;
@@ -228,32 +228,34 @@ namespace flame
 //			focusing = next_focusing;
 //			next_focusing = (cEventReceiver*)INVALID_POINTER;
 //		}
-//
-//		if (focusing)
-//		{
-//			if (!focusing->entity->global_visibility)
-//				focusing = nullptr;
-//			else if (focusing_state != FocusingNormal)
-//			{
-//				switch (focusing->focus_type)
-//				{
-//				case FocusByLeftButton:
-//					if (mouse_buttons[Mouse_Left] & KeyStateUp)
-//						focusing_state = FocusingNormal;
-//					break;
-//				case FocusByRightButton:
-//					if (mouse_buttons[Mouse_Right] & KeyStateUp)
-//						focusing_state = FocusingNormal;
-//					break;
-//				case FocusByLeftOrRightButton:
-//					if ((mouse_buttons[Mouse_Left] & KeyStateUp) && (mouse_buttons[Mouse_Right] & KeyStateUp))
-//						focusing_state = FocusingNormal;
-//					break;
-//				}
-//			}
-//
-//		}
-//
+
+		if (focusing)
+		{
+			if (!((EntityPrivate*)focusing->entity)->global_visibility)
+				focusing = nullptr;
+			else if (active || dragging)
+			{
+				if (mbtns[Mouse_Left] & KeyStateUp)
+					active = dragging = nullptr;
+				//switch (focusing->focus_type)
+				//{
+				//case FocusByLeftButton:
+				//	if (mouse_buttons[Mouse_Left] & KeyStateUp)
+				//		focusing_state = FocusingNormal;
+				//	break;
+				//case FocusByRightButton:
+				//	if (mouse_buttons[Mouse_Right] & KeyStateUp)
+				//		focusing_state = FocusingNormal;
+				//	break;
+				//case FocusByLeftOrRightButton:
+				//	if ((mouse_buttons[Mouse_Left] & KeyStateUp) && (mouse_buttons[Mouse_Right] & KeyStateUp))
+				//		focusing_state = FocusingNormal;
+				//	break;
+				//}
+			}
+
+		}
+
 //		if (focusing && focusing_state == FocusingAndActive)
 //		{
 //			if (focusing->drag_hash)

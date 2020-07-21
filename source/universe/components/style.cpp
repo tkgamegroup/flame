@@ -37,8 +37,6 @@ namespace flame
 			return;
 
 		auto type = setter->get_parameter(0);
-		if (type->get_tag() == TypePointer)
-			type = TypeInfo::get(TypeData, type->get_name());
 
 		auto r = new Rule;
 		r->state = state;
@@ -57,8 +55,9 @@ namespace flame
 		{
 			if (r->state == s)
 			{
-				void* parms[] = { r->data };
+				void* parms[] = { r->type->get_tag() == TypePointer ? *(void**)r->data : r->data };
 				r->setter->call(r->target, nullptr, parms);
+				break;
 			}
 		}
 	}

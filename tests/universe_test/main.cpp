@@ -48,7 +48,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"7.prefab";
+auto test_prefab = L"8.prefab";
 
 int main(int argc, char** args)
 {
@@ -69,7 +69,7 @@ int main(int argc, char** args)
 	canvas->add_font(font_atlas);
 	{
 		auto path = res_path / L"9.png";
-		canvas->set_resource(1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
+		canvas->set_resource(-1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
 	}
 
 	on_resize();
