@@ -97,7 +97,7 @@ namespace flame
 			current_pipeline = nullptr;
 		}
 
-		void CommandBufferPrivate::begin_renderpass(FramebufferPrivate* fb, std::span<const Vec4f> clearvalues)
+		void CommandBufferPrivate::begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues)
 		{
 			auto rp = fb->renderpass;
 
@@ -116,8 +116,8 @@ namespace flame
 			auto size = fb->views[0]->image->size;
 			info.renderArea.extent.width = size.x();
 			info.renderArea.extent.height = size.y();
-			info.clearValueCount = clearvalues.size();
-			info.pClearValues = (VkClearValue*)clearvalues.data();
+			info.clearValueCount = clearvalues ? fb->views.size() : 0;
+			info.pClearValues = (VkClearValue*)clearvalues;
 
 			vkCmdBeginRenderPass(vk_command_buffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 #elif defined(FLAME_D3D12)

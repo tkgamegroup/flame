@@ -99,13 +99,16 @@ namespace flame
 		static RenderpassPrivate* rp_bk = nullptr;
 		static DescriptorSetLayoutPrivate* dsl_bk = nullptr;
 		static PipelineLayoutPrivate* pll_bk = nullptr;
-		static ShaderPrivate* vert_bk = nullptr;
-		static ShaderPrivate* frag_bk = nullptr;
-		static PipelinePrivate* pl_bk = nullptr;
+		static ShaderPrivate* vert_fs = nullptr;
+		static ShaderPrivate* frag_blt = nullptr;
+		static PipelinePrivate* pl_blt = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
 			device(d)
 		{
+			wchar_t engine_path[260];
+			get_engine_path(engine_path);
+
 			if (!rp_el)
 			{
 				auto fmt = Swapchain::get_format();
@@ -154,15 +157,14 @@ namespace flame
 					vert_el,
 					frag_el
 				};
-				wchar_t engine_path[260];
-				get_engine_path(engine_path);
 				pl_el = PipelinePrivate::create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll_el, rp_el, 0, &vi);
 			}
+
 			if (!rp_bk)
 			{
 				auto fmt = Swapchain::get_format();
 				RenderpassAttachmentInfo att;
-				att.format = fmt;
+				att.format = Format_R8G8B8A8_UNORM;
 				att.clear = false;
 				RenderpassSubpassInfo sp;
 				uint col_refs[] = {
@@ -171,6 +173,26 @@ namespace flame
 				sp.color_attachments_count = 1;
 				sp.color_attachments = col_refs;
 				rp_bk = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
+			}
+			if (!dsl_bk)
+			{
+				DescriptorBindingInfo db;
+				db.type = DescriptorSampledImage;
+				db.count = 1;
+				db.name = "image";
+				dsl_bk = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+			}
+			if (!pll_bk)
+				pll_bk = new PipelineLayoutPrivate(d, { &dsl_bk, 1 }, 0);
+			if (!pl_blt)
+			{
+				vert_fs = new ShaderPrivate(L"fullscreen.vert");
+				frag_blt = new ShaderPrivate(L"blit.frag");
+				ShaderPrivate* shaders[] = {
+					vert_fs,
+					frag_blt
+				};
+				pl_blt = PipelinePrivate::create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll_bk, rp_bk, 0);
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -213,6 +235,12 @@ namespace flame
 				{
 					auto view = img_bk->default_view.get();
 					fb_bk.reset(new FramebufferPrivate(device, rp_bk, { &view, 1 }));
+				}
+				auto sp = device->sampler_nearest.get();
+				for (auto i = 0; i < views.size(); i++)
+				{
+					ds_bk[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_bk));
+					ds_bk[i]->set_image(0, 0, views[i], sp);
 				}
 			}
 		}
@@ -740,7 +768,8 @@ namespace flame
 		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 		{
 			cb->begin();
-			cb->begin_renderpass(fbs_el[image_index].get(), { &clear_color, 1 });
+
+			cb->begin_renderpass(fbs_el[image_index].get(), &clear_color);
 			if (idx_end != buf_idx->get_mapped())
 			{
 				cb->set_viewport(curr_scissor);
@@ -774,6 +803,13 @@ namespace flame
 				}
 			}
 			cb->end_renderpass();
+
+			//cb->begin_renderpass(fb_bk.get());
+			//cb->bind_pipeline(pl_blt);
+			//cb->bind_descriptor_set(ds_bk[image_index].get(), 0, pll_bk);
+			//cb->draw(3, 1, 0, 0);
+			//cb->end_renderpass();
+
 			cb->end();
 
 			cmds.clear();

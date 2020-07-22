@@ -55,7 +55,7 @@ int main(int argc, char** args)
 	w = Window::create("Universe Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	d = Device::create(true);
 	render_finished = Semaphore::create(d);
-	sc = Swapchain::create(d, w);
+	sc = Swapchain::create(d, w, ImageUsageSampled);
 	fence = Fence::create(d);
 
 	canvas = Canvas::create(d);

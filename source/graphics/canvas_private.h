@@ -84,6 +84,7 @@ namespace flame
 			std::unique_ptr<ImagePrivate> img_bk;
 			std::unique_ptr<FramebufferPrivate> fb_bk;
 			std::unique_ptr<DescriptorSetPrivate> ds;
+			std::unique_ptr<DescriptorSetPrivate> ds_bk[3];
 
 			std::vector<std::vector<Vec2f>> paths;
 

@@ -83,7 +83,7 @@ namespace flame
 
 			virtual void begin(bool once = false) = 0;
 
-			virtual void begin_renderpass(Framebuffer* fb, uint clearvalues_count, const Vec4f* clearvalues) = 0;
+			virtual void begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues) = 0;
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Vec4f& rect) = 0;
 			virtual void set_scissor(const Vec4f& rect) = 0;
