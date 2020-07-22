@@ -8,66 +8,96 @@ namespace flame
 {
 	void cElementPrivate::set_x(float _x)
 	{
+		if (x == _x)
+			return;
 		x = _x;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_y(float _y)
 	{
+		if (y == _y)
+			return;
 		y = _y;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_width(float w)
 	{
+		if (width == w)
+			return;
 		width = w;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_height(float h)
 	{
+		if (height == h)
+			return;
 		height = h;
+		mark_transform_dirty();
+	}
+
+	void cElementPrivate::set_padding(const Vec4f& p)
+	{
+		if (padding == p)
+			return;
+		padding = p;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_pivotx(float p)
 	{
+		if (pivotx == p)
+			return;
 		pivotx = p;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_pivoty(float p)
 	{
+		if (pivoty == p)
+			return;
 		pivoty = p;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_scalex(float s)
 	{
+		if (scalex == s)
+			return;
 		scalex = s;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_scaley(float s)
 	{
+		if (scaley == s)
+			return;
 		scaley = s;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_rotation(float r)
 	{
+		if (rotation == r)
+			return;
 		rotation = r;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_skewx(float s)
 	{
+		if (skewx == s)
+			return;
 		skewx = s;
 		mark_transform_dirty();
 	}
 
 	void cElementPrivate::set_skewy(float s)
 	{
+		if (skewy == s)
+			return;
 		skewy = s;
 		mark_transform_dirty();
 	}
@@ -78,7 +108,7 @@ namespace flame
 			return;
 		transform_dirty = false;
 
-		auto base_transform = Mat<3, 2, float>(1.f);
+		auto base_transform = Mat23f(1.f);
 		auto p = ((EntityPrivate*)entity)->parent;
 		if (p)
 		{
@@ -95,49 +125,36 @@ namespace flame
 
 		auto w = axis[0] * width;
 		auto h = axis[1] * height;
-		p00 = w * -pivotx + h * -pivoty + c;
-		p10 = w * (1.f - pivotx) + h * -pivoty + c;
-		p01 = w * -pivotx + h * (1.f - pivoty) + c;
-		p11 = w * (1.f - pivotx) + h * (1.f - pivoty) + c;
-		transform = Mat<3, 2, float>(Vec3f(axis[0], p00.x()), Vec3f(axis[1], p00.y()));
+		points[0] = w * -pivotx + h * -pivoty + c;
+		points[1] = w * (1.f - pivotx) + h * -pivoty + c;
+		points[2] = w * (1.f - pivotx) + h * (1.f - pivoty) + c;
+		points[3] = w * -pivotx + h * (1.f - pivoty) + c;
+		auto hw = width * 0.5f;
+		auto hh = height * 0.5f;
+		auto pl = min(padding[0], hw);
+		auto pt = min(padding[1], hh);
+		auto pr = min(padding[2], hw);
+		auto pb = min(padding[3], hh);
+		points[4] = points[0] + pl * axis[0] + pt * axis[1];
+		points[5] = points[1] - pr * axis[0] + pt * axis[1];
+		points[6] = points[2] - pr * axis[0] - pb * axis[1];
+		points[7] = points[3] + pl * axis[0] - pb * axis[1];
+		transform = Mat23f(Vec3f(axis[0], points[0].x()), Vec3f(axis[1], points[0].y()));
 	}
 
-	const Mat<3, 2, float>& cElementPrivate::get_transform()
+	const Mat23f& cElementPrivate::get_transform()
 	{
-		if (transform_dirty)
-			update_transform();
+		update_transform();
 		return transform;
 	}
 
-	Vec2f cElementPrivate::get_p00()
+	Vec2f cElementPrivate::get_point(uint idx)
 	{
-		if (transform_dirty)
-			update_transform();
-		return p00;
+		update_transform();
+		return points[idx];
 	}
 
-	Vec2f cElementPrivate::get_p10()
-	{
-		if (transform_dirty)
-			update_transform();
-		return p10;
-	}
-
-	Vec2f cElementPrivate::get_p11()
-	{
-		if (transform_dirty)
-			update_transform();
-		return p11;
-	}
-
-	Vec2f cElementPrivate::get_p01()
-	{
-		if (transform_dirty)
-			update_transform();
-		return p01;
-	}
-
-	void cElementPrivate::set_fill_color(const Vec3c& c)
+	void cElementPrivate::set_fill_color(const Vec4c& c)
 	{
 		fill_color = c;
 		mark_drawing_dirty();
@@ -160,6 +177,13 @@ namespace flame
 	{
 		if (renderer)
 			renderer->dirty = true;
+	}
+
+	bool cElementPrivate::contains(const Vec2f& p)
+	{
+		update_transform();
+		Vec2f ps[] = { points[0], points[1], points[2], points[3] };
+		return convex_contains<float>(p, ps);
 	}
 
 	void cElementPrivate::on_entered_world()
@@ -221,12 +245,15 @@ namespace flame
 //			if (alpha > 0.f)
 //			{
 				update_transform();
-				canvas->begin_path();
-				canvas->move_to(p00.x(), p00.y());
-				canvas->line_to(p10.x(), p10.y());
-				canvas->line_to(p11.x(), p11.y());
-				canvas->line_to(p01.x(), p01.y());
-				canvas->fill(Vec4c(fill_color, 255));
+				if (fill_color.a() > 0)
+				{
+					canvas->begin_path();
+					canvas->move_to(points[0].x(), points[0].y());
+					canvas->line_to(points[1].x(), points[1].y());
+					canvas->line_to(points[2].x(), points[2].y());
+					canvas->line_to(points[3].x(), points[3].y());
+					canvas->fill(fill_color);
+				}
 
 				for (auto d : drawers)
 					d->draw(canvas);

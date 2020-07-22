@@ -263,7 +263,7 @@ namespace flame
 	inline Vec2c sto<Vec2c>(const char* s)
 	{
 		Vec2i ret;
-		sscanf(s, "%d;%d", &ret.x(), &ret.y());
+		sscanf(s, "%d,%d", &ret.x(), &ret.y());
 		return Vec2c(ret);
 	}
 
@@ -271,7 +271,7 @@ namespace flame
 	inline Vec3c sto<Vec3c>(const char* s)
 	{
 		Vec3i ret;
-		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		sscanf(s, "%d,%d,%d", &ret.x(), &ret.y(), &ret.z());
 		return Vec3c(ret);
 	}
 
@@ -279,7 +279,7 @@ namespace flame
 	inline Vec4c sto<Vec4c>(const char* s)
 	{
 		Vec4i ret;
-		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		sscanf(s, "%d,%d,%d,%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return Vec4c(ret);
 	}
 
@@ -295,7 +295,7 @@ namespace flame
 	inline Vec2i sto<Vec2i>(const char* s)
 	{
 		Vec2i ret;
-		sscanf(s, "%d;%d", &ret.x(), &ret.y());
+		sscanf(s, "%d,%d", &ret.x(), &ret.y());
 		return ret;
 	}
 
@@ -303,7 +303,7 @@ namespace flame
 	inline Vec3i sto<Vec3i>(const char* s)
 	{
 		Vec3i ret;
-		sscanf(s, "%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		sscanf(s, "%d,%d,%d", &ret.x(), &ret.y(), &ret.z());
 		return ret;
 	}
 
@@ -311,7 +311,7 @@ namespace flame
 	inline Vec4i sto<Vec4i>(const char* s)
 	{
 		Vec4i ret;
-		sscanf(s, "%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		sscanf(s, "%d,%d,%d,%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 
@@ -327,7 +327,7 @@ namespace flame
 	inline Vec2u sto<Vec2u>(const char* s)
 	{
 		Vec2u ret;
-		sscanf(s, "%u;%u", &ret.x(), &ret.y());
+		sscanf(s, "%u,%u", &ret.x(), &ret.y());
 		return ret;
 	}
 
@@ -335,7 +335,7 @@ namespace flame
 	inline Vec3u sto<Vec3u>(const char* s)
 	{
 		Vec3u ret;
-		sscanf(s, "%u;%u;%u", &ret.x(), &ret.y(), &ret.z());
+		sscanf(s, "%u,%u,%u", &ret.x(), &ret.y(), &ret.z());
 		return ret;
 	}
 
@@ -343,7 +343,7 @@ namespace flame
 	inline Vec4u sto<Vec4u>(const char* s)
 	{
 		Vec4u ret;
-		sscanf(s, "%u;%u;%u;%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		sscanf(s, "%u,%u,%u,%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 
@@ -359,7 +359,7 @@ namespace flame
 	inline Vec2f sto<Vec2f>(const char* s)
 	{
 		Vec2f ret;
-		sscanf(s, "%f;%f", &ret.x(), &ret.y());
+		sscanf(s, "%f,%f", &ret.x(), &ret.y());
 		return ret;
 	}
 
@@ -367,7 +367,7 @@ namespace flame
 	inline Vec3f sto<Vec3f>(const char* s)
 	{
 		Vec3f ret;
-		sscanf(s, "%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
+		sscanf(s, "%f,%f,%f", &ret.x(), &ret.y(), &ret.z());
 		return ret;
 	}
 
@@ -375,7 +375,7 @@ namespace flame
 	inline Vec4f sto<Vec4f>(const char* s)
 	{
 		Vec4f ret;
-		sscanf(s, "%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		sscanf(s, "%f,%f,%f,%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 
@@ -430,7 +430,7 @@ namespace flame
 	inline Vec2c sto<Vec2c>(const wchar_t* s)
 	{
 		Vec2i ret;
-		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
+		swscanf(s, L"%d,%d", &ret.x(), &ret.y());
 		return Vec2c(ret);
 	}
 
@@ -438,7 +438,7 @@ namespace flame
 	inline Vec3c sto<Vec3c>(const wchar_t* s)
 	{
 		Vec3i ret;
-		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		swscanf(s, L"%d,%d,%d", &ret.x(), &ret.y(), &ret.z());
 		return Vec3c(ret);
 	}
 
@@ -446,7 +446,7 @@ namespace flame
 	inline Vec4c sto<Vec4c>(const wchar_t* s)
 	{
 		Vec4i ret;
-		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		swscanf(s, L"%d,%d,%d,%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return Vec4c(ret);
 	}
 
@@ -462,7 +462,7 @@ namespace flame
 	inline Vec2i sto<Vec2i>(const wchar_t* s)
 	{
 		Vec2i ret;
-		swscanf(s, L"%d;%d", &ret.x(), &ret.y());
+		swscanf(s, L"%d,%d", &ret.x(), &ret.y());
 		return ret;
 	}
 
@@ -470,7 +470,7 @@ namespace flame
 	inline Vec3i sto<Vec3i>(const wchar_t* s)
 	{
 		Vec3i ret;
-		swscanf(s, L"%d;%d;%d", &ret.x(), &ret.y(), &ret.z());
+		swscanf(s, L"%d,%d,%d", &ret.x(), &ret.y(), &ret.z());
 		return ret;
 	}
 
@@ -478,7 +478,7 @@ namespace flame
 	inline Vec4i sto<Vec4i>(const wchar_t* s)
 	{
 		Vec4i ret;
-		swscanf(s, L"%d;%d;%d;%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		swscanf(s, L"%d,%d,%d,%d", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 
@@ -494,7 +494,7 @@ namespace flame
 	inline Vec2u sto<Vec2u>(const wchar_t* s)
 	{
 		Vec2u ret;
-		swscanf(s, L"%u;%u", &ret.x(), &ret.y());
+		swscanf(s, L"%u,%u", &ret.x(), &ret.y());
 		return ret;
 	}
 
@@ -502,7 +502,7 @@ namespace flame
 	inline Vec3u sto<Vec3u>(const wchar_t* s)
 	{
 		Vec3u ret;
-		swscanf(s, L"%u;%u;%u", &ret.x(), &ret.y(), &ret.z());
+		swscanf(s, L"%u,%u,%u", &ret.x(), &ret.y(), &ret.z());
 		return ret;
 	}
 
@@ -510,7 +510,7 @@ namespace flame
 	inline Vec4u sto<Vec4u>(const wchar_t* s)
 	{
 		Vec4u ret;
-		swscanf(s, L"%u;%u;%u;%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		swscanf(s, L"%u,%u,%u,%u", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 
@@ -526,7 +526,7 @@ namespace flame
 	inline Vec2f sto<Vec2f>(const wchar_t* s)
 	{
 		Vec2f ret;
-		swscanf(s, L"%f;%f", &ret.x(), &ret.y());
+		swscanf(s, L"%f,%f", &ret.x(), &ret.y());
 		return ret;
 	}
 
@@ -534,7 +534,7 @@ namespace flame
 	inline Vec3f sto<Vec3f>(const wchar_t* s)
 	{
 		Vec3f ret;
-		swscanf(s, L"%f;%f;%f", &ret.x(), &ret.y(), &ret.z());
+		swscanf(s, L"%f,%f,%f", &ret.x(), &ret.y(), &ret.z());
 		return ret;
 	}
 
@@ -542,7 +542,7 @@ namespace flame
 	inline Vec4f sto<Vec4f>(const wchar_t* s)
 	{
 		Vec4f ret;
-		swscanf(s, L"%f;%f;%f;%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
+		swscanf(s, L"%f,%f,%f,%f", &ret.x(), &ret.y(), &ret.z(), &ret.w());
 		return ret;
 	}
 

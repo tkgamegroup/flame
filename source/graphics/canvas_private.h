@@ -37,8 +37,6 @@ namespace flame
 
 			uint set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas) override;
 
-			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
-
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
 
@@ -121,8 +119,8 @@ namespace flame
 
 			void stroke(const Vec4c& col, float thickness, bool aa = false) override;
 			void fill(const Vec4c& col, bool aa = false) override;
-			void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col) override;
-			void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col);
+			void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy) override;
+			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col);
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;
@@ -140,11 +138,6 @@ namespace flame
 		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas)
 		{
 			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, filename ? filename : L"", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
-		}
-
-		inline void CanvasBridge::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
-		{
-			((CanvasPrivate*)this)->add_image(res_id, tile_id, pos, size, uv0, uv1, tint_col);
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)

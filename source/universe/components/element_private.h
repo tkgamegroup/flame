@@ -14,6 +14,7 @@ namespace flame
 		float y = 0.f;
 		float width = 0.f;
 		float height = 0.f;
+		Vec4f padding = Vec4f(0.f);
 		float pivotx = 0.f;
 		float pivoty = 0.f;
 		float scalex = 1.f;
@@ -22,11 +23,11 @@ namespace flame
 		float skewx = 0.f;
 		float skewy = 0.f;
 
-		Mat<3, 2, float> transform = Mat<3, 2, float>(1.f);
+		Mat23f transform = Mat23f(1.f);
 		bool transform_dirty = true;
-		Vec2f p00, p10, p11, p01;
+		Vec2f points[8];
 
-		Vec3c fill_color = Vec3c(255);
+		Vec4c fill_color = Vec4c(255);
 
 		std::vector<Drawer*> drawers;
 
@@ -41,6 +42,9 @@ namespace flame
 
 		float get_height() const override { return height; }
 		void set_height(float h) override;
+
+		Vec4f get_padding() override { return padding; }
+		void set_padding(const Vec4f& p) override;
 
 		float get_pivotx() const override { return pivotx; }
 		void set_pivotx(float p) override;
@@ -64,22 +68,21 @@ namespace flame
 		void set_skewy(float s) override;
 
 		void update_transform();
-		const Mat<3, 2, float>& get_transform();
-		Vec2f get_p00() override;
-		Vec2f get_p10() override;
-		Vec2f get_p11() override;
-		Vec2f get_p01() override;
+		const Mat23f& get_transform();
+		Vec2f get_point(uint idx) override;
 
-		Vec3c get_fill_color() override { return fill_color; }
-		void set_fill_color(const Vec3c& c) override;
+		Vec4c get_fill_color() override { return fill_color; }
+		void set_fill_color(const Vec4c& c) override;
+
+		void mark_transform_dirty() override;
+		void mark_drawing_dirty() override;
+
+		bool contains(const Vec2f& p) override;
 
 		void on_entered_world() override;
 		void on_left_world() override;
 		void on_entity_visibility_changed() override;
 		void on_entity_position_changed() override;
-
-		void mark_transform_dirty() override;
-		void mark_drawing_dirty() override;
 
 		void draw(graphics::Canvas* canvas);
 

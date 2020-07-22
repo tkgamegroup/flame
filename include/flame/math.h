@@ -998,7 +998,7 @@ namespace flame
 		return cv;
 	}
 
-	template <uint N, uint M, class T>
+	template <uint M, uint N, class T>
 	struct Mat
 	{
 		Vec<N, T> v_[M];
@@ -1287,6 +1287,7 @@ namespace flame
 	using Mat2f = Mat<2, 2, float>;
 	using Mat3f = Mat<3, 3, float>;
 	using Mat4f = Mat<4, 4, float>;
+	using Mat23f = Mat<2, 3, float>;
 
 	template <class T>
 	Vec<3, T> x_axis()

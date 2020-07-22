@@ -42,8 +42,8 @@ namespace flame
 
 			virtual void stroke(const Vec4c& col, float thickness, bool aa = false) = 0;
 			virtual void fill(const Vec4c& col, bool aa = false) = 0;
-			virtual void add_text(uint res_id, const wchar_t* text, uint size, const Vec2f& pos, const Vec4c& col) = 0;
-			virtual void add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
+			virtual void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx = Vec2f(1.f, 0.f), const Vec2f& axisy = Vec2f(0.f, 1.f)) = 0;
+			virtual void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
 
 			virtual Vec4f get_scissor() const = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;

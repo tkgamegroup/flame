@@ -48,7 +48,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"8.prefab";
+auto test_prefab = L"button.prefab";
 
 int main(int argc, char** args)
 {

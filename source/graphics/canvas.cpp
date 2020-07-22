@@ -665,13 +665,13 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_text(uint res_id, const wchar_t* text, uint font_size, const Vec2f& pos, const Vec4c& col)
+		void CanvasPrivate::add_text(uint res_id, const wchar_t* text, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy)
 		{
 			auto atlas = resources[res_id]->font_atlas;
 
 			add_draw_cmd(res_id);
 
-			auto _pos = pos;
+			auto p = Vec2f(0.f);
 
 			while (*text)
 			{
@@ -680,8 +680,8 @@ namespace flame
 					break;
 				if (ch == '\n')
 				{
-					_pos.y() += font_size;
-					_pos.x() = pos.x();
+					p.y() += font_size;
+					p.x() = 0.f;
 				}
 				else if (ch != '\r')
 				{
@@ -689,53 +689,51 @@ namespace flame
 						ch = ' ';
 
 					auto g = atlas->get_glyph(ch, font_size);
+					auto o = p + Vec2f(g->off);
+					auto s = Vec2f(g->size);
+					auto uv = g->uv;
+					auto uv0 = Vec2f(uv.x(), uv.y());
+					auto uv1 = Vec2f(uv.z(), uv.w());
 
-					auto p = _pos + Vec2f(g->off);
-					auto size = Vec2f(g->size);
-					if (rect_overlapping(Vec4f(Vec2f(p.x(), p.y() - size.y()), Vec2f(p.x() + size.x(), p.y())), curr_scissor))
-					{
-						auto uv = g->uv;
-						auto uv0 = Vec2f(uv.x(), uv.y());
-						auto uv1 = Vec2f(uv.z(), uv.w());
+					auto vtx_cnt = *p_vtx_cnt;
 
-						auto vtx_cnt = *p_vtx_cnt;
+					add_vtx(pos + o.x() * axisx + o.y() * axisy, uv0, col);
+					add_vtx(pos + o.x() * axisx + (o.y() - s.y()) * axisy, Vec2f(uv0.x(), uv1.y()), col);
+					add_vtx(pos + (o.x() + s.x()) * axisx + (o.y() - s.y()) * axisy, uv1, col);
+					add_vtx(pos + (o.x() + s.x()) * axisx + o.y() * axisy, Vec2f(uv1.x(), uv0.y()), col);
+					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 
-						add_vtx(p, uv0, col);
-						add_vtx(p + Vec2f(0.f, -size.y()), Vec2f(uv0.x(), uv1.y()), col);
-						add_vtx(p + Vec2f(size.x(), -size.y()), uv1, col);
-						add_vtx(p + Vec2f(size.x(), 0.f), Vec2f(uv1.x(), uv0.y()), col);
-						add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
-					}
-
-					_pos.x() += g->advance;
+					p.x() += g->advance;
 				}
 
 				text++;
 			}
 		}
 
-		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, Vec2f uv0, Vec2f uv1, const Vec4c& tint_col)
+		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
 			res_id = min(res_id, resources_count - 1);
 			auto atlas = resources[res_id]->image_atlas;
+			auto _uv0 = uv0;
+			auto _uv1 = uv1;
 			if (atlas)
 			{
 				auto tile = atlas->tiles[tile_id].get();
 				auto tuv = tile->uv;
 				auto tuv0 = Vec2f(tuv.x(), tuv.y());
 				auto tuv1 = Vec2f(tuv.z(), tuv.w());
-				uv0 = mix(tuv0, tuv1, uv0);
-				uv1 = mix(tuv0, tuv1, uv1);
+				_uv0 = mix(tuv0, tuv1, uv0);
+				_uv1 = mix(tuv0, tuv1, uv1);
 			}
 
 			add_draw_cmd(res_id);
 
 			auto vtx_cnt = *p_vtx_cnt;
 
-			add_vtx(pos, uv0, tint_col);
-			add_vtx(pos + Vec2f(0.f, size.y()), Vec2f(uv0.x(), uv1.y()), tint_col);
-			add_vtx(pos + Vec2f(size.x(), size.y()), uv1, tint_col);
-			add_vtx(pos + Vec2f(size.x(), 0.f), Vec2f(uv1.x(), uv0.y()), tint_col);
+			add_vtx(LT, _uv0, tint_col);
+			add_vtx(RT, Vec2f(_uv1.x(), _uv0.y()), tint_col);
+			add_vtx(RB, _uv1, tint_col);
+			add_vtx(LB, Vec2f(_uv0.x(), _uv1.y()), tint_col);
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 

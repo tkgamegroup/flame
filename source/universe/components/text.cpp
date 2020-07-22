@@ -60,7 +60,7 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(0, text.c_str(), 14, element->p00, Vec4c(0, 0, 0, 255));
+		canvas->add_text(0, text.c_str(), 14, Vec4c(0, 0, 0, 255), element->points[4], Vec2f(element->transform[0]), Vec2f(element->transform[1]));
 	}
 
 	Vec2f cTextPrivate::measure()

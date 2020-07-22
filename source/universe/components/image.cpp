@@ -109,7 +109,9 @@ namespace flame
 
 	void cImagePrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_image(res_id, tile_id, element->p00, Vec2f(element->width, element->height), uv0, uv1, Vec4c(255));
+		canvas->add_image(res_id, tile_id, 
+			element->points[4], element->points[5], element->points[6], element->points[7],
+			uv0, uv1, Vec4c(255));
 	}
 
 	cImagePrivate* cImagePrivate::create()

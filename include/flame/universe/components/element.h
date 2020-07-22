@@ -36,6 +36,11 @@ namespace flame
 		virtual float get_height() const = 0;
 		virtual void set_height(float h) = 0;
 
+		// left top right bottom
+		virtual Vec4f get_padding() = 0;
+		// left top right bottom
+		virtual void set_padding(const Vec4f& p) = 0;
+
 		// 0 - 1
 		virtual float get_pivotx() const = 0;
 		// 0 - 1
@@ -61,24 +66,17 @@ namespace flame
 		virtual float get_skewy() const = 0;
 		virtual void set_skewy(float angle) = 0;
 
-		virtual Vec2f get_p00() = 0;
-		virtual Vec2f get_p10() = 0;
-		virtual Vec2f get_p11() = 0;
-		virtual Vec2f get_p01() = 0;
+		// 0-3: edge points, 4-7: content points, left-top, right-top, right-bottom, left-bottom
+		virtual Vec2f get_point(uint idx) = 0;
 
-		virtual Vec3c get_fill_color() = 0;
-		virtual void set_fill_color(const Vec3c& c) = 0;
+		virtual Vec4c get_fill_color() = 0;
+		virtual void set_fill_color(const Vec4c& c) = 0;
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;
 
-		inline bool contains(const Vec2f& p)
-		{
-			Vec2f points[] = { get_p00(), get_p10(), get_p11(), get_p01() };
-			return convex_contains<float>(p, points);
-		}
+		virtual bool contains(const Vec2f& p) = 0;
 
-		//FLAME_RV(Vec4f, padding); // L T R B
 		//FLAME_RV(float, alpha);
 		//FLAME_RV(Vec4f, roundness);
 		//FLAME_RV(uint, roundness_lod);
