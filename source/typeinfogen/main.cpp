@@ -322,6 +322,7 @@ int main(int argc, char **args)
 	struct DesiredEnum
 	{
 		std::string name;
+		std::string full_name;
 	};
 	struct DesiredFunction
 	{
@@ -383,13 +384,27 @@ int main(int argc, char **args)
 		for (auto i = 0; i < lines.size(); i++)
 		{
 			static std::regex reg_ns(R"(^namespace\s+(\w+))");
-			static std::regex reg_R(R"(FLAME_R\((.*)\))");
+			static std::regex reg_RE(R"(FLAME_RE\((.*)\))");
+			static std::regex reg_RU(R"(FLAME_RU\((.*)\))");
 			static std::regex reg_RV(R"(FLAME_RV\((.*)\))");
 			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]+)\))");
 			std::smatch res;
 			if (std::regex_search(lines[i], res, reg_ns))
 				current_namespaces.emplace_back(braces_level, res[1].str());
-			else if (std::regex_search(lines[i], res, reg_R))
+			else if (std::regex_search(lines[i], res, reg_RE))
+			{
+				DesiredEnum de;
+
+				auto str = res[1].str();
+				SUS::remove_spaces(str);
+				de.name = str;
+				for (auto& ns : current_namespaces)
+					de.full_name += ns.second + "::";
+				de.full_name += de.name;
+
+				desired_enums.push_back(de);
+			}
+			else if (std::regex_search(lines[i], res, reg_RU))
 			{
 				DesiredUDT du;
 
@@ -500,15 +515,15 @@ int main(int argc, char **args)
 
 	std::ofstream typeinfo_code(code_path);
 
-	auto add_enum = [&](TagAndName& desc, IDiaSymbol* s_type) {
-		if (!has_enum(desc.name))
+	auto add_enum = [&](const std::string& name, IDiaSymbol* s_type) {
+		if (!has_enum(name))
 		{
-			enums.emplace(desc.name, 0);
+			enums.emplace(name, 0);
 
 			if (!n_enums)
 				n_enums = file_root.append_child("enums");
 			auto n_enum = n_enums.append_child("enum");
-			n_enum.append_attribute("name").set_value(desc.name.c_str());
+			n_enum.append_attribute("name").set_value(name.c_str());
 
 			auto n_items = n_enum.append_child("items");
 
@@ -535,6 +550,24 @@ int main(int argc, char **args)
 			s_items->Release();
 		}
 	};
+
+	IDiaEnumSymbols* s_enums;
+	global->findChildren(SymTagEnum, NULL, nsNone, &s_enums);
+	IDiaSymbol* s_enum;
+	while (SUCCEEDED(s_enums->Next(1, &s_enum, &ul)) && (ul == 1))
+	{
+		s_enum->get_name(&pwname);
+		auto name = w2s(pwname);
+		for (auto& de : desired_enums)
+		{
+			if (de.full_name == name)
+			{
+				add_enum(name, s_enum);
+
+				break;
+			}
+		}
+	}
 
 	IDiaEnumSymbols* s_udts;
 	global->findChildren(SymTagUDT, NULL, nsNone, &s_udts);
@@ -620,7 +653,7 @@ int main(int argc, char **args)
 
 									auto desc = typeinfo_from_symbol(s_parameter, 0);
 									if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-										add_enum(desc, s_type);
+										add_enum(desc.name, s_type);
 
 									if (!n_parameters)
 										n_parameters = n_function.append_child("parameters");
@@ -681,7 +714,7 @@ int main(int argc, char **args)
 
 							auto desc = typeinfo_from_symbol(s_type, flags);
 							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-								add_enum(desc, s_type);
+								add_enum(desc.name, s_type);
 
 							if (!n_variables)
 								n_variables = n_udt.prepend_child("variables");

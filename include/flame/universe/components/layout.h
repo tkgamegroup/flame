@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct FLAME_R(cLayout : Component, all)
+	struct FLAME_RU(cLayout : Component, all)
 	{
 		inline static auto type_name = "cLayout";
 		inline static auto type_hash = ch(type_name);

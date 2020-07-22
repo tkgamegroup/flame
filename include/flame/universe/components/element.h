@@ -9,7 +9,7 @@ namespace flame
 		struct Canvas;
 	}
 
-	struct FLAME_R(cElement : Component, all)
+	struct FLAME_RU(cElement : Component, all)
 	{
 		inline static auto type_name = "cElement";
 		inline static auto type_hash = ch(type_name);

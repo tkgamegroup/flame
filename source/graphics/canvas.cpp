@@ -231,17 +231,17 @@ namespace flame
 				fbs_el.resize(views.size());
 				for (auto i = 0; i < fbs_el.size(); i++)
 					fbs_el[i].reset(new FramebufferPrivate(device, rp_el, { &views[i], 1 }));
-				img_bk.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, target_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-				{
-					auto view = img_bk->default_view.get();
-					fb_bk.reset(new FramebufferPrivate(device, rp_bk, { &view, 1 }));
-				}
-				auto sp = device->sampler_nearest.get();
-				for (auto i = 0; i < views.size(); i++)
-				{
-					ds_bk[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_bk));
-					ds_bk[i]->set_image(0, 0, views[i], sp);
-				}
+				//img_bk.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, target_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				//{
+				//	auto view = img_bk->default_view.get();
+				//	fb_bk.reset(new FramebufferPrivate(device, rp_bk, { &view, 1 }));
+				//}
+				//auto sp = device->sampler_nearest.get();
+				//for (auto i = 0; i < views.size(); i++)
+				//{
+				//	ds_bk[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_bk));
+				//	ds_bk[i]->set_image(0, 0, views[i], sp);
+				//}
 			}
 		}
 

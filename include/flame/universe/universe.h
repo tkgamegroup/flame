@@ -10,7 +10,7 @@
 
 namespace flame
 {
-	enum StateFlags
+	enum FLAME_RE(StateFlags)
 	{
 		StateNone = 0,
 		StateHovering = 1 << 0,

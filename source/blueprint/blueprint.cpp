@@ -1015,7 +1015,7 @@ namespace flame
 		return bp;
 	}
 
-	struct FLAME_R(R_MakeVec2i)
+	struct FLAME_RU(R_MakeVec2i)
 	{
 		FLAME_RV(int, x, i);
 		FLAME_RV(int, y, i);
@@ -1028,7 +1028,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec2i)
+	struct FLAME_RU(R_BreakVec2i)
 	{
 		FLAME_RV(Vec2i, in, i);
 
@@ -1042,7 +1042,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec3i)
+	struct FLAME_RU(R_MakeVec3i)
 	{
 		FLAME_RV(int, x, i);
 		FLAME_RV(int, y, i);
@@ -1056,7 +1056,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec3i)
+	struct FLAME_RU(R_BreakVec3i)
 	{
 		FLAME_RV(Vec3i, in, i);
 
@@ -1072,7 +1072,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec4i)
+	struct FLAME_RU(R_MakeVec4i)
 	{
 		FLAME_RV(int, x, i);
 		FLAME_RV(int, y, i);
@@ -1087,7 +1087,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec4i)
+	struct FLAME_RU(R_BreakVec4i)
 	{
 		FLAME_RV(Vec4i, in, i);
 
@@ -1105,7 +1105,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec2u)
+	struct FLAME_RU(R_MakeVec2u)
 	{
 		FLAME_RV(uint, x, i);
 		FLAME_RV(uint, y, i);
@@ -1118,7 +1118,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec2u)
+	struct FLAME_RU(R_BreakVec2u)
 	{
 		FLAME_RV(Vec2u, in, i);
 
@@ -1132,7 +1132,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec3u)
+	struct FLAME_RU(R_MakeVec3u)
 	{
 		FLAME_RV(uint, x, i);
 		FLAME_RV(uint, y, i);
@@ -1146,7 +1146,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec3u)
+	struct FLAME_RU(R_BreakVec3u)
 	{
 		FLAME_RV(Vec3u, in, i);
 
@@ -1162,7 +1162,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec4u)
+	struct FLAME_RU(R_MakeVec4u)
 	{
 		FLAME_RV(uint, x, i);
 		FLAME_RV(uint, y, i);
@@ -1177,7 +1177,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec4u)
+	struct FLAME_RU(R_BreakVec4u)
 	{
 		FLAME_RV(Vec4u, in, i);
 
@@ -1195,7 +1195,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec2f)
+	struct FLAME_RU(R_MakeVec2f)
 	{
 		FLAME_RV(float, x, i);
 		FLAME_RV(float, y, i);
@@ -1208,7 +1208,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec2f)
+	struct FLAME_RU(R_BreakVec2f)
 	{
 		FLAME_RV(Vec2f, in, i);
 
@@ -1222,7 +1222,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec3f)
+	struct FLAME_RU(R_MakeVec3f)
 	{
 		FLAME_RV(float, x, i);
 		FLAME_RV(float, y, i);
@@ -1236,7 +1236,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec3f)
+	struct FLAME_RU(R_BreakVec3f)
 	{
 		FLAME_RV(Vec3f, in, i);
 
@@ -1252,7 +1252,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec4f)
+	struct FLAME_RU(R_MakeVec4f)
 	{
 		FLAME_RV(float, x, i);
 		FLAME_RV(float, y, i);
@@ -1267,7 +1267,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec4f)
+	struct FLAME_RU(R_BreakVec4f)
 	{
 		FLAME_RV(Vec4f, in, i);
 
@@ -1285,7 +1285,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec2c)
+	struct FLAME_RU(R_MakeVec2c)
 	{
 		FLAME_RV(uchar, x, i);
 		FLAME_RV(uchar, y, i);
@@ -1298,7 +1298,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec2c)
+	struct FLAME_RU(R_BreakVec2c)
 	{
 		FLAME_RV(Vec2c, in, i);
 
@@ -1312,7 +1312,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec3c)
+	struct FLAME_RU(R_MakeVec3c)
 	{
 		FLAME_RV(uchar, x, i);
 		FLAME_RV(uchar, y, i);
@@ -1326,7 +1326,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec3c)
+	struct FLAME_RU(R_BreakVec3c)
 	{
 		FLAME_RV(Vec3c, in, i);
 
@@ -1342,7 +1342,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_MakeVec4c)
+	struct FLAME_RU(R_MakeVec4c)
 	{
 		FLAME_RV(uchar, x, i);
 		FLAME_RV(uchar, y, i);
@@ -1357,7 +1357,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_BreakVec4c)
+	struct FLAME_RU(R_BreakVec4c)
 	{
 		FLAME_RV(Vec4c, in, i);
 
@@ -1375,7 +1375,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Add)
+	struct FLAME_RU(R_Add)
 	{
 		FLAME_RV(float, a, i);
 		FLAME_RV(float, b, i);
@@ -1388,7 +1388,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Multiple)
+	struct FLAME_RU(R_Multiple)
 	{
 		FLAME_RV(float, a, i);
 		FLAME_RV(float, b, i);
@@ -1401,7 +1401,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Time)
+	struct FLAME_RU(R_Time)
 	{
 		FLAME_RV(float, delta, o);
 		FLAME_RV(float, total, o);
@@ -1413,7 +1413,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Sin)
+	struct FLAME_RU(R_Sin)
 	{
 		FLAME_RV(float, t, i);
 
@@ -1425,7 +1425,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Linear1d)
+	struct FLAME_RU(R_Linear1d)
 	{
 		FLAME_RV(float, a, i);
 		FLAME_RV(float, b, i);
@@ -1439,7 +1439,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Linear2d)
+	struct FLAME_RU(R_Linear2d)
 	{
 		FLAME_RV(Vec2f, a, i);
 		FLAME_RV(Vec2f, b, i);
@@ -1453,7 +1453,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Trace)
+	struct FLAME_RU(R_Trace)
 	{
 		FLAME_RV(float, target, i);
 		FLAME_RV(float, step, i);
@@ -1467,7 +1467,7 @@ namespace flame
 		}
 	};
 
-	struct FLAME_R(R_Print)
+	struct FLAME_RU(R_Print)
 	{
 		FLAME_RV(StringA, text, i);
 

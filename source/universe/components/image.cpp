@@ -98,7 +98,7 @@ namespace flame
 
 	Vec2f cImagePrivate::measure()
 	{
-		if (!canvas)
+		if (!canvas || res_id == 0xffffffff)
 			return Vec2f(0.f);
 		auto r = canvas->get_resource(res_id);
 		auto ia = r->get_image_atlas();

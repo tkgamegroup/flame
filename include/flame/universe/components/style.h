@@ -8,7 +8,7 @@ namespace flame
 //	struct cText;
 //	struct cEventReceiver;
 
-	struct FLAME_R(cStyle : Component, all)
+	struct FLAME_RU(cStyle : Component, all)
 	{
 		inline static auto type_name = "cStyle";
 		inline static auto type_hash = ch(type_name);
@@ -18,30 +18,12 @@ namespace flame
 		{
 		}
 
-		virtual void add_rule(StateFlags state, const char* rule) = 0;
+		virtual const char* get_rule() const = 0;
+		virtual void set_rule(const char* rule) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cStyle* create();
 	};
 
-//	struct cStyleColor : Component
-//	{
-//		cElement* element;
-//		cEventReceiver* event_receiver;
-//
-//		Vec4c color_normal;
-//		Vec4c color_hovering; 
-//		Vec4c color_active;
-//
-//		cStyleColor() :
-//			Component("cStyleColor")
-//		{
-//		}
-//
-//		FLAME_UNIVERSE_EXPORTS void style();
-//
-//		FLAME_UNIVERSE_EXPORTS static cStyleColor* create();
-//	};
-//
 //	struct cStyleColor2 : Component
 //	{
 //		cElement* element;

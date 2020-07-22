@@ -6,7 +6,7 @@ namespace flame
 {
 //	struct cElement;
 //
-	struct FLAME_R(cAligner : Component, all)
+	struct FLAME_RU(cAligner : Component, all)
 	{
 		inline static auto type_name = "cAligner";
 		inline static auto type_hash = ch(type_name);

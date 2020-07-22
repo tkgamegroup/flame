@@ -432,27 +432,6 @@ namespace flame
 					dst->add_component((Component*)c);
 					for (auto a : n_c.attributes())
 						set_attribute(c, udt, a.name(), a.value());
-					for (auto i : n_c.children())
-					{
-						auto f = udt->find_function(i.name());
-						if (f)
-						{
-							auto sp = SUS::split(i.child_value(), ',');
-							std::vector<void*> parms(f->get_parameters_count());
-							std::vector<std::pair<TypeInfo*, void*>> cleanups;
-							for (auto i = 0; i < parms.size(); i++)
-							{
-								auto type = f->get_parameter(i);
-								auto p = type->create();
-								type->unserialize(p, sp[i].c_str());
-								parms[i] = type->get_tag() == TypePointer ? *(void**)p : p;
-								cleanups.emplace_back(type, p);
-							}
-							f->call(c, nullptr, parms.data());
-							for (auto& c : cleanups)
-								c.first->destroy(c.second);
-						}
-					}
 				}
 			}
 		}

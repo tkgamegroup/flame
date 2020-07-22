@@ -83,7 +83,7 @@ namespace flame
 			s -= ret;
 			if (i < N - 1)
 			{
-				*p = ';';
+				*p = ',';
 				p++;
 				s--;
 			}
@@ -176,7 +176,7 @@ namespace flame
 			s -= ret;
 			if (i < N - 1)
 			{
-				*p = ';';
+				*p = ',';
 				p++;
 				s--;
 			}
