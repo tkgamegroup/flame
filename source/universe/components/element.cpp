@@ -156,7 +156,25 @@ namespace flame
 
 	void cElementPrivate::set_fill_color(const Vec4c& c)
 	{
+		if (fill_color == c)
+			return;
 		fill_color = c;
+		mark_drawing_dirty();
+	}
+
+	void cElementPrivate::set_border(float b)
+	{
+		if (border == b)
+			return;
+		border = b;
+		mark_drawing_dirty();
+	}
+
+	void cElementPrivate::set_border_color(const Vec4c& c)
+	{
+		if (border_color == c)
+			return;
+		border_color = c;
 		mark_drawing_dirty();
 	}
 
@@ -245,6 +263,7 @@ namespace flame
 //			if (alpha > 0.f)
 //			{
 				update_transform();
+
 				if (fill_color.a() > 0)
 				{
 					canvas->begin_path();
@@ -255,8 +274,20 @@ namespace flame
 					canvas->fill(fill_color);
 				}
 
+				if (border > 0.f && border_color.a() > 0)
+				{
+					canvas->begin_path();
+					canvas->move_to(points[0].x(), points[0].y());
+					canvas->line_to(points[1].x(), points[1].y());
+					canvas->line_to(points[2].x(), points[2].y());
+					canvas->line_to(points[3].x(), points[3].y());
+					canvas->line_to(points[0].x(), points[0].y());
+					canvas->stroke(border_color, border);
+				}
+
 				for (auto d : drawers)
 					d->draw(canvas);
+
 //				auto p = floor(global_pos);
 //				auto s = floor(global_size);
 //				auto r = floor(roundness * global_scale);

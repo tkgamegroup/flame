@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-      <cElement />
+      <cElement x="1.0" y="1.0" width="20.0" height="10.0" border="1.0" />
   </entity>
 </prefab>

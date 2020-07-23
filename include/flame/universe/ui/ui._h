@@ -599,13 +599,6 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_element()
-		{
-			auto e = e_empty();
-			c_element();
-			return e;
-		}
-
 		inline Entity* e_begin_layout(LayoutType type = LayoutFree, float item_padding = 0.f, bool width_fit_children = true, bool height_fit_children = true)
 		{
 			auto e = e_empty();
@@ -619,35 +612,6 @@ namespace flame
 		inline void e_end_layout()
 		{
 			parents.pop();
-		}
-
-		inline Entity* e_text(const wchar_t* text)
-		{
-			auto e = e_empty();
-			c_element();
-			auto t = c_text();
-			if (text)
-				t->set_text(text);
-			return e;
-		}
-
-		inline Entity* e_button(const wchar_t* text, void(*on_clicked)(Capture& c) = nullptr, const Capture& _capture = Capture(), bool use_style = true)
-		{
-			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(text);
-			auto cer = c_event_receiver();
-			if (on_clicked)
-				cer->clicked_listeners.add(on_clicked, _capture);
-			if (use_style)
-			{
-				auto cs = c_style_color();
-				cs->color_normal = style(ButtonColorNormal).c;
-				cs->color_hovering = style(ButtonColorHovering).c;
-				cs->color_active = style(ButtonColorActive).c;
-				cs->style();
-			}
-			return e;
 		}
 
 		inline Entity* e_checkbox(bool checked = false)

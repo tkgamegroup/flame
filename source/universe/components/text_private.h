@@ -33,11 +33,6 @@ namespace flame
 		Vec2f measure() override;
 
 		static cTextPrivate* create();
-
-		//cTextPrivate();
-		//cTextPrivate::~cTextPrivate();
-		//void auto_set_size();
-		//void on_event(EntityEvent e, void* t) override;
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

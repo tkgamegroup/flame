@@ -29,6 +29,9 @@ namespace flame
 
 		Vec4c fill_color = Vec4c(255);
 
+		float border = 0.f;
+		Vec4c border_color = Vec4c(0, 0, 0, 255);
+
 		std::vector<Drawer*> drawers;
 
 		float get_x() const override { return x; }
@@ -73,6 +76,12 @@ namespace flame
 
 		Vec4c get_fill_color() override { return fill_color; }
 		void set_fill_color(const Vec4c& c) override;
+
+		float get_border() override { return border; }
+		void set_border(float b) override;
+
+		Vec4c get_border_color() override { return border_color; }
+		void set_border_color(const Vec4c& c) override;
 
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;

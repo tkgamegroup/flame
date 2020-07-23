@@ -562,36 +562,25 @@ namespace flame
 	template <class CH>
 	struct StrUtils
 	{
-		static std::basic_string<CH> cut(const std::basic_string<CH>& str, int length) // < 0 means from end
+		static std::basic_string<CH> trim(const std::basic_string<CH>& str)
 		{
-			if (length < 0)
-				length = str.size() + length;
-			return std::basic_string<CH>(str.begin(), str.begin() + length);
-		}
-
-		static void trim(std::basic_string<CH>& str)
-		{
-			if (!str.empty())
+			auto begin = 0;
+			auto end = (int)str.size();
+			for (; begin < str.size(); begin++)
 			{
-				auto begin = 0;
-				auto end = (int)str.size();
-				for (; begin < str.size(); begin++)
-				{
-					auto ch = str[begin];
-					if (ch != ' ' && ch != '\t')
-						break;
-				}
-				for (; end > 0; end--)
-				{
-					auto ch = str[end - 1];
-					if (ch != ' ' && ch != '\t')
-						break;
-				}
-				if (begin >= end)
-					str = "";
-				else
-					str = std::basic_string<CH>(str.begin() + begin, str.begin() + end);
+				auto ch = str[begin];
+				if (ch != ' ' && ch != '\t')
+					break;
 			}
+			for (; end > 0; end--)
+			{
+				auto ch = str[end - 1];
+				if (ch != ' ' && ch != '\t')
+					break;
+			}
+			if (begin >= end)
+				return "";
+			return str.substr(begin, end);
 		}
 
 		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
@@ -903,7 +892,7 @@ namespace flame
 			std::getline(file, line);
 			if (!line.empty() && line[0] != ';')
 			{
-				SUS::trim(line);
+				line = SUS::trim(line);
 				if (line.size() > 2 && line.front() == '[' && line.back() == ']')
 				{
 					INI_Section section;
@@ -929,7 +918,7 @@ namespace flame
 					}
 					else
 						entry.value = line;
-					SUS::trim(entry.value);
+					entry.value = SUS::trim(entry.value);
 					if (std::regex_search(entry.value, res, reg_quot))
 						entry.value = res[1].str();
 

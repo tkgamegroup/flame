@@ -72,6 +72,11 @@ namespace flame
 		virtual Vec4c get_fill_color() = 0;
 		virtual void set_fill_color(const Vec4c& c) = 0;
 
+		virtual float get_border() = 0;
+		virtual void set_border(float b) = 0;
+		virtual Vec4c get_border_color() = 0;
+		virtual void set_border_color(const Vec4c& c) = 0;
+
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;
 

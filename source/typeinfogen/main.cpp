@@ -375,7 +375,7 @@ int main(int argc, char **args)
 		{
 			std::string line;
 			std::getline(file, line);
-			SUS::trim(line);
+			line = SUS::trim(line);
 			if (!line.empty())
 				lines.push_back(line);
 		}
@@ -464,12 +464,11 @@ int main(int argc, char **args)
 							auto braces_level = 0;
 							for (i = i + 1; i < lines.size(); i++)
 							{
-								auto l = lines[i];
-								SUS::trim(l);
+								auto l = SUS::trim(lines[i]);
 								code_lines.push_back(l);
 
-								braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
-								braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
+								braces_level += std::count(l.begin(), l.end(), '{');
+								braces_level -= std::count(l.begin(), l.end(), '}');
 								if (braces_level == 0)
 									break;
 							}
