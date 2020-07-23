@@ -665,7 +665,7 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_text(uint res_id, const wchar_t* text, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy)
+		void CanvasPrivate::add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy)
 		{
 			auto atlas = resources[res_id]->font_atlas;
 
@@ -673,9 +673,10 @@ namespace flame
 
 			auto p = Vec2f(0.f);
 
-			while (*text)
+			auto ptext = text_beg;
+			while ((!text_end || ptext == text_end) && *ptext)
 			{
-				auto ch = *text;
+				auto ch = *ptext;
 				if (!ch)
 					break;
 				if (ch == '\n')
@@ -706,7 +707,7 @@ namespace flame
 					p.x() += g->advance;
 				}
 
-				text++;
+				ptext++;
 			}
 		}
 

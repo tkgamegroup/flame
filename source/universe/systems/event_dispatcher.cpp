@@ -1,5 +1,4 @@
-//#include <flame/serialize.h>
-
+#include <flame/serialize.h>
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/event_receiver_private.h"
@@ -8,19 +7,13 @@
 
 namespace flame
 {
-//	sEventDispatcherPrivate::sEventDispatcherPrivate()
-//	{
-//		next_focusing = (cEventReceiver*)INVALID_POINTER;
-//
-//		char_input_compelete = true;
-//		for (auto i = 0; i < size(key_states); i++)
-//			key_states[i] = KeyStateUp;
-//
-//		mouse_scroll = 0;
-//		for (auto i = 0; i < size(mouse_buttons); i++)
-//			mouse_buttons[i] = KeyStateUp;
-//		dbclick_timer = -1.f;
-//	}
+	sEventDispatcherPrivate::sEventDispatcherPrivate()
+	{
+		for (auto i = 0; i < size(kbtns_temp); i++)
+			kbtns_temp[i] = KeyStateNull;
+		for (auto i = 0; i < size(mbtns_temp); i++)
+			mbtns_temp[i] = KeyStateNull;
+	}
 
 	void sEventDispatcherPrivate::on_added()
 	{
@@ -28,36 +21,36 @@ namespace flame
 		if (window)
 		{
 			key_listener = window->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
-//				auto thiz = c.thiz<sEventDispatcherPrivate>();
-//
-//				if (action == KeyStateNull)
-//				{
-//					if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
-//					{
-//						std::string ansi;
-//						ansi += thiz->char_inputs.back();
-//						ansi += value;
-//						auto wstr = a2w(ansi);
-//						thiz->char_inputs.back() = wstr[0];
-//						thiz->char_input_compelete = true;
-//					}
-//					else
-//					{
-//						thiz->char_inputs.push_back(value);
-//						if (value >= 0x80)
-//							thiz->char_input_compelete = false;
-//					}
-//				}
-//				else
-//				{
-//					thiz->key_states[value] = action | KeyStateJust;
-//					if (action == KeyStateDown)
-//						thiz->keydown_inputs.push_back((Key)value);
-//					else if (action == KeyStateUp)
-//						thiz->keyup_inputs.push_back((Key)value);
-//				}
-//
-//				thiz->dirty = true;
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				if (action == KeyStateNull)
+				{
+					if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
+					{
+						std::string ansi;
+						ansi += thiz->char_inputs.back();
+						ansi += value;
+						auto wstr = a2w(ansi);
+						thiz->char_inputs.back() = wstr[0];
+						thiz->char_input_compelete = true;
+					}
+					else
+					{
+						thiz->char_inputs.push_back(value);
+						if (value >= 0x80)
+							thiz->char_input_compelete = false;
+					}
+				}
+				else
+				{
+					thiz->kbtns_temp[value] = action;
+					if (action == KeyStateDown)
+						thiz->keydown_inputs.push_back((Key)value);
+					else if (action == KeyStateUp)
+						thiz->keyup_inputs.push_back((Key)value);
+				}
+
+				thiz->dirty = true;
 			}, Capture().set_thiz(this));
 
 			mouse_listener = window->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -66,17 +59,17 @@ namespace flame
 				if (action == KeyStateNull)
 				{
 					if (key == Mouse_Middle)
-						;//thiz->mouse_scroll = pos.x();
+						thiz->mscrl_temp = pos.x();
 					else if (key == Mouse_Null)
 					{
-						thiz->mdisp += pos - thiz->mpos;
+						thiz->mdisp_temp += pos - thiz->mpos;
 						thiz->mpos = pos;
 					}
 				}
 				else
 				{
-					thiz->mbtns[key] = action | KeyStateJust;
-					thiz->mdisp += pos - thiz->mpos;
+					thiz->mbtns_temp[key] = action;
+					thiz->mdisp_temp += pos - thiz->mpos;
 					thiz->mpos = pos;
 				}
 
@@ -101,7 +94,7 @@ namespace flame
 
 	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
 	{
-		auto mouse_contained = er->element->contains(mpos);
+		auto mouse_contained = er->element->contains((Vec2f)mpos);
 		//auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
 
 		if ([&]() {
@@ -154,24 +147,24 @@ namespace flame
 						{
 							focusing = hovering;
 							active = focusing;
-//							active_pos = mouse_pos;
+							active_pos = mpos;
 						}
 					}
 				}
 			}
-//
-//			if (mouse_disp != 0)
-//				((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Null, mouse_disp);
-//			if (mouse_scroll != 0)
-//				((cEventReceiverPrivate*)er)->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mouse_scroll, 0));
-//			for (auto i = 0; i < size(mouse_buttons); i++)
-//			{
-//				auto s = mouse_buttons[i];
-//				if (s & KeyStateJust)
-//					((cEventReceiverPrivate*)er)->on_mouse(s, (MouseKey)i, mouse_pos);
-//			}
+
+			if (mdisp != 0)
+				er->on_mouse(KeyStateNull, Mouse_Null, mdisp);
+			if (mscrl != 0)
+				er->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mscrl, 0));
+			for (auto i = 0; i < size(mbtns); i++)
+			{
+				auto s = mbtns[i];
+				if (s & KeyStateJust)
+					er->on_mouse(s, (MouseKey)i, mpos);
+			}
 		}
-//
+
 //		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)
 //		{
 //			auto hash = focusing->drag_hash;
@@ -184,8 +177,8 @@ namespace flame
 //				}
 //			}
 //		}
-//
-//		er->frame = get_looper()->frame;
+
+		er->frame = get_looper()->get_frame();
 	}
 
 	void sEventDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
@@ -198,7 +191,7 @@ namespace flame
 		}
 
 		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
-		if (!er /*|| er->frame >= (int)get_looper()->frame*/)
+		if (!er || er->frame >= (int)get_looper()->get_frame())
 			return;
 
 		dispatch_mouse_single(er, false);
@@ -213,8 +206,27 @@ namespace flame
 			return;
 		dirty = false;
 
-//		mouse_disp = mouse_pos - mouse_pos_prev;
-//
+		for (int i = 0; i < size(kbtns); i++)
+		{
+			if (kbtns_temp[i] != KeyStateNull)
+				kbtns[i] = (KeyStateFlags)((int)kbtns_temp[i] | KeyStateJust);
+			else
+				kbtns[i] = (KeyStateFlags)((int)kbtns[i] & ~KeyStateJust);
+			kbtns_temp[i] = KeyStateNull;
+		}
+		for (int i = 0; i < size(mbtns); i++)
+		{
+			if (mbtns_temp[i] != KeyStateNull)
+				mbtns[i] = (KeyStateFlags)((int)mbtns_temp[i] | KeyStateJust);
+			else
+				mbtns[i] = (KeyStateFlags)((int)mbtns[i] & ~KeyStateJust);
+			mbtns_temp[i] = KeyStateNull;
+		}
+		mdisp = mdisp_temp;
+		mdisp_temp = 0.f;
+		mscrl = mscrl_temp;
+		mscrl_temp = 0;
+
 		auto prev_hovering = hovering;
 		auto prev_focusing = focusing;
 		auto prev_active = active;
@@ -222,7 +234,7 @@ namespace flame
 //		auto prev_dragging = (!focusing || focusing_state != FocusingAndDragging) ? nullptr : focusing;
 		hovering = nullptr;
 //		drag_overing = nullptr;
-//
+
 //		if (next_focusing != INVALID_POINTER)
 //		{
 //			focusing = next_focusing;
@@ -264,10 +276,10 @@ namespace flame
 //					focusing_state = FocusingAndDragging;
 //			}
 //		}
-//
+
 //		mouse_event_checker = nullptr;
-//		if (focusing && focusing_state != FocusingNormal)
-//			dispatch_mouse_single((cEventReceiverPrivate*)focusing, true);
+		if (active)
+			dispatch_mouse_single(active, true);
 		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
 
 		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mpos)))
@@ -288,6 +300,8 @@ namespace flame
 			auto s = (e->state & (~StateHovering) & (~StateActive));
 			if (er == hovering)
 				s |= StateHovering;
+			if (er == focusing)
+				s |= StateFocusing;
 			if (er == active)
 				s |= StateActive;
 			e->set_state((StateFlags)s);
@@ -301,39 +315,27 @@ namespace flame
 		if (focusing)
 			set_state(focusing);
 
-//		if (prev_hovering != hovering)
-//		{
-//			if (prev_hovering)
-//				((cEventReceiverPrivate*)prev_hovering)->on_hovering(false);
-//			if (hovering)
-//				((cEventReceiverPrivate*)hovering)->on_hovering(true);
-//		}
-//
-//		if (prev_focusing != focusing)
-//		{
-//			if (prev_focusing)
-//				((cEventReceiverPrivate*)prev_focusing)->on_focusing(false);
-//			if (focusing)
-//			{
-//				((cEventReceiverPrivate*)focusing)->on_focusing(true);
-//
-//				key_receiving = nullptr;
-//				auto e = focusing->entity;
-//				while (e)
-//				{
-//					auto er = e->get_component(cEventReceiver);
-//					if (er && er->key_listeners.impl->count() > 0)
-//					{
-//						key_receiving = er;
-//						break;
-//					}
-//					e = e->parent;
-//				}
-//			}
-//
-//			dbclick_timer = -1.f;
-//		}
-//
+		if (prev_focusing != focusing)
+		{
+			if (focusing)
+			{
+				key_target = nullptr;
+				auto e = (EntityPrivate*)focusing->entity;
+				while (e)
+				{
+					auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
+					if (er && !er->key_listeners.empty())
+					{
+						key_target = er;
+						break;
+					}
+					e = e->parent;
+				}
+			}
+
+			//dbclick_timer = -1.f;
+		}
+
 //		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
 //			((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
 //		else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
@@ -355,36 +357,20 @@ namespace flame
 //			if (drag_overing)
 //				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOvering, focusing, mouse_pos);
 //		}
-//
-//		if (key_receiving)
-//		{
-//			for (auto& code : keydown_inputs)
-//				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateDown, code);
-//			for (auto& code : keyup_inputs)
-//				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateUp, code);
-//			for (auto& ch : char_inputs)
-//				((cEventReceiverPrivate*)key_receiving)->on_key(KeyStateNull, ch);
-//		}
 
-		{ // TODO test
-			for (int i = 0; i < size(mbtns); i++)
-				mbtns[i] = (KeyStateFlags)((int)mbtns[i] & ~KeyStateJust);
+		if (key_target)
+		{
+			for (auto& code : keydown_inputs)
+				key_target->on_key(KeyStateDown, code);
+			for (auto& code : keyup_inputs)
+				key_target->on_key(KeyStateUp, code);
+			for (auto& ch : char_inputs)
+				key_target->on_key(KeyStateNull, ch);
 		}
+		keydown_inputs.clear();
+		keyup_inputs.clear();
+		char_inputs.clear();
 	}
-//
-//	void sEventDispatcherPrivate::after_update()
-//	{
-//		keydown_inputs.clear();
-//		keyup_inputs.clear();
-//		char_inputs.clear();
-//		for (int i = 0; i < size(key_states); i++)
-//			key_states[i] &= ~KeyStateJust;
-//
-//		mouse_pos_prev = mouse_pos;
-//		mouse_scroll = 0;
-//		for (auto i = 0; i < size(mouse_buttons); i++)
-//			mouse_buttons[i] &= ~KeyStateJust;
-//	}
 
 	sEventDispatcherPrivate* sEventDispatcherPrivate::create()
 	{

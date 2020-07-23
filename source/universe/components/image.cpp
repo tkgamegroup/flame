@@ -50,12 +50,17 @@ namespace flame
 		}
 	}
 
+	void cImagePrivate::mark_size_dirty()
+	{
+		if (type_setting && element && true/*auto_size*/)
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+	}
+
 	void cImagePrivate::on_added()
 	{
 		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
 		element->drawers.push_back(this);
-		if (type_setting && true/*auto_size*/)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		mark_size_dirty();
 	}
 
 	void cImagePrivate::on_removed()
@@ -69,8 +74,7 @@ namespace flame
 	{
 		auto world = ((EntityPrivate*)entity)->world;
 		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
-		//if (auto_size)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		mark_size_dirty();
 		canvas = (graphics::Canvas*)world->find_object("Canvas");
 		res_map = (ResMapPrivate*)world->find_object("ResMap");
 		if (canvas && res_map && !src.empty())
@@ -92,8 +96,8 @@ namespace flame
 
 	void cImagePrivate::on_entity_visibility_changed()
 	{
-		if (type_setting && true/*auto_size*/)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		if (((EntityPrivate*)entity)->global_visibility)
+			mark_size_dirty();
 	}
 
 	Vec2f cImagePrivate::measure()

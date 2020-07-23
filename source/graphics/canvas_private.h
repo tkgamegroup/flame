@@ -119,7 +119,7 @@ namespace flame
 
 			void stroke(const Vec4c& col, float thickness, bool aa = false) override;
 			void fill(const Vec4c& col, bool aa = false) override;
-			void add_text(uint res_id, const wchar_t* text, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy) override;
+			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col);
 
 			Vec4f get_scissor() const override { return curr_scissor; }

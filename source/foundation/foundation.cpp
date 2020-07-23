@@ -1585,6 +1585,8 @@ namespace flame
 			return false;
 		}
 
+		process_events();
+
 		frame_callback(frame_capture, delta_time);
 
 		frame++;

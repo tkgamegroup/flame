@@ -14,12 +14,13 @@ namespace flame
 		void* mouse_listener = nullptr;
 		void* destroy_listener = nullptr;
 
-		//		KeyStateFlags key_states[Key_Count];
-		KeyStateFlags mbtns[3];
-		Vec2f mpos = Vec2f(0.f);
-		Vec2f mdisp = Vec2f(0.f);
-		Vec2f active_pos = Vec2f(0.f);
-		//		int mouse_scroll;
+		KeyStateFlags kbtns[Key_Count], kbtns_temp[Key_Count];
+		KeyStateFlags mbtns[3], mbtns_temp[3];
+		Vec2i mpos = Vec2i(-1);
+		Vec2i mdisp, mdisp_temp = Vec2i(0);
+		int mscrl, mscrl_temp = 0;
+
+		Vec2i active_pos = Vec2i(0);
 		
 		cEventReceiverPrivate* hovering = nullptr;
 		cEventReceiverPrivate* focusing = nullptr;
@@ -28,20 +29,20 @@ namespace flame
 		cEventReceiverPrivate* key_target = nullptr;
 		cEventReceiverPrivate* drag_overing = nullptr;
 
-		//cEventReceiver* next_focusing;
+		//cEventReceiverPrivate* next_focusing = (cEventReceiverPrivate*)INVALID_POINTER;
 
-//		std::vector<Key> keydown_inputs;
-//		std::vector<Key> keyup_inputs;
-//		std::vector<wchar_t> char_inputs;
-//		bool char_input_compelete;
-//		float dbclick_timer;
+		std::vector<Key> keydown_inputs;
+		std::vector<Key> keyup_inputs;
+		std::vector<wchar_t> char_inputs;
+		bool char_input_compelete = true;
+//		float dbclick_timer = -1.f;
 //		void* ev_dbclick;
 
 //		cEventReceiverPrivate* mouse_event_checker;
-//
+
 		bool dirty = false;
 
-//		sEventDispatcherPrivate();
+		sEventDispatcherPrivate();
 //		~sEventDispatcherPrivate();
 		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);

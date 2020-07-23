@@ -22,8 +22,6 @@ namespace flame
 //		ListenerHub<bool(Capture& c, cEventReceiver* er, bool* pass)>								pass_checkers;
 //		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>								key_listeners;
 //		ListenerHub<bool(Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>		drag_and_drop_listeners;
-//		ListenerHub<bool(Capture& c, bool hovering)>												hover_listeners;
-//		ListenerHub<bool(Capture& c, bool focusing)>												focus_listeners;
 //
 //		FLAME_RV(ListenerHub<void(Capture& c)>,														clicked_listeners);
 //
@@ -58,6 +56,8 @@ namespace flame
 //		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);
 //		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
 
+		virtual void* add_key_listener(bool (*callback)(Capture& c, KeyStateFlags action, uint value), const Capture& capture) = 0;
+		virtual void remove_key_listener(void* lis) = 0;
 		virtual void* add_mouse_listener(bool (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_listener(void* lis) = 0;
 

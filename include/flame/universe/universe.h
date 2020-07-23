@@ -14,8 +14,9 @@ namespace flame
 	{
 		StateNone = 0,
 		StateHovering = 1 << 0,
-		StateActive = 1 << 1,
-		StateSelected = 1 << 2
+		StateFocusing = 1 << 1,
+		StateActive = 1 << 2,
+		StateSelected = 1 << 3
 	};
 
 	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }

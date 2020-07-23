@@ -17,13 +17,6 @@ namespace flame
 			Component(type_name, type_hash, true)
 		{
 		}
-
-//		cElement* element;
-//		cText* text;
-//		cEventReceiver* event_receiver;
-//
-//		uint select_start;
-//		uint select_end; // can be smaller than start
 //
 //		bool select_all_on_dbclicked;
 //		bool select_all_on_focus;

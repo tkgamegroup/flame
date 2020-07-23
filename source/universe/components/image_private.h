@@ -36,6 +36,8 @@ namespace flame
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
+		void mark_size_dirty();
+
 		void on_added() override;
 		void on_removed() override;
 		void on_entered_world() override;

@@ -22,10 +22,14 @@ namespace flame
 //		frame = -1;
 //	}
 
-//	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)
-//	{
-//		key_listeners.call_with_current(this, action, value);
-//	}
+	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)
+	{
+		for (auto& l : key_listeners)
+		{
+			if (!l->call(action, value))
+				break;
+		}
+	}
 
 	void cEventReceiverPrivate::on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value)
 	{
@@ -39,16 +43,6 @@ namespace flame
 //	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 //	{
 //		drag_and_drop_listeners.call_with_current(this, action, er, pos);
-//	}
-//
-//	void cEventReceiverPrivate::on_hovering(bool hovering)
-//	{
-//		hover_listeners.call_with_current(this, hovering);
-//	}
-//
-//	void cEventReceiverPrivate::on_focusing(bool focusing)
-//	{
-//		focus_listeners.call_with_current(this, focusing);
 //	}
 
 	void cEventReceiverPrivate::on_entered_world()
@@ -101,25 +95,24 @@ namespace flame
 //		for (auto i = 0; i < drop_count; i++)
 //			drops[i] = _drops[i];
 //	}
-//
-//	void cEventReceiver::on_key(KeyStateFlags action, uint value)
-//	{
-//		((cEventReceiverPrivate*)this)->on_key(action, value);
-//	}
-//
-//	void cEventReceiver::on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value)
-//	{
-//		((cEventReceiverPrivate*)this)->on_mouse(action, key, value);
-//	}
-//
-//	void cEventReceiver::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
-//	{
-//		((cEventReceiverPrivate*)this)->on_drag_and_drop(action, er, pos);
-//	}
 
 	void cEventReceiverPrivate::on_added() 
 	{
 		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
+	}
+
+	void* cEventReceiverPrivate::add_key_listener(bool (*callback)(Capture& c, KeyStateFlags action, uint value), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		key_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_key_listener(void* lis)
+	{
+		std::erase_if(key_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	void* cEventReceiverPrivate::add_mouse_listener(bool (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)

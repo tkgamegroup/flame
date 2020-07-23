@@ -3,7 +3,6 @@
 
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
-#include "../entity_private.h"
 #include "../world_private.h"
 #include "text_private.h"
 
@@ -20,12 +19,28 @@ namespace flame
 		}
 	}
 
+	void cTextPrivate::set_font_size(uint fs)
+	{
+		if (font_size == fs)
+			return;
+		font_size = fs;
+		if (element)
+			element->mark_drawing_dirty();
+		mark_size_dirty();
+		//	data_changed(FLAME_CHASH("font_size"), sender);
+	}
+
+	void cTextPrivate::mark_size_dirty()
+	{
+		if (type_setting && element && true/*auto_size*/)
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+	}
+
 	void cTextPrivate::on_added()
 	{
 		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
 		element->drawers.push_back(this);
-		if (type_setting && true/*auto_size*/)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		mark_size_dirty();
 	}
 
 	void cTextPrivate::on_removed()
@@ -39,9 +54,10 @@ namespace flame
 	{
 		auto world = ((EntityPrivate*)entity)->world;
 		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
-		//if (auto_size)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		mark_size_dirty();
 		canvas = (graphics::Canvas*)world->find_object("Canvas");
+		if (canvas)
+			atlas = canvas->get_resource(0)->get_font_atlas();
 	}
 
 	void cTextPrivate::on_left_world()
@@ -50,49 +66,35 @@ namespace flame
 			type_setting->remove_from_sizing_list(this);
 		type_setting = nullptr;
 		canvas = nullptr;
+		atlas = nullptr;
 	}
 
 	void cTextPrivate::on_entity_visibility_changed()
 	{
-		if (type_setting && true/*auto_size*/)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+		if (((EntityPrivate*)entity)->global_visibility)
+			mark_size_dirty();
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(0, text.c_str(), 14, Vec4c(0, 0, 0, 255), element->points[4], Vec2f(element->transform[0]), Vec2f(element->transform[1]));
+		canvas->add_text(0, text.c_str(), nullptr, font_size, Vec4c(0, 0, 0, 255), element->points[4], Vec2f(element->transform[0]), Vec2f(element->transform[1]));
 	}
 
 	Vec2f cTextPrivate::measure()
 	{
-		if (!canvas)
+		if (!atlas)
 			return Vec2f(0.f);
-		return Vec2f(canvas->get_resource(0)->get_font_atlas()->text_size(14, text.c_str()));
+		return Vec2f(atlas->text_size(font_size, text.c_str()));
 	}
 
 	//cTextPrivate::cTextPrivate()
 	//{
-	//	font_atlas = nullptr;
-	//	text.resize(1);
-	//	text.v[0] = 0;
-	//	font_size = 0;
 	//	color = 0;
 	//	auto_size = true;
 	//}
 
-	//void cTextPrivate::draw(graphics::Canvas* canvas)
-	//{
-	//	if (!element->clipped)
-	//	{
-	//		canvas->add_text(font_atlas, text.v, nullptr, font_size * element->global_scale, element->content_min(),
-	//			color.copy().factor_w(element->alpha));
-	//	}
-	//}
-
 	//void cTextPrivate::auto_set_size()
 	//{
-	//	auto s = Vec2f(font_atlas->text_size(font_size, text.v, nullptr)) + Vec2f(element->padding.xz().sum(), element->padding.yw().sum());
-	//	element->set_size(s, this);
 	//	auto aligner = entity->get_component(cAligner);
 	//	if (aligner)
 	//	{
@@ -113,20 +115,6 @@ namespace flame
 	//		thiz->text.assign(text, length);
 	//	}
 	//	data_changed(FLAME_CHASH("text"), sender);
-	//}
-
-	//void cText::set_font_size(uint s, void* sender)
-	//{
-	//	if (s == font_size)
-	//		return;
-	//	font_size = s;
-	//	if (element)
-	//	{
-	//		element->mark_dirty();
-	//		if (management && auto_size)
-	//			management->add_to_sizing_list(this);
-	//	}
-	//	data_changed(FLAME_CHASH("font_size"), sender);
 	//}
 
 	//void cText::set_color(const Vec4c& c, void* sender)
