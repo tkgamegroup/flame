@@ -498,11 +498,7 @@ namespace flame
 						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s->type) + L" out.glsl -o" + spv_path.wstring());
 
 						std::string output;
-						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), [](Capture& c, uint size) {
-							auto& output = *c.thiz<std::string>();
-							output.resize(size);
-							return output.data();
-						}, Capture().set_thiz(&output));
+						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 						std::filesystem::remove(L"out.glsl");
 						if (!std::filesystem::exists(spv_path))
 						{
@@ -530,11 +526,7 @@ namespace flame
 							}
 							glsl_file.close();
 
-							exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), [](Capture& c, uint size) {
-								auto& output = *c.thiz<std::string>();
-								output.resize(size);
-								return output.data();
-							}, Capture().set_thiz(&output));
+							exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 							std::filesystem::remove(L"out.glsl");
 							if (!std::filesystem::exists(spv_path))
 							{

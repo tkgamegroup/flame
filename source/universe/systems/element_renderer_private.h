@@ -19,7 +19,5 @@ namespace flame
 		void update() override;
 
 		void do_render(EntityPrivate* e);
-
-		static sElementRendererPrivate* create();
 	};
 }

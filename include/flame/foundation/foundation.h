@@ -24,12 +24,14 @@
 
 namespace flame
 {
-	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size), char* (*stralloc)(void* p, uint size));
+	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size), 
+		char* (*stralloc)(void* p, uint size), wchar_t* (*wstralloc)(void* p, uint size));
 
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
 	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
 	FLAME_FOUNDATION_EXPORTS char* f_stralloc(void* p, uint size);
+	FLAME_FOUNDATION_EXPORTS wchar_t* f_wstralloc(void* p, uint size);
 
 	template <class T, class ...Args>
 	T* f_new(Args... args)
@@ -552,7 +554,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
-	FLAME_FOUNDATION_EXPORTS void get_clipboard(wchar_t* (*str_allocator)(Capture& c, uint size), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str);
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool ctrl, bool shift, bool alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
@@ -560,8 +562,8 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyStateFlags action, Key key);
 	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(KeyStateFlags action, MouseKey key);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
-	// if str_allocator is null then the output will be redirect to std output
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, char* (*str_allocator)(Capture& c, uint size) = nullptr, const Capture& capture = {});
+	// if str is null then the output will be redirect to std output
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* str = nullptr);
 	FLAME_FOUNDATION_EXPORTS void debug_break();
 
 	struct StackFrameInfo

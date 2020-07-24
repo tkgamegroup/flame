@@ -94,7 +94,5 @@ namespace flame
 		void on_entity_position_changed() override;
 
 		void draw(graphics::Canvas* canvas);
-
-		static cElementPrivate* create();
 	};
 }

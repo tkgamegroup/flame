@@ -34,8 +34,6 @@ namespace flame
 		void set_rule(const std::string& rule);
 
 		void on_entity_state_changed() override;
-
-		static cStylePrivate* create();
 	};
 
 	void cStyleBridge::set_rule(const char* rule)

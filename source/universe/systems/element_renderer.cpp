@@ -77,10 +77,8 @@ namespace flame
 		dirty = false;
 	}
 
-	sElementRendererPrivate* sElementRendererPrivate::create()
+	sElementRenderer* sElementRenderer::create()
 	{
 		return f_new<sElementRendererPrivate>();
 	}
-
-	sElementRenderer* sElementRenderer::create() { return sElementRendererPrivate::create(); }
 }

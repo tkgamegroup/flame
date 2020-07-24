@@ -47,8 +47,6 @@ namespace flame
 		void draw(graphics::Canvas* canvas) override;
 
 		Vec2f measure() override;
-
-		static cImagePrivate* create();
 	};
 
 	inline void cImageBridge::set_src(const char* src)

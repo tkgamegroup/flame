@@ -118,10 +118,8 @@ namespace flame
 			uv0, uv1, Vec4c(255));
 	}
 
-	cImagePrivate* cImagePrivate::create()
+	cImage* cImage::create()
 	{
 		return f_new<cImagePrivate>();
 	}
-
-	cImage* cImage::create() { return cImagePrivate::create(); }
 }

@@ -69,8 +69,10 @@ namespace flame
 			if (std::get<1>(s)->global_visibility)
 			{
 				auto size = std::get<0>(s)->measure();
-				std::get<2>(s)->set_width(size.x() + std::get<2>(s)->padding[0] + std::get<2>(s)->padding[2]);
-				std::get<2>(s)->set_height(size.y() + std::get<2>(s)->padding[1] + std::get<2>(s)->padding[3]);
+				if (std::get<0>(s)->auto_width)
+					std::get<2>(s)->set_width(size.x() + std::get<2>(s)->padding[0] + std::get<2>(s)->padding[2]);
+				if (std::get<0>(s)->auto_height)
+					std::get<2>(s)->set_height(size.y() + std::get<2>(s)->padding[1] + std::get<2>(s)->padding[3]);
 			}
 			sizing_list.pop_front();
 		}
@@ -85,10 +87,8 @@ namespace flame
 		}
 	}
 
-	sTypeSettingPrivate* sTypeSettingPrivate::create()
+	sTypeSetting* sTypeSetting::create()
 	{
 		return f_new<sTypeSettingPrivate>();
 	}
-
-	sTypeSetting* sTypeSetting::create() { return sTypeSettingPrivate::create(); }
 }

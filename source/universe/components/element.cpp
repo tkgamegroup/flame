@@ -267,21 +267,21 @@ namespace flame
 				if (fill_color.a() > 0)
 				{
 					canvas->begin_path();
-					canvas->move_to(points[0].x(), points[0].y());
-					canvas->line_to(points[1].x(), points[1].y());
-					canvas->line_to(points[2].x(), points[2].y());
-					canvas->line_to(points[3].x(), points[3].y());
+					canvas->move_to(points[0]);
+					canvas->line_to(points[1]);
+					canvas->line_to(points[2]);
+					canvas->line_to(points[3]);
 					canvas->fill(fill_color);
 				}
 
 				if (border > 0.f && border_color.a() > 0)
 				{
 					canvas->begin_path();
-					canvas->move_to(points[0].x(), points[0].y());
-					canvas->line_to(points[1].x(), points[1].y());
-					canvas->line_to(points[2].x(), points[2].y());
-					canvas->line_to(points[3].x(), points[3].y());
-					canvas->line_to(points[0].x(), points[0].y());
+					canvas->move_to(points[0]);
+					canvas->line_to(points[1]);
+					canvas->line_to(points[2]);
+					canvas->line_to(points[3]);
+					canvas->line_to(points[0]);
 					canvas->stroke(border_color, border);
 				}
 
@@ -403,10 +403,8 @@ namespace flame
 //		data_changed(FLAME_CHASH("frame_color"), sender);
 //	}
 
-	cElementPrivate* cElementPrivate::create()
+	cElement* cElement::create()
 	{
 		return f_new<cElementPrivate>();
 	}
-
-	cElement* cElement::create() { return cElementPrivate::create(); }
 }

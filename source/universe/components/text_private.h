@@ -32,6 +32,11 @@ namespace flame
 		uint get_font_size() const override { return font_size; }
 		void set_font_size(uint fs) override;
 
+		bool get_auto_width() const override { return auto_width; }
+		void set_auto_width(bool a) override { auto_width = a; }
+		bool get_auto_height() const override { return auto_height; }
+		void set_auto_height(bool a) override { auto_height = a; }
+
 		void mark_size_dirty();
 
 		void on_added() override;
@@ -43,8 +48,6 @@ namespace flame
 		void draw(graphics::Canvas* canvas) override;
 
 		Vec2f measure() override;
-
-		static cTextPrivate* create();
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

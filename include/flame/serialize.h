@@ -16,7 +16,7 @@ namespace flame
 {
 	inline int fmt(char* buf, int buf_size, bool v)
 	{
-		return sprintf_s(buf, buf_size, "%d", v ? "1" : "0");
+		return sprintf_s(buf, buf_size, "%s", v ? "true" : "false");
 	}
 
 	inline int fmt(char* buf, int buf_size, uchar v)

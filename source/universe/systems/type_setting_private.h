@@ -24,8 +24,6 @@ namespace flame
 		void remove_from_layouting_list(cLayoutPrivate* l);
 
 		void update() override;
-
-		static sTypeSettingPrivate* create();
 	};
 
 	inline void sTypeSettingBridge::add_to_sizing_list(sTypeSetting::AutoSizer* s, Entity* e)

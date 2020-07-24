@@ -82,10 +82,8 @@ namespace flame
 //		data_changed(FLAME_CHASH("height_factor"), sender);
 //	}
 
-	cAlignerPrivate* cAlignerPrivate::create()
+	cAligner* cAligner::create()
 	{
 		return f_new<cAlignerPrivate>();
 	}
-
-	cAligner* cAligner::create() { return cAlignerPrivate::create(); }
 }

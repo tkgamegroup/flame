@@ -19,13 +19,16 @@ namespace flame
 	static void  (*pf_deallocate)(void* p);
 	static void* (*pf_reallocate)(void* p, uint size);
 	static char* (*pf_stralloc)(void* p, uint size);
+	static wchar_t* (*pf_wstralloc)(void* p, uint size);
 
-	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size), char* (*stralloc)(void* p, uint size))
+	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size), 
+		char* (*stralloc)(void* p, uint size), wchar_t* (*wstralloc)(void* p, uint size))
 	{
 		pf_allocate = allocate;
 		pf_deallocate = deallocate;
 		pf_reallocate = reallocate;
 		pf_stralloc = stralloc;
+		pf_wstralloc = wstralloc;
 	}
 
 	void* f_malloc(uint size)
@@ -63,6 +66,17 @@ namespace flame
 			return str.data();
 		}
 		return pf_stralloc(p, size);
+	}
+
+	wchar_t* f_wstralloc(void* p, uint size)
+	{
+		if (!pf_stralloc)
+		{
+			auto& str = *(std::wstring*)p;
+			str.resize(size);
+			return str.data();
+		}
+		return pf_wstralloc(p, size);
 	}
 
 	Guid generate_guid()
@@ -216,14 +230,13 @@ namespace flame
 		}
 	}
 
-	void get_clipboard(wchar_t* (*str_allocator)(Capture& c, uint size), const Capture& capture)
+	void get_clipboard(void* str)
 	{
 		OpenClipboard(NULL);
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
 		auto size = GlobalSize(hMemory) / sizeof(wchar_t) - 1;
-		auto dst = str_allocator((Capture&)capture, size);
-		wcsncpy(dst, (wchar_t*)GlobalLock(hMemory), size);
-		dst[size] = 0;
+		auto dst = f_wstralloc(str, size);
+		wcscpy(dst, (wchar_t*)GlobalLock(hMemory));
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 	}
@@ -799,12 +812,12 @@ namespace flame
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	void exec(const wchar_t* filename, wchar_t* parameters, char* (*str_allocator)(Capture& c, uint size), const Capture& capture)
+	void exec(const wchar_t* filename, wchar_t* parameters, void* str)
 	{
 		bool ok;
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
-		if (str_allocator)
+		if (str)
 		{
 			SECURITY_ATTRIBUTES saAttr;
 			saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -835,11 +848,11 @@ namespace flame
 		CloseHandle(proc_info.hProcess);
 		CloseHandle(proc_info.hThread);
 
-		if (str_allocator)
+		if (str)
 		{
 			DWORD size;
 			PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &size, NULL);
-			auto dst = str_allocator((Capture&)capture, size);
+			auto dst = f_stralloc(str, size);
 			PeekNamedPipe(hChildStd_OUT_Rd, (void*)dst, size, NULL, NULL, NULL);
 		}
 	}

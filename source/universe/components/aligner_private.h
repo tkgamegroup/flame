@@ -6,7 +6,5 @@ namespace flame
 {
 	struct cAlignerPrivate : cAligner
 	{
-
-		static cAlignerPrivate* create();
 	};
 }

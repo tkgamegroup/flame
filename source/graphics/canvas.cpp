@@ -326,22 +326,22 @@ namespace flame
 			paths.clear();
 		}
 
-		void CanvasPrivate::move_to(float x, float y)
+		void CanvasPrivate::move_to(const Vec2f& pos)
 		{
 			if (paths.empty())
 				paths.emplace_back();
 			if (paths.back().empty())
 			{
-				paths.back().push_back(Vec2f(x, y));
+				paths.back().push_back(pos);
 				return;
 			}
 			paths.emplace_back();
-			paths.back().push_back(Vec2f(x, y));
+			paths.back().push_back(pos);
 		}
 
-		void CanvasPrivate::line_to(float x, float y)
+		void CanvasPrivate::line_to(const Vec2f& pos)
 		{
-			paths.back().push_back(Vec2f(x, y));
+			paths.back().push_back(pos);
 		}
 
 		void CanvasPrivate::close_path()
@@ -665,7 +665,7 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Vec2f& axisx, const Vec2f& axisy)
+		void CanvasPrivate::add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes)
 		{
 			auto atlas = resources[res_id]->font_atlas;
 
@@ -674,7 +674,7 @@ namespace flame
 			auto p = Vec2f(0.f);
 
 			auto ptext = text_beg;
-			while ((!text_end || ptext == text_end) && *ptext)
+			while ((!text_end || ptext != text_end) && *ptext)
 			{
 				auto ch = *ptext;
 				if (!ch)
@@ -698,10 +698,10 @@ namespace flame
 
 					auto vtx_cnt = *p_vtx_cnt;
 
-					add_vtx(pos + o.x() * axisx + o.y() * axisy, uv0, col);
-					add_vtx(pos + o.x() * axisx + (o.y() - s.y()) * axisy, Vec2f(uv0.x(), uv1.y()), col);
-					add_vtx(pos + (o.x() + s.x()) * axisx + (o.y() - s.y()) * axisy, uv1, col);
-					add_vtx(pos + (o.x() + s.x()) * axisx + o.y() * axisy, Vec2f(uv1.x(), uv0.y()), col);
+					add_vtx(pos + axes * o, uv0, col);
+					add_vtx(pos + axes * (o + Vec2f(0.f, -s.y())), Vec2f(uv0.x(), uv1.y()), col);
+					add_vtx(pos + axes * (o + Vec2f(s.x(), -s.y())), uv1, col);
+					add_vtx(pos + axes * (o + Vec2f(s.x(), 0.f)), Vec2f(uv1.x(), uv0.y()), col);
 					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 
 					p.x() += g->advance;

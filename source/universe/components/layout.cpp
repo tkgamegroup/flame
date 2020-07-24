@@ -509,10 +509,8 @@ namespace flame
 		type_setting = nullptr;
 	}
 
-	cLayoutPrivate* cLayoutPrivate::create()
+	cLayout* cLayout::create()
 	{
 		return f_new<cLayoutPrivate>();
 	}
-
-	cLayout* cLayout::create() { return cLayoutPrivate::create(); }
 }

@@ -84,6 +84,11 @@ int main(int argc, char** args)
 		auto& str = *(std::string*)p;
 		str.resize(size);
 		return str.data();
+	},
+	[](void* p, uint size) {
+		auto& str = *(std::wstring*)p;
+		str.resize(size);
+		return str.data();
 	});
 
 	world = World::create();

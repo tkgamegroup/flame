@@ -39,7 +39,5 @@ namespace flame
 		void on_added() override;
 		void on_entered_world() override;
 		void on_left_world() override;
-
-		static cLayoutPrivate* create();
 	};
 }

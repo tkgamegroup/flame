@@ -129,10 +129,8 @@ namespace flame
 		});
 	}
 
-	cEventReceiverPrivate* cEventReceiverPrivate::create()
+	cEventReceiver* cEventReceiver::create()
 	{
 		return f_new<cEventReceiverPrivate>();
 	}
-
-	cEventReceiver* cEventReceiver::create() { return cEventReceiverPrivate::create(); }
 }

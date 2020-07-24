@@ -417,7 +417,7 @@ namespace flame
 			auto name = std::string(n_c.name());
 			if (name == "entity")
 			{
-				auto e = EntityPrivate::create();
+				auto e = f_new<EntityPrivate>();
 				dst->add_child(e);
 				load_prefab(e, n_c);
 			}
@@ -507,10 +507,8 @@ namespace flame
 		file.save_file(filename.c_str());
 	}
 
-	EntityPrivate* EntityPrivate::create()
+	Entity* Entity::create()
 	{
 		return f_new<EntityPrivate>();
 	}
-
-	Entity* Entity::create() { return EntityPrivate::create(); }
 }

@@ -372,10 +372,8 @@ namespace flame
 		char_inputs.clear();
 	}
 
-	sEventDispatcherPrivate* sEventDispatcherPrivate::create()
+	sEventDispatcher* sEventDispatcher::create()
 	{
 		return f_new<sEventDispatcherPrivate>();
 	}
-
-	sEventDispatcher* sEventDispatcher::create() { return sEventDispatcherPrivate::create(); }
 }

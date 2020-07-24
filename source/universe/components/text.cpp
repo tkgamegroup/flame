@@ -77,7 +77,7 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_text(0, text.c_str(), nullptr, font_size, Vec4c(0, 0, 0, 255), element->points[4], Vec2f(element->transform[0]), Vec2f(element->transform[1]));
+		canvas->add_text(0, text.c_str(), nullptr, font_size, Vec4c(0, 0, 0, 255), element->points[4], Mat2f(element->transform));
 	}
 
 	Vec2f cTextPrivate::measure()
@@ -149,10 +149,8 @@ namespace flame
 	//	data_changed(FLAME_CHASH("auto_size"), sender);
 	//}
 
-	cTextPrivate* cTextPrivate::create()
+	cText* cText::create()
 	{
 		return f_new<cTextPrivate>();
 	}
-
-	cText* cText::create() { return cTextPrivate::create(); }
 }

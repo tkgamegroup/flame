@@ -126,7 +126,13 @@ namespace flame
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(bool*)dst = std::stoi(src) != 0;
+			auto str = std::string(src);
+			if (str == "false")
+				*(bool*)dst = false;
+			else if (str == "true")
+				*(bool*)dst = true;
+			else
+				*(bool*)dst = std::stoi(str) != 0;
 		}
 	};
 

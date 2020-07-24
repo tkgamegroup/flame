@@ -13,6 +13,9 @@ namespace flame
 
 		struct AutoSizer
 		{
+			bool auto_width = true;
+			bool auto_height = true;
+
 			bool pending_sizing = false;
 
 			virtual Vec2f measure() = 0;

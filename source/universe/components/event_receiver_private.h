@@ -36,7 +36,5 @@ namespace flame
 		void remove_mouse_listener(void* lis) override;
 
 		void on_added() override;
-
-		static cEventReceiverPrivate* create();
 	};
 }

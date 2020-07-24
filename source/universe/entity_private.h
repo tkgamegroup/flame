@@ -80,8 +80,6 @@ namespace flame
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);
-
-		static EntityPrivate* create();
 	};
 
 	inline void EntityBridge::add_child(Entity* e, int position)

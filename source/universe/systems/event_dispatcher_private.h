@@ -51,7 +51,5 @@ namespace flame
 
 		virtual void on_added() override;
 		virtual void on_removed() override;
-
-		static sEventDispatcherPrivate* create();
 	};
 }
