@@ -21,14 +21,6 @@ namespace flame
 
 	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
 
-	enum ClipFlags
-	{
-		ClipSelf = 1 << 0,
-		ClipChildren = 1 << 1
-	};
-
-	inline ClipFlags operator| (ClipFlags a, ClipFlags b) { return (ClipFlags)((int)a | (int)b); }
-
 	enum FocusType
 	{
 		FocusByLeftButton,

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-      <cElement width="20.0" height="20.0" pivotx="0.5" pivoty="0.5" rotation="40" />
-      <entity>
-        <cElement x="5.0" y="5.0" width="10.0" height="10.0" fill_color="255,255,0,255" />
-      </entity>
+    <cElement width="20.0" height="20.0" pivotx="0.5" pivoty="0.5" rotation="40" />
+    <entity>
+      <cElement x="5.0" y="5.0" width="10.0" height="10.0" fill_color="255,255,0,255" />
+    </entity>
   </entity>
 </prefab>

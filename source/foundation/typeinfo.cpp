@@ -1056,6 +1056,12 @@ namespace flame
 			case TypeData:
 				if (p->name == "float")
 					list2[idx++] = *((float*)*_p++);
+				else if (p->size == 1)
+					list1[idx++] = (void*)*((char*)*_p++);
+				else if (p->size == 4)
+					list1[idx++] = (void*)*((int*)*_p++);
+				else if (p->size == 8)
+					list1[idx++] = *((void**)*_p++);
 				break;
 			case TypePointer:
 				list1[idx] = *_p++;

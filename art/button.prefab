@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity src="text" cElement.padding="4,2,4,2" cText.text="Button">
+  <entity src="text" >
+    <cElement padding="4,2,4,2" />
+    <cText text="Hello World" />
 	  <cEventReceiver />
 	  <cStyle rule=
            "StateHovering,StateActive;cElement.fill_color=69,94,222,255#

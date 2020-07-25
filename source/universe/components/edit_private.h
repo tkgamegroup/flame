@@ -25,6 +25,8 @@ namespace flame
 		bool show_cursor = false;
 		bool changed = false;
 
+		float scroll = 0.f;
+
 		void flash_cursor(int mode);
 		int locate_cursor(const Vec2f& mpos);
 		

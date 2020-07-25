@@ -17,51 +17,28 @@ namespace flame
 		if (!element)
 			return;
 
-		//auto scissor = canvas->get_scissor();
+		auto scissor = canvas->get_scissor();
+		element->update_transform();
 		//auto r = rect(element->global_pos, element->global_pos + element->global_size);
 		//element->clipped = !rect_overlapping(scissor, r);
-		//element->clipped_rect = element->clipped ? Vec4f(-1.f) : Vec4f(max(r.x(), scissor.x()), max(r.y(), scissor.y()), min(r.z(), scissor.z()), min(r.w(), scissor.w()));
+		//element->clipped_rect = element->clipped ? Vec4f(-1.f) : max(r, scissor);
 
-		//auto clip_flags = element->clip_flags;
-		//if (clip_flags)
-		//{
-		//	auto last_scissor = canvas->get_scissor();
-		//	auto scissor = Vec4f(element->content_min(), element->content_max());
-		//	if (clip_flags == (ClipSelf | ClipChildren))
-		//	{
-		//		element->draw(canvas);
-		//		canvas->set_scissor(scissor);
-		//		element->cmds.call(canvas);
-		//		for (auto c : e->children)
-		//			do_render(c);
-		//		canvas->set_scissor(last_scissor);
-		//	}
-		//	else if (clip_flags == ClipSelf)
-		//	{
-		//		element->draw(canvas);
-		//		canvas->set_scissor(scissor);
-		//		element->cmds.call(canvas);
-		//		canvas->set_scissor(last_scissor);
-		//		for (auto c : e->children)
-		//			do_render(c);
-		//	}
-		//	else if (clip_flags == ClipChildren)
-		//	{
-		//		element->draw(canvas);
-		//		element->cmds.call(canvas);
-		//		canvas->set_scissor(scissor);
-		//		for (auto c : e->children)
-		//			do_render(c);
-		//		canvas->set_scissor(last_scissor);
-		//	}
-		//}
-		//else
-		//{
-			element->draw(canvas);
-			//element->cmds.call(canvas);
+		if (element->clipping)
+		{
+			element->draw_background(canvas);
+			canvas->set_scissor(Vec4f(element->points[4], element->points[6]));
+			element->draw_content(canvas);
 			for (auto& c : e->children)
 				do_render(c.get());
-		//}
+			canvas->set_scissor(scissor);
+		}
+		else
+		{
+			element->draw_background(canvas);
+			element->draw_content(canvas);
+			for (auto& c : e->children)
+				do_render(c.get());
+		}
 	}
 
 	void sElementRendererPrivate::on_added()

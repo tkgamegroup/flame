@@ -363,20 +363,6 @@ namespace flame
 		return nullptr;
 	}
 
-	static void set_attribute(Component* c, UdtInfo* udt, const std::string& name, const std::string& value)
-	{
-		auto fs = udt->find_function(("set_" + name).c_str());
-		if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
-		{
-			auto type = fs->get_parameter(0);
-			void* d = type->create();
-			type->unserialize(d, value.c_str());
-			void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
-			fs->call(c, nullptr, parms);
-			type->destroy(d);
-		}
-	}
-
 	static std::stack<std::filesystem::path> prefab_paths;
 
 	static void load_prefab(EntityPrivate* dst, pugi::xml_node src)
@@ -397,19 +383,6 @@ namespace flame
 				path.replace_extension(L".prefab");
 				dst->load(prefab_paths.empty() ? path : prefab_paths.top() / path);
 			}
-			else
-			{
-				auto sp = SUS::split(name, '.');
-				if (sp.size() > 1)
-				{
-					auto c = dst->get_component(std::hash<std::string>()(sp[0]));
-					if (c)
-					{
-						auto udt = find_udt(("flame::" + sp[0]).c_str());
-						set_attribute(c, udt, sp[1], a.value());
-					}
-				}
-			}
 		}
 
 		for (auto n_c : src.children())
@@ -424,14 +397,34 @@ namespace flame
 			else
 			{
 				auto udt = find_udt(("flame::" + name).c_str());
-				auto fc = udt->find_function("create");
-				if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
+				if (udt)
 				{
-					Component* c = nullptr;
-					fc->call(nullptr, &c, {});
-					dst->add_component((Component*)c);
-					for (auto a : n_c.attributes())
-						set_attribute(c, udt, a.name(), a.value());
+					auto c = dst->get_component(std::hash<std::string>()(name));
+					if (!c)
+					{
+						auto fc = udt->find_function("create");
+						if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
+						{
+							fc->call(nullptr, &c, {});
+							dst->add_component((Component*)c);
+						}
+					}
+					if (c)
+					{
+						for (auto a : n_c.attributes())
+						{
+							auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
+							if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
+							{
+								auto type = fs->get_parameter(0);
+								void* d = type->create();
+								type->unserialize(d, a.value());
+								void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
+								fs->call(c, nullptr, parms);
+								type->destroy(d);
+							}
+						}
+					}
 				}
 			}
 		}

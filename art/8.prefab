@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-      <cElement />
-      <cEventReceiver />
+    <cElement />
+    <cEventReceiver />
 	  <cImage/>
-      <cStyle rule="StateHovering,StateActive;cImage.src=3#StateActive;cImage.src=1#StateHovering;cImage.src=2#StateNone;cImage.src=1" />
+    <cStyle rule="StateHovering,StateActive;cImage.src=3#StateActive;cImage.src=1#StateHovering;cImage.src=2#StateNone;cImage.src=1" />
   </entity>
 </prefab>

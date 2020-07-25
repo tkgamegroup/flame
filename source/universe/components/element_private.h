@@ -32,6 +32,9 @@ namespace flame
 		float border = 0.f;
 		Vec4c border_color = Vec4c(0, 0, 0, 255);
 
+		bool clipping = false;
+		bool culled = false;
+
 		std::vector<Drawer*> drawers;
 
 		float get_x() const override { return x; }
@@ -83,6 +86,9 @@ namespace flame
 		Vec4c get_border_color() override { return border_color; }
 		void set_border_color(const Vec4c& c) override;
 
+		bool get_clipping() const override { return clipping; }
+		void set_clipping(bool c) override;
+
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;
 
@@ -93,6 +99,7 @@ namespace flame
 		void on_entity_visibility_changed() override;
 		void on_entity_position_changed() override;
 
-		void draw(graphics::Canvas* canvas);
+		void draw_background(graphics::Canvas* canvas);
+		void draw_content(graphics::Canvas* canvas);
 	};
 }

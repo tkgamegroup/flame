@@ -106,12 +106,12 @@ namespace flame
 				}
 				return (int)str.size();
 			};
-			//auto on_changed = [&]() {
-			//	if (thiz->trigger_changed_on_lost_focus)
-			//		thiz->changed = true;
-			//	else
-			//		c_text->set_text(nullptr, -1, thiz);
-			//};
+			auto on_changed = [&]() {
+				//if (thiz->trigger_changed_on_lost_focus)
+				//	thiz->changed = true;
+				//else
+				//	c_text->set_text(nullptr, -1, thiz);
+			};
 			//auto throw_focus = [&]() {
 			//	auto dp = thiz->event_receiver->dispatcher;
 			//	dp->next_focusing = dp->world_->root->get_component(cEventReceiver);
@@ -135,14 +135,14 @@ namespace flame
 						{
 							low--;
 							str.erase(str.begin() + low);
-							//on_changed();
+							on_changed();
 							select_start = select_end = low;
 						}
 					}
 					else
 					{
 						str = str.substr(0, low) + str.substr(high);
-						//on_changed();
+						on_changed();
 						select_start = select_end = low;
 					}
 					break;
@@ -154,7 +154,7 @@ namespace flame
 					if (!cb.empty())
 					{
 						str = str.substr(0, low) + cb + str.substr(high);
-						//on_changed();
+						on_changed();
 						select_start = select_end = high + cb.size() - (high - low);
 					}
 				}
@@ -172,7 +172,7 @@ namespace flame
 					value = '\n';
 				default:
 					str = str.substr(0, low) + std::wstring(1, value) + str.substr(high);
-					//on_changed();
+					on_changed();
 					select_start = select_end = high + 1 - (high - low);
 				}
 			}
@@ -269,13 +269,13 @@ namespace flame
 						if (low < str.size())
 						{
 							str.erase(str.begin() + low);
-							//on_changed();
+							on_changed();
 						}
 					}
 					else
 					{
 						str = str.substr(0, low) + str.substr(high);
-						//on_changed();
+						on_changed();
 						select_start = select_end = low;
 					}
 					break;

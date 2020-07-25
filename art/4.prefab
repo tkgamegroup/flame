@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-      <cElement />
+    <cElement />
 	  <cImage src="9" />
   </entity>
 </prefab>

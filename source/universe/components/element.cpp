@@ -117,29 +117,26 @@ namespace flame
 				base_transform = pe->get_transform();
 		}
 
-		auto axis = Mat2f(base_transform);
+		auto axes = Mat2f(base_transform);
 		auto c = Vec2f(base_transform[0][2], base_transform[1][2]) + 
-			axis[0] * x + axis[1] * y;
-		axis[0] = ::flame::rotation((rotation + skewy) * ANG_RAD) * axis[0] * scalex;
-		axis[1] = ::flame::rotation((rotation + skewx) * ANG_RAD) * axis[1] * scaley;
+			axes[0] * x + axes[1] * y;
+		axes[0] = ::flame::rotation((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
+		axes[1] = ::flame::rotation((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
 
-		auto w = axis[0] * width;
-		auto h = axis[1] * height;
-		points[0] = w * -pivotx + h * -pivoty + c;
-		points[1] = w * (1.f - pivotx) + h * -pivoty + c;
-		points[2] = w * (1.f - pivotx) + h * (1.f - pivoty) + c;
-		points[3] = w * -pivotx + h * (1.f - pivoty) + c;
-		auto hw = width * 0.5f;
-		auto hh = height * 0.5f;
-		auto pl = min(padding[0], hw);
-		auto pt = min(padding[1], hh);
-		auto pr = min(padding[2], hw);
-		auto pb = min(padding[3], hh);
-		points[4] = points[0] + pl * axis[0] + pt * axis[1];
-		points[5] = points[1] - pr * axis[0] + pt * axis[1];
-		points[6] = points[2] - pr * axis[0] - pb * axis[1];
-		points[7] = points[3] + pl * axis[0] - pb * axis[1];
-		transform = Mat23f(Vec3f(axis[0], points[0].x()), Vec3f(axis[1], points[0].y()));
+		points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
+		points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);
+		points[2] = c + axes * Vec2f((1.f - pivotx) * width, (1.f - pivoty) * height);
+		points[3] = c + axes * Vec2f(-pivotx * width, (1.f - pivoty) * height);
+
+		auto pl = min(padding[0], width * 0.5f);
+		auto pt = min(padding[1], height * 0.5f);
+		auto pr = -min(padding[2], width * 0.5f);
+		auto pb = -min(padding[3], height * 0.5f);
+		points[4] = points[0] + axes * Vec2f(pl, pt);
+		points[5] = points[1] + axes * Vec2f(pr, pt);
+		points[6] = points[2] + axes * Vec2f(pr, pb);
+		points[7] = points[3] + axes * Vec2f(pl, pb);
+		transform = Mat23f(Vec3f(axes[0], points[0].x()), Vec3f(axes[1], points[0].y()));
 	}
 
 	const Mat23f& cElementPrivate::get_transform()
@@ -175,6 +172,14 @@ namespace flame
 		if (border_color == c)
 			return;
 		border_color = c;
+		mark_drawing_dirty();
+	}
+
+	void cElementPrivate::set_clipping(bool c)
+	{
+		if (clipping == c)
+			return;
+		clipping = c;
 		mark_drawing_dirty();
 	}
 
@@ -247,8 +252,8 @@ namespace flame
 //			data_changed(FLAME_CHASH("global_pos"), nullptr);
 //		}
 //	}
-//
-	void cElementPrivate::draw(graphics::Canvas* canvas)
+
+	void cElementPrivate::draw_background(graphics::Canvas* canvas)
 	{
 //#ifdef _DEBUG
 //		if (debug_level > 0)
@@ -258,112 +263,55 @@ namespace flame
 //		}
 //#endif
 //
-//		if (!clipped)
-//		{
-//			if (alpha > 0.f)
-//			{
-				update_transform();
+		//if (alpha > 0.f)
+		{
+			if (fill_color.a() > 0)
+			{
+				canvas->begin_path();
+				canvas->move_to(points[0]);
+				canvas->line_to(points[1]);
+				canvas->line_to(points[2]);
+				canvas->line_to(points[3]);
+				canvas->fill(fill_color);
+			}
 
-				if (fill_color.a() > 0)
-				{
-					canvas->begin_path();
-					canvas->move_to(points[0]);
-					canvas->line_to(points[1]);
-					canvas->line_to(points[2]);
-					canvas->line_to(points[3]);
-					canvas->fill(fill_color);
-				}
-
-				if (border > 0.f && border_color.a() > 0)
-				{
-					canvas->begin_path();
-					canvas->move_to(points[0]);
-					canvas->line_to(points[1]);
-					canvas->line_to(points[2]);
-					canvas->line_to(points[3]);
-					canvas->line_to(points[0]);
-					canvas->stroke(border_color, border);
-				}
-
-				for (auto d : drawers)
-					d->draw(canvas);
-
-//				auto p = floor(global_pos);
-//				auto s = floor(global_size);
-//				auto r = floor(roundness * global_scale);
-//				path_rect(points, p, s, r, roundness_lod);
-//				if (color.w() > 0)
-//					canvas->fill(points.size(), points.data(), color.copy().factor_w(alpha));
-//				auto ft = frame_thickness * global_scale;
-//				if (ft > 0.f && frame_color.w() > 0)
-//				{
-//					points.clear();
-//					path_rect(points, p + 0.5f, s - 0.5f, r, roundness_lod);
-//					points.push_back(points[0]);
-//					canvas->stroke(points.size(), points.data(), frame_color.copy().factor_w(alpha), ft);
-//				}
-//			}
-//		}
+			if (border > 0.f && border_color.a() > 0)
+			{
+				auto hf = border * 0.5f;
+				canvas->begin_path();
+				canvas->move_to(points[0] + Vec2f(hf, hf));
+				canvas->line_to(points[1] + Vec2f(-hf, hf));
+				canvas->line_to(points[2] + Vec2f(-hf, -hf));
+				canvas->line_to(points[3] + Vec2f(hf, -hf));
+				canvas->line_to(points[0] + Vec2f(hf, hf));
+				canvas->stroke(border_color, border);
+			}
+		}
 	}
-//
-//	void cElementPrivate::on_event(EntityEvent e, void* t)
-//	{
-//		switch (e)
-//		{
-//		case EntityEnteredWorld:
-//		{
-//			calc_geometry();
-//			renderer = entity->world->get_system(sElementRenderer);
-//			renderer->pending_update = true;
-//		}
-//			break;
-//		case EntityLeftWorld:
-//			mark_drawing_dirty();
-//			renderer = nullptr;
-//			break;
-//		case EntityVisibilityChanged:
-//			calc_geometry();
-//			mark_drawing_dirty();
-//			break;
-//		case EntityPositionChanged:
-//			mark_drawing_dirty();
-//			break;
-//		}
-//	}
-//
+
+	void cElementPrivate::draw_content(graphics::Canvas* canvas)
+	{
+		for (auto d : drawers)
+			d->draw(canvas);
+	}
+
 //	void cElement::set_pos(const Vec2f& p, void* sender)
 //	{
-//		if (p == pos)
-//			return;
-//		pos = p;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("pos"), sender);
 //	}
 //
 //	void cElement::set_scale(float s, void* sender)
 //	{
-//		if (s == scale)
-//			return;
-//		scale = s;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("scale"), sender);
 //	}
 //
 //	void cElement::set_size(const Vec2f& s, void* sender)
 //	{
-//		if (s == size)
-//			return;
-//		size = s;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("size"), sender);
 //	}
 //
 //	void cElement::set_alpha(float a, void* sender)
 //	{
-//		if (a == alpha)
-//			return;
-//		alpha = a;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("alpha"), sender);
 //	}
 //
@@ -378,28 +326,16 @@ namespace flame
 //
 //	void cElement::set_frame_thickness(float t, void* sender)
 //	{
-//		if (t == frame_thickness)
-//			return;
-//		frame_thickness = t;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("frame_thickness"), sender);
 //	}
 //
 //	void cElement::set_color(const Vec4c& c, void* sender)
 //	{
-//		if (c == color)
-//			return;
-//		color = c;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("color"), sender);
 //	}
 //
 //	void cElement::set_frame_color(const Vec4c& c, void* sender)
 //	{
-//		if (c == frame_color)
-//			return;
-//		frame_color = c;
-//		mark_drawing_dirty();
 //		data_changed(FLAME_CHASH("frame_color"), sender);
 //	}
 
