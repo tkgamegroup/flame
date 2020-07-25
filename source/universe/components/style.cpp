@@ -1,6 +1,6 @@
-//#include <flame/universe/components/element.h>
-//#include <flame/universe/components/text.h>
-//#include <flame/universe/components/event_receiver.h>
+//#include <flame/universe/cs/element.h>
+//#include <flame/universe/cs/text.h>
+//#include <flame/universe/cs/event_receiver.h>
 #include <flame/foundation/typeinfo.h>
 #include "../entity_private.h"
 #include "style_private.h"
@@ -9,7 +9,7 @@ namespace flame
 {
 	void cStylePrivate::set_rule(const std::string& rule)
 	{
-		cmds.clear();
+		targets.clear();
 
 		auto et = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 		assert(et);
@@ -36,11 +36,11 @@ namespace flame
 			}
 			if (!e)
 				continue;
-			auto component = e->get_component(std::hash<std::string>()(sp4[sp4.size() - 2]));
-			if (!component)
+			auto c = e->get_component(std::hash<std::string>()(sp4[sp4.size() - 2]));
+			if (!c)
 				continue;
 
-			auto udt = find_udt((std::string("flame::") + component->type_name).c_str());
+			auto udt = find_udt((std::string("flame::") + c->type_name).c_str());
 			if (!udt)
 				continue;
 
@@ -48,27 +48,48 @@ namespace flame
 			if (!setter || setter->get_type() != TypeInfo::get(TypeData, "void") || setter->get_parameters_count() != 1)
 				continue;
 
+			Target* ptarget = nullptr;
+			for (auto& t : targets)
+			{
+				if (t.c == c)
+				{
+					ptarget = &t;
+					break;
+				}
+			}
+			if (!ptarget)
+			{
+				targets.push_back({});
+				ptarget = &targets.back();
+			}
+			ptarget->c = c;
+
 			auto state = et->create();
 			et->unserialize(state, sp2[0].c_str());
-			auto it = std::find_if(cmds.begin(), cmds.end(), [&](const auto& a) {
-				return a.first == *(int*)state;
-			});
-			if (it == cmds.end())
+			Situation* psituation = nullptr;
+			for (auto& s : ptarget->situations)
 			{
-				cmds.push_back({});
-				it = cmds.end() - 1;
+				if (s.s == *(int*)state)
+				{
+					psituation = &s;
+					break;
+				}
 			}
-			it->first = *(StateFlags*)state;
+			if (!psituation)
+			{
+				ptarget->situations.push_back({});
+				psituation = &ptarget->situations.back();
+			}
+			psituation->s = *(StateFlags*)state;
 
 			auto type = setter->get_parameter(0);
 
-			auto c = new Command;
-			c->target = component;
-			c->type = type;
-			c->setter = setter;
-			c->data = type->create();
-			type->unserialize(c->data, sp3[1].c_str());
-			it->second.emplace_back(c);
+			auto cmd = new Command;
+			cmd->type = type;
+			cmd->setter = setter;
+			cmd->data = type->create();
+			type->unserialize(cmd->data, sp3[1].c_str());
+			psituation->cmds.emplace_back(cmd);
 
 			et->destroy(state);
 		}
@@ -80,17 +101,20 @@ namespace flame
 
 	void cStylePrivate::on_entity_state_changed()
 	{
-		auto s = ((EntityPrivate*)entity)->state;
-		for (auto& l : cmds)
+		auto state = ((EntityPrivate*)entity)->state;
+		for (auto& t : targets)
 		{
-			if (l.first == s)
+			for (auto& s : t.situations)
 			{
-				for (auto& c : l.second)
+				if ((s.s & state) == s.s)
 				{
-					void* parms[] = { c->type->get_tag() == TypePointer ? *(void**)c->data : c->data };
-					c->setter->call(c->target, nullptr, parms);
+					for (auto& c : s.cmds)
+					{
+						void* parms[] = { c->type->get_tag() == TypePointer ? *(void**)c->data : c->data };
+						c->setter->call(t.c, nullptr, parms);
+					}
+					break;
 				}
-				break;
 			}
 		}
 	}

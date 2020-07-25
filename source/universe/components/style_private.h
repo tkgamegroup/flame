@@ -16,7 +16,6 @@ namespace flame
 	{
 		struct Command
 		{
-			Component* target;
 			TypeInfo* type;
 			FunctionInfo* setter;
 			void* data = nullptr;
@@ -27,7 +26,19 @@ namespace flame
 			}
 		};
 
-		std::vector<std::pair<StateFlags, std::vector<std::unique_ptr<Command>>>> cmds;
+		struct Situation
+		{
+			StateFlags s;
+			std::vector<std::unique_ptr<Command>> cmds;
+		};
+
+		struct Target
+		{
+			Component* c;
+			std::vector<Situation> situations;
+		};
+
+		std::vector<Target> targets;
 		std::string rule;
 
 		const char* get_rule() const override { return rule.c_str(); }
