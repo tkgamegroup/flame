@@ -1,11 +1,6 @@
-//#include <flame/universe/entity.h>
-//#include <flame/universe/world.h>
-//#include "../components/element_private.h"
-//#include "../components/text_private.h"
-//#include <flame/universe/components/aligner.h>
-
 #include "../entity_private.h"
 #include "../components/element_private.h"
+#include "../components/aligner_private.h"
 #include "../components/layout_private.h"
 #include "type_setting_private.h"
 
@@ -18,10 +13,10 @@ namespace flame
 		auto it = sizing_list.begin();
 		for (; it != sizing_list.end(); it++)
 		{
-			if (std::get<1>(*it)->depth < e->depth)
+			if (it->second->depth < e->depth)
 				break;
 		}
-		sizing_list.emplace(it, s, e, (cElementPrivate*)e->get_component(cElement::type_hash));
+		sizing_list.emplace(it, s, e);
 		s->pending_sizing = true;
 	}
 
@@ -31,7 +26,7 @@ namespace flame
 			return;
 		s->pending_sizing = false;
 		std::erase_if(sizing_list, [&](const auto& i) {
-			return std::get<0>(i) == s;
+			return i.first == s;
 		});
 	}
 
@@ -65,14 +60,25 @@ namespace flame
 		while (!sizing_list.empty())
 		{
 			auto& s = sizing_list.front();
-			std::get<0>(s)->pending_sizing = false;
+			s.first->pending_sizing = false;
 			if (std::get<1>(s)->global_visibility)
 			{
-				auto size = std::get<0>(s)->measure();
-				if (std::get<0>(s)->auto_width)
-					std::get<2>(s)->set_width(size.x() + std::get<2>(s)->padding[0] + std::get<2>(s)->padding[2]);
-				if (std::get<0>(s)->auto_height)
-					std::get<2>(s)->set_height(size.y() + std::get<2>(s)->padding[1] + std::get<2>(s)->padding[3]);
+				auto element = (cElementPrivate*)s.second->get_component(cElement::type_hash);
+				auto aligner = (cAlignerPrivate*)s.second->get_component(cAligner::type_hash);
+				auto size = s.first->measure();
+				auto w = 0.f, h = 0.f;
+				if (s.first->auto_width)
+				{
+					w = size.x() + element->padding[0] + element->padding[2];
+					element->set_width(w);
+				}
+				if (s.first->auto_height)
+				{
+					h = size.y() + element->padding[1] + element->padding[3];
+					element->set_height(h);
+				}
+				if (aligner)
+					aligner->desired_size = Vec2f(w, h);
 			}
 			sizing_list.pop_front();
 		}

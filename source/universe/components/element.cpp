@@ -12,6 +12,7 @@ namespace flame
 			return;
 		x = _x;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("x")>::v);
 	}
 
 	void cElementPrivate::set_y(float _y)
@@ -20,6 +21,7 @@ namespace flame
 			return;
 		y = _y;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("y")>::v);
 	}
 
 	void cElementPrivate::set_width(float w)
@@ -28,6 +30,7 @@ namespace flame
 			return;
 		width = w;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("width")>::v);
 	}
 
 	void cElementPrivate::set_height(float h)
@@ -36,6 +39,7 @@ namespace flame
 			return;
 		height = h;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("height")>::v);
 	}
 
 	void cElementPrivate::set_padding(const Vec4f& p)
@@ -44,6 +48,7 @@ namespace flame
 			return;
 		padding = p;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("padding")>::v);
 	}
 
 	void cElementPrivate::set_pivotx(float p)
@@ -52,6 +57,7 @@ namespace flame
 			return;
 		pivotx = p;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("pivotx")>::v);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -60,6 +66,7 @@ namespace flame
 			return;
 		pivoty = p;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("pivoty")>::v);
 	}
 
 	void cElementPrivate::set_scalex(float s)
@@ -68,6 +75,7 @@ namespace flame
 			return;
 		scalex = s;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("scalex")>::v);
 	}
 
 	void cElementPrivate::set_scaley(float s)
@@ -76,6 +84,7 @@ namespace flame
 			return;
 		scaley = s;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("scaley")>::v);
 	}
 
 	void cElementPrivate::set_rotation(float r)
@@ -84,6 +93,7 @@ namespace flame
 			return;
 		rotation = r;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("rotation")>::v);
 	}
 
 	void cElementPrivate::set_skewx(float s)
@@ -92,6 +102,7 @@ namespace flame
 			return;
 		skewx = s;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("skewx")>::v);
 	}
 
 	void cElementPrivate::set_skewy(float s)
@@ -100,6 +111,7 @@ namespace flame
 			return;
 		skewy = s;
 		mark_transform_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("skewy")>::v);
 	}
 
 	void cElementPrivate::update_transform()
@@ -157,6 +169,7 @@ namespace flame
 			return;
 		fill_color = c;
 		mark_drawing_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("fill_color")>::v);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -165,6 +178,7 @@ namespace flame
 			return;
 		border = b;
 		mark_drawing_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("border")>::v);
 	}
 
 	void cElementPrivate::set_border_color(const Vec4c& c)
@@ -173,6 +187,7 @@ namespace flame
 			return;
 		border_color = c;
 		mark_drawing_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("border_color")>::v);
 	}
 
 	void cElementPrivate::set_clipping(bool c)
@@ -181,6 +196,7 @@ namespace flame
 			return;
 		clipping = c;
 		mark_drawing_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("clipping")>::v);
 	}
 
 	void cElementPrivate::mark_transform_dirty()
@@ -237,19 +253,19 @@ namespace flame
 //		{
 //			mark_drawing_dirty();
 //			global_scale = _global_scale;
-//			data_changed(FLAME_CHASH("global_scale"), nullptr);
+//			report_data_changed(FLAME_CHASH("global_scale"), nullptr);
 //		}
 //		if (global_size != _global_size)
 //		{
 //			mark_drawing_dirty();
 //			global_size = _global_size;
-//			data_changed(FLAME_CHASH("global_size"), nullptr);
+//			report_data_changed(FLAME_CHASH("global_size"), nullptr);
 //		}
 //		if (global_pos != _global_pos)
 //		{
 //			mark_drawing_dirty();
 //			global_pos = _global_pos;
-//			data_changed(FLAME_CHASH("global_pos"), nullptr);
+//			report_data_changed(FLAME_CHASH("global_pos"), nullptr);
 //		}
 //	}
 
@@ -295,48 +311,13 @@ namespace flame
 			d->draw(canvas);
 	}
 
-//	void cElement::set_pos(const Vec2f& p, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("pos"), sender);
-//	}
-//
-//	void cElement::set_scale(float s, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("scale"), sender);
-//	}
-//
-//	void cElement::set_size(const Vec2f& s, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("size"), sender);
-//	}
-//
-//	void cElement::set_alpha(float a, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("alpha"), sender);
-//	}
-//
 //	void cElement::set_roundness(const Vec4f& r, void* sender)
 //	{
 //		if (r == roundness)
 //			return;
 //		roundness = r;
 //		mark_drawing_dirty();
-//		data_changed(FLAME_CHASH("roundness"), sender);
-//	}
-//
-//	void cElement::set_frame_thickness(float t, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("frame_thickness"), sender);
-//	}
-//
-//	void cElement::set_color(const Vec4c& c, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("color"), sender);
-//	}
-//
-//	void cElement::set_frame_color(const Vec4c& c, void* sender)
-//	{
-//		data_changed(FLAME_CHASH("frame_color"), sender);
+//		report_data_changed(FLAME_CHASH("roundness"), sender);
 //	}
 
 	cElement* cElement::create()

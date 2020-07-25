@@ -1,86 +1,63 @@
-//#include <flame/universe/components/element.h>
+#include "../entity_private.h"
 #include "aligner_private.h"
 
 namespace flame
 {
-	//cAlignerPrivate()
-	//{
-	//	element = nullptr;
+	void cAlignerPrivate::set_alignx(Align a)
+	{
+		if (alignx == a)
+			return;
+		alignx = a;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("alignx")>::v);
+	}
 
-	//	margin = Vec4f(0.f);
-	//	x_align_flags = (AlignFlag)0;
-	//	y_align_flags = (AlignFlag)0;
-	//	min_width = -1.f;
-	//	min_height = -1.f;
-	//	width_factor = 1.f;
-	//	height_factor = 1.f;
-	//}
+	void cAlignerPrivate::set_aligny(Align a)
+	{
+		if (aligny == a)
+			return;
+		aligny = a;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("aligny")>::v);
+	}
 
-	//void on_event(EntityEvent e, void* t) override
-	//{
-	//	if (e == EntityComponentAdded && t == this)
-	//	{
-	//		element = entity->get_component(cElement);
-	//		assert(element);
-	//		if (x_align_flags & AlignGreedy && min_width < 0.f)
-	//			min_width = element->size.x();
-	//		if (y_align_flags & AlignGreedy && min_height < 0.f)
-	//			min_height = element->size.y();
-	//	}
-	//}
-//
-//	cAligner* cAligner::create()
-//	{
-//		return new cAlignerPrivate();
-//	}
-//
-//	void cAligner::set_x_align_flags(uint a, void* sender)
-//	{
-//		if (a == x_align_flags)
-//			return;
-//		x_align_flags = (AlignFlag)a;
-//		data_changed(FLAME_CHASH("x_align_flags"), sender);
-//	}
-//
-//	void cAligner::set_y_align_flags(uint a, void* sender)
-//	{
-//		if (a == y_align_flags)
-//			return;
-//		y_align_flags = (AlignFlag)a;
-//		data_changed(FLAME_CHASH("y_align_flags"), sender);
-//	}
-//
-//	void cAligner::set_min_width(float w, void* sender)
-//	{
-//		if (w == min_width)
-//			return;
-//		min_width = w;
-//		data_changed(FLAME_CHASH("min_width"), sender);
-//	}
-//
-//	void cAligner::set_min_height(float h, void* sender)
-//	{
-//		if (h == min_height)
-//			return;
-//		min_height = h;
-//		data_changed(FLAME_CHASH("min_height"), sender);
-//	}
-//
-//	void cAligner::set_width_factor(float f, void* sender)
-//	{
-//		if (f == width_factor)
-//			return;
-//		width_factor = f;
-//		data_changed(FLAME_CHASH("width_factor"), sender);
-//	}
-//
-//	void cAligner::set_height_factor(float f, void* sender)
-//	{
-//		if (f == height_factor)
-//			return;
-//		height_factor = f;
-//		data_changed(FLAME_CHASH("height_factor"), sender);
-//	}
+	void cAlignerPrivate::set_width_factor(float f)
+	{
+		if (width_factor == f)
+			return;
+		width_factor = f;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("width_factor")>::v);
+	}
+
+	void cAlignerPrivate::set_height_factor(float f)
+	{
+		if (height_factor == f)
+			return;
+		height_factor = f;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("height_factor")>::v);
+	}
+
+	void cAlignerPrivate::set_absolute(bool a)
+	{
+		if (absolute == a)
+			return;
+		absolute = a;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("absolute")>::v);
+	}
+
+	void cAlignerPrivate::set_margin(const Vec4f& m)
+	{
+		if (margin == m)
+			return;
+		margin = m;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("margin")>::v);
+	}
+
+	void cAlignerPrivate::set_only_basic(bool o)
+	{
+		if (only_basic == o)
+			return;
+		only_basic = o;
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("only_basic")>::v);
+	}
 
 	cAligner* cAligner::create()
 	{

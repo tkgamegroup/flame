@@ -1,9 +1,9 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
-
 #include "../world_private.h"
 #include "../res_map_private.h"
 #include "image_private.h"
+#include "aligner_private.h"
 
 namespace flame
 {
@@ -12,7 +12,12 @@ namespace flame
 		if (res_id == id)
 			return;
 		res_id = id;
-		src = "";
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("res_id")>::v);
+		if (!src.empty())
+		{
+			src = "";
+			((EntityPrivate*)entity)->report_data_changed(this, S<ch("src")>::v);
+		}
 	}
 
 	void cImagePrivate::set_tile_id(uint id)
@@ -20,7 +25,12 @@ namespace flame
 		if (tile_id == id)
 			return;
 		tile_id = id;
-		src = "";
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("tile_id")>::v);
+		if (!src.empty())
+		{
+			src = "";
+			((EntityPrivate*)entity)->report_data_changed(this, S<ch("src")>::v);
+		}
 	}
 
 	void cImagePrivate::set_src(const std::string& _src)
@@ -43,6 +53,9 @@ namespace flame
 				if (r_filename == path)
 				{
 					res_id = slot;
+					((EntityPrivate*)entity)->report_data_changed(this, S<ch("res_id")>::v);
+					((EntityPrivate*)entity)->report_data_changed(this, S<ch("tile_id")>::v);
+					((EntityPrivate*)entity)->report_data_changed(this, S<ch("src")>::v);
 					break;
 				}
 				slot++;
@@ -94,9 +107,9 @@ namespace flame
 		res_map = nullptr;
 	}
 
-	void cImagePrivate::on_entity_visibility_changed()
+	void cImagePrivate::on_entity_component_added(Component* c)
 	{
-		if (((EntityPrivate*)entity)->global_visibility)
+		if (c->type_hash == cAligner::type_hash)
 			mark_size_dirty();
 	}
 

@@ -3,7 +3,6 @@
 namespace flame
 {
 	struct EntityPrivate;
-	struct cElementPrivate;
 	struct cLayoutPrivate;
 
 	struct sTypeSettingBridge : sTypeSetting
@@ -15,7 +14,7 @@ namespace flame
 
 	struct sTypeSettingPrivate : sTypeSettingBridge
 	{
-		std::deque<std::tuple<AutoSizer*, EntityPrivate*, cElementPrivate*>> sizing_list;
+		std::deque<std::pair<AutoSizer*, EntityPrivate*>> sizing_list;
 		std::deque<cLayoutPrivate*> layouting_list;
 
 		void add_to_sizing_list(AutoSizer* s, EntityPrivate* e);

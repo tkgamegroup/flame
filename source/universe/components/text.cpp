@@ -1,9 +1,7 @@
-//#include <flame/universe/world.h>
-//#include <flame/universe/components/aligner.h>
-
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
+#include "aligner_private.h"
 #include "text_private.h"
 
 namespace flame
@@ -12,11 +10,9 @@ namespace flame
 	{
 		text = _text;
 		if (element)
-		{
 			element->mark_drawing_dirty();
-			if (type_setting && true/*auto_size*/)
-				type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
-		}
+		mark_size_dirty();
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("text")>::v);
 	}
 
 	void cTextPrivate::set_font_size(uint fs)
@@ -27,7 +23,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 		mark_size_dirty();
-		//	data_changed(FLAME_CHASH("font_size"), sender);
+		((EntityPrivate*)entity)->report_data_changed(this, S<ch("font_size")>::v);
 	}
 
 	void cTextPrivate::mark_size_dirty()
@@ -69,9 +65,9 @@ namespace flame
 		atlas = nullptr;
 	}
 
-	void cTextPrivate::on_entity_visibility_changed()
+	void cTextPrivate::on_entity_component_added(Component* c)
 	{
-		if (((EntityPrivate*)entity)->global_visibility)
+		if (c->type_hash == cAligner::type_hash)
 			mark_size_dirty();
 	}
 
@@ -114,7 +110,7 @@ namespace flame
 	//			return;
 	//		thiz->text.assign(text, length);
 	//	}
-	//	data_changed(FLAME_CHASH("text"), sender);
+	//	report_data_changed(FLAME_CHASH("text"), sender);
 	//}
 
 	//void cText::set_color(const Vec4c& c, void* sender)
@@ -128,7 +124,7 @@ namespace flame
 	//		if (management && auto_size)
 	//			management->add_to_sizing_list(this);
 	//	}
-	//	data_changed(FLAME_CHASH("color"), sender);
+	//	report_data_changed(FLAME_CHASH("color"), sender);
 	//}
 
 	//void cText::set_auto_size(bool v, void* sender)
@@ -146,7 +142,7 @@ namespace flame
 	//				management->add_to_sizing_list(this);
 	//		}
 	//	}
-	//	data_changed(FLAME_CHASH("auto_size"), sender);
+	//	report_data_changed(FLAME_CHASH("auto_size"), sender);
 	//}
 
 	cText* cText::create()

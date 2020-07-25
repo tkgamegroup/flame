@@ -66,7 +66,7 @@ namespace flame
 		auto thiz = (cCheckboxPrivate*)this;
 		checked = _checked;
 		thiz->do_style();
-		data_changed(FLAME_CHASH("checked"), sender);
+		report_data_changed(FLAME_CHASH("checked"), sender);
 	}
 
 	cCheckbox* cCheckbox::create()

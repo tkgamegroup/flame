@@ -21,31 +21,28 @@ namespace flame
 
 	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
 
-	enum FocusType
+	enum FocusMethod
 	{
 		FocusByLeftButton,
 		FocusByRightButton,
 		FocusByLeftOrRightButton
 	};
 
-	enum AlignFlags
+	enum Align
 	{
-		AlignMin = 1 << 0,
-		AlignMax = 1 << 1,
-		AlignMiddle = 1 << 2,
-		AlignMinMax = 1 << 3,
-		AlignAbsolute = 1 << 4, // no padding
-		AlignGreedy = 1 << 5
+		AlignNone,
+		AlignMin,
+		AlignMax,
+		AlignMiddle,
+		AlignMinMax
 	};
-
-	inline AlignFlags operator| (AlignFlags a, AlignFlags b) { return (AlignFlags)((int)a | (int)b); }
 
 	enum LayoutType
 	{
-		LayoutFree,
+		LayoutBasic,
 		LayoutVertical,
 		LayoutHorizontal,
-		LayoutGrid
+		LayoutTile
 	};
 
 	enum ScrollbarType

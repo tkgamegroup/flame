@@ -194,7 +194,7 @@ namespace flame
 		components.clear();
 	}
 
-	void EntityPrivate::data_changed(Component* c, uint hash)
+	void EntityPrivate::report_data_changed(Component* c, uint hash)
 	{
 		assert(c->entity == this);
 		for (auto cc : local_data_changed_dispatch_list)

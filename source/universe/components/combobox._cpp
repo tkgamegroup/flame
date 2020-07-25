@@ -127,7 +127,7 @@ namespace flame
 					comboboxitem->do_style(true);
 			}
 		}
-		data_changed(FLAME_CHASH("index"), sender);
+		report_data_changed(FLAME_CHASH("index"), sender);
 	}
 
 	cCombobox* cCombobox::create()

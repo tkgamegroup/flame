@@ -138,7 +138,7 @@ namespace flame
 					element->set_height(0.f);
 				v += element->pos.y();
 				element->set_y(element->size.y() > 0.f ? clamp(v, 0.f, scrollbar->element->size.y() - element->size.y()) : 0.f);
-				target_layout->set_y_scroll_offset(-int(element->pos.y() / scrollbar->element->size.y() * content_size / step) * step);
+				target_layout->set_scrolly(-int(element->pos.y() / scrollbar->element->size.y() * content_size / step) * step);
 			}
 			else
 			{
@@ -154,7 +154,7 @@ namespace flame
 					element->set_width(0.f);
 				v += element->pos.x();
 				element->set_x(element->size.x() > 0.f ? clamp(v, 0.f, scrollbar->element->size.x() - element->size.x()) : 0.f);
-				target_layout->set_x_scroll_offset(-int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step);
+				target_layout->set_scrollx(-int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step);
 			}
 		}
 	};

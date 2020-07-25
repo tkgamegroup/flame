@@ -152,7 +152,7 @@ namespace flame
 				listitem->do_style(true);
 		}
 		selected = e;
-		data_changed(FLAME_CHASH("selected"), sender);
+		report_data_changed(FLAME_CHASH("selected"), sender);
 	}
 
 	cList* cList::create(bool select_air_when_clicked)

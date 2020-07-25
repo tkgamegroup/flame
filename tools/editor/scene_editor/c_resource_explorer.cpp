@@ -172,7 +172,7 @@ cResourceExplorer::cResourceExplorer() :
 				c_list_element = e_list->get_component(cElement);
 
 				c_list_layout = e_list->get_component(cLayout);
-				c_list_layout->type = LayoutGrid;
+				c_list_layout->type = LayoutTile;
 				c_list_layout->column = 4;
 			}
 				ui.e_begin_popup_menu();

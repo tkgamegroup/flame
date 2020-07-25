@@ -300,7 +300,7 @@ namespace flame
 			}
 		}
 		selected = e;
-		data_changed(FLAME_CHASH("selected"), sender);
+		report_data_changed(FLAME_CHASH("selected"), sender);
 	}
 
 	static void expand(Entity* e, Entity* r)

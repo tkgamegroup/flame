@@ -52,7 +52,7 @@ auto test_prefab = L"edit.prefab";
 
 int main(int argc, char** args)
 {
-	w = Window::create("Universe Test", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	w = Window::create("Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
 	d = Device::create(true);
 	render_finished = Semaphore::create(d);
 	sc = Swapchain::create(d, w, ImageUsageSampled);

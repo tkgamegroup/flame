@@ -4,8 +4,6 @@
 
 namespace flame
 {
-//	struct cElement;
-//
 	struct FLAME_RU(cAligner : Component, all)
 	{
 		inline static auto type_name = "cAligner";
@@ -16,29 +14,26 @@ namespace flame
 		{
 		}
 
-		//virtual AlignFlags get_x_align_flags() const = 0;
+		virtual Align get_alignx() const = 0;
+		virtual void set_alignx(Align a) = 0;
+		virtual Align get_aligny() const = 0;
+		virtual void set_aligny(Align a) = 0;
 
-//		cElement* element;
-//
-//		FLAME_RV(Vec4f, margin); // L T R B
-//		FLAME_RV(AlignFlag, x_align_flags, m);
-//		FLAME_RV(AlignFlag, y_align_flags, m);
-//		float min_width;
-//		float min_height;
-//		float width_factor;
-//		float height_factor;
-//
-//		cAligner() :
-//			Component("cAligner")
-//		{
-//		}
-//
-//		FLAME_UNIVERSE_EXPORTS void set_x_align_flags(uint a);
-//		FLAME_UNIVERSE_EXPORTS void set_y_align_flags(uint a);
-//		FLAME_UNIVERSE_EXPORTS void set_min_width(float w);
-//		FLAME_UNIVERSE_EXPORTS void set_min_height(float h);
-//		FLAME_UNIVERSE_EXPORTS void set_width_factor(float f);
-//		FLAME_UNIVERSE_EXPORTS void set_height_factor(float f);
+		virtual float get_width_factor() const = 0;
+		virtual void set_width_factor(float f) = 0;
+		virtual float get_height_factor() const = 0;
+		virtual void set_height_factor(float f) = 0;
+
+		virtual bool get_absolute() const = 0;
+		virtual void set_absolute(bool a) = 0;
+
+		// left top right bottom
+		virtual Vec4f get_margin() const = 0;
+		// left top right bottom
+		virtual void set_margin(const Vec4f& m) = 0;
+
+		virtual bool get_only_basic() const = 0;
+		virtual void set_only_basic(bool o) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cAligner* create();
 	};
