@@ -109,8 +109,7 @@ namespace flame
 		void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0) override;
 		void reset_event(void* ev) override;
 		void remove_event(void* ev) override;
-		void remove_events(int id) override;
-		void process_events() override;
+		void remove_all_events(int id) override;
 	};
 
 	extern LooperPrivate* _looper;

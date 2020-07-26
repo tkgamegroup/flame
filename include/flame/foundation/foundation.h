@@ -668,8 +668,7 @@ namespace flame
 		virtual void* add_event(void (*callback)(Capture& c /* set c._current to invalid to keep event */ ), const Capture& capture, CountDown interval = CountDown(), uint id = 0) = 0;
 		virtual void reset_event(void* ev) = 0;
 		virtual void remove_event(void* ev) = 0;
-		virtual void remove_events(int id = 0) = 0; /* id=-1 means all */
-		virtual void process_events() = 0;
+		virtual void remove_all_events(int id = 0) = 0; /* id=-1 means all */
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper* get_looper();

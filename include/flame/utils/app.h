@@ -267,9 +267,9 @@ namespace flame
 	void App::run()
 	{
 		{
-			uint dt = get_looper()->delta_time * 1000;
-			if (dt < 16)
-				std::this_thread::sleep_for(std::chrono::milliseconds(16 - dt));
+			auto t = (0.02 - get_looper()->get_delta_time());
+			if (t > 0.f)
+				std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
 		}
 
 		get_looper()->process_events();

@@ -15,6 +15,7 @@
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/element_renderer.h>
+#include <flame/utils/fps.h>
 
 using namespace flame;
 using namespace graphics;
@@ -160,7 +161,17 @@ int main(int argc, char** args)
 	//	}
 	//}, Capture().set_thiz(root));
 
+	add_fps_listener([](Capture&, uint fps) {
+		printf("%d\n", fps);
+	}, Capture());
+
 	get_looper()->loop([](Capture&, float) {
+		{
+			auto t = (0.02 - get_looper()->get_delta_time());
+			if (t > 0.f)
+				std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
+		}
+
 		if (!cbs.empty())
 		{
 			world->update();

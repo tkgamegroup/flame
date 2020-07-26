@@ -323,7 +323,7 @@ static void undo()
 
 		bp_editor.e_notification->set_visible(true);
 		bp_editor.e_notification->get_component(cText)->set_text((std::wstring(L"Undo ") + a->name).c_str());
-		get_looper()->remove_events(FLAME_CHASH("hide_notification"));
+		get_looper()->remove_all_events(FLAME_CHASH("hide_notification"));
 		get_looper()->add_event([](Capture& c) {
 			bp_editor.e_notification->set_visible(false);
 		}, Capture(), 1.f, FLAME_CHASH("hide_notification"));
@@ -344,7 +344,7 @@ static void redo()
 
 		bp_editor.e_notification->set_visible(true);
 		bp_editor.e_notification->get_component(cText)->set_text((std::wstring(L"Redo ") + a->name).c_str());
-		get_looper()->remove_events(FLAME_CHASH("hide_notification"));
+		get_looper()->remove_all_events(FLAME_CHASH("hide_notification"));
 		get_looper()->add_event([](Capture& c) {
 			bp_editor.e_notification->set_visible(false);
 		}, Capture(), 1.f, FLAME_CHASH("hide_notification"));

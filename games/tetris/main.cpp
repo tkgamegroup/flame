@@ -1527,7 +1527,7 @@ void MyApp::begin_count_down()
 	e_count_down->set_visible(true);
 	e_count_down->get_component(cText)->set_text(L"3");
 	auto t = 3;
-	get_looper()->remove_events(FLAME_CHASH("count_down"));
+	get_looper()->remove_all_events(FLAME_CHASH("count_down"));
 	get_looper()->add_event([](Capture& c) {
 		auto& t = c.data<int>();
 		t--;
@@ -2172,7 +2172,7 @@ void MyApp::do_game_logic()
 								{
 									c_text_special->entity->set_visible(true);
 									c_text_special->set_text(special_str.c_str());
-									get_looper()->remove_events(FLAME_CHASH("special_text"));
+									get_looper()->remove_all_events(FLAME_CHASH("special_text"));
 									get_looper()->add_event([](Capture&) {
 										app.c_text_special->entity->set_visible(false);
 									}, Capture(), 1.f, FLAME_CHASH("special_text"));

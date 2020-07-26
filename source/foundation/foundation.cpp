@@ -1598,7 +1598,39 @@ namespace flame
 			return false;
 		}
 
-		process_events();
+		{
+			std::lock_guard<std::recursive_mutex> lock(event_mtx);
+			for (auto it = events.begin(); it != events.end();)
+			{
+				auto& e = *it;
+				auto excute = false;
+				if (e->rest.is_frame)
+				{
+					if (e->rest.v.frames == 0)
+						excute = true;
+					else
+						e->rest.v.frames--;
+				}
+				else
+				{
+					e->rest.v.time -= delta_time;
+					if (e->rest.v.time <= 0)
+						excute = true;
+				}
+				if (excute)
+				{
+					e->capture._current = nullptr;
+					e->callback(e->capture);
+					if (e->capture._current != INVALID_POINTER)
+					{
+						it = events.erase(it);
+						continue;
+					}
+					e->rest = e->interval;
+				}
+				it++;
+			}
+		}
 
 		frame_callback(frame_capture, delta_time);
 
@@ -1645,7 +1677,7 @@ namespace flame
 		}
 	}
 
-	void LooperPrivate::remove_events(int id)
+	void LooperPrivate::remove_all_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
@@ -1659,41 +1691,6 @@ namespace flame
 				else
 					it++;
 			}
-		}
-	}
-
-	void LooperPrivate::process_events()
-	{
-		std::lock_guard<std::recursive_mutex> lock(event_mtx);
-		for (auto it = events.begin(); it != events.end();)
-		{
-			auto& e = *it;
-			auto excute = false;
-			if (e->rest.is_frame)
-			{
-				if (e->rest.v.frames == 0)
-					excute = true;
-				else
-					e->rest.v.frames--;
-			}
-			else
-			{
-				e->rest.v.time -= delta_time;
-				if (e->rest.v.time <= 0)
-					excute = true;
-			}
-			if (excute)
-			{
-				e->capture._current = nullptr;
-				e->callback(e->capture);
-				if (e->capture._current != INVALID_POINTER)
-				{
-					it = events.erase(it);
-					continue;
-				}
-				e->rest = e->interval;
-			}
-			it++;
 		}
 	}
 
