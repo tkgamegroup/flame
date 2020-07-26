@@ -9,7 +9,6 @@
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/components/edit.h>
-#include <flame/universe/components/checkbox.h>
 #include <flame/universe/components/aligner.h>
 #include <flame/universe/components/layout.h>
 #include <flame/universe/components/scrollbar.h>
@@ -600,26 +599,6 @@ namespace flame
 		inline void e_end_layout()
 		{
 			parents.pop();
-		}
-
-		inline Entity* e_checkbox(bool checked = false)
-		{
-			auto e = e_empty();
-			auto ce = c_element();
-			ce->size = 4.f + style(FontSize).u[0];
-			ce->frame_thickness = 3.f;
-			ce->frame_color = style(TextColorNormal).c;
-			c_event_receiver();
-			auto cs = c_style_color2();
-			cs->color_normal[0] = style(FrameColorNormal).c;
-			cs->color_hovering[0] = style(FrameColorHovering).c;
-			cs->color_active[0] = style(FrameColorActive).c;
-			cs->color_normal[1] = style(ButtonColorNormal).c;
-			cs->color_hovering[1] = style(ButtonColorHovering).c;
-			cs->color_active[1] = style(ButtonColorActive).c;
-			cs->style();
-			c_checkbox()->set_checked(checked);
-			return e;
 		}
 
 		inline Entity* e_toggle(const wchar_t* text, bool toggled = false)

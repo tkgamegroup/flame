@@ -1,4 +1,4 @@
-#include "../entity_private.h"
+#include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/aligner_private.h"
 #include "../components/layout_private.h"
@@ -55,8 +55,31 @@ namespace flame
 		});
 	}
 
+	void sTypeSettingPrivate::on_added()
+	{
+		window = (Window*)((WorldPrivate*)world)->find_object("Window");
+
+		auto root = ((WorldPrivate*)world)->root.get();
+		if (!root->get_component(cElement::type_hash))
+		{
+			auto element = (cElementPrivate*)cElementPrivate::create();
+			element->fill_color = Vec4c(0);
+			root->add_component(element);
+		}
+		if (!root->get_component(cLayout::type_hash))
+			root->add_component(cLayoutPrivate::create());
+	}
+
 	void sTypeSettingPrivate::update()
 	{
+		if (window)
+		{
+			auto element = (cElementPrivate*)((WorldPrivate*)world)->root->get_component(cElement::type_hash);
+			auto size = window->get_size();
+			element->set_width(size.x());
+			element->set_height(size.y());
+		}
+
 		while (!sizing_list.empty())
 		{
 			auto& s = sizing_list.front();

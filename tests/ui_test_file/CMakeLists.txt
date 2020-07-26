@@ -1,5 +1,0 @@
-generate_config()
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_executable(ui_test_file ${SOURCE_LIST})
-set_target_properties(ui_test_file PROPERTIES FOLDER "tests")
-target_link_libraries(ui_test_file flame_universe)

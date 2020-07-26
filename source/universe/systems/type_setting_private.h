@@ -2,6 +2,8 @@
 
 namespace flame
 {
+	struct Window;
+
 	struct EntityPrivate;
 	struct cLayoutPrivate;
 
@@ -14,6 +16,8 @@ namespace flame
 
 	struct sTypeSettingPrivate : sTypeSettingBridge
 	{
+		Window* window = nullptr;;
+
 		std::deque<std::pair<AutoSizer*, EntityPrivate*>> sizing_list;
 		std::deque<cLayoutPrivate*> layouting_list;
 
@@ -22,6 +26,7 @@ namespace flame
 		void add_to_layouting_list(cLayoutPrivate* l);
 		void remove_from_layouting_list(cLayoutPrivate* l);
 
+		void on_added() override;
 		void update() override;
 	};
 

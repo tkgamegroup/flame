@@ -107,17 +107,27 @@ int main(int argc, char** args)
 	ser = sElementRenderer::create();
 	world->add_system(ser);
 
-	auto root = world->get_root();
-	root->load((res_path / test_prefab).c_str());
+	auto e = Entity::create();
+	e->load((res_path / "menu_bar.prefab").c_str());
+	world->get_root()->add_child(e);
+	{
+		for (auto i = 0; i < 5; i++)
+		{
+			auto ee = Entity::create();
+			ee->load((res_path / "menu.prefab").c_str());
+			e->add_child(ee);
+		}
+	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);
 	//	if (path.filename() == test_prefab)
 	//	{
+	//		auto e = Entity::create();
+	//		e->load(filename);
 	//		auto root = c.thiz<Entity>();
-	//		root->remove_all_components();
 	//		root->remove_all_children();
-	//		root->load(filename);
+	//		root->add_child(e);
 	//	}
 	//}, Capture().set_thiz(root), false, false);
 
@@ -146,12 +156,9 @@ int main(int argc, char** args)
 
 			fence->wait();
 
-			if (!cbs.empty())
-			{
-				auto q = d->get_queue(QueueGraphics);
-				q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
-				q->present(sc, render_finished);
-			}
+			auto q = d->get_queue(QueueGraphics);
+			q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
+			q->present(sc, render_finished);
 		}
 	}, Capture());
 
