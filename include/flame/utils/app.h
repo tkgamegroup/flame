@@ -25,21 +25,20 @@ namespace flame
 
 	struct GraphicsWindow
 	{
-		Window* window;
-		graphics::Swapchain* swapchain;
-		int swapchain_image_index;
+		Window* window = nullptr;
+		graphics::Swapchain* swapchain = nullptr;
+		int swapchain_image_index = -1;
 		std::vector<graphics::CommandBuffer*> swapchain_commandbuffers;
-		graphics::Fence* submit_fence;
-		graphics::Semaphore* render_finished_semaphore;
+		graphics::Fence* submit_fence = nullptr;
+		graphics::Semaphore* render_finished_semaphore = nullptr;
 
-		graphics::Canvas* canvas;
+		graphics::Canvas* canvas = nullptr;
 
-		World* world;
-		sLayoutManagement* s_layout_management;
-		sEventDispatcher* s_event_dispatcher;
-		sElementRenderer* s_2d_renderer;
-		Entity* root;
-		cElement* root_element;
+		World* world = nullptr;
+		sLayoutManagement* s_layout_management = nullptr;
+		sEventDispatcher* s_event_dispatcher = nullptr;
+		sElementRenderer* s_2d_renderer = nullptr;
+		Entity* root = nullptr;
 
 		GraphicsWindow();
 		GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p = nullptr, bool maximized = false);
@@ -69,22 +68,6 @@ namespace flame
 		void create(bool graphics_debug = true);
 		void run();
 	};
-
-	GraphicsWindow::GraphicsWindow() :
-		window(nullptr),
-		swapchain(nullptr),
-		swapchain_image_index(-1),
-		submit_fence(nullptr),
-		render_finished_semaphore(nullptr),
-		canvas(nullptr),
-		world(nullptr),
-		s_layout_management(nullptr),
-		s_event_dispatcher(nullptr),
-		s_2d_renderer(nullptr),
-		root(nullptr),
-		root_element(nullptr)
-	{
-	}
 
 	GraphicsWindow::GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, uint styles, Window* p, bool maximized) :
 		GraphicsWindow()
@@ -136,8 +119,7 @@ namespace flame
 			world->add_system(s_2d_renderer);
 
 			root = world->root;
-			root_element = cElement::create();
-			root->add_component(root_element);
+			root->add_component(cElement::create());
 			root->add_component(cEventReceiver::create());
 			root->add_component(cLayout::create(LayoutFree));
 		}
@@ -190,10 +172,7 @@ namespace flame
 	void GraphicsWindow::update()
 	{
 		if (world)
-		{
-			root_element->set_size(Vec2f(window->get_size()));
 			world->update();
-		}
 
 		on_update();
 

@@ -21,7 +21,9 @@ using namespace graphics;
 
 Window* w;
 Device* d;
+Queue* q;
 Swapchain* sc;
+int img_idx = -1;
 Fence* fence;
 std::vector<CommandBuffer*> cbs;
 Semaphore* render_finished;
@@ -30,7 +32,7 @@ Canvas* canvas;
 FontAtlas* font_atlas;
 
 World* world;
-sElementRenderer* ser;
+sElementRenderer* renderer = nullptr;
 
 void on_resize()
 {
@@ -54,9 +56,13 @@ int main(int argc, char** args)
 {
 	w = Window::create("Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
 	d = Device::create(true);
+	q = d->get_queue(QueueGraphics);
 	render_finished = Semaphore::create(d);
 	sc = Swapchain::create(d, w, ImageUsageSampled);
 	fence = Fence::create(d);
+	w->add_resize_listener([](Capture&, const Vec2u&) {
+		on_resize();
+	}, Capture());
 
 	canvas = Canvas::create(d);
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
@@ -104,20 +110,35 @@ int main(int argc, char** args)
 
 	world->add_system(sTypeSetting::create());
 	world->add_system(sEventDispatcher::create());
-	ser = sElementRenderer::create();
-	world->add_system(ser);
+	struct sPrepareCanvas : System
+	{
+		sPrepareCanvas() :
+			System("sPrepareCanvas", ch("sEventDispatcher"))
+		{
+		}
+
+		void update() override
+		{
+			if (!renderer->is_dirty())
+				return;
+			if (img_idx < 0)
+			{
+				if (!cbs.empty())
+				{
+					sc->acquire_image();
+					img_idx = sc->get_image_index();
+				}
+				canvas->prepare();
+			}
+		}
+	};
+	world->add_system(new sPrepareCanvas);
+	renderer = sElementRenderer::create();
+	world->add_system(renderer);
 
 	auto e = Entity::create();
-	e->load((res_path / "menu_bar.prefab").c_str());
+	e->load((res_path / test_prefab).c_str());
 	world->get_root()->add_child(e);
-	{
-		for (auto i = 0; i < 5; i++)
-		{
-			auto ee = Entity::create();
-			ee->load((res_path / "menu.prefab").c_str());
-			e->add_child(ee);
-		}
-	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);
@@ -142,23 +163,20 @@ int main(int argc, char** args)
 	get_looper()->loop([](Capture&, float) {
 		if (!cbs.empty())
 		{
-			sc->acquire_image();
-
-			auto img_idx = sc->get_image_index();
-			auto cb = cbs[img_idx];
-
-			canvas->prepare();
-
-			ser->mark_dirty();
 			world->update();
-
-			canvas->record(cb, img_idx);
 
 			fence->wait();
 
-			auto q = d->get_queue(QueueGraphics);
-			q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
-			q->present(sc, render_finished);
+			if (img_idx >= 0)
+			{
+				auto cb = cbs[img_idx];
+
+				canvas->record(cb, img_idx);
+
+				q->submit(1, &cb, sc->get_image_avalible(), render_finished, fence);
+				q->present(sc, render_finished);
+				img_idx = -1;
+			}
 		}
 	}, Capture());
 

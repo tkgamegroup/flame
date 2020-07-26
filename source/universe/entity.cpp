@@ -436,7 +436,10 @@ namespace flame
 		pugi::xml_node file_root;
 
 		if (!file.load_file(filename.c_str()) || (file_root = file.first_child()).name() != std::string("prefab"))
+		{
+			printf("prefab not exist or wrong format: %s\n", filename.string().c_str());
 			return;
+		}
 
 		auto parent_path = filename.parent_path();
 		if (!parent_path.empty())
