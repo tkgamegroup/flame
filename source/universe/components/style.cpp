@@ -1,6 +1,3 @@
-//#include <flame/universe/cs/element.h>
-//#include <flame/universe/cs/text.h>
-//#include <flame/universe/cs/event_receiver.h>
 #include <flame/foundation/typeinfo.h>
 #include "../entity_private.h"
 #include "style_private.h"

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity >
+    <cElement padding="4,2,4,2" />
+    <cText text="list item" />
+    <cAligner alignx="AlignMinMax" />
+    <cElement />
+    <cEventReceiver />
+    <cStyle rule=
+           "StateHovering,StateActive,StateSelected;cElement.fill_color=195,215,240,255#
+            StateActive,StateSelected;cElement.fill_color=200,220,245,255#
+            StateHovering,StateSelected;cElement.fill_color=205,225,250,255#
+            StateNone,StateSelected;cElement.fill_color=200,220,245,255#
+            StateHovering,StateActive;cElement.fill_color=225,225,225,255#
+            StateActive;cElement.fill_color=220,220,220,255#
+            StateHovering;cElement.fill_color=230,230,230,255#
+            StateNone;cElement.fill_color=220,220,220,255" />
+  </entity>
+</prefab>

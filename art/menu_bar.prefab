@@ -3,6 +3,6 @@
   <entity >
     <cElement fill_color="220,220,220,255" />
     <cAligner alignx="AlignMinMax" />
-    <cLayout type="LayoutHorizontal" gap="4.0" auto_width="false" />
+    <cLayout type="LayoutHorizontal" gap="4.0" />
   </entity>
 </prefab>

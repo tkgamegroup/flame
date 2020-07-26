@@ -1,7 +1,4 @@
-//#include <flame/serialize.h>
-//#include <flame/graphics/device.h>
 #include <flame/graphics/canvas.h>
-
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "element_renderer_private.h"

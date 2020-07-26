@@ -1,5 +1,4 @@
 #include <flame/graphics/canvas.h>
-
 #include "../world_private.h"
 #include "element_private.h"
 #include "../systems/element_renderer_private.h"

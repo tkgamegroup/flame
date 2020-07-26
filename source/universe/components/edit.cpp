@@ -1,5 +1,3 @@
-//#include <flame/universe/components/aligner.h>
-
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"

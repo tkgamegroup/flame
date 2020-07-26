@@ -3,7 +3,6 @@
 #include "../components/element_private.h"
 #include "../components/event_receiver_private.h"
 #include "event_dispatcher_private.h"
-//#include <flame/universe/components/element.h>
 
 namespace flame
 {

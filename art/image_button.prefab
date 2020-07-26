@@ -3,7 +3,7 @@
   <entity>
     <cElement />
     <cEventReceiver />
-	  <cImage/>
+    <cImage/>
     <cStyle rule="StateHovering,StateActive;cImage.src=3#StateActive;cImage.src=1#StateHovering;cImage.src=2#StateNone;cImage.src=1" />
   </entity>
 </prefab>

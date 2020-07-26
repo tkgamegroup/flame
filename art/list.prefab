@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity >
+    <cElement />
+    <cAligner />
+    <cLayout type="LayoutVertical" gap="2.0" />
+  </entity>
+</prefab>

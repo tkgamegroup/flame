@@ -378,18 +378,6 @@ namespace flame
 			return c;
 		}
 
-		inline cListItem* c_list_item()
-		{
-			auto c = cListItem::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
 		inline cTree* c_tree()
 		{
 			auto c = cTree::create();

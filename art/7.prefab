@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <entity>
-      <cElement width="20.0" height="20.0" />
-      <cEventReceiver />
-      <cStyle rule="StateHovering;cElement.fill_color=100,180,200#StateNone;cElement.fill_color=255,255,255" />
-  </entity>
-</prefab>

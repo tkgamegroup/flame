@@ -4,10 +4,6 @@
 
 namespace flame
 {
-//	struct cElement;
-//	struct cText;
-//	struct cEventReceiver;
-
 	struct FLAME_RU(cEdit : Component, all)
 	{
 		inline static auto type_name = "cEdit";

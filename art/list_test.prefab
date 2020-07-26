@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity src="list" >
+    <cElement width="200.0" height="400.0" padding="8.0,8.0,8.0,8.0" border="2.0" fill_color="0,0,0,0" />
+    <cLayout auto_width="false" auto_height="false" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+    <entity src="list_item" />
+  </entity>
+</prefab>

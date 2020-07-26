@@ -37,10 +37,10 @@ namespace flame
 		bool get_auto_height() const override { return auto_height; }
 		void set_auto_height(bool a) override;
 
-		void apply_h_free_layout(cElementPrivate* e, cAlignerPrivate* a, bool free);
-		void apply_v_free_layout(cElementPrivate* e, cAlignerPrivate* a, bool free);
-		void use_children_width(float w);
-		void use_children_height(float h);
+		void apply_basic_h(cElementPrivate* e, cAlignerPrivate* a, bool free);
+		void apply_basic_v(cElementPrivate* e, cAlignerPrivate* a, bool free);
+		void judge_width(float w);
+		void judge_height(float h);
 		void update();
 
 		void mark_layout_dirty() override;

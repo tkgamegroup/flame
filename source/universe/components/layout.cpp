@@ -21,7 +21,7 @@ namespace flame
 //		report_data_changed(FLAME_CHASH("content_size"), this);
 //	}
 
-	void cLayoutPrivate::apply_h_free_layout(cElementPrivate* e, cAlignerPrivate* a, bool free)
+	void cLayoutPrivate::apply_basic_h(cElementPrivate* e, cAlignerPrivate* a, bool free)
 	{
 		auto alignx = a ? a->alignx : (free ? AlignNone : AlignMin);
 		auto p = ((a && a->absolute) ? Vec2f(0.f) : element->padding.xz()) + (a ? a->margin.xz() : Vec2f(0.f));
@@ -45,7 +45,7 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::apply_v_free_layout(cElementPrivate* e, cAlignerPrivate* a, bool free)
+	void cLayoutPrivate::apply_basic_v(cElementPrivate* e, cAlignerPrivate* a, bool free)
 	{
 		auto aligny = a ? a->aligny : (free ? AlignNone : AlignMin);
 		auto p = ((a && a->absolute) ? Vec2f(0.f) : element->padding.yw()) + (a ? a->margin.yw() : Vec2f(0.f));
@@ -69,16 +69,22 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::use_children_width(float w)
+	void cLayoutPrivate::judge_width(float w)
 	{
-		element->set_width(w);
+		if (!auto_width)
+			w = 0.f;
+		else
+			element->set_width(w);
 		if (aligner)
 			aligner->desired_size.x() = w;
 	}
 
-	void cLayoutPrivate::use_children_height(float h)
+	void cLayoutPrivate::judge_height(float h)
 	{
-		element->set_height(h);
+		if (!auto_height)
+			h = 0.f;
+		else
+			element->set_height(h);
 		if (aligner)
 			aligner->desired_size.y() = h;
 	}
@@ -119,8 +125,8 @@ namespace flame
 			{
 				for (auto& al : als[i])
 				{
-					apply_h_free_layout(al.first, al.second, true);
-					apply_v_free_layout(al.first, al.second, true);
+					apply_basic_h(al.first, al.second, true);
+					apply_basic_v(al.first, al.second, true);
 				}
 			}
 			break;
@@ -153,10 +159,8 @@ namespace flame
 			//set_content_size(Vec2f(w, h));
 			w += element->padding.xz().sum();
 			h += element->padding.yw().sum();
-			if (auto_width)
-				use_children_width(w);
-			if (auto_height)
-				use_children_height(h);
+			judge_width(w);
+			judge_height(h);
 
 			w = element->width - w;
 			if (w > 0.f && factor > 0.f)
@@ -178,11 +182,11 @@ namespace flame
 				x += element->width + gap + m[1];
 			}
 			for (auto& al : als[0])
-				apply_v_free_layout(al.first, al.second, false);
+				apply_basic_v(al.first, al.second, false);
 			for (auto& al : als[1])
 			{
-				apply_h_free_layout(al.first, al.second, true);
-				apply_v_free_layout(al.first, al.second, true);
+				apply_basic_h(al.first, al.second, true);
+				apply_basic_v(al.first, al.second, true);
 			}
 		}
 			break;
@@ -214,13 +218,11 @@ namespace flame
 			//set_content_size(Vec2f(w, h));
 			w += element->padding.xz().sum();
 			h += element->padding.yw().sum();
-			if (auto_width)
-				use_children_width(w);
-			if (auto_height)
-				use_children_height(h);
+			judge_width(w);
+			judge_height(h);
 
 			for (auto& al : als[0])
-				apply_h_free_layout(al.first, al.second, false);
+				apply_basic_h(al.first, al.second, false);
 			h = element->height - h;
 			if (h > 0.f && factor > 0.f)
 				h /= factor;
@@ -242,8 +244,8 @@ namespace flame
 			}
 			for (auto& al : als[1])
 			{
-				apply_h_free_layout(al.first, al.second, true);
-				apply_v_free_layout(al.first, al.second, true);
+				apply_basic_h(al.first, al.second, true);
+				apply_basic_v(al.first, al.second, true);
 			}
 		}
 			break;
@@ -254,10 +256,8 @@ namespace flame
 //			if (column == 0)
 //			{
 //				set_content_size(Vec2f(0.f));
-//				if (auto_width)
-//					use_children_width(element->padding.xz().sum());
-//				if (auto_height)
-//					use_children_height(element->padding.yw().sum());
+//				judge_width(element->padding.xz().sum());
+//				judge_height(element->padding.yw().sum());
 //				for (auto i = 0; i < n; i++)
 //				{
 //					auto& al = als[i];
@@ -269,8 +269,8 @@ namespace flame
 //				}
 //				for (auto i = n; i < als.size(); i++)
 //				{
-//					apply_h_free_layout(als[i].first, als[i].second, true);
-//					apply_v_free_layout(als[i].first, als[i].second, true);
+//					apply_basic_h(als[i].first, als[i].second, true);
+//					apply_basic_v(als[i].first, als[i].second, true);
 //				}
 //			}
 //			else
@@ -308,10 +308,8 @@ namespace flame
 //				set_content_size(Vec2f(w, h));
 //				w += element->padding.xz().sum();
 //				h += element->padding.yw().sum();
-//				if (auto_width)
-//					use_children_width(w);
-//				if (auto_height)
-//					use_children_height(h);
+//				judge_width(w);
+//				judge_height(h);
 //
 //				auto x = element->padding[0];
 //				auto y = element->padding[1];
@@ -337,8 +335,8 @@ namespace flame
 //				}
 //				for (auto i = n; i < als.size(); i++)
 //				{
-//					apply_h_free_layout(als[i].first, als[i].second, true);
-//					apply_v_free_layout(als[i].first, als[i].second, true);
+//					apply_basic_h(als[i].first, als[i].second, true);
+//					apply_basic_v(als[i].first, als[i].second, true);
 //				}
 //			}
 		}
