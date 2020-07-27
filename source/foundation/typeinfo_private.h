@@ -23,25 +23,44 @@ namespace flame
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name);
 	};
 
+	struct ReflectMetaBridge : ReflectMeta
+	{
+		bool has_token(const char* str) const override;
+	};
+
+	struct ReflectMetaPrivate : ReflectMetaBridge
+	{
+		std::vector<std::string> tokens;
+
+		uint get_tokens_count() const override { return tokens.size(); }
+		void get_token(void* str, uint idx) const override;
+		bool has_token(const std::string& str) const;
+	};
+
+	inline bool ReflectMetaBridge::has_token(const char* str) const
+	{
+		return ((ReflectMetaPrivate*)this)->has_token(str);
+	}
+
 	struct VariableInfoPrivate : VariableInfo
 	{
 		UdtInfoPrivate* udt;
 		uint index;
 		TypeInfoPrivate* type;
 		std::string name;
-		uint flags;
 		uint offset;
+		ReflectMetaPrivate meta;
 		void* default_value;
 
-		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset);
+		VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, const std::string& meta);
 		~VariableInfoPrivate();
 
 		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }
 		uint get_index() const override { return index; }
 		TypeInfo* get_type() const override { return type; }
 		const char* get_name() const override { return name.c_str(); }
-		uint get_flags() const override { return flags; }
 		uint get_offset() const override { return offset; }
+		ReflectMeta* get_meta() const override { return (ReflectMeta*)&meta; }
 		const void* get_default_value() const override { return default_value; }
 	};
 

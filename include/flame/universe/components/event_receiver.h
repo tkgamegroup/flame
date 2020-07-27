@@ -4,10 +4,7 @@
 
 namespace flame
 {
-//	struct sEventDispatcher;
-//	struct cElement;
-//
-	struct FLAME_RU(cEventReceiver : Component, all)
+	struct cEventReceiver : Component // R
 	{
 		inline static auto type_name = "cEventReceiver";
 		inline static auto type_hash = ch(type_name);

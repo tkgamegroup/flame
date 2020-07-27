@@ -575,7 +575,7 @@ namespace flame
 			for (; end > 0; end--)
 			{
 				auto ch = str[end - 1];
-				if (ch != ' ' && ch != '\t')
+				if (ch != ' ' && ch != '\t' && ch != '\r')
 					break;
 			}
 			if (begin >= end)

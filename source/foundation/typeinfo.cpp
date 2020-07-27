@@ -44,8 +44,8 @@ namespace flame
 		{
 		}
 
-		void* create() const override { return f_malloc(size); }
-		void destroy(void* p) const override { f_free(p); }
+		void* create(void* p) const override { return p ? p : f_malloc(size); }
+		void destroy(void* p, bool free_memory) const override { if (free_memory) f_free(p); }
 		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
 		void serialize(void* str, const void* src) const override {}
 		void unserialize(void* dst, const char* src) const override {}
@@ -575,13 +575,21 @@ namespace flame
 		{
 		}
 
-		void* create() const override
+		void* create(void* p) const override
 		{
+			if (p)
+			{
+				new (p) StringA;
+				return p;
+			}
 			return f_new<StringA>();
 		}
-		void destroy(void* p) const override
+		void destroy(void* p, bool free_memory) const override
 		{
-			f_delete((StringA*)p);
+			if (free_memory)
+				f_delete((StringA*)p);
+			else
+				((StringA*)p)->~String();
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -590,7 +598,11 @@ namespace flame
 		void serialize(void* str, const void* src) const override
 		{
 			const auto& s = *(StringA*)src;
-			strcpy(f_stralloc(str, s.s), s.v);
+			auto dst = f_stralloc(str, s.s);
+			if (s.v)
+				strcpy(dst, s.v);
+			else
+				dst[0] = 0;
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -605,13 +617,21 @@ namespace flame
 		{
 		}
 
-		void* create() const override
+		void* create(void* p) const override
 		{
+			if (p)
+			{
+				new (p) StringW;
+				return p;
+			}
 			return f_new<StringW>();
 		}
-		void destroy(void* p) const override
+		void destroy(void* p, bool free_memory) const override
 		{
-			f_delete((StringW*)p);
+			if (free_memory)
+				f_delete((StringW*)p);
+			else
+				((StringW*)p)->~String();
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -638,18 +658,19 @@ namespace flame
 			base = TypeInfoPrivate::get(TypeData, name);
 		}
 
-		void* create() const override 
+		void* create(void* p) const override 
 		{ 
-			auto ret = new void*;
-			*ret = base->create();
-			return ret; 
-		}
-		void destroy(void* p) const override 
-		{
 			if (!p)
-				return;
-			base->destroy(*(void**)p);
-			f_free(p); 
+				p = new void*;
+			*(void**)p = base->create();
+			return p; 
+		}
+		void destroy(void* p, bool free_memory) const override 
+		{
+			if (p)
+				base->destroy(*(void**)p);
+			if (free_memory)
+				f_free(p); 
 		}
 		void serialize(void* str, const void* src) const override
 		{
@@ -668,19 +689,20 @@ namespace flame
 		{
 		}
 
-		void* create() const override
-		{
-			auto ret = new char*;
-			*ret = new char[1];
-			*ret[0] = 0;
-			return ret;
-		}
-		void destroy(void* p) const override
+		void* create(void* p) const override
 		{
 			if (!p)
-				return;
-			f_free(*(char**)p);
-			f_free(p);
+				p = new char*;
+			*(char**)p = new char[1];
+			(*(char**)p)[0] = 0;
+			return p;
+		}
+		void destroy(void* p, bool free_memory) const override
+		{
+			if (p)
+				f_free(*(char**)p);
+			if (free_memory)
+				f_free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -706,19 +728,20 @@ namespace flame
 		{
 		}
 
-		void* create() const override
-		{
-			auto ret = new wchar_t*;
-			*ret = new wchar_t[1];
-			*ret[0] = 0;
-			return ret;
-		}
-		void destroy(void* p) const override
+		void* create(void* p) const override
 		{
 			if (!p)
-				return;
-			f_free(*(wchar_t**)p);
-			f_free(p);
+				p = new wchar_t*;
+			*(wchar_t**)p = new wchar_t[1];
+			(*(wchar_t**)p)[0] = 0;
+			return p;
+		}
+		void destroy(void* p, bool free_memory) const override
+		{
+			if (p)
+				f_free(*(wchar_t**)p);
+			if (free_memory)
+				f_free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -945,15 +968,31 @@ namespace flame
 		return t;
 	}
 
-	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, uint offset) :
+	void ReflectMetaPrivate::get_token(void* str, uint idx) const
+	{
+		const auto& s = tokens[idx];
+		strcpy(f_stralloc(str, s.size()), s.data());
+	}
+
+	bool ReflectMetaPrivate::has_token(const std::string& str) const
+	{
+		for (auto& t : tokens)
+		{
+			if (t == str)
+				return true;
+		}
+		return false;
+	}
+
+	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, const std::string& _meta) :
 		udt(udt),
 		index(index),
 		type(type),
 		name(name),
-		flags(flags),
 		offset(offset),
 		default_value(nullptr)
 	{
+		meta.tokens = SUS::split(_meta);
 	}
 
 	VariableInfoPrivate::~VariableInfoPrivate()
@@ -1145,8 +1184,8 @@ namespace flame
 				for (auto n_variable : n_udt.child("variables"))
 				{
 					auto type = TypeInfoPrivate::get((TypeTag)n_variable.attribute("type_tag").as_int(), n_variable.attribute("type_name").value());
-					auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(),
-						n_variable.attribute("flags").as_uint(), n_variable.attribute("offset").as_uint());
+					auto v = new VariableInfoPrivate(u, u->variables.size(), type, n_variable.attribute("name").value(), n_variable.attribute("offset").as_uint(),
+						n_variable.attribute("meta").value());
 					u->variables.emplace_back(v);
 					auto dv = n_variable.attribute("default_value");
 					if (dv)
@@ -1165,38 +1204,6 @@ namespace flame
 					for (auto n_parameter : n_function.child("parameters"))
 						f->parameters.push_back(TypeInfoPrivate::get((TypeTag)n_parameter.attribute("type_tag").as_int(), n_parameter.attribute("type_name").value()));
 				}
-			}
-
-			auto code_path = library_path;
-			code_path.replace_extension(L".code");
-			std::ifstream code_file(code_path);
-			if (code_file.good())
-			{
-				FunctionInfoPrivate* curr_func = nullptr;
-
-				while (!code_file.eof())
-				{
-					std::string line;
-					std::getline(code_file, line);
-					if (line.empty())
-						continue;
-
-					if (line.size() > 2 && line[0] == '#' && line[1] == '#')
-					{
-						auto name = line.substr(2);
-						for (auto& u : udts)
-						{
-							for (auto& f : u.second->functions)
-							{
-								if (name == u.second->name + "::" + f->name)
-									curr_func = f.get();
-							}
-						}
-					}
-					else
-						curr_func->code += line + "\n";
-				}
-				code_file.close();
 			}
 
 			has_typeinfo = true;

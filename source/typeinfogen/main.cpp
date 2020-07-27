@@ -72,7 +72,7 @@ struct TagAndName
 	}
 };
 
-TagAndName typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
+TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 {
 	DWORD dw;
 	wchar_t* pwname;
@@ -171,7 +171,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type, uint flags)
 	{
 		IDiaSymbol* s_arg_type;
 		s_type->get_type(&s_arg_type);
-		auto ret = typeinfo_from_symbol(s_arg_type, 0);
+		auto ret = typeinfo_from_symbol(s_arg_type);
 		s_arg_type->Release();
 		return ret;
 	}
@@ -191,10 +191,8 @@ int main(int argc, char **args)
 	pdb_path.replace_extension(L".pdb");
 	auto typeinfo_path = library_path;
 	typeinfo_path.replace_extension(L".typeinfo");
-	auto code_path = library_path;
-	code_path.replace_extension(L".code");
 
-	std::vector<std::filesystem::path> source_dirs;
+	std::vector<std::filesystem::path> dirs;
 
 	auto clear = false;
 	for (auto i = 2; i < argc; i++)
@@ -208,7 +206,7 @@ int main(int argc, char **args)
 				clear = true;
 				break;
 			case 'd':
-				source_dirs.push_back(arg + 2);
+				dirs.push_back(arg + 2);
 				break;
 			}
 		}
@@ -227,7 +225,7 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	for (auto& d : source_dirs)
+	for (auto& d : dirs)
 		d.make_preferred();
 
 	printf("generating typeinfo for %s: ", library_path.string().c_str());
@@ -282,82 +280,63 @@ int main(int argc, char **args)
 	DWORD dw;
 	wchar_t* pwname;
 
-	std::vector<std::filesystem::path> my_sources;
-	IDiaEnumSourceFiles* _source_files;
-	IDiaSourceFile* _source_file;
-	session->findFile(nullptr, nullptr, 0, &_source_files);
-	while (SUCCEEDED(_source_files->Next(1, &_source_file, &ul)) && (ul == 1))
+	std::vector<std::filesystem::path> files;
+	for (auto& d : dirs)
 	{
-		_source_file->get_fileName(&pwname);
-		auto fn = std::filesystem::path(pwname);
-		auto ext = fn.extension();
-		if (ext == L".h" || ext == L".cpp")
+		for (std::filesystem::recursive_directory_iterator end, it(d); it != end; it++)
 		{
-			auto my_file = false;
-			auto p = fn.parent_path();
-			while (p.root_path() != p)
+			if (!std::filesystem::is_directory(it->status()))
 			{
-				auto check_dir = [&](const std::filesystem::path& p) {
-					for (auto& d : source_dirs)
-					{
-						if (d == p)
-							return true;
-					}
-					return false;
-				};
-				if (check_dir(p))
-				{
-					my_file = true;
-					break;
-				}
-				p = p.parent_path();
+				auto p = it->path();
+				auto e = p.extension();
+				if (e == L".h" || e == L".cpp")
+					files.push_back(p);
 			}
-			if (my_file)
-				my_sources.push_back(fn);
 		}
-		_source_file->Release();
 	}
-	_source_files->Release();
 
 	struct DesiredEnum
 	{
 		std::string name;
 		std::string full_name;
 	};
-	struct DesiredFunction
+	struct VariableTarget
 	{
+		bool include = true;
 		std::string name;
-		std::string code;
+		std::vector<std::string> meta;
 	};
-	struct DesiredVariable
+	struct FunctionTarget
 	{
+		bool include = true;
 		std::string name;
-		uint flags;
+		std::vector<std::string> meta;
+		std::string code;
 	};
 	struct DesiredUDT
 	{
-		bool all = false;
+		bool all = true;
 		std::string name;
 		std::string full_name;
 		std::string base_name;
-		std::vector<DesiredVariable> variables;
-		std::vector<DesiredFunction> functions;
+		std::vector<VariableTarget> variables;
+		std::vector<FunctionTarget> functions;
 
-		const DesiredVariable* find_var(const std::string& name) const
+		const VariableTarget* find_var(const std::string& name) const
 		{
-			for (auto& dv : variables)
+			for (auto& vt : variables)
 			{
-				if (dv.name == name)
-					return &dv;
+				if (vt.name == name)
+					return &vt;
 			}
 			return nullptr;
 		}
-		const DesiredFunction* find_fun(const std::string& name) const
+		const FunctionTarget* find_fun(const std::string& name) const
 		{
-			for (auto& df : functions)
+			for (auto& ft : functions)
 			{
-				if (df.name == name)
-					return &df;
+				if (ft.name == name)
+					return &ft;
 			}
 			return nullptr;
 		}
@@ -365,7 +344,7 @@ int main(int argc, char **args)
 	std::vector<DesiredEnum> desired_enums;
 	std::vector<DesiredUDT> desired_udts;
 
-	for (auto& src : my_sources)
+	for (auto& src : files)
 	{
 		std::vector<std::string> lines;
 		std::vector<std::pair<int, std::string>> current_namespaces;
@@ -384,115 +363,111 @@ int main(int argc, char **args)
 		for (auto i = 0; i < lines.size(); i++)
 		{
 			static std::regex reg_ns(R"(^namespace\s+(\w+))");
-			static std::regex reg_RE(R"(FLAME_RE\((.*)\))");
-			static std::regex reg_RU(R"(FLAME_RU\((.*)\))");
-			static std::regex reg_RV(R"(FLAME_RV\((.*)\))");
-			static std::regex reg_RF(R"(FLAME_RF\(([\~\w]+)\))");
+			static std::regex reg_R(R"(^(.*)//\s*R(.*)$)");
+			static std::regex reg_E(R"(enum\s(\w+))");
+			static std::regex reg_U(R"(struct\s+(\w+)(\s+:\s+(\w+))?)");
+			static std::regex reg_V(R"(\w+\s(\w+))");
+			static std::regex reg_F(R"(\w+\s(\w+)\s*\(.*\))");
 			std::smatch res;
 			if (std::regex_search(lines[i], res, reg_ns))
 				current_namespaces.emplace_back(braces_level, res[1].str());
-			else if (std::regex_search(lines[i], res, reg_RE))
+			else if (std::regex_search(lines[i], res, reg_R))
 			{
-				DesiredEnum de;
-
 				auto str = res[1].str();
-				SUS::remove_spaces(str);
-				de.name = str;
-				for (auto& ns : current_namespaces)
-					de.full_name += ns.second + "::";
-				de.full_name += de.name;
-
-				desired_enums.push_back(de);
-			}
-			else if (std::regex_search(lines[i], res, reg_RU))
-			{
-				DesiredUDT du;
-
-				auto str = res[1].str();
-				SUS::remove_spaces(str);
-				auto sp = SUS::split(str, ',');
-				if (sp.size() > 0)
+				auto meta = SUS::split(SUS::trim(res[2].str()));
+				if (std::regex_search(str, res, reg_E))
 				{
-					auto _sp = SUS::split(sp[0], ':');
-					du.name = _sp[0];
+					DesiredEnum de;
+
+					de.name = res[1].str();
+					for (auto& ns : current_namespaces)
+						de.full_name += ns.second + "::";
+					de.full_name += de.name;
+
+					desired_enums.push_back(de);
+				}
+				else if (std::regex_search(str, res, reg_U))
+				{
+					DesiredUDT du;
+
+					du.name = res[1].str();
 					for (auto& ns : current_namespaces)
 						du.full_name += ns.second + "::";
 					du.full_name += du.name;
-					if (_sp.size() > 1)
-						du.base_name = _sp[1];
-				}
-				if (sp.size() > 1)
-				{
-					for (auto j = 1; j < sp.size(); j++)
-					{
-						auto specifier = sp[j];
-						if (specifier == "all")
-							du.all = true;
-					}
-				}
+					if (res[2].matched)
+						du.base_name = res[3].str();
 
-				auto braces_level = 0;
-				for (i = i + 1; i < lines.size(); i++)
-				{
-					if (std::regex_search(lines[i], res, reg_RV))
+					for (auto& t : meta)
 					{
-						auto str = res[1].str();
-						SUS::remove_spaces(str);
-						auto sp = SUS::split(str, ',');
-						DesiredVariable dv;
-						dv.flags = 0;
-						dv.name = sp[1];
-						for (auto i = 2; i < sp.size(); i++)
+						if (t == "~")
 						{
-							if (sp[i] == "i")
-								dv.flags |= VariableFlagInput;
-							else if (sp[i] == "o")
-								dv.flags |= VariableFlagOutput;
-						}
-						du.variables.push_back(dv);
-					}
-					else if (std::regex_search(lines[i], res, reg_RF))
-					{
-						auto str = res[1].str();
-						SUS::remove_spaces(str);
-						DesiredFunction df;
-						df.name = str;
-
-						if (df.name == "bp_update")
-						{
-							std::vector<std::string> code_lines;
-							auto braces_level = 0;
-							for (i = i + 1; i < lines.size(); i++)
-							{
-								auto l = SUS::trim(lines[i]);
-								code_lines.push_back(l);
-
-								braces_level += std::count(l.begin(), l.end(), '{');
-								braces_level -= std::count(l.begin(), l.end(), '}');
-								if (braces_level == 0)
-									break;
-							}
-
-							if (code_lines.size() >= 2 && code_lines.front() == "{" && code_lines.back() == "}")
-							{
-								code_lines.erase(code_lines.begin() + 0);
-								code_lines.erase(code_lines.end() - 1);
-							}
-							for (auto& l : code_lines)
-								df.code += l + "\n";
-						}
-
-						du.functions.push_back(df);
-					}
-					else
-					{
-						braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
-						braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
-						if (braces_level == 0)
+							du.all = false;
 							break;
+						}
 					}
+
+					auto braces_level = 0;
+					for (i = i + 1; i < lines.size(); i++)
+					{
+						if (std::regex_search(lines[i], res, reg_R))
+						{
+							auto str = res[1].str();
+							auto meta = SUS::split(SUS::trim(res[2].str()));
+							if (std::regex_search(str, res, reg_F))
+							{
+								FunctionTarget ft;
+								ft.name = res[1].str();
+								ft.meta = meta;
+								for (auto& t : meta)
+								{
+									if (t == "code")
+									{
+										std::vector<std::string> code_lines;
+										auto braces_level = 0;
+										for (i = i + 1; i < lines.size(); i++)
+										{
+											auto l = SUS::trim(lines[i]);
+											code_lines.push_back(l);
+
+											braces_level += std::count(l.begin(), l.end(), '{');
+											braces_level -= std::count(l.begin(), l.end(), '}');
+											if (braces_level == 0)
+												break;
+										}
+
+										if (code_lines.size() >= 2 && code_lines.front() == "{" && code_lines.back() == "}")
+										{
+											code_lines.erase(code_lines.begin() + 0);
+											code_lines.erase(code_lines.end() - 1);
+										}
+										ft.code = "\n";
+										for (auto& l : code_lines)
+											ft.code += "\t\t\t\t\t\t" + l + "\n";
+										ft.code += "\t\t\t\t\t";
+										break;
+									}
+								}
+
+								du.functions.push_back(ft);
+							}
+							else if (std::regex_search(str, res, reg_V))
+							{
+								VariableTarget vt;
+								vt.name = res[1].str();
+								vt.meta = meta;
+								du.variables.push_back(vt);
+							}
+						}
+						else
+						{
+							braces_level += std::count(lines[i].begin(), lines[i].end(), '{');
+							braces_level -= std::count(lines[i].begin(), lines[i].end(), '}');
+							if (braces_level == 0)
+								break;
+						}
+					}
+					desired_udts.push_back(du);
 				}
-				desired_udts.push_back(du);
 			}
 			else
 			{
@@ -511,8 +486,6 @@ int main(int argc, char **args)
 	auto file_root = file.append_child("typeinfo");
 	pugi::xml_node n_enums;
 	pugi::xml_node n_udts;
-
-	std::ofstream typeinfo_code(code_path);
 
 	auto add_enum = [&](const std::string& name, IDiaSymbol* s_type) {
 		if (!has_enum(name))
@@ -606,8 +579,8 @@ int main(int argc, char **args)
 					{
 						s_function->get_name(&pwname);
 						auto name = w2s(pwname);
-						auto df = du.find_fun(name);
-						if (df || du.all)
+						auto ft = du.find_fun(name);
+						if (du.all || (ft && ft->include))
 						{
 							if (name == du.name)
 								name = "ctor";
@@ -627,14 +600,13 @@ int main(int argc, char **args)
 
 								IDiaSymbol* s_return_type;
 								s_function_type->get_type(&s_return_type);
-								auto ret_type = typeinfo_from_symbol(s_return_type, 0);
+								auto ret_type = typeinfo_from_symbol(s_return_type);
 								s_return_type->Release();
 
 								if (!n_functions)
 									n_functions = n_udt.append_child("functions");
 								auto n_function = n_functions.append_child("function");
 								n_function.append_attribute("name").set_value(name.c_str());
-								n_function.append_attribute("calling").set_value(dw);
 								n_function.append_attribute("rva").set_value(rva);
 								n_function.append_attribute("voff").set_value(voff);
 								n_function.append_attribute("type_tag").set_value(ret_type.tag);
@@ -650,7 +622,7 @@ int main(int argc, char **args)
 									IDiaSymbol* s_type;
 									s_parameter->get_type(&s_type);
 
-									auto desc = typeinfo_from_symbol(s_parameter, 0);
+									auto desc = typeinfo_from_symbol(s_parameter);
 									if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 										add_enum(desc.name, s_type);
 
@@ -673,11 +645,8 @@ int main(int argc, char **args)
 								else if (name == "dtor")
 									dtor = rva;
 
-								if (df && !df->code.empty())
-								{
-									typeinfo_code << "##" << du.full_name << "::" << name << "\n";
-									typeinfo_code << df->code;
-								}
+								if (ft && !ft->code.empty())
+									n_function.append_child("code").append_child(pugi::node_pcdata).set_value(ft->code.c_str());
 							}
 						}
 						s_function->Release();
@@ -699,11 +668,9 @@ int main(int argc, char **args)
 					{
 						s_variable->get_name(&pwname);
 						auto name = w2s(pwname);
-						auto dv = du.find_var(name);
-						if (dv || du.all)
+						auto vt = du.find_var(name);
+						if (du.all || (vt && vt->include))
 						{
-							auto flags = dv ? dv->flags : 0;
-
 							IDiaSymbol* s_type;
 							s_variable->get_type(&s_type);
 
@@ -711,7 +678,7 @@ int main(int argc, char **args)
 							auto offset = l;
 							s_type->get_length(&ull);
 
-							auto desc = typeinfo_from_symbol(s_type, flags);
+							auto desc = typeinfo_from_symbol(s_type);
 							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
 								add_enum(desc.name, s_type);
 
@@ -721,16 +688,27 @@ int main(int argc, char **args)
 							n_variable.append_attribute("type_tag").set_value(desc.tag);
 							n_variable.append_attribute("type_name").set_value(desc.name.c_str());
 							n_variable.append_attribute("name").set_value(name.c_str());
-							n_variable.append_attribute("flags").set_value(flags);
 							n_variable.append_attribute("offset").set_value(offset);
+							auto meta = std::string();
+							if (vt)
+							{
+								for (auto& t : vt->meta)
+									meta += t + " ";
+								if (!meta.empty())
+									meta.erase(meta.end() - 1);
+							}
+							n_variable.append_attribute("meta").set_value(meta.c_str());
 
-							if ((desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti || desc.tag == TypeData) &&
-								desc.name != "flame::StringA" && desc.name != "flame::StringW" && !(flags & VariableFlagOutput))
+							if (desc.tag != TypePointer)
 							{
 								auto type = TypeInfo::get(desc.tag, desc.name.c_str());
-								std::string str;
-								type->serialize(&str, (char*)obj + offset);
-								n_variable.append_attribute("default_value").set_value(str.c_str());
+								if (type)
+								{
+									std::string str;
+									type->serialize(&str, (char*)obj + offset);
+									if (!str.empty())
+										n_variable.append_attribute("default_value").set_value(str.c_str());
+								}
 							}
 
 							s_type->Release();
@@ -752,8 +730,6 @@ int main(int argc, char **args)
 	s_udts->Release();
 
 	file.save_file(typeinfo_path.string().c_str());
-
-	typeinfo_code.close();
 
 	FreeLibrary(library);
 

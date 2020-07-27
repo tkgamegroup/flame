@@ -45,6 +45,54 @@ namespace flame
 //		drag_and_drop_listeners.call_with_current(this, action, er, pos);
 //	}
 
+	void cEventReceiverPrivate::mark_dirty() 
+	{
+		if (dispatcher)
+			dispatcher->dirty = true;
+	}
+
+//
+//	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
+//	{
+//		auto& drops = ((cEventReceiverPrivate*)this)->acceptable_drops;
+//		drops.resize(drop_count);
+//		for (auto i = 0; i < drop_count; i++)
+//			drops[i] = _drops[i];
+//	}
+
+	void* cEventReceiverPrivate::add_key_listener(bool (*callback)(Capture& c, KeyStateFlags action, uint value), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		key_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_key_listener(void* lis)
+	{
+		std::erase_if(key_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_listener(bool (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_listener(void* lis)
+	{
+		std::erase_if(mouse_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void cEventReceiverPrivate::on_added()
+	{
+		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
+	}
+
 	void cEventReceiverPrivate::on_entered_world()
 	{
 		dispatcher = (sEventDispatcherPrivate*)((EntityPrivate*)entity)->world->get_system(sEventDispatcherPrivate::type_hash);
@@ -79,54 +127,6 @@ namespace flame
 	void cEventReceiverPrivate::on_entity_visibility_changed()
 	{
 		mark_dirty();
-	}
-
-	void cEventReceiverPrivate::mark_dirty() 
-	{
-		if (dispatcher)
-			dispatcher->dirty = true;
-	}
-
-//
-//	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
-//	{
-//		auto& drops = ((cEventReceiverPrivate*)this)->acceptable_drops;
-//		drops.resize(drop_count);
-//		for (auto i = 0; i < drop_count; i++)
-//			drops[i] = _drops[i];
-//	}
-
-	void cEventReceiverPrivate::on_added() 
-	{
-		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
-	}
-
-	void* cEventReceiverPrivate::add_key_listener(bool (*callback)(Capture& c, KeyStateFlags action, uint value), const Capture& capture)
-	{
-		auto c = new Closure(callback, capture);
-		key_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cEventReceiverPrivate::remove_key_listener(void* lis)
-	{
-		std::erase_if(key_listeners, [&](const auto& i) {
-			return i == (decltype(i))lis;
-		});
-	}
-
-	void* cEventReceiverPrivate::add_mouse_listener(bool (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
-	{
-		auto c = new Closure(callback, capture);
-		mouse_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cEventReceiverPrivate::remove_mouse_listener(void* lis)
-	{
-		std::erase_if(mouse_listeners, [&](const auto& i) {
-			return i == (decltype(i))lis;
-		});
 	}
 
 	cEventReceiver* cEventReceiver::create()

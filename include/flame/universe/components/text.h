@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct FLAME_RU(cText : Component, all)
+	struct cText : Component // R
 	{
 		inline static auto type_name = "cText";
 		inline static auto type_hash = ch(type_name);

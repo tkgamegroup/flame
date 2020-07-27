@@ -240,6 +240,8 @@ namespace flame
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
+		assert(e && e != this);
+
 		if (position == -1)
 			position = children.size();
 
@@ -324,6 +326,8 @@ namespace flame
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
+		assert(e && e != this);
+
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == e;
 		});

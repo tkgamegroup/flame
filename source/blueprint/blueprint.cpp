@@ -43,7 +43,7 @@ namespace flame
 		//if (_setter)
 		//	(*_setter)->set(d);
 		//else
-			type->copy(d, data);
+			type->copy(data, d);
 	}
 
 	bool bpSlotPrivate::link_to(bpSlotPrivate* target)
@@ -197,8 +197,8 @@ namespace flame
 					auto size = type->get_size();
 					auto in = next_var(p, size);
 					auto out = next_var(p, size);
-					type->destruct(in);
-					type->destruct(out);
+					type->destroy(in, false);
+					type->destroy(out, false);
 				}
 
 				void update()
@@ -241,9 +241,9 @@ namespace flame
 					auto size = type->get_size();
 					auto& out = *next_var<Array<int>>(p);
 					for (auto i = 0; i < out.s; i++)
-						type->destruct((char*)out.v + size * i);
+						type->destroy((char*)out.v + size * i, false);
 					for (auto i = 0; i < length; i++)
-						type->destruct(next_var(p, size));
+						type->destroy(next_var(p, size), false);
 					f_free(out.v);
 				}
 
@@ -346,9 +346,10 @@ namespace flame
 				for (auto i = 0; i < vars_count; i++)
 				{
 					auto v = udt->get_variable(i);
-					if (v->get_flags() & VariableFlagOutput)
+					auto meta = v->get_meta();
+					if (meta->has_token("o"))
 						outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, outputs.size(), v));
-					else
+					else if (meta->has_token("i"))
 						inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, inputs.size(), v));
 				}
 			}
@@ -704,7 +705,9 @@ namespace flame
 							n_datas = n_node.append_child("datas");
 						auto n_data = n_datas.append_child("data");
 						n_data.append_attribute("name").set_value(in->name.c_str());
-						n_data.append_attribute("value").set_value(type->serialize(in->data).c_str());
+						std::string str;
+						type->serialize(&str, in->data);
+						n_data.append_attribute("value").set_value(str.c_str());
 					}
 				}
 
@@ -960,7 +963,7 @@ namespace flame
 		pugi::xml_node file_root;
 		if (!file.load_file(filename) || (file_root = file.first_child()).name() != std::string("BP"))
 		{
-			printf("bp file does not exist, abort\n", s_filename.c_str());
+			printf("bp file does not exist, abort: %s\n", s_filename.c_str());
 			printf("end loading bp: %s\n", s_filename.c_str());
 			return nullptr;
 		}
@@ -982,7 +985,7 @@ namespace flame
 						auto type = input->type;
 						auto tag = type->get_tag();
 						if (tag == TypeEnumSingle || tag == TypeEnumMulti || tag == TypeData)
-							type->unserialize(n_data.attribute("value").value(), input->data);
+							type->unserialize(input->data, n_data.attribute("value").value());
 					}
 				}
 
@@ -1015,56 +1018,56 @@ namespace flame
 		return bp;
 	}
 
-	struct FLAME_RU(R_MakeVec2i)
+	struct R_MakeVec2i // R
 	{
-		FLAME_RV(int, x, i);
-		FLAME_RV(int, y, i);
+		int x; // R i
+		int y; // R i
 
-		FLAME_RV(Vec2i, out, o);
+		Vec2i out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec2i(x, y);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec2i)
+	struct R_BreakVec2i // R
 	{
-		FLAME_RV(Vec2i, in, i);
+		Vec2i in; // R i
 
-		FLAME_RV(int, x, o);
-		FLAME_RV(int, y, o);
+		int x; // R o
+		int y; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec3i)
+	struct R_MakeVec3i // R
 	{
-		FLAME_RV(int, x, i);
-		FLAME_RV(int, y, i);
-		FLAME_RV(int, z, i);
+		int x; // R i
+		int y; // R i
+		int z; // R i
 
-		FLAME_RV(Vec3i, out, o);
+		Vec3i out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec3i(x, y, z);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec3i)
+	struct R_BreakVec3i // R
 	{
-		FLAME_RV(Vec3i, in, i);
+		Vec3i in; // R i
 
-		FLAME_RV(int, x, o);
-		FLAME_RV(int, y, o);
-		FLAME_RV(int, z, o);
+		int x; // R o
+		int y; // R o
+		int z; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1072,31 +1075,31 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec4i)
+	struct R_MakeVec4i // R
 	{
-		FLAME_RV(int, x, i);
-		FLAME_RV(int, y, i);
-		FLAME_RV(int, z, i);
-		FLAME_RV(int, w, i);
+		int x; // R i
+		int y; // R i
+		int z; // R i
+		int w; // R i
 
-		FLAME_RV(Vec4i, out, o);
+		Vec4i out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec4i(x, y, z, w);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec4i)
+	struct R_BreakVec4i // R
 	{
-		FLAME_RV(Vec4i, in, i);
+		Vec4i in; // R i
 
-		FLAME_RV(int, x, o);
-		FLAME_RV(int, y, o);
-		FLAME_RV(int, z, o);
-		FLAME_RV(int, w, o);
+		int x; // R o
+		int y; // R o
+		int z; // R o
+		int w; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1105,56 +1108,56 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec2u)
+	struct R_MakeVec2u // R
 	{
-		FLAME_RV(uint, x, i);
-		FLAME_RV(uint, y, i);
+		uint x; // R i
+		uint y; // R i
 
-		FLAME_RV(Vec2u, out, o);
+		Vec2u out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec2u(x, y);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec2u)
+	struct R_BreakVec2u // R
 	{
-		FLAME_RV(Vec2u, in, i);
+		Vec2u in; // R i
 
-		FLAME_RV(uint, x, o);
-		FLAME_RV(uint, y, o);
+		uint x; // R o
+		uint y; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec3u)
+	struct R_MakeVec3u // R
 	{
-		FLAME_RV(uint, x, i);
-		FLAME_RV(uint, y, i);
-		FLAME_RV(uint, z, i);
+		uint x; // R i
+		uint y; // R i
+		uint z; // R i
 
-		FLAME_RV(Vec3u, out, o);
+		Vec3u out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec3u(x, y, z);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec3u)
+	struct R_BreakVec3u // R
 	{
-		FLAME_RV(Vec3u, in, i);
+		Vec3u in; // R i
 
-		FLAME_RV(uint, x, o);
-		FLAME_RV(uint, y, o);
-		FLAME_RV(uint, z, o);
+		uint x; // R o
+		uint y; // R o
+		uint z; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1162,31 +1165,31 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec4u)
+	struct R_MakeVec4u // R
 	{
-		FLAME_RV(uint, x, i);
-		FLAME_RV(uint, y, i);
-		FLAME_RV(uint, z, i);
-		FLAME_RV(uint, w, i);
+		uint x; // R i
+		uint y; // R i
+		uint z; // R i
+		uint w; // R i
 
-		FLAME_RV(Vec4u, out, o);
+		Vec4u out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec4u(x, y, z, w);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec4u)
+	struct R_BreakVec4u // R
 	{
-		FLAME_RV(Vec4u, in, i);
+		Vec4u in; // R i
 
-		FLAME_RV(uint, x, o);
-		FLAME_RV(uint, y, o);
-		FLAME_RV(uint, z, o);
-		FLAME_RV(uint, w, o);
+		uint x; // R o
+		uint y; // R o
+		uint z; // R o
+		uint w; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1195,56 +1198,56 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec2f)
+	struct R_MakeVec2f // R
 	{
-		FLAME_RV(float, x, i);
-		FLAME_RV(float, y, i);
+		float x; // R i
+		float y; // R i
 
-		FLAME_RV(Vec2f, out, o);
+		Vec2f out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec2f(x, y);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec2f)
+	struct R_BreakVec2f // R
 	{
-		FLAME_RV(Vec2f, in, i);
+		Vec2f in; // R i
 
-		FLAME_RV(float, x, o);
-		FLAME_RV(float, y, o);
+		float x; // R o
+		float y; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec3f)
+	struct R_MakeVec3f // R
 	{
-		FLAME_RV(float, x, i);
-		FLAME_RV(float, y, i);
-		FLAME_RV(float, z, i);
+		float x; // R i
+		float y; // R i
+		float z; // R i
 
-		FLAME_RV(Vec3f, out, o);
+		Vec3f out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec3f(x, y, z);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec3f)
+	struct R_BreakVec3f // R
 	{
-		FLAME_RV(Vec3f, in, i);
+		Vec3f in; // R i
 
-		FLAME_RV(float, x, o);
-		FLAME_RV(float, y, o);
-		FLAME_RV(float, z, o);
+		float x; // R o
+		float y; // R o
+		float z; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1252,31 +1255,31 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec4f)
+	struct R_MakeVec4f // R
 	{
-		FLAME_RV(float, x, i);
-		FLAME_RV(float, y, i);
-		FLAME_RV(float, z, i);
-		FLAME_RV(float, w, i);
+		float x; // R i
+		float y; // R i
+		float z; // R i
+		float w; // R i
 
-		FLAME_RV(Vec4f, out, o);
+		Vec4f out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec4f(x, y, z, w);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec4f)
+	struct R_BreakVec4f // R
 	{
-		FLAME_RV(Vec4f, in, i);
+		Vec4f in; // R i
 
-		FLAME_RV(float, x, o);
-		FLAME_RV(float, y, o);
-		FLAME_RV(float, z, o);
-		FLAME_RV(float, w, o);
+		float x; // R o
+		float y; // R o
+		float z; // R o
+		float w; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1285,56 +1288,56 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec2c)
+	struct R_MakeVec2c // R
 	{
-		FLAME_RV(uchar, x, i);
-		FLAME_RV(uchar, y, i);
+		uchar x; // R i
+		uchar y; // R i
 
-		FLAME_RV(Vec2c, out, o);
+		Vec2c out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec2c(x, y);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec2c)
+	struct R_BreakVec2c // R
 	{
-		FLAME_RV(Vec2c, in, i);
+		Vec2c in; // R i
 
-		FLAME_RV(uchar, x, o);
-		FLAME_RV(uchar, y, o);
+		uchar x; // R o
+		uchar y; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec3c)
+	struct R_MakeVec3c // R
 	{
-		FLAME_RV(uchar, x, i);
-		FLAME_RV(uchar, y, i);
-		FLAME_RV(uchar, z, i);
+		uchar x; // R i
+		uchar y; // R i
+		uchar z; // R i
 
-		FLAME_RV(Vec3c, out, o);
+		Vec3c out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec3c(x, y, z);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec3c)
+	struct R_BreakVec3c // R
 	{
-		FLAME_RV(Vec3c, in, i);
+		Vec3c in; // R i
 
-		FLAME_RV(uchar, x, o);
-		FLAME_RV(uchar, y, o);
-		FLAME_RV(uchar, z, o);
+		uchar x; // R o
+		uchar y; // R o
+		uchar z; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1342,31 +1345,31 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_MakeVec4c)
+	struct R_MakeVec4c // R
 	{
-		FLAME_RV(uchar, x, i);
-		FLAME_RV(uchar, y, i);
-		FLAME_RV(uchar, z, i);
-		FLAME_RV(uchar, w, i);
+		uchar x; // R i
+		uchar y; // R i
+		uchar z; // R i
+		uchar w; // R i
 
-		FLAME_RV(Vec4c, out, o);
+		Vec4c out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = Vec4c(x, y, z, w);
 		}
 	};
 
-	struct FLAME_RU(R_BreakVec4c)
+	struct R_BreakVec4c // R
 	{
-		FLAME_RV(Vec4c, in, i);
+		Vec4c in; // R i
 
-		FLAME_RV(uchar, x, o);
-		FLAME_RV(uchar, y, o);
-		FLAME_RV(uchar, z, o);
-		FLAME_RV(uchar, w, o);
+		uchar x; // R o
+		uchar y; // R o
+		uchar z; // R o
+		uchar w; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			x = in[0];
 			y = in[1];
@@ -1375,103 +1378,103 @@ namespace flame
 		}
 	};
 
-	struct FLAME_RU(R_Add)
+	struct R_Add // R
 	{
-		FLAME_RV(float, a, i);
-		FLAME_RV(float, b, i);
+		float a; // R i
+		float b; // R i
 
-		FLAME_RV(float, out, o);
+		float out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = a + b;
 		}
 	};
 
-	struct FLAME_RU(R_Multiple)
+	struct R_Multiple // R
 	{
-		FLAME_RV(float, a, i);
-		FLAME_RV(float, b, i);
+		float a; // R i
+		float b; // R i
 
-		FLAME_RV(float, out, o);
+		float out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = a * b;
 		}
 	};
 
-	struct FLAME_RU(R_Time)
+	struct R_Time // R
 	{
-		FLAME_RV(float, delta, o);
-		FLAME_RV(float, total, o);
+		float delta; // R o
+		float total; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			delta = get_looper()->get_delta_time();
 			total = bp_time;
 		}
 	};
 
-	struct FLAME_RU(R_Sin)
+	struct R_Sin // R
 	{
-		FLAME_RV(float, t, i);
+		float t; // R i
 
-		FLAME_RV(float, out, o);
+		float out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = sin(t * M_PI / 180.f);
 		}
 	};
 
-	struct FLAME_RU(R_Linear1d)
+	struct R_Linear1d // R
 	{
-		FLAME_RV(float, a, i);
-		FLAME_RV(float, b, i);
-		FLAME_RV(float, t, i);
+		float a; // R i
+		float b; // R i
+		float t; // R i
 
-		FLAME_RV(float, out, o);
+		float out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
 	};
 
-	struct FLAME_RU(R_Linear2d)
+	struct R_Linear2d // R
 	{
-		FLAME_RV(Vec2f, a, i);
-		FLAME_RV(Vec2f, b, i);
-		FLAME_RV(float, t, i);
+		Vec2f a; // R i
+		Vec2f b; // R i
+		float t; // R i
 
-		FLAME_RV(Vec2f, out, o);
+		Vec2f out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = a + (b - a) * clamp(t, 0.f, 1.f);
 		}
 	};
 
-	struct FLAME_RU(R_Trace)
+	struct R_Trace // R
 	{
-		FLAME_RV(float, target, i);
-		FLAME_RV(float, step, i);
-		FLAME_RV(float, v, i);
+		float target; // R i
+		float step; // R i
+		float v; // R i
 
-		FLAME_RV(float, out, o);
+		float out; // R o
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			out = v + min(abs(target - v), step) * sign(target - v);
 		}
 	};
 
-	struct FLAME_RU(R_Print)
+	struct R_Print // R
 	{
-		FLAME_RV(StringA, text, i);
+		StringA text; // R i
 
-		FLAME_BLUEPRINT_EXPORTS void FLAME_RF(bp_update)()
+		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
 			printf("%s\n", text.v);
 		}

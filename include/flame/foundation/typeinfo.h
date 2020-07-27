@@ -17,10 +17,7 @@ namespace flame
 		TypeTagCount
 	};
 
-	struct TypeInfo;
 	struct EnumInfo;
-	struct VariableInfo;
-	struct FunctionInfo;
 	struct UdtInfo;
 	struct Library;
 
@@ -30,8 +27,9 @@ namespace flame
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
 		virtual uint get_size() const = 0;
 
-		virtual void* create() const = 0;
-		virtual void destroy(void* p) const = 0;
+		// p = null to allocate new memory
+		virtual void* create(void* p = nullptr) const = 0;
+		virtual void destroy(void* p, bool free_memory = true) const = 0;
 		virtual void copy(void* dst, const void* src) const = 0;
 		virtual void serialize(void* str, const void* src) const = 0;
 		virtual void unserialize(void* dst, const char* src) const = 0;
@@ -41,13 +39,12 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static void get_basic_types(TypeInfo** (*callback)(Capture& c, uint size), const Capture& capture);
 	};
 
-	enum VariableFlags
+	struct ReflectMeta
 	{
-		VariableFlagInput = 1 << 0,
-		VariableFlagOutput = 1 << 2
+		virtual uint get_tokens_count() const = 0;
+		virtual void get_token(void* str, uint idx) const = 0;
+		virtual bool has_token(const char* str) const = 0;
 	};
-
-	inline VariableFlags operator| (VariableFlags a, VariableFlags b) { return (VariableFlags)((int)a | (int)b); }
 
 	struct VariableInfo
 	{
@@ -55,10 +52,9 @@ namespace flame
 		virtual uint get_index() const = 0;
 		virtual TypeInfo* get_type() const = 0;
 		virtual const char* get_name() const = 0;
-		virtual uint get_flags() const = 0;
 		virtual uint get_offset() const = 0;
+		virtual ReflectMeta* get_meta() const = 0;
 		virtual const void* get_default_value() const = 0;
-
 	};
 
 	struct EnumItem

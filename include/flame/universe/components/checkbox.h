@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct FLAME_RU(cCheckbox : Component, all)
+	struct cCheckbox : Component // R
 	{
 		inline static auto type_name = "cCheckbox";
 		inline static auto type_hash = ch(type_name);

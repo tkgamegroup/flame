@@ -17,11 +17,6 @@
 #include <mutex>
 #include <filesystem>
 
-#define FLAME_RE(name, ...) name
-#define FLAME_RU(name, ...) name
-#define FLAME_RV(type, name, ...) type name;
-#define FLAME_RF(name, ...) name
-
 namespace flame
 {
 	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size), 
