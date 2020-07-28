@@ -12,7 +12,7 @@ namespace flame
 	struct cElement : Component // R !ctor !dtor !type_name !type_hash
 	{
 		inline static auto type_name = "flame::cElement";
-		inline static auto type_hash = S<ch("cElement")>::v;
+		inline static auto type_hash = ch(type_name);
 
 		struct Drawer
 		{

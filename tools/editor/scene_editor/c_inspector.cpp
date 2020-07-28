@@ -808,19 +808,19 @@ void cInspector::refresh()
 						{
 							auto f = u->find_function("ctor");
 							if (f && f->parameters.s == 0)
-								cmf(p2f<MF_v_v>((char*)library + (uint)f->rva), dummy);
+								cmf(a2f<MF_v_v>((char*)library + (uint)f->rva), dummy);
 						}
 						void* component;
 						{
 							auto f = u->find_function("create");
 							assert(f && check_function(f, "P#flame::Component", {}));
-							component = cmf(p2f<MF_vp_v>((char*)library + (uint)f->rva), dummy);
+							component = cmf(a2f<MF_vp_v>((char*)library + (uint)f->rva), dummy);
 						}
 						scene_editor.selected->add_component((Component*)component);
 						{
 							auto f = u->find_function("dtor");
 							if (f)
-								cmf(p2f<MF_v_v>((char*)library + (uint)f->rva), dummy);
+								cmf(a2f<MF_v_v>((char*)library + (uint)f->rva), dummy);
 						}
 						free(dummy);
 

@@ -42,19 +42,6 @@ std::string format_type(const wchar_t* in, bool* is_array)
 		}
 	}
 
-	std::string head;
-	std::string tail;
-	auto pos_t = str.find('<');
-	if (pos_t != std::string::npos)
-	{
-		head = std::string(str.begin(), str.begin() + pos_t);
-		tail = std::string(str.begin() + pos_t, str.end());
-	}
-	else
-		head = str;
-
-	str = head + tail;
-
 	SUS::remove_ch(str, ' ');
 
 	return str;
@@ -612,8 +599,8 @@ int main(int argc, char **args)
 									n_functions = n_udt.append_child("functions");
 								auto n_function = n_functions.append_child("function");
 								n_function.append_attribute("name").set_value(name.c_str());
-								n_function.append_attribute("rva").set_value(du.all ? rva : 0);
-								n_function.append_attribute("voff").set_value(du.all ? voff : 0);
+								n_function.append_attribute("rva").set_value((du.all || ft) ? rva : 0);
+								n_function.append_attribute("voff").set_value((du.all || ft) ? voff : 0);
 								n_function.append_attribute("type_tag").set_value(ret_type.tag);
 								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
 
@@ -665,7 +652,7 @@ int main(int argc, char **args)
 					memset(obj, 0, udt_size);
 
 					if (ctor)
-						cf(p2f<void(*)(void*)>((char*)library + ctor), obj);
+						a2f<void(*)(void*)>((char*)library + ctor)(obj);
 
 					pugi::xml_node n_variables;
 
@@ -696,7 +683,7 @@ int main(int argc, char **args)
 							n_variable.append_attribute("type_tag").set_value(desc.tag);
 							n_variable.append_attribute("type_name").set_value(desc.name.c_str());
 							n_variable.append_attribute("name").set_value(name.c_str());
-							n_variable.append_attribute("offset").set_value(offset);
+							n_variable.append_attribute("offset").set_value((du.all || vt) ? offset : 0);
 							auto meta = std::string();
 							if (vt)
 							{
@@ -726,7 +713,7 @@ int main(int argc, char **args)
 					s_variables->Release();
 
 					if (dtor)
-						cf(p2f<void(*)(void*)>((char*)library + dtor), obj);
+						a2f<void(*)(void*)>((char*)library + dtor)(obj);
 					free(obj);
 				}
 

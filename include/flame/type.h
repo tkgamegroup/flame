@@ -65,7 +65,7 @@ namespace flame
 	}
 
 	template <class F>
-	F p2f(void* p) // void pointer to function
+	F a2f(void* p) // void pointer to function
 	{
 		union
 		{
@@ -74,12 +74,6 @@ namespace flame
 		}cvt;
 		cvt.p = p;
 		return cvt.f;
-	}
-
-	template <class F, class ...Args>
-	auto cf(F f, Args... args) // call function
-	{
-		return (*f)(args...);
 	}
 
 	struct CountDown

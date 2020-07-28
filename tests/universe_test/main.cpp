@@ -10,6 +10,7 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/res_map.h>
 #include <flame/universe/components/element.h>
+#include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
 #include <flame/universe/systems/type_setting.h>
@@ -138,6 +139,7 @@ int main(int argc, char** args)
 	world->add_system(renderer);
 
 	auto e = Entity::create();
+	e->add_component(cText::create());
 	e->load((res_path / test_prefab).c_str());
 	world->get_root()->add_child(e);
 

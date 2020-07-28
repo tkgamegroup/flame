@@ -7,7 +7,7 @@ namespace flame
 	struct cText : Component // R !ctor !dtor !type_name !type_hash
 	{
 		inline static auto type_name = "flame::cText";
-		inline static auto type_hash = S<ch("cText")>::v;
+		inline static auto type_hash = ch(type_name);
 
 		cText() :
 			Component(type_name, type_hash)

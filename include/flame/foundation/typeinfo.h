@@ -81,8 +81,7 @@ namespace flame
 		virtual UdtInfo* get_udt() const = 0;
 		virtual uint get_index() const = 0;
 		virtual const char* get_name() const = 0;
-		virtual uint get_rva() const = 0;
-		virtual uint get_voff() const = 0;
+		virtual void* get_address(void* obj = nullptr /* for virtual fucntion */) const = 0;
 		virtual TypeInfo* get_type() const = 0;
 		virtual uint get_parameters_count() const = 0;
 		virtual TypeInfo* get_parameter(uint idx) const = 0;

@@ -30,10 +30,20 @@ namespace flame
 
 		StateFlags state = StateNone;
 
+		struct ComponentReferencing
+		{
+			Component* t;
+			void** addr;
+			void(*on_gain)(void*);
+			void(*on_lost)(void*);
+		};
+
 		struct ComponentWrapper
 		{
 			std::unique_ptr<Component, Delector> p;
 			UdtInfo* udt[2];
+			std::vector<ComponentReferencing> referencings;
+			std::vector<Component*> referenceds;
 			bool want_local_event;
 			bool want_child_event;
 			bool want_local_data_changed;
@@ -71,6 +81,7 @@ namespace flame
 		void set_state(StateFlags state) override;
 
 		Component* get_component(uint64 hash) const override;
+		ComponentWrapper& get_wrapper(Component* c);
 		void add_component(Component* c);
 		void info_component_removed(ComponentWrapper& cw) const;
 		void remove_component(Component* c, bool destroy = true);

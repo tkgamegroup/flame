@@ -85,24 +85,17 @@ namespace flame
 		return nullptr;
 	}
 
+	EntityPrivate::ComponentWrapper& EntityPrivate::get_wrapper(Component* c)
+	{
+		return components.find(c->type_hash)->second;
+	}
+
 	void EntityPrivate::add_component(Component* c)
 	{
 		assert(!c->entity);
 		assert(components.find(c->type_hash) == components.end());
 
-		c->entity = this;
-		c->on_added();
-
-		for (auto cc : local_event_dispatch_list)
-			cc->on_entity_component_added(c);
-		if (parent)
-		{
-			for (auto cc : parent->child_event_dispatch_list)
-				cc->on_entity_child_component_added(c);
-		}
-
 		ComponentWrapper cw;
-		cw.p.reset(c);
 		cw.udt[0] = find_udt(c->type_name);
 		cw.udt[1] = find_udt((c->type_name + std::string("Private")).c_str());
 		if (cw.udt[0])
@@ -110,6 +103,50 @@ namespace flame
 			auto udt = cw.udt[0];
 			if (cw.udt[1])
 				udt = cw.udt[1];
+
+			auto vc = udt->get_variables_count();
+			for (auto i = 0; i < vc; i++)
+			{
+				auto v = udt->get_variable(i);
+				auto m = v->get_meta();
+				if (m->has_token("ref"))
+				{
+					auto type = std::string(v->get_type()->get_name());
+					if (type.ends_with("Private"))
+						type = type.substr(0, type.size() - 7);
+
+					auto it = components.find(std::hash<std::string>()(type));
+					if (it == components.end())
+					{
+						printf("add component %s failed, required component %s do not exist\n", c->type_name, type.c_str());
+						return;
+					}
+
+					auto name = std::string(v->get_name());
+
+					ComponentReferencing ref;
+					ref.t = it->second.p.get();
+					ref.addr = (void**)((char*)c + v->get_offset());
+					{
+						auto f = udt->find_function(("on_gain_" + name).c_str());
+						if (f)
+							ref.on_gain = a2f<void(*)(void*)>(f->get_address());
+						else
+							ref.on_gain = nullptr;
+					}
+					{
+						auto f = udt->find_function(("on_lost_" + name).c_str());
+						if (f)
+							ref.on_lost = a2f<void(*)(void*)>(f->get_address());
+						else
+							ref.on_lost = nullptr;
+					}
+					cw.referencings.push_back(ref);
+
+					it->second.referenceds.push_back(c);
+				}
+			}
+
 			cw.want_local_event = false;
 			if (udt->find_function("on_entered_world") ||
 				udt->find_function("on_left_world") ||
@@ -137,6 +174,19 @@ namespace flame
 			if (udt->find_function("on_entity_child_component_data_changed"))
 				cw.want_child_data_changed = true;
 		}
+		cw.p.reset(c);
+
+		c->entity = this;
+		c->on_added();
+
+		for (auto cc : local_event_dispatch_list)
+			cc->on_entity_component_added(c);
+		if (parent)
+		{
+			for (auto cc : parent->child_event_dispatch_list)
+				cc->on_entity_child_component_added(c);
+		}
+
 		components.emplace(c->type_hash, std::move(cw));
 
 		if (cw.want_local_event)

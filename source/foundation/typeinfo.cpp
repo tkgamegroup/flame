@@ -1045,6 +1045,11 @@ namespace flame
 	{
 	}
 
+	void* FunctionInfoPrivate::get_address(void* obj) const
+	{
+		return rva ? library->address + rva : *(void**)((*(char**)obj) + voff);
+	}
+
 	bool FunctionInfoPrivate::check(void* _type, ...) const
 	{
 		if (type != _type)
@@ -1109,7 +1114,7 @@ namespace flame
 		}
 
 		void* r = nullptr;
-		__call(rva ? library->address + rva : *(void**)((*(char**)obj) + voff), &r, list1.data(), list2.data());
+		__call(get_address(obj), &r, list1.data(), list2.data());
 		if (ret)
 			memcpy(ret, &r, type->size);
 	}

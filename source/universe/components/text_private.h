@@ -21,7 +21,7 @@ namespace flame
 		std::wstring text;
 		uint font_size = 14;
 
-		cElementPrivate* element = nullptr;
+		cElementPrivate* element = nullptr; // R ref
 		sTypeSettingPrivate* type_setting = nullptr;
 		graphics::Canvas* canvas = nullptr;
 		graphics::FontAtlas* atlas = nullptr;
@@ -38,6 +38,9 @@ namespace flame
 		void set_auto_height(bool a) override { auto_height = a; }
 
 		void mark_size_dirty();
+
+		void on_gain_element();
+		void on_lost_element();
 
 		void on_added() override;
 		void on_removed() override;

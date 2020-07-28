@@ -327,19 +327,19 @@ namespace flame
 				{
 					auto f = udt->find_function("ctor");
 					if (f && f->check(TypeInfo::get(TypeData, "void"), nullptr))
-						cf(p2f<void(*)(void*)>((char*)library_address + (uint)f->get_rva()), object);
+						a2f<void(*)(void*)>(f->get_address())(object);
 				}
 
 				{
 					auto f = udt->find_function("dtor");
 					if (f && f->check(TypeInfo::get(TypeData, "void"), nullptr))
-						dtor_addr = (char*)library_address + (uint)f->get_rva();
+						dtor_addr = f->get_address();
 				}
 
 				{
 					auto f = udt->find_function("bp_update");
 					assert(f && f->check(TypeInfo::get(TypeData, "void"), nullptr));
-					update_addr = (char*)library_address + (uint)f->get_rva();
+					update_addr = f->get_address();
 				}
 
 				auto vars_count = udt->get_variables_count();
@@ -359,7 +359,7 @@ namespace flame
 				//{
 				//	auto f = (*udt)->find_function("get_linked_object");
 				//	assert(f && check_function(f, ("P#" + udt->name.str()).c_str(), {}));
-				//	object = cf(p2f<F_vp_v>((char*)library + (uint)f->rva));
+				//	object = a2f<F_vp_v>((char*)library + (uint)f->rva)();
 				//	assert(object);
 				//}
 
@@ -382,7 +382,7 @@ namespace flame
 						auto f_set = udt->find_function((std::string("set_") + v->get_name()).c_str());
 						if (f_set)
 						{
-							auto f_set_addr = (char*)library_address + (uint)f_set->get_rva();
+							auto f_set_addr = f_set->get_address();
 							//setter->o = object;
 							//setter->f = f_set_addr;
 							//input->_setter = setter;
@@ -402,7 +402,7 @@ namespace flame
 		if (object_rule == bpObjectEntity)
 		{
 			if (dtor_addr)
-				cf(p2f<void(*)(void*)>(dtor_addr), object);
+				a2f<void(*)(void*)>(dtor_addr)(object);
 			free(object);
 		}
 	}
@@ -592,7 +592,7 @@ namespace flame
 		}
 
 		if (update_addr)
-			cmf(p2f<void(*)(void*)>(update_addr), object);
+			a2f<void(*)(void*)>(update_addr)(object);
 
 		if (need_rebuild_update_list)
 			build_update_list(this);
