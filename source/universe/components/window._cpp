@@ -805,7 +805,7 @@ namespace flame
 							if (thiz->dock_side == SideCenter)
 							{
 								auto tabbar_er = (cEventReceiverPrivate*)thiz->entity->parent->children[0]->get_component(cEventReceiver);
-								tabbar_er->on_drag_and_drop(BeenDropped, er, Vec2i(0, 99999));
+								tabbar_er->send_drag_and_drop_event(BeenDropped, er, Vec2i(0, 99999));
 							}
 							else if (thiz->dock_side != Outside)
 							{

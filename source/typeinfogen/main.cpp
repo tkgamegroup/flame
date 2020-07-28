@@ -219,11 +219,11 @@ int main(int argc, char **args)
 		return 0;
 	}
 
-	if (std::filesystem::exists(typeinfo_path) && std::filesystem::last_write_time(typeinfo_path) >= std::filesystem::last_write_time(library_path))
-	{
-		printf("typeinfo up to date\n");
-		return 0;
-	}
+	//if (std::filesystem::exists(typeinfo_path) && std::filesystem::last_write_time(typeinfo_path) >= std::filesystem::last_write_time(library_path))
+	//{
+	//	printf("typeinfo up to date\n");
+	//	return 0;
+	//}
 
 	for (auto& d : dirs)
 		d.make_preferred();
@@ -300,16 +300,11 @@ int main(int argc, char **args)
 		std::string name;
 		std::string full_name;
 	};
-	struct VariableTarget
+	struct MemberTarget
 	{
 		bool include = true;
 		std::string name;
-		std::vector<std::string> meta;
-	};
-	struct FunctionTarget
-	{
-		bool include = true;
-		std::string name;
+		std::regex reg;
 		std::vector<std::string> meta;
 		std::string code;
 	};
@@ -319,24 +314,22 @@ int main(int argc, char **args)
 		std::string name;
 		std::string full_name;
 		std::string base_name;
-		std::vector<VariableTarget> variables;
-		std::vector<FunctionTarget> functions;
+		std::vector<MemberTarget> targets;
 
-		const VariableTarget* find_var(const std::string& name) const
+		const MemberTarget* find_target(const std::string& name) const
 		{
-			for (auto& vt : variables)
+			for (auto& t : targets)
 			{
-				if (vt.name == name)
-					return &vt;
-			}
-			return nullptr;
-		}
-		const FunctionTarget* find_fun(const std::string& name) const
-		{
-			for (auto& ft : functions)
-			{
-				if (ft.name == name)
-					return &ft;
+				if (!t.name.empty())
+				{
+					if (t.name == name)
+						return &t;
+				}
+				else
+				{
+					if (std::regex_search(name, t.reg))
+						return &t;
+				}
 			}
 			return nullptr;
 		}
@@ -366,7 +359,7 @@ int main(int argc, char **args)
 			static std::regex reg_R(R"(^(.*)//\s*R(.*)$)");
 			static std::regex reg_E(R"(enum\s(\w+))");
 			static std::regex reg_U(R"(struct\s+(\w+)(\s+:\s+(\w+))?)");
-			static std::regex reg_V(R"(\w+\s(\w+))");
+			static std::regex reg_V(R"([\w\*]+\s(\w+))");
 			static std::regex reg_F(R"(\w+\s(\w+)\s*\(.*\))");
 			std::smatch res;
 			if (std::regex_search(lines[i], res, reg_ns))
@@ -400,9 +393,21 @@ int main(int argc, char **args)
 					for (auto& t : meta)
 					{
 						if (t == "~")
-						{
 							du.all = false;
-							break;
+						else
+						{
+							MemberTarget mt;
+							if (t[0] == '!')
+							{
+								t.erase(t.begin());
+								mt.include = false;
+							}
+							auto pos = t.find('*');
+							if (pos != std::string::npos)
+								mt.reg = std::regex(t.substr(0, pos) + "\\w+" + t.substr(pos + 1));
+							else
+								mt.name = t;
+							du.targets.push_back(mt);
 						}
 					}
 
@@ -415,7 +420,7 @@ int main(int argc, char **args)
 							auto meta = SUS::split(SUS::trim(res[2].str()));
 							if (std::regex_search(str, res, reg_F))
 							{
-								FunctionTarget ft;
+								MemberTarget ft;
 								ft.name = res[1].str();
 								ft.meta = meta;
 								for (auto& t : meta)
@@ -448,14 +453,14 @@ int main(int argc, char **args)
 									}
 								}
 
-								du.functions.push_back(ft);
+								du.targets.push_back(ft);
 							}
 							else if (std::regex_search(str, res, reg_V))
 							{
-								VariableTarget vt;
+								MemberTarget vt;
 								vt.name = res[1].str();
 								vt.meta = meta;
-								du.variables.push_back(vt);
+								du.targets.push_back(vt);
 							}
 						}
 						else
@@ -564,7 +569,7 @@ int main(int argc, char **args)
 						n_udts = file_root.append_child("udts");
 					auto n_udt = n_udts.append_child("udt");
 					n_udt.append_attribute("name").set_value(name.c_str());
-					n_udt.append_attribute("size").set_value(udt_size);
+					n_udt.append_attribute("size").set_value(du.all ? udt_size : 0);
 					n_udt.append_attribute("base_name").set_value(du.base_name.c_str());
 
 					DWORD ctor = 0;
@@ -579,14 +584,14 @@ int main(int argc, char **args)
 					{
 						s_function->get_name(&pwname);
 						auto name = w2s(pwname);
-						auto ft = du.find_fun(name);
-						if (du.all || (ft && ft->include))
-						{
-							if (name == du.name)
-								name = "ctor";
-							else if (name[0] == '~')
-								name = "dtor";
+						if (name == du.name)
+							name = "ctor";
+						else if (name[0] == '~')
+							name = "dtor";
 
+						auto ft = du.find_target(name);
+						if ((!ft && du.all) || (ft && ft->include))
+						{
 							s_function->get_relativeVirtualAddress(&dw);
 							auto rva = dw;
 
@@ -607,36 +612,39 @@ int main(int argc, char **args)
 									n_functions = n_udt.append_child("functions");
 								auto n_function = n_functions.append_child("function");
 								n_function.append_attribute("name").set_value(name.c_str());
-								n_function.append_attribute("rva").set_value(rva);
-								n_function.append_attribute("voff").set_value(voff);
+								n_function.append_attribute("rva").set_value(du.all ? rva : 0);
+								n_function.append_attribute("voff").set_value(du.all ? voff : 0);
 								n_function.append_attribute("type_tag").set_value(ret_type.tag);
 								n_function.append_attribute("type_name").set_value(ret_type.name.c_str());
 
 								pugi::xml_node n_parameters;
 
-								IDiaEnumSymbols* s_parameters;
-								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
-								IDiaSymbol* s_parameter;
-								while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
+								if (du.all)
 								{
-									IDiaSymbol* s_type;
-									s_parameter->get_type(&s_type);
+									IDiaEnumSymbols* s_parameters;
+									s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
+									IDiaSymbol* s_parameter;
+									while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
+									{
+										IDiaSymbol* s_type;
+										s_parameter->get_type(&s_type);
 
-									auto desc = typeinfo_from_symbol(s_parameter);
-									if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-										add_enum(desc.name, s_type);
+										auto desc = typeinfo_from_symbol(s_parameter);
+										if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+											add_enum(desc.name, s_type);
 
-									if (!n_parameters)
-										n_parameters = n_function.append_child("parameters");
-									auto n_parameter = n_parameters.append_child("parameter");
-									n_parameter.append_attribute("type_tag").set_value(desc.tag);
-									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
+										if (!n_parameters)
+											n_parameters = n_function.append_child("parameters");
+										auto n_parameter = n_parameters.append_child("parameter");
+										n_parameter.append_attribute("type_tag").set_value(desc.tag);
+										n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
 
-									s_type->Release();
+										s_type->Release();
 
-									s_parameter->Release();
+										s_parameter->Release();
+									}
+									s_parameters->Release();
 								}
-								s_parameters->Release();
 
 								s_function_type->Release();
 
@@ -657,7 +665,7 @@ int main(int argc, char **args)
 					memset(obj, 0, udt_size);
 
 					if (ctor)
-						cmf(p2f<void(__Dummy__::*)()>((char*)library + ctor), obj);
+						cf(p2f<void(*)(void*)>((char*)library + ctor), obj);
 
 					pugi::xml_node n_variables;
 
@@ -668,8 +676,8 @@ int main(int argc, char **args)
 					{
 						s_variable->get_name(&pwname);
 						auto name = w2s(pwname);
-						auto vt = du.find_var(name);
-						if (du.all || (vt && vt->include))
+						auto vt = du.find_target(name);
+						if ((!vt && du.all) || (vt && vt->include))
 						{
 							IDiaSymbol* s_type;
 							s_variable->get_type(&s_type);
@@ -718,7 +726,7 @@ int main(int argc, char **args)
 					s_variables->Release();
 
 					if (dtor)
-						cmf(p2f<void(__Dummy__::*)()>((char*)library + dtor), obj);
+						cf(p2f<void(*)(void*)>((char*)library + dtor), obj);
 					free(obj);
 				}
 

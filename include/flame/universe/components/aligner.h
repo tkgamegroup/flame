@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cAligner : Component // R
+	struct cAligner : Component // R !ctor !dtor !type_name !type_hash
 	{
 		inline static auto type_name = "cAligner";
 		inline static auto type_hash = ch(type_name);

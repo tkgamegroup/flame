@@ -141,7 +141,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 				if (thiz->dragging)
 				{
 					if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
-						thiz->group->edt.event_receiver->on_mouse(action, key, pos);
+						thiz->group->edt.event_receiver->send_mouse_event(action, key, pos);
 				}
 				return true;
 			}, Capture().set_thiz(this));

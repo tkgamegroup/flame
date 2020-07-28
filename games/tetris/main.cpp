@@ -898,7 +898,7 @@ void MyApp::create_lan_scene()
 				ui.parents.pop();
 			}, Capture().set_thiz(e_room_list));
 		}, Capture().set_thiz(e_room_list));
-	}, Capture().set_thiz(e_room_list))->get_component(cEventReceiver)->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
+	}, Capture().set_thiz(e_room_list))->get_component(cEventReceiver)->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
 	ui.e_button(L"Create Room", [](Capture&) {
 		auto& ui = main_window->ui;
 

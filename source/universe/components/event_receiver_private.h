@@ -7,7 +7,7 @@ namespace flame
 	struct cElementPrivate;
 	struct sEventDispatcherPrivate;
 
-	struct cEventReceiverPrivate : cEventReceiver // R ~
+	struct cEventReceiverPrivate : cEventReceiver // R ~ on_*
 	{
 		std::vector<std::unique_ptr<Closure<bool(Capture&, KeyStateFlags action, uint value)>>> key_listeners;
 		std::vector<std::unique_ptr<Closure<bool(Capture&, KeyStateFlags, MouseKey, const Vec2i&)>>> mouse_listeners;
@@ -20,9 +20,9 @@ namespace flame
 //
 //		cEventReceiverPrivate();
 //		~cEventReceiverPrivate();
-		void on_key(KeyStateFlags action, uint value);
-		void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);
-//		void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
+		void send_key_event(KeyStateFlags action, uint value);
+		void send_mouse_event(KeyStateFlags action, MouseKey key, const Vec2i& value);
+//		void send_drag_and_drop_event(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
 
 		void mark_dirty();
 

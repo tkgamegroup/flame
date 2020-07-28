@@ -82,16 +82,6 @@ namespace flame
 		return (*f)(args...);
 	}
 
-	struct __Dummy__
-	{
-	};
-
-	template <class F, class ...Args>
-	auto cmf(F f, void* p, Args... args) // call member function at an address
-	{
-		return (*((__Dummy__*)p).*f)(args...);
-	}
-
 	struct CountDown
 	{
 		bool is_frame;

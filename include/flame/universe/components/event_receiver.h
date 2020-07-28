@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cEventReceiver : Component // R
+	struct cEventReceiver : Component // R !ctor !dtor !type_name !type_hash
 	{
 		inline static auto type_name = "cEventReceiver";
 		inline static auto type_hash = ch(type_name);
@@ -49,9 +49,9 @@ namespace flame
 //
 //		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drops_count, const uint* drops);
 //
-//		FLAME_UNIVERSE_EXPORTS void on_key(KeyStateFlags action, uint value);
-//		FLAME_UNIVERSE_EXPORTS void on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value);
-//		FLAME_UNIVERSE_EXPORTS void on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
+//		FLAME_UNIVERSE_EXPORTS void send_key_event(KeyStateFlags action, uint value);
+//		FLAME_UNIVERSE_EXPORTS void send_mouse_event(KeyStateFlags action, MouseKey key, const Vec2i& value);
+//		FLAME_UNIVERSE_EXPORTS void send_drag_and_drop_event(DragAndDrop action, cEventReceiver* er, const Vec2i& pos);
 
 		virtual void* add_key_listener(bool (*callback)(Capture& c, KeyStateFlags action, uint value), const Capture& capture) = 0;
 		virtual void remove_key_listener(void* lis) = 0;

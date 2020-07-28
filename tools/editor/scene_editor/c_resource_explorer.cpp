@@ -411,7 +411,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				ui.e_begin_popup_menu();
 				ui.e_menu_item(L"Open", [](Capture& c) {
-					c.thiz<cEventReceiver>()->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
+					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
 				}, Capture().set_thiz(er));
 				ui.e_end_popup_menu();
 			}
@@ -435,7 +435,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				ui.e_begin_popup_menu();
 				ui.e_menu_item(L"Open", [](Capture& c) {
-					c.thiz<cEventReceiver>()->on_mouse(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
+					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
 				}, Capture().set_thiz(er));
 				ui.e_end_popup_menu();
 			}

@@ -22,7 +22,7 @@ namespace flame
 //		frame = -1;
 //	}
 
-	void cEventReceiverPrivate::on_key(KeyStateFlags action, uint value)
+	void cEventReceiverPrivate::send_key_event(KeyStateFlags action, uint value)
 	{
 		for (auto& l : key_listeners)
 		{
@@ -31,7 +31,7 @@ namespace flame
 		}
 	}
 
-	void cEventReceiverPrivate::on_mouse(KeyStateFlags action, MouseKey key, const Vec2i& value)
+	void cEventReceiverPrivate::send_mouse_event(KeyStateFlags action, MouseKey key, const Vec2i& value)
 	{
 		for (auto& l : mouse_listeners)
 		{
@@ -40,7 +40,7 @@ namespace flame
 		}
 	}
 
-//	void cEventReceiverPrivate::on_drag_and_drop(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
+//	void cEventReceiverPrivate::send_drag_and_drop_event(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
 //	{
 //		drag_and_drop_listeners.call_with_current(this, action, er, pos);
 //	}

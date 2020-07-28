@@ -153,14 +153,14 @@ namespace flame
 			}
 
 			if (mdisp != 0)
-				er->on_mouse(KeyStateNull, Mouse_Null, mdisp);
+				er->send_mouse_event(KeyStateNull, Mouse_Null, mdisp);
 			if (mscrl != 0)
-				er->on_mouse(KeyStateNull, Mouse_Middle, Vec2i(mscrl, 0));
+				er->send_mouse_event(KeyStateNull, Mouse_Middle, Vec2i(mscrl, 0));
 			for (auto i = 0; i < size(mbtns); i++)
 			{
 				auto s = mbtns[i];
 				if (s & KeyStateJust)
-					er->on_mouse(s, (MouseKey)i, mpos);
+					er->send_mouse_event(s, (MouseKey)i, mpos);
 			}
 		}
 
@@ -286,8 +286,8 @@ namespace flame
 		{
 			//auto disp = mouse_pos - active_pos;
 			//auto db = dbclick_timer > 0.f;
-			focusing->on_mouse(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
-			//((cEventReceiverPrivate*)focusing)->on_mouse(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
+			focusing->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
+			//((cEventReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
 			//if (db)
 			//	dbclick_timer = -1.f;
 			//else if (disp == 0)
@@ -336,35 +336,35 @@ namespace flame
 		}
 
 //		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
-//			((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragStart, nullptr, mouse_pos);
+//			((cEventReceiverPrivate*)focusing)->send_drag_and_drop_event(DragStart, nullptr, mouse_pos);
 //		else if (prev_dragging && (!focusing || focusing_state != FocusingAndDragging))
 //		{
 //			if (prev_drag_overing)
-//				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(BeenDropped, prev_dragging, mouse_pos);
-//			((cEventReceiverPrivate*)prev_dragging)->on_drag_and_drop(DragEnd, prev_drag_overing, mouse_pos);
+//				((cEventReceiverPrivate*)prev_drag_overing)->send_drag_and_drop_event(BeenDropped, prev_dragging, mouse_pos);
+//			((cEventReceiverPrivate*)prev_dragging)->send_drag_and_drop_event(DragEnd, prev_drag_overing, mouse_pos);
 //		}
 //		if (prev_drag_overing != drag_overing)
 //		{
 //			if (prev_drag_overing)
-//				((cEventReceiverPrivate*)prev_drag_overing)->on_drag_and_drop(BeingOverEnd, focusing, mouse_pos);
+//				((cEventReceiverPrivate*)prev_drag_overing)->send_drag_and_drop_event(BeingOverEnd, focusing, mouse_pos);
 //			if (drag_overing)
-//				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOverStart, focusing, mouse_pos);
+//				((cEventReceiverPrivate*)drag_overing)->send_drag_and_drop_event(BeingOverStart, focusing, mouse_pos);
 //		}
 //		if (focusing && focusing_state == FocusingAndDragging)
 //		{
-//			((cEventReceiverPrivate*)focusing)->on_drag_and_drop(DragOvering, drag_overing, mouse_pos);
+//			((cEventReceiverPrivate*)focusing)->send_drag_and_drop_event(DragOvering, drag_overing, mouse_pos);
 //			if (drag_overing)
-//				((cEventReceiverPrivate*)drag_overing)->on_drag_and_drop(BeingOvering, focusing, mouse_pos);
+//				((cEventReceiverPrivate*)drag_overing)->send_drag_and_drop_event(BeingOvering, focusing, mouse_pos);
 //		}
 
 		if (key_target)
 		{
 			for (auto& code : keydown_inputs)
-				key_target->on_key(KeyStateDown, code);
+				key_target->send_key_event(KeyStateDown, code);
 			for (auto& code : keyup_inputs)
-				key_target->on_key(KeyStateUp, code);
+				key_target->send_key_event(KeyStateUp, code);
 			for (auto& ch : char_inputs)
-				key_target->on_key(KeyStateNull, ch);
+				key_target->send_key_event(KeyStateNull, ch);
 		}
 		keydown_inputs.clear();
 		keyup_inputs.clear();
