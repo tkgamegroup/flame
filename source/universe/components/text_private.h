@@ -16,7 +16,7 @@ namespace flame
 		void set_text(const wchar_t* text) override;
 	};
 
-	struct cTextPrivate : cTextBridge, cElement::Drawer, sTypeSetting::AutoSizer
+	struct cTextPrivate : cTextBridge, cElement::Drawer, sTypeSetting::AutoSizer // R ~ on_*
 	{
 		std::wstring text;
 		uint font_size = 14;

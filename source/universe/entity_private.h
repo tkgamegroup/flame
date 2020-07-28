@@ -4,6 +4,8 @@
 
 namespace flame
 {
+	struct UdtInfo;
+
 	struct WorldPrivate;
 
 	struct EntityBridge : Entity
@@ -28,7 +30,16 @@ namespace flame
 
 		StateFlags state = StateNone;
 
-		std::unordered_map<uint64, std::unique_ptr<Component, Delector>> components;
+		struct ComponentWrapper
+		{
+			std::unique_ptr<Component, Delector> p;
+			UdtInfo* udt[2];
+			bool want_local_event;
+			bool want_child_event;
+			bool want_local_data_changed;
+			bool want_child_data_changed;
+		};
+		std::unordered_map<uint64, ComponentWrapper> components;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 		std::vector<Component*> local_event_dispatch_list;
 		std::vector<Component*> child_event_dispatch_list;
@@ -61,7 +72,7 @@ namespace flame
 
 		Component* get_component(uint64 hash) const override;
 		void add_component(Component* c);
-		void info_component_removed(Component* c) const;
+		void info_component_removed(ComponentWrapper& cw) const;
 		void remove_component(Component* c, bool destroy = true);
 		void remove_all_components(bool destroy) override;
 		void report_data_changed(Component* c, uint hash) override;

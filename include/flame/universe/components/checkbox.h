@@ -6,11 +6,11 @@ namespace flame
 {
 	struct cCheckbox : Component // R !ctor !dtor !type_name !type_hash
 	{
-		inline static auto type_name = "cCheckbox";
-		inline static auto type_hash = ch(type_name);
+		inline static auto type_name = "flame::cCheckbox";
+		inline static auto type_hash = S<ch("cCheckbox")>::v;
 
 		cCheckbox() :
-			Component(type_name, type_hash, true)
+			Component(type_name, type_hash)
 		{
 		}
 

@@ -11,8 +11,8 @@ namespace flame
 
 	struct cElement : Component // R !ctor !dtor !type_name !type_hash
 	{
-		inline static auto type_name = "cElement";
-		inline static auto type_hash = ch(type_name);
+		inline static auto type_name = "flame::cElement";
+		inline static auto type_hash = S<ch("cElement")>::v;
 
 		struct Drawer
 		{
@@ -20,7 +20,7 @@ namespace flame
 		};
 
 		cElement() :
-			Component(type_name, type_hash, true)
+			Component(type_name, type_hash)
 		{
 		}
 

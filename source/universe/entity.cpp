@@ -81,7 +81,7 @@ namespace flame
 	{
 		auto it = components.find(hash);
 		if (it != components.end())
-			return it->second.get();
+			return it->second.p.get();
 		return nullptr;
 	}
 
@@ -91,7 +91,6 @@ namespace flame
 		assert(components.find(c->type_hash) == components.end());
 
 		c->entity = this;
-
 		c->on_added();
 
 		for (auto cc : local_event_dispatch_list)
@@ -102,36 +101,72 @@ namespace flame
 				cc->on_entity_child_component_added(c);
 		}
 
-		components.emplace(c->type_hash, c);
+		ComponentWrapper cw;
+		cw.p.reset(c);
+		cw.udt[0] = find_udt(c->type_name);
+		cw.udt[1] = find_udt((c->type_name + std::string("Private")).c_str());
+		if (cw.udt[0])
+		{
+			auto udt = cw.udt[0];
+			if (cw.udt[1])
+				udt = cw.udt[1];
+			cw.want_local_event = false;
+			if (udt->find_function("on_entered_world") ||
+				udt->find_function("on_left_world") ||
+				udt->find_function("on_entity_destroyed") ||
+				udt->find_function("on_entity_visibility_changed") ||
+				udt->find_function("on_entity_state_changed") ||
+				udt->find_function("on_entity_added") ||
+				udt->find_function("on_entity_removed") ||
+				udt->find_function("on_entity_position_changed") ||
+				udt->find_function("on_entity_component_added") ||
+				udt->find_function("on_entity_component_removed") ||
+				udt->find_function("on_entity_added_child") ||
+				udt->find_function("on_entity_removed_child"))
+				cw.want_local_event = true;
+			cw.want_child_event = false;
+			if (udt->find_function("on_entity_child_visibility_changed") ||
+				udt->find_function("on_entity_child_position_changed") ||
+				udt->find_function("on_entity_child_component_added") ||
+				udt->find_function("on_entity_child_component_removed"))
+				cw.want_child_event = true;
+			cw.want_local_data_changed = false;
+			if (udt->find_function("on_entity_component_data_changed"))
+				cw.want_local_data_changed = true;
+			cw.want_child_data_changed = false;
+			if (udt->find_function("on_entity_child_component_data_changed"))
+				cw.want_child_data_changed = true;
+		}
+		components.emplace(c->type_hash, std::move(cw));
 
-		if (c->_want_local_event)
+		if (cw.want_local_event)
 		{
 			local_event_dispatch_list.push_back(c);
 			if (world)
 				c->on_entered_world();
 		}
-		if (c->_want_child_event)
+		if (cw.want_child_event)
 			child_event_dispatch_list.push_back(c);
-		if (c->_want_local_data_changed)
+		if (cw.want_local_data_changed)
 			local_data_changed_dispatch_list.push_back(c);
-		if (c->_want_child_data_changed)
+		if (cw.want_child_data_changed)
 			child_data_changed_dispatch_list.push_back(c);
 	}
 
-	void EntityPrivate::info_component_removed(Component* c) const
+	void EntityPrivate::info_component_removed(ComponentWrapper& cw) const
 	{
 		for (auto cc : local_event_dispatch_list)
-			cc->on_entity_component_removed(c);
+			cc->on_entity_component_removed(cw.p.get());
 		if (parent)
 		{
 			for (auto cc : parent->child_event_dispatch_list)
-				cc->on_entity_child_component_removed(c);
+				cc->on_entity_child_component_removed(cw.p.get());
 		}
 
-		if (c->_want_local_event)
+		if (cw.want_local_event)
 		{
 			if (world)
-				c->on_left_world();
+				cw.p->on_left_world();
 		}
 	}
 
@@ -144,27 +179,29 @@ namespace flame
 			return;
 		}
 
-		info_component_removed(c);
+		auto& cw = it->second;
 
-		if (c->_want_local_event)
+		info_component_removed(cw);
+
+		if (cw.want_local_event)
 		{
 			std::erase_if(local_event_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (c->_want_child_event)
+		if (cw.want_child_event)
 		{
 			std::erase_if(child_event_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (c->_want_local_data_changed)
+		if (cw.want_local_data_changed)
 		{
 			std::erase_if(local_data_changed_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (c->_want_child_data_changed)
+		if (cw.want_child_data_changed)
 		{
 			std::erase_if(child_data_changed_dispatch_list, [&](const auto& i) {
 				return i == c;
@@ -172,14 +209,14 @@ namespace flame
 		}
 
 		if (!destroy)
-			it->second.release();
+			it->second.p.release();
 		components.erase(it);
 	}
 
 	void EntityPrivate::remove_all_components(bool destroy)
 	{
 		for (auto& c : components)
-			info_component_removed(c.second.get());
+			info_component_removed(c.second);
 
 		local_event_dispatch_list.clear();
 		child_event_dispatch_list.clear();
@@ -189,7 +226,7 @@ namespace flame
 		if (!destroy)
 		{
 			for (auto& c : components)
-				c.second.release();
+				c.second.p.release();
 		}
 		components.clear();
 	}
@@ -367,7 +404,22 @@ namespace flame
 		return nullptr;
 	}
 
-	static std::stack<std::filesystem::path> prefab_paths;
+	struct LoadState
+	{
+		std::vector<std::pair<std::string, std::string>> nss;
+		std::filesystem::path path;
+
+		std::string find_ns(const std::string& n)
+		{
+			for (auto& ns : nss)
+			{
+				if (ns.first == n)
+					return ns.second;
+			}
+			return "";
+		}
+	};
+	static std::stack<LoadState> load_states;
 
 	static void load_prefab(EntityPrivate* dst, pugi::xml_node src)
 	{
@@ -385,7 +437,7 @@ namespace flame
 			{
 				auto path = std::filesystem::path(a.value());
 				path.replace_extension(L".prefab");
-				dst->load(prefab_paths.empty() ? path : prefab_paths.top() / path);
+				dst->load(load_states.empty() ? path : load_states.top().path / path);
 			}
 		}
 
@@ -400,32 +452,36 @@ namespace flame
 			}
 			else
 			{
-				auto udt = find_udt(("flame::" + name).c_str());
-				if (udt)
+				auto sp = SUS::split(name, ':');
+				if (sp.size() == 2)
 				{
-					auto c = dst->get_component(std::hash<std::string>()(name));
-					if (!c)
+					auto udt = find_udt((load_states.top().find_ns(sp[0]) + "::" + sp[1]).c_str());
+					if (udt)
 					{
-						auto fc = udt->find_function("create");
-						if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
+						auto c = dst->get_component(std::hash<std::string>()(sp[1]));
+						if (!c)
 						{
-							fc->call(nullptr, &c, {});
-							dst->add_component((Component*)c);
-						}
-					}
-					if (c)
-					{
-						for (auto a : n_c.attributes())
-						{
-							auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
-							if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
+							auto fc = udt->find_function("create");
+							if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 							{
-								auto type = fs->get_parameter(0);
-								void* d = type->create();
-								type->unserialize(d, a.value());
-								void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
-								fs->call(c, nullptr, parms);
-								type->destroy(d);
+								fc->call(nullptr, &c, {});
+								dst->add_component((Component*)c);
+							}
+						}
+						if (c)
+						{
+							for (auto a : n_c.attributes())
+							{
+								auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
+								if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
+								{
+									auto type = fs->get_parameter(0);
+									void* d = type->create();
+									type->unserialize(d, a.value());
+									void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
+									fs->call(c, nullptr, parms);
+									type->destroy(d);
+								}
 							}
 						}
 					}
@@ -445,12 +501,19 @@ namespace flame
 			return;
 		}
 
-		auto parent_path = filename.parent_path();
-		if (!parent_path.empty())
-			prefab_paths.push(parent_path);
+		LoadState state;
+		for (auto a : file_root.attributes())
+		{
+			static std::regex reg_ns(R"(xmlns:(\w+))");
+			std::smatch res;
+			auto name = std::string(a.name());
+			if (std::regex_search(name, res, reg_ns))
+				state.nss.emplace_back(res[1].str(), a.value());
+		}
+		state.path = filename.parent_path();
+		load_states.push(state);
 		load_prefab(this, file_root.first_child());
-		if (!parent_path.empty())
-			prefab_paths.pop();
+		load_states.pop();
 	}
 
 	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
@@ -468,7 +531,7 @@ namespace flame
 
 		//		auto n_c = n_cs.append_child(component->name);
 
-		//		auto udt = find_udt((std::string("flame::") + component->name).c_str());
+		//		auto udt = find_udt(component->name);
 		//		assert(udt && udt->get_base_name() == std::string("Component"));
 		//		auto variables_count = udt->get_variables_count();
 		//		for (auto i = 0; i < variables_count; i++)

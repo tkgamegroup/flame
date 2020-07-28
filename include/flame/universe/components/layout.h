@@ -6,11 +6,11 @@ namespace flame
 {
 	struct cLayout : Component // R !ctor !dtor !type_name !type_hash
 	{
-		inline static auto type_name = "cLayout";
-		inline static auto type_hash = ch(type_name);
+		inline static auto type_name = "flame::cLayout";
+		inline static auto type_hash = S<ch("cLayout")>::v;
 
 		cLayout() :
-			Component(type_name, type_hash, true, true, true, true)
+			Component(type_name, type_hash)
 		{
 		}
 

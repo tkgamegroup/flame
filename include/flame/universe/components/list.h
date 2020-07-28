@@ -6,8 +6,8 @@ namespace flame
 {
 	struct cList : Component // R !ctor !dtor !type_name !type_hash
 	{
-		inline static auto type_name = "cList";
-		inline static auto type_hash = ch(type_name);
+		inline static auto type_name = "flame::cList";
+		inline static auto type_hash = S<ch("cList")>::v;
 
 		cList() :
 			Component(type_name, type_hash)
@@ -21,8 +21,8 @@ namespace flame
 
 	struct cListItem : Component // R !ctor !dtor !type_name !type_hash
 	{
-		inline static auto type_name = "cListItem";
-		inline static auto type_hash = ch(type_name);
+		inline static auto type_name = "flame::cListItem";
+		inline static auto type_hash = S<ch("cListItem")>::v;
 
 		cListItem() :
 			Component(type_name, type_hash)

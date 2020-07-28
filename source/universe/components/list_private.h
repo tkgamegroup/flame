@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cListPrivate : cList
+	struct cListPrivate : cList // R ~ on_*
 	{
 
 		//		cEventReceiver* event_receiver;
@@ -12,7 +12,7 @@ namespace flame
 		//		Entity* selected;
 	};
 
-	struct cListItemPrivate : cListItem
+	struct cListItemPrivate : cListItem // R ~ on_*
 	{
 
 		//		cEventReceiver* event_receiver;

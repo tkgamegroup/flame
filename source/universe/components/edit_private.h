@@ -8,7 +8,7 @@ namespace flame
 	struct cTextPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cEditPrivate : cEdit, cElement::Drawer
+	struct cEditPrivate : cEdit, cElement::Drawer // R ~ on_*
 	{
 		uint select_start = 0;
 		uint select_end = 0;

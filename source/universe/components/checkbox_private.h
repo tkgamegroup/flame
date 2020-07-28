@@ -7,7 +7,7 @@ namespace flame
 	struct cElementPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cCheckboxPrivate : cCheckbox
+	struct cCheckboxPrivate : cCheckbox  // R ~ on_*
 	{
 		cEventReceiverPrivate* event_receiver = nullptr;
 

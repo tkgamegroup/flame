@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cAlignerPrivate : cAligner
+	struct cAlignerPrivate : cAligner  // R ~ on_*
 	{
 		Align alignx = AlignNone;
 		Align aligny = AlignNone;

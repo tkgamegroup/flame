@@ -12,22 +12,10 @@ namespace flame
 		const uint64 type_hash;
 
 		Entity* entity = nullptr;
-		bool _want_local_event;
-		bool _want_child_event;
-		bool _want_local_data_changed;
-		bool _want_child_data_changed;
 
-		Component(const char* name, uint64 hash,
-			bool want_local_event = false,
-			bool want_child_event = false,
-			bool want_local_data_changed = false,
-			bool want_child_data_changed = false) :
+		Component(const char* name, uint64 hash) :
 			type_name(name),
-			type_hash(hash),
-			_want_local_event(want_local_event),
-			_want_child_event(want_child_event),
-			_want_local_data_changed(want_local_data_changed),
-			_want_child_data_changed(want_child_data_changed)
+			type_hash(hash)
 		{
 		}
 
@@ -69,9 +57,6 @@ namespace flame
 		// local event, this component's entity removed a component
 		virtual void on_entity_component_removed(Component* c) {}
 
-		// local data changed, other component on this component's entity data changed
-		virtual void on_entity_component_data_changed(Component* c, uint data_name_hash) {}
-
 		// local event, this component's entity added another entity
 		virtual void on_entity_added_child(Entity* e) {}
 
@@ -89,6 +74,9 @@ namespace flame
 
 		// child event, this component's entity's child removed a component
 		virtual void on_entity_child_component_removed(Component* c) {}
+
+		// local data changed, other component on this component's entity data changed
+		virtual void on_entity_component_data_changed(Component* c, uint data_name_hash) {}
 
 		// child data changed, component on this component's entity's child data changed
 		virtual void on_entity_child_component_data_changed(Component* c, uint data_name_hash) {}

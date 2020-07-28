@@ -12,7 +12,7 @@ namespace flame
 		void set_rule(const char* rule) override;
 	};
 
-	struct cStylePrivate : cStyleBridge
+	struct cStylePrivate : cStyleBridge // R ~ on_*
 	{
 		struct Command
 		{

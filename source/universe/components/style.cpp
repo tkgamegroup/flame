@@ -37,7 +37,7 @@ namespace flame
 			if (!c)
 				continue;
 
-			auto udt = find_udt((std::string("flame::") + c->type_name).c_str());
+			auto udt = find_udt(c->type_name);
 			if (!udt)
 				continue;
 

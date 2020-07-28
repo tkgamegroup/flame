@@ -8,11 +8,11 @@ namespace flame
 
 	struct cImage : Component // R !ctor !dtor !type_name !type_hash
 	{
-		inline static auto type_name = "cImage";
-		inline static auto type_hash = ch(type_name);
+		inline static auto type_name = "flame::cImage";
+		inline static auto type_hash = S<ch("cImage")>::v;
 
 		cImage() :
-			Component(type_name, type_hash, true)
+			Component(type_name, type_hash)
 		{
 		}
 

@@ -13,7 +13,7 @@ namespace flame
 		void set_src(const char* src) override;
 	};
 
-	struct cImagePrivate : cImageBridge, cElement::Drawer, sTypeSetting::AutoSizer
+	struct cImagePrivate : cImageBridge, cElement::Drawer, sTypeSetting::AutoSizer // R ~ on_*
 	{
 		uint res_id = 0xffffffff;
 		uint tile_id = 0;

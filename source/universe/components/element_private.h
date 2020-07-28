@@ -6,7 +6,7 @@ namespace flame
 {
 	struct sElementRendererPrivate;
 
-	struct cElementPrivate : cElement
+	struct cElementPrivate : cElement // R ~ on_*
 	{
 		sElementRendererPrivate* renderer = nullptr;
 

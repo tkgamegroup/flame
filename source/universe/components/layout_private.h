@@ -9,7 +9,7 @@ namespace flame
 
 	struct sTypeSettingPrivate;
 
-	struct cLayoutPrivate : cLayout
+	struct cLayoutPrivate : cLayout // R ~ on_*
 	{
 		LayoutType type = LayoutBasic;
 		float gap = 0.f;

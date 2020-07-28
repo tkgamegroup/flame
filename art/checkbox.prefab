@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
-<prefab>
+<prefab xmlns:f="flame">
   <entity >
     <entity name="box">
-      <cElement width="20.0" height="20.0" border="2.0" />
+      <f:cElement width="20.0" height="20.0" border="2.0" />
     </entity>
     <entity src="text" name="text">
-      <cElement padding="4,0,4,0" />
-      <cText text="checkbox" />
-      <cAligner aligny="AlignMiddle" />
+      <f:cElement padding="4,0,4,0" />
+      <f:cText text="checkbox" />
+      <f:cAligner aligny="AlignMiddle" />
     </entity>
-    <cElement />
-    <cLayout type="LayoutHorizontal" />
-    <cEventReceiver />
-    <cCheckbox />
-    <cStyle rule=
+    <f:cElement />
+    <f:cLayout type="LayoutHorizontal" />
+    <f:cEventReceiver />
+    <f:cCheckbox />
+    <f:cStyle rule=
            "StateHovering,StateActive,StateSelected;box.cElement.fill_color=69,94,222,255#
             StateActive,StateSelected;box.cElement.fill_color=86,119,252,255#
             StateHovering,StateSelected;box.cElement.fill_color=78,108,239,255#

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<prefab>
+<prefab xmlns:f="flame">
   <entity src="text" >
-    <cElement width="100.0" padding="4,2,4,2" border="1.0" clipping="true" />
-    <cText text="Hello World" auto_width="false" />
-    <cEventReceiver />
-    <cEdit />
+    <f:cElement width="100.0" padding="4,2,4,2" border="1.0" clipping="true" />
+    <f:cText text="Hello World" auto_width="false" />
+    <f:cEventReceiver />
+    <f:cEdit />
   </entity>
 </prefab>
