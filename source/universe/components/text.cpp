@@ -32,14 +32,13 @@ namespace flame
 			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
 	}
 
-	void cTextPrivate::on_added()
+	void cTextPrivate::on_gain_element()
 	{
-		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
 		element->drawers.push_back(this);
 		mark_size_dirty();
 	}
 
-	void cTextPrivate::on_removed()
+	void cTextPrivate::on_lost_element()
 	{
 		std::erase_if(element->drawers, [&](const auto& i) {
 			return i == this;

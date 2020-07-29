@@ -139,7 +139,14 @@ int main(int argc, char** args)
 	world->add_system(renderer);
 
 	auto e = Entity::create();
-	e->add_component(cText::create());
+	{
+		auto ce = cElement::create();
+		e->add_component(ce);
+		auto ct = cText::create();
+		e->add_component(ct);
+		e->remove_component(ct);
+		e->remove_component(ce);
+	}
 	e->load((res_path / test_prefab).c_str());
 	world->get_root()->add_child(e);
 

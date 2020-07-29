@@ -33,7 +33,7 @@ namespace flame
 		struct ComponentReferencing
 		{
 			Component* t;
-			void** addr;
+			void** dst;
 			void(*on_gain)(void*);
 			void(*on_lost)(void*);
 		};
@@ -43,13 +43,13 @@ namespace flame
 			std::unique_ptr<Component, Delector> p;
 			UdtInfo* udt[2];
 			std::vector<ComponentReferencing> referencings;
-			std::vector<Component*> referenceds;
 			bool want_local_event;
 			bool want_child_event;
 			bool want_local_data_changed;
 			bool want_child_data_changed;
 		};
 		std::unordered_map<uint64, ComponentWrapper> components;
+		std::unordered_map<uint64, std::vector<Component*>> component_monitors;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 		std::vector<Component*> local_event_dispatch_list;
 		std::vector<Component*> child_event_dispatch_list;
@@ -58,7 +58,7 @@ namespace flame
 
 		uint depth = 0;
 		uint index = 0;
-		int _created_frame;
+		int created_frame;
 		std::vector<void*> created_stack;
 
 		EntityPrivate();
@@ -81,9 +81,8 @@ namespace flame
 		void set_state(StateFlags state) override;
 
 		Component* get_component(uint64 hash) const override;
-		ComponentWrapper& get_wrapper(Component* c);
 		void add_component(Component* c);
-		void info_component_removed(ComponentWrapper& cw) const;
+		void info_component_removed(ComponentWrapper& cw);
 		void remove_component(Component* c, bool destroy = true);
 		void remove_all_components(bool destroy) override;
 		void report_data_changed(Component* c, uint hash) override;

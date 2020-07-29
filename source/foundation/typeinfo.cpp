@@ -984,7 +984,7 @@ namespace flame
 		return false;
 	}
 
-	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint flags, const std::string& _meta) :
+	VariableInfoPrivate::VariableInfoPrivate(UdtInfoPrivate* udt, uint index, TypeInfoPrivate* type, const std::string& name, uint offset, const std::string& _meta) :
 		udt(udt),
 		index(index),
 		type(type),

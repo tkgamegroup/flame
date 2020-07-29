@@ -7,7 +7,7 @@ namespace flame
 {
 	EntityPrivate::EntityPrivate()
 	{
-		_created_frame = get_looper()->get_frame();
+		created_frame = get_looper()->get_frame();
 
 #ifdef _DEBUG
 		//_created_stack_ = get_stack_frames(); TODO
@@ -85,11 +85,6 @@ namespace flame
 		return nullptr;
 	}
 
-	EntityPrivate::ComponentWrapper& EntityPrivate::get_wrapper(Component* c)
-	{
-		return components.find(c->type_hash)->second;
-	}
-
 	void EntityPrivate::add_component(Component* c)
 	{
 		assert(!c->entity);
@@ -115,7 +110,8 @@ namespace flame
 					if (type.ends_with("Private"))
 						type = type.substr(0, type.size() - 7);
 
-					auto it = components.find(std::hash<std::string>()(type));
+					auto hash = std::hash<std::string>()(type);
+					auto it = components.find(hash);
 					if (it == components.end())
 					{
 						printf("add component %s failed, required component %s do not exist\n", c->type_name, type.c_str());
@@ -126,7 +122,7 @@ namespace flame
 
 					ComponentReferencing ref;
 					ref.t = it->second.p.get();
-					ref.addr = (void**)((char*)c + v->get_offset());
+					ref.dst = (void**)((char*)c + v->get_offset());
 					{
 						auto f = udt->find_function(("on_gain_" + name).c_str());
 						if (f)
@@ -142,8 +138,11 @@ namespace flame
 							ref.on_lost = nullptr;
 					}
 					cw.referencings.push_back(ref);
+					
+					component_monitors[hash].push_back(c);
 
-					it->second.referenceds.push_back(c);
+					*ref.dst = ref.t;
+					ref.on_gain(c);
 				}
 			}
 
@@ -188,6 +187,7 @@ namespace flame
 		}
 
 		components.emplace(c->type_hash, std::move(cw));
+		component_monitors[c->type_hash] = {};
 
 		if (cw.want_local_event)
 		{
@@ -203,8 +203,19 @@ namespace flame
 			child_data_changed_dispatch_list.push_back(c);
 	}
 
-	void EntityPrivate::info_component_removed(ComponentWrapper& cw) const
+	void EntityPrivate::info_component_removed(ComponentWrapper& cw)
 	{
+		for (auto& r : cw.referencings)
+		{
+			auto& vec = ((EntityPrivate*)r.t->entity)->component_monitors[r.t->type_hash];
+			std::erase_if(vec, [&](const auto& i) {
+				return i == cw.p.get();
+			});
+			r.on_lost(cw.p.get());
+			*r.dst = nullptr;
+		}
+		cw.referencings.clear();
+
 		for (auto cc : local_event_dispatch_list)
 			cc->on_entity_component_removed(cw.p.get());
 		if (parent)
@@ -226,6 +237,16 @@ namespace flame
 		if (it == components.end())
 		{
 			assert(0);
+			return;
+		}
+
+		auto& vec = component_monitors[c->type_hash];
+		if (!vec.empty())
+		{
+			printf("remove component %s failed, this component is referenced by ", c->type_name);
+			for (auto& r : vec)
+				printf("%s ", r->type_name);
+			printf("\n");
 			return;
 		}
 
@@ -505,10 +526,11 @@ namespace flame
 				auto sp = SUS::split(name, ':');
 				if (sp.size() == 2)
 				{
-					auto udt = find_udt((load_states.top().find_ns(sp[0]) + "::" + sp[1]).c_str());
+					auto name = load_states.top().find_ns(sp[0]) + "::" + sp[1];
+					auto udt = find_udt(name.c_str());
 					if (udt)
 					{
-						auto c = dst->get_component(std::hash<std::string>()(sp[1]));
+						auto c = dst->get_component(std::hash<std::string>()(name));
 						if (!c)
 						{
 							auto fc = udt->find_function("create");
