@@ -121,7 +121,7 @@ namespace flame
 					auto name = std::string(v->get_name());
 
 					ComponentReferencing ref;
-					ref.t = it->second.p.get();
+					ref.target = it->second.p.get();
 					ref.dst = (void**)((char*)c + v->get_offset());
 					{
 						auto f = udt->find_function(("on_gain_" + name).c_str());
@@ -137,11 +137,11 @@ namespace flame
 						else
 							ref.on_lost = nullptr;
 					}
-					cw.referencings.push_back(ref);
+					cw.references.push_back(ref);
 					
-					component_monitors[hash].push_back(c);
+					component_sniffers[hash].push_back(c);
 
-					*ref.dst = ref.t;
+					*ref.dst = ref.target;
 					ref.on_gain(c);
 				}
 			}
@@ -187,7 +187,7 @@ namespace flame
 		}
 
 		components.emplace(c->type_hash, std::move(cw));
-		component_monitors[c->type_hash] = {};
+		component_sniffers[c->type_hash] = {};
 
 		if (cw.want_local_event)
 		{
@@ -203,18 +203,18 @@ namespace flame
 			child_data_changed_dispatch_list.push_back(c);
 	}
 
-	void EntityPrivate::info_component_removed(ComponentWrapper& cw)
+	void EntityPrivate::on_component_removed(ComponentWrapper& cw)
 	{
-		for (auto& r : cw.referencings)
+		for (auto& r : cw.references)
 		{
-			auto& vec = ((EntityPrivate*)r.t->entity)->component_monitors[r.t->type_hash];
+			auto& vec = ((EntityPrivate*)r.target->entity)->component_sniffers[r.target->type_hash];
 			std::erase_if(vec, [&](const auto& i) {
 				return i == cw.p.get();
 			});
 			r.on_lost(cw.p.get());
 			*r.dst = nullptr;
 		}
-		cw.referencings.clear();
+		cw.references.clear();
 
 		for (auto cc : local_event_dispatch_list)
 			cc->on_entity_component_removed(cw.p.get());
@@ -240,7 +240,7 @@ namespace flame
 			return;
 		}
 
-		auto& vec = component_monitors[c->type_hash];
+		auto& vec = component_sniffers[c->type_hash];
 		if (!vec.empty())
 		{
 			printf("remove component %s failed, this component is referenced by ", c->type_name);
@@ -252,7 +252,7 @@ namespace flame
 
 		auto& cw = it->second;
 
-		info_component_removed(cw);
+		on_component_removed(cw);
 
 		if (cw.want_local_event)
 		{
@@ -287,7 +287,7 @@ namespace flame
 	void EntityPrivate::remove_all_components(bool destroy)
 	{
 		for (auto& c : components)
-			info_component_removed(c.second);
+			on_component_removed(c.second);
 
 		local_event_dispatch_list.clear();
 		child_event_dispatch_list.clear();
