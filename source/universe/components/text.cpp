@@ -12,7 +12,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 		mark_size_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("text")>::v);
+		Entity::report_data_changed(this, S<ch("text")>::v);
 	}
 
 	void cTextPrivate::set_font_size(uint fs)
@@ -23,7 +23,7 @@ namespace flame
 		if (element)
 			element->mark_drawing_dirty();
 		mark_size_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("font_size")>::v);
+		Entity::report_data_changed(this, S<ch("font_size")>::v);
 	}
 
 	void cTextPrivate::mark_size_dirty()
@@ -45,7 +45,7 @@ namespace flame
 		});
 	}
 
-	void cTextPrivate::on_entered_world()
+	void cTextPrivate::on_entity_entered_world()
 	{
 		auto world = ((EntityPrivate*)entity)->world;
 		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
@@ -55,7 +55,7 @@ namespace flame
 			atlas = canvas->get_resource(0)->get_font_atlas();
 	}
 
-	void cTextPrivate::on_left_world()
+	void cTextPrivate::on_entity_left_world()
 	{
 		if (type_setting)
 			type_setting->remove_from_sizing_list(this);

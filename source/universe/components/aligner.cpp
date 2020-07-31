@@ -8,7 +8,7 @@ namespace flame
 		if (alignx == a)
 			return;
 		alignx = a;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("alignx")>::v);
+		Entity::report_data_changed(this, S<ch("alignx")>::v);
 	}
 
 	void cAlignerPrivate::set_aligny(Align a)
@@ -16,7 +16,7 @@ namespace flame
 		if (aligny == a)
 			return;
 		aligny = a;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("aligny")>::v);
+		Entity::report_data_changed(this, S<ch("aligny")>::v);
 	}
 
 	void cAlignerPrivate::set_width_factor(float f)
@@ -24,7 +24,7 @@ namespace flame
 		if (width_factor == f)
 			return;
 		width_factor = f;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("width_factor")>::v);
+		Entity::report_data_changed(this, S<ch("width_factor")>::v);
 	}
 
 	void cAlignerPrivate::set_height_factor(float f)
@@ -32,7 +32,7 @@ namespace flame
 		if (height_factor == f)
 			return;
 		height_factor = f;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("height_factor")>::v);
+		Entity::report_data_changed(this, S<ch("height_factor")>::v);
 	}
 
 	void cAlignerPrivate::set_absolute(bool a)
@@ -40,7 +40,7 @@ namespace flame
 		if (absolute == a)
 			return;
 		absolute = a;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("absolute")>::v);
+		Entity::report_data_changed(this, S<ch("absolute")>::v);
 	}
 
 	void cAlignerPrivate::set_margin(const Vec4f& m)
@@ -48,7 +48,7 @@ namespace flame
 		if (margin == m)
 			return;
 		margin = m;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("margin")>::v);
+		Entity::report_data_changed(this, S<ch("margin")>::v);
 	}
 
 	void cAlignerPrivate::set_only_basic(bool o)
@@ -56,7 +56,7 @@ namespace flame
 		if (only_basic == o)
 			return;
 		only_basic = o;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("only_basic")>::v);
+		Entity::report_data_changed(this, S<ch("only_basic")>::v);
 	}
 
 	cAligner* cAligner::create()

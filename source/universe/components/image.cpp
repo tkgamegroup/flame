@@ -12,11 +12,11 @@ namespace flame
 		if (res_id == id)
 			return;
 		res_id = id;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("res_id")>::v);
+		Entity::report_data_changed(this, S<ch("res_id")>::v);
 		if (!src.empty())
 		{
 			src = "";
-			((EntityPrivate*)entity)->report_data_changed(this, S<ch("src")>::v);
+			Entity::report_data_changed(this, S<ch("src")>::v);
 		}
 	}
 
@@ -25,11 +25,11 @@ namespace flame
 		if (tile_id == id)
 			return;
 		tile_id = id;
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("tile_id")>::v);
+		Entity::report_data_changed(this, S<ch("tile_id")>::v);
 		if (!src.empty())
 		{
 			src = "";
-			((EntityPrivate*)entity)->report_data_changed(this, S<ch("src")>::v);
+			Entity::report_data_changed(this, S<ch("src")>::v);
 		}
 	}
 
@@ -53,9 +53,9 @@ namespace flame
 				if (r_filename == path)
 				{
 					res_id = slot;
-					((EntityPrivate*)entity)->report_data_changed(this, S<ch("res_id")>::v);
-					((EntityPrivate*)entity)->report_data_changed(this, S<ch("tile_id")>::v);
-					((EntityPrivate*)entity)->report_data_changed(this, S<ch("src")>::v);
+					Entity::report_data_changed(this, S<ch("res_id")>::v);
+					Entity::report_data_changed(this, S<ch("tile_id")>::v);
+					Entity::report_data_changed(this, S<ch("src")>::v);
 					break;
 				}
 				slot++;
@@ -83,7 +83,7 @@ namespace flame
 		});
 	}
 
-	void cImagePrivate::on_entered_world()
+	void cImagePrivate::on_entity_entered_world()
 	{
 		auto world = ((EntityPrivate*)entity)->world;
 		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
@@ -98,7 +98,7 @@ namespace flame
 		}
 	}
 
-	void cImagePrivate::on_left_world()
+	void cImagePrivate::on_entity_left_world()
 	{
 		if (type_setting)
 			type_setting->remove_from_sizing_list(this);

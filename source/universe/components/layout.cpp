@@ -382,7 +382,7 @@ namespace flame
 			return;
 		type = t;
 		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("type")>::v);
+		Entity::report_data_changed(this, S<ch("type")>::v);
 	}
 
 	void cLayoutPrivate::set_gap(float g)
@@ -391,7 +391,7 @@ namespace flame
 			return;
 		gap = g;
 		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("gap")>::v);
+		Entity::report_data_changed(this, S<ch("gap")>::v);
 	}
 
 	void cLayoutPrivate::set_auto_width(bool a)
@@ -400,7 +400,7 @@ namespace flame
 			return;
 		auto_width = a;
 		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("auto_width")>::v);
+		Entity::report_data_changed(this, S<ch("auto_width")>::v);
 	}
 
 	void cLayoutPrivate::set_auto_height(bool a)
@@ -409,7 +409,7 @@ namespace flame
 			return;
 		auto_height = a;
 		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("auto_height")>::v);
+		Entity::report_data_changed(this, S<ch("auto_height")>::v);
 	}
 
 	void cLayoutPrivate::mark_layout_dirty()
@@ -424,13 +424,13 @@ namespace flame
 		aligner = (cAlignerPrivate*)((EntityPrivate*)entity)->get_component(cAligner::type_hash);
 	}
 
-	void cLayoutPrivate::on_entered_world()
+	void cLayoutPrivate::on_entity_entered_world()
 	{
 		type_setting = (sTypeSettingPrivate*)((WorldPrivate*)((EntityPrivate*)entity)->world)->get_system(sTypeSetting::type_hash);
 		type_setting->add_to_layouting_list(this);
 	}
 
-	void cLayoutPrivate::on_left_world()
+	void cLayoutPrivate::on_entity_left_world()
 	{
 		if (type_setting)
 			type_setting->remove_from_layouting_list(this);

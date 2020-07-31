@@ -93,7 +93,7 @@ namespace flame
 
 		on_entity_state_changed();
 
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("rule")>::v);
+		Entity::report_data_changed(this, S<ch("rule")>::v);
 	}
 
 	void cStylePrivate::on_entity_state_changed()

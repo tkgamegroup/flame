@@ -157,7 +157,7 @@ namespace flame
 				auto v = udt->get_variable(i);
 				auto m = v->get_meta();
 				std::string ref_str;
-				if (m->get_token("r", &ref_str))
+				if (m->get_token("ref", &ref_str))
 				{
 					Ref r;
 					r.name = SUS::cut_tail_if(v->get_type()->get_name(), "Private");
@@ -180,7 +180,7 @@ namespace flame
 						}
 
 						auto target_base = std::string(target_udt->get_base_name());
-						if (target_base == "flame::Component")
+						if (target_base == "Component")
 						{
 							r.type = RefComponent;
 
@@ -203,7 +203,7 @@ namespace flame
 
 							aux.refs.push_back(r);
 						}
-						else if (target_base == "flame::System")
+						else if (target_base == "System")
 						{
 							r.type = RefSystem;
 
@@ -403,21 +403,6 @@ namespace flame
 				c.second.release();
 		}
 		components.clear();
-	}
-
-	void EntityPrivate::report_data_changed(Component* c, uint hash)
-	{
-		assert(c->entity == this);
-		for (auto cc : local_data_changed_dispatch_list)
-		{
-			if (cc != c)
-				cc->on_entity_component_data_changed(c, hash);
-		}
-		if (parent)
-		{
-			for (auto cc : parent->child_data_changed_dispatch_list)
-				cc->on_entity_child_component_data_changed(c, hash);
-		}
 	}
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
@@ -782,6 +767,23 @@ namespace flame
 		save_prefab(file_root, this);
 
 		file.save_file(filename.c_str());
+	}
+
+	void Entity::report_data_changed(Component* c, uint hash)
+	{
+		auto entity = (EntityPrivate*)c->entity;
+		if (!entity)
+			return;
+		for (auto cc : entity->local_data_changed_dispatch_list)
+		{
+			if (cc != c)
+				cc->on_entity_component_data_changed(c, hash);
+		}
+		if (entity->parent)
+		{
+			for (auto cc : entity->parent->child_data_changed_dispatch_list)
+				cc->on_entity_child_component_data_changed(c, hash);
+		}
 	}
 
 	Entity* Entity::create()

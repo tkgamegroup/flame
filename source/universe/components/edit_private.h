@@ -32,7 +32,7 @@ namespace flame
 		
 		void on_added() override;
 		void on_removed() override;
-		void on_left_world() override;
+		void on_entity_left_world() override;
 		void on_entity_visibility_changed() override;
 		void on_entity_state_changed() override;
 

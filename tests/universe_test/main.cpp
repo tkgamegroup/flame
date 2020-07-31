@@ -143,11 +143,10 @@ int main(int argc, char** args)
 		auto ce = cElement::create();
 		e->add_component(ce);
 		auto ct = cText::create();
+		ct->set_text(L"Hello World");
 		e->add_component(ct);
-		e->remove_component(ct);
-		e->remove_component(ce);
 	}
-	e->load((res_path / test_prefab).c_str());
+	//e->load((res_path / test_prefab).c_str());
 	world->get_root()->add_child(e);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {

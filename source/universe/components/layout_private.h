@@ -46,8 +46,8 @@ namespace flame
 		void mark_layout_dirty() override;
 
 		void on_added() override;
-		void on_entered_world() override;
-		void on_left_world() override;
+		void on_entity_entered_world() override;
+		void on_entity_left_world() override;
 		void on_entity_component_removed(Component* c) override;
 		void on_entity_component_added(Component* c) override;
 		void on_entity_component_data_changed(Component* c, uint data_name_hash) override;

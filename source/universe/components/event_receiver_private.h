@@ -32,8 +32,8 @@ namespace flame
 		void remove_mouse_listener(void* lis) override;
 
 		void on_added() override;
-		void on_entered_world() override;
-		void on_left_world() override;
+		void on_entity_entered_world() override;
+		void on_entity_left_world() override;
 		void on_entity_visibility_changed() override;
 	};
 }

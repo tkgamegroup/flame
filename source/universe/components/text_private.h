@@ -42,8 +42,8 @@ namespace flame
 		void on_gain_element();
 		void on_lost_element();
 
-		void on_entered_world() override;
-		void on_left_world() override;
+		void on_entity_entered_world() override;
+		void on_entity_left_world() override;
 		void on_entity_component_added(Component* c) override;
 
 		void draw(graphics::Canvas* canvas) override;

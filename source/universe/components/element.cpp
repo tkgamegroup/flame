@@ -11,7 +11,7 @@ namespace flame
 			return;
 		x = _x;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("x")>::v);
+		Entity::report_data_changed(this, S<ch("x")>::v);
 	}
 
 	void cElementPrivate::set_y(float _y)
@@ -20,7 +20,7 @@ namespace flame
 			return;
 		y = _y;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("y")>::v);
+		Entity::report_data_changed(this, S<ch("y")>::v);
 	}
 
 	void cElementPrivate::set_width(float w)
@@ -29,7 +29,7 @@ namespace flame
 			return;
 		width = w;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("width")>::v);
+		Entity::report_data_changed(this, S<ch("width")>::v);
 	}
 
 	void cElementPrivate::set_height(float h)
@@ -38,7 +38,7 @@ namespace flame
 			return;
 		height = h;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("height")>::v);
+		Entity::report_data_changed(this, S<ch("height")>::v);
 	}
 
 	void cElementPrivate::set_padding(const Vec4f& p)
@@ -47,7 +47,7 @@ namespace flame
 			return;
 		padding = p;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("padding")>::v);
+		Entity::report_data_changed(this, S<ch("padding")>::v);
 	}
 
 	void cElementPrivate::set_pivotx(float p)
@@ -56,7 +56,7 @@ namespace flame
 			return;
 		pivotx = p;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("pivotx")>::v);
+		Entity::report_data_changed(this, S<ch("pivotx")>::v);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -65,7 +65,7 @@ namespace flame
 			return;
 		pivoty = p;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("pivoty")>::v);
+		Entity::report_data_changed(this, S<ch("pivoty")>::v);
 	}
 
 	void cElementPrivate::set_scalex(float s)
@@ -74,7 +74,7 @@ namespace flame
 			return;
 		scalex = s;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("scalex")>::v);
+		Entity::report_data_changed(this, S<ch("scalex")>::v);
 	}
 
 	void cElementPrivate::set_scaley(float s)
@@ -83,7 +83,7 @@ namespace flame
 			return;
 		scaley = s;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("scaley")>::v);
+		Entity::report_data_changed(this, S<ch("scaley")>::v);
 	}
 
 	void cElementPrivate::set_rotation(float r)
@@ -92,7 +92,7 @@ namespace flame
 			return;
 		rotation = r;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("rotation")>::v);
+		Entity::report_data_changed(this, S<ch("rotation")>::v);
 	}
 
 	void cElementPrivate::set_skewx(float s)
@@ -101,7 +101,7 @@ namespace flame
 			return;
 		skewx = s;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("skewx")>::v);
+		Entity::report_data_changed(this, S<ch("skewx")>::v);
 	}
 
 	void cElementPrivate::set_skewy(float s)
@@ -110,7 +110,7 @@ namespace flame
 			return;
 		skewy = s;
 		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("skewy")>::v);
+		Entity::report_data_changed(this, S<ch("skewy")>::v);
 	}
 
 	void cElementPrivate::update_transform()
@@ -168,7 +168,7 @@ namespace flame
 			return;
 		fill_color = c;
 		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("fill_color")>::v);
+		Entity::report_data_changed(this, S<ch("fill_color")>::v);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -177,7 +177,7 @@ namespace flame
 			return;
 		border = b;
 		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("border")>::v);
+		Entity::report_data_changed(this, S<ch("border")>::v);
 	}
 
 	void cElementPrivate::set_border_color(const Vec4c& c)
@@ -186,7 +186,7 @@ namespace flame
 			return;
 		border_color = c;
 		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("border_color")>::v);
+		Entity::report_data_changed(this, S<ch("border_color")>::v);
 	}
 
 	void cElementPrivate::set_clipping(bool c)
@@ -195,7 +195,7 @@ namespace flame
 			return;
 		clipping = c;
 		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("clipping")>::v);
+		Entity::report_data_changed(this, S<ch("clipping")>::v);
 	}
 
 	void cElementPrivate::mark_transform_dirty()
@@ -224,13 +224,13 @@ namespace flame
 		return convex_contains<float>(p, ps);
 	}
 
-	void cElementPrivate::on_entered_world()
+	void cElementPrivate::on_entity_entered_world()
 	{
 		renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->world->get_system(sElementRenderer::type_hash);
 		mark_transform_dirty();
 	}
 
-	void cElementPrivate::on_left_world()
+	void cElementPrivate::on_entity_left_world()
 	{
 		mark_transform_dirty();
 		renderer = nullptr;

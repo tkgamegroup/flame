@@ -325,7 +325,7 @@ namespace flame
 			get_looper()->remove_event(flash_event);
 	}
 
-	void cEditPrivate::on_left_world()
+	void cEditPrivate::on_entity_left_world()
 	{
 		if (flash_event)
 		{

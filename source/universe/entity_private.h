@@ -2,6 +2,8 @@
 
 #include <flame/universe/entity.h>
 
+#include <functional>
+
 namespace flame
 {
 	struct UdtInfo;
@@ -112,7 +114,6 @@ namespace flame
 		bool check_component_removable(Component* c) const;
 		void remove_component(Component* c, bool destroy = true);
 		void remove_all_components(bool destroy) override;
-		void report_data_changed(Component* c, uint hash) override;
 
 		uint get_children_count() const override { return children.size(); }
 		Entity* get_child(uint idx) const override { return children[idx].get(); }

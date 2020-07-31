@@ -93,13 +93,13 @@ namespace flame
 		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
 	}
 
-	void cEventReceiverPrivate::on_entered_world()
+	void cEventReceiverPrivate::on_entity_entered_world()
 	{
 		dispatcher = (sEventDispatcherPrivate*)((EntityPrivate*)entity)->world->get_system(sEventDispatcherPrivate::type_hash);
 		mark_dirty();
 	}
 
-	void cEventReceiverPrivate::on_left_world()
+	void cEventReceiverPrivate::on_entity_left_world()
 	{
 		if (dispatcher)
 		{
