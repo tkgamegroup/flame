@@ -81,8 +81,58 @@ namespace flame
 	{
 		auto it = components.find(hash);
 		if (it != components.end())
-			return it->second.p.get();
+			return it->second.get();
 		return nullptr;
+	}
+
+	Component* EntityPrivate::get_component(Place place, uint64 hash) const
+	{
+		switch (place)
+		{
+		case PlaceLocal:
+			return get_component(hash);
+		case PlaceParent:
+			return parent->get_component(hash);
+		case PlaceAncestor:
+			auto e = parent;
+			while (e)
+			{
+				auto c = e->get_component(hash);
+				if (c)
+					return c;
+				e = e->parent;
+			}
+		}
+	}
+
+	void EntityPrivate::Ref::gain(Component* c)
+	{
+		target = staging;
+		*dst = target;
+		if (target)
+		{
+			if (on_gain)
+				on_gain(c);
+
+			if (type == RefComponent)
+				((ComponentAux*)((Component*)target)->aux)->list_ref_by.push_back(c);
+		}
+	}
+
+	void EntityPrivate::Ref::lost(Component* c)
+	{
+		if (on_lost)
+			on_lost(c);
+		target = nullptr;
+		*dst = nullptr;
+	}
+
+	void EntityPrivate::traversal(const std::function<bool(EntityPrivate*)>& callback)
+	{
+		if (!callback(this))
+			return;
+		for (auto& c : children)
+			c->traversal(callback);
 	}
 
 	void EntityPrivate::add_component(Component* c)
@@ -90,90 +140,134 @@ namespace flame
 		assert(!c->entity);
 		assert(components.find(c->type_hash) == components.end());
 
-		ComponentWrapper cw;
-		cw.udt[0] = find_udt(c->type_name);
-		cw.udt[1] = find_udt((c->type_name + std::string("Private")).c_str());
-		if (cw.udt[0])
+		ComponentAux aux;
+
+		auto udt = find_udt(c->type_name);
+		if (udt)
 		{
-			auto udt = cw.udt[0];
-			if (cw.udt[1])
-				udt = cw.udt[1];
+			{
+				auto u = find_udt((c->type_name + std::string("Private")).c_str());
+				if (u)
+					udt = u;
+			}
 
 			auto vc = udt->get_variables_count();
 			for (auto i = 0; i < vc; i++)
 			{
 				auto v = udt->get_variable(i);
 				auto m = v->get_meta();
-				if (m->has_token("ref"))
+				std::string ref_str;
+				if (m->get_token("r", &ref_str))
 				{
-					auto type = std::string(v->get_type()->get_name());
-					if (type.ends_with("Private"))
-						type = type.substr(0, type.size() - 7);
-
-					auto hash = std::hash<std::string>()(type);
-					auto it = components.find(hash);
-					if (it == components.end())
+					Ref r;
+					r.name = SUS::cut_tail_if(v->get_type()->get_name(), "Private");
+					r.hash = std::hash<std::string>()(r.name);
+					auto target_udt = find_udt(r.name.c_str());
+					if (target_udt)
 					{
-						printf("add component %s failed, required component %s do not exist\n", c->type_name, type.c_str());
-						return;
-					}
+						r.strong = ref_str.empty() || ref_str == "strong";
+						r.dst = (void**)((char*)c + v->get_offset());
+						auto var_name = std::string(v->get_name());
+						{
+							auto f = udt->find_function(("on_gain_" + var_name).c_str());
+							if (f)
+								r.on_gain = a2f<void(*)(void*)>(f->get_address());
+						}
+						{
+							auto f = udt->find_function(("on_lost_" + var_name).c_str());
+							if (f)
+								r.on_lost = a2f<void(*)(void*)>(f->get_address());
+						}
 
-					auto name = std::string(v->get_name());
+						auto target_base = std::string(target_udt->get_base_name());
+						if (target_base == "flame::Component")
+						{
+							r.type = RefComponent;
 
-					ComponentReferencing ref;
-					ref.t = it->second.p.get();
-					ref.dst = (void**)((char*)c + v->get_offset());
-					{
-						auto f = udt->find_function(("on_gain_" + name).c_str());
-						if (f)
-							ref.on_gain = a2f<void(*)(void*)>(f->get_address());
-						else
-							ref.on_gain = nullptr;
-					}
-					{
-						auto f = udt->find_function(("on_lost_" + name).c_str());
-						if (f)
-							ref.on_lost = a2f<void(*)(void*)>(f->get_address());
-						else
-							ref.on_lost = nullptr;
-					}
-					cw.referencings.push_back(ref);
-					
-					component_monitors[hash].push_back(c);
+							std::string place_str;
+							m->get_token("place", &place_str);
 
-					*ref.dst = ref.t;
-					ref.on_gain(c);
+							r.place = (place_str.empty() || place_str == "local") ? PlaceLocal :
+								(place_str == "parent" ? PlaceParent : PlaceAncestor);
+
+							if (r.place == PlaceLocal || parent)
+							{
+								r.staging = get_component(r.place, r.hash);
+								if (!r.staging && r.strong)
+								{
+									printf("add component %s failed, this component requires %s%s component %s, which do not exist\n", 
+										c->type_name, place_str.c_str(), r.place != PlaceLocal ? "'s" : "", r.name.c_str());
+									return;
+								}
+							}
+
+							aux.refs.push_back(r);
+						}
+						else if (target_base == "flame::System")
+						{
+							r.type = RefSystem;
+
+							if (world)
+							{
+								r.staging = world->get_system(r.hash);
+								if (!r.staging && r.strong)
+								{
+									printf("add component %s failed, this component requires system %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
+							}
+
+							aux.refs.push_back(r);
+						}
+						else // object
+						{
+							r.type = RefObject;
+
+							if (world)
+							{
+								r.staging = world->find_object(r.name);
+								if (!r.staging && r.strong)
+								{
+									printf("add component %s failed, this component requires object %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
+							}
+
+							aux.refs.push_back(r);
+						}
+					}
 				}
 			}
-
-			cw.want_local_event = false;
-			if (udt->find_function("on_entered_world") ||
-				udt->find_function("on_left_world") ||
-				udt->find_function("on_entity_destroyed") ||
-				udt->find_function("on_entity_visibility_changed") ||
-				udt->find_function("on_entity_state_changed") ||
-				udt->find_function("on_entity_added") ||
-				udt->find_function("on_entity_removed") ||
-				udt->find_function("on_entity_position_changed") ||
-				udt->find_function("on_entity_component_added") ||
-				udt->find_function("on_entity_component_removed") ||
-				udt->find_function("on_entity_added_child") ||
-				udt->find_function("on_entity_removed_child"))
-				cw.want_local_event = true;
-			cw.want_child_event = false;
-			if (udt->find_function("on_entity_child_visibility_changed") ||
-				udt->find_function("on_entity_child_position_changed") ||
-				udt->find_function("on_entity_child_component_added") ||
-				udt->find_function("on_entity_child_component_removed"))
-				cw.want_child_event = true;
-			cw.want_local_data_changed = false;
-			if (udt->find_function("on_entity_component_data_changed"))
-				cw.want_local_data_changed = true;
-			cw.want_child_data_changed = false;
-			if (udt->find_function("on_entity_child_component_data_changed"))
-				cw.want_child_data_changed = true;
 		}
-		cw.p.reset(c);
+
+		c->aux = new ComponentAux;
+		*(ComponentAux*)c->aux = aux;
+
+		for (auto& r : aux.refs)
+			r.gain(c);
+
+		if (udt->find_function("on_entity_destroyed") ||
+			udt->find_function("on_entity_visibility_changed") ||
+			udt->find_function("on_entity_state_changed") ||
+			udt->find_function("on_entity_added") ||
+			udt->find_function("on_entity_removed") ||
+			udt->find_function("on_entity_position_changed") || 
+			udt->find_function("on_entity_entered_world") ||
+			udt->find_function("on_entity_left_world") ||
+			udt->find_function("on_entity_component_added") ||
+			udt->find_function("on_entity_component_removed") ||
+			udt->find_function("on_entity_added_child") ||
+			udt->find_function("on_entity_removed_child"))
+			aux.want_local_event = true;
+		if (udt->find_function("on_entity_child_visibility_changed") ||
+			udt->find_function("on_entity_child_position_changed") ||
+			udt->find_function("on_entity_child_component_added") ||
+			udt->find_function("on_entity_child_component_removed"))
+			aux.want_child_event = true;
+		if (udt->find_function("on_entity_component_data_changed"))
+			aux.want_local_data_changed = true;
+		if (udt->find_function("on_entity_child_component_data_changed"))
+			aux.want_child_data_changed = true;
 
 		c->entity = this;
 		c->on_added();
@@ -186,49 +280,59 @@ namespace flame
 				cc->on_entity_child_component_added(c);
 		}
 
-		components.emplace(c->type_hash, std::move(cw));
-		component_monitors[c->type_hash] = {};
+		components.emplace(c->type_hash, c);
 
-		if (cw.want_local_event)
-		{
+		if (aux.want_local_event)
 			local_event_dispatch_list.push_back(c);
-			if (world)
-				c->on_entered_world();
-		}
-		if (cw.want_child_event)
+		if (aux.want_child_event)
 			child_event_dispatch_list.push_back(c);
-		if (cw.want_local_data_changed)
+		if (aux.want_local_data_changed)
 			local_data_changed_dispatch_list.push_back(c);
-		if (cw.want_child_data_changed)
+		if (aux.want_child_data_changed)
 			child_data_changed_dispatch_list.push_back(c);
 	}
 
-	void EntityPrivate::info_component_removed(ComponentWrapper& cw)
+	void EntityPrivate::on_component_removed(Component* c)
 	{
-		for (auto& r : cw.referencings)
+		auto& aux = *(ComponentAux*)c->aux;
+
+		for (auto& r : aux.refs)
 		{
-			auto& vec = ((EntityPrivate*)r.t->entity)->component_monitors[r.t->type_hash];
-			std::erase_if(vec, [&](const auto& i) {
-				return i == cw.p.get();
-			});
-			r.on_lost(cw.p.get());
-			*r.dst = nullptr;
+			if (r.target)
+			{
+				if (r.type == RefComponent)
+				{
+					std::erase_if(((ComponentAux*)((Component*)r.target)->aux)->list_ref_by, [&](const auto& i) {
+						return i == c;
+					});
+				}
+				r.lost(c);
+			}
 		}
-		cw.referencings.clear();
+
+		delete &aux;
+		c->aux = nullptr;
 
 		for (auto cc : local_event_dispatch_list)
-			cc->on_entity_component_removed(cw.p.get());
+			cc->on_entity_component_removed(c);
 		if (parent)
 		{
 			for (auto cc : parent->child_event_dispatch_list)
-				cc->on_entity_child_component_removed(cw.p.get());
+				cc->on_entity_child_component_removed(c);
+		}
+	}
+
+	bool EntityPrivate::check_component_removable(Component* c) const
+	{
+		auto& aux = *(ComponentAux*)c->aux;
+
+		if (!aux.list_ref_by.empty())
+		{
+			printf("remove component %s failed, this component is referenced by %d component(s)\n", c->type_name, aux.list_ref_by.size());
+			return false;
 		}
 
-		if (cw.want_local_event)
-		{
-			if (world)
-				cw.p->on_left_world();
-		}
+		return true;
 	}
 
 	void EntityPrivate::remove_component(Component* c, bool destroy)
@@ -240,39 +344,32 @@ namespace flame
 			return;
 		}
 
-		auto& vec = component_monitors[c->type_hash];
-		if (!vec.empty())
-		{
-			printf("remove component %s failed, this component is referenced by ", c->type_name);
-			for (auto& r : vec)
-				printf("%s ", r->type_name);
-			printf("\n");
+		if (!check_component_removable(c))
 			return;
-		}
 
-		auto& cw = it->second;
+		auto& aux = *(ComponentAux*)c->aux;
 
-		info_component_removed(cw);
+		on_component_removed(c);
 
-		if (cw.want_local_event)
+		if (aux.want_local_event)
 		{
 			std::erase_if(local_event_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (cw.want_child_event)
+		if (aux.want_child_event)
 		{
 			std::erase_if(child_event_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (cw.want_local_data_changed)
+		if (aux.want_local_data_changed)
 		{
 			std::erase_if(local_data_changed_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (cw.want_child_data_changed)
+		if (aux.want_child_data_changed)
 		{
 			std::erase_if(child_data_changed_dispatch_list, [&](const auto& i) {
 				return i == c;
@@ -280,14 +377,20 @@ namespace flame
 		}
 
 		if (!destroy)
-			it->second.p.release();
+			it->second.release();
 		components.erase(it);
 	}
 
 	void EntityPrivate::remove_all_components(bool destroy)
 	{
 		for (auto& c : components)
-			info_component_removed(c.second);
+		{
+			if (!check_component_removable(c.second.get()))
+				return;
+		}
+
+		for (auto& c : components)
+			on_component_removed(c.second.get());
 
 		local_event_dispatch_list.clear();
 		child_event_dispatch_list.clear();
@@ -297,7 +400,7 @@ namespace flame
 		if (!destroy)
 		{
 			for (auto& c : components)
-				c.second.p.release();
+				c.second.release();
 		}
 		components.clear();
 	}
@@ -317,69 +420,88 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::enter_world()
-	{
-		for (auto c : local_event_dispatch_list)
-			c->on_entered_world();
-		for (auto& e : children)
-		{
-			e->world = world;
-			e->enter_world();
-		}
-	}
-
-	void EntityPrivate::leave_world()
-	{
-		for (auto it = children.rbegin(); it != children.rend(); it++)
-			(*it)->leave_world();
-		world = nullptr;
-		for (auto c : local_event_dispatch_list)
-			c->on_left_world();
-	}
-
-	void EntityPrivate::inherit()
-	{
-		for (auto& e : children)
-		{
-			e->gene = gene;
-			e->inherit();
-		}
-	}
-
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
-		assert(e && e != this);
+		assert(e && e != this && !e->parent);
+
+		auto ok = true;
+		e->traversal([this, &ok](EntityPrivate* e) {
+			for (auto& c : e->components)
+			{
+				auto& aux = *(ComponentAux*)c.second->aux;
+				for (auto& r : aux.refs)
+				{
+					switch (r.type)
+					{
+					case RefComponent:
+						if (r.place != PlaceLocal && !r.target)
+						{
+							r.staging = e->get_component(r.place, r.hash);
+							if (!r.staging && r.strong)
+							{
+								printf("add child failed, this child contains a component %s that requires %s component %s, which do not exist\n", 
+									c.second->type_name, r.place == PlaceParent ? "local" : "ancestor's", r.name.c_str());
+								ok = false;
+								return false;
+							}
+						}
+						break;
+					case RefSystem:
+						if (world)
+						{
+							r.staging = world->get_system(r.hash);
+							if (!r.staging && r.strong)
+							{
+								printf("add child failed, this child contains a component %s that requires system %s, which do not exist\n", c.second->type_name, r.name.c_str());
+								ok = false;
+								return false;
+							}
+						}
+						break;
+					case RefObject:
+						if (world)
+						{
+							r.staging = world->find_object(r.name);
+							if (!r.staging && r.strong)
+							{
+								printf("add child failed, this child contains a component %s that requires object %s, which do not exist\n", c.second->type_name, r.name.c_str());
+								ok = false;
+								return false;
+							}
+						}
+						break;
+					}
+				}
+			}
+			return true;
+		});
+
+		if (!ok)
+			return;
+
+		e->traversal([this](EntityPrivate* e) {
+			for (auto& c : e->components)
+			{
+				auto& aux = *(ComponentAux*)c.second->aux;
+				for (auto& r : aux.refs)
+					r.gain(c.second.get());
+
+				e->world = world;
+				if (world)
+					c.second->on_entity_entered_world();
+			}
+			return true;
+		});
 
 		if (position == -1)
 			position = children.size();
 
-		for (auto i = position; i < children.size(); i++)
-		{
-			auto e = children[i].get();
-			e->index += 1;
-			for (auto c : e->local_event_dispatch_list)
-				c->on_entity_position_changed();
-			for (auto c : child_event_dispatch_list)
-				c->on_entity_child_position_changed(e);
-		}
 		children.emplace(children.begin() + position, e);
 
-		if (gene)
-		{
-			e->gene = gene;
-			e->inherit();
-		}
 		e->parent = this;
 		e->depth = depth + 1;
 		e->index = position;
 		e->update_visibility();
-
-		if (e->world != world)
-		{
-			e->world = world;
-			if (world)
-				e->enter_world();
-		}
 
 		for (auto c : e->local_event_dispatch_list)
 			c->on_entity_added();
@@ -410,21 +532,41 @@ namespace flame
 			c->on_entity_child_position_changed(b);
 	}
 
-	void EntityPrivate::info_child_removed(EntityPrivate* e) const
+	void EntityPrivate::on_child_removed(EntityPrivate* e) const
 	{
-		for (auto i = 0; i < e->index; i++)
-		{
-			auto ee = children[i].get();
-			ee->index -= 1;
-			for (auto c : ee->local_event_dispatch_list)
-				c->on_entity_position_changed();
-			for (auto c : child_event_dispatch_list)
-				c->on_entity_child_position_changed(ee);
-		}
-
 		e->parent = nullptr;
-		if (e->world)
-			e->leave_world();
+
+		e->traversal([](EntityPrivate* e) {
+			for (auto& c : e->components)
+			{
+				auto& aux = *(ComponentAux*)c.second->aux;
+				for (auto& r : aux.refs)
+				{
+					if (r.target)
+					{
+						if (r.type == RefComponent)
+						{
+							auto target = (Component*)r.target;
+							if (((EntityPrivate*)target->entity)->depth < e->depth)
+							{
+								std::erase_if(((ComponentAux*)target->aux)->list_ref_by, [&](const auto& i) {
+									return i == c.second.get();
+								});
+								r.lost(c.second.get());
+							}
+						}
+						else
+							r.lost(c.second.get());
+					}
+				}
+			}
+
+			for (auto c : e->local_event_dispatch_list)
+				c->on_entity_left_world();
+			e->world = nullptr;
+
+			return true;
+		});
 
 		for (auto c : e->local_event_dispatch_list)
 			c->on_entity_removed();
@@ -445,7 +587,7 @@ namespace flame
 			return;
 		}
 
-		info_child_removed(e);
+		on_child_removed(e);
 
 		if (!destroy)
 			it->release();
@@ -455,7 +597,7 @@ namespace flame
 	void EntityPrivate::remove_all_children(bool destroy)
 	{
 		for (auto& c : children)
-			info_child_removed(c.get());
+			on_child_removed(c.get());
 
 		if (!destroy)
 		{

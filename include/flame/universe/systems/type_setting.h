@@ -8,7 +8,7 @@ namespace flame
 
 	struct sTypeSetting : System
 	{
-		inline static auto type_name = "sTypeSetting";
+		inline static auto type_name = "flame::sTypeSetting";
 		inline static auto type_hash = ch(type_name);
 
 		struct AutoSizer

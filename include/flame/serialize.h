@@ -583,6 +583,17 @@ namespace flame
 			return str.substr(begin, end);
 		}
 
+		static void remove_ch(std::basic_string<CH>& str, CH ch = ' ')
+		{
+			str.erase(std::remove(str.begin(), str.end(), ch), str.end());
+		}
+
+		static void remove_spaces(std::basic_string<CH>& str)
+		{
+			remove_ch(str, ' ');
+			remove_ch(str, '\t');
+		}
+
 		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
 		{
 			std::basic_istringstream<CH> iss(str);
@@ -595,67 +606,18 @@ namespace flame
 			return ret;
 		}
 
-		static std::vector<std::basic_string<CH>> split_lastone(const std::basic_string<CH>& str, CH delimiter = ' ')
+		static std::basic_string<CH> cut_head_if(const std::basic_string<CH>& str, const std::basic_string<CH>& head)
 		{
-			auto i = str.size() - 1;
-			for (; i >= 0; i--)
-			{
-				if (str[i] == delimiter)
-					break;
-			}
-			std::vector<std::basic_string<CH>> ret;
-			ret.push_back(i > 0 ? std::basic_string<CH>(str.begin(), str.begin() + i) : std::basic_string<CH>());
-			ret.push_back(i < str.size() - 1 ? std::basic_string<CH>(str.begin() + i + 1, str.end()) : std::basic_string<CH>());
-			return ret;
+			if (str.starts_with(head))
+				return str.substr(head.size());
+			return str;
 		}
 
-		static std::vector<std::basic_string<CH>> split_dbnull(const CH* str)
+		static std::basic_string<CH> cut_tail_if(const std::basic_string<CH>& str, const std::basic_string<CH>& tail)
 		{
-			std::vector<std::basic_string<CH>> ret;
-
-			auto p = str, q = str;
-			while (true)
-			{
-				if (*p == 0)
-				{
-					ret.push_back(q);
-					p++;
-					if (*p == 0)
-						break;
-					q = p;
-				}
-				else
-					p++;
-			}
-
-			return ret;
-		}
-
-		static std::vector<std::basic_string<CH>> split_regex(const std::basic_string<CH>& str, const std::basic_regex<CH>& reg, uint req_idx = 0)
-		{
-			std::vector<std::basic_string<CH>> ret;
-
-			std::match_results<typename std::basic_string<CH>::const_iterator> res;
-			auto s = str;
-
-			while (std::regex_search(s, res, reg))
-			{
-				ret.push_back(res[req_idx]);
-				s = res.suffix();
-			}
-
-			return ret;
-		}
-
-		static void remove_ch(std::basic_string<CH>& str, CH ch = ' ')
-		{
-			str.erase(std::remove(str.begin(), str.end(), ch), str.end());
-		}
-
-		static void remove_spaces(std::basic_string<CH>& str)
-		{
-			remove_ch(str, ' ');
-			remove_ch(str, '\t');
+			if (str.ends_with(tail))
+				return str.substr(0, str.size() - tail.size());
+			return str;
 		}
 	};
 

@@ -12,6 +12,7 @@ namespace flame
 		const uint64 type_hash;
 
 		Entity* entity = nullptr;
+		void* aux = nullptr;
 
 		Component(const char* name, uint64 hash) :
 			type_name(name),
@@ -26,12 +27,6 @@ namespace flame
 
 		// this component removed from entity
 		virtual void on_removed() {}
-
-		// local event, this component's entity entered world or this component added to a entity that entered world
-		virtual void on_entered_world() {}
-
-		// local event, this component's entity left world or this component removed from a entity that entered world
-		virtual void on_left_world() {}
 
 		// local event, this component's entity destroyed
 		virtual void on_entity_destroyed() {}
@@ -50,6 +45,12 @@ namespace flame
 
 		// local event, this component's entity's position changed
 		virtual void on_entity_position_changed() {}
+
+		// local event, this component's entity entered world or this component added to a entity that entered world
+		virtual void on_entity_entered_world() {}
+
+		// local event, this component's entity left world or this component removed from a entity that entered world
+		virtual void on_entity_left_world() {}
 
 		// local event, this component's entity added a component
 		virtual void on_entity_component_added(Component* c) {}

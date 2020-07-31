@@ -22,8 +22,8 @@ namespace flame
 		uint font_size = 14;
 
 		cElementPrivate* element = nullptr; // R ref
-		sTypeSettingPrivate* type_setting = nullptr;
-		graphics::Canvas* canvas = nullptr;
+		sTypeSettingPrivate* type_setting = nullptr; // R ref
+		graphics::Canvas* canvas = nullptr; // R ref
 		graphics::FontAtlas* atlas = nullptr;
 
 		const wchar_t* get_text() const override { return text.c_str(); }
