@@ -100,8 +100,8 @@ int main(int argc, char** args)
 	});
 
 	world = World::create();
-	world->register_object(w, "Window");
-	world->register_object(canvas, "Canvas");
+	world->register_object(w, "flame::Window");
+	world->register_object(canvas, "flame::graphics::Canvas");
 	auto res = ResMap::create();
 	res->load((res_path / L"res.ini").c_str());
 	res->traversal([](Capture&, const char*, const wchar_t* _path) {

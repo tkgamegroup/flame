@@ -162,25 +162,28 @@ namespace flame
 					Ref r;
 					r.name = SUS::cut_tail_if(v->get_type()->get_name(), "Private");
 					r.hash = std::hash<std::string>()(r.name);
-					auto target_udt = find_udt(r.name.c_str());
-					if (target_udt)
+					r.strong = ref_str.empty() || ref_str == "strong";
+					r.dst = (void**)((char*)c + v->get_offset());
+					auto var_name = std::string(v->get_name());
 					{
-						r.strong = ref_str.empty() || ref_str == "strong";
-						r.dst = (void**)((char*)c + v->get_offset());
-						auto var_name = std::string(v->get_name());
+						auto f = udt->find_function(("on_gain_" + var_name).c_str());
+						if (f)
+							r.on_gain = a2f<void(*)(void*)>(f->get_address());
+					}
+					{
+						auto f = udt->find_function(("on_lost_" + var_name).c_str());
+						if (f)
+							r.on_lost = a2f<void(*)(void*)>(f->get_address());
+					}
+					{
+						auto pos = r.name.find_last_of(':');
+						if (pos == std::string::npos)
+							pos = 0;
+						else
+							pos++;
+						switch (r.name[pos])
 						{
-							auto f = udt->find_function(("on_gain_" + var_name).c_str());
-							if (f)
-								r.on_gain = a2f<void(*)(void*)>(f->get_address());
-						}
-						{
-							auto f = udt->find_function(("on_lost_" + var_name).c_str());
-							if (f)
-								r.on_lost = a2f<void(*)(void*)>(f->get_address());
-						}
-
-						auto target_base = std::string(target_udt->get_base_name());
-						if (target_base == "Component")
+						case 'c':
 						{
 							r.type = RefComponent;
 
@@ -195,7 +198,7 @@ namespace flame
 								r.staging = get_component(r.place, r.hash);
 								if (!r.staging && r.strong)
 								{
-									printf("add component %s failed, this component requires %s%s component %s, which do not exist\n", 
+									printf("add component %s failed, this component requires %s%s component %s, which do not exist\n",
 										c->type_name, place_str.c_str(), r.place != PlaceLocal ? "'s" : "", r.name.c_str());
 									return;
 								}
@@ -203,8 +206,8 @@ namespace flame
 
 							aux.refs.push_back(r);
 						}
-						else if (target_base == "System")
-						{
+							break;
+						case 's':
 							r.type = RefSystem;
 
 							if (world)
@@ -218,9 +221,8 @@ namespace flame
 							}
 
 							aux.refs.push_back(r);
-						}
-						else // object
-						{
+							break;
+						default:
 							r.type = RefObject;
 
 							if (world)

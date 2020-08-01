@@ -45,22 +45,18 @@ namespace flame
 		});
 	}
 
-	void cTextPrivate::on_entity_entered_world()
+	void cTextPrivate::on_gain_type_setting()
 	{
-		auto world = ((EntityPrivate*)entity)->world;
-		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
 		mark_size_dirty();
-		canvas = (graphics::Canvas*)world->find_object("Canvas");
-		if (canvas)
-			atlas = canvas->get_resource(0)->get_font_atlas();
 	}
 
-	void cTextPrivate::on_entity_left_world()
+	void cTextPrivate::on_gain_canvas()
 	{
-		if (type_setting)
-			type_setting->remove_from_sizing_list(this);
-		type_setting = nullptr;
-		canvas = nullptr;
+		atlas = canvas->get_resource(0)->get_font_atlas();
+	}
+
+	void cTextPrivate::on_lost_canvas()
+	{
 		atlas = nullptr;
 	}
 
