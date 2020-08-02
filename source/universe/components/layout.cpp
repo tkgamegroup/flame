@@ -12,7 +12,7 @@ namespace flame
 //		scroll_offset = Vec2f(0.f);
 //		content_size = Vec2f(0.f);
 //	}
-//
+
 //	void cLayoutPrivate::set_content_size(const Vec2f& s)
 //	{
 //		if (s == content_size)

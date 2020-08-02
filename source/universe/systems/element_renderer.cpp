@@ -41,14 +41,6 @@ namespace flame
 	void sElementRendererPrivate::on_added()
 	{
 		canvas = (graphics::Canvas*)((WorldPrivate*)world)->find_object("flame::graphics::Canvas");
-
-		auto root = ((WorldPrivate*)world)->root.get();
-		if (!root->get_component(cElement::type_hash))
-		{
-			auto element = (cElementPrivate*)cElementPrivate::create();
-			element->fill_color = Vec4c(0);
-			root->add_component(element);
-		}
 	}
 
 	void sElementRendererPrivate::update()

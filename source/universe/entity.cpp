@@ -251,6 +251,8 @@ namespace flame
 		c->aux = new ComponentAux;
 		*(ComponentAux*)c->aux = aux;
 
+		c->entity = this;
+
 		for (auto& r : aux.refs)
 			r.gain(c);
 
@@ -278,7 +280,6 @@ namespace flame
 		if (udt->find_function("on_entity_child_component_data_changed"))
 			aux.want_child_data_changed = true;
 
-		c->entity = this;
 		c->on_added();
 
 		for (auto cc : local_event_dispatch_list)

@@ -16,7 +16,7 @@ namespace flame
 
 	void sEventDispatcherPrivate::on_added()
 	{
-		window = (Window*)((WorldPrivate*)world)->find_object("Window");
+		window = (Window*)((WorldPrivate*)world)->find_object("flame::Window");
 		if (window)
 		{
 			key_listener = window->add_key_listener([](Capture& c, KeyStateFlags action, int value) {

@@ -13,6 +13,7 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/layout.h>
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/element_renderer.h>
@@ -147,7 +148,14 @@ int main(int argc, char** args)
 		e->add_component(ct);
 	}
 	//e->load((res_path / test_prefab).c_str());
-	world->get_root()->add_child(e);
+	{
+		auto root = world->get_root();
+		auto ce = cElement::create();
+		ce->set_fill_color(Vec4c(0));
+		root->add_component(ce);
+		root->add_component(cLayout::create());
+		world->get_root()->add_child(e);
+	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);
