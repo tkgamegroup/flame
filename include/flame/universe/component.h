@@ -37,6 +37,9 @@ namespace flame
 		// local event, this component's entity state changed
 		virtual void on_entity_state_changed() {}
 
+		// local event, this component's entity receive message
+		virtual void on_entity_message(Message msg) {}
+
 		// local event, this component's entity added to another entity
 		virtual void on_entity_added() {}
 

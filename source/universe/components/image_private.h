@@ -23,10 +23,10 @@ namespace flame
 
 		std::string src;
 
-		cElementPrivate* element = nullptr;
-		sTypeSettingPrivate* type_setting = nullptr;
-		graphics::Canvas* canvas = nullptr;
-		ResMapPrivate* res_map = nullptr;
+		cElementPrivate* element = nullptr; // R ref
+		sTypeSettingPrivate* type_setting = nullptr; // R ref
+		graphics::Canvas* canvas = nullptr; // R ref
+		ResMapPrivate* res_map = nullptr; // R ref
 
 		uint get_res_id() const override { return res_id; }
 		void set_res_id(uint id) override;
@@ -36,17 +36,21 @@ namespace flame
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
-		void mark_size_dirty();
+		void on_gain_element();
+		void on_lost_element();
+		void on_gain_type_setting();
+		void on_lost_type_setting();
+		void on_gain_canvas();
+		void on_gain_res_map();
 
-		void on_added() override;
-		void on_removed() override;
-		void on_entity_entered_world() override;
-		void on_entity_left_world() override;
-		void on_entity_component_added(Component* c) override;
+		void apply_src();
 
 		void draw(graphics::Canvas* canvas) override;
 
 		Vec2f measure() override;
+
+		void on_added() override;
+		void on_entity_message(Message msg) override;
 	};
 
 	inline void cImageBridge::set_src(const char* src)

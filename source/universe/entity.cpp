@@ -77,6 +77,12 @@ namespace flame
 			c->on_entity_state_changed();
 	}
 
+	void EntityPrivate::send_message(Message msg)
+	{
+		for (auto c : local_event_dispatch_list)
+			c->on_entity_message(msg);
+	}
+
 	Component* EntityPrivate::get_component(uint64 hash) const
 	{
 		auto it = components.find(hash);
@@ -198,8 +204,8 @@ namespace flame
 								r.staging = get_component(r.place, r.hash);
 								if (!r.staging && r.strong)
 								{
-									printf("add component %s failed, this component requires %s%s component %s, which do not exist\n",
-										c->type_name, place_str.c_str(), r.place != PlaceLocal ? "'s" : "", r.name.c_str());
+									printf("add component %s failed, this component requires %s component %s, which do not exist\n",
+										c->type_name, r.place == PlaceLocal ? "local" : (r.place == PlaceParent ? "parent's" : "ancestor's"), r.name.c_str());
 									return;
 								}
 							}
@@ -251,6 +257,7 @@ namespace flame
 		if (udt->find_function("on_entity_destroyed") ||
 			udt->find_function("on_entity_visibility_changed") ||
 			udt->find_function("on_entity_state_changed") ||
+			udt->find_function("on_entity_message") ||
 			udt->find_function("on_entity_added") ||
 			udt->find_function("on_entity_removed") ||
 			udt->find_function("on_entity_position_changed") || 

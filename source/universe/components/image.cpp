@@ -37,9 +37,80 @@ namespace flame
 	{
 		if (src == _src)
 			return;
+		src = _src;
+		apply_src();
+	}
+
+	void cImagePrivate::on_gain_element()
+	{
+		element->drawers.push_back(this);
+	}
+
+	void cImagePrivate::on_lost_element()
+	{
+		std::erase_if(element->drawers, [&](const auto& i) {
+			return i == this;
+		});
+	}
+
+	Vec2f cImagePrivate::measure()
+	{
+		if (!canvas || res_id == 0xffffffff)
+			return Vec2f(0.f);
+		auto r = canvas->get_resource(res_id);
+		auto ia = r->get_image_atlas();
+		if (!ia)
+			return Vec2f(r->get_view()->get_image()->get_size());
+		return Vec2f(ia->get_tile(tile_id)->get_size());
+	}
+
+	void cImagePrivate::draw(graphics::Canvas* canvas)
+	{
+		canvas->add_image(res_id, tile_id, 
+			element->points[4], element->points[5], element->points[6], element->points[7],
+			uv0, uv1, Vec4c(255));
+	}
+
+	void cImagePrivate::on_added()
+	{
+		on_entity_message(MessageElementSizeDirty);
+	}
+
+	void cImagePrivate::on_entity_message(Message msg)
+	{
+		switch (msg)
+		{
+		case MessageElementSizeDirty:
+			if (type_setting && true/*auto_size*/)
+				type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+			break;
+		}
+	}
+
+	void cImagePrivate::on_gain_type_setting()
+	{
+		on_entity_message(MessageElementSizeDirty);
+	}
+
+	void cImagePrivate::on_lost_type_setting()
+	{
+		type_setting->remove_from_sizing_list(this);
+	}
+
+	void cImagePrivate::on_gain_canvas()
+	{
+		apply_src();
+	}
+
+	void cImagePrivate::on_gain_res_map()
+	{
+		apply_src();
+	}
+
+	void cImagePrivate::apply_src()
+	{
 		res_id = 0xffffffff;
 		tile_id = 0;
-		src = _src;
 		if (canvas && res_map)
 		{
 			auto path = res_map->get_res_path(src);
@@ -61,74 +132,6 @@ namespace flame
 				slot++;
 			}
 		}
-	}
-
-	void cImagePrivate::mark_size_dirty()
-	{
-		if (type_setting && element && true/*auto_size*/)
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
-	}
-
-	void cImagePrivate::on_added()
-	{
-		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
-		element->drawers.push_back(this);
-		mark_size_dirty();
-	}
-
-	void cImagePrivate::on_removed()
-	{
-		std::erase_if(element->drawers, [&](const auto& i) {
-			return i == this;
-		});
-	}
-
-	void cImagePrivate::on_entity_entered_world()
-	{
-		auto world = ((EntityPrivate*)entity)->world;
-		type_setting = (sTypeSettingPrivate*)world->get_system(sTypeSetting::type_hash);
-		mark_size_dirty();
-		canvas = (graphics::Canvas*)world->find_object("Canvas");
-		res_map = (ResMapPrivate*)world->find_object("ResMap");
-		if (canvas && res_map && !src.empty())
-		{
-			auto _src = src;
-			src = "";
-			set_src(_src);
-		}
-	}
-
-	void cImagePrivate::on_entity_left_world()
-	{
-		if (type_setting)
-			type_setting->remove_from_sizing_list(this);
-		type_setting = nullptr;
-		canvas = nullptr;
-		res_map = nullptr;
-	}
-
-	void cImagePrivate::on_entity_component_added(Component* c)
-	{
-		if (c->type_hash == cAligner::type_hash)
-			mark_size_dirty();
-	}
-
-	Vec2f cImagePrivate::measure()
-	{
-		if (!canvas || res_id == 0xffffffff)
-			return Vec2f(0.f);
-		auto r = canvas->get_resource(res_id);
-		auto ia = r->get_image_atlas();
-		if (!ia)
-			return Vec2f(r->get_view()->get_image()->get_size());
-		return Vec2f(ia->get_tile(tile_id)->get_size());
-	}
-
-	void cImagePrivate::draw(graphics::Canvas* canvas)
-	{
-		canvas->add_image(res_id, tile_id, 
-			element->points[4], element->points[5], element->points[6], element->points[7],
-			uv0, uv1, Vec4c(255));
 	}
 
 	cImage* cImage::create()

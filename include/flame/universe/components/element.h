@@ -80,9 +80,6 @@ namespace flame
 		virtual bool get_clipping() const = 0;
 		virtual void set_clipping(bool c) = 0;
 
-		virtual void mark_transform_dirty() = 0;
-		virtual void mark_drawing_dirty() = 0;
-
 		virtual bool contains(const Vec2f& p) = 0;
 
 		//FLAME_RV(float, alpha);

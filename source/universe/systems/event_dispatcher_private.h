@@ -29,25 +29,22 @@ namespace flame
 		cEventReceiverPrivate* key_target = nullptr;
 		cEventReceiverPrivate* drag_overing = nullptr;
 
-		//cEventReceiverPrivate* next_focusing = (cEventReceiverPrivate*)INVALID_POINTER;
+		cEventReceiverPrivate* next_focusing = (cEventReceiverPrivate*)INVALID_POINTER;
 
 		std::vector<Key> keydown_inputs;
 		std::vector<Key> keyup_inputs;
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete = true;
-//		float dbclick_timer = -1.f;
-//		void* ev_dbclick;
+		float dbclick_timer = -1.f;
 
 //		cEventReceiverPrivate* mouse_event_checker;
 
 		bool dirty = false;
 
 		sEventDispatcherPrivate();
-//		~sEventDispatcherPrivate();
 		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
-//		void after_update() override;
 
 		virtual void on_added() override;
 		virtual void on_removed() override;

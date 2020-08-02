@@ -13,17 +13,20 @@ namespace flame
 			Component(type_name, type_hash)
 		{
 		}
-//
-//		bool select_all_on_dbclicked;
-//		bool select_all_on_focus;
-//		bool enter_to_throw_focus;
-//		bool trigger_changed_on_lost_focus;
-//
-//		void set_select(uint start, int length = 0)
-//		{
-//			select_start = start;
-//			select_end = start + length;
-//		}
+
+		//virtual uint get_select_start() const = 0;
+		//virtual void set_select_start(uint s) = 0;
+		//virtual uint get_select_end() const = 0;
+		//virtual void set_select_end(uint s) = 0;
+
+		//virtual bool get_select_all_on_dbclicked() const = 0;
+		//virtual void set_select_all_on_dbclicked(bool b) = 0;
+		//virtual bool get_select_all_on_focus() const = 0;
+		//virtual void set_select_all_on_focus(bool b) = 0;
+		//virtual bool get_enter_to_throw_focus() const = 0;
+		//virtual void set_enter_to_throw_focus(bool b) = 0;
+		//virtual bool get_trigger_changed_on_lost_focus() const = 0;
+		//virtual void set_trigger_changed_on_lost_focus(bool b) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cEdit* create();
 	};

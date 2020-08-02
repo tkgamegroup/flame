@@ -18,8 +18,6 @@ namespace flame
 //			}
 //			return true;
 //		}, Capture().set_thiz(this));
-//
-//		frame = -1;
 //	}
 
 	void cEventReceiverPrivate::send_key_event(KeyStateFlags action, uint value)
@@ -45,13 +43,6 @@ namespace flame
 //		drag_and_drop_listeners.call_with_current(this, action, er, pos);
 //	}
 
-	void cEventReceiverPrivate::mark_dirty() 
-	{
-		if (dispatcher)
-			dispatcher->dirty = true;
-	}
-
-//
 //	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
 //	{
 //		auto& drops = ((cEventReceiverPrivate*)this)->acceptable_drops;
@@ -88,45 +79,37 @@ namespace flame
 		});
 	}
 
-	void cEventReceiverPrivate::on_added()
+	void cEventReceiverPrivate::on_gain_dispatcher()
 	{
-		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
+		dispatcher->dirty = true;
 	}
 
-	void cEventReceiverPrivate::on_entity_entered_world()
+	void cEventReceiverPrivate::on_lost_dispatcher()
 	{
-		dispatcher = (sEventDispatcherPrivate*)((EntityPrivate*)entity)->world->get_system(sEventDispatcherPrivate::type_hash);
-		mark_dirty();
-	}
-
-	void cEventReceiverPrivate::on_entity_left_world()
-	{
-		if (dispatcher)
+		if (this == dispatcher->hovering)
+			dispatcher->hovering = nullptr;
+		if (this == dispatcher->focusing)
 		{
-			if (this == dispatcher->hovering)
-				dispatcher->hovering = nullptr;
-			if (this == dispatcher->focusing)
-			{
-				dispatcher->focusing = nullptr;
-				dispatcher->active = nullptr;
-				dispatcher->dragging = nullptr;
-			}
-			if (this == dispatcher->key_target)
-				dispatcher->key_target = nullptr;
-			if (this == dispatcher->drag_overing)
-				dispatcher->drag_overing = nullptr;
-			//if (er == next_focusing)
-			//	next_focusing = (cEventReceiver*)INVALID_POINTER;
-
-			((EntityPrivate*)entity)->set_state((StateFlags)((int)((EntityPrivate*)entity)->state & (~StateHovering) & (~StateActive)));
+			dispatcher->focusing = nullptr;
+			dispatcher->active = nullptr;
+			dispatcher->dragging = nullptr;
 		}
-		mark_dirty();
-		dispatcher = nullptr;
+		if (this == dispatcher->key_target)
+			dispatcher->key_target = nullptr;
+		if (this == dispatcher->drag_overing)
+			dispatcher->drag_overing = nullptr;
+		//if (er == next_focusing)
+		//	next_focusing = (cEventReceiver*)INVALID_POINTER;
+
+		((EntityPrivate*)entity)->set_state((StateFlags)((int)((EntityPrivate*)entity)->state & (~StateHovering) & (~StateFocusing) & (~StateActive)));
+
+		dispatcher->dirty = true;
 	}
 
 	void cEventReceiverPrivate::on_entity_visibility_changed()
 	{
-		mark_dirty();
+		if (dispatcher)
+			dispatcher->dirty = true;
 	}
 
 	cEventReceiver* cEventReceiver::create()

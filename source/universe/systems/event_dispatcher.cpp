@@ -198,8 +198,8 @@ namespace flame
 
 	void sEventDispatcherPrivate::update()
 	{
-//		if (dbclick_timer > 0.f)
-//			dbclick_timer -= get_looper()->delta_time;
+		if (dbclick_timer > 0.f)
+			dbclick_timer -= get_looper()->get_delta_time();
 
 		if (!dirty)
 			return;
@@ -332,7 +332,7 @@ namespace flame
 				}
 			}
 
-			//dbclick_timer = -1.f;
+			dbclick_timer = -1.f;
 		}
 
 //		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)

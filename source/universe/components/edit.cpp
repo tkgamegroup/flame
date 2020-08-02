@@ -10,7 +10,8 @@ namespace flame
 {
 	void cEditPrivate::flash_cursor(int mode)
 	{
-		element->mark_drawing_dirty();
+		if (element)
+			element->on_entity_message(MessageElementDrawingDirty);
 		if (mode == 1)
 			show_cursor = false;
 		else if (mode == 2)
@@ -27,7 +28,7 @@ namespace flame
 	{
 		const auto& str = text->text;
 		auto atlas = text->atlas;
-		auto font_size = text->font_size;
+		auto font_size = text->size;
 
 		element->update_transform();
 		auto pos = element->points[4];
@@ -66,14 +67,21 @@ namespace flame
 		return i;
 	}
 
-	void cEditPrivate::on_added()
+	void cEditPrivate::on_gain_element()
 	{
-		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
-		text = (cTextPrivate*)((EntityPrivate*)entity)->get_component(cText::type_hash);
-		event_receiver = (cEventReceiverPrivate*)((EntityPrivate*)entity)->get_component(cEventReceiver::type_hash);
 
 		element->drawers.push_back(this);
+	}
 
+	void cEditPrivate::on_lost_element()
+	{
+		std::erase_if(element->drawers, [&](const auto& i) {
+			return i == this;
+		});
+	}
+
+	void cEditPrivate::on_gain_event_receiver()
+	{
 		key_listener = event_receiver->add_key_listener([](Capture& c, KeyStateFlags action, uint value) {
 			auto thiz = c.thiz<cEditPrivate>();
 			auto& str = thiz->text->text;
@@ -105,10 +113,10 @@ namespace flame
 				return (int)str.size();
 			};
 			auto on_changed = [&]() {
-				//if (thiz->trigger_changed_on_lost_focus)
-				//	thiz->changed = true;
-				//else
-				//	c_text->set_text(nullptr, -1, thiz);
+				if (thiz->trigger_changed_on_lost_focus)
+					thiz->changed = true;
+				else
+					thiz->text->mark_text_changed();
 			};
 			//auto throw_focus = [&]() {
 			//	auto dp = thiz->event_receiver->dispatcher;
@@ -284,7 +292,7 @@ namespace flame
 
 			return true;
 		}, Capture().set_thiz(this));
-		
+
 		mouse_listener = event_receiver->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 			auto thiz = c.thiz<cEditPrivate>();
 			if (action == (KeyStateDown | KeyStateJust) && key == Mouse_Left)
@@ -299,30 +307,19 @@ namespace flame
 			}
 			//else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
 			//{
-			//	thiz->set_select(0, thiz->text->text.s);
-			//	thiz->element->mark_dirty();
+			//	thiz->select_start = 0;
+			//	thiz->select_end = thiz->text->text.size();
+			//	if (thiz->element)
+			//		thiz->element->on_entity_message(MessageElementDrawingDirty);
 			//}
 			return true;
 		}, Capture().set_thiz(this));
-
-		//					state_listener = event_receiver->state_listeners.add([](Capture& c, EventReceiverState s) {
-		//						c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorIBeam : CursorArrow);
-		//						return true;
-		//					}, Capture());
 	}
 
-	void cEditPrivate::on_removed()
+	void cEditPrivate::on_lost_event_receiver()
 	{
-		std::erase_if(element->drawers, [&](const auto& i) {
-			return i == this;
-		});
-
-		//event_receiver->key_listeners.remove(key_listener);
+		event_receiver->remove_key_listener(key_listener);
 		event_receiver->remove_mouse_listener(mouse_listener);
-		//event_receiver->focus_listeners.remove(focus_listener);
-
-		if (flash_event)
-			get_looper()->remove_event(flash_event);
 	}
 
 	void cEditPrivate::on_entity_left_world()
@@ -346,6 +343,7 @@ namespace flame
 	void cEditPrivate::on_entity_state_changed()
 	{
 		auto s = ((EntityPrivate*)entity)->state;
+		event_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
 		if ((s & StateFocusing) != 0)
 		{
 			if (!flash_event)
@@ -379,7 +377,7 @@ namespace flame
 	{
 		const auto& str = text->text;
 		auto atlas = text->atlas;
-		auto font_size = text->font_size;
+		auto font_size = text->size;
 		element->update_transform();
 		auto pos = element->points[4];
 		auto axes = Mat2f(element->transform);
@@ -418,24 +416,13 @@ namespace flame
 		if (show_cursor)
 		{
 			auto off = (Vec2f)atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end);
-			off.x() += 1.f;
+			off.x() += 0.5f;
 			canvas->begin_path();
 			canvas->move_to(pos + axes * off);
 			canvas->line_to(pos + axes * (off + Vec2f(0.f, font_size)));
-			canvas->stroke(Vec4c(0, 0, 0, 255), 2.f);
+			canvas->stroke(Vec4c(0, 0, 0, 255), 1.f);
 		}
 	}
-
-//	struct cEditPrivate : cEdit
-//	{
-//		cEditPrivate()
-//		{
-//			select_all_on_dbclicked = true;
-//			select_all_on_focus = true;
-//			enter_to_throw_focus = false;
-//			trigger_changed_on_lost_focus = false;
-//		}
-//	};
 
 	cEdit* cEdit::create()
 	{

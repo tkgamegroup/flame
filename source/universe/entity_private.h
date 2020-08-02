@@ -106,6 +106,8 @@ namespace flame
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
 
+		void send_message(Message msg) override;
+
 		Component* get_component(uint64 hash) const override;
 		Component* get_component(Place place, uint64 hash) const;
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);

@@ -59,6 +59,11 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("only_basic")>::v);
 	}
 
+	void cAlignerPrivate::on_added()
+	{
+		entity->send_message(MessageElementSizeDirty);
+	}
+
 	cAligner* cAligner::create()
 	{
 		return f_new<cAlignerPrivate>();

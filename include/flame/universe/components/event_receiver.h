@@ -17,7 +17,6 @@ namespace flame
 //		uint drag_hash; // non-zero means it can be draged to drop
 //
 //		ListenerHub<bool(Capture& c, cEventReceiver* er, bool* pass)>								pass_checkers;
-//		ListenerHub<bool(Capture& c, KeyStateFlags action, int value)>								key_listeners;
 //		ListenerHub<bool(Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos)>		drag_and_drop_listeners;
 //
 //		FLAME_RV(ListenerHub<void(Capture& c)>,														clicked_listeners);
