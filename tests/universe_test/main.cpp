@@ -42,7 +42,6 @@ void on_resize()
 	std::vector<ImageView*> vs(sc->get_images_count());
 	for (auto i = 0; i < vs.size(); i++)
 		vs[i] = sc->get_image(i)->get_default_view();
-
 	canvas->set_target(vs.size(), vs.data());
 
 	for (auto cb : cbs)
@@ -116,7 +115,7 @@ int main(int argc, char** args)
 	struct sPrepareCanvas : System
 	{
 		sPrepareCanvas() :
-			System("sPrepareCanvas", ch("sEventDispatcher"))
+			System("sPrepareCanvas", ch("sPrepareCanvas"))
 		{
 		}
 
@@ -150,9 +149,7 @@ int main(int argc, char** args)
 	//e->load((res_path / test_prefab).c_str());
 	{
 		auto root = world->get_root();
-		auto ce = cElement::create();
-		ce->set_fill_color(Vec4c(0));
-		root->add_component(ce);
+		root->add_component(cElement::create());
 		root->add_component(cLayout::create());
 		world->get_root()->add_child(e);
 	}

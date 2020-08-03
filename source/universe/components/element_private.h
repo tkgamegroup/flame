@@ -27,7 +27,7 @@ namespace flame
 		bool transform_dirty = true;
 		Vec2f points[8];
 
-		Vec4c fill_color = Vec4c(255);
+		Vec4c fill_color = Vec4c(0);
 
 		float border = 0.f;
 		Vec4c border_color = Vec4c(0, 0, 0, 255);
