@@ -97,7 +97,7 @@ namespace flame
 		{
 			canvas = graphics::Canvas::create(app->graphics_device);
 			set_canvas_target();
-			canvas->set_resource(-1, app->font_atlas->get_view(), app->graphics_device->get_sampler(graphics::FilterNearest), L"", nullptr, app->font_atlas);
+			canvas->set_resource(-1, app->font_atlas->get_view(), app->graphics_device->get_sampler(graphics::FilterNearest), "", nullptr, app->font_atlas);
 
 			window->add_resize_listener([](Capture& c, const Vec2u&) {
 				c.thiz<GraphicsWindow>()->set_canvas_target();

@@ -81,7 +81,7 @@ namespace flame
 		for (auto& i : inputs)
 		{
 			BinPackTile t;
-			t.id = i.filename().string();
+			t.id = i.filename().stem().string();
 			t.b = Bitmap::create(i.c_str());
 			t.pos = Vec2i(-1);
 			tiles.push_back(t);

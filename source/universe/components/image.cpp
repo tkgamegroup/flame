@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
@@ -111,19 +112,33 @@ namespace flame
 	{
 		res_id = 0xffffffff;
 		tile_id = 0;
-		if (canvas && res_map)
+		if (canvas)
 		{
-			auto path = res_map->get_res_path(src);
+			auto sp = SUS::split(src, '.');
 			auto slot = 0;
 			while (true)
 			{
 				auto r = canvas->get_resource(slot);
 				if (!r)
 					break;
-				auto r_filename = std::filesystem::path(r->get_filename());
-				if (r_filename == path)
+				if (r->get_name() == sp[0])
 				{
-					res_id = slot;
+					auto atlas = r->get_image_atlas();
+					if (!atlas)
+					{
+						assert(sp.size() == 1);
+						res_id = slot;
+					}
+					else
+					{
+						assert(sp.size() == 2);
+						auto tile = atlas->find_tile(sp[1].c_str());
+						if (tile)
+						{
+							res_id = slot;
+							tile_id = tile->get_index();
+						}
+					}
 					Entity::report_data_changed(this, S<ch("res_id")>::v);
 					Entity::report_data_changed(this, S<ch("tile_id")>::v);
 					Entity::report_data_changed(this, S<ch("src")>::v);

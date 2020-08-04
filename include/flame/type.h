@@ -53,7 +53,7 @@ namespace flame
 	}
 
 	template <class F>
-	void* f2p(F f) // function to void pointer
+	void* f2a(F f) // function to address
 	{
 		union
 		{
@@ -65,7 +65,7 @@ namespace flame
 	}
 
 	template <class F>
-	F a2f(void* p) // void pointer to function
+	F a2f(void* p) // address to function
 	{
 		union
 		{

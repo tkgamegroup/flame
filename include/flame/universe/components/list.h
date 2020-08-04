@@ -14,8 +14,8 @@ namespace flame
 		{
 		}
 
-		//		FLAME_UNIVERSE_EXPORTS void set_selected(Entity* e);
-		//
+		virtual void set_selected(Entity* e);
+
 		FLAME_UNIVERSE_EXPORTS static cList* create();
 	};
 

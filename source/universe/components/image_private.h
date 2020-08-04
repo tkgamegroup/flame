@@ -26,7 +26,6 @@ namespace flame
 		cElementPrivate* element = nullptr; // R ref
 		sTypeSettingPrivate* type_setting = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
-		ResMapPrivate* res_map = nullptr; // R ref
 
 		uint get_res_id() const override { return res_id; }
 		void set_res_id(uint id) override;
