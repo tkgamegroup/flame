@@ -1,4 +1,3 @@
-//#include <flame/serialize.h>
 #include <flame/utils/app.h>
 //#include <flame/utils/fps.h>
 
@@ -16,10 +15,7 @@ struct MyApp : App
 struct MainForm : GraphicsWindow
 {
 	MainForm();
-	~MainForm() override;
 };
-
-MainForm* main_window = nullptr;
 
 void MyApp::create()
 {
@@ -29,7 +25,6 @@ void MyApp::create()
 void MyApp::create_widgets()
 {
 //	auto root = main_window->root;
-//	auto& ui = main_window->ui;
 //
 //	ui.parents.push(root);
 //
@@ -201,29 +196,17 @@ void MyApp::create_widgets()
 MainForm::MainForm() :
 	GraphicsWindow(&g_app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
-	main_window = this;
-
-	setup_as_main_window();
-
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	//canvas->set_resource(img_id, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"art/9.png").c_str())->default_view());
 
 	g_app.create_widgets();
 }
 
-MainForm::~MainForm()
-{
-	main_window = nullptr;
-}
-
 int main(int argc, char** args)
 {
 	g_app.create();
 	new MainForm();
-
-	get_looper()->loop([](Capture&, float) {
-		g_app.run();
-	}, Capture());
+	g_app.run();
 
 	return 0;
 }

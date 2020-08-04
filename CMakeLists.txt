@@ -18,6 +18,11 @@ foreach(type ${CMAKE_CONFIGURATION_TYPES})
 	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${type_u} "${CMAKE_SOURCE_DIR}/bin/${type_l}")
 endforeach()
 
+add_definitions(-DFLAME_WINDOWS)
+set(FLAME_RENDER_API "Vulkan")
+add_definitions(-DFLAME_VULKAN)
+
+#[[
 set(FLAME_PLATFORM "Windows" CACHE STRING "Platform")
 set_property(CACHE FLAME_PLATFORM PROPERTY STRINGS Windows Android)
 if (FLAME_PLATFORM MATCHES "Windows")
@@ -37,6 +42,7 @@ endif()
 if (FLAME_PLATFORM MATCHES "Android" AND FLAME_RENDER_API MATCHES "D3D12")
 	message(FATAL_ERROR "cannot use D3D on Android")
 endif()
+]]
 
 string(FIND "${CMAKE_LINKER}" "/VC/" pos)
 string(SUBSTRING  "${CMAKE_LINKER}" 0 ${pos} VS_LOCATION)
@@ -76,6 +82,7 @@ endif()
 set(OPENAL_INCLUDE_DIR "${temp}/include" CACHE PATH "OpenAL Include Directory")
 set(OPENAL_STATIC_LIBRARY_PATH "${temp}/libs/Win64/OpenAL32.lib" CACHE FILEPATH "OpenAL STATIC Library Path")
 
+#[[
 option(FLAME_ENABLE_MODEL "Enable Model" OFF)
 if (FLAME_ENABLE_MODEL)
 	set(ASSIMP_INCLUDE_DIR "" CACHE PATH "Assimp Include Directory")
@@ -89,6 +96,7 @@ if (FLAME_ENABLE_PHYSICS)
 	set(PHYSX_STATIC_LIBRARY_DIR "" CACHE PATH "PHYSX STATIC Library Directory")
 	set(PHYSX_SHARED_LIBRARY_DIR "" CACHE PATH "PHYSX SHARED Library Directory")
 endif()
+]]
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
 

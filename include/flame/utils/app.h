@@ -46,9 +46,8 @@ namespace flame
 
 		GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p = nullptr, bool maximized = false);
 		virtual ~GraphicsWindow();
-		void setup_as_main_window();
 		void set_canvas_target();
-		void virtual on_update() {}
+		void virtual on_frame() {}
 		void update();
 	};
 
@@ -68,6 +67,7 @@ namespace flame
 		graphics::FontAtlas* font_atlas;
 
 		std::list<std::unique_ptr<GraphicsWindow>> windows;
+		GraphicsWindow* main_window = nullptr;
 
 		void create(bool graphics_debug = true);
 		void run();
@@ -76,8 +76,6 @@ namespace flame
 	GraphicsWindow::GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p, bool maximized) :
 		app(app)
 	{
-		app->windows.emplace_back(this);
-
 		if (maximized)
 			styles = styles | WindowMaximized;
 		window = Window::create(title, size, styles, p);
@@ -113,32 +111,35 @@ namespace flame
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
 			s_element_renderer = sElementRenderer::create();
-			struct sPrepareCanvas : System
+			struct sFrame : System
 			{
-				GraphicsWindow* w;
+				GraphicsWindow* thiz;
 
-				sPrepareCanvas(GraphicsWindow* _w) :
-					System("sPrepareCanvas", ch("sPrepareCanvas"))
+				sFrame(GraphicsWindow* _w) :
+					System("sFrame", ch("sFrame"))
 				{
-					w = _w;
+					thiz = _w;
 				}
 
 				void update() override
 				{
-					if (!w->s_element_renderer->is_dirty())
+					if (!thiz->s_element_renderer->is_dirty())
 						return;
-					if (w->swapchain_image_index < 0)
+					if (thiz->swapchain_image_index < 0)
 					{
-						if (!w->swapchain_commandbuffers.empty())
+						if (!thiz->swapchain_commandbuffers.empty())
 						{
-							w->swapchain->acquire_image();
-							w->swapchain_image_index = w->swapchain->get_image_index();
+							thiz->swapchain->acquire_image();
+							thiz->swapchain_image_index = thiz->swapchain->get_image_index();
 						}
-						w->canvas->prepare();
+						thiz->canvas->prepare();
 					}
+
+					if (thiz->swapchain_image_index >= 0)
+						thiz->on_frame();
 				}
 			};
-			world->add_system(new sPrepareCanvas(this));
+			world->add_system(new sFrame(this));
 			world->add_system(s_element_renderer);
 
 			root = world->get_root();
@@ -146,10 +147,22 @@ namespace flame
 			root->add_component(cEventReceiver::create());
 			root->add_component(cLayout::create());
 		}
+
+		if (app->windows.empty())
+		{
+			app->main_window = this;
+			window->add_destroy_listener([](Capture&) {
+				exit(0);
+			}, Capture());
+		}
+		app->windows.emplace_back(this);
+
 	}
 
 	GraphicsWindow::~GraphicsWindow()
 	{
+		if (app->main_window == this)
+			app->main_window = nullptr;
 		if (window)
 			window->close();
 		swapchain->release();
@@ -161,13 +174,6 @@ namespace flame
 			canvas->release();
 		if (world)
 			world->release();
-	}
-
-	void GraphicsWindow::setup_as_main_window()
-	{
-		window->add_destroy_listener([](Capture&) {
-			exit(0);
-		}, Capture());
 	}
 
 	void GraphicsWindow::set_canvas_target()
@@ -182,8 +188,6 @@ namespace flame
 	{
 		if (world)
 			world->update();
-
-		on_update();
 
 		submit_fence->wait();
 		if (swapchain_image_index >= 0)
@@ -202,24 +206,24 @@ namespace flame
 	void App::create(bool graphics_debug)
 	{
 		developing = false;
-		{
-			auto config = parse_ini_file(L"config.ini");
-			for (auto& e : config.get_section_entries(""))
-			{
-				if (e.key == "developing")
-					developing = e.value != "0";
-				else if (e.key == "resource_path")
-					resource_path = e.value;
-				else if (e.key == "engine_path")
-				{
-					if (e.value == "{e}")
-						engine_path = getenv("FLAME_PATH");
-					else
-						engine_path = e.value;
-				}
-			}
-		}
-		set_engine_path(engine_path.c_str());
+		//{
+		//	auto config = parse_ini_file(L"config.ini");
+		//	for (auto& e : config.get_section_entries(""))
+		//	{
+		//		if (e.key == "developing")
+		//			developing = e.value != "0";
+		//		else if (e.key == "resource_path")
+		//			resource_path = e.value;
+		//		else if (e.key == "engine_path")
+		//		{
+		//			if (e.value == "{e}")
+		//				engine_path = getenv("FLAME_PATH");
+		//			else
+		//				engine_path = e.value;
+		//		}
+		//	}
+		//}
+		//set_engine_path(engine_path.c_str());
 		if (developing)
 		{
 			set_file_callback([](Capture& c, const wchar_t* _filename) {
@@ -277,22 +281,26 @@ namespace flame
 
 	void App::run()
 	{
-		{
-			auto t = (0.02 - get_looper()->get_delta_time());
-			if (t > 0.f)
-				std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
-		}
+		get_looper()->loop([](Capture& c, float) {
+			auto thiz = c.thiz<App>();
 
-		for (auto it = windows.begin(); it != windows.end();)
-		{
-			auto w = it->get();
-			if (!w->window)
-				it = windows.erase(it);
-			else
 			{
-				w->update();
-				it++;
+				auto t = (0.02 - get_looper()->get_delta_time());
+				if (t > 0.f)
+					std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
 			}
-		}
+
+			for (auto it = thiz->windows.begin(); it != thiz->windows.end();)
+			{
+				auto w = it->get();
+				if (!w->window)
+					it = thiz->windows.erase(it);
+				else
+				{
+					w->update();
+					it++;
+				}
+			}
+		}, Capture().set_thiz(this));
 	}
 }

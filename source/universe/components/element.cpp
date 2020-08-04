@@ -147,6 +147,7 @@ namespace flame
 		points[5] = points[1] + axes * Vec2f(pr, pt);
 		points[6] = points[2] + axes * Vec2f(pr, pb);
 		points[7] = points[3] + axes * Vec2f(pl, pb);
+
 		transform = Mat23f(Vec3f(axes[0], points[0].x()), Vec3f(axes[1], points[0].y()));
 	}
 

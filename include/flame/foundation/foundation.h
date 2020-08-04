@@ -495,16 +495,6 @@ namespace flame
 		return action == KeyStateNull;
 	}
 
-	inline bool is_mouse_enter(KeyStateFlags action, MouseKey key)
-	{
-		return action == KeyStateDown && key == Mouse_Null;
-	}
-
-	inline bool is_mouse_leave(KeyStateFlags action, MouseKey key)
-	{
-		return action == KeyStateUp && key == Mouse_Null;
-	}
-
 	inline bool is_mouse_down(KeyStateFlags action, MouseKey key, bool just = false) // value is pos
 	{
 		return action == (KeyStateDown | (just ? KeyStateJust : 0)) && key != Mouse_Null;
