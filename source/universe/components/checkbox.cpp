@@ -19,19 +19,15 @@ namespace flame
 
 	void cCheckboxPrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (is_mouse_clicked(action, key))
-			{
-				auto thiz = c.thiz<cCheckboxPrivate>();
-				thiz->set_checked(!thiz->checked);
-			}
-			return true;
+		click_listener = event_receiver->add_mouse_click_listener([](Capture& c) {
+			auto thiz = c.thiz<cCheckboxPrivate>();
+			thiz->set_checked(!thiz->checked);
 		}, Capture().set_thiz(this));
 	}
 
 	void cCheckboxPrivate::on_lost_event_receiver()
 	{
-		event_receiver->remove_mouse_listener(mouse_listener);
+		event_receiver->remove_mouse_click_listener(click_listener);
 	}
 
 	cCheckbox* cCheckbox::create()

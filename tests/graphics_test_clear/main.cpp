@@ -84,7 +84,7 @@ int main(int argc, char** args)
 		app.on_resize();
 	}, Capture());
 
-	get_looper()->loop([](Capture&, float) {
+	looper().loop([](Capture&, float) {
 		app.run();
 	}, Capture());
 }

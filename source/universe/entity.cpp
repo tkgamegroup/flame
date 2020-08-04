@@ -7,7 +7,7 @@ namespace flame
 {
 	EntityPrivate::EntityPrivate()
 	{
-		created_frame = get_looper()->get_frame();
+		created_frame = looper().get_frame();
 
 #ifdef _DEBUG
 		//_created_stack_ = get_stack_frames(); TODO

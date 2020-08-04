@@ -290,385 +290,386 @@ namespace flame
 		shell_folder->Release();
 	}
 
-	static Key vk_code_to_key(int vkCode)
+	static KeyboardKey vk_code_to_key(int vkCode)
 	{
 #ifdef FLAME_WINDOWS
 		switch (vkCode)
 		{
 		case VK_BACK:
-			return Key_Backspace;
+			return Keyboard_Backspace;
 		case VK_TAB:
-			return Key_Tab;
+			return Keyboard_Tab;
 		case VK_RETURN:
-			return Key_Enter;
+			return Keyboard_Enter;
 		case VK_SHIFT:
-			return Key_Shift;
+			return Keyboard_Shift;
 		case VK_CONTROL:
-			return Key_Ctrl;
+			return Keyboard_Ctrl;
 		case VK_MENU:
-			return Key_Alt;
+			return Keyboard_Alt;
 		case VK_PAUSE:
-			return Key_Pause;
+			return Keyboard_Pause;
 		case VK_CAPITAL:
-			return Key_CapsLock;
+			return Keyboard_CapsLock;
 		case VK_ESCAPE:
-			return Key_Esc;
+			return Keyboard_Esc;
 		case VK_SPACE:
-			return Key_Space;
+			return Keyboard_Space;
 		case VK_PRIOR:
-			return Key_PgUp;
+			return Keyboard_PgUp;
 		case VK_NEXT:
-			return Key_PgDn;
+			return Keyboard_PgDn;
 		case VK_END:
-			return Key_End;
+			return Keyboard_End;
 		case VK_HOME:
-			return Key_Home;
+			return Keyboard_Home;
 		case VK_LEFT:
-			return Key_Left;
+			return Keyboard_Left;
 		case VK_UP:
-			return Key_Up;
+			return Keyboard_Up;
 		case VK_RIGHT:
-			return Key_Right;
+			return Keyboard_Right;
 		case VK_DOWN:
-			return Key_Down;
+			return Keyboard_Down;
 		case VK_SNAPSHOT:
-			return Key_PrtSc;
+			return Keyboard_PrtSc;
 		case VK_INSERT:
-			return Key_Ins;
+			return Keyboard_Ins;
 		case VK_DELETE:
-			return Key_Del;
+			return Keyboard_Del;
 		case '0':
-			return Key_0;
+			return Keyboard_0;
 		case '1':
-			return Key_1;
+			return Keyboard_1;
 		case '2':
-			return Key_2;
+			return Keyboard_2;
 		case '3':
-			return Key_3;
+			return Keyboard_3;
 		case '4':
-			return Key_4;
+			return Keyboard_4;
 		case '5':
-			return Key_5;
+			return Keyboard_5;
 		case '6':
-			return Key_6;
+			return Keyboard_6;
 		case '7':
-			return Key_7;
+			return Keyboard_7;
 		case '8':
-			return Key_8;
+			return Keyboard_8;
 		case '9':
-			return Key_9;
+			return Keyboard_9;
 		case 'A':
-			return Key_A;
+			return Keyboard_A;
 		case 'B':
-			return Key_B;
+			return Keyboard_B;
 		case 'C':
-			return Key_C;
+			return Keyboard_C;
 		case 'D':
-			return Key_D;
+			return Keyboard_D;
 		case 'E':
-			return Key_E;
+			return Keyboard_E;
 		case 'F':
-			return Key_F;
+			return Keyboard_F;
 		case 'G':
-			return Key_G;
+			return Keyboard_G;
 		case 'H':
-			return Key_H;
+			return Keyboard_H;
 		case 'I':
-			return Key_I;
+			return Keyboard_I;
 		case 'J':
-			return Key_J;
+			return Keyboard_J;
 		case 'K':
-			return Key_K;
+			return Keyboard_K;
 		case 'L':
-			return Key_L;
+			return Keyboard_L;
 		case 'M':
-			return Key_M;
+			return Keyboard_M;
 		case 'N':
-			return Key_N;
+			return Keyboard_N;
 		case 'O':
-			return Key_O;
+			return Keyboard_O;
 		case 'P':
-			return Key_P;
+			return Keyboard_P;
 		case 'Q':
-			return Key_Q;
+			return Keyboard_Q;
 		case 'R':
-			return Key_R;
+			return Keyboard_R;
 		case 'S':
-			return Key_S;
+			return Keyboard_S;
 		case 'T':
-			return Key_T;
+			return Keyboard_T;
 		case 'U':
-			return Key_U;
+			return Keyboard_U;
 		case 'V':
-			return Key_V;
+			return Keyboard_V;
 		case 'W':
-			return Key_W;
+			return Keyboard_W;
 		case 'X':
-			return Key_X;
+			return Keyboard_X;
 		case 'Y':
-			return Key_Y;
+			return Keyboard_Y;
 		case 'Z':
-			return Key_Z;
+			return Keyboard_Z;
 		case VK_NUMPAD0:
-			return Key_Numpad0;
+			return Keyboard_Numpad0;
 		case VK_NUMPAD1:
-			return Key_Numpad1;
+			return Keyboard_Numpad1;
 		case VK_NUMPAD2:
-			return Key_Numpad2;
+			return Keyboard_Numpad2;
 		case VK_NUMPAD3:
-			return Key_Numpad3;
+			return Keyboard_Numpad3;
 		case VK_NUMPAD4:
-			return Key_Numpad4;
+			return Keyboard_Numpad4;
 		case VK_NUMPAD5:
-			return Key_Numpad5;
+			return Keyboard_Numpad5;
 		case VK_NUMPAD6:
-			return Key_Numpad6;
+			return Keyboard_Numpad6;
 		case VK_NUMPAD7:
-			return Key_Numpad7;
+			return Keyboard_Numpad7;
 		case VK_NUMPAD8:
-			return Key_Numpad8;
+			return Keyboard_Numpad8;
 		case VK_NUMPAD9:
-			return Key_Numpad9;
+			return Keyboard_Numpad9;
 		case VK_ADD:
-			return Key_Add;
+			return Keyboard_Add;
 		case VK_SUBTRACT:
-			return Key_Subtract;
+			return Keyboard_Subtract;
 		case VK_MULTIPLY:
-			return Key_Multiply;
+			return Keyboard_Multiply;
 		case VK_DIVIDE:
-			return Key_Divide;
+			return Keyboard_Divide;
 		case VK_SEPARATOR:
-			return Key_Separator;
+			return Keyboard_Separator;
 		case VK_DECIMAL:
-			return Key_Decimal;
+			return Keyboard_Decimal;
 		case VK_F1:
-			return Key_F1;
+			return Keyboard_F1;
 		case VK_F2:
-			return Key_F2;
+			return Keyboard_F2;
 		case VK_F3:
-			return Key_F3;
+			return Keyboard_F3;
 		case VK_F4:
-			return Key_F4;
+			return Keyboard_F4;
 		case VK_F5:
-			return Key_F5;
+			return Keyboard_F5;
 		case VK_F6:
-			return Key_F6;
+			return Keyboard_F6;
 		case VK_F7:
-			return Key_F7;
+			return Keyboard_F7;
 		case VK_F8:
-			return Key_F8;
+			return Keyboard_F8;
 		case VK_F9:
-			return Key_F9;
+			return Keyboard_F9;
 		case VK_F10:
-			return Key_F10;
+			return Keyboard_F10;
 		case VK_F11:
-			return Key_F11;
+			return Keyboard_F11;
 		case VK_F12:
-			return Key_F12;
+			return Keyboard_F12;
 		case VK_NUMLOCK:
-			return Key_NumLock;
+			return Keyboard_NumLock;
 		case VK_SCROLL:
-			return Key_ScrollLock;
+			return Keyboard_ScrollLock;
 		default:
-			return KeyNull;
+			return KeyboardNull;
 		}
 #endif
-		return KeyNull;
+		return KeyboardNull;
 	}
 
-	int key_to_vk_code(Key key)
+	int key_to_vk_code(KeyboardKey key)
 	{
 #ifdef FLAME_WINDOWS
 		switch (key)
 		{
-		case Key_Backspace:
+		case Keyboard_Backspace:
 			return VK_BACK;
-		case Key_Tab:
+		case Keyboard_Tab:
 			return VK_TAB;
-		case Key_Enter:
+		case Keyboard_Enter:
 			return VK_RETURN;
-		case Key_Shift:
+		case Keyboard_Shift:
 			return VK_SHIFT;
-		case Key_Ctrl:
+		case Keyboard_Ctrl:
 			return VK_CONTROL;
-		case Key_Alt:
+		case Keyboard_Alt:
 			return VK_MENU;
-		case Key_Pause:
+		case Keyboard_Pause:
 			return VK_PAUSE;
-		case Key_CapsLock:
+		case Keyboard_CapsLock:
 			return VK_CAPITAL;
-		case Key_Esc:
+		case Keyboard_Esc:
 			return VK_ESCAPE;
-		case Key_Space:
+		case Keyboard_Space:
 			return VK_SPACE;
-		case Key_PgUp:
+		case Keyboard_PgUp:
 			return VK_PRIOR;
-		case Key_PgDn:
+		case Keyboard_PgDn:
 			return VK_NEXT;
-		case Key_End:
+		case Keyboard_End:
 			return VK_END;
-		case Key_Home:
+		case Keyboard_Home:
 			return VK_HOME;
-		case Key_Left:
+		case Keyboard_Left:
 			return VK_LEFT;
-		case Key_Up:
+		case Keyboard_Up:
 			return VK_UP;
-		case Key_Right:
+		case Keyboard_Right:
 			return VK_RIGHT;
-		case Key_Down:
+		case Keyboard_Down:
 			return VK_DOWN;
-		case Key_PrtSc:
+		case Keyboard_PrtSc:
 			return VK_SNAPSHOT;
-		case Key_Ins:
+		case Keyboard_Ins:
 			return VK_INSERT;
-		case Key_Del:
+		case Keyboard_Del:
 			return VK_DELETE;
-		case Key_0:
+		case Keyboard_0:
 			return '0';
-		case Key_1:
+		case Keyboard_1:
 			return '1';
-		case Key_2:
+		case Keyboard_2:
 			return '2';
-		case Key_3:
+		case Keyboard_3:
 			return '3';
-		case Key_4:
+		case Keyboard_4:
 			return '4';
-		case Key_5:
+		case Keyboard_5:
 			return '5';
-		case Key_6:
+		case Keyboard_6:
 			return '6';
-		case Key_7:
+		case Keyboard_7:
 			return '7';
-		case Key_8:
+		case Keyboard_8:
 			return '8';
-		case Key_9:
+		case Keyboard_9:
 			return '9';
-		case Key_A:
+		case Keyboard_A:
 			return 'A';
-		case Key_B:
+		case Keyboard_B:
 			return 'B';
-		case Key_C:
+		case Keyboard_C:
 			return 'C';
-		case Key_D:
+		case Keyboard_D:
 			return 'D';
-		case Key_E:
+		case Keyboard_E:
 			return 'E';
-		case Key_F:
+		case Keyboard_F:
 			return 'F';
-		case Key_G:
+		case Keyboard_G:
 			return 'G';
-		case Key_H:
+		case Keyboard_H:
 			return 'H';
-		case Key_I:
+		case Keyboard_I:
 			return 'I';
-		case Key_J:
+		case Keyboard_J:
 			return 'J';
-		case Key_K:
+		case Keyboard_K:
 			return 'K';
-		case Key_L:
+		case Keyboard_L:
 			return 'L';
-		case Key_M:
+		case Keyboard_M:
 			return 'M';
-		case Key_N:
+		case Keyboard_N:
 			return 'N';
-		case Key_O:
+		case Keyboard_O:
 			return 'O';
-		case Key_P:
+		case Keyboard_P:
 			return 'P';
-		case Key_Q:
+		case Keyboard_Q:
 			return 'Q';
-		case Key_R:
+		case Keyboard_R:
 			return 'R';
-		case Key_S:
+		case Keyboard_S:
 			return 'S';
-		case Key_T:
+		case Keyboard_T:
 			return 'T';
-		case Key_U:
+		case Keyboard_U:
 			return 'U';
-		case Key_V:
+		case Keyboard_V:
 			return 'V';
-		case Key_W:
+		case Keyboard_W:
 			return 'W';
-		case Key_X:
+		case Keyboard_X:
 			return 'X';
-		case Key_Y:
+		case Keyboard_Y:
 			return 'Y';
-		case Key_Z:
+		case Keyboard_Z:
 			return 'Z';
-		case Key_Numpad0:
+		case Keyboard_Numpad0:
 			return VK_NUMPAD0;
-		case Key_Numpad1:
+		case Keyboard_Numpad1:
 			return VK_NUMPAD1;
-		case Key_Numpad2:
+		case Keyboard_Numpad2:
 			return VK_NUMPAD2;
-		case Key_Numpad3:
+		case Keyboard_Numpad3:
 			return VK_NUMPAD3;
-		case Key_Numpad4:
+		case Keyboard_Numpad4:
 			return VK_NUMPAD4;
-		case Key_Numpad5:
+		case Keyboard_Numpad5:
 			return VK_NUMPAD5;
-		case Key_Numpad6:
+		case Keyboard_Numpad6:
 			return VK_NUMPAD6;
-		case Key_Numpad7:
+		case Keyboard_Numpad7:
 			return VK_NUMPAD7;
-		case Key_Numpad8:
+		case Keyboard_Numpad8:
 			return VK_NUMPAD8;
-		case Key_Numpad9:
+		case Keyboard_Numpad9:
 			return VK_NUMPAD9;
-		case Key_Add:
+		case Keyboard_Add:
 			return VK_ADD;
-		case Key_Subtract:
+		case Keyboard_Subtract:
 			return VK_SUBTRACT;
-		case Key_Multiply:
+		case Keyboard_Multiply:
 			return VK_MULTIPLY;
-		case Key_Divide:
+		case Keyboard_Divide:
 			return VK_DIVIDE;
-		case Key_Separator:
+		case Keyboard_Separator:
 			return VK_SEPARATOR;
-		case Key_Decimal:
+		case Keyboard_Decimal:
 			return VK_DECIMAL;
-		case Key_F1:
+		case Keyboard_F1:
 			return VK_F1;
-		case Key_F2:
+		case Keyboard_F2:
 			return VK_F2;
-		case Key_F3:
+		case Keyboard_F3:
 			return VK_F3;
-		case Key_F4:
+		case Keyboard_F4:
 			return VK_F4;
-		case Key_F5:
+		case Keyboard_F5:
 			return VK_F5;
-		case Key_F6:
+		case Keyboard_F6:
 			return VK_F6;
-		case Key_F7:
+		case Keyboard_F7:
 			return VK_F7;
-		case Key_F8:
+		case Keyboard_F8:
 			return VK_F8;
-		case Key_F9:
+		case Keyboard_F9:
 			return VK_F9;
-		case Key_F10:
+		case Keyboard_F10:
 			return VK_F10;
-		case Key_F11:
+		case Keyboard_F11:
 			return VK_F11;
-		case Key_F12:
+		case Keyboard_F12:
 			return VK_F12;
-		case Key_NumLock:
+		case Keyboard_NumLock:
 			return VK_NUMLOCK;
-		case Key_ScrollLock:
+		case Keyboard_ScrollLock:
 			return VK_SCROLL;
 		default:
-			return KeyNull;
+			return KeyboardNull;
 		}
 #endif
-		return KeyNull;
+		return KeyboardNull;
 	}
 
 	struct GlobalKeyListener
 	{
-		Key key;
+		KeyboardKey key;
+		bool down;
 		bool ctrl;
 		bool shift;
 		bool alt;
-		std::unique_ptr<Closure<void(Capture& c, KeyStateFlags action)>> callback;
+		std::unique_ptr<Closure<void(Capture& c)>> callback;
 	};
 
 	static HHOOK global_key_hook = 0;
@@ -690,21 +691,19 @@ namespace flame
 				continue;
 			if (l->alt && !(GetAsyncKeyState(VK_LMENU) || GetAsyncKeyState(VK_RMENU)))
 				continue;
-			auto action = KeyStateNull;
-			if (wParam == WM_KEYDOWN)
-				action = KeyStateDown;
-			else if (wParam == WM_KEYUP)
-				action = KeyStateUp;
-			l->callback->call(action);
+			if (l->down && wParam == WM_KEYUP)
+				continue;
+			l->callback->call();
 		}
 
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
-	void* add_global_key_listener(Key key, bool ctrl, bool shift, bool alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture)
+	void* add_global_key_listener(KeyboardKey key, void (*callback)(Capture& c), const Capture& capture, bool down, bool ctrl, bool shift, bool alt)
 	{
 		auto l = new GlobalKeyListener;
 		l->key = key;
+		l->down = down;
 		l->ctrl = ctrl;
 		l->shift = shift;
 		l->alt = alt;
@@ -739,63 +738,27 @@ namespace flame
 		}
 	}
 
-	void send_global_key_event(KeyStateFlags action, Key key)
+	void send_global_keyboard_event(KeyboardKey key, bool down)
 	{
-		auto flags = -1;
-		switch (action)
-		{
-		case KeyStateDown:
-			flags = 0;
-			break;
-		case KeyStateUp:
-			flags = KEYEVENTF_KEYUP;
-			break;
-		}
-		if (flags != -1)
-			keybd_event(key_to_vk_code(key), 0, flags, 0);
+		keybd_event(key_to_vk_code(key), 0, down ? 0 : KEYEVENTF_KEYUP, 0);
 	}
 
-	void send_global_mouse_event(KeyStateFlags action, MouseKey key)
+	void send_global_mouse_event(MouseKey key, bool down)
 	{
 		auto flags = -1;
 		switch (key)
 		{
 		case Mouse_Left:
-			switch (action)
-			{
-			case KeyStateDown:
-				flags = MOUSEEVENTF_LEFTDOWN;
-				break;
-			case KeyStateUp:
-				flags = MOUSEEVENTF_LEFTUP;
-				break;
-			}
+			flags = down ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
 			break;
 		case Mouse_Right:
-			switch (action)
-			{
-			case KeyStateDown:
-				flags = MOUSEEVENTF_RIGHTDOWN;
-				break;
-			case KeyStateUp:
-				flags = MOUSEEVENTF_RIGHTUP;
-				break;
-			}
+			flags = down ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
 			break;
 		case Mouse_Middle:
-			switch (action)
-			{
-			case KeyStateDown:
-				flags = MOUSEEVENTF_MIDDLEDOWN;
-				break;
-			case KeyStateUp:
-				flags = MOUSEEVENTF_MIDDLEUP;
-				break;
-			}
+			flags = down ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
 			break;
 		}
-		if (flags != -1)
-			mouse_event(flags, 0, 0, 0, NULL);
+		mouse_event(flags, 0, 0, 0, NULL);
 	}
 
 	void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
@@ -1217,7 +1180,7 @@ namespace flame
 		pending_size = size;
 
 		set_cursor(CursorArrow);
-		_looper->windows.emplace_back(this);
+		_looper.windows.emplace_back(this);
 	}
 #elif FLAME_ANDROID
 	WindowPrivate::WindowPrivate(android_app* android_state) :
@@ -1249,8 +1212,8 @@ namespace flame
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
 			{
-				for (auto& l : key_listeners)
-					l->call(KeyStateDown, v);
+				for (auto& l : key_down_listeners)
+					l->call(v);
 			}
 		}
 			break;
@@ -1259,71 +1222,71 @@ namespace flame
 			auto v = vk_code_to_key(wParam);
 			if (v > 0)
 			{
-				for (auto& l : key_listeners)
-					l->call(KeyStateUp, v);
+				for (auto& l : key_up_listeners)
+					l->call(v);
 			}
 		}
 			break;
 		case WM_CHAR:
-			for (auto& l : key_listeners)
-				l->call(KeyStateNull, (Key)wParam);
+			for (auto& l : char_listeners)
+				l->call(wParam);
 			break;
 		case WM_LBUTTONDOWN:
 		{
 			SetCapture(hWnd);
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateDown, Mouse_Left, pos);
+			for (auto& l : mouse_left_down_listeners)
+				l->call(pos);
 		}
 			break;
 		case WM_LBUTTONUP:
 		{
 			ReleaseCapture();
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateUp, Mouse_Left, pos);
-		}
-			break;
-		case WM_MBUTTONDOWN:
-		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateDown, Mouse_Middle, pos);
-		}
-			break;
-		case WM_MBUTTONUP:
-		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateUp, Mouse_Middle, pos);
+			for (auto& l : mouse_left_up_listeners)
+				l->call(pos);
 		}
 			break;
 		case WM_RBUTTONDOWN:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateDown, Mouse_Right, pos);
+			for (auto& l : mouse_right_down_listeners)
+				l->call(pos);
 		}
 			break;
 		case WM_RBUTTONUP:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateUp, Mouse_Right, pos);
+			for (auto& l : mouse_right_up_listeners)
+				l->call(pos);
+		}
+			break;
+		case WM_MBUTTONDOWN:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_middle_down_listeners)
+				l->call(pos);
+		}
+			break;
+		case WM_MBUTTONUP:
+		{
+			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			for (auto& l : mouse_middle_up_listeners)
+				l->call(pos);
 		}
 			break;
 		case WM_MOUSEMOVE:
 		{
 			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateNull, Mouse_Null, pos);
+			for (auto& l : mouse_move_listeners)
+				l->call(pos);
 		}
 			break;
 		case WM_MOUSEWHEEL:
 		{
-			auto v = Vec2i((int)HIWORD(wParam) > 0 ? 1 : -1, 0);
-			for (auto& l : mouse_listeners)
-				l->call(KeyStateNull, Mouse_Middle, v);
+			auto v = (int)HIWORD(wParam) > 0 ? 1 : -1;
+			for (auto& l : mouse_scroll_listeners)
+				l->call(v);
 		}
 			break;
 		case WM_DESTROY:
@@ -1340,7 +1303,7 @@ namespace flame
 		case WM_TIMER:
 			if (wParam == 0)
 				resize();
-			_looper->one_frame();
+			_looper.one_frame();
 			break;
 		case WM_SIZE:
 			pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
@@ -1399,30 +1362,156 @@ namespace flame
 		dead = true;
 	}
 
-	void* WindowPrivate::add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture)
+	void* WindowPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		key_listeners.emplace_back(c);
+		key_down_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_key_listener(void* lis)
+	void WindowPrivate::remove_key_down_listener(void* lis)
 	{
-		std::erase_if(key_listeners, [&](const auto& i) {
+		std::erase_if(key_down_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
 
-	void* WindowPrivate::add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		mouse_listeners.emplace_back(c);
+		key_up_listeners.emplace_back(c);
 		return c;
 	}
 
-	void WindowPrivate::remove_mouse_listener(void* lis)
+	void WindowPrivate::remove_key_up_listener(void* lis)
 	{
-		std::erase_if(mouse_listeners, [&](const auto& i) {
+		std::erase_if(key_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		char_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_char_listener(void* lis)
+	{
+		std::erase_if(char_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_left_down_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_left_down_listener(void* lis)
+	{
+		std::erase_if(mouse_left_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_left_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_left_up_listener(void* lis)
+	{
+		std::erase_if(mouse_left_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_right_down_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_right_down_listener(void* lis)
+	{
+		std::erase_if(mouse_right_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_right_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_right_up_listener(void* lis)
+	{
+		std::erase_if(mouse_right_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_middle_down_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_middle_down_listener(void* lis)
+	{
+		std::erase_if(mouse_middle_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_middle_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_middle_up_listener(void* lis)
+	{
+		std::erase_if(mouse_middle_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_move_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_move_listener(void* lis)
+	{
+		std::erase_if(mouse_move_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* WindowPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_scroll_listeners.emplace_back(c);
+		return c;
+	}
+
+	void WindowPrivate::remove_mouse_scroll_listener(void* lis)
+	{
+		std::erase_if(mouse_scroll_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
@@ -1694,9 +1783,9 @@ namespace flame
 		}
 	}
 
-	LooperPrivate* _looper = new LooperPrivate;
+	LooperPrivate _looper;
 
-	Looper* get_looper()
+	Looper& looper()
 	{
 		return _looper;
 	}
@@ -1706,9 +1795,9 @@ namespace flame
 		rest = duration;
 		callback(capture, -1.f, duration);
 		auto e = this;
-		_looper->add_event([](Capture& c) {
+		_looper.add_event([](Capture& c) {
 			auto e = c.data<Event*>();
-			e->rest -= _looper->delta_time;
+			e->rest -= _looper.delta_time;
 			auto end = e->rest <= 0.f;
 			e->callback(e->capture, e->duration - max(e->rest, 0.f), e->duration);
 			if (!end)
@@ -1738,7 +1827,7 @@ namespace flame
 	{
 		if (delay > 0.f)
 		{
-			_looper->add_event([](Capture& c) {
+			_looper.add_event([](Capture& c) {
 				c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
 			}, Capture().set_data(&s).set_thiz(this), delay);
 		}
@@ -1753,7 +1842,7 @@ namespace flame
 		{
 			if (e->delay > 0.f)
 			{
-				_looper->add_event([](Capture& c) {
+				_looper.add_event([](Capture& c) {
 					c.thiz<Event>()->add_to_looper(c.data<SchedulePrivate*>());
 				}, Capture().set_data(&s).set_thiz(e.get()), e->delay);
 			}

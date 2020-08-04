@@ -167,7 +167,7 @@ int main(int argc, char** args)
 	//}, Capture().set_thiz(root), false, false);
 
 	//w->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
-	//	if (is_key_down(action) && value == Key_Right)
+	//	if (is_key_down(action) && value == Keyboard_Right)
 	//	{
 	//		auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
 	//		e->set_x(e->get_x() + 1);
@@ -178,9 +178,9 @@ int main(int argc, char** args)
 		printf("%d\n", fps);
 	}, Capture());
 
-	get_looper()->loop([](Capture&, float) {
+	looper().loop([](Capture&, float) {
 		{
-			auto t = (0.02 - get_looper()->get_delta_time());
+			auto t = (0.02 - looper().get_delta_time());
 			if (t > 0.f)
 				std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
 		}

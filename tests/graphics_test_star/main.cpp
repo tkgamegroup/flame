@@ -135,7 +135,7 @@ int main(int argc, char** args)
 
 	app.setup();
 
-	get_looper()->loop([](Capture&, float delta_time) {
+	looper().loop([](Capture&, float delta_time) {
 		app.run(delta_time);
 	}, Capture());
 

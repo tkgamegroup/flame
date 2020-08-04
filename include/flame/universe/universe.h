@@ -29,13 +29,6 @@ namespace flame
 		MessageLayoutDirty
 	};
 
-	enum FocusMethod
-	{
-		FocusByLeftButton,
-		FocusByRightButton,
-		FocusByLeftOrRightButton
-	};
-
 	enum Align
 	{
 		AlignNone,

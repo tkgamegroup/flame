@@ -122,7 +122,7 @@ void cInspector::refresh()
 			ui.push_style(ButtonColorHovering, common(ui.style(FrameColorHovering).c));
 			ui.push_style(ButtonColorActive, common(ui.style(FrameColorActive).c));
 			ui.e_button(L"X", [](Capture& c) {
-				get_looper()->add_event([](Capture& c) {
+				looper().add_event([](Capture& c) {
 					auto component = c.thiz<Component>();
 					scene_editor.inspector->refresh();
 					component->entity->remove_component(component);
@@ -800,7 +800,7 @@ void cInspector::refresh()
 			for (auto udt : all_udts)
 			{
 				ui.e_menu_item(s2w(udt->name.v + prefix.l).c_str(), [](Capture& c) {
-					get_looper()->add_event([](Capture& c) {
+					looper().add_event([](Capture& c) {
 						auto u = c.thiz<UdtInfo>();
 
 						auto dummy = malloc(u->size);

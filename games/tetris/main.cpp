@@ -209,7 +209,7 @@ MainForm::MainForm() :
 		auto e = ui.e_text(L"");
 		e->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 			if (e == EntityDestroyed)
-				get_looper()->remove_event(c.thiz<void>());
+				looper().remove_event(c.thiz<void>());
 			return true;
 		}, Capture().set_thiz(add_fps_listener([](Capture& c, uint fps) {
 			c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
@@ -345,7 +345,7 @@ void MyApp::create_home_scene()
 	ui.pop_style(FontSize);
 	ui.push_style(FontSize, common(Vec1u(20)));
 	ui.e_button(L"Marathon", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.game_mode = GameSingleMarathon;
 			app.create_game_scene();
@@ -354,7 +354,7 @@ void MyApp::create_home_scene()
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"RTA", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.game_mode = GameSingleRTA;
 			app.create_game_scene();
@@ -363,7 +363,7 @@ void MyApp::create_home_scene()
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Practice", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.game_mode = GameSinglePractice;
 			app.create_game_scene();
@@ -372,14 +372,14 @@ void MyApp::create_home_scene()
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"LAN", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_lan_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Config", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_config_scene();
 		}, Capture());
@@ -566,7 +566,7 @@ void MyApp::create_player_controls(int player_index)
 
 void MyApp::process_player_entered(int index)
 {
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto& ui = main_window->ui;
 		auto index = c.data<int>();
 		auto& p = app.players[index];
@@ -581,7 +581,7 @@ void MyApp::process_player_entered(int index)
 
 void MyApp::process_player_disconnected(int index)
 {
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto index = c.data<int>();
 		auto& p = app.players[index];
 		p.disconnected = true;
@@ -591,7 +591,7 @@ void MyApp::process_player_disconnected(int index)
 
 void MyApp::process_player_left(int index)
 {
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto index = c.data<int>();
 		auto& p = app.players[index];
 		p.reset();
@@ -601,7 +601,7 @@ void MyApp::process_player_left(int index)
 
 void MyApp::process_player_ready(int index)
 {
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto& p = app.players[c.data<int>()];
 		p.ready = true;
 		p.c_ready->entity->set_visible(true);
@@ -610,7 +610,7 @@ void MyApp::process_player_ready(int index)
 
 void MyApp::process_game_start()
 {
-	get_looper()->add_event([](Capture&) {
+	looper().add_event([](Capture&) {
 		app.room_gaming = true;
 		app.start_game();
 	}, Capture());
@@ -625,7 +625,7 @@ void MyApp::process_report_board(int index, const std::string& d)
 	}capture;
 	capture.b = app.players[index].c_main;
 	memcpy(capture.d, d.data(), d.size());
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto& capture = c.data<Capturing>();
 		for (auto y = 0; y < board_height; y++)
 		{
@@ -640,7 +640,7 @@ void MyApp::process_report_board(int index, const std::string& d)
 
 void MyApp::process_attack(int index, int value)
 {
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto n = c.data<int>();
 		Garbage g;
 		g.time = 60;
@@ -659,7 +659,7 @@ void MyApp::process_dead(int index, int rank)
 	}capture;
 	capture.index = index;
 	capture.rank = rank;
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto& capture = c.data<Capturing>();
 		auto& p = app.players[capture.index];
 		std::wstring str;
@@ -684,7 +684,7 @@ void MyApp::process_dead(int index, int rank)
 
 void MyApp::process_gameover()
 {
-	get_looper()->add_event([](Capture&) {
+	looper().add_event([](Capture&) {
 		app.room_gaming = false;
 		app.gaming = false;
 		app.e_start_or_ready->set_visible(true);
@@ -709,7 +709,7 @@ void MyApp::join_room(const char* ip)
 			auto& me = app.players[app.my_room_index];
 			me.id = (void*)0xffff;
 			me.name = app.my_name;
-			get_looper()->add_event([](Capture&) {
+			looper().add_event([](Capture&) {
 				main_window->root->remove_children(1, -1);
 				app.game_mode = GameVS;
 				app.create_game_scene();
@@ -746,12 +746,12 @@ void MyApp::join_room(const char* ip)
 		}
 	},
 	[](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			auto& ui = main_window->ui;
 			ui.e_message_dialog(L"Host Has Disconnected")->event_listeners.add([](Capture&, EntityEvent e, void*) {
 				if (e == EntityDestroyed)
 				{
-					get_looper()->add_event([](Capture&) {
+					looper().add_event([](Capture&) {
 						app.quit_game();
 					}, Capture());
 				}
@@ -878,7 +878,7 @@ void MyApp::create_lan_scene()
 	ui.c_aligner(AlignMinMax, 0);
 	ui.e_button(Icon_REFRESH, [](Capture& c) {
 		auto e_room_list = c.thiz<Entity>();
-		get_looper()->add_event([](Capture& c) {
+		looper().add_event([](Capture& c) {
 			auto e_room_list = c.thiz<Entity>();
 			e_room_list->remove_children(0, -1);
 			nlohmann::json req;
@@ -1114,7 +1114,7 @@ void MyApp::create_lan_scene()
 						}
 					}, Capture());
 					app.room_gaming = false;
-					get_looper()->add_event([](Capture&) {
+					looper().add_event([](Capture&) {
 						main_window->root->remove_children(1, -1);
 						app.game_mode = GameVS;
 						app.create_game_scene();
@@ -1155,7 +1155,7 @@ void MyApp::create_lan_scene()
 		}
 	}, Capture());
 	ui.e_button(L"Back", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_home_scene();
 		}, Capture());
@@ -1175,28 +1175,28 @@ void MyApp::create_config_scene()
 	ui.c_aligner(AlignMiddle, AlignMiddle);
 	ui.push_style(FontSize, common(Vec1u(20)));
 	ui.e_button(L"Key", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_key_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Sound", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_sound_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Sensitiveness", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_sensitiveness_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Back", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_home_scene();
 		}, Capture());
@@ -1241,7 +1241,7 @@ void MyApp::create_key_scene()
 		ui.e_end_layout();
 	}
 	ui.e_button(L"Back", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_config_scene();
 		}, Capture());
@@ -1288,7 +1288,7 @@ void MyApp::create_sound_scene()
 	ui.e_button(L"+", change_fx_volumn, Capture().set_data(&capture));
 	ui.e_end_layout();
 	ui.e_button(L"Back", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_config_scene();
 		}, Capture());
@@ -1364,7 +1364,7 @@ void MyApp::create_sensitiveness_scene()
 	ui.e_button(L"+", change_sd_sp, Capture().set_data(&capture));
 	ui.e_end_layout();
 	ui.e_button(L"Back", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
 			app.create_config_scene();
 		}, Capture());
@@ -1393,12 +1393,12 @@ void MyApp::create_game_scene()
 
 	ui.e_empty();
 	{
-		auto ev = get_looper()->add_event([](Capture& c) {
+		auto ev = looper().add_event([](Capture& c) {
 			c._current = INVALID_POINTER;
 		}, Capture());
 		ui.current_entity->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 			if (e == EntityRemoved)
-				get_looper()->remove_event(c.data<void*>());
+				looper().remove_event(c.data<void*>());
 			return true;
 		}, Capture().set_data(&ev));
 	}
@@ -1509,7 +1509,7 @@ void MyApp::create_game_scene()
 		ui.e_confirm_dialog(L"Quit?", [](Capture&, bool yes) {
 			if (yes)
 			{
-				get_looper()->add_event([](Capture&) {
+				looper().add_event([](Capture&) {
 					app.quit_game();
 				}, Capture());
 			}
@@ -1527,8 +1527,8 @@ void MyApp::begin_count_down()
 	e_count_down->set_visible(true);
 	e_count_down->get_component(cText)->set_text(L"3");
 	auto t = 3;
-	get_looper()->remove_all_events(FLAME_CHASH("count_down"));
-	get_looper()->add_event([](Capture& c) {
+	looper().remove_all_events(FLAME_CHASH("count_down"));
+	looper().add_event([](Capture& c) {
 		auto& t = c.data<int>();
 		t--;
 
@@ -1732,7 +1732,7 @@ void MyApp::quit_game()
 		client = nullptr;
 	}
 
-	get_looper()->add_event([](Capture&) {
+	looper().add_event([](Capture&) {
 		main_window->root->remove_children(1, -1);
 		app.create_home_scene();
 	}, Capture());
@@ -1788,7 +1788,7 @@ void MyApp::do_game_logic()
 	{
 		main_window->s_2d_renderer->pending_update = true;
 
-		play_time += get_looper()->delta_time;
+		play_time += looper().delta_time;
 
 		auto& p = players[my_room_index];
 		auto& c_main = p.c_main;
@@ -2088,7 +2088,7 @@ void MyApp::do_game_logic()
 										}capture;
 										capture.e = element;
 										capture.f = 5;
-										get_looper()->add_event([](Capture& c) {
+										looper().add_event([](Capture& c) {
 											auto& capture = c.data<Capturing>();
 											capture.f--;
 											if (capture.f > 0)
@@ -2172,8 +2172,8 @@ void MyApp::do_game_logic()
 								{
 									c_text_special->entity->set_visible(true);
 									c_text_special->set_text(special_str.c_str());
-									get_looper()->remove_all_events(FLAME_CHASH("special_text"));
-									get_looper()->add_event([](Capture&) {
+									looper().remove_all_events(FLAME_CHASH("special_text"));
+									looper().add_event([](Capture&) {
 										app.c_text_special->entity->set_visible(false);
 									}, Capture(), 1.f, FLAME_CHASH("special_text"));
 								}
@@ -2382,7 +2382,7 @@ int main(int argc, char **args)
 
 	new MainForm();
 
-	get_looper()->loop([](Capture&) {
+	looper().loop([](Capture&) {
 		app.run();
 	}, Capture());
 

@@ -32,7 +32,7 @@ int main(int argc, char **args)
 		{
 			auto ch = t[0];
 			if (ch >= 'a' && ch <= 'z')
-				key = Key(Key_A + ch - 'a');
+				key = Key(Keyboard_A + ch - 'a');
 		}
 	}
 
@@ -52,7 +52,7 @@ int main(int argc, char **args)
 		}
 	}, Capture().set_data(&capture));
 
-	get_looper()->loop();
+	looper().loop();
 
 	return 0;
 }

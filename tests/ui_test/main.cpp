@@ -33,7 +33,7 @@ void MyApp::create_widgets()
 //		ui.e_begin_menu_bar();
 //			ui.e_begin_menubar_menu(L"Style");
 //				ui.e_menu_item(L"Dark", [](Capture& c) {
-//					get_looper()->add_event([](Capture& c) {
+//					looper().add_event([](Capture& c) {
 //						auto& ui = main_window->ui;
 //						main_window->root->remove_children(0, -1);
 //						ui.style_set_to_dark();
@@ -42,7 +42,7 @@ void MyApp::create_widgets()
 //					}, Capture());
 //				}, Capture());
 //				ui.e_menu_item(L"Light", [](Capture& c) {
-//					get_looper()->add_event([](Capture& c) {
+//					looper().add_event([](Capture& c) {
 //						auto& ui = main_window->ui;
 //						main_window->root->remove_children(0, -1);
 //						ui.style_set_to_light();

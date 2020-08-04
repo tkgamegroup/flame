@@ -11,7 +11,7 @@ namespace flame
 	{
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 
-		void* mouse_listener = nullptr;
+		void* click_listener = nullptr;
 
 		bool checked = false;
 

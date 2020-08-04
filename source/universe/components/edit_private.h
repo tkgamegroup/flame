@@ -22,9 +22,11 @@ namespace flame
 		cTextPrivate* text = nullptr; // R ref
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 
-		void* key_listener = nullptr;
-		void* mouse_listener = nullptr;
-		void* focus_listener = nullptr;
+		void* key_down_listener = nullptr;
+		void* char_listener = nullptr;
+		void* mouse_down_listener = nullptr;
+		void* mouse_move_listener = nullptr;
+		void* mouse_dbclick_listener = nullptr;
 		void* flash_event = nullptr;
 
 		bool show_cursor = false;
@@ -32,6 +34,7 @@ namespace flame
 
 		float scroll = 0.f;
 
+		void mark_changed();
 		void flash_cursor(int mode);
 		int locate_cursor(const Vec2f& mpos);
 		

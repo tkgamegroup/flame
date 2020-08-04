@@ -281,11 +281,11 @@ namespace flame
 
 	void App::run()
 	{
-		get_looper()->loop([](Capture& c, float) {
+		looper().loop([](Capture& c, float) {
 			auto thiz = c.thiz<App>();
 
 			{
-				auto t = (0.02 - get_looper()->get_delta_time());
+				auto t = (0.02 - looper().get_delta_time());
 				if (t > 0.f)
 					std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
 			}

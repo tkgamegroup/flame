@@ -10,12 +10,23 @@ namespace flame
 	struct sEventDispatcherPrivate : sEventDispatcher
 	{
 		Window* window = nullptr;
-		void* key_listener = nullptr;
-		void* mouse_listener = nullptr;
+		void* key_down_listener = nullptr;
+		void* key_up_listener = nullptr;
+		void* char_listener = nullptr;
+		void* mouse_left_down_listener = nullptr;
+		void* mouse_left_up_listener = nullptr;
+		void* mouse_right_down_listener = nullptr;
+		void* mouse_right_up_listener = nullptr;
+		void* mouse_middle_down_listener = nullptr;
+		void* mouse_middle_up_listener = nullptr;
+		void* mouse_move_listener = nullptr;
+		void* mouse_scroll_listener = nullptr;
 		void* destroy_listener = nullptr;
 
-		KeyStateFlags kbtns[Key_Count], kbtns_temp[Key_Count];
-		KeyStateFlags mbtns[3], mbtns_temp[3];
+		std::pair<bool, bool> kbtns[KeyboardKeyCount];
+		std::pair<bool, bool> kbtns_temp[KeyboardKeyCount];
+		std::pair<bool, bool> mbtns[MouseKeyCount];
+		std::pair<bool, bool> mbtns_temp[MouseKeyCount];
 		Vec2i mpos = Vec2i(-1);
 		Vec2i mdisp, mdisp_temp = Vec2i(0);
 		int mscrl, mscrl_temp = 0;
@@ -26,13 +37,13 @@ namespace flame
 		cEventReceiverPrivate* focusing = nullptr;
 		cEventReceiverPrivate* active = nullptr;
 		cEventReceiverPrivate* dragging = nullptr;
-		cEventReceiverPrivate* key_target = nullptr;
+		cEventReceiverPrivate* keyboard_target = nullptr;
 		cEventReceiverPrivate* drag_overing = nullptr;
 
 		cEventReceiverPrivate* next_focusing = (cEventReceiverPrivate*)INVALID_POINTER;
 
-		std::vector<Key> keydown_inputs;
-		std::vector<Key> keyup_inputs;
+		std::vector<KeyboardKey> key_down_inputs;
+		std::vector<KeyboardKey> key_up_inputs;
 		std::vector<wchar_t> char_inputs;
 		bool char_input_compelete = true;
 		float dbclick_timer = -1.f;

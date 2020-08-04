@@ -318,7 +318,7 @@ namespace flame
 		if (!selected)
 			return;
 		expand(selected->parent, entity);
-		get_looper()->add_event([](Capture& c) {
+		looper().add_event([](Capture& c) {
 			auto thiz = c.thiz<cTreePrivate>();
 			auto selected = thiz->selected;
 			if (!selected)

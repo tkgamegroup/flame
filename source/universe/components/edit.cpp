@@ -8,6 +8,14 @@
 
 namespace flame
 {
+	void cEditPrivate::mark_changed()
+	{
+		if (trigger_changed_on_lost_focus)
+			changed = true;
+		else
+			text->mark_text_changed();
+	}
+
 	void cEditPrivate::flash_cursor(int mode)
 	{
 		if (element)
@@ -17,7 +25,7 @@ namespace flame
 		else if (mode == 2)
 		{
 			if (flash_event)
-				get_looper()->reset_event(flash_event);
+				looper().reset_event(flash_event);
 			show_cursor = true;
 		}
 		else
@@ -82,7 +90,7 @@ namespace flame
 
 	void cEditPrivate::on_gain_event_receiver()
 	{
-		key_listener = event_receiver->add_key_listener([](Capture& c, KeyStateFlags action, uint value) {
+		key_down_listener = event_receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
 			auto thiz = c.thiz<cEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
@@ -112,221 +120,221 @@ namespace flame
 				}
 				return (int)str.size();
 			};
-			auto on_changed = [&]() {
-				if (thiz->trigger_changed_on_lost_focus)
-					thiz->changed = true;
+
+			switch (key)
+			{
+			case Keyboard_Enter:
+				//if (thiz->enter_to_throw_focus)
+				//	throw_focus();
+				break;
+			case Keyboard_Left:
+				if (ed->kbtns[Keyboard_Shift].first)
+				{
+					if (select_end > 0)
+						select_end--;
+				}
 				else
-					thiz->text->mark_text_changed();
-			};
+				{
+					if (low > 0)
+						low--;
+					select_start = select_end = low;
+				}
+				break;
+			case Keyboard_Right:
+				if (ed->kbtns[Keyboard_Shift].first)
+				{
+					if (select_end < str.size())
+						select_end++;
+				}
+				else
+				{
+					if (high < str.size())
+						high++;
+					select_start = select_end = high;
+				}
+				break;
+			case Keyboard_Up:
+			{
+				if (ed->kbtns[Keyboard_Shift].first)
+				{
+					auto end_s = line_start(select_end);
+					auto up_s = line_start(end_s - 1);
+					if (end_s != up_s)
+						select_end = up_s + min((int)select_end - end_s, max(0, end_s - up_s - 1));
+				}
+				else
+				{
+					auto end_s = line_start(select_end);
+					auto low_s = low == select_end ? end_s : line_start(low);
+					auto up_s = line_start(low_s - 1);
+					if (low_s != up_s)
+						select_end = select_start = up_s + min((int)select_end - end_s, max(0, low_s - up_s - 1));
+					else
+						select_start = select_end;
+				}
+			}
+				break;
+			case Keyboard_Down:
+			{
+				if (ed->kbtns[Keyboard_Shift].first)
+				{
+					auto end_s = line_start(select_end);
+					auto end_e = line_end(select_end);
+					auto down_l = line_end(end_e + 1) - end_e - 1;
+					if (down_l >= 0)
+						select_end = end_e + 1 + min(down_l, (int)select_end - end_s);
+				}
+				else
+				{
+					auto end_s = line_start(select_end);
+					auto high_e = line_end(high);
+					auto down_l = line_end(high_e + 1) - high_e - 1;
+					if (down_l >= 0)
+						select_end = select_start = high_e + 1 + min(down_l, (int)select_end - end_s);
+					else
+						select_start = select_end;
+				}
+			}
+				break;
+			case Keyboard_Home:
+				select_end = (ed->kbtns[Keyboard_Ctrl].first) ? 0 : line_start(select_end);
+				if (!(ed->kbtns[Keyboard_Shift].first))
+					select_start = select_end;
+				break;
+			case Keyboard_End:
+				select_end = (ed->kbtns[Keyboard_Ctrl].first) ? str.size() : line_end(select_end);
+				if (!(ed->kbtns[Keyboard_Shift].first))
+					select_start = select_end;
+				break;
+			case Keyboard_Del:
+				if (low == high)
+				{
+					if (low < str.size())
+					{
+						str.erase(str.begin() + low);
+						thiz->mark_changed();
+					}
+				}
+				else
+				{
+					str = str.substr(0, low) + str.substr(high);
+					thiz->mark_changed();
+					select_start = select_end = low;
+				}
+				break;
+			}
+
+			thiz->flash_cursor(2);
+		}, Capture().set_thiz(this));
+		char_listener = event_receiver->add_char_listener([](Capture& c, wchar_t ch) {
+			auto thiz = c.thiz<cEditPrivate>();
+			auto& str = thiz->text->text;
+			auto& select_start = thiz->select_start;
+			auto& select_end = thiz->select_end;
+			auto low = min(select_start, select_end);
+			auto high = max(select_start, select_end);
+
 			//auto throw_focus = [&]() {
 			//	auto dp = thiz->event_receiver->dispatcher;
 			//	dp->next_focusing = dp->world_->root->get_component(cEventReceiver);
 			//};
 
-			if (action == KeyStateNull)
+			switch (ch)
 			{
-				switch (value)
+			case 24: // Ctrl+X
+			case 3: // Ctrl+C
+				if (low == high)
+					break;
+				set_clipboard(str.substr(low, high - low).c_str());
+				if (ch == 3)
+					break;
+			case L'\b':
+				if (low == high)
 				{
-				case 24: // Ctrl+X
-				case 3: // Ctrl+C
-					if (low == high)
-						break;
-					set_clipboard(str.substr(low, high - low).c_str());
-					if (value == 3)
-						break;
-				case L'\b':
-					if (low == high)
+					if (low > 0)
 					{
-						if (low > 0)
-						{
-							low--;
-							str.erase(str.begin() + low);
-							on_changed();
-							select_start = select_end = low;
-						}
-					}
-					else
-					{
-						str = str.substr(0, low) + str.substr(high);
-						on_changed();
+						low--;
+						str.erase(str.begin() + low);
+						thiz->mark_changed();
 						select_start = select_end = low;
 					}
-					break;
-				case 22: // Ctrl+V
+				}
+				else
 				{
-					std::wstring cb;
-					get_clipboard(&cb);
-					cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
-					if (!cb.empty())
-					{
-						str = str.substr(0, low) + cb + str.substr(high);
-						on_changed();
-						select_start = select_end = high + cb.size() - (high - low);
-					}
+					str = str.substr(0, low) + str.substr(high);
+					thiz->mark_changed();
+					select_start = select_end = low;
 				}
 				break;
-				case 27:
-					break;
-				case '\r':
-					break;
-				case '\n':
-					//if (thiz->enter_to_throw_focus)
-					//{
-					//	throw_focus();
-					//	break;
-					//}
-					value = '\n';
-				default:
-					str = str.substr(0, low) + std::wstring(1, value) + str.substr(high);
-					on_changed();
-					select_start = select_end = high + 1 - (high - low);
+			case 22: // Ctrl+V
+			{
+				std::wstring cb;
+				get_clipboard(&cb);
+				cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
+				if (!cb.empty())
+				{
+					str = str.substr(0, low) + cb + str.substr(high);
+					thiz->mark_changed();
+					select_start = select_end = high + cb.size() - (high - low);
 				}
 			}
-			else if (action == KeyStateDown)
-			{
-				switch (value)
-				{
-				case Key_Enter:
-					//if (thiz->enter_to_throw_focus)
-					//	throw_focus();
-					break;
-				case Key_Left:
-					if (ed->kbtns[Key_Shift] & KeyStateDown)
-					{
-						if (select_end > 0)
-							select_end--;
-					}
-					else
-					{
-						if (low > 0)
-							low--;
-						select_start = select_end = low;
-					}
-					break;
-				case Key_Right:
-					if (ed->kbtns[Key_Shift] & KeyStateDown)
-					{
-						if (select_end < str.size())
-							select_end++;
-					}
-					else
-					{
-						if (high < str.size())
-							high++;
-						select_start = select_end = high;
-					}
-					break;
-				case Key_Up:
-				{
-					if (ed->kbtns[Key_Shift] & KeyStateDown)
-					{
-						auto end_s = line_start(select_end);
-						auto up_s = line_start(end_s - 1);
-						if (end_s != up_s)
-							select_end = up_s + min((int)select_end - end_s, max(0, end_s - up_s - 1));
-					}
-					else
-					{
-						auto end_s = line_start(select_end);
-						auto low_s = low == select_end ? end_s : line_start(low);
-						auto up_s = line_start(low_s - 1);
-						if (low_s != up_s)
-							select_end = select_start = up_s + min((int)select_end - end_s, max(0, low_s - up_s - 1));
-						else
-							select_start = select_end;
-					}
-				}
 				break;
-				case Key_Down:
-				{
-					if (ed->kbtns[Key_Shift] & KeyStateDown)
-					{
-						auto end_s = line_start(select_end);
-						auto end_e = line_end(select_end);
-						auto down_l = line_end(end_e + 1) - end_e - 1;
-						if (down_l >= 0)
-							select_end = end_e + 1 + min(down_l, (int)select_end - end_s);
-					}
-					else
-					{
-						auto end_s = line_start(select_end);
-						auto high_e = line_end(high);
-						auto down_l = line_end(high_e + 1) - high_e - 1;
-						if (down_l >= 0)
-							select_end = select_start = high_e + 1 + min(down_l, (int)select_end - end_s);
-						else
-							select_start = select_end;
-					}
-				}
+			case 27:
 				break;
-				case Key_Home:
-					select_end = (ed->kbtns[Key_Ctrl] & KeyStateDown) ? 0 : line_start(select_end);
-					if (!(ed->kbtns[Key_Shift] & KeyStateDown))
-						select_start = select_end;
-					break;
-				case Key_End:
-					select_end = (ed->kbtns[Key_Ctrl] & KeyStateDown) ? str.size() : line_end(select_end);
-					if (!(ed->kbtns[Key_Shift] & KeyStateDown))
-						select_start = select_end;
-					break;
-				case Key_Del:
-					if (low == high)
-					{
-						if (low < str.size())
-						{
-							str.erase(str.begin() + low);
-							on_changed();
-						}
-					}
-					else
-					{
-						str = str.substr(0, low) + str.substr(high);
-						on_changed();
-						select_start = select_end = low;
-					}
-					break;
-				}
+			case '\r':
+				break;
+			case '\n':
+				//if (thiz->enter_to_throw_focus)
+				//{
+				//	throw_focus();
+				//	break;
+				//}
+				ch = '\n';
+			default:
+				str = str.substr(0, low) + std::wstring(1, ch) + str.substr(high);
+				thiz->mark_changed();
+				select_start = select_end = high + 1 - (high - low);
 			}
 
 			thiz->flash_cursor(2);
-
-			return true;
 		}, Capture().set_thiz(this));
 
-		mouse_listener = event_receiver->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 			auto thiz = c.thiz<cEditPrivate>();
-			if (action == (KeyStateDown | KeyStateJust) && key == Mouse_Left)
+			thiz->select_start = thiz->select_end = thiz->locate_cursor((Vec2f)pos);
+			thiz->flash_cursor(2);
+		}, Capture().set_thiz(this));
+		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+			auto thiz = c.thiz<cEditPrivate>();
+			if (thiz->event_receiver->dispatcher->active == thiz->event_receiver)
 			{
-				thiz->select_start = thiz->select_end = thiz->locate_cursor((Vec2f)pos);
+				thiz->select_end = thiz->locate_cursor((Vec2f)pos);
 				thiz->flash_cursor(2);
 			}
-			else if (is_mouse_move(action, key) && thiz->event_receiver->dispatcher->active == thiz->event_receiver)
-			{
-				thiz->select_end = thiz->locate_cursor((Vec2f)thiz->event_receiver->dispatcher->mpos);
-				thiz->flash_cursor(2);
-			}
-			//else if (is_mouse_clicked(action, key) && (action & KeyStateDouble) && thiz->select_all_on_dbclicked)
-			//{
+		}, Capture().set_thiz(this));
+		mouse_dbclick_listener = event_receiver->add_mouse_dbclick_listener([](Capture& c) {
+			auto thiz = c.thiz<cEditPrivate>();
 			//	thiz->select_start = 0;
 			//	thiz->select_end = thiz->text->text.size();
 			//	if (thiz->element)
 			//		thiz->element->on_entity_message(MessageElementDrawingDirty);
-			//}
-			return true;
 		}, Capture().set_thiz(this));
 	}
 
 	void cEditPrivate::on_lost_event_receiver()
 	{
-		event_receiver->remove_key_listener(key_listener);
-		event_receiver->remove_mouse_listener(mouse_listener);
+		event_receiver->remove_key_down_listener(key_down_listener);
+		event_receiver->remove_char_listener(char_listener);
+		event_receiver->remove_mouse_left_down_listener(mouse_down_listener);
+		event_receiver->remove_mouse_move_listener(mouse_move_listener);
+		event_receiver->remove_mouse_dbclick_listener(mouse_dbclick_listener);
 	}
 
 	void cEditPrivate::on_entity_left_world()
 	{
 		if (flash_event)
 		{
-			get_looper()->remove_event(flash_event);
+			looper().remove_event(flash_event);
 			flash_event = nullptr;
 		}
 	}
@@ -335,7 +343,7 @@ namespace flame
 	{
 		if (flash_event && !((EntityPrivate*)entity)->global_visibility)
 		{
-			get_looper()->remove_event(flash_event);
+			looper().remove_event(flash_event);
 			flash_event = nullptr;
 		}
 	}
@@ -348,7 +356,7 @@ namespace flame
 		{
 			if (!flash_event)
 			{
-				flash_event = get_looper()->add_event([](Capture& c) {
+				flash_event = looper().add_event([](Capture& c) {
 					c.thiz<cEditPrivate>()->flash_cursor(0);
 					c._current = INVALID_POINTER;
 				}, Capture().set_thiz(this), 0.5f);
@@ -360,7 +368,7 @@ namespace flame
 		{
 			if (flash_event)
 			{
-				get_looper()->remove_event(flash_event);
+				looper().remove_event(flash_event);
 				flash_event = nullptr;
 			}
 			select_start = select_end = 0;

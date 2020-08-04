@@ -100,7 +100,7 @@ void cSlot::clear_tips()
 	{
 		auto e = tip_info;
 		tip_info = nullptr;
-		get_looper()->add_event([](Capture& c) {
+		looper().add_event([](Capture& c) {
 			auto e = c.thiz<Entity>();
 			e->parent->remove_child(e);
 		}, Capture().set_thiz(e));
@@ -109,7 +109,7 @@ void cSlot::clear_tips()
 	{
 		auto e = tip_link;
 		tip_link = nullptr;
-		get_looper()->add_event([](Capture& c) {
+		looper().add_event([](Capture& c) {
 			auto e = c.thiz<Entity>();
 			e->parent->remove_child(e);
 		}, Capture().set_thiz(e));
@@ -201,7 +201,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 							ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
 						}
 						ui.e_end_layout();
-						get_looper()->add_event([](Capture& c) {
+						looper().add_event([](Capture& c) {
 							bp_editor.window->root->add_child(c.thiz<Entity>());
 						}, Capture().set_thiz(thiz->tip_link));
 					}
@@ -251,10 +251,10 @@ void cSlot::on_event(EntityEvent e, void* t)
 						ui.e_end_layout();
 						thiz->tip_info->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 							if (e == EntityDestroyed)
-								get_looper()->remove_all_events(FLAME_CHASH("update_tip"));
+								looper().remove_all_events(FLAME_CHASH("update_tip"));
 							return true;
 						}, Capture());
-						get_looper()->add_event([](Capture& c) {
+						looper().add_event([](Capture& c) {
 							auto tip_info = c.thiz<Entity>();
 							bp_editor.window->root->add_child(tip_info);
 						}, Capture().set_thiz(thiz->tip_info), 0.f, FLAME_CHASH("update_tip"));
@@ -267,7 +267,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 						capture.t = s->type;
 						capture.d = s->data;
 						capture.text = text_value;
-						get_looper()->add_event([](Capture& c) {
+						looper().add_event([](Capture& c) {
 							auto& capture = c.data<Capturing>();
 							capture.text->set_text(s2w(capture.t->serialize(capture.d)).c_str());
 							c._current = INVALID_POINTER;
@@ -1219,7 +1219,7 @@ void cBPEditor::on_add_node(bpNode* n)
 		ui.e_bring_to_front();
 	ui.parents.pop();
 
-	get_looper()->add_event([](Capture& c) {
+	looper().add_event([](Capture& c) {
 		auto e_node = c.thiz<Entity>();
 		auto n = e_node->get_component(cNode)->n;
 		((Entity*)n->parent->user_data)->get_component(cNode)->edt.base->entity->add_child(e_node);
@@ -1418,21 +1418,21 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					{
 						ui.e_menu_item(L"Enum Single", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
-							get_looper()->add_event([](Capture& c) {
+							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
 								capture.show_enums(TypeEnumSingle);
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
 						ui.e_menu_item(L"Enum Multi", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
-							get_looper()->add_event([](Capture& c) {
+							looper().add_event([](Capture& c) {
 								auto& capture = c.data<Capturing>();
 								capture.show_enums(TypeEnumMulti);
 							}, Capture().set_data(&capture));
 						}, Capture().set_data(&capture), false);
 						ui.e_menu_item(L"Variable", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
-							get_looper()->add_event([](Capture& c) {
+							looper().add_event([](Capture& c) {
 								auto& ui = bp_editor.window->ui;
 								auto& capture = c.data<Capturing>();
 								struct _Capturing
@@ -1463,7 +1463,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 						}, Capture().set_data(&capture), false);
 						ui.e_menu_item(L"Array", [](Capture& c) {
 							auto& capture = c.data<Capturing>();
-							get_looper()->add_event([](Capture& c) {
+							looper().add_event([](Capture& c) {
 								auto& ui = bp_editor.window->ui;
 								auto& capture = c.data<Capturing>();
 								struct _Capturing

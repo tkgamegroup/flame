@@ -616,7 +616,7 @@ namespace flame
 
 		root->update();
 
-		time += get_looper()->get_delta_time();
+		time += looper().get_delta_time();
 	}
 
 	void bpScenePrivate::save()
@@ -1356,7 +1356,7 @@ namespace flame
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			delta = get_looper()->get_delta_time();
+			delta = looper().get_delta_time();
 			total = bp_time;
 		}
 	};

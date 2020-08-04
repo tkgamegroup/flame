@@ -2,46 +2,190 @@
 #include "element_private.h"
 #include "event_receiver_private.h"
 #include "../systems/event_dispatcher_private.h"
-//
+
 namespace flame
 {
-//	cEventReceiverPrivate::cEventReceiverPrivate()
-//	{
-//		focus_type = FocusByLeftButton;
-//		drag_hash = 0;
-//
-//		mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//			if (is_mouse_clicked(action, key))
-//			{
-//				auto thiz = c.thiz<cEventReceiverPrivate>();
-//				thiz->clicked_listeners.call_no_check_with_current(thiz);
-//			}
-//			return true;
-//		}, Capture().set_thiz(this));
-//	}
-
-	void cEventReceiverPrivate::send_key_event(KeyStateFlags action, uint value)
+	void* cEventReceiverPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) 
 	{
-		for (auto& l : key_listeners)
-		{
-			if (!l->call(action, value))
-				break;
-		}
+		auto c = new Closure(callback, capture);
+		key_down_listeners.emplace_back(c);
+		return c;
 	}
 
-	void cEventReceiverPrivate::send_mouse_event(KeyStateFlags action, MouseKey key, const Vec2i& value)
+	void cEventReceiverPrivate::remove_key_down_listener(void* lis)
 	{
-		for (auto& l : mouse_listeners)
-		{
-			if (!l->call(action, key, value))
-				break;
-		}
+		std::erase_if(key_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
-//	void cEventReceiverPrivate::send_drag_and_drop_event(DragAndDrop action, cEventReceiver* er, const Vec2i& pos)
-//	{
-//		drag_and_drop_listeners.call_with_current(this, action, er, pos);
-//	}
+	void* cEventReceiverPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		key_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_key_up_listener(void* lis)
+	{
+		std::erase_if(key_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_char_listener(void (*callback)(Capture& c, wchar_t ch), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		char_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_char_listener(void* lis)
+	{
+		std::erase_if(char_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_left_down_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_left_down_listener(void* lis)
+	{
+		std::erase_if(mouse_left_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_left_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_left_up_listener(void* lis)
+	{
+		std::erase_if(mouse_left_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_right_down_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_right_down_listener(void* lis)
+	{
+		std::erase_if(mouse_right_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_right_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_right_up_listener(void* lis)
+	{
+		std::erase_if(mouse_right_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_middle_down_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_middle_down_listener(void* lis)
+	{
+		std::erase_if(mouse_middle_down_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_middle_up_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_middle_up_listener(void* lis)
+	{
+		std::erase_if(mouse_middle_up_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& disp, const Vec2i& pos), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_move_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_move_listener(void* lis)
+	{
+		std::erase_if(mouse_move_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_scroll_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_scroll_listener(void* lis)
+	{
+		std::erase_if(mouse_scroll_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_click_listener(void (*callback)(Capture& c), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_click_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_click_listener(void* lis)
+	{
+		std::erase_if(mouse_click_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* cEventReceiverPrivate::add_mouse_dbclick_listener(void (*callback)(Capture& c), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		mouse_dbclick_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cEventReceiverPrivate::remove_mouse_dbclick_listener(void* lis)
+	{
+		std::erase_if(mouse_dbclick_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
 
 //	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
 //	{
@@ -50,34 +194,6 @@ namespace flame
 //		for (auto i = 0; i < drop_count; i++)
 //			drops[i] = _drops[i];
 //	}
-
-	void* cEventReceiverPrivate::add_key_listener(bool (*callback)(Capture& c, KeyStateFlags action, uint value), const Capture& capture)
-	{
-		auto c = new Closure(callback, capture);
-		key_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cEventReceiverPrivate::remove_key_listener(void* lis)
-	{
-		std::erase_if(key_listeners, [&](const auto& i) {
-			return i == (decltype(i))lis;
-		});
-	}
-
-	void* cEventReceiverPrivate::add_mouse_listener(bool (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture)
-	{
-		auto c = new Closure(callback, capture);
-		mouse_listeners.emplace_back(c);
-		return c;
-	}
-
-	void cEventReceiverPrivate::remove_mouse_listener(void* lis)
-	{
-		std::erase_if(mouse_listeners, [&](const auto& i) {
-			return i == (decltype(i))lis;
-		});
-	}
 
 	void cEventReceiverPrivate::on_gain_dispatcher()
 	{
@@ -94,8 +210,8 @@ namespace flame
 			dispatcher->active = nullptr;
 			dispatcher->dragging = nullptr;
 		}
-		if (this == dispatcher->key_target)
-			dispatcher->key_target = nullptr;
+		if (this == dispatcher->keyboard_target)
+			dispatcher->keyboard_target = nullptr;
 		if (this == dispatcher->drag_overing)
 			dispatcher->drag_overing = nullptr;
 		//if (er == next_focusing)
