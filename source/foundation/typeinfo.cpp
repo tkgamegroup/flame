@@ -968,18 +968,23 @@ namespace flame
 		return t;
 	}
 
-	void ReflectMetaPrivate::get_token(void* str, uint idx) const
+	void ReflectMetaPrivate::get_token(void* name_dst, void* value_dst, uint idx) const
 	{
 		const auto& s = tokens[idx];
-		strcpy(f_stralloc(str, s.size()), s.data());
+		strcpy(f_stralloc(name_dst, s.first.size()), s.first.data());
+		strcpy(f_stralloc(value_dst, s.second.size()), s.second.data());
 	}
 
-	bool ReflectMetaPrivate::has_token(const std::string& str) const
+	bool ReflectMetaPrivate::get_token(const std::string& str, void* value_dst) const
 	{
 		for (auto& t : tokens)
 		{
-			if (t == str)
+			if (t.first == str)
+			{
+				if (value_dst)
+					strcpy(f_stralloc(value_dst, t.second.size()), t.second.data());
 				return true;
+			}
 		}
 		return false;
 	}
@@ -992,7 +997,12 @@ namespace flame
 		offset(offset),
 		default_value(nullptr)
 	{
-		meta.tokens = SUS::split(_meta);
+		auto sp1 = SUS::split(_meta);
+		for (auto& t : sp1)
+		{
+			auto sp2 = SUS::split(t, '=');
+			meta.tokens.emplace_back(sp2[0], sp2.size() > 1 ? sp2[1] : "");
+		}
 	}
 
 	VariableInfoPrivate::~VariableInfoPrivate()

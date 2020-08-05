@@ -4,5 +4,7 @@
     <f:cElement />
     <f:cAligner />
     <f:cLayout type="LayoutVertical" gap="2.0" />
+    <f:cEventReceiver />
+    <f:cList />
   </entity>
 </prefab>

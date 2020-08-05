@@ -9,7 +9,7 @@ namespace flame
 
 	struct sEventDispatcher : System
 	{
-		inline static auto type_name = "sEventDispatcher";
+		inline static auto type_name = "flame::sEventDispatcher";
 		inline static auto type_hash = ch(type_name);
 
 		sEventDispatcher() :

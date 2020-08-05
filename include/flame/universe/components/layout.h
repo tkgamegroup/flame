@@ -29,8 +29,6 @@ namespace flame
 
 		//Vec2f content_size;
 
-		virtual void mark_layout_dirty() = 0;
-
 		//FLAME_UNIVERSE_EXPORTS void set_scrollx(float x);
 		//FLAME_UNIVERSE_EXPORTS void set_scrolly(float y);
 		//FLAME_UNIVERSE_EXPORTS void set_column(uint c);

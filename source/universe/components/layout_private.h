@@ -19,9 +19,8 @@ namespace flame
 		float scrollx = 0.f;
 		float scrolly = 0.f;
 
-		cElementPrivate* element = nullptr;
-		cAlignerPrivate* aligner = nullptr;
-		sTypeSettingPrivate* type_setting = nullptr;
+		cElementPrivate* element = nullptr; // R ref
+		sTypeSettingPrivate* type_setting = nullptr; // R ref
 
 		bool pending_layouting = false;
 		bool updating = false;
@@ -43,13 +42,10 @@ namespace flame
 		void judge_height(float h);
 		void update();
 
-		void mark_layout_dirty() override;
+		void on_gain_type_setting();
+		void on_lost_type_setting();
 
-		void on_added() override;
-		void on_entered_world() override;
-		void on_left_world() override;
-		void on_entity_component_removed(Component* c) override;
-		void on_entity_component_added(Component* c) override;
+		void on_entity_message(Message msg) override;
 		void on_entity_component_data_changed(Component* c, uint data_name_hash) override;
 		void on_entity_child_visibility_changed(Entity* e) override;
 		void on_entity_child_position_changed(Entity* e) override;

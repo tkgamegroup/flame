@@ -10,8 +10,8 @@ namespace flame
 		if (x == _x)
 			return;
 		x = _x;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("x")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("x")>::v);
 	}
 
 	void cElementPrivate::set_y(float _y)
@@ -19,8 +19,8 @@ namespace flame
 		if (y == _y)
 			return;
 		y = _y;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("y")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("y")>::v);
 	}
 
 	void cElementPrivate::set_width(float w)
@@ -28,8 +28,8 @@ namespace flame
 		if (width == w)
 			return;
 		width = w;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("width")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("width")>::v);
 	}
 
 	void cElementPrivate::set_height(float h)
@@ -37,8 +37,8 @@ namespace flame
 		if (height == h)
 			return;
 		height = h;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("height")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("height")>::v);
 	}
 
 	void cElementPrivate::set_padding(const Vec4f& p)
@@ -46,8 +46,8 @@ namespace flame
 		if (padding == p)
 			return;
 		padding = p;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("padding")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("padding")>::v);
 	}
 
 	void cElementPrivate::set_pivotx(float p)
@@ -55,8 +55,8 @@ namespace flame
 		if (pivotx == p)
 			return;
 		pivotx = p;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("pivotx")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("pivotx")>::v);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -64,8 +64,8 @@ namespace flame
 		if (pivoty == p)
 			return;
 		pivoty = p;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("pivoty")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("pivoty")>::v);
 	}
 
 	void cElementPrivate::set_scalex(float s)
@@ -73,8 +73,8 @@ namespace flame
 		if (scalex == s)
 			return;
 		scalex = s;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("scalex")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("scalex")>::v);
 	}
 
 	void cElementPrivate::set_scaley(float s)
@@ -82,8 +82,8 @@ namespace flame
 		if (scaley == s)
 			return;
 		scaley = s;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("scaley")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("scaley")>::v);
 	}
 
 	void cElementPrivate::set_rotation(float r)
@@ -91,8 +91,8 @@ namespace flame
 		if (rotation == r)
 			return;
 		rotation = r;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("rotation")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("rotation")>::v);
 	}
 
 	void cElementPrivate::set_skewx(float s)
@@ -100,8 +100,8 @@ namespace flame
 		if (skewx == s)
 			return;
 		skewx = s;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("skewx")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("skewx")>::v);
 	}
 
 	void cElementPrivate::set_skewy(float s)
@@ -109,8 +109,8 @@ namespace flame
 		if (skewy == s)
 			return;
 		skewy = s;
-		mark_transform_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("skewy")>::v);
+		on_entity_message(MessageElementTransformDirty);
+		Entity::report_data_changed(this, S<ch("skewy")>::v);
 	}
 
 	void cElementPrivate::update_transform()
@@ -147,6 +147,7 @@ namespace flame
 		points[5] = points[1] + axes * Vec2f(pr, pt);
 		points[6] = points[2] + axes * Vec2f(pr, pb);
 		points[7] = points[3] + axes * Vec2f(pl, pb);
+
 		transform = Mat23f(Vec3f(axes[0], points[0].x()), Vec3f(axes[1], points[0].y()));
 	}
 
@@ -167,8 +168,8 @@ namespace flame
 		if (fill_color == c)
 			return;
 		fill_color = c;
-		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("fill_color")>::v);
+		on_entity_message(MessageElementDrawingDirty);
+		Entity::report_data_changed(this, S<ch("fill_color")>::v);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -176,8 +177,8 @@ namespace flame
 		if (border == b)
 			return;
 		border = b;
-		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("border")>::v);
+		on_entity_message(MessageElementDrawingDirty);
+		Entity::report_data_changed(this, S<ch("border")>::v);
 	}
 
 	void cElementPrivate::set_border_color(const Vec4c& c)
@@ -185,8 +186,8 @@ namespace flame
 		if (border_color == c)
 			return;
 		border_color = c;
-		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("border_color")>::v);
+		on_entity_message(MessageElementDrawingDirty);
+		Entity::report_data_changed(this, S<ch("border_color")>::v);
 	}
 
 	void cElementPrivate::set_clipping(bool c)
@@ -194,27 +195,28 @@ namespace flame
 		if (clipping == c)
 			return;
 		clipping = c;
-		mark_drawing_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("clipping")>::v);
+		on_entity_message(MessageElementDrawingDirty);
+		Entity::report_data_changed(this, S<ch("clipping")>::v);
 	}
 
-	void cElementPrivate::mark_transform_dirty()
+	void cElementPrivate::on_entity_message(Message msg)
 	{
-		if (transform_dirty)
-			return;
-		transform_dirty = true;
-		mark_drawing_dirty();
-		for (auto& c : ((EntityPrivate*)entity)->children)
+		switch (msg)
 		{
-			auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
-			e->mark_transform_dirty();
+		case MessageElementTransformDirty:
+			if (transform_dirty)
+				return;
+			transform_dirty = true;
+			for (auto& c : ((EntityPrivate*)entity)->children)
+			{
+				auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
+				e->on_entity_message(MessageElementTransformDirty);
+			}
+		case MessageElementDrawingDirty:
+			if (renderer)
+				renderer->dirty = true;
+			break;
 		}
-	}
-
-	void cElementPrivate::mark_drawing_dirty()
-	{
-		if (renderer)
-			renderer->dirty = true;
 	}
 
 	bool cElementPrivate::contains(const Vec2f& p)
@@ -224,49 +226,25 @@ namespace flame
 		return convex_contains<float>(p, ps);
 	}
 
-	void cElementPrivate::on_entered_world()
+	void cElementPrivate::on_gain_renderer()
 	{
-		renderer = (sElementRendererPrivate*)((EntityPrivate*)entity)->world->get_system(sElementRenderer::type_hash);
-		mark_transform_dirty();
+		on_entity_message(MessageElementTransformDirty);
 	}
 
-	void cElementPrivate::on_left_world()
+	void cElementPrivate::on_lost_renderer()
 	{
-		mark_transform_dirty();
-		renderer = nullptr;
+		on_entity_message(MessageElementTransformDirty);
 	}
 
 	void cElementPrivate::on_entity_visibility_changed()
 	{
-		mark_drawing_dirty();
+		on_entity_message(MessageElementTransformDirty);
 	}
 
 	void cElementPrivate::on_entity_position_changed()
 	{
-		mark_drawing_dirty();
+		on_entity_message(MessageElementTransformDirty);
 	}
-
-//	void cElementPrivate::calc_geometry()
-//	{
-//		if (global_scale != _global_scale)
-//		{
-//			mark_drawing_dirty();
-//			global_scale = _global_scale;
-//			report_data_changed(FLAME_CHASH("global_scale"), nullptr);
-//		}
-//		if (global_size != _global_size)
-//		{
-//			mark_drawing_dirty();
-//			global_size = _global_size;
-//			report_data_changed(FLAME_CHASH("global_size"), nullptr);
-//		}
-//		if (global_pos != _global_pos)
-//		{
-//			mark_drawing_dirty();
-//			global_pos = _global_pos;
-//			report_data_changed(FLAME_CHASH("global_pos"), nullptr);
-//		}
-//	}
 
 	void cElementPrivate::draw_background(graphics::Canvas* canvas)
 	{

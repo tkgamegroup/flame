@@ -2,9 +2,12 @@
 
 #include <flame/universe/entity.h>
 
+#include <functional>
+
 namespace flame
 {
 	struct UdtInfo;
+	struct VariableInfo;
 
 	struct WorldPrivate;
 
@@ -23,33 +26,56 @@ namespace flame
 		bool visible = true;
 		bool global_visibility = false;
 
-		void* gene = nullptr;
-
 		WorldPrivate* world = nullptr;
 		EntityPrivate* parent = nullptr;
 
 		StateFlags state = StateNone;
 
-		struct ComponentReferencing
+		enum Place
 		{
-			Component* target;
-			void** dst;
-			void(*on_gain)(void*);
-			void(*on_lost)(void*);
+			PlaceLocal,
+			PlaceParent,
+			PlaceAncestor
 		};
 
-		struct ComponentWrapper
+		enum RefType
 		{
-			std::unique_ptr<Component, Delector> p;
-			UdtInfo* udt[2];
-			std::vector<ComponentReferencing> references;
-			bool want_local_event;
-			bool want_child_event;
-			bool want_local_data_changed;
-			bool want_child_data_changed;
+			RefComponent,
+			RefSystem,
+			RefObject
 		};
-		std::unordered_map<uint64, ComponentWrapper> components;
-		std::unordered_map<uint64, std::vector<Component*>> component_sniffers;
+
+		struct Ref
+		{
+			RefType type;
+			bool strong;
+			Place place = PlaceLocal;
+			std::string name;
+			uint64 hash;
+
+			void* staging = nullptr;
+			void* target = nullptr;
+			void** dst = nullptr;
+			void(*on_gain)(void*) = nullptr;
+			void(*on_lost)(void*) = nullptr;
+
+			void gain(Component* c);
+			void lost(Component* c);
+		};
+
+		struct ComponentAux
+		{
+			std::vector<Ref> refs;
+
+			std::vector<Component*> list_ref_by;
+
+			bool want_local_event = false;
+			bool want_child_event = false;
+			bool want_local_data_changed = false;
+			bool want_child_data_changed = false;
+		};
+
+		std::unordered_map<uint64, std::unique_ptr<Component, Delector>> components;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 		std::vector<Component*> local_event_dispatch_list;
 		std::vector<Component*> child_event_dispatch_list;
@@ -80,21 +106,22 @@ namespace flame
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
 
+		void send_message(Message msg) override;
+
 		Component* get_component(uint64 hash) const override;
+		Component* get_component(Place place, uint64 hash) const;
+		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
-		void on_component_removed(ComponentWrapper& cw);
+		void on_component_removed(Component* c);
+		bool check_component_removable(Component* c) const;
 		void remove_component(Component* c, bool destroy = true);
 		void remove_all_components(bool destroy) override;
-		void report_data_changed(Component* c, uint hash) override;
 
 		uint get_children_count() const override { return children.size(); }
 		Entity* get_child(uint idx) const override { return children[idx].get(); }
-		void enter_world();
-		void leave_world();
-		void inherit();
 		void add_child(EntityPrivate* e, int position = -1);
 		void reposition_child(uint pos1, uint pos2) override;
-		void info_child_removed(EntityPrivate* e) const;
+		void on_child_removed(EntityPrivate* e) const;
 		void remove_child(EntityPrivate* e, bool destroy = true);
 		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;

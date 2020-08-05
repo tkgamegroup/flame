@@ -245,7 +245,7 @@ namespace flame
 			}
 		}
 
-		uint CanvasPrivate::set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::filesystem::path& filename, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas)
+		uint CanvasPrivate::set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas)
 		{
 			if (resources.empty())
 				return -1;
@@ -271,7 +271,7 @@ namespace flame
 				r->white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
 			}
 			ds->set_image(0, slot, v, sp ? sp : device->sampler_linear.get());
-			r->filename = filename;
+			r->name = name;
 			r->view = v ? v : iv_white;
 			r->image_atlas = image_atlas;
 			r->font_atlas = font_atlas;

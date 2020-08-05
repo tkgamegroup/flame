@@ -9,68 +9,120 @@ namespace flame
 	sEventDispatcherPrivate::sEventDispatcherPrivate()
 	{
 		for (auto i = 0; i < size(kbtns_temp); i++)
-			kbtns_temp[i] = KeyStateNull;
+			kbtns_temp[i].second = false;
 		for (auto i = 0; i < size(mbtns_temp); i++)
-			mbtns_temp[i] = KeyStateNull;
+			mbtns_temp[i].second = false;
 	}
 
 	void sEventDispatcherPrivate::on_added()
 	{
-		window = (Window*)((WorldPrivate*)world)->find_object("Window");
+		window = (Window*)((WorldPrivate*)world)->find_object("flame::Window");
 		if (window)
 		{
-			key_listener = window->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
+			key_down_listener = window->add_key_down_listener([](Capture& c, KeyboardKey key) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
-				if (action == KeyStateNull)
+				thiz->kbtns_temp[key] = std::make_pair(true, true);
+				thiz->key_down_inputs.push_back(key);
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			key_up_listener = window->add_key_up_listener([](Capture& c, KeyboardKey key) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->kbtns_temp[key] = std::make_pair(false, true);
+				thiz->key_up_inputs.push_back(key);
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			char_listener = window->add_char_listener([](Capture& c, char ch) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
 				{
-					if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
-					{
-						std::string ansi;
-						ansi += thiz->char_inputs.back();
-						ansi += value;
-						auto wstr = a2w(ansi);
-						thiz->char_inputs.back() = wstr[0];
-						thiz->char_input_compelete = true;
-					}
-					else
-					{
-						thiz->char_inputs.push_back(value);
-						if (value >= 0x80)
-							thiz->char_input_compelete = false;
-					}
+					std::string ansi;
+					ansi += thiz->char_inputs.back();
+					ansi += ch;
+					auto wstr = a2w(ansi);
+					thiz->char_inputs.back() = wstr[0];
+					thiz->char_input_compelete = true;
 				}
 				else
 				{
-					thiz->kbtns_temp[value] = action;
-					if (action == KeyStateDown)
-						thiz->keydown_inputs.push_back((Key)value);
-					else if (action == KeyStateUp)
-						thiz->keyup_inputs.push_back((Key)value);
+					thiz->char_inputs.push_back(ch);
+					if (ch >= 0x80)
+						thiz->char_input_compelete = false;
 				}
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
 
-			mouse_listener = window->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			mouse_left_down_listener = window->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
-				if (action == KeyStateNull)
-				{
-					if (key == Mouse_Middle)
-						thiz->mscrl_temp = pos.x();
-					else if (key == Mouse_Null)
-					{
-						thiz->mdisp_temp += pos - thiz->mpos;
-						thiz->mpos = pos;
-					}
-				}
-				else
-				{
-					thiz->mbtns_temp[key] = action;
-					thiz->mdisp_temp += pos - thiz->mpos;
-					thiz->mpos = pos;
-				}
+				thiz->mbtns_temp[Mouse_Left] = std::make_pair(true, true);
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_left_up_listener = window->add_mouse_left_up_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mbtns_temp[Mouse_Left] = std::make_pair(false, true);
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_right_down_listener = window->add_mouse_right_down_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mbtns_temp[Mouse_Right] = std::make_pair(true, true);
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_right_up_listener = window->add_mouse_right_up_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mbtns_temp[Mouse_Right] = std::make_pair(false, true);
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_middle_down_listener = window->add_mouse_middle_down_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mbtns_temp[Mouse_Middle] = std::make_pair(true, true);
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_middle_up_listener = window->add_mouse_middle_up_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mbtns_temp[Mouse_Middle] = std::make_pair(false, true);
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_move_listener = window->add_mouse_move_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mdisp_temp += pos - thiz->mpos;
+				thiz->mpos = pos;
+
+				thiz->dirty = true;
+			}, Capture().set_thiz(this));
+			mouse_scroll_listener = window->add_mouse_scroll_listener([](Capture& c, int scroll) {
+				auto thiz = c.thiz<sEventDispatcherPrivate>();
+
+				thiz->mscrl_temp = scroll;
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
@@ -85,9 +137,18 @@ namespace flame
 	{
 		if (window)
 		{
-			window->remove_key_listener(key_listener);
-			window->remove_mouse_listener(mouse_listener);
-			window->remove_mouse_listener(destroy_listener);
+			window->remove_key_down_listener(key_down_listener);
+			window->remove_key_up_listener(key_up_listener);
+			window->remove_char_listener(char_listener);
+			window->remove_mouse_left_down_listener(mouse_left_down_listener);
+			window->remove_mouse_left_up_listener(mouse_left_up_listener);
+			window->remove_mouse_right_down_listener(mouse_right_down_listener);
+			window->remove_mouse_right_up_listener(mouse_right_up_listener);
+			window->remove_mouse_middle_down_listener(mouse_middle_down_listener);
+			window->remove_mouse_middle_up_listener(mouse_middle_up_listener);
+			window->remove_mouse_move_listener(mouse_move_listener);
+			window->remove_mouse_scroll_listener(mouse_scroll_listener);
+			window->remove_destroy_listener(destroy_listener);
 		}
 	}
 
@@ -104,7 +165,7 @@ namespace flame
 				//auto pass = false;
 				//mouse_event_checker->pass_checkers.call(er, &pass);
 				//return pass;
-				return true;
+				return !hovering; // TODO
 			}() && (force || mouse_contained))
 		{
 //			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
@@ -114,53 +175,66 @@ namespace flame
 			{
 				hovering = er;
 
-				auto left_just_down = mbtns[Mouse_Left] == (KeyStateDown | KeyStateJust);
-				auto right_just_down = mbtns[Mouse_Right] == (KeyStateDown | KeyStateJust);
-				if (left_just_down || right_just_down)
+				if (mbtns[Mouse_Left] == std::make_pair(true, true))
 				{
-					if (left_just_down)
-						focusing = nullptr;
+					focusing = nullptr;
 					if (hovering)
 					{
-						auto do_focus = false;
-//						switch (hovering->focus_type)
-//						{
-//						case FocusByLeftButton:
-//							if (left_just_down)
-//								do_focus = true;
-//							break;
-//						case FocusByRightButton:
-//							if (right_just_down)
-//								do_focus = true;
-//							break;
-//						case FocusByLeftOrRightButton:
-//							if (left_just_down || right_just_down)
-//								do_focus = true;
-//							break;
-//						}
-						{ // TODO test
-							if (left_just_down)
-								do_focus = true;
-						}
-						if (do_focus)
-						{
-							focusing = hovering;
-							active = focusing;
-							active_pos = mpos;
-						}
+						focusing = hovering;
+						active = focusing;
+						active_pos = mpos;
 					}
 				}
 			}
 
 			if (mdisp != 0)
-				er->send_mouse_event(KeyStateNull, Mouse_Null, mdisp);
-			if (mscrl != 0)
-				er->send_mouse_event(KeyStateNull, Mouse_Middle, Vec2i(mscrl, 0));
-			for (auto i = 0; i < size(mbtns); i++)
 			{
-				auto s = mbtns[i];
-				if (s & KeyStateJust)
-					er->send_mouse_event(s, (MouseKey)i, mpos);
+				for (auto& l : er->mouse_move_listeners)
+					l->call(mdisp, mpos);
+			}
+			if (mscrl != 0)
+			{
+				for (auto& l : er->mouse_scroll_listeners)
+					l->call(mscrl);
+			}
+			if (mbtns[Mouse_Left].second)
+			{
+				if (mbtns[Mouse_Left].first)
+				{
+					for (auto& l : er->mouse_left_down_listeners)
+						l->call(mpos);
+				}
+				else
+				{
+					for (auto& l : er->mouse_left_up_listeners)
+						l->call(mpos);
+				}
+			}
+			if (mbtns[Mouse_Right].second)
+			{
+				if (mbtns[Mouse_Right].first)
+				{
+					for (auto& l : er->mouse_right_down_listeners)
+						l->call(mpos);
+				}
+				else
+				{
+					for (auto& l : er->mouse_right_up_listeners)
+						l->call(mpos);
+				}
+			}
+			if (mbtns[Mouse_Middle].second)
+			{
+				if (mbtns[Mouse_Middle].first)
+				{
+					for (auto& l : er->mouse_middle_down_listeners)
+						l->call(mpos);
+				}
+				else
+				{
+					for (auto& l : er->mouse_middle_up_listeners)
+						l->call(mpos);
+				}
 			}
 		}
 
@@ -177,7 +251,7 @@ namespace flame
 //			}
 //		}
 
-		er->frame = get_looper()->get_frame();
+		er->frame = looper().get_frame();
 	}
 
 	void sEventDispatcherPrivate::dispatch_mouse_recursively(EntityPrivate* e)
@@ -190,7 +264,7 @@ namespace flame
 		}
 
 		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
-		if (!er || er->frame >= (int)get_looper()->get_frame())
+		if (!er || er->frame >= (int)looper().get_frame())
 			return;
 
 		dispatch_mouse_single(er, false);
@@ -198,8 +272,8 @@ namespace flame
 
 	void sEventDispatcherPrivate::update()
 	{
-//		if (dbclick_timer > 0.f)
-//			dbclick_timer -= get_looper()->delta_time;
+		if (dbclick_timer > 0.f)
+			dbclick_timer -= looper().get_delta_time();
 
 		if (!dirty)
 			return;
@@ -207,19 +281,23 @@ namespace flame
 
 		for (int i = 0; i < size(kbtns); i++)
 		{
-			if (kbtns_temp[i] != KeyStateNull)
-				kbtns[i] = (KeyStateFlags)((int)kbtns_temp[i] | KeyStateJust);
+			if (kbtns_temp[i].second)
+			{
+				kbtns[i] = std::make_pair(kbtns_temp[i].first, true);
+				kbtns_temp[i].second = false;
+			}
 			else
-				kbtns[i] = (KeyStateFlags)((int)kbtns[i] & ~KeyStateJust);
-			kbtns_temp[i] = KeyStateNull;
+				kbtns[i].second = false;
 		}
 		for (int i = 0; i < size(mbtns); i++)
 		{
-			if (mbtns_temp[i] != KeyStateNull)
-				mbtns[i] = (KeyStateFlags)((int)mbtns_temp[i] | KeyStateJust);
+			if (mbtns_temp[i].second)
+			{
+				mbtns[i] = std::make_pair(mbtns_temp[i].first, true);
+				mbtns_temp[i].second = false;
+			}
 			else
-				mbtns[i] = (KeyStateFlags)((int)mbtns[i] & ~KeyStateJust);
-			mbtns_temp[i] = KeyStateNull;
+				mbtns[i].second;
 		}
 		mdisp = mdisp_temp;
 		mdisp_temp = 0.f;
@@ -246,23 +324,8 @@ namespace flame
 				focusing = nullptr;
 			else if (active || dragging)
 			{
-				if (mbtns[Mouse_Left] & KeyStateUp)
+				if (!mbtns[Mouse_Left].first)
 					active = dragging = nullptr;
-				//switch (focusing->focus_type)
-				//{
-				//case FocusByLeftButton:
-				//	if (mouse_buttons[Mouse_Left] & KeyStateUp)
-				//		focusing_state = FocusingNormal;
-				//	break;
-				//case FocusByRightButton:
-				//	if (mouse_buttons[Mouse_Right] & KeyStateUp)
-				//		focusing_state = FocusingNormal;
-				//	break;
-				//case FocusByLeftOrRightButton:
-				//	if ((mouse_buttons[Mouse_Left] & KeyStateUp) && (mouse_buttons[Mouse_Right] & KeyStateUp))
-				//		focusing_state = FocusingNormal;
-				//	break;
-				//}
 			}
 
 		}
@@ -282,11 +345,12 @@ namespace flame
 		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
 
 		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mpos)))
-		if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && focusing->element->contains(Vec2f(mpos)))
+		if (focusing && mbtns[Mouse_Left] == std::make_pair(false, true) && focusing->element->contains(Vec2f(mpos)))
 		{
 			//auto disp = mouse_pos - active_pos;
 			//auto db = dbclick_timer > 0.f;
-			focusing->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
+			for (auto& l : focusing->mouse_click_listeners)
+				l->call();
 			//((cEventReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
 			//if (db)
 			//	dbclick_timer = -1.f;
@@ -318,21 +382,21 @@ namespace flame
 		{
 			if (focusing)
 			{
-				key_target = nullptr;
+				keyboard_target = nullptr;
 				auto e = (EntityPrivate*)focusing->entity;
 				while (e)
 				{
 					auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
-					if (er && !er->key_listeners.empty())
+					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
 					{
-						key_target = er;
+						keyboard_target = er;
 						break;
 					}
 					e = e->parent;
 				}
 			}
 
-			//dbclick_timer = -1.f;
+			dbclick_timer = -1.f;
 		}
 
 //		if (!prev_dragging && focusing && focusing_state == FocusingAndDragging)
@@ -357,17 +421,26 @@ namespace flame
 //				((cEventReceiverPrivate*)drag_overing)->send_drag_and_drop_event(BeingOvering, focusing, mouse_pos);
 //		}
 
-		if (key_target)
+		if (keyboard_target)
 		{
-			for (auto& code : keydown_inputs)
-				key_target->send_key_event(KeyStateDown, code);
-			for (auto& code : keyup_inputs)
-				key_target->send_key_event(KeyStateUp, code);
+			for (auto& code : key_down_inputs)
+			{
+				for (auto& l : keyboard_target->key_down_listeners)
+					l->call(code);
+			}
+			for (auto& code : key_up_inputs)
+			{
+				for (auto& l : keyboard_target->key_up_listeners)
+					l->call(code);
+			}
 			for (auto& ch : char_inputs)
-				key_target->send_key_event(KeyStateNull, ch);
+			{
+				for (auto& l : keyboard_target->char_listeners)
+					l->call(ch);
+			}
 		}
-		keydown_inputs.clear();
-		keyup_inputs.clear();
+		key_down_inputs.clear();
+		key_up_inputs.clear();
 		char_inputs.clear();
 	}
 

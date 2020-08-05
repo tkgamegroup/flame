@@ -8,7 +8,7 @@ namespace flame
 
 	struct cElementPrivate : cElement // R ~ on_*
 	{
-		sElementRendererPrivate* renderer = nullptr;
+		sElementRendererPrivate* renderer = nullptr; // R ref
 
 		float x = 0.f;
 		float y = 0.f;
@@ -27,7 +27,7 @@ namespace flame
 		bool transform_dirty = true;
 		Vec2f points[8];
 
-		Vec4c fill_color = Vec4c(255);
+		Vec4c fill_color = Vec4c(0);
 
 		float border = 0.f;
 		Vec4c border_color = Vec4c(0, 0, 0, 255);
@@ -89,14 +89,13 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
-		void mark_transform_dirty() override;
-		void mark_drawing_dirty() override;
-
 		bool contains(const Vec2f& p) override;
 
-		void on_entered_world() override;
-		void on_left_world() override;
+		void on_gain_renderer();
+		void on_lost_renderer();
+
 		void on_entity_visibility_changed() override;
+		void on_entity_message(Message msg) override;
 		void on_entity_position_changed() override;
 
 		void draw_background(graphics::Canvas* canvas);

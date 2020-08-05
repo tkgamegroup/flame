@@ -414,59 +414,49 @@ namespace flame
 		}
 	};
 
-	enum KeyStateFlags
+	enum KeyboardKey
 	{
-		KeyStateNull,
-		KeyStateUp = 1 << 0,
-		KeyStateDown = 1 << 1,
-		KeyStateJust = 1 << 2,
-		KeyStateDouble = 1 << 2
-	};
+		KeyboardNull = -1,
 
-	inline KeyStateFlags operator| (KeyStateFlags a, KeyStateFlags b) { return (KeyStateFlags)((int)a | (int)b); }
+		Keyboard_Backspace,
+		Keyboard_Tab,
+		Keyboard_Enter,
+		Keyboard_Shift,
+		Keyboard_Ctrl,
+		Keyboard_Alt,
+		Keyboard_Pause,
+		Keyboard_CapsLock,
+		Keyboard_Esc,
+		Keyboard_Space,
+		Keyboard_PgUp, Keyboard_PgDn,
+		Keyboard_End,
+		Keyboard_Home,
+		Keyboard_Left, Keyboard_Up, Keyboard_Right, Keyboard_Down,
+		Keyboard_PrtSc,
+		Keyboard_Ins,
+		Keyboard_Del,
+		Keyboard_0, Keyboard_1, Keyboard_2, Keyboard_3, Keyboard_4, Keyboard_5, Keyboard_6, Keyboard_7, Keyboard_8, Keyboard_9,
+		Keyboard_A, Keyboard_B, Keyboard_C, Keyboard_D, Keyboard_E, Keyboard_F, Keyboard_G, Keyboard_H, Keyboard_I, Keyboard_J, Keyboard_K, Keyboard_L, Keyboard_M, Keyboard_N, Keyboard_O, Keyboard_P, Keyboard_Q, Keyboard_R, Keyboard_S, Keyboard_T, Keyboard_U, Keyboard_V, Keyboard_W, Keyboard_X, Keyboard_Y, Keyboard_Z,
+		Keyboard_Numpad0, Keyboard_Numpad1, Keyboard_Numpad2, Keyboard_Numpad3, Keyboard_Numpad4, Keyboard_Numpad5, Keyboard_Numpad6, Keyboard_Numpad7, Keyboard_Numpad8, Keyboard_Numpad9,
+		Keyboard_Add, Keyboard_Subtract, Keyboard_Multiply, Keyboard_Divide,
+		Keyboard_Separator,
+		Keyboard_Decimal,
+		Keyboard_F1, Keyboard_F2, Keyboard_F3, Keyboard_F4, Keyboard_F5, Keyboard_F6, Keyboard_F7, Keyboard_F8, Keyboard_F9, Keyboard_F10, Keyboard_F11, Keyboard_F12,
+		Keyboard_NumLock,
+		Keyboard_ScrollLock,
 
-	enum Key
-	{
-		KeyNull = -1,
-
-		Key_Backspace,
-		Key_Tab,
-		Key_Enter,
-		Key_Shift,
-		Key_Ctrl,
-		Key_Alt,
-		Key_Pause,
-		Key_CapsLock,
-		Key_Esc,
-		Key_Space,
-		Key_PgUp, Key_PgDn,
-		Key_End,
-		Key_Home,
-		Key_Left, Key_Up, Key_Right, Key_Down,
-		Key_PrtSc,
-		Key_Ins,
-		Key_Del,
-		Key_0, Key_1, Key_2, Key_3, Key_4, Key_5, Key_6, Key_7, Key_8, Key_9,
-		Key_A, Key_B, Key_C, Key_D, Key_E, Key_F, Key_G, Key_H, Key_I, Key_J, Key_K, Key_L, Key_M, Key_N, Key_O, Key_P, Key_Q, Key_R, Key_S, Key_T, Key_U, Key_V, Key_W, Key_X, Key_Y, Key_Z,
-		Key_Numpad0, Key_Numpad1, Key_Numpad2, Key_Numpad3, Key_Numpad4, Key_Numpad5, Key_Numpad6, Key_Numpad7, Key_Numpad8, Key_Numpad9,
-		Key_Add, Key_Subtract, Key_Multiply, Key_Divide,
-		Key_Separator,
-		Key_Decimal,
-		Key_F1, Key_F2, Key_F3, Key_F4, Key_F5, Key_F6, Key_F7, Key_F8, Key_F9, Key_F10, Key_F11, Key_F12,
-		Key_NumLock,
-		Key_ScrollLock,
-
-		Key_Count
+		KeyboardKeyCount
 	};
 
 	enum MouseKey
 	{
-		Mouse_Null = -1,
+		MouseNull = -1,
+
 		Mouse_Left,
 		Mouse_Right,
 		Mouse_Middle,
 
-		MouseKey_Count
+		MouseKeyCount
 	};
 
 	enum DragAndDrop
@@ -479,56 +469,6 @@ namespace flame
 		BeingOverEnd,
 		BeenDropped
 	};
-
-	inline bool is_key_down(KeyStateFlags action) // value is Key
-	{
-		return action == KeyStateDown;
-	}
-
-	inline bool is_key_up(KeyStateFlags action) // value is Key
-	{
-		return action == KeyStateUp;
-	}
-
-	inline bool is_key_char(KeyStateFlags action) // value is ch
-	{
-		return action == KeyStateNull;
-	}
-
-	inline bool is_mouse_enter(KeyStateFlags action, MouseKey key)
-	{
-		return action == KeyStateDown && key == Mouse_Null;
-	}
-
-	inline bool is_mouse_leave(KeyStateFlags action, MouseKey key)
-	{
-		return action == KeyStateUp && key == Mouse_Null;
-	}
-
-	inline bool is_mouse_down(KeyStateFlags action, MouseKey key, bool just = false) // value is pos
-	{
-		return action == (KeyStateDown | (just ? KeyStateJust : 0)) && key != Mouse_Null;
-	}
-
-	inline bool is_mouse_up(KeyStateFlags action, MouseKey key, bool just = false) // value is pos
-	{
-		return action == (KeyStateUp | (just ? KeyStateJust : 0)) && key != Mouse_Null;
-	}
-
-	inline bool is_mouse_move(KeyStateFlags action, MouseKey key) // value is disp
-	{
-		return action == KeyStateNull && key == Mouse_Null;
-	}
-
-	inline bool is_mouse_scroll(KeyStateFlags action, MouseKey key) // value.x() is scroll value
-	{
-		return action == KeyStateNull && key == Mouse_Middle;
-	}
-
-	inline bool is_mouse_clicked(KeyStateFlags action, MouseKey key)
-	{
-		return (action & KeyStateDown) && (action & KeyStateUp) && key == Mouse_Null;
-	}
 
 	inline uint64 get_now_ns()
 	{
@@ -552,10 +492,10 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str);
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
-	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(Key key, bool ctrl, bool shift, bool alt, void (*callback)(Capture& c, KeyStateFlags action), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(KeyboardKey key, void (*callback)(Capture& c), const Capture& capture, bool down = true, bool ctrl = false, bool shift = false, bool alt = false);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
-	FLAME_FOUNDATION_EXPORTS void send_global_key_event(KeyStateFlags action, Key key);
-	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(KeyStateFlags action, MouseKey key);
+	FLAME_FOUNDATION_EXPORTS void send_global_keyboard_event(KeyboardKey key, bool down = true);
+	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(MouseKey key, bool down = true);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	// if str is null then the output will be redirect to std output
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* str = nullptr);
@@ -640,10 +580,28 @@ namespace flame
 
 		virtual void close() = 0;
 
-		virtual void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) = 0;
-		virtual void remove_key_listener(void* lis) = 0;
-		virtual void* add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) = 0;
-		virtual void remove_mouse_listener(void* lis) = 0;
+		virtual void* add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) = 0;
+		virtual void remove_key_down_listener(void* lis) = 0;
+		virtual void* add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) = 0;
+		virtual void remove_key_up_listener(void* lis) = 0;
+		virtual void* add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture) = 0;
+		virtual void remove_char_listener(void* lis) = 0;
+		virtual void* add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_left_down_listener(void* lis) = 0;
+		virtual void* add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_left_up_listener(void* lis) = 0;
+		virtual void* add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_right_down_listener(void* lis) = 0;
+		virtual void* add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_right_up_listener(void* lis) = 0;
+		virtual void* add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_middle_down_listener(void* lis) = 0;
+		virtual void* add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_middle_up_listener(void* lis) = 0;
+		virtual void* add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void remove_mouse_move_listener(void* lis) = 0;
+		virtual void* add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture) = 0;
+		virtual void remove_mouse_scroll_listener(void* lis) = 0;
 		virtual void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) = 0;
 		virtual void remove_resize_listener(void* lis) = 0;
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
@@ -666,7 +624,7 @@ namespace flame
 		virtual void remove_all_events(int id = 0) = 0; /* id=-1 means all */
 	};
 
-	FLAME_FOUNDATION_EXPORTS Looper* get_looper();
+	FLAME_FOUNDATION_EXPORTS Looper& looper();
 
 	struct Schedule
 	{

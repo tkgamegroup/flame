@@ -18,13 +18,13 @@ namespace flame
 
 		struct CanvasResourcePrivate : CanvasResource
 		{
-			std::filesystem::path filename;
+			std::string name;
 			ImageViewPrivate* view;
 			ImageAtlasPrivate* image_atlas = nullptr;
 			FontAtlasPrivate* font_atlas = nullptr;
 			Vec2f white_uv = Vec2f(0.5f);
 
-			const wchar_t* get_filename() const override { return filename.c_str(); }
+			const char* get_name() const override { return name.c_str(); }
 			ImageView* get_view() const override { return view; }
 			ImageAtlas* get_image_atlas() const override { return image_atlas; }
 			FontAtlas* get_font_atlas() const override { return font_atlas; }
@@ -35,7 +35,7 @@ namespace flame
 		{
 			void set_target(uint views_count, ImageView* const* views) override;
 
-			uint set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas) override;
+			uint set_resource(int slot, ImageView* v, Sampler* sp, const char* name, ImageAtlas* image_atlas, FontAtlas* font_atlas) override;
 
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
@@ -106,7 +106,7 @@ namespace flame
 			void set_target(std::span<ImageViewPrivate*> views);
 
 			CanvasResource* get_resource(uint slot) override { return slot < resources_count ? resources[slot].get() : nullptr; }
-			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp = nullptr, const std::filesystem::path& filename = "", ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
+			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp = nullptr, const std::string& name = "", ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
 
 			void add_draw_cmd(int id = -1);
 			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
@@ -135,9 +135,9 @@ namespace flame
 			((CanvasPrivate*)this)->set_target({ (ImageViewPrivate**)views, views_count });
 		}
 
-		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const wchar_t* filename, ImageAtlas* image_atlas, FontAtlas* font_atlas)
+		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const char* name, ImageAtlas* image_atlas, FontAtlas* font_atlas)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, filename ? filename : L"", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
+			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, name ? name : "", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)

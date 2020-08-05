@@ -10,7 +10,7 @@ int main(int argc, char** args)
 			c.thiz<Window>()->close();
 	}, Capture().set_thiz(w));
 
-	get_looper()->loop([](Capture&, float delta_time) {
+	looper().loop([](Capture&, float delta_time) {
 	}, Capture());
 
 	return 0;

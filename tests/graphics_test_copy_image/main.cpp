@@ -55,6 +55,6 @@ int main(int argc, char** args)
 		app.on_resize();
 	}, Capture());
 
-	get_looper()->loop([](Capture&) {
+	looper().loop([](Capture&) {
 	}, Capture());
 }

@@ -14,28 +14,21 @@ namespace flame
 			s = (StateFlags)(int)(s | StateSelected);
 		else
 			s = (StateFlags)(int)(s & ~StateSelected);
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("checked")>::v);
+		Entity::report_data_changed(this, S<ch("checked")>::v);
 	}
 
-	void cCheckboxPrivate::on_added()
+	void cCheckboxPrivate::on_gain_event_receiver()
 	{
-		event_receiver = (cEventReceiverPrivate*)((EntityPrivate*)entity)->get_component(cEventReceiver::type_hash);
-
-		mouse_listener = event_receiver->add_mouse_listener([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-			if (is_mouse_clicked(action, key))
-			{
-				auto thiz = c.thiz<cCheckboxPrivate>();
-				thiz->set_checked(!thiz->checked);
-			}
-			return true;
+		click_listener = event_receiver->add_mouse_click_listener([](Capture& c) {
+			auto thiz = c.thiz<cCheckboxPrivate>();
+			thiz->set_checked(!thiz->checked);
 		}, Capture().set_thiz(this));
 	}
 
-	void cCheckboxPrivate::on_removed()
+	void cCheckboxPrivate::on_lost_event_receiver()
 	{
-		event_receiver->remove_mouse_listener(mouse_listener);
+		event_receiver->remove_mouse_click_listener(click_listener);
 	}
-
 
 	cCheckbox* cCheckbox::create()
 	{

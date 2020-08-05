@@ -122,7 +122,7 @@ void SceneEditor::select(Entity* e)
 		selected = e;
 		if (editor)
 			editor->on_select();
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			if (scene_editor.hierarchy)
 				scene_editor.hierarchy->refresh_selected();
 			if (scene_editor.inspector)
@@ -136,7 +136,7 @@ void SceneEditor::load(const std::filesystem::path& _filepath)
 	filepath = _filepath;
 	prefab = filepath.empty() ? nullptr : Entity::create_from_file(scene_editor.window->world, filepath.c_str());
 	selected = nullptr;
-	get_looper()->add_event([](Capture&) {
+	looper().add_event([](Capture&) {
 		if (scene_editor.editor)
 		{
 			scene_editor.editor->on_select();
@@ -185,35 +185,35 @@ SceneEditorWindow::SceneEditorWindow() :
 				auto ed = c.current<cEventReceiver>()->dispatcher;
 				switch (value)
 				{
-				case Key_S:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_S:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						scene_editor.save();
 					break;
-				case Key_Z:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_Z:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						undo();
 					break;
-				case Key_Y:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_Y:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						redo();
 					break;
-				case Key_X:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_X:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						cut_selected();
 					break;
-				case Key_C:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_C:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						copy_selected();
 					break;
-				case Key_V:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_V:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						paste();
 					break;
-				case Key_D:
-					if (ed->key_states[Key_Ctrl] & KeyStateDown)
+				case Keyboard_D:
+					if (ed->key_states[Keyboard_Ctrl] & KeyStateDown)
 						duplicate_selected();
 					break;
-				case Key_Del:
+				case Keyboard_Del:
 					delete_selected();
 					break;
 				}
@@ -231,7 +231,7 @@ SceneEditorWindow::SceneEditorWindow() :
 	ui.e_begin_menu_bar();
 	ui.e_begin_menubar_menu(L"Scene");
 	ui.e_menu_item(L"        New Entity", [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			auto e = f_new<Entity>();
 			e->name = "unnamed";
 			if (scene_editor.selected)
@@ -266,7 +266,7 @@ SceneEditorWindow::SceneEditorWindow() :
 
 	}, Capture());
 	ui.e_menu_item((std::wstring(Icon_TIMES) + L"   Delete").c_str(), [](Capture&) {
-		get_looper()->add_event([](Capture&) {
+		looper().add_event([](Capture&) {
 			if (scene_editor.selected)
 			{
 				scene_editor.selected = nullptr;

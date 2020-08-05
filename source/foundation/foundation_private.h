@@ -33,8 +33,17 @@ namespace flame
 		HCURSOR cursors[Cursor_Count];
 #endif
 
-		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, int)>>> key_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, KeyStateFlags, MouseKey, const Vec2i&)>>> mouse_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, char)>>> char_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_left_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_left_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_right_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_right_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_middle_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_middle_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_move_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> mouse_scroll_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2u&)>>> resize_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> destroy_listeners;
 
@@ -71,14 +80,32 @@ namespace flame
 
 		void close() override;
 
-		void* add_key_listener(void (*callback)(Capture& c, KeyStateFlags action, int value), const Capture& capture) override;
-		void remove_key_listener(void* ret) override;
-		void* add_mouse_listener(void (*callback)(Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos), const Capture& capture) override;
-		void remove_mouse_listener(void* ret) override;
+		void* add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) override;
+		void remove_key_down_listener(void* lis) override;
+		void* add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) override;
+		void remove_key_up_listener(void* lis) override;
+		void* add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture) override;
+		void remove_char_listener(void* lis) override;
+		void* add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_left_down_listener(void* lis) override;
+		void* add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_left_up_listener(void* lis) override;
+		void* add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_right_down_listener(void* lis) override;
+		void* add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_right_up_listener(void* lis) override;
+		void* add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_middle_down_listener(void* lis) override;
+		void* add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_middle_up_listener(void* lis) override;
+		void* add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void remove_mouse_move_listener(void* lis) override;
+		void* add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture) override;
+		void remove_mouse_scroll_listener(void* lis) override;
 		void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) override;
-		void remove_resize_listener(void* ret) override;
+		void remove_resize_listener(void* lis) override;
 		void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) override;
-		void remove_destroy_listener(void* ret) override;
+		void remove_destroy_listener(void* lis) override;
 	};
 
 	inline void WindowBridge::set_title(const char* _title)
@@ -112,7 +139,7 @@ namespace flame
 		void remove_all_events(int id) override;
 	};
 
-	extern LooperPrivate* _looper;
+	extern LooperPrivate _looper;
 
 	struct SchedulePrivate : Schedule
 	{

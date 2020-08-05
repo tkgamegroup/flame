@@ -12,7 +12,7 @@ namespace flame
 //		scroll_offset = Vec2f(0.f);
 //		content_size = Vec2f(0.f);
 //	}
-//
+
 //	void cLayoutPrivate::set_content_size(const Vec2f& s)
 //	{
 //		if (s == content_size)
@@ -75,6 +75,7 @@ namespace flame
 			w = 0.f;
 		else
 			element->set_width(w);
+		auto aligner = (cAlignerPrivate*)entity->get_component(cAligner::type_hash);
 		if (aligner)
 			aligner->desired_size.x() = w;
 	}
@@ -85,6 +86,7 @@ namespace flame
 			h = 0.f;
 		else
 			element->set_height(h);
+		auto aligner = (cAlignerPrivate*)entity->get_component(cAligner::type_hash);
 		if (aligner)
 			aligner->desired_size.y() = h;
 	}
@@ -381,8 +383,8 @@ namespace flame
 		if (type == t)
 			return;
 		type = t;
-		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("type")>::v);
+		on_entity_message(MessageLayoutDirty);
+		Entity::report_data_changed(this, S<ch("type")>::v);
 	}
 
 	void cLayoutPrivate::set_gap(float g)
@@ -390,8 +392,8 @@ namespace flame
 		if (gap == g)
 			return;
 		gap = g;
-		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("gap")>::v);
+		on_entity_message(MessageLayoutDirty);
+		Entity::report_data_changed(this, S<ch("gap")>::v);
 	}
 
 	void cLayoutPrivate::set_auto_width(bool a)
@@ -399,8 +401,8 @@ namespace flame
 		if (auto_width == a)
 			return;
 		auto_width = a;
-		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("auto_width")>::v);
+		on_entity_message(MessageLayoutDirty);
+		Entity::report_data_changed(this, S<ch("auto_width")>::v);
 	}
 
 	void cLayoutPrivate::set_auto_height(bool a)
@@ -408,47 +410,29 @@ namespace flame
 		if (auto_height == a)
 			return;
 		auto_height = a;
-		mark_layout_dirty();
-		((EntityPrivate*)entity)->report_data_changed(this, S<ch("auto_height")>::v);
+		on_entity_message(MessageLayoutDirty);
+		Entity::report_data_changed(this, S<ch("auto_height")>::v);
 	}
 
-	void cLayoutPrivate::mark_layout_dirty()
+	void cLayoutPrivate::on_gain_type_setting()
 	{
-		if (type_setting)
-			type_setting->add_to_layouting_list(this);
-	}
-
-	void cLayoutPrivate::on_added()
-	{
-		element = (cElementPrivate*)((EntityPrivate*)entity)->get_component(cElement::type_hash);
-		aligner = (cAlignerPrivate*)((EntityPrivate*)entity)->get_component(cAligner::type_hash);
-	}
-
-	void cLayoutPrivate::on_entered_world()
-	{
-		type_setting = (sTypeSettingPrivate*)((WorldPrivate*)((EntityPrivate*)entity)->world)->get_system(sTypeSetting::type_hash);
 		type_setting->add_to_layouting_list(this);
 	}
 
-	void cLayoutPrivate::on_left_world()
+	void cLayoutPrivate::on_lost_type_setting()
 	{
-		if (type_setting)
-			type_setting->remove_from_layouting_list(this);
-		type_setting = nullptr;
+		type_setting->remove_from_layouting_list(this);
 	}
 
-	void cLayoutPrivate::on_entity_component_removed(Component* c)
+	void cLayoutPrivate::on_entity_message(Message msg)
 	{
-		if (c->type_hash == cAligner::type_hash)
-			aligner = nullptr;
-	}
-
-	void cLayoutPrivate::on_entity_component_added(Component* c)
-	{
-		if (c->type_hash == cAligner::type_hash)
+		switch (msg)
 		{
-			aligner = (cAlignerPrivate*)c;
-			mark_layout_dirty();
+		case MessageElementSizeDirty:
+		case MessageLayoutDirty:
+			if (type_setting)
+				type_setting->add_to_layouting_list(this);
+			break;
 		}
 	}
 
@@ -461,7 +445,7 @@ namespace flame
 			case S<ch("width")>::v:
 			case S<ch("height")>::v:
 			case S<ch("padding")>::v:
-				mark_layout_dirty();
+				on_entity_message(MessageLayoutDirty);
 				break;
 			}
 		}
@@ -469,24 +453,24 @@ namespace flame
 
 	void cLayoutPrivate::on_entity_child_visibility_changed(Entity* e)
 	{
-		mark_layout_dirty();
+		on_entity_message(MessageLayoutDirty);
 	}
 
 	void cLayoutPrivate::on_entity_child_position_changed(Entity* e)
 	{
-		mark_layout_dirty();
+		on_entity_message(MessageLayoutDirty);
 	}
 
 	void cLayoutPrivate::on_entity_child_component_added(Component* c)
 	{
 		if (c->type_hash == cElement::type_hash || c->type_hash == cAligner::type_hash)
-			mark_layout_dirty();
+			on_entity_message(MessageLayoutDirty);
 	}
 
 	void cLayoutPrivate::on_entity_child_component_removed(Component* c)
 	{
 		if (c->type_hash == cElement::type_hash || c->type_hash == cAligner::type_hash)
-			mark_layout_dirty();
+			on_entity_message(MessageLayoutDirty);
 	}
 
 	void cLayoutPrivate::on_entity_child_component_data_changed(Component* c, uint data_name_hash)
@@ -500,7 +484,7 @@ namespace flame
 			case S<ch("width")>::v:
 			case S<ch("height")>::v:
 			case S<ch("padding")>::v:
-				mark_layout_dirty();
+				on_entity_message(MessageLayoutDirty);
 				break;
 			}
 		}
@@ -514,7 +498,7 @@ namespace flame
 			case S<ch("height_factor")>::v:
 			case S<ch("margin")>::v:
 			case S<ch("only_basic")>::v:
-				mark_layout_dirty();
+				on_entity_message(MessageLayoutDirty);
 				break;
 			}
 		}

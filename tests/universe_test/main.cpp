@@ -13,6 +13,7 @@
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/style.h>
+#include <flame/universe/components/layout.h>
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/element_renderer.h>
@@ -41,7 +42,6 @@ void on_resize()
 	std::vector<ImageView*> vs(sc->get_images_count());
 	for (auto i = 0; i < vs.size(); i++)
 		vs[i] = sc->get_image(i)->get_default_view();
-
 	canvas->set_target(vs.size(), vs.data());
 
 	for (auto cb : cbs)
@@ -73,7 +73,7 @@ int main(int argc, char** args)
 			Font::create(L"c:/windows/fonts/consola.ttf")
 		};
 		font_atlas = FontAtlas::create(d, size(fonts), fonts);
-		canvas->set_resource(-1, font_atlas->get_view(), d->get_sampler(FilterNearest), L"", nullptr, font_atlas);
+		canvas->set_resource(-1, font_atlas->get_view(), d->get_sampler(FilterNearest), "", nullptr, font_atlas);
 	}
 
 	on_resize();
@@ -100,13 +100,13 @@ int main(int argc, char** args)
 	});
 
 	world = World::create();
-	world->register_object(w, "Window");
-	world->register_object(canvas, "Canvas");
+	world->register_object(w, "flame::Window");
+	world->register_object(canvas, "flame::graphics::Canvas");
 	auto res = ResMap::create();
 	res->load((res_path / L"res.ini").c_str());
-	res->traversal([](Capture&, const char*, const wchar_t* _path) {
+	res->traversal([](Capture&, const char* name, const wchar_t* _path) {
 		auto path = std::filesystem::path(_path);
-		canvas->set_resource(-1, Image::create(d, path.c_str())->get_default_view(), nullptr, path.c_str());
+		canvas->set_resource(-1, Image::create(d, path.c_str())->get_default_view(), nullptr, name);
 	}, Capture());
 	world->register_object(res, "ResMap");
 
@@ -115,7 +115,7 @@ int main(int argc, char** args)
 	struct sPrepareCanvas : System
 	{
 		sPrepareCanvas() :
-			System("sPrepareCanvas", ch("sEventDispatcher"))
+			System("sPrepareCanvas", ch("sPrepareCanvas"))
 		{
 		}
 
@@ -139,16 +139,20 @@ int main(int argc, char** args)
 	world->add_system(renderer);
 
 	auto e = Entity::create();
-	{
-		auto ce = cElement::create();
-		e->add_component(ce);
-		auto ct = cText::create();
-		e->add_component(ct);
-		e->remove_component(ct);
-		e->remove_component(ce);
-	}
+	//{
+	//	auto ce = cElement::create();
+	//	e->add_component(ce);
+	//	auto ct = cText::create();
+	//	ct->set_text(L"Hello World");
+	//	e->add_component(ct);
+	//}
 	e->load((res_path / test_prefab).c_str());
-	world->get_root()->add_child(e);
+	{
+		auto root = world->get_root();
+		root->add_component(cElement::create());
+		root->add_component(cLayout::create());
+		world->get_root()->add_child(e);
+	}
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);
@@ -163,7 +167,7 @@ int main(int argc, char** args)
 	//}, Capture().set_thiz(root), false, false);
 
 	//w->add_key_listener([](Capture& c, KeyStateFlags action, int value) {
-	//	if (is_key_down(action) && value == Key_Right)
+	//	if (is_key_down(action) && value == Keyboard_Right)
 	//	{
 	//		auto e = (cElement*)c.thiz<Entity>()->get_component(cElement::type_hash);
 	//		e->set_x(e->get_x() + 1);
@@ -174,9 +178,9 @@ int main(int argc, char** args)
 		printf("%d\n", fps);
 	}, Capture());
 
-	get_looper()->loop([](Capture&, float) {
+	looper().loop([](Capture&, float) {
 		{
-			auto t = (0.02 - get_looper()->get_delta_time());
+			auto t = (0.02 - looper().get_delta_time());
 			if (t > 0.f)
 				std::this_thread::sleep_for(std::chrono::milliseconds(uint(t * 1000)));
 		}

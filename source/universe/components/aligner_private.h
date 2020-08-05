@@ -4,6 +4,8 @@
 
 namespace flame
 {
+	struct cElementPrivate;
+
 	struct cAlignerPrivate : cAligner  // R ~ on_*
 	{
 		Align alignx = AlignNone;
@@ -19,6 +21,8 @@ namespace flame
 		bool only_basic = false;
 
 		Vec2f desired_size = Vec2f(0.f);
+
+		cElementPrivate* element = nullptr; // R ref
 
 		Align get_alignx() const override { return alignx; }
 		void set_alignx(Align a) override;
@@ -38,5 +42,7 @@ namespace flame
 
 		bool get_only_basic() const override { return only_basic; }
 		void set_only_basic(bool o) override;
+
+		void on_added() override;
 	};
 }

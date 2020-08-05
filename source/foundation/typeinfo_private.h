@@ -25,21 +25,21 @@ namespace flame
 
 	struct ReflectMetaBridge : ReflectMeta
 	{
-		bool has_token(const char* str) const override;
+		bool get_token(const char* str, void* value_dst) const override;
 	};
 
 	struct ReflectMetaPrivate : ReflectMetaBridge
 	{
-		std::vector<std::string> tokens;
+		std::vector<std::pair<std::string, std::string>> tokens;
 
 		uint get_tokens_count() const override { return tokens.size(); }
-		void get_token(void* str, uint idx) const override;
-		bool has_token(const std::string& str) const;
+		void get_token(void* name_dst, void* value_dst, uint idx) const override;
+		bool get_token(const std::string& str, void* value_dst) const;
 	};
 
-	inline bool ReflectMetaBridge::has_token(const char* str) const
+	inline bool ReflectMetaBridge::get_token(const char* str, void* value_dst) const
 	{
-		return ((ReflectMetaPrivate*)this)->has_token(str);
+		return ((ReflectMetaPrivate*)this)->get_token(str, value_dst);
 	}
 
 	struct VariableInfoPrivate : VariableInfo

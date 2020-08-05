@@ -19,36 +19,43 @@ namespace flame
 	struct cTextPrivate : cTextBridge, cElement::Drawer, sTypeSetting::AutoSizer // R ~ on_*
 	{
 		std::wstring text;
-		uint font_size = 14;
+		uint size = 14;
+		Vec4c color = Vec4c(0, 0, 0, 255);
 
 		cElementPrivate* element = nullptr; // R ref
-		sTypeSettingPrivate* type_setting = nullptr;
-		graphics::Canvas* canvas = nullptr;
+		sTypeSettingPrivate* type_setting = nullptr; // R ref
+		graphics::Canvas* canvas = nullptr; // R ref
 		graphics::FontAtlas* atlas = nullptr;
 
 		const wchar_t* get_text() const override { return text.c_str(); }
+		uint get_text_length() const override { return text.size(); }
 		void set_text(const std::wstring& text);
 
-		uint get_font_size() const override { return font_size; }
-		void set_font_size(uint fs) override;
+		uint get_size() const override { return size; }
+		void set_size(uint s) override;
+
+		Vec4c get_color() const override { return color; }
+		void set_color(const Vec4c& col) override;
 
 		bool get_auto_width() const override { return auto_width; }
 		void set_auto_width(bool a) override { auto_width = a; }
 		bool get_auto_height() const override { return auto_height; }
 		void set_auto_height(bool a) override { auto_height = a; }
 
-		void mark_size_dirty();
-
 		void on_gain_element();
 		void on_lost_element();
+		void on_gain_type_setting();
+		void on_gain_canvas();
+		void on_lost_canvas();
 
-		void on_entered_world() override;
-		void on_left_world() override;
-		void on_entity_component_added(Component* c) override;
+		void mark_text_changed();
 
 		void draw(graphics::Canvas* canvas) override;
 
 		Vec2f measure() override;
+
+		void on_added() override;
+		void on_entity_message(Message msg) override;
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

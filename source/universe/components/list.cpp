@@ -1,122 +1,55 @@
-//namespace flame
-//{
-//	struct cListItemPrivate : cListItem
-//	{
-//		cListItemPrivate()
-//		{
-//			event_receiver = nullptr;
-//			list = nullptr;
-//
-//			mouse_listener = nullptr;
-//		}
-//
-//		~cListItemPrivate()
-//		{
-//			if (!entity->dying_)
-//				event_receiver->mouse_listeners.remove(mouse_listener);
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//			switch (e)
-//			{
-//			case EntityComponentAdded:
-//				if (t == this)
-//				{
-//					event_receiver = entity->get_component(cEventReceiver);
-//					assert(event_receiver);
-//
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-//						{
-//							auto thiz = c.thiz<cListItemPrivate>();
-//							if (thiz->list)
-//								thiz->list->set_selected(thiz->entity);
-//						}
-//						return true;
-//					}, Capture().set_thiz(this));
-//				}
-//				break;
-//			}
-//		}
-//	};
-//
-//	cListItem* cListItem::create()
-//	{
-//		return new cListItemPrivate();
-//	}
-//
-//	struct cListPrivate : cList
-//	{
-//		bool select_air_when_clicked;
-//		void* mouse_listener;
-//
-//		cListPrivate(bool _select_air_when_clicked)
-//		{
-//			event_receiver = nullptr;
-//
-//			selected = nullptr;
-//
-//			select_air_when_clicked = _select_air_when_clicked;
-//			mouse_listener = nullptr;
-//		}
-//
-//		~cListPrivate()
-//		{
-//			if (!entity->dying_ && mouse_listener)
-//				event_receiver->mouse_listeners.remove(mouse_listener);
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//			switch (e)
-//			{
-//			case EntityComponentAdded:
-//				if (t == this)
-//				{
-//					event_receiver = entity->get_component(cEventReceiver);
-//					assert(event_receiver);
-//
-//					if (select_air_when_clicked)
-//					{
-//						mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//							if (is_mouse_down(action, key, true) && key == Mouse_Left)
-//								c.thiz<cListPrivate>()->set_selected(nullptr);
-//							return true;
-//						}, Capture().set_thiz(this));
-//					}
-//				}
-//				break;
-//			case EntityChildComponentAdded:
-//				if (((Component*)t)->name_hash == FLAME_CHASH("cListItem"))
-//					((cListItem*)t)->list = this;
-//				break;
-//			}
-//		}
-//	};
-//
-//	void cList::set_selected(Entity* e, void* sender)
-//	{
-//		if (selected == e)
-//			return;
-//		if (selected)
-//		{
-//			auto listitem = (cListItemPrivate*)selected->get_component(cListItem);
-//			if (listitem)
-//				listitem->do_style(false);
-//		}
-//		if (e)
-//		{
-//			auto listitem = (cListItemPrivate*)e->get_component(cListItem);
-//			if (listitem)
-//				listitem->do_style(true);
-//		}
-//		selected = e;
-//		report_data_changed(FLAME_CHASH("selected"), sender);
-//	}
-//
-//	cList* cList::create(bool select_air_when_clicked)
-//	{
-//		return new cListPrivate(select_air_when_clicked);
-//	}
-//}
+#include "../entity_private.h"
+#include "event_receiver_private.h"
+#include "list_private.h"
+
+namespace flame
+{
+	void cListPrivate::on_gain_event_receiver()
+	{
+		//if (select_air_when_clicked)
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			c.thiz<cListPrivate>()->set_selected(nullptr);
+		}, Capture().set_thiz(this));
+	}
+
+	void cListPrivate::on_lost_event_receiver()
+	{
+		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+	}
+
+	void cListPrivate::set_selected(Entity* e)
+	{
+		if (selected == e)
+			return;
+		if (selected)
+			selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
+		if (e)
+			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
+		selected = e;
+		Entity::report_data_changed(this, S<ch("selected")>::v);
+	}
+
+	cList* cList::create()
+	{
+		return f_new<cListPrivate>();
+	}
+
+	void cListItemPrivate::on_gain_event_receiver()
+	{
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			auto thiz = c.thiz<cListItemPrivate>();
+			if (thiz->list)
+				thiz->list->set_selected(thiz->entity);
+		}, Capture().set_thiz(this));
+	}
+
+	void cListItemPrivate::on_lost_event_receiver()
+	{
+		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+	}
+
+	cListItem* cListItem::create()
+	{
+		return f_new<cListItemPrivate>();
+	}
+}

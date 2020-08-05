@@ -21,11 +21,12 @@ namespace flame
 
 	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
 
-	enum FocusMethod
+	enum Message
 	{
-		FocusByLeftButton,
-		FocusByRightButton,
-		FocusByLeftOrRightButton
+		MessageElementTransformDirty,
+		MessageElementDrawingDirty,
+		MessageElementSizeDirty,
+		MessageLayoutDirty
 	};
 
 	enum Align

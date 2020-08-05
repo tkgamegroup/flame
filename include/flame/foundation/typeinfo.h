@@ -42,8 +42,8 @@ namespace flame
 	struct ReflectMeta
 	{
 		virtual uint get_tokens_count() const = 0;
-		virtual void get_token(void* str, uint idx) const = 0;
-		virtual bool has_token(const char* str) const = 0;
+		virtual void get_token(void* name_dst, void* value_dst, uint idx) const = 0;
+		virtual bool get_token(const char* name, void* value_dst = nullptr) const = 0;
 	};
 
 	struct VariableInfo

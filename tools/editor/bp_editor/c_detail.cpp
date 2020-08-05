@@ -24,7 +24,7 @@ cDetail::~cDetail()
 
 void cDetail::on_after_select()
 {
-	get_looper()->add_event([](Capture&) {
+	looper().add_event([](Capture&) {
 		auto& ui = bp_editor.window->ui;
 
 		bp_editor.detail->e_page->remove_children(0, -1);

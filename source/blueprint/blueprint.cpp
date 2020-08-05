@@ -151,7 +151,7 @@ namespace flame
 			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "chk", offsetof(Dummy, chk), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "out", offsetof(Dummy, out), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
-			update_addr = f2p(&Dummy::update);
+			update_addr = f2a(&Dummy::update);
 		}
 			break;
 		case bpNodeEnumMulti:
@@ -180,7 +180,7 @@ namespace flame
 			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 1, TypeInfo::get(TypeEnumSingle, type_parameter.c_str()), "chk", offsetof(Dummy, chk), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeEnumMulti, type_parameter.c_str()), "out", offsetof(Dummy, out), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 1, TypeInfo::get(TypeData, "float"), "res", offsetof(Dummy, res), nullptr));
-			update_addr = f2p(&Dummy::update);
+			update_addr = f2a(&Dummy::update);
 		}
 			break;
 		case bpNodeVariable:
@@ -219,8 +219,8 @@ namespace flame
 			memset(object, 0, size);
 			inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, 0, type, "in", sizeof(Dummy), nullptr));
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, type, "out", sizeof(Dummy) + type_size, nullptr));
-			dtor_addr = f2p(&Dummy::dtor);
-			update_addr = f2p(&Dummy::update);
+			dtor_addr = f2a(&Dummy::dtor);
+			update_addr = f2a(&Dummy::update);
 			auto& obj = *(Dummy*)object;
 			obj.type = type;
 		}
@@ -284,8 +284,8 @@ namespace flame
 			outputs.emplace_back(new bpSlotPrivate(this, bpSlotOut, 0, TypeInfo::get(TypeArrayOfData, type_name.c_str()), "out", sizeof(Dummy), nullptr));
 			for (auto i = 0; i < length; i++)
 				inputs.emplace_back(new bpSlotPrivate(this, bpSlotIn, i, type, std::to_string(i), sizeof(Dummy) + sizeof(Array<int>) + type_size * i, nullptr));
-			dtor_addr = f2p(&Dummy::dtor);
-			update_addr = f2p(&Dummy::update);
+			dtor_addr = f2a(&Dummy::dtor);
+			update_addr = f2a(&Dummy::update);
 			auto& obj = *(Dummy*)object;
 			obj.type = type;
 			obj.length = length;
@@ -616,7 +616,7 @@ namespace flame
 
 		root->update();
 
-		time += get_looper()->get_delta_time();
+		time += looper().get_delta_time();
 	}
 
 	void bpScenePrivate::save()
@@ -1356,7 +1356,7 @@ namespace flame
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			delta = get_looper()->get_delta_time();
+			delta = looper().get_delta_time();
 			total = bp_time;
 		}
 	};

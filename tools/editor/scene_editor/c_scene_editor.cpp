@@ -206,7 +206,7 @@ void _2DGizmo::on_select()
 		target = scene_editor.selected->get_component(cElement);
 		if (target)
 		{
-			get_looper()->add_event([](Capture& c) {
+			looper().add_event([](Capture& c) {
 				auto thiz = c.thiz<_2DGizmo>();
 				thiz->show_blocks(true);
 				if (thiz->target)
