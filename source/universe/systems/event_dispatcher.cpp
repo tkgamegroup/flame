@@ -165,7 +165,7 @@ namespace flame
 				//auto pass = false;
 				//mouse_event_checker->pass_checkers.call(er, &pass);
 				//return pass;
-				return true;
+				return !hovering; // TODO
 			}() && (force || mouse_contained))
 		{
 //			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;

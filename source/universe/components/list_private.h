@@ -4,7 +4,6 @@
 
 namespace flame
 {
-	struct EntityPrivate;
 	struct cEventReceiverPrivate;
 
 	struct cListPrivate : cList // R ~ on_*
@@ -13,13 +12,13 @@ namespace flame
 
 		void* mouse_listener = nullptr;
 
-		EntityPrivate* selected = nullptr;
+		Entity* selected = nullptr;
 		bool select_air_when_clicked = true;
 
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 
-		void cListPrivate::set_selected(Entity* e) override;
+		void set_selected(Entity* e) override;
 	};
 
 	struct cListItemPrivate : cListItem // R ~ on_*
