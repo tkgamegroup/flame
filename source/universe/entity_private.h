@@ -52,7 +52,7 @@ namespace flame
 			std::string name;
 			uint64 hash;
 
-			void* staging = nullptr;
+			void* staging = INVALID_POINTER;
 			void* target = nullptr;
 			void** dst = nullptr;
 			void(*on_gain)(void*) = nullptr;

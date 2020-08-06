@@ -1,4 +1,5 @@
 #include "../world_private.h"
+#include "element_private.h"
 #include "event_receiver_private.h"
 #include "menu_private.h"
 
@@ -8,23 +9,54 @@ namespace flame
 	{
 		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
-			auto w = ((EntityPrivate*)thiz->entity)->world;
-			if (w && !thiz->opened && thiz->items)
+			if (thiz->root && !thiz->opened && thiz->items)
 			{
-				auto root = w->root.get();
-				root->add_child(thiz->items.get());
-				thiz->root_listener = ((cEventReceiverPrivate*)root->get_component(cEventReceiver::type_hash))
+				thiz->items_element->set_x(::rand() % 300);
+				thiz->items_element->set_y(::rand() % 300);
+				thiz->root->add_child(thiz->items.get());
+				thiz->root_mouse_listener = thiz->root_event_receiver
 				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 					auto thiz = c.thiz<cMenuPrivate>();
+					if (thiz->frame >= looper().get_frame())
+						return;
+					thiz->root->remove_child(thiz->items.get(), false);
+					thiz->root_event_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
+					thiz->opened = false;
 				}, Capture().set_thiz(thiz));
 				thiz->opened = true;
+				thiz->frame = looper().get_frame();
 			}
 		}, Capture().set_thiz(this));
+	}
+
+	void cMenuPrivate::set_items(Entity* _e) 
+	{
+		auto e = (EntityPrivate*)_e;
+		auto ce = (cElementPrivate*)e->get_component(cElement::type_hash);
+		if (!ce)
+		{
+			printf("cannot set items of menu, items must contains a cElement component\n");
+			return;
+		}
+		items.reset(e); 
+		items_element = ce;
 	}
 
 	void cMenuPrivate::on_lost_event_receiver()
 	{
 		event_receiver->remove_mouse_left_down_listener(mouse_down_listener);
+	}
+
+	void cMenuPrivate::on_entity_entered_world()
+	{
+		root = ((EntityPrivate*)entity)->world->root.get();
+		root_event_receiver = ((cEventReceiverPrivate*)root->get_component(cEventReceiver::type_hash));
+	}
+
+	void cMenuPrivate::on_entity_left_world()
+	{
+		root = nullptr;
+		root_event_receiver = nullptr;
 	}
 
 	cMenu* cMenu::create()

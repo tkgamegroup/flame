@@ -113,7 +113,10 @@ namespace flame
 
 	void EntityPrivate::Ref::gain(Component* c)
 	{
+		if (staging == INVALID_POINTER)
+			return;
 		target = staging;
+		staging = INVALID_POINTER;
 		*dst = target;
 		if (target)
 		{
@@ -251,7 +254,7 @@ namespace flame
 
 		c->entity = this;
 
-		for (auto& r : aux.refs)
+		for (auto& r : ((ComponentAux*)c->aux)->refs)
 			r.gain(c);
 
 		if (udt->find_function("on_entity_destroyed") ||

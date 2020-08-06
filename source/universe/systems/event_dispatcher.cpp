@@ -173,7 +173,7 @@ namespace flame
 			}
 		}
 		if (hovering == er || force || (er->ignore_occluders && mouse_contained))
-			staging_mouse_target.push_back(er);
+			staging_mouse_targets.push_back(er);
 
 //		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)
 //		{
@@ -234,7 +234,7 @@ namespace flame
 				mbtns_temp[i].second = false;
 			}
 			else
-				mbtns[i].second;
+				mbtns[i].second = false;
 		}
 		mdisp = mdisp_temp;
 		mdisp_temp = 0.f;
@@ -276,12 +276,12 @@ namespace flame
 //			}
 //		}
 		
-		staging_mouse_target.clear();
+		staging_mouse_targets.clear();
 		if (active)
 			dispatch_mouse_single(active, true);
 		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
 
-		for (auto er : staging_mouse_target)
+		for (auto er : staging_mouse_targets)
 		{
 			if (mdisp != 0)
 			{
