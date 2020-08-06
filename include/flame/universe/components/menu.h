@@ -1,11 +1,19 @@
-//#pragma once
-//
-//#include <flame/universe/component.h>
-//
-//namespace flame
-//{
-//	struct cMenu : Component
-//	{
+#pragma once
+
+#include <flame/universe/component.h>
+
+namespace flame
+{
+	struct cMenu : Component // R !ctor !dtor !type_name !type_hash
+	{
+		inline static auto type_name = "flame::cMenu";
+		inline static auto type_hash = ch(type_name);
+
+		cMenu() :
+			Component(type_name, type_hash)
+		{
+		}
+
 //		enum Mode
 //		{
 //			ModeMenubar,
@@ -14,22 +22,12 @@
 //			ModeContext
 //		};
 //
-//		cElement* element;
-//		cEventReceiver* event_receiver;
-//
-//		Entity* root;
-//		Entity* items;
 //		Mode mode;
-//
-//		bool opened;
-//
-//		cMenu() :
-//			Component("cMenu")
-//		{
-//		}
-//		
-//		FLAME_UNIVERSE_EXPORTS static cMenu* create(Mode mode);
-//	};
+
+		virtual void set_items(Entity* e) = 0;
+
+		FLAME_UNIVERSE_EXPORTS static cMenu* create();
+	};
 //
 //	struct cMenuItems : Component
 //	{
@@ -56,4 +54,4 @@
 //	};
 //
 //	FLAME_UNIVERSE_EXPORTS void close_menu(Entity* menu);
-//}
+}

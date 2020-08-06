@@ -18,6 +18,7 @@ namespace flame
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 
+		Entity* get_selected() const override { return selected; }
 		void set_selected(Entity* e) override;
 	};
 

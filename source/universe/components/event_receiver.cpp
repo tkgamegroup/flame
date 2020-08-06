@@ -5,6 +5,11 @@
 
 namespace flame
 {
+	void cEventReceiverPrivate::set_ignore_occluders(bool v)
+	{
+		ignore_occluders = v;
+	}
+
 	void* cEventReceiverPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) 
 	{
 		auto c = new Closure(callback, capture);

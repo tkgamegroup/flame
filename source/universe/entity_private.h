@@ -48,7 +48,6 @@ namespace flame
 		struct Ref
 		{
 			RefType type;
-			bool strong;
 			Place place = PlaceLocal;
 			std::string name;
 			uint64 hash;

@@ -52,7 +52,7 @@ void on_resize()
 }
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"list_test.prefab";
+auto test_prefab = L"menu.prefab";
 
 int main(int argc, char** args)
 {
@@ -150,6 +150,9 @@ int main(int argc, char** args)
 	{
 		auto root = world->get_root();
 		root->add_component(cElement::create());
+		auto cer = cEventReceiver::create();
+		cer->set_ignore_occluders(true);
+		root->add_component(cer);
 		root->add_component(cLayout::create());
 		world->get_root()->add_child(e);
 	}

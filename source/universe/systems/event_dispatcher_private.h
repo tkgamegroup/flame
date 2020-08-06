@@ -48,7 +48,7 @@ namespace flame
 		bool char_input_compelete = true;
 		float dbclick_timer = -1.f;
 
-//		cEventReceiverPrivate* mouse_event_checker;
+		std::vector<cEventReceiverPrivate*> staging_mouse_target;
 
 		bool dirty = false;
 

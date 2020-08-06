@@ -1,46 +1,49 @@
-//#include <flame/graphics/font.h>
-//#include <flame/universe/components/element.h>
-//#include <flame/universe/components/text.h>
-//#include <flame/universe/components/event_receiver.h>
-//#include <flame/universe/components/style.h>
-//#include <flame/universe/components/aligner.h>
-//#include <flame/universe/components/layout.h>
-//#include <flame/universe/components/menu.h>
-//#include <flame/universe/ui/layer.h>
-//
-//namespace flame
-//{
+#include "../world_private.h"
+#include "event_receiver_private.h"
+#include "menu_private.h"
+
+namespace flame
+{
+	void cMenuPrivate::on_gain_event_receiver()
+	{
+		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			auto thiz = c.thiz<cMenuPrivate>();
+			auto w = ((EntityPrivate*)thiz->entity)->world;
+			if (w && !thiz->opened && thiz->items)
+			{
+				auto root = w->root.get();
+				root->add_child(thiz->items.get());
+				thiz->root_listener = ((cEventReceiverPrivate*)root->get_component(cEventReceiver::type_hash))
+				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+					auto thiz = c.thiz<cMenuPrivate>();
+				}, Capture().set_thiz(thiz));
+				thiz->opened = true;
+			}
+		}, Capture().set_thiz(this));
+	}
+
+	void cMenuPrivate::on_lost_event_receiver()
+	{
+		event_receiver->remove_mouse_left_down_listener(mouse_down_listener);
+	}
+
+	cMenu* cMenu::create()
+	{
+		return f_new<cMenuPrivate>();
+	}
+
 //	struct cMenuPrivate : cMenu
 //	{
-//		void* mouse_listener;
-//
 //		cMenuPrivate(Mode _mode)
 //		{
-//			element = nullptr;
-//			event_receiver = nullptr;
-//
-//			root = nullptr;
-//			items = f_new<Entity>();
-//			{
 //				items->add_component(cElement::create());
 //				items->add_component(cLayout::create(LayoutVertical));
 //				items->add_component(cMenuItems::create());
-//			}
+
 //			items->get_component(cMenuItems)->menu = this;
 //			mode = _mode;
-//
-//			opened = false;
-//
-//			mouse_listener = nullptr;
 //		}
-//
-//		~cMenuPrivate()
-//		{
-//			if (!entity->dying_)
-//				event_receiver->mouse_listeners.remove(mouse_listener);
-//			f_delete(items);
-//		}
-//
+
 //		void close()
 //		{
 //			if (opened)
@@ -164,33 +167,15 @@
 //
 //		void on_event(EntityEvent e, void* t) override
 //		{
-//			switch (e)
-//			{
-//			case EntityComponentAdded:
-//				if (t == this)
-//				{
-//					element = entity->get_component(cElement);
-//					event_receiver = entity->get_component(cEventReceiver);
-//					assert(element);
-//					assert(event_receiver);
-//
 //					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 //						auto thiz = c.thiz<cMenuPrivate>();
 //						if (thiz->can_open(action, key))
 //							thiz->open((Vec2f)pos);
 //						return true;
 //					}, Capture().set_thiz(this));
-//				}
-//				break;
-//			}
 //		}
 //	};
-//
-//	cMenu* cMenu::create(cMenu::Mode mode)
-//	{
-//		return new cMenuPrivate(mode);
-//	}
-//
+
 //	struct cMenuItemsPrivate : cMenuItems
 //	{
 //		cMenuItemsPrivate()
@@ -265,4 +250,4 @@
 //	{
 //		return new cMenuItemPrivate();
 //	}
-//}
+}

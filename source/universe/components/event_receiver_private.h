@@ -27,8 +27,12 @@ namespace flame
 		sEventDispatcherPrivate* dispatcher = nullptr; // R ref
 		int frame = -1;
 
+		bool ignore_occluders = false;
 		uint64 drag_hash = 0;
 		std::vector<uint64> acceptable_drops;
+
+		bool get_ignore_occluders() const override { return ignore_occluders; }
+		void set_ignore_occluders(bool v) override;
 
 		void* add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) override;
 		void remove_key_down_listener(void* lis) override;

@@ -157,86 +157,23 @@ namespace flame
 		auto mouse_contained = er->element->contains((Vec2f)mpos);
 		//auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
 
-		if ([&]() {
-				//if (!mouse_event_checker)
-				//	return true;
-				//if (mouse_event_checker == INVALID_POINTER)
-				//	return false;
-				//auto pass = false;
-				//mouse_event_checker->pass_checkers.call(er, &pass);
-				//return pass;
-				return !hovering; // TODO
-			}() && (force || mouse_contained))
+		if (!hovering && mouse_contained)
 		{
-//			mouse_event_checker = er->pass_checkers.impl->count() ? er : (cEventReceiverPrivate*)INVALID_POINTER;
-//
-			//if (mouse_event_checker == INVALID_POINTER && mouse_contained)
-			if (mouse_contained)
-			{
-				hovering = er;
+			hovering = er;
 
-				if (mbtns[Mouse_Left] == std::make_pair(true, true))
-				{
-					focusing = nullptr;
-					if (hovering)
-					{
-						focusing = hovering;
-						active = focusing;
-						active_pos = mpos;
-					}
-				}
-			}
-
-			if (mdisp != 0)
+			if (mbtns[Mouse_Left] == std::make_pair(true, true))
 			{
-				for (auto& l : er->mouse_move_listeners)
-					l->call(mdisp, mpos);
-			}
-			if (mscrl != 0)
-			{
-				for (auto& l : er->mouse_scroll_listeners)
-					l->call(mscrl);
-			}
-			if (mbtns[Mouse_Left].second)
-			{
-				if (mbtns[Mouse_Left].first)
+				focusing = nullptr;
+				if (hovering)
 				{
-					for (auto& l : er->mouse_left_down_listeners)
-						l->call(mpos);
-				}
-				else
-				{
-					for (auto& l : er->mouse_left_up_listeners)
-						l->call(mpos);
-				}
-			}
-			if (mbtns[Mouse_Right].second)
-			{
-				if (mbtns[Mouse_Right].first)
-				{
-					for (auto& l : er->mouse_right_down_listeners)
-						l->call(mpos);
-				}
-				else
-				{
-					for (auto& l : er->mouse_right_up_listeners)
-						l->call(mpos);
-				}
-			}
-			if (mbtns[Mouse_Middle].second)
-			{
-				if (mbtns[Mouse_Middle].first)
-				{
-					for (auto& l : er->mouse_middle_down_listeners)
-						l->call(mpos);
-				}
-				else
-				{
-					for (auto& l : er->mouse_middle_up_listeners)
-						l->call(mpos);
+					focusing = hovering;
+					active = focusing;
+					active_pos = mpos;
 				}
 			}
 		}
+		if (hovering == er || force || (er->ignore_occluders && mouse_contained))
+			staging_mouse_target.push_back(er);
 
 //		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)
 //		{
@@ -338,11 +275,64 @@ namespace flame
 //					focusing_state = FocusingAndDragging;
 //			}
 //		}
-
-//		mouse_event_checker = nullptr;
+		
+		staging_mouse_target.clear();
 		if (active)
 			dispatch_mouse_single(active, true);
 		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
+
+		for (auto er : staging_mouse_target)
+		{
+			if (mdisp != 0)
+			{
+				for (auto& l : er->mouse_move_listeners)
+					l->call(mdisp, mpos);
+			}
+			if (mscrl != 0)
+			{
+				for (auto& l : er->mouse_scroll_listeners)
+					l->call(mscrl);
+			}
+			if (mbtns[Mouse_Left].second)
+			{
+				if (mbtns[Mouse_Left].first)
+				{
+					for (auto& l : er->mouse_left_down_listeners)
+						l->call(mpos);
+				}
+				else
+				{
+					for (auto& l : er->mouse_left_up_listeners)
+						l->call(mpos);
+				}
+			}
+			if (mbtns[Mouse_Right].second)
+			{
+				if (mbtns[Mouse_Right].first)
+				{
+					for (auto& l : er->mouse_right_down_listeners)
+						l->call(mpos);
+				}
+				else
+				{
+					for (auto& l : er->mouse_right_up_listeners)
+						l->call(mpos);
+				}
+			}
+			if (mbtns[Mouse_Middle].second)
+			{
+				if (mbtns[Mouse_Middle].first)
+				{
+					for (auto& l : er->mouse_middle_down_listeners)
+						l->call(mpos);
+				}
+				else
+				{
+					for (auto& l : er->mouse_middle_up_listeners)
+						l->call(mpos);
+				}
+			}
+		}
 
 		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mpos)))
 		if (focusing && mbtns[Mouse_Left] == std::make_pair(false, true) && focusing->element->contains(Vec2f(mpos)))

@@ -162,13 +162,11 @@ namespace flame
 			{
 				auto v = udt->get_variable(i);
 				auto m = v->get_meta();
-				std::string ref_str;
-				if (m->get_token("ref", &ref_str))
+				if (m->get_token("ref"))
 				{
 					Ref r;
 					r.name = SUS::cut_tail_if(v->get_type()->get_name(), "Private");
 					r.hash = std::hash<std::string>()(r.name);
-					r.strong = ref_str.empty() || ref_str == "strong";
 					r.dst = (void**)((char*)c + v->get_offset());
 					auto var_name = std::string(v->get_name());
 					{
@@ -202,7 +200,7 @@ namespace flame
 							if (r.place == PlaceLocal || parent)
 							{
 								r.staging = get_component(r.place, r.hash);
-								if (!r.staging && r.strong)
+								if (!r.staging)
 								{
 									printf("add component %s failed, this component requires %s component %s, which do not exist\n",
 										c->type_name, r.place == PlaceLocal ? "local" : (r.place == PlaceParent ? "parent's" : "ancestor's"), r.name.c_str());
@@ -219,7 +217,7 @@ namespace flame
 							if (world)
 							{
 								r.staging = world->get_system(r.hash);
-								if (!r.staging && r.strong)
+								if (!r.staging)
 								{
 									printf("add component %s failed, this component requires system %s, which do not exist\n", c->type_name, r.name.c_str());
 									return;
@@ -234,7 +232,7 @@ namespace flame
 							if (world)
 							{
 								r.staging = world->find_object(r.name);
-								if (!r.staging && r.strong)
+								if (!r.staging)
 								{
 									printf("add component %s failed, this component requires object %s, which do not exist\n", c->type_name, r.name.c_str());
 									return;
@@ -432,7 +430,7 @@ namespace flame
 						if (r.place != PlaceLocal && !r.target)
 						{
 							r.staging = e->get_component(r.place, r.hash);
-							if (!r.staging && r.strong)
+							if (!r.staging)
 							{
 								printf("add child failed, this child contains a component %s that requires %s component %s, which do not exist\n", 
 									c.second->type_name, r.place == PlaceParent ? "local" : "ancestor's", r.name.c_str());
@@ -445,7 +443,7 @@ namespace flame
 						if (world)
 						{
 							r.staging = world->get_system(r.hash);
-							if (!r.staging && r.strong)
+							if (!r.staging)
 							{
 								printf("add child failed, this child contains a component %s that requires system %s, which do not exist\n", c.second->type_name, r.name.c_str());
 								ok = false;
@@ -457,7 +455,7 @@ namespace flame
 						if (world)
 						{
 							r.staging = world->find_object(r.name);
-							if (!r.staging && r.strong)
+							if (!r.staging)
 							{
 								printf("add child failed, this child contains a component %s that requires object %s, which do not exist\n", c.second->type_name, r.name.c_str());
 								ok = false;
@@ -692,8 +690,20 @@ namespace flame
 									type->destroy(d);
 								}
 							}
+							for (auto n : n_c.children())
+							{
+								auto fs = udt->find_function((std::string("set_") + n.name()).c_str());
+								if (fs->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Entity"), nullptr))
+								{
+									auto e = f_new<EntityPrivate>();
+									load_prefab(e, n.child("entity"));
+									a2f<void(*)(void*, void*)>(fs->get_address(c))(c, e);
+								}
+							}
 						}
 					}
+					else
+						printf("cannot find udt: %s\n", name.c_str());
 				}
 			}
 		}
