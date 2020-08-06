@@ -11,7 +11,6 @@ namespace flame
 		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* d) :
 			device(d)
 		{
-#if defined(FLAME_VULKAN)
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
 				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 128},
 				{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32},
@@ -27,18 +26,11 @@ namespace flame
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
 			descriptorPoolInfo.maxSets = 8;
 			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		DescriptorPoolPrivate::~DescriptorPoolPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		DescriptorPool* DescriptorPool::create(Device* d)
@@ -57,7 +49,6 @@ namespace flame
 		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> _bindings, bool create_default_set) :
 			device(d)
 		{
-#if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(_bindings.size());
 			bindings.resize(_bindings.size());
 			for (auto i = 0; i < bindings.size(); i++)
@@ -82,9 +73,7 @@ namespace flame
 			info.pBindings = vk_bindings.data();
 
 			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
-#elif defined(FLAME_D3D12)
 
-#endif
 			if (create_default_set)
 				default_set.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), this));
 
@@ -95,11 +84,7 @@ namespace flame
 
 		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		DescriptorSetLayout* DescriptorSetLayout::create(Device* d, uint binding_count, const DescriptorBindingInfo* bindings, bool create_default_set)
@@ -111,7 +96,6 @@ namespace flame
 			descriptor_pool(p),
 			descriptor_layout(l)
 		{
-#if defined(FLAME_VULKAN)
 			VkDescriptorSetAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 			info.pNext = nullptr;
@@ -120,23 +104,15 @@ namespace flame
 			info.pSetLayouts = &l->vk_descriptor_set_layout;
 
 			chk_res(vkAllocateDescriptorSets(p->device->vk_device, &info, &vk_descriptor_set));
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		DescriptorSetPrivate::~DescriptorSetPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			chk_res(vkFreeDescriptorSets(descriptor_pool->device->vk_device, descriptor_pool->vk_descriptor_pool, 1, &vk_descriptor_set));
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void DescriptorSetPrivate::set_buffer(uint binding, uint index, BufferPrivate* b, uint offset, uint range)
 		{
-#if defined(FLAME_VULKAN)
 			VkDescriptorBufferInfo i;
 			i.buffer = b->vk_buffer;
 			i.offset = offset;
@@ -155,14 +131,10 @@ namespace flame
 			write.pTexelBufferView = nullptr;
 
 			vkUpdateDescriptorSets(descriptor_pool->device->vk_device, 1, &write, 0, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void DescriptorSetPrivate::set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sampler)
 		{
-#if defined(FLAME_VULKAN)
 			VkDescriptorImageInfo i;
 			i.imageView = iv->vk_image_view;
 			i.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -181,9 +153,6 @@ namespace flame
 			write.pTexelBufferView = nullptr;
 
 			vkUpdateDescriptorSets(descriptor_pool->device->vk_device, 1, &write, 0, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		DescriptorSet* DescriptorSet::create(DescriptorPool* p, DescriptorSetLayout* l)
@@ -195,7 +164,6 @@ namespace flame
 			device(d),
 			push_cconstant_size(_push_constant_size)
 		{
-#if defined(FLAME_VULKAN)
 			std::vector<VkDescriptorSetLayout> raw_descriptor_set_layouts;
 			raw_descriptor_set_layouts.resize(_descriptor_layouts.size());
 			for (auto i = 0; i < _descriptor_layouts.size(); i++)
@@ -216,9 +184,6 @@ namespace flame
 			info.pPushConstantRanges = push_cconstant_size > 0 ? &pushconstant_range : nullptr;
 
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			descriptor_layouts.resize(_descriptor_layouts.size());
 			for (auto i = 0; i < descriptor_layouts.size(); i++)
@@ -232,11 +197,7 @@ namespace flame
 
 		PipelineLayoutPrivate::~PipelineLayoutPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		PipelineLayout* PipelineLayout::create(Device* d, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
@@ -609,7 +570,6 @@ namespace flame
 
 				report_used_file(spv_path.c_str());
 
-#if defined(FLAME_VULKAN)
 				VkShaderModuleCreateInfo shader_info;
 				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 				shader_info.flags = 0;
@@ -617,9 +577,6 @@ namespace flame
 				shader_info.codeSize = spv_file.size();
 				shader_info.pCode = (uint*)spv_file.data();
 				chk_res(vkCreateShaderModule(d->vk_device, &shader_info, nullptr, &shaders[i].m));
-#elif defined(FLAME_D3D12)
-
-#endif
 			}
 
 			return true;
@@ -641,7 +598,6 @@ namespace flame
 		{
 			type = PipelineGraphics;
 
-#if defined(FLAME_VULKAN)
 			std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 			std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
 			std::vector<VkVertexInputBindingDescription> vk_vi_bindings;
@@ -847,9 +803,6 @@ namespace flame
 			pipeline_info.basePipelineIndex = 0;
 
 			chk_res(vkCreateGraphicsPipelines(d->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			shaders.resize(_shaders.size());
 			for (auto i = 0; i < shaders.size(); i++)
@@ -862,7 +815,6 @@ namespace flame
 		{
 			type = PipelineCompute;
 
-#if defined(FLAME_VULKAN)
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 			pipeline_info.pNext = nullptr;
@@ -881,9 +833,6 @@ namespace flame
 			pipeline_info.layout = pll->vk_pipeline_layout;
 
 			chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			shaders.resize(1);
 			shaders[0] = std::move(compute_shader);
@@ -891,14 +840,10 @@ namespace flame
 
 		PipelinePrivate::~PipelinePrivate()
 		{
-#if defined(FLAME_VULKAN)
 			for (auto& s : shaders)
 				vkDestroyShaderModule(device->vk_device, s.m, nullptr);
 
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders,

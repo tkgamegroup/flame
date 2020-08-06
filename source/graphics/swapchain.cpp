@@ -37,23 +37,15 @@ namespace flame
 			if (window)
 				window->remove_resize_listener(resize_listener);
 
-#if defined(FLAME_VULKAN)
 			if (vk_swapchain)
 				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
 			if (vk_surface)
 				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void SwapchainPrivate::acquire_image()
 		{
-#if defined(FLAME_VULKAN)
 			chk_res(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
-#elif defined(FLAME_D3D12)
-			image_index = v->GetCurrentBackBufferIndex();
-#endif
 		}
 
 		void SwapchainPrivate::update()
@@ -62,7 +54,6 @@ namespace flame
 
 			images.clear();
 
-#if defined(FLAME_VULKAN)
 			if (vk_swapchain)
 			{
 				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
@@ -73,18 +64,12 @@ namespace flame
 				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
 				vk_surface = nullptr;
 			}
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			auto size = window->get_size();
 			if (size != 0U)
 			{
 				uint image_count = 3;
 
-#if defined(FLAME_VULKAN)
-
-#ifdef FLAME_WINDOWS
 				VkWin32SurfaceCreateInfoKHR surface_info;
 				surface_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 				surface_info.flags = 0;
@@ -92,13 +77,6 @@ namespace flame
 				surface_info.hinstance = (HINSTANCE)get_hinst();
 				surface_info.hwnd = (HWND)window->get_native();
 				chk_res(vkCreateWin32SurfaceKHR(device->vk_instance, &surface_info, nullptr, &vk_surface));
-#else
-				VkAndroidSurfaceCreateInfoKHR surface_info;
-				surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
-				surface_info.flags = 0;
-				surface_info.pNext = nullptr;
-				surface_info.window = ((android_app*)w->get_native())->window;
-#endif
 
 				VkBool32 surface_supported;
 				vkGetPhysicalDeviceSurfaceSupportKHR(device->vk_physical_device, 0, vk_surface, &surface_supported);
@@ -155,43 +133,6 @@ namespace flame
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
-
-#elif defined(FLAME_D3D12)
-
-				HRESULT res;
-
-				DXGI_MODE_DESC backbuffer_desc = {};
-				backbuffer_desc.Width = size.x();
-				backbuffer_desc.Height = size.y();
-				backbuffer_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-				DXGI_SAMPLE_DESC sample_desc = {};
-				sample_desc.Count = 1;
-
-				DXGI_SWAP_CHAIN_DESC desc = {};
-				desc.BufferCount = image_count;
-				desc.BufferDesc = backbuffer_desc;
-				desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-				desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-				desc.OutputWindow = (HWND)(w->get_native());
-				desc.SampleDesc = sample_desc;
-				desc.Windowed = true;
-
-				IDXGISwapChain* temp_swapchain;
-				res = d->factory->CreateSwapChain(((QueuePrivate*)d->gq)->v, &desc, &temp_swapchain);
-				assert(SUCCEEDED(res));
-				v = (IDXGISwapChain3*)temp_swapchain;
-
-				std::vector<void*> vk_images;
-
-				std::vector<ID3D12Resource*> native_images;
-				native_images.resize(image_count);
-				for (auto i = 0; i < image_count; i++)
-				{
-					res = v->GetBuffer(i, IID_PPV_ARGS(&native_images[i]));
-					assert(SUCCEEDED(res));
-				}
-#endif
 
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)

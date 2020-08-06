@@ -19,7 +19,6 @@ namespace flame
 
 		struct DevicePrivate : Device
 		{
-#if defined(FLAME_VULKAN)
 			VkInstance vk_instance;
 			VkPhysicalDevice vk_physical_device;
 			VkPhysicalDeviceProperties vk_props;
@@ -28,11 +27,6 @@ namespace flame
 			VkDevice vk_device;
 			int graphics_queue_index;
 			int transfer_queue_index;
-#elif defined(FLAME_D3D12)
-			IDXGIFactory4* factory; // just like instance
-			IDXGIAdapter1* adapter; // just like physical device
-			ID3D12Device4* v; // just like device
-#endif
 			std::unique_ptr<DescriptorPoolPrivate> descriptor_pool;
 			std::unique_ptr<SamplerPrivate> sampler_nearest;
 			std::unique_ptr<SamplerPrivate> sampler_linear;

@@ -20,11 +20,7 @@ namespace flame
 		struct CommandPoolPrivate : CommandPool
 		{
 			DevicePrivate* device;
-#if defined(FLAME_VULKAN)
 			VkCommandPool vk_command_buffer_pool;
-#elif defined(FLAME_D3D12)
-			ID3D12CommandAllocator* v;
-#endif
 
 			CommandPoolPrivate(DevicePrivate* d, int queue_family_idx);
 			~CommandPoolPrivate();
@@ -57,12 +53,7 @@ namespace flame
 			FramebufferPrivate* current_framebuffer = nullptr;
 			PipelinePrivate* current_pipeline = nullptr;
 
-#if defined(FLAME_VULKAN)
 			VkCommandBuffer vk_command_buffer;
-#elif defined(FLAME_D3D12)
-			ID3D12GraphicsCommandList* v;
-			bool _recording;
-#endif
 
 			CommandBufferPrivate(CommandPoolPrivate* p, bool sub = false);
 			~CommandBufferPrivate();
@@ -160,11 +151,7 @@ namespace flame
 		struct QueuePrivate : QueueBridge
 		{
 			DevicePrivate* device;
-#if defined(FLAME_VULKAN)
 			VkQueue vk_queue;
-#elif defined(FLAME_D3D12)
-			ID3D12CommandQueue* v;
-#endif
 
 			QueuePrivate(DevicePrivate* d, uint queue_family_idx);
 

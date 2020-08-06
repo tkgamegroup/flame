@@ -8,6 +8,7 @@ namespace flame
 
 	struct cMenuPrivate : cMenu // R ~ on_*
 	{
+		cElementPrivate* element = nullptr; // R ref
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 
 		void* mouse_down_listener = nullptr;

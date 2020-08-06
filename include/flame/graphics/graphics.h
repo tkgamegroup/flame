@@ -1,13 +1,9 @@
  #pragma once
 
-#ifdef FLAME_WINDOWS
 #ifdef FLAME_GRAPHICS_MODULE
 #define FLAME_GRAPHICS_EXPORTS __declspec(dllexport)
 #else
 #define FLAME_GRAPHICS_EXPORTS __declspec(dllimport)
-#endif
-#else
-#define FLAME_GRAPHICS_EXPORTS
 #endif
 
 #include <flame/math.h>

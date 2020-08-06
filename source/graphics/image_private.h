@@ -20,12 +20,8 @@ namespace flame
 			uint layer;
 			SampleCount sample_count;
 
-#if defined(FLAME_VULKAN)
 			VkDeviceMemory vk_memory = 0;
 			VkImage vk_image = 0;
-#elif defined(FLAME_D3D12)
-			ID3D12Resource* _v;
-#endif
 			std::unique_ptr<ImageViewPrivate> default_view;
 
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool default_view = true);
@@ -67,11 +63,7 @@ namespace flame
 			Swizzle swizzle_b;
 			Swizzle swizzle_a;
 
-#if defined(FLAME_VULKAN)
 			VkImageView vk_image_view;
-#elif defined(FLAME_D3D12)
-			ID3D12DescriptorHeap* _v;
-#endif
 
 			ImageViewPrivate(ImagePrivate* image, ImageViewType type = ImageView2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
 				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
@@ -109,11 +101,8 @@ namespace flame
 		struct SamplerPrivate : Sampler
 		{
 			DevicePrivate* device;
-#if defined(FLAME_VULKAN)
 			VkSampler vk_sampler;
-#elif defined(FLAME_D3D12)
 
-#endif
 			SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
 			~SamplerPrivate();
 

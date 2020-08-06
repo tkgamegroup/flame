@@ -667,7 +667,6 @@ namespace flame
 		return converter.to_bytes(wstr);
 	}
 
-#ifdef FLAME_WINDOWS
 	inline std::string translate(const char* src_locale, const char* dst_locale, const std::string& src)
 	{
 		std::wstring_convert<std::codecvt_byname<wchar_t, char, mbstate_t>>
@@ -681,7 +680,6 @@ namespace flame
 	{
 		return translate(".932", ".936", src);
 	}
-#endif
 
 	enum FileType
 	{
@@ -798,11 +796,7 @@ namespace flame
 
 	inline std::string get_file_content(const std::filesystem::path& filename)
 	{
-#ifdef FLAME_WINDOWS
 		std::ifstream file(filename, std::ios::binary);
-#else
-		std::ifstream file(w2s(filename), std::ios::binary);
-#endif
 		if (!file.good())
 			return "";
 

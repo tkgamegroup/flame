@@ -11,7 +11,6 @@ namespace flame
 		{
 			size = _size;
 
-#if defined(FLAME_VULKAN)
 			VkBufferCreateInfo buffer_info;
 			buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 			buffer_info.flags = 0;
@@ -43,9 +42,7 @@ namespace flame
 			chk_res(vkAllocateMemory(d->vk_device, &alloc_info, nullptr, &vk_memory));
 
 			chk_res(vkBindBufferMemory(d->vk_device, vk_buffer, vk_memory, 0));
-#elif defined(FLAME_D3D12)
 
-#endif
 			if (data)
 				copy_from_data(data);
 		}
@@ -55,12 +52,8 @@ namespace flame
 			if (mapped)
 				unmap();
 
-#if defined(FLAME_VULKAN)
 			vkFreeMemory(device->vk_device, vk_memory, nullptr);
 			vkDestroyBuffer(device->vk_device, vk_buffer, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void BufferPrivate::map(uint offset, uint _size)
@@ -69,29 +62,20 @@ namespace flame
 				return;
 			if (_size == 0)
 				_size = size;
-#if defined(FLAME_VULKAN)
 			chk_res(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void BufferPrivate::unmap()
 		{
 			if (mapped)
 			{
-#if defined(FLAME_VULKAN)
 				vkUnmapMemory(device->vk_device, vk_memory);
 				mapped = nullptr;
-#elif defined(FLAME_D3D12)
-
-#endif
 			}
 		}
 
 		void BufferPrivate::flush()
 		{
-#if defined(FLAME_VULKAN)
 			VkMappedMemoryRange range;
 			range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			range.pNext = nullptr;
@@ -99,9 +83,6 @@ namespace flame
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
 			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void BufferPrivate::copy_from_data(void* data)

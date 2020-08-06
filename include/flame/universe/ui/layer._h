@@ -1,12 +1,3 @@
-#pragma once
-
-#include <flame/universe/world.h>
-#include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/components/data_keeper.h>
-#include <flame/universe/components/element.h>
-#include <flame/universe/components/event_receiver.h>
-#include <flame/universe/components/aligner.h>
-
 namespace flame
 {
 	struct Entity;

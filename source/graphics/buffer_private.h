@@ -15,12 +15,8 @@ namespace flame
 
 			void* mapped = nullptr;
 
-#if defined(FLAME_VULKAN)
 			VkBuffer vk_buffer;
 			VkDeviceMemory vk_memory;
-#elif defined(FLAME_D3D12)
-			ID3D12Resource* v;
-#endif
 
 			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing = false, void* data = nullptr);
 			~BufferPrivate();

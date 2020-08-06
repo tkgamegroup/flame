@@ -2,7 +2,6 @@
 #include "foundation_private.h"
 #include "bitmap_private.h"
 
-#ifdef FLAME_WINDOWS
 #define NOMINMAX
 #include <process.h>
 #include <shellapi.h>
@@ -11,7 +10,6 @@
 #include <CommCtrl.h>
 #include <thumbcache.h>
 #include <ImageHlp.h>
-#endif
 
 namespace flame
 {
@@ -292,7 +290,6 @@ namespace flame
 
 	static KeyboardKey vk_code_to_key(int vkCode)
 	{
-#ifdef FLAME_WINDOWS
 		switch (vkCode)
 		{
 		case VK_BACK:
@@ -472,13 +469,11 @@ namespace flame
 		default:
 			return KeyboardNull;
 		}
-#endif
 		return KeyboardNull;
 	}
 
 	int key_to_vk_code(KeyboardKey key)
 	{
-#ifdef FLAME_WINDOWS
 		switch (key)
 		{
 		case Keyboard_Backspace:
@@ -658,7 +653,6 @@ namespace flame
 		default:
 			return KeyboardNull;
 		}
-#endif
 		return KeyboardNull;
 	}
 
@@ -1037,7 +1031,6 @@ namespace flame
 		KeyEventUp
 	};
 
-#ifdef FLAME_WINDOWS
 	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
@@ -1046,9 +1039,7 @@ namespace flame
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-#endif
 
-#ifdef FLAME_WINDOWS
 	WindowPrivate::WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent)
 	{
 		static bool initialized = false;
@@ -1182,12 +1173,7 @@ namespace flame
 		set_cursor(CursorArrow);
 		_looper.windows.emplace_back(this);
 	}
-#elif FLAME_ANDROID
-	WindowPrivate::WindowPrivate(android_app* android_state) :
-		android_state(android_state)
-	{
-	}
-#endif
+
 	WindowPrivate::~WindowPrivate()
 	{
 		for (auto& l : destroy_listeners)
@@ -1318,11 +1304,7 @@ namespace flame
 
 	void* WindowPrivate::get_native() 
 	{
-#ifdef FLAME_WINDOWS
 		return hWnd;
-#elif FLAME_ANDROID
-		return android_state;
-#endif
 	}
 
 	void WindowPrivate::set_pos(const Vec2i& _pos)
@@ -1343,7 +1325,6 @@ namespace flame
 
 	void WindowPrivate::set_cursor(CursorType type) 
 	{
-#ifdef FLAME_WINDOWS
 		if (type == cursor_type)
 			return;
 
@@ -1353,7 +1334,6 @@ namespace flame
 			ShowCursor(false);
 
 		cursor_type = type;
-#endif
 	}
 
 	void WindowPrivate::close()
@@ -1624,29 +1604,12 @@ namespace flame
 
 		for (;;)
 		{
-#ifdef FLAME_WINDOWS
 			MSG msg;
 			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
-#elif FLAME_ANDROID
-			int ident;
-			int events;
-			android_poll_source* source;
-
-			auto w = (*windows.begin());
-
-			while ((ident = ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0)
-			{
-				if (source != NULL)
-					source->process(w->android_state, source);
-
-				if (w->android_state->destroyRequested != 0)
-					w->destroy_event = true;
-			}
-#endif
 			if (!one_frame())
 				break;
 		}

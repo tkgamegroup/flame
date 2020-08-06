@@ -41,7 +41,6 @@ namespace flame
 			layer(layer),
 			sample_count(sample_count)
 		{
-#if defined(FLAME_VULKAN)
 			VkImageCreateInfo imageInfo;
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 			imageInfo.flags = 0;
@@ -75,9 +74,7 @@ namespace flame
 			chk_res(vkAllocateMemory(d->vk_device, &allocInfo, nullptr, &vk_memory));
 
 			chk_res(vkBindImageMemory(d->vk_device, vk_image, vk_memory, 0));
-#elif defined(FLAME_D3D12)
 
-#endif
 			if (_default_view)
 				default_view.reset(new ImageViewPrivate(this));
 
@@ -108,26 +105,18 @@ namespace flame
 			layer(layer),
 			sample_count(SampleCount_1)
 		{
-#if defined(FLAME_VULKAN)
 			vk_image = (VkImage)native;
-#elif defined(FLAME_D3D12)
-			_v = (ID3D12Resource*)native;
-#endif
 
 			default_view.reset(_default_view ? new ImageViewPrivate(this) : nullptr);
 		}
 
 		ImagePrivate::~ImagePrivate()
 		{
-#if defined(FLAME_VULKAN)
 			if (vk_memory != 0)
 			{
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
 			}
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
@@ -337,7 +326,6 @@ namespace flame
 			swizzle_b(swizzle_b),
 			swizzle_a(swizzle_a)
 		{
-#if defined(FLAME_VULKAN)
 			VkImageViewCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
@@ -356,29 +344,11 @@ namespace flame
 			info.subresourceRange.layerCount = layer_count;
 
 			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &vk_image_view));
-#elif defined(FLAME_D3D12)
-			D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-			desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-			desc.NumDescriptors = 1;
-			desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-			auto d = image->device->vk_device;
-			auto res = d->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&v));
-			assert(SUCCEEDED(res));
-
-			//auto descriptor_size = d->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-			auto descriptor_handle = v->GetCPUDescriptorHandleForHeapStart();
-			d->CreateRenderTargetView(i->_v, nullptr, descriptor_handle);
-			//descriptor_handle.ptr += descriptor_size;
-#endif
 		}
 
 		ImageViewPrivate::~ImageViewPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		ImageView* ImageView::create(Image* image, ImageViewType type, uint base_level, uint level_count, uint base_layer, uint layer_count, Swizzle swizzle_r, Swizzle swizzle_g, Swizzle swizzle_b, Swizzle swizzle_a)
@@ -389,7 +359,6 @@ namespace flame
 		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates) :
 			device(d)
 		{
-#if defined(FLAME_VULKAN)
 			VkSamplerCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 			info.flags = 0;
@@ -411,18 +380,11 @@ namespace flame
 			info.maxLod = 0.f;
 
 			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &vk_sampler));
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		SamplerPrivate::~SamplerPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
-#elif defined(FLAME_D3D12)
-
-#endif
 		}
 
 		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)

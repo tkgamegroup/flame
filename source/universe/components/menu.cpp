@@ -11,8 +11,9 @@ namespace flame
 			auto thiz = c.thiz<cMenuPrivate>();
 			if (thiz->root && !thiz->opened && thiz->items)
 			{
-				thiz->items_element->set_x(::rand() % 300);
-				thiz->items_element->set_y(::rand() % 300);
+				auto pos = thiz->element->get_point(3);
+				thiz->items_element->set_x(pos.x());
+				thiz->items_element->set_y(pos.y());
 				thiz->root->add_child(thiz->items.get());
 				thiz->root_mouse_listener = thiz->root_event_receiver
 				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {

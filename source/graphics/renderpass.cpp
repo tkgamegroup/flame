@@ -29,7 +29,6 @@ namespace flame
 		RenderpassPrivate::RenderpassPrivate(DevicePrivate* d, std::span<const RenderpassAttachmentInfo> _attachments, std::span<const RenderpassSubpassInfo> _subpasses, std::span<const Vec2u> _dependencies) :
 			device(d)
 		{
-#if defined(FLAME_VULKAN)
 			std::vector<VkAttachmentDescription> attachment_descs(_attachments.size());
 			for (auto i = 0; i < _attachments.size(); i++)
 			{
@@ -145,14 +144,11 @@ namespace flame
 			subpasses.resize(_subpasses.size());
 			for (auto i = 0; i < _subpasses.size(); i++)
 				subpasses[i].reset(new RenderpassSubpassPrivate(this, i, _subpasses[i]));
-#endif
 		}
 
 		RenderpassPrivate::~RenderpassPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
-#endif
 		}
 
 		Renderpass* Renderpass::create(Device* d, uint attachments_count, const RenderpassAttachmentInfo* attachments, uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
@@ -164,7 +160,6 @@ namespace flame
 			device(d),
 			renderpass(rp)
 		{
-#if defined(FLAME_VULKAN)
 			std::vector<VkImageView> raw_views(_views.size());
 			for (auto i = 0; i < _views.size(); i++)
 				raw_views[i] = _views[i]->vk_image_view;
@@ -182,7 +177,6 @@ namespace flame
 			create_info.pAttachments = raw_views.data();
 
 			chk_res(vkCreateFramebuffer(d->vk_device, &create_info, nullptr, &vk_framebuffer));
-#endif
 
 			views.resize(_views.size());
 			for (auto i = 0; i < _views.size(); i++)
@@ -191,119 +185,13 @@ namespace flame
 
 		FramebufferPrivate::~FramebufferPrivate()
 		{
-#if defined(FLAME_VULKAN)
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
-#endif
 		}
 
 		Framebuffer* Framebuffer::create(Device* d, Renderpass* rp, uint views_count, ImageView* const* views)
 		{
 			return new FramebufferPrivate((DevicePrivate*)d, (RenderpassPrivate*)rp, { (ImageViewPrivate**)views, views_count });
 		}
-
-		//void RenderpassAndFramebufferPrivate(Device* d, uint pass_count, SubpassTargetInfo* const* passes)
-		//{
-		//	std::vector<RenderpassAttachmentInfo*> rp_attachments;
-		//	std::vector<RenderpassSubpassInfo*> rp_subpasses;
-		//	std::vector<std::tuple<TargetType, void*, std::unique_ptr<RenderpassAttachmentInfo>, Vec4c>> att_infos;
-		//	std::vector<std::unique_ptr<SubpassInfoPrivate>> sp_infos;
-		//	for (auto i = 0; i < pass_count; i++)
-		//	{
-		//		auto find_or_add_att = [&](const RenderTarget& t) {
-		//			for (auto i = 0; i < att_infos.size(); i++)
-		//			{
-		//				auto& att = att_infos[i];
-		//				if (t.type == std::get<0>(att) && t.v == std::get<1>(att))
-		//					return i;
-		//			}
-
-		//			auto idx = (int)att_infos.size();
-
-		//			auto image = image_from_target(t.type, t.v);
-		//			assert(image);
-
-		//			auto att_info = new RenderpassAttachmentInfo;
-		//			att_info->format = image->format;
-		//			att_info->clear = t.clear;
-		//			att_info->sample_count = image->sample_count;
-		//			att_infos.emplace_back(t.type, t.v, att_info, t.clear_color);
-
-		//			rp_attachments.push_back(att_info);
-
-		//			return idx;
-		//		};
-
-		//		auto src = new SubpassInfoPrivate;
-		//		const auto& p = *passes[i];
-		//		for (auto i = 0; i < p.color_target_count; i++)
-		//			src._color_attachments.push_back(find_or_add_att(*p.color_targets[i]));
-		//		for (auto i = 0; i < p.resolve_target_count; i++)
-		//			src._resolve_attachments.push_back(find_or_add_att(*p.resolve_targets[i]));
-		//		src.color_attachment_count = p.color_target_count;
-		//		src.color_attachments = src._color_attachments.data();
-		//		src.resolve_attachment_count = p.resolve_target_count;
-		//		src.resolve_attachments = src._resolve_attachments.data();
-		//		if (p.depth_target)
-		//			src.depth_attachment = find_or_add_att(*p.depth_target);
-		//		else
-		//			src.depth_attachment = -1;
-
-		//		sp_infos.emplace_back(src);
-		//		rp_subpasses.push_back(src);
-
-		//	}
-		//	rp = (RenderpassPrivate*)Renderpass::create(d, rp_attachments.size(), rp_attachments.data(), rp_subpasses.size(), rp_subpasses.data(), 0, nullptr);
-
-		//	for (auto i = 0; i < att_infos.size(); i++)
-		//		cv->set(i, std::get<3>(att_infos[i]));
-
-		//	auto image_count = 0;
-		//	for (auto& att_info : att_infos)
-		//	{
-		//		auto type = std::get<0>(att_info);
-		//		if (type == TargetImages)
-		//		{
-		//			auto count = ((Array<Image*>*)std::get<1>(att_info))->s;
-		//			if (image_count == 0)
-		//				image_count = count;
-		//			else
-		//				assert(image_count == count);
-		//		}
-		//	}
-		//	if (image_count == 0)
-		//		image_count = 1;
-
-		//	for (auto i = 0; i < image_count; i++)
-		//	{
-		//		std::vector<ImageView*> fb_views;
-		//		for (auto& att_info : att_infos)
-		//		{
-		//			auto type = std::get<0>(att_info);
-		//			auto v = std::get<1>(att_info);
-		//			switch (type)
-		//			{
-		//			case TargetImage:
-		//			{
-		//				auto view = ImageView::create((Image*)v);
-		//				created_views.push_back(view);
-		//				fb_views.push_back(view);
-		//			}
-		//				break;
-		//			case TargetImageView:
-		//				fb_views.push_back((ImageView*)v);
-		//				break;
-		//			case TargetImages:
-		//			{
-		//				auto view = ImageView::create(((Array<Image*>*)v)->at(i));
-		//				created_views.push_back(view);
-		//				fb_views.push_back(view);
-		//			}
-		//				break;
-		//			}
-		//		}
-		//		fbs.emplace_back(Framebuffer::create(d, rp, fb_views.size(), fb_views.data()));
-		//	}
-		//}
 	}
 }
 

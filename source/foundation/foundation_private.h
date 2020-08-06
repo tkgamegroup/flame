@@ -2,12 +2,8 @@
 
 #include <flame/foundation/foundation.h>
 
-#ifdef FLAME_WINDOWS
 #define NOMINMAX
 #include <Windows.h>
-#elif FLAME_ANDROID
-#include <android_native_app_glue.h>
-#endif
 
 namespace flame
 {
@@ -18,20 +14,14 @@ namespace flame
 
 	struct WindowPrivate : WindowBridge
 	{
-#ifdef FLAME_WINDOWS
 		HWND hWnd = 0;
-#elif FLAME_ANDROID
-		android_app* _android_state;
-#endif
 
 		Vec2i pos;
 		Vec2u size;
 		std::string title;
 		int style;
 		CursorType cursor_type = CursorNone;
-#ifdef FLAME_WINDOWS
 		HCURSOR cursors[Cursor_Count];
-#endif
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_down_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_up_listeners;
@@ -52,16 +42,10 @@ namespace flame
 
 		bool dead = false;
 
-#ifdef FLAME_WINDOWS
 		WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent);
-#elif FLAME_ANDROID
-		WindowPrivate(android_app* android_state);
-#endif
 		~WindowPrivate();
 
-#ifdef FLAME_WINDOWS
 		void wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
-#endif
 
 		void* get_native() override;
 

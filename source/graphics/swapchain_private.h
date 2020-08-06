@@ -18,12 +18,8 @@ namespace flame
 
 			ImageUsageFlags extra_usages;
 
-#if defined(FLAME_VULKAN)
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;
-#elif defined(FLAME_D3D12)
-			IDXGISwapChain3* v;
-#endif
 
 			std::vector<std::unique_ptr<ImagePrivate>> images;
 			std::unique_ptr<SemaphorePrivate> image_avalible;

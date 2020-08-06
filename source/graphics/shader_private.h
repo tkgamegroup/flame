@@ -18,11 +18,8 @@ namespace flame
 		struct DescriptorPoolPrivate : DescriptorPool
 		{
 			DevicePrivate* device;
-#if defined(FLAME_VULKAN)
 			VkDescriptorPool vk_descriptor_pool;
-#elif defined(FLAME_D3D12)
 
-#endif
 			DescriptorPoolPrivate(DevicePrivate* d);
 			~DescriptorPoolPrivate();
 
@@ -47,11 +44,7 @@ namespace flame
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
 			DevicePrivate* device;
-#if defined(FLAME_VULKAN)
 			VkDescriptorSetLayout vk_descriptor_set_layout;
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
 			std::unique_ptr<DescriptorSetPrivate> default_set;
@@ -78,11 +71,7 @@ namespace flame
 		{
 			DescriptorPoolPrivate* descriptor_pool;
 			DescriptorSetLayoutPrivate* descriptor_layout;
-#if defined(FLAME_VULKAN)
 			VkDescriptorSet vk_descriptor_set;
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l);
 			~DescriptorSetPrivate();
@@ -108,11 +97,8 @@ namespace flame
 		struct PipelineLayoutPrivate : PipelineLayout
 		{
 			DevicePrivate* device;
-#if defined(FLAME_VULKAN)
 			VkPipelineLayout vk_pipeline_layout;
-#elif defined(FLAME_D3D12)
 
-#endif
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_layouts;
 			uint push_cconstant_size;
 
@@ -210,11 +196,7 @@ namespace flame
 		{
 			ShaderPrivate* s;
 			ShaderResource r;
-#if defined(FLAME_VULKAN)
 			VkShaderModule m;
-#elif defined(FLAME_D3D12)
-
-#endif
 		};
 
 		struct PipelinePrivate : Pipeline
@@ -224,11 +206,7 @@ namespace flame
 			DevicePrivate* device;
 			PipelineLayoutPrivate* pipeline_layout;
 			std::vector<CompiledShader> shaders;
-#if defined(FLAME_VULKAN)
 			VkPipeline vk_pipeline;
-#elif defined(FLAME_D3D12)
-
-#endif
 
 			PipelinePrivate(DevicePrivate* d, std::vector<CompiledShader>& shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
 				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 

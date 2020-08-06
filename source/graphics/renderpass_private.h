@@ -50,9 +50,8 @@ namespace flame
 			std::vector<std::unique_ptr<RenderpassAttachmentPrivate>> attachments;
 			std::vector<std::unique_ptr<RenderpassSubpassPrivate>> subpasses;
 
-#if defined(FLAME_VULKAN)
 			VkRenderPass vk_renderpass;
-#endif
+
 			RenderpassPrivate(DevicePrivate* d, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies = {});
 			~RenderpassPrivate();
 
@@ -70,11 +69,8 @@ namespace flame
 
 			RenderpassPrivate* renderpass;
 			std::vector<ImageViewPrivate*> views;
-#if defined(FLAME_VULKAN)
 			VkFramebuffer vk_framebuffer;
-#elif defined(FLAME_D3D12)
 
-#endif
 			FramebufferPrivate(DevicePrivate* d, RenderpassPrivate* rp, std::span<ImageViewPrivate*> views);
 			~FramebufferPrivate();
 
