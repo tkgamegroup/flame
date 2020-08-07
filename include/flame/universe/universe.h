@@ -46,6 +46,12 @@ namespace flame
 		LayoutTile
 	};
 
+	enum MenuType
+	{
+		MenuTop,
+		MenuSub
+	};
+
 	enum ScrollbarType
 	{
 		ScrollbarVertical,

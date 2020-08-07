@@ -1027,7 +1027,6 @@ namespace flame
 			auto icon_fn = std::filesystem::path(getenv("FLAME_PATH")) / L"art\\ico.png";
 			if (std::filesystem::exists(icon_fn))
 			{
-				report_used_file(icon_fn.c_str());
 				auto icon_image = BitmapPrivate::create(icon_fn);
 				icon_image->swap_channel(0, 2);
 				wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->get_width(), icon_image->get_height(), 1,

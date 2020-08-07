@@ -5,28 +5,19 @@
 
 namespace flame
 {
+	static cMenuPrivate* curr_menu = nullptr;
+
 	void cMenuPrivate::on_gain_event_receiver()
 	{
 		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
-			if (thiz->root && !thiz->opened && thiz->items)
-			{
-				auto pos = thiz->element->get_point(3);
-				thiz->items_element->set_x(pos.x());
-				thiz->items_element->set_y(pos.y());
-				thiz->root->add_child(thiz->items.get());
-				thiz->root_mouse_listener = thiz->root_event_receiver
-				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
-					auto thiz = c.thiz<cMenuPrivate>();
-					if (thiz->frame >= looper().get_frame())
-						return;
-					thiz->root->remove_child(thiz->items.get(), false);
-					thiz->root_event_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
-					thiz->opened = false;
-				}, Capture().set_thiz(thiz));
-				thiz->opened = true;
-				thiz->frame = looper().get_frame();
-			}
+			if (thiz->type == MenuTop && thiz->root && !thiz->opened && thiz->items && !curr_menu)
+				thiz->open();
+		}, Capture().set_thiz(this));
+		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+			auto thiz = c.thiz<cMenuPrivate>();
+			if (thiz->root && !thiz->opened && thiz->items && curr_menu)
+				thiz->open();
 		}, Capture().set_thiz(this));
 	}
 
@@ -43,9 +34,68 @@ namespace flame
 		items_element = ce;
 	}
 
+	void cMenuPrivate::open()
+	{
+		if (opened)
+			return;
+
+		auto pos = element->get_point(type == MenuTop ? 3 : 1);
+		items_element->set_x(pos.x());
+		items_element->set_y(pos.y());
+		root->add_child(items.get());
+
+		auto parent = ((EntityPrivate*)entity)->parent;
+		for (auto& e : parent->children)
+		{
+			auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
+			if (cm)
+				cm->close();
+		}
+
+		if (type == MenuTop)
+		{
+			root_mouse_listener = root_event_receiver
+				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+				auto thiz = c.thiz<cMenuPrivate>();
+				if (thiz->frame >= looper().get_frame())
+					return;
+				thiz->root_event_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
+				thiz->close();
+				curr_menu = nullptr;
+			}, Capture().set_thiz(this));
+			curr_menu = this;
+		}
+
+		opened = true;
+		frame = looper().get_frame();
+	}
+
+	void cMenuPrivate::close()
+	{
+		if (!opened)
+			return;
+
+		for (auto& e : items->children)
+		{
+			auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
+			if (cm)
+				cm->close();
+		}
+
+		if (type == MenuTop)
+		{
+			root_event_receiver->remove_mouse_left_down_listener(root_mouse_listener);
+			curr_menu = nullptr;
+		}
+
+		root->remove_child(items.get(), false);
+		opened = false;
+	}
+
 	void cMenuPrivate::on_lost_event_receiver()
 	{
 		event_receiver->remove_mouse_left_down_listener(mouse_down_listener);
+		event_receiver->remove_mouse_move_listener(mouse_move_listener);
 	}
 
 	void cMenuPrivate::on_entity_entered_world()
@@ -64,223 +114,4 @@ namespace flame
 	{
 		return f_new<cMenuPrivate>();
 	}
-
-//	struct cMenuPrivate : cMenu
-//	{
-//		cMenuPrivate(Mode _mode)
-//		{
-//				items->add_component(cElement::create());
-//				items->add_component(cLayout::create(LayoutVertical));
-//				items->add_component(cMenuItems::create());
-
-//			items->get_component(cMenuItems)->menu = this;
-//			mode = _mode;
-//		}
-
-//		void close()
-//		{
-//			if (opened)
-//			{
-//				opened = false;
-//
-//				for (auto i : items->children)
-//				{
-//					auto menu = (cMenuPrivate*)i->get_component(cMenu);
-//					if (menu)
-//						menu->close();
-//				}
-//
-//				((Entity*)items->gene)->remove_child(items, false);
-//			}
-//		}
-//
-//		void close_subs(Entity* p)
-//		{
-//			if (mode != ModeMain)
-//			{
-//				for (auto i : p->children)
-//				{
-//					auto menu = (cMenuPrivate*)i->get_component(cMenu);
-//					if (menu)
-//						menu->close();
-//				}
-//			}
-//		}
-//
-//		bool can_open(KeyStateFlags action, MouseKey key)
-//		{
-//			if (mode == cMenu::ModeContext)
-//			{
-//				if (!event_receiver->is_focusing_and_not_normal() && is_mouse_down(action, key, true) && key == Mouse_Right)
-//					return true;
-//			}
-//			else
-//			{
-//				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-//					return true;
-//				else if (is_mouse_move(action, key))
-//					return root->last_child(FLAME_CHASH("layer_menu"));
-//			}
-//			return false;
-//		}
-//
-//		void open(const Vec2f& pos)
-//		{
-//			if (!opened)
-//			{
-//				if (mode == ModeContext)
-//				{
-//					auto layer = add_layer(root);
-//					layer->name = "layer_menu";
-//					layer->event_listeners.add([](Capture& c, EntityEvent e, void* t) {
-//						if (e == EntityRemoved)
-//							c.thiz<Entity>()->remove_children(0, -1, false);
-//						return true;
-//					}, Capture().set_thiz(layer));
-//					auto items_element = items->get_component(cElement);
-//					items_element->set_pos(Vec2f(pos));
-//					items_element->set_scale(element->global_scale);
-//					layer->add_child(items);
-//
-//					opened = true;
-//				}
-//				else
-//				{
-//					auto p = entity->parent;
-//					if (p)
-//						close_subs(p);
-//
-//					auto layer = root->last_child();
-//					if (layer)
-//					{
-//						if (layer->name.h != FLAME_CHASH("layer_menu"))
-//							layer = nullptr;
-//					}
-//					auto new_layer = !layer;
-//
-//					if (mode == ModeSub)
-//						assert(layer);
-//					else
-//					{
-//						if (mode == ModeMenubar)
-//						{
-//							if (!layer)
-//								layer = add_layer(root, p);
-//						}
-//						else
-//							layer = add_layer(root, entity);
-//					}
-//					if (new_layer)
-//					{
-//						layer->name = "layer_menu";
-//						layer->event_listeners.add([](Capture& c, EntityEvent e, void* t) {
-//							if (e == EntityRemoved)
-//								c.thiz<Entity>()->remove_children(0, -1, false);
-//							return true;
-//						}, Capture().set_thiz(layer));
-//					}
-//
-//					auto items_element = items->get_component(cElement);
-//					switch (mode)
-//					{
-//					case ModeMenubar: case ModeMain:
-//						items_element->set_pos(Vec2f(element->global_pos.x(), element->global_pos.y() + element->global_size.y()));
-//						break;
-//					case ModeSub:
-//						items_element->set_pos(Vec2f(element->global_pos.x() + element->global_size.x(), element->global_pos.y()));
-//						break;
-//					}
-//					items_element->set_scale(element->global_scale);
-//					layer->add_child(items);
-//
-//					opened = true;
-//				}
-//			}
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						auto thiz = c.thiz<cMenuPrivate>();
-//						if (thiz->can_open(action, key))
-//							thiz->open((Vec2f)pos);
-//						return true;
-//					}, Capture().set_thiz(this));
-//		}
-//	};
-
-//	struct cMenuItemsPrivate : cMenuItems
-//	{
-//		cMenuItemsPrivate()
-//		{
-//			menu = nullptr;
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//			switch (e)
-//			{
-//			case EntityRemoved:
-//				if (menu)
-//					menu->opened = false;
-//				break;
-//			}
-//		}
-//	};
-//
-//	cMenuItems* cMenuItems::create()
-//	{
-//		return new cMenuItemsPrivate();
-//	}
-//
-//	struct cMenuItemPrivate : cMenuItem
-//	{
-//		void* mouse_listener;
-//
-//		cMenuItemPrivate()
-//		{
-//			mouse_listener = nullptr;
-//		}
-//
-//		~cMenuItemPrivate()
-//		{
-//			if (!entity->dying_)
-//				event_receiver->mouse_listeners.remove(mouse_listener);
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//			switch (e)
-//			{
-//			case EntityComponentAdded:
-//				if (t == this)
-//				{
-//					event_receiver = entity->get_component(cEventReceiver);
-//					assert(event_receiver);
-//
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						auto thiz = c.thiz<cMenuItemPrivate>();
-//						auto c_items = thiz->entity->parent->get_component(cMenuItems);
-//						if (c_items)
-//						{
-//							auto menu = (cMenuPrivate*)c_items->menu;
-//							auto layer = menu->root->last_child();
-//							if (layer)
-//							{
-//								if (layer->name.h == FLAME_CHASH("layer_menu"))
-//									menu->close_subs(menu->items);
-//							}
-//						}
-//						return true;
-//					}, Capture().set_thiz(this));
-//				}
-//				break;
-//			}
-//		}
-//	};
-//
-//	cMenuItem* cMenuItem::create()
-//	{
-//		return new cMenuItemPrivate();
-//	}
 }

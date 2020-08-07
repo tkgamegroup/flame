@@ -204,13 +204,14 @@ namespace flame
 		switch (msg)
 		{
 		case MessageElementTransformDirty:
-			if (transform_dirty)
-				return;
-			transform_dirty = true;
-			for (auto& c : ((EntityPrivate*)entity)->children)
+			if (!transform_dirty)
 			{
-				auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
-				e->on_entity_message(MessageElementTransformDirty);
+				transform_dirty = true;
+				for (auto& c : ((EntityPrivate*)entity)->children)
+				{
+					auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
+					e->on_entity_message(MessageElementTransformDirty);
+				}
 			}
 		case MessageElementDrawingDirty:
 			if (renderer)

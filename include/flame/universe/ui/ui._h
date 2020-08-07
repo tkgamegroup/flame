@@ -41,20 +41,6 @@ namespace flame
 			change_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
 		}
 
-		inline cLayout* c_layout(LayoutType type = LayoutFree, bool width_fit_children = true, bool height_fit_children = true)
-		{
-			auto c = cLayout::create(type);
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			c->width_fit_children = width_fit_children;
-			c->height_fit_children = height_fit_children;
-			current_entity->add_component(c);
-			return c;
-		}
-
 		inline cScrollbar* c_scrollbar()
 		{
 			auto c = cScrollbar::create();
@@ -154,34 +140,6 @@ namespace flame
 		inline cTreeLeaf* c_tree_leaf()
 		{
 			auto c = cTreeLeaf::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cMenu* c_menu(cMenu::Mode mode)
-		{
-			auto c = cMenu::create(mode);
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			auto ce = c->items->get_component(cElement);
-			ce->padding = 1.f;
-			ce->frame_thickness = 1.f;
-			ce->frame_color = style(ForegroundColor).c;
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cMenuItem* c_menu_item()
-		{
-			auto c = cMenuItem::create();
 			if (next_component_id)
 			{
 				c->id = next_component_id;
@@ -296,16 +254,6 @@ namespace flame
 				p->add_child(e, pos);
 			}
 			current_entity = e;
-			return e;
-		}
-
-		inline Entity* e_begin_layout(LayoutType type = LayoutFree, float item_padding = 0.f, bool width_fit_children = true, bool height_fit_children = true)
-		{
-			auto e = e_empty();
-			c_element();
-			auto cl = c_layout(type, width_fit_children, height_fit_children);
-			cl->item_padding = item_padding;
-			parents.push(e);
 			return e;
 		}
 
@@ -430,37 +378,6 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_list(bool size_fit_parent)
-		{
-			auto e = e_empty();
-			c_element();
-			c_event_receiver();
-			if (size_fit_parent)
-				c_aligner(AlignMinMax, AlignMinMax);
-			auto cl = c_layout(LayoutVertical);
-			if (size_fit_parent)
-			{
-				cl->width_fit_children = false;
-				cl->height_fit_children = false;
-			}
-			c_list();
-			parents.push(e);
-			return e;
-		}
-
-		inline Entity* e_list_item(const wchar_t* text, uint align_flags = AlignMinMax)
-		{
-			auto e = e_empty();
-			c_element();
-			if (text[0])
-				c_text()->set_text(text);
-			c_event_receiver();
-			if (align_flags)
-				c_aligner(align_flags, 0);
-			c_list_item();
-			return e;
-		}
-
 		inline Entity* e_begin_tree(bool fit_parent)
 		{
 			auto e = e_empty();
@@ -549,7 +466,6 @@ namespace flame
 		inline Entity* e_begin_combobox()
 		{
 			auto e = e_empty();
-			e->gene = e;
 			auto ce = c_element();
 			ce->size = Vec2f(0.f, style(FontSize).u.x() + 4.f);
 			ce->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
@@ -611,39 +527,10 @@ namespace flame
 			c_combobox_item();
 			return e;
 		}
-
-		inline Entity* e_begin_menu_bar()
-		{
-			auto e = e_empty();
-			e->gene = e;
-			c_element()->color = style(FrameColorNormal).c;
-			c_aligner(AlignMinMax, 0);
-			c_layout(LayoutHorizontal)->item_padding = 4.f;
-			parents.push(e);
-			return e;
-		}
-
-		inline Entity* e_begin_menubar_menu(const wchar_t* text, bool transparent = true)
-		{
-			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(text);
-			c_event_receiver();
-			auto cm = c_menu(cMenu::ModeMenubar);
-			cm->root = current_root;
-			auto cs = c_style_color();
-			cs->color_normal = transparent ? Vec4c(0) : style(FrameColorHovering).c;
-			cs->color_hovering = style(FrameColorHovering).c;
-			cs->color_active = style(FrameColorActive).c;
-			cs->style();
-			parents.push(cm->items);
-			return e;
-		}
-
+		
 		inline Entity* e_begin_button_menu(const wchar_t* text)
 		{
 			auto e = e_empty();
-			e->gene = e;
 			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
 			c_text()->set_text(text);
 			c_event_receiver();
@@ -655,65 +542,6 @@ namespace flame
 			cs->color_active = style(ButtonColorActive).c;
 			cs->style();
 			parents.push(cm->items);
-			return e;
-		}
-
-		inline Entity* e_begin_sub_menu(const wchar_t* text)
-		{
-			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
-			c_text()->set_text(text);
-			c_event_receiver();
-			auto cm = c_menu(cMenu::ModeSub);
-			cm->root = current_root;
-			auto cs = c_style_color();
-			cs->color_normal = style(FrameColorNormal).c;
-			cs->color_hovering = style(FrameColorHovering).c;
-			cs->color_active = style(FrameColorActive).c;
-			cs->style();
-			c_aligner(AlignMinMax | AlignGreedy, 0);
-			c_layout();
-			parents.push(e);
-			e_empty();
-			c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(Icon_CARET_RIGHT);
-			c_aligner(AlignMax | AlignAbsolute, 0);
-			parents.pop();
-			parents.push(cm->items);
-			return e;
-		}
-
-		inline Entity* e_menu_item(const wchar_t* text, void(*func)(Capture& c), const Capture& _capture, bool close_menu = true)
-		{
-			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(text);
-			struct Capturing
-			{
-				Entity* e;
-				bool close;
-				void(*f)(Capture&);
-			}capture;
-			capture.e = e;
-			capture.close = close_menu;
-			capture.f = func;
-			c_event_receiver()->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-				if (is_mouse_down(action, key, true) && key == Mouse_Left)
-				{
-					auto& capture = c.data<Capturing>();
-					if (capture.close)
-						remove_layer((Entity*)capture.e->gene);
-					capture.f(c.release<Capturing>());
-				}
-				return true;
-			}, Capture().absorb(&capture, _capture, true));
-			c_menu_item();
-			auto cs = c_style_color();
-			cs->color_normal = style(FrameColorNormal).c;
-			cs->color_hovering = style(FrameColorHovering).c;
-			cs->color_active = style(FrameColorActive).c;
-			cs->style();
-			c_aligner(AlignMinMax | AlignGreedy, 0);
 			return e;
 		}
 

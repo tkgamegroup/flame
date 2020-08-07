@@ -54,7 +54,6 @@ namespace flame
 
 	struct App
 	{
-		bool developing;
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
 
@@ -230,24 +229,16 @@ namespace flame
 			return str.data();
 		});
 
-		developing = false;
 		//{
 		//	auto config = parse_ini_file(L"config.ini");
 		//	for (auto& e : config.get_section_entries(""))
 		//	{
-		//		if (e.key == "developing")
-		//			developing = e.value != "0";
-		//		else if (e.key == "resource_path")
+		//		if (e.key == "resource_path")
 		//			resource_path = e.value;
-		//		else if (e.key == "engine_path")
-		//		{
-		//			if (e.value == "{e}")
-		//				engine_path = getenv("FLAME_PATH");
-		//			else
-		//				engine_path = e.value;
-		//		}
 		//	}
 		//}
+
+		engine_path = getenv("FLAME_PATH");
 
 		graphics_device = graphics::Device::create(graphics_debug);
 		graphics_command_pool = graphics_device->get_command_pool(graphics::QueueGraphics);

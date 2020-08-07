@@ -71,24 +71,36 @@ namespace flame
 
 	void cLayoutPrivate::judge_width(float w)
 	{
-		if (!auto_width)
-			w = 0.f;
-		else
-			element->set_width(w);
 		auto aligner = (cAlignerPrivate*)entity->get_component(cAligner::type_hash);
 		if (aligner)
-			aligner->desired_size.x() = w;
+		{
+			if (auto_width && aligner->alignx != AlignMinMax)
+			{
+				element->set_width(w);
+				aligner->desired_size.x() = w;
+			}
+			else
+				aligner->desired_size.x() = 0.f;
+		}
+		else if (auto_width)
+			element->set_width(w);
 	}
 
 	void cLayoutPrivate::judge_height(float h)
 	{
-		if (!auto_height)
-			h = 0.f;
-		else
-			element->set_height(h);
 		auto aligner = (cAlignerPrivate*)entity->get_component(cAligner::type_hash);
 		if (aligner)
-			aligner->desired_size.y() = h;
+		{
+			if (auto_height && aligner->aligny != AlignMinMax)
+			{
+				element->set_height(h);
+				aligner->desired_size.y() = h;
+			}
+			else
+				aligner->desired_size.y() = 0.f;
+		}
+		else if (auto_height)
+			element->set_height(h);
 	}
 
 	void cLayoutPrivate::update()
@@ -475,6 +487,8 @@ namespace flame
 
 	void cLayoutPrivate::on_entity_child_component_data_changed(Component* c, uint data_name_hash)
 	{
+		if (updating)
+			return;
 		if (c->type_hash == cElement::type_hash)
 		{
 			switch (data_name_hash)
