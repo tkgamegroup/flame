@@ -453,10 +453,7 @@ namespace flame
 				return nullptr;
 			}
 
-			auto atlas = new ImageAtlasPrivate((DevicePrivate*)d, filename);
-			report_used_file(filename);
-
-			return atlas;
+			return new ImageAtlasPrivate((DevicePrivate*)d, filename);
 		}
 	}
 }

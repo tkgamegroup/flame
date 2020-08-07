@@ -20,6 +20,7 @@
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/element_renderer.h>
+#include <flame/universe/res_map.h>
 
 namespace flame
 {
@@ -56,7 +57,6 @@ namespace flame
 		bool developing;
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
-		std::vector<std::filesystem::path> used_files[2];
 
 		graphics::Device* graphics_device;
 		graphics::CommandPool* graphics_command_pool;
@@ -144,7 +144,11 @@ namespace flame
 
 			root = world->get_root();
 			root->add_component(cElement::create());
-			root->add_component(cEventReceiver::create());
+			{
+				auto cer = cEventReceiver::create();
+				cer->set_ignore_occluders(true);
+				root->add_component(cer);
+			}
 			root->add_component(cLayout::create());
 		}
 
@@ -205,6 +209,27 @@ namespace flame
 
 	void App::create(bool graphics_debug)
 	{
+		set_allocator(
+			[](uint size) {
+			return malloc(size);
+		},
+			[](void* p) {
+			free(p);
+		},
+			[](void* p, uint size) {
+			return realloc(p, size);
+		},
+			[](void* p, uint size) {
+			auto& str = *(std::string*)p;
+			str.resize(size);
+			return str.data();
+		},
+			[](void* p, uint size) {
+			auto& str = *(std::wstring*)p;
+			str.resize(size);
+			return str.data();
+		});
+
 		developing = false;
 		//{
 		//	auto config = parse_ini_file(L"config.ini");
@@ -223,44 +248,6 @@ namespace flame
 		//		}
 		//	}
 		//}
-		//set_engine_path(engine_path.c_str());
-		if (developing)
-		{
-			set_file_callback([](Capture& c, const wchar_t* _filename) {
-				auto& app = *c.thiz<App>();
-				std::filesystem::path filename = _filename;
-				auto i = -1;
-				{
-					auto p = filename.lexically_relative(app.resource_path);
-					if (!p.empty() && p.c_str()[0] != L'.')
-					{
-						filename = p;
-						i = 1;
-					}
-				}
-				if (i == -1)
-				{
-					auto p = filename.lexically_relative(app.engine_path);
-					if (!p.empty() && p.c_str()[0] != L'.')
-					{
-						filename = p;
-						i = 0;
-					}
-				}
-				if (i == -1)
-					return;
-				for (auto& p : app.used_files[i])
-				{
-					if (p == filename)
-						return;
-				}
-				app.used_files[i].push_back(filename);
-			}, Capture().set_thiz(this));
-			wchar_t app_path[260];
-			get_app_path(app_path, true);
-			auto this_app = std::filesystem::path(app_path);
-			report_used_file((this_app.parent_path().replace_filename(L"{c}") / this_app.filename()).c_str());
-		}
 
 		graphics_device = graphics::Device::create(graphics_debug);
 		graphics_command_pool = graphics_device->get_command_pool(graphics::QueueGraphics);

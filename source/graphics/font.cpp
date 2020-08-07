@@ -18,8 +18,6 @@ namespace flame
 
 			stbtt_info = new stbtt_fontinfo;
 			stbtt_InitFont(stbtt_info, (uchar*)file.data(), stbtt_GetFontOffsetForIndex((uchar*)file.data(), 0));
-
-			report_used_file(filename.c_str());
 		}
 
 		FontPrivate::~FontPrivate()

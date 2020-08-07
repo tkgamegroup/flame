@@ -103,7 +103,7 @@ int main(int argc, char** args)
 		};
 		app.font_atlas = FontAtlas::create(app.d, 2, fonts);
 	}
-	app.canvas->set_resource(-1, app.font_atlas->get_view(), app.d->get_sampler(FilterNearest), L"", nullptr, app.font_atlas);
+	app.canvas->set_resource(-1, app.font_atlas->get_view(), app.d->get_sampler(FilterNearest), "", nullptr, app.font_atlas);
 	app.on_resize();
 	app.w->add_resize_listener([](Capture&, const Vec2u&) {
 		app.on_resize();

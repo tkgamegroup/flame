@@ -472,10 +472,6 @@ namespace flame
 	}
 
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
-	FLAME_FOUNDATION_EXPORTS void get_engine_path(wchar_t* dst);
-	FLAME_FOUNDATION_EXPORTS void set_engine_path(const wchar_t* p);
-	FLAME_FOUNDATION_EXPORTS void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
-	FLAME_FOUNDATION_EXPORTS void report_used_file(const wchar_t* filename);
 	FLAME_FOUNDATION_EXPORTS void get_app_path(wchar_t* dst, bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
 	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();

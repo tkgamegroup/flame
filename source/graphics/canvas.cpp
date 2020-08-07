@@ -106,8 +106,12 @@ namespace flame
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
 			device(d)
 		{
-			wchar_t engine_path[260];
-			get_engine_path(engine_path);
+			auto shader_path = std::filesystem::path(L"shaders");
+			{
+				auto engin_path = getenv("FLAME_PATH");
+				if (engin_path)
+					shader_path = engin_path / shader_path;
+			}
 
 			if (!rp_el)
 			{
@@ -157,7 +161,7 @@ namespace flame
 					vert_el,
 					frag_el
 				};
-				pl_el = PipelinePrivate::create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll_el, rp_el, 0, &vi);
+				pl_el = PipelinePrivate::create(d, shader_path, shaders, pll_el, rp_el, 0, &vi);
 			}
 
 			if (!rp_bk)
@@ -192,7 +196,7 @@ namespace flame
 					vert_fs,
 					frag_blt
 				};
-				pl_blt = PipelinePrivate::create(d, std::filesystem::path(engine_path) / L"shaders", shaders, pll_bk, rp_bk, 0);
+				pl_blt = PipelinePrivate::create(d, shader_path, shaders, pll_bk, rp_bk, 0);
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));

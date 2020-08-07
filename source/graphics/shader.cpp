@@ -568,8 +568,6 @@ namespace flame
 					return false;
 				}
 
-				report_used_file(spv_path.c_str());
-
 				VkShaderModuleCreateInfo shader_info;
 				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 				shader_info.flags = 0;

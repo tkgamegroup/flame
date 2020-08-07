@@ -84,35 +84,6 @@ namespace flame
 		return ret;
 	}
 
-	static std::filesystem::path engine_path = getenv("FLAME_PATH");
-
-	void set_engine_path(const wchar_t* p)
-	{
-		engine_path = p;
-	}
-
-	void get_engine_path(wchar_t* dst)
-	{
-		auto path = engine_path.wstring();
-		wcsncpy(dst, path.c_str(), path.size());
-		dst[path.size()] = 0;
-	}
-
-	static void(*file_callback)(Capture&, const wchar_t*);
-	static Capture file_callback_capture;
-
-	void set_file_callback(void(*callback)(Capture& c, const wchar_t* filename), const Capture& capture)
-	{
-		file_callback = callback;
-		file_callback_capture = capture;
-	}
-
-	void report_used_file(const wchar_t* filename)
-	{
-		if (file_callback)
-			file_callback(file_callback_capture, filename);
-	}
-
 	void get_app_path(wchar_t* dst, bool has_name)
 	{
 		GetModuleFileNameW(nullptr, dst, 260);
