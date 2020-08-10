@@ -49,7 +49,8 @@ namespace flame
 	enum MenuType
 	{
 		MenuTop,
-		MenuSub
+		MenuSub,
+		MenuButton
 	};
 
 	enum ScrollbarType

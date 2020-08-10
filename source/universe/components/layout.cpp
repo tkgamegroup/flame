@@ -448,21 +448,6 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::on_entity_component_data_changed(Component* c, uint data_name_hash)
-	{
-		if (c == element)
-		{
-			switch (data_name_hash)
-			{
-			case S<ch("width")>::v:
-			case S<ch("height")>::v:
-			case S<ch("padding")>::v:
-				on_entity_message(MessageLayoutDirty);
-				break;
-			}
-		}
-	}
-
 	void cLayoutPrivate::on_entity_child_visibility_changed(Entity* e)
 	{
 		on_entity_message(MessageLayoutDirty);
@@ -485,7 +470,22 @@ namespace flame
 			on_entity_message(MessageLayoutDirty);
 	}
 
-	void cLayoutPrivate::on_entity_child_component_data_changed(Component* c, uint data_name_hash)
+	void cLayoutPrivate::on_entity_component_data_changed(Component* c, uint64 data_name_hash)
+	{
+		if (c == element)
+		{
+			switch (data_name_hash)
+			{
+			case S<ch("width")>::v:
+			case S<ch("height")>::v:
+			case S<ch("padding")>::v:
+				on_entity_message(MessageLayoutDirty);
+				break;
+			}
+		}
+	}
+
+	void cLayoutPrivate::on_entity_child_component_data_changed(Component* c, uint64 data_name_hash)
 	{
 		if (updating)
 			return;

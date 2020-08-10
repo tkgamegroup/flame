@@ -659,6 +659,8 @@ namespace flame
 				dst->add_child(e);
 				load_prefab(e, n_c);
 			}
+			else if (name == "debug_break")
+				debug_break();
 			else
 			{
 				auto sp = SUS::split(name, ':');
@@ -792,7 +794,7 @@ namespace flame
 		file.save_file(filename.c_str());
 	}
 
-	void Entity::report_data_changed(Component* c, uint hash)
+	void Entity::report_data_changed(Component* c, uint64 hash)
 	{
 		auto entity = (EntityPrivate*)c->entity;
 		if (!entity)

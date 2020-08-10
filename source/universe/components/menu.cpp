@@ -1,5 +1,6 @@
 #include "../world_private.h"
 #include "element_private.h"
+#include "text_private.h"
 #include "event_receiver_private.h"
 #include "menu_private.h"
 

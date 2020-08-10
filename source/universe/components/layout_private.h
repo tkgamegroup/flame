@@ -46,11 +46,11 @@ namespace flame
 		void on_lost_type_setting();
 
 		void on_entity_message(Message msg) override;
-		void on_entity_component_data_changed(Component* c, uint data_name_hash) override;
 		void on_entity_child_visibility_changed(Entity* e) override;
 		void on_entity_child_position_changed(Entity* e) override;
 		void on_entity_child_component_added(Component* c) override;
 		void on_entity_child_component_removed(Component* c) override;
-		void on_entity_child_component_data_changed(Component* c, uint data_name_hash) override;
+		void on_entity_component_data_changed(Component* c, uint64 data_name_hash) override;
+		void on_entity_child_component_data_changed(Component* c, uint64 data_name_hash) override;
 	};
 }

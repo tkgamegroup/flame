@@ -92,7 +92,7 @@ namespace flame
 		virtual void load(const wchar_t* filename) = 0;
 		virtual void save(const wchar_t* filename) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint hash);
+		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};
 }

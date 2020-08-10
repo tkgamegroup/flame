@@ -1,24 +1,11 @@
-//#pragma once
-//
-//#include <flame/universe/component.h>
-//
-//namespace flame
-//{
-//	namespace graphics
-//	{
-//		struct FontAtlas;
-//	}
-//
-//	struct cElement;
-//	struct cText;
-//	struct cEventReceiver;
-//	struct cStyleColor2;
-//
+#pragma once
+
+#include <flame/universe/component.h>
+
+namespace flame
+{
 //	struct cCombobox : Component
 //	{
-//		cText* text;
-//		cEventReceiver* event_receiver;
-//
 //		int index;
 //
 //		cCombobox() :
@@ -33,10 +20,7 @@
 //
 //	struct cComboboxItem : Component
 //	{
-//		cEventReceiver* event_receiver;
-//		cStyleColor2* style;
-//
-//		int index;
+//		int value;
 //
 //		cComboboxItem() :
 //			Component("cComboboxItem")
@@ -45,4 +29,4 @@
 //
 //		FLAME_UNIVERSE_EXPORTS static cComboboxItem* create();
 //	};
-//}
+}

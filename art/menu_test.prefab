@@ -16,6 +16,7 @@
               <f:cText text="cat"/>
             </entity>
             <entity src="sub_menu">
+              <f:cText text="1"/>
               <f:cMenu>
                 <items>
                   <entity src="menu_items">
