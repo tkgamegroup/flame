@@ -12,8 +12,16 @@ namespace flame
 	{
 		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
-			if (thiz->type == MenuTop && thiz->root && !thiz->opened && thiz->items && !curr_menu)
-				thiz->open();
+			if (thiz->type == MenuTop)
+			{
+				if (thiz->root && !thiz->opened && thiz->items && !curr_menu)
+					thiz->open();
+			}
+			else if (thiz->type == MenuButton)
+			{
+				if (thiz->root && !thiz->opened && thiz->items)
+					thiz->open();
+			}
 		}, Capture().set_thiz(this));
 		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
@@ -33,6 +41,7 @@ namespace flame
 		}
 		items.reset(e); 
 		items_element = ce;
+		Entity::report_data_changed(this, S<ch("items")>::v);
 	}
 
 	void cMenuPrivate::open()
@@ -40,20 +49,23 @@ namespace flame
 		if (opened)
 			return;
 
-		auto pos = element->get_point(type == MenuTop ? 3 : 1);
+		auto pos = element->get_point((type == MenuTop || type == MenuButton) ? 3 : 1);
 		items_element->set_x(pos.x());
 		items_element->set_y(pos.y());
 		root->add_child(items.get());
 
-		auto parent = ((EntityPrivate*)entity)->parent;
-		for (auto& e : parent->children)
+		if (type != MenuButton)
 		{
-			auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
-			if (cm)
-				cm->close();
+			auto parent = ((EntityPrivate*)entity)->parent;
+			for (auto& e : parent->children)
+			{
+				auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
+				if (cm)
+					cm->close();
+			}
 		}
 
-		if (type == MenuTop)
+		if (type != MenuSub)
 		{
 			root_mouse_listener = root_event_receiver
 				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
@@ -62,9 +74,11 @@ namespace flame
 					return;
 				thiz->root_event_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
 				thiz->close();
-				curr_menu = nullptr;
+				if (thiz->type == MenuTop)
+					curr_menu = nullptr;
 			}, Capture().set_thiz(this));
-			curr_menu = this;
+			if (type == MenuTop)
+				curr_menu = this;
 		}
 
 		opened = true;
@@ -76,17 +90,21 @@ namespace flame
 		if (!opened)
 			return;
 
-		for (auto& e : items->children)
+		if (type != MenuButton)
 		{
-			auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
-			if (cm)
-				cm->close();
+			for (auto& e : items->children)
+			{
+				auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
+				if (cm)
+					cm->close();
+			}
 		}
 
-		if (type == MenuTop)
+		if (type != MenuSub)
 		{
 			root_event_receiver->remove_mouse_left_down_listener(root_mouse_listener);
-			curr_menu = nullptr;
+			if (type == MenuTop)
+				curr_menu = nullptr;
 		}
 
 		root->remove_child(items.get(), false);

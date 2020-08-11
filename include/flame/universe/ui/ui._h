@@ -149,30 +149,6 @@ namespace flame
 			return c;
 		}
 
-		inline cCombobox* c_combobox()
-		{
-			auto c = cCombobox::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cComboboxItem* c_combobox_item()
-		{
-			auto c = cComboboxItem::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
 		inline cMoveable* c_moveable()
 		{
 			auto c = cMoveable::create();
@@ -465,31 +441,7 @@ namespace flame
 
 		inline Entity* e_begin_combobox()
 		{
-			auto e = e_empty();
-			auto ce = c_element();
-			ce->size = Vec2f(0.f, style(FontSize).u.x() + 4.f);
-			ce->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
-			ce->frame_color = style(TextColorNormal).c;
-			ce->frame_thickness = 2.f;
-			c_text(false);
-			c_event_receiver();
-			auto cs = c_style_color();
-			cs->color_normal = style(FrameColorNormal).c;
-			cs->color_hovering = style(FrameColorHovering).c;
-			cs->color_active = style(FrameColorActive).c;
-			cs->style();
-			c_layout();
-			auto cm = c_menu(cMenu::ModeMain);
-			cm->root = current_root;
 			auto ccb = c_combobox();
-			parents.push(e);
-			e_empty();
-			c_element()->padding = Vec4f(0.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(Icon_ANGLE_DOWN);
-			c_aligner(AlignMax | AlignAbsolute, 0);
-			parents.pop();
-			parents.push(cm->items);
-			return e;
 		}
 
 		inline Entity* e_end_combobox(int idx = -1)
