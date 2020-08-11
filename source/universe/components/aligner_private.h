@@ -8,8 +8,8 @@ namespace flame
 
 	struct cAlignerPrivate : cAligner  // R ~ on_*
 	{
-		Align alignx = AlignNone;
-		Align aligny = AlignNone;
+		Align alignx = AlignMin;
+		Align aligny = AlignMin;
 
 		float width_factor = 1.f;
 		float height_factor = 1.f;

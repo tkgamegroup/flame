@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab xmlns:f="flame">
-  <entity src="text" >
+  <entity>
     <f:cElement padding="4,2,4,2" />
     <f:cText text="button" />
     <f:cEventReceiver />

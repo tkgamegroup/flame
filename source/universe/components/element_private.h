@@ -23,9 +23,10 @@ namespace flame
 		float skewx = 0.f;
 		float skewy = 0.f;
 
-		Mat23f transform = Mat23f(1.f);
 		bool transform_dirty = true;
 		Vec2f points[8];
+		Vec4f bb;
+		Mat23f transform = Mat23f(1.f);
 
 		Vec4c fill_color = Vec4c(0);
 

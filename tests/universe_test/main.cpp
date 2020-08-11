@@ -7,7 +7,7 @@ using namespace graphics;
 App g_app;
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"combobox_test.prefab";
+auto test_prefab = L"list_scroll_test.prefab";
 
 Entity* root;
 

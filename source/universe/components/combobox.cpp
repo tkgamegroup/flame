@@ -35,6 +35,7 @@ namespace flame
 			if (data_name_hash == S<ch("items")>::v)
 			{
 				auto i = 0;
+				auto max_width = 0;
 				for (auto& e : menu->items->children)
 				{
 					auto ci = (cComboboxItemPrivate*)e->get_component(cComboboxItem::type_hash);

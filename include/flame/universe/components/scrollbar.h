@@ -1,13 +1,9 @@
-//#pragma once
-//
-//#include <flame/universe/component.h>
-//
-//namespace flame
-//{
-//	struct cElement;
-//	struct cEventReceiver;
-//	struct cLayout;
-//
+#pragma once
+
+#include <flame/universe/component.h>
+
+namespace flame
+{
 //	struct cScrollbar : Component
 //	{
 //		cElement* element;
@@ -40,4 +36,4 @@
 //
 //		FLAME_UNIVERSE_EXPORTS static cScrollbarThumb* create(ScrollbarType type);
 //	};
-//}
+}

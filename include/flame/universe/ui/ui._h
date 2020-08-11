@@ -27,10 +27,6 @@ namespace flame
 			change_style(SelectedColorNormal, common(Vec4c(200, 220, 245, 255)));
 			change_style(SelectedColorHovering, common(Vec4c(205, 225, 250, 255)));
 			change_style(SelectedColorActive, common(Vec4c(195, 215, 240, 255)));
-			change_style(ScrollbarColor, common(Vec4c(245, 245, 245, 255)));
-			change_style(ScrollbarThumbColorNormal, common(Vec4c(194, 195, 201, 255)));
-			change_style(ScrollbarThumbColorHovering, common(Vec4c(104, 104, 104, 255)));
-			change_style(ScrollbarThumbColorActive, common(Vec4c(91, 91, 91, 255)));
 			change_style(TabColorNormal, common(Vec4c(0, 0, 0, 0)));
 			change_style(TabColorElse, common(Vec4c(28, 151, 234, 255)));
 			change_style(TabTextColorNormal, common(Vec4c(0, 0, 0, 255)));
@@ -39,162 +35,6 @@ namespace flame
 			change_style(SelectedTabColorElse, common(Vec4c(0, 122, 204, 255)));
 			change_style(SelectedTabTextColorNormal, common(Vec4c(255, 255, 255, 255)));
 			change_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
-		}
-
-		inline cScrollbar* c_scrollbar()
-		{
-			auto c = cScrollbar::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cSplitter* c_splitter(SplitterType type)
-		{
-			auto c = cSplitter::create(type);
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cScrollbarThumb* c_scrollbar_thumb(ScrollbarType type)
-		{
-			auto c = cScrollbarThumb::create(type);
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cList* c_list()
-		{
-			auto c = cList::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cTree* c_tree()
-		{
-			auto c = cTree::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cTreeNode* c_tree_node()
-		{
-			auto c = cTreeNode::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cTreeNodeTitle* c_tree_node_title()
-		{
-			auto c = cTreeNodeTitle::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cTreeNodeArrow* c_tree_node_arrow()
-		{
-			auto c = cTreeNodeArrow::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cTreeLeaf* c_tree_leaf()
-		{
-			auto c = cTreeLeaf::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cMoveable* c_moveable()
-		{
-			auto c = cMoveable::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cBringToFront* c_bring_to_front()
-		{
-			auto c = cBringToFront::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cDockerTab* c_docker_tab()
-		{
-			auto c = cDockerTab::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-
-		inline cExtraElementDrawing* c_extra_element_drawing()
-		{
-			auto c = cExtraElementDrawing::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
 		}
 
 		inline Entity* e_empty()
@@ -282,48 +122,14 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_scrollbar(ScrollbarType type, bool size_fit_parent)
-		{
-			auto e = e_empty();
-			c_element()->clip_flags = ClipChildren;
-			if (size_fit_parent)
-				c_aligner(AlignMinMax, AlignMinMax);
-			auto cl = c_layout(type == ScrollbarVertical ? LayoutHorizontal : LayoutVertical, false, false);
-			cl->item_padding = 4.f;
-			cl->fence = 2;
-			parents.push(e);
-			return e;
-		}
-
 		inline void e_end_scrollbar(float step = 1.f)
 		{
 			auto type = parents.top()->get_component(cLayout)->type == LayoutHorizontal ? ScrollbarVertical : ScrollbarHorizontal;
 			{
-				e_empty();
-				auto ce = c_element();
-				ce->size = 10.f;
-				ce->color = style(ScrollbarColor).c;
-				auto ca = c_aligner(0, 0);
-				if (type == ScrollbarVertical)
-					ca->y_align_flags = AlignMinMax;
-				else
-					ca->x_align_flags = AlignMinMax;
-				c_event_receiver();
 				c_scrollbar();
-				parents.push(current_entity);
 			}
 			{
-				e_empty();
-				c_element()->size = 10.f;
-				c_event_receiver();
-				auto cs = c_style_color();
-				cs->color_normal = style(ScrollbarThumbColorNormal).c;
-				cs->color_hovering = style(ScrollbarThumbColorHovering).c;
-				cs->color_active = style(ScrollbarThumbColorActive).c;
-				cs->style();
 				auto ct = c_scrollbar_thumb(type);
-				ct->step = step;
-				parents.pop();
 
 				e_empty();
 				c_element();
@@ -439,15 +245,8 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_begin_combobox()
-		{
-			auto ccb = c_combobox();
-		}
-
 		inline Entity* e_end_combobox(int idx = -1)
 		{
-			auto eis = parents.top();
-			auto ecb = eis->get_component(cMenuItems)->menu->entity;
 			auto max_width = 0U;
 			for (auto c : eis->children)
 			{
@@ -455,29 +254,6 @@ namespace flame
 				max_width = max(max_width, ct->font_atlas->text_size(ct->font_size, ct->text.v).x());
 			}
 			ecb->get_component(cElement)->add_width(8.f + max_width + style(FontSize).u.x());
-			if (idx != -1)
-				ecb->get_component(cCombobox)->set_index(idx, false);
-			parents.pop();
-			return ecb;
-		}
-
-		inline Entity* e_combobox_item(const wchar_t* text)
-		{
-			auto e = e_empty();
-			c_element()->padding = Vec4f(4.f, 2.f, 4.f, 2.f);
-			c_text()->set_text(text);
-			c_event_receiver();
-			auto cs = c_style_color2();
-			cs->color_normal[0] = style(FrameColorNormal).c;
-			cs->color_hovering[0] = style(FrameColorHovering).c;
-			cs->color_active[0] = style(FrameColorActive).c;
-			cs->color_normal[1] = style(SelectedColorNormal).c;
-			cs->color_hovering[1] = style(SelectedColorHovering).c;
-			cs->color_active[1] = style(SelectedColorActive).c;
-			cs->style();
-			c_aligner(AlignMinMax | AlignGreedy, 0);
-			c_combobox_item();
-			return e;
 		}
 		
 		inline Entity* e_begin_button_menu(const wchar_t* text)
