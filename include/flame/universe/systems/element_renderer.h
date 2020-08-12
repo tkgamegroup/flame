@@ -20,6 +20,7 @@ namespace flame
 		{
 		}
 
+		virtual void set_always_update(bool a) = 0;
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 

@@ -4,10 +4,6 @@
 #include "shader_private.h"
 #include "command_private.h"
 
-#ifdef FLAME_ANDROID
-#include <dlfcn.h>
-#endif
-
 namespace flame
 {
 	namespace graphics

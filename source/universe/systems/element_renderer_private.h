@@ -10,9 +10,11 @@ namespace flame
 	{
 		graphics::Canvas* canvas = nullptr;
 
+		bool always_update = false;
 		bool dirty = true;
 
-		bool is_dirty() const override { return dirty; }
+		void set_always_update(bool a) override { always_update = a; }
+		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
 
 		void on_added() override;

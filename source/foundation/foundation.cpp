@@ -726,6 +726,11 @@ namespace flame
 		mouse_event(flags, 0, 0, 0, NULL);
 	}
 
+	void set_mouse_pos(const Vec2i& pos)
+	{
+		SetCursorPos(pos.x(), pos.y());
+	}
+
 	void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
 	{
 		SHELLEXECUTEINFOW info = {};
@@ -1266,6 +1271,9 @@ namespace flame
 			if (!sizing)
 				resize();
 			break;
+		case WM_MOVE:
+			pos = Vec2i((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
+			break;
 		case WM_SETCURSOR:
 			SetCursor(cursors[cursor_type]);
 			break;
@@ -1285,6 +1293,15 @@ namespace flame
 
 	void WindowPrivate::set_size(const Vec2u& size)
 	{
+	}
+
+	Vec2i WindowPrivate::global_to_local(const Vec2i& p)
+	{
+		POINT pt;
+		pt.x = p.x();
+		pt.y = p.y();
+		ScreenToClient(hWnd, &pt);
+		return Vec2i(pt.x, pt.y);
 	}
 
 	void WindowPrivate::set_title(const std::string& _title)
@@ -1498,55 +1515,6 @@ namespace flame
 	{
 		return new WindowPrivate(title, size, style, (WindowPrivate*)parent);
 	}
-
-#ifdef FLAME_ANDROID
-	static int32_t android_handle_input(android_app* state, AInputEvent* event)
-	{
-		if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION)
-			return 1;
-		return 0;
-	}
-
-	void (*created_callback)();
-
-	static void android_handle_cmd(android_app* state, int32_t cmd)
-	{
-		//auto w = (Window*)app->userData;
-		switch (cmd)
-		{
-		case APP_CMD_SAVE_STATE:
-			//engine->app->savedState = malloc(sizeof(???));
-			//*((struct ???*)engine->app->savedState) = ???;
-			//engine->app->savedStateSize = sizeof(struct ???);
-			break;
-		case APP_CMD_INIT_WINDOW:
-			if (state->window)
-				created_callback();
-			break;
-		case APP_CMD_TERM_WINDOW:
-			break;
-		case APP_CMD_GAINED_FOCUS:
-			break;
-		case APP_CMD_LOST_FOCUS:
-			break;
-		}
-	}
-
-	Window* Window::create(Application* app, void* android_state, void(*callback)())
-	{
-		auto android_state = reinterpret_cast<android_app*>(android_state);
-		auto w = new WindowPrivate(android_state);
-		w->app = reinterpret_cast<ApplicationPrivate*>(app);
-		((ApplicationPrivate*)app)->windows.push_back(w);
-
-		android_state->userData = w;
-		android_state->onAppCmd = android_handle_cmd;
-		android_state->onInputEvent = android_handle_input;
-		created_callback = callback;
-
-		return w;
-	}
-#endif
 
 	int LooperPrivate::loop(void (*_frame_callback)(Capture& c, float delta_time), const Capture& capture)
 	{

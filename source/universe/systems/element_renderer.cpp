@@ -46,7 +46,7 @@ namespace flame
 
 	void sElementRendererPrivate::update()
 	{
-		if (!dirty)
+		if (!dirty && !always_update)
 			return;
 		do_render(((WorldPrivate*)world)->root.get());
 		dirty = false;

@@ -5,10 +5,6 @@
 #include "command_private.h"
 #include "swapchain_private.h"
 
-#ifdef FLAME_ANDROID
-#include <android_native_app_glue.h>
-#endif
-
 namespace flame
 {
 	namespace graphics

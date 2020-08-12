@@ -48,7 +48,7 @@ namespace flame
 		GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p = nullptr, bool maximized = false);
 		virtual ~GraphicsWindow();
 		void set_canvas_target();
-		void virtual on_frame() {}
+		virtual void on_frame() {}
 		void update();
 	};
 

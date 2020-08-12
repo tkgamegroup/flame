@@ -54,6 +54,8 @@ namespace flame
 		Vec2u get_size() const override { return size; }
 		void set_size(const Vec2u& size) override;
 
+		Vec2i global_to_local(const Vec2i& p) override;
+
 		const char* get_title() const override { return title.c_str(); }
 		void set_title(const std::string& _title);
 

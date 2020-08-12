@@ -488,6 +488,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 	FLAME_FOUNDATION_EXPORTS void send_global_keyboard_event(KeyboardKey key, bool down = true);
 	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(MouseKey key, bool down = true);
+	FLAME_FOUNDATION_EXPORTS void set_mouse_pos(const Vec2i& pos);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	// if str is null then the output will be redirect to std output
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* str = nullptr);
@@ -561,6 +562,8 @@ namespace flame
 		virtual void set_pos(const Vec2i& pos) = 0;
 		virtual Vec2u get_size() const = 0;
 		virtual void set_size(const Vec2u& size) = 0;
+
+		virtual Vec2i global_to_local(const Vec2i& p) = 0;
 
 		virtual const char* get_title() const = 0;
 		virtual void set_title(const char* title) = 0;
