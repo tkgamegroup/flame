@@ -50,6 +50,8 @@ namespace flame
 		void on_lost_type_setting();
 
 		void on_entity_message(Message msg) override;
+		void on_entity_added_child(Entity* e) override;
+		void on_entity_removed_child(Entity* e) override;
 		void on_entity_child_visibility_changed(Entity* e) override;
 		void on_entity_child_position_changed(Entity* e) override;
 		void on_entity_child_component_added(Component* c) override;

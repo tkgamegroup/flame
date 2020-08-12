@@ -2,7 +2,7 @@
 <prefab xmlns:f="flame">
   <entity>
     <f:cElement padding="1.0,1.0,1.0,1.0" border="1.0" border_color="0,0,0,60" />
-    <f:cAligner />
+    <f:cAligner alignx="AlignNone" aligny="AlignNone" />
     <f:cLayout type="LayoutVertical" />
   </entity>
 </prefab>

@@ -433,6 +433,16 @@ namespace flame
 		}
 	}
 
+	void cLayoutPrivate::on_entity_added_child(Entity* e)
+	{
+		on_entity_message(MessageLayoutDirty);
+	}
+
+	void cLayoutPrivate::on_entity_removed_child(Entity* e)
+	{
+		on_entity_message(MessageLayoutDirty);
+	}
+
 	void cLayoutPrivate::on_entity_child_visibility_changed(Entity* e)
 	{
 		on_entity_message(MessageLayoutDirty);

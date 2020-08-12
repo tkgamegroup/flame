@@ -4,11 +4,11 @@
     <f:cElement width="100" height="100" />
     <f:cEventReceiver ignore_occluders="true" />
     <f:cLayout />
-    <entity>
+    <entity name="scrollbar_track">
       <f:cElement width="10" fill_color="245,245,245,255" />
       <f:cAligner alignx="AlignMax" aligny="AlignMinMax" />
       <f:cEventReceiver />
-      <entity>
+      <entity name="scrollbar_thumb">
         <f:cElement width="10" height="10" />
         <f:cEventReceiver />
         <f:cStyle rule=

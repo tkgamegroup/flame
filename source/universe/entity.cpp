@@ -91,26 +91,6 @@ namespace flame
 		return nullptr;
 	}
 
-	Component* EntityPrivate::get_component(Place place, uint64 hash) const
-	{
-		switch (place)
-		{
-		case PlaceLocal:
-			return get_component(hash);
-		case PlaceParent:
-			return parent->get_component(hash);
-		case PlaceAncestor:
-			auto e = parent;
-			while (e)
-			{
-				auto c = e->get_component(hash);
-				if (c)
-					return c;
-				e = e->parent;
-			}
-		}
-	}
-
 	void EntityPrivate::Ref::gain(Component* c)
 	{
 		if (staging == INVALID_POINTER)
@@ -197,16 +177,59 @@ namespace flame
 							std::string place_str;
 							m->get_token("place", &place_str);
 
-							r.place = (place_str.empty() || place_str == "local") ? PlaceLocal :
-								(place_str == "parent" ? PlaceParent : PlaceAncestor);
-
-							if (r.place == PlaceLocal || parent)
+							if (place_str.empty() || place_str == "local")
 							{
-								r.staging = get_component(r.place, r.hash);
+								r.place = PlaceLocal;
+								r.staging = get_component(r.hash);
 								if (!r.staging)
 								{
-									printf("add component %s failed, this component requires %s component %s, which do not exist\n",
-										c->type_name, r.place == PlaceLocal ? "local" : (r.place == PlaceParent ? "parent's" : "ancestor's"), r.name.c_str());
+									printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
+							}
+							else if (place_str == "parent")
+							{
+								r.place = PlaceParent;
+								if (parent)
+								{
+									r.staging = parent->get_component(r.hash);
+									if (!r.staging)
+									{
+										printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
+										return;
+									}
+								}
+							}
+							else if (place_str == "ancestor")
+							{
+								r.place = PlaceAncestor;
+								if (parent)
+								{
+									r.staging = nullptr;
+									auto e = parent;
+									while (e)
+									{
+										r.staging = e->get_component(r.hash);
+										if (r.staging)
+											break;
+										e = e->parent;
+									}
+									if (!r.staging)
+									{
+										printf("add component %s failed, this component requires ancestor's component %s, which do not exist\n", c->type_name, r.name.c_str());
+										return;
+									}
+								}
+							}
+							else
+							{
+								r.place = PlaceOffspring;
+								auto e = find_child(place_str);
+								if (e)
+									r.staging = e->get_component(r.hash);
+								if (!r.staging)
+								{
+									printf("add component %s failed, this component requires offspring(%s)'s component %s, which do not exist\n", c->type_name, place_str.c_str(), r.name.c_str());
 									return;
 								}
 							}
@@ -430,15 +453,36 @@ namespace flame
 					switch (r.type)
 					{
 					case RefComponent:
-						if (r.place != PlaceLocal && !r.target)
+						if (!r.target)
 						{
-							r.staging = e->get_component(r.place, r.hash);
-							if (!r.staging)
+							switch (r.place)
 							{
-								printf("add child failed, this child contains a component %s that requires %s component %s, which do not exist\n", 
-									c.second->type_name, r.place == PlaceParent ? "local" : "ancestor's", r.name.c_str());
-								ok = false;
-								return false;
+							case PlaceParent:
+								r.staging = get_component(r.hash);
+								if (!r.staging)
+								{
+									printf("add child failed, this child contains a component %s that requires parent's component %s, which do not exist\n", c.second->type_name, r.name.c_str());
+									ok = false;
+									return false;
+								}
+								break;
+							case PlaceAncestor:
+								r.staging = nullptr;
+								auto e = this;
+								while (e)
+								{
+									r.staging = e->get_component(r.hash);
+									if (r.staging)
+										break;
+									e = e->parent;
+								}
+								if (!r.staging)
+								{
+									printf("add child failed, this child contains a component %s that requires ancestor's component %s, which do not exist\n", c.second->type_name, r.name.c_str());
+									ok = false;
+									return false;
+								}
+								break;
 							}
 						}
 						break;
@@ -609,6 +653,9 @@ namespace flame
 		{
 			if (c->name == name)
 				return c.get();
+			auto res = c->find_child(name);
+			if (res)
+				return res;
 		}
 		return nullptr;
 	}
@@ -656,8 +703,8 @@ namespace flame
 			if (name == "entity")
 			{
 				auto e = f_new<EntityPrivate>();
-				dst->add_child(e);
 				load_prefab(e, n_c);
+				dst->add_child(e);
 			}
 			else if (name == "debug_break")
 				debug_break();

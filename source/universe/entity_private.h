@@ -31,18 +31,19 @@ namespace flame
 
 		StateFlags state = StateNone;
 
-		enum Place
-		{
-			PlaceLocal,
-			PlaceParent,
-			PlaceAncestor
-		};
-
 		enum RefType
 		{
 			RefComponent,
 			RefSystem,
 			RefObject
+		};
+
+		enum Place
+		{
+			PlaceLocal,
+			PlaceParent,
+			PlaceAncestor,
+			PlaceOffspring
 		};
 
 		struct Ref
@@ -108,7 +109,6 @@ namespace flame
 		void send_message(Message msg) override;
 
 		Component* get_component(uint64 hash) const override;
-		Component* get_component(Place place, uint64 hash) const;
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
 		void on_component_removed(Component* c);
