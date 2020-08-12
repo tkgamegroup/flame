@@ -122,32 +122,6 @@ namespace flame
 			return e;
 		}
 
-		inline void e_end_scrollbar(float step = 1.f)
-		{
-			auto type = parents.top()->get_component(cLayout)->type == LayoutHorizontal ? ScrollbarVertical : ScrollbarHorizontal;
-			{
-				c_scrollbar();
-			}
-			{
-				auto ct = c_scrollbar_thumb(type);
-
-				e_empty();
-				c_element();
-				auto ce = c_event_receiver();
-				ce->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
-					*pass = true;
-					return true;
-				}, Capture());
-				ce->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-					if (is_mouse_scroll(action, key))
-						c.thiz<cScrollbarThumb>()->update(-pos.x() * 20.f);
-					return true;
-				}, Capture().set_thiz(ct));
-				c_aligner(AlignMinMax, AlignMinMax);
-			}
-			parents.pop();
-		}
-
 		inline Entity* e_begin_splitter(SplitterType type)
 		{
 			auto e = e_empty();

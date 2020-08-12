@@ -2,15 +2,6 @@ namespace flame
 {
 	struct Entity;
 
-	inline void remove_layer(Entity* l)
-	{
-		l->name = "";
-		looper().add_event([](Capture& c) {
-			auto l = c.thiz<Entity>();
-			l->parent->remove_child(l);
-		}, Capture().set_thiz(l));
-	}
-
 	inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
 	{
 		auto l = f_new<Entity>();

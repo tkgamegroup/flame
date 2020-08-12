@@ -14,7 +14,7 @@
             StateHovering,StateActive;flame::cElement.fill_color=225,225,225,255#
             StateActive;flame::cElement.fill_color=220,220,220,255#
             StateHovering;flame::cElement.fill_color=230,230,230,255#
-            StateNone;flame::cElement.fill_color=220,220,220,255" />
+            StateNone;flame::cElement.fill_color=220,220,220,0" />
 	<f:cListItem />
   </entity>
 </prefab>

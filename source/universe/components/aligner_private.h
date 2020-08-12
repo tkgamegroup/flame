@@ -18,7 +18,7 @@ namespace flame
 
 		Vec4f margin = Vec4f(0.f);
 
-		bool only_basic = false;
+		bool include_in_layout = true;
 
 		Vec2f desired_size = Vec2f(0.f);
 
@@ -40,8 +40,8 @@ namespace flame
 		Vec4f get_margin() const override { return margin; }
 		void set_margin(const Vec4f& m) override;
 
-		bool get_only_basic() const override { return only_basic; }
-		void set_only_basic(bool o) override;
+		bool get_include_in_layout() const override { return include_in_layout; }
+		void set_include_in_layout(bool o) override;
 
 		void on_added() override;
 	};

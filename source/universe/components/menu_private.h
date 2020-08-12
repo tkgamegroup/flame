@@ -23,9 +23,6 @@ namespace flame
 		bool opened = false;
 		int frame = -1;
 
-		void on_gain_event_receiver();
-		void on_lost_event_receiver();
-
 		MenuType get_type() const override { return type; }
 		void set_type(MenuType t) override { type = t; }
 
@@ -33,6 +30,9 @@ namespace flame
 
 		void open();
 		void close();
+
+		void on_gain_event_receiver();
+		void on_lost_event_receiver();
 
 		void on_entity_entered_world() override;
 		void on_entity_left_world() override;

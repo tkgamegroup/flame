@@ -1,39 +1,26 @@
-//#include <flame/universe/components/element.h>
-//#include <flame/universe/components/event_receiver.h>
-//#include <flame/universe/components/aligner.h>
-//#include <flame/universe/components/style.h>
-//#include <flame/universe/components/layout.h>
-//#include <flame/universe/components/scrollbar.h>
-//
-//namespace flame
-//{
-//	struct cScrollbarPrivate : cScrollbar
-//	{
-//		cScrollbarPrivate()
-//		{
-//			element = nullptr;
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//			switch (e)
-//			{
-//			case EntityComponentAdded:
-//				if (t == this)
-//				{
-//					element = entity->get_component(cElement);
-//					assert(element);
-//				}
-//				break;
-//			}
-//		}
-//	};
-//
-//	cScrollbar* cScrollbar::create()
-//	{
-//		return new cScrollbarPrivate();
-//	}
-//
+#include "event_receiver_private.h"
+#include "scroller_private.h"
+
+namespace flame
+{
+	void cScrollerPrivate::on_gain_event_receiver()
+	{
+		mouse_scroll_listener = event_receiver->add_mouse_scroll_listener([](Capture& c, int v) {
+			auto thiz = c.thiz<cScrollerPrivate>();
+			//thiz->update(-v * 20.f);
+		}, Capture().set_thiz(this));
+	}
+
+	void cScrollerPrivate::on_lost_event_receiver()
+	{
+		event_receiver->remove_mouse_scroll_listener(mouse_scroll_listener);
+	}
+
+	cScroller* cScroller::create()
+	{
+		return f_new<cScrollerPrivate>();
+	}
+
 //	struct cScrollbarThumbPrivate : cScrollbarThumb
 //	{
 //		void* mouse_listener;
@@ -168,4 +155,4 @@
 //	{
 //		return new cScrollbarThumbPrivate(type);
 //	}
-//}
+}

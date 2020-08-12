@@ -8,28 +8,6 @@ namespace flame
 {
 	static cMenuPrivate* curr_menu = nullptr;
 
-	void cMenuPrivate::on_gain_event_receiver()
-	{
-		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
-			auto thiz = c.thiz<cMenuPrivate>();
-			if (thiz->type == MenuTop)
-			{
-				if (thiz->root && !thiz->opened && thiz->items && !curr_menu)
-					thiz->open();
-			}
-			else if (thiz->type == MenuButton)
-			{
-				if (thiz->root && !thiz->opened && thiz->items)
-					thiz->open();
-			}
-		}, Capture().set_thiz(this));
-		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
-			auto thiz = c.thiz<cMenuPrivate>();
-			if (thiz->root && !thiz->opened && thiz->items && curr_menu)
-				thiz->open();
-		}, Capture().set_thiz(this));
-	}
-
 	void cMenuPrivate::set_items(Entity* _e) 
 	{
 		auto e = (EntityPrivate*)_e;
@@ -109,6 +87,28 @@ namespace flame
 
 		root->remove_child(items.get(), false);
 		opened = false;
+	}
+
+	void cMenuPrivate::on_gain_event_receiver()
+	{
+		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			auto thiz = c.thiz<cMenuPrivate>();
+			if (thiz->type == MenuTop)
+			{
+				if (thiz->root && !thiz->opened && thiz->items && !curr_menu)
+					thiz->open();
+			}
+			else if (thiz->type == MenuButton)
+			{
+				if (thiz->root && !thiz->opened && thiz->items)
+					thiz->open();
+			}
+		}, Capture().set_thiz(this));
+		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+			auto thiz = c.thiz<cMenuPrivate>();
+			if (thiz->root && !thiz->opened && thiz->items && curr_menu)
+				thiz->open();
+		}, Capture().set_thiz(this));
 	}
 
 	void cMenuPrivate::on_lost_event_receiver()

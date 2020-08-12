@@ -148,7 +148,11 @@ namespace flame
 		points[6] = points[2] + axes * Vec2f(pr, pb);
 		points[7] = points[3] + axes * Vec2f(pl, pb);
 
-		for (auto i = 0; i < 4; i++)
+		bb.x() = points[0].x();
+		bb.z() = points[0].x();
+		bb.y() = points[0].y();
+		bb.w() = points[0].y();
+		for (auto i = 1; i < 4; i++)
 		{
 			bb.x() = min(bb.x(), points[i].x());
 			bb.z() = max(bb.z(), points[i].x());

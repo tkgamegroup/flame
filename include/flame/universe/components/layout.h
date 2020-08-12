@@ -25,9 +25,9 @@ namespace flame
 		virtual bool get_auto_height() const = 0;
 		virtual void set_auto_height(bool a) = 0;
 
-		//FLAME_RV(uint, column);
+		virtual void set_break_on_next_update(bool b) = 0;
 
-		//Vec2f content_size;
+		//FLAME_RV(uint, column);
 
 		//FLAME_UNIVERSE_EXPORTS void set_scrollx(float x);
 		//FLAME_UNIVERSE_EXPORTS void set_scrolly(float y);

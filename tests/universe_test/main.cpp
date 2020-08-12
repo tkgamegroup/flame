@@ -7,7 +7,7 @@ using namespace graphics;
 App g_app;
 
 auto res_path = std::filesystem::path(getenv("FLAME_PATH")) / "art";
-auto test_prefab = L"list_scroll_test.prefab";
+auto test_prefab = L"vscroller_test.prefab";
 
 Entity* root;
 
@@ -15,7 +15,7 @@ int main(int argc, char** args)
 {
 	g_app.create();
 	auto w = new GraphicsWindow(&g_app, true, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
-	w->canvas->set_clear_color(Vec4c(200, 200, 200, 255));
+	w->canvas->set_clear_color(Vec4c(255));
 	root = w->root;
 
 	//auto res = ResMap::create();

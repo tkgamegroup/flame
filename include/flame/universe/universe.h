@@ -40,7 +40,7 @@ namespace flame
 
 	enum LayoutType
 	{
-		LayoutBasic,
+		LayoutFree,
 		LayoutVertical,
 		LayoutHorizontal,
 		LayoutTile
@@ -53,10 +53,10 @@ namespace flame
 		MenuButton
 	};
 
-	enum ScrollbarType
+	enum ScrollerType
 	{
-		ScrollbarVertical,
-		ScrollbarHorizontal
+		ScrollerVertical,
+		ScrollerHorizontal
 	};
 
 	enum SplitterType

@@ -1,14 +1,15 @@
 <?xml version="1.0"?>
 <prefab xmlns:f="flame">
   <entity >
-    <f:cElement width="100.0" height="100.0" padding="0,0,10,0" clipping="true" />
-    <f:cLayout type="LayoutVertical" auto_width="false" auto_height="false" />
+    <f:cElement width="100" height="100" />
+    <f:cEventReceiver ignore_occluders="true" />
+    <f:cLayout />
     <entity>
-      <f:cElement width="10.0" fill_color="245,245,245,255" />
-      <f:cAligner alignx="AlignMax" aligny="AlignMinMax" only_basic="true" />
+      <f:cElement width="10" fill_color="245,245,245,255" />
+      <f:cAligner alignx="AlignMax" aligny="AlignMinMax" />
       <f:cEventReceiver />
       <entity>
-        <f:cElement width="10.0" height="10.0" />
+        <f:cElement width="10" height="10" />
         <f:cEventReceiver />
         <f:cStyle rule=
            "StateHovering,StateActive;flame::cElement.fill_color=91,91,91,255#
@@ -17,6 +18,6 @@
             StateNone;flame::cElement.fill_color=194,195,201,255" />
       </entity>
     </entity>
-    <f:cScrollbar type="ScrollbarVertical" />
+    <f:cScroller type="ScrollerVertical" />
   </entity>
 </prefab>

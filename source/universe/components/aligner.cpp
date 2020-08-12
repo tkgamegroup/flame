@@ -51,12 +51,12 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("margin")>::v);
 	}
 
-	void cAlignerPrivate::set_only_basic(bool o)
+	void cAlignerPrivate::set_include_in_layout(bool o)
 	{
-		if (only_basic == o)
+		if (include_in_layout == o)
 			return;
-		only_basic = o;
-		Entity::report_data_changed(this, S<ch("only_basic")>::v);
+		include_in_layout = o;
+		Entity::report_data_changed(this, S<ch("include_in_layout")>::v);
 	}
 
 	void cAlignerPrivate::on_added()

@@ -4,18 +4,22 @@
 
 namespace flame
 {
-//	struct cScrollbar : Component
-//	{
-//		cElement* element;
-//
-//		cScrollbar() :
-//			Component("cScrollbar")
-//		{
-//		}
-//
-//		FLAME_UNIVERSE_EXPORTS static cScrollbar* create();
-//	};
-//
+	struct cScroller : Component // R !ctor !dtor !type_name !type_hash
+	{
+		inline static auto type_name = "flame::cScroller";
+		inline static auto type_hash = ch(type_name);
+
+		cScroller() :
+			Component(type_name, type_hash)
+		{
+		}
+
+		virtual ScrollerType get_type() const = 0;
+		virtual void set_type(ScrollerType type) = 0;
+
+		FLAME_UNIVERSE_EXPORTS static cScroller* create();
+	};
+
 //	struct cScrollbarThumb : Component
 //	{
 //		cElement* element;
@@ -26,11 +30,6 @@ namespace flame
 //
 //		ScrollbarType type;
 //		float step;
-//
-//		cScrollbarThumb() :
-//			Component("cScrollbarThumb")
-//		{
-//		}
 //
 //		FLAME_UNIVERSE_EXPORTS void update(float v);
 //

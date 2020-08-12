@@ -32,8 +32,8 @@ namespace flame
 		// left top right bottom
 		virtual void set_margin(const Vec4f& m) = 0;
 
-		virtual bool get_only_basic() const = 0;
-		virtual void set_only_basic(bool o) = 0;
+		virtual bool get_include_in_layout() const = 0;
+		virtual void set_include_in_layout(bool o) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cAligner* create();
 	};

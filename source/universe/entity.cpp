@@ -694,6 +694,8 @@ namespace flame
 									fs->call(c, nullptr, parms);
 									type->destroy(d);
 								}
+								else
+									printf("unknow attribute: %s\n", a.name());
 							}
 							for (auto n : n_c.children())
 							{
@@ -704,6 +706,8 @@ namespace flame
 									load_prefab(e, n.child("entity"));
 									a2f<void(*)(void*, void*)>(fs->get_address(c))(c, e);
 								}
+								else
+									printf("unknow attribute: %s\n", n.name());
 							}
 						}
 					}

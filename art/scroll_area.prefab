@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<prefab xmlns:f="flame">
+  <entity>
+    <f:cElement clipping="true" />
+    <f:cAligner alignx="AlignMinMax" aligny="AlignMinMax" margin="0,0,12,0" />
+    <f:cLayout/>
+  </entity>
+</prefab>

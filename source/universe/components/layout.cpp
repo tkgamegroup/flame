@@ -10,15 +10,6 @@ namespace flame
 //		column = 0;
 
 //		scroll_offset = Vec2f(0.f);
-//		content_size = Vec2f(0.f);
-//	}
-
-//	void cLayoutPrivate::set_content_size(const Vec2f& s)
-//	{
-//		if (s == content_size)
-//			return;
-//		content_size = s;
-//		report_data_changed(FLAME_CHASH("content_size"), this);
 //	}
 
 	void cLayoutPrivate::apply_basic_h(cElementPrivate* e, cAlignerPrivate* a, bool free)
@@ -105,14 +96,12 @@ namespace flame
 
 	void cLayoutPrivate::update()
 	{
-//#ifdef _DEBUG
-//		if (debug_level > 0)
-//		{
-//			debug_break();
-//			debug_level = 0;
-//		}
-//#endif
-//
+		if (break_on_next_update)
+		{
+			debug_break();
+			break_on_next_update = false;
+		}
+
 		updating = true;
 
 		std::vector<std::pair<cElementPrivate*, cAlignerPrivate*>> als[2];
@@ -124,7 +113,7 @@ namespace flame
 				auto a = (cAlignerPrivate*)c->get_component(cAligner::type_hash);
 				if (e || a)
 				{
-					if (a && a->only_basic)
+					if (a && !a->include_in_layout)
 						als[1].emplace_back(e, a);
 					else
 						als[0].emplace_back(e, a);
@@ -134,7 +123,7 @@ namespace flame
 
 		switch (type)
 		{
-		case LayoutBasic:
+		case LayoutFree:
 			for (auto i = 0; i < 2; i++)
 			{
 				for (auto& al : als[i])
@@ -170,7 +159,6 @@ namespace flame
 			}
 			if (!als[0].empty())
 				w -= gap;
-			//set_content_size(Vec2f(w, h));
 			w += element->padding.xz().sum();
 			h += element->padding.yw().sum();
 			judge_width(w);
@@ -229,7 +217,6 @@ namespace flame
 			}
 			if (!als[0].empty())
 				h -= gap;
-			//set_content_size(Vec2f(w, h));
 			w += element->padding.xz().sum();
 			h += element->padding.yw().sum();
 			judge_width(w);
@@ -269,7 +256,6 @@ namespace flame
 //
 //			if (column == 0)
 //			{
-//				set_content_size(Vec2f(0.f));
 //				judge_width(element->padding.xz().sum());
 //				judge_height(element->padding.yw().sum());
 //				for (auto i = 0; i < n; i++)
@@ -319,7 +305,6 @@ namespace flame
 //					}
 //					h -= gap;
 //				}
-//				set_content_size(Vec2f(w, h));
 //				w += element->padding.xz().sum();
 //				h += element->padding.yw().sum();
 //				judge_width(w);
@@ -511,7 +496,7 @@ namespace flame
 			case S<ch("width_factor")>::v:
 			case S<ch("height_factor")>::v:
 			case S<ch("margin")>::v:
-			case S<ch("only_basic")>::v:
+			case S<ch("include_in_layout")>::v:
 				on_entity_message(MessageLayoutDirty);
 				break;
 			}
