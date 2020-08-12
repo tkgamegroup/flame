@@ -227,10 +227,15 @@ namespace flame
 		dispatcher->dirty = true;
 	}
 
-	void cEventReceiverPrivate::on_entity_visibility_changed()
+	void cEventReceiverPrivate::on_local_message(Message msg, void* p)
 	{
-		if (dispatcher)
-			dispatcher->dirty = true;
+		switch (msg)
+		{
+		case MessageVisibilityChanged:
+			if (dispatcher)
+				dispatcher->dirty = true;
+			break;
+		}
 	}
 
 	cEventReceiver* cEventReceiver::create()

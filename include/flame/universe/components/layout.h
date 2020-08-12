@@ -25,6 +25,11 @@ namespace flame
 		virtual bool get_auto_height() const = 0;
 		virtual void set_auto_height(bool a) = 0;
 
+		virtual float get_scrollx() const = 0;
+		virtual void set_scrollx(float s) = 0;
+		virtual float get_scrolly() const = 0;
+		virtual void set_scrolly(float s) = 0;
+
 		virtual void set_break_on_next_update(bool b) = 0;
 
 		//FLAME_RV(uint, column);

@@ -28,7 +28,7 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("index")>::v);
 	}
 
-	void cComboboxPrivate::on_entity_component_data_changed(Component* c, uint64 data_name_hash)
+	void cComboboxPrivate::on_local_data_changed(Component* c, uint64 data_name_hash)
 	{
 		if (c == menu)
 		{

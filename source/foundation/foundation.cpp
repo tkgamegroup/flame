@@ -1240,7 +1240,7 @@ namespace flame
 			break;
 		case WM_MOUSEWHEEL:
 		{
-			auto v = (int)HIWORD(wParam) > 0 ? 1 : -1;
+			auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
 			for (auto& l : mouse_scroll_listeners)
 				l->call(v);
 		}

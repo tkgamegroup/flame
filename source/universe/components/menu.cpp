@@ -117,16 +117,19 @@ namespace flame
 		event_receiver->remove_mouse_move_listener(mouse_move_listener);
 	}
 
-	void cMenuPrivate::on_entity_entered_world()
+	void cMenuPrivate::on_local_message(Message msg, void* p)
 	{
-		root = ((EntityPrivate*)entity)->world->root.get();
-		root_event_receiver = ((cEventReceiverPrivate*)root->get_component(cEventReceiver::type_hash));
-	}
-
-	void cMenuPrivate::on_entity_left_world()
-	{
-		root = nullptr;
-		root_event_receiver = nullptr;
+		switch (msg)
+		{
+		case MessageEnteredWorld:
+			root = ((EntityPrivate*)entity)->world->root.get();
+			root_event_receiver = ((cEventReceiverPrivate*)root->get_component(cEventReceiver::type_hash));
+			break;
+		case MessageLeftWorld:
+			root = nullptr;
+			root_event_receiver = nullptr;
+			break;
+		}
 	}
 
 	cMenu* cMenu::create()

@@ -49,13 +49,14 @@ namespace flame
 		void on_lost_canvas();
 
 		void mark_text_changed();
+		void mark_size_dirty();
 
 		void draw(graphics::Canvas* canvas) override;
 
 		Vec2f measure() override;
 
 		void on_added() override;
-		void on_entity_message(Message msg) override;
+		void on_local_message(Message msg, void* p) override;
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

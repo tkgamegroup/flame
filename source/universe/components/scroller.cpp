@@ -3,44 +3,37 @@
 #include "event_receiver_private.h"
 #include "layout_private.h"
 #include "scroller_private.h"
+#include "../systems/event_dispatcher_private.h"
 
 namespace flame
 {
 	void cScrollerPrivate::scroll(float v)
 	{
-		//auto target_element = target_layout->element;
-		//if (type == ScrollbarVertical)
-		//{
-		//	auto content_size = target_layout->content_size.y() + 20.f;
-		//	if (target_element->size.y() > 0.f)
-		//	{
-		//		if (content_size > target_element->size.y())
-		//			element->set_height(target_element->size.y() / content_size * scrollbar->element->size.y());
-		//		else
-		//			element->set_height(0.f);
-		//	}
-		//	else
-		//		element->set_height(0.f);
-		//	v += element->pos.y();
-		//	element->set_y(element->size.y() > 0.f ? clamp(v, 0.f, scrollbar->element->size.y() - element->size.y()) : 0.f);
-		//	target_layout->set_scrolly(-int(element->pos.y() / scrollbar->element->size.y() * content_size / step) * step);
-		//}
-		//else
-		//{
-		//	auto content_size = target_layout->content_size.x() + 20.f;
-		//	if (target_element->size.x() > 0.f)
-		//	{
-		//		if (content_size > target_element->size.x())
-		//			element->set_width(target_element->size.x() / content_size * scrollbar->element->size.x());
-		//		else
-		//			element->set_width(0.f);
-		//	}
-		//	else
-		//		element->set_width(0.f);
-		//	v += element->pos.x();
-		//	element->set_x(element->size.x() > 0.f ? clamp(v, 0.f, scrollbar->element->size.x() - element->size.x()) : 0.f);
-		//	target_layout->set_scrollx(-int(element->pos.x() / scrollbar->element->size.x() * content_size / step) * step);
-		//}
+		if (view_layout && target_element)
+		{
+			if (type == ScrollerHorizontal)
+			{
+				auto target_size = target_element->width;
+				if (target_size > target_element->width)
+					thumb_element->set_width(target_element->width / target_size * track_element->width);
+				else
+					thumb_element->set_width(0.f);
+				v += thumb_element->x;
+				thumb_element->set_x(thumb_element->width > 0.f ? clamp(v, 0.f, track_element->width - thumb_element->width) : 0.f);
+				view_layout->set_scrollx(-int(thumb_element->x / track_element->width * target_size / step) * step);
+			}
+			else
+			{
+				auto target_size = target_element->height;
+				if (target_size > view_element->height)
+					thumb_element->set_height(view_element->height / target_size * track_element->height);
+				else
+					thumb_element->set_height(0.f);
+				v += thumb_element->y;
+				thumb_element->set_y(thumb_element->height > 0.f ? clamp(v, 0.f, track_element->height - thumb_element->height) : 0.f);
+				view_layout->set_scrolly(-int(thumb_element->y / track_element->height * target_size / step) * step);
+			}
+		}
 	}
 
 	void cScrollerPrivate::on_gain_event_receiver()
@@ -55,29 +48,77 @@ namespace flame
 		event_receiver->remove_mouse_scroll_listener(mouse_scroll_listener);
 	}
 
-	void cScrollerPrivate::on_entity_added_child(Entity* e)
+	void cScrollerPrivate::on_gain_track_element()
 	{
-		if (!view)
-		{
-			auto cs = e->get_component(cScrollView::type_hash);
-			if (cs)
+		track_element->entity->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+			auto thiz = c.thiz<cScrollerPrivate>();
+			if (t == thiz->track_element)
 			{
-				auto cl = e->get_component(cLayout::type_hash);
-				if (cl)
-				{
-					view = e;
-					view_layout = (cLayoutPrivate*)cl;
-				}
+				if (h == S<ch("width")>::v && thiz->type == ScrollerHorizontal ||
+					h == S<ch("height")>::v && thiz->type == ScrollerVertical)
+					thiz->scroll(0.f);
 			}
-		}
+		}, Capture().set_thiz(this));
 	}
 
-	void cScrollerPrivate::on_entity_removed_child(Entity* e)
+	void cScrollerPrivate::on_gain_thumb_event_receiver()
 	{
-		if (view == e)
+		thumb_mouse_listener = thumb_event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+			auto thiz = c.thiz<cScrollerPrivate>();
+			if (thiz->thumb_event_receiver->dispatcher->active == thiz->thumb_event_receiver)
+			{
+				if (thiz->type == ScrollerHorizontal)
+					thiz->scroll(disp.x());
+				else
+					thiz->scroll(disp.y());
+			}
+		}, Capture().set_thiz(this));
+	}
+
+	void cScrollerPrivate::on_lost_thumb_event_receiver()
+	{
+		thumb_event_receiver->remove_mouse_move_listener(thumb_mouse_listener);
+	}
+
+	void cScrollerPrivate::on_child_message(Message msg, void* p)
+	{
+		switch (msg)
 		{
-			view = nullptr;
-			view_layout = nullptr;
+		case MessageAdded:
+			if (!view)
+			{
+				auto e = (Entity*)p;
+				auto cs = e->get_component(cScrollView::type_hash);
+				if (cs)
+				{
+					auto ce = e->get_component(cElement::type_hash);
+					auto cl = e->get_component(cLayout::type_hash);
+					if (ce && cl)
+					{
+						view = e;
+						view_element = (cElementPrivate*)ce;
+						view_layout = (cLayoutPrivate*)cl;
+					}
+
+					e->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+						auto thiz = c.thiz<cScrollerPrivate>();
+						if (t == thiz->view_element)
+						{
+							if (h == S<ch("width")>::v && thiz->type == ScrollerHorizontal ||
+								h == S<ch("height")>::v && thiz->type == ScrollerVertical)
+								thiz->scroll(0.f);
+						}
+					}, Capture().set_thiz(this));
+				}
+			}
+			break;
+		case MessageRemoved:
+			if (view == p)
+			{
+				view = nullptr;
+				view_layout = nullptr;
+			}
+			break;
 		}
 	}
 
@@ -88,26 +129,58 @@ namespace flame
 
 	void cScrollViewPrivate::on_gain_scroller()
 	{
-		scroller->target_element = (cElementPrivate*)target->get_component(cElement::type_hash);
-		scroller->scroll(0.f);
-	}
-
-	void cScrollViewPrivate::on_entity_added_child(Entity* e)
-	{
-		if (!target)
+		if (target_element)
 		{
-			auto ce = e->get_component(cElement::type_hash);
-			if (ce)
-				target = e;
+			scroller->target_element = target_element;
+			scroller->scroll(0.f);
+
+			target->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+				auto thiz = c.thiz<cScrollerPrivate>();
+				if (t == thiz->target_element)
+				{
+					if (h == S<ch("width")>::v && thiz->type == ScrollerHorizontal ||
+						h == S<ch("height")>::v && thiz->type == ScrollerVertical)
+						thiz->scroll(0.f);
+				}
+			}, Capture().set_thiz(scroller));
 		}
 	}
 
-	void cScrollViewPrivate::on_entity_removed_child(Entity* e)
+	void cScrollViewPrivate::on_lost_scroller()
 	{
-		if (target == e)
+		scroller->target_element = nullptr;
+	}
+
+	void cScrollViewPrivate::on_child_message(Message msg, void* p)
+	{
+		switch (msg)
 		{
-			target = nullptr;
-			scroller->target_element = nullptr;
+		case MessageAdded:
+			if (!target)
+			{
+				auto e = (Entity*)p;
+				auto ce = e->get_component(cElement::type_hash);
+				if (ce)
+				{
+					target = e;
+					target_element = (cElementPrivate*)ce;
+
+					if (scroller)
+						on_gain_scroller();
+				}
+			}
+			break;
+		case MessageRemoved:
+			if (target == p)
+			{
+				target = nullptr;
+				target_element = nullptr;
+				scroller->target_element = nullptr;
+
+				if (scroller)
+					scroller->target_element = nullptr;
+			}
+			break;
 		}
 	}
 
@@ -115,58 +188,4 @@ namespace flame
 	{
 		return f_new<cScrollViewPrivate>();
 	}
-
-//	struct cScrollbarThumbPrivate : cScrollbarThumb
-//	{
-//		cScrollbarThumbPrivate(ScrollbarType _type)
-//		{
-//			step = 1.f;
-//		}
-//
-//		void on_event(EntityEvent e, void* t) override
-//		{
-//			switch (e)
-//			{
-//			case EntityComponentAdded:
-//			{
-//				if (t == this)
-//				{
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						auto thiz = c.thiz<cScrollbarThumbPrivate>();
-//						if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
-//						{
-//							if (thiz->type == ScrollbarVertical)
-//								thiz->update(pos.y());
-//							else
-//								thiz->update(pos.x());
-//						}
-//						return true;
-//					}, Capture().set_thiz(this));
-//
-//					auto parent = entity->parent;
-//					parent_element = parent->get_component(cElement);
-//					parent_element_listener = parent_element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-//						if (hash == FLAME_CHASH("size"))
-//							c.thiz<cScrollbarThumbPrivate>()->update(0.f);
-//						return true;
-//					}, Capture().set_thiz(this));
-//					scrollbar = parent->get_component(cScrollbar);
-//					target_layout = parent->parent->children[0]->get_component(cLayout);
-//					target_element_listener = target_layout->element->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-//						if (hash == FLAME_CHASH("size"))
-//							c.thiz<cScrollbarThumbPrivate>()->update(0.f);
-//						return true;
-//					}, Capture().set_thiz(this));
-//					target_layout_listener = target_layout->data_changed_listeners.add([](Capture& c, uint hash, void*) {
-//						if (hash == FLAME_CHASH("content_size"))
-//							c.thiz<cScrollbarThumbPrivate>()->update(0.f);
-//						return true;
-//					}, Capture().set_thiz(this));
-//					update(0.f);
-//				}
-//			}
-//				break;
-//			}
-//		}
-//	};
 }

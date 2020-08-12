@@ -64,6 +64,6 @@ namespace flame
 		void on_gain_dispatcher();
 		void on_lost_dispatcher();
 
-		void on_entity_visibility_changed() override;
+		void on_local_message(Message msg, void* p) override;
 	};
 }

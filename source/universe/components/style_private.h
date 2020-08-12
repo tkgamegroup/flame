@@ -44,7 +44,9 @@ namespace flame
 		const char* get_rule() const override { return rule.c_str(); }
 		void set_rule(const std::string& rule);
 
-		void on_entity_state_changed() override;
+		void on_state_changed();
+
+		void on_local_message(Message msg, void* p) override;
 	};
 
 	void cStyleBridge::set_rule(const char* rule)

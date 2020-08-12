@@ -18,8 +18,8 @@ namespace flame
 			return;
 		size = s;
 		if (element)
-			element->on_entity_message(MessageElementDrawingDirty);
-		on_entity_message(MessageElementSizeDirty);
+			element->mark_drawing_dirty();
+		mark_size_dirty();
 		Entity::report_data_changed(this, S<ch("size")>::v);
 	}
 
@@ -29,8 +29,8 @@ namespace flame
 			return;
 		color = col;
 		if (element)
-			element->on_entity_message(MessageElementDrawingDirty);
-		on_entity_message(MessageElementSizeDirty);
+			element->mark_drawing_dirty();
+		mark_size_dirty();
 		Entity::report_data_changed(this, S<ch("color")>::v);
 	}
 
@@ -48,7 +48,7 @@ namespace flame
 
 	void cTextPrivate::on_gain_type_setting()
 	{
-		on_entity_message(MessageElementSizeDirty);
+		mark_size_dirty();
 	}
 
 	void cTextPrivate::on_gain_canvas()
@@ -64,9 +64,15 @@ namespace flame
 	void cTextPrivate::mark_text_changed()
 	{
 		if (element)
-			element->on_entity_message(MessageElementDrawingDirty);
-		on_entity_message(MessageElementSizeDirty);
+			element->mark_drawing_dirty();
+		mark_size_dirty();
 		Entity::report_data_changed(this, S<ch("text")>::v);
+	}
+
+	void cTextPrivate::mark_size_dirty()
+	{
+		if (type_setting && (auto_width || auto_height))
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
@@ -83,16 +89,15 @@ namespace flame
 
 	void cTextPrivate::on_added()
 	{
-		on_entity_message(MessageElementSizeDirty);
+		mark_size_dirty();
 	}
 
-	void cTextPrivate::on_entity_message(Message msg)
+	void cTextPrivate::on_local_message(Message msg, void* p)
 	{
 		switch (msg)
 		{
 		case MessageElementSizeDirty:
-			if (type_setting && (auto_width || auto_height))
-				type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+			mark_size_dirty();
 			break;
 		}
 	}

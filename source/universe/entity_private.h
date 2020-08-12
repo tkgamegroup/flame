@@ -69,18 +69,19 @@ namespace flame
 
 			std::vector<Component*> list_ref_by;
 
-			bool want_local_event = false;
-			bool want_child_event = false;
+			bool want_local_message = false;
+			bool want_child_message = false;
 			bool want_local_data_changed = false;
 			bool want_child_data_changed = false;
 		};
 
 		std::unordered_map<uint64, std::unique_ptr<Component, Delector>> components;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
-		std::vector<Component*> local_event_dispatch_list;
-		std::vector<Component*> child_event_dispatch_list;
+		std::vector<Component*> local_message_dispatch_list;
+		std::vector<Component*> child_message_dispatch_list;
 		std::vector<Component*> local_data_changed_dispatch_list;
 		std::vector<Component*> child_data_changed_dispatch_list;
+		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> data_changed_listeners;
 
 		uint depth = 0;
 		uint index = 0;
@@ -106,7 +107,7 @@ namespace flame
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
 
-		void send_message(Message msg) override;
+		void on_message(Message msg) override;
 
 		Component* get_component(uint64 hash) const override;
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
@@ -124,6 +125,9 @@ namespace flame
 		void remove_child(EntityPrivate* e, bool destroy = true);
 		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;
+
+		void* add_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) override;
+		void remove_data_changed_listener(void* lis) override;
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);

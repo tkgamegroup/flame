@@ -43,9 +43,7 @@ namespace flame
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 
-		void on_entity_left_world() override;
-		void on_entity_visibility_changed() override;
-		void on_entity_state_changed() override;
+		void on_local_message(Message msg, void* p) override;
 
 		void draw(graphics::Canvas* canvas) override;
 

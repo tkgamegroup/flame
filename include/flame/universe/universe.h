@@ -23,6 +23,16 @@ namespace flame
 
 	enum Message
 	{
+		MessageDestroyed,
+		MessageVisibilityChanged,
+		MessageStateChanged,
+		MessageAdded,
+		MessageRemoved,
+		MessagePositionChanged,
+		MessageEnteredWorld,
+		MessageLeftWorld,
+		MessageComponentAdded,
+		MessageComponentRemoved,
 		MessageElementTransformDirty,
 		MessageElementDrawingDirty,
 		MessageElementSizeDirty,

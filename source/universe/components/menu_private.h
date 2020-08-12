@@ -34,7 +34,6 @@ namespace flame
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 
-		void on_entity_entered_world() override;
-		void on_entity_left_world() override;
+		void on_local_message(Message msg, void* p) override;
 	};
 }

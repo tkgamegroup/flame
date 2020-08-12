@@ -90,14 +90,15 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
-		bool contains(const Vec2f& p) override;
+		void mark_transform_dirty();
+		void mark_drawing_dirty();
 
 		void on_gain_renderer();
 		void on_lost_renderer();
 
-		void on_entity_visibility_changed() override;
-		void on_entity_message(Message msg) override;
-		void on_entity_position_changed() override;
+		bool contains(const Vec2f& p) override;
+
+		void on_local_message(Message msg, void* p) override;
 
 		void draw_background(graphics::Canvas* canvas);
 		void draw_content(graphics::Canvas* canvas);

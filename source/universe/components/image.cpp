@@ -65,6 +65,12 @@ namespace flame
 		return Vec2f(ia->get_tile(tile_id)->get_size());
 	}
 
+	void cImagePrivate::mark_size_dirty()
+	{
+		if (type_setting && true/*auto_size*/)
+			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+	}
+
 	void cImagePrivate::draw(graphics::Canvas* canvas)
 	{
 		canvas->add_image(res_id, tile_id, 
@@ -74,23 +80,22 @@ namespace flame
 
 	void cImagePrivate::on_added()
 	{
-		on_entity_message(MessageElementSizeDirty);
+		mark_size_dirty();
 	}
 
-	void cImagePrivate::on_entity_message(Message msg)
+	void cImagePrivate::on_local_message(Message msg, void* p)
 	{
 		switch (msg)
 		{
 		case MessageElementSizeDirty:
-			if (type_setting && true/*auto_size*/)
-				type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
+			mark_size_dirty();
 			break;
 		}
 	}
 
 	void cImagePrivate::on_gain_type_setting()
 	{
-		on_entity_message(MessageElementSizeDirty);
+		mark_size_dirty();
 	}
 
 	void cImagePrivate::on_lost_type_setting()

@@ -91,12 +91,12 @@ namespace flame
 			et->destroy(state);
 		}
 
-		on_entity_state_changed();
+		on_state_changed();
 
 		Entity::report_data_changed(this, S<ch("rule")>::v);
 	}
 
-	void cStylePrivate::on_entity_state_changed()
+	void cStylePrivate::on_state_changed()
 	{
 		auto state = ((EntityPrivate*)entity)->state;
 		for (auto& t : targets)
@@ -113,6 +113,16 @@ namespace flame
 					break;
 				}
 			}
+		}
+	}
+
+	void cStylePrivate::on_local_message(Message msg, void* p)
+	{
+		switch (msg)
+		{
+		case MessageStateChanged:
+			on_state_changed();
+			break;
 		}
 	}
 

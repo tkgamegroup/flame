@@ -17,7 +17,7 @@ namespace flame
 		int get_index() const override { return index; }
 		void set_index(int index) override;
 
-		void on_entity_component_data_changed(Component* c, uint64 data_name_hash) override;
+		void on_local_data_changed(Component* c, uint64 data_name_hash) override;
 	};
 
 	struct cComboboxItemPrivate : cComboboxItem // R ~ on_*

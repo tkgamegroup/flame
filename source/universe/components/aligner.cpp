@@ -61,7 +61,7 @@ namespace flame
 
 	void cAlignerPrivate::on_added()
 	{
-		entity->send_message(MessageElementSizeDirty);
+		entity->on_message(MessageElementSizeDirty);
 	}
 
 	cAligner* cAligner::create()

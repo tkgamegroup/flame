@@ -18,11 +18,11 @@ namespace flame
 	{
 		for (auto& e : children)
 		{
-			for (auto c : e->local_event_dispatch_list)
-				c->on_entity_removed();
+			for (auto c : e->local_message_dispatch_list)
+				c->on_local_message(MessageRemoved);
 		}
-		for (auto c : local_event_dispatch_list)
-			c->on_entity_destroyed();
+		for (auto c : local_message_dispatch_list)
+			c->on_local_message(MessageDestroyed);
 	}
 
 	void EntityPrivate::release()
@@ -47,12 +47,12 @@ namespace flame
 		}
 		if (global_visibility != prev_visibility)
 		{
-			for (auto c : local_event_dispatch_list)
-				c->on_entity_visibility_changed();
+			for (auto c : local_message_dispatch_list)
+				c->on_local_message(MessageVisibilityChanged);
 			if (parent)
 			{
-				for (auto c : parent->child_event_dispatch_list)
-					c->on_entity_child_visibility_changed(this);
+				for (auto c : parent->child_message_dispatch_list)
+					c->on_local_message(MessageVisibilityChanged, this);
 			}
 		}
 
@@ -73,14 +73,14 @@ namespace flame
 		if (state == s)
 			return;
 		state = s;
-		for (auto c : local_event_dispatch_list)
-			c->on_entity_state_changed();
+		for (auto c : local_message_dispatch_list)
+			c->on_local_message(MessageStateChanged);
 	}
 
-	void EntityPrivate::send_message(Message msg)
+	void EntityPrivate::on_message(Message msg)
 	{
-		for (auto c : local_event_dispatch_list)
-			c->on_entity_message(msg);
+		for (auto c : local_message_dispatch_list)
+			c->on_local_message(msg);
 	}
 
 	Component* EntityPrivate::get_component(uint64 hash) const
@@ -280,46 +280,31 @@ namespace flame
 		for (auto& r : ((ComponentAux*)c->aux)->refs)
 			r.gain(c);
 
-		if (udt->find_function("on_entity_destroyed") ||
-			udt->find_function("on_entity_visibility_changed") ||
-			udt->find_function("on_entity_state_changed") ||
-			udt->find_function("on_entity_message") ||
-			udt->find_function("on_entity_added") ||
-			udt->find_function("on_entity_removed") ||
-			udt->find_function("on_entity_position_changed") || 
-			udt->find_function("on_entity_entered_world") ||
-			udt->find_function("on_entity_left_world") ||
-			udt->find_function("on_entity_component_added") ||
-			udt->find_function("on_entity_component_removed") ||
-			udt->find_function("on_entity_added_child") ||
-			udt->find_function("on_entity_removed_child"))
-			aux.want_local_event = true;
-		if (udt->find_function("on_entity_child_visibility_changed") ||
-			udt->find_function("on_entity_child_position_changed") ||
-			udt->find_function("on_entity_child_component_added") ||
-			udt->find_function("on_entity_child_component_removed"))
-			aux.want_child_event = true;
-		if (udt->find_function("on_entity_component_data_changed"))
+		if (udt->find_function("on_local_message"))
+			aux.want_local_message = true;
+		if (udt->find_function("on_child_message"))
+			aux.want_child_message = true;
+		if (udt->find_function("on_local_data_changed"))
 			aux.want_local_data_changed = true;
-		if (udt->find_function("on_entity_child_component_data_changed"))
+		if (udt->find_function("on_child_data_changed"))
 			aux.want_child_data_changed = true;
 
 		c->on_added();
 
-		for (auto cc : local_event_dispatch_list)
-			cc->on_entity_component_added(c);
+		for (auto cc : local_message_dispatch_list)
+			cc->on_local_message(MessageComponentAdded, c);
 		if (parent)
 		{
-			for (auto cc : parent->child_event_dispatch_list)
-				cc->on_entity_child_component_added(c);
+			for (auto cc : parent->child_message_dispatch_list)
+				cc->on_child_message(MessageComponentAdded, c);
 		}
 
 		components.emplace(c->type_hash, c);
 
-		if (aux.want_local_event)
-			local_event_dispatch_list.push_back(c);
-		if (aux.want_child_event)
-			child_event_dispatch_list.push_back(c);
+		if (aux.want_local_message)
+			local_message_dispatch_list.push_back(c);
+		if (aux.want_child_message)
+			child_message_dispatch_list.push_back(c);
 		if (aux.want_local_data_changed)
 			local_data_changed_dispatch_list.push_back(c);
 		if (aux.want_child_data_changed)
@@ -347,12 +332,12 @@ namespace flame
 		delete &aux;
 		c->aux = nullptr;
 
-		for (auto cc : local_event_dispatch_list)
-			cc->on_entity_component_removed(c);
+		for (auto cc : local_message_dispatch_list)
+			cc->on_local_message(MessageComponentRemoved, c);
 		if (parent)
 		{
-			for (auto cc : parent->child_event_dispatch_list)
-				cc->on_entity_child_component_removed(c);
+			for (auto cc : parent->child_message_dispatch_list)
+				cc->on_child_message(MessageComponentRemoved, c);
 		}
 	}
 
@@ -385,15 +370,15 @@ namespace flame
 
 		on_component_removed(c);
 
-		if (aux.want_local_event)
+		if (aux.want_local_message)
 		{
-			std::erase_if(local_event_dispatch_list, [&](const auto& i) {
+			std::erase_if(local_message_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
-		if (aux.want_child_event)
+		if (aux.want_child_message)
 		{
-			std::erase_if(child_event_dispatch_list, [&](const auto& i) {
+			std::erase_if(child_message_dispatch_list, [&](const auto& i) {
 				return i == c;
 			});
 		}
@@ -426,8 +411,8 @@ namespace flame
 		for (auto& c : components)
 			on_component_removed(c.second.get());
 
-		local_event_dispatch_list.clear();
-		child_event_dispatch_list.clear();
+		local_message_dispatch_list.clear();
+		child_message_dispatch_list.clear();
 		local_data_changed_dispatch_list.clear();
 		child_data_changed_dispatch_list.clear();
 
@@ -528,7 +513,7 @@ namespace flame
 
 				e->world = world;
 				if (world)
-					c.second->on_entity_entered_world();
+					c.second->on_local_message(MessageEnteredWorld);
 			}
 			return true;
 		});
@@ -543,10 +528,10 @@ namespace flame
 		e->index = position;
 		e->update_visibility();
 
-		for (auto c : e->local_event_dispatch_list)
-			c->on_entity_added();
-		for (auto c : local_event_dispatch_list)
-			c->on_entity_added_child(e);
+		for (auto c : e->local_message_dispatch_list)
+			c->on_local_message(MessageAdded);
+		for (auto c : child_message_dispatch_list)
+			c->on_child_message(MessageAdded, e);
 	}
 
 	void EntityPrivate::reposition_child(uint pos1, uint pos2)
@@ -561,15 +546,15 @@ namespace flame
 		b->index = pos1;
 		std::swap(children[pos1], children[pos2]);
 
-		for (auto c : a->local_event_dispatch_list)
-			c->on_entity_position_changed();
-		for (auto c : b->local_event_dispatch_list)
-			c->on_entity_position_changed();
+		for (auto c : a->local_message_dispatch_list)
+			c->on_local_message(MessagePositionChanged);
+		for (auto c : b->local_message_dispatch_list)
+			c->on_local_message(MessagePositionChanged);
 
-		for (auto c : child_event_dispatch_list)
-			c->on_entity_child_position_changed(a);
-		for (auto c : child_event_dispatch_list)
-			c->on_entity_child_position_changed(b);
+		for (auto c : child_message_dispatch_list)
+			c->on_child_message(MessagePositionChanged, a);
+		for (auto c : child_message_dispatch_list)
+			c->on_child_message(MessagePositionChanged, b);
 	}
 
 	void EntityPrivate::on_child_removed(EntityPrivate* e) const
@@ -601,17 +586,17 @@ namespace flame
 				}
 			}
 
-			for (auto c : e->local_event_dispatch_list)
-				c->on_entity_left_world();
+			for (auto c : e->local_message_dispatch_list)
+				c->on_local_message(MessageLeftWorld);
 			e->world = nullptr;
 
 			return true;
 		});
 
-		for (auto c : e->local_event_dispatch_list)
-			c->on_entity_removed();
-		for (auto c : local_event_dispatch_list)
-			c->on_entity_removed_child(e);
+		for (auto c : e->local_message_dispatch_list)
+			c->on_local_message(MessageRemoved);
+		for (auto c : child_message_dispatch_list)
+			c->on_child_message(MessageRemoved, e);
 	}
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
@@ -658,6 +643,20 @@ namespace flame
 				return res;
 		}
 		return nullptr;
+	}
+
+	void* EntityPrivate::add_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		data_changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void EntityPrivate::remove_data_changed_listener(void* lis)
+	{
+		std::erase_if(data_changed_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
 	}
 
 	struct LoadState
@@ -853,13 +852,15 @@ namespace flame
 		for (auto cc : entity->local_data_changed_dispatch_list)
 		{
 			if (cc != c)
-				cc->on_entity_component_data_changed(c, hash);
+				cc->on_local_data_changed(c, hash);
 		}
 		if (entity->parent)
 		{
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)
-				cc->on_entity_child_component_data_changed(c, hash);
+				cc->on_child_data_changed(c, hash);
 		}
+		for (auto& l : entity->data_changed_listeners)
+			l->call(c, hash);
 	}
 
 	Entity* Entity::create()

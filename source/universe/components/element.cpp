@@ -10,7 +10,7 @@ namespace flame
 		if (x == _x)
 			return;
 		x = _x;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("x")>::v);
 	}
 
@@ -19,7 +19,7 @@ namespace flame
 		if (y == _y)
 			return;
 		y = _y;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("y")>::v);
 	}
 
@@ -28,7 +28,7 @@ namespace flame
 		if (width == w)
 			return;
 		width = w;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("width")>::v);
 	}
 
@@ -37,7 +37,7 @@ namespace flame
 		if (height == h)
 			return;
 		height = h;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("height")>::v);
 	}
 
@@ -46,7 +46,7 @@ namespace flame
 		if (padding == p)
 			return;
 		padding = p;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("padding")>::v);
 	}
 
@@ -55,7 +55,7 @@ namespace flame
 		if (pivotx == p)
 			return;
 		pivotx = p;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("pivotx")>::v);
 	}
 
@@ -64,7 +64,7 @@ namespace flame
 		if (pivoty == p)
 			return;
 		pivoty = p;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("pivoty")>::v);
 	}
 
@@ -73,7 +73,7 @@ namespace flame
 		if (scalex == s)
 			return;
 		scalex = s;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("scalex")>::v);
 	}
 
@@ -82,7 +82,7 @@ namespace flame
 		if (scaley == s)
 			return;
 		scaley = s;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("scaley")>::v);
 	}
 
@@ -91,7 +91,7 @@ namespace flame
 		if (rotation == r)
 			return;
 		rotation = r;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("rotation")>::v);
 	}
 
@@ -100,7 +100,7 @@ namespace flame
 		if (skewx == s)
 			return;
 		skewx = s;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("skewx")>::v);
 	}
 
@@ -109,7 +109,7 @@ namespace flame
 		if (skewy == s)
 			return;
 		skewy = s;
-		on_entity_message(MessageElementTransformDirty);
+		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("skewy")>::v);
 	}
 
@@ -180,7 +180,7 @@ namespace flame
 		if (fill_color == c)
 			return;
 		fill_color = c;
-		on_entity_message(MessageElementDrawingDirty);
+		mark_drawing_dirty();
 		Entity::report_data_changed(this, S<ch("fill_color")>::v);
 	}
 
@@ -189,7 +189,7 @@ namespace flame
 		if (border == b)
 			return;
 		border = b;
-		on_entity_message(MessageElementDrawingDirty);
+		mark_drawing_dirty();
 		Entity::report_data_changed(this, S<ch("border")>::v);
 	}
 
@@ -198,7 +198,7 @@ namespace flame
 		if (border_color == c)
 			return;
 		border_color = c;
-		on_entity_message(MessageElementDrawingDirty);
+		mark_drawing_dirty();
 		Entity::report_data_changed(this, S<ch("border_color")>::v);
 	}
 
@@ -207,29 +207,38 @@ namespace flame
 		if (clipping == c)
 			return;
 		clipping = c;
-		on_entity_message(MessageElementDrawingDirty);
+		mark_drawing_dirty();
 		Entity::report_data_changed(this, S<ch("clipping")>::v);
 	}
 
-	void cElementPrivate::on_entity_message(Message msg)
+	void cElementPrivate::mark_transform_dirty()
 	{
-		switch (msg)
+		if (!transform_dirty)
 		{
-		case MessageElementTransformDirty:
-			if (!transform_dirty)
+			transform_dirty = true;
+			for (auto& c : ((EntityPrivate*)entity)->children)
 			{
-				transform_dirty = true;
-				for (auto& c : ((EntityPrivate*)entity)->children)
-				{
-					auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
-					e->on_entity_message(MessageElementTransformDirty);
-				}
+				auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
+				e->mark_transform_dirty();
 			}
-		case MessageElementDrawingDirty:
-			if (renderer)
-				renderer->dirty = true;
-			break;
 		}
+		mark_drawing_dirty();
+	}
+
+	void cElementPrivate::mark_drawing_dirty()
+	{
+		if (renderer)
+			renderer->dirty = true;
+	}
+
+	void cElementPrivate::on_gain_renderer()
+	{
+		mark_transform_dirty();
+	}
+
+	void cElementPrivate::on_lost_renderer()
+	{
+		mark_transform_dirty();
 	}
 
 	bool cElementPrivate::contains(const Vec2f& p)
@@ -239,24 +248,19 @@ namespace flame
 		return convex_contains<float>(p, ps);
 	}
 
-	void cElementPrivate::on_gain_renderer()
+	void cElementPrivate::on_local_message(Message msg, void* p)
 	{
-		on_entity_message(MessageElementTransformDirty);
-	}
-
-	void cElementPrivate::on_lost_renderer()
-	{
-		on_entity_message(MessageElementTransformDirty);
-	}
-
-	void cElementPrivate::on_entity_visibility_changed()
-	{
-		on_entity_message(MessageElementTransformDirty);
-	}
-
-	void cElementPrivate::on_entity_position_changed()
-	{
-		on_entity_message(MessageElementTransformDirty);
+		switch (msg)
+		{
+		case MessageVisibilityChanged:
+		case MessagePositionChanged:
+		case MessageElementTransformDirty:
+			mark_transform_dirty();
+			break;
+		case MessageElementDrawingDirty:
+			mark_drawing_dirty();
+			break;
+		}
 	}
 
 	void cElementPrivate::draw_background(graphics::Canvas* canvas)

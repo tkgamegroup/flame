@@ -22,12 +22,8 @@ namespace flame
 
 		virtual ~System() {}
 
-		// this system added to world
 		virtual void on_added() {}
-
-		// this system removed to world
 		virtual void on_removed() {}
-
 		virtual void update() = 0;
 	};
 }
