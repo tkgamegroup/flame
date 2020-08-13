@@ -25,8 +25,8 @@ namespace flame
 
 		bool transform_dirty = true;
 		Vec2f points[8];
+		Mat2f axes = Mat2f(1.f);
 		Vec4f aabb;
-		Mat23f transform = Mat23f(1.f);
 
 		Vec4c fill_color = Vec4c(0);
 
@@ -34,6 +34,8 @@ namespace flame
 		Vec4c border_color = Vec4c(0, 0, 0, 255);
 
 		bool clipping = false;
+
+		Vec4f scissor;
 		bool culled = false;
 
 		std::vector<Drawer*> drawers;
@@ -75,7 +77,6 @@ namespace flame
 		void set_skewy(float s) override;
 
 		void update_transform();
-		const Mat23f& get_transform();
 		Vec2f get_point(uint idx) override;
 
 		Vec4c get_fill_color() override { return fill_color; }

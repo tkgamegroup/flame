@@ -41,7 +41,7 @@ namespace flame
 		element->update_transform();
 		auto pos = element->points[4];
 		auto p = Vec2f(0.f);
-		auto axes = Mat2f(element->transform);
+		auto axes = element->axes;
 
 		auto i = 0;
 		for (; i < str.size(); i++)
@@ -391,7 +391,7 @@ namespace flame
 		auto font_size = text->size;
 		element->update_transform();
 		auto pos = element->points[4];
-		auto axes = Mat2f(element->transform);
+		auto axes = element->axes;
 
 		if (select_start != select_end)
 		{

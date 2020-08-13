@@ -119,18 +119,22 @@ namespace flame
 			return;
 		transform_dirty = false;
 
-		auto base_transform = Mat23f(1.f);
+		auto base_axes = Mat2f(1.f);
+		auto base_pos = Vec2f(0.f);
 		auto p = ((EntityPrivate*)entity)->parent;
 		if (p)
 		{
 			auto pe = (cElementPrivate*)p->get_component(cElement::type_hash);
 			if (pe)
-				base_transform = pe->get_transform();
+			{
+				pe->update_transform();
+				base_axes = pe->axes;
+				base_pos = pe->points[0];
+			}
 		}
 
-		auto axes = Mat2f(base_transform);
-		auto c = Vec2f(base_transform[0][2], base_transform[1][2]) + 
-			axes[0] * x + axes[1] * y;
+		axes = base_axes;
+		auto c = base_pos + axes[0] * x + axes[1] * y;
 		axes[0] = ::flame::rotation((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
 		axes[1] = ::flame::rotation((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
 
@@ -159,14 +163,6 @@ namespace flame
 			aabb.y() = min(aabb.y(), points[i].y());
 			aabb.w() = max(aabb.w(), points[i].y());
 		}
-
-		transform = Mat23f(Vec3f(axes[0], points[0].x()), Vec3f(axes[1], points[0].y()));
-	}
-
-	const Mat23f& cElementPrivate::get_transform()
-	{
-		update_transform();
-		return transform;
 	}
 
 	Vec2f cElementPrivate::get_point(uint idx)

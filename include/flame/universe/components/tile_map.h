@@ -25,6 +25,9 @@ namespace flame
 		virtual void get_cell(const Vec2u& idx, int& tile_id, Vec4c& color) const = 0;
 		virtual void set_cell(const Vec2u& idx, int tile_id, const Vec4c color) = 0;
 
+		virtual bool get_clipping() const = 0;
+		virtual void set_clipping(bool c) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cTileMap* create();
 	};
 }

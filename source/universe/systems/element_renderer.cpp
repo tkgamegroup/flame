@@ -14,10 +14,9 @@ namespace flame
 		if (!element)
 			return;
 
-		auto scissor = canvas->get_scissor();
+		element->scissor = canvas->get_scissor();
 		element->update_transform();
-		element->culled = !rect_overlapping(scissor, element->aabb);
-		//element->clipped_rect = element->clipped ? Vec4f(-1.f) : max(r, scissor);
+		element->culled = !rect_overlapping(element->scissor, element->aabb);
 		if (element->culled)
 			return;
 
@@ -28,7 +27,7 @@ namespace flame
 			element->draw_content(canvas);
 			for (auto& c : e->children)
 				do_render(c.get());
-			canvas->set_scissor(scissor);
+			canvas->set_scissor(element->scissor);
 		}
 		else
 		{

@@ -15,6 +15,8 @@ namespace flame
 
 		std::vector<std::vector<std::pair<int, Vec4c>>> cells;
 
+		bool clipping = false;
+
 		cElementPrivate* element = nullptr; // R ref
 
 		int get_res_id() const override { return res_id; }
@@ -27,6 +29,9 @@ namespace flame
 
 		void get_cell(const Vec2u& idx, int& tile_id, Vec4c& color) const override;
 		void set_cell(const Vec2u& idx, int tile_id, const Vec4c color) override;
+
+		bool get_clipping() const override { return clipping; }
+		void set_clipping(bool c) override;
 
 		void on_gain_element();
 		void on_lost_element();
