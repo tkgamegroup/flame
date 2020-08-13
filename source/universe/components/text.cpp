@@ -37,6 +37,7 @@ namespace flame
 	void cTextPrivate::on_gain_element()
 	{
 		element->drawers.push_back(this);
+		element->mark_drawing_dirty();
 	}
 
 	void cTextPrivate::on_lost_element()
@@ -44,6 +45,7 @@ namespace flame
 		std::erase_if(element->drawers, [&](const auto& i) {
 			return i == this;
 		});
+		element->mark_drawing_dirty();
 	}
 
 	void cTextPrivate::on_gain_type_setting()

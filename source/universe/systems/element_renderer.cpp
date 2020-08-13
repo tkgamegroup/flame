@@ -16,7 +16,7 @@ namespace flame
 
 		auto scissor = canvas->get_scissor();
 		element->update_transform();
-		element->culled = !rect_overlapping(scissor, element->bb);
+		element->culled = !rect_overlapping(scissor, element->aabb);
 		//element->clipped_rect = element->clipped ? Vec4f(-1.f) : max(r, scissor);
 		if (element->culled)
 			return;

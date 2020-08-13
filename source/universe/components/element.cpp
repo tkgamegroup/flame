@@ -148,16 +148,16 @@ namespace flame
 		points[6] = points[2] + axes * Vec2f(pr, pb);
 		points[7] = points[3] + axes * Vec2f(pl, pb);
 
-		bb.x() = points[0].x();
-		bb.z() = points[0].x();
-		bb.y() = points[0].y();
-		bb.w() = points[0].y();
+		aabb.x() = points[0].x();
+		aabb.z() = points[0].x();
+		aabb.y() = points[0].y();
+		aabb.w() = points[0].y();
 		for (auto i = 1; i < 4; i++)
 		{
-			bb.x() = min(bb.x(), points[i].x());
-			bb.z() = max(bb.z(), points[i].x());
-			bb.y() = min(bb.y(), points[i].y());
-			bb.w() = max(bb.w(), points[i].y());
+			aabb.x() = min(aabb.x(), points[i].x());
+			aabb.z() = max(aabb.z(), points[i].x());
+			aabb.y() = min(aabb.y(), points[i].y());
+			aabb.w() = max(aabb.w(), points[i].y());
 		}
 
 		transform = Mat23f(Vec3f(axes[0], points[0].x()), Vec3f(axes[1], points[0].y()));

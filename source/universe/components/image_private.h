@@ -1,12 +1,12 @@
 #pragma once
 
-#include <flame/universe/components/image.h>
 #include "element_private.h"
+#include <flame/universe/components/image.h>
 #include "../systems/type_setting_private.h"
 
 namespace flame
 {
-	struct ResMapPrivate;
+	struct cElementPrivate;
 
 	struct cImageBridge : cImage
 	{
@@ -43,7 +43,6 @@ namespace flame
 		void on_gain_type_setting();
 		void on_lost_type_setting();
 		void on_gain_canvas();
-		void on_gain_res_map();
 
 		void apply_src();
 

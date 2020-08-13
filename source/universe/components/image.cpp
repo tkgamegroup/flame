@@ -2,7 +2,6 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
-#include "../res_map_private.h"
 #include "image_private.h"
 #include "aligner_private.h"
 
@@ -13,6 +12,8 @@ namespace flame
 		if (res_id == id)
 			return;
 		res_id = id;
+		if (element)
+			element->mark_drawing_dirty();
 		Entity::report_data_changed(this, S<ch("res_id")>::v);
 		if (!src.empty())
 		{
@@ -26,6 +27,8 @@ namespace flame
 		if (tile_id == id)
 			return;
 		tile_id = id;
+		if (element)
+			element->mark_drawing_dirty();
 		Entity::report_data_changed(this, S<ch("tile_id")>::v);
 		if (!src.empty())
 		{
@@ -40,11 +43,14 @@ namespace flame
 			return;
 		src = _src;
 		apply_src();
+		if (element)
+			element->mark_drawing_dirty();
 	}
 
 	void cImagePrivate::on_gain_element()
 	{
 		element->drawers.push_back(this);
+		element->mark_drawing_dirty();
 	}
 
 	void cImagePrivate::on_lost_element()
@@ -52,6 +58,7 @@ namespace flame
 		std::erase_if(element->drawers, [&](const auto& i) {
 			return i == this;
 		});
+		element->mark_drawing_dirty();
 	}
 
 	Vec2f cImagePrivate::measure()
@@ -107,11 +114,6 @@ namespace flame
 	}
 
 	void cImagePrivate::on_gain_canvas()
-	{
-		apply_src();
-	}
-
-	void cImagePrivate::on_gain_res_map()
 	{
 		apply_src();
 	}

@@ -25,7 +25,7 @@ namespace flame
 
 		bool transform_dirty = true;
 		Vec2f points[8];
-		Vec4f bb;
+		Vec4f aabb;
 		Mat23f transform = Mat23f(1.f);
 
 		Vec4c fill_color = Vec4c(0);
