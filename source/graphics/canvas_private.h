@@ -22,20 +22,20 @@ namespace flame
 			ImageViewPrivate* view;
 			ImageAtlasPrivate* image_atlas = nullptr;
 			FontAtlasPrivate* font_atlas = nullptr;
-			Vec2f white_uv = Vec2f(0.5f);
 
 			const char* get_name() const override { return name.c_str(); }
 			ImageView* get_view() const override { return view; }
 			ImageAtlas* get_image_atlas() const override { return image_atlas; }
 			FontAtlas* get_font_atlas() const override { return font_atlas; }
-			Vec2f get_white_uv() const override { return white_uv; }
 		};
 
 		struct CanvasBridge : Canvas
 		{
 			void set_target(uint views_count, ImageView* const* views) override;
 
-			uint set_resource(int slot, ImageView* v, Sampler* sp, const char* name, ImageAtlas* image_atlas, FontAtlas* font_atlas) override;
+			uint set_resource(int slot, ImageView* v, Sampler* sp, const char* name) override;
+			uint set_resource(int slot, ImageAtlas* image_atlas, const char* name) override;
+			uint set_resource(int slot, FontAtlas* font_atlas, const char* name) override;
 
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
@@ -76,6 +76,8 @@ namespace flame
 
 			std::unique_ptr<ImagePrivate> img_white;
 			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
+			uint white_slot = 0;
+
 			std::unique_ptr<BufferPrivate> buf_vtx;
 			std::unique_ptr<BufferPrivate> buf_idx;
 			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_el;
@@ -106,9 +108,9 @@ namespace flame
 			void set_target(std::span<ImageViewPrivate*> views);
 
 			CanvasResource* get_resource(uint slot) override { return slot < resources_count ? resources[slot].get() : nullptr; }
-			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp = nullptr, const std::string& name = "", ImageAtlasPrivate* image_atlas = nullptr, FontAtlasPrivate* font_atlas = nullptr);
+			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas);
 
-			void add_draw_cmd(int id = -1);
+			void add_draw_cmd(uint id);
 			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
 			void add_idx(uint idx);
 
@@ -135,9 +137,22 @@ namespace flame
 			((CanvasPrivate*)this)->set_target({ (ImageViewPrivate**)views, views_count });
 		}
 
-		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const char* name, ImageAtlas* image_atlas, FontAtlas* font_atlas)
+		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, name ? name : "", (ImageAtlasPrivate*)image_atlas, (FontAtlasPrivate*)font_atlas);
+			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, name ? name : "", nullptr, nullptr);
+		}
+
+		inline uint CanvasBridge::set_resource(int slot, ImageAtlas* image_atlas, const char* name)
+		{
+			return ((CanvasPrivate*)this)->set_resource(slot, ((ImageAtlasPrivate*)image_atlas)->image->default_view.get(), 
+				((ImageAtlasPrivate*)image_atlas)->border ? ((CanvasPrivate*)this)->device->sampler_linear.get() : ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
+				name ? name : "", (ImageAtlasPrivate*)image_atlas, nullptr);
+		}
+
+		inline uint CanvasBridge::set_resource(int slot, FontAtlas* font_atlas, const char* name)
+		{
+			return ((CanvasPrivate*)this)->set_resource(slot, ((FontAtlasPrivate*)font_atlas)->view.get(), ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
+				name ? name : "", nullptr, (FontAtlasPrivate*)font_atlas);
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)

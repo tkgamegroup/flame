@@ -412,7 +412,7 @@ namespace flame
 			for (auto& e : ini.get_section_entries("tiles"))
 			{
 				auto tile = new ImageTilePrivate;
-
+				tile->index = tiles.size();
 				std::string t;
 				std::stringstream ss(e.value);
 				ss >> t;

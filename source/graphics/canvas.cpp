@@ -253,54 +253,60 @@ namespace flame
 		{
 			if (resources.empty())
 				return -1;
+
 			auto iv_white = img_white->default_view.get();
+
 			if (slot == -1)
 			{
 				assert(v);
-				for (auto i = 0; i < resources.size(); i++)
-				{
-					if (resources[i]->view == iv_white)
-					{
-						slot = i;
-						break;
-					}
-				}
-				assert(slot != -1);
+				slot = white_slot;
+				white_slot = -1;
 			}
+
 			auto r = new CanvasResourcePrivate;
-			if (v)
-			{
-				auto img = v->image;
-				img->set_pixels(img->size - 1U, Vec2u(1), &Vec4c(255));
-				r->white_uv = (Vec2f(img->size - 1U) + 0.5f) / Vec2f(img->size);
-			}
 			ds->set_image(0, slot, v, sp ? sp : device->sampler_linear.get());
 			r->name = name;
 			r->view = v ? v : iv_white;
 			r->image_atlas = image_atlas;
 			r->font_atlas = font_atlas;
 			resources[slot].reset(r);
+
+			if (white_slot == -1)
+			{
+				for (auto i = 0; i < resources.size(); i++)
+				{
+					if (resources[i]->view == iv_white)
+					{
+						white_slot = i;
+						break;
+					}
+				}
+				assert(white_slot != -1);
+			}
+
 			return slot;
 		}
 
-		void CanvasPrivate::add_draw_cmd(int id)
+		void CanvasPrivate::add_draw_cmd(uint id)
 		{
 			auto equal = [&]() {
 				if (cmds.empty())
 					return false;
 				auto& back = cmds.back();
-				if (back.type == CmdDrawElement && (id == -1 || back.v.draw_data.id == id))
+				if (back.type == CmdDrawElement && back.v.draw_data.id == id)
 					return true;
 				return false;
 			};
 			if (equal())
 				return;
+
 			Cmd cmd;
 			cmd.type = CmdDrawElement;
-			cmd.v.draw_data.id = id == -1 ? 0 : id;
+			cmd.v.draw_data.id = id;
 			cmd.v.draw_data.vtx_cnt = 0;
 			cmd.v.draw_data.idx_cnt = 0;
 			cmds.push_back(cmd);
+
 			auto& d = cmds.back().v.draw_data;
 			p_vtx_cnt = &d.vtx_cnt;
 			p_idx_cnt = &d.idx_cnt;
@@ -386,8 +392,8 @@ namespace flame
 		{
 			thickness *= 0.5f;
 
-			add_draw_cmd();
-			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
+			add_draw_cmd(white_slot);
+			auto uv = Vec2f(0.5f);
 
 			for (auto& path : paths)
 			{
@@ -598,8 +604,8 @@ namespace flame
 
 		void CanvasPrivate::fill(const Vec4c& col, bool aa)
 		{
-			add_draw_cmd();
-			auto uv = resources[cmds.back().v.draw_data.id]->white_uv;
+			add_draw_cmd(white_slot);
+			auto uv = Vec2f(0.5f);
 
 			for (auto& path : paths)
 			{

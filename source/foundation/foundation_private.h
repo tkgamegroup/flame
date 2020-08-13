@@ -20,7 +20,7 @@ namespace flame
 		Vec2u size;
 		std::string title;
 		int style;
-		CursorType cursor_type = CursorNone;
+		CursorType cursor_type = CursorArrow;
 		HCURSOR cursors[Cursor_Count];
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_down_listeners;

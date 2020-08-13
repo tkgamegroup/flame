@@ -103,7 +103,7 @@ namespace flame
 		for (auto& t : tiles)
 		{
 			_size.x() = max(t.pos.x() + t.b->get_width() + b1, _size.x());
-			_size.y() = max(t.pos.y() + t.b->get_height() + b1 + 1, _size.y()); // stage 1 line to store a white pixel
+			_size.y() = max(t.pos.y() + t.b->get_height() + b1, _size.y());
 		}
 
 		auto b = Bitmap::create(_size.x(), _size.y(), 4);

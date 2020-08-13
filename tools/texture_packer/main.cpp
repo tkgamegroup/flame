@@ -42,40 +42,6 @@ int main(int argc, char **args)
 			file.close();
 		});
 	}
-	else if (ext == L".json")
-	{
-		bin_pack(Vec2u(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
-			nlohmann::json json;
-			{
-				auto& mc = json["mc"];
-				auto& clip1 = mc["clip1"];
-				clip1["frameRate"] = 24;
-				clip1["events"] = nlohmann::json::array();
-				auto& frames = clip1["frames"];
-				for (auto i = 0; i < tiles.size(); i++)
-				{
-					frames[i] = nlohmann::json{
-						{"res", std::to_string(10000 + i + 1) + ".png"},
-						{"x", 0},
-						{"y", 0}
-					};
-				}
-				auto& res = json["res"];
-				for (auto& t : tiles)
-				{
-					res[t.id] = nlohmann::json{
-						{"x", t.pos.x()},
-						{"y", t.pos.y()},
-						{"w", t.b->get_width()},
-						{"h", t.b->get_height()}
-					};
-				}
-			}
-			std::ofstream file(output);
-			file << json.dump();
-			file.close();
-		});
-	}
 
 	return 0;
 }

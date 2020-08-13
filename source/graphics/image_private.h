@@ -146,6 +146,8 @@ namespace flame
 
 			ImageTilePrivate* get_tile(uint id) const override { return tiles[id].get(); }
 			ImageTilePrivate* find_tile(const std::string& name) const;
+
+			Image* get_image() const override { return image; }
 		};
 
 		inline ImageTile* ImageAtlasBridge::get_tile(uint id) const

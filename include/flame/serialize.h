@@ -75,10 +75,9 @@ namespace flame
 	{
 		auto p = buf;
 		auto s = buf_size;
-		auto ret = 0;
 		for (auto i = 0; i < N; i++)
 		{
-			ret += fmt(p, s, v[i]);
+			auto ret = fmt(p, s, v[i]);
 			p += ret;
 			s -= ret;
 			if (i < N - 1)
@@ -88,7 +87,7 @@ namespace flame
 				s--;
 			}
 		}
-		return ret;
+		return buf_size - s;
 	}
 
 	template <class T>
@@ -168,10 +167,9 @@ namespace flame
 	{
 		auto p = buf;
 		auto s = buf_size;
-		auto ret = 0;
 		for (auto i = 0; i < N; i++)
 		{
-			ret += fmt(p, s, v[i]);
+			auto ret = fmt(p, s, v[i]);
 			p += ret;
 			s -= ret;
 			if (i < N - 1)
@@ -181,7 +179,7 @@ namespace flame
 				s--;
 			}
 		}
-		return ret;
+		return buf_size - s;
 	}
 
 	template <class T>

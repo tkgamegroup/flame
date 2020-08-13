@@ -15,8 +15,8 @@ namespace flame
 
 	struct cImagePrivate : cImageBridge, cElement::Drawer, sTypeSetting::AutoSizer // R ~ on_*
 	{
-		uint res_id = 0xffffffff;
-		uint tile_id = 0;
+		int res_id = -1;
+		int tile_id = -1;
 		Vec2f uv0 = Vec2f(0.f);
 		Vec2f uv1 = Vec2f(1.f);
 		Vec3c color = Vec3c(255);
@@ -27,13 +27,16 @@ namespace flame
 		sTypeSettingPrivate* type_setting = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
 
-		uint get_res_id() const override { return res_id; }
-		void set_res_id(uint id) override;
-		uint get_tile_id() const override { return tile_id; }
-		void set_tile_id(uint id) override;
+		int get_res_id() const override { return res_id; }
+		void set_res_id(int id) override;
+		int get_tile_id() const override { return tile_id; }
+		void set_tile_id(int id) override;
 
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
+
+		bool get_auto_size() const override { return auto_width || auto_height; }
+		void set_auto_size(bool a) override { auto_width = auto_height = a; }
 
 		void on_gain_element();
 		void on_lost_element();

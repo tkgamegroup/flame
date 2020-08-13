@@ -8,7 +8,7 @@
 
 namespace flame
 {
-	void cImagePrivate::set_res_id(uint id)
+	void cImagePrivate::set_res_id(int id)
 	{
 		if (res_id == id)
 			return;
@@ -21,7 +21,7 @@ namespace flame
 		}
 	}
 
-	void cImagePrivate::set_tile_id(uint id)
+	void cImagePrivate::set_tile_id(int id)
 	{
 		if (tile_id == id)
 			return;
@@ -56,7 +56,7 @@ namespace flame
 
 	Vec2f cImagePrivate::measure()
 	{
-		if (!canvas || res_id == 0xffffffff)
+		if (!canvas || res_id == -1 || tile_id == -1)
 			return Vec2f(0.f);
 		auto r = canvas->get_resource(res_id);
 		auto ia = r->get_image_atlas();
@@ -73,9 +73,12 @@ namespace flame
 
 	void cImagePrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_image(res_id, tile_id, 
-			element->points[4], element->points[5], element->points[6], element->points[7],
-			uv0, uv1, Vec4c(255));
+		if (res_id != -1 && tile_id != -1)
+		{
+			canvas->add_image(res_id, tile_id,
+				element->points[4], element->points[5], element->points[6], element->points[7],
+				uv0, uv1, Vec4c(255));
+		}
 	}
 
 	void cImagePrivate::on_added()
@@ -115,9 +118,9 @@ namespace flame
 
 	void cImagePrivate::apply_src()
 	{
-		res_id = 0xffffffff;
-		tile_id = 0;
-		if (canvas)
+		res_id = -1;
+		tile_id = -1;
+		if (canvas && !src.empty())
 		{
 			auto sp = SUS::split(src, '.');
 			auto slot = 0;
