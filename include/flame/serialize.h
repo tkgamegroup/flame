@@ -94,15 +94,15 @@ namespace flame
 	inline std::string to_string(T v)
 	{
 		char buf[32];
-		fmt(buf, sizeof(buf), v);
+		fmt(buf, size(buf), v);
 		return buf;
 	}
 
 	template <uint N, class T>
 	inline std::string to_string(const Vec<N, T>& v)
 	{
-		char buf[32];
-		fmt(buf, sizeof(buf), v);
+		char buf[32 * N];
+		fmt(buf, size(buf), v);
 		return buf;
 	}
 
@@ -185,16 +185,16 @@ namespace flame
 	template <class T>
 	inline std::wstring to_wstring(T v)
 	{
-		wchar_t buf[20];
-		fmt(buf, sizeof(buf), v);
+		wchar_t buf[32];
+		fmt(buf, size(buf), v);
 		return buf;
 	}
 
 	template <uint N, class T>
 	inline std::wstring to_wstring(const Vec<N, T>& v)
 	{
-		wchar_t buf[20];
-		fmt(buf, sizeof(buf), v);
+		wchar_t buf[32 * N];
+		fmt(buf, size(buf), v);
 		return buf;
 	}
 

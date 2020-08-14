@@ -36,9 +36,9 @@ namespace flame
 		virtual float get_height() const = 0;
 		virtual void set_height(float h) = 0;
 
-		// left top right bottom
+		// L T R B
 		virtual Vec4f get_padding() = 0;
-		// left top right bottom
+		// L T R B
 		virtual void set_padding(const Vec4f& p) = 0;
 
 		// 0 - 1
@@ -66,8 +66,9 @@ namespace flame
 		virtual float get_skewy() const = 0;
 		virtual void set_skewy(float angle) = 0;
 
-		// 0-3: edge points, 4-7: content points, left-top, right-top, right-bottom, left-bottom
+		// 0-3: LT, RT, RB, LB, 4-7: content LT, content RT, content RB, content LB, 8: center, 9: content center
 		virtual Vec2f get_point(uint idx) = 0;
+		virtual Mat2f get_axes() = 0;
 
 		//virtual float get_alpha() const = 0;
 		//virtual void set_alpha(float a) = 0;

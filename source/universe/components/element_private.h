@@ -24,7 +24,7 @@ namespace flame
 		float skewy = 0.f;
 
 		bool transform_dirty = true;
-		Vec2f points[8];
+		Vec2f points[10];
 		Mat2f axes = Mat2f(1.f);
 		Vec4f aabb;
 
@@ -78,6 +78,7 @@ namespace flame
 
 		void update_transform();
 		Vec2f get_point(uint idx) override;
+		Mat2f get_axes() override;
 
 		Vec4c get_fill_color() override { return fill_color; }
 		void set_fill_color(const Vec4c& c) override;

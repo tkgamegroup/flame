@@ -1029,7 +1029,10 @@ namespace flame
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
 			wcex.hIcon = 0;
-			auto icon_fn = std::filesystem::path(getenv("FLAME_PATH")) / L"art\\ico.png";
+			auto icon_fn = std::filesystem::path(L"art\\ico.png");
+			auto engine_path = getenv("FLAME_PATH");
+			if (engine_path)
+				icon_fn = engine_path / icon_fn;
 			if (std::filesystem::exists(icon_fn))
 			{
 				auto icon_image = BitmapPrivate::create(icon_fn);

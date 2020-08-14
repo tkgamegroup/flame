@@ -33,6 +33,8 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
+		void update_visible_range();
+
 		void on_gain_element();
 		void on_lost_element();
 

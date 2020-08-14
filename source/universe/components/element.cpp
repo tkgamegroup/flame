@@ -152,6 +152,9 @@ namespace flame
 		points[6] = points[2] + axes * Vec2f(pr, pb);
 		points[7] = points[3] + axes * Vec2f(pl, pb);
 
+		points[8] = (points[0] + points[1] + points[2] + points[3]) * 0.25f;
+		points[9] = (points[4] + points[5] + points[6] + points[7]) * 0.25f;
+
 		aabb.x() = points[0].x();
 		aabb.z() = points[0].x();
 		aabb.y() = points[0].y();
@@ -169,6 +172,12 @@ namespace flame
 	{
 		update_transform();
 		return points[idx];
+	}
+
+	Mat2f cElementPrivate::get_axes()
+	{
+		update_transform();
+		return axes;
 	}
 
 	void cElementPrivate::set_fill_color(const Vec4c& c)
