@@ -2,7 +2,7 @@ namespace flame
 {
 	struct Entity;
 
-	inline Entity* add_layer(Entity* parent, void* pass_gene = nullptr, bool modal = false, const Vec4c& col = Vec4c(0))
+	inline Entity* add_layer(Entity* parent, bool modal = false, const Vec4c& col = Vec4c(0))
 	{
 		auto l = f_new<Entity>();
 		l->gene = l;
@@ -54,14 +54,6 @@ namespace flame
 		l->add_component(c_element);
 
 		auto c_event_receiver = cEventReceiver::create();
-		if (pass_gene)
-		{
-			c_event_receiver->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
-				if (er->entity->gene == c.data<void*>())
-					*pass = true;
-				return true;
-			}, Capture().set_data(&pass_gene));
-		}
 		if (!modal)
 		{
 			c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {

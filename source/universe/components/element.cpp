@@ -124,7 +124,7 @@ namespace flame
 		auto p = ((EntityPrivate*)entity)->parent;
 		if (p)
 		{
-			auto pe = (cElementPrivate*)p->get_component(cElement::type_hash);
+			auto pe = p->get_component_t<cElementPrivate>();
 			if (pe)
 			{
 				pe->update_transform();
@@ -223,7 +223,7 @@ namespace flame
 			transform_dirty = true;
 			for (auto& c : ((EntityPrivate*)entity)->children)
 			{
-				auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
+				auto e = c->get_component_t<cElementPrivate>();
 				e->mark_transform_dirty();
 			}
 		}

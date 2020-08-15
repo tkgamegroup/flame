@@ -4,8 +4,6 @@
 using namespace flame;
 using namespace graphics;
 
-//const auto img_id = 9;
-
 struct MyApp : App
 {
 	void create();
@@ -24,10 +22,6 @@ void MyApp::create()
 
 void MyApp::create_widgets()
 {
-//	auto root = main_window->root;
-//
-//	ui.parents.push(root);
-//
 //	ui.e_begin_layout(LayoutVertical, 0.f, false, false);
 //	ui.c_aligner(AlignMinMax, AlignMinMax);
 //		ui.e_begin_menu_bar();
@@ -189,15 +183,13 @@ void MyApp::create_widgets()
 //			}, Capture());
 //		ui.e_end_sub_menu();
 //	ui.e_end_popup_menu();
-//
-//	ui.parents.pop();
 }
 
 MainForm::MainForm() :
 	GraphicsWindow(&g_app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	//canvas->set_resource(img_id, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"art/9.png").c_str())->default_view());
+	//canvas->set_resource(-1, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"art/9.png").c_str())->default_view());
 
 	g_app.create_widgets();
 }

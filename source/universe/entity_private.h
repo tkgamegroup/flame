@@ -31,6 +31,12 @@ namespace flame
 
 		StateFlags state = StateNone;
 
+		uint depth = 0;
+		uint index = 0;
+
+		int created_frame;
+		std::vector<void*> created_stack;
+
 		enum RefType
 		{
 			RefComponent,
@@ -77,16 +83,12 @@ namespace flame
 
 		std::unordered_map<uint64, std::unique_ptr<Component, Delector>> components;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
+
 		std::vector<Component*> local_message_dispatch_list;
 		std::vector<Component*> child_message_dispatch_list;
 		std::vector<Component*> local_data_changed_dispatch_list;
 		std::vector<Component*> child_data_changed_dispatch_list;
 		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> data_changed_listeners;
-
-		uint depth = 0;
-		uint index = 0;
-		int created_frame;
-		std::vector<void*> created_stack;
 
 		EntityPrivate();
 		~EntityPrivate();

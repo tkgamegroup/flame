@@ -28,6 +28,7 @@ namespace flame
 		virtual void on_message(Message msg) = 0;
 
 		virtual Component* get_component(uint64 hash) const = 0;
+		template <class T> inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
 		virtual void add_component(Component* c) = 0;
 		virtual void remove_component(Component* c, bool destroy = true) = 0;
 		virtual void remove_all_components(bool destroy = true) = 0;

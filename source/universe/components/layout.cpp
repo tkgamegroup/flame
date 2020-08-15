@@ -60,7 +60,7 @@ namespace flame
 
 	void cLayoutPrivate::judge_width(float w)
 	{
-		auto aligner = (cAlignerPrivate*)entity->get_component(cAligner::type_hash);
+		auto aligner = entity->get_component_t<cAlignerPrivate>();
 		if (aligner)
 		{
 			if (auto_width && aligner->alignx != AlignMinMax)
@@ -77,7 +77,7 @@ namespace flame
 
 	void cLayoutPrivate::judge_height(float h)
 	{
-		auto aligner = (cAlignerPrivate*)entity->get_component(cAligner::type_hash);
+		auto aligner = entity->get_component_t<cAlignerPrivate>();
 		if (aligner)
 		{
 			if (auto_height && aligner->aligny != AlignMinMax)
@@ -107,8 +107,8 @@ namespace flame
 		{
 			if (c->global_visibility)
 			{
-				auto e = (cElementPrivate*)c->get_component(cElement::type_hash);
-				auto a = (cAlignerPrivate*)c->get_component(cAligner::type_hash);
+				auto e = c->get_component_t<cElementPrivate>();
+				auto a = c->get_component_t<cAlignerPrivate>();
 				if (e || a)
 				{
 					if (a && !a->include_in_layout)
@@ -462,7 +462,7 @@ namespace flame
 		case MessagePositionChanged:
 		case MessageAdded:
 		case MessageRemoved:
-			if (((EntityPrivate*)p)->get_component(cElement::type_hash))
+			if (((EntityPrivate*)p)->get_component_t<cElementPrivate>())
 				mark_layout_dirty();
 			break;
 		case MessageComponentAdded:

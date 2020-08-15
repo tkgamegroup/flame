@@ -33,9 +33,10 @@ MainForm::MainForm() :
 
 	ui.e_text(L"");
 	ui.c_aligner(AlignMin, AlignMax);
-	add_fps_listener([](Capture& c, uint fps) {
+	looper().add_event([](Capture& c) {
 		c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
-	}, Capture().set_thiz(ui.current_entity->get_component(cText)));
+		c._current = INVALID_POINTER;
+	}, Capture().set_thiz(e->get_component<cText>()), 1.f);
 
 	ui.next_element_pos = 100.f;
 	ui.next_element_size = 10.f;

@@ -1,36 +1,14 @@
-//#include <flame/universe/world.h>
-//#include <flame/universe/components/element.h>
-//#include <flame/universe/components/event_receiver.h>
-//#include <flame/universe/components/aligner.h>
-//#include <flame/universe/components/splitter.h>
-//#include <flame/universe/components/style.h>
-//
-//namespace flame
-//{
+#include "splitter_private.h"
+
+namespace flame
+{
+	cSplitter* cSplitter::create()
+	{
+		return f_new<cSplitterPrivate>();
+	}
+
 //	struct cSplitterPrivate : cSplitter
 //	{
-//		void* mouse_listener;
-//		void* state_listener;
-//
-//		cSplitterPrivate(SplitterType _type)
-//		{
-//			event_receiver = nullptr;
-//
-//			type = _type;
-//
-//			mouse_listener = nullptr;
-//			state_listener = nullptr;
-//		}
-//
-//		~cSplitterPrivate()
-//		{
-//			if (!entity->dying_)
-//			{
-//				event_receiver->mouse_listeners.remove(mouse_listener);
-//				event_receiver->state_listeners.remove(state_listener);
-//			}
-//		}
-//
 //		void on_event(EntityEvent e, void* t) override
 //		{
 //			switch (e)
@@ -38,9 +16,6 @@
 //			case EntityComponentAdded:
 //				if (t == this)
 //				{
-//					event_receiver = entity->get_component(cEventReceiver);
-//					assert(event_receiver);
-//
 //					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 //						auto thiz = c.thiz<cSplitterPrivate>();
 //						if (thiz->event_receiver->is_active() && is_mouse_move(action, key))
@@ -111,19 +86,13 @@
 //		}
 //	};
 //
-//	cSplitter* cSplitter::create(SplitterType type)
-//	{
-//		return new cSplitterPrivate(type);
-//	}
-//
 //	void cSplitter::make(World* w, Entity* e, SplitterType type)
 //	{
-//		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 //		auto ce = cElement::create();
 //		ce->size = 8.f;
 //		e->add_component(ce);
 //		e->add_component(cEventReceiver::create());
-//		auto cs = cStyleColor::create();
+//		auto cs = cStyleColor::create();. 0..................................
 //		cs->color_normal = Vec4c(0);
 //		cs->color_hovering = sg->get_style(FrameColorHovering).c;
 //		cs->color_active = sg->get_style(FrameColorActive).c;
@@ -136,4 +105,4 @@
 //			ca->x_align_flags = AlignMinMax;
 //		e->add_component(ca);
 //	}
-//}
+}

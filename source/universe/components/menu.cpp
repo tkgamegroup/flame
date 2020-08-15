@@ -11,7 +11,7 @@ namespace flame
 	void cMenuPrivate::set_items(Entity* _e) 
 	{
 		auto e = (EntityPrivate*)_e;
-		auto ce = (cElementPrivate*)e->get_component(cElement::type_hash);
+		auto ce = e->get_component_t<cElementPrivate>();
 		if (!ce)
 		{
 			printf("cannot set items of menu, items must contains a cElement component\n");
@@ -37,7 +37,7 @@ namespace flame
 			auto parent = ((EntityPrivate*)entity)->parent;
 			for (auto& e : parent->children)
 			{
-				auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
+				auto cm = e->get_component_t<cMenuPrivate>();
 				if (cm)
 					cm->close();
 			}
@@ -72,7 +72,7 @@ namespace flame
 		{
 			for (auto& e : items->children)
 			{
-				auto cm = (cMenuPrivate*)e->get_component(cMenu::type_hash);
+				auto cm = e->get_component_t<cMenuPrivate>();
 				if (cm)
 					cm->close();
 			}
@@ -123,7 +123,7 @@ namespace flame
 		{
 		case MessageEnteredWorld:
 			root = ((EntityPrivate*)entity)->world->root.get();
-			root_event_receiver = ((cEventReceiverPrivate*)root->get_component(cEventReceiver::type_hash));
+			root_event_receiver = root->get_component_t<cEventReceiverPrivate>();
 			break;
 		case MessageLeftWorld:
 			root = nullptr;

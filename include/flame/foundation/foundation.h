@@ -610,6 +610,7 @@ namespace flame
 		virtual uint get_frame() const = 0;
 		virtual float get_delta_time() const = 0; // second
 		virtual float get_total_time() const = 0; // second
+		virtual uint get_fps() const = 0;
 
 		virtual int loop(void (*frame_callback)(Capture& c, float delta_time) = nullptr, const Capture& capture = {}) = 0;
 

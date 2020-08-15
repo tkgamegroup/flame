@@ -162,111 +162,108 @@ namespace flame
 						if (f)
 							r.on_lost = a2f<void(*)(void*)>(f->get_address());
 					}
+
+					std::string place_str;
+					m->get_token("place", &place_str);
+					switch (r.name[(int)r.name.find_last_of(':') + 1])
 					{
-						auto pos = r.name.find_last_of(':');
-						if (pos == std::string::npos)
-							pos = 0;
-						else
-							pos++;
-						switch (r.name[pos])
-						{
-						case 'c':
-						{
-							r.type = RefComponent;
+					case 'c':
+					{
+						r.type = RefComponent;
 
-							std::string place_str;
-							m->get_token("place", &place_str);
-
-							if (place_str.empty() || place_str == "local")
+						if (place_str.empty() || place_str == "local")
+						{
+							r.place = PlaceLocal;
+							r.staging = get_component(r.hash);
+							if (!r.staging)
 							{
-								r.place = PlaceLocal;
-								r.staging = get_component(r.hash);
+								printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
+								return;
+							}
+						}
+						else if (place_str == "parent")
+						{
+							r.place = PlaceParent;
+							if (parent)
+							{
+								r.staging = parent->get_component(r.hash);
 								if (!r.staging)
 								{
-									printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
+									printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
 									return;
 								}
 							}
-							else if (place_str == "parent")
+						}
+						else if (place_str == "ancestor")
+						{
+							r.place = PlaceAncestor;
+							if (parent)
 							{
-								r.place = PlaceParent;
-								if (parent)
+								r.staging = nullptr;
+								auto e = parent;
+								while (e)
 								{
-									r.staging = parent->get_component(r.hash);
-									if (!r.staging)
-									{
-										printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
-										return;
-									}
-								}
-							}
-							else if (place_str == "ancestor")
-							{
-								r.place = PlaceAncestor;
-								if (parent)
-								{
-									r.staging = nullptr;
-									auto e = parent;
-									while (e)
-									{
-										r.staging = e->get_component(r.hash);
-										if (r.staging)
-											break;
-										e = e->parent;
-									}
-									if (!r.staging)
-									{
-										printf("add component %s failed, this component requires ancestor's component %s, which do not exist\n", c->type_name, r.name.c_str());
-										return;
-									}
-								}
-							}
-							else
-							{
-								r.place = PlaceOffspring;
-								auto e = find_child(place_str);
-								if (e)
 									r.staging = e->get_component(r.hash);
+									if (r.staging)
+										break;
+									e = e->parent;
+								}
 								if (!r.staging)
 								{
-									printf("add component %s failed, this component requires offspring(%s)'s component %s, which do not exist\n", c->type_name, place_str.c_str(), r.name.c_str());
+									printf("add component %s failed, this component requires ancestor's component %s, which do not exist\n", c->type_name, r.name.c_str());
 									return;
 								}
 							}
-
-							aux.refs.push_back(r);
 						}
-							break;
-						case 's':
-							r.type = RefSystem;
-
-							if (world)
+						else
+						{
+							r.place = PlaceOffspring;
+							auto e = find_child(place_str);
+							if (e)
+								r.staging = e->get_component(r.hash);
+							if (!r.staging)
 							{
-								r.staging = world->get_system(r.hash);
-								if (!r.staging)
-								{
-									printf("add component %s failed, this component requires system %s, which do not exist\n", c->type_name, r.name.c_str());
-									return;
-								}
+								printf("add component %s failed, this component requires offspring(%s)'s component %s, which do not exist\n", c->type_name, place_str.c_str(), r.name.c_str());
+								return;
 							}
-
-							aux.refs.push_back(r);
-							break;
-						default:
-							r.type = RefObject;
-
-							if (world)
-							{
-								r.staging = world->find_object(r.name);
-								if (!r.staging)
-								{
-									printf("add component %s failed, this component requires object %s, which do not exist\n", c->type_name, r.name.c_str());
-									return;
-								}
-							}
-
-							aux.refs.push_back(r);
 						}
+
+						aux.refs.push_back(r);
+					}
+						break;
+					case 's':
+						assert(place_str.empty());
+
+						r.type = RefSystem;
+
+						if (world)
+						{
+							r.staging = world->get_system(r.hash);
+							if (!r.staging)
+							{
+								printf("add component %s failed, this component requires system %s, which do not exist\n", c->type_name, r.name.c_str());
+								return;
+							}
+						}
+
+						aux.refs.push_back(r);
+						break;
+					default:
+						assert(place_str.empty());
+
+						r.type = RefObject;
+
+						if (world)
+						{
+							r.staging = world->find_object(r.name);
+							if (!r.staging)
+							{
+								printf("add component %s failed, this component requires object %s, which do not exist\n", c->type_name, r.name.c_str());
+								return;
+							}
+						}
+
+						aux.refs.push_back(r);
 					}
 				}
 			}
@@ -572,13 +569,10 @@ namespace flame
 						if (r.type == RefComponent)
 						{
 							auto target = (Component*)r.target;
-							if (((EntityPrivate*)target->entity)->depth < e->depth)
-							{
-								std::erase_if(((ComponentAux*)target->aux)->list_ref_by, [&](const auto& i) {
-									return i == c.second.get();
-								});
-								r.lost(c.second.get());
-							}
+							std::erase_if(((ComponentAux*)target->aux)->list_ref_by, [&](const auto& i) {
+								return i == c.second.get();
+							});
+							r.lost(c.second.get());
 						}
 						else
 							r.lost(c.second.get());
@@ -599,6 +593,19 @@ namespace flame
 			c->on_child_message(MessageRemoved, e);
 	}
 
+	static bool can_remove(EntityPrivate* e)
+	{
+		for (auto& c : e->components)
+		{
+			for (auto& r : ((EntityPrivate::ComponentAux*)c.second->aux)->list_ref_by)
+			{
+				if (((EntityPrivate*)r->entity)->depth < e->depth)
+					return false;
+			}
+		}
+		return true;
+	}
+
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
 		assert(e && e != this);
@@ -612,6 +619,9 @@ namespace flame
 			return;
 		}
 
+		if (!can_remove(e))
+			return;
+
 		on_child_removed(e);
 
 		if (!destroy)
@@ -621,6 +631,12 @@ namespace flame
 
 	void EntityPrivate::remove_all_children(bool destroy)
 	{
+		for (auto& c : children)
+		{
+			if (!can_remove(c.get()))
+				return;
+		}
+
 		for (auto& c : children)
 			on_child_removed(c.get());
 
@@ -766,10 +782,28 @@ namespace flame
 
 	void EntityPrivate::load(const std::filesystem::path& filename)
 	{
+		auto fn = filename;
+
+		if (fn.parent_path().empty())
+		{
+			if (fn.extension().empty())
+				fn.replace_extension(L".prefab");
+			if (!std::filesystem::exists(fn))
+			{
+				fn = L"art" / fn;
+				if (!std::filesystem::exists(fn))
+				{
+					auto engine_path = getenv("FLAME_PATH");
+					if (engine_path)
+						fn = engine_path / fn;
+				}
+			}
+		}
+
 		pugi::xml_document file;
 		pugi::xml_node file_root;
 
-		if (!file.load_file(filename.c_str()) || (file_root = file.first_child()).name() != std::string("prefab"))
+		if (!file.load_file(fn.c_str()) || (file_root = file.first_child()).name() != std::string("prefab"))
 		{
 			printf("prefab not exist or wrong format: %s\n", filename.string().c_str());
 			return;

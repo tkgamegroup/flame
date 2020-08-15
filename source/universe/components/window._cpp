@@ -196,7 +196,6 @@ namespace flame
 
 	void cSizeDragger::make(World* w, Entity* e)
 	{
-		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 		auto ce = cElement::create();
 		ce->size = 8.f;
 		e->add_component(ce);
@@ -446,7 +445,6 @@ namespace flame
 
 	void cDockerTab::make_floating_container(World* w, Entity* e, const Vec2f& pos, const Vec2f& size)
 	{
-		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 		e->name = "docker_floating_container";
 		auto ce = cElement::create();
 		ce->pos = pos;
@@ -469,7 +467,6 @@ namespace flame
 
 	void cDockerTab::make_static_container(World* w, Entity* e)
 	{
-		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 		e->name = "docker_static_container";
 		auto ce = cElement::create();
 		ce->color = sg->get_style(BackgroundColor).c;
@@ -502,7 +499,6 @@ namespace flame
 
 	void cDockerTab::make_docker(World* w, Entity* e)
 	{
-		auto sg = (StyleGetter*)w->find_object(FLAME_CHASH("StyleGetter"), 0);
 		e->name = "docker";
 		auto ce = cElement::create();
 		ce->frame_thickness = 1.f;

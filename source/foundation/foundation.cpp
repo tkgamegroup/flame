@@ -1633,6 +1633,14 @@ namespace flame
 		et = last_time - et;
 		delta_time = et / 1000000000.f;
 		total_time += delta_time;
+		fps_counting++;
+		fps_delta += delta_time;
+		if (fps_delta >= 1.f)
+		{
+			fps = fps_counting;
+			fps_counting = 0;
+			fps_delta = 0.f;
+		}
 
 		return true;
 	}

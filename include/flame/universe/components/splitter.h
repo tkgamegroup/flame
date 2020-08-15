@@ -1,25 +1,19 @@
-//#pragma once
-//
-//#include <flame/universe/component.h>
-//
-//namespace flame
-//{
-//	struct cElement;
-//	struct cEventReceiver;
-//	struct cAligner;
-//
-//	struct cSplitter : Component
-//	{
-//		cEventReceiver* event_receiver;
-//
-//		SplitterType type;
-//
-//		cSplitter() :
-//			Component("cSplitter")
-//		{
-//		}
-//
-//		FLAME_UNIVERSE_EXPORTS static cSplitter* create(SplitterType type);
-//		FLAME_UNIVERSE_EXPORTS static void make(World* w, Entity* e, SplitterType type);
-//	};
-//}
+#pragma once
+
+#include <flame/universe/component.h>
+
+namespace flame
+{
+	struct cSplitter : Component // R !ctor !dtor !type_name !type_hash
+	{
+		inline static auto type_name = "flame::cSplitter";
+		inline static auto type_hash = ch(type_name);
+
+		cSplitter() :
+			Component(type_name, type_hash)
+		{
+		}
+
+		FLAME_UNIVERSE_EXPORTS static cSplitter* create();
+	};
+}

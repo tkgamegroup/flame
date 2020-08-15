@@ -88,16 +88,16 @@ namespace flame
 			if (!view)
 			{
 				auto e = (Entity*)p;
-				auto cs = e->get_component(cScrollView::type_hash);
+				auto cs = e->get_component_t<cScrollViewPrivate>();
 				if (cs)
 				{
-					auto ce = e->get_component(cElement::type_hash);
-					auto cl = e->get_component(cLayout::type_hash);
+					auto ce = e->get_component_t<cElementPrivate>();
+					auto cl = e->get_component_t<cLayoutPrivate>();
 					if (ce && cl)
 					{
 						view = e;
-						view_element = (cElementPrivate*)ce;
-						view_layout = (cLayoutPrivate*)cl;
+						view_element = ce;
+						view_layout = cl;
 					}
 
 					e->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
@@ -159,11 +159,11 @@ namespace flame
 			if (!target)
 			{
 				auto e = (Entity*)p;
-				auto ce = e->get_component(cElement::type_hash);
+				auto ce = e->get_component_t<cElementPrivate>();
 				if (ce)
 				{
 					target = e;
-					target_element = (cElementPrivate*)ce;
+					target_element = ce;
 
 					if (scroller)
 						on_gain_scroller();

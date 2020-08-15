@@ -1,25 +1,11 @@
-//#pragma once
-//
-//#include <flame/universe/component.h>
-//
-//namespace flame
-//{
-//	namespace graphics
-//	{
-//		struct FontAtlas;
-//	}
-//
-//	struct cText;
-//	struct cEventReceiver;
-//	struct cStyleColor2;
-//	struct cTree;
-//
+#pragma once
+
+#include <flame/universe/component.h>
+
+namespace flame
+{
 //	struct cTreeLeaf : Component
 //	{
-//		cEventReceiver* event_receiver;
-//		cStyleColor2* style;
-//		cTree* tree;
-//
 //		cTreeLeaf() :
 //			Component("cTreeLeaf")
 //		{
@@ -30,8 +16,6 @@
 //
 //	struct cTreeNode : Component
 //	{
-//		cTree* tree;
-//
 //		cTreeNode() :
 //			Component("cTreeNode")
 //		{
@@ -40,42 +24,8 @@
 //		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
 //	};
 //
-//	struct cTreeNodeTitle : Component
-//	{
-//		cEventReceiver* event_receiver;
-//		cStyleColor2* style;
-//		cTree* tree;
-//
-//		cTreeNodeTitle() :
-//			Component("cTreeNodeTitle")
-//		{
-//		}
-//
-//		FLAME_UNIVERSE_EXPORTS static cTreeNodeTitle* create();
-//	};
-//
-//	struct cTreeNodeArrow : Component
-//	{
-//		cEventReceiver* event_receiver;
-//		cText* text;
-//		cTree* tree;
-//
-//		cTreeNodeArrow() :
-//			Component("cTreeNodeArrow")
-//		{
-//		}
-//
-//		FLAME_UNIVERSE_EXPORTS void toggle_collapse();
-//
-//		FLAME_UNIVERSE_EXPORTS static cTreeNodeArrow* create();
-//	};
-//
 //	struct cTree : Component
 //	{
-//		cEventReceiver* event_receiver;
-//
-//		Entity* selected;
-//
 //		cTree() :
 //			Component("cTree")
 //		{
@@ -86,4 +36,4 @@
 //
 //		FLAME_UNIVERSE_EXPORTS static cTree* create();
 //	};
-//}
+}

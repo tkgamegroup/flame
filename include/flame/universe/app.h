@@ -20,7 +20,6 @@
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/element_renderer.h>
-#include <flame/universe/res_map.h>
 
 namespace flame
 {

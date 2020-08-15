@@ -79,6 +79,7 @@ namespace flame
 	struct CountDown
 	{
 		bool is_frame;
+
 		union
 		{
 			uint frames;

@@ -1,16 +1,187 @@
 #include <flame/serialize.h>
-#include <flame/foundation/blueprint.h>
-#include <flame/graphics/image.h>
 #include <flame/network/network.h>
-#include <flame/universe/ui/ui.h>
+#include <flame/universe/components/text.h>
+#include <flame/universe/components/tile_map.h>
 #include <flame/utils/app.h>
 #include <flame/utils/fps.h>
 
-#include "mino.h"
-#include "key.h"
-#include "score.h"
-
 using namespace flame;
+
+enum MinoType
+{
+	Mino_L,
+	Mino_T,
+	Mino_S,
+	Mino_Z,
+	Mino_J,
+	Mino_O,
+	Mino_I,
+
+	MinoTypeCount
+};
+
+Vec2i g_mino_coords[MinoTypeCount][3];
+Vec4c g_mino_colors[MinoTypeCount];
+
+Vec2i g_mino_LTSZJ_offsets[5][4];
+Vec2i g_mino_O_offsets[5][4];
+Vec2i g_mino_I_offsets[5][4];
+
+enum
+{
+	KEY_PAUSE,
+	KEY_LEFT,
+	KEY_RIGHT,
+	KEY_ROTATE_LEFT,
+	KEY_ROTATE_RIGHT,
+	KEY_SOFT_DROP,
+	KEY_HARD_DROP,
+	KEY_HOLD,
+	KEY_COUNT
+};
+
+
+KeyboardKey key_map[KEY_COUNT];
+const wchar_t* key_names[KEY_COUNT];
+
+inline void get_combo_award(uint combo, int& attack, std::wstring& str)
+{
+	if (combo >= 1)
+	{
+		if (combo > 12)
+			attack += 5;
+		else
+		{
+			switch (combo)
+			{
+			case 2:
+				attack += 1;
+				break;
+			case 3:
+				attack += 1;
+				break;
+			case 4:
+				attack += 2;
+				break;
+			case 5:
+				attack += 2;
+				break;
+			case 6:
+				attack += 3;
+				break;
+			case 7:
+				attack += 3;
+				break;
+			case 8:
+				attack += 4;
+				break;
+			case 9:
+				attack += 4;
+				break;
+			case 10:
+				attack += 4;
+				break;
+			case 11:
+				attack += 5;
+				break;
+			case 12:
+				attack += 5;
+				break;
+			}
+		}
+		str += wfmt(L"Ren %d\n", combo);
+	}
+}
+
+inline void get_lines_award(uint l, bool tspin, bool mini, bool& back_to_back, uint& score, int& attack, std::wstring& str)
+{
+	switch (l)
+	{
+	case 1:
+		if (tspin)
+		{
+			if (mini)
+			{
+				score += 400;
+				str += L"T-Spin\nMini\n";
+			}
+			else
+			{
+				score += 800;
+				attack += 2;
+				str += L"T-Spin\nSingle\n";
+			}
+			if (back_to_back)
+			{
+				score += mini ? 200 : 400;
+				attack++;
+				str += L"\nBack\nTo\nBack";
+			}
+			back_to_back = true;
+		}
+		else
+			back_to_back = false;
+		break;
+	case 2:
+		if (tspin)
+		{
+			score += 1200;
+			attack += 4;
+			str += L"T-Spin\nDouble\n";
+			if (back_to_back)
+			{
+				score += 600;
+				attack++;
+				str += L"\nBack\nTo\nBack";
+			}
+			back_to_back = true;
+		}
+		else
+		{
+			score += 300;
+			attack += 1;
+			str += L"Double\n";
+			back_to_back = false;
+		}
+		break;
+	case 3:
+		if (tspin)
+		{
+			score += 1600;
+			attack += 6;
+			str += L"T-Spin\nTriple\n";
+			if (back_to_back)
+			{
+				score += 800;
+				attack++;
+				str += L"\nBack\nTo\nBack";
+			}
+			back_to_back = true;
+		}
+		else
+		{
+			score += 500;
+			attack += 2;
+			str += L"Triple\n";
+			back_to_back = false;
+		}
+		break;
+	case 4:
+		score += 800;
+		attack += 4;
+
+		str += L"Tetris\n";
+		if (back_to_back)
+		{
+			score += 400;
+			attack++;
+			str += L"\nBack\nTo\nBack";
+		}
+		back_to_back = true;
+		break;
+	}
+}
+
 
 const auto board_width = 10U;
 const auto board_height = 24U;
@@ -104,11 +275,11 @@ struct MyApp : App
 	std::wstring my_name;
 	std::wstring room_name;
 	std::vector<Player> players;
-	uint my_room_index;
+	uint my_room_index = 0;
 	bool room_gaming;
-	Server* server;
+	Server* server = nullptr;
 	uint room_max_people;
-	Client* client;
+	Client* client = nullptr;
 
 	GameMode game_mode;
 
@@ -181,61 +352,147 @@ struct MyApp : App
 	uint get_rotation_idx(bool clockwise);
 	bool super_rotation(cTileMap* board, bool clockwise, Vec2i* out_coord, Vec2i* offset);
 	void quit_game();
-}app;
+}g_app;
 
 struct MainForm : GraphicsWindow
 {
-	UI ui;
-
 	MainForm();
-	~MainForm() override;
 };
 
-MainForm* main_window = nullptr;
-
 MainForm::MainForm() :
-	GraphicsWindow(&app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
+	GraphicsWindow(&g_app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
 {
-	main_window = this;
+	canvas->set_resource(-1, g_app.atlas, "");
 
-	setup_as_main_window();
-
-	canvas->set_resource(-1, app.atlas->get_view(), app.graphics_device->get_sampler(app.atlas->get_border() ? graphics::FilterLinear : graphics::FilterNearest), L"", app.atlas, nullptr);
-
-	ui.init(world);
-
-	ui.parents.push(root);
 	{
 		auto e = ui.e_text(L"");
-		e->event_listeners.add([](Capture& c, EntityEvent e, void*) {
-			if (e == EntityDestroyed)
-				looper().remove_event(c.thiz<void>());
-			return true;
-		}, Capture().set_thiz(add_fps_listener([](Capture& c, uint fps) {
+		looper().add_event([](Capture& c) {
 			c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
-		}, Capture().set_thiz(e->get_component(cText)))));
+			c._current = INVALID_POINTER;
+		}, Capture().set_thiz(e->get_component<cText>()), 1.f);
 	}
 	ui.c_aligner(AlignMin, AlignMax);
-	ui.parents.pop();
 
-	app.create_home_scene();
-}
-
-MainForm::~MainForm()
-{
-	main_window = nullptr;
+	g_app.create_home_scene();
 }
 
 MyApp::MyApp()
 {
 	players.resize(1);
 	players[0].id = (void*)0xffff;
-	my_room_index = 0;
-	server = nullptr;
-	client = nullptr;
 
-	init_mino();
-	init_key();
+	g_mino_coords[Mino_L][0] = Vec2i(-1, +0);
+	g_mino_coords[Mino_L][1] = Vec2i(+1, +0);
+	g_mino_coords[Mino_L][2] = Vec2i(-1, -1);
+
+	g_mino_coords[Mino_J][0] = Vec2i(-1, +0);
+	g_mino_coords[Mino_J][1] = Vec2i(+1, +0);
+	g_mino_coords[Mino_J][2] = Vec2i(+1, -1);
+
+	g_mino_coords[Mino_T][0] = Vec2i(-1, +0);
+	g_mino_coords[Mino_T][1] = Vec2i(+1, +0);
+	g_mino_coords[Mino_T][2] = Vec2i(+0, -1);
+
+	g_mino_coords[Mino_S][0] = Vec2i(-1, +0);
+	g_mino_coords[Mino_S][1] = Vec2i(+0, -1);
+	g_mino_coords[Mino_S][2] = Vec2i(+1, -1);
+
+	g_mino_coords[Mino_Z][0] = Vec2i(-1, -1);
+	g_mino_coords[Mino_Z][1] = Vec2i(+0, -1);
+	g_mino_coords[Mino_Z][2] = Vec2i(+1, +0);
+
+	g_mino_coords[Mino_O][0] = Vec2i(+0, -1);
+	g_mino_coords[Mino_O][1] = Vec2i(+1, +0);
+	g_mino_coords[Mino_O][2] = Vec2i(+1, -1);
+
+	g_mino_coords[Mino_I][0] = Vec2i(-1, +0);
+	g_mino_coords[Mino_I][1] = Vec2i(+1, +0);
+	g_mino_coords[Mino_I][2] = Vec2i(+2, +0);
+
+	g_mino_colors[Mino_L] = Vec4c(0, 81, 179, 255);
+	g_mino_colors[Mino_T] = Vec4c(169, 0, 225, 255);
+	g_mino_colors[Mino_S] = Vec4c(0, 221, 50, 255);
+	g_mino_colors[Mino_Z] = Vec4c(193, 0, 0, 255);
+	g_mino_colors[Mino_J] = Vec4c(230, 132, 0, 255);
+	g_mino_colors[Mino_O] = Vec4c(225, 198, 0, 255);
+	g_mino_colors[Mino_I] = Vec4c(0, 184, 217, 255);
+
+	memset(g_mino_LTSZJ_offsets, 0, sizeof(g_mino_LTSZJ_offsets));
+	memset(g_mino_O_offsets, 0, sizeof(g_mino_O_offsets));
+	memset(g_mino_I_offsets, 0, sizeof(g_mino_I_offsets));
+
+	g_mino_LTSZJ_offsets[0][0] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[0][1] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[0][2] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[0][3] = Vec2i(+0, +0);
+
+	g_mino_LTSZJ_offsets[1][0] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[1][1] = Vec2i(+1, +0);
+	g_mino_LTSZJ_offsets[1][2] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[1][3] = Vec2i(-1, +0);
+
+	g_mino_LTSZJ_offsets[2][0] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[2][1] = Vec2i(+1, +1);
+	g_mino_LTSZJ_offsets[2][2] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[2][3] = Vec2i(-1, +1);
+
+	g_mino_LTSZJ_offsets[3][0] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[3][1] = Vec2i(+0, -2);
+	g_mino_LTSZJ_offsets[3][2] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[3][3] = Vec2i(+0, -2);
+
+	g_mino_LTSZJ_offsets[4][0] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[4][1] = Vec2i(+1, -2);
+	g_mino_LTSZJ_offsets[4][2] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[4][3] = Vec2i(-1, -2);
+
+	g_mino_I_offsets[0][0] = Vec2i(+0, +0);
+	g_mino_I_offsets[0][1] = Vec2i(-1, +0);
+	g_mino_I_offsets[0][2] = Vec2i(-1, -1);
+	g_mino_I_offsets[0][3] = Vec2i(+0, -1);
+
+	g_mino_I_offsets[1][0] = Vec2i(-1, +0);
+	g_mino_I_offsets[1][1] = Vec2i(+0, +0);
+	g_mino_I_offsets[1][2] = Vec2i(+1, -1);
+	g_mino_I_offsets[1][3] = Vec2i(+0, -1);
+
+	g_mino_I_offsets[2][0] = Vec2i(+2, +0);
+	g_mino_I_offsets[2][1] = Vec2i(+0, +0);
+	g_mino_I_offsets[2][2] = Vec2i(-2, -1);
+	g_mino_I_offsets[2][3] = Vec2i(+0, -1);
+
+	g_mino_I_offsets[3][0] = Vec2i(-1, +0);
+	g_mino_I_offsets[3][1] = Vec2i(+0, -1);
+	g_mino_I_offsets[3][2] = Vec2i(+1, +0);
+	g_mino_I_offsets[3][3] = Vec2i(+0, +1);
+
+	g_mino_I_offsets[4][0] = Vec2i(+2, +0);
+	g_mino_I_offsets[4][1] = Vec2i(+0, +2);
+	g_mino_I_offsets[4][2] = Vec2i(-2, +0);
+	g_mino_I_offsets[4][3] = Vec2i(+0, -2);
+
+	g_mino_O_offsets[0][0] = Vec2i(+0, +0);
+	g_mino_O_offsets[0][1] = Vec2i(+0, +1);
+	g_mino_O_offsets[0][2] = Vec2i(-1, +1);
+	g_mino_O_offsets[0][3] = Vec2i(-1, +0);
+
+	key_map[KEY_PAUSE] = Keyboard_Esc;
+	key_map[KEY_LEFT] = Keyboard_A;
+	key_map[KEY_RIGHT] = Keyboard_D;
+	key_map[KEY_ROTATE_LEFT] = Keyboard_J;
+	key_map[KEY_ROTATE_RIGHT] = Keyboard_K;
+	key_map[KEY_SOFT_DROP] = Keyboard_S;
+	key_map[KEY_HARD_DROP] = Keyboard_Space;
+	key_map[KEY_HOLD] = Keyboard_E;
+
+	key_names[KEY_PAUSE] = L"Pause";
+	key_names[KEY_LEFT] = L"Left";
+	key_names[KEY_RIGHT] = L"Right";
+	key_names[KEY_ROTATE_LEFT] = L"Rotate_Left";
+	key_names[KEY_ROTATE_RIGHT] = L"Rotate_Right";
+	key_names[KEY_SOFT_DROP] = L"Soft_Drop";
+	key_names[KEY_HARD_DROP] = L"Hard_Drop";
+	key_names[KEY_HOLD] = L"Hold";
 }
 
 MyApp::~MyApp()
@@ -243,9 +500,9 @@ MyApp::~MyApp()
 	std::ofstream user_data(L"user_data.ini");
 	user_data << "name = " << w2s(my_name) << "\n";
 	user_data << "\n[key]\n";
-	auto key_info = find_enum("flame::Key");
+	auto key_info = find_enum("flame::KeyboardKey");
 	for (auto i = 0; i < KEY_COUNT; i++)
-		user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->name.str() << "\n";
+		user_data << w2s(key_names[i]) << " = " << key_info->find_item(key_map[i])->get_name() << "\n";
 	user_data << "\n[sound]\n";
 	user_data << "fx_volumn = " << fx_volumn << "\n";
 	user_data << "\n[sensitiveness]\n";
@@ -253,20 +510,6 @@ MyApp::~MyApp()
 	user_data << "left_right_speed = " << left_right_speed << "\n";
 	user_data << "soft_drop_speed = " << soft_drop_speed << "\n";
 	user_data.close();
-
-	if (app.developing)
-	{
-		std::ofstream pack_desc(app.resource_path / L"package_description.ini");
-		pack_desc << "src = \"\"\n";
-		pack_desc << "dst = \"{c}\"\n\n";
-		pack_desc << "[engine_items]\n";
-		for (auto& p : app.used_files[0])
-			pack_desc << "\"" << p.string() << "\"\n";
-		pack_desc << "[items]\n";
-		for (auto& p : app.used_files[1])
-			pack_desc << "\"" << p.string() << "\"\n";
-		pack_desc.close();
-	}
 }
 
 void MyApp::create()
@@ -279,13 +522,13 @@ void MyApp::create()
 		if (e.key == "name")
 			my_name = s2w(e.value);
 	}
-	auto key_info = find_enum("flame::Key");
+	auto key_info = find_enum("flame::KeyboardKey");
 	for (auto& e : user_data.get_section_entries("key"))
 	{
 		for (auto i = 0; i < KEY_COUNT; i++)
 		{
 			if (key_names[i] == s2w(e.key))
-				key_map[i] = (Key)key_info->find_item(e.value.c_str())->value;
+				key_map[i] = (KeyboardKey)key_info->find_item(e.value.c_str())->get_value();
 		}
 	}
 	for (auto& e : user_data.get_section_entries("sound"))
@@ -303,7 +546,7 @@ void MyApp::create()
 			soft_drop_speed = std::stoi(e.value);
 	}
 
-	atlas = graphics::ImageAtlas::load(graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
+	atlas = graphics::ImageAtlas::create(graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
 
 	{
 		sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
@@ -334,9 +577,6 @@ void MyApp::create()
 
 void MyApp::create_home_scene()
 {
-	auto& ui = main_window->ui;
-
-	ui.parents.push(main_window->root);
 	ui.e_begin_layout(LayoutVertical, 8.f);
 	ui.c_aligner(AlignMiddle, AlignMiddle);
 	ui.push_style(FontSize, common(Vec1u(40)));
@@ -347,53 +587,50 @@ void MyApp::create_home_scene()
 	ui.e_button(L"Marathon", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.game_mode = GameSingleMarathon;
-			app.create_game_scene();
-			app.start_game();
+			g_app.game_mode = GameSingleMarathon;
+			g_app.create_game_scene();
+			g_app.start_game();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"RTA", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.game_mode = GameSingleRTA;
-			app.create_game_scene();
-			app.start_game();
+			g_app.game_mode = GameSingleRTA;
+			g_app.create_game_scene();
+			g_app.start_game();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Practice", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.game_mode = GameSinglePractice;
-			app.create_game_scene();
-			app.start_game();
+			g_app.game_mode = GameSinglePractice;
+			g_app.create_game_scene();
+			g_app.start_game();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"LAN", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_lan_scene();
+			g_app.create_lan_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Config", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_config_scene();
+			g_app.create_config_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.pop_style(FontSize);
 	ui.e_end_layout();
-	ui.parents.pop();
 }
 
 void MyApp::create_player_controls(int player_index)
 {
-	auto& ui = main_window->ui;
-
 	auto scale = (player_index == my_room_index || room_max_people == 2) ? 1.f : 0.5f;
 	auto block_size = 24U * scale;
 
@@ -422,7 +659,7 @@ void MyApp::create_player_controls(int player_index)
 	ui.e_begin_layout(LayoutHorizontal, 4.f);
 	ui.push_style(FontSize, common(Vec1u(30 * scale)));
 	p.c_name = ui.e_text([p]() {
-		switch (app.game_mode)
+		switch (g_app.game_mode)
 		{
 		case GameSingleMarathon:
 			return L"Marathon";
@@ -443,20 +680,20 @@ void MyApp::create_player_controls(int player_index)
 		p.e_kick = ui.e_button(Icon_TIMES, [](Capture& c) {
 			auto index = c.data<int>();
 
-			app.process_player_left(index);
+			g_app.process_player_left(index);
 
 			{
 				nlohmann::json rep;
 				rep["action"] = "player_left";
 				rep["index"] = index;
 				auto str = rep.dump();
-				for (auto i = 1; i < app.players.size(); i++)
+				for (auto i = 1; i < g_app.players.size(); i++)
 				{
 					if (i != index)
 					{
-						auto& p = app.players[i];
+						auto& p = g_app.players[i];
 						if (p.id && !p.disconnected)
-							app.server->send(p.id, str.data(), str.size(), false);
+							g_app.server->send(p.id, str.data(), str.size(), false);
 					}
 				}
 			}
@@ -567,13 +804,12 @@ void MyApp::create_player_controls(int player_index)
 void MyApp::process_player_entered(int index)
 {
 	looper().add_event([](Capture& c) {
-		auto& ui = main_window->ui;
 		auto index = c.data<int>();
-		auto& p = app.players[index];
+		auto& p = g_app.players[index];
 		ui.parents.push(main_window->root);
 		p.e = ui.e_element();
 		ui.parents.push(p.e);
-		app.create_player_controls(index);
+		g_app.create_player_controls(index);
 		ui.parents.pop();
 		ui.parents.pop();
 	}, Capture().set_data(&index));
@@ -583,7 +819,7 @@ void MyApp::process_player_disconnected(int index)
 {
 	looper().add_event([](Capture& c) {
 		auto index = c.data<int>();
-		auto& p = app.players[index];
+		auto& p = g_app.players[index];
 		p.disconnected = true;
 		p.c_name->set_text((p.name + L" " + Icon_BOLT).c_str());
 	}, Capture().set_data(&index));
@@ -593,7 +829,7 @@ void MyApp::process_player_left(int index)
 {
 	looper().add_event([](Capture& c) {
 		auto index = c.data<int>();
-		auto& p = app.players[index];
+		auto& p = g_app.players[index];
 		p.reset();
 		main_window->root->remove_child(p.e);
 	}, Capture().set_data(&index));
@@ -602,7 +838,7 @@ void MyApp::process_player_left(int index)
 void MyApp::process_player_ready(int index)
 {
 	looper().add_event([](Capture& c) {
-		auto& p = app.players[c.data<int>()];
+		auto& p = g_app.players[c.data<int>()];
 		p.ready = true;
 		p.c_ready->entity->set_visible(true);
 	}, Capture().set_data(&index));
@@ -611,8 +847,8 @@ void MyApp::process_player_ready(int index)
 void MyApp::process_game_start()
 {
 	looper().add_event([](Capture&) {
-		app.room_gaming = true;
-		app.start_game();
+		g_app.room_gaming = true;
+		g_app.start_game();
 	}, Capture());
 }
 
@@ -623,7 +859,7 @@ void MyApp::process_report_board(int index, const std::string& d)
 		cTileMap* b;
 		char d[1024];
 	}capture;
-	capture.b = app.players[index].c_main;
+	capture.b = g_app.players[index].c_main;
 	memcpy(capture.d, d.data(), d.size());
 	looper().add_event([](Capture& c) {
 		auto& capture = c.data<Capturing>();
@@ -645,8 +881,8 @@ void MyApp::process_attack(int index, int value)
 		Garbage g;
 		g.time = 60;
 		g.lines = n;
-		app.garbages.push_back(g);
-		app.need_update_garbages_tip = true;
+		g_app.garbages.push_back(g);
+		g_app.need_update_garbages_tip = true;
 	}, Capture().set_data(&value));
 }
 
@@ -661,7 +897,7 @@ void MyApp::process_dead(int index, int rank)
 	capture.rank = rank;
 	looper().add_event([](Capture& c) {
 		auto& capture = c.data<Capturing>();
-		auto& p = app.players[capture.index];
+		auto& p = g_app.players[capture.index];
 		std::wstring str;
 		switch (capture.rank)
 		{
@@ -685,87 +921,85 @@ void MyApp::process_dead(int index, int rank)
 void MyApp::process_gameover()
 {
 	looper().add_event([](Capture&) {
-		app.room_gaming = false;
-		app.gaming = false;
-		app.e_start_or_ready->set_visible(true);
+		g_app.room_gaming = false;
+		g_app.gaming = false;
+		g_app.e_start_or_ready->set_visible(true);
 	}, Capture());
 }
 
 void MyApp::join_room(const char* ip)
 {
-	auto& ui = main_window->ui;
-	app.client = Client::create(SocketNormal, ip, 2434,
+	g_app.client = Client::create(SocketNormal, ip, 2434,
 	[](Capture&, const char* msg, uint size) {
 		auto req = nlohmann::json::parse(std::string(msg, size));
 		auto action = req["action"].get<std::string>();
 		if (action == "report_room")
 		{
-			app.room_name = s2w(req["room_name"].get<std::string>());
-			app.room_max_people = req["max_people"].get<int>();
-			app.players.resize(app.room_max_people);
-			for (auto& p : app.players)
+			g_app.room_name = s2w(req["room_name"].get<std::string>());
+			g_app.room_max_people = req["max_people"].get<int>();
+			g_app.players.resize(g_app.room_max_people);
+			for (auto& p : g_app.players)
 				p.reset();
-			app.my_room_index = req["index"].get<int>();
-			auto& me = app.players[app.my_room_index];
+			g_app.my_room_index = req["index"].get<int>();
+			auto& me = g_app.players[g_app.my_room_index];
 			me.id = (void*)0xffff;
-			me.name = app.my_name;
+			me.name = g_app.my_name;
 			looper().add_event([](Capture&) {
 				main_window->root->remove_children(1, -1);
-				app.game_mode = GameVS;
-				app.create_game_scene();
+				g_app.game_mode = GameVS;
+				g_app.create_game_scene();
 			}, Capture());
 		}
 		else if (action == "player_entered")
 		{
 			auto index = req["index"].get<int>();
-			auto& p = app.players[index];
+			auto& p = g_app.players[index];
 			p.id = (void*)0xffff;
 			p.name = s2w(req["name"].get<std::string>());
 
-			app.process_player_entered(index);
+			g_app.process_player_entered(index);
 		}
 		else if (action == "player_disconnected")
-			app.process_player_disconnected(req["index"].get<int>());
+			g_app.process_player_disconnected(req["index"].get<int>());
 		else if (action == "player_left")
-			app.process_player_left(req["index"].get<int>());
+			g_app.process_player_left(req["index"].get<int>());
 		else if (action == "player_ready")
-			app.process_player_ready(req["index"].get<int>());
+			g_app.process_player_ready(req["index"].get<int>());
 		else if (action == "game_start")
-			app.process_game_start();
+			g_app.process_game_start();
 		else if (action == "report_board")
-			app.process_report_board(req["index"].get<int>(), req["board"].get<std::string>());
+			g_app.process_report_board(req["index"].get<int>(), req["board"].get<std::string>());
 		else if (action == "report_dead")
-			app.process_dead(req["index"].get<int>(), req["rank"].get<int>());
+			g_app.process_dead(req["index"].get<int>(), req["rank"].get<int>());
 		else if (action == "report_gameover")
-			app.process_gameover();
+			g_app.process_gameover();
 		else if (action == "attack")
 		{
 			auto index = req["index"].get<int>();
 			auto value = req["value"].get<int>();
-			app.process_attack(index, value);
+			g_app.process_attack(index, value);
 		}
 	},
 	[](Capture&) {
 		looper().add_event([](Capture&) {
-			auto& ui = main_window->ui;
 			ui.e_message_dialog(L"Host Has Disconnected")->event_listeners.add([](Capture&, EntityEvent e, void*) {
 				if (e == EntityDestroyed)
 				{
 					looper().add_event([](Capture&) {
-						app.quit_game();
+						g_app.quit_game();
 					}, Capture());
 				}
 				return true;
 			}, Capture());
 		}, Capture());
 	}, Capture());
-	if (app.client)
+	if (g_app.client)
 	{
 		nlohmann::json req;
 		req["action"] = "join_room";
-		req["name"] = w2s(app.my_name);
+		req["name"] = w2s(g_app.my_name);
 		auto str = req.dump();
-		app.client->send(str.data(), str.size());
+		g_app.client->send(str.data(), str.size());
 	}
 	else
 		ui.e_message_dialog(L"Join Room Failed");
@@ -779,9 +1013,9 @@ void MyApp::people_dead(int index)
 	auto total_people = 0;
 	auto dead_people = 0;
 	auto last_people = 0;
-	for (auto i = 0; i < app.players.size(); i++)
+	for (auto i = 0; i < g_app.players.size(); i++)
 	{
-		auto& p = app.players[i];
+		auto& p = g_app.players[i];
 		if (p.id)
 		{
 			total_people++;
@@ -799,11 +1033,11 @@ void MyApp::people_dead(int index)
 		rep["index"] = index;
 		rep["rank"] = rank;
 		auto str = rep.dump();
-		for (auto i = 1; i < app.players.size(); i++)
+		for (auto i = 1; i < g_app.players.size(); i++)
 		{
-			auto& p = app.players[i];
+			auto& p = g_app.players[i];
 			if (p.id && !p.disconnected)
-				app.server->send(p.id, str.data(), str.size(), false);
+				g_app.server->send(p.id, str.data(), str.size(), false);
 		}
 	}
 
@@ -811,7 +1045,7 @@ void MyApp::people_dead(int index)
 
 	if (total_people - dead_people == 1)
 	{
-		app.process_dead(last_people, 1);
+		g_app.process_dead(last_people, 1);
 
 		{
 			nlohmann::json rep;
@@ -819,31 +1053,31 @@ void MyApp::people_dead(int index)
 			rep["index"] = last_people;
 			rep["rank"] = 1;
 			auto str = rep.dump();
-			for (auto i = 1; i < app.players.size(); i++)
+			for (auto i = 1; i < g_app.players.size(); i++)
 			{
-				auto& p = app.players[i];
+				auto& p = g_app.players[i];
 				if (p.id && !p.disconnected)
-					app.server->send(p.id, str.data(), str.size(), false);
+					g_app.server->send(p.id, str.data(), str.size(), false);
 			}
 		}
 
-		for (auto i = 1; i < app.players.size(); i++)
+		for (auto i = 1; i < g_app.players.size(); i++)
 		{
-			auto& p = app.players[i];
+			auto& p = g_app.players[i];
 			if (p.id)
 				p.e_kick->set_visible(true);
 		}
-		app.process_gameover();
+		g_app.process_gameover();
 
 		{
 			nlohmann::json rep;
 			rep["action"] = "report_gameover";
 			auto str = rep.dump();
-			for (auto i = 1; i < app.players.size(); i++)
+			for (auto i = 1; i < g_app.players.size(); i++)
 			{
-				auto& p = app.players[i];
+				auto& p = g_app.players[i];
 				if (p.id && !p.disconnected)
-					app.server->send(p.id, str.data(), str.size(), false);
+					g_app.server->send(p.id, str.data(), str.size(), false);
 			}
 		}
 	}
@@ -851,8 +1085,6 @@ void MyApp::people_dead(int index)
 
 void MyApp::create_lan_scene()
 {
-	auto& ui = main_window->ui;
-
 	ui.parents.push(main_window->root);
 	ui.next_element_size = Vec2f(500.f, 0.f);
 	ui.next_element_padding = 8.f;
@@ -862,9 +1094,9 @@ void MyApp::create_lan_scene()
 	ui.e_begin_layout(LayoutHorizontal, 8.f);
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_text(L"Your Name");
-	ui.e_edit(300.f, app.my_name.c_str())->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
+	ui.e_edit(300.f, g_app.my_name.c_str())->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 		if (hash == FLAME_CHASH("text"))
-			app.my_name = c.current<cText>()->text.str();
+			g_app.my_name = c.current<cText>()->text.str();
 		return true;
 	}, Capture());
 	ui.e_end_layout();
@@ -885,8 +1117,6 @@ void MyApp::create_lan_scene()
 			req["action"] = "get_room";
 			auto str = req.dump();
 			board_cast(2434, str.data(), str.size(), 1, [](Capture& c, const char* ip, const char* msg, uint size) {
-				auto& ui = main_window->ui;
-
 				auto e_room_list = c.thiz<Entity>();
 				auto rep = nlohmann::json::parse(std::string(msg, size));
 				auto name = s2w(rep["name"].get<std::string>());
@@ -900,9 +1130,7 @@ void MyApp::create_lan_scene()
 		}, Capture().set_thiz(e_room_list));
 	}, Capture().set_thiz(e_room_list))->get_component(cEventReceiver)->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
 	ui.e_button(L"Create Room", [](Capture&) {
-		auto& ui = main_window->ui;
-
-		if (app.my_name.empty())
+		if (g_app.my_name.empty())
 			ui.e_message_dialog(L"Your Name Cannot Not Be Empty");
 		else
 		{
@@ -910,7 +1138,7 @@ void MyApp::create_lan_scene()
 			ui.e_text(L"Room Name");
 			ui.e_edit(100.f)->get_component(cText)->data_changed_listeners.add([](Capture& c, uint hash, void*) {
 				if (hash == FLAME_CHASH("text"))
-					app.room_name = c.current<cText>()->text.str();
+					g_app.room_name = c.current<cText>()->text.str();
 				return true;
 			}, Capture());
 			ui.e_text(L"Max People");
@@ -921,10 +1149,10 @@ void MyApp::create_lan_scene()
 					switch (index)
 					{
 					case 0:
-						app.room_max_people = 2;
+						g_app.room_max_people = 2;
 						break;
 					case 1:
-						app.room_max_people = 7;
+						g_app.room_max_people = 7;
 						break;
 					}
 				}
@@ -933,75 +1161,73 @@ void MyApp::create_lan_scene()
 			ui.e_combobox_item(L"2");
 			ui.e_combobox_item(L"7");
 			ui.e_end_combobox(0);
-			app.room_max_people = 2;
+			g_app.room_max_people = 2;
 			ui.e_begin_layout(LayoutHorizontal, 4.f);
 			ui.c_aligner(AlignMiddle, 0);
 			ui.e_button(L"OK", [](Capture& c) {
-				auto& ui = main_window->ui;
-
 				remove_layer(c.thiz<Entity>());
 
-				if (!app.room_name.empty())
+				if (!g_app.room_name.empty())
 				{
-					app.players.resize(app.room_max_people);
-					for (auto& p : app.players)
+					g_app.players.resize(g_app.room_max_people);
+					for (auto& p : g_app.players)
 						p.reset();
-					app.my_room_index = 0;
+					g_app.my_room_index = 0;
 					{
-						auto& me = app.players[0];
+						auto& me = g_app.players[0];
 						me.id = (void*)0xffff;
-						me.name = app.my_name;
+						me.name = g_app.my_name;
 					}
-					app.server = Server::create(SocketNormal, 2434,
+					g_app.server = Server::create(SocketNormal, 2434,
 					[](Capture&, void* id, const char* msg, uint size) {
 						auto req = nlohmann::json::parse(std::string(msg, size));
 						if (req["action"] == "get_room")
 						{
 							nlohmann::json rep;
-							rep["name"] = w2s(app.room_name);
-							rep["host"] = w2s(app.my_name);
+							rep["name"] = w2s(g_app.room_name);
+							rep["host"] = w2s(g_app.my_name);
 							auto str = rep.dump();
-							app.server->send(id, str.data(), str.size(), true);
+							g_app.server->send(id, str.data(), str.size(), true);
 						}
 					},
 					[](Capture&, void* id) {
-						if (!app.room_gaming)
+						if (!g_app.room_gaming)
 						{
-							for (auto i = 0; i < app.players.size(); i++)
+							for (auto i = 0; i < g_app.players.size(); i++)
 							{
-								auto& p = app.players[i];
+								auto& p = g_app.players[i];
 								if (!p.id)
 								{
 									{
 										nlohmann::json rep;
 										rep["action"] = "report_room";
-										rep["room_name"] = w2s(app.room_name);
-										rep["max_people"] = app.room_max_people;
+										rep["room_name"] = w2s(g_app.room_name);
+										rep["max_people"] = g_app.room_max_people;
 										rep["index"] = i;
 										auto str = rep.dump();
-										app.server->send(id, str.data(), str.size(), false);
+										g_app.server->send(id, str.data(), str.size(), false);
 									}
 									{
 										nlohmann::json rep;
 										rep["action"] = "player_entered";
-										rep["index"] = app.my_room_index;
-										rep["name"] = w2s(app.my_name);
+										rep["index"] = g_app.my_room_index;
+										rep["name"] = w2s(g_app.my_name);
 										auto str = rep.dump();
-										app.server->send(id, str.data(), str.size(), false);
+										g_app.server->send(id, str.data(), str.size(), false);
 									}
 
 									p.id = id;
-									app.server->set_client(id,
+									g_app.server->set_client(id,
 										[](Capture& c, const char* msg, uint size) {
 										auto index = c.data<int>();
-										auto& p = app.players[index];
+										auto& p = g_app.players[index];
 										auto req = nlohmann::json::parse(std::string(msg, size));
 										auto action = req["action"].get<std::string>();
 										if (action == "join_room")
 										{
 											p.name = s2w(req["name"].get<std::string>());
 
-											app.process_player_entered(index);
+											g_app.process_player_entered(index);
 
 											{
 												nlohmann::json rep;
@@ -1009,33 +1235,33 @@ void MyApp::create_lan_scene()
 												rep["index"] = index;
 												rep["name"] = w2s(p.name);
 												auto str = rep.dump();
-												for (auto i = 1; i < app.players.size(); i++)
+												for (auto i = 1; i < g_app.players.size(); i++)
 												{
 													if (i != index)
 													{
-														auto& p = app.players[i];
+														auto& p = g_app.players[i];
 														if (p.id && !p.disconnected)
-															app.server->send(p.id, str.data(), str.size(), false);
+															g_app.server->send(p.id, str.data(), str.size(), false);
 													}
 												}
 											}
 										}
 										else if (action == "ready")
 										{
-											app.process_player_ready(index);
+											g_app.process_player_ready(index);
 
 											{
 												nlohmann::json rep;
 												rep["action"] = "player_ready";
 												rep["index"] = index;
 												auto str = rep.dump();
-												for (auto i = 1; i < app.players.size(); i++)
+												for (auto i = 1; i < g_app.players.size(); i++)
 												{
 													if (i != index)
 													{
-														auto& p = app.players[i];
+														auto& p = g_app.players[i];
 														if (p.id && !p.disconnected)
-															app.server->send(p.id, str.data(), str.size(), false);
+															g_app.server->send(p.id, str.data(), str.size(), false);
 													}
 												}
 											}
@@ -1043,7 +1269,7 @@ void MyApp::create_lan_scene()
 										else if (action == "report_board")
 										{
 											auto d = req["board"].get<std::string>();
-											app.process_report_board(req["index"].get<int>(), d);
+											g_app.process_report_board(req["index"].get<int>(), d);
 
 											{
 												nlohmann::json rep;
@@ -1051,25 +1277,25 @@ void MyApp::create_lan_scene()
 												rep["index"] = index;
 												rep["board"] = d;
 												auto str = rep.dump();
-												for (auto i = 1; i < app.players.size(); i++)
+												for (auto i = 1; i < g_app.players.size(); i++)
 												{
 													if (i != index)
 													{
-														auto& p = app.players[i];
+														auto& p = g_app.players[i];
 														if (p.id && !p.disconnected)
-															app.server->send(p.id, str.data(), str.size(), false);
+															g_app.server->send(p.id, str.data(), str.size(), false);
 													}
 												}
 											}
 										}
 										else if (action == "report_dead")
-											app.people_dead(index);
+											g_app.people_dead(index);
 										else if (action == "attack")
 										{
 											auto target = req["target"].get<int>();
 											auto value = req["value"].get<int>();
-											if (target == app.my_room_index)
-												app.process_attack(index, value);
+											if (target == g_app.my_room_index)
+												g_app.process_attack(index, value);
 											else
 											{
 												nlohmann::json rep;
@@ -1077,35 +1303,35 @@ void MyApp::create_lan_scene()
 												rep["index"] = index;
 												rep["value"] = value;
 												auto str = rep.dump();
-												auto& p = app.players[target];
+												auto& p = g_app.players[target];
 												if (p.id && !p.disconnected)
-													app.server->send(p.id, str.data(), str.size(), false);
+													g_app.server->send(p.id, str.data(), str.size(), false);
 											}
 										}
 									},
 										[](Capture& c) {
 										auto index = c.data<int>();
 
-										app.process_player_disconnected(index);
+										g_app.process_player_disconnected(index);
 
 										{
 											nlohmann::json rep;
 											rep["action"] = "player_disconnected";
 											rep["index"] = index;
 											auto str = rep.dump();
-											for (auto i = 1; i < app.players.size(); i++)
+											for (auto i = 1; i < g_app.players.size(); i++)
 											{
 												if (i != index)
 												{
-													auto& p = app.players[i];
+													auto& p = g_app.players[i];
 													if (p.id && !p.disconnected)
-														app.server->send(p.id, str.data(), str.size(), false);
+														g_app.server->send(p.id, str.data(), str.size(), false);
 												}
 											}
 										}
 
-										if (app.room_gaming)
-											app.people_dead(index);
+										if (g_app.room_gaming)
+											g_app.people_dead(index);
 									}, Capture().set_data(&i));
 
 									break;
@@ -1113,11 +1339,11 @@ void MyApp::create_lan_scene()
 							}
 						}
 					}, Capture());
-					app.room_gaming = false;
+					g_app.room_gaming = false;
 					looper().add_event([](Capture&) {
 						main_window->root->remove_children(1, -1);
-						app.game_mode = GameVS;
-						app.create_game_scene();
+						g_app.game_mode = GameVS;
+						g_app.create_game_scene();
 					}, Capture());
 				}
 			}, Capture().set_thiz(e_layer));
@@ -1129,35 +1355,33 @@ void MyApp::create_lan_scene()
 		}
 	}, Capture());
 	ui.e_button(L"Join Room", [](Capture& c) {
-		auto& ui = main_window->ui;
 		auto e_room_list = c.thiz<Entity>();
 		auto selected = e_room_list->get_component(cList)->selected;
 		if (selected)
 		{
-			if (app.my_name.empty())
+			if (g_app.my_name.empty())
 				ui.e_message_dialog(L"Your Name Cannot Not Be Empty");
 			else
-				app.join_room(selected->get_component(cDataKeeper)->get_string_item(FLAME_CHASH("ip")));
+				g_app.join_room(selected->get_component(cDataKeeper)->get_string_item(FLAME_CHASH("ip")));
 		}
 		else
 			ui.e_message_dialog(L"You Need To Select A Room");
 	}, Capture().set_thiz(e_room_list));
 	ui.e_button(L"Direct Connect", [](Capture&) {
-		auto& ui = main_window->ui;
-		if (app.my_name.empty())
+		if (g_app.my_name.empty())
 			ui.e_message_dialog(L"Your Name Cannot Not Be Empty");
 		else
 		{
 			ui.e_input_dialog(L"IP", [](Capture&, bool ok, const wchar_t* text) {
 				if (ok)
-					app.join_room(w2s(text).c_str());
+					g_app.join_room(w2s(text).c_str());
 			}, Capture());
 		}
 	}, Capture());
 	ui.e_button(L"Back", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_home_scene();
+			g_app.create_home_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMax, AlignMin);
@@ -1169,36 +1393,35 @@ void MyApp::create_lan_scene()
 
 void MyApp::create_config_scene()
 {
-	auto& ui = main_window->ui;
 	ui.parents.push(main_window->root);
 	ui.e_begin_layout(LayoutVertical, 8.f);
 	ui.c_aligner(AlignMiddle, AlignMiddle);
 	ui.push_style(FontSize, common(Vec1u(20)));
-	ui.e_button(L"Key", [](Capture&) {
+	ui.e_button(L"KeyboardKey", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_key_scene();
+			g_app.create_key_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Sound", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_sound_scene();
+			g_app.create_sound_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Sensitiveness", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_sensitiveness_scene();
+			g_app.create_sensitiveness_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
 	ui.e_button(L"Back", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_home_scene();
+			g_app.create_home_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
@@ -1209,12 +1432,11 @@ void MyApp::create_config_scene()
 
 void MyApp::create_key_scene()
 {
-	auto& ui = main_window->ui;
 	ui.parents.push(main_window->root);
 	ui.e_begin_layout(LayoutVertical, 8.f);
 	ui.c_aligner(AlignMiddle, AlignMiddle);
 	ui.push_style(FontSize, common(Vec1u(20)));
-	auto key_info = find_enum(FLAME_CHASH("flame::Key"));
+	auto key_info = find_enum(FLAME_CHASH("flame::KeyboardKey"));
 	for (auto i = 0; i < KEY_COUNT; i++)
 	{
 		ui.e_begin_layout(LayoutHorizontal, 4.f);
@@ -1231,9 +1453,9 @@ void MyApp::create_key_scene()
 			if (action == KeyStateDown)
 			{
 				auto& capture = c.data<Capturing>();
-				key_map[capture.i] = (Key)value;
-				auto key_info = find_enum(FLAME_CHASH("flame::Key"));
-				capture.t->set_text(s2w(key_info->find_item((Key)value)->name.str()).c_str());
+				key_map[capture.i] = (KeyboardKey)value;
+				auto key_info = find_enum(FLAME_CHASH("flame::KeyboardKey"));
+				capture.t->set_text(s2w(key_info->find_item((KeyboardKey)value)->name.str()).c_str());
 			}
 			return false;
 		}, Capture().set_data(&capture), 0);
@@ -1243,7 +1465,7 @@ void MyApp::create_key_scene()
 	ui.e_button(L"Back", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_config_scene();
+			g_app.create_config_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
@@ -1254,7 +1476,6 @@ void MyApp::create_key_scene()
 
 void MyApp::create_sound_scene()
 {
-	auto& ui = main_window->ui;
 	ui.parents.push(main_window->root);
 	ui.e_begin_layout(LayoutVertical, 8.f);
 	ui.c_aligner(AlignMiddle, AlignMiddle);
@@ -1275,11 +1496,11 @@ void MyApp::create_sound_scene()
 			capture.t->set_text(wfmt(L"FX %d", v).c_str());
 
 			auto f = v / 10.f;
-			app.sound_move_src->set_volume(f * sound_move_volumn);
-			app.sound_soft_drop_src->set_volume(f * sound_soft_drop_volumn);
-			app.sound_hard_drop_src->set_volume(f * sound_hard_drop_volumn);
-			app.sound_clear_src->set_volume(f * sound_clear_volumn);
-			app.sound_hold_src->set_volume(f * sound_hold_volumn);
+			g_app.sound_move_src->set_volume(f * sound_move_volumn);
+			g_app.sound_soft_drop_src->set_volume(f * sound_soft_drop_volumn);
+			g_app.sound_hard_drop_src->set_volume(f * sound_hard_drop_volumn);
+			g_app.sound_clear_src->set_volume(f * sound_clear_volumn);
+			g_app.sound_hold_src->set_volume(f * sound_hold_volumn);
 		}
 	};
 	capture.v = -1;
@@ -1290,7 +1511,7 @@ void MyApp::create_sound_scene()
 	ui.e_button(L"Back", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_config_scene();
+			g_app.create_config_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
@@ -1301,7 +1522,6 @@ void MyApp::create_sound_scene()
 
 void MyApp::create_sensitiveness_scene()
 {
-	auto& ui = main_window->ui;
 	ui.parents.push(main_window->root);
 	ui.e_begin_layout(LayoutVertical, 8.f);
 	ui.c_aligner(AlignMiddle, AlignMiddle);
@@ -1366,7 +1586,7 @@ void MyApp::create_sensitiveness_scene()
 	ui.e_button(L"Back", [](Capture&) {
 		looper().add_event([](Capture&) {
 			main_window->root->remove_children(1, -1);
-			app.create_config_scene();
+			g_app.create_config_scene();
 		}, Capture());
 	}, Capture());
 	ui.c_aligner(AlignMiddle, 0);
@@ -1386,8 +1606,6 @@ void MyApp::set_board_tiles(cTileMap* m)
 
 void MyApp::create_game_scene()
 {
-	auto& ui = main_window->ui;
-
 	ui.parents.push(main_window->root);
 	ui.push_style(FontSize, common(Vec1u(20)));
 
@@ -1452,9 +1670,9 @@ void MyApp::create_game_scene()
 			e_start_or_ready = ui.e_button(L"Start", [](Capture&) {
 				if ([]() {
 					auto n = 0;
-						for (auto i = 1; i < app.players.size(); i++)
+						for (auto i = 1; i < g_app.players.size(); i++)
 						{
-							auto& p = app.players[i];
+							auto& p = g_app.players[i];
 								if (!p.id)
 									continue;
 								if (!p.ready)
@@ -1464,23 +1682,23 @@ void MyApp::create_game_scene()
 					return n != 0;
 				}())
 				{
-					for (auto i = 1; i < app.players.size(); i++)
+					for (auto i = 1; i < g_app.players.size(); i++)
 					{
-						auto& p = app.players[i];
+						auto& p = g_app.players[i];
 						if (p.id && !p.disconnected)
 							p.e_kick->set_visible(false);
 					}
-					app.process_game_start();
+					g_app.process_game_start();
 
 					{
 						nlohmann::json req;
 						req["action"] = "game_start";
 						auto str = req.dump();
-						for (auto i = 1; i < app.players.size(); i++)
+						for (auto i = 1; i < g_app.players.size(); i++)
 						{
-							auto& p = app.players[i];
+							auto& p = g_app.players[i];
 							if (p.id && !p.disconnected)
-								app.server->send(p.id, str.data(), str.size(), false);
+								g_app.server->send(p.id, str.data(), str.size(), false);
 						}
 					}
 				}
@@ -1489,28 +1707,27 @@ void MyApp::create_game_scene()
 		else
 		{
 			e_start_or_ready = ui.e_button(L"Ready", [](Capture&) {
-				auto& me = app.players[app.my_room_index];
-				if (!app.room_gaming && !me.ready)
+				auto& me = g_app.players[g_app.my_room_index];
+				if (!g_app.room_gaming && !me.ready)
 				{
 					me.ready = true;
 					nlohmann::json req;
 					req["action"] = "ready";
 					auto str = req.dump();
-					app.client->send(str.data(), str.size());
+					g_app.client->send(str.data(), str.size());
 
-					app.process_player_ready(app.my_room_index);
+					g_app.process_player_ready(g_app.my_room_index);
 				}
 			}, Capture());
 		}
 	}
 
 	ui.e_button(Icon_TIMES, [](Capture&) {
-		auto& ui = main_window->ui;
 		ui.e_confirm_dialog(L"Quit?", [](Capture&, bool yes) {
 			if (yes)
 			{
 				looper().add_event([](Capture&) {
-					app.quit_game();
+					g_app.quit_game();
 				}, Capture());
 			}
 		}, Capture());
@@ -1536,7 +1753,7 @@ void MyApp::begin_count_down()
 		if (t == 0)
 		{
 			e->set_visible(false);
-			app.gaming = true;
+			g_app.gaming = true;
 		}
 		else
 		{
@@ -1564,13 +1781,13 @@ void MyApp::start_game()
 {
 	for (auto i = 0; i < players.size(); i++)
 	{
-		auto& p = app.players[i];
+		auto& p = g_app.players[i];
 		if (p.id)
 		{
 			p.ready = false;
 			p.dead = false;
 			p.c_main->clear_cells(TileGrid);
-			if (i == app.my_room_index)
+			if (i == g_app.my_room_index)
 			{
 				p.c_hold->clear_cells(-1);
 				for (auto j = 0; j < size(p.c_next); j++)
@@ -1734,14 +1951,12 @@ void MyApp::quit_game()
 
 	looper().add_event([](Capture&) {
 		main_window->root->remove_children(1, -1);
-		app.create_home_scene();
+		g_app.create_home_scene();
 	}, Capture());
 }
 
 void MyApp::do_game_logic()
 {
-	auto& ui = main_window->ui;
-
 	auto& key_states = main_window->s_event_dispatcher->key_states;
 
 	if (game_mode != GameVS)
@@ -1760,18 +1975,18 @@ void MyApp::do_game_logic()
 				ui.c_aligner(AlignMiddle, 0);
 				ui.e_button(L"Resume", [](Capture& c) {
 					remove_layer(c.thiz<Entity>());
-					app.begin_count_down();
+					g_app.begin_count_down();
 				}, Capture().set_thiz(layer));
 				ui.c_aligner(AlignMiddle, 0);
 				ui.e_button(L"Restart", [](Capture& c) {
 					remove_layer(c.thiz<Entity>());
-					app.play_time = 0.f;
-					app.start_game();
+					g_app.play_time = 0.f;
+					g_app.start_game();
 				}, Capture().set_thiz(layer));
 				ui.c_aligner(AlignMiddle, 0);
 				ui.e_button(L"Quit", [](Capture& c) {
 					remove_layer(c.thiz<Entity>());
-					app.quit_game();
+					g_app.quit_game();
 				}, Capture().set_thiz(layer));
 				ui.c_aligner(AlignMiddle, 0);
 				ui.e_end_dialog();
@@ -1919,12 +2134,12 @@ void MyApp::do_game_logic()
 						ui.e_text((L"Score: " + wfmt(L"%d", score)).c_str());
 						ui.e_button(L"Quit", [](Capture& c) {
 							remove_layer(c.thiz<Entity>());
-							app.quit_game();
+							g_app.quit_game();
 						}, Capture().set_thiz(layer));
 						ui.c_aligner(AlignMiddle, 0);
 						ui.e_button(L"Restart", [](Capture& c) {
 							remove_layer(c.thiz<Entity>());
-							app.start_game();
+							g_app.start_game();
 						}, Capture().set_thiz(layer));
 						ui.c_aligner(AlignMiddle, 0);
 						ui.e_end_dialog();
@@ -2174,7 +2389,7 @@ void MyApp::do_game_logic()
 									c_text_special->set_text(special_str.c_str());
 									looper().remove_all_events(FLAME_CHASH("special_text"));
 									looper().add_event([](Capture&) {
-										app.c_text_special->entity->set_visible(false);
+										g_app.c_text_special->entity->set_visible(false);
 									}, Capture(), 1.f, FLAME_CHASH("special_text"));
 								}
 
@@ -2378,13 +2593,11 @@ void MyApp::do_game_logic()
 
 int main(int argc, char **args)
 {
-	app.create();
+	g_app.create();
 
 	new MainForm();
 
-	looper().loop([](Capture&) {
-		app.run();
-	}, Capture());
+	g_app.run();
 
 	return 0;
 }

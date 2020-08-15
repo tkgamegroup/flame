@@ -22,7 +22,7 @@ namespace flame
 		else
 		{
 			auto e = items->children[index].get();
-			text->set_text(((cTextPrivate*)e->get_component(cText::type_hash))->text.c_str());
+			text->set_text(e->get_component_t<cTextPrivate>()->text.c_str());
 			e->set_state((StateFlags)(e->state | StateSelected));
 		}
 		Entity::report_data_changed(this, S<ch("index")>::v);
@@ -38,7 +38,7 @@ namespace flame
 				auto max_width = 0;
 				for (auto& e : menu->items->children)
 				{
-					auto ci = (cComboboxItemPrivate*)e->get_component(cComboboxItem::type_hash);
+					auto ci = e->get_component_t<cComboboxItemPrivate>();
 					if (ci)
 					{
 						ci->combobox = this;
