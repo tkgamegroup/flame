@@ -1,45 +1,45 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity src="menu_bar">
     <entity src="top_menu">
-      <f:cText text="1" />
-      <f:cMenu>
+      <cText text="1" />
+      <cMenu>
         <items>
           <entity src="menu_items">
             <entity src="menu_item">
-              <f:cText text="apple"/>
+              <cText text="apple"/>
             </entity>
             <entity src="menu_item">
-              <f:cText text="banana"/>
+              <cText text="banana"/>
             </entity>
             <entity src="menu_item">
-              <f:cText text="cat"/>
+              <cText text="cat"/>
             </entity>
             <entity src="sub_menu">
-              <f:cText text="1"/>
-              <f:cMenu>
+              <cText text="1"/>
+              <cMenu>
                 <items>
                   <entity src="menu_items">
                     <entity src="menu_item" />
                   </entity>
                 </items>
-              </f:cMenu>
+              </cMenu>
             </entity>
           </entity>
         </items>
-      </f:cMenu>
+      </cMenu>
     </entity>
     <entity src="top_menu">
-      <f:cText text="2" />
-      <f:cMenu>
+      <cText text="2" />
+      <cMenu>
         <items>
           <entity src="menu_items">
             <entity src="menu_item">
-              <f:cText text="1"/>
+              <cText text="1"/>
             </entity>
           </entity>
         </items>
-      </f:cMenu>
+      </cMenu>
     </entity>
   </entity>
 </prefab>

@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity src="vscroller" >
-    <f:cElement width="200" height="100" padding="4,4,4,4" border="1" />
+    <cElement width="200" height="100" padding="4,4,4,4" border="1" />
     <entity src="scroll_view" >
       <entity src="list">
-        <f:cElement padding="0,0,0,20" />
-        <f:cAligner alignx="AlignMinMax" />
+        <cElement padding="0,0,0,20" />
+        <cAligner alignx="AlignMinMax" />
         <entity src="list_item" />
         <entity src="list_item" />
         <entity src="list_item" />

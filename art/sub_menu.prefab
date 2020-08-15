@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity>
-    <f:cElement padding="4,2,18,2" />
-    <f:cText text="sub_menu" />
-    <f:cEventReceiver />
-    <f:cAligner alignx="AlignMinMax" />
-    <f:cStyle rule=
+    <cElement padding="4,2,18,2" />
+    <cText text="sub_menu" />
+    <cEventReceiver />
+    <cAligner alignx="AlignMinMax" />
+    <cStyle rule=
            "StateHovering;flame::cElement.fill_color=230,230,230,255#
             StateNone;flame::cElement.fill_color=220,220,220,255" />
-    <f:cMenu type="MenuSub" />
-    <f:cLayout />
+    <cMenu type="MenuSub" />
+    <cLayout />
     <entity>
-      <f:cElement padding="4,2,4,2" />
-      <f:cText text="" />
-      <f:cAligner alignx="AlignMax" absolute="true" />
+      <cElement padding="4,2,4,2" />
+      <cText text="" />
+      <cAligner alignx="AlignMax" absolute="true" />
     </entity>
   </entity>
 </prefab>

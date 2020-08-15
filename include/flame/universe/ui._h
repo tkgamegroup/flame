@@ -278,13 +278,6 @@ namespace flame
 			return e;
 		}
 
-		inline Entity* e_size_dragger()
-		{
-			auto e = e_empty();
-			cSizeDragger::make(current_root->world, e);
-			return e;
-		}
-
 		inline Entity* e_begin_window(const wchar_t* title, bool close_button = true)
 		{
 			Entity* el;

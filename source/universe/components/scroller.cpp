@@ -50,7 +50,7 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_track_element()
 	{
-		track_element->entity->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		track_element_listener = track_element->entity->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->track_element)
 			{
@@ -59,6 +59,11 @@ namespace flame
 					thiz->scroll(0.f);
 			}
 		}, Capture().set_thiz(this));
+	}
+
+	void cScrollerPrivate::on_lost_track_element()
+	{
+		track_element->entity->remove_data_changed_listener(track_element_listener);
 	}
 
 	void cScrollerPrivate::on_gain_thumb_event_receiver()
@@ -88,8 +93,8 @@ namespace flame
 			if (!view)
 			{
 				auto e = (Entity*)p;
-				auto cs = e->get_component_t<cScrollViewPrivate>();
-				if (cs)
+				auto cv = e->get_component_t<cScrollViewPrivate>();
+				if (cv)
 				{
 					auto ce = e->get_component_t<cElementPrivate>();
 					auto cl = e->get_component_t<cLayoutPrivate>();
@@ -100,7 +105,7 @@ namespace flame
 						view_layout = cl;
 					}
 
-					e->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+					view->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 						auto thiz = c.thiz<cScrollerPrivate>();
 						if (t == thiz->view_element)
 						{

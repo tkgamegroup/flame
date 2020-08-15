@@ -32,8 +32,9 @@ namespace flame
 	{
 		if (c == menu)
 		{
-			if (data_name_hash == S<ch("items")>::v)
+			switch (data_name_hash)
 			{
+			case ch("items"):
 				auto i = 0;
 				auto max_width = 0;
 				for (auto& e : menu->items->children)
@@ -46,6 +47,12 @@ namespace flame
 						i++;
 					}
 				}
+
+				menu->items->add_data_changed_listener([](Capture& c, Component* t, uint64 data_name_hash) {
+
+				}, Capture().set_thiz(this));
+
+				break;
 			}
 		}
 	}

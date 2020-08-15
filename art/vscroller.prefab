@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity >
-    <f:cElement width="100" height="100" />
-    <f:cEventReceiver ignore_occluders="true" />
-    <f:cLayout />
+    <cElement width="100" height="100" />
+    <cEventReceiver ignore_occluders="true" />
+    <cLayout />
     <entity name="scrollbar_track">
-      <f:cElement width="10" fill_color="245,245,245,255" />
-      <f:cAligner alignx="AlignMax" aligny="AlignMinMax" />
-      <f:cEventReceiver />
+      <cElement width="10" fill_color="245,245,245,255" />
+      <cAligner alignx="AlignMax" aligny="AlignMinMax" />
+      <cEventReceiver />
       <entity name="scrollbar_thumb">
-        <f:cElement width="10" height="10" />
-        <f:cEventReceiver />
-        <f:cStyle rule=
+        <cElement width="10" height="10" />
+        <cEventReceiver />
+        <cStyle rule=
            "StateHovering,StateActive;flame::cElement.fill_color=91,91,91,255#
             StateActive;flame::cElement.fill_color=194,195,201,255#
             StateHovering;flame::cElement.fill_color=104,104,104,255#
             StateNone;flame::cElement.fill_color=194,195,201,255" />
       </entity>
     </entity>
-    <f:cScroller type="ScrollerVertical" />
+    <cScroller type="ScrollerVertical" />
   </entity>
 </prefab>

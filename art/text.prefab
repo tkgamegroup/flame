@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity>
-    <f:cElement />
-	  <f:cText />
+    <cElement />
+	  <cText />
   </entity>
 </prefab>

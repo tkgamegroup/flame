@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity src="combobox">
-    <f:cMenu>
+    <cMenu>
       <items>
         <entity src="menu_items">
           <entity src="combobox_item">
-            <f:cText text="apple"/>
+            <cText text="apple"/>
           </entity>
           <entity src="combobox_item">
-            <f:cText text="banana"/>
+            <cText text="banana"/>
           </entity>
           <entity src="combobox_item">
-            <f:cText text="cat"/>
+            <cText text="cat"/>
           </entity>
         </entity>
       </items>
-    </f:cMenu>
+    </cMenu>
   </entity>
 </prefab>

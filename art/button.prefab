@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity>
-    <f:cElement padding="4,2,4,2" />
-    <f:cText text="button" />
-    <f:cEventReceiver />
-    <f:cStyle rule=
+    <cElement padding="4,2,4,2" />
+    <cText text="button" />
+    <cEventReceiver />
+    <cStyle rule=
            "StateHovering,StateActive;flame::cElement.fill_color=69,94,222,255#
             StateActive;flame::cElement.fill_color=86,119,252,255#
             StateHovering;flame::cElement.fill_color=78,108,239,255#

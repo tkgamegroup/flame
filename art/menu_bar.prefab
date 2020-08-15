@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity >
-    <f:cElement fill_color="220,220,220,255" />
-    <f:cAligner alignx="AlignMinMax" />
-    <f:cLayout type="LayoutHorizontal" gap="4.0" />
+    <cElement fill_color="220,220,220,255" />
+    <cAligner alignx="AlignMinMax" />
+    <cLayout type="LayoutHorizontal" gap="4.0" />
   </entity>
 </prefab>

@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity>
-    <f:cElement width="100.0" padding="4,2,18,2" border="1.0" />
-    <f:cText text="" auto_width="false" />
-    <f:cEventReceiver />
-    <f:cStyle rule=
+    <cElement width="100.0" padding="4,2,18,2" border="1.0" />
+    <cText text="" auto_width="false" />
+    <cEventReceiver />
+    <cStyle rule=
            "StateHovering;flame::cElement.fill_color=230,230,230,255#
             StateNone;flame::cElement.fill_color=0,0,0,0" />
-    <f:cMenu type="MenuButton" />
-    <f:cCombobox />
-    <f:cLayout />
+    <cMenu type="MenuButton" />
+    <cCombobox />
+    <cLayout />
     <entity>
-      <f:cElement padding="4,2,4,2" />
-      <f:cText text="" />
-      <f:cAligner alignx="AlignMax" absolute="true" />
+      <cElement padding="4,2,4,2" />
+      <cText text="" />
+      <cAligner alignx="AlignMax" absolute="true" />
     </entity>
   </entity>
 </prefab>

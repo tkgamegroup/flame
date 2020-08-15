@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity>
-    <f:cElement />
-    <f:cEventReceiver />
-    <f:cImage/>
-    <f:cStyle rule="
+    <cElement />
+    <cEventReceiver />
+    <cImage/>
+    <cStyle rule="
               StateHovering,StateActive;flame::cImage.src=3#
               StateActive;flame::cImage.src=1#
               StateHovering;cImage.src=2#StateNone;flame::cImage.src=1" />

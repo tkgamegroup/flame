@@ -24,6 +24,7 @@ namespace flame
 		cElementPrivate* target_element = nullptr;
 
 		void* mouse_scroll_listener = nullptr;
+		void* track_element_listener = nullptr;
 		void* thumb_mouse_listener = nullptr;
 
 		ScrollerType get_type() const override { return type; }
@@ -34,6 +35,7 @@ namespace flame
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 		void on_gain_track_element();
+		void on_lost_track_element();
 		void on_gain_thumb_event_receiver();
 		void on_lost_thumb_event_receiver();
 

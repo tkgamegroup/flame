@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<prefab xmlns:f="flame">
+<prefab>
   <entity>
-    <f:cElement />
-    <f:cAligner />
-    <f:cLayout type="LayoutVertical" gap="2.0" />
-    <f:cEventReceiver />
-    <f:cList />
+    <cElement />
+    <cAligner />
+    <cLayout type="LayoutVertical" gap="2.0" />
+    <cEventReceiver />
+    <cList />
   </entity>
 </prefab>

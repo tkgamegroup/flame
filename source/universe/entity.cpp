@@ -568,11 +568,14 @@ namespace flame
 					{
 						if (r.type == RefComponent)
 						{
-							auto target = (Component*)r.target;
-							std::erase_if(((ComponentAux*)target->aux)->list_ref_by, [&](const auto& i) {
-								return i == c.second.get();
-							});
-							r.lost(c.second.get());
+							if (r.place != PlaceLocal)
+							{
+								auto target = (Component*)r.target;
+								std::erase_if(((ComponentAux*)target->aux)->list_ref_by, [&](const auto& i) {
+									return i == c.second.get();
+								});
+								r.lost(c.second.get());
+							}
 						}
 						else
 							r.lost(c.second.get());
@@ -727,55 +730,55 @@ namespace flame
 			{
 				auto sp = SUS::split(name, ':');
 				if (sp.size() == 2)
+					name = load_states.top().find_ns(sp[0]) + "::" + sp[1];
+				else
+					name = "flame::" + name;
+				auto udt = find_udt(name.c_str());
+				if (udt)
 				{
-					auto name = load_states.top().find_ns(sp[0]) + "::" + sp[1];
-					auto udt = find_udt(name.c_str());
-					if (udt)
+					auto c = dst->get_component(std::hash<std::string>()(name));
+					if (!c)
 					{
-						auto c = dst->get_component(std::hash<std::string>()(name));
-						if (!c)
+						auto fc = udt->find_function("create");
+						if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 						{
-							auto fc = udt->find_function("create");
-							if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
-							{
-								fc->call(nullptr, &c, {});
-								dst->add_component((Component*)c);
-							}
-						}
-						if (c)
-						{
-							for (auto a : n_c.attributes())
-							{
-								auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
-								if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
-								{
-									auto type = fs->get_parameter(0);
-									void* d = type->create();
-									type->unserialize(d, a.value());
-									void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
-									fs->call(c, nullptr, parms);
-									type->destroy(d);
-								}
-								else
-									printf("unknow attribute: %s\n", a.name());
-							}
-							for (auto n : n_c.children())
-							{
-								auto fs = udt->find_function((std::string("set_") + n.name()).c_str());
-								if (fs->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Entity"), nullptr))
-								{
-									auto e = f_new<EntityPrivate>();
-									load_prefab(e, n.child("entity"));
-									a2f<void(*)(void*, void*)>(fs->get_address(c))(c, e);
-								}
-								else
-									printf("unknow attribute: %s\n", n.name());
-							}
+							fc->call(nullptr, &c, {});
+							dst->add_component((Component*)c);
 						}
 					}
-					else
-						printf("cannot find udt: %s\n", name.c_str());
+					if (c)
+					{
+						for (auto a : n_c.attributes())
+						{
+							auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
+							if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
+							{
+								auto type = fs->get_parameter(0);
+								void* d = type->create();
+								type->unserialize(d, a.value());
+								void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
+								fs->call(c, nullptr, parms);
+								type->destroy(d);
+							}
+							else
+								printf("unknow attribute: %s\n", a.name());
+						}
+						for (auto n : n_c.children())
+						{
+							auto fs = udt->find_function((std::string("set_") + n.name()).c_str());
+							if (fs->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Entity"), nullptr))
+							{
+								auto e = f_new<EntityPrivate>();
+								load_prefab(e, n.child("entity"));
+								a2f<void(*)(void*, void*)>(fs->get_address(c))(c, e);
+							}
+							else
+								printf("unknow attribute: %s\n", n.name());
+						}
+					}
 				}
+				else
+					printf("cannot find udt: %s\n", name.c_str());
 			}
 		}
 	}

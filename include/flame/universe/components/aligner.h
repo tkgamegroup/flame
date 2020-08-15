@@ -24,12 +24,14 @@ namespace flame
 		virtual float get_height_factor() const = 0;
 		virtual void set_height_factor(float f) = 0;
 
+		// no padding
 		virtual bool get_absolute() const = 0;
+		// no padding
 		virtual void set_absolute(bool a) = 0;
 
-		// left top right bottom
+		// L T R B
 		virtual Vec4f get_margin() const = 0;
-		// left top right bottom
+		// L T R B
 		virtual void set_margin(const Vec4f& m) = 0;
 
 		virtual bool get_include_in_layout() const = 0;
