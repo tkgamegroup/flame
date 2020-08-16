@@ -6,9 +6,10 @@ namespace flame
 {
 	void cListPrivate::on_gain_event_receiver()
 	{
-		//if (select_air_when_clicked)
 		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
-			c.thiz<cListPrivate>()->set_selected(nullptr);
+			auto thiz = c.thiz<cListPrivate>();
+			if (thiz->select_air_when_clicked)
+				thiz->set_selected(nullptr);
 		}, Capture().set_thiz(this));
 	}
 

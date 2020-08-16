@@ -5,6 +5,6 @@
     <cAligner />
     <cLayout type="LayoutVertical" gap="2" />
     <cEventReceiver />
-    <cList />
+    <cTree />
   </entity>
 </prefab>
