@@ -10,7 +10,7 @@
             StateNone;flame::cElement.fill_color=220,220,220,255" />
     <cMenu type="MenuSub" />
     <cLayout />
-    <entity>
+    <entity name="arrow" >
       <cElement padding="4,2,4,2" />
       <cText text="" />
       <cAligner alignx="AlignMax" absolute="true" />

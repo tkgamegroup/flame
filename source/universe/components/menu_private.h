@@ -16,8 +16,7 @@ namespace flame
 		void* root_mouse_listener = nullptr;
 		
 		MenuType type = MenuTop;
-		std::unique_ptr<EntityPrivate, Delector> items;
-		cElementPrivate* items_element = nullptr;
+		EntityPrivate* items = nullptr;
 		EntityPrivate* root = nullptr;
 		cEventReceiverPrivate* root_event_receiver = nullptr;
 		bool opened = false;
@@ -26,8 +25,6 @@ namespace flame
 		MenuType get_type() const override { return type; }
 		void set_type(MenuType t) override { type = t; }
 
-		void set_items(Entity* e) override;
-
 		void open();
 		void close();
 
@@ -35,5 +32,6 @@ namespace flame
 		void on_lost_event_receiver();
 
 		void on_local_message(Message msg, void* p) override;
+		void on_child_message(Message msg, void* p) override;
 	};
 }

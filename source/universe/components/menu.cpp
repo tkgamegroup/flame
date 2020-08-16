@@ -8,29 +8,10 @@ namespace flame
 {
 	static cMenuPrivate* curr_menu = nullptr;
 
-	void cMenuPrivate::set_items(Entity* _e) 
-	{
-		auto e = (EntityPrivate*)_e;
-		auto ce = e->get_component_t<cElementPrivate>();
-		if (!ce)
-		{
-			printf("cannot set items of menu, items must contains a cElement component\n");
-			return;
-		}
-		items.reset(e); 
-		items_element = ce;
-		Entity::report_data_changed(this, S<ch("items")>::v);
-	}
-
 	void cMenuPrivate::open()
 	{
 		if (opened)
 			return;
-
-		auto pos = element->get_point((type == MenuTop || type == MenuButton) ? 3 : 1);
-		items_element->set_x(pos.x());
-		items_element->set_y(pos.y());
-		root->add_child(items.get());
 
 		if (type != MenuButton)
 		{
@@ -42,6 +23,19 @@ namespace flame
 					cm->close();
 			}
 		}
+
+		opened = true;
+
+		auto items_element = items->get_component_t<cElementPrivate>();
+		if (items_element)
+		{
+			auto pos = element->get_point((type == MenuTop || type == MenuButton) ? 3 : 1);
+			items_element->set_x(pos.x());
+			items_element->set_y(pos.y());
+		}
+		((EntityPrivate*)entity)->remove_child(items, false);
+		items->set_visible(true);
+		root->add_child(items);
 
 		if (type != MenuSub)
 		{
@@ -59,7 +53,6 @@ namespace flame
 				curr_menu = this;
 		}
 
-		opened = true;
 		frame = looper().get_frame();
 	}
 
@@ -85,7 +78,9 @@ namespace flame
 				curr_menu = nullptr;
 		}
 
-		root->remove_child(items.get(), false);
+		root->remove_child(items, false);
+		items->set_visible(false);
+		entity->add_child(items);
 		opened = false;
 	}
 
@@ -128,6 +123,21 @@ namespace flame
 		case MessageLeftWorld:
 			root = nullptr;
 			root_event_receiver = nullptr;
+			break;
+		}
+	}
+
+	void cMenuPrivate::on_child_message(Message msg, void* p)
+	{
+		switch (msg)
+		{
+		case MessageAdded:
+			if (!items && ((EntityPrivate*)p)->name != "arrow")
+				items = (EntityPrivate*)p;
+			break;
+		case MessageRemoved:
+			if (items == p && !opened)
+				items = nullptr;
 			break;
 		}
 	}

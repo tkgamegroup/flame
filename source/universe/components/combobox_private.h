@@ -16,14 +16,12 @@ namespace flame
 
 		int get_index() const override { return index; }
 		void set_index(int index) override;
-
-		void on_local_data_changed(Component* c, uint64 data_name_hash) override;
 	};
 
 	struct cComboboxItemPrivate : cComboboxItem // R ~ on_*
 	{
-		cComboboxPrivate* combobox = nullptr;
-		int index = -1;
+		cComboboxPrivate* combobox = nullptr; // R ref place=ancestor
+		cComboboxPrivate* staging_combobox = nullptr;
 
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 
@@ -31,5 +29,6 @@ namespace flame
 
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
+		void on_lost_combobox();
 	};
 }

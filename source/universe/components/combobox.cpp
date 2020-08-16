@@ -10,7 +10,7 @@ namespace flame
 	{
 		if (!menu || index == i)
 			return;
-		auto items = menu->items.get();
+		auto items = menu->items;
 		if (index != -1)
 		{
 			auto e = items->children[index].get();
@@ -28,35 +28,6 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("index")>::v);
 	}
 
-	void cComboboxPrivate::on_local_data_changed(Component* c, uint64 data_name_hash)
-	{
-		if (c == menu)
-		{
-			switch (data_name_hash)
-			{
-			case ch("items"):
-				auto i = 0;
-				auto max_width = 0;
-				for (auto& e : menu->items->children)
-				{
-					auto ci = e->get_component_t<cComboboxItemPrivate>();
-					if (ci)
-					{
-						ci->combobox = this;
-						ci->index = i;
-						i++;
-					}
-				}
-
-				menu->items->add_data_changed_listener([](Capture& c, Component* t, uint64 data_name_hash) {
-
-				}, Capture().set_thiz(this));
-
-				break;
-			}
-		}
-	}
-
 	cCombobox* cCombobox::create()
 	{
 		return f_new<cComboboxPrivate>();
@@ -66,13 +37,19 @@ namespace flame
 	{
 		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 			auto thiz = c.thiz<cComboboxItemPrivate>();
-			thiz->combobox->set_index(thiz->index);
+			if (thiz->staging_combobox)
+				thiz->staging_combobox->set_index(((EntityPrivate*)thiz->entity)->index);
 		}, Capture().set_thiz(this));
 	}
 
 	void cComboboxItemPrivate::on_lost_event_receiver()
 	{
 		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+	}
+
+	void cComboboxItemPrivate::on_lost_combobox()
+	{
+		staging_combobox = combobox->menu->opened ? combobox : nullptr;
 	}
 
 	cComboboxItem* cComboboxItem::create()

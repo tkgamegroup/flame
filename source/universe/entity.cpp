@@ -40,7 +40,7 @@ namespace flame
 			global_visibility = visible && parent->global_visibility;
 		else
 		{
-			if (world->root.get() == this)
+			if (!world || world->root.get() == this)
 				global_visibility = true;
 			else
 				global_visibility = false;
@@ -457,12 +457,6 @@ namespace flame
 									if (r.staging)
 										break;
 									e = e->parent;
-								}
-								if (!r.staging)
-								{
-									printf("add child failed, this child contains a component %s that requires ancestor's component %s, which do not exist\n", c.second->type_name, r.name.c_str());
-									ok = false;
-									return false;
 								}
 								break;
 							}

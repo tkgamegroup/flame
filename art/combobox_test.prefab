@@ -1,20 +1,16 @@
 <?xml version="1.0"?>
 <prefab>
   <entity src="combobox">
-    <cMenu>
-      <items>
-        <entity src="menu_items">
-          <entity src="combobox_item">
-            <cText text="apple"/>
-          </entity>
-          <entity src="combobox_item">
-            <cText text="banana"/>
-          </entity>
-          <entity src="combobox_item">
-            <cText text="cat"/>
-          </entity>
-        </entity>
-      </items>
-    </cMenu>
+    <entity src="menu_items">
+      <entity src="combobox_item">
+        <cText text="apple"/>
+      </entity>
+      <entity src="combobox_item">
+        <cText text="banana"/>
+      </entity>
+      <entity src="combobox_item">
+        <cText text="cat"/>
+      </entity>
+    </entity>
   </entity>
 </prefab>

@@ -17,8 +17,6 @@ namespace flame
 		virtual MenuType get_type() const = 0;
 		virtual void set_type(MenuType type) = 0;
 
-		virtual void set_items(Entity* e) = 0;
-
 		FLAME_UNIVERSE_EXPORTS static cMenu* create();
 	};
 }

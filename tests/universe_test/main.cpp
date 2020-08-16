@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"menu_test";
+auto test_prefab = L"combobox_test";
 
 Entity* root;
 

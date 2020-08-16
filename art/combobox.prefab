@@ -10,7 +10,7 @@
     <cMenu type="MenuButton" />
     <cCombobox />
     <cLayout />
-    <entity>
+    <entity name="arrow" >
       <cElement padding="4,2,4,2" />
       <cText text="" />
       <cAligner alignx="AlignMax" absolute="true" />
