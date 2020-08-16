@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity src="hsplitter" >
+    <entity>
+      <cElement width="10" height="10" fill_color="255,0,0,255" />
+      <cAligner alignx="AlignMinMax" aligny="AlignMinMax" />
+    </entity>
+    <entity>
+      <cElement width="10" height="10" fill_color="0,255,0,255" />
+      <cAligner alignx="AlignMinMax" aligny="AlignMinMax" />
+    </entity>
+  </entity>
+</prefab>

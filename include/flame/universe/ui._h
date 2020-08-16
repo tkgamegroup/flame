@@ -37,42 +37,6 @@ namespace flame
 			change_style(SelectedTabTextColorElse, common(Vec4c(255, 255, 255, 255)));
 		}
 
-		inline Entity* e_empty()
-		{
-			Entity* e;
-			if (next_entity)
-			{
-				e = next_entity;
-				next_entity = nullptr;
-			}
-			else
-				e = f_new<Entity>();
-			auto p = parents.empty() ? nullptr : parents.top();
-			if (p)
-			{
-				auto pos = (int)p->children.s - 1;
-				while (pos >= 0)
-				{
-					auto c = p->children[pos];
-					if (c->get_component(cBringToFront) || c->get_component(cSizeDragger))
-						pos--;
-					else if (c->get_component(cSplitter))
-					{
-						if (pos == 0)
-							pos--;
-						else
-							break;
-					}
-					else
-						break;
-				}
-				pos++;
-				p->add_child(e, pos);
-			}
-			current_entity = e;
-			return e;
-		}
-
 		inline Entity* e_drag_edit()
 		{
 			auto e = e_begin_layout(LayoutVertical);

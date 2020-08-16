@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"combobox_test";
+auto test_prefab = L"hsplitter_test";
 
 Entity* root;
 

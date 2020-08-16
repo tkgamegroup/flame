@@ -40,8 +40,10 @@ namespace flame
 		virtual void remove_child(Entity* e, bool destroy = true) = 0;
 		virtual void remove_all_children(bool destroy = true) = 0;
 
-		virtual void* add_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) = 0;
-		virtual void remove_data_changed_listener(void* lis) = 0;
+		virtual void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
+		virtual void remove_local_message_listener(void* lis) = 0;
+		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) = 0;
+		virtual void remove_local_data_changed_listener(void* lis) = 0;
 
 		virtual void load(const wchar_t* filename) = 0;
 		virtual void save(const wchar_t* filename) = 0;

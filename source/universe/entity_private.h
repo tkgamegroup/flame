@@ -88,7 +88,8 @@ namespace flame
 		std::vector<Component*> child_message_dispatch_list;
 		std::vector<Component*> local_data_changed_dispatch_list;
 		std::vector<Component*> child_data_changed_dispatch_list;
-		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> data_changed_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> local_message_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> local_data_changed_listeners;
 
 		EntityPrivate();
 		~EntityPrivate();
@@ -128,8 +129,10 @@ namespace flame
 		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;
 
-		void* add_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) override;
-		void remove_data_changed_listener(void* lis) override;
+		void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) override;
+		void remove_local_message_listener(void* lis) override;
+		void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) override;
+		void remove_local_data_changed_listener(void* lis) override;
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity >
+    <cElement width="100" height="100" />
+    <cLayout type="LayoutHorizontal" auto_width="false" auto_height="false" />
+    <entity name="splitter_bar">
+      <cElement width="8" />
+      <cAligner aligny="AlignMinMax" />
+      <cEventReceiver />
+    <cStyle rule=
+           "StateHovering,StateActive;flame::cElement.fill_color=225,225,225,255#
+            StateActive;flame::cElement.fill_color=220,220,220,255#
+            StateHovering;flame::cElement.fill_color=230,230,230,255#
+            StateNone;flame::cElement.fill_color=0,0,0,0" />
+    </entity>
+    <cSplitter type="SplitterHorizontal" />
+  </entity>
+</prefab>

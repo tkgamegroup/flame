@@ -20,9 +20,13 @@ namespace flame
 		{
 			for (auto c : e->local_message_dispatch_list)
 				c->on_local_message(MessageRemoved);
+			for (auto& l : e->local_message_listeners)
+				l->call(MessageRemoved, nullptr);
 		}
 		for (auto c : local_message_dispatch_list)
 			c->on_local_message(MessageDestroyed);
+		for (auto& l : local_message_listeners)
+			l->call(MessageDestroyed, nullptr);
 	}
 
 	void EntityPrivate::release()
@@ -49,10 +53,12 @@ namespace flame
 		{
 			for (auto c : local_message_dispatch_list)
 				c->on_local_message(MessageVisibilityChanged);
+			for (auto& l : local_message_listeners)
+				l->call(MessageVisibilityChanged, nullptr);
 			if (parent)
 			{
 				for (auto c : parent->child_message_dispatch_list)
-					c->on_local_message(MessageVisibilityChanged, this);
+					c->on_child_message(MessageVisibilityChanged, this);
 			}
 		}
 
@@ -75,12 +81,16 @@ namespace flame
 		state = s;
 		for (auto c : local_message_dispatch_list)
 			c->on_local_message(MessageStateChanged);
+		for (auto& l : local_message_listeners)
+			l->call(MessageStateChanged, nullptr);
 	}
 
 	void EntityPrivate::on_message(Message msg)
 	{
 		for (auto c : local_message_dispatch_list)
 			c->on_local_message(msg);
+		for (auto& l : local_message_listeners)
+			l->call(msg, nullptr);
 	}
 
 	Component* EntityPrivate::get_component(uint64 hash) const
@@ -290,6 +300,8 @@ namespace flame
 
 		for (auto cc : local_message_dispatch_list)
 			cc->on_local_message(MessageComponentAdded, c);
+		for (auto& l : local_message_listeners)
+			l->call(MessageComponentAdded, c);
 		if (parent)
 		{
 			for (auto cc : parent->child_message_dispatch_list)
@@ -331,6 +343,8 @@ namespace flame
 
 		for (auto cc : local_message_dispatch_list)
 			cc->on_local_message(MessageComponentRemoved, c);
+		for (auto& l : local_message_listeners)
+			l->call(MessageComponentRemoved, c);
 		if (parent)
 		{
 			for (auto cc : parent->child_message_dispatch_list)
@@ -504,7 +518,11 @@ namespace flame
 
 				e->world = world;
 				if (world)
+				{
 					c.second->on_local_message(MessageEnteredWorld);
+					for (auto& l : local_message_listeners)
+						l->call(MessageEnteredWorld, nullptr);
+				}
 			}
 			return true;
 		});
@@ -521,6 +539,8 @@ namespace flame
 
 		for (auto c : e->local_message_dispatch_list)
 			c->on_local_message(MessageAdded);
+		for (auto& l : local_message_listeners)
+			l->call(MessageAdded, nullptr);
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessageAdded, e);
 	}
@@ -539,8 +559,12 @@ namespace flame
 
 		for (auto c : a->local_message_dispatch_list)
 			c->on_local_message(MessagePositionChanged);
+		for (auto& l : a->local_message_listeners)
+			l->call(MessagePositionChanged, nullptr);
 		for (auto c : b->local_message_dispatch_list)
 			c->on_local_message(MessagePositionChanged);
+		for (auto& l : b->local_message_listeners)
+			l->call(MessagePositionChanged, nullptr);
 
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessagePositionChanged, a);
@@ -579,6 +603,8 @@ namespace flame
 
 			for (auto c : e->local_message_dispatch_list)
 				c->on_local_message(MessageLeftWorld);
+			for (auto& l : e->local_message_listeners)
+				l->call(MessageLeftWorld, nullptr);
 			e->world = nullptr;
 
 			return true;
@@ -586,6 +612,8 @@ namespace flame
 
 		for (auto c : e->local_message_dispatch_list)
 			c->on_local_message(MessageRemoved);
+		for (auto& l : e->local_message_listeners)
+			l->call(MessageRemoved, nullptr);
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessageRemoved, e);
 	}
@@ -658,16 +686,30 @@ namespace flame
 		return nullptr;
 	}
 
-	void* EntityPrivate::add_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture)
+	void* EntityPrivate::add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
-		data_changed_listeners.emplace_back(c);
+		local_message_listeners.emplace_back(c);
 		return c;
 	}
 
-	void EntityPrivate::remove_data_changed_listener(void* lis)
+	void EntityPrivate::remove_local_message_listener(void* lis)
 	{
-		std::erase_if(data_changed_listeners, [&](const auto& i) {
+		std::erase_if(local_message_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* EntityPrivate::add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		local_data_changed_listeners.emplace_back(c);
+		return c;
+	}
+
+	void EntityPrivate::remove_local_data_changed_listener(void* lis)
+	{
+		std::erase_if(local_data_changed_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
@@ -756,18 +798,6 @@ namespace flame
 							}
 							else
 								printf("unknow attribute: %s\n", a.name());
-						}
-						for (auto n : n_c.children())
-						{
-							auto fs = udt->find_function((std::string("set_") + n.name()).c_str());
-							if (fs->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Entity"), nullptr))
-							{
-								auto e = f_new<EntityPrivate>();
-								load_prefab(e, n.child("entity"));
-								a2f<void(*)(void*, void*)>(fs->get_address(c))(c, e);
-							}
-							else
-								printf("unknow attribute: %s\n", n.name());
 						}
 					}
 				}
@@ -885,13 +915,13 @@ namespace flame
 			if (cc != c)
 				cc->on_local_data_changed(c, hash);
 		}
+		for (auto& l : entity->local_data_changed_listeners)
+			l->call(c, hash);
 		if (entity->parent)
 		{
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)
 				cc->on_child_data_changed(c, hash);
 		}
-		for (auto& l : entity->data_changed_listeners)
-			l->call(c, hash);
 	}
 
 	Entity* Entity::create()

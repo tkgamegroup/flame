@@ -50,7 +50,7 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_track_element()
 	{
-		track_element_listener = track_element->entity->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		track_element_listener = track_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->track_element)
 			{
@@ -63,7 +63,7 @@ namespace flame
 
 	void cScrollerPrivate::on_lost_track_element()
 	{
-		track_element->entity->remove_data_changed_listener(track_element_listener);
+		track_element->entity->remove_local_data_changed_listener(track_element_listener);
 	}
 
 	void cScrollerPrivate::on_gain_thumb_event_receiver()
@@ -105,7 +105,7 @@ namespace flame
 						view_layout = cl;
 					}
 
-					view->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+					view->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 						auto thiz = c.thiz<cScrollerPrivate>();
 						if (t == thiz->view_element)
 						{
@@ -139,7 +139,7 @@ namespace flame
 			scroller->target_element = target_element;
 			scroller->scroll(0.f);
 
-			target->add_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+			target->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 				auto thiz = c.thiz<cScrollerPrivate>();
 				if (t == thiz->target_element)
 				{
