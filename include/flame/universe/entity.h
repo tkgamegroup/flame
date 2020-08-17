@@ -45,10 +45,11 @@ namespace flame
 		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) = 0;
 		virtual void remove_local_data_changed_listener(void* lis) = 0;
 
+		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
+
 		virtual void load(const wchar_t* filename) = 0;
 		virtual void save(const wchar_t* filename) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};
 }

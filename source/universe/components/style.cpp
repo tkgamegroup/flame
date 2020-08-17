@@ -4,8 +4,9 @@
 
 namespace flame
 {
-	void cStylePrivate::set_rule(const std::string& rule)
+	void cStylePrivate::set_rule(const std::string& _rule)
 	{
+		rule = _rule;
 		targets.clear();
 
 		auto et = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");

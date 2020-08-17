@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"hsplitter_test";
+auto test_prefab = L"button";
 
 Entity* root;
 
@@ -17,14 +17,8 @@ int main(int argc, char** args)
 	root = w->root;
 
 	auto e = Entity::create();
-	//{
-	//	auto ce = cElement::create();
-	//	e->add_component(ce);
-	//	auto ct = cText::create();
-	//	ct->set_text(L"Hello World");
-	//	e->add_component(ct);0
-	//}
 	e->load(test_prefab);
+	e->save(L"d:/1.prefab");
 	root->add_child(e);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {

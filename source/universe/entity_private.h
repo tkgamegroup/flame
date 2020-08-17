@@ -91,6 +91,8 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> local_message_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> local_data_changed_listeners;
 
+		std::filesystem::path src;
+
 		EntityPrivate();
 		~EntityPrivate();
 

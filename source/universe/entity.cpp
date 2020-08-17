@@ -714,24 +714,8 @@ namespace flame
 		});
 	}
 
-	struct LoadState
-	{
-		std::vector<std::pair<std::string, std::string>> nss;
-		std::filesystem::path path;
-
-		std::string find_ns(const std::string& n)
-		{
-			for (auto& ns : nss)
-			{
-				if (ns.first == n)
-					return ns.second;
-			}
-			return "";
-		}
-	};
-	static std::stack<LoadState> load_states;
-
-	static void load_prefab(EntityPrivate* dst, pugi::xml_node src)
+	static void load_prefab(EntityPrivate* dst, pugi::xml_node src, 
+		const std::vector<std::pair<std::string, std::string>>& nss)
 	{
 		if (src.name() != std::string("entity"))
 			return;
@@ -747,9 +731,18 @@ namespace flame
 			{
 				auto path = std::filesystem::path(a.value());
 				path.replace_extension(L".prefab");
-				dst->load(load_states.empty() ? path : load_states.top().path / path);
+				dst->load(path);
 			}
 		}
+
+		auto find_ns = [&](const std::string& n)->std::string {
+			for (auto& ns : nss)
+			{
+				if (ns.first == n)
+					return ns.second;
+			}
+			return "";
+		};
 
 		for (auto n_c : src.children())
 		{
@@ -757,7 +750,7 @@ namespace flame
 			if (name == "entity")
 			{
 				auto e = f_new<EntityPrivate>();
-				load_prefab(e, n_c);
+				load_prefab(e, n_c, nss);
 				dst->add_child(e);
 			}
 			else if (name == "debug_break")
@@ -766,7 +759,7 @@ namespace flame
 			{
 				auto sp = SUS::split(name, ':');
 				if (sp.size() == 2)
-					name = load_states.top().find_ns(sp[0]) + "::" + sp[1];
+					name = find_ns(sp[0]) + "::" + sp[1];
 				else
 					name = "flame::" + name;
 				auto udt = find_udt(name.c_str());
@@ -781,13 +774,15 @@ namespace flame
 							fc->call(nullptr, &c, {});
 							dst->add_component((Component*)c);
 						}
+						else
+							printf("cannot create component of type: %s\n", name.c_str());
 					}
 					if (c)
 					{
 						for (auto a : n_c.attributes())
 						{
 							auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
-							if (fs->get_type() == TypeInfo::get(TypeData, "void") && fs->get_parameters_count() == 1)
+							if (fs && udt->find_function((std::string("get_") + a.name()).c_str()))
 							{
 								auto type = fs->get_parameter(0);
 								void* d = type->create();
@@ -796,8 +791,6 @@ namespace flame
 								fs->call(c, nullptr, parms);
 								type->destroy(d);
 							}
-							else
-								printf("unknow attribute: %s\n", a.name());
 						}
 					}
 				}
@@ -807,55 +800,228 @@ namespace flame
 		}
 	}
 
-	void EntityPrivate::load(const std::filesystem::path& filename)
+	std::filesystem::path get_prefab_path(const std::filesystem::path& filename)
 	{
 		auto fn = filename;
 
-		if (fn.parent_path().empty())
+		if (fn.extension().empty())
+			fn.replace_extension(L".prefab");
+		if (!std::filesystem::exists(fn))
 		{
-			if (fn.extension().empty())
-				fn.replace_extension(L".prefab");
+			fn = L"art" / fn;
 			if (!std::filesystem::exists(fn))
 			{
-				fn = L"art" / fn;
-				if (!std::filesystem::exists(fn))
-				{
-					auto engine_path = getenv("FLAME_PATH");
-					if (engine_path)
-						fn = engine_path / fn;
-				}
+				auto engine_path = getenv("FLAME_PATH");
+				if (engine_path)
+					fn = engine_path / fn;
 			}
 		}
 
-		pugi::xml_document file;
-		pugi::xml_node file_root;
+		return fn;
+	}
 
-		if (!file.load_file(fn.c_str()) || (file_root = file.first_child()).name() != std::string("prefab"))
+	void EntityPrivate::load(const std::filesystem::path& filename)
+	{
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
+
+		if (!doc.load_file(get_prefab_path(filename).c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
 		{
 			printf("prefab not exist or wrong format: %s\n", filename.string().c_str());
 			return;
 		}
 
-		LoadState state;
-		for (auto a : file_root.attributes())
+		std::vector<std::pair<std::string, std::string>> nss;
+		for (auto a : doc_root.attributes())
 		{
 			static std::regex reg_ns(R"(xmlns:(\w+))");
 			std::smatch res;
 			auto name = std::string(a.name());
 			if (std::regex_search(name, res, reg_ns))
-				state.nss.emplace_back(res[1].str(), a.value());
+				nss.emplace_back(res[1].str(), a.value());
 		}
-		state.path = filename.parent_path();
-		load_states.push(state);
-		load_prefab(this, file_root.first_child());
-		load_states.pop();
+		src = filename;
+		load_prefab(this, doc_root.first_child(), nss);
 	}
+
+	static std::unordered_map<uint64, std::unique_ptr<Component, Delector>> staging_components;
 
 	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
 	{
 		auto n = dst.append_child("entity");
-		n.append_attribute("name").set_value(src->name.empty() ? "unnamed" : src->name.c_str());
-		n.append_attribute("visible").set_value(src->visible);
+
+		pugi::xml_document reference_doc;
+		pugi::xml_node reference_doc_root;
+		pugi::xml_node reference;
+
+		//if (!src->src.empty())
+		//{
+		//	if (!reference_doc.load_file(get_prefab_path(src->src).c_str()) || (reference_doc_root = reference_doc.first_child()).name() != std::string("prefab"))
+		//	{
+		//		printf("prefab not exist or wrong format: %s\n", src->src.string().c_str());
+		//		return;
+		//	}
+
+		//	reference = reference_doc_root.first_child();
+		//}
+
+		n.append_attribute("src").set_value(src->src.string().c_str());
+		if (src->name != reference.attribute("name").value())
+			n.append_attribute("name").set_value(src->name.c_str());
+		if (src->visible != reference.attribute("visible").as_bool(true))
+			n.append_attribute("visible").set_value(src->visible);
+
+		std::vector<Component*> before_children_components;
+		std::vector<Component*> after_children_components;
+		for (auto& c : src->components)
+		{
+			auto after = false;
+			for (auto& r : ((EntityPrivate::ComponentAux*)c.second->aux)->refs)
+			{
+				if (r.type == EntityPrivate::RefComponent && r.place == EntityPrivate::PlaceOffspring)
+				{
+					after = true;
+					break;
+				}
+			}
+			if (after)
+				after_children_components.push_back(c.second.get());
+			else
+				before_children_components.push_back(c.second.get());
+		}
+		auto sort_components = [](std::vector<Component*>& list) {
+			for (auto i = 0; i < (int)list.size() - 1; i++)
+			{
+				for (auto j = i; j < list.size(); j++)
+				{
+					auto ok = true;
+					for (auto& r : ((EntityPrivate::ComponentAux*)list[j]->aux)->refs)
+					{
+						if (r.type == EntityPrivate::RefComponent && r.place == EntityPrivate::PlaceLocal)
+						{
+							auto found = false;
+							for (auto k = 0; k < i; k++)
+							{
+								if (list[k] == r.target)
+								{
+									found = true;
+									break;
+								}
+							}
+							if (!found)
+							{
+								ok = false;
+								break;
+							}
+						}
+					}
+					if (ok)
+					{
+						std::swap(list[i], list[j]);
+						break;
+					}
+				}
+			}
+		};
+		sort_components(before_children_components);
+		sort_components(after_children_components);
+
+		for (auto c : before_children_components)
+		{
+			auto c_type = std::string(c->type_name);
+			auto c_type_nns = c_type.substr((int)c_type.find_last_of(':') + 1);
+			auto reference_c = reference.child(c_type_nns.c_str());
+
+			pugi::xml_node n_c;
+			if (!reference || !reference_c)
+				n_c = n.append_child(c_type_nns.c_str());
+
+			auto udt = find_udt(c_type.c_str());
+			if (udt)
+			{
+				auto functions_count = udt->get_functions_count();
+				for (auto i = 0; i < functions_count; i++)
+				{
+					auto fg = udt->get_function(i);
+					auto name = std::string(fg->get_name());
+					if (name.starts_with("get_"))
+					{
+						name = name.substr(4);
+						if (udt->find_function(("set_" + name).c_str()))
+						{
+							auto type = fg->get_type();
+							if (type->get_tag() != TypePointer || 
+								type->get_name() == std::string("char") ||
+								type->get_name() == std::string("wchar_t"))
+							{
+								auto d1 = type->create();
+								fg->call(c, d1, {});
+
+								auto save_attr = [&]() {
+									std::string str;
+									type->serialize(&str, d1);
+								};
+
+								auto same = false;
+								auto d2 = type->create();
+								auto a = reference_c.attribute(name.c_str());
+								if (a)
+								{
+									type->unserialize(d2, a.value());
+									same = memcmp(d1, d2, type->get_size()) == 0;
+								}
+								else
+								{
+									Component* cc = nullptr;
+									auto it = staging_components.find(std::hash<std::string>()(c_type));
+									if (it != staging_components.end())
+										cc = it->second.get();
+									else
+									{
+										auto fc = udt->find_function("create");
+										if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
+										{
+											fc->call(nullptr, &cc, {});
+											staging_components.emplace(c->type_hash, cc);
+										}
+										else
+											printf("cannot create component of type: %s\n", name.c_str());
+									}
+									if (cc)
+									{
+										fg->call(cc, d2, {});
+										same = memcmp(d1, d2, type->get_size()) == 0;
+									}
+								}
+								if (type->get_tag() == TypePointer)
+									*(void**)d2 = nullptr;
+								type->destroy(d2);
+								if (!same)
+								{
+									std::string str;
+									type->serialize(&str, d1);
+									if (!n_c)
+										n_c = n.append_child(c_type_nns.c_str());
+									n_c.append_attribute(name.c_str()).set_value(str.c_str());
+								}
+								if (type->get_tag() == TypePointer)
+									*(void**)d1 = nullptr;
+								type->destroy(d1);
+							}
+						}
+					}
+				}
+			}
+			else
+				printf("cannot find udt: %s\n", c_type.c_str());
+		}
+
+		//if (!src->children.empty())
+		//{
+		//	auto n_es = n.append_child("children");
+		//	for (auto& e : src->children)
+		//		save_prefab(n_es, e.get());
+		//}
 
 		//if (!src->components.empty())
 		//{
@@ -886,13 +1052,6 @@ namespace flame
 		//		}
 		//	}
 		//}
-
-		//if (!src->children.empty())
-		//{
-		//	auto n_es = n.append_child("children");
-		//	for (auto& e : src->children)
-		//		save_prefab(n_es, e.get());
-		//}
 	}
 
 	void EntityPrivate::save(const std::filesystem::path& filename)
@@ -901,6 +1060,8 @@ namespace flame
 		auto file_root = file.append_child("prefab");
 
 		save_prefab(file_root, this);
+
+		staging_components.clear();
 
 		file.save_file(filename.c_str());
 	}

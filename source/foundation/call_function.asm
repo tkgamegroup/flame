@@ -1,15 +1,16 @@
 .code
 __call proc
-    push rdx
-
     mov rax, rcx
-    mov r10, r8
-    mov r11, r9
+    mov r10, rdx
+    mov r11, r8
 
     mov rcx, qword ptr [r10]
     mov rdx, qword ptr [r10 + 8]
     mov r8, qword ptr [r10 + 16]
     mov r9, qword ptr [r10 + 24]
+
+    push qword ptr [r10 + 32]
+    push qword ptr [r10 + 40]
 
     movss xmm0, dword ptr [r11]
 	movss xmm1, dword ptr [r11 + 4]
@@ -19,12 +20,12 @@ __call proc
     sub rsp, 20h
     call rax
     add rsp, 20h
-
+    
     pop rdx
-    and rdx, rdx
-    jz e
-    mov qword ptr [rdx], rax
-e:
+    pop rcx
+
+    mov qword ptr [rcx], rax
+    movss dword ptr [rdx], xmm0
     ret
 __call endp
 end

@@ -692,8 +692,8 @@ namespace flame
 		void* create(void* p) const override
 		{
 			if (!p)
-				p = new char*;
-			*(char**)p = new char[1];
+				p = f_malloc(sizeof(void*));
+			*(char**)p = (char*)f_malloc(sizeof(char));
 			(*(char**)p)[0] = 0;
 			return p;
 		}
@@ -710,13 +710,14 @@ namespace flame
 		}
 		void serialize(void* str, const void* src) const override
 		{
-			strcpy(f_stralloc(str, strlen((char*)src)), (char*)src);
+			auto& p = *(char**)src;
+			strcpy(f_stralloc(str, strlen(p)), p);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
 			auto& p = *(char**)dst;
 			f_free(p);
-			p = new char[strlen(src) + 1];
+			p = (char*)f_malloc(strlen(src) + 1);
 			strcpy(p, src);
 		}
 	};
@@ -731,8 +732,8 @@ namespace flame
 		void* create(void* p) const override
 		{
 			if (!p)
-				p = new wchar_t*;
-			*(wchar_t**)p = new wchar_t[1];
+				p = f_malloc(sizeof(void*));
+			*(wchar_t**)p = (wchar_t*)f_malloc(sizeof(wchar_t));
 			(*(wchar_t**)p)[0] = 0;
 			return p;
 		}
@@ -749,7 +750,8 @@ namespace flame
 		}
 		void serialize(void* str, const void* src) const override 
 		{
-			const auto s = w2s((wchar_t*)src);
+			auto& p = *(wchar_t**)src;
+			const auto s = w2s(p);
 			strcpy(f_stralloc(str, s.size()), s.c_str());
 		}
 		void unserialize(void* dst, const char* src) const override
@@ -1082,21 +1084,22 @@ namespace flame
 		return c == parameters.size();
 	}
 
-	extern "C" void __call(void* f, void* ret, void* list1, void* list2);
+	extern "C" void __call(void* f, void* list1, void* list2);
 
 	void FunctionInfoPrivate::call(void* obj, void* ret, void** parms) const
 	{
-		if (parameters.size() > 4 || type->size > sizeof(void*))
-		{
-			assert(0);
-			return;
-		}
-
 		auto idx = 0;
-		std::vector<void*> list1(4);
+		std::vector<void*> list1(6);
 		std::vector<float> list2(4);
 		if (obj)
 			list1[idx++] = obj;
+		if (type->size > sizeof(void*)
+			|| type->name == "flame::Vec<3,uchar>"
+			|| type->name == "flame::Vec<4,uchar>")
+		{
+			list1[idx++] = ret;
+			ret = nullptr;
+		}
 
 		auto _p = parms;
 		for (auto p : parameters)
@@ -1123,10 +1126,18 @@ namespace flame
 			}
 		}
 
-		void* r = nullptr;
-		__call(get_address(obj), &r, list1.data(), list2.data());
+		void* staging_rax;
+		float staging_xmm0;
+		list1[4] = &staging_rax;
+		list1[5] = &staging_xmm0;
+		__call(get_address(obj), list1.data(), list2.data());
 		if (ret)
-			memcpy(ret, &r, type->size);
+		{
+			if (type->name == "float")
+				memcpy(ret, &staging_xmm0, type->size);
+			else
+				memcpy(ret, &staging_rax, type->size);
+		}
 	}
 
 	UdtInfoPrivate::UdtInfoPrivate(LibraryPrivate* library, const std::string& name, uint size, const std::string& base_name) :

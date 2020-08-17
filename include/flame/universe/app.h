@@ -212,24 +212,25 @@ namespace flame
 	{
 		set_allocator(
 			[](uint size) {
-			return malloc(size);
-		},
+				return malloc(size);
+			},
 			[](void* p) {
-			free(p);
-		},
+				free(p);
+			},
 			[](void* p, uint size) {
-			return realloc(p, size);
-		},
+				return realloc(p, size);
+			},
 			[](void* p, uint size) {
-			auto& str = *(std::string*)p;
-			str.resize(size);
-			return str.data();
-		},
+				auto& str = *(std::string*)p;
+				str.resize(size);
+				return str.data();
+			},
 			[](void* p, uint size) {
-			auto& str = *(std::wstring*)p;
-			str.resize(size);
-			return str.data();
-		});
+				auto& str = *(std::wstring*)p;
+				str.resize(size);
+				return str.data();
+			}
+		);
 
 		//{
 		//	auto config = parse_ini_file(L"config.ini");
