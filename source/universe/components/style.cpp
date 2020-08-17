@@ -16,7 +16,7 @@ namespace flame
 		auto sp1 = SUS::split(rule, '#');
 		for (auto& i : sp1)
 		{
-			auto sp2 = SUS::split(SUS::trim(i), ':');
+			auto sp2 = SUS::split(SUS::trim(i), '?');
 			if (sp2.size() != 2)
 				continue;
 			auto sp3 = SUS::split(sp2[1], '=');

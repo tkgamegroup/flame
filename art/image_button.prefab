@@ -5,8 +5,9 @@
     <cEventReceiver />
     <cImage/>
     <cStyle rule="
-              StateHovering,StateActive;flame::cImage.src=3#
-              StateActive;flame::cImage.src=1#
-              StateHovering;cImage.src=2#StateNone;flame::cImage.src=1" />
+              Hovering,Active?cImage.src=3#
+              Active?cImage.src=1#
+              Hovering?cImage.src=2#
+              None?cImage.src=1" />
   </entity>
 </prefab>

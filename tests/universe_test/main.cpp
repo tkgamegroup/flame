@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"checkbox";
+auto test_prefab = L"button";
 
 Entity* root;
 

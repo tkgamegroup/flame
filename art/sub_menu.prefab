@@ -4,16 +4,16 @@
     <cElement padding="4,2,18,2" />
     <cText text="sub_menu" />
     <cEventReceiver />
-    <cAligner alignx="AlignMinMax" />
+    <cAligner alignx="MinMax" />
     <cStyle rule=
-           "StateHovering;flame::cElement.fill_color=230,230,230,255#
-            StateNone;flame::cElement.fill_color=220,220,220,255" />
+           "Hovering?cElement.fill_color=230,230,230,255#
+            None?cElement.fill_color=220,220,220,255" />
     <cMenu type="MenuSub" />
     <cLayout />
     <entity name="arrow" >
       <cElement padding="4,2,4,2" />
       <cText text="" />
-      <cAligner alignx="AlignMax" absolute="true" />
+      <cAligner alignx="Max" absolute="true" />
     </entity>
   </entity>
 </prefab>

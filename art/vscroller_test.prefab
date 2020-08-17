@@ -5,7 +5,7 @@
     <entity src="scroll_view" >
       <entity src="list">
         <cElement padding="0,0,0,20" />
-        <cAligner alignx="AlignMinMax" />
+        <cAligner alignx="MinMax" />
         <entity src="list_item" />
         <entity src="list_item" />
         <entity src="list_item" />

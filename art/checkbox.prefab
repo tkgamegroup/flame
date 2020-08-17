@@ -14,13 +14,13 @@
     <cEventReceiver />
     <cCheckbox />
     <cStyle rule=
-           "Hovering,Active,Selected:box.cElement.fill_color=69,94,222,255#
-            Active,Selected:box.cElement.fill_color=86,119,252,255#
-            Hovering,Selected:box.cElement.fill_color=78,108,239,255#
-            None,Selected:box.cElement.fill_color=86,119,252,255#
-            Hovering,Active:box.cElement.fill_color=225,225,225,255#
-            Active:box.cElement.fill_color=220,220,220,255#
-            Hovering:box.cElement.fill_color=230,230,230,255#
-            None:box.cElement.fill_color=220,220,220,255" />
+           "Hovering,Active,Selected?box.cElement.fill_color=69,94,222,255#
+            Active,Selected?box.cElement.fill_color=86,119,252,255#
+            Hovering,Selected?box.cElement.fill_color=78,108,239,255#
+            None,Selected?box.cElement.fill_color=86,119,252,255#
+            Hovering,Active?box.cElement.fill_color=225,225,225,255#
+            Active?box.cElement.fill_color=220,220,220,255#
+            Hovering?box.cElement.fill_color=230,230,230,255#
+            None?box.cElement.fill_color=220,220,220,255" />
   </entity>
 </prefab>

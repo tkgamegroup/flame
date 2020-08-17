@@ -2,7 +2,7 @@
 <prefab>
   <entity >
     <cElement fill_color="220,220,220,255" />
-    <cAligner alignx="AlignMinMax" />
+    <cAligner alignx="MinMax" />
     <cLayout type="LayoutHorizontal" gap="4.0" />
   </entity>
 </prefab>
