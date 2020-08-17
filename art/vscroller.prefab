@@ -18,6 +18,7 @@
             None?cElement.fill_color=194,195,201,255" />
       </entity>
     </entity>
-    <cScroller type="ScrollerVertical" />
+    <cScroller type="Vertical" />
+    <entity name="view" src="scroll_view" />
   </entity>
 </prefab>

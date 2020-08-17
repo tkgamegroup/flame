@@ -3,7 +3,7 @@
   <entity>
     <cElement />
     <cAligner alignx="MinMax" />
-    <cLayout type="LayoutVertical" gap="2" />
+    <cLayout type="Vertical" gap="2" />
     <entity>
       <cElement padding="18,2,4,2" />
       <cText text="tree_node" />
@@ -28,7 +28,7 @@
     <cTreeNode />
     </entity>
       <cElement padding="7,0,0,0" />
-      <cLayout type="LayoutVertical" gap="2" />
+      <cLayout type="Vertical" gap="2" />
     <entity>
   </entity>
 </prefab>

@@ -3,7 +3,7 @@
   <entity>
     <cElement />
     <cAligner />
-    <cLayout type="LayoutVertical" gap="2" />
+    <cLayout type="Vertical" gap="2" />
     <cEventReceiver />
     <cList />
   </entity>

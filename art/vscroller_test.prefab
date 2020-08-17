@@ -2,21 +2,19 @@
 <prefab>
   <entity src="vscroller" >
     <cElement width="200" height="100" padding="4,4,4,4" border="1" />
-    <entity src="scroll_view" >
-      <entity src="list">
-        <cElement padding="0,0,0,20" />
-        <cAligner alignx="MinMax" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-        <entity src="list_item" />
-      </entity>
+    <entity attach="view" src="list">
+      <cElement padding="0,0,0,20" />
+      <cAligner alignx="MinMax" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
+      <entity src="list_item" />
     </entity>
   </entity>
 </prefab>

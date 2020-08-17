@@ -8,12 +8,13 @@
     <cStyle rule=
            "Hovering?cElement.fill_color=230,230,230,255#
             None?cElement.fill_color=220,220,220,255" />
-    <cMenu type="MenuSub" />
+    <cMenu type="Sub" />
     <cLayout />
     <entity name="arrow" >
       <cElement padding="4,2,4,2" />
       <cText text="" />
       <cAligner alignx="Max" absolute="true" />
     </entity>
+    <entity name="items" src="menu_items" />
   </entity>
 </prefab>

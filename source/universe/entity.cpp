@@ -751,7 +751,18 @@ namespace flame
 			{
 				auto e = f_new<EntityPrivate>();
 				load_prefab(e, n_c, nss);
-				dst->add_child(e);
+
+				auto attach = std::string(n_c.attribute("attach").value());
+				if (!attach.empty())
+				{
+					auto _dst = dst->find_child(attach);
+					if (_dst)
+						_dst->add_child(e);
+					else
+						printf("cannot find child: %s\n", attach.c_str());
+				}
+				else
+					dst->add_child(e);
 			}
 			else if (name == "debug_break")
 				debug_break();

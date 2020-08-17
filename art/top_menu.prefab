@@ -8,5 +8,6 @@
            "Hovering?cElement.fill_color=230,230,230,255#
             None?cElement.fill_color=0,0,0,0" />
     <cMenu />
+    <entity name="items" src="menu_items" />
   </entity>
 </prefab>

@@ -3,6 +3,6 @@
   <entity visible="false" >
     <cElement padding="1.0,1.0,1.0,1.0" border="1.0" border_color="0,0,0,60" />
     <cAligner alignx="None" aligny="None" />
-    <cLayout type="LayoutVertical" />
+    <cLayout type="Vertical" />
   </entity>
 </prefab>

@@ -2,7 +2,7 @@
 <prefab>
   <entity >
     <cElement width="100" height="100" />
-    <cLayout type="LayoutHorizontal" auto_width="false" auto_height="false" />
+    <cLayout type="Horizontal" auto_width="false" auto_height="false" />
     <entity name="splitter_bar">
       <cElement width="8" />
       <cAligner aligny="MinMax" />
