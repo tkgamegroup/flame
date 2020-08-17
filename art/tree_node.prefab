@@ -2,7 +2,6 @@
 <prefab>
   <entity>
     <cElement />
-    <cAligner alignx="MinMax" />
     <cLayout type="Vertical" gap="2" />
     <entity>
       <cElement padding="18,2,4,2" />
@@ -16,19 +15,18 @@
               Active,Hovering?cElement.fill_color=225,225,225,255#
               Active?cElement.fill_color=220,220,220,255#
               Hovering?cElement.fill_color=230,230,230,255#
-              None?cElement.fill_color=220,220,220,255#" />
-      <cLayout />
+              None?cElement.fill_color=220,220,220,0#" />
       <entity>
-        <cElement />
+        <cElement padding="4,2,4,2" />
         <cText text="" />
         <cEventReceiver />
         <cStyle rule="" />
       </entity>
     </entity>
     <cTreeNode />
-    </entity>
+    <entity name="@items">
       <cElement padding="7,0,0,0" />
       <cLayout type="Vertical" gap="2" />
-    <entity>
+    </entity>
   </entity>
 </prefab>

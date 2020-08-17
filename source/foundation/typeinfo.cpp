@@ -47,6 +47,7 @@ namespace flame
 		void* create(void* p) const override { return p ? p : f_malloc(size); }
 		void destroy(void* p, bool free_memory) const override { if (free_memory) f_free(p); }
 		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
+		bool compare(void* a, const void* b) const override { return memcmp(a, b, size) == 0; }
 		void serialize(void* str, const void* src) const override {}
 		void unserialize(void* dst, const char* src) const override {}
 	};
@@ -595,6 +596,10 @@ namespace flame
 		{
 			*(StringA*)dst = *(StringA*)src;
 		}
+		bool compare(void* dst, const void* src) const override
+		{
+			return (*(StringA*)dst).str() == (*(StringA*)src).str();
+		}
 		void serialize(void* str, const void* src) const override
 		{
 			const auto& s = *(StringA*)src;
@@ -637,6 +642,10 @@ namespace flame
 		{
 			*(StringW*)dst = *(StringW*)src;
 		}
+		bool compare(void* a, const void* b) const override
+		{
+			return (*(StringW*)a).str() == (*(StringW*)b).str();
+		}
 		void serialize(void* str, const void* src) const override
 		{
 			const auto s = w2s((*(StringW*)src).str());
@@ -672,9 +681,9 @@ namespace flame
 			if (free_memory)
 				f_free(p); 
 		}
-		void serialize(void* str, const void* src) const override
+		void serialize(void* a, const void* b) const override
 		{
-			base->serialize(str, *(void**)src);
+			base->serialize(a, *(void**)b);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
@@ -706,7 +715,11 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			strcpy((char*)dst, (char*)src);
+			strcpy(*(char**)dst, *(char**)src);
+		}
+		bool compare(void* a, const void* b) const override
+		{
+			return std::string(*(char**)a) == std::string(*(char**)b);
 		}
 		void serialize(void* str, const void* src) const override
 		{
@@ -746,7 +759,11 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			wcscpy((wchar_t*)dst, (wchar_t*)src);
+			wcscpy(*(wchar_t**)dst, *(wchar_t**)src);
+		}
+		bool compare(void* a, const void* b) const override
+		{
+			return std::wstring(*(wchar_t**)a) == std::wstring(*(wchar_t**)b);
 		}
 		void serialize(void* str, const void* src) const override 
 		{

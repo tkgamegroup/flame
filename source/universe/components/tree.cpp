@@ -4,14 +4,14 @@ namespace flame
 {
 	void cTreePrivate::set_selected(Entity* e)
 	{
-		if (selected == e)
-			return;
-		if (selected)
-			selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
-		if (e)
-			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
-		selected = e;
-		Entity::report_data_changed(this, S<ch("selected")>::v);
+		//if (selected == e)
+		//	return;
+		//if (selected)
+		//	selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
+		//if (e)
+		//	e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
+		//selected = e;
+		//Entity::report_data_changed(this, S<ch("selected")>::v);
 	}
 
 	//	static void expand(Entity* e, Entity* r)

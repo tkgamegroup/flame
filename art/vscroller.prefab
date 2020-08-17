@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity >
+  <entity>
     <cElement width="100" height="100" />
     <cEventReceiver ignore_occluders="true" />
     <cLayout />
@@ -19,6 +19,6 @@
       </entity>
     </entity>
     <cScroller type="Vertical" />
-    <entity name="view" src="scroll_view" />
+    <entity name="@view" src="scroll_view" />
   </entity>
 </prefab>

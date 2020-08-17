@@ -31,6 +31,7 @@ namespace flame
 		virtual void* create(void* p = nullptr) const = 0;
 		virtual void destroy(void* p, bool free_memory = true) const = 0;
 		virtual void copy(void* dst, const void* src) const = 0;
+		virtual bool compare(void* dst, const void* src) const = 0;
 		virtual void serialize(void* str, const void* src) const = 0;
 		virtual void unserialize(void* dst, const char* src) const = 0;
 

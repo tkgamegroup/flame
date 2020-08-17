@@ -724,12 +724,17 @@ namespace flame
 		{
 			auto name = std::string(a.name());
 			if (name == "name")
+			{
 				dst->name = a.value();
+				if (dst->name.size() > 1 && dst->name[0] == '@')
+					dst->name.erase(dst->name.begin());
+			}
 			else if (name == "visible")
 				dst->visible = a.as_bool();
 			else if (name == "src")
 			{
 				auto path = std::filesystem::path(a.value());
+				dst->src = path;
 				path.replace_extension(L".prefab");
 				dst->load(path);
 			}
@@ -851,21 +856,18 @@ namespace flame
 			if (std::regex_search(name, res, reg_ns))
 				nss.emplace_back(res[1].str(), a.value());
 		}
-		src = filename;
 		load_prefab(this, doc_root.first_child(), nss);
 	}
 
 	static std::unordered_map<uint64, std::unique_ptr<Component, Delector>> staging_components;
 
-	static void save_prefab(pugi::xml_node dst, EntityPrivate* src, bool root)
+	static void save_prefab(pugi::xml_node n, EntityPrivate* src)
 	{
-		auto n = dst.append_child("entity");
-
 		pugi::xml_document reference_doc;
 		pugi::xml_node reference_doc_root;
 		pugi::xml_node reference;
 
-		if (!root && !src->src.empty())
+		if (!src->src.empty())
 		{
 			if (!reference_doc.load_file(get_prefab_path(src->src).c_str()) || (reference_doc_root = reference_doc.first_child()).name() != std::string("prefab"))
 			{
@@ -979,7 +981,7 @@ namespace flame
 								if (a)
 								{
 									type->unserialize(d2, a.value());
-									same = memcmp(d1, d2, type->get_size()) == 0;
+									same = type->compare(d1, d2);
 								}
 								else
 								{
@@ -1001,7 +1003,7 @@ namespace flame
 									if (cc)
 									{
 										fg->call(cc, d2, {});
-										same = memcmp(d1, d2, type->get_size()) == 0;
+										same = type->compare(d1, d2);
 									}
 								}
 								if (type->get_tag() == TypePointer)
@@ -1032,8 +1034,50 @@ namespace flame
 
 		for (auto& c : src->children)
 		{
-			if (!reference.child(c->name.c_str()))
-				save_prefab(n, c.get(), false);
+			auto found = false;
+			for (auto nn : reference.children("entity"))
+			{
+				auto name = std::string(nn.attribute("name").value());
+				if (name == c->name || name == "@" + c->name)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				auto nn = n.append_child("entity");
+				save_prefab(nn, c.get());
+			}
+		}
+
+		std::vector<EntityPrivate*> attach_points;
+		std::function<void(pugi::xml_node)> collect_attach_points;
+		collect_attach_points = [&](pugi::xml_node n) {
+			for (auto c : n.children())
+			{
+				if (c.name() == std::string("entity"))
+				{
+					auto name = std::string(c.attribute("name").value());
+					if (name.size() > 1 && name[0] == '@') 
+					{
+						name.erase(name.begin());
+						attach_points.push_back(src->find_child(name));
+					}
+					collect_attach_points(c);
+				}
+			}
+		};
+		collect_attach_points(reference);
+
+		for (auto p : attach_points)
+		{
+			for (auto& c : p->children)
+			{
+				auto nn = n.append_child("entity");
+				nn.append_attribute("attach").set_value(p->name.c_str());
+				save_prefab(nn, c.get());
+			}
 		}
 
 		for (auto c : after_children_components)
@@ -1045,7 +1089,7 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file_root, this, true);
+		save_prefab(file_root, this);
 
 		staging_components.clear();
 

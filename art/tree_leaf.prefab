@@ -4,7 +4,6 @@
     <cElement padding="18,2,4,2" />
     <cText text="tree_leaf" />
     <cEventReceiver />
-    <cAligner alignx="MinMax" />
     <cStyle rule=
            "Active,Hovering,Selected?cElement.fill_color=195,215,240,255#
             Active,Selected?cElement.fill_color=200,220,245,255#
@@ -13,7 +12,7 @@
             Active,Hovering?cElement.fill_color=225,225,225,255#
             Active?cElement.fill_color=220,220,220,255#
             Hovering?cElement.fill_color=230,230,230,255#
-            None?cElement.fill_color=220,220,220,255#" />
+            None?cElement.fill_color=220,220,220,0#" />
     <cTreeLeaf />
   </entity>
 </prefab>
