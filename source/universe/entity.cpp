@@ -846,7 +846,7 @@ namespace flame
 
 	static std::unordered_map<uint64, std::unique_ptr<Component, Delector>> staging_components;
 
-	static void save_prefab(pugi::xml_node dst, EntityPrivate* src)
+	static void save_prefab(pugi::xml_node dst, EntityPrivate* src, bool root)
 	{
 		auto n = dst.append_child("entity");
 
@@ -854,18 +854,19 @@ namespace flame
 		pugi::xml_node reference_doc_root;
 		pugi::xml_node reference;
 
-		//if (!src->src.empty())
-		//{
-		//	if (!reference_doc.load_file(get_prefab_path(src->src).c_str()) || (reference_doc_root = reference_doc.first_child()).name() != std::string("prefab"))
-		//	{
-		//		printf("prefab not exist or wrong format: %s\n", src->src.string().c_str());
-		//		return;
-		//	}
+		if (!root && !src->src.empty())
+		{
+			if (!reference_doc.load_file(get_prefab_path(src->src).c_str()) || (reference_doc_root = reference_doc.first_child()).name() != std::string("prefab"))
+			{
+				printf("prefab not exist or wrong format: %s\n", src->src.string().c_str());
+				return;
+			}
 
-		//	reference = reference_doc_root.first_child();
-		//}
+			reference = reference_doc_root.first_child();
 
-		n.append_attribute("src").set_value(src->src.string().c_str());
+			n.append_attribute("src").set_value(src->src.string().c_str());
+		}
+
 		if (src->name != reference.attribute("name").value())
 			n.append_attribute("name").set_value(src->name.c_str());
 		if (src->visible != reference.attribute("visible").as_bool(true))
@@ -926,8 +927,7 @@ namespace flame
 		sort_components(before_children_components);
 		sort_components(after_children_components);
 
-		for (auto c : before_children_components)
-		{
+		auto save_component = [&](Component* c) {
 			auto c_type = std::string(c->type_name);
 			auto c_type_nns = c_type.substr((int)c_type.find_last_of(':') + 1);
 			auto reference_c = reference.child(c_type_nns.c_str());
@@ -950,7 +950,7 @@ namespace flame
 						if (udt->find_function(("set_" + name).c_str()))
 						{
 							auto type = fg->get_type();
-							if (type->get_tag() != TypePointer || 
+							if (type->get_tag() != TypePointer ||
 								type->get_name() == std::string("char") ||
 								type->get_name() == std::string("wchar_t"))
 							{
@@ -1014,44 +1014,19 @@ namespace flame
 			}
 			else
 				printf("cannot find udt: %s\n", c_type.c_str());
+		};
+
+		for (auto c : before_children_components)
+			save_component(c);
+
+		for (auto& c : src->children)
+		{
+			if (!reference.child(c->name.c_str()))
+				save_prefab(n, c.get(), false);
 		}
 
-		//if (!src->children.empty())
-		//{
-		//	auto n_es = n.append_child("children");
-		//	for (auto& e : src->children)
-		//		save_prefab(n_es, e.get());
-		//}
-
-		//if (!src->components.empty())
-		//{
-		//	auto n_cs = n.append_child("components");
-		//	for (auto& c : src->components)
-		//	{
-		//		auto component = c.second.get();
-
-		//		auto n_c = n_cs.append_child(component->name);
-
-		//		auto udt = find_udt(component->name);
-		//		assert(udt && udt->get_base_name() == std::string("Component"));
-		//		auto variables_count = udt->get_variables_count();
-		//		for (auto i = 0; i < variables_count; i++)
-		//		{
-		//			auto v = udt->get_variable(i);
-		//			auto type = v->get_type();
-		//			auto p = (char*)component + v->get_offset();
-		//			if (type->get_tag() == TypePointer)
-		//				//n_c.append_child(v->name.v).append_attribute("v").set_value((*(Object**)p)->id); TODO
-		//				;
-		//			else
-		//			{
-		//				auto dv = v->get_default_value();
-		//				if (!dv || memcmp(dv, p, type->get_size()) != 0)
-		//					n_c.append_child(v->get_name()).append_attribute("v").set_value(type->serialize(p).c_str());
-		//			}
-		//		}
-		//	}
-		//}
+		for (auto c : after_children_components)
+			save_component(c);
 	}
 
 	void EntityPrivate::save(const std::filesystem::path& filename)
@@ -1059,7 +1034,7 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file_root, this);
+		save_prefab(file_root, this, true);
 
 		staging_components.clear();
 

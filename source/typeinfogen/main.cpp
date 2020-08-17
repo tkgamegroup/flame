@@ -491,6 +491,8 @@ int main(int argc, char **args)
 
 			auto n_items = n_enum.append_child("items");
 
+			std::vector<std::pair<std::string, int>> items;
+
 			IDiaEnumSymbols* s_items;
 			s_type->findChildren(SymTagNull, NULL, nsNone, &s_items);
 			IDiaSymbol* s_item;
@@ -503,15 +505,39 @@ int main(int argc, char **args)
 
 				auto item_name = w2s(pwname);
 				if (!item_name.ends_with("_Max") && !item_name.ends_with("_Count"))
-				{
-					auto n_item = n_items.append_child("item");
-					n_item.append_attribute("name").set_value(item_name.c_str());
-					n_item.append_attribute("value").set_value(variant.lVal);
-				}
+					items.emplace_back(item_name, variant.lVal);
 
 				s_item->Release();
 			}
 			s_items->Release();
+
+			while (true)
+			{
+				auto same = true;
+				auto ch = items[0].first[0];
+				for (auto i = 1; i < items.size(); i++)
+				{
+					if (items[i].first[0] != ch)
+					{
+						same = false;
+						break;
+					}
+				}
+				if (same)
+				{
+					for (auto& i : items)
+						i.first.erase(i.first.begin());
+				}
+				else
+					break;
+			}
+
+			for (auto& i : items)
+			{
+				auto n_item = n_items.append_child("item");
+				n_item.append_attribute("name").set_value(i.first.c_str());
+				n_item.append_attribute("value").set_value(i.second);
+			}
 		}
 	};
 

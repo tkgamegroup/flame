@@ -7,6 +7,7 @@ namespace flame
 	void cStylePrivate::set_rule(const std::string& _rule)
 	{
 		rule = _rule;
+		SUS::remove_spaces(rule);
 		targets.clear();
 
 		auto et = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
@@ -15,7 +16,7 @@ namespace flame
 		auto sp1 = SUS::split(rule, '#');
 		for (auto& i : sp1)
 		{
-			auto sp2 = SUS::split(SUS::trim(i), ';');
+			auto sp2 = SUS::split(SUS::trim(i), ':');
 			if (sp2.size() != 2)
 				continue;
 			auto sp3 = SUS::split(sp2[1], '=');
@@ -34,7 +35,10 @@ namespace flame
 			}
 			if (!e)
 				continue;
-			auto c = e->get_component(std::hash<std::string>()(sp4[sp4.size() - 2]));
+			auto c_type = sp4[sp4.size() - 2];
+			auto c = e->get_component(std::hash<std::string>()(c_type));
+			if (!c)
+				c = e->get_component(std::hash<std::string>()("flame::" + c_type));
 			if (!c)
 				continue;
 
@@ -42,7 +46,8 @@ namespace flame
 			if (!udt)
 				continue;
 
-			auto setter = udt->find_function(("set_" + sp4[sp4.size() - 1]).c_str());
+			auto v_name = sp4[sp4.size() - 1];
+			auto setter = udt->find_function(("set_" + v_name).c_str());
 			if (!setter || setter->get_type() != TypeInfo::get(TypeData, "void") || setter->get_parameters_count() != 1)
 				continue;
 
