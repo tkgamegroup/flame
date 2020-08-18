@@ -43,10 +43,13 @@ namespace flame
 
 		const char* get_rule() const override { return rule.c_str(); }
 		void set_rule(const std::string& rule);
+		void apply_rule();
 
 		void on_state_changed();
 
+		void on_added() override;
 		void on_local_message(Message msg, void* p) override;
+		void on_child_message(Message msg, void* p) override;
 	};
 
 	void cStyleBridge::set_rule(const char* rule)

@@ -1,4 +1,6 @@
+#include <flame/graphics/font.h>
 #include "../entity_private.h"
+#include "text_private.h"
 #include "event_receiver_private.h"
 #include "tree_private.h"
 
@@ -52,6 +54,18 @@ namespace flame
 		//		}, Capture().set_thiz(this), 1U);
 	}
 
+	void cTreePrivate::on_gain_event_receiver()
+	{
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			c.thiz<cTreePrivate>()->set_selected(nullptr);
+		}, Capture().set_thiz(this));
+	}
+
+	void cTreePrivate::on_lost_event_receiver()
+	{
+		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+	}
+
 	cTree* cTree::create()
 	{
 		return f_new<cTreePrivate>();
@@ -77,46 +91,38 @@ namespace flame
 
 	void cTreeNodePrivate::on_gain_event_receiver()
 	{
-
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			auto thiz = c.thiz<cTreeNodePrivate>();
+			thiz->tree->set_selected(thiz->entity);
+		}, Capture().set_thiz(this));
 	}
 
 	void cTreeNodePrivate::on_lost_event_receiver()
 	{
+		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+	}
 
+	void cTreeNodePrivate::on_gain_arrow_event_receiver()
+	{
+		arrow_mouse_listener = arrow_event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			c.thiz<cTreeNodePrivate>()->toggle_collapse();
+		}, Capture().set_thiz(this));
+	}
+
+	void cTreeNodePrivate::on_lost_arrow_event_receiver()
+	{
+		arrow_event_receiver->remove_mouse_left_down_listener(arrow_mouse_listener);
+	}
+
+	void cTreeNodePrivate::toggle_collapse()
+	{
+		auto e = (EntityPrivate*)items_element->entity;
+		e->set_visible(!e->visible);
+		arrow_text->set_text(e->visible ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 	}
 
 	cTreeNode* cTreeNode::create()
 	{
 		return f_new<cTreeNodePrivate>();
 	}
-
-//	struct cTreeNodePrivate : cTreeNode
-//	{
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-//						{
-//							auto thiz = c.thiz<cTreeNodeTitlePrivate>();
-//							thiz->tree->set_selected(thiz->entity->parent);
-//						}
-//					}, Capture().set_thiz(this));
-//
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-//							c.thiz<cTreeNodeArrowPrivate>()->toggle_collapse();
-//					}, Capture().set_thiz(this));
-//		void toggle_collapse()
-//		{
-//			auto e = entity->parent->parent->children[1];
-//			e->set_visible(!e->visible_);
-//			text->set_text(e->visible_ ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
-//		}
-//	};
-//
-//	struct cTreePrivate : cTree
-//	{
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						if (is_mouse_down(action, key, true) && key == Mouse_Left)
-//							c.thiz<cTreePrivate>()->set_selected(nullptr);
-//					}, Capture().set_thiz(this));
-//	};
 }

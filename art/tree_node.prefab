@@ -3,22 +3,22 @@
   <entity>
     <cElement />
     <cEventReceiver />
+    <cStyle rule="Active,Hovering,Selected?title.cElement.fill_color=195,215,240,255#Active,Selected?title.cElement.fill_color=200,220,245,255#Hovering,Selected?title.cElement.fill_color=200,220,245,255#None,Selected?title.cElement.fill_color=200,220,245,255#Active,Hovering?title.cElement.fill_color=225,225,225,255#Active?title.cElement.fill_color=220,220,220,255#Hovering?title.cElement.fill_color=230,230,230,255#None?title.cElement.fill_color=220,220,220,0" />
     <cLayout type="Vertical" gap="2" />
     <entity name="title">
       <cElement padding="18,2,4,2" />
       <cText text="tree_node" />
-      <entity>
+      <entity name="arrow">
         <cElement padding="4,2,4,2" />
-        <cText text="" />
+        <cText text="" />
         <cEventReceiver />
         <cStyle rule="Hovering?cText.color=128,128,128,255#None?cText.color=0,0,0,255#" />
       </entity>
     </entity>
-    <cStyle rule="Active,Hovering,Selected?title.cElement.fill_color=195,215,240,255#Active,Selected?title.cElement.fill_color=200,220,245,255#Hovering,Selected?title.cElement.fill_color=200,220,245,255#None,Selected?title.cElement.fill_color=200,220,245,255#Active,Hovering?title.cElement.fill_color=225,225,225,255#Active?title.cElement.fill_color=220,220,220,255#Hovering?title.cElement.fill_color=230,230,230,255#None?title.cElement.fill_color=220,220,220,0" />
-    <cTreeNode />
     <entity name="@items">
       <cElement padding="7,0,0,0" />
       <cLayout type="Vertical" gap="2" />
     </entity>
+    <cTreeNode />
   </entity>
 </prefab>

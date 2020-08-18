@@ -8,6 +8,13 @@ namespace flame
 	{
 		rule = _rule;
 		SUS::remove_spaces(rule);
+		apply_rule();
+
+		Entity::report_data_changed(this, S<ch("rule")>::v);
+	}
+
+	void cStylePrivate::apply_rule()
+	{
 		targets.clear();
 
 		auto et = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
@@ -18,22 +25,13 @@ namespace flame
 		{
 			auto sp2 = SUS::split(i, '?');
 			if (sp2.size() != 2)
-			{
-				assert(0);
 				continue;
-			}
 			auto sp3 = SUS::split(sp2[1], '=');
 			if (sp3.size() != 2)
-			{
-				assert(0);
 				continue;
-			}
 			auto sp4 = SUS::split(sp3[0], '.');
 			if (sp4.size() < 2)
-			{
-				assert(0);
 				continue;
-			}
 
 			auto e = (EntityPrivate*)entity;
 			for (auto i = 0; i < sp4.size() - 2; i++)
@@ -43,26 +41,17 @@ namespace flame
 					break;
 			}
 			if (!e)
-			{
-				assert(0);
 				continue;
-			}
 			auto c_type = sp4[sp4.size() - 2];
 			auto c = e->get_component(std::hash<std::string>()(c_type));
 			if (!c)
 				c = e->get_component(std::hash<std::string>()("flame::" + c_type));
 			if (!c)
-			{
-				assert(0);
 				continue;
-			}
 
 			auto udt = find_udt(c->type_name);
 			if (!udt)
-			{
-				assert(0);
 				continue;
-			}
 
 			auto v_name = sp4[sp4.size() - 1];
 			auto setter = udt->find_function(("set_" + v_name).c_str());
@@ -116,8 +105,6 @@ namespace flame
 		}
 
 		on_state_changed();
-
-		Entity::report_data_changed(this, S<ch("rule")>::v);
 	}
 
 	void cStylePrivate::on_state_changed()
@@ -140,12 +127,30 @@ namespace flame
 		}
 	}
 
+	void cStylePrivate::on_added()
+	{
+		apply_rule();
+	}
+
 	void cStylePrivate::on_local_message(Message msg, void* p)
 	{
 		switch (msg)
 		{
 		case MessageStateChanged:
 			on_state_changed();
+			break;
+		case MessageComponentAdded:
+			apply_rule();
+			break;
+		}
+	}
+
+	void cStylePrivate::on_child_message(Message msg, void* p)
+	{
+		switch (msg)
+		{
+		case MessageAdded:
+			apply_rule();
 			break;
 		}
 	}
