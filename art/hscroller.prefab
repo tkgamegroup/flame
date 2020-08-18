@@ -5,11 +5,11 @@
     <cEventReceiver ignore_occluders="true" />
     <cLayout />
     <entity src="scrollbar" >
-      <cAligner alignx="Max" aligny="MinMax" />
+      <cAligner alignx="MinMax" aligny="Max" />
     </entity>
     <entity name="@view" src="scroll_view" >
-      <cAligner margin="0,0,12,0" />
+      <cAligner margin="0,0,0,12" />
     </entity>
-    <cScroller type="Vertical" />
+    <cScroller type="Horizontal" />
   </entity>
 </prefab>

@@ -2,7 +2,7 @@
 <prefab>
   <entity src="text" >
     <cElement width="100.0" padding="4,2,4,2" border="1.0" clipping="true" />
-    <cText text="Hello World" auto_width="false" />
+    <cText auto_width="false" />
     <cEventReceiver />
     <cEdit />
   </entity>

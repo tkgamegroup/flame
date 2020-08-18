@@ -11,6 +11,7 @@ App g_app;
 Canvas* canvas;
 Entity* root;
 
+Entity* search;
 Entity* tree;
 Entity* image;
 
@@ -71,11 +72,20 @@ int main(int argc, char** args)
 	e->load(L"main");
 	root->add_child(e);
 
+	search = e->find_child("search");
+	search->add_local_data_changed_listener([](Capture&, Component* t, uint64 h) {
+		if (t->type_hash == cText::type_hash && h == S<ch("text")>::v)
+		{
+
+		}
+	}, Capture());
 	tree = e->find_child("tree");
 	image = e->find_child("image");
-	auto ci = image->get_component_t<cImage>();
-	ci->set_res_id(9);
-	ci->set_tile_id(0);
+	{
+		auto ci = image->get_component_t<cImage>();
+		ci->set_res_id(9);
+		ci->set_tile_id(0);
+	}
 
 	white_view = canvas->get_resource(9)->get_view();
 
@@ -107,7 +117,7 @@ int main(int argc, char** args)
 		}
 	}, Capture());
 
-	add_dir(tree, L"E:/music/th");
+	add_dir(tree, L"E:/music");
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());

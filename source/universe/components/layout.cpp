@@ -339,30 +339,10 @@ namespace flame
 		}
 			break;
 		}
-//
+
 		updating = false;
 	}
-//
-//	void cLayout::set_scrollx(float x)
-//	{
-//		if (scroll_offset.x() == x)
-//			return;
-//		scroll_offset.x() = x;
-//		auto thiz = (cLayoutPrivate*)this;
-//		if (thiz->management)
-//			thiz->management->add_to_update_list(thiz);
-//	}
-//
-//	void cLayout::set_scrolly(float y)
-//	{
-//		if (scroll_offset.y() == y)
-//			return;
-//		scroll_offset.y() = y;
-//		auto thiz = (cLayoutPrivate*)this;
-//		if (thiz->management)
-//			thiz->management->add_to_update_list(thiz);
-//	}
-//
+
 //	void cLayout::set_column(uint c)
 //	{
 //		if (column == c)

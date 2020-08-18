@@ -5,6 +5,7 @@ namespace flame
 	struct cElementPrivate;
 	struct cEventReceiverPrivate;
 	struct cLayoutPrivate;
+	struct cScrollViewPrivate;
 
 	struct cScrollerPrivate : cScroller // R ~ on_*
 	{
@@ -13,14 +14,14 @@ namespace flame
 		float step = 1.f;
 
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
-		cElementPrivate* track_element = nullptr; // R ref place=scrollbar_track
-		cEventReceiverPrivate* track_event_receiver = nullptr; // R ref place=scrollbar_track
-		cElementPrivate* thumb_element = nullptr; // R ref place=scrollbar_thumb
-		cEventReceiverPrivate* thumb_event_receiver = nullptr; // R ref place=scrollbar_thumb
+		cElementPrivate* track_element = nullptr; // R ref place=track
+		cEventReceiverPrivate* track_event_receiver = nullptr; // R ref place=track
+		cElementPrivate* thumb_element = nullptr; // R ref place=thumb
+		cEventReceiverPrivate* thumb_event_receiver = nullptr; // R ref place=thumb
 
-		Entity* view = nullptr;
-		cElementPrivate* view_element = nullptr;
-		cLayoutPrivate* view_layout = nullptr;
+		cElementPrivate* view_element = nullptr; // R ref place=view
+		cLayoutPrivate* view_layout = nullptr; // R ref place=view
+		cScrollViewPrivate* view = nullptr; // R ref place=view
 		cElementPrivate* target_element = nullptr;
 
 		void* mouse_scroll_listener = nullptr;
@@ -38,8 +39,7 @@ namespace flame
 		void on_lost_track_element();
 		void on_gain_thumb_event_receiver();
 		void on_lost_thumb_event_receiver();
-
-		void on_child_message(Message msg, void* p) override;
+		void on_gain_view();
 	};
 
 	struct cScrollViewPrivate : cScrollView // R ~ on_*
@@ -47,10 +47,7 @@ namespace flame
 		Entity* target = nullptr;
 		cElementPrivate* target_element = nullptr;
 
-		cScrollerPrivate* scroller = nullptr; // R ref place=parent
-
-		void on_gain_scroller();
-		void on_lost_scroller();
+		cScrollerPrivate* scroller = nullptr;
 
 		void on_child_message(Message msg, void* p) override;
 	};
