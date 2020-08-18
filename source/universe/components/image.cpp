@@ -98,6 +98,7 @@ namespace flame
 		switch (msg)
 		{
 		case MessageElementSizeDirty:
+		case MessageVisibilityChanged:
 			mark_size_dirty();
 			break;
 		}

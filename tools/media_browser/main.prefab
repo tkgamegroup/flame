@@ -6,13 +6,17 @@
       <cElement padding="4,4,4,4" border="1" />
       <cAligner alignx="MinMax" aligny="MinMax" />
       <entity attach="view" name="tree" src="tree">
-        <cElement padding="4,4,4,4" border="1" />
+        <cElement padding="4,4,4,4" />
         <cAligner alignx="MinMax" />
       </entity>
     </entity>
-    <entity >
+    <entity>
       <cElement />
       <cAligner alignx="MinMax" aligny="MinMax" />
+      <entity name="image">
+        <cElement />
+        <cImage />
+      </entity>
     </entity>
   </entity>
 </prefab>

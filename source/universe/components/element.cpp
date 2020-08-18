@@ -248,6 +248,8 @@ namespace flame
 
 	bool cElementPrivate::contains(const Vec2f& p)
 	{
+		if (width == 0.f || height == 0.f)
+			return false;
 		update_transform();
 		Vec2f ps[] = { points[0], points[1], points[2], points[3] };
 		return convex_contains<float>(p, ps);

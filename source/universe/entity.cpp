@@ -287,14 +287,17 @@ namespace flame
 		for (auto& r : ((ComponentAux*)c->aux)->refs)
 			r.gain(c);
 
-		if (udt->find_function("on_local_message"))
-			aux.want_local_message = true;
-		if (udt->find_function("on_child_message"))
-			aux.want_child_message = true;
-		if (udt->find_function("on_local_data_changed"))
-			aux.want_local_data_changed = true;
-		if (udt->find_function("on_child_data_changed"))
-			aux.want_child_data_changed = true;
+		if (udt)
+		{
+			if (udt->find_function("on_local_message"))
+				aux.want_local_message = true;
+			if (udt->find_function("on_child_message"))
+				aux.want_child_message = true;
+			if (udt->find_function("on_local_data_changed"))
+				aux.want_local_data_changed = true;
+			if (udt->find_function("on_child_data_changed"))
+				aux.want_child_data_changed = true;
+		}
 
 		c->on_added();
 

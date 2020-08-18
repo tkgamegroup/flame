@@ -45,6 +45,8 @@ namespace flame
 		{
 		}
 
+		virtual void toggle_collapse() = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cTreeNode* create();
 	};
 }

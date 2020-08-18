@@ -449,6 +449,7 @@ namespace flame
 		{
 		case MessageElementSizeDirty:
 		case MessageLayoutDirty:
+		case MessageVisibilityChanged:
 			mark_layout_dirty();
 			break;
 		}

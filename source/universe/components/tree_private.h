@@ -44,7 +44,7 @@ namespace flame
 		void* mouse_listener = nullptr;
 		void* arrow_mouse_listener = nullptr;
 
-		void toggle_collapse();
+		void toggle_collapse() override;
 
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
