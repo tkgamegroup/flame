@@ -18,13 +18,22 @@ namespace flame
 		{
 			auto sp2 = SUS::split(i, '?');
 			if (sp2.size() != 2)
+			{
+				assert(0);
 				continue;
+			}
 			auto sp3 = SUS::split(sp2[1], '=');
 			if (sp3.size() != 2)
+			{
+				assert(0);
 				continue;
+			}
 			auto sp4 = SUS::split(sp3[0], '.');
 			if (sp4.size() < 2)
+			{
+				assert(0);
 				continue;
+			}
 
 			auto e = (EntityPrivate*)entity;
 			for (auto i = 0; i < sp4.size() - 2; i++)
@@ -34,17 +43,26 @@ namespace flame
 					break;
 			}
 			if (!e)
+			{
+				assert(0);
 				continue;
+			}
 			auto c_type = sp4[sp4.size() - 2];
 			auto c = e->get_component(std::hash<std::string>()(c_type));
 			if (!c)
 				c = e->get_component(std::hash<std::string>()("flame::" + c_type));
 			if (!c)
+			{
+				assert(0);
 				continue;
+			}
 
 			auto udt = find_udt(c->type_name);
 			if (!udt)
+			{
+				assert(0);
 				continue;
+			}
 
 			auto v_name = sp4[sp4.size() - 1];
 			auto setter = udt->find_function(("set_" + v_name).c_str());

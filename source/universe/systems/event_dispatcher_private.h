@@ -52,6 +52,8 @@ namespace flame
 
 		bool dirty = false;
 
+		cEventReceiverPrivate* debug_target = nullptr;
+
 		sEventDispatcherPrivate();
 		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);

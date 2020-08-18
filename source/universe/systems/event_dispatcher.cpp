@@ -34,6 +34,45 @@ namespace flame
 				thiz->key_up_inputs.push_back(key);
 
 				thiz->dirty = true;
+				if (key == Keyboard_F7)
+				{
+					pugi::xml_document file;
+					auto file_root = file.append_child("root");
+					auto idx = 0;
+					std::function<void(pugi::xml_node, EntityPrivate*)> save;
+					save = [&](pugi::xml_node dst, EntityPrivate* src) {
+						auto n = dst.append_child("entity");
+						n.append_attribute("name").set_value(src->name.c_str());
+						n.append_attribute("idx").set_value(idx++);
+						auto ce = src->get_component_t<cElementPrivate>();
+						n.append_attribute("LT").set_value(to_string(ce->points[0]).c_str());
+						n.append_attribute("RB").set_value(to_string(ce->points[2]).c_str());
+						n.append_attribute("has_er").set_value(src->get_component(cEventReceiver::type_hash) != nullptr);
+						for (auto& c : src->children)
+							save(n, c.get());
+					};
+					save(file_root, ((WorldPrivate*)thiz->world)->root.get());
+					file.save_file("d:/reflect_ui.xml");
+				}
+				if (key == Keyboard_F8)
+				{
+					std::ifstream file("d:/debug_idx.txt");
+					std::string line;
+					std::getline(file, line);
+					auto idx = std::stoi(line);
+					std::function<void(EntityPrivate*)> find;
+					find = [&](EntityPrivate* n) {
+						if (idx == 0)
+							thiz->debug_target = n->get_component_t<cEventReceiverPrivate>();
+						idx--;
+						for (auto& c : n->children)
+							find(c.get());
+					};
+					find(((WorldPrivate*)thiz->world)->root.get());
+					file.close();
+				}
+				if (key == Keyboard_F9)
+					thiz->debug_target = (cEventReceiverPrivate*)INVALID_POINTER;
 			}, Capture().set_thiz(this));
 			char_listener = window->add_char_listener([](Capture& c, char ch) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
@@ -154,6 +193,12 @@ namespace flame
 
 	void sEventDispatcherPrivate::dispatch_mouse_single(cEventReceiverPrivate* er, bool force)
 	{
+		if (debug_target == er)
+		{
+			debug_target = nullptr;
+			debug_break();
+		}
+
 		auto mouse_contained = er->element->contains((Vec2f)mpos);
 		//auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
 
@@ -196,15 +241,13 @@ namespace flame
 		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
 		{
 			auto c = it->get();
-			if (c->global_visibility && e->get_component(cElement::type_hash))
+			if (c->global_visibility && c->get_component(cElement::type_hash))
 				dispatch_mouse_recursively(c);
 		}
 
 		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
-		if (!er || er->frame >= (int)looper().get_frame())
-			return;
-
-		dispatch_mouse_single(er, false);
+		if (er && er->frame < (int)looper().get_frame())
+			dispatch_mouse_single(er, false);
 	}
 
 	void sEventDispatcherPrivate::update()
@@ -215,6 +258,12 @@ namespace flame
 		if (!dirty)
 			return;
 		dirty = false;
+
+		if (debug_target == INVALID_POINTER)
+		{
+			debug_target = nullptr;
+			debug_break();
+		}
 
 		for (int i = 0; i < size(kbtns); i++)
 		{

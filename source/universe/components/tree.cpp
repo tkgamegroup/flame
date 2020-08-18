@@ -1,17 +1,19 @@
+#include "../entity_private.h"
+#include "event_receiver_private.h"
 #include "tree_private.h"
 
 namespace flame
 {
 	void cTreePrivate::set_selected(Entity* e)
 	{
-		//if (selected == e)
-		//	return;
-		//if (selected)
-		//	selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
-		//if (e)
-		//	e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
-		//selected = e;
-		//Entity::report_data_changed(this, S<ch("selected")>::v);
+		if (selected == e)
+			return;
+		if (selected)
+			selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
+		if (e)
+			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
+		selected = e;
+		Entity::report_data_changed(this, S<ch("selected")>::v);
 	}
 
 	//	static void expand(Entity* e, Entity* r)
@@ -55,9 +57,32 @@ namespace flame
 		return f_new<cTreePrivate>();
 	}
 
+	void cTreeLeafPrivate::on_gain_event_receiver()
+	{
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			auto thiz = c.thiz<cTreeLeafPrivate>();
+			thiz->tree->set_selected(thiz->entity);
+		}, Capture().set_thiz(this));
+	}
+
+	void cTreeLeafPrivate::on_lost_event_receiver()
+	{
+		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+	}
+
 	cTreeLeaf* cTreeLeaf::create()
 	{
 		return f_new<cTreeLeafPrivate>();
+	}
+
+	void cTreeNodePrivate::on_gain_event_receiver()
+	{
+
+	}
+
+	void cTreeNodePrivate::on_lost_event_receiver()
+	{
+
 	}
 
 	cTreeNode* cTreeNode::create()
@@ -65,18 +90,6 @@ namespace flame
 		return f_new<cTreeNodePrivate>();
 	}
 
-//	struct cTreeLeafPrivate : cTreeLeaf
-//	{
-//					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
-//						if (is_mouse_down(action, key, true) && (key == Mouse_Left || key == Mouse_Right))
-//						{
-//							auto thiz = c.thiz<cTreeLeafPrivate>();
-//							thiz->tree->set_selected(thiz->entity);
-//						}
-//						return true;
-//					}, Capture().set_thiz(this));
-//	};
-//
 //	struct cTreeNodePrivate : cTreeNode
 //	{
 //					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
@@ -85,13 +98,11 @@ namespace flame
 //							auto thiz = c.thiz<cTreeNodeTitlePrivate>();
 //							thiz->tree->set_selected(thiz->entity->parent);
 //						}
-//						return true;
 //					}, Capture().set_thiz(this));
 //
 //					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 //						if (is_mouse_down(action, key, true) && key == Mouse_Left)
 //							c.thiz<cTreeNodeArrowPrivate>()->toggle_collapse();
-//						return true;
 //					}, Capture().set_thiz(this));
 //		void toggle_collapse()
 //		{
@@ -106,7 +117,6 @@ namespace flame
 //					mouse_listener = event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
 //						if (is_mouse_down(action, key, true) && key == Mouse_Left)
 //							c.thiz<cTreePrivate>()->set_selected(nullptr);
-//						return true;
 //					}, Capture().set_thiz(this));
 //	};
 }
