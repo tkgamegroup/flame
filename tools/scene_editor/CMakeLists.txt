@@ -1,0 +1,5 @@
+generate_config()
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
+add_executable(scene_editor ${SOURCE_LIST})
+set_target_properties(scene_editor PROPERTIES FOLDER "tools")
+target_link_libraries(scene_editor flame_universe)

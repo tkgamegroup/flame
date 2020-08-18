@@ -1,6 +1,5 @@
 generate_config()
-file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
+file(GLOB_RECURSE SOURCE_LIST "*.c*")
 add_executable(media_browser ${SOURCE_LIST})
 set_target_properties(media_browser PROPERTIES FOLDER "tools")
 target_link_libraries(media_browser flame_universe)
-add_dependencies(media_browser typeinfogen)
