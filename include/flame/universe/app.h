@@ -253,7 +253,7 @@ namespace flame
 
 		{
 			graphics::Font* fonts[] = {
-				graphics::Font::create(L"c:/windows/fonts/consola.ttf"),
+				graphics::Font::create(L"c:/windows/fonts/msyh.ttc"),
 				graphics::Font::create((engine_path / L"art/font_awesome.ttf").c_str())
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);

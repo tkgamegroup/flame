@@ -15,6 +15,7 @@ namespace flame
 	{
 		void add_child(Entity* e, int position) override;
 		void remove_child(Entity* e, bool destroy) override;
+		Entity* find_child(const char* name) const override;
 		void load(const wchar_t* filename) override;
 		void save(const wchar_t* filename) override;
 	};
@@ -143,6 +144,11 @@ namespace flame
 	inline void EntityBridge::add_child(Entity* e, int position)
 	{
 		((EntityPrivate*)this)->add_child((EntityPrivate*)e, position);
+	}
+
+	inline Entity* EntityBridge::find_child(const char* name) const
+	{
+		return ((EntityPrivate*)this)->find_child(name);
 	}
 
 	inline void EntityBridge::remove_child(Entity* e, bool destroy)

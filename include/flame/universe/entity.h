@@ -39,6 +39,7 @@ namespace flame
 		virtual void reposition_child(uint pos1, uint pos2) = 0;
 		virtual void remove_child(Entity* e, bool destroy = true) = 0;
 		virtual void remove_all_children(bool destroy = true) = 0;
+		virtual Entity* find_child(const char* name) const = 0;
 
 		virtual void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
 		virtual void remove_local_message_listener(void* lis) = 0;

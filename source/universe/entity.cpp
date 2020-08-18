@@ -752,22 +752,23 @@ namespace flame
 		for (auto n_c : src.children())
 		{
 			auto name = std::string(n_c.name());
+			auto attach_address = std::string(n_c.attribute("attach").value());
+			auto attach = dst;
+			if (!attach_address.empty())
+			{
+				attach = dst->find_child(attach_address);
+				if (!attach)
+				{
+					printf("cannot find child: %s\n", attach_address.c_str());
+					continue;
+				}
+			}
 			if (name == "entity")
 			{
 				auto e = f_new<EntityPrivate>();
 				load_prefab(e, n_c, nss);
 
-				auto attach = std::string(n_c.attribute("attach").value());
-				if (!attach.empty())
-				{
-					auto _dst = dst->find_child(attach);
-					if (_dst)
-						_dst->add_child(e);
-					else
-						printf("cannot find child: %s\n", attach.c_str());
-				}
-				else
-					dst->add_child(e);
+				attach->add_child(e);
 			}
 			else if (name == "debug_break")
 				debug_break();
@@ -781,14 +782,14 @@ namespace flame
 				auto udt = find_udt(name.c_str());
 				if (udt)
 				{
-					auto c = dst->get_component(std::hash<std::string>()(name));
+					auto c = attach->get_component(std::hash<std::string>()(name));
 					if (!c)
 					{
 						auto fc = udt->find_function("create");
 						if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 						{
 							fc->call(nullptr, &c, {});
-							dst->add_component((Component*)c);
+							attach->add_component((Component*)c);
 						}
 						else
 							printf("cannot create component of type: %s\n", name.c_str());
