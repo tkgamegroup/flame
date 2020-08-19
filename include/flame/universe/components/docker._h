@@ -4,51 +4,6 @@
 
 namespace flame
 {
-	struct cElement;
-	struct cEventReceiver;
-	struct cListItem;
-	struct cList;
-
-	struct cMoveable : Component
-	{
-		cElement* element;
-		cEventReceiver* event_receiver;
-
-		cMoveable() :
-			Component("cMoveable")
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS static cMoveable* create();
-	};
-
-	struct cBringToFront : Component
-	{
-		cEventReceiver* event_receiver;
-
-		cBringToFront() :
-			Component("cBringToFront")
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS static cBringToFront* create();
-		FLAME_UNIVERSE_EXPORTS static void make(Entity* e);
-	};
-
-	struct cSizeDragger : Component 
-	{
-		cEventReceiver* event_receiver;
-		cElement* p_element;
-
-		cSizeDragger() :
-			Component("cSizeDragger")
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS static cSizeDragger* create();
-		FLAME_UNIVERSE_EXPORTS static void make(World* w, Entity* e);
-	};
-
 	struct cDockerTab : Component
 	{
 		cElement* element;

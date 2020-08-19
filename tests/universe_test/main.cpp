@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"tree_test";
+auto test_prefab = L"window";
 
 Entity* root;
 

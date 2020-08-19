@@ -2,18 +2,6 @@ namespace flame
 {
 	struct UI
 	{
-		inline cDataKeeper* c_data_keeper()
-		{
-			auto c = cDataKeeper::create();
-			if (next_component_id)
-			{
-				c->id = next_component_id;
-				next_component_id = 0;
-			}
-			current_entity->add_component(c);
-			return c;
-		}
-		
 		void style_set_to_light()
 		{
 			change_style(FontSize, common(Vec1u(16U)));
@@ -138,37 +126,8 @@ namespace flame
 			parents.push(cm->items);
 		}
 
-		inline Entity* e_bring_to_front()
-		{
-			auto e = e_empty();
-			cBringToFront::make(e);
-			return e;
-		}
-
 		inline Entity* e_begin_window(const wchar_t* title, bool close_button = true)
 		{
-			Entity* el;
-			auto e = e_empty();
-			auto ce = c_element();
-			ce->size += Vec2f(0.f, 4.f + style(FontSize).u.x());
-			ce->frame_thickness = 2.f;
-			ce->color = style(BackgroundColor).c;
-			ce->frame_color = style(ForegroundColor).c;
-			c_event_receiver();
-			c_layout(LayoutVertical)->fence = -1;
-			c_moveable();
-			parents.push(e);
-			{
-				e_empty();
-				auto ce = c_element();
-				ce->padding = Vec4f(4.f, 2.f, 4.f + style(FontSize).u.x(), 2.f);
-				ce->color = style(SelectedTabColorNormal).c;
-				c_text()->set_text(title);
-				c_aligner(AlignMinMax | AlignGreedy, 0);
-				if (close_button)
-				{
-					c_layout();
-					parents.push(current_entity);
 					e_button(Icon_TIMES, [](Capture& c) {
 						looper().add_event([](Capture& c) {
 							auto e = c.thiz<Entity>();
@@ -176,25 +135,6 @@ namespace flame
 						}, Capture().set_thiz(c.thiz<Entity>()));
 					}, Capture().set_thiz(e), false);
 					c_aligner(AlignMax | AlignAbsolute, 0);
-					parents.pop();
-				}
-
-				el = e_empty();
-				c_element()->padding = Vec4f(8.f, 4.f, 8.f, 4.f);
-				c_layout(LayoutVertical)->item_padding = 4.f;
-
-				e_empty();
-				c_element();
-				c_event_receiver()->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
-					*pass = true;
-					return true;
-				}, Capture());
-				c_aligner(AlignMinMax, AlignMinMax);
-				c_bring_to_front();
-			}
-			parents.pop();
-			parents.push(el);
-			return e;
 		}
 
 		inline Entity* e_begin_docker_floating_container()

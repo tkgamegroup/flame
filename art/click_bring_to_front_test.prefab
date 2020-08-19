@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+    <cElement />
+    <entity>
+      <cElement x="100" y="100" width="100.0" height="100.0" fill_color="255,0,0,255" />
+      <cEventReceiver ignore_occluders="true" />
+      <cClickBringToFront />
+    </entity>
+    <entity>
+      <cElement x="150" y="150" width="100.0" height="100.0" fill_color="0,255,0,255" />
+      <cEventReceiver ignore_occluders="true" />
+      <cClickBringToFront />
+    </entity>
+  </entity>
+</prefab>

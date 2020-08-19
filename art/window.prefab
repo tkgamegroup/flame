@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+    <cElement width="200" height="200" padding="8,8,8,8" border="1.0" fill_color="240,240,240,255" />
+    <cLayout type="Vertical" gap="4" auto_width="false" auto_height="false" />
+    <cEventReceiver />
+    <cDragMove />
+    <cClickBringToFront />
+      <entity>
+        <cElement padding="4,2,26,2" fill_color="0,122,204,255" />
+        <cText text="Window" />
+        <cLayout />
+        <cAligner alignx="MinMax" />
+        <entity src="button">
+          <cText text="" />
+          <cAligner alignx="Max" absolute="true" />
+        </entity>
+      </entity>
+      <entity name="content">
+        <cElement />
+        <cAligner alignx="MinMax" aligny="MinMax" />
+      </entity>
+      <entity src="drag_resize_block" />
+    <cDragResize />
+  </entity>
+</prefab>
