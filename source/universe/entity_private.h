@@ -142,6 +142,8 @@ namespace flame
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);
+
+		const wchar_t* get_src() const override { return src.c_str(); }
 	};
 
 	inline void EntityBridge::add_child(Entity* e, int position)

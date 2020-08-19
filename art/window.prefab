@@ -6,21 +6,21 @@
     <cEventReceiver />
     <cDragMove />
     <cClickBringToFront />
-      <entity>
-        <cElement padding="4,2,26,2" fill_color="0,122,204,255" />
-        <cText text="Window" />
-        <cLayout />
-        <cAligner alignx="MinMax" />
-        <entity src="button">
-          <cText text="" />
-          <cAligner alignx="Max" absolute="true" />
-        </entity>
+    <entity src="drag_resize_block" />
+    <entity>
+      <cElement padding="4,2,26,2" fill_color="0,122,204,255" />
+      <cText text="Window" />
+      <cLayout />
+      <cAligner alignx="MinMax" />
+      <entity src="button">
+        <cText text="" />
+        <cAligner alignx="Max" absolute="true" />
       </entity>
-      <entity name="content">
-        <cElement />
-        <cAligner alignx="MinMax" aligny="MinMax" />
-      </entity>
-      <entity src="drag_resize_block" />
+    </entity>
+    <entity name="@content">
+      <cElement />
+      <cAligner alignx="MinMax" aligny="MinMax" />
+    </entity>
     <cDragResize />
   </entity>
 </prefab>

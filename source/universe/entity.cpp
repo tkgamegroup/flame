@@ -1183,6 +1183,11 @@ namespace flame
 		file.save_file(filename.c_str());
 	}
 
+	Entity* Entity::create()
+	{
+		return f_new<EntityPrivate>();
+	}
+
 	void Entity::report_data_changed(Component* c, uint64 hash)
 	{
 		auto entity = (EntityPrivate*)c->entity;
@@ -1200,10 +1205,5 @@ namespace flame
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)
 				cc->on_child_data_changed(c, hash);
 		}
-	}
-
-	Entity* Entity::create()
-	{
-		return f_new<EntityPrivate>();
 	}
 }

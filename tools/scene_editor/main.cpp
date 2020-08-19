@@ -1,37 +1,50 @@
 #include <flame/universe/app.h>
+#include <flame/universe/components/text.h>
 
 using namespace flame;
 using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"tree_test";
-
 Entity* root;
+
+Entity* hierarchy;
+Entity* scene;
+Entity* inspector;
 
 int main(int argc, char** args)
 {
 	g_app.create();
-	auto w = new GraphicsWindow(&g_app, true, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
+	auto w = new GraphicsWindow(&g_app, true, true, "Scene Editor", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	w->canvas->set_clear_color(Vec4c(255));
 	root = w->root;
 
 	auto e = Entity::create();
-	e->load(test_prefab);
-	e->save(L"d:/1.prefab");
+	e->load(L"main");
 	root->add_child(e);
 
-	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
-	//	auto path = std::filesystem::path(filename);
-	//	if (path.filename() == test_prefab)
-	//	{
-	//		auto e = Entity::create();
-	//		e->load(filename);
-	//		auto root = c.thiz<Entity>();
-	//		root->remove_all_children();
-	//		root->add_child(e);
-	//	}
-	//}, Capture().set_thiz(root), false, false);
+	hierarchy = e->find_child("hierarchy");
+	scene = e->find_child("scene");
+	inspector = e->find_child("inspector");
+
+	auto prefab = Entity::create();
+	prefab->load(L"list_test");
+	scene->add_child(prefab);
+
+	std::function<void(Entity*, Entity*)> add_node;
+	add_node = [&](Entity* dst, Entity* src) {
+		auto e = Entity::create();
+		e->load(L"tree_node");
+		dst->add_child(e);
+		
+		e->find_child("title")->get_component_t<cText>()->set_text(
+			(L"<" + std::wstring(src->get_src()) + L"> " + s2w(src->get_name())).c_str());
+		auto child_count = src->get_children_count();
+		auto items = e->find_child("items");
+		for (auto i = 0; i < child_count; i++)
+			add_node(items, src->get_child(i));
+	};
+	add_node(hierarchy, prefab);
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());

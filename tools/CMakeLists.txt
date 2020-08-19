@@ -1,4 +1,3 @@
-add_subdirectory(text_maker)
 add_subdirectory(SLOC)
 add_subdirectory(when_key)
 add_subdirectory(when_changed)
