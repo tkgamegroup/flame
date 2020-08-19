@@ -15,7 +15,7 @@
         <cAligner alignx="MinMax" aligny="MinMax" />
         <entity attach="view" name="tree" src="tree">
           <cElement padding="4,4,4,4" />
-          <cAligner alignx="MinMax" aligny="MinMax" />
+          <cAligner alignx="MinMax" />
         </entity>
       </entity>
     </entity>

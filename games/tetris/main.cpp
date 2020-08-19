@@ -1,9 +1,8 @@
 #include <flame/serialize.h>
+#include <flame/universe/app.h>
 #include <flame/network/network.h>
 #include <flame/universe/components/text.h>
 #include <flame/universe/components/tile_map.h>
-#include <flame/utils/app.h>
-#include <flame/utils/fps.h>
 
 using namespace flame;
 

@@ -1,10 +1,3 @@
-#pragma once
-
-#include <flame/serialize.h>
-#include <flame/graphics/image.h>
-
-#include "../app.h"
-
 struct _2DGizmo
 {
 	cElement* base;
@@ -98,16 +91,12 @@ struct cInspector : Component
 
 struct SceneEditorWindow : GraphicsWindow
 {
-	UI ui;
-
 	SceneEditorWindow();
 	~SceneEditorWindow();
 };
 
 struct SceneEditor
 {
-	SceneEditorWindow* window;
-
 	std::filesystem::path filepath;
 	Entity* prefab;
 	bool changed;
