@@ -22,6 +22,7 @@ namespace flame
 
 		virtual ~Component() {}
 
+		virtual bool check_refs() { return true; }
 		virtual void on_added() {}
 		virtual void on_removed() {}
 		virtual void on_local_message(Message msg, void* p = nullptr) {}

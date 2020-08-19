@@ -199,8 +199,7 @@ namespace flame
 			debug_break();
 		}
 
-		auto mouse_contained = er->element->contains((Vec2f)mpos);
-		//auto mouse_contained = !er->element->clipped && rect_contains(er->element->clipped_rect, Vec2f(mouse_pos));
+		auto mouse_contained = er->element->contains((Vec2f)mpos) && rect_contains(er->element->scissor, (Vec2f)mpos);
 
 		if (!hovering && mouse_contained)
 		{

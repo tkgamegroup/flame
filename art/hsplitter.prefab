@@ -13,6 +13,6 @@
             Hovering?cElement.fill_color=230,230,230,255#
             None?cElement.fill_color=0,0,0,0" />
     </entity>
-    <cSplitter type="Horizontal" />
+    <cSplitter />
   </entity>
 </prefab>

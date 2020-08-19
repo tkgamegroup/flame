@@ -2,6 +2,7 @@
 #include "element_private.h"
 #include "aligner_private.h"
 #include "event_receiver_private.h"
+#include "layout_private.h"
 #include "splitter_private.h"
 #include "../systems/event_dispatcher_private.h"
 
@@ -16,7 +17,7 @@ namespace flame
 			case MessageStateChanged:
 				thiz->bar_event_receiver->dispatcher->window->set_cursor(
 					(((EntityPrivate*)thiz->bar_event_receiver->entity)->state & StateHovering) ?
-					(thiz->type == SplitterHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
+					(thiz->layout->type == LayoutHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
 				break;
 			}
 		}, Capture().set_thiz(this));
@@ -35,7 +36,7 @@ namespace flame
 					auto right_aligner = right->get_component_t<cAlignerPrivate>();
 					if (left_element && right_element)
 					{
-						if (thiz->type == SplitterHorizontal)
+						if (thiz->layout->type == LayoutHorizontal)
 						{
 							if (disp.x() < 0.f)
 							{

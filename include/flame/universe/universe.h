@@ -63,18 +63,6 @@ namespace flame
 		MenuButton
 	};
 
-	enum ScrollerType
-	{
-		ScrollerVertical,
-		ScrollerHorizontal
-	};
-
-	enum SplitterType
-	{
-		SplitterHorizontal,
-		SplitterVertical
-	};
-
 	enum ExtraDrawFlags
 	{
 		ExtraDrawFilledCornerSE = 1 << 0,

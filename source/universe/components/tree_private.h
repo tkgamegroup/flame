@@ -24,7 +24,7 @@ namespace flame
 
 	struct cTreeLeafPrivate : cTreeLeaf // R ~ on_*
 	{
-		cTreePrivate* tree = nullptr; // R ref place=ancestor
+		cTreePrivate* tree = nullptr; // R ref place=ancestor optional
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 
 		void* mouse_listener = nullptr;
@@ -35,7 +35,7 @@ namespace flame
 
 	struct cTreeNodePrivate : cTreeNode // R ~ on_*
 	{
-		cTreePrivate* tree = nullptr; // R ref place=ancestor
+		cTreePrivate* tree = nullptr; // R ref place=ancestor optional
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 		cTextPrivate* arrow_text = nullptr; // R ref place=arrow
 		cEventReceiverPrivate* arrow_event_receiver = nullptr; // R ref place=arrow

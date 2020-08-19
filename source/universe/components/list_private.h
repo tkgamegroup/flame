@@ -24,7 +24,7 @@ namespace flame
 
 	struct cListItemPrivate : cListItem // R ~ on_*
 	{
-		cListPrivate* list; // R ref place=parent
+		cListPrivate* list; // R ref place=parent optional
 		cEventReceiverPrivate* event_receiver; // R ref
 
 		void* mouse_listener = nullptr;

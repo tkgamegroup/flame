@@ -4,6 +4,5 @@
     <cElement clipping="true" />
     <cAligner alignx="MinMax" aligny="MinMax" />
     <cLayout/>
-    <cScrollView/>
   </entity>
 </prefab>

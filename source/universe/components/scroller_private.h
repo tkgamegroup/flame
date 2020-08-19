@@ -5,50 +5,50 @@ namespace flame
 	struct cElementPrivate;
 	struct cEventReceiverPrivate;
 	struct cLayoutPrivate;
-	struct cScrollViewPrivate;
 
 	struct cScrollerPrivate : cScroller // R ~ on_*
 	{
-		ScrollerType type = ScrollerVertical;
-
 		float step = 1.f;
 
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
-		cElementPrivate* track_element = nullptr; // R ref place=track
-		cEventReceiverPrivate* track_event_receiver = nullptr; // R ref place=track
-		cElementPrivate* thumb_element = nullptr; // R ref place=thumb
-		cEventReceiverPrivate* thumb_event_receiver = nullptr; // R ref place=thumb
+
+		cElementPrivate* htrack_element = nullptr; // R ref place=htrack
+		cElementPrivate* hthumb_element = nullptr; // R ref place=hthumb
+		cEventReceiverPrivate* hthumb_event_receiver = nullptr; // R ref place=hthumb
+
+		cElementPrivate* vtrack_element = nullptr; // R ref place=vtrack
+		cElementPrivate* vthumb_element = nullptr; // R ref place=vthumb
+		cEventReceiverPrivate* vthumb_event_receiver = nullptr; // R ref place=vthumb
 
 		cElementPrivate* view_element = nullptr; // R ref place=view
 		cLayoutPrivate* view_layout = nullptr; // R ref place=view
-		cScrollViewPrivate* view = nullptr; // R ref place=view
+
 		cElementPrivate* target_element = nullptr;
 
 		void* mouse_scroll_listener = nullptr;
-		void* track_element_listener = nullptr;
-		void* thumb_mouse_listener = nullptr;
 
-		ScrollerType get_type() const override { return type; }
-		void set_type(ScrollerType t) override { type = t; }
+		void* htrack_element_listener = nullptr;
+		void* hthumb_mouse_listener = nullptr;
+		void* vtrack_element_listener = nullptr;
+		void* vthumb_mouse_listener = nullptr;
 
-		void scroll(float v) override;
+		void scroll(const Vec2f& v) override;
 
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
-		void on_gain_track_element();
-		void on_lost_track_element();
-		void on_gain_thumb_event_receiver();
-		void on_lost_thumb_event_receiver();
-		void on_gain_view();
-	};
 
-	struct cScrollViewPrivate : cScrollView // R ~ on_*
-	{
-		Entity* target = nullptr;
-		cElementPrivate* target_element = nullptr;
+		void on_gain_htrack_element();
+		void on_lost_htrack_element();
+		void on_gain_hthumb_event_receiver();
+		void on_lost_hthumb_event_receiver();
 
-		cScrollerPrivate* scroller = nullptr;
+		void on_gain_vtrack_element();
+		void on_lost_vtrack_element();
+		void on_gain_vthumb_event_receiver();
+		void on_lost_vthumb_event_receiver();
 
-		void on_child_message(Message msg, void* p) override;
+		void on_gain_view_element();
+
+		bool check_refs() override;
 	};
 }

@@ -59,6 +59,8 @@ namespace flame
 			{
 				for (auto c : parent->child_message_dispatch_list)
 					c->on_child_message(MessageVisibilityChanged, this);
+				for (auto& l : parent->child_message_listeners)
+					l->call(MessageVisibilityChanged, nullptr);
 			}
 		}
 
@@ -105,16 +107,15 @@ namespace flame
 	{
 		if (staging == INVALID_POINTER)
 			return;
-		target = staging;
+		*dst = staging == INVALID_POINTER ? nullptr : staging;
 		staging = INVALID_POINTER;
-		*dst = target;
-		if (target)
+		if (*dst)
 		{
 			if (on_gain)
 				on_gain(c);
 
 			if (type == RefComponent)
-				((ComponentAux*)((Component*)target)->aux)->list_ref_by.push_back(c);
+				((ComponentAux*)((Component*)*dst)->aux)->list_ref_by.push_back(c);
 		}
 	}
 
@@ -122,7 +123,6 @@ namespace flame
 	{
 		if (on_lost)
 			on_lost(c);
-		target = nullptr;
 		*dst = nullptr;
 	}
 
@@ -175,6 +175,9 @@ namespace flame
 
 					std::string place_str;
 					m->get_token("place", &place_str);
+
+					r.optional = m->get_token("optional");
+
 					switch (r.name[(int)r.name.find_last_of(':') + 1])
 					{
 					case 'c':
@@ -187,8 +190,11 @@ namespace flame
 							r.staging = get_component(r.hash);
 							if (!r.staging)
 							{
-								printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
-								return;
+								if (!r.optional)
+								{
+									printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
 							}
 						}
 						else if (place_str == "parent")
@@ -199,8 +205,11 @@ namespace flame
 								r.staging = parent->get_component(r.hash);
 								if (!r.staging)
 								{
-									printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
-									return;
+									if (!r.optional)
+									{
+										printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
+										return;
+									}
 								}
 							}
 						}
@@ -220,8 +229,11 @@ namespace flame
 								}
 								if (!r.staging)
 								{
-									printf("add component %s failed, this component requires ancestor's component %s, which do not exist\n", c->type_name, r.name.c_str());
-									return;
+									if (!r.optional)
+									{
+										printf("add component %s failed, this component requires ancestor's component %s, which do not exist\n", c->type_name, r.name.c_str());
+										return;
+									}
 								}
 							}
 						}
@@ -233,8 +245,11 @@ namespace flame
 								r.staging = e->get_component(r.hash);
 							if (!r.staging)
 							{
-								printf("add component %s failed, this component requires offspring(%s)'s component %s, which do not exist\n", c->type_name, place_str.c_str(), r.name.c_str());
-								return;
+								if (!r.optional)
+								{
+									printf("add component %s failed, this component requires offspring(%s)'s component %s, which do not exist\n", c->type_name, place_str.c_str(), r.name.c_str());
+									return;
+								}
 							}
 						}
 
@@ -251,8 +266,11 @@ namespace flame
 							r.staging = world->get_system(r.hash);
 							if (!r.staging)
 							{
-								printf("add component %s failed, this component requires system %s, which do not exist\n", c->type_name, r.name.c_str());
-								return;
+								if (!r.optional)
+								{
+									printf("add component %s failed, this component requires system %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
 							}
 						}
 
@@ -268,8 +286,11 @@ namespace flame
 							r.staging = world->find_object(r.name);
 							if (!r.staging)
 							{
-								printf("add component %s failed, this component requires object %s, which do not exist\n", c->type_name, r.name.c_str());
-								return;
+								if (!r.optional)
+								{
+									printf("add component %s failed, this component requires object %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
 							}
 						}
 
@@ -279,10 +300,21 @@ namespace flame
 			}
 		}
 
-		c->aux = new ComponentAux;
-		*(ComponentAux*)c->aux = aux;
+		for (auto& r : aux.refs)
+		{
+			if (r.staging != INVALID_POINTER)
+				*r.dst = r.staging;
+		}
+		if (!c->check_refs())
+		{
+			printf("add component %s failed, check refs failed\n", c->type_name);
+			return;
+		}
 
 		c->entity = this;
+
+		c->aux = new ComponentAux;
+		*(ComponentAux*)c->aux = aux;
 
 		for (auto& r : ((ComponentAux*)c->aux)->refs)
 			r.gain(c);
@@ -309,6 +341,8 @@ namespace flame
 		{
 			for (auto cc : parent->child_message_dispatch_list)
 				cc->on_child_message(MessageComponentAdded, c);
+			for (auto& l : parent->child_message_listeners)
+				l->call(MessageComponentAdded, c);
 		}
 
 		components.emplace(c->type_hash, c);
@@ -329,11 +363,11 @@ namespace flame
 
 		for (auto& r : aux.refs)
 		{
-			if (r.target)
+			if (*r.dst)
 			{
 				if (r.type == RefComponent)
 				{
-					std::erase_if(((ComponentAux*)((Component*)r.target)->aux)->list_ref_by, [&](const auto& i) {
+					std::erase_if(((ComponentAux*)((Component*)*r.dst)->aux)->list_ref_by, [&](const auto& i) {
 						return i == c;
 					});
 				}
@@ -352,6 +386,8 @@ namespace flame
 		{
 			for (auto cc : parent->child_message_dispatch_list)
 				cc->on_child_message(MessageComponentRemoved, c);
+			for (auto& l : parent->child_message_listeners)
+				l->call(MessageComponentRemoved, c);
 		}
 	}
 
@@ -452,7 +488,7 @@ namespace flame
 					switch (r.type)
 					{
 					case RefComponent:
-						if (!r.target)
+						if (!*r.dst)
 						{
 							switch (r.place)
 							{
@@ -460,9 +496,12 @@ namespace flame
 								r.staging = get_component(r.hash);
 								if (!r.staging)
 								{
-									printf("add child failed, this child contains a component %s that requires parent's component %s, which do not exist\n", c.second->type_name, r.name.c_str());
-									ok = false;
-									return false;
+									if (!r.optional)
+									{
+										printf("add child failed, this child contains a component %s that requires parent's component %s, which do not exist\n", c.second->type_name, r.name.c_str());
+										ok = false;
+										return false;
+									}
 								}
 								break;
 							case PlaceAncestor:
@@ -475,6 +514,12 @@ namespace flame
 										break;
 									e = e->parent;
 								}
+								if (!r.staging && !r.optional)
+								{
+									printf("add child failed, this child contains a component %s that requires ancestor's component %s, which do not exist\n", c.second->type_name, r.name.c_str());
+									ok = false;
+									return false;
+								}
 								break;
 							}
 						}
@@ -485,9 +530,12 @@ namespace flame
 							r.staging = world->get_system(r.hash);
 							if (!r.staging)
 							{
-								printf("add child failed, this child contains a component %s that requires system %s, which do not exist\n", c.second->type_name, r.name.c_str());
-								ok = false;
-								return false;
+								if (!r.optional)
+								{
+									printf("add child failed, this child contains a component %s that requires system %s, which do not exist\n", c.second->type_name, r.name.c_str());
+									ok = false;
+									return false;
+								}
 							}
 						}
 						break;
@@ -497,13 +545,27 @@ namespace flame
 							r.staging = world->find_object(r.name);
 							if (!r.staging)
 							{
-								printf("add child failed, this child contains a component %s that requires object %s, which do not exist\n", c.second->type_name, r.name.c_str());
-								ok = false;
-								return false;
+								if (!r.optional)
+								{
+									printf("add child failed, this child contains a component %s that requires object %s, which do not exist\n", c.second->type_name, r.name.c_str());
+									ok = false;
+									return false;
+								}
 							}
 						}
 						break;
 					}
+				}
+
+				for (auto& r : aux.refs)
+				{
+					if (r.staging != INVALID_POINTER)
+						*r.dst = r.staging;
+				}
+				if (!c.second->check_refs())
+				{
+					printf("add child failded, this child contains a component %s that check refs failed\n", c.second->type_name);
+					return false;
 				}
 			}
 			return true;
@@ -546,6 +608,8 @@ namespace flame
 			l->call(MessageAdded, nullptr);
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessageAdded, e);
+		for (auto& l : child_message_listeners)
+			l->call(MessageAdded, e);
 	}
 
 	void EntityPrivate::reposition_child(uint pos1, uint pos2)
@@ -571,8 +635,12 @@ namespace flame
 
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessagePositionChanged, a);
+		for (auto& l : child_message_listeners)
+			l->call(MessagePositionChanged, a);
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessagePositionChanged, b);
+		for (auto& l : child_message_listeners)
+			l->call(MessagePositionChanged, b);
 	}
 
 	void EntityPrivate::on_child_removed(EntityPrivate* e) const
@@ -585,14 +653,13 @@ namespace flame
 				auto& aux = *(ComponentAux*)c.second->aux;
 				for (auto& r : aux.refs)
 				{
-					if (r.target)
+					if (!r.dst)
 					{
 						if (r.type == RefComponent)
 						{
 							if (r.place != PlaceLocal)
 							{
-								auto target = (Component*)r.target;
-								std::erase_if(((ComponentAux*)target->aux)->list_ref_by, [&](const auto& i) {
+								std::erase_if(((ComponentAux*)((Component*)*r.dst)->aux)->list_ref_by, [&](const auto& i) {
 									return i == c.second.get();
 								});
 								r.lost(c.second.get());
@@ -619,6 +686,8 @@ namespace flame
 			l->call(MessageRemoved, nullptr);
 		for (auto c : child_message_dispatch_list)
 			c->on_child_message(MessageRemoved, e);
+		for (auto& l : child_message_listeners)
+			l->call(MessageRemoved, e);
 	}
 
 	static bool can_remove(EntityPrivate* e)
@@ -699,6 +768,20 @@ namespace flame
 	void EntityPrivate::remove_local_message_listener(void* lis)
 	{
 		std::erase_if(local_message_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void* EntityPrivate::add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		child_message_listeners.emplace_back(c);
+		return c;
+	}
+
+	void EntityPrivate::remove_child_message_listener(void* lis)
+	{
+		std::erase_if(child_message_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
 		});
 	}
@@ -920,7 +1003,7 @@ namespace flame
 							auto found = false;
 							for (auto k = 0; k < i; k++)
 							{
-								if (list[k] == r.target)
+								if (list[k] == *r.dst)
 								{
 									found = true;
 									break;

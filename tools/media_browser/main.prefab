@@ -19,7 +19,7 @@
         </entity>
       </entity>
     </entity>
-    <entity src="hscroller">
+    <entity src="scroller">
       <cElement />
       <cAligner alignx="MinMax" aligny="MinMax" />
       <entity attach="view" name="image">

@@ -59,9 +59,9 @@ namespace flame
 			Place place = PlaceLocal;
 			std::string name;
 			uint64 hash;
+			bool optional = false;
 
 			void* staging = INVALID_POINTER;
-			void* target = nullptr;
 			void** dst = nullptr;
 			void(*on_gain)(void*) = nullptr;
 			void(*on_lost)(void*) = nullptr;
@@ -90,6 +90,7 @@ namespace flame
 		std::vector<Component*> local_data_changed_dispatch_list;
 		std::vector<Component*> child_data_changed_dispatch_list;
 		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> local_message_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> child_message_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> local_data_changed_listeners;
 
 		std::filesystem::path src;
@@ -134,6 +135,8 @@ namespace flame
 
 		void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) override;
 		void remove_local_message_listener(void* lis) override;
+		void* add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) override;
+		void remove_child_message_listener(void* lis) override;
 		void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) override;
 		void remove_local_data_changed_listener(void* lis) override;
 

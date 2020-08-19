@@ -43,6 +43,8 @@ namespace flame
 
 		virtual void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
 		virtual void remove_local_message_listener(void* lis) = 0;
+		virtual void* add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
+		virtual void remove_child_message_listener(void* lis) = 0;
 		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) = 0;
 		virtual void remove_local_data_changed_listener(void* lis) = 0;
 
