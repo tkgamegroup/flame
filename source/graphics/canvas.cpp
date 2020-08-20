@@ -823,6 +823,9 @@ namespace flame
 					break;
 				}
 			}
+			Pass p;
+			p.type = 1;
+			passes.push_back(p);
 
 			cb->begin();
 
@@ -872,12 +875,14 @@ namespace flame
 					break;
 				case 1:
 				{
+					cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(fb_bk.get());
 					cb->bind_pipeline(pl_blurh);
 					cb->bind_descriptor_set(ds_tar[image_index].get(), 0, pll_1_img);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
+					cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(fbs_tar[image_index].get());
 					cb->bind_pipeline(pl_blurv);
 					cb->bind_descriptor_set(ds_bk.get(), 0, pll_1_img);
