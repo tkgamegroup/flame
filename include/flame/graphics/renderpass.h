@@ -12,34 +12,20 @@ namespace flame
 
 		struct RenderpassAttachmentInfo
 		{
-			Format format;
-			bool clear;
-			SampleCount sample_count;
-
-			RenderpassAttachmentInfo() :
-				format(Format_R8G8B8A8_UNORM),
-				clear(true),
-				sample_count(SampleCount_1)
-			{
-			}
+			Format format = Format_R8G8B8A8_UNORM;
+			bool clear = true;
+			SampleCount sample_count = SampleCount_1;
+			ImageLayout initia_layout = ImageLayoutUndefined;
+			ImageLayout final_layout = ImageLayoutShaderReadOnly;
 		};
 
 		struct RenderpassSubpassInfo
 		{
-			uint color_attachments_count;
-			const uint* color_attachments;
-			uint resolve_attachments_count;
-			const uint* resolve_attachments;
-			int depth_attachment;
-
-			RenderpassSubpassInfo() :
-				color_attachments_count(0),
-				color_attachments(nullptr),
-				resolve_attachments_count(0),
-				resolve_attachments(nullptr),
-				depth_attachment(-1)
-			{
-			}
+			uint color_attachments_count = 0;
+			const uint* color_attachments = nullptr;
+			uint resolve_attachments_count = 0;
+			const uint* resolve_attachments = nullptr;
+			int depth_attachment = -1;
 		};
 
 		struct RenderpassAttachment

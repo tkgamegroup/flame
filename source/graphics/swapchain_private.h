@@ -16,8 +16,6 @@ namespace flame
 
 			DevicePrivate* device;
 
-			ImageUsageFlags extra_usages;
-
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;
 
@@ -28,7 +26,7 @@ namespace flame
 
 			void* resize_listener;
 
-			SwapchainPrivate(DevicePrivate *d, Window* w, ImageUsageFlags extra_usages = ImageUsageNone);
+			SwapchainPrivate(DevicePrivate *d, Window* w);
 			~SwapchainPrivate();
 
 			void release() override { delete this; }

@@ -42,18 +42,8 @@ namespace flame
 				dst.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				dst.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-				dst.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-				auto fmt = src.format;
-				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-				{
-					if (fmt >= Format_Swapchain_Begin && fmt <= Format_Swapchain_End)
-						dst.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-					else
-						dst.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				}
-				else
-					dst.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				dst.initialLayout = to_backend(src.initia_layout, src.format);
+				dst.finalLayout = to_backend(src.final_layout, src.format);
 			}
 
 			std::vector<std::vector<VkAttachmentReference>> color_refs(_subpasses.size());

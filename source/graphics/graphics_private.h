@@ -38,9 +38,9 @@ namespace flame
 					return VK_FORMAT_R8G8B8A8_UNORM;
 				case Format_R8G8B8A8_SRGB:
 					return VK_FORMAT_R8G8B8A8_SRGB;
-				case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
+				case Format_B8G8R8A8_UNORM:
 					return VK_FORMAT_B8G8R8A8_UNORM;
-				case Format_B8G8R8A8_SRGB: case Format_Swapchain_B8G8R8A8_SRGB:
+				case Format_B8G8R8A8_SRGB:
 					return VK_FORMAT_B8G8R8A8_SRGB;
 				case Format_R16G16B16A16_UNORM:
 					return VK_FORMAT_R16G16B16A16_UNORM;
@@ -64,14 +64,14 @@ namespace flame
 			}
 		}
 
-		inline Format get_format(VkFormat f, bool is_swapchain)
+		inline Format get_format(VkFormat f)
 		{
 			switch (f)
 			{
 				case VK_FORMAT_B8G8R8A8_UNORM:
-					return is_swapchain ? Format_Swapchain_B8G8R8A8_UNORM : Format_B8G8R8A8_UNORM;
+					return Format_B8G8R8A8_UNORM;
 				case VK_FORMAT_B8G8R8A8_SRGB:
-					return is_swapchain ? Format_Swapchain_B8G8R8A8_SRGB : Format_B8G8R8A8_SRGB;
+					return Format_B8G8R8A8_SRGB;
 				default:
 					assert(0);
 			}

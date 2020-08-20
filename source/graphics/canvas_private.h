@@ -45,7 +45,8 @@ namespace flame
 			enum CmdType
 			{
 				CmdDrawElement,
-				CmdSetScissor
+				CmdSetScissor,
+				CmdBlur
 			};
 
 			struct Cmd
@@ -58,8 +59,12 @@ namespace flame
 						uint id;
 						uint vtx_cnt;
 						uint idx_cnt;
-					}draw_data;
-					Vec4f scissor;
+					}d1;
+					struct
+					{
+						Vec4f scissor;
+						uint radius;
+					}d2;
 				}v;
 			};
 
@@ -72,7 +77,7 @@ namespace flame
 
 			DevicePrivate* device;
 
-			Vec4f clear_color = Vec4f(0.f, 0.f, 0.f, 1.f);
+			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
 			std::unique_ptr<ImagePrivate> img_white;
 			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
@@ -80,11 +85,15 @@ namespace flame
 
 			std::unique_ptr<BufferPrivate> buf_vtx;
 			std::unique_ptr<BufferPrivate> buf_idx;
-			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_el;
+			std::unique_ptr<DescriptorSetPrivate> ds_el;
+
+			std::vector<ImageViewPrivate*> views_tar;
+			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_tar;
+			std::unique_ptr<DescriptorSetPrivate> ds_tar[3];
+
 			std::unique_ptr<ImagePrivate> img_bk;
 			std::unique_ptr<FramebufferPrivate> fb_bk;
-			std::unique_ptr<DescriptorSetPrivate> ds;
-			std::unique_ptr<DescriptorSetPrivate> ds_bk[3];
+			std::unique_ptr<DescriptorSetPrivate> ds_bk;
 
 			std::vector<std::vector<Vec2f>> paths;
 
@@ -102,8 +111,8 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Vec4f get_clear_color() const override { return clear_color; }
-			void set_clear_color(const Vec4c& color) override { clear_color = Vec4f(color) / 255.f; }
+			Vec4c get_clear_color() const override { return clear_color; }
+			void set_clear_color(const Vec4c& color) override { clear_color = color; }
 
 			void set_target(std::span<ImageViewPrivate*> views);
 

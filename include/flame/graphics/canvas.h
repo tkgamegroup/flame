@@ -26,7 +26,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			virtual Vec4f get_clear_color() const = 0;
+			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
 
 			virtual void set_target(uint views_count, ImageView* const* views) = 0;

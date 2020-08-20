@@ -47,7 +47,7 @@ int main(int argc, char** args)
 
 	app.w = Window::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
-	app.sc = Swapchain::create(app.d, app.w, true);
+	app.sc = Swapchain::create(app.d, app.w);
 	app.img = Image::create_from_file(app.d, (engine_path / L"art/9.png").c_str(), ImageUsageTransferSrc, false);
 	app.img->change_layout(ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
 	app.on_resize();

@@ -9,12 +9,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		static auto swapchain_format = Format_Swapchain_B8G8R8A8_UNORM;
+		static auto swapchain_format = Format_B8G8R8A8_UNORM;
 
-		SwapchainPrivate::SwapchainPrivate(DevicePrivate* d, Window* w, ImageUsageFlags _extra_usages) :
+		SwapchainPrivate::SwapchainPrivate(DevicePrivate* d, Window* w) :
 			device(d),
-			window(w),
-			extra_usages(_extra_usages)
+			window(w)
 		{
 			update();
 
@@ -101,7 +100,7 @@ namespace flame
 				surface_formats.resize(surface_format_count);
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device, vk_surface, &surface_format_count, surface_formats.data());
 
-				swapchain_format = graphics::get_format(surface_formats[0].format, true);
+				swapchain_format = graphics::get_format(surface_formats[0].format);
 
 				VkSwapchainCreateInfoKHR swapchain_info;
 				swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -114,7 +113,7 @@ namespace flame
 				swapchain_info.imageExtent.width = size.x();
 				swapchain_info.imageExtent.height = size.y();
 				swapchain_info.imageArrayLayers = 1;
-				swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | (extra_usages ? get_backend_image_usage_flags(extra_usages) : 0);
+				swapchain_info.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 				swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 				swapchain_info.queueFamilyIndexCount = 0;
 				swapchain_info.pQueueFamilyIndices = nullptr;
@@ -141,9 +140,9 @@ namespace flame
 			return swapchain_format;
 		}
 
-		Swapchain *Swapchain::create(Device *d, Window* w, ImageUsageFlags extra_usages)
+		Swapchain* Swapchain::create(Device *d, Window* w)
 		{
-			return new SwapchainPrivate((DevicePrivate*)d, w, extra_usages);
+			return new SwapchainPrivate((DevicePrivate*)d, w);
 		}
 	}
 }

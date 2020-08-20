@@ -268,8 +268,6 @@ namespace flame
 			switch (barrier.oldLayout)
 			{
 			case VK_IMAGE_LAYOUT_UNDEFINED:
-				barrier.srcAccessMask = 0;
-				break;
 			case VK_IMAGE_LAYOUT_GENERAL:
 				barrier.srcAccessMask = 0;
 				break;

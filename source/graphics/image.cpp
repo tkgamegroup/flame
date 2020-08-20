@@ -21,7 +21,7 @@ namespace flame
 				return 2;
 			case Format_R32_SFLOAT:
 				return 4;
-			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM: case Format_Swapchain_B8G8R8A8_UNORM:
+			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
 				return 4;
 			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
 				return 8;
