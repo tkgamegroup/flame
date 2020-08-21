@@ -15,6 +15,7 @@ namespace flame
 		struct CommandBufferPrivate;
 
 		const auto resources_count = 64U;
+		const auto downsample_level = 6U;
 
 		struct CanvasResourcePrivate : CanvasResource
 		{
@@ -89,11 +90,12 @@ namespace flame
 
 			std::vector<ImageViewPrivate*> views_tar;
 			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_tar;
-			std::unique_ptr<DescriptorSetPrivate> ds_tar[3];
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> dss_tar;
 
 			std::unique_ptr<ImagePrivate> img_bk;
-			std::unique_ptr<FramebufferPrivate> fb_bk;
-			std::unique_ptr<DescriptorSetPrivate> ds_bk;
+			std::unique_ptr<ImageViewPrivate> ivs_bk[downsample_level];
+			std::unique_ptr<FramebufferPrivate> fbs_bk[downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> dss_bk[downsample_level];
 
 			std::vector<std::vector<Vec2f>> paths;
 

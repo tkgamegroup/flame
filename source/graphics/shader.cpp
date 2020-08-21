@@ -509,7 +509,8 @@ namespace flame
 
 					{
 						nlohmann::json json;
-						if (s->type == ShaderStageFrag)
+
+						if (!r.blend_options.empty())
 						{
 							auto& bos = json["blend_options"];
 							for (auto i = 0; i < r.blend_options.size(); i++)
