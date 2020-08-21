@@ -270,7 +270,7 @@ namespace flame
 		}
 	}
 
-	void cElementPrivate::draw_background(graphics::Canvas* canvas)
+	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
 //#ifdef _DEBUG
 //		if (debug_level > 0)
@@ -304,12 +304,6 @@ namespace flame
 				canvas->stroke(border_color, border);
 			}
 		}
-	}
-
-	void cElementPrivate::draw_content(graphics::Canvas* canvas)
-	{
-		for (auto d : drawers)
-			d->draw(canvas);
 	}
 
 //	void cElement::set_roundness(const Vec4f& r, void* sender)

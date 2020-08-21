@@ -20,22 +20,17 @@ namespace flame
 		if (element->culled)
 			return;
 
+		for (auto d : element->before_drawers)
+			d->draw(canvas);
+		element->draw(canvas);
 		if (element->clipping)
-		{
-			element->draw_background(canvas);
 			canvas->set_scissor(Vec4f(element->points[4], element->points[6]));
-			element->draw_content(canvas);
-			for (auto& c : e->children)
-				do_render(c.get());
+		for (auto d : element->after_drawers)
+			d->draw(canvas);
+		for (auto& c : e->children)
+			do_render(c.get());
+		if (element->clipping)
 			canvas->set_scissor(element->scissor);
-		}
-		else
-		{
-			element->draw_background(canvas);
-			element->draw_content(canvas);
-			for (auto& c : e->children)
-				do_render(c.get());
-		}
 	}
 
 	void sElementRendererPrivate::on_added()

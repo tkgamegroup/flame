@@ -36,13 +36,13 @@ namespace flame
 
 	void cTextPrivate::on_gain_element()
 	{
-		element->drawers.push_back(this);
+		element->after_drawers.push_back(this);
 		element->mark_drawing_dirty();
 	}
 
 	void cTextPrivate::on_lost_element()
 	{
-		std::erase_if(element->drawers, [&](const auto& i) {
+		std::erase_if(element->after_drawers, [&](const auto& i) {
 			return i == this;
 		});
 		element->mark_drawing_dirty();

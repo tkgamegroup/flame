@@ -38,7 +38,8 @@ namespace flame
 		Vec4f scissor;
 		bool culled = false;
 
-		std::vector<Drawer*> drawers;
+		std::vector<Drawer*> before_drawers;
+		std::vector<Drawer*> after_drawers;
 
 		float get_x() const override { return x; }
 		void set_x(float x) override;
@@ -102,7 +103,6 @@ namespace flame
 
 		void on_local_message(Message msg, void* p) override;
 
-		void draw_background(graphics::Canvas* canvas);
-		void draw_content(graphics::Canvas* canvas);
+		void draw(graphics::Canvas* canvas);
 	};
 }

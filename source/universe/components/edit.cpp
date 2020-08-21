@@ -78,12 +78,12 @@ namespace flame
 	void cEditPrivate::on_gain_element()
 	{
 
-		element->drawers.push_back(this);
+		element->after_drawers.push_back(this);
 	}
 
 	void cEditPrivate::on_lost_element()
 	{
-		std::erase_if(element->drawers, [&](const auto& i) {
+		std::erase_if(element->after_drawers, [&](const auto& i) {
 			return i == this;
 		});
 	}
