@@ -460,44 +460,15 @@ namespace flame
 
 						std::string output;
 						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
-						std::filesystem::remove(L"out.glsl");
 						if (!std::filesystem::exists(spv_path))
 						{
-							printf("compile error:\n%s\n", output.c_str());
-							printf("trying to use fallback");
+							std::ifstream glsl(L"out.glsl");
 
-							std::ofstream glsl_file(L"out.glsl");
-							glsl_file << glsl_header;
-							switch (s->type)
-							{
-							case ShaderStageVert:
-								glsl_file << "void main()\n"
-									"{\n"
-									"\tgl_Position = vec4(0, 0, 0, 1);"
-									"}\n";
-								break;
-							case ShaderStageFrag:
-								glsl_file <<
-									"void main()\n"
-									"{\n"
-									"}\n";
-								break;
-							default:
-								assert(0); // WIP
-							}
-							glsl_file.close();
-
-							exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
-							std::filesystem::remove(L"out.glsl");
-							if (!std::filesystem::exists(spv_path))
-							{
-								printf(" - failed\n error:\n%s", output.c_str());
-								assert(0);
-								ok = false;
-							}
-							else
-								printf(" - ok\n");
+							glsl.close();
+							printf("error:\n%s\n", output.c_str());
+							assert(0);
 						}
+						std::filesystem::remove(L"out.glsl");
 
 						wprintf(L"end compiling shader:%s\n", shader_path.c_str());
 					}
