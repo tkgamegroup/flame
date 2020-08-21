@@ -89,18 +89,23 @@ namespace flame
 		}
 		*/
 
+		static auto initialized = false;
+
 		static RenderpassPrivate* rp_tar = nullptr;
+		static RenderpassPrivate* rp_bk = nullptr;
+
 		static DescriptorSetLayoutPrivate* dsl_el = nullptr;
 		static PipelineLayoutPrivate* pll_el = nullptr;
 		static PipelinePrivate* pl_el = nullptr;
 
-		static RenderpassPrivate* rp_bk = nullptr;
-		static DescriptorSetLayoutPrivate* dsl_1_img = nullptr;
+		static DescriptorSetLayoutPrivate* dsl_1img = nullptr;
 		static PipelineLayoutPrivate* pll_blur = nullptr;
 		static PipelinePrivate* pl_blurh = nullptr;
 		static PipelinePrivate* pl_blurv = nullptr;
 		static PipelineLayoutPrivate* pll_blt = nullptr;
 		static PipelinePrivate* pl_blt = nullptr;
+		static PipelineLayoutPrivate* pll_ds = nullptr;
+		static PipelinePrivate* pl_ds = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
 			device(d)
@@ -112,103 +117,116 @@ namespace flame
 					shader_path = engin_path / shader_path;
 			}
 
-			if (!rp_tar)
+			if (!initialized)
 			{
-				RenderpassAttachmentInfo att;
-				att.format = Swapchain::get_format();
-				att.clear = false;
-				RenderpassSubpassInfo sp;
-				uint col_refs[] = {
-					0
-				};
-				sp.color_attachments_count = 1;
-				sp.color_attachments = col_refs;
-				rp_tar = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
-			}
-			if (!dsl_el)
-			{
-				DescriptorBindingInfo db;
-				db.type = DescriptorSampledImage;
-				db.count = resources_count;
-				db.name = "images";
-				dsl_el = new DescriptorSetLayoutPrivate(d, { &db, 1});
-			}
-			if (!pll_el)
-				pll_el = new PipelineLayoutPrivate(d, { &dsl_el, 1 }, 16);
-			if (!pl_el)
-			{
-				VertexAttributeInfo vias[3];
-				auto& via1 = vias[0];
-				via1.format = Format_R32G32_SFLOAT;
-				via1.name = "pos";
-				auto& via2 = vias[1];
-				via2.format = Format_R32G32_SFLOAT;
-				via2.name = "uv";
-				auto& via3 = vias[2];
-				via3.format = Format_R8G8B8A8_UNORM;
-				via3.name = "color";
-				VertexBufferInfo vib;
-				vib.attributes_count = size(vias);
-				vib.attributes = vias;
-				VertexInfo vi;
-				vi.buffers_count = 1;
-				vi.buffers = &vib;
-				ShaderPrivate* shaders[] = {
-					new ShaderPrivate(L"element.vert"),
-					new ShaderPrivate(L"element.frag")
-				};
-				pl_el = PipelinePrivate::create(d, shader_path, shaders, pll_el, rp_tar, 0, &vi);
-			}
+				initialized = true;
 
-			if (!rp_bk)
-			{
-				auto fmt = Swapchain::get_format();
-				RenderpassAttachmentInfo att;
-				att.format = Format_R8G8B8A8_UNORM;
-				att.clear = false;
-				RenderpassSubpassInfo sp;
-				uint col_refs[] = {
-					0
-				};
-				sp.color_attachments_count = 1;
-				sp.color_attachments = col_refs;
-				rp_bk = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
-			}
-			if (!dsl_1_img)
-			{
-				DescriptorBindingInfo db;
-				db.type = DescriptorSampledImage;
-				db.count = 1;
-				db.name = "image";
-				dsl_1_img = new DescriptorSetLayoutPrivate(d, { &db, 1 });
-			}
-			if (!pll_blur)
-				pll_blur = new PipelineLayoutPrivate(d, { &dsl_1_img, 1 }, sizeof(Vec4f));
-			if (!pl_blurh)
-			{
-				ShaderPrivate* shaders[] = {
-					new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
-					new ShaderPrivate(L"blur.frag", "#define H")
-				};
-				pl_blurh = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_bk, 0);
-			}
-			if (!pl_blurv)
-			{
-				ShaderPrivate* shaders[] = {
-					new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
-					new ShaderPrivate(L"blur.frag", "#define V")
-				};
-				pl_blurv = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_bk, 0);
-			}
-			if (!pll_blt)
-				pll_blt = new PipelineLayoutPrivate(d, { &dsl_1_img, 1 }, sizeof(Vec4f));
-			if (!pl_blt)
-			{
-				ShaderPrivate* shaders[] = {
-					new ShaderPrivate(L"fullscreen.vert"),
-					new ShaderPrivate(L"blt.frag")
-				};
-				pl_blt = PipelinePrivate::create(d, shader_path, shaders, pll_blt, rp_bk, 0);
+				{
+					RenderpassAttachmentInfo att;
+					att.format = Swapchain::get_format();
+					att.clear = false;
+					RenderpassSubpassInfo sp;
+					uint col_refs[] = {
+						0
+					};
+					sp.color_attachments_count = 1;
+					sp.color_attachments = col_refs;
+					rp_tar = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
+				}
+
+				{
+					DescriptorBindingInfo db;
+					db.type = DescriptorSampledImage;
+					db.count = resources_count;
+					db.name = "images";
+					dsl_el = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+				}
+
+				pll_el = new PipelineLayoutPrivate(d, { &dsl_el, 1 }, 16);
+
+				{
+					VertexAttributeInfo vias[3];
+					auto& via1 = vias[0];
+					via1.format = Format_R32G32_SFLOAT;
+					via1.name = "pos";
+					auto& via2 = vias[1];
+					via2.format = Format_R32G32_SFLOAT;
+					via2.name = "uv";
+					auto& via3 = vias[2];
+					via3.format = Format_R8G8B8A8_UNORM;
+					via3.name = "color";
+					VertexBufferInfo vib;
+					vib.attributes_count = size(vias);
+					vib.attributes = vias;
+					VertexInfo vi;
+					vi.buffers_count = 1;
+					vi.buffers = &vib;
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(L"element.vert"),
+						new ShaderPrivate(L"element.frag")
+					};
+					pl_el = PipelinePrivate::create(d, shader_path, shaders, pll_el, rp_tar, 0, &vi);
+				}
+
+				{
+					auto fmt = Swapchain::get_format();
+					RenderpassAttachmentInfo att;
+					att.format = Format_R8G8B8A8_UNORM;
+					att.clear = false;
+					RenderpassSubpassInfo sp;
+					uint col_refs[] = {
+						0
+					};
+					sp.color_attachments_count = 1;
+					sp.color_attachments = col_refs;
+					rp_bk = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
+				}
+
+				{
+					DescriptorBindingInfo db;
+					db.type = DescriptorSampledImage;
+					db.count = 1;
+					db.name = "image";
+					dsl_1img = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+				}
+
+				pll_blur = new PipelineLayoutPrivate(d, { &dsl_1img, 1 }, sizeof(Vec4f));
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
+						new ShaderPrivate(L"blur.frag", "#define H")
+					};
+					pl_blurh = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_bk, 0);
+				}
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
+						new ShaderPrivate(L"blur.frag", "#define V")
+					};
+					pl_blurv = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_bk, 0);
+				}
+
+				pll_blt = new PipelineLayoutPrivate(d, { &dsl_1img, 1 }, sizeof(Vec4f));
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(L"fullscreen.vert"),
+						new ShaderPrivate(L"blt.frag")
+					};
+					pl_blt = PipelinePrivate::create(d, shader_path, shaders, pll_blt, rp_bk, 0);
+				}
+
+				pll_ds = new PipelineLayoutPrivate(d, { &dsl_1img, 1 }, 0);
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
+						new ShaderPrivate(L"downsample.frag")
+					};
+					pl_ds = PipelinePrivate::create(d, shader_path, shaders, pll_ds, rp_bk, 0);
+				}
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -259,7 +277,7 @@ namespace flame
 					cb->change_image_layout(views[i]->image, ImageLayoutUndefined, ImageLayoutPresent);
 					views_tar[i] = views[i];
 					fbs_tar[i].reset(new FramebufferPrivate(device, rp_tar, { &views[i], 1 }));
-					dss_tar[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_1_img));
+					dss_tar[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_1img));
 					dss_tar[i]->set_image(0, 0, views[i], sp);
 				}
 				cb->end();
@@ -273,8 +291,18 @@ namespace flame
 					ivs_bk[i].reset(new ImageViewPrivate(img_bk.get(), ImageView2D, i, 1));
 					auto iv = ivs_bk[i].get();
 					fbs_bk[i].reset(new FramebufferPrivate(device, rp_bk, { &iv, 1 }));
-					dss_bk[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_1_img));
+					dss_bk[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_1img));
 					dss_bk[i]->set_image(0, 0, iv, sp);
+				}
+
+				img_pp.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, target_size, downsample_level, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				for (auto i = 0; i < size(fbs_bk); i++)
+				{
+					ivs_pp[i].reset(new ImageViewPrivate(img_pp.get(), ImageView2D, i, 1));
+					auto iv = ivs_pp[i].get();
+					fbs_pp[i].reset(new FramebufferPrivate(device, rp_bk, { &iv, 1 }));
+					dss_pp[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), dsl_1img));
+					dss_pp[i]->set_image(0, 0, iv, sp);
 				}
 			}
 		}
@@ -822,7 +850,7 @@ namespace flame
 		{
 			Cmd cmd;
 			cmd.type = CmdBlur;
-			cmd.v.d2.scissor = Vec4f(100.f, 100.f, 200.f, 200.f);
+			cmd.v.d2.scissor = Vec4f(0.f, 0.f, 200.f, 200.f);
 			cmd.v.d2.sigma = 1.f;
 			cmds.push_back(cmd);
 
@@ -906,34 +934,80 @@ namespace flame
 					break;
 				case 1:
 				{
-					auto range = cmd.v.d2.scissor;
-					cb->push_constant(0, sizeof(Vec4f), &range, pll_blur);
+					auto blur_range = cmd.v.d2.scissor;
+					auto blur_size = Vec2f(blur_range.z() - blur_range.x(), blur_range.w() - blur_range.y());
+					if (blur_size.x() < 1.f || blur_size.y() < 1.f)
+						continue;
+					auto target_range = Vec4f(0.f, 0.f, target_size.x(), target_size.y());
+					uint x, y, w, h;
 
-					//Vec4f kernel;
-					//auto a = 1.f;
-					//auto a2 = a * a;
-					//for (auto i = 0; i < 4; i++)
-					//	kernel[i] = exp(-(i * i) / (2.f * a2)) / sqrt(2.f * M_PI * a2);
-					//auto s = kernel[0];
-					//for (auto i = 1; i < 4; i++)
-					//	s += kernel[i] * 2.f;
-					//for (auto i = 0; i < 4; i++)
-					//	kernel[i] /= s;
-					//cb->push_constant(0, sizeof(Vec4f), &kernel, pll_blur);
+					cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					cb->set_viewport(target_range);
+					cb->push_constant(0, sizeof(Vec4f), &target_range, pll_blt);
+					cb->begin_renderpass(fbs_bk[0].get());
+					cb->bind_pipeline(pl_blt);
+					cb->bind_descriptor_set(dss_tar[image_index].get(), 0, pll_blt);
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
 
-					//cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-					//cb->begin_renderpass(fb_bk.get());
-					//cb->bind_pipeline(pl_blurh);
-					//cb->bind_descriptor_set(ds_tar[image_index].get(), 0, pll_blur);
-					//cb->draw(3, 1, 0, 0);
-					//cb->end_renderpass();
+					w = target_size.x();
+					h = target_size.y();
+					for (auto i = 1; i < downsample_level; i++)
+					{
+						cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
+						w = max(1U, w / 2); h = max(1U, h / 2);
+						cb->set_viewport(Vec4f(0.f, 0.f, w, h));
+						cb->begin_renderpass(fbs_bk[i].get());
+						cb->bind_pipeline(pl_ds);
+						cb->bind_descriptor_set(dss_bk[i - 1].get(), 0, pll_ds);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+					}
 
-					//cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-					//cb->begin_renderpass(fbs_tar[image_index].get());
-					//cb->bind_pipeline(pl_blurv);
-					//cb->bind_descriptor_set(ds_bk.get(), 0, pll_blur);
-					//cb->draw(3, 1, 0, 0);
-					//cb->end_renderpass();
+					Vec4f kernel;
+					auto a = 1.f; auto a2 = a * a;
+					for (auto i = 0; i < 4; i++)
+						kernel[i] = exp(-(i * i) / (2.f * a2)) / sqrt(2.f * M_PI * a2);
+					auto sum = kernel[0];
+					for (auto i = 1; i < 4; i++)
+						sum += kernel[i] * 2.f;
+					for (auto i = 0; i < 4; i++)
+						kernel[i] /= sum;
+					cb->push_constant(0, sizeof(Vec4f), &kernel, pll_blur);
+
+					x = blur_range.x();
+					y = blur_range.y();
+					w = blur_size.x();
+					h = blur_size.y();
+					for (auto i = 0; i < downsample_level; i++)
+					{
+						cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
+						cb->set_viewport(Vec4f(x - 3.f, y - 3.f, w + 3.f, h + 3.f));
+						cb->begin_renderpass(fbs_pp[i].get());
+						cb->bind_pipeline(pl_blurh);
+						cb->bind_descriptor_set(dss_bk[i].get(), 0, pll_blur);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+						x = x / 2; y = y / 2; w = max(1U, w / 2); h = max(1U, h / 2);
+					}
+
+					x = blur_range.x();
+					y = blur_range.y();
+					w = blur_size.x();
+					h = blur_size.y();
+					for (auto i = 0; i < downsample_level; i++)
+					{
+						cb->change_image_layout(img_pp.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
+						cb->set_viewport(Vec4f(x, y, w, h));
+						cb->begin_renderpass(fbs_bk[i].get());
+						cb->bind_pipeline(pl_blurv);
+						cb->bind_descriptor_set(dss_pp[i].get(), 0, pll_blur);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+						x = x / 2; y = y / 2; w = max(1U, w / 2); h = max(1U, h / 2);
+					}
+
+					cb->set_viewport(Vec4f(0.f, 0.f, target_size.x(), target_size.y()));
 				}
 					break;
 				}

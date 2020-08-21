@@ -85,7 +85,11 @@ namespace flame
 			info.framebuffer = fb->vk_framebuffer;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
-			auto size = fb->views[0]->image->size;
+			auto first_view = fb->views[0];
+			auto lv = first_view->base_level;
+			auto size = first_view->image->size;
+			size.x() = max(1U, size.x() >> lv);
+			size.y() = max(1U, size.y() >> lv);
 			info.renderArea.extent.width = size.x();
 			info.renderArea.extent.height = size.y();
 			info.clearValueCount = clearvalues ? fb->views.size() : 0;

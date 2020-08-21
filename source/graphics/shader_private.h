@@ -110,7 +110,7 @@ namespace flame
 			void release() override { delete this; }
 		};
 
-		struct BlendOptions
+		struct BlendOption
 		{
 			bool enable;
 			BlendFactor src_color;
@@ -130,7 +130,7 @@ namespace flame
 				finalColor = finalColor & colorWriteMask;
 			*/
 
-			BlendOptions() :
+			BlendOption() :
 				enable(false),
 				src_color(BlendFactorZero),
 				dst_color(BlendFactorZero),
@@ -173,9 +173,9 @@ namespace flame
 		{
 			std::vector<ShaderInOut> inputs;
 			std::vector<ShaderInOut> outputs;
-			std::vector<BlendOptions> blend_options;
-			std::vector<std::unique_ptr<ShaderResource>> uniform_buffers;
-			std::unique_ptr<ShaderResource> push_constant;
+			std::vector<BlendOption> blend_options;
+			//std::vector<std::unique_ptr<ShaderResource>> uniform_buffers;
+			//std::unique_ptr<ShaderResource> push_constant;
 		};
 
 		struct ShaderPrivate : Shader

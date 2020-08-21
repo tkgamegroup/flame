@@ -24,7 +24,7 @@ namespace flame
 			descriptorPoolInfo.pNext = nullptr;
 			descriptorPoolInfo.poolSizeCount = size(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-			descriptorPoolInfo.maxSets = 8;
+			descriptorPoolInfo.maxSets = 64;
 			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
 		}
 
@@ -329,7 +329,7 @@ namespace flame
 								auto dual = false;
 								if (s->type == ShaderStageFrag)
 								{
-									BlendOptions bo;
+									BlendOption bo;
 									if (res[3].matched)
 									{
 										bo.enable = true;
@@ -462,9 +462,7 @@ namespace flame
 						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 						if (!std::filesystem::exists(spv_path))
 						{
-							std::ifstream glsl(L"out.glsl");
-
-							glsl.close();
+							printf("glsl:\n%s\n", get_file_content(L"out.glsl").c_str());
 							printf("error:\n%s\n", output.c_str());
 							assert(0);
 						}
@@ -479,53 +477,83 @@ namespace flame
 					}
 
 					{
-						nlohmann::json json;
+						pugi::xml_document doc;
+						auto root = doc.append_child("res");
+						if (!r.inputs.empty())
+						{
+							auto n = root.append_child("inputs");
+							for (auto& i : r.inputs)
+							{
+								auto nn = n.append_child("input");
+								nn.append_attribute("name").set_value(i.name.c_str());
+								nn.append_attribute("type").set_value(i.type.c_str());
+							}
+						}
+						if (!r.outputs.empty())
+						{
+							auto n = root.append_child("outputs");
+							for (auto& o : r.outputs)
+							{
+								auto nn = n.append_child("input");
+								nn.append_attribute("name").set_value(o.name.c_str());
+								nn.append_attribute("type").set_value(o.type.c_str());
+							}
 
+						}
 						if (!r.blend_options.empty())
 						{
-							auto& bos = json["blend_options"];
-							for (auto i = 0; i < r.blend_options.size(); i++)
+							auto n = root.append_child("blend_options");
+							for (auto& bo : r.blend_options)
 							{
-								auto& src = r.blend_options[i];
-								auto& dst = bos[i];
-								dst["enable"] = src.enable;
-								if (src.enable)
+								auto nn = n.append_child("attachment");
+								nn.append_attribute("enable").set_value(bo.enable);
+								if (bo.enable)
 								{
-									dst["sc"] = (int)src.src_color;
-									dst["dc"] = (int)src.dst_color;
-									dst["sa"] = (int)src.src_alpha;
-									dst["da"] = (int)src.dst_alpha;
+									nn.append_attribute("sc").set_value((int)bo.src_color);
+									nn.append_attribute("dc").set_value((int)bo.dst_color);
+									nn.append_attribute("sa").set_value((int)bo.src_alpha);
+									nn.append_attribute("da").set_value((int)bo.dst_alpha);
 								}
 							}
 						}
-						std::ofstream res(res_path);
-						res << json.dump();
-						res.close();
+
+						doc.save_file(res_path.c_str());
 					}
 				}
 				else
 				{
-					auto res = get_file_content(res_path);
-					if (!res.empty())
+					pugi::xml_document doc;
+					pugi::xml_node root;
+					if (!doc.load_file(res_path.c_str()) || (root = doc.first_child()).name() != std::string("res"))
+						assert(0);
+					else
 					{
-						auto json = nlohmann::json::parse(res);
-						if (s->type == ShaderStageFrag)
+						for (auto& n : root.child("inputs"))
 						{
-							auto& bos = json["blend_options"];
-							for (auto j = 0; j < bos.size(); j++)
+							ShaderInOut i;
+							i.name = n.attribute("name").value();
+							i.type = n.attribute("type").value();
+							r.inputs.push_back(i);
+						}
+						for (auto& n : root.child("outputs"))
+						{
+							ShaderInOut o;
+							o.name = n.attribute("name").value();
+							o.type = n.attribute("type").value();
+							r.outputs.push_back(o);
+						}
+						for (auto& n : root.child("blend_options"))
+						{
+							BlendOption bo;
+							bo.enable = n.attribute("enable").as_bool();
+							if (bo.enable)
 							{
-								auto& src = bos[j];
-								BlendOptions dst;
-								dst.enable = src["enable"].get<bool>();
-								if (dst.enable)
-								{
-									dst.src_color = (BlendFactor)src["sc"].get<int>();
-									dst.dst_color = (BlendFactor)src["dc"].get<int>();
-									dst.src_alpha = (BlendFactor)src["sa"].get<int>();
-									dst.dst_alpha = (BlendFactor)src["da"].get<int>();
-								}
-								r.blend_options.push_back(dst);
+								bo.src_color = (BlendFactor)n.attribute("sc").as_int();
+								bo.dst_color = (BlendFactor)n.attribute("dc").as_int();
+								bo.src_alpha = (BlendFactor)n.attribute("sa").as_int();
+								bo.dst_alpha = (BlendFactor)n.attribute("da").as_int();
 							}
+							r.blend_options.push_back(bo);
 						}
 					}
 				}

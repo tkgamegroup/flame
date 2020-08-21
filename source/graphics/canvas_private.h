@@ -96,6 +96,10 @@ namespace flame
 			std::unique_ptr<ImageViewPrivate> ivs_bk[downsample_level];
 			std::unique_ptr<FramebufferPrivate> fbs_bk[downsample_level];
 			std::unique_ptr<DescriptorSetPrivate> dss_bk[downsample_level];
+			std::unique_ptr<ImagePrivate> img_pp;
+			std::unique_ptr<ImageViewPrivate> ivs_pp[downsample_level];
+			std::unique_ptr<FramebufferPrivate> fbs_pp[downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> dss_pp[downsample_level];
 
 			std::vector<std::vector<Vec2f>> paths;
 

@@ -125,7 +125,7 @@ namespace flame
 						return;
 					if (thiz->swapchain_image_index < 0)
 					{
-						if (!thiz->swapchain_commandbuffers.empty())
+						if (thiz->swapchain->get_images_count() > 0)
 						{
 							thiz->swapchain->acquire_image();
 							thiz->swapchain_image_index = thiz->swapchain->get_image_index();
