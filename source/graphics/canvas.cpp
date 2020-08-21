@@ -96,7 +96,7 @@ namespace flame
 
 		static RenderpassPrivate* rp_bk = nullptr;
 		static DescriptorSetLayoutPrivate* dsl_1_img = nullptr;
-		static PipelineLayoutPrivate* pll_1_img = nullptr;
+		static PipelineLayoutPrivate* pll_blur = nullptr;
 		static PipelinePrivate* pl_blurh = nullptr;
 		static PipelinePrivate* pl_blurv = nullptr;
 
@@ -180,15 +180,15 @@ namespace flame
 				db.name = "image";
 				dsl_1_img = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 			}
-			if (!pll_1_img)
-				pll_1_img = new PipelineLayoutPrivate(d, { &dsl_1_img, 1 }, 0);
+			if (!pll_blur)
+				pll_blur = new PipelineLayoutPrivate(d, { &dsl_1_img, 1 }, sizeof(Vec4f));
 			if (!pl_blurh)
 			{
 				ShaderPrivate* shaders[] = {
 					new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
 					new ShaderPrivate(L"blur.frag", "#define H")
 				};
-				pl_blurh = PipelinePrivate::create(d, shader_path, shaders, pll_1_img, rp_bk, 0);
+				pl_blurh = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_bk, 0);
 			}
 			if (!pl_blurv)
 			{
@@ -196,7 +196,7 @@ namespace flame
 					new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
 					new ShaderPrivate(L"blur.frag", "#define V")
 				};
-				pl_blurv = PipelinePrivate::create(d, shader_path, shaders, pll_1_img, rp_tar, 0);
+				pl_blurv = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_tar, 0);
 			}
 
 			buf_vtx.reset(new BufferPrivate(d, 3495200, BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -764,6 +764,20 @@ namespace flame
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 
+		void CanvasPrivate::add_blur(const Vec4f& _range, float sigma)
+		{
+			auto range = Vec4f(
+				max(_range.x(), 0.f),
+				max(_range.y(), 0.f),
+				min(_range.z(), (float)target_size.x()),
+				min(_range.w(), (float)target_size.y()));
+			Cmd cmd;
+			cmd.type = CmdBlur;
+			cmd.v.d2.scissor = range;
+			cmd.v.d2.sigma = sigma;
+			cmds.push_back(cmd);
+		}
+
 		void CanvasPrivate::set_scissor(const Vec4f& _scissor)
 		{
 			auto scissor = Vec4f(
@@ -823,9 +837,6 @@ namespace flame
 					break;
 				}
 			}
-			Pass p;
-			p.type = 1;
-			passes.push_back(p);
 
 			cb->begin();
 
@@ -875,17 +886,31 @@ namespace flame
 					break;
 				case 1:
 				{
+
+
+					Vec4f kernel;
+					auto a = 1.f;
+					auto a2 = a * a;
+					for (auto i = 0; i < 4; i++)
+						kernel[i] = exp(-(i * i) / (2.f * a2)) / sqrt(2.f * M_PI * a2);
+					auto s = kernel[0];
+					for (auto i = 1; i < 4; i++)
+						s += kernel[i] * 2.f;
+					for (auto i = 0; i < 4; i++)
+						kernel[i] /= s;
+					cb->push_constant(0, sizeof(Vec4f), &kernel, pll_blur);
+
 					cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(fb_bk.get());
 					cb->bind_pipeline(pl_blurh);
-					cb->bind_descriptor_set(ds_tar[image_index].get(), 0, pll_1_img);
+					cb->bind_descriptor_set(ds_tar[image_index].get(), 0, pll_blur);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
 					cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(fbs_tar[image_index].get());
 					cb->bind_pipeline(pl_blurv);
-					cb->bind_descriptor_set(ds_bk.get(), 0, pll_1_img);
+					cb->bind_descriptor_set(ds_bk.get(), 0, pll_blur);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}
