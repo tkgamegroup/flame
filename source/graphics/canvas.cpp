@@ -850,7 +850,7 @@ namespace flame
 		{
 			Cmd cmd;
 			cmd.type = CmdBlur;
-			cmd.v.d2.scissor = Vec4f(0.f, 0.f, 200.f, 200.f);
+			cmd.v.d2.scissor = Vec4f(100.f, 100.f, 200.f, 200.f);
 			cmd.v.d2.sigma = 1.f;
 			cmds.push_back(cmd);
 
@@ -939,6 +939,42 @@ namespace flame
 					if (blur_size.x() < 1.f || blur_size.y() < 1.f)
 						continue;
 					auto target_range = Vec4f(0.f, 0.f, target_size.x(), target_size.y());
+
+					Vec4f kernel;
+					auto a = cmd.v.d2.sigma; auto a2 = a * a;
+					for (auto i = 0; i < 4; i++)
+						kernel[i] = exp(-(i * i) / (2.f * a2)) / sqrt(2.f * M_PI * a2);
+					//auto sum = kernel[0];
+					//for (auto i = 1; i < 4; i++)
+					//	sum += kernel[i] * 2.f;
+					//for (auto i = 0; i < 4; i++)
+					//	kernel[i] /= sum;
+					cb->push_constant(0, sizeof(Vec4f), &kernel, pll_blur);
+
+					cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					cb->set_viewport(Vec4f(blur_range.x() - 3.f, blur_range.y() - 3.f, blur_range.z() + 3.f, blur_range.w() + 3.f));
+					cb->begin_renderpass(fbs_bk[0].get());
+					cb->bind_pipeline(pl_blurh);
+					cb->bind_descriptor_set(dss_tar[image_index].get(), 0, pll_blur);
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+
+					cb->change_image_layout(img_pp.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					cb->set_viewport(blur_range);
+					cb->begin_renderpass(fbs_tar[image_index].get());
+					cb->bind_pipeline(pl_blurv);
+					cb->bind_descriptor_set(dss_bk[0].get(), 0, pll_blur);
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
+					break;
+				case 2:
+				{
+					auto blur_range = cmd.v.d2.scissor;
+					auto blur_size = Vec2f(blur_range.z() - blur_range.x(), blur_range.w() - blur_range.y());
+					if (blur_size.x() < 1.f || blur_size.y() < 1.f)
+						continue;
+					auto target_range = Vec4f(0.f, 0.f, target_size.x(), target_size.y());
 					uint x, y, w, h;
 
 					cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
@@ -968,11 +1004,11 @@ namespace flame
 					auto a = 1.f; auto a2 = a * a;
 					for (auto i = 0; i < 4; i++)
 						kernel[i] = exp(-(i * i) / (2.f * a2)) / sqrt(2.f * M_PI * a2);
-					auto sum = kernel[0];
-					for (auto i = 1; i < 4; i++)
-						sum += kernel[i] * 2.f;
-					for (auto i = 0; i < 4; i++)
-						kernel[i] /= sum;
+					//auto sum = kernel[0];
+					//for (auto i = 1; i < 4; i++)
+					//	sum += kernel[i] * 2.f;
+					//for (auto i = 0; i < 4; i++)
+					//	kernel[i] /= sum;
 					cb->push_constant(0, sizeof(Vec4f), &kernel, pll_blur);
 
 					x = blur_range.x();
