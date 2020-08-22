@@ -4,11 +4,11 @@
 
 namespace flame
 {
-	struct sElementRendererPrivate;
+	struct sRendererPrivate;
 
 	struct cElementPrivate : cElement // R ~ on_*
 	{
-		sElementRendererPrivate* renderer = nullptr; // R ref
+		sRendererPrivate* renderer = nullptr; // R ref
 
 		float x = 0.f;
 		float y = 0.f;

@@ -100,20 +100,13 @@ namespace flame
 		static PipelineLayoutPrivate* pll_ds = nullptr;
 		static PipelinePrivate* pl_ele = nullptr;
 		static PipelinePrivate* pl_blt = nullptr;
-		static PipelinePrivate* pl_blurh[19] = {};
-		static PipelinePrivate* pl_blurv[19] = {};
+		static PipelinePrivate* pl_blurh[10] = {};
+		static PipelinePrivate* pl_blurv[10] = {};
 		static PipelinePrivate* pl_ds = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
 			device(d)
 		{
-			auto shader_path = std::filesystem::path(L"shaders");
-			{
-				auto engin_path = getenv("FLAME_PATH");
-				if (engin_path)
-					shader_path = engin_path / shader_path;
-			}
-
 			if (!initialized)
 			{
 				initialized = true;
@@ -170,51 +163,51 @@ namespace flame
 					vi.buffers_count = 1;
 					vi.buffers = &vib;
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(L"element.vert"),
-						new ShaderPrivate(L"element.frag")
+						new ShaderPrivate(d, L"element.vert"),
+						new ShaderPrivate(d, L"element.frag")
 					};
 					BlendOption bo;
 					bo.enable = true;
 					bo.src_color = BlendFactorSrcAlpha;
 					bo.dst_color = BlendFactorOneMinusSrcAlpha;
 					bo.dst_alpha = BlendFactorOne;
-					pl_ele = PipelinePrivate::create(d, shader_path, shaders, pll_ele, rp_1img, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					pl_ele = PipelinePrivate::create(d, shaders, pll_ele, rp_1img, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
 						nullptr, { &bo, 1 });
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(L"fullscreen.vert"),
-						new ShaderPrivate(L"blt.frag")
+						new ShaderPrivate(d, L"fullscreen.vert"),
+						new ShaderPrivate(d, L"blt.frag")
 					};
-					pl_blt = PipelinePrivate::create(d, shader_path, shaders, pll_blt, rp_1img, 0);
+					pl_blt = PipelinePrivate::create(d, shaders, pll_blt, rp_1img, 0);
 				}
 
-				for (auto i = 0; i < 3; i++)
+				for (auto i = 0; i < 10; i++)
 				{
 					{
 						ShaderPrivate* shaders[] = {
-							new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
-							new ShaderPrivate(L"blur.frag", "#define R" + std::to_string(i + 1) + "\n#define H\n")
+							new ShaderPrivate(d, L"fullscreen.vert", "NO_COORD"),
+							new ShaderPrivate(d, L"blur.frag", "R" + std::to_string(i + 1) + " H\n")
 						};
-						pl_blurh[i] = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_1img, 0);
+						pl_blurh[i] = PipelinePrivate::create(d, shaders, pll_blur, rp_1img, 0);
 					}
 
 					{
 						ShaderPrivate* shaders[] = {
-							new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
-							new ShaderPrivate(L"blur.frag", "#define R" + std::to_string(i + 1) + "\n#define V\n")
+							new ShaderPrivate(d, L"fullscreen.vert", "NO_COORD"),
+							new ShaderPrivate(d, L"blur.frag", "R" + std::to_string(i + 1) + " V\n")
 						};
-						pl_blurv[i] = PipelinePrivate::create(d, shader_path, shaders, pll_blur, rp_1img, 0);
+						pl_blurv[i] = PipelinePrivate::create(d, shaders, pll_blur, rp_1img, 0);
 					}
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(L"fullscreen.vert", "#define NO_COORD"),
-						new ShaderPrivate(L"downsample.frag")
+						new ShaderPrivate(d, L"fullscreen.vert", "NO_COORD"),
+						new ShaderPrivate(d, L"downsample.frag")
 					};
-					pl_ds = PipelinePrivate::create(d, shader_path, shaders, pll_ds, rp_1img, 0);
+					pl_ds = PipelinePrivate::create(d, shaders, pll_ds, rp_1img, 0);
 				}
 			}
 
@@ -920,9 +913,7 @@ namespace flame
 				case 1:
 				{
 					auto& cmd = cmds[p.cmd_ids[0]];
-					auto blur_radius = cmd.v.d2.radius;
-					if (blur_radius == 0 || blur_radius > 20)
-						continue;
+					auto blur_radius = clamp(cmd.v.d2.radius, 0U, 10U);
 					auto blur_range = cmd.v.d2.scissor;
 					auto blur_size = Vec2f(blur_range.z() - blur_range.x(), blur_range.w() - blur_range.y());
 					if (blur_size.x() < 1.f || blur_size.y() < 1.f)

@@ -76,10 +76,6 @@ namespace flame
 
 			if (create_default_set)
 				default_set.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), this));
-
-			hash = 0;
-			for (auto& b : _bindings)
-				hash = std::hash<int>()(b.type) ^ std::hash<std::string>()(b.name) ^ std::hash<int>()(b.count);
 		}
 
 		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
@@ -188,11 +184,6 @@ namespace flame
 			descriptor_layouts.resize(_descriptor_layouts.size());
 			for (auto i = 0; i < descriptor_layouts.size(); i++)
 				descriptor_layouts[i] = (DescriptorSetLayoutPrivate*)_descriptor_layouts[i];
-
-			hash = 0;
-			for (auto d : descriptor_layouts)
-				hash = hash ^ d->hash;
-			hash = hash ^ std::hash<int>()(push_cconstant_size);
 		}
 
 		PipelineLayoutPrivate::~PipelineLayoutPrivate()
@@ -205,315 +196,148 @@ namespace flame
 			return new PipelineLayoutPrivate((DevicePrivate*)d, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
 		}
 
-		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::span<CompiledShader> shaders, PipelineLayoutPrivate* pll, const VertexInfo* vi)
+		ShaderPrivate::ShaderPrivate(DevicePrivate* d, const std::filesystem::path& _filename, const std::string& _prefix) :
+			filename(_filename),
+			prefix(_prefix),
+			device(d)
 		{
-			static std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
-			static std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)\s*;)");
-			static std::regex regex_pc(R"(\s*pushconstant)");
-			static std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
-			static std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
+			filename.make_preferred();
+			type = shader_stage_from_ext(_filename.extension());
 
-			auto hash = 0ULL;
-			for (auto& s : shaders)
-				hash = hash ^ std::hash<std::wstring>()(s.s->filename) ^ std::hash<std::string>()(s.s->prefix);
-			hash = hash ^ pll->hash;
-			if (vi)
-			{
-				for (auto i = 0; i < vi->buffers_count; i++)
-				{
-					auto& b = vi->buffers[i];
-					for (auto j = 0; j < b.attributes_count; j++)
-					{
-						auto& a = b.attributes[j];
-						hash = hash ^ std::hash<int>()(a.format) ^ std::hash<std::string>()(a.name);
-					}
-					hash = hash ^ std::hash<int>()(b.rate);
-				}
-				hash = hash ^ std::hash<int>()(vi->primitive_topology) ^ std::hash<int>()(vi->patch_control_points);
-			}
+			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(prefix);
 			auto str_hash = std::to_wstring(hash);
 
-			for (auto i = 0; i < shaders.size(); i++)
+			auto path = filename;
+			if (!std::filesystem::exists(path))
 			{
-				auto& s = shaders[i].s;
-				auto& r = shaders[i].r;
-
-				auto shader_path = dir / s->filename;
-				auto spv_path = shader_path;
-				spv_path += L".";
-				spv_path += str_hash;
-				auto res_path = spv_path;
-				spv_path += L".spv";
-				res_path += L".res";
-
-				auto ok = true;
-				if (std::filesystem::exists(shader_path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(shader_path)))
+				auto engine_path = getenv("FLAME_PATH");
+				if (engine_path)
+					path = std::filesystem::path(engine_path) / L"shaders" / path;
+				if (!std::filesystem::exists(path))
 				{
-					wprintf(L"begin compiling shader:%s\n", shader_path.c_str());
+					wprintf(L"cannot find shader: %s\n", filename.c_str());
+					return;
+				}
+			}
 
-					std::ifstream src(shader_path);
+			auto spv_path = path;
+			spv_path += L".";
+			spv_path += str_hash;
+			//auto res_path = spv_path;
+			//spv_path += L".spv";
+			//res_path += L".res";
 
-					std::string glsl_header = "#version 450 core\n"
-						"#extension GL_ARB_shading_language_420pack : enable\n";
-					if (s->type != ShaderStageComp)
-						glsl_header += "#extension GL_ARB_separate_shader_objects : enable\n";
-					glsl_header += s->prefix + "\n";
+			if (std::filesystem::exists(path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(path)))
+			{
 
-					auto type_id = 0;
-
-					printf("generating glsl file");
-					std::ofstream glsl_file(L"out.glsl");
-					glsl_file << glsl_header;
-					{
-						std::string line;
-						std::smatch res;
-						while (!src.eof())
-						{
-							std::getline(src, line);
-
-							auto get_formated_type = [](const std::string& type) {
-								auto ret = type;
-								if (ret[0] == 'i' || ret[0] == 'u')
-									ret = "flat " + ret;
-								return ret;
-							};
-
-							if (std::regex_search(line, res, regex_in))
-							{
-								ShaderInOut in;
-								in.type = res[1].str();
-								in.name = res[2].str();
-								if (s->type == ShaderStageVert)
-								{
-									auto location = 0;
-									if (vi)
-									{
-										for (auto i = 0; i < vi->buffers_count; i++)
-										{
-											auto& b = vi->buffers[i];
-											for (auto j = 0; j < b.attributes_count; j++)
-											{
-												auto& a = b.attributes[j];
-												if (a.name == in.name)
-												{
-													glsl_file << "layout (location = " + std::to_string(location) + +") in " + get_formated_type(in.type) + " i_" + in.name + ";\n";
-													location = -1;
-													break;
-												}
-												location++;
-											}
-											if (location == -1)
-												break;
-										}
-									}
-								}
-								else
-								{
-									auto& ps = shaders[i - 1].r;
-									for (auto j = 0; j < ps.outputs.size(); j++)
-									{
-										if (ps.outputs[j].name == in.name)
-										{
-											glsl_file << "layout (location = " + std::to_string(j) + +") in " + get_formated_type(in.type) + " i_" + in.name + ";\n";
-											break;
-										}
-									}
-								}
-								r.inputs.push_back(in);
-							}
-							else if (std::regex_search(line, res, regex_out))
-							{
-								ShaderInOut out;
-								out.type = res[1].str();
-								out.name = res[2].str();
-								glsl_file << "layout (location = " + std::to_string((int)r.outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
-								r.outputs.push_back(out);
-							}
-							else if (std::regex_search(line, res, regex_pc))
-							{
-								if (pll && pll->push_cconstant_size > 0)
-									glsl_file << "layout (push_constant) uniform pc_t\n";
-								else
-									glsl_file << "struct type_" + std::to_string(type_id++) + "\n";
-							}
-							else if (std::regex_search(line, res, regex_ubo))
-							{
-								auto set = 0;
-								auto binding = -1;
-								if (pll)
-								{
-									auto name = res[1].str();
-									for (auto j = 0; j < pll->descriptor_layouts.size(); j++)
-									{
-										auto dsl = pll->descriptor_layouts[j];
-										for (auto k = 0; k < dsl->bindings.size(); k++)
-										{
-											if (dsl->bindings[k]->name == name)
-											{
-												set = j;
-												binding = k;
-												glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform type_" + std::to_string(type_id) + "\n";
-												break;
-											}
-										}
-										if (binding != -1)
-											break;
-									}
-								}
-								if (binding == -1)
-									glsl_file << "struct eliminate_" + std::to_string(type_id) + "\n";
-								type_id++;
-							}
-							else if (std::regex_search(line, res, regex_tex))
-							{
-								auto set = 0;
-								auto binding = -1;
-								if (pll)
-								{
-									auto name = res[1].str();
-									for (auto j = 0; j < pll->descriptor_layouts.size(); j++)
-									{
-										auto dsl = pll->descriptor_layouts[j];
-										for (auto k = 0; k < dsl->bindings.size(); k++)
-										{
-											if (dsl->bindings[k]->name == name)
-											{
-												set = j;
-												binding = k;
-												glsl_file << "layout (set = " + std::to_string(set) + ", binding = " + std::to_string(binding) + ") uniform sampler2D " + name + (res[2].matched ? res[2].str() : "") + ";\n";
-												break;
-											}
-										}
-										if (binding != -1)
-											break;
-									}
-								}
-							}
-							else
-								glsl_file << line + "\n";
-						}
-
-					}
-					glsl_file.close();
-					printf(" - done\n");
+				auto vk_sdk_path = getenv("VK_SDK_PATH");
+				if (vk_sdk_path)
+				{
+					wprintf(L"begin compiling shader:%s\n", path.c_str());
 
 					if (std::filesystem::exists(spv_path))
 						std::filesystem::remove(spv_path);
 
-					auto vk_sdk_path = getenv("VK_SDK_PATH");
-					if (vk_sdk_path)
+					std::filesystem::path glslc_path = vk_sdk_path;
+					glslc_path /= L"Bin/glslc.exe";
+
+					std::wstring command_line(L" " + path.wstring() + L" -o" + spv_path.wstring());
+					auto defines = SUS::split(prefix);
+					for (auto& d : defines)
+						command_line += L" -D" + s2w(d);
+
+					std::string output;
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
+					if (!std::filesystem::exists(spv_path))
 					{
-						std::filesystem::path glslc_path = vk_sdk_path;
-						glslc_path /= L"Bin/glslc.exe";
-
-						std::wstring command_line(L" -fshader-stage=" + shader_stage_name(s->type) + L" out.glsl -o" + spv_path.wstring());
-
-						std::string output;
-						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
-						if (!std::filesystem::exists(spv_path))
-						{
-							printf("glsl:\n");
-							auto glsl = SUS::split(get_file_content(L"out.glsl"), '\n');
-							auto line = 1;
-							for (auto& l : glsl)
-								printf("%d: %s\n", line++, l.c_str());
-							printf("\nerror:\n%s\n", output.c_str());
-							assert(0);
-						}
-						std::filesystem::remove(L"out.glsl");
-
-						wprintf(L"end compiling shader:%s\n", shader_path.c_str());
-					}
-					else
-					{
-						printf("cannot find vk sdk\n");
+						printf("\nerror:\n%s\n", output.c_str());
 						assert(0);
 					}
 
-					{
-						pugi::xml_document doc;
-						auto root = doc.append_child("res");
-						if (!r.inputs.empty())
-						{
-							auto n = root.append_child("inputs");
-							for (auto& i : r.inputs)
-							{
-								auto nn = n.append_child("input");
-								nn.append_attribute("name").set_value(i.name.c_str());
-								nn.append_attribute("type").set_value(i.type.c_str());
-							}
-						}
-						if (!r.outputs.empty())
-						{
-							auto n = root.append_child("outputs");
-							for (auto& o : r.outputs)
-							{
-								auto nn = n.append_child("input");
-								nn.append_attribute("name").set_value(o.name.c_str());
-								nn.append_attribute("type").set_value(o.type.c_str());
-							}
-
-						}
-
-						doc.save_file(res_path.c_str());
-					}
+					wprintf(L"end compiling shader:%s\n", path.c_str());
 				}
 				else
 				{
-					pugi::xml_document doc;
-					pugi::xml_node root;
-					if (!doc.load_file(res_path.c_str()) || (root = doc.first_child()).name() != std::string("res"))
-						assert(0);
-					else
-					{
-						for (auto& n : root.child("inputs"))
-						{
-							ShaderInOut i;
-							i.name = n.attribute("name").value();
-							i.type = n.attribute("type").value();
-							r.inputs.push_back(i);
-						}
-						for (auto& n : root.child("outputs"))
-						{
-							ShaderInOut o;
-							o.name = n.attribute("name").value();
-							o.type = n.attribute("type").value();
-							r.outputs.push_back(o);
-						}
-					}
-				}
-
-				if (!ok)
-					return false;
-
-				auto spv_file = get_file_content(spv_path);
-				if (spv_file.empty())
-				{
+					printf("cannot find vk sdk\n");
 					assert(0);
-					return false;
 				}
 
-				VkShaderModuleCreateInfo shader_info;
-				shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-				shader_info.flags = 0;
-				shader_info.pNext = nullptr;
-				shader_info.codeSize = spv_file.size();
-				shader_info.pCode = (uint*)spv_file.data();
-				chk_res(vkCreateShaderModule(d->vk_device, &shader_info, nullptr, &shaders[i].m));
+				//{
+				//	pugi::xml_document doc;
+				//	auto root = doc.append_child("res");
+				//	if (!r.inputs.empty())
+				//	{
+				//		auto n = root.append_child("inputs");
+				//		for (auto& i : r.inputs)
+				//		{
+				//			auto nn = n.append_child("input");
+				//			nn.append_attribute("name").set_value(i.name.c_str());
+				//			nn.append_attribute("type").set_value(i.type.c_str());
+				//		}
+				//	}
+				//	if (!r.outputs.empty())
+				//	{
+				//		auto n = root.append_child("outputs");
+				//		for (auto& o : r.outputs)
+				//		{
+				//			auto nn = n.append_child("input");
+				//			nn.append_attribute("name").set_value(o.name.c_str());
+				//			nn.append_attribute("type").set_value(o.type.c_str());
+				//		}
+
+				//	}
+
+				//	doc.save_file(res_path.c_str());
+				//}
+			}
+			//else
+			//{
+			//	pugi::xml_document doc;
+			//	pugi::xml_node root;
+			//	if (!doc.load_file(res_path.c_str()) || (root = doc.first_child()).name() != std::string("res"))
+			//		assert(0);
+			//	else
+			//	{
+			//		for (auto& n : root.child("inputs"))
+			//		{
+			//			ShaderInOut i;
+			//			i.name = n.attribute("name").value();
+			//			i.type = n.attribute("type").value();
+			//			r.inputs.push_back(i);
+			//		}
+			//		for (auto& n : root.child("outputs"))
+			//		{
+			//			ShaderInOut o;
+			//			o.name = n.attribute("name").value();
+			//			o.type = n.attribute("type").value();
+			//			r.outputs.push_back(o);
+			//		}
+			//	}
+			//}
+
+			auto spv_file = get_file_content(spv_path);
+			if (spv_file.empty())
+			{
+				assert(0);
+				return;
 			}
 
-			return true;
+			VkShaderModuleCreateInfo shader_info;
+			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			shader_info.flags = 0;
+			shader_info.pNext = nullptr;
+			shader_info.codeSize = spv_file.size();
+			shader_info.pCode = (uint*)spv_file.data();
+			chk_res(vkCreateShaderModule(d->vk_device, &shader_info, nullptr, &vk_module));
 		}
 
-		ShaderPrivate::ShaderPrivate(const std::filesystem::path& _filename, const std::string& _prefix) :
-			filename(_filename),
-			prefix(_prefix)
+		ShaderPrivate::~ShaderPrivate()
 		{
-			filename.make_preferred();
-			type = shader_stage_from_ext(_filename.extension());
+			if (vk_module)
+				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::vector<CompiledShader>& _shaders, PipelineLayoutPrivate* pll,
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,
 			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
 			DepthInfo* depth, std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states) :
 			device(d),
@@ -537,8 +361,8 @@ namespace flame
 				dst.pNext = nullptr;
 				dst.pSpecializationInfo = nullptr;
 				dst.pName = "main";
-				dst.stage = to_backend(src.s->type);
-				dst.module = src.m;
+				dst.stage = to_backend(src->type);
+				dst.module = src->vk_module;
 			}
 
 			if (vi)
@@ -722,13 +546,9 @@ namespace flame
 			pipeline_info.basePipelineIndex = 0;
 
 			chk_res(vkCreateGraphicsPipelines(d->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
-
-			shaders.resize(_shaders.size());
-			for (auto i = 0; i < shaders.size(); i++)
-				shaders[i] = std::move(_shaders[i]);
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelineLayoutPrivate* pll) :
+		PipelinePrivate::PipelinePrivate(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll) :
 			device(d),
 			pipeline_layout(pll)
 		{
@@ -745,27 +565,21 @@ namespace flame
 			pipeline_info.stage.pSpecializationInfo = nullptr;
 			pipeline_info.stage.pName = "main";
 			pipeline_info.stage.stage = to_backend(ShaderStageComp);
-			pipeline_info.stage.module = compute_shader.m;
+			pipeline_info.stage.module = compute_shader->vk_module;
 
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 			pipeline_info.layout = pll->vk_pipeline_layout;
 
 			chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
-
-			shaders.resize(1);
-			shaders[0] = std::move(compute_shader);
 		}
 
 		PipelinePrivate::~PipelinePrivate()
 		{
-			for (auto& s : shaders)
-				vkDestroyShaderModule(device->vk_device, s.m, nullptr);
-
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders,
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, std::span<ShaderPrivate*> shaders,
 			PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
 			DepthInfo* depth, std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states)
 		{
@@ -788,47 +602,32 @@ namespace flame
 			if (!has_vert_stage || (tess_stage_count != 0 && tess_stage_count != 2))
 				return nullptr;
 
-			std::vector<CompiledShader> ss;
-			ss.resize(shaders.size());
-			for (auto i = 0; i < shaders.size(); i++)
-				ss[i].s = shaders[i];
-			std::sort(ss.begin(), ss.end(), [](const auto& a, const auto& b) {
-				return (int)a.s->type < (int)b.s->type;
-			});
-			if (!compile_shaders(d, shader_dir, ss, pll, vi))
-				return nullptr;
-
-			return new PipelinePrivate(d, ss, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, blend_options, dynamic_states);
+			return new PipelinePrivate(d, shaders, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, blend_options, dynamic_states);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
 		{
 			if (compute_shader->type != ShaderStageComp)
 				return nullptr;
 
-			CompiledShader s;
-			s.s = compute_shader;
-			if (!compile_shaders(d, shader_dir, { &s, 1 }, pll, nullptr))
-				return nullptr;
-
-			return new PipelinePrivate(d, s, pll);
+			return new PipelinePrivate(d, compute_shader, pll);
 		}
 
-		Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count,
+		Pipeline* create(Device* d, uint shaders_count,
 			Shader* const* shaders, PipelineLayout* pll, Renderpass* rp, uint subpass_idx,
 			VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
 			uint blend_options_count, const BlendOption* blend_options,
 			uint dynamic_states_count, const uint* dynamic_states)
 		{
-			return PipelinePrivate::create((DevicePrivate*)d, shader_dir, 
+			return PipelinePrivate::create((DevicePrivate*)d,  
 				{ (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, 
 				{ blend_options , blend_options_count },
 				{ dynamic_states , dynamic_states_count });
 		}
 
-		Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, PipelineLayout* pll)
+		Pipeline* create(Device* d, Shader* compute_shader, PipelineLayout* pll)
 		{
-			return PipelinePrivate::create((DevicePrivate*)d, shader_dir, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
+			return PipelinePrivate::create((DevicePrivate*)d, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
 		}
 	}
 }

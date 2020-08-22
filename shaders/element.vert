@@ -1,12 +1,16 @@
-in vec2 i_pos;
-in vec2 i_uv;
-in vec4 i_color;
+#version 450 core
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_ARB_separate_shader_objects : enable
 
-out vec4 o_color;
-out vec2 o_uv;
-out uint o_id;
+layout (location = 0) in vec2 i_pos;
+layout (location = 1) in vec2 i_uv;
+layout (location = 2) in vec4 i_color;
 
-pushconstant
+layout (location = 0) out vec4 o_color;
+layout (location = 1) out vec2 o_uv;
+layout (location = 2) out flat uint o_id;
+
+layout (push_constant) uniform PushConstantT
 {
 	vec2 scale;
 }pc;

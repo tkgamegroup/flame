@@ -8,7 +8,7 @@
     </entity>
     <entity src="window">
       <cElement fill_color="240,240,240,50" />
-      <cBlur radius="3" />
+      <cBlur radius="10" />
     </entity>
   </entity>
 </prefab>

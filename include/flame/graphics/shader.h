@@ -167,7 +167,7 @@ namespace flame
 			virtual const wchar_t* get_filename() const = 0;
 			virtual const char* get_prefix() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Shader* create(const wchar_t* filename, const char* prefix);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const wchar_t* filename, const char* prefix);
 		};
 
 		struct Pipeline
@@ -176,13 +176,13 @@ namespace flame
 
 			virtual PipelineType get_type() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count,
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, uint shaders_count,
 				Shader* const* shaders, PipelineLayout* pll, Renderpass* rp, uint subpass_idx,
 				VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr,
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
 				uint blend_options_count = 0, const BlendOption* blend_options = nullptr,
 				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, PipelineLayout* pll);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, Shader* compute_shader, PipelineLayout* pll);
 		};
 	}
 }

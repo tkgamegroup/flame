@@ -19,7 +19,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/systems/element_renderer.h>
+#include <flame/universe/systems/renderer.h>
 
 namespace flame
 {
@@ -41,7 +41,7 @@ namespace flame
 		World* world = nullptr;
 		sTypeSetting* s_type_setting = nullptr;
 		sEventDispatcher* s_event_dispatcher = nullptr;
-		sElementRenderer* s_element_renderer = nullptr;
+		sRenderer* s_renderer = nullptr;
 		Entity* root = nullptr;
 
 		GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p = nullptr, bool maximized = false);
@@ -108,7 +108,7 @@ namespace flame
 			world->add_system(s_type_setting);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			s_element_renderer = sElementRenderer::create();
+			s_renderer = sRenderer::create();
 			struct sFrame : System
 			{
 				GraphicsWindow* thiz;
@@ -121,7 +121,7 @@ namespace flame
 
 				void update() override
 				{
-					if (!thiz->s_element_renderer->is_dirty())
+					if (!thiz->s_renderer->is_dirty())
 						return;
 					if (thiz->swapchain_image_index < 0)
 					{
@@ -138,7 +138,7 @@ namespace flame
 				}
 			};
 			world->add_system(new sFrame(this));
-			world->add_system(s_element_renderer);
+			world->add_system(s_renderer);
 
 			root = world->get_root();
 			root->add_component(cElement::create());

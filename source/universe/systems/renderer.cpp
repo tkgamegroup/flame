@@ -1,11 +1,11 @@
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "../components/element_private.h"
-#include "element_renderer_private.h"
+#include "renderer_private.h"
 
 namespace flame
 {
-	void sElementRendererPrivate::do_render(EntityPrivate* e)
+	void sRendererPrivate::do_render(EntityPrivate* e)
 	{
 		if (!e->global_visibility)
 			return;
@@ -33,12 +33,12 @@ namespace flame
 			canvas->set_scissor(element->scissor);
 	}
 
-	void sElementRendererPrivate::on_added()
+	void sRendererPrivate::on_added()
 	{
 		canvas = (graphics::Canvas*)((WorldPrivate*)world)->find_object("flame::graphics::Canvas");
 	}
 
-	void sElementRendererPrivate::update()
+	void sRendererPrivate::update()
 	{
 		if (!dirty && !always_update)
 			return;
@@ -46,8 +46,8 @@ namespace flame
 		dirty = false;
 	}
 
-	sElementRenderer* sElementRenderer::create()
+	sRenderer* sRenderer::create()
 	{
-		return f_new<sElementRendererPrivate>();
+		return f_new<sRendererPrivate>();
 	}
 }
