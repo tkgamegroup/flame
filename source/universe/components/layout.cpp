@@ -454,11 +454,11 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::on_local_data_changed(Component* c, uint64 data_name_hash)
+	void cLayoutPrivate::on_local_data_changed(Component* c, uint64 hash)
 	{
 		if (c == element)
 		{
-			switch (data_name_hash)
+			switch (hash)
 			{
 			case S<ch("width")>::v:
 			case S<ch("height")>::v:
@@ -469,13 +469,13 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::on_child_data_changed(Component* c, uint64 data_name_hash)
+	void cLayoutPrivate::on_child_data_changed(Component* c, uint64 hash)
 	{
 		if (updating)
 			return;
 		if (c->type_hash == cElement::type_hash)
 		{
-			switch (data_name_hash)
+			switch (hash)
 			{
 			case S<ch("x")>::v:
 			case S<ch("y")>::v:
@@ -488,7 +488,7 @@ namespace flame
 		}
 		else if (c->type_hash == cAligner::type_hash)
 		{
-			switch (data_name_hash)
+			switch (hash)
 			{
 			case S<ch("alignx")>::v:
 			case S<ch("aligny")>::v:

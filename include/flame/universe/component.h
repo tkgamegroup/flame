@@ -27,7 +27,7 @@ namespace flame
 		virtual void on_removed() {}
 		virtual void on_local_message(Message msg, void* p = nullptr) {}
 		virtual void on_child_message(Message msg, void* p = nullptr) {}
-		virtual void on_local_data_changed(Component* c, uint64 data_name_hash) {}
-		virtual void on_child_data_changed(Component* c, uint64 data_name_hash) {}
+		virtual void on_local_data_changed(Component* c, uint64 hash) {}
+		virtual void on_child_data_changed(Component* c, uint64 hash) {}
 	};
 }

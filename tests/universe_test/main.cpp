@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"window_test";
+auto test_prefab = L"slider";
 
 Entity* root;
 

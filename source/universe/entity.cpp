@@ -786,7 +786,7 @@ namespace flame
 		});
 	}
 
-	void* EntityPrivate::add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture)
+	void* EntityPrivate::add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		local_data_changed_listeners.emplace_back(c);

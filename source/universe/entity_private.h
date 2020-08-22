@@ -137,7 +137,7 @@ namespace flame
 		void remove_local_message_listener(void* lis) override;
 		void* add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) override;
 		void remove_child_message_listener(void* lis) override;
-		void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) override;
+		void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture) override;
 		void remove_local_data_changed_listener(void* lis) override;
 
 		void load(const std::filesystem::path& filename);

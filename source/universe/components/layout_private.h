@@ -58,7 +58,7 @@ namespace flame
 
 		void on_local_message(Message msg, void* p) override;
 		void on_child_message(Message msg, void* p) override;
-		void on_local_data_changed(Component* c, uint64 data_name_hash) override;
-		void on_child_data_changed(Component* c, uint64 data_name_hash) override;
+		void on_local_data_changed(Component* c, uint64 hash) override;
+		void on_child_data_changed(Component* c, uint64 hash) override;
 	};
 }
