@@ -18,7 +18,7 @@ int main(int argc, char** args)
 
 	auto e = Entity::create();
 	e->load(test_prefab);
-	e->save(L"d:/1.prefab");
+	//e->save(L"d:/1.prefab");
 	root->add_child(e);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {

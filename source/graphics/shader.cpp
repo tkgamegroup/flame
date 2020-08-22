@@ -208,7 +208,7 @@ namespace flame
 		bool compile_shaders(DevicePrivate* d, const std::filesystem::path& dir, std::span<CompiledShader> shaders, PipelineLayoutPrivate* pll, const VertexInfo* vi)
 		{
 			static std::regex regex_in(R"(\s*in\s+([\w]+)\s+i_([\w]+)\s*;)");
-			static std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)(\{([\w:\s]+)\})?\s*;)");
+			static std::regex regex_out(R"(\s*out\s+([\w]+)\s+o_([\w]+)\s*;)");
 			static std::regex regex_pc(R"(\s*pushconstant)");
 			static std::regex regex_ubo(R"(\s*uniform\s+([\w]+))");
 			static std::regex regex_tex(R"(\s*sampler2D\s+([\w]+)([\[\]0-9\s]+)?;)");
@@ -326,57 +326,7 @@ namespace flame
 								ShaderInOut out;
 								out.type = res[1].str();
 								out.name = res[2].str();
-								auto dual = false;
-								if (s->type == ShaderStageFrag)
-								{
-									BlendOption bo;
-									if (res[3].matched)
-									{
-										bo.enable = true;
-										auto sp = SUS::split(res[4].str());
-										for (auto& p : sp)
-										{
-											auto sp = SUS::split(p, ':');
-											BlendFactor f;
-											if (sp[1] == "0")
-												f = BlendFactorZero;
-											else if (sp[1] == "1")
-												f = BlendFactorOne;
-											else if (sp[1] == "sa")
-												f = BlendFactorSrcAlpha;
-											else if (sp[1] == "1msa")
-												f = BlendFactorOneMinusSrcAlpha;
-											else if (sp[1] == "s1c")
-											{
-												dual = true;
-												f = BlendFactorSrc1Color;
-											}
-											else if (sp[1] == "1ms1c")
-											{
-												dual = true;
-												f = BlendFactorOneMinusSrc1Color;
-											}
-											else
-												continue;
-											if (sp[0] == "sc")
-												bo.src_color = f;
-											else if (sp[0] == "dc")
-												bo.dst_color = f;
-											else if (sp[0] == "sa")
-												bo.src_alpha = f;
-											else if (sp[0] == "da")
-												bo.dst_alpha = f;
-										}
-									}
-									r.blend_options.push_back(bo);
-								}
-								if (dual)
-								{
-									glsl_file << "layout (location = " + std::to_string((int)r.outputs.size()) + +", index = 0) out " + get_formated_type(out.type) + " o_" + out.name + "0;\n";
-									glsl_file << "layout (location = " + std::to_string((int)r.outputs.size()) + +", index = 1) out " + get_formated_type(out.type) + " o_" + out.name + "1;\n";
-								}
-								else
-									glsl_file << "layout (location = " + std::to_string((int)r.outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
+								glsl_file << "layout (location = " + std::to_string((int)r.outputs.size()) + +") out " + get_formated_type(out.type) + " o_" + out.name + ";\n";
 								r.outputs.push_back(out);
 							}
 							else if (std::regex_search(line, res, regex_pc))
@@ -462,8 +412,12 @@ namespace flame
 						exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 						if (!std::filesystem::exists(spv_path))
 						{
-							printf("glsl:\n%s\n", get_file_content(L"out.glsl").c_str());
-							printf("error:\n%s\n", output.c_str());
+							printf("glsl:\n");
+							auto glsl = SUS::split(get_file_content(L"out.glsl"), '\n');
+							auto line = 1;
+							for (auto& l : glsl)
+								printf("%d: %s\n", line++, l.c_str());
+							printf("\nerror:\n%s\n", output.c_str());
 							assert(0);
 						}
 						std::filesystem::remove(L"out.glsl");
@@ -500,22 +454,6 @@ namespace flame
 							}
 
 						}
-						if (!r.blend_options.empty())
-						{
-							auto n = root.append_child("blend_options");
-							for (auto& bo : r.blend_options)
-							{
-								auto nn = n.append_child("attachment");
-								nn.append_attribute("enable").set_value(bo.enable);
-								if (bo.enable)
-								{
-									nn.append_attribute("sc").set_value((int)bo.src_color);
-									nn.append_attribute("dc").set_value((int)bo.dst_color);
-									nn.append_attribute("sa").set_value((int)bo.src_alpha);
-									nn.append_attribute("da").set_value((int)bo.dst_alpha);
-								}
-							}
-						}
 
 						doc.save_file(res_path.c_str());
 					}
@@ -541,19 +479,6 @@ namespace flame
 							o.name = n.attribute("name").value();
 							o.type = n.attribute("type").value();
 							r.outputs.push_back(o);
-						}
-						for (auto& n : root.child("blend_options"))
-						{
-							BlendOption bo;
-							bo.enable = n.attribute("enable").as_bool();
-							if (bo.enable)
-							{
-								bo.src_color = (BlendFactor)n.attribute("sc").as_int();
-								bo.dst_color = (BlendFactor)n.attribute("dc").as_int();
-								bo.src_alpha = (BlendFactor)n.attribute("sa").as_int();
-								bo.dst_alpha = (BlendFactor)n.attribute("da").as_int();
-							}
-							r.blend_options.push_back(bo);
 						}
 					}
 				}
@@ -590,7 +515,7 @@ namespace flame
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::vector<CompiledShader>& _shaders, PipelineLayoutPrivate* pll,
 			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
-			DepthInfo* depth, std::span<const uint> dynamic_states) :
+			DepthInfo* depth, std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states) :
 			device(d),
 			pipeline_layout(pll)
 		{
@@ -728,25 +653,21 @@ namespace flame
 			vk_blend_attachment_states.resize(rp->subpasses[subpass_idx]->color_attachments.size());
 			for (auto& a : vk_blend_attachment_states)
 			{
-				memset(&a, 0, sizeof(a));
+				a = {};
 				a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
-			if (_shaders.back().s->type == ShaderStageFrag)
+			for (auto i = 0; i < blend_options.size(); i++)
 			{
-				auto& bos = _shaders.back().r.blend_options;
-				for (auto i = 0; i < bos.size(); i++)
-				{
-					const auto& src = bos[i];
-					auto& dst = vk_blend_attachment_states[i];
-					dst.blendEnable = src.enable;
-					dst.srcColorBlendFactor = to_backend(src.src_color);
-					dst.dstColorBlendFactor = to_backend(src.dst_color);
-					dst.colorBlendOp = VK_BLEND_OP_ADD;
-					dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
-					dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
-					dst.alphaBlendOp = VK_BLEND_OP_ADD;
-					dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-				}
+				auto& src = blend_options[i];
+				auto& dst = vk_blend_attachment_states[i];
+				dst.blendEnable = src.enable;
+				dst.srcColorBlendFactor = to_backend(src.src_color);
+				dst.dstColorBlendFactor = to_backend(src.dst_color);
+				dst.colorBlendOp = VK_BLEND_OP_ADD;
+				dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
+				dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
+				dst.alphaBlendOp = VK_BLEND_OP_ADD;
+				dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 			}
 
 			VkPipelineColorBlendStateCreateInfo blend_state;
@@ -846,7 +767,7 @@ namespace flame
 
 		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders,
 			PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
-			DepthInfo* depth, std::span<const uint> dynamic_states)
+			DepthInfo* depth, std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states)
 		{
 			auto has_vert_stage = false;
 			auto tess_stage_count = 0;
@@ -877,7 +798,7 @@ namespace flame
 			if (!compile_shaders(d, shader_dir, ss, pll, vi))
 				return nullptr;
 
-			return new PipelinePrivate(d, ss, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, dynamic_states);
+			return new PipelinePrivate(d, ss, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, blend_options, dynamic_states);
 		}
 
 		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
@@ -896,9 +817,13 @@ namespace flame
 		Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count,
 			Shader* const* shaders, PipelineLayout* pll, Renderpass* rp, uint subpass_idx,
 			VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
+			uint blend_options_count, const BlendOption* blend_options,
 			uint dynamic_states_count, const uint* dynamic_states)
 		{
-			return PipelinePrivate::create((DevicePrivate*)d, shader_dir, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, { dynamic_states , dynamic_states_count });
+			return PipelinePrivate::create((DevicePrivate*)d, shader_dir, 
+				{ (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, 
+				{ blend_options , blend_options_count },
+				{ dynamic_states , dynamic_states_count });
 		}
 
 		Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, PipelineLayout* pll)

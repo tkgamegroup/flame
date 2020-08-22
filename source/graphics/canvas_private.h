@@ -64,7 +64,7 @@ namespace flame
 					struct
 					{
 						Vec4f scissor;
-						float sigma;
+						uint radius;
 					}d2;
 				}v;
 			};
@@ -86,20 +86,16 @@ namespace flame
 
 			std::unique_ptr<BufferPrivate> buf_vtx;
 			std::unique_ptr<BufferPrivate> buf_idx;
-			std::unique_ptr<DescriptorSetPrivate> ds_el;
+			std::unique_ptr<DescriptorSetPrivate> ds_ele;
 
-			std::vector<ImageViewPrivate*> views_tar;
+			std::vector<ImageViewPrivate*> ivs_tar;
 			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_tar;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> dss_tar;
 
-			std::unique_ptr<ImagePrivate> img_bk;
-			std::unique_ptr<ImageViewPrivate> ivs_bk[downsample_level];
-			std::unique_ptr<FramebufferPrivate> fbs_bk[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> dss_bk[downsample_level];
-			std::unique_ptr<ImagePrivate> img_pp;
-			std::unique_ptr<ImageViewPrivate> ivs_pp[downsample_level];
-			std::unique_ptr<FramebufferPrivate> fbs_pp[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> dss_pp[downsample_level];
+			std::unique_ptr<ImagePrivate> imgs_bk[2];
+			std::unique_ptr<ImageViewPrivate> ivs_bk[2][downsample_level];
+			std::unique_ptr<FramebufferPrivate> fbs_bk[2][downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> dss_bk[2][downsample_level];
 
 			std::vector<std::vector<Vec2f>> paths;
 
@@ -138,7 +134,7 @@ namespace flame
 			void fill(const Vec4c& col, bool aa = false) override;
 			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
-			void add_blur(const Vec4f& range, float sigma) override;
+			void add_blur(const Vec4f& range, uint radius) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

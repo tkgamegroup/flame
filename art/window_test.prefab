@@ -6,6 +6,9 @@
       <cElement width="200" height="200" padding="8,8,8,8" border="1.0" fill_color="240,240,240,255" />
       <cText text="Hello" />
     </entity>
-    <entity src="window" />
+    <entity src="window">
+      <cElement fill_color="240,240,240,50" />
+      <cBlur radius="3" />
+    </entity>
   </entity>
 </prefab>

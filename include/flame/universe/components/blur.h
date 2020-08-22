@@ -14,8 +14,8 @@ namespace flame
 		{
 		}
 
-		virtual float get_sigma() const = 0;
-		virtual void set_sigma(float s) = 0;
+		virtual uint get_radius() const = 0;
+		virtual void set_radius(uint r) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cBlur* create();
 	};

@@ -4,14 +4,14 @@
 
 namespace flame
 {
-	void cBlurPrivate::set_sigma(float s)
+	void cBlurPrivate::set_radius(uint r)
 	{
-		if (sigma == s)
+		if (radius == r)
 			return;
-		sigma = s;
+		radius = r;
 		if (element)
 			element->mark_drawing_dirty();
-		Entity::report_data_changed(this, S<ch("size")>::v);
+		Entity::report_data_changed(this, S<ch("radius")>::v);
 	}
 
 	void cBlurPrivate::on_gain_element()
@@ -30,7 +30,7 @@ namespace flame
 
 	void cBlurPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->add_blur(Vec4f(element->points[0], element->points[2]), sigma);
+		canvas->add_blur(Vec4f(element->points[0], element->points[2]), radius);
 	}
 
 	cBlur* cBlur::create()

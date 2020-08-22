@@ -7,12 +7,12 @@ namespace flame
 {
 	struct cBlurPrivate : cBlur, cElement::Drawer // R ~ on_*
 	{
-		float sigma = 1.f;
+		uint radius = 1.f;
 
 		cElementPrivate* element = nullptr; // R ref
 
-		float get_sigma() const override { return sigma; }
-		void set_sigma(float s) override;
+		uint get_radius() const override { return radius; }
+		void set_radius(uint s) override;
 
 		void on_gain_element();
 		void on_lost_element();
