@@ -10,11 +10,13 @@ namespace flame
 		struct ImageViewPrivate;
 		struct ImageAtlasPrivate;
 		struct FontAtlasPrivate;
+		struct ModelPrivate;
 		struct FramebufferPrivate;
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
 
 		const auto resources_count = 64U;
+		const auto models_count = 1024U;
 		const auto downsample_level = 6U;
 
 		struct CanvasResourcePrivate : CanvasResource
@@ -69,7 +71,7 @@ namespace flame
 					}d2;
 					struct
 					{
-						Mat4f matrix;
+						uint count;
 					}d3;
 				}v;
 			};
@@ -81,35 +83,35 @@ namespace flame
 				Vec4c col;
 			};
 
-			struct ModelVertex
-			{
-				Vec3f pos;
-				Vec2f uv;
-				Vec3f normal;
-				Vec3f tangent;
-			};
-
 			struct AddedMesh
 			{
-				uint idx_off;
 				uint vtx_off;
-				uint vtx_cnt;
+				uint idx_off;
 				uint idx_cnt;
 			};
 
 			struct AddedModel
 			{
 				std::string name;
+				ModelPrivate* model;
 				std::vector<AddedMesh> meshes;
+			};
+
+			struct ObjectMatrix
+			{
+				Mat4f mvp;
+				Mat4f nor;
 			};
 
 			DevicePrivate* device;
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
-			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
+			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
+			std::unique_ptr<AddedModel> models[models_count];
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
+			bool model_dirty = true;
 
 			std::unique_ptr<BufferPrivate> element_vertex_buffer;
 			std::unique_ptr<BufferPrivate> element_vertex_staging_buffer;
@@ -127,7 +129,7 @@ namespace flame
 
 			ElementVertex* element_vertex_buffer_end;
 			uint* element_index_buffer_end;
-			Mat4f* object_matrix_buffer_end;
+			ObjectMatrix* object_matrix_buffer_end;
 			DrawIndexedIndirectCommand* object_indirect_buffer_end;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
@@ -175,7 +177,7 @@ namespace flame
 			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void add_object(const Mat4f& mat, uint mod_id) override;
+			void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor) override;
 
 			void add_blur(const Vec4f& range, uint radius) override;
 

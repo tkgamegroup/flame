@@ -3,6 +3,7 @@
 #include "buffer_private.h"
 #include "image_private.h"
 #include "font_private.h"
+#include "model_private.h"
 #include "renderpass_private.h"
 #include "shader_private.h"
 #include "command_private.h"
@@ -162,13 +163,10 @@ namespace flame
 					VertexAttributeInfo vias[3];
 					vias[0].location = 0;
 					vias[0].format = Format_R32G32_SFLOAT;
-					vias[0].name = "pos";
 					vias[1].location = 1;
 					vias[1].format = Format_R32G32_SFLOAT;
-					vias[1].name = "uv";
 					vias[2].location = 2;
 					vias[2].format = Format_R8G8B8A8_UNORM;
-					vias[2].name = "color";
 					VertexBufferInfo vib;
 					vib.attributes_count = size(vias);
 					vib.attributes = vias;
@@ -189,23 +187,32 @@ namespace flame
 				}
 
 				{
-					VertexAttributeInfo vias1[1];
+					VertexAttributeInfo vias1[4];
 					vias1[0].location = 0;
 					vias1[0].format = Format_R32G32B32_SFLOAT;
-					vias1[0].name = "pos";
-					VertexAttributeInfo vias2[4];
-					vias2[0].location = 1;
+					vias1[1].location = 1;
+					vias1[1].format = Format_R32G32_SFLOAT;
+					vias1[2].location = 2;
+					vias1[2].format = Format_R32G32B32_SFLOAT;
+					vias1[3].location = 3;
+					vias1[3].format = Format_R32G32B32_SFLOAT;
+					VertexAttributeInfo vias2[8];
+					vias2[0].location = 4;
 					vias2[0].format = Format_R32G32B32A32_SFLOAT;
-					vias2[0].name = "col0";
-					vias2[1].location = 2;
+					vias2[1].location = 5;
 					vias2[1].format = Format_R32G32B32A32_SFLOAT;
-					vias2[1].name = "col1";
-					vias2[2].location = 3;
+					vias2[2].location = 6;
 					vias2[2].format = Format_R32G32B32A32_SFLOAT;
-					vias2[2].name = "col2";
-					vias2[3].location = 4;
+					vias2[3].location = 7;
 					vias2[3].format = Format_R32G32B32A32_SFLOAT;
-					vias2[3].name = "col3";
+					vias2[4].location = 8;
+					vias2[4].format = Format_R32G32B32A32_SFLOAT;
+					vias2[5].location = 9;
+					vias2[5].format = Format_R32G32B32A32_SFLOAT;
+					vias2[6].location = 10;
+					vias2[6].format = Format_R32G32B32A32_SFLOAT;
+					vias2[7].location = 11;
+					vias2[7].format = Format_R32G32B32A32_SFLOAT;
 					VertexBufferInfo vibs[2];
 					vibs[0].attributes_count = size(vias1);
 					vibs[0].attributes = vias1;
@@ -278,45 +285,23 @@ namespace flame
 			model_index_staging_buffer->map();
 			object_matrix_staging_buffer->map();
 			object_indirect_staging_buffer->map();
-			{
-				Vec3f ps[] = {
-					Vec3f(-0.5f, 0.5f, -0.5f), Vec3f(0.5f, 0.5f, -0.5f), Vec3f(0.5f, -0.5f, -0.5f), Vec3f(-0.5f, -0.5f, -0.5f),
-					Vec3f(-0.5f, 0.5f, 0.5f), Vec3f(0.5f, 0.5f, 0.5f), Vec3f(0.5f, -0.5f, 0.5f), Vec3f(-0.5f, -0.5f, 0.5f)
-				};
-				uint is[] = {
-					0, 2, 1, 0, 3, 2,
-					5, 7, 4, 5, 6, 7,
-					4, 1, 5, 4, 0, 1,
-					3, 6, 2, 3, 7, 6,
-					4, 3, 0, 4, 7, 3,
-					1, 6, 5, 1, 2, 6
-				};
-				memcpy(model_vertex_staging_buffer->mapped, ps, sizeof(Vec3f)* size(ps));
-				memcpy(model_index_staging_buffer->mapped, is, sizeof(uint)* size(is));
-
-				auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
-				cb->begin(true);
-				BufferCopy cpy1;
-				cpy1.size = sizeof(Vec3f) * size(ps);
-				BufferCopy cpy2;
-				cpy2.size = sizeof(uint) * size(is);
-				cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy1, 1 });
-				cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy2, 1 });
-				cb->end();
-				auto q = d->graphics_queue.get();
-				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-				q->wait_idle();
-			}
 
 			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			white_image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
-			resources.resize(resources_count);
 			auto iv_white = white_image->default_view.get();
 			for (auto i = 0; i < resources_count; i++)
 			{
 				auto r = new CanvasResourcePrivate;
 				r->view = iv_white;
 				resources[i].reset(r);
+			}
+
+			for (auto i = 0; i < models_count; i++)
+			{
+				auto m = new AddedModel;
+				m->name = "cube";
+				m->model = (ModelPrivate*)Model::get_standard(StandardModelCube);
+				models[i].reset(m);
 			}
 
 			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
@@ -399,9 +384,6 @@ namespace flame
 
 		uint CanvasPrivate::set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas)
 		{
-			if (resources.empty())
-				return -1;
-
 			auto iv_white = white_image->default_view.get();
 
 			if (slot == -1)
@@ -421,7 +403,7 @@ namespace flame
 
 			if (white_slot == -1)
 			{
-				for (auto i = 0; i < resources.size(); i++)
+				for (auto i = 0; i < resources_count; i++)
 				{
 					if (resources[i]->view == iv_white)
 					{
@@ -863,23 +845,6 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_object(const Mat4f& mat, uint mod_id)
-		{
-			*object_matrix_buffer_end = mat;
-			object_matrix_buffer_end++;
-
-			object_indirect_buffer_end->index_count = 36;
-			object_indirect_buffer_end->first_index = 0;
-			object_indirect_buffer_end->vertex_offset = 0;
-			object_indirect_buffer_end->first_instance = object_indirect_buffer_end - object_indirect_buffer->mapped;
-			object_indirect_buffer_end++;
-
-			Cmd cmd;
-			cmd.type = CmdDrawObject;
-			cmd.v.d3.matrix = mat;
-			cmds.push_back(cmd);
-		}
-
 		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
 			res_id = min(res_id, resources_count - 1);
@@ -905,6 +870,70 @@ namespace flame
 			add_vtx(RB, _uv1, tint_col);
 			add_vtx(LB, Vec2f(_uv0.x(), _uv1.y()), tint_col);
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
+		}
+
+		void CanvasPrivate::add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor)
+		{
+			if (model_dirty)
+			{
+				auto vtx_off = 0;
+				auto idx_off = 0;
+				for (auto i = 0; i < models_count; i++)
+				{
+					auto& m = models[i];
+					if (!m->model)
+						continue;
+					m->meshes.clear();
+					for (auto& ms : m->model->meshes)
+					{
+						AddedMesh am;
+						am.vtx_off = vtx_off;
+						am.idx_off = idx_off;
+						am.idx_cnt = ms->indices.size();
+						m->meshes.push_back(am);
+
+						memcpy((char*)model_vertex_staging_buffer->mapped + sizeof(ModelVertex) * vtx_off, ms->vertices.data(), sizeof(ModelVertex) * ms->vertices.size());
+						memcpy((char*)model_index_staging_buffer->mapped + sizeof(uint) * idx_off, ms->indices.data(), sizeof(uint) * ms->indices.size());
+						vtx_off += ms->vertices.size();
+						idx_off += ms->indices.size();
+					}
+				}
+
+				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+				cb->begin(true);
+				BufferCopy cpy1;
+				cpy1.size = sizeof(ModelVertex) * vtx_off;
+				BufferCopy cpy2;
+				cpy2.size = sizeof(uint) * idx_off;
+				cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy1, 1 });
+				cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy2, 1 });
+				cb->end();
+				auto q = device->graphics_queue.get();
+				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+				q->wait_idle();
+
+				model_dirty = false;
+			}
+
+			auto& m = models[mod_id];
+			for (auto& ms : m->meshes)
+			{
+				object_matrix_buffer_end->mvp = mvp;
+				object_matrix_buffer_end->nor = nor;
+				object_matrix_buffer_end++;
+
+				object_indirect_buffer_end->index_count = ms.idx_cnt;
+				object_indirect_buffer_end->instance_count = 1;
+				object_indirect_buffer_end->first_index = ms.idx_off;
+				object_indirect_buffer_end->vertex_offset = ms.vtx_off;
+				object_indirect_buffer_end->first_instance = object_indirect_buffer_end - object_indirect_staging_buffer->mapped;
+				object_indirect_buffer_end++;
+			}
+
+			Cmd cmd;
+			cmd.type = CmdDrawObject;
+			cmd.v.d3.count = m->meshes.size();
+			cmds.push_back(cmd);
 		}
 
 		void CanvasPrivate::add_blur(const Vec4f& _range, uint radius)
@@ -941,7 +970,7 @@ namespace flame
 		{
 			element_vertex_buffer_end = (ElementVertex*)element_vertex_staging_buffer->mapped;
 			element_index_buffer_end = (uint*)element_index_staging_buffer->mapped;
-			object_matrix_buffer_end = (Mat4f*)object_matrix_staging_buffer->mapped;
+			object_matrix_buffer_end = (ObjectMatrix*)object_matrix_staging_buffer->mapped;
 			object_indirect_buffer_end = (DrawIndexedIndirectCommand*)object_indirect_staging_buffer->mapped;
 
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
@@ -965,9 +994,18 @@ namespace flame
 			};
 			std::vector<Pass> passes;
 
-			auto mat = get_project_matrix(60.f * ANG_RAD, (float)target_size.x() / (float)target_size.y(), 0.1f, 1000.f) *
-				get_view_matrix(Vec3f(3.f), Vec3f(0.f), Vec3f(0.f, 1.f, 0.f));
-			add_object(mat, 0);
+			auto matv = get_view_matrix(Vec3f(3.f), Vec3f(0.f), Vec3f(0.f, 1.f, 0.f));
+			auto matvp = get_project_matrix(60.f * ANG_RAD, (float)target_size.x() / (float)target_size.y(), 0.1f, 1000.f) * matv;
+			static float ang = 0.f;
+			{
+				auto matm = Mat4f(Mat<3, 4, float>(get_rotation_matrix(normalize(Vec3f(1.f, 0.f, 0.f)), ang * ANG_RAD), Vec3f(0.f)), Vec4f(+1.5f, 0.f, 0.f, 1.f));
+				add_object(0, matvp * matm, transpose(inverse(matv * matm)));
+			}
+			{
+				auto matm = Mat4f(Mat<3, 4, float>(1.f), Vec4f(-1.5f, 0.f, 0.f, 1.f));
+				add_object(0, matvp * matm, transpose(inverse(matv * matm)));
+			}
+			ang += 5.f;
 
 			for (auto i = 0; i < cmds.size(); i++)
 			{
@@ -1040,10 +1078,6 @@ namespace flame
 				cpy.size = (char*)object_indirect_buffer_end - object_indirect_staging_buffer->mapped;
 				cb->copy_buffer(object_indirect_staging_buffer.get(), object_indirect_buffer.get(), { &cpy, 1 });
 			}
-			cb->buffer_barrier(element_vertex_buffer.get(), AccessTransferWrite, AccessVertexAttributeRead);
-			cb->buffer_barrier(element_index_buffer.get(), AccessTransferWrite, AccessIndexRead);
-			cb->buffer_barrier(object_matrix_buffer.get(), AccessTransferWrite, AccessIndexRead);
-			cb->buffer_barrier(object_indirect_buffer.get(), AccessTransferWrite, AccessIndirectCommandRead);
 
 			cb->set_viewport(curr_scissor);
 			cb->set_scissor(curr_scissor);
@@ -1057,6 +1091,11 @@ namespace flame
 				{
 				case PassElement:
 				{
+					if (ele_idx_off == 0)
+					{
+						cb->buffer_barrier(element_vertex_buffer.get(), AccessTransferWrite, AccessVertexAttributeRead);
+						cb->buffer_barrier(element_index_buffer.get(), AccessTransferWrite, AccessIndexRead);
+					}
 					cb->set_viewport(curr_scissor);
 					cb->bind_vertex_buffer(element_vertex_buffer.get(), 0);
 					cb->bind_index_buffer(element_index_buffer.get(), IndiceTypeUint);
@@ -1088,6 +1127,11 @@ namespace flame
 					break;
 				case PassObject:
 				{
+					if (obj_off == 0)
+					{
+						cb->buffer_barrier(object_matrix_buffer.get(), AccessTransferWrite, AccessIndexRead);
+						cb->buffer_barrier(object_indirect_buffer.get(), AccessTransferWrite, AccessIndirectCommandRead);
+					}
 					cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 					cb->bind_vertex_buffer(model_vertex_buffer.get(), 0);
 					cb->bind_vertex_buffer(object_matrix_buffer.get(), 1);
@@ -1096,9 +1140,11 @@ namespace flame
 					cvs[1] = Vec4f(1.f);
 					cb->begin_renderpass(forward_framebuffers[image_index].get(), cvs);
 					cb->bind_pipeline(forward_pipeline);
-					cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_off, p.cmd_ids.size());
-					obj_off += p.cmd_ids.size();
-					cb->draw_indexed(36, 0, 0, 1, 0);
+					auto count = 0;
+					for (auto& i : p.cmd_ids)
+						count += cmds[i].v.d3.count;
+					cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_off, count);
+					obj_off += count;
 					cb->end_renderpass();
 				}
 					break;

@@ -1027,7 +1027,7 @@ namespace flame
 		template <uint O, uint P, class U>
 		explicit Mat(const Mat<O, P, U>& rhs)
 		{
-			static_assert(N <= O && M <= P);
+			static_assert(M <= O && N <= P);
 			for (auto i = 0; i < M; i++)
 			{
 				for (auto j = 0; j < N; j++)
@@ -1044,25 +1044,25 @@ namespace flame
 			}
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2)
+		template <uint N, class U>
+		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2)
 		{
-			static_assert(N == O && M == 2);
+			static_assert(M == 2);
 			v_[0] = _v1;
 			v_[1] = _v2;
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2, const Vec<O, U>& _v3)
+		template <uint N, class U>
+		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Vec<N, U>& _v3)
 		{
-			static_assert(N == O && M == 3);
+			static_assert(M == 3);
 			v_[0] = _v1;
 			v_[1] = _v2;
 			v_[2] = _v3;
 		}
 
 		template <uint O, class U>
-		Mat(const Mat<O, 2, U>& _m1, const Vec<O, U>& _v1)
+		Mat(const Mat<2, O, U>& _m1, const Vec<O, U>& _v1)
 		{
 			static_assert(N == O && M == 3);
 			v_[0] = _m1[0];
@@ -1070,77 +1070,84 @@ namespace flame
 			v_[2] = _v1;
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Mat<O, 2, U>& _m1)
+		template <uint N, class U>
+		Mat(const Vec<N, U>& _v1, const Mat<2, N, U>& _m1)
 		{
-			static_assert(N == O && M == 3);
+			static_assert(M == 3);
 			v_[0] = _v1;
 			v_[1] = _m1[0];
 			v_[2] = _m1[1];
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2, const Vec<O, U>& _v3, const Vec<O, U>& _v4)
+		template <class U>
+		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Vec<N, U>& _v3, const Vec<N, U>& _v4)
 		{
-			static_assert(N == O && M == 4);
+			static_assert(M == 4);
 			v_[0] = _v1;
 			v_[1] = _v2;
 			v_[2] = _v3;
 			v_[3] = _v4;
 		}
 
-		template <uint O, class U>
-		Mat(const Mat<O, 2, U>& _m1, const Vec<O, U>& _v1, const Vec<O, U>& _v2)
+		template <uint N, class U>
+		Mat(const Mat<2, N, U>& _m1, const Vec<N, U>& _v1, const Vec<N, U>& _v2)
 		{
-			static_assert(N == O && M == 4);
+			static_assert(M == 4);
 			v_[0] = _m1[0];
 			v_[1] = _m1[1];
 			v_[2] = _v1;
 			v_[3] = _v2;
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Mat<O, 2, U>& _m1, const Vec<O, U>& _v2)
+		template <uint N, class U>
+		Mat(const Vec<N, U>& _v1, const Mat<2, N, U>& _m1, const Vec<N, U>& _v2)
 		{
-			static_assert(N == O && M == 4);
+			static_assert(M == 4);
 			v_[0] = _v1;
 			v_[1] = _m1[0];
 			v_[2] = _m1[1];
 			v_[3] = _v2;
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Vec<O, U>& _v2, const Mat<O, 2, U>& _m1)
+		template <class U>
+		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Mat<2, N, U>& _m1)
 		{
-			static_assert(N == O && M == 4);
+			static_assert(M == 4);
 			v_[0] = _v1;
 			v_[1] = _v2;
 			v_[2] = _m1[0];
 			v_[3] = _m1[1];
 		}
 
-		template <uint O, class U>
-		Mat(const Mat<O, 2, U>& _m1, const Mat<O, 2, U>& _m2)
+		template <class U>
+		Mat(const Mat<2, N, U>& _m1, const Mat<2, N, U>& _m2)
 		{
-			static_assert(N == O && M == 4);
+			static_assert(M == 4);
 			v_[0] = _m1[0];
 			v_[1] = _m1[1];
 			v_[2] = _m1[0];
 			v_[3] = _m1[1];
 		}
 
-		template <uint O, class U>
-		Mat(const Mat<O, 3, U>& _m1, const Vec<O, U>& _v1)
+		template <class U>
+		Mat(const Mat<3, N, U>& _m1, const Vec<N, U>& _v1)
 		{
-			static_assert(N == O && M == 4);
+			static_assert(M == 4);
 			v_[0] = _m1[0];
 			v_[1] = _m1[1];
 			v_[2] = _m1[2];
 			v_[3] = _v1;
 		}
 
+		template <class U>
+		Mat(const Mat<M, N - 1, U>& _m1, const Vec<M, U>& _v1)
+		{
+			for (auto i = 0; i < M; i++)
+				v_[i] = Vec<N, T>(_m1[i], _v1[i]);
+		}
+
 		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Mat<O, 3, U>& _m1)
+		Mat(const Vec<O, U>& _v1, const Mat<3, O, U>& _m1)
 		{
 			static_assert(N == O && M == 4);
 			v_[0] = _v1;
@@ -1498,6 +1505,7 @@ namespace flame
 			for (auto j = 0; j < N; j++)
 				ret[i][j] = m[j][i];
 		}
+		return ret;
 	}
 
 	template <class T>
