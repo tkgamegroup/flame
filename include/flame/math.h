@@ -1589,7 +1589,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<2, 2, T> rotation(T rad)
+	Mat<2, 2, T> get_rotation_matrix(T rad)
 	{
 		auto c = cos(rad);
 		auto s = sin(rad);
@@ -1598,7 +1598,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<3, 3, T> rotation(const Vec<3, T>& axis, T rad)
+	Mat<3, 3, T> get_rotation_matrix(const Vec<3, T>& axis, T rad)
 	{
 		auto c = cos(rad);
 		auto s = sin(rad);
@@ -1623,7 +1623,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<4, 4, T> view_mat(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
+	Mat<4, 4, T> get_view_matrix(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
 	{
 		auto f = normalize(center - eye);
 		auto s = normalize(cross(f, up));
@@ -1646,7 +1646,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<4, 4, T> proj_mat(float fovy, float aspect, float zNear, float zFar)
+	Mat<4, 4, T> get_project_matrix(T fovy, T aspect, T zNear, T zFar)
 	{
 		auto tanHalfFovy = tan(fovy / 2.f);
 

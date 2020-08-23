@@ -95,9 +95,9 @@ namespace flame
 
 		struct DepthInfo
 		{
-			bool test;
-			bool write;
-			CompareOp compare_op;
+			bool test = true;
+			bool write = true;
+			CompareOp compare_op = CompareOpLess;
 		};
 
 

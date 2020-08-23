@@ -135,8 +135,8 @@ namespace flame
 
 		axes = base_axes;
 		auto c = base_pos + axes[0] * x + axes[1] * y;
-		axes[0] = ::flame::rotation((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
-		axes[1] = ::flame::rotation((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
+		axes[0] = get_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
+		axes[1] = get_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
 
 		points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
 		points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);

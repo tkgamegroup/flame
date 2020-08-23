@@ -47,6 +47,7 @@ namespace flame
 			{
 				CmdDrawElement,
 				CmdSetScissor,
+				CmdDrawModel,
 				CmdBlur
 			};
 
@@ -66,45 +67,73 @@ namespace flame
 						Vec4f scissor;
 						uint radius;
 					}d2;
+					struct
+					{
+						Mat4f matrix;
+					}d3;
 				}v;
 			};
 
-			struct Vertex
+			struct ElementVertex
 			{
 				Vec2f pos;
 				Vec2f uv;
 				Vec4c col;
 			};
 
+			struct ModelVertex
+			{
+				Vec3f pos;
+				Vec2f uv;
+				Vec3f normal;
+			};
+
+			struct AddedMesh
+			{
+				uint vtx_off;
+				uint vtx_cnt;
+				uint idx_cnt;
+			};
+
+			struct AddedModel
+			{
+				std::string name;
+				std::vector<AddedMesh> meshes;
+			};
+
 			DevicePrivate* device;
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
-			std::unique_ptr<ImagePrivate> img_white;
 			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
+			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
 
-			std::unique_ptr<BufferPrivate> buf_vtx;
-			std::unique_ptr<BufferPrivate> buf_idx;
-			std::unique_ptr<DescriptorSetPrivate> ds_ele;
+			std::unique_ptr<BufferPrivate> element_vertex_buffer;
+			std::unique_ptr<BufferPrivate> element_index_buffer;
+			std::unique_ptr<BufferPrivate> model_vertex_buffer;
+			std::unique_ptr<BufferPrivate> model_index_buffer;
+			std::unique_ptr<BufferPrivate> object_matrix_buffer;
+			std::unique_ptr<BufferPrivate> object_indirect_buffer;
+			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
+			ElementVertex* element_vertex_buffer_end;
+			uint* element_index_buffer_end;
 
-			std::vector<ImageViewPrivate*> ivs_tar;
-			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_tar;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> dss_tar;
+			std::vector<ImageViewPrivate*> target_imageviews;
+			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_descriptors;
 
-			std::unique_ptr<ImagePrivate> imgs_bk[2];
-			std::unique_ptr<ImageViewPrivate> ivs_bk[2][downsample_level];
-			std::unique_ptr<FramebufferPrivate> fbs_bk[2][downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> dss_bk[2][downsample_level];
+			std::unique_ptr<ImagePrivate> depth_image;
+			std::vector<std::unique_ptr<FramebufferPrivate>> forward_framebuffers;
+
+			std::unique_ptr<ImagePrivate> back_images[2];
+			std::unique_ptr<ImageViewPrivate> back_imageviews[2][downsample_level];
+			std::unique_ptr<FramebufferPrivate> back_framebuffers[2][downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> back_descriptorsets[2][downsample_level];
 
 			std::vector<std::vector<Vec2f>> paths;
 
-			Vertex* vtx_end;
-			uint* idx_end;
-
 			std::vector<Cmd> cmds;
-			uint* p_vtx_cnt;
-			uint* p_idx_cnt;
 
 			Vec2u target_size;
 			Vec4f curr_scissor;

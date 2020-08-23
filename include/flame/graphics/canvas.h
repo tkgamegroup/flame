@@ -36,6 +36,9 @@ namespace flame
 			virtual uint set_resource(int slot /* -1 to find an empty slot */, ImageAtlas* image_atlas, const char* name = nullptr) = 0;
 			virtual uint set_resource(int slot /* -1 to find an empty slot */, FontAtlas* font_atlas, const char* name = nullptr) = 0;
 
+			//virtual void add_model(const char* name) = 0;
+			//virtual void remove_model(const char* name) = 0;
+
 			virtual void begin_path() = 0;
 			virtual void move_to(const Vec2f& pos) = 0;
 			virtual void line_to(const Vec2f& pos) = 0;

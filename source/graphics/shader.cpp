@@ -233,8 +233,6 @@ namespace flame
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
-					wprintf(L"begin compiling shader:%s\n", path.c_str());
-
 					if (std::filesystem::exists(spv_path))
 						std::filesystem::remove(spv_path);
 
@@ -250,11 +248,9 @@ namespace flame
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(spv_path))
 					{
-						printf("\nerror:\n%s\n", output.c_str());
+						printf("\nshader compile error:\n%s\n", output.c_str());
 						assert(0);
 					}
-
-					wprintf(L"end compiling shader:%s\n", path.c_str());
 				}
 				else
 				{
