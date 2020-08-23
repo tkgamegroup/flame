@@ -27,11 +27,11 @@ struct App
 			auto dst = sc->image(sc->image_index());
 			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
 			cb->begin();
-			cb->change_image_layout(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->image_barrier(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
 			ImageCopy cpy;
 			cpy.size = min(dst->size, img->size);
 			cb->copy_image(img, dst, 1, &cpy);
-			cb->change_image_layout(dst, ImageLayoutTransferDst, ImageLayoutPresent);
+			cb->image_barrier(dst, ImageLayoutTransferDst, ImageLayoutPresent);
 			cb->end();
 			auto finished = Semaphore::create(d);
 			Queue::get_default(QueueGraphics)->submit(1, &cb, sc->image_avalible(), finished, nullptr);

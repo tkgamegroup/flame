@@ -67,8 +67,9 @@ namespace flame
 
 		struct VertexAttributeInfo
 		{
-			const char* name;
+			uint location;
 			Format format;
+			const char* name;
 		};
 
 		struct VertexBufferInfo

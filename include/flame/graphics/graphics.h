@@ -131,6 +131,14 @@ namespace flame
 			ImageViewMax = 0xffffffff
 		};
 
+		struct ImageSubresource
+		{
+			uint base_level = 0;
+			uint level_count = 1;
+			uint base_layer = 0;
+			uint layer_count = 1;
+		};
+
 		enum Swizzle
 		{
 			SwizzleIdentity,
@@ -140,6 +148,14 @@ namespace flame
 			SwizzleG,
 			SwizzleB,
 			SwizzleA
+		};
+
+		struct ImageSwizzle
+		{
+			Swizzle r = SwizzleIdentity;
+			Swizzle g = SwizzleIdentity;
+			Swizzle b = SwizzleIdentity;
+			Swizzle a = SwizzleIdentity;
 		};
 
 		enum Filter
@@ -265,16 +281,14 @@ namespace flame
 
 		inline bool is_blend_factor_dual(BlendFactor f)
 		{
-			const BlendFactor dual_src_enums[] = {
-				BlendFactorSrc1Color,
-				BlendFactorOneMinusSrc1Color,
-				BlendFactorSrc1Alpha,
-				BlendFactorOneMinusSrc1Alpha
-			};
-			for (auto i = 0; i < size(dual_src_enums); i++)
+			switch (f)
 			{
-				if (f == dual_src_enums[i])
-					return true;
+			case BlendFactorSrc1Color:
+			case BlendFactorOneMinusSrc1Color:
+			case BlendFactorSrc1Alpha:
+			case BlendFactorOneMinusSrc1Alpha:
+				return true;
+
 			}
 			return false;
 		}
@@ -291,5 +305,26 @@ namespace flame
 			DynamicStateStencilWriteMask,
 			DynamicStateStencilReference
 		};
+
+		enum AccessFlags
+		{
+			AccessIndirectCommandRead = 1 << 0,
+			AccessIndexRead = 1 << 1,
+			AccessVertexAttributeRead = 1 << 2,
+			AccessUniformRead = 1 << 3,
+			AccessInputAttachmentRead = 1 << 4,
+			AccessShaderRead = 1 << 5,
+			AccessShaderWrite = 1 << 6,
+			AccessColorAttachmentRead = 1 << 7,
+			AccessColorAttachmentWrite = 1 << 8,
+			AccessDepthAttachmentRead = 1 << 9,
+			AccessDepthAttachmentWrite = 1 << 10,
+			AccessTransferRead = 1 << 11,
+			AccessTransferWrite = 1 << 12,
+			AccessHostRead = 1 << 13,
+			AccessHostWrite = 1 << 14
+		};
+
+		inline AccessFlags operator| (AccessFlags a, AccessFlags b) { return (AccessFlags)((int)a | (int)b); }
 	}
 }

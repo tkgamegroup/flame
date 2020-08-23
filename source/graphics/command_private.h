@@ -36,11 +36,14 @@ namespace flame
 			void bind_vertex_buffer(Buffer* b, uint id) override;
 			void bind_index_buffer(Buffer* b, IndiceType t) override;
 			void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll) override;
+			void draw_indirect(Buffer* b, uint offset, uint count) override;
+			void draw_indexed_indirect(Buffer* b, uint offset, uint count) override;
+			void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) override;
+			void image_barrier(Image* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource) override;
 			void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) override;
 			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override;
 			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override;
 			void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) override;
-			void change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count) override;
 			void clear_image(Image* i, const Vec4c& col) override;
 		};
 
@@ -72,12 +75,15 @@ namespace flame
 			void push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
+			void draw_indirect(BufferPrivate* b, uint offset, uint count);
+			void draw_indexed_indirect(BufferPrivate* b, uint offset, uint count);
 			void dispatch(const Vec3u& v) override;
+			void buffer_barrier(BufferPrivate* b, AccessFlags src_access, AccessFlags dst_access);
+			void image_barrier(ImagePrivate* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource = {});
 			void copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies);
 			void copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
 			void copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
 			void copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies);
-			void change_image_layout(ImagePrivate* i, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1);
 			void clear_image(ImagePrivate* i, const Vec4c& col);
 			void end() override;
 		};
@@ -112,6 +118,26 @@ namespace flame
 			((CommandBufferPrivate*)this)->push_constant(offset, size, data, (PipelineLayoutPrivate*)pll);
 		}
 
+		inline void CommandBufferBridge::draw_indirect(Buffer* b, uint offset, uint count)
+		{
+			((CommandBufferPrivate*)this)->draw_indirect((BufferPrivate*)b, offset, count);
+		}
+
+		inline void CommandBufferBridge::draw_indexed_indirect(Buffer* b, uint offset, uint count)
+		{
+			((CommandBufferPrivate*)this)->draw_indexed_indirect((BufferPrivate*)b, offset, count);
+		}
+
+		inline void CommandBufferBridge::buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access)
+		{
+			((CommandBufferPrivate*)this)->buffer_barrier((BufferPrivate*)b, src_access, dst_access);
+		}
+
+		inline void CommandBufferBridge::image_barrier(Image* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource)
+		{
+			((CommandBufferPrivate*)this)->image_barrier((ImagePrivate*)i, from, to, subresource);
+		}
+
 		inline void CommandBufferBridge::copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies)
 		{
 			((CommandBufferPrivate*)this)->copy_buffer((BufferPrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
@@ -130,11 +156,6 @@ namespace flame
 		inline void CommandBufferBridge::copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies)
 		{
 			((CommandBufferPrivate*)this)->copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
-		}
-
-		inline void CommandBufferBridge::change_image_layout(Image* i, ImageLayout from, ImageLayout to, uint base_level, uint level_count, uint base_layer, uint layer_count)
-		{
-			((CommandBufferPrivate*)this)->change_image_layout((ImagePrivate*)i, from, to, base_level, level_count, base_layer, layer_count);
 		}
 
 		inline void CommandBufferBridge::clear_image(Image* i, const Vec4c& col)

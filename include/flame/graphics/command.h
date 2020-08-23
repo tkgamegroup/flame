@@ -27,54 +27,41 @@ namespace flame
 
 		struct BufferCopy
 		{
-			uint src_off;
-			uint dst_off;
+			uint src_off = 0;
+			uint dst_off = 0;
 			uint size;
-
-			BufferCopy()
-			{
-			}
-
-			BufferCopy(uint _src_off, uint _dst_off, uint _size) :
-				src_off(_src_off),
-				dst_off(_dst_off),
-				size(_size)
-			{
-			}
 		};
 
 		struct ImageCopy
 		{
-			Vec2u src_off;
-			Vec2u dst_off;
+			Vec2u src_off = Vec2u(0);
+			Vec2u dst_off = Vec2u(0);
 			Vec2u size;
-
-			ImageCopy() :
-				src_off(0),
-				dst_off(0),
-				size(0)
-			{
-			}
 		};
 
 		struct BufferImageCopy
 		{
-			uint buffer_offset;
-			Vec2u image_offset;
+			uint buffer_offset = 0;
+			Vec2u image_offset = Vec2u(0);
 			Vec2u image_extent;
-			uint image_level;
+			uint image_level = 0;
+		};
 
-			BufferImageCopy()
-			{
-			}
+		struct DrawIndirectCommand
+		{
+			uint vertex_count;
+			uint instance_count;
+			uint first_vertex;
+			uint first_instance;
+		};
 
-			BufferImageCopy(const Vec2u& image_extent, uint buf_off = 0, uint level = 0, const Vec2u& image_offset = Vec2u(0)) :
-				buffer_offset(buf_off),
-				image_offset(image_offset),
-				image_extent(image_extent),
-				image_level(level)
-			{
-			}
+		struct DrawIndexedIndirectCommand
+		{
+			uint index_count;
+			uint instance_count = 1;
+			uint first_index;
+			int  vertex_offset;
+			uint first_instance;
 		};
 
 		struct CommandBuffer
@@ -94,13 +81,16 @@ namespace flame
 			virtual void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll = nullptr) = 0;
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
+			virtual void draw_indirect(Buffer* b, uint offset, uint count) = 0;
+			virtual void draw_indexed_indirect(Buffer* b, uint offset, uint count) = 0;
 			virtual void dispatch(const Vec3u& v) = 0;
+			virtual void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) = 0;
+			virtual void image_barrier(Image* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource = {}) = 0;
 
 			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) = 0;
 			virtual void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) = 0;
 			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) = 0;
 			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) = 0;
-			virtual void change_image_layout(Image* t, ImageLayout from, ImageLayout to, uint base_level = 0, uint level_count = 0, uint base_layer = 0, uint layer_count = 0) = 0;
 
 			virtual void clear_image(Image* i, const Vec4c& col) = 0;
 

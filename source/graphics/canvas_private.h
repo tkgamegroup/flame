@@ -47,7 +47,7 @@ namespace flame
 			{
 				CmdDrawElement,
 				CmdSetScissor,
-				CmdDrawModel,
+				CmdDrawObject,
 				CmdBlur
 			};
 
@@ -86,10 +86,12 @@ namespace flame
 				Vec3f pos;
 				Vec2f uv;
 				Vec3f normal;
+				Vec3f tangent;
 			};
 
 			struct AddedMesh
 			{
+				uint idx_off;
 				uint vtx_off;
 				uint vtx_cnt;
 				uint idx_cnt;
@@ -110,14 +112,23 @@ namespace flame
 			uint white_slot = 0;
 
 			std::unique_ptr<BufferPrivate> element_vertex_buffer;
+			std::unique_ptr<BufferPrivate> element_vertex_staging_buffer;
 			std::unique_ptr<BufferPrivate> element_index_buffer;
+			std::unique_ptr<BufferPrivate> element_index_staging_buffer;
 			std::unique_ptr<BufferPrivate> model_vertex_buffer;
+			std::unique_ptr<BufferPrivate> model_vertex_staging_buffer;
 			std::unique_ptr<BufferPrivate> model_index_buffer;
+			std::unique_ptr<BufferPrivate> model_index_staging_buffer;
 			std::unique_ptr<BufferPrivate> object_matrix_buffer;
+			std::unique_ptr<BufferPrivate> object_matrix_staging_buffer;
 			std::unique_ptr<BufferPrivate> object_indirect_buffer;
+			std::unique_ptr<BufferPrivate> object_indirect_staging_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
+
 			ElementVertex* element_vertex_buffer_end;
 			uint* element_index_buffer_end;
+			Mat4f* object_matrix_buffer_end;
+			DrawIndexedIndirectCommand* object_indirect_buffer_end;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
 			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
@@ -163,6 +174,9 @@ namespace flame
 			void fill(const Vec4c& col, bool aa = false) override;
 			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
+
+			void add_object(const Mat4f& mat, uint mod_id) override;
+
 			void add_blur(const Vec4f& range, uint radius) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }

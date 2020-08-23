@@ -54,32 +54,19 @@ namespace flame
 			ImagePrivate* image;
 
 			ImageViewType type;
-			uint base_level;
-			uint level_count;
-			uint base_layer;
-			uint layer_count;
-			Swizzle swizzle_r;
-			Swizzle swizzle_g;
-			Swizzle swizzle_b;
-			Swizzle swizzle_a;
+			ImageSubresource subresource;
+			ImageSwizzle swizzle;
 
 			VkImageView vk_image_view;
 
-			ImageViewPrivate(ImagePrivate* image, ImageViewType type = ImageView2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
-				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
+			ImageViewPrivate(ImagePrivate* image, ImageViewType type = ImageView2D, const ImageSubresource& subresource = {}, const ImageSwizzle& swizzle = {});
 			~ImageViewPrivate();
 
 			void release() override { delete this; }
 
 			ImageViewType get_type() const override { return type; }
-			uint get_base_level() const override { return base_level; }
-			uint get_level_count() const override { return level_count; }
-			uint get_base_layer() const override { return base_layer; }
-			uint get_layer_count() const override { return layer_count; }
-			Swizzle get_swizzle_r() const override { return swizzle_r; }
-			Swizzle get_swizzle_g() const override { return swizzle_g; }
-			Swizzle get_swizzle_b() const override { return swizzle_b; }
-			Swizzle get_swizzle_a() const override { return swizzle_a; }
+			ImageSubresource get_subresource() const override { return subresource; }
+			ImageSwizzle get_swizzle() const override { return swizzle; }
 
 			Image* get_image() const override { return image; }
 		};

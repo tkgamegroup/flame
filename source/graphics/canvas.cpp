@@ -153,22 +153,22 @@ namespace flame
 				}
 
 				element_pipelinelayout = new PipelineLayoutPrivate(d, { &element_descriptorsetlayout, 1 }, sizeof(Vec4f));
-				forward_pipelinelayout = new PipelineLayoutPrivate(d, { &forward_descriptorsetlayout, 1 }, sizeof(Mat4f));
+				forward_pipelinelayout = new PipelineLayoutPrivate(d, { &forward_descriptorsetlayout, 1 }, 0);
 				blt_pipelinelayout = new PipelineLayoutPrivate(d, { &one_image_descriptorsetlayout, 1 }, sizeof(Vec4f));
 				blur_pipelinelayout = new PipelineLayoutPrivate(d, { &one_image_descriptorsetlayout, 1 }, 0);
 				downsample_pipelinelayout = new PipelineLayoutPrivate(d, { &one_image_descriptorsetlayout, 1 }, 0);
 
 				{
 					VertexAttributeInfo vias[3];
-					auto& via1 = vias[0];
-					via1.format = Format_R32G32_SFLOAT;
-					via1.name = "pos";
-					auto& via2 = vias[1];
-					via2.format = Format_R32G32_SFLOAT;
-					via2.name = "uv";
-					auto& via3 = vias[2];
-					via3.format = Format_R8G8B8A8_UNORM;
-					via3.name = "color";
+					vias[0].location = 0;
+					vias[0].format = Format_R32G32_SFLOAT;
+					vias[0].name = "pos";
+					vias[1].location = 1;
+					vias[1].format = Format_R32G32_SFLOAT;
+					vias[1].name = "uv";
+					vias[2].location = 2;
+					vias[2].format = Format_R8G8B8A8_UNORM;
+					vias[2].name = "color";
 					VertexBufferInfo vib;
 					vib.attributes_count = size(vias);
 					vib.attributes = vias;
@@ -189,16 +189,32 @@ namespace flame
 				}
 
 				{
-					VertexAttributeInfo vias[1];
-					auto& via1 = vias[0];
-					via1.format = Format_R32G32B32_SFLOAT;
-					via1.name = "pos";
-					VertexBufferInfo vib;
-					vib.attributes_count = size(vias);
-					vib.attributes = vias;
+					VertexAttributeInfo vias1[1];
+					vias1[0].location = 0;
+					vias1[0].format = Format_R32G32B32_SFLOAT;
+					vias1[0].name = "pos";
+					VertexAttributeInfo vias2[4];
+					vias2[0].location = 1;
+					vias2[0].format = Format_R32G32B32A32_SFLOAT;
+					vias2[0].name = "col0";
+					vias2[1].location = 2;
+					vias2[1].format = Format_R32G32B32A32_SFLOAT;
+					vias2[1].name = "col1";
+					vias2[2].location = 3;
+					vias2[2].format = Format_R32G32B32A32_SFLOAT;
+					vias2[2].name = "col2";
+					vias2[3].location = 4;
+					vias2[3].format = Format_R32G32B32A32_SFLOAT;
+					vias2[3].name = "col3";
+					VertexBufferInfo vibs[2];
+					vibs[0].attributes_count = size(vias1);
+					vibs[0].attributes = vias1;
+					vibs[1].attributes_count = size(vias2);
+					vibs[1].attributes = vias2;
+					vibs[1].rate = VertexInputRateInstance;
 					VertexInfo vi;
-					vi.buffers_count = 1;
-					vi.buffers = &vib;
+					vi.buffers_count = size(vibs);
+					vi.buffers = vibs;
 					DepthInfo dep;
 					ShaderPrivate* shaders[] = {
 						new ShaderPrivate(d, L"forward.vert"),
@@ -244,15 +260,24 @@ namespace flame
 				}
 			}
 
-			element_vertex_buffer.reset(new BufferPrivate(d, 360000 * sizeof(ElementVertex), BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));
-			element_index_buffer.reset(new BufferPrivate(d, 240000 * sizeof(uint), BufferUsageIndex, MemoryPropertyHost | MemoryPropertyCoherent));
-			model_vertex_buffer.reset(new BufferPrivate(d, 600000 * sizeof(ModelVertex), BufferUsageVertex, MemoryPropertyHost | MemoryPropertyCoherent));
-			model_index_buffer.reset(new BufferPrivate(d, 400000 * sizeof(uint), BufferUsageIndex, MemoryPropertyHost | MemoryPropertyCoherent));
-			object_matrix_buffer.reset(new BufferPrivate(d, 10000 * sizeof(Mat4f), BufferUsageUniform, MemoryPropertyHost | MemoryPropertyCoherent));
-			element_vertex_buffer->map();
-			element_index_buffer->map();
-			model_vertex_buffer->map();
-			model_index_buffer->map();
+			element_vertex_buffer.reset(new BufferPrivate(d, 360000 * sizeof(ElementVertex), BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+			element_vertex_staging_buffer.reset(new BufferPrivate(d, element_vertex_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			element_index_buffer.reset(new BufferPrivate(d, 240000 * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
+			element_index_staging_buffer.reset(new BufferPrivate(d, element_index_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			model_vertex_buffer.reset(new BufferPrivate(d, 600000 * sizeof(ModelVertex), BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+			model_vertex_staging_buffer.reset(new BufferPrivate(d, model_vertex_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			model_index_buffer.reset(new BufferPrivate(d, 400000 * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
+			model_index_staging_buffer.reset(new BufferPrivate(d, model_index_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			object_matrix_buffer.reset(new BufferPrivate(d, 10000 * sizeof(Mat4f), BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+			object_matrix_staging_buffer.reset(new BufferPrivate(d, object_matrix_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			object_indirect_buffer.reset(new BufferPrivate(d, 10000 * sizeof(DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
+			object_indirect_staging_buffer.reset(new BufferPrivate(d, object_indirect_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			element_vertex_staging_buffer->map();
+			element_index_staging_buffer->map();
+			model_vertex_staging_buffer->map();
+			model_index_staging_buffer->map();
+			object_matrix_staging_buffer->map();
+			object_indirect_staging_buffer->map();
 			{
 				Vec3f ps[] = {
 					Vec3f(-0.5f, 0.5f, -0.5f), Vec3f(0.5f, 0.5f, -0.5f), Vec3f(0.5f, -0.5f, -0.5f), Vec3f(-0.5f, -0.5f, -0.5f),
@@ -266,8 +291,21 @@ namespace flame
 					4, 3, 0, 4, 7, 3,
 					1, 6, 5, 1, 2, 6
 				};
-				memcpy(model_vertex_buffer->mapped, ps, sizeof(Vec3f)* size(ps));
-				memcpy(model_index_buffer->mapped, is, sizeof(uint)* size(is));
+				memcpy(model_vertex_staging_buffer->mapped, ps, sizeof(Vec3f)* size(ps));
+				memcpy(model_index_staging_buffer->mapped, is, sizeof(uint)* size(is));
+
+				auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
+				cb->begin(true);
+				BufferCopy cpy1;
+				cpy1.size = sizeof(Vec3f) * size(ps);
+				BufferCopy cpy2;
+				cpy2.size = sizeof(uint) * size(is);
+				cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy1, 1 });
+				cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy2, 1 });
+				cb->end();
+				auto q = d->graphics_queue.get();
+				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+				q->wait_idle();
 			}
 
 			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
@@ -321,7 +359,7 @@ namespace flame
 				cb->begin(true);
 				for (auto i = 0; i < views.size(); i++)
 				{
-					cb->change_image_layout(views[i]->image, ImageLayoutUndefined, ImageLayoutPresent);
+					cb->image_barrier(views[i]->image, ImageLayoutUndefined, ImageLayoutPresent);
 					target_imageviews[i] = views[i];
 					target_framebuffers[i].reset(new FramebufferPrivate(device, one_image_renderpass, { &views[i], 1 }));
 					target_descriptors[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
@@ -347,7 +385,9 @@ namespace flame
 					back_images[i].reset(new ImagePrivate(device, Format_B8G8R8A8_UNORM, target_size, downsample_level, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 					for (auto j = 0; j < downsample_level; j++)
 					{
-						back_imageviews[i][j].reset(new ImageViewPrivate(back_images[i].get(), ImageView2D, i, 1));
+						ImageSubresource sr;
+						sr.base_level = i;
+						back_imageviews[i][j].reset(new ImageViewPrivate(back_images[i].get(), ImageView2D, sr));
 						auto iv = back_imageviews[i][j].get();
 						back_framebuffers[i][j].reset(new FramebufferPrivate(device, one_image_renderpass, { &iv, 1 }));
 						back_descriptorsets[i][j].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
@@ -823,6 +863,23 @@ namespace flame
 			}
 		}
 
+		void CanvasPrivate::add_object(const Mat4f& mat, uint mod_id)
+		{
+			*object_matrix_buffer_end = mat;
+			object_matrix_buffer_end++;
+
+			object_indirect_buffer_end->index_count = 36;
+			object_indirect_buffer_end->first_index = 0;
+			object_indirect_buffer_end->vertex_offset = 0;
+			object_indirect_buffer_end->first_instance = object_indirect_buffer_end - object_indirect_buffer->mapped;
+			object_indirect_buffer_end++;
+
+			Cmd cmd;
+			cmd.type = CmdDrawObject;
+			cmd.v.d3.matrix = mat;
+			cmds.push_back(cmd);
+		}
+
 		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
 			res_id = min(res_id, resources_count - 1);
@@ -882,8 +939,10 @@ namespace flame
 
 		void CanvasPrivate::prepare()
 		{
-			element_vertex_buffer_end = (ElementVertex*)element_vertex_buffer->get_mapped();
-			element_index_buffer_end = (uint*)element_index_buffer->get_mapped();
+			element_vertex_buffer_end = (ElementVertex*)element_vertex_staging_buffer->mapped;
+			element_index_buffer_end = (uint*)element_index_staging_buffer->mapped;
+			object_matrix_buffer_end = (Mat4f*)object_matrix_staging_buffer->mapped;
+			object_indirect_buffer_end = (DrawIndexedIndirectCommand*)object_indirect_staging_buffer->mapped;
 
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
 
@@ -895,7 +954,7 @@ namespace flame
 			enum PassType
 			{
 				PassElement,
-				PassModel,
+				PassObject,
 				PassBlur,
 				PassBloom
 			};
@@ -905,9 +964,11 @@ namespace flame
 				std::vector<int> cmd_ids;
 			};
 			std::vector<Pass> passes;
-			Pass p;
-			p.type = PassModel;
-			passes.push_back(p);
+
+			auto mat = get_project_matrix(60.f * ANG_RAD, (float)target_size.x() / (float)target_size.y(), 0.1f, 1000.f) *
+				get_view_matrix(Vec3f(3.f), Vec3f(0.f), Vec3f(0.f, 1.f, 0.f));
+			add_object(mat, 0);
+
 			for (auto i = 0; i < cmds.size(); i++)
 			{
 				switch (cmds[i].type)
@@ -927,13 +988,13 @@ namespace flame
 
 				}
 					break;
-				case CmdDrawModel:
+				case CmdDrawObject:
 				{
 					Pass* p;
-					if (passes.empty() || passes.back().type != PassModel)
+					if (passes.empty() || passes.back().type != PassObject)
 					{
 						Pass p;
-						p.type = PassModel;
+						p.type = PassObject;
 						passes.push_back(p);
 					}
 					p = &passes.back();
@@ -956,14 +1017,39 @@ namespace flame
 
 			auto tar = target_imageviews[image_index];
 
-			cb->change_image_layout(tar->image, ImageLayoutPresent, ImageLayoutTransferDst,
-				tar->base_level, tar->level_count, tar->base_layer, tar->layer_count);
+			cb->image_barrier(tar->image, ImageLayoutPresent, ImageLayoutTransferDst);
 			cb->clear_image(tar->image, clear_color);
+
+			{
+				BufferCopy cpy;
+				cpy.size = (char*)element_vertex_buffer_end - element_vertex_staging_buffer->mapped;
+				cb->copy_buffer(element_vertex_staging_buffer.get(), element_vertex_buffer.get(), { &cpy, 1 });
+			}
+			{
+				BufferCopy cpy;
+				cpy.size = (char*)element_index_buffer_end - element_index_staging_buffer->mapped;
+				cb->copy_buffer(element_index_staging_buffer.get(), element_index_buffer.get(), { &cpy, 1 });
+			}
+			{
+				BufferCopy cpy;
+				cpy.size = (char*)object_matrix_buffer_end - object_matrix_staging_buffer->mapped;
+				cb->copy_buffer(object_matrix_staging_buffer.get(), object_matrix_buffer.get(), { &cpy, 1 });
+			}
+			{
+				BufferCopy cpy;
+				cpy.size = (char*)object_indirect_buffer_end - object_indirect_staging_buffer->mapped;
+				cb->copy_buffer(object_indirect_staging_buffer.get(), object_indirect_buffer.get(), { &cpy, 1 });
+			}
+			cb->buffer_barrier(element_vertex_buffer.get(), AccessTransferWrite, AccessVertexAttributeRead);
+			cb->buffer_barrier(element_index_buffer.get(), AccessTransferWrite, AccessIndexRead);
+			cb->buffer_barrier(object_matrix_buffer.get(), AccessTransferWrite, AccessIndexRead);
+			cb->buffer_barrier(object_indirect_buffer.get(), AccessTransferWrite, AccessIndirectCommandRead);
 
 			cb->set_viewport(curr_scissor);
 			cb->set_scissor(curr_scissor);
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
+			auto obj_off = 0;
 
 			for (auto& p : passes)
 			{
@@ -1000,17 +1086,18 @@ namespace flame
 					cb->end_renderpass();
 				}
 					break;
-				case PassModel:
+				case PassObject:
 				{
 					cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 					cb->bind_vertex_buffer(model_vertex_buffer.get(), 0);
+					cb->bind_vertex_buffer(object_matrix_buffer.get(), 1);
 					cb->bind_index_buffer(model_index_buffer.get(), IndiceTypeUint);
 					Vec4f cvs[2];
 					cvs[1] = Vec4f(1.f);
 					cb->begin_renderpass(forward_framebuffers[image_index].get(), cvs);
 					cb->bind_pipeline(forward_pipeline);
-					auto mat = get_project_matrix(60.f * ANG_RAD, (float)target_size.x() / (float)target_size.y(), 0.1f, 1000.f) * get_view_matrix(Vec3f(3.f), Vec3f(0.f), Vec3f(0.f, 1.f, 0.f));
-					cb->push_constant(0, sizeof(Mat4f), &mat, forward_pipelinelayout);
+					cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_off, p.cmd_ids.size());
+					obj_off += p.cmd_ids.size();
 					cb->draw_indexed(36, 0, 0, 1, 0);
 					cb->end_renderpass();
 				}
@@ -1024,7 +1111,7 @@ namespace flame
 					if (blur_size.x() < 1.f || blur_size.y() < 1.f)
 						continue;
 
-					cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					cb->image_barrier(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					cb->set_viewport(Vec4f(blur_range.x() - blur_radius, blur_range.y() - blur_radius,
 						blur_range.z() + blur_radius, blur_range.w() + blur_radius));
 					cb->begin_renderpass(back_framebuffers[0][0].get());
@@ -1033,7 +1120,7 @@ namespace flame
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
-					cb->change_image_layout(back_images[0].get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					cb->image_barrier(back_images[0].get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					cb->set_viewport(blur_range);
 					cb->begin_renderpass(target_framebuffers[image_index].get());
 					cb->bind_pipeline(blurv_pipeline[blur_radius - 1]);
@@ -1051,7 +1138,7 @@ namespace flame
 					//auto target_range = Vec4f(0.f, 0.f, target_size.x(), target_size.y());
 					//uint x, y, w, h;
 
-					//cb->change_image_layout(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					//cb->image_barrier(tar->image, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					//cb->set_viewport(target_range);
 					//cb->push_constant(0, sizeof(Vec4f), &target_range, pll_blt);
 					//cb->begin_renderpass(fbs_bk[0].get());
@@ -1064,7 +1151,7 @@ namespace flame
 					//h = target_size.y();
 					//for (auto i = 1; i < downsample_level; i++)
 					//{
-					//	cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
+					//	cb->image_barrier(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
 					//	w = max(1U, w / 2); h = max(1U, h / 2);
 					//	cb->set_viewport(Vec4f(0.f, 0.f, w, h));
 					//	cb->begin_renderpass(fbs_bk[i].get());
@@ -1091,7 +1178,7 @@ namespace flame
 					//h = blur_size.y();
 					//for (auto i = 0; i < downsample_level; i++)
 					//{
-					//	cb->change_image_layout(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
+					//	cb->image_barrier(img_bk.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
 					//	cb->set_viewport(Vec4f(x - 3.f, y - 3.f, w + 3.f, h + 3.f));
 					//	cb->begin_renderpass(fbs_pp[i].get());
 					//	cb->bind_pipeline(pl_blurh);
@@ -1107,7 +1194,7 @@ namespace flame
 					//h = blur_size.y();
 					//for (auto i = 0; i < downsample_level; i++)
 					//{
-					//	cb->change_image_layout(img_pp.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
+					//	cb->image_barrier(img_pp.get(), ImageLayoutUndefined, ImageLayoutShaderReadOnly, i, 1);
 					//	cb->set_viewport(Vec4f(x, y, w, h));
 					//	cb->begin_renderpass(fbs_bk[i].get());
 					//	cb->bind_pipeline(pl_blurv);
@@ -1121,8 +1208,7 @@ namespace flame
 				}
 			}
 
-			cb->change_image_layout(tar->image, ImageLayoutShaderReadOnly, ImageLayoutPresent,
-				tar->base_level, tar->level_count, tar->base_layer, tar->layer_count);
+			cb->image_barrier(tar->image, ImageLayoutShaderReadOnly, ImageLayoutPresent);
 
 			cb->end();
 

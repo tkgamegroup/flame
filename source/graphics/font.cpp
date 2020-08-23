@@ -43,7 +43,12 @@ namespace flame
 
 			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, false));
 			image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
-			view.reset(new ImageViewPrivate(image.get(), ImageView2D, 0, 1, 0, 1, SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR));
+			ImageSwizzle swz;
+			swz.r = SwizzleOne;
+			swz.g = SwizzleOne;
+			swz.b = SwizzleOne;
+			swz.a = SwizzleR;
+			view.reset(new ImageViewPrivate(image.get(), ImageView2D, ImageSubresource(), swz));
 		}
 
 		GlyphPrivate* FontAtlasPrivate::get_glyph(wchar_t code, uint size)

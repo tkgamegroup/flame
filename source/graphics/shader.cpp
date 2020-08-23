@@ -363,7 +363,6 @@ namespace flame
 
 			if (vi)
 			{
-				auto attribute_location = 0;
 				vk_vi_bindings.resize(vi->buffers_count);
 				for (auto i = 0; i < vk_vi_bindings.size(); i++)
 				{
@@ -374,7 +373,7 @@ namespace flame
 					{
 						auto& _src = src.attributes[j];
 						VkVertexInputAttributeDescription _dst;
-						_dst.location = attribute_location++;
+						_dst.location = _src.location;
 						_dst.binding = i;
 						_dst.offset = dst.stride;
 						dst.stride += format_size(_src.format);
