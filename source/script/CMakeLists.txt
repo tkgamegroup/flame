@@ -1,0 +1,8 @@
+get_filename_component(DIR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+file(GLOB_RECURSE INCLUDE_LIST "${INCLUDE_DIR}/${DIR}/*.h*")
+file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
+add_library(flame_script SHARED ${INCLUDE_LIST} ${SOURCE_LIST})
+set_target_properties(flame_script PROPERTIES FOLDER "flame")
+target_compile_definitions(flame_script PRIVATE FLAME_SCRIPT_MODULE)
+target_include_directories(flame_script PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries(flame_script flame_foundation)

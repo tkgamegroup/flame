@@ -57,19 +57,13 @@ set(OPENAL_INCLUDE_DIR "${temp}/include" CACHE PATH "OpenAL Include Directory")
 set(OPENAL_STATIC_LIBRARY_PATH "${temp}/libs/Win64/OpenAL32.lib" CACHE FILEPATH "OpenAL STATIC Library Path")
 
 #[[
-option(FLAME_ENABLE_MODEL "Enable Model" OFF)
-if (FLAME_ENABLE_MODEL)
-	set(ASSIMP_INCLUDE_DIR "" CACHE PATH "Assimp Include Directory")
-	set(ASSIMP_STATIC_LIBRARY_PATH "" CACHE FILEPATH "Assimp STATIC Library Path")
-	set(ASSIMP_SHARED_LIBRARY_PATH "" CACHE FILEPATH "Assimp SHARED Library Path")
-endif()
+set(ASSIMP_INCLUDE_DIR "" CACHE PATH "Assimp Include Directory")
+set(ASSIMP_STATIC_LIBRARY_PATH "" CACHE FILEPATH "Assimp STATIC Library Path")
+set(ASSIMP_SHARED_LIBRARY_PATH "" CACHE FILEPATH "Assimp SHARED Library Path")
 
-option(FLAME_ENABLE_PHYSICS "Enable Physics" OFF)
-if (FLAME_ENABLE_PHYSICS)
-	set(PHYSX_DIR "" CACHE PATH "Physx Directory")
-	set(PHYSX_STATIC_LIBRARY_DIR "" CACHE PATH "PHYSX STATIC Library Directory")
-	set(PHYSX_SHARED_LIBRARY_DIR "" CACHE PATH "PHYSX SHARED Library Directory")
-endif()
+set(PHYSX_DIR "" CACHE PATH "Physx Directory")
+set(PHYSX_STATIC_LIBRARY_DIR "" CACHE PATH "PHYSX STATIC Library Directory")
+set(PHYSX_SHARED_LIBRARY_DIR "" CACHE PATH "PHYSX SHARED Library Directory")
 ]]
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
