@@ -20,13 +20,13 @@ namespace flame
 		if (element->culled)
 			return;
 
-		for (auto d : element->before_drawers)
-			d->draw(canvas);
+		for (auto& d : element->underlayer_drawers)
+			d.second(d.first, canvas);
 		element->draw(canvas);
 		if (element->clipping)
 			canvas->set_scissor(Vec4f(element->points[4], element->points[6]));
-		for (auto d : element->after_drawers)
-			d->draw(canvas);
+		for (auto& d : element->drawers)
+			d.second(d.first, canvas);
 		for (auto& c : e->children)
 			do_render(c.get());
 		if (element->clipping)

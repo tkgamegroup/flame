@@ -1,11 +1,14 @@
 #pragma once
 
-#include "element_private.h"
 #include <flame/universe/components/image.h>
-#include "../systems/type_setting_private.h"
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct cElementPrivate;
 
 	struct cImageBridge : cImage
@@ -13,7 +16,7 @@ namespace flame
 		void set_src(const char* src) override;
 	};
 
-	struct cImagePrivate : cImageBridge, cElement::Drawer, sTypeSetting::AutoSizer // R ~ on_*
+	struct cImagePrivate : cImageBridge // R ~ on_*
 	{
 		int res_id = -1;
 		int tile_id = -1;
@@ -23,8 +26,9 @@ namespace flame
 
 		std::string src;
 
+		bool auto_size = true;
+
 		cElementPrivate* element = nullptr; // R ref
-		sTypeSettingPrivate* type_setting = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
 
 		int get_res_id() const override { return res_id; }
@@ -35,25 +39,16 @@ namespace flame
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
-		bool get_auto_size() const override { return auto_width || auto_height; }
-		void set_auto_size(bool a) override { auto_width = auto_height = a; }
+		bool get_auto_size() const override { return auto_size; }
+		void set_auto_size(bool a) override { auto_size = a; }
 
-		void on_gain_element();
-		void on_lost_element();
-		void on_gain_type_setting();
-		void on_lost_type_setting();
 		void on_gain_canvas();
 
 		void apply_src();
 
-		void mark_size_dirty();
+		void draw(graphics::Canvas* canvas); // R
 
-		void draw(graphics::Canvas* canvas) override;
-
-		Vec2f measure() override;
-
-		void on_added() override;
-		void on_local_message(Message msg, void* p) override;
+		void measure(Vec2f& ret); // R
 	};
 
 	inline void cImageBridge::set_src(const char* src)

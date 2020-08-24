@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include "../entity_private.h"
+#include "element_private.h"
 #include "text_private.h"
 #include "event_receiver_private.h"
 #include "tree_private.h"

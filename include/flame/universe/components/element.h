@@ -14,11 +14,6 @@ namespace flame
 		inline static auto type_name = "flame::cElement";
 		inline static auto type_hash = ch(type_name);
 
-		struct Drawer
-		{
-			virtual void draw(graphics::Canvas* canvas) = 0;
-		};
-
 		cElement() :
 			Component(type_name, type_hash)
 		{
@@ -88,8 +83,6 @@ namespace flame
 
 		//FLAME_RV(Vec4f, roundness);
 		//FLAME_RV(uint, roundness_lod);
-
-		//Vec4f clipped_rect;
 
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const Vec4f& r);
 

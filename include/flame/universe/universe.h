@@ -35,8 +35,7 @@ namespace flame
 		MessageComponentRemoved,
 		MessageElementTransformDirty,
 		MessageElementDrawingDirty,
-		MessageElementSizeDirty,
-		MessageLayoutDirty
+		MessageElementSizeDirty
 	};
 
 	enum Align

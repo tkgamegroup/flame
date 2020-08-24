@@ -30,8 +30,6 @@ namespace flame
 		virtual float get_scrolly() const = 0;
 		virtual void set_scrolly(float s) = 0;
 
-		virtual void set_break_on_next_update(bool b) = 0;
-
 		//FLAME_RV(uint, column);
 
 		//FLAME_UNIVERSE_EXPORTS void set_scrollx(float x);

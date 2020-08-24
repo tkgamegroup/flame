@@ -75,19 +75,6 @@ namespace flame
 		return i;
 	}
 
-	void cEditPrivate::on_gain_element()
-	{
-
-		element->after_drawers.push_back(this);
-	}
-
-	void cEditPrivate::on_lost_element()
-	{
-		std::erase_if(element->after_drawers, [&](const auto& i) {
-			return i == this;
-		});
-	}
-
 	void cEditPrivate::on_gain_event_receiver()
 	{
 		key_down_listener = event_receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {

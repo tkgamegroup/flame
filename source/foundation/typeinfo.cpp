@@ -1076,7 +1076,7 @@ namespace flame
 
 	void* FunctionInfoPrivate::get_address(void* obj) const
 	{
-		return rva ? library->address + rva : *(void**)((*(char**)obj) + voff);
+		return rva ? library->address + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
 	}
 
 	bool FunctionInfoPrivate::check(void* _type, ...) const

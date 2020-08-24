@@ -25,7 +25,7 @@ namespace flame
 		virtual StateFlags get_state() const = 0;
 		virtual void set_state(StateFlags state) = 0;
 
-		virtual void on_message(Message msg) = 0;
+		virtual void on_message(Message msg, void* p = nullptr) = 0;
 
 		virtual Component* get_component(uint64 hash) const = 0;
 		template <class T> inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
@@ -53,7 +53,7 @@ namespace flame
 
 		virtual const wchar_t* get_src() const = 0;
 
-		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
+		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};
 }

@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct cBlurPrivate : cBlur, cElement::Drawer // R ~ on_*
+	struct cBlurPrivate : cBlur // R ~ on_*
 	{
 		uint radius = 1.f;
 
@@ -14,9 +14,6 @@ namespace flame
 		uint get_radius() const override { return radius; }
 		void set_radius(uint s) override;
 
-		void on_gain_element();
-		void on_lost_element();
-
-		void draw(graphics::Canvas* canvas) override;
+		void draw_underlayer(graphics::Canvas* canvas); // R
 	};
 }

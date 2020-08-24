@@ -1,7 +1,7 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
-#include "aligner_private.h"
+#include "element_private.h"
 #include "text_private.h"
 
 namespace flame
@@ -18,8 +18,10 @@ namespace flame
 			return;
 		size = s;
 		if (element)
+		{
 			element->mark_drawing_dirty();
-		mark_size_dirty();
+			element->mark_size_dirty();
+		}
 		Entity::report_data_changed(this, S<ch("size")>::v);
 	}
 
@@ -29,28 +31,11 @@ namespace flame
 			return;
 		color = col;
 		if (element)
+		{
 			element->mark_drawing_dirty();
-		mark_size_dirty();
+			element->mark_size_dirty();
+		}
 		Entity::report_data_changed(this, S<ch("color")>::v);
-	}
-
-	void cTextPrivate::on_gain_element()
-	{
-		element->after_drawers.push_back(this);
-		element->mark_drawing_dirty();
-	}
-
-	void cTextPrivate::on_lost_element()
-	{
-		std::erase_if(element->after_drawers, [&](const auto& i) {
-			return i == this;
-		});
-		element->mark_drawing_dirty();
-	}
-
-	void cTextPrivate::on_gain_type_setting()
-	{
-		mark_size_dirty();
 	}
 
 	void cTextPrivate::on_gain_canvas()
@@ -66,15 +51,11 @@ namespace flame
 	void cTextPrivate::mark_text_changed()
 	{
 		if (element)
+		{
 			element->mark_drawing_dirty();
-		mark_size_dirty();
+			element->mark_size_dirty();
+		}
 		Entity::report_data_changed(this, S<ch("text")>::v);
-	}
-
-	void cTextPrivate::mark_size_dirty()
-	{
-		if (type_setting && (auto_width || auto_height))
-			type_setting->add_to_sizing_list(this, (EntityPrivate*)entity);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
@@ -82,27 +63,18 @@ namespace flame
 		canvas->add_text(0, text.c_str(), nullptr, size, color, element->points[4], element->axes);
 	}
 
-	Vec2f cTextPrivate::measure()
+	void cTextPrivate::measure(Vec2f& ret)
 	{
 		if (!atlas)
-			return Vec2f(0.f);
-		return Vec2f(atlas->text_size(size, text.c_str()));
-	}
-
-	void cTextPrivate::on_added()
-	{
-		mark_size_dirty();
-	}
-
-	void cTextPrivate::on_local_message(Message msg, void* p)
-	{
-		switch (msg)
 		{
-		case MessageElementSizeDirty:
-		case MessageVisibilityChanged:
-			mark_size_dirty();
-			break;
+			ret = Vec2f(-1.f);
+			return;
 		}
+		ret = Vec2f(atlas->text_size(size, text.c_str()));
+		if (!auto_width)
+			ret.x() = -1.f;
+		if (!auto_height)
+			ret.y() = -1.f;
 	}
 
 	cText* cText::create()

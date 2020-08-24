@@ -143,4 +143,15 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name);
+
+	inline UdtInfo* find_underlay_udt(const std::string& name)
+	{
+		auto ret = find_udt(name.c_str());
+		if (!ret)
+			return nullptr;
+		auto underlay = find_udt((name + "Private").c_str());
+		if (underlay)
+			ret = underlay;
+		return ret;
+	}
 }

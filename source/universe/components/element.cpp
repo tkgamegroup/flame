@@ -1,6 +1,8 @@
+#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "element_private.h"
+#include "../systems/type_setting_private.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
@@ -236,6 +238,12 @@ namespace flame
 			renderer->dirty = true;
 	}
 
+	void cElementPrivate::mark_size_dirty()
+	{
+		if (type_setting)
+			type_setting->add_to_sizing_list(this);
+	}
+
 	void cElementPrivate::on_gain_renderer()
 	{
 		mark_transform_dirty();
@@ -244,6 +252,11 @@ namespace flame
 	void cElementPrivate::on_lost_renderer()
 	{
 		mark_transform_dirty();
+	}
+
+	void cElementPrivate::on_gain_type_setting()
+	{
+		mark_size_dirty();
 	}
 
 	bool cElementPrivate::contains(const Vec2f& p)
@@ -259,11 +272,74 @@ namespace flame
 	{
 		switch (msg)
 		{
+		case MessageComponentAdded:
+		{
+			auto udt = find_underlay_udt(((Component*)p)->type_name);
+			if (udt)
+			{
+				{
+					auto f = udt->find_function("draw_underlayer");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+					{
+						auto addr = f->get_address();
+						if (addr)
+						{
+							underlayer_drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+							mark_drawing_dirty();
+						}
+					}
+				}
+				{
+					auto f = udt->find_function("draw");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+					{
+						auto addr = f->get_address();
+						if (addr)
+						{
+							drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+							mark_drawing_dirty();
+						}
+					}
+				}
+				{
+					auto f = udt->find_function("measure");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Vec<2,float>"), nullptr))
+					{
+						auto addr = f->get_address();
+						if (addr)
+						{
+							measurables.emplace_back((Component*)p, (void(*)(Component*, Vec2f&))addr);
+							mark_size_dirty();
+						}
+					}
+				}
+			}
+		}
+			break;
+		case MessageComponentRemoved:
+		{
+			if (std::erase_if(measurables, [&](const auto& i) {
+				return i.first == (Component*)p;
+			}))
+				mark_size_dirty();
+			auto n = std::erase_if(underlayer_drawers, [&](const auto& i) {
+				return i.first == (Component*)p;
+			}) + std::erase_if(drawers, [&](const auto& i) {
+				return i.first == (Component*)p;
+			});
+			if (n)
+				mark_drawing_dirty();
+		}
+			break;
 		case MessageVisibilityChanged:
-		case MessagePositionChanged:
+			mark_size_dirty();
 		case MessageElementTransformDirty:
 			mark_transform_dirty();
 			break;
+		case MessageElementSizeDirty:
+			mark_size_dirty();
+			break;
+		case MessagePositionChanged:
 		case MessageElementDrawingDirty:
 			mark_drawing_dirty();
 			break;

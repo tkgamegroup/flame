@@ -87,12 +87,12 @@ namespace flame
 			l->call(MessageStateChanged, nullptr);
 	}
 
-	void EntityPrivate::on_message(Message msg)
+	void EntityPrivate::on_message(Message msg, void* p)
 	{
 		for (auto c : local_message_dispatch_list)
-			c->on_local_message(msg);
+			c->on_local_message(msg, p);
 		for (auto& l : local_message_listeners)
-			l->call(msg, nullptr);
+			l->call(msg, p);
 	}
 
 	Component* EntityPrivate::get_component(uint64 hash) const
@@ -141,15 +141,9 @@ namespace flame
 
 		ComponentAux aux;
 
-		auto udt = find_udt(c->type_name);
+		auto udt = find_underlay_udt(c->type_name);
 		if (udt)
 		{
-			{
-				auto u = find_udt((c->type_name + std::string("Private")).c_str());
-				if (u)
-					udt = u;
-			}
-
 			auto vc = udt->get_variables_count();
 			for (auto i = 0; i < vc; i++)
 			{
@@ -1183,11 +1177,6 @@ namespace flame
 		file.save_file(filename.c_str());
 	}
 
-	Entity* Entity::create()
-	{
-		return f_new<EntityPrivate>();
-	}
-
 	void Entity::report_data_changed(Component* c, uint64 hash)
 	{
 		auto entity = (EntityPrivate*)c->entity;
@@ -1205,5 +1194,10 @@ namespace flame
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)
 				cc->on_child_data_changed(c, hash);
 		}
+	}
+
+	Entity* Entity::create()
+	{
+		return f_new<EntityPrivate>();
 	}
 }

@@ -1061,24 +1061,6 @@ namespace flame
 			v_[2] = _v3;
 		}
 
-		template <uint O, class U>
-		Mat(const Mat<2, O, U>& _m1, const Vec<O, U>& _v1)
-		{
-			static_assert(N == O && M == 3);
-			v_[0] = _m1[0];
-			v_[1] = _m1[1];
-			v_[2] = _v1;
-		}
-
-		template <uint N, class U>
-		Mat(const Vec<N, U>& _v1, const Mat<2, N, U>& _m1)
-		{
-			static_assert(M == 3);
-			v_[0] = _v1;
-			v_[1] = _m1[0];
-			v_[2] = _m1[1];
-		}
-
 		template <class U>
 		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Vec<N, U>& _v3, const Vec<N, U>& _v4)
 		{
@@ -1089,61 +1071,19 @@ namespace flame
 			v_[3] = _v4;
 		}
 
-		template <uint N, class U>
-		Mat(const Mat<2, N, U>& _m1, const Vec<N, U>& _v1, const Vec<N, U>& _v2)
+		template <class U>
+		Mat(const Mat<M - 1, N, U>& _m, const Vec<N, U>& _v)
 		{
-			static_assert(M == 4);
-			v_[0] = _m1[0];
-			v_[1] = _m1[1];
-			v_[2] = _v1;
-			v_[3] = _v2;
-		}
-
-		template <uint N, class U>
-		Mat(const Vec<N, U>& _v1, const Mat<2, N, U>& _m1, const Vec<N, U>& _v2)
-		{
-			static_assert(M == 4);
-			v_[0] = _v1;
-			v_[1] = _m1[0];
-			v_[2] = _m1[1];
-			v_[3] = _v2;
+			for (auto i = 0; i < M - 1; i++)
+				v_[i] = _m[i];
+			v_[M - 1] = _v;
 		}
 
 		template <class U>
-		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Mat<2, N, U>& _m1)
-		{
-			static_assert(M == 4);
-			v_[0] = _v1;
-			v_[1] = _v2;
-			v_[2] = _m1[0];
-			v_[3] = _m1[1];
-		}
-
-		template <class U>
-		Mat(const Mat<2, N, U>& _m1, const Mat<2, N, U>& _m2)
-		{
-			static_assert(M == 4);
-			v_[0] = _m1[0];
-			v_[1] = _m1[1];
-			v_[2] = _m1[0];
-			v_[3] = _m1[1];
-		}
-
-		template <class U>
-		Mat(const Mat<3, N, U>& _m1, const Vec<N, U>& _v1)
-		{
-			static_assert(M == 4);
-			v_[0] = _m1[0];
-			v_[1] = _m1[1];
-			v_[2] = _m1[2];
-			v_[3] = _v1;
-		}
-
-		template <class U>
-		Mat(const Mat<M, N - 1, U>& _m1, const Vec<M, U>& _v1)
+		Mat(const Mat<M, N - 1, U>& _m, const Vec<M, U>& _v)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] = Vec<N, T>(_m1[i], _v1[i]);
+				v_[i] = Vec<N, T>(_m[i], _v[i]);
 		}
 
 		template <uint O, class U>

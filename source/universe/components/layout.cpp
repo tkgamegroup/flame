@@ -94,12 +94,6 @@ namespace flame
 
 	void cLayoutPrivate::update()
 	{
-		if (break_on_next_update)
-		{
-			debug_break();
-			break_on_next_update = false;
-		}
-
 		updating = true;
 
 		std::vector<std::pair<cElementPrivate*, cAlignerPrivate*>> als[2];
@@ -428,9 +422,9 @@ namespace flame
 		switch (msg)
 		{
 		case MessageElementSizeDirty:
-		case MessageLayoutDirty:
 		case MessageVisibilityChanged:
-			mark_layout_dirty();
+			if (((EntityPrivate*)this->entity)->global_visibility)
+				mark_layout_dirty();
 			break;
 		}
 	}

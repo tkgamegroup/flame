@@ -69,20 +69,6 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("clipping")>::v);
 	}
 
-	void cTileMapPrivate::on_gain_element()
-	{
-		element->after_drawers.push_back(this);
-		element->mark_drawing_dirty();
-	}
-
-	void cTileMapPrivate::on_lost_element()
-	{
-		std::erase_if(element->after_drawers, [&](const auto& i) {
-			return i == this;
-		});
-		element->mark_drawing_dirty();
-	}
-
 	void cTileMapPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (res_id == -1 || cell_count == Vec2u(0) || cell_size == Vec2f(0.f))

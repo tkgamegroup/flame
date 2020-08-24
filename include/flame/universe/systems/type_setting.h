@@ -4,6 +4,7 @@
 
 namespace flame
 {
+	struct cElement;
 	struct cLayout;
 
 	struct sTypeSetting : System
@@ -11,23 +12,21 @@ namespace flame
 		inline static auto type_name = "flame::sTypeSetting";
 		inline static auto type_hash = ch(type_name);
 
-		struct AutoSizer
-		{
-			bool auto_width = true;
-			bool auto_height = true;
+		//struct AutoSizer
+		//{
+		//	bool auto_width = true;
+		//	bool auto_height = true;
 
-			bool pending_sizing = false;
-
-			virtual Vec2f measure() = 0;
-		};
+		//	virtual Vec2f measure() = 0;
+		//};
 
 		sTypeSetting() :
 			System(type_name, type_hash)
 		{
 		}
 
-		virtual void add_to_sizing_list(AutoSizer* s, Entity* e) = 0;
-		virtual void remove_from_sizing_list(AutoSizer* s) = 0;
+		virtual void add_to_sizing_list(cElement* e) = 0;
+		virtual void remove_from_sizing_list(cElement* e) = 0;
 		virtual void add_to_layouting_list(cLayout* l) = 0;
 		virtual void remove_from_layouting_list(cLayout* l) = 0;
 

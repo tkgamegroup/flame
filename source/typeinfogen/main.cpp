@@ -632,32 +632,29 @@ int main(int argc, char **args)
 
 								pugi::xml_node n_parameters;
 
-								if (du.all)
+								IDiaEnumSymbols* s_parameters;
+								s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
+								IDiaSymbol* s_parameter;
+								while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
 								{
-									IDiaEnumSymbols* s_parameters;
-									s_function_type->findChildren(SymTagFunctionArgType, NULL, nsNone, &s_parameters);
-									IDiaSymbol* s_parameter;
-									while (SUCCEEDED(s_parameters->Next(1, &s_parameter, &ul)) && (ul == 1))
-									{
-										IDiaSymbol* s_type;
-										s_parameter->get_type(&s_type);
+									IDiaSymbol* s_type;
+									s_parameter->get_type(&s_type);
 
-										auto desc = typeinfo_from_symbol(s_parameter);
-										if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-											add_enum(desc.name, s_type);
+									auto desc = typeinfo_from_symbol(s_parameter);
+									if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+										add_enum(desc.name, s_type);
 
-										if (!n_parameters)
-											n_parameters = n_function.append_child("parameters");
-										auto n_parameter = n_parameters.append_child("parameter");
-										n_parameter.append_attribute("type_tag").set_value(desc.tag);
-										n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
+									if (!n_parameters)
+										n_parameters = n_function.append_child("parameters");
+									auto n_parameter = n_parameters.append_child("parameter");
+									n_parameter.append_attribute("type_tag").set_value(desc.tag);
+									n_parameter.append_attribute("type_name").set_value(desc.name.c_str());
 
-										s_type->Release();
+									s_type->Release();
 
-										s_parameter->Release();
-									}
-									s_parameters->Release();
+									s_parameter->Release();
 								}
+								s_parameters->Release();
 
 								s_function_type->Release();
 
