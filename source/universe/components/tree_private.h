@@ -7,7 +7,7 @@ namespace flame
 
 	struct cTreePrivate : cTree // R ~ on_*
 	{
-		Entity* selected = nullptr;
+		EntityPrivate* selected = nullptr;
 
 		cEventReceiverPrivate* event_receiver = nullptr; // R ref
 

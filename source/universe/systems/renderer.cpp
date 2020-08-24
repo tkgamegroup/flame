@@ -35,14 +35,14 @@ namespace flame
 
 	void sRendererPrivate::on_added()
 	{
-		canvas = (graphics::Canvas*)((WorldPrivate*)world)->find_object("flame::graphics::Canvas");
+		canvas = (graphics::Canvas*)world->find_object("flame::graphics::Canvas");
 	}
 
 	void sRendererPrivate::update()
 	{
 		if (!dirty && !always_update)
 			return;
-		do_render(((WorldPrivate*)world)->root.get());
+		do_render(world->root.get());
 		dirty = false;
 	}
 

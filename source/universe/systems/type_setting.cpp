@@ -14,7 +14,7 @@ namespace flame
 		auto it = sizing_list.begin();
 		for (; it != sizing_list.end(); it++)
 		{
-			if (((EntityPrivate*)(*it)->entity)->depth < ((EntityPrivate*)e->entity)->depth)
+			if ((*it)->entity->depth < e->entity->depth)
 				break;
 		}
 		sizing_list.emplace(it, e);
@@ -39,7 +39,7 @@ namespace flame
 		auto it = layouting_list.begin();
 		for (; it != layouting_list.end(); it++)
 		{
-			if (((EntityPrivate*)(*it)->entity)->depth < ((EntityPrivate*)l->entity)->depth)
+			if ((*it)->entity->depth < l->entity->depth)
 				break;
 		}
 		layouting_list.emplace(it, l);
@@ -57,14 +57,14 @@ namespace flame
 
 	void sTypeSettingPrivate::on_added()
 	{
-		window = (Window*)((WorldPrivate*)world)->find_object("flame::Window");
+		window = (Window*)world->find_object("flame::Window");
 	}
 
 	void sTypeSettingPrivate::update()
 	{
 		if (window)
 		{
-			auto element = (cElementPrivate*)((WorldPrivate*)world)->root->get_component(cElement::type_hash);
+			auto element = (cElementPrivate*)world->root->get_component(cElement::type_hash);
 			auto size = window->get_size();
 			element->set_width(size.x());
 			element->set_height(size.y());
@@ -74,8 +74,7 @@ namespace flame
 		{
 			auto e = sizing_list.front();
 			e->pending_sizing = false;
-			auto entity = (EntityPrivate*)e->entity;
-			if (entity->global_visibility)
+			if (e->entity->global_visibility)
 			{
 				auto size = Vec2f(-1.f);
 				for (auto& m : e->measurables)
@@ -97,7 +96,7 @@ namespace flame
 					e->set_height(h);
 				}
 
-				auto aligner = entity->get_component_t<cAlignerPrivate>();
+				auto aligner = e->entity->get_component_t<cAlignerPrivate>();
 				if (aligner)
 					aligner->desired_size = Vec2f(w, h);
 			}
@@ -108,7 +107,7 @@ namespace flame
 		{
 			auto l = layouting_list.front();
 			l->pending_layouting = false;
-			if (((EntityPrivate*)l->entity)->global_visibility)
+			if (l->entity->global_visibility)
 				l->update();
 			layouting_list.pop_front();
 		}

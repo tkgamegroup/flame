@@ -97,7 +97,7 @@ namespace flame
 		updating = true;
 
 		std::vector<std::pair<cElementPrivate*, cAlignerPrivate*>> als[2];
-		for (auto& c : ((EntityPrivate*)entity)->children)
+		for (auto& c : entity->children)
 		{
 			if (c->global_visibility)
 			{
@@ -423,7 +423,7 @@ namespace flame
 		{
 		case MessageElementSizeDirty:
 		case MessageVisibilityChanged:
-			if (((EntityPrivate*)this->entity)->global_visibility)
+			if (entity->global_visibility)
 				mark_layout_dirty();
 			break;
 		}

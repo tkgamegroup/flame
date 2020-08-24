@@ -15,7 +15,7 @@ namespace flame
 
 		if (type != MenuButton)
 		{
-			auto parent = ((EntityPrivate*)entity)->parent;
+			auto parent = entity->parent;
 			for (auto& e : parent->children)
 			{
 				auto cm = e->get_component_t<cMenuPrivate>();
@@ -33,7 +33,7 @@ namespace flame
 			items_element->set_x(pos.x());
 			items_element->set_y(pos.y());
 		}
-		((EntityPrivate*)entity)->remove_child(items, false);
+		entity->remove_child(items, false);
 		items->set_visible(true);
 		root->add_child(items);
 
@@ -117,7 +117,7 @@ namespace flame
 		switch (msg)
 		{
 		case MessageEnteredWorld:
-			root = ((EntityPrivate*)entity)->world->root.get();
+			root = entity->world->root.get();
 			root_event_receiver = root->get_component_t<cEventReceiverPrivate>();
 			break;
 		case MessageLeftWorld:

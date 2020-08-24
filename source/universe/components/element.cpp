@@ -123,7 +123,7 @@ namespace flame
 
 		auto base_axes = Mat2f(1.f);
 		auto base_pos = Vec2f(0.f);
-		auto p = ((EntityPrivate*)entity)->parent;
+		auto p = entity->parent;
 		if (p)
 		{
 			auto pe = p->get_component_t<cElementPrivate>();
@@ -223,7 +223,7 @@ namespace flame
 		if (!transform_dirty)
 		{
 			transform_dirty = true;
-			for (auto& c : ((EntityPrivate*)entity)->children)
+			for (auto& c : entity->children)
 			{
 				auto e = c->get_component_t<cElementPrivate>();
 				e->mark_transform_dirty();

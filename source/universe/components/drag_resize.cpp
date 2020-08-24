@@ -17,13 +17,13 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		((EntityPrivate*)block_event_receiver->entity)->add_local_message_listener([](Capture& c, Message msg, void*) {
+		block_event_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {
 			auto thiz = c.thiz<cDragResizePrivate>();
 			switch (msg)
 			{
 			case MessageStateChanged:
 				thiz->block_event_receiver->dispatcher->window->set_cursor(
-					(((EntityPrivate*)thiz->block_event_receiver->entity)->state & StateHovering) ? CursorSizeNWSE : CursorArrow);
+					(thiz->block_event_receiver->entity->state & StateHovering) ? CursorSizeNWSE : CursorArrow);
 				break;
 			}
 		}, Capture().set_thiz(this));

@@ -5,13 +5,18 @@
 namespace flame
 {
 	struct Entity;
+	struct EntityPrivate;
 
 	struct Component
 	{
 		const char* type_name;
 		const uint64 type_hash;
 
+#ifdef FLAME_UNIVERSE_MODULE
+		EntityPrivate* entity = nullptr;
+#else
 		Entity* entity = nullptr;
+#endif
 		void* aux = nullptr;
 
 		Component(const char* name, uint64 hash) :

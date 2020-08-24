@@ -322,7 +322,7 @@ namespace flame
 		switch (msg)
 		{
 		case MessageVisibilityChanged:
-			if (flash_event && !((EntityPrivate*)entity)->global_visibility)
+			if (flash_event && !entity->global_visibility)
 			{
 				looper().remove_event(flash_event);
 				flash_event = nullptr;
@@ -330,7 +330,7 @@ namespace flame
 			break;
 		case MessageStateChanged:
 		{
-			auto s = ((EntityPrivate*)entity)->state;
+			auto s = entity->state;
 			event_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
 			if ((s & StateFocusing) != 0)
 			{

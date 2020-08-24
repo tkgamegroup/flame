@@ -33,7 +33,7 @@ namespace flame
 			if (sp4.size() < 2)
 				continue;
 
-			auto e = (EntityPrivate*)entity;
+			auto e = entity;
 			for (auto i = 0; i < sp4.size() - 2; i++)
 			{
 				e = e->find_child(sp4[i]);
@@ -109,7 +109,7 @@ namespace flame
 
 	void cStylePrivate::on_state_changed()
 	{
-		auto state = ((EntityPrivate*)entity)->state;
+		auto state = entity->state;
 		for (auto& t : targets)
 		{
 			for (auto& s : t.situations)
