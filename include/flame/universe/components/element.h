@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct cElement : Component // R !ctor !dtor !type_name !type_hash
 	{
 		inline static auto type_name = "flame::cElement";

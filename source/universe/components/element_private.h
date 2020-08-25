@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct sRendererPrivate;
 	struct sTypeSettingPrivate;
 

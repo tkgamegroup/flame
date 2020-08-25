@@ -5,6 +5,7 @@
 namespace flame
 {
 	struct EntityPrivate;
+	struct cCameraPrivate;
 
 	struct sRendererPrivate : sRenderer
 	{
@@ -21,6 +22,6 @@ namespace flame
 
 		void update() override;
 
-		void do_render(EntityPrivate* e);
+		void render(EntityPrivate* e, bool element_culled, bool node_culled);
 	};
 }

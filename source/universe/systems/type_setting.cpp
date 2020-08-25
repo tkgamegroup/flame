@@ -64,7 +64,7 @@ namespace flame
 	{
 		if (window)
 		{
-			auto element = (cElementPrivate*)world->root->get_component(cElement::type_hash);
+			auto element = world->root->get_component_t<cElementPrivate>();
 			auto size = window->get_size();
 			element->set_width(size.x());
 			element->set_height(size.y());

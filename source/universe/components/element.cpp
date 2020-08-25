@@ -117,56 +117,57 @@ namespace flame
 
 	void cElementPrivate::update_transform()
 	{
-		if (!transform_dirty)
-			return;
-		transform_dirty = false;
-
-		auto base_axes = Mat2f(1.f);
-		auto base_pos = Vec2f(0.f);
-		auto p = entity->parent;
-		if (p)
+		if (transform_dirty)
 		{
-			auto pe = p->get_component_t<cElementPrivate>();
-			if (pe)
+			transform_dirty = false;
+
+			auto base_axes = Mat2f(1.f);
+			auto base_pos = Vec2f(0.f);
+			auto p = entity->parent;
+			if (p)
 			{
-				pe->update_transform();
-				base_axes = pe->axes;
-				base_pos = pe->points[0];
+				auto pe = p->get_component_t<cElementPrivate>();
+				if (pe)
+				{
+					pe->update_transform();
+					base_axes = pe->axes;
+					base_pos = pe->points[0];
+				}
 			}
-		}
 
-		axes = base_axes;
-		auto c = base_pos + axes[0] * x + axes[1] * y;
-		axes[0] = get_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
-		axes[1] = get_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
+			axes = base_axes;
+			auto c = base_pos + axes[0] * x + axes[1] * y;
+			axes[0] = get_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
+			axes[1] = get_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
 
-		points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
-		points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);
-		points[2] = c + axes * Vec2f((1.f - pivotx) * width, (1.f - pivoty) * height);
-		points[3] = c + axes * Vec2f(-pivotx * width, (1.f - pivoty) * height);
+			points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
+			points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);
+			points[2] = c + axes * Vec2f((1.f - pivotx) * width, (1.f - pivoty) * height);
+			points[3] = c + axes * Vec2f(-pivotx * width, (1.f - pivoty) * height);
 
-		auto pl = min(padding[0], width * 0.5f);
-		auto pt = min(padding[1], height * 0.5f);
-		auto pr = -min(padding[2], width * 0.5f);
-		auto pb = -min(padding[3], height * 0.5f);
-		points[4] = points[0] + axes * Vec2f(pl, pt);
-		points[5] = points[1] + axes * Vec2f(pr, pt);
-		points[6] = points[2] + axes * Vec2f(pr, pb);
-		points[7] = points[3] + axes * Vec2f(pl, pb);
+			auto pl = min(padding[0], width * 0.5f);
+			auto pt = min(padding[1], height * 0.5f);
+			auto pr = -min(padding[2], width * 0.5f);
+			auto pb = -min(padding[3], height * 0.5f);
+			points[4] = points[0] + axes * Vec2f(pl, pt);
+			points[5] = points[1] + axes * Vec2f(pr, pt);
+			points[6] = points[2] + axes * Vec2f(pr, pb);
+			points[7] = points[3] + axes * Vec2f(pl, pb);
 
-		points[8] = (points[0] + points[1] + points[2] + points[3]) * 0.25f;
-		points[9] = (points[4] + points[5] + points[6] + points[7]) * 0.25f;
+			points[8] = (points[0] + points[1] + points[2] + points[3]) * 0.25f;
+			points[9] = (points[4] + points[5] + points[6] + points[7]) * 0.25f;
 
-		aabb.x() = points[0].x();
-		aabb.z() = points[0].x();
-		aabb.y() = points[0].y();
-		aabb.w() = points[0].y();
-		for (auto i = 1; i < 4; i++)
-		{
-			aabb.x() = min(aabb.x(), points[i].x());
-			aabb.z() = max(aabb.z(), points[i].x());
-			aabb.y() = min(aabb.y(), points[i].y());
-			aabb.w() = max(aabb.w(), points[i].y());
+			aabb.x() = points[0].x();
+			aabb.z() = points[0].x();
+			aabb.y() = points[0].y();
+			aabb.w() = points[0].y();
+			for (auto i = 1; i < 4; i++)
+			{
+				aabb.x() = min(aabb.x(), points[i].x());
+				aabb.z() = max(aabb.z(), points[i].x());
+				aabb.y() = min(aabb.y(), points[i].y());
+				aabb.w() = max(aabb.w(), points[i].y());
+			}
 		}
 	}
 

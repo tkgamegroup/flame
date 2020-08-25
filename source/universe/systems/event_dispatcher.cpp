@@ -47,7 +47,7 @@ namespace flame
 						auto ce = src->get_component_t<cElementPrivate>();
 						n.append_attribute("LT").set_value(to_string(ce->points[0]).c_str());
 						n.append_attribute("RB").set_value(to_string(ce->points[2]).c_str());
-						n.append_attribute("has_er").set_value(src->get_component(cEventReceiver::type_hash) != nullptr);
+						n.append_attribute("has_er").set_value(src->get_component_t<cEventReceiver>() != nullptr);
 						for (auto& c : src->children)
 							save(n, c.get());
 					};
@@ -240,11 +240,11 @@ namespace flame
 		for (auto it = e->children.rbegin(); it != e->children.rend(); it++)
 		{
 			auto c = it->get();
-			if (c->global_visibility && c->get_component(cElement::type_hash))
+			if (c->global_visibility && c->get_component_t<cElement>())
 				dispatch_mouse_recursively(c);
 		}
 
-		auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
+		auto er = (cEventReceiverPrivate*)e->get_component_t<cEventReceiver>();
 		if (er && er->frame < (int)looper().get_frame())
 			dispatch_mouse_single(er, false);
 	}
@@ -424,7 +424,7 @@ namespace flame
 				auto e = focusing->entity;
 				while (e)
 				{
-					auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);
+					auto er = e->get_component_t<cEventReceiverPrivate>();
 					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
 					{
 						keyboard_target = er;
