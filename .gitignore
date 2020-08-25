@@ -1,4 +1,5 @@
 build/
 bin/
-*.spv
+*.vert.*
+*.frag.*
 *.res

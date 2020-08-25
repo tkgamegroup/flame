@@ -38,7 +38,7 @@ namespace flame
 		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
 			auto thiz = c.thiz<cComboboxItemPrivate>();
 			if (thiz->staging_combobox)
-				thiz->staging_combobox->set_index(((EntityPrivate*)thiz->entity)->index);
+				thiz->staging_combobox->set_index(thiz->entity->index);
 		}, Capture().set_thiz(this));
 	}
 

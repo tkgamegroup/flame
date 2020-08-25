@@ -10,11 +10,13 @@ namespace flame
 		struct ImageViewPrivate;
 		struct ImageAtlasPrivate;
 		struct FontAtlasPrivate;
+		struct ModelPrivate;
 		struct FramebufferPrivate;
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
 
 		const auto resources_count = 64U;
+		const auto models_count = 1024U;
 		const auto downsample_level = 6U;
 
 		struct CanvasResourcePrivate : CanvasResource
@@ -47,6 +49,7 @@ namespace flame
 			{
 				CmdDrawElement,
 				CmdSetScissor,
+				CmdDrawObject,
 				CmdBlur
 			};
 
@@ -64,51 +67,86 @@ namespace flame
 					struct
 					{
 						Vec4f scissor;
-						float sigma;
+						uint radius;
 					}d2;
+					struct
+					{
+						uint count;
+					}d3;
 				}v;
 			};
 
-			struct Vertex
+			struct ElementVertex
 			{
 				Vec2f pos;
 				Vec2f uv;
 				Vec4c col;
 			};
 
+			struct AddedMesh
+			{
+				uint vtx_off;
+				uint idx_off;
+				uint idx_cnt;
+			};
+
+			struct AddedModel
+			{
+				std::string name;
+				ModelPrivate* model;
+				std::vector<AddedMesh> meshes;
+			};
+
+			struct ObjectMatrix
+			{
+				Mat4f mvp;
+				Mat4f nor;
+			};
+
 			DevicePrivate* device;
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
-			std::unique_ptr<ImagePrivate> img_white;
-			std::vector<std::unique_ptr<CanvasResourcePrivate>> resources;
+			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
+			std::unique_ptr<AddedModel> models[models_count];
+			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
+			bool model_dirty = true;
 
-			std::unique_ptr<BufferPrivate> buf_vtx;
-			std::unique_ptr<BufferPrivate> buf_idx;
-			std::unique_ptr<DescriptorSetPrivate> ds_el;
+			std::unique_ptr<BufferPrivate> element_vertex_buffer;
+			std::unique_ptr<BufferPrivate> element_vertex_staging_buffer;
+			std::unique_ptr<BufferPrivate> element_index_buffer;
+			std::unique_ptr<BufferPrivate> element_index_staging_buffer;
+			std::unique_ptr<BufferPrivate> model_vertex_buffer;
+			std::unique_ptr<BufferPrivate> model_vertex_staging_buffer;
+			std::unique_ptr<BufferPrivate> model_index_buffer;
+			std::unique_ptr<BufferPrivate> model_index_staging_buffer;
+			std::unique_ptr<BufferPrivate> object_matrix_buffer;
+			std::unique_ptr<BufferPrivate> object_matrix_staging_buffer;
+			std::unique_ptr<BufferPrivate> object_indirect_buffer;
+			std::unique_ptr<BufferPrivate> object_indirect_staging_buffer;
+			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 
-			std::vector<ImageViewPrivate*> views_tar;
-			std::vector<std::unique_ptr<FramebufferPrivate>> fbs_tar;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> dss_tar;
+			ElementVertex* element_vertex_buffer_end;
+			uint* element_index_buffer_end;
+			ObjectMatrix* object_matrix_buffer_end;
+			DrawIndexedIndirectCommand* object_indirect_buffer_end;
 
-			std::unique_ptr<ImagePrivate> img_bk;
-			std::unique_ptr<ImageViewPrivate> ivs_bk[downsample_level];
-			std::unique_ptr<FramebufferPrivate> fbs_bk[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> dss_bk[downsample_level];
-			std::unique_ptr<ImagePrivate> img_pp;
-			std::unique_ptr<ImageViewPrivate> ivs_pp[downsample_level];
-			std::unique_ptr<FramebufferPrivate> fbs_pp[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> dss_pp[downsample_level];
+			std::vector<ImageViewPrivate*> target_imageviews;
+			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_descriptors;
+
+			std::unique_ptr<ImagePrivate> depth_image;
+			std::vector<std::unique_ptr<FramebufferPrivate>> forward_framebuffers;
+
+			std::unique_ptr<ImagePrivate> back_images[2];
+			std::unique_ptr<ImageViewPrivate> back_imageviews[2][downsample_level];
+			std::unique_ptr<FramebufferPrivate> back_framebuffers[2][downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> back_descriptorsets[2][downsample_level];
 
 			std::vector<std::vector<Vec2f>> paths;
 
-			Vertex* vtx_end;
-			uint* idx_end;
-
 			std::vector<Cmd> cmds;
-			uint* p_vtx_cnt;
-			uint* p_idx_cnt;
 
 			Vec2u target_size;
 			Vec4f curr_scissor;
@@ -138,7 +176,10 @@ namespace flame
 			void fill(const Vec4c& col, bool aa = false) override;
 			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
-			void add_blur(const Vec4f& range, float sigma) override;
+
+			void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor) override;
+
+			void add_blur(const Vec4f& range, uint radius) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

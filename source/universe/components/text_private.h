@@ -1,31 +1,34 @@
 #pragma once
 
 #include <flame/universe/components/text.h>
-#include "element_private.h"
-#include "../systems/type_setting_private.h"
 
 namespace flame
 {
 	namespace graphics
 	{
 		struct FontAtlas;
+		struct Canvas;
 	}
+
+	struct cElementPrivate;
 
 	struct cTextBridge : cText
 	{
 		void set_text(const wchar_t* text) override;
 	};
 
-	struct cTextPrivate : cTextBridge, cElement::Drawer, sTypeSetting::AutoSizer // R ~ on_*
+	struct cTextPrivate : cTextBridge // R ~ on_*
 	{
 		std::wstring text;
 		uint size = 14;
 		Vec4c color = Vec4c(0, 0, 0, 255);
 
 		cElementPrivate* element = nullptr; // R ref
-		sTypeSettingPrivate* type_setting = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
 		graphics::FontAtlas* atlas = nullptr;
+
+		bool auto_width = true;
+		bool auto_height = true;
 
 		const wchar_t* get_text() const override { return text.c_str(); }
 		uint get_text_length() const override { return text.size(); }
@@ -42,21 +45,14 @@ namespace flame
 		bool get_auto_height() const override { return auto_height; }
 		void set_auto_height(bool a) override { auto_height = a; }
 
-		void on_gain_element();
-		void on_lost_element();
-		void on_gain_type_setting();
 		void on_gain_canvas();
 		void on_lost_canvas();
 
 		void mark_text_changed();
-		void mark_size_dirty();
 
-		void draw(graphics::Canvas* canvas) override;
+		void draw(graphics::Canvas* canvas); // R
 
-		Vec2f measure() override;
-
-		void on_added() override;
-		void on_local_message(Message msg, void* p) override;
+		void measure(Vec2f& ret); // R
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

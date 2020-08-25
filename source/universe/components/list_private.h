@@ -12,7 +12,7 @@ namespace flame
 
 		void* mouse_listener = nullptr;
 
-		Entity* selected = nullptr;
+		EntityPrivate* selected = nullptr;
 		bool select_air_when_clicked = true;
 
 		void on_gain_event_receiver();

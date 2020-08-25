@@ -96,7 +96,9 @@ namespace flame
 
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->begin(true);
-			cb->copy_buffer(stag_buf.get(), this, { &BufferCopy(0, 0, size), 1 });
+			BufferCopy cpy;
+			cpy.size = size;
+			cb->copy_buffer(stag_buf.get(), this, { &cpy, 1 });
 			cb->end();
 			auto q = device->graphics_queue.get();
 			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);

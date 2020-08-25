@@ -4,12 +4,11 @@
 
 namespace flame
 {
-	struct sElementRendererPrivate;
+	struct sRendererPrivate;
+	struct sTypeSettingPrivate;
 
 	struct cElementPrivate : cElement // R ~ on_*
 	{
-		sElementRendererPrivate* renderer = nullptr; // R ref
-
 		float x = 0.f;
 		float y = 0.f;
 		float width = 0.f;
@@ -38,7 +37,14 @@ namespace flame
 		Vec4f scissor;
 		bool culled = false;
 
-		std::vector<Drawer*> drawers;
+		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> underlayer_drawers;
+		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
+
+		bool pending_sizing = false;
+		std::vector<std::pair<Component*, void(*)(Component*, Vec2f&)>> measurables;
+
+		sRendererPrivate* renderer = nullptr; // R ref
+		sTypeSettingPrivate* type_setting = nullptr; // R ref
 
 		float get_x() const override { return x; }
 		void set_x(float x) override;
@@ -94,15 +100,16 @@ namespace flame
 
 		void mark_transform_dirty();
 		void mark_drawing_dirty();
+		void mark_size_dirty();
 
 		void on_gain_renderer();
 		void on_lost_renderer();
+		void on_gain_type_setting();
 
 		bool contains(const Vec2f& p) override;
 
 		void on_local_message(Message msg, void* p) override;
 
-		void draw_background(graphics::Canvas* canvas);
-		void draw_content(graphics::Canvas* canvas);
+		void draw(graphics::Canvas* canvas);
 	};
 }

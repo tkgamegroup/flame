@@ -75,19 +75,6 @@ namespace flame
 		return i;
 	}
 
-	void cEditPrivate::on_gain_element()
-	{
-
-		element->drawers.push_back(this);
-	}
-
-	void cEditPrivate::on_lost_element()
-	{
-		std::erase_if(element->drawers, [&](const auto& i) {
-			return i == this;
-		});
-	}
-
 	void cEditPrivate::on_gain_event_receiver()
 	{
 		key_down_listener = event_receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
@@ -335,7 +322,7 @@ namespace flame
 		switch (msg)
 		{
 		case MessageVisibilityChanged:
-			if (flash_event && !((EntityPrivate*)entity)->global_visibility)
+			if (flash_event && !entity->global_visibility)
 			{
 				looper().remove_event(flash_event);
 				flash_event = nullptr;
@@ -343,7 +330,7 @@ namespace flame
 			break;
 		case MessageStateChanged:
 		{
-			auto s = ((EntityPrivate*)entity)->state;
+			auto s = entity->state;
 			event_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
 			if ((s & StateFocusing) != 0)
 			{

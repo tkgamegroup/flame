@@ -238,7 +238,7 @@ struct Action_SetLinks : Action
 				bp_editor._set_link(i, l.before_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->root->find_node(l.before_output_addr.node_guid)->find_output(l.before_output_addr.slot_name.c_str()));
 		}
 
-		bp_editor.window->s_2d_renderer->pending_update = true;
+		bp_editor.window->s_renderer->pending_update = true;
 	}
 
 	void redo() override
@@ -250,7 +250,7 @@ struct Action_SetLinks : Action
 				bp_editor._set_link(i, l.after_output_addr.slot_name.empty() ? nullptr : bp_editor.bp->root->find_node(l.after_output_addr.node_guid)->find_output(l.after_output_addr.slot_name.c_str()));
 		}
 
-		bp_editor.window->s_2d_renderer->pending_update = true;
+		bp_editor.window->s_renderer->pending_update = true;
 	}
 };
 
@@ -393,7 +393,7 @@ static void delete_selected()
 
 		bp_editor.set_changed(true);
 
-		bp_editor.window->s_2d_renderer->pending_update = true;
+		bp_editor.window->s_renderer->pending_update = true;
 	}
 }
 

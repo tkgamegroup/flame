@@ -83,17 +83,10 @@ namespace flame
 			virtual Image* get_image() const = 0;
 
 			virtual ImageViewType get_type() const = 0;
-			virtual uint get_base_level() const = 0;
-			virtual uint get_level_count() const = 0;
-			virtual uint get_base_layer() const = 0;
-			virtual uint get_layer_count() const = 0;
-			virtual Swizzle get_swizzle_r() const = 0;
-			virtual Swizzle get_swizzle_g() const = 0;
-			virtual Swizzle get_swizzle_b() const = 0;
-			virtual Swizzle get_swizzle_a() const = 0;
+			virtual ImageSubresource get_subresource() const = 0;
+			virtual ImageSwizzle get_swizzle() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static ImageView* create(Image* i, ImageViewType type = ImageView2D, uint base_level = 0, uint level_count = 1, uint base_layer = 0, uint layer_count = 1,
-				Swizzle swizzle_r = SwizzleIdentity, Swizzle swizzle_g = SwizzleIdentity, Swizzle swizzle_b = SwizzleIdentity, Swizzle swizzle_a = SwizzleIdentity);
+			FLAME_GRAPHICS_EXPORTS static ImageView* create(Image* i, ImageViewType type = ImageView2D, const ImageSubresource& subresource = {}, const ImageSwizzle& swizzle = {});
 		};
 
 		struct Sampler

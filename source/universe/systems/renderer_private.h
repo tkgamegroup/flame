@@ -1,12 +1,12 @@
 #pragma once
 
-#include <flame/universe/systems/element_renderer.h>
+#include <flame/universe/systems/renderer.h>
 
 namespace flame
 {
 	struct EntityPrivate;
 
-	struct sElementRendererPrivate : sElementRenderer
+	struct sRendererPrivate : sRenderer
 	{
 		graphics::Canvas* canvas = nullptr;
 

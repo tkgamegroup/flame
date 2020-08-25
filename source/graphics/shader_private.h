@@ -49,8 +49,6 @@ namespace flame
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
 			std::unique_ptr<DescriptorSetPrivate> default_set;
 
-			uint64 hash;
-
 			DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings, bool create_default_set = false);
 			~DescriptorSetLayoutPrivate();
 
@@ -102,42 +100,10 @@ namespace flame
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_layouts;
 			uint push_cconstant_size;
 
-			uint64 hash;
-
 			PipelineLayoutPrivate(DevicePrivate* d, std::span<DescriptorSetLayoutPrivate*> descriptorlayouts, uint push_constant_size);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
-		};
-
-		struct BlendOption
-		{
-			bool enable;
-			BlendFactor src_color;
-			BlendFactor dst_color;
-			BlendFactor src_alpha;
-			BlendFactor dst_alpha;
-
-			/*
-				if (Enable)
-				{
-					finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
-					finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
-				}
-				else
-					finalColor = newColor;
-
-				finalColor = finalColor & colorWriteMask;
-			*/
-
-			BlendOption() :
-				enable(false),
-				src_color(BlendFactorZero),
-				dst_color(BlendFactorZero),
-				src_alpha(BlendFactorZero),
-				dst_alpha(BlendFactorZero)
-			{
-			}
 		};
 
 		struct ShaderInOut
@@ -169,34 +135,28 @@ namespace flame
 			ShaderVariable v;
 		};
 
-		struct ShaderResource
-		{
-			std::vector<ShaderInOut> inputs;
-			std::vector<ShaderInOut> outputs;
-			std::vector<BlendOption> blend_options;
-			//std::vector<std::unique_ptr<ShaderResource>> uniform_buffers;
-			//std::unique_ptr<ShaderResource> push_constant;
-		};
-
 		struct ShaderPrivate : Shader
 		{
 			std::filesystem::path filename;
 			std::string prefix;
 			ShaderStageFlags type;
 
-			ShaderPrivate(const std::filesystem::path& filename, const std::string& prefix = "");
+			DevicePrivate* device;
+
+			//std::vector<ShaderInOut> inputs;
+			//std::vector<ShaderInOut> outputs;
+			//std::vector<std::unique_ptr<ShaderBindng>> uniform_buffers;
+			//std::unique_ptr<ShaderBindng> push_constant;
+
+			VkShaderModule vk_module = 0;
+
+			ShaderPrivate(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix = "");
+			~ShaderPrivate();
 
 			void release() override { delete this; }
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 			const char* get_prefix() const override { return prefix.c_str(); }
-		};
-
-		struct CompiledShader
-		{
-			ShaderPrivate* s;
-			ShaderResource r;
-			VkShaderModule m;
 		};
 
 		struct PipelinePrivate : Pipeline
@@ -205,19 +165,22 @@ namespace flame
 
 			DevicePrivate* device;
 			PipelineLayoutPrivate* pipeline_layout;
-			std::vector<CompiledShader> shaders;
+			std::vector<ShaderPrivate*> shaders;
+
 			VkPipeline vk_pipeline;
 
-			PipelinePrivate(DevicePrivate* d, std::vector<CompiledShader>& shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
+			PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
 				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
-				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
-			PipelinePrivate(DevicePrivate* d, CompiledShader& compute_shader, PipelineLayoutPrivate* pll);
+				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const BlendOption> blend_options = {},
+				std::span<const uint> dynamic_states = {});
+			PipelinePrivate(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 			~PipelinePrivate();
 
-			static PipelinePrivate* create(DevicePrivate* d, const std::filesystem::path& shader_dir, std::span<ShaderPrivate*> shaders, 
+			static PipelinePrivate* create(DevicePrivate* d, std::span<ShaderPrivate*> shaders, 
 				PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0),
-				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const uint> dynamic_states = {});
-			static PipelinePrivate* create(DevicePrivate* d, const std::filesystem::path& shader_dir, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const BlendOption> blend_options = {}, 
+				std::span<const uint> dynamic_states = {});
+			static PipelinePrivate* create(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 
 			void release() override { delete this; }
 

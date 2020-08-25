@@ -2000,7 +2000,7 @@ void MyApp::do_game_logic()
 
 	if (gaming)
 	{
-		main_window->s_2d_renderer->pending_update = true;
+		main_window->s_renderer->pending_update = true;
 
 		play_time += looper().delta_time;
 

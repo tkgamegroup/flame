@@ -25,7 +25,7 @@ namespace flame
 		virtual StateFlags get_state() const = 0;
 		virtual void set_state(StateFlags state) = 0;
 
-		virtual void on_message(Message msg) = 0;
+		virtual void on_message(Message msg, void* p = nullptr) = 0;
 
 		virtual Component* get_component(uint64 hash) const = 0;
 		template <class T> inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
@@ -45,7 +45,7 @@ namespace flame
 		virtual void remove_local_message_listener(void* lis) = 0;
 		virtual void* add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
 		virtual void remove_child_message_listener(void* lis) = 0;
-		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 data_name_hash), const Capture& capture) = 0;
+		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture) = 0;
 		virtual void remove_local_data_changed_listener(void* lis) = 0;
 
 		virtual void load(const wchar_t* filename) = 0;
@@ -53,7 +53,7 @@ namespace flame
 
 		virtual const wchar_t* get_src() const = 0;
 
-		FLAME_UNIVERSE_EXPORTS static Entity* create();
 		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
+		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};
 }

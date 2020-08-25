@@ -222,7 +222,7 @@ namespace flame
 		//if (er == next_focusing)
 		//	next_focusing = (cEventReceiver*)INVALID_POINTER;
 
-		((EntityPrivate*)entity)->set_state((StateFlags)((int)((EntityPrivate*)entity)->state & (~StateHovering) & (~StateFocusing) & (~StateActive)));
+		entity->set_state((StateFlags)((int)entity->state & (~StateHovering) & (~StateFocusing) & (~StateActive)));
 
 		dispatcher->dirty = true;
 	}

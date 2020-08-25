@@ -23,10 +23,10 @@ namespace flame
 		if (selected == e)
 			return;
 		if (selected)
-			selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
+			selected->set_state((StateFlags)(selected->state & (~StateSelected)));
 		if (e)
 			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
-		selected = e;
+		selected = (EntityPrivate*)e;
 		Entity::report_data_changed(this, S<ch("selected")>::v);
 	}
 

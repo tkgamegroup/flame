@@ -9,7 +9,7 @@ namespace flame
 		if (checked == c)
 			return;
 		checked = c;
-		auto& s = ((EntityPrivate*)entity)->state;
+		auto& s = entity->state;
 		if (checked)
 			s = (StateFlags)(int)(s | StateSelected);
 		else

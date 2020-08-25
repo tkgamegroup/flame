@@ -1,7 +1,9 @@
+#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "element_private.h"
-#include "../systems/element_renderer_private.h"
+#include "../systems/type_setting_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -121,7 +123,7 @@ namespace flame
 
 		auto base_axes = Mat2f(1.f);
 		auto base_pos = Vec2f(0.f);
-		auto p = ((EntityPrivate*)entity)->parent;
+		auto p = entity->parent;
 		if (p)
 		{
 			auto pe = p->get_component_t<cElementPrivate>();
@@ -135,8 +137,8 @@ namespace flame
 
 		axes = base_axes;
 		auto c = base_pos + axes[0] * x + axes[1] * y;
-		axes[0] = ::flame::rotation((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
-		axes[1] = ::flame::rotation((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
+		axes[0] = get_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
+		axes[1] = get_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
 
 		points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
 		points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);
@@ -221,7 +223,7 @@ namespace flame
 		if (!transform_dirty)
 		{
 			transform_dirty = true;
-			for (auto& c : ((EntityPrivate*)entity)->children)
+			for (auto& c : entity->children)
 			{
 				auto e = c->get_component_t<cElementPrivate>();
 				e->mark_transform_dirty();
@@ -236,6 +238,12 @@ namespace flame
 			renderer->dirty = true;
 	}
 
+	void cElementPrivate::mark_size_dirty()
+	{
+		if (type_setting)
+			type_setting->add_to_sizing_list(this);
+	}
+
 	void cElementPrivate::on_gain_renderer()
 	{
 		mark_transform_dirty();
@@ -244,6 +252,11 @@ namespace flame
 	void cElementPrivate::on_lost_renderer()
 	{
 		mark_transform_dirty();
+	}
+
+	void cElementPrivate::on_gain_type_setting()
+	{
+		mark_size_dirty();
 	}
 
 	bool cElementPrivate::contains(const Vec2f& p)
@@ -259,18 +272,81 @@ namespace flame
 	{
 		switch (msg)
 		{
+		case MessageComponentAdded:
+		{
+			auto udt = find_underlay_udt(((Component*)p)->type_name);
+			if (udt)
+			{
+				{
+					auto f = udt->find_function("draw_underlayer");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+					{
+						auto addr = f->get_address();
+						if (addr)
+						{
+							underlayer_drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+							mark_drawing_dirty();
+						}
+					}
+				}
+				{
+					auto f = udt->find_function("draw");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+					{
+						auto addr = f->get_address();
+						if (addr)
+						{
+							drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+							mark_drawing_dirty();
+						}
+					}
+				}
+				{
+					auto f = udt->find_function("measure");
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Vec<2,float>"), nullptr))
+					{
+						auto addr = f->get_address();
+						if (addr)
+						{
+							measurables.emplace_back((Component*)p, (void(*)(Component*, Vec2f&))addr);
+							mark_size_dirty();
+						}
+					}
+				}
+			}
+		}
+			break;
+		case MessageComponentRemoved:
+		{
+			if (std::erase_if(measurables, [&](const auto& i) {
+				return i.first == (Component*)p;
+			}))
+				mark_size_dirty();
+			auto n = std::erase_if(underlayer_drawers, [&](const auto& i) {
+				return i.first == (Component*)p;
+			}) + std::erase_if(drawers, [&](const auto& i) {
+				return i.first == (Component*)p;
+			});
+			if (n)
+				mark_drawing_dirty();
+		}
+			break;
 		case MessageVisibilityChanged:
-		case MessagePositionChanged:
+			mark_size_dirty();
 		case MessageElementTransformDirty:
 			mark_transform_dirty();
 			break;
+		case MessageElementSizeDirty:
+			mark_size_dirty();
+			break;
+		case MessagePositionChanged:
 		case MessageElementDrawingDirty:
 			mark_drawing_dirty();
 			break;
 		}
 	}
 
-	void cElementPrivate::draw_background(graphics::Canvas* canvas)
+	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
 //#ifdef _DEBUG
 //		if (debug_level > 0)
@@ -304,12 +380,6 @@ namespace flame
 				canvas->stroke(border_color, border);
 			}
 		}
-	}
-
-	void cElementPrivate::draw_content(graphics::Canvas* canvas)
-	{
-		for (auto d : drawers)
-			d->draw(canvas);
 	}
 
 //	void cElement::set_roundness(const Vec4f& r, void* sender)

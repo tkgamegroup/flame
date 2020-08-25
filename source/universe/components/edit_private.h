@@ -8,7 +8,7 @@ namespace flame
 	struct cTextPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cEditPrivate : cEdit, cElement::Drawer // R ~ on_*
+	struct cEditPrivate : cEdit // R ~ on_*
 	{
 		uint select_start = 0;
 		uint select_end = 0;
@@ -38,14 +38,12 @@ namespace flame
 		void flash_cursor(int mode);
 		int locate_cursor(const Vec2f& mpos);
 		
-		void on_gain_element();
-		void on_lost_element();
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 
 		void on_local_message(Message msg, void* p) override;
 
-		void draw(graphics::Canvas* canvas) override;
+		void draw(graphics::Canvas* canvas); // R
 
 		static cEditPrivate* create();
 	};

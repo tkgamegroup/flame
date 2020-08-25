@@ -5,7 +5,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"window_test";
+auto test_prefab = L"slider";
 
 Entity* root;
 
@@ -13,12 +13,12 @@ int main(int argc, char** args)
 {
 	g_app.create();
 	auto w = new GraphicsWindow(&g_app, true, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
-	w->canvas->set_clear_color(Vec4c(255));
+	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	root = w->root;
 
 	auto e = Entity::create();
 	e->load(test_prefab);
-	e->save(L"d:/1.prefab");
+	//e->save(L"d:/1.prefab");
 	root->add_child(e);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {

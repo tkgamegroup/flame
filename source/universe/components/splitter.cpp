@@ -10,13 +10,13 @@ namespace flame
 {
 	void cSplitterPrivate::on_gain_bar_event_receiver()
 	{
-		bar_state_listener = ((EntityPrivate*)bar_event_receiver->entity)->add_local_message_listener([](Capture& c, Message msg, void*) {
+		bar_state_listener = bar_event_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {
 			auto thiz = c.thiz<cSplitterPrivate>();
 			switch (msg)
 			{
 			case MessageStateChanged:
 				thiz->bar_event_receiver->dispatcher->window->set_cursor(
-					(((EntityPrivate*)thiz->bar_event_receiver->entity)->state & StateHovering) ?
+					(thiz->bar_event_receiver->entity->state & StateHovering) ?
 					(thiz->layout->type == LayoutHorizontal ? CursorSizeWE : CursorSizeNS) : CursorArrow);
 				break;
 			}
@@ -25,8 +25,8 @@ namespace flame
 			auto thiz = c.thiz<cSplitterPrivate>();
 			if (thiz->bar_event_receiver == thiz->bar_event_receiver->dispatcher->active)
 			{
-				auto e = (EntityPrivate*)thiz->entity;
-				if (e->children.size() >= 3 && ((EntityPrivate*)thiz->bar_event_receiver->entity)->index == 1)
+				auto e = thiz->entity;
+				if (e->children.size() >= 3 && thiz->bar_event_receiver->entity->index == 1)
 				{
 					auto left = e->children[0].get();
 					auto left_element = left->get_component_t<cElementPrivate>();
@@ -82,7 +82,7 @@ namespace flame
 
 	void cSplitterPrivate::on_lost_bar_event_receiver()
 	{
-		((EntityPrivate*)bar_event_receiver->entity)->remove_local_message_listener(bar_state_listener);
+		bar_event_receiver->entity->remove_local_message_listener(bar_state_listener);
 		bar_state_listener = nullptr;
 	}
 
@@ -91,8 +91,8 @@ namespace flame
 		switch (msg)
 		{
 		case MessageAdded:
-			if (((EntityPrivate*)entity)->children.size() == 2)
-				((EntityPrivate*)entity)->reposition_child(0, 1);
+			if (entity->children.size() == 2)
+				entity->reposition_child(0, 1);
 			break;
 		}
 	}

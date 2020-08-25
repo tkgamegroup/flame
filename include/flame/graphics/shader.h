@@ -67,8 +67,9 @@ namespace flame
 
 		struct VertexAttributeInfo
 		{
-			const char* name;
+			uint location;
 			Format format;
+			const char* name;
 		};
 
 		struct VertexBufferInfo
@@ -95,9 +96,30 @@ namespace flame
 
 		struct DepthInfo
 		{
-			bool test;
-			bool write;
-			CompareOp compare_op;
+			bool test = true;
+			bool write = true;
+			CompareOp compare_op = CompareOpLess;
+		};
+
+
+		/*
+			if (Enable)
+			{
+				finalColor.rgb = (srcColorBlendFactor * newColor.rgb) <colorBlendOp> (dstColorBlendFactor * oldColor.rgb);
+				finalColor.a   = (srcAlphaBlendFactor * newColor.a  ) <alphaBlendOp> (dstAlphaBlendFactor * oldColor.a  );
+			}
+			else
+				finalColor = newColor;
+
+			finalColor = finalColor & colorWriteMask;
+		*/
+		struct BlendOption
+		{
+			bool enable = false;
+			BlendFactor src_color = BlendFactorZero;
+			BlendFactor dst_color = BlendFactorZero;
+			BlendFactor src_alpha = BlendFactorZero;
+			BlendFactor dst_alpha = BlendFactorZero;
 		};
 
 		inline std::wstring shader_stage_name(ShaderStageFlags s)
@@ -139,17 +161,6 @@ namespace flame
 		// stage variables:
 		//  'i_' or 'o_' will be eliminated to verify between stages
 
-		// blend factors:
-		//  0 - zero
-		//  1 - one
-		//  sc - src color
-		//  dc - dst color
-		//  sa - src alpha
-		//  da - dst alpha
-		//  1msa - one minus src alpha
-		//  s1c - src1 color
-		//  1ms1c - one minus src1 color
-
 		struct Shader
 		{
 			virtual void release() = 0;
@@ -157,7 +168,7 @@ namespace flame
 			virtual const wchar_t* get_filename() const = 0;
 			virtual const char* get_prefix() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Shader* create(const wchar_t* filename, const char* prefix);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* d, const wchar_t* filename, const char* prefix);
 		};
 
 		struct Pipeline
@@ -166,12 +177,13 @@ namespace flame
 
 			virtual PipelineType get_type() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, uint shaders_count, 
-				Shader* const* shaders , PipelineLayout* pll, Renderpass* rp, uint subpass_idx, 
-				VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, uint shaders_count,
+				Shader* const* shaders, PipelineLayout* pll, Renderpass* rp, uint subpass_idx,
+				VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr,
 				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr,
+				uint blend_options_count = 0, const BlendOption* blend_options = nullptr,
 				uint dynamic_states_count = 0, const uint* dynamic_states = nullptr);
-			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, const wchar_t* shader_dir, Shader* compute_shader, PipelineLayout* pll);
+			FLAME_GRAPHICS_EXPORTS static Pipeline* create(Device* d, Shader* compute_shader, PipelineLayout* pll);
 		};
 	}
 }

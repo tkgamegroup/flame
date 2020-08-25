@@ -61,9 +61,9 @@ namespace flame
 			Entity* e_detail;
 
 			sEventDispatcher* s_event_dispatcher;
-			sElementRenderer* s_2d_renderer;
+			sElementRenderer* s_renderer;
 			void* s_event_dispatcher_listener;
-			void* s_2d_renderer_listener;
+			void* s_renderer_listener;
 
 			cReflector() :
 				Component("cReflector")
@@ -73,7 +73,7 @@ namespace flame
 			~cReflector() override
 			{
 				s_event_dispatcher->after_update_listeners.remove(s_event_dispatcher_listener);
-				s_2d_renderer->after_update_listeners.remove(s_2d_renderer_listener);
+				s_renderer->after_update_listeners.remove(s_renderer_listener);
 			}
 
 			void make_target(const wchar_t* title, Target& t, bool highlight = false)
@@ -457,7 +457,7 @@ namespace flame
 
 			void processing_2d_renderer_event()
 			{
-				if (s_2d_renderer->pending_update)
+				if (s_renderer->pending_update)
 				{
 					auto highlight = [&](Entity* e, const Vec4c& col) {
 						if (!e)
@@ -473,7 +473,7 @@ namespace flame
 							std::vector<Vec2f> points;
 							path_rect(points, rect.xy(), rect.zw());
 							points.push_back(points[0]);
-							s_2d_renderer->canvas->stroke(points.size(), points.data(), col, 3.f);
+							s_renderer->canvas->stroke(points.size(), points.data(), col, 3.f);
 						}
 					};
 					if (c_tree->selected)
@@ -487,7 +487,7 @@ namespace flame
 							std::vector<Vec2f> points;
 							path_rect(points, rect.xy(), rect.zw());
 							points.push_back(points[0]);
-							s_2d_renderer->canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 0, 255), 3.f);
+							s_renderer->canvas->stroke(points.size(), points.data(), Vec4c(255, 255, 0, 255), 3.f);
 						};
 						if (t_undering.highlight)
 							highlight(t_undering.rect);
@@ -510,8 +510,8 @@ namespace flame
 						c.thiz<cReflector>()->processing_event_dispatcher_event();
 						return true;
 					}, Capture().set_thiz(this));
-					s_2d_renderer = entity->world->get_system(sElementRenderer);
-					s_2d_renderer_listener = s_2d_renderer->after_update_listeners.add([](Capture& c) {
+					s_renderer = entity->world->get_system(sElementRenderer);
+					s_renderer_listener = s_renderer->after_update_listeners.add([](Capture& c) {
 						c.thiz<cReflector>()->processing_2d_renderer_event();
 						return true;
 					}, Capture().set_thiz(this));

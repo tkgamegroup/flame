@@ -4,12 +4,13 @@ namespace flame
 {
 	struct Window;
 
-	struct EntityPrivate;
+	struct cElementPrivate;
 	struct cLayoutPrivate;
 
 	struct sTypeSettingBridge : sTypeSetting
 	{
-		void add_to_sizing_list(AutoSizer* s, Entity* e) override;
+		void add_to_sizing_list(cElement* e) override;
+		void remove_from_sizing_list(cElement* e) override;
 		void add_to_layouting_list(cLayout* l) override;
 		void remove_from_layouting_list(cLayout* l) override;
 	};
@@ -18,11 +19,11 @@ namespace flame
 	{
 		Window* window = nullptr;;
 
-		std::deque<std::pair<AutoSizer*, EntityPrivate*>> sizing_list;
+		std::deque<cElementPrivate*> sizing_list;
 		std::deque<cLayoutPrivate*> layouting_list;
 
-		void add_to_sizing_list(AutoSizer* s, EntityPrivate* e);
-		void remove_from_sizing_list(AutoSizer* s) override;
+		void add_to_sizing_list(cElementPrivate* e);
+		void remove_from_sizing_list(cElementPrivate* e);
 		void add_to_layouting_list(cLayoutPrivate* l);
 		void remove_from_layouting_list(cLayoutPrivate* l);
 
@@ -30,9 +31,14 @@ namespace flame
 		void update() override;
 	};
 
-	inline void sTypeSettingBridge::add_to_sizing_list(sTypeSetting::AutoSizer* s, Entity* e)
+	inline void sTypeSettingBridge::add_to_sizing_list(cElement* e)
 	{
-		((sTypeSettingPrivate*)this)->add_to_sizing_list(s, (EntityPrivate*)e);
+		((sTypeSettingPrivate*)this)->add_to_sizing_list((cElementPrivate*)e);
+	}
+
+	inline void sTypeSettingBridge::remove_from_sizing_list(cElement* e)
+	{
+		((sTypeSettingPrivate*)this)->remove_from_sizing_list((cElementPrivate*)e);
 	}
 
 	inline void sTypeSettingBridge::add_to_layouting_list(cLayout* l)

@@ -19,8 +19,6 @@ namespace flame
 		float scrollx = 0.f;
 		float scrolly = 0.f;
 
-		bool break_on_next_update = false;
-
 		cElementPrivate* element = nullptr; // R ref
 		sTypeSettingPrivate* type_setting = nullptr; // R ref
 
@@ -43,8 +41,6 @@ namespace flame
 		float get_scrolly() const override { return scrolly; }
 		void set_scrolly(float s) override;
 
-		void set_break_on_next_update(bool b) override { break_on_next_update = b; }
-
 		void apply_basic_h(cElementPrivate* e, cAlignerPrivate* a, bool free);
 		void apply_basic_v(cElementPrivate* e, cAlignerPrivate* a, bool free);
 		void judge_width(float w);
@@ -58,7 +54,7 @@ namespace flame
 
 		void on_local_message(Message msg, void* p) override;
 		void on_child_message(Message msg, void* p) override;
-		void on_local_data_changed(Component* c, uint64 data_name_hash) override;
-		void on_child_data_changed(Component* c, uint64 data_name_hash) override;
+		void on_local_data_changed(Component* c, uint64 hash) override;
+		void on_child_data_changed(Component* c, uint64 hash) override;
 	};
 }

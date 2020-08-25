@@ -16,7 +16,7 @@ namespace flame
 
 	void sEventDispatcherPrivate::on_added()
 	{
-		window = (Window*)((WorldPrivate*)world)->find_object("flame::Window");
+		window = (Window*)world->find_object("flame::Window");
 		if (window)
 		{
 			key_down_listener = window->add_key_down_listener([](Capture& c, KeyboardKey key) {
@@ -51,7 +51,7 @@ namespace flame
 						for (auto& c : src->children)
 							save(n, c.get());
 					};
-					save(file_root, ((WorldPrivate*)thiz->world)->root.get());
+					save(file_root, thiz->world->root.get());
 					file.save_file("d:/reflect_ui.xml");
 				}
 				if (key == Keyboard_F8)
@@ -68,7 +68,7 @@ namespace flame
 						for (auto& c : n->children)
 							find(c.get());
 					};
-					find(((WorldPrivate*)thiz->world)->root.get());
+					find(thiz->world->root.get());
 					file.close();
 				}
 				if (key == Keyboard_F9)
@@ -305,7 +305,7 @@ namespace flame
 
 		if (focusing)
 		{
-			if (!((EntityPrivate*)focusing->entity)->global_visibility)
+			if (!focusing->entity->global_visibility)
 				focusing = nullptr;
 			else if (active || dragging)
 			{
@@ -327,7 +327,7 @@ namespace flame
 		staging_mouse_targets.clear();
 		if (active)
 			dispatch_mouse_single(active, true);
-		dispatch_mouse_recursively(((WorldPrivate*)world)->root.get());
+		dispatch_mouse_recursively(world->root.get());
 
 		for (auto er : staging_mouse_targets)
 		{
@@ -397,7 +397,7 @@ namespace flame
 		}
 
 		auto set_state = [&](cEventReceiver* er) {
-			auto e = (EntityPrivate*)er->entity;
+			auto e = er->entity;
 			auto s = (e->state & (~StateHovering) & (~StateActive));
 			if (er == hovering)
 				s |= StateHovering;
@@ -421,7 +421,7 @@ namespace flame
 			if (focusing)
 			{
 				keyboard_target = nullptr;
-				auto e = (EntityPrivate*)focusing->entity;
+				auto e = focusing->entity;
 				while (e)
 				{
 					auto er = (cEventReceiverPrivate*)e->get_component(cEventReceiver::type_hash);

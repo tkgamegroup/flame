@@ -7,7 +7,7 @@ namespace flame
 {
 	struct cElementPrivate;
 
-	struct cTileMapPrivate : cTileMap, cElement::Drawer // R ~ on_*
+	struct cTileMapPrivate : cTileMap // R ~ on_*
 	{
 		int res_id = -1;
 		Vec2u cell_count = Vec2u(0);
@@ -33,11 +33,6 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
-		void update_visible_range();
-
-		void on_gain_element();
-		void on_lost_element();
-
-		void draw(graphics::Canvas* canvas) override;
+		void draw(graphics::Canvas* canvas); // R
 	};
 }

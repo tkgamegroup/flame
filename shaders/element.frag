@@ -1,10 +1,14 @@
-in vec4 i_color;
-in vec2 i_uv;
-in uint i_id;
+#version 450 core
+#extension GL_ARB_shading_language_420pack : enable
+#extension GL_ARB_separate_shader_objects : enable
 
-out vec4 o_color{sc:sa dc:1msa da:1};
+layout (location = 0) in vec4 i_color;
+layout (location = 1) in vec2 i_uv;
+layout (location = 2) in flat uint i_id;
 
-sampler2D images[64];
+layout (location = 0) out vec4 o_color;
+
+layout (set = 0, binding = 0) uniform sampler2D images[64];
 
 void main()
 {

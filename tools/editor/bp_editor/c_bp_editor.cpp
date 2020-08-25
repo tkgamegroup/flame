@@ -161,7 +161,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 				else if (action == DragOvering)
 				{
 					thiz->group->dragging_slot_pos = Vec2f(pos);
-					bp_editor.window->s_2d_renderer->pending_update = true;
+					bp_editor.window->s_renderer->pending_update = true;
 				}
 				else if (action == DragEnd)
 				{
@@ -170,7 +170,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 						bp_editor.editor->show_add_node_menu(Vec2f(pos));
 					else
 						thiz->group->dragging_slot = nullptr;
-					bp_editor.window->s_2d_renderer->pending_update = true;
+					bp_editor.window->s_renderer->pending_update = true;
 				}
 				else if (action == BeingOverStart)
 				{

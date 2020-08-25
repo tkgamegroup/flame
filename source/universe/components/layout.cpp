@@ -94,16 +94,10 @@ namespace flame
 
 	void cLayoutPrivate::update()
 	{
-		if (break_on_next_update)
-		{
-			debug_break();
-			break_on_next_update = false;
-		}
-
 		updating = true;
 
 		std::vector<std::pair<cElementPrivate*, cAlignerPrivate*>> als[2];
-		for (auto& c : ((EntityPrivate*)entity)->children)
+		for (auto& c : entity->children)
 		{
 			if (c->global_visibility)
 			{
@@ -428,9 +422,9 @@ namespace flame
 		switch (msg)
 		{
 		case MessageElementSizeDirty:
-		case MessageLayoutDirty:
 		case MessageVisibilityChanged:
-			mark_layout_dirty();
+			if (entity->global_visibility)
+				mark_layout_dirty();
 			break;
 		}
 	}
@@ -454,11 +448,11 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::on_local_data_changed(Component* c, uint64 data_name_hash)
+	void cLayoutPrivate::on_local_data_changed(Component* c, uint64 hash)
 	{
 		if (c == element)
 		{
-			switch (data_name_hash)
+			switch (hash)
 			{
 			case S<ch("width")>::v:
 			case S<ch("height")>::v:
@@ -469,13 +463,13 @@ namespace flame
 		}
 	}
 
-	void cLayoutPrivate::on_child_data_changed(Component* c, uint64 data_name_hash)
+	void cLayoutPrivate::on_child_data_changed(Component* c, uint64 hash)
 	{
 		if (updating)
 			return;
 		if (c->type_hash == cElement::type_hash)
 		{
-			switch (data_name_hash)
+			switch (hash)
 			{
 			case S<ch("x")>::v:
 			case S<ch("y")>::v:
@@ -488,7 +482,7 @@ namespace flame
 		}
 		else if (c->type_hash == cAligner::type_hash)
 		{
-			switch (data_name_hash)
+			switch (hash)
 			{
 			case S<ch("alignx")>::v:
 			case S<ch("aligny")>::v:

@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include "../entity_private.h"
+#include "element_private.h"
 #include "text_private.h"
 #include "event_receiver_private.h"
 #include "tree_private.h"
@@ -11,10 +12,10 @@ namespace flame
 		if (selected == e)
 			return;
 		if (selected)
-			selected->set_state((StateFlags)(((EntityPrivate*)selected)->state & (~StateSelected)));
+			selected->set_state((StateFlags)(selected->state & (~StateSelected)));
 		if (e)
 			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
-		selected = e;
+		selected = (EntityPrivate*)e;
 		Entity::report_data_changed(this, S<ch("selected")>::v);
 	}
 
@@ -116,7 +117,7 @@ namespace flame
 
 	void cTreeNodePrivate::toggle_collapse()
 	{
-		auto e = (EntityPrivate*)items_element->entity;
+		auto e = items_element->entity;
 		e->set_visible(!e->visible);
 		arrow_text->set_text(e->visible ? Icon_CARET_DOWN : Icon_CARET_RIGHT);
 	}

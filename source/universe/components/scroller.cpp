@@ -112,7 +112,7 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_view_element()
 	{
-		((EntityPrivate*)view_element->entity)->add_child_message_listener([](Capture& c, Message msg, void* p) {
+		view_element->entity->add_child_message_listener([](Capture& c, Message msg, void* p) {
 			auto thiz = c.thiz<cScrollerPrivate>();
 			switch (msg)
 			{
@@ -145,7 +145,7 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		((EntityPrivate*)view_element->entity)->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		view_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->view_element)
 			{
