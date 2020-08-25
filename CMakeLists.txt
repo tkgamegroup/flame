@@ -56,6 +56,10 @@ endif()
 set(OPENAL_INCLUDE_DIR "${temp}/include" CACHE PATH "OpenAL Include Directory")
 set(OPENAL_STATIC_LIBRARY_PATH "${temp}/libs/Win64/OpenAL32.lib" CACHE FILEPATH "OpenAL STATIC Library Path")
 
+set(LUA_INCLUDE_DIR "" CACHE PATH "LUA Include Directory")
+set(LUA_STATIC_LIBRARY_PATH "" CACHE FILEPATH "LUA STATIC Library Path")
+set(LUA_DYNAMIC_LIBRARY_PATH "" CACHE FILEPATH "LUA DYNAMIC Library Path")
+
 #[[
 set(ASSIMP_INCLUDE_DIR "" CACHE PATH "Assimp Include Directory")
 set(ASSIMP_STATIC_LIBRARY_PATH "" CACHE FILEPATH "Assimp STATIC Library Path")

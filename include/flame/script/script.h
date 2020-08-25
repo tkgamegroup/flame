@@ -8,5 +8,13 @@
 
 namespace flame
 {
+	namespace script
+	{
+		struct Instance
+		{
 
+
+			FLAME_SCRIPT_EXPORTS static Instance* get();
+		};
+	}
 }
