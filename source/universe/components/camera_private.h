@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct cNodePrivate;
 
 	struct cCameraPrivate : cCamera // R ~ on_*
@@ -16,8 +21,10 @@ namespace flame
 		bool view_dirty = true;
 		Mat4f project_matrix;
 		Mat4f view_matrix;
+		Mat4f vp_matrix; // P * V
 
 		cNodePrivate* node = nullptr; // R ref
+		graphics::Canvas* canvas = nullptr; // R ref
 
 		void update_matrix();
 	};

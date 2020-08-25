@@ -984,6 +984,7 @@ namespace flame
 			{
 				PassElement,
 				PassObject,
+				SetScissor,
 				PassBlur,
 				PassBloom
 			};
@@ -994,25 +995,11 @@ namespace flame
 			};
 			std::vector<Pass> passes;
 
-			auto matv = get_view_matrix(Vec3f(3.f), Vec3f(0.f), Vec3f(0.f, 1.f, 0.f));
-			auto matvp = get_project_matrix(60.f * ANG_RAD, (float)target_size.x() / (float)target_size.y(), 0.1f, 1000.f) * matv;
-			static float ang = 0.f;
-			{
-				auto matm = Mat4f(Mat<3, 4, float>(get_rotation_matrix(normalize(Vec3f(1.f, 0.f, 0.f)), ang * ANG_RAD), Vec3f(0.f)), Vec4f(+1.5f, 0.f, 0.f, 1.f));
-				add_object(0, matvp * matm, transpose(inverse(matv * matm)));
-			}
-			{
-				auto matm = Mat4f(Mat<3, 4, float>(1.f), Vec4f(-1.5f, 0.f, 0.f, 1.f));
-				add_object(0, matvp * matm, transpose(inverse(matv * matm)));
-			}
-			ang += 5.f;
-
 			for (auto i = 0; i < cmds.size(); i++)
 			{
 				switch (cmds[i].type)
 				{
 				case CmdDrawElement:
-				case CmdSetScissor:
 				{
 					Pass* p;
 					if (passes.empty() || passes.back().type != PassElement)
@@ -1024,6 +1011,14 @@ namespace flame
 					p = &passes.back();
 					p->cmd_ids.push_back(i);
 
+				}
+					break;
+				case CmdSetScissor:
+				{
+					Pass p;
+					p.type = SetScissor;
+					p.cmd_ids.push_back(i);
+					passes.push_back(p);
 				}
 					break;
 				case CmdDrawObject:
@@ -1117,9 +1112,6 @@ namespace flame
 								ele_idx_off += cmd.v.d1.idx_cnt;
 							}
 							break;
-						case CmdSetScissor:
-							cb->set_scissor(cmd.v.d2.scissor);
-							break;
 						}
 					}
 					cb->end_renderpass();
@@ -1147,6 +1139,9 @@ namespace flame
 					obj_off += count;
 					cb->end_renderpass();
 				}
+					break;
+				case SetScissor:
+					cb->set_scissor(cmds[p.cmd_ids[0]].v.d2.scissor);
 					break;
 				case PassBlur:
 				{

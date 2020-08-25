@@ -10,11 +10,16 @@ namespace flame
 	struct sRendererPrivate : sRenderer
 	{
 		graphics::Canvas* canvas = nullptr;
+		cCameraPrivate* camera = nullptr;
 
 		bool always_update = false;
 		bool dirty = true;
 
 		void set_always_update(bool a) override { always_update = a; }
+
+		cCamera* get_camera() const override { return (cCamera*)camera; }
+		void set_camera(cCamera* c) override { camera = (cCameraPrivate*)c; }
+
 		bool is_dirty() const override { return always_update || dirty; }
 		void mark_dirty() override { dirty = true; }
 

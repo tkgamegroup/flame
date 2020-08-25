@@ -10,6 +10,8 @@ namespace flame
 		struct Canvas;
 	}
 
+	struct cCamera;
+
 	struct sRenderer : System
 	{
 		inline static auto type_name = "flame::sRenderer";
@@ -21,6 +23,10 @@ namespace flame
 		}
 
 		virtual void set_always_update(bool a) = 0;
+
+		virtual cCamera* get_camera() const = 0;
+		virtual void set_camera(cCamera* camera) = 0;
+
 		virtual bool is_dirty() const = 0;
 		virtual void mark_dirty() = 0;
 

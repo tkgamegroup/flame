@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+    <entity name="camera">
+      <cNode />
+      <cCamera />
+    </entity>
+    <cNode />
+    <cObject />
+  </entity>
+</prefab>

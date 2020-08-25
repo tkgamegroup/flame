@@ -30,6 +30,7 @@ namespace flame
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
 
+			virtual ImageView* get_target(uint idx) const = 0;
 			virtual void set_target(uint views_count, ImageView* const* views) = 0;
 
 			virtual CanvasResource* get_resource(uint slot) = 0;

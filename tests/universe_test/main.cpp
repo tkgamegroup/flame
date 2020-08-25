@@ -1,11 +1,12 @@
 #include <flame/universe/app.h>
+#include <flame/universe/components/camera.h>
 
 using namespace flame;
 using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"window_test";
+auto test_prefab = L"cube_test";
 
 Entity* root;
 
@@ -18,6 +19,11 @@ int main(int argc, char** args)
 
 	auto e = Entity::create();
 	e->load(test_prefab);
+	{
+		auto n = e->find_child("camera");
+		if (n)
+			w->s_renderer->set_camera(n->get_component_t<cCamera>());
+	}
 	//e->save(L"d:/1.prefab");
 	root->add_child(e);
 
