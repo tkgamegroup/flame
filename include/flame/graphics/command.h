@@ -92,7 +92,8 @@ namespace flame
 			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) = 0;
 			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) = 0;
 
-			virtual void clear_image(Image* i, const Vec4c& col) = 0;
+			virtual void clear_color_image(Image* i, const Vec4c& color) = 0;
+			virtual void clear_depth_image(Image* i, float depth) = 0;
 
 			virtual void end() = 0;
 

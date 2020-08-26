@@ -33,7 +33,7 @@ namespace flame
 			return 0;
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool _default_view) :
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) :
 			device(d),
 			format(format),
 			size(size),
@@ -75,8 +75,9 @@ namespace flame
 
 			chk_res(vkBindImageMemory(d->vk_device, vk_image, vk_memory, 0));
 
-			if (_default_view)
-				default_view.reset(new ImageViewPrivate(this));
+			default_views.resize(level);
+			for (auto i = 0; i < level; i++)
+				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, ImageSubresource{ (uint)i }));
 
 			if (data)
 			{
@@ -99,7 +100,7 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool _default_view) :
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native) :
 			device(d),
 			format(format),
 			size(size),
@@ -109,7 +110,9 @@ namespace flame
 		{
 			vk_image = (VkImage)native;
 
-			default_view.reset(_default_view ? new ImageViewPrivate(this) : nullptr);
+			default_views.resize(level);
+			for (auto i = 0; i < level; i++)
+				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, ImageSubresource{ (uint)i }));
 		}
 
 		ImagePrivate::~ImagePrivate()
@@ -137,7 +140,7 @@ namespace flame
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->begin(true);
 			cb->image_barrier(this, current_layout, ImageLayoutTransferDst);
-			cb->clear_image(this, color);
+			cb->clear_color_image(this, color);
 			cb->image_barrier(this, ImageLayoutTransferDst, after_layout);
 			cb->end();
 			auto q = device->graphics_queue.get();
@@ -196,7 +199,7 @@ namespace flame
 			q->wait_idle();
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool default_view)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage)
 		{
 			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
 
@@ -220,7 +223,7 @@ namespace flame
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage, bool default_view)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage)
 		{
 			std::filesystem::path path(filename);
 			if (!std::filesystem::exists(path))
@@ -321,9 +324,9 @@ namespace flame
 			return i;
 		}
 
-		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool default_view) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data, default_view); }
-		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage, bool create_default_view) { return ImagePrivate::create((DevicePrivate*)d, bmp, extra_usage, create_default_view); }
-		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage, bool create_defalut_view) { return ImagePrivate::create((DevicePrivate*)d, filename, extra_usage, create_defalut_view); }
+		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data); }
+		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage) { return ImagePrivate::create((DevicePrivate*)d, bmp, extra_usage); }
+		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage) { return ImagePrivate::create((DevicePrivate*)d, filename, extra_usage); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),

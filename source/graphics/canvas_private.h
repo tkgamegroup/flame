@@ -105,6 +105,8 @@ namespace flame
 
 			DevicePrivate* device;
 
+			bool hdr = false;
+
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
 			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
@@ -134,15 +136,27 @@ namespace flame
 
 			std::vector<ImageViewPrivate*> target_imageviews;
 			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_descriptors;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_nearest_descriptorsets;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_linear_descriptorsets;
+
+			std::unique_ptr<ImagePrivate> hdr_image;
+			std::unique_ptr<FramebufferPrivate> hdr_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> hdr_nearest_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> hdr_linear_descriptorset;
 
 			std::unique_ptr<ImagePrivate> depth_image;
-			std::vector<std::unique_ptr<FramebufferPrivate>> forward_framebuffers;
+			std::vector<std::unique_ptr<FramebufferPrivate>> forward8_framebuffers;
+			std::unique_ptr<FramebufferPrivate> forward16_framebuffer;
 
-			std::unique_ptr<ImagePrivate> back_images[2];
-			std::unique_ptr<ImageViewPrivate> back_imageviews[2][downsample_level];
-			std::unique_ptr<FramebufferPrivate> back_framebuffers[2][downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> back_descriptorsets[2][downsample_level];
+			std::unique_ptr<ImagePrivate> back8_image;
+			std::unique_ptr<FramebufferPrivate> back8_framebuffers[downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> back8_nearest_descriptorsets[downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> back8_linear_descriptorsets[downsample_level];
+
+			std::unique_ptr<ImagePrivate> back16_image;
+			std::unique_ptr<FramebufferPrivate> back16_framebuffers[downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> back16_nearest_descriptorsets[downsample_level];
+			std::unique_ptr<DescriptorSetPrivate> back16_linear_descriptorsets[downsample_level];
 
 			std::vector<std::vector<Vec2f>> paths;
 
@@ -154,6 +168,8 @@ namespace flame
 			CanvasPrivate(DevicePrivate* d);
 
 			void release() override { delete this; }
+
+			void set_hdr(bool v) override { hdr = v; }
 
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }
@@ -202,7 +218,7 @@ namespace flame
 
 		inline uint CanvasBridge::set_resource(int slot, ImageAtlas* image_atlas, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, ((ImageAtlasPrivate*)image_atlas)->image->default_view.get(), 
+			return ((CanvasPrivate*)this)->set_resource(slot, ((ImageAtlasPrivate*)image_atlas)->image->default_views[0].get(), 
 				((ImageAtlasPrivate*)image_atlas)->border ? ((CanvasPrivate*)this)->device->sampler_linear.get() : ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
 				name ? name : "", (ImageAtlasPrivate*)image_atlas, nullptr);
 		}

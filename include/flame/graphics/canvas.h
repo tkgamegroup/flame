@@ -27,6 +27,9 @@ namespace flame
 		{
 			virtual void release() = 0;
 
+			// default is false
+			virtual void set_hdr(bool v) = 0;
+
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
 

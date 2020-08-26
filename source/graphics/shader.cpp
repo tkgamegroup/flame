@@ -244,11 +244,13 @@ namespace flame
 					for (auto& d : defines)
 						command_line += L" -D" + s2w(d);
 
+					wprintf(L"compiling shader: %s\n", path.c_str());
+
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(spv_path))
 					{
-						printf("\nshader compile error:\n%s\n", output.c_str());
+						printf("%s\n", output.c_str());
 						assert(0);
 					}
 				}

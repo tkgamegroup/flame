@@ -61,7 +61,7 @@ namespace flame
 			virtual uint get_layer() const = 0;
 			virtual SampleCount get_sample_count() const = 0;
 
-			virtual ImageView* get_default_view() const = 0;
+			virtual ImageView* get_default_view(uint level = 0) const = 0;
 
 			virtual void change_layout(ImageLayout from, ImageLayout to) = 0;
 			virtual void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) = 0;
@@ -70,9 +70,9 @@ namespace flame
 			virtual void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) = 0;
 			virtual void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool create_defalut_view = true);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone, bool create_defalut_view = true); // default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage = ImageUsageNone, bool create_default_view = true); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage = ImageUsageNone); // default usage: ShaderSampled, TransferDst
 
 		};
 

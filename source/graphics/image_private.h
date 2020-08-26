@@ -22,10 +22,10 @@ namespace flame
 
 			VkDeviceMemory vk_memory = 0;
 			VkImage vk_image = 0;
-			std::unique_ptr<ImageViewPrivate> default_view;
+			std::vector<std::unique_ptr<ImageViewPrivate>> default_views;
 
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool default_view = true);
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native, bool default_view = true);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
 			void release() override { delete this; }
@@ -36,7 +36,7 @@ namespace flame
 			uint get_layer() const override { return layer; }
 			SampleCount get_sample_count() const override { return sample_count; }
 
-			ImageView* get_default_view() const override { return (ImageView*)default_view.get(); }
+			ImageView* get_default_view(uint level) const override { return (ImageView*)default_views[level].get(); }
 
 			void change_layout(ImageLayout from, ImageLayout to) override;
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
@@ -44,8 +44,8 @@ namespace flame
 			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;
 			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override;
 
-			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone, bool create_defalut_view = true);
-			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = ImageUsageNone, bool create_defalut_view = true);
+			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone);
+			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = ImageUsageNone);
 		};
 
 		struct ImageViewPrivate : ImageView

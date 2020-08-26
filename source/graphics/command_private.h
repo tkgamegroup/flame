@@ -44,7 +44,8 @@ namespace flame
 			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override;
 			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override;
 			void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) override;
-			void clear_image(Image* i, const Vec4c& col) override;
+			void clear_color_image(Image* i, const Vec4c& color) override;
+			void clear_depth_image(Image* i, float depth) override;
 		};
 
 		struct CommandBufferPrivate : CommandBufferBridge
@@ -84,7 +85,8 @@ namespace flame
 			void copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
 			void copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
 			void copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies);
-			void clear_image(ImagePrivate* i, const Vec4c& col);
+			void clear_color_image(ImagePrivate* i, const Vec4c& color);
+			void clear_depth_image(ImagePrivate* i, float depth);
 			void end() override;
 		};
 
@@ -158,9 +160,14 @@ namespace flame
 			((CommandBufferPrivate*)this)->copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
 		}
 
-		inline void CommandBufferBridge::clear_image(Image* i, const Vec4c& col)
+		inline void CommandBufferBridge::clear_color_image(Image* i, const Vec4c& color)
 		{
-			((CommandBufferPrivate*)this)->clear_image((ImagePrivate*)i, col);
+			((CommandBufferPrivate*)this)->clear_color_image((ImagePrivate*)i, color);
+		}
+
+		inline void CommandBufferBridge::clear_depth_image(Image* i, float depth)
+		{
+			((CommandBufferPrivate*)this)->clear_depth_image((ImagePrivate*)i, depth);
 		}
 
 		struct QueueBridge : Queue

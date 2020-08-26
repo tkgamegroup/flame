@@ -361,20 +361,34 @@ namespace flame
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
-		void CommandBufferPrivate::clear_image(ImagePrivate* i, const Vec4c& col)
+		void CommandBufferPrivate::clear_color_image(ImagePrivate* i, const Vec4c& color)
 		{
 			VkClearColorValue cv;
-			cv.float32[0] = col.x() / 255.f;
-			cv.float32[1] = col.y() / 255.f;
-			cv.float32[2] = col.z() / 255.f;
-			cv.float32[3] = col.w() / 255.f;
-			VkImageSubresourceRange r;
-			r.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			r.baseMipLevel = 0;
-			r.levelCount = 1;
-			r.baseArrayLayer = 0;
-			r.layerCount = 1;
-			vkCmdClearColorImage(vk_command_buffer, i->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &r);
+			cv.float32[0] = color.x() / 255.f;
+			cv.float32[1] = color.y() / 255.f;
+			cv.float32[2] = color.z() / 255.f;
+			cv.float32[3] = color.w() / 255.f;
+			VkImageSubresourceRange range;
+			range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			range.baseMipLevel = 0;
+			range.levelCount = 1;
+			range.baseArrayLayer = 0;
+			range.layerCount = 1;
+			vkCmdClearColorImage(vk_command_buffer, i->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
+		}
+
+		void CommandBufferPrivate::clear_depth_image(ImagePrivate* i, float depth)
+		{
+			VkClearDepthStencilValue cv;
+			cv.depth = depth;
+			cv.stencil = 0;
+			VkImageSubresourceRange range;
+			range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+			range.baseMipLevel = 0;
+			range.levelCount = 1;
+			range.baseArrayLayer = 0;
+			range.layerCount = 1;
+			vkCmdClearDepthStencilImage(vk_command_buffer, i->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
 		}
 
 		void CommandBufferPrivate::end()
