@@ -188,7 +188,7 @@ MainForm::MainForm() :
 	GraphicsWindow(&g_app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
 {
 	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	//canvas->set_resource(-1, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"art/9.png").c_str())->default_view());
+	//canvas->set_resource(-1, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"assets/9.png").c_str())->default_view());
 
 	g_app.create_widgets();
 }

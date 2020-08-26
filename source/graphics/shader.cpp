@@ -212,7 +212,7 @@ namespace flame
 			{
 				auto engine_path = getenv("FLAME_PATH");
 				if (engine_path)
-					path = std::filesystem::path(engine_path) / L"shaders" / path;
+					path = std::filesystem::path(engine_path) / L"assets/shaders" / path;
 				if (!std::filesystem::exists(path))
 				{
 					wprintf(L"cannot find shader: %s\n", filename.c_str());

@@ -545,30 +545,30 @@ void MyApp::create()
 			soft_drop_speed = std::stoi(e.value);
 	}
 
-	atlas = graphics::ImageAtlas::create(graphics_device, (resource_path / L"art/atlas/main.atlas").c_str());
+	atlas = graphics::ImageAtlas::create(graphics_device, (resource_path / L"assets/atlas/main.atlas").c_str());
 
 	{
-		sound_move_buf = sound::Buffer::create_from_file((resource_path / L"art/move.wav").c_str());
+		sound_move_buf = sound::Buffer::create_from_file((resource_path / L"assets/move.wav").c_str());
 		sound_move_src = sound::Source::create(sound_move_buf);
 		sound_move_src->set_volume(sound_move_volumn);
 	}
 	{
-		sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/soft_drop.wav").c_str());
+		sound_soft_drop_buf = sound::Buffer::create_from_file((resource_path / L"assets/soft_drop.wav").c_str());
 		sound_soft_drop_src = sound::Source::create(sound_soft_drop_buf);
 		sound_soft_drop_src->set_volume(sound_soft_drop_volumn);
 	}
 	{
-		sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"art/hard_drop.wav").c_str());
+		sound_hard_drop_buf = sound::Buffer::create_from_file((resource_path / L"assets/hard_drop.wav").c_str());
 		sound_hard_drop_src = sound::Source::create(sound_hard_drop_buf);
 		sound_hard_drop_src->set_volume(sound_hard_drop_volumn);
 	}
 	{
-		sound_clear_buf = sound::Buffer::create_from_file((resource_path / L"art/clear.wav").c_str());
+		sound_clear_buf = sound::Buffer::create_from_file((resource_path / L"assets/clear.wav").c_str());
 		sound_clear_src = sound::Source::create(sound_clear_buf);
 		sound_clear_src->set_volume(sound_clear_volumn);
 	}
 	{
-		sound_hold_buf = sound::Buffer::create_from_file((resource_path / L"art/hold.wav").c_str());
+		sound_hold_buf = sound::Buffer::create_from_file((resource_path / L"assets/hold.wav").c_str());
 		sound_hold_src = sound::Source::create(sound_hold_buf);
 		sound_hold_src->set_volume(sound_hold_volumn);
 	}

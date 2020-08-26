@@ -11,6 +11,8 @@ namespace flame
 			lua_State* lua_state = nullptr;
 
 			InstancePrivate();
+
+			bool check_result(int res);
 		};
 	}
 }

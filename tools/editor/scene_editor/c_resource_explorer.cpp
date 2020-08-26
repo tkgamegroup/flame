@@ -119,9 +119,9 @@ cResourceExplorer::cResourceExplorer() :
 	Component("cResourceExplorer")
 {
 	auto canvas = scene_editor.window->canvas;
-	folder_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/folder.png").c_str());
+	folder_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"assets/folder.png").c_str());
 	folder_img_idx = canvas->set_resource(-1, folder_img->default_view());
-	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"art/file.png").c_str());
+	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"assets/file.png").c_str());
 	file_img_idx = canvas->set_resource(-1, file_img->default_view());
 	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
 	thumbnails_img->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));

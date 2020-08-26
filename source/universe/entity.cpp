@@ -905,7 +905,7 @@ namespace flame
 			fn.replace_extension(L".prefab");
 		if (!std::filesystem::exists(fn))
 		{
-			fn = L"art" / fn;
+			fn = L"assets" / fn;
 			if (!std::filesystem::exists(fn))
 			{
 				auto engine_path = getenv("FLAME_PATH");

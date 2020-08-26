@@ -92,7 +92,7 @@ int main(int argc, char** args)
 		sp.color_attachments = col_refs;
 		app.rp = Renderpass::create(app.d, 1, &att, 1, &sp, 0, nullptr);
 	}
-	app.img = Image::create_from_file(app.d, (engine_path / L"art/9.png").c_str());
+	app.img = Image::create_from_file(app.d, (engine_path / L"assets/9.png").c_str());
 	{
 		DescriptorBinding db;
 		db.type = DescriptorSampledImage;

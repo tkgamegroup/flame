@@ -982,9 +982,9 @@ namespace flame
 		{
 			enum PassType
 			{
+				PassNone = -1,
 				PassElement,
 				PassObject,
-				SetScissor,
 				PassBlur,
 				PassBloom
 			};
@@ -1001,38 +1001,27 @@ namespace flame
 				{
 				case CmdDrawElement:
 				{
-					Pass* p;
-					if (passes.empty() || passes.back().type != PassElement)
-					{
-						Pass p;
-						p.type = PassElement;
-						passes.push_back(p);
-					}
-					p = &passes.back();
-					p->cmd_ids.push_back(i);
+					if (passes.empty() || (passes.back().type != PassElement && passes.back().type != PassNone))
+						passes.emplace_back();
+					passes.back().type = PassElement;
+					passes.back().cmd_ids.push_back(i);
+
+				}
+					break;
+				case CmdDrawObject:
+				{
+					if (passes.empty() || (passes.back().type != PassObject && passes.back().type != PassNone))
+						passes.emplace_back();
+					passes.back().type = PassObject;
+					passes.back().cmd_ids.push_back(i);
 
 				}
 					break;
 				case CmdSetScissor:
 				{
-					Pass p;
-					p.type = SetScissor;
-					p.cmd_ids.push_back(i);
-					passes.push_back(p);
-				}
-					break;
-				case CmdDrawObject:
-				{
-					Pass* p;
-					if (passes.empty() || passes.back().type != PassObject)
-					{
-						Pass p;
-						p.type = PassObject;
-						passes.push_back(p);
-					}
-					p = &passes.back();
-					p->cmd_ids.push_back(i);
-
+					if (passes.empty() || (passes.back().type != PassElement && passes.back().type != PassObject && passes.back().type != PassNone))
+						passes.emplace_back();
+					passes.back().cmd_ids.push_back(i);
 				}
 					break;
 				case CmdBlur:
@@ -1112,6 +1101,9 @@ namespace flame
 								ele_idx_off += cmd.v.d1.idx_cnt;
 							}
 							break;
+						case CmdSetScissor:
+							cb->set_scissor(cmd.v.d2.scissor);
+							break;
 						}
 					}
 					cb->end_renderpass();
@@ -1132,16 +1124,22 @@ namespace flame
 					cvs[1] = Vec4f(1.f);
 					cb->begin_renderpass(forward_framebuffers[image_index].get(), cvs);
 					cb->bind_pipeline(forward_pipeline);
-					auto count = 0;
 					for (auto& i : p.cmd_ids)
-						count += cmds[i].v.d3.count;
-					cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_off, count);
-					obj_off += count;
+					{
+						auto& cmd = cmds[i];
+						switch (cmd.type)
+						{
+						case CmdDrawObject:
+							cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_off, cmd.v.d3.count);
+							obj_off += cmd.v.d3.count;
+							break;
+						case CmdSetScissor:
+							cb->set_scissor(cmd.v.d2.scissor);
+							break;
+						}
+					}
 					cb->end_renderpass();
 				}
-					break;
-				case SetScissor:
-					cb->set_scissor(cmds[p.cmd_ids[0]].v.d2.scissor);
 					break;
 				case PassBlur:
 				{

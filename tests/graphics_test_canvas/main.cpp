@@ -99,7 +99,7 @@ int main(int argc, char** args)
 	{
 		Font* fonts[] = {
 			Font::create(L"c:/windows/fonts/consola.ttf"),
-			Font::create((engine_path / L"art/font_awesome.ttf").c_str())
+			Font::create((engine_path / L"assets/font_awesome.ttf").c_str())
 		};
 		app.font_atlas = FontAtlas::create(app.d, 2, fonts);
 	}

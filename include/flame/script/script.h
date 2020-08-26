@@ -6,6 +6,8 @@
 #define FLAME_SCRIPT_EXPORTS __declspec(dllimport)
 #endif
 
+#include <flame/math.h>
+
 namespace flame
 {
 	namespace script

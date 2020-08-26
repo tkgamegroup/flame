@@ -12,6 +12,7 @@
 #include <flame/sound/context.h>
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
+#include <flame/script/script.h>
 #include <flame/universe/world.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
@@ -61,6 +62,7 @@ namespace flame
 		graphics::Queue* graphics_queue;
 		sound::Device* sound_device;
 		sound::Context* sound_context;
+		script::Instance* script_instance;
 
 		graphics::FontAtlas* font_atlas;
 
@@ -251,10 +253,12 @@ namespace flame
 		sound_context = sound::Context::create(sound_device);
 		sound_context->make_current();
 
+		script_instance = script::Instance::get();
+
 		{
 			graphics::Font* fonts[] = {
 				graphics::Font::create(L"c:/windows/fonts/msyh.ttc"),
-				graphics::Font::create((engine_path / L"art/font_awesome.ttf").c_str())
+				graphics::Font::create((engine_path / L"assets/font_awesome.ttf").c_str())
 			};
 			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
 		}
