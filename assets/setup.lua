@@ -1,7 +1,10 @@
 function make_obj(o, tbl)
+	if (tbl == nil) then
+		return
+	end
 	for k, v in pairs(tbl) do
 		o[k] = function(self, ...)
-			return flame_call(..., o.p, v)
+			return flame_call({...}, o.p, v)
 		end
 	end
 end

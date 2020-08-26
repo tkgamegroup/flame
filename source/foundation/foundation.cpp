@@ -197,6 +197,8 @@ namespace flame
 			}
 			ImageUnload(image);
 		}
+
+		f_free(capture._data);
 	}
 
 	void get_clipboard(void* str)

@@ -671,12 +671,13 @@ namespace flame
 		{ 
 			if (!p)
 				p = new void*;
-			*(void**)p = base->create();
+			if (base)
+				*(void**)p = base->create();
 			return p; 
 		}
 		void destroy(void* p, bool free_memory) const override 
 		{
-			if (p)
+			if (p && base)
 				base->destroy(*(void**)p);
 			if (free_memory)
 				f_free(p); 
@@ -1138,7 +1139,8 @@ namespace flame
 					list1[idx++] = *((void**)*_p++);
 				break;
 			case TypePointer:
-				list1[idx] = *_p++;
+				list1[idx] = *(void**)(*_p);
+				_p++;
 				break;
 			}
 		}
@@ -1331,4 +1333,18 @@ namespace flame
 
 	EnumInfo* find_enum(const char* name) { return find_enum(std::string(name)); }
 	UdtInfo* find_udt(const char* name) { return find_udt(std::string(name)); }
+
+	void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture)
+	{
+		for (auto& e : enums)
+			callback((Capture&)capture, e.second.get());
+		f_free(capture._data);
+	}
+
+	void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture)
+	{
+		for (auto& u : udts)
+			callback((Capture&)capture, u.second.get());
+		f_free(capture._data);
+	}
 }

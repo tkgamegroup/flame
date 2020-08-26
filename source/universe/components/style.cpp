@@ -118,7 +118,7 @@ namespace flame
 				{
 					for (auto& c : s.cmds)
 					{
-						void* parms[] = { c->type->get_tag() == TypePointer ? *(void**)c->data : c->data };
+						void* parms[] = { c->data };
 						c->setter->call(t.c, nullptr, parms);
 					}
 					break;

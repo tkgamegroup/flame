@@ -103,6 +103,17 @@ namespace flame
 		return nullptr;
 	}
 
+	Component* EntityPrivate::get_component_n(const char* _name) const
+	{
+		auto name = std::string(_name);
+		for (auto& c : components)
+		{
+			if (c.second->type_name == name)
+				return c.second.get();
+		}
+		return nullptr;
+	}
+
 	void EntityPrivate::Ref::gain(Component* c)
 	{
 		if (staging == INVALID_POINTER)
@@ -884,7 +895,7 @@ namespace flame
 								auto type = fs->get_parameter(0);
 								void* d = type->create();
 								type->unserialize(d, a.value());
-								void* parms[] = { type->get_tag() == TypePointer ? *(void**)d : d };
+								void* parms[] = { d };
 								fs->call(c, nullptr, parms);
 								type->destroy(d);
 							}

@@ -117,6 +117,7 @@ namespace flame
 		void on_message(Message msg, void* p = nullptr) override;
 
 		Component* get_component(uint64 hash) const override;
+		Component* get_component_n(const char* name) const override;
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
 		void on_component_removed(Component* c);

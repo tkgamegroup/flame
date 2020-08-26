@@ -143,6 +143,8 @@ namespace flame
 
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name);
+	FLAME_FOUNDATION_EXPORTS void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture);
 
 	inline UdtInfo* find_underlay_udt(const std::string& name)
 	{

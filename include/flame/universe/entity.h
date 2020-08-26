@@ -7,7 +7,7 @@ namespace flame
 	struct World;
 	struct Component;
 
-	struct Entity
+	struct Entity // R !ctor !dtor
 	{
 		// if it is a child, it will be removed first
 		virtual void release() = 0;
@@ -28,7 +28,9 @@ namespace flame
 		virtual void on_message(Message msg, void* p = nullptr) = 0;
 
 		virtual Component* get_component(uint64 hash) const = 0;
+		virtual Component* get_component_n(const char* name) const = 0;
 		template <class T> inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
+
 		virtual void add_component(Component* c) = 0;
 		virtual void remove_component(Component* c, bool destroy = true) = 0;
 		virtual void remove_all_components(bool destroy = true) = 0;
