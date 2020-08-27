@@ -38,7 +38,6 @@ namespace flame
 
 			ImageView* get_default_view(uint level) const override { return (ImageView*)default_views[level].get(); }
 
-			void change_layout(ImageLayout from, ImageLayout to) override;
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
 
 			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;

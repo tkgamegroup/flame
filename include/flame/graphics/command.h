@@ -79,13 +79,19 @@ namespace flame
 			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;
 			virtual void bind_index_buffer(Buffer* b, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll = nullptr) = 0;
+			template <class T>
+			inline void push_constant_t(uint offset, const T& data, PipelineLayout* pll = nullptr)
+			{
+				push_constant(offset, sizeof(T), &data, pll);
+			}
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
 			virtual void draw_indirect(Buffer* b, uint offset, uint count) = 0;
 			virtual void draw_indexed_indirect(Buffer* b, uint offset, uint count) = 0;
 			virtual void dispatch(const Vec3u& v) = 0;
 			virtual void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) = 0;
-			virtual void image_barrier(Image* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource = {}) = 0;
+			virtual void image_barrier(Image* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
+				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) = 0;
 
 			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) = 0;
 			virtual void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) = 0;

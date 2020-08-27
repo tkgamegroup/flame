@@ -395,6 +395,60 @@ namespace flame
 			}
 		}
 
+		template <>
+		inline VkFlags to_backend_flags<AccessFlags>(uint a)
+		{
+			VkAccessFlags ret = 0;
+			if (a & AccessIndirectCommandRead)
+				ret |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+			if (a & AccessIndexRead)
+				ret |= VK_ACCESS_INDEX_READ_BIT;
+			if (a & AccessVertexAttributeRead)
+				ret |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+			if (a & AccessUniformRead)
+				ret |= VK_ACCESS_UNIFORM_READ_BIT;
+			if (a & AccessInputAttachmentRead)
+				ret |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+			if (a & AccessShaderRead)
+				ret |= VK_ACCESS_SHADER_READ_BIT;
+			if (a & AccessShaderWrite)
+				ret |= VK_ACCESS_SHADER_WRITE_BIT;
+			if (a & AccessColorAttachmentRead)
+				ret |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+			if (a & AccessColorAttachmentWrite)
+				ret |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			if (a & AccessDepthAttachmentRead)
+				ret |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+			if (a & AccessDepthAttachmentWrite)
+				ret |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			if (a & AccessTransferRead)
+				ret |= VK_ACCESS_TRANSFER_READ_BIT;
+			if (a & AccessTransferWrite)
+				ret |= VK_ACCESS_TRANSFER_WRITE_BIT;
+			if (a & AccessHostRead)
+				ret |= VK_ACCESS_HOST_READ_BIT;
+			if (a & AccessHostWrite)
+				ret |= VK_ACCESS_HOST_WRITE_BIT;
+			if (a & AccessMemoryRead)
+				ret |= VK_ACCESS_MEMORY_READ_BIT;
+			if (a & AccessMemoryWrite)
+				ret |= VK_ACCESS_MEMORY_WRITE_BIT;
+			return ret;
+		}
+
+		inline VkAttachmentLoadOp to_backend(AttachmentLoadOp op)
+		{
+			switch (op)
+			{
+			case AttachmentLoad:
+				return VK_ATTACHMENT_LOAD_OP_LOAD;
+			case AttachmentClear:
+				return VK_ATTACHMENT_LOAD_OP_CLEAR;
+			case AttachmentDontCare:
+				return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			}
+		}
+
 		inline VkVertexInputRate to_backend(VertexInputRate r)
 		{
 			switch (r)
@@ -552,43 +606,6 @@ namespace flame
 			case DynamicStateStencilReference:
 				return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
 			}
-		}
-
-		template <>
-		inline VkFlags to_backend_flags<AccessFlags>(uint a)
-		{
-			VkAccessFlags ret = 0;
-			if (a & AccessIndirectCommandRead)
-				ret |= VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-			if (a & AccessIndexRead)
-				ret |= VK_ACCESS_INDEX_READ_BIT;
-			if (a & AccessVertexAttributeRead)
-				ret |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-			if (a & AccessUniformRead)
-				ret |= VK_ACCESS_UNIFORM_READ_BIT;
-			if (a & AccessInputAttachmentRead)
-				ret |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-			if (a & AccessShaderRead)
-				ret |= VK_ACCESS_SHADER_READ_BIT;
-			if (a & AccessShaderWrite)
-				ret |= VK_ACCESS_SHADER_WRITE_BIT;
-			if (a & AccessColorAttachmentRead)
-				ret |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-			if (a & AccessColorAttachmentWrite)
-				ret |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			if (a & AccessDepthAttachmentRead)
-				ret |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-			if (a & AccessDepthAttachmentWrite)
-				ret |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-			if (a & AccessTransferRead)
-				ret |= VK_ACCESS_TRANSFER_READ_BIT;
-			if (a & AccessTransferWrite)
-				ret |= VK_ACCESS_TRANSFER_WRITE_BIT;
-			if (a & AccessHostRead)
-				ret |= VK_ACCESS_HOST_READ_BIT;
-			if (a & AccessHostWrite)
-				ret |= VK_ACCESS_HOST_WRITE_BIT;
-			return ret;
 		}
 	}
 }

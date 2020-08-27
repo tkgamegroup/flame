@@ -15,14 +15,14 @@ namespace flame
 		{
 			uint index;
 			Format format;
-			bool clear;
+			AttachmentLoadOp load_op;
 			SampleCount sample_count;
 
 			RenderpassAttachmentPrivate(uint index, const RenderpassAttachmentInfo& info);
 
 			uint get_index() const override { return index; }
 			Format get_format() const override { return format; }
-			bool get_clear() const override { return clear; }
+			AttachmentLoadOp get_load_op() const override { return load_op; }
 			SampleCount get_sample_count() const override { return sample_count; }
 		};
 

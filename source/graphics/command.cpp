@@ -201,13 +201,13 @@ namespace flame
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
 		}
 
-		void CommandBufferPrivate::image_barrier(ImagePrivate* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource)
+		void CommandBufferPrivate::image_barrier(ImagePrivate* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
 		{
 			VkImageMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			barrier.pNext = nullptr;
-			barrier.oldLayout = to_backend(from, i->format);
-			barrier.newLayout = to_backend(to, i->format);
+			barrier.oldLayout = to_backend(old_layout, i->format);
+			barrier.newLayout = to_backend(new_layout, i->format);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.image = i->vk_image;
@@ -217,69 +217,60 @@ namespace flame
 			barrier.subresourceRange.baseArrayLayer = subresource.base_layer;
 			barrier.subresourceRange.layerCount = subresource.layer_count;
 
-			switch (barrier.oldLayout)
+			if (src_access == AccessNone)
 			{
-			case VK_IMAGE_LAYOUT_UNDEFINED:
-			case VK_IMAGE_LAYOUT_GENERAL:
-				barrier.srcAccessMask = 0;
-				break;
-			case VK_IMAGE_LAYOUT_PREINITIALIZED:
-				barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-				barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-				barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-				barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-				barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-				barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-				barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-				break;
-			default:
-				barrier.srcAccessMask = 0;
-				break;
+				switch (old_layout)
+				{
+				case ImageLayoutTransferDst:
+					src_access = AccessTransferWrite;
+					break;
+				case ImageLayoutTransferSrc:
+					src_access = AccessTransferRead;
+					break;
+				case ImageLayoutAttachment:
+					if (i->format >= Format_Color_Begin && i->format <= Format_Color_End)
+						src_access = AccessColorAttachmentWrite;
+					else
+						src_access = AccessDepthAttachmentWrite;
+					break;
+				case ImageLayoutShaderReadOnly:
+					src_access = AccessShaderRead;
+					break;
+				case ImageLayoutPresent:
+					src_access = AccessMemoryRead;
+					break;
+				}
 			}
 
-			switch (barrier.newLayout)
+			if (dst_access == AccessNone)
 			{
-			case VK_IMAGE_LAYOUT_GENERAL:
-				barrier.dstAccessMask = 0;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-				barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-				barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-				barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-				barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-				break;
-			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-				if (barrier.srcAccessMask == 0)
-					barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-				barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-				barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-				break;
-			default:
-				barrier.dstAccessMask = 0;
-				break;
+				switch (new_layout)
+				{
+				case ImageLayoutTransferDst:
+					dst_access = AccessTransferWrite;
+					break;
+				case ImageLayoutTransferSrc:
+					dst_access = AccessTransferRead;
+					break;
+				case ImageLayoutAttachment:
+					if (i->format >= Format_Color_Begin && i->format <= Format_Color_End)
+						dst_access = AccessColorAttachmentWrite;
+					else
+						dst_access = AccessDepthAttachmentWrite;
+					break;
+				case ImageLayoutShaderReadOnly:
+					if (src_access == AccessNone)
+						src_access = AccessHostWrite | AccessTransferWrite;
+					dst_access = AccessShaderRead;
+					break;
+				case ImageLayoutPresent:
+					dst_access = AccessMemoryRead;
+					break;
+				}
 			}
+
+			barrier.srcAccessMask = to_backend_flags<AccessFlags>(src_access);
+			barrier.dstAccessMask = to_backend_flags<AccessFlags>(dst_access);
 
 			vkCmdPipelineBarrier(vk_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0, 0, nullptr, 0, nullptr, 1, &barrier);

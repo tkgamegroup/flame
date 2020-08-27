@@ -13,7 +13,7 @@ namespace flame
 		struct RenderpassAttachmentInfo
 		{
 			Format format = Format_R8G8B8A8_UNORM;
-			bool clear = true;
+			AttachmentLoadOp load_op = AttachmentClear;
 			SampleCount sample_count = SampleCount_1;
 			ImageLayout initia_layout = ImageLayoutUndefined;
 			ImageLayout final_layout = ImageLayoutShaderReadOnly;
@@ -32,7 +32,7 @@ namespace flame
 		{
 			virtual uint get_index() const = 0;
 			virtual Format get_format() const = 0;
-			virtual bool get_clear() const = 0;
+			virtual AttachmentLoadOp get_load_op() const = 0;
 			virtual SampleCount get_sample_count() const = 0;
 		};
 

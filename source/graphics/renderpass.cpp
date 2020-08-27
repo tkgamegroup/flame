@@ -8,7 +8,7 @@ namespace flame
 		RenderpassAttachmentPrivate::RenderpassAttachmentPrivate(uint _index, const RenderpassAttachmentInfo& info) :
 			index(_index),
 			format(info.format),
-			clear(info.clear),
+			load_op(info.load_op),
 			sample_count(info.sample_count)
 		{
 		}
@@ -38,7 +38,7 @@ namespace flame
 				dst.flags = 0;
 				dst.format = to_backend(src.format);
 				dst.samples = to_backend(src.sample_count);
-				dst.loadOp = src.clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				dst.loadOp = to_backend(src.load_op);
 				dst.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 				dst.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

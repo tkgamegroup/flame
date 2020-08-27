@@ -39,7 +39,7 @@ namespace flame
 			void draw_indirect(Buffer* b, uint offset, uint count) override;
 			void draw_indexed_indirect(Buffer* b, uint offset, uint count) override;
 			void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) override;
-			void image_barrier(Image* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource) override;
+			void image_barrier(Image* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access) override;
 			void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) override;
 			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override;
 			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override;
@@ -80,7 +80,7 @@ namespace flame
 			void draw_indexed_indirect(BufferPrivate* b, uint offset, uint count);
 			void dispatch(const Vec3u& v) override;
 			void buffer_barrier(BufferPrivate* b, AccessFlags src_access, AccessFlags dst_access);
-			void image_barrier(ImagePrivate* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource = {});
+			void image_barrier(ImagePrivate* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone);
 			void copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies);
 			void copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
 			void copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
@@ -135,9 +135,9 @@ namespace flame
 			((CommandBufferPrivate*)this)->buffer_barrier((BufferPrivate*)b, src_access, dst_access);
 		}
 
-		inline void CommandBufferBridge::image_barrier(Image* i, ImageLayout from, ImageLayout to, const ImageSubresource& subresource)
+		inline void CommandBufferBridge::image_barrier(Image* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
 		{
-			((CommandBufferPrivate*)this)->image_barrier((ImagePrivate*)i, from, to, subresource);
+			((CommandBufferPrivate*)this)->image_barrier((ImagePrivate*)i, subresource, old_layout, new_layout, src_access, dst_access);
 		}
 
 		inline void CommandBufferBridge::copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies)

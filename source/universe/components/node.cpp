@@ -9,7 +9,7 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			transform = Mat4f(Mat<3, 4, float>(get_rotation_matrix(normalize(Vec3f(1.f, 0.f, 0.f)), 45.f * ANG_RAD), Vec3f(0.f)), Vec4f(pos, 1.f)); // TODO
+			transform = Mat4f(Mat<3, 4, float>(get_rotation_matrix(normalize(Vec3f(1.f, 0.f, 0.f)), 15.f * ANG_RAD), Vec3f(0.f)), Vec4f(pos, 1.f)); // TODO
 		}
 	}
 

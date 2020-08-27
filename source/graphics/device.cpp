@@ -8,47 +8,10 @@ namespace flame
 {
 	namespace graphics
 	{
-		VkBool32 VKAPI_PTR report_callback(
-			VkDebugReportFlagsEXT                       flags,
-			VkDebugReportObjectTypeEXT                  objectType,
-			uint64_t                                    object,
-			size_t                                      location,
-			int32_t                                     messageCode,
-			const char* pLayerPrefix,
-			const char* pMessage,
-			void* pUserData)
+		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
+			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
-			if (messageCode == 1) return VK_FALSE; // THREADING ERROR
-
 			printf("\n%s\n\n", pMessage);
-
-			if (messageCode == 8) return VK_FALSE; // Your computer is not support anisotropy, never mind
-			if (messageCode == 10) return VK_FALSE; // Dest AccessMask 0 [None] must have required access bit 4096 [VK_ACCESS_TRANSFER_WRITE_BIT]  when layout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, unless the app has previously added a barrier for this transition.
-			if (messageCode == 0) return VK_FALSE; // descriptor set bind warmming
-			if (messageCode == 2) return VK_FALSE; // Vertex attribute not consumed by vertex shader, never mind
-			if (messageCode == 53) return VK_FALSE; // You have gave more clear values, never mind
-
-			if (messageCode == 54 || messageCode == 113246970) return VK_FALSE; // vkCreateDevice: pCreateInfo->pQueueCreateInfos[0].queueFamilyIndex (= 0) is not less than any previously obtained pQueueFamilyPropertyCount from vkGetPhysicalDeviceQueueFamilyProperties (the pQueueFamilyPropertyCount was never obtained)
-			if (messageCode == 5) return VK_FALSE; // SPIR-V module not valid: Operand 4 of MemberDecorate requires one of these capabilities: MultiViewport 
-			if (messageCode == 13) return VK_FALSE; // Shader expects at least n descriptors but only less provided, never mind
-			if (messageCode == 61) return VK_FALSE; // Some descriptor maybe used before any update, never mind
-			if (messageCode == 15) return VK_FALSE; // Shader requires VkPhysicalDeviceFeatures::tessellationShader but is not enabled on the device, never mind
-
-			if (messageCode == 52 || messageCode == 440402828) return VK_FALSE; // At Draw time the active render pass is incompatible w/ gfx pipeline
-
-																				// ignore above
-
-			if (messageCode == 6)
-				return VK_FALSE;
-			if (messageCode == 101) return VK_FALSE; // vkQueuePresentKHR: Presenting image without calling vkGetPhysicalDeviceSurfaceSupportKHR
-			if (messageCode == 100) return VK_FALSE; // vkCreateSwapChainKHR(): surface capabilities not retrieved for this physical device
-			if (messageCode == 1922 || messageCode == 341838316) return VK_FALSE; // vkCreateSwapChainKHR(): pCreateInfo->surface is not known at this time to be supported for presentation by this device. The vkGetPhysicalDeviceSurfaceSupportKHR() must be called beforehand, and it must return VK_TRUE support with this surface for at least one queue family of this device
-			if (messageCode == 24) return VK_FALSE; // Vertex buffers are bound to command buffer but no vertex buffers are attached to this Pipeline State Object.
-			if (messageCode == 59) return VK_FALSE; // Descriptor set encountered the following validation error at vkCmdDrawIndexed() time: Descriptor is being used in draw but has not been updated.
-			if (messageCode == 63) return VK_FALSE; // vkBeginCommandBuffer(): Secondary Command Buffers may perform better if a valid framebuffer parameter is specified.
-			if (messageCode == 14) return VK_FALSE;
-			if (messageCode == 12) return VK_FALSE; // Push constant range covering variable starting at offset not accessible from stage
-			if (messageCode == 4) return VK_FALSE;  //Pipeline needs renderpass information
 
 			return VK_FALSE;
 		}
@@ -84,7 +47,7 @@ namespace flame
 
 			if (debug)
 			{
-				static auto _vkCreateDebugReportCallbackEXT = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"));
+				static auto _vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)(vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"));
 
 				VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
 				callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;

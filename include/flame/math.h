@@ -714,9 +714,9 @@ namespace flame
 	template <uint N, class T>
 	Vec<N, T> operator/(T lhs, const Vec<N, T>& rhs)
 	{
-		Vec<N, T> ret(rhs);
+		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
-			ret[i] /= lhs;
+			ret[i] = lhs / rhs[i];
 		return ret;
 	}
 

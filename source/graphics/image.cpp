@@ -77,7 +77,7 @@ namespace flame
 
 			default_views.resize(level);
 			for (auto i = 0; i < level; i++)
-				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, ImageSubresource{ (uint)i }));
+				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
 
 			if (data)
 			{
@@ -88,11 +88,11 @@ namespace flame
 
 				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 				cb->begin(true);
-				cb->image_barrier(this, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
 				cpy.image_extent = this->size;
 				cb->copy_buffer_to_image(staging_buffer.get(), this, { &cpy, 1 });
-				cb->image_barrier(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+				cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
 				auto q = d->graphics_queue.get();
 				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
@@ -112,7 +112,7 @@ namespace flame
 
 			default_views.resize(level);
 			for (auto i = 0; i < level; i++)
-				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, ImageSubresource{ (uint)i }));
+				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
 		}
 
 		ImagePrivate::~ImagePrivate()
@@ -124,24 +124,13 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::change_layout(ImageLayout from, ImageLayout to)
-		{
-			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->begin(true);
-			cb->image_barrier(this, from, to);
-			cb->end();
-			auto q = device->graphics_queue.get();
-			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-			q->wait_idle();
-		}
-
 		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
 		{
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->begin(true);
-			cb->image_barrier(this, current_layout, ImageLayoutTransferDst);
+			cb->image_barrier(this, {}, current_layout, ImageLayoutTransferDst);
 			cb->clear_color_image(this, color);
-			cb->image_barrier(this, ImageLayoutTransferDst, after_layout);
+			cb->image_barrier(this, {}, ImageLayoutTransferDst, after_layout);
 			cb->end();
 			auto q = device->graphics_queue.get();
 			q->submit(std::array{ cb.get()}, nullptr, nullptr, nullptr);
@@ -158,12 +147,12 @@ namespace flame
 
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->begin(true);
-			cb->image_barrier(this, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
+			cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
 			BufferImageCopy cpy;
 			cpy.image_offset = offset;
 			cpy.image_extent = extent;
 			cb->copy_image_to_buffer(this, stag_buf.get(), { &cpy, 1 });
-			cb->image_barrier(this, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+			cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = device->graphics_queue.get();
 			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
@@ -187,12 +176,12 @@ namespace flame
 
 			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 			cb->begin(true);
-			cb->image_barrier(this, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+			cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 			BufferImageCopy cpy;
 			cpy.image_offset = offset;
 			cpy.image_extent = extent;
 			cb->copy_buffer_to_image(stag_buf.get(), this, { &cpy, 1 });
-			cb->image_barrier(this, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = device->graphics_queue.get();
 			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
@@ -210,11 +199,11 @@ namespace flame
 
 			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
 			cb->begin(true);
-			cb->image_barrier(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			BufferImageCopy cpy;
 			cpy.image_offset = i->size;
 			cb->copy_buffer_to_image(staging_buffer.get(), i, { &cpy, 1 });
-			cb->image_barrier(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = d->graphics_queue.get();
 			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
@@ -313,9 +302,9 @@ namespace flame
 
 			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
 			cb->begin(true);
-			cb->image_barrier(i, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->copy_buffer_to_image(staging_buffer.get(), i, { buffer_copy_regions.data(), buffer_copy_regions.size() });
-			cb->image_barrier(i, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
+			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = d->graphics_queue.get();
 			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);

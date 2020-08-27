@@ -2,6 +2,12 @@
 <prefab>
   <entity>
     <cElement />
+    <cNode />
+    <cObject />
+    <entity name="camera">
+      <cNode />
+      <cCamera />
+    </entity>
     <entity>
       <cElement width="200" height="200" padding="8,8,8,8" border="1.0" fill_color="240,240,240,255" />
       <cText text="Hello" />

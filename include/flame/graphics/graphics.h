@@ -164,6 +164,37 @@ namespace flame
 			FilterLinear
 		};
 
+		enum AccessFlags
+		{
+			AccessNone = 0,
+			AccessIndirectCommandRead = 1 << 0,
+			AccessIndexRead = 1 << 1,
+			AccessVertexAttributeRead = 1 << 2,
+			AccessUniformRead = 1 << 3,
+			AccessInputAttachmentRead = 1 << 4,
+			AccessShaderRead = 1 << 5,
+			AccessShaderWrite = 1 << 6,
+			AccessColorAttachmentRead = 1 << 7,
+			AccessColorAttachmentWrite = 1 << 8,
+			AccessDepthAttachmentRead = 1 << 9,
+			AccessDepthAttachmentWrite = 1 << 10,
+			AccessTransferRead = 1 << 11,
+			AccessTransferWrite = 1 << 12,
+			AccessHostRead = 1 << 13,
+			AccessHostWrite = 1 << 14,
+			AccessMemoryRead = 1 << 15,
+			AccessMemoryWrite = 1 << 16
+		};
+
+		inline AccessFlags operator| (AccessFlags a, AccessFlags b) { return (AccessFlags)((int)a | (int)b); }
+
+		enum AttachmentLoadOp
+		{
+			AttachmentLoad,
+			AttachmentClear,
+			AttachmentDontCare
+		};
+
 		enum QueueFamily
 		{
 			QueueGraphics,
@@ -305,26 +336,5 @@ namespace flame
 			DynamicStateStencilWriteMask,
 			DynamicStateStencilReference
 		};
-
-		enum AccessFlags
-		{
-			AccessIndirectCommandRead = 1 << 0,
-			AccessIndexRead = 1 << 1,
-			AccessVertexAttributeRead = 1 << 2,
-			AccessUniformRead = 1 << 3,
-			AccessInputAttachmentRead = 1 << 4,
-			AccessShaderRead = 1 << 5,
-			AccessShaderWrite = 1 << 6,
-			AccessColorAttachmentRead = 1 << 7,
-			AccessColorAttachmentWrite = 1 << 8,
-			AccessDepthAttachmentRead = 1 << 9,
-			AccessDepthAttachmentWrite = 1 << 10,
-			AccessTransferRead = 1 << 11,
-			AccessTransferWrite = 1 << 12,
-			AccessHostRead = 1 << 13,
-			AccessHostWrite = 1 << 14
-		};
-
-		inline AccessFlags operator| (AccessFlags a, AccessFlags b) { return (AccessFlags)((int)a | (int)b); }
 	}
 }

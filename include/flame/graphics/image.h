@@ -63,7 +63,6 @@ namespace flame
 
 			virtual ImageView* get_default_view(uint level = 0) const = 0;
 
-			virtual void change_layout(ImageLayout from, ImageLayout to) = 0;
 			virtual void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) = 0;
 
 			// accepted formats for get/set pixels: Format_R8G8B8A8_UNORM, Format_R16G16B16A16_UNORM
