@@ -1,6 +1,11 @@
-function make_obj(o, tbl)
+function make_obj(o, n)
+	local tbl = udts[n];
 	if (tbl == nil) then
-		return
+		tbl = udts["flame::"..n];
+		if (tbl == nil) then
+			print("script: cannot find udt "..n)
+			return
+		end
 	end
 	for k, v in pairs(tbl) do
 		o[k] = function(self, ...)

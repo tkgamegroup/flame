@@ -111,6 +111,12 @@ namespace flame
 			if (c.second->type_name == name)
 				return c.second.get();
 		}
+		name = "flame::" + name;
+		for (auto& c : components)
+		{
+			if (c.second->type_name == name)
+				return c.second.get();
+		}
 		return nullptr;
 	}
 

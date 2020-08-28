@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<prefab>
+  <entity>
+    <cElement x="20" y="8" />
+    <cLayout type="Vertical" gap="2" />
+    <entity src="text">
+      <cText text ="Roughness" />
+    </entity>
+    <entity src="slider">
+      <cSlider value_min="0" value_max="1" />
+    </entity>
+  </entity>
+</prefab>

@@ -1,11 +1,37 @@
 #include "../entity_private.h"
 #include "element_private.h"
+#include "text_private.h"
 #include "event_receiver_private.h"
 #include "slider_private.h"
 #include "../systems/event_dispatcher_private.h"
 
 namespace flame
 {
+	void cSliderPrivate::set_value(float v)
+	{
+		value = clamp(v, value_min, value_max);
+		proportion = (v - value_min) / value_max * bar_element->width;
+		thumb_element->set_x(proportion * bar_element->width);
+		text->set_text(std::to_wstring(value));
+		Entity::report_data_changed(this, S<ch("value")>::v);
+	}
+
+	void cSliderPrivate::set_value_min(float v)
+	{
+		value_min = v;
+		value = proportion * (value_max -value_min) + value_min;
+		text->set_text(std::to_wstring(value));
+		Entity::report_data_changed(this, S<ch("value")>::v);
+	}
+
+	void cSliderPrivate::set_value_max(float v)
+	{
+		value_max = v;
+		value = proportion * (value_max - value_min) + value_min;
+		text->set_text(std::to_wstring(value));
+		Entity::report_data_changed(this, S<ch("value")>::v);
+	}
+
 	void cSliderPrivate::on_gain_bar_element()
 	{
 		bar_element_listener = bar_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
@@ -15,7 +41,7 @@ namespace flame
 				switch (h)
 				{
 				case ch("width"):
-					thiz->thumb_element->set_x(thiz->v * thiz->bar_element->width);
+					thiz->thumb_element->set_x(thiz->proportion * thiz->bar_element->width);
 					break;
 				case ch("height"):
 					thiz->thumb_element->set_y(thiz->bar_element->height * 0.5f);
@@ -37,9 +63,12 @@ namespace flame
 			if (thiz->thumb_event_receiver->dispatcher->active == thiz->thumb_event_receiver)
 			{
 				auto x = clamp(thiz->thumb_element->x + disp.x(), 0.f, thiz->bar_element->width);
-				thiz->v = x / thiz->bar_element->width;
+				thiz->proportion = x / thiz->bar_element->width;
+				thiz->value = thiz->proportion * (thiz->value_max - thiz->value_min) + thiz->value_min;
 				thiz->thumb_element->set_x(x);
 				thiz->thumb_element->set_y(thiz->bar_element->height * 0.5f);
+				thiz->text->set_text(std::to_wstring(thiz->value));
+				Entity::report_data_changed(thiz, S<ch("value")>::v);
 			}
 		}, Capture().set_thiz(this));
 	}

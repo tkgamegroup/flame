@@ -7,15 +7,6 @@ namespace flame
 {
 	namespace script
 	{
-		static void format_type_name(std::string& name)
-		{
-			for (auto& ch : name)
-			{
-				if (ch == ':')
-					ch = '_';
-			}
-		}
-
 		static int l_call(lua_State* state)
 		{
 			if (lua_isuserdata(state, -1) && lua_isuserdata(state, -2))
@@ -63,7 +54,6 @@ namespace flame
 					auto tn = std::string(ret_type->get_name());
 					if (ret_type->get_tag() == TypePointer)
 					{
-						format_type_name(tn);
 						InstancePrivate::get()->add_object(*(void**)ret, "staging", tn.c_str());
 						lua_getglobal(state, "staging");
 					}
@@ -93,12 +83,13 @@ namespace flame
 
 			if (excute(L"setup.lua"))
 			{
+				lua_newtable(lua_state);
+				lua_setglobal(lua_state, "udts");
 				traverse_udts([](Capture& c, UdtInfo* udt) {
 					auto state = c.thiz<InstancePrivate>()->lua_state;
 					auto udt_name = std::string(udt->get_name());
 					if (udt_name.ends_with("Private"))
 						return;
-					format_type_name(udt_name);
 					lua_newtable(state);
 					auto count = udt->get_functions_count();
 					for (auto i = 0; i < count; i++)
@@ -108,7 +99,12 @@ namespace flame
 						lua_pushlightuserdata(state, f);
 						lua_settable(state, -3);
 					}
-					lua_setglobal(state, udt_name.c_str());
+					lua_setglobal(state, "udt");
+
+					lua_getglobal(state, "udts");
+					lua_pushstring(state, udt_name.c_str());
+					lua_getglobal(state, "udt");
+					lua_settable(state, -3);
 				}, Capture().set_thiz(this));
 			}
 		}
@@ -145,7 +141,7 @@ namespace flame
 
 			lua_getglobal(lua_state, "make_obj");
 			lua_getglobal(lua_state, name);
-			lua_getglobal(lua_state, type_name);
+			lua_pushstring(lua_state, type_name);
 			check_result(lua_pcall(lua_state, 2, 0, 0));
 		}
 
