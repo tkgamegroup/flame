@@ -73,6 +73,17 @@ namespace flame
 			return 0;
 		}
 
+		static int l_hash(lua_State* state)
+		{
+			if (lua_isstring(state, -1))
+			{
+				auto hash = std::hash<std::string>()(lua_tostring(state, -1));
+				lua_pushlightuserdata(state, (void*)hash);
+				return 1;
+			}
+			return 0;
+		}
+
 		InstancePrivate::InstancePrivate()
 		{
 			lua_state = luaL_newstate();
@@ -80,6 +91,9 @@ namespace flame
 
 			lua_pushcfunction(lua_state, l_call);
 			lua_setglobal(lua_state, "flame_call");
+
+			lua_pushcfunction(lua_state, l_hash);
+			lua_setglobal(lua_state, "flame_hash");
 
 			if (excute(L"setup.lua"))
 			{
@@ -105,6 +119,7 @@ namespace flame
 					lua_pushstring(state, udt_name.c_str());
 					lua_getglobal(state, "udt");
 					lua_settable(state, -3);
+					lua_pop(state, 1);
 				}, Capture().set_thiz(this));
 			}
 		}
@@ -143,6 +158,35 @@ namespace flame
 			lua_getglobal(lua_state, name);
 			lua_pushstring(lua_state, type_name);
 			check_result(lua_pcall(lua_state, 2, 0, 0));
+		}
+
+		void InstancePrivate::call_slot(uint s, uint parameters_count, Parameter* parameters)
+		{
+			lua_getglobal(lua_state, "slots");
+			lua_pushinteger(lua_state, s);
+			lua_gettable(lua_state, -2);
+			for (auto i = 0; i < parameters_count; i++)
+			{
+				auto& p = parameters[i];
+				switch (p.type)
+				{
+				case ScriptTypeInt:
+					lua_pushinteger(lua_state, *(int*)p.data);
+					break;
+				case ScriptTypePointer:
+					lua_pushlightuserdata(lua_state, *(void**)p.data);
+					break;
+				}
+			}
+			check_result(lua_pcall(lua_state, parameters_count, 0, 0));
+			lua_pop(lua_state, 1);
+		}
+
+		void InstancePrivate::release_slot(uint s)
+		{
+			lua_getglobal(lua_state, "release_slot");
+			lua_pushinteger(lua_state, s);
+			check_result(lua_pcall(lua_state, 1, 0, 0));
 		}
 
 		static InstancePrivate* instance = nullptr;

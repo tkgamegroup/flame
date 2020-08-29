@@ -50,6 +50,9 @@ namespace flame
 		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture) = 0;
 		virtual void remove_local_data_changed_listener(void* lis) = 0;
 
+		virtual void add_local_data_changed_listener_s(uint slot) = 0;
+		virtual void remove_local_data_changed_listener_s(uint slot) = 0;
+
 		virtual void load(const wchar_t* filename) = 0;
 		virtual void save(const wchar_t* filename) = 0;
 

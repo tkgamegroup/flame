@@ -58,6 +58,7 @@ namespace flame
 			virtual void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor = {}) = 0;
 
 			virtual void add_blur(const Vec4f& range, uint radius) = 0;
+			virtual void add_bloom() = 0;
 
 			virtual Vec4f get_scissor() const = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;

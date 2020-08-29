@@ -1,5 +1,6 @@
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
+#include "element_private.h"
 #include "blur_private.h"
 
 namespace flame

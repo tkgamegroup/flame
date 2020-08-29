@@ -1,10 +1,11 @@
 #pragma once
 
 #include <flame/universe/components/blur.h>
-#include "element_private.h"
 
 namespace flame
 {
+	struct cElementPrivate;
+
 	struct cBlurPrivate : cBlur // R ~ on_*
 	{
 		uint radius = 1.f;

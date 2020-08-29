@@ -6,8 +6,12 @@
     <entity src="text">
       <cText text ="Roughness" />
     </entity>
-    <entity src="slider">
+    <entity name="NDF_s" src="slider">
       <cSlider value_min="0" value_max="1" />
     </entity>
+    <entity name="NDF_t" src="text">
+      <cText text ="NDF: " />
+    </entity>
+    <cScript filename="tests/equation_test.lua" />
   </entity>
 </prefab>

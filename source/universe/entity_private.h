@@ -92,6 +92,7 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> local_message_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> child_message_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> local_data_changed_listeners;
+		std::vector<uint> local_data_changed_listeners_s;
 
 		std::filesystem::path src;
 
@@ -140,6 +141,9 @@ namespace flame
 		void remove_child_message_listener(void* lis) override;
 		void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture) override;
 		void remove_local_data_changed_listener(void* lis) override;
+
+		void add_local_data_changed_listener_s(uint slot) override;
+		void remove_local_data_changed_listener_s(uint slot) override;
 
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);

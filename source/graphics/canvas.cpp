@@ -1063,6 +1063,13 @@ namespace flame
 			cmds.push_back(cmd);
 		}
 
+		void CanvasPrivate::add_bloom()
+		{
+			Cmd cmd;
+			cmd.type = CmdBloom;
+			cmds.push_back(cmd);
+		}
+
 		void CanvasPrivate::set_scissor(const Vec4f& _scissor)
 		{
 			auto scissor = Vec4f(
@@ -1145,12 +1152,15 @@ namespace flame
 					passes.push_back(p);
 				}
 					break;
+				case CmdBloom:
+				{
+					Pass p;
+					p.type = PassBloom;
+					p.cmd_ids.push_back(i);
+					passes.push_back(p);
 				}
-			}
-			{
-				Pass p;
-				p.type = PassBloom;
-				passes.push_back(p);
+				break;
+				}
 			}
 
 			cb->begin();

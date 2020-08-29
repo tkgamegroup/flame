@@ -50,7 +50,8 @@ namespace flame
 				CmdDrawElement,
 				CmdSetScissor,
 				CmdDrawObject,
-				CmdBlur
+				CmdBlur,
+				CmdBloom
 			};
 
 			struct Cmd
@@ -197,6 +198,7 @@ namespace flame
 			void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor) override;
 
 			void add_blur(const Vec4f& range, uint radius) override;
+			void add_bloom() override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

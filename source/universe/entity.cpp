@@ -1,4 +1,5 @@
 #include <flame/foundation/typeinfo.h>
+#include <flame/script/script.h>
 #include <flame/universe/component.h>
 #include "entity_private.h"
 #include "world_private.h"
@@ -16,6 +17,9 @@ namespace flame
 
 	EntityPrivate::~EntityPrivate()
 	{
+		for (auto s : local_data_changed_listeners_s)
+			script::Instance::get()->release_slot(s);
+
 		for (auto& e : children)
 		{
 			for (auto c : e->local_message_dispatch_list)
@@ -811,6 +815,18 @@ namespace flame
 		});
 	}
 
+	void EntityPrivate::add_local_data_changed_listener_s(uint slot)
+	{
+		local_data_changed_listeners_s.push_back(slot);
+	}
+
+	void EntityPrivate::remove_local_data_changed_listener_s(uint slot)
+	{
+		std::erase_if(local_data_changed_listeners_s, [&](const auto& i) {
+			return i == slot;
+		});
+	}
+
 	static void load_prefab(EntityPrivate* dst, pugi::xml_node src, 
 		const std::vector<std::pair<std::string, std::string>>& nss)
 	{
@@ -1206,6 +1222,15 @@ namespace flame
 		}
 		for (auto& l : entity->local_data_changed_listeners)
 			l->call(c, hash);
+		for (auto s : entity->local_data_changed_listeners_s)
+		{
+			script::Parameter ps[2];
+			ps[0].type = script::ScriptTypePointer;
+			ps[0].data = &c;
+			ps[1].type = script::ScriptTypePointer;
+			ps[1].data = &hash;
+			script::Instance::get()->call_slot(s, size(ps), ps);
+		}
 		if (entity->parent)
 		{
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)

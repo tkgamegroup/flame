@@ -6,7 +6,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"text";
+auto test_prefab = L"tests/equation_test";
 
 Entity* root;
 
@@ -27,9 +27,6 @@ int main(int argc, char** args)
 	}
 	//e->save(L"d:/1.prefab");
 	root->add_child(e);
-
-	g_app.script_instance->add_object(e, "entity", "Entity");
-	g_app.script_instance->excute(L"d:/1.lua");
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);

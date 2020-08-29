@@ -14,10 +14,24 @@ namespace flame
 
 	namespace script
 	{
+		enum ScriptType
+		{
+			ScriptTypeInt,
+			ScriptTypePointer
+		};
+
+		struct Parameter
+		{
+			ScriptType type;
+			void* data;
+		};
+
 		struct Instance
 		{
 			virtual bool excute(const wchar_t* filename) = 0;
 			virtual void add_object(void* p, const char* name, const char* type_name) = 0;
+			virtual void call_slot(uint s, uint parameters_count, Parameter* parameters) = 0;
+			virtual void release_slot(uint s) = 0;
 
 			FLAME_SCRIPT_EXPORTS static Instance* get();
 		};
