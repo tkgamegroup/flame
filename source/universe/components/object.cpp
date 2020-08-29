@@ -8,7 +8,7 @@ namespace flame
 	void cObjectPrivate::draw(graphics::Canvas* canvas, cCamera* _camera)
 	{
 		auto camera = (cCameraPrivate*)_camera;
-		canvas->add_object(0, camera->vp_matrix * node->transform, transpose(inverse(camera->view_matrix * node->transform)));
+		canvas->add_object(0, camera->vp_matrix * node->transform, Mat4f(Mat3f(camera->view_matrix) * node->rotate_matrix));
 	}
 
 	cObject* cObject::create()

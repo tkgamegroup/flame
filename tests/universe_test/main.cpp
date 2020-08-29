@@ -6,7 +6,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"tests/equation_test";
+auto test_prefab = L"tests/cube_test";
 
 Entity* root;
 

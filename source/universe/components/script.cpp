@@ -4,24 +4,24 @@
 
 namespace flame
 {
-	void cScriptPrivate::set_filename(const wchar_t* fn)
+	void cScriptPrivate::set_src(const wchar_t* fn)
 	{
-		if (filename == fn)
+		if (src == fn)
 			return;
-		filename = fn;
+		src = fn;
 		do_file();
-		Entity::report_data_changed(this, S<ch("filename")>::v);
+		Entity::report_data_changed(this, S<ch("src")>::v);
 	}
 
 	void cScriptPrivate::do_file()
 	{
-		if (!filename.empty() && entity)
+		if (!src.empty() && entity)
 		{
 			looper().add_event([](Capture& c) {
 				auto thiz = c.thiz<cScriptPrivate>();
 				auto ins = script::Instance::get();
 				ins->add_object(thiz->entity, "entity", "Entity");
-				ins->excute(thiz->filename.c_str());
+				ins->excute(thiz->src.c_str());
 			}, Capture().set_thiz(this));
 		}
 	}

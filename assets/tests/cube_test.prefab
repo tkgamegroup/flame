@@ -4,7 +4,7 @@
     <cElement />
     <cNode />
     <entity name="camera">
-      <cNode />
+      <cNode pos="0,0,-5" />
       <cCamera />
     </entity>
     <entity>

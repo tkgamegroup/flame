@@ -16,8 +16,6 @@ namespace flame
 		struct CommandBufferPrivate;
 
 		const auto resources_count = 64U;
-		const auto models_count = 1024U;
-		const auto downsample_level = 6U;
 
 		struct CanvasResourcePrivate : CanvasResource
 		{
@@ -84,18 +82,18 @@ namespace flame
 				Vec4c col;
 			};
 
-			struct AddedMesh
+			struct BoundMesh
 			{
 				uint vtx_off;
 				uint idx_off;
 				uint idx_cnt;
 			};
 
-			struct AddedModel
+			struct BoundModel
 			{
 				std::string name;
 				ModelPrivate* model;
-				std::vector<AddedMesh> meshes;
+				std::vector<BoundMesh> meshes;
 			};
 
 			struct ObjectMatrix
@@ -111,7 +109,7 @@ namespace flame
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
 			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
-			std::unique_ptr<AddedModel> models[models_count];
+			std::vector<BoundModel> models;
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
 			bool model_dirty = true;
@@ -129,6 +127,7 @@ namespace flame
 			std::unique_ptr<BufferPrivate> object_indirect_buffer;
 			std::unique_ptr<BufferPrivate> object_indirect_staging_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
 
 			ElementVertex* element_vertex_buffer_end;
 			uint* element_index_buffer_end;
@@ -150,14 +149,14 @@ namespace flame
 			std::unique_ptr<FramebufferPrivate> forward16_framebuffer;
 
 			std::unique_ptr<ImagePrivate> back8_image;
-			std::unique_ptr<FramebufferPrivate> back8_framebuffers[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> back8_nearest_descriptorsets[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> back8_linear_descriptorsets[downsample_level];
+			std::vector<std::unique_ptr<FramebufferPrivate>> back8_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back8_nearest_descriptorsets;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back8_linear_descriptorsets;
 
 			std::unique_ptr<ImagePrivate> back16_image;
-			std::unique_ptr<FramebufferPrivate> back16_framebuffers[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> back16_nearest_descriptorsets[downsample_level];
-			std::unique_ptr<DescriptorSetPrivate> back16_linear_descriptorsets[downsample_level];
+			std::vector<std::unique_ptr<FramebufferPrivate>> back16_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back16_nearest_descriptorsets;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back16_linear_descriptorsets;
 
 			std::vector<std::vector<Vec2f>> paths;
 

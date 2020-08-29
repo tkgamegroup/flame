@@ -14,8 +14,8 @@ namespace flame
 		{
 		}
 
-		virtual const wchar_t* get_filename() const = 0;
-		virtual void set_filename(const wchar_t* fn) = 0;
+		virtual const wchar_t* get_src() const = 0;
+		virtual void set_src(const wchar_t* fn) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cScript* create();
 	};

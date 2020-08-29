@@ -2,8 +2,8 @@
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "element_private.h"
-#include "../systems/type_setting_private.h"
 #include "../systems/renderer_private.h"
+#include "../systems/type_setting_private.h"
 
 namespace flame
 {

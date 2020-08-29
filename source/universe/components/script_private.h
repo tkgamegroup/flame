@@ -6,10 +6,10 @@ namespace flame
 {
 	struct cScriptPrivate : cScript // R ~ on_*
 	{
-		std::filesystem::path filename;
+		std::filesystem::path src;
 
-		const wchar_t* get_filename() const override { return filename.c_str(); }
-		void set_filename(const wchar_t* fn) override;
+		const wchar_t* get_src() const override { return src.c_str(); }
+		void set_src(const wchar_t* fn) override;
 
 		void do_file();
 

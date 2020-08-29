@@ -184,12 +184,13 @@ namespace flame
 					DescriptorBindingInfo db;
 					db.type = DescriptorSampledImage;
 					db.count = resources_count;
-					db.name = "images";
 					element_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
 				{
-					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, {});
+					DescriptorBindingInfo db;
+					db.type = DescriptorStorageBuffer;
+					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
 				{
@@ -236,49 +237,30 @@ namespace flame
 				}
 
 				{
-					VertexAttributeInfo vias1[4];
-					vias1[0].location = 0;
-					vias1[0].format = Format_R32G32B32_SFLOAT;
-					vias1[1].location = 1;
-					vias1[1].format = Format_R32G32_SFLOAT;
-					vias1[2].location = 2;
-					vias1[2].format = Format_R32G32B32_SFLOAT;
-					vias1[3].location = 3;
-					vias1[3].format = Format_R32G32B32_SFLOAT;
-					VertexAttributeInfo vias2[8];
-					vias2[0].location = 4;
-					vias2[0].format = Format_R32G32B32A32_SFLOAT;
-					vias2[1].location = 5;
-					vias2[1].format = Format_R32G32B32A32_SFLOAT;
-					vias2[2].location = 6;
-					vias2[2].format = Format_R32G32B32A32_SFLOAT;
-					vias2[3].location = 7;
-					vias2[3].format = Format_R32G32B32A32_SFLOAT;
-					vias2[4].location = 8;
-					vias2[4].format = Format_R32G32B32A32_SFLOAT;
-					vias2[5].location = 9;
-					vias2[5].format = Format_R32G32B32A32_SFLOAT;
-					vias2[6].location = 10;
-					vias2[6].format = Format_R32G32B32A32_SFLOAT;
-					vias2[7].location = 11;
-					vias2[7].format = Format_R32G32B32A32_SFLOAT;
-					VertexBufferInfo vibs[2];
-					vibs[0].attributes_count = size(vias1);
-					vibs[0].attributes = vias1;
-					vibs[1].attributes_count = size(vias2);
-					vibs[1].attributes = vias2;
-					vibs[1].rate = VertexInputRateInstance;
+					VertexAttributeInfo vias[4];
+					vias[0].location = 0;
+					vias[0].format = Format_R32G32B32_SFLOAT;
+					vias[1].location = 1;
+					vias[1].format = Format_R32G32_SFLOAT;
+					vias[2].location = 2;
+					vias[2].format = Format_R32G32B32_SFLOAT;
+					vias[3].location = 3;
+					vias[3].format = Format_R32G32B32_SFLOAT;
+					VertexBufferInfo vib;
+					vib.attributes_count = size(vias);
+					vib.attributes = vias;
+					RasterInfo rst;
 					VertexInfo vi;
-					vi.buffers_count = size(vibs);
-					vi.buffers = vibs;
+					vi.buffers_count = 1;
+					vi.buffers = &vib;
 					DepthInfo dep;
 					ShaderPrivate* shaders[] = {
 						new ShaderPrivate(d, L"forward.vert"),
 						new ShaderPrivate(d, L"forward.frag")
 					};
-					forward8_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					forward8_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					forward16_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					forward16_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
 				}
 
@@ -352,7 +334,7 @@ namespace flame
 			model_vertex_staging_buffer.reset(new BufferPrivate(d, model_vertex_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			model_index_buffer.reset(new BufferPrivate(d, 400000 * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
 			model_index_staging_buffer.reset(new BufferPrivate(d, model_index_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			object_matrix_buffer.reset(new BufferPrivate(d, 10000 * sizeof(Mat4f), BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
+			object_matrix_buffer.reset(new BufferPrivate(d, 10000 * sizeof(Mat4f), BufferUsageTransferDst | BufferUsageStorage, MemoryPropertyDevice));
 			object_matrix_staging_buffer.reset(new BufferPrivate(d, object_matrix_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			object_indirect_buffer.reset(new BufferPrivate(d, 10000 * sizeof(DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
 			object_indirect_staging_buffer.reset(new BufferPrivate(d, object_indirect_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
@@ -375,16 +357,19 @@ namespace flame
 
 			for (auto i = 0; i < models_count; i++)
 			{
-				auto m = new AddedModel;
+				auto m = new BoundModel;
 				m->name = "cube";
 				m->model = (ModelPrivate*)Model::get_standard(StandardModelCube);
 				models[i].reset(m);
 			}
 
-			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
 			auto sp = d->sampler_linear.get();
+
+			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
+			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
 			for (auto i = 0; i < resources_count; i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp);
+			forward_descriptorset->set_buffer(0, 0, object_matrix_buffer.get());
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -401,11 +386,13 @@ namespace flame
 			forward8_framebuffers.clear();
 
 			back8_image.reset();
-			for (auto i = 0; i < downsample_level; i++)
-			{
-				back8_framebuffers[i].reset();
-				back8_nearest_descriptorsets[i].reset();
-			}
+			back8_framebuffers.clear();
+			back8_nearest_descriptorsets.clear();
+			back8_linear_descriptorsets.clear();
+			back16_image.reset();
+			back16_framebuffers.clear();
+			back16_nearest_descriptorsets.clear();
+			back16_linear_descriptorsets.clear();
 
 			if (views.empty())
 				target_size = 0.f;
@@ -417,7 +404,7 @@ namespace flame
 				auto sp_nr = device->sampler_nearest.get();
 				auto sp_ln = device->sampler_linear.get();
 
-				target_size = views[0]->image->size;
+				target_size = views[0]->image->sizes[0];
 				target_imageviews.resize(views.size());
 				target_framebuffers.resize(views.size());
 				target_nearest_descriptorsets.resize(views.size());
@@ -464,28 +451,33 @@ namespace flame
 					forward16_framebuffer.reset(new FramebufferPrivate(device, forward16_renderpass, vs));
 				}
 
-				back8_image.reset(new ImagePrivate(device, Format_B8G8R8A8_UNORM, target_size, downsample_level, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-				back16_image.reset(new ImagePrivate(device, Format_R16G16B16A16_SFLOAT, target_size, downsample_level, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-				for (auto i = 0; i < downsample_level; i++)
+				back8_image.reset(new ImagePrivate(device, Format_B8G8R8A8_UNORM, target_size, 0xFFFFFFFF, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				back8_framebuffers.resize(back8_image->level);
+				back8_nearest_descriptorsets.resize(back8_image->level);
+				back8_linear_descriptorsets.resize(back8_image->level);
+				for (auto i = 0; i < back8_image->level; i++)
 				{
 					cb->image_barrier(back8_image.get(), { (uint)i }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					auto iv = back8_image->default_views[i].get();
+					back8_framebuffers[i].reset(new FramebufferPrivate(device, one_image8_renderpass, { &iv, 1 }));
+					back8_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
+					back8_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
+					back8_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
+					back8_linear_descriptorsets[i]->set_image(0, 0, iv, sp_ln);
+				}
+				back16_image.reset(new ImagePrivate(device, Format_R16G16B16A16_SFLOAT, target_size, 0xFFFFFFFF, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				back16_framebuffers.resize(back16_image->level);
+				back16_nearest_descriptorsets.resize(back16_image->level);
+				back16_linear_descriptorsets.resize(back16_image->level);
+				for (auto i = 0; i < back16_image->level; i++)
+				{
 					cb->image_barrier(back16_image.get(), { (uint)i }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-					{
-						auto iv = back8_image->default_views[i].get();
-						back8_framebuffers[i].reset(new FramebufferPrivate(device, one_image8_renderpass, { &iv, 1 }));
-						back8_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
-						back8_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
-						back8_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
-						back8_linear_descriptorsets[i]->set_image(0, 0, iv, sp_ln);
-					}
-					{
-						auto iv = back16_image->default_views[i].get();
-						back16_framebuffers[i].reset(new FramebufferPrivate(device, one_image16_renderpass, { &iv, 1 }));
-						back16_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
-						back16_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
-						back16_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
-						back16_linear_descriptorsets[i]->set_image(0, 0, iv, sp_ln);
-					}
+					auto iv = back16_image->default_views[i].get();
+					back16_framebuffers[i].reset(new FramebufferPrivate(device, one_image16_renderpass, { &iv, 1 }));
+					back16_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
+					back16_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), one_image_descriptorsetlayout));
+					back16_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
+					back16_linear_descriptorsets[i]->set_image(0, 0, iv, sp_ln);
 				}
 
 				cb->end();
@@ -999,7 +991,7 @@ namespace flame
 					m->meshes.clear();
 					for (auto& ms : m->model->meshes)
 					{
-						AddedMesh am;
+						BoundMesh am;
 						am.vtx_off = vtx_off;
 						am.idx_off = idx_off;
 						am.idx_cnt = ms->indices.size();
@@ -1254,10 +1246,10 @@ namespace flame
 					}
 					cb->set_scissor(curr_scissor);
 					cb->bind_vertex_buffer(model_vertex_buffer.get(), 0);
-					cb->bind_vertex_buffer(object_matrix_buffer.get(), 1);
 					cb->bind_index_buffer(model_index_buffer.get(), IndiceTypeUint);
 					cb->begin_renderpass(hdr ? forward16_framebuffer.get() : forward8_framebuffers[image_index].get());
 					cb->bind_pipeline(pl_fwd);
+					cb->bind_descriptor_set(forward_descriptorset.get(), 0, forward_pipelinelayout);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -1319,29 +1311,25 @@ namespace flame
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
-					Vec2u lv_sz[downsample_level];
-					for (auto i = 0; i < downsample_level; i++)
-						lv_sz[i] = Vec2u(target_size.x() >> i, target_size.y() >> i);
-
-					for (auto i = 0; i < downsample_level - 1; i++)
+					for (auto i = 0; i < back16_image->level - 1; i++)
 					{
-						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)lv_sz[i + 1]));
+						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)back16_image->sizes[i + 1]));
 						cb->image_barrier(back16_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly);
 						cb->begin_renderpass(back16_framebuffers[i + 1].get());
 						cb->bind_pipeline(downsample_pipeline);
 						cb->bind_descriptor_set(back16_linear_descriptorsets[i].get(), 0, one_image_pc8_pipelinelayout);
-						cb->push_constant_t(0, 1.f / (Vec2f)lv_sz[i], one_image_pc8_pipelinelayout);
+						cb->push_constant_t(0, 1.f / (Vec2f)back16_image->sizes[i], one_image_pc8_pipelinelayout);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
-					for (auto i = downsample_level - 1; i > 0; i--)
+					for (auto i = back16_image->level - 1; i > 0; i--)
 					{
-						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)lv_sz[i - 1]));
+						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)back16_image->sizes[i - 1]));
 						cb->image_barrier(back16_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly);
 						cb->begin_renderpass(back16_framebuffers[i - 1].get());
 						cb->bind_pipeline(upsample_pipeline);
 						cb->bind_descriptor_set(back16_linear_descriptorsets[i].get(), 0, one_image_pc8_pipelinelayout);
-						cb->push_constant_t(0, 1.f / (Vec2f)lv_sz[(uint)i - 1], one_image_pc8_pipelinelayout);
+						cb->push_constant_t(0, 1.f / (Vec2f)back16_image->sizes[(uint)i - 1], one_image_pc8_pipelinelayout);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}

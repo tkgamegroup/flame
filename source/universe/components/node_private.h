@@ -10,6 +10,7 @@ namespace flame
 	}
 	
 	struct cCamera;
+	struct sRendererPrivate;
 
 	struct cNodePrivate : cNode // R ~ on_*
 	{
@@ -18,11 +19,24 @@ namespace flame
 		Vec3f scale = Vec3f(1.f);
 
 		bool transform_dirty = true;
+		Mat3f rotate_matrix;
 		Mat4f transform;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*, cCamera*)>> drawers;
 
+		sRendererPrivate* renderer = nullptr; // R ref
+
+		Vec3f get_pos() const override { return pos; }
+		void set_pos(const Vec3f& pos) override;
+		Vec4f get_quat() const override { return quat; }
+		void set_quat(const Vec4f& quat) override;
+		Vec3f get_scale() const override { return scale; }
+		void set_scale(const Vec3f & scale) override;
+
 		void update_transform();
+
+		void mark_transform_dirty();
+		void mark_drawing_dirty();
 
 		void on_local_message(Message msg, void* p) override;
 	};

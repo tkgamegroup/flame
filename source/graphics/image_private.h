@@ -15,7 +15,7 @@ namespace flame
 			DevicePrivate* device;
 			
 			Format format;
-			Vec2u size;
+			std::vector<Vec2u> sizes;
 			uint level;
 			uint layer;
 			SampleCount sample_count;
@@ -24,6 +24,7 @@ namespace flame
 			VkImage vk_image = 0;
 			std::vector<std::unique_ptr<ImageViewPrivate>> default_views;
 
+			void init(const Vec2u& size);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
@@ -31,7 +32,7 @@ namespace flame
 			void release() override { delete this; }
 
 			Format get_format() const override { return format; }
-			Vec2u get_size() const override { return size; }
+			Vec2u get_size(uint lv) const override { return sizes[lv]; }
 			uint get_level() const override { return level; }
 			uint get_layer() const override { return layer; }
 			SampleCount get_sample_count() const override { return sample_count; }

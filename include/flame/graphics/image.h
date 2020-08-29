@@ -56,7 +56,7 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual Format get_format() const = 0;
-			virtual Vec2u get_size() const = 0;
+			virtual Vec2u get_size(uint lv = 0) const = 0;
 			virtual uint get_level() const = 0;
 			virtual uint get_layer() const = 0;
 			virtual SampleCount get_sample_count() const = 0;

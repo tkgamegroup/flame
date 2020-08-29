@@ -33,14 +33,31 @@ namespace flame
 			return 0;
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) :
+		void ImagePrivate::init(const Vec2u& size)
+		{
+			auto s = size;
+			for (auto i = 0; i < level; i++)
+			{
+				if (s.x() == 0 && s.y() == 0)
+				{
+					level = i;
+					break;
+				}
+				sizes.push_back(max(s, Vec2u(1U)));
+				s.x() >>= 1;
+				s.y() >>= 1;
+			}
+		}
+
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) :
 			device(d),
 			format(format),
-			size(size),
-			level(level),
+			level(_level),
 			layer(layer),
 			sample_count(sample_count)
 		{
+			init(size);
+
 			VkImageCreateInfo imageInfo;
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 			imageInfo.flags = 0;
@@ -90,7 +107,7 @@ namespace flame
 				cb->begin(true);
 				cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 				BufferImageCopy cpy;
-				cpy.image_extent = this->size;
+				cpy.image_extent = size;
 				cb->copy_buffer_to_image(staging_buffer.get(), this, { &cpy, 1 });
 				cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
@@ -100,14 +117,15 @@ namespace flame
 			}
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native) :
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, void* native) :
 			device(d),
 			format(format),
-			size(size),
-			level(level),
+			level(_level),
 			layer(layer),
 			sample_count(SampleCount_1)
 		{
+			init(size);
+
 			vk_image = (VkImage)native;
 
 			default_views.resize(level);
@@ -201,7 +219,7 @@ namespace flame
 			cb->begin(true);
 			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			BufferImageCopy cpy;
-			cpy.image_offset = i->size;
+			cpy.image_offset = i->sizes[0];
 			cb->copy_buffer_to_image(staging_buffer.get(), i, { &cpy, 1 });
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
@@ -404,8 +422,8 @@ namespace flame
 
 			image = ImagePrivate::create(d, image_filename.c_str());
 
-			auto w = (float)image->size.x();
-			auto h = (float)image->size.y();
+			auto w = (float)image->sizes[0].x();
+			auto h = (float)image->sizes[0].y();
 
 			for (auto& e : ini.get_section_entries("tiles"))
 			{

@@ -23,8 +23,8 @@ namespace flame
 		struct DescriptorBindingInfo
 		{
 			DescriptorType type;
-			uint count;
-			const char* name;
+			uint count = 1;
+			const char* name = "";
 		};
 
 		struct DescriptorBinding
@@ -69,7 +69,7 @@ namespace flame
 		{
 			uint location;
 			Format format;
-			const char* name;
+			const char* name = "";
 		};
 
 		struct VertexBufferInfo
@@ -89,9 +89,9 @@ namespace flame
 
 		struct RasterInfo
 		{
-			bool depth_clamp;
-			PolygonMode polygon_mode;
-			CullMode cull_mode;
+			bool depth_clamp = true;
+			PolygonMode polygon_mode = PolygonModeFill;
+			CullMode cull_mode = CullModeBack;
 		};
 
 		struct DepthInfo

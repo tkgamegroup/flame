@@ -94,8 +94,8 @@ namespace flame
 
 							image->set_pixels(atlas_pos, g->size, bitmap);
 
-							g->uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->size.y()) / image->size,
-								Vec2f(atlas_pos.x() + g->size.x(), atlas_pos.y()) / image->size);
+							g->uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->size.y()) / image->sizes[0],
+								Vec2f(atlas_pos.x() + g->size.x(), atlas_pos.y()) / image->sizes[0]);
 						}
 						else
 							printf("font atlas is full\n");

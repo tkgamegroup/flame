@@ -12,6 +12,6 @@
     <entity name="NDF_t" src="text">
       <cText text ="NDF: " />
     </entity>
-    <cScript filename="tests/equation_test.lua" />
+    <cScript src="tests/equation_test.lua" />
   </entity>
 </prefab>

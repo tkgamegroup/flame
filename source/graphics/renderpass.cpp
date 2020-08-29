@@ -159,10 +159,7 @@ namespace flame
 			create_info.flags = 0;
 			create_info.pNext = nullptr;
 			auto first_view = _views[0];
-			auto lv = first_view->subresource.base_level;
-			auto size = first_view->image->size;
-			size.x() = max(1U, size.x() >> lv);
-			size.y() = max(1U, size.y() >> lv);
+			auto size = first_view->image->sizes[first_view->subresource.base_level];
 			create_info.width = size.x();
 			create_info.height = size.y();
 			create_info.layers = 1;

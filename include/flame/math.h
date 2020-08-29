@@ -1086,14 +1086,14 @@ namespace flame
 				v_[i] = Vec<N, T>(_m[i], _v[i]);
 		}
 
-		template <uint O, class U>
-		Mat(const Vec<O, U>& _v1, const Mat<3, O, U>& _m1)
+		template <class U>
+		Mat(const Mat<M - 1, N - 1, U>& _m)
 		{
-			static_assert(N == O && M == 4);
-			v_[0] = _v1;
-			v_[1] = _m1[0];
-			v_[2] = _m1[1];
-			v_[3] = _m1[2];
+			for (auto i = 0; i < M - 1; i++)
+				v_[i] = Vec<N, T>(_m[i], 0.f);
+			for (auto i = 0; i < N - 1; i++)
+				v_[M - 1][i] = 0.f;
+			v_[M - 1][N - 1] = 1.f;
 		}
 
 		Mat<N, M, T>& operator=(T rhs)
@@ -2030,7 +2030,7 @@ namespace flame
 	// (x, y, z) - vector, (w) - scalar
 
 	template <class T>
-	Vec<4, T> quat(const Mat<3, 3, T>& m)
+	Vec<4, T> get_quat(const Mat<3, 3, T>& m)
 	{
 		T s;
 		T tq[4];
@@ -2103,7 +2103,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<3, 3, T> rotation(const Vec<4, T>& q)
+	Mat<3, 3, T> get_rotation_matrix(const Vec<4, T>& q)
 	{
 		T wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
 
