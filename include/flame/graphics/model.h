@@ -16,7 +16,7 @@ namespace flame
 		struct Model
 		{
 			FLAME_GRAPHICS_EXPORTS static Model* get_standard(StandardModel m);
-			FLAME_GRAPHICS_EXPORTS static Model* create();
+			FLAME_GRAPHICS_EXPORTS static Model* create(const wchar_t* filename);
 		};
 	}
 }

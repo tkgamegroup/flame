@@ -102,6 +102,12 @@ namespace flame
 				Mat4f nor;
 			};
 
+			struct LightInfo
+			{
+				Vec4f col;
+				Vec4f pos;
+			};
+
 			DevicePrivate* device;
 
 			bool hdr = false;
@@ -110,9 +116,12 @@ namespace flame
 
 			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
 			std::vector<BoundModel> models;
+			uint uploaded_models_count = 0;
+			uint uploaded_vertices_count = 0;
+			uint uploaded_indices_count = 0;
+
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
-			bool model_dirty = true;
 
 			std::unique_ptr<BufferPrivate> element_vertex_buffer;
 			std::unique_ptr<BufferPrivate> element_vertex_staging_buffer;
@@ -126,13 +135,16 @@ namespace flame
 			std::unique_ptr<BufferPrivate> object_matrix_staging_buffer;
 			std::unique_ptr<BufferPrivate> object_indirect_buffer;
 			std::unique_ptr<BufferPrivate> object_indirect_staging_buffer;
+			std::unique_ptr<BufferPrivate> light_info_buffer;
+			std::unique_ptr<BufferPrivate> light_info_staging_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
 
-			ElementVertex* element_vertex_buffer_end;
-			uint* element_index_buffer_end;
-			ObjectMatrix* object_matrix_buffer_end;
+			ElementVertex*				element_vertex_buffer_end;
+			uint*						element_index_buffer_end;
+			ObjectMatrix*				object_matrix_buffer_end;
 			DrawIndexedIndirectCommand* object_indirect_buffer_end;
+			LightInfo*					light_info_buffer_end;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
 			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
@@ -195,6 +207,7 @@ namespace flame
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
 			void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor) override;
+			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
 
 			void add_blur(const Vec4f& range, uint radius) override;
 			void add_bloom() override;

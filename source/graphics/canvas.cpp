@@ -188,9 +188,10 @@ namespace flame
 				}
 
 				{
-					DescriptorBindingInfo db;
-					db.type = DescriptorStorageBuffer;
-					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					DescriptorBindingInfo dbs[2];
+					dbs[0].type = DescriptorStorageBuffer;
+					dbs[1].type = DescriptorStorageBuffer;
+					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
 				}
 
 				{
@@ -338,12 +339,15 @@ namespace flame
 			object_matrix_staging_buffer.reset(new BufferPrivate(d, object_matrix_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			object_indirect_buffer.reset(new BufferPrivate(d, 10000 * sizeof(DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
 			object_indirect_staging_buffer.reset(new BufferPrivate(d, object_indirect_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			light_info_buffer.reset(new BufferPrivate(d, 10000 * sizeof(LightInfo), BufferUsageTransferDst | BufferUsageStorage, MemoryPropertyDevice));
+			light_info_staging_buffer.reset(new BufferPrivate(d, light_info_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			element_vertex_staging_buffer->map();
 			element_index_staging_buffer->map();
 			model_vertex_staging_buffer->map();
 			model_index_staging_buffer->map();
 			object_matrix_staging_buffer->map();
 			object_indirect_staging_buffer->map();
+			light_info_staging_buffer->map();
 
 			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			white_image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
@@ -355,12 +359,11 @@ namespace flame
 				resources[i].reset(r);
 			}
 
-			for (auto i = 0; i < models_count; i++)
 			{
-				auto m = new BoundModel;
-				m->name = "cube";
-				m->model = (ModelPrivate*)Model::get_standard(StandardModelCube);
-				models[i].reset(m);
+				BoundModel m;
+				m.name = "cube";
+				m.model = (ModelPrivate*)Model::get_standard(StandardModelCube);
+				models.push_back(m);
 			}
 
 			auto sp = d->sampler_linear.get();
@@ -979,37 +982,36 @@ namespace flame
 
 		void CanvasPrivate::add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor)
 		{
-			if (model_dirty)
+			if (uploaded_models_count != models.size())
 			{
-				auto vtx_off = 0;
-				auto idx_off = 0;
-				for (auto i = 0; i < models_count; i++)
+				auto vtx_cnt = 0;
+				auto idx_cnt = 0;
+				for (auto i = uploaded_models_count; i < models.size(); i++)
 				{
 					auto& m = models[i];
-					if (!m->model)
-						continue;
-					m->meshes.clear();
-					for (auto& ms : m->model->meshes)
+					for (auto& ms : m.model->meshes)
 					{
-						BoundMesh am;
-						am.vtx_off = vtx_off;
-						am.idx_off = idx_off;
-						am.idx_cnt = ms->indices.size();
-						m->meshes.push_back(am);
+						BoundMesh bm;
+						bm.vtx_off = vtx_cnt;
+						bm.idx_off = idx_cnt;
+						bm.idx_cnt = ms->indices.size();
+						m.meshes.push_back(bm);
 
-						memcpy((char*)model_vertex_staging_buffer->mapped + sizeof(ModelVertex) * vtx_off, ms->vertices.data(), sizeof(ModelVertex) * ms->vertices.size());
-						memcpy((char*)model_index_staging_buffer->mapped + sizeof(uint) * idx_off, ms->indices.data(), sizeof(uint) * ms->indices.size());
-						vtx_off += ms->vertices.size();
-						idx_off += ms->indices.size();
+						memcpy((char*)model_vertex_staging_buffer->mapped + sizeof(ModelVertex) * vtx_cnt, ms->vertices.data(), sizeof(ModelVertex) * ms->vertices.size());
+						memcpy((char*)model_index_staging_buffer->mapped + sizeof(uint) * idx_cnt, ms->indices.data(), sizeof(uint) * ms->indices.size());
+						vtx_cnt += ms->vertices.size();
+						idx_cnt += ms->indices.size();
 					}
 				}
 
 				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 				cb->begin(true);
 				BufferCopy cpy1;
-				cpy1.size = sizeof(ModelVertex) * vtx_off;
+				cpy1.dst_off = sizeof(ModelVertex) * uploaded_vertices_count;
+				cpy1.size = sizeof(ModelVertex) * vtx_cnt;
 				BufferCopy cpy2;
-				cpy2.size = sizeof(uint) * idx_off;
+				cpy1.dst_off = sizeof(uint) * uploaded_indices_count;
+				cpy2.size = sizeof(uint) * idx_cnt;
 				cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy1, 1 });
 				cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy2, 1 });
 				cb->end();
@@ -1017,11 +1019,13 @@ namespace flame
 				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
 				q->wait_idle();
 
-				model_dirty = false;
+				uploaded_models_count = models.size();
+				uploaded_vertices_count += vtx_cnt;
+				uploaded_indices_count += idx_cnt;
 			}
 
 			auto& m = models[mod_id];
-			for (auto& ms : m->meshes)
+			for (auto& ms : m.meshes)
 			{
 				object_matrix_buffer_end->mvp = mvp;
 				object_matrix_buffer_end->nor = nor;
@@ -1037,8 +1041,15 @@ namespace flame
 
 			Cmd cmd;
 			cmd.type = CmdDrawObject;
-			cmd.v.d3.count = m->meshes.size();
+			cmd.v.d3.count = m.meshes.size();
 			cmds.push_back(cmd);
+		}
+
+		void CanvasPrivate::add_light(LightType type, const Vec3f& color, const Vec3f& pos)
+		{
+			light_info_buffer_end->col = Vec4f(color, 0.f);
+			light_info_buffer_end->pos = Vec4f(pos, type == LightPoint ? 1.f : 0.f);
+			light_info_buffer_end++;
 		}
 
 		void CanvasPrivate::add_blur(const Vec4f& _range, uint radius)
@@ -1084,6 +1095,7 @@ namespace flame
 			element_index_buffer_end = (uint*)element_index_staging_buffer->mapped;
 			object_matrix_buffer_end = (ObjectMatrix*)object_matrix_staging_buffer->mapped;
 			object_indirect_buffer_end = (DrawIndexedIndirectCommand*)object_indirect_staging_buffer->mapped;
+			light_info_buffer_end = (LightInfo*)light_info_staging_buffer->mapped;
 
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
 
@@ -1190,6 +1202,11 @@ namespace flame
 				BufferCopy cpy;
 				cpy.size = (char*)object_indirect_buffer_end - object_indirect_staging_buffer->mapped;
 				cb->copy_buffer(object_indirect_staging_buffer.get(), object_indirect_buffer.get(), { &cpy, 1 });
+			}
+			{
+				BufferCopy cpy;
+				cpy.size = (char*)light_info_buffer_end - light_info_staging_buffer->mapped;
+				cb->copy_buffer(light_info_staging_buffer.get(), light_info_buffer.get(), { &cpy, 1 });
 			}
 
 			cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));

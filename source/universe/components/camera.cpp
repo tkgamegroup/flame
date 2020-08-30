@@ -16,8 +16,7 @@ namespace flame
 		if (view_dirty)
 		{
 			node->update_transform();
-			view_matrix = get_view_matrix(Vec3f(node->transform[3]), 
-				Vec3f(node->transform[3]) + node->rotate_matrix[2], node->rotate_matrix[1]);
+			view_matrix = Mat4f(Mat<3, 4, float>(node->rotate_matrix, Vec3f(0.f)), Vec4f(node->pos, 1.f));
 		}
 		if (project_dirty || view_dirty)
 			vp_matrix = project_matrix * view_matrix;

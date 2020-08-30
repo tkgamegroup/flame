@@ -13,10 +13,10 @@ struct ObjectMatrix
 	mat4 nor;
 };
 
-layout (set = 0, binding = 0) buffer ObjectMatrices
+layout (set = 0, binding = 0) buffer readonly ObjectMatrices
 {
-	ObjectMatrix d[];
-}object_matrices;
+	ObjectMatrix object_matrices[];
+};
 
 layout (location = 0) out vec3 o_normal;
 
@@ -24,6 +24,6 @@ void main()
 {
 	uint mod_idx = gl_InstanceIndex >> 16;
 	uint mat_idx = gl_InstanceIndex & 0xffff;
-	o_normal = vec3(object_matrices.d[mod_idx].nor * vec4(i_normal, 0));
-	gl_Position = object_matrices.d[mod_idx].mvp * vec4(i_pos, 1.0);
+	o_normal = vec3(object_matrices[mod_idx].nor * vec4(i_normal, 0));
+	gl_Position = object_matrices[mod_idx].mvp * vec4(i_pos, 1.0);
 }

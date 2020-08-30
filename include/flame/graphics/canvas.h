@@ -41,8 +41,7 @@ namespace flame
 			virtual uint set_resource(int slot /* -1 to find an empty slot */, ImageAtlas* image_atlas, const char* name = nullptr) = 0;
 			virtual uint set_resource(int slot /* -1 to find an empty slot */, FontAtlas* font_atlas, const char* name = nullptr) = 0;
 
-			//virtual Model* get_model(uint slot) = 0;
-			//virtual uint set_model(int slot /* -1 to find an empty slot */, Model* model, const char* name) = 0;
+			//virtual uint bind_model(Model* model, const char* name) = 0;
 
 			virtual void begin_path() = 0;
 			virtual void move_to(const Vec2f& pos) = 0;
@@ -56,6 +55,7 @@ namespace flame
 			virtual void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
 
 			virtual void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor = {}) = 0;
+			virtual void add_light(LightType type, const Vec3f& color, const Vec3f& pos) = 0;
 
 			virtual void add_blur(const Vec4f& range, uint radius) = 0;
 			virtual void add_bloom() = 0;

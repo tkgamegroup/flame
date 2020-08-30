@@ -336,5 +336,11 @@ namespace flame
 			DynamicStateStencilWriteMask,
 			DynamicStateStencilReference
 		};
+
+		enum LightType
+		{
+			LightPoint,
+			LightParallel
+		};
 	}
 }

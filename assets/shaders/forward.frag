@@ -4,6 +4,17 @@
 
 layout (location = 0) in vec3 i_normal;
 
+struct LightInfo
+{
+	vec4 col;
+	vec4 pos;
+};
+
+layout (set = 0, binding = 1) buffer readonly LightInfos
+{
+	LightInfo light_infos[];
+};
+
 layout (location = 0) out vec4 o_color;
 
 void main()

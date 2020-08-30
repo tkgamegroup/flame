@@ -8,10 +8,10 @@ namespace flame
 	{
 		struct ModelVertex
 		{
-			Vec3f pos;
-			Vec2f uv;
-			Vec3f normal;
-			Vec3f tangent;
+			Vec3f pos = Vec3f(0.f);
+			Vec2f uv = Vec2f(0.f);
+			Vec3f normal = Vec3f(0.f);
+			Vec3f tangent = Vec3f(0.f);
 		};
 
 		struct ModelMesh

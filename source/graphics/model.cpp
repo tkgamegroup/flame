@@ -1,3 +1,4 @@
+#include <flame/foundation/foundation.h>
 #include "model_private.h"
 
 namespace flame
@@ -104,8 +105,11 @@ namespace flame
 			return ret;
 		}
 
-		Model* Model::create()
+		Model* Model::create(const wchar_t* filename)
 		{
+			if (!std::filesystem::exists(filename))
+				return nullptr;
+
 			return new ModelPrivate();
 		}
 	}
