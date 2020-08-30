@@ -33,6 +33,7 @@ The typeinfogen wouldn't reflect all informations in the target. The desired ite
         }
     
 First, the R symbol in the comment means this struct/class, variable or function in this line is marked reflected. Next, it follows some tokens that descrips more of the reflection. By default, the R in the struct/class suggested that it will reflect all members of that struct/class (the opposite is R ~), and any tokens begin will '!' suggested that this member will not be reflected. You can define you own token usages, all tokens can be retrieve by calling the get_token() function of VariableInfo. Tokens can have value, simply place a '=' after that token, such as 'max_value=100'. You can make use of the tokens as you like, such as the slider min/max value, speed and so on.
+
 #### Engine Use Cases:
 
 Currently, the engine uses the typeinfo to do such things:
@@ -100,5 +101,30 @@ Here is an example of the scene file:
 	  </entity>
 	</prefab>
 	
-Which describes a ui like this:
+Which describes an ui like this:
 
+![prefab_example](https://raw.githubusercontent.com/tkgamegroup/flame/master/screenshots/prefab_example.png)
+
+# Script:
+
+Currently, we use lua as the script language. With the help of reflection, we can pass the function infos to the lua side, then lua can pass back that function info with arguments to call the cpp function. We just register a handful functions to lua. And we can call arbitrary cpp function through some asm magic (this magic is also used to call a setter function). To use scripts are very simple, just like:
+
+The prefab file:
+
+	<?xml version="1.0"?>
+	<prefab>
+	  <entity src="button">
+	    <cScript src="tests/button_test.lua" />
+	  </entity>
+	</prefab>
+	
+The lua file:
+
+	local event_receiver = entity:get_component_n("cEventReceiver")
+	make_obj(event_receiver, "cEventReceiver")
+
+	event_receiver:add_mouse_click_listener_s(get_slot(
+		function()
+			print("Hello World")
+		end
+	))
