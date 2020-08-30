@@ -36,15 +36,3 @@ An ECS Game Engine Based On Reflection.
 - enjoy
 
 ** if you want to build in release config, always build in RelWithDebInfo, because DebugInfo is always needed
-
-### Example CMake Config:
-![cmake_config](https://github.com/tkgamegroup/flame/blob/master/screenshots/cmake_config.png)
-
-### UI Gallery:
-![ui_dark](https://github.com/tkgamegroup/flame/blob/master/screenshots/ui_dark.png)
-
-![ui_light](https://github.com/tkgamegroup/flame/blob/master/screenshots/ui_light.png)
-### Render Path Editing In Blueprint:
-![bp_editor](https://github.com/tkgamegroup/flame/blob/master/screenshots/bp_editor.png)
-### Game Tetris:
-![tetris](https://github.com/tkgamegroup/flame/blob/master/screenshots/tetris.png)

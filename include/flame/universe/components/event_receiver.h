@@ -50,6 +50,9 @@ namespace flame
 		virtual void* add_mouse_dbclick_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_mouse_dbclick_listener(void* lis) = 0;
 
+		virtual void add_mouse_click_listener_s(uint slot) = 0;
+		virtual void remove_mouse_click_listener_s(uint slot) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
 	};
 }

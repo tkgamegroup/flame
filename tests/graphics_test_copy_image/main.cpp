@@ -33,9 +33,9 @@ struct App
 			cb->copy_image(img, dst, 1, &cpy);
 			cb->image_barrier(dst, ImageLayoutTransferDst, ImageLayoutPresent);
 			cb->end();
+
 			auto finished = Semaphore::create(d);
 			Queue::get_default(QueueGraphics)->submit(1, &cb, sc->image_avalible(), finished, nullptr);
-
 			Queue::get_default(QueueGraphics)->present(sc, finished);
 		}
 	}

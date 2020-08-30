@@ -1,3 +1,4 @@
+#include <flame/script/script.h>
 #include "../world_private.h"
 #include "element_private.h"
 #include "event_receiver_private.h"
@@ -5,6 +6,12 @@
 
 namespace flame
 {
+	cEventReceiverPrivate::~cEventReceiverPrivate()
+	{
+		for (auto s : mouse_click_listeners_s)
+			script::Instance::get()->release_slot(s);
+	}
+
 	void cEventReceiverPrivate::set_ignore_occluders(bool v)
 	{
 		ignore_occluders = v;
@@ -189,6 +196,18 @@ namespace flame
 	{
 		std::erase_if(mouse_dbclick_listeners, [&](const auto& i) {
 			return i == (decltype(i))lis;
+		});
+	}
+
+	void cEventReceiverPrivate::add_mouse_click_listener_s(uint slot)
+	{
+		mouse_click_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_mouse_click_listener_s(uint slot)
+	{
+		std::erase_if(mouse_click_listeners_s, [&](const auto& i) {
+			return i == slot;
 		});
 	}
 

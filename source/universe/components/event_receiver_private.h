@@ -23,6 +23,8 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> mouse_click_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> mouse_dbclick_listeners;
 
+		std::vector<uint> mouse_click_listeners_s;
+
 		cElementPrivate* element = nullptr; // R ref
 		sEventDispatcherPrivate* dispatcher = nullptr; // R ref
 		int frame = -1;
@@ -30,6 +32,8 @@ namespace flame
 		bool ignore_occluders = false;
 		uint64 drag_hash = 0;
 		std::vector<uint64> acceptable_drops;
+
+		~cEventReceiverPrivate();
 
 		bool get_ignore_occluders() const override { return ignore_occluders; }
 		void set_ignore_occluders(bool v) override;
@@ -60,6 +64,9 @@ namespace flame
 		void remove_mouse_click_listener(void* lis) override;
 		void* add_mouse_dbclick_listener(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_mouse_dbclick_listener(void* lis) override;
+
+		void add_mouse_click_listener_s(uint slot) override;
+		void remove_mouse_click_listener_s(uint slot) override;
 
 		void on_gain_dispatcher();
 		void on_lost_dispatcher();

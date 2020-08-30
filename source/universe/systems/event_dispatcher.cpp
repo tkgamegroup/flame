@@ -1,4 +1,5 @@
 #include <flame/serialize.h>
+#include <flame/script/script.h>
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/event_receiver_private.h"
@@ -389,6 +390,8 @@ namespace flame
 			//auto db = dbclick_timer > 0.f;
 			for (auto& l : focusing->mouse_click_listeners)
 				l->call();
+			for (auto s : focusing->mouse_click_listeners_s)
+				script::Instance::get()->call_slot(s, 0, nullptr);
 			//((cEventReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
 			//if (db)
 			//	dbclick_timer = -1.f;
