@@ -117,7 +117,7 @@ int main(int argc, char** args)
 		}
 	}, Capture());
 
-	add_dir(tree, L"E:/music/th");
+	add_dir(tree, L"E:/pic/pic");
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());

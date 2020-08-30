@@ -1,4 +1,3 @@
-generate_config()
 file(GLOB_RECURSE SOURCE_LIST "*.c*")
 add_executable(universe_test ${SOURCE_LIST})
 set_target_properties(universe_test PROPERTIES FOLDER "tests")
