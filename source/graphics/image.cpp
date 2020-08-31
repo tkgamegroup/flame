@@ -49,6 +49,14 @@ namespace flame
 			}
 		}
 
+		void ImagePrivate::build_default_views()
+		{
+			default_views.resize(level + 1);
+			for (auto i = 0; i < level; i++)
+				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
+			default_views[level].reset(new ImageViewPrivate(this, ImageView2D, { (uint)0, (uint)level }));
+		}
+
 		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) :
 			device(d),
 			format(format),
@@ -92,9 +100,7 @@ namespace flame
 
 			chk_res(vkBindImageMemory(d->vk_device, vk_image, vk_memory, 0));
 
-			default_views.resize(level);
-			for (auto i = 0; i < level; i++)
-				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
+			build_default_views();
 
 			if (data)
 			{
@@ -128,9 +134,7 @@ namespace flame
 
 			vk_image = (VkImage)native;
 
-			default_views.resize(level);
-			for (auto i = 0; i < level; i++)
-				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
+			build_default_views();
 		}
 
 		ImagePrivate::~ImagePrivate()

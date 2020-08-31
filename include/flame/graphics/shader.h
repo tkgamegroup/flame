@@ -41,9 +41,8 @@ namespace flame
 
 			virtual uint get_bindings_count() const = 0;
 			virtual DescriptorBinding* get_binding(uint binding) const = 0;
-			virtual DescriptorSet* get_default_set() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* d, uint bindings_count, const DescriptorBindingInfo* bindings, bool create_default_set = false);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* d, uint bindings_count, const DescriptorBindingInfo* bindings);
 		};
 
 		struct DescriptorSet

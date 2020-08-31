@@ -188,9 +188,12 @@ namespace flame
 				}
 
 				{
-					DescriptorBindingInfo dbs[2];
+					DescriptorBindingInfo dbs[4];
 					dbs[0].type = DescriptorStorageBuffer;
 					dbs[1].type = DescriptorStorageBuffer;
+					dbs[2].type = DescriptorSampledImage;
+					dbs[2].count = 128;
+					dbs[3].type = DescriptorUniformBuffer;
 					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
 				}
 
@@ -198,7 +201,6 @@ namespace flame
 					DescriptorBindingInfo db;
 					db.type = DescriptorSampledImage;
 					db.count = 1;
-					db.name = "image";
 					one_image_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
@@ -335,6 +337,8 @@ namespace flame
 			model_vertex_staging_buffer.reset(new BufferPrivate(d, model_vertex_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			model_index_buffer.reset(new BufferPrivate(d, 400000 * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
 			model_index_staging_buffer.reset(new BufferPrivate(d, model_index_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+			material_info_buffer.reset(new BufferPrivate(d, 128 * sizeof(BoundMaterial), BufferUsageTransferDst | BufferUsageUniform, MemoryPropertyDevice));
+			material_info_staging_buffer.reset(new BufferPrivate(d, material_info_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			object_matrix_buffer.reset(new BufferPrivate(d, 10000 * sizeof(Mat4f), BufferUsageTransferDst | BufferUsageStorage, MemoryPropertyDevice));
 			object_matrix_staging_buffer.reset(new BufferPrivate(d, object_matrix_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			object_indirect_buffer.reset(new BufferPrivate(d, 10000 * sizeof(DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
@@ -986,6 +990,11 @@ namespace flame
 			{
 				auto vtx_cnt = 0;
 				auto idx_cnt = 0;
+				auto tex_cnt = 0;
+				auto mat_cnt = 0;
+
+				auto sp = device->sampler_linear.get();
+
 				for (auto i = uploaded_models_count; i < models.size(); i++)
 				{
 					auto& m = models[i];
@@ -1001,19 +1010,80 @@ namespace flame
 						memcpy((char*)model_index_staging_buffer->mapped + sizeof(uint) * idx_cnt, ms->indices.data(), sizeof(uint) * ms->indices.size());
 						vtx_cnt += ms->vertices.size();
 						idx_cnt += ms->indices.size();
+
+						BoundMaterial mat;
+						mat.albedo = Vec4f(ms->albedo, 0.f);
+						mat.spec_roughness = Vec4f(ms->spec, ms->roughness);
+						{
+							auto img = ImagePrivate::create(device, ms->albedo_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								mat.albedo_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						{
+							auto img = ImagePrivate::create(device, ms->spec_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								mat.spec_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						{
+							auto img = ImagePrivate::create(device, ms->roughness_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								mat.roughness_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						{
+							auto img = ImagePrivate::create(device, ms->normal_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								mat.normal_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						memcpy((char*)material_info_staging_buffer->mapped + sizeof(BoundMaterial) * mat_cnt, &mat, sizeof(BoundMaterial));
+						bm.mat_idx = uploaded_materials_count + mat_cnt;
+						mat_cnt++;
 					}
 				}
 
 				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 				cb->begin(true);
-				BufferCopy cpy1;
-				cpy1.dst_off = sizeof(ModelVertex) * uploaded_vertices_count;
-				cpy1.size = sizeof(ModelVertex) * vtx_cnt;
-				BufferCopy cpy2;
-				cpy1.dst_off = sizeof(uint) * uploaded_indices_count;
-				cpy2.size = sizeof(uint) * idx_cnt;
-				cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy1, 1 });
-				cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy2, 1 });
+				{
+					BufferCopy cpy;
+					cpy.dst_off = sizeof(ModelVertex) * uploaded_vertices_count;
+					cpy.size = sizeof(ModelVertex) * vtx_cnt;
+					cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy, 1 });
+				}
+				{
+					BufferCopy cpy;
+					cpy.dst_off = sizeof(uint) * uploaded_indices_count;
+					cpy.size = sizeof(uint) * idx_cnt;
+					cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy, 1 });
+				}
+				{
+					BufferCopy cpy;
+					cpy.dst_off = sizeof(BoundMaterial) * uploaded_materials_count;
+					cpy.size = sizeof(BoundMaterial) * mat_cnt;
+					cb->copy_buffer(material_info_staging_buffer.get(), material_info_buffer.get(), { &cpy, 1 });
+				}
 				cb->end();
 				auto q = device->graphics_queue.get();
 				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
@@ -1022,6 +1092,8 @@ namespace flame
 				uploaded_models_count = models.size();
 				uploaded_vertices_count += vtx_cnt;
 				uploaded_indices_count += idx_cnt;
+				uploaded_model_textures_count += tex_cnt;
+				uploaded_materials_count += mat_cnt;
 			}
 
 			auto& m = models[mod_id];

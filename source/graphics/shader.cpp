@@ -46,7 +46,7 @@ namespace flame
 		{
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> _bindings, bool create_default_set) :
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> _bindings) :
 			device(d)
 		{
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(_bindings.size());
@@ -73,9 +73,6 @@ namespace flame
 			info.pBindings = vk_bindings.data();
 
 			chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &vk_descriptor_set_layout));
-
-			if (create_default_set)
-				default_set.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), this));
 		}
 
 		DescriptorSetLayoutPrivate::~DescriptorSetLayoutPrivate()
@@ -83,9 +80,9 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
-		DescriptorSetLayout* DescriptorSetLayout::create(Device* d, uint binding_count, const DescriptorBindingInfo* bindings, bool create_default_set)
+		DescriptorSetLayout* DescriptorSetLayout::create(Device* d, uint binding_count, const DescriptorBindingInfo* bindings)
 		{
-			return new DescriptorSetLayoutPrivate((DevicePrivate*)d, { bindings, binding_count }, create_default_set);
+			return new DescriptorSetLayoutPrivate((DevicePrivate*)d, { bindings, binding_count });
 		}
 
 		DescriptorSetPrivate::DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l) :

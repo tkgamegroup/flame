@@ -82,11 +82,23 @@ namespace flame
 				Vec4c col;
 			};
 
+			struct BoundMaterial
+			{
+				Vec4f albedo;
+				Vec4f spec_roughness;
+				uint albedo_map_index;
+				uint spec_map_index;
+				uint roughness_map_index;
+				uint normal_map_index;
+			};
+
 			struct BoundMesh
 			{
 				uint vtx_off;
 				uint idx_off;
 				uint idx_cnt;
+
+				uint mat_idx;
 			};
 
 			struct BoundModel
@@ -116,9 +128,12 @@ namespace flame
 
 			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
 			std::vector<BoundModel> models;
+			std::vector<std::unique_ptr<Image>> model_textures;
 			uint uploaded_models_count = 0;
 			uint uploaded_vertices_count = 0;
 			uint uploaded_indices_count = 0;
+			uint uploaded_model_textures_count = 0;
+			uint uploaded_materials_count = 0;
 
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
@@ -131,6 +146,8 @@ namespace flame
 			std::unique_ptr<BufferPrivate> model_vertex_staging_buffer;
 			std::unique_ptr<BufferPrivate> model_index_buffer;
 			std::unique_ptr<BufferPrivate> model_index_staging_buffer;
+			std::unique_ptr<BufferPrivate> material_info_buffer;
+			std::unique_ptr<BufferPrivate> material_info_staging_buffer;
 			std::unique_ptr<BufferPrivate> object_matrix_buffer;
 			std::unique_ptr<BufferPrivate> object_matrix_staging_buffer;
 			std::unique_ptr<BufferPrivate> object_indirect_buffer;

@@ -19,6 +19,14 @@ namespace flame
 			std::vector<ModelVertex> vertices;
 			std::vector<uint> indices;
 
+			Vec3f albedo;
+			Vec3f spec;
+			float roughness;
+			std::filesystem::path albedo_map_filename;
+			std::filesystem::path spec_map_filename;
+			std::filesystem::path roughness_map_filename;
+			std::filesystem::path normal_map_filename;
+
 			void set_vertices_p(const std::initializer_list<float>& v);
 			void set_vertices_pn(const std::initializer_list<float>& v);
 			void set_indices(const std::initializer_list<uint>& v);

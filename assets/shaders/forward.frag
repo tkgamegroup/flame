@@ -15,6 +15,23 @@ layout (set = 0, binding = 1) buffer readonly LightInfos
 	LightInfo light_infos[];
 };
 
+layout (set = 0, binding = 2) uniform sampler2D maps[128];
+
+struct MaterialInfo
+{
+	vec4 albedo;
+	vec4 spec_roughness;
+	uint albedo_map_index;
+	uint spec_map_index;
+	uint roughness_map_index;
+	uint normal_map_index;
+};
+
+layout (set = 0, binding = 3) uniform MaterialInfos
+{
+	MaterialInfo material_infos[];
+};
+
 layout (location = 0) out vec4 o_color;
 
 void main()

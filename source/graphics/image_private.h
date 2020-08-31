@@ -25,6 +25,7 @@ namespace flame
 			std::vector<std::unique_ptr<ImageViewPrivate>> default_views;
 
 			void init(const Vec2u& size);
+			void build_default_views();
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();

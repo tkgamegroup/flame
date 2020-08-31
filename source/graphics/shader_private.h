@@ -47,16 +47,14 @@ namespace flame
 			VkDescriptorSetLayout vk_descriptor_set_layout;
 
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
-			std::unique_ptr<DescriptorSetPrivate> default_set;
 
-			DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings, bool create_default_set = false);
+			DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings);
 			~DescriptorSetLayoutPrivate();
 
 			void release() override { delete this; }
 
 			uint get_bindings_count() const override { return bindings.size(); }
 			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
-			DescriptorSet* get_default_set() const override { return (DescriptorSet*)default_set.get(); }
 		};
 
 		struct DescriptorSetBridge : DescriptorSet
