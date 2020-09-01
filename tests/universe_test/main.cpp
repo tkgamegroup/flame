@@ -1,3 +1,4 @@
+#include <flame/graphics/model.h>
 #include <flame/universe/app.h>
 #include <flame/universe/components/camera.h>
 
@@ -6,7 +7,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"tests/button_test";
+auto test_prefab = L"tests/cube_test";
 
 Entity* root;
 

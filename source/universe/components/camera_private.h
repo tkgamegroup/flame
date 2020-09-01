@@ -15,7 +15,7 @@ namespace flame
 	{
 		float fovy = 60.f;
 		float near = 0.1f;
-		float far = 1.f;
+		float far = 1000.f;
 
 		bool project_dirty = true;
 		bool view_dirty = true;
@@ -27,5 +27,7 @@ namespace flame
 		graphics::Canvas* canvas = nullptr; // R ref
 
 		void update_matrix();
+
+		void on_local_data_changed(Component* t, uint64 h) override;
 	};
 }

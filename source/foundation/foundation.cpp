@@ -439,10 +439,8 @@ namespace flame
 			return Keyboard_NumLock;
 		case VK_SCROLL:
 			return Keyboard_ScrollLock;
-		default:
-			return KeyboardNull;
 		}
-		return KeyboardNull;
+		return KeyboardKey_Count;
 	}
 
 	int key_to_vk_code(KeyboardKey key)
@@ -623,10 +621,8 @@ namespace flame
 			return VK_NUMLOCK;
 		case Keyboard_ScrollLock:
 			return VK_SCROLL;
-		default:
-			return KeyboardNull;
 		}
-		return KeyboardNull;
+		return KeyboardKey_Count;
 	}
 
 	struct GlobalKeyListener

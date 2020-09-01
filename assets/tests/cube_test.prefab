@@ -6,6 +6,7 @@
     <entity name="camera">
       <cNode pos="0,0,-5" />
       <cCamera />
+      <cScript src="camera_controller.lua" />
     </entity>
     <entity>
       <cNode />

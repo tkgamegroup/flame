@@ -412,8 +412,6 @@ namespace flame
 
 	enum KeyboardKey
 	{
-		KeyboardNull = -1,
-
 		Keyboard_Backspace,
 		Keyboard_Tab,
 		Keyboard_Enter,
@@ -441,7 +439,7 @@ namespace flame
 		Keyboard_NumLock,
 		Keyboard_ScrollLock,
 
-		KeyboardKeyCount
+		KeyboardKey_Count
 	};
 
 	enum MouseKey

@@ -52,6 +52,8 @@ namespace flame
 					transform = pn->transform * transform;
 				}
 			}
+
+			Entity::report_data_changed(this, S<ch("transform")>::v);
 		}
 	}
 

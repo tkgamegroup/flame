@@ -236,10 +236,9 @@ namespace flame
 
 		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage)
 		{
-			std::filesystem::path path(filename);
-			if (!std::filesystem::exists(path))
+			if (!std::filesystem::exists(filename))
 			{
-				wprintf(L"cannot find image: %s\n", filename);
+				wprintf(L"cannot find image: %s\n", filename.c_str());
 				return nullptr;
 			}
 
@@ -249,7 +248,7 @@ namespace flame
 			std::unique_ptr<BufferPrivate> staging_buffer;
 			std::vector<BufferImageCopy> buffer_copy_regions;
 
-			auto ext = path.extension().string();
+			auto ext = filename.extension().string();
 			if (ext == ".ktx" || ext == ".dds")
 			{
 				//gli::gl GL(gli::gl::PROFILE_GL33);

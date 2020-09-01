@@ -8,6 +8,10 @@ namespace flame
 {
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
+		for (auto s : key_down_listeners_s)
+			script::Instance::get()->release_slot(s);
+		for (auto s : key_up_listeners_s)
+			script::Instance::get()->release_slot(s);
 		for (auto s : mouse_click_listeners_s)
 			script::Instance::get()->release_slot(s);
 	}
@@ -199,6 +203,40 @@ namespace flame
 		});
 	}
 
+	void cEventReceiverPrivate::add_key_down_listener_s(uint slot)
+	{
+		key_down_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_key_down_listener_s(uint slot)
+	{
+		for (auto it = key_down_listeners_s.begin(); it != key_down_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				key_down_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cEventReceiverPrivate::add_key_up_listener_s(uint slot)
+	{
+		key_up_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_key_up_listener_s(uint slot)
+	{
+		for (auto it = key_up_listeners_s.begin(); it != key_up_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				key_up_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
 	void cEventReceiverPrivate::add_mouse_click_listener_s(uint slot)
 	{
 		mouse_click_listeners_s.push_back(slot);
@@ -206,9 +244,29 @@ namespace flame
 
 	void cEventReceiverPrivate::remove_mouse_click_listener_s(uint slot)
 	{
-		std::erase_if(mouse_click_listeners_s, [&](const auto& i) {
-			return i == slot;
-		});
+		for (auto it = mouse_click_listeners_s.begin(); it != mouse_click_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				mouse_click_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cEventReceiverPrivate::on_key_event(KeyboardKey key, bool down)
+	{
+		auto& listeners = down ? key_down_listeners : key_up_listeners;
+		auto& listeners_s = down ? key_down_listeners_s : key_up_listeners_s;
+		for (auto& l : listeners)
+			l->call(key);
+		for (auto s : listeners_s)
+		{
+			script::Parameter p;
+			p.type = script::ScriptTypeInt;
+			p.data = &key;
+			script::Instance::get()->call_slot(s, 1, &p);
+		}
 	}
 
 //	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)

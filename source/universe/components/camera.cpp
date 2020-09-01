@@ -13,15 +13,19 @@ namespace flame
 			auto size = Vec2f(canvas->get_target(0)->get_image()->get_size());
 			project_matrix = get_project_matrix(fovy * ANG_RAD, size.x() / size.y(), near, far);
 		}
+		node->update_transform();
 		if (view_dirty)
-		{
-			node->update_transform();
 			view_matrix = Mat4f(Mat<3, 4, float>(node->rotate_matrix, Vec3f(0.f)), Vec4f(node->pos, 1.f));
-		}
 		if (project_dirty || view_dirty)
 			vp_matrix = project_matrix * view_matrix;
-		view_dirty = false;
 		project_dirty = false;
+		view_dirty = false;
+	}
+
+	void cCameraPrivate::on_local_data_changed(Component* t, uint64 h)
+	{
+		if (t == node && h == S<ch("transform")>::v)
+			view_dirty = true;
 	}
 
 	cCamera* cCamera::create()

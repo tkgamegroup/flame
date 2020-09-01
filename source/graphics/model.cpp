@@ -1,6 +1,14 @@
 #include <flame/foundation/foundation.h>
 #include "model_private.h"
 
+#ifdef USE_ASSIMP
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#endif
+
+#include <functional>
+
 namespace flame
 {
 	namespace graphics
@@ -32,12 +40,43 @@ namespace flame
 			}
 		}
 
+		void ModelMesh::set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals, Vec3f* tangents)
+		{
+			vertices.resize(number);
+			if (poses)
+			{
+				for (auto i = 0; i < number; i++)
+					vertices[i].pos = poses[i];
+			}
+			if (uvs)
+			{
+				for (auto i = 0; i < number; i++)
+					vertices[i].uv = uvs[i];
+			}
+			if (normals)
+			{
+				for (auto i = 0; i < number; i++)
+					vertices[i].normal = normals[i];
+			}
+			if (tangents)
+			{
+				for (auto i = 0; i < number; i++)
+					vertices[i].tangent = tangents[i];
+			}
+		}
+
 		void ModelMesh::set_indices(const std::initializer_list<uint>& v)
 		{
 			indices.resize(v.size());
-			auto idx = 0;
 			for (auto i = 0; i < indices.size(); i++)
 				indices[i] = v.begin()[i];
+		}
+
+		void ModelMesh::set_indices(uint number, uint* _indices)
+		{
+			indices.resize(number);
+			for (auto i = 0; i < number; i++)
+				indices[i] = _indices[i];
 		}
 
 		static ModelPrivate* standard_models[StandardModelCount];
@@ -105,12 +144,64 @@ namespace flame
 			return ret;
 		}
 
-		Model* Model::create(const wchar_t* filename)
+		ModelPrivate* ModelPrivate::create(const std::filesystem::path& filename)
 		{
 			if (!std::filesystem::exists(filename))
+			{
+				wprintf(L"cannot find model: %s\n", filename.c_str());
 				return nullptr;
+			}
 
-			return new ModelPrivate();
+#ifdef USE_ASSIMP
+			Assimp::Importer importer;
+			auto scene = importer.ReadFile(filename.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
+			if (!scene)
+			{
+				wprintf(L"load model failed: %s\n", filename.c_str());
+				return nullptr;
+			}
+
+			auto ret = new ModelPrivate();
+
+			std::function<void(aiNode*, Mat4f)> get_mesh;
+			get_mesh = [&](aiNode* n, Mat4f mat) {
+				mat = mat * Mat4f(
+					Vec4f(n->mTransformation.a1, n->mTransformation.b1, n->mTransformation.c1, n->mTransformation.d1),
+					Vec4f(n->mTransformation.a2, n->mTransformation.b2, n->mTransformation.c2, n->mTransformation.d2),
+					Vec4f(n->mTransformation.a3, n->mTransformation.b3, n->mTransformation.c3, n->mTransformation.d3),
+					Vec4f(n->mTransformation.a4, n->mTransformation.b4, n->mTransformation.c4, n->mTransformation.d4)
+				);
+				for (auto i = 0; i < n->mNumMeshes; i++)
+				{
+					auto dst = new ModelMesh;
+					auto src = scene->mMeshes[n->mMeshes[i]];
+					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals, (Vec3f*)src->mTangents);
+					for (auto j = 0; j < src->mNumVertices; j++)
+						dst->vertices[j].pos = mat * Vec4f(dst->vertices[j].pos, 1.f);
+					std::vector<uint> indices(src->mNumFaces * 3);
+					for (auto j = 0; j < src->mNumFaces; j++)
+					{
+						indices[j * 3 + 0] = src->mFaces[j].mIndices[0];
+						indices[j * 3 + 1] = src->mFaces[j].mIndices[1];
+						indices[j * 3 + 2] = src->mFaces[j].mIndices[2];
+					}
+					dst->set_indices(indices.size(), indices.data());
+					ret->meshes.emplace_back(dst);
+				}
+				for (auto i = 0; i < n->mNumChildren; i++)
+					get_mesh(n->mChildren[i], mat);
+			};
+			get_mesh(scene->mRootNode, Mat4f(1.f));
+
+			return ret;
+#endif
+
+			return nullptr;
+		}
+
+		Model* Model::create(const wchar_t* filename)
+		{
+			return ModelPrivate::create(filename);
 		}
 	}
 }

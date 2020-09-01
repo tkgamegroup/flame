@@ -7,7 +7,7 @@ namespace flame
 	struct Entity;
 	struct System;
 
-	struct World
+	struct World // R
 	{
 		virtual void release() = 0;
 

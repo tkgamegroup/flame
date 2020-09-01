@@ -17,9 +17,6 @@ namespace flame
 
 	EntityPrivate::~EntityPrivate()
 	{
-		for (auto s : local_data_changed_listeners_s)
-			script::Instance::get()->release_slot(s);
-
 		for (auto& e : children)
 		{
 			for (auto c : e->local_message_dispatch_list)
@@ -31,6 +28,19 @@ namespace flame
 			c->on_local_message(MessageDestroyed);
 		for (auto& l : local_message_listeners)
 			l->call(MessageDestroyed, nullptr);
+
+		for (auto ev : events)
+			looper().remove_event(ev);
+
+		for (auto& s : events_s)
+		{
+			looper().remove_event(s.second);
+			script::Instance::get()->release_slot(s.first);
+		}
+
+		for (auto s : local_data_changed_listeners_s)
+			script::Instance::get()->release_slot(s);
+
 	}
 
 	void EntityPrivate::release()
@@ -815,6 +825,25 @@ namespace flame
 		});
 	}
 
+	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture)
+	{
+		auto ev = looper().add_event(callback, capture);
+		events.push_back(ev);
+		return ev;
+	}
+
+	void EntityPrivate::remove_event(void* ev)
+	{
+		for (auto it = events.begin(); it != events.end(); it++)
+		{
+			if (*it == ev)
+			{
+				events.erase(it);
+				looper().remove_event(ev);
+			}
+		}
+	}
+
 	void EntityPrivate::add_local_data_changed_listener_s(uint slot)
 	{
 		local_data_changed_listeners_s.push_back(slot);
@@ -822,9 +851,36 @@ namespace flame
 
 	void EntityPrivate::remove_local_data_changed_listener_s(uint slot)
 	{
-		std::erase_if(local_data_changed_listeners_s, [&](const auto& i) {
-			return i == slot;
-		});
+		for (auto it = local_data_changed_listeners_s.begin(); it != local_data_changed_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				local_data_changed_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void EntityPrivate::add_event_s(uint slot)
+	{
+		auto ev = looper().add_event([](Capture& c) {
+			script::Instance::get()->call_slot(c.data<uint>(), 0, nullptr);
+			c._current = INVALID_POINTER;
+		}, Capture().set_data(&slot));
+		events_s.emplace_back(slot, ev);
+	}
+
+	void EntityPrivate::remove_event_s(uint slot)
+	{
+		for (auto it = events_s.begin(); it != events_s.end(); it++)
+		{
+			if (it->first == slot)
+			{
+				looper().remove_event(it->second);
+				events_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
 	}
 
 	static void load_prefab(EntityPrivate* dst, pugi::xml_node src, 

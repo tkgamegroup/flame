@@ -428,7 +428,8 @@ namespace flame
 				while (e)
 				{
 					auto er = e->get_component_t<cEventReceiverPrivate>();
-					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
+					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty() &&
+						er->key_down_listeners_s.empty() && er->key_up_listeners_s.empty()))
 					{
 						keyboard_target = er;
 						break;
@@ -464,16 +465,10 @@ namespace flame
 
 		if (keyboard_target)
 		{
-			for (auto& code : key_down_inputs)
-			{
-				for (auto& l : keyboard_target->key_down_listeners)
-					l->call(code);
-			}
-			for (auto& code : key_up_inputs)
-			{
-				for (auto& l : keyboard_target->key_up_listeners)
-					l->call(code);
-			}
+			for (auto& key : key_down_inputs)
+				keyboard_target->on_key_event(key, true);
+			for (auto& key : key_up_inputs)
+				keyboard_target->on_key_event(key, false);
 			for (auto& ch : char_inputs)
 			{
 				for (auto& l : keyboard_target->char_listeners)

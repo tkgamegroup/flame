@@ -349,6 +349,7 @@ namespace flame
 			element_index_staging_buffer->map();
 			model_vertex_staging_buffer->map();
 			model_index_staging_buffer->map();
+			material_info_staging_buffer->map();
 			object_matrix_staging_buffer->map();
 			object_indirect_staging_buffer->map();
 			light_info_staging_buffer->map();

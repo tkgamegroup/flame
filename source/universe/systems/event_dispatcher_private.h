@@ -23,8 +23,8 @@ namespace flame
 		void* mouse_scroll_listener = nullptr;
 		void* destroy_listener = nullptr;
 
-		std::pair<bool, bool> kbtns[KeyboardKeyCount];
-		std::pair<bool, bool> kbtns_temp[KeyboardKeyCount];
+		std::pair<bool, bool> kbtns[KeyboardKey_Count];
+		std::pair<bool, bool> kbtns_temp[KeyboardKey_Count];
 		std::pair<bool, bool> mbtns[MouseKeyCount];
 		std::pair<bool, bool> mbtns_temp[MouseKeyCount];
 		Vec2i mpos = Vec2i(-1);
