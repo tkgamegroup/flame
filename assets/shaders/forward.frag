@@ -36,5 +36,5 @@ layout (location = 0) out vec4 o_color;
 
 void main()
 {
-	o_color = vec4(vec3(dot(i_normal, vec3(0, 0, 1))) * 2.0, 1.0);
+	o_color = vec4(vec3(dot(i_normal, vec3(0, 0, 1))), 1.0);
 }

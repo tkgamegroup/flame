@@ -21,6 +21,11 @@ namespace flame
 		virtual Vec3f get_scale() const = 0;
 		virtual void set_scale(const Vec3f& scale) = 0;
 
+		// in angle
+		virtual void set_euler(float yaw, float pitch, float roll) = 0;
+
+		virtual Vec3f get_dir(uint idx) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cNode* create();
 	};
 }

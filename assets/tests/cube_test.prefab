@@ -4,7 +4,7 @@
     <cElement />
     <cNode />
     <entity name="camera">
-      <cNode pos="0,0,-5" />
+      <cNode pos="0,0,5" />
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
@@ -13,8 +13,12 @@
       <cObject />
     </entity>
     <entity>
+      <cNode pos="2,0,0" />
+      <cObject />
+    </entity>
+    <entity>
       <cElement />
-      <cBloom />
+      <cBloom1 />
     </entity>
   </entity>
 </prefab>

@@ -2029,8 +2029,16 @@ namespace flame
 	// Vec4f as Quat
 	// (x, y, z) - vector, (w) - scalar
 
+	// q = [sin(q /2)v, cos(q / 2)] (where q is an angle and v is an axis)
 	template <class T>
-	Vec<4, T> get_quat(const Mat<3, 3, T>& m)
+	Vec<4, T> get_quat_from_axis_and_angle(float q, const Vec<3, T>& v)
+	{
+		auto rad = q * 0.5f * ANG_RAD;
+		return normalize(Vec<4, T>(sin(rad) * v, cos(rad)));
+	}
+
+	template <class T>
+	Vec<4, T> get_quat_from_matrix(const Mat<3, 3, T>& m)
 	{
 		T s;
 		T tq[4];
@@ -2076,19 +2084,18 @@ namespace flame
 			ret.y() = m[1][2] + m[2][1];
 			ret.z() = tq[3];
 		}
-		ret = normalize(ret * sqrt(T(0.25) / tq[j]));
-		return ret;
+		ret *= sqrt(T(0.25) / tq[j]);
+		return normalize(ret);
 	}
 	
 	template <class T>
-	Vec<4, T> quat_mul(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+	Vec<4, T> quat_mul(const Vec<4, T>& q1, const Vec<4, T>& q2)
 	{
 		Vec<4, T> ret;
-		ret.x() = lhs.w() * rhs.x() + lhs.x() * rhs.w() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
-		ret.y() = lhs.w() * rhs.y() - lhs.x() * rhs.z() + lhs.y() * rhs.w() + lhs.z() * rhs.x();
-		ret.z() = lhs.w() * rhs.z() + lhs.x() * rhs.y() + lhs.y() * rhs.w() + lhs.z() * rhs.x();
-		ret.w() = lhs.w() * rhs.w() - lhs.x() * rhs.x() - lhs.y() * rhs.y() - lhs.z() * rhs.z();
-		return ret;
+		auto v1 = Vec<3, T>(q1);
+		auto v2 = Vec<3, T>(q2);
+		ret = Vec<4, T>(q1.w() * v2 + q2.w() * v1 + cross(v1, v2), q1.w() * q2.w() - dot(v1, v2));
+		return normalize(ret);
 	}
 
 	template <class T>
