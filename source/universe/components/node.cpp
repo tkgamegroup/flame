@@ -79,8 +79,9 @@ namespace flame
 			transform_dirty = true;
 			for (auto& c : entity->children)
 			{
-				auto e = c->get_component_t<cNodePrivate>();
-				e->mark_transform_dirty();
+				auto n = c->get_component_t<cNodePrivate>();
+				if (n)
+					n->mark_transform_dirty();
 			}
 		}
 		mark_drawing_dirty();

@@ -364,12 +364,7 @@ namespace flame
 				resources[i].reset(r);
 			}
 
-			{
-				BoundModel m;
-				m.name = "cube";
-				m.model = (ModelPrivate*)Model::get_standard(StandardModelCube);
-				models.push_back(m);
-			}
+			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
 
 			auto sp = d->sampler_linear.get();
 
@@ -528,6 +523,25 @@ namespace flame
 			}
 
 			return slot;
+		}
+
+		uint CanvasPrivate::bind_model(ModelPrivate* model, const std::string& name)
+		{
+			BoundModel m;
+			m.name = name;
+			m.model = model;
+			models.push_back(m);
+			return models.size() - 1;
+		}
+
+		int CanvasPrivate::find_model(const char* name)
+		{
+			for (auto i = 0; i < models.size(); i++)
+			{
+				if (models[i].name == name)
+					return i;
+			}
+			return -1;
 		}
 
 		void CanvasPrivate::add_draw_cmd(uint id)
@@ -1108,7 +1122,7 @@ namespace flame
 				object_indirect_buffer_end->instance_count = 1;
 				object_indirect_buffer_end->first_index = ms.idx_off;
 				object_indirect_buffer_end->vertex_offset = ms.vtx_off;
-				object_indirect_buffer_end->first_instance = object_indirect_buffer_end - object_indirect_staging_buffer->mapped;
+				object_indirect_buffer_end->first_instance = (object_indirect_buffer_end - object_indirect_staging_buffer->mapped) << 16;
 				object_indirect_buffer_end++;
 			}
 

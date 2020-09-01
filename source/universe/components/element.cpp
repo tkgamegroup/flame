@@ -227,7 +227,8 @@ namespace flame
 			for (auto& c : entity->children)
 			{
 				auto e = c->get_component_t<cElementPrivate>();
-				e->mark_transform_dirty();
+				if (e)
+					e->mark_transform_dirty();
 			}
 		}
 		mark_drawing_dirty();

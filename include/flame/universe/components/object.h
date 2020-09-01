@@ -14,6 +14,9 @@ namespace flame
 		{
 		}
 
+		virtual const char* get_src() const = 0;
+		virtual void set_src(const char* src) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cObject* create();
 	};
 }

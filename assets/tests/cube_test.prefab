@@ -9,12 +9,8 @@
       <cScript src="camera_controller.lua" />
     </entity>
     <entity>
-      <cNode />
-      <cObject />
-    </entity>
-    <entity>
-      <cNode pos="2,0,0" />
-      <cObject />
+      <cNode pos="0,0,0" />
+      <cObject src="cube" />
     </entity>
     <entity>
       <cElement />

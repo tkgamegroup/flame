@@ -171,13 +171,18 @@ namespace flame
 					Vec4f(n->mTransformation.a3, n->mTransformation.b3, n->mTransformation.c3, n->mTransformation.d3),
 					Vec4f(n->mTransformation.a4, n->mTransformation.b4, n->mTransformation.c4, n->mTransformation.d4)
 				);
+				auto mat3 = Mat3f(mat);
 				for (auto i = 0; i < n->mNumMeshes; i++)
 				{
 					auto dst = new ModelMesh;
 					auto src = scene->mMeshes[n->mMeshes[i]];
 					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals, (Vec3f*)src->mTangents);
 					for (auto j = 0; j < src->mNumVertices; j++)
+					{
 						dst->vertices[j].pos = mat * Vec4f(dst->vertices[j].pos, 1.f);
+						dst->vertices[j].normal = mat3 * dst->vertices[j].normal;
+						dst->vertices[j].tangent = mat3 * dst->vertices[j].tangent;
+					}
 					std::vector<uint> indices(src->mNumFaces * 3);
 					for (auto j = 0; j < src->mNumFaces; j++)
 					{

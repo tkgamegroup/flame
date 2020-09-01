@@ -38,6 +38,8 @@ namespace flame
 			uint set_resource(int slot, ImageAtlas* image_atlas, const char* name) override;
 			uint set_resource(int slot, FontAtlas* font_atlas, const char* name) override;
 
+			uint bind_model(Model* model, const char* name) override;
+
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
 
@@ -209,6 +211,9 @@ namespace flame
 			CanvasResource* get_resource(uint slot) override { return slot < resources_count ? resources[slot].get() : nullptr; }
 			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas);
 
+			uint bind_model(ModelPrivate* model, const std::string& name);
+			int find_model(const char* name) override;
+
 			void add_draw_cmd(uint id);
 			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
 			void add_idx(uint idx);
@@ -258,6 +263,11 @@ namespace flame
 		{
 			return ((CanvasPrivate*)this)->set_resource(slot, ((FontAtlasPrivate*)font_atlas)->view.get(), ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
 				name ? name : "", nullptr, (FontAtlasPrivate*)font_atlas);
+		}
+
+		inline uint CanvasBridge::bind_model(Model* model, const char* name)
+		{
+			return ((CanvasPrivate*)this)->bind_model((ModelPrivate*)model, name);
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)
