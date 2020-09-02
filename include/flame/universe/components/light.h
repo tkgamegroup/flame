@@ -18,6 +18,9 @@ namespace flame
 		virtual graphics::LightType get_type() const = 0;
 		virtual void set_type(graphics::LightType t) = 0;
 
+		virtual Vec3f get_color() const = 0;
+		virtual void set_color(const Vec3f& c) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cLight* create();
 	};
 }

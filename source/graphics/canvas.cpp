@@ -188,12 +188,13 @@ namespace flame
 				}
 
 				{
-					DescriptorBindingInfo dbs[4];
+					DescriptorBindingInfo dbs[5];
 					dbs[0].type = DescriptorStorageBuffer;
 					dbs[1].type = DescriptorStorageBuffer;
-					dbs[2].type = DescriptorSampledImage;
-					dbs[2].count = 128;
-					dbs[3].type = DescriptorUniformBuffer;
+					dbs[2].type = DescriptorStorageBuffer;
+					dbs[3].type = DescriptorSampledImage;
+					dbs[3].count = 128;
+					dbs[4].type = DescriptorUniformBuffer;
 					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
 				}
 
@@ -329,30 +330,15 @@ namespace flame
 				}
 			}
 
-			element_vertex_buffer.reset(new BufferPrivate(d, 360000 * sizeof(ElementVertex), BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
-			element_vertex_staging_buffer.reset(new BufferPrivate(d, element_vertex_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			element_index_buffer.reset(new BufferPrivate(d, 240000 * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
-			element_index_staging_buffer.reset(new BufferPrivate(d, element_index_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			model_vertex_buffer.reset(new BufferPrivate(d, 600000 * sizeof(ModelVertex), BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
-			model_vertex_staging_buffer.reset(new BufferPrivate(d, model_vertex_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			model_index_buffer.reset(new BufferPrivate(d, 400000 * sizeof(uint), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
-			model_index_staging_buffer.reset(new BufferPrivate(d, model_index_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			material_info_buffer.reset(new BufferPrivate(d, 128 * sizeof(BoundMaterial), BufferUsageTransferDst | BufferUsageUniform, MemoryPropertyDevice));
-			material_info_staging_buffer.reset(new BufferPrivate(d, material_info_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			object_matrix_buffer.reset(new BufferPrivate(d, 10000 * sizeof(Mat4f), BufferUsageTransferDst | BufferUsageStorage, MemoryPropertyDevice));
-			object_matrix_staging_buffer.reset(new BufferPrivate(d, object_matrix_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			object_indirect_buffer.reset(new BufferPrivate(d, 10000 * sizeof(DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
-			object_indirect_staging_buffer.reset(new BufferPrivate(d, object_indirect_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			light_info_buffer.reset(new BufferPrivate(d, 10000 * sizeof(LightInfo), BufferUsageTransferDst | BufferUsageStorage, MemoryPropertyDevice));
-			light_info_staging_buffer.reset(new BufferPrivate(d, light_info_buffer->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-			element_vertex_staging_buffer->map();
-			element_index_staging_buffer->map();
-			model_vertex_staging_buffer->map();
-			model_index_staging_buffer->map();
-			material_info_staging_buffer->map();
-			object_matrix_staging_buffer->map();
-			object_indirect_staging_buffer->map();
-			light_info_staging_buffer->map();
+			element_vertex_buffer.init(d, 360000);
+			element_index_buffer.init(d, 240000);
+			model_vertex_buffer.init(d, 600000);
+			model_index_buffer.init(d, 400000);
+			material_info_buffer.init(d, 128);
+			object_matrix_buffer.init(d, 10000);
+			object_indirect_buffer.init(d, 10000);
+			light_info_buffer.init(d, 10000);
+			light_indices_buffer.init(d, 1);
 
 			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			white_image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
@@ -372,7 +358,10 @@ namespace flame
 			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
 			for (auto i = 0; i < resources_count; i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp);
-			forward_descriptorset->set_buffer(0, 0, object_matrix_buffer.get());
+			forward_descriptorset->set_buffer(0, 0, object_matrix_buffer.buf.get());
+			forward_descriptorset->set_buffer(1, 0, light_info_buffer.buf.get());
+			forward_descriptorset->set_buffer(2, 0, light_indices_buffer.buf.get());
+			forward_descriptorset->set_buffer(4, 0, material_info_buffer.buf.get());
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -527,6 +516,7 @@ namespace flame
 
 		uint CanvasPrivate::bind_model(ModelPrivate* model, const std::string& name)
 		{
+			assert(model);
 			BoundModel m;
 			m.name = name;
 			m.model = model;
@@ -566,19 +556,18 @@ namespace flame
 
 		void CanvasPrivate::add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col)
 		{
-			auto& v = *element_vertex_buffer_end;
-			v.pos = pos; 
+			ElementVertex v;
+			v.pos = pos;
 			v.uv = uv;
-			v.col = col; 
-			element_vertex_buffer_end++;
+			v.col = col;
+			element_vertex_buffer.push(v);
 			
 			cmds.back().v.d1.vtx_cnt++;
 		}
 
 		void CanvasPrivate::add_idx(uint idx)
 		{
-			*element_index_buffer_end = idx;
-			element_index_buffer_end++;
+			element_index_buffer.push(idx);
 
 			cmds.back().v.d1.idx_cnt++;
 		}
@@ -998,14 +987,14 @@ namespace flame
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 
-		void CanvasPrivate::add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor)
+		void CanvasPrivate::add_object(uint mod_id, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal)
 		{
 			if (uploaded_models_count != models.size())
 			{
-				auto vtx_cnt = 0;
-				auto idx_cnt = 0;
+				model_vertex_buffer.stg_rewind();
+				model_index_buffer.stg_rewind();
+				material_info_buffer.stg_rewind();
 				auto tex_cnt = 0;
-				auto mat_cnt = 0;
 
 				auto sp = device->sampler_linear.get();
 
@@ -1015,99 +1004,85 @@ namespace flame
 					for (auto& ms : m.model->meshes)
 					{
 						BoundMesh bm;
-						bm.vtx_off = vtx_cnt;
-						bm.idx_off = idx_cnt;
+						bm.vtx_off = model_vertex_buffer.stg_num();
+						bm.idx_off = model_index_buffer.stg_num();
 						bm.idx_cnt = ms->indices.size();
 						m.meshes.push_back(bm);
 
-						memcpy((char*)model_vertex_staging_buffer->mapped + sizeof(ModelVertex) * vtx_cnt, ms->vertices.data(), sizeof(ModelVertex) * ms->vertices.size());
-						memcpy((char*)model_index_staging_buffer->mapped + sizeof(uint) * idx_cnt, ms->indices.data(), sizeof(uint) * ms->indices.size());
-						vtx_cnt += ms->vertices.size();
-						idx_cnt += ms->indices.size();
+						model_vertex_buffer.push(ms->vertices.size(), ms->vertices.data());
+						model_index_buffer.push(ms->indices.size(), ms->indices.data());
 
 						BoundMaterial mat;
 						mat.albedo = Vec4f(ms->albedo, 0.f);
 						mat.spec_roughness = Vec4f(ms->spec, ms->roughness);
+						if (!ms->albedo_map_filename.empty())
 						{
 							auto img = ImagePrivate::create(device, ms->albedo_map_filename);
 							if (img)
 							{
 								auto idx = uploaded_model_textures_count + tex_cnt;
 								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
 								mat.albedo_map_index = idx;
 								tex_cnt++;
 							}
 						}
+						if (!ms->spec_map_filename.empty())
 						{
 							auto img = ImagePrivate::create(device, ms->spec_map_filename);
 							if (img)
 							{
 								auto idx = uploaded_model_textures_count + tex_cnt;
 								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
 								mat.spec_map_index = idx;
 								tex_cnt++;
 							}
 						}
+						if (!ms->roughness_map_filename.empty())
 						{
 							auto img = ImagePrivate::create(device, ms->roughness_map_filename);
 							if (img)
 							{
 								auto idx = uploaded_model_textures_count + tex_cnt;
 								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
 								mat.roughness_map_index = idx;
 								tex_cnt++;
 							}
 						}
+						if (!ms->normal_map_filename.empty())
 						{
 							auto img = ImagePrivate::create(device, ms->normal_map_filename);
 							if (img)
 							{
 								auto idx = uploaded_model_textures_count + tex_cnt;
 								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(2, idx, img->default_views[img->level].get(), sp);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
 								mat.normal_map_index = idx;
 								tex_cnt++;
 							}
 						}
-						memcpy((char*)material_info_staging_buffer->mapped + sizeof(BoundMaterial) * mat_cnt, &mat, sizeof(BoundMaterial));
-						bm.mat_idx = uploaded_materials_count + mat_cnt;
-						mat_cnt++;
+						bm.mat_idx = uploaded_materials_count + material_info_buffer.stg_num();
+						material_info_buffer.push(mat);
 					}
 				}
 
 				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 				cb->begin(true);
-				{
-					BufferCopy cpy;
-					cpy.dst_off = sizeof(ModelVertex) * uploaded_vertices_count;
-					cpy.size = sizeof(ModelVertex) * vtx_cnt;
-					cb->copy_buffer(model_vertex_staging_buffer.get(), model_vertex_buffer.get(), { &cpy, 1 });
-				}
-				{
-					BufferCopy cpy;
-					cpy.dst_off = sizeof(uint) * uploaded_indices_count;
-					cpy.size = sizeof(uint) * idx_cnt;
-					cb->copy_buffer(model_index_staging_buffer.get(), model_index_buffer.get(), { &cpy, 1 });
-				}
-				{
-					BufferCopy cpy;
-					cpy.dst_off = sizeof(BoundMaterial) * uploaded_materials_count;
-					cpy.size = sizeof(BoundMaterial) * mat_cnt;
-					cb->copy_buffer(material_info_staging_buffer.get(), material_info_buffer.get(), { &cpy, 1 });
-				}
+				model_vertex_buffer.upload(cb.get());
+				model_index_buffer.upload(cb.get());
+				material_info_buffer.upload(cb.get());
 				cb->end();
 				auto q = device->graphics_queue.get();
 				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
 				q->wait_idle();
 
 				uploaded_models_count = models.size();
-				uploaded_vertices_count += vtx_cnt;
-				uploaded_indices_count += idx_cnt;
+				uploaded_vertices_count += model_vertex_buffer.stg_num();
+				uploaded_indices_count += model_index_buffer.stg_num();
+				uploaded_materials_count += material_info_buffer.stg_num();
 				uploaded_model_textures_count += tex_cnt;
-				uploaded_materials_count += mat_cnt;
 			}
 
 			auto add_cmd = [&]() {
@@ -1125,19 +1100,24 @@ namespace flame
 					add_cmd();
 			}
 
+			auto m_id = object_matrix_buffer.stg_num() << 16;
 			auto& m = models[mod_id];
+			ObjectMatrix om;
+			om.model = model;
+			om.view = view;
+			om.proj = proj;
+			om.mvp = proj * view * model;
+			om.nor = normal;
+			object_matrix_buffer.push(om);
 			for (auto& ms : m.meshes)
 			{
-				object_matrix_buffer_end->mvp = mvp;
-				object_matrix_buffer_end->nor = nor;
-				object_matrix_buffer_end++;
-
-				object_indirect_buffer_end->index_count = ms.idx_cnt;
-				object_indirect_buffer_end->instance_count = 1;
-				object_indirect_buffer_end->first_index = ms.idx_off;
-				object_indirect_buffer_end->vertex_offset = ms.vtx_off;
-				object_indirect_buffer_end->first_instance = (object_indirect_buffer_end - object_indirect_staging_buffer->mapped) << 16;
-				object_indirect_buffer_end++;
+				DrawIndexedIndirectCommand ic;
+				ic.index_count = ms.idx_cnt;
+				ic.instance_count = 1;
+				ic.first_index = ms.idx_off;
+				ic.vertex_offset = ms.vtx_off;
+				ic.first_instance = m_id;
+				object_indirect_buffer.push(ic);
 			}
 
 			cmds.back().v.d3.count += m.meshes.size();
@@ -1145,9 +1125,16 @@ namespace flame
 
 		void CanvasPrivate::add_light(LightType type, const Vec3f& color, const Vec3f& pos)
 		{
-			light_info_buffer_end->col = Vec4f(color, 0.f);
-			light_info_buffer_end->pos = Vec4f(pos, type == LightPoint ? 1.f : 0.f);
-			light_info_buffer_end++;
+			LightInfo li;
+			li.col = Vec4f(color, 0.f);
+			li.pos = Vec4f(pos, type == LightPoint ? 1.f : 0.f);
+			light_info_buffer.push(li);
+
+			{
+				// TODO
+				auto& lis = *(LightIndices*)light_indices_buffer.stg->mapped;
+				lis.indices[lis.count++] = light_info_buffer.stg_num() - 1;
+			}
 		}
 
 		void CanvasPrivate::add_blur(const Vec4f& _range, uint radius)
@@ -1189,11 +1176,19 @@ namespace flame
 
 		void CanvasPrivate::prepare()
 		{
-			element_vertex_buffer_end = (ElementVertex*)element_vertex_staging_buffer->mapped;
-			element_index_buffer_end = (uint*)element_index_staging_buffer->mapped;
-			object_matrix_buffer_end = (ObjectMatrix*)object_matrix_staging_buffer->mapped;
-			object_indirect_buffer_end = (DrawIndexedIndirectCommand*)object_indirect_staging_buffer->mapped;
-			light_info_buffer_end = (LightInfo*)light_info_staging_buffer->mapped;
+			element_vertex_buffer.stg_rewind();
+			element_index_buffer.stg_rewind();
+			object_matrix_buffer.stg_rewind();
+			object_indirect_buffer.stg_rewind();
+			light_info_buffer.stg_rewind();
+			light_indices_buffer.stg_rewind();
+
+			{
+				// TODO
+				LightIndices lis;
+				lis.count = 0;
+				light_indices_buffer.push(lis);
+			}
 
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
 
@@ -1281,31 +1276,12 @@ namespace flame
 			cb->clear_depth_image(depth_image.get(), 1.f);
 			cb->image_barrier(depth_image.get(), {}, ImageLayoutTransferDst, ImageLayoutAttachment);
 
-			{
-				BufferCopy cpy;
-				cpy.size = (char*)element_vertex_buffer_end - element_vertex_staging_buffer->mapped;
-				cb->copy_buffer(element_vertex_staging_buffer.get(), element_vertex_buffer.get(), { &cpy, 1 });
-			}
-			{
-				BufferCopy cpy;
-				cpy.size = (char*)element_index_buffer_end - element_index_staging_buffer->mapped;
-				cb->copy_buffer(element_index_staging_buffer.get(), element_index_buffer.get(), { &cpy, 1 });
-			}
-			{
-				BufferCopy cpy;
-				cpy.size = (char*)object_matrix_buffer_end - object_matrix_staging_buffer->mapped;
-				cb->copy_buffer(object_matrix_staging_buffer.get(), object_matrix_buffer.get(), { &cpy, 1 });
-			}
-			{
-				BufferCopy cpy;
-				cpy.size = (char*)object_indirect_buffer_end - object_indirect_staging_buffer->mapped;
-				cb->copy_buffer(object_indirect_staging_buffer.get(), object_indirect_buffer.get(), { &cpy, 1 });
-			}
-			{
-				BufferCopy cpy;
-				cpy.size = (char*)light_info_buffer_end - light_info_staging_buffer->mapped;
-				cb->copy_buffer(light_info_staging_buffer.get(), light_info_buffer.get(), { &cpy, 1 });
-			}
+			element_vertex_buffer.upload(cb);
+			element_index_buffer.upload(cb);
+			object_matrix_buffer.upload(cb);
+			object_indirect_buffer.upload(cb);
+			light_info_buffer.upload(cb);
+			light_indices_buffer.upload(cb);
 
 			cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 			cb->set_scissor(curr_scissor);
@@ -1321,12 +1297,13 @@ namespace flame
 				{
 					if (ele_idx_off == 0)
 					{
-						cb->buffer_barrier(element_vertex_buffer.get(), AccessTransferWrite, AccessVertexAttributeRead);
-						cb->buffer_barrier(element_index_buffer.get(), AccessTransferWrite, AccessIndexRead);
+						element_vertex_buffer.barrier(cb);
+						element_index_buffer.barrier(cb);
+
 					}
 					cb->set_scissor(curr_scissor);
-					cb->bind_vertex_buffer(element_vertex_buffer.get(), 0);
-					cb->bind_index_buffer(element_index_buffer.get(), IndiceTypeUint);
+					cb->bind_vertex_buffer(element_vertex_buffer.buf.get(), 0);
+					cb->bind_index_buffer(element_index_buffer.buf.get(), IndiceTypeUint);
 					cb->begin_renderpass(dst_fb);
 					cb->bind_pipeline(pl_ele);
 					cb->bind_descriptor_set(element_descriptorset.get(), 0, element_pipelinelayout);
@@ -1356,12 +1333,14 @@ namespace flame
 				{
 					if (obj_indirect_off == 0)
 					{
-						cb->buffer_barrier(object_matrix_buffer.get(), AccessTransferWrite, AccessIndexRead);
-						cb->buffer_barrier(object_indirect_buffer.get(), AccessTransferWrite, AccessIndirectCommandRead);
+						object_matrix_buffer.barrier(cb);
+						object_indirect_buffer.barrier(cb);
+						light_info_buffer.barrier(cb);
+						light_indices_buffer.barrier(cb);
 					}
 					cb->set_scissor(curr_scissor);
-					cb->bind_vertex_buffer(model_vertex_buffer.get(), 0);
-					cb->bind_index_buffer(model_index_buffer.get(), IndiceTypeUint);
+					cb->bind_vertex_buffer(model_vertex_buffer.buf.get(), 0);
+					cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
 					cb->begin_renderpass(hdr ? forward16_framebuffer.get() : forward8_framebuffers[image_index].get());
 					cb->bind_pipeline(pl_fwd);
 					cb->bind_descriptor_set(forward_descriptorset.get(), 0, forward_pipelinelayout);
@@ -1371,7 +1350,7 @@ namespace flame
 						switch (cmd.type)
 						{
 						case CmdDrawObject:
-							cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_indirect_off, cmd.v.d3.count);
+							cb->draw_indexed_indirect(object_indirect_buffer.buf.get(), obj_indirect_off, cmd.v.d3.count);
 							obj_indirect_off += cmd.v.d3.count;
 							break;
 						case CmdSetScissor:

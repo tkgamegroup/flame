@@ -3,6 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout (location = 0) in vec3 i_normal;
+layout (location = 1) in vec3 i_world_coord;
 
 struct LightInfo
 {
@@ -15,7 +16,18 @@ layout (set = 0, binding = 1) buffer readonly LightInfos
 	LightInfo light_infos[];
 };
 
-layout (set = 0, binding = 2) uniform sampler2D maps[128];
+struct LightIndices
+{
+	uint count;
+	uint indices[1023];
+};
+
+layout (set = 0, binding = 2) buffer readonly LightIndicesList
+{
+	LightIndices light_indices_list[];
+};
+
+layout (set = 0, binding = 3) uniform sampler2D maps[128];
 
 struct MaterialInfo
 {
@@ -27,7 +39,7 @@ struct MaterialInfo
 	uint normal_map_index;
 };
 
-layout (set = 0, binding = 3) uniform MaterialInfos
+layout (set = 0, binding = 4) uniform MaterialInfos
 {
 	MaterialInfo material_infos[];
 };
@@ -36,5 +48,12 @@ layout (location = 0) out vec4 o_color;
 
 void main()
 {
-	o_color = vec4(vec3(dot(i_normal, vec3(0, 0, 1))), 1.0);
+	vec3 color = vec3(0);
+	uint count = light_indices_list[0].count;
+	for (int i = 0; i < count; i++)
+	{
+		LightInfo light = light_infos[light_indices_list[0].indices[i]];
+		color += dot(i_normal, normalize(light.pos.xyz - i_world_coord)) * light.col.rgb;
+	}
+	o_color = vec4(color, 1.0);
 }

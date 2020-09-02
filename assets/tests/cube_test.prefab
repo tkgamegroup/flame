@@ -13,6 +13,10 @@
       <cObject src="cube" />
     </entity>
     <entity>
+      <cNode pos="5,3,6" />
+      <cLight color="0.8,0.7,0.4" />
+    </entity>
+    <entity>
       <cElement />
       <cBloom1 />
     </entity>

@@ -43,6 +43,90 @@ namespace flame
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
 
+		template <class T, BufferUsageFlags U>
+		struct TBuffer
+		{
+			DevicePrivate* d = nullptr;
+			uint count = 0;
+			std::unique_ptr<BufferPrivate> buf;
+			std::unique_ptr<BufferPrivate> stg;
+			T* end = nullptr;
+
+			void init(DevicePrivate* _d, uint _count)
+			{
+				d = _d;
+				count = _count;
+				create();
+			}
+
+			void create()
+			{
+				T* temp = nullptr;
+				auto n = 0;
+				if (end)
+				{
+					n = stg_num();
+					temp = new T[n];
+					memcpy(temp, stg->mapped, sizeof(T) * n);
+				}
+				buf.reset(new BufferPrivate(d, count * sizeof(T), BufferUsageTransferDst | U, MemoryPropertyDevice));
+				stg.reset(new BufferPrivate(d, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stg->map();
+				end = (T*)stg->mapped;
+				if (temp)
+				{
+					push(n, temp);
+					delete[]temp;
+				}
+			}
+
+			void stg_rewind()
+			{
+				end = (T*)stg->mapped;
+			}
+
+			uint stg_num()
+			{
+				return end - stg->mapped;
+			}
+
+			void push(const T& t)
+			{
+				auto n = stg_num();
+				if (n >= count)
+				{
+					count *= 2;
+					create();
+				}
+				*end = t;
+				end++;
+			}
+
+			void push(uint cnt, const T* p)
+			{
+				auto n = stg_num();
+				if (n + cnt >= count)
+				{
+					count = (n + cnt) * 2;
+					create();
+				}
+				memcpy(end, p, sizeof(T) * cnt);
+				end += cnt;
+			}
+
+			void upload(CommandBufferPrivate* cb)
+			{
+				BufferCopy cpy;
+				cpy.size = (char*)end - stg->mapped;
+				cb->copy_buffer(stg.get(), buf.get(), { &cpy, 1 });
+			}
+
+			void barrier(CommandBufferPrivate* cb)
+			{
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
+			}
+		};
+
 		struct CanvasPrivate : CanvasBridge
 		{
 			enum CmdType
@@ -89,7 +173,9 @@ namespace flame
 				USE_ALBEDO_MAP = 1 << 0,
 				USE_SPEC_MAP = 1 << 1,
 				USE_ROUGHNESS_MAP = 1 << 2,
-				USE_NORMAL_MAP = 1 << 3
+				USE_NORMAL_MAP = 1 << 3,
+
+				ALL_MATERIALS = 1 << 4
 			};
 
 			struct BoundMaterial
@@ -120,6 +206,9 @@ namespace flame
 
 			struct ObjectMatrix
 			{
+				Mat4f model;
+				Mat4f view;
+				Mat4f proj;
 				Mat4f mvp;
 				Mat4f nor;
 			};
@@ -128,6 +217,12 @@ namespace flame
 			{
 				Vec4f col;
 				Vec4f pos;
+			};
+
+			struct LightIndices
+			{
+				uint count;
+				uint indices[1023];
 			};
 
 			DevicePrivate* device;
@@ -142,36 +237,24 @@ namespace flame
 			uint uploaded_models_count = 0;
 			uint uploaded_vertices_count = 0;
 			uint uploaded_indices_count = 0;
-			uint uploaded_model_textures_count = 0;
 			uint uploaded_materials_count = 0;
+			uint uploaded_model_textures_count = 0;
 
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
 
-			std::unique_ptr<BufferPrivate> element_vertex_buffer;
-			std::unique_ptr<BufferPrivate> element_vertex_staging_buffer;
-			std::unique_ptr<BufferPrivate> element_index_buffer;
-			std::unique_ptr<BufferPrivate> element_index_staging_buffer;
-			std::unique_ptr<BufferPrivate> model_vertex_buffer;
-			std::unique_ptr<BufferPrivate> model_vertex_staging_buffer;
-			std::unique_ptr<BufferPrivate> model_index_buffer;
-			std::unique_ptr<BufferPrivate> model_index_staging_buffer;
-			std::unique_ptr<BufferPrivate> material_info_buffer;
-			std::unique_ptr<BufferPrivate> material_info_staging_buffer;
-			std::unique_ptr<BufferPrivate> object_matrix_buffer;
-			std::unique_ptr<BufferPrivate> object_matrix_staging_buffer;
-			std::unique_ptr<BufferPrivate> object_indirect_buffer;
-			std::unique_ptr<BufferPrivate> object_indirect_staging_buffer;
-			std::unique_ptr<BufferPrivate> light_info_buffer;
-			std::unique_ptr<BufferPrivate> light_info_staging_buffer;
+			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
+			TBuffer<uint, BufferUsageIndex> element_index_buffer;
+			TBuffer<ModelVertex, BufferUsageVertex> model_vertex_buffer;
+			TBuffer<uint, BufferUsageIndex> model_index_buffer;
+			TBuffer<BoundMaterial, BufferUsageUniform> material_info_buffer;
+			TBuffer<ObjectMatrix, BufferUsageStorage> object_matrix_buffer;
+			TBuffer<DrawIndexedIndirectCommand, BufferUsageIndirect> object_indirect_buffer;
+			TBuffer<LightInfo, BufferUsageStorage> light_info_buffer;
+			TBuffer<LightIndices, BufferUsageStorage> light_indices_buffer;
+
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
-
-			ElementVertex*				element_vertex_buffer_end;
-			uint*						element_index_buffer_end;
-			ObjectMatrix*				object_matrix_buffer_end;
-			DrawIndexedIndirectCommand* object_indirect_buffer_end;
-			LightInfo*					light_info_buffer_end;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
 			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
@@ -236,7 +319,7 @@ namespace flame
 			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void add_object(uint mod_id, const Mat4f& mvp, const Mat4f& nor) override;
+			void add_object(uint mod_id, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
 			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
 
 			void add_blur(const Vec4f& range, uint radius) override;

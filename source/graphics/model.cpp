@@ -174,8 +174,9 @@ namespace flame
 				auto mat3 = Mat3f(mat);
 				for (auto i = 0; i < n->mNumMeshes; i++)
 				{
-					auto dst = new ModelMesh;
 					auto src = scene->mMeshes[n->mMeshes[i]];
+					auto dst = new ModelMesh;
+
 					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals, (Vec3f*)src->mTangents);
 					for (auto j = 0; j < src->mNumVertices; j++)
 					{
@@ -191,6 +192,13 @@ namespace flame
 						indices[j * 3 + 2] = src->mFaces[j].mIndices[2];
 					}
 					dst->set_indices(indices.size(), indices.data());
+
+					//auto src_mat = scene->mMaterials[src->mMaterialIndex];
+					//aiString str;
+					//src_mat->GetTexture(aiTextureType_BASE_COLOR, 0, &str);
+					//src_mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
+					//src_mat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &str);
+
 					ret->meshes.emplace_back(dst);
 				}
 				for (auto i = 0; i < n->mNumChildren; i++)
