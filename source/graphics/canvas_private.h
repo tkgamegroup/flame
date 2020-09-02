@@ -84,6 +84,14 @@ namespace flame
 				Vec4c col;
 			};
 
+			enum
+			{
+				USE_ALBEDO_MAP = 1 << 0,
+				USE_SPEC_MAP = 1 << 1,
+				USE_ROUGHNESS_MAP = 1 << 2,
+				USE_NORMAL_MAP = 1 << 3
+			};
+
 			struct BoundMaterial
 			{
 				Vec4f albedo;
@@ -214,7 +222,7 @@ namespace flame
 			uint bind_model(ModelPrivate* model, const std::string& name);
 			int find_model(const char* name) override;
 
-			void add_draw_cmd(uint id);
+			void add_draw_element_cmd(uint id);
 			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
 			void add_idx(uint idx);
 

@@ -10,7 +10,7 @@ namespace flame
 	}
 
 	struct cNodePrivate;
-	struct cCameraPrivate;
+	struct cCamera;
 
 	struct cObjectBridge : cObject
 	{

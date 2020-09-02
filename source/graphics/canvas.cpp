@@ -544,25 +544,24 @@ namespace flame
 			return -1;
 		}
 
-		void CanvasPrivate::add_draw_cmd(uint id)
+		void CanvasPrivate::add_draw_element_cmd(uint id)
 		{
-			auto equal = [&]() {
-				if (cmds.empty())
-					return false;
-				auto& back = cmds.back();
-				if (back.type == CmdDrawElement && back.v.d1.id == id)
-					return true;
-				return false;
+			auto add = [&]() {
+				Cmd cmd;
+				cmd.type = CmdDrawElement;
+				cmd.v.d1.id = id;
+				cmd.v.d1.vtx_cnt = 0;
+				cmd.v.d1.idx_cnt = 0;
+				cmds.push_back(cmd);
 			};
-			if (equal())
-				return;
-
-			Cmd cmd;
-			cmd.type = CmdDrawElement;
-			cmd.v.d1.id = id;
-			cmd.v.d1.vtx_cnt = 0;
-			cmd.v.d1.idx_cnt = 0;
-			cmds.push_back(cmd);
+			if (cmds.empty())
+				add();
+			else
+			{
+				auto& back = cmds.back();
+				if (back.type != CmdDrawElement || back.v.d1.id != id)
+					add();
+			}
 		}
 
 		void CanvasPrivate::add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col)
@@ -645,7 +644,7 @@ namespace flame
 		{
 			thickness *= 0.5f;
 
-			add_draw_cmd(white_slot);
+			add_draw_element_cmd(white_slot);
 			auto uv = Vec2f(0.5f);
 
 			for (auto& path : paths)
@@ -855,7 +854,7 @@ namespace flame
 
 		void CanvasPrivate::fill(const Vec4c& col, bool aa)
 		{
-			add_draw_cmd(white_slot);
+			add_draw_element_cmd(white_slot);
 			auto uv = Vec2f(0.5f);
 
 			for (auto& path : paths)
@@ -930,7 +929,7 @@ namespace flame
 		{
 			auto atlas = resources[res_id]->font_atlas;
 
-			add_draw_cmd(res_id);
+			add_draw_element_cmd(res_id);
 
 			auto p = Vec2f(0.f);
 
@@ -988,7 +987,7 @@ namespace flame
 				_uv1 = mix(tuv0, tuv1, uv1);
 			}
 
-			add_draw_cmd(res_id);
+			add_draw_element_cmd(res_id);
 
 			auto vtx_cnt = cmds.back().v.d1.vtx_cnt;
 
@@ -1111,6 +1110,21 @@ namespace flame
 				uploaded_materials_count += mat_cnt;
 			}
 
+			auto add_cmd = [&]() {
+				Cmd cmd;
+				cmd.type = CmdDrawObject;
+				cmd.v.d3.count = 0;
+				cmds.push_back(cmd);
+			};
+			if (cmds.empty())
+				add_cmd();
+			else
+			{
+				auto& back = cmds.back();
+				if (back.type != CmdDrawObject)
+					add_cmd();
+			}
+
 			auto& m = models[mod_id];
 			for (auto& ms : m.meshes)
 			{
@@ -1126,10 +1140,7 @@ namespace flame
 				object_indirect_buffer_end++;
 			}
 
-			Cmd cmd;
-			cmd.type = CmdDrawObject;
-			cmd.v.d3.count = m.meshes.size();
-			cmds.push_back(cmd);
+			cmds.back().v.d3.count += m.meshes.size();
 		}
 
 		void CanvasPrivate::add_light(LightType type, const Vec3f& color, const Vec3f& pos)
@@ -1300,7 +1311,7 @@ namespace flame
 			cb->set_scissor(curr_scissor);
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
-			auto obj_off = 0;
+			auto obj_indirect_off = 0;
 
 			for (auto& p : passes)
 			{
@@ -1343,7 +1354,7 @@ namespace flame
 					break;
 				case PassObject:
 				{
-					if (obj_off == 0)
+					if (obj_indirect_off == 0)
 					{
 						cb->buffer_barrier(object_matrix_buffer.get(), AccessTransferWrite, AccessIndexRead);
 						cb->buffer_barrier(object_indirect_buffer.get(), AccessTransferWrite, AccessIndirectCommandRead);
@@ -1360,8 +1371,8 @@ namespace flame
 						switch (cmd.type)
 						{
 						case CmdDrawObject:
-							cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_off, cmd.v.d3.count);
-							obj_off += cmd.v.d3.count;
+							cb->draw_indexed_indirect(object_indirect_buffer.get(), obj_indirect_off, cmd.v.d3.count);
+							obj_indirect_off += cmd.v.d3.count;
 							break;
 						case CmdSetScissor:
 							cb->set_scissor(cmd.v.d2.scissor);
