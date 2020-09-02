@@ -28,7 +28,7 @@ int main(int argc, char** args)
 	inspector = e->find_child("inspector");
 
 	auto prefab = Entity::create();
-	prefab->load(L"list_test");
+	prefab->load(L"tests/list_test");
 	scene->add_child(prefab);
 
 	std::function<void(Entity*, Entity*)> add_node;

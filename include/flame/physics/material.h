@@ -8,15 +8,12 @@ namespace flame
 	{
 		struct Device;
 
-		struct MaterialPrivate;
-
 		struct Material
 		{
-			MaterialPrivate *_priv;
-		};
+			virtual void release() = 0;
 
-		FLAME_PHYSICS_EXPORTS Material *create_material(Device *d, float static_friction, float dynamic_friction, float restitution);
-		FLAME_PHYSICS_EXPORTS void destroy_material(Material *m);
+			FLAME_PHYSICS_EXPORTS Material* create(Device* d, float static_friction, float dynamic_friction, float restitution);
+		};
 	}
 }
 

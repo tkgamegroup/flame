@@ -69,11 +69,14 @@ set(ASSIMP_INCLUDE_DIR "${temp}/include" CACHE PATH "Assimp Include Directory")
 set(ASSIMP_STATIC_LIBRARY_PATH "${temp}/build/lib/Debug/assimp-vc142-mtd.lib" CACHE FILEPATH "Assimp STATIC Library Path")
 set(ASSIMP_SHARED_LIBRARY_PATH "${temp}/build/bin/Debug/assimp-vc142-mtd.dll" CACHE FILEPATH "Assimp SHARED Library Path")
 
-#[[
-set(PHYSX_DIR "" CACHE PATH "Physx Directory")
-set(PHYSX_STATIC_LIBRARY_DIR "" CACHE PATH "PHYSX STATIC Library Directory")
-set(PHYSX_SHARED_LIBRARY_DIR "" CACHE PATH "PHYSX SHARED Library Directory")
-]]
+option(USE_PHYSX "Use Physx" OFF)
+set(temp "${dir}/physx")
+if (NOT EXISTS "${temp}")
+	set(temp "")
+endif()
+set(PHYSX_DIR "${temp}" CACHE PATH "Physx Directory")
+set(PHYSX_STATIC_LIBRARY_DIR "${temp}" CACHE PATH "PHYSX STATIC Library Directory")
+set(PHYSX_SHARED_LIBRARY_DIR "${temp}" CACHE PATH "PHYSX SHARED Library Directory")
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
 

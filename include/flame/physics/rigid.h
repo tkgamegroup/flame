@@ -1,6 +1,6 @@
 #pragma once
 
-#include "physics.h"
+#include <flame/physics/physics.h>
 
 namespace flame
 {
@@ -9,22 +9,18 @@ namespace flame
 		struct Device;
 		struct Shape;
 
-		struct RigidPrivate;
-
 		struct Rigid
 		{
-			RigidPrivate *_priv;
+			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS void attach_shape(Shape *s);
-			FLAME_PHYSICS_EXPORTS void detach_shape(Shape *s);
-			FLAME_PHYSICS_EXPORTS void get_pose(Vec3f &out_coord, Vec4f &out_quat);
-			FLAME_PHYSICS_EXPORTS void add_force(const Vec3f &v);
-			FLAME_PHYSICS_EXPORTS void clear_force();
+			virtual void attach_shape(Shape* s) = 0;
+			virtual void detach_shape(Shape* s) = 0;
+			virtual void get_pose(Vec3f& out_coord, Vec4f& out_quat) = 0;
+			virtual void add_force(const Vec3f& v) = 0;
+			virtual void clear_force() = 0;
+
+			FLAME_PHYSICS_EXPORTS Rigid* create(Device* d, const Vec3f& coord, bool dynamic);
 		};
-
-		FLAME_PHYSICS_EXPORTS Rigid *create_static_rigid(Device *d, const Vec3f &coord);
-		FLAME_PHYSICS_EXPORTS Rigid *create_dynamic_rigid(Device *d, const Vec3f &coord);
-		FLAME_PHYSICS_EXPORTS void destroy_rigid(Rigid *r);
 	}
 }
 

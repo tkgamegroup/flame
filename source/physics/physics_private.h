@@ -2,15 +2,17 @@
 
 #pragma once
 
-#include "physics.h"
+#include <flame/physics/physics.h>
 
+#ifdef USE_PHYSX
 #include <PxPhysicsAPI.h>
-using namespace physx;
+#endif
 
 namespace flame
 {
 	namespace physics
 	{
+#ifdef USE_PHYSX
 		inline PxVec3 Z(const Vec3f &v)
 		{
 			return PxVec3(v.x(), v.y(), v.z());
@@ -39,6 +41,7 @@ namespace flame
 		{
 			return PxTransform(Z(coord), PxQuat(Z(axis)));
 		}
+#endif
 	}
 }
 

@@ -1,15 +1,22 @@
 #pragma once
 
-#include "rigid.h"
+#include <flame/physics/rigid.h>
 #include "physics_private.h"
 
 namespace flame
 {
 	namespace physics
 	{
-		struct RigidPrivate
+		struct RigidPrivate : Rigid
 		{
-			PxRigidActor *v;
+#ifdef USE_PHYSX
+			PxRigidActor* v;
+#endif
+
+			RigidPrivate();
+			~RigidPrivate();
+
+			void release() override { delete this; }
 		};
 	}
 }

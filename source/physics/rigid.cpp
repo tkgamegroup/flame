@@ -7,19 +7,26 @@ namespace flame
 {
 	namespace physics
 	{
-		void Rigid::attach_shape(Shape *s)
+		RigidPrivate::~RigidPrivate()
 		{
-			_priv->v->attachShape(*s->_priv->v);
+#ifdef USE_PHYSX
+			v->release();
+#endif
 		}
 
-		void Rigid::detach_shape(Shape *s)
+		void Rigid::attach_shape(Shape* s)
 		{
-			_priv->v->detachShape(*s->_priv->v);
+			v->attachShape(*s->v);
 		}
 
-		void Rigid::get_pose(Vec3f &out_coord, Vec4f &out_quat)
+		void Rigid::detach_shape(Shape* s)
 		{
-			auto trans = _priv->v->getGlobalPose();
+			v->detachShape(*s->v);
+		}
+
+		void Rigid::get_pose(Vec3f& out_coord, Vec4f& out_quat)
+		{
+			auto trans = v->getGlobalPose();
 			out_coord.x() = trans.p.x();
 			out_coord.y() = trans.p.y();
 			out_coord.z() = trans.p.z();
@@ -29,49 +36,36 @@ namespace flame
 			out_quat.w() = trans.q.w();
 		}
 
-		void Rigid::add_force(const Vec3f &v)
+		void Rigid::add_force(const Vec3f& v)
 		{
-			auto d = (PxRigidDynamic*)_priv->v;
+			auto d = (PxRigidDynamic*)v;
 			d->addForce(Z(v));
 		}
 
 		void Rigid::clear_force()
 		{
-			auto d = (PxRigidDynamic*)_priv->v;
+			auto d = (PxRigidDynamic*)v;
 			d->clearForce();
 		}
-		
-		Rigid *create_static_rigid(Device *d, const Vec3f &coord)
+
+		Rigid* create_static_rigid(Device* d, const Vec3f& coord)
 		{
-			auto r = new Rigid;
-			
-			r->_priv = new RigidPrivate;
-			r->_priv->v = d->_priv->inst->createRigidStatic(
+			r->v = d->inst->createRigidStatic(
 				Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
-			r->_priv->v->userData = r;
+			r->v->userData = r;
 
 			return r;
 		}
 
-		Rigid *create_dynamic_rigid(Device *d, const Vec3f &coord)
+		Rigid* create_dynamic_rigid(Device* d, const Vec3f& coord)
 		{
-			auto r = new Rigid;
-
-			r->_priv = new RigidPrivate;
-			r->_priv->v = d->_priv->inst->createRigidDynamic(
+			r->v = d->inst->createRigidDynamic(
 				Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
 			//PxRigidBodyExt::updateMassAndInertia(*body, density);
 			//if (kinematic) body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-			r->_priv->v->userData = r;
+			r->v->userData = r;
 
 			return r;
-		}
-
-		void destroy_rigid(Rigid *r)
-		{
-			r->_priv->v->release();
-			delete r->_priv;
-			delete r;
 		}
 	}
 }

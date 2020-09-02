@@ -5,22 +5,23 @@ namespace flame
 {
 	namespace physics
 	{
-		Material *create_material(Device *d, float static_friction, float dynamic_friction, float restitution)
+		MaterialPrivate::MaterialPrivate(DevicePrivate* d, float static_friction, float dynamic_friction, float restitution)
 		{
-			auto m = new Material;
-			
-			m->_priv = new MaterialPrivate;
-			m->_priv->v = d->_priv->inst->createMaterial(static_friction, dynamic_friction, restitution);
-
-			return m;
+#ifdef USE_PHYSX
+			v = d->inst->createMaterial(static_friction, dynamic_friction, restitution);
+#endif
 		}
 
-		void destroy_material(Material *m)
+		MaterialPrivate::~MaterialPrivate()
 		{
-			m->_priv->v->release();
+#ifdef USE_PHYSX
+			v->release();
+#endif
+		}
 
-			delete m->_priv;
-			delete m;
+		Material* Material::create(Device *d, float static_friction, float dynamic_friction, float restitution)
+		{
+			return new MaterialPrivate((DevicePrivate*)d, static_friction, dynamic_friction, restitution);
 		}
 	}
 }
