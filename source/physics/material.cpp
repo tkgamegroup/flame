@@ -8,14 +8,14 @@ namespace flame
 		MaterialPrivate::MaterialPrivate(DevicePrivate* d, float static_friction, float dynamic_friction, float restitution)
 		{
 #ifdef USE_PHYSX
-			v = d->inst->createMaterial(static_friction, dynamic_friction, restitution);
+			px_material = d->px_instance->createMaterial(static_friction, dynamic_friction, restitution);
 #endif
 		}
 
 		MaterialPrivate::~MaterialPrivate()
 		{
 #ifdef USE_PHYSX
-			v->release();
+			px_material->release();
 #endif
 		}
 

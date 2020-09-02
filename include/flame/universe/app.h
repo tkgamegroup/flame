@@ -13,6 +13,7 @@
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
 #include <flame/script/script.h>
+#include <flame/physics/device.h>
 #include <flame/universe/world.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
@@ -63,6 +64,7 @@ namespace flame
 		sound::Device* sound_device;
 		sound::Context* sound_context;
 		script::Instance* script_instance;
+		physics::Device* physics_device;
 
 		graphics::FontAtlas* font_atlas;
 
@@ -110,7 +112,6 @@ namespace flame
 			world->add_system(s_type_setting);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			s_renderer = sRenderer::create();
 			struct sFrame : System
 			{
 				GraphicsWindow* thiz;
@@ -140,6 +141,7 @@ namespace flame
 				}
 			};
 			world->add_system(new sFrame(this));
+			s_renderer = sRenderer::create();
 			world->add_system(s_renderer);
 
 			root = world->get_root();
@@ -254,6 +256,8 @@ namespace flame
 		sound_context->make_current();
 
 		script_instance = script::Instance::get();
+
+		physics_device = physics::Device::create();
 
 		{
 			graphics::Font* fonts[] = {

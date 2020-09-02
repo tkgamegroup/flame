@@ -1,8 +1,7 @@
 #pragma once
 
-#include "physics.h"
-
-#include <functional>
+#include <flame/foundation/foundation.h>
+#include <flame/physics/physics.h>
 
 namespace flame
 {
@@ -12,25 +11,18 @@ namespace flame
 		struct Rigid;
 		struct Shape;
 
-		struct ScenePrivate;
-
-		typedef std::function<void(Rigid *trigger_rigid, Shape *trigger_shape, Rigid *other_rigid, 
-			Shape *other_shape, TouchType tt)> TriggerCallback;
-
 		struct Scene
 		{
-			ScenePrivate *_priv;
+			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS void add_rigid(Rigid *r);
-			FLAME_PHYSICS_EXPORTS void remove_rigid(Rigid *r);
-			FLAME_PHYSICS_EXPORTS void update(float disp);
-			FLAME_PHYSICS_EXPORTS void enable_callback();
-			FLAME_PHYSICS_EXPORTS void disable_callback();
-			FLAME_PHYSICS_EXPORTS void set_trigger_callback(const TriggerCallback &callback);
+			virtual void add_rigid(Rigid* r) = 0;
+			virtual void remove_rigid(Rigid* r) = 0;
+			virtual void update(float disp) = 0;
+			virtual void* add_trigger_listener(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) = 0;
+			virtual void remove_trigger_listener(void* lis) = 0;
+
+			FLAME_PHYSICS_EXPORTS static Scene* create(Device* d, float gravity, uint threads_count);
 		};
-
-		FLAME_PHYSICS_EXPORTS Scene *create_scene(Device *d, float gravity, int threads_count);
-		FLAME_PHYSICS_EXPORTS void destroy_scene(Scene *s);
 	}
 }
 

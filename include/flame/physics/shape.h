@@ -1,36 +1,26 @@
 #pragma once
 
-#include "physics.h"
+#include <flame/physics/physics.h>
 
 namespace flame
 {
 	namespace physics
 	{
 		struct Device;
+		struct Rigid;
 		struct Material;
-
-		struct ShapePrivate;
 
 		struct Shape
 		{
-			ShapePrivate *_priv;
+			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS void set_trigger(bool v); // default false
+			// trigger means it will not collide with others but will report when it overlay with others, default is false
+			virtual void set_trigger(bool v) = 0;
 
-			/*  == set_trigger ==
-				A trigger means it will not collide with others, but will report when it overlay
-				with others. We can use this for items, speical area etc.
-			*/
+			virtual Rigid* get_rigid() const = 0;
+
+			FLAME_PHYSICS_EXPORTS static Shape* create(Device* d, Material* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord);
 		};
-
-		//FLAME_PHYSICS_EXPORTS void create_sphere_shape(Material *m, const glm::vec3 &coord,
-		//	float radius);
-		//FLAME_PHYSICS_EXPORTS void create_capsule_shape(Material *m, const glm::vec3 &coord,
-		//	float radius, float height);
-
-		FLAME_PHYSICS_EXPORTS Shape *create_box_shape(Device *d, Material *m, const Vec3f &coord,
-			float x_hf_ext, float y_hf_ext, float z_hf_ext);
-		FLAME_PHYSICS_EXPORTS void destroy_shape(Shape *s);
 	}
 }
 

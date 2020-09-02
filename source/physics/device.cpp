@@ -7,8 +7,8 @@ namespace flame
 		DevicePrivate::DevicePrivate()
 		{
 #ifdef USE_PHYSX
-			foundation = PxCreateFoundation(PX_FOUNDATION_VERSION, allocator, error_callback);
-			inst = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, PxTolerancesScale());
+			px_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, px_allocator, px_error_callback);
+			px_instance = PxCreatePhysics(PX_PHYSICS_VERSION, *px_foundation, physx::PxTolerancesScale());
 #endif
 		}
 

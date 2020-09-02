@@ -17,6 +17,30 @@ namespace flame
 			TouchFound,
 			TouchLost
 		};
+
+		enum ShapeType
+		{
+			ShapeBox,
+			ShapeSphere,
+			ShapeCapsule
+		};
+
+		union ShapeDesc
+		{
+			struct
+			{
+				Vec3f hf_ext;
+			}box;
+			struct
+			{
+				float radius;
+			}sphere;
+			struct
+			{
+				float radius;
+				float height;
+			}capsule;
+		};
 	}
 }
 

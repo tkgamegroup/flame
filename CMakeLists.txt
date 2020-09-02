@@ -74,9 +74,8 @@ set(temp "${dir}/physx")
 if (NOT EXISTS "${temp}")
 	set(temp "")
 endif()
-set(PHYSX_DIR "${temp}" CACHE PATH "Physx Directory")
-set(PHYSX_STATIC_LIBRARY_DIR "${temp}" CACHE PATH "PHYSX STATIC Library Directory")
-set(PHYSX_SHARED_LIBRARY_DIR "${temp}" CACHE PATH "PHYSX SHARED Library Directory")
+set(PHYSX_INCLUDE_DIR "${temp}/physx/include" CACHE PATH "Physx Directory")
+set(PHYSX_LIBRARY_DIR "${temp}/physx/bin/win.x86_64.vc142.mt/debug" CACHE PATH "PHYSX Library Directory")
 
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/flame")
 

@@ -7,65 +7,77 @@ namespace flame
 {
 	namespace physics
 	{
-		RigidPrivate::~RigidPrivate()
+		RigidPrivate::RigidPrivate(DevicePrivate* d, const Vec3f& coord, bool dynamic)
 		{
 #ifdef USE_PHYSX
-			v->release();
+			if (dynamic)
+			{
+				px_rigid = d->px_instance->createRigidDynamic(physx::PxTransform(physx::PxVec3(coord.x(), coord.y(), coord.z())));
+				physx::PxRigidBodyExt::updateMassAndInertia(*(physx::PxRigidDynamic*)px_rigid, 10.0);
+				//if (kinematic) 
+				//	body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+			}
+			else
+				px_rigid = d->px_instance->createRigidStatic(physx::PxTransform(physx::PxVec3(coord.x(), coord.y(), coord.z())));
+
+			px_rigid->userData = this;
 #endif
 		}
 
-		void Rigid::attach_shape(Shape* s)
+		RigidPrivate::~RigidPrivate()
 		{
-			v->attachShape(*s->v);
+#ifdef USE_PHYSX
+			px_rigid->release();
+#endif
 		}
 
-		void Rigid::detach_shape(Shape* s)
+		void RigidPrivate::add_shape(ShapePrivate* s)
 		{
-			v->detachShape(*s->v);
+#ifdef USE_PHYSX
+			px_rigid->attachShape(*s->px_shape);
+			s->rigid = this;
+#endif
 		}
 
-		void Rigid::get_pose(Vec3f& out_coord, Vec4f& out_quat)
+		void RigidPrivate::remove_shape(ShapePrivate* s)
 		{
-			auto trans = v->getGlobalPose();
-			out_coord.x() = trans.p.x();
-			out_coord.y() = trans.p.y();
-			out_coord.z() = trans.p.z();
-			out_quat.x() = trans.q.x();
-			out_quat.y() = trans.q.y();
-			out_quat.z() = trans.q.z();
-			out_quat.w() = trans.q.w();
+#ifdef USE_PHYSX
+			s->rigid = nullptr;
+			px_rigid->detachShape(*s->px_shape);
+#endif
 		}
 
-		void Rigid::add_force(const Vec3f& v)
+		void RigidPrivate::get_pose(Vec3f& out_coord, Vec4f& out_quat)
 		{
-			auto d = (PxRigidDynamic*)v;
-			d->addForce(Z(v));
+#ifdef USE_PHYSX
+			auto trans = px_rigid->getGlobalPose();
+			out_coord.x() = trans.p.x;
+			out_coord.y() = trans.p.y;
+			out_coord.z() = trans.p.z;
+			out_quat.x() = trans.q.x;
+			out_quat.y() = trans.q.y;
+			out_quat.z() = trans.q.z;
+			out_quat.w() = trans.q.w;
+#endif
 		}
 
-		void Rigid::clear_force()
+		void RigidPrivate::add_force(const Vec3f& v)
 		{
-			auto d = (PxRigidDynamic*)v;
-			d->clearForce();
+#ifdef USE_PHYSX
+			((physx::PxRigidDynamic*)px_rigid)->addForce(physx::PxVec3(v.x(), v.y(), v.z()));
+#endif
 		}
 
-		Rigid* create_static_rigid(Device* d, const Vec3f& coord)
+		void RigidPrivate::clear_force()
 		{
-			r->v = d->inst->createRigidStatic(
-				Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
-			r->v->userData = r;
-
-			return r;
+#ifdef USE_PHYSX
+			((physx::PxRigidDynamic*)px_rigid)->clearForce();
+#endif
 		}
 
-		Rigid* create_dynamic_rigid(Device* d, const Vec3f& coord)
+		Rigid* Rigid::create(Device* d, const Vec3f& coord, bool dynamic)
 		{
-			r->v = d->inst->createRigidDynamic(
-				Z(coord, Vec4f(0.f, 0.f, 0.f, 1.f)));
-			//PxRigidBodyExt::updateMassAndInertia(*body, density);
-			//if (kinematic) body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-			r->v->userData = r;
-
-			return r;
+			return new RigidPrivate((DevicePrivate*)d, coord, dynamic);
 		}
 	}
 }
