@@ -79,6 +79,88 @@ namespace flame
 				indices[i] = _indices[i];
 		}
 
+		void ModelMeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation)
+		{
+			std::vector<std::vector<int>> staging_indices;
+			staging_indices.resize(horiSubdiv + 1);
+
+			for (int level = 1; level < horiSubdiv; level++)
+			{
+				for (int i = 0; i < vertSubdiv; i++)
+				{
+					auto radian = (level * 180.f / horiSubdiv - 90.f) * ANG_RAD;
+					auto ring_radius = cos(radian) * radius;
+					auto height = sin(radian) * radius;
+					auto ang = (i * 360.f / vertSubdiv) * ANG_RAD;
+					staging_indices[level].push_back(vertices.size());
+					ModelVertex v;
+					v.pos = rotation * Vec3f(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
+					v.normal = normalize(v.pos);
+					v.pos += center;
+					vertices.push_back(v);
+				}
+			}
+
+			{
+				staging_indices[0].push_back(vertices.size());
+				ModelVertex v;
+				v.pos = rotation * Vec3f(0.f, -radius, 0.f);
+				v.normal = normalize(v.pos);
+				v.pos += center;
+				vertices.push_back(v);
+			}
+
+			{
+				staging_indices[horiSubdiv].push_back(vertices.size());
+				ModelVertex v;
+				v.pos = rotation * Vec3f(0.f, radius, 0.f);
+				v.normal = normalize(v.pos);
+				v.pos += center;
+				vertices.push_back(v);
+			}
+
+			for (int level = 0; level < horiSubdiv; level++)
+			{
+				if (level == 0)
+				{
+					for (int i = 0; i < vertSubdiv; i++)
+					{
+						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
+
+						indices.push_back(staging_indices[0][0]);
+						indices.push_back(staging_indices[1][i]);
+						indices.push_back(staging_indices[1][ii]);
+					}
+				}
+				else if (level == horiSubdiv - 1)
+				{
+					for (int i = 0; i < vertSubdiv; i++)
+					{
+						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
+
+						indices.push_back(staging_indices[horiSubdiv - 1][i]);
+						indices.push_back(staging_indices[horiSubdiv][0]);
+						indices.push_back(staging_indices[horiSubdiv - 1][ii]);
+					}
+				}
+				else
+				{
+					for (int i = 0; i < vertSubdiv; i++)
+					{
+						auto ii = i + 1; if (ii == vertSubdiv) ii = 0;
+
+						indices.push_back(staging_indices[level][i]);
+						indices.push_back(staging_indices[level + 1][i]);
+						indices.push_back(staging_indices[level][ii]);
+
+						indices.push_back(staging_indices[level][ii]);
+						indices.push_back(staging_indices[level + 1][i]);
+						indices.push_back(staging_indices[level + 1][ii]);
+					}
+				}
+			}
+		}
+
 		static ModelPrivate* standard_models[StandardModelCount];
 
 		Model* Model::get_standard(StandardModel m)
@@ -135,6 +217,15 @@ namespace flame
 					21, 23, 20, 21, 22, 23, // R
 
 				});
+
+				ret->meshes.emplace_back(mesh);
+			}
+				break;
+			case StandardModelSphere:
+			{
+				auto mesh = new ModelMeshPrivate;
+
+				mesh->add_sphere(0.5f, 8, 8, Vec3f(0.f), Mat3f(1.f));
 
 				ret->meshes.emplace_back(mesh);
 			}

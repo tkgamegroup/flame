@@ -351,6 +351,7 @@ namespace flame
 			}
 
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
+			bind_model((ModelPrivate*)Model::get_standard(StandardModelSphere), "sphere");
 
 			auto sp = d->sampler_linear.get();
 

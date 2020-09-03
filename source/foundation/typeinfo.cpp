@@ -1077,7 +1077,9 @@ namespace flame
 
 	void* FunctionInfoPrivate::get_address(void* obj) const
 	{
-		return rva ? library->address + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
+		auto address = rva ? library->address + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
+		assert(address);
+		return address;
 	}
 
 	bool FunctionInfoPrivate::check(void* _type, ...) const
@@ -1102,20 +1104,21 @@ namespace flame
 		return c == parameters.size();
 	}
 
-	extern "C" void __call(void* f, void* list1, void* list2);
+	extern "C" void __call(void* f, void* list1, void* list2, void* dummy);
 
 	void FunctionInfoPrivate::call(void* obj, void* ret, void** parms) const
 	{
-		auto idx = 0;
+		auto idx1 = 0;
+		auto idx2 = 0;
 		std::vector<void*> list1(6);
 		std::vector<float> list2(4);
 		if (obj)
-			list1[idx++] = obj;
+			list1[idx1++] = obj;
 		if (type->size > sizeof(void*)
 			|| type->name == "flame::Vec<3,uchar>"
 			|| type->name == "flame::Vec<4,uchar>")
 		{
-			list1[idx++] = ret;
+			list1[idx1++] = ret;
 			ret = nullptr;
 		}
 
@@ -1126,20 +1129,20 @@ namespace flame
 			{
 			case TypeEnumSingle:
 			case TypeEnumMulti:
-				list1[idx++] = (void*)*((int*)*_p++);
+				list1[idx1++] = (void*)*((int*)*_p++);
 				break;
 			case TypeData:
 				if (p->name == "float")
-					list2[idx++] = *((float*)*_p++);
+					list2[idx2++] = *((float*)*_p++);
 				else if (p->size == 1)
-					list1[idx++] = (void*)*((char*)*_p++);
+					list1[idx1++] = (void*)*((char*)*_p++);
 				else if (p->size == 4)
-					list1[idx++] = (void*)*((int*)*_p++);
+					list1[idx1++] = (void*)*((int*)*_p++);
 				else if (p->size == 8)
-					list1[idx++] = *((void**)*_p++);
+					list1[idx1++] = *((void**)*_p++);
 				break;
 			case TypePointer:
-				list1[idx] = *(void**)(*_p);
+				list1[idx1++] = *(void**)(*_p);
 				_p++;
 				break;
 			}
@@ -1149,7 +1152,7 @@ namespace flame
 		float staging_xmm0;
 		list1[4] = &staging_rax;
 		list1[5] = &staging_xmm0;
-		__call(get_address(obj), list1.data(), list2.data());
+		__call(get_address(obj), list1.data(), list2.data(), nullptr);
 		if (ret)
 		{
 			if (type->name == "float")

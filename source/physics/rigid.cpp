@@ -7,7 +7,8 @@ namespace flame
 {
 	namespace physics
 	{
-		RigidPrivate::RigidPrivate(bool dynamic)
+		RigidPrivate::RigidPrivate(bool dynamic) :
+			dynamic(dynamic)
 		{
 #ifdef USE_PHYSX
 			if (dynamic)
@@ -63,8 +64,19 @@ namespace flame
 #endif
 		}
 
+		void RigidPrivate::add_impulse(const Vec3f& v)
+		{
+			if (!dynamic)
+				return;
+#ifdef USE_PHYSX
+			((PxRigidDynamic*)px_rigid)->addForce(cvt(v), PxForceMode::eIMPULSE);
+#endif
+		}
+
 		void RigidPrivate::add_force(const Vec3f& v)
 		{
+			if (!dynamic)
+				return;
 #ifdef USE_PHYSX
 			((PxRigidDynamic*)px_rigid)->addForce(cvt(v));
 #endif
@@ -72,6 +84,8 @@ namespace flame
 
 		void RigidPrivate::clear_force()
 		{
+			if (!dynamic)
+				return;
 #ifdef USE_PHYSX
 			((PxRigidDynamic*)px_rigid)->clearForce();
 #endif

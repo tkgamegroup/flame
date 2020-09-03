@@ -25,6 +25,7 @@ namespace flame
 		enum StandardModel
 		{
 			StandardModelCube,
+			StandardModelSphere,
 
 			StandardModelCount
 		};

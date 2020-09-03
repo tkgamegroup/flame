@@ -16,7 +16,9 @@ namespace flame
 			System(type_name, type_hash)
 		{
 		}
-//
+
+		virtual void set_next_focusing(cEventReceiver* er) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static sEventDispatcher* create();
 	};
 }

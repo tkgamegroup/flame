@@ -32,6 +32,11 @@ namespace flame
 			shape = physics::Shape::create(get_material(), physics::ShapeBox, desc);
 			rigid->rigid->add_shape(shape);
 			break;
+		case physics::ShapeSphere:
+			desc.sphere.radius = 0.5f * node->scale.x();
+			shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
+			rigid->rigid->add_shape(shape);
+			break;
 		case physics::ShapeTriangles:
 			if (object->model_idx != -1)
 			{

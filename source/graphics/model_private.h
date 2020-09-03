@@ -29,6 +29,8 @@ namespace flame
 			void set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals, Vec3f* tangents);
 			void set_indices(const std::initializer_list<uint>& v);
 			void set_indices(uint number, uint* indices);
+
+			void add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation);
 		};
 
 		struct ModelPrivate : Model

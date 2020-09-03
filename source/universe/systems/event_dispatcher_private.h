@@ -59,7 +59,9 @@ namespace flame
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
 
-		virtual void on_added() override;
-		virtual void on_removed() override;
+		void set_next_focusing(cEventReceiver* er) override { next_focusing = (cEventReceiverPrivate*)er; }
+
+		void on_added() override;
+		void on_removed() override;
 	};
 }

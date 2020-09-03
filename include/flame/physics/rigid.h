@@ -18,6 +18,7 @@ namespace flame
 			virtual void add_shape(Shape* s) = 0;
 			virtual void remove_shape(Shape* s) = 0;
 
+			virtual void add_impulse(const Vec3f& v) = 0;
 			virtual void add_force(const Vec3f& v) = 0;
 			virtual void clear_force() = 0;
 

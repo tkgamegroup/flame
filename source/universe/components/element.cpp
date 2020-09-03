@@ -52,6 +52,15 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("padding")>::v);
 	}
 
+	//	void cElement::set_roundness(const Vec4f& r, void* sender)
+	//	{
+	//		if (r == roundness)
+	//			return;
+	//		roundness = r;
+	//		mark_drawing_dirty();
+	//		report_data_changed(FLAME_CHASH("roundness"), sender);
+	//	}
+
 	void cElementPrivate::set_pivotx(float p)
 	{
 		if (pivotx == p)
@@ -383,15 +392,6 @@ namespace flame
 			}
 		}
 	}
-
-//	void cElement::set_roundness(const Vec4f& r, void* sender)
-//	{
-//		if (r == roundness)
-//			return;
-//		roundness = r;
-//		mark_drawing_dirty();
-//		report_data_changed(FLAME_CHASH("roundness"), sender);
-//	}
 
 	cElement* cElement::create()
 	{

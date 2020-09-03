@@ -79,7 +79,7 @@ namespace flame
 								lua_pop(state, 1);
 							}
 							else
-								*(Vec2f*)p = Vec2f(0.f);
+								*(Vec2f*)pp = Vec2f(0.f);
 						}
 						else if (tn == "flame::Vec<3,float>" && tt == TypePointer)
 						{
@@ -102,7 +102,7 @@ namespace flame
 								lua_pop(state, 1);
 							}
 							else
-								*(Vec3f*)p = Vec3f(0.f);
+								*(Vec3f*)pp = Vec3f(0.f);
 						}
 						else if (tn == "flame::Vec<4,float>" && tt == TypePointer)
 						{
@@ -130,8 +130,10 @@ namespace flame
 								lua_pop(state, 1);
 							}
 							else
-								*(Vec4f*)p = Vec4f(0.f);
+								*(Vec4f*)pp = Vec4f(0.f);
 						}
+						else if (tt == TypePointer)
+							*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
 						lua_pop(state, 1);
 					}
 					parms[i] = p;

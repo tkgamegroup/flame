@@ -298,11 +298,11 @@ namespace flame
 		hovering = nullptr;
 //		drag_overing = nullptr;
 
-//		if (next_focusing != INVALID_POINTER)
-//		{
-//			focusing = next_focusing;
-//			next_focusing = (cEventReceiver*)INVALID_POINTER;
-//		}
+		if (next_focusing != INVALID_POINTER)
+		{
+			focusing = next_focusing;
+			next_focusing = (cEventReceiverPrivate*)INVALID_POINTER;
+		}
 
 		if (focusing)
 		{

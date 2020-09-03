@@ -1,5 +1,7 @@
 .code
 __call proc
+    sub rsp, 8h
+
     mov rax, rcx
     mov r10, rdx
     mov r11, r8
@@ -26,6 +28,9 @@ __call proc
 
     mov qword ptr [rcx], rax
     movss dword ptr [rdx], xmm0
+
+    add rsp, 8h
+
     ret
 __call endp
 end

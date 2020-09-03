@@ -144,11 +144,11 @@ namespace flame
 			world->add_system(s_type_setting);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
+			s_physic_world = sPhysicsWorld::create();
+			world->add_system(s_physic_world);
 			world->add_system(new sRendererController(this));
 			s_renderer = sRenderer::create();
 			world->add_system(s_renderer);
-			s_physic_world = sPhysicsWorld::create();
-			world->add_system(s_physic_world);
 
 			root = world->get_root();
 			root->add_component(cElement::create());
@@ -156,8 +156,11 @@ namespace flame
 				auto cer = cEventReceiver::create();
 				cer->set_ignore_occluders(true);
 				root->add_component(cer);
+				s_event_dispatcher->set_next_focusing(cer);
 			}
 			root->add_component(cLayout::create());
+
+			app->script_instance->add_object(root, "root", "flame::Entity");
 		}
 
 		if (app->windows.empty())

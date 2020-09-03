@@ -17,12 +17,9 @@ namespace flame
 	{
 		if (!src.empty() && entity)
 		{
-			looper().add_event([](Capture& c) {
-				auto thiz = c.thiz<cScriptPrivate>();
-				auto ins = script::Instance::get();
-				ins->add_object(thiz->entity, "entity", "Entity");
-				ins->excute(thiz->src.c_str());
-			}, Capture().set_thiz(this));
+			auto ins = script::Instance::get();
+			ins->add_object(entity, "entity", "Entity");
+			ins->excute(src.c_str());
 		}
 	}
 

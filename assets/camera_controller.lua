@@ -1,6 +1,7 @@
 local node = entity:get_component_n("cNode")
 make_obj(node, "cNode")
-local camera = {
+
+camera = {
 	node = node,
 	pos = node:get_pos(),
 	yaw = 0,
@@ -18,7 +19,8 @@ local camera = {
 	sp = false,
 	sh = false
 }
-local root_event_receiver = entity:get_world():get_root():get_component_n("cEventReceiver")
+
+local root_event_receiver = root:get_component_n("cEventReceiver")
 make_obj(root_event_receiver, "cEventReceiver")
 root_event_receiver:add_key_down_listener_s(get_slot(
 	function(k)

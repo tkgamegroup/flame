@@ -17,6 +17,8 @@ namespace flame
 
 		struct RigidPrivate : RigidBridge
 		{
+			bool dynamic;
+
 #ifdef USE_PHYSX
 			PxRigidActor* px_rigid;
 #endif
@@ -32,6 +34,7 @@ namespace flame
 			void add_shape(ShapePrivate* s);
 			void remove_shape(ShapePrivate* s);
 
+			void add_impulse(const Vec3f& v) override;
 			void add_force(const Vec3f& v) override;
 			void clear_force() override;
 		};
