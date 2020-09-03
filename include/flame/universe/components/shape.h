@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/physics/physics.h>
 #include <flame/universe/component.h>
 
 namespace flame
@@ -13,6 +14,9 @@ namespace flame
 			Component(type_name, type_hash)
 		{
 		}
+
+		virtual physics::ShapeType get_type() const = 0;
+		virtual void set_type(physics::ShapeType t) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cShape* create();
 	};

@@ -10,6 +10,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Model;
+	}
+
 	namespace physics
 	{
 		enum TouchType
@@ -22,7 +27,8 @@ namespace flame
 		{
 			ShapeBox,
 			ShapeSphere,
-			ShapeCapsule
+			ShapeCapsule,
+			ShapeTriangles
 		};
 
 		union ShapeDesc
@@ -40,6 +46,11 @@ namespace flame
 				float radius;
 				float height;
 			}capsule;
+			struct
+			{
+				graphics::Model* model;
+				Vec3f scale;
+			}triangles;
 		};
 	}
 }

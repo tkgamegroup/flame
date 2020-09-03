@@ -18,7 +18,7 @@ namespace flame
 		struct RigidPrivate : RigidBridge
 		{
 #ifdef USE_PHYSX
-			physx::PxRigidActor* px_rigid;
+			PxRigidActor* px_rigid;
 #endif
 
 			RigidPrivate(bool dynamic);

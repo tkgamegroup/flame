@@ -32,11 +32,11 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("scale")>::v);
 	}
 
-	void cNodePrivate::set_euler(float yaw, float pitch, float roll)
+	void cNodePrivate::set_euler(const Vec3f& e)
 	{
-		auto qy = get_quat_from_axis_and_angle(yaw, Vec3f(0.f, 1.f, 0.f));
-		auto qp = get_quat_from_axis_and_angle(pitch, Vec3f(1.f, 0.f, 0.f));
-		auto qr = get_quat_from_axis_and_angle(roll, Vec3f(0.f, 0.f, 1.f));
+		auto qy = get_quat_from_axis_and_angle(e.x(), Vec3f(0.f, 1.f, 0.f));
+		auto qp = get_quat_from_axis_and_angle(e.y(), Vec3f(1.f, 0.f, 0.f));
+		auto qr = get_quat_from_axis_and_angle(e.z(), Vec3f(0.f, 0.f, 1.f));
 		set_quat(quat_mul(quat_mul(qy, qp), qr));
 	}
 

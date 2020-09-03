@@ -13,7 +13,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		void ModelMesh::set_vertices_p(const std::initializer_list<float>& v)
+		void ModelMeshPrivate::set_vertices_p(const std::initializer_list<float>& v)
 		{
 			assert(v.size() % 3 == 0);
 			vertices.resize(v.size() / 3);
@@ -25,7 +25,7 @@ namespace flame
 			}
 		}
 
-		void ModelMesh::set_vertices_pn(const std::initializer_list<float>& v)
+		void ModelMeshPrivate::set_vertices_pn(const std::initializer_list<float>& v)
 		{
 			assert(v.size() % 6 == 0);
 			vertices.resize(v.size() / 6);
@@ -40,7 +40,7 @@ namespace flame
 			}
 		}
 
-		void ModelMesh::set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals, Vec3f* tangents)
+		void ModelMeshPrivate::set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals, Vec3f* tangents)
 		{
 			vertices.resize(number);
 			if (poses)
@@ -65,14 +65,14 @@ namespace flame
 			}
 		}
 
-		void ModelMesh::set_indices(const std::initializer_list<uint>& v)
+		void ModelMeshPrivate::set_indices(const std::initializer_list<uint>& v)
 		{
 			indices.resize(v.size());
 			for (auto i = 0; i < indices.size(); i++)
 				indices[i] = v.begin()[i];
 		}
 
-		void ModelMesh::set_indices(uint number, uint* _indices)
+		void ModelMeshPrivate::set_indices(uint number, uint* _indices)
 		{
 			indices.resize(number);
 			for (auto i = 0; i < number; i++)
@@ -91,7 +91,7 @@ namespace flame
 			{
 			case StandardModelCube:
 			{
-				auto mesh = new ModelMesh;
+				auto mesh = new ModelMeshPrivate;
 
 				mesh->set_vertices_pn({
 					// F
@@ -175,7 +175,7 @@ namespace flame
 				for (auto i = 0; i < n->mNumMeshes; i++)
 				{
 					auto src = scene->mMeshes[n->mMeshes[i]];
-					auto dst = new ModelMesh;
+					auto dst = new ModelMeshPrivate;
 
 					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals, (Vec3f*)src->mTangents);
 					for (auto j = 0; j < src->mNumVertices; j++)

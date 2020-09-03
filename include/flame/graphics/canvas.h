@@ -42,6 +42,7 @@ namespace flame
 			virtual uint set_resource(int slot /* -1 to find an empty slot */, FontAtlas* font_atlas, const char* name = nullptr) = 0;
 
 			virtual uint bind_model(Model* model, const char* name) = 0;
+			virtual Model* get_model(uint idx) const = 0;
 			virtual int find_model(const char* name) = 0;
 
 			virtual void begin_path() = 0;

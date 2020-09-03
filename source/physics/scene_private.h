@@ -19,19 +19,19 @@ namespace flame
 		struct ScenePrivate : SceneBridge
 		{
 #ifdef USE_PHYSX
-			struct Callback : physx::PxSimulationEventCallback
+			struct Callback : PxSimulationEventCallback
 			{
 				ScenePrivate* thiz;
 
-				void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override;
-				void onWake(physx::PxActor** actors, physx::PxU32 count) override;
-				void onSleep(physx::PxActor** actors, physx::PxU32 count) override;
-				void onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs) override;
-				void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override;
-				void onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count) override;
+				void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
+				void onWake(PxActor** actors, PxU32 count) override;
+				void onSleep(PxActor** actors, PxU32 count) override;
+				void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
+				void onTrigger(PxTriggerPair* pairs, PxU32 count) override;
+				void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override;
 			};
 
-			physx::PxScene* px_scene;
+			PxScene* px_scene;
 			Callback px_callback;
 #endif
 

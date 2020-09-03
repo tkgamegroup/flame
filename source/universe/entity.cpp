@@ -969,7 +969,7 @@ namespace flame
 						for (auto a : n_c.attributes())
 						{
 							auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
-							if (fs && udt->find_function((std::string("get_") + a.name()).c_str()))
+							if (fs && fs->get_parameters_count() == 1)
 							{
 								auto type = fs->get_parameter(0);
 								void* d = type->create();
@@ -978,6 +978,8 @@ namespace flame
 								fs->call(c, nullptr, parms);
 								type->destroy(d);
 							}
+							else
+								printf("cannot find setter: %s\n", a.name());
 						}
 						if (isnew)
 							attach->add_component((Component*)c);

@@ -15,13 +15,19 @@
       <cShape />
     </entity>
     <entity>
-      <cNode pos="0,0,0" />
+      <cNode pos="0,-5,0" euler="-90,0,0" scale="2,2,2" />
+      <cObject src="mod" />
+      <cRigid dynamic="false" />
+      <cShape type="Triangles" />
+    </entity>
+    <entity>
+      <cNode pos="0,15,0" scale="0.5,0.5,0.5" />
       <cObject src="cube" />
       <cRigid />
       <cShape />
     </entity>
     <entity>
-      <cNode pos="5,3,6" />
+      <cNode pos="5,10,6" />
       <cLight color="0.8,0.7,0.4" />
     </entity>
     <entity>

@@ -12,13 +12,13 @@ namespace flame
 #ifdef USE_PHYSX
 			if (dynamic)
 			{
-				px_rigid = DevicePrivate::get()->px_instance->createRigidDynamic(physx::PxTransform(physx::PxVec3(0.f)));
-				physx::PxRigidBodyExt::updateMassAndInertia(*(physx::PxRigidDynamic*)px_rigid, 10.0);
+				px_rigid = DevicePrivate::get()->px_instance->createRigidDynamic(PxTransform(PxVec3(0.f)));
+				PxRigidBodyExt::updateMassAndInertia(*(PxRigidDynamic*)px_rigid, 10.0);
 				//if (kinematic) 
 				//	body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 			}
 			else
-				px_rigid = DevicePrivate::get()->px_instance->createRigidStatic(physx::PxTransform(physx::PxVec3(0.f)));
+				px_rigid = DevicePrivate::get()->px_instance->createRigidStatic(PxTransform(PxVec3(0.f)));
 
 			px_rigid->userData = this;
 #endif
@@ -35,17 +35,15 @@ namespace flame
 		{
 #ifdef USE_PHYSX
 			auto trans = px_rigid->getGlobalPose();
-			coord = Vec3f(trans.p.x, trans.p.y, trans.p.z);
-			quat = Vec4f(trans.q.x, trans.q.y, trans.q.z, trans.q.w);
+			coord = cvt(trans.p);
+			quat = cvt(trans.q);
 #endif
 		}
 
 		void RigidPrivate::set_pose(const Vec3f& coord, const Vec4f& quat)
 		{
 #ifdef USE_PHYSX
-			px_rigid->setGlobalPose(physx::PxTransform(
-				physx::PxVec3(coord.x(), coord.y(), coord.z()),
-				physx::PxQuat(quat.x(), quat.y(), quat.z(), quat.w())));
+			px_rigid->setGlobalPose(PxTransform(cvt(coord), cvt(quat)));
 #endif
 		}
 
@@ -68,14 +66,14 @@ namespace flame
 		void RigidPrivate::add_force(const Vec3f& v)
 		{
 #ifdef USE_PHYSX
-			((physx::PxRigidDynamic*)px_rigid)->addForce(physx::PxVec3(v.x(), v.y(), v.z()));
+			((PxRigidDynamic*)px_rigid)->addForce(cvt(v));
 #endif
 		}
 
 		void RigidPrivate::clear_force()
 		{
 #ifdef USE_PHYSX
-			((physx::PxRigidDynamic*)px_rigid)->clearForce();
+			((PxRigidDynamic*)px_rigid)->clearForce();
 #endif
 		}
 

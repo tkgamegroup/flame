@@ -15,9 +15,9 @@ namespace flame
 			RigidPrivate* rigid = nullptr;
 
 #ifdef USE_PHYSX
-			physx::PxShape* px_shape;
+			PxShape* px_shape;
 #endif
-			ShapePrivate(MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord);
+			ShapePrivate(MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat);
 			~ShapePrivate();
 
 			void release() override { delete this; }

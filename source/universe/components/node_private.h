@@ -33,7 +33,7 @@ namespace flame
 		Vec3f get_scale() const override { return scale; }
 		void set_scale(const Vec3f & scale) override;
 
-		void set_euler(float yaw, float pitch, float roll) override;
+		void set_euler(const Vec3f& e) override;
 
 		Vec3f get_dir(uint idx) override;
 

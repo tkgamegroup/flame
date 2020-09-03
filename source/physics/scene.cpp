@@ -7,27 +7,27 @@ namespace flame
 	namespace physics
 	{
 #ifdef USE_PHYSX
-		void ScenePrivate::Callback::onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count)
+		void ScenePrivate::Callback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)
 		{
 		}
 
-		void ScenePrivate::Callback::onWake(physx::PxActor** actors, physx::PxU32 count)
+		void ScenePrivate::Callback::onWake(PxActor** actors, PxU32 count)
 		{
 		}
 
-		void ScenePrivate::Callback::onSleep(physx::PxActor** actors, physx::PxU32 count)
+		void ScenePrivate::Callback::onSleep(PxActor** actors, PxU32 count)
 		{
 		}
 
-		void ScenePrivate::Callback::onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs)
+		void ScenePrivate::Callback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 		{
 		}
 
-		void ScenePrivate::Callback::onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count)
+		void ScenePrivate::Callback::onTrigger(PxTriggerPair* pairs, PxU32 count)
 		{
 			for (auto i = 0; i < count; i++)
 			{
-				auto type = pairs[i].status == physx::PxPairFlag::eNOTIFY_TOUCH_FOUND ? TouchFound : TouchLost;
+				auto type = pairs[i].status == PxPairFlag::eNOTIFY_TOUCH_FOUND ? TouchFound : TouchLost;
 				auto trigger_shape = (Shape*)pairs[i].triggerShape->userData;
 				auto other_shape = (Shape*)pairs[i].otherShape->userData;
 				for (auto& l : thiz->trigger_listeners)
@@ -35,7 +35,7 @@ namespace flame
 			}
 		}
 
-		void ScenePrivate::Callback::onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count)
+		void ScenePrivate::Callback::onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count)
 		{
 		}
 #endif
@@ -43,10 +43,10 @@ namespace flame
 		ScenePrivate::ScenePrivate(float gravity, uint thread_count)
 		{
 #ifdef USE_PHYSX
-			physx::PxSceneDesc desc(DevicePrivate::get()->px_instance->getTolerancesScale());
-			desc.gravity = physx::PxVec3(0.0f, gravity, 0.0f);
-			desc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(thread_count);
-			desc.filterShader = physx::PxDefaultSimulationFilterShader;
+			PxSceneDesc desc(DevicePrivate::get()->px_instance->getTolerancesScale());
+			desc.gravity = PxVec3(0.0f, gravity, 0.0f);
+			desc.cpuDispatcher = PxDefaultCpuDispatcherCreate(thread_count);
+			desc.filterShader = PxDefaultSimulationFilterShader;
 			px_scene = DevicePrivate::get()->px_instance->createScene(desc);
 			px_callback.thiz = this;
 			px_scene->setSimulationEventCallback(&px_callback);

@@ -116,25 +116,29 @@ entity:add_event_s(get_slot(
 		end
 		if camera.a then
 			camera.yaw = camera.yaw + 1
-			camera.node:set_euler(camera.yaw, camera.pitch, 0)
+			local euler = { x=camera.yaw, y=camera.pitch, z=0 }
+			camera.node:set_euler(euler)
 			camera.dir1 = camera.node:get_dir(2)
 			camera.dir2 = camera.node:get_dir(0)
 		end
 		if camera.d then
 			camera.yaw = camera.yaw - 1
-			camera.node:set_euler(camera.yaw, camera.pitch, 0)
+			local euler = { x=camera.yaw, y=camera.pitch, z=0 }
+			camera.node:set_euler(euler)
 			camera.dir1 = camera.node:get_dir(2)
 			camera.dir2 = camera.node:get_dir(0)
 		end
 		if camera.z then
 			camera.pitch = camera.pitch - 1
-			camera.node:set_euler(camera.yaw, camera.pitch, 0)
+			local euler = { x=camera.yaw, y=camera.pitch, z=0 }
+			camera.node:set_euler(euler)
 			camera.dir1 = camera.node:get_dir(2)
 			camera.dir2 = camera.node:get_dir(0)
 		end
 		if camera.x then
 			camera.pitch = camera.pitch + 1
-			camera.node:set_euler(camera.yaw, camera.pitch, 0)
+			local euler = { x=camera.yaw, y=camera.pitch, z=0 }
+			camera.node:set_euler(euler)
 			camera.dir1 = camera.node:get_dir(2)
 			camera.dir2 = camera.node:get_dir(0)
 		end

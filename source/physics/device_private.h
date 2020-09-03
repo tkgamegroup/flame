@@ -10,10 +10,11 @@ namespace flame
 		struct DevicePrivate : Device
 		{
 #ifdef USE_PHYSX
-			physx::PxFoundation* px_foundation;
-			physx::PxPhysics* px_instance;
-			physx::PxDefaultAllocator px_allocator;
-			physx::PxDefaultErrorCallback px_error_callback;
+			PxFoundation* px_foundation;
+			PxPhysics* px_instance;
+			PxCooking* px_cooking;
+			PxDefaultAllocator px_allocator;
+			PxDefaultErrorCallback px_error_callback;
 #endif
 
 			DevicePrivate();

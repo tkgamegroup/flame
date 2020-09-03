@@ -303,6 +303,7 @@ namespace flame
 			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas);
 
 			uint bind_model(ModelPrivate* model, const std::string& name);
+			Model* get_model(uint idx) const override { return models[idx].model; }
 			int find_model(const char* name) override;
 
 			void add_draw_element_cmd(uint id);

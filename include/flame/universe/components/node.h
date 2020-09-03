@@ -21,8 +21,8 @@ namespace flame
 		virtual Vec3f get_scale() const = 0;
 		virtual void set_scale(const Vec3f& scale) = 0;
 
-		// in angle
-		virtual void set_euler(float yaw, float pitch, float roll) = 0;
+		// yaw, pitch, roll, in angle
+		virtual void set_euler(const Vec3f& e) = 0;
 
 		virtual Vec3f get_dir(uint idx) = 0;
 

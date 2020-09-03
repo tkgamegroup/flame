@@ -8,7 +8,9 @@ namespace flame
 		{
 #ifdef USE_PHYSX
 			px_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, px_allocator, px_error_callback);
-			px_instance = PxCreatePhysics(PX_PHYSICS_VERSION, *px_foundation, physx::PxTolerancesScale());
+			px_instance = PxCreatePhysics(PX_PHYSICS_VERSION, *px_foundation, PxTolerancesScale());
+			PxTolerancesScale scale;
+			px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation, PxCookingParams(scale));
 #endif
 		}
 

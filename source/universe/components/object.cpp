@@ -1,4 +1,5 @@
 #include <flame/graphics/canvas.h>
+#include "../entity_private.h"
 #include "node_private.h"
 #include "camera_private.h"
 #include "object_private.h"
@@ -25,6 +26,7 @@ namespace flame
 		model_idx = -1;
 		if (canvas && !src.empty())
 			model_idx = canvas->find_model(src.c_str());
+		Entity::report_data_changed(this, S<ch("model_idx")>::v);
 	}
 
 	void cObjectPrivate::draw(graphics::Canvas* canvas, cCamera* _camera)
