@@ -7,7 +7,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct DevicePrivate;
 		struct MaterialPrivate;
 		struct RigidPrivate;
 
@@ -18,7 +17,7 @@ namespace flame
 #ifdef USE_PHYSX
 			physx::PxShape* px_shape;
 #endif
-			ShapePrivate(DevicePrivate* d, MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord);
+			ShapePrivate(MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord);
 			~ShapePrivate();
 
 			void release() override { delete this; }

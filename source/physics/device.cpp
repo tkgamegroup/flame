@@ -12,9 +12,18 @@ namespace flame
 #endif
 		}
 
-		Device* Device::create()
+		static DevicePrivate* device = nullptr;
+
+		DevicePrivate* DevicePrivate::get()
 		{
-			return new DevicePrivate;
+			if (!device)
+				device = new DevicePrivate;
+			return device;
+		}
+
+		Device* Device::get()
+		{
+			return DevicePrivate::get();
 		}
 	}
 }

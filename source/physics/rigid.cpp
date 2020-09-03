@@ -7,18 +7,18 @@ namespace flame
 {
 	namespace physics
 	{
-		RigidPrivate::RigidPrivate(DevicePrivate* d, const Vec3f& coord, bool dynamic)
+		RigidPrivate::RigidPrivate(bool dynamic)
 		{
 #ifdef USE_PHYSX
 			if (dynamic)
 			{
-				px_rigid = d->px_instance->createRigidDynamic(physx::PxTransform(physx::PxVec3(coord.x(), coord.y(), coord.z())));
+				px_rigid = DevicePrivate::get()->px_instance->createRigidDynamic(physx::PxTransform(physx::PxVec3(0.f)));
 				physx::PxRigidBodyExt::updateMassAndInertia(*(physx::PxRigidDynamic*)px_rigid, 10.0);
 				//if (kinematic) 
 				//	body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 			}
 			else
-				px_rigid = d->px_instance->createRigidStatic(physx::PxTransform(physx::PxVec3(coord.x(), coord.y(), coord.z())));
+				px_rigid = DevicePrivate::get()->px_instance->createRigidStatic(physx::PxTransform(physx::PxVec3(0.f)));
 
 			px_rigid->userData = this;
 #endif
@@ -31,33 +31,37 @@ namespace flame
 #endif
 		}
 
+		void RigidPrivate::get_pose(Vec3f& coord, Vec4f& quat) const
+		{
+#ifdef USE_PHYSX
+			auto trans = px_rigid->getGlobalPose();
+			coord = Vec3f(trans.p.x, trans.p.y, trans.p.z);
+			quat = Vec4f(trans.q.x, trans.q.y, trans.q.z, trans.q.w);
+#endif
+		}
+
+		void RigidPrivate::set_pose(const Vec3f& coord, const Vec4f& quat)
+		{
+#ifdef USE_PHYSX
+			px_rigid->setGlobalPose(physx::PxTransform(
+				physx::PxVec3(coord.x(), coord.y(), coord.z()),
+				physx::PxQuat(quat.x(), quat.y(), quat.z(), quat.w())));
+#endif
+		}
+
 		void RigidPrivate::add_shape(ShapePrivate* s)
 		{
 #ifdef USE_PHYSX
-			px_rigid->attachShape(*s->px_shape);
 			s->rigid = this;
+			px_rigid->attachShape(*s->px_shape);
 #endif
 		}
 
 		void RigidPrivate::remove_shape(ShapePrivate* s)
 		{
 #ifdef USE_PHYSX
-			s->rigid = nullptr;
 			px_rigid->detachShape(*s->px_shape);
-#endif
-		}
-
-		void RigidPrivate::get_pose(Vec3f& out_coord, Vec4f& out_quat)
-		{
-#ifdef USE_PHYSX
-			auto trans = px_rigid->getGlobalPose();
-			out_coord.x() = trans.p.x;
-			out_coord.y() = trans.p.y;
-			out_coord.z() = trans.p.z;
-			out_quat.x() = trans.q.x;
-			out_quat.y() = trans.q.y;
-			out_quat.z() = trans.q.z;
-			out_quat.w() = trans.q.w;
+			s->rigid = nullptr;
 #endif
 		}
 
@@ -75,9 +79,9 @@ namespace flame
 #endif
 		}
 
-		Rigid* Rigid::create(Device* d, const Vec3f& coord, bool dynamic)
+		Rigid* Rigid::create(bool dynamic)
 		{
-			return new RigidPrivate((DevicePrivate*)d, coord, dynamic);
+			return new RigidPrivate(dynamic);
 		}
 	}
 }

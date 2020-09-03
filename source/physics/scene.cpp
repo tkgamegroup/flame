@@ -40,14 +40,14 @@ namespace flame
 		}
 #endif
 
-		ScenePrivate::ScenePrivate(DevicePrivate* d, float gravity, uint thread_count)
+		ScenePrivate::ScenePrivate(float gravity, uint thread_count)
 		{
 #ifdef USE_PHYSX
-			physx::PxSceneDesc desc(d->px_instance->getTolerancesScale());
+			physx::PxSceneDesc desc(DevicePrivate::get()->px_instance->getTolerancesScale());
 			desc.gravity = physx::PxVec3(0.0f, gravity, 0.0f);
 			desc.cpuDispatcher = physx::PxDefaultCpuDispatcherCreate(thread_count);
 			desc.filterShader = physx::PxDefaultSimulationFilterShader;
-			px_scene = d->px_instance->createScene(desc);
+			px_scene = DevicePrivate::get()->px_instance->createScene(desc);
 			px_callback.thiz = this;
 			px_scene->setSimulationEventCallback(&px_callback);
 #endif
@@ -70,7 +70,7 @@ namespace flame
 		void ScenePrivate::update(float disp)
 		{
 #ifdef USE_PHYSX
-			px_scene->simulate(disp);
+			px_scene->simulate(max(disp, 0.001f));
 			px_scene->fetchResults(true);
 #endif
 		}
@@ -89,9 +89,9 @@ namespace flame
 			});
 		}
 
-		Scene* Scene::create(Device* d, float gravity, uint threads_count)
+		Scene* Scene::create(float gravity, uint threads_count)
 		{
-			return new ScenePrivate((DevicePrivate*)d, gravity, threads_count);
+			return new ScenePrivate(gravity, threads_count);
 		}
 	}
 }

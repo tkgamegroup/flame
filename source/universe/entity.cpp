@@ -952,13 +952,14 @@ namespace flame
 				if (udt)
 				{
 					auto c = attach->get_component(std::hash<std::string>()(name));
+					auto isnew = false;
 					if (!c)
 					{
 						auto fc = udt->find_function("create");
 						if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 						{
 							fc->call(nullptr, &c, {});
-							attach->add_component((Component*)c);
+							isnew = true;
 						}
 						else
 							printf("cannot create component of type: %s\n", name.c_str());
@@ -978,7 +979,11 @@ namespace flame
 								type->destroy(d);
 							}
 						}
+						if (isnew)
+							attach->add_component((Component*)c);
 					}
+					else
+						printf("cannot create component: %s\n", name.c_str());
 				}
 				else
 					printf("cannot find udt: %s\n", name.c_str());

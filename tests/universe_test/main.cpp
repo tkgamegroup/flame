@@ -14,7 +14,7 @@ Entity* root;
 int main(int argc, char** args)
 {
 	g_app.create();
-	auto w = new GraphicsWindow(&g_app, true, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
+	auto w = new GraphicsWindow(&g_app, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
 	w->canvas->set_hdr(true);
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	root = w->root;

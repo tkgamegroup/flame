@@ -7,7 +7,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct DevicePrivate;
 		struct ShapePrivate;
 
 		struct RigidBridge : Rigid
@@ -22,14 +21,17 @@ namespace flame
 			physx::PxRigidActor* px_rigid;
 #endif
 
-			RigidPrivate(DevicePrivate* d, const Vec3f& coord, bool dynamic);
+			RigidPrivate(bool dynamic);
 			~RigidPrivate();
 
 			void release() override { delete this; }
 
+			void get_pose(Vec3f& coord, Vec4f& quat) const override;
+			void set_pose(const Vec3f& coord, const Vec4f& quat) override;
+
 			void add_shape(ShapePrivate* s);
 			void remove_shape(ShapePrivate* s);
-			void get_pose(Vec3f& out_coord, Vec4f& out_quat) override;
+
 			void add_force(const Vec3f& v) override;
 			void clear_force() override;
 		};

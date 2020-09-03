@@ -37,7 +37,7 @@ namespace flame
 
 			std::vector<std::unique_ptr<Closure<void(Capture&, TouchType type, Shape* trigger_shape, Shape* other_shape)>>> trigger_listeners;
 
-			ScenePrivate(DevicePrivate* d, float gravity, uint thread_count);
+			ScenePrivate(float gravity, uint thread_count);
 
 			void release() override { delete this; }
 

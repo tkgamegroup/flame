@@ -13,7 +13,7 @@
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
 #include <flame/script/script.h>
-#include <flame/physics/device.h>
+#include <flame/physics/scene.h>
 #include <flame/universe/world.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
@@ -21,6 +21,7 @@
 #include <flame/universe/components/layout.h>
 #include <flame/universe/systems/type_setting.h>
 #include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/physics_world.h>
 #include <flame/universe/systems/renderer.h>
 
 namespace flame
@@ -29,24 +30,56 @@ namespace flame
 
 	struct GraphicsWindow
 	{
+		struct sRendererController : System
+		{
+			GraphicsWindow* thiz;
+
+			sRendererController(GraphicsWindow* _w) :
+				System("sRendererController", ch("sRendererController"))
+			{
+				thiz = _w;
+			}
+
+			void update() override
+			{
+				if (!thiz->s_renderer->is_dirty())
+					return;
+				if (thiz->swapchain_image_index < 0)
+				{
+					if (thiz->swapchain->get_images_count() > 0)
+					{
+						thiz->swapchain->acquire_image();
+						thiz->swapchain_image_index = thiz->swapchain->get_image_index();
+					}
+					thiz->canvas->prepare();
+				}
+
+				if (thiz->swapchain_image_index >= 0)
+					thiz->on_frame();
+			}
+		};
+
 		App* app;
 
 		Window* window = nullptr;
+
 		graphics::Swapchain* swapchain = nullptr;
 		int swapchain_image_index = -1;
 		std::vector<graphics::CommandBuffer*> swapchain_commandbuffers;
 		graphics::Fence* submit_fence = nullptr;
 		graphics::Semaphore* render_finished_semaphore = nullptr;
-
 		graphics::Canvas* canvas = nullptr;
+
+		physics::Scene* physics_scene = nullptr;
 
 		World* world = nullptr;
 		sTypeSetting* s_type_setting = nullptr;
 		sEventDispatcher* s_event_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
+		sPhysicsWorld* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
-		GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p = nullptr, bool maximized = false);
+		GraphicsWindow(App* app, bool has_world, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p = nullptr, bool maximized = false);
 		virtual ~GraphicsWindow();
 		void set_canvas_target();
 		virtual void on_frame() {}
@@ -64,7 +97,6 @@ namespace flame
 		sound::Device* sound_device;
 		sound::Context* sound_context;
 		script::Instance* script_instance;
-		physics::Device* physics_device;
 
 		graphics::FontAtlas* font_atlas;
 
@@ -75,7 +107,7 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, bool has_world, bool has_canvas, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p, bool maximized) :
+	GraphicsWindow::GraphicsWindow(App* app, bool has_world, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p, bool maximized) :
 		app(app)
 	{
 		if (maximized)
@@ -84,6 +116,7 @@ namespace flame
 		window->add_destroy_listener([](Capture& c) {
 			c.thiz<GraphicsWindow>()->window = nullptr;
 		}, Capture().set_thiz(this));
+
 		swapchain = graphics::Swapchain::create(app->graphics_device, window);
 		swapchain_commandbuffers.resize(swapchain->get_images_count());
 		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
@@ -91,58 +124,31 @@ namespace flame
 		submit_fence = graphics::Fence::create(app->graphics_device);
 		render_finished_semaphore = graphics::Semaphore::create(app->graphics_device);
 
-		if (has_world)
-			has_canvas = true;
-		if (has_canvas)
-		{
-			canvas = graphics::Canvas::create(app->graphics_device);
-			set_canvas_target();
-			canvas->set_resource(-1, app->font_atlas, "");
+		canvas = graphics::Canvas::create(app->graphics_device);
+		set_canvas_target();
+		canvas->set_resource(-1, app->font_atlas, "");
 
-			window->add_resize_listener([](Capture& c, const Vec2u&) {
-				c.thiz<GraphicsWindow>()->set_canvas_target();
-			}, Capture().set_thiz(this));
-		}
+		physics_scene = physics::Scene::create(-9.81f, 2);
+
+		window->add_resize_listener([](Capture& c, const Vec2u&) {
+			c.thiz<GraphicsWindow>()->set_canvas_target();
+		}, Capture().set_thiz(this));
+
 		if (has_world)
 		{
 			world = World::create();
 			world->register_object(window, "flame::Window");
 			world->register_object(canvas, "flame::graphics::Canvas");
+			world->register_object(physics_scene, "flame::physics::Scene");
 			s_type_setting = sTypeSetting::create();
 			world->add_system(s_type_setting);
 			s_event_dispatcher = sEventDispatcher::create();
 			world->add_system(s_event_dispatcher);
-			struct sFrame : System
-			{
-				GraphicsWindow* thiz;
-
-				sFrame(GraphicsWindow* _w) :
-					System("sFrame", ch("sFrame"))
-				{
-					thiz = _w;
-				}
-
-				void update() override
-				{
-					if (!thiz->s_renderer->is_dirty())
-						return;
-					if (thiz->swapchain_image_index < 0)
-					{
-						if (thiz->swapchain->get_images_count() > 0)
-						{
-							thiz->swapchain->acquire_image();
-							thiz->swapchain_image_index = thiz->swapchain->get_image_index();
-						}
-						thiz->canvas->prepare();
-					}
-
-					if (thiz->swapchain_image_index >= 0)
-						thiz->on_frame();
-				}
-			};
-			world->add_system(new sFrame(this));
+			world->add_system(new sRendererController(this));
 			s_renderer = sRenderer::create();
 			world->add_system(s_renderer);
+			s_physic_world = sPhysicsWorld::create();
+			world->add_system(s_physic_world);
 
 			root = world->get_root();
 			root->add_component(cElement::create());
@@ -162,7 +168,6 @@ namespace flame
 			}, Capture());
 		}
 		app->windows.emplace_back(this);
-
 	}
 
 	GraphicsWindow::~GraphicsWindow()
@@ -181,6 +186,8 @@ namespace flame
 		render_finished_semaphore->release();
 		if (canvas)
 			canvas->release();
+		if (physics_scene)
+			physics_scene->release();
 		if (world)
 			world->release();
 	}
@@ -256,8 +263,6 @@ namespace flame
 		sound_context->make_current();
 
 		script_instance = script::Instance::get();
-
-		physics_device = physics::Device::create();
 
 		{
 			graphics::Font* fonts[] = {

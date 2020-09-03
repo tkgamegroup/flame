@@ -7,15 +7,13 @@ namespace flame
 {
 	namespace physics
 	{
-		struct DevicePrivate;
-
 		struct MaterialPrivate : Material
 		{
 #ifdef USE_PHYSX
 			physx::PxMaterial* px_material;
 #endif
 
-			MaterialPrivate(DevicePrivate* d, float static_friction, float dynamic_friction, float restitution);
+			MaterialPrivate(float static_friction, float dynamic_friction, float restitution);
 			~MaterialPrivate();
 
 			void release() override { delete this; }

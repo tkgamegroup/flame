@@ -6,7 +6,6 @@ namespace flame
 {
 	namespace physics
 	{
-		struct Device;
 		struct Rigid;
 		struct Material;
 
@@ -19,7 +18,7 @@ namespace flame
 
 			virtual Rigid* get_rigid() const = 0;
 
-			FLAME_PHYSICS_EXPORTS static Shape* create(Device* d, Material* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord);
+			FLAME_PHYSICS_EXPORTS static Shape* create(Material* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord);
 		};
 	}
 }

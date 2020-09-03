@@ -4,13 +4,21 @@
     <cElement />
     <cNode />
     <entity name="camera">
-      <cNode pos="0,0,5" />
+      <cNode pos="0,0,15" />
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
     <entity>
+      <cNode pos="0,-5,0" scale="100,1,100" />
+      <cObject src="cube" />
+      <cRigid dynamic="false" />
+      <cShape />
+    </entity>
+    <entity>
       <cNode pos="0,0,0" />
       <cObject src="cube" />
+      <cRigid />
+      <cShape />
     </entity>
     <entity>
       <cNode pos="5,3,6" />

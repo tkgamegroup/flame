@@ -10,7 +10,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS static Device* create();
+			FLAME_PHYSICS_EXPORTS static Device* get();
 		};
 	}
 }

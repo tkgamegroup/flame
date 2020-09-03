@@ -2038,8 +2038,10 @@ namespace flame
 	}
 
 	template <class T>
-	Vec<4, T> get_quat_from_matrix(const Mat<3, 3, T>& m)
+	Vec<4, T> get_quat_from_matrix(const Mat<3, 3, T>& _m)
 	{
+		auto m = Mat<3, 3, T>(normalize(_m[0]), normalize(_m[1]), normalize(_m[2]));
+
 		T s;
 		T tq[4];
 		int i, j;
