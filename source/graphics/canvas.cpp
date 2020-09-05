@@ -332,7 +332,7 @@ namespace flame
 
 			element_vertex_buffer.init(d, 360000);
 			element_index_buffer.init(d, 240000);
-			model_vertex_buffer.init(d, 600000);
+			model_vertex_buffer_1.init(d, 600000);
 			model_index_buffer.init(d, 400000);
 			material_info_buffer.init(d, 128);
 			object_matrix_buffer.init(d, 10000);
@@ -988,11 +988,11 @@ namespace flame
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 
-		void CanvasPrivate::add_object(uint mod_id, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal)
+		void CanvasPrivate::add_object(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal)
 		{
 			if (uploaded_models_count != models.size())
 			{
-				model_vertex_buffer.stg_rewind();
+				model_vertex_buffer_1.stg_rewind();
 				model_index_buffer.stg_rewind();
 				material_info_buffer.stg_rewind();
 				auto tex_cnt = 0;
@@ -1002,76 +1002,80 @@ namespace flame
 				for (auto i = uploaded_models_count; i < models.size(); i++)
 				{
 					auto& m = models[i];
+					for (auto& ma : m.model->materials)
+					{
+						BoundMaterial bm;
+						bm.albedo = Vec4f(ma->albedo, 0.f);
+						bm.spec_roughness = Vec4f(ma->spec, ma->roughness);
+						if (!ma->albedo_map_filename.empty())
+						{
+							auto img = ImagePrivate::create(device, ma->albedo_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
+								bm.albedo_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						if (!ma->spec_map_filename.empty())
+						{
+							auto img = ImagePrivate::create(device, ma->spec_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
+								bm.spec_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						if (!ma->normal_map_filename.empty())
+						{
+							auto img = ImagePrivate::create(device, ma->normal_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
+								bm.normal_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						if (!ma->roughness_map_filename.empty())
+						{
+							auto img = ImagePrivate::create(device, ma->roughness_map_filename);
+							if (img)
+							{
+								auto idx = uploaded_model_textures_count + tex_cnt;
+								model_textures[idx].reset(img);
+								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
+								bm.roughness_map_index = idx;
+								tex_cnt++;
+							}
+						}
+						m.mat_idxs.push_back(uploaded_materials_count + material_info_buffer.stg_num());
+
+						material_info_buffer.push(bm);
+					}
 					for (auto& ms : m.model->meshes)
 					{
 						BoundMesh bm;
-						bm.vtx_off = model_vertex_buffer.stg_num();
+						bm.vtx_off = model_vertex_buffer_1.stg_num();
 						bm.idx_off = model_index_buffer.stg_num();
 						bm.idx_cnt = ms->indices.size();
+						bm.mat_idx = m.mat_idxs[ms->material_index];
 						m.meshes.push_back(bm);
 
-						model_vertex_buffer.push(ms->vertices.size(), ms->vertices.data());
+						model_vertex_buffer_1.push(ms->vertices_1.size(), ms->vertices_1.data());
 						model_index_buffer.push(ms->indices.size(), ms->indices.data());
-
-						BoundMaterial mat;
-						mat.albedo = Vec4f(ms->albedo, 0.f);
-						mat.spec_roughness = Vec4f(ms->spec, ms->roughness);
-						if (!ms->albedo_map_filename.empty())
-						{
-							auto img = ImagePrivate::create(device, ms->albedo_map_filename);
-							if (img)
-							{
-								auto idx = uploaded_model_textures_count + tex_cnt;
-								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
-								mat.albedo_map_index = idx;
-								tex_cnt++;
-							}
-						}
-						if (!ms->spec_map_filename.empty())
-						{
-							auto img = ImagePrivate::create(device, ms->spec_map_filename);
-							if (img)
-							{
-								auto idx = uploaded_model_textures_count + tex_cnt;
-								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
-								mat.spec_map_index = idx;
-								tex_cnt++;
-							}
-						}
-						if (!ms->roughness_map_filename.empty())
-						{
-							auto img = ImagePrivate::create(device, ms->roughness_map_filename);
-							if (img)
-							{
-								auto idx = uploaded_model_textures_count + tex_cnt;
-								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
-								mat.roughness_map_index = idx;
-								tex_cnt++;
-							}
-						}
-						if (!ms->normal_map_filename.empty())
-						{
-							auto img = ImagePrivate::create(device, ms->normal_map_filename);
-							if (img)
-							{
-								auto idx = uploaded_model_textures_count + tex_cnt;
-								model_textures[idx].reset(img);
-								forward_descriptorset->set_image(3, idx, img->default_views[img->level].get(), sp);
-								mat.normal_map_index = idx;
-								tex_cnt++;
-							}
-						}
-						bm.mat_idx = uploaded_materials_count + material_info_buffer.stg_num();
-						material_info_buffer.push(mat);
 					}
 				}
 
 				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
 				cb->begin(true);
-				model_vertex_buffer.upload(cb.get());
+				model_vertex_buffer_1.upload(cb.get());
 				model_index_buffer.upload(cb.get());
 				material_info_buffer.upload(cb.get());
 				cb->end();
@@ -1080,7 +1084,7 @@ namespace flame
 				q->wait_idle();
 
 				uploaded_models_count = models.size();
-				uploaded_vertices_count += model_vertex_buffer.stg_num();
+				uploaded_vertices_count += model_vertex_buffer_1.stg_num();
 				uploaded_indices_count += model_index_buffer.stg_num();
 				uploaded_materials_count += material_info_buffer.stg_num();
 				uploaded_model_textures_count += tex_cnt;
@@ -1110,8 +1114,8 @@ namespace flame
 			om.mvp = proj * view * model;
 			om.nor = normal;
 			object_matrix_buffer.push(om);
-			for (auto& ms : m.meshes)
 			{
+				auto& ms = m.meshes[mesh_idx];
 				DrawIndexedIndirectCommand ic;
 				ic.index_count = ms.idx_cnt;
 				ic.instance_count = 1;
@@ -1340,7 +1344,7 @@ namespace flame
 						light_indices_buffer.barrier(cb);
 					}
 					cb->set_scissor(curr_scissor);
-					cb->bind_vertex_buffer(model_vertex_buffer.buf.get(), 0);
+					cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
 					cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
 					cb->begin_renderpass(hdr ? forward16_framebuffer.get() : forward8_framebuffers[image_index].get());
 					cb->bind_pipeline(pl_fwd);

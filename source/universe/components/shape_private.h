@@ -17,7 +17,7 @@ namespace flame
 	{
 		physics::ShapeType type = physics::ShapeBox;
 
-		physics::Shape* shape = nullptr;
+		std::vector<physics::Shape*> phy_shapes;
 
 		cNodePrivate* node = nullptr; // R ref
 		cObjectPrivate* object = nullptr; // R ref

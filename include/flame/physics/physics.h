@@ -50,6 +50,7 @@ namespace flame
 			{
 				graphics::Model* model;
 				Vec3f scale;
+				uint filter;
 			}triangles;
 		};
 	}

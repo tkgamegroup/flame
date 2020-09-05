@@ -201,6 +201,7 @@ namespace flame
 			{
 				std::string name;
 				ModelPrivate* model;
+				std::vector<uint> mat_idxs;
 				std::vector<BoundMesh> meshes;
 			};
 
@@ -245,7 +246,7 @@ namespace flame
 
 			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
-			TBuffer<ModelVertex, BufferUsageVertex> model_vertex_buffer;
+			TBuffer<ModelVertex1, BufferUsageVertex> model_vertex_buffer_1;
 			TBuffer<uint, BufferUsageIndex> model_index_buffer;
 			TBuffer<BoundMaterial, BufferUsageUniform> material_info_buffer;
 			TBuffer<ObjectMatrix, BufferUsageStorage> object_matrix_buffer;
@@ -320,7 +321,7 @@ namespace flame
 			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void add_object(uint mod_id, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
+			void add_object(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
 			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
 
 			void add_blur(const Vec4f& range, uint radius) override;

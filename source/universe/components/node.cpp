@@ -34,9 +34,9 @@ namespace flame
 
 	void cNodePrivate::set_euler(const Vec3f& e)
 	{
-		auto qy = get_quat_from_axis_and_angle(e.x(), Vec3f(0.f, 1.f, 0.f));
-		auto qp = get_quat_from_axis_and_angle(e.y(), Vec3f(1.f, 0.f, 0.f));
-		auto qr = get_quat_from_axis_and_angle(e.z(), Vec3f(0.f, 0.f, 1.f));
+		auto qy = make_quat(e.x(), Vec3f(0.f, 1.f, 0.f));
+		auto qp = make_quat(e.y(), Vec3f(1.f, 0.f, 0.f));
+		auto qr = make_quat(e.z(), Vec3f(0.f, 0.f, 1.f));
 		set_quat(quat_mul(quat_mul(qy, qp), qr));
 	}
 
@@ -44,7 +44,7 @@ namespace flame
 	{
 		update_transform();
 
-		return rotate_matrix[idx];
+		return axes[idx];
 	}
 
 	void cNodePrivate::update_transform()
@@ -53,20 +53,23 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			rotate_matrix = get_rotation_matrix(quat);
-			transform = Mat4f(Mat<3, 4, float>(rotate_matrix * Mat3f(Vec3f(scale.x(), 0.f, 0.f), Vec3f(0.f, scale.y(), 0.f), Vec3f(0.f, 0.f, scale.z())),
-				Vec3f(0.f)), Vec4f(pos, 1.f));
-
-			auto p = entity->parent;
-			if (p)
+			auto pn = entity->get_parent_component_t<cNodePrivate>();
+			if (pn)
 			{
-				auto pn = p->get_component_t<cNodePrivate>();
-				if (pn)
-				{
-					pn->update_transform();
-					transform = pn->transform * transform;
-				}
+				pn->update_transform();
+				global_pos = pn->global_pos + quat_mul(pn->global_quat, pos * pn->global_scale);
+				global_quat = quat_mul(pn->global_quat, quat);
+				global_scale = pn->global_scale * scale;
 			}
+			else
+			{
+				global_pos = pos;
+				global_quat = quat;
+				global_scale = scale;
+			}
+
+			axes = make_rotation_matrix(global_quat);
+			transform = Mat4f(Mat<3, 4, float>(axes * Mat3f(scale), Vec3f(0.f)), Vec4f(global_pos, 1.f));
 
 			Entity::report_data_changed(this, S<ch("transform")>::v);
 		}

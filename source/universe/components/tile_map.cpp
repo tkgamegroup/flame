@@ -84,12 +84,11 @@ namespace flame
 		if (clipping)
 		{
 			auto inv = inverse(axes);
-			auto wtf = inv * axes;
 			Vec2f ps[4];
-			ps[0] = inv * Vec2f(element->scissor[0] - p.x(), element->scissor[1] - p.y());
-			ps[1] = inv * Vec2f(element->scissor[2] - p.x(), element->scissor[1] - p.y());
-			ps[2] = inv * Vec2f(element->scissor[2] - p.x(), element->scissor[3] - p.y());
-			ps[3] = inv * Vec2f(element->scissor[0] - p.x(), element->scissor[3] - p.y());
+			ps[0] = inv * Vec2f(element->boundaries[0] - p.x(), element->boundaries[1] - p.y());
+			ps[1] = inv * Vec2f(element->boundaries[2] - p.x(), element->boundaries[1] - p.y());
+			ps[2] = inv * Vec2f(element->boundaries[2] - p.x(), element->boundaries[3] - p.y());
+			ps[3] = inv * Vec2f(element->boundaries[0] - p.x(), element->boundaries[3] - p.y());
 			Vec4f bb;
 			bb[0] = bb[2] = ps[0].x();
 			bb[1] = bb[3] = ps[0].y();

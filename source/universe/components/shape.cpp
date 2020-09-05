@@ -1,4 +1,5 @@
 #include <flame/graphics/canvas.h>
+#include <flame/graphics/model.h>
 #include <flame/physics/material.h>
 #include <flame/physics/rigid.h>
 #include <flame/physics/shape.h>
@@ -24,26 +25,51 @@ namespace flame
 
 	void cShapePrivate::make_shape()
 	{
+		assert(phy_shapes.empty());
+
 		physics::ShapeDesc desc;
 		switch (type)
 		{
 		case physics::ShapeBox:
 			desc.box.hf_ext = Vec3f(0.5f) * node->scale;
-			shape = physics::Shape::create(get_material(), physics::ShapeBox, desc);
-			rigid->rigid->add_shape(shape);
+			phy_shapes.resize(1);
+			phy_shapes[0] = physics::Shape::create(get_material(), physics::ShapeBox, desc);
+			rigid->phy_rigid->add_shape(phy_shapes[0]);
 			break;
 		case physics::ShapeSphere:
 			desc.sphere.radius = 0.5f * node->scale.x();
-			shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
-			rigid->rigid->add_shape(shape);
+			phy_shapes.resize(1);
+			phy_shapes[0] = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
+			rigid->phy_rigid->add_shape(phy_shapes[0]);
 			break;
 		case physics::ShapeTriangles:
 			if (object->model_idx != -1)
 			{
 				desc.triangles.model = object->canvas->get_model(object->model_idx);
 				desc.triangles.scale = node->scale;
-				shape = physics::Shape::create(get_material(), physics::ShapeTriangles, desc);
-				rigid->rigid->add_shape(shape);
+				desc.triangles.filter = graphics::ModelMeshNormal;
+				phy_shapes.resize(1);
+				phy_shapes[0] = physics::Shape::create(get_material(), physics::ShapeTriangles, desc);
+				rigid->phy_rigid->add_shape(phy_shapes[0]);
+
+				auto has_triggers = false;
+				auto mesh_cnt = desc.triangles.model->get_meshes_count();
+				for (auto i = 0; i < mesh_cnt; i++)
+				{
+					if (desc.triangles.model->get_mesh(i)->get_flags() & graphics::ModelMeshTrigger)
+					{
+						has_triggers = true;
+						break;
+					}
+				}
+				if (has_triggers)
+				{
+					desc.triangles.filter = graphics::ModelMeshTrigger;
+					phy_shapes.resize(2);
+					phy_shapes[1] = physics::Shape::create(get_material(), physics::ShapeTriangles, desc);
+					phy_shapes[1]->set_trigger(true);
+					rigid->phy_rigid->add_shape(phy_shapes[1]);
+				}
 			}
 			break;
 		}
@@ -57,8 +83,9 @@ namespace flame
 
 	void cShapePrivate::on_lost_rigid()
 	{
-		shape->release();
-		shape = nullptr;
+		for (auto s : phy_shapes)
+			s->release();
+		phy_shapes.clear();
 	}
 
 	void cShapePrivate::on_local_data_changed(Component* t, uint64 h)

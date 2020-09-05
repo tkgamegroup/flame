@@ -6,7 +6,6 @@ add_typeinfo_support(flame_physics "${INCLUDE_DIR}/${DIR}" "${CMAKE_CURRENT_SOUR
 set_target_properties(flame_physics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_physics PRIVATE FLAME_PHYSICS_MODULE)
 target_include_directories(flame_physics PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_link_libraries(flame_physics flame_foundation)
 target_link_libraries(flame_physics flame_graphics)
 if (USE_PHYSX)
 	target_compile_definitions(flame_physics PRIVATE USE_PHYSX)

@@ -39,7 +39,7 @@ namespace flame
 
 		bool clipping = false;
 
-		Vec4f scissor;
+		Vec4f boundaries;
 		bool culled = false;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> underlayer_drawers;

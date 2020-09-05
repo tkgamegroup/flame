@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cNode pos="0,15,0" scale="0.5,0.5,0.5" />
+    <cNode pos="0,0,0" scale="0.5,0.5,0.5" />
     <cObject src="sphere" />
     <cRigid />
     <cShape type="Sphere" />

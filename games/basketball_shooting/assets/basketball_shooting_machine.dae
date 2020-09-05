@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.79.0 commit date:2018-03-22, commit time:14:10, hash:f4dc9f9d68b</authoring_tool>
     </contributor>
-    <created>2020-09-02T03:36:58</created>
-    <modified>2020-09-02T03:36:58</modified>
+    <created>2020-09-05T00:34:55</created>
+    <modified>2020-09-05T00:34:55</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -300,6 +300,38 @@
         </triangles>
       </mesh>
     </geometry>
+    <geometry id="Circle-mesh" name="Circle">
+      <mesh>
+        <source id="Circle-mesh-positions">
+          <float_array id="Circle-mesh-positions-array" count="96">0 0.34 0 -0.1301124 0.3141191 0 -0.2404163 0.2404163 0 -0.3141191 0.1301124 0 -0.34 0 0 -0.3141191 -0.1301124 0 -0.2404163 -0.2404163 0 -0.1301124 -0.3141191 0 0 -0.34 0 0.1301123 -0.3141191 0 0.2404162 -0.2404164 0 0.3141191 -0.1301124 0 0.34 0 0 0.3141191 0.1301124 0 0.2404162 0.2404164 0 0.1301122 0.3141191 0 0 0.34 0.006884634 -0.1301124 0.3141191 0.006884634 -0.2404163 0.2404163 0.006884634 -0.3141191 0.1301124 0.006884634 -0.34 0 0.006884634 -0.3141191 -0.1301124 0.006884634 -0.2404163 -0.2404163 0.006884634 -0.1301124 -0.3141191 0.006884634 0 -0.34 0.006884634 0.1301123 -0.3141191 0.006884634 0.2404162 -0.2404164 0.006884634 0.3141191 -0.1301124 0.006884634 0.34 0 0.006884634 0.3141191 0.1301124 0.006884634 0.2404162 0.2404164 0.006884634 0.1301122 0.3141191 0.006884634</float_array>
+          <technique_common>
+            <accessor source="#Circle-mesh-positions-array" count="32" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Circle-mesh-normals">
+          <float_array id="Circle-mesh-normals-array" count="105">0 0 1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 -0.8314695 -0.5555705 0 0.5555705 0.8314694 0 -0.55557 -0.8314698 0 0.1950904 0.9807854 0 0.1950903 -0.9807854 0 -0.1950901 -0.9807854 0 -0.1950901 0.9807853 0 0.5555704 -0.8314696 0 -0.55557 0.8314698 0 0.8314697 -0.5555703 0 -0.8314695 0.5555704 0 0.9807853 -0.1950904 0 -0.9807853 0.1950904 0 0.9807853 0.1950904 0 -0.9807853 -0.1950909 0 0.8314694 0.5555705 0 -0.8314696 -0.5555703 0 0.5555704 0.8314696 0 -0.5555698 -0.8314699 0 0.1950904 0.9807854 0 -0.1950901 0.9807853 0 0.5555705 -0.8314694 0 -0.5555699 0.8314698 0 0.8314696 -0.5555704 0 -0.9807854 -0.1950904 0 0.8314697 0.5555704 0</float_array>
+          <technique_common>
+            <accessor source="#Circle-mesh-normals-array" count="35" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Circle-mesh-vertices">
+          <input semantic="POSITION" source="#Circle-mesh-positions"/>
+        </vertices>
+        <triangles count="60">
+          <input semantic="VERTEX" source="#Circle-mesh-vertices" offset="0"/>
+          <input semantic="NORMAL" source="#Circle-mesh-normals" offset="1"/>
+          <p>1 0 15 0 0 0 1 0 14 0 15 0 2 0 14 0 1 0 2 0 13 0 14 0 12 0 13 0 11 0 6 0 4 0 5 0 3 0 4 0 2 0 4 0 11 0 2 0 11 0 4 0 6 0 11 0 13 0 2 0 6 0 10 0 11 0 10 0 6 0 9 0 6 0 8 0 9 0 7 0 8 0 6 0 17 1 16 1 31 1 17 2 31 2 30 2 18 2 17 2 30 2 18 3 30 3 29 3 28 4 27 4 29 4 22 5 21 5 20 5 19 2 18 2 20 2 20 2 18 2 27 2 27 2 22 2 20 2 27 6 18 6 29 6 22 7 27 7 26 7 26 2 25 2 22 2 22 8 25 8 24 8 23 2 22 2 24 2 13 9 30 9 14 9 6 10 23 10 7 10 14 11 31 11 15 11 7 12 24 12 8 12 0 13 17 13 1 13 15 14 16 14 0 14 8 15 25 15 9 15 1 16 18 16 2 16 9 17 26 17 10 17 2 18 19 18 3 18 10 19 27 19 11 19 3 20 20 20 4 20 11 21 28 21 12 21 4 22 21 22 5 22 12 23 29 23 13 23 5 24 22 24 6 24 13 25 29 25 30 25 6 26 22 26 23 26 14 27 30 27 31 27 7 28 23 28 24 28 0 13 16 13 17 13 15 14 31 14 16 14 8 29 24 29 25 29 1 30 17 30 18 30 9 31 25 31 26 31 2 32 18 32 19 32 10 19 26 19 27 19 3 20 19 20 20 20 11 21 27 21 28 21 4 22 20 22 21 22 12 33 28 33 29 33 5 34 21 34 22 34</p>
+        </triangles>
+      </mesh>
+    </geometry>
   </library_geometries>
   <library_controllers/>
   <library_visual_scenes>
@@ -339,6 +371,10 @@
       <node id="Cube_002" name="Cube_002" type="NODE">
         <matrix sid="transform">-0.08196898 0 0 -2.177328 0 -0.07215895 0 -0.002986759 0 0 -0.006145489 3.621584 0 0 0 1</matrix>
         <instance_geometry url="#Cube-mesh" name="Cube_002"/>
+      </node>
+      <node id="trigger_score_area" name="trigger_score_area" type="NODE">
+        <matrix sid="transform">0.6099461 0 0 -1.882505 0 0.6099461 0 -0.006348618 0 0 0.6099461 3.613166 0 0 0 1</matrix>
+        <instance_geometry url="#Circle-mesh" name="trigger_score_area"/>
       </node>
     </visual_scene>
   </library_visual_scenes>

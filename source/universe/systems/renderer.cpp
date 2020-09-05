@@ -19,9 +19,9 @@ namespace flame
 			auto element = e->get_component_t<cElementPrivate>();
 			if (element)
 			{
-				element->scissor = last_scissor;
+				element->boundaries = last_scissor;
 				element->update_transform();
-				element->culled = !rect_overlapping(element->scissor, element->aabb);
+				element->culled = !rect_overlapping(element->boundaries, element->aabb);
 				if (element->culled)
 					element_culled = true;
 				else

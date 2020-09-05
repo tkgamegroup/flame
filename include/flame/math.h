@@ -1024,6 +1024,15 @@ namespace flame
 				v_[i][i] = v;
 		}
 
+		explicit Mat(const Vec<N, T>& v)
+		{
+			static_assert(N == M);
+			for (auto i = 0; i < N; i++)
+				v_[i] = Vec<N, T>(0);
+			for (auto i = 0; i < N; i++)
+				v_[i][i] = v[i];
+		}
+
 		template <uint O, uint P, class U>
 		explicit Mat(const Mat<O, P, U>& rhs)
 		{
@@ -1537,7 +1546,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<2, 2, T> get_rotation_matrix(T rad)
+	Mat<2, 2, T> make_rotation_matrix(T rad)
 	{
 		auto c = cos(rad);
 		auto s = sin(rad);
@@ -1546,7 +1555,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<3, 3, T> get_rotation_matrix(const Vec<3, T>& axis, T rad)
+	Mat<3, 3, T> make_rotation_matrix(const Vec<3, T>& axis, T rad)
 	{
 		auto c = cos(rad);
 		auto s = sin(rad);
@@ -1571,7 +1580,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<4, 4, T> get_view_matrix(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
+	Mat<4, 4, T> make_view_matrix(const Vec<3, T>& eye, const Vec<3, T>& center, const Vec<3, T>& up)
 	{
 		auto f = normalize(center - eye);
 		auto s = normalize(cross(f, up));
@@ -1594,7 +1603,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<4, 4, T> get_project_matrix(T fovy, T aspect, T zNear, T zFar)
+	Mat<4, 4, T> make_project_matrix(T fovy, T aspect, T zNear, T zFar)
 	{
 		auto tanHalfFovy = tan(fovy / 2.f);
 
@@ -2031,17 +2040,15 @@ namespace flame
 
 	// q = [sin(q /2)v, cos(q / 2)] (where q is an angle and v is an axis)
 	template <class T>
-	Vec<4, T> get_quat_from_axis_and_angle(float q, const Vec<3, T>& v)
+	Vec<4, T> make_quat(float q, const Vec<3, T>& v)
 	{
 		auto rad = q * 0.5f * ANG_RAD;
 		return normalize(Vec<4, T>(sin(rad) * v, cos(rad)));
 	}
 
 	template <class T>
-	Vec<4, T> get_quat_from_matrix(const Mat<3, 3, T>& _m)
+	Vec<4, T> make_quat(const Mat<3, 3, T>& m)
 	{
-		auto m = Mat<3, 3, T>(normalize(_m[0]), normalize(_m[1]), normalize(_m[2]));
-
 		T s;
 		T tq[4];
 		int i, j;
@@ -2089,30 +2096,31 @@ namespace flame
 		ret *= sqrt(T(0.25) / tq[j]);
 		return normalize(ret);
 	}
-	
+
 	template <class T>
-	Vec<4, T> quat_mul(const Vec<4, T>& q1, const Vec<4, T>& q2)
+	Vec<4, T> quat_mul_nn(const Vec<4, T>& q1, const Vec<4, T>& q2)
 	{
 		Vec<4, T> ret;
 		auto v1 = Vec<3, T>(q1);
 		auto v2 = Vec<3, T>(q2);
 		ret = Vec<4, T>(q1.w() * v2 + q2.w() * v1 + cross(v1, v2), q1.w() * q2.w() - dot(v1, v2));
-		return normalize(ret);
+		return ret;
 	}
-
+	
 	template <class T>
-	Vec<3, T> quat_mul(const Vec<4, T>& lhs, const Vec<3, T>& rhs)
+	Vec<4, T> quat_mul(const Vec<4, T>& q1, const Vec<4, T>& q2)
 	{
-		Vec<4, T> ret;
-		ret.x() = lhs.w() * rhs.x() + lhs.y() * rhs.z() - lhs.z() * rhs.y();
-		ret.y() = lhs.w() * rhs.y() - lhs.x() * rhs.z() + lhs.z() * rhs.x();
-		ret.z() = lhs.w() * rhs.z() + lhs.x() * rhs.y() + lhs.z() * rhs.x();
-		ret.w() = -lhs.x() * rhs.x() - lhs.y() * rhs.y() - lhs.z() * rhs.z();
-		return Vec<3, T>(quat_mul(ret, Vec<4, T>(-lhs.x(), -lhs.y(), -lhs.z(), lhs.w())));
+		return normalize(quat_mul_nn(q1, q2));
 	}
 
 	template <class T>
-	Mat<3, 3, T> get_rotation_matrix(const Vec<4, T>& q)
+	Vec<3, T> quat_mul(const Vec<4, T>& q, const Vec<3, T>& v)
+	{
+		return Vec<3, T>(quat_mul_nn(quat_mul_nn(q, Vec<4, T>(v, T(0))), Vec4f(-q.x(), -q.y(), -q.z(), q.w())));
+	}
+
+	template <class T>
+	Mat<3, 3, T> make_rotation_matrix(const Vec<4, T>& q)
 	{
 		T wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
 
@@ -2146,6 +2154,9 @@ namespace flame
 		ret[1][2] = yz + wx;
 		ret[2][2] = T(1) - (xx + yy);
 
+		ret[0] = normalize(ret[0]);
+		ret[1] = normalize(ret[1]);
+		ret[2] = normalize(ret[2]);
 		return ret;
 	}
 

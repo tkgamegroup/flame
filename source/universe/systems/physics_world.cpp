@@ -13,17 +13,11 @@ namespace flame
 
 	void sPhysicsWorldPrivate::update()
 	{
+		for (auto r : rigids)
+			r->set_pose();
 		scene->update(looper().get_delta_time());
 		for (auto r : rigids)
-		{
-			r->retrieving = true;
-			Vec3f coord;
-			Vec4f quat;
-			r->rigid->get_pose(coord, quat);
-			r->node->set_pos(coord);
-			r->node->set_quat(quat);
-			r->retrieving = false;
-		}
+			r->get_pose();
 	}
 
 	sPhysicsWorld* sPhysicsWorld::create()

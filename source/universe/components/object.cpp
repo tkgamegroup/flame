@@ -34,7 +34,7 @@ namespace flame
 		if (model_idx != -1)
 		{
 			auto camera = (cCameraPrivate*)_camera;
-			canvas->add_object(model_idx, camera->project_matrix, camera->view_matrix, node->transform, Mat4f(node->rotate_matrix));
+			canvas->add_object(model_idx, camera->project_matrix, camera->view_matrix, node->transform, Mat4f(node->axes));
 		}
 	}
 

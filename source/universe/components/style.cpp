@@ -104,7 +104,8 @@ namespace flame
 			et->destroy(state);
 		}
 
-		on_state_changed();
+		if (entity)
+			on_state_changed();
 	}
 
 	void cStylePrivate::on_state_changed()

@@ -7,7 +7,7 @@ namespace flame
 {
 	namespace physics
 	{
-		static std::vector<std::pair<graphics::Model*, PxTriangleMesh*>> meshes;
+		static std::vector<std::pair<ShapeDesc, PxTriangleMesh*>> meshes;
 
 		ShapePrivate::ShapePrivate(MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
 		{
@@ -31,7 +31,9 @@ namespace flame
 				PxTriangleMesh* mesh = nullptr;
 				for (auto& m : meshes)
 				{
-					if (m.first == desc.triangles.model)
+					if (m.first.triangles.model == desc.triangles.model &&
+						m.first.triangles.scale == desc.triangles.scale &&
+						m.first.triangles.filter == desc.triangles.filter)
 						mesh = m.second;
 				}
 				if (!mesh)
@@ -50,6 +52,8 @@ namespace flame
 					for (auto i = 0; i < mesh_cnt; i++)
 					{
 						auto m = model->get_mesh(i);
+						if (!(m->get_flags() & desc.triangles.filter))
+							continue;
 						vtx_cnt += m->get_vertices_count();
 						idx_cnt += m->get_indices_count();
 					}
@@ -60,6 +64,8 @@ namespace flame
 					for (auto i = 0; i < mesh_cnt; i++)
 					{
 						auto m = model->get_mesh(i);
+						if (!(m->get_flags() & desc.triangles.filter))
+							continue;
 						auto vc = m->get_vertices_count();
 						auto vs = m->get_vertices();
 						for (auto j = 0; j < vc; j++)
@@ -82,6 +88,7 @@ namespace flame
 					mesh_desc.triangles.data = indices.data();
 
 					mesh = DevicePrivate::get()->px_cooking->createTriangleMesh(mesh_desc, DevicePrivate::get()->px_instance->getPhysicsInsertionCallback());
+					meshes.emplace_back(desc, mesh);
 				}
 				
 				px_shape = DevicePrivate::get()->px_instance->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(cvt(desc.triangles.scale))), *m->px_material);

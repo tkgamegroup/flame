@@ -341,9 +341,6 @@ namespace flame
 		c->aux = new ComponentAux;
 		*(ComponentAux*)c->aux = aux;
 
-		for (auto& r : ((ComponentAux*)c->aux)->refs)
-			r.gain(c);
-
 		if (udt)
 		{
 			if (udt->find_function("on_local_message"))
@@ -355,6 +352,9 @@ namespace flame
 			if (udt->find_function("on_child_data_changed"))
 				aux.want_child_data_changed = true;
 		}
+
+		for (auto& r : ((ComponentAux*)c->aux)->refs)
+			r.gain(c);
 
 		c->on_added();
 

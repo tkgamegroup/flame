@@ -19,11 +19,15 @@ namespace flame
 		Vec3f scale = Vec3f(1.f);
 
 		bool transform_dirty = true;
-		Mat3f rotate_matrix;
+		Vec3f global_pos;
+		Vec4f global_quat;
+		Vec3f global_scale;
+		Mat3f axes;
 		Mat4f transform;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*, cCamera*)>> drawers;
 
+		cNodePrivate* p_node; // R ref place=parent optional
 		sRendererPrivate* renderer = nullptr; // R ref
 
 		Vec3f get_pos() const override { return pos; }

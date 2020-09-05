@@ -11,22 +11,34 @@ namespace flame
 		dynamic = v;
 	}
 
+	void cRigidPrivate::add_impulse(const Vec3f& v)
+	{
+		if (dynamic && phy_rigid)
+		{
+			if (!physics_world)
+				staging_impulse += v;
+			else
+				phy_rigid->add_impulse(v);
+		}
+	}
+
 	void cRigidPrivate::on_gain_node()
 	{
-		rigid = physics::Rigid::create(dynamic);
-		rigid->set_pose(node->pos, node->quat);
+		phy_rigid = physics::Rigid::create(dynamic);
 	}
 
 	void cRigidPrivate::on_lost_node()
 	{
-		rigid->release();
-		rigid = nullptr;
+		phy_rigid->release();
+		phy_rigid = nullptr;
 	}
 
 	void cRigidPrivate::on_gain_physics_world()
 	{
 		physics_world->rigids.push_back(this);
-		physics_world->scene->add_rigid(rigid);
+		physics_world->scene->add_rigid(phy_rigid);
+		phy_rigid->add_impulse(staging_impulse);
+		staging_impulse = 0.f;
 	}
 
 	void cRigidPrivate::on_lost_physics_world()
@@ -34,20 +46,33 @@ namespace flame
 		std::erase_if(physics_world->rigids, [&](const auto& i) {
 			return i == this;
 		});
-		physics_world->scene->remove_rigid(rigid);
+		physics_world->scene->remove_rigid(phy_rigid);
 	}
 
-	void cRigidPrivate::on_local_data_changed(Component* t, uint64 h)
+	void cRigidPrivate::set_pose()
 	{
-		if (t == node && !retrieving)
+		node->update_transform();
+		if (!dynamic || distance(node->global_pos, curr_coord) > 0.01f || distance(node->global_quat, curr_quat) > 0.01f)
+			phy_rigid->set_pose(node->global_pos, node->global_quat);
+	}
+
+	void cRigidPrivate::get_pose()
+	{
+		if (!dynamic)
+			return;
+		phy_rigid->get_pose(curr_coord, curr_quat);
+		auto pn = entity->get_parent_component_t<cNodePrivate>();
+		if (pn)
 		{
-			switch (h)
-			{
-			case ch("pos"):
-			case ch("quat"):
-				rigid->set_pose(node->pos, node->quat);
-				break;
-			}
+			auto q_inv = pn->global_quat;
+			q_inv = Vec4f(-q_inv.x(), -q_inv.y(), -q_inv.z(), q_inv.w());
+			node->set_pos(quat_mul(q_inv, curr_coord - pn->global_pos) / pn->global_scale);
+			node->set_quat(quat_mul(q_inv, curr_quat));
+		}
+		else
+		{
+			node->set_pos(curr_coord);
+			node->set_quat(curr_quat);
 		}
 	}
 

@@ -132,22 +132,18 @@ namespace flame
 
 			auto base_axes = Mat2f(1.f);
 			auto base_pos = Vec2f(0.f);
-			auto p = entity->parent;
-			if (p)
+			auto pe = entity->get_parent_component_t<cElementPrivate>();
+			if (pe)
 			{
-				auto pe = p->get_component_t<cElementPrivate>();
-				if (pe)
-				{
-					pe->update_transform();
-					base_axes = pe->axes;
-					base_pos = pe->points[0];
-				}
+				pe->update_transform();
+				base_axes = pe->axes;
+				base_pos = pe->points[0];
 			}
 
 			axes = base_axes;
 			auto c = base_pos + axes[0] * x + axes[1] * y;
-			axes[0] = get_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
-			axes[1] = get_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
+			axes[0] = make_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
+			axes[1] = make_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
 
 			points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
 			points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);

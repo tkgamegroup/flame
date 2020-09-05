@@ -1,3 +1,4 @@
+#include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 #include "model_private.h"
 
@@ -16,52 +17,47 @@ namespace flame
 		void ModelMeshPrivate::set_vertices_p(const std::initializer_list<float>& v)
 		{
 			assert(v.size() % 3 == 0);
-			vertices.resize(v.size() / 3);
-			for (auto i = 0; i < vertices.size(); i++)
+			vertices_1.resize(v.size() / 3);
+			for (auto i = 0; i < vertices_1.size(); i++)
 			{
-				vertices[i].pos.x() = v.begin()[i * 3 + 0];
-				vertices[i].pos.y() = v.begin()[i * 3 + 1];
-				vertices[i].pos.z() = v.begin()[i * 3 + 2];
+				vertices_1[i].pos.x() = v.begin()[i * 3 + 0];
+				vertices_1[i].pos.y() = v.begin()[i * 3 + 1];
+				vertices_1[i].pos.z() = v.begin()[i * 3 + 2];
 			}
 		}
 
 		void ModelMeshPrivate::set_vertices_pn(const std::initializer_list<float>& v)
 		{
 			assert(v.size() % 6 == 0);
-			vertices.resize(v.size() / 6);
-			for (auto i = 0; i < vertices.size(); i++)
+			vertices_1.resize(v.size() / 6);
+			for (auto i = 0; i < vertices_1.size(); i++)
 			{
-				vertices[i].pos.x() = v.begin()[i * 6 + 0];
-				vertices[i].pos.y() = v.begin()[i * 6 + 1];
-				vertices[i].pos.z() = v.begin()[i * 6 + 2];
-				vertices[i].normal.x() = v.begin()[i * 6 + 3];
-				vertices[i].normal.y() = v.begin()[i * 6 + 4];
-				vertices[i].normal.z() = v.begin()[i * 6 + 5];
+				vertices_1[i].pos.x() = v.begin()[i * 6 + 0];
+				vertices_1[i].pos.y() = v.begin()[i * 6 + 1];
+				vertices_1[i].pos.z() = v.begin()[i * 6 + 2];
+				vertices_1[i].normal.x() = v.begin()[i * 6 + 3];
+				vertices_1[i].normal.y() = v.begin()[i * 6 + 4];
+				vertices_1[i].normal.z() = v.begin()[i * 6 + 5];
 			}
 		}
 
-		void ModelMeshPrivate::set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals, Vec3f* tangents)
+		void ModelMeshPrivate::set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals)
 		{
-			vertices.resize(number);
+			vertices_1.resize(number);
 			if (poses)
 			{
 				for (auto i = 0; i < number; i++)
-					vertices[i].pos = poses[i];
+					vertices_1[i].pos = poses[i];
 			}
 			if (uvs)
 			{
 				for (auto i = 0; i < number; i++)
-					vertices[i].uv = uvs[i];
+					vertices_1[i].uv = uvs[i];
 			}
 			if (normals)
 			{
 				for (auto i = 0; i < number; i++)
-					vertices[i].normal = normals[i];
-			}
-			if (tangents)
-			{
-				for (auto i = 0; i < number; i++)
-					vertices[i].tangent = tangents[i];
+					vertices_1[i].normal = normals[i];
 			}
 		}
 
@@ -92,31 +88,31 @@ namespace flame
 					auto ring_radius = cos(radian) * radius;
 					auto height = sin(radian) * radius;
 					auto ang = (i * 360.f / vertSubdiv) * ANG_RAD;
-					staging_indices[level].push_back(vertices.size());
-					ModelVertex v;
+					staging_indices[level].push_back(vertices_1.size());
+					ModelVertex1 v;
 					v.pos = rotation * Vec3f(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
 					v.normal = normalize(v.pos);
 					v.pos += center;
-					vertices.push_back(v);
+					vertices_1.push_back(v);
 				}
 			}
 
 			{
-				staging_indices[0].push_back(vertices.size());
-				ModelVertex v;
+				staging_indices[0].push_back(vertices_1.size());
+				ModelVertex1 v;
 				v.pos = rotation * Vec3f(0.f, -radius, 0.f);
 				v.normal = normalize(v.pos);
 				v.pos += center;
-				vertices.push_back(v);
+				vertices_1.push_back(v);
 			}
 
 			{
-				staging_indices[horiSubdiv].push_back(vertices.size());
-				ModelVertex v;
+				staging_indices[horiSubdiv].push_back(vertices_1.size());
+				ModelVertex1 v;
 				v.pos = rotation * Vec3f(0.f, radius, 0.f);
 				v.normal = normalize(v.pos);
 				v.pos += center;
-				vertices.push_back(v);
+				vertices_1.push_back(v);
 			}
 
 			for (int level = 0; level < horiSubdiv; level++)
@@ -253,49 +249,52 @@ namespace flame
 			}
 
 			auto ret = new ModelPrivate();
+			ret->root.reset(new ModelNodePrivate);
 
-			std::function<void(aiNode*, Mat4f)> get_mesh;
-			get_mesh = [&](aiNode* n, Mat4f mat) {
-				mat = mat * Mat4f(
-					Vec4f(n->mTransformation.a1, n->mTransformation.b1, n->mTransformation.c1, n->mTransformation.d1),
-					Vec4f(n->mTransformation.a2, n->mTransformation.b2, n->mTransformation.c2, n->mTransformation.d2),
-					Vec4f(n->mTransformation.a3, n->mTransformation.b3, n->mTransformation.c3, n->mTransformation.d3),
-					Vec4f(n->mTransformation.a4, n->mTransformation.b4, n->mTransformation.c4, n->mTransformation.d4)
-				);
-				auto mat3 = Mat3f(mat);
-				for (auto i = 0; i < n->mNumMeshes; i++)
+			for (auto i = 0; i < scene->mNumMeshes; i++)
+			{
+				auto src = scene->mMeshes[i];
+				auto dst = new ModelMeshPrivate;
+				ret->meshes.emplace_back(dst);
+
+				dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals);
+
+				std::vector<uint> indices(src->mNumFaces * 3);
+				for (auto j = 0; j < src->mNumFaces; j++)
 				{
-					auto src = scene->mMeshes[n->mMeshes[i]];
-					auto dst = new ModelMeshPrivate;
-
-					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals, (Vec3f*)src->mTangents);
-					for (auto j = 0; j < src->mNumVertices; j++)
-					{
-						dst->vertices[j].pos = mat * Vec4f(dst->vertices[j].pos, 1.f);
-						dst->vertices[j].normal = mat3 * dst->vertices[j].normal;
-						dst->vertices[j].tangent = mat3 * dst->vertices[j].tangent;
-					}
-					std::vector<uint> indices(src->mNumFaces * 3);
-					for (auto j = 0; j < src->mNumFaces; j++)
-					{
-						indices[j * 3 + 0] = src->mFaces[j].mIndices[0];
-						indices[j * 3 + 1] = src->mFaces[j].mIndices[1];
-						indices[j * 3 + 2] = src->mFaces[j].mIndices[2];
-					}
-					dst->set_indices(indices.size(), indices.data());
-
-					//auto src_mat = scene->mMaterials[src->mMaterialIndex];
-					//aiString str;
-					//src_mat->GetTexture(aiTextureType_BASE_COLOR, 0, &str);
-					//src_mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
-					//src_mat->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &str);
-
-					ret->meshes.emplace_back(dst);
+					indices[j * 3 + 0] = src->mFaces[j].mIndices[0];
+					indices[j * 3 + 1] = src->mFaces[j].mIndices[1];
+					indices[j * 3 + 2] = src->mFaces[j].mIndices[2];
 				}
-				for (auto i = 0; i < n->mNumChildren; i++)
-					get_mesh(n->mChildren[i], mat);
+				dst->set_indices(indices.size(), indices.data());
+			}
+
+			std::function<void(ModelNodePrivate*, aiNode*)> get_node;
+			get_node = [&](ModelNodePrivate* dst, aiNode* src) {
+				dst->name = std::string(src->mName.C_Str());
+
+				{
+					aiVector3D s;
+					aiVector3D r;
+					ai_real a;
+					aiVector3D p;
+					src->mTransformation.Decompose(s, r, a, p);
+					dst->pos = Vec3f(p.x, p.y, p.z);
+					dst->quat = make_quat(a, Vec3f(r.x, r.y, r.z));
+					dst->scale = Vec3f(s.x, s.y, s.z);
+				}
+
+				if (src->mNumMeshes > 0)
+					dst->mesh_index = src->mMeshes[0];
+
+				for (auto i = 0; i < src->mNumChildren; i++)
+				{
+					auto n = new ModelNodePrivate;
+					dst->children.emplace_back(n);
+					get_node(n, src->mChildren[i]);
+				}
 			};
-			get_mesh(scene->mRootNode, Mat4f(1.f));
+			get_node(ret->root.get(), scene->mRootNode);
 
 			return ret;
 #endif

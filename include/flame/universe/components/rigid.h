@@ -17,6 +17,8 @@ namespace flame
 		virtual bool get_dynamic() const = 0;
 		virtual void set_dynamic(bool v) = 0;
 
+		virtual void add_impulse(const Vec3f& v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cRigid* create();
 	};
 }

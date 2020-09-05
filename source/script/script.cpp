@@ -33,11 +33,10 @@ namespace flame
 
 		static int l_call(lua_State* state)
 		{
-			if (lua_isuserdata(state, -1) && lua_isuserdata(state, -2))
+			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
+			auto p = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : (lua_isnil(state, -2) ? nullptr : INVALID_POINTER);
+			if (f && p != INVALID_POINTER)
 			{
-				auto f = (FunctionInfo*)lua_touserdata(state, -1);
-				auto p = lua_touserdata(state, -2);
-
 				void* ret = nullptr;
 				auto ret_type = f->get_type();
 				if (ret_type != TypeInfo::get(TypeData, "void"))
