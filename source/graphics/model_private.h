@@ -53,17 +53,14 @@ namespace flame
 
 			int mesh_index = -1;
 
+			bool trigger = false;
+
 			ModelNodePrivate* parent = nullptr;
 			std::vector<std::unique_ptr<ModelNodePrivate>> children;
 
 			const char* get_name() const override { return name.c_str(); }
 
-			void get_transform(Vec3f& p, Vec4f& q, Vec3f& s) const override 
-			{ 
-				p = pos;
-				q = quat;
-				s = scale;
-			}
+			void get_transform(Vec3f& p, Vec4f& q, Vec3f& s) const override { p = pos; q = quat; s = scale; }
 
 			ModelNode* get_parent() const override { return parent; }
 			uint get_children_count() const { return children.size(); }

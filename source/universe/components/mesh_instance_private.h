@@ -7,6 +7,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Canvas;
+		struct ModelMesh;
 	}
 
 	struct cNodePrivate;
@@ -25,18 +26,17 @@ namespace flame
 		graphics::Canvas* canvas = nullptr; // R ref
 		int model_index = -1;
 		int mesh_index = -1;
-
-		int get_model_index() const override { return model_index; }
-		void set_model_index(int id) override;
-		int get_mesh_index() const override { return mesh_index; }
-		void set_mesh_index(int id) override;
+		graphics::ModelMesh* mesh = nullptr;
 
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
+		int get_mesh_index() const override { return mesh_index; }
+		void set_mesh_index(int id) override;
+
 		void on_gain_canvas();
 
-		void apply_src();
+		void get_mesh();
 
 		void draw(graphics::Canvas* canvas, cCamera* camera); // R
 	};

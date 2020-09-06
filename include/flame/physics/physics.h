@@ -12,7 +12,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Model;
+		struct ModelMesh;
 	}
 
 	namespace physics
@@ -25,10 +25,10 @@ namespace flame
 
 		enum ShapeType
 		{
-			ShapeBox,
+			ShapeCube,
 			ShapeSphere,
 			ShapeCapsule,
-			ShapeTriangles
+			ShapeMesh
 		};
 
 		union ShapeDesc
@@ -48,10 +48,9 @@ namespace flame
 			}capsule;
 			struct
 			{
-				graphics::Model* model;
-				uint mesh_idx;
+				graphics::ModelMesh* mesh;
 				Vec3f scale;
-			}triangles;
+			}mesh;
 		};
 	}
 }

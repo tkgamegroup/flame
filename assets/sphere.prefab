@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<prefab>
+	<entity>
+	  <cNode />
+    <cMeshInstance src="sphere" mesh_index="0" />
+    <cRigid />
+    <cShape type="Sphere" />
+	</entity>
+</prefab>

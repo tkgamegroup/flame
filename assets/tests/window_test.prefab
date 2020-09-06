@@ -3,7 +3,7 @@
   <entity>
     <cElement />
     <cNode />
-    <cObject />
+    <cMeshInstance />
     <entity name="camera">
       <cNode />
       <cCamera />

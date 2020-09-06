@@ -213,13 +213,10 @@ namespace flame
 						{
 							r.place = PlaceLocal;
 							r.staging = get_component(r.hash);
-							if (!r.staging)
+							if (!r.staging && !r.optional)
 							{
-								if (!r.optional)
-								{
-									printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
-									return;
-								}
+								printf("add component %s failed, this component requires local component %s, which do not exist\n", c->type_name, r.name.c_str());
+								return;
 							}
 						}
 						else if (place_str == "parent")
@@ -228,9 +225,25 @@ namespace flame
 							if (parent)
 							{
 								r.staging = parent->get_component(r.hash);
-								if (!r.staging)
+								if (!r.staging && !r.optional)
 								{
-									if (!r.optional)
+									printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
+									return;
+								}
+							}
+						}
+						else if (place_str == "local|parent")
+						{
+							r.staging = get_component(r.hash);
+							if (r.staging)
+								r.place = PlaceLocal;
+							else
+							{
+								r.place = PlaceParent;
+								if (parent)
+								{
+									r.staging = parent->get_component(r.hash);
+									if (!r.staging && !r.optional)
 									{
 										printf("add component %s failed, this component requires parent's component %s, which do not exist\n", c->type_name, r.name.c_str());
 										return;

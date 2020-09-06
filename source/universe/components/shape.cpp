@@ -3,6 +3,7 @@
 #include <flame/physics/material.h>
 #include <flame/physics/rigid.h>
 #include <flame/physics/shape.h>
+#include "../entity_private.h"
 #include "node_private.h"
 #include "mesh_instance_private.h"
 #include "rigid_private.h"
@@ -23,43 +24,63 @@ namespace flame
 		type = t;
 	}
 
-	void cShapePrivate::on_gain_rigid()
+	void cShapePrivate::set_size(const Vec3f& s)
 	{
-		physics::ShapeDesc desc;
-		switch (type)
-		{
-		case physics::ShapeBox:
-			desc.box.hf_ext = Vec3f(0.5f) * node->scale;
-			phy_shape = physics::Shape::create(get_material(), physics::ShapeBox, desc);
-			rigid->phy_rigid->add_shape(phy_shape);
-			break;
-		case physics::ShapeSphere:
-			desc.sphere.radius = 0.5f * node->scale.x();
-			phy_shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
-			rigid->phy_rigid->add_shape(phy_shape);
-			break;
-		case physics::ShapeTriangles:
-			//if (rigid->mesh->model_idx != -1)
-			//{
-			//	desc.triangles.model = object->canvas->get_model(object->model_idx);
-			//	desc.triangles.scale = node->scale;
-			//	phy_shapes[0] = physics::Shape::create(get_material(), physics::ShapeTriangles, desc);
-			//	rigid->phy_rigid->add_shape(phy_shapes[0]);
-
-			//	if (has_triggers)
-			//	{
-			//		phy_shapes[1]->set_trigger(true);
-			//		rigid->phy_rigid->add_shape(phy_shapes[1]);
-			//	}
-			//}
-			break;
-		}
+		size = s;
 	}
 
-	void cShapePrivate::on_lost_rigid()
+	void cShapePrivate::set_trigger(bool v)
 	{
-		phy_shape->release();
-		phy_shape = nullptr;
+		trigger = v;
+	}
+
+	void cShapePrivate::on_local_message(Message msg, void* p)
+	{
+		switch (msg)
+		{
+		case MessageEnteredWorld:
+			node->update_transform();
+
+			physics::ShapeDesc desc;
+			switch (type)
+			{
+			case physics::ShapeCube:
+				desc.box.hf_ext = size * Vec3f(0.5f) * node->global_scale;
+				phy_shape = physics::Shape::create(get_material(), physics::ShapeCube, desc);
+				break;
+			case physics::ShapeSphere:
+				desc.sphere.radius = size.x() * 0.5f * node->global_scale.x();
+				phy_shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
+				break;
+			case physics::ShapeMesh:
+				if (mesh && mesh->mesh)
+				{
+					desc.mesh.mesh = mesh->mesh;
+					desc.mesh.scale = size * node->global_scale;
+					phy_shape = physics::Shape::create(get_material(), physics::ShapeMesh, desc);
+				}
+				break;
+			}
+
+			if (phy_shape)
+			{
+				if (trigger)
+					phy_shape->set_trigger(true);
+				rigid->phy_shapes.push_back(phy_shape);
+				rigid->phy_rigid->add_shape(phy_shape);
+			}
+			break;
+		case MessageLeftWorld:
+			if (phy_shape)
+			{
+				std::erase_if(rigid->phy_shapes, [&](const auto& i) {
+					return i == phy_shape;
+				});
+				phy_shape->release();
+				phy_shape = nullptr;
+			}
+			break;
+		}
 	}
 
 	cShape* cShape::create()

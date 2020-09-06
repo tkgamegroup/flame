@@ -1,4 +1,5 @@
 #include <flame/serialize.h>
+#include <flame/graphics/model.h>
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include "node_private.h"
@@ -7,15 +8,14 @@
 
 namespace flame
 {
-	void cMeshInstancePrivate::set_model_index(int id)
+	void cMeshInstancePrivate::set_src(const std::string& _src)
 	{
-		if (model_index == id)
+		if (src == _src)
 			return;
-		model_index = id;
+		src = _src;
+		get_mesh();
 		if (node)
 			node->mark_transform_dirty();
-		if (!src.empty())
-			src = "";
 	}
 
 	void cMeshInstancePrivate::set_mesh_index(int id)
@@ -23,30 +23,28 @@ namespace flame
 		if (mesh_index == id)
 			return;
 		mesh_index = id;
-		if (node)
-			node->mark_transform_dirty();
-	}
-
-	void cMeshInstancePrivate::set_src(const std::string& _src)
-	{
-		if (src == _src)
-			return;
-		src = _src;
-		apply_src();
+		get_mesh();
 		if (node)
 			node->mark_transform_dirty();
 	}
 
 	void cMeshInstancePrivate::on_gain_canvas()
 	{
-		apply_src();
+		get_mesh();
 	}
 
-	void cMeshInstancePrivate::apply_src()
+	void cMeshInstancePrivate::get_mesh()
 	{
-		model_index = -1;
+		mesh = nullptr;
 		if (canvas && !src.empty())
+		{
 			model_index = canvas->find_model(src.c_str());
+			if (mesh_index != -1)
+			{
+				mesh = canvas->get_model(model_index)->get_mesh(mesh_index);
+				Entity::report_data_changed(this, S<ch("mesh")>::v);
+			}
+		}
 	}
 
 	void cMeshInstancePrivate::draw(graphics::Canvas* canvas, cCamera* _camera)

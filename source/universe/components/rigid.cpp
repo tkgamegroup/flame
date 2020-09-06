@@ -1,4 +1,5 @@
 #include <flame/physics/scene.h>
+#include <flame/physics/rigid.h>
 #include "../entity_private.h"
 #include "node_private.h"
 #include "rigid_private.h"
@@ -8,7 +9,21 @@ namespace flame
 {
 	void cRigidPrivate::set_dynamic(bool v)
 	{
-		dynamic = v;
+		if (dynamic != v)
+		{
+			dynamic = v;
+			if (phy_rigid)
+			{
+				for (auto s : phy_shapes)
+					phy_rigid->remove_shape(s);
+				on_lost_physics_world();
+				on_lost_node();
+				on_gain_node();
+				on_gain_physics_world();
+				for (auto s : phy_shapes)
+					phy_rigid->add_shape(s);
+			}
+		}
 	}
 
 	void cRigidPrivate::add_impulse(const Vec3f& v)
@@ -35,6 +50,8 @@ namespace flame
 
 	void cRigidPrivate::on_gain_physics_world()
 	{
+		if (!physics_world)
+			return;
 		physics_world->rigids.push_back(this);
 		physics_world->scene->add_rigid(phy_rigid);
 		phy_rigid->add_impulse(staging_impulse);
@@ -43,6 +60,8 @@ namespace flame
 
 	void cRigidPrivate::on_lost_physics_world()
 	{
+		if (!physics_world)
+			return;
 		std::erase_if(physics_world->rigids, [&](const auto& i) {
 			return i == this;
 		});

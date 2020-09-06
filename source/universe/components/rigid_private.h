@@ -1,10 +1,15 @@
 #pragma once
 
-#include <flame/physics/rigid.h>
 #include <flame/universe/components/rigid.h>
 
 namespace flame
 {
+	namespace physics
+	{
+		struct Rigid;
+		struct Shape;
+	}
+
 	struct cNodePrivate;
 	struct sPhysicsWorldPrivate;
 
@@ -12,6 +17,7 @@ namespace flame
 	{
 		bool dynamic = true;
 		physics::Rigid* phy_rigid = nullptr;
+		std::vector<physics::Shape*> phy_shapes;
 		Vec3f staging_impulse = Vec3f(0.f);
 		Vec3f curr_coord = Vec3f(0.f);
 		Vec4f curr_quat = Vec4f(0.f, 0.f, 0.f, 1.f);

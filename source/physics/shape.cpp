@@ -14,7 +14,7 @@ namespace flame
 #ifdef USE_PHYSX
 			switch (type)
 			{
-			case ShapeBox:
+			case ShapeCube:
 				px_shape = DevicePrivate::get()->px_instance->createShape(PxBoxGeometry(desc.box.hf_ext.x(), desc.box.hf_ext.y(), desc.box.hf_ext.z()), *m->px_material);
 				px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat)));
 				break;
@@ -26,14 +26,13 @@ namespace flame
 				px_shape = DevicePrivate::get()->px_instance->createShape(PxCapsuleGeometry(desc.capsule.radius, desc.capsule.height), *m->px_material);
 				px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat) * PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
 				break;
-			case ShapeTriangles:
+			case ShapeMesh:
 			{
 				PxTriangleMesh* mesh = nullptr;
 				for (auto& m : meshes)
 				{
-					if (m.first.triangles.model == desc.triangles.model &&
-						m.first.triangles.mesh_idx == desc.triangles.mesh_idx &&
-						m.first.triangles.scale == desc.triangles.scale)
+					if (m.first.mesh.mesh == desc.mesh.mesh &&
+						m.first.mesh.scale == desc.mesh.scale)
 						mesh = m.second;
 				}
 				if (!mesh)
@@ -46,7 +45,7 @@ namespace flame
 					std::vector<PxVec3> vertices;
 					std::vector<PxU32> indices;
 					{
-						auto mesh = desc.triangles.model->get_mesh(desc.triangles.mesh_idx);
+						auto mesh = desc.mesh.mesh;
 						vertices.resize(mesh->get_vertices_count_1());
 						indices.resize(mesh->get_indices_count());
 						auto vs = mesh->get_vertices_1();
@@ -70,7 +69,7 @@ namespace flame
 					meshes.emplace_back(desc, mesh);
 				}
 				
-				px_shape = DevicePrivate::get()->px_instance->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(cvt(desc.triangles.scale))), *m->px_material);
+				px_shape = DevicePrivate::get()->px_instance->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(cvt(desc.mesh.scale))), *m->px_material);
 			}
 				break;
 			default:

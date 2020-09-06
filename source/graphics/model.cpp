@@ -212,12 +212,45 @@ namespace flame
 			file.close();
 
 			pugi::xml_document prefab;
-			auto prefab_root = prefab.append_child("prefab");
 
+			auto model_name = filename.filename().string();
 			std::function<void(pugi::xml_node, ModelNodePrivate*)> print_node;
 			print_node = [&](pugi::xml_node dst, ModelNodePrivate* src) {
-
+				auto n = dst.append_child("entity");
+				n.append_attribute("name").set_value(src->name.c_str());
+				auto nn = n.append_child("cNode");
+				nn.append_attribute("pos").set_value(to_string(src->pos).c_str());
+				nn.append_attribute("quat").set_value(to_string(src->quat).c_str());
+				nn.append_attribute("scale").set_value(to_string(src->scale).c_str());
+				if (src->mesh_index != -1)
+				{
+					auto nm = n.append_child("cMeshInstance");
+					nm.append_attribute("src").set_value(model_name.c_str());
+					nm.append_attribute("mesh_index").set_value(src->mesh_index);
+					if (src->name == "$MergedNode_0" && model_name.starts_with("sm_"))
+					{
+						auto nr = n.append_child("cRigid");
+						nr.append_attribute("dynamic").set_value(false);
+						auto ns = n.append_child("cShape");
+						ns.append_attribute("type").set_value("Mesh");
+					}
+				}
+				else
+				{
+					if (src->name.starts_with("trigger"))
+					{
+						auto nr = n.append_child("cRigid");
+						nr.append_attribute("dynamic").set_value(false);
+						auto ns = n.append_child("cShape");
+						ns.append_attribute("type").set_value("Cube");
+						ns.append_attribute("size").set_value("2,2,0.01");
+						ns.append_attribute("trigger").set_value(true);
+					}
+				}
+				for (auto& c : src->children)
+					print_node(n, c.get());
 			};
+			print_node(prefab.append_child("prefab"), root.get());
 
 			auto prefab_path = filename;
 			prefab_path.replace_extension(L".prefab");
@@ -303,9 +336,11 @@ namespace flame
 				return nullptr;
 			}
 
+			ModelPrivate* ret = nullptr;
+
 			if (filename.extension() == L".fm")
 			{
-				auto ret = new ModelPrivate();
+				ret = new ModelPrivate();
 
 				std::ifstream file(filename, std::ios::binary);
 				uint size;
@@ -315,7 +350,8 @@ namespace flame
 				ret->materials.resize(size);
 				for (auto i = 0; i < ret->materials.size(); i++)
 				{
-
+					auto m = new ModelMaterialPrivate;
+					ret->materials[i].reset(m);
 				}
 
 				file.read((char*)&size, sizeof(uint));
@@ -356,8 +392,6 @@ namespace flame
 				load_node(ret->root.get());
 
 				file.close();
-
-				return ret;
 			}
 			else
 			{
@@ -365,19 +399,19 @@ namespace flame
 				Assimp::Importer importer;
 				importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger0 trigger1 trigger2 trigger3");
 				auto scene = importer.ReadFile(filename.string(),
-					aiProcess_Triangulate |
-					aiProcess_JoinIdenticalVertices |
-					aiProcess_SortByPType |
 					aiProcess_OptimizeGraph |
 					aiProcess_OptimizeMeshes |
-					aiProcess_RemoveRedundantMaterials);
+					aiProcess_RemoveRedundantMaterials |
+					aiProcess_Triangulate |
+					aiProcess_JoinIdenticalVertices |
+					aiProcess_SortByPType);
 				if (!scene)
 				{
 					wprintf(L"load model failed: %s\n", filename.c_str());
 					return nullptr;
 				}
 
-				auto ret = new ModelPrivate();
+				ret = new ModelPrivate();
 
 				for (auto i = 0; i < scene->mNumMaterials; i++)
 				{
@@ -414,6 +448,7 @@ namespace flame
 						ai_real a;
 						aiVector3D p;
 						src->mTransformation.Decompose(s, r, a, p);
+						a *= RAD_ANG;
 						dst->pos = Vec3f(p.x, p.y, p.z);
 						dst->quat = make_quat(a, Vec3f(r.x, r.y, r.z));
 						dst->scale = Vec3f(s.x, s.y, s.z);
@@ -452,12 +487,18 @@ namespace flame
 					else
 						it++;
 				}
-
-				return ret;
 #endif
 			}
 
-			return nullptr;
+			if (ret && ret->root->children.empty())
+			{
+				auto n = new ModelNodePrivate;
+				auto r = ret->root.release();
+				n->children.emplace_back(r);
+				ret->root.reset(n);
+			}
+
+			return ret;
 		}
 
 		Model* Model::create(const wchar_t* filename)

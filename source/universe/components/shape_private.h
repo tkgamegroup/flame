@@ -10,22 +10,31 @@ namespace flame
 	}
 
 	struct cNodePrivate;
-	struct cObjectPrivate;
+	struct cMeshInstancePrivate;
 	struct cRigidPrivate;
 
 	struct cShapePrivate : cShape // R ~ on_*
 	{
-		physics::ShapeType type = physics::ShapeBox;
+		physics::ShapeType type = physics::ShapeCube;
+		Vec3f size = Vec3f(1.f);
+
+		bool trigger = false;
 
 		physics::Shape* phy_shape;
 
 		cNodePrivate* node = nullptr; // R ref
-		cRigidPrivate* rigid = nullptr; // R ref place=parent
+		cMeshInstancePrivate* mesh = nullptr; // R ref optional
+		cRigidPrivate* rigid = nullptr; // R ref place=local|parent
 
 		physics::ShapeType get_type() const override { return type; }
 		void set_type(physics::ShapeType t) override;
 
-		void on_gain_rigid();
-		void on_lost_rigid();
+		Vec3f get_size() const override { return size; }
+		void set_size(const Vec3f& s) override;
+
+		bool get_trigger() const override { return trigger; }
+		void set_trigger(bool v) override;
+
+		void on_local_message(Message msg, void* p) override;
 	};
 }
