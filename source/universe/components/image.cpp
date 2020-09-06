@@ -76,7 +76,7 @@ namespace flame
 	{
 		if (res_id != -1 && tile_id != -1)
 		{
-			canvas->add_image(res_id, tile_id,
+			canvas->draw_image(res_id, tile_id,
 				element->points[4], element->points[5], element->points[6], element->points[7],
 				uv0, uv1, Vec4c(255));
 		}

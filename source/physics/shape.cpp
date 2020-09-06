@@ -32,8 +32,8 @@ namespace flame
 				for (auto& m : meshes)
 				{
 					if (m.first.triangles.model == desc.triangles.model &&
-						m.first.triangles.scale == desc.triangles.scale &&
-						m.first.triangles.filter == desc.triangles.filter)
+						m.first.triangles.mesh_idx == desc.triangles.mesh_idx &&
+						m.first.triangles.scale == desc.triangles.scale)
 						mesh = m.second;
 				}
 				if (!mesh)
@@ -43,39 +43,18 @@ namespace flame
 
 					DevicePrivate::get()->px_cooking->setParams(params);
 
-					auto vtx_cnt = 0;
-					auto idx_cnt = 0;
 					std::vector<PxVec3> vertices;
 					std::vector<PxU32> indices;
-					auto model = desc.triangles.model;
-					auto mesh_cnt = model->get_meshes_count();
-					for (auto i = 0; i < mesh_cnt; i++)
 					{
-						auto m = model->get_mesh(i);
-						if (!(m->get_flags() & desc.triangles.filter))
-							continue;
-						vtx_cnt += m->get_vertices_count();
-						idx_cnt += m->get_indices_count();
-					}
-					vertices.resize(vtx_cnt);
-					indices.resize(idx_cnt);
-					vtx_cnt = 0;
-					idx_cnt = 0;
-					for (auto i = 0; i < mesh_cnt; i++)
-					{
-						auto m = model->get_mesh(i);
-						if (!(m->get_flags() & desc.triangles.filter))
-							continue;
-						auto vc = m->get_vertices_count();
-						auto vs = m->get_vertices();
-						for (auto j = 0; j < vc; j++)
-							vertices[vtx_cnt + j] = cvt(vs[j].pos);
-						auto ic = m->get_indices_count();
-						auto is = m->get_indices();
-						for (auto j = 0; j < ic; j++)
-							indices[idx_cnt + j] = is[j] + vtx_cnt;
-						vtx_cnt += vc;
-						idx_cnt += ic;
+						auto mesh = desc.triangles.model->get_mesh(desc.triangles.mesh_idx);
+						vertices.resize(mesh->get_vertices_count_1());
+						indices.resize(mesh->get_indices_count());
+						auto vs = mesh->get_vertices_1();
+						for (auto i = 0; i < vertices.size(); i++)
+							vertices[i] = cvt(vs[i].pos);
+						auto is = mesh->get_indices();
+						for (auto i = 0; i < indices.size(); i++)
+							indices[i] = is[i];
 					}
 
 					PxTriangleMeshDesc mesh_desc;

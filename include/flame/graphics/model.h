@@ -57,6 +57,8 @@ namespace flame
 
 			virtual ModelNode* get_root() const = 0;
 
+			virtual void save(const wchar_t* filename) const = 0;
+
 			FLAME_GRAPHICS_EXPORTS static Model* get_standard(StandardModel m);
 			FLAME_GRAPHICS_EXPORTS static Model* create(const wchar_t* filename);
 		};

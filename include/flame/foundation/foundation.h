@@ -6,12 +6,11 @@
 #define FLAME_FOUNDATION_EXPORTS __declspec(dllimport)
 #endif
 
-#include <flame/math.h>
+#include <flame/serialize.h>
 
 #include <chrono>
 #include <thread>
 #include <mutex>
-#include <filesystem>
 
 namespace flame
 {

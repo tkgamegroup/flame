@@ -49,6 +49,7 @@ namespace flame
 		{
 			PlaceLocal,
 			PlaceParent,
+			PlaceLocalOrParent,
 			PlaceAncestor,
 			PlaceOffspring
 		};

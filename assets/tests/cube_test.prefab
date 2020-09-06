@@ -9,22 +9,8 @@
       <cScript src="camera_controller.lua" />
     </entity>
     <entity>
-      <cNode pos="0,-5,0" scale="100,1,100" />
-      <cObject src="cube" />
-      <cRigid dynamic="false" />
-      <cShape />
-    </entity>
-    <entity>
-      <cNode pos="0,-5,0" euler="-90,0,0" scale="2,2,2" />
-      <cObject src="mod" />
-      <cRigid dynamic="false" />
-      <cShape type="Triangles" />
-    </entity>
-    <entity>
-      <cNode pos="0,15,0" scale="0.5,0.5,0.5" />
-      <cObject src="cube" />
-      <cRigid />
-      <cShape />
+      <cNode />
+      <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity>
       <cNode pos="5,10,6" />

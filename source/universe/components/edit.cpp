@@ -407,7 +407,7 @@ namespace flame
 				canvas->line_to(pos + axes * (p2 + Vec2f(0.f, font_size)));
 				canvas->line_to(pos + axes * (p1 + Vec2f(0.f, font_size)));
 				canvas->fill(Vec4c(128, 128, 255, 255));
-				canvas->add_text(0, sb, se, font_size, Vec4c(255), pos + p1, axes);
+				canvas->draw_text(0, sb, se, font_size, Vec4c(255), pos + p1, axes);
 			}
 		}
 

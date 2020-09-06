@@ -17,20 +17,15 @@ namespace flame
 	{
 		physics::ShapeType type = physics::ShapeBox;
 
-		std::vector<physics::Shape*> phy_shapes;
+		physics::Shape* phy_shape;
 
 		cNodePrivate* node = nullptr; // R ref
-		cObjectPrivate* object = nullptr; // R ref
-		cRigidPrivate* rigid = nullptr; // R ref
+		cRigidPrivate* rigid = nullptr; // R ref place=parent
 
 		physics::ShapeType get_type() const override { return type; }
 		void set_type(physics::ShapeType t) override;
 
-		void make_shape();
-
 		void on_gain_rigid();
 		void on_lost_rigid();
-
-		void on_local_data_changed(Component* t, uint64 h) override;
 	};
 }

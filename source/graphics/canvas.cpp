@@ -241,15 +241,15 @@ namespace flame
 				}
 
 				{
-					VertexAttributeInfo vias[4];
+					VertexAttributeInfo vias[3];
 					vias[0].location = 0;
 					vias[0].format = Format_R32G32B32_SFLOAT;
 					vias[1].location = 1;
 					vias[1].format = Format_R32G32_SFLOAT;
 					vias[2].location = 2;
 					vias[2].format = Format_R32G32B32_SFLOAT;
-					vias[3].location = 3;
-					vias[3].format = Format_R32G32B32_SFLOAT;
+					//vias[3].location = 3;
+					//vias[3].format = Format_R32G32B32_SFLOAT;
 					VertexBufferInfo vib;
 					vib.attributes_count = size(vias);
 					vib.attributes = vias;
@@ -335,8 +335,8 @@ namespace flame
 			model_vertex_buffer_1.init(d, 600000);
 			model_index_buffer.init(d, 400000);
 			material_info_buffer.init(d, 128);
-			object_matrix_buffer.init(d, 10000);
-			object_indirect_buffer.init(d, 10000);
+			mesh_matrix_buffer.init(d, 10000);
+			mesh_indirect_buffer.init(d, 10000);
 			light_info_buffer.init(d, 10000);
 			light_indices_buffer.init(d, 1);
 
@@ -359,7 +359,7 @@ namespace flame
 			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
 			for (auto i = 0; i < resources_count; i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp);
-			forward_descriptorset->set_buffer(0, 0, object_matrix_buffer.buf.get());
+			forward_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
 			forward_descriptorset->set_buffer(1, 0, light_info_buffer.buf.get());
 			forward_descriptorset->set_buffer(2, 0, light_indices_buffer.buf.get());
 			forward_descriptorset->set_buffer(4, 0, material_info_buffer.buf.get());
@@ -915,7 +915,7 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes)
+		void CanvasPrivate::draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes)
 		{
 			auto atlas = resources[res_id]->font_atlas;
 
@@ -961,7 +961,7 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
+		void CanvasPrivate::draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
 			res_id = min(res_id, resources_count - 1);
 			auto atlas = resources[res_id]->image_atlas;
@@ -988,7 +988,7 @@ namespace flame
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 
-		void CanvasPrivate::add_object(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal)
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal)
 		{
 			if (uploaded_models_count != models.size())
 			{
@@ -1092,7 +1092,7 @@ namespace flame
 
 			auto add_cmd = [&]() {
 				Cmd cmd;
-				cmd.type = CmdDrawObject;
+				cmd.type = CmdDrawMesh;
 				cmd.v.d3.count = 0;
 				cmds.push_back(cmd);
 			};
@@ -1101,19 +1101,19 @@ namespace flame
 			else
 			{
 				auto& back = cmds.back();
-				if (back.type != CmdDrawObject)
+				if (back.type != CmdDrawMesh)
 					add_cmd();
 			}
 
-			auto m_id = object_matrix_buffer.stg_num() << 16;
+			auto m_id = mesh_matrix_buffer.stg_num() << 16;
 			auto& m = models[mod_id];
-			ObjectMatrix om;
+			MeshMatrix om;
 			om.model = model;
 			om.view = view;
 			om.proj = proj;
 			om.mvp = proj * view * model;
 			om.nor = normal;
-			object_matrix_buffer.push(om);
+			mesh_matrix_buffer.push(om);
 			{
 				auto& ms = m.meshes[mesh_idx];
 				DrawIndexedIndirectCommand ic;
@@ -1122,7 +1122,7 @@ namespace flame
 				ic.first_index = ms.idx_off;
 				ic.vertex_offset = ms.vtx_off;
 				ic.first_instance = m_id;
-				object_indirect_buffer.push(ic);
+				mesh_indirect_buffer.push(ic);
 			}
 
 			cmds.back().v.d3.count += m.meshes.size();
@@ -1183,8 +1183,8 @@ namespace flame
 		{
 			element_vertex_buffer.stg_rewind();
 			element_index_buffer.stg_rewind();
-			object_matrix_buffer.stg_rewind();
-			object_indirect_buffer.stg_rewind();
+			mesh_matrix_buffer.stg_rewind();
+			mesh_indirect_buffer.stg_rewind();
 			light_info_buffer.stg_rewind();
 			light_indices_buffer.stg_rewind();
 
@@ -1230,7 +1230,7 @@ namespace flame
 
 				}
 					break;
-				case CmdDrawObject:
+				case CmdDrawMesh:
 				{
 					if (passes.empty() || (passes.back().type != PassObject && passes.back().type != PassNone))
 						passes.emplace_back();
@@ -1283,8 +1283,8 @@ namespace flame
 
 			element_vertex_buffer.upload(cb);
 			element_index_buffer.upload(cb);
-			object_matrix_buffer.upload(cb);
-			object_indirect_buffer.upload(cb);
+			mesh_matrix_buffer.upload(cb);
+			mesh_indirect_buffer.upload(cb);
 			light_info_buffer.upload(cb);
 			light_indices_buffer.upload(cb);
 
@@ -1338,8 +1338,8 @@ namespace flame
 				{
 					if (obj_indirect_off == 0)
 					{
-						object_matrix_buffer.barrier(cb);
-						object_indirect_buffer.barrier(cb);
+						mesh_matrix_buffer.barrier(cb);
+						mesh_indirect_buffer.barrier(cb);
 						light_info_buffer.barrier(cb);
 						light_indices_buffer.barrier(cb);
 					}
@@ -1354,8 +1354,8 @@ namespace flame
 						auto& cmd = cmds[i];
 						switch (cmd.type)
 						{
-						case CmdDrawObject:
-							cb->draw_indexed_indirect(object_indirect_buffer.buf.get(), obj_indirect_off, cmd.v.d3.count);
+						case CmdDrawMesh:
+							cb->draw_indexed_indirect(mesh_indirect_buffer.buf.get(), obj_indirect_off, cmd.v.d3.count);
 							obj_indirect_off += cmd.v.d3.count;
 							break;
 						case CmdSetScissor:

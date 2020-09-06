@@ -132,8 +132,8 @@ namespace flame
 			enum CmdType
 			{
 				CmdDrawElement,
+				CmdDrawMesh,
 				CmdSetScissor,
-				CmdDrawObject,
 				CmdBlur,
 				CmdBloom
 			};
@@ -205,7 +205,7 @@ namespace flame
 				std::vector<BoundMesh> meshes;
 			};
 
-			struct ObjectMatrix
+			struct MeshMatrix
 			{
 				Mat4f model;
 				Mat4f view;
@@ -249,8 +249,8 @@ namespace flame
 			TBuffer<ModelVertex1, BufferUsageVertex> model_vertex_buffer_1;
 			TBuffer<uint, BufferUsageIndex> model_index_buffer;
 			TBuffer<BoundMaterial, BufferUsageUniform> material_info_buffer;
-			TBuffer<ObjectMatrix, BufferUsageStorage> object_matrix_buffer;
-			TBuffer<DrawIndexedIndirectCommand, BufferUsageIndirect> object_indirect_buffer;
+			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
+			TBuffer<DrawIndexedIndirectCommand, BufferUsageIndirect> mesh_indirect_buffer;
 			TBuffer<LightInfo, BufferUsageStorage> light_info_buffer;
 			TBuffer<LightIndices, BufferUsageStorage> light_indices_buffer;
 
@@ -318,10 +318,10 @@ namespace flame
 
 			void stroke(const Vec4c& col, float thickness, bool aa = false) override;
 			void fill(const Vec4c& col, bool aa = false) override;
-			void add_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
-			void add_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
+			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
+			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void add_object(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
+			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
 			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
 
 			void add_blur(const Vec4f& range, uint radius) override;

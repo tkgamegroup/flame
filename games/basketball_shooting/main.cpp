@@ -11,20 +11,10 @@ Entity* root;
 
 int main(int argc, char** args)
 {
-	auto a = make_rotation_matrix(make_quat(90, Vec3f(1, 0, 0)));
-	auto b = make_rotation_matrix(make_quat(90, Vec3f(0, 1, 0)));
-	auto c = a * b;
-	auto d = b * a;
-
-	auto m = make_rotation_matrix(quat_mul(
-		make_quat(90, Vec3f(1, 0, 0)),
-		make_quat(90, Vec3f(0, 1, 0))
-	));
-
 	g_app.create();
 	auto w = new GraphicsWindow(&g_app, true, "Basketball Shooting", Vec2u(600, 400), WindowFrame | WindowResizable);
 	w->canvas->set_clear_color(Vec4c(100, 100, 200, 255));
-	w->canvas->bind_model(Model::create(L"assets/basketball_shooting_machine.dae"), "machine");
+	w->canvas->bind_model(Model::create(L"assets/basketball_shooting_machine.fm"), "machine");
 	root = w->root;
 
 	auto e = Entity::create();

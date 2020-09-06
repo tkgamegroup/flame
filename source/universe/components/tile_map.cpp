@@ -112,7 +112,7 @@ namespace flame
 				auto& cell = cells[i][j];
 				if (cell.first != -1)
 				{
-					canvas->add_image(res_id, cell.first,
+					canvas->draw_image(res_id, cell.first,
 						p + axes * (Vec2f(j, i) * cell_size),
 						p + axes * (Vec2f(j + 1, i) * cell_size),
 						p + axes * (Vec2f(j + 1, i + 1) * cell_size),

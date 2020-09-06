@@ -8,6 +8,7 @@
 #include <regex>
 #include <locale>
 #include <codecvt>
+#include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -716,7 +717,7 @@ namespace flame
 	{
 		auto ext = _ext;
 		std::transform(ext.begin(), ext.end(), ext.begin(), tolower);
-		if (ext == L".obj" || ext == L".pmd" || ext == L".pmx" || ext == L".dae")
+		if (ext == L".obj" || ext == L".dae")
 			return true;
 		return false;
 	}
@@ -730,58 +731,6 @@ namespace flame
 		if (is_model_file(ext))
 			return FileTypeModel;
 		return FileTypeUnknown;
-	}
-
-	template <class T>
-	inline T read(std::ifstream& file)
-	{
-		T v;
-		file.read((char*)&v, sizeof(T));
-		return v;
-	}
-
-	inline std::string read_string(std::ifstream& file)
-	{
-		uint size = 0;
-		uint q = 1;
-		for (auto i = 0; i < 4; i++)
-		{
-			unsigned char byte;
-			file.read((char*)&byte, 1);
-			if (byte >= 128)
-				byte -= 128;
-			else
-				i = 4;
-			size += q * byte;
-			q *= 128;
-		}
-		std::string v;
-		v.resize(size);
-		file.read((char*)v.data(), size);
-		return v;
-	}
-
-	template <class T>
-	inline void write(std::ofstream& file, const T& v)
-	{
-		file.write((char*)&v, sizeof(T));
-	}
-
-	inline void write_string(std::ofstream& file, const std::string& v)
-	{
-		uint size = v.size();
-		for (auto i = 0; i < 4; i++)
-		{
-			unsigned char byte = size % 128;
-			size /= 128;
-			if (size > 0)
-				byte += 128;
-			else
-				i = 4;
-			file.write((char*)&byte, 1);
-
-		}
-		file.write((char*)v.data(), v.size());
 	}
 
 	inline int64 get_file_length(std::ifstream& f)

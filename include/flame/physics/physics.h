@@ -49,8 +49,8 @@ namespace flame
 			struct
 			{
 				graphics::Model* model;
+				uint mesh_idx;
 				Vec3f scale;
-				uint filter;
 			}triangles;
 		};
 	}
