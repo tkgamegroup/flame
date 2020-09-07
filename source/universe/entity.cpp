@@ -1298,14 +1298,14 @@ namespace flame
 		}
 		for (auto& l : entity->local_data_changed_listeners)
 			l->call(c, hash);
-		for (auto s : entity->local_data_changed_listeners_s)
 		{
 			script::Parameter ps[2];
 			ps[0].type = script::ScriptTypePointer;
 			ps[0].data = &c;
 			ps[1].type = script::ScriptTypePointer;
 			ps[1].data = &hash;
-			script::Instance::get()->call_slot(s, size(ps), ps);
+			for (auto s : entity->local_data_changed_listeners_s)
+				script::Instance::get()->call_slot(s, size(ps), ps);
 		}
 		if (entity->parent)
 		{

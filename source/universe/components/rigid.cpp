@@ -1,5 +1,6 @@
 #include <flame/physics/scene.h>
 #include <flame/physics/rigid.h>
+#include <flame/script/script.h>
 #include "../entity_private.h"
 #include "node_private.h"
 #include "rigid_private.h"
@@ -7,6 +8,12 @@
 
 namespace flame
 {
+	cRigidPrivate::~cRigidPrivate()
+	{
+		for (auto s : trigger_listeners_s)
+			script::Instance::get()->release_slot(s);
+	}
+
 	void cRigidPrivate::set_dynamic(bool v)
 	{
 		if (dynamic != v)
@@ -37,9 +44,56 @@ namespace flame
 		}
 	}
 
+	void* cRigidPrivate::add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShape* trigger_shape, cShape* other_shape), const Capture& capture)
+	{
+		auto c = new Closure(callback, capture);
+		trigger_listeners.emplace_back(c);
+		return c;
+	}
+
+	void cRigidPrivate::remove_trigger_listener(void* lis)
+	{
+		std::erase_if(trigger_listeners, [&](const auto& i) {
+			return i == (decltype(i))lis;
+		});
+	}
+
+	void cRigidPrivate::add_trigger_listener_s(uint slot)
+	{
+		trigger_listeners_s.push_back(slot);
+	}
+
+	void cRigidPrivate::remove_trigger_listener_s(uint slot)
+	{
+		for (auto it = trigger_listeners_s.begin(); it != trigger_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				trigger_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cRigidPrivate::on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape)
+	{
+		for (auto& l : trigger_listeners)
+			l->call(type, trigger_shape, other_shape);
+		script::Parameter ps[3];
+		ps[0].type = script::ScriptTypeInt;
+		ps[0].data = &type;
+		ps[1].type = script::ScriptTypePointer;
+		ps[1].data = &trigger_shape;
+		ps[2].type = script::ScriptTypePointer;
+		ps[2].data = &other_shape;
+		for (auto s : trigger_listeners_s)
+			script::Instance::get()->call_slot(s, size(ps), ps);
+	}
+
 	void cRigidPrivate::on_gain_node()
 	{
 		phy_rigid = physics::Rigid::create(dynamic);
+		phy_rigid->user_data = this;
 	}
 
 	void cRigidPrivate::on_lost_node()

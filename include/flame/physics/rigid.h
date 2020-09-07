@@ -22,6 +22,8 @@ namespace flame
 			virtual void add_force(const Vec3f& v) = 0;
 			virtual void clear_force() = 0;
 
+			void* user_data;
+
 			FLAME_PHYSICS_EXPORTS static Rigid* create(bool dynamic);
 		};
 	}

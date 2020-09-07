@@ -318,7 +318,7 @@ namespace flame
 			case StandardModelSphere:
 			{
 				auto mesh = new ModelMeshPrivate;
-				mesh->add_sphere(0.5f, 8, 8, Vec3f(0.f), Mat3f(1.f));
+				mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
 				ret->meshes.emplace_back(mesh);
 				ret->root->mesh_index = 0;
 			}

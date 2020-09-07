@@ -25,13 +25,15 @@ namespace flame
 
 		void ScenePrivate::Callback::onTrigger(PxTriggerPair* pairs, PxU32 count)
 		{
-			for (auto i = 0; i < count; i++)
+			if (thiz->trigger_callback)
 			{
-				auto type = pairs[i].status == PxPairFlag::eNOTIFY_TOUCH_FOUND ? TouchFound : TouchLost;
-				auto trigger_shape = (Shape*)pairs[i].triggerShape->userData;
-				auto other_shape = (Shape*)pairs[i].otherShape->userData;
-				for (auto& l : thiz->trigger_listeners)
-					l->call(type, trigger_shape, other_shape);
+				for (auto i = 0; i < count; i++)
+				{
+					auto type = pairs[i].status == PxPairFlag::eNOTIFY_TOUCH_FOUND ? TouchFound : TouchLost;
+					auto trigger_shape = (Shape*)pairs[i].triggerShape->userData;
+					auto other_shape = (Shape*)pairs[i].otherShape->userData;
+					thiz->trigger_callback->call(type, trigger_shape, other_shape);
+				}
 			}
 		}
 
@@ -75,18 +77,9 @@ namespace flame
 #endif
 		}
 
-		void* ScenePrivate::add_trigger_listener(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture)
+		void ScenePrivate::set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture)
 		{
-			auto c = new Closure(callback, capture);
-			trigger_listeners.emplace_back(c);
-			return c;
-		}
-
-		void ScenePrivate::remove_trigger_listener(void* lis)
-		{
-			std::erase_if(trigger_listeners, [&](const auto& i) {
-				return i == (decltype(i))lis;
-			});
+			trigger_callback.reset(new Closure(callback, capture));
 		}
 
 		Scene* Scene::create(float gravity, uint threads_count)

@@ -18,6 +18,8 @@ namespace flame
 
 			virtual Rigid* get_rigid() const = 0;
 
+			void* user_data;
+
 			FLAME_PHYSICS_EXPORTS static Shape* create(Material* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord = Vec3f(0.f, 0.f, 0.f), const Vec4f& quat = Vec4f(0.f, 0.f, 0.f, 1.f));
 		};
 	}

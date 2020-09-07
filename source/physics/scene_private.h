@@ -35,7 +35,7 @@ namespace flame
 			Callback px_callback;
 #endif
 
-			std::vector<std::unique_ptr<Closure<void(Capture&, TouchType type, Shape* trigger_shape, Shape* other_shape)>>> trigger_listeners;
+			std::unique_ptr<Closure<void(Capture&, TouchType type, Shape* trigger_shape, Shape* other_shape)>> trigger_callback;
 
 			ScenePrivate(float gravity, uint thread_count);
 
@@ -44,8 +44,7 @@ namespace flame
 			void add_rigid(RigidPrivate* r);
 			void remove_rigid(RigidPrivate* r);
 			void update(float disp) override;
-			void* add_trigger_listener(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) override;
-			void remove_trigger_listener(void* lis) override;
+			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) override;
 		};
 
 		inline void SceneBridge::add_rigid(Rigid* s)

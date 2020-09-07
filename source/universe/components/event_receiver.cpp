@@ -260,12 +260,12 @@ namespace flame
 		auto& listeners_s = down ? key_down_listeners_s : key_up_listeners_s;
 		for (auto& l : listeners)
 			l->call(key);
-		for (auto s : listeners_s)
 		{
 			script::Parameter p;
 			p.type = script::ScriptTypeInt;
 			p.data = &key;
-			script::Instance::get()->call_slot(s, 1, &p);
+			for (auto s : listeners_s)
+				script::Instance::get()->call_slot(s, 1, &p);
 		}
 	}
 

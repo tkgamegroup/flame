@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
   <entity src="sphere">
-    <cNode pos="0,15,0" scale="0.3,0.3,0.3" />
+    <cNode scale="0.3,0.3,0.3" />
   </entity>
 </prefab>

@@ -64,6 +64,7 @@ namespace flame
 
 			if (phy_shape)
 			{
+				phy_shape->user_data = this;
 				if (trigger)
 					phy_shape->set_trigger(true);
 				rigid->phy_shapes.push_back(phy_shape);
