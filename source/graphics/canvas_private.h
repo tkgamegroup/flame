@@ -180,7 +180,7 @@ namespace flame
 
 			struct BoundMaterial
 			{
-				Vec4f albedo;
+				Vec4f albedo_alpha;
 				Vec4f spec_roughness;
 				uint albedo_map_index;
 				uint spec_map_index;

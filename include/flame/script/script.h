@@ -17,13 +17,20 @@ namespace flame
 		enum ScriptType
 		{
 			ScriptTypeInt,
-			ScriptTypePointer
+			ScriptTypeFloat,
+			ScriptTypePointer,
+			ScriptTypeVec2f
 		};
 
 		struct Parameter
 		{
 			ScriptType type;
-			void* data;
+			union
+			{
+				void* p;
+				Vec4i i;
+				Vec4f f;
+			}data;
 		};
 
 		struct Instance

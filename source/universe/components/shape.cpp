@@ -15,7 +15,7 @@ namespace flame
 	physics::Material* get_material()
 	{
 		if (!material)
-			material = physics::Material::create(0.5f, 0.5f, 0.6f);
+			material = physics::Material::create(0.2f, 0.2f, 0.3f);
 		return material;
 	}
 

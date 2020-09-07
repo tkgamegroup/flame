@@ -25,6 +25,9 @@ namespace flame
 
 		std::vector<uint> key_down_listeners_s;
 		std::vector<uint> key_up_listeners_s;
+		std::vector<uint> mouse_left_down_listeners_s;
+		std::vector<uint> mouse_left_up_listeners_s;
+		std::vector<uint> mouse_move_listeners_s;
 		std::vector<uint> mouse_click_listeners_s;
 
 		cElementPrivate* element = nullptr; // R ref
@@ -73,6 +76,12 @@ namespace flame
 		void remove_key_up_listener_s(uint slot) override;
 		void add_mouse_click_listener_s(uint slot) override;
 		void remove_mouse_click_listener_s(uint slot) override;
+		void add_mouse_left_down_listener_s(uint slot) override;
+		void remove_mouse_left_down_listener_s(uint slot) override;
+		void add_mouse_left_up_listener_s(uint slot) override;
+		void remove_mouse_left_up_listener_s(uint slot) override;
+		void add_mouse_move_listener_s(uint slot) override;
+		void remove_mouse_move_listener_s(uint slot) override;
 
 		void cEventReceiverPrivate::on_key_event(KeyboardKey key, bool down) override;
 

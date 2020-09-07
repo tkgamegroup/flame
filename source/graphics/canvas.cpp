@@ -1005,7 +1005,7 @@ namespace flame
 					for (auto& ma : m.model->materials)
 					{
 						BoundMaterial bm;
-						bm.albedo = Vec4f(ma->albedo, 0.f);
+						bm.albedo_alpha = Vec4f(ma->albedo, 1.f);
 						bm.spec_roughness = Vec4f(ma->spec, ma->roughness);
 						if (!ma->albedo_map_filename.empty())
 						{

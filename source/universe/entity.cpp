@@ -1301,9 +1301,9 @@ namespace flame
 		{
 			script::Parameter ps[2];
 			ps[0].type = script::ScriptTypePointer;
-			ps[0].data = &c;
+			ps[0].data.p = c;
 			ps[1].type = script::ScriptTypePointer;
-			ps[1].data = &hash;
+			ps[1].data.p = (void*)hash;
 			for (auto s : entity->local_data_changed_listeners_s)
 				script::Instance::get()->call_slot(s, size(ps), ps);
 		}

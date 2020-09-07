@@ -10,7 +10,7 @@
     </entity>
     <entity>
       <cNode />
-      <cMeshInstance src="model" mesh_index="0" />
+      <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity>
       <cNode pos="5,10,6" />

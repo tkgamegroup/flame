@@ -81,11 +81,11 @@ namespace flame
 			l->call(type, trigger_shape, other_shape);
 		script::Parameter ps[3];
 		ps[0].type = script::ScriptTypeInt;
-		ps[0].data = &type;
+		ps[0].data.i[0] = type;
 		ps[1].type = script::ScriptTypePointer;
-		ps[1].data = &trigger_shape;
+		ps[1].data.p = trigger_shape;
 		ps[2].type = script::ScriptTypePointer;
-		ps[2].data = &other_shape;
+		ps[2].data.p = other_shape;
 		for (auto s : trigger_listeners_s)
 			script::Instance::get()->call_slot(s, size(ps), ps);
 	}

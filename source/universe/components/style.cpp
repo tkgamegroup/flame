@@ -20,6 +20,9 @@ namespace flame
 		auto et = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 		assert(et);
 
+		if (!entity)
+			return;
+
 		auto sp1 = SUS::split(rule, '#');
 		for (auto& i : sp1)
 		{
@@ -104,8 +107,7 @@ namespace flame
 			et->destroy(state);
 		}
 
-		if (entity)
-			on_state_changed();
+		on_state_changed();
 	}
 
 	void cStylePrivate::on_state_changed()

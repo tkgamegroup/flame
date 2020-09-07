@@ -336,6 +336,13 @@ namespace flame
 			{
 				for (auto& l : er->mouse_move_listeners)
 					l->call(mdisp, mpos);
+				script::Parameter ps[2];
+				ps[0].type = script::ScriptTypeVec2f;
+				ps[0].data.f.xy() = mdisp;
+				ps[1].type = script::ScriptTypeVec2f;
+				ps[1].data.f.xy() = mpos;
+				for (auto s : er->mouse_move_listeners_s)
+					script::Instance::get()->call_slot(s, size(ps), ps);
 			}
 			if (mscrl != 0)
 			{
@@ -348,11 +355,21 @@ namespace flame
 				{
 					for (auto& l : er->mouse_left_down_listeners)
 						l->call(mpos);
+					script::Parameter p;
+					p.type = script::ScriptTypeVec2f;
+					p.data.f.xy() = mpos;
+					for (auto s : er->mouse_left_down_listeners_s)
+						script::Instance::get()->call_slot(s, 1, &p);
 				}
 				else
 				{
 					for (auto& l : er->mouse_left_up_listeners)
 						l->call(mpos);
+					script::Parameter p;
+					p.type = script::ScriptTypeVec2f;
+					p.data.f.xy() = mpos;
+					for (auto s : er->mouse_left_up_listeners_s)
+						script::Instance::get()->call_slot(s, 1, &p);
 				}
 			}
 			if (mbtns[Mouse_Right].second)

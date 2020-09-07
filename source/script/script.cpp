@@ -31,6 +31,57 @@ namespace flame
 			}
 		}
 
+		static void l_push_vec2f(lua_State* state, const Vec2f& v)
+		{
+			lua_newtable(state);
+
+			lua_pushstring(state, "x");
+			lua_pushnumber(state, v.x());
+			lua_settable(state, -3);
+
+			lua_pushstring(state, "y");
+			lua_pushnumber(state, v.y());
+			lua_settable(state, -3);
+		}
+
+		static void l_push_vec3f(lua_State* state, const Vec3f& v)
+		{
+			lua_newtable(state);
+
+			lua_pushstring(state, "x");
+			lua_pushnumber(state, v.x());
+			lua_settable(state, -3);
+
+			lua_pushstring(state, "y");
+			lua_pushnumber(state, v.y());
+			lua_settable(state, -3);
+
+			lua_pushstring(state, "z");
+			lua_pushnumber(state, v.z());
+			lua_settable(state, -3);
+		}
+
+		static void l_push_vec4f(lua_State* state, const Vec4f& v)
+		{
+			lua_newtable(state);
+
+			lua_pushstring(state, "x");
+			lua_pushnumber(state, v.x());
+			lua_settable(state, -3);
+
+			lua_pushstring(state, "y");
+			lua_pushnumber(state, v.y());
+			lua_settable(state, -3);
+
+			lua_pushstring(state, "z");
+			lua_pushnumber(state, v.z());
+			lua_settable(state, -3);
+
+			lua_pushstring(state, "w");
+			lua_pushnumber(state, v.w());
+			lua_settable(state, -3);
+		}
+
 		static int l_call(lua_State* state)
 		{
 			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
@@ -160,53 +211,11 @@ namespace flame
 						else if (tn == "float")
 							lua_pushnumber(state, *(float*)ret);
 						else if (tn == "flame::Vec<2,float>")
-						{
-							lua_newtable(state);
-
-							lua_pushstring(state, "x");
-							lua_pushnumber(state, (*(Vec2f*)ret).x());
-							lua_settable(state, -3);
-
-							lua_pushstring(state, "y");
-							lua_pushnumber(state, (*(Vec2f*)ret).y());
-							lua_settable(state, -3);
-						}
+							l_push_vec2f(state, *(Vec2f*)ret);
 						else if (tn == "flame::Vec<3,float>")
-						{
-							lua_newtable(state);
-
-							lua_pushstring(state, "x");
-							lua_pushnumber(state, (*(Vec3f*)ret).x());
-							lua_settable(state, -3);
-
-							lua_pushstring(state, "y");
-							lua_pushnumber(state, (*(Vec3f*)ret).y());
-							lua_settable(state, -3);
-
-							lua_pushstring(state, "z");
-							lua_pushnumber(state, (*(Vec3f*)ret).z());
-							lua_settable(state, -3);
-						}
+							l_push_vec3f(state, *(Vec3f*)ret);
 						else if (tn == "flame::Vec<4,float>")
-						{
-							lua_newtable(state);
-
-							lua_pushstring(state, "x");
-							lua_pushnumber(state, (*(Vec4f*)ret).x());
-							lua_settable(state, -3);
-
-							lua_pushstring(state, "y");
-							lua_pushnumber(state, (*(Vec4f*)ret).y());
-							lua_settable(state, -3);
-
-							lua_pushstring(state, "z");
-							lua_pushnumber(state, (*(Vec4f*)ret).z());
-							lua_settable(state, -3);
-
-							lua_pushstring(state, "w");
-							lua_pushnumber(state, (*(Vec4f*)ret).w());
-							lua_settable(state, -3);
-						}
+							l_push_vec4f(state, *(Vec4f*)ret);
 						else
 							lua_pushnil(state);
 					}
@@ -337,10 +346,16 @@ namespace flame
 				switch (p.type)
 				{
 				case ScriptTypeInt:
-					lua_pushinteger(lua_state, *(int*)p.data);
+					lua_pushinteger(lua_state, p.data.i[0]);
+					break;
+				case ScriptTypeFloat:
+					lua_pushinteger(lua_state, p.data.f[0]);
 					break;
 				case ScriptTypePointer:
-					lua_pushlightuserdata(lua_state, *(void**)p.data);
+					lua_pushlightuserdata(lua_state, p.data.p);
+					break;
+				case ScriptTypeVec2f:
+					l_push_vec2f(lua_state, (Vec2f)p.data.f);
 					break;
 				}
 			}

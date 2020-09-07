@@ -54,6 +54,12 @@ namespace flame
 		virtual void remove_key_down_listener_s(uint slot) = 0;
 		virtual void add_key_up_listener_s(uint slot) = 0;
 		virtual void remove_key_up_listener_s(uint slot) = 0;
+		virtual void add_mouse_left_down_listener_s(uint slot) = 0;
+		virtual void remove_mouse_left_down_listener_s(uint slot) = 0;
+		virtual void add_mouse_left_up_listener_s(uint slot) = 0;
+		virtual void remove_mouse_left_up_listener_s(uint slot) = 0;
+		virtual void add_mouse_move_listener_s(uint slot) = 0;
+		virtual void remove_mouse_move_listener_s(uint slot) = 0;
 		virtual void add_mouse_click_listener_s(uint slot) = 0;
 		virtual void remove_mouse_click_listener_s(uint slot) = 0;
 

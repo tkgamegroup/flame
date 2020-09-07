@@ -125,8 +125,6 @@ namespace flame
 			device_info.pEnabledFeatures = &features;
 			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
 
-			printf("vulkan initialized, gpu count: %d\n", gpu_count);
-
 			descriptor_pool.reset(new DescriptorPoolPrivate(this));
 			sampler_nearest.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, false));
 			sampler_linear.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, false));

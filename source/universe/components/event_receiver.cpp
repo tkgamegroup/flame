@@ -14,6 +14,12 @@ namespace flame
 			script::Instance::get()->release_slot(s);
 		for (auto s : mouse_click_listeners_s)
 			script::Instance::get()->release_slot(s);
+		for (auto s : mouse_left_down_listeners_s)
+			script::Instance::get()->release_slot(s);
+		for (auto s : mouse_left_up_listeners_s)
+			script::Instance::get()->release_slot(s);
+		for (auto s : mouse_move_listeners_s)
+			script::Instance::get()->release_slot(s);
 	}
 
 	void cEventReceiverPrivate::set_ignore_occluders(bool v)
@@ -254,6 +260,57 @@ namespace flame
 		}
 	}
 
+	void cEventReceiverPrivate::add_mouse_left_down_listener_s(uint slot)
+	{
+		mouse_left_down_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_mouse_left_down_listener_s(uint slot)
+	{
+		for (auto it = mouse_left_down_listeners_s.begin(); it != mouse_left_down_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				mouse_left_down_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cEventReceiverPrivate::add_mouse_left_up_listener_s(uint slot)
+	{
+		mouse_left_up_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_mouse_left_up_listener_s(uint slot)
+	{
+		for (auto it = mouse_left_up_listeners_s.begin(); it != mouse_left_up_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				mouse_left_up_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cEventReceiverPrivate::add_mouse_move_listener_s(uint slot)
+	{
+		mouse_move_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_mouse_move_listener_s(uint slot)
+	{
+		for (auto it = mouse_move_listeners_s.begin(); it != mouse_move_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				mouse_move_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
 	void cEventReceiverPrivate::on_key_event(KeyboardKey key, bool down)
 	{
 		auto& listeners = down ? key_down_listeners : key_up_listeners;
@@ -263,7 +320,7 @@ namespace flame
 		{
 			script::Parameter p;
 			p.type = script::ScriptTypeInt;
-			p.data = &key;
+			p.data.i[0] = key;
 			for (auto s : listeners_s)
 				script::Instance::get()->call_slot(s, 1, &p);
 		}
