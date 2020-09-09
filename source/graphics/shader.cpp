@@ -130,8 +130,9 @@ namespace flame
 		{
 			VkDescriptorImageInfo i;
 			i.imageView = iv->vk_image_view;
-			i.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			i.sampler = sampler->vk_sampler;
+			i.imageLayout = descriptor_layout->bindings[binding]->type == DescriptorSampledImage ? 
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
+			i.sampler = sampler ? sampler->vk_sampler : nullptr;
 
 			VkWriteDescriptorSet write;
 			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -220,9 +221,6 @@ namespace flame
 			auto spv_path = path;
 			spv_path += L".";
 			spv_path += str_hash;
-			//auto res_path = spv_path;
-			//spv_path += L".spv";
-			//res_path += L".res";
 
 			if (std::filesystem::exists(path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(path)))
 			{
@@ -256,59 +254,7 @@ namespace flame
 					printf("cannot find vk sdk\n");
 					assert(0);
 				}
-
-				//{
-				//	pugi::xml_document doc;
-				//	auto root = doc.append_child("res");
-				//	if (!r.inputs.empty())
-				//	{
-				//		auto n = root.append_child("inputs");
-				//		for (auto& i : r.inputs)
-				//		{
-				//			auto nn = n.append_child("input");
-				//			nn.append_attribute("name").set_value(i.name.c_str());
-				//			nn.append_attribute("type").set_value(i.type.c_str());
-				//		}
-				//	}
-				//	if (!r.outputs.empty())
-				//	{
-				//		auto n = root.append_child("outputs");
-				//		for (auto& o : r.outputs)
-				//		{
-				//			auto nn = n.append_child("input");
-				//			nn.append_attribute("name").set_value(o.name.c_str());
-				//			nn.append_attribute("type").set_value(o.type.c_str());
-				//		}
-
-				//	}
-
-				//	doc.save_file(res_path.c_str());
-				//}
 			}
-			//else
-			//{
-			//	pugi::xml_document doc;
-			//	pugi::xml_node root;
-			//	if (!doc.load_file(res_path.c_str()) || (root = doc.first_child()).name() != std::string("res"))
-			//		assert(0);
-			//	else
-			//	{
-			//		for (auto& n : root.child("inputs"))
-			//		{
-			//			ShaderInOut i;
-			//			i.name = n.attribute("name").value();
-			//			i.type = n.attribute("type").value();
-			//			r.inputs.push_back(i);
-			//		}
-			//		for (auto& n : root.child("outputs"))
-			//		{
-			//			ShaderInOut o;
-			//			o.name = n.attribute("name").value();
-			//			o.type = n.attribute("type").value();
-			//			r.outputs.push_back(o);
-			//		}
-			//	}
-			//}
 
 			auto spv_file = get_file_content(spv_path);
 			if (spv_file.empty())

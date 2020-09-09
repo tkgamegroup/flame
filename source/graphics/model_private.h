@@ -8,13 +8,14 @@ namespace flame
 	{
 		struct ModelMaterialPrivate
 		{
-			Vec3f albedo;
-			Vec3f spec;
-			float roughness;
-			std::filesystem::path albedo_map_filename;
-			std::filesystem::path spec_map_filename;
-			std::filesystem::path roughness_map_filename;
-			std::filesystem::path normal_map_filename;
+			bool conductor = false;
+			Vec4f color = Vec4f(Vec3f(1.f), 1.f);
+			float roughness = 0.5f;
+			float alpha_test = 0.f;
+			std::filesystem::path color_map;
+			std::filesystem::path alpha_map;
+			std::filesystem::path roughness_map;
+			std::filesystem::path normal_map;
 		};
 
 		struct ModelMeshPrivate : ModelMesh

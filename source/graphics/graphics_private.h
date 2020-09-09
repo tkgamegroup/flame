@@ -325,6 +325,8 @@ namespace flame
 				return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 			case ImageLayoutPresent:
 				return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			case ImageLayoutGeneral:
+				return VK_IMAGE_LAYOUT_GENERAL;
 			}
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}

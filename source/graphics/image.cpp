@@ -51,10 +51,11 @@ namespace flame
 
 		void ImagePrivate::build_default_views()
 		{
-			default_views.resize(level + 1);
+			default_views.resize(level);
 			for (auto i = 0; i < level; i++)
 				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
-			default_views[level].reset(new ImageViewPrivate(this, ImageView2D, { (uint)0, (uint)level }));
+			if (level > 1)
+				default_views.emplace_back(new ImageViewPrivate(this, ImageView2D, { (uint)0, (uint)level }));
 		}
 
 		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) :
@@ -104,7 +105,7 @@ namespace flame
 
 			if (data)
 			{
-				auto staging_buffer = std::make_unique<BufferPrivate>(d, image_pitch(get_pixel_size(this) * size.x()) * size.y(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
+				auto staging_buffer = std::make_unique<BufferPrivate>(device, image_pitch(get_pixel_size(this) * size.x()) * size.y(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
 				staging_buffer->map();
 				memcpy(staging_buffer->mapped, data, staging_buffer->size);
 				staging_buffer->unmap();
@@ -117,7 +118,7 @@ namespace flame
 				cb->copy_buffer_to_image(staging_buffer.get(), this, { &cpy, 1 });
 				cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
-				auto q = d->graphics_queue.get();
+				auto q = device->graphics_queue.get();
 				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
 				q->wait_idle();
 			}
@@ -212,7 +213,7 @@ namespace flame
 
 		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage)
 		{
-			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | extra_usage);
 
 			auto staging_buffer = std::make_unique<BufferPrivate>(d, bmp->get_size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
 			staging_buffer->map();
@@ -319,7 +320,7 @@ namespace flame
 				buffer_copy_regions.push_back(cpy);
 			}
 
-			auto i = new ImagePrivate(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | extra_usage);
+			auto i = new ImagePrivate(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | extra_usage);
 
 			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
 			cb->begin(true);

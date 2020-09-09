@@ -129,36 +129,65 @@ namespace flame
 
 		struct CanvasPrivate : CanvasBridge
 		{
-			enum CmdType
-			{
-				CmdDrawElement,
-				CmdDrawMesh,
-				CmdSetScissor,
-				CmdBlur,
-				CmdBloom
-			};
-
 			struct Cmd
 			{
-				CmdType type;
+				enum Type
+				{
+					DrawElement,
+					DrawMesh,
+					SetScissor,
+					Blur,
+					Bloom
+				};
+
+				Type type;
+
+				Cmd(Type t) : type(t) {}
+				virtual ~Cmd() {}
+
 				union
 				{
-					struct
-					{
-						uint id;
-						uint vtx_cnt;
-						uint idx_cnt;
-					}d1;
-					struct
-					{
-						Vec4f scissor;
-						uint radius;
-					}d2;
 					struct
 					{
 						uint count;
 					}d3;
 				}v;
+			};
+
+			struct CmdDrawElement : Cmd
+			{
+				uint id;
+				uint vertices_count = 0;
+				uint indices_count = 0;
+
+				CmdDrawElement(uint _id) : Cmd(DrawElement) { id = _id; }
+			};
+
+			struct CmdDrawMesh : Cmd
+			{
+				uint indiret_count = 0;
+
+				CmdDrawMesh() : Cmd(DrawMesh) {}
+			};
+
+			struct CmdSetScissor : Cmd
+			{
+				Vec4f scissor;
+
+				CmdSetScissor(const Vec4f& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
+			};
+
+			struct CmdBlur : Cmd
+			{
+				Vec4f range;
+				uint radius;
+
+				CmdBlur(const Vec4f& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
+			};
+
+			struct CmdBloom : Cmd
+			{
+				CmdBloom() : Cmd(Bloom) {}
 			};
 
 			struct ElementVertex
@@ -168,24 +197,15 @@ namespace flame
 				Vec4c col;
 			};
 
-			enum
-			{
-				USE_ALBEDO_MAP = 1 << 0,
-				USE_SPEC_MAP = 1 << 1,
-				USE_ROUGHNESS_MAP = 1 << 2,
-				USE_NORMAL_MAP = 1 << 3,
-
-				ALL_MATERIALS = 1 << 4
-			};
-
 			struct BoundMaterial
 			{
-				Vec4f albedo_alpha;
-				Vec4f spec_roughness;
-				uint albedo_map_index;
-				uint spec_map_index;
-				uint roughness_map_index;
-				uint normal_map_index;
+				int conductor;
+				Vec3i dummy;
+				Vec4f color;
+				float roughness;
+				float alpha_test;
+				int color_map_index = -1;
+				int normal_roughness_map_index = -1;
 			};
 
 			struct BoundMesh
@@ -233,8 +253,8 @@ namespace flame
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
 			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
+			std::vector<std::unique_ptr<ImagePrivate>> model_textures;
 			std::vector<BoundModel> models;
-			std::vector<std::unique_ptr<Image>> model_textures;
 			uint uploaded_models_count = 0;
 			uint uploaded_vertices_count = 0;
 			uint uploaded_indices_count = 0;
@@ -281,9 +301,14 @@ namespace flame
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> back16_nearest_descriptorsets;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> back16_linear_descriptorsets;
 
+			std::unique_ptr<DescriptorSetPrivate> image1_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> image2_descriptorset;
+
 			std::vector<std::vector<Vec2f>> paths;
 
-			std::vector<Cmd> cmds;
+			std::vector<std::unique_ptr<Cmd>> cmds;
+			CmdDrawElement* last_element_cmd = nullptr;
+			CmdDrawMesh* last_mesh_cmd = nullptr;
 
 			Vec2u target_size;
 			Vec4f curr_scissor;
@@ -324,11 +349,11 @@ namespace flame
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
 			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
 
-			void add_blur(const Vec4f& range, uint radius) override;
-			void add_bloom() override;
-
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;
+
+			void add_blur(const Vec4f& range, uint radius) override;
+			void add_bloom() override;
 
 			void prepare() override;
 

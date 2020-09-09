@@ -755,6 +755,81 @@ namespace flame
 		return ret;
 	}
 
+	inline bool read_b(std::ifstream& f)
+	{
+		char ch;
+		f.read(&ch, sizeof(char));
+		return ch == 1;
+	}
+
+	inline int read_i(std::ifstream& f)
+	{
+		int v;
+		f.read((char*)&v, sizeof(int));
+		return v;
+	}
+
+	inline uint read_u(std::ifstream& f)
+	{
+		uint v;
+		f.read((char*)&v, sizeof(uint));
+		return v;
+	}
+
+	inline void read_s(std::ifstream& f, std::string& v)
+	{
+		v.resize(read_u(f));
+		f.read(v.data(), v.size());
+	}
+
+	template <class T>
+	void read_t(std::ifstream& f, T& v)
+	{
+		f.read((char*)&v, sizeof(T));
+	}
+
+	template <class T>
+	void read_v(std::ifstream& f, std::vector<T>& v)
+	{
+		v.resize(read_u(f));
+		f.read((char*)v.data(), v.size() * sizeof(T));
+	}
+
+	inline void write_b(std::ofstream& f, bool b)
+	{
+		char ch = b ? 1 : 0;
+		f.write(&ch, sizeof(char));
+	}
+
+	inline void write_i(std::ofstream& f, int v)
+	{
+		f.write((char*)&v, sizeof(int));
+	}
+
+	inline void write_u(std::ofstream& f, uint v)
+	{
+		f.write((char*)&v, sizeof(uint));
+	}
+
+	inline void write_s(std::ofstream& f, const std::string& v)
+	{
+		write_u(f, v.size());
+		f.write(v.c_str(), v.size());
+	}
+
+	template <class T>
+	void write_t(std::ofstream& f, const T& v)
+	{
+		f.write((char*)&v, sizeof(T));
+	}
+
+	template <class T>
+	void write_v(std::ofstream& f, const std::vector<T>& v)
+	{
+		write_u(f, v.size());
+		f.write((char*)v.data(), v.size() * sizeof(T));
+	}
+
 	struct INI_Entry
 	{
 		std::string key;

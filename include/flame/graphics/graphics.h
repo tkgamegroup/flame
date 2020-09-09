@@ -106,7 +106,8 @@ namespace flame
 			ImageLayoutShaderStorage,
 			ImageLayoutTransferSrc,
 			ImageLayoutTransferDst,
-			ImageLayoutPresent
+			ImageLayoutPresent,
+			ImageLayoutGeneral
 		};
 
 		enum ImageAspectFlags
@@ -280,7 +281,7 @@ namespace flame
 			ShaderStageGeom = 1 << 3,
 			ShaderStageFrag = 1 << 4,
 			ShaderStageComp = 1 << 5,
-			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag,
+			ShaderStageAll = ShaderStageVert | ShaderStageTesc | ShaderStageTese | ShaderStageGeom | ShaderStageFrag | ShaderStageComp,
 
 			ShaderStageMax = 0xffffffff
 		};

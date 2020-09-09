@@ -69,7 +69,7 @@ namespace flame
 			}
 
 			axes = make_rotation_matrix(global_quat);
-			transform = Mat4f(Mat<3, 4, float>(axes * Mat3f(scale), Vec3f(0.f)), Vec4f(global_pos, 1.f));
+			transform = Mat4f(Mat<3, 4, float>(axes * Mat3f(global_scale), Vec3f(0.f)), Vec4f(global_pos, 1.f));
 
 			Entity::report_data_changed(this, S<ch("transform")>::v);
 		}

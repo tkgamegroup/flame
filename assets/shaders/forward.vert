@@ -21,14 +21,17 @@ layout (set = 0, binding = 0) buffer readonly MeshMatrices
 	MeshMatrix mesh_matrices[];
 };
 
-layout (location = 0) out vec3 o_coord;
-layout (location = 1) out vec3 o_normal;
+layout (location = 0) out flat uint o_mat_id;
+layout (location = 1) out vec3 o_coord;
+layout (location = 2) out vec3 o_normal;
+layout (location = 3) out vec2 o_uv;
 
 void main()
 {
 	uint mod_idx = gl_InstanceIndex >> 16;
-	uint mat_idx = gl_InstanceIndex & 0xffff;
-	o_normal = vec3(mesh_matrices[mod_idx].nor * vec4(i_normal, 0));
+	o_mat_id = gl_InstanceIndex & 0xffff;
 	o_coord = vec3(mesh_matrices[mod_idx].model * vec4(i_pos, 1.0));
+	o_normal = vec3(mesh_matrices[mod_idx].nor * vec4(i_normal, 0));
+	o_uv = i_uv;
 	gl_Position = mesh_matrices[mod_idx].mvp * vec4(i_pos, 1.0);
 }

@@ -134,7 +134,7 @@ namespace flame
 
 		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
 		{
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pll ? PipelineGraphics : current_pipeline->type), 
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(current_pipeline ? current_pipeline->type : PipelineGraphics),
 				pll ? pll->vk_pipeline_layout : current_pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
 		}
 
@@ -233,6 +233,9 @@ namespace flame
 				case ImageLayoutShaderReadOnly:
 					src_access = AccessShaderRead;
 					break;
+				case ImageLayoutShaderStorage:
+					src_access = AccessShaderRead | AccessShaderWrite;
+					break;
 				case ImageLayoutPresent:
 					src_access = AccessMemoryRead;
 					break;
@@ -259,6 +262,9 @@ namespace flame
 					if (src_access == AccessNone)
 						src_access = AccessHostWrite | AccessTransferWrite;
 					dst_access = AccessShaderRead;
+					break;
+				case ImageLayoutShaderStorage:
+					dst_access = AccessShaderRead | AccessShaderWrite;
 					break;
 				case ImageLayoutPresent:
 					dst_access = AccessMemoryRead;

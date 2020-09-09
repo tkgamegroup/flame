@@ -173,40 +173,41 @@ namespace flame
 		void ModelPrivate::save(const std::filesystem::path& filename) const
 		{
 			std::ofstream file(filename, std::ios::binary);
-			uint size;
-			int idx;
 			
-			size = materials.size();
-			file.write((char*)&size, sizeof(uint));
+			write_u(file, materials.size());
 			for (auto& m : materials)
 			{
+				write_b(file, m->conductor);
 
+				write_t(file, m->color);
+				write_t(file, m->roughness);
+				write_t(file, m->alpha_test);
+
+				write_s(file, m->color_map.string());
+				write_s(file, m->alpha_map.string());
+				write_s(file, m->roughness_map.string());
+				write_s(file, m->normal_map.string());
 			}
 
-			size = meshes.size();
-			file.write((char*)&size, sizeof(uint));
+			write_u(file, meshes.size());
 			for (auto& m : meshes)
 			{
-				file.write((char*)&m->material_index, sizeof(int));
+				write_i(file, m->material_index);
 
-				size = m->vertices_1.size();
-				file.write((char*)&size, sizeof(uint));
-				file.write((char*)m->vertices_1.data(), sizeof(ModelVertex1) * m->vertices_1.size());
-				size = m->indices.size();
-				file.write((char*)&size, sizeof(uint));
-				file.write((char*)m->indices.data(), sizeof(uint) * m->indices.size());
+				write_v(file, m->vertices_1);
+				write_v(file, m->indices);
 			}
 
 			root->traverse([&](ModelNodePrivate* n) {
-				size = n->name.size();
-				file.write((char*)&size, sizeof(uint));
-				file.write(n->name.data(), n->name.size());
-				file.write((char*)&n->pos, sizeof(Vec3f));
-				file.write((char*)&n->quat, sizeof(Vec4f));
-				file.write((char*)&n->scale, sizeof(Vec3f));
-				file.write((char*)&n->mesh_index, sizeof(uint));
-				size = n->children.size();
-				file.write((char*)&size, sizeof(uint));
+				write_s(file, n->name);
+
+				write_t(file, n->pos);
+				write_t(file, n->quat);
+				write_t(file, n->scale);
+
+				write_i(file, n->mesh_index);
+
+				write_u(file, n->children.size());
 			});
 
 			file.close();
@@ -342,46 +343,81 @@ namespace flame
 			{
 				ret = new ModelPrivate();
 
-				std::ifstream file(filename, std::ios::binary);
-				uint size;
-				int idx;
+				auto path = filename.parent_path();
 
-				file.read((char*)&size, sizeof(uint));
-				ret->materials.resize(size);
+				std::ifstream file(filename, std::ios::binary);
+
+				ret->materials.resize(read_u(file));
 				for (auto i = 0; i < ret->materials.size(); i++)
 				{
 					auto m = new ModelMaterialPrivate;
 					ret->materials[i].reset(m);
+
+					m->conductor = read_b(file);
+
+					read_t(file, m->color);
+					read_t(file, m->roughness);
+					read_t(file, m->alpha_test);
+
+					std::string filename;
+
+					read_s(file, filename);
+					if (!filename.empty())
+					{
+						if (filename[0] == '/')
+							filename.erase(filename.begin());
+						m->color_map = path / filename;
+					}
+
+					read_s(file, filename);
+					if (!filename.empty())
+					{
+						if (filename[0] == '/')
+							filename.erase(filename.begin());
+						m->alpha_map = path / filename;
+						m->alpha_test = 0.5f;
+					}
+
+					read_s(file, filename);
+					if (!filename.empty())
+					{
+						if (filename[0] == '/')
+							filename.erase(filename.begin());
+						m->roughness_map = path / filename;
+					}
+
+					read_s(file, filename);
+					if (!filename.empty())
+					{
+						if (filename[0] == '/')
+							filename.erase(filename.begin());
+						m->normal_map = path / filename;
+					}
 				}
 
-				file.read((char*)&size, sizeof(uint));
-				ret->meshes.resize(size);
+				ret->meshes.resize(read_u(file));
 				for (auto i = 0; i < ret->meshes.size(); i++)
 				{
 					auto m = new ModelMeshPrivate;
 					ret->meshes[i].reset(m);
 
-					file.read((char*)&m->material_index, sizeof(int));
+					m->material_index = read_i(file);
 
-					file.read((char*)&size, sizeof(uint));
-					m->vertices_1.resize(size);
-					file.read((char*)m->vertices_1.data(), sizeof(ModelVertex1) * m->vertices_1.size());
-					file.read((char*)&size, sizeof(uint));
-					m->indices.resize(size);
-					file.read((char*)m->indices.data(), sizeof(uint) * m->indices.size());
+					read_v(file, m->vertices_1);
+					read_v(file, m->indices);
 				}
 
 				std::function<void(ModelNodePrivate*)> load_node;
 				load_node = [&](ModelNodePrivate* n) {
-					file.read((char*)&size, sizeof(uint));
-					n->name.resize(size);
-					file.read(n->name.data(), n->name.size());
-					file.read((char*)&n->pos, sizeof(Vec3f));
-					file.read((char*)&n->quat, sizeof(Vec4f));
-					file.read((char*)&n->scale, sizeof(Vec3f));
-					file.read((char*)&n->mesh_index, sizeof(int));
-					file.read((char*)&size, sizeof(uint));
-					n->children.resize(size);
+					read_s(file, n->name);
+
+					read_t(file, n->pos);
+					read_t(file, n->quat);
+					read_t(file, n->scale);
+
+					n->mesh_index = read_i(file);
+
+					n->children.resize(read_u(file));
 					for (auto i = 0; i < n->children.size(); i++)
 					{
 						auto c = new ModelNodePrivate;
@@ -395,16 +431,27 @@ namespace flame
 			}
 			else
 			{
+				auto is_obj = filename.extension() == L".obj";
 #ifdef USE_ASSIMP
 				Assimp::Importer importer;
 				importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger0 trigger1 trigger2 trigger3");
-				auto scene = importer.ReadFile(filename.string(),
-					aiProcess_OptimizeGraph |
-					aiProcess_OptimizeMeshes |
+				auto load_flags = 
 					aiProcess_RemoveRedundantMaterials |
 					aiProcess_Triangulate |
 					aiProcess_JoinIdenticalVertices |
-					aiProcess_SortByPType);
+					aiProcess_SortByPType;
+				if (is_obj)
+				{
+					load_flags = load_flags |
+						aiProcess_FlipUVs;
+				}
+				else
+				{
+					load_flags = load_flags |
+						aiProcess_OptimizeGraph |
+						aiProcess_OptimizeMeshes;
+				}
+				auto scene = importer.ReadFile(filename.string(), load_flags);
 				if (!scene)
 				{
 					wprintf(L"load model failed: %s\n", filename.c_str());
@@ -413,11 +460,27 @@ namespace flame
 
 				ret = new ModelPrivate();
 
+				ret->materials.clear();
 				for (auto i = 0; i < scene->mNumMaterials; i++)
 				{
 					auto src = scene->mMaterials[i];
 					auto dst = new ModelMaterialPrivate;
 					ret->materials.emplace_back(dst);
+
+					aiString name;
+					aiColor3D color;
+					ai_real shininess;
+
+					int shading_model;
+					src->Get(AI_MATKEY_SHADING_MODEL, shading_model);
+
+					name.Clear();
+					src->GetTexture(aiTextureType_DIFFUSE, 0, &name);
+					dst->color_map = name.C_Str();
+
+					name.Clear();
+					src->GetTexture(aiTextureType_OPACITY, 0, &name);
+					dst->alpha_map = name.C_Str();
 				}
 
 				for (auto i = 0; i < scene->mNumMeshes; i++)
@@ -425,6 +488,8 @@ namespace flame
 					auto src = scene->mMeshes[i];
 					auto dst = new ModelMeshPrivate;
 					ret->meshes.emplace_back(dst);
+
+					dst->material_index = src->mMaterialIndex;
 
 					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals);
 
@@ -480,12 +545,27 @@ namespace flame
 				};
 				get_node(ret->root.get(), scene->mRootNode);
 
-				for (auto it = ret->meshes.begin(); it != ret->meshes.end(); )
+				if (is_obj)
 				{
-					if ((*it)->ref_cnt == 0)
-						it = ret->meshes.erase(it);
-					else
-						it++;
+					for (auto i = 0; i < ret->meshes.size(); i++)
+					{
+						if (ret->meshes[i]->ref_cnt == 0)
+						{
+							auto n = new ModelNodePrivate;
+							n->mesh_index = i;
+							ret->root->children.emplace_back(n);
+						}
+					}
+				}
+				else
+				{
+					for (auto it = ret->meshes.begin(); it != ret->meshes.end(); )
+					{
+						if ((*it)->ref_cnt == 0)
+							it = ret->meshes.erase(it);
+						else
+							it++;
+					}
 				}
 #endif
 			}

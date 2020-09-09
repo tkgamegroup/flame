@@ -60,6 +60,13 @@ set(LUA_INCLUDE_DIR "${temp}/include" CACHE PATH "LUA Include Directory")
 set(LUA_STATIC_LIBRARY_PATH "${temp}/liblua54.a" CACHE FILEPATH "LUA STATIC Library Path")
 set(LUA_DYNAMIC_LIBRARY_PATH "${temp}/lua54.dll" CACHE FILEPATH "LUA DYNAMIC Library Path")
 
+set(temp "${dir}/SPIRV-Cross")
+if (NOT EXISTS "${temp}")
+	set(temp "")
+endif()
+set(SPIRV_CROSS_INCLUDE_DIR "${temp}" CACHE PATH "SPIRV Cross Include Directory")
+set(SPIRV_CROSS_LIBRARY_DIR "${temp}/build/Debug" CACHE PATH "SPIRV Cross Library Directory")
+
 option(USE_ASSIMP "Use Assimp" OFF)
 set(temp "${dir}/assimp")
 if (NOT EXISTS "${temp}")

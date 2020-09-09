@@ -39,7 +39,7 @@ namespace flame
 		if (canvas && !src.empty())
 		{
 			model_index = canvas->find_model(src.c_str());
-			if (mesh_index != -1)
+			if (model_index != -1)
 			{
 				mesh = canvas->get_model(model_index)->get_mesh(mesh_index);
 				Entity::report_data_changed(this, S<ch("mesh")>::v);

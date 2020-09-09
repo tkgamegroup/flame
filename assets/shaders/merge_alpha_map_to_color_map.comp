@@ -1,0 +1,14 @@
+#version 450 core
+#extension GL_ARB_shading_language_420pack : enable
+
+layout (set = 0, binding = 0, rgba8) uniform image2D color_map;
+layout (set = 0, binding = 1, rgba8) uniform image2D alpha_map;
+
+void main()
+{
+	ivec2 uv = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+	vec4 color1 = imageLoad(color_map, uv);
+	vec4 color2 = imageLoad(alpha_map, uv);
+	color1.a = (color2.r + color2.g + color2.b) / 3.0;
+	imageStore(color_map, uv, color1);
+}
