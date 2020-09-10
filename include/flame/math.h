@@ -300,13 +300,13 @@ namespace flame
 		Vec<2, T>& xy() const
 		{
 			static_assert(N > 1);
-			return *((Vec<2, T>*)(&v_[0]));
+			return (Vec<2, T>&)v_[0];
 		}
 
 		Vec<2, T>& zw() const
 		{
 			static_assert(N > 3);
-			return *((Vec<2, T>*)(&v_[2]));
+			return (Vec<2, T>&)v_[2];
 		}
 
 		Vec<2, T> xz() const

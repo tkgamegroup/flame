@@ -11,7 +11,6 @@ namespace flame
 	}
 
 	struct cNodePrivate;
-	struct cCamera;
 
 	struct cMeshInstanceBridge : cMeshInstance
 	{
@@ -38,7 +37,7 @@ namespace flame
 
 		void get_mesh();
 
-		void draw(graphics::Canvas* canvas, cCamera* camera); // R
+		void draw(graphics::Canvas* canvas); // R
 	};
 
 	inline void cMeshInstanceBridge::set_src(const char* src)

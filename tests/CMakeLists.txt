@@ -1,4 +1,5 @@
 add_subdirectory(empty_test)
+add_subdirectory(raster)
 add_subdirectory(window_test)
 add_subdirectory(graphics_test_clear)
 add_subdirectory(graphics_test_copy_image)

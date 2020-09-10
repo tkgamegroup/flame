@@ -195,13 +195,14 @@ namespace flame
 				}
 
 				{
-					DescriptorBindingInfo dbs[5];
-					dbs[0].type = DescriptorStorageBuffer;
+					DescriptorBindingInfo dbs[6];
+					dbs[0].type = DescriptorUniformBuffer;
 					dbs[1].type = DescriptorStorageBuffer;
 					dbs[2].type = DescriptorStorageBuffer;
-					dbs[3].type = DescriptorSampledImage;
-					dbs[3].count = 128;
+					dbs[3].type = DescriptorStorageBuffer;
 					dbs[4].type = DescriptorUniformBuffer;
+					dbs[5].type = DescriptorSampledImage;
+					dbs[5].count = 128;
 					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
 				}
 
@@ -370,6 +371,7 @@ namespace flame
 			element_index_buffer.init(d, 240000);
 			model_vertex_buffer_1.init(d, 600000);
 			model_index_buffer.init(d, 400000);
+			camera_data_buffer.init(d, 1);
 			material_info_buffer.init(d, 128);
 			mesh_matrix_buffer.init(d, 10000);
 			mesh_indirect_buffer.init(d, 10000);
@@ -389,17 +391,18 @@ namespace flame
 			auto sp = d->sampler_linear.get();
 
 			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
-			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
 			for (auto i = 0; i < resources_count; i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp);
-			forward_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
-			forward_descriptorset->set_buffer(1, 0, light_info_buffer.buf.get());
-			forward_descriptorset->set_buffer(2, 0, light_indices_buffer.buf.get());
-			forward_descriptorset->set_buffer(4, 0, material_info_buffer.buf.get());
 
+			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
+			forward_descriptorset->set_buffer(0, 0, camera_data_buffer.buf.get());
+			forward_descriptorset->set_buffer(1, 0, mesh_matrix_buffer.buf.get());
+			forward_descriptorset->set_buffer(2, 0, light_info_buffer.buf.get());
+			forward_descriptorset->set_buffer(3, 0, light_indices_buffer.buf.get());
+			forward_descriptorset->set_buffer(4, 0, material_info_buffer.buf.get());
 			model_textures.resize(128);
 			for (auto i = 0; i < model_textures.size(); i++)
-				forward_descriptorset->set_image(3, i, white_image->default_views[0].get(), sp);
+				forward_descriptorset->set_image(5, i, white_image->default_views[0].get(), sp);
 
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelSphere), "sphere");
@@ -1029,7 +1032,17 @@ namespace flame
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 
-		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal)
+		void CanvasPrivate::set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord)
+		{
+			project_view_matrix = proj * view;
+
+			camera_data_buffer.end->proj = proj;
+			camera_data_buffer.end->view = view;
+			camera_data_buffer.end->proj_view = project_view_matrix;
+			camera_data_buffer.end->coord = coord;
+		}
+
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal)
 		{
 			if (uploaded_models_count != models.size())
 			{
@@ -1046,9 +1059,10 @@ namespace flame
 					for (auto& ma : m.model->materials)
 					{
 						BoundMaterial bm;
-						bm.conductor = ma->conductor ? 1 : 0;
 						bm.color = ma->color;
+						bm.metallic = ma->metallic;
 						bm.roughness = ma->roughness;
+						bm.depth = 0.f;
 						bm.alpha_test = ma->alpha_test;
 						if (!ma->color_map.empty())
 						{
@@ -1056,7 +1070,7 @@ namespace flame
 							if (img)
 							{
 								model_textures[tex_idx].reset(img);
-								forward_descriptorset->set_image(3, tex_idx, img->default_views.back().get(), sp);
+								forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
 								bm.color_map_index = tex_idx;
 								tex_idx++;
 							}
@@ -1086,7 +1100,7 @@ namespace flame
 									}
 
 									model_textures[tex_idx].reset(img);
-									forward_descriptorset->set_image(3, tex_idx, img->default_views.back().get(), sp);
+									forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
 									bm.color_map_index = tex_idx;
 									tex_idx++;
 								}
@@ -1133,7 +1147,7 @@ namespace flame
 						//	if (img)
 						//	{
 						//		model_textures[tex_idx].reset(img);
-						//		forward_descriptorset->set_image(3, tex_idx, img->default_views.back().get(), sp);
+						//		forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
 						//		bm.normal_map_index = tex_idx;
 						//		tex_idx++;
 						//	}
@@ -1144,7 +1158,7 @@ namespace flame
 						//	if (img)
 						//	{
 						//		model_textures[tex_idx].reset(img);
-						//		forward_descriptorset->set_image(3, tex_idx, img->default_views.back().get(), sp);
+						//		forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
 						//		bm.roughness_map_index = tex_idx;
 						//		tex_idx++;
 						//	}
@@ -1192,9 +1206,7 @@ namespace flame
 
 			MeshMatrix om;
 			om.model = model;
-			om.view = view;
-			om.proj = proj;
-			om.mvp = proj * view * model;
+			om.mvp = project_view_matrix * model;
 			om.nor = normal;
 			mesh_matrix_buffer.push(om);
 
@@ -1356,6 +1368,7 @@ namespace flame
 
 			element_vertex_buffer.upload(cb);
 			element_index_buffer.upload(cb);
+			camera_data_buffer.upload(cb, true);
 			mesh_matrix_buffer.upload(cb);
 			mesh_indirect_buffer.upload(cb);
 			light_info_buffer.upload(cb);
@@ -1417,6 +1430,7 @@ namespace flame
 				{
 					if (obj_indirect_off == 0)
 					{
+						camera_data_buffer.barrier(cb);
 						mesh_matrix_buffer.barrier(cb);
 						mesh_indirect_buffer.barrier(cb);
 						light_info_buffer.barrier(cb);

@@ -177,9 +177,8 @@ namespace flame
 			write_u(file, materials.size());
 			for (auto& m : materials)
 			{
-				write_b(file, m->conductor);
-
 				write_t(file, m->color);
+				write_t(file, m->metallic);
 				write_t(file, m->roughness);
 				write_t(file, m->alpha_test);
 
@@ -353,9 +352,8 @@ namespace flame
 					auto m = new ModelMaterialPrivate;
 					ret->materials[i].reset(m);
 
-					m->conductor = read_b(file);
-
 					read_t(file, m->color);
+					read_t(file, m->metallic);
 					read_t(file, m->roughness);
 					read_t(file, m->alpha_test);
 

@@ -14,7 +14,7 @@ namespace flame
 		color = c;
 	}
 
-	void cLightPrivate::draw(graphics::Canvas* canvas, cCamera* _camera)
+	void cLightPrivate::draw(graphics::Canvas* canvas)
 	{
 		node->update_transform();
 		canvas->add_light(type, color, Vec3f(node->transform[3]));

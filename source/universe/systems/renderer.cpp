@@ -43,7 +43,7 @@ namespace flame
 			{
 				node->update_transform();
 				for (auto& d : node->drawers)
-					d.second(d.first, canvas, camera);
+					d.second(d.first, canvas);
 			}
 		}
 		for (auto& c : e->children)
@@ -63,6 +63,7 @@ namespace flame
 			return;
 		if (camera)
 			camera->update_matrix();
+		canvas->set_camera(camera->project_matrix, camera->view_matrix, camera->node->global_pos);
 		render(world->root.get(), false, !camera);
 		dirty = false;
 	}

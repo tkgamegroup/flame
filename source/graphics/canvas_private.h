@@ -114,10 +114,10 @@ namespace flame
 				end += cnt;
 			}
 
-			void upload(CommandBufferPrivate* cb)
+			void upload(CommandBufferPrivate* cb, bool all = false)
 			{
 				BufferCopy cpy;
-				cpy.size = (char*)end - stg->mapped;
+				cpy.size = all ? buf->size : (char*)end - stg->mapped;
 				cb->copy_buffer(stg.get(), buf.get(), { &cpy, 1 });
 			}
 
@@ -199,13 +199,15 @@ namespace flame
 
 			struct BoundMaterial
 			{
-				int conductor;
-				Vec3i dummy;
 				Vec4f color;
+				float metallic;
 				float roughness;
+				float depth;
 				float alpha_test;
 				int color_map_index = -1;
 				int normal_roughness_map_index = -1;
+				int dummy1;
+				int dummy2;
 			};
 
 			struct BoundMesh
@@ -225,11 +227,17 @@ namespace flame
 				std::vector<BoundMesh> meshes;
 			};
 
+			struct CameraData
+			{
+				Mat4f view;
+				Mat4f proj;
+				Mat4f proj_view;
+				Vec3f coord;
+			};
+
 			struct MeshMatrix
 			{
 				Mat4f model;
-				Mat4f view;
-				Mat4f proj;
 				Mat4f mvp;
 				Mat4f nor;
 			};
@@ -264,11 +272,14 @@ namespace flame
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
 
+			Mat4f project_view_matrix = Mat4f(1.f);
+
 			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
 			TBuffer<ModelVertex1, BufferUsageVertex> model_vertex_buffer_1;
 			TBuffer<uint, BufferUsageIndex> model_index_buffer;
 			TBuffer<BoundMaterial, BufferUsageUniform> material_info_buffer;
+			TBuffer<CameraData, BufferUsageUniform> camera_data_buffer;
 			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
 			TBuffer<DrawIndexedIndirectCommand, BufferUsageIndirect> mesh_indirect_buffer;
 			TBuffer<LightInfo, BufferUsageStorage> light_info_buffer;
@@ -346,7 +357,9 @@ namespace flame
 			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& proj, const Mat4f& view, const Mat4f& model, const Mat4f& normal) override;
+			void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord) override;
+
+			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal) override;
 			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }

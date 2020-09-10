@@ -12,8 +12,16 @@
       <cNode scale="0.1,0.1,0.1" />
     </entity>
     <entity>
+      <cNode pos="2,10,2" />
+      <cLight color="1.0,1.0,1.0" />
+    </entity>
+    <entity>
       <cNode pos="5,25,6" />
       <cLight color="7.0,7.0,7.0" />
+    </entity>
+    <entity>
+      <cNode pos="-7,30,12" />
+      <cLight color="9.0,9.0,9.0" />
     </entity>
     <entity>
       <cElement />

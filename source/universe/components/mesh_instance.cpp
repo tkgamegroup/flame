@@ -3,7 +3,6 @@
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include "node_private.h"
-#include "camera_private.h"
 #include "mesh_instance_private.h"
 
 namespace flame
@@ -47,13 +46,10 @@ namespace flame
 		}
 	}
 
-	void cMeshInstancePrivate::draw(graphics::Canvas* canvas, cCamera* _camera)
+	void cMeshInstancePrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_index != -1 && mesh_index != -1)
-		{
-			auto camera = (cCameraPrivate*)_camera;
-			canvas->draw_mesh(model_index, mesh_index, camera->project_matrix, camera->view_matrix, node->transform, Mat4f(node->axes));
-		}
+			canvas->draw_mesh(model_index, mesh_index, node->transform, Mat4f(node->axes));
 	}
 
 	cMeshInstance* cMeshInstance::create()

@@ -25,6 +25,6 @@ namespace flame
 		Vec3f get_color() const override { return color; }
 		void set_color(const Vec3f& c) override;
 
-		void draw(graphics::Canvas* canvas, cCamera* camera); // R
+		void draw(graphics::Canvas* canvas); // R
 	};
 }

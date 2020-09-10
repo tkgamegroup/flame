@@ -107,12 +107,12 @@ namespace flame
 			{
 				{
 					auto f = udt->find_function("draw");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), TypeInfo::get(TypePointer, "flame::cCamera"), nullptr))
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
 					{
 						auto addr = f->get_address();
 						if (addr)
 						{
-							drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*, cCamera*))addr);
+							drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
 							mark_drawing_dirty();
 						}
 					}

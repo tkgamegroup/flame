@@ -9,7 +9,6 @@ namespace flame
 		struct Canvas;
 	}
 	
-	struct cCamera;
 	struct sRendererPrivate;
 
 	struct cNodePrivate : cNode // R ~ on_*
@@ -25,7 +24,7 @@ namespace flame
 		Mat3f axes;
 		Mat4f transform;
 
-		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*, cCamera*)>> drawers;
+		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
 
 		cNodePrivate* p_node; // R ref place=parent optional
 		sRendererPrivate* renderer = nullptr; // R ref
