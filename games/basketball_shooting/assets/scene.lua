@@ -9,7 +9,7 @@ for i=1, 5 do
 	ball.e:load("assets/ball")
 	ball.node = ball.e:get_component_n("cNode")
 	make_obj(ball.node, "cNode")
-	ball.node:set_pos({x=i*0.3-1, y=4, z=-0})
+	ball.node:set_pos({x=i*0.3-1, y=10, z=0})
 	ball.rigid = ball.e:get_component_n("cRigid")
 	make_obj(ball.rigid, "cRigid")
 	root:add_child(ball.e.p)
@@ -31,7 +31,7 @@ root_event_receiver:add_key_down_listener_s(get_slot(
 	end
 ))
 
-local trigger_rigid = entity:find_child("trigger0"):get_component_n("cRigid")
+local trigger_rigid = entity:find_child("trigger_score_area"):get_component_n("cRigid")
 make_obj(trigger_rigid, "cRigid")
 trigger_rigid:add_trigger_listener_s(get_slot(
 	function(type)

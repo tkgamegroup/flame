@@ -11,7 +11,7 @@
       <cNode scale="100,1,100" />
       <cRigid dynamic="false" />
     </entity>
-	<entity src="assets/sm_machine">
+	<entity src="D:/basketball_shooting_machine/machine">
 	  <cNode euler="-90,0,0" />
 	</entity>
     <entity>

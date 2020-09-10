@@ -227,7 +227,7 @@ namespace flame
 					auto nm = n.append_child("cMeshInstance");
 					nm.append_attribute("src").set_value(model_name.c_str());
 					nm.append_attribute("mesh_index").set_value(src->mesh_index);
-					if (src->name == "$MergedNode_0" && model_name.starts_with("sm_"))
+					if (src->name.starts_with("sm_"))
 					{
 						auto nr = n.append_child("cRigid");
 						nr.append_attribute("dynamic").set_value(false);
@@ -237,7 +237,7 @@ namespace flame
 				}
 				else
 				{
-					if (src->name.starts_with("trigger"))
+					if (src->name.starts_with("trigger_"))
 					{
 						auto nr = n.append_child("cRigid");
 						nr.append_attribute("dynamic").set_value(false);
@@ -338,11 +338,12 @@ namespace flame
 
 			ModelPrivate* ret = nullptr;
 
-			if (filename.extension() == L".fm")
+			auto extension = filename.extension();
+
+			if (extension == L".fm")
 			{
 				ret = new ModelPrivate();
-
-				auto path = filename.parent_path();
+				ret->filename = filename;
 
 				std::ifstream file(filename, std::ios::binary);
 
@@ -364,7 +365,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						m->color_map = path / filename;
+						m->color_map = filename;
 					}
 
 					read_s(file, filename);
@@ -372,7 +373,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						m->alpha_map = path / filename;
+						m->alpha_map = filename;
 						m->alpha_test = 0.5f;
 					}
 
@@ -381,7 +382,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						m->roughness_map = path / filename;
+						m->roughness_map = filename;
 					}
 
 					read_s(file, filename);
@@ -389,7 +390,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						m->normal_map = path / filename;
+						m->normal_map = filename;
 					}
 				}
 
@@ -432,7 +433,6 @@ namespace flame
 				auto is_obj = filename.extension() == L".obj";
 #ifdef USE_ASSIMP
 				Assimp::Importer importer;
-				importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, "trigger0 trigger1 trigger2 trigger3");
 				auto load_flags = 
 					aiProcess_RemoveRedundantMaterials |
 					aiProcess_Triangulate |
@@ -442,12 +442,6 @@ namespace flame
 				{
 					load_flags = load_flags |
 						aiProcess_FlipUVs;
-				}
-				else
-				{
-					load_flags = load_flags |
-						aiProcess_OptimizeGraph |
-						aiProcess_OptimizeMeshes;
 				}
 				auto scene = importer.ReadFile(filename.string(), load_flags);
 				if (!scene)
@@ -520,7 +514,7 @@ namespace flame
 					if (src->mNumMeshes > 0)
 					{
 						dst->mesh_index = src->mMeshes[0];
-						if (dst->name.starts_with("trigger"))
+						if (dst->name.starts_with("trigger_"))
 						{
 							auto& m = ret->meshes[dst->mesh_index];
 							if (m->vertices_1.size() == 4 && m->indices.size() == 6)
@@ -541,7 +535,11 @@ namespace flame
 						get_node(n, src->mChildren[i]);
 					}
 				};
-				get_node(ret->root.get(), scene->mRootNode);
+				{
+					auto n = new ModelNodePrivate;
+					ret->root->children.emplace_back(n);
+					get_node(n, scene->mRootNode);
+				}
 
 				if (is_obj)
 				{

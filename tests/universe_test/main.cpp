@@ -17,7 +17,7 @@ int main(int argc, char** args)
 	auto w = new GraphicsWindow(&g_app, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
 	w->canvas->set_hdr(true);
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	w->canvas->bind_model(Model::create(LR"(D:\island\Small_Tropical_Island\Small_Tropical_Island.fm)"), "Small_Tropical_Island.fm");
+	w->canvas->bind_model(Model::create(LR"(D:\test\test.fm)"), "test.fm");
 	root = w->root;
 
 	auto e = Entity::create();

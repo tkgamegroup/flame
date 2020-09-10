@@ -79,6 +79,8 @@ namespace flame
 
 		struct ModelPrivate : ModelBridge
 		{
+			std::filesystem::path filename;
+
 			std::vector<std::unique_ptr<ModelMaterialPrivate>> materials;
 			std::vector<std::unique_ptr<ModelMeshPrivate>> meshes;
 

@@ -35,24 +35,25 @@ end
 
 local root_event_receiver = root:get_component_n("cEventReceiver")
 make_obj(root_event_receiver, "cEventReceiver")
+
 root_event_receiver:add_key_down_listener_s(get_slot(
 	function(k)
-		if (k == enums["flame::KeyboardKey"]["W"]) then
+		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = true
 		end
-		if (k == enums["flame::KeyboardKey"]["S"]) then
+		if k == enums["flame::KeyboardKey"]["S"] then
 			camera.s = true
 		end
-		if (k == enums["flame::KeyboardKey"]["A"]) then
+		if k == enums["flame::KeyboardKey"]["A"] then
 			camera.a = true
 		end
-		if (k == enums["flame::KeyboardKey"]["D"]) then
+		if k == enums["flame::KeyboardKey"]["D"] then
 			camera.d = true
 		end
-		if (k == enums["flame::KeyboardKey"]["Space"]) then
+		if k == enums["flame::KeyboardKey"]["Space"] then
 			camera.sp = true
 		end
-		if (k == enums["flame::KeyboardKey"]["Shift"]) then
+		if k == enums["flame::KeyboardKey"]["Shift"] then
 			camera.sh = true
 		end
 	end
@@ -60,22 +61,22 @@ root_event_receiver:add_key_down_listener_s(get_slot(
 
 root_event_receiver:add_key_up_listener_s(get_slot(
 	function(k)
-		if (k == enums["flame::KeyboardKey"]["W"]) then
+		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = false
 		end
-		if (k == enums["flame::KeyboardKey"]["S"]) then
+		if k == enums["flame::KeyboardKey"]["S"] then
 			camera.s = false
 		end
-		if (k == enums["flame::KeyboardKey"]["A"]) then
+		if k == enums["flame::KeyboardKey"]["A"] then
 			camera.a = false
 		end
-		if (k == enums["flame::KeyboardKey"]["D"]) then
+		if k == enums["flame::KeyboardKey"]["D"] then
 			camera.d = false
 		end
-		if (k == enums["flame::KeyboardKey"]["Space"]) then
+		if k == enums["flame::KeyboardKey"]["Space"] then
 			camera.sp = false
 		end
-		if (k == enums["flame::KeyboardKey"]["Shift"]) then
+		if k == enums["flame::KeyboardKey"]["Shift"] then
 			camera.sh = false
 		end
 	end

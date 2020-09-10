@@ -110,6 +110,7 @@ void main()
 
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
+	float NdotV = max(dot(N, V), 0.0);
 
 	uint count = light_indices_list[0].count;
 	for (int i = 0; i < count; i++)
@@ -123,12 +124,11 @@ void main()
 		vec3 H = normalize(V + L);
 		
 		float NdotL = max(dot(N, L), 0.0);
-		float NdotV = max(dot(N, V), 0.0);
 		float NdotH = max(dot(N, H), 0.0);
 
-		vec3 radiance = NdotL * light.col.rgb / (dist * dist * 0.01);
+		vec3 radiance = NdotL * light.col.rgb / max(dist * dist * 0.01, 1.0);
 
-		vec3 F = fresnel_schlick(max(dot(H, V), 0.0), spec);
+		vec3 F = fresnel_schlick(clamp(dot(H, V), 0.0, 1.0), spec);
 		float G = geometry_smith(NdotV, NdotL, roughness);;
 		float D = distribution_ggx(NdotH, roughness);
 

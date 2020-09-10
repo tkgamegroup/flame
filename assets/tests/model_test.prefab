@@ -8,20 +8,14 @@
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
-    <entity src="D:/island/Small_Tropical_Island/Small_Tropical_Island.prefab">
+    <entity src="D:/test/test.prefab">
       <cNode scale="0.1,0.1,0.1" />
     </entity>
     <entity>
-      <cNode pos="2,10,2" />
+      <cNode pos="2,10,2" scale="0.1,0.1,0.1" />
+      <cMeshInstance src="sphere" mesh_index="0" />
       <cLight color="1.0,1.0,1.0" />
-    </entity>
-    <entity>
-      <cNode pos="5,25,6" />
-      <cLight color="7.0,7.0,7.0" />
-    </entity>
-    <entity>
-      <cNode pos="-7,30,12" />
-      <cLight color="9.0,9.0,9.0" />
+      <cScript src="object_controller.lua" />
     </entity>
     <entity>
       <cElement />

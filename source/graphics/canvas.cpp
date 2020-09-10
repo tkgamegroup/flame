@@ -81,8 +81,8 @@ namespace flame
 
 		static auto initialized = false;
 
-		static RenderpassPrivate* one_image8_renderpass = nullptr;
-		static RenderpassPrivate* one_image16_renderpass = nullptr;
+		static RenderpassPrivate* image1_8_renderpass = nullptr;
+		static RenderpassPrivate* image1_16_renderpass = nullptr;
 		static RenderpassPrivate* forward8_renderpass = nullptr;
 		static RenderpassPrivate* forward16_renderpass = nullptr;
 		static DescriptorSetLayoutPrivate* element_descriptorsetlayout = nullptr;
@@ -132,7 +132,7 @@ namespace flame
 					};
 					sp.color_attachments_count = 1;
 					sp.color_attachments = col_refs;
-					one_image8_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
+					image1_8_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
 				}
 
 				{
@@ -146,7 +146,7 @@ namespace flame
 					};
 					sp.color_attachments_count = 1;
 					sp.color_attachments = col_refs;
-					one_image16_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
+					image1_16_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
 				}
 
 				{
@@ -260,9 +260,9 @@ namespace flame
 					bo.src_color = BlendFactorSrcAlpha;
 					bo.dst_color = BlendFactorOneMinusSrcAlpha;
 					bo.dst_alpha = BlendFactorOne;
-					element8_pipeline = PipelinePrivate::create(d, shaders, element_pipelinelayout, one_image8_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					element8_pipeline = PipelinePrivate::create(d, shaders, element_pipelinelayout, image1_8_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
 						nullptr, { &bo, 1 });
-					element16_pipeline = PipelinePrivate::create(d, shaders, element_pipelinelayout, one_image16_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					element16_pipeline = PipelinePrivate::create(d, shaders, element_pipelinelayout, image1_16_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
 						nullptr, { &bo, 1 });
 				}
 
@@ -301,8 +301,8 @@ namespace flame
 							new ShaderPrivate(d, L"fullscreen.vert"),
 							new ShaderPrivate(d, L"blur.frag", "R" + std::to_string(i + 1) + " H\n")
 						};
-						blurh8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, one_image8_renderpass, 0);
-						blurh16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, one_image16_renderpass, 0);
+						blurh8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
+						blurh16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
 					}
 
 					{
@@ -310,8 +310,8 @@ namespace flame
 							new ShaderPrivate(d, L"fullscreen.vert"),
 							new ShaderPrivate(d, L"blur.frag", "R" + std::to_string(i + 1) + " V\n")
 						};
-						blurv8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, one_image8_renderpass, 0);
-						blurv16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, one_image16_renderpass, 0);
+						blurv8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
+						blurv16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
 					}
 				}
 
@@ -320,8 +320,8 @@ namespace flame
 						new ShaderPrivate(d, L"fullscreen.vert"),
 						new ShaderPrivate(d, L"blit.frag")
 					};
-					blit8_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, one_image8_renderpass, 0);
-					blit16_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, one_image16_renderpass, 0);
+					blit8_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
+					blit16_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
 				}
 
 				{
@@ -329,7 +329,7 @@ namespace flame
 						new ShaderPrivate(d, L"fullscreen.vert"),
 						new ShaderPrivate(d, L"filter_bright.frag")
 					};
-					filter_bright_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, one_image16_renderpass, 0);
+					filter_bright_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
 				}
 
 				{
@@ -337,7 +337,7 @@ namespace flame
 						new ShaderPrivate(d, L"fullscreen.vert"),
 						new ShaderPrivate(d, L"box.frag")
 					};
-					downsample_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc8_pipelinelayout, one_image16_renderpass, 0);
+					downsample_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0);
 				}
 
 				{
@@ -351,7 +351,7 @@ namespace flame
 					bo.dst_color = BlendFactorOne;
 					bo.src_alpha = BlendFactorZero;
 					bo.dst_alpha = BlendFactorOne;
-					upsample_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc8_pipelinelayout, one_image16_renderpass, 0, nullptr, Vec2u(0), nullptr, SampleCount_1, 
+					upsample_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0, nullptr, Vec2u(0), nullptr, SampleCount_1, 
 						nullptr, { &bo, 1 });
 				}
 
@@ -360,7 +360,7 @@ namespace flame
 						new ShaderPrivate(d, L"fullscreen.vert"),
 						new ShaderPrivate(d, L"gamma.frag")
 					};
-					gamma_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, one_image8_renderpass, 0);
+					gamma_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
 				}
 
 				convert_alpha_map_to_color_map_pipeline = PipelinePrivate::create(d, new ShaderPrivate(d, L"convert_alpha_map_to_color_map.comp"), image1_pc0_pipelinelayout);
@@ -451,7 +451,7 @@ namespace flame
 				for (auto i = 0; i < views.size(); i++)
 				{
 					target_imageviews[i] = views[i];
-					target_framebuffers[i].reset(new FramebufferPrivate(device, one_image8_renderpass, { &views[i], 1 }));
+					target_framebuffers[i].reset(new FramebufferPrivate(device, image1_8_renderpass, { &views[i], 1 }));
 					target_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					target_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					target_nearest_descriptorsets[i]->set_image(0, 0, views[i], sp_nr);
@@ -463,7 +463,7 @@ namespace flame
 					cb->image_barrier(hdr_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 
 					auto iv = hdr_image->default_views[0].get();
-					hdr_framebuffer.reset(new FramebufferPrivate(device, one_image16_renderpass, { &iv, 1 }));
+					hdr_framebuffer.reset(new FramebufferPrivate(device, image1_16_renderpass, { &iv, 1 }));
 					hdr_nearest_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					hdr_linear_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					hdr_nearest_descriptorset->set_image(0, 0, iv, sp_nr);
@@ -498,7 +498,7 @@ namespace flame
 				{
 					cb->image_barrier(back8_image.get(), { (uint)i }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					auto iv = back8_image->default_views[i].get();
-					back8_framebuffers[i].reset(new FramebufferPrivate(device, one_image8_renderpass, { &iv, 1 }));
+					back8_framebuffers[i].reset(new FramebufferPrivate(device, image1_8_renderpass, { &iv, 1 }));
 					back8_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					back8_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					back8_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
@@ -512,7 +512,7 @@ namespace flame
 				{
 					cb->image_barrier(back16_image.get(), { (uint)i }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					auto iv = back16_image->default_views[i].get();
-					back16_framebuffers[i].reset(new FramebufferPrivate(device, one_image16_renderpass, { &iv, 1 }));
+					back16_framebuffers[i].reset(new FramebufferPrivate(device, image1_16_renderpass, { &iv, 1 }));
 					back16_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					back16_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 					back16_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
@@ -1056,6 +1056,8 @@ namespace flame
 				for (auto i = uploaded_models_count; i < models.size(); i++)
 				{
 					auto& m = models[i];
+					auto path = m.model->filename.parent_path();
+
 					for (auto& ma : m.model->materials)
 					{
 						BoundMaterial bm;
@@ -1064,9 +1066,10 @@ namespace flame
 						bm.roughness = ma->roughness;
 						bm.depth = 0.f;
 						bm.alpha_test = ma->alpha_test;
+
 						if (!ma->color_map.empty())
 						{
-							auto img = ImagePrivate::create(device, ma->color_map);
+							auto img = ImagePrivate::create(device, path / ma->color_map);
 							if (img)
 							{
 								model_textures[tex_idx].reset(img);
@@ -1077,7 +1080,7 @@ namespace flame
 						}
 						if (!ma->alpha_map.empty())
 						{
-							auto img = ImagePrivate::create(device, ma->alpha_map);
+							auto img = ImagePrivate::create(device, path / ma->alpha_map);
 							if (img)
 							{
 								if (bm.color_map_index == -1)
@@ -1143,7 +1146,7 @@ namespace flame
 						}
 						//if (!ma->roughness_map.empty())
 						//{
-						//	auto img = ImagePrivate::create(device, ma->roughness_map);
+						//	auto img = ImagePrivate::create(device, path / ma->roughness_map);
 						//	if (img)
 						//	{
 						//		model_textures[tex_idx].reset(img);
@@ -1154,7 +1157,7 @@ namespace flame
 						//}
 						//if (!ma->normal_map.empty())
 						//{
-						//	auto img = ImagePrivate::create(device, ma->normal_map);
+						//	auto img = ImagePrivate::create(device, path / ma->normal_map);
 						//	if (img)
 						//	{
 						//		model_textures[tex_idx].reset(img);
