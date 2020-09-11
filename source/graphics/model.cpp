@@ -170,22 +170,54 @@ namespace flame
 			root.reset(new ModelNodePrivate);
 		}
 
-		void ModelPrivate::save(const std::filesystem::path& filename) const
+		void ModelPrivate::substitute_material(const char* _name, const wchar_t* filename)
+		{
+			auto name = std::string(_name);
+			for (auto& m : materials)
+			{
+				if (m->name == name)
+				{
+					std::ifstream mtl(filename);
+					while (!mtl.eof())
+					{
+						std::string line;
+						std::getline(mtl, line);
+						if (line == "color_map")
+						{
+							std::getline(mtl, line);
+							m->color_map = line;
+						}
+						else if (line == "roughness_map")
+						{
+							std::getline(mtl, line);
+							m->roughness_map = line;
+						}
+					}
+					mtl.close();
+					break;
+				}
+			}
+		}
+
+		void ModelPrivate::save(const std::filesystem::path& filename, const std::string& _model_name) const
 		{
 			std::ofstream file(filename, std::ios::binary);
 			
 			write_u(file, materials.size());
 			for (auto& m : materials)
 			{
+				write_s(file, m->name);
+
 				write_t(file, m->color);
 				write_t(file, m->metallic);
 				write_t(file, m->roughness);
 				write_t(file, m->alpha_test);
 
-				write_s(file, m->color_map.string());
-				write_s(file, m->alpha_map.string());
-				write_s(file, m->roughness_map.string());
-				write_s(file, m->normal_map.string());
+				write_s(file, m->color_map);
+				write_s(file, m->alpha_map);
+				write_s(file, m->metallic_map);
+				write_s(file, m->roughness_map);
+				write_s(file, m->normal_map);
 			}
 
 			write_u(file, meshes.size());
@@ -213,7 +245,9 @@ namespace flame
 
 			pugi::xml_document prefab;
 
-			auto model_name = filename.filename().string();
+			auto model_name = _model_name;
+			if (model_name.empty())
+				model_name = filename.filename().string();
 			std::function<void(pugi::xml_node, ModelNodePrivate*)> print_node;
 			print_node = [&](pugi::xml_node dst, ModelNodePrivate* src) {
 				auto n = dst.append_child("entity");
@@ -340,7 +374,7 @@ namespace flame
 
 			auto extension = filename.extension();
 
-			if (extension == L".fm")
+			if (extension == L".fmod")
 			{
 				ret = new ModelPrivate();
 				ret->filename = filename;
@@ -353,45 +387,20 @@ namespace flame
 					auto m = new ModelMaterialPrivate;
 					ret->materials[i].reset(m);
 
+					read_s(file, m->name);
+
 					read_t(file, m->color);
 					read_t(file, m->metallic);
 					read_t(file, m->roughness);
 					read_t(file, m->alpha_test);
 
-					std::string filename;
-
-					read_s(file, filename);
-					if (!filename.empty())
-					{
-						if (filename[0] == '/')
-							filename.erase(filename.begin());
-						m->color_map = filename;
-					}
-
-					read_s(file, filename);
-					if (!filename.empty())
-					{
-						if (filename[0] == '/')
-							filename.erase(filename.begin());
-						m->alpha_map = filename;
+					read_s(file, m->color_map);
+					read_s(file, m->alpha_map);
+					if (!m->alpha_map.empty())
 						m->alpha_test = 0.5f;
-					}
-
-					read_s(file, filename);
-					if (!filename.empty())
-					{
-						if (filename[0] == '/')
-							filename.erase(filename.begin());
-						m->roughness_map = filename;
-					}
-
-					read_s(file, filename);
-					if (!filename.empty())
-					{
-						if (filename[0] == '/')
-							filename.erase(filename.begin());
-						m->normal_map = filename;
-					}
+					read_s(file, m->metallic_map);
+					read_s(file, m->roughness_map);
+					read_s(file, m->normal_map);
 				}
 
 				ret->meshes.resize(read_u(file));
@@ -463,16 +472,29 @@ namespace flame
 					aiColor3D color;
 					ai_real shininess;
 
-					int shading_model;
-					src->Get(AI_MATKEY_SHADING_MODEL, shading_model);
+					dst->name = src->GetName().C_Str();
+
+					std::string filename;
 
 					name.Clear();
 					src->GetTexture(aiTextureType_DIFFUSE, 0, &name);
-					dst->color_map = name.C_Str();
+					filename = name.C_Str();
+					if (!filename.empty())
+					{
+						if (filename[0] == '/')
+							filename.erase(filename.begin());
+						dst->color_map = filename;
+					}
 
 					name.Clear();
 					src->GetTexture(aiTextureType_OPACITY, 0, &name);
-					dst->alpha_map = name.C_Str();
+					filename = name.C_Str();
+					if (!filename.empty())
+					{
+						if (filename[0] == '/')
+							filename.erase(filename.begin());
+						dst->alpha_map = filename;
+					}
 				}
 
 				for (auto i = 0; i < scene->mNumMeshes; i++)
@@ -551,16 +573,6 @@ namespace flame
 							n->mesh_index = i;
 							ret->root->children.emplace_back(n);
 						}
-					}
-				}
-				else
-				{
-					for (auto it = ret->meshes.begin(); it != ret->meshes.end(); )
-					{
-						if ((*it)->ref_cnt == 0)
-							it = ret->meshes.erase(it);
-						else
-							it++;
 					}
 				}
 #endif

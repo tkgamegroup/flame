@@ -6,6 +6,8 @@
 
 namespace flame
 {
+	static std::map<std::string, std::filesystem::path> registered_prefabs;
+
 	EntityPrivate::EntityPrivate()
 	{
 		created_frame = looper().get_frame();
@@ -915,9 +917,18 @@ namespace flame
 				dst->visible = a.as_bool();
 			else if (name == "src")
 			{
-				auto path = std::filesystem::path(a.value());
+				auto src = std::string(a.value());
+				std::filesystem::path path;
+				if (src[0] == '@')
+				{
+					src.erase(src.begin());
+					path = registered_prefabs[src];
+				}
+				else
+					path = std::filesystem::path(src);
 				dst->src = path;
-				path.replace_extension(L".prefab");
+				if (path.extension().empty())
+					path.replace_extension(L".prefab");
 				dst->load(path);
 			}
 		}
@@ -1312,6 +1323,11 @@ namespace flame
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)
 				cc->on_child_data_changed(c, hash);
 		}
+	}
+
+	void Entity::register_prefab(const wchar_t* prefab, const char* name)
+	{
+		registered_prefabs[name] = prefab;
 	}
 
 	Entity* Entity::create()

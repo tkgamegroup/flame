@@ -35,10 +35,12 @@ struct MaterialInfo
 	vec4 color;
 	float metallic;
 	float roughness;
-	float depth;
 	float alpha_test;
+	float dummy0;
 	int color_map_index;
-	int normal_roughness_map_index;
+	int metallic_roughness_ao_map_index;
+	int normal_height_map_index;
+	int dummy1;
 };
 
 layout (set = 0, binding = 4) uniform MaterialInfos
@@ -104,9 +106,21 @@ void main()
 	if (color.a < material.alpha_test)
 		discard;
 
-	vec3 albedo = (1.0 - material.metallic) * color.rgb;
-	vec3 spec = mix(vec3(0.04), color.rgb, material.metallic);
-	float roughness = material.roughness;
+	float metallic;
+	float roughness;
+	if (material.metallic_roughness_ao_map_index >= 0)
+	{
+		vec4 s = texture(maps[material.metallic_roughness_ao_map_index], i_uv);
+		metallic = s.r;
+		roughness = s.g;
+	}
+	else
+	{
+		metallic = material.metallic;
+		roughness = material.roughness;
+	}
+	vec3 albedo = (1.0 - metallic) * color.rgb;
+	vec3 spec = mix(vec3(0.04), color.rgb, metallic);
 
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);

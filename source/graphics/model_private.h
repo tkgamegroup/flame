@@ -8,14 +8,17 @@ namespace flame
 	{
 		struct ModelMaterialPrivate
 		{
+			std::string name;
+
 			Vec4f color = Vec4f(Vec3f(1.f), 1.f);
 			float metallic = 0.f;
 			float roughness = 0.5f;
 			float alpha_test = 0.f;
-			std::filesystem::path color_map;
-			std::filesystem::path alpha_map;
-			std::filesystem::path roughness_map;
-			std::filesystem::path normal_map;
+			std::string color_map;
+			std::string alpha_map;
+			std::string metallic_map;
+			std::string roughness_map;
+			std::string normal_map;
 		};
 
 		struct ModelMeshPrivate : ModelMesh
@@ -74,7 +77,7 @@ namespace flame
 
 		struct ModelBridge : Model
 		{
-			void save(const wchar_t* filename) const override;
+			void save(const wchar_t* filename, const char* model_name) const override;
 		};
 
 		struct ModelPrivate : ModelBridge
@@ -93,14 +96,16 @@ namespace flame
 
 			ModelNode* get_root() const override { return root.get(); }
 
-			void save(const std::filesystem::path& filename) const;
+			void substitute_material(const char* name, const wchar_t* filename) override;
+
+			void save(const std::filesystem::path& filename, const std::string& model_name) const;
 
 			static ModelPrivate* create(const std::filesystem::path& filename);
 		};
 
-		inline void ModelBridge::save(const wchar_t* filename) const
+		inline void ModelBridge::save(const wchar_t* filename, const char* model_name) const
 		{
-			return ((ModelPrivate*)this)->save(filename);
+			return ((ModelPrivate*)this)->save(filename, model_name ? model_name : "");
 		}
 	}
 }

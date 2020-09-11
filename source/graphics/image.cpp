@@ -224,7 +224,7 @@ namespace flame
 			cb->begin(true);
 			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			BufferImageCopy cpy;
-			cpy.image_offset = i->sizes[0];
+			cpy.image_extent = i->sizes[0];
 			cb->copy_buffer_to_image(staging_buffer.get(), i, { &cpy, 1 });
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();

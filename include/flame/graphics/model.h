@@ -57,7 +57,11 @@ namespace flame
 
 			virtual ModelNode* get_root() const = 0;
 
-			virtual void save(const wchar_t* filename) const = 0;
+			// name - which material you want to substitute
+			// filename - .fmtl file
+			virtual void substitute_material(const char* name, const wchar_t* filename) = 0;
+
+			virtual void save(const wchar_t* filename, const char* model_name = nullptr) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Model* get_standard(StandardModel m);
 			FLAME_GRAPHICS_EXPORTS static Model* create(const wchar_t* filename);

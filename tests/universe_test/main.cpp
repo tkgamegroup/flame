@@ -7,7 +7,8 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = L"tests/model_test";
+auto test_prefab = std::filesystem::path(L"tests/model_test");
+auto model_path = std::filesystem::path(LR"(D:\test\test.fmod)");
 
 Entity* root;
 
@@ -17,11 +18,16 @@ int main(int argc, char** args)
 	auto w = new GraphicsWindow(&g_app, true, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable);
 	w->canvas->set_hdr(true);
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	w->canvas->bind_model(Model::create(LR"(D:\test\test.fm)"), "test.fm");
+	if (!model_path.empty())
+	{
+		w->canvas->bind_model(Model::create(model_path.c_str()), "mod");
+		model_path.replace_extension(L".prefab");
+		Entity::register_prefab(model_path.c_str(), "mod");
+	}
 	root = w->root;
 
 	auto e = Entity::create();
-	e->load(test_prefab);
+	e->load(test_prefab.c_str());
 	{
 		auto n = e->find_child("camera");
 		if (n)

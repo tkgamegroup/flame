@@ -132,10 +132,10 @@ namespace flame
 			return nullptr;
 
 		int cx, cy, channel;
-		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 4);
+		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 0);
 		if (!data)
 			return nullptr;
-		auto b = new BitmapPrivate(cx, cy, 4, 1, data);
+		auto b = new BitmapPrivate(cx, cy, channel, 1, data);
 		stbi_image_free(data);
 		return b;
 	}

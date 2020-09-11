@@ -111,8 +111,6 @@ namespace flame
 		static PipelinePrivate* downsample_pipeline = nullptr;
 		static PipelinePrivate* upsample_pipeline = nullptr;
 		static PipelinePrivate* gamma_pipeline = nullptr;
-		static PipelinePrivate* convert_alpha_map_to_color_map_pipeline = nullptr;
-		static PipelinePrivate* merge_alpha_map_to_color_map_pipeline = nullptr;
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d) :
 			device(d)
@@ -362,9 +360,6 @@ namespace flame
 					};
 					gamma_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
 				}
-
-				convert_alpha_map_to_color_map_pipeline = PipelinePrivate::create(d, new ShaderPrivate(d, L"convert_alpha_map_to_color_map.comp"), image1_pc0_pipelinelayout);
-				merge_alpha_map_to_color_map_pipeline = PipelinePrivate::create(d, new ShaderPrivate(d, L"merge_alpha_map_to_color_map.comp"), image2_pc0_pipelinelayout);
 			}
 
 			element_vertex_buffer.init(d, 360000);
@@ -1064,108 +1059,118 @@ namespace flame
 						bm.color = ma->color;
 						bm.metallic = ma->metallic;
 						bm.roughness = ma->roughness;
-						bm.depth = 0.f;
 						bm.alpha_test = ma->alpha_test;
 
-						if (!ma->color_map.empty())
+						if (!path.empty())
 						{
-							auto img = ImagePrivate::create(device, path / ma->color_map);
-							if (img)
+							auto color_map = !ma->color_map.empty() ? Bitmap::create((path / ma->color_map).c_str()) : nullptr;
+							auto alpha_map = !ma->alpha_map.empty() ? Bitmap::create((path / ma->alpha_map).c_str()) : nullptr;
+							if (color_map || alpha_map)
 							{
+								Vec2u size = Vec2u(0U);
+								if (color_map)
+									size = Vec2u(color_map->get_width(), color_map->get_height());
+								else if (alpha_map)
+									size = Vec2u(alpha_map->get_width(), alpha_map->get_height());
+
+								auto dst_map = Bitmap::create(size.x(), size.y());
+								auto dst_map_d = dst_map->get_data();
+								auto dst_map_pitch = size.x() * 4;
+
+								auto color_map_d = color_map ? color_map->get_data() : nullptr;
+								auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
+								auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
+								auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
+								auto alpha_map_ch = alpha_map ? alpha_map->get_byte_per_channel() : 0;
+
+								if (color_map && alpha_map)
+								{
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] = 
+												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
+										}
+									}
+								}
+								else if (color_map && !alpha_map)
+								{
+									auto a = ma->color.a() * 255;
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], a);
+										}
+									}
+								}
+								else if (!color_map && alpha_map)
+								{
+									auto col = Vec3c(Vec3f(ma->color) * 255.f);
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * 3]);
+										}
+									}
+								}
+
+								auto img = ImagePrivate::create(device, dst_map);
 								model_textures[tex_idx].reset(img);
 								forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
 								bm.color_map_index = tex_idx;
 								tex_idx++;
+
+								if (color_map)
+									color_map->release();
+								if (alpha_map)
+									alpha_map->release();
+								dst_map->release();
 							}
-						}
-						if (!ma->alpha_map.empty())
-						{
-							auto img = ImagePrivate::create(device, path / ma->alpha_map);
-							if (img)
+
+							auto roughness_map = !ma->roughness_map.empty() ? Bitmap::create((path / ma->roughness_map).c_str()) : nullptr;
+							if (roughness_map)
 							{
-								if (bm.color_map_index == -1)
+								Vec2u size = Vec2u(0U);
+								if (roughness_map)
+									size = Vec2u(roughness_map->get_width(), roughness_map->get_height());
+
+								auto dst_map = Bitmap::create(size.x(), size.y());
+								auto dst_map_d = dst_map->get_data();
+								auto dst_map_pitch = size.x() * 4;
+
+								auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
+								auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
+								auto roughness_map_ch = roughness_map ? roughness_map->get_byte_per_channel() : 0;
+
+								if (roughness_map)
 								{
-									for (auto i = 0; i < img->level; i++)
+									for (auto y = 0; y < size.y(); y++)
 									{
-										image1_descriptorset->set_image(0, 0, img->default_views[i].get(), nullptr);
-
-										auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-										cb->begin(true);
-										cb->image_barrier(img, {}, ImageLayoutShaderReadOnly, ImageLayoutShaderStorage);
-										cb->bind_pipeline(convert_alpha_map_to_color_map_pipeline);
-										cb->bind_descriptor_set(image1_descriptorset.get(), 0, image1_pc0_pipelinelayout);
-										cb->dispatch(Vec3u(img->sizes[i], 1));
-										cb->image_barrier(img, {}, ImageLayoutShaderStorage, ImageLayoutShaderReadOnly);
-										cb->end();
-										auto q = device->graphics_queue.get();
-										q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-										q->wait_idle();
-									}
-
-									model_textures[tex_idx].reset(img);
-									forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
-									bm.color_map_index = tex_idx;
-									tex_idx++;
-								}
-								else
-								{
-									auto col_img = model_textures[bm.color_map_index].get();
-
-									for (auto i = 0; i < img->level; i++)
-									{
+										for (auto x = 0; x < size.x(); x++)
 										{
-											auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-											cb->begin(true);
-											cb->image_barrier(col_img, { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutGeneral);
-											cb->image_barrier(img, { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutGeneral);
-											cb->end();
-											auto q = device->graphics_queue.get();
-											q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-											q->wait_idle();
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c(0, roughness_map_d[y * roughness_map_pitch + x * roughness_map_ch], 0, 0);
 										}
-
-										image2_descriptorset->set_image(0, 0, col_img->default_views[i].get(), nullptr);
-										image2_descriptorset->set_image(1, 0, img->default_views[i].get(), nullptr);
-
-										auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-										cb->begin(true);
-										cb->bind_pipeline(merge_alpha_map_to_color_map_pipeline);
-										cb->bind_descriptor_set(image2_descriptorset.get(), 0, image2_pc0_pipelinelayout);
-										cb->dispatch(Vec3u(img->sizes[i], 1));
-										cb->image_barrier(col_img, { (uint)i }, ImageLayoutShaderStorage, ImageLayoutShaderReadOnly);
-										cb->image_barrier(img, { (uint)i }, ImageLayoutShaderStorage, ImageLayoutShaderReadOnly);
-										cb->end();
-										auto q = device->graphics_queue.get();
-										q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
-										q->wait_idle();
 									}
-
-									delete img;
 								}
+
+								auto img = ImagePrivate::create(device, dst_map);
+								model_textures[tex_idx].reset(img);
+								forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
+								bm.metallic_roughness_ao_map_index = tex_idx;
+								tex_idx++;
+
+								if (roughness_map)
+									roughness_map->release();
+								dst_map->release();
 							}
 						}
-						//if (!ma->roughness_map.empty())
-						//{
-						//	auto img = ImagePrivate::create(device, path / ma->roughness_map);
-						//	if (img)
-						//	{
-						//		model_textures[tex_idx].reset(img);
-						//		forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
-						//		bm.normal_map_index = tex_idx;
-						//		tex_idx++;
-						//	}
-						//}
-						//if (!ma->normal_map.empty())
-						//{
-						//	auto img = ImagePrivate::create(device, path / ma->normal_map);
-						//	if (img)
-						//	{
-						//		model_textures[tex_idx].reset(img);
-						//		forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
-						//		bm.roughness_map_index = tex_idx;
-						//		tex_idx++;
-						//	}
-						//}
+
 						m.mat_idxs.push_back(uploaded_materials_count + material_info_buffer.stg_num());
 
 						material_info_buffer.push(bm);

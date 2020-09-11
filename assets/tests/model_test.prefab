@@ -8,8 +8,8 @@
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
-    <entity src="D:/test/test.prefab">
-      <cNode scale="0.1,0.1,0.1" />
+    <entity src="@mod">
+      <cNode />
     </entity>
     <entity>
       <cNode pos="2,10,2" scale="0.1,0.1,0.1" />

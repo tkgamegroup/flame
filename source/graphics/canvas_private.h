@@ -202,12 +202,12 @@ namespace flame
 				Vec4f color;
 				float metallic;
 				float roughness;
-				float depth;
 				float alpha_test;
+				float dummy0;
 				int color_map_index = -1;
-				int normal_roughness_map_index = -1;
+				int metallic_roughness_ao_map_index = -1;
+				int normal_hegiht_map_index = -1;
 				int dummy1;
-				int dummy2;
 			};
 
 			struct BoundMesh
