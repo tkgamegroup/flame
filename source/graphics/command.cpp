@@ -70,9 +70,9 @@ namespace flame
 			current_pipeline = nullptr;
 		}
 
-		void CommandBufferPrivate::begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues)
+		void CommandBufferPrivate::begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues, RenderpassPrivate* _rp)
 		{
-			auto rp = fb->renderpass;
+			auto rp = _rp ? _rp : fb->renderpass;
 
 			current_renderpass = rp;
 			current_subpass = 0;

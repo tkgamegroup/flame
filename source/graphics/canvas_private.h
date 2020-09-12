@@ -17,6 +17,8 @@ namespace flame
 
 		const auto resources_count = 64U;
 
+		const SampleCount msaa_sample_count = SampleCount_4;
+
 		struct CanvasResourcePrivate : CanvasResource
 		{
 			std::string name;
@@ -259,7 +261,8 @@ namespace flame
 
 			DevicePrivate* device;
 
-			bool hdr = false;
+			bool hdr;
+			bool msaa_3d;
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
@@ -296,14 +299,22 @@ namespace flame
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_nearest_descriptorsets;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_linear_descriptorsets;
 
-			std::unique_ptr<ImagePrivate> hdr_image;
-			std::unique_ptr<FramebufferPrivate> hdr_framebuffer;
-			std::unique_ptr<DescriptorSetPrivate> hdr_nearest_descriptorset;
-			std::unique_ptr<DescriptorSetPrivate> hdr_linear_descriptorset;
+			std::unique_ptr<ImagePrivate> dst_image;
+			std::unique_ptr<FramebufferPrivate> dst_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> dst_nearest_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> dst_linear_descriptorset;
 
 			std::unique_ptr<ImagePrivate> depth_image;
+			std::unique_ptr<ImagePrivate> depth_msaa_image;
+
 			std::vector<std::unique_ptr<FramebufferPrivate>> forward8_framebuffers;
 			std::unique_ptr<FramebufferPrivate> forward16_framebuffer;
+
+			std::unique_ptr<ImagePrivate> msaa_image;
+			std::unique_ptr<ImagePrivate> msaa_resolve_image;
+			std::unique_ptr<FramebufferPrivate> msaa_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> msaa_nearest_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> msaa_linear_descriptorset;
 
 			std::unique_ptr<ImagePrivate> back8_image;
 			std::vector<std::unique_ptr<FramebufferPrivate>> back8_framebuffers;
@@ -327,11 +338,9 @@ namespace flame
 			Vec2u target_size;
 			Vec4f curr_scissor;
 
-			CanvasPrivate(DevicePrivate* d);
+			CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d);
 
 			void release() override { delete this; }
-
-			void set_hdr(bool v) override { hdr = v; }
 
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }

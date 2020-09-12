@@ -79,7 +79,7 @@ namespace flame
 		sPhysicsWorld* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
-		GraphicsWindow(App* app, bool has_world, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p = nullptr, bool maximized = false);
+		GraphicsWindow(App* app, const char* title, const Vec2u size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_target();
 		virtual void on_frame() {}
@@ -107,12 +107,10 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, bool has_world, const char* title, const Vec2u size, WindowStyleFlags styles, Window* p, bool maximized) :
+	GraphicsWindow::GraphicsWindow(App* app, const char* title, const Vec2u size, WindowStyleFlags styles, bool hdr, bool msaa_3d, Window* parent) :
 		app(app)
 	{
-		if (maximized)
-			styles = styles | WindowMaximized;
-		window = Window::create(title, size, styles, p);
+		window = Window::create(title, size, styles, parent);
 		window->add_destroy_listener([](Capture& c) {
 			c.thiz<GraphicsWindow>()->window = nullptr;
 		}, Capture().set_thiz(this));
@@ -124,7 +122,7 @@ namespace flame
 		submit_fence = graphics::Fence::create(app->graphics_device);
 		render_finished_semaphore = graphics::Semaphore::create(app->graphics_device);
 
-		canvas = graphics::Canvas::create(app->graphics_device);
+		canvas = graphics::Canvas::create(app->graphics_device, hdr, msaa_3d);
 		set_canvas_target();
 		canvas->set_resource(-1, app->font_atlas, "");
 
@@ -134,34 +132,31 @@ namespace flame
 			c.thiz<GraphicsWindow>()->set_canvas_target();
 		}, Capture().set_thiz(this));
 
-		if (has_world)
+		world = World::create();
+		world->register_object(window, "flame::Window");
+		world->register_object(canvas, "flame::graphics::Canvas");
+		world->register_object(physics_scene, "flame::physics::Scene");
+		s_type_setting = sTypeSetting::create();
+		world->add_system(s_type_setting);
+		s_event_dispatcher = sEventDispatcher::create();
+		world->add_system(s_event_dispatcher);
+		s_physic_world = sPhysicsWorld::create();
+		world->add_system(s_physic_world);
+		world->add_system(new sRendererController(this));
+		s_renderer = sRenderer::create();
+		world->add_system(s_renderer);
+
+		root = world->get_root();
+		root->add_component(cElement::create());
 		{
-			world = World::create();
-			world->register_object(window, "flame::Window");
-			world->register_object(canvas, "flame::graphics::Canvas");
-			world->register_object(physics_scene, "flame::physics::Scene");
-			s_type_setting = sTypeSetting::create();
-			world->add_system(s_type_setting);
-			s_event_dispatcher = sEventDispatcher::create();
-			world->add_system(s_event_dispatcher);
-			s_physic_world = sPhysicsWorld::create();
-			world->add_system(s_physic_world);
-			world->add_system(new sRendererController(this));
-			s_renderer = sRenderer::create();
-			world->add_system(s_renderer);
-
-			root = world->get_root();
-			root->add_component(cElement::create());
-			{
-				auto cer = cEventReceiver::create();
-				cer->set_ignore_occluders(true);
-				root->add_component(cer);
-				s_event_dispatcher->set_next_focusing(cer);
-			}
-			root->add_component(cLayout::create());
-
-			app->script_instance->add_object(root, "root", "flame::Entity");
+			auto cer = cEventReceiver::create();
+			cer->set_ignore_occluders(true);
+			root->add_component(cer);
+			s_event_dispatcher->set_next_focusing(cer);
 		}
+		root->add_component(cLayout::create());
+
+		app->script_instance->add_object(root, "root", "flame::Entity");
 
 		if (app->windows.empty())
 		{

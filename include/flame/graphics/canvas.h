@@ -27,9 +27,6 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			// default is false
-			virtual void set_hdr(bool v) = 0;
-
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
 
@@ -70,7 +67,7 @@ namespace flame
 			virtual void prepare() = 0;
 			virtual void record(CommandBuffer* cb, uint image_index) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d);
+			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d, bool hdr = false, bool msaa_3d = false);
 		};
 	}
 }

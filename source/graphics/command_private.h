@@ -30,7 +30,7 @@ namespace flame
 
 		struct CommandBufferBridge : CommandBuffer
 		{
-			void begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues) override;
+			void begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues, Renderpass* rp) override;
 			void bind_pipeline(Pipeline* p) override;
 			void bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll) override;
 			void bind_vertex_buffer(Buffer* b, uint id) override;
@@ -65,7 +65,7 @@ namespace flame
 			void release() override { delete this; }
 
 			void begin(bool once = false);
-			void begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues = nullptr);
+			void begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues = nullptr, RenderpassPrivate* rp = nullptr);
 			void end_renderpass() override;
 			void set_viewport(const Vec4f& rect) override;
 			void set_scissor(const Vec4f& rect) override;
@@ -90,9 +90,9 @@ namespace flame
 			void end() override;
 		};
 
-		inline void CommandBufferBridge::begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues)
+		inline void CommandBufferBridge::begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues, Renderpass* rp)
 		{
-			((CommandBufferPrivate*)this)->begin_renderpass((FramebufferPrivate*)fb, clearvalues);
+			((CommandBufferPrivate*)this)->begin_renderpass((FramebufferPrivate*)fb, clearvalues, (RenderpassPrivate*)rp);
 		}
 
 		inline void CommandBufferBridge::bind_pipeline(Pipeline* p)
