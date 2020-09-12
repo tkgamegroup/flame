@@ -232,8 +232,11 @@ namespace flame
 				Mat4f view;
 				Mat4f proj;
 				Mat4f proj_view;
-				Vec3f coord;
-			};
+				Vec4f coord;
+				Vec4f dummy0;
+				Vec4f dummy1;
+				Vec4f dummy2;
+			}; 
 
 			struct MeshMatrix
 			{

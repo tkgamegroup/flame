@@ -54,43 +54,6 @@ layout (location = 0) out vec4 o_color;
 
 const float PI = 3.14159265359;
 
-vec3 fresnel_schlick(float cos_theta, vec3 f0)
-{
-	return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);
-}
-
-float geometry_schlick_ggx(float NdotV, float roughness)
-{
-	float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-	
-    return num / denom;
-}
-
-float geometry_smith(float NdotV, float NdotL, float roughness)
-{
-    float g2  = geometry_schlick_ggx(NdotV, roughness);
-    float g1  = geometry_schlick_ggx(NdotL, roughness);
-	
-    return g1 * g2;
-}
-
-float distribution_ggx(float NdotH, float roughness)
-{
-	float a      = roughness*roughness;
-    float a2     = a*a;
-    float NdotH2 = NdotH*NdotH;
-	
-    float num   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-	
-    return num / denom;
-}
-
 void main()
 {
 	o_color = vec4(0);
@@ -124,7 +87,7 @@ void main()
 
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
-	float NdotV = max(dot(N, V), 0.0);
+	float NdotV = clamp(dot(N, V), 0.0, 1.0);
 
 	uint count = light_indices_list[0].count;
 	for (int i = 0; i < count; i++)
@@ -137,20 +100,28 @@ void main()
 
 		vec3 H = normalize(V + L);
 		
-		float NdotL = max(dot(N, L), 0.0);
-		float NdotH = max(dot(N, H), 0.0);
+		float NdotL = clamp(dot(N, L), 0.0, 1.0);
+		float NdotH = clamp(dot(N, H), 0.0, 1.0);
+		float LdotH = clamp(dot(L, H), 0.0, 1.0);
+
+		float roughness2 = roughness * roughness;
+
+		float roughness4 = roughness2 * roughness2;
+		float denom = NdotH * NdotH *(roughness4 - 1.0) + 1.0;
+		float D = roughness4 / (PI * denom * denom);
+
+		float LdotH5 = 1.0 - LdotH;
+		LdotH5 = LdotH5*LdotH5*LdotH5*LdotH5*LdotH5;
+		vec3 F = spec + (1.0 - spec) * LdotH5;
+
+		float k = roughness2 / 2.0;
+		float G = (1.0 / (NdotL * (1.0 - k) + k)) * (1.0 / (NdotV * (1.0 - k) + k));
+
+        vec3 specular = min(F * G * D, vec3(1.0));
 
 		vec3 radiance = NdotL * light.col.rgb / max(dist * dist * 0.01, 1.0);
-
-		vec3 F = fresnel_schlick(clamp(dot(H, V), 0.0, 1.0), spec);
-		float G = geometry_smith(NdotV, NdotL, roughness);;
-		float D = distribution_ggx(NdotH, roughness);
-
-		vec3 numerator    = F * G * D;
-        float denominator = 4.0 * NdotV * NdotL;
-        vec3 specular     = numerator / max(denominator, 0.001);
 		
-		o_color.rgb += ((vec3(1.0) - F) * albedo / PI + specular) * radiance;
+		o_color.rgb += ((vec3(1.0) - F) * albedo + specular) * radiance;
 	}
 
 	o_color.a = color.a;

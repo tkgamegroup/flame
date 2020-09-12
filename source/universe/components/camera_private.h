@@ -14,7 +14,7 @@ namespace flame
 	struct cCameraPrivate : cCamera // R ~ on_*
 	{
 		float fovy = 45.f;
-		float near = 0.1f;
+		float near = 1.f;
 		float far = 1000.f;
 
 		bool project_dirty = true;

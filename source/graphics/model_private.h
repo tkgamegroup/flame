@@ -12,7 +12,7 @@ namespace flame
 
 			Vec4f color = Vec4f(Vec3f(1.f), 1.f);
 			float metallic = 0.f;
-			float roughness = 0.5f;
+			float roughness = 0.25f;
 			float alpha_test = 0.f;
 			std::string color_map;
 			std::string alpha_map;

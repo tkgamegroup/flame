@@ -1034,7 +1034,7 @@ namespace flame
 			camera_data_buffer.end->proj = proj;
 			camera_data_buffer.end->view = view;
 			camera_data_buffer.end->proj_view = project_view_matrix;
-			camera_data_buffer.end->coord = coord;
+			camera_data_buffer.end->coord = Vec4f(coord, 1.f);
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal)
@@ -1063,8 +1063,10 @@ namespace flame
 
 						if (!path.empty())
 						{
-							auto color_map = !ma->color_map.empty() ? Bitmap::create((path / ma->color_map).c_str()) : nullptr;
-							auto alpha_map = !ma->alpha_map.empty() ? Bitmap::create((path / ma->alpha_map).c_str()) : nullptr;
+							auto color_map = false && !ma->color_map.empty() ? Bitmap::create((path / ma->color_map).c_str()) : nullptr;
+							auto alpha_map = false && !ma->alpha_map.empty() ? Bitmap::create((path / ma->alpha_map).c_str()) : nullptr;
+							auto roughness_map = false && !ma->roughness_map.empty() ? Bitmap::create((path / ma->roughness_map).c_str()) : nullptr;
+
 							if (color_map || alpha_map)
 							{
 								Vec2u size = Vec2u(0U);
@@ -1132,7 +1134,6 @@ namespace flame
 								dst_map->release();
 							}
 
-							auto roughness_map = !ma->roughness_map.empty() ? Bitmap::create((path / ma->roughness_map).c_str()) : nullptr;
 							if (roughness_map)
 							{
 								Vec2u size = Vec2u(0U);

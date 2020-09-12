@@ -8,9 +8,13 @@
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
-    <entity src="@mod">
-      <cNode />
+    <entity>
+      <cNode pos="0,0,0" scale="100,1,100" />
+      <cMeshInstance src="cube" mesh_index="0" />
     </entity>
+    <entity1 src="@mod">
+      <cNode />
+    </entity1>
     <entity>
       <cNode pos="2,10,2" scale="0.1,0.1,0.1" />
       <cMeshInstance src="sphere" mesh_index="0" />
