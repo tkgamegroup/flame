@@ -28,6 +28,13 @@ int main(int argc, char** args)
 		print_type(2, glsl.get_type(r.base_type_id));
 		printf("\n");
 	}
+	printf("\n");
+	for (auto& r : resources.storage_buffers)
+	{
+		printf("%s:\n", r.name.c_str());
+		print_type(2, glsl.get_type(r.base_type_id));
+		printf("\n");
+	}
 
 	return 0;
 }

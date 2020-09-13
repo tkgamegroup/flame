@@ -16,8 +16,8 @@ namespace flame
 		struct CommandBufferPrivate;
 
 		const auto resources_count = 64U;
-
-		const SampleCount msaa_sample_count = SampleCount_4;
+		const auto msaa_sample_count = SampleCount_4;
+		const auto shadow_map_size = Vec2u(1024);
 
 		struct CanvasResourcePrivate : CanvasResource
 		{
@@ -131,67 +131,6 @@ namespace flame
 
 		struct CanvasPrivate : CanvasBridge
 		{
-			struct Cmd
-			{
-				enum Type
-				{
-					DrawElement,
-					DrawMesh,
-					SetScissor,
-					Blur,
-					Bloom
-				};
-
-				Type type;
-
-				Cmd(Type t) : type(t) {}
-				virtual ~Cmd() {}
-
-				union
-				{
-					struct
-					{
-						uint count;
-					}d3;
-				}v;
-			};
-
-			struct CmdDrawElement : Cmd
-			{
-				uint id;
-				uint vertices_count = 0;
-				uint indices_count = 0;
-
-				CmdDrawElement(uint _id) : Cmd(DrawElement) { id = _id; }
-			};
-
-			struct CmdDrawMesh : Cmd
-			{
-				uint indiret_count = 0;
-
-				CmdDrawMesh() : Cmd(DrawMesh) {}
-			};
-
-			struct CmdSetScissor : Cmd
-			{
-				Vec4f scissor;
-
-				CmdSetScissor(const Vec4f& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
-			};
-
-			struct CmdBlur : Cmd
-			{
-				Vec4f range;
-				uint radius;
-
-				CmdBlur(const Vec4f& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
-			};
-
-			struct CmdBloom : Cmd
-			{
-				CmdBloom() : Cmd(Bloom) {}
-			};
-
 			struct ElementVertex
 			{
 				Vec2f pos;
@@ -249,14 +188,84 @@ namespace flame
 
 			struct LightInfo
 			{
-				Vec4f col;
-				Vec4f pos;
+				int type;
+				bool cast_shadow;
+				int dummy0;
+				int dummy1;
+
+				Vec3f color;
+				int dummy2;
+				Vec3f pos;
+				int dummy3;
+
+				uint shadow_map_indices[8];
+				Mat4f shadow_map_matrices[6];
 			};
 
 			struct LightIndices
 			{
 				uint count;
 				uint indices[1023];
+			};
+			struct Cmd
+			{
+				enum Type
+				{
+					DrawElement,
+					DrawMesh,
+					SetScissor,
+					Blur,
+					Bloom
+				};
+
+				Type type;
+
+				Cmd(Type t) : type(t) {}
+				virtual ~Cmd() {}
+
+				union
+				{
+					struct
+					{
+						uint count;
+					}d3;
+				}v;
+			};
+
+			struct CmdDrawElement : Cmd
+			{
+				uint id;
+				uint vertices_count = 0;
+				uint indices_count = 0;
+
+				CmdDrawElement(uint _id) : Cmd(DrawElement) { id = _id; }
+			};
+
+			struct CmdDrawMesh : Cmd
+			{
+				std::vector<BoundMesh*> meshes;
+
+				CmdDrawMesh() : Cmd(DrawMesh) {}
+			};
+
+			struct CmdSetScissor : Cmd
+			{
+				Vec4f scissor;
+
+				CmdSetScissor(const Vec4f& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
+			};
+
+			struct CmdBlur : Cmd
+			{
+				Vec4f range;
+				uint radius;
+
+				CmdBlur(const Vec4f& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
+			};
+
+			struct CmdBloom : Cmd
+			{
+				CmdBloom() : Cmd(Bloom) {}
 			};
 
 			DevicePrivate* device;
@@ -284,14 +293,18 @@ namespace flame
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
 			TBuffer<ModelVertex1, BufferUsageVertex> model_vertex_buffer_1;
 			TBuffer<uint, BufferUsageIndex> model_index_buffer;
-			TBuffer<BoundMaterial, BufferUsageUniform> material_info_buffer;
 			TBuffer<CameraData, BufferUsageUniform> camera_data_buffer;
+			TBuffer<BoundMaterial, BufferUsageStorage> material_info_buffer;
 			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
-			TBuffer<DrawIndexedIndirectCommand, BufferUsageIndirect> mesh_indirect_buffer;
 			TBuffer<LightInfo, BufferUsageStorage> light_info_buffer;
 			TBuffer<LightIndices, BufferUsageStorage> light_indices_buffer;
 
+			std::vector<std::pair<BoundMesh*, uint>> shadow_casters;
+			std::vector<std::unique_ptr<ImagePrivate>> shadow_maps;
+			uint used_shadow_maps_count = 0;
+
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
@@ -371,8 +384,8 @@ namespace flame
 
 			void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord) override;
 
-			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal) override;
-			void add_light(LightType type, const Vec3f& color, const Vec3f& pos) override;
+			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow) override;
+			void add_light(LightType type, const Vec3f& color, const Vec3f& pos, bool cast_shadow) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

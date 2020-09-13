@@ -68,7 +68,6 @@ namespace flame
 		{
 			uint location;
 			Format format;
-			const char* name = "";
 		};
 
 		struct VertexBufferInfo
@@ -76,8 +75,9 @@ namespace flame
 			uint attributes_count = 0;
 			const VertexAttributeInfo* attributes = nullptr;
 			VertexInputRate rate = VertexInputRateVertex;
+			uint stride = 0;
 		};
-
+		 
 		struct VertexInfo
 		{
 			uint buffers_count = 0;

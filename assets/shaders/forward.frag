@@ -8,28 +8,6 @@ layout (location = 2) in vec3 i_coordv;
 layout (location = 3) in vec3 i_normal;
 layout (location = 4) in vec2 i_uv;
 
-struct LightInfo
-{
-	vec4 col;
-	vec4 pos;
-};
-
-layout (set = 0, binding = 2) buffer readonly LightInfos
-{
-	LightInfo light_infos[];
-};
-
-struct LightIndices
-{
-	uint count;
-	uint indices[1023];
-};
-
-layout (set = 0, binding = 3) buffer readonly LightIndicesList
-{
-	LightIndices light_indices_list[];
-};
-
 struct MaterialInfo
 {
 	vec4 color;
@@ -43,12 +21,46 @@ struct MaterialInfo
 	int dummy1;
 };
 
-layout (set = 0, binding = 4) uniform MaterialInfos
+layout (set = 0, binding = 1) buffer readonly MaterialInfos
 {
-	MaterialInfo material_infos[128];
+	MaterialInfo material_infos[];
 };
 
-layout (set = 0, binding = 5) uniform sampler2D maps[128];
+layout (set = 0, binding = 2) uniform sampler2D maps[128];
+
+struct LightInfo
+{
+	int type;
+	bool cast_shadow;
+	int dummy0;
+	int dummy1;
+
+	vec3 color;
+	int dummy2;
+	vec3 pos;
+	int dummy3;
+
+	uint shadow_map_indices[8]; // only 6 valid, 8 is for alignment
+	mat4 shadow_map_matrices[6];
+};
+
+layout (set = 1, binding = 1) buffer readonly LightInfos
+{
+	LightInfo light_infos[];
+};
+
+struct LightIndices
+{
+	uint count;
+	uint indices[1023];
+};
+
+layout (set = 1, binding = 2) buffer readonly LightIndicesList
+{
+	LightIndices light_indices_list[];
+};
+
+layout (set = 1, binding = 3) uniform sampler2D shadow_maps[24];
 
 layout (location = 0) out vec4 o_color;
 
@@ -94,9 +106,34 @@ void main()
 	{
 		LightInfo light = light_infos[light_indices_list[0].indices[i]];
 
-		vec3 L = light.pos.xyz - i_coordw * light.pos.w;
-		float dist = length(L);
-		L = L / dist;
+		/*
+		if (light.cast_shadow)
+		{
+			uint id = 0;
+
+			vec4 coord = light.shadow_map_matrices[id] * vec4(i_coordw, 1.0);
+			coord /= coord.w;
+
+			float ref = texture(shadow_maps[light.shadow_map_indices[id]], coord.xy).z;
+			if (ref < coord.z)
+				continue;
+		}
+		*/
+
+		vec3 L;
+		vec3 Li;
+		if (light.type == 0)
+		{
+			L = normalize(light.pos);
+			Li = light.color;
+		}
+		else
+		{
+			L = light.pos - i_coordw;
+			float dist = length(L);
+			L = L / dist;
+			Li = light.color / max(dist * dist * 0.01, 1.0);
+		}
 
 		vec3 H = normalize(V + L);
 		
@@ -119,9 +156,7 @@ void main()
 
         vec3 specular = min(F * G * D, vec3(1.0));
 
-		vec3 radiance = NdotL * light.col.rgb / max(dist * dist * 0.01, 1.0);
-		
-		o_color.rgb += ((vec3(1.0) - F) * albedo + specular) * radiance;
+		o_color.rgb += ((vec3(1.0) - F) * albedo + specular) * NdotL * Li;
 	}
 
 	o_color.a = color.a;

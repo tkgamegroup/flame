@@ -12,10 +12,10 @@ namespace flame
 			device(d)
 		{
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
-				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 128},
+				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16},
 				{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32},
-				{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 256},
-				{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 32},
+				{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512},
+				{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8},
 			};
 
 			VkDescriptorPoolCreateInfo descriptorPoolInfo;
@@ -311,21 +311,23 @@ namespace flame
 				vk_vi_bindings.resize(vi->buffers_count);
 				for (auto i = 0; i < vk_vi_bindings.size(); i++)
 				{
-					auto& src = vi->buffers[i];
-					auto& dst = vk_vi_bindings[i];
-					dst.binding = i;
-					for (auto j = 0; j < src.attributes_count; j++)
+					auto& src_buf = vi->buffers[i];
+					auto& dst_buf = vk_vi_bindings[i];
+					dst_buf.binding = i;
+					auto offset = 0;
+					for (auto j = 0; j < src_buf.attributes_count; j++)
 					{
-						auto& _src = src.attributes[j];
-						VkVertexInputAttributeDescription _dst;
-						_dst.location = _src.location;
-						_dst.binding = i;
-						_dst.offset = dst.stride;
-						dst.stride += format_size(_src.format);
-						_dst.format = to_backend(_src.format);
-						vk_vi_attributes.push_back(_dst);
+						auto& src_att = src_buf.attributes[j];
+						VkVertexInputAttributeDescription dst_att;
+						dst_att.location = src_att.location;
+						dst_att.binding = i;
+						dst_att.offset = offset;
+						offset += format_size(src_att.format);
+						dst_att.format = to_backend(src_att.format);
+						vk_vi_attributes.push_back(dst_att);
 					}
-					dst.inputRate = to_backend(src.rate);
+					dst_buf.inputRate = to_backend(src_buf.rate);
+					dst_buf.stride = src_buf.stride ? src_buf.stride : offset;
 				}
 			}
 

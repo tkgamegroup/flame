@@ -340,8 +340,8 @@ namespace flame
 
 		enum LightType
 		{
-			LightPoint,
-			LightParallel
+			LightParallel,
+			LightPoint
 		};
 	}
 }

@@ -87,7 +87,9 @@ namespace flame
 		static RenderpassPrivate* forward16_renderpass = nullptr;
 		static RenderpassPrivate* forward8_msaa_renderpass = nullptr;
 		static RenderpassPrivate* forward16_msaa_renderpass = nullptr;
+		static RenderpassPrivate* depth_renderpass = nullptr;
 		static DescriptorSetLayoutPrivate* element_descriptorsetlayout = nullptr;
+		static DescriptorSetLayoutPrivate* mesh_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* forward_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* sampler1_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* image1_descriptorsetlayout = nullptr;
@@ -99,12 +101,14 @@ namespace flame
 		static PipelineLayoutPrivate* sampler1_pc8_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* image1_pc0_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* image2_pc0_pipelinelayout = nullptr;
+		static PipelineLayoutPrivate* depth_pipelinelayout = nullptr;
 		static PipelinePrivate* element8_pipeline = nullptr;
 		static PipelinePrivate* element16_pipeline = nullptr;
 		static PipelinePrivate* forward8_pipeline = nullptr;
 		static PipelinePrivate* forward16_pipeline = nullptr;
 		static PipelinePrivate* forward8_msaa_pipeline = nullptr;
 		static PipelinePrivate* forward16_msaa_pipeline = nullptr;
+		static PipelinePrivate* depth_pipeline = nullptr;
 		static PipelinePrivate* blurh8_pipeline[10] = {};
 		static PipelinePrivate* blurh16_pipeline[10] = {};
 		static PipelinePrivate* blurv8_pipeline[10] = {};
@@ -132,6 +136,7 @@ namespace flame
 					att.format = Swapchain::get_format();
 					att.load_op = AttachmentLoad;
 					att.initia_layout = ImageLayoutShaderReadOnly;
+					att.final_layout = ImageLayoutShaderReadOnly;
 					RenderpassSubpassInfo sp;
 					uint col_refs[] = {
 						0
@@ -192,6 +197,17 @@ namespace flame
 				}
 
 				{
+					RenderpassAttachmentInfo att;
+					att.format = Format_Depth16;
+					att.load_op = AttachmentClear;
+					att.initia_layout = ImageLayoutShaderReadOnly;
+					att.final_layout = ImageLayoutShaderReadOnly;
+					RenderpassSubpassInfo sp;
+					sp.depth_attachment = 0;
+					depth_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp,1 });
+				}
+
+				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorSampledImage;
 					db.count = resources_count;
@@ -199,14 +215,21 @@ namespace flame
 				}
 
 				{
-					DescriptorBindingInfo dbs[6];
+					DescriptorBindingInfo dbs[3];
+					dbs[0].type = DescriptorStorageBuffer;
+					dbs[1].type = DescriptorStorageBuffer;
+					dbs[2].type = DescriptorSampledImage;
+					dbs[2].count = 128;
+					mesh_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
+				}
+
+				{
+					DescriptorBindingInfo dbs[4];
 					dbs[0].type = DescriptorUniformBuffer;
 					dbs[1].type = DescriptorStorageBuffer;
 					dbs[2].type = DescriptorStorageBuffer;
-					dbs[3].type = DescriptorStorageBuffer;
-					dbs[4].type = DescriptorUniformBuffer;
-					dbs[5].type = DescriptorSampledImage;
-					dbs[5].count = 128;
+					dbs[3].type = DescriptorSampledImage;
+					dbs[3].count = 24;
 					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
 				}
 
@@ -234,12 +257,19 @@ namespace flame
 				}
 
 				element_pipelinelayout = new PipelineLayoutPrivate(d, { &element_descriptorsetlayout, 1 }, sizeof(Vec4f));
-				forward_pipelinelayout = new PipelineLayoutPrivate(d, { &forward_descriptorsetlayout, 1 }, 0);
+				{
+					DescriptorSetLayoutPrivate* dsls[] = {
+						mesh_descriptorsetlayout,
+						forward_descriptorsetlayout
+					};
+					forward_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
+				}
 				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, 0);
 				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
 				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
 				image1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &image1_descriptorsetlayout, 1 }, 0);
 				image2_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &image2_descriptorsetlayout, 1 }, 0);
+				depth_pipelinelayout = new PipelineLayoutPrivate(d, { &mesh_descriptorsetlayout, 1 }, 0);
 
 				{
 					VertexAttributeInfo vias[3];
@@ -272,7 +302,6 @@ namespace flame
 				}
 
 				{
-					DepthInfo dep;
 					ShaderPrivate* shaders[] = {
 						new ShaderPrivate(d, L"forward.vert"),
 						new ShaderPrivate(d, L"forward.frag")
@@ -289,10 +318,11 @@ namespace flame
 					VertexBufferInfo vib;
 					vib.attributes_count = size(vias);
 					vib.attributes = vias;
-					RasterInfo rst;
 					VertexInfo vi;
 					vi.buffers_count = 1;
 					vi.buffers = &vib;
+					RasterInfo rst;
+					DepthInfo dep;
 					BlendOption bo;
 					bo.enable = true;
 					bo.src_color = BlendFactorSrcAlpha;
@@ -307,6 +337,29 @@ namespace flame
 						&dep, { &bo, 1 });
 					forward16_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep, { &bo, 1 });
+				}
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(d, L"depth.vert"),
+						new ShaderPrivate(d, L"depth.frag")
+					};
+					VertexAttributeInfo vias[2];
+					vias[0].location = 0;
+					vias[0].format = Format_R32G32B32_SFLOAT;
+					vias[1].location = 1;
+					vias[1].format = Format_R32G32_SFLOAT;
+					VertexBufferInfo vib;
+					vib.attributes_count = size(vias);
+					vib.attributes = vias;
+					vib.stride = 8 * sizeof(float);
+					VertexInfo vi;
+					vi.buffers_count = 1;
+					vi.buffers = &vib;
+					RasterInfo rst;
+					DepthInfo dep;
+					depth_pipeline = PipelinePrivate::create(d, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+						&dep);
 				}
 
 				for (auto i = 0; i < 10; i++)
@@ -396,7 +449,6 @@ namespace flame
 			camera_data_buffer.init(d, 1);
 			material_info_buffer.init(d, 128);
 			mesh_matrix_buffer.init(d, 10000);
-			mesh_indirect_buffer.init(d, 10000);
 			light_info_buffer.init(d, 10000);
 			light_indices_buffer.init(d, 1);
 
@@ -416,15 +468,23 @@ namespace flame
 			for (auto i = 0; i < resources_count; i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp);
 
-			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
-			forward_descriptorset->set_buffer(0, 0, camera_data_buffer.buf.get());
-			forward_descriptorset->set_buffer(1, 0, mesh_matrix_buffer.buf.get());
-			forward_descriptorset->set_buffer(2, 0, light_info_buffer.buf.get());
-			forward_descriptorset->set_buffer(3, 0, light_indices_buffer.buf.get());
-			forward_descriptorset->set_buffer(4, 0, material_info_buffer.buf.get());
+			mesh_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), mesh_descriptorsetlayout));
+			mesh_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
+			mesh_descriptorset->set_buffer(1, 0, material_info_buffer.buf.get());
 			model_textures.resize(128);
 			for (auto i = 0; i < model_textures.size(); i++)
-				forward_descriptorset->set_image(5, i, white_image->default_views[0].get(), sp);
+				mesh_descriptorset->set_image(2, i, iv_wht, sp);
+
+			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
+			forward_descriptorset->set_buffer(0, 0, camera_data_buffer.buf.get());
+			forward_descriptorset->set_buffer(1, 0, light_info_buffer.buf.get());
+			forward_descriptorset->set_buffer(2, 0, light_indices_buffer.buf.get());
+			shadow_maps.resize(24);
+			for (auto i = 0; i < shadow_maps.size(); i++)
+			{
+				shadow_maps[i].reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				forward_descriptorset->set_image(3, i, shadow_maps[i]->default_views[0].get(), sp);
+			}
 
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelSphere), "sphere");
@@ -1098,7 +1158,7 @@ namespace flame
 			camera_data_buffer.end->coord = Vec4f(coord, 1.f);
 		}
 
-		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal)
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow)
 		{
 			if (uploaded_models_count != models.size())
 			{
@@ -1184,7 +1244,7 @@ namespace flame
 
 								auto img = ImagePrivate::create(device, dst_map);
 								model_textures[tex_idx].reset(img);
-								forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
+								mesh_descriptorset->set_image(2, tex_idx, img->default_views.back().get(), sp);
 								bm.color_map_index = tex_idx;
 								tex_idx++;
 
@@ -1223,7 +1283,7 @@ namespace flame
 
 								auto img = ImagePrivate::create(device, dst_map);
 								model_textures[tex_idx].reset(img);
-								forward_descriptorset->set_image(5, tex_idx, img->default_views.back().get(), sp);
+								mesh_descriptorset->set_image(2, tex_idx, img->default_views.back().get(), sp);
 								bm.metallic_roughness_ao_map_index = tex_idx;
 								tex_idx++;
 
@@ -1280,23 +1340,34 @@ namespace flame
 			om.nor = normal;
 			mesh_matrix_buffer.push(om);
 
-			auto& ms = models[mod_id].meshes[mesh_idx];
-			DrawIndexedIndirectCommand ic;
-			ic.index_count = ms.idx_cnt;
-			ic.instance_count = 1;
-			ic.first_index = ms.idx_off;
-			ic.vertex_offset = ms.vtx_off;
-			ic.first_instance = ((mesh_matrix_buffer.stg_num() - 1) << 16) + ms.mat_idx;
-			mesh_indirect_buffer.push(ic);
-
-			last_mesh_cmd->indiret_count++;
+			auto ms = &models[mod_id].meshes[mesh_idx];
+			last_mesh_cmd->meshes.push_back(ms);
+			if (cast_shadow)
+				shadow_casters.emplace_back(ms, mesh_matrix_buffer.stg_num() - 1);
 		}
 
-		void CanvasPrivate::add_light(LightType type, const Vec3f& color, const Vec3f& pos)
+		void CanvasPrivate::add_light(LightType type, const Vec3f& color, const Vec3f& pos, bool cast_shadow)
 		{
 			LightInfo li;
-			li.col = Vec4f(color, 0.f);
-			li.pos = Vec4f(pos, type == LightPoint ? 1.f : 0.f);
+			li.type = type == LightParallel ? 0 : 1;
+			li.color = color;
+			li.pos = pos;
+			li.cast_shadow = cast_shadow;
+			if (cast_shadow)
+			{
+				if (type == LightPoint)
+				{
+					for (auto i = 0; i < 6; i++)
+						li.shadow_map_indices[i] = used_shadow_maps_count++;
+					auto proj = make_project_matrix(90.f, 1.f, 0.1f, 1000.f);
+					li.shadow_map_matrices[0] = proj * make_view_matrix(pos, pos + Vec3f(1, 0, 0), Vec3f(0, -1, 0));
+					li.shadow_map_matrices[1] = proj * make_view_matrix(pos, pos + Vec3f(-1, 0, 0), Vec3f(0, -1, 0));
+					li.shadow_map_matrices[2] = proj * make_view_matrix(pos, pos + Vec3f(0, 1, 0), Vec3f(0, 0, 1));
+					li.shadow_map_matrices[3] = proj * make_view_matrix(pos, pos + Vec3f(0, -1, 0), Vec3f(0, 0, 1));
+					li.shadow_map_matrices[4] = proj * make_view_matrix(pos, pos + Vec3f(0, 0, 1), Vec3f(0, -1, 0));
+					li.shadow_map_matrices[5] = proj * make_view_matrix(pos, pos + Vec3f(0, 0, -1), Vec3f(0, -1, 0));
+				}
+			}
 			light_info_buffer.push(li);
 
 			{
@@ -1339,7 +1410,6 @@ namespace flame
 			element_vertex_buffer.stg_rewind();
 			element_index_buffer.stg_rewind();
 			mesh_matrix_buffer.stg_rewind();
-			mesh_indirect_buffer.stg_rewind();
 			light_info_buffer.stg_rewind();
 			light_indices_buffer.stg_rewind();
 
@@ -1349,6 +1419,9 @@ namespace flame
 				lis.count = 0;
 				light_indices_buffer.push(lis);
 			}
+
+			shadow_casters.clear();
+			used_shadow_maps_count = 0;
 
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
 
@@ -1440,9 +1513,29 @@ namespace flame
 			element_index_buffer.upload(cb);
 			camera_data_buffer.upload(cb, true);
 			mesh_matrix_buffer.upload(cb);
-			mesh_indirect_buffer.upload(cb);
 			light_info_buffer.upload(cb);
 			light_indices_buffer.upload(cb);
+
+			if (used_shadow_maps_count > 0)
+			{
+				cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
+				cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
+				cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
+				cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
+
+				auto lights_count = light_info_buffer.stg_num();
+				for (auto i = 0; i < lights_count; i++)
+				{
+					auto& li = light_info_buffer.end[i];
+					if (li.cast_shadow)
+					{
+						if (li.type == 1)
+						{
+
+						}
+					}
+				}
+			}
 
 			cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 			cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
@@ -1502,7 +1595,6 @@ namespace flame
 					{
 						camera_data_buffer.barrier(cb);
 						mesh_matrix_buffer.barrier(cb);
-						mesh_indirect_buffer.barrier(cb);
 						light_info_buffer.barrier(cb);
 						light_indices_buffer.barrier(cb);
 					}
@@ -1520,7 +1612,8 @@ namespace flame
 						cb->begin_renderpass(msaa_framebuffer.get(), cvs);
 					}
 					cb->bind_pipeline(pl_fwd);
-					cb->bind_descriptor_set(forward_descriptorset.get(), 0, forward_pipelinelayout);
+					cb->bind_descriptor_set(mesh_descriptorset.get(), 0, forward_pipelinelayout);
+					cb->bind_descriptor_set(forward_descriptorset.get(), 1, forward_pipelinelayout);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -1529,8 +1622,9 @@ namespace flame
 						case Cmd::DrawMesh:
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
-							cb->draw_indexed_indirect(mesh_indirect_buffer.buf.get(), obj_indirect_off, c->indiret_count);
-							obj_indirect_off += c->indiret_count;
+							for (auto m : c->meshes)
+								cb->draw_indexed(m->idx_cnt, m->idx_off, m->vtx_off, 1, (obj_indirect_off << 16) + m->mat_idx);
+							obj_indirect_off += c->meshes.size();
 						}
 							break;
 						case Cmd::SetScissor:
