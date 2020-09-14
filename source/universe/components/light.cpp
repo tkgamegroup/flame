@@ -17,7 +17,12 @@ namespace flame
 	void cLightPrivate::draw(graphics::Canvas* canvas)
 	{
 		node->update_transform();
-		canvas->add_light(type, color, Vec3f(node->transform[3]));
+		canvas->add_light(type, color, Vec3f(node->transform[3]), cast_shadow);
+	}
+
+	void cLightPrivate::set_cast_shadow(bool v)
+	{
+		cast_shadow = v;
 	}
 
 	cLight* cLight::create()

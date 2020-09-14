@@ -81,6 +81,7 @@ namespace flame
 
 		static auto initialized = false;
 
+		static SamplerPrivate* sampler_linear_border = nullptr;
 		static RenderpassPrivate* image1_8_renderpass = nullptr;
 		static RenderpassPrivate* image1_16_renderpass = nullptr;
 		static RenderpassPrivate* forward8_renderpass = nullptr;
@@ -130,6 +131,8 @@ namespace flame
 			if (!initialized)
 			{
 				initialized = true;
+
+				sampler_linear_border = new SamplerPrivate(device, FilterLinear, FilterLinear, false, false);
 
 				{
 					RenderpassAttachmentInfo att;
@@ -269,7 +272,7 @@ namespace flame
 				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
 				image1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &image1_descriptorsetlayout, 1 }, 0);
 				image2_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &image2_descriptorsetlayout, 1 }, 0);
-				depth_pipelinelayout = new PipelineLayoutPrivate(d, { &mesh_descriptorsetlayout, 1 }, 0);
+				depth_pipelinelayout = new PipelineLayoutPrivate(d, { &mesh_descriptorsetlayout, 1 }, sizeof(Mat4f));
 
 				{
 					VertexAttributeInfo vias[3];
@@ -462,28 +465,35 @@ namespace flame
 				resources[i].reset(r);
 			}
 
-			auto sp = d->sampler_linear.get();
+			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
+			cb->begin(true);
+
+			auto sp_ln = d->sampler_linear.get();
 
 			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
 			for (auto i = 0; i < resources_count; i++)
-				element_descriptorset->set_image(0, i, iv_wht, sp);
+				element_descriptorset->set_image(0, i, iv_wht, sp_ln);
 
 			mesh_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), mesh_descriptorsetlayout));
 			mesh_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
 			mesh_descriptorset->set_buffer(1, 0, material_info_buffer.buf.get());
 			model_textures.resize(128);
 			for (auto i = 0; i < model_textures.size(); i++)
-				mesh_descriptorset->set_image(2, i, iv_wht, sp);
+				mesh_descriptorset->set_image(2, i, iv_wht, sp_ln);
 
 			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
 			forward_descriptorset->set_buffer(0, 0, camera_data_buffer.buf.get());
 			forward_descriptorset->set_buffer(1, 0, light_info_buffer.buf.get());
 			forward_descriptorset->set_buffer(2, 0, light_indices_buffer.buf.get());
 			shadow_maps.resize(24);
+			shadow_map_framebuffers.resize(shadow_maps.size());
 			for (auto i = 0; i < shadow_maps.size(); i++)
 			{
 				shadow_maps[i].reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
-				forward_descriptorset->set_image(3, i, shadow_maps[i]->default_views[0].get(), sp);
+				cb->image_barrier(shadow_maps[i].get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+				auto iv = shadow_maps[i]->default_views[0].get();
+				shadow_map_framebuffers[i].reset(new FramebufferPrivate(device, depth_renderpass, { &iv, 1 }));
+				forward_descriptorset->set_image(3, i, iv, sampler_linear_border);
 			}
 
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
@@ -491,6 +501,11 @@ namespace flame
 
 			image1_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), image1_descriptorsetlayout));
 			image2_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), image2_descriptorsetlayout));
+
+			cb->end();
+			auto q = device->graphics_queue.get();
+			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->wait_idle();
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -1352,20 +1367,20 @@ namespace flame
 			li.type = type == LightParallel ? 0 : 1;
 			li.color = color;
 			li.pos = pos;
-			li.cast_shadow = cast_shadow;
+			li.cast_shadow = cast_shadow ? 1 : 0;
 			if (cast_shadow)
 			{
 				if (type == LightPoint)
 				{
 					for (auto i = 0; i < 6; i++)
 						li.shadow_map_indices[i] = used_shadow_maps_count++;
-					auto proj = make_project_matrix(90.f, 1.f, 0.1f, 1000.f);
-					li.shadow_map_matrices[0] = proj * make_view_matrix(pos, pos + Vec3f(1, 0, 0), Vec3f(0, -1, 0));
-					li.shadow_map_matrices[1] = proj * make_view_matrix(pos, pos + Vec3f(-1, 0, 0), Vec3f(0, -1, 0));
-					li.shadow_map_matrices[2] = proj * make_view_matrix(pos, pos + Vec3f(0, 1, 0), Vec3f(0, 0, 1));
+					auto proj = make_project_matrix(90.f * ANG_RAD, 1.f, 1.f, 1000.f);
+					li.shadow_map_matrices[0] = proj * make_view_matrix(pos, pos + Vec3f(+1, 0, 0), Vec3f(0, 1, 0));
+					li.shadow_map_matrices[1] = proj * make_view_matrix(pos, pos + Vec3f(-1, 0, 0), Vec3f(0, 1, 0));
+					li.shadow_map_matrices[2] = proj * make_view_matrix(pos, pos + Vec3f(0, +1, 0), Vec3f(0, 0, 1));
 					li.shadow_map_matrices[3] = proj * make_view_matrix(pos, pos + Vec3f(0, -1, 0), Vec3f(0, 0, 1));
-					li.shadow_map_matrices[4] = proj * make_view_matrix(pos, pos + Vec3f(0, 0, 1), Vec3f(0, -1, 0));
-					li.shadow_map_matrices[5] = proj * make_view_matrix(pos, pos + Vec3f(0, 0, -1), Vec3f(0, -1, 0));
+					li.shadow_map_matrices[4] = proj * make_view_matrix(pos, pos + Vec3f(0, 0, +1), Vec3f(0, 1, 0));
+					li.shadow_map_matrices[5] = proj * make_view_matrix(pos, pos + Vec3f(0, 0, -1), Vec3f(0, 1, 0));
 				}
 			}
 			light_info_buffer.push(li);
@@ -1516,27 +1531,6 @@ namespace flame
 			light_info_buffer.upload(cb);
 			light_indices_buffer.upload(cb);
 
-			if (used_shadow_maps_count > 0)
-			{
-				cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
-				cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
-				cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
-				cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
-
-				auto lights_count = light_info_buffer.stg_num();
-				for (auto i = 0; i < lights_count; i++)
-				{
-					auto& li = light_info_buffer.end[i];
-					if (li.cast_shadow)
-					{
-						if (li.type == 1)
-						{
-
-						}
-					}
-				}
-			}
-
 			cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 			cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 			auto ele_vtx_off = 0;
@@ -1597,7 +1591,43 @@ namespace flame
 						mesh_matrix_buffer.barrier(cb);
 						light_info_buffer.barrier(cb);
 						light_indices_buffer.barrier(cb);
+
+						if (used_shadow_maps_count > 0)
+						{
+							cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
+							cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
+							cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
+							cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
+							cb->bind_pipeline(depth_pipeline);
+							cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
+
+							auto lights_count = light_info_buffer.stg_num();
+							for (auto i = 0; i < lights_count; i++)
+							{
+								auto& li = ((LightInfo*)light_info_buffer.stg->mapped)[i];
+								if (li.cast_shadow)
+								{
+									if (li.type == 1)
+									{
+										for (auto j = 0; j < 6; j++)
+										{
+											auto idx = li.shadow_map_indices[j];
+											Vec4f cv = Vec4f(1.f, 0.f, 0.f, 0.f);
+											cb->begin_renderpass(shadow_map_framebuffers[idx].get(), &cv);
+											cb->push_constant(0, sizeof(Mat4f), &li.shadow_map_matrices[j], depth_pipelinelayout);
+											for (auto& m : shadow_casters)
+												cb->draw_indexed(m.first->idx_cnt, m.first->idx_off, m.first->vtx_off, 1, (m.second << 16) + m.first->mat_idx);
+											cb->end_renderpass();
+											cb->image_barrier(shadow_maps[idx].get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+										}
+									}
+								}
+							}
+
+							cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)target_size));
+						}
 					}
+
 					cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 					cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
 					cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
@@ -1623,8 +1653,10 @@ namespace flame
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
 							for (auto m : c->meshes)
+							{
 								cb->draw_indexed(m->idx_cnt, m->idx_off, m->vtx_off, 1, (obj_indirect_off << 16) + m->mat_idx);
-							obj_indirect_off += c->meshes.size();
+								obj_indirect_off++;
+							}
 						}
 							break;
 						case Cmd::SetScissor:

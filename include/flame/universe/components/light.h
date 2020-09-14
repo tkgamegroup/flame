@@ -21,6 +21,9 @@ namespace flame
 		virtual Vec3f get_color() const = 0;
 		virtual void set_color(const Vec3f& c) = 0;
 
+		virtual bool get_cast_shadow() const = 0;
+		virtual void set_cast_shadow(bool v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cLight* create();
 	};
 }

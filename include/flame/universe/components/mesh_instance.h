@@ -20,6 +20,9 @@ namespace flame
 		virtual int get_mesh_index() const = 0;
 		virtual void set_mesh_index(int id) = 0;
 
+		//virtual bool get_cast_shadow() const = 0;
+		//virtual void set_cast_shadow(bool v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cMeshInstance* create();
 	};
 }

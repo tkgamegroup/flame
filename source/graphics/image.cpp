@@ -376,7 +376,7 @@ namespace flame
 			return new ImageViewPrivate((ImagePrivate*)image, type, subresource, swizzle);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates) :
+		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge) :
 			device(d)
 		{
 			VkSamplerCreateInfo info;
@@ -385,12 +385,12 @@ namespace flame
 			info.pNext = nullptr;
 			info.magFilter = to_backend(mag_filter);
 			info.minFilter = to_backend(min_filter);
-			info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-			info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			info.addressModeU = clamp_to_edge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			info.addressModeV = clamp_to_edge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			info.addressModeW = clamp_to_edge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 			info.anisotropyEnable = VK_FALSE;
 			info.maxAnisotropy = 1.f;
-			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 			info.unnormalizedCoordinates = unnormalized_coordinates;
 			info.compareEnable = VK_FALSE;
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
@@ -407,9 +407,9 @@ namespace flame
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 		}
 
-		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates)
+		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge)
 		{
-			return new SamplerPrivate((DevicePrivate*)d, mag_filter, min_filter, unnormalized_coordinates);
+			return new SamplerPrivate((DevicePrivate*)d, mag_filter, min_filter, unnormalized_coordinates, clamp_to_edge);
 		}
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* d, const std::wstring& filename)

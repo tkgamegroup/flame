@@ -1584,7 +1584,7 @@ namespace flame
 	{
 		auto f = normalize(center - eye);
 		auto s = normalize(cross(f, up));
-		auto u = cross(s, f);
+		auto u = normalize(cross(s, f));
 
 		Mat<4, 4, T> ret(1);
 		ret[0][0] = s.x();
@@ -1605,19 +1605,15 @@ namespace flame
 	template <class T>
 	Mat<4, 4, T> make_project_matrix(T fovy, T aspect, T zNear, T zFar)
 	{
-		auto tanHalfFovy = tan(fovy / 2.f);
+		auto t = tan(fovy / 2.f);
 
-		Mat<4, 4, T> ret(1);
-		ret[0][0] = T(1) / (aspect * tanHalfFovy);
-		ret[1][1] = T(1) / (tanHalfFovy);
+		Mat<4, 4, T> ret(T(0));
+		ret[0][0] = T(1) / (aspect * t);
+		ret[1][1] = T(-1) / (t);
 		ret[2][2] = zFar / (zNear - zFar);
 		ret[2][3] = T(-1);
 		ret[3][2] = -(zFar * zNear) / (zFar - zNear);
-		return Mat<4, 4, T>(
-			Vec<4, T>(1, 0, 0, 0),
-			Vec<4, T>(0, -1, 0, 0),
-			Vec<4, T>(0, 0, 1, 0),
-			Vec<4, T>(0, 0, 0, 1)) * ret;
+		return ret;
 	}
 
 	struct PerspectiveProjector

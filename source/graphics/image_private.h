@@ -91,7 +91,7 @@ namespace flame
 			DevicePrivate* device;
 			VkSampler vk_sampler;
 
-			SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates);
+			SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge = true);
 			~SamplerPrivate();
 
 			void release() override { delete this; }

@@ -16,6 +16,7 @@ namespace flame
 	{
 		graphics::LightType type = graphics::LightPoint;
 		Vec3f color = Vec3f(1.f);
+		bool cast_shadow = false;
 
 		cNodePrivate* node = nullptr; // R ref
 
@@ -24,6 +25,9 @@ namespace flame
 
 		Vec3f get_color() const override { return color; }
 		void set_color(const Vec3f& c) override;
+
+		bool get_cast_shadow() const override { return cast_shadow; }
+		void set_cast_shadow(bool v) override;
 
 		void draw(graphics::Canvas* canvas); // R
 	};

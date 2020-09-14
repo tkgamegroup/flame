@@ -189,7 +189,7 @@ namespace flame
 			struct LightInfo
 			{
 				int type;
-				bool cast_shadow;
+				int cast_shadow;
 				int dummy0;
 				int dummy1;
 
@@ -301,6 +301,7 @@ namespace flame
 
 			std::vector<std::pair<BoundMesh*, uint>> shadow_casters;
 			std::vector<std::unique_ptr<ImagePrivate>> shadow_maps;
+			std::vector<std::unique_ptr<FramebufferPrivate>> shadow_map_framebuffers;
 			uint used_shadow_maps_count = 0;
 
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;

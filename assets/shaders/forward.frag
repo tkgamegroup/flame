@@ -31,7 +31,7 @@ layout (set = 0, binding = 2) uniform sampler2D maps[128];
 struct LightInfo
 {
 	int type;
-	bool cast_shadow;
+	int cast_shadow;
 	int dummy0;
 	int dummy1;
 
@@ -65,6 +65,17 @@ layout (set = 1, binding = 3) uniform sampler2D shadow_maps[24];
 layout (location = 0) out vec4 o_color;
 
 const float PI = 3.14159265359;
+
+int cube_side(vec3 r) 
+{
+   vec3 absr = abs(r);
+   if (absr.x > absr.y && absr.x > absr.z) 
+	 return int(step(r.x, 0.0));
+   else if (absr.y > absr.z) 
+     return int(step(r.y, 0.0)) + 2;
+   else
+     return int(step(r.z, 0.0)) + 4;
+}
 
 void main()
 {
@@ -106,19 +117,18 @@ void main()
 	{
 		LightInfo light = light_infos[light_indices_list[0].indices[i]];
 
-		/*
-		if (light.cast_shadow)
+		if (light.cast_shadow == 1)
 		{
-			uint id = 0;
-
-			vec4 coord = light.shadow_map_matrices[id] * vec4(i_coordw, 1.0);
-			coord /= coord.w;
-
-			float ref = texture(shadow_maps[light.shadow_map_indices[id]], coord.xy).z;
-			if (ref < coord.z)
-				continue;
+			if (light.type == 1)
+			{
+				int idx = cube_side(i_coordw - light.pos);
+				vec4 coord = light.shadow_map_matrices[idx] * vec4(i_coordw, 1.0);
+				coord /= coord.w;
+				float ref = texture(shadow_maps[light.shadow_map_indices[idx]], coord.xy * 0.5 + vec2(0.5)).r;
+				if (ref < coord.z - 0.005)
+					continue;
+			}
 		}
-		*/
 
 		vec3 L;
 		vec3 Li;
