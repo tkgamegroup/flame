@@ -2,19 +2,10 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
+#include "mesh_set.h"
+
 layout (location = 0) in vec3 i_pos;
 layout (location = 1) in vec2 i_uv;
-
-struct MeshMatrix
-{
-	mat4 model;
-	mat4 normal;
-};
-
-layout (set = 0, binding = 0) buffer readonly MeshMatrices
-{
-	MeshMatrix mesh_matrices[];
-};
 
 layout (push_constant) uniform PushConstantT
 {

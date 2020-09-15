@@ -114,8 +114,6 @@ namespace flame
 		static PipelinePrivate* blurv16_pipeline[10] = {};
 		static PipelinePrivate* blit8_pipeline = nullptr;
 		static PipelinePrivate* blit16_pipeline = nullptr;
-		static PipelinePrivate* add8_pipeline = nullptr;
-		static PipelinePrivate* add16_pipeline = nullptr;
 		static PipelinePrivate* filter_bright_pipeline = nullptr;
 		static PipelinePrivate* downsample_pipeline = nullptr;
 		static PipelinePrivate* upsample_pipeline = nullptr;
@@ -386,16 +384,6 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						new ShaderPrivate(d, L"fullscreen.vert"),
-						new ShaderPrivate(d, L"add.frag")
-					};
-
-					add8_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
-					add16_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
-				}
-
-				{
-					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(d, L"fullscreen.vert"),
 						new ShaderPrivate(d, L"filter_bright.frag")
 					};
 					filter_bright_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
@@ -575,15 +563,15 @@ namespace flame
 					msaa_resolve_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_R8G8B8A8_UNORM, target_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 					cb->image_barrier(msaa_resolve_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 
-					auto iv = msaa_resolve_image->views[0].get();
+					auto iv_res = msaa_resolve_image->views[0].get();
 					msaa_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-					msaa_descriptorset->set_image(0, 0, iv, sp_nr);
+					msaa_descriptorset->set_image(0, 0, iv_res, sp_nr);
 
 					forward_framebuffers.resize(1);
 					ImageViewPrivate* vs[] = {
 						msaa_image->views[0].get(),
 						depth_image->views[0].get(),
-						iv
+						iv_res
 					};
 					forward_framebuffers[0].reset(new FramebufferPrivate(device, hdr ? forward16_msaa_renderpass : forward8_msaa_renderpass, vs));
 				}
@@ -1677,7 +1665,7 @@ namespace flame
 						cb->image_barrier(msaa_resolve_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 						cb->begin_renderpass(dst_framebuffer.get());
-						cb->bind_pipeline(hdr ? add16_pipeline : add8_pipeline);
+						cb->bind_pipeline(hdr ? blit16_pipeline : blit8_pipeline);
 						cb->bind_descriptor_set(msaa_descriptorset.get(), 0, sampler1_pc0_pipelinelayout);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();

@@ -16,7 +16,7 @@ namespace flame
 		struct CommandBufferPrivate;
 
 		const auto resources_count = 64U;
-		const auto msaa_sample_count = SampleCount_4;
+		const auto msaa_sample_count = SampleCount_8;
 		const auto shadow_map_size = Vec2u(1024);
 
 		struct CanvasResourcePrivate : CanvasResource
