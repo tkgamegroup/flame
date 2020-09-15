@@ -15,6 +15,13 @@ namespace flame
 		struct Sampler;
 		struct CommandBuffer;
 
+		struct ElementVertex
+		{
+			Vec2f pos;
+			Vec2f uv;
+			Vec4c col;
+		};
+
 		struct CanvasResource
 		{
 			virtual const char* get_name() const = 0;
@@ -56,7 +63,7 @@ namespace flame
 			virtual void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord) = 0;
 
 			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow = true) = 0;
-			virtual void add_light(LightType type, const Vec3f& color, const Vec3f& pos, bool cast_shadow = false) = 0;
+			virtual void add_light(LightType type, const Vec3f& color, const Vec3f& coord, bool cast_shadow = false) = 0;
 
 			virtual Vec4f get_scissor() const = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;

@@ -28,6 +28,8 @@ namespace flame
 					return VK_FORMAT_R8_UNORM;
 				case Format_R16_UNORM:
 					return VK_FORMAT_R16_UNORM;
+				case Format_R16_SFLOAT:
+					return VK_FORMAT_R16_SFLOAT;
 				case Format_R32_SFLOAT:
 					return VK_FORMAT_R32_SFLOAT;
 				case Format_R32G32_SFLOAT:

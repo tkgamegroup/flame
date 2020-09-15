@@ -78,7 +78,7 @@ namespace flame
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
 			std::unique_ptr<ImagePrivate> image;
-			std::unique_ptr<ImageViewPrivate> view;
+			ImageViewPrivate* view;
 
 			FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> fonts);
 
@@ -86,7 +86,7 @@ namespace flame
 
 			GlyphPrivate* get_glyph(wchar_t code, uint size);
 
-			ImageView* get_view() const override { return view.get(); }
+			ImageView* get_view() const override { return view; }
 		};
 
 		inline Glyph* FontAtlasBridge::get_glyph(wchar_t code, uint size)

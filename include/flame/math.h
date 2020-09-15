@@ -88,6 +88,63 @@ namespace flame
 		}
 	};
 
+	template <class T>
+	float sign(T v)
+	{
+		return v >= T(0) ? 1.f : -1.f;
+	}
+
+	template <class T>
+	T abs(T v)
+	{
+		return v >= T(0) ? v : -v;
+	}
+
+	template <class T>
+	T min(T a, T b)
+	{
+		return a < b ? a : b;
+	}
+
+	template <class T, class ...Args>
+	T minN(T a, T b, Args... args)
+	{
+		return minN(min(a, b), args...);
+	}
+
+	template <class T>
+	T max(T a, T b)
+	{
+		return a > b ? a : b;
+	}
+
+	template <class T, class ...Args>
+	T maxN(T a, T b, Args... rest)
+	{
+		return maxN(max(a, b), rest...);
+	}
+
+	template <class T>
+	T clamp(T v, T a, T b)
+	{
+		if (v < a)
+			return a;
+		if (v > b)
+			return b;
+		return v;
+	}
+
+	inline float fract(float v)
+	{
+		return v - ::floor(v);
+	}
+
+	template <class T>
+	T mix(T v0, T v1, T q)
+	{
+		return v0 + q * (v1 - v0);
+	}
+
 	inline uint image_pitch(uint b)
 	{
 		return (uint)ceil((b / 4.f)) * 4U;
@@ -1291,24 +1348,6 @@ namespace flame
 		return ret;
 	}
 
-	template <class T>
-	float sign(T v)
-	{
-		return v >= T(0) ? 1.f : -1.f;
-	}
-
-	template <class T>
-	T abs(T v)
-	{
-		return v >= T(0) ? v : -v;
-	}
-
-	template <class T>
-	T min(T a, T b)
-	{
-		return a < b ? a : b;
-	}
-
 	template <uint N, class T>
 	Vec<N, T> min(const Vec<N, T>& a, const Vec<N, T>& b)
 	{
@@ -1318,18 +1357,6 @@ namespace flame
 		return ret;
 	}
 
-	template <class T, class ...Args>
-	T minN(T a, T b, Args... args)
-	{
-		return minN(min(a, b), args...);
-	}
-
-	template <class T>
-	T max(T a, T b)
-	{
-		return a > b ? a : b;
-	}
-
 	template <uint N, class T>
 	Vec<N, T> max(const Vec<N, T>& a, const Vec<N, T>& b)
 	{
@@ -1337,22 +1364,6 @@ namespace flame
 		for (auto i = 0; i < N; i++)
 			ret[i] = max(a[i], b[i]);
 		return ret;
-	}
-
-	template <class T, class ...Args>
-	T maxN(T a, T b, Args... rest)
-	{
-		return maxN(max(a, b), rest...);
-	}
-
-	template <class T>
-	T clamp(T v, T a, T b)
-	{
-		if (v < a)
-			return a;
-		if (v > b)
-			return b;
-		return v;
 	}
 
 	template <uint N, class T>
@@ -1373,11 +1384,6 @@ namespace flame
 		return ret;
 	}
 
-	inline float fract(float v)
-	{
-		return v - ::floor(v);
-	}
-
 	template <uint N>
 	Vec<N, float> fract(const Vec<N, float>& v)
 	{
@@ -1391,12 +1397,6 @@ namespace flame
 	Vec<2, T> mod(T a, T b)
 	{
 		return Vec<2, T>(a / b, a % b);
-	}
-
-	template <class T>
-	T mix(T v0, T v1, T q)
-	{
-		return v0 + q * (v1 - v0);
 	}
 
 	template <uint N, class T>

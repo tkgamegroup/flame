@@ -52,16 +52,10 @@ namespace flame
 			uint count = 0;
 			std::unique_ptr<BufferPrivate> buf;
 			std::unique_ptr<BufferPrivate> stg;
+			T* beg = nullptr;
 			T* end = nullptr;
 
-			void init(DevicePrivate* _d, uint _count)
-			{
-				d = _d;
-				count = _count;
-				create();
-			}
-
-			void create()
+			void _build()
 			{
 				T* temp = nullptr;
 				auto n = 0;
@@ -74,12 +68,20 @@ namespace flame
 				buf.reset(new BufferPrivate(d, count * sizeof(T), BufferUsageTransferDst | U, MemoryPropertyDevice));
 				stg.reset(new BufferPrivate(d, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stg->map();
-				end = (T*)stg->mapped;
+				beg = (T*)stg->mapped;
+				end = beg;
 				if (temp)
 				{
 					push(n, temp);
 					delete[]temp;
 				}
+			}
+
+			void create(DevicePrivate* _d, uint _count)
+			{
+				d = _d;
+				count = _count;
+				_build();
 			}
 
 			void stg_rewind()
@@ -98,7 +100,7 @@ namespace flame
 				if (n >= count)
 				{
 					count *= 2;
-					create();
+					_build();
 				}
 				*end = t;
 				end++;
@@ -110,7 +112,7 @@ namespace flame
 				if (n + cnt >= count)
 				{
 					count = (n + cnt) * 2;
-					create();
+					_build();
 				}
 				memcpy(end, p, sizeof(T) * cnt);
 				end += cnt;
@@ -131,13 +133,6 @@ namespace flame
 
 		struct CanvasPrivate : CanvasBridge
 		{
-			struct ElementVertex
-			{
-				Vec2f pos;
-				Vec2f uv;
-				Vec4c col;
-			};
-
 			struct BoundMaterial
 			{
 				Vec4f color;
@@ -182,31 +177,24 @@ namespace flame
 			struct MeshMatrix
 			{
 				Mat4f model;
-				Mat4f mvp;
-				Mat4f nor;
+				Mat4f normal;
 			};
 
-			struct LightInfo
+			struct PointLightInfo
 			{
-				int type;
-				int cast_shadow;
-				int dummy0;
-				int dummy1;
-
 				Vec3f color;
-				int dummy2;
-				Vec3f pos;
-				int dummy3;
+				int dummy0;
+				Vec3f coord;
 
-				uint shadow_map_indices[8];
-				Mat4f shadow_map_matrices[6];
+				int shadow_map_index;
 			};
 
-			struct LightIndices
+			struct PointLightIndices
 			{
 				uint count;
 				uint indices[1023];
 			};
+
 			struct Cmd
 			{
 				enum Type
@@ -296,13 +284,14 @@ namespace flame
 			TBuffer<CameraData, BufferUsageUniform> camera_data_buffer;
 			TBuffer<BoundMaterial, BufferUsageStorage> material_info_buffer;
 			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
-			TBuffer<LightInfo, BufferUsageStorage> light_info_buffer;
-			TBuffer<LightIndices, BufferUsageStorage> light_indices_buffer;
+			TBuffer<PointLightInfo, BufferUsageStorage> point_light_info_buffer;
+			TBuffer<PointLightIndices, BufferUsageStorage> point_light_indices_buffer;
 
 			std::vector<std::pair<BoundMesh*, uint>> shadow_casters;
-			std::vector<std::unique_ptr<ImagePrivate>> shadow_maps;
-			std::vector<std::unique_ptr<FramebufferPrivate>> shadow_map_framebuffers;
-			uint used_shadow_maps_count = 0;
+			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
+			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_depth_images;
+			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
+			uint used_point_light_shadow_maps_count = 0;
 
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
@@ -310,38 +299,24 @@ namespace flame
 
 			std::vector<ImageViewPrivate*> target_imageviews;
 			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_nearest_descriptorsets;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_linear_descriptorsets;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_descriptorsets;
 
 			std::unique_ptr<ImagePrivate> dst_image;
 			std::unique_ptr<FramebufferPrivate> dst_framebuffer;
-			std::unique_ptr<DescriptorSetPrivate> dst_nearest_descriptorset;
-			std::unique_ptr<DescriptorSetPrivate> dst_linear_descriptorset;
-
-			std::unique_ptr<ImagePrivate> depth_image;
-			std::unique_ptr<ImagePrivate> depth_msaa_image;
-
-			std::vector<std::unique_ptr<FramebufferPrivate>> forward8_framebuffers;
-			std::unique_ptr<FramebufferPrivate> forward16_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> dst_descriptorset;
 
 			std::unique_ptr<ImagePrivate> msaa_image;
 			std::unique_ptr<ImagePrivate> msaa_resolve_image;
-			std::unique_ptr<FramebufferPrivate> msaa_framebuffer;
-			std::unique_ptr<DescriptorSetPrivate> msaa_nearest_descriptorset;
-			std::unique_ptr<DescriptorSetPrivate> msaa_linear_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> msaa_descriptorset;
 
-			std::unique_ptr<ImagePrivate> back8_image;
-			std::vector<std::unique_ptr<FramebufferPrivate>> back8_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back8_nearest_descriptorsets;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back8_linear_descriptorsets;
+			std::unique_ptr<ImagePrivate> depth_image;
 
-			std::unique_ptr<ImagePrivate> back16_image;
-			std::vector<std::unique_ptr<FramebufferPrivate>> back16_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back16_nearest_descriptorsets;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> back16_linear_descriptorsets;
+			std::vector<std::unique_ptr<FramebufferPrivate>> forward_framebuffers;
 
-			std::unique_ptr<DescriptorSetPrivate> image1_descriptorset;
-			std::unique_ptr<DescriptorSetPrivate> image2_descriptorset;
+			std::unique_ptr<ImagePrivate> back_image;
+			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets;
 
 			std::vector<std::vector<Vec2f>> paths;
 
@@ -386,7 +361,7 @@ namespace flame
 			void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow) override;
-			void add_light(LightType type, const Vec3f& color, const Vec3f& pos, bool cast_shadow) override;
+			void add_light(LightType type, const Vec3f& color, const Vec3f& coord, bool cast_shadow) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;
@@ -411,14 +386,14 @@ namespace flame
 
 		inline uint CanvasBridge::set_resource(int slot, ImageAtlas* image_atlas, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, ((ImageAtlasPrivate*)image_atlas)->image->default_views[0].get(), 
+			return ((CanvasPrivate*)this)->set_resource(slot, ((ImageAtlasPrivate*)image_atlas)->image->views[0].get(), 
 				((ImageAtlasPrivate*)image_atlas)->border ? ((CanvasPrivate*)this)->device->sampler_linear.get() : ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
 				name ? name : "", (ImageAtlasPrivate*)image_atlas, nullptr);
 		}
 
 		inline uint CanvasBridge::set_resource(int slot, FontAtlas* font_atlas, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, ((FontAtlasPrivate*)font_atlas)->view.get(), ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
+			return ((CanvasPrivate*)this)->set_resource(slot, ((FontAtlasPrivate*)font_atlas)->view, ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
 				name ? name : "", nullptr, (FontAtlasPrivate*)font_atlas);
 		}
 

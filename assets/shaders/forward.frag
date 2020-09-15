@@ -3,10 +3,10 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 layout (location = 0) in flat uint i_mat_id;
-layout (location = 1) in vec3 i_coordw;
-layout (location = 2) in vec3 i_coordv;
-layout (location = 3) in vec3 i_normal;
-layout (location = 4) in vec2 i_uv;
+layout (location = 1) in vec2 i_uv;
+layout (location = 2) in vec3 i_coordw;
+layout (location = 3) in vec3 i_coordv;
+layout (location = 4) in vec3 i_normal;
 
 struct MaterialInfo
 {
@@ -28,54 +28,41 @@ layout (set = 0, binding = 1) buffer readonly MaterialInfos
 
 layout (set = 0, binding = 2) uniform sampler2D maps[128];
 
-struct LightInfo
+struct PointLightInfo
 {
-	int type;
-	int cast_shadow;
-	int dummy0;
-	int dummy1;
-
 	vec3 color;
-	int dummy2;
-	vec3 pos;
-	int dummy3;
+	int dummy0;
+	vec3 coord;
 
-	uint shadow_map_indices[8]; // only 6 valid, 8 is for alignment
-	mat4 shadow_map_matrices[6];
+	int shadow_map_index;
 };
 
-layout (set = 1, binding = 1) buffer readonly LightInfos
+layout (set = 1, binding = 1) buffer readonly PointLightInfos
 {
-	LightInfo light_infos[];
+	PointLightInfo point_light_infos[];
 };
 
-struct LightIndices
+struct PointLightIndices
 {
 	uint count;
 	uint indices[1023];
 };
 
-layout (set = 1, binding = 2) buffer readonly LightIndicesList
+layout (set = 1, binding = 2) buffer readonly PointLightIndicesList
 {
-	LightIndices light_indices_list[];
+	PointLightIndices point_light_indices_list[];
 };
 
-layout (set = 1, binding = 3) uniform sampler2D shadow_maps[24];
+layout (set = 1, binding = 3) uniform samplerCube point_light_shadow_maps[4];
+
+layout (push_constant) uniform PushConstantT
+{
+	vec2 shadow_map_advance;
+}pc;
 
 layout (location = 0) out vec4 o_color;
 
 const float PI = 3.14159265359;
-
-int cube_side(vec3 r) 
-{
-   vec3 absr = abs(r);
-   if (absr.x > absr.y && absr.x > absr.z) 
-	 return int(step(r.x, 0.0));
-   else if (absr.y > absr.z) 
-     return int(step(r.y, 0.0)) + 2;
-   else
-     return int(step(r.z, 0.0)) + 4;
-}
 
 void main()
 {
@@ -112,38 +99,27 @@ void main()
 	vec3 V = normalize(i_coordv);
 	float NdotV = clamp(dot(N, V), 0.0, 1.0);
 
-	uint count = light_indices_list[0].count;
+	uint count = point_light_indices_list[0].count;
 	for (int i = 0; i < count; i++)
 	{
-		LightInfo light = light_infos[light_indices_list[0].indices[i]];
+		PointLightInfo light = point_light_infos[point_light_indices_list[0].indices[i]];
+		float shadow = 1.0;
 
-		if (light.cast_shadow == 1)
+		vec3 L = light.coord - i_coordw;
+		float dist = length(L);
+		L = L / dist;
+
+		if (light.shadow_map_index != -1)
 		{
-			if (light.type == 1)
-			{
-				int idx = cube_side(i_coordw - light.pos);
-				vec4 coord = light.shadow_map_matrices[idx] * vec4(i_coordw, 1.0);
-				coord /= coord.w;
-				float ref = texture(shadow_maps[light.shadow_map_indices[idx]], coord.xy * 0.5 + vec2(0.5)).r;
-				if (ref < coord.z - 0.005)
-					continue;
-			}
+			float ref = texture(point_light_shadow_maps[light.shadow_map_index], -L).r;
+			//o_color.rgb = vec3(ref / 1000.f);
+			//continue;
+			if (ref < dist - 0.01)
+				continue;
 		}
 
-		vec3 L;
-		vec3 Li;
-		if (light.type == 0)
-		{
-			L = normalize(light.pos);
-			Li = light.color;
-		}
-		else
-		{
-			L = light.pos - i_coordw;
-			float dist = length(L);
-			L = L / dist;
-			Li = light.color / max(dist * dist * 0.01, 1.0);
-		}
+		vec3 Li = light.color / max(dist * dist * 0.01, 1.0);
+		Li *= shadow;
 
 		vec3 H = normalize(V + L);
 		

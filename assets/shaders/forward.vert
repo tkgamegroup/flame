@@ -10,8 +10,7 @@ layout (location = 2) in vec3 i_normal;
 struct MeshMatrix
 {
 	mat4 model;
-	mat4 mvp;
-	mat4 nor;
+	mat4 normal;
 };
 
 layout (set = 0, binding = 0) buffer readonly MeshMatrices
@@ -31,10 +30,10 @@ layout (set = 1, binding = 0) uniform CameraData
 }camera_data;
 
 layout (location = 0) out flat uint o_mat_id;
-layout (location = 1) out vec3 o_coordw;
-layout (location = 2) out vec3 o_coordv;
-layout (location = 3) out vec3 o_normal;
-layout (location = 4) out vec2 o_uv;
+layout (location = 1) out vec2 o_uv;
+layout (location = 2) out vec3 o_coordw;
+layout (location = 3) out vec3 o_coordv;
+layout (location = 4) out vec3 o_normal;
 
 void main()
 {
@@ -43,6 +42,6 @@ void main()
 	o_uv = i_uv;
 	o_coordw = vec3(mesh_matrices[mod_idx].model * vec4(i_pos, 1.0));
 	o_coordv = vec3(camera_data.coord) - o_coordw;
-	o_normal = vec3(mesh_matrices[mod_idx].nor * vec4(i_normal, 0));
-	gl_Position = mesh_matrices[mod_idx].mvp * vec4(i_pos, 1.0);
+	o_normal = vec3(mesh_matrices[mod_idx].normal * vec4(i_normal, 0));
+	gl_Position = camera_data.proj_view * vec4(o_coordw, 1.0);
 }

@@ -40,6 +40,12 @@ namespace flame
 		constexpr static decltype(V) v = V;
 	};
 
+	template <class T>
+	std::span<T> SP(const T& v)
+	{
+		return std::span(&(T&)v, 1);
+	}
+
 	uint64 constexpr ch(char const* str)
 	{
 		auto ret = std::_FNV_offset_basis;

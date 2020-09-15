@@ -101,7 +101,7 @@ namespace flame
 			cb->copy_buffer(stag_buf.get(), this, { &cpy, 1 });
 			cb->end();
 			auto q = device->graphics_queue.get();
-			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 		}
 

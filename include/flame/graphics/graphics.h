@@ -18,6 +18,7 @@ namespace flame
 
 			Format_R8_UNORM,
 			Format_R16_UNORM,
+			Format_R16_SFLOAT,
 			Format_R32_UINT,
 			Format_R32_SFLOAT,
 			Format_R32G32_SFLOAT,
@@ -340,8 +341,9 @@ namespace flame
 
 		enum LightType
 		{
-			LightParallel,
-			LightPoint
+			LightDirectional,
+			LightPoint,
+			LightSpot
 		};
 	}
 }

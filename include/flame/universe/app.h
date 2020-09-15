@@ -194,7 +194,7 @@ namespace flame
 	{
 		std::vector<graphics::ImageView*> vs(swapchain->get_images_count());
 		for (auto i = 0; i < vs.size(); i++)
-			vs[i] = swapchain->get_image(i)->get_default_view();
+			vs[i] = swapchain->get_image(i)->get_view();
 		canvas->set_target(vs.size(), vs.data());
 	}
 

@@ -22,11 +22,11 @@ namespace flame
 
 			VkDeviceMemory vk_memory = 0;
 			VkImage vk_image = 0;
-			std::vector<std::unique_ptr<ImageViewPrivate>> default_views;
+			std::vector<std::unique_ptr<ImageViewPrivate>> views;
 
 			void init(const Vec2u& size);
 			void build_default_views();
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool is_cube = false);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
@@ -38,7 +38,7 @@ namespace flame
 			uint get_layer() const override { return layer; }
 			SampleCount get_sample_count() const override { return sample_count; }
 
-			ImageView* get_default_view(uint level) const override { return (ImageView*)default_views[level].get(); }
+			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
 			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
 
@@ -60,7 +60,7 @@ namespace flame
 
 			VkImageView vk_image_view;
 
-			ImageViewPrivate(ImagePrivate* image, ImageViewType type = ImageView2D, const ImageSubresource& subresource = {}, const ImageSwizzle& swizzle = {});
+			ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type = ImageView2D, const ImageSubresource& subresource = {}, const ImageSwizzle& swizzle = {});
 			~ImageViewPrivate();
 
 			void release() override { delete this; }

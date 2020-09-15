@@ -51,14 +51,14 @@ namespace flame
 
 		void ImagePrivate::build_default_views()
 		{
-			default_views.resize(level);
+			views.resize(level);
 			for (auto i = 0; i < level; i++)
-				default_views[i].reset(new ImageViewPrivate(this, ImageView2D, { (uint)i }));
+				views[i].reset(new ImageViewPrivate(this, false, ImageView2D, { (uint)i }));
 			if (level > 1)
-				default_views.emplace_back(new ImageViewPrivate(this, ImageView2D, { (uint)0, (uint)level }));
+				views.emplace_back(new ImageViewPrivate(this, false, ImageView2D, { (uint)0, (uint)level }));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) :
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool is_cube) :
 			device(d),
 			format(format),
 			level(_level),
@@ -69,7 +69,7 @@ namespace flame
 
 			VkImageCreateInfo imageInfo;
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-			imageInfo.flags = 0;
+			imageInfo.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 			imageInfo.pNext = nullptr;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
 			imageInfo.format = to_backend(format);
@@ -119,7 +119,7 @@ namespace flame
 				cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 				cb->end();
 				auto q = device->graphics_queue.get();
-				q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+				q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 				q->wait_idle();
 			}
 		}
@@ -156,7 +156,7 @@ namespace flame
 			cb->image_barrier(this, {}, ImageLayoutTransferDst, after_layout);
 			cb->end();
 			auto q = device->graphics_queue.get();
-			q->submit(std::array{ cb.get()}, nullptr, nullptr, nullptr);
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 		}
 
@@ -178,7 +178,7 @@ namespace flame
 			cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = device->graphics_queue.get();
-			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 
 			stag_buf->map();
@@ -207,7 +207,7 @@ namespace flame
 			cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = device->graphics_queue.get();
-			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 		}
 
@@ -229,7 +229,7 @@ namespace flame
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = d->graphics_queue.get();
-			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 
 			return i;
@@ -329,17 +329,17 @@ namespace flame
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			cb->end();
 			auto q = d->graphics_queue.get();
-			q->submit(std::array{ cb.get() }, nullptr, nullptr, nullptr);
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 
 			return i;
 		}
 
-		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data); }
+		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool is_cube) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data, is_cube); }
 		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage) { return ImagePrivate::create((DevicePrivate*)d, bmp, extra_usage); }
 		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage) { return ImagePrivate::create((DevicePrivate*)d, filename, extra_usage); }
 
-		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
+		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),
 			device(image->device),
 			type(type),
@@ -364,6 +364,9 @@ namespace flame
 			info.subresourceRange.layerCount = subresource.layer_count;
 
 			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &vk_image_view));
+
+			if (auto_released)
+				image->views.emplace_back(this);
 		}
 
 		ImageViewPrivate::~ImageViewPrivate()
@@ -371,9 +374,9 @@ namespace flame
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
 		}
 
-		ImageView* ImageView::create(Image* image, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle)
+		ImageView* ImageView::create(Image* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle)
 		{
-			return new ImageViewPrivate((ImagePrivate*)image, type, subresource, swizzle);
+			return new ImageViewPrivate((ImagePrivate*)image, auto_released, type, subresource, swizzle);
 		}
 
 		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge) :

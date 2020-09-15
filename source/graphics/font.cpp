@@ -41,14 +41,14 @@ namespace flame
 
 			bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, false));
+			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, nullptr, false));
 			image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
 			ImageSwizzle swz;
 			swz.r = SwizzleOne;
 			swz.g = SwizzleOne;
 			swz.b = SwizzleOne;
 			swz.a = SwizzleR;
-			view.reset(new ImageViewPrivate(image.get(), ImageView2D, {}, swz));
+			view = new ImageViewPrivate(image.get(), true, ImageView2D, {}, swz);
 		}
 
 		GlyphPrivate* FontAtlasPrivate::get_glyph(wchar_t code, uint size)

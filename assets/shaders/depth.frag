@@ -4,6 +4,7 @@
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
+layout (location = 2) in vec3 i_coord;
 
 struct MaterialInfo
 {
@@ -25,6 +26,8 @@ layout (set = 0, binding = 1) buffer readonly MaterialInfos
 
 layout (set = 0, binding = 2) uniform sampler2D maps[128];
 
+layout (location = 0) out float o_color;
+
 void main()
 {
 	MaterialInfo material = material_infos[i_mat_id];
@@ -37,4 +40,6 @@ void main()
 
 	if (color.a < material.alpha_test)
 		discard;
+
+	o_color = length(i_coord);
 }
