@@ -27,6 +27,11 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
+	void cMeshInstancePrivate::set_cast_shadow(bool v)
+	{
+		cast_shadow = v;
+	}
+
 	void cMeshInstancePrivate::on_gain_canvas()
 	{
 		get_mesh();
@@ -49,7 +54,7 @@ namespace flame
 	void cMeshInstancePrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_index != -1 && mesh_index != -1)
-			canvas->draw_mesh(model_index, mesh_index, node->transform, Mat4f(node->axes));
+			canvas->draw_mesh(model_index, mesh_index, node->transform, Mat4f(node->axes), cast_shadow);
 	}
 
 	cMeshInstance* cMeshInstance::create()

@@ -27,11 +27,16 @@ namespace flame
 		int mesh_index = -1;
 		graphics::ModelMesh* mesh = nullptr;
 
+		bool cast_shadow = true;
+
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
 		int get_mesh_index() const override { return mesh_index; }
 		void set_mesh_index(int id) override;
+
+		bool get_cast_shadow() const override { return cast_shadow; }
+		void set_cast_shadow(bool v) override;
 
 		void on_gain_canvas();
 
