@@ -447,5 +447,20 @@ namespace flame
 		{
 			return new QueuePrivate((DevicePrivate*)d, queue_family_idx);
 		}
+
+		ImmediateCommandBuffer::ImmediateCommandBuffer(DevicePrivate* d) :
+			d(d)
+		{
+			cb.reset(new CommandBufferPrivate(d->graphics_command_pool.get()));
+			cb->begin(true);
+		}
+
+		ImmediateCommandBuffer::~ImmediateCommandBuffer()
+		{
+			cb->end();
+			auto q = d->graphics_queue.get();
+			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
+			q->wait_idle();
+		}
 	}
 }

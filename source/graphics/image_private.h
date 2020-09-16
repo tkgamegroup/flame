@@ -26,7 +26,7 @@ namespace flame
 
 			void init(const Vec2u& size);
 			void build_default_views();
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool is_cube = false);
+			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
@@ -40,13 +40,8 @@ namespace flame
 
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
-			void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) override;
-
-			void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) override;
-			void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) override;
-
-			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone);
-			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage = ImageUsageNone);
+			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp);
+			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename);
 		};
 
 		struct ImageViewPrivate : ImageView

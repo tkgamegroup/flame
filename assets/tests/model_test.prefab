@@ -8,21 +8,13 @@
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
-    <entity>
-      <cNode pos="0,15,0" />
-      <cMeshInstance src="cube" mesh_index="0" />
-    </entity>
-    <entity>
-      <cNode pos="0,20,0" scale="10,1,10" />
-      <cMeshInstance src="cube" mesh_index="0" />
-    </entity>
     <entity src="@mod" >
       <cNode scale="0.1,0.1,0.1" />
     </entity>
     <entity>
-      <cNode pos="0,10,0" scale="0.2,0.2,0.2" />
+      <cNode pos="5,20,5" scale="0.2,0.2,0.2" />
       <cMeshInstance src="sphere" mesh_index="0" cast_shadow="false" />
-      <cLight color="1.0,1.0,1.0" cast_shadow="true" />
+      <cLight color="2.0,2.0,2.0" cast_shadow="true" />
       <cScript src="object_controller.lua" />
     </entity>
     <entity>

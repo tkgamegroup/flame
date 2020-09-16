@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing, void* data) :
+		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing) :
 			device(d)
 		{
 			size = _size;
@@ -42,9 +42,6 @@ namespace flame
 			chk_res(vkAllocateMemory(d->vk_device, &alloc_info, nullptr, &vk_memory));
 
 			chk_res(vkBindBufferMemory(d->vk_device, vk_buffer, vk_memory, 0));
-
-			if (data)
-				copy_from_data(data);
 		}
 
 		BufferPrivate::~BufferPrivate()
@@ -85,29 +82,17 @@ namespace flame
 			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
 		}
 
-		void BufferPrivate::copy_from_data(void* data)
+		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing)
 		{
-			auto stag_buf = std::make_unique<BufferPrivate>(device, size, BufferUsageTransferSrc, MemoryPropertyHost);
-
-			stag_buf->map();
-			memcpy(stag_buf->mapped, data, size);
-			stag_buf->flush();
-			stag_buf->unmap();
-
-			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->begin(true);
-			BufferCopy cpy;
-			cpy.size = size;
-			cb->copy_buffer(stag_buf.get(), this, { &cpy, 1 });
-			cb->end();
-			auto q = device->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
+			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop, sharing);
 		}
 
-		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing, void* data)
+		ImmediateStagingBuffer::ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data)
 		{
-			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop, sharing, data);
+			buf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost));
+			buf->map();
+			memcpy(buf->mapped, data, size);
+			buf->flush();
 		}
 	}
 }

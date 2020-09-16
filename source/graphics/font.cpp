@@ -1,6 +1,8 @@
 #include <flame/serialize.h>
 #include <flame/foundation/bitmap.h>
-#include <flame/graphics/device.h>
+#include "device_private.h"
+#include "command_private.h"
+#include "buffer_private.h"
 #include "image_private.h"
 #include "font_private.h"
 
@@ -34,15 +36,19 @@ namespace flame
 
 		const auto font_atlas_size = Vec2u(1024);
 
-		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> _fonts)
+		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> _fonts) :
+			d(d)
 		{
 			for (auto f : _fonts)
 				fonts.push_back(f);
 
 			bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst, nullptr, false));
-			image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(0, 0, 0, 255));
+			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
+			ImmediateCommandBuffer cb(d);
+			cb->image_barrier(image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->clear_color_image(image.get(), Vec4c(0, 0, 0, 255));
+			cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			ImageSwizzle swz;
 			swz.r = SwizzleOne;
 			swz.g = SwizzleOne;
@@ -92,7 +98,14 @@ namespace flame
 						{
 							auto& atlas_pos = n->pos;
 
-							image->set_pixels(atlas_pos, g->size, bitmap);
+							ImmediateStagingBuffer stag(d, image_pitch(g->size.x()) * g->size.y(), bitmap);
+							ImmediateCommandBuffer cb(d);
+							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
+							BufferImageCopy cpy;
+							cpy.image_offset = atlas_pos;
+							cpy.image_extent = g->size;
+							cb->copy_buffer_to_image(stag.buf.get(), image.get(), { &cpy, 1 });
+							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 							g->uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->size.y()) / image->sizes[0],
 								Vec2f(atlas_pos.x() + g->size.x(), atlas_pos.y()) / image->sizes[0]);

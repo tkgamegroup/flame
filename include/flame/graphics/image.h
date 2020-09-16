@@ -66,15 +66,9 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
-			virtual void clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color) = 0;
-
-			// accepted formats for get/set pixels: Format_R8G8B8A8_UNORM, Format_R16G16B16A16_UNORM
-			virtual void get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst) = 0;
-			virtual void set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src) = 0;
-
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data = nullptr, bool is_cube = false);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage = ImageUsageNone); // default usage: ShaderSampled, TransferDst
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage = ImageUsageNone); // default usage: ShaderSampled, TransferDst
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename);
 
 		};
 

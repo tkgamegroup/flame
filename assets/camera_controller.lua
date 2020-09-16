@@ -2,6 +2,7 @@ local node = entity:get_component_n("cNode")
 make_obj(node, "cNode")
 
 camera = {
+	speed = 0.5,
 	node = node,
 	pos = node:get_pos(),
 	yaw = 0,
@@ -107,23 +108,23 @@ root_event_receiver:add_mouse_move_listener_s(get_slot(
 entity:add_event_s(get_slot(
 	function()
 		if camera.w then
-			camera:move(camera.dir1, -0.2)
+			camera:move(camera.dir1, -camera.speed)
 		end
 		if camera.s then
-			camera:move(camera.dir1, 0.2)
+			camera:move(camera.dir1, camera.speed)
 		end
 		if camera.a then
-			camera:move(camera.dir2, -0.2)
+			camera:move(camera.dir2, -camera.speed)
 		end
 		if camera.d then
-			camera:move(camera.dir2, 0.2)
+			camera:move(camera.dir2, camera.speed)
 		end
 		if camera.sp then
-			camera.pos.y = camera.pos.y + 0.2
+			camera.pos.y = camera.pos.y + camera.speed
 			camera.node:set_pos(camera.pos)
 		end
 		if camera.sh then
-			camera.pos.y = camera.pos.y - 0.2
+			camera.pos.y = camera.pos.y - camera.speed
 			camera.node:set_pos(camera.pos)
 		end
 	end

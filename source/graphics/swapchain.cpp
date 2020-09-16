@@ -129,18 +129,13 @@ namespace flame
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
-				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-				cb->begin(true);
+				ImmediateCommandBuffer cb(device);
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{
 					images[i].reset(new ImagePrivate(device, swapchain_format, size, 1, 1, native_images[i]));
 					cb->image_barrier(images[i].get(), {}, ImageLayoutUndefined, ImageLayoutPresent);
 				}
-				cb->end();
-				auto q = device->graphics_queue.get();
-				q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-				q->wait_idle();
 			}
 		}
 

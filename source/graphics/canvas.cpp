@@ -84,6 +84,7 @@ namespace flame
 		static SamplerPrivate* shadow_sampler = nullptr;
 		static RenderpassPrivate* image1_8_renderpass = nullptr;
 		static RenderpassPrivate* image1_16_renderpass = nullptr;
+		static RenderpassPrivate* image1_r32_renderpass = nullptr;
 		static RenderpassPrivate* forward8_renderpass = nullptr;
 		static RenderpassPrivate* forward16_renderpass = nullptr;
 		static RenderpassPrivate* forward8_msaa_renderpass = nullptr;
@@ -91,6 +92,8 @@ namespace flame
 		static RenderpassPrivate* depth_renderpass = nullptr;
 		static DescriptorSetLayoutPrivate* element_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* mesh_descriptorsetlayout = nullptr;
+		static DescriptorSetLayoutPrivate* material_descriptorsetlayout = nullptr;
+		static DescriptorSetLayoutPrivate* light_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* forward_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* sampler1_descriptorsetlayout = nullptr;
 		static PipelineLayoutPrivate* element_pipelinelayout = nullptr;
@@ -112,6 +115,8 @@ namespace flame
 		static PipelinePrivate* blurh16_pipeline[10] = {};
 		static PipelinePrivate* blurv8_pipeline[10] = {};
 		static PipelinePrivate* blurv16_pipeline[10] = {};
+		static PipelinePrivate* blurh_depth_pipeline = nullptr;
+		static PipelinePrivate* blurv_depth_pipeline = nullptr;
 		static PipelinePrivate* blit8_pipeline = nullptr;
 		static PipelinePrivate* blit16_pipeline = nullptr;
 		static PipelinePrivate* filter_bright_pipeline = nullptr;
@@ -128,7 +133,7 @@ namespace flame
 			{
 				initialized = true;
 
-				shadow_sampler = new SamplerPrivate(device, FilterNearest, FilterNearest, false, false);
+				shadow_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, false, false);
 
 				{
 					RenderpassAttachmentInfo att;
@@ -145,6 +150,8 @@ namespace flame
 					image1_8_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp, 1 });
 					att.format = Format_R16G16B16A16_SFLOAT;
 					image1_16_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp, 1 });
+					att.format = Format_R32_SFLOAT;
+					image1_r32_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp, 1 });
 				}
 
 				{
@@ -197,7 +204,7 @@ namespace flame
 
 				{
 					RenderpassAttachmentInfo atts[2];
-					atts[0].format = Format_R16_SFLOAT;
+					atts[0].format = Format_R32_SFLOAT;
 					atts[0].load_op = AttachmentClear;
 					atts[0].initia_layout = ImageLayoutShaderReadOnly;
 					atts[1].format = Format_Depth16;
@@ -222,22 +229,32 @@ namespace flame
 				}
 
 				{
+					DescriptorBindingInfo db;
+					db.type = DescriptorStorageBuffer;
+					mesh_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+				}
+
+				{
+					DescriptorBindingInfo dbs[2];
+					dbs[0].type = DescriptorStorageBuffer;
+					dbs[1].type = DescriptorSampledImage;
+					dbs[1].count = 128;
+					material_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
+				}
+
+				{
 					DescriptorBindingInfo dbs[3];
 					dbs[0].type = DescriptorStorageBuffer;
 					dbs[1].type = DescriptorStorageBuffer;
 					dbs[2].type = DescriptorSampledImage;
-					dbs[2].count = 128;
-					mesh_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
+					dbs[2].count = 4;
+					light_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
 				}
 
 				{
-					DescriptorBindingInfo dbs[4];
-					dbs[0].type = DescriptorUniformBuffer;
-					dbs[1].type = DescriptorStorageBuffer;
-					dbs[2].type = DescriptorStorageBuffer;
-					dbs[3].type = DescriptorSampledImage;
-					dbs[3].count = 4;
-					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
+					DescriptorBindingInfo db;
+					db.type = DescriptorUniformBuffer;
+					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
 				{
@@ -251,14 +268,22 @@ namespace flame
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
 						mesh_descriptorsetlayout,
+						material_descriptorsetlayout,
+						light_descriptorsetlayout,
 						forward_descriptorsetlayout
 					};
-					forward_pipelinelayout = new PipelineLayoutPrivate(d, dsls, sizeof(Vec2f));
+					forward_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
 				}
 				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, 0);
 				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
 				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
-				depth_pipelinelayout = new PipelineLayoutPrivate(d, { &mesh_descriptorsetlayout, 1 }, sizeof(Mat4f) * 2);
+				{
+					DescriptorSetLayoutPrivate* dsls[] = {
+						mesh_descriptorsetlayout,
+						material_descriptorsetlayout
+					};
+					depth_pipelinelayout = new PipelineLayoutPrivate(d, dsls, sizeof(Mat4f) * 2);
+				}
 
 				{
 					VertexAttributeInfo vias[3];
@@ -312,20 +337,14 @@ namespace flame
 					vi.buffers = &vib;
 					RasterInfo rst;
 					DepthInfo dep;
-					BlendOption bo;
-					bo.enable = true;
-					bo.src_color = BlendFactorSrcAlpha;
-					bo.dst_color = BlendFactorOneMinusSrcAlpha;
-					bo.src_alpha = BlendFactorOne;
-					bo.dst_alpha = BlendFactorZero;
 					forward8_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
-						&dep, { &bo, 1 });
+						&dep);
 					forward16_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
-						&dep, { &bo, 1 });
+						&dep);
 					forward8_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
-						&dep, { &bo, 1 });
+						&dep);
 					forward16_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
-						&dep, { &bo, 1 });
+						&dep);
 				}
 
 				{
@@ -370,6 +389,22 @@ namespace flame
 						blurv8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
 						blurv16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
 					}
+				}
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(d, L"fullscreen.vert"),
+						new ShaderPrivate(d, L"blur_depth.frag", "R5 H\n")
+					};
+					blurh_depth_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_r32_renderpass, 0);
+				}
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(d, L"fullscreen.vert"),
+						new ShaderPrivate(d, L"blur_depth.frag", "R5 V\n")
+					};
+					blurv_depth_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_r32_renderpass, 0);
 				}
 
 				{
@@ -421,6 +456,8 @@ namespace flame
 				}
 			}
 
+			ImmediateCommandBuffer cb(device);
+
 			element_vertex_buffer.create(d, 360000);
 			element_index_buffer.create(d, 240000);
 			model_vertex_buffer_1.create(d, 600000);
@@ -432,7 +469,9 @@ namespace flame
 			point_light_indices_buffer.create(d, 1);
 
 			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
-			white_image->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
+			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->clear_color_image(white_image.get(), Vec4c(255));
+			cb->image_barrier(white_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			auto iv_wht = white_image->views[0].get();
 			for (auto i = 0; i < resources_count; i++)
 			{
@@ -441,9 +480,7 @@ namespace flame
 				resources[i].reset(r);
 			}
 
-			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->begin(true);
-
+			auto sp_nr = d->sampler_nearest.get();
 			auto sp_ln = d->sampler_linear.get();
 
 			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
@@ -452,47 +489,56 @@ namespace flame
 
 			mesh_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), mesh_descriptorsetlayout));
 			mesh_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
-			mesh_descriptorset->set_buffer(1, 0, material_info_buffer.buf.get());
+
+			material_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), material_descriptorsetlayout));
+			material_descriptorset->set_buffer(0, 0, material_info_buffer.buf.get());
 			model_textures.resize(128);
 			for (auto i = 0; i < model_textures.size(); i++)
-				mesh_descriptorset->set_image(2, i, iv_wht, sp_ln);
+				material_descriptorset->set_image(1, i, iv_wht, sp_ln);
+
+			light_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), light_descriptorsetlayout));
+			light_descriptorset->set_buffer(0, 0, point_light_info_buffer.buf.get());
+			light_descriptorset->set_buffer(1, 0, point_light_indices_buffer.buf.get());
+			{
+				shadow_depth_image.reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageAttachment));
+				cb->image_barrier(shadow_depth_image.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
+				shadow_blur_pingpong_image.reset(new ImagePrivate(device, Format_R32_SFLOAT, shadow_map_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+				auto iv_pingpong = shadow_blur_pingpong_image->views[0].get();
+				shadow_blur_pingpong_image_framebuffer.reset(new FramebufferPrivate(device, image1_r32_renderpass, { &iv_pingpong, 1 }));
+				shadow_blur_pingpong_image_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), sampler1_descriptorsetlayout));
+				shadow_blur_pingpong_image_descriptorset->set_image(0, 0, iv_pingpong, sp_nr);
+
+				point_light_shadow_maps.resize(4);
+				point_light_shadow_map_depth_framebuffers.resize(point_light_shadow_maps.size() * 6);
+				point_light_shadow_map_framebuffers.resize(point_light_shadow_maps.size() * 6);
+				point_light_shadow_map_descriptorsets.resize(point_light_shadow_maps.size() * 6);
+				for (auto i = 0; i < point_light_shadow_maps.size(); i++)
+				{
+					point_light_shadow_maps[i].reset(new ImagePrivate(device, Format_R32_SFLOAT, shadow_map_size, 1, 6, SampleCount_1, ImageUsageSampled | ImageUsageAttachment, true));
+					cb->image_barrier(point_light_shadow_maps[i].get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
+					for (auto j = 0; j < 6; j++)
+					{
+						auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageView2D, { 0U, 1U, (uint)j, 1U });
+						ImageViewPrivate* vs[] = {
+							iv,
+							shadow_depth_image->views[0].get()
+						};
+						point_light_shadow_map_depth_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, depth_renderpass, vs));
+						point_light_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, image1_r32_renderpass, { &iv, 1 }));
+						point_light_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(d->descriptor_pool.get(), sampler1_descriptorsetlayout));
+						point_light_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, sp_nr);
+					}
+					auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageViewCube, { 0U, 1U, 0U, 6U });
+					light_descriptorset->set_image(2, i, iv, shadow_sampler);
+				}
+			}
 
 			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
 			forward_descriptorset->set_buffer(0, 0, camera_data_buffer.buf.get());
-			forward_descriptorset->set_buffer(1, 0, point_light_info_buffer.buf.get());
-			forward_descriptorset->set_buffer(2, 0, point_light_indices_buffer.buf.get());
-			point_light_shadow_maps.resize(4);
-			point_light_shadow_depth_images.resize(4);
-			point_light_shadow_map_framebuffers.resize(point_light_shadow_maps.size() * 6);
-			for (auto i = 0; i < point_light_shadow_maps.size(); i++)
-			{
-				point_light_shadow_maps[i].reset(new ImagePrivate(device, Format_R16_SFLOAT, shadow_map_size, 1, 6, SampleCount_1, ImageUsageSampled | ImageUsageAttachment, nullptr, true));
-				point_light_shadow_depth_images[i].reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 6, SampleCount_1, ImageUsageAttachment, nullptr, true));
-				ImageSubresource sr;
-				sr.layer_count = 6;
-				cb->image_barrier(point_light_shadow_maps[i].get(), sr, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
-				cb->image_barrier(point_light_shadow_depth_images[i].get(), sr, ImageLayoutUndefined, ImageLayoutAttachment);
-				for (auto j = 0; j < 6; j++)
-				{
-					ImageSubresource sr;
-					sr.base_layer = j;
-					ImageViewPrivate* vs[] = {
-						new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageView2D, sr),
-						new ImageViewPrivate(point_light_shadow_depth_images[i].get(), true, ImageView2D, sr)
-					};
-					point_light_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, depth_renderpass, vs));
-				}
-				auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageViewCube, sr);
-				forward_descriptorset->set_image(3, i, iv, shadow_sampler);
-			}
 
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
 			bind_model((ModelPrivate*)Model::get_standard(StandardModelSphere), "sphere");
-
-			cb->end();
-			auto q = device->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -522,8 +568,7 @@ namespace flame
 				target_size = 0.f;
 			else
 			{
-				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-				cb->begin(true);
+				ImmediateCommandBuffer cb(device);
 
 				auto sp_nr = device->sampler_nearest.get();
 				auto sp_ln = device->sampler_linear.get();
@@ -601,12 +646,12 @@ namespace flame
 				}
 
 				back_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_B8G8R8A8_UNORM, target_size, 0xFFFFFFFF, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
+				cb->image_barrier(back_image.get(), { 0U, back_image->level, 0U, 1U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 				back_framebuffers.resize(back_image->level);
 				back_nearest_descriptorsets.resize(back_image->level);
 				back_linear_descriptorsets.resize(back_image->level);
 				for (auto i = 0; i < back_image->level; i++)
 				{
-					cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					auto iv = back_image->views[i].get();
 					back_framebuffers[i].reset(new FramebufferPrivate(device, hdr ? image1_16_renderpass : image1_8_renderpass, { &iv, 1 }));
 					back_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
@@ -614,11 +659,6 @@ namespace flame
 					back_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
 					back_linear_descriptorsets[i]->set_image(0, 0, iv, sp_ln);
 				}
-
-				cb->end();
-				auto q = device->graphics_queue.get();
-				q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-				q->wait_idle();
 			}
 		}
 
@@ -1192,39 +1232,39 @@ namespace flame
 									{
 										for (auto x = 0; x < size.x(); x++)
 										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] = 
-												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
 										}
 									}
 								}
 								else if (color_map && !alpha_map)
 								{
-									auto a = ma->color.a() * 255;
-									for (auto y = 0; y < size.y(); y++)
+								auto a = ma->color.a() * 255;
+								for (auto y = 0; y < size.y(); y++)
+								{
+									for (auto x = 0; x < size.x(); x++)
 									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], a);
-										}
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], a);
 									}
+								}
 								}
 								else if (!color_map && alpha_map)
 								{
-									auto col = Vec3c(Vec3f(ma->color) * 255.f);
-									for (auto y = 0; y < size.y(); y++)
+								auto col = Vec3c(Vec3f(ma->color) * 255.f);
+								for (auto y = 0; y < size.y(); y++)
+								{
+									for (auto x = 0; x < size.x(); x++)
 									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * 3]);
-										}
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * 3]);
 									}
+								}
 								}
 
 								auto img = ImagePrivate::create(device, dst_map);
 								model_textures[tex_idx].reset(img);
-								mesh_descriptorset->set_image(2, tex_idx, img->views.back().get(), sp);
+								material_descriptorset->set_image(1, tex_idx, img->views.back().get(), sp);
 								bm.color_map_index = tex_idx;
 								tex_idx++;
 
@@ -1263,7 +1303,7 @@ namespace flame
 
 								auto img = ImagePrivate::create(device, dst_map);
 								model_textures[tex_idx].reset(img);
-								mesh_descriptorset->set_image(2, tex_idx, img->views.back().get(), sp);
+								material_descriptorset->set_image(1, tex_idx, img->views.back().get(), sp);
 								bm.metallic_roughness_ao_map_index = tex_idx;
 								tex_idx++;
 
@@ -1291,15 +1331,12 @@ namespace flame
 					}
 				}
 
-				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-				cb->begin(true);
-				model_vertex_buffer_1.upload(cb.get());
-				model_index_buffer.upload(cb.get());
-				material_info_buffer.upload(cb.get());
-				cb->end();
-				auto q = device->graphics_queue.get();
-				q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-				q->wait_idle();
+				{
+					ImmediateCommandBuffer cb(device);
+					model_vertex_buffer_1.upload(cb.cb.get());
+					model_index_buffer.upload(cb.cb.get());
+					material_info_buffer.upload(cb.cb.get());
+				}
 
 				uploaded_models_count = models.size();
 				uploaded_vertices_count += model_vertex_buffer_1.stg_num();
@@ -1549,8 +1586,6 @@ namespace flame
 							cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 							cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
 							cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
-							cb->bind_pipeline(depth_pipeline);
-							cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
 
 							auto lights_count = point_light_info_buffer.stg_num();
 							for (auto i = 0; i < lights_count; i++)
@@ -1564,44 +1599,43 @@ namespace flame
 											Vec4f(1000.f, 0.f, 0.f, 0.f),
 											Vec4f(1.f, 0.f, 0.f, 0.f)
 										};
-										cb->begin_renderpass(point_light_shadow_map_framebuffers[li.shadow_map_index * 6 + j].get(), cvs);
-
-										static const auto project_matrix = make_project_matrix(90.f * ANG_RAD, 1.f, 1.f, 1000.f);
-
+										cb->begin_renderpass(point_light_shadow_map_depth_framebuffers[li.shadow_map_index * 6 + j].get(), cvs);
+										cb->bind_pipeline(depth_pipeline);
+										cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
+										cb->bind_descriptor_set(material_descriptorset.get(), 1, depth_pipelinelayout);
+										static const auto proj = make_project_matrix(90.f * ANG_RAD, 1.f, 1.f, 1000.f);
 										struct
 										{
 											Mat4f matrix;
 											Vec4f coord;
-											Vec4f dummy0;
-											Vec4f dummy1;
-											Vec4f dummy2;
+											Vec4f dummy[3];
 										}pc;
 										pc.matrix = Mat4f(1.f);
 										switch (j)
 										{
 										case 0:
 											pc.matrix[0][0] = -1.f;
-											pc.matrix = pc.matrix * project_matrix * make_view_matrix(li.coord, li.coord + Vec3f(1.f, 0.f, 0.f), Vec3f(0.f, 1.f, 0.f));
+											pc.matrix = pc.matrix * proj * make_view_matrix(li.coord, li.coord + Vec3f(1.f, 0.f, 0.f), Vec3f(0.f, 1.f, 0.f));
 											break;
 										case 1:
 											pc.matrix[0][0] = -1.f;
-											pc.matrix = pc.matrix * project_matrix * make_view_matrix(li.coord, li.coord + Vec3f(-1.f, 0.f, 0.f), Vec3f(0.f, 1.f, 0.f));
+											pc.matrix = pc.matrix * proj * make_view_matrix(li.coord, li.coord + Vec3f(-1.f, 0.f, 0.f), Vec3f(0.f, 1.f, 0.f));
 											break;
 										case 2:
 											pc.matrix[1][1] = -1.f;
-											pc.matrix = pc.matrix * project_matrix * make_view_matrix(li.coord, li.coord + Vec3f(0.f, 1.f, 0.f), Vec3f(1.f, 0.f, 0.f));
+											pc.matrix = pc.matrix * proj * make_view_matrix(li.coord, li.coord + Vec3f(0.f, 1.f, 0.f), Vec3f(1.f, 0.f, 0.f));
 											break;
 										case 3:
 											pc.matrix[1][1] = -1.f;
-											pc.matrix = pc.matrix * project_matrix * make_view_matrix(li.coord, li.coord + Vec3f(0.f, -1.f, 0.f), Vec3f(0.f, 0.f, -1.f));
+											pc.matrix = pc.matrix * proj * make_view_matrix(li.coord, li.coord + Vec3f(0.f, -1.f, 0.f), Vec3f(0.f, 0.f, -1.f));
 											break;
 										case 4:
 											pc.matrix[0][0] = -1.f;
-											pc.matrix = pc.matrix * project_matrix * make_view_matrix(li.coord, li.coord + Vec3f(0.f, 0.f, 1.f), Vec3f(0.f, 1.f, 0.f));
+											pc.matrix = pc.matrix * proj * make_view_matrix(li.coord, li.coord + Vec3f(0.f, 0.f, 1.f), Vec3f(0.f, 1.f, 0.f));
 											break;
 										case 5:
 											pc.matrix[0][0] = -1.f;
-											pc.matrix = pc.matrix * project_matrix * make_view_matrix(li.coord, li.coord + Vec3f(0.f, 0.f, -1.f), Vec3f(0.f, 1.f, 0.f));
+											pc.matrix = pc.matrix * proj * make_view_matrix(li.coord, li.coord + Vec3f(0.f, 0.f, -1.f), Vec3f(0.f, 1.f, 0.f));
 											break;
 										}
 										pc.coord = Vec4f(li.coord, 0.f);
@@ -1609,8 +1643,25 @@ namespace flame
 										for (auto& m : shadow_casters)
 											cb->draw_indexed(m.first->idx_cnt, m.first->idx_off, m.first->vtx_off, 1, (m.second << 16) + m.first->mat_idx);
 										cb->end_renderpass();
-										cb->image_barrier(point_light_shadow_maps[li.shadow_map_index].get(), { 0U, 1U, 0U, 6U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+
+										cb->image_barrier(point_light_shadow_maps[li.shadow_map_index].get(), { 0U, 1U, (uint)j, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+										cb->begin_renderpass(shadow_blur_pingpong_image_framebuffer.get());
+										cb->bind_pipeline(blurh_depth_pipeline);
+										cb->bind_descriptor_set(point_light_shadow_map_descriptorsets[li.shadow_map_index * 6 + j].get(), 0, sampler1_pc4_pipelinelayout);
+										cb->push_constant_t(0, 1.f / shadow_map_size.x(), sampler1_pc4_pipelinelayout);
+										cb->draw(3, 1, 0, 0);
+										cb->end_renderpass();
+
+										cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+										cb->begin_renderpass(point_light_shadow_map_framebuffers[li.shadow_map_index * 6 + j].get());
+										cb->bind_pipeline(blurv_depth_pipeline);
+										cb->bind_descriptor_set(shadow_blur_pingpong_image_descriptorset.get(), 0, sampler1_pc4_pipelinelayout);
+										cb->push_constant_t(0, 1.f / shadow_map_size.y(), sampler1_pc4_pipelinelayout);
+										cb->draw(3, 1, 0, 0);
+										cb->end_renderpass();
 									}
+
+									cb->image_barrier(point_light_shadow_maps[li.shadow_map_index].get(), { 0U, 1U, 0U, 6U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 								}
 							}
 
@@ -1633,9 +1684,9 @@ namespace flame
 					}
 					cb->bind_pipeline(pl_fwd);
 					cb->bind_descriptor_set(mesh_descriptorset.get(), 0, forward_pipelinelayout);
-					cb->bind_descriptor_set(forward_descriptorset.get(), 1, forward_pipelinelayout);
-					auto shadow_map_advance = 1.f / Vec2f(shadow_map_size);
-					cb->push_constant(0, sizeof(Vec2f), &shadow_map_advance, forward_pipelinelayout);
+					cb->bind_descriptor_set(material_descriptorset.get(), 1, forward_pipelinelayout);
+					cb->bind_descriptor_set(light_descriptorset.get(), 2, forward_pipelinelayout);
+					cb->bind_descriptor_set(forward_descriptorset.get(), 3, forward_pipelinelayout);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -1687,7 +1738,7 @@ namespace flame
 					cb->begin_renderpass(back_framebuffers[0].get());
 					cb->bind_pipeline(hdr ? blurh16_pipeline[blur_radius - 1] : blurh8_pipeline[blur_radius - 1]);
 					cb->bind_descriptor_set(dst_ds, 0, sampler1_pc4_pipelinelayout);
-					cb->push_constant_t(0, 1.f / target_size.x(), element_pipelinelayout);
+					cb->push_constant_t(0, 1.f / target_size.x(), sampler1_pc4_pipelinelayout);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
@@ -1696,7 +1747,7 @@ namespace flame
 					cb->begin_renderpass(dst_fb);
 					cb->bind_pipeline(hdr ? blurv16_pipeline[blur_radius - 1] : blurv8_pipeline[blur_radius - 1]);
 					cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0, sampler1_pc4_pipelinelayout);
-					cb->push_constant_t(0, 1.f / target_size.y(), element_pipelinelayout);
+					cb->push_constant_t(0, 1.f / target_size.y(), sampler1_pc4_pipelinelayout);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}

@@ -9,6 +9,7 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct DevicePrivate;
 		struct ImagePrivate;
 
 		struct FontPrivate : Font
@@ -77,6 +78,7 @@ namespace flame
 			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
+			DevicePrivate* d;
 			std::unique_ptr<ImagePrivate> image;
 			ImageViewPrivate* view;
 

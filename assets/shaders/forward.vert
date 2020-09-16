@@ -2,14 +2,14 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "mesh_set.h"
+#include "mesh_dsl.glsl"
 
 layout (location = 0) in vec3 i_pos;
 layout (location = 1) in vec2 i_uv;
 layout (location = 2) in vec3 i_normal;
 //layout (location = 3) in vec3 i_tangent;
 
-layout (set = 1, binding = 0) uniform CameraData
+layout (set = 3, binding = 0) uniform CameraData
 {
 	mat4 view;
 	mat4 proj;

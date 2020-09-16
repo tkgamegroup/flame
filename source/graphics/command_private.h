@@ -199,5 +199,16 @@ namespace flame
 		{
 			((QueuePrivate*)this)->present((SwapchainPrivate*)s, (SemaphorePrivate*)wait_semaphore);
 		}
+
+		struct ImmediateCommandBuffer
+		{
+			DevicePrivate* d;
+			std::unique_ptr<CommandBufferPrivate> cb;
+
+			ImmediateCommandBuffer(DevicePrivate* d);
+			~ImmediateCommandBuffer();
+
+			CommandBufferPrivate* operator->() { return cb.get(); }
+		};
 	}
 }

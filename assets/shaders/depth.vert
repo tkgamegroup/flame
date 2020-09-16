@@ -2,7 +2,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "mesh_set.h"
+#include "mesh_dsl.glsl"
 
 layout (location = 0) in vec3 i_pos;
 layout (location = 1) in vec2 i_uv;
@@ -11,9 +11,7 @@ layout (push_constant) uniform PushConstantT
 {
 	mat4 matrix;
 	vec4 coord;
-	vec4 dummy0;
-	vec4 dummy1;
-	vec4 dummy2;
+	vec4 dummy[3];
 }pc;
 
 layout (location = 0) out flat uint o_mat_id;

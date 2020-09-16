@@ -288,13 +288,21 @@ namespace flame
 			TBuffer<PointLightIndices, BufferUsageStorage> point_light_indices_buffer;
 
 			std::vector<std::pair<BoundMesh*, uint>> shadow_casters;
+			std::unique_ptr<ImagePrivate> shadow_depth_image;
+			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
+			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
+
 			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
-			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_depth_images;
+			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> point_light_shadow_map_descriptorsets;
 			uint used_point_light_shadow_maps_count = 0;
 
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
 
 			std::vector<ImageViewPrivate*> target_imageviews;

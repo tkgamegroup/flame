@@ -2,6 +2,7 @@ local node = entity:get_component_n("cNode")
 make_obj(node, "cNode")
 
 controller = {
+	speed = 0.5,
 	node = node,
 	pos = node:get_pos(),
 	_8 = false,
@@ -64,27 +65,27 @@ root_event_receiver:add_key_up_listener_s(get_slot(
 entity:add_event_s(get_slot(
 	function()
 		if controller._8 then
-			controller.pos.x = controller.pos.x + 0.1
+			controller.pos.x = controller.pos.x + controller.speed
 			controller.node:set_pos(controller.pos)
 		end
 		if controller._5 then
-			controller.pos.x = controller.pos.x - 0.1
+			controller.pos.x = controller.pos.x - controller.speed
 			controller.node:set_pos(controller.pos)
 		end
 		if controller._4 then
-			controller.pos.z = controller.pos.z - 0.1
+			controller.pos.z = controller.pos.z - controller.speed
 			controller.node:set_pos(controller.pos)
 		end
 		if controller._6 then
-			controller.pos.z = controller.pos.z + 0.1
+			controller.pos.z = controller.pos.z + controller.speed
 			controller.node:set_pos(controller.pos)
 		end
 		if controller._7 then
-			controller.pos.y = controller.pos.y - 0.1
+			controller.pos.y = controller.pos.y - controller.speed
 			controller.node:set_pos(controller.pos)
 		end
 		if controller._9 then
-			controller.pos.y = controller.pos.y + 0.1
+			controller.pos.y = controller.pos.y + controller.speed
 			controller.node:set_pos(controller.pos)
 		end
 	end

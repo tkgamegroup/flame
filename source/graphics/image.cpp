@@ -58,7 +58,7 @@ namespace flame
 				views.emplace_back(new ImageViewPrivate(this, false, ImageView2D, { (uint)0, (uint)level }));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool is_cube) :
+		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
 			device(d),
 			format(format),
 			level(_level),
@@ -102,26 +102,6 @@ namespace flame
 			chk_res(vkBindImageMemory(d->vk_device, vk_image, vk_memory, 0));
 
 			build_default_views();
-
-			if (data)
-			{
-				auto staging_buffer = std::make_unique<BufferPrivate>(device, image_pitch(get_pixel_size(this) * size.x()) * size.y(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
-				staging_buffer->map();
-				memcpy(staging_buffer->mapped, data, staging_buffer->size);
-				staging_buffer->unmap();
-
-				auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-				cb->begin(true);
-				cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-				BufferImageCopy cpy;
-				cpy.image_extent = size;
-				cb->copy_buffer_to_image(staging_buffer.get(), this, { &cpy, 1 });
-				cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-				cb->end();
-				auto q = device->graphics_queue.get();
-				q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-				q->wait_idle();
-			}
 		}
 
 		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, void* native) :
@@ -147,95 +127,23 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::clear(ImageLayout current_layout, ImageLayout after_layout, const Vec4c& color)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp)
 		{
-			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->begin(true);
-			cb->image_barrier(this, {}, current_layout, ImageLayoutTransferDst);
-			cb->clear_color_image(this, color);
-			cb->image_barrier(this, {}, ImageLayoutTransferDst, after_layout);
-			cb->end();
-			auto q = device->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
-		}
+			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), 
+				Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
-		void ImagePrivate::get_pixels(const Vec2u& offset, const Vec2u& extent, void* dst)
-		{
-			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
-
-			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
-
-			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferDst, MemoryPropertyHost);
-
-			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->begin(true);
-			cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc);
-			BufferImageCopy cpy;
-			cpy.image_offset = offset;
-			cpy.image_extent = extent;
-			cb->copy_image_to_buffer(this, stag_buf.get(), { &cpy, 1 });
-			cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
-			cb->end();
-			auto q = device->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
-
-			stag_buf->map();
-			memcpy(dst, stag_buf->mapped, stag_buf->size);
-			stag_buf->flush();
-		}
-
-		void ImagePrivate::set_pixels(const Vec2u& offset, const Vec2u& extent, const void* src)
-		{
-			assert(format == Format_R8_UNORM || format == Format_R8G8B8A8_UNORM || format == Format_R16G16B16A16_UNORM);
-
-			auto data_size = image_pitch(get_pixel_size(this) * extent.x()) * extent.y();
-
-			auto stag_buf = std::make_unique<BufferPrivate>(device, data_size, BufferUsageTransferSrc, MemoryPropertyHost);
-			stag_buf->map();
-			memcpy(stag_buf->mapped, src, stag_buf->size);
-			stag_buf->flush();
-
-			auto cb = std::make_unique<CommandBufferPrivate>(device->graphics_command_pool.get());
-			cb->begin(true);
-			cb->image_barrier(this, {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
-			BufferImageCopy cpy;
-			cpy.image_offset = offset;
-			cpy.image_extent = extent;
-			cb->copy_buffer_to_image(stag_buf.get(), this, { &cpy, 1 });
-			cb->image_barrier(this, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->end();
-			auto q = device->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
-		}
-
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp, ImageUsageFlags extra_usage)
-		{
-			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | extra_usage);
-
-			auto staging_buffer = std::make_unique<BufferPrivate>(d, bmp->get_size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
-			staging_buffer->map();
-			memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
-			staging_buffer->unmap();
-
-			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
-			cb->begin(true);
-			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
+			ImmediateCommandBuffer cb(d);
 			BufferImageCopy cpy;
 			cpy.image_extent = i->sizes[0];
-			cb->copy_buffer_to_image(staging_buffer.get(), i, { &cpy, 1 });
+			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+			cb->copy_buffer_to_image(stag.buf.get(), i, { &cpy, 1 });
 			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->end();
-			auto q = d->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
 
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, ImageUsageFlags extra_usage)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -243,11 +151,7 @@ namespace flame
 				return nullptr;
 			}
 
-			int width, height, level, layer;
-			auto fmt = Format_Undefined;
-
-			std::unique_ptr<BufferPrivate> staging_buffer;
-			std::vector<BufferImageCopy> buffer_copy_regions;
+			ImagePrivate* ret = nullptr;
 
 			auto ext = filename.extension().string();
 			if (ext == ".ktx" || ext == ".dds")
@@ -302,42 +206,28 @@ namespace flame
 				if (channel == 3)
 					bmp->add_alpha_channel();
 
-				width = bmp->get_width();
-				height = bmp->get_height();
-				level = layer = 1;
+				ret = new ImagePrivate(d, get_image_format(channel, bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
-				fmt = get_image_format(channel, bmp->get_byte_per_channel());
-
-				staging_buffer.reset(new BufferPrivate(d, bmp->get_size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-				staging_buffer->map();
-				memcpy(staging_buffer->mapped, bmp->get_data(), staging_buffer->size);
-				staging_buffer->unmap();
+				ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
+				ImmediateCommandBuffer cb(d);
+				BufferImageCopy cpy;
+				cpy.image_extent = ret->sizes[0];
+				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(stag.buf.get(), ret, { &cpy, 1 });
+				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
 				bmp->release();
-
-				BufferImageCopy cpy;
-				cpy.image_extent = Vec2u(width, height);
-				buffer_copy_regions.push_back(cpy);
 			}
 
-			auto i = new ImagePrivate(d, fmt, Vec2u(width, height), level, layer, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | extra_usage);
-
-			auto cb = std::make_unique<CommandBufferPrivate>(d->graphics_command_pool.get());
-			cb->begin(true);
-			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->copy_buffer_to_image(staging_buffer.get(), i, { buffer_copy_regions.data(), buffer_copy_regions.size() });
-			cb->image_barrier(i, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
-			cb->end();
-			auto q = d->graphics_queue.get();
-			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
-			q->wait_idle();
-
-			return i;
+			return ret;
 		}
 
-		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, void* data, bool is_cube) { return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, data, is_cube); }
-		Image* Image::create(Device* d, Bitmap* bmp, ImageUsageFlags extra_usage) { return ImagePrivate::create((DevicePrivate*)d, bmp, extra_usage); }
-		Image* Image::create(Device* d, const wchar_t* filename, ImageUsageFlags extra_usage) { return ImagePrivate::create((DevicePrivate*)d, filename, extra_usage); }
+		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) 
+		{ 
+			return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, is_cube); 
+		}
+		Image* Image::create(Device* d, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)d, bmp); }
+		Image* Image::create(Device* d, const wchar_t* filename) { return ImagePrivate::create((DevicePrivate*)d, filename); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),
