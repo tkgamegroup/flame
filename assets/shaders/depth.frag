@@ -6,7 +6,13 @@
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
-layout (location = 2) in vec3 i_coord;
+
+layout (push_constant) uniform PushConstantT
+{
+	mat4 matrix;
+	float zNear;
+	float zFar;
+}pc;
 
 layout (location = 0) out float o_depth;
 
@@ -22,6 +28,10 @@ void main()
 
 	if (color.a < material.alpha_test)
 		discard;
-		
-	o_depth = length(i_coord);
+
+	float z = gl_FragCoord.z / gl_FragCoord.w;
+	if (pc.zNear == 0.0)
+		o_depth = z * pc.zFar;
+	else
+		o_depth = pc.zNear * pc.zFar / (pc.zFar + z * (pc.zNear - pc.zFar));
 }

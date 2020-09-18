@@ -12,9 +12,8 @@
       <cNode scale="0.1,0.1,0.1" />
     </entity>
     <entity>
-      <cNode pos="5,20,5" scale="0.2,0.2,0.2" />
-      <cMeshInstance src="sphere" mesh_index="0" cast_shadow="false" />
-      <cLight color="2.0,2.0,2.0" cast_shadow="true" />
+      <cNode />
+      <cLight type="Directional" color="2.0,2.0,2.0" cast_shadow="true" />
       <cScript src="object_controller.lua" />
     </entity>
     <entity>

@@ -169,7 +169,9 @@ namespace flame
 				Mat4f proj;
 				Mat4f proj_view;
 				Vec4f coord;
-				Vec4f dummy0;
+				float zNear;
+				float zFar;
+				Vec2f dummy0;
 				Vec4f dummy1;
 				Vec4f dummy2;
 			}; 
@@ -180,19 +182,35 @@ namespace flame
 				Mat4f normal;
 			};
 
-			struct PointLightInfo
+			struct LightIndices
 			{
-				Vec3f color;
-				int dummy0;
-				Vec3f coord;
-
-				int shadow_map_index;
+				uint directional_lights_count;
+				uint point_lights_count;
+				uint point_light_indices[1022];
 			};
 
-			struct PointLightIndices
+			struct DirectionalLightInfo
 			{
-				uint count;
-				uint indices[1023];
+				Vec3f dir;
+				int dummy1;
+				Vec3f side;
+				int dummy2;
+				Vec3f up;
+				int dummy3;
+				Vec3f color;
+				int shadow_map_index;
+
+				float shadow_distances[4];
+				Mat4f shadow_matrices[4];
+			}; 
+			
+			struct PointLightInfo
+			{
+				Vec3f coord;
+				int dummy0;
+				Vec3f color;
+
+				int shadow_map_index;
 			};
 
 			struct Cmd
@@ -284,8 +302,6 @@ namespace flame
 			TBuffer<CameraData, BufferUsageUniform> camera_data_buffer;
 			TBuffer<BoundMaterial, BufferUsageStorage> material_info_buffer;
 			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
-			TBuffer<PointLightInfo, BufferUsageStorage> point_light_info_buffer;
-			TBuffer<PointLightIndices, BufferUsageStorage> point_light_indices_buffer;
 
 			std::vector<std::pair<BoundMesh*, uint>> shadow_casters;
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
@@ -293,6 +309,16 @@ namespace flame
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
 
+			TBuffer<LightIndices, BufferUsageStorage> light_indices_buffer;
+
+			TBuffer<DirectionalLightInfo, BufferUsageStorage> directional_light_info_buffer;
+			std::vector<std::unique_ptr<ImagePrivate>> directional_light_shadow_maps;
+			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_depth_framebuffers;
+			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_light_shadow_map_descriptorsets;
+			uint used_directional_light_shadow_maps_count = 0;
+
+			TBuffer<PointLightInfo, BufferUsageStorage> point_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
@@ -366,10 +392,10 @@ namespace flame
 			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord) override;
+			void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord, float zNear, float zFar) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow) override;
-			void add_light(LightType type, const Vec3f& color, const Vec3f& coord, bool cast_shadow) override;
+			void add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

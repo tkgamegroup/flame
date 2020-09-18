@@ -1,26 +1,49 @@
+
+struct LightIndices
+{
+	uint directional_lights_count;
+	uint point_lights_count;
+	uint point_light_indices[1022];
+};
+
+struct DirectionalLightInfo
+{
+	vec3 dir;
+	int dummy1;
+	vec3 side;
+	int dummy2;
+	vec3 up;
+	int dummy3;
+	vec3 color;
+	int shadow_map_index;
+
+	float shadow_distances[4];
+	mat4 shadow_matrices[4];
+};
+
 struct PointLightInfo
 {
-	vec3 color;
-	int dummy0;
 	vec3 coord;
+	int dummy;
+	vec3 color;
 
 	int shadow_map_index;
 };
 
-struct PointLightIndices
+layout (set = 2, binding = 0) buffer readonly LightIndicesList
 {
-	uint count;
-	uint indices[1023];
+	LightIndices light_indices_list[];
 };
 
-layout (set = 2, binding = 0) buffer readonly PointLightInfos
+layout (set = 2, binding = 1) buffer readonly DirectionalLightInfos
+{
+	DirectionalLightInfo directional_light_infos[];
+};
+
+layout (set = 2, binding = 2) buffer readonly PointLightInfos
 {
 	PointLightInfo point_light_infos[];
 };
 
-layout (set = 2, binding = 1) buffer readonly PointLightIndicesList
-{
-	PointLightIndices point_light_indices_list[];
-};
-
-layout (set = 2, binding = 2) uniform samplerCube point_light_shadow_maps[4];
+layout (set = 2, binding = 3) uniform sampler2DArray directional_light_shadow_maps[4];
+layout (set = 2, binding = 4) uniform samplerCube point_light_shadow_maps[4];

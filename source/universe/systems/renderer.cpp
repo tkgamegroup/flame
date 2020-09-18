@@ -63,7 +63,7 @@ namespace flame
 			return;
 		if (camera)
 			camera->update_matrix();
-		canvas->set_camera(camera->project_matrix, camera->view_matrix, camera->node->global_pos);
+		canvas->set_camera(camera->project_matrix, camera->view_matrix, camera->node->global_pos, camera->near, camera->far);
 		render(world->root.get(), false, !camera);
 		dirty = false;
 	}

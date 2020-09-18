@@ -8,6 +8,9 @@ using namespace flame;
 
 int main(int argc, char** args)
 {
+	auto o = make_ortho_project_matrix(-10.f, 10.f, -10.f, 10.f, 100.f);
+	auto wtf = o * Vec4f(0, 0, -10, 1);
+
 	auto file = get_file_content(args[1]);
 	auto glsl = spirv_cross::CompilerGLSL((uint*)file.c_str(), file.size() / sizeof(uint));
 	auto resources = glsl.get_shader_resources();

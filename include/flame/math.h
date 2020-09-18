@@ -101,6 +101,24 @@ namespace flame
 	}
 
 	template <class T>
+	inline T floor(T v)
+	{
+		return std::floor(v);
+	}
+
+	template <class T>
+	inline T ceil(T v)
+	{
+		return std::ceil(v);
+	}
+
+	template <class T>
+	inline T fract(T v)
+	{
+		return v - floor(v);
+	}
+
+	template <class T>
 	T min(T a, T b)
 	{
 		return a < b ? a : b;
@@ -132,11 +150,6 @@ namespace flame
 		if (v > b)
 			return b;
 		return v;
-	}
-
-	inline float fract(float v)
-	{
-		return v - ::floor(v);
 	}
 
 	template <class T>
@@ -1603,7 +1616,19 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<4, 4, T> make_project_matrix(T fovy, T aspect, T zNear, T zFar)
+	Mat<4, 4, T> make_ortho_project_matrix(T left, T right, T bottom, T top, T zFar)
+	{
+		Mat<4, 4, T> ret(T(1));
+		ret[0][0] = T(2) / (right - left);
+		ret[1][1] = T(2) / (top - bottom);
+		ret[2][2] = -T(1) / zFar;
+		ret[3][0] = -(right + left) / (right - left);
+		ret[3][1] = -(top + bottom) / (top - bottom);
+		return ret;
+	}
+
+	template <class T>
+	Mat<4, 4, T> make_perspective_project_matrix(T fovy, T aspect, T zNear, T zFar)
 	{
 		auto t = tan(fovy / 2.f);
 
@@ -1615,36 +1640,6 @@ namespace flame
 		ret[3][2] = -(zFar * zNear) / (zFar - zNear);
 		return ret;
 	}
-
-	struct PerspectiveProjector
-	{
-		float _screen_width;
-		float _screen_height;
-		float _screen_ratio;
-		float _fovy;
-		float _tan_fovy;
-		float _tan_fovy_near2;
-		float _near;
-		float _far;
-
-		PerspectiveProjector(float screen_width, float screen_height, float fovy, float near, float far) :
-			_screen_width(screen_width),
-			_screen_height(screen_height),
-			_fovy(fovy),
-			_near(near),
-			_far(far)
-		{
-			_screen_ratio = _screen_width / _screen_height;
-			_tan_fovy = tan(_fovy * ANG_RAD);
-			_tan_fovy_near2 = _tan_fovy * _near * _near;
-		}
-
-		Vec2f project(const Vec3f& p)
-		{
-			return Vec2f((p.x() / p.z() * _tan_fovy_near2 * _screen_ratio + 1.f) * 0.5f * _screen_width,
-				(-p.y() / p.z() * _tan_fovy_near2 + 1.f) * 0.5f * _screen_height);
-		}
-	};
 
 	template <class T>
 	T segment_intersect(const Vec<2, T>& a, const Vec<2, T>& b, const Vec<2, T>& c, const Vec<2, T>& d)

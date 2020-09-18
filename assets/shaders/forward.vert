@@ -15,7 +15,9 @@ layout (set = 3, binding = 0) uniform CameraData
 	mat4 proj;
 	mat4 proj_view;
 	vec4 coord;
-	vec4 dummy0;
+	float zNear;
+	float zFar;
+	vec2 dummy0;
 	vec4 dummy1;
 	vec4 dummy2;
 }camera_data;

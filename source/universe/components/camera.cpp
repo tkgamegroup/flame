@@ -11,7 +11,7 @@ namespace flame
 		{
 			project_matrix;
 			auto size = Vec2f(canvas->get_target(0)->get_image()->get_size());
-			project_matrix = make_project_matrix(fovy * ANG_RAD, size.x() / size.y(), near, far);
+			project_matrix = make_perspective_project_matrix(fovy * ANG_RAD, size.x() / size.y(), near, far);
 		}
 		node->update_transform();
 		if (view_dirty)

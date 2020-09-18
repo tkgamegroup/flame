@@ -24,7 +24,7 @@ namespace flame
 			descriptorPoolInfo.pNext = nullptr;
 			descriptorPoolInfo.poolSizeCount = size(descriptorPoolSizes);
 			descriptorPoolInfo.pPoolSizes = descriptorPoolSizes;
-			descriptorPoolInfo.maxSets = 64;
+			descriptorPoolInfo.maxSets = 128;
 			chk_res(vkCreateDescriptorPool(device->vk_device, &descriptorPoolInfo, nullptr, &vk_descriptor_pool));
 		}
 

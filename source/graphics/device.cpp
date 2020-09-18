@@ -11,8 +11,8 @@ namespace flame
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
-			assert(0);
 			printf("\n%s\n\n", pMessage);
+			assert(0);
 
 			return VK_FALSE;
 		}

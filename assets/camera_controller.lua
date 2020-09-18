@@ -28,8 +28,7 @@ function camera:move(dir, v)
 end
 
 function camera:update_dir()
-	local euler = { x=self.yaw, y=self.pitch, z=0 }
-	self.node:set_euler(euler)
+	self.node:set_euler({ x=self.yaw, y=self.pitch, z=0 })
 	self.dir1 = self.node:get_dir(2)
 	self.dir2 = self.node:get_dir(0)
 end
