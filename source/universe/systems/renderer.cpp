@@ -1,3 +1,4 @@
+#include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "../components/element_private.h"
@@ -62,8 +63,12 @@ namespace flame
 		if (!dirty && !always_update)
 			return;
 		if (camera)
-			camera->update_matrix();
-		canvas->set_camera(camera->project_matrix, camera->view_matrix, camera->node->global_pos, camera->near, camera->far);
+		{
+			auto node = camera->node;
+			node->update_transform();
+			auto size = Vec2f(canvas->get_target(0)->get_image()->get_size());
+			canvas->set_camera(camera->fovy, size.x() / size.y(), camera->near, camera->far, node->axes, node->global_pos);
+		}
 		render(world->root.get(), false, !camera);
 		dirty = false;
 	}

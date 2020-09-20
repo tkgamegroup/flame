@@ -8,8 +8,12 @@ using namespace flame;
 
 int main(int argc, char** args)
 {
-	auto o = make_ortho_project_matrix(-10.f, 10.f, -10.f, 10.f, 100.f);
-	auto wtf = o * Vec4f(0, 0, -10, 1);
+	auto m = transpose(Mat4f(
+		Vec4f(-0.06181, 0, 0, -0.03987),
+		Vec4f(0, 0.09706, 0.0, -0.36282),
+		Vec4f(0, 0.0, 0.1, 0.14793),
+		Vec4f(0, 0, 0, 1)));
+	auto v = m * Vec4f(-0.7389, 0.03416, 12.35963, 1);
 
 	auto file = get_file_content(args[1]);
 	auto glsl = spirv_cross::CompilerGLSL((uint*)file.c_str(), file.size() / sizeof(uint));

@@ -17,7 +17,7 @@ namespace flame
 
 		const auto resources_count = 64U;
 		const auto msaa_sample_count = SampleCount_8;
-		const auto shadow_map_size = Vec2u(1024);
+		const auto shadow_map_size = Vec2u(2048);
 
 		struct CanvasResourcePrivate : CanvasResource
 		{
@@ -151,29 +151,32 @@ namespace flame
 				uint vtx_off;
 				uint idx_off;
 				uint idx_cnt;
-
 				uint mat_idx;
+
+				Mat<2U, 3U, float> aabb;
 			};
 
 			struct BoundModel
 			{
 				std::string name;
 				ModelPrivate* model;
-				std::vector<uint> mat_idxs;
 				std::vector<BoundMesh> meshes;
 			};
 
 			struct CameraData
 			{
+				float fovy;
+				float aspect;
+				float zNear;
+				float zFar;
+				Vec3f coord;
+				int dummy1;
+				Vec4i dummy2;
+				Vec4i dummy3;
+				Mat4f view_inv;
 				Mat4f view;
 				Mat4f proj;
 				Mat4f proj_view;
-				Vec4f coord;
-				float zNear;
-				float zFar;
-				Vec2f dummy0;
-				Vec4f dummy1;
-				Vec4f dummy2;
 			}; 
 
 			struct MeshMatrix
@@ -198,19 +201,24 @@ namespace flame
 				Vec3f up;
 				int dummy3;
 				Vec3f color;
-				int shadow_map_index;
+				int dummy4;
 
-				float shadow_distances[4];
+				int shadow_map_index;
+				float shadow_distance;
+				Vec2i dummy5;
 				Mat4f shadow_matrices[4];
 			}; 
 			
 			struct PointLightInfo
 			{
 				Vec3f coord;
-				int dummy0;
+				int dummy1;
 				Vec3f color;
+				int dummy2;
 
 				int shadow_map_index;
+				float shadow_distance;
+				int dummy3[2];
 			};
 
 			struct Cmd
@@ -249,7 +257,7 @@ namespace flame
 
 			struct CmdDrawMesh : Cmd
 			{
-				std::vector<BoundMesh*> meshes;
+				std::vector<std::tuple<uint, BoundMesh*, bool>> meshes;
 
 				CmdDrawMesh() : Cmd(DrawMesh) {}
 			};
@@ -293,8 +301,6 @@ namespace flame
 			std::unique_ptr<ImagePrivate> white_image;
 			uint white_slot = 0;
 
-			Mat4f project_view_matrix = Mat4f(1.f);
-
 			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
 			TBuffer<ModelVertex1, BufferUsageVertex> model_vertex_buffer_1;
@@ -303,7 +309,6 @@ namespace flame
 			TBuffer<BoundMaterial, BufferUsageStorage> material_info_buffer;
 			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
 
-			std::vector<std::pair<BoundMesh*, uint>> shadow_casters;
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
@@ -392,7 +397,7 @@ namespace flame
 			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void set_camera(const Mat4f& proj, const Mat4f& view, const Vec3f& coord, float zNear, float zFar) override;
+			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow) override;
 			void add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow) override;

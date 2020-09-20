@@ -3,6 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "material_dsl.glsl"
+#include "linear_depth.glsl"
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
@@ -29,9 +30,9 @@ void main()
 	if (color.a < material.alpha_test)
 		discard;
 
-	float z = gl_FragCoord.z / gl_FragCoord.w;
+	float z = gl_FragCoord.z;
 	if (pc.zNear == 0.0)
-		o_depth = z * pc.zFar;
+		o_depth = z;
 	else
-		o_depth = pc.zNear * pc.zFar / (pc.zFar + z * (pc.zNear - pc.zFar));
+		o_depth = linear_depth(z, pc.zNear, pc.zFar);
 }

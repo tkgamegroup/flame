@@ -1,4 +1,3 @@
-
 struct LightIndices
 {
 	uint directional_lights_count;
@@ -15,19 +14,24 @@ struct DirectionalLightInfo
 	vec3 up;
 	int dummy3;
 	vec3 color;
-	int shadow_map_index;
+	int dummy4;
 
-	float shadow_distances[4];
+	int shadow_map_index;
+	float shadow_distance;
+	ivec2 dummy5;
 	mat4 shadow_matrices[4];
 };
 
 struct PointLightInfo
 {
 	vec3 coord;
-	int dummy;
+	int dummy1;
 	vec3 color;
+	int dummy2;
 
 	int shadow_map_index;
+	float shadow_distance;
+	int dummy3[2];
 };
 
 layout (set = 2, binding = 0) buffer readonly LightIndicesList
