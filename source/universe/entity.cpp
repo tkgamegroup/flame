@@ -10,7 +10,9 @@ namespace flame
 
 	EntityPrivate::EntityPrivate()
 	{
+		static auto id = 0;
 		created_frame = looper().get_frame();
+		created_id = id++;
 
 #ifdef _DEBUG
 		//_created_stack_ = get_stack_frames(); TODO
@@ -615,13 +617,14 @@ namespace flame
 			return;
 
 		e->traversal([this](EntityPrivate* e) {
+			e->world = world;
+
 			for (auto& c : e->components)
 			{
 				auto& aux = *(ComponentAux*)c.second->aux;
 				for (auto& r : aux.refs)
 					r.gain(c.second.get());
 
-				e->world = world;
 				if (world)
 				{
 					c.second->on_local_message(MessageEnteredWorld);

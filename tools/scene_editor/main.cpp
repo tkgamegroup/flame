@@ -1,5 +1,6 @@
 #include <flame/universe/app.h>
 #include <flame/universe/components/text.h>
+#include <flame/universe/components/tree.h>
 
 using namespace flame;
 using namespace graphics;
@@ -9,6 +10,7 @@ App g_app;
 Entity* root;
 
 Entity* hierarchy;
+cTree* hierarchy_tree;
 Entity* scene;
 Entity* inspector;
 
@@ -24,6 +26,7 @@ int main(int argc, char** args)
 	root->add_child(e);
 
 	hierarchy = e->find_child("hierarchy");
+	hierarchy_tree = hierarchy->get_component_t<cTree>();
 	scene = e->find_child("scene");
 	inspector = e->find_child("inspector");
 
@@ -34,17 +37,32 @@ int main(int argc, char** args)
 	std::function<void(Entity*, Entity*)> add_node;
 	add_node = [&](Entity* dst, Entity* src) {
 		auto e = Entity::create();
-		e->load(L"tree_node");
-		dst->add_child(e);
-		
-		e->find_child("title")->get_component_t<cText>()->set_text(
-			(L"<" + std::wstring(src->get_src()) + L"> " + s2w(src->get_name())).c_str());
+		auto title = L"<" + std::wstring(src->get_src()) + L"> " + s2w(src->get_name());
 		auto child_count = src->get_children_count();
-		auto items = e->find_child("items");
-		for (auto i = 0; i < child_count; i++)
-			add_node(items, src->get_child(i));
+		if (child_count > 0)
+		{
+			e->load(L"tree_node");
+			e->find_child("title")->get_component_t<cText>()->set_text(title.c_str());
+
+			auto items = e->find_child("items");
+			for (auto i = 0; i < child_count; i++)
+				add_node(items, src->get_child(i));
+		}
+		else
+		{
+			e->load(L"tree_leaf");
+			e->get_component_t<cText>()->set_text(title.c_str());
+		}
+		dst->add_child(e);
 	};
 	add_node(hierarchy, prefab);
+
+	hierarchy->add_local_data_changed_listener([](Capture&, Component* t, uint64 h) {
+		if (t == hierarchy_tree && h == S<ch("selected")>::v)
+		{
+			inspector->remove_all_children();
+		}
+	}, Capture());
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());

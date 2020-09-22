@@ -36,6 +36,7 @@ namespace flame
 		uint index = 0;
 
 		int created_frame;
+		int created_id;
 		std::vector<void*> created_stack;
 
 		enum RefType

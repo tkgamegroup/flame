@@ -15,10 +15,9 @@
       <entity src="vscroller" >
         <cElement padding="4,4,4,4" border="1" />
         <cAligner alignx="MinMax" aligny="MinMax" />
-        <entity attach="view" name="inspector" >
+        <entity attach="view" name="inspector" src="tree">
           <cElement padding="4,4,4,4" />
           <cAligner alignx="MinMax" aligny="MinMax" />
-          <cLayout type="Vertical" gap="2" />
         </entity>
       </entity>
     </entity>
