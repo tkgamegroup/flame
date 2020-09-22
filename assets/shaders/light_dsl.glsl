@@ -31,7 +31,7 @@ struct PointLightInfo
 
 	int shadow_map_index;
 	float shadow_distance;
-	int dummy3[2];
+	ivec2 dummy3;
 };
 
 layout (set = 2, binding = 0) buffer readonly LightIndicesList

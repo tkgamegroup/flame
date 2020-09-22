@@ -5,7 +5,6 @@
 #include "material_dsl.glsl"
 #include "light_dsl.glsl"
 #include "camera_data.glsl"
-#include "linear_depth.glsl"
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
@@ -79,8 +78,6 @@ void main()
 
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
-
-	float z = linear_depth(gl_FragCoord.z, camera_data.zNear, camera_data.zFar);
 	
 	uint light_count;
 	
@@ -95,18 +92,19 @@ void main()
 
 		if (light.shadow_map_index != -1)
 		{
+			float depthv = length(i_coordv) / camera_data.zFar;
 			int lv = 0;
 			for (; lv < 4; lv++)
 			{
-				if (z < csm_lvs[lv])
+				if (depthv < csm_lvs[lv])
 					break;
 			}
-			vec4 coord = light.shadow_matrices[lv] * vec4(i_coordw, 1.0);
-			coord.xy = coord.xy * 0.5 + vec2(0.5);
-			if (coord.z >= 0.0 && coord.z <= 1.0)
+			vec4 coordl = light.shadow_matrices[lv] * vec4(i_coordw, 1.0);
+			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
+			if (coordl.z >= 0.0 && coordl.z <= 1.0)
 			{
-				float ref = texture(directional_light_shadow_maps[light.shadow_map_index], vec3(coord.xy, lv)).r;
-				shadow = clamp(exp(-80.0 * (coord.z - ref)), 0.0, 1.0);
+				float ref = texture(directional_light_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
+				shadow = clamp(exp(-80.0 * (coordl.z - ref)), 0.0, 1.0);
 			}
 		}
 		
@@ -128,11 +126,7 @@ void main()
 		{
 			float ref = texture(point_light_shadow_maps[light.shadow_map_index], -L).r;
 			ref *= light.shadow_distance;
-			shadow = exp(-10.0 * (dist - ref * light.shadow_distance));
-			if (shadow >= 1.0)
-				shadow = 1.0;
-			else
-				shadow *= 0.1;
+			shadow = clamp(exp(-80.0 * (dist - ref)), 0.0, 1.0);
 		}
 
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);

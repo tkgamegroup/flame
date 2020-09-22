@@ -25,7 +25,7 @@
     </entity>
     <entity>
       <cNode />
-      <cLight type="Directional" color="0.5,0.5,0.5" cast_shadow="true" />
+      <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
       <cScript src="object_controller.lua" />
     </entity>
     <entity>
