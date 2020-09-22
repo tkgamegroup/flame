@@ -1108,17 +1108,16 @@ namespace flame
 
 	void FunctionInfoPrivate::call(void* obj, void* ret, void** parms) const
 	{
-		auto idx1 = 0;
-		auto idx2 = 0;
+		auto idx = 0;
 		std::vector<void*> list1(6);
 		std::vector<float> list2(4);
 		if (obj)
-			list1[idx1++] = obj;
+			list1[idx++] = obj;
 		if (type->size > sizeof(void*)
 			|| type->name == "flame::Vec<3,uchar>"
 			|| type->name == "flame::Vec<4,uchar>")
 		{
-			list1[idx1++] = ret;
+			list1[idx++] = ret;
 			ret = nullptr;
 		}
 
@@ -1129,20 +1128,20 @@ namespace flame
 			{
 			case TypeEnumSingle:
 			case TypeEnumMulti:
-				list1[idx1++] = (void*)*((int*)*_p++);
+				list1[idx++] = (void*)*((int*)*_p++);
 				break;
 			case TypeData:
 				if (p->name == "float")
-					list2[idx2++] = *((float*)*_p++);
+					list2[idx++] = *((float*)*_p++);
 				else if (p->size == 1)
-					list1[idx1++] = (void*)*((char*)*_p++);
+					list1[idx++] = (void*)*((char*)*_p++);
 				else if (p->size == 4)
-					list1[idx1++] = (void*)*((int*)*_p++);
+					list1[idx++] = (void*)*((int*)*_p++);
 				else if (p->size == 8)
-					list1[idx1++] = *((void**)*_p++);
+					list1[idx++] = *((void**)*_p++);
 				break;
 			case TypePointer:
-				list1[idx1++] = *(void**)(*_p);
+				list1[idx++] = *(void**)(*_p);
 				_p++;
 				break;
 			}

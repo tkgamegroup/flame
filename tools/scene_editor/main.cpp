@@ -15,7 +15,7 @@ Entity* inspector;
 int main(int argc, char** args)
 {
 	g_app.create();
-	auto w = new GraphicsWindow(&g_app, true, "Scene Editor", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	auto w = new GraphicsWindow(&g_app, "Scene Editor", Vec2u(1280, 720), WindowFrame | WindowResizable);
 	w->canvas->set_clear_color(Vec4c(255));
 	root = w->root;
 

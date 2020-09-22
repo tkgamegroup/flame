@@ -4,10 +4,10 @@
     <cElement width="100" height="100" />
     <cLayout type="Horizontal" auto_width="false" auto_height="false" />
     <entity name="splitter_bar">
-    <cElement width="8" />
-    <cAligner aligny="MinMax" />
-    <cEventReceiver />
-    <cStyle rule="Hovering,Active?cElement.fill_color=225,225,225,255#Active?cElement.fill_color=220,220,220,255#Hovering?cElement.fill_color=230,230,230,255#None?cElement.fill_color=0,0,0,0" />
+      <cElement width="8" />
+      <cAligner aligny="MinMax" />
+      <cEventReceiver />
+      <cStyle rule="Hovering,Active?cElement.fill_color=225,225,225,255#Active?cElement.fill_color=220,220,220,255#Hovering?cElement.fill_color=230,230,230,255#None?cElement.fill_color=0,0,0,0" />
     </entity>
     <cSplitter />
   </entity>
