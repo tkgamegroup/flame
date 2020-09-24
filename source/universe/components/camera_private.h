@@ -15,7 +15,7 @@ namespace flame
 	{
 		float fovy = 45.f;
 		float near = 1.f;
-		float far = 100.f;
+		float far = 1000.f;
 
 		cNodePrivate* node = nullptr; // R ref
 	};

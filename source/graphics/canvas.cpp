@@ -1513,6 +1513,8 @@ namespace flame
 			render_data_buffer.end->zNear = zNear;
 			render_data_buffer.end->zFar = zFar;
 			render_data_buffer.end->camera_coord = coord;
+			render_data_buffer.end->shadow_distance = 100.f;
+			render_data_buffer.end->csm_levels = 3;
 			render_data_buffer.end->view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
 			render_data_buffer.end->view = inverse(render_data_buffer.end->view_inv);
 			render_data_buffer.end->proj = make_perspective_project_matrix(fovy * ANG_RAD, aspect, zNear, zFar);
@@ -1541,12 +1543,63 @@ namespace flame
 		{
 			if (type == LightDirectional)
 			{
+				auto dir = normalize(-Vec3f(matrix[2]));
+				auto side = normalize(Vec3f(matrix[0]));
+				auto up = normalize(Vec3f(matrix[1]));
+
 				DirectionalLightInfoS li;
-				li.dir = normalize(-Vec3f(matrix[2]));
-				li.side = normalize(Vec3f(matrix[0]));
-				li.up = normalize(Vec3f(matrix[1]));
+				li.dir = dir;
+				li.distance = 100.f;
 				li.color = color;
 				li.shadow_map_index = cast_shadow ? used_directional_light_shadow_maps_count++ : -1;
+				if (cast_shadow)
+				{
+					auto zFar = render_data_buffer.end->shadow_distance;
+					auto tan_hf_fovy = tan(render_data_buffer.end->fovy * 0.5f * ANG_RAD);
+					auto aspect = render_data_buffer.end->aspect;
+					auto view_inv = render_data_buffer.end->view_inv;
+
+					auto level = render_data_buffer.end->csm_levels;
+					for (auto j = 0; j < level; j++)
+					{
+						auto n = j / (float)level;
+						n = n * n * zFar;
+						auto f = (j + 1) / (float)level;
+						f = f * f * zFar;
+
+						auto y1 = n * tan_hf_fovy;
+						auto y2 = f * tan_hf_fovy;
+						auto x1 = y1 * aspect;
+						auto x2 = y2 * aspect;
+
+						Vec3f ps[8];
+
+						ps[0] = Vec3f(view_inv * Vec4f(-x1, y1, -n, 1.f));
+						ps[1] = Vec3f(view_inv * Vec4f(x1, y1, -n, 1.f));
+						ps[2] = Vec3f(view_inv * Vec4f(x1, -y1, -n, 1.f));
+						ps[3] = Vec3f(view_inv * Vec4f(-x1, -y1, -n, 1.f));
+
+						ps[4] = Vec3f(view_inv * Vec4f(-x2, y2, -f, 1.f));
+						ps[5] = Vec3f(view_inv * Vec4f(x2, y2, -f, 1.f));
+						ps[6] = Vec3f(view_inv * Vec4f(x2, -y2, -f, 1.f));
+						ps[7] = Vec3f(view_inv * Vec4f(-x2, -y2, -f, 1.f));
+
+						auto c = (ps[0] + ps[1] + ps[2] + ps[3] +
+							ps[4] + ps[5] + ps[6] + ps[7]) * 0.125f;
+						auto light_inv = inverse(Mat4f(Mat<3, 4, float>(Mat3f(side, up, dir), Vec3f(0.f)), Vec4f(c, 1.f)));
+						Vec2f LT = Vec2f(zFar);
+						Vec2f RB = Vec2f(-zFar);
+						for (auto k = 0; k < 8; k++)
+						{
+							auto p = light_inv * Vec4f(ps[k], 1.f);
+							LT = min(LT, p.xy());
+							RB = max(RB, p.xy());
+						}
+
+						li.shadow_matrices[j] = make_ortho_project_matrix(LT.x(), RB.x(), LT.y(), RB.y(), li.distance) *
+							make_view_matrix(c + li.dir * li.distance * 0.5f, c, up);
+					}
+				}
 				directional_light_info_buffer.push(li);
 
 				{
@@ -1559,6 +1612,7 @@ namespace flame
 			{
 				PointLightInfoS li;
 				li.color = color;
+				li.distance = 10.f;
 				li.coord = Vec3f(matrix[3]);
 				li.shadow_map_index = cast_shadow ? used_point_light_shadow_maps_count++ : -1;
 				point_light_info_buffer.push(li);
@@ -1775,75 +1829,6 @@ namespace flame
 						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 
-						if (used_directional_light_shadow_maps_count > 0)
-						{
-							auto lights_count = directional_light_info_buffer.stg_num();
-							for (auto i = 0; i < lights_count; i++)
-							{
-								auto& li = directional_light_info_buffer.beg[i];
-								if (li.shadow_map_index != -1)
-								{
-									auto zNear = render_data_buffer.end->zNear;
-									auto zFar = render_data_buffer.end->zFar;
-									auto tan_hf_fovy = tan(render_data_buffer.end->fovy * 0.5f * ANG_RAD);
-									auto aspect = render_data_buffer.end->aspect;
-									auto view_inv = render_data_buffer.end->view_inv;
-
-									li.shadow_distance = 100.f;
-
-									for (auto j = 0; j < 4; j++)
-									{
-										auto n = j / 4.f;
-										n = n * n * (zFar - zNear) + zNear;
-										auto f = (j + 1) / 4.f;
-										f = f * f * (zFar - zNear) + zNear;
-
-										auto y1 = n * tan_hf_fovy;
-										auto y2 = f * tan_hf_fovy;
-										auto x1 = y1 * aspect;
-										auto x2 = y2 * aspect;
-
-										Vec3f ps[8];
-
-										ps[0] = Vec3f(view_inv * Vec4f(-x1, y1, -n, 1.f));
-										ps[1] = Vec3f(view_inv * Vec4f(x1, y1, -n, 1.f));
-										ps[2] = Vec3f(view_inv * Vec4f(x1, -y1, -n, 1.f));
-										ps[3] = Vec3f(view_inv * Vec4f(-x1, -y1, -n, 1.f));
-
-										ps[4] = Vec3f(view_inv * Vec4f(-x2, y2, -f, 1.f));
-										ps[5] = Vec3f(view_inv * Vec4f(x2, y2, -f, 1.f));
-										ps[6] = Vec3f(view_inv * Vec4f(x2, -y2, -f, 1.f));
-										ps[7] = Vec3f(view_inv * Vec4f(-x2, -y2, -f, 1.f));
-
-										auto c = (ps[0] + ps[1] + ps[2] + ps[3] + 
-											ps[4] + ps[5] + ps[6] + ps[7]) * 0.125f;
-										auto light_inv = inverse(Mat4f(Mat<3, 4, float>(Mat3f(li.side, li.up, li.dir), Vec3f(0.f)), Vec4f(c, 1.f)));
-										Vec2f LT = Vec2f(zFar);
-										Vec2f RB = Vec2f(-zFar);
-										for (auto k = 0; k < 8; k++)
-										{
-											auto p = light_inv * Vec4f(ps[k], 1.f);
-											LT = min(LT, p.xy());
-											RB = max(RB, p.xy());
-										}
-
-										li.shadow_matrices[j] = make_ortho_project_matrix(LT.x(), RB.x(), LT.y(), RB.y(), li.shadow_distance) *
-											make_view_matrix(c + li.dir * li.shadow_distance * 0.5f, c, li.up);
-									}
-								}
-							}
-						}
-						if (used_point_light_shadow_maps_count > 0)
-						{
-							auto lights_count = point_light_info_buffer.stg_num();
-							for (auto i = 0; i < lights_count; i++)
-							{
-								auto& li = point_light_info_buffer.beg[i];
-								if (li.shadow_map_index != -1)
-									li.shadow_distance = 10.f;
-							}
-						}
-
 						light_indices_buffer.upload(cb);
 						directional_light_info_buffer.upload(cb);
 						point_light_info_buffer.upload(cb);
@@ -1859,7 +1844,8 @@ namespace flame
 								auto& li = directional_light_info_buffer.beg[i];
 								if (li.shadow_map_index != -1)
 								{
-									for (auto i = 0; i < 4; i++)
+									auto level = render_data_buffer.end->csm_levels;
+									for (auto i = 0; i < level; i++)
 									{
 										Vec4f cvs[] = {
 											Vec4f(1.f, 0.f, 0.f, 0.f),
@@ -1877,7 +1863,7 @@ namespace flame
 										}pc;
 										pc.matrix = li.shadow_matrices[i];
 										pc.zNear = 0.f;
-										pc.zFar = li.shadow_distance;
+										pc.zFar = 100.f;
 										cb->push_constant(0, sizeof(pc), &pc, depth_pipelinelayout);
 										for (auto& cmd : cmds)
 										{
@@ -1936,7 +1922,7 @@ namespace flame
 										cb->bind_pipeline(depth_pipeline);
 										cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
 										cb->bind_descriptor_set(material_descriptorset.get(), 1, depth_pipelinelayout);
-										auto proj = make_perspective_project_matrix(90.f * ANG_RAD, 1.f, 1.f, li.shadow_distance);
+										auto proj = make_perspective_project_matrix(90.f * ANG_RAD, 1.f, 1.f, li.distance);
 										struct
 										{
 											Mat4f matrix;
@@ -1972,7 +1958,7 @@ namespace flame
 											break;
 										}
 										pc.zNear = 1.f;
-										pc.zFar = li.shadow_distance;
+										pc.zFar = li.distance;
 										cb->push_constant(0, sizeof(pc), &pc, depth_pipelinelayout);
 										for (auto& cmd : cmds)
 										{

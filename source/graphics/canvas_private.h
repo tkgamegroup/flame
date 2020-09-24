@@ -173,11 +173,11 @@ namespace flame
 			float metallic;
 			float roughness;
 			float alpha_test;
-			float dummy0;
+			float dummy1;
 			int color_map_index = -1;
 			int metallic_roughness_ao_map_index = -1;
 			int normal_hegiht_map_index = -1;
-			int dummy1;
+			int dummy2;
 		};
 
 		struct LightIndicesS
@@ -190,30 +190,23 @@ namespace flame
 		struct DirectionalLightInfoS
 		{
 			Vec3f dir;
-			int dummy1;
-			Vec3f side;
-			int dummy2;
-			Vec3f up;
-			int dummy3;
+			float distance;
 			Vec3f color;
-			int dummy4;
+			int dummy1;
 
 			int shadow_map_index;
-			float shadow_distance;
-			Vec2i dummy5;
+			float dummy2;
+			Vec2f dummy3;
+			Vec4f dummy4;
 			Mat4f shadow_matrices[4];
 		};
 
 		struct PointLightInfoS
 		{
 			Vec3f coord;
-			int dummy1;
+			float distance;
 			Vec3f color;
-			int dummy2;
-
 			int shadow_map_index;
-			float shadow_distance;
-			int dummy3[2];
 		};
 
 		struct RenderDataS
@@ -223,9 +216,11 @@ namespace flame
 			float zNear;
 			float zFar;
 			Vec3f camera_coord;
-			int dummy1;
-			Vec4i dummy2;
-			Vec4i dummy3;
+			float shadow_distance;
+			uint csm_levels;
+			float dummy1;
+			Vec2f dummy2;
+			Vec4f dummy3;
 			Mat4f view_inv;
 			Mat4f view;
 			Mat4f proj;

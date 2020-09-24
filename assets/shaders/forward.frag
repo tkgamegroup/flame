@@ -15,9 +15,6 @@ layout (location = 4) in vec3 i_normal;
 layout (location = 0) out vec4 o_color;
 
 const float PI = 3.14159265359;
-const float csm_lvs[4] = {
-	0.0625, 0.25, 0.5625, 1.0
-};
 
 vec3 shading(vec3 N, vec3 V, vec3 L, vec3 intensity, vec3 albedo, vec3 spec, float roughness)
 {
@@ -78,6 +75,8 @@ void main()
 
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
+
+	float distancev = length(i_coordv);
 	
 	uint light_count;
 	
@@ -90,13 +89,16 @@ void main()
 		
 		float shadow = 1.0;
 
-		if (light.shadow_map_index != -1)
+		if (light.shadow_map_index != -1 && distancev < render_data.shadow_distance)
 		{
-			float depthv = length(i_coordv) / render_data.zFar;
+			float d = distancev / render_data.shadow_distance;
+			uint lvs = render_data.csm_levels;
+			float div = 1.0 / lvs;
 			int lv = 0;
-			for (; lv < 4; lv++)
+			for (; lv < lvs; lv++)
 			{
-				if (depthv < csm_lvs[lv])
+				float v = (lv + 1) * div;
+				if (d < v * v)
 					break;
 			}
 			vec4 coordl = light.shadow_matrices[lv] * vec4(i_coordw, 1.0);
@@ -104,7 +106,7 @@ void main()
 			if (coordl.z >= 0.0 && coordl.z <= 1.0)
 			{
 				float ref = texture(directional_light_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
-				shadow = clamp(exp(-80.0 * (coordl.z - ref)), 0.0, 1.0);
+				shadow = clamp(exp(-100.0 * (coordl.z - ref)), 0.0, 1.0);
 			}
 		}
 		
@@ -125,8 +127,7 @@ void main()
 		if (light.shadow_map_index != -1)
 		{
 			float ref = texture(point_light_shadow_maps[light.shadow_map_index], -L).r;
-			ref *= light.shadow_distance;
-			shadow = clamp(exp(-80.0 * (dist - ref)), 0.0, 1.0);
+			shadow = clamp(exp(-0.1 * (dist - ref * light.distance)), 0.0, 1.0);
 		}
 
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);
