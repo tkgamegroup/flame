@@ -224,7 +224,7 @@ namespace flame
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorSampledImage;
-					db.count = resources_count;
+					db.count = 64;
 					element_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
@@ -460,41 +460,39 @@ namespace flame
 			}
 
 			ImmediateCommandBuffer cb(device);
-
-			element_vertex_buffer.create(d, 360000);
-			element_index_buffer.create(d, 240000);
-			model_vertex_buffer_1.create(d, 600000);
-			model_index_buffer.create(d, 400000);
-			camera_data_buffer.create(d, 1);
-			material_info_buffer.create(d, 128);
-			mesh_matrix_buffer.create(d, 10000);
+			auto sp_nr = d->sampler_nearest.get();
+			auto sp_ln = d->sampler_linear.get();
 
 			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->clear_color_image(white_image.get(), Vec4c(255));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			auto iv_wht = white_image->views[0].get();
-			for (auto i = 0; i < resources_count; i++)
-			{
-				auto r = new CanvasResourcePrivate;
-				r->view = iv_wht;
-				resources[i].reset(r);
-			}
 
-			auto sp_nr = d->sampler_nearest.get();
-			auto sp_ln = d->sampler_linear.get();
+			element_resources.resize(64);
+			for (auto i = 0; i < element_resources.size(); i++)
+				element_resources[i].p = iv_wht;
 
+			texture_resources.resize(128);
+			for (auto i = 0; i < texture_resources.size(); i++)
+				texture_resources[i].second = iv_wht;
+			material_resources.resize(128);
+			model_resources.resize(128);
+
+			element_vertex_buffer.create(d, 360000);
+			element_index_buffer.create(d, 240000);
 			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
-			for (auto i = 0; i < resources_count; i++)
+			for (auto i = 0; i < element_resources.size(); i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp_ln);
-
+			
+			mesh_matrix_buffer.create(d, 10000);
 			mesh_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), mesh_descriptorsetlayout));
 			mesh_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
 
+			material_info_buffer.create(d, 128);
 			material_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), material_descriptorsetlayout));
 			material_descriptorset->set_buffer(0, 0, material_info_buffer.buf.get());
-			model_textures.resize(128);
-			for (auto i = 0; i < model_textures.size(); i++)
+			for (auto i = 0; i < texture_resources.size(); i++)
 				material_descriptorset->set_image(1, i, iv_wht, sp_ln);
 
 			light_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), light_descriptorsetlayout));
@@ -564,11 +562,12 @@ namespace flame
 				}
 			}
 
+			render_data_buffer.create(d, 1);
 			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
-			forward_descriptorset->set_buffer(0, 0, camera_data_buffer.buf.get());
+			forward_descriptorset->set_buffer(0, 0, render_data_buffer.buf.get());
 
-			bind_model((ModelPrivate*)Model::get_standard(StandardModelCube), "cube");
-			bind_model((ModelPrivate*)Model::get_standard(StandardModelSphere), "sphere");
+			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("cube"), "cube");
+			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -692,59 +691,364 @@ namespace flame
 			}
 		}
 
-		uint CanvasPrivate::set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas)
+		void* CanvasPrivate::get_resource(ResourceType type, uint slot, ResourceType* real_type)
+		{
+			switch (type)
+			{
+			case ResourceImage:
+			case ResourceImageAtlas:
+			case ResourceFontAtlas:
+				if (slot < element_resources.size())
+				{
+					auto& r = element_resources[slot];
+					if (real_type)
+						*real_type = r.type;
+					return r.p;
+				}
+				break;
+			case ResourceModel:
+				if (slot < model_resources.size())
+				{
+					auto& r = model_resources[slot];
+					if (r)
+					{
+						if (real_type)
+							*real_type = ResourceModel;
+						return r->model;
+					}
+				}
+			}
+			return nullptr;
+		}
+
+		int CanvasPrivate::find_resource(ResourceType type, const std::string& name)
+		{
+			switch (type)
+			{
+			case ResourceImage:
+			case ResourceImageAtlas:
+			case ResourceFontAtlas:
+				for (auto i = 0; i < element_resources.size(); i++)
+				{
+					if (element_resources[i].name == name)
+						return i;
+				}
+				break;
+			case ResourceModel:
+				for (auto i = 0; i < model_resources.size(); i++)
+				{
+					if (model_resources[i] && model_resources[i]->name == name)
+						return i;
+				}
+			}
+			return -1;
+		}
+
+		uint CanvasPrivate::set_resource(ResourceType type, int slot, void* p, const std::string& name)
 		{
 			auto iv_wht = white_image->views[0].get();
-
-			if (slot == -1)
+			switch (type)
 			{
-				assert(v);
-				slot = white_slot;
-				white_slot = -1;
-			}
-
-			auto r = new CanvasResourcePrivate;
-			element_descriptorset->set_image(0, slot, v, sp ? sp : device->sampler_linear.get());
-			r->name = name;
-			r->view = v ? v : iv_wht;
-			r->image_atlas = image_atlas;
-			r->font_atlas = font_atlas;
-			resources[slot].reset(r);
-
-			if (white_slot == -1)
-			{
-				for (auto i = 0; i < resources_count; i++)
+			case ResourceImage:
+			case ResourceImageAtlas:
+			case ResourceFontAtlas:
+				if (slot == -1)
 				{
-					if (resources[i]->view == iv_wht)
+					for (auto i = 1; i < element_resources.size(); i++)
 					{
-						white_slot = i;
+						if (element_resources[i].p == iv_wht)
+						{
+							slot = i;
+							break;
+						}
+					}
+				}
+				if (slot != -1)
+				{
+					auto& dst = element_resources[slot];
+					dst.name = name;
+					dst.type = type;
+					dst.p = p;
+
+					switch (type)
+					{
+					case ResourceImage:
+						element_descriptorset->set_image(0, slot, p ? (ImageViewPrivate*)p : iv_wht, device->sampler_linear.get());
+						break;
+					case ResourceImageAtlas:
+					{
+						auto atlas = (ImageAtlasPrivate*)p;
+						element_descriptorset->set_image(0, slot, atlas->image->views[0].get(), atlas->border ? device->sampler_linear.get() : device->sampler_nearest.get());
+					}
+						break;
+					case ResourceFontAtlas:
+					{
+						auto atlas = (FontAtlasPrivate*)p;
+						element_descriptorset->set_image(0, slot, atlas->view, device->sampler_nearest.get());
+					}
 						break;
 					}
 				}
-				assert(white_slot != -1);
+				break;
+			case ResourceTexture:
+				if (slot == -1)
+				{
+					for (auto i = 1; i < texture_resources.size(); i++)
+					{
+						if (texture_resources[i].second == iv_wht)
+						{
+							slot = i;
+							break;
+						}
+					}
+				}
+				if (slot != -1)
+				{
+					auto v = p ? (ImageViewPrivate*)p : iv_wht;
+					texture_resources[slot] = std::make_pair(name, v);
+					material_descriptorset->set_image(1, slot, v, device->sampler_linear.get());
+				}
+				break;
+			case ResourceMaterial:
+			{
+				auto material = (MaterialPrivate*)p;
+				auto sp = device->sampler_linear.get();
+
+				if (slot == -1)
+				{
+					for (auto i = 1; i < material_resources.size(); i++)
+					{
+						if (!material_resources[i])
+						{
+							slot = i;
+							break;
+						}
+					}
+				}
+				if (slot != -1)
+				{
+					{
+						auto prev = material_resources[slot].get();
+						if (prev)
+						{
+							for (auto& t : prev->textures)
+								set_resource(ResourceTexture, t.first, nullptr, "");
+						}
+					}
+
+					if (!material)
+						material_resources[slot].reset();
+					else
+					{
+						auto mr = new MaterialResource;
+						mr->name = name;
+						material_resources[slot].reset(mr);
+
+						MaterialInfoS mis;
+						mis.color = material->color;
+						mis.metallic = material->metallic;
+						mis.roughness = material->roughness;
+						mis.alpha_test = material->alpha_test;
+
+						if (!material->path.empty())
+						{
+							auto color_map = !material->color_map.empty() ? Bitmap::create((material->path / material->color_map).c_str()) : nullptr;
+							auto alpha_map = !material->alpha_map.empty() ? Bitmap::create((material->path / material->alpha_map).c_str()) : nullptr;
+							auto roughness_map = !material->roughness_map.empty() ? Bitmap::create((material->path / material->roughness_map).c_str()) : nullptr;
+
+							if (color_map || alpha_map)
+							{
+								Vec2u size = Vec2u(0U);
+								if (color_map)
+									size = Vec2u(color_map->get_width(), color_map->get_height());
+								else if (alpha_map)
+									size = Vec2u(alpha_map->get_width(), alpha_map->get_height());
+
+								auto dst_map = Bitmap::create(size.x(), size.y());
+								auto dst_map_d = dst_map->get_data();
+								auto dst_map_pitch = size.x() * 4;
+
+								auto color_map_d = color_map ? color_map->get_data() : nullptr;
+								auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
+								auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
+								auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
+								auto alpha_map_ch = alpha_map ? alpha_map->get_byte_per_channel() : 0;
+
+								if (color_map && alpha_map)
+								{
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
+										}
+									}
+								}
+								else if (color_map && !alpha_map)
+								{
+									auto a = material->color.a() * 255;
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], a);
+										}
+									}
+								}
+								else if (!color_map && alpha_map)
+								{
+									auto col = Vec3c(Vec3f(material->color) * 255.f);
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * 3]);
+										}
+									}
+								}
+
+								auto img = ImagePrivate::create(device, dst_map);
+								auto idx = set_resource(ResourceTexture, -1, img->views.back().get(), "");
+								mr->textures.emplace_back(idx, img);
+								mis.color_map_index = idx;
+
+								if (color_map)
+									color_map->release();
+								if (alpha_map)
+									alpha_map->release();
+								dst_map->release();
+							}
+
+							if (roughness_map)
+							{
+								Vec2u size = Vec2u(0U);
+								if (roughness_map)
+									size = Vec2u(roughness_map->get_width(), roughness_map->get_height());
+
+								auto dst_map = Bitmap::create(size.x(), size.y());
+								auto dst_map_d = dst_map->get_data();
+								auto dst_map_pitch = size.x() * 4;
+
+								auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
+								auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
+								auto roughness_map_ch = roughness_map ? roughness_map->get_byte_per_channel() : 0;
+
+								if (roughness_map)
+								{
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c(0, roughness_map_d[y * roughness_map_pitch + x * roughness_map_ch], 0, 0);
+										}
+									}
+								}
+
+								auto img = ImagePrivate::create(device, dst_map);
+								auto idx = set_resource(ResourceTexture, -1, img->views.back().get(), "");
+								mr->textures.emplace_back(idx, img);
+								mis.metallic_roughness_ao_map_index = idx;
+
+								if (roughness_map)
+									roughness_map->release();
+								dst_map->release();
+							}
+						}
+
+						material_info_buffer.push(slot, mis);
+
+						ImmediateCommandBuffer cb(device);
+						material_info_buffer.upload(cb.cb.get(), slot, 1);
+					}
+				}
+			}
+				break;
+			case ResourceModel:
+			{
+				auto model = (ModelPrivate*)p;
+
+
+				if (slot == -1)
+				{
+					for (auto i = 0; i < model_resources.size(); i++)
+					{
+						if (!model_resources[i])
+						{
+							slot = i;
+							break;
+						}
+					}
+				}
+				if (slot != -1)
+				{
+					{
+						auto prev = model_resources[slot].get();
+						if (prev)
+						{
+							for (auto& m : prev->materials)
+								set_resource(ResourceMaterial, m, nullptr, "");
+						}
+					}
+
+					if (!model)
+						model_resources[slot].reset();
+					else
+					{
+						auto mr = new ModelResource;
+						mr->name = name;
+						mr->model = model;
+						model_resources[slot].reset(mr);
+
+						mr->materials.resize(model->materials.size());
+						for (auto i = 0; i < model->materials.size(); i++)
+							mr->materials[i] = set_resource(ResourceMaterial, -1, model->materials[i].get(), "");
+
+						ImmediateCommandBuffer cb(device);
+
+						mr->meshes.resize(model->meshes.size());
+						for (auto i = 0; i < model->meshes.size(); i++)
+						{
+							auto ms = model->meshes[i].get();
+
+							auto mrm = new ModelResource::Mesh;
+
+							mrm->vertex_buffer_1.create(device, ms->positions.size());
+							std::vector<ModelVertex1> vertices_1;
+							vertices_1.resize(ms->positions.size());
+							for (auto j = 0; j < vertices_1.size(); j++)
+								vertices_1[j].position = ms->positions[j];
+							if (!ms->uvs.empty())
+							{
+								for (auto j = 0; j < vertices_1.size(); j++)
+									vertices_1[j].uv = ms->uvs[j];
+							}
+							if (!ms->normals.empty())
+							{
+								for (auto j = 0; j < vertices_1.size(); j++)
+									vertices_1[j].normal = ms->normals[j];
+							}
+							mrm->vertex_buffer_1.push(vertices_1.size(), vertices_1.data());
+							mrm->vertex_buffer_1.upload(cb.cb.get());
+
+							mrm->index_buffer.create(device, ms->indices.size());
+							mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
+							mrm->index_buffer.upload(cb.cb.get());
+
+							mrm->material_index = mr->materials[ms->material_index];
+
+							mr->meshes[i].reset(mrm);
+						}
+					}
+				}
+			}
+				break;
 			}
 
 			return slot;
-		}
-
-		uint CanvasPrivate::bind_model(ModelPrivate* model, const std::string& name)
-		{
-			assert(model);
-			BoundModel m;
-			m.name = name;
-			m.model = model;
-			models.push_back(m);
-			return models.size() - 1;
-		}
-
-		int CanvasPrivate::find_model(const char* name)
-		{
-			for (auto i = 0; i < models.size(); i++)
-			{
-				if (models[i].name == name)
-					return i;
-			}
-			return -1;
 		}
 
 		void CanvasPrivate::add_draw_element_cmd(uint id)
@@ -765,12 +1069,12 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col)
+		void CanvasPrivate::add_vtx(const Vec2f& position, const Vec2f& uv, const Vec4c& color)
 		{
 			ElementVertex v;
-			v.pos = pos;
+			v.position = position;
 			v.uv = uv;
-			v.col = col;
+			v.color = color;
 			element_vertex_buffer.push(v);
 			
 			last_element_cmd->vertices_count++;
@@ -844,7 +1148,7 @@ namespace flame
 		{
 			thickness *= 0.5f;
 
-			add_draw_element_cmd(white_slot);
+			add_draw_element_cmd(0);
 			auto uv = Vec2f(0.5f);
 
 			for (auto& path : paths)
@@ -1054,7 +1358,7 @@ namespace flame
 
 		void CanvasPrivate::fill(const Vec4c& col, bool aa)
 		{
-			add_draw_element_cmd(white_slot);
+			add_draw_element_cmd(0);
 			auto uv = Vec2f(0.5f);
 
 			for (auto& path : paths)
@@ -1127,7 +1431,10 @@ namespace flame
 
 		void CanvasPrivate::draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes)
 		{
-			auto atlas = resources[res_id]->font_atlas;
+			auto& res = element_resources[res_id];
+			if (res.type != ResourceFontAtlas)
+				return;
+			auto atlas = (FontAtlasPrivate*)res.p;
 
 			add_draw_element_cmd(res_id);
 
@@ -1173,13 +1480,14 @@ namespace flame
 
 		void CanvasPrivate::draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col)
 		{
-			res_id = min(res_id, resources_count - 1);
-			auto atlas = resources[res_id]->image_atlas;
+			if (res_id >= element_resources.size())
+				res_id = 0;
+			auto& res = element_resources[res_id];
 			auto _uv0 = uv0;
 			auto _uv1 = uv1;
-			if (atlas)
+			if (res.type == ResourceImageAtlas)
 			{
-				auto tile = atlas->tiles[tile_id].get();
+				auto tile = ((ImageAtlasPrivate*)res.p)->tiles[tile_id].get();
 				auto tuv = tile->uv;
 				auto tuv0 = Vec2f(tuv.x(), tuv.y());
 				auto tuv1 = Vec2f(tuv.z(), tuv.w());
@@ -1200,189 +1508,19 @@ namespace flame
 
 		void CanvasPrivate::set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord)
 		{
-			camera_data_buffer.end->fovy = fovy;
-			camera_data_buffer.end->aspect = aspect;
-			camera_data_buffer.end->zNear = zNear;
-			camera_data_buffer.end->zFar = zFar;
-			camera_data_buffer.end->coord = coord;
-			camera_data_buffer.end->view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
-			camera_data_buffer.end->view = inverse(camera_data_buffer.end->view_inv);
-			camera_data_buffer.end->proj = make_perspective_project_matrix(fovy * ANG_RAD, aspect, zNear, zFar);
-			camera_data_buffer.end->proj_view = camera_data_buffer.end->proj * camera_data_buffer.end->view;
+			render_data_buffer.end->fovy = fovy;
+			render_data_buffer.end->aspect = aspect;
+			render_data_buffer.end->zNear = zNear;
+			render_data_buffer.end->zFar = zFar;
+			render_data_buffer.end->camera_coord = coord;
+			render_data_buffer.end->view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
+			render_data_buffer.end->view = inverse(render_data_buffer.end->view_inv);
+			render_data_buffer.end->proj = make_perspective_project_matrix(fovy * ANG_RAD, aspect, zNear, zFar);
+			render_data_buffer.end->proj_view = render_data_buffer.end->proj * render_data_buffer.end->view;
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow)
 		{
-			if (uploaded_models_count != models.size())
-			{
-				model_vertex_buffer_1.stg_rewind();
-				model_index_buffer.stg_rewind();
-				material_info_buffer.stg_rewind();
-				auto tex_idx = uploaded_model_textures_count;
-
-				auto sp = device->sampler_linear.get();
-
-				for (auto i = uploaded_models_count; i < models.size(); i++)
-				{
-					auto& m = models[i];
-					auto path = m.model->filename.parent_path();
-
-					std::vector<uint> mat_idxs;
-
-					for (auto& ma : m.model->materials)
-					{
-						BoundMaterial bm;
-						bm.color = ma->color;
-						bm.metallic = ma->metallic;
-						bm.roughness = ma->roughness;
-						bm.alpha_test = ma->alpha_test;
-
-						if (!path.empty())
-						{
-							auto color_map = !ma->color_map.empty() ? Bitmap::create((path / ma->color_map).c_str()) : nullptr;
-							auto alpha_map = !ma->alpha_map.empty() ? Bitmap::create((path / ma->alpha_map).c_str()) : nullptr;
-							auto roughness_map = !ma->roughness_map.empty() ? Bitmap::create((path / ma->roughness_map).c_str()) : nullptr;
-
-							if (color_map || alpha_map)
-							{
-								Vec2u size = Vec2u(0U);
-								if (color_map)
-									size = Vec2u(color_map->get_width(), color_map->get_height());
-								else if (alpha_map)
-									size = Vec2u(alpha_map->get_width(), alpha_map->get_height());
-
-								auto dst_map = Bitmap::create(size.x(), size.y());
-								auto dst_map_d = dst_map->get_data();
-								auto dst_map_pitch = size.x() * 4;
-
-								auto color_map_d = color_map ? color_map->get_data() : nullptr;
-								auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
-								auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
-								auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
-								auto alpha_map_ch = alpha_map ? alpha_map->get_byte_per_channel() : 0;
-
-								if (color_map && alpha_map)
-								{
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
-										}
-									}
-								}
-								else if (color_map && !alpha_map)
-								{
-								auto a = ma->color.a() * 255;
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-									{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], a);
-									}
-								}
-								}
-								else if (!color_map && alpha_map)
-								{
-									auto col = Vec3c(Vec3f(ma->color) * 255.f);
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * 3]);
-										}
-									}
-								}
-
-								auto img = ImagePrivate::create(device, dst_map);
-								model_textures[tex_idx].reset(img);
-								material_descriptorset->set_image(1, tex_idx, img->views.back().get(), sp);
-								bm.color_map_index = tex_idx;
-								tex_idx++;
-
-								if (color_map)
-									color_map->release();
-								if (alpha_map)
-									alpha_map->release();
-								dst_map->release();
-							}
-
-							if (roughness_map)
-							{
-								Vec2u size = Vec2u(0U);
-								if (roughness_map)
-									size = Vec2u(roughness_map->get_width(), roughness_map->get_height());
-
-								auto dst_map = Bitmap::create(size.x(), size.y());
-								auto dst_map_d = dst_map->get_data();
-								auto dst_map_pitch = size.x() * 4;
-
-								auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
-								auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
-								auto roughness_map_ch = roughness_map ? roughness_map->get_byte_per_channel() : 0;
-
-								if (roughness_map)
-								{
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(0, roughness_map_d[y * roughness_map_pitch + x * roughness_map_ch], 0, 0);
-										}
-									}
-								}
-
-								auto img = ImagePrivate::create(device, dst_map);
-								model_textures[tex_idx].reset(img);
-								material_descriptorset->set_image(1, tex_idx, img->views.back().get(), sp);
-								bm.metallic_roughness_ao_map_index = tex_idx;
-								tex_idx++;
-
-								if (roughness_map)
-									roughness_map->release();
-								dst_map->release();
-							}
-						}
-
-						mat_idxs.push_back(uploaded_materials_count + material_info_buffer.stg_num());
-
-						material_info_buffer.push(bm);
-					}
-					for (auto& ms : m.model->meshes)
-					{
-						BoundMesh bm;
-						bm.vtx_off = model_vertex_buffer_1.stg_num();
-						bm.idx_off = model_index_buffer.stg_num();
-						bm.idx_cnt = ms->indices.size();
-						bm.mat_idx = mat_idxs[ms->material_index];
-						bm.aabb = Mat<2U, 3U, float>(0.f);
-						for (auto& v : ms->vertices_1)
-							AABB_merge(bm.aabb, v.pos);
-						m.meshes.push_back(bm);
-
-						model_vertex_buffer_1.push(ms->vertices_1.size(), ms->vertices_1.data());
-						model_index_buffer.push(ms->indices.size(), ms->indices.data());
-					}
-				}
-
-				{
-					ImmediateCommandBuffer cb(device);
-					model_vertex_buffer_1.upload(cb.cb.get());
-					model_index_buffer.upload(cb.cb.get());
-					material_info_buffer.upload(cb.cb.get());
-				}
-
-				uploaded_models_count = models.size();
-				uploaded_vertices_count += model_vertex_buffer_1.stg_num();
-				uploaded_indices_count += model_index_buffer.stg_num();
-				uploaded_materials_count += material_info_buffer.stg_num();
-				uploaded_model_textures_count = tex_idx;
-			}
-
 			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
 			{
 				last_mesh_cmd = new CmdDrawMesh;
@@ -1391,19 +1529,19 @@ namespace flame
 
 			auto idx = mesh_matrix_buffer.stg_num();
 
-			MeshMatrix om;
+			MeshMatrixS om;
 			om.model = model;
 			om.normal = normal;
 			mesh_matrix_buffer.push(om);
 
-			last_mesh_cmd->meshes.emplace_back(idx, &models[mod_id].meshes[mesh_idx], cast_shadow);
+			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow);
 		}
 
 		void CanvasPrivate::add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow)
 		{
 			if (type == LightDirectional)
 			{
-				DirectionalLightInfo li;
+				DirectionalLightInfoS li;
 				li.dir = normalize(-Vec3f(matrix[2]));
 				li.side = normalize(Vec3f(matrix[0]));
 				li.up = normalize(Vec3f(matrix[1]));
@@ -1419,7 +1557,7 @@ namespace flame
 			}
 			else
 			{
-				PointLightInfo li;
+				PointLightInfoS li;
 				li.color = color;
 				li.coord = Vec3f(matrix[3]);
 				li.shadow_map_index = cast_shadow ? used_point_light_shadow_maps_count++ : -1;
@@ -1469,7 +1607,7 @@ namespace flame
 			light_indices_buffer.stg_rewind();
 			{
 				// TODO
-				LightIndices lis;
+				LightIndicesS lis;
 				lis.directional_lights_count = 0;
 				lis.point_lights_count = 0;
 				light_indices_buffer.push(lis);
@@ -1629,15 +1767,13 @@ namespace flame
 					{
 						obj_first = false;
 
-						camera_data_buffer.upload(cb, true);
+						render_data_buffer.upload(cb, 0, 1);
 						mesh_matrix_buffer.upload(cb);
-						camera_data_buffer.barrier(cb);
+						render_data_buffer.barrier(cb);
 						mesh_matrix_buffer.barrier(cb);
 
 						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
-						cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
-						cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
 
 						if (used_directional_light_shadow_maps_count > 0)
 						{
@@ -1647,11 +1783,11 @@ namespace flame
 								auto& li = directional_light_info_buffer.beg[i];
 								if (li.shadow_map_index != -1)
 								{
-									auto zNear = camera_data_buffer.end->zNear;
-									auto zFar = camera_data_buffer.end->zFar;
-									auto tan_hf_fovy = tan(camera_data_buffer.end->fovy * 0.5f * ANG_RAD);
-									auto aspect = camera_data_buffer.end->aspect;
-									auto view_inv = camera_data_buffer.end->view_inv;
+									auto zNear = render_data_buffer.end->zNear;
+									auto zFar = render_data_buffer.end->zFar;
+									auto tan_hf_fovy = tan(render_data_buffer.end->fovy * 0.5f * ANG_RAD);
+									auto aspect = render_data_buffer.end->aspect;
+									auto view_inv = render_data_buffer.end->view_inv;
 
 									li.shadow_distance = 100.f;
 
@@ -1751,7 +1887,11 @@ namespace flame
 												for (auto& m : c->meshes)
 												{
 													if (std::get<2>(m))
-														cb->draw_indexed(std::get<1>(m)->idx_cnt, std::get<1>(m)->idx_off, std::get<1>(m)->vtx_off, 1, (std::get<0>(m) << 16) + std::get<1>(m)->mat_idx);
+													{
+														cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer_1.buf.get(), 0);
+														cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
+														cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
+													}
 												}
 											}
 										}
@@ -1842,7 +1982,11 @@ namespace flame
 												for (auto& m : c->meshes)
 												{
 													if (std::get<2>(m))
-														cb->draw_indexed(std::get<1>(m)->idx_cnt, std::get<1>(m)->idx_off, std::get<1>(m)->vtx_off, 1, (std::get<0>(m) << 16) + std::get<1>(m)->mat_idx);
+													{
+														cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer_1.buf.get(), 0);
+														cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
+														cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
+													}
 												}
 											}
 										}
@@ -1874,8 +2018,6 @@ namespace flame
 					}
 
 					cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
-					cb->bind_vertex_buffer(model_vertex_buffer_1.buf.get(), 0);
-					cb->bind_index_buffer(model_index_buffer.buf.get(), IndiceTypeUint);
 					if (!msaa_3d)
 						cb->begin_renderpass(forward_framebuffers[hdr ? 0 : image_index].get());
 					else
@@ -1900,7 +2042,11 @@ namespace flame
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
 							for (auto& m : c->meshes)
-								cb->draw_indexed(std::get<1>(m)->idx_cnt, std::get<1>(m)->idx_off, std::get<1>(m)->vtx_off, 1, (std::get<0>(m) << 16) + std::get<1>(m)->mat_idx);
+							{
+								cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer_1.buf.get(), 0);
+								cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
+								cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
+							}
 						}
 							break;
 						case Cmd::SetScissor:

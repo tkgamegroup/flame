@@ -15,19 +15,14 @@ namespace flame
 		struct Sampler;
 		struct CommandBuffer;
 
-		struct ElementVertex
+		enum ResourceType
 		{
-			Vec2f pos;
-			Vec2f uv;
-			Vec4c col;
-		};
-
-		struct CanvasResource
-		{
-			virtual const char* get_name() const = 0;
-			virtual ImageView* get_view() const = 0;
-			virtual ImageAtlas* get_image_atlas() const = 0;
-			virtual FontAtlas* get_font_atlas() const = 0;
+			ResourceImage,
+			ResourceImageAtlas,
+			ResourceFontAtlas,
+			ResourceTexture,
+			ResourceMaterial,
+			ResourceModel
 		};
 
 		struct Canvas
@@ -40,14 +35,9 @@ namespace flame
 			virtual ImageView* get_target(uint idx) const = 0;
 			virtual void set_target(uint views_count, ImageView* const* views) = 0;
 
-			virtual CanvasResource* get_resource(uint slot) = 0;
-			virtual uint set_resource(int slot /* -1 to find an empty slot */, ImageView* v, Sampler* sp = nullptr, const char* name = nullptr) = 0;
-			virtual uint set_resource(int slot /* -1 to find an empty slot */, ImageAtlas* image_atlas, const char* name = nullptr) = 0;
-			virtual uint set_resource(int slot /* -1 to find an empty slot */, FontAtlas* font_atlas, const char* name = nullptr) = 0;
-
-			virtual uint bind_model(Model* model, const char* name) = 0;
-			virtual Model* get_model(uint idx) const = 0;
-			virtual int find_model(const char* name) = 0;
+			virtual void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) = 0;
+			virtual int find_resource(ResourceType type, const char* name) = 0;
+			virtual uint set_resource(ResourceType type, int slot /* -1 to find an empty slot */, void* p, const char* name = nullptr) = 0;
 
 			virtual void begin_path() = 0;
 			virtual void move_to(const Vec2f& pos) = 0;

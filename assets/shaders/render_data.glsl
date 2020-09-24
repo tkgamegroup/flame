@@ -1,10 +1,10 @@
-layout (set = 3, binding = 0) uniform CameraData
+layout (set = 3, binding = 0) uniform RenderData
 {
 	float fovy;
 	float aspect;
 	float zNear;
 	float zFar;
-	vec3 coord;
+	vec3 camera_coord;
 	int dummy1;
 	ivec4 dummy2;
 	ivec4 dummy3;
@@ -12,4 +12,4 @@ layout (set = 3, binding = 0) uniform CameraData
 	mat4 view;
 	mat4 proj;
 	mat4 proj_view;
-}camera_data;
+}render_data;

@@ -30,12 +30,12 @@ namespace flame
 
 	struct GraphicsWindow
 	{
-		struct sRendererController : System
+		struct sBeforeRender : System
 		{
 			GraphicsWindow* thiz;
 
-			sRendererController(GraphicsWindow* _w) :
-				System("sRendererController", ch("sRendererController"))
+			sBeforeRender(GraphicsWindow* _w) :
+				System("sBeforeRender", ch("sBeforeRender"))
 			{
 				thiz = _w;
 			}
@@ -124,7 +124,7 @@ namespace flame
 
 		canvas = graphics::Canvas::create(app->graphics_device, hdr, msaa_3d);
 		set_canvas_target();
-		canvas->set_resource(-1, app->font_atlas, "");
+		canvas->set_resource(graphics::ResourceFontAtlas, -1, app->font_atlas, "default_font");
 
 		physics_scene = physics::Scene::create(-9.81f, 2);
 
@@ -142,7 +142,7 @@ namespace flame
 		world->add_system(s_event_dispatcher);
 		s_physic_world = sPhysicsWorld::create();
 		world->add_system(s_physic_world);
-		world->add_system(new sRendererController(this));
+		world->add_system(new sBeforeRender(this));
 		s_renderer = sRenderer::create();
 		world->add_system(s_renderer);
 

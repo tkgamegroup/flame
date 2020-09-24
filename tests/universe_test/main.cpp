@@ -19,7 +19,7 @@ int main(int argc, char** args)
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	if (!model_path.empty())
 	{
-		w->canvas->bind_model(Model::create(model_path.c_str()), "mod");
+		w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(model_path.c_str()), "mod");
 		model_path.replace_extension(L".prefab");
 		Entity::register_prefab(model_path.c_str(), "mod");
 	}

@@ -7,7 +7,7 @@ namespace flame
 	namespace graphics
 	{
 		struct Canvas;
-		struct ModelMesh;
+		struct Mesh;
 	}
 
 	struct cNodePrivate;
@@ -25,7 +25,7 @@ namespace flame
 		graphics::Canvas* canvas = nullptr; // R ref
 		int model_index = -1;
 		int mesh_index = -1;
-		graphics::ModelMesh* mesh = nullptr;
+		graphics::Mesh* mesh = nullptr;
 
 		bool cast_shadow = true;
 

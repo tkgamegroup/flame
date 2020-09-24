@@ -14,68 +14,70 @@ namespace flame
 {
 	namespace graphics
 	{
-		void ModelMeshPrivate::set_vertices_p(const std::initializer_list<float>& v)
+		void MeshPrivate::set_vertices_p(const std::initializer_list<float>& v)
 		{
 			assert(v.size() % 3 == 0);
-			vertices_1.resize(v.size() / 3);
-			for (auto i = 0; i < vertices_1.size(); i++)
+			auto n = v.size() / 3;
+			positions.resize(n);
+			for (auto i = 0; i < n; i++)
 			{
-				vertices_1[i].pos.x() = v.begin()[i * 3 + 0];
-				vertices_1[i].pos.y() = v.begin()[i * 3 + 1];
-				vertices_1[i].pos.z() = v.begin()[i * 3 + 2];
+				positions[i].x() = v.begin()[i * 3 + 0];
+				positions[i].y() = v.begin()[i * 3 + 1];
+				positions[i].z() = v.begin()[i * 3 + 2];
 			}
 		}
 
-		void ModelMeshPrivate::set_vertices_pn(const std::initializer_list<float>& v)
+		void MeshPrivate::set_vertices_pn(const std::initializer_list<float>& v)
 		{
 			assert(v.size() % 6 == 0);
-			vertices_1.resize(v.size() / 6);
-			for (auto i = 0; i < vertices_1.size(); i++)
+			auto n = v.size() / 6;
+			positions.resize(n);
+			normals.resize(n);
+			for (auto i = 0; i < n; i++)
 			{
-				vertices_1[i].pos.x() = v.begin()[i * 6 + 0];
-				vertices_1[i].pos.y() = v.begin()[i * 6 + 1];
-				vertices_1[i].pos.z() = v.begin()[i * 6 + 2];
-				vertices_1[i].normal.x() = v.begin()[i * 6 + 3];
-				vertices_1[i].normal.y() = v.begin()[i * 6 + 4];
-				vertices_1[i].normal.z() = v.begin()[i * 6 + 5];
+				positions[i].x() = v.begin()[i * 6 + 0];
+				positions[i].y() = v.begin()[i * 6 + 1];
+				positions[i].z() = v.begin()[i * 6 + 2];
+				normals[i].x() = v.begin()[i * 6 + 3];
+				normals[i].y() = v.begin()[i * 6 + 4];
+				normals[i].z() = v.begin()[i * 6 + 5];
 			}
 		}
 
-		void ModelMeshPrivate::set_vertices(uint number, Vec3f* poses, Vec3f* uvs, Vec3f* normals)
+		void MeshPrivate::set_vertices(uint n, Vec3f* _positions, Vec3f* _uvs, Vec3f* _normals)
 		{
-			vertices_1.resize(number);
-			if (poses)
+			positions.resize(n);
+			for (auto i = 0; i < n; i++)
+				positions[i] = _positions[i];
+			if (_uvs)
 			{
-				for (auto i = 0; i < number; i++)
-					vertices_1[i].pos = poses[i];
+				uvs.resize(n);
+				for (auto i = 0; i < n; i++)
+					uvs[i] = _uvs[i];
 			}
-			if (uvs)
+			if (_normals)
 			{
-				for (auto i = 0; i < number; i++)
-					vertices_1[i].uv = uvs[i];
-			}
-			if (normals)
-			{
-				for (auto i = 0; i < number; i++)
-					vertices_1[i].normal = normals[i];
+				normals.resize(n);
+				for (auto i = 0; i < n; i++)
+					normals[i] = _normals[i];
 			}
 		}
 
-		void ModelMeshPrivate::set_indices(const std::initializer_list<uint>& v)
+		void MeshPrivate::set_indices(const std::initializer_list<uint>& v)
 		{
 			indices.resize(v.size());
 			for (auto i = 0; i < indices.size(); i++)
 				indices[i] = v.begin()[i];
 		}
 
-		void ModelMeshPrivate::set_indices(uint number, uint* _indices)
+		void MeshPrivate::set_indices(uint n, uint* _indices)
 		{
-			indices.resize(number);
-			for (auto i = 0; i < number; i++)
+			indices.resize(n);
+			for (auto i = 0; i < n; i++)
 				indices[i] = _indices[i];
 		}
 
-		void ModelMeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation)
+		void MeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation)
 		{
 			std::vector<std::vector<int>> staging_indices;
 			staging_indices.resize(horiSubdiv + 1);
@@ -88,31 +90,25 @@ namespace flame
 					auto ring_radius = cos(radian) * radius;
 					auto height = sin(radian) * radius;
 					auto ang = (i * 360.f / vertSubdiv) * ANG_RAD;
-					staging_indices[level].push_back(vertices_1.size());
-					ModelVertex1 v;
-					v.pos = rotation * Vec3f(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
-					v.normal = normalize(v.pos);
-					v.pos += center;
-					vertices_1.push_back(v);
+					staging_indices[level].push_back(positions.size());
+					auto p = rotation * Vec3f(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
+					normals.push_back(p);
+					positions.push_back(p + center);
 				}
 			}
 
 			{
-				staging_indices[0].push_back(vertices_1.size());
-				ModelVertex1 v;
-				v.pos = rotation * Vec3f(0.f, -radius, 0.f);
-				v.normal = normalize(v.pos);
-				v.pos += center;
-				vertices_1.push_back(v);
+				staging_indices[0].push_back(positions.size());
+				auto p = rotation * Vec3f(0.f, -radius, 0.f);
+				normals.push_back(p);
+				positions.push_back(p + center);
 			}
 
 			{
-				staging_indices[horiSubdiv].push_back(vertices_1.size());
-				ModelVertex1 v;
-				v.pos = rotation * Vec3f(0.f, radius, 0.f);
-				v.normal = normalize(v.pos);
-				v.pos += center;
-				vertices_1.push_back(v);
+				staging_indices[horiSubdiv].push_back(positions.size());
+				auto p = rotation * Vec3f(0.f, radius, 0.f);
+				normals.push_back(p);
+				positions.push_back(p + center);
 			}
 
 			for (int level = 0; level < horiSubdiv; level++)
@@ -157,7 +153,7 @@ namespace flame
 			}
 		}
 
-		void ModelNodePrivate::traverse(const std::function<void(ModelNodePrivate*)>& callback)
+		void NodePrivate::traverse(const std::function<void(NodePrivate*)>& callback)
 		{
 			callback(this);
 			for (auto& c : children)
@@ -166,8 +162,8 @@ namespace flame
 
 		ModelPrivate::ModelPrivate()
 		{
-			materials.emplace_back(new ModelMaterialPrivate);
-			root.reset(new ModelNodePrivate);
+			materials.emplace_back(new MaterialPrivate);
+			root.reset(new NodePrivate);
 		}
 
 		void ModelPrivate::substitute_material(const char* _name, const wchar_t* filename)
@@ -225,11 +221,19 @@ namespace flame
 			{
 				write_i(file, m->material_index);
 
-				write_v(file, m->vertices_1);
+				auto n = m->positions.size();
+				write_u(file, n);
+				file.write((char*)m->positions.data(), sizeof(Vec3f) * n);
+				write_b(file, !m->uvs.empty());
+				if (!m->uvs.empty())
+					file.write((char*)m->uvs.data(), sizeof(Vec2f) * n);
+				write_b(file, !m->normals.empty());
+				if (!m->normals.empty())
+					file.write((char*)m->normals.data(), sizeof(Vec3f) * n);
 				write_v(file, m->indices);
 			}
 
-			root->traverse([&](ModelNodePrivate* n) {
+			root->traverse([&](NodePrivate* n) {
 				write_s(file, n->name);
 
 				write_t(file, n->pos);
@@ -248,8 +252,8 @@ namespace flame
 			auto model_name = _model_name;
 			if (model_name.empty())
 				model_name = filename.filename().string();
-			std::function<void(pugi::xml_node, ModelNodePrivate*)> print_node;
-			print_node = [&](pugi::xml_node dst, ModelNodePrivate* src) {
+			std::function<void(pugi::xml_node, NodePrivate*)> print_node;
+			print_node = [&](pugi::xml_node dst, NodePrivate* src) {
 				auto n = dst.append_child("entity");
 				n.append_attribute("name").set_value(src->name.c_str());
 				auto nn = n.append_child("cNode");
@@ -291,75 +295,81 @@ namespace flame
 			prefab.save_file(prefab_path.c_str());
 		}
 
-		static ModelPrivate* standard_models[StandardModelCount];
+		static ModelPrivate* standard_cube = nullptr;
+		static ModelPrivate* standard_sphere = nullptr;
 
-		Model* Model::get_standard(StandardModel m)
+		Model* Model::get_standard(const char* _name)
 		{
-			auto ret = standard_models[m];
-			if (ret)
-				return ret;
-			ret = new ModelPrivate;
-			switch (m)
+			auto name = std::string(_name);
+			if (name == "cube")
 			{
-			case StandardModelCube:
-			{
-				auto mesh = new ModelMeshPrivate;
-				mesh->set_vertices_pn({
-					// F
-					-0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
-					+0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
-					+0.5f, -0.5f, +0.5f, +0.f, +0.f, +1.f,
-					-0.5f, -0.5f, +0.5f, +0.f, +0.f, +1.f,
-					// B
-					-0.5f, +0.5f, -0.5f, +0.f, +0.f, -1.f,
-					+0.5f, +0.5f, -0.5f, +0.f, +0.f, -1.f,
-					+0.5f, -0.5f, -0.5f, +0.f, +0.f, -1.f,
-					-0.5f, -0.5f, -0.5f, +0.f, +0.f, -1.f,
-					// T
-					-0.5f, +0.5f, -0.5f, +0.f, +1.f, +0.f,
-					+0.5f, +0.5f, -0.5f, +0.f, +1.f, +0.f,
-					+0.5f, +0.5f, +0.5f, +0.f, +1.f, +0.f,
-					-0.5f, +0.5f, +0.5f, +0.f, +1.f, +0.f,
-					// B
-					-0.5f, -0.5f, -0.5f, +0.f, -1.f, +0.f,
-					+0.5f, -0.5f, -0.5f, +0.f, -1.f, +0.f,
-					+0.5f, -0.5f, +0.5f, +0.f, -1.f, +0.f,
-					-0.5f, -0.5f, +0.5f, +0.f, -1.f, +0.f,
-					// L
-					-0.5f, +0.5f, -0.5f, -1.f, +0.f, +0.f,
-					-0.5f, +0.5f, +0.5f, -1.f, +0.f, +0.f,
-					-0.5f, -0.5f, +0.5f, -1.f, +0.f, +0.f,
-					-0.5f, -0.5f, -0.5f, -1.f, +0.f, +0.f,
-					// R
-					+0.5f, +0.5f, -0.5f, +1.f, +0.f, +0.f,
-					+0.5f, +0.5f, +0.5f, +1.f, +0.f, +0.f,
-					+0.5f, -0.5f, +0.5f, +1.f, +0.f, +0.f,
-					+0.5f, -0.5f, -0.5f, +1.f, +0.f, +0.f,
-				});
-				mesh->set_indices({
-					0, 2, 1, 0, 3, 2, // F
-					5, 7, 4, 5, 6, 7, // B
-					8, 10, 9, 8, 11, 10, // T
-					15, 13, 14, 15, 12, 13, // B
-					16, 18, 17, 16, 19, 18, // L
-					21, 23, 20, 21, 22, 23, // R
+				if (!standard_cube)
+				{
+					auto m = new ModelPrivate;
+					auto mesh = new MeshPrivate;
+					mesh->set_vertices_pn({
+						// F
+						-0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
+						+0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
+						+0.5f, -0.5f, +0.5f, +0.f, +0.f, +1.f,
+						-0.5f, -0.5f, +0.5f, +0.f, +0.f, +1.f,
+						// B
+						-0.5f, +0.5f, -0.5f, +0.f, +0.f, -1.f,
+						+0.5f, +0.5f, -0.5f, +0.f, +0.f, -1.f,
+						+0.5f, -0.5f, -0.5f, +0.f, +0.f, -1.f,
+						-0.5f, -0.5f, -0.5f, +0.f, +0.f, -1.f,
+						// T
+						-0.5f, +0.5f, -0.5f, +0.f, +1.f, +0.f,
+						+0.5f, +0.5f, -0.5f, +0.f, +1.f, +0.f,
+						+0.5f, +0.5f, +0.5f, +0.f, +1.f, +0.f,
+						-0.5f, +0.5f, +0.5f, +0.f, +1.f, +0.f,
+						// B
+						-0.5f, -0.5f, -0.5f, +0.f, -1.f, +0.f,
+						+0.5f, -0.5f, -0.5f, +0.f, -1.f, +0.f,
+						+0.5f, -0.5f, +0.5f, +0.f, -1.f, +0.f,
+						-0.5f, -0.5f, +0.5f, +0.f, -1.f, +0.f,
+						// L
+						-0.5f, +0.5f, -0.5f, -1.f, +0.f, +0.f,
+						-0.5f, +0.5f, +0.5f, -1.f, +0.f, +0.f,
+						-0.5f, -0.5f, +0.5f, -1.f, +0.f, +0.f,
+						-0.5f, -0.5f, -0.5f, -1.f, +0.f, +0.f,
+						// R
+						+0.5f, +0.5f, -0.5f, +1.f, +0.f, +0.f,
+						+0.5f, +0.5f, +0.5f, +1.f, +0.f, +0.f,
+						+0.5f, -0.5f, +0.5f, +1.f, +0.f, +0.f,
+						+0.5f, -0.5f, -0.5f, +1.f, +0.f, +0.f,
+						});
+					mesh->set_indices({
+						0, 2, 1, 0, 3, 2, // F
+						5, 7, 4, 5, 6, 7, // B
+						8, 10, 9, 8, 11, 10, // T
+						15, 13, 14, 15, 12, 13, // B
+						16, 18, 17, 16, 19, 18, // L
+						21, 23, 20, 21, 22, 23, // R
 
-				});
-				ret->meshes.emplace_back(mesh);
-				ret->root->mesh_index = 0;
+						});
+					m->meshes.emplace_back(mesh);
+					m->root->mesh_index = 0;
+
+					standard_cube = m;
+				}
+				return standard_cube;
 			}
-				break;
-			case StandardModelSphere:
+			else if (name == "sphere")
 			{
-				auto mesh = new ModelMeshPrivate;
-				mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
-				ret->meshes.emplace_back(mesh);
-				ret->root->mesh_index = 0;
+				if (!standard_sphere)
+				{
+					auto m = new ModelPrivate;
+					auto mesh = new MeshPrivate;
+					mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
+					m->meshes.emplace_back(mesh);
+					m->root->mesh_index = 0;
+
+					standard_sphere = m;
+				}
+				return standard_sphere;
 			}
-				break;
-			}
-			standard_models[m] = ret;
-			return ret;
+			return nullptr;
 		}
 
 		ModelPrivate* ModelPrivate::create(const std::filesystem::path& filename)
@@ -384,7 +394,8 @@ namespace flame
 				ret->materials.resize(read_u(file));
 				for (auto i = 0; i < ret->materials.size(); i++)
 				{
-					auto m = new ModelMaterialPrivate;
+					auto m = new MaterialPrivate;
+					m->path = filename.parent_path();
 					ret->materials[i].reset(m);
 
 					read_s(file, m->name);
@@ -406,17 +417,29 @@ namespace flame
 				ret->meshes.resize(read_u(file));
 				for (auto i = 0; i < ret->meshes.size(); i++)
 				{
-					auto m = new ModelMeshPrivate;
+					auto m = new MeshPrivate;
 					ret->meshes[i].reset(m);
 
 					m->material_index = read_i(file);
 
-					read_v(file, m->vertices_1);
+					auto n = read_u(file);
+					m->positions.resize(n);
+					file.read((char*)m->positions.data(), sizeof(Vec3f) * n);
+					if (read_b(file))
+					{
+						m->uvs.resize(n);
+						file.read((char*)m->uvs.data(), sizeof(Vec2f) * n);
+					}
+					if (read_b(file))
+					{
+						m->normals.resize(n);
+						file.read((char*)m->normals.data(), sizeof(Vec3f) * n);
+					}
 					read_v(file, m->indices);
 				}
 
-				std::function<void(ModelNodePrivate*)> load_node;
-				load_node = [&](ModelNodePrivate* n) {
+				std::function<void(NodePrivate*)> load_node;
+				load_node = [&](NodePrivate* n) {
 					read_s(file, n->name);
 
 					read_t(file, n->pos);
@@ -428,7 +451,7 @@ namespace flame
 					n->children.resize(read_u(file));
 					for (auto i = 0; i < n->children.size(); i++)
 					{
-						auto c = new ModelNodePrivate;
+						auto c = new NodePrivate;
 						n->children[i].reset(c);
 						load_node(c);
 					}
@@ -465,7 +488,7 @@ namespace flame
 				for (auto i = 0; i < scene->mNumMaterials; i++)
 				{
 					auto src = scene->mMaterials[i];
-					auto dst = new ModelMaterialPrivate;
+					auto dst = new MaterialPrivate;
 					ret->materials.emplace_back(dst);
 
 					aiString name;
@@ -500,7 +523,7 @@ namespace flame
 				for (auto i = 0; i < scene->mNumMeshes; i++)
 				{
 					auto src = scene->mMeshes[i];
-					auto dst = new ModelMeshPrivate;
+					auto dst = new MeshPrivate;
 					ret->meshes.emplace_back(dst);
 
 					dst->material_index = src->mMaterialIndex;
@@ -517,8 +540,8 @@ namespace flame
 					dst->set_indices(indices.size(), indices.data());
 				}
 
-				std::function<void(ModelNodePrivate*, aiNode*)> get_node;
-				get_node = [&](ModelNodePrivate* dst, aiNode* src) {
+				std::function<void(NodePrivate*, aiNode*)> get_node;
+				get_node = [&](NodePrivate* dst, aiNode* src) {
 					dst->name = std::string(src->mName.C_Str());
 
 					{
@@ -539,7 +562,7 @@ namespace flame
 						if (dst->name.starts_with("trigger_"))
 						{
 							auto& m = ret->meshes[dst->mesh_index];
-							if (m->vertices_1.size() == 4 && m->indices.size() == 6)
+							if (m->positions.size() == 4 && m->indices.size() == 6)
 							{
 								// plane
 								// TODO
@@ -552,13 +575,13 @@ namespace flame
 
 					for (auto i = 0; i < src->mNumChildren; i++)
 					{
-						auto n = new ModelNodePrivate;
+						auto n = new NodePrivate;
 						dst->children.emplace_back(n);
 						get_node(n, src->mChildren[i]);
 					}
 				};
 				{
-					auto n = new ModelNodePrivate;
+					auto n = new NodePrivate;
 					ret->root->children.emplace_back(n);
 					get_node(n, scene->mRootNode);
 				}
@@ -569,7 +592,7 @@ namespace flame
 					{
 						if (ret->meshes[i]->ref_cnt == 0)
 						{
-							auto n = new ModelNodePrivate;
+							auto n = new NodePrivate;
 							n->mesh_index = i;
 							ret->root->children.emplace_back(n);
 						}
@@ -580,7 +603,7 @@ namespace flame
 
 			if (ret && ret->root->children.empty())
 			{
-				auto n = new ModelNodePrivate;
+				auto n = new NodePrivate;
 				auto r = ret->root.release();
 				n->children.emplace_back(r);
 				ret->root.reset(n);

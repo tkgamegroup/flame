@@ -10,40 +10,11 @@ namespace flame
 		struct ImageViewPrivate;
 		struct ImageAtlasPrivate;
 		struct FontAtlasPrivate;
+		struct MaterialPrivate;
 		struct ModelPrivate;
 		struct FramebufferPrivate;
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
-
-		const auto resources_count = 64U;
-		const auto msaa_sample_count = SampleCount_8;
-		const auto shadow_map_size = Vec2u(2048);
-
-		struct CanvasResourcePrivate : CanvasResource
-		{
-			std::string name;
-			ImageViewPrivate* view;
-			ImageAtlasPrivate* image_atlas = nullptr;
-			FontAtlasPrivate* font_atlas = nullptr;
-
-			const char* get_name() const override { return name.c_str(); }
-			ImageView* get_view() const override { return view; }
-			ImageAtlas* get_image_atlas() const override { return image_atlas; }
-			FontAtlas* get_font_atlas() const override { return font_atlas; }
-		};
-
-		struct CanvasBridge : Canvas
-		{
-			void set_target(uint views_count, ImageView* const* views) override;
-
-			uint set_resource(int slot, ImageView* v, Sampler* sp, const char* name) override;
-			uint set_resource(int slot, ImageAtlas* image_atlas, const char* name) override;
-			uint set_resource(int slot, FontAtlas* font_atlas, const char* name) override;
-
-			uint bind_model(Model* model, const char* name) override;
-
-			void record(CommandBuffer* cb, uint image_index) override;
-		};
 
 		template <class T, BufferUsageFlags U>
 		struct TBuffer
@@ -118,10 +89,23 @@ namespace flame
 				end += cnt;
 			}
 
-			void upload(CommandBufferPrivate* cb, bool all = false)
+			void push(uint off, const T& t)
+			{
+				beg[off] = t;
+			}
+
+			void upload(CommandBufferPrivate* cb)
 			{
 				BufferCopy cpy;
-				cpy.size = all ? buf->size : (char*)end - stg->mapped;
+				cpy.size = (char*)end - stg->mapped;
+				cb->copy_buffer(stg.get(), buf.get(), { &cpy, 1 });
+			}
+
+			void upload(CommandBufferPrivate* cb, uint off, uint n)
+			{
+				BufferCopy cpy;
+				cpy.src_off = cpy.dst_off = off * sizeof(T);
+				cpy.size = n * sizeof(T);
 				cb->copy_buffer(stg.get(), buf.get(), { &cpy, 1 });
 			}
 
@@ -131,157 +115,196 @@ namespace flame
 			}
 		};
 
+		const auto msaa_sample_count = SampleCount_8;
+		const auto shadow_map_size = Vec2u(2048);
+
+		struct ElementVertex
+		{
+			Vec2f position;
+			Vec2f uv;
+			Vec4c color;
+		};
+
+		struct ModelVertex1
+		{
+			Vec3f position;
+			Vec2f uv;
+			Vec3f normal;
+		};
+
+		struct ElementResource
+		{
+			std::string name; 
+			ResourceType type = ResourceImage;
+			void* p;
+		};
+
+		struct MaterialResource
+		{
+			std::string name;
+			MaterialPrivate* material;
+			std::vector<std::pair<uint, std::unique_ptr<ImagePrivate>>> textures;
+		};
+
+		struct ModelResource
+		{
+			struct Mesh
+			{
+				TBuffer<ModelVertex1, BufferUsageVertex> vertex_buffer_1;
+				TBuffer<uint, BufferUsageIndex> index_buffer;
+				uint material_index;
+			};
+
+			std::string name;
+			ModelPrivate* model;
+			std::vector<uint> materials;
+			std::vector<std::unique_ptr<Mesh>> meshes;
+		};
+
+		struct MeshMatrixS
+		{
+			Mat4f model;
+			Mat4f normal;
+		};
+
+		struct MaterialInfoS
+		{
+			Vec4f color;
+			float metallic;
+			float roughness;
+			float alpha_test;
+			float dummy0;
+			int color_map_index = -1;
+			int metallic_roughness_ao_map_index = -1;
+			int normal_hegiht_map_index = -1;
+			int dummy1;
+		};
+
+		struct LightIndicesS
+		{
+			uint directional_lights_count;
+			uint point_lights_count;
+			uint point_light_indices[1022];
+		};
+
+		struct DirectionalLightInfoS
+		{
+			Vec3f dir;
+			int dummy1;
+			Vec3f side;
+			int dummy2;
+			Vec3f up;
+			int dummy3;
+			Vec3f color;
+			int dummy4;
+
+			int shadow_map_index;
+			float shadow_distance;
+			Vec2i dummy5;
+			Mat4f shadow_matrices[4];
+		};
+
+		struct PointLightInfoS
+		{
+			Vec3f coord;
+			int dummy1;
+			Vec3f color;
+			int dummy2;
+
+			int shadow_map_index;
+			float shadow_distance;
+			int dummy3[2];
+		};
+
+		struct RenderDataS
+		{
+			float fovy;
+			float aspect;
+			float zNear;
+			float zFar;
+			Vec3f camera_coord;
+			int dummy1;
+			Vec4i dummy2;
+			Vec4i dummy3;
+			Mat4f view_inv;
+			Mat4f view;
+			Mat4f proj;
+			Mat4f proj_view;
+		};
+
+		struct Cmd
+		{
+			enum Type
+			{
+				DrawElement,
+				DrawMesh,
+				SetScissor,
+				Blur,
+				Bloom
+			};
+
+			Type type;
+
+			Cmd(Type t) : type(t) {}
+			virtual ~Cmd() {}
+
+			union
+			{
+				struct
+				{
+					uint count;
+				}d3;
+			}v;
+		};
+
+		struct CmdDrawElement : Cmd
+		{
+			uint id;
+			uint vertices_count = 0;
+			uint indices_count = 0;
+
+			CmdDrawElement(uint _id) : Cmd(DrawElement) { id = _id; }
+		};
+
+		struct CmdDrawMesh : Cmd
+		{
+			std::vector<std::tuple<uint, ModelResource::Mesh*, bool>> meshes;
+
+			CmdDrawMesh() : Cmd(DrawMesh) {}
+		};
+
+		struct CmdSetScissor : Cmd
+		{
+			Vec4f scissor;
+
+			CmdSetScissor(const Vec4f& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
+		};
+
+		struct CmdBlur : Cmd
+		{
+			Vec4f range;
+			uint radius;
+
+			CmdBlur(const Vec4f& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
+		};
+
+		struct CmdBloom : Cmd
+		{
+			CmdBloom() : Cmd(Bloom) {}
+		};
+
+		struct CanvasBridge : Canvas
+		{
+			void set_target(uint views_count, ImageView* const* views) override;
+
+			int find_resource(ResourceType type, const char* name) override;
+			uint set_resource(ResourceType type, int slot, void* p, const char* name) override;
+
+			void record(CommandBuffer* cb, uint image_index) override;
+		};
+
 		struct CanvasPrivate : CanvasBridge
 		{
-			struct BoundMaterial
-			{
-				Vec4f color;
-				float metallic;
-				float roughness;
-				float alpha_test;
-				float dummy0;
-				int color_map_index = -1;
-				int metallic_roughness_ao_map_index = -1;
-				int normal_hegiht_map_index = -1;
-				int dummy1;
-			};
-
-			struct BoundMesh
-			{
-				uint vtx_off;
-				uint idx_off;
-				uint idx_cnt;
-				uint mat_idx;
-
-				Mat<2U, 3U, float> aabb;
-			};
-
-			struct BoundModel
-			{
-				std::string name;
-				ModelPrivate* model;
-				std::vector<BoundMesh> meshes;
-			};
-
-			struct CameraData
-			{
-				float fovy;
-				float aspect;
-				float zNear;
-				float zFar;
-				Vec3f coord;
-				int dummy1;
-				Vec4i dummy2;
-				Vec4i dummy3;
-				Mat4f view_inv;
-				Mat4f view;
-				Mat4f proj;
-				Mat4f proj_view;
-			}; 
-
-			struct MeshMatrix
-			{
-				Mat4f model;
-				Mat4f normal;
-			};
-
-			struct LightIndices
-			{
-				uint directional_lights_count;
-				uint point_lights_count;
-				uint point_light_indices[1022];
-			};
-
-			struct DirectionalLightInfo
-			{
-				Vec3f dir;
-				int dummy1;
-				Vec3f side;
-				int dummy2;
-				Vec3f up;
-				int dummy3;
-				Vec3f color;
-				int dummy4;
-
-				int shadow_map_index;
-				float shadow_distance;
-				Vec2i dummy5;
-				Mat4f shadow_matrices[4];
-			}; 
-			
-			struct PointLightInfo
-			{
-				Vec3f coord;
-				int dummy1;
-				Vec3f color;
-				int dummy2;
-
-				int shadow_map_index;
-				float shadow_distance;
-				int dummy3[2];
-			};
-
-			struct Cmd
-			{
-				enum Type
-				{
-					DrawElement,
-					DrawMesh,
-					SetScissor,
-					Blur,
-					Bloom
-				};
-
-				Type type;
-
-				Cmd(Type t) : type(t) {}
-				virtual ~Cmd() {}
-
-				union
-				{
-					struct
-					{
-						uint count;
-					}d3;
-				}v;
-			};
-
-			struct CmdDrawElement : Cmd
-			{
-				uint id;
-				uint vertices_count = 0;
-				uint indices_count = 0;
-
-				CmdDrawElement(uint _id) : Cmd(DrawElement) { id = _id; }
-			};
-
-			struct CmdDrawMesh : Cmd
-			{
-				std::vector<std::tuple<uint, BoundMesh*, bool>> meshes;
-
-				CmdDrawMesh() : Cmd(DrawMesh) {}
-			};
-
-			struct CmdSetScissor : Cmd
-			{
-				Vec4f scissor;
-
-				CmdSetScissor(const Vec4f& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
-			};
-
-			struct CmdBlur : Cmd
-			{
-				Vec4f range;
-				uint radius;
-
-				CmdBlur(const Vec4f& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
-			};
-
-			struct CmdBloom : Cmd
-			{
-				CmdBloom() : Cmd(Bloom) {}
-			};
-
 			DevicePrivate* device;
 
 			bool hdr;
@@ -289,51 +312,46 @@ namespace flame
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
-			std::unique_ptr<CanvasResourcePrivate> resources[resources_count];
-			std::vector<std::unique_ptr<ImagePrivate>> model_textures;
-			std::vector<BoundModel> models;
-			uint uploaded_models_count = 0;
-			uint uploaded_vertices_count = 0;
-			uint uploaded_indices_count = 0;
-			uint uploaded_materials_count = 0;
-			uint uploaded_model_textures_count = 0;
-
 			std::unique_ptr<ImagePrivate> white_image;
-			uint white_slot = 0;
+			std::vector<ElementResource> element_resources;
+			std::vector<std::pair<std::string, ImageViewPrivate*>> texture_resources;
+			std::vector<std::unique_ptr<MaterialResource>> material_resources;
+			std::vector<std::unique_ptr<ModelResource>> model_resources;
 
 			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
-			TBuffer<ModelVertex1, BufferUsageVertex> model_vertex_buffer_1;
-			TBuffer<uint, BufferUsageIndex> model_index_buffer;
-			TBuffer<CameraData, BufferUsageUniform> camera_data_buffer;
-			TBuffer<BoundMaterial, BufferUsageStorage> material_info_buffer;
-			TBuffer<MeshMatrix, BufferUsageStorage> mesh_matrix_buffer;
+			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
+
+			TBuffer<MeshMatrixS, BufferUsageStorage> mesh_matrix_buffer;
+			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
+
+			TBuffer<MaterialInfoS, BufferUsageStorage> material_info_buffer;
+			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
 
-			TBuffer<LightIndices, BufferUsageStorage> light_indices_buffer;
+			TBuffer<LightIndicesS, BufferUsageStorage> light_indices_buffer;
 
-			TBuffer<DirectionalLightInfo, BufferUsageStorage> directional_light_info_buffer;
+			TBuffer<DirectionalLightInfoS, BufferUsageStorage> directional_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> directional_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_light_shadow_map_descriptorsets;
 			uint used_directional_light_shadow_maps_count = 0;
 
-			TBuffer<PointLightInfo, BufferUsageStorage> point_light_info_buffer;
+			TBuffer<PointLightInfoS, BufferUsageStorage> point_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> point_light_shadow_map_descriptorsets;
 			uint used_point_light_shadow_maps_count = 0;
 
-			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
-			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
-			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
+
+			TBuffer<RenderDataS, BufferUsageUniform> render_data_buffer;
 			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
@@ -376,15 +394,12 @@ namespace flame
 			ImageView* get_target(uint idx) const override { return (ImageView*)target_imageviews[idx]; }
 			void set_target(std::span<ImageViewPrivate*> views);
 
-			CanvasResource* get_resource(uint slot) override { return slot < resources_count ? resources[slot].get() : nullptr; }
-			uint set_resource(int slot, ImageViewPrivate* v, SamplerPrivate* sp, const std::string& name, ImageAtlasPrivate* image_atlas, FontAtlasPrivate* font_atlas);
-
-			uint bind_model(ModelPrivate* model, const std::string& name);
-			Model* get_model(uint idx) const override { return models[idx].model; }
-			int find_model(const char* name) override;
+			void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) override;
+			int find_resource(ResourceType type, const std::string& name);
+			uint set_resource(ResourceType type, int slot, void* p, const std::string& name);
 
 			void add_draw_element_cmd(uint id);
-			void add_vtx(const Vec2f& pos, const Vec2f& uv, const Vec4c& col);
+			void add_vtx(const Vec2f& position, const Vec2f& uv, const Vec4c& color);
 			void add_idx(uint idx);
 
 			void begin_path() override;
@@ -418,27 +433,14 @@ namespace flame
 			((CanvasPrivate*)this)->set_target({ (ImageViewPrivate**)views, views_count });
 		}
 
-		inline uint CanvasBridge::set_resource(int slot, ImageView* v, Sampler* sp, const char* name)
+		inline int CanvasBridge::find_resource(ResourceType type, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, (ImageViewPrivate*)v, (SamplerPrivate*)sp, name ? name : "", nullptr, nullptr);
+			return ((CanvasPrivate*)this)->find_resource(type, name ? name : "");
 		}
 
-		inline uint CanvasBridge::set_resource(int slot, ImageAtlas* image_atlas, const char* name)
+		inline uint CanvasBridge::set_resource(ResourceType type, int slot, void* p, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(slot, ((ImageAtlasPrivate*)image_atlas)->image->views[0].get(), 
-				((ImageAtlasPrivate*)image_atlas)->border ? ((CanvasPrivate*)this)->device->sampler_linear.get() : ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
-				name ? name : "", (ImageAtlasPrivate*)image_atlas, nullptr);
-		}
-
-		inline uint CanvasBridge::set_resource(int slot, FontAtlas* font_atlas, const char* name)
-		{
-			return ((CanvasPrivate*)this)->set_resource(slot, ((FontAtlasPrivate*)font_atlas)->view, ((CanvasPrivate*)this)->device->sampler_nearest.get(), 
-				name ? name : "", nullptr, (FontAtlasPrivate*)font_atlas);
-		}
-
-		inline uint CanvasBridge::bind_model(Model* model, const char* name)
-		{
-			return ((CanvasPrivate*)this)->bind_model((ModelPrivate*)model, name);
+			return ((CanvasPrivate*)this)->set_resource(type, slot, p, name ? name : "");
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)

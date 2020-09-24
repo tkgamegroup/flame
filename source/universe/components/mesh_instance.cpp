@@ -42,10 +42,10 @@ namespace flame
 		mesh = nullptr;
 		if (canvas && !src.empty())
 		{
-			model_index = canvas->find_model(src.c_str());
+			model_index = canvas->find_resource(graphics::ResourceModel, src.c_str());
 			if (model_index != -1)
 			{
-				mesh = canvas->get_model(model_index)->get_mesh(mesh_index);
+				mesh = ((graphics::Model*)canvas->get_resource(graphics::ResourceModel, model_index))->get_mesh(mesh_index);
 				Entity::report_data_changed(this, S<ch("mesh")>::v);
 			}
 		}

@@ -22,10 +22,10 @@ namespace flame
 		std::wstring text;
 		uint size = 14;
 		Vec4c color = Vec4c(0, 0, 0, 255);
+		int res_id = -1;
 
 		cElementPrivate* element = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
-		graphics::FontAtlas* atlas = nullptr;
 
 		bool auto_width = true;
 		bool auto_height = true;
@@ -46,7 +46,6 @@ namespace flame
 		void set_auto_height(bool a) override { auto_height = a; }
 
 		void on_gain_canvas();
-		void on_lost_canvas();
 
 		void mark_text_changed();
 

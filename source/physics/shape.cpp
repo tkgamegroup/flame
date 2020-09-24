@@ -46,11 +46,11 @@ namespace flame
 					std::vector<PxU32> indices;
 					{
 						auto mesh = desc.mesh.mesh;
-						vertices.resize(mesh->get_vertices_count_1());
+						vertices.resize(mesh->get_vertices_count());
 						indices.resize(mesh->get_indices_count());
-						auto vs = mesh->get_vertices_1();
+						auto ps = mesh->get_positions();
 						for (auto i = 0; i < vertices.size(); i++)
-							vertices[i] = cvt(vs[i].pos);
+							vertices[i] = cvt(ps[i]);
 						auto is = mesh->get_indices();
 						for (auto i = 0; i < indices.size(); i++)
 							indices[i] = is[i];

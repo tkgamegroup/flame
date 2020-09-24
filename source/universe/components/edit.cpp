@@ -35,7 +35,7 @@ namespace flame
 	int cEditPrivate::locate_cursor(const Vec2f& mpos)
 	{
 		const auto& str = text->text;
-		auto atlas = text->atlas;
+		auto atlas = (graphics::FontAtlas*)text->canvas->get_resource(graphics::ResourceFontAtlas, text->res_id);
 		auto font_size = text->size;
 
 		element->update_transform();
@@ -374,7 +374,7 @@ namespace flame
 	void cEditPrivate::draw(graphics::Canvas* canvas)
 	{
 		const auto& str = text->text;
-		auto atlas = text->atlas;
+		auto atlas = (graphics::FontAtlas*)text->canvas->get_resource(graphics::ResourceFontAtlas, text->res_id);
 		auto font_size = text->size;
 		element->update_transform();
 		auto pos = element->points[4];

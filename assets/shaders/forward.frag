@@ -4,7 +4,7 @@
 
 #include "material_dsl.glsl"
 #include "light_dsl.glsl"
-#include "camera_data.glsl"
+#include "render_data.glsl"
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
@@ -92,7 +92,7 @@ void main()
 
 		if (light.shadow_map_index != -1)
 		{
-			float depthv = length(i_coordv) / camera_data.zFar;
+			float depthv = length(i_coordv) / render_data.zFar;
 			int lv = 0;
 			for (; lv < 4; lv++)
 			{

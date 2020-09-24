@@ -4,12 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct CommandBuffer;
-		struct Canvas;
-	}
-
 	struct cCamera;
 
 	struct sRenderer : System

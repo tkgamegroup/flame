@@ -12,7 +12,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct ModelMesh;
+		struct Mesh;
 	}
 
 	namespace physics
@@ -48,7 +48,7 @@ namespace flame
 			}capsule;
 			struct
 			{
-				graphics::ModelMesh* mesh;
+				graphics::Mesh* mesh;
 				Vec3f scale;
 			}mesh;
 		};

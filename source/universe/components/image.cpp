@@ -63,12 +63,12 @@ namespace flame
 			ret = Vec2f(-1.f);
 			return;
 		}
-		auto r = canvas->get_resource(res_id);
-		auto ia = r->get_image_atlas();
-		if (!ia)
-			ret = Vec2f(r->get_view()->get_image()->get_size());
+		graphics::ResourceType type;
+		auto r = canvas->get_resource(graphics::ResourceImage, res_id, &type);
+		if (type == graphics::ResourceImage)
+			ret = Vec2f(((graphics::ImageView*)r)->get_image()->get_size());
 		else
-			ret = Vec2f(ia->get_tile(tile_id)->get_size());
+			ret = Vec2f(((graphics::ImageAtlas*)r)->get_tile(tile_id)->get_size());
 
 	}
 
@@ -94,37 +94,34 @@ namespace flame
 		if (canvas && !src.empty())
 		{
 			auto sp = SUS::split(src, '.');
-			auto slot = 0;
-			while (true)
+			auto slot = canvas->find_resource(graphics::ResourceImage, sp[0].c_str());
+			graphics::ResourceType type;
+			auto r = canvas->get_resource(graphics::ResourceImage, slot, &type);
+			if (type == graphics::ResourceImageAtlas)
 			{
-				auto r = canvas->get_resource(slot);
-				if (!r)
-					break;
-				if (r->get_name() == sp[0])
+				if (sp.size() != 2)
+					return;
+
+				auto tile = ((graphics::ImageAtlas*)r)->find_tile(sp[1].c_str());
+				if (tile)
 				{
-					auto atlas = r->get_image_atlas();
-					if (!atlas)
-					{
-						assert(sp.size() == 1);
-						res_id = slot;
-					}
-					else
-					{
-						assert(sp.size() == 2);
-						auto tile = atlas->find_tile(sp[1].c_str());
-						if (tile)
-						{
-							res_id = slot;
-							tile_id = tile->get_index();
-						}
-					}
-					Entity::report_data_changed(this, S<ch("res_id")>::v);
-					Entity::report_data_changed(this, S<ch("tile_id")>::v);
-					Entity::report_data_changed(this, S<ch("src")>::v);
-					break;
+					res_id = slot;
+					tile_id = tile->get_index();
 				}
-				slot++;
+				else
+					return;
 			}
+			else
+			{
+				if (sp.size() == 1)
+					res_id = slot;
+				else
+					return;
+			}
+
+			Entity::report_data_changed(this, S<ch("res_id")>::v);
+			Entity::report_data_changed(this, S<ch("tile_id")>::v);
+			Entity::report_data_changed(this, S<ch("src")>::v);
 		}
 	}
 
