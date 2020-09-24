@@ -2,6 +2,12 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
+#define RENDER_DATA_SET 2
+#define TERRAIN_SET 3
+
+#include "render_data_dsl.glsl"
+#include "terrain_dsl.glsl"
+
 layout(triangles) in;  
 layout(triangle_strip, max_vertices = 3) out;
 
@@ -19,7 +25,7 @@ void main(void)
 
 	for(int i = 0; i < gl_in.length(); ++i)  
 	{  
-		gl_Position = gl_in[i].gl_Position;  
+		gl_Position = render_data.proj_view * gl_in[i].gl_Position;  
   
 		o_uv = i_uvs[i];
 		o_normal = normal;

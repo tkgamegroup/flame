@@ -66,7 +66,10 @@ namespace flame
 		{
 			auto node = camera->node;
 			node->update_transform();
-			auto size = Vec2f(canvas->get_target(0)->get_image()->get_size());
+			auto tar = canvas->get_target(0);
+			auto size = Vec2f(0.f);
+			if (tar)
+				size = Vec2f(tar->get_image()->get_size());
 			canvas->set_camera(camera->fovy, size.x() / size.y(), camera->near, camera->far, node->axes, node->global_pos);
 		}
 		render(world->root.get(), false, !camera);

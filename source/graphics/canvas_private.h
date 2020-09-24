@@ -401,7 +401,7 @@ namespace flame
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }
 
-			ImageView* get_target(uint idx) const override { return (ImageView*)target_imageviews[idx]; }
+			ImageView* get_target(uint idx) const override { return target_imageviews.empty() ? nullptr : (ImageView*)target_imageviews[idx]; }
 			void set_target(std::span<ImageViewPrivate*> views);
 
 			void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) override;

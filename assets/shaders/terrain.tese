@@ -36,5 +36,5 @@ void main()
 	MaterialInfo material = material_infos[99];
 	pos.y -= texture(maps[material.normal_height_map_index], o_uv).a * terrain_info.extent.y;
 
-	gl_Position = render_data.proj_view * pos;
+	gl_Position = pos;
 }
