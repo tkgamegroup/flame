@@ -79,6 +79,23 @@ namespace flame
 		}
 		*/
 
+		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const Mat4f& transform, Vec3f* dst)
+		{
+			auto y1 = zNear * tan_hf_fovy;
+			auto y2 = zFar * tan_hf_fovy;
+			auto x1 = y1 * aspect;
+			auto x2 = y2 * aspect;
+
+			dst[0] = Vec3f(transform * Vec4f(-x1, y1, -zNear, 1.f));
+			dst[1] = Vec3f(transform * Vec4f(x1, y1, -zNear, 1.f));
+			dst[2] = Vec3f(transform * Vec4f(x1, -y1, -zNear, 1.f));
+			dst[3] = Vec3f(transform * Vec4f(-x1, -y1, -zNear, 1.f));
+			dst[4] = Vec3f(transform * Vec4f(-x2, y2, -zFar, 1.f));
+			dst[5] = Vec3f(transform * Vec4f(x2, y2, -zFar, 1.f));
+			dst[6] = Vec3f(transform * Vec4f(x2, -y2, -zFar, 1.f));
+			dst[7] = Vec3f(transform * Vec4f(-x2, -y2, -zFar, 1.f));
+		}
+
 		static auto initialized = false;
 
 		static SamplerPrivate* shadow_sampler = nullptr;
@@ -94,22 +111,28 @@ namespace flame
 		static DescriptorSetLayoutPrivate* mesh_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* material_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* light_descriptorsetlayout = nullptr;
-		static DescriptorSetLayoutPrivate* forward_descriptorsetlayout = nullptr;
+		static DescriptorSetLayoutPrivate* render_data_descriptorsetlayout = nullptr;
+		static DescriptorSetLayoutPrivate* terrain_descriptorsetlayout = nullptr;
 		static DescriptorSetLayoutPrivate* sampler1_descriptorsetlayout = nullptr;
 		static PipelineLayoutPrivate* element_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* forward_pipelinelayout = nullptr;
+		static PipelineLayoutPrivate* terrain_pipelinelayout = nullptr;
+		static PipelineLayoutPrivate* depth_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc0_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc4_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc8_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* image1_pc0_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* image2_pc0_pipelinelayout = nullptr;
-		static PipelineLayoutPrivate* depth_pipelinelayout = nullptr;
 		static PipelinePrivate* element8_pipeline = nullptr;
 		static PipelinePrivate* element16_pipeline = nullptr;
 		static PipelinePrivate* forward8_pipeline = nullptr;
 		static PipelinePrivate* forward16_pipeline = nullptr;
 		static PipelinePrivate* forward8_msaa_pipeline = nullptr;
 		static PipelinePrivate* forward16_msaa_pipeline = nullptr;
+		static PipelinePrivate* terrain8_pipeline = nullptr;
+		static PipelinePrivate* terrain16_pipeline = nullptr;
+		static PipelinePrivate* terrain8_msaa_pipeline = nullptr;
+		static PipelinePrivate* terrain16_msaa_pipeline = nullptr;
 		static PipelinePrivate* depth_pipeline = nullptr;
 		static PipelinePrivate* blurh8_pipeline[10] = {};
 		static PipelinePrivate* blurh16_pipeline[10] = {};
@@ -257,7 +280,13 @@ namespace flame
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorUniformBuffer;
-					forward_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					render_data_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+				}
+
+				{
+					DescriptorBindingInfo db;
+					db.type = DescriptorUniformBuffer;
+					terrain_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
 				{
@@ -273,13 +302,19 @@ namespace flame
 						mesh_descriptorsetlayout,
 						material_descriptorsetlayout,
 						light_descriptorsetlayout,
-						forward_descriptorsetlayout
+						render_data_descriptorsetlayout
 					};
 					forward_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
 				}
-				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, 0);
-				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
-				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
+				{
+					DescriptorSetLayoutPrivate* dsls[] = {
+						material_descriptorsetlayout,
+						light_descriptorsetlayout,
+						render_data_descriptorsetlayout,
+						terrain_descriptorsetlayout
+					};
+					terrain_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
+				}
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
 						mesh_descriptorsetlayout,
@@ -287,6 +322,9 @@ namespace flame
 					};
 					depth_pipelinelayout = new PipelineLayoutPrivate(d, dsls, sizeof(Mat4f) * 2);
 				}
+				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, 0);
+				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
+				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
 
 				{
 					VertexAttributeInfo vias[3];
@@ -347,6 +385,29 @@ namespace flame
 					forward8_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
 					forward16_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+						&dep);
+				}
+
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(d, L"terrain.vert"),
+						new ShaderPrivate(d, L"terrain.tesc"),
+						new ShaderPrivate(d, L"terrain.tese"),
+						new ShaderPrivate(d, L"terrain.geom"),
+						new ShaderPrivate(d, L"terrain.frag")
+					};
+					VertexInfo vi;
+					vi.primitive_topology = PrimitiveTopologyPatchList;
+					vi.patch_control_points = 4;
+					RasterInfo rst;
+					DepthInfo dep;
+					terrain8_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+						&dep);
+					terrain16_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+						&dep);
+					terrain8_msaa_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+						&dep);
+					terrain16_msaa_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
 				}
 
@@ -563,11 +624,23 @@ namespace flame
 			}
 
 			render_data_buffer.create(d, 1);
-			forward_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), forward_descriptorsetlayout));
-			forward_descriptorset->set_buffer(0, 0, render_data_buffer.buf.get());
+			render_data_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), render_data_descriptorsetlayout));
+			render_data_descriptorset->set_buffer(0, 0, render_data_buffer.buf.get());
+
+			terrain_info_buffer.create(d, 1);
+			terrain_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), terrain_descriptorsetlayout));
+			terrain_descriptorset->set_buffer(0, 0, terrain_info_buffer.buf.get());
 
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("cube"), "cube");
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
+
+			{
+				// TODO
+				auto terrain_material = new MaterialPrivate;
+				terrain_material->path = L"D:/terrain";
+				terrain_material->height_map = "height.jpg";
+				set_resource(ResourceMaterial, 99, terrain_material, "");
+			}
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -855,14 +928,16 @@ namespace flame
 							auto color_map = !material->color_map.empty() ? Bitmap::create((material->path / material->color_map).c_str()) : nullptr;
 							auto alpha_map = !material->alpha_map.empty() ? Bitmap::create((material->path / material->alpha_map).c_str()) : nullptr;
 							auto roughness_map = !material->roughness_map.empty() ? Bitmap::create((material->path / material->roughness_map).c_str()) : nullptr;
+							auto normal_map = !material->normal_map.empty() ? Bitmap::create((material->path / material->normal_map).c_str()) : nullptr;
+							auto height_map = !material->height_map.empty() ? Bitmap::create((material->path / material->height_map).c_str()) : nullptr;
 
 							if (color_map || alpha_map)
 							{
 								Vec2u size = Vec2u(0U);
 								if (color_map)
-									size = Vec2u(color_map->get_width(), color_map->get_height());
-								else if (alpha_map)
-									size = Vec2u(alpha_map->get_width(), alpha_map->get_height());
+									size = max(size, Vec2u(color_map->get_width(), color_map->get_height()));
+								if (alpha_map)
+									size = max(size, Vec2u(alpha_map->get_width(), alpha_map->get_height()));
 
 								auto dst_map = Bitmap::create(size.x(), size.y());
 								auto dst_map_d = dst_map->get_data();
@@ -905,7 +980,7 @@ namespace flame
 										for (auto x = 0; x < size.x(); x++)
 										{
 											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * 3]);
+												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
 										}
 									}
 								}
@@ -915,10 +990,6 @@ namespace flame
 								mr->textures.emplace_back(idx, img);
 								mis.color_map_index = idx;
 
-								if (color_map)
-									color_map->release();
-								if (alpha_map)
-									alpha_map->release();
 								dst_map->release();
 							}
 
@@ -926,7 +997,7 @@ namespace flame
 							{
 								Vec2u size = Vec2u(0U);
 								if (roughness_map)
-									size = Vec2u(roughness_map->get_width(), roughness_map->get_height());
+									size = max(size, Vec2u(roughness_map->get_width(), roughness_map->get_height()));
 
 								auto dst_map = Bitmap::create(size.x(), size.y());
 								auto dst_map_d = dst_map->get_data();
@@ -953,10 +1024,63 @@ namespace flame
 								mr->textures.emplace_back(idx, img);
 								mis.metallic_roughness_ao_map_index = idx;
 
-								if (roughness_map)
-									roughness_map->release();
 								dst_map->release();
 							}
+
+							if (normal_map || height_map)
+							{
+								Vec2u size = Vec2u(0U);
+								if (normal_map)
+									size = max(size, Vec2u(normal_map->get_width(), normal_map->get_height()));
+								if (height_map)
+									size = max(size, Vec2u(height_map->get_width(), height_map->get_height()));
+
+								auto dst_map = Bitmap::create(size.x(), size.y());
+								auto dst_map_d = dst_map->get_data();
+								auto dst_map_pitch = size.x() * 4;
+
+								auto height_map_d = height_map ? height_map->get_data() : nullptr;
+								auto height_map_pitch = height_map ? height_map->get_pitch() : 0;
+								auto height_map_ch = height_map ? height_map->get_byte_per_channel() : 0;
+
+								if (normal_map && height_map)
+								{
+
+								}
+								else if (normal_map && !height_map)
+								{
+
+								}
+								else if (!normal_map && height_map)
+								{
+									for (auto y = 0; y < size.y(); y++)
+									{
+										for (auto x = 0; x < size.x(); x++)
+										{
+											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+												Vec4c(Vec3f(0.f), height_map_d[y * height_map_pitch + x * height_map_ch]);
+										}
+									}
+								}
+
+								auto img = ImagePrivate::create(device, dst_map);
+								auto idx = set_resource(ResourceTexture, -1, img->views.back().get(), "");
+								mr->textures.emplace_back(idx, img);
+								mis.normal_hegiht_map_index = idx;
+
+								dst_map->release();
+							}
+
+							if (color_map)
+								color_map->release();
+							if (alpha_map)
+								alpha_map->release();
+							if (roughness_map)
+								roughness_map->release();
+							if (normal_map)
+								normal_map->release();
+							if (height_map)
+								height_map->release();
 						}
 
 						material_info_buffer.push(slot, mis);
@@ -1508,17 +1632,26 @@ namespace flame
 
 		void CanvasPrivate::set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord)
 		{
+			auto view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
+
 			render_data_buffer.end->fovy = fovy;
 			render_data_buffer.end->aspect = aspect;
 			render_data_buffer.end->zNear = zNear;
 			render_data_buffer.end->zFar = zFar;
 			render_data_buffer.end->camera_coord = coord;
-			render_data_buffer.end->shadow_distance = 100.f;
-			render_data_buffer.end->csm_levels = 3;
-			render_data_buffer.end->view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
+			render_data_buffer.end->view_inv = view_inv;
 			render_data_buffer.end->view = inverse(render_data_buffer.end->view_inv);
-			render_data_buffer.end->proj = make_perspective_project_matrix(fovy * ANG_RAD, aspect, zNear, zFar);
+			render_data_buffer.end->proj = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
 			render_data_buffer.end->proj_view = render_data_buffer.end->proj * render_data_buffer.end->view;
+
+			Vec3f ps[8];
+			get_frustum_points(zNear, zFar, tan(fovy * 0.5f * ANG_RAD), aspect, view_inv, ps);
+			render_data_buffer.end->frustum_planes[0] = make_plane(ps[0], ps[1], ps[2]); // near
+			render_data_buffer.end->frustum_planes[1] = make_plane(ps[5], ps[4], ps[6]); // far
+			render_data_buffer.end->frustum_planes[2] = make_plane(ps[4], ps[0], ps[7]); // left
+			render_data_buffer.end->frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
+			render_data_buffer.end->frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
+			render_data_buffer.end->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow)
@@ -1567,22 +1700,8 @@ namespace flame
 						auto f = (j + 1) / (float)level;
 						f = f * f * zFar;
 
-						auto y1 = n * tan_hf_fovy;
-						auto y2 = f * tan_hf_fovy;
-						auto x1 = y1 * aspect;
-						auto x2 = y2 * aspect;
-
 						Vec3f ps[8];
-
-						ps[0] = Vec3f(view_inv * Vec4f(-x1, y1, -n, 1.f));
-						ps[1] = Vec3f(view_inv * Vec4f(x1, y1, -n, 1.f));
-						ps[2] = Vec3f(view_inv * Vec4f(x1, -y1, -n, 1.f));
-						ps[3] = Vec3f(view_inv * Vec4f(-x1, -y1, -n, 1.f));
-
-						ps[4] = Vec3f(view_inv * Vec4f(-x2, y2, -f, 1.f));
-						ps[5] = Vec3f(view_inv * Vec4f(x2, y2, -f, 1.f));
-						ps[6] = Vec3f(view_inv * Vec4f(x2, -y2, -f, 1.f));
-						ps[7] = Vec3f(view_inv * Vec4f(-x2, -y2, -f, 1.f));
+						get_frustum_points(n, f, tan_hf_fovy, aspect, view_inv, ps);
 
 						auto c = (ps[0] + ps[1] + ps[2] + ps[3] +
 							ps[4] + ps[5] + ps[6] + ps[7]) * 0.125f;
@@ -1683,7 +1802,7 @@ namespace flame
 			{
 				PassNone = -1,
 				PassElement,
-				PassObject,
+				PassMesh,
 				PassBlur,
 				PassBloom
 			};
@@ -1709,16 +1828,16 @@ namespace flame
 					break;
 				case Cmd::DrawMesh:
 				{
-					if (passes.empty() || (passes.back().type != PassObject && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != PassMesh && passes.back().type != PassNone))
 						passes.emplace_back();
-					passes.back().type = PassObject;
+					passes.back().type = PassMesh;
 					passes.back().cmd_ids.push_back(i);
 
 				}
 					break;
 				case Cmd::SetScissor:
 				{
-					if (passes.empty() || (passes.back().type != PassElement && passes.back().type != PassObject && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != PassElement && passes.back().type != PassMesh && passes.back().type != PassNone))
 						passes.emplace_back();
 					passes.back().cmd_ids.push_back(i);
 				}
@@ -1749,6 +1868,7 @@ namespace flame
 			auto dst_ds = hdr ? dst_descriptorset.get() : target_descriptorsets[image_index].get();
 			auto pl_ele = hdr ? element16_pipeline : element8_pipeline;
 			auto pl_fwd = msaa_3d ? (hdr ? forward16_msaa_pipeline : forward8_msaa_pipeline) : (hdr ? forward16_pipeline : forward8_pipeline);
+			auto pl_ter = msaa_3d ? (hdr ? terrain16_msaa_pipeline : terrain8_msaa_pipeline) : (hdr ? terrain16_pipeline : terrain8_pipeline);
 
 			cb->image_barrier(dst, {}, hdr ? ImageLayoutShaderReadOnly : ImageLayoutPresent, ImageLayoutTransferDst);
 			cb->clear_color_image(dst, clear_color);
@@ -1765,7 +1885,7 @@ namespace flame
 			cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
-			auto obj_first = true;
+			auto first_mesh = true;
 
 			for (auto& p : passes)
 			{
@@ -1815,16 +1935,31 @@ namespace flame
 					cb->end_renderpass();
 				}
 					break;
-				case PassObject:
+				case PassMesh:
 				{
-					if (obj_first)
+					if (first_mesh)
 					{
-						obj_first = false;
+						first_mesh = false;
 
-						render_data_buffer.upload(cb, 0, 1);
+						render_data_buffer.end->fb_size = target_size;
+						render_data_buffer.end->shadow_distance = 100.f;
+						render_data_buffer.end->csm_levels = 3;
+
+						{
+							// TODO
+							terrain_info_buffer.end->coord = Vec3f(0.f);
+							terrain_info_buffer.end->tessellation_factor = 1.f;
+							terrain_info_buffer.end->size = Vec2u(64);
+							terrain_info_buffer.end->extent = Vec3f(100.f);
+							terrain_info_buffer.end->extent = Vec3f(100.f);
+						}
+
 						mesh_matrix_buffer.upload(cb);
-						render_data_buffer.barrier(cb);
 						mesh_matrix_buffer.barrier(cb);
+						render_data_buffer.upload(cb, 0, 1);
+						render_data_buffer.barrier(cb);
+						terrain_info_buffer.upload(cb, 0, 1);
+						terrain_info_buffer.barrier(cb);
 
 						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
@@ -1922,7 +2057,7 @@ namespace flame
 										cb->bind_pipeline(depth_pipeline);
 										cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
 										cb->bind_descriptor_set(material_descriptorset.get(), 1, depth_pipelinelayout);
-										auto proj = make_perspective_project_matrix(90.f * ANG_RAD, 1.f, 1.f, li.distance);
+										auto proj = make_perspective_project_matrix(90.f, 1.f, 1.f, li.distance);
 										struct
 										{
 											Mat4f matrix;
@@ -2018,7 +2153,7 @@ namespace flame
 					cb->bind_descriptor_set(mesh_descriptorset.get(), 0, forward_pipelinelayout);
 					cb->bind_descriptor_set(material_descriptorset.get(), 1, forward_pipelinelayout);
 					cb->bind_descriptor_set(light_descriptorset.get(), 2, forward_pipelinelayout);
-					cb->bind_descriptor_set(forward_descriptorset.get(), 3, forward_pipelinelayout);
+					cb->bind_descriptor_set(render_data_descriptorset.get(), 3, forward_pipelinelayout);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2042,6 +2177,16 @@ namespace flame
 						}
 							break;
 						}
+					}
+					{
+						// TODO
+						cb->bind_pipeline(pl_ter);
+						cb->bind_descriptor_set(material_descriptorset.get(), 0, terrain_pipelinelayout);
+						cb->bind_descriptor_set(light_descriptorset.get(), 1, terrain_pipelinelayout);
+						cb->bind_descriptor_set(render_data_descriptorset.get(), 2, terrain_pipelinelayout);
+						cb->bind_descriptor_set(terrain_descriptorset.get(), 3, terrain_pipelinelayout);
+						auto size = terrain_info_buffer.end->size;
+						cb->draw(4, size.x() * size.y(), 0, 0);
 					}
 					cb->end_renderpass();
 					if (msaa_3d)

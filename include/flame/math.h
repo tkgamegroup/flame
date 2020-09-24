@@ -208,7 +208,7 @@ namespace flame
 	template <uint N, class T>
 	struct Vec
 	{
-		T v_[N];
+		T d[N];
 
 		Vec() = default;
 
@@ -226,169 +226,169 @@ namespace flame
 		T& x()
 		{
 			static_assert(N > 0);
-			return v_[0];
+			return d[0];
 		}
 
 		T x() const
 		{
 			static_assert(N > 0);
-			return v_[0];
+			return d[0];
 		}
 
 		T& y()
 		{
 			static_assert(N > 1);
-			return v_[1];
+			return d[1];
 		}
 
 		T y() const
 		{
 			static_assert(N > 1);
-			return v_[1];
+			return d[1];
 		}
 
 		T& z()
 		{
 			static_assert(N > 2);
-			return v_[2];
+			return d[2];
 		}
 
 		T z() const
 		{
 			static_assert(N > 2);
-			return v_[2];
+			return d[2];
 		}
 
 		T& w()
 		{
 			static_assert(N > 3);
-			return v_[3];
+			return d[3];
 		}
 
 		T w() const
 		{
 			static_assert(N > 3);
-			return v_[3];
+			return d[3];
 		}
 
 		T& r()
 		{
 			static_assert(N > 0);
-			return v_[0];
+			return d[0];
 		}
 
 		T r() const
 		{
 			static_assert(N > 0);
-			return v_[0];
+			return d[0];
 		}
 
 		T& g()
 		{
 			static_assert(N > 1);
-			return v_[1];
+			return d[1];
 		}
 
 		T g() const
 		{
 			static_assert(N > 1);
-			return v_[1];
+			return d[1];
 		}
 
 		T& b()
 		{
 			static_assert(N > 2);
-			return v_[2];
+			return d[2];
 		}
 
 		T b() const
 		{
 			static_assert(N > 2);
-			return v_[2];
+			return d[2];
 		}
 
 		T& a()
 		{
 			static_assert(N > 3);
-			return v_[3];
+			return d[3];
 		}
 
 		T a() const
 		{
 			static_assert(N > 3);
-			return v_[3];
+			return d[3];
 		}
 
 		T& s()
 		{
 			static_assert(N > 0);
-			return v_[0];
+			return d[0];
 		}
 
 		T s() const
 		{
 			static_assert(N > 0);
-			return v_[0];
+			return d[0];
 		}
 
 		T& t()
 		{
 			static_assert(N > 1);
-			return v_[1];
+			return d[1];
 		}
 
 		T t() const
 		{
 			static_assert(N > 1);
-			return v_[1];
+			return d[1];
 		}
 
 		T& p()
 		{
 			static_assert(N > 2);
-			return v_[2];
+			return d[2];
 		}
 
 		T p() const
 		{
 			static_assert(N > 2);
-			return v_[2];
+			return d[2];
 		}
 
 		T& q()
 		{
 			static_assert(N > 3);
-			return v_[3];
+			return d[3];
 		}
 
 		T q() const
 		{
 			static_assert(N > 3);
-			return v_[3];
+			return d[3];
 		}
 
 		Vec<2, T>& xy() const
 		{
 			static_assert(N > 1);
-			return (Vec<2, T>&)v_[0];
+			return (Vec<2, T>&)d[0];
 		}
 
 		Vec<2, T>& zw() const
 		{
 			static_assert(N > 3);
-			return (Vec<2, T>&)v_[2];
+			return (Vec<2, T>&)d[2];
 		}
 
 		Vec<2, T> xz() const
 		{
 			static_assert(N > 2);
-			return Vec<2, T>(v_[0], v_[2]);
+			return Vec<2, T>(d[0], d[2]);
 		}
 
 		Vec<2, T> yw() const
 		{
 			static_assert(N > 3);
-			return Vec<2, T>(v_[1], v_[3]);
+			return Vec<2, T>(d[1], d[3]);
 		}
 
 		Vec<N, T> copy() const
@@ -399,101 +399,101 @@ namespace flame
 		Vec<N, T>& set_x(T v)
 		{
 			static_assert(N > 0);
-			v_[0] = v;
+			d[0] = v;
 			return *this;
 		}
 
 		Vec<N, T>& set_y(T v)
 		{
 			static_assert(N > 1);
-			v_[1] = v;
+			d[1] = v;
 			return *this;
 		}
 
 		Vec<N, T>& set_z(T v)
 		{
 			static_assert(N > 2);
-			v_[2] = v;
+			d[2] = v;
 			return *this;
 		}
 
 		Vec<N, T>& set_w(T v)
 		{
 			static_assert(N > 3);
-			v_[3] = v;
+			d[3] = v;
 			return *this;
 		}
 
 		Vec<N, T>& add_x(T v)
 		{
 			static_assert(N > 0);
-			v_[0] += v;
+			d[0] += v;
 			return *this;
 		}
 
 		Vec<N, T>& add_y(T v)
 		{
 			static_assert(N > 1);
-			v_[1] += v;
+			d[1] += v;
 			return *this;
 		}
 
 		Vec<N, T>& add_z(T v)
 		{
 			static_assert(N > 2);
-			v_[2] += v;
+			d[2] += v;
 			return *this;
 		}
 
 		Vec<N, T>& add_w(T v)
 		{
 			static_assert(N > 3);
-			v_[3] += v;
+			d[3] += v;
 			return *this;
 		}
 
 		Vec<N, T>& factor_x(float v)
 		{
 			static_assert(N > 0);
-			v_[0] *= v;
+			d[0] *= v;
 			return *this;
 		}
 
 		Vec<N, T>& factor_y(float v)
 		{
 			static_assert(N > 1);
-			v_[1] *= v;
+			d[1] *= v;
 			return *this;
 		}
 
 		Vec<N, T>& factor_z(float v)
 		{
 			static_assert(N > 2);
-			v_[2] *= v;
+			d[2] *= v;
 			return *this;
 		}
 
 		Vec<N, T>& factor_w(float v)
 		{
 			static_assert(N > 3);
-			v_[3] *= v;
+			d[3] *= v;
 			return *this;
 		}
 
 		T operator[](uint i) const
 		{
-			return v_[i];
+			return d[i];
 		}
 
 		T& operator[](uint i)
 		{
-			return v_[i];
+			return d[i];
 		}
 
 		explicit Vec(T v)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] = v;
+				d[i] = v;
 		}
 
 		template <uint M, class U>
@@ -501,7 +501,7 @@ namespace flame
 		{
 			static_assert(N <= M);
 			for (auto i = 0; i < N; i++)
-				v_[i] = rhs[i];
+				d[i] = rhs[i];
 		}
 
 		Vec(T _x, T _y)
@@ -609,7 +609,7 @@ namespace flame
 		Vec<N, T>& operator=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] = rhs;
+				d[i] = rhs;
 			return *this;
 		}
 
@@ -618,22 +618,22 @@ namespace flame
 		{
 			static_assert(N <= M);
 			for (auto i = 0; i < N; i++)
-				v_[i] = rhs[i];
+				d[i] = rhs[i];
 			return *this;
 		}
 
-		Vec<N, T> operator-()
+		Vec<N, T> operator-() const
 		{
 			Vec<N, T> ret;
 			for (auto i = 0; i < N; i++)
-				ret[i] = -v_[i];
+				ret[i] = -d[i];
 			return ret;
 		}
 
 		Vec<N, T>& operator+=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] += rhs;
+				d[i] += rhs;
 			return *this;
 		}
 
@@ -641,14 +641,14 @@ namespace flame
 		Vec<N, T>& operator+=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] += rhs[i];
+				d[i] += rhs[i];
 			return *this;
 		}
 
 		Vec<N, T>& operator-=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] -= rhs;
+				d[i] -= rhs;
 			return *this;
 		}
 
@@ -656,14 +656,14 @@ namespace flame
 		Vec<N, T>& operator-=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] -= rhs[i];
+				d[i] -= rhs[i];
 			return *this;
 		}
 
 		Vec<N, T>& operator*=(T rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] *= rhs;
+				d[i] *= rhs;
 			return *this;
 		}
 
@@ -671,7 +671,7 @@ namespace flame
 		Vec<N, T>& operator*=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] *= rhs[i];
+				d[i] *= rhs[i];
 			return *this;
 		}
 
@@ -679,7 +679,7 @@ namespace flame
 		{
 			rhs = T(1) / rhs;
 			for (auto i = 0; i < N; i++)
-				v_[i] *= rhs;
+				d[i] *= rhs;
 			return *this;
 		}
 
@@ -687,7 +687,7 @@ namespace flame
 		Vec<N, T>& operator/=(const Vec<N, U>& rhs)
 		{
 			for (auto i = 0; i < N; i++)
-				v_[i] /= rhs[i];
+				d[i] /= rhs[i];
 			return *this;
 		}
 
@@ -695,7 +695,7 @@ namespace flame
 		{
 			auto ret = T(0);
 			for (auto i = 0; i < N; i++)
-				ret += v_[i];
+				ret += d[i];
 			return ret;
 		}
 	};
@@ -1071,16 +1071,16 @@ namespace flame
 	template <uint M, uint N, class T>
 	struct Mat
 	{
-		Vec<N, T> v_[M];
+		Vec<N, T> d[M];
 
 		Vec<N, T> operator[](uint i) const
 		{
-			return v_[i];
+			return d[i];
 		}
 
 		Vec<N, T>& operator[](uint i)
 		{
-			return v_[i];
+			return d[i];
 		}
 
 		Mat() = default;
@@ -1088,19 +1088,19 @@ namespace flame
 		explicit Mat(T v)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] = Vec<N, T>(0);
+				d[i] = Vec<N, T>(0);
 			auto n = min(N, M);
 			for (auto i = 0; i < n; i++)
-				v_[i][i] = v;
+				d[i][i] = v;
 		}
 
 		explicit Mat(const Vec<N, T>& v)
 		{
 			static_assert(N == M);
 			for (auto i = 0; i < N; i++)
-				v_[i] = Vec<N, T>(0);
+				d[i] = Vec<N, T>(0);
 			for (auto i = 0; i < N; i++)
-				v_[i][i] = v[i];
+				d[i][i] = v[i];
 		}
 
 		template <uint O, uint P, class U>
@@ -1110,7 +1110,7 @@ namespace flame
 			for (auto i = 0; i < M; i++)
 			{
 				for (auto j = 0; j < N; j++)
-					v_[i][j] = rhs[i][j];
+					d[i][j] = rhs[i][j];
 			}
 		}
 
@@ -1119,7 +1119,7 @@ namespace flame
 			for (auto i = 0; i < M; i++)
 			{
 				for (auto j = 0; j < N; j++)
-					v_[i][j] = *rhs++;
+					d[i][j] = *rhs++;
 			}
 		}
 
@@ -1127,61 +1127,61 @@ namespace flame
 		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2)
 		{
 			static_assert(M == 2);
-			v_[0] = _v1;
-			v_[1] = _v2;
+			d[0] = _v1;
+			d[1] = _v2;
 		}
 
 		template <uint N, class U>
 		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Vec<N, U>& _v3)
 		{
 			static_assert(M == 3);
-			v_[0] = _v1;
-			v_[1] = _v2;
-			v_[2] = _v3;
+			d[0] = _v1;
+			d[1] = _v2;
+			d[2] = _v3;
 		}
 
 		template <class U>
 		Mat(const Vec<N, U>& _v1, const Vec<N, U>& _v2, const Vec<N, U>& _v3, const Vec<N, U>& _v4)
 		{
 			static_assert(M == 4);
-			v_[0] = _v1;
-			v_[1] = _v2;
-			v_[2] = _v3;
-			v_[3] = _v4;
+			d[0] = _v1;
+			d[1] = _v2;
+			d[2] = _v3;
+			d[3] = _v4;
 		}
 
 		template <class U>
 		Mat(const Mat<M - 1, N, U>& _m, const Vec<N, U>& _v)
 		{
 			for (auto i = 0; i < M - 1; i++)
-				v_[i] = _m[i];
-			v_[M - 1] = _v;
+				d[i] = _m[i];
+			d[M - 1] = _v;
 		}
 
 		template <class U>
 		Mat(const Mat<M, N - 1, U>& _m, const Vec<M, U>& _v)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] = Vec<N, T>(_m[i], _v[i]);
+				d[i] = Vec<N, T>(_m[i], _v[i]);
 		}
 
 		template <class U>
 		Mat(const Mat<M - 1, N - 1, U>& _m)
 		{
 			for (auto i = 0; i < M - 1; i++)
-				v_[i] = Vec<N, T>(_m[i], 0.f);
+				d[i] = Vec<N, T>(_m[i], 0.f);
 			for (auto i = 0; i < N - 1; i++)
-				v_[M - 1][i] = 0.f;
-			v_[M - 1][N - 1] = 1.f;
+				d[M - 1][i] = 0.f;
+			d[M - 1][N - 1] = 1.f;
 		}
 
 		Mat<N, M, T>& operator=(T rhs)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] = Vec<N, T>(0);
+				d[i] = Vec<N, T>(0);
 			auto n = min(N, M);
 			for (auto i = 0; i < n; i++)
-				v_[i][i] = rhs;
+				d[i][i] = rhs;
 			return *this;
 		}
 
@@ -1192,7 +1192,7 @@ namespace flame
 			for (auto i = 0; i < M; i++)
 			{
 				for (auto j = 0; j < N; j++)
-					v_[i][j] = rhs[i][j];
+					d[i][j] = rhs[i][j];
 			}
 			return *this;
 		}
@@ -1201,7 +1201,7 @@ namespace flame
 		Mat<N, M, T>& operator+=(const Mat<N, M, U>& rhs)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] += rhs[i];
+				d[i] += rhs[i];
 			return *this;
 		}
 
@@ -1209,21 +1209,21 @@ namespace flame
 		Mat<N, M, T>& operator-=(const Mat<N, M, U>& rhs)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] -= rhs[i];
+				d[i] -= rhs[i];
 			return *this;
 		}
 
 		Mat<N, M, T>& operator*=(T rhs)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] *= rhs;
+				d[i] *= rhs;
 			return *this;
 		}
 
 		Mat<N, M, T>& operator/=(T rhs)
 		{
 			for (auto i = 0; i < M; i++)
-				v_[i] /= rhs;
+				d[i] /= rhs;
 			return *this;
 		}
 	};
@@ -1426,7 +1426,7 @@ namespace flame
 	{
 		T ret = 0;
 		for (auto i = 0; i < N; i++)
-			ret += lhs.v_[i] * rhs.v_[i];
+			ret += lhs.d[i] * rhs.d[i];
 		return ret;
 	}
 
@@ -1440,9 +1440,9 @@ namespace flame
 	Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
 	{
 		return Vec<3, T>(
-			lhs.v_[1] * rhs.v_[2] - rhs.v_[1] * lhs.v_[2],
-			lhs.v_[2] * rhs.v_[0] - rhs.v_[2] * lhs.v_[0],
-			lhs.v_[0] * rhs.v_[1] - rhs.v_[0] * lhs.v_[1]);
+			lhs.d[1] * rhs.d[2] - rhs.d[1] * lhs.d[2],
+			lhs.d[2] * rhs.d[0] - rhs.d[2] * lhs.d[0],
+			lhs.d[0] * rhs.d[1] - rhs.d[0] * lhs.d[1]);
 	}
 
 	template <uint N, class T>
@@ -1616,7 +1616,7 @@ namespace flame
 	}
 
 	template <class T>
-	Mat<4, 4, T> make_ortho_project_matrix(T left, T right, T bottom, T top, T zFar)
+	Mat<4, 4, T> make_ortho_project_matrix(T left, T right, T top, T bottom, T zFar)
 	{
 		Mat<4, 4, T> ret(T(1));
 		ret[0][0] = T(2) / (right - left);
@@ -1630,7 +1630,7 @@ namespace flame
 	template <class T>
 	Mat<4, 4, T> make_perspective_project_matrix(T fovy, T aspect, T zNear, T zFar)
 	{
-		auto t = tan(fovy / 2.f);
+		auto t = tan(fovy * 0.5f * ANG_RAD);
 
 		Mat<4, 4, T> ret(T(0));
 		ret[0][0] = T(1) / (aspect * t);
@@ -2195,7 +2195,16 @@ namespace flame
 	}
 
 	// Vec4f as Plane:
-	// (x, y, z) - normal, w - d
+	// Ax + Bx + Cz + D = 0
+
+	template <class T>
+	Vec<4, T> make_plane(const Vec<3, T>& p1, const Vec<3, T>& p2, const Vec<3, T>& p3)
+	{
+		auto v1 = p2 - p1;
+		auto v2 = p3 - p1;
+		auto n = normalize(cross(v1, v2));
+		return Vec<4, T>(n, dot(n, -p1));
+	}
 
 	template <class T>
 	T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)
@@ -2211,19 +2220,19 @@ namespace flame
 	}
 
 	// Mat2x3 as AABB:
-	// v_[0] - min, v_[1] - max
+	// d[0] - min, d[1] - max
 
 	template <class T>
 	void AABB_offset(Mat<2, 3, T>& AABB, const Vec<3, T>& off)
 	{
-		AABB.v_[0] += off;
-		AABB.v_[1] += off;
+		AABB.d[0] += off;
+		AABB.d[1] += off;
 	}
 
 	template <class T>
 	void AABB_merge(Mat<2, 3, T>& AABB, const Vec<3, T>& p)
 	{
-		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
+		auto& v1 = AABB.d[0], v2 = AABB.d[1];
 		v1.x() = min(v1.x(), p.x());
 		v1.y() = min(v1.y(), p.y());
 		v1.z() = min(v1.z(), p.z());
@@ -2235,7 +2244,7 @@ namespace flame
 	template <class T>
 	void AABB_points(const Mat<2, 3, T>& AABB, Vec<3, T>* dst)
 	{
-		auto& v1 = AABB.v_[0], v2 = AABB.v_[1];
+		auto& v1 = AABB.d[0], v2 = AABB.d[1];
 		dst[0] = v1;
 		dst[1] = Vec<3, T>(v2.x(), v1.y(), v1.z());
 		dst[2] = Vec<3, T>(v2.x(), v1.y(), v2.z());

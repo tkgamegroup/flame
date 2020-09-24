@@ -2,6 +2,8 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
+#define MATERIAL_SET 1
+
 #include "material_dsl.glsl"
 
 layout (location = 0) in flat uint i_mat_id;

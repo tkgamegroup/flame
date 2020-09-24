@@ -224,29 +224,42 @@ namespace flame
 
 			if (std::filesystem::exists(path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(path)))
 			{
-
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
 					if (std::filesystem::exists(spv_path))
 						std::filesystem::remove(spv_path);
 
-					std::filesystem::path glslc_path = vk_sdk_path;
+					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					std::wstring command_line(L" " + path.wstring() + L" -o" + spv_path.wstring());
+					auto command_line = std::wstring(L" " + path.wstring() + L" -o" + spv_path.wstring());
 					auto defines = SUS::split(prefix);
 					for (auto& d : defines)
 						command_line += L" -D" + s2w(d);
 
-					wprintf(L"compiling shader: %s\n", path.c_str());
+					wprintf(L"compiling shader: %s", path.c_str());
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(spv_path))
 					{
-						printf("%s\n", output.c_str());
+						printf("\n%s\n", output.c_str());
 						assert(0);
+					}
+
+					printf(" done\n");
+
+					auto shader_info_path = std::filesystem::path(getenv("FLAME_PATH"));
+					shader_info_path /= L"bin/debug/shader_info.exe";
+					if (std::filesystem::exists(shader_info_path))
+					{
+						exec(shader_info_path.c_str(), (wchar_t*)spv_path.c_str(), &output);
+						if (output.find("ALIGNMENT DISMATCH") != std::string::npos)
+						{
+							printf("%s\n", output.c_str());
+							assert(0);
+						}
 					}
 				}
 				else

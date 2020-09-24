@@ -20,6 +20,7 @@ namespace flame
 			std::string metallic_map;
 			std::string roughness_map;
 			std::string normal_map;
+			std::string height_map;
 		};
 
 		struct MeshPrivate : Mesh

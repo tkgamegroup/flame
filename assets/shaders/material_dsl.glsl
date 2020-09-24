@@ -11,9 +11,9 @@ struct MaterialInfo
 	int dummy1;
 };
 
-layout (set = 1, binding = 0) buffer readonly MaterialInfos
+layout (set = MATERIAL_SET, binding = 0) buffer readonly MaterialInfos
 {
 	MaterialInfo material_infos[];
 };
 
-layout (set = 1, binding = 1) uniform sampler2D maps[128];
+layout (set = MATERIAL_SET, binding = 1) uniform sampler2D maps[128];

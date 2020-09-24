@@ -1,5 +1,9 @@
 build/
 bin/
 *.vert.*
+*.tesc.*
+*.tese.*
+*.geom.*
 *.frag.*
+*.comp.*
 *.res

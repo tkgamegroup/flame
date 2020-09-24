@@ -2,6 +2,8 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
+#define MESH_SET 0
+
 #include "mesh_dsl.glsl"
 
 layout (location = 0) in vec3 i_pos;

@@ -27,20 +27,20 @@ struct PointLightInfo
 	int shadow_map_index;
 };
 
-layout (set = 2, binding = 0) buffer readonly LightIndicesList
+layout (set = LIGHT_SET, binding = 0) buffer readonly LightIndicesList
 {
 	LightIndices light_indices_list[];
 };
 
-layout (set = 2, binding = 1) buffer readonly DirectionalLightInfos
+layout (set = LIGHT_SET, binding = 1) buffer readonly DirectionalLightInfos
 {
 	DirectionalLightInfo directional_light_infos[];
 };
 
-layout (set = 2, binding = 2) buffer readonly PointLightInfos
+layout (set = LIGHT_SET, binding = 2) buffer readonly PointLightInfos
 {
 	PointLightInfo point_light_infos[];
 };
 
-layout (set = 2, binding = 3) uniform sampler2DArray directional_light_shadow_maps[4];
-layout (set = 2, binding = 4) uniform samplerCube point_light_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray directional_light_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 4) uniform samplerCube point_light_shadow_maps[4];

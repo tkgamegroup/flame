@@ -216,15 +216,27 @@ namespace flame
 			float zNear;
 			float zFar;
 			Vec3f camera_coord;
+			float dummy1;
+			Vec4f frustum_planes[6];
+
+			Vec2f fb_size;
 			float shadow_distance;
 			uint csm_levels;
-			float dummy1;
-			Vec2f dummy2;
-			Vec4f dummy3;
+			Vec4f dummy3[3];
+
 			Mat4f view_inv;
 			Mat4f view;
 			Mat4f proj;
 			Mat4f proj_view;
+		};
+
+		struct TerrainInfoS
+		{
+			Vec3f coord;
+			float tessellation_factor;
+			Vec2u size;
+			Vec2f dummy1;
+			Vec3f extent;
 		};
 
 		struct Cmd
@@ -347,7 +359,10 @@ namespace flame
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 
 			TBuffer<RenderDataS, BufferUsageUniform> render_data_buffer;
-			std::unique_ptr<DescriptorSetPrivate> forward_descriptorset;
+			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
+
+			TBuffer<TerrainInfoS, BufferUsageUniform> terrain_info_buffer;
+			std::unique_ptr<DescriptorSetPrivate> terrain_descriptorset;
 
 			std::vector<ImageViewPrivate*> target_imageviews;
 			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;

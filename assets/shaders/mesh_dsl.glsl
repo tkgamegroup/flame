@@ -4,7 +4,7 @@ struct MeshMatrix
 	mat4 normal;
 };
 
-layout (set = 0, binding = 0) buffer readonly MeshMatrices
+layout (set = MESH_SET, binding = 0) buffer readonly MeshMatrices
 {
 	MeshMatrix mesh_matrices[];
 };

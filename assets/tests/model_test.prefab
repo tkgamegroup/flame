@@ -10,17 +10,17 @@
     </entity>
     <entity>
       <cNode pos="0,5,0" />
-		  <cMeshInstance src="cube" mesh_index="0" />
+	  <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity>
       <cNode pos="10,5,0" />
-		  <cMeshInstance src="cube" mesh_index="0" />
+	  <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity>
       <cNode pos="0,5,5" />
-		  <cMeshInstance src="cube" mesh_index="0" />
+	  <cMeshInstance src="cube" mesh_index="0" />
     </entity>
-    <entity src="@mod" >
+    <entity src="@mod1" >
       <cNode />
     </entity>
     <entity>

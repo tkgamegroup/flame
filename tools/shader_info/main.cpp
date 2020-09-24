@@ -8,23 +8,19 @@ using namespace flame;
 
 int main(int argc, char** args)
 {
-	auto m = transpose(Mat4f(
-		Vec4f(-0.06181, 0, 0, -0.03987),
-		Vec4f(0, 0.09706, 0.0, -0.36282),
-		Vec4f(0, 0.0, 0.1, 0.14793),
-		Vec4f(0, 0, 0, 1)));
-	auto v = m * Vec4f(-0.7389, 0.03416, 12.35963, 1);
-
 	auto file = get_file_content(args[1]);
 	auto glsl = spirv_cross::CompilerGLSL((uint*)file.c_str(), file.size() / sizeof(uint));
 	auto resources = glsl.get_shader_resources();
 
 	std::function<void(int indent, const spirv_cross::SPIRType&)> print_type;
 	print_type = [&](int indent, const spirv_cross::SPIRType& t) {
+		auto end = 0;
 		for (auto i = 0; i < t.member_types.size(); i++)
 		{
-			printf("%*s%s: %d %d\n", indent, "", glsl.get_member_name(t.self, i).c_str(),
-				glsl.type_struct_member_offset(t, i), glsl.get_declared_struct_member_size(t, i));
+			auto off = glsl.type_struct_member_offset(t, i);
+			auto size = glsl.get_declared_struct_member_size(t, i);
+			printf("%*s%s: %d %d %s\n", indent, "", glsl.get_member_name(t.self, i).c_str(), off, size, end != off ? "ALIGNMENT DISMATCH" : "");
+			end += size;
 			print_type(indent + 2, glsl.get_type(t.member_types[i]));
 		}
 	};
