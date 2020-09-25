@@ -17,12 +17,12 @@ int main(int argc, char** args)
 	g_app.create();
 	auto w = new GraphicsWindow(&g_app, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, true);
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	if (!model_path.empty())
-	{
-		w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(model_path.c_str()), "mod");
-		model_path.replace_extension(L".prefab");
-		Entity::register_prefab(model_path.c_str(), "mod");
-	}
+	//if (!model_path.empty())
+	//{
+	//	w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(model_path.c_str()), "mod");
+	//	model_path.replace_extension(L".prefab");
+	//	Entity::register_prefab(model_path.c_str(), "mod");
+	//}
 	root = w->root;
 
 	auto e = Entity::create();

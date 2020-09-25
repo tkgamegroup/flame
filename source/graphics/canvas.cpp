@@ -393,13 +393,13 @@ namespace flame
 						new ShaderPrivate(d, L"terrain.vert"),
 						new ShaderPrivate(d, L"terrain.tesc"),
 						new ShaderPrivate(d, L"terrain.tese"),
-						new ShaderPrivate(d, L"terrain.geom"),
 						new ShaderPrivate(d, L"terrain.frag")
 					};
 					VertexInfo vi;
 					vi.primitive_topology = PrimitiveTopologyPatchList;
 					vi.patch_control_points = 4;
 					RasterInfo rst;
+					//rst.polygon_mode = PolygonModeLine;
 					DepthInfo dep;
 					terrain8_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
@@ -1633,6 +1633,8 @@ namespace flame
 		void CanvasPrivate::set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord)
 		{
 			auto view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
+			auto view = inverse(view_inv);
+			auto proj = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
 
 			render_data_buffer.end->fovy = fovy;
 			render_data_buffer.end->aspect = aspect;
@@ -1640,9 +1642,30 @@ namespace flame
 			render_data_buffer.end->zFar = zFar;
 			render_data_buffer.end->camera_coord = coord;
 			render_data_buffer.end->view_inv = view_inv;
-			render_data_buffer.end->view = inverse(render_data_buffer.end->view_inv);
-			render_data_buffer.end->proj = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
-			render_data_buffer.end->proj_view = render_data_buffer.end->proj * render_data_buffer.end->view;
+			render_data_buffer.end->view = view;
+			render_data_buffer.end->proj = proj;
+			render_data_buffer.end->proj_view = proj * view;
+
+			{
+				auto p = proj * Vec4f(100, 0, -100, 1);
+				p /= p.w();
+				int cut = 1;
+			}
+			{
+				auto p = proj * Vec4f(-100, 0, -100, 1);
+				p /= p.w();
+				int cut = 1;
+			}
+			{
+				auto p = proj * Vec4f(100, 0, -200, 1);
+				p /= p.w();
+				int cut = 1;
+			}
+			{
+				auto p = proj * Vec4f(-100, 0, -200, 1);
+				p /= p.w();
+				int cut = 1;
+			}
 
 			Vec3f ps[8];
 			get_frustum_points(zNear, zFar, tan(fovy * 0.5f * ANG_RAD), aspect, view_inv, ps);
@@ -1948,10 +1971,9 @@ namespace flame
 						{
 							// TODO
 							terrain_info_buffer.end->coord = Vec3f(0.f);
-							terrain_info_buffer.end->tessellation_factor = 1.f;
+							terrain_info_buffer.end->tessellation_levels = 20.f;
 							terrain_info_buffer.end->size = Vec2u(64);
-							terrain_info_buffer.end->extent = Vec3f(100.f);
-							terrain_info_buffer.end->extent = Vec3f(100.f);
+							terrain_info_buffer.end->extent = Vec3f(100.f, 200.f, 100.f);
 						}
 
 						mesh_matrix_buffer.upload(cb);
@@ -2187,6 +2209,7 @@ namespace flame
 						cb->bind_descriptor_set(terrain_descriptorset.get(), 3, terrain_pipelinelayout);
 						auto size = terrain_info_buffer.end->size;
 						cb->draw(4, size.x() * size.y(), 0, 0);
+						//cb->draw(4, 1, 0, 0);
 					}
 					cb->end_renderpass();
 					if (msaa_3d)

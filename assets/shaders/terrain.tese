@@ -3,7 +3,6 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #define MATERIAL_SET 0
-#define LIGHT_SET 1
 #define RENDER_DATA_SET 2
 #define TERRAIN_SET 3
 
@@ -14,27 +13,61 @@
 layout(quads, equal_spacing, ccw) in;
 
 layout (location = 0) in vec2 i_uvs[];
+layout (location = 1) in vec4 i_debug[];
  
 layout (location = 0) out vec2 o_uv;
+layout (location = 1) out vec3 o_coordw;
+layout (location = 2) out vec3 o_coordv;
+layout (location = 3) out vec3 o_normal;
+layout (location = 4) out vec4 o_debug;
+
+vec2 uv;
+uint id;
+
+vec3 get_coord(vec2 off)
+{
+	vec3 ret = vec3(mix(
+		mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x + off.x), 
+		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x + off.x), 
+		gl_TessCoord.y + off.y
+	));
+	ret.y -= texture(maps[id], uv + off / terrain_info.size).a * terrain_info.extent.y;
+	return ret;
+}
+
+vec3 normalx(vec3 v)
+{
+	return normalize(vec3(-v.y, v.x, 0));
+}
+
+vec3 normalz(vec3 v)
+{
+	return normalize(vec3(0, -v.z, v.y));
+}
 
 void main()
 {
-	o_uv = 
-		mix(
-			mix(i_uvs[0], i_uvs[1], gl_TessCoord.x), 
-			mix(i_uvs[3], i_uvs[2], gl_TessCoord.x), 
-			gl_TessCoord.y
-		);
-
-	vec4 pos = 
-		mix(
-			mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x), 
-			mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x), 
-			gl_TessCoord.y
-		);
-		
 	MaterialInfo material = material_infos[99];
-	pos.y -= texture(maps[material.normal_height_map_index], o_uv).a * terrain_info.extent.y;
+	id = material.normal_height_map_index;
 
-	gl_Position = pos;
+	uv = mix(
+		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x), 
+		mix(i_uvs[3], i_uvs[2], gl_TessCoord.x), 
+		gl_TessCoord.y
+	);
+
+	vec3 p = get_coord(vec2(0));
+
+	o_uv = uv;
+	o_coordw = p;
+	o_coordv = render_data.camera_coord - p;
+
+	float off = 1.0 / terrain_info.tessellation_levels;
+	vec3 n0 = normalx(get_coord(vec2(off, 0)) - p);
+	vec3 n1 = normalx(p - get_coord(vec2(-off, 0)));
+	vec3 n2 = normalz(get_coord(vec2(0, -off)));
+	vec3 n3 = normalz(p - get_coord(vec2(0, off)));
+	o_normal = (n0 + n1 + n2 + n3) * 0.25;
+
+	gl_Position = render_data.proj_view * vec4(p, 1.0);
 }

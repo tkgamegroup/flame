@@ -4,20 +4,20 @@
     <cElement />
     <cNode />
     <entity name="camera">
-      <cNode pos="0,0,15" />
+      <cNode pos="0,0,5" />
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
     <entity>
-      <cNode pos="0,5,0" />
+      <cNode pos="0,0,0" />
 	  <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity>
-      <cNode pos="10,5,0" />
+      <cNode pos="10,0,0" />
 	  <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity>
-      <cNode pos="0,5,5" />
+      <cNode pos="0,0,5" />
 	  <cMeshInstance src="cube" mesh_index="0" />
     </entity>
     <entity src="@mod1" >

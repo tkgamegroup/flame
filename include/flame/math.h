@@ -1440,9 +1440,9 @@ namespace flame
 	Vec<3, T> cross(const Vec<3, T>& lhs, const Vec<3, T>& rhs)
 	{
 		return Vec<3, T>(
-			lhs.d[1] * rhs.d[2] - rhs.d[1] * lhs.d[2],
-			lhs.d[2] * rhs.d[0] - rhs.d[2] * lhs.d[0],
-			lhs.d[0] * rhs.d[1] - rhs.d[0] * lhs.d[1]);
+			lhs[1] * rhs[2] - rhs[1] * lhs[2],
+			lhs[2] * rhs[0] - rhs[2] * lhs[0],
+			lhs[0] * rhs[1] - rhs[0] * lhs[1]);
 	}
 
 	template <uint N, class T>
@@ -2202,7 +2202,7 @@ namespace flame
 	{
 		auto v1 = p2 - p1;
 		auto v2 = p3 - p1;
-		auto n = normalize(cross(v1, v2));
+		auto n = -normalize(cross(v1, v2));
 		return Vec<4, T>(n, dot(n, -p1));
 	}
 

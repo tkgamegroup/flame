@@ -233,7 +233,7 @@ namespace flame
 		struct TerrainInfoS
 		{
 			Vec3f coord;
-			float tessellation_factor;
+			float tessellation_levels;
 			Vec2u size;
 			Vec2f dummy1;
 			Vec3f extent;
