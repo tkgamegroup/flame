@@ -2,7 +2,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#define RENDER_DATA_SET 2
+#define RENDER_DATA_SET 0
 #define TERRAIN_SET 3
 
 #include "render_data_dsl.glsl"

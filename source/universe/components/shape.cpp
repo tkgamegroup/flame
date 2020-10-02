@@ -5,7 +5,7 @@
 #include <flame/physics/shape.h>
 #include "../entity_private.h"
 #include "node_private.h"
-#include "mesh_instance_private.h"
+#include "mesh_private.h"
 #include "rigid_private.h"
 #include "shape_private.h"
 
@@ -53,9 +53,10 @@ namespace flame
 				phy_shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
 				break;
 			case physics::ShapeMesh:
-				if (mesh && mesh->mesh)
+				if (mesh && mesh->model_id != -1 && mesh->mesh_id != -1)
 				{
-					desc.mesh.mesh = mesh->mesh;
+					desc.mesh.mesh = ((graphics::Model*)mesh->canvas->
+						get_resource(graphics::ResourceModel, mesh->model_id))->get_mesh(mesh->mesh_id);
 					desc.mesh.scale = size * node->global_scale;
 					phy_shape = physics::Shape::create(get_material(), physics::ShapeMesh, desc);
 				}

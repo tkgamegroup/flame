@@ -6,17 +6,24 @@
 
 #include "terrain_dsl.glsl"
 
-layout (location = 0) out vec2 o_uv;
+layout (location = 0) out flat uint o_idx;
+layout (location = 1) out vec2 o_uv;
 
 void main(void)
 {
+	uint idx = gl_InstanceIndex >> 16;
+	uint tile_idx = gl_InstanceIndex & 0xffff;
+	TerrainInfo terrain = terrain_infos[idx];
+
 	vec2 vs[4] = {
 		vec2(0.0, 0.0),
 		vec2(1.0, 0.0),
 		vec2(1.0, 1.0),
 		vec2(0.0, 1.0)
 	};
-	vec2 v = vec2((gl_InstanceIndex % terrain_info.size.x) + vs[gl_VertexIndex].x, (gl_InstanceIndex / terrain_info.size.x) + vs[gl_VertexIndex].y);
-	gl_Position = vec4(vec3(v.x * terrain_info.extent.x, 0.0, v.y * terrain_info.extent.z) + terrain_info.coord, 1.0);
-	o_uv = v / terrain_info.size;
+	vec2 v = vec2((tile_idx % terrain.size.x) + vs[gl_VertexIndex].x, (tile_idx / terrain.size.x) + vs[gl_VertexIndex].y);
+
+	gl_Position = vec4(vec3(v.x * terrain.extent.x, 0.0, v.y * terrain.extent.z) + terrain.coord, 1.0);
+	o_idx = idx;
+	o_uv = v / terrain.size;
 }

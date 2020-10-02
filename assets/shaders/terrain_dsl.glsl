@@ -1,8 +1,17 @@
-layout(set = TERRAIN_SET, binding = 0) uniform TerrianInfo
+struct TerrainInfo
 {
 	vec3 coord;
-	float tessellation_levels;
+	float dummy1;
+
 	uvec2 size;
-	vec2 dummy1;
+	uint height_tex_id;
+	float tess_levels;
+
 	vec3 extent;
-}terrain_info;
+	float dummy2;
+};
+
+layout(set = TERRAIN_SET, binding = 0) uniform TerrainInfos
+{
+	TerrainInfo terrain_infos[];
+};

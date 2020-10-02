@@ -9,19 +9,19 @@
       <cScript src="camera_controller.lua" />
     </entity>
     <entity>
-      <cNode pos="0,0,0" />
-	  <cMeshInstance src="cube" mesh_index="0" />
+    <cNode pos="50,-100,50" />
+	  <cMesh src="cube.0" />
     </entity>
     <entity>
-      <cNode pos="10,0,0" />
-	  <cMeshInstance src="cube" mesh_index="0" />
+      <cNode pos="60,-100,50" />
+	  <cMesh src="cube.0" />
     </entity>
     <entity>
-      <cNode pos="0,0,5" />
-	  <cMeshInstance src="cube" mesh_index="0" />
+      <cNode pos="50,-100,55" />
+	  <cMesh src="cube.0" />
     </entity>
-    <entity src="@mod1" >
-      <cNode />
+    <entity src="@mod" >
+      <cNode scale="1.0,1.0,1.0" />
     </entity>
     <entity>
       <cNode />

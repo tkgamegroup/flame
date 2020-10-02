@@ -8,11 +8,17 @@ namespace flame
 	{
 		struct Material
 		{
+			//virtual const char* get_name() const = 0;
 
+			//virtual int get_bound_index() const = 0;
+
+			//FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path);
 		};
 
 		struct Mesh
 		{
+			//virtual const char* get_name() const = 0;
+
 			virtual uint get_vertices_count() const = 0;
 			virtual const Vec3f* get_positions() const = 0;
 			virtual const Vec2f* get_uvs() const = 0;
@@ -20,6 +26,8 @@ namespace flame
 
 			virtual uint get_indices_count() const = 0;
 			virtual const uint* get_indices() const = 0;
+
+			//virtual uint get_material_index() const = 0;
 		};
 		
 		struct Node
@@ -37,14 +45,15 @@ namespace flame
 
 		struct Model
 		{
+			//virtual uint get_materials_count() const = 0;
+			//virtual Material* get_material(uint idx) const = 0;
+			//virtual int find_material(const char* name) const = 0;
+
 			virtual uint get_meshes_count() const = 0;
 			virtual Mesh* get_mesh(uint idx) const = 0;
+			virtual int find_mesh(const char* name) const = 0;
 
 			virtual Node* get_root() const = 0;
-
-			// name - which material you want to substitute
-			// filename - .fmtl file
-			virtual void substitute_material(const char* name, const wchar_t* filename) = 0;
 
 			virtual void save(const wchar_t* filename, const char* model_name = nullptr) const = 0;
 

@@ -42,13 +42,13 @@ namespace flame
 		bool get_auto_size() const override { return auto_size; }
 		void set_auto_size(bool a) override { auto_size = a; }
 
-		void on_gain_canvas();
-
 		void apply_src();
 
-		void draw(graphics::Canvas* canvas); // R
+		void on_gain_canvas();
 
 		void measure(Vec2f& ret); // R
+
+		void draw(graphics::Canvas* canvas); // R
 	};
 
 	inline void cImageBridge::set_src(const char* src)

@@ -299,18 +299,18 @@ namespace flame
 				element_pipelinelayout = new PipelineLayoutPrivate(d, { &element_descriptorsetlayout, 1 }, sizeof(Vec4f));
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
+						render_data_descriptorsetlayout,
 						mesh_descriptorsetlayout,
 						material_descriptorsetlayout,
-						light_descriptorsetlayout,
-						render_data_descriptorsetlayout
+						light_descriptorsetlayout
 					};
 					forward_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
 				}
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
+						render_data_descriptorsetlayout,
 						material_descriptorsetlayout,
 						light_descriptorsetlayout,
-						render_data_descriptorsetlayout,
 						terrain_descriptorsetlayout
 					};
 					terrain_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
@@ -633,14 +633,6 @@ namespace flame
 
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("cube"), "cube");
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
-
-			{
-				// TODO
-				auto terrain_material = new MaterialPrivate;
-				terrain_material->path = L"D:/terrain";
-				terrain_material->height_map = "height.jpg";
-				set_resource(ResourceMaterial, 99, terrain_material, "");
-			}
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -945,9 +937,10 @@ namespace flame
 
 								auto color_map_d = color_map ? color_map->get_data() : nullptr;
 								auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
+								auto color_map_ch = color_map ? color_map->get_channel() : 0;
 								auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
 								auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
-								auto alpha_map_ch = alpha_map ? alpha_map->get_byte_per_channel() : 0;
+								auto alpha_map_ch = alpha_map ? alpha_map->get_channel() : 0;
 
 								if (color_map && alpha_map)
 								{
@@ -968,7 +961,7 @@ namespace flame
 										for (auto x = 0; x < size.x(); x++)
 										{
 											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], a);
+												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * color_map_ch], a);
 										}
 									}
 								}
@@ -1005,7 +998,7 @@ namespace flame
 
 								auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
 								auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
-								auto roughness_map_ch = roughness_map ? roughness_map->get_byte_per_channel() : 0;
+								auto roughness_map_ch = roughness_map ? roughness_map->get_channel() : 0;
 
 								if (roughness_map)
 								{
@@ -1041,7 +1034,7 @@ namespace flame
 
 								auto height_map_d = height_map ? height_map->get_data() : nullptr;
 								auto height_map_pitch = height_map ? height_map->get_pitch() : 0;
-								auto height_map_ch = height_map ? height_map->get_byte_per_channel() : 0;
+								auto height_map_ch = height_map ? height_map->get_channel() : 0;
 
 								if (normal_map && height_map)
 								{
@@ -1695,6 +1688,22 @@ namespace flame
 			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow);
 		}
 
+		void CanvasPrivate::draw_terrain(uint height_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels)
+		{
+			auto cmd = new CmdDrawTerrain;
+			cmds.emplace_back(cmd);
+
+			cmd->idx = terrain_info_buffer.stg_num();
+
+			TerrainInfoS ti;
+			ti.coord = Vec3f(0.f);
+			ti.size = Vec2u(64);
+			ti.height_tex_id = height_tex_id;
+			ti.extent = Vec3f(100.f, 200.f, 100.f);
+			ti.tess_levels = tess_levels;
+			terrain_info_buffer.push(ti);
+		}
+
 		void CanvasPrivate::add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow)
 		{
 			if (type == LightDirectional)
@@ -1824,8 +1833,8 @@ namespace flame
 			enum PassType
 			{
 				PassNone = -1,
-				PassElement,
-				PassMesh,
+				Pass2D,
+				Pass3D,
 				PassBlur,
 				PassBloom
 			};
@@ -1842,25 +1851,26 @@ namespace flame
 				{
 				case Cmd::DrawElement:
 				{
-					if (passes.empty() || (passes.back().type != PassElement && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != Pass2D && passes.back().type != PassNone))
 						passes.emplace_back();
-					passes.back().type = PassElement;
+					passes.back().type = Pass2D;
 					passes.back().cmd_ids.push_back(i);
 
 				}
 					break;
 				case Cmd::DrawMesh:
+				case Cmd::DrawTerrain:
 				{
-					if (passes.empty() || (passes.back().type != PassMesh && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != Pass3D && passes.back().type != PassNone))
 						passes.emplace_back();
-					passes.back().type = PassMesh;
+					passes.back().type = Pass3D;
 					passes.back().cmd_ids.push_back(i);
 
 				}
 					break;
 				case Cmd::SetScissor:
 				{
-					if (passes.empty() || (passes.back().type != PassElement && passes.back().type != PassMesh && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != Pass2D && passes.back().type != Pass3D && passes.back().type != PassNone))
 						passes.emplace_back();
 					passes.back().cmd_ids.push_back(i);
 				}
@@ -1914,7 +1924,7 @@ namespace flame
 			{
 				switch (p.type)
 				{
-				case PassElement:
+				case Pass2D:
 				{
 					if (ele_idx_off == 0)
 					{
@@ -1958,7 +1968,7 @@ namespace flame
 					cb->end_renderpass();
 				}
 					break;
-				case PassMesh:
+				case Pass3D:
 				{
 					if (first_mesh)
 					{
@@ -1968,20 +1978,12 @@ namespace flame
 						render_data_buffer.end->shadow_distance = 100.f;
 						render_data_buffer.end->csm_levels = 3;
 
-						{
-							// TODO
-							terrain_info_buffer.end->coord = Vec3f(0.f);
-							terrain_info_buffer.end->tessellation_levels = 20.f;
-							terrain_info_buffer.end->size = Vec2u(64);
-							terrain_info_buffer.end->extent = Vec3f(100.f, 200.f, 100.f);
-						}
-
 						mesh_matrix_buffer.upload(cb);
 						mesh_matrix_buffer.barrier(cb);
+						terrain_info_buffer.upload(cb);
+						terrain_info_buffer.barrier(cb);
 						render_data_buffer.upload(cb, 0, 1);
 						render_data_buffer.barrier(cb);
-						terrain_info_buffer.upload(cb, 0, 1);
-						terrain_info_buffer.barrier(cb);
 
 						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
@@ -2171,11 +2173,6 @@ namespace flame
 						cvs[2] = Vec4f(0.f, 0.f, 0.f, 0.f);
 						cb->begin_renderpass(forward_framebuffers[0].get(), cvs);
 					}
-					cb->bind_pipeline(pl_fwd);
-					cb->bind_descriptor_set(mesh_descriptorset.get(), 0, forward_pipelinelayout);
-					cb->bind_descriptor_set(material_descriptorset.get(), 1, forward_pipelinelayout);
-					cb->bind_descriptor_set(light_descriptorset.get(), 2, forward_pipelinelayout);
-					cb->bind_descriptor_set(render_data_descriptorset.get(), 3, forward_pipelinelayout);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2184,12 +2181,29 @@ namespace flame
 						case Cmd::DrawMesh:
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
+							cb->bind_pipeline(pl_fwd);
+							cb->bind_descriptor_set(render_data_descriptorset.get(), 0, forward_pipelinelayout);
+							cb->bind_descriptor_set(mesh_descriptorset.get(), 1, forward_pipelinelayout);
+							cb->bind_descriptor_set(material_descriptorset.get(), 2, forward_pipelinelayout);
+							cb->bind_descriptor_set(light_descriptorset.get(), 3, forward_pipelinelayout);
 							for (auto& m : c->meshes)
 							{
 								cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer_1.buf.get(), 0);
 								cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
 								cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
 							}
+						}
+							break;
+						case Cmd::DrawTerrain:
+						{
+							auto c = (CmdDrawTerrain*)cmd.get();
+							cb->bind_pipeline(pl_ter);
+							cb->bind_descriptor_set(render_data_descriptorset.get(), 0, terrain_pipelinelayout);
+							cb->bind_descriptor_set(material_descriptorset.get(), 1, terrain_pipelinelayout);
+							cb->bind_descriptor_set(light_descriptorset.get(), 2, terrain_pipelinelayout);
+							cb->bind_descriptor_set(terrain_descriptorset.get(), 3, terrain_pipelinelayout);
+							auto size = terrain_info_buffer.end->size;
+							cb->draw(4, size.x() * size.y(), 0, c->idx << 16);
 						}
 							break;
 						case Cmd::SetScissor:
@@ -2199,17 +2213,6 @@ namespace flame
 						}
 							break;
 						}
-					}
-					{
-						// TODO
-						cb->bind_pipeline(pl_ter);
-						cb->bind_descriptor_set(material_descriptorset.get(), 0, terrain_pipelinelayout);
-						cb->bind_descriptor_set(light_descriptorset.get(), 1, terrain_pipelinelayout);
-						cb->bind_descriptor_set(render_data_descriptorset.get(), 2, terrain_pipelinelayout);
-						cb->bind_descriptor_set(terrain_descriptorset.get(), 3, terrain_pipelinelayout);
-						auto size = terrain_info_buffer.end->size;
-						cb->draw(4, size.x() * size.y(), 0, 0);
-						//cb->draw(4, 1, 0, 0);
 					}
 					cb->end_renderpass();
 					if (msaa_3d)

@@ -25,7 +25,7 @@ namespace flame
 
 		struct MeshPrivate : Mesh
 		{
-			uint ref_cnt = 0;
+			std::string name;
 
 			uint material_index = 0;
 
@@ -80,6 +80,8 @@ namespace flame
 
 		struct ModelBridge : Model
 		{
+			int find_mesh(const char* name) const override;
+
 			void save(const wchar_t* filename, const char* model_name) const override;
 		};
 
@@ -96,15 +98,19 @@ namespace flame
 
 			uint get_meshes_count() const override { return meshes.size(); }
 			Mesh* get_mesh(uint idx) const override { return meshes[idx].get(); }
+			int find_mesh(const std::string& name) const;
 
 			Node* get_root() const override { return root.get(); }
-
-			void substitute_material(const char* name, const wchar_t* filename) override;
 
 			void save(const std::filesystem::path& filename, const std::string& model_name) const;
 
 			static ModelPrivate* create(const std::filesystem::path& filename);
 		};
+
+		inline int ModelBridge::find_mesh(const char* name) const
+		{
+			return ((ModelPrivate*)this)->find_mesh(name);
+		}
 
 		inline void ModelBridge::save(const wchar_t* filename, const char* model_name) const
 		{

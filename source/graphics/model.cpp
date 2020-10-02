@@ -166,33 +166,14 @@ namespace flame
 			root.reset(new NodePrivate);
 		}
 
-		void ModelPrivate::substitute_material(const char* _name, const wchar_t* filename)
+		int ModelPrivate::find_mesh(const std::string& name) const
 		{
-			auto name = std::string(_name);
-			for (auto& m : materials)
+			for (auto i = 0; i < meshes.size(); i++)
 			{
-				if (m->name == name)
-				{
-					std::ifstream mtl(filename);
-					while (!mtl.eof())
-					{
-						std::string line;
-						std::getline(mtl, line);
-						if (line == "color_map")
-						{
-							std::getline(mtl, line);
-							m->color_map = line;
-						}
-						else if (line == "roughness_map")
-						{
-							std::getline(mtl, line);
-							m->roughness_map = line;
-						}
-					}
-					mtl.close();
-					break;
-				}
+				if (meshes[i]->name == name)
+					return i;
 			}
+			return -1;
 		}
 
 		void ModelPrivate::save(const std::filesystem::path& filename, const std::string& _model_name) const
@@ -262,9 +243,8 @@ namespace flame
 				nn.append_attribute("scale").set_value(to_string(src->scale).c_str());
 				if (src->mesh_index != -1)
 				{
-					auto nm = n.append_child("cMeshInstance");
-					nm.append_attribute("src").set_value(model_name.c_str());
-					nm.append_attribute("mesh_index").set_value(src->mesh_index);
+					auto nm = n.append_child("cMesh");
+					nm.append_attribute("src").set_value((model_name + "." + meshes[src->mesh_index]->name).c_str());
 					if (src->name.starts_with("sm_"))
 					{
 						auto nr = n.append_child("cRigid");
@@ -307,6 +287,7 @@ namespace flame
 				{
 					auto m = new ModelPrivate;
 					auto mesh = new MeshPrivate;
+					mesh->name = "0";
 					mesh->set_vertices_pn({
 						// F
 						-0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
@@ -361,6 +342,7 @@ namespace flame
 				{
 					auto m = new ModelPrivate;
 					auto mesh = new MeshPrivate;
+					mesh->name = "0";
 					mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
 					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
@@ -462,23 +444,18 @@ namespace flame
 			}
 			else
 			{
-				auto is_obj = filename.extension() == L".obj";
 #ifdef USE_ASSIMP
 				Assimp::Importer importer;
 				auto load_flags = 
 					aiProcess_RemoveRedundantMaterials |
 					aiProcess_Triangulate |
 					aiProcess_JoinIdenticalVertices |
-					aiProcess_SortByPType;
-				if (is_obj)
-				{
-					load_flags = load_flags |
-						aiProcess_FlipUVs;
-				}
+					aiProcess_SortByPType |
+					aiProcess_FlipUVs;
 				auto scene = importer.ReadFile(filename.string(), load_flags);
 				if (!scene)
 				{
-					wprintf(L"load model failed: %s\n", filename.c_str());
+					printf("load model %s failed: %s\n", filename.string().c_str(), importer.GetErrorString());
 					return nullptr;
 				}
 
@@ -526,6 +503,10 @@ namespace flame
 					auto dst = new MeshPrivate;
 					ret->meshes.emplace_back(dst);
 
+					dst->name = src->mName.C_Str();
+					if (dst->name.empty())
+						dst->name = std::to_string(i);
+
 					dst->material_index = src->mMaterialIndex;
 
 					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals);
@@ -539,6 +520,29 @@ namespace flame
 					}
 					dst->set_indices(indices.size(), indices.data());
 				}
+
+				for (auto i = 0; i < ret->meshes.size(); i++)
+				{
+					auto name = ret->meshes[i]->name;
+					auto n = 0;
+					auto unique = [&]() {
+						for (auto j = 0; j < ret->meshes.size(); j++)
+						{
+							if (ret->meshes[j]->name == name)
+								return false;
+						}
+						return true;
+					};
+					while (!unique())
+					{
+						name = ret->meshes[i]->name + std::to_string(i);
+						n++;
+					}
+					ret->meshes[i]->name = name;
+				}
+
+				std::vector<uint> mesh_refs;
+				mesh_refs.resize(ret->meshes.size());
 
 				std::function<void(NodePrivate*, aiNode*)> get_node;
 				get_node = [&](NodePrivate* dst, aiNode* src) {
@@ -571,7 +575,7 @@ namespace flame
 						}
 					}
 					if (dst->mesh_index != -1)
-						ret->meshes[dst->mesh_index]->ref_cnt++;
+						mesh_refs[dst->mesh_index]++;
 
 					for (auto i = 0; i < src->mNumChildren; i++)
 					{
@@ -586,16 +590,13 @@ namespace flame
 					get_node(n, scene->mRootNode);
 				}
 
-				if (is_obj)
+				for (auto i = 0; i < mesh_refs.size(); i++)
 				{
-					for (auto i = 0; i < ret->meshes.size(); i++)
+					if (mesh_refs[i] == 0)
 					{
-						if (ret->meshes[i]->ref_cnt == 0)
-						{
-							auto n = new NodePrivate;
-							n->mesh_index = i;
-							ret->root->children.emplace_back(n);
-						}
+						auto n = new NodePrivate;
+						n->mesh_index = i;
+						ret->root->children.emplace_back(n);
 					}
 				}
 #endif

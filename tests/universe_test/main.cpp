@@ -8,7 +8,8 @@ using namespace graphics;
 App g_app;
 
 auto test_prefab = std::filesystem::path(L"tests/model_test");
-auto model_path = std::filesystem::path(LR"(D:\island\Small_Tropical_Island\Small_Tropical_Island.fmod)");
+//auto model_path = std::filesystem::path(LR"(D:\island\Small_Tropical_Island\Small_Tropical_Island.fmod)");
+auto model_path = std::filesystem::path(LR"(D:\illidan\illidan.fmod)");
 
 Entity* root;
 
@@ -17,12 +18,16 @@ int main(int argc, char** args)
 	g_app.create();
 	auto w = new GraphicsWindow(&g_app, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, true);
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	//if (!model_path.empty())
-	//{
-	//	w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(model_path.c_str()), "mod");
-	//	model_path.replace_extension(L".prefab");
-	//	Entity::register_prefab(model_path.c_str(), "mod");
-	//}
+	if (!model_path.empty())
+	{
+		w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(model_path.c_str()), "mod");
+		model_path.replace_extension(L".prefab");
+		Entity::register_prefab(model_path.c_str(), "mod");
+	}
+	{
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/height.jpg");
+		w->canvas->set_resource(ResourceTexture, -1, t, "height_map");
+	}
 	root = w->root;
 
 	auto e = Entity::create();

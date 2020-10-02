@@ -10,7 +10,7 @@ namespace flame
 	}
 
 	struct cNodePrivate;
-	struct cMeshInstancePrivate;
+	struct cMeshPrivate;
 	struct cRigidPrivate;
 
 	struct cShapePrivate : cShape // R ~ on_*
@@ -23,7 +23,7 @@ namespace flame
 		physics::Shape* phy_shape;
 
 		cNodePrivate* node = nullptr; // R ref
-		cMeshInstancePrivate* mesh = nullptr; // R ref optional
+		cMeshPrivate* mesh = nullptr; // R ref optional
 		cRigidPrivate* rigid = nullptr; // R ref place=local|parent
 
 		physics::ShapeType get_type() const override { return type; }

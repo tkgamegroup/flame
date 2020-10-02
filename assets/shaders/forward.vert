@@ -2,11 +2,11 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#define MESH_SET 0
-#define RENDER_DATA_SET 3
+#define RENDER_DATA_SET 0
+#define MESH_SET 1
 
-#include "mesh_dsl.glsl"
 #include "render_data_dsl.glsl"
+#include "mesh_dsl.glsl"
 
 layout (location = 0) in vec3 i_position;
 layout (location = 1) in vec2 i_uv;
