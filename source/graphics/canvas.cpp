@@ -285,7 +285,7 @@ namespace flame
 
 				{
 					DescriptorBindingInfo db;
-					db.type = DescriptorUniformBuffer;
+					db.type = DescriptorStorageBuffer;
 					terrain_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
 				}
 
@@ -796,6 +796,13 @@ namespace flame
 				for (auto i = 0; i < element_resources.size(); i++)
 				{
 					if (element_resources[i].name == name)
+						return i;
+				}
+				break;
+			case ResourceTexture:
+				for (auto i = 0; i < texture_resources.size(); i++)
+				{
+					if (texture_resources[i].first == name)
 						return i;
 				}
 				break;
@@ -1809,6 +1816,7 @@ namespace flame
 			element_vertex_buffer.stg_rewind();
 			element_index_buffer.stg_rewind();
 			mesh_matrix_buffer.stg_rewind();
+			terrain_info_buffer.stg_rewind();
 			light_indices_buffer.stg_rewind();
 			{
 				// TODO
@@ -2202,7 +2210,7 @@ namespace flame
 							cb->bind_descriptor_set(material_descriptorset.get(), 1, terrain_pipelinelayout);
 							cb->bind_descriptor_set(light_descriptorset.get(), 2, terrain_pipelinelayout);
 							cb->bind_descriptor_set(terrain_descriptorset.get(), 3, terrain_pipelinelayout);
-							auto size = terrain_info_buffer.end->size;
+							auto size = terrain_info_buffer.beg[c->idx].size;
 							cb->draw(4, size.x() * size.y(), 0, c->idx << 16);
 						}
 							break;

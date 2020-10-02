@@ -11,7 +11,12 @@ namespace flame
 
 	struct cNodePrivate;
 
-	struct cTerrainPrivate : cTerrain // R ~ on_*
+	struct cTerrainBridge : cTerrain
+	{
+		void set_height_map(const char* name) override;
+	};
+
+	struct cTerrainPrivate : cTerrainBridge // R ~ on_*
 	{
 		int height_map_id = -1;
 
@@ -23,6 +28,8 @@ namespace flame
 		cNodePrivate* node = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
 
+		const char* get_height_map() const override { return height_map_name.c_str(); }
+		void set_height_map(const std::string& name);
 		Vec2u get_size() const override { return size; }
 		void set_size(const Vec2u& s) override;
 		Vec3f get_extent() const override { return extent; }
@@ -34,4 +41,9 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas); // R
 	};
+
+	inline void cTerrainBridge::set_height_map(const char* name)
+	{
+		((cTerrainPrivate*)this)->set_height_map(name);
+	}
 }

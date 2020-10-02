@@ -341,6 +341,9 @@ namespace flame
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 
+			TBuffer<RenderDataS, BufferUsageUniform> render_data_buffer;
+			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
+
 			TBuffer<MeshMatrixS, BufferUsageStorage> mesh_matrix_buffer;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
 
@@ -370,10 +373,7 @@ namespace flame
 
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 
-			TBuffer<RenderDataS, BufferUsageUniform> render_data_buffer;
-			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
-
-			TBuffer<TerrainInfoS, BufferUsageUniform> terrain_info_buffer;
+			TBuffer<TerrainInfoS, BufferUsageStorage> terrain_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> terrain_descriptorset;
 
 			std::vector<ImageViewPrivate*> target_imageviews;

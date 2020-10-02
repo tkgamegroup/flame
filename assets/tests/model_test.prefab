@@ -23,6 +23,10 @@
     <entity src="@mod" >
       <cNode scale="1.0,1.0,1.0" />
     </entity>
+	<entity>
+		<cNode />
+		<cTerrain height_map="height_map" />
+	</entity>
     <entity>
       <cNode />
       <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />

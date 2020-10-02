@@ -200,6 +200,8 @@ namespace flame
 			write_u(file, meshes.size());
 			for (auto& m : meshes)
 			{
+				write_s(file, m->name);
+
 				write_i(file, m->material_index);
 
 				auto n = m->positions.size();
@@ -402,6 +404,8 @@ namespace flame
 					auto m = new MeshPrivate;
 					ret->meshes[i].reset(m);
 
+					read_s(file, m->name);
+
 					m->material_index = read_i(file);
 
 					auto n = read_u(file);
@@ -538,7 +542,8 @@ namespace flame
 						name = ret->meshes[i]->name + std::to_string(i);
 						n++;
 					}
-					ret->meshes[i]->name = name;
+					if (n > 0)
+						ret->meshes[i]->name = name;
 				}
 
 				std::vector<uint> mesh_refs;

@@ -34,7 +34,7 @@ vec3 get_coord(vec2 off)
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x + off.x), 
 		gl_TessCoord.y + off.y
 	));
-	ret.y -= texture(maps[id], uv + off / terrain.size).a * terrain.extent.y;
+	ret.y -= texture(maps[id], uv + off / terrain.size).r * terrain.extent.y;
 	return ret;
 }
 
@@ -53,8 +53,7 @@ void main()
 	uint idx = i_idxs[0];
 	terrain = terrain_infos[idx];
 
-	MaterialInfo material = material_infos[99];
-	id = material.normal_height_map_index;
+	id = terrain.height_tex_id;
 
 	uv = mix(
 		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x), 
@@ -71,7 +70,7 @@ void main()
 	o_coordw = p;
 	o_coordv = render_data.camera_coord - p;
 
-	float off = 1.0 / terrain.tessellation_levels;
+	float off = 1.0 / terrain.tess_levels;
 	vec3 n0 = normalx(get_coord(vec2(off, 0)) - p);
 	vec3 n1 = normalx(p - get_coord(vec2(-off, 0)));
 	vec3 n2 = normalz(get_coord(vec2(0, -off)));

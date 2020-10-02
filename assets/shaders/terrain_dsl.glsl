@@ -11,7 +11,7 @@ struct TerrainInfo
 	float dummy2;
 };
 
-layout(set = TERRAIN_SET, binding = 0) uniform TerrainInfos
+layout(set = TERRAIN_SET, binding = 0) buffer readonly TerrainInfos
 {
 	TerrainInfo terrain_infos[];
 };

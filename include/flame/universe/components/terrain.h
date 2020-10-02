@@ -14,6 +14,8 @@ namespace flame
 		{
 		}
 
+		virtual const char* get_height_map() const = 0;
+		virtual void set_height_map(const char* name) = 0;
 		virtual Vec2u get_size() const = 0;
 		virtual void set_size(const Vec2u& s) = 0;
 		virtual Vec3f get_extent() const = 0;

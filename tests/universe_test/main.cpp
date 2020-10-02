@@ -26,7 +26,7 @@ int main(int argc, char** args)
 	}
 	{
 		auto t = Image::create(g_app.graphics_device, L"D:/terrain/height.jpg");
-		w->canvas->set_resource(ResourceTexture, -1, t, "height_map");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "height_map");
 	}
 	root = w->root;
 

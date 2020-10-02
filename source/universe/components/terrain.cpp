@@ -4,6 +4,13 @@
 
 namespace flame
 {
+	void cTerrainPrivate::set_height_map(const std::string& name)
+	{
+		if (height_map_name == name)
+			return;
+		height_map_name = name;
+	}
+
 	void cTerrainPrivate::set_size(const Vec2u& s)
 	{
 		if (size == s)
