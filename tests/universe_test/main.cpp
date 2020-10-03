@@ -28,6 +28,26 @@ int main(int argc, char** args)
 		auto t = Image::create(g_app.graphics_device, L"D:/terrain/height.jpg");
 		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "height_map");
 	}
+	{
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/blend.png");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "blend_map");
+	}
+	{
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/0.png");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_0");
+	}
+	{
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/1.png");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_1");
+	}
+	{
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/2.png");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_2");
+	}
+	{
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/3.png");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_3");
+	}
 	root = w->root;
 
 	auto e = Entity::create();

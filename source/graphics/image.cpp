@@ -269,7 +269,7 @@ namespace flame
 			return new ImageViewPrivate((ImagePrivate*)image, auto_released, type, subresource, swizzle);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge) :
+		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates) :
 			device(d)
 		{
 			VkSamplerCreateInfo info;
@@ -278,9 +278,10 @@ namespace flame
 			info.pNext = nullptr;
 			info.magFilter = to_backend(mag_filter);
 			info.minFilter = to_backend(min_filter);
-			info.addressModeU = clamp_to_edge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-			info.addressModeV = clamp_to_edge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-			info.addressModeW = clamp_to_edge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			auto vk_address_mode = to_backend(address_mode);
+			info.addressModeU = vk_address_mode;
+			info.addressModeV = vk_address_mode;
+			info.addressModeW = vk_address_mode;
 			info.anisotropyEnable = VK_FALSE;
 			info.maxAnisotropy = 1.f;
 			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
@@ -300,9 +301,9 @@ namespace flame
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 		}
 
-		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge)
+		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates)
 		{
-			return new SamplerPrivate((DevicePrivate*)d, mag_filter, min_filter, unnormalized_coordinates, clamp_to_edge);
+			return new SamplerPrivate((DevicePrivate*)d, mag_filter, min_filter, address_mode, unnormalized_coordinates);
 		}
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* d, const std::wstring& filename)

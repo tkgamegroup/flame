@@ -388,6 +388,19 @@ namespace flame
 			}
 		}
 
+		inline VkSamplerAddressMode to_backend(AddressMode m)
+		{
+			switch (m)
+			{
+			case AddressClampToEdge:
+				return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			case AddressClampToBorder:
+				return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+			case AddressRepeat:
+				return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+			}
+		}
+
 		inline VkFilter to_backend(Filter f)
 		{
 			switch (f)

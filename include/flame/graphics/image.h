@@ -89,7 +89,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 			
-			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, bool unnormalized_coordinates, bool clamp_to_edge = true);
+			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, AddressMode address_mode = AddressClampToEdge, bool unnormalized_coordinates = true);
 		};
 
 		struct ImageTile

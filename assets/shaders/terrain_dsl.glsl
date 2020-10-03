@@ -8,7 +8,9 @@ struct TerrainInfo
 	float tess_levels;
 
 	vec3 extent;
-	float dummy2;
+	int blend_tex_id;
+	
+	ivec4 color_tex_ids;
 };
 
 layout(set = TERRAIN_SET, binding = 0) buffer readonly TerrainInfos

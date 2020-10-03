@@ -24,8 +24,8 @@
       <cNode scale="1.0,1.0,1.0" />
     </entity>
 	<entity>
-		<cNode />
-		<cTerrain height_map="height_map" />
+		<cNode pos="-1000,0,-1000" />
+		<cTerrain height_map="height_map" extent="100,200,100" blend_map="blend_map" color_map_0="color_map_0" color_map_1="color_map_1" color_map_2="color_map_2" color_map_3="color_map_3" />
 	</entity>
     <entity>
       <cNode />

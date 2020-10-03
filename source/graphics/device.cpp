@@ -127,8 +127,8 @@ namespace flame
 			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
 
 			descriptor_pool.reset(new DescriptorPoolPrivate(this));
-			sampler_nearest.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, false));
-			sampler_linear.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, false));
+			sampler_nearest.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, AddressClampToEdge));
+			sampler_linear.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, AddressClampToEdge));
 			graphics_command_pool.reset(new CommandPoolPrivate(this, graphics_queue_index));
 			graphics_queue.reset(new QueuePrivate(this, graphics_queue_index));
 			if (transfer_queue_index > 0)

@@ -98,6 +98,7 @@ namespace flame
 
 		static auto initialized = false;
 
+		static SamplerPrivate* map_sampler = nullptr;
 		static SamplerPrivate* shadow_sampler = nullptr;
 		static RenderpassPrivate* image1_8_renderpass = nullptr;
 		static RenderpassPrivate* image1_16_renderpass = nullptr;
@@ -156,7 +157,8 @@ namespace flame
 			{
 				initialized = true;
 
-				shadow_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, false, false);
+				map_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, AddressRepeat);
+				shadow_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, AddressClampToBorder);
 
 				{
 					RenderpassAttachmentInfo att;
@@ -878,7 +880,7 @@ namespace flame
 				{
 					auto v = p ? (ImageViewPrivate*)p : iv_wht;
 					texture_resources[slot] = std::make_pair(name, v);
-					material_descriptorset->set_image(1, slot, v, device->sampler_linear.get());
+					material_descriptorset->set_image(1, slot, v, map_sampler);
 				}
 				break;
 			case ResourceMaterial:
@@ -1695,7 +1697,7 @@ namespace flame
 			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow);
 		}
 
-		void CanvasPrivate::draw_terrain(uint height_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels)
+		void CanvasPrivate::draw_terrain(uint height_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels, int blend_tex_id, int color_tex_id_0, int color_tex_id_1, int color_tex_id_2, int color_tex_id_3)
 		{
 			auto cmd = new CmdDrawTerrain;
 			cmds.emplace_back(cmd);
@@ -1703,11 +1705,16 @@ namespace flame
 			cmd->idx = terrain_info_buffer.stg_num();
 
 			TerrainInfoS ti;
-			ti.coord = Vec3f(0.f);
-			ti.size = Vec2u(64);
+			ti.coord = coord;
+			ti.size = size;
 			ti.height_tex_id = height_tex_id;
-			ti.extent = Vec3f(100.f, 200.f, 100.f);
+			ti.extent = extent;
 			ti.tess_levels = tess_levels;
+			ti.blend_tex_id = blend_tex_id;
+			ti.color_tex_ids[0] = color_tex_id_0;
+			ti.color_tex_ids[1] = color_tex_id_1;
+			ti.color_tex_ids[2] = color_tex_id_2;
+			ti.color_tex_ids[3] = color_tex_id_3;
 			terrain_info_buffer.push(ti);
 		}
 

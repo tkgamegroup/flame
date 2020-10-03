@@ -160,6 +160,13 @@ namespace flame
 			Swizzle a = SwizzleIdentity;
 		};
 
+		enum AddressMode
+		{
+			AddressClampToEdge,
+			AddressClampToBorder,
+			AddressRepeat
+		};
+
 		enum Filter
 		{
 			FilterNearest,

@@ -3,10 +3,14 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #define RENDER_DATA_SET 0
+#define MATERIAL_SET 1
 #define LIGHT_SET 2
+#define TERRAIN_SET 3
 
 #include "render_data_dsl.glsl"
+#include "material_dsl.glsl"
 #include "light_dsl.glsl"
+#include "terrain_dsl.glsl"
 #include "shading.glsl"
 
 layout (location = 0) in flat uint i_idx;
@@ -22,6 +26,25 @@ void main()
 {
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
+
+	TerrainInfo terrain = terrain_infos[i_idx];
+
+	vec3 albedo;
+	if (terrain.blend_tex_id != -1)
+	{
+		vec4 blend = texture(maps[terrain.blend_tex_id], i_uv);
+		blend = max(blend, vec4(0.0001));
+		blend = normalize(blend);
+		vec2 tiled_uv = i_uv * terrain.size * terrain.tess_levels;
+		for (int i = 0; i < 4; i++)
+		{
+			int id = terrain.color_tex_ids[i];
+			if (id != -1 && blend[i] > 0.0)
+				albedo += texture(maps[id], tiled_uv).rgb * blend[i];
+		}
+	}
+	else
+		albedo = vec3(1.0);
 	
-	o_color = vec4(shading(i_coordw, i_coordv, N, V, vec3(1.0), vec3(0.0), 0.5), 1.0);
+	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, vec3(0.0), 1.0), 1.0);
 }
