@@ -951,6 +951,9 @@ namespace flame
 								auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
 								auto alpha_map_ch = alpha_map ? alpha_map->get_channel() : 0;
 
+								if (color_map)
+									color_map->srgb_to_linear();
+
 								if (color_map && alpha_map)
 								{
 									for (auto y = 0; y < size.y(); y++)

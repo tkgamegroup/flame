@@ -116,6 +116,33 @@ namespace flame
 		}
 	}
 
+	void BitmapPrivate::srgb_to_linear()
+	{
+		assert(channel >= 3);
+		if (channel < 3)
+			return;
+		for (auto j = 0; j < height; j++)
+		{
+			auto line = data + j * pitch;
+			for (auto i = 0; i < width; i++)
+			{
+				auto p = line + i * channel;
+				{
+					auto& r = p[0];
+					r = pow(r / 255.f, 2.2f) * 255.f;
+				}
+				{
+					auto& g = p[1];
+					g = pow(g / 255.f, 2.2f) * 255.f;
+				}
+				{
+					auto& b = p[2];
+					b = pow(b / 255.f, 2.2f) * 255.f;
+				}
+			}
+		}
+	}
+
 	void BitmapPrivate::save(const std::filesystem::path& filename)
 	{
 		auto ext = std::filesystem::path(filename).extension();
