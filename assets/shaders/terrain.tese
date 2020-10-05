@@ -34,7 +34,7 @@ vec3 get_coord(vec2 off)
 		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x + off.x), 
 		gl_TessCoord.y + off.y
 	));
-	ret.y -= texture(maps[id], uv + off / terrain.size).r * terrain.extent.y;
+	ret.y += texture(maps[id], uv + off / terrain.size).r * terrain.extent.y;
 	return ret;
 }
 

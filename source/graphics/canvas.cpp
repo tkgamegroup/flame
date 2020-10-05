@@ -1697,7 +1697,7 @@ namespace flame
 			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow);
 		}
 
-		void CanvasPrivate::draw_terrain(uint height_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels, int blend_tex_id, int color_tex_id_0, int color_tex_id_1, int color_tex_id_2, int color_tex_id_3)
+		void CanvasPrivate::draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels)
 		{
 			auto cmd = new CmdDrawTerrain;
 			cmds.emplace_back(cmd);
@@ -1708,13 +1708,9 @@ namespace flame
 			ti.coord = coord;
 			ti.size = size;
 			ti.height_tex_id = height_tex_id;
+			ti.color_tex_id = color_tex_id;
 			ti.extent = extent;
 			ti.tess_levels = tess_levels;
-			ti.blend_tex_id = blend_tex_id;
-			ti.color_tex_ids[0] = color_tex_id_0;
-			ti.color_tex_ids[1] = color_tex_id_1;
-			ti.color_tex_ids[2] = color_tex_id_2;
-			ti.color_tex_ids[3] = color_tex_id_3;
 			terrain_info_buffer.push(ti);
 		}
 

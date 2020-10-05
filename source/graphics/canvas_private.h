@@ -237,12 +237,10 @@ namespace flame
 
 			Vec2u size;
 			uint height_tex_id;
-			float tess_levels;
+			uint color_tex_id;
 
 			Vec3f extent;
-			int blend_tex_id;
-
-			Vec4i color_tex_ids;
+			float tess_levels;
 		};
 
 		struct Cmd
@@ -439,7 +437,7 @@ namespace flame
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow) override;
-			void draw_terrain(uint height_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels, int blend_tex_id, int color_tex_id_0, int color_tex_id_1, int color_tex_id_2, int color_tex_id_3) override;
+			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels) override;
 			void add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }

@@ -53,7 +53,7 @@ namespace flame
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) = 0;
 
 			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow = true) = 0;
-			virtual void draw_terrain(uint height_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels = 32.f, int blend_tex_id = -1, int color_tex_id_0 = -1, int color_tex_id_1 = 1, int color_tex_id_2 = -1, int color_tex_id_3 = -1) = 0;
+			virtual void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels = 32.f) = 0;
 			virtual void add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow = false) = 0;
 
 			virtual Vec4f get_scissor() const = 0;

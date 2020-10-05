@@ -11,6 +11,13 @@ namespace flame
 		height_map_name = name;
 	}
 
+	void cTerrainPrivate::set_color_map(const char* name)
+	{
+		if (color_map_name == name)
+			return;
+		color_map_name = name;
+	}
+
 	void cTerrainPrivate::set_size(const Vec2u& s)
 	{
 		if (size == s)
@@ -38,53 +45,16 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cTerrainPrivate::set_blend_map(const char* name)
-	{
-		if (blend_map_name == name)
-			return;
-		blend_map_name = name;
-	}
-
-	void cTerrainPrivate::set_color_map_0(const char* name)
-	{
-		if (color_map_names[0] == name)
-			return;
-		color_map_names[0] = name;
-	}
-
-	void cTerrainPrivate::set_color_map_1(const char* name)
-	{
-		if (color_map_names[1] == name)
-			return;
-		color_map_names[1] = name;
-	}
-
-	void cTerrainPrivate::set_color_map_2(const char* name)
-	{
-		if (color_map_names[2] == name)
-			return;
-		color_map_names[2] = name;
-	}
-
-	void cTerrainPrivate::set_color_map_3(const char* name)
-	{
-		if (color_map_names[3] == name)
-			return;
-		color_map_names[3] = name;
-	}
-
 	void cTerrainPrivate::on_gain_canvas()
 	{
 		height_map_id = canvas->find_resource(graphics::ResourceTexture, height_map_name.c_str());
-		blend_map_id = canvas->find_resource(graphics::ResourceTexture, blend_map_name.c_str());
-		for (auto i = 0; i < 4; i++)
-			color_map_ids[i] = canvas->find_resource(graphics::ResourceTexture, color_map_names[i].c_str());
+		color_map_id = canvas->find_resource(graphics::ResourceTexture, color_map_name.c_str());
 	}
 
 	void cTerrainPrivate::draw(graphics::Canvas* canvas)
 	{
-		if (height_map_id != -1)
-			canvas->draw_terrain(height_map_id, size, extent, node->global_pos, tess_levels, blend_map_id, color_map_ids[0], color_map_ids[1], color_map_ids[2], color_map_ids[3]);
+		if (height_map_id != -1 && color_map_id != -1)
+			canvas->draw_terrain(height_map_id, color_map_id, size, extent, node->global_pos, tess_levels);
 	}
 
 	cTerrain* cTerrain::create()

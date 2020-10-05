@@ -202,11 +202,10 @@ namespace flame
 			else
 			{
 				auto bmp = Bitmap::create(filename.c_str());
-				auto channel = bmp->get_channel();
-				if (channel == 3)
+				if (bmp->get_channel() == 3)
 					bmp->add_alpha_channel();
 
-				ret = new ImagePrivate(d, get_image_format(channel, bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
+				ret = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
 				ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
 				ImmediateCommandBuffer cb(d);

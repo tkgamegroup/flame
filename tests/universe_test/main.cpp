@@ -25,28 +25,12 @@ int main(int argc, char** args)
 		Entity::register_prefab(model_path.c_str(), "mod");
 	}
 	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/height.jpg");
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/height.png");
 		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "height_map");
 	}
 	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/blend.png");
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "blend_map");
-	}
-	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/0.png");
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_0");
-	}
-	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/1.png");
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_1");
-	}
-	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/2.png");
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_2");
-	}
-	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/3.png");
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map_3");
+		auto t = Image::create(g_app.graphics_device, L"D:/terrain/color.png");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map");
 	}
 	root = w->root;
 

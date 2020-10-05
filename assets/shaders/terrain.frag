@@ -29,22 +29,7 @@ void main()
 
 	TerrainInfo terrain = terrain_infos[i_idx];
 
-	vec3 albedo;
-	if (terrain.blend_tex_id != -1)
-	{
-		vec4 blend = texture(maps[terrain.blend_tex_id], i_uv);
-		blend = max(blend, vec4(0.0001));
-		blend = normalize(blend);
-		vec2 tiled_uv = i_uv * terrain.size * terrain.tess_levels;
-		for (int i = 0; i < 4; i++)
-		{
-			int id = terrain.color_tex_ids[i];
-			if (id != -1 && blend[i] > 0.0)
-				albedo += texture(maps[id], tiled_uv).rgb * blend[i];
-		}
-	}
-	else
-		albedo = vec3(1.0);
+	vec3 albedo = texture(maps[terrain.color_tex_id], i_uv).rgb;
 	
 	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, vec3(0.0), 1.0), 1.0);
 }
