@@ -773,6 +773,17 @@ namespace flame
 					return r.p;
 				}
 				break;
+			case ResourceTexture:
+				if (slot < texture_resources.size())
+				{
+					auto& r = texture_resources[slot];
+					if (r.second)
+					{
+						if (real_type)
+							*real_type = ResourceTexture;
+						return r.second;
+					}
+				}
 			case ResourceModel:
 				if (slot < model_resources.size())
 				{
@@ -784,6 +795,7 @@ namespace flame
 						return r->model;
 					}
 				}
+				break;
 			}
 			return nullptr;
 		}
@@ -1138,10 +1150,10 @@ namespace flame
 
 						ImmediateCommandBuffer cb(device);
 
-						mr->meshes.resize(model->meshes.size());
-						for (auto i = 0; i < model->meshes.size(); i++)
+						mr->staging_meshes.resize(model->staging_meshes.size());
+						for (auto i = 0; i < model->staging_meshes.size(); i++)
 						{
-							auto ms = model->meshes[i].get();
+							auto ms = model->staging_meshes[i].get();
 
 							auto mrm = new ModelResource::Mesh;
 
@@ -1169,7 +1181,7 @@ namespace flame
 
 							mrm->material_index = mr->materials[ms->material_index];
 
-							mr->meshes[i].reset(mrm);
+							mr->staging_meshes[i].reset(mrm);
 						}
 					}
 				}
@@ -1697,7 +1709,7 @@ namespace flame
 			om.normal = normal;
 			mesh_matrix_buffer.push(om);
 
-			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow);
+			last_mesh_cmd->staging_meshes.emplace_back(idx, model_resources[mod_id]->staging_meshes[mesh_idx].get(), cast_shadow);
 		}
 
 		void CanvasPrivate::draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels)
@@ -2043,7 +2055,7 @@ namespace flame
 											if (cmd->type == Cmd::DrawMesh)
 											{
 												auto c = (CmdDrawMesh*)cmd.get();
-												for (auto& m : c->meshes)
+												for (auto& m : c->staging_meshes)
 												{
 													if (std::get<2>(m))
 													{
@@ -2138,7 +2150,7 @@ namespace flame
 											if (cmd->type == Cmd::DrawMesh)
 											{
 												auto c = (CmdDrawMesh*)cmd.get();
-												for (auto& m : c->meshes)
+												for (auto& m : c->staging_meshes)
 												{
 													if (std::get<2>(m))
 													{
@@ -2200,7 +2212,7 @@ namespace flame
 							cb->bind_descriptor_set(mesh_descriptorset.get(), 1, forward_pipelinelayout);
 							cb->bind_descriptor_set(material_descriptorset.get(), 2, forward_pipelinelayout);
 							cb->bind_descriptor_set(light_descriptorset.get(), 3, forward_pipelinelayout);
-							for (auto& m : c->meshes)
+							for (auto& m : c->staging_meshes)
 							{
 								cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer_1.buf.get(), 0);
 								cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);

@@ -11,6 +11,7 @@ namespace flame
 
 	struct cNodePrivate;
 	struct cMeshPrivate;
+	struct cTerrainPrivate;
 	struct cRigidPrivate;
 
 	struct cShapePrivate : cShape // R ~ on_*
@@ -24,6 +25,7 @@ namespace flame
 
 		cNodePrivate* node = nullptr; // R ref
 		cMeshPrivate* mesh = nullptr; // R ref optional
+		cTerrainPrivate* terrain = nullptr; // R ref optional
 		cRigidPrivate* rigid = nullptr; // R ref place=local|parent
 
 		physics::ShapeType get_type() const override { return type; }

@@ -1,3 +1,4 @@
+#include <flame/foundation/bitmap.h>
 #include <flame/graphics/model.h>
 #include "shape_private.h"
 #include "device_private.h"
@@ -7,7 +8,7 @@ namespace flame
 {
 	namespace physics
 	{
-		static std::vector<std::pair<ShapeDesc, PxTriangleMesh*>> meshes;
+		static std::vector<std::pair<ShapeDesc, PxTriangleMesh*>> staging_triangle_meshes;
 
 		ShapePrivate::ShapePrivate(MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
 		{
@@ -26,16 +27,16 @@ namespace flame
 				px_shape = DevicePrivate::get()->px_instance->createShape(PxCapsuleGeometry(desc.capsule.radius, desc.capsule.height), *m->px_material);
 				px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat) * PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
 				break;
-			case ShapeMesh:
+			case ShapeTriangleMesh:
 			{
-				PxTriangleMesh* mesh = nullptr;
-				for (auto& m : meshes)
+				PxTriangleMesh* triangle_mesh = nullptr;
+				for (auto& m : staging_triangle_meshes)
 				{
-					if (m.first.mesh.mesh == desc.mesh.mesh &&
-						m.first.mesh.scale == desc.mesh.scale)
-						mesh = m.second;
+					if (m.first.triangle_mesh.mesh == desc.triangle_mesh.mesh &&
+						m.first.triangle_mesh.scale == desc.triangle_mesh.scale)
+						triangle_mesh = m.second;
 				}
-				if (!mesh)
+				if (!triangle_mesh)
 				{
 					PxTolerancesScale scale;
 					PxCookingParams params(scale);
@@ -45,13 +46,13 @@ namespace flame
 					std::vector<PxVec3> vertices;
 					std::vector<PxU32> indices;
 					{
-						auto mesh = desc.mesh.mesh;
-						vertices.resize(mesh->get_vertices_count());
-						indices.resize(mesh->get_indices_count());
-						auto ps = mesh->get_positions();
+						auto triangle_mesh = desc.triangle_mesh.mesh;
+						vertices.resize(triangle_mesh->get_vertices_count());
+						indices.resize(triangle_mesh->get_indices_count());
+						auto ps = triangle_mesh->get_positions();
 						for (auto i = 0; i < vertices.size(); i++)
 							vertices[i] = cvt(ps[i]);
-						auto is = mesh->get_indices();
+						auto is = triangle_mesh->get_indices();
 						for (auto i = 0; i < indices.size(); i++)
 							indices[i] = is[i];
 					}
@@ -65,11 +66,44 @@ namespace flame
 					mesh_desc.triangles.stride = 3 * sizeof(PxU32);
 					mesh_desc.triangles.data = indices.data();
 
-					mesh = DevicePrivate::get()->px_cooking->createTriangleMesh(mesh_desc, DevicePrivate::get()->px_instance->getPhysicsInsertionCallback());
-					meshes.emplace_back(desc, mesh);
+					triangle_mesh = DevicePrivate::get()->px_cooking->createTriangleMesh(mesh_desc, DevicePrivate::get()->px_instance->getPhysicsInsertionCallback());
+					staging_triangle_meshes.emplace_back(desc, triangle_mesh);
 				}
 				
-				px_shape = DevicePrivate::get()->px_instance->createShape(PxTriangleMeshGeometry(mesh, PxMeshScale(cvt(desc.mesh.scale))), *m->px_material);
+				px_shape = DevicePrivate::get()->px_instance->createShape(PxTriangleMeshGeometry(triangle_mesh, PxMeshScale(cvt(desc.triangle_mesh.scale))), *m->px_material);
+			}
+				break;
+			case ShapeHeightField:
+			{
+				auto w = desc.height_field.height_map->get_width();
+				auto h = desc.height_field.height_map->get_height();
+				PxHeightFieldDesc height_field_desc;
+				height_field_desc.nbColumns = w;
+				height_field_desc.nbRows = h;
+				auto samples = new uint[w * h];
+				height_field_desc.samples.data = samples;
+				height_field_desc.samples.stride = sizeof(uint);
+				auto data = desc.height_field.height_map->get_data();
+				auto pitch = desc.height_field.height_map->get_pitch();
+				auto bpp = desc.height_field.height_map->get_byte_per_channel() * desc.height_field.height_map->get_channel();
+				auto sample = (PxHeightFieldSample*)samples;
+				for (auto y = 0; y < h; y++)
+				{
+					auto line = &data[y * pitch];
+					for (auto x = 0; x < w; x++)
+					{
+						sample->height = line[x * bpp];
+						sample->materialIndex0 = 0;
+						sample->materialIndex1 = 0;
+						sample->clearTessFlag();
+						sample++;
+					}
+				}
+				auto height_field = DevicePrivate::get()->px_cooking->createHeightField(height_field_desc, DevicePrivate::get()->px_instance->getPhysicsInsertionCallback());
+
+				px_shape = DevicePrivate::get()->px_instance->createShape(PxHeightFieldGeometry(height_field, PxMeshGeometryFlags(), 
+					desc.height_field.scale.y() / 255.f, desc.height_field.scale.x() / w, desc.height_field.scale.z() / h), *m->px_material);
+				delete[]samples;
 			}
 				break;
 			default:

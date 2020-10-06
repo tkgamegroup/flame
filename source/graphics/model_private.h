@@ -90,14 +90,14 @@ namespace flame
 			std::filesystem::path filename;
 
 			std::vector<std::unique_ptr<MaterialPrivate>> materials;
-			std::vector<std::unique_ptr<MeshPrivate>> meshes;
+			std::vector<std::unique_ptr<MeshPrivate>> staging_meshes;
 
 			std::unique_ptr<NodePrivate> root;
 
 			ModelPrivate();
 
-			uint get_meshes_count() const override { return meshes.size(); }
-			Mesh* get_mesh(uint idx) const override { return meshes[idx].get(); }
+			uint get_meshes_count() const override { return staging_meshes.size(); }
+			Mesh* get_mesh(uint idx) const override { return staging_meshes[idx].get(); }
 			int find_mesh(const std::string& name) const;
 
 			Node* get_root() const override { return root.get(); }

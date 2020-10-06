@@ -168,9 +168,9 @@ namespace flame
 
 		int ModelPrivate::find_mesh(const std::string& name) const
 		{
-			for (auto i = 0; i < meshes.size(); i++)
+			for (auto i = 0; i < staging_meshes.size(); i++)
 			{
-				if (meshes[i]->name == name)
+				if (staging_meshes[i]->name == name)
 					return i;
 			}
 			return -1;
@@ -197,8 +197,8 @@ namespace flame
 				write_s(file, m->normal_map);
 			}
 
-			write_u(file, meshes.size());
-			for (auto& m : meshes)
+			write_u(file, staging_meshes.size());
+			for (auto& m : staging_meshes)
 			{
 				write_s(file, m->name);
 
@@ -246,7 +246,7 @@ namespace flame
 				if (src->mesh_index != -1)
 				{
 					auto nm = n.append_child("cMesh");
-					nm.append_attribute("src").set_value((model_name + "." + meshes[src->mesh_index]->name).c_str());
+					nm.append_attribute("src").set_value((model_name + "." + staging_meshes[src->mesh_index]->name).c_str());
 					if (src->name.starts_with("sm_"))
 					{
 						auto nr = n.append_child("cRigid");
@@ -288,9 +288,9 @@ namespace flame
 				if (!standard_cube)
 				{
 					auto m = new ModelPrivate;
-					auto mesh = new MeshPrivate;
-					mesh->name = "0";
-					mesh->set_vertices_pn({
+					auto triangle_mesh = new MeshPrivate;
+					triangle_mesh->name = "0";
+					triangle_mesh->set_vertices_pn({
 						// F
 						-0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
 						+0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
@@ -322,7 +322,7 @@ namespace flame
 						+0.5f, -0.5f, +0.5f, +1.f, +0.f, +0.f,
 						+0.5f, -0.5f, -0.5f, +1.f, +0.f, +0.f,
 						});
-					mesh->set_indices({
+					triangle_mesh->set_indices({
 						0, 2, 1, 0, 3, 2, // F
 						5, 7, 4, 5, 6, 7, // B
 						8, 10, 9, 8, 11, 10, // T
@@ -331,7 +331,7 @@ namespace flame
 						21, 23, 20, 21, 22, 23, // R
 
 						});
-					m->meshes.emplace_back(mesh);
+					m->staging_meshes.emplace_back(triangle_mesh);
 					m->root->mesh_index = 0;
 
 					standard_cube = m;
@@ -343,10 +343,10 @@ namespace flame
 				if (!standard_sphere)
 				{
 					auto m = new ModelPrivate;
-					auto mesh = new MeshPrivate;
-					mesh->name = "0";
-					mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
-					m->meshes.emplace_back(mesh);
+					auto triangle_mesh = new MeshPrivate;
+					triangle_mesh->name = "0";
+					triangle_mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
+					m->staging_meshes.emplace_back(triangle_mesh);
 					m->root->mesh_index = 0;
 
 					standard_sphere = m;
@@ -398,11 +398,11 @@ namespace flame
 					read_s(file, m->normal_map);
 				}
 
-				ret->meshes.resize(read_u(file));
-				for (auto i = 0; i < ret->meshes.size(); i++)
+				ret->staging_meshes.resize(read_u(file));
+				for (auto i = 0; i < ret->staging_meshes.size(); i++)
 				{
 					auto m = new MeshPrivate;
-					ret->meshes[i].reset(m);
+					ret->staging_meshes[i].reset(m);
 
 					read_s(file, m->name);
 
@@ -505,7 +505,7 @@ namespace flame
 				{
 					auto src = scene->mMeshes[i];
 					auto dst = new MeshPrivate;
-					ret->meshes.emplace_back(dst);
+					ret->staging_meshes.emplace_back(dst);
 
 					dst->name = src->mName.C_Str();
 					if (dst->name.empty())
@@ -525,29 +525,29 @@ namespace flame
 					dst->set_indices(indices.size(), indices.data());
 				}
 
-				for (auto i = 0; i < ret->meshes.size(); i++)
+				for (auto i = 0; i < ret->staging_meshes.size(); i++)
 				{
-					auto name = ret->meshes[i]->name;
+					auto name = ret->staging_meshes[i]->name;
 					auto n = 0;
 					auto unique = [&]() {
-						for (auto j = 0; j < ret->meshes.size(); j++)
+						for (auto j = 0; j < ret->staging_meshes.size(); j++)
 						{
-							if (ret->meshes[j]->name == name)
+							if (ret->staging_meshes[j]->name == name)
 								return false;
 						}
 						return true;
 					};
 					while (!unique())
 					{
-						name = ret->meshes[i]->name + std::to_string(i);
+						name = ret->staging_meshes[i]->name + std::to_string(i);
 						n++;
 					}
 					if (n > 0)
-						ret->meshes[i]->name = name;
+						ret->staging_meshes[i]->name = name;
 				}
 
 				std::vector<uint> mesh_refs;
-				mesh_refs.resize(ret->meshes.size());
+				mesh_refs.resize(ret->staging_meshes.size());
 
 				std::function<void(NodePrivate*, aiNode*)> get_node;
 				get_node = [&](NodePrivate* dst, aiNode* src) {
@@ -570,7 +570,7 @@ namespace flame
 						dst->mesh_index = src->mMeshes[0];
 						if (dst->name.starts_with("trigger_"))
 						{
-							auto& m = ret->meshes[dst->mesh_index];
+							auto& m = ret->staging_meshes[dst->mesh_index];
 							if (m->positions.size() == 4 && m->indices.size() == 6)
 							{
 								// plane

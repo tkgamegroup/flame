@@ -208,6 +208,7 @@ namespace flame
 					bmp->srgb_to_linear();
 
 				ret = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
+				ret->filename = filename;
 
 				ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
 				ImmediateCommandBuffer cb(d);

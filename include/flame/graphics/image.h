@@ -61,6 +61,8 @@ namespace flame
 			virtual uint get_layer() const = 0;
 			virtual SampleCount get_sample_count() const = 0;
 
+			virtual const wchar_t* get_filename() const = 0;
+
 			// [0, level-1]: view of that level
 			// [level]: view of all levels
 			// [>level]: auto released views

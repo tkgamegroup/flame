@@ -1,11 +1,14 @@
-#include <flame/graphics/canvas.h>
+#include <flame/foundation/bitmap.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/model.h>
+#include <flame/graphics/canvas.h>
 #include <flame/physics/material.h>
 #include <flame/physics/rigid.h>
 #include <flame/physics/shape.h>
 #include "../entity_private.h"
 #include "node_private.h"
 #include "mesh_private.h"
+#include "terrain_private.h"
 #include "rigid_private.h"
 #include "shape_private.h"
 
@@ -52,13 +55,27 @@ namespace flame
 				desc.sphere.radius = size.x() * 0.5f * node->global_scale.x();
 				phy_shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
 				break;
-			case physics::ShapeMesh:
+			case physics::ShapeTriangleMesh:
 				if (mesh && mesh->model_id != -1 && mesh->mesh_id != -1)
 				{
-					desc.mesh.mesh = ((graphics::Model*)mesh->canvas->
+					desc.triangle_mesh.mesh = ((graphics::Model*)mesh->canvas->
 						get_resource(graphics::ResourceModel, mesh->model_id))->get_mesh(mesh->mesh_id);
-					desc.mesh.scale = size * node->global_scale;
-					phy_shape = physics::Shape::create(get_material(), physics::ShapeMesh, desc);
+					desc.triangle_mesh.scale = size * node->global_scale;
+					phy_shape = physics::Shape::create(get_material(), physics::ShapeTriangleMesh, desc);
+				}
+				break;
+			case physics::ShapeHeightField:
+				if (terrain && terrain->height_map_id != -1)
+				{
+					auto map_fn = std::filesystem::path(((graphics::ImageView*)terrain->canvas->
+						get_resource(graphics::ResourceTexture, terrain->height_map_id))->get_image()->get_filename());
+					map_fn.replace_filename(map_fn.stem().wstring() + L"_low" + map_fn.extension().wstring());
+
+					auto bmp = Bitmap::create(map_fn.c_str());
+					desc.height_field.height_map = bmp;
+					desc.height_field.scale = node->global_scale * terrain->extent * Vec3f(terrain->size.x(), 1.f, terrain->size.y());
+					phy_shape = physics::Shape::create(get_material(), physics::ShapeHeightField, desc);
+					bmp->release();
 				}
 				break;
 			}

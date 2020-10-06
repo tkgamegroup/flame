@@ -158,7 +158,7 @@ namespace flame
 			std::string name;
 			ModelPrivate* model;
 			std::vector<uint> materials;
-			std::vector<std::unique_ptr<Mesh>> meshes;
+			std::vector<std::unique_ptr<Mesh>> staging_meshes;
 		};
 
 		struct RenderDataS
@@ -280,7 +280,7 @@ namespace flame
 
 		struct CmdDrawMesh : Cmd
 		{
-			std::vector<std::tuple<uint, ModelResource::Mesh*, bool>> meshes;
+			std::vector<std::tuple<uint, ModelResource::Mesh*, bool>> staging_meshes;
 
 			CmdDrawMesh() : Cmd(DrawMesh) {}
 		};

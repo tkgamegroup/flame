@@ -4,7 +4,7 @@
     <cElement />
     <cNode />
     <entity name="camera">
-      <cNode pos="0,0,5" />
+      <cNode pos="0,200,0" />
       <cCamera />
       <cScript src="camera_controller.lua" />
     </entity>
@@ -23,9 +23,14 @@
     <entity src="@mod" >
       <cNode scale="1.0,1.0,1.0" />
     </entity>
+    <entity src="sphere">
+      <cNode pos="50,300,100" scale="3,3,3" />
+    </entity>
 	<entity>
-		<cNode pos="-200,0,-200" />
-		<cTerrain height_map="height_map" color_map="color_map" size="4,4" extent="100,200,100" />
+	  <cNode pos="-200,0,-200" />
+	  <cTerrain height_map="height_map" color_map="color_map" size="4,4" extent="100,200,100" />
+      <cRigid dynamic="false" />
+      <cShape type="HeightField" />
 	</entity>
     <entity>
       <cNode />

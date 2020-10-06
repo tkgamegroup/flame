@@ -20,6 +20,8 @@ namespace flame
 			uint layer;
 			SampleCount sample_count;
 
+			std::filesystem::path filename;
+
 			VkDeviceMemory vk_memory = 0;
 			VkImage vk_image = 0;
 			std::vector<std::unique_ptr<ImageViewPrivate>> views;
@@ -37,6 +39,8 @@ namespace flame
 			uint get_level() const override { return level; }
 			uint get_layer() const override { return layer; }
 			SampleCount get_sample_count() const override { return sample_count; }
+
+			const wchar_t* get_filename() const override { return filename.c_str(); }
 
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 

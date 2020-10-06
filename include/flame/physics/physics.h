@@ -10,6 +10,8 @@
 
 namespace flame
 {
+	struct Bitmap;
+
 	namespace graphics
 	{
 		struct Mesh;
@@ -28,7 +30,8 @@ namespace flame
 			ShapeCube,
 			ShapeSphere,
 			ShapeCapsule,
-			ShapeMesh
+			ShapeTriangleMesh,
+			ShapeHeightField
 		};
 
 		union ShapeDesc
@@ -50,7 +53,12 @@ namespace flame
 			{
 				graphics::Mesh* mesh;
 				Vec3f scale;
-			}mesh;
+			}triangle_mesh;
+			struct
+			{
+				Bitmap* height_map;
+				Vec3f scale;
+			}height_field;
 		};
 	}
 }
