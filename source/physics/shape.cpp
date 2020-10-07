@@ -87,12 +87,11 @@ namespace flame
 				auto pitch = desc.height_field.height_map->get_pitch();
 				auto bpp = desc.height_field.height_map->get_byte_per_channel() * desc.height_field.height_map->get_channel();
 				auto sample = (PxHeightFieldSample*)samples;
-				for (auto y = 0; y < h; y++)
+				for (auto x = 0; x < w; x++)
 				{
-					auto line = &data[y * pitch];
-					for (auto x = 0; x < w; x++)
+					for (auto y = 0; y < h; y++)
 					{
-						sample->height = line[x * bpp];
+						sample->height = data[y * pitch + x * bpp];
 						sample->materialIndex0 = 0;
 						sample->materialIndex1 = 0;
 						sample->clearTessFlag();
