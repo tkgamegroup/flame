@@ -611,11 +611,11 @@ namespace flame
 
 		virtual int loop(void (*frame_callback)(Capture& c, float delta_time) = nullptr, const Capture& capture = {}) = 0;
 
-		/* set c._current to invalid to keep event */
+		/* set c._current to null to keep event */
 		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, CountDown interval = CountDown(), uint id = 0) = 0;
 		virtual void reset_event(void* ev) = 0;
 		virtual void remove_event(void* ev) = 0;
-		virtual void remove_all_events(int id = 0) = 0; /* id=-1 means all */
+		virtual void remove_events(int id = 0) = 0; /* id=-1 means all */
 	};
 
 	FLAME_FOUNDATION_EXPORTS Looper& looper();

@@ -1610,9 +1610,9 @@ namespace flame
 				}
 				if (excute)
 				{
-					e->capture._current = nullptr;
+					e->capture._current = INVALID_POINTER;
 					e->callback(e->capture);
-					if (e->capture._current != INVALID_POINTER)
+					if (e->capture._current == INVALID_POINTER)
 					{
 						it = events.erase(it);
 						continue;
@@ -1670,13 +1670,16 @@ namespace flame
 		{
 			if ((*it).get() == ev)
 			{
-				events.erase(it);
+				if ((*it)->capture._current != nullptr)
+					(*it)->capture._current = INVALID_POINTER;
+				else
+					events.erase(it);
 				break;
 			}
 		}
 	}
 
-	void LooperPrivate::remove_all_events(int id)
+	void LooperPrivate::remove_events(int id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		if (id == -1)
@@ -1711,7 +1714,7 @@ namespace flame
 			auto end = e->rest <= 0.f;
 			e->callback(e->capture, e->duration - max(e->rest, 0.f), e->duration);
 			if (!end)
-				c._current = INVALID_POINTER;
+				c._current = nullptr;
 			else
 			{
 				auto thiz = c.thiz<SchedulePrivate>();

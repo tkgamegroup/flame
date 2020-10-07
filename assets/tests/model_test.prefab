@@ -3,43 +3,44 @@
   <entity>
     <cElement />
     <cNode />
-    <entity name="camera">
-      <cNode pos="0,200,0" />
-      <cCamera />
-      <cScript src="camera_controller.lua" />
-    </entity>
-    <entity>
-    <cNode pos="50,-100,50" />
-	  <cMesh src="cube.0" />
-    </entity>
-    <entity>
-      <cNode pos="60,-100,50" />
-	  <cMesh src="cube.0" />
-    </entity>
-    <entity>
-      <cNode pos="50,-100,55" />
-	  <cMesh src="cube.0" />
-    </entity>
-    <entity src="@mod" >
-      <cNode scale="1.0,1.0,1.0" />
-    </entity>
-    <entity src="sphere">
-      <cNode pos="50,300,100" scale="3,3,3" />
-    </entity>
-	<entity>
-	  <cNode pos="-200,0,-200" />
-	  <cTerrain height_map="height_map" color_map="color_map" size="4,4" extent="100,200,100" />
-      <cRigid dynamic="false" />
-      <cShape type="HeightField" />
-	</entity>
-    <entity>
+    <entity name="scene">
       <cNode />
-      <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
-      <cScript src="object_controller.lua" />
+      <entity name="camera">
+        <cNode pos="0,200,0" euler="0,-90,0" />
+        <cCamera />
+        <cScript src="camera_fly.lua" />
+      </entity>
+      <entity>
+        <cNode pos="50,200,50" />
+	    <cMesh src="cube.0" />
+      </entity>
+      <entity>
+        <cNode pos="60,200,50" />
+	    <cMesh src="cube.0" />
+      </entity>
+      <entity>
+        <cNode pos="50,200,55" />
+	    <cMesh src="cube.0" />
+      </entity>
+      <entity src="@mod" >
+        <cNode pos="0,200,0" />
+      </entity>
+	    <entity>
+	      <cNode pos="-200,0,-200" />
+	      <cTerrain height_map="height_map" color_map="color_map" size="4,4" extent="100,200,100" />
+        <cRigid dynamic="false" />
+        <cShape type="HeightField" />
+	    </entity>
+      <entity>
+        <cNode euler="0,60,0" />
+        <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
+        <cScript src="object_controller.lua" />
+      </entity>
     </entity>
     <entity>
       <cElement />
       <cBloom />
     </entity>
+	<cScript src="tests/shoot_ball.lua" />
   </entity>
 </prefab>

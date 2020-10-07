@@ -24,7 +24,7 @@ int main(int argc, char** args)
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());
-		c._current = INVALID_POINTER;
+		c._current = nullptr;
 	}, Capture(), 1.f);
 
 	g_app.run();

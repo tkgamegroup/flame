@@ -35,7 +35,7 @@ MainForm::MainForm() :
 	ui.c_aligner(AlignMin, AlignMax);
 	looper().add_event([](Capture& c) {
 		c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
-		c._current = INVALID_POINTER;
+		c._current = nullptr;
 	}, Capture().set_thiz(e->get_component<cText>()), 1.f);
 
 	ui.next_element_pos = 100.f;

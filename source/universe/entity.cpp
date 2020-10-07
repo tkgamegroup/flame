@@ -882,8 +882,8 @@ namespace flame
 	void EntityPrivate::add_event_s(uint slot)
 	{
 		auto ev = looper().add_event([](Capture& c) {
+			c._current = (void*)1;
 			script::Instance::get()->call_slot(c.data<uint>(), 0, nullptr);
-			c._current = INVALID_POINTER;
 		}, Capture().set_data(&slot));
 		events_s.emplace_back(slot, ev);
 	}

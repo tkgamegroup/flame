@@ -367,7 +367,7 @@ MainForm::MainForm() :
 		auto e = ui.e_text(L"");
 		looper().add_event([](Capture& c) {
 			c.thiz<cText>()->set_text(std::to_wstring(fps).c_str());
-			c._current = INVALID_POINTER;
+			c._current = nullptr;
 		}, Capture().set_thiz(e->get_component<cText>()), 1.f);
 	}
 	ui.c_aligner(AlignMin, AlignMax);
@@ -1611,7 +1611,7 @@ void MyApp::create_game_scene()
 	ui.e_empty();
 	{
 		auto ev = looper().add_event([](Capture& c) {
-			c._current = INVALID_POINTER;
+			c._current = nullptr;
 		}, Capture());
 		ui.current_entity->event_listeners.add([](Capture& c, EntityEvent e, void*) {
 			if (e == EntityRemoved)
@@ -1743,7 +1743,7 @@ void MyApp::begin_count_down()
 	e_count_down->set_visible(true);
 	e_count_down->get_component(cText)->set_text(L"3");
 	auto t = 3;
-	looper().remove_all_events(FLAME_CHASH("count_down"));
+	looper().remove_events(FLAME_CHASH("count_down"));
 	looper().add_event([](Capture& c) {
 		auto& t = c.data<int>();
 		t--;
@@ -1756,7 +1756,7 @@ void MyApp::begin_count_down()
 		}
 		else
 		{
-			c._current = INVALID_POINTER;
+			c._current = nullptr;
 			e->get_component(cText)->set_text(std::to_wstring(t).c_str());
 		}
 	}, Capture().set_thiz(e_count_down).set_data(&t), 1.f, FLAME_CHASH("count_down"));
@@ -2312,7 +2312,7 @@ void MyApp::do_game_logic()
 												capture.e->pos.y() += 2.4f;
 												capture.e->size.y() -= 4.8f;
 												capture.e->color.a() = max(capture.e->color.a() - 30, 0);
-												c._current = INVALID_POINTER;
+												c._current = nullptr;
 											}
 											else
 											{
@@ -2386,7 +2386,7 @@ void MyApp::do_game_logic()
 								{
 									c_text_special->entity->set_visible(true);
 									c_text_special->set_text(special_str.c_str());
-									looper().remove_all_events(FLAME_CHASH("special_text"));
+									looper().remove_events(FLAME_CHASH("special_text"));
 									looper().add_event([](Capture&) {
 										g_app.c_text_special->entity->set_visible(false);
 									}, Capture(), 1.f, FLAME_CHASH("special_text"));

@@ -6,7 +6,7 @@ camera = {
 	node = node,
 	pos = node:get_pos(),
 	yaw = 0,
-	pitch = 0,
+	pitch = -90,
 	dir1 = { x=0, y=0, z=1 },
 	dir2 = { x=1, y=0, z=0 },
 	dragging = false,

@@ -10,6 +10,8 @@ namespace flame
 {
 	cRigidPrivate::~cRigidPrivate()
 	{
+		on_lost_physics_world();
+
 		for (auto s : trigger_listeners_s)
 			script::Instance::get()->release_slot(s);
 	}

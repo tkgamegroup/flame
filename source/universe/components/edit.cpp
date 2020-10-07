@@ -338,7 +338,7 @@ namespace flame
 				{
 					flash_event = looper().add_event([](Capture& c) {
 						c.thiz<cEditPrivate>()->flash_cursor(0);
-						c._current = INVALID_POINTER;
+						c._current = nullptr;
 					}, Capture().set_thiz(this), 0.5f);
 				}
 				//if (select_all_on_focus)
