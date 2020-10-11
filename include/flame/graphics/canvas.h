@@ -12,6 +12,7 @@ namespace flame
 		struct ImageAtlas;
 		struct FontAtlas;
 		struct Model;
+		struct Mesh;
 		struct Sampler;
 		struct CommandBuffer;
 
@@ -27,6 +28,8 @@ namespace flame
 
 		struct ArmatureDeformer
 		{
+			virtual void release() = 0;
+
 			virtual void set_pose(uint id, const Mat4f& pose) = 0;
 			virtual void update(CommandBuffer* cb) = 0;
 
@@ -36,6 +39,8 @@ namespace flame
 		struct Canvas
 		{
 			virtual void release() = 0;
+
+			virtual Device* get_device() const = 0;
 
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;

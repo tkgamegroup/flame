@@ -56,10 +56,9 @@ namespace flame
 				phy_shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
 				break;
 			case physics::ShapeTriangleMesh:
-				if (mesh && mesh->model_id != -1 && mesh->mesh_id != -1)
+				if (mesh && mesh->mesh)
 				{
-					desc.triangle_mesh.mesh = ((graphics::Model*)mesh->canvas->
-						get_resource(graphics::ResourceModel, mesh->model_id))->get_mesh(mesh->mesh_id);
+					desc.triangle_mesh.mesh = mesh->mesh;
 					desc.triangle_mesh.scale = size * node->global_scale;
 					phy_shape = physics::Shape::create(get_material(), physics::ShapeTriangleMesh, desc);
 				}

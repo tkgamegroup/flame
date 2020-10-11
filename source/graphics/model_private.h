@@ -54,6 +54,8 @@ namespace flame
 			uint get_indices_count() const { return indices.size(); }
 			const uint* get_indices() const { return indices.data(); }
 
+			uint get_bones_count() const override { return bones.size(); }
+
 			void add_vertices(uint n, Vec3f* positions, Vec3f* uvs, Vec3f* normals);
 			void add_indices(uint n, uint* indices);
 

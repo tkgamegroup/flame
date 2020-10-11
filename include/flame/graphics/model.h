@@ -27,7 +27,7 @@ namespace flame
 			virtual uint get_indices_count() const = 0;
 			virtual const uint* get_indices() const = 0;
 
-			//virtual uint get_material_index() const = 0;
+			virtual uint get_bones_count() const = 0;
 		};
 		
 		struct Node

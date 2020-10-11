@@ -179,6 +179,8 @@ namespace flame
 			std::unique_ptr<DescriptorSetPrivate> descriptorset;
 
 			ArmatureDeformerPrivate(DevicePrivate* d, MeshPrivate* mesh);
+			void release() override { delete this; }
+			void set_pose(uint id, const Mat4f& pose) override;
 			void update(CommandBufferPrivate* cb);
 		};
 
@@ -440,6 +442,8 @@ namespace flame
 			CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d);
 
 			void release() override { delete this; }
+
+			Device* get_device() const override { return device; }
 
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }

@@ -50,6 +50,8 @@ namespace flame
 					return VK_FORMAT_R16G16B16A16_SFLOAT;
 				case Format_R32G32B32A32_SFLOAT:
 					return VK_FORMAT_R32G32B32A32_SFLOAT;
+				case Format_R32G32B32A32_INT:
+					return VK_FORMAT_R32G32B32A32_SINT;
 				case Format_RGBA_BC3:
 					return VK_FORMAT_BC3_UNORM_BLOCK;
 				case Format_RGBA_ETC2:
@@ -120,6 +122,7 @@ namespace flame
 			case Format_R8G8B8A8_UNORM:
 				return 4;
 			case Format_R32G32B32A32_SFLOAT:
+			case Format_R32G32B32A32_INT:
 				return 16;
 			default:
 				assert(0);

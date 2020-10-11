@@ -160,11 +160,24 @@ namespace flame
 				poses_buffer.push(Mat4f(1.f));
 			descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), armature_descriptorsetlayout));
 			descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
+
+			ImmediateCommandBuffer cb(d);
+			update(cb.cb.get());
+		}
+
+		void ArmatureDeformerPrivate::set_pose(uint id, const Mat4f& pose)
+		{
+
 		}
 
 		void ArmatureDeformerPrivate::update(CommandBufferPrivate* cb)
 		{
 			poses_buffer.upload(cb, 0, poses_buffer.count);
+		}
+
+		ArmatureDeformer* ArmatureDeformer::create(Device* d, Mesh* mesh)
+		{
+			return new ArmatureDeformerPrivate((DevicePrivate*)d, (MeshPrivate*)mesh);
 		}
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d) :
@@ -1800,7 +1813,7 @@ namespace flame
 			om.normal_matrix = normal_matrix;
 			mesh_matrix_buffer.push(om);
 
-			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow, deformer);
+			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow, (ArmatureDeformerPrivate*)deformer);
 		}
 
 		void CanvasPrivate::draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels)

@@ -6,6 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct Mesh;
+		struct ArmatureDeformer;
 		struct Canvas;
 	}
 
@@ -21,6 +23,9 @@ namespace flame
 		int model_id = -1;
 		int mesh_id = -1;
 
+		graphics::Mesh* mesh = nullptr;
+		graphics::ArmatureDeformer* deformer = nullptr;
+
 		std::string src;
 
 		cNodePrivate* node = nullptr; // R ref
@@ -30,11 +35,6 @@ namespace flame
 
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
-
-		int get_model_id() const override { return model_id; }
-		void set_model_id(int id) override;
-		int get_mesh_id() const override { return mesh_id; }
-		void set_mesh_id(int id) override;
 
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
