@@ -125,11 +125,17 @@ namespace flame
 			Vec4c color;
 		};
 
-		struct ModelVertex1
+		struct MeshVertex
 		{
 			Vec3f position;
 			Vec2f uv;
 			Vec3f normal;
+		};
+
+		struct MeshWeight
+		{
+			Vec4i ids;
+			Vec4f weights;
 		};
 
 		struct ElementResource
@@ -150,7 +156,8 @@ namespace flame
 		{
 			struct Mesh
 			{
-				TBuffer<ModelVertex1, BufferUsageVertex> vertex_buffer_1;
+				TBuffer<MeshVertex, BufferUsageVertex> vertex_buffer;
+				TBuffer<MeshWeight, BufferUsageVertex> weight_buffer;
 				TBuffer<uint, BufferUsageIndex> index_buffer;
 				uint material_index;
 			};
@@ -158,8 +165,27 @@ namespace flame
 			std::string name;
 			ModelPrivate* model;
 			std::vector<uint> materials;
-			std::vector<std::unique_ptr<Mesh>> staging_meshes;
+			std::vector<std::unique_ptr<Mesh>> meshes;
 		};
+
+		struct ArmatureDeformerBridge : ArmatureDeformer
+		{
+			void update(CommandBuffer* cb) override;
+		};
+
+		struct ArmatureDeformerPrivate : ArmatureDeformerBridge
+		{
+			TBuffer<Mat4f, BufferUsageStorage> poses_buffer;
+			std::unique_ptr<DescriptorSetPrivate> descriptorset;
+
+			ArmatureDeformerPrivate(DevicePrivate* d, MeshPrivate* mesh);
+			void update(CommandBufferPrivate* cb);
+		};
+
+		inline void ArmatureDeformerBridge::update(CommandBuffer* cb)
+		{
+			((ArmatureDeformerPrivate*)this)->update((CommandBufferPrivate*)cb);
+		}
 
 		struct RenderDataS
 		{
@@ -184,8 +210,8 @@ namespace flame
 
 		struct MeshMatrixS
 		{
-			Mat4f model;
-			Mat4f normal;
+			Mat4f transform;
+			Mat4f normal_matrix;
 		};
 
 		struct MaterialInfoS
@@ -280,7 +306,7 @@ namespace flame
 
 		struct CmdDrawMesh : Cmd
 		{
-			std::vector<std::tuple<uint, ModelResource::Mesh*, bool>> staging_meshes;
+			std::vector<std::tuple<uint, ModelResource::Mesh*, bool, ArmatureDeformerPrivate*>> meshes;
 
 			CmdDrawMesh() : Cmd(DrawMesh) {}
 		};
@@ -406,6 +432,11 @@ namespace flame
 			Vec2u target_size;
 			Vec4f curr_scissor;
 
+			PipelinePrivate* pl_element;
+			PipelinePrivate* pl_forward;
+			PipelinePrivate* pl_forward_armature;
+			PipelinePrivate* pl_terrain;
+
 			CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d);
 
 			void release() override { delete this; }
@@ -436,9 +467,9 @@ namespace flame
 
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
-			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& model, const Mat4f& normal, bool cast_shadow) override;
+			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels) override;
-			void add_light(LightType type, const Mat4f& matrix, const Vec3f& color, bool cast_shadow) override;
+			void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

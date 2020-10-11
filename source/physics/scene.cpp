@@ -52,6 +52,8 @@ namespace flame
 			px_scene = DevicePrivate::get()->px_instance->createScene(desc);
 			px_callback.thiz = this;
 			px_scene->setSimulationEventCallback(&px_callback);
+
+			px_controller_manager = PxCreateControllerManager(*px_scene);
 #endif
 		}
 

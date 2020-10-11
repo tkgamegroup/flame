@@ -9,7 +9,7 @@ App g_app;
 
 auto test_prefab = std::filesystem::path(L"tests/model_test");
 //auto model_path = std::filesystem::path(LR"(D:\island\Small_Tropical_Island\Small_Tropical_Island.fmod)");
-auto model_path = std::filesystem::path(LR"(D:\illidan\illidan.fmod)");
+auto model_path = std::filesystem::path(LR"(D:\character\character.fmod)");
 
 Entity* root;
 

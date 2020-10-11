@@ -14,67 +14,101 @@ namespace flame
 {
 	namespace graphics
 	{
-		void MeshPrivate::set_vertices_p(const std::initializer_list<float>& v)
+		void MeshPrivate::add_vertices(uint n, Vec3f* _positions, Vec3f* _uvs, Vec3f* _normals)
 		{
-			assert(v.size() % 3 == 0);
-			auto n = v.size() / 3;
-			positions.resize(n);
+			auto b = positions.size();
+			positions.resize(b + n);
 			for (auto i = 0; i < n; i++)
-			{
-				positions[i].x() = v.begin()[i * 3 + 0];
-				positions[i].y() = v.begin()[i * 3 + 1];
-				positions[i].z() = v.begin()[i * 3 + 2];
-			}
-		}
-
-		void MeshPrivate::set_vertices_pn(const std::initializer_list<float>& v)
-		{
-			assert(v.size() % 6 == 0);
-			auto n = v.size() / 6;
-			positions.resize(n);
-			normals.resize(n);
-			for (auto i = 0; i < n; i++)
-			{
-				positions[i].x() = v.begin()[i * 6 + 0];
-				positions[i].y() = v.begin()[i * 6 + 1];
-				positions[i].z() = v.begin()[i * 6 + 2];
-				normals[i].x() = v.begin()[i * 6 + 3];
-				normals[i].y() = v.begin()[i * 6 + 4];
-				normals[i].z() = v.begin()[i * 6 + 5];
-			}
-		}
-
-		void MeshPrivate::set_vertices(uint n, Vec3f* _positions, Vec3f* _uvs, Vec3f* _normals)
-		{
-			positions.resize(n);
-			for (auto i = 0; i < n; i++)
-				positions[i] = _positions[i];
+				positions[b + i] = _positions[i];
 			if (_uvs)
 			{
-				uvs.resize(n);
+				uvs.resize(b + n);
 				for (auto i = 0; i < n; i++)
-					uvs[i] = _uvs[i];
+					uvs[b + i] = _uvs[i];
 			}
 			if (_normals)
 			{
-				normals.resize(n);
+				normals.resize(b + n);
 				for (auto i = 0; i < n; i++)
-					normals[i] = _normals[i];
+					normals[b + i] = _normals[i];
 			}
 		}
 
-		void MeshPrivate::set_indices(const std::initializer_list<uint>& v)
+		void MeshPrivate::add_indices(uint n, uint* _indices)
 		{
-			indices.resize(v.size());
-			for (auto i = 0; i < indices.size(); i++)
-				indices[i] = v.begin()[i];
+			auto b = indices.size();
+			indices.resize(b + n);
+			for (auto i = 0; i < n; i++)
+				indices[b + i] = _indices[i];
 		}
 
-		void MeshPrivate::set_indices(uint n, uint* _indices)
+		void MeshPrivate::add_cube(const Vec3f& extent, const Vec3f& center, const Mat3f& rotation)
 		{
-			indices.resize(n);
-			for (auto i = 0; i < n; i++)
-				indices[i] = _indices[i];
+			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, +0.5f) * extent + center);
+			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
+			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
+			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
+			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
+			indices.push_back(0); indices.push_back(2); indices.push_back(1);
+			indices.push_back(0); indices.push_back(3); indices.push_back(2);
+
+			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, -0.5f) * extent + center);
+			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
+			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
+			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
+			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
+			indices.push_back(5); indices.push_back(7); indices.push_back(4);
+			indices.push_back(5); indices.push_back(6); indices.push_back(7);
+
+			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, +0.5f) * extent + center);
+			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
+			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
+			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
+			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
+			indices.push_back(8); indices.push_back(10); indices.push_back(9);
+			indices.push_back(8); indices.push_back(11); indices.push_back(10);
+
+			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, +0.5f) * extent + center);
+			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
+			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
+			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
+			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
+			indices.push_back(15); indices.push_back(13); indices.push_back(14);
+			indices.push_back(15); indices.push_back(12); indices.push_back(13);
+
+			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, -0.5f) * extent + center);
+			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
+			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
+			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
+			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
+			indices.push_back(16); indices.push_back(18); indices.push_back(17);
+			indices.push_back(16); indices.push_back(19); indices.push_back(18);
+
+			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, -0.5f) * extent + center);
+			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
+			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
+			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
+			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
+			indices.push_back(21); indices.push_back(23); indices.push_back(20);
+			indices.push_back(21); indices.push_back(22); indices.push_back(23);
 		}
 
 		void MeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation)
@@ -153,6 +187,19 @@ namespace flame
 			}
 		}
 
+		NodePrivate* NodePrivate::find(const std::string& _name)
+		{
+			if (name == _name)
+				return this;
+			for (auto& c : children)
+			{
+				auto ret = c->find(_name);
+				if (ret)
+					return ret;
+			}
+			return nullptr;
+		}
+
 		void NodePrivate::traverse(const std::function<void(NodePrivate*)>& callback)
 		{
 			callback(this);
@@ -168,9 +215,9 @@ namespace flame
 
 		int ModelPrivate::find_mesh(const std::string& name) const
 		{
-			for (auto i = 0; i < staging_meshes.size(); i++)
+			for (auto i = 0; i < meshes.size(); i++)
 			{
-				if (staging_meshes[i]->name == name)
+				if (meshes[i]->name == name)
 					return i;
 			}
 			return -1;
@@ -197,8 +244,8 @@ namespace flame
 				write_s(file, m->normal_map);
 			}
 
-			write_u(file, staging_meshes.size());
-			for (auto& m : staging_meshes)
+			write_u(file, meshes.size());
+			for (auto& m : meshes)
 			{
 				write_s(file, m->name);
 
@@ -214,6 +261,14 @@ namespace flame
 				if (!m->normals.empty())
 					file.write((char*)m->normals.data(), sizeof(Vec3f) * n);
 				write_v(file, m->indices);
+
+				write_u(file, m->bones.size());
+				for (auto& b : m->bones)
+				{
+					write_s(file, b->name);
+					write_t(file, b->offset_matrix);
+					write_v(file, b->weights);
+				}
 			}
 
 			root->traverse([&](NodePrivate* n) {
@@ -227,6 +282,20 @@ namespace flame
 
 				write_u(file, n->children.size());
 			});
+
+			write_u(file, animations.size());
+			for (auto& a : animations)
+			{
+				write_s(file, a->name);
+
+				write_u(file, a->channels.size());
+				for (auto& c : a->channels)
+				{
+					write_s(file, c.node_name);
+					write_v(file, c.position_keys);
+					write_v(file, c.rotation_keys);
+				}
+			}
 
 			file.close();
 
@@ -246,7 +315,7 @@ namespace flame
 				if (src->mesh_index != -1)
 				{
 					auto nm = n.append_child("cMesh");
-					nm.append_attribute("src").set_value((model_name + "." + staging_meshes[src->mesh_index]->name).c_str());
+					nm.append_attribute("src").set_value((model_name + "." + meshes[src->mesh_index]->name).c_str());
 					if (src->name.starts_with("sm_"))
 					{
 						auto nr = n.append_child("cRigid");
@@ -288,50 +357,10 @@ namespace flame
 				if (!standard_cube)
 				{
 					auto m = new ModelPrivate;
-					auto triangle_mesh = new MeshPrivate;
-					triangle_mesh->name = "0";
-					triangle_mesh->set_vertices_pn({
-						// F
-						-0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
-						+0.5f, +0.5f, +0.5f, +0.f, +0.f, +1.f,
-						+0.5f, -0.5f, +0.5f, +0.f, +0.f, +1.f,
-						-0.5f, -0.5f, +0.5f, +0.f, +0.f, +1.f,
-						// B
-						-0.5f, +0.5f, -0.5f, +0.f, +0.f, -1.f,
-						+0.5f, +0.5f, -0.5f, +0.f, +0.f, -1.f,
-						+0.5f, -0.5f, -0.5f, +0.f, +0.f, -1.f,
-						-0.5f, -0.5f, -0.5f, +0.f, +0.f, -1.f,
-						// T
-						-0.5f, +0.5f, -0.5f, +0.f, +1.f, +0.f,
-						+0.5f, +0.5f, -0.5f, +0.f, +1.f, +0.f,
-						+0.5f, +0.5f, +0.5f, +0.f, +1.f, +0.f,
-						-0.5f, +0.5f, +0.5f, +0.f, +1.f, +0.f,
-						// B
-						-0.5f, -0.5f, -0.5f, +0.f, -1.f, +0.f,
-						+0.5f, -0.5f, -0.5f, +0.f, -1.f, +0.f,
-						+0.5f, -0.5f, +0.5f, +0.f, -1.f, +0.f,
-						-0.5f, -0.5f, +0.5f, +0.f, -1.f, +0.f,
-						// L
-						-0.5f, +0.5f, -0.5f, -1.f, +0.f, +0.f,
-						-0.5f, +0.5f, +0.5f, -1.f, +0.f, +0.f,
-						-0.5f, -0.5f, +0.5f, -1.f, +0.f, +0.f,
-						-0.5f, -0.5f, -0.5f, -1.f, +0.f, +0.f,
-						// R
-						+0.5f, +0.5f, -0.5f, +1.f, +0.f, +0.f,
-						+0.5f, +0.5f, +0.5f, +1.f, +0.f, +0.f,
-						+0.5f, -0.5f, +0.5f, +1.f, +0.f, +0.f,
-						+0.5f, -0.5f, -0.5f, +1.f, +0.f, +0.f,
-						});
-					triangle_mesh->set_indices({
-						0, 2, 1, 0, 3, 2, // F
-						5, 7, 4, 5, 6, 7, // B
-						8, 10, 9, 8, 11, 10, // T
-						15, 13, 14, 15, 12, 13, // B
-						16, 18, 17, 16, 19, 18, // L
-						21, 23, 20, 21, 22, 23, // R
-
-						});
-					m->staging_meshes.emplace_back(triangle_mesh);
+					auto mesh = new MeshPrivate;
+					mesh->name = "0";
+					mesh->add_cube(Vec3f(1.f), Vec3f(0.f), Mat3f(1.f));
+					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
 
 					standard_cube = m;
@@ -343,10 +372,10 @@ namespace flame
 				if (!standard_sphere)
 				{
 					auto m = new ModelPrivate;
-					auto triangle_mesh = new MeshPrivate;
-					triangle_mesh->name = "0";
-					triangle_mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
-					m->staging_meshes.emplace_back(triangle_mesh);
+					auto mesh = new MeshPrivate;
+					mesh->name = "0";
+					mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
+					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
 
 					standard_sphere = m;
@@ -398,11 +427,11 @@ namespace flame
 					read_s(file, m->normal_map);
 				}
 
-				ret->staging_meshes.resize(read_u(file));
-				for (auto i = 0; i < ret->staging_meshes.size(); i++)
+				ret->meshes.resize(read_u(file));
+				for (auto i = 0; i < ret->meshes.size(); i++)
 				{
 					auto m = new MeshPrivate;
-					ret->staging_meshes[i].reset(m);
+					ret->meshes[i].reset(m);
 
 					read_s(file, m->name);
 
@@ -422,6 +451,17 @@ namespace flame
 						file.read((char*)m->normals.data(), sizeof(Vec3f) * n);
 					}
 					read_v(file, m->indices);
+
+					m->bones.resize(read_u(file));
+					for (auto j = 0; j < m->bones.size(); j++)
+					{
+						auto b = new BonePrivate;
+						m->bones[j].reset(b);
+
+						read_s(file, b->name);
+						read_t(file, b->offset_matrix);
+						read_v(file, b->weights);
+					}
 				}
 
 				std::function<void(NodePrivate*)> load_node;
@@ -443,6 +483,24 @@ namespace flame
 					}
 				};
 				load_node(ret->root.get());
+
+				ret->animations.resize(read_u(file));
+				for (auto i = 0; i < ret->animations.size(); i++)
+				{
+					auto a = new AnimationPrivate;
+					ret->animations[i].reset(a);
+
+					read_s(file, a->name);
+
+					a->channels.resize(read_u(file));
+					for (auto j = 0; j < a->channels.size(); j++)
+					{
+						auto& c = a->channels[j];
+						read_s(file, c.node_name);
+						read_v(file, c.position_keys);
+						read_v(file, c.rotation_keys);
+					}
+				}
 
 				file.close();
 			}
@@ -505,7 +563,7 @@ namespace flame
 				{
 					auto src = scene->mMeshes[i];
 					auto dst = new MeshPrivate;
-					ret->staging_meshes.emplace_back(dst);
+					ret->meshes.emplace_back(dst);
 
 					dst->name = src->mName.C_Str();
 					if (dst->name.empty())
@@ -513,7 +571,7 @@ namespace flame
 
 					dst->material_index = src->mMaterialIndex;
 
-					dst->set_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals);
+					dst->add_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals);
 
 					std::vector<uint> indices(src->mNumFaces * 3);
 					for (auto j = 0; j < src->mNumFaces; j++)
@@ -522,32 +580,58 @@ namespace flame
 						indices[j * 3 + 1] = src->mFaces[j].mIndices[1];
 						indices[j * 3 + 2] = src->mFaces[j].mIndices[2];
 					}
-					dst->set_indices(indices.size(), indices.data());
+					dst->add_indices(indices.size(), indices.data());
+
+					for (auto j = 0; j < src->mNumBones; j++)
+					{
+						auto src_b = src->mBones[j];
+						auto dst_b = new BonePrivate;
+						dst->bones.emplace_back(dst_b);
+
+						dst_b->name = src_b->mName.C_Str();
+						{
+							auto& m = src_b->mOffsetMatrix;
+							dst_b->offset_matrix = Mat4f(
+								Vec4f(m.a1, m.a2, m.a3, m.a4),
+								Vec4f(m.b1, m.b2, m.b3, m.b4),
+								Vec4f(m.c1, m.c2, m.c3, m.c4),
+								Vec4f(m.d1, m.d2, m.d3, m.d4)
+							);
+						}
+						dst_b->weights.resize(src_b->mNumWeights);
+						for (auto k = 0; k < src_b->mNumWeights; k++)
+						{
+							auto& src_w = src_b->mWeights[k];
+							auto& dst_w = dst_b->weights[k];
+							dst_w.first = src_w.mVertexId;
+							dst_w.second = src_w.mWeight;
+						}
+					}
 				}
 
-				for (auto i = 0; i < ret->staging_meshes.size(); i++)
+				for (auto i = 0; i < ret->meshes.size(); i++)
 				{
-					auto name = ret->staging_meshes[i]->name;
+					auto name = ret->meshes[i]->name;
 					auto n = 0;
 					auto unique = [&]() {
-						for (auto j = 0; j < ret->staging_meshes.size(); j++)
+						for (auto j = 0; j < ret->meshes.size(); j++)
 						{
-							if (ret->staging_meshes[j]->name == name)
+							if (ret->meshes[j]->name == name)
 								return false;
 						}
 						return true;
 					};
 					while (!unique())
 					{
-						name = ret->staging_meshes[i]->name + std::to_string(i);
+						name = ret->meshes[i]->name + std::to_string(i);
 						n++;
 					}
 					if (n > 0)
-						ret->staging_meshes[i]->name = name;
+						ret->meshes[i]->name = name;
 				}
 
 				std::vector<uint> mesh_refs;
-				mesh_refs.resize(ret->staging_meshes.size());
+				mesh_refs.resize(ret->meshes.size());
 
 				std::function<void(NodePrivate*, aiNode*)> get_node;
 				get_node = [&](NodePrivate* dst, aiNode* src) {
@@ -559,9 +643,8 @@ namespace flame
 						ai_real a;
 						aiVector3D p;
 						src->mTransformation.Decompose(s, r, a, p);
-						a *= RAD_ANG;
 						dst->pos = Vec3f(p.x, p.y, p.z);
-						dst->quat = make_quat(a, Vec3f(r.x, r.y, r.z));
+						dst->quat = make_quat(a * RAD_ANG, Vec3f(r.x, r.y, r.z));
 						dst->scale = Vec3f(s.x, s.y, s.z);
 					}
 
@@ -570,7 +653,7 @@ namespace flame
 						dst->mesh_index = src->mMeshes[0];
 						if (dst->name.starts_with("trigger_"))
 						{
-							auto& m = ret->staging_meshes[dst->mesh_index];
+							auto& m = ret->meshes[dst->mesh_index];
 							if (m->positions.size() == 4 && m->indices.size() == 6)
 							{
 								// plane
@@ -593,6 +676,42 @@ namespace flame
 					auto n = new NodePrivate;
 					ret->root->children.emplace_back(n);
 					get_node(n, scene->mRootNode);
+				}
+
+				for (auto i = 0; i < scene->mNumAnimations; i++)
+				{
+					auto src = scene->mAnimations[i];
+					auto dst = new AnimationPrivate;
+					ret->animations.emplace_back(dst);
+
+					dst->name = src->mName.C_Str();
+					dst->channels.resize(src->mNumChannels);
+					for (auto j = 0; j < src->mNumChannels; j++)
+					{
+						auto src_c = src->mChannels[j];
+						auto& dst_c = dst->channels[j];
+
+						dst_c.node_name = src_c->mNodeName.C_Str();
+
+						dst_c.position_keys.resize(src_c->mNumPositionKeys);
+						for (auto k = 0; k < src_c->mNumPositionKeys; k++)
+						{
+							auto& src_k = src_c->mPositionKeys[k];
+							auto& dst_k = dst_c.position_keys[k];
+							dst_k.t = src_k.mTime;
+							auto& p = src_k.mValue;
+							dst_k.v = Vec3f(p.x, p.y, p.z);
+						}
+						dst_c.rotation_keys.resize(src_c->mNumRotationKeys);
+						for (auto k = 0; k < src_c->mNumRotationKeys; k++)
+						{
+							auto& src_k = src_c->mRotationKeys[k];
+							auto& dst_k = dst_c.rotation_keys[k];
+							dst_k.t = src_k.mTime;
+							auto& q = src_k.mValue;
+							dst_k.v = Vec4f(q.x, q.y, q.z, q.w);
+						}
+					}
 				}
 
 				for (auto i = 0; i < mesh_refs.size(); i++)

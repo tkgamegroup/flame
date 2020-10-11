@@ -33,6 +33,7 @@ namespace flame
 
 			PxScene* px_scene;
 			Callback px_callback;
+			PxControllerManager* px_controller_manager;
 #endif
 
 			std::unique_ptr<Closure<void(Capture&, TouchType type, Shape* trigger_shape, Shape* other_shape)>> trigger_callback;

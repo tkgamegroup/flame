@@ -30,6 +30,7 @@ namespace flame
 			Format_R16G16B16A16_UNORM,
 			Format_R16G16B16A16_SFLOAT,
 			Format_R32G32B32A32_SFLOAT,
+			Format_R32G32B32A32_INT,
 			Format_RGBA_BC3,
 			Format_RGBA_ETC2,
 			Format_Color_Begin = Format_R8_UNORM,

@@ -6,6 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct NodePrivate;
+
 		struct MaterialPrivate : Material
 		{
 			std::string name;
@@ -14,6 +16,7 @@ namespace flame
 			float metallic = 0.f;
 			float roughness = 0.25f;
 			float alpha_test = 0.f;
+
 			std::filesystem::path path;
 			std::string color_map;
 			std::string alpha_map;
@@ -21,6 +24,14 @@ namespace flame
 			std::string roughness_map;
 			std::string normal_map;
 			std::string height_map;
+		};
+
+		struct BonePrivate
+		{
+			std::string name;
+
+			Mat4f offset_matrix;
+			std::vector<std::pair<uint, float>> weights;
 		};
 
 		struct MeshPrivate : Mesh
@@ -34,6 +45,8 @@ namespace flame
 			std::vector<Vec3f> normals;
 			std::vector<uint> indices;
 
+			std::vector<std::unique_ptr<BonePrivate>> bones;
+
 			uint get_vertices_count() const override { return positions.size(); }
 			const Vec3f* get_positions() const override { return positions.data(); }
 			const Vec2f* get_uvs() const override { return uvs.data(); }
@@ -41,12 +54,10 @@ namespace flame
 			uint get_indices_count() const { return indices.size(); }
 			const uint* get_indices() const { return indices.data(); }
 
-			void set_vertices_p(const std::initializer_list<float>& v);
-			void set_vertices_pn(const std::initializer_list<float>& v);
-			void set_vertices(uint n, Vec3f* positions, Vec3f* uvs, Vec3f* normals);
-			void set_indices(const std::initializer_list<uint>& v);
-			void set_indices(uint n, uint* indices);
+			void add_vertices(uint n, Vec3f* positions, Vec3f* uvs, Vec3f* normals);
+			void add_indices(uint n, uint* indices);
 
+			void add_cube(const Vec3f& extent, const Vec3f& center, const Mat3f& rotation);
 			void add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation);
 		};
 
@@ -75,7 +86,39 @@ namespace flame
 
 			int get_mesh_index() const override { return mesh_index; }
 
+			NodePrivate* find(const std::string& name);
 			void traverse(const std::function<void(NodePrivate*)>& callback);
+		};
+
+		struct AnimationPrivate
+		{
+			struct Channel
+			{
+				struct PositionKey
+				{
+					float t;
+					Vec3f v;
+				};
+				struct RotationKey
+				{
+					float t;
+					Vec4f v;
+				};
+				struct ScalingKey
+				{
+					float t;
+					Vec3f v;
+				};
+
+				std::string node_name;
+
+				std::vector<PositionKey> position_keys;
+				std::vector<RotationKey> rotation_keys;
+			};
+
+			std::string name;
+
+			std::vector<Channel> channels;
 		};
 
 		struct ModelBridge : Model
@@ -90,14 +133,16 @@ namespace flame
 			std::filesystem::path filename;
 
 			std::vector<std::unique_ptr<MaterialPrivate>> materials;
-			std::vector<std::unique_ptr<MeshPrivate>> staging_meshes;
+			std::vector<std::unique_ptr<MeshPrivate>> meshes;
 
 			std::unique_ptr<NodePrivate> root;
 
+			std::vector<std::unique_ptr<AnimationPrivate>> animations;
+
 			ModelPrivate();
 
-			uint get_meshes_count() const override { return staging_meshes.size(); }
-			Mesh* get_mesh(uint idx) const override { return staging_meshes[idx].get(); }
+			uint get_meshes_count() const override { return meshes.size(); }
+			Mesh* get_mesh(uint idx) const override { return meshes[idx].get(); }
 			int find_mesh(const std::string& name) const;
 
 			Node* get_root() const override { return root.get(); }
