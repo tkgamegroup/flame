@@ -36,8 +36,6 @@ void main()
 	uint mod_idx = gl_InstanceIndex >> 16;
 	o_mat_id = gl_InstanceIndex & 0xffff;
 	o_uv = i_uv;
-	vec4 pos = vec4(i_position, 1.0);
-	vec3 normal = i_normal;
 #ifdef ARMATURE
 	mat4 deform = mat4(0.0);
 	for (int i = 0; i < 4; i++)
@@ -46,11 +44,12 @@ void main()
 		if (id != -1)
 			deform += i_bone_weights[i] * bones[id];
 	}
-	pos = deform * pos;
-	normal = mat3(deform) * normal;
+	o_coordw = vec3(deform * vec4(i_position, 1.0));
+	o_normal = mat3(deform) * i_normal;
+#else
+	o_coordw = vec3(mesh_matrices[mod_idx].transform * vec4(i_position, 1.0));
+	o_normal = vec3(mesh_matrices[mod_idx].normal_matrix * vec4(i_normal, 0));
 #endif
-	o_coordw = vec3(mesh_matrices[mod_idx].transform * pos);
 	o_coordv = render_data.camera_coord - o_coordw;
-	o_normal = vec3(mesh_matrices[mod_idx].normal_matrix * vec4(normal, 0));
 	gl_Position = render_data.proj_view * vec4(o_coordw, 1.0);
 }

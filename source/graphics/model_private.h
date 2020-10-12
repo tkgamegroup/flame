@@ -26,12 +26,14 @@ namespace flame
 			std::string height_map;
 		};
 
-		struct BonePrivate
+		struct BonePrivate : Bone
 		{
 			std::string name;
 
 			Mat4f offset_matrix;
 			std::vector<std::pair<uint, float>> weights;
+
+			const char* get_name() const override { return name.c_str(); }
 		};
 
 		struct MeshPrivate : Mesh
@@ -55,6 +57,7 @@ namespace flame
 			const uint* get_indices() const { return indices.data(); }
 
 			uint get_bones_count() const override { return bones.size(); }
+			Bone* get_bone(uint idx) const override { return bones[idx].get(); }
 
 			void add_vertices(uint n, Vec3f* positions, Vec3f* uvs, Vec3f* normals);
 			void add_indices(uint n, uint* indices);

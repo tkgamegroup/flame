@@ -591,12 +591,12 @@ namespace flame
 						dst_b->name = src_b->mName.C_Str();
 						{
 							auto& m = src_b->mOffsetMatrix;
-							dst_b->offset_matrix = Mat4f(
-								Vec4f(m.a1, m.a2, m.a3, m.a4),
-								Vec4f(m.b1, m.b2, m.b3, m.b4),
-								Vec4f(m.c1, m.c2, m.c3, m.c4),
-								Vec4f(m.d1, m.d2, m.d3, m.d4)
-							);
+							dst_b->offset_matrix = inverse(Mat4f(
+								Vec4f(m.a1, m.b1, m.c1, m.d1),
+								Vec4f(m.a2, m.b2, m.c2, m.d2),
+								Vec4f(m.a3, m.b3, m.c3, m.d3),
+								Vec4f(m.a4, m.b4, m.c4, m.d4)
+							));
 						}
 						dst_b->weights.resize(src_b->mNumWeights);
 						for (auto k = 0; k < src_b->mNumWeights; k++)

@@ -168,26 +168,17 @@ namespace flame
 			std::vector<std::unique_ptr<Mesh>> meshes;
 		};
 
-		struct ArmatureDeformerBridge : ArmatureDeformer
+		struct ArmatureDeformerPrivate : ArmatureDeformer
 		{
-			void update(CommandBuffer* cb) override;
-		};
-
-		struct ArmatureDeformerPrivate : ArmatureDeformerBridge
-		{
+			MeshPrivate* mesh;
 			TBuffer<Mat4f, BufferUsageStorage> poses_buffer;
 			std::unique_ptr<DescriptorSetPrivate> descriptorset;
+			Vec2i dirty_range = Vec2i(0);
 
-			ArmatureDeformerPrivate(DevicePrivate* d, MeshPrivate* mesh);
+			ArmatureDeformerPrivate(DevicePrivate* device, MeshPrivate* mesh);
 			void release() override { delete this; }
 			void set_pose(uint id, const Mat4f& pose) override;
-			void update(CommandBufferPrivate* cb);
 		};
-
-		inline void ArmatureDeformerBridge::update(CommandBuffer* cb)
-		{
-			((ArmatureDeformerPrivate*)this)->update((CommandBufferPrivate*)cb);
-		}
 
 		struct RenderDataS
 		{
@@ -443,8 +434,6 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Device* get_device() const override { return device; }
-
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }
 
@@ -471,6 +460,7 @@ namespace flame
 
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
+			ArmatureDeformer* create_armature_deformer(Mesh* mesh) override;
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels) override;
 			void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow) override;

@@ -153,31 +153,21 @@ namespace flame
 		static PipelinePrivate* upsample_pipeline = nullptr;
 		static PipelinePrivate* gamma_pipeline = nullptr;
 
-		ArmatureDeformerPrivate::ArmatureDeformerPrivate(DevicePrivate* d, MeshPrivate* mesh)
+		ArmatureDeformerPrivate::ArmatureDeformerPrivate(DevicePrivate* device, MeshPrivate* mesh) :
+			mesh(mesh)
 		{
-			poses_buffer.create(d, mesh->bones.size());
-			for (auto i = 0; i < mesh->bones.size(); i++)
-				poses_buffer.push(Mat4f(1.f));
-			descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), armature_descriptorsetlayout));
+			poses_buffer.create(device, mesh->bones.size());
+			descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), armature_descriptorsetlayout));
 			descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
-
-			ImmediateCommandBuffer cb(d);
-			update(cb.cb.get());
 		}
 
 		void ArmatureDeformerPrivate::set_pose(uint id, const Mat4f& pose)
 		{
-
-		}
-
-		void ArmatureDeformerPrivate::update(CommandBufferPrivate* cb)
-		{
-			poses_buffer.upload(cb, 0, poses_buffer.count);
-		}
-
-		ArmatureDeformer* ArmatureDeformer::create(Device* d, Mesh* mesh)
-		{
-			return new ArmatureDeformerPrivate((DevicePrivate*)d, (MeshPrivate*)mesh);
+			if (id < dirty_range[0])
+				dirty_range[0] = id;
+			if (id >= dirty_range[1])
+				dirty_range[1] = id + 1;
+			poses_buffer.beg[id] = pose * mesh->bones[id]->offset_matrix;
 		}
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d) :
@@ -1798,6 +1788,11 @@ namespace flame
 			render_data_buffer.end->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 		}
 
+		ArmatureDeformer* CanvasPrivate::create_armature_deformer(Mesh* mesh)
+		{
+			return new ArmatureDeformerPrivate(device, (MeshPrivate*)mesh);
+		}
+
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer)
 		{
 			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
@@ -1960,6 +1955,8 @@ namespace flame
 
 		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 		{
+			cb->begin();
+
 			enum PassType
 			{
 				PassNone = -1,
@@ -1989,6 +1986,21 @@ namespace flame
 				}
 					break;
 				case Cmd::DrawMesh:
+				{
+					auto cmd = (CmdDrawMesh*)cmds[i].get();
+					for (auto& m : cmd->meshes)
+					{
+						auto deformer = std::get<3>(m);
+						if (deformer)
+						{
+							if (deformer->dirty_range[1] > deformer->dirty_range[0])
+							{
+								deformer->poses_buffer.upload(cb, deformer->dirty_range[0], deformer->dirty_range[1] - deformer->dirty_range[0]);
+								deformer->poses_buffer.barrier(cb);
+							}
+						}
+					}
+				}
 				case Cmd::DrawTerrain:
 				{
 					if (passes.empty() || (passes.back().type != Pass3D && passes.back().type != PassNone))
@@ -2023,8 +2035,6 @@ namespace flame
 					break;
 				}
 			}
-
-			cb->begin();
 
 			auto dst = hdr ? dst_image.get() : target_imageviews[image_index]->image;
 			auto dst_fb = hdr ? dst_framebuffer.get() : target_framebuffers[image_index].get();
@@ -2314,17 +2324,18 @@ namespace flame
 							cb->bind_descriptor_set(light_descriptorset.get(), 3, forward_pipelinelayout);
 							for (auto& m : c->meshes)
 							{
-								cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer.buf.get(), 0);
-								cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
+								auto mrm = std::get<1>(m);
+								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
+								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 								if (std::get<3>(m))
 								{
 									cb->bind_pipeline(pl_forward_armature);
-									cb->bind_vertex_buffer(std::get<1>(m)->weight_buffer.buf.get(), 1);
+									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 									cb->bind_descriptor_set(std::get<3>(m)->descriptorset.get(), 4, forward_pipelinelayout);
 								}
 								else
 									cb->bind_pipeline(pl_forward);
-								cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
+								cb->draw_indexed(mrm->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
 							}
 						}
 							break;

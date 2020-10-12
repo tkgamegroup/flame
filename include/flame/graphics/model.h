@@ -15,6 +15,11 @@ namespace flame
 			//FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path);
 		};
 
+		struct Bone
+		{
+			virtual const char* get_name() const = 0;
+		};
+
 		struct Mesh
 		{
 			//virtual const char* get_name() const = 0;
@@ -28,6 +33,7 @@ namespace flame
 			virtual const uint* get_indices() const = 0;
 
 			virtual uint get_bones_count() const = 0;
+			virtual Bone* get_bone(uint idx) const = 0;
 		};
 		
 		struct Node

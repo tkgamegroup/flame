@@ -31,16 +31,11 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual void set_pose(uint id, const Mat4f& pose) = 0;
-			virtual void update(CommandBuffer* cb) = 0;
-
-			FLAME_GRAPHICS_EXPORTS static ArmatureDeformer* create(Device* d, Mesh* mesh);
 		};
 
 		struct Canvas
 		{
 			virtual void release() = 0;
-
-			virtual Device* get_device() const = 0;
 
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
@@ -65,6 +60,7 @@ namespace flame
 
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) = 0;
 
+			virtual ArmatureDeformer* create_armature_deformer(Mesh* mesh) = 0;
 			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer = nullptr) = 0;
 			virtual void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels = 32.f) = 0;
 			virtual void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow = false) = 0;

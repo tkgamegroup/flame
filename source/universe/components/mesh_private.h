@@ -25,6 +25,7 @@ namespace flame
 
 		graphics::Mesh* mesh = nullptr;
 		graphics::ArmatureDeformer* deformer = nullptr;
+		std::vector<std::pair<cNodePrivate*, void*>> bones;
 
 		std::string src;
 
@@ -33,11 +34,15 @@ namespace flame
 
 		bool cast_shadow = true;
 
+		~cMeshPrivate();
+
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
+
+		void destroy_deformer();
 
 		void apply_src();
 

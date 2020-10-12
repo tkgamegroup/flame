@@ -80,6 +80,7 @@ namespace flame
 		if (!transform_dirty)
 		{
 			transform_dirty = true;
+
 			for (auto& c : entity->children)
 			{
 				auto n = c->get_component_t<cNodePrivate>();
