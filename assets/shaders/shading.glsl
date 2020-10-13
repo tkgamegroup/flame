@@ -23,7 +23,7 @@ vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 intensity, vec3 albedo, vec3 spec, fl
 	float G = (1.0 / (NdotL * (1.0 - k) + k)) * (1.0 / (NdotV * (1.0 - k) + k));
 
 	vec3 brdf = min(F * G * D, vec3(1.0));
-	return ((vec3(1.0) - F) * albedo + brdf) * NdotL * intensity;
+	return ((vec3(1.0) - F) * albedo / PI + brdf) * NdotL * intensity;
 }
 
 vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, float roughness)

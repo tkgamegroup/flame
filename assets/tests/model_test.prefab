@@ -34,7 +34,6 @@
       <entity>
         <cNode euler="0,60,0" />
         <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
-        <cScript src="object_controller.lua" />
       </entity>
     </entity>
     <entity>
