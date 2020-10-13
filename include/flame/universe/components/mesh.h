@@ -20,6 +20,9 @@ namespace flame
 		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;
 
+		virtual const char* get_animation_name() const = 0;
+		virtual void set_animation_name(const char* name) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static cMesh* create();
 	};
 }

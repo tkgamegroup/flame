@@ -9,6 +9,7 @@ namespace flame
 	cMeshPrivate::~cMeshPrivate()
 	{
 		destroy_deformer();
+		stop_animation();
 	}
 
 	void cMeshPrivate::set_src(const std::string& _src)
@@ -26,6 +27,16 @@ namespace flame
 		cast_shadow = v;
 	}
 
+	void cMeshPrivate::set_animation_name(const std::string& name)
+	{
+		if (animation_name == name)
+			return;
+		animation_name = name;
+		apply_animation();
+		if (node)
+			node->mark_transform_dirty();
+	}
+
 	void cMeshPrivate::destroy_deformer()
 	{
 		if (deformer)
@@ -33,8 +44,18 @@ namespace flame
 			deformer->release();
 			deformer = nullptr;
 			for (auto& b : bones)
-				b.first->entity->remove_local_data_changed_listener(b.second);
+				b.node->entity->remove_local_data_changed_listener(b.changed_listener);
 			bones.clear();
+		}
+	}
+
+	void cMeshPrivate::stop_animation()
+	{
+		if (animation_event)
+		{
+			animation_frame = -1;
+			looper().remove_event(animation_event);
+			animation_event = nullptr;
 		}
 	}
 
@@ -63,21 +84,23 @@ namespace flame
 						for (auto i = 0; i < bones_count; i++)
 						{
 							auto& b = bones[i];
-							auto e = armature->find_child(mesh->get_bone(i)->get_name());
+							auto name = std::string(mesh->get_bone(i)->get_name());
+							auto e = armature->find_child(name);
 							if (e)
 							{
 								auto n = e->get_component_t<cNodePrivate>();
 								if (n)
 								{
-									b.first = n;
-									b.second = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+									b.name = name;
+									b.node = n;
+									b.changed_listener = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 										auto thiz = c.thiz<cMeshPrivate>();
 										auto id = c.data<int>();
 										auto& b = thiz->bones[id];
-										if (t == b.first && h == S<ch("transform")>::v)
+										if (t == b.node && h == S<ch("transform")>::v)
 										{
-											b.first->update_transform();
-											thiz->deformer->set_pose(id, b.first->transform);
+											b.node->update_transform();
+											thiz->deformer->set_pose(id, b.node->transform);
 										}
 									}, Capture().set_thiz(this).set_data(&i));
 								}
@@ -89,9 +112,69 @@ namespace flame
 		}
 	}
 
+	void cMeshPrivate::apply_animation()
+	{
+		stop_animation();
+		if (canvas && model_id != -1 && deformer && !animation_name.empty())
+		{
+			auto model = (graphics::Model*)canvas->get_resource(graphics::ResourceModel, model_id);
+			auto animation_id = model->find_animation(animation_name.c_str());
+			if (animation_id != -1)
+			{
+				auto animation = model->get_animation(animation_id);
+				auto chs = animation->get_channels_count();
+				for (auto i = 0; i < chs; i++)
+				{
+					auto ch = animation->get_channel(i);
+					auto find_bone = [&](const std::string& name) {
+						for (auto i = 0; i < bones.size(); i++)
+						{
+							if (bones[i].name == name)
+								return i;
+						}
+						return -1;
+					};
+					auto bid = find_bone(ch->get_node_name());
+					if (bid != -1)
+					{
+						auto& b = bones[bid];
+						animation_max_frame = min(ch->get_position_keys_count(), ch->get_rotation_keys_count());
+						b.frames.resize(animation_max_frame);
+						auto pk = ch->get_position_keys();
+						auto rk = ch->get_rotation_keys();
+						for (auto j = 0; j < animation_max_frame; j++)
+						{
+							auto& f = b.frames[j];
+							f.p = pk[j].v;
+							f.q = rk[j].v;
+						}
+					}
+				}
+				animation_frame = 0;
+				animation_event = looper().add_event([](Capture& c) {
+					auto thiz = c.thiz<cMeshPrivate>();
+					for (auto i = 0; i < thiz->bones.size(); i++)
+					{
+						auto& b = thiz->bones[i];
+						auto& k = b.frames[thiz->animation_frame];
+						b.node->set_pos(k.p);
+						b.node->set_quat(k.q);
+					}
+					thiz->animation_frame++;
+					if (thiz->animation_frame == thiz->animation_max_frame)
+						thiz->animation_frame = 0;
+					c._current = nullptr;
+				}, Capture().set_thiz(this), 1.f / 24.f);
+			}
+			else
+				animation_name.clear();
+		}
+	}
+
 	void cMeshPrivate::on_gain_canvas()
 	{
 		apply_src();
+		apply_animation();
 	}
 
 	void cMeshPrivate::draw(graphics::Canvas* canvas)

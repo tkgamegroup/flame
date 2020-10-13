@@ -16,23 +16,43 @@ namespace flame
 	struct cMeshBridge : cMesh
 	{
 		void set_src(const char* src) override;
+		void set_animation_name(const char* name) override;
 	};
 
 	struct cMeshPrivate : cMeshBridge // R ~ on_*
 	{
+		struct FramePose
+		{
+			Vec3f p;
+			Vec4f q;
+		};
+
+		struct Bone
+		{
+			std::string name;
+			cNodePrivate* node;
+			void* changed_listener;
+			std::vector<FramePose> frames;
+		};
+
 		int model_id = -1;
 		int mesh_id = -1;
 
 		graphics::Mesh* mesh = nullptr;
 		graphics::ArmatureDeformer* deformer = nullptr;
-		std::vector<std::pair<cNodePrivate*, void*>> bones;
+		std::vector<Bone> bones;
+		int animation_frame = -1;
+		uint animation_max_frame;
+		void* animation_event = nullptr;
 
 		std::string src;
 
+		bool cast_shadow = true;
+
+		std::string animation_name;
+
 		cNodePrivate* node = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
-
-		bool cast_shadow = true;
 
 		~cMeshPrivate();
 
@@ -42,9 +62,14 @@ namespace flame
 		bool get_cast_shadow() const override { return cast_shadow; }
 		void set_cast_shadow(bool v) override;
 
+		const char* get_animation_name() const override { return animation_name.c_str(); }
+		void set_animation_name(const std::string& name);
+
 		void destroy_deformer();
+		void stop_animation();
 
 		void apply_src();
+		void apply_animation();
 
 		void on_gain_canvas();
 
@@ -54,5 +79,10 @@ namespace flame
 	inline void cMeshBridge::set_src(const char* src)
 	{
 		((cMeshPrivate*)this)->set_src(src);
+	}
+
+	inline void cMeshBridge::set_animation_name(const char* name)
+	{
+		((cMeshPrivate*)this)->set_animation_name(name);
 	}
 }

@@ -223,6 +223,16 @@ namespace flame
 			return -1;
 		}
 
+		int ModelPrivate::find_animation(const std::string& name) const
+		{
+			for (auto i = 0; i < animations.size(); i++)
+			{
+				if (animations[i]->name == name)
+					return i;
+			}
+			return -1;
+		}
+
 		void ModelPrivate::save(const std::filesystem::path& filename, const std::string& _model_name) const
 		{
 			std::ofstream file(filename, std::ios::binary);
@@ -291,9 +301,9 @@ namespace flame
 				write_u(file, a->channels.size());
 				for (auto& c : a->channels)
 				{
-					write_s(file, c.node_name);
-					write_v(file, c.position_keys);
-					write_v(file, c.rotation_keys);
+					write_s(file, c->node_name);
+					write_v(file, c->position_keys);
+					write_v(file, c->rotation_keys);
 				}
 			}
 
@@ -495,10 +505,11 @@ namespace flame
 					a->channels.resize(read_u(file));
 					for (auto j = 0; j < a->channels.size(); j++)
 					{
-						auto& c = a->channels[j];
-						read_s(file, c.node_name);
-						read_v(file, c.position_keys);
-						read_v(file, c.rotation_keys);
+						auto c = new ChannelPrivate;
+						a->channels[j].reset(c);
+						read_s(file, c->node_name);
+						read_v(file, c->position_keys);
+						read_v(file, c->rotation_keys);
 					}
 				}
 
@@ -591,12 +602,12 @@ namespace flame
 						dst_b->name = src_b->mName.C_Str();
 						{
 							auto& m = src_b->mOffsetMatrix;
-							dst_b->offset_matrix = inverse(Mat4f(
+							dst_b->offset_matrix = Mat4f(
 								Vec4f(m.a1, m.b1, m.c1, m.d1),
 								Vec4f(m.a2, m.b2, m.c2, m.d2),
 								Vec4f(m.a3, m.b3, m.c3, m.d3),
 								Vec4f(m.a4, m.b4, m.c4, m.d4)
-							));
+							);
 						}
 						dst_b->weights.resize(src_b->mNumWeights);
 						for (auto k = 0; k < src_b->mNumWeights; k++)
@@ -689,24 +700,25 @@ namespace flame
 					for (auto j = 0; j < src->mNumChannels; j++)
 					{
 						auto src_c = src->mChannels[j];
-						auto& dst_c = dst->channels[j];
+						auto dst_c = new ChannelPrivate;
+						dst->channels[j].reset(dst_c);
 
-						dst_c.node_name = src_c->mNodeName.C_Str();
+						dst_c->node_name = src_c->mNodeName.C_Str();
 
-						dst_c.position_keys.resize(src_c->mNumPositionKeys);
+						dst_c->position_keys.resize(src_c->mNumPositionKeys);
 						for (auto k = 0; k < src_c->mNumPositionKeys; k++)
 						{
 							auto& src_k = src_c->mPositionKeys[k];
-							auto& dst_k = dst_c.position_keys[k];
+							auto& dst_k = dst_c->position_keys[k];
 							dst_k.t = src_k.mTime;
 							auto& p = src_k.mValue;
 							dst_k.v = Vec3f(p.x, p.y, p.z);
 						}
-						dst_c.rotation_keys.resize(src_c->mNumRotationKeys);
+						dst_c->rotation_keys.resize(src_c->mNumRotationKeys);
 						for (auto k = 0; k < src_c->mNumRotationKeys; k++)
 						{
 							auto& src_k = src_c->mRotationKeys[k];
-							auto& dst_k = dst_c.rotation_keys[k];
+							auto& dst_k = dst_c->rotation_keys[k];
 							dst_k.t = src_k.mTime;
 							auto& q = src_k.mValue;
 							dst_k.v = Vec4f(q.x, q.y, q.z, q.w);

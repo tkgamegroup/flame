@@ -95,40 +95,35 @@ namespace flame
 			void traverse(const std::function<void(NodePrivate*)>& callback);
 		};
 
-		struct AnimationPrivate
+		struct ChannelPrivate : Channel
 		{
-			struct Channel
-			{
-				struct PositionKey
-				{
-					float t;
-					Vec3f v;
-				};
-				struct RotationKey
-				{
-					float t;
-					Vec4f v;
-				};
-				struct ScalingKey
-				{
-					float t;
-					Vec3f v;
-				};
+			std::string node_name;
 
-				std::string node_name;
+			std::vector<PositionKey> position_keys;
+			std::vector<RotationKey> rotation_keys;
 
-				std::vector<PositionKey> position_keys;
-				std::vector<RotationKey> rotation_keys;
-			};
+			const char* get_node_name() const override { return node_name.c_str(); }
+			uint get_position_keys_count() const override { return position_keys.size(); }
+			const PositionKey* get_position_keys() const override { return position_keys.data(); }
+			uint get_rotation_keys_count() const { return rotation_keys.size(); }
+			const RotationKey* get_rotation_keys() const { return rotation_keys.data(); }
+		};
 
+		struct AnimationPrivate : Animation
+		{
 			std::string name;
 
-			std::vector<Channel> channels;
+			std::vector<std::unique_ptr<ChannelPrivate>> channels;
+
+			const char* get_name() const override { return name.c_str(); }
+			uint get_channels_count() const override { return channels.size(); }
+			Channel* get_channel(uint idx) const { return channels[idx].get(); }
 		};
 
 		struct ModelBridge : Model
 		{
 			int find_mesh(const char* name) const override;
+			int find_animation(const char* name) const override;
 
 			void save(const wchar_t* filename, const char* model_name) const override;
 		};
@@ -152,6 +147,10 @@ namespace flame
 
 			Node* get_root() const override { return root.get(); }
 
+			uint get_animations_count() const override { return animations.size(); }
+			Animation* get_animation(uint idx) const override { return animations[idx].get(); }
+			int find_animation(const std::string& name) const;
+
 			void save(const std::filesystem::path& filename, const std::string& model_name) const;
 
 			static ModelPrivate* create(const std::filesystem::path& filename);
@@ -160,6 +159,11 @@ namespace flame
 		inline int ModelBridge::find_mesh(const char* name) const
 		{
 			return ((ModelPrivate*)this)->find_mesh(name);
+		}
+
+		inline int ModelBridge::find_animation(const char* name) const
+		{
+			return ((ModelPrivate*)this)->find_animation(name);
 		}
 
 		inline void ModelBridge::save(const wchar_t* filename, const char* model_name) const

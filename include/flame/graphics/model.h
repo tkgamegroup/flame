@@ -49,6 +49,34 @@ namespace flame
 			virtual int get_mesh_index() const = 0;
 		};
 
+		struct PositionKey
+		{
+			float t;
+			Vec3f v;
+		};
+
+		struct RotationKey
+		{
+			float t;
+			Vec4f v;
+		};
+
+		struct Channel
+		{
+			virtual const char* get_node_name() const = 0;
+			virtual uint get_position_keys_count() const = 0;
+			virtual const PositionKey* get_position_keys() const = 0;
+			virtual uint get_rotation_keys_count() const = 0;
+			virtual const RotationKey* get_rotation_keys() const = 0;
+		};
+
+		struct Animation
+		{
+			virtual const char* get_name() const = 0;
+			virtual uint get_channels_count() const = 0;
+			virtual Channel* get_channel(uint idx) const = 0;
+		};
+
 		struct Model
 		{
 			//virtual uint get_materials_count() const = 0;
@@ -60,6 +88,10 @@ namespace flame
 			virtual int find_mesh(const char* name) const = 0;
 
 			virtual Node* get_root() const = 0;
+
+			virtual uint get_animations_count() const = 0;
+			virtual Animation* get_animation(uint idx) const = 0;
+			virtual int find_animation(const char* name) const = 0;
 
 			virtual void save(const wchar_t* filename, const char* model_name = nullptr) const = 0;
 
