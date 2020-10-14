@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/sound/buffer.h>
 #include "sound_private.h"
 
@@ -11,9 +12,13 @@ namespace flame
 		{
 			ALuint al_buf;
 
+			BufferPrivate();
 			BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration);
-			BufferPrivate(FILE* f);
 			~BufferPrivate();
+
+			void release() override { delete this; }
+
+			static BufferPrivate* create(const std::filesystem::path& filename);
 		};
 	}
 }

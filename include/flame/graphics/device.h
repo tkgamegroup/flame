@@ -23,7 +23,6 @@ namespace flame
 		struct Device
 		{
 			virtual void release() = 0;
-			virtual void set_default() = 0;
 
 			virtual DescriptorPool* get_descriptor_pool() const = 0;
 			virtual Sampler* get_sampler(Filter filter) const = 0;
@@ -32,8 +31,8 @@ namespace flame
 
 			virtual bool has_feature(Feature f) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Device* get_default();
-			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug, bool set_to_current = true);
+			FLAME_GRAPHICS_EXPORTS static Device* get();
+			FLAME_GRAPHICS_EXPORTS static Device* create(bool debug, bool as_default = true);
 		};
 	}
 }

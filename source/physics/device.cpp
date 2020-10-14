@@ -4,6 +4,8 @@ namespace flame
 {
 	namespace physics
 	{
+		DevicePrivate* default_device = nullptr;
+
 		DevicePrivate::DevicePrivate()
 		{
 #ifdef USE_PHYSX
@@ -21,18 +23,17 @@ namespace flame
 #endif
 		}
 
-		static DevicePrivate* device = nullptr;
-
-		DevicePrivate* DevicePrivate::get()
-		{
-			if (!device)
-				device = new DevicePrivate;
-			return device;
-		}
-
 		Device* Device::get()
 		{
-			return DevicePrivate::get();
+			return default_device;
+		}
+
+		Device* Device::create(bool as_default)
+		{
+			auto device = new DevicePrivate;
+			if (as_default)
+				default_device = device;
+			return device;
 		}
 	}
 }

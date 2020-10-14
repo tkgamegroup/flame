@@ -7,6 +7,8 @@ namespace flame
 {
 	namespace script
 	{
+		InstancePrivate* default_instance = nullptr;
+
 		static void print_lua_stack(lua_State* state)
 		{
 			printf("lua stack:\n");
@@ -370,12 +372,16 @@ namespace flame
 			check_result(lua_pcall(lua_state, 1, 0, 0));
 		}
 
-		static InstancePrivate* instance = nullptr;
-
 		Instance* Instance::get()
 		{
-			if (!instance)
-				instance = new InstancePrivate;
+			return default_instance;
+		}
+
+		Instance* Instance::create(bool as_default)
+		{
+			auto instance = new InstancePrivate;
+			if (as_default)
+				default_instance = instance;
 			return instance;
 		}
 	}

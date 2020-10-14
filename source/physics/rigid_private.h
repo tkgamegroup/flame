@@ -7,6 +7,7 @@ namespace flame
 {
 	namespace physics
 	{
+		struct DevicePrivate;
 		struct ShapePrivate;
 
 		struct RigidBridge : Rigid
@@ -23,7 +24,7 @@ namespace flame
 			PxRigidActor* px_rigid;
 #endif
 
-			RigidPrivate(bool dynamic);
+			RigidPrivate(DevicePrivate* device, bool dynamic);
 			~RigidPrivate();
 
 			void release() override { delete this; }

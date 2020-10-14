@@ -49,6 +49,9 @@ namespace flame
 
 			std::vector<std::unique_ptr<BonePrivate>> bones;
 
+			Vec3f lower_bound = Vec3f(0.f);
+			Vec3f upper_bound = Vec3f(0.f);
+
 			uint get_vertices_count() const override { return positions.size(); }
 			const Vec3f* get_positions() const override { return positions.data(); }
 			const Vec2f* get_uvs() const override { return uvs.data(); }
@@ -58,6 +61,9 @@ namespace flame
 
 			uint get_bones_count() const override { return bones.size(); }
 			Bone* get_bone(uint idx) const override { return bones[idx].get(); }
+
+			Vec3f get_lower_bound() const override { return lower_bound; }
+			Vec3f get_upper_bound() const override { return upper_bound; }
 
 			void add_vertices(uint n, Vec3f* positions, Vec3f* uvs, Vec3f* normals);
 			void add_indices(uint n, uint* indices);

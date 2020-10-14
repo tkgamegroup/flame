@@ -6,6 +6,7 @@ namespace flame
 {
 	namespace physics
 	{
+		struct Device;
 		struct Shape;
 
 		struct Rigid
@@ -24,7 +25,7 @@ namespace flame
 
 			void* user_data;
 
-			FLAME_PHYSICS_EXPORTS static Rigid* create(bool dynamic);
+			FLAME_PHYSICS_EXPORTS static Rigid* create(Device* device, bool dynamic);
 		};
 	}
 }

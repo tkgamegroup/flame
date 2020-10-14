@@ -1,6 +1,7 @@
 #pragma once
 
 #include <flame/foundation/typeinfo.h>
+#include <flame/network/network.h>
 #include <flame/graphics/device.h>
 #include <flame/graphics/swapchain.h>
 #include <flame/graphics/synchronize.h>
@@ -9,11 +10,11 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include <flame/sound/device.h>
-#include <flame/sound/context.h>
 #include <flame/sound/buffer.h>
 #include <flame/sound/source.h>
-#include <flame/script/script.h>
+#include <flame/physics/device.h>
 #include <flame/physics/scene.h>
+#include <flame/script/script.h>
 #include <flame/universe/world.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
@@ -91,12 +92,8 @@ namespace flame
 		std::filesystem::path engine_path;
 		std::filesystem::path resource_path;
 
-		graphics::Device* graphics_device;
 		graphics::CommandPool* graphics_command_pool;
 		graphics::Queue* graphics_queue;
-		sound::Device* sound_device;
-		sound::Context* sound_context;
-		script::Instance* script_instance;
 
 		graphics::FontAtlas* font_atlas;
 
@@ -115,18 +112,18 @@ namespace flame
 			c.thiz<GraphicsWindow>()->window = nullptr;
 		}, Capture().set_thiz(this));
 
-		swapchain = graphics::Swapchain::create(app->graphics_device, window);
+		swapchain = graphics::Swapchain::create(graphics::Device::get(), window);
 		swapchain_commandbuffers.resize(swapchain->get_images_count());
 		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
 			swapchain_commandbuffers[i] = graphics::CommandBuffer::create(app->graphics_command_pool);
-		submit_fence = graphics::Fence::create(app->graphics_device);
-		render_finished_semaphore = graphics::Semaphore::create(app->graphics_device);
+		submit_fence = graphics::Fence::create(graphics::Device::get());
+		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get());
 
-		canvas = graphics::Canvas::create(app->graphics_device, hdr, msaa_3d);
+		canvas = graphics::Canvas::create(graphics::Device::get(), hdr, msaa_3d);
 		set_canvas_target();
 		canvas->set_resource(graphics::ResourceFontAtlas, -1, app->font_atlas, "default_font");
 
-		physics_scene = physics::Scene::create(-9.81f, 2);
+		physics_scene = physics::Scene::create(physics::Device::get(), -9.81f, 2);
 
 		window->add_resize_listener([](Capture& c, const Vec2u&) {
 			c.thiz<GraphicsWindow>()->set_canvas_target();
@@ -156,7 +153,7 @@ namespace flame
 		}
 		root->add_component(cLayout::create());
 
-		app->script_instance->add_object(root, "root", "flame::Entity");
+		script::Instance::get()->add_object(root, "root", "flame::Entity");
 
 		if (app->windows.empty())
 		{
@@ -252,22 +249,20 @@ namespace flame
 
 		engine_path = getenv("FLAME_PATH");
 
-		graphics_device = graphics::Device::create(graphics_debug);
-		graphics_command_pool = graphics_device->get_command_pool(graphics::QueueGraphics);
-		graphics_queue = graphics_device->get_queue(graphics::QueueGraphics);
-
-		sound_device = sound::Device::create_player();
-		sound_context = sound::Context::create(sound_device);
-		sound_context->make_current();
-
-		script_instance = script::Instance::get();
+		network::initialize();
+		graphics::Device::create(graphics_debug);
+		graphics_command_pool = graphics::Device::get()->get_command_pool(graphics::QueueGraphics);
+		graphics_queue = graphics::Device::get()->get_queue(graphics::QueueGraphics);
+		physics::Device::create();
+		sound::Device::create();
+		script::Instance::create();
 
 		{
 			graphics::Font* fonts[] = {
 				graphics::Font::create(L"c:/windows/fonts/msyh.ttc"),
 				graphics::Font::create((engine_path / L"assets/font_awesome.ttf").c_str())
 			};
-			font_atlas = graphics::FontAtlas::create(graphics_device, 2, fonts);
+			font_atlas = graphics::FontAtlas::create(graphics::Device::get(), 2, fonts);
 		}
 	}
 

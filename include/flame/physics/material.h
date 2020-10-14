@@ -6,11 +6,13 @@ namespace flame
 {
 	namespace physics
 	{
+		struct Device;
+
 		struct Material
 		{
 			virtual void release() = 0;
 
-			FLAME_PHYSICS_EXPORTS static Material* create(float static_friction, float dynamic_friction, float restitution);
+			FLAME_PHYSICS_EXPORTS static Material* create(Device* device, float static_friction, float dynamic_friction, float restitution);
 		};
 	}
 }

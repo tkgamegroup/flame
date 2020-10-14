@@ -10,13 +10,14 @@ namespace flame
 
 		struct Source
 		{
-			FLAME_SOUND_EXPORTS void set_volume(float v);
-			FLAME_SOUND_EXPORTS void set_looping(bool v);
-			FLAME_SOUND_EXPORTS void play();
-			FLAME_SOUND_EXPORTS void stop();
+			virtual void release() = 0;
 
-			FLAME_SOUND_EXPORTS static Source *create(Buffer *b);
-			FLAME_SOUND_EXPORTS static void destroy(Source *s);
+			virtual void set_volume(float v) = 0;
+			virtual void set_looping(bool v) = 0;
+			virtual void play() = 0;
+			virtual void stop() = 0;
+
+			FLAME_SOUND_EXPORTS static Source *create(Buffer *buffer);
 		};
 	}
 }

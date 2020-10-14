@@ -1,3 +1,4 @@
+#include <flame/physics/device.h>
 #include <flame/physics/scene.h>
 #include <flame/physics/rigid.h>
 #include <flame/script/script.h>
@@ -94,7 +95,7 @@ namespace flame
 
 	void cRigidPrivate::on_gain_node()
 	{
-		phy_rigid = physics::Rigid::create(dynamic);
+		phy_rigid = physics::Rigid::create(physics::Device::get(), dynamic);
 		phy_rigid->user_data = this;
 	}
 

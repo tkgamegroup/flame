@@ -34,6 +34,9 @@ namespace flame
 
 			virtual uint get_bones_count() const = 0;
 			virtual Bone* get_bone(uint idx) const = 0;
+
+			virtual Vec3f get_lower_bound() const = 0;
+			virtual Vec3f get_upper_bound() const = 0;
 		};
 		
 		struct Node

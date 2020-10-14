@@ -25,11 +25,11 @@ int main(int argc, char** args)
 		Entity::register_prefab(model_path.c_str(), "mod");
 	}
 	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/height.png", false);
+		auto t = Image::create(graphics::Device::get(), L"D:/terrain/height.png", false);
 		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "height_map");
 	}
 	{
-		auto t = Image::create(g_app.graphics_device, L"D:/terrain/color.png", true);
+		auto t = Image::create(graphics::Device::get(), L"D:/terrain/color.png", true);
 		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map");
 	}
 	root = w->root;

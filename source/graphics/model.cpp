@@ -19,7 +19,12 @@ namespace flame
 			auto b = positions.size();
 			positions.resize(b + n);
 			for (auto i = 0; i < n; i++)
-				positions[b + i] = _positions[i];
+			{
+				auto& p = _positions[i];
+				positions[b + i] = p;
+				lower_bound = min(lower_bound, p);
+				upper_bound = min(upper_bound, p);
+			}
 			if (_uvs)
 			{
 				uvs.resize(b + n);

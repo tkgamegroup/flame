@@ -170,6 +170,11 @@ namespace flame
 			poses_buffer.beg[id] = pose * mesh->bones[id]->offset_matrix;
 		}
 
+		ArmatureDeformer* ArmatureDeformer::create(Device* device, Mesh* mesh)
+		{
+			return new ArmatureDeformerPrivate((DevicePrivate*)device, (MeshPrivate*)mesh);
+		}
+
 		CanvasPrivate::CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d) :
 			device(d),
 			hdr(hdr),
@@ -1786,11 +1791,6 @@ namespace flame
 			render_data_buffer.end->frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
 			render_data_buffer.end->frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
 			render_data_buffer.end->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
-		}
-
-		ArmatureDeformer* CanvasPrivate::create_armature_deformer(Mesh* mesh)
-		{
-			return new ArmatureDeformerPrivate(device, (MeshPrivate*)mesh);
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer)

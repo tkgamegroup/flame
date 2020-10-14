@@ -1,5 +1,3 @@
-#pragma once
-
 #include "source_private.h"
 #include "buffer_private.h"
 
@@ -7,10 +5,10 @@ namespace flame
 {
 	namespace sound
 	{
-		SourcePrivate::SourcePrivate(Buffer *b)
+		SourcePrivate::SourcePrivate(BufferPrivate* buffer)
 		{
 			alGenSources(1, &al_src);
-			alSourcei(al_src, AL_BUFFER, ((BufferPrivate*)b)->al_buf);
+			alSourcei(al_src, AL_BUFFER, buffer->al_buf);
 		}
 
 		SourcePrivate::~SourcePrivate()
@@ -44,34 +42,9 @@ namespace flame
 			alSourceStop(al_src);
 		}
 
-		void Source::set_volume(float v)
+		Source *Source::create(Buffer* buffer)
 		{
-			((SourcePrivate*)this)->set_volume(v);
-		}
-
-		void Source::set_looping(bool v)
-		{
-			((SourcePrivate*)this)->set_looping(v);
-		}
-
-		void Source::play()
-		{
-			((SourcePrivate*)this)->play();
-		}
-
-		void Source::stop()
-		{
-			((SourcePrivate*)this)->stop();
-		}
-
-		Source *Source::create(Buffer *b)
-		{
-			return new SourcePrivate(b);
-		}
-
-		void Source::destroy(Source *s)
-		{
-			delete (SourcePrivate*)s;
+			return new SourcePrivate((BufferPrivate*)buffer);
 		}
 	}
 }

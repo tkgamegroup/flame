@@ -28,5 +28,7 @@ namespace flame
 		{
 			return ((InstancePrivate*)this)->excute(filename);
 		}
+
+		extern InstancePrivate* default_instance;
 	}
 }

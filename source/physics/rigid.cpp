@@ -7,19 +7,19 @@ namespace flame
 {
 	namespace physics
 	{
-		RigidPrivate::RigidPrivate(bool dynamic) :
+		RigidPrivate::RigidPrivate(DevicePrivate* device, bool dynamic) :
 			dynamic(dynamic)
 		{
 #ifdef USE_PHYSX
 			if (dynamic)
 			{
-				px_rigid = DevicePrivate::get()->px_instance->createRigidDynamic(PxTransform(PxVec3(0.f)));
+				px_rigid = device->px_instance->createRigidDynamic(PxTransform(PxVec3(0.f)));
 				PxRigidBodyExt::updateMassAndInertia(*(PxRigidDynamic*)px_rigid, 10.0);
 				//if (kinematic) 
 				//	body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 			}
 			else
-				px_rigid = DevicePrivate::get()->px_instance->createRigidStatic(PxTransform(PxVec3(0.f)));
+				px_rigid = device->px_instance->createRigidStatic(PxTransform(PxVec3(0.f)));
 
 			px_rigid->userData = this;
 #endif
@@ -91,9 +91,9 @@ namespace flame
 #endif
 		}
 
-		Rigid* Rigid::create(bool dynamic)
+		Rigid* Rigid::create(Device* device, bool dynamic)
 		{
-			return new RigidPrivate(dynamic);
+			return new RigidPrivate((DevicePrivate*)device, dynamic);
 		}
 	}
 }

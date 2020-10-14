@@ -1,18 +1,26 @@
-#include <flame/serialize.h>
-#include <flame/foundation/foundation.h>
 #include "buffer_private.h"
 
 namespace flame
 {
 	namespace sound
 	{
+		BufferPrivate::BufferPrivate()
+		{
+			alGenBuffers(1, &al_buf);
+		}
+
 		BufferPrivate::BufferPrivate(void* data, uint frequency, bool stereo, bool _16bit, float duration)
 		{
 			alGenBuffers(1, &al_buf);
 			alBufferData(al_buf, to_backend(stereo, _16bit), data, get_size(duration, frequency, stereo, _16bit), frequency);
 		}
 
-		BufferPrivate::BufferPrivate(FILE* f)
+		BufferPrivate::~BufferPrivate()
+		{
+			alDeleteBuffers(1, &al_buf);
+		}
+
+		BufferPrivate* BufferPrivate::create(const std::filesystem::path& filename)
 		{
 			struct RIFF_Header
 			{
@@ -43,58 +51,47 @@ namespace flame
 			int data_size;
 			int data_offset;
 
-			fread(&wave_header, sizeof(RIFF_Header), 1, f);
-			while (fread(&riff_chunk, sizeof(RIFF_Chunk), 1, f) == 1)
+			std::ifstream file(filename, std::ios::binary);
+
+			read_t(file, wave_header);
+			while (!file.eof())
 			{
+				read_t(file, riff_chunk);
+
 				auto chunk_name = std::string(riff_chunk.name);
 				if (chunk_name.starts_with("fmt"))
-					fread(&fmt, riff_chunk.size, 1, f);
+					read_t(file, riff_chunk.size);
 				else if (chunk_name.starts_with("data"))
 				{
 					data_size = riff_chunk.size;
-					data_offset = ftell(f);
-					fseek(f, riff_chunk.size, SEEK_CUR);
+					data_offset = file.tellg();
+					file.seekg(riff_chunk.size, std::ios::cur);
 				}
 				else
-					fseek(f, riff_chunk.size, SEEK_CUR);
+					file.seekg(riff_chunk.size, std::ios::cur);
 			}
 
-			alGenBuffers(1, &al_buf);
-
-			auto data = new uchar[data_size];
-			fseek(f, data_offset, SEEK_SET);
-			fread(data, data_size, 1, f);
-
-			alBufferData(al_buf, to_backend(fmt.channel == 2, fmt.bits_per_sample == 16), data, data_size, fmt.samples_per_sec);
+			auto data = new char[data_size];
+			file.seekg(data_offset);
+			file.read(data, data_size);
+			auto ret = new BufferPrivate;
+			alBufferData(ret->al_buf, to_backend(fmt.channel == 2, fmt.bits_per_sample == 16), data, data_size, fmt.samples_per_sec);
 			delete[]data;
+
+			return ret;
 		}
 
-		BufferPrivate::~BufferPrivate()
-		{
-			alDeleteBuffers(1, &al_buf);
-		}
-
-		Buffer* Buffer::create_from_data(void* data, uint frequency, bool stereo, bool _16bit, float duration)
+		Buffer* Buffer::create(void* data, uint frequency, bool stereo, bool _16bit, float duration)
 		{
 			return new BufferPrivate(data, frequency, stereo, _16bit, duration);
 		}
 
-		Buffer* Buffer::create_from_file(const wchar_t* filename)
+		Buffer* Buffer::create(const wchar_t* filename)
 		{
-			auto file = _wfopen(filename, L"rb");
-			if (!file)
+			if (!std::filesystem::exists(filename))
 				return nullptr;
 
-			auto b = new BufferPrivate(file);
-
-			fclose(file);
-
-			return b;
-		}
-
-		void Buffer::destroy(Buffer *b)
-		{
-			delete (BufferPrivate*)b;
+			return BufferPrivate::create(filename);
 		}
 	}
 }

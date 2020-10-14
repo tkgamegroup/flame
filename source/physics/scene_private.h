@@ -8,6 +8,7 @@ namespace flame
 	namespace physics
 	{
 		struct DevicePrivate;
+		struct DevicePrivate;
 		struct RigidPrivate;
 
 		struct SceneBridge : Scene
@@ -38,7 +39,7 @@ namespace flame
 
 			std::unique_ptr<Closure<void(Capture&, TouchType type, Shape* trigger_shape, Shape* other_shape)>> trigger_callback;
 
-			ScenePrivate(float gravity, uint thread_count);
+			ScenePrivate(DevicePrivate* device, float gravity, uint thread_count);
 
 			void release() override { delete this; }
 

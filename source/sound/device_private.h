@@ -10,13 +10,29 @@ namespace flame
 		struct DevicePrivate : Device
 		{
 			ALCdevice *al_dev;
+			ALCcontext* al_ctx;
 
 			DevicePrivate();
-			DevicePrivate(uint frequency, bool stereo, bool _16bit, float duration);
 			~DevicePrivate();
 
-			void start_record();
-			void stop_record(void* dst);
+			void release() override { delete this; }
 		};
+
+		extern DevicePrivate* default_device;
+
+		struct RecorderPrivate : Recorder
+		{
+			ALCdevice* al_dev;
+
+			RecorderPrivate(uint frequency, bool stereo, bool _16bit, float duration);
+			~RecorderPrivate();
+
+			void release() override { delete this; }
+
+			void start_record() override;
+			void stop_record(void* dst) override;
+		};
+
+		extern RecorderPrivate* default_recorder;
 	}
 }

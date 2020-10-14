@@ -7,6 +7,7 @@ namespace flame
 {
 	namespace physics
 	{
+		struct Device;
 		struct Rigid;
 		struct Shape;
 
@@ -19,7 +20,7 @@ namespace flame
 			virtual void update(float disp) = 0;
 			virtual void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) = 0;
 
-			FLAME_PHYSICS_EXPORTS static Scene* create(float gravity, uint threads_count);
+			FLAME_PHYSICS_EXPORTS static Scene* create(Device* device, float gravity, uint threads_count);
 		};
 	}
 }

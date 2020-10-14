@@ -11,6 +11,7 @@ namespace flame
 			virtual void release() = 0;
 
 			FLAME_PHYSICS_EXPORTS static Device* get();
+			FLAME_PHYSICS_EXPORTS static Device* create(bool as_default = true);
 		};
 	}
 }

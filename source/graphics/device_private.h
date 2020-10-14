@@ -15,7 +15,7 @@ namespace flame
 		struct QueuePrivate;
 		struct DevicePrivate;
 
-		extern DevicePrivate* _default_device;
+		extern DevicePrivate* default_device;
 
 		struct DevicePrivate : Device
 		{
@@ -41,7 +41,6 @@ namespace flame
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
 
 			void release() override { delete this; }
-			void set_default() override { _default_device = this; }
 
 			DescriptorPool* get_descriptor_pool() const override { return (DescriptorPool*)descriptor_pool.get(); }
 			Sampler* get_sampler(Filter filter) const override 

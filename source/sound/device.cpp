@@ -4,27 +4,52 @@ namespace flame
 {
 	namespace sound
 	{
+		DevicePrivate* default_device = nullptr;
+
 		DevicePrivate::DevicePrivate()
 		{
 			al_dev = alcOpenDevice(nullptr);
-		}
-
-		DevicePrivate::DevicePrivate(uint frequency, bool stereo, bool _16bit, float duration)
-		{
-			al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
+			al_ctx = alcCreateContext(al_dev, nullptr);
+			alcMakeContextCurrent(al_ctx);
 		}
 
 		DevicePrivate::~DevicePrivate()
 		{
+			alcDestroyContext(al_ctx);
 			alcCloseDevice(al_dev);
 		}
 
-		void DevicePrivate::start_record()
+		Device* Device::create(bool as_default)
+		{
+			auto device = new DevicePrivate;
+			if (as_default)
+				default_device = device;
+			return device;
+		}
+
+		Device* Device::get()
+		{
+			return default_device;
+		}
+
+		RecorderPrivate* default_recorder = nullptr;
+
+		RecorderPrivate::RecorderPrivate(uint frequency, bool stereo, bool _16bit, float duration)
+		{
+			al_dev = alcCaptureOpenDevice(nullptr, frequency, to_backend(stereo, _16bit), get_size(duration, frequency, stereo, _16bit));
+		}
+
+		RecorderPrivate::~RecorderPrivate()
+		{
+			alcCloseDevice(al_dev);
+		}
+
+		void RecorderPrivate::start_record()
 		{
 			alcCaptureStart(al_dev);
 		}
 
-		void DevicePrivate::stop_record(void* dst)
+		void RecorderPrivate::stop_record(void* dst)
 		{
 			alcCaptureStop(al_dev);
 			ALint samples;
@@ -32,29 +57,12 @@ namespace flame
 			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
-		void Device::start_record()
+		Recorder* Recorder::create(uint frequency, bool stereo, bool _16bit, float duration, bool as_default)
 		{
-			((DevicePrivate*)this)->start_record();
-		}
-
-		void Device::stop_record(void* dst)
-		{
-			((DevicePrivate*)this)->stop_record(dst);
-		}
-
-		Device* Device::create_player()
-		{
-			return new DevicePrivate();
-		}
-
-		Device* Device::create_recorder(uint frequency, bool stereo, bool _16bit, float duration)
-		{
-			return new DevicePrivate(frequency, stereo, _16bit, duration);
-		}
-
-		void Device::destroy(Device *d)
-		{
-			delete (DevicePrivate*)d;
+			auto recorder = new RecorderPrivate(frequency, stereo, _16bit, duration);
+			if (as_default)
+				default_recorder = recorder;
+			return recorder;
 		}
 	}
 }

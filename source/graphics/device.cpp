@@ -8,6 +8,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		DevicePrivate* default_device = nullptr;
+
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
@@ -142,8 +144,6 @@ namespace flame
 		{
 		}
 
-		DevicePrivate* _default_device;
-
 		bool DevicePrivate::has_feature(Feature f) const
 		{
 			switch (f)
@@ -171,17 +171,17 @@ namespace flame
 			return -1;
 		}
 
-		Device* Device::get_default()
+		Device* Device::get()
 		{
-			return _default_device;
+			return default_device;
 		}
 
-		Device* Device::create(bool debug, bool set_to_default)
+		Device* Device::create(bool debug, bool as_default)
 		{
-			auto d = new DevicePrivate(debug);
-			if (set_to_default)
-				_default_device = d;
-			return d;
+			auto device = new DevicePrivate(debug);
+			if (as_default)
+				default_device = device;
+			return device;
 		}
 	}
 }

@@ -2,6 +2,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/canvas.h>
+#include <flame/physics/device.h>
 #include <flame/physics/material.h>
 #include <flame/physics/rigid.h>
 #include <flame/physics/shape.h>
@@ -18,7 +19,7 @@ namespace flame
 	physics::Material* get_material()
 	{
 		if (!material)
-			material = physics::Material::create(0.2f, 0.2f, 0.3f);
+			material = physics::Material::create(physics::Device::get(), 0.2f, 0.2f, 0.3f);
 		return material;
 	}
 
@@ -49,18 +50,18 @@ namespace flame
 			{
 			case physics::ShapeCube:
 				desc.box.hf_ext = size * Vec3f(0.5f) * node->global_scale;
-				phy_shape = physics::Shape::create(get_material(), physics::ShapeCube, desc);
+				phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeCube, desc);
 				break;
 			case physics::ShapeSphere:
 				desc.sphere.radius = size.x() * 0.5f * node->global_scale.x();
-				phy_shape = physics::Shape::create(get_material(), physics::ShapeSphere, desc);
+				phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeSphere, desc);
 				break;
 			case physics::ShapeTriangleMesh:
 				if (mesh && mesh->mesh)
 				{
 					desc.triangle_mesh.mesh = mesh->mesh;
 					desc.triangle_mesh.scale = size * node->global_scale;
-					phy_shape = physics::Shape::create(get_material(), physics::ShapeTriangleMesh, desc);
+					phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeTriangleMesh, desc);
 				}
 				break;
 			case physics::ShapeHeightField:
@@ -73,7 +74,7 @@ namespace flame
 					auto bmp = Bitmap::create(map_fn.c_str());
 					desc.height_field.height_map = bmp;
 					desc.height_field.scale = node->global_scale * terrain->extent * Vec3f(terrain->size.x(), 1.f, terrain->size.y());
-					phy_shape = physics::Shape::create(get_material(), physics::ShapeHeightField, desc);
+					phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeHeightField, desc);
 					bmp->release();
 				}
 				break;
