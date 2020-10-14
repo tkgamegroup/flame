@@ -5,11 +5,6 @@
     <cNode />
     <entity name="scene">
       <cNode />
-      <entity name="camera">
-        <cNode pos="0,200,0" euler="0,-90,0" />
-        <cCamera />
-        <cScript src="camera_fly.lua" />
-      </entity>
       <entity src="cube">
         <cNode pos="0,200,0" />
         <cRigid dynamic="false" />
@@ -24,6 +19,11 @@
       </entity>
       <entity src="@mod" >
         <cNode pos="0,200,0" />
+        <entity name="camera">
+          <cNode pos="0,5,0" euler="0,-90,0" />
+          <cCamera />
+          <cScript src="camera_third.lua" />
+        </entity>
       </entity>
 	    <entity>
 	      <cNode pos="-200,0,-200" />
