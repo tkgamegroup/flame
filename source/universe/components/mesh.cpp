@@ -181,7 +181,7 @@ namespace flame
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, Mat4f(node->axes), cast_shadow, deformer);
+			canvas->draw_mesh(model_id, mesh_id, node->transform, Mat4f(node->global_axes), cast_shadow, deformer);
 	}
 
 	cMesh* cMesh::create()

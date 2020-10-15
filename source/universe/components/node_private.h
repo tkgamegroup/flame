@@ -18,10 +18,11 @@ namespace flame
 		Vec3f scale = Vec3f(1.f);
 
 		bool transform_dirty = true;
+		Mat3f local_axes;
 		Vec3f global_pos;
 		Vec4f global_quat;
 		Vec3f global_scale;
-		Mat3f axes;
+		Mat3f global_axes;
 		Mat4f transform;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
@@ -38,8 +39,11 @@ namespace flame
 
 		void set_euler(const Vec3f& e) override;
 
+		Vec3f get_local_dir(uint idx) override;
+
 		Vec3f get_global_pos() override;
 		Vec3f get_global_dir(uint idx) override;
+		Vec3f get_global_scale() override;
 
 		void update_transform();
 

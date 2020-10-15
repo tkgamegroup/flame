@@ -13,7 +13,8 @@ er:add_key_down_listener_s(get_slot(
 			
 			local rigid = e:get_component_n("cRigid")
 			make_obj(rigid, "cRigid")
-			rigid:add_impulse({x=-camera.dir1.x*5, y=-camera.dir1.y*5, z=-camera.dir1.z*5})
+			local dir = camera.node.get_global_dir(2)
+			rigid:add_impulse({x=-dir.x*5, y=-dir.y*5, z=-dir.z*5})
 			
 			scene:add_child(e.p)
 			
