@@ -68,7 +68,7 @@ namespace flame
 			void push(const T& t)
 			{
 				auto n = stg_num();
-				if (n >= count)
+				if (n > count)
 				{
 					count *= 2;
 					_build();
@@ -80,7 +80,7 @@ namespace flame
 			void push(uint cnt, const T* p)
 			{
 				auto n = stg_num();
-				if (n + cnt >= count)
+				if (n + cnt > count)
 				{
 					count = (n + cnt) * 2;
 					_build();

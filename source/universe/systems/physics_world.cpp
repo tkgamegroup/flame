@@ -31,11 +31,11 @@ namespace flame
 		for (auto c : controllers)
 		{
 			auto disp = c->disp;
-			c->disp = Vec3f(0.f);
 			disp.y() -= 9.8f;
 			// physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
 			// o->floatingTime += dist;
 			c->phy_controller->move(disp, delta_time);
+			c->disp = Vec3f(0.f);
 		}
 
 		phy_scene->update(delta_time);

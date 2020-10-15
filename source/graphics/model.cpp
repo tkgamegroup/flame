@@ -23,7 +23,7 @@ namespace flame
 				auto& p = _positions[i];
 				positions[b + i] = p;
 				lower_bound = min(lower_bound, p);
-				upper_bound = min(upper_bound, p);
+				upper_bound = max(upper_bound, p);
 			}
 			if (_uvs)
 			{
@@ -284,6 +284,9 @@ namespace flame
 					write_t(file, b->offset_matrix);
 					write_v(file, b->weights);
 				}
+
+				write_t(file, m->lower_bound);
+				write_t(file, m->upper_bound);
 			}
 
 			root->traverse([&](NodePrivate* n) {
@@ -477,6 +480,9 @@ namespace flame
 						read_t(file, b->offset_matrix);
 						read_v(file, b->weights);
 					}
+
+					read_t(file, m->lower_bound);
+					read_t(file, m->upper_bound);
 				}
 
 				std::function<void(NodePrivate*)> load_node;

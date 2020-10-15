@@ -19,6 +19,12 @@ controller = {
 	e = false
 }
 
+function controller:update_dir()
+	self.node:set_euler({ x=self.yaw, y=0, z=0 })
+	self.dir1 = self.node:get_local_dir(2)
+	self.dir2 = self.node:get_local_dir(0)
+end
+
 local root_event_receiver = root:get_component_n("cEventReceiver")
 make_obj(root_event_receiver, "cEventReceiver")
 
@@ -84,13 +90,11 @@ entity:add_event_s(get_slot(
 		end
 		if controller.a then
 			controller.yaw = controller.yaw + 1
-			controller.node:set_euler({ x=controller.yaw, y=0, z=0 })
-			controller.dir1 = controller.node:get_global_dir(2)
+			controller:update_dir()
 		end
 		if controller.d then
 			controller.yaw = controller.yaw - 1
-			controller.node:set_euler({ x=controller.yaw, y=0, z=0 })
-			controller.dir1 = controller.node:get_global_dir(2)
+			controller:update_dir()
 		end
 	end
 ))

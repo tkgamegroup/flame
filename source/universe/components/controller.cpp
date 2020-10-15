@@ -15,10 +15,19 @@ namespace flame
 		return material;
 	}
 
+	void cControllerPrivate::set_radius(float r)
+	{
+		radius = r;
+	}
+
+	void cControllerPrivate::set_height(float h)
+	{
+		height = h;
+	}
+
 	void cControllerPrivate::on_gain_physics_world()
 	{
-		auto size = Vec3f(1.f, 2.f, 1.f);
-		phy_controller = physics::Controller::create(physics_world->phy_scene, get_material(), max(size.x(), size.z()), size.y());
+		phy_controller = physics::Controller::create(physics_world->phy_scene, get_material(), radius, height);
 		node->update_transform();
 		phy_controller->set_position(node->global_pos);
 		physics_world->controllers.push_back(this);
