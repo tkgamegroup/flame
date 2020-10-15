@@ -140,6 +140,7 @@ namespace flame
 		static PipelinePrivate* terrain8_msaa_pipeline = nullptr;
 		static PipelinePrivate* terrain16_msaa_pipeline = nullptr;
 		static PipelinePrivate* depth_pipeline = nullptr;
+		static PipelinePrivate* depth_armature_pipeline = nullptr;
 		static PipelinePrivate* blurh8_pipeline[10] = {};
 		static PipelinePrivate* blurh16_pipeline[10] = {};
 		static PipelinePrivate* blurv8_pipeline[10] = {};
@@ -354,7 +355,8 @@ namespace flame
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
 						mesh_descriptorsetlayout,
-						material_descriptorsetlayout
+						material_descriptorsetlayout,
+						armature_descriptorsetlayout
 					};
 					depth_pipelinelayout = new PipelineLayoutPrivate(d, dsls, sizeof(Mat4f) * 2);
 				}
@@ -472,21 +474,33 @@ namespace flame
 						new ShaderPrivate(d, L"depth.vert"),
 						new ShaderPrivate(d, L"depth.frag")
 					};
-					VertexAttributeInfo vias[2];
-					vias[0].location = 0;
-					vias[0].format = Format_R32G32B32_SFLOAT;
-					vias[1].location = 1;
-					vias[1].format = Format_R32G32_SFLOAT;
-					VertexBufferInfo vib;
-					vib.attributes_count = size(vias);
-					vib.attributes = vias;
-					vib.stride = 8 * sizeof(float);
+					VertexAttributeInfo vias1[2];
+					vias1[0].location = 0;
+					vias1[0].format = Format_R32G32B32_SFLOAT;
+					vias1[1].location = 1;
+					vias1[1].format = Format_R32G32_SFLOAT;
+					VertexBufferInfo vibs[2];
+					vibs[0].attributes_count = size(vias1);
+					vibs[0].attributes = vias1;
+					vibs[0].stride = 8 * sizeof(float);
 					VertexInfo vi;
 					vi.buffers_count = 1;
-					vi.buffers = &vib;
+					vi.buffers = vibs;
 					RasterInfo rst;
 					DepthInfo dep;
 					depth_pipeline = PipelinePrivate::create(d, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+						&dep);
+
+					shaders[0] = new ShaderPrivate(d, L"depth.vert", "ARMATURE");
+					VertexAttributeInfo vias2[2];
+					vias2[0].location = 2;
+					vias2[0].format = Format_R32G32B32A32_INT;
+					vias2[1].location = 3;
+					vias2[1].format = Format_R32G32B32A32_SFLOAT;
+					vibs[1].attributes_count = size(vias2);
+					vibs[1].attributes = vias2;
+					vi.buffers_count = 2;
+					depth_armature_pipeline = PipelinePrivate::create(d, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
 				}
 
@@ -2148,16 +2162,15 @@ namespace flame
 											Vec4f(1.f, 0.f, 0.f, 0.f)
 										};
 										cb->begin_renderpass(directional_light_shadow_map_depth_framebuffers[li.shadow_map_index * 4 + i].get(), cvs);
-										cb->bind_pipeline(depth_pipeline);
 										cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
 										cb->bind_descriptor_set(material_descriptorset.get(), 1, depth_pipelinelayout);
 										struct
 										{
-											Mat4f matrix;
+											Mat4f proj_view;
 											float zNear;
 											float zFar;
 										}pc;
-										pc.matrix = li.shadow_matrices[i];
+										pc.proj_view = li.shadow_matrices[i];
 										pc.zNear = 0.f;
 										pc.zFar = 100.f;
 										cb->push_constant(0, sizeof(pc), &pc, depth_pipelinelayout);
@@ -2170,9 +2183,18 @@ namespace flame
 												{
 													if (std::get<2>(m))
 													{
-														cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer.buf.get(), 0);
-														cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
-														cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
+														auto mrm = std::get<1>(m);
+														cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
+														cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
+														if (std::get<3>(m))
+														{
+															cb->bind_pipeline(depth_armature_pipeline);
+															cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
+															cb->bind_descriptor_set(std::get<3>(m)->descriptorset.get(), 2, depth_pipelinelayout);
+														}
+														else
+															cb->bind_pipeline(depth_pipeline);
+														cb->draw_indexed(mrm->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
 													}
 												}
 											}
@@ -2215,7 +2237,6 @@ namespace flame
 											Vec4f(1.f, 0.f, 0.f, 0.f)
 										};
 										cb->begin_renderpass(point_light_shadow_map_depth_framebuffers[li.shadow_map_index * 6 + j].get(), cvs);
-										cb->bind_pipeline(depth_pipeline);
 										cb->bind_descriptor_set(mesh_descriptorset.get(), 0, depth_pipelinelayout);
 										cb->bind_descriptor_set(material_descriptorset.get(), 1, depth_pipelinelayout);
 										auto proj = make_perspective_project_matrix(90.f, 1.f, 1.f, li.distance);
@@ -2265,9 +2286,18 @@ namespace flame
 												{
 													if (std::get<2>(m))
 													{
-														cb->bind_vertex_buffer(std::get<1>(m)->vertex_buffer.buf.get(), 0);
-														cb->bind_index_buffer(std::get<1>(m)->index_buffer.buf.get(), IndiceTypeUint);
-														cb->draw_indexed(std::get<1>(m)->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + std::get<1>(m)->material_index);
+														auto mrm = std::get<1>(m);
+														cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
+														cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
+														if (std::get<3>(m))
+														{
+															cb->bind_pipeline(depth_armature_pipeline);
+															cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
+															cb->bind_descriptor_set(std::get<3>(m)->descriptorset.get(), 2, depth_pipelinelayout);
+														}
+														else
+															cb->bind_pipeline(depth_pipeline);
+														cb->draw_indexed(mrm->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
 													}
 												}
 											}

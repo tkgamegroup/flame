@@ -11,7 +11,7 @@ layout (location = 1) in vec2 i_uv;
 
 layout (push_constant) uniform PushConstantT
 {
-	mat4 matrix;
+	mat4 proj_view;
 	float zNear;
 	float zFar;
 }pc;
