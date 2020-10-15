@@ -26,19 +26,18 @@ namespace flame
 
 	void sPhysicsWorldPrivate::update()
 	{
+		auto delta_time = looper().get_delta_time();
+
 		for (auto c : controllers)
 		{
 			auto disp = c->disp;
 			disp.y() -= 9.8f;
-			c->move(disp);
-			//physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
-			//o->floatingTime += dist;
-
-			//if (o->pxController->move(disp, 0.f, dist, nullptr) & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)
-			//	o->floatingTime = 0.f;
+			// physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
+			// o->floatingTime += dist;
+			c->phy_controller->move(disp, delta_time);
 		}
 
-		phy_scene->update(looper().get_delta_time());
+		phy_scene->update(delta_time);
 
 		for (auto r : rigids)
 		{
@@ -64,9 +63,16 @@ namespace flame
 		}
 		for (auto c : controllers)
 		{
-			//			auto p = o->pxController->getPosition();
-			//			auto c = glm::vec3(p.x, p.y, p.z) - o->model->controller_position * o->get_scale();
-			//			o->set_coord(c);
+			auto coord = c->phy_controller->get_position();
+			auto pn = c->entity->get_parent_component_t<cNodePrivate>();
+			if (pn)
+			{
+				auto q_inv = pn->global_quat;
+				q_inv = Vec4f(-q_inv.x(), -q_inv.y(), -q_inv.z(), q_inv.w());
+				c->node->set_pos(quat_mul(q_inv, coord - pn->global_pos) / pn->global_scale);
+			}
+			else
+				c->node->set_pos(coord);
 		}
 	}
 

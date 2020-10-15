@@ -983,7 +983,7 @@ namespace flame
 					if (!c)
 					{
 						auto fc = udt->find_function("create");
-						if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
+						if (fc && fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
 						{
 							fc->call(nullptr, &c, {});
 							isnew = true;

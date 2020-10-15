@@ -19,6 +19,7 @@
       </entity>
       <entity src="@mod" >
         <cNode pos="0,200,0" />
+        <cController />
         <entity name="camera">
           <cNode pos="0,5,0" euler="0,0,0" />
           <cCamera />

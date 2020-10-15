@@ -20,7 +20,6 @@ namespace flame
 		physics::Controller* phy_controller = nullptr;
 
 		cNodePrivate* node = nullptr; // R ref
-		cMeshPrivate* mesh = nullptr; // R ref
 		sPhysicsWorldPrivate* physics_world = nullptr; // R ref
 
 		void move(const Vec3f& _disp) override { disp = _disp; }

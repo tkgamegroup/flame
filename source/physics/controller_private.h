@@ -8,12 +8,13 @@ namespace flame
 	namespace physics
 	{
 		struct ScenePrivate;
+		struct MaterialPrivate;
 
 		struct ControllerPrivate : Controller
 		{
 			PxController* px_controller;
 
-			ControllerPrivate(ScenePrivate* scene, float radius, float height);
+			ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height);
 			~ControllerPrivate();
 
 			void release() override { delete this; }

@@ -16,7 +16,7 @@
 namespace flame
 {
 	static physics::Material* material = nullptr;
-	physics::Material* get_material()
+	static physics::Material* get_material()
 	{
 		if (!material)
 			material = physics::Material::create(physics::Device::get(), 0.2f, 0.2f, 0.3f);
