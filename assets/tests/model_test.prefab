@@ -20,7 +20,7 @@
       <entity src="@mod" >
         <cNode pos="0,200,0" />
         <entity name="camera">
-          <cNode pos="0,5,0" euler="0,-90,0" />
+          <cNode pos="0,5,0" euler="0,0,0" />
           <cCamera />
           <cScript src="camera_third.lua" />
         </entity>

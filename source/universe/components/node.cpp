@@ -40,7 +40,14 @@ namespace flame
 		set_quat(quat_mul(quat_mul(qy, qp), qr));
 	}
 
-	Vec3f cNodePrivate::get_dir(uint idx)
+	Vec3f cNodePrivate::get_global_pos()
+	{
+		update_transform();
+
+		return global_pos;
+	}
+
+	Vec3f cNodePrivate::get_global_dir(uint idx)
 	{
 		update_transform();
 

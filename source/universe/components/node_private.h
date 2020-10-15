@@ -38,7 +38,8 @@ namespace flame
 
 		void set_euler(const Vec3f& e) override;
 
-		Vec3f get_dir(uint idx) override;
+		Vec3f get_global_pos() override;
+		Vec3f get_global_dir(uint idx) override;
 
 		void update_transform();
 

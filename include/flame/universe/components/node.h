@@ -24,7 +24,8 @@ namespace flame
 		// yaw, pitch, roll, in angle
 		virtual void set_euler(const Vec3f& e) = 0;
 
-		virtual Vec3f get_dir(uint idx) = 0;
+		virtual Vec3f get_global_pos() = 0;
+		virtual Vec3f get_global_dir(uint idx) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cNode* create();
 	};

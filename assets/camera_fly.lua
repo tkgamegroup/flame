@@ -6,7 +6,7 @@ camera = {
 	node = node,
 	pos = node:get_pos(),
 	yaw = 0,
-	pitch = -90,
+	pitch = 0,
 	dir1 = { x=0, y=0, z=1 },
 	dir2 = { x=1, y=0, z=0 },
 	dragging = false,
@@ -29,8 +29,8 @@ end
 
 function camera:update_dir()
 	self.node:set_euler({ x=self.yaw, y=self.pitch, z=0 })
-	self.dir1 = self.node:get_dir(2)
-	self.dir2 = self.node:get_dir(0)
+	self.dir1 = self.node:get_global_dir(2)
+	self.dir2 = self.node:get_global_dir(0)
 end
 
 local root_event_receiver = root:get_component_n("cEventReceiver")

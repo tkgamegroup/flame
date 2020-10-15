@@ -19,8 +19,6 @@ namespace flame
 		physics::Rigid* phy_rigid = nullptr;
 		std::vector<physics::Shape*> phy_shapes;
 		Vec3f staging_impulse = Vec3f(0.f);
-		Vec3f curr_coord = Vec3f(0.f);
-		Vec4f curr_quat = Vec4f(0.f, 0.f, 0.f, 1.f);
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, cShape*, cShape*)>>> trigger_listeners;
 
@@ -44,12 +42,7 @@ namespace flame
 
 		void on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape) override;
 
-		void on_gain_node();
-		void on_lost_node();
 		void on_gain_physics_world();
 		void on_lost_physics_world();
-
-		void set_pose();
-		void get_pose();
 	};
 }
