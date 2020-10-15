@@ -348,6 +348,11 @@ namespace flame
 			{
 				for (auto& l : er->mouse_scroll_listeners)
 					l->call(mscrl);
+				script::Parameter p;
+				p.type = script::ScriptTypeInt;
+				p.data.i[0] = mscrl;
+				for (auto s : er->mouse_scroll_listeners_s)
+					script::Instance::get()->call_slot(s, 1, &p);
 			}
 			if (mbtns[Mouse_Left].second)
 			{

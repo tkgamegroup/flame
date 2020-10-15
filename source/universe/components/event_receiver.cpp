@@ -12,13 +12,15 @@ namespace flame
 			script::Instance::get()->release_slot(s);
 		for (auto s : key_up_listeners_s)
 			script::Instance::get()->release_slot(s);
-		for (auto s : mouse_click_listeners_s)
-			script::Instance::get()->release_slot(s);
 		for (auto s : mouse_left_down_listeners_s)
 			script::Instance::get()->release_slot(s);
 		for (auto s : mouse_left_up_listeners_s)
 			script::Instance::get()->release_slot(s);
 		for (auto s : mouse_move_listeners_s)
+			script::Instance::get()->release_slot(s);
+		for (auto s : mouse_scroll_listeners_s)
+			script::Instance::get()->release_slot(s);
+		for (auto s : mouse_click_listeners_s)
 			script::Instance::get()->release_slot(s);
 	}
 
@@ -243,23 +245,6 @@ namespace flame
 		}
 	}
 
-	void cEventReceiverPrivate::add_mouse_click_listener_s(uint slot)
-	{
-		mouse_click_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_mouse_click_listener_s(uint slot)
-	{
-		for (auto it = mouse_click_listeners_s.begin(); it != mouse_click_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				mouse_click_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
-			}
-		}
-	}
-
 	void cEventReceiverPrivate::add_mouse_left_down_listener_s(uint slot)
 	{
 		mouse_left_down_listeners_s.push_back(slot);
@@ -306,6 +291,40 @@ namespace flame
 			if (*it == slot)
 			{
 				mouse_move_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cEventReceiverPrivate::add_mouse_scroll_listener_s(uint slot)
+	{
+		mouse_scroll_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_mouse_scroll_listener_s(uint slot)
+	{
+		for (auto it = mouse_scroll_listeners_s.begin(); it != mouse_scroll_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				mouse_scroll_listeners_s.erase(it);
+				script::Instance::get()->release_slot(slot);
+			}
+		}
+	}
+
+	void cEventReceiverPrivate::add_mouse_click_listener_s(uint slot)
+	{
+		mouse_click_listeners_s.push_back(slot);
+	}
+
+	void cEventReceiverPrivate::remove_mouse_click_listener_s(uint slot)
+	{
+		for (auto it = mouse_click_listeners_s.begin(); it != mouse_click_listeners_s.end(); it++)
+		{
+			if (*it == slot)
+			{
+				mouse_click_listeners_s.erase(it);
 				script::Instance::get()->release_slot(slot);
 			}
 		}

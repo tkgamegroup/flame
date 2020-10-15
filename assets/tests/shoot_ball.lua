@@ -9,7 +9,7 @@ er:add_key_down_listener_s(get_slot(
 			
 			local node = e:get_component_n("cNode")
 			make_obj(node, "cNode")
-			node:set_pos(camera.pos)
+			node:set_pos(camera.pos.node:get_global_pos())
 			
 			local rigid = e:get_component_n("cRigid")
 			make_obj(rigid, "cRigid")
