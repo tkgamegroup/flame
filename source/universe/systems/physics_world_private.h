@@ -9,6 +9,7 @@ namespace flame
 		struct Scene;
 	}
 	
+	struct cCustomDrawingPrivate;
 	struct cRigidPrivate;
 	struct cControllerPrivate;
 
@@ -16,8 +17,11 @@ namespace flame
 	{
 		std::vector<cRigidPrivate*> rigids;
 		std::vector<cControllerPrivate*> controllers;
+		cCustomDrawingPrivate* visualization_layer = nullptr;
 
 		physics::Scene* phy_scene = nullptr;
+
+		void set_visualization(bool v) override;
 
 		void on_added() override;
 		void update() override;

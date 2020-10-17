@@ -120,35 +120,38 @@ namespace flame
 		static PipelineLayoutPrivate* forward_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* terrain_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* depth_pipelinelayout = nullptr;
+		static PipelineLayoutPrivate* line_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc0_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc4_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc8_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* image1_pc0_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* image2_pc0_pipelinelayout = nullptr;
-		static PipelinePrivate* element8_pipeline = nullptr;
-		static PipelinePrivate* element16_pipeline = nullptr;
-		static PipelinePrivate* forward8_pipeline = nullptr;
-		static PipelinePrivate* forward16_pipeline = nullptr;
-		static PipelinePrivate* forward8_msaa_pipeline = nullptr;
-		static PipelinePrivate* forward16_msaa_pipeline = nullptr;
-		static PipelinePrivate* forward8_armature_pipeline = nullptr;
-		static PipelinePrivate* forward16_armature_pipeline = nullptr;
-		static PipelinePrivate* forward8_msaa_armature_pipeline = nullptr;
-		static PipelinePrivate* forward16_msaa_armature_pipeline = nullptr;
-		static PipelinePrivate* terrain8_pipeline = nullptr;
-		static PipelinePrivate* terrain16_pipeline = nullptr;
-		static PipelinePrivate* terrain8_msaa_pipeline = nullptr;
-		static PipelinePrivate* terrain16_msaa_pipeline = nullptr;
+		static PipelinePrivate* element_8_pipeline = nullptr;
+		static PipelinePrivate* element_16_pipeline = nullptr;
+		static PipelinePrivate* forward_8_pipeline = nullptr;
+		static PipelinePrivate* forward_16_pipeline = nullptr;
+		static PipelinePrivate* forward_8_msaa_pipeline = nullptr;
+		static PipelinePrivate* forward_16_msaa_pipeline = nullptr;
+		static PipelinePrivate* forward_8_armature_pipeline = nullptr;
+		static PipelinePrivate* forward_16_armature_pipeline = nullptr;
+		static PipelinePrivate* forward_8_msaa_armature_pipeline = nullptr;
+		static PipelinePrivate* forward_16_msaa_armature_pipeline = nullptr;
+		static PipelinePrivate* terrain_8_pipeline = nullptr;
+		static PipelinePrivate* terrain_16_pipeline = nullptr;
+		static PipelinePrivate* terrain_8_msaa_pipeline = nullptr;
+		static PipelinePrivate* terrain_16_msaa_pipeline = nullptr;
 		static PipelinePrivate* depth_pipeline = nullptr;
 		static PipelinePrivate* depth_armature_pipeline = nullptr;
-		static PipelinePrivate* blurh8_pipeline[10] = {};
-		static PipelinePrivate* blurh16_pipeline[10] = {};
-		static PipelinePrivate* blurv8_pipeline[10] = {};
-		static PipelinePrivate* blurv16_pipeline[10] = {};
+		static PipelinePrivate* line3_8_pipeline = nullptr;
+		static PipelinePrivate* line3_16_pipeline = nullptr;
+		static PipelinePrivate* blurh_8_pipeline[10] = {};
+		static PipelinePrivate* blurh_16_pipeline[10] = {};
+		static PipelinePrivate* blurv_8_pipeline[10] = {};
+		static PipelinePrivate* blurv_16_pipeline[10] = {};
 		static PipelinePrivate* blurh_depth_pipeline = nullptr;
 		static PipelinePrivate* blurv_depth_pipeline = nullptr;
-		static PipelinePrivate* blit8_pipeline = nullptr;
-		static PipelinePrivate* blit16_pipeline = nullptr;
+		static PipelinePrivate* blit_8_pipeline = nullptr;
+		static PipelinePrivate* blit_16_pipeline = nullptr;
 		static PipelinePrivate* filter_bright_pipeline = nullptr;
 		static PipelinePrivate* downsample_pipeline = nullptr;
 		static PipelinePrivate* upsample_pipeline = nullptr;
@@ -176,8 +179,8 @@ namespace flame
 			return new ArmatureDeformerPrivate((DevicePrivate*)device, (MeshPrivate*)mesh);
 		}
 
-		CanvasPrivate::CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d) :
-			device(d),
+		CanvasPrivate::CanvasPrivate(DevicePrivate* device, bool hdr, bool msaa_3d) :
+			device(device),
 			hdr(hdr),
 			msaa_3d(msaa_3d)
 		{
@@ -200,11 +203,11 @@ namespace flame
 					};
 					sp.color_attachments_count = 1;
 					sp.color_attachments = col_refs;
-					image1_8_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp, 1 });
+					image1_8_renderpass = new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 });
 					att.format = Format_R16G16B16A16_SFLOAT;
-					image1_16_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp, 1 });
+					image1_16_renderpass = new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 });
 					att.format = Format_R16_SFLOAT;
-					image1_r16_renderpass = new RenderpassPrivate(d, { &att, 1 }, { &sp, 1 });
+					image1_r16_renderpass = new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 });
 				}
 
 				{
@@ -223,9 +226,9 @@ namespace flame
 					sp.color_attachments_count = 1;
 					sp.color_attachments = col_refs;
 					sp.depth_attachment = 1;
-					forward8_renderpass = new RenderpassPrivate(d, atts, { &sp, 1 });
+					forward8_renderpass = new RenderpassPrivate(device, atts, { &sp, 1 });
 					atts[0].format = Format_R16G16B16A16_SFLOAT;
-					forward16_renderpass = new RenderpassPrivate(d, atts, { &sp, 1 });
+					forward16_renderpass = new RenderpassPrivate(device, atts, { &sp, 1 });
 
 					{
 						RenderpassAttachmentInfo atts[3];
@@ -248,10 +251,10 @@ namespace flame
 
 						atts[0].format = Swapchain::get_format();
 						atts[2].format = Swapchain::get_format();
-						forward8_msaa_renderpass = new RenderpassPrivate(d, atts, { &sp,1 });
+						forward8_msaa_renderpass = new RenderpassPrivate(device, atts, { &sp,1 });
 						atts[0].format = Format_R16G16B16A16_SFLOAT;
 						atts[2].format = Format_R16G16B16A16_SFLOAT;
-						forward16_msaa_renderpass = new RenderpassPrivate(d, atts, { &sp,1 });
+						forward16_msaa_renderpass = new RenderpassPrivate(device, atts, { &sp,1 });
 					}
 				}
 
@@ -271,26 +274,26 @@ namespace flame
 					sp.color_attachments_count = 1;
 					sp.color_attachments = col_refs;
 					sp.depth_attachment = 1;
-					depth_renderpass = new RenderpassPrivate(d, atts, { &sp,1 });
+					depth_renderpass = new RenderpassPrivate(device, atts, { &sp,1 });
 				}
 
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorSampledImage;
 					db.count = 64;
-					element_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					element_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, { &db, 1 });
 				}
 
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorStorageBuffer;
-					mesh_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					mesh_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, { &db, 1 });
 				}
 
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorStorageBuffer;
-					armature_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					armature_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, { &db, 1 });
 				}
 
 				{
@@ -298,7 +301,7 @@ namespace flame
 					dbs[0].type = DescriptorStorageBuffer;
 					dbs[1].type = DescriptorSampledImage;
 					dbs[1].count = 128;
-					material_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
+					material_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, dbs);
 				}
 
 				{
@@ -310,29 +313,29 @@ namespace flame
 					dbs[3].count = 4;
 					dbs[4].type = DescriptorSampledImage;
 					dbs[4].count = 4;
-					light_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, dbs);
+					light_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, dbs);
 				}
 
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorUniformBuffer;
-					render_data_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					render_data_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, { &db, 1 });
 				}
 
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorStorageBuffer;
-					terrain_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					terrain_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, { &db, 1 });
 				}
 
 				{
 					DescriptorBindingInfo db;
 					db.type = DescriptorSampledImage;
 					db.count = 1;
-					sampler1_descriptorsetlayout = new DescriptorSetLayoutPrivate(d, { &db, 1 });
+					sampler1_descriptorsetlayout = new DescriptorSetLayoutPrivate(device, { &db, 1 });
 				}
 
-				element_pipelinelayout = new PipelineLayoutPrivate(d, { &element_descriptorsetlayout, 1 }, sizeof(Vec4f));
+				element_pipelinelayout = new PipelineLayoutPrivate(device, { &element_descriptorsetlayout, 1 }, sizeof(Vec4f));
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
 						render_data_descriptorsetlayout,
@@ -341,7 +344,7 @@ namespace flame
 						light_descriptorsetlayout,
 						armature_descriptorsetlayout
 					};
-					forward_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
+					forward_pipelinelayout = new PipelineLayoutPrivate(device, dsls, 0);
 				}
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
@@ -350,7 +353,7 @@ namespace flame
 						light_descriptorsetlayout,
 						terrain_descriptorsetlayout
 					};
-					terrain_pipelinelayout = new PipelineLayoutPrivate(d, dsls, 0);
+					terrain_pipelinelayout = new PipelineLayoutPrivate(device, dsls, 0);
 				}
 				{
 					DescriptorSetLayoutPrivate* dsls[] = {
@@ -358,13 +361,18 @@ namespace flame
 						material_descriptorsetlayout,
 						armature_descriptorsetlayout
 					};
-					depth_pipelinelayout = new PipelineLayoutPrivate(d, dsls, sizeof(Mat4f) * 2);
+					depth_pipelinelayout = new PipelineLayoutPrivate(device, dsls, sizeof(Mat4f) * 2);
 				}
-				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, 0);
-				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
-				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(d, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
+				line_pipelinelayout = new PipelineLayoutPrivate(device, {}, sizeof(Mat4f));
+				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(device, { &sampler1_descriptorsetlayout, 1 }, 0);
+				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(device, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
+				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(device, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
 
 				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(device, L"element.vert"),
+						new ShaderPrivate(device, L"element.frag")
+					};
 					VertexAttributeInfo vias[3];
 					vias[0].location = 0;
 					vias[0].format = Format_R32G32_SFLOAT;
@@ -378,26 +386,22 @@ namespace flame
 					VertexInfo vi;
 					vi.buffers_count = 1;
 					vi.buffers = &vib;
-					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(d, L"element.vert"),
-						new ShaderPrivate(d, L"element.frag")
-					};
 					BlendOption bo;
 					bo.enable = true;
 					bo.src_color = BlendFactorSrcAlpha;
 					bo.dst_color = BlendFactorOneMinusSrcAlpha;
 					bo.src_alpha = BlendFactorOne;
 					bo.dst_alpha = BlendFactorZero;
-					element8_pipeline = PipelinePrivate::create(d, shaders, element_pipelinelayout, image1_8_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					element_8_pipeline = PipelinePrivate::create(device, shaders, element_pipelinelayout, image1_8_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
 						nullptr, { &bo, 1 });
-					element16_pipeline = PipelinePrivate::create(d, shaders, element_pipelinelayout, image1_16_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
+					element_16_pipeline = PipelinePrivate::create(device, shaders, element_pipelinelayout, image1_16_renderpass, 0, &vi, Vec2u(0), nullptr, SampleCount_1,
 						nullptr, { &bo, 1 });
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(d, L"forward.vert"),
-						new ShaderPrivate(d, L"forward.frag")
+						new ShaderPrivate(device, L"forward.vert"),
+						new ShaderPrivate(device, L"forward.frag")
 					};
 					VertexAttributeInfo vias1[3];
 					vias1[0].location = 0;
@@ -418,16 +422,16 @@ namespace flame
 					vi.buffers = vibs;
 					RasterInfo rst;
 					DepthInfo dep;
-					forward8_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					forward_8_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					forward16_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					forward_16_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					forward8_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+					forward_8_msaa_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
-					forward16_msaa_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+					forward_16_msaa_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
 
-					shaders[0] = new ShaderPrivate(d, L"forward.vert", "ARMATURE");
+					shaders[0] = new ShaderPrivate(device, L"forward.vert", "ARMATURE");
 					VertexAttributeInfo vias2[2];
 					vias2[0].location = 5;
 					vias2[0].format = Format_R32G32B32A32_INT;
@@ -436,43 +440,43 @@ namespace flame
 					vibs[1].attributes_count = size(vias2);
 					vibs[1].attributes = vias2;
 					vi.buffers_count = 2;
-					forward8_armature_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					forward_8_armature_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					forward16_armature_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					forward_16_armature_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					forward8_msaa_armature_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+					forward_8_msaa_armature_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
-					forward16_msaa_armature_pipeline = PipelinePrivate::create(d, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+					forward_16_msaa_armature_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(d, L"terrain.vert"),
-						new ShaderPrivate(d, L"terrain.tesc"),
-						new ShaderPrivate(d, L"terrain.tese"),
-						new ShaderPrivate(d, L"terrain.frag")
+						new ShaderPrivate(device, L"terrain.vert"),
+						new ShaderPrivate(device, L"terrain.tesc"),
+						new ShaderPrivate(device, L"terrain.tese"),
+						new ShaderPrivate(device, L"terrain.frag")
 					};
 					VertexInfo vi;
 					vi.primitive_topology = PrimitiveTopologyPatchList;
 					vi.patch_control_points = 4;
 					RasterInfo rst;
-					//rst.polygon_mode = PolygonModeLine;
+					rst.polygon_mode = PolygonModeLine;
 					DepthInfo dep;
-					terrain8_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					terrain_8_pipeline = PipelinePrivate::create(device, shaders, terrain_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					terrain16_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					terrain_16_pipeline = PipelinePrivate::create(device, shaders, terrain_pipelinelayout, forward16_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
-					terrain8_msaa_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+					terrain_8_msaa_pipeline = PipelinePrivate::create(device, shaders, terrain_pipelinelayout, forward8_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
-					terrain16_msaa_pipeline = PipelinePrivate::create(d, shaders, terrain_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
+					terrain_16_msaa_pipeline = PipelinePrivate::create(device, shaders, terrain_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(d, L"depth.vert"),
-						new ShaderPrivate(d, L"depth.frag")
+						new ShaderPrivate(device, L"depth.vert"),
+						new ShaderPrivate(device, L"depth.frag")
 					};
 					VertexAttributeInfo vias1[2];
 					vias1[0].location = 0;
@@ -488,10 +492,10 @@ namespace flame
 					vi.buffers = vibs;
 					RasterInfo rst;
 					DepthInfo dep;
-					depth_pipeline = PipelinePrivate::create(d, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					depth_pipeline = PipelinePrivate::create(device, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
 
-					shaders[0] = new ShaderPrivate(d, L"depth.vert", "ARMATURE");
+					shaders[0] = new ShaderPrivate(device, L"depth.vert", "ARMATURE");
 					VertexAttributeInfo vias2[2];
 					vias2[0].location = 2;
 					vias2[0].format = Format_R32G32B32A32_INT;
@@ -500,78 +504,99 @@ namespace flame
 					vibs[1].attributes_count = size(vias2);
 					vibs[1].attributes = vias2;
 					vi.buffers_count = 2;
-					depth_armature_pipeline = PipelinePrivate::create(d, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
+					depth_armature_pipeline = PipelinePrivate::create(device, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
 				}
 
-				auto fullscreen_shader = new ShaderPrivate(d, L"fullscreen.vert");
+				{
+					ShaderPrivate* shaders[] = {
+						new ShaderPrivate(device, L"line3.vert"),
+						new ShaderPrivate(device, L"line3.frag")
+					};
+					VertexAttributeInfo vias[2];
+					vias[0].location = 0;
+					vias[0].format = Format_R32G32B32_SFLOAT;
+					vias[1].location = 1;
+					vias[1].format = Format_R8G8B8A8_UNORM;
+					VertexBufferInfo vib;
+					vib.attributes_count = size(vias);
+					vib.attributes = vias;
+					VertexInfo vi;
+					vi.primitive_topology = PrimitiveTopologyLineList;
+					vi.buffers_count = 1;
+					vi.buffers = &vib;
+					line3_8_pipeline = PipelinePrivate::create(device, shaders, line_pipelinelayout, image1_8_renderpass, 0, &vi);
+					line3_16_pipeline = PipelinePrivate::create(device, shaders, line_pipelinelayout, image1_16_renderpass, 0, &vi);
+				}
+
+				auto fullscreen_shader = new ShaderPrivate(device, L"fullscreen.vert");
 
 				for (auto i = 0; i < 10; i++)
 				{
 					{
 						ShaderPrivate* shaders[] = {
 							fullscreen_shader,
-							new ShaderPrivate(d, L"blur.frag", "R" + std::to_string(i + 1) + " H\n")
+							new ShaderPrivate(device, L"blur.frag", "R" + std::to_string(i + 1) + " H\n")
 						};
-						blurh8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
-						blurh16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
+						blurh_8_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
+						blurh_16_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
 					}
 
 					{
 						ShaderPrivate* shaders[] = {
 							fullscreen_shader,
-							new ShaderPrivate(d, L"blur.frag", "R" + std::to_string(i + 1) + " V\n")
+							new ShaderPrivate(device, L"blur.frag", "R" + std::to_string(i + 1) + " V\n")
 						};
-						blurv8_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
-						blurv16_pipeline[i] = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
+						blurv_8_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
+						blurv_16_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
 					}
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"blur_depth.frag", "H\n")
+						new ShaderPrivate(device, L"blur_depth.frag", "H\n")
 					};
-					blurh_depth_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_r16_renderpass, 0);
+					blurh_depth_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_r16_renderpass, 0);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"blur_depth.frag", "V\n")
+						new ShaderPrivate(device, L"blur_depth.frag", "V\n")
 					};
-					blurv_depth_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc4_pipelinelayout, image1_r16_renderpass, 0);
+					blurv_depth_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_r16_renderpass, 0);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"blit.frag")
+						new ShaderPrivate(device, L"blit.frag")
 					};
-					blit8_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
-					blit16_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
+					blit_8_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
+					blit_16_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"filter_bright.frag")
+						new ShaderPrivate(device, L"filter_bright.frag")
 					};
-					filter_bright_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
+					filter_bright_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"box.frag")
+						new ShaderPrivate(device, L"box.frag")
 					};
-					downsample_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0);
+					downsample_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0);
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"box.frag")
+						new ShaderPrivate(device, L"box.frag")
 					};
 					BlendOption bo;
 					bo.enable = true;
@@ -579,24 +604,24 @@ namespace flame
 					bo.dst_color = BlendFactorOne;
 					bo.src_alpha = BlendFactorZero;
 					bo.dst_alpha = BlendFactorOne;
-					upsample_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0, nullptr, Vec2u(0), nullptr, SampleCount_1, 
+					upsample_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0, nullptr, Vec2u(0), nullptr, SampleCount_1, 
 						nullptr, { &bo, 1 });
 				}
 
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(d, L"gamma.frag")
+						new ShaderPrivate(device, L"gamma.frag")
 					};
-					gamma_pipeline = PipelinePrivate::create(d, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
+					gamma_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
 				}
 			}
 
 			ImmediateCommandBuffer cb(device);
-			auto sp_nr = d->sampler_nearest.get();
-			auto sp_ln = d->sampler_linear.get();
+			auto sp_nr = device->sampler_nearest.get();
+			auto sp_ln = device->sampler_linear.get();
 
-			white_image.reset(new ImagePrivate(d, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
+			white_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->clear_color_image(white_image.get(), Vec4c(255));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
@@ -612,23 +637,23 @@ namespace flame
 			material_resources.resize(128);
 			model_resources.resize(128);
 
-			element_vertex_buffer.create(d, 360000);
-			element_index_buffer.create(d, 240000);
-			element_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), element_descriptorsetlayout));
+			element_vertex_buffer.create(device, 360000);
+			element_index_buffer.create(device, 240000);
+			element_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), element_descriptorsetlayout));
 			for (auto i = 0; i < element_resources.size(); i++)
 				element_descriptorset->set_image(0, i, iv_wht, sp_ln);
 			
-			mesh_matrix_buffer.create(d, 10000);
-			mesh_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), mesh_descriptorsetlayout));
+			mesh_matrix_buffer.create(device, 10000);
+			mesh_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), mesh_descriptorsetlayout));
 			mesh_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
 
-			material_info_buffer.create(d, 128);
-			material_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), material_descriptorsetlayout));
+			material_info_buffer.create(device, 128);
+			material_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), material_descriptorsetlayout));
 			material_descriptorset->set_buffer(0, 0, material_info_buffer.buf.get());
 			for (auto i = 0; i < texture_resources.size(); i++)
 				material_descriptorset->set_image(1, i, iv_wht, sp_ln);
 
-			light_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), light_descriptorsetlayout));
+			light_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), light_descriptorsetlayout));
 			{
 				shadow_depth_image.reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageAttachment));
 				cb->image_barrier(shadow_depth_image.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
@@ -636,13 +661,13 @@ namespace flame
 				cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 				auto iv_pingpong = shadow_blur_pingpong_image->views[0].get();
 				shadow_blur_pingpong_image_framebuffer.reset(new FramebufferPrivate(device, image1_r16_renderpass, { &iv_pingpong, 1 }));
-				shadow_blur_pingpong_image_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), sampler1_descriptorsetlayout));
+				shadow_blur_pingpong_image_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 				shadow_blur_pingpong_image_descriptorset->set_image(0, 0, iv_pingpong, sp_nr);
 
-				light_indices_buffer.create(d, 1);
+				light_indices_buffer.create(device, 1);
 				light_descriptorset->set_buffer(0, 0, light_indices_buffer.buf.get());
 
-				directional_light_info_buffer.create(d, 1);
+				directional_light_info_buffer.create(device, 1);
 				light_descriptorset->set_buffer(1, 0, directional_light_info_buffer.buf.get());
 				directional_light_shadow_maps.resize(4);
 				directional_light_shadow_map_depth_framebuffers.resize(directional_light_shadow_maps.size() * 4);
@@ -661,14 +686,14 @@ namespace flame
 						};
 						directional_light_shadow_map_depth_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, depth_renderpass, vs));
 						directional_light_shadow_map_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, image1_r16_renderpass, { &iv, 1 }));
-						directional_light_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(d->descriptor_pool.get(), sampler1_descriptorsetlayout));
+						directional_light_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 						directional_light_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, sp_ln);
 					}
 					auto iv = new ImageViewPrivate(directional_light_shadow_maps[i].get(), true, ImageView2DArray, { 0U, 1U, (uint)0, 4U });
 					light_descriptorset->set_image(3, i, iv, shadow_sampler);
 				}
 
-				point_light_info_buffer.create(d, 10000);
+				point_light_info_buffer.create(device, 10000);
 				light_descriptorset->set_buffer(2, 0, point_light_info_buffer.buf.get());
 				point_light_shadow_maps.resize(4);
 				point_light_shadow_map_depth_framebuffers.resize(point_light_shadow_maps.size() * 6);
@@ -687,7 +712,7 @@ namespace flame
 						};
 						point_light_shadow_map_depth_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, depth_renderpass, vs));
 						point_light_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, image1_r16_renderpass, { &iv, 1 }));
-						point_light_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(d->descriptor_pool.get(), sampler1_descriptorsetlayout));
+						point_light_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
 						point_light_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, sp_ln);
 					}
 					auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageViewCube, { 0U, 1U, 0U, 6U });
@@ -695,21 +720,23 @@ namespace flame
 				}
 			}
 
-			render_data_buffer.create(d, 1);
-			render_data_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), render_data_descriptorsetlayout));
+			render_data_buffer.create(device, 1);
+			render_data_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), render_data_descriptorsetlayout));
 			render_data_descriptorset->set_buffer(0, 0, render_data_buffer.buf.get());
 
-			terrain_info_buffer.create(d, 1);
-			terrain_descriptorset.reset(new DescriptorSetPrivate(d->descriptor_pool.get(), terrain_descriptorsetlayout));
+			terrain_info_buffer.create(device, 1);
+			terrain_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), terrain_descriptorsetlayout));
 			terrain_descriptorset->set_buffer(0, 0, terrain_info_buffer.buf.get());
 
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("cube"), "cube");
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 
-			pl_element = hdr ? element16_pipeline : element8_pipeline;
-			pl_forward = msaa_3d ? (hdr ? forward16_msaa_pipeline : forward8_msaa_pipeline) : (hdr ? forward16_pipeline : forward8_pipeline);
-			pl_forward_armature = msaa_3d ? (hdr ? forward16_msaa_armature_pipeline : forward8_msaa_armature_pipeline) : (hdr ? forward16_armature_pipeline : forward8_armature_pipeline);
-			pl_terrain = msaa_3d ? (hdr ? terrain16_msaa_pipeline : terrain8_msaa_pipeline) : (hdr ? terrain16_pipeline : terrain8_pipeline);
+			line3_buffer.create(device, 200000);
+
+			pl_element = hdr ? element_16_pipeline : element_8_pipeline;
+			pl_forward = msaa_3d ? (hdr ? forward_16_msaa_pipeline : forward_8_msaa_pipeline) : (hdr ? forward_16_pipeline : forward_8_pipeline);
+			pl_forward_armature = msaa_3d ? (hdr ? forward_16_msaa_armature_pipeline : forward_8_msaa_armature_pipeline) : (hdr ? forward_16_armature_pipeline : forward_8_armature_pipeline);
+			pl_terrain = msaa_3d ? (hdr ? terrain_16_msaa_pipeline : terrain_8_msaa_pipeline) : (hdr ? terrain_16_pipeline : terrain_8_pipeline);
 		}
 
 		void CanvasPrivate::set_target(std::span<ImageViewPrivate*> views)
@@ -1376,8 +1403,8 @@ namespace flame
 			std::vector<Vec2f> normals(points.size());
 			for (auto i = 0; i < points.size() - 1; i++)
 			{
-				auto d = normalize(points[i + 1] - points[i]);
-				auto normal = Vec2f(d.y(), -d.x());
+				auto device = normalize(points[i + 1] - points[i]);
+				auto normal = Vec2f(device.y(), -device.x());
 
 				if (i > 0)
 				{
@@ -1766,15 +1793,15 @@ namespace flame
 			auto view = inverse(view_inv);
 			auto proj = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
 
-			render_data_buffer.end->fovy = fovy;
-			render_data_buffer.end->aspect = aspect;
-			render_data_buffer.end->zNear = zNear;
-			render_data_buffer.end->zFar = zFar;
-			render_data_buffer.end->camera_coord = coord;
-			render_data_buffer.end->view_inv = view_inv;
-			render_data_buffer.end->view = view;
-			render_data_buffer.end->proj = proj;
-			render_data_buffer.end->proj_view = proj * view;
+			render_data_buffer.beg->fovy = fovy;
+			render_data_buffer.beg->aspect = aspect;
+			render_data_buffer.beg->zNear = zNear;
+			render_data_buffer.beg->zFar = zFar;
+			render_data_buffer.beg->camera_coord = coord;
+			render_data_buffer.beg->view_inv = view_inv;
+			render_data_buffer.beg->view = view;
+			render_data_buffer.beg->proj = proj;
+			render_data_buffer.beg->proj_view = proj * view;
 
 			{
 				auto p = proj * Vec4f(100, 0, -100, 1);
@@ -1799,12 +1826,12 @@ namespace flame
 
 			Vec3f ps[8];
 			get_frustum_points(zNear, zFar, tan(fovy * 0.5f * ANG_RAD), aspect, view_inv, ps);
-			render_data_buffer.end->frustum_planes[0] = make_plane(ps[0], ps[1], ps[2]); // near
-			render_data_buffer.end->frustum_planes[1] = make_plane(ps[5], ps[4], ps[6]); // far
-			render_data_buffer.end->frustum_planes[2] = make_plane(ps[4], ps[0], ps[7]); // left
-			render_data_buffer.end->frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
-			render_data_buffer.end->frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
-			render_data_buffer.end->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
+			render_data_buffer.beg->frustum_planes[0] = make_plane(ps[0], ps[1], ps[2]); // near
+			render_data_buffer.beg->frustum_planes[1] = make_plane(ps[5], ps[4], ps[6]); // far
+			render_data_buffer.beg->frustum_planes[2] = make_plane(ps[4], ps[0], ps[7]); // left
+			render_data_buffer.beg->frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
+			render_data_buffer.beg->frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
+			render_data_buffer.beg->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer)
@@ -1857,12 +1884,12 @@ namespace flame
 				li.shadow_map_index = cast_shadow ? used_directional_light_shadow_maps_count++ : -1;
 				if (cast_shadow)
 				{
-					auto zFar = render_data_buffer.end->shadow_distance;
-					auto tan_hf_fovy = tan(render_data_buffer.end->fovy * 0.5f * ANG_RAD);
-					auto aspect = render_data_buffer.end->aspect;
-					auto view_inv = render_data_buffer.end->view_inv;
+					auto zFar = render_data_buffer.beg->shadow_distance;
+					auto tan_hf_fovy = tan(render_data_buffer.beg->fovy * 0.5f * ANG_RAD);
+					auto aspect = render_data_buffer.beg->aspect;
+					auto view_inv = render_data_buffer.beg->view_inv;
 
-					auto level = render_data_buffer.end->csm_levels;
+					auto level = render_data_buffer.beg->csm_levels;
 					for (auto j = 0; j < level; j++)
 					{
 						auto n = j / (float)level;
@@ -1914,6 +1941,19 @@ namespace flame
 			}
 		}
 
+		void CanvasPrivate::draw_lines(uint lines_count, const Line3* lines)
+		{
+			if (cmds.empty() || cmds.back()->type != Cmd::DrawLine3)
+			{
+				last_line3_cmd = new CmdDrawLine3;
+				cmds.emplace_back(last_line3_cmd);
+			}
+
+			line3_buffer.push(lines_count, lines);
+
+			last_line3_cmd->count = lines_count;
+		}
+
 		void CanvasPrivate::set_scissor(const Vec4f& _scissor)
 		{
 			auto scissor = Vec4f(
@@ -1962,6 +2002,8 @@ namespace flame
 			used_directional_light_shadow_maps_count = 0;
 			used_point_light_shadow_maps_count = 0;
 
+			line3_buffer.stg_rewind();
+
 			curr_scissor = Vec4f(Vec2f(0.f), Vec2f(target_size));
 
 			cmds.clear();
@@ -1976,6 +2018,7 @@ namespace flame
 				PassNone = -1,
 				Pass2D,
 				Pass3D,
+				PassLine3,
 				PassBlur,
 				PassBloom
 			};
@@ -2024,9 +2067,17 @@ namespace flame
 
 				}
 					break;
+				case Cmd::DrawLine3:
+				{
+					if (passes.empty() || (passes.back().type != PassLine3 && passes.back().type != PassNone))
+						passes.emplace_back();
+					passes.back().type = PassLine3;
+					passes.back().cmd_ids.push_back(i);
+				}
+					break;
 				case Cmd::SetScissor:
 				{
-					if (passes.empty() || (passes.back().type != Pass2D && passes.back().type != Pass3D && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != Pass2D && passes.back().type != Pass3D && passes.back().type != PassLine3 && passes.back().type != PassNone))
 						passes.emplace_back();
 					passes.back().cmd_ids.push_back(i);
 				}
@@ -2070,6 +2121,7 @@ namespace flame
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
 			auto first_mesh = true;
+			auto line3_off = 0;
 
 			for (auto& p : passes)
 			{
@@ -2080,8 +2132,8 @@ namespace flame
 					if (ele_idx_off == 0)
 					{
 						element_vertex_buffer.upload(cb);
-						element_index_buffer.upload(cb);
 						element_vertex_buffer.barrier(cb);
+						element_index_buffer.upload(cb);
 						element_index_buffer.barrier(cb);
 
 					}
@@ -2125,9 +2177,9 @@ namespace flame
 					{
 						first_mesh = false;
 
-						render_data_buffer.end->fb_size = target_size;
-						render_data_buffer.end->shadow_distance = 100.f;
-						render_data_buffer.end->csm_levels = 3;
+						render_data_buffer.beg->fb_size = target_size;
+						render_data_buffer.beg->shadow_distance = 100.f;
+						render_data_buffer.beg->csm_levels = 3;
 
 						mesh_matrix_buffer.upload(cb);
 						mesh_matrix_buffer.barrier(cb);
@@ -2154,7 +2206,7 @@ namespace flame
 								auto& li = directional_light_info_buffer.beg[i];
 								if (li.shadow_map_index != -1)
 								{
-									auto level = render_data_buffer.end->csm_levels;
+									auto level = render_data_buffer.beg->csm_levels;
 									for (auto i = 0; i < level; i++)
 									{
 										Vec4f cvs[] = {
@@ -2395,11 +2447,46 @@ namespace flame
 						cb->image_barrier(msaa_resolve_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 						cb->begin_renderpass(dst_framebuffer.get());
-						cb->bind_pipeline(hdr ? blit16_pipeline : blit8_pipeline);
+						cb->bind_pipeline(hdr ? blit_16_pipeline : blit_8_pipeline);
 						cb->bind_descriptor_set(msaa_descriptorset.get(), 0, sampler1_pc0_pipelinelayout);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
+				}
+					break;
+				case PassLine3:
+				{
+					if (line3_off == 0)
+					{
+						line3_buffer.upload(cb);
+						line3_buffer.barrier(cb);
+					}
+					cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
+					cb->begin_renderpass(dst_fb);
+					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);
+					cb->bind_pipeline(hdr ? line3_16_pipeline : line3_8_pipeline);
+					cb->push_constant(0, sizeof(Mat4f), &render_data_buffer.beg->proj_view, line_pipelinelayout);
+					for (auto& i : p.cmd_ids)
+					{
+						auto& cmd = cmds[i];
+						switch (cmd->type)
+						{
+						case Cmd::DrawLine3:
+						{
+							auto c = (CmdDrawLine3*)cmd.get();
+							cb->draw(c->count * 2, 1, line3_off, 0);
+							line3_off += c->count;
+						}
+							break;
+						case Cmd::SetScissor:
+						{
+							auto c = (CmdSetScissor*)cmd.get();
+							cb->set_scissor(c->scissor);
+						}
+							break;
+						}
+					}
+					cb->end_renderpass();
 				}
 					break;
 				case PassBlur:
@@ -2415,7 +2502,7 @@ namespace flame
 					cb->set_scissor(Vec4f(blur_range.x() - blur_radius, blur_range.y() - blur_radius,
 						blur_range.z() + blur_radius, blur_range.w() + blur_radius));
 					cb->begin_renderpass(back_framebuffers[0].get());
-					cb->bind_pipeline(hdr ? blurh16_pipeline[blur_radius - 1] : blurh8_pipeline[blur_radius - 1]);
+					cb->bind_pipeline(hdr ? blurh_16_pipeline[blur_radius - 1] : blurh_8_pipeline[blur_radius - 1]);
 					cb->bind_descriptor_set(dst_ds, 0, sampler1_pc4_pipelinelayout);
 					cb->push_constant_t(0, 1.f / target_size.x(), sampler1_pc4_pipelinelayout);
 					cb->draw(3, 1, 0, 0);
@@ -2424,7 +2511,7 @@ namespace flame
 					cb->image_barrier(back_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 					cb->set_scissor(blur_range);
 					cb->begin_renderpass(dst_fb);
-					cb->bind_pipeline(hdr ? blurv16_pipeline[blur_radius - 1] : blurv8_pipeline[blur_radius - 1]);
+					cb->bind_pipeline(hdr ? blurv_16_pipeline[blur_radius - 1] : blurv_8_pipeline[blur_radius - 1]);
 					cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0, sampler1_pc4_pipelinelayout);
 					cb->push_constant_t(0, 1.f / target_size.y(), sampler1_pc4_pipelinelayout);
 					cb->draw(3, 1, 0, 0);
@@ -2500,9 +2587,9 @@ namespace flame
 			cmds.clear();
 		}
 
-		Canvas* Canvas::create(Device* d, bool hdr, bool msaa_3d)
+		Canvas* Canvas::create(Device* device, bool hdr, bool msaa_3d)
 		{
-			return new CanvasPrivate((DevicePrivate*)d, hdr, msaa_3d);
+			return new CanvasPrivate((DevicePrivate*)device, hdr, msaa_3d);
 		}
 	}
 }

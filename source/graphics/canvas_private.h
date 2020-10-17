@@ -269,6 +269,7 @@ namespace flame
 				DrawElement,
 				DrawMesh,
 				DrawTerrain,
+				DrawLine3,
 				SetScissor,
 				Blur,
 				Bloom
@@ -278,14 +279,6 @@ namespace flame
 
 			Cmd(Type t) : type(t) {}
 			virtual ~Cmd() {}
-
-			union
-			{
-				struct
-				{
-					uint count;
-				}d3;
-			}v;
 		};
 
 		struct CmdDrawElement : Cmd
@@ -309,6 +302,13 @@ namespace flame
 			uint idx;
 
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
+		};
+
+		struct CmdDrawLine3 : Cmd
+		{
+			uint count;
+
+			CmdDrawLine3() : Cmd(DrawLine3) {}
 		};
 
 		struct CmdSetScissor : Cmd
@@ -418,9 +418,12 @@ namespace flame
 
 			std::vector<std::vector<Vec2f>> paths;
 
+			TBuffer<Line3, BufferUsageVertex> line3_buffer;
+
 			std::vector<std::unique_ptr<Cmd>> cmds;
 			CmdDrawElement* last_element_cmd = nullptr;
 			CmdDrawMesh* last_mesh_cmd = nullptr;
+			CmdDrawLine3* last_line3_cmd = nullptr;
 
 			Vec2u target_size;
 			Vec4f curr_scissor;
@@ -463,6 +466,8 @@ namespace flame
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels) override;
 			void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow) override;
+
+			void draw_lines(uint lines_count, const Line3* lines) override;
 
 			Vec4f get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Vec4f& scissor) override;

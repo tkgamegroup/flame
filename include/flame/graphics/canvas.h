@@ -16,6 +16,18 @@ namespace flame
 		struct Sampler;
 		struct CommandBuffer;
 
+		struct Point3
+		{
+			Vec3f position;
+			Vec4c color;
+		};
+
+		struct Line3
+		{
+			Point3 a;
+			Point3 b;
+		};
+
 		enum ResourceType
 		{
 			ResourceImage,
@@ -65,6 +77,8 @@ namespace flame
 			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer = nullptr) = 0;
 			virtual void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels = 32.f) = 0;
 			virtual void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow = false) = 0;
+
+			virtual void draw_lines(uint lines_count, const Line3* lines) = 0;
 
 			virtual Vec4f get_scissor() const = 0;
 			virtual void set_scissor(const Vec4f& scissor) = 0;

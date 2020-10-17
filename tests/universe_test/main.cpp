@@ -1,5 +1,6 @@
 #include <flame/graphics/model.h>
 #include <flame/universe/app.h>
+#include <flame/universe/components/custom_drawing.h>
 #include <flame/universe/components/camera.h>
 
 using namespace flame;
@@ -11,12 +12,12 @@ auto test_prefab = std::filesystem::path(L"tests/model_test");
 //auto model_path = std::filesystem::path(LR"(D:\island\Small_Tropical_Island\Small_Tropical_Island.fmod)");
 auto model_path = std::filesystem::path(LR"(D:\character\character.fmod)");
 
-Entity* root;
-
 int main(int argc, char** args)
 {
 	g_app.create();
+
 	auto w = new GraphicsWindow(&g_app, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, true);
+
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	if (!model_path.empty())
 	{
@@ -32,17 +33,20 @@ int main(int argc, char** args)
 		auto t = Image::create(graphics::Device::get(), L"D:/terrain/color.png", true);
 		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map");
 	}
-	root = w->root;
 
-	auto e = Entity::create();
-	e->load(test_prefab.c_str());
 	{
-		auto n = e->find_child("camera");
-		if (n)
-			w->s_renderer->set_camera(n->get_component_t<cCamera>());
+		auto e = Entity::create();
+		e->load(test_prefab.c_str());
+		{
+			auto n = e->find_child("camera");
+			if (n)
+				w->s_renderer->set_camera(n->get_component_t<cCamera>());
+		}
+		//e->save(L"d:/1.prefab");
+		w->root->add_child(e);
 	}
-	//e->save(L"d:/1.prefab");
-	root->add_child(e);
+
+	w->s_physic_world->set_visualization(true);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);

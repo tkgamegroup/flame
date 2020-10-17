@@ -52,6 +52,7 @@ namespace flame
 			px_scene = device->px_instance->createScene(desc);
 			px_callback.thiz = this;
 			px_scene->setSimulationEventCallback(&px_callback);
+			px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.f);
 
 			px_controller_manager = PxCreateControllerManager(*px_scene);
 #endif
@@ -82,6 +83,22 @@ namespace flame
 		void ScenePrivate::set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture)
 		{
 			trigger_callback.reset(new Closure(callback, capture));
+		}
+
+		void ScenePrivate::set_visualization(bool v)
+		{
+#ifdef USE_PHYSX
+			px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, v ? 1.f : 0.f);
+#endif
+		}
+
+		void ScenePrivate::get_visualization_data(uint* lines_count, graphics::Line3** lines)
+		{
+#ifdef USE_PHYSX
+			auto& rb = px_scene->getRenderBuffer();
+			*lines_count = rb.getNbLines();
+			*lines = (graphics::Line3*)rb.getLines();
+#endif
 		}
 
 		Scene* Scene::create(Device* device, float gravity, uint threads_count)

@@ -5,6 +5,7 @@
 #include <flame/script/script.h>
 #include "../world_private.h"
 #include "../components/node_private.h"
+#include "../components/custom_drawing_private.h"
 #include "../components/rigid_private.h"
 #include "../components/shape_private.h"
 #include "../components/controller_private.h"
@@ -13,6 +14,33 @@
 namespace flame
 {
 	using namespace physics;
+
+	void sPhysicsWorldPrivate::set_visualization(bool v)
+	{
+		if (!v)
+			visualization_layer = nullptr;
+		else
+		{
+			if (world && phy_scene)
+			{
+				visualization_layer = world->root->find_child("debug")->get_component_t<cCustomDrawingPrivate>();
+				if (visualization_layer)
+				{
+					phy_scene->set_visualization(true);
+					visualization_layer->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+						auto thiz = c.thiz<sPhysicsWorldPrivate>();
+						if (thiz->visualization_layer)
+						{
+							uint lines_count;
+							graphics::Line3* lines;
+							thiz->phy_scene->get_visualization_data(&lines_count, &lines);
+							canvas->draw_lines(lines_count, lines);
+						}
+					}, Capture().set_thiz(this));
+				}
+			}
+		}
+	}
 
 	void sPhysicsWorldPrivate::on_added()
 	{

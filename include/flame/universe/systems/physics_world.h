@@ -14,6 +14,8 @@ namespace flame
 		{
 		}
 
+		virtual void set_visualization(bool v) = 0;
+
 		FLAME_UNIVERSE_EXPORTS static sPhysicsWorld* create();
 	};
 }

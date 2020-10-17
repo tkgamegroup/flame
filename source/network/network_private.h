@@ -12,7 +12,7 @@ namespace flame
 
 			int fd;
 
-			void (*on_message)(Capture& c, const char* msg, uint size);
+			void (*on_message)(Capture& c, uint size, const char* msg);
 			void (*on_close)(Capture& c);
 			Capture capture;
 
@@ -23,7 +23,7 @@ namespace flame
 
 			void release() override { delete this; }
 
-			void send(void* data, uint size) override;
+			void send(uint size, void* data) override;
 			void stop(bool passive);
 		};
 
@@ -33,7 +33,7 @@ namespace flame
 			{
 				int fd;
 
-				void (*on_message)(Capture& c, const char* msg, uint size);
+				void (*on_message)(Capture& c, uint size, const char* msg);
 				void (*on_close)(Capture& c);
 				Capture capture;
 
@@ -52,7 +52,7 @@ namespace flame
 
 			std::vector<std::unique_ptr<Client>> cs;
 
-			void (*on_dgram)(Capture& c, void* id, const char* msg, uint size);
+			void (*on_dgram)(Capture& c, void* id, uint size, const char* msg);
 			void (*on_connect)(Capture& c, void* id);
 			Capture capture;
 
@@ -64,8 +64,8 @@ namespace flame
 
 			void release() override { delete this; }
 
-			void set_client(void* id, void on_message(Capture& c, const char* msg, uint size), void on_close(Capture& c), const Capture& capture) override;
-			void send(void* id, void* data, uint size, bool dgram) override;
+			void set_client(void* id, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture) override;
+			void send(void* id, uint size, void* data, bool dgram) override;
 			void stop();
 		};
 
@@ -86,7 +86,7 @@ namespace flame
 
 			void release() override { delete this; }
 
-			bool send(uint client_id, void* data, uint size) override;
+			bool send(uint client_id, uint size, void* data) override;
 			void stop();
 		};
 	}

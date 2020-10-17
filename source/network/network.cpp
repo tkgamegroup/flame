@@ -75,7 +75,7 @@ namespace flame
 				return true;
 		}
 
-		bool _send(SocketType type, int fd, void* data, uint size)
+		bool _send(SocketType type, int fd, uint size, void* data)
 		{
 			char buf[1024 * 64];
 
@@ -272,9 +272,9 @@ namespace flame
 			destroy_event(ev_ended);
 		}
 
-		void ClientPrivate::send(void* data, uint size)
+		void ClientPrivate::send(uint size, void* data)
 		{
-			_send(type, fd, data, size);
+			_send(type, fd, size, data);
 		}
 
 		void ClientPrivate::stop(bool passive)
@@ -289,7 +289,7 @@ namespace flame
 			}
 		}
 
-		Client* Client::create(SocketType type, const char* ip, uint port, void on_message(Capture& c, const char* msg, uint size), void on_close(Capture& c), const Capture& capture)
+		Client* Client::create(SocketType type, const char* ip, uint port, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture)
 		{
 			int res;
 
@@ -326,7 +326,7 @@ namespace flame
 					}
 					std::lock_guard lock(c->mtx);
 					for (auto& r : res)
-						c->on_message(c->capture, r.c_str(), r.size());
+						c->on_message(c->capture, r.size(), r.c_str());
 				}
 			}).detach();
 
@@ -386,7 +386,7 @@ namespace flame
 				c->stop(false);
 		}
 
-		void ServerPrivate::set_client(void* id, void on_message(Capture& c, const char* msg, uint size), void on_close(Capture& c), const Capture& capture)
+		void ServerPrivate::set_client(void* id, void on_message(Capture& c, uint size, const char* msg), void on_close(Capture& c), const Capture& capture)
 		{
 			auto client = (Client*)id;
 			client->on_message = on_message;
@@ -394,10 +394,10 @@ namespace flame
 			client->capture = capture;
 		}
 
-		void ServerPrivate::send(void* id, void* data, uint size, bool dgram)
+		void ServerPrivate::send(void* id, uint size, void* data, bool dgram)
 		{
 			if (!dgram)
-				_send(type, ((Client*)id)->fd, data, size);
+				_send(type, ((Client*)id)->fd, size, data);
 			else
 			{
 				auto& da = *(DgramAddress*)id;
@@ -405,7 +405,7 @@ namespace flame
 			}
 		}
 
-		Server* Server::create(SocketType type, uint port, void on_dgram(Capture& c, void* id, const char* msg, uint size), void on_connect(Capture& c, void* id), const Capture& capture)
+		Server* Server::create(SocketType type, uint port, void on_dgram(Capture& c, void* id, uint size, const char* msg), void on_connect(Capture& c, void* id), const Capture& capture)
 		{
 			int res;
 			sockaddr_in address;
@@ -461,7 +461,7 @@ namespace flame
 					DgramAddress da;
 					da.fd = s->fd_d;
 					da.paddr = (sockaddr*)&address;
-					s->on_dgram(s->capture, &da, buf, res);
+					s->on_dgram(s->capture, &da, res, buf);
 				}
 			}).detach();
 
@@ -501,7 +501,7 @@ namespace flame
 							}
 							std::lock_guard lock(c->mtx);
 							for (auto& r : res)
-								c->on_message(c->capture, r.c_str(), r.size());
+								c->on_message(c->capture, r.size(), r.c_str());
 						}
 					}).detach();
 				}
@@ -517,9 +517,9 @@ namespace flame
 			destroy_event(ev_ended);
 		}
 
-		bool FrameSyncServerPrivate::send(uint client_id, void* data, uint size)
+		bool FrameSyncServerPrivate::send(uint client_id, uint size, void* data)
 		{
-			return _send(type, fd_cs[client_id], data, size);
+			return _send(type, fd_cs[client_id], size, data);
 		}
 
 		void FrameSyncServerPrivate::stop()
@@ -573,7 +573,7 @@ namespace flame
 				auto str = json.dump();
 				for (auto fd : fd_cs)
 				{
-					if (!_send(type, fd, str.data(), str.size()))
+					if (!_send(type, fd, str.size(), str.data()))
 						return nullptr;
 				}
 			}
@@ -631,7 +631,7 @@ namespace flame
 										s->frame_data["action"] = "frame";
 										auto str = s->frame_data.dump();
 										for (auto i = 0; i < 2; i++)
-											s->send(i, str.data(), str.size());
+											s->send(i, str.size(), str.data());
 										s->frame_data.clear();
 									}
 								}
@@ -644,7 +644,7 @@ namespace flame
 			return s;
 		}
 
-		void board_cast(uint port, void* data, uint size, uint _timeout, void on_message(Capture& c, const char* ip, const char* msg, uint size), const Capture& capture)
+		void board_cast(uint port, uint size, void* data, uint _timeout, void on_message(Capture& c, const char* ip, uint size, const char* msg), const Capture& capture)
 		{
 			int res;
 
@@ -686,7 +686,7 @@ namespace flame
 						f_free(capture._data);
 						return;
 					}
-					on_message((Capture&)capture, inet_ntoa(address.sin_addr), buf, res);
+					on_message((Capture&)capture, inet_ntoa(address.sin_addr), res, buf);
 				}
 			}).detach();
 		}

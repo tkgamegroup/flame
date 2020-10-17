@@ -19,7 +19,7 @@
       </entity>
       <entity src="@mod" >
         <cNode pos="0,200,0" />
-        <cController radius="1.2" height="0.6" />
+        <cController radius="0.8" height="1.0" />
         <cScript src="character_controller.lua" />
         <entity name="camera">
           <cNode pos="0,5,0" euler="0,0,0" />
@@ -41,6 +41,9 @@
     <entity>
       <cElement />
       <cBloom />
+    </entity>
+    <entity name="debug">
+        <cCustomDrawing />
     </entity>
 	<cScript src="tests/shoot_ball.lua" />
   </entity>
