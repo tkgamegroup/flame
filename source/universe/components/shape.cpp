@@ -67,15 +67,10 @@ namespace flame
 			case physics::ShapeHeightField:
 				if (terrain && terrain->height_map_id != -1)
 				{
-					auto map_fn = std::filesystem::path(((graphics::ImageView*)terrain->canvas->
-						get_resource(graphics::ResourceTexture, terrain->height_map_id))->get_image()->get_filename());
-					map_fn.replace_filename(map_fn.stem().wstring() + L"_low" + map_fn.extension().wstring());
-
-					auto bmp = Bitmap::create(map_fn.c_str());
-					desc.height_field.height_map = bmp;
+					desc.height_field.height_map = ((graphics::ImageView*)terrain->canvas->get_resource(graphics::ResourceTexture, terrain->height_map_id))->get_image();
+					desc.height_field.tess = terrain->size * (uint)terrain->tess_levels;
 					desc.height_field.scale = node->global_scale * terrain->extent * Vec3f(terrain->size.x(), 1.f, terrain->size.y());
 					phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeHeightField, desc);
-					bmp->release();
 				}
 				break;
 			}

@@ -10,10 +10,9 @@
 
 namespace flame
 {
-	struct Bitmap;
-
 	namespace graphics
 	{
+		struct Image;
 		struct Mesh;
 	}
 
@@ -56,7 +55,8 @@ namespace flame
 			}triangle_mesh;
 			struct
 			{
-				Bitmap* height_map;
+				graphics::Image* height_map;
+				Vec2u tess;
 				Vec3f scale;
 			}height_field;
 		};

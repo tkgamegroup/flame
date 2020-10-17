@@ -26,7 +26,7 @@ int main(int argc, char** args)
 		Entity::register_prefab(model_path.c_str(), "mod");
 	}
 	{
-		auto t = Image::create(graphics::Device::get(), L"D:/terrain/height.png", false);
+		auto t = Image::create(graphics::Device::get(), L"D:/terrain/height.png", false, graphics::ImageUsageTransferSrc);
 		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "height_map");
 	}
 	{
@@ -46,7 +46,7 @@ int main(int argc, char** args)
 		w->root->add_child(e);
 	}
 
-	w->s_physic_world->set_visualization(true);
+	//w->s_physic_world->set_visualization(true);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);

@@ -143,7 +143,7 @@ namespace flame
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, bool srgb)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -207,7 +207,8 @@ namespace flame
 				if (srgb)
 					bmp->srgb_to_linear();
 
-				ret = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
+				ret = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, 
+					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
 				ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
@@ -229,7 +230,7 @@ namespace flame
 			return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, is_cube); 
 		}
 		Image* Image::create(Device* d, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)d, bmp); }
-		Image* Image::create(Device* d, const wchar_t* filename, bool srgb) { return ImagePrivate::create((DevicePrivate*)d, filename, srgb); }
+		Image* Image::create(Device* d, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage) { return ImagePrivate::create((DevicePrivate*)d, filename, srgb, additional_usage); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),

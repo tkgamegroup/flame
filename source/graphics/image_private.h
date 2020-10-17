@@ -45,7 +45,7 @@ namespace flame
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
 			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp);
-			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, bool srgb);
+			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
 		};
 
 		struct ImageViewPrivate : ImageView

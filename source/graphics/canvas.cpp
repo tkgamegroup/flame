@@ -461,7 +461,7 @@ namespace flame
 					vi.primitive_topology = PrimitiveTopologyPatchList;
 					vi.patch_control_points = 4;
 					RasterInfo rst;
-					rst.polygon_mode = PolygonModeLine;
+					//rst.polygon_mode = PolygonModeLine;
 					DepthInfo dep;
 					terrain_8_pipeline = PipelinePrivate::create(device, shaders, terrain_pipelinelayout, forward8_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);

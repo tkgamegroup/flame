@@ -70,7 +70,7 @@ namespace flame
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, bool srgb);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
 
 		};
 

@@ -1,5 +1,8 @@
-#include <flame/foundation/bitmap.h>
+#include <flame/graphics/device.h>
+#include <flame/graphics/buffer.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/model.h>
+#include <flame/graphics/command.h>
 #include "shape_private.h"
 #include "device_private.h"
 #include "material_private.h"
@@ -9,6 +12,7 @@ namespace flame
 	namespace physics
 	{
 		static std::vector<std::pair<ShapeDesc, PxTriangleMesh*>> staging_triangle_meshes;
+		static std::vector<std::pair<ShapeDesc, PxHeightField*>> staging_height_fields;
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
 		{
@@ -75,34 +79,113 @@ namespace flame
 				break;
 			case ShapeHeightField:
 			{
-				auto w = desc.height_field.height_map->get_width();
-				auto h = desc.height_field.height_map->get_height();
-				PxHeightFieldDesc height_field_desc;
-				height_field_desc.nbColumns = w;
-				height_field_desc.nbRows = h;
-				auto samples = new uint[w * h];
-				height_field_desc.samples.data = samples;
-				height_field_desc.samples.stride = sizeof(uint);
-				auto data = desc.height_field.height_map->get_data();
-				auto pitch = desc.height_field.height_map->get_pitch();
-				auto bpp = desc.height_field.height_map->get_byte_per_channel() * desc.height_field.height_map->get_channel();
-				auto sample = (PxHeightFieldSample*)samples;
-				for (auto x = 0; x < w; x++)
+				PxHeightField* height_field = nullptr;
+				for (auto& m : staging_height_fields)
 				{
-					for (auto y = 0; y < h; y++)
-					{
-						sample->height = data[y * pitch + x * bpp];
-						sample->materialIndex0 = 0;
-						sample->materialIndex1 = 0;
-						sample->clearTessFlag();
-						sample++;
-					}
+					if (m.first.height_field.height_map == desc.height_field.height_map &&
+						m.first.height_field.tess == desc.height_field.tess)
+						height_field = m.second;
 				}
-				auto height_field = device->px_cooking->createHeightField(height_field_desc, device->px_instance->getPhysicsInsertionCallback());
+				auto w = desc.height_field.tess.x();
+				auto h = desc.height_field.tess.y();
+				if (!height_field)
+				{
+					std::vector<uint> samples;
+					samples.resize((w + 1) * (h + 1));
+					{
+						auto dev = graphics::Device::get();
+						auto img = desc.height_field.height_map;
+						auto img_size = img->get_size();
+						auto buf = graphics::Buffer::create(dev, img_size.x() * img_size.y(), graphics::BufferUsageTransferDst, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent);
+						auto cb = graphics::CommandBuffer::create(dev->get_command_pool(graphics::QueueGraphics));
+						cb->begin(true);
+						cb->image_barrier(img, {}, graphics::ImageLayoutShaderReadOnly, graphics::ImageLayoutTransferSrc);
+						graphics::BufferImageCopy cpy;
+						cpy.image_extent = img_size;
+						cb->copy_image_to_buffer(img, buf, 1, &cpy);
+						cb->image_barrier(img, {}, graphics::ImageLayoutTransferSrc, graphics::ImageLayoutShaderReadOnly);
+						cb->end();
+						auto que = dev->get_queue(graphics::QueueGraphics);
+						que->submit(1, &cb, nullptr, nullptr, nullptr);
+						que->wait_idle();
+						buf->map();
+						auto src = (char*)buf->get_mapped();
+						auto dst = (PxHeightFieldSample*)samples.data();
+						auto sample = [&](int x, int y) {
+							if (x == -1)
+								x = img_size.x() - 1;
+							else if (x == img_size.x())
+								x = 0;
+							if (y == -1)
+								y = img_size.y() - 1;
+							else if (y == img_size.y())
+								y = 0;
+							return src[y * img_size.x() + x];
+						};
+						for (auto x = 0; x <= w; x++)
+						{
+							for (auto y = 0; y <= h; y++)
+							{
+								auto tc = Vec2f(x / (float)w, y / (float)h) * img_size;
+								auto itc = Vec2i(tc);
+								auto ftc = tc - itc;
+								int height;
+								if (ftc.x() > 0.5f && ftc.y() > 0.5f)
+								{
+									ftc.x() -= 0.5f;
+									ftc.y() -= 0.5f;
+									height =
+										(sample(itc.x(), itc.y()) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y()) * ftc.x()) * (1.f - ftc.y()) +
+										(sample(itc.x(), itc.y() + 1) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y() + 1) * ftc.x()) * ftc.y();
+								}
+								else if (ftc.x() > 0.5f && ftc.y() < 0.5f)
+								{
+									ftc.x() -= 0.5f;
+									ftc.y() += 0.5f;
+									height =
+										(sample(itc.x(), itc.y() - 1) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y() - 1) * ftc.x()) * (1.f - ftc.y()) +
+										(sample(itc.x(), itc.y()) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y()) * ftc.x()) * ftc.y();
+								}
+								else if (ftc.x() < 0.5f && ftc.y() > 0.5f)
+								{
+									ftc.x() += 0.5f;
+									ftc.y() -= 0.5f;
+									height =
+										(sample(itc.x() - 1, itc.y()) * (1.f - ftc.x()) + sample(itc.x(), itc.y()) * ftc.x()) * (1.f - ftc.y()) +
+										(sample(itc.x() - 1, itc.y() + 1) * (1.f - ftc.x()) + sample(itc.x(), itc.y() + 1) * ftc.x()) * ftc.y();
+								}
+								else
+								{
+									ftc.x() += 0.5f;
+									ftc.y() += 0.5f;
+									height =
+										(sample(itc.x() - 1, itc.y() - 1) * (1.f - ftc.x()) + sample(itc.x(), itc.y() - 1) * ftc.x()) * (1.f - ftc.y()) +
+										(sample(itc.x() - 1, itc.y()) * (1.f - ftc.x()) + sample(itc.x(), itc.y()) * ftc.x()) * ftc.y();
+								}
+								dst->height = height;
+
+								dst->materialIndex0 = 0;
+								dst->materialIndex1 = 0;
+								dst->clearTessFlag();
+								dst++;
+							}
+						}
+						cb->release();
+						buf->release();
+					}
+
+					PxHeightFieldDesc height_field_desc;
+					height_field_desc.nbColumns = w + 1;
+					height_field_desc.nbRows = h + 1;
+					height_field_desc.samples.data = samples.data();
+					height_field_desc.samples.stride = sizeof(uint);
+
+					height_field = device->px_cooking->createHeightField(height_field_desc, device->px_instance->getPhysicsInsertionCallback());
+					staging_height_fields.emplace_back(desc, height_field);
+				}
 
 				px_shape = device->px_instance->createShape(PxHeightFieldGeometry(height_field, PxMeshGeometryFlags(),
 					desc.height_field.scale.y() / 255.f, desc.height_field.scale.x() / w, desc.height_field.scale.z() / h), *m->px_material);
-				delete[]samples;
 			}
 				break;
 			default:
