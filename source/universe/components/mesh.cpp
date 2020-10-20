@@ -64,6 +64,7 @@ namespace flame
 	{
 		model_id = -1;
 		mesh_id = -1;
+		model = nullptr;
 		mesh = nullptr;
 		if (canvas && !src.empty())
 		{
@@ -71,7 +72,7 @@ namespace flame
 			if (sp.size() == 2)
 			{
 				model_id = canvas->find_resource(graphics::ResourceModel, sp[0].c_str());
-				auto model = (graphics::Model*)canvas->get_resource(graphics::ResourceModel, model_id);
+				model = (graphics::Model*)canvas->get_resource(graphics::ResourceModel, model_id);
 				mesh_id = model->find_mesh(sp[1].c_str());
 				mesh = model->get_mesh(mesh_id);
 				auto bones_count = mesh->get_bones_count();
@@ -116,9 +117,8 @@ namespace flame
 	void cMeshPrivate::apply_animation()
 	{
 		stop_animation();
-		if (canvas && model_id != -1 && deformer && !animation_name.empty())
+		if (canvas && model && deformer && !animation_name.empty())
 		{
-			auto model = (graphics::Model*)canvas->get_resource(graphics::ResourceModel, model_id);
 			auto animation_id = model->find_animation(animation_name.c_str());
 			if (animation_id != -1)
 			{
@@ -139,15 +139,17 @@ namespace flame
 					if (bid != -1)
 					{
 						auto& b = bones[bid];
-						animation_max_frame = min(ch->get_position_keys_count(), ch->get_rotation_keys_count());
+						auto pkc = ch->get_position_keys_count();
+						auto rkc = ch->get_rotation_keys_count();
+						animation_max_frame = max(pkc, rkc);
 						b.frames.resize(animation_max_frame);
 						auto pk = ch->get_position_keys();
 						auto rk = ch->get_rotation_keys();
 						for (auto j = 0; j < animation_max_frame; j++)
 						{
 							auto& f = b.frames[j];
-							f.p = pk[j].v;
-							f.q = rk[j].v;
+							f.p = j < pkc ? pk[j].v : Vec3f(0.f);
+							f.q = j < rkc ? rk[j].v : Vec4f(0.f, 0.f, 0.f, 1.f);
 						}
 					}
 				}

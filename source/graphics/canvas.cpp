@@ -188,7 +188,7 @@ namespace flame
 			{
 				initialized = true;
 
-				map_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, AddressRepeat);
+				map_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, AddressClampToEdge);
 				shadow_sampler = new SamplerPrivate(device, FilterLinear, FilterLinear, AddressClampToBorder);
 
 				{
@@ -1852,7 +1852,7 @@ namespace flame
 			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow, (ArmatureDeformerPrivate*)deformer);
 		}
 
-		void CanvasPrivate::draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels)
+		void CanvasPrivate::draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels)
 		{
 			auto cmd = new CmdDrawTerrain;
 			cmds.emplace_back(cmd);
@@ -1861,10 +1861,10 @@ namespace flame
 
 			TerrainInfoS ti;
 			ti.coord = coord;
-			ti.size = size;
+			ti.blocks = blocks;
 			ti.height_tex_id = height_tex_id;
 			ti.color_tex_id = color_tex_id;
-			ti.extent = extent;
+			ti.scale = scale;
 			ti.tess_levels = tess_levels;
 			terrain_info_buffer.push(ti);
 		}
@@ -2429,8 +2429,7 @@ namespace flame
 							cb->bind_descriptor_set(material_descriptorset.get(), 1, terrain_pipelinelayout);
 							cb->bind_descriptor_set(light_descriptorset.get(), 2, terrain_pipelinelayout);
 							cb->bind_descriptor_set(terrain_descriptorset.get(), 3, terrain_pipelinelayout);
-							auto size = terrain_info_buffer.beg[c->idx].size;
-							cb->draw(4, size.x() * size.y(), 0, c->idx << 16);
+							cb->draw(4, terrain_info_buffer.beg[c->idx].blocks.mul(), 0, c->idx << 16);
 						}
 							break;
 						case Cmd::SetScissor:

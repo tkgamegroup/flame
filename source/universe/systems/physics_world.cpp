@@ -59,7 +59,7 @@ namespace flame
 		for (auto c : controllers)
 		{
 			auto disp = c->disp;
-			disp.y() -= 9.8f;
+			disp.y() -= 1.f;
 			// physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
 			// o->floatingTime += dist;
 			c->phy_controller->move(disp, delta_time);

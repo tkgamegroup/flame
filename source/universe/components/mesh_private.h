@@ -6,6 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct Model;
 		struct Mesh;
 		struct ArmatureDeformer;
 		struct Canvas;
@@ -37,7 +38,7 @@ namespace flame
 
 		int model_id = -1;
 		int mesh_id = -1;
-
+		graphics::Model* model = nullptr;
 		graphics::Mesh* mesh = nullptr;
 		graphics::ArmatureDeformer* deformer = nullptr;
 		std::vector<Bone> bones;

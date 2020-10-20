@@ -8,9 +8,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/model_test");
-//auto model_path = std::filesystem::path(LR"(D:\island\Small_Tropical_Island\Small_Tropical_Island.fmod)");
-auto model_path = std::filesystem::path(LR"(D:\character\character.fmod)");
+auto test_prefab = std::filesystem::path(L"tests/scene_test");
 
 int main(int argc, char** args)
 {
@@ -19,11 +17,9 @@ int main(int argc, char** args)
 	auto w = new GraphicsWindow(&g_app, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, true);
 
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	if (!model_path.empty())
 	{
-		w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(model_path.c_str()), "mod");
-		model_path.replace_extension(L".prefab");
-		Entity::register_prefab(model_path.c_str(), "mod");
+		w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(LR"(D:\character\man.fmod)"), "man");
+		Entity::register_prefab(LR"(D:\character\man.prefab)", "main_character");
 	}
 	{
 		auto t = Image::create(graphics::Device::get(), L"D:/terrain/height.png", false, graphics::ImageUsageTransferSrc);

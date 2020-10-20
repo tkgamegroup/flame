@@ -68,8 +68,9 @@ namespace flame
 				if (terrain && terrain->height_map_id != -1)
 				{
 					desc.height_field.height_map = ((graphics::ImageView*)terrain->canvas->get_resource(graphics::ResourceTexture, terrain->height_map_id))->get_image();
-					desc.height_field.tess = terrain->size * (uint)terrain->tess_levels;
-					desc.height_field.scale = node->global_scale * terrain->extent * Vec3f(terrain->size.x(), 1.f, terrain->size.y());
+					desc.height_field.blocks = terrain->blocks;
+					desc.height_field.tess_levels = terrain->tess_levels;
+					desc.height_field.scale = node->global_scale * terrain->scale;
 					phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeHeightField, desc);
 				}
 				break;

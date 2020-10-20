@@ -23,9 +23,9 @@ namespace flame
 
 		std::string height_map_name;
 		std::string color_map_name;
-		Vec2u size = Vec2u(64);
-		Vec3f extent = Vec3f(100.f);
-		float tess_levels = 32.f;
+		Vec2u blocks = Vec2u(64);
+		Vec3f scale = Vec3f(100.f);
+		uint tess_levels = 32.f;
 
 		cNodePrivate* node = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
@@ -35,12 +35,12 @@ namespace flame
 		const char* get_color_map() const override { return color_map_name.c_str(); }
 		void set_color_map(const char* name) override;
 
-		Vec2u get_size() const override { return size; }
-		void set_size(const Vec2u& s) override;
-		Vec3f get_extent() const override { return extent; }
-		void set_extent(const Vec3f& e) override;
-		float get_tess_levels() const override { return tess_levels; }
-		void set_tess_levels(float l) override;
+		Vec2u get_blocks() const override { return blocks; }
+		void set_blocks(const Vec2u& b) override;
+		Vec3f get_scale() const override { return scale; }
+		void set_scale(const Vec3f& s) override;
+		uint get_tess_levels() const override { return tess_levels; }
+		void set_tess_levels(uint l) override;
 
 		void on_gain_canvas();
 

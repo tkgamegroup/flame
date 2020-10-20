@@ -11,6 +11,7 @@ namespace flame
 #ifdef USE_PHYSX
 			PxCapsuleControllerDesc desc;
 			desc.material = material->px_material;
+			desc.contactOffset = 0.01f;
 			desc.radius = radius;
 			desc.height = height;
 			px_controller = scene->px_controller_manager->createController(desc);
@@ -27,7 +28,7 @@ namespace flame
 		Vec3f ControllerPrivate::get_position() const
 		{
 #ifdef USE_PHYSX
-			auto p = px_controller->getPosition();
+			auto p = px_controller->getFootPosition();
 			return Vec3f(p.x, p.y, p.z);
 #else
 			return Vec3f(0.f);
@@ -37,7 +38,7 @@ namespace flame
 		void ControllerPrivate::set_position(const Vec3f& pos)
 		{
 #ifdef USE_PHYSX
-			px_controller->setPosition(physx::PxExtendedVec3(pos.x(), pos.y(), pos.z()));
+			px_controller->setFootPosition(physx::PxExtendedVec3(pos.x(), pos.y(), pos.z()));
 #endif
 		}
 

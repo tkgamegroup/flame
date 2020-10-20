@@ -13,6 +13,7 @@ namespace flame
 	{
 		static std::vector<std::pair<ShapeDesc, PxTriangleMesh*>> staging_triangle_meshes;
 		static std::vector<std::pair<ShapeDesc, PxHeightField*>> staging_height_fields;
+		const auto height_field_precision = 30000.f;
 
 		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
 		{
@@ -83,11 +84,14 @@ namespace flame
 				for (auto& m : staging_height_fields)
 				{
 					if (m.first.height_field.height_map == desc.height_field.height_map &&
-						m.first.height_field.tess == desc.height_field.tess)
+						m.first.height_field.blocks == desc.height_field.blocks &&
+						m.first.height_field.tess_levels == desc.height_field.tess_levels)
 						height_field = m.second;
 				}
-				auto w = desc.height_field.tess.x();
-				auto h = desc.height_field.tess.y();
+				auto blocks = desc.height_field.blocks;
+				auto lv = desc.height_field.tess_levels;
+				auto w = blocks.x() * lv;
+				auto h = blocks.y() * lv;
 				if (!height_field)
 				{
 					std::vector<uint> samples;
@@ -109,19 +113,24 @@ namespace flame
 						que->submit(1, &cb, nullptr, nullptr, nullptr);
 						que->wait_idle();
 						buf->map();
-						auto src = (char*)buf->get_mapped();
+						auto src = (uchar*)buf->get_mapped();
 						auto dst = (PxHeightFieldSample*)samples.data();
 						auto sample = [&](int x, int y) {
-							if (x == -1)
-								x = img_size.x() - 1;
-							else if (x == img_size.x())
+							if (x < 0)
+								//x = img_size.x() - 1;
 								x = 0;
-							if (y == -1)
-								y = img_size.y() - 1;
-							else if (y == img_size.y())
+							else if (x >= img_size.x())
+								//x = 0;
+								x = img_size.x() - 1;
+							if (y < 0)
+								//y = img_size.y() - 1;
 								y = 0;
-							return src[y * img_size.x() + x];
+							else if (y >= img_size.y())
+								//y = 0;
+								y = img_size.y() - 1;
+							return src[y * img_size.x() + x] / 255.f;
 						};
+						auto lvhf = lv >> 1;
 						for (auto x = 0; x <= w; x++)
 						{
 							for (auto y = 0; y <= h; y++)
@@ -129,7 +138,7 @@ namespace flame
 								auto tc = Vec2f(x / (float)w, y / (float)h) * img_size;
 								auto itc = Vec2i(tc);
 								auto ftc = tc - itc;
-								int height;
+								float height;
 								if (ftc.x() > 0.5f && ftc.y() > 0.5f)
 								{
 									ftc.x() -= 0.5f;
@@ -162,11 +171,16 @@ namespace flame
 										(sample(itc.x() - 1, itc.y() - 1) * (1.f - ftc.x()) + sample(itc.x(), itc.y() - 1) * ftc.x()) * (1.f - ftc.y()) +
 										(sample(itc.x() - 1, itc.y()) * (1.f - ftc.x()) + sample(itc.x(), itc.y()) * ftc.x()) * ftc.y();
 								}
-								dst->height = height;
+								dst->height = height * height_field_precision;
 
 								dst->materialIndex0 = 0;
 								dst->materialIndex1 = 0;
-								dst->clearTessFlag();
+								auto s1 = x % lv < lvhf ? 1 : -1;
+								auto s2 = y % lv < lvhf ? 1 : -1;
+								if (s1 * s2 > 0)
+									dst->setTessFlag();
+								else
+									dst->clearTessFlag();
 								dst++;
 							}
 						}
@@ -185,7 +199,7 @@ namespace flame
 				}
 
 				px_shape = device->px_instance->createShape(PxHeightFieldGeometry(height_field, PxMeshGeometryFlags(),
-					desc.height_field.scale.y() / 255.f, desc.height_field.scale.x() / w, desc.height_field.scale.z() / h), *m->px_material);
+					desc.height_field.scale.y() / height_field_precision, desc.height_field.scale.x() / lv, desc.height_field.scale.z() / lv), *m->px_material);
 			}
 				break;
 			default:

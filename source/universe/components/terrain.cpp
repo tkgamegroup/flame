@@ -18,25 +18,25 @@ namespace flame
 		color_map_name = name;
 	}
 
-	void cTerrainPrivate::set_size(const Vec2u& s)
+	void cTerrainPrivate::set_blocks(const Vec2u& b)
 	{
-		if (size == s)
+		if (blocks == b)
 			return;
-		size = s;
+		blocks = b;
 		if (node)
 			node->mark_transform_dirty();
 	}
 
-	void cTerrainPrivate::set_extent(const Vec3f& e)
+	void cTerrainPrivate::set_scale(const Vec3f& s)
 	{
-		if (extent == e)
+		if (scale == s)
 			return;
-		extent = e;
+		scale = s;
 		if (node)
 			node->mark_transform_dirty();
 	}
 
-	void cTerrainPrivate::set_tess_levels(float l)
+	void cTerrainPrivate::set_tess_levels(uint l)
 	{
 		if (tess_levels == l)
 			return;
@@ -54,7 +54,7 @@ namespace flame
 	void cTerrainPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (height_map_id != -1 && color_map_id != -1)
-			canvas->draw_terrain(height_map_id, color_map_id, size, extent, node->global_pos, tess_levels);
+			canvas->draw_terrain(height_map_id, color_map_id, blocks, scale, node->global_pos, tess_levels);
 	}
 
 	cTerrain* cTerrain::create()

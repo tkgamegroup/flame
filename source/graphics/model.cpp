@@ -588,6 +588,11 @@ namespace flame
 					ret->meshes.emplace_back(dst);
 
 					dst->name = src->mName.C_Str();
+					for (auto& c : dst->name)
+					{
+						if (c == '.')
+							c = '_';
+					}
 					if (dst->name.empty())
 						dst->name = std::to_string(i);
 

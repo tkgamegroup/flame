@@ -56,8 +56,9 @@ namespace flame
 			struct
 			{
 				graphics::Image* height_map;
-				Vec2u tess;
+				Vec2u blocks;
 				Vec3f scale;
+				uint tess_levels;
 			}height_field;
 		};
 	}

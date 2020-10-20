@@ -698,6 +698,14 @@ namespace flame
 				ret += d[i];
 			return ret;
 		}
+
+		T mul() const
+		{
+			auto ret = T(1);
+			for (auto i = 0; i < N; i++)
+				ret *= d[i];
+			return ret;
+		}
 	};
 
 	template <uint N, class T>

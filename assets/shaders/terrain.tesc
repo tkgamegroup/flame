@@ -29,7 +29,7 @@ float screen_space_tessellation_factor(vec4 p0, vec4 p1)
 
 bool frustum_check()
 {
-	float r = max(max(terrain.extent.x, terrain.extent.z), terrain.extent.y);
+	float r = max(max(terrain.scale.x, terrain.scale.z), terrain.scale.y);
 	vec4 p = (gl_in[0].gl_Position + gl_in[1].gl_Position + gl_in[2].gl_Position + gl_in[3].gl_Position) * 0.25;
 
 	for (int i = 0; i < 6; i++) 

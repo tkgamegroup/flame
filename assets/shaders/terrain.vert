@@ -21,9 +21,9 @@ void main(void)
 		vec2(1.0, 1.0),
 		vec2(0.0, 1.0)
 	};
-	vec2 v = vec2((tile_idx % terrain.size.x) + vs[gl_VertexIndex].x, (tile_idx / terrain.size.x) + vs[gl_VertexIndex].y);
+	vec2 v = vec2((tile_idx % terrain.blocks.x) + vs[gl_VertexIndex].x, (tile_idx / terrain.blocks.x) + vs[gl_VertexIndex].y);
 
-	gl_Position = vec4(vec3(v.x * terrain.extent.x, 0.0, v.y * terrain.extent.z) + terrain.coord, 1.0);
+	gl_Position = vec4(vec3(v.x * terrain.scale.x, 0.0, v.y * terrain.scale.z) + terrain.coord, 1.0);
 	o_idx = idx;
-	o_uv = v / terrain.size;
+	o_uv = v / terrain.blocks;
 }

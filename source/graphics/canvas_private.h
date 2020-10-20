@@ -254,11 +254,11 @@ namespace flame
 			Vec3f coord;
 			float dummy1;
 
-			Vec2u size;
+			Vec2u blocks;
 			uint height_tex_id;
 			uint color_tex_id;
 
-			Vec3f extent;
+			Vec3f scale;
 			float tess_levels;
 		};
 
@@ -464,7 +464,7 @@ namespace flame
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer) override;
-			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& size, const Vec3f& extent, const Vec3f& coord, float tess_levels) override;
+			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels) override;
 			void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line3* lines) override;

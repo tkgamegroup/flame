@@ -1,13 +1,17 @@
 local node = entity:get_component_n("cNode")
 make_obj(node, "cNode")
 
-local cc = entity:get_component_n("cController")
-make_obj(cc, "cController")
+local mesh = entity:find_child("mesh"):get_component_n("cMesh")
+make_obj(mesh, "cMesh")
 
-controller = {
-	speed = 0.5,
+local controller = entity:get_component_n("cController")
+make_obj(controller, "cController")
+
+character = {
+	speed = 0.2,
 	node = node,
-	cc = cc,
+	mesh = mesh,
+	controller = controller,
 	yaw = 0,
 	dir1 = { x=0, y=0, z=1 },
 	dir2 = { x=1, y=0, z=0 },
@@ -19,7 +23,7 @@ controller = {
 	e = false
 }
 
-function controller:update_dir()
+function character:update_dir()
 	self.node:set_euler({ x=self.yaw, y=0, z=0 })
 	self.dir1 = self.node:get_local_dir(2)
 	self.dir2 = self.node:get_local_dir(0)
@@ -31,22 +35,23 @@ make_obj(root_event_receiver, "cEventReceiver")
 root_event_receiver:add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
-			controller.w = true
+			character.w = true
+			character.mesh:set_animation_name("walk")
 		end
 		if k == enums["flame::KeyboardKey"]["S"] then
-			controller.s = true
+			character.s = true
 		end
 		if k == enums["flame::KeyboardKey"]["A"] then
-			controller.a = true
+			character.a = true
 		end
 		if k == enums["flame::KeyboardKey"]["D"] then
-			controller.d = true
+			character.d = true
 		end
 		if k == enums["flame::KeyboardKey"]["Q"] then
-			controller.q = true
+			character.q = true
 		end
 		if k == enums["flame::KeyboardKey"]["E"] then
-			controller.e = true
+			character.e = true
 		end
 	end
 ))
@@ -54,47 +59,48 @@ root_event_receiver:add_key_down_listener_s(get_slot(
 root_event_receiver:add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
-			controller.w = false
+			character.w = false
+			character.mesh:set_animation_name("")
 		end
 		if k == enums["flame::KeyboardKey"]["S"] then
-			controller.s = false
+			character.s = false
 		end
 		if k == enums["flame::KeyboardKey"]["A"] then
-			controller.a = false
+			character.a = false
 		end
 		if k == enums["flame::KeyboardKey"]["D"] then
-			controller.d = false
+			character.d = false
 		end
 		if k == enums["flame::KeyboardKey"]["Q"] then
-			controller.q = false
+			character.q = false
 		end
 		if k == enums["flame::KeyboardKey"]["E"] then
-			controller.e = false
+			character.e = false
 		end
 	end
 ))
 
 entity:add_event_s(get_slot(
 	function()
-		if controller.w then
-			controller.cc:move({x=controller.dir1.x * controller.speed, y=controller.dir1.y * controller.speed, z=controller.dir1.z * controller.speed})
+		if character.w then
+			character.controller:move({x=character.dir1.x * character.speed, y=character.dir1.y * character.speed, z=character.dir1.z * character.speed})
 		end
-		if controller.s then
-			controller.cc:move({x=-controller.dir1.x * controller.speed, y=-controller.dir1.y * controller.speed, z=-controller.dir1.z * controller.speed})
+		if character.s then
+			character.controller:move({x=-character.dir1.x * character.speed, y=-character.dir1.y * character.speed, z=-character.dir1.z * character.speed})
 		end
-		if controller.q then
-			controller.cc:move({x=controller.dir2.x * controller.speed, y=controller.dir2.y * controller.speed, z=controller.dir2.z * controller.speed})
+		if character.q then
+			character.controller:move({x=character.dir2.x * character.speed, y=character.dir2.y * character.speed, z=character.dir2.z * character.speed})
 		end
-		if controller.e then
-			controller.cc:move({x=-controller.dir2.x * controller.speed, y=-controller.dir2.y * controller.speed, z=-controller.dir2.z * controller.speed})
+		if character.e then
+			character.controller:move({x=-character.dir2.x * character.speed, y=-character.dir2.y * character.speed, z=-character.dir2.z * character.speed})
 		end
-		if controller.a then
-			controller.yaw = controller.yaw + 1
-			controller:update_dir()
+		if character.a then
+			character.yaw = character.yaw + 1
+			character:update_dir()
 		end
-		if controller.d then
-			controller.yaw = controller.yaw - 1
-			controller:update_dir()
+		if character.d then
+			character.yaw = character.yaw - 1
+			character:update_dir()
 		end
 	end
 ))

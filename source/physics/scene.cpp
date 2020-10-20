@@ -52,7 +52,6 @@ namespace flame
 			px_scene = device->px_instance->createScene(desc);
 			px_callback.thiz = this;
 			px_scene->setSimulationEventCallback(&px_callback);
-			px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.f);
 
 			px_controller_manager = PxCreateControllerManager(*px_scene);
 #endif
@@ -88,7 +87,18 @@ namespace flame
 		void ScenePrivate::set_visualization(bool v)
 		{
 #ifdef USE_PHYSX
-			px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, v ? 1.f : 0.f);
+			if (v)
+			{
+				px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.f);
+				px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.f);
+				px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_AABBS, 1.f);
+			}
+			else 
+			{
+				px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, -1.f);
+				px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, -1.f);
+				px_scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_AABBS, -1.f);
+			}
 #endif
 		}
 
