@@ -14,88 +14,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		/*
-		inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, float a1, float a2, uint lod = 0)
-		{
-			int a = pieces_num * a1;
-			int b = pieces_num * a2;
-			lod += 1;
-			for (; a <= b; a += lod)
-				points.push_back(center + pieces[a % pieces_num] * radius);
-		}
-
-		// roundness: LT RT RB LB
-		inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, const Vec4f& roundness = Vec4f(0.f), uint lod = 0)
-		{
-			if (roundness[0] > 0.f)
-				path_arc(points, pos + Vec2f(roundness[0]), roundness[0], 0.5f, 0.75f, lod);
-			else
-				points.push_back(pos);
-			if (roundness[1] > 0.f)
-				path_arc(points, pos + Vec2f(size.x() - roundness[1], roundness[1]), roundness[1], 0.75f, 1.f, lod);
-			else
-				points.push_back(pos + Vec2f(size.x(), 0.f));
-			if (roundness[2] > 0.f)
-				path_arc(points, pos + size - Vec2f(roundness[2]), roundness[2], 0.f, 0.25f, lod);
-			else
-				points.push_back(pos + size);
-			if (roundness[3] > 0.f)
-				path_arc(points, pos + Vec2f(roundness[3], size.y() - roundness[3]), roundness[3], 0.25f, 0.5f, lod);
-			else
-				points.push_back(pos + Vec2f(0.f, size.y()));
-		}
-
-		inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius, uint lod = 0)
-		{
-			path_arc(points, center, radius, 0.f, 1.f, lod);
-		}
-
-		inline void path_bezier(std::vector<Vec2f>& points, const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level = 0)
-		{
-			auto dx = p4.x() - p1.x();
-			auto dy = p4.y() - p1.y();
-			auto d2 = ((p2.x() - p4.x()) * dy - (p2.y() - p4.y()) * dx);
-			auto d3 = ((p3.x() - p4.x()) * dy - (p3.y() - p4.y()) * dx);
-			d2 = (d2 >= 0) ? d2 : -d2;
-			d3 = (d3 >= 0) ? d3 : -d3;
-			if ((d2 + d3) * (d2 + d3) < 1.25f * (dx * dx + dy * dy))
-			{
-				if (points.empty())
-					points.push_back(p1);
-				points.push_back(p4);
-			}
-			else if (level < 10)
-			{
-				auto p12 = (p1 + p2) * 0.5f;
-				auto p23 = (p2 + p3) * 0.5f;
-				auto p34 = (p3 + p4) * 0.5f;
-				auto p123 = (p12 + p23) * 0.5f;
-				auto p234 = (p23 + p34) * 0.5f;
-				auto p1234 = (p123 + p234) * 0.5f;
-
-				path_bezier(points, p1, p12, p123, p1234, level + 1);
-				path_bezier(points, p1234, p234, p34, p4, level + 1);
-			}
-		}
-		*/
-
-		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const Mat4f& transform, Vec3f* dst)
-		{
-			auto y1 = zNear * tan_hf_fovy;
-			auto y2 = zFar * tan_hf_fovy;
-			auto x1 = y1 * aspect;
-			auto x2 = y2 * aspect;
-
-			dst[0] = Vec3f(transform * Vec4f(-x1, y1, -zNear, 1.f));
-			dst[1] = Vec3f(transform * Vec4f(x1, y1, -zNear, 1.f));
-			dst[2] = Vec3f(transform * Vec4f(x1, -y1, -zNear, 1.f));
-			dst[3] = Vec3f(transform * Vec4f(-x1, -y1, -zNear, 1.f));
-			dst[4] = Vec3f(transform * Vec4f(-x2, y2, -zFar, 1.f));
-			dst[5] = Vec3f(transform * Vec4f(x2, y2, -zFar, 1.f));
-			dst[6] = Vec3f(transform * Vec4f(x2, -y2, -zFar, 1.f));
-			dst[7] = Vec3f(transform * Vec4f(-x2, -y2, -zFar, 1.f));
-		}
-
 		static auto initialized = false;
 
 		static SamplerPrivate* map_sampler = nullptr;
@@ -177,6 +95,23 @@ namespace flame
 		ArmatureDeformer* ArmatureDeformer::create(Device* device, Mesh* mesh)
 		{
 			return new ArmatureDeformerPrivate((DevicePrivate*)device, (MeshPrivate*)mesh);
+		}
+
+		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const Mat4f& transform, Vec3f* dst)
+		{
+			auto y1 = zNear * tan_hf_fovy;
+			auto y2 = zFar * tan_hf_fovy;
+			auto x1 = y1 * aspect;
+			auto x2 = y2 * aspect;
+
+			dst[0] = Vec3f(transform * Vec4f(-x1, y1, -zNear, 1.f));
+			dst[1] = Vec3f(transform * Vec4f(x1, y1, -zNear, 1.f));
+			dst[2] = Vec3f(transform * Vec4f(x1, -y1, -zNear, 1.f));
+			dst[3] = Vec3f(transform * Vec4f(-x1, -y1, -zNear, 1.f));
+			dst[4] = Vec3f(transform * Vec4f(-x2, y2, -zFar, 1.f));
+			dst[5] = Vec3f(transform * Vec4f(x2, y2, -zFar, 1.f));
+			dst[6] = Vec3f(transform * Vec4f(x2, -y2, -zFar, 1.f));
+			dst[7] = Vec3f(transform * Vec4f(-x2, -y2, -zFar, 1.f));
 		}
 
 		CanvasPrivate::CanvasPrivate(DevicePrivate* device, bool hdr, bool msaa_3d) :
@@ -370,8 +305,8 @@ namespace flame
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(device, L"element.vert"),
-						new ShaderPrivate(device, L"element.frag")
+						ShaderPrivate::create(device, L"element.vert"),
+						ShaderPrivate::create(device, L"element.frag")
 					};
 					VertexAttributeInfo vias[3];
 					vias[0].location = 0;
@@ -400,8 +335,8 @@ namespace flame
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(device, L"forward.vert"),
-						new ShaderPrivate(device, L"forward.frag")
+						ShaderPrivate::create(device, L"forward.vert"),
+						ShaderPrivate::create(device, L"forward.frag")
 					};
 					VertexAttributeInfo vias1[3];
 					vias1[0].location = 0;
@@ -431,7 +366,7 @@ namespace flame
 					forward_16_msaa_pipeline = PipelinePrivate::create(device, shaders, forward_pipelinelayout, forward16_msaa_renderpass, 0, &vi, Vec2u(0), &rst, msaa_sample_count,
 						&dep);
 
-					shaders[0] = new ShaderPrivate(device, L"forward.vert", "ARMATURE");
+					shaders[0] = ShaderPrivate::create(device, L"forward.vert", "ARMATURE");
 					VertexAttributeInfo vias2[2];
 					vias2[0].location = 5;
 					vias2[0].format = Format_R32G32B32A32_INT;
@@ -452,10 +387,10 @@ namespace flame
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(device, L"terrain.vert"),
-						new ShaderPrivate(device, L"terrain.tesc"),
-						new ShaderPrivate(device, L"terrain.tese"),
-						new ShaderPrivate(device, L"terrain.frag")
+						ShaderPrivate::create(device, L"terrain.vert"),
+						ShaderPrivate::create(device, L"terrain.tesc"),
+						ShaderPrivate::create(device, L"terrain.tese"),
+						ShaderPrivate::create(device, L"terrain.frag")
 					};
 					VertexInfo vi;
 					vi.primitive_topology = PrimitiveTopologyPatchList;
@@ -475,8 +410,8 @@ namespace flame
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(device, L"depth.vert"),
-						new ShaderPrivate(device, L"depth.frag")
+						ShaderPrivate::create(device, L"depth.vert"),
+						ShaderPrivate::create(device, L"depth.frag")
 					};
 					VertexAttributeInfo vias1[2];
 					vias1[0].location = 0;
@@ -491,11 +426,12 @@ namespace flame
 					vi.buffers_count = 1;
 					vi.buffers = vibs;
 					RasterInfo rst;
+					rst.cull_mode = CullModeFront;
 					DepthInfo dep;
 					depth_pipeline = PipelinePrivate::create(device, shaders, depth_pipelinelayout, depth_renderpass, 0, &vi, Vec2u(0), &rst, SampleCount_1,
 						&dep);
 
-					shaders[0] = new ShaderPrivate(device, L"depth.vert", "ARMATURE");
+					shaders[0] = ShaderPrivate::create(device, L"depth.vert", "ARMATURE");
 					VertexAttributeInfo vias2[2];
 					vias2[0].location = 2;
 					vias2[0].format = Format_R32G32B32A32_INT;
@@ -510,8 +446,8 @@ namespace flame
 
 				{
 					ShaderPrivate* shaders[] = {
-						new ShaderPrivate(device, L"line3.vert"),
-						new ShaderPrivate(device, L"line3.frag")
+						ShaderPrivate::create(device, L"line3.vert"),
+						ShaderPrivate::create(device, L"line3.frag")
 					};
 					VertexAttributeInfo vias[2];
 					vias[0].location = 0;
@@ -529,14 +465,14 @@ namespace flame
 					line3_16_pipeline = PipelinePrivate::create(device, shaders, line_pipelinelayout, image1_16_renderpass, 0, &vi);
 				}
 
-				auto fullscreen_shader = new ShaderPrivate(device, L"fullscreen.vert");
+				auto fullscreen_shader = ShaderPrivate::create(device, L"fullscreen.vert");
 
 				for (auto i = 0; i < 10; i++)
 				{
 					{
 						ShaderPrivate* shaders[] = {
 							fullscreen_shader,
-							new ShaderPrivate(device, L"blur.frag", "R" + std::to_string(i + 1) + " H\n")
+							ShaderPrivate::create(device, L"blur.frag", "R" + std::to_string(i + 1) + " H")
 						};
 						blurh_8_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
 						blurh_16_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
@@ -545,7 +481,7 @@ namespace flame
 					{
 						ShaderPrivate* shaders[] = {
 							fullscreen_shader,
-							new ShaderPrivate(device, L"blur.frag", "R" + std::to_string(i + 1) + " V\n")
+							ShaderPrivate::create(device, L"blur.frag", "R" + std::to_string(i + 1) + " V")
 						};
 						blurv_8_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_8_renderpass, 0);
 						blurv_16_pipeline[i] = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_16_renderpass, 0);
@@ -555,7 +491,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"blur_depth.frag", "H\n")
+						ShaderPrivate::create(device, L"blur_depth.frag", "H BAN")
 					};
 					blurh_depth_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_r16_renderpass, 0);
 				}
@@ -563,7 +499,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"blur_depth.frag", "V\n")
+						ShaderPrivate::create(device, L"blur_depth.frag", "V BAN")
 					};
 					blurv_depth_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc4_pipelinelayout, image1_r16_renderpass, 0);
 				}
@@ -571,7 +507,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"blit.frag")
+						ShaderPrivate::create(device, L"blit.frag")
 					};
 					blit_8_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
 					blit_16_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
@@ -580,7 +516,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"filter_bright.frag")
+						ShaderPrivate::create(device, L"filter_bright.frag")
 					};
 					filter_bright_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_16_renderpass, 0);
 				}
@@ -588,7 +524,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"box.frag")
+						ShaderPrivate::create(device, L"box.frag")
 					};
 					downsample_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc8_pipelinelayout, image1_16_renderpass, 0);
 				}
@@ -596,7 +532,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"box.frag")
+						ShaderPrivate::create(device, L"box.frag")
 					};
 					BlendOption bo;
 					bo.enable = true;
@@ -611,7 +547,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_shader,
-						new ShaderPrivate(device, L"gamma.frag")
+						ShaderPrivate::create(device, L"gamma.frag")
 					};
 					gamma_pipeline = PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout, image1_8_renderpass, 0);
 				}
@@ -1390,6 +1326,71 @@ namespace flame
 		{
 			paths.back().push_back(pos);
 		}
+
+		/*
+		inline void path_arc(std::vector<Vec2f>& points, const Vec2f& center, float radius, float a1, float a2, uint lod = 0)
+		{
+			int a = pieces_num * a1;
+			int b = pieces_num * a2;
+			lod += 1;
+			for (; a <= b; a += lod)
+				points.push_back(center + pieces[a % pieces_num] * radius);
+		}
+
+		// roundness: LT RT RB LB
+		inline void path_rect(std::vector<Vec2f>& points, const Vec2f& pos, const Vec2f& size, const Vec4f& roundness = Vec4f(0.f), uint lod = 0)
+		{
+			if (roundness[0] > 0.f)
+				path_arc(points, pos + Vec2f(roundness[0]), roundness[0], 0.5f, 0.75f, lod);
+			else
+				points.push_back(pos);
+			if (roundness[1] > 0.f)
+				path_arc(points, pos + Vec2f(size.x() - roundness[1], roundness[1]), roundness[1], 0.75f, 1.f, lod);
+			else
+				points.push_back(pos + Vec2f(size.x(), 0.f));
+			if (roundness[2] > 0.f)
+				path_arc(points, pos + size - Vec2f(roundness[2]), roundness[2], 0.f, 0.25f, lod);
+			else
+				points.push_back(pos + size);
+			if (roundness[3] > 0.f)
+				path_arc(points, pos + Vec2f(roundness[3], size.y() - roundness[3]), roundness[3], 0.25f, 0.5f, lod);
+			else
+				points.push_back(pos + Vec2f(0.f, size.y()));
+		}
+
+		inline void path_circle(std::vector<Vec2f>& points, const Vec2f& center, float radius, uint lod = 0)
+		{
+			path_arc(points, center, radius, 0.f, 1.f, lod);
+		}
+
+		inline void path_bezier(std::vector<Vec2f>& points, const Vec2f& p1, const Vec2f& p2, const Vec2f& p3, const Vec2f& p4, uint level = 0)
+		{
+			auto dx = p4.x() - p1.x();
+			auto dy = p4.y() - p1.y();
+			auto d2 = ((p2.x() - p4.x()) * dy - (p2.y() - p4.y()) * dx);
+			auto d3 = ((p3.x() - p4.x()) * dy - (p3.y() - p4.y()) * dx);
+			d2 = (d2 >= 0) ? d2 : -d2;
+			d3 = (d3 >= 0) ? d3 : -d3;
+			if ((d2 + d3) * (d2 + d3) < 1.25f * (dx * dx + dy * dy))
+			{
+				if (points.empty())
+					points.push_back(p1);
+				points.push_back(p4);
+			}
+			else if (level < 10)
+			{
+				auto p12 = (p1 + p2) * 0.5f;
+				auto p23 = (p2 + p3) * 0.5f;
+				auto p34 = (p3 + p4) * 0.5f;
+				auto p123 = (p12 + p23) * 0.5f;
+				auto p234 = (p23 + p34) * 0.5f;
+				auto p1234 = (p123 + p234) * 0.5f;
+
+				path_bezier(points, p1, p12, p123, p1234, level + 1);
+				path_bezier(points, p1234, p234, p34, p4, level + 1);
+			}
+		}
+		*/
 
 		void CanvasPrivate::close_path()
 		{

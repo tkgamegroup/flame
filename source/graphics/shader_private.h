@@ -148,13 +148,15 @@ namespace flame
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix = "");
+			ShaderPrivate(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content);
 			~ShaderPrivate();
 
 			void release() override { delete this; }
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 			const char* get_prefix() const override { return prefix.c_str(); }
+
+			static ShaderPrivate* create(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix = "");
 		};
 
 		struct PipelinePrivate : Pipeline

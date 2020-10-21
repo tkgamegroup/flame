@@ -1,4 +1,5 @@
 const float PI = 3.14159265359;
+const float esm_c = 3.0;
 
 vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 intensity, vec3 albedo, vec3 spec, float roughness)
 {
@@ -61,7 +62,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, f
 			if (coordl.z >= 0.0 && coordl.z <= 1.0)
 			{
 				float ref = texture(directional_light_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
-				shadow = clamp(exp(-100.0 * (coordl.z - ref)), 0.0, 1.0);
+				shadow = clamp(exp(-esm_c * 1000.0 * (coordl.z - ref)), 0.0, 1.0);
 			}
 		}
 		
@@ -82,7 +83,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, f
 		if (light.shadow_map_index != -1)
 		{
 			float ref = texture(point_light_shadow_maps[light.shadow_map_index], -L).r;
-			shadow = clamp(exp(-0.1 * (dist - ref * light.distance)), 0.0, 1.0);
+			shadow = clamp(exp(-esm_c * (dist - ref * light.distance)), 0.0, 1.0);
 		}
 
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);

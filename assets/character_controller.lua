@@ -8,7 +8,7 @@ local controller = entity:get_component_n("cController")
 make_obj(controller, "cController")
 
 character = {
-	speed = 0.2,
+	speed = 0.1,
 	node = node,
 	mesh = mesh,
 	controller = controller,

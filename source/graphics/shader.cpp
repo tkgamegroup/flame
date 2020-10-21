@@ -194,16 +194,32 @@ namespace flame
 			return new PipelineLayoutPrivate((DevicePrivate*)d, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
 		}
 
-		ShaderPrivate::ShaderPrivate(DevicePrivate* d, const std::filesystem::path& _filename, const std::string& _prefix) :
-			filename(_filename),
-			prefix(_prefix),
-			device(d)
+		ShaderPrivate::ShaderPrivate(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content) :
+			device(d),
+			filename(filename),
+			prefix(prefix)
 		{
-			filename.make_preferred();
-			type = shader_stage_from_ext(_filename.extension());
+			type = shader_stage_from_ext(filename.extension());
 
-			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(prefix);
-			auto str_hash = std::to_wstring(hash);
+			VkShaderModuleCreateInfo shader_info;
+			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+			shader_info.flags = 0;
+			shader_info.pNext = nullptr;
+			shader_info.codeSize = spv_content.size();
+			shader_info.pCode = (uint*)spv_content.data();
+			chk_res(vkCreateShaderModule(d->vk_device, &shader_info, nullptr, &vk_module));
+		}
+
+		ShaderPrivate::~ShaderPrivate()
+		{
+			if (vk_module)
+				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+		}
+
+		ShaderPrivate* ShaderPrivate::create(DevicePrivate* d, const std::filesystem::path& _filename, const std::string& prefix)
+		{
+			auto filename = _filename;
+			filename.make_preferred();
 
 			auto path = filename;
 			if (!std::filesystem::exists(path))
@@ -214,15 +230,69 @@ namespace flame
 				if (!std::filesystem::exists(path))
 				{
 					wprintf(L"cannot find shader: %s\n", filename.c_str());
-					return;
+					return nullptr;
 				}
 			}
 
-			auto spv_path = path;
-			spv_path += L".";
-			spv_path += str_hash;
+			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(prefix);
+			auto str_hash = std::to_wstring(hash);
 
-			if (std::filesystem::exists(path) && (!std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(path)))
+			auto spv_path = path;
+			spv_path += L"." + str_hash;
+
+			auto inc_path = path;
+			inc_path += L".inc";
+
+			std::vector<std::filesystem::path> includes;
+
+			if (!std::filesystem::exists(inc_path) || std::filesystem::last_write_time(inc_path) < std::filesystem::last_write_time(path))
+			{
+				std::ofstream inc(inc_path);
+				std::ifstream shader(path);
+				while (!shader.eof())
+				{
+					std::string line;
+					std::getline(shader, line);
+					static auto reg = std::regex(R"(#include \"(.*)\")");
+					std::smatch res;
+					if (std::regex_search(line, res, reg))
+					{
+						inc << res[1].str() << std::endl;
+						includes.push_back(res[1].str());
+					}
+				}
+				shader.close();
+				inc.close();
+			}
+			else
+			{
+				std::ifstream inc(inc_path);
+				while (!inc.eof())
+				{
+					std::string line;
+					std::getline(inc, line);
+					if (!line.empty())
+						includes.push_back(line);
+				}
+				inc.close();
+			}
+
+			auto need_compile = !std::filesystem::exists(spv_path) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(path);
+			if (!need_compile)
+			{
+				auto pp = path.parent_path();
+				for (auto& i : includes)
+				{
+					auto p = pp / i;
+					if (!std::filesystem::exists(p) || std::filesystem::last_write_time(spv_path) < std::filesystem::last_write_time(p))
+					{
+						need_compile = true;
+						break;
+					}
+				}
+			}
+
+			if (need_compile)
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
@@ -238,7 +308,7 @@ namespace flame
 					for (auto& d : defines)
 						command_line += L" -D" + s2w(d);
 
-					wprintf(L"compiling shader: %s", path.c_str());
+					printf("compiling shader: %s (%s)", path.string().c_str(), prefix.c_str());
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
@@ -246,6 +316,7 @@ namespace flame
 					{
 						printf("\n%s\n", output.c_str());
 						assert(0);
+						return nullptr;
 					}
 
 					printf(" done\n");
@@ -259,6 +330,7 @@ namespace flame
 						{
 							printf("%s\n", output.c_str());
 							assert(0);
+							return nullptr;
 						}
 					}
 				}
@@ -266,6 +338,7 @@ namespace flame
 				{
 					printf("cannot find vk sdk\n");
 					assert(0);
+					return nullptr;
 				}
 			}
 
@@ -273,22 +346,10 @@ namespace flame
 			if (spv_file.empty())
 			{
 				assert(0);
-				return;
+				return nullptr;
 			}
 
-			VkShaderModuleCreateInfo shader_info;
-			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			shader_info.flags = 0;
-			shader_info.pNext = nullptr;
-			shader_info.codeSize = spv_file.size();
-			shader_info.pCode = (uint*)spv_file.data();
-			chk_res(vkCreateShaderModule(d->vk_device, &shader_info, nullptr, &vk_module));
-		}
-
-		ShaderPrivate::~ShaderPrivate()
-		{
-			if (vk_module)
-				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
+			return new ShaderPrivate(d, filename, prefix, spv_file);
 		}
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,
