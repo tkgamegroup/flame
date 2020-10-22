@@ -39,11 +39,11 @@ namespace flame
 		for (auto& s : events_s)
 		{
 			looper().remove_event(s.second);
-			script::Instance::get()->release_slot(s.first);
+			script::Instance::get_default()->release_slot(s.first);
 		}
 
 		for (auto s : local_data_changed_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 
 	}
 
@@ -874,7 +874,7 @@ namespace flame
 			if (*it == slot)
 			{
 				local_data_changed_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -883,7 +883,7 @@ namespace flame
 	{
 		auto ev = looper().add_event([](Capture& c) {
 			c._current = (void*)1;
-			script::Instance::get()->call_slot(c.data<uint>(), 0, nullptr);
+			script::Instance::get_default()->call_slot(c.data<uint>(), 0, nullptr);
 		}, Capture().set_data(&slot));
 		events_s.emplace_back(slot, ev);
 	}
@@ -896,7 +896,7 @@ namespace flame
 			{
 				looper().remove_event(it->second);
 				events_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -1319,7 +1319,7 @@ namespace flame
 			ps[1].type = script::ScriptTypePointer;
 			ps[1].data.p = (void*)hash;
 			for (auto s : entity->local_data_changed_listeners_s)
-				script::Instance::get()->call_slot(s, size(ps), ps);
+				script::Instance::get_default()->call_slot(s, size(ps), ps);
 		}
 		if (entity->parent)
 		{

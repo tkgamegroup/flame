@@ -14,7 +14,7 @@ namespace flame
 		on_lost_physics_world();
 
 		for (auto s : trigger_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 	}
 
 	void cRigidPrivate::set_dynamic(bool v)
@@ -71,7 +71,7 @@ namespace flame
 			if (*it == slot)
 			{
 				trigger_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -88,7 +88,7 @@ namespace flame
 		ps[2].type = script::ScriptTypePointer;
 		ps[2].data.p = other_shape;
 		for (auto s : trigger_listeners_s)
-			script::Instance::get()->call_slot(s, size(ps), ps);
+			script::Instance::get_default()->call_slot(s, size(ps), ps);
 	}
 
 	void cRigidPrivate::on_gain_physics_world()

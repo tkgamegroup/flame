@@ -40,8 +40,9 @@ namespace flame
 			virtual void call_slot(uint s, uint parameters_count, Parameter* parameters) = 0;
 			virtual void release_slot(uint s) = 0;
 
-			FLAME_SCRIPT_EXPORTS static Instance* get();
-			FLAME_SCRIPT_EXPORTS static Instance* create(bool as_default = true);
+			FLAME_SCRIPT_EXPORTS static Instance* get_default();
+			FLAME_SCRIPT_EXPORTS static void set_default(Instance* instance);
+			FLAME_SCRIPT_EXPORTS static Instance* create();
 		};
 	}
 }

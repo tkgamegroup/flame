@@ -30,6 +30,6 @@ namespace flame
 			return ((InstancePrivate*)this)->excute(filename);
 		}
 
-		extern InstancePrivate* default_instance;
+		extern thread_local InstancePrivate* default_instance;
 	}
 }

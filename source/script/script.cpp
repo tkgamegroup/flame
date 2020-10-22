@@ -7,7 +7,7 @@ namespace flame
 {
 	namespace script
 	{
-		InstancePrivate* default_instance = nullptr;
+		thread_local InstancePrivate* default_instance = nullptr;
 
 		static void print_lua_stack(lua_State* state)
 		{
@@ -203,7 +203,7 @@ namespace flame
 					auto tn = std::string(ret_type->get_name());
 					if (ret_type->get_tag() == TypePointer)
 					{
-						InstancePrivate::get()->add_object(*(void**)ret, "staging", tn.c_str());
+						default_instance->add_object(*(void**)ret, "staging", tn.c_str());
 						lua_getglobal(state, "staging");
 					}
 					else
@@ -378,17 +378,19 @@ namespace flame
 			check_result(lua_pcall(lua_state, 1, 0, 0));
 		}
 
-		Instance* Instance::get()
+		Instance* Instance::get_default()
 		{
 			return default_instance;
 		}
 
-		Instance* Instance::create(bool as_default)
+		void Instance::set_default(Instance* instance)
 		{
-			auto instance = new InstancePrivate;
-			if (as_default)
-				default_instance = instance;
-			return instance;
+			default_instance = (InstancePrivate*)instance;
+		}
+
+		Instance* Instance::create()
+		{
+			return new InstancePrivate;
 		}
 	}
 }

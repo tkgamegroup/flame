@@ -9,19 +9,19 @@ namespace flame
 	cEventReceiverPrivate::~cEventReceiverPrivate()
 	{
 		for (auto s : key_down_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 		for (auto s : key_up_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 		for (auto s : mouse_left_down_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 		for (auto s : mouse_left_up_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 		for (auto s : mouse_move_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 		for (auto s : mouse_scroll_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 		for (auto s : mouse_click_listeners_s)
-			script::Instance::get()->release_slot(s);
+			script::Instance::get_default()->release_slot(s);
 	}
 
 	void cEventReceiverPrivate::set_ignore_occluders(bool v)
@@ -223,7 +223,7 @@ namespace flame
 			if (*it == slot)
 			{
 				key_down_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -240,7 +240,7 @@ namespace flame
 			if (*it == slot)
 			{
 				key_up_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -257,7 +257,7 @@ namespace flame
 			if (*it == slot)
 			{
 				mouse_left_down_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -274,7 +274,7 @@ namespace flame
 			if (*it == slot)
 			{
 				mouse_left_up_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -291,7 +291,7 @@ namespace flame
 			if (*it == slot)
 			{
 				mouse_move_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -308,7 +308,7 @@ namespace flame
 			if (*it == slot)
 			{
 				mouse_scroll_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -325,7 +325,7 @@ namespace flame
 			if (*it == slot)
 			{
 				mouse_click_listeners_s.erase(it);
-				script::Instance::get()->release_slot(slot);
+				script::Instance::get_default()->release_slot(slot);
 			}
 		}
 	}
@@ -341,7 +341,7 @@ namespace flame
 			p.type = script::ScriptTypeInt;
 			p.data.i[0] = key;
 			for (auto s : listeners_s)
-				script::Instance::get()->call_slot(s, 1, &p);
+				script::Instance::get_default()->call_slot(s, 1, &p);
 		}
 	}
 

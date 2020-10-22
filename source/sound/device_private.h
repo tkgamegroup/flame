@@ -18,7 +18,7 @@ namespace flame
 			void release() override { delete this; }
 		};
 
-		extern DevicePrivate* default_device;
+		extern thread_local DevicePrivate* default_device;
 
 		struct RecorderPrivate : Recorder
 		{
@@ -32,7 +32,5 @@ namespace flame
 			void start_record() override;
 			void stop_record(void* dst) override;
 		};
-
-		extern RecorderPrivate* default_recorder;
 	}
 }

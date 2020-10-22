@@ -17,7 +17,7 @@ namespace flame
 	{
 		if (!src.empty() && entity)
 		{
-			auto ins = script::Instance::get();
+			auto ins = script::Instance::get_default();
 			ins->add_object(entity, "entity", "Entity");
 			ins->excute(src.c_str());
 		}

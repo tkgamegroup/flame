@@ -153,7 +153,7 @@ namespace flame
 		}
 		root->add_component(cLayout::create());
 
-		script::Instance::get()->add_object(root, "root", "flame::Entity");
+		script::Instance::get_default()->add_object(root, "root", "flame::Entity");
 
 		if (app->windows.empty())
 		{
@@ -254,8 +254,8 @@ namespace flame
 		graphics_command_pool = graphics::Device::get_default()->get_command_pool(graphics::QueueGraphics);
 		graphics_queue = graphics::Device::get_default()->get_queue(graphics::QueueGraphics);
 		physics::Device::set_default(physics::Device::create());
-		sound::Device::create();
-		script::Instance::create();
+		sound::Device::set_default(sound::Device::create());
+		script::Instance::set_default(script::Instance::create());
 
 		{
 			graphics::Font* fonts[] = {

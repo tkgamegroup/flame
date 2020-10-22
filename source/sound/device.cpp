@@ -4,7 +4,7 @@ namespace flame
 {
 	namespace sound
 	{
-		DevicePrivate* default_device = nullptr;
+		thread_local DevicePrivate* default_device = nullptr;
 
 		DevicePrivate::DevicePrivate()
 		{
@@ -19,20 +19,20 @@ namespace flame
 			alcCloseDevice(al_dev);
 		}
 
-		Device* Device::create(bool as_default)
+		Device* Device::create()
 		{
-			auto device = new DevicePrivate;
-			if (as_default)
-				default_device = device;
-			return device;
+			return new DevicePrivate;
 		}
 
-		Device* Device::get()
+		Device* Device::get_default()
 		{
 			return default_device;
 		}
 
-		RecorderPrivate* default_recorder = nullptr;
+		void Device::set_default(Device* device)
+		{
+			default_device = (DevicePrivate*)device;
+		}
 
 		RecorderPrivate::RecorderPrivate(uint frequency, bool stereo, bool _16bit, float duration)
 		{
@@ -57,12 +57,9 @@ namespace flame
 			alcCaptureSamples(al_dev, (ALCvoid*)dst, samples);
 		}
 
-		Recorder* Recorder::create(uint frequency, bool stereo, bool _16bit, float duration, bool as_default)
+		Recorder* Recorder::create(uint frequency, bool stereo, bool _16bit, float duration)
 		{
-			auto recorder = new RecorderPrivate(frequency, stereo, _16bit, duration);
-			if (as_default)
-				default_recorder = recorder;
-			return recorder;
+			return new RecorderPrivate(frequency, stereo, _16bit, duration);
 		}
 	}
 }
