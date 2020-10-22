@@ -45,7 +45,7 @@ namespace flame
 
 		void SwapchainPrivate::update()
 		{
-			device->graphics_queue.get()->wait_idle();
+			device->gq.get()->wait_idle();
 
 			images.clear();
 
@@ -129,7 +129,7 @@ namespace flame
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
-				ImmediateCommandBuffer cb(device);
+				ImmediateCommandBuffer cb;
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 				{

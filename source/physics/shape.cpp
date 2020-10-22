@@ -15,21 +15,23 @@ namespace flame
 		static std::vector<std::pair<ShapeDesc, PxHeightField*>> staging_height_fields;
 		const auto height_field_precision = 30000.f;
 
-		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
+		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
 		{
+			if (!material)
+				material = device->mat.get();
 #ifdef USE_PHYSX
 			switch (type)
 			{
 			case ShapeCube:
-				px_shape = device->px_instance->createShape(PxBoxGeometry(desc.box.hf_ext.x(), desc.box.hf_ext.y(), desc.box.hf_ext.z()), *m->px_material);
+				px_shape = device->px_instance->createShape(PxBoxGeometry(desc.box.hf_ext.x(), desc.box.hf_ext.y(), desc.box.hf_ext.z()), *material->px_material);
 				px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat)));
 				break;
 			case ShapeSphere:
-				px_shape = device->px_instance->createShape(PxSphereGeometry(desc.sphere.radius), *m->px_material);
+				px_shape = device->px_instance->createShape(PxSphereGeometry(desc.sphere.radius), *material->px_material);
 				px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat)));
 				break;
 			case ShapeCapsule:
-				px_shape = device->px_instance->createShape(PxCapsuleGeometry(desc.capsule.radius, desc.capsule.height), *m->px_material);
+				px_shape = device->px_instance->createShape(PxCapsuleGeometry(desc.capsule.radius, desc.capsule.height), *material->px_material);
 				px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat) * PxQuat(PxHalfPi, PxVec3(0.f, 0.f, 1.f))));
 				break;
 			case ShapeTriangleMesh:
@@ -75,7 +77,7 @@ namespace flame
 					staging_triangle_meshes.emplace_back(desc, triangle_mesh);
 				}
 				
-				px_shape = device->px_instance->createShape(PxTriangleMeshGeometry(triangle_mesh, PxMeshScale(cvt(desc.triangle_mesh.scale))), *m->px_material);
+				px_shape = device->px_instance->createShape(PxTriangleMeshGeometry(triangle_mesh, PxMeshScale(cvt(desc.triangle_mesh.scale))), *material->px_material);
 			}
 				break;
 			case ShapeHeightField:
@@ -97,7 +99,7 @@ namespace flame
 					std::vector<uint> samples;
 					samples.resize((w + 1) * (h + 1));
 					{
-						auto dev = graphics::Device::get();
+						auto dev = graphics::Device::get_default();
 						auto img = desc.height_field.height_map;
 						auto img_size = img->get_size();
 						auto buf = graphics::Buffer::create(dev, img_size.x() * img_size.y(), graphics::BufferUsageTransferDst, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent);
@@ -199,7 +201,7 @@ namespace flame
 				}
 
 				px_shape = device->px_instance->createShape(PxHeightFieldGeometry(height_field, PxMeshGeometryFlags(),
-					desc.height_field.scale.y() / height_field_precision, desc.height_field.scale.x() / lv, desc.height_field.scale.z() / lv), *m->px_material);
+					desc.height_field.scale.y() / height_field_precision, desc.height_field.scale.x() / lv, desc.height_field.scale.z() / lv), *material->px_material);
 			}
 				break;
 			default:
@@ -224,9 +226,9 @@ namespace flame
 #endif
 		}
 
-		Shape* Shape::create(Device* device, Material* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
+		Shape* Shape::create(Device* device, Material* material, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat)
 		{
-			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)m, type, desc, coord, quat);
+			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)material, type, desc, coord, quat);
 		}
 	}
 }

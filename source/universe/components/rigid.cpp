@@ -93,7 +93,7 @@ namespace flame
 
 	void cRigidPrivate::on_gain_physics_world()
 	{
-		phy_rigid = physics::Rigid::create(physics::Device::get(), dynamic);
+		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
 		phy_rigid->user_data = this;
 		physics_world->rigids.push_back(this);
 		physics_world->phy_scene->add_rigid(phy_rigid);

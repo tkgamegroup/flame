@@ -18,7 +18,7 @@ namespace flame
 			VkBuffer vk_buffer;
 			VkDeviceMemory vk_memory;
 
-			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing = false);
+			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
 			~BufferPrivate();
 
 			void release() override { delete this; }
@@ -36,7 +36,7 @@ namespace flame
 		{
 			std::unique_ptr<BufferPrivate> buf;
 
-			ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data);
+			ImmediateStagingBuffer(uint size, void* data);
 		};
 	}
 }

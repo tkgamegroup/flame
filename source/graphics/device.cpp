@@ -8,7 +8,10 @@ namespace flame
 {
 	namespace graphics
 	{
-		DevicePrivate* default_device = nullptr;
+		int graphics_queue_index = -1;
+		int transfer_queue_index = -1;
+
+		thread_local DevicePrivate* default_device = nullptr;
 
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
@@ -128,20 +131,19 @@ namespace flame
 			device_info.pEnabledFeatures = &features;
 			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
 
-			descriptor_pool.reset(new DescriptorPoolPrivate(this));
-			sampler_nearest.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, AddressClampToEdge));
-			sampler_linear.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, AddressClampToEdge));
-			graphics_command_pool.reset(new CommandPoolPrivate(this, graphics_queue_index));
-			graphics_queue.reset(new QueuePrivate(this, graphics_queue_index));
-			if (transfer_queue_index > 0)
-			{
-				transfer_command_pool.reset(new CommandPoolPrivate(this, transfer_queue_index));
-				transfer_queue.reset(new QueuePrivate(this, transfer_queue_index));
-			}
+			dsp.reset(new DescriptorPoolPrivate(this));
+			nsp.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, AddressClampToEdge));
+			lsp.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, AddressClampToEdge));
+			gcp.reset(graphics_queue_index != -1 ? new CommandPoolPrivate(this, graphics_queue_index) : nullptr);
+			tcp.reset(transfer_queue_index != -1 ? new CommandPoolPrivate(this, transfer_queue_index) : nullptr);
+			gq.reset(graphics_queue_index != -1 ? new QueuePrivate(this, graphics_queue_index) : nullptr);
+			tq.reset(transfer_queue_index != -1 ? new QueuePrivate(this, transfer_queue_index) : nullptr);
 		}
 
 		DevicePrivate::~DevicePrivate()
 		{
+			if (default_device == this)
+				default_device = nullptr;
 		}
 
 		bool DevicePrivate::has_feature(Feature f) const
@@ -171,17 +173,19 @@ namespace flame
 			return -1;
 		}
 
-		Device* Device::get()
+		Device* Device::get_default()
 		{
 			return default_device;
 		}
 
-		Device* Device::create(bool debug, bool as_default)
+		void Device::set_default(Device* device)
 		{
-			auto device = new DevicePrivate(debug);
-			if (as_default)
-				default_device = device;
-			return device;
+			default_device = (DevicePrivate*)device;
+		}
+
+		Device* Device::create(bool debug)
+		{
+			return new DevicePrivate(debug);
 		}
 	}
 }

@@ -1,10 +1,11 @@
 #include "device_private.h"
+#include "material_private.h"
 
 namespace flame
 {
 	namespace physics
 	{
-		DevicePrivate* default_device = nullptr;
+		thread_local DevicePrivate* default_device = nullptr;
 
 		DevicePrivate::DevicePrivate()
 		{
@@ -21,19 +22,28 @@ namespace flame
 				px_cooking = PxCreateCooking(PX_PHYSICS_VERSION, *px_foundation, PxCookingParams(scale));
 			}
 #endif
+			mat.reset(new MaterialPrivate(this, 0.2f, 0.2f, 0.3f));
 		}
 
-		Device* Device::get()
+		DevicePrivate::~DevicePrivate()
+		{
+			if (default_device == this)
+				default_device = nullptr;
+		}
+
+		Device* Device::get_default()
 		{
 			return default_device;
 		}
 
-		Device* Device::create(bool as_default)
+		void Device::set_default(Device* device)
 		{
-			auto device = new DevicePrivate;
-			if (as_default)
-				default_device = device;
-			return device;
+			default_device = (DevicePrivate*)device;
+		}
+
+		Device* Device::create()
+		{
+			return new DevicePrivate;
 		}
 	}
 }

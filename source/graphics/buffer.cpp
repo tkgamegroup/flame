@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing) :
+		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
 			device(d)
 		{
 			size = _size;
@@ -17,13 +17,9 @@ namespace flame
 			buffer_info.pNext = nullptr;
 			buffer_info.size = _size;
 			buffer_info.usage = to_backend_flags<BufferUsageFlags>(usage);
-			buffer_info.sharingMode = sharing ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
-			buffer_info.queueFamilyIndexCount = sharing ? 2 : 0;
-			uint queue_family_idx[] = {
-				(uint)d->graphics_queue_index,
-				(uint)d->transfer_queue_index
-			};
-			buffer_info.pQueueFamilyIndices = sharing ? queue_family_idx : nullptr;
+			buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			buffer_info.queueFamilyIndexCount = 0;
+			buffer_info.pQueueFamilyIndices = nullptr;
 
 			auto res = vkCreateBuffer(d->vk_device, &buffer_info, nullptr, &vk_buffer);
 			assert(res == VK_SUCCESS);
@@ -82,14 +78,14 @@ namespace flame
 			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
 		}
 
-		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing)
+		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
 		{
-			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop, sharing);
+			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop);
 		}
 
-		ImmediateStagingBuffer::ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data)
+		ImmediateStagingBuffer::ImmediateStagingBuffer(uint size, void* data)
 		{
-			buf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost));
+			buf.reset(new BufferPrivate(default_device, size, BufferUsageTransferSrc, MemoryPropertyHost));
 			buf->map();
 			memcpy(buf->mapped, data, size);
 			buf->flush();

@@ -7,14 +7,6 @@
 
 namespace flame
 {
-	static physics::Material* material = nullptr;
-	static physics::Material* get_material()
-	{
-		if (!material)
-			material = physics::Material::create(physics::Device::get(), 0.2f, 0.2f, 0.3f);
-		return material;
-	}
-
 	void cControllerPrivate::set_radius(float r)
 	{
 		radius = r;
@@ -27,7 +19,7 @@ namespace flame
 
 	void cControllerPrivate::on_gain_physics_world()
 	{
-		phy_controller = physics::Controller::create(physics_world->phy_scene, get_material(), radius, height);
+		phy_controller = physics::Controller::create(physics_world->phy_scene, nullptr, radius, height);
 		node->update_transform();
 		phy_controller->set_position(node->global_pos);
 		physics_world->controllers.push_back(this);

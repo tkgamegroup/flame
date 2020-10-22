@@ -42,7 +42,8 @@ namespace flame
 		}
 #endif
 
-		ScenePrivate::ScenePrivate(DevicePrivate* device, float gravity, uint thread_count)
+		ScenePrivate::ScenePrivate(DevicePrivate* device, float gravity, uint thread_count) :
+			device(device)
 		{
 #ifdef USE_PHYSX
 			PxSceneDesc desc(device->px_instance->getTolerancesScale());

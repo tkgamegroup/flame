@@ -301,6 +301,12 @@ namespace flame
 			}, Capture().set_thiz(this));
 		}
 
+		InstancePrivate::~InstancePrivate()
+		{
+			if (default_instance == this)
+				default_instance = nullptr;
+		}
+
 		bool InstancePrivate::check_result(int res)
 		{
 			if (res != LUA_OK)

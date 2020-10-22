@@ -202,10 +202,9 @@ namespace flame
 
 		struct ImmediateCommandBuffer
 		{
-			DevicePrivate* d;
 			std::unique_ptr<CommandBufferPrivate> cb;
 
-			ImmediateCommandBuffer(DevicePrivate* d);
+			ImmediateCommandBuffer();
 			~ImmediateCommandBuffer();
 
 			CommandBufferPrivate* operator->() { return cb.get(); }

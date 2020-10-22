@@ -16,6 +16,7 @@ namespace flame
 			lua_State* lua_state = nullptr;
 
 			InstancePrivate();
+			~InstancePrivate();
 
 			bool check_result(int res);
 			bool excute(const std::filesystem::path& filename);

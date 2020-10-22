@@ -1,3 +1,4 @@
+#include "device_private.h"
 #include "scene_private.h"
 #include "material_private.h"
 #include "controller_private.h"
@@ -8,6 +9,8 @@ namespace flame
 	{
 		ControllerPrivate::ControllerPrivate(ScenePrivate* scene, MaterialPrivate* material, float radius, float height)
 		{
+			if (!material)
+				material = scene->device->mat.get();
 #ifdef USE_PHYSX
 			PxCapsuleControllerDesc desc;
 			desc.material = material->px_material;

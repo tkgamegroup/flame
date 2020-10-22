@@ -12,6 +12,7 @@ namespace flame
 		struct FontAtlasPrivate;
 		struct MaterialPrivate;
 		struct ModelPrivate;
+		struct RenderpassPrivate;
 		struct FramebufferPrivate;
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
@@ -112,6 +113,24 @@ namespace flame
 			void barrier(CommandBufferPrivate* cb)
 			{
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
+			}
+		};
+
+		template <Format F>
+		struct TImage
+		{
+			DevicePrivate* d = nullptr;
+			std::unique_ptr<ImagePrivate> img;
+			ImageViewPrivate* iv = nullptr;
+			std::unique_ptr<FramebufferPrivate> fb;
+			std::unique_ptr<DescriptorSetPrivate> ds;
+
+			void create(DevicePrivate* _d, CommandBuffer* cb, const Vec2u& size, RenderpassPrivate* rp = nullptr, DescriptorSetLayoutPrivate* dsl = nullptr)
+			{
+				d = _d;
+				img.reset(new ImagePrivate(d, F, size, 1, 1, SampleCount_1, ImageUsageAttachment));
+				cb->image_barrier(img.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
+				iv = img->views[0].get();
 			}
 		};
 
@@ -369,7 +388,7 @@ namespace flame
 			TBuffer<MaterialInfoS, BufferUsageStorage> material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
-			std::unique_ptr<ImagePrivate> shadow_depth_image;
+			TImage<Format_Depth16> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
@@ -418,7 +437,11 @@ namespace flame
 
 			std::vector<std::vector<Vec2f>> paths;
 
+			std::unique_ptr<PipelineLayoutPrivate> line_pipelinelayout;
 			TBuffer<Line3, BufferUsageVertex> line3_buffer;
+			std::unique_ptr<ShaderPrivate> line3_vert;
+			std::unique_ptr<ShaderPrivate> line3_frag;
+			std::unique_ptr<PipelinePrivate> line3_pipeline;
 
 			std::vector<std::unique_ptr<Cmd>> cmds;
 			CmdDrawElement* last_element_cmd = nullptr;

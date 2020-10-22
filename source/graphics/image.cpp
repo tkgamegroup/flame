@@ -132,8 +132,8 @@ namespace flame
 			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), 
 				Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
-			ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
-			ImmediateCommandBuffer cb(d);
+			ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
+			ImmediateCommandBuffer cb;
 			BufferImageCopy cpy;
 			cpy.image_extent = i->sizes[0];
 			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
@@ -211,8 +211,8 @@ namespace flame
 					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
-				ImmediateStagingBuffer stag(d, bmp->get_size(), bmp->get_data());
-				ImmediateCommandBuffer cb(d);
+				ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
+				ImmediateCommandBuffer cb;
 				BufferImageCopy cpy;
 				cpy.image_extent = ret->sizes[0];
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);

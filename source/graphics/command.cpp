@@ -448,17 +448,16 @@ namespace flame
 			return new QueuePrivate((DevicePrivate*)d, queue_family_idx);
 		}
 
-		ImmediateCommandBuffer::ImmediateCommandBuffer(DevicePrivate* d) :
-			d(d)
+		ImmediateCommandBuffer::ImmediateCommandBuffer()
 		{
-			cb.reset(new CommandBufferPrivate(d->graphics_command_pool.get()));
+			cb.reset(new CommandBufferPrivate(default_device->gcp.get()));
 			cb->begin(true);
 		}
 
 		ImmediateCommandBuffer::~ImmediateCommandBuffer()
 		{
 			cb->end();
-			auto q = d->graphics_queue.get();
+			auto q = default_device->gq.get();
 			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 		}

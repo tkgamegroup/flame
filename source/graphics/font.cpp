@@ -45,7 +45,7 @@ namespace flame
 			bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
 			image.reset(new ImagePrivate(d, Format_R8_UNORM, font_atlas_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst));
-			ImmediateCommandBuffer cb(d);
+			ImmediateCommandBuffer cb;
 			cb->image_barrier(image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 			cb->clear_color_image(image.get(), Vec4c(0, 0, 0, 255));
 			cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
@@ -98,8 +98,8 @@ namespace flame
 						{
 							auto& atlas_pos = n->pos;
 
-							ImmediateStagingBuffer stag(d, image_pitch(g->size.x()) * g->size.y(), bitmap);
-							ImmediateCommandBuffer cb(d);
+							ImmediateStagingBuffer stag(image_pitch(g->size.x()) * g->size.y(), bitmap);
+							ImmediateCommandBuffer cb;
 							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
 							cpy.image_offset = atlas_pos;

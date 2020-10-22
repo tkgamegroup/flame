@@ -15,14 +15,6 @@
 
 namespace flame
 {
-	static physics::Material* material = nullptr;
-	static physics::Material* get_material()
-	{
-		if (!material)
-			material = physics::Material::create(physics::Device::get(), 0.2f, 0.2f, 0.3f);
-		return material;
-	}
-
 	void cShapePrivate::set_type(physics::ShapeType t)
 	{
 		type = t;
@@ -50,18 +42,18 @@ namespace flame
 			{
 			case physics::ShapeCube:
 				desc.box.hf_ext = size * Vec3f(0.5f) * node->global_scale;
-				phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeCube, desc);
+				phy_shape = physics::Shape::create(physics::Device::get_default(), nullptr, physics::ShapeCube, desc);
 				break;
 			case physics::ShapeSphere:
 				desc.sphere.radius = size.x() * 0.5f * node->global_scale.x();
-				phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeSphere, desc);
+				phy_shape = physics::Shape::create(physics::Device::get_default(), nullptr, physics::ShapeSphere, desc);
 				break;
 			case physics::ShapeTriangleMesh:
 				if (mesh && mesh->mesh)
 				{
 					desc.triangle_mesh.mesh = mesh->mesh;
 					desc.triangle_mesh.scale = size * node->global_scale;
-					phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeTriangleMesh, desc);
+					phy_shape = physics::Shape::create(physics::Device::get_default(), nullptr, physics::ShapeTriangleMesh, desc);
 				}
 				break;
 			case physics::ShapeHeightField:
@@ -71,7 +63,7 @@ namespace flame
 					desc.height_field.blocks = terrain->blocks;
 					desc.height_field.tess_levels = terrain->tess_levels;
 					desc.height_field.scale = node->global_scale * terrain->scale;
-					phy_shape = physics::Shape::create(physics::Device::get(), get_material(), physics::ShapeHeightField, desc);
+					phy_shape = physics::Shape::create(physics::Device::get_default(), nullptr, physics::ShapeHeightField, desc);
 				}
 				break;
 			}

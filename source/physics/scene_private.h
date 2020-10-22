@@ -8,7 +8,6 @@ namespace flame
 	namespace physics
 	{
 		struct DevicePrivate;
-		struct DevicePrivate;
 		struct RigidPrivate;
 
 		struct SceneBridge : Scene
@@ -31,6 +30,8 @@ namespace flame
 				void onTrigger(PxTriggerPair* pairs, PxU32 count) override;
 				void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override;
 			};
+
+			DevicePrivate* device;
 
 			PxScene* px_scene;
 			Callback px_callback;

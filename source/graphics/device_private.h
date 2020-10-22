@@ -15,7 +15,7 @@ namespace flame
 		struct QueuePrivate;
 		struct DevicePrivate;
 
-		extern DevicePrivate* default_device;
+		extern thread_local DevicePrivate* default_device;
 
 		struct DevicePrivate : Device
 		{
@@ -25,15 +25,14 @@ namespace flame
 			VkPhysicalDeviceFeatures vk_features; 
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
-			int graphics_queue_index;
-			int transfer_queue_index;
-			std::unique_ptr<DescriptorPoolPrivate> descriptor_pool;
-			std::unique_ptr<SamplerPrivate> sampler_nearest;
-			std::unique_ptr<SamplerPrivate> sampler_linear;
-			std::unique_ptr<CommandPoolPrivate> graphics_command_pool;
-			std::unique_ptr<CommandPoolPrivate> transfer_command_pool;
-			std::unique_ptr<QueuePrivate> graphics_queue;
-			std::unique_ptr<QueuePrivate> transfer_queue;
+
+			std::unique_ptr<DescriptorPoolPrivate> dsp;
+			std::unique_ptr<SamplerPrivate> nsp;
+			std::unique_ptr<SamplerPrivate> lsp;
+			std::unique_ptr<CommandPoolPrivate> gcp;
+			std::unique_ptr<CommandPoolPrivate> tcp;
+			std::unique_ptr<QueuePrivate> gq;
+			std::unique_ptr<QueuePrivate> tq;
 
 			DevicePrivate(bool debug);
 			~DevicePrivate();
@@ -42,26 +41,14 @@ namespace flame
 
 			void release() override { delete this; }
 
-			DescriptorPool* get_descriptor_pool() const override { return (DescriptorPool*)descriptor_pool.get(); }
-			Sampler* get_sampler(Filter filter) const override 
-			{
-				switch (filter)
-				{
-				case FilterNearest:
-					return (Sampler*)sampler_nearest.get();
-				case FilterLinear:
-					return (Sampler*)sampler_linear.get();
-				}
-				return nullptr;
-			}
 			CommandPool* get_command_pool(QueueFamily family) const override
 			{
 				switch (family)
 				{
 				case QueueGraphics:
-					return (CommandPool*)graphics_command_pool.get();
+					return (CommandPool*)gcp.get();
 				case QueueTransfer:
-					return (CommandPool*)transfer_command_pool.get();
+					return (CommandPool*)tcp.get();
 				}
 				return nullptr;
 			}
@@ -70,9 +57,9 @@ namespace flame
 				switch (family)
 				{
 				case QueueGraphics:
-					return (Queue*)graphics_queue.get();
+					return (Queue*)gq.get();
 				case QueueTransfer:
-					return (Queue*)transfer_queue.get();
+					return (Queue*)tq.get();
 				}
 				return nullptr;
 			}

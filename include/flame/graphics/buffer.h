@@ -20,7 +20,7 @@ namespace flame
 			virtual void unmap() = 0;
 			virtual void flush() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop, bool sharing = false);
+			FLAME_GRAPHICS_EXPORTS static Buffer *create(Device *d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
 		};
 	}
 }

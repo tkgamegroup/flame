@@ -18,7 +18,7 @@ namespace flame
 #ifdef USE_PHYSX
 			PxShape* px_shape;
 #endif
-			ShapePrivate(DevicePrivate* device, MaterialPrivate* m, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat);
+			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, ShapeType type, const ShapeDesc& desc, const Vec3f& coord, const Vec4f& quat);
 			~ShapePrivate();
 
 			void release() override { delete this; }

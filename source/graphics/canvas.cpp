@@ -38,7 +38,6 @@ namespace flame
 		static PipelineLayoutPrivate* forward_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* terrain_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* depth_pipelinelayout = nullptr;
-		static PipelineLayoutPrivate* line_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc0_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc4_pipelinelayout = nullptr;
 		static PipelineLayoutPrivate* sampler1_pc8_pipelinelayout = nullptr;
@@ -60,8 +59,6 @@ namespace flame
 		static PipelinePrivate* terrain_16_msaa_pipeline = nullptr;
 		static PipelinePrivate* depth_pipeline = nullptr;
 		static PipelinePrivate* depth_armature_pipeline = nullptr;
-		static PipelinePrivate* line3_8_pipeline = nullptr;
-		static PipelinePrivate* line3_16_pipeline = nullptr;
 		static PipelinePrivate* blurh_8_pipeline[10] = {};
 		static PipelinePrivate* blurh_16_pipeline[10] = {};
 		static PipelinePrivate* blurv_8_pipeline[10] = {};
@@ -79,7 +76,7 @@ namespace flame
 			mesh(mesh)
 		{
 			poses_buffer.create(device, mesh->bones.size());
-			descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), armature_descriptorsetlayout));
+			descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), armature_descriptorsetlayout));
 			descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
 		}
 
@@ -298,7 +295,6 @@ namespace flame
 					};
 					depth_pipelinelayout = new PipelineLayoutPrivate(device, dsls, sizeof(Mat4f) * 2);
 				}
-				line_pipelinelayout = new PipelineLayoutPrivate(device, {}, sizeof(Mat4f));
 				sampler1_pc0_pipelinelayout = new PipelineLayoutPrivate(device, { &sampler1_descriptorsetlayout, 1 }, 0);
 				sampler1_pc4_pipelinelayout = new PipelineLayoutPrivate(device, { &sampler1_descriptorsetlayout, 1 }, sizeof(float));
 				sampler1_pc8_pipelinelayout = new PipelineLayoutPrivate(device, { &sampler1_descriptorsetlayout, 1 }, sizeof(Vec2f));
@@ -444,27 +440,6 @@ namespace flame
 						&dep);
 				}
 
-				{
-					ShaderPrivate* shaders[] = {
-						ShaderPrivate::create(device, L"line3.vert"),
-						ShaderPrivate::create(device, L"line3.frag")
-					};
-					VertexAttributeInfo vias[2];
-					vias[0].location = 0;
-					vias[0].format = Format_R32G32B32_SFLOAT;
-					vias[1].location = 1;
-					vias[1].format = Format_R8G8B8A8_UNORM;
-					VertexBufferInfo vib;
-					vib.attributes_count = size(vias);
-					vib.attributes = vias;
-					VertexInfo vi;
-					vi.primitive_topology = PrimitiveTopologyLineList;
-					vi.buffers_count = 1;
-					vi.buffers = &vib;
-					line3_8_pipeline = PipelinePrivate::create(device, shaders, line_pipelinelayout, image1_8_renderpass, 0, &vi);
-					line3_16_pipeline = PipelinePrivate::create(device, shaders, line_pipelinelayout, image1_16_renderpass, 0, &vi);
-				}
-
 				auto fullscreen_shader = ShaderPrivate::create(device, L"fullscreen.vert");
 
 				for (auto i = 0; i < 10; i++)
@@ -553,9 +528,7 @@ namespace flame
 				}
 			}
 
-			ImmediateCommandBuffer cb(device);
-			auto sp_nr = device->sampler_nearest.get();
-			auto sp_ln = device->sampler_linear.get();
+			ImmediateCommandBuffer cb;
 
 			white_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
@@ -575,30 +548,29 @@ namespace flame
 
 			element_vertex_buffer.create(device, 360000);
 			element_index_buffer.create(device, 240000);
-			element_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), element_descriptorsetlayout));
+			element_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), element_descriptorsetlayout));
 			for (auto i = 0; i < element_resources.size(); i++)
-				element_descriptorset->set_image(0, i, iv_wht, sp_ln);
+				element_descriptorset->set_image(0, i, iv_wht, device->lsp.get());
 			
 			mesh_matrix_buffer.create(device, 10000);
-			mesh_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), mesh_descriptorsetlayout));
+			mesh_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), mesh_descriptorsetlayout));
 			mesh_descriptorset->set_buffer(0, 0, mesh_matrix_buffer.buf.get());
 
 			material_info_buffer.create(device, 128);
-			material_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), material_descriptorsetlayout));
+			material_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), material_descriptorsetlayout));
 			material_descriptorset->set_buffer(0, 0, material_info_buffer.buf.get());
 			for (auto i = 0; i < texture_resources.size(); i++)
-				material_descriptorset->set_image(1, i, iv_wht, sp_ln);
+				material_descriptorset->set_image(1, i, iv_wht, device->lsp.get());
 
-			light_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), light_descriptorsetlayout));
+			light_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), light_descriptorsetlayout));
 			{
-				shadow_depth_image.reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageAttachment));
-				cb->image_barrier(shadow_depth_image.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
+				shadow_depth_image.create(device, cb.cb.get(), shadow_map_size);
 				shadow_blur_pingpong_image.reset(new ImagePrivate(device, Format_R16_SFLOAT, shadow_map_size, 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
 				cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 				auto iv_pingpong = shadow_blur_pingpong_image->views[0].get();
 				shadow_blur_pingpong_image_framebuffer.reset(new FramebufferPrivate(device, image1_r16_renderpass, { &iv_pingpong, 1 }));
-				shadow_blur_pingpong_image_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-				shadow_blur_pingpong_image_descriptorset->set_image(0, 0, iv_pingpong, sp_nr);
+				shadow_blur_pingpong_image_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+				shadow_blur_pingpong_image_descriptorset->set_image(0, 0, iv_pingpong, device->nsp.get());
 
 				light_indices_buffer.create(device, 1);
 				light_descriptorset->set_buffer(0, 0, light_indices_buffer.buf.get());
@@ -618,12 +590,12 @@ namespace flame
 						auto iv = new ImageViewPrivate(directional_light_shadow_maps[i].get(), true, ImageView2D, { 0U, 1U, (uint)j, 1U });
 						ImageViewPrivate* vs[] = {
 							iv,
-							shadow_depth_image->views[0].get()
+							shadow_depth_image.iv
 						};
 						directional_light_shadow_map_depth_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, depth_renderpass, vs));
 						directional_light_shadow_map_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, image1_r16_renderpass, { &iv, 1 }));
-						directional_light_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-						directional_light_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, sp_ln);
+						directional_light_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+						directional_light_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, device->lsp.get());
 					}
 					auto iv = new ImageViewPrivate(directional_light_shadow_maps[i].get(), true, ImageView2DArray, { 0U, 1U, (uint)0, 4U });
 					light_descriptorset->set_image(3, i, iv, shadow_sampler);
@@ -644,12 +616,12 @@ namespace flame
 						auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageView2D, { 0U, 1U, (uint)j, 1U });
 						ImageViewPrivate* vs[] = {
 							iv,
-							shadow_depth_image->views[0].get()
+							shadow_depth_image.iv
 						};
 						point_light_shadow_map_depth_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, depth_renderpass, vs));
 						point_light_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, image1_r16_renderpass, { &iv, 1 }));
-						point_light_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-						point_light_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, sp_ln);
+						point_light_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+						point_light_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, device->lsp.get());
 					}
 					auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageViewCube, { 0U, 1U, 0U, 6U });
 					light_descriptorset->set_image(4, i, iv, shadow_sampler);
@@ -657,17 +629,39 @@ namespace flame
 			}
 
 			render_data_buffer.create(device, 1);
-			render_data_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), render_data_descriptorsetlayout));
+			render_data_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), render_data_descriptorsetlayout));
 			render_data_descriptorset->set_buffer(0, 0, render_data_buffer.buf.get());
 
 			terrain_info_buffer.create(device, 1);
-			terrain_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), terrain_descriptorsetlayout));
+			terrain_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), terrain_descriptorsetlayout));
 			terrain_descriptorset->set_buffer(0, 0, terrain_info_buffer.buf.get());
 
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("cube"), "cube");
 			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 
+			line_pipelinelayout.reset(new PipelineLayoutPrivate(device, {}, sizeof(Mat4f)));
 			line3_buffer.create(device, 200000);
+			line3_vert.reset(ShaderPrivate::create(device, L"line3.vert"));
+			line3_frag.reset(ShaderPrivate::create(device, L"line3.frag"));
+			{
+				ShaderPrivate* shaders[] = {
+					line3_vert.get(),
+					line3_frag.get()
+				};
+				VertexAttributeInfo vias[2];
+				vias[0].location = 0;
+				vias[0].format = Format_R32G32B32_SFLOAT;
+				vias[1].location = 1;
+				vias[1].format = Format_R8G8B8A8_UNORM;
+				VertexBufferInfo vib;
+				vib.attributes_count = size(vias);
+				vib.attributes = vias;
+				VertexInfo vi;
+				vi.primitive_topology = PrimitiveTopologyLineList;
+				vi.buffers_count = 1;
+				vi.buffers = &vib;
+				line3_pipeline.reset(PipelinePrivate::create(device, shaders, line_pipelinelayout.get(), hdr ? image1_16_renderpass : image1_8_renderpass, 0, &vi));
+			}
 
 			pl_element = hdr ? element_16_pipeline : element_8_pipeline;
 			pl_forward = msaa_3d ? (hdr ? forward_16_msaa_pipeline : forward_8_msaa_pipeline) : (hdr ? forward_16_pipeline : forward_8_pipeline);
@@ -702,10 +696,7 @@ namespace flame
 				target_size = 0.f;
 			else
 			{
-				ImmediateCommandBuffer cb(device);
-
-				auto sp_nr = device->sampler_nearest.get();
-				auto sp_ln = device->sampler_linear.get();
+				ImmediateCommandBuffer cb;
 
 				target_size = views[0]->image->sizes[0];
 				target_imageviews.resize(views.size());
@@ -715,8 +706,8 @@ namespace flame
 				{
 					target_imageviews[i] = views[i];
 					target_framebuffers[i].reset(new FramebufferPrivate(device, image1_8_renderpass, { &views[i], 1 }));
-					target_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-					target_descriptorsets[i]->set_image(0, 0, views[i], sp_nr);
+					target_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+					target_descriptorsets[i]->set_image(0, 0, views[i], device->nsp.get());
 				}
 
 				if (hdr)
@@ -725,8 +716,8 @@ namespace flame
 					cb->image_barrier(dst_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					auto iv = dst_image->views[0].get();
 					dst_framebuffer.reset(new FramebufferPrivate(device, image1_16_renderpass, { &iv, 1 }));
-					dst_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-					dst_descriptorset->set_image(0, 0, iv, sp_nr);
+					dst_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+					dst_descriptorset->set_image(0, 0, iv, device->nsp.get());
 				}
 
 				if (msaa_3d)
@@ -743,8 +734,8 @@ namespace flame
 					cb->image_barrier(msaa_resolve_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 
 					auto iv_res = msaa_resolve_image->views[0].get();
-					msaa_descriptorset.reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-					msaa_descriptorset->set_image(0, 0, iv_res, sp_nr);
+					msaa_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+					msaa_descriptorset->set_image(0, 0, iv_res, device->nsp.get());
 
 					forward_framebuffers.resize(1);
 					ImageViewPrivate* vs[] = {
@@ -788,10 +779,10 @@ namespace flame
 				{
 					auto iv = back_image->views[i].get();
 					back_framebuffers[i].reset(new FramebufferPrivate(device, hdr ? image1_16_renderpass : image1_8_renderpass, { &iv, 1 }));
-					back_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-					back_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->descriptor_pool.get(), sampler1_descriptorsetlayout));
-					back_nearest_descriptorsets[i]->set_image(0, 0, iv, sp_nr);
-					back_linear_descriptorsets[i]->set_image(0, 0, iv, sp_ln);
+					back_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+					back_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), sampler1_descriptorsetlayout));
+					back_nearest_descriptorsets[i]->set_image(0, 0, iv, device->nsp.get());
+					back_linear_descriptorsets[i]->set_image(0, 0, iv, device->lsp.get());
 				}
 			}
 		}
@@ -897,18 +888,18 @@ namespace flame
 					switch (type)
 					{
 					case ResourceImage:
-						element_descriptorset->set_image(0, slot, p ? (ImageViewPrivate*)p : iv_wht, device->sampler_linear.get());
+						element_descriptorset->set_image(0, slot, p ? (ImageViewPrivate*)p : iv_wht, device->lsp.get());
 						break;
 					case ResourceImageAtlas:
 					{
 						auto atlas = (ImageAtlasPrivate*)p;
-						element_descriptorset->set_image(0, slot, atlas->image->views[0].get(), atlas->border ? device->sampler_linear.get() : device->sampler_nearest.get());
+						element_descriptorset->set_image(0, slot, atlas->image->views[0].get(), atlas->border ? device->lsp.get() : device->nsp.get());
 					}
 						break;
 					case ResourceFontAtlas:
 					{
 						auto atlas = (FontAtlasPrivate*)p;
-						element_descriptorset->set_image(0, slot, atlas->view, device->sampler_nearest.get());
+						element_descriptorset->set_image(0, slot, atlas->view, device->nsp.get());
 					}
 						break;
 					}
@@ -936,7 +927,7 @@ namespace flame
 			case ResourceMaterial:
 			{
 				auto material = (MaterialPrivate*)p;
-				auto sp = device->sampler_linear.get();
+				auto sp = device->lsp.get();
 
 				if (slot == -1)
 				{
@@ -1140,7 +1131,7 @@ namespace flame
 
 						material_info_buffer.push(slot, mis);
 
-						ImmediateCommandBuffer cb(device);
+						ImmediateCommandBuffer cb;
 						material_info_buffer.upload(cb.cb.get(), slot, 1);
 					}
 				}
@@ -1186,7 +1177,7 @@ namespace flame
 						for (auto i = 0; i < model->materials.size(); i++)
 							mr->materials[i] = set_resource(ResourceMaterial, -1, model->materials[i].get(), "");
 
-						ImmediateCommandBuffer cb(device);
+						ImmediateCommandBuffer cb;
 
 						mr->meshes.resize(model->meshes.size());
 						for (auto i = 0; i < model->meshes.size(); i++)
@@ -2464,8 +2455,8 @@ namespace flame
 					cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)target_size));
 					cb->begin_renderpass(dst_fb);
 					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);
-					cb->bind_pipeline(hdr ? line3_16_pipeline : line3_8_pipeline);
-					cb->push_constant(0, sizeof(Mat4f), &render_data_buffer.beg->proj_view, line_pipelinelayout);
+					cb->bind_pipeline(line3_pipeline.get());
+					cb->push_constant(0, sizeof(Mat4f), &render_data_buffer.beg->proj_view, line_pipelinelayout.get());
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];

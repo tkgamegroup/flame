@@ -7,6 +7,8 @@ namespace flame
 {
 	namespace physics
 	{
+		struct MaterialPrivate;
+
 		struct DevicePrivate : Device
 		{
 #ifdef USE_PHYSX
@@ -18,12 +20,15 @@ namespace flame
 			PxDefaultErrorCallback px_error_callback;
 #endif
 
+			std::unique_ptr<MaterialPrivate> mat;
+
 			DevicePrivate();
+			~DevicePrivate();
 
 			void release() override { delete this; }
 		};
 
-		extern DevicePrivate* default_device;
+		extern thread_local DevicePrivate* default_device;
 	}
 }
 

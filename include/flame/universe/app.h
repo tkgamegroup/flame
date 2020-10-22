@@ -112,18 +112,18 @@ namespace flame
 			c.thiz<GraphicsWindow>()->window = nullptr;
 		}, Capture().set_thiz(this));
 
-		swapchain = graphics::Swapchain::create(graphics::Device::get(), window);
+		swapchain = graphics::Swapchain::create(graphics::Device::get_default(), window);
 		swapchain_commandbuffers.resize(swapchain->get_images_count());
 		for (auto i = 0; i < swapchain_commandbuffers.size(); i++)
 			swapchain_commandbuffers[i] = graphics::CommandBuffer::create(app->graphics_command_pool);
-		submit_fence = graphics::Fence::create(graphics::Device::get());
-		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get());
+		submit_fence = graphics::Fence::create(graphics::Device::get_default());
+		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get_default());
 
-		canvas = graphics::Canvas::create(graphics::Device::get(), hdr, msaa_3d);
+		canvas = graphics::Canvas::create(graphics::Device::get_default(), hdr, msaa_3d);
 		set_canvas_target();
 		canvas->set_resource(graphics::ResourceFontAtlas, -1, app->font_atlas, "default_font");
 
-		physics_scene = physics::Scene::create(physics::Device::get(), -9.81f, 2);
+		physics_scene = physics::Scene::create(physics::Device::get_default(), -9.81f, 2);
 
 		window->add_resize_listener([](Capture& c, const Vec2u&) {
 			c.thiz<GraphicsWindow>()->set_canvas_target();
@@ -250,10 +250,10 @@ namespace flame
 		engine_path = getenv("FLAME_PATH");
 
 		network::initialize();
-		graphics::Device::create(graphics_debug);
-		graphics_command_pool = graphics::Device::get()->get_command_pool(graphics::QueueGraphics);
-		graphics_queue = graphics::Device::get()->get_queue(graphics::QueueGraphics);
-		physics::Device::create();
+		graphics::Device::set_default(graphics::Device::create(graphics_debug));
+		graphics_command_pool = graphics::Device::get_default()->get_command_pool(graphics::QueueGraphics);
+		graphics_queue = graphics::Device::get_default()->get_queue(graphics::QueueGraphics);
+		physics::Device::set_default(physics::Device::create());
 		sound::Device::create();
 		script::Instance::create();
 
@@ -262,7 +262,7 @@ namespace flame
 				graphics::Font::create(L"c:/windows/fonts/msyh.ttc"),
 				graphics::Font::create((engine_path / L"assets/font_awesome.ttf").c_str())
 			};
-			font_atlas = graphics::FontAtlas::create(graphics::Device::get(), 2, fonts);
+			font_atlas = graphics::FontAtlas::create(graphics::Device::get_default(), 2, fonts);
 		}
 	}
 
