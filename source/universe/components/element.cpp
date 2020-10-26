@@ -3,7 +3,7 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "../systems/renderer_private.h"
-#include "../systems/type_setting_private.h"
+#include "../systems/layout_system_private.h"
 
 namespace flame
 {
@@ -247,8 +247,8 @@ namespace flame
 
 	void cElementPrivate::mark_size_dirty()
 	{
-		if (type_setting)
-			type_setting->add_to_sizing_list(this);
+		if (layout_system)
+			layout_system->add_to_sizing_list(this);
 	}
 
 	void cElementPrivate::on_gain_renderer()
@@ -261,7 +261,7 @@ namespace flame
 		mark_transform_dirty();
 	}
 
-	void cElementPrivate::on_gain_type_setting()
+	void cElementPrivate::on_gain_layout_system()
 	{
 		mark_size_dirty();
 	}

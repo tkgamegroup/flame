@@ -2,11 +2,11 @@
 #include "../components/element_private.h"
 #include "../components/aligner_private.h"
 #include "../components/layout_private.h"
-#include "type_setting_private.h"
+#include "layout_system_private.h"
 
 namespace flame
 {
-	void sTypeSettingPrivate::add_to_sizing_list(cElementPrivate* e)
+	void sLayoutSystemPrivate::add_to_sizing_list(cElementPrivate* e)
 	{
 		if (e->pending_sizing)
 			return;
@@ -20,7 +20,7 @@ namespace flame
 		sizing_list.emplace(it, e);
 	}
 
-	void sTypeSettingPrivate::remove_from_sizing_list(cElementPrivate* e)
+	void sLayoutSystemPrivate::remove_from_sizing_list(cElementPrivate* e)
 	{
 		if (!e->pending_sizing)
 			return;
@@ -30,7 +30,7 @@ namespace flame
 		});
 	}
 
-	void sTypeSettingPrivate::add_to_layouting_list(cLayoutPrivate* l)
+	void sLayoutSystemPrivate::add_to_layouting_list(cLayoutPrivate* l)
 	{
 		if (l->pending_layouting)
 			return;
@@ -45,7 +45,7 @@ namespace flame
 		layouting_list.emplace(it, l);
 	}
 
-	void sTypeSettingPrivate::remove_from_layouting_list(cLayoutPrivate* l)
+	void sLayoutSystemPrivate::remove_from_layouting_list(cLayoutPrivate* l)
 	{
 		if (!l->pending_layouting)
 			return;
@@ -55,12 +55,12 @@ namespace flame
 		});
 	}
 
-	void sTypeSettingPrivate::on_added()
+	void sLayoutSystemPrivate::on_added()
 	{
 		window = (Window*)world->find_object("flame::Window");
 	}
 
-	void sTypeSettingPrivate::update()
+	void sLayoutSystemPrivate::update()
 	{
 		if (window)
 		{
@@ -113,8 +113,8 @@ namespace flame
 		}
 	}
 
-	sTypeSetting* sTypeSetting::create()
+	sLayoutSystem* sLayoutSystem::create()
 	{
-		return f_new<sTypeSettingPrivate>();
+		return f_new<sLayoutSystemPrivate>();
 	}
 }

@@ -7,7 +7,7 @@ namespace flame
 	struct cElementPrivate;
 	struct cAlignerPrivate;
 
-	struct sTypeSettingPrivate;
+	struct sLayoutSystemPrivate;
 
 	struct cLayoutPrivate : cLayout // R ~ on_*
 	{
@@ -20,7 +20,7 @@ namespace flame
 		float scrolly = 0.f;
 
 		cElementPrivate* element = nullptr; // R ref
-		sTypeSettingPrivate* type_setting = nullptr; // R ref
+		sLayoutSystemPrivate* layout_system = nullptr; // R ref
 
 		bool pending_layouting = false;
 		bool updating = false;
@@ -47,8 +47,8 @@ namespace flame
 		void judge_height(float h);
 		void update();
 
-		void on_gain_type_setting();
-		void on_lost_type_setting();
+		void on_gain_layout_system();
+		void on_lost_layout_system();
 
 		void mark_layout_dirty();
 

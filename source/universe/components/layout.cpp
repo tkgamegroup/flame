@@ -2,7 +2,8 @@
 #include "element_private.h"
 #include "aligner_private.h"
 #include "layout_private.h"
-#include "../systems/type_setting_private.h"
+#include "../systems/layout_system_private.h"
+
 namespace flame
 {
 //	cLayoutPrivate::cLayoutPrivate(LayoutType _type)
@@ -401,20 +402,20 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("scrolly")>::v);
 	}
 
-	void cLayoutPrivate::on_gain_type_setting()
+	void cLayoutPrivate::on_gain_layout_system()
 	{
-		type_setting->add_to_layouting_list(this);
+		layout_system->add_to_layouting_list(this);
 	}
 
-	void cLayoutPrivate::on_lost_type_setting()
+	void cLayoutPrivate::on_lost_layout_system()
 	{
-		type_setting->remove_from_layouting_list(this);
+		layout_system->remove_from_layouting_list(this);
 	}
 
 	void cLayoutPrivate::mark_layout_dirty()
 	{
-		if (type_setting)
-			type_setting->add_to_layouting_list(this);
+		if (layout_system)
+			layout_system->add_to_layouting_list(this);
 	}
 
 	void cLayoutPrivate::on_local_message(Message msg, void* p)

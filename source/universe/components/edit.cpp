@@ -374,7 +374,8 @@ namespace flame
 	void cEditPrivate::draw(graphics::Canvas* canvas)
 	{
 		const auto& str = text->text;
-		auto atlas = (graphics::FontAtlas*)text->canvas->get_resource(graphics::ResourceFontAtlas, text->res_id);
+		auto res_id = text->res_id;
+		auto atlas = (graphics::FontAtlas*)text->canvas->get_resource(graphics::ResourceFontAtlas, res_id);
 		auto font_size = text->size;
 		element->update_transform();
 		auto pos = element->points[4];
@@ -407,7 +408,7 @@ namespace flame
 				canvas->line_to(pos + axes * (p2 + Vec2f(0.f, font_size)));
 				canvas->line_to(pos + axes * (p1 + Vec2f(0.f, font_size)));
 				canvas->fill(Vec4c(128, 128, 255, 255));
-				canvas->draw_text(0, sb, se, font_size, Vec4c(255), pos + p1, axes);
+				canvas->draw_text(res_id, sb, se, font_size, Vec4c(255), pos + p1, axes);
 			}
 		}
 

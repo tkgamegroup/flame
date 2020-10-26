@@ -2,6 +2,8 @@
 <prefab>
   <entity>
     <cElement />
+    <cAligner alignx="MinMax" aligny="MinMax"/>
+    <cLayout />
     <cNode />
     <entity name="scene">
       <cNode />
@@ -45,6 +47,26 @@
     <entity name="debug">
       <cCustomDrawing />
     </entity>
-	<cScript src="tests/shoot_ball.lua" />
+    <entity name="ui">
+      <cElement />
+      <cAligner alignx="MinMax" aligny="MinMax"/>
+      <cLayout />
+      <entity src="menu_bar">
+        <entity src="top_menu">
+          <cText text="view" />
+          <entity attach="items" src="sub_menu">
+            <cText text="terrain"/>
+              <entity name="menu_view_terrain_normal" attach="items" src="menu_item">
+                <cText text="normal"/>
+              </entity>
+              <entity name="menu_view_terrain_normal" attach="items" src="menu_item">
+                <cText text="wire_frame"/>
+              </entity>
+          </entity>
+        </entity>
+      </entity>
+      <cScript src="tests/shoot_ball.lua" />
+    </entity>
+    <cScript src="tests/scene_test.lua" />
   </entity>
 </prefab>

@@ -7,20 +7,12 @@ namespace flame
 	struct cElement;
 	struct cLayout;
 
-	struct sTypeSetting : System
+	struct sLayoutSystem : System
 	{
-		inline static auto type_name = "flame::sTypeSetting";
+		inline static auto type_name = "flame::sLayoutSystem";
 		inline static auto type_hash = ch(type_name);
 
-		//struct AutoSizer
-		//{
-		//	bool auto_width = true;
-		//	bool auto_height = true;
-
-		//	virtual Vec2f measure() = 0;
-		//};
-
-		sTypeSetting() :
+		sLayoutSystem() :
 			System(type_name, type_hash)
 		{
 		}
@@ -30,6 +22,6 @@ namespace flame
 		virtual void add_to_layouting_list(cLayout* l) = 0;
 		virtual void remove_from_layouting_list(cLayout* l) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static sTypeSetting* create();
+		FLAME_UNIVERSE_EXPORTS static sLayoutSystem* create();
 	};
 }

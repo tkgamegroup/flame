@@ -20,7 +20,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/event_receiver.h>
 #include <flame/universe/components/layout.h>
-#include <flame/universe/systems/type_setting.h>
+#include <flame/universe/systems/layout_system.h>
 #include <flame/universe/systems/event_dispatcher.h>
 #include <flame/universe/systems/physics_world.h>
 #include <flame/universe/systems/renderer.h>
@@ -74,7 +74,7 @@ namespace flame
 		physics::Scene* physics_scene = nullptr;
 
 		World* world = nullptr;
-		sTypeSetting* s_type_setting = nullptr;
+		sLayoutSystem* s_layout_system = nullptr;
 		sEventDispatcher* s_event_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
 		sPhysicsWorld* s_physic_world = nullptr;
@@ -133,8 +133,8 @@ namespace flame
 		world->register_object(window, "flame::Window");
 		world->register_object(canvas, "flame::graphics::Canvas");
 		world->register_object(physics_scene, "flame::physics::Scene");
-		s_type_setting = sTypeSetting::create();
-		world->add_system(s_type_setting);
+		s_layout_system = sLayoutSystem::create();
+		world->add_system(s_layout_system);
 		s_event_dispatcher = sEventDispatcher::create();
 		world->add_system(s_event_dispatcher);
 		s_physic_world = sPhysicsWorld::create();

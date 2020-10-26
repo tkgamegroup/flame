@@ -10,7 +10,7 @@ namespace flame
 	}
 
 	struct sRendererPrivate;
-	struct sTypeSettingPrivate;
+	struct sLayoutSystemPrivate;
 
 	struct cElementPrivate : cElement // R ~ on_*
 	{
@@ -49,7 +49,7 @@ namespace flame
 		std::vector<std::pair<Component*, void(*)(Component*, Vec2f&)>> measurables;
 
 		sRendererPrivate* renderer = nullptr; // R ref
-		sTypeSettingPrivate* type_setting = nullptr; // R ref
+		sLayoutSystemPrivate* layout_system = nullptr; // R ref
 
 		float get_x() const override { return x; }
 		void set_x(float x) override;
@@ -109,7 +109,7 @@ namespace flame
 
 		void on_gain_renderer();
 		void on_lost_renderer();
-		void on_gain_type_setting();
+		void on_gain_layout_system();
 
 		bool contains(const Vec2f& p) override;
 
