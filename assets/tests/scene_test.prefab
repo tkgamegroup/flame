@@ -59,8 +59,17 @@
               <entity name="menu_view_terrain_normal" attach="items" src="menu_item">
                 <cText text="normal"/>
               </entity>
-              <entity name="menu_view_terrain_normal" attach="items" src="menu_item">
+              <entity name="menu_view_terrain_wireframe" attach="items" src="menu_item">
                 <cText text="wire_frame"/>
+              </entity>
+          </entity>
+          <entity attach="items" src="sub_menu">
+            <cText text="physics"/>
+              <entity name="menu_view_physics_on" attach="items" src="menu_item">
+                <cText text="on"/>
+              </entity>
+              <entity name="menu_view_physics_off" attach="items" src="menu_item">
+                <cText text="off"/>
               </entity>
           </entity>
         </entity>

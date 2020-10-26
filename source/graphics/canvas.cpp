@@ -294,21 +294,7 @@ namespace flame
 				mesh_armature_pipeline.reset(PipelinePrivate::create(device, shaders, mesh_pipelinelayout.get(), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 			}
 
-			{
-				ShaderPrivate* shaders[] = {
-					terrain_vert.get(),
-					terrain_tesc.get(),
-					terrain_tese.get(),
-					terrain_frag.get()
-				};
-				VertexInfo vi;
-				vi.primitive_topology = PrimitiveTopologyPatchList;
-				vi.patch_control_points = 4;
-				RasterInfo rst;
-				//rst.polygon_mode = PolygonModeLine;
-				DepthInfo dep;
-				terrain_pipeline.reset(PipelinePrivate::create(device, shaders, terrain_pipelinelayout.get(), mesh_renderpass.get(), 0, &vi, &rst, &dep));
-			}
+			make_terrain_pipeline();
 
 			{
 				ShaderPrivate* shaders[] = {
@@ -444,6 +430,42 @@ namespace flame
 					gamma_frag.get()
 				};
 				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, sampler1_pc0_pipelinelayout.get(), image1_8_renderpass.get(), 0));
+			}
+		}
+
+		void RenderPreferencesPrivate::make_terrain_pipeline()
+		{
+			ShaderPrivate* shaders[] = {
+				terrain_vert.get(),
+				terrain_tesc.get(),
+				terrain_tese.get(),
+				terrain_frag.get()
+			};
+			VertexInfo vi;
+			vi.primitive_topology = PrimitiveTopologyPatchList;
+			vi.patch_control_points = 4;
+			RasterInfo rst;
+			if (terrain_render == RenderWireframe)
+				rst.polygon_mode = PolygonModeLine;
+			DepthInfo dep;
+			terrain_pipeline.reset(PipelinePrivate::create(device, shaders, terrain_pipelinelayout.get(), mesh_renderpass.get(), 0, &vi, &rst, &dep));
+		}
+
+		void RenderPreferencesPrivate::set_terrain_render(RenderType type)
+		{
+			if (terrain_render != type)
+			{
+				terrain_render = type;
+				switch (type)
+				{
+				case RenderNormal:
+					terrain_frag.reset(ShaderPrivate::create(device, L"terrain.frag"));
+					break;
+				case RenderWireframe:
+					terrain_frag.reset(ShaderPrivate::create(device, L"terrain.frag", "WIREFRAME"));
+					break;
+				}
+				make_terrain_pipeline();
 			}
 		}
 

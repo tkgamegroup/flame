@@ -90,7 +90,13 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> upsample_pipeline;
 			std::unique_ptr<PipelinePrivate> gamma_pipeline;
 
+			RenderType terrain_render = RenderNormal;
+
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
+
+			void make_terrain_pipeline();
+
+			void set_terrain_render(RenderType type) override;
 		};
 
 		template <class T, BufferUsageFlags U>

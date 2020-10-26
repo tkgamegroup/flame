@@ -69,6 +69,7 @@ namespace flame
 		std::vector<graphics::CommandBuffer*> swapchain_commandbuffers;
 		graphics::Fence* submit_fence = nullptr;
 		graphics::Semaphore* render_finished_semaphore = nullptr;
+		graphics::RenderPreferences* render_preferences = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		physics::Scene* physics_scene = nullptr;
@@ -119,7 +120,8 @@ namespace flame
 		submit_fence = graphics::Fence::create(graphics::Device::get_default());
 		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get_default());
 
-		canvas = graphics::Canvas::create(graphics::RenderPreferences::create(graphics::Device::get_default(), hdr, msaa_3d));
+		render_preferences = graphics::RenderPreferences::create(graphics::Device::get_default(), hdr, msaa_3d);
+		canvas = graphics::Canvas::create(render_preferences);
 		set_canvas_output();
 		canvas->set_resource(graphics::ResourceFontAtlas, -1, app->font_atlas, "default_font");
 

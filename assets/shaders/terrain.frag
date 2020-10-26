@@ -31,6 +31,9 @@ void main()
 
 	vec3 albedo = texture(maps[terrain.color_tex_id], i_uv).rgb;
 	
+#ifdef WIREFRAME
+	o_color = vec4(0.0, 1.0, 0.0, 1.0);
+#else
 	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, vec3(0.04), 0.9), 1.0);
-	//o_color = vec4(0.0, 1.0, 0.0, 1.0);
+#endif
 }

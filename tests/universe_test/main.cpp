@@ -1,5 +1,6 @@
 #include <flame/graphics/model.h>
 #include <flame/universe/app.h>
+#include <flame/universe/components/command.h>
 #include <flame/universe/components/custom_drawing.h>
 #include <flame/universe/components/camera.h>
 
@@ -31,6 +32,19 @@ int main(int argc, char** args)
 	}
 
 	{
+		auto c = cCommand::create();
+		c->add_processor([](Capture& c, const char* _cmd) {
+			auto cmd = std::string(_cmd);
+			if (cmd == "view_terrain_normal")
+				g_app.main_window->render_preferences->set_terrain_render(graphics::RenderNormal);
+			else if (cmd == "view_terrain_wireframe")
+				g_app.main_window->render_preferences->set_terrain_render(graphics::RenderWireframe);
+			else if (cmd == "view_physics_on")
+				g_app.main_window->s_physic_world->set_visualization(true);
+			else if (cmd == "view_physics_off")
+				g_app.main_window->s_physic_world->set_visualization(false);
+		}, Capture());
+		w->root->add_component(c);
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
 		{

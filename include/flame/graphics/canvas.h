@@ -16,6 +16,12 @@ namespace flame
 		struct Sampler;
 		struct CommandBuffer;
 
+		enum RenderType
+		{
+			RenderNormal,
+			RenderWireframe
+		};
+
 		struct Point3
 		{
 			Vec3f position;
@@ -40,6 +46,8 @@ namespace flame
 
 		struct RenderPreferences
 		{
+			virtual void set_terrain_render(RenderType type) = 0;
+
 			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true, bool msaa_3d = true);
 		};
 
