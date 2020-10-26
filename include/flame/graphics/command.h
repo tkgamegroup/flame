@@ -22,7 +22,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static CommandPool* create(Device* d, int queue_family_idx);
+			FLAME_GRAPHICS_EXPORTS static CommandPool* create(Device* device, int queue_family_idx);
 		};
 
 		struct BufferCopy
@@ -70,15 +70,15 @@ namespace flame
 
 			virtual void begin(bool once = false) = 0;
 
-			virtual void begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues = nullptr, Renderpass* rp = nullptr) = 0;
+			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const Vec4f* clearvalues = nullptr) = 0;
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Vec4f& rect) = 0;
 			virtual void set_scissor(const Vec4f& rect) = 0;
 			virtual void bind_pipeline(Pipeline* p) = 0;
-			virtual void bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll = nullptr) = 0;
+			virtual void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) = 0;
 			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;
 			virtual void bind_index_buffer(Buffer* b, IndiceType t) = 0;
-			virtual void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll = nullptr) = 0;
+			virtual void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll) = 0;
 			template <class T>
 			inline void push_constant_t(uint offset, const T& data, PipelineLayout* pll = nullptr)
 			{
@@ -114,7 +114,7 @@ namespace flame
 			virtual void submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
 			virtual void present(Swapchain* s, Semaphore* wait_semaphore) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* d, uint queue_family_idx);
+			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* device, uint queue_family_idx);
 		};
 	}
 }

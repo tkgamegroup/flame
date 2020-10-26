@@ -134,7 +134,7 @@ namespace flame
 
 			virtual ImageView* get_view() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* d, uint fonts_count, Font* const* fonts);
+			FLAME_GRAPHICS_EXPORTS static FontAtlas* create(Device* device, uint fonts_count, Font* const* fonts);
 		};
 	}
 

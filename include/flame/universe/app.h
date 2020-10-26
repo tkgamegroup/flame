@@ -82,7 +82,7 @@ namespace flame
 
 		GraphicsWindow(App* app, const char* title, const Vec2u size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
-		void set_canvas_target();
+		void set_canvas_output();
 		virtual void on_frame() {}
 		void update();
 	};
@@ -119,14 +119,14 @@ namespace flame
 		submit_fence = graphics::Fence::create(graphics::Device::get_default());
 		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get_default());
 
-		canvas = graphics::Canvas::create(graphics::Device::get_default(), hdr, msaa_3d);
-		set_canvas_target();
+		canvas = graphics::Canvas::create(graphics::RenderPreferences::create(graphics::Device::get_default(), hdr, msaa_3d));
+		set_canvas_output();
 		canvas->set_resource(graphics::ResourceFontAtlas, -1, app->font_atlas, "default_font");
 
 		physics_scene = physics::Scene::create(physics::Device::get_default(), -9.81f, 2);
 
 		window->add_resize_listener([](Capture& c, const Vec2u&) {
-			c.thiz<GraphicsWindow>()->set_canvas_target();
+			c.thiz<GraphicsWindow>()->set_canvas_output();
 		}, Capture().set_thiz(this));
 
 		world = World::create();
@@ -187,12 +187,12 @@ namespace flame
 			world->release();
 	}
 
-	void GraphicsWindow::set_canvas_target()
+	void GraphicsWindow::set_canvas_output()
 	{
 		std::vector<graphics::ImageView*> vs(swapchain->get_images_count());
 		for (auto i = 0; i < vs.size(); i++)
 			vs[i] = swapchain->get_image(i)->get_view();
-		canvas->set_target(vs.size(), vs.data());
+		canvas->set_output(vs.size(), vs.data());
 	}
 
 	void GraphicsWindow::update()

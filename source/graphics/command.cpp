@@ -11,8 +11,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		CommandPoolPrivate::CommandPoolPrivate(DevicePrivate* d, int queue_family_idx) :
-			device(d)
+		CommandPoolPrivate::CommandPoolPrivate(DevicePrivate* device, int queue_family_idx) :
+			device(device)
 		{
 			VkCommandPoolCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -20,7 +20,7 @@ namespace flame
 			info.pNext = nullptr;
 			info.queueFamilyIndex = queue_family_idx;
 
-			chk_res(vkCreateCommandPool(d->vk_device, &info, nullptr, &vk_command_buffer_pool));
+			chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &vk_command_buffer_pool));
 		}
 
 		CommandPoolPrivate::~CommandPoolPrivate()
@@ -28,13 +28,13 @@ namespace flame
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
 		}
 
-		CommandPool* CommandPool::create(Device* d, int queue_family_idx)
+		CommandPool* CommandPool::create(Device* device, int queue_family_idx)
 		{
-			return new CommandPoolPrivate((DevicePrivate*)d, queue_family_idx);
+			return new CommandPoolPrivate((DevicePrivate*)device, queue_family_idx);
 		}
 
 		CommandBufferPrivate::CommandBufferPrivate(CommandPoolPrivate* p, bool sub) :
-			command_buffer_pool(p)
+			pool(p)
 		{
 			VkCommandBufferAllocateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -51,7 +51,7 @@ namespace flame
 
 		CommandBufferPrivate::~CommandBufferPrivate()
 		{
-			vkFreeCommandBuffers(command_buffer_pool->device->vk_device, command_buffer_pool->vk_command_buffer_pool, 1, &vk_command_buffer);
+			vkFreeCommandBuffers(pool->device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
 		}
 
 		void CommandBufferPrivate::begin(bool once)
@@ -64,24 +64,14 @@ namespace flame
 			info.pInheritanceInfo = nullptr;
 
 			chk_res(vkBeginCommandBuffer(vk_command_buffer, &info));
-			current_renderpass = nullptr;
-			current_subpass = 0;
-			current_framebuffer = nullptr;
-			current_pipeline = nullptr;
 		}
 
-		void CommandBufferPrivate::begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues, RenderpassPrivate* _rp)
+		void CommandBufferPrivate::begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const Vec4f* clearvalues)
 		{
-			auto rp = _rp ? _rp : fb->renderpass;
-
-			current_renderpass = rp;
-			current_subpass = 0;
-			current_framebuffer = fb;
-
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			info.pNext = nullptr;
-			info.renderPass = rp->vk_renderpass;
+			info.renderPass = rp ? rp->vk_renderpass : fb->renderpass->vk_renderpass;
 			info.framebuffer = fb->vk_framebuffer;
 			info.renderArea.offset.x = 0;
 			info.renderArea.offset.y = 0;
@@ -124,18 +114,12 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* p)
 		{
-			if (current_pipeline == p)
-				return;
-
-			assert(p->type != PipelineNone);
-			current_pipeline = p;
 			vkCmdBindPipeline(vk_command_buffer, to_backend(p->type), p->vk_pipeline);
 		}
 
-		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
+		void CommandBufferPrivate::bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
 		{
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(current_pipeline ? current_pipeline->type : PipelineGraphics),
-				pll ? pll->vk_pipeline_layout : current_pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(type), pll->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* b, uint id)
@@ -151,8 +135,6 @@ namespace flame
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll)
 		{
-			if (!pll)
-				pll = current_pipeline->pipeline_layout;
 			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
@@ -395,10 +377,10 @@ namespace flame
 			return new CommandBufferPrivate((CommandPoolPrivate*)p, sub);
 		}
 
-		QueuePrivate::QueuePrivate(DevicePrivate* d, uint queue_family_idx) :
-			device(d)
+		QueuePrivate::QueuePrivate(DevicePrivate* device, uint queue_family_idx) :
+			device(device)
 		{
-			vkGetDeviceQueue(d->vk_device, queue_family_idx, 0, &vk_queue);
+			vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &vk_queue);
 		}
 
 		void QueuePrivate::wait_idle()
@@ -443,9 +425,9 @@ namespace flame
 			chk_res(vkQueuePresentKHR(vk_queue, &info));
 		}
 
-		Queue* Queue::create(Device* d, uint queue_family_idx)
+		Queue* Queue::create(Device* device, uint queue_family_idx)
 		{
-			return new QueuePrivate((DevicePrivate*)d, queue_family_idx);
+			return new QueuePrivate((DevicePrivate*)device, queue_family_idx);
 		}
 
 		ImmediateCommandBuffer::ImmediateCommandBuffer()

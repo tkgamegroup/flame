@@ -6,8 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		BufferPrivate::BufferPrivate(DevicePrivate* d, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
-			device(d)
+		BufferPrivate::BufferPrivate(DevicePrivate* device, uint _size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop) :
+			device(device)
 		{
 			size = _size;
 
@@ -21,11 +21,11 @@ namespace flame
 			buffer_info.queueFamilyIndexCount = 0;
 			buffer_info.pQueueFamilyIndices = nullptr;
 
-			auto res = vkCreateBuffer(d->vk_device, &buffer_info, nullptr, &vk_buffer);
+			auto res = vkCreateBuffer(device->vk_device, &buffer_info, nullptr, &vk_buffer);
 			assert(res == VK_SUCCESS);
 
 			VkMemoryRequirements mem_requirements;
-			vkGetBufferMemoryRequirements(d->vk_device, vk_buffer, &mem_requirements);
+			vkGetBufferMemoryRequirements(device->vk_device, vk_buffer, &mem_requirements);
 
 			assert(_size <= mem_requirements.size);
 
@@ -33,11 +33,11 @@ namespace flame
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			alloc_info.pNext = nullptr;
 			alloc_info.allocationSize = mem_requirements.size;
-			alloc_info.memoryTypeIndex = d->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
+			alloc_info.memoryTypeIndex = device->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
-			chk_res(vkAllocateMemory(d->vk_device, &alloc_info, nullptr, &vk_memory));
+			chk_res(vkAllocateMemory(device->vk_device, &alloc_info, nullptr, &vk_memory));
 
-			chk_res(vkBindBufferMemory(d->vk_device, vk_buffer, vk_memory, 0));
+			chk_res(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
 		}
 
 		BufferPrivate::~BufferPrivate()
@@ -78,9 +78,9 @@ namespace flame
 			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
 		}
 
-		Buffer* Buffer::create(Device* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
+		Buffer* Buffer::create(Device* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop)
 		{
-			return new BufferPrivate((DevicePrivate*)d, size, usage, mem_prop);
+			return new BufferPrivate((DevicePrivate*)device, size, usage, mem_prop);
 		}
 
 		ImmediateStagingBuffer::ImmediateStagingBuffer(uint size, void* data)

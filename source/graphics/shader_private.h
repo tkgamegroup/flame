@@ -20,7 +20,7 @@ namespace flame
 			DevicePrivate* device;
 			VkDescriptorPool vk_descriptor_pool;
 
-			DescriptorPoolPrivate(DevicePrivate* d);
+			DescriptorPoolPrivate(DevicePrivate* device);
 			~DescriptorPoolPrivate();
 
 			void release() override { delete this; }
@@ -48,7 +48,7 @@ namespace flame
 
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
 
-			DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> bindings);
+			DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> bindings);
 			~DescriptorSetLayoutPrivate();
 
 			void release() override { delete this; }
@@ -98,7 +98,7 @@ namespace flame
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_layouts;
 			uint push_cconstant_size;
 
-			PipelineLayoutPrivate(DevicePrivate* d, std::span<DescriptorSetLayoutPrivate*> descriptorlayouts, uint push_constant_size);
+			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptorlayouts, uint push_constant_size);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
@@ -148,7 +148,7 @@ namespace flame
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content);
+			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content);
 			~ShaderPrivate();
 
 			void release() override { delete this; }
@@ -156,7 +156,7 @@ namespace flame
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 			const char* get_prefix() const override { return prefix.c_str(); }
 
-			static ShaderPrivate* create(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix = "");
+			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& prefix = "");
 		};
 
 		struct PipelinePrivate : Pipeline
@@ -169,18 +169,16 @@ namespace flame
 
 			VkPipeline vk_pipeline;
 
-			PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, RenderpassPrivate* rp,
-				uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0), RasterInfo* raster = nullptr, 
-				SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const BlendOption> blend_options = {},
-				std::span<const uint> dynamic_states = {});
-			PipelinePrivate(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+			PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, 
+				RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi = nullptr, RasterInfo* raster = nullptr, DepthInfo* depth = nullptr, 
+				std::span<const BlendOption> blend_options = {}, std::span<const uint> dynamic_states = {});
+			PipelinePrivate(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 			~PipelinePrivate();
 
-			static PipelinePrivate* create(DevicePrivate* d, std::span<ShaderPrivate*> shaders, 
-				PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, const Vec2u& vp = Vec2u(0),
-				RasterInfo* raster = nullptr, SampleCount sc = SampleCount_1, DepthInfo* depth = nullptr, std::span<const BlendOption> blend_options = {}, 
-				std::span<const uint> dynamic_states = {});
-			static PipelinePrivate* create(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
+			static PipelinePrivate* create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, 
+				Renderpass* rp, uint subpass_idx, VertexInfo* vi = nullptr, RasterInfo* raster = nullptr, DepthInfo* depth = nullptr, 
+				std::span<const BlendOption> blend_options = {}, std::span<const uint> dynamic_states = {});
+			static PipelinePrivate* create(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll);
 
 			void release() override { delete this; }
 

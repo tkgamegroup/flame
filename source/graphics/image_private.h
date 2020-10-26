@@ -28,8 +28,8 @@ namespace flame
 
 			void init(const Vec2u& size);
 			void build_default_views();
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
-			ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint level, uint layer, void* native);
+			ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
 			void release() override { delete this; }
@@ -44,8 +44,8 @@ namespace flame
 
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
-			static ImagePrivate* create(DevicePrivate* d, Bitmap* bmp);
-			static ImagePrivate* create(DevicePrivate* d, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
+			static ImagePrivate* create(DevicePrivate* device, Bitmap* bmp);
+			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
 		};
 
 		struct ImageViewPrivate : ImageView
@@ -90,7 +90,7 @@ namespace flame
 			DevicePrivate* device;
 			VkSampler vk_sampler;
 
-			SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates = false);
+			SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates = false);
 			~SamplerPrivate();
 
 			void release() override { delete this; }
@@ -124,7 +124,7 @@ namespace flame
 			ImagePrivate* image;
 			std::vector<std::unique_ptr<ImageTilePrivate>> tiles;
 
-			ImageAtlasPrivate(DevicePrivate* d, const std::wstring& atlas_filename);
+			ImageAtlasPrivate(DevicePrivate* device, const std::wstring& atlas_filename);
 			~ImageAtlasPrivate();
 
 			void release() override { delete this; }

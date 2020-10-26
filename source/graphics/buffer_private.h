@@ -18,7 +18,7 @@ namespace flame
 			VkBuffer vk_buffer;
 			VkDeviceMemory vk_memory;
 
-			BufferPrivate(DevicePrivate* d, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
+			BufferPrivate(DevicePrivate* device, uint size, BufferUsageFlags usage, MemoryPropertyFlags mem_prop);
 			~BufferPrivate();
 
 			void release() override { delete this; }

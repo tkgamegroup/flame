@@ -68,9 +68,9 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* d, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
 
 		};
 
@@ -91,7 +91,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 			
-			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* d, Filter mag_filter, Filter min_filter, AddressMode address_mode = AddressClampToEdge, bool unnormalized_coordinates = true);
+			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode = AddressClampToEdge, bool unnormalized_coordinates = true);
 		};
 
 		struct ImageTile
@@ -114,7 +114,7 @@ namespace flame
 
 			virtual Image* get_image() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static ImageAtlas* create(Device* d, const wchar_t* filename);
+			FLAME_GRAPHICS_EXPORTS static ImageAtlas* create(Device* device, const wchar_t* filename);
 		};
 	}
 }

@@ -78,11 +78,11 @@ namespace flame
 			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
-			DevicePrivate* d;
+			DevicePrivate* device;
 			std::unique_ptr<ImagePrivate> image;
 			ImageViewPrivate* view;
 
-			FontAtlasPrivate(DevicePrivate* d, std::span<FontPrivate*> fonts);
+			FontAtlasPrivate(DevicePrivate* device, std::span<FontPrivate*> fonts);
 
 			void release() override { delete this; }
 

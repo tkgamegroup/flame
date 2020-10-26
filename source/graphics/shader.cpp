@@ -8,8 +8,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* d) :
-			device(d)
+		DescriptorPoolPrivate::DescriptorPoolPrivate(DevicePrivate* device) :
+			device(device)
 		{
 			VkDescriptorPoolSize descriptorPoolSizes[] = {
 				{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16},
@@ -33,9 +33,9 @@ namespace flame
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
 		}
 
-		DescriptorPool* DescriptorPool::create(Device* d)
+		DescriptorPool* DescriptorPool::create(Device* device)
 		{
-			return new DescriptorPoolPrivate((DevicePrivate*)d);
+			return new DescriptorPoolPrivate((DevicePrivate*)device);
 		}
 
 		DescriptorBindingPrivate::DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info) :
@@ -46,8 +46,8 @@ namespace flame
 		{
 		}
 
-		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* d, std::span<const DescriptorBindingInfo> _bindings) :
-			device(d)
+		DescriptorSetLayoutPrivate::DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> _bindings) :
+			device(device)
 		{
 			std::vector<VkDescriptorSetLayoutBinding> vk_bindings(_bindings.size());
 			bindings.resize(_bindings.size());
@@ -80,9 +80,9 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
-		DescriptorSetLayout* DescriptorSetLayout::create(Device* d, uint binding_count, const DescriptorBindingInfo* bindings)
+		DescriptorSetLayout* DescriptorSetLayout::create(Device* device, uint binding_count, const DescriptorBindingInfo* bindings)
 		{
-			return new DescriptorSetLayoutPrivate((DevicePrivate*)d, { bindings, binding_count });
+			return new DescriptorSetLayoutPrivate((DevicePrivate*)device, { bindings, binding_count });
 		}
 
 		DescriptorSetPrivate::DescriptorSetPrivate(DescriptorPoolPrivate* p, DescriptorSetLayoutPrivate* l) :
@@ -154,8 +154,8 @@ namespace flame
 			return new DescriptorSetPrivate((DescriptorPoolPrivate*)p, (DescriptorSetLayoutPrivate*)l);
 		}
 
-		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* d, std::span<DescriptorSetLayoutPrivate*> _descriptor_layouts, uint _push_constant_size) :
-			device(d),
+		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> _descriptor_layouts, uint _push_constant_size) :
+			device(device),
 			push_cconstant_size(_push_constant_size)
 		{
 			std::vector<VkDescriptorSetLayout> raw_descriptor_set_layouts;
@@ -189,13 +189,13 @@ namespace flame
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
-		PipelineLayout* PipelineLayout::create(Device* d, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
+		PipelineLayout* PipelineLayout::create(Device* device, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
 		{
-			return new PipelineLayoutPrivate((DevicePrivate*)d, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
+			return new PipelineLayoutPrivate((DevicePrivate*)device, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
 		}
 
-		ShaderPrivate::ShaderPrivate(DevicePrivate* d, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content) :
-			device(d),
+		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content) :
+			device(device),
 			filename(filename),
 			prefix(prefix)
 		{
@@ -207,7 +207,7 @@ namespace flame
 			shader_info.pNext = nullptr;
 			shader_info.codeSize = spv_content.size();
 			shader_info.pCode = (uint*)spv_content.data();
-			chk_res(vkCreateShaderModule(d->vk_device, &shader_info, nullptr, &vk_module));
+			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &vk_module));
 		}
 
 		ShaderPrivate::~ShaderPrivate()
@@ -216,7 +216,7 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPrivate* ShaderPrivate::create(DevicePrivate* d, const std::filesystem::path& _filename, const std::string& prefix)
+		ShaderPrivate* ShaderPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename, const std::string& prefix)
 		{
 			auto filename = _filename;
 			filename.make_preferred();
@@ -349,13 +349,13 @@ namespace flame
 				return nullptr;
 			}
 
-			return new ShaderPrivate(d, filename, prefix, spv_file);
+			return new ShaderPrivate(device, filename, prefix, spv_file);
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,
-			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
-			DepthInfo* depth, std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states) :
-			device(d),
+		PipelinePrivate::PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,
+			RenderpassPrivate* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth, 
+			std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states) :
+			device(device),
 			pipeline_layout(pll)
 		{
 			type = PipelineGraphics;
@@ -428,16 +428,16 @@ namespace flame
 			tess_state.patchControlPoints = vi ? vi->patch_control_points : 0;
 
 			VkViewport viewport;
-			viewport.width = (float)vp.x();
-			viewport.height = (float)vp.y();
-			viewport.minDepth = (float)0.0f;
-			viewport.maxDepth = (float)1.0f;
+			viewport.width = 1.f;
+			viewport.height = 1.f;
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
 			viewport.x = 0;
 			viewport.y = 0;
 
 			VkRect2D scissor;
-			scissor.extent.width = vp.x();
-			scissor.extent.height = vp.y();
+			scissor.extent.width = 1;
+			scissor.extent.height = 1;
 			scissor.offset.x = 0;
 			scissor.offset.y = 0;
 
@@ -469,7 +469,10 @@ namespace flame
 			multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 			multisample_state.flags = 0;
 			multisample_state.pNext = nullptr;
-			multisample_state.rasterizationSamples = to_backend(sc);
+			{
+				auto& res_atts = rp->subpasses[subpass_idx]->resolve_attachments;
+				multisample_state.rasterizationSamples = to_backend(res_atts.empty() ? SampleCount_1 : res_atts[0]->sample_count);
+			}
 			multisample_state.sampleShadingEnable = VK_FALSE;
 			multisample_state.minSampleShading = 0.f;
 			multisample_state.pSampleMask = nullptr;
@@ -525,13 +528,10 @@ namespace flame
 
 			for (auto i = 0; i < dynamic_states.size(); i++)
 				vk_dynamic_states.push_back(to_backend((DynamicState)dynamic_states[i]));
-			if (vp.x() == 0 && vp.y() == 0)
-			{
-				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
-					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_SCISSOR) == vk_dynamic_states.end())
-					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_SCISSOR);
-			}
+			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
+				vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+			if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_SCISSOR) == vk_dynamic_states.end())
+				vk_dynamic_states.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
 			VkPipelineDynamicStateCreateInfo dynamic_state;
 			dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -561,11 +561,11 @@ namespace flame
 			pipeline_info.basePipelineHandle = 0;
 			pipeline_info.basePipelineIndex = 0;
 
-			chk_res(vkCreateGraphicsPipelines(d->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
+			chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &vk_pipeline));
 		}
 
-		PipelinePrivate::PipelinePrivate(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll) :
-			device(d),
+		PipelinePrivate::PipelinePrivate(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll) :
+			device(device),
 			pipeline_layout(pll)
 		{
 			type = PipelineCompute;
@@ -595,9 +595,9 @@ namespace flame
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, std::span<ShaderPrivate*> shaders,
-			PipelineLayoutPrivate* pll, Renderpass* rp, uint subpass_idx, VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, 
-			DepthInfo* depth, std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, std::span<ShaderPrivate*> shaders, PipelineLayoutPrivate* pll, 
+			Renderpass* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth, 
+			std::span<const BlendOption> blend_options, std::span<const uint> dynamic_states)
 		{
 			auto has_vert_stage = false;
 			auto tess_stage_count = 0;
@@ -618,32 +618,30 @@ namespace flame
 			if (!has_vert_stage || (tess_stage_count != 0 && tess_stage_count != 2))
 				return nullptr;
 
-			return new PipelinePrivate(d, shaders, pll, (RenderpassPrivate*)rp, subpass_idx, vi, vp, raster, sc, depth, blend_options, dynamic_states);
+			return new PipelinePrivate(device, shaders, pll, (RenderpassPrivate*)rp, subpass_idx, vi, raster, depth, blend_options, dynamic_states);
 		}
 
-		PipelinePrivate* PipelinePrivate::create(DevicePrivate* d, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
+		PipelinePrivate* PipelinePrivate::create(DevicePrivate* device, ShaderPrivate* compute_shader, PipelineLayoutPrivate* pll)
 		{
 			if (compute_shader->type != ShaderStageComp)
 				return nullptr;
 
-			return new PipelinePrivate(d, compute_shader, pll);
+			return new PipelinePrivate(device, compute_shader, pll);
 		}
 
-		Pipeline* create(Device* d, uint shaders_count,
-			Shader* const* shaders, PipelineLayout* pll, Renderpass* rp, uint subpass_idx,
-			VertexInfo* vi, const Vec2u& vp, RasterInfo* raster, SampleCount sc, DepthInfo* depth,
+		Pipeline* create(Device* device, uint shaders_count, Shader* const* shaders, PipelineLayout* pll, 
+			Renderpass* rp, uint subpass_idx, VertexInfo* vi, RasterInfo* raster, DepthInfo* depth,
 			uint blend_options_count, const BlendOption* blend_options,
 			uint dynamic_states_count, const uint* dynamic_states)
 		{
-			return PipelinePrivate::create((DevicePrivate*)d,  
-				{ (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, rp, subpass_idx, vi, vp, raster, sc, depth, 
-				{ blend_options , blend_options_count },
-				{ dynamic_states , dynamic_states_count });
+			return PipelinePrivate::create((DevicePrivate*)device, { (ShaderPrivate**)shaders, shaders_count }, (PipelineLayoutPrivate*)pll, 
+				rp, subpass_idx, vi, raster, depth, 
+				{ blend_options , blend_options_count }, { dynamic_states , dynamic_states_count });
 		}
 
-		Pipeline* create(Device* d, Shader* compute_shader, PipelineLayout* pll)
+		Pipeline* create(Device* device, Shader* compute_shader, PipelineLayout* pll)
 		{
-			return PipelinePrivate::create((DevicePrivate*)d, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
+			return PipelinePrivate::create((DevicePrivate*)device, (ShaderPrivate*)compute_shader, (PipelineLayoutPrivate*)pll);
 		}
 	}
 }

@@ -38,24 +38,31 @@ namespace flame
 			ResourceModel
 		};
 
+		struct RenderPreferences
+		{
+			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true, bool msaa_3d = true);
+		};
+
 		struct ArmatureDeformer
 		{
 			virtual void release() = 0;
 
 			virtual void set_pose(uint id, const Mat4f& pose) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static ArmatureDeformer* create(Device* device, Mesh* mesh);
+			FLAME_GRAPHICS_EXPORTS static ArmatureDeformer* create(RenderPreferences* preferences, Mesh* mesh);
 		};
 
 		struct Canvas
 		{
 			virtual void release() = 0;
 
+			virtual RenderPreferences* get_preferences() const = 0;
+
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;
 
-			virtual ImageView* get_target(uint idx) const = 0;
-			virtual void set_target(uint views_count, ImageView* const* views) = 0;
+			virtual ImageView* get_output(uint idx) const = 0;
+			virtual void set_output(uint views_count, ImageView* const* views) = 0;
 
 			virtual void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) = 0;
 			virtual int find_resource(ResourceType type, const char* name) = 0;
@@ -89,7 +96,7 @@ namespace flame
 			virtual void prepare() = 0;
 			virtual void record(CommandBuffer* cb, uint image_index) = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Canvas* create(Device* d, bool hdr = false, bool msaa_3d = false);
+			FLAME_GRAPHICS_EXPORTS static Canvas* create(RenderPreferences* preferences);
 		};
 	}
 }

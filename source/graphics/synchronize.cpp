@@ -5,8 +5,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		SemaphorePrivate::SemaphorePrivate(DevicePrivate* d) :
-			device(d)
+		SemaphorePrivate::SemaphorePrivate(DevicePrivate* device) :
+			device(device)
 		{
 			VkSemaphoreCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -18,13 +18,13 @@ namespace flame
 			vkDestroySemaphore(device->vk_device, vk_semaphore, nullptr);
 		}
 
-		Semaphore* Semaphore::create(Device* d)
+		Semaphore* Semaphore::create(Device* device)
 		{
-			return new SemaphorePrivate((DevicePrivate*)d);
+			return new SemaphorePrivate((DevicePrivate*)device);
 		}
 
-		FencePrivate::FencePrivate(DevicePrivate* d) :
-			device(d)
+		FencePrivate::FencePrivate(DevicePrivate* device) :
+			device(device)
 		{
 			VkFenceCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -48,9 +48,9 @@ namespace flame
 			}
 		}
 
-		Fence* Fence::create(Device* d)
+		Fence* Fence::create(Device* device)
 		{
-			return new FencePrivate((DevicePrivate*)d);
+			return new FencePrivate((DevicePrivate*)device);
 		}
 	}
 }

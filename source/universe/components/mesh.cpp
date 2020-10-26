@@ -78,7 +78,7 @@ namespace flame
 				auto bones_count = mesh->get_bones_count();
 				if (bones_count > 0)
 				{
-					deformer = graphics::ArmatureDeformer::create(graphics::Device::get_default(), mesh);
+					deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
 					bones.resize(bones_count);
 					auto armature = entity->parent;
 					if (armature)

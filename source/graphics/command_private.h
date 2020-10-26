@@ -22,7 +22,7 @@ namespace flame
 			DevicePrivate* device;
 			VkCommandPool vk_command_buffer_pool;
 
-			CommandPoolPrivate(DevicePrivate* d, int queue_family_idx);
+			CommandPoolPrivate(DevicePrivate* device, int queue_family_idx);
 			~CommandPoolPrivate();
 
 			void release() override { delete this; }
@@ -30,9 +30,9 @@ namespace flame
 
 		struct CommandBufferBridge : CommandBuffer
 		{
-			void begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues, Renderpass* rp) override;
+			void begin_renderpass(Renderpass* rp, Framebuffer* fb, const Vec4f* clearvalues) override;
 			void bind_pipeline(Pipeline* p) override;
-			void bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll) override;
+			void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) override;
 			void bind_vertex_buffer(Buffer* b, uint id) override;
 			void bind_index_buffer(Buffer* b, IndiceType t) override;
 			void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll) override;
@@ -50,12 +50,7 @@ namespace flame
 
 		struct CommandBufferPrivate : CommandBufferBridge
 		{
-			CommandPoolPrivate* command_buffer_pool;
-
-			RenderpassPrivate* current_renderpass = nullptr;
-			uint current_subpass = 0;
-			FramebufferPrivate* current_framebuffer = nullptr;
-			PipelinePrivate* current_pipeline = nullptr;
+			CommandPoolPrivate* pool;
 
 			VkCommandBuffer vk_command_buffer;
 
@@ -65,12 +60,12 @@ namespace flame
 			void release() override { delete this; }
 
 			void begin(bool once = false);
-			void begin_renderpass(FramebufferPrivate* fb, const Vec4f* clearvalues = nullptr, RenderpassPrivate* rp = nullptr);
+			void begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const Vec4f* clearvalues = nullptr);
 			void end_renderpass() override;
 			void set_viewport(const Vec4f& rect) override;
 			void set_scissor(const Vec4f& rect) override;
 			void bind_pipeline(PipelinePrivate* p);
-			void bind_descriptor_set(DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll);
+			void bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll);
 			void bind_vertex_buffer(BufferPrivate* b, uint id);
 			void bind_index_buffer(BufferPrivate* b, IndiceType t);
 			void push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll);
@@ -90,9 +85,9 @@ namespace flame
 			void end() override;
 		};
 
-		inline void CommandBufferBridge::begin_renderpass(Framebuffer* fb, const Vec4f* clearvalues, Renderpass* rp)
+		inline void CommandBufferBridge::begin_renderpass(Renderpass* rp, Framebuffer* fb, const Vec4f* clearvalues)
 		{
-			((CommandBufferPrivate*)this)->begin_renderpass((FramebufferPrivate*)fb, clearvalues, (RenderpassPrivate*)rp);
+			((CommandBufferPrivate*)this)->begin_renderpass((RenderpassPrivate*)rp, (FramebufferPrivate*)fb, clearvalues);
 		}
 
 		inline void CommandBufferBridge::bind_pipeline(Pipeline* p)
@@ -100,9 +95,9 @@ namespace flame
 			((CommandBufferPrivate*)this)->bind_pipeline((PipelinePrivate*)p);
 		}
 
-		inline void CommandBufferBridge::bind_descriptor_set(DescriptorSet* s, uint idx, PipelineLayout* pll)
+		inline void CommandBufferBridge::bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll)
 		{
-			((CommandBufferPrivate*)this)->bind_descriptor_set((DescriptorSetPrivate*)s, idx, (PipelineLayoutPrivate*)pll);
+			((CommandBufferPrivate*)this)->bind_descriptor_set(type, (DescriptorSetPrivate*)s, idx, (PipelineLayoutPrivate*)pll);
 		}
 
 		inline void CommandBufferBridge::bind_vertex_buffer(Buffer* b, uint id)
@@ -181,7 +176,7 @@ namespace flame
 			DevicePrivate* device;
 			VkQueue vk_queue;
 
-			QueuePrivate(DevicePrivate* d, uint queue_family_idx);
+			QueuePrivate(DevicePrivate* device, uint queue_family_idx);
 
 			void release() override { delete this; }
 

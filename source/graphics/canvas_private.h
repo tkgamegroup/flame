@@ -17,6 +17,82 @@ namespace flame
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
 
+		struct RenderPreferencesPrivate : RenderPreferences
+		{
+			DevicePrivate* device;
+
+			bool hdr;
+			bool msaa_3d;
+
+			std::unique_ptr<SamplerPrivate> map_sampler;
+			std::unique_ptr<SamplerPrivate> shadow_sampler;
+			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
+			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
+			std::unique_ptr<RenderpassPrivate> image1_r16_renderpass;
+			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
+			std::unique_ptr<RenderpassPrivate> depth_renderpass;
+			std::unique_ptr<DescriptorSetLayoutPrivate> element_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> mesh_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> armature_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> material_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> light_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> render_data_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> terrain_descriptorsetlayout;
+			std::unique_ptr<DescriptorSetLayoutPrivate> sampler1_descriptorsetlayout;
+			std::unique_ptr<PipelineLayoutPrivate> element_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> mesh_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> terrain_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> depth_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> sampler1_pc0_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> sampler1_pc4_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> sampler1_pc8_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> image1_pc0_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> image2_pc0_pipelinelayout;
+			std::unique_ptr<PipelineLayoutPrivate> line_pipelinelayout;
+			std::unique_ptr<ShaderPrivate> element_vert;
+			std::unique_ptr<ShaderPrivate> element_frag;
+			std::unique_ptr<ShaderPrivate> mesh_vert;
+			std::unique_ptr<ShaderPrivate> mesh_armature_vert;
+			std::unique_ptr<ShaderPrivate> mesh_frag;
+			std::unique_ptr<ShaderPrivate> terrain_vert;
+			std::unique_ptr<ShaderPrivate> terrain_tesc;
+			std::unique_ptr<ShaderPrivate> terrain_tese;
+			std::unique_ptr<ShaderPrivate> terrain_frag;
+			std::unique_ptr<ShaderPrivate> depth_vert;
+			std::unique_ptr<ShaderPrivate> depth_armature_vert;
+			std::unique_ptr<ShaderPrivate> depth_frag;
+			std::unique_ptr<ShaderPrivate> line3_vert;
+			std::unique_ptr<ShaderPrivate> line3_frag;
+			std::unique_ptr<ShaderPrivate> fullscreen_vert;
+			std::unique_ptr<ShaderPrivate> blurh_frag[10];
+			std::unique_ptr<ShaderPrivate> blurv_frag[10];
+			std::unique_ptr<ShaderPrivate> blurh_depth_frag;
+			std::unique_ptr<ShaderPrivate> blurv_depth_frag;
+			std::unique_ptr<ShaderPrivate> blit_frag;
+			std::unique_ptr<ShaderPrivate> filter_bright_frag;
+			std::unique_ptr<ShaderPrivate> box_frag;
+			std::unique_ptr<ShaderPrivate> gamma_frag;
+			std::unique_ptr<PipelinePrivate> element_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_armature_pipeline;
+			std::unique_ptr<PipelinePrivate> terrain_pipeline;
+			std::unique_ptr<PipelinePrivate> depth_pipeline;
+			std::unique_ptr<PipelinePrivate> depth_armature_pipeline;
+			std::unique_ptr<PipelinePrivate> line3_pipeline;
+			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
+			std::unique_ptr<PipelinePrivate> blurv_pipeline[10];
+			std::unique_ptr<PipelinePrivate> blurh_depth_pipeline;
+			std::unique_ptr<PipelinePrivate> blurv_depth_pipeline;
+			std::unique_ptr<PipelinePrivate> blit_8_pipeline;
+			std::unique_ptr<PipelinePrivate> blit_16_pipeline;
+			std::unique_ptr<PipelinePrivate> filter_bright_pipeline;
+			std::unique_ptr<PipelinePrivate> downsample_pipeline;
+			std::unique_ptr<PipelinePrivate> upsample_pipeline;
+			std::unique_ptr<PipelinePrivate> gamma_pipeline;
+
+			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
+		};
+
 		template <class T, BufferUsageFlags U>
 		struct TBuffer
 		{
@@ -116,22 +192,16 @@ namespace flame
 			}
 		};
 
-		template <Format F>
-		struct TImage
+		struct ArmatureDeformerPrivate : ArmatureDeformer
 		{
-			DevicePrivate* d = nullptr;
-			std::unique_ptr<ImagePrivate> img;
-			ImageViewPrivate* iv = nullptr;
-			std::unique_ptr<FramebufferPrivate> fb;
-			std::unique_ptr<DescriptorSetPrivate> ds;
+			MeshPrivate* mesh;
+			TBuffer<Mat4f, BufferUsageStorage> poses_buffer;
+			std::unique_ptr<DescriptorSetPrivate> descriptorset;
+			Vec2i dirty_range = Vec2i(0);
 
-			void create(DevicePrivate* _d, CommandBuffer* cb, const Vec2u& size, RenderpassPrivate* rp = nullptr, DescriptorSetLayoutPrivate* dsl = nullptr)
-			{
-				d = _d;
-				img.reset(new ImagePrivate(d, F, size, 1, 1, SampleCount_1, ImageUsageAttachment));
-				cb->image_barrier(img.get(), {}, ImageLayoutUndefined, ImageLayoutAttachment);
-				iv = img->views[0].get();
-			}
+			ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh);
+			void release() override { delete this; }
+			void set_pose(uint id, const Mat4f& pose) override;
 		};
 
 		const auto msaa_sample_count = SampleCount_8;
@@ -185,18 +255,6 @@ namespace flame
 			ModelPrivate* model;
 			std::vector<uint> materials;
 			std::vector<std::unique_ptr<Mesh>> meshes;
-		};
-
-		struct ArmatureDeformerPrivate : ArmatureDeformer
-		{
-			MeshPrivate* mesh;
-			TBuffer<Mat4f, BufferUsageStorage> poses_buffer;
-			std::unique_ptr<DescriptorSetPrivate> descriptorset;
-			Vec2i dirty_range = Vec2i(0);
-
-			ArmatureDeformerPrivate(DevicePrivate* device, MeshPrivate* mesh);
-			void release() override { delete this; }
-			void set_pose(uint id, const Mat4f& pose) override;
 		};
 
 		struct RenderDataS
@@ -352,7 +410,7 @@ namespace flame
 
 		struct CanvasBridge : Canvas
 		{
-			void set_target(uint views_count, ImageView* const* views) override;
+			void set_output(uint views_count, ImageView* const* views) override;
 
 			int find_resource(ResourceType type, const char* name) override;
 			uint set_resource(ResourceType type, int slot, void* p, const char* name) override;
@@ -362,10 +420,7 @@ namespace flame
 
 		struct CanvasPrivate : CanvasBridge
 		{
-			DevicePrivate* device;
-
-			bool hdr;
-			bool msaa_3d;
+			RenderPreferencesPrivate* preferences;
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
@@ -388,7 +443,7 @@ namespace flame
 			TBuffer<MaterialInfoS, BufferUsageStorage> material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
-			TImage<Format_Depth16> shadow_depth_image;
+			std::unique_ptr<ImagePrivate> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
@@ -414,21 +469,21 @@ namespace flame
 			TBuffer<TerrainInfoS, BufferUsageStorage> terrain_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> terrain_descriptorset;
 
-			std::vector<ImageViewPrivate*> target_imageviews;
-			std::vector<std::unique_ptr<FramebufferPrivate>> target_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> target_descriptorsets;
+			std::vector<ImageViewPrivate*> output_imageviews;
+			std::vector<std::unique_ptr<FramebufferPrivate>> output_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> output_descriptorsets;
 
-			std::unique_ptr<ImagePrivate> dst_image;
-			std::unique_ptr<FramebufferPrivate> dst_framebuffer;
-			std::unique_ptr<DescriptorSetPrivate> dst_descriptorset;
+			std::unique_ptr<ImagePrivate> hdr_image;
+			std::unique_ptr<FramebufferPrivate> hdr_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> hdr_descriptorset;
+
+			std::unique_ptr<ImagePrivate> depth_image;
 
 			std::unique_ptr<ImagePrivate> msaa_image;
 			std::unique_ptr<ImagePrivate> msaa_resolve_image;
 			std::unique_ptr<DescriptorSetPrivate> msaa_descriptorset;
 
-			std::unique_ptr<ImagePrivate> depth_image;
-
-			std::vector<std::unique_ptr<FramebufferPrivate>> forward_framebuffers;
+			std::vector<std::unique_ptr<FramebufferPrivate>> mesh_framebuffers;
 
 			std::unique_ptr<ImagePrivate> back_image;
 			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
@@ -437,34 +492,27 @@ namespace flame
 
 			std::vector<std::vector<Vec2f>> paths;
 
-			std::unique_ptr<PipelineLayoutPrivate> line_pipelinelayout;
 			TBuffer<Line3, BufferUsageVertex> line3_buffer;
-			std::unique_ptr<ShaderPrivate> line3_vert;
-			std::unique_ptr<ShaderPrivate> line3_frag;
-			std::unique_ptr<PipelinePrivate> line3_pipeline;
 
 			std::vector<std::unique_ptr<Cmd>> cmds;
 			CmdDrawElement* last_element_cmd = nullptr;
 			CmdDrawMesh* last_mesh_cmd = nullptr;
 			CmdDrawLine3* last_line3_cmd = nullptr;
 
-			Vec2u target_size;
+			Vec2u output_size;
 			Vec4f curr_scissor;
 
-			PipelinePrivate* pl_element;
-			PipelinePrivate* pl_forward;
-			PipelinePrivate* pl_forward_armature;
-			PipelinePrivate* pl_terrain;
-
-			CanvasPrivate(DevicePrivate* d, bool hdr, bool msaa_3d);
+			CanvasPrivate(RenderPreferencesPrivate* preferences);
 
 			void release() override { delete this; }
+
+			RenderPreferences* get_preferences() const override { return preferences; };
 
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }
 
-			ImageView* get_target(uint idx) const override { return target_imageviews.empty() ? nullptr : (ImageView*)target_imageviews[idx]; }
-			void set_target(std::span<ImageViewPrivate*> views);
+			ImageView* get_output(uint idx) const override { return output_imageviews.empty() ? nullptr : (ImageView*)output_imageviews[idx]; }
+			void set_output(std::span<ImageViewPrivate*> views);
 
 			void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) override;
 			int find_resource(ResourceType type, const std::string& name);
@@ -503,9 +551,9 @@ namespace flame
 			void record(CommandBufferPrivate* cb, uint image_index);
 		};
 
-		inline void CanvasBridge::set_target(uint views_count, ImageView* const* views)
+		inline void CanvasBridge::set_output(uint views_count, ImageView* const* views)
 		{
-			((CanvasPrivate*)this)->set_target({ (ImageViewPrivate**)views, views_count });
+			((CanvasPrivate*)this)->set_output({ (ImageViewPrivate**)views, views_count });
 		}
 
 		inline int CanvasBridge::find_resource(ResourceType type, const char* name)

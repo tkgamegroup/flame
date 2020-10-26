@@ -58,8 +58,8 @@ namespace flame
 				views.emplace_back(new ImageViewPrivate(this, false, ImageView2D, { (uint)0, (uint)level }));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
-			device(d),
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
+			device(device),
 			format(format),
 			level(_level),
 			layer(layer),
@@ -86,26 +86,26 @@ namespace flame
 			imageInfo.pQueueFamilyIndices = nullptr;
 			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-			chk_res(vkCreateImage(d->vk_device, &imageInfo, nullptr, &vk_image));
+			chk_res(vkCreateImage(device->vk_device, &imageInfo, nullptr, &vk_image));
 
 			VkMemoryRequirements memRequirements;
-			vkGetImageMemoryRequirements(d->vk_device, vk_image, &memRequirements);
+			vkGetImageMemoryRequirements(device->vk_device, vk_image, &memRequirements);
 
 			VkMemoryAllocateInfo allocInfo;
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.pNext = nullptr;
 			allocInfo.allocationSize = memRequirements.size;
-			allocInfo.memoryTypeIndex = d->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
+			allocInfo.memoryTypeIndex = device->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
 
-			chk_res(vkAllocateMemory(d->vk_device, &allocInfo, nullptr, &vk_memory));
+			chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &vk_memory));
 
-			chk_res(vkBindImageMemory(d->vk_device, vk_image, vk_memory, 0));
+			chk_res(vkBindImageMemory(device->vk_device, vk_image, vk_memory, 0));
 
 			build_default_views();
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* d, Format format, const Vec2u& size, uint _level, uint layer, void* native) :
-			device(d),
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint _level, uint layer, void* native) :
+			device(device),
 			format(format),
 			level(_level),
 			layer(layer),
@@ -127,9 +127,9 @@ namespace flame
 			}
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, Bitmap* bmp)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Bitmap* bmp)
 		{
-			auto i = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), 
+			auto i = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()),
 				Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
 			ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
@@ -143,7 +143,7 @@ namespace flame
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* d, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -207,7 +207,7 @@ namespace flame
 				if (srgb)
 					bmp->srgb_to_linear();
 
-				ret = new ImagePrivate(d, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, 
+				ret = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1,
 					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
@@ -225,12 +225,12 @@ namespace flame
 			return ret;
 		}
 
-		Image* Image::create(Device* d, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) 
+		Image* Image::create(Device* device, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) 
 		{ 
-			return new ImagePrivate((DevicePrivate*)d, format, size, level, layer, sample_count, usage, is_cube); 
+			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
 		}
-		Image* Image::create(Device* d, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)d, bmp); }
-		Image* Image::create(Device* d, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage) { return ImagePrivate::create((DevicePrivate*)d, filename, srgb, additional_usage); }
+		Image* Image::create(Device* device, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)device, bmp); }
+		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),
@@ -272,8 +272,8 @@ namespace flame
 			return new ImageViewPrivate((ImagePrivate*)image, auto_released, type, subresource, swizzle);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* d, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates) :
-			device(d)
+		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates) :
+			device(device)
 		{
 			VkSamplerCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -304,12 +304,12 @@ namespace flame
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 		}
 
-		Sampler* Sampler::create(Device* d, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates)
+		Sampler* Sampler::create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates)
 		{
-			return new SamplerPrivate((DevicePrivate*)d, mag_filter, min_filter, address_mode, unnormalized_coordinates);
+			return new SamplerPrivate((DevicePrivate*)device, mag_filter, min_filter, address_mode, unnormalized_coordinates);
 		}
 
-		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* d, const std::wstring& filename)
+		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::wstring& filename)
 		{
 			std::wstring image_filename;
 			auto ini = parse_ini_file(filename);
@@ -321,7 +321,7 @@ namespace flame
 					border = !(e.value == "0");
 			}
 
-			image = ImagePrivate::create(d, image_filename.c_str(), false);
+			image = ImagePrivate::create(device, image_filename.c_str(), false);
 
 			auto w = (float)image->sizes[0].x();
 			auto h = (float)image->sizes[0].y();
@@ -362,7 +362,7 @@ namespace flame
 			return nullptr;;
 		}
 
-		ImageAtlas* ImageAtlas::create(Device* d, const wchar_t* filename)
+		ImageAtlas* ImageAtlas::create(Device* device, const wchar_t* filename)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -370,7 +370,7 @@ namespace flame
 				return nullptr;
 			}
 
-			return new ImageAtlasPrivate((DevicePrivate*)d, filename);
+			return new ImageAtlasPrivate((DevicePrivate*)device, filename);
 		}
 	}
 }

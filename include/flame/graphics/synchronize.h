@@ -21,7 +21,7 @@ namespace flame
 
 			virtual void wait() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* d);
+			FLAME_GRAPHICS_EXPORTS static Fence* create(Device* device);
 		};
 	}
 }

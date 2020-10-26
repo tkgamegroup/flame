@@ -52,7 +52,7 @@ namespace flame
 
 			VkRenderPass vk_renderpass;
 
-			RenderpassPrivate(DevicePrivate* d, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies = {});
+			RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies = {});
 			~RenderpassPrivate();
 
 			void release() override { delete this; }
@@ -71,7 +71,7 @@ namespace flame
 			std::vector<ImageViewPrivate*> views;
 			VkFramebuffer vk_framebuffer;
 
-			FramebufferPrivate(DevicePrivate* d, RenderpassPrivate* rp, std::span<ImageViewPrivate*> views);
+			FramebufferPrivate(DevicePrivate* device, RenderpassPrivate* rp, std::span<ImageViewPrivate*> views);
 			~FramebufferPrivate();
 
 			void release() override { delete this; }

@@ -14,7 +14,7 @@ namespace flame
 			DevicePrivate* device;
 			VkSemaphore vk_semaphore;
 
-			SemaphorePrivate(DevicePrivate* d);
+			SemaphorePrivate(DevicePrivate* device);
 			~SemaphorePrivate();
 
 			void release() override { delete this; }
@@ -26,7 +26,7 @@ namespace flame
 			uint value;
 			VkFence vk_fence;
 
-			FencePrivate(DevicePrivate* d);
+			FencePrivate(DevicePrivate* device);
 			~FencePrivate();
 
 			void release() override { delete this; }
