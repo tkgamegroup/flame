@@ -23,22 +23,6 @@ layout (location = 3) out vec3 o_coordv;
 layout (location = 4) out vec3 o_normal;
 layout (location = 5) out vec4 o_debug;
 
-TerrainInfo terrain;
-vec2 uv;
-uint id;
-
-vec3 get_coord(vec2 off)
-{
-	vec3 ret = vec3(mix(
-		mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x + off.x), 
-		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x + off.x), 
-		gl_TessCoord.y + off.y
-	));
-	//ret.y += 0.105882352 * terrain.scale.y;
-	ret.y += texture(maps[id], uv + off / terrain.blocks).r * terrain.scale.y;
-	return ret;
-}
-
 vec3 normalx(vec3 v)
 {
 	return normalize(vec3(-v.y, v.x, 0));
@@ -52,17 +36,20 @@ vec3 normalz(vec3 v)
 void main()
 {
 	uint idx = i_idxs[0];
-	terrain = terrain_infos[idx];
+	TerrainInfo terrain = terrain_infos[idx];
 
-	id = terrain.height_tex_id;
-
-	uv = mix(
+	vec2 uv = mix(
 		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x), 
 		mix(i_uvs[3], i_uvs[2], gl_TessCoord.x), 
 		gl_TessCoord.y
 	);
-
-	vec3 p = get_coord(vec2(0));
+	
+	vec3 p = vec3(mix(
+		mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x), 
+		mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x), 
+		gl_TessCoord.y
+	));
+	p.y += texture(maps[terrain.height_tex_id], uv).r * terrain.scale.y;
 
 	gl_Position = render_data.proj_view * vec4(p, 1.0);
 
@@ -70,11 +57,6 @@ void main()
 	o_uv = uv;
 	o_coordw = p;
 	o_coordv = render_data.camera_coord - p;
-
-	float off = 1.0 / terrain.tess_levels;
-	vec3 n0 = normalx(get_coord(vec2(off, 0)) - p);
-	vec3 n1 = normalx(p - get_coord(vec2(-off, 0)));
-	vec3 n2 = normalz(get_coord(vec2(0, -off)));
-	vec3 n3 = normalz(p - get_coord(vec2(0, off)));
-	o_normal = (n0 + n1 + n2 + n3) * 0.25;
+	vec3 n = texture(maps[terrain.normal_tex_id], uv).xyz * 2.0 - vec3(1.0);
+	o_normal = vec3(n.x, n.z, -n.y);
 }

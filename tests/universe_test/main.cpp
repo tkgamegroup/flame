@@ -24,11 +24,15 @@ int main(int argc, char** args)
 	}
 	{
 		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/height.png", false, graphics::ImageUsageTransferSrc);
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "height_map");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "terrain_height_map");
+	}
+	{
+		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/normal.png", false, graphics::ImageUsageTransferSrc);
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "terrain_normal_map");
 	}
 	{
 		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/color.png", true);
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "color_map");
+		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "terrain_color_map");
 	}
 
 	{

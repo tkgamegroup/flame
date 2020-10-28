@@ -31,7 +31,7 @@
       </entity>
 	    <entity>
 	      <cNode pos="-100,100,-100" />
-	      <cTerrain height_map="height_map" color_map="color_map" blocks="4,4" scale="100,200,100" tess_levels="32" />
+	      <cTerrain blocks="4,4" scale="100,200,100" tess_levels="32" height_map="terrain_height_map" normal_map="terrain_normal_map" color_map="terrain_color_map" />
         <cRigid dynamic="false" />
         <cShape type="HeightField" />
 	    </entity>

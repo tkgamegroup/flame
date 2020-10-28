@@ -338,11 +338,15 @@ namespace flame
 			float dummy1;
 
 			Vec2u blocks;
-			uint height_tex_id;
-			uint color_tex_id;
+			Vec2f dummy2;
 
 			Vec3f scale;
 			float tess_levels;
+
+			uint height_tex_id;
+			uint normal_tex_id;
+			uint color_tex_id;
+			float dummy3;
 		};
 
 		struct Cmd
@@ -541,7 +545,7 @@ namespace flame
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer) override;
-			void draw_terrain(uint height_tex_id, uint color_tex_id, const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels) override;
+			void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint color_tex_id) override;
 			void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line3* lines) override;
