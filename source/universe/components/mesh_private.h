@@ -36,6 +36,15 @@ namespace flame
 			std::vector<FramePose> frames;
 		};
 
+		std::string src;
+
+		bool cast_shadow = true;
+
+		std::string animation_name;
+
+		cNodePrivate* node = nullptr; // R ref
+		graphics::Canvas* canvas = nullptr; // R ref
+
 		int model_id = -1;
 		int mesh_id = -1;
 		graphics::Model* model = nullptr;
@@ -45,15 +54,6 @@ namespace flame
 		int animation_frame = -1;
 		uint animation_max_frame;
 		void* animation_event = nullptr;
-
-		std::string src;
-
-		bool cast_shadow = true;
-
-		std::string animation_name;
-
-		cNodePrivate* node = nullptr; // R ref
-		graphics::Canvas* canvas = nullptr; // R ref
 
 		~cMeshPrivate();
 

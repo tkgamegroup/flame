@@ -34,6 +34,6 @@ void main()
 #ifdef WIREFRAME
 	o_color = vec4(0.0, 1.0, 0.0, 1.0);
 #else
-	o_color = vec4(shading(i_coordw, i_coordv, N, V, vec3(1.0), vec3(0.0), 1.0), 1.0);
+	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, vec3(0.0), 1.0), 1.0);
 #endif
 }

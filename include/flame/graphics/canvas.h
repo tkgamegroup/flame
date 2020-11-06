@@ -11,8 +11,9 @@ namespace flame
 		struct ImageView;
 		struct ImageAtlas;
 		struct FontAtlas;
-		struct Model;
+		struct Material;
 		struct Mesh;
+		struct Model;
 		struct Sampler;
 		struct CommandBuffer;
 
@@ -34,16 +35,6 @@ namespace flame
 			Point3 b;
 		};
 
-		enum ResourceType
-		{
-			ResourceImage,
-			ResourceImageAtlas,
-			ResourceFontAtlas,
-			ResourceTexture,
-			ResourceMaterial,
-			ResourceModel
-		};
-
 		struct RenderPreferences
 		{
 			virtual void set_terrain_render(RenderType type) = 0;
@@ -60,6 +51,13 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static ArmatureDeformer* create(RenderPreferences* preferences, Mesh* mesh);
 		};
 
+		struct ElementResource
+		{
+			ImageView* iv;
+			ImageAtlas* ia;
+			FontAtlas* fa;
+		};
+
 		struct Canvas
 		{
 			virtual void release() = 0;
@@ -72,9 +70,21 @@ namespace flame
 			virtual ImageView* get_output(uint idx) const = 0;
 			virtual void set_output(uint views_count, ImageView* const* views) = 0;
 
-			virtual void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) = 0;
-			virtual int find_resource(ResourceType type, const char* name) = 0;
-			virtual uint set_resource(ResourceType type, int slot /* -1 to find an empty slot */, void* p, const char* name = nullptr) = 0;
+			virtual ElementResource get_element_resource(uint slot) = 0;
+			virtual int find_element_resource(const char* name) = 0;
+			virtual uint set_element_resource(int slot /* -1 to find an empty slot */, ElementResource r, const char* name = nullptr) = 0;
+
+			virtual ImageView* get_texture_resource(uint slot) = 0;
+			virtual int find_texture_resource(const char* name) = 0;
+			virtual uint set_texture_resource(int slot /* -1 to find an empty slot */, ImageView* iv, Sampler* sp, const char* name = nullptr) = 0;
+
+			virtual Material* get_material_resource(uint slot) = 0;
+			virtual int find_material_resource(const char* name) = 0;
+			virtual uint set_material_resource(int slot /* -1 to find an empty slot */, Material* mat, const char* name = nullptr) = 0;
+
+			virtual Model* get_model_resource(uint slot) = 0;
+			virtual int find_model_resource(const char* name) = 0;
+			virtual uint set_model_resource(int slot /* -1 to find an empty slot */, Model* mod, const char* name = nullptr) = 0;
 
 			virtual void begin_path() = 0;
 			virtual void move_to(const Vec2f& pos) = 0;

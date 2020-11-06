@@ -7,6 +7,8 @@ namespace flame
 	namespace physics
 	{
 		struct Shape;
+		struct TriangleMesh;
+		struct HeightField;
 	}
 
 	struct cNodePrivate;
@@ -21,7 +23,9 @@ namespace flame
 
 		bool trigger = false;
 
-		physics::Shape* phy_shape;
+		physics::Shape* phy_shape = nullptr;
+		physics::TriangleMesh* phy_triangle_mesh = nullptr;
+		physics::HeightField* phy_height_field = nullptr;
 
 		cNodePrivate* node = nullptr; // R ref
 		cMeshPrivate* mesh = nullptr; // R ref optional

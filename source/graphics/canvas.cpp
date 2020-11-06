@@ -19,7 +19,6 @@ namespace flame
 			hdr(hdr),
 			msaa_3d(msaa_3d)
 		{
-			map_sampler.reset(new SamplerPrivate(device, FilterLinear, FilterLinear, AddressClampToEdge));
 			shadow_sampler.reset(new SamplerPrivate(device, FilterLinear, FilterLinear, AddressClampToBorder));
 
 			{
@@ -512,11 +511,11 @@ namespace flame
 
 			element_resources.resize(64);
 			for (auto i = 0; i < element_resources.size(); i++)
-				element_resources[i].p = iv_wht;
+				element_resources[i].iv = iv_wht;
 
 			texture_resources.resize(128);
 			for (auto i = 0; i < texture_resources.size(); i++)
-				texture_resources[i].second = iv_wht;
+				texture_resources[i].iv = iv_wht;
 			material_resources.resize(128);
 			model_resources.resize(128);
 
@@ -614,8 +613,8 @@ namespace flame
 			terrain_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), preferences->terrain_descriptorsetlayout.get()));
 			terrain_descriptorset->set_buffer(0, 0, terrain_info_buffer.buf.get());
 
-			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("cube"), "cube");
-			set_resource(ResourceModel, -1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
+			set_model_resource(-1, (ModelPrivate*)Model::get_standard("cube"), "cube");
+			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 
 			line3_buffer.create(device, 200000);
 		}
@@ -742,477 +741,470 @@ namespace flame
 			}
 		}
 
-		void* CanvasPrivate::get_resource(ResourceType type, uint slot, ResourceType* real_type)
+		ElementResource CanvasPrivate::get_element_resource(uint slot)
 		{
-			switch (type)
+			if (slot < element_resources.size())
 			{
-			case ResourceImage:
-			case ResourceImageAtlas:
-			case ResourceFontAtlas:
-				if (slot < element_resources.size())
-				{
-					auto& r = element_resources[slot];
-					if (real_type)
-						*real_type = r.type;
-					return r.p;
-				}
-				break;
-			case ResourceTexture:
-				if (slot < texture_resources.size())
-				{
-					auto& r = texture_resources[slot];
-					if (r.second)
-					{
-						if (real_type)
-							*real_type = ResourceTexture;
-						return r.second;
-					}
-				}
-			case ResourceModel:
-				if (slot < model_resources.size())
-				{
-					auto& r = model_resources[slot];
-					if (r)
-					{
-						if (real_type)
-							*real_type = ResourceModel;
-						return r->model;
-					}
-				}
-				break;
+				auto& r = element_resources[slot];
+				return { r.iv, r.ia, r.fa };
 			}
-			return nullptr;
+			return { nullptr, nullptr, nullptr };
 		}
 
-		int CanvasPrivate::find_resource(ResourceType type, const std::string& name)
+		int CanvasPrivate::find_element_resource(const std::string& name)
 		{
-			switch (type)
+			for (auto i = 0; i < element_resources.size(); i++)
 			{
-			case ResourceImage:
-			case ResourceImageAtlas:
-			case ResourceFontAtlas:
-				for (auto i = 0; i < element_resources.size(); i++)
-				{
-					if (element_resources[i].name == name)
-						return i;
-				}
-				break;
-			case ResourceTexture:
-				for (auto i = 0; i < texture_resources.size(); i++)
-				{
-					if (texture_resources[i].first == name)
-						return i;
-				}
-				break;
-			case ResourceModel:
-				for (auto i = 0; i < model_resources.size(); i++)
-				{
-					if (model_resources[i] && model_resources[i]->name == name)
-						return i;
-				}
+				if (element_resources[i].name == name)
+					return i;
 			}
 			return -1;
 		}
 
-		uint CanvasPrivate::set_resource(ResourceType type, int slot, void* p, const std::string& name)
+		uint CanvasPrivate::set_element_resource(int slot, ElementResource r, const std::string& name)
 		{
 			auto device = preferences->device;
-
 			auto iv_wht = white_image->views[0].get();
-			switch (type)
+			if (slot == -1)
 			{
-			case ResourceImage:
-			case ResourceImageAtlas:
-			case ResourceFontAtlas:
-				if (slot == -1)
+				for (auto i = 1; i < element_resources.size(); i++)
 				{
-					for (auto i = 1; i < element_resources.size(); i++)
+					if (element_resources[i].iv == iv_wht)
 					{
-						if (element_resources[i].p == iv_wht)
-						{
-							slot = i;
-							break;
-						}
-					}
-				}
-				if (slot != -1)
-				{
-					auto& dst = element_resources[slot];
-					dst.name = name;
-					dst.type = type;
-					dst.p = p;
-
-					switch (type)
-					{
-					case ResourceImage:
-						element_descriptorset->set_image(0, slot, p ? (ImageViewPrivate*)p : iv_wht, device->lsp.get());
-						break;
-					case ResourceImageAtlas:
-					{
-						auto atlas = (ImageAtlasPrivate*)p;
-						element_descriptorset->set_image(0, slot, atlas->image->views[0].get(), atlas->border ? device->lsp.get() : device->nsp.get());
-					}
-						break;
-					case ResourceFontAtlas:
-					{
-						auto atlas = (FontAtlasPrivate*)p;
-						element_descriptorset->set_image(0, slot, atlas->view, device->nsp.get());
-					}
+						slot = i;
 						break;
 					}
 				}
-				break;
-			case ResourceTexture:
-				if (slot == -1)
-				{
-					for (auto i = 1; i < texture_resources.size(); i++)
-					{
-						if (texture_resources[i].second == iv_wht)
-						{
-							slot = i;
-							break;
-						}
-					}
-				}
-				if (slot != -1)
-				{
-					auto v = p ? (ImageViewPrivate*)p : iv_wht;
-					texture_resources[slot] = std::make_pair(name, v);
-					material_descriptorset->set_image(1, slot, v, preferences->map_sampler.get());
-				}
-				break;
-			case ResourceMaterial:
+			}
+			if (slot != -1)
 			{
-				auto material = (MaterialPrivate*)p;
-				auto sp = device->lsp.get();
+				auto& dst = element_resources[slot];
+				dst.name = name;
+				dst.iv = (ImageViewPrivate*)r.iv;
+				dst.ia = (ImageAtlasPrivate*)r.ia;
+				dst.fa = (FontAtlasPrivate*)r.fa;
+				if (dst.ia)
+					element_descriptorset->set_image(0, slot, dst.ia->image->views[0].get(), dst.ia->border ? device->lsp.get() : device->nsp.get());
+				else if (dst.fa)
+					element_descriptorset->set_image(0, slot, dst.fa->view, device->nsp.get());
+				else
+					element_descriptorset->set_image(0, slot, dst.iv ? dst.iv : iv_wht, device->lsp.get());
+			}
+			return slot;
+		}
 
-				if (slot == -1)
+		ImageView* CanvasPrivate::get_texture_resource(uint slot)
+		{
+			if (slot < texture_resources.size())
+			{
+				auto& r = texture_resources[slot];
+				r.iv;
+			}
+			return nullptr;
+		}
+
+		int CanvasPrivate::find_texture_resource(const std::string& name)
+		{
+			for (auto i = 0; i < texture_resources.size(); i++)
+			{
+				if (texture_resources[i].name == name)
+					return i;
+			}
+			return -1;
+		}
+
+		uint CanvasPrivate::set_texture_resource(int slot, ImageViewPrivate* iv, SamplerPrivate* sp, const std::string& name)
+		{
+			auto device = preferences->device;
+			auto iv_wht = white_image->views[0].get();
+			if (slot == -1)
+			{
+				for (auto i = 1; i < texture_resources.size(); i++)
 				{
-					for (auto i = 1; i < material_resources.size(); i++)
+					if (texture_resources[i].iv == iv_wht)
 					{
-						if (!material_resources[i])
-						{
-							slot = i;
-							break;
-						}
+						slot = i;
+						break;
 					}
 				}
-				if (slot != -1)
+			}
+			if (slot != -1)
+			{
+				auto& r = texture_resources[slot];
+				r.name = name;
+				r.iv = iv;
+				material_descriptorset->set_image(1, slot, iv ? iv : iv_wht, iv && sp ? sp : device->lsp.get());
+			}
+			return slot;
+		}
+
+		Material* CanvasPrivate::get_material_resource(uint slot)
+		{
+			if (slot < material_resources.size())
+			{
+				auto& r = material_resources[slot];
+				r->material;
+			}
+			return nullptr;
+		}
+
+		int CanvasPrivate::find_material_resource(const std::string& name)
+		{
+			for (auto i = 0; i < material_resources.size(); i++)
+			{
+				if (material_resources[i] && material_resources[i]->name == name)
+					return i;
+			}
+			return -1;
+		}
+
+		uint CanvasPrivate::set_material_resource(int slot, MaterialPrivate* mat, const std::string& name)
+		{
+			auto device = preferences->device;
+			auto sp = device->lsp.get();
+
+			if (slot == -1)
+			{
+				for (auto i = 1; i < material_resources.size(); i++)
 				{
+					if (!material_resources[i])
 					{
-						auto prev = material_resources[slot].get();
-						if (prev)
-						{
-							for (auto& t : prev->textures)
-								set_resource(ResourceTexture, t.first, nullptr, "");
-						}
+						slot = i;
+						break;
 					}
-
-					if (!material)
-						material_resources[slot].reset();
-					else
+				}
+			}
+			if (slot != -1)
+			{
+				{
+					auto prev = material_resources[slot].get();
+					if (prev)
 					{
-						auto mr = new MaterialResource;
-						mr->name = name;
-						material_resources[slot].reset(mr);
+						for (auto& t : prev->textures)
+							set_texture_resource(t.first, nullptr, nullptr, "");
+					}
+				}
 
-						MaterialInfoS mis;
-						mis.color = material->color;
-						mis.metallic = material->metallic;
-						mis.roughness = material->roughness;
-						mis.alpha_test = material->alpha_test;
+				if (!mat)
+					material_resources[slot].reset();
+				else
+				{
+					auto mr = new MaterialResourceSlot;
+					mr->name = name;
+					material_resources[slot].reset(mr);
 
-						if (!material->path.empty())
+					MaterialInfoS mis;
+					mis.color = mat->color;
+					mis.metallic = mat->metallic;
+					mis.roughness = mat->roughness;
+					mis.alpha_test = mat->alpha_test;
+
+					if (!mat->path.empty())
+					{
+						auto color_map = !mat->color_map.empty() ? Bitmap::create((mat->path / mat->color_map).c_str()) : nullptr;
+						auto alpha_map = !mat->alpha_map.empty() ? Bitmap::create((mat->path / mat->alpha_map).c_str()) : nullptr;
+						auto roughness_map = !mat->roughness_map.empty() ? Bitmap::create((mat->path / mat->roughness_map).c_str()) : nullptr;
+						auto normal_map = !mat->normal_map.empty() ? Bitmap::create((mat->path / mat->normal_map).c_str()) : nullptr;
+						auto height_map = !mat->height_map.empty() ? Bitmap::create((mat->path / mat->height_map).c_str()) : nullptr;
+
+						if (color_map || alpha_map)
 						{
-							auto color_map = !material->color_map.empty() ? Bitmap::create((material->path / material->color_map).c_str()) : nullptr;
-							auto alpha_map = !material->alpha_map.empty() ? Bitmap::create((material->path / material->alpha_map).c_str()) : nullptr;
-							auto roughness_map = !material->roughness_map.empty() ? Bitmap::create((material->path / material->roughness_map).c_str()) : nullptr;
-							auto normal_map = !material->normal_map.empty() ? Bitmap::create((material->path / material->normal_map).c_str()) : nullptr;
-							auto height_map = !material->height_map.empty() ? Bitmap::create((material->path / material->height_map).c_str()) : nullptr;
+							Vec2u size = Vec2u(0U);
+							if (color_map)
+								size = max(size, Vec2u(color_map->get_width(), color_map->get_height()));
+							if (alpha_map)
+								size = max(size, Vec2u(alpha_map->get_width(), alpha_map->get_height()));
 
-							if (color_map || alpha_map)
-							{
-								Vec2u size = Vec2u(0U);
-								if (color_map)
-									size = max(size, Vec2u(color_map->get_width(), color_map->get_height()));
-								if (alpha_map)
-									size = max(size, Vec2u(alpha_map->get_width(), alpha_map->get_height()));
+							auto dst_map = Bitmap::create(size.x(), size.y());
+							auto dst_map_d = dst_map->get_data();
+							auto dst_map_pitch = size.x() * 4;
 
-								auto dst_map = Bitmap::create(size.x(), size.y());
-								auto dst_map_d = dst_map->get_data();
-								auto dst_map_pitch = size.x() * 4;
-
-								auto color_map_d = color_map ? color_map->get_data() : nullptr;
-								auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
-								auto color_map_ch = color_map ? color_map->get_channel() : 0;
-								auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
-								auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
-								auto alpha_map_ch = alpha_map ? alpha_map->get_channel() : 0;
-
-								if (color_map)
-									color_map->srgb_to_linear();
-
-								if (color_map && alpha_map)
-								{
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
-										}
-									}
-								}
-								else if (color_map && !alpha_map)
-								{
-									auto a = material->color.a() * 255;
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * color_map_ch], a);
-										}
-									}
-								}
-								else if (!color_map && alpha_map)
-								{
-									auto col = Vec3c(Vec3f(material->color) * 255.f);
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
-										}
-									}
-								}
-
-								auto img = ImagePrivate::create(device, dst_map);
-								auto idx = set_resource(ResourceTexture, -1, img->views.back().get(), "");
-								mr->textures.emplace_back(idx, img);
-								mis.color_map_index = idx;
-
-								dst_map->release();
-							}
-
-							if (roughness_map)
-							{
-								Vec2u size = Vec2u(0U);
-								if (roughness_map)
-									size = max(size, Vec2u(roughness_map->get_width(), roughness_map->get_height()));
-
-								auto dst_map = Bitmap::create(size.x(), size.y());
-								auto dst_map_d = dst_map->get_data();
-								auto dst_map_pitch = size.x() * 4;
-
-								auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
-								auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
-								auto roughness_map_ch = roughness_map ? roughness_map->get_channel() : 0;
-
-								if (roughness_map)
-								{
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(0, roughness_map_d[y * roughness_map_pitch + x * roughness_map_ch], 0, 0);
-										}
-									}
-								}
-
-								auto img = ImagePrivate::create(device, dst_map);
-								auto idx = set_resource(ResourceTexture, -1, img->views.back().get(), "");
-								mr->textures.emplace_back(idx, img);
-								mis.metallic_roughness_ao_map_index = idx;
-
-								dst_map->release();
-							}
-
-							if (normal_map || height_map)
-							{
-								Vec2u size = Vec2u(0U);
-								if (normal_map)
-									size = max(size, Vec2u(normal_map->get_width(), normal_map->get_height()));
-								if (height_map)
-									size = max(size, Vec2u(height_map->get_width(), height_map->get_height()));
-
-								auto dst_map = Bitmap::create(size.x(), size.y());
-								auto dst_map_d = dst_map->get_data();
-								auto dst_map_pitch = size.x() * 4;
-
-								auto height_map_d = height_map ? height_map->get_data() : nullptr;
-								auto height_map_pitch = height_map ? height_map->get_pitch() : 0;
-								auto height_map_ch = height_map ? height_map->get_channel() : 0;
-
-								if (normal_map && height_map)
-								{
-
-								}
-								else if (normal_map && !height_map)
-								{
-
-								}
-								else if (!normal_map && height_map)
-								{
-									for (auto y = 0; y < size.y(); y++)
-									{
-										for (auto x = 0; x < size.x(); x++)
-										{
-											(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-												Vec4c(Vec3f(0.f), height_map_d[y * height_map_pitch + x * height_map_ch]);
-										}
-									}
-								}
-
-								auto img = ImagePrivate::create(device, dst_map);
-								auto idx = set_resource(ResourceTexture, -1, img->views.back().get(), "");
-								mr->textures.emplace_back(idx, img);
-								mis.normal_hegiht_map_index = idx;
-
-								dst_map->release();
-							}
+							auto color_map_d = color_map ? color_map->get_data() : nullptr;
+							auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
+							auto color_map_ch = color_map ? color_map->get_channel() : 0;
+							auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
+							auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
+							auto alpha_map_ch = alpha_map ? alpha_map->get_channel() : 0;
 
 							if (color_map)
-								color_map->release();
-							if (alpha_map)
-								alpha_map->release();
-							if (roughness_map)
-								roughness_map->release();
-							if (normal_map)
-								normal_map->release();
-							if (height_map)
-								height_map->release();
-						}
+								color_map->srgb_to_linear();
 
-						material_info_buffer.push(slot, mis);
-
-						ImmediateCommandBuffer cb;
-						material_info_buffer.upload(cb.cb.get(), slot, 1);
-					}
-				}
-			}
-				break;
-			case ResourceModel:
-			{
-				auto model = (ModelPrivate*)p;
-
-
-				if (slot == -1)
-				{
-					for (auto i = 0; i < model_resources.size(); i++)
-					{
-						if (!model_resources[i])
-						{
-							slot = i;
-							break;
-						}
-					}
-				}
-				if (slot != -1)
-				{
-					{
-						auto prev = model_resources[slot].get();
-						if (prev)
-						{
-							for (auto& m : prev->materials)
-								set_resource(ResourceMaterial, m, nullptr, "");
-						}
-					}
-
-					if (!model)
-						model_resources[slot].reset();
-					else
-					{
-						auto mr = new ModelResource;
-						mr->name = name;
-						mr->model = model;
-						model_resources[slot].reset(mr);
-
-						mr->materials.resize(model->materials.size());
-						for (auto i = 0; i < model->materials.size(); i++)
-							mr->materials[i] = set_resource(ResourceMaterial, -1, model->materials[i].get(), "");
-
-						ImmediateCommandBuffer cb;
-
-						mr->meshes.resize(model->meshes.size());
-						for (auto i = 0; i < model->meshes.size(); i++)
-						{
-							auto ms = model->meshes[i].get();
-
-							auto mrm = new ModelResource::Mesh;
-
-							mrm->vertex_buffer.create(device, ms->positions.size());
-							std::vector<MeshVertex> vertices;
-							vertices.resize(ms->positions.size());
-							for (auto j = 0; j < vertices.size(); j++)
-								vertices[j].position = ms->positions[j];
-							if (!ms->uvs.empty())
+							if (color_map && alpha_map)
 							{
-								for (auto j = 0; j < vertices.size(); j++)
-									vertices[j].uv = ms->uvs[j];
-							}
-							if (!ms->normals.empty())
-							{
-								for (auto j = 0; j < vertices.size(); j++)
-									vertices[j].normal = ms->normals[j];
-							}
-							mrm->vertex_buffer.push(vertices.size(), vertices.data());
-							mrm->vertex_buffer.upload(cb.cb.get());
-
-							if (!ms->bones.empty())
-							{
-								mrm->weight_buffer.create(device, ms->positions.size());
-								std::vector<std::vector<std::pair<uint, float>>> weights;
-								weights.resize(ms->positions.size());
-								for (auto j= 0; j < ms->bones.size(); j++)
+								for (auto y = 0; y < size.y(); y++)
 								{
-									auto& b = ms->bones[j];
-									for (auto& w : b->weights)
-										weights[w.first].emplace_back(j, w.second);
-								}
-								for (auto& w : weights)
-								{
-									std::sort(w.begin(), w.end(), [](const auto& a, const auto& b) {
-										return a.second < b.second;
-									});
-								}
-								std::vector<MeshWeight> mesh_weights;
-								mesh_weights.resize(weights.size());
-								for (auto j = 0; j < weights.size(); j++)
-								{
-									auto& src = weights[j];
-									auto& dst = mesh_weights[j];
-									for (auto k = 0; k < 4; k++)
+									for (auto x = 0; x < size.x(); x++)
 									{
-										if (k < src.size())
-										{
-											dst.ids[k] = src[k].first;
-											dst.weights[k] = src[k].second;
-										}
-										else
-											dst.ids[k] = -1;
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
 									}
 								}
-								mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
-								mrm->weight_buffer.upload(cb.cb.get());
+							}
+							else if (color_map && !alpha_map)
+							{
+								auto a = mat->color.a() * 255;
+								for (auto y = 0; y < size.y(); y++)
+								{
+									for (auto x = 0; x < size.x(); x++)
+									{
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * color_map_ch], a);
+									}
+								}
+							}
+							else if (!color_map && alpha_map)
+							{
+								auto col = Vec3c(Vec3f(mat->color) * 255.f);
+								for (auto y = 0; y < size.y(); y++)
+								{
+									for (auto x = 0; x < size.x(); x++)
+									{
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
+									}
+								}
 							}
 
-							mrm->index_buffer.create(device, ms->indices.size());
-							mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
-							mrm->index_buffer.upload(cb.cb.get());
+							auto img = ImagePrivate::create(device, dst_map);
+							auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
+							mr->textures.emplace_back(idx, img);
+							mis.color_map_index = idx;
 
-							mrm->material_index = mr->materials[ms->material_index];
-
-							mr->meshes[i].reset(mrm);
+							dst_map->release();
 						}
+
+						if (roughness_map)
+						{
+							Vec2u size = Vec2u(0U);
+							if (roughness_map)
+								size = max(size, Vec2u(roughness_map->get_width(), roughness_map->get_height()));
+
+							auto dst_map = Bitmap::create(size.x(), size.y());
+							auto dst_map_d = dst_map->get_data();
+							auto dst_map_pitch = size.x() * 4;
+
+							auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
+							auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
+							auto roughness_map_ch = roughness_map ? roughness_map->get_channel() : 0;
+
+							if (roughness_map)
+							{
+								for (auto y = 0; y < size.y(); y++)
+								{
+									for (auto x = 0; x < size.x(); x++)
+									{
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c(0, roughness_map_d[y * roughness_map_pitch + x * roughness_map_ch], 0, 0);
+									}
+								}
+							}
+
+							auto img = ImagePrivate::create(device, dst_map);
+							auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
+							mr->textures.emplace_back(idx, img);
+							mis.metallic_roughness_ao_map_index = idx;
+
+							dst_map->release();
+						}
+
+						if (normal_map || height_map)
+						{
+							Vec2u size = Vec2u(0U);
+							if (normal_map)
+								size = max(size, Vec2u(normal_map->get_width(), normal_map->get_height()));
+							if (height_map)
+								size = max(size, Vec2u(height_map->get_width(), height_map->get_height()));
+
+							auto dst_map = Bitmap::create(size.x(), size.y());
+							auto dst_map_d = dst_map->get_data();
+							auto dst_map_pitch = size.x() * 4;
+
+							auto height_map_d = height_map ? height_map->get_data() : nullptr;
+							auto height_map_pitch = height_map ? height_map->get_pitch() : 0;
+							auto height_map_ch = height_map ? height_map->get_channel() : 0;
+
+							if (normal_map && height_map)
+							{
+
+							}
+							else if (normal_map && !height_map)
+							{
+
+							}
+							else if (!normal_map && height_map)
+							{
+								for (auto y = 0; y < size.y(); y++)
+								{
+									for (auto x = 0; x < size.x(); x++)
+									{
+										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
+											Vec4c(Vec3f(0.f), height_map_d[y * height_map_pitch + x * height_map_ch]);
+									}
+								}
+							}
+
+							auto img = ImagePrivate::create(device, dst_map);
+							auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
+							mr->textures.emplace_back(idx, img);
+							mis.normal_hegiht_map_index = idx;
+
+							dst_map->release();
+						}
+
+						if (color_map)
+							color_map->release();
+						if (alpha_map)
+							alpha_map->release();
+						if (roughness_map)
+							roughness_map->release();
+						if (normal_map)
+							normal_map->release();
+						if (height_map)
+							height_map->release();
+					}
+
+					material_info_buffer.push(slot, mis);
+
+					ImmediateCommandBuffer cb;
+					material_info_buffer.upload(cb.cb.get(), slot, 1);
+				}
+			}
+			return slot;
+		}
+
+		Model* CanvasPrivate::get_model_resource(uint slot)
+		{
+			if (slot < model_resources.size())
+			{
+				auto& r = model_resources[slot];
+				r->model;
+			}
+			return nullptr;
+		}
+
+		int CanvasPrivate::find_model_resource(const std::string& name)
+		{
+			for (auto i = 0; i < model_resources.size(); i++)
+			{
+				if (model_resources[i] && model_resources[i]->name == name)
+					return i;
+			}
+			return -1;
+		}
+
+		uint CanvasPrivate::set_model_resource(int slot, ModelPrivate* mod, const std::string& name)
+		{
+			auto device = preferences->device;
+			if (slot == -1)
+			{
+				for (auto i = 0; i < model_resources.size(); i++)
+				{
+					if (!model_resources[i])
+					{
+						slot = i;
+						break;
 					}
 				}
 			}
-				break;
-			}
+			if (slot != -1)
+			{
+				{
+					auto prev = model_resources[slot].get();
+					if (prev)
+					{
+						for (auto& m : prev->materials)
+							set_material_resource(m, nullptr, "");
+					}
+				}
 
+				if (!mod)
+					model_resources[slot].reset();
+				else
+				{
+					auto mr = new ModelResourceSlot;
+					mr->name = name;
+					mr->model = mod;
+					model_resources[slot].reset(mr);
+
+					mr->materials.resize(mod->materials.size());
+					for (auto i = 0; i < mod->materials.size(); i++)
+						mr->materials[i] = set_material_resource(-1, mod->materials[i].get(), "");
+
+					ImmediateCommandBuffer cb;
+
+					mr->meshes.resize(mod->meshes.size());
+					for (auto i = 0; i < mod->meshes.size(); i++)
+					{
+						auto ms = mod->meshes[i].get();
+
+						auto mrm = new ModelResourceSlot::Mesh;
+
+						mrm->vertex_buffer.create(device, ms->positions.size());
+						std::vector<MeshVertex> vertices;
+						vertices.resize(ms->positions.size());
+						for (auto j = 0; j < vertices.size(); j++)
+							vertices[j].position = ms->positions[j];
+						if (!ms->uvs.empty())
+						{
+							for (auto j = 0; j < vertices.size(); j++)
+								vertices[j].uv = ms->uvs[j];
+						}
+						if (!ms->normals.empty())
+						{
+							for (auto j = 0; j < vertices.size(); j++)
+								vertices[j].normal = ms->normals[j];
+						}
+						mrm->vertex_buffer.push(vertices.size(), vertices.data());
+						mrm->vertex_buffer.upload(cb.cb.get());
+
+						if (!ms->bones.empty())
+						{
+							mrm->weight_buffer.create(device, ms->positions.size());
+							std::vector<std::vector<std::pair<uint, float>>> weights;
+							weights.resize(ms->positions.size());
+							for (auto j = 0; j < ms->bones.size(); j++)
+							{
+								auto& b = ms->bones[j];
+								for (auto& w : b->weights)
+									weights[w.first].emplace_back(j, w.second);
+							}
+							for (auto& w : weights)
+							{
+								std::sort(w.begin(), w.end(), [](const auto& a, const auto& b) {
+									return a.second < b.second;
+								});
+							}
+							std::vector<MeshWeight> mesh_weights;
+							mesh_weights.resize(weights.size());
+							for (auto j = 0; j < weights.size(); j++)
+							{
+								auto& src = weights[j];
+								auto& dst = mesh_weights[j];
+								for (auto k = 0; k < 4; k++)
+								{
+									if (k < src.size())
+									{
+										dst.ids[k] = src[k].first;
+										dst.weights[k] = src[k].second;
+									}
+									else
+										dst.ids[k] = -1;
+								}
+							}
+							mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
+							mrm->weight_buffer.upload(cb.cb.get());
+						}
+
+						mrm->index_buffer.create(device, ms->indices.size());
+						mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
+						mrm->index_buffer.upload(cb.cb.get());
+
+						mrm->material_index = mr->materials[ms->material_index];
+
+						mr->meshes[i].reset(mrm);
+					}
+				}
+			}
 			return slot;
 		}
 
@@ -1662,9 +1654,9 @@ namespace flame
 		void CanvasPrivate::draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes)
 		{
 			auto& res = element_resources[res_id];
-			if (res.type != ResourceFontAtlas)
+			if (!res.fa)
 				return;
-			auto atlas = (FontAtlasPrivate*)res.p;
+			auto atlas = res.fa;
 
 			add_draw_element_cmd(res_id);
 
@@ -1715,9 +1707,9 @@ namespace flame
 			auto& res = element_resources[res_id];
 			auto _uv0 = uv0;
 			auto _uv1 = uv1;
-			if (res.type == ResourceImageAtlas)
+			if (res.ia)
 			{
-				auto tile = ((ImageAtlasPrivate*)res.p)->tiles[tile_id].get();
+				auto tile = res.ia->tiles[tile_id].get();
 				auto tuv = tile->uv;
 				auto tuv0 = Vec2f(tuv.x(), tuv.y());
 				auto tuv1 = Vec2f(tuv.z(), tuv.w());

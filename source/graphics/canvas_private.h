@@ -24,7 +24,6 @@ namespace flame
 			bool hdr;
 			bool msaa_3d;
 
-			std::unique_ptr<SamplerPrivate> map_sampler;
 			std::unique_ptr<SamplerPrivate> shadow_sampler;
 			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
@@ -233,21 +232,28 @@ namespace flame
 			Vec4f weights;
 		};
 
-		struct ElementResource
+		struct ElementResourceSlot
 		{
-			std::string name; 
-			ResourceType type = ResourceImage;
-			void* p;
+			std::string name;
+			ImageViewPrivate* iv;
+			ImageAtlasPrivate* ia;
+			FontAtlasPrivate* fa;
 		};
 
-		struct MaterialResource
+		struct TextureResourceSlot
+		{
+			std::string name;
+			ImageViewPrivate* iv;
+		};
+
+		struct MaterialResourceSlot
 		{
 			std::string name;
 			MaterialPrivate* material;
 			std::vector<std::pair<uint, std::unique_ptr<ImagePrivate>>> textures;
 		};
 
-		struct ModelResource
+		struct ModelResourceSlot
 		{
 			struct Mesh
 			{
@@ -379,7 +385,7 @@ namespace flame
 
 		struct CmdDrawMesh : Cmd
 		{
-			std::vector<std::tuple<uint, ModelResource::Mesh*, bool, ArmatureDeformerPrivate*>> meshes;
+			std::vector<std::tuple<uint, ModelResourceSlot::Mesh*, bool, ArmatureDeformerPrivate*>> meshes;
 
 			CmdDrawMesh() : Cmd(DrawMesh) {}
 		};
@@ -422,8 +428,14 @@ namespace flame
 		{
 			void set_output(uint views_count, ImageView* const* views) override;
 
-			int find_resource(ResourceType type, const char* name) override;
-			uint set_resource(ResourceType type, int slot, void* p, const char* name) override;
+			int find_element_resource(const char* name) override;
+			uint set_element_resource(int slot, ElementResource r, const char* name) override;
+			int find_texture_resource(const char* name) override;
+			uint set_texture_resource(int slot, ImageView* iv, Sampler* sp, const char* name) override;
+			int find_material_resource(const char* name) override;
+			uint set_material_resource(int slot, Material* mat, const char* name) override;
+			int find_model_resource(const char* name) override;
+			uint set_model_resource(int slot, Model* mod, const char* name) override;
 
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
@@ -435,10 +447,10 @@ namespace flame
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
 			std::unique_ptr<ImagePrivate> white_image;
-			std::vector<ElementResource> element_resources;
-			std::vector<std::pair<std::string, ImageViewPrivate*>> texture_resources;
-			std::vector<std::unique_ptr<MaterialResource>> material_resources;
-			std::vector<std::unique_ptr<ModelResource>> model_resources;
+			std::vector < ElementResourceSlot > element_resources;
+			std::vector<TextureResourceSlot> texture_resources;
+			std::vector<std::unique_ptr<MaterialResourceSlot>> material_resources;
+			std::vector<std::unique_ptr<ModelResourceSlot>> model_resources;
 
 			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
 			TBuffer<uint, BufferUsageIndex> element_index_buffer;
@@ -524,9 +536,21 @@ namespace flame
 			ImageView* get_output(uint idx) const override { return output_imageviews.empty() ? nullptr : (ImageView*)output_imageviews[idx]; }
 			void set_output(std::span<ImageViewPrivate*> views);
 
-			void* get_resource(ResourceType type, uint slot, ResourceType* real_type = nullptr) override;
-			int find_resource(ResourceType type, const std::string& name);
-			uint set_resource(ResourceType type, int slot, void* p, const std::string& name);
+			ElementResource get_element_resource(uint slot) override;
+			int find_element_resource(const std::string& name);
+			uint set_element_resource(int slot, ElementResource r, const std::string& name);
+
+			ImageView* get_texture_resource(uint slot) override;
+			int find_texture_resource(const std::string& name);
+			uint set_texture_resource(int slot, ImageViewPrivate* iv, SamplerPrivate* sp, const std::string& name);
+
+			Material* get_material_resource(uint slot) override;
+			int find_material_resource(const std::string& name);
+			uint set_material_resource(int slot, MaterialPrivate* mat, const std::string& name);
+
+			Model* get_model_resource(uint slot) override;
+			int find_model_resource(const std::string& name);
+			uint set_model_resource(int slot, ModelPrivate* mat, const std::string& name);
 
 			void add_draw_element_cmd(uint id);
 			void add_vtx(const Vec2f& position, const Vec2f& uv, const Vec4c& color);
@@ -566,14 +590,44 @@ namespace flame
 			((CanvasPrivate*)this)->set_output({ (ImageViewPrivate**)views, views_count });
 		}
 
-		inline int CanvasBridge::find_resource(ResourceType type, const char* name)
+		inline int CanvasBridge::find_element_resource(const char* name)
 		{
-			return ((CanvasPrivate*)this)->find_resource(type, name ? name : "");
+			return ((CanvasPrivate*)this)->find_element_resource(name ? name : "");
 		}
 
-		inline uint CanvasBridge::set_resource(ResourceType type, int slot, void* p, const char* name)
+		inline uint CanvasBridge::set_element_resource(int slot, ElementResource r, const char* name)
 		{
-			return ((CanvasPrivate*)this)->set_resource(type, slot, p, name ? name : "");
+			return ((CanvasPrivate*)this)->set_element_resource(slot, r, name ? name : "");
+		}
+
+		inline int CanvasBridge::find_texture_resource(const char* name)
+		{
+			return ((CanvasPrivate*)this)->find_texture_resource(name ? name : "");
+		}
+
+		inline uint CanvasBridge::set_texture_resource(int slot, ImageView* iv, Sampler* sp, const char* name)
+		{
+			return ((CanvasPrivate*)this)->set_texture_resource(slot, (ImageViewPrivate*)iv, (SamplerPrivate*)sp, name ? name : "");
+		}
+
+		inline int CanvasBridge::find_material_resource(const char* name)
+		{
+			return ((CanvasPrivate*)this)->find_material_resource(name ? name : "");
+		}
+
+		inline uint CanvasBridge::set_material_resource(int slot, Material* mat, const char* name) 
+		{
+			return ((CanvasPrivate*)this)->set_material_resource(slot, (MaterialPrivate*)mat, name ? name : "");
+		}
+
+		inline int CanvasBridge::find_model_resource(const char* name)
+		{
+			return ((CanvasPrivate*)this)->find_model_resource(name ? name : "");
+		}
+
+		inline uint CanvasBridge::set_model_resource(int slot, Model* mod, const char* name)
+		{
+			return ((CanvasPrivate*)this)->set_model_resource(slot, (ModelPrivate*)mod, name ? name : "");
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)

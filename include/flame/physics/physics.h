@@ -32,35 +32,6 @@ namespace flame
 			ShapeTriangleMesh,
 			ShapeHeightField
 		};
-
-		union ShapeDesc
-		{
-			struct
-			{
-				Vec3f hf_ext;
-			}box;
-			struct
-			{
-				float radius;
-			}sphere;
-			struct
-			{
-				float radius;
-				float height;
-			}capsule;
-			struct
-			{
-				graphics::Mesh* mesh;
-				Vec3f scale;
-			}triangle_mesh;
-			struct
-			{
-				graphics::Image* height_map;
-				Vec2u blocks;
-				Vec3f scale;
-				uint tess_levels;
-			}height_field;
-		};
 	}
 }
 

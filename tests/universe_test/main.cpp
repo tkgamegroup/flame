@@ -19,20 +19,20 @@ int main(int argc, char** args)
 
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
 	{
-		w->canvas->set_resource(graphics::ResourceModel, -1, Model::create(LR"(D:\character\man.fmod)"), "man");
+		w->canvas->set_model_resource(-1, Model::create(LR"(D:\character\man.fmod)"), "man");
 		Entity::register_prefab(LR"(D:\character\man.prefab)", "main_character");
 	}
 	{
 		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/height.png", false, graphics::ImageUsageTransferSrc);
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "terrain_height_map");
+		w->canvas->set_texture_resource(-1, t->get_view(0), nullptr, "terrain_height_map");
 	}
 	{
 		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/normal.png", false, graphics::ImageUsageTransferSrc);
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "terrain_normal_map");
+		w->canvas->set_texture_resource(-1, t->get_view(0), nullptr, "terrain_normal_map");
 	}
 	{
 		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/color.png", true);
-		w->canvas->set_resource(ResourceTexture, -1, t->get_view(0), "terrain_color_map");
+		w->canvas->set_texture_resource(-1, t->get_view(0), nullptr, "terrain_color_map");
 	}
 
 	{

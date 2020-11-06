@@ -123,7 +123,7 @@ namespace flame
 		render_preferences = graphics::RenderPreferences::create(graphics::Device::get_default(), hdr, msaa_3d);
 		canvas = graphics::Canvas::create(render_preferences);
 		set_canvas_output();
-		canvas->set_resource(graphics::ResourceFontAtlas, -1, app->font_atlas, "default_font");
+		canvas->set_element_resource(-1, { nullptr, nullptr, app->font_atlas }, "default_font");
 
 		physics_scene = physics::Scene::create(physics::Device::get_default(), -9.81f, 2);
 

@@ -54,9 +54,9 @@ namespace flame
 
 	void cTerrainPrivate::on_gain_canvas()
 	{
-		height_map_id = canvas->find_resource(graphics::ResourceTexture, height_map_name.c_str());
-		normal_map_id = canvas->find_resource(graphics::ResourceTexture, normal_map_name.c_str());
-		color_map_id = canvas->find_resource(graphics::ResourceTexture, color_map_name.c_str());
+		height_map_id = canvas->find_texture_resource(height_map_name.c_str());
+		normal_map_id = canvas->find_texture_resource(normal_map_name.c_str());
+		color_map_id = canvas->find_texture_resource(color_map_name.c_str());
 	}
 
 	void cTerrainPrivate::draw(graphics::Canvas* canvas)

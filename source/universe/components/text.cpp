@@ -40,7 +40,19 @@ namespace flame
 
 	void cTextPrivate::on_gain_canvas()
 	{
-		res_id = canvas->find_resource(graphics::ResourceFontAtlas, "default_font");
+		res_id = canvas->find_element_resource("default_font");
+		if (res_id != -1)
+		{
+			atlas = canvas->get_element_resource(res_id).fa;
+			if (!atlas)
+				res_id = -1;
+		}
+	}
+
+	void cTextPrivate::on_lost_canvas()
+	{
+		res_id = -1;
+		atlas = nullptr;
 	}
 
 	void cTextPrivate::mark_text_changed()
@@ -60,12 +72,11 @@ namespace flame
 
 	void cTextPrivate::measure(Vec2f& ret)
 	{
-		if (!canvas || res_id == -1 || (!auto_width && !auto_height))
+		if (!atlas || (!auto_width && !auto_height))
 		{
 			ret = Vec2f(-1.f);
 			return;
 		}
-		auto atlas = (graphics::FontAtlas*)canvas->get_resource(graphics::ResourceFontAtlas, res_id);
 		ret = Vec2f(atlas->text_size(size, text.c_str()));
 		if (!auto_width)
 			ret.x() = -1.f;

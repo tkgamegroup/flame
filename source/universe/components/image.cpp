@@ -18,11 +18,6 @@ namespace flame
 			element->mark_size_dirty();
 		}
 		Entity::report_data_changed(this, S<ch("res_id")>::v);
-		if (!src.empty())
-		{
-			src = "";
-			Entity::report_data_changed(this, S<ch("src")>::v);
-		}
 	}
 
 	void cImagePrivate::set_tile_id(int id)
@@ -36,11 +31,6 @@ namespace flame
 			element->mark_size_dirty();
 		}
 		Entity::report_data_changed(this, S<ch("tile_id")>::v);
-		if (!src.empty())
-		{
-			src = "";
-			Entity::report_data_changed(this, S<ch("src")>::v);
-		}
 	}
 
 	void cImagePrivate::set_src(const std::string& _src)
@@ -54,43 +44,58 @@ namespace flame
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
+		Entity::report_data_changed(this, S<ch("src")>::v);
 	}
 
 	void cImagePrivate::apply_src()
 	{
-		res_id = -1;
-		tile_id = -1;
+		iv = nullptr;
+		atlas = nullptr;
 		if (canvas && !src.empty())
 		{
 			auto sp = SUS::split(src, '.');
-			auto slot = canvas->find_resource(graphics::ResourceImage, sp[0].c_str());
-			graphics::ResourceType type;
-			auto r = canvas->get_resource(graphics::ResourceImage, slot, &type);
-			if (type == graphics::ResourceImageAtlas)
+			auto slot = canvas->find_element_resource(sp[0].c_str());
+			auto r = canvas->get_element_resource(slot);
+			if (r.ia)
 			{
-				if (sp.size() != 2)
-					return;
-
-				auto tile = ((graphics::ImageAtlas*)r)->find_tile(sp[1].c_str());
-				if (tile)
+				if (sp.size() == 2)
 				{
-					res_id = slot;
-					tile_id = tile->get_index();
+					auto tile = r.ia->find_tile(sp[1].c_str());
+					if (tile)
+					{
+						if (res_id != slot)
+						{
+							res_id = slot;
+							Entity::report_data_changed(this, S<ch("res_id")>::v);
+						}
+						slot = tile->get_index();
+						if (tile_id != slot)
+						{
+							tile_id = slot;
+							Entity::report_data_changed(this, S<ch("tile_id")>::v);
+						}
+						iv = r.ia->get_image()->get_view();
+						atlas = r.ia;
+					}
 				}
-				else
-					return;
 			}
 			else
 			{
 				if (sp.size() == 1)
-					res_id = slot;
-				else
-					return;
+				{
+					if (res_id != slot)
+					{
+						res_id = slot;
+						Entity::report_data_changed(this, S<ch("res_id")>::v);
+					}
+					if (tile_id != -1)
+					{
+						tile_id = -1;
+						Entity::report_data_changed(this, S<ch("tile_id")>::v);
+					}
+					iv = r.iv;
+				}
 			}
-
-			Entity::report_data_changed(this, S<ch("res_id")>::v);
-			Entity::report_data_changed(this, S<ch("tile_id")>::v);
-			Entity::report_data_changed(this, S<ch("src")>::v);
 		}
 	}
 
@@ -99,20 +104,22 @@ namespace flame
 		apply_src();
 	}
 
+	void cImagePrivate::on_lost_canvas()
+	{
+		res_id = -1;
+		tile_id = -1;
+		iv = nullptr;
+		atlas = nullptr;
+	}
+
 	void cImagePrivate::measure(Vec2f& ret)
 	{
-		if (!canvas || res_id == -1 || tile_id == -1 || !auto_size)
+		if (!iv)
 		{
 			ret = Vec2f(-1.f);
 			return;
 		}
-		graphics::ResourceType type;
-		auto r = canvas->get_resource(graphics::ResourceImage, res_id, &type);
-		if (type == graphics::ResourceImage)
-			ret = Vec2f(((graphics::ImageView*)r)->get_image()->get_size());
-		else
-			ret = Vec2f(((graphics::ImageAtlas*)r)->get_tile(tile_id)->get_size());
-
+		ret = iv->get_image()->get_size();
 	}
 
 	void cImagePrivate::draw(graphics::Canvas* canvas)

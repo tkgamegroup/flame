@@ -71,8 +71,8 @@ namespace flame
 			auto sp = SUS::split(src, '.');
 			if (sp.size() == 2)
 			{
-				model_id = canvas->find_resource(graphics::ResourceModel, sp[0].c_str());
-				model = (graphics::Model*)canvas->get_resource(graphics::ResourceModel, model_id);
+				model_id = canvas->find_model_resource(sp[0].c_str());
+				model = (graphics::Model*)canvas->get_model_resource(model_id);
 				mesh_id = model->find_mesh(sp[1].c_str());
 				mesh = model->get_mesh(mesh_id);
 				auto bones_count = mesh->get_bones_count();
