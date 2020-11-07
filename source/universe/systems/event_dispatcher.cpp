@@ -35,45 +35,6 @@ namespace flame
 				thiz->key_up_inputs.push_back(key);
 
 				thiz->dirty = true;
-				if (key == Keyboard_F7)
-				{
-					pugi::xml_document file;
-					auto file_root = file.append_child("root");
-					auto idx = 0;
-					std::function<void(pugi::xml_node, EntityPrivate*)> save;
-					save = [&](pugi::xml_node dst, EntityPrivate* src) {
-						auto n = dst.append_child("entity");
-						n.append_attribute("name").set_value(src->name.c_str());
-						n.append_attribute("idx").set_value(idx++);
-						auto ce = src->get_component_t<cElementPrivate>();
-						n.append_attribute("LT").set_value(to_string(ce->points[0]).c_str());
-						n.append_attribute("RB").set_value(to_string(ce->points[2]).c_str());
-						n.append_attribute("has_er").set_value(src->get_component_t<cEventReceiver>() != nullptr);
-						for (auto& c : src->children)
-							save(n, c.get());
-					};
-					save(file_root, thiz->world->root.get());
-					file.save_file("d:/reflect_ui.xml");
-				}
-				if (key == Keyboard_F8)
-				{
-					std::ifstream file("d:/debug_idx.txt");
-					std::string line;
-					std::getline(file, line);
-					auto idx = std::stoi(line);
-					std::function<void(EntityPrivate*)> find;
-					find = [&](EntityPrivate* n) {
-						if (idx == 0)
-							thiz->debug_target = n->get_component_t<cEventReceiverPrivate>();
-						idx--;
-						for (auto& c : n->children)
-							find(c.get());
-					};
-					find(thiz->world->root.get());
-					file.close();
-				}
-				if (key == Keyboard_F9)
-					thiz->debug_target = (cEventReceiverPrivate*)INVALID_POINTER;
 			}, Capture().set_thiz(this));
 			char_listener = window->add_char_listener([](Capture& c, char ch) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();

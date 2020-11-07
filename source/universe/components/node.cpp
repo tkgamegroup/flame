@@ -44,7 +44,7 @@ namespace flame
 	{
 		update_transform();
 
-		return local_axes[idx];
+		return local_dirs[idx];
 	}
 
 	Vec3f cNodePrivate::get_global_pos()
@@ -58,7 +58,7 @@ namespace flame
 	{
 		update_transform();
 
-		return global_axes[idx];
+		return global_dirs[idx];
 	}
 
 	Vec3f cNodePrivate::get_global_scale()
@@ -74,7 +74,7 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			local_axes = make_rotation_matrix(quat);
+			local_dirs = make_rotation_matrix(quat) * Mat3f(scale);
 
 			auto pn = entity->get_parent_component_t<cNodePrivate>();
 			if (pn)
@@ -91,8 +91,8 @@ namespace flame
 				global_scale = scale;
 			}
 
-			global_axes = make_rotation_matrix(global_quat);
-			transform = Mat4f(Mat<3, 4, float>(global_axes * Mat3f(global_scale), Vec3f(0.f)), Vec4f(global_pos, 1.f));
+			global_dirs = make_rotation_matrix(global_quat);
+			transform = Mat4f(Mat<3, 4, float>(global_dirs * Mat3f(global_scale), Vec3f(0.f)), Vec4f(global_pos, 1.f));
 
 			Entity::report_data_changed(this, S<ch("transform")>::v);
 		}

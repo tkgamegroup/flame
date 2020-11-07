@@ -28,12 +28,12 @@ namespace flame
 					element_culled = true;
 				else
 				{
-					for (auto& d : element->underlayer_drawers)
+					for (auto& d : element->drawers[0])
 						d.second(d.first, canvas);
 					element->draw(canvas);
 					if (element->clipping)
-						canvas->set_scissor(Vec4f(element->points[4], element->points[6]));
-					for (auto& d : element->drawers)
+						canvas->set_scissor(element->aabb);
+					for (auto& d : element->drawers[1])
 						d.second(d.first, canvas);
 				}
 			}
@@ -79,7 +79,7 @@ namespace flame
 			node->update_transform();
 			auto out = canvas->get_output(0);
 			auto size = out ? Vec2f(out->get_image()->get_size()) : Vec2f(1.f);
-			canvas->set_camera(camera->fovy, size.x() / size.y(), camera->near, camera->far, node->global_axes, node->global_pos);
+			canvas->set_camera(camera->fovy, size.x() / size.y(), camera->near, camera->far, node->global_dirs, node->global_pos);
 		}
 		render(world->root.get(), false, !camera);
 		dirty = false;

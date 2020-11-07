@@ -56,10 +56,6 @@ namespace flame
 		virtual float get_skewy() const = 0;
 		virtual void set_skewy(float angle) = 0;
 
-		// 0-3: LT, RT, RB, LB, 4-7: content LT, content RT, content RB, content LB, 8: center, 9: content center
-		virtual Vec2f get_point(uint idx) = 0;
-		virtual Mat2f get_axes() = 0;
-
 		//virtual float get_alpha() const = 0;
 		//virtual void set_alpha(float a) = 0;
 

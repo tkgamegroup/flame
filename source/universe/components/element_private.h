@@ -14,23 +14,19 @@ namespace flame
 
 	struct cElementPrivate : cElement // R ~ on_*
 	{
-		float x = 0.f;
-		float y = 0.f;
-		float width = 0.f;
-		float height = 0.f;
+		Vec2f pos = Vec2f(0.f);
+		Vec2f size = Vec2f(0.f);
 		Vec4f padding = Vec4f(0.f);
-		float pivotx = 0.f;
-		float pivoty = 0.f;
-		float scalex = 1.f;
-		float scaley = 1.f;
+		Vec2f content_size = Vec2f(0.f);
+		Vec2f pivot = Vec2f(0.f);
+		Vec2f scale = Vec2f(1.f);
 		float rotation = 0.f;
-		float skewx = 0.f;
-		float skewy = 0.f;
+		Vec2f skew = Vec2f(0.f);
 
 		bool transform_dirty = true;
-		Vec2f points[4];
 		bool crooked = false;
-		Mat2f axes = Mat2f(1.f);
+		Vec2f global_points[8];
+		Mat2f global_axes;
 		Vec4f aabb;
 
 		Vec4c fill_color = Vec4c(0);
@@ -43,8 +39,7 @@ namespace flame
 		Vec4f boundaries;
 		bool culled = false;
 
-		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> underlayer_drawers;
-		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
+		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers[2];
 
 		bool pending_sizing = false;
 		std::vector<std::pair<Component*, void(*)(Component*, Vec2f&)>> measurables;
@@ -52,45 +47,43 @@ namespace flame
 		sRendererPrivate* renderer = nullptr; // R ref
 		sLayoutSystemPrivate* layout_system = nullptr; // R ref
 
-		float get_x() const override { return x; }
+		float get_x() const override { return pos.x(); }
 		void set_x(float x) override;
 
-		float get_y() const override { return y; }
+		float get_y() const override { return pos.y(); }
 		void set_y(float y) override;
 
-		float get_width() const override { return width; }
+		float get_width() const override { return size.x(); }
 		void set_width(float w) override;
 
-		float get_height() const override { return height; }
+		float get_height() const override { return size.y(); }
 		void set_height(float h) override;
 
 		Vec4f get_padding() override { return padding; }
 		void set_padding(const Vec4f& p) override;
 
-		float get_pivotx() const override { return pivotx; }
+		float get_pivotx() const override { return pivot.x(); }
 		void set_pivotx(float p) override;
 
-		float get_pivoty() const override { return pivoty; }
+		float get_pivoty() const override { return pivot.y(); }
 		void set_pivoty(float p) override;
 
-		float get_scalex() const override { return scalex; }
+		float get_scalex() const override { return scale.x(); }
 		void set_scalex(float s) override;
 
-		float get_scaley() const override { return scaley; }
+		float get_scaley() const override { return scale.y(); }
 		void set_scaley(float s) override;
 
 		float get_rotation() const override { return rotation; }
 		void set_rotation(float r) override;
 
-		float get_skewx() const override { return skewx; }
+		float get_skewx() const override { return skew.x(); }
 		void set_skewx(float s) override;
 
-		float get_skewy() const override { return skewy; }
+		float get_skewy() const override { return skew.y(); }
 		void set_skewy(float s) override;
 
 		void update_transform();
-		Vec2f get_point(uint idx) override;
-		Mat2f get_axes() override;
 
 		Vec4c get_fill_color() override { return fill_color; }
 		void set_fill_color(const Vec4c& c) override;

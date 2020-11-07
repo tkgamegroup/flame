@@ -10,6 +10,6 @@ namespace flame
 	{
 		cElementPrivate* element = nullptr; // R ref
 
-		void draw_underlayer(graphics::Canvas* canvas); // R
+		void draw0(graphics::Canvas* canvas); // R
 	};
 }

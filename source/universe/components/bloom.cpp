@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	void cBloomPrivate::draw_underlayer(graphics::Canvas* canvas)
+	void cBloomPrivate::draw0(graphics::Canvas* canvas)
 	{
 		canvas->add_bloom();
 	}

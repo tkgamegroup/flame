@@ -10,8 +10,8 @@ namespace flame
 	void cSliderPrivate::set_value(float v)
 	{
 		value = clamp(v, value_min, value_max);
-		proportion = (v - value_min) / value_max * bar_element->width;
-		thumb_element->set_x(proportion * bar_element->width);
+		proportion = (v - value_min) / value_max * bar_element->size.x();
+		thumb_element->set_x(proportion * bar_element->size.x());
 		text->set_text(std::to_wstring(value));
 		Entity::report_data_changed(this, S<ch("value")>::v);
 	}
@@ -41,10 +41,10 @@ namespace flame
 				switch (h)
 				{
 				case ch("width"):
-					thiz->thumb_element->set_x(thiz->proportion * thiz->bar_element->width);
+					thiz->thumb_element->set_x(thiz->proportion * thiz->bar_element->size.x());
 					break;
 				case ch("height"):
-					thiz->thumb_element->set_y(thiz->bar_element->height * 0.5f);
+					thiz->thumb_element->set_y(thiz->bar_element->size.y() * 0.5f);
 					break;
 				}
 			}
@@ -62,11 +62,11 @@ namespace flame
 			auto thiz = c.thiz<cSliderPrivate>();
 			if (thiz->thumb_event_receiver->dispatcher->active == thiz->thumb_event_receiver)
 			{
-				auto x = clamp(thiz->thumb_element->x + disp.x(), 0.f, thiz->bar_element->width);
-				thiz->proportion = x / thiz->bar_element->width;
+				auto x = clamp(thiz->thumb_element->pos.x() + disp.x(), 0.f, thiz->bar_element->size.x());
+				thiz->proportion = x / thiz->bar_element->size.x();
 				thiz->value = thiz->proportion * (thiz->value_max - thiz->value_min) + thiz->value_min;
 				thiz->thumb_element->set_x(x);
-				thiz->thumb_element->set_y(thiz->bar_element->height * 0.5f);
+				thiz->thumb_element->set_y(thiz->bar_element->size.y() * 0.5f);
 				thiz->text->set_text(std::to_wstring(thiz->value));
 				Entity::report_data_changed(thiz, S<ch("value")>::v);
 			}

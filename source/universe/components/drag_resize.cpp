@@ -12,8 +12,8 @@ namespace flame
 			auto thiz = c.thiz<cDragResizePrivate>();
 			if (thiz->block_event_receiver->dispatcher->active == thiz->block_event_receiver)
 			{
-				thiz->element->set_width(thiz->element->width + disp.x());
-				thiz->element->set_height(thiz->element->height + disp.y());
+				thiz->element->set_width(thiz->element->size.x() + disp.x());
+				thiz->element->set_height(thiz->element->size.y() + disp.y());
 			}
 		}, Capture().set_thiz(this));
 

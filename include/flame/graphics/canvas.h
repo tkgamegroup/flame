@@ -93,15 +93,20 @@ namespace flame
 
 			virtual void stroke(const Vec4c& col, float thickness, bool aa = false) = 0;
 			virtual void fill(const Vec4c& col, bool aa = false) = 0;
+
+			virtual void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
+			inline void draw_image(uint res_id, uint tile_id, const Vec2f& pos, const Vec2f& size, const Mat2f& axes = Mat2f(1.f), const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255))
+			{
+				draw_image(res_id, tile_id, pos, pos + axes[0] * size.x(), pos + axes * size, pos + axes[1] * size.y(), uv0, uv1, tint_col);
+			}
 			// null text_end means render until '\0'
 			virtual void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes = Mat2f(1.f)) = 0;
-			virtual void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0 = Vec2f(0.f), const Vec2f& uv1 = Vec2f(1.f), const Vec4c& tint_col = Vec4c(255)) = 0;
 
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) = 0;
 
-			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& normal_matrix, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
+			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
 			virtual void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint color_tex_id) = 0;
-			virtual void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow = false) = 0;
+			virtual void add_light(LightType type, const Mat3f& dirs, const Vec3f& color, bool cast_shadow = false) = 0;
 
 			virtual void draw_lines(uint lines_count, const Line3* lines) = 0;
 

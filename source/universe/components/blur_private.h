@@ -15,6 +15,6 @@ namespace flame
 		uint get_radius() const override { return radius; }
 		void set_radius(uint s) override;
 
-		void draw_underlayer(graphics::Canvas* canvas); // R
+		void draw0(graphics::Canvas* canvas); // R
 	};
 }

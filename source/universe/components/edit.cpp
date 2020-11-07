@@ -39,9 +39,9 @@ namespace flame
 		auto font_size = text->size;
 
 		element->update_transform();
-		auto pos = element->points[4];
+		auto& pos = element->global_points[4];
+		auto& axes = element->global_axes;
 		auto p = Vec2f(0.f);
-		auto axes = element->axes;
 
 		auto i = 0;
 		for (; i < str.size(); i++)
@@ -378,8 +378,8 @@ namespace flame
 		auto atlas = text->atlas;
 		auto font_size = text->size;
 		element->update_transform();
-		auto pos = element->points[4];
-		auto axes = element->axes;
+		auto& pos = element->global_points[4];
+		auto& axes = element->global_axes;
 
 		if (select_start != select_end)
 		{

@@ -15,9 +15,9 @@ namespace flame
 		Entity::report_data_changed(this, S<ch("radius")>::v);
 	}
 
-	void cBlurPrivate::draw_underlayer(graphics::Canvas* canvas)
+	void cBlurPrivate::draw0(graphics::Canvas* canvas)
 	{
-		canvas->add_blur(Vec4f(element->points[0], element->points[2]), radius);
+		canvas->add_blur(element->aabb, radius);
 	}
 
 	cBlur* cBlur::create()

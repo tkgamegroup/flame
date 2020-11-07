@@ -76,7 +76,8 @@ namespace flame
 				if (!fn.extension().empty())
 				{
 					isfile = true;
-					fn = entity->filename / fn;
+					if (!fn.is_absolute())
+						fn = entity->filename / fn;
 				}
 				model_id = canvas->find_model_resource(fn.string().c_str());
 				if (model_id == -1 && isfile)
@@ -199,7 +200,7 @@ namespace flame
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, node->global_axes, cast_shadow, deformer);
+			canvas->draw_mesh(model_id, mesh_id, node->transform, node->global_dirs, cast_shadow, deformer);
 	}
 
 	cMesh* cMesh::create()

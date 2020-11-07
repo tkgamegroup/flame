@@ -29,7 +29,8 @@ namespace flame
 		auto items_element = items->get_component_t<cElementPrivate>();
 		if (items_element)
 		{
-			auto pos = element->get_point((type == MenuTop || type == MenuButton) ? 3 : 1);
+			element->update_transform();
+			auto pos = element->global_points[type == MenuTop || type == MenuButton ? 3 : 1];
 			items_element->set_x(pos.x());
 			items_element->set_y(pos.y());
 		}

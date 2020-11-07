@@ -1792,7 +1792,7 @@ namespace flame
 			render_data_buffer.beg->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 		}
 
-		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer)
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer)
 		{
 			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
 			{
@@ -1804,7 +1804,7 @@ namespace flame
 
 			MeshMatrixS om;
 			om.transform = transform;
-			om.normal_matrix = normal_matrix;
+			om.normal_matrix = dirs;
 			mesh_matrix_buffer.push(om);
 
 			last_mesh_cmd->meshes.emplace_back(idx, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow, (ArmatureDeformerPrivate*)deformer);
@@ -1828,13 +1828,13 @@ namespace flame
 			terrain_info_buffer.push(ti);
 		}
 
-		void CanvasPrivate::add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow)
+		void CanvasPrivate::add_light(LightType type, const Mat3f& dirs, const Vec3f& color, bool cast_shadow)
 		{
 			if (type == LightDirectional)
 			{
-				auto dir = normalize(-Vec3f(transform[2]));
-				auto side = normalize(Vec3f(transform[0]));
-				auto up = normalize(Vec3f(transform[1]));
+				auto dir = normalize(-dirs[2]);
+				auto side = normalize(dirs[0]);
+				auto up = normalize(dirs[1]);
 
 				DirectionalLightInfoS li;
 				li.dir = dir;
@@ -1888,7 +1888,7 @@ namespace flame
 				PointLightInfoS li;
 				li.color = color;
 				li.distance = 10.f;
-				li.coord = Vec3f(transform[3]);
+				li.coord = dirs[0];
 				li.shadow_map_index = cast_shadow ? used_point_light_shadow_maps_count++ : -1;
 				point_light_info_buffer.push(li);
 

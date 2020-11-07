@@ -7,38 +7,40 @@
 
 namespace flame
 {
-	void cElementPrivate::set_x(float _x)
+	void cElementPrivate::set_x(float x)
 	{
-		if (x == _x)
+		if (pos.x() == x)
 			return;
-		x = _x;
+		pos.x() = x;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("x")>::v);
 	}
 
-	void cElementPrivate::set_y(float _y)
+	void cElementPrivate::set_y(float y)
 	{
-		if (y == _y)
+		if (pos.y() == y)
 			return;
-		y = _y;
+		pos.y() = pos.y();
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("y")>::v);
 	}
 
 	void cElementPrivate::set_width(float w)
 	{
-		if (width == w)
+		if (size.x() == w)
 			return;
-		width = w;
+		size.x() = w;
+		content_size.x() = size.x() - padding.xz().sum();
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("width")>::v);
 	}
 
 	void cElementPrivate::set_height(float h)
 	{
-		if (height == h)
+		if (size.y() == h)
 			return;
-		height = h;
+		size.y() = h;
+		content_size.y() = size.y() - padding.yw().sum();
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("height")>::v);
 	}
@@ -63,36 +65,36 @@ namespace flame
 
 	void cElementPrivate::set_pivotx(float p)
 	{
-		if (pivotx == p)
+		if (pivot.x() == p)
 			return;
-		pivotx = p;
+		pivot.x() = p;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("pivotx")>::v);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
 	{
-		if (pivoty == p)
+		if (pivot.y() == p)
 			return;
-		pivoty = p;
+		pivot.y() = p;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("pivoty")>::v);
 	}
 
 	void cElementPrivate::set_scalex(float s)
 	{
-		if (scalex == s)
+		if (scale.x() == s)
 			return;
-		scalex = s;
+		scale.x() = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("scalex")>::v);
 	}
 
 	void cElementPrivate::set_scaley(float s)
 	{
-		if (scaley == s)
+		if (scale.y() == s)
 			return;
-		scaley = s;
+		scale.y() = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("scaley")>::v);
 	}
@@ -108,18 +110,18 @@ namespace flame
 
 	void cElementPrivate::set_skewx(float s)
 	{
-		if (skewx == s)
+		if (skew.x() == s)
 			return;
-		skewx = s;
+		skew.x() = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("skewx")>::v);
 	}
 
 	void cElementPrivate::set_skewy(float s)
 	{
-		if (skewy == s)
+		if (skew.y() == s)
 			return;
-		skewy = s;
+		skew.y() = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("skewy")>::v);
 	}
@@ -130,62 +132,43 @@ namespace flame
 		{
 			transform_dirty = false;
 
+			crooked = rotation == 0.f && skew == 0.f;
 			auto base_axes = Mat2f(1.f);
 			auto base_pos = Vec2f(0.f);
 			auto pe = entity->get_parent_component_t<cElementPrivate>();
 			if (pe)
 			{
 				pe->update_transform();
-				base_axes = pe->axes;
-				base_pos = pe->points[0];
+				crooked = crooked && pe->crooked;
+				base_axes = pe->global_axes;
+				base_pos = pe->global_points[0];
 			}
 
-			axes = base_axes;
-			auto c = base_pos + axes[0] * x + axes[1] * y;
-			axes[0] = make_rotation_matrix((rotation + skewy) * ANG_RAD) * axes[0] * scalex;
-			axes[1] = make_rotation_matrix((rotation + skewx) * ANG_RAD) * axes[1] * scaley;
+			global_axes = base_axes;
+			auto c = base_pos + global_axes * pos;
+			global_axes[0] = make_rotation_matrix((rotation + skew.y()) * ANG_RAD) * global_axes[0];
+			global_axes[1] = make_rotation_matrix((rotation + skew.x()) * ANG_RAD) * global_axes[1];
+			global_axes = global_axes * Mat2f(scale);
 
-			points[0] = c + axes * Vec2f(-pivotx * width, -pivoty * height);
-			points[1] = c + axes * Vec2f((1.f - pivotx) * width, -pivoty * height);
-			points[2] = c + axes * Vec2f((1.f - pivotx) * width, (1.f - pivoty) * height);
-			points[3] = c + axes * Vec2f(-pivotx * width, (1.f - pivoty) * height);
+			global_points[0] = c + global_axes * -pivot * size;
+			global_points[1] = global_points[0] + global_axes[0] * size.x();
+			global_points[2] = global_points[0] + global_axes * size;
+			global_points[3] = global_points[0] + global_axes[1] * size.y();
 
-			auto pl = min(padding[0], width * 0.5f);
-			auto pt = min(padding[1], height * 0.5f);
-			auto pr = -min(padding[2], width * 0.5f);
-			auto pb = -min(padding[3], height * 0.5f);
-			points[4] = points[0] + axes * Vec2f(pl, pt);
-			points[5] = points[1] + axes * Vec2f(pr, pt);
-			points[6] = points[2] + axes * Vec2f(pr, pb);
-			points[7] = points[3] + axes * Vec2f(pl, pb);
+			global_points[4] = global_points[0] + global_axes * padding.xy();
+			global_points[5] = global_points[2] - global_axes[0] * padding.z() + global_axes[1] * padding.y();
+			global_points[6] = global_points[3] - global_axes * padding.zw();
+			global_points[7] = global_points[4] + global_axes[0] * padding.x() - global_axes[1] * padding.w();
 
-			points[8] = (points[0] + points[1] + points[2] + points[3]) * 0.25f;
-			points[9] = (points[4] + points[5] + points[6] + points[7]) * 0.25f;
-
-			aabb.x() = points[0].x();
-			aabb.z() = points[0].x();
-			aabb.y() = points[0].y();
-			aabb.w() = points[0].y();
+			aabb = Vec4f(global_points[0], global_points[0]);
 			for (auto i = 1; i < 4; i++)
 			{
-				aabb.x() = min(aabb.x(), points[i].x());
-				aabb.z() = max(aabb.z(), points[i].x());
-				aabb.y() = min(aabb.y(), points[i].y());
-				aabb.w() = max(aabb.w(), points[i].y());
+				aabb.x() = min(aabb.x(), global_points[i].x());
+				aabb.z() = max(aabb.z(), global_points[i].x());
+				aabb.y() = min(aabb.y(), global_points[i].y());
+				aabb.w() = max(aabb.w(), global_points[i].y());
 			}
 		}
-	}
-
-	Vec2f cElementPrivate::get_point(uint idx)
-	{
-		update_transform();
-		return points[idx];
-	}
-
-	Mat2f cElementPrivate::get_axes()
-	{
-		update_transform();
-		return axes;
 	}
 
 	void cElementPrivate::set_fill_color(const Vec4c& c)
@@ -268,11 +251,16 @@ namespace flame
 
 	bool cElementPrivate::contains(const Vec2f& p)
 	{
-		if (width == 0.f || height == 0.f)
+		if (size == 0.f)
 			return false;
 		update_transform();
-		Vec2f ps[] = { points[0], points[1], points[2], points[3] };
-		return convex_contains<float>(p, ps);
+		if (crooked)
+		{
+			Vec2f ps[] = { global_points[0], global_points[1], global_points[2], global_points[3] };
+			return convex_contains<float>(p, ps);
+		}
+		else
+			return rect_contains(aabb, p);
 	}
 
 	void cElementPrivate::on_local_message(Message msg, void* p)
@@ -285,13 +273,13 @@ namespace flame
 			if (udt)
 			{
 				{
-					auto f = udt->find_function("draw_underlayer");
+					auto f = udt->find_function("draw0");
 					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
 					{
 						auto addr = f->get_address();
 						if (addr)
 						{
-							underlayer_drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+							drawers[0].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
 							mark_drawing_dirty();
 						}
 					}
@@ -303,7 +291,7 @@ namespace flame
 						auto addr = f->get_address();
 						if (addr)
 						{
-							drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+							drawers[1].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
 							mark_drawing_dirty();
 						}
 					}
@@ -329,9 +317,9 @@ namespace flame
 				return i.first == (Component*)p;
 			}))
 				mark_size_dirty();
-			auto n = std::erase_if(underlayer_drawers, [&](const auto& i) {
+			auto n = std::erase_if(drawers[0], [&](const auto& i) {
 				return i.first == (Component*)p;
-			}) + std::erase_if(drawers, [&](const auto& i) {
+			}) + std::erase_if(drawers[1], [&](const auto& i) {
 				return i.first == (Component*)p;
 			});
 			if (n)
@@ -368,22 +356,21 @@ namespace flame
 			if (fill_color.a() > 0)
 			{
 				canvas->begin_path();
-				canvas->move_to(points[0]);
-				canvas->line_to(points[1]);
-				canvas->line_to(points[2]);
-				canvas->line_to(points[3]);
+				canvas->move_to(global_points[0]);
+				canvas->line_to(global_points[1]);
+				canvas->line_to(global_points[2]);
+				canvas->line_to(global_points[3]);
 				canvas->fill(fill_color);
 			}
 
 			if (border > 0.f && border_color.a() > 0)
 			{
-				auto hf = border * 0.5f;
 				canvas->begin_path();
-				canvas->move_to(points[0] + Vec2f(hf, hf));
-				canvas->line_to(points[1] + Vec2f(-hf, hf));
-				canvas->line_to(points[2] + Vec2f(-hf, -hf));
-				canvas->line_to(points[3] + Vec2f(hf, -hf));
-				canvas->line_to(points[0] + Vec2f(hf, hf));
+				canvas->move_to(global_points[4]);
+				canvas->line_to(global_points[5]);
+				canvas->line_to(global_points[6]);
+				canvas->line_to(global_points[7]);
+				canvas->line_to(global_points[4]);
 				canvas->stroke(border_color, border);
 			}
 		}

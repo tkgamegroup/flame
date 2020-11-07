@@ -127,7 +127,7 @@ namespace flame
 		if (res_id != -1 && tile_id != -1)
 		{
 			canvas->draw_image(res_id, tile_id,
-				element->points[4], element->points[5], element->points[6], element->points[7],
+				element->global_points[4], element->global_points[5], element->global_points[6], element->global_points[7],
 				uv0, uv1, Vec4c(255));
 		}
 	}

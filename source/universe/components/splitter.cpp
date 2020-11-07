@@ -40,39 +40,39 @@ namespace flame
 						{
 							if (disp.x() < 0.f)
 							{
-								auto v = min(left_element->width - max(1.f, left_aligner ? left_aligner->desired_size.x() : left_element->padding.xz().sum()), (float)-disp.x());
-								left_element->set_width(left_element->width - v);
-								right_element->set_width(right_element->width + v);
+								auto v = min(left_element->size.x() - max(1.f, left_aligner ? left_aligner->desired_size.x() : left_element->padding.xz().sum()), (float)-disp.x());
+								left_element->set_width(left_element->size.x() - v);
+								right_element->set_width(right_element->size.x() + v);
 							}
 							else if (disp.x() > 0.f)
 							{
-								auto v = min(right_element->width - max(1.f, right_aligner ? right_aligner->desired_size.x() : right_element->padding.xz().sum()), (float)disp.x());
-								left_element->set_width(left_element->width + v);
-								right_element->set_width(right_element->width - v);
+								auto v = min(right_element->size.x() - max(1.f, right_aligner ? right_aligner->desired_size.x() : right_element->padding.xz().sum()), (float)disp.x());
+								left_element->set_width(left_element->size.x() + v);
+								right_element->set_width(right_element->size.x() - v);
 							}
 							if (left_aligner)
-								left_aligner->set_width_factor(left_element->width);
+								left_aligner->set_width_factor(left_element->size.x());
 							if (right_aligner)
-								right_aligner->set_width_factor(right_element->width);
+								right_aligner->set_width_factor(right_element->size.x());
 						}
 						else
 						{
 							if (disp.y() < 0.f)
 							{
-								auto v = min(left_element->height - max(1.f, left_aligner ? left_aligner->desired_size.y() : left_element->padding.yw().sum()), (float)-disp.y());
-								left_element->set_height(left_element->height - v);
-								right_element->set_height(right_element->height + v);
+								auto v = min(left_element->size.y() - max(1.f, left_aligner ? left_aligner->desired_size.y() : left_element->padding.yw().sum()), (float)-disp.y());
+								left_element->set_height(left_element->size.y() - v);
+								right_element->set_height(right_element->size.y() + v);
 							}
 							else if (disp.y() > 0.f)
 							{
-								auto v = min(right_element->height - max(1.f, right_aligner ? right_aligner->desired_size.y() : right_element->padding.yw().sum()), (float)disp.y());
-								left_element->set_height(left_element->height + v);
-								right_element->set_height(right_element->height - v);
+								auto v = min(right_element->size.y() - max(1.f, right_aligner ? right_aligner->desired_size.y() : right_element->padding.yw().sum()), (float)disp.y());
+								left_element->set_height(left_element->size.y() + v);
+								right_element->set_height(right_element->size.y() - v);
 							}
 							if (left_aligner)
-								left_aligner->set_height_factor(left_element->height);
+								left_aligner->set_height_factor(left_element->size.y());
 							if (right_aligner)
-								right_aligner->set_height_factor(right_element->height);
+								right_aligner->set_height_factor(right_element->size.y());
 						}
 					}
 				}

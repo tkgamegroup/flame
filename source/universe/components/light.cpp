@@ -17,7 +17,7 @@ namespace flame
 	void cLightPrivate::draw(graphics::Canvas* canvas)
 	{
 		node->update_transform();
-		canvas->add_light(type, Mat4f(Mat<3, 4, float>(node->global_axes, Vec3f(0.f)), Vec4f(node->global_pos, 1.f)), color, cast_shadow);
+		canvas->add_light(type, type == graphics::LightPoint ? Mat3f(node->global_pos, Vec3f(0.f), Vec3f(0.f)) : node->global_dirs, color, cast_shadow);
 	}
 
 	void cLightPrivate::set_cast_shadow(bool v)

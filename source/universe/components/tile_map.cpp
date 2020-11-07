@@ -74,8 +74,8 @@ namespace flame
 		if (res_id == -1 || cell_count == Vec2u(0) || cell_size == Vec2f(0.f))
 			return;
 
-		auto axes = element->axes;
-		auto p = element->points[4];
+		auto& axes = element->global_axes;
+		auto& p = element->global_points[4];
 		auto l = 0;
 		auto r = (int)cell_count.x();
 		auto t = 0;

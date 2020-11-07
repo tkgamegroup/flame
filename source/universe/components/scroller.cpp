@@ -13,25 +13,25 @@ namespace flame
 		{
 			if (htrack_element)
 			{
-				auto target_size = target_element->width;
-				if (target_size > view_element->width)
-					hthumb_element->set_width(view_element->width / target_size * htrack_element->width);
+				auto target_size = target_element->size.x();
+				if (target_size > view_element->size.x())
+					hthumb_element->set_width(view_element->size.x() / target_size * htrack_element->size.x());
 				else
 					hthumb_element->set_width(0.f);
-				auto x = v.x() + hthumb_element->x;
-				hthumb_element->set_x(hthumb_element->width > 0.f ? clamp(x, 0.f, htrack_element->width - hthumb_element->width) : 0.f);
-				view_layout->set_scrollx(-int(hthumb_element->x / htrack_element->width * target_size / step) * step);
+				auto x = v.x() + hthumb_element->pos.x();
+				hthumb_element->set_x(hthumb_element->size.x() > 0.f ? clamp(x, 0.f, htrack_element->size.x() - hthumb_element->size.x()) : 0.f);
+				view_layout->set_scrollx(-int(hthumb_element->pos.x() / htrack_element->size.x() * target_size / step) * step);
 			}
 			if (vtrack_element)
 			{
-				auto target_size = target_element->height;
-				if (target_size > view_element->height)
-					vthumb_element->set_height(view_element->height / target_size * vtrack_element->height);
+				auto target_size = target_element->size.y();
+				if (target_size > view_element->size.y())
+					vthumb_element->set_height(view_element->size.y() / target_size * vtrack_element->size.y());
 				else
 					vthumb_element->set_height(0.f);
-				auto y = v.y() + vthumb_element->y;
-				vthumb_element->set_y(vthumb_element->height > 0.f ? clamp(y, 0.f, vtrack_element->height - vthumb_element->height) : 0.f);
-				view_layout->set_scrolly(-int(vthumb_element->y / vtrack_element->height * target_size / step) * step);
+				auto y = v.y() + vthumb_element->pos.y();
+				vthumb_element->set_y(vthumb_element->size.y() > 0.f ? clamp(y, 0.f, vtrack_element->size.y() - vthumb_element->size.y()) : 0.f);
+				view_layout->set_scrolly(-int(vthumb_element->pos.y() / vtrack_element->size.y() * target_size / step) * step);
 			}
 		}
 	}
@@ -131,7 +131,7 @@ namespace flame
 							auto thiz = c.thiz<cScrollerPrivate>();
 							if (t == thiz->target_element)
 							{
-								if (h == S<ch("width")>::v || h == S<ch("height")>::v)
+								if (h == S<ch("size.x()")>::v || h == S<ch("size.y()")>::v)
 									thiz->scroll(Vec2f(0.f));
 							}
 						}, Capture().set_thiz(thiz));
@@ -149,7 +149,7 @@ namespace flame
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->view_element)
 			{
-				if (h == S<ch("width")>::v || h == S<ch("height")>::v)
+				if (h == S<ch("size.x()")>::v || h == S<ch("size.y()")>::v)
 					thiz->scroll(Vec2f(0.f));
 			}
 		}, Capture().set_thiz(this));
