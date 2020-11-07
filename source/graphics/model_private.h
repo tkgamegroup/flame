@@ -131,7 +131,7 @@ namespace flame
 			int find_mesh(const char* name) const override;
 			int find_animation(const char* name) const override;
 
-			void save(const wchar_t* filename, const char* model_name) const override;
+			void save(const wchar_t* filename) const override;
 		};
 
 		struct ModelPrivate : ModelBridge
@@ -157,7 +157,7 @@ namespace flame
 			Animation* get_animation(uint idx) const override { return animations[idx].get(); }
 			int find_animation(const std::string& name) const;
 
-			void save(const std::filesystem::path& filename, const std::string& model_name) const;
+			void save(const std::filesystem::path& filename) const;
 
 			static ModelPrivate* create(const std::filesystem::path& filename);
 		};
@@ -172,9 +172,9 @@ namespace flame
 			return ((ModelPrivate*)this)->find_animation(name);
 		}
 
-		inline void ModelBridge::save(const wchar_t* filename, const char* model_name) const
+		inline void ModelBridge::save(const wchar_t* filename) const
 		{
-			return ((ModelPrivate*)this)->save(filename, model_name ? model_name : "");
+			return ((ModelPrivate*)this)->save(filename);
 		}
 	}
 }

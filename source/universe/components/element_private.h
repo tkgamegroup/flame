@@ -28,7 +28,8 @@ namespace flame
 		float skewy = 0.f;
 
 		bool transform_dirty = true;
-		Vec2f points[10];
+		Vec2f points[4];
+		bool crooked = false;
 		Mat2f axes = Mat2f(1.f);
 		Vec4f aabb;
 

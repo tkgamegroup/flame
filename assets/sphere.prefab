@@ -2,7 +2,7 @@
 <prefab>
 	<entity>
 	<cNode />
-    <cMesh src="sphere.0" />
+    <cMesh src="sphere#0" />
     <cRigid />
     <cShape type="Sphere" />
 	</entity>

@@ -18,22 +18,6 @@ int main(int argc, char** args)
 	auto w = new GraphicsWindow(&g_app, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, true);
 
 	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
-	{
-		w->canvas->set_model_resource(-1, Model::create(LR"(D:\character\man.fmod)"), "man");
-		Entity::register_prefab(LR"(D:\character\man.prefab)", "main_character");
-	}
-	{
-		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/height.png", false, graphics::ImageUsageTransferSrc);
-		w->canvas->set_texture_resource(-1, t->get_view(0), nullptr, "terrain_height_map");
-	}
-	{
-		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/normal.png", false, graphics::ImageUsageTransferSrc);
-		w->canvas->set_texture_resource(-1, t->get_view(0), nullptr, "terrain_normal_map");
-	}
-	{
-		auto t = Image::create(graphics::Device::get_default(), L"D:/terrain/color.png", true);
-		w->canvas->set_texture_resource(-1, t->get_view(0), nullptr, "terrain_color_map");
-	}
 
 	{
 		auto c = cCommand::create();
@@ -59,8 +43,6 @@ int main(int argc, char** args)
 		//e->save(L"d:/1.prefab");
 		w->root->add_child(e);
 	}
-
-	//w->s_physic_world->set_visualization(true);
 
 	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
 	//	auto path = std::filesystem::path(filename);

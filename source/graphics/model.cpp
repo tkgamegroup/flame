@@ -238,7 +238,7 @@ namespace flame
 			return -1;
 		}
 
-		void ModelPrivate::save(const std::filesystem::path& filename, const std::string& _model_name) const
+		void ModelPrivate::save(const std::filesystem::path& filename) const
 		{
 			std::ofstream file(filename, std::ios::binary);
 			
@@ -319,9 +319,7 @@ namespace flame
 
 			pugi::xml_document prefab;
 
-			auto model_name = _model_name;
-			if (model_name.empty())
-				model_name = filename.filename().string();
+			auto model_name = filename.filename().string();
 			std::function<void(pugi::xml_node, NodePrivate*)> print_node;
 			print_node = [&](pugi::xml_node dst, NodePrivate* src) {
 				auto n = dst.append_child("entity");

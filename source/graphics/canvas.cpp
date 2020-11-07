@@ -1792,7 +1792,7 @@ namespace flame
 			render_data_buffer.beg->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 		}
 
-		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer)
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& normal_matrix, bool cast_shadow, ArmatureDeformer* deformer)
 		{
 			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
 			{

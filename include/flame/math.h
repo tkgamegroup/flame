@@ -616,8 +616,8 @@ namespace flame
 		template <uint M, class U>
 		Vec<N, T>& operator=(const Vec<M, U>& rhs) 
 		{
-			static_assert(N <= M);
-			for (auto i = 0; i < N; i++)
+			auto n = min(N, M);
+			for (auto i = 0; i < n; i++)
 				d[i] = rhs[i];
 			return *this;
 		}
@@ -1196,10 +1196,11 @@ namespace flame
 		template <uint O, uint P, class U>
 		Mat<N, M, T>& operator=(const Mat<O, P, U> & rhs)
 		{
-			static_assert(N <= O && M <= P);
-			for (auto i = 0; i < M; i++)
+			auto m = min(M, P);
+			auto n = min(N, O);
+			for (auto i = 0; i < m; i++)
 			{
-				for (auto j = 0; j < N; j++)
+				for (auto j = 0; j < n; j++)
 					d[i][j] = rhs[i][j];
 			}
 			return *this;

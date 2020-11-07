@@ -68,43 +68,59 @@ namespace flame
 		mesh = nullptr;
 		if (canvas && !src.empty())
 		{
-			auto sp = SUS::split(src, '.');
+			auto sp = SUS::split(src, '#');
 			if (sp.size() == 2)
 			{
-				model_id = canvas->find_model_resource(sp[0].c_str());
-				model = (graphics::Model*)canvas->get_model_resource(model_id);
-				mesh_id = model->find_mesh(sp[1].c_str());
-				mesh = model->get_mesh(mesh_id);
-				auto bones_count = mesh->get_bones_count();
-				if (bones_count > 0)
+				auto isfile = false;
+				auto fn = std::filesystem::path(sp[0]);
+				if (!fn.extension().empty())
 				{
-					deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
-					bones.resize(bones_count);
-					auto armature = entity->parent;
-					if (armature)
+					isfile = true;
+					fn = entity->filename / fn;
+				}
+				model_id = canvas->find_model_resource(fn.string().c_str());
+				if (model_id == -1 && isfile)
+					model_id = canvas->set_model_resource(-1, graphics::Model::create(fn.c_str()), fn.string().c_str());
+
+				if (model_id != -1)
+				{
+					model = (graphics::Model*)canvas->get_model_resource(model_id);
+					mesh_id = model->find_mesh(sp[1].c_str());
+					if (mesh_id != -1)
 					{
-						for (auto i = 0; i < bones_count; i++)
+						mesh = model->get_mesh(mesh_id);
+						auto bones_count = mesh->get_bones_count();
+						if (bones_count > 0)
 						{
-							auto& b = bones[i];
-							auto name = std::string(mesh->get_bone(i)->get_name());
-							auto e = armature->find_child(name);
-							if (e)
+							deformer = graphics::ArmatureDeformer::create(canvas->get_preferences(), mesh);
+							bones.resize(bones_count);
+							auto armature = entity->parent;
+							if (armature)
 							{
-								auto n = e->get_component_t<cNodePrivate>();
-								if (n)
+								for (auto i = 0; i < bones_count; i++)
 								{
-									b.name = name;
-									b.node = n;
-									b.changed_listener = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-										auto thiz = c.thiz<cMeshPrivate>();
-										auto id = c.data<int>();
-										auto& b = thiz->bones[id];
-										if (t == b.node && h == S<ch("transform")>::v)
+									auto& b = bones[i];
+									auto name = std::string(mesh->get_bone(i)->get_name());
+									auto e = armature->find_child(name);
+									if (e)
+									{
+										auto n = e->get_component_t<cNodePrivate>();
+										if (n)
 										{
-											b.node->update_transform();
-											thiz->deformer->set_pose(id, b.node->transform);
+											b.name = name;
+											b.node = n;
+											b.changed_listener = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+												auto thiz = c.thiz<cMeshPrivate>();
+												auto id = c.data<int>();
+												auto& b = thiz->bones[id];
+												if (t == b.node && h == S<ch("transform")>::v)
+												{
+													b.node->update_transform();
+													thiz->deformer->set_pose(id, b.node->transform);
+												}
+											}, Capture().set_thiz(this).set_data(&i));
 										}
-									}, Capture().set_thiz(this).set_data(&i));
+									}
 								}
 							}
 						}
@@ -183,7 +199,7 @@ namespace flame
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, Mat4f(node->global_axes), cast_shadow, deformer);
+			canvas->draw_mesh(model_id, mesh_id, node->transform, node->global_axes, cast_shadow, deformer);
 	}
 
 	cMesh* cMesh::create()

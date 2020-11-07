@@ -65,7 +65,6 @@ namespace flame
 		virtual const wchar_t* get_src() const = 0;
 
 		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
-		FLAME_UNIVERSE_EXPORTS static void register_prefab(const wchar_t* prefab, const char* name);
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
 	};
 }

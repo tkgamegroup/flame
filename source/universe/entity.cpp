@@ -6,8 +6,6 @@
 
 namespace flame
 {
-	static std::map<std::string, std::filesystem::path> registered_prefabs;
-
 	EntityPrivate::EntityPrivate()
 	{
 		static auto id = 0;
@@ -920,15 +918,7 @@ namespace flame
 				dst->visible = a.as_bool();
 			else if (name == "src")
 			{
-				auto src = std::string(a.value());
-				std::filesystem::path path;
-				if (src[0] == '@')
-				{
-					src.erase(src.begin());
-					path = registered_prefabs[src];
-				}
-				else
-					path = std::filesystem::path(src);
+				auto path = std::filesystem::path(a.value());
 				dst->src = path;
 				if (path.extension().empty())
 					path.replace_extension(L".prefab");
@@ -1040,14 +1030,14 @@ namespace flame
 		return fn;
 	}
 
-	void EntityPrivate::load(const std::filesystem::path& filename)
+	void EntityPrivate::load(const std::filesystem::path& _filename)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
 
-		if (!doc.load_file(get_prefab_path(filename).c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
+		if (!doc.load_file(get_prefab_path(_filename).c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
 		{
-			printf("prefab do not exist or wrong format: %s\n", filename.string().c_str());
+			printf("prefab do not exist or wrong format: %s\n", _filename.string().c_str());
 			return;
 		}
 
@@ -1060,10 +1050,10 @@ namespace flame
 			if (std::regex_search(name, res, reg_ns))
 				nss.emplace_back(res[1].str(), a.value());
 		}
+
+		filename = _filename;
 		load_prefab(this, doc_root.first_child(), nss);
 	}
-
-	static std::unordered_map<uint64, std::unique_ptr<Component, Delector>> staging_components;
 
 	static void save_prefab(pugi::xml_node n, EntityPrivate* src)
 	{
@@ -1190,20 +1180,11 @@ namespace flame
 								else
 								{
 									Component* cc = nullptr;
-									auto it = staging_components.find(std::hash<std::string>()(c_type));
-									if (it != staging_components.end())
-										cc = it->second.get();
+									auto fc = udt->find_function("create");
+									if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
+										fc->call(nullptr, &cc, {});
 									else
-									{
-										auto fc = udt->find_function("create");
-										if (fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
-										{
-											fc->call(nullptr, &cc, {});
-											staging_components.emplace(c->type_hash, cc);
-										}
-										else
-											printf("cannot create component of type: %s\n", name.c_str());
-									}
+										printf("cannot create component of type: %s\n", name.c_str());
 									if (cc)
 									{
 										fg->call(cc, d2, {});
@@ -1295,8 +1276,6 @@ namespace flame
 
 		save_prefab(file_root, this);
 
-		staging_components.clear();
-
 		file.save_file(filename.c_str());
 	}
 
@@ -1326,11 +1305,6 @@ namespace flame
 			for (auto cc : entity->parent->child_data_changed_dispatch_list)
 				cc->on_child_data_changed(c, hash);
 		}
-	}
-
-	void Entity::register_prefab(const wchar_t* prefab, const char* name)
-	{
-		registered_prefabs[name] = prefab;
 	}
 
 	Entity* Entity::create()

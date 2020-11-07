@@ -19,7 +19,7 @@
         <cNode pos="0,200,5" />
         <cRigid dynamic="false" />
       </entity>
-      <entity src="@main_character" >
+      <entity src="D:\character\man" >
         <cNode pos="0,205,0" />
         <cController radius="0.5" height="1.8" />
         <cScript src="character_controller.lua" />
@@ -31,7 +31,7 @@
       </entity>
 	    <entity>
 	      <cNode pos="-100,100,-100" />
-	      <cTerrain blocks="4,4" scale="100,200,100" tess_levels="32" height_map="terrain_height_map" normal_map="terrain_normal_map" color_map="terrain_color_map" />
+	      <cTerrain blocks="4,4" scale="100,200,100" tess_levels="32" height_map="D:\terrain\height_map.png" normal_map="D:\terrain\normal_map.png" color_map="D:\terrain\color_map.png" />
         <cRigid dynamic="false" />
         <cShape type="HeightField" />
 	    </entity>

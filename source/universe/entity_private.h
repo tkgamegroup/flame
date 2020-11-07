@@ -38,6 +38,7 @@ namespace flame
 		int created_frame;
 		int created_id;
 		std::vector<void*> created_stack;
+		std::filesystem::path filename;
 
 		enum RefType
 		{

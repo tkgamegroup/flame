@@ -99,7 +99,7 @@ namespace flame
 
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) = 0;
 
-			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat4f& normal_matrix, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
+			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& normal_matrix, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
 			virtual void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint color_tex_id) = 0;
 			virtual void add_light(LightType type, const Mat4f& transform, const Vec3f& color, bool cast_shadow = false) = 0;
 

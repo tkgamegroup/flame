@@ -1,4 +1,7 @@
+#include <flame/graphics/device.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
+#include "../entity_private.h"
 #include "node_private.h"
 #include "terrain_private.h"
 
@@ -54,9 +57,51 @@ namespace flame
 
 	void cTerrainPrivate::on_gain_canvas()
 	{
-		height_map_id = canvas->find_texture_resource(height_map_name.c_str());
-		normal_map_id = canvas->find_texture_resource(normal_map_name.c_str());
-		color_map_id = canvas->find_texture_resource(color_map_name.c_str());
+		{
+			auto isfile = false;
+			auto fn = std::filesystem::path(height_map_name);
+			if (!fn.extension().empty())
+			{
+				isfile = true;
+				fn = entity->filename / fn;
+			}
+			height_map_id = canvas->find_texture_resource(fn.string().c_str());
+			if (height_map_id == -1 && isfile)
+			{
+				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
+				height_map_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
+			}
+		}
+		{
+			auto isfile = false;
+			auto fn = std::filesystem::path(normal_map_name);
+			if (!fn.extension().empty())
+			{
+				isfile = true;
+				fn = entity->filename / fn;
+			}
+			normal_map_id = canvas->find_texture_resource(fn.string().c_str());
+			if (normal_map_id == -1 && isfile)
+			{
+				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false);
+				normal_map_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
+			}
+		}
+		{
+			auto isfile = false;
+			auto fn = std::filesystem::path(color_map_name);
+			if (!fn.extension().empty())
+			{
+				isfile = true;
+				fn = entity->filename / fn;
+			}
+			color_map_id = canvas->find_texture_resource(fn.string().c_str());
+			if (color_map_id == -1 && isfile)
+			{
+				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false);
+				color_map_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
+			}
+		}
 	}
 
 	void cTerrainPrivate::draw(graphics::Canvas* canvas)

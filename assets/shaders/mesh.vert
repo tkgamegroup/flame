@@ -48,7 +48,7 @@ void main()
 	o_normal = mat3(deform) * i_normal;
 #else
 	o_coordw = vec3(mesh_matrices[mod_idx].transform * vec4(i_position, 1.0));
-	o_normal = vec3(mesh_matrices[mod_idx].normal_matrix * vec4(i_normal, 0));
+	o_normal = mat3(mesh_matrices[mod_idx].normal_matrix) * i_normal;
 #endif
 	o_coordv = render_data.camera_coord - o_coordw;
 	gl_Position = render_data.proj_view * vec4(o_coordw, 1.0);
