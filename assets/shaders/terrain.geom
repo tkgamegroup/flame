@@ -5,8 +5,8 @@
 #define RENDER_DATA_SET 0
 #define TERRAIN_SET 3
 
-#include "render_data_dsl.glsl"
-#include "terrain_dsl.glsl"
+#include "render_data.dsl"
+#include "terrain.dsl"
 
 layout(triangles) in;  
 layout(triangle_strip, max_vertices = 3) out;

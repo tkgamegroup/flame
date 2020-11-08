@@ -1,3 +1,7 @@
+#ifdef MAKE_DSL
+#define RENDER_DATA_SET 0
+#endif
+
 layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 {
 	float fovy;

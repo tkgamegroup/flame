@@ -7,10 +7,10 @@
 #define LIGHT_SET 2
 #define TERRAIN_SET 3
 
-#include "render_data_dsl.glsl"
-#include "material_dsl.glsl"
-#include "light_dsl.glsl"
-#include "terrain_dsl.glsl"
+#include "render_data.dsl"
+#include "material.dsl"
+#include "light.dsl"
+#include "terrain.dsl"
 #include "shading.glsl"
 
 layout (location = 0) in flat uint i_idx;

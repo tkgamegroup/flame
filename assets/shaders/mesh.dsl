@@ -1,3 +1,7 @@
+#ifdef MAKE_DSL
+#define MESH_SET 0
+#endif
+
 struct MeshMatrix
 {
 	mat4 transform;

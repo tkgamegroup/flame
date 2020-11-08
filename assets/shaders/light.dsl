@@ -1,3 +1,7 @@
+#ifdef MAKE_DSL
+#define LIGHT_SET 0
+#endif
+
 struct LightIndices
 {
 	uint directional_lights_count;
@@ -44,3 +48,4 @@ layout (set = LIGHT_SET, binding = 2) buffer readonly PointLightInfos
 
 layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray directional_light_shadow_maps[4];
 layout (set = LIGHT_SET, binding = 4) uniform samplerCube point_light_shadow_maps[4];
+

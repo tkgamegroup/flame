@@ -29,7 +29,7 @@ namespace flame
 
 		struct DescriptorBinding
 		{
-			virtual uint get_index() const = 0;
+			virtual uint get_binding() const = 0;
 			virtual DescriptorType get_type() const = 0;
 			virtual uint get_count() const = 0;
 			virtual const char* get_name() const = 0;
@@ -43,6 +43,7 @@ namespace flame
 			virtual DescriptorBinding* get_binding(uint binding) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* device, uint bindings_count, const DescriptorBindingInfo* bindings);
+			FLAME_GRAPHICS_EXPORTS static DescriptorSetLayout* create(Device* device, const wchar_t* filename);
 		};
 
 		struct DescriptorSet
@@ -52,7 +53,7 @@ namespace flame
 			virtual DescriptorSetLayout* get_layout() const = 0;
 
 			virtual void set_buffer(uint binding, uint index, Buffer* b, uint offset = 0, uint range = 0) = 0;
-			virtual void set_image(uint binding, uint index, ImageView* v, Sampler* sampler) = 0;
+			virtual void set_image(uint binding, uint index, ImageView* v, Sampler* sp) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static DescriptorSet* create(DescriptorPool* p, DescriptorSetLayout* l);
 		};
@@ -165,9 +166,9 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual const wchar_t* get_filename() const = 0;
-			virtual const char* get_prefix() const = 0;
+			virtual const char* get_defines() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* device, const wchar_t* filename, const char* prefix);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* device, const wchar_t* filename, const char* defines);
 		};
 
 		struct Pipeline

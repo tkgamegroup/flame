@@ -106,17 +106,9 @@ namespace flame
 				sp.depth_attachment = 1;
 				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 			}
-			{
-				DescriptorBindingInfo db;
-				db.type = DescriptorSampledImage;
-				db.count = 64;
-				element_descriptorsetlayout.reset(new DescriptorSetLayoutPrivate(device, { &db, 1 }));
-			}
-			{
-				DescriptorBindingInfo db;
-				db.type = DescriptorStorageBuffer;
-				mesh_descriptorsetlayout.reset(new DescriptorSetLayoutPrivate(device, { &db, 1 }));
-			}
+
+			element_descriptorsetlayout.reset(DescriptorSetLayoutPrivate::create(device, L"element.dsl"));
+			mesh_descriptorsetlayout.reset(DescriptorSetLayoutPrivate::create(device, L"mesh.dsl"));
 			{
 				DescriptorBindingInfo db;
 				db.type = DescriptorStorageBuffer;
@@ -798,7 +790,7 @@ namespace flame
 			if (slot < texture_resources.size())
 			{
 				auto& r = texture_resources[slot];
-				r.iv;
+				return r.iv;
 			}
 			return nullptr;
 		}
@@ -843,7 +835,7 @@ namespace flame
 			if (slot < material_resources.size())
 			{
 				auto& r = material_resources[slot];
-				r->material;
+				return r->material;
 			}
 			return nullptr;
 		}
@@ -1077,7 +1069,7 @@ namespace flame
 			if (slot < model_resources.size())
 			{
 				auto& r = model_resources[slot];
-				r->model;
+				return r->model;
 			}
 			return nullptr;
 		}

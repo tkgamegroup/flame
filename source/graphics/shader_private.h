@@ -15,6 +15,61 @@ namespace flame
 		struct RenderpassPrivate;
 		struct DescriptorSetPrivate;
 
+		struct ShaderType;
+
+		struct ShaderVariable
+		{
+			std::string name;
+			uint offset;
+			uint size;
+			uint array_count;
+			uint array_stride;
+
+			ShaderType* info = nullptr;
+		};
+
+		enum ShaderBaseType
+		{
+			ShaderBaseTypeInt,
+			ShaderBaseTypeUint,
+			ShaderBaseTypeFloat,
+			ShaderBaseTypeMat4f,
+			ShaderBaseTypeStruct,
+		};
+
+		struct ShaderType
+		{
+			uint id;
+			ShaderBaseType base_type;
+			std::string name;
+			std::vector<ShaderVariable> variables;
+		};
+
+		struct DescriptorBindingPrivate : DescriptorBinding
+		{
+			DescriptorType type;
+			uint binding;
+			uint count;
+			std::string name;
+
+			ShaderType* info = nullptr;
+
+			DescriptorBindingPrivate() {}
+			DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info);
+
+			uint get_binding() const override { return binding; }
+			DescriptorType get_type() const override { return type; }
+			uint get_count() const override { return count; }
+			const char* get_name() const override { return name.c_str(); }
+		};
+
+		struct ShaderInOutInfo
+		{
+			uint location;
+			std::string name;
+			std::string type;
+		};
+
 		struct DescriptorPoolPrivate : DescriptorPool
 		{
 			DevicePrivate* device;
@@ -26,35 +81,27 @@ namespace flame
 			void release() override { delete this; }
 		};
 
-		struct DescriptorBindingPrivate : DescriptorBinding
-		{
-			uint index;
-			DescriptorType type;
-			uint count;
-			std::string name;
-
-			DescriptorBindingPrivate(uint index, const DescriptorBindingInfo& info);
-
-			uint get_index() const override { return index; }
-			DescriptorType get_type() const override { return type; }
-			uint get_count() const override { return count; }
-			const char* get_name() const override { return name.c_str(); }
-		};
-
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
 			DevicePrivate* device;
-			VkDescriptorSetLayout vk_descriptor_set_layout;
 
+			std::filesystem::path filename;
+
+			std::vector<std::unique_ptr<ShaderType>> types;
 			std::vector<std::unique_ptr<DescriptorBindingPrivate>> bindings;
 
+			VkDescriptorSetLayout vk_descriptor_set_layout;
+
 			DescriptorSetLayoutPrivate(DevicePrivate* device, std::span<const DescriptorBindingInfo> bindings);
+			DescriptorSetLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::vector<std::unique_ptr<ShaderType>>& types, std::vector<std::unique_ptr<DescriptorBindingPrivate>>& bindings);
 			~DescriptorSetLayoutPrivate();
 
 			void release() override { delete this; }
 
 			uint get_bindings_count() const override { return bindings.size(); }
 			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
+
+			static DescriptorSetLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
 		struct DescriptorSetBridge : DescriptorSet
@@ -77,7 +124,7 @@ namespace flame
 			DescriptorSetLayout* get_layout() const override { return descriptor_layout; }
 
 			void set_buffer(uint binding, uint index, BufferPrivate* b, uint offset = 0, uint range = 0);
-			void set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sampler);
+			void set_image(uint binding, uint index, ImageViewPrivate* iv, SamplerPrivate* sp);
 		};
 
 		inline void DescriptorSetBridge::set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range)
@@ -98,65 +145,36 @@ namespace flame
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_layouts;
 			uint push_cconstant_size;
 
+			//std::unique_ptr<ShaderBindng> push_constant;
+
 			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptorlayouts, uint push_constant_size);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
 		};
 
-		struct ShaderInOut
-		{
-			std::string name;
-			std::string type;
-		};
-
-		struct ShaderVariable
-		{
-			std::string type_name;
-			std::string name;
-			uint offset = 0;
-			uint size = 0;
-			uint count = 0;
-			uint array_stride = 0;
-
-			std::vector<std::unique_ptr<ShaderVariable>> members;
-		};
-
-		struct ShaderBindng
-		{
-			uint location = 0;
-			uint index = 0;
-			uint set = 0;
-			uint binding = 0;
-			std::string name;
-
-			ShaderVariable v;
-		};
-
 		struct ShaderPrivate : Shader
 		{
 			std::filesystem::path filename;
-			std::string prefix;
+			std::string defines;
 			ShaderStageFlags type;
 
 			DevicePrivate* device;
 
-			//std::vector<ShaderInOut> inputs;
-			//std::vector<ShaderInOut> outputs;
-			//std::vector<std::unique_ptr<ShaderBindng>> uniform_buffers;
-			//std::unique_ptr<ShaderBindng> push_constant;
+			//std::vector<ShaderInOutInfo> inputs;
+			//std::vector<ShaderInOutInfo> outputs;
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& prefix, const std::string& spv_content);
+			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& spv_content);
 			~ShaderPrivate();
 
 			void release() override { delete this; }
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
-			const char* get_prefix() const override { return prefix.c_str(); }
+			const char* get_defines() const override { return defines.c_str(); }
 
-			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& prefix = "");
+			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "");
 		};
 
 		struct PipelinePrivate : Pipeline

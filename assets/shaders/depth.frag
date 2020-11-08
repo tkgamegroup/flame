@@ -4,7 +4,7 @@
 
 #define MATERIAL_SET 1
 
-#include "material_dsl.glsl"
+#include "material.dsl"
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;

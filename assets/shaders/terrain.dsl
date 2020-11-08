@@ -1,3 +1,7 @@
+#ifdef MAKE_DSL
+#define TERRAIN_SET 0
+#endif
+
 struct TerrainInfo
 {
 	vec3 coord;

@@ -1,3 +1,7 @@
+#ifdef MAKE_DSL
+#define MATERIAL_SET 0
+#endif
+
 struct MaterialInfo
 {
 	vec4 color;

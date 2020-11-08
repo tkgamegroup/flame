@@ -6,9 +6,9 @@
 #define MATERIAL_SET 1
 #define TERRAIN_SET 3
 
-#include "render_data_dsl.glsl"
-#include "material_dsl.glsl"
-#include "terrain_dsl.glsl"
+#include "render_data.dsl"
+#include "material.dsl"
+#include "terrain.dsl"
 
 layout(quads, equal_spacing, ccw) in;
 

@@ -7,9 +7,9 @@
 #define ARMATURE_SET 2
 #endif
 
-#include "mesh_dsl.glsl"
+#include "mesh.dsl"
 #ifdef ARMATURE
-#include "armature_dsl.glsl"
+#include "armature.dsl"
 #endif
 
 layout (location = 0) in vec3 i_position;
