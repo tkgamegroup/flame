@@ -63,6 +63,7 @@ namespace flame
 			virtual void release() = 0;
 
 			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, uint descriptorlayouts_count, DescriptorSetLayout* const* descriptor_layouts, uint push_constant_size);
+			FLAME_GRAPHICS_EXPORTS static PipelineLayout* create(Device* device, const wchar_t* filename);
 		};
 
 		struct VertexAttributeInfo

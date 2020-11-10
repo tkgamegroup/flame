@@ -409,6 +409,90 @@ namespace flame
 		}
 	};
 
+	inline bool get_resource_path(std::filesystem::path& path, const std::filesystem::path& subdir)
+	{
+		if (!std::filesystem::exists(path))
+		{
+			auto engine_path = getenv("FLAME_PATH");
+			if (engine_path)
+				path = std::filesystem::path(engine_path) / subdir / path;
+			if (!std::filesystem::exists(path))
+				return false;
+		}
+		return true;
+	}
+
+	inline std::vector<std::filesystem::path> get_make_dependencies(const std::filesystem::path& path)
+	{
+		auto inc_path = path;
+		inc_path += L".inc";
+
+		std::vector<std::filesystem::path> includes;
+
+		if (!std::filesystem::exists(inc_path) || std::filesystem::last_write_time(inc_path) < std::filesystem::last_write_time(path))
+		{
+			std::ofstream inc(inc_path);
+			inc << path.string() << std::endl;
+			std::stack<std::filesystem::path> remains;
+			remains.push(path);
+			while (!remains.empty())
+			{
+				auto p = remains.top();
+				std::ifstream target(p);
+				p = p.parent_path();
+				remains.pop();
+				if (target.good())
+				{
+					while (!target.eof())
+					{
+						std::string line;
+						std::getline(target, line);
+						static auto reg = std::regex(R"(#include \"(.*)\")");
+						std::smatch res;
+						if (std::regex_search(line, res, reg))
+						{
+							auto fn = std::filesystem::path(res[1].str());
+							if (!fn.is_absolute())
+								fn = p / fn;
+							inc << fn.string() << std::endl;
+							includes.push_back(fn);
+							remains.push(fn);
+						}
+					}
+					target.close();
+				}
+			}
+			inc.close();
+		}
+		else
+		{
+			std::ifstream inc(inc_path);
+			while (!inc.eof())
+			{
+				std::string line;
+				std::getline(inc, line);
+				if (!line.empty())
+					includes.push_back(line);
+			}
+			inc.close();
+		}
+
+		return includes;
+	}
+
+	inline bool should_remake(const std::vector<std::filesystem::path>& dependencies, const std::filesystem::path& target)
+	{
+		if (!std::filesystem::exists(target))
+			return true;
+		auto lwt = std::filesystem::last_write_time(target);
+		for (auto& d : dependencies)
+		{
+			if (!std::filesystem::exists(d) || lwt < std::filesystem::last_write_time(d))
+				return true;
+		}
+		return false;
+	}
+
 	enum KeyboardKey
 	{
 		Keyboard_Backspace,

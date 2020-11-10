@@ -30,7 +30,7 @@ namespace flame
 		if (items_element)
 		{
 			element->update_transform();
-			auto pos = element->global_points[type == MenuTop || type == MenuButton ? 3 : 1];
+			auto pos = element->global_points[(type == MenuTop || type == MenuButton) ? 3 : 1];
 			items_element->set_x(pos.x());
 			items_element->set_y(pos.y());
 		}

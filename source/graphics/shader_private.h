@@ -20,10 +20,10 @@ namespace flame
 		struct ShaderVariable
 		{
 			std::string name;
-			uint offset;
-			uint size;
-			uint array_count;
-			uint array_stride;
+			uint offset = 0;
+			uint size = 0;
+			uint array_count = 0;
+			uint array_stride = 0;
 
 			ShaderType* info = nullptr;
 		};
@@ -31,10 +31,22 @@ namespace flame
 		enum ShaderBaseType
 		{
 			ShaderBaseTypeInt,
+			ShaderBaseTypeVec2i,
+			ShaderBaseTypeVec3i,
+			ShaderBaseTypeVec4i,
 			ShaderBaseTypeUint,
+			ShaderBaseTypeVec2u,
+			ShaderBaseTypeVec3u,
+			ShaderBaseTypeVec4u,
 			ShaderBaseTypeFloat,
+			ShaderBaseTypeVec2f,
+			ShaderBaseTypeVec3f,
+			ShaderBaseTypeVec4f,
+			ShaderBaseTypeMat2f,
+			ShaderBaseTypeMat3f,
 			ShaderBaseTypeMat4f,
 			ShaderBaseTypeStruct,
+			ShaderBaseTypeImage
 		};
 
 		struct ShaderType
@@ -101,8 +113,11 @@ namespace flame
 			uint get_bindings_count() const override { return bindings.size(); }
 			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
 
+			static DescriptorSetLayoutPrivate* get(const std::filesystem::path& filename);
 			static DescriptorSetLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
+
+		extern std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> descriptor_set_layouts;
 
 		struct DescriptorSetBridge : DescriptorSet
 		{
@@ -140,18 +155,26 @@ namespace flame
 		struct PipelineLayoutPrivate : PipelineLayout
 		{
 			DevicePrivate* device;
+
+			std::filesystem::path filename;
+
+			std::vector<DescriptorSetLayoutPrivate*> descriptor_set_layouts;
+
+			std::vector<std::unique_ptr<ShaderType>> types;
+			ShaderVariable push_constant;
+
 			VkPipelineLayout vk_pipeline_layout;
 
-			std::vector<DescriptorSetLayoutPrivate*> descriptor_layouts;
-			uint push_cconstant_size;
-
-			//std::unique_ptr<ShaderBindng> push_constant;
-
-			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptorlayouts, uint push_constant_size);
+			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
+			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& types, ShaderVariable& push_constant);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
+
+			static PipelineLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
+
+		extern std::vector<std::unique_ptr<PipelineLayoutPrivate>> pipeline_layouts;
 
 		struct ShaderPrivate : Shader
 		{

@@ -2,13 +2,8 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#define RENDER_DATA_SET 0
-#define MATERIAL_SET 2
-#define LIGHT_SET 3
+#include "mesh.pll"
 
-#include "render_data.dsl"
-#include "material.dsl"
-#include "light.dsl"
 #include "shading.glsl"
 
 layout (location = 0) in flat uint i_mat_id;

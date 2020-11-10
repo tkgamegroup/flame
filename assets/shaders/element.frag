@@ -2,8 +2,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#define ELEMENT_SET 0
-#include "element.dsl"
+#include "element.pll"
 
 layout (location = 0) in vec4 i_color;
 layout (location = 1) in vec2 i_uv;

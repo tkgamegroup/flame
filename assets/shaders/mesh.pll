@@ -1,0 +1,12 @@
+#ifndef MAKE_PLL
+#define RENDER_DATA_SET 0
+#include "render_data.dsl"
+#define MESH_SET 1
+#include "mesh.dsl"
+#define MATERIAL_SET 2
+#include "material.dsl"
+#define LIGHT_SET 3
+#include "light.dsl"
+#define ARMATURE_SET 4
+#include "armature.dsl"
+#endif

@@ -2,6 +2,8 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
+#include "element.pll"
+
 layout (location = 0) in vec2 i_position;
 layout (location = 1) in vec2 i_uv;
 layout (location = 2) in vec4 i_color;
@@ -9,11 +11,6 @@ layout (location = 2) in vec4 i_color;
 layout (location = 0) out vec4 o_color;
 layout (location = 1) out vec2 o_uv;
 layout (location = 2) out flat uint o_id;
-
-layout (push_constant) uniform PushConstantT
-{
-	vec2 scale;
-}pc;
 
 void main()
 {

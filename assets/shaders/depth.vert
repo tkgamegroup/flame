@@ -2,15 +2,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#define MESH_SET 0
-#ifdef ARMATURE
-#define ARMATURE_SET 2
-#endif
-
-#include "mesh.dsl"
-#ifdef ARMATURE
-#include "armature.dsl"
-#endif
+#include "depth.pll"
 
 layout (location = 0) in vec3 i_position;
 layout (location = 1) in vec2 i_uv;
@@ -18,13 +10,6 @@ layout (location = 1) in vec2 i_uv;
 layout (location = 2) in ivec4 i_bone_ids;
 layout (location = 3) in vec4 i_bone_weights;
 #endif
-
-layout (push_constant) uniform PushConstantT
-{
-	mat4 proj_view;
-	float zNear;
-	float zFar;
-}pc;
 
 layout (location = 0) out flat uint o_mat_id;
 layout (location = 1) out vec2 o_uv;

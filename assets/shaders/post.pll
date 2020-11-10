@@ -1,0 +1,9 @@
+#ifndef MAKE_PLL
+#define POST_SET 0
+#include "post.dsl"
+#endif
+
+layout (push_constant) uniform PushConstantT
+{
+	vec2 pxsz;
+}pc;

@@ -2,19 +2,10 @@
 #extension GL_ARB_shading_language_420pack : enable
 #extension GL_ARB_separate_shader_objects : enable
 
-#define MATERIAL_SET 1
-
-#include "material.dsl"
+#include "depth.pll"
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;
-
-layout (push_constant) uniform PushConstantT
-{
-	mat4 proj_view;
-	float zNear;
-	float zFar;
-}pc;
 
 layout (location = 0) out float o_depth;
 

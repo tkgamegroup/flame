@@ -1,0 +1,15 @@
+#ifndef MAKE_PLL
+#define MESH_SET 0
+#include "mesh.dsl"
+#define MATERIAL_SET 1
+#include "material.dsl"
+#define ARMATURE_SET 2
+#include "armature.dsl"
+#endif
+
+layout (push_constant) uniform PushConstantT
+{
+	mat4 proj_view;
+	float zNear;
+	float zFar;
+}pc;
