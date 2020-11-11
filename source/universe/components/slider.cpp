@@ -13,7 +13,7 @@ namespace flame
 		proportion = (v - value_min) / value_max * bar_element->size.x();
 		thumb_element->set_x(proportion * bar_element->size.x());
 		text->set_text(std::to_wstring(value));
-		Entity::report_data_changed(this, S<ch("value")>::v);
+		Entity::report_data_changed(this, S<"value"_h>);
 	}
 
 	void cSliderPrivate::set_value_min(float v)
@@ -21,7 +21,7 @@ namespace flame
 		value_min = v;
 		value = proportion * (value_max -value_min) + value_min;
 		text->set_text(std::to_wstring(value));
-		Entity::report_data_changed(this, S<ch("value")>::v);
+		Entity::report_data_changed(this, S<"value"_h>);
 	}
 
 	void cSliderPrivate::set_value_max(float v)
@@ -29,7 +29,7 @@ namespace flame
 		value_max = v;
 		value = proportion * (value_max - value_min) + value_min;
 		text->set_text(std::to_wstring(value));
-		Entity::report_data_changed(this, S<ch("value")>::v);
+		Entity::report_data_changed(this, S<"value"_h>);
 	}
 
 	void cSliderPrivate::on_gain_bar_element()
@@ -68,7 +68,7 @@ namespace flame
 				thiz->thumb_element->set_x(x);
 				thiz->thumb_element->set_y(thiz->bar_element->size.y() * 0.5f);
 				thiz->text->set_text(std::to_wstring(thiz->value));
-				Entity::report_data_changed(thiz, S<ch("value")>::v);
+				Entity::report_data_changed(thiz, S<"value"_h>);
 			}
 		}, Capture().set_thiz(this));
 	}

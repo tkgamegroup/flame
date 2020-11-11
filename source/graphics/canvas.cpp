@@ -495,8 +495,9 @@ namespace flame
 				}
 			}
 
-			render_data_buffer.create(device, 1);
-			render_data_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), DescriptorSetLayoutPrivate::get(L"render_data.dsl")));
+			auto render_data_dsl = DescriptorSetLayoutPrivate::get(L"render_data.dsl");
+			render_data_buffer.create(device, BufferUsageUniform, find_type(render_data_dsl->types, "RenderData"));
+			render_data_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), render_data_dsl));
 			render_data_descriptorset->set_buffer(0, 0, render_data_buffer.buf.get());
 
 			terrain_info_buffer.create(device, 1);
@@ -1640,51 +1641,40 @@ namespace flame
 			dst[7] = Vec3f(transform * Vec4f(-x2, -y2, -zFar, 1.f));
 		}
 
-		void CanvasPrivate::set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord)
+		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const Mat3f& axes, const Vec3f& _coord)
 		{
-			auto view_inv = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(coord, 1.f));
-			auto view = inverse(view_inv);
-			auto proj = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
+			fovy = _fovy;
+			aspect = _aspect;
+			zNear = _zNear;
+			zFar = _zFar;
+			camera_coord = _coord;
 
-			render_data_buffer.beg->fovy = fovy;
-			render_data_buffer.beg->aspect = aspect;
-			render_data_buffer.beg->zNear = zNear;
-			render_data_buffer.beg->zFar = zFar;
-			render_data_buffer.beg->camera_coord = coord;
-			render_data_buffer.beg->view_inv = view_inv;
-			render_data_buffer.beg->view = view;
-			render_data_buffer.beg->proj = proj;
-			render_data_buffer.beg->proj_view = proj * view;
+			view_inv_matrix = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(camera_coord, 1.f));
+			view_matrix = inverse(view_inv_matrix);
+			proj_matrix = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
+			proj_view_matrix = proj_matrix * view_matrix;
+
+			render_data_buffer.set(S<"fovy"_h>, fovy);
+			render_data_buffer.set(S<"aspect"_h>, aspect);
+			render_data_buffer.set(S<"zNear"_h>, zNear);
+			render_data_buffer.set(S<"zFar"_h>, zFar);
+			render_data_buffer.set(S<"camera_coord"_h>, camera_coord);
+			render_data_buffer.set(S<"view_inv"_h>, view_inv_matrix);
+			render_data_buffer.set(S<"view"_h>, view_matrix);
+			render_data_buffer.set(S<"proj"_h>, proj_matrix);
+			render_data_buffer.set(S<"proj_view"_h>, proj_view_matrix);
 
 			{
-				auto p = proj * Vec4f(100, 0, -100, 1);
-				p /= p.w();
-				int cut = 1;
+				Vec3f ps[8];
+				get_frustum_points(zNear, zFar, tan(fovy * 0.5f * ANG_RAD), aspect, view_inv_matrix, ps);
+				auto dst = (Vec4f*)(render_data_buffer.stag + render_data_buffer.offsets[S<"frustum_planes"_h>]);
+				dst[0] = make_plane(ps[0], ps[1], ps[2]); // near
+				dst[1] = make_plane(ps[5], ps[4], ps[6]); // far
+				dst[2] = make_plane(ps[4], ps[0], ps[7]); // left
+				dst[3] = make_plane(ps[1], ps[5], ps[2]); // right
+				dst[4] = make_plane(ps[4], ps[5], ps[0]); // top
+				dst[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 			}
-			{
-				auto p = proj * Vec4f(-100, 0, -100, 1);
-				p /= p.w();
-				int cut = 1;
-			}
-			{
-				auto p = proj * Vec4f(100, 0, -200, 1);
-				p /= p.w();
-				int cut = 1;
-			}
-			{
-				auto p = proj * Vec4f(-100, 0, -200, 1);
-				p /= p.w();
-				int cut = 1;
-			}
-
-			Vec3f ps[8];
-			get_frustum_points(zNear, zFar, tan(fovy * 0.5f * ANG_RAD), aspect, view_inv, ps);
-			render_data_buffer.beg->frustum_planes[0] = make_plane(ps[0], ps[1], ps[2]); // near
-			render_data_buffer.beg->frustum_planes[1] = make_plane(ps[5], ps[4], ps[6]); // far
-			render_data_buffer.beg->frustum_planes[2] = make_plane(ps[4], ps[0], ps[7]); // left
-			render_data_buffer.beg->frustum_planes[3] = make_plane(ps[1], ps[5], ps[2]); // right
-			render_data_buffer.beg->frustum_planes[4] = make_plane(ps[4], ps[5], ps[0]); // top
-			render_data_buffer.beg->frustum_planes[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer)
@@ -1738,10 +1728,9 @@ namespace flame
 				li.shadow_map_index = cast_shadow ? used_directional_light_shadow_maps_count++ : -1;
 				if (cast_shadow)
 				{
-					auto zFar = render_data_buffer.beg->shadow_distance;
-					auto tan_hf_fovy = tan(render_data_buffer.beg->fovy * 0.5f * ANG_RAD);
-					auto aspect = render_data_buffer.beg->aspect;
-					auto view_inv = render_data_buffer.beg->view_inv;
+					auto zFar = shadow_distance;
+					auto tan_hf_fovy = tan(fovy * 0.5f * ANG_RAD);
+					auto view_inv = view_inv_matrix;
 
 					for (auto j = 0; j < csm_levels; j++)
 					{
@@ -2025,13 +2014,13 @@ namespace flame
 					{
 						first_mesh = false;
 
-						render_data_buffer.beg->fb_size = output_size;
-						render_data_buffer.beg->shadow_distance = 100.f;
-						render_data_buffer.beg->csm_levels = csm_levels;
+						render_data_buffer.set(S<"fb_size"_h>, output_size);
+						render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
+						render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
 
 						mesh_matrix_buffer.upload(cb);
 						terrain_info_buffer.upload(cb);
-						render_data_buffer.upload(cb, 0, 1);
+						render_data_buffer.upload(cb);
 
 						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
@@ -2317,7 +2306,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->line3_pipeline.get());
-					cb->push_constant(0, sizeof(Mat4f), &render_data_buffer.beg->proj_view, nullptr);
+					cb->push_constant(0, sizeof(Mat4f), &proj_view_matrix, nullptr);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];

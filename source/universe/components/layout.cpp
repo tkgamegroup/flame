@@ -354,7 +354,7 @@ namespace flame
 			return;
 		type = t;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<ch("type")>::v);
+		Entity::report_data_changed(this, S<"type"_h>);
 	}
 
 	void cLayoutPrivate::set_gap(float g)
@@ -363,7 +363,7 @@ namespace flame
 			return;
 		gap = g;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<ch("gap")>::v);
+		Entity::report_data_changed(this, S<"gap"_h>);
 	}
 
 	void cLayoutPrivate::set_auto_width(bool a)
@@ -372,7 +372,7 @@ namespace flame
 			return;
 		auto_width = a;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<ch("auto_width")>::v);
+		Entity::report_data_changed(this, S<"auto_width"_h>);
 	}
 
 	void cLayoutPrivate::set_auto_height(bool a)
@@ -381,7 +381,7 @@ namespace flame
 			return;
 		auto_height = a;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<ch("auto_height")>::v);
+		Entity::report_data_changed(this, S<"auto_height"_h>);
 	}
 
 	void cLayoutPrivate::set_scrollx(float s)
@@ -390,7 +390,7 @@ namespace flame
 			return;
 		scrollx = s;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<ch("scrollx")>::v);
+		Entity::report_data_changed(this, S<"scrollx"_h>);
 	}
 
 	void cLayoutPrivate::set_scrolly(float s)
@@ -399,7 +399,7 @@ namespace flame
 			return;
 		scrolly = s;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<ch("scrolly")>::v);
+		Entity::report_data_changed(this, S<"scrolly"_h>);
 	}
 
 	void cLayoutPrivate::on_gain_layout_system()
@@ -455,9 +455,9 @@ namespace flame
 		{
 			switch (hash)
 			{
-			case S<ch("width")>::v:
-			case S<ch("height")>::v:
-			case S<ch("padding")>::v:
+			case S<"width"_h>:
+			case S<"height"_h>:
+			case S<"padding"_h>:
 				mark_layout_dirty();
 				break;
 			}
@@ -472,11 +472,11 @@ namespace flame
 		{
 			switch (hash)
 			{
-			case S<ch("x")>::v:
-			case S<ch("y")>::v:
-			case S<ch("width")>::v:
-			case S<ch("height")>::v:
-			case S<ch("padding")>::v:
+			case S<"x"_h>:
+			case S<"y"_h>:
+			case S<"width"_h>:
+			case S<"height"_h>:
+			case S<"padding"_h>:
 				mark_layout_dirty();
 				break;
 			}
@@ -485,12 +485,12 @@ namespace flame
 		{
 			switch (hash)
 			{
-			case S<ch("alignx")>::v:
-			case S<ch("aligny")>::v:
-			case S<ch("width_factor")>::v:
-			case S<ch("height_factor")>::v:
-			case S<ch("margin")>::v:
-			case S<ch("include_in_layout")>::v:
+			case S<"alignx"_h>:
+			case S<"aligny"_h>:
+			case S<"width_factor"_h>:
+			case S<"height_factor"_h>:
+			case S<"margin"_h>:
+			case S<"include_in_layout"_h>:
 				mark_layout_dirty();
 				break;
 			}

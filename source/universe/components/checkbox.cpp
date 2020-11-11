@@ -14,7 +14,7 @@ namespace flame
 			s = (StateFlags)(int)(s | StateSelected);
 		else
 			s = (StateFlags)(int)(s & ~StateSelected);
-		Entity::report_data_changed(this, S<ch("checked")>::v);
+		Entity::report_data_changed(this, S<"checked"_h>);
 	}
 
 	void cCheckboxPrivate::on_gain_event_receiver()

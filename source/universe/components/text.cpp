@@ -22,7 +22,7 @@ namespace flame
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
-		Entity::report_data_changed(this, S<ch("size")>::v);
+		Entity::report_data_changed(this, S<"size"_h>);
 	}
 
 	void cTextPrivate::set_color(const Vec4c& col)
@@ -35,7 +35,7 @@ namespace flame
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
-		Entity::report_data_changed(this, S<ch("color")>::v);
+		Entity::report_data_changed(this, S<"color"_h>);
 	}
 
 	void cTextPrivate::on_gain_canvas()
@@ -62,7 +62,7 @@ namespace flame
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
-		Entity::report_data_changed(this, S<ch("text")>::v);
+		Entity::report_data_changed(this, S<"text"_h>);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)

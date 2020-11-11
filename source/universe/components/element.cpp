@@ -13,7 +13,7 @@ namespace flame
 			return;
 		pos.x() = x;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("x")>::v);
+		Entity::report_data_changed(this, S<"x"_h>);
 	}
 
 	void cElementPrivate::set_y(float y)
@@ -22,7 +22,7 @@ namespace flame
 			return;
 		pos.y() = y;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("y")>::v);
+		Entity::report_data_changed(this, S<"y"_h>);
 	}
 
 	void cElementPrivate::set_width(float w)
@@ -32,7 +32,7 @@ namespace flame
 		size.x() = w;
 		content_size.x() = size.x() - padding.xz().sum();
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("width")>::v);
+		Entity::report_data_changed(this, S<"width"_h>);
 	}
 
 	void cElementPrivate::set_height(float h)
@@ -42,7 +42,7 @@ namespace flame
 		size.y() = h;
 		content_size.y() = size.y() - padding.yw().sum();
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("height")>::v);
+		Entity::report_data_changed(this, S<"height"_h>);
 	}
 
 	void cElementPrivate::set_padding(const Vec4f& p)
@@ -51,7 +51,7 @@ namespace flame
 			return;
 		padding = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("padding")>::v);
+		Entity::report_data_changed(this, S<"padding"_h>);
 	}
 
 	//	void cElement::set_roundness(const Vec4f& r, void* sender)
@@ -69,7 +69,7 @@ namespace flame
 			return;
 		pivot.x() = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("pivotx")>::v);
+		Entity::report_data_changed(this, S<"pivotx"_h>);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -78,7 +78,7 @@ namespace flame
 			return;
 		pivot.y() = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("pivoty")>::v);
+		Entity::report_data_changed(this, S<"pivoty"_h>);
 	}
 
 	void cElementPrivate::set_scalex(float s)
@@ -87,7 +87,7 @@ namespace flame
 			return;
 		scale.x() = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("scalex")>::v);
+		Entity::report_data_changed(this, S<"scalex"_h>);
 	}
 
 	void cElementPrivate::set_scaley(float s)
@@ -96,7 +96,7 @@ namespace flame
 			return;
 		scale.y() = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("scaley")>::v);
+		Entity::report_data_changed(this, S<"scaley"_h>);
 	}
 
 	void cElementPrivate::set_rotation(float r)
@@ -105,7 +105,7 @@ namespace flame
 			return;
 		rotation = r;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("rotation")>::v);
+		Entity::report_data_changed(this, S<"rotation"_h>);
 	}
 
 	void cElementPrivate::set_skewx(float s)
@@ -114,7 +114,7 @@ namespace flame
 			return;
 		skew.x() = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("skewx")>::v);
+		Entity::report_data_changed(this, S<"skewx"_h>);
 	}
 
 	void cElementPrivate::set_skewy(float s)
@@ -123,7 +123,7 @@ namespace flame
 			return;
 		skew.y() = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("skewy")>::v);
+		Entity::report_data_changed(this, S<"skewy"_h>);
 	}
 
 	void cElementPrivate::update_transform()
@@ -177,7 +177,7 @@ namespace flame
 			return;
 		fill_color = c;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<ch("fill_color")>::v);
+		Entity::report_data_changed(this, S<"fill_color"_h>);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -186,7 +186,7 @@ namespace flame
 			return;
 		border = b;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<ch("border")>::v);
+		Entity::report_data_changed(this, S<"border"_h>);
 	}
 
 	void cElementPrivate::set_border_color(const Vec4c& c)
@@ -195,7 +195,7 @@ namespace flame
 			return;
 		border_color = c;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<ch("border_color")>::v);
+		Entity::report_data_changed(this, S<"border_color"_h>);
 	}
 
 	void cElementPrivate::set_clipping(bool c)
@@ -204,7 +204,7 @@ namespace flame
 			return;
 		clipping = c;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<ch("clipping")>::v);
+		Entity::report_data_changed(this, S<"clipping"_h>);
 	}
 
 	void cElementPrivate::mark_transform_dirty()

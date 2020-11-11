@@ -34,11 +34,7 @@ namespace flame
 		return (char*)p + sizeof(T);
 	}
 
-	template <auto V>
-	struct S
-	{
-		constexpr static decltype(V) v = V;
-	};
+	template <auto V> inline constexpr auto S = V;
 
 	template <class T>
 	std::span<T> SP(const T& v)
@@ -46,7 +42,7 @@ namespace flame
 		return std::span(&(T&)v, 1);
 	}
 
-	uint64 constexpr ch(char const* str)
+	constexpr uint64 ch(char const* str)
 	{
 		auto ret = std::_FNV_offset_basis;
 		while (*str)
@@ -56,6 +52,11 @@ namespace flame
 			str++;
 		}
 		return ret;
+	}
+
+	constexpr uint64 operator "" _h(char const* str, std::size_t len)
+	{
+		return ch(str);
 	}
 
 	template <class F>

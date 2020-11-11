@@ -50,16 +50,6 @@ namespace flame
 
 		std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> descriptor_set_layouts;
 
-		static ShaderType* find_type(const std::vector<std::unique_ptr<ShaderType>>& types, uint id)
-		{
-			for (auto& t : types)
-			{
-				if (t->id == id)
-					return t.get();
-			}
-			return nullptr;
-		}
-
 		static void load_res_types(pugi::xml_node root, std::vector<std::unique_ptr<ShaderType>>& types)
 		{
 			for (auto n_type : root.child("types"))

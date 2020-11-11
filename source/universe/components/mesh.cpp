@@ -114,7 +114,7 @@ namespace flame
 												auto thiz = c.thiz<cMeshPrivate>();
 												auto id = c.data<int>();
 												auto& b = thiz->bones[id];
-												if (t == b.node && h == S<ch("transform")>::v)
+												if (t == b.node && h == S<"transform"_h>)
 												{
 													b.node->update_transform();
 													thiz->deformer->set_pose(id, b.node->transform);

@@ -58,6 +58,26 @@ namespace flame
 			std::vector<ShaderVariable> variables;
 		};
 
+		inline ShaderType* find_type(const std::vector<std::unique_ptr<ShaderType>>& types, uint id)
+		{
+			for (auto& t : types)
+			{
+				if (t->id == id)
+					return t.get();
+			}
+			return nullptr;
+		}
+
+		inline ShaderType* find_type(const std::vector<std::unique_ptr<ShaderType>>& types, const std::string& name)
+		{
+			for (auto& t : types)
+			{
+				if (t->name == name)
+					return t.get();
+			}
+			return nullptr;
+		}
+
 		struct DescriptorBindingPrivate : DescriptorBinding
 		{
 			DescriptorType type;

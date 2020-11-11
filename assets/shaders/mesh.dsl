@@ -5,7 +5,7 @@
 struct MeshMatrix
 {
 	mat4 transform;
-	mat3 normal_matrix;
+	mat4 normal_matrix;
 };
 
 layout (set = MESH_SET, binding = 0) buffer readonly MeshMatrices

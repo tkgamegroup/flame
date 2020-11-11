@@ -11,7 +11,7 @@ namespace flame
 			return;
 		pos = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("pos")>::v);
+		Entity::report_data_changed(this, S<"pos"_h>);
 	}
 
 	void cNodePrivate::set_quat(const Vec4f& q)
@@ -20,7 +20,7 @@ namespace flame
 			return;
 		quat = q;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("quat")>::v);
+		Entity::report_data_changed(this, S<"quat"_h>);
 	}
 
 	void cNodePrivate::set_scale(const Vec3f& s)
@@ -29,7 +29,7 @@ namespace flame
 			return;
 		scale = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<ch("scale")>::v);
+		Entity::report_data_changed(this, S<"scale"_h>);
 	}
 
 	void cNodePrivate::set_euler(const Vec3f& e)
@@ -94,7 +94,7 @@ namespace flame
 			global_dirs = make_rotation_matrix(global_quat);
 			transform = Mat4f(Mat<3, 4, float>(global_dirs * Mat3f(global_scale), Vec3f(0.f)), Vec4f(global_pos, 1.f));
 
-			Entity::report_data_changed(this, S<ch("transform")>::v);
+			Entity::report_data_changed(this, S<"transform"_h>);
 		}
 	}
 

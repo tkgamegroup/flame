@@ -10,7 +10,7 @@ namespace flame
 		SUS::remove_spaces(rule);
 		apply_rule();
 
-		Entity::report_data_changed(this, S<ch("rule")>::v);
+		Entity::report_data_changed(this, S<"rule"_h>);
 	}
 
 	void cStylePrivate::apply_rule()

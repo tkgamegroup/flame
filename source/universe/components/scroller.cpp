@@ -54,7 +54,7 @@ namespace flame
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->htrack_element)
 			{
-				if (h == S<ch("width")>::v)
+				if (h == S<"width"_h>)
 					thiz->scroll(Vec2f(0.f));
 			}
 		}, Capture().set_thiz(this));
@@ -85,7 +85,7 @@ namespace flame
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->vtrack_element)
 			{
-				if (h == S<ch("height")>::v)
+				if (h == S<"height"_h>)
 					thiz->scroll(Vec2f(0.f));
 			}
 		}, Capture().set_thiz(this));
@@ -131,7 +131,7 @@ namespace flame
 							auto thiz = c.thiz<cScrollerPrivate>();
 							if (t == thiz->target_element)
 							{
-								if (h == S<ch("size.x()")>::v || h == S<ch("size.y()")>::v)
+								if (h == S<"width"_h> || h == S<"height"_h>)
 									thiz->scroll(Vec2f(0.f));
 							}
 						}, Capture().set_thiz(thiz));
@@ -149,7 +149,7 @@ namespace flame
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (t == thiz->view_element)
 			{
-				if (h == S<ch("size.x()")>::v || h == S<ch("size.y()")>::v)
+				if (h == S<"width"_h> || h == S<"height"_h>)
 					thiz->scroll(Vec2f(0.f));
 			}
 		}, Capture().set_thiz(this));

@@ -90,7 +90,7 @@ namespace flame
 			uint size;
 			std::unique_ptr<BufferPrivate> buf;
 			std::unique_ptr<BufferPrivate> stgbuf;
-			void* stag = nullptr;
+			char* stag = nullptr;
 
 			std::unordered_map<uint64, uint> offsets;
 
@@ -100,7 +100,7 @@ namespace flame
 				buf.reset(new BufferPrivate(d, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stgbuf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stgbuf->map();
-				stag = stgbuf->mapped;
+				stag = (char*)stgbuf->mapped;
 				for (auto& v : t->variables)
 					offsets[std::hash<std::string>()(v.name)] = v.offset;
 			}
@@ -289,31 +289,10 @@ namespace flame
 			std::vector<std::unique_ptr<Mesh>> meshes;
 		};
 
-		struct RenderDataS
-		{
-			float fovy;
-			float aspect;
-			float zNear;
-			float zFar;
-			Vec3f camera_coord;
-			float dummy1;
-			Vec4f frustum_planes[6];
-
-			Vec2f fb_size;
-			float shadow_distance;
-			uint csm_levels;
-			Vec4f dummy3[3];
-
-			Mat4f view_inv;
-			Mat4f view;
-			Mat4f proj;
-			Mat4f proj_view;
-		};
-
 		struct MeshMatrixS
 		{
 			Mat4f transform;
-			Mat<3, 4, float> normal_matrix;
+			Mat4f normal_matrix;
 		};
 
 		struct MaterialInfoS
@@ -466,6 +445,19 @@ namespace flame
 
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
+			float fovy;
+			float aspect;
+			float zNear;
+			float zFar;
+			Vec3f camera_coord;
+			Mat4f view_matrix;
+			Mat4f view_inv_matrix;
+			Mat4f proj_matrix;
+			Mat4f proj_view_matrix;
+
+			float shadow_distance = 100.f;
+			uint csm_levels = 3;
+
 			std::unique_ptr<ImagePrivate> white_image;
 			std::vector < ElementResourceSlot > element_resources;
 			std::vector<TextureResourceSlot> texture_resources;
@@ -476,7 +468,7 @@ namespace flame
 			ShaderBufferArrayed<uint, BufferUsageIndex> element_index_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 
-			ShaderBufferArrayed<RenderDataS, BufferUsageUniform> render_data_buffer;
+			ShaderBuffer render_data_buffer;
 			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
 
 			ShaderBufferArrayed<MeshMatrixS, BufferUsageStorage> mesh_matrix_buffer;
@@ -484,8 +476,6 @@ namespace flame
 
 			ShaderBufferArrayed<MaterialInfoS, BufferUsageStorage> material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
-
-			uint csm_levels = 3;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
