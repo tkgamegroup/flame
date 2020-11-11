@@ -68,6 +68,7 @@ namespace flame
 				t->id = n_type.attribute("id").as_uint();
 				t->base_type = (ShaderBaseType)n_type.attribute("id").as_int();
 				t->name = n_type.attribute("name").value();
+				t->size = n_type.attribute("size").as_uint();
 				for (auto n_variable : n_type.child("variables"))
 				{
 					ShaderVariable v;
@@ -97,6 +98,7 @@ namespace flame
 				n_type.append_attribute("id").set_value(t->id);
 				n_type.append_attribute("base_type").set_value((int)t->base_type);
 				n_type.append_attribute("name").set_value(t->name.c_str());
+				n_type.append_attribute("size").set_value(t->size);
 				if (!t->variables.empty())
 				{
 					auto n_variables = n_type.append_child("variables");
@@ -200,6 +202,7 @@ namespace flame
 			{
 				dst->base_type = ShaderBaseTypeStruct;
 				dst->name = glsl.get_name(src.self);
+				dst->size = glsl.get_declared_struct_size(src);
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
 					uint32_t id = src.member_types[i];
@@ -210,7 +213,6 @@ namespace flame
 					v.size = glsl.get_declared_struct_member_size(src, i);
 					v.array_count = glsl.get_type(id).array[0];
 					v.array_stride = glsl.get_decoration(id, spv::DecorationArrayStride);
-
 					ShaderType* t = nullptr;
 					for (auto& _t : types)
 					{
@@ -591,7 +593,9 @@ namespace flame
 			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
 				descriptor_set_layouts[i] = _descriptor_set_layouts[i];
-			push_constant.size = push_constant_size;
+			push_constant = new ShaderType;
+			push_constant->size = push_constant_size;
+			types.emplace_back(push_constant);
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
@@ -615,7 +619,7 @@ namespace flame
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
 		}
 
-		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& _types, ShaderVariable& _push_constant) :
+		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& _types, ShaderType* _push_constant) :
 			device(device),
 			filename(filename)
 		{
@@ -626,6 +630,12 @@ namespace flame
 			for (auto i = 0; i < types.size(); i++)
 				types[i].reset(_types[i].release());
 			push_constant = _push_constant;
+			if (!push_constant)
+			{
+				push_constant = new ShaderType;
+				push_constant->size = 0;
+				types.emplace_back(push_constant);
+			}
 
 			std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 			vk_descriptor_set_layouts.resize(descriptor_set_layouts.size());
@@ -634,7 +644,7 @@ namespace flame
 
 			VkPushConstantRange vk_pushconstant_range;
 			vk_pushconstant_range.offset = 0;
-			vk_pushconstant_range.size = push_constant.size;
+			vk_pushconstant_range.size = push_constant->size;
 			vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
 
 			VkPipelineLayoutCreateInfo info;
@@ -643,8 +653,8 @@ namespace flame
 			info.pNext = nullptr;
 			info.setLayoutCount = vk_descriptor_set_layouts.size();
 			info.pSetLayouts = vk_descriptor_set_layouts.data();
-			info.pushConstantRangeCount = push_constant.size > 0 ? 1 : 0;
-			info.pPushConstantRanges = push_constant.size > 0 ? &vk_pushconstant_range : nullptr;
+			info.pushConstantRangeCount = push_constant->size > 0 ? 1 : 0;
+			info.pPushConstantRanges = push_constant->size > 0 ? &vk_pushconstant_range : nullptr;
 
 			chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &vk_pipeline_layout));
 		}
@@ -686,7 +696,7 @@ namespace flame
 			}
 
 			std::vector<std::unique_ptr<ShaderType>> types;
-			ShaderVariable push_constant;
+			ShaderType* push_constant = nullptr;
 
 			if (!std::filesystem::exists(res_path) || std::filesystem::last_write_time(res_path) < std::filesystem::last_write_time(path))
 			{
@@ -741,8 +751,7 @@ namespace flame
 						info->id = r.base_type_id;
 						get_shader_type(glsl, types, glsl.get_type(r.base_type_id), info);
 						
-						push_constant.size = glsl.get_declared_struct_size(glsl.get_type(r.base_type_id));
-						push_constant.info = info;
+						push_constant = info;
 						break;
 					}
 				}
@@ -759,8 +768,7 @@ namespace flame
 				save_res_types(root, types);
 
 				auto n_push_constant = root.append_child("push_constant");
-				n_push_constant.append_attribute("size").set_value(push_constant.size);
-				n_push_constant.append_attribute("type_id").set_value(push_constant.info ? std::to_string(push_constant.info->id).c_str() : "-1");
+				n_push_constant.append_attribute("type_id").set_value(push_constant ? std::to_string(push_constant->id).c_str() : "-1");
 
 				res.save_file(res_path.c_str());
 			}
@@ -778,8 +786,7 @@ namespace flame
 				load_res_types(root, types);
 
 				auto n_push_constant = root.child("push_constant");
-				push_constant.size = n_push_constant.attribute("size").as_uint();
-				push_constant.info = find_type(types, n_push_constant.attribute("type_id").as_uint());
+				push_constant = find_type(types, n_push_constant.attribute("type_id").as_uint());
 			}
 
 			auto ret = new PipelineLayoutPrivate(device, filename, dsls, types, push_constant);

@@ -3,7 +3,7 @@
 #include "element.dsl"
 #endif
 
-layout (push_constant) uniform PushConstantT
+layout (push_constant) uniform PushConstant
 {
 	vec2 scale;
 }pc;

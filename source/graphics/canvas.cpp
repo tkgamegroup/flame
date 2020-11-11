@@ -256,7 +256,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"blur_depth.frag", "H BAN"))
+					add_shader(ShaderPrivate::create(device, L"blur_depth.frag", "H"))
 				};
 				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -264,7 +264,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"blur_depth.frag", "V BAN"))
+					add_shader(ShaderPrivate::create(device, L"blur_depth.frag", "V"))
 				};
 				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -1743,12 +1743,11 @@ namespace flame
 					auto aspect = render_data_buffer.beg->aspect;
 					auto view_inv = render_data_buffer.beg->view_inv;
 
-					auto level = render_data_buffer.beg->csm_levels;
-					for (auto j = 0; j < level; j++)
+					for (auto j = 0; j < csm_levels; j++)
 					{
-						auto n = j / (float)level;
+						auto n = j / (float)csm_levels;
 						n = n * n * zFar;
-						auto f = (j + 1) / (float)level;
+						auto f = (j + 1) / (float)csm_levels;
 						f = f * f * zFar;
 
 						Vec3f ps[8];
@@ -2028,7 +2027,7 @@ namespace flame
 
 						render_data_buffer.beg->fb_size = output_size;
 						render_data_buffer.beg->shadow_distance = 100.f;
-						render_data_buffer.beg->csm_levels = 3;
+						render_data_buffer.beg->csm_levels = csm_levels;
 
 						mesh_matrix_buffer.upload(cb);
 						terrain_info_buffer.upload(cb);
@@ -2049,8 +2048,7 @@ namespace flame
 								auto& li = directional_light_info_buffer.beg[i];
 								if (li.shadow_map_index != -1)
 								{
-									auto level = render_data_buffer.beg->csm_levels;
-									for (auto i = 0; i < level; i++)
+									for (auto i = 0; i < csm_levels; i++)
 									{
 										Vec4f cvs[] = {
 											Vec4f(1.f, 0.f, 0.f, 0.f),
@@ -2101,21 +2099,21 @@ namespace flame
 										}
 										cb->end_renderpass();
 
-										cb->image_barrier(directional_light_shadow_maps[li.shadow_map_index].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-										cb->begin_renderpass(nullptr, shadow_blur_pingpong_image_framebuffer.get());
-										cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
-										cb->bind_descriptor_set(PipelineGraphics, directional_light_shadow_map_descriptorsets[li.shadow_map_index * 4 + i].get(), 0, nullptr);
-										cb->push_constant_t(0, 1.f / shadow_map_size.x(), nullptr);
-										cb->draw(3, 1, 0, 0);
-										cb->end_renderpass();
+										//cb->image_barrier(directional_light_shadow_maps[li.shadow_map_index].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+										//cb->begin_renderpass(nullptr, shadow_blur_pingpong_image_framebuffer.get());
+										//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
+										//cb->bind_descriptor_set(PipelineGraphics, directional_light_shadow_map_descriptorsets[li.shadow_map_index * 4 + i].get(), 0, nullptr);
+										//cb->push_constant_t(0, 1.f / shadow_map_size.x(), nullptr);
+										//cb->draw(3, 1, 0, 0);
+										//cb->end_renderpass();
 
-										cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-										cb->begin_renderpass(nullptr, directional_light_shadow_map_framebuffers[li.shadow_map_index * 4 + i].get());
-										cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
-										cb->bind_descriptor_set(PipelineGraphics, shadow_blur_pingpong_image_descriptorset.get(), 0, nullptr);
-										cb->push_constant_t(0, 1.f / shadow_map_size.y(), nullptr);
-										cb->draw(3, 1, 0, 0);
-										cb->end_renderpass();
+										//cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+										//cb->begin_renderpass(nullptr, directional_light_shadow_map_framebuffers[li.shadow_map_index * 4 + i].get());
+										//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
+										//cb->bind_descriptor_set(PipelineGraphics, shadow_blur_pingpong_image_descriptorset.get(), 0, nullptr);
+										//cb->push_constant_t(0, 1.f / shadow_map_size.y(), nullptr);
+										//cb->draw(3, 1, 0, 0);
+										//cb->end_renderpass();
 									}
 
 									cb->image_barrier(directional_light_shadow_maps[li.shadow_map_index].get(), { 0U, 1U, 0U, 4U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);

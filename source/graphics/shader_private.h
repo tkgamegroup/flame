@@ -51,9 +51,10 @@ namespace flame
 
 		struct ShaderType
 		{
-			uint id;
-			ShaderBaseType base_type;
+			uint id = -1;
+			ShaderBaseType base_type = ShaderBaseTypeStruct;
 			std::string name;
+			uint size = 0;
 			std::vector<ShaderVariable> variables;
 		};
 
@@ -161,12 +162,12 @@ namespace flame
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_set_layouts;
 
 			std::vector<std::unique_ptr<ShaderType>> types;
-			ShaderVariable push_constant;
+			ShaderType* push_constant = nullptr;
 
 			VkPipelineLayout vk_pipeline_layout;
 
 			PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, uint push_constant_size);
-			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& types, ShaderVariable& push_constant);
+			PipelineLayoutPrivate(DevicePrivate* device, const std::filesystem::path& filename, std::span<DescriptorSetLayoutPrivate*> descriptor_set_layouts, std::vector<std::unique_ptr<ShaderType>>& types, ShaderType* push_constant);
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }

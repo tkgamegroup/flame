@@ -7,7 +7,7 @@
 #include "armature.dsl"
 #endif
 
-layout (push_constant) uniform PushConstantT
+layout (push_constant) uniform PushConstant
 {
 	mat4 proj_view;
 	float zNear;

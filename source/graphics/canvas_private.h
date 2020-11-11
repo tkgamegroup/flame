@@ -85,6 +85,41 @@ namespace flame
 			void set_terrain_render(RenderType type) override;
 		};
 
+		struct ShaderBuffer
+		{
+			uint size;
+			std::unique_ptr<BufferPrivate> buf;
+			std::unique_ptr<BufferPrivate> stgbuf;
+			void* stag = nullptr;
+
+			std::unordered_map<uint64, uint> offsets;
+
+			void create(DevicePrivate* d, BufferUsageFlags usage, ShaderType* t)
+			{
+				size = t->size;
+				buf.reset(new BufferPrivate(d, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+				stgbuf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stgbuf->map();
+				stag = stgbuf->mapped;
+				for (auto& v : t->variables)
+					offsets[std::hash<std::string>()(v.name)] = v.offset;
+			}
+
+			template <class T>
+			void set(uint64 h, const T& v)
+			{
+				*(T*)(stag + offsets[h]) = v;
+			}
+
+			void upload(CommandBufferPrivate* cb)
+			{
+				BufferCopy cpy;
+				cpy.size = size;
+				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
+			}
+		};
+
 		template <class T, BufferUsageFlags U>
 		struct ShaderBufferArrayed
 		{
@@ -169,6 +204,7 @@ namespace flame
 				BufferCopy cpy;
 				cpy.size = (char*)end - stgbuf->mapped;
 				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
 			}
 
 			void upload(CommandBufferPrivate* cb, uint off, uint n)
@@ -448,6 +484,8 @@ namespace flame
 
 			ShaderBufferArrayed<MaterialInfoS, BufferUsageStorage> material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
+
+			uint csm_levels = 3;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
