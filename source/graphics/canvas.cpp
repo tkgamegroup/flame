@@ -388,7 +388,8 @@ namespace flame
 		{
 			auto device = preferences->device;
 
-			ImmediateCommandBuffer cb;
+			ImmediateCommandBuffer icb;
+			auto cb = icb.cb.get();
 
 			white_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
 			cb->image_barrier(white_image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
@@ -541,7 +542,8 @@ namespace flame
 				output_size = 0.f;
 			else
 			{
-				ImmediateCommandBuffer cb;
+				ImmediateCommandBuffer icb;
+				auto cb = icb.cb.get();
 
 				output_size = views[0]->image->sizes[0];
 				output_imageviews.resize(views.size());
@@ -956,8 +958,9 @@ namespace flame
 
 					material_info_buffer.push(slot, mis);
 
-					ImmediateCommandBuffer cb;
-					material_info_buffer.upload(cb.cb.get(), slot, 1);
+					ImmediateCommandBuffer icb;
+					auto cb = icb.cb.get();
+					material_info_buffer.upload(cb, slot, 1);
 				}
 			}
 			return slot;
@@ -1021,7 +1024,8 @@ namespace flame
 					for (auto i = 0; i < mod->materials.size(); i++)
 						mr->materials[i] = set_material_resource(-1, mod->materials[i].get(), "");
 
-					ImmediateCommandBuffer cb;
+					ImmediateCommandBuffer icb;
+					auto cb = icb.cb.get();
 
 					mr->meshes.resize(mod->meshes.size());
 					for (auto i = 0; i < mod->meshes.size(); i++)
@@ -1046,7 +1050,7 @@ namespace flame
 								vertices[j].normal = ms->normals[j];
 						}
 						mrm->vertex_buffer.push(vertices.size(), vertices.data());
-						mrm->vertex_buffer.upload(cb.cb.get());
+						mrm->vertex_buffer.upload(cb);
 
 						if (!ms->bones.empty())
 						{
@@ -1083,12 +1087,12 @@ namespace flame
 								}
 							}
 							mrm->weight_buffer.push(mesh_weights.size(), mesh_weights.data());
-							mrm->weight_buffer.upload(cb.cb.get());
+							mrm->weight_buffer.upload(cb);
 						}
 
 						mrm->index_buffer.create(device, ms->indices.size());
 						mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
-						mrm->index_buffer.upload(cb.cb.get());
+						mrm->index_buffer.upload(cb);
 
 						mrm->material_index = mr->materials[ms->material_index];
 
@@ -1901,10 +1905,7 @@ namespace flame
 						if (deformer)
 						{
 							if (deformer->dirty_range[1] > deformer->dirty_range[0])
-							{
 								deformer->poses_buffer.upload(cb, deformer->dirty_range[0], deformer->dirty_range[1] - deformer->dirty_range[0]);
-								deformer->poses_buffer.barrier(cb);
-							}
 						}
 					}
 				}
@@ -1982,9 +1983,7 @@ namespace flame
 					if (ele_idx_off == 0)
 					{
 						element_vertex_buffer.upload(cb);
-						element_vertex_buffer.barrier(cb);
 						element_index_buffer.upload(cb);
-						element_index_buffer.barrier(cb);
 
 					}
 					cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)output_size));
@@ -2032,11 +2031,8 @@ namespace flame
 						render_data_buffer.beg->csm_levels = 3;
 
 						mesh_matrix_buffer.upload(cb);
-						mesh_matrix_buffer.barrier(cb);
 						terrain_info_buffer.upload(cb);
-						terrain_info_buffer.barrier(cb);
 						render_data_buffer.upload(cb, 0, 1);
-						render_data_buffer.barrier(cb);
 
 						cb->set_viewport(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
 						cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)shadow_map_size));
@@ -2044,9 +2040,6 @@ namespace flame
 						light_indices_buffer.upload(cb);
 						directional_light_info_buffer.upload(cb);
 						point_light_info_buffer.upload(cb);
-						light_indices_buffer.barrier(cb);
-						point_light_info_buffer.barrier(cb);
-						directional_light_info_buffer.barrier(cb);
 
 						if (used_directional_light_shadow_maps_count > 0)
 						{
@@ -2101,7 +2094,7 @@ namespace flame
 															cb->push_constant(0, sizeof(pc), &pc, nullptr);
 															first = false;
 														}
-														cb->draw_indexed(mrm->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
+														cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
 													}
 												}
 											}
@@ -2209,7 +2202,7 @@ namespace flame
 															cb->push_constant(0, sizeof(pc), &pc, nullptr);
 															first = false;
 														}
-														cb->draw_indexed(mrm->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
+														cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
 													}
 												}
 											}
@@ -2282,7 +2275,7 @@ namespace flame
 									cb->bind_descriptor_set(PipelineGraphics, light_descriptorset.get(), 3, nullptr);
 									first = false;
 								}
-								cb->draw_indexed(mrm->index_buffer.count, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
+								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
 							}
 						}
 							break;
@@ -2321,10 +2314,7 @@ namespace flame
 				case PassLine3:
 				{
 					if (line3_off == 0)
-					{
 						line3_buffer.upload(cb);
-						line3_buffer.barrier(cb);
-					}
 					cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)output_size));
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);

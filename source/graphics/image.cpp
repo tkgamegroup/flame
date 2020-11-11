@@ -133,7 +133,8 @@ namespace flame
 				Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
 			ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
-			ImmediateCommandBuffer cb;
+			ImmediateCommandBuffer icb;
+			auto cb = icb.cb.get();
 			BufferImageCopy cpy;
 			cpy.image_extent = i->sizes[0];
 			cb->image_barrier(i, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
@@ -212,7 +213,8 @@ namespace flame
 				ret->filename = filename;
 
 				ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
-				ImmediateCommandBuffer cb;
+				ImmediateCommandBuffer icb;
+				auto cb = icb.cb.get();
 				BufferImageCopy cpy;
 				cpy.image_extent = ret->sizes[0];
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);

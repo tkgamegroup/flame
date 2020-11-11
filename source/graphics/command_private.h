@@ -203,8 +203,6 @@ namespace flame
 
 			ImmediateCommandBuffer();
 			~ImmediateCommandBuffer();
-
-			CommandBufferPrivate* operator->() { return cb.get(); }
 		};
 	}
 }

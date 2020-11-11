@@ -1183,21 +1183,21 @@ namespace flame
 			d[M - 1][N - 1] = 1.f;
 		}
 
-		Mat<N, M, T>& operator=(T rhs)
+		Mat<M, N, T>& operator=(T rhs)
 		{
 			for (auto i = 0; i < M; i++)
 				d[i] = Vec<N, T>(0);
-			auto n = min(N, M);
+			auto n = min(M, N);
 			for (auto i = 0; i < n; i++)
 				d[i][i] = rhs;
 			return *this;
 		}
 
 		template <uint O, uint P, class U>
-		Mat<N, M, T>& operator=(const Mat<O, P, U> & rhs)
+		Mat<M, N, T>& operator=(const Mat<O, P, U> & rhs)
 		{
-			auto m = min(M, P);
-			auto n = min(N, O);
+			auto m = min(M, O);
+			auto n = min(N, P);
 			for (auto i = 0; i < m; i++)
 			{
 				for (auto j = 0; j < n; j++)
@@ -1207,7 +1207,7 @@ namespace flame
 		}
 
 		template <class U>
-		Mat<N, M, T>& operator+=(const Mat<N, M, U>& rhs)
+		Mat<M, N, T>& operator+=(const Mat<N, M, U>& rhs)
 		{
 			for (auto i = 0; i < M; i++)
 				d[i] += rhs[i];
@@ -1215,21 +1215,21 @@ namespace flame
 		}
 
 		template <class U>
-		Mat<N, M, T>& operator-=(const Mat<N, M, U>& rhs)
+		Mat<M, N, T>& operator-=(const Mat<N, M, U>& rhs)
 		{
 			for (auto i = 0; i < M; i++)
 				d[i] -= rhs[i];
 			return *this;
 		}
 
-		Mat<N, M, T>& operator*=(T rhs)
+		Mat<M, N, T>& operator*=(T rhs)
 		{
 			for (auto i = 0; i < M; i++)
 				d[i] *= rhs;
 			return *this;
 		}
 
-		Mat<N, M, T>& operator/=(T rhs)
+		Mat<M, N, T>& operator/=(T rhs)
 		{
 			for (auto i = 0; i < M; i++)
 				d[i] /= rhs;
@@ -1237,75 +1237,75 @@ namespace flame
 		}
 	};
 
-	template <uint N, uint M, class T, class U>
-	Mat<N, M, T> operator+(const Mat<N, M, T>& lhs, const Mat<N, M, U>& rhs)
+	template <uint M, uint N, class T, class U>
+	Mat<M, N, T> operator+(const Mat<M, N, T>& lhs, const Mat<M, N, U>& rhs)
 	{
-		Mat<N, M, T> ret(lhs);
+		Mat<M, N, T> ret(lhs);
 		for (auto i = 0; i < M; i++)
 			ret[i] += rhs[i];
 		return ret;
 	}
 
-	template <uint N, uint M, class T, class U>
-	Mat<N, M, T> operator-(const Mat<N, M, T>& lhs, const Mat<N, M, U>& rhs)
+	template <uint M, uint N, class T, class U>
+	Mat<M, N, T> operator-(const Mat<M, N, T>& lhs, const Mat<M, N, U>& rhs)
 	{
-		Mat<N, M, T> ret(lhs);
+		Mat<M, N, T> ret(lhs);
 		for (auto i = 0; i < M; i++)
 			ret[i] -= rhs[i];
 		return ret;
 	}
 
-	template <uint N, uint M, class T>
-	Mat<N, M, T> operator*(const Mat<N, M, T>& lhs, T rhs)
+	template <uint M, uint N, class T>
+	Mat<M, N, T> operator*(const Mat<M, N, T>& lhs, T rhs)
 	{
-		Mat<N, M, T> ret(lhs);
+		Mat<M, N, T> ret(lhs);
 		for (auto i = 0; i < M; i++)
 			ret[i] *= rhs;
 		return ret;
 	}
 
-	template <uint N, uint M, class T>
-	Mat<N, M, T> operator*(T lhs, const Mat<N, M, T>& rhs)
+	template <uint M, uint N, class T>
+	Mat<M, N, T> operator*(T lhs, const Mat<M, N, T>& rhs)
 	{
-		Mat<N, M, T> ret(rhs);
+		Mat<M, N, T> ret(rhs);
 		for (auto i = 0; i < M; i++)
 			ret[i] *= lhs;
 		return ret;
 	}
 
-	template <uint N, uint M, uint O, class T>
-	Mat<N, O, T> operator*(const Mat<N, M, T>& lhs, const Mat<M, O, T>& rhs)
+	template <uint M, uint N, uint O, class T>
+	Mat<N, O, T> operator*(const Mat<M, N, T>& lhs, const Mat<O, M, T>& rhs)
 	{
-		Mat<N, O, T> ret;
+		Mat<O, N, T> ret;
 		for (auto i = 0; i < O; i++)
 		{
 			for (auto j = 0; j < N; j++)
 			{
-				ret[i][j] = 0;
+				ret[j][i] = 0;
 				for (auto k = 0; k < M; k++)
-					ret[i][j] += lhs[k][j] * rhs[i][k];
+					ret[j][i] += lhs[k][i] * rhs[j][k];
 			}
 		}
 		return ret;
 	}
 
-	template <uint N, uint M, class T>
-	Vec<M, T> operator*(const Mat<N, M, T>& lhs, const Vec<M, T>& rhs)
+	template <uint M, uint N, class T>
+	Vec<N, T> operator*(const Mat<M, N, T>& lhs, const Vec<M, T>& rhs)
 	{
-		Vec<M, T> ret;
+		Vec<N, T> ret;
 		for (auto i = 0; i < N; i++)
 		{
 			ret[i] = 0;
 			for (auto j = 0; j < M; j++)
-				ret[i] += lhs[j][i] * rhs[j];
+				ret[i] += lhs[i][j] * rhs[i];
 		}
 		return ret;
 	}
 
-	template <uint N, uint M, class T>
-	Mat<N, M, T> operator/(const Mat<N, M, T>& lhs, T rhs)
+	template <uint M, uint N, class T>
+	Mat<M, N, T> operator/(const Mat<M, N, T>& lhs, T rhs)
 	{
-		Mat<N, M, T> ret(lhs);
+		Mat<M, N, T> ret(lhs);
 		for (auto i = 0; i < M; i++)
 			ret[i] /= rhs;
 		return ret;
@@ -1322,7 +1322,6 @@ namespace flame
 	using Mat2f = Mat<2, 2, float>;
 	using Mat3f = Mat<3, 3, float>;
 	using Mat4f = Mat<4, 4, float>;
-	using Mat23f = Mat<2, 3, float>;
 
 	template <class T>
 	Vec<3, T> x_axis()

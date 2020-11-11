@@ -86,16 +86,16 @@ namespace flame
 		};
 
 		template <class T, BufferUsageFlags U>
-		struct TBuffer
+		struct ShaderBufferArrayed
 		{
 			DevicePrivate* d = nullptr;
-			uint count = 0;
 			std::unique_ptr<BufferPrivate> buf;
-			std::unique_ptr<BufferPrivate> stg;
+			std::unique_ptr<BufferPrivate> stgbuf;
+			uint capacity = 0;
 			T* beg = nullptr;
 			T* end = nullptr;
 
-			void _build()
+			void rebuild()
 			{
 				T* temp = nullptr;
 				auto n = 0;
@@ -103,12 +103,12 @@ namespace flame
 				{
 					n = stg_num();
 					temp = new T[n];
-					memcpy(temp, stg->mapped, sizeof(T) * n);
+					memcpy(temp, stgbuf->mapped, sizeof(T) * n);
 				}
-				buf.reset(new BufferPrivate(d, count * sizeof(T), BufferUsageTransferDst | U, MemoryPropertyDevice));
-				stg.reset(new BufferPrivate(d, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
-				stg->map();
-				beg = (T*)stg->mapped;
+				buf.reset(new BufferPrivate(d, capacity * sizeof(T), BufferUsageTransferDst | U, MemoryPropertyDevice));
+				stgbuf.reset(new BufferPrivate(d, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stgbuf->map();
+				beg = (T*)stgbuf->mapped;
 				end = beg;
 				if (temp)
 				{
@@ -120,27 +120,27 @@ namespace flame
 			void create(DevicePrivate* _d, uint _count)
 			{
 				d = _d;
-				count = _count;
-				_build();
+				capacity = _count;
+				rebuild();
 			}
 
 			void stg_rewind()
 			{
-				end = (T*)stg->mapped;
+				end = (T*)stgbuf->mapped;
 			}
 
 			uint stg_num()
 			{
-				return end - stg->mapped;
+				return end - stgbuf->mapped;
 			}
 
 			void push(const T& t)
 			{
 				auto n = stg_num();
-				if (n > count)
+				if (n > capacity)
 				{
-					count *= 2;
-					_build();
+					capacity *= 2;
+					rebuild();
 				}
 				*end = t;
 				end++;
@@ -149,11 +149,12 @@ namespace flame
 			void push(uint cnt, const T* p)
 			{
 				auto n = stg_num();
-				if (n + cnt > count)
+				if (n + cnt > capacity)
 				{
-					count = (n + cnt) * 2;
-					_build();
+					capacity = (n + cnt) * 2;
+					rebuild();
 				}
+
 				memcpy(end, p, sizeof(T) * cnt);
 				end += cnt;
 			}
@@ -166,8 +167,8 @@ namespace flame
 			void upload(CommandBufferPrivate* cb)
 			{
 				BufferCopy cpy;
-				cpy.size = (char*)end - stg->mapped;
-				cb->copy_buffer(stg.get(), buf.get(), { &cpy, 1 });
+				cpy.size = (char*)end - stgbuf->mapped;
+				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
 			}
 
 			void upload(CommandBufferPrivate* cb, uint off, uint n)
@@ -175,11 +176,7 @@ namespace flame
 				BufferCopy cpy;
 				cpy.src_off = cpy.dst_off = off * sizeof(T);
 				cpy.size = n * sizeof(T);
-				cb->copy_buffer(stg.get(), buf.get(), { &cpy, 1 });
-			}
-
-			void barrier(CommandBufferPrivate* cb)
-			{
+				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
 			}
 		};
@@ -187,7 +184,7 @@ namespace flame
 		struct ArmatureDeformerPrivate : ArmatureDeformer
 		{
 			MeshPrivate* mesh;
-			TBuffer<Mat4f, BufferUsageStorage> poses_buffer;
+			ShaderBufferArrayed<Mat4f, BufferUsageStorage> poses_buffer;
 			std::unique_ptr<DescriptorSetPrivate> descriptorset;
 			Vec2i dirty_range = Vec2i(0);
 
@@ -244,9 +241,9 @@ namespace flame
 		{
 			struct Mesh
 			{
-				TBuffer<MeshVertex, BufferUsageVertex> vertex_buffer;
-				TBuffer<MeshWeight, BufferUsageVertex> weight_buffer;
-				TBuffer<uint, BufferUsageIndex> index_buffer;
+				ShaderBufferArrayed<MeshVertex, BufferUsageVertex> vertex_buffer;
+				ShaderBufferArrayed<MeshWeight, BufferUsageVertex> weight_buffer;
+				ShaderBufferArrayed<uint, BufferUsageIndex> index_buffer;
 				uint material_index;
 			};
 
@@ -280,7 +277,7 @@ namespace flame
 		struct MeshMatrixS
 		{
 			Mat4f transform;
-			Mat4f normal_matrix;
+			Mat<3, 4, float> normal_matrix;
 		};
 
 		struct MaterialInfoS
@@ -439,17 +436,17 @@ namespace flame
 			std::vector<std::unique_ptr<MaterialResourceSlot>> material_resources;
 			std::vector<std::unique_ptr<ModelResourceSlot>> model_resources;
 
-			TBuffer<ElementVertex, BufferUsageVertex> element_vertex_buffer;
-			TBuffer<uint, BufferUsageIndex> element_index_buffer;
+			ShaderBufferArrayed<ElementVertex, BufferUsageVertex> element_vertex_buffer;
+			ShaderBufferArrayed<uint, BufferUsageIndex> element_index_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 
-			TBuffer<RenderDataS, BufferUsageUniform> render_data_buffer;
+			ShaderBufferArrayed<RenderDataS, BufferUsageUniform> render_data_buffer;
 			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
 
-			TBuffer<MeshMatrixS, BufferUsageStorage> mesh_matrix_buffer;
+			ShaderBufferArrayed<MeshMatrixS, BufferUsageStorage> mesh_matrix_buffer;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
 
-			TBuffer<MaterialInfoS, BufferUsageStorage> material_info_buffer;
+			ShaderBufferArrayed<MaterialInfoS, BufferUsageStorage> material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
@@ -457,16 +454,16 @@ namespace flame
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
 
-			TBuffer<LightIndicesS, BufferUsageStorage> light_indices_buffer;
+			ShaderBufferArrayed<LightIndicesS, BufferUsageStorage> light_indices_buffer;
 
-			TBuffer<DirectionalLightInfoS, BufferUsageStorage> directional_light_info_buffer;
+			ShaderBufferArrayed<DirectionalLightInfoS, BufferUsageStorage> directional_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> directional_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_light_shadow_map_descriptorsets;
 			uint used_directional_light_shadow_maps_count = 0;
 
-			TBuffer<PointLightInfoS, BufferUsageStorage> point_light_info_buffer;
+			ShaderBufferArrayed<PointLightInfoS, BufferUsageStorage> point_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
@@ -475,7 +472,7 @@ namespace flame
 
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 
-			TBuffer<TerrainInfoS, BufferUsageStorage> terrain_info_buffer;
+			ShaderBufferArrayed<TerrainInfoS, BufferUsageStorage> terrain_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> terrain_descriptorset;
 
 			std::vector<ImageViewPrivate*> output_imageviews;
@@ -501,7 +498,7 @@ namespace flame
 
 			std::vector<std::vector<Vec2f>> paths;
 
-			TBuffer<Line3, BufferUsageVertex> line3_buffer;
+			ShaderBufferArrayed<Line3, BufferUsageVertex> line3_buffer;
 
 			std::vector<std::unique_ptr<Cmd>> cmds;
 			CmdDrawElement* last_element_cmd = nullptr;
