@@ -30,43 +30,7 @@ namespace flame
 			std::unique_ptr<RenderpassPrivate> image1_r16_renderpass;
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
-			DescriptorSetLayoutPrivate* element_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* mesh_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* armature_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* material_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* light_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* render_data_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* terrain_descriptorsetlayout;
-			DescriptorSetLayoutPrivate* post_descriptorsetlayout;
-			PipelineLayoutPrivate* element_pipelinelayout;
-			PipelineLayoutPrivate* mesh_pipelinelayout;
-			PipelineLayoutPrivate* terrain_pipelinelayout;
-			PipelineLayoutPrivate* depth_pipelinelayout;
-			PipelineLayoutPrivate* simple3d_pipelinelayout;
-			PipelineLayoutPrivate* post_pipelinelayout;
-			std::unique_ptr<ShaderPrivate> element_vert;
-			std::unique_ptr<ShaderPrivate> element_frag;
-			std::unique_ptr<ShaderPrivate> mesh_vert;
-			std::unique_ptr<ShaderPrivate> mesh_armature_vert;
-			std::unique_ptr<ShaderPrivate> mesh_frag;
-			std::unique_ptr<ShaderPrivate> terrain_vert;
-			std::unique_ptr<ShaderPrivate> terrain_tesc;
-			std::unique_ptr<ShaderPrivate> terrain_tese;
-			std::unique_ptr<ShaderPrivate> terrain_frag;
-			std::unique_ptr<ShaderPrivate> depth_vert;
-			std::unique_ptr<ShaderPrivate> depth_armature_vert;
-			std::unique_ptr<ShaderPrivate> depth_frag;
-			std::unique_ptr<ShaderPrivate> line3_vert;
-			std::unique_ptr<ShaderPrivate> line3_frag;
-			std::unique_ptr<ShaderPrivate> fullscreen_vert;
-			std::unique_ptr<ShaderPrivate> blurh_frag[10];
-			std::unique_ptr<ShaderPrivate> blurv_frag[10];
-			std::unique_ptr<ShaderPrivate> blurh_depth_frag;
-			std::unique_ptr<ShaderPrivate> blurv_depth_frag;
-			std::unique_ptr<ShaderPrivate> blit_frag;
-			std::unique_ptr<ShaderPrivate> filter_bright_frag;
-			std::unique_ptr<ShaderPrivate> box_frag;
-			std::unique_ptr<ShaderPrivate> gamma_frag;
+			std::vector<std::unique_ptr<ShaderPrivate>> shaders;
 			std::unique_ptr<PipelinePrivate> element_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_armature_pipeline;
@@ -88,6 +52,33 @@ namespace flame
 			RenderType terrain_render = RenderNormal;
 
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
+
+			ShaderPrivate* add_shader(ShaderPrivate* s)
+			{
+				shaders.emplace_back(s);
+				return s;
+			}
+
+			int find_shader(const std::filesystem::path& filename)
+			{
+				for (auto i = 0; i < shaders.size(); i++)
+				{
+					auto s = shaders[i].get();
+					if (s->filename == filename)
+						return i;
+				}
+				return -1;
+			}
+
+			ShaderPrivate* find_or_create_shader(const std::filesystem::path& filename, const std::string& defines = "")
+			{
+				auto ret = find_shader(filename);
+				if (ret != -1)
+					return shaders[ret].get();
+				auto s = ShaderPrivate::create(device, filename, defines);
+				shaders.emplace_back(s);
+				return s;
+			}
 
 			void make_terrain_pipeline();
 

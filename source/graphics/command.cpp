@@ -114,11 +114,14 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* p)
 		{
+			pipeline = p;
 			vkCmdBindPipeline(vk_command_buffer, to_backend(p->type), p->vk_pipeline);
 		}
 
 		void CommandBufferPrivate::bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
 		{
+			if (!pll)
+				pll = pipeline->pipeline_layout;
 			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(type), pll->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
 		}
 
@@ -135,6 +138,8 @@ namespace flame
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll)
 		{
+			if (!pll)
+				pll = pipeline->pipeline_layout;
 			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 

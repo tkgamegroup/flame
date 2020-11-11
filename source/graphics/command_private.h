@@ -52,6 +52,8 @@ namespace flame
 		{
 			CommandPoolPrivate* pool;
 
+			PipelinePrivate* pipeline = nullptr;
+
 			VkCommandBuffer vk_command_buffer;
 
 			CommandBufferPrivate(CommandPoolPrivate* p, bool sub = false);
