@@ -20,7 +20,7 @@ namespace flame
 	{
 		if (pos.y() == y)
 			return;
-		pos.y() = pos.y();
+		pos.y() = y;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<ch("y")>::v);
 	}
@@ -156,9 +156,9 @@ namespace flame
 			global_points[3] = global_points[0] + global_axes[1] * size.y();
 
 			global_points[4] = global_points[0] + global_axes * padding.xy();
-			global_points[5] = global_points[2] - global_axes[0] * padding.z() + global_axes[1] * padding.y();
-			global_points[6] = global_points[3] - global_axes * padding.zw();
-			global_points[7] = global_points[4] + global_axes[0] * padding.x() - global_axes[1] * padding.w();
+			global_points[5] = global_points[1] - global_axes[0] * padding.z() + global_axes[1] * padding.y();
+			global_points[6] = global_points[2] - global_axes * padding.zw();
+			global_points[7] = global_points[3] + global_axes[0] * padding.x() - global_axes[1] * padding.w();
 
 			aabb = Vec4f(global_points[0], global_points[0]);
 			for (auto i = 1; i < 4; i++)
