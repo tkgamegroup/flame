@@ -683,7 +683,7 @@ namespace flame
 
 		//if (bp->need_rebuild_update_list)
 		//	build_update_list(bp);
-		//struct Var
+		//struct Piece
 		//{
 		//	std::string type;
 		//	std::string name;
@@ -694,7 +694,7 @@ namespace flame
 		//	int assign_var_idx; // -1 means it is not an assignment
 		//	std::string content;
 		//};
-		//std::vector<Var> vars;
+		//std::vector<Piece> pieces;
 		//std::vector<Line> lines;
 		//for (auto n : bp->update_list)
 		//{
@@ -758,7 +758,7 @@ namespace flame
 		//					name = "Array<" + name + ">";
 		//				if (type->tag == TypePointer)
 		//					name += "*";
-		//				vars.push_back({ name, id, 0 });
+		//				pieces.push_back({ name, id, 0 });
 		//				std::regex reg("\\b" + out->name + "\\b");
 		//				function_code = std::regex_replace(function_code, reg, id);
 		//			}
@@ -786,8 +786,8 @@ namespace flame
 		//			{
 		//				auto out_id = "_" + n->id + "_out";
 		//				auto res_id = "_" + n->id + "_res";
-		//				vars.push_back({ "uint", out_id, 0 });
-		//				vars.push_back({ "float", res_id, 0 });
+		//				pieces.push_back({ "uint", out_id, 0 });
+		//				pieces.push_back({ "float", res_id, 0 });
 		//				std::string in_value;
 		//				{
 		//					auto in = n->inputs[0].get();
@@ -828,9 +828,9 @@ namespace flame
 		//	}
 		//}
 
-		//for (auto i = 0; i < vars.size(); i++)
+		//for (auto i = 0; i < pieces.size(); i++)
 		//{
-		//	std::regex reg(R"(^)" + vars[i].name + R"( = (.*);)");
+		//	std::regex reg(R"(^)" + pieces[i].name + R"( = (.*);)");
 		//	for (auto& l : lines)
 		//	{
 		//		if (l.assign_var_idx == -1)
@@ -850,7 +850,7 @@ namespace flame
 		//	auto& l = lines[i];
 		//	if (l.assign_var_idx != -1)
 		//	{
-		//		auto& v = vars[l.assign_var_idx];
+		//		auto& v = pieces[l.assign_var_idx];
 		//		std::regex reg(R"(\b)" + v.name + R"(\b)");
 		//		auto ref_count = 0, last_ref_line = -1;
 		//		for (auto j = i + 1; j < lines.size(); j++)
@@ -877,7 +877,7 @@ namespace flame
 
 		//std::ofstream h_file(filename + std::wstring(L".h"));
 		//h_file << "// THIS FILE IS AUTO-GENERATED\n";
-		//for (auto& v : vars)
+		//for (auto& v : pieces)
 		//{
 		//	if (v.ref_count == 0)
 		//		continue;
@@ -890,7 +890,7 @@ namespace flame
 		//	if (l.assign_var_idx == -1)
 		//		h_file << l.content + "\n";
 		//	else
-		//		h_file << vars[l.assign_var_idx].name + " = " + l.content + ";\n";
+		//		h_file << pieces[l.assign_var_idx].name + " = " + l.content + ";\n";
 		//}
 		//h_file.close();
 	}

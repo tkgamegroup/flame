@@ -28,34 +28,41 @@ namespace flame
 			ShaderType* info = nullptr;
 		};
 
-		enum ShaderBaseType
+		enum ShaderTypeTag
 		{
-			ShaderBaseTypeInt,
-			ShaderBaseTypeVec2i,
-			ShaderBaseTypeVec3i,
-			ShaderBaseTypeVec4i,
-			ShaderBaseTypeUint,
-			ShaderBaseTypeVec2u,
-			ShaderBaseTypeVec3u,
-			ShaderBaseTypeVec4u,
-			ShaderBaseTypeFloat,
-			ShaderBaseTypeVec2f,
-			ShaderBaseTypeVec3f,
-			ShaderBaseTypeVec4f,
-			ShaderBaseTypeMat2f,
-			ShaderBaseTypeMat3f,
-			ShaderBaseTypeMat4f,
-			ShaderBaseTypeStruct,
-			ShaderBaseTypeImage
+			ShaderTagInt,
+			ShaderTagVec2i,
+			ShaderTagVec3i,
+			ShaderTagVec4i,
+			ShaderTagUint,
+			ShaderTagVec2u,
+			ShaderTagVec3u,
+			ShaderTagVec4u,
+			ShaderTagFloat,
+			ShaderTagVec2f,
+			ShaderTagVec3f,
+			ShaderTagVec4f,
+			ShaderTagMat2f,
+			ShaderTagMat3f,
+			ShaderTagMat4f,
+			ShaderTagStruct,
+			ShaderTagImage
 		};
 
 		struct ShaderType
 		{
 			uint id = -1;
-			ShaderBaseType base_type = ShaderBaseTypeStruct;
+			ShaderTypeTag tag = ShaderTagStruct;
 			std::string name;
 			uint size = 0;
 			std::vector<ShaderVariable> variables;
+			std::unordered_map<uint64, uint> variables_map;
+
+			void make_map()
+			{
+				for (auto i = 0; i < variables.size(); i++)
+					variables_map[std::hash<std::string>()(variables[i].name)] = i;
+			}
 		};
 
 		inline ShaderType* find_type(const std::vector<std::unique_ptr<ShaderType>>& types, uint id)
@@ -133,6 +140,7 @@ namespace flame
 
 			uint get_bindings_count() const override { return bindings.size(); }
 			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
+			int find_binding(const std::string& name);
 
 			static DescriptorSetLayoutPrivate* get(const std::filesystem::path& filename);
 			static DescriptorSetLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);

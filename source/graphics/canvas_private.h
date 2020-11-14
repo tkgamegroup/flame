@@ -85,66 +85,180 @@ namespace flame
 			void set_terrain_render(RenderType type) override;
 		};
 
-		struct ShaderBuffer
+		struct ShaderBufferBase
 		{
-			uint size;
 			std::unique_ptr<BufferPrivate> buf;
 			std::unique_ptr<BufferPrivate> stgbuf;
+		};
+
+		struct ShaderBuffer : ShaderBufferBase
+		{
+			struct Piece
+			{
+				uint beg;
+				uint end;
+				bool peeding_update = false;
+				std::list<std::pair<uint, uint>>::iterator cpy_it;
+			};
+
+			uint size;
+			uint arrsize = 0;
 			char* stag = nullptr;
 
-			std::unordered_map<uint64, uint> offsets;
+			ShaderType* t = nullptr;
+			std::vector<Piece> pieces;
+			std::list<std::pair<uint, uint>> cpys;
 
-			void create(DevicePrivate* d, BufferUsageFlags usage, ShaderType* t)
+			void create(DevicePrivate* d, BufferUsageFlags usage, ShaderType* _t, uint _arrsize = 0)
 			{
+				t = _t;
 				size = t->size;
-				buf.reset(new BufferPrivate(d, size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
-				stgbuf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				auto bufsize = size * (_arrsize == 0 ? 1 : _arrsize);
+				buf.reset(new BufferPrivate(d, bufsize, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+				stgbuf.reset(new BufferPrivate(d, bufsize, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stgbuf->map();
 				stag = (char*)stgbuf->mapped;
-				for (auto& v : t->variables)
-					offsets[std::hash<std::string>()(v.name)] = v.offset;
+
+				if (_arrsize == 0)
+				{
+					pieces.resize(t->variables.size());
+					for (auto i = 0; i < pieces.size(); i++)
+					{
+						auto& src = t->variables[i];
+						Piece dst;
+						dst.beg = src.offset;
+						dst.end = src.offset + src.size;
+						pieces[i] = dst;
+					}
+				}
+				else
+				{
+					arrsize = _arrsize;
+					pieces.resize(arrsize);
+					for (auto i = 0; i < pieces.size(); i++)
+					{
+						Piece dst;
+						dst.beg = i * size;
+						dst.end = dst.beg + size;
+						pieces[i] = dst;
+					}
+				}
+			}
+
+			void mark_piece_dirty(uint idx)
+			{
+				auto& p = pieces[idx];
+				if (!p.peeding_update)
+				{
+					if (idx > 0)
+					{
+						auto& pp = pieces[idx - 1];
+						if (pp.peeding_update)
+						{
+							p.peeding_update = true;
+							p.cpy_it = pp.cpy_it;
+							pp.cpy_it->second++;
+						}
+					}
+					if (!p.peeding_update)
+					{
+						p.peeding_update = true;
+						p.cpy_it = cpys.emplace(cpys.end(), std::make_pair(idx, 1));
+					}
+					if (idx < pieces.size() - 1)
+					{
+						auto& np = pieces[idx + 1];
+						if (np.peeding_update)
+						{
+							auto it = np.cpy_it;
+							p.cpy_it->second += it->second;
+							for (auto i = 0; i < it->second; i++)
+								pieces[it->first + i].cpy_it = p.cpy_it;
+							cpys.erase(it);
+						}
+					}
+				}
+			}
+
+			char* dst(uint64 h, char* p = nullptr)
+			{
+				if (!p)
+					p = (char*)stag;
+				return p + t->variables[t->variables_map[h]].offset;
+			}
+
+			char* mark(uint64 h)
+			{
+				assert(arrsize == 0);
+				auto idx = t->variables_map[h];
+				mark_piece_dirty(idx);
+				return stag + t->variables[idx].offset;
 			}
 
 			template <class T>
 			void set(uint64 h, const T& v)
 			{
-				*(T*)(stag + offsets[h]) = v;
+				assert(arrsize == 0);
+				*(T*)mark(h) = v;
+			}
+
+			char* mark_item(uint idx)
+			{
+				assert(arrsize != 0);
+				mark_piece_dirty(idx);
+				return stag + pieces[idx].beg;
+			}
+
+			template <class T>
+			void set(char* p, uint64 h, const T& v)
+			{
+				assert(arrsize != 0);
+				*(T*)dst(h, p) = v;
 			}
 
 			void upload(CommandBufferPrivate* cb)
 			{
-				BufferCopy cpy;
-				cpy.size = size;
-				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
+				if (cpys.empty())
+					return;
+				std::vector<BufferCopy> _cpys;
+				for (auto& cpy : cpys)
+				{
+					for (auto i = 0; i < cpy.second; i++)
+						pieces[cpy.first + i].peeding_update = false;
+					BufferCopy _cpy;
+					_cpy.src_off = _cpy.dst_off = pieces[cpy.first].beg;
+					_cpy.size = pieces[cpy.first + cpy.second - 1].end - _cpy.src_off;
+					_cpys.push_back(_cpy);
+				}
+				cb->copy_buffer(stgbuf.get(), buf.get(), _cpys);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
+				cpys.clear();
 			}
 		};
 
-		template <class T, BufferUsageFlags U>
-		struct ShaderBufferArrayed
+		template <class T>
+		struct ShaderGeometryBuffer : ShaderBufferBase
 		{
 			DevicePrivate* d = nullptr;
-			std::unique_ptr<BufferPrivate> buf;
-			std::unique_ptr<BufferPrivate> stgbuf;
+			BufferUsageFlags usage;
 			uint capacity = 0;
-			T* beg = nullptr;
-			T* end = nullptr;
+			T* stag = nullptr;
+			uint stagnum = 0;
 
 			void rebuild()
 			{
 				T* temp = nullptr;
 				auto n = 0;
-				if (end)
+				if (stagnum > 0)
 				{
-					n = stg_num();
+					n = stagnum;
 					temp = new T[n];
 					memcpy(temp, stgbuf->mapped, sizeof(T) * n);
 				}
-				buf.reset(new BufferPrivate(d, capacity * sizeof(T), BufferUsageTransferDst | U, MemoryPropertyDevice));
+				buf.reset(new BufferPrivate(d, capacity * sizeof(T), BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stgbuf.reset(new BufferPrivate(d, buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stgbuf->map();
-				beg = (T*)stgbuf->mapped;
-				end = beg;
+				stag = (T*)stgbuf->mapped;
 				if (temp)
 				{
 					push(n, temp);
@@ -152,66 +266,30 @@ namespace flame
 				}
 			}
 
-			void create(DevicePrivate* _d, uint _count)
+			void create(DevicePrivate* _d, BufferUsageFlags _usage, uint _capacity)
 			{
 				d = _d;
-				capacity = _count;
+				usage = _usage;
+				capacity = _capacity;
 				rebuild();
-			}
-
-			void stg_rewind()
-			{
-				end = (T*)stgbuf->mapped;
-			}
-
-			uint stg_num()
-			{
-				return end - stgbuf->mapped;
-			}
-
-			void push(const T& t)
-			{
-				auto n = stg_num();
-				if (n > capacity)
-				{
-					capacity *= 2;
-					rebuild();
-				}
-				*end = t;
-				end++;
 			}
 
 			void push(uint cnt, const T* p)
 			{
-				auto n = stg_num();
-				if (n + cnt > capacity)
+				if (stagnum + cnt > capacity)
 				{
-					capacity = (n + cnt) * 2;
+					capacity = (stagnum + cnt) * 2;
 					rebuild();
 				}
 
-				memcpy(end, p, sizeof(T) * cnt);
-				end += cnt;
-			}
-
-			void push(uint off, const T& t)
-			{
-				beg[off] = t;
+				memcpy(stag + stagnum, p, sizeof(T) * cnt);
+				stagnum += cnt;
 			}
 
 			void upload(CommandBufferPrivate* cb)
 			{
 				BufferCopy cpy;
-				cpy.size = (char*)end - stgbuf->mapped;
-				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
-				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
-			}
-
-			void upload(CommandBufferPrivate* cb, uint off, uint n)
-			{
-				BufferCopy cpy;
-				cpy.src_off = cpy.dst_off = off * sizeof(T);
-				cpy.size = n * sizeof(T);
+				cpy.size = stagnum * sizeof(T);
 				cb->copy_buffer(stgbuf.get(), buf.get(), { &cpy, 1 });
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, AccessVertexAttributeRead);
 			}
@@ -220,9 +298,8 @@ namespace flame
 		struct ArmatureDeformerPrivate : ArmatureDeformer
 		{
 			MeshPrivate* mesh;
-			ShaderBufferArrayed<Mat4f, BufferUsageStorage> poses_buffer;
+			ShaderBuffer poses_buffer;
 			std::unique_ptr<DescriptorSetPrivate> descriptorset;
-			Vec2i dirty_range = Vec2i(0);
 
 			ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh);
 			void release() override { delete this; }
@@ -277,9 +354,9 @@ namespace flame
 		{
 			struct Mesh
 			{
-				ShaderBufferArrayed<MeshVertex, BufferUsageVertex> vertex_buffer;
-				ShaderBufferArrayed<MeshWeight, BufferUsageVertex> weight_buffer;
-				ShaderBufferArrayed<uint, BufferUsageIndex> index_buffer;
+				ShaderGeometryBuffer<MeshVertex> vertex_buffer;
+				ShaderGeometryBuffer<MeshWeight> weight_buffer;
+				ShaderGeometryBuffer<uint> index_buffer;
 				uint material_index;
 			};
 
@@ -289,69 +366,15 @@ namespace flame
 			std::vector<std::unique_ptr<Mesh>> meshes;
 		};
 
-		struct MeshMatrixS
+		struct DirectionalShadow
 		{
-			Mat4f transform;
-			Mat4f normal_matrix;
+			Mat4f matrices[6];
 		};
 
-		struct MaterialInfoS
-		{
-			Vec4f color;
-			float metallic;
-			float roughness;
-			float alpha_test;
-			float dummy1;
-			int color_map_index = -1;
-			int metallic_roughness_ao_map_index = -1;
-			int normal_hegiht_map_index = -1;
-			int dummy2;
-		};
-
-		struct LightIndicesS
-		{
-			uint directional_lights_count;
-			uint point_lights_count;
-			uint point_light_indices[1022];
-		};
-
-		struct DirectionalLightInfoS
-		{
-			Vec3f dir;
-			float distance;
-			Vec3f color;
-			int dummy1;
-
-			int shadow_map_index;
-			float dummy2;
-			Vec2f dummy3;
-			Vec4f dummy4;
-			Mat4f shadow_matrices[4];
-		};
-
-		struct PointLightInfoS
+		struct PointShadow
 		{
 			Vec3f coord;
 			float distance;
-			Vec3f color;
-			int shadow_map_index;
-		};
-
-		struct TerrainInfoS
-		{
-			Vec3f coord;
-			float dummy1;
-
-			Vec2u blocks;
-			Vec2f dummy2;
-
-			Vec3f scale;
-			float tess_levels;
-
-			uint height_tex_id;
-			uint normal_tex_id;
-			uint color_tex_id;
-			float dummy3;
 		};
 
 		struct Cmd
@@ -392,6 +415,7 @@ namespace flame
 		struct CmdDrawTerrain : Cmd
 		{
 			uint idx;
+			uint dcs;
 
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
 		};
@@ -464,17 +488,17 @@ namespace flame
 			std::vector<std::unique_ptr<MaterialResourceSlot>> material_resources;
 			std::vector<std::unique_ptr<ModelResourceSlot>> model_resources;
 
-			ShaderBufferArrayed<ElementVertex, BufferUsageVertex> element_vertex_buffer;
-			ShaderBufferArrayed<uint, BufferUsageIndex> element_index_buffer;
+			ShaderGeometryBuffer<ElementVertex> element_vertex_buffer;
+			ShaderGeometryBuffer<uint> element_index_buffer;
 			std::unique_ptr<DescriptorSetPrivate> element_descriptorset;
 
 			ShaderBuffer render_data_buffer;
 			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
 
-			ShaderBufferArrayed<MeshMatrixS, BufferUsageStorage> mesh_matrix_buffer;
+			ShaderBuffer mesh_matrix_buffer;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
 
-			ShaderBufferArrayed<MaterialInfoS, BufferUsageStorage> material_info_buffer;
+			ShaderBuffer material_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> material_descriptorset;
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
@@ -482,25 +506,23 @@ namespace flame
 			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
 			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
 
-			ShaderBufferArrayed<LightIndicesS, BufferUsageStorage> light_indices_buffer;
+			ShaderBuffer light_indices_buffer;
 
-			ShaderBufferArrayed<DirectionalLightInfoS, BufferUsageStorage> directional_light_info_buffer;
+			ShaderBuffer directional_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> directional_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_light_shadow_map_descriptorsets;
-			uint used_directional_light_shadow_maps_count = 0;
 
-			ShaderBufferArrayed<PointLightInfoS, BufferUsageStorage> point_light_info_buffer;
+			ShaderBuffer point_light_info_buffer;
 			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_depth_framebuffers;
 			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> point_light_shadow_map_descriptorsets;
-			uint used_point_light_shadow_maps_count = 0;
 
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 
-			ShaderBufferArrayed<TerrainInfoS, BufferUsageStorage> terrain_info_buffer;
+			ShaderBuffer terrain_info_buffer;
 			std::unique_ptr<DescriptorSetPrivate> terrain_descriptorset;
 
 			std::vector<ImageViewPrivate*> output_imageviews;
@@ -526,10 +548,16 @@ namespace flame
 
 			std::vector<std::vector<Vec2f>> paths;
 
-			ShaderBufferArrayed<Line3, BufferUsageVertex> line3_buffer;
+			ShaderGeometryBuffer<Line3> line3_buffer;
 
 			std::vector<std::unique_ptr<Cmd>> cmds;
 			CmdDrawElement* last_element_cmd = nullptr;
+			uint  meshes_count = 0;
+			uint terrains_count = 0;
+			uint directional_lights_count;
+			uint point_lights_count;
+			std::vector<DirectionalShadow> directional_shadows;
+			std::vector<PointShadow> point_shadows;
 			CmdDrawMesh* last_mesh_cmd = nullptr;
 			CmdDrawLine3* last_line3_cmd = nullptr;
 

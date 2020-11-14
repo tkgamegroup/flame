@@ -8,11 +8,10 @@ struct MaterialInfo
 	float metallic;
 	float roughness;
 	float alpha_test;
-	float dummy0;
+
 	int color_map_index;
 	int metallic_roughness_ao_map_index;
 	int normal_height_map_index;
-	int dummy1;
 };
 
 layout (set = MATERIAL_SET, binding = 0) buffer readonly MaterialInfos

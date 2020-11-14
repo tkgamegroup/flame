@@ -13,8 +13,8 @@ namespace flame
 			std::string name;
 
 			Vec4f color = Vec4f(Vec3f(1.f), 1.f);
-			float metallic = 0.f;
-			float roughness = 0.25f;
+			float metallic = 0.04f;
+			float roughness = 0.5f;
 			float alpha_test = 0.f;
 
 			std::filesystem::path path;

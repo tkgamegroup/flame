@@ -56,7 +56,7 @@ namespace flame
 			{
 				auto t = new ShaderType;
 				t->id = n_type.attribute("id").as_uint();
-				t->base_type = (ShaderBaseType)n_type.attribute("id").as_int();
+				t->tag = (ShaderTypeTag)n_type.attribute("tag").as_int();
 				t->name = n_type.attribute("name").value();
 				t->size = n_type.attribute("size").as_uint();
 				for (auto n_variable : n_type.child("variables"))
@@ -70,6 +70,7 @@ namespace flame
 					v.info = (ShaderType*)n_variable.attribute("type_id").as_uint();
 					t->variables.push_back(v);
 				}
+				t->make_map();
 				types.emplace_back(t);
 			}
 			for (auto& t : types)
@@ -86,7 +87,7 @@ namespace flame
 			{
 				auto n_type = n_types.append_child("type");
 				n_type.append_attribute("id").set_value(t->id);
-				n_type.append_attribute("base_type").set_value((int)t->base_type);
+				n_type.append_attribute("tag").set_value((int)t->tag);
 				n_type.append_attribute("name").set_value(t->name.c_str());
 				n_type.append_attribute("size").set_value(t->size);
 				if (!t->variables.empty())
@@ -176,6 +177,16 @@ namespace flame
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 		}
 
+		int DescriptorSetLayoutPrivate::find_binding(const std::string& name)
+		{
+			for (auto i = 0; i < bindings.size(); i++)
+			{
+				if (bindings[i]->name == name)
+					return i;
+			}
+			return -1;
+		}
+
 		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(const std::filesystem::path& filename)
 		{
 			for (auto& d : descriptor_set_layouts)
@@ -190,9 +201,15 @@ namespace flame
 		{
 			if (src.basetype == spirv_cross::SPIRType::Struct)
 			{
-				dst->base_type = ShaderBaseTypeStruct;
+				dst->tag = ShaderTagStruct;
 				dst->name = glsl.get_name(src.self);
-				dst->size = glsl.get_declared_struct_size(src);
+				{
+					auto s = glsl.get_declared_struct_size(src);
+					auto m = s % 16;
+					if (m != 0)
+						s += (16 - m);
+					dst->size = s;
+				}
 				for (auto i = 0; i < src.member_types.size(); i++)
 				{
 					uint32_t id = src.member_types[i];
@@ -223,9 +240,10 @@ namespace flame
 
 					dst->variables.push_back(v);
 				}
+				dst->make_map();
 			}
 			else if (src.basetype == spirv_cross::SPIRType::Image || src.basetype == spirv_cross::SPIRType::SampledImage)
-				dst->base_type = ShaderBaseTypeImage;
+				dst->tag = ShaderTagImage;
 			else
 			{
 				switch (src.basetype)
@@ -237,16 +255,20 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->base_type = ShaderBaseTypeInt;
+							dst->tag = ShaderTagInt;
+							dst->name = "Int";
 							break;
 						case 2:
-							dst->base_type = ShaderBaseTypeVec2i;
+							dst->tag = ShaderTagVec2i;
+							dst->name = "Vec2i";
 							break;
 						case 3:
-							dst->base_type = ShaderBaseTypeVec3i;
+							dst->tag = ShaderTagVec3i;
+							dst->name = "Vec3i";
 							break;
 						case 4:
-							dst->base_type = ShaderBaseTypeVec4i;
+							dst->tag = ShaderTagVec4i;
+							dst->name = "Vec4i";
 							break;
 						default:
 							assert(0);
@@ -263,16 +285,20 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->base_type = ShaderBaseTypeUint;
+							dst->tag = ShaderTagUint;
+							dst->name = "Uint";
 							break;
 						case 2:
-							dst->base_type = ShaderBaseTypeVec2u;
+							dst->tag = ShaderTagVec2u;
+							dst->name = "Vec2u";
 							break;
 						case 3:
-							dst->base_type = ShaderBaseTypeVec3u;
+							dst->tag = ShaderTagVec3u;
+							dst->name = "Vec3u";
 							break;
 						case 4:
-							dst->base_type = ShaderBaseTypeVec4u;
+							dst->tag = ShaderTagVec4u;
+							dst->name = "Vec4u";
 							break;
 						default:
 							assert(0);
@@ -289,16 +315,20 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->base_type = ShaderBaseTypeFloat;
+							dst->tag = ShaderTagFloat;
+							dst->name = "float";
 							break;
 						case 2:
-							dst->base_type = ShaderBaseTypeVec2f;
+							dst->tag = ShaderTagVec2f;
+							dst->name = "Vec2f";
 							break;
 						case 3:
-							dst->base_type = ShaderBaseTypeVec3f;
+							dst->tag = ShaderTagVec3f;
+							dst->name = "Vec3f";
 							break;
 						case 4:
-							dst->base_type = ShaderBaseTypeVec4f;
+							dst->tag = ShaderTagVec4f;
+							dst->name = "Vec4f";
 							break;
 						default:
 							assert(0);
@@ -308,7 +338,8 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 2:
-							dst->base_type = ShaderBaseTypeMat2f;
+							dst->tag = ShaderTagMat2f;
+							dst->name = "Mat2f";
 							break;
 						default:
 							assert(0);
@@ -318,7 +349,8 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 3:
-							dst->base_type = ShaderBaseTypeMat3f;
+							dst->tag = ShaderTagMat3f;
+							dst->name = "Mat3f";
 							break;
 						default:
 							assert(0);
@@ -328,7 +360,8 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 4:
-							dst->base_type = ShaderBaseTypeMat4f;
+							dst->tag = ShaderTagMat4f;
+							dst->name = "Mat4f";
 							break;
 						default:
 							assert(0);
