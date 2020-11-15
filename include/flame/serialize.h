@@ -618,6 +618,18 @@ namespace flame
 				return str.substr(0, str.size() - tail.size());
 			return str;
 		}
+
+		static void replace_all(std::basic_string<CH>& str, const std::basic_string<CH>& from, const std::basic_string<CH>& to)
+		{
+			if (from.empty())
+				return;
+			auto start_pos = 0;
+			while ((start_pos = str.find(from, start_pos)) != std::basic_string<CH>::npos)
+			{
+				str.replace(start_pos, from.length(), to);
+				start_pos += to.length();
+			}
+		}
 	};
 
 	using SUS = StrUtils<char>;

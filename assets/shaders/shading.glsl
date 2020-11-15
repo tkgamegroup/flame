@@ -43,7 +43,6 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, f
 		
 		float shadow = 1.0;
 
-		
 		if (light.shadow_map_index != -1 && distancev < render_data.shadow_distance)
 		{
 			float d = distancev / render_data.shadow_distance;

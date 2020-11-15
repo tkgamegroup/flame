@@ -14,6 +14,13 @@ namespace flame
 {
 	namespace graphics
 	{
+		Material* Material::create(const wchar_t* filename)
+		{
+			auto ret = new MaterialPrivate;
+			ret->pipeline = filename;
+			return ret;
+		}
+
 		void MeshPrivate::add_vertices(uint n, Vec3f* _positions, Vec3f* _uvs, Vec3f* _normals)
 		{
 			auto b = positions.size();
@@ -252,11 +259,8 @@ namespace flame
 				write_t(file, m->roughness);
 				write_t(file, m->alpha_test);
 
-				write_s(file, m->color_map);
-				write_s(file, m->alpha_map);
-				write_s(file, m->metallic_map);
-				write_s(file, m->roughness_map);
-				write_s(file, m->normal_map);
+				for (auto i = 0; i < size(m->textures); i++)
+					write_s(file, m->textures[i].string());
 			}
 
 			write_u(file, meshes.size());
@@ -424,7 +428,7 @@ namespace flame
 				for (auto i = 0; i < ret->materials.size(); i++)
 				{
 					auto m = new MaterialPrivate;
-					m->path = filename.parent_path();
+					m->dir = filename.parent_path();
 					ret->materials[i].reset(m);
 
 					read_s(file, m->name);
@@ -434,13 +438,12 @@ namespace flame
 					read_t(file, m->roughness);
 					read_t(file, m->alpha_test);
 
-					read_s(file, m->color_map);
-					read_s(file, m->alpha_map);
-					if (!m->alpha_map.empty())
-						m->alpha_test = 0.5f;
-					read_s(file, m->metallic_map);
-					read_s(file, m->roughness_map);
-					read_s(file, m->normal_map);
+					for (auto i = 0; i < size(m->textures); i++)
+					{
+						std::string str;
+						read_s(file, str);
+						m->textures[i] = str;
+					}
 				}
 
 				ret->meshes.resize(read_u(file));
@@ -565,7 +568,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						dst->color_map = filename;
+						dst->textures[0] = filename;
 					}
 
 					name.Clear();
@@ -575,7 +578,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						dst->alpha_map = filename;
+						dst->textures[1] = filename;
 					}
 				}
 

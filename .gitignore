@@ -8,3 +8,4 @@ bin/
 *.comp.*
 *.res
 *.inc
+temp.*

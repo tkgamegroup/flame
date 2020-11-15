@@ -1,0 +1,11 @@
+{
+	vec3 color = material.color.rgb;
+
+	float metallic = material.metallic;
+	float roughness = material.roughness;
+
+	vec3 albedo = (1.0 - metallic) * color;
+	vec3 spec = mix(vec3(0.04), color, metallic);
+	
+	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, spec, roughness), 1.0);
+}

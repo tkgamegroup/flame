@@ -55,12 +55,12 @@
         <entity src="top_menu">
           <cText text="view" />
           <entity attach="items" src="sub_menu">
-            <cText text="terrain"/>
-              <entity name="menu_view_terrain_normal" attach="items" src="menu_item">
-                <cText text="normal"/>
+            <cText text="shading"/>
+              <entity name="menu_view_shading_solid" attach="items" src="menu_item">
+                <cText text="solid"/>
               </entity>
-              <entity name="menu_view_terrain_wireframe" attach="items" src="menu_item">
-                <cText text="wire_frame"/>
+              <entity name="menu_view_shading_wireframe" attach="items" src="menu_item">
+                <cText text="wireframe"/>
               </entity>
           </entity>
           <entity attach="items" src="sub_menu">

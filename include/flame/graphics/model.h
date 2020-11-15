@@ -12,7 +12,7 @@ namespace flame
 
 			//virtual int get_bound_index() const = 0;
 
-			//FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path);
+			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path);
 		};
 
 		struct Bone

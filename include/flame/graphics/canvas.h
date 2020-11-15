@@ -17,10 +17,10 @@ namespace flame
 		struct Sampler;
 		struct CommandBuffer;
 
-		enum RenderType
+		enum ShadingType
 		{
-			RenderNormal,
-			RenderWireframe
+			ShadingSolid,
+			ShadingWireframe
 		};
 
 		struct Point3
@@ -37,7 +37,7 @@ namespace flame
 
 		struct RenderPreferences
 		{
-			virtual void set_terrain_render(RenderType type) = 0;
+			virtual void set_shading(ShadingType type) = 0;
 
 			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true, bool msaa_3d = true);
 		};
@@ -105,7 +105,7 @@ namespace flame
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) = 0;
 
 			virtual void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
-			virtual void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint color_tex_id) = 0;
+			virtual void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint mat_id) = 0;
 			virtual void add_light(LightType type, const Mat3f& dirs, const Vec3f& color, bool cast_shadow = false) = 0;
 
 			virtual void draw_lines(uint lines_count, const Line3* lines) = 0;

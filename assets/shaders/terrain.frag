@@ -1,16 +1,4 @@
-#version 450 core
-#extension GL_ARB_shading_language_420pack : enable
-#extension GL_ARB_separate_shader_objects : enable
-
-#define RENDER_DATA_SET 0
-#define MATERIAL_SET 1
-#define LIGHT_SET 2
-#define TERRAIN_SET 3
-
-#include "render_data.dsl"
-#include "material.dsl"
-#include "light.dsl"
-#include "terrain.dsl"
+#include "terrain.pll"
 #include "shading.glsl"
 
 layout (location = 0) in flat uint i_idx;

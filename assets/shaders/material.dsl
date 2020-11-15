@@ -9,9 +9,7 @@ struct MaterialInfo
 	float roughness;
 	float alpha_test;
 
-	int color_map_index;
-	int metallic_roughness_ao_map_index;
-	int normal_height_map_index;
+	ivec4 map_indices;
 };
 
 layout (set = MATERIAL_SET, binding = 0) buffer readonly MaterialInfos

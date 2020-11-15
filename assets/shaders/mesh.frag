@@ -1,7 +1,3 @@
-#version 450 core
-#extension GL_ARB_shading_language_420pack : enable
-#extension GL_ARB_separate_shader_objects : enable
-
 #include "mesh.pll"
 
 #include "shading.glsl"
@@ -21,33 +17,12 @@ void main()
 
 	MaterialInfo material = material_infos[i_mat_id];
 
-	vec4 color;
-	if (material.color_map_index >= 0)
-		color = texture(maps[material.color_map_index], i_uv);
-	else
-		color = material.color;
-
-	if (color.a < material.alpha_test)
-		discard;
-
-	float metallic;
-	float roughness;
-	if (material.metallic_roughness_ao_map_index >= 0)
-	{
-		vec4 s = texture(maps[material.metallic_roughness_ao_map_index], i_uv);
-		metallic = s.r;
-		roughness = s.g;
-	}
-	else
-	{
-		metallic = material.metallic;
-		roughness = material.roughness;
-	}
-	vec3 albedo = (1.0 - metallic) * color.rgb;
-	vec3 spec = mix(vec3(0.04), color.rgb, metallic);
-
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
 	
-	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, spec, roughness), 1.0);
+#ifdef MAT
+	#include MAT_FILE
+#else
+	o_color = vec4(0.0, 1.0, 0.0, 1.0);
+#endif
 }

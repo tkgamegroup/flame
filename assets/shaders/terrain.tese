@@ -1,14 +1,4 @@
-#version 450 core
-#extension GL_ARB_shading_language_420pack : enable
-#extension GL_ARB_separate_shader_objects : enable
-
-#define RENDER_DATA_SET 0
-#define MATERIAL_SET 1
-#define TERRAIN_SET 3
-
-#include "render_data.dsl"
-#include "material.dsl"
-#include "terrain.dsl"
+#include "terrain.pll"
 
 layout(quads, equal_spacing, ccw) in;
 

@@ -187,14 +187,14 @@ namespace flame
 			return -1;
 		}
 
-		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(const std::filesystem::path& filename)
+		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
 		{
 			for (auto& d : descriptor_set_layouts)
 			{
 				if (d->filename == filename)
 					return d.get();
 			}
-			return nullptr;
+			return DescriptorSetLayoutPrivate::create(device, filename);
 		};
 
 		void get_shader_type(const spirv_cross::CompilerGLSL& glsl, std::vector<std::unique_ptr<ShaderType>>& types, const spirv_cross::SPIRType& src, ShaderType* dst)
@@ -375,6 +375,15 @@ namespace flame
 			}
 		}
 
+		static std::string basic_glsl_prefix()
+		{
+			std::string ret;
+			ret += "#version 450 core\n";
+			ret += "#extension GL_ARB_shading_language_420pack : enable\n";
+			ret += "#extension GL_ARB_separate_shader_objects : enable\n\n";
+			return ret;
+		}
+
 		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
 			auto filename = _filename;
@@ -398,21 +407,23 @@ namespace flame
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
-					std::ofstream temp(L"temp.frag");
-					temp << "#version 450 core" << std::endl;
-					temp << "#extension GL_ARB_shading_language_420pack : enable" << std::endl;
-					temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
-					temp << "#define MAKE_DSL" << std::endl;
+					auto temp = basic_glsl_prefix();
+					temp += "#define MAKE_DSL\n";
 					std::ifstream dsl(path);
 					while (!dsl.eof())
 					{
 						std::string line;
 						std::getline(dsl, line);
-						temp << line << std::endl;
+						temp += line + "\n";
 					}
+					temp += "void main()\n{\n}\n";
 					dsl.close();
-					temp << "void main()\n{\n}\n" << std::endl;
-					temp.close();
+
+					auto temp_fn = path;
+					temp_fn.replace_filename(L"temp.frag");
+					std::ofstream temp_file(temp_fn);
+					temp_file << temp << std::endl;
+					temp_file.close();
 
 					if (std::filesystem::exists(L"a.spv"))
 						std::filesystem::remove(L"a.spv");
@@ -420,7 +431,7 @@ namespace flame
 					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					auto command_line = std::wstring(L" temp.frag");
+					auto command_line = std::wstring(L" " + temp_fn.wstring());
 
 					printf("compiling dsl: %s", path.string().c_str());
 
@@ -428,7 +439,7 @@ namespace flame
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(L"a.spv"))
 					{
-						printf("\n%s\n", output.c_str());
+						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 						assert(0);
 						return nullptr;
 					}
@@ -687,6 +698,16 @@ namespace flame
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 		}
 
+		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
+		{
+			for (auto& p : pipeline_layouts)
+			{
+				if (p->filename == filename)
+					return p.get();
+			}
+			return PipelineLayoutPrivate::create(device, filename);
+		};
+
 		PipelineLayoutPrivate* PipelineLayoutPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
 			auto filename = _filename;
@@ -711,10 +732,7 @@ namespace flame
 				if (d.extension() == L".dsl")
 				{
 					auto fn = d.lexically_relative(ppath);
-					auto dsl = DescriptorSetLayoutPrivate::get(fn);
-					if (!dsl)
-						dsl = DescriptorSetLayoutPrivate::create(device, fn);
-					dsls.push_back(dsl);
+					dsls.push_back(DescriptorSetLayoutPrivate::get(device, fn));
 				}
 			}
 
@@ -726,21 +744,23 @@ namespace flame
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
-					std::ofstream temp(L"temp.frag");
-					temp << "#version 450 core" << std::endl;
-					temp << "#extension GL_ARB_shading_language_420pack : enable" << std::endl;
-					temp << "#extension GL_ARB_separate_shader_objects : enable" << std::endl;
-					temp << "#define MAKE_PLL" << std::endl;
-					std::ifstream dsl(path);
-					while (!dsl.eof())
+					auto temp = basic_glsl_prefix();
+					temp += "#define MAKE_PLL\n";
+					std::ifstream pll(path);
+					while (!pll.eof())
 					{
 						std::string line;
-						std::getline(dsl, line);
-						temp << line << std::endl;
+						std::getline(pll, line);
+						temp += line + "\n";
 					}
-					dsl.close();
-					temp << "void main()\n{\n}\n" << std::endl;
-					temp.close();
+					temp += "void main()\n{\n}\n";
+					pll.close();
+
+					auto temp_fn = path;
+					temp_fn.replace_filename(L"temp.frag");
+					std::ofstream temp_file(temp_fn);
+					temp_file << temp << std::endl;
+					temp_file.close();
 
 					if (std::filesystem::exists(L"a.spv"))
 						std::filesystem::remove(L"a.spv");
@@ -748,7 +768,7 @@ namespace flame
 					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					auto command_line = std::wstring(L" temp.frag");
+					auto command_line = std::wstring(L" " + temp_fn.wstring());
 
 					printf("compiling pll: %s", path.string().c_str());
 
@@ -756,7 +776,7 @@ namespace flame
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(L"a.spv"))
 					{
-						printf("\n%s\n", output.c_str());
+						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 						assert(0);
 						return nullptr;
 					}
@@ -822,10 +842,11 @@ namespace flame
 			return new PipelineLayoutPrivate((DevicePrivate*)device, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
 		}
 
-		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& spv_content) :
+		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::string& spv_content) :
 			device(device),
 			filename(filename),
-			defines(defines)
+			defines(defines),
+			substitutes(substitutes)
 		{
 			type = shader_stage_from_ext(filename.extension());
 
@@ -844,7 +865,7 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPrivate* ShaderPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename, const std::string& prefix)
+		ShaderPrivate* ShaderPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename, const std::string& defines, const std::string& substitutes)
 		{
 			auto filename = _filename;
 			filename.make_preferred();
@@ -856,7 +877,7 @@ namespace flame
 				return nullptr;
 			}
 
-			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(prefix);
+			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(defines) ^ std::hash<std::string>()(substitutes);
 			auto str_hash = std::to_wstring(hash);
 
 			auto spv_path = path;
@@ -867,24 +888,51 @@ namespace flame
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)
 				{
+					std::vector<std::pair<std::string, std::string>> replace_pairs;
+					{
+						auto sp = SUS::split(substitutes);
+						assert(sp.size() % 2 == 0);
+						for (auto i = 0; i < sp.size(); i += 2)
+							replace_pairs.emplace_back(sp[i], sp[i + 1]);
+					}
+
+					auto temp = basic_glsl_prefix();
+					std::ifstream glsl(path);
+					while (!glsl.eof())
+					{
+						std::string line;
+						std::getline(glsl, line);
+						for (auto& p : replace_pairs)
+							SUS::replace_all(line, p.first, p.second);
+						temp += line + "\n";
+					}
+					glsl.close();
+
+					auto temp_fn = path;
+					temp_fn.replace_filename(L"temp");
+					temp_fn.replace_extension(filename.extension());
+					std::ofstream temp_file(temp_fn);
+					temp_file << temp << std::endl;
+					temp_file.close();
+
 					if (std::filesystem::exists(spv_path))
 						std::filesystem::remove(spv_path);
 
 					auto glslc_path = std::filesystem::path(vk_sdk_path);
 					glslc_path /= L"Bin/glslc.exe";
 
-					auto command_line = std::wstring(L" " + path.wstring() + L" -o" + spv_path.wstring());
-					auto defines = SUS::split(prefix);
-					for (auto& d : defines)
+					auto command_line = std::wstring(L" " + temp_fn.wstring() + L" -o" + spv_path.wstring());
+					auto sp = SUS::split(defines);
+					for (auto& d : sp)
 						command_line += L" -D" + s2w(d);
 
-					printf("compiling shader: %s (%s)", path.string().c_str(), prefix.c_str());
+					printf("compiling shader: %s (%s) (%s)", path.string().c_str(), defines.c_str(), substitutes.c_str());
 
 					std::string output;
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(spv_path))
 					{
-						printf("\n%s\n", output.c_str());
+						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 						assert(0);
 						return nullptr;
 					}
@@ -919,7 +967,7 @@ namespace flame
 				return nullptr;
 			}
 
-			return new ShaderPrivate(device, filename, prefix, spv_file);
+			return new ShaderPrivate(device, filename, defines, substitutes, spv_file);
 		}
 
 		PipelinePrivate::PipelinePrivate(DevicePrivate* device, std::span<ShaderPrivate*> _shaders, PipelineLayoutPrivate* pll,

@@ -12,18 +12,15 @@ namespace flame
 		{
 			std::string name;
 
-			Vec4f color = Vec4f(Vec3f(1.f), 1.f);
+			Vec4f color = Vec4f(1.f);
 			float metallic = 0.04f;
 			float roughness = 0.5f;
 			float alpha_test = 0.f;
 
-			std::filesystem::path path;
-			std::string color_map;
-			std::string alpha_map;
-			std::string metallic_map;
-			std::string roughness_map;
-			std::string normal_map;
-			std::string height_map;
+			std::filesystem::path dir;
+			std::filesystem::path textures[4];
+
+			std::filesystem::path pipeline = "standard.mat";
 		};
 
 		struct BonePrivate : Bone

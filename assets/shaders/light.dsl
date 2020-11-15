@@ -14,12 +14,8 @@ struct DirectionalLightInfo
 	vec3 dir;
 	float distance;
 	vec3 color;
-	int dummy1;
 	
 	int shadow_map_index;
-	float dummy2;
-	vec2 dummy3;
-	vec4 dummy4;
 	mat4 shadow_matrices[4];
 };
 

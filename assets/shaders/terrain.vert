@@ -1,10 +1,4 @@
-#version 450 core
-#extension GL_ARB_shading_language_420pack : enable
-#extension GL_ARB_separate_shader_objects : enable
-
-#define TERRAIN_SET 3
-
-#include "terrain.dsl"
+#include "terrain.pll"
 
 layout (location = 0) out flat uint o_idx;
 layout (location = 1) out vec2 o_uv;

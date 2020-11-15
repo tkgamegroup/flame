@@ -169,7 +169,7 @@ namespace flame
 			virtual const wchar_t* get_filename() const = 0;
 			virtual const char* get_defines() const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* device, const wchar_t* filename, const char* defines);
+			FLAME_GRAPHICS_EXPORTS static Shader* create(Device* device, const wchar_t* filename, const char* defines, const char* substitutes);
 		};
 
 		struct Pipeline

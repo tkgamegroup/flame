@@ -107,14 +107,10 @@ namespace flame
 				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 			}
 
-			auto mesh_pll = PipelineLayoutPrivate::create(device, L"mesh.pll");
-			auto depth_pll = PipelineLayoutPrivate::create(device, L"depth.pll");
-			auto post_pll = PipelineLayoutPrivate::create(device, L"post.pll");
-
 			{
 				ShaderPrivate* shaders[] = {
-					add_shader(ShaderPrivate::create(device, L"element.vert")),
-					add_shader(ShaderPrivate::create(device, L"element.frag"))
+					get_shader(L"element.vert"),
+					get_shader(L"element.frag")
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -135,53 +131,19 @@ namespace flame
 				bo.dst_color = BlendFactorOneMinusSrcAlpha;
 				bo.src_alpha = BlendFactorOne;
 				bo.dst_alpha = BlendFactorZero;
-				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::create(device, L"element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
+				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
 			}
 
-			{
-				ShaderPrivate* shaders[] = {
-					add_shader(ShaderPrivate::create(device, L"mesh.vert")),
-					add_shader(ShaderPrivate::create(device, L"mesh.frag"))
-				};
-				VertexAttributeInfo vias1[3];
-				vias1[0].location = 0;
-				vias1[0].format = Format_R32G32B32_SFLOAT;
-				vias1[1].location = 1;
-				vias1[1].format = Format_R32G32_SFLOAT;
-				vias1[2].location = 2;
-				vias1[2].format = Format_R32G32B32_SFLOAT;
-				//vias1[3].location = 3;
-				//vias1[3].format = Format_R32G32B32_SFLOAT;
-				//vias1[3].location = 4;
-				//vias1[3].format = Format_R32G32B32_SFLOAT;
-				VertexBufferInfo vibs[2];
-				vibs[0].attributes_count = size(vias1);
-				vibs[0].attributes = vias1;
-				VertexInfo vi;
-				vi.buffers_count = 1;
-				vi.buffers = vibs;
-				RasterInfo rst;
-				DepthInfo dep;
-				mesh_pipeline.reset(PipelinePrivate::create(device, shaders, mesh_pll, mesh_renderpass.get(), 0, &vi, &rst, &dep));
+			for (auto i = 0; i < MaterialUsageCount; i++)
+				wireframe_pipelines[i].reset(create_material_pipeline((MaterialUsage)i, "WIREFRAME"));
 
-				shaders[0] = add_shader(ShaderPrivate::create(device, L"mesh.vert", "ARMATURE"));
-				VertexAttributeInfo vias2[2];
-				vias2[0].location = 5;
-				vias2[0].format = Format_R32G32B32A32_INT;
-				vias2[1].location = 6;
-				vias2[1].format = Format_R32G32B32A32_SFLOAT;
-				vibs[1].attributes_count = size(vias2);
-				vibs[1].attributes = vias2;
-				vi.buffers_count = 2;
-				mesh_armature_pipeline.reset(PipelinePrivate::create(device, shaders, mesh_pll, mesh_renderpass.get(), 0, &vi, &rst, &dep));
-			}
-
-			make_terrain_pipeline();
+			//make_terrain_pipelines();
 
 			{
+				auto depth_pll = PipelineLayoutPrivate::get(device, L"depth.pll");
 				ShaderPrivate* shaders[] = {
-					add_shader(ShaderPrivate::create(device, L"depth.vert")),
-					add_shader(ShaderPrivate::create(device, L"depth.frag"))
+					get_shader(L"depth.vert"),
+					get_shader(L"depth.frag")
 				};
 				VertexAttributeInfo vias1[2];
 				vias1[0].location = 0;
@@ -200,7 +162,7 @@ namespace flame
 				DepthInfo dep;
 				depth_pipeline.reset(PipelinePrivate::create(device, shaders, depth_pll, depth_renderpass.get(), 0, &vi, &rst, &dep));
 
-				shaders[0] = add_shader(ShaderPrivate::create(device, L"depth.vert", "ARMATURE"));
+				shaders[0] = get_shader(L"depth.vert", "ARMATURE");
 				VertexAttributeInfo vias2[2];
 				vias2[0].location = 2;
 				vias2[0].format = Format_R32G32B32A32_INT;
@@ -214,8 +176,8 @@ namespace flame
 
 			{
 				ShaderPrivate* shaders[] = {
-					add_shader(ShaderPrivate::create(device, L"line3.vert")),
-					add_shader(ShaderPrivate::create(device, L"line3.frag"))
+					get_shader(L"line3.vert"),
+					get_shader(L"line3.frag")
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -229,17 +191,18 @@ namespace flame
 				vi.primitive_topology = PrimitiveTopologyLineList;
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
-				line3_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::create(device, L"simple3d.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, &vi));
+				line3_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"simple3d.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, &vi));
 			}
 
-			auto fullscreen_vert = add_shader(ShaderPrivate::create(device, L"fullscreen.vert"));
+			auto post_pll = PipelineLayoutPrivate::get(device, L"post.pll");
+			auto fullscreen_vert = get_shader(L"fullscreen.vert");
 
 			for (auto i = 0; i < 10; i++)
 			{
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_vert,
-						add_shader(ShaderPrivate::create(device, L"blur.frag", "R" + std::to_string(i + 1) + " H"))
+						get_shader(L"blur.frag", "R" + std::to_string(i + 1) + " H")
 					};
 					blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
 				}
@@ -247,7 +210,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_vert,
-						add_shader(ShaderPrivate::create(device, L"blur.frag", "R" + std::to_string(i + 1) + " V"))
+						get_shader(L"blur.frag", "R" + std::to_string(i + 1) + " V")
 					};
 					blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
 				}
@@ -256,7 +219,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"blur_depth.frag", "H"))
+					get_shader(L"blur_depth.frag", "H")
 				};
 				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -264,7 +227,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"blur_depth.frag", "V"))
+					get_shader(L"blur_depth.frag", "V")
 				};
 				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -272,7 +235,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"blit.frag"))
+					get_shader(L"blit.frag")
 				};
 				blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
 				blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
@@ -281,12 +244,12 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"filter_bright.frag"))
+					get_shader(L"filter_bright.frag")
 				};
 				filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
 			}
 
-			auto box_frag = add_shader(ShaderPrivate::create(device, L"box.frag"));
+			auto box_frag = get_shader(L"box.frag");
 
 			{
 				ShaderPrivate* shaders[] = {
@@ -313,46 +276,158 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					add_shader(ShaderPrivate::create(device, L"gamma.frag"))
+					get_shader(L"gamma.frag")
 				};
 				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
 			}
 		}
 
-		void RenderPreferencesPrivate::make_terrain_pipeline()
+		ShaderPrivate* RenderPreferencesPrivate::get_shader(const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes)
 		{
-			ShaderPrivate* shaders[] = {
-				find_or_create_shader(L"terrain.vert"),
-				find_or_create_shader(L"terrain.tesc"),
-				find_or_create_shader(L"terrain.tese"),
-				find_or_create_shader(L"terrain.frag")
-			};
-			VertexInfo vi;
-			vi.primitive_topology = PrimitiveTopologyPatchList;
-			vi.patch_control_points = 4;
-			RasterInfo rst;
-			if (terrain_render == RenderWireframe)
-				rst.polygon_mode = PolygonModeLine;
-			DepthInfo dep;
-			terrain_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::create(device, L"terrain.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
+			for (auto& s : shaders)
+			{
+				if (s.second->filename == filename && s.second->defines == defines && s.second->substitutes == substitutes)
+				{
+					s.first++;
+					return s.second.get();
+				}
+			}
+			auto s = ShaderPrivate::create(device, filename, defines, substitutes);
+			shaders.emplace_back(1, s);
+			return s;
 		}
 
-		void RenderPreferencesPrivate::set_terrain_render(RenderType type)
+		void RenderPreferencesPrivate::release_shader(ShaderPrivate* s)
 		{
-			if (terrain_render != type)
+			for (auto it = shaders.begin(); it != shaders.end(); it++)
 			{
-				terrain_render = type;
-				switch (type)
+				if (it->second.get() == s)
 				{
-				case RenderNormal:
-					shaders[find_shader(L"terrain.frag")].reset(ShaderPrivate::create(device, L"terrain.frag"));
-					break;
-				case RenderWireframe:
-					shaders[find_shader(L"terrain.frag")].reset(ShaderPrivate::create(device, L"terrain.frag", "WIREFRAME"));
+					if (it->first == 1)
+						shaders.erase(it);
+					else
+						it->first--;
 					break;
 				}
-				make_terrain_pipeline();
 			}
+		}
+
+		PipelinePrivate* RenderPreferencesPrivate::get_material_pipeline(MaterialUsage usage, const std::string& name)
+		{
+			for (auto& p : material_pipelines[usage])
+			{
+				if (std::get<0>(p) == name)
+				{
+					std::get<1>(p)++;
+					return std::get<2>(p).get();
+				}
+			}
+			auto ret = create_material_pipeline(usage, name);
+			material_pipelines[MaterialForMesh].emplace_back(name, 1, ret);
+			return ret;
+		}
+
+		PipelinePrivate* RenderPreferencesPrivate::create_material_pipeline(MaterialUsage usage, const std::string& name)
+		{
+			switch (usage)
+			{
+			case MaterialForMesh:
+			{
+				ShaderPrivate* shaders[] = {
+					get_shader(L"mesh.vert"),
+					get_shader(L"mesh.frag", name != "WIREFRAME" ? "MAT" : "", name != "WIREFRAME" ? ("MAT_FILE \"" + name + "\"") : "")
+				};
+				VertexAttributeInfo vias[3];
+				vias[0].location = 0;
+				vias[0].format = Format_R32G32B32_SFLOAT;
+				vias[1].location = 1;
+				vias[1].format = Format_R32G32_SFLOAT;
+				vias[2].location = 2;
+				vias[2].format = Format_R32G32B32_SFLOAT;
+				VertexBufferInfo vib;
+				vib.attributes_count = size(vias);
+				vib.attributes = vias;
+				VertexInfo vi;
+				vi.buffers_count = 1;
+				vi.buffers = &vib;
+				RasterInfo rst;
+				DepthInfo dep;
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			}
+				break;
+			case MaterialForMeshArmature:
+			{
+				ShaderPrivate* shaders[] = {
+					get_shader(L"mesh.vert", "ARMATURE"),
+					get_shader(L"mesh.frag")
+				};
+				VertexAttributeInfo vias1[3];
+				vias1[0].location = 0;
+				vias1[0].format = Format_R32G32B32_SFLOAT;
+				vias1[1].location = 1;
+				vias1[1].format = Format_R32G32_SFLOAT;
+				vias1[2].location = 2;
+				vias1[2].format = Format_R32G32B32_SFLOAT;
+				VertexAttributeInfo vias2[2];
+				vias2[0].location = 5;
+				vias2[0].format = Format_R32G32B32A32_INT;
+				vias2[1].location = 6;
+				vias2[1].format = Format_R32G32B32A32_SFLOAT;
+				VertexBufferInfo vibs[2];
+				vibs[0].attributes_count = size(vias1);
+				vibs[0].attributes = vias1;
+				vibs[1].attributes_count = size(vias2);
+				vibs[1].attributes = vias2;
+				VertexInfo vi;
+				vi.buffers_count = 2;
+				vi.buffers = vibs;
+				RasterInfo rst;
+				DepthInfo dep;
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			}
+				break;
+			case MaterialForTerrain:
+			{
+				ShaderPrivate* shaders[] = {
+					get_shader(L"terrain.vert"),
+					get_shader(L"terrain.tesc"),
+					get_shader(L"terrain.tese"),
+					get_shader(L"terrain.frag", name)
+				};
+				VertexInfo vi;
+				vi.primitive_topology = PrimitiveTopologyPatchList;
+				vi.patch_control_points = 4;
+				RasterInfo rst;
+				if (name == "WIREFRAME")
+					rst.polygon_mode = PolygonModeLine;
+				DepthInfo dep;
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"terrain.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			}
+				break;
+			}
+			return nullptr;
+		}
+
+		void RenderPreferencesPrivate::release_material_pipeline(MaterialUsage usage, PipelinePrivate* p)
+		{
+			for (auto it = material_pipelines[usage].begin(); it != material_pipelines[usage].end(); it++)
+			{
+				if (std::get<2>(*it).get() == p)
+				{
+					for (auto s : p->shaders)
+						release_shader(s);
+					if (std::get<1>(*it) == 1)
+						material_pipelines[usage].erase(it);
+					else
+						std::get<1>(*it)--;
+					break;
+				}
+			}
+		}
+
+		void RenderPreferencesPrivate::set_shading(ShadingType type)
+		{
+			shading_type = type;
 		}
 
 		RenderPreferences* RenderPreferences::create(Device* device, bool hdr, bool msaa_3d)
@@ -363,7 +438,7 @@ namespace flame
 		ArmatureDeformerPrivate::ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh) :
 			mesh(mesh)
 		{
-			auto dsl = DescriptorSetLayoutPrivate::get(L"armature.dsl");
+			auto dsl = DescriptorSetLayoutPrivate::get(preferences->device, L"armature.dsl");
 			poses_buffer.create(preferences->device, BufferUsageStorage, find_type(dsl->types, "Mat4f"), mesh->bones.size());
 			descriptorset.reset(new DescriptorSetPrivate(preferences->device->dsp.get(), dsl));
 			descriptorset->set_buffer(0, 0, poses_buffer.buf.get());
@@ -406,7 +481,7 @@ namespace flame
 			model_resources.resize(128);
 			
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(L"render_data.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"render_data.dsl");
 				render_data_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				render_data_buffer.create(device, BufferUsageUniform, find_type(dsl->types, "RenderData"));
 				render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
@@ -415,7 +490,7 @@ namespace flame
 			}
 
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(L"element.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"element.dsl");
 				element_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				element_vertex_buffer.create(device, BufferUsageVertex, 360000);
 				element_index_buffer.create(device, BufferUsageIndex, 240000);
@@ -424,14 +499,14 @@ namespace flame
 			}
 			
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(L"mesh.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"mesh.dsl");
 				mesh_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				mesh_matrix_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MeshMatrix"), 10000);
 				mesh_descriptorset->set_buffer(dsl->find_binding("MeshMatrices"), 0, mesh_matrix_buffer.buf.get());
 			}
 
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(L"material.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"material.dsl");
 				material_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				material_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MaterialInfo"), 128);
 				material_descriptorset->set_buffer(dsl->find_binding("MaterialInfos"), 0, material_info_buffer.buf.get());
@@ -442,7 +517,7 @@ namespace flame
 			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post.dsl");
 
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(L"light.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"light.dsl");
 				light_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 
 				shadow_depth_image.reset(new ImagePrivate(device, Format_Depth16, shadow_map_size, 1, 1, SampleCount_1, ImageUsageAttachment));
@@ -514,7 +589,7 @@ namespace flame
 			}
 
 			{
-				auto dsl = DescriptorSetLayoutPrivate::get(L"terrain.dsl");
+				auto dsl = DescriptorSetLayoutPrivate::get(device, L"terrain.dsl");
 				terrain_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
 				terrain_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "TerrainInfo"), 1);
 				terrain_descriptorset->set_buffer(dsl->find_binding("TerrainInfos"), 0, terrain_info_buffer.buf.get());
@@ -792,6 +867,8 @@ namespace flame
 					{
 						for (auto& t : prev->textures)
 							set_texture_resource(t.first, nullptr, nullptr, "");
+						for (auto i = 0; i < MaterialUsageCount; i++)
+							preferences->release_material_pipeline((MaterialUsage)i, prev->pipelines[i]);
 					}
 				}
 
@@ -803,6 +880,9 @@ namespace flame
 					mr->name = name;
 					material_resources[slot].reset(mr);
 
+					for (auto i = 0; i < MaterialUsageCount; i++)
+						mr->pipelines[i] = preferences->get_material_pipeline((MaterialUsage)i, mat->pipeline.string());
+
 					auto dst = material_info_buffer.mark_item(slot);
 
 					material_info_buffer.set(dst, S<"color"_h>, mat->color);
@@ -810,168 +890,26 @@ namespace flame
 					material_info_buffer.set(dst, S<"roughness"_h>, mat->roughness);
 					material_info_buffer.set(dst, S<"alpha_test"_h>, mat->alpha_test);
 
-					if (!mat->path.empty())
+					if (!mat->dir.empty())
 					{
-						auto color_map = !mat->color_map.empty() ? Bitmap::create((mat->path / mat->color_map).c_str()) : nullptr;
-						auto alpha_map = !mat->alpha_map.empty() ? Bitmap::create((mat->path / mat->alpha_map).c_str()) : nullptr;
-						auto roughness_map = !mat->roughness_map.empty() ? Bitmap::create((mat->path / mat->roughness_map).c_str()) : nullptr;
-						auto normal_map = !mat->normal_map.empty() ? Bitmap::create((mat->path / mat->normal_map).c_str()) : nullptr;
-						auto height_map = !mat->height_map.empty() ? Bitmap::create((mat->path / mat->height_map).c_str()) : nullptr;
-
-						if (color_map || alpha_map)
+						Vec4i ids;
+						for (auto i = 0; i < size(mr->textures); i++)
 						{
-							Vec2u size = Vec2u(0U);
-							if (color_map)
-								size = max(size, Vec2u(color_map->get_width(), color_map->get_height()));
-							if (alpha_map)
-								size = max(size, Vec2u(alpha_map->get_width(), alpha_map->get_height()));
-
-							auto dst_map = Bitmap::create(size.x(), size.y());
-							auto dst_map_d = dst_map->get_data();
-							auto dst_map_pitch = size.x() * 4;
-
-							auto color_map_d = color_map ? color_map->get_data() : nullptr;
-							auto color_map_pitch = color_map ? color_map->get_pitch() : 0;
-							auto color_map_ch = color_map ? color_map->get_channel() : 0;
-							auto alpha_map_d = alpha_map ? alpha_map->get_data() : nullptr;
-							auto alpha_map_pitch = alpha_map ? alpha_map->get_pitch() : 0;
-							auto alpha_map_ch = alpha_map ? alpha_map->get_channel() : 0;
-
-							if (color_map)
-								color_map->srgb_to_linear();
-
-							if (color_map && alpha_map)
+							auto& dst = mr->textures[i];
+							if (!mat->textures[i].empty())
 							{
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-									{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * 3], alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
-									}
-								}
+								auto img = ImagePrivate::create(device, mat->dir / mat->textures[i], true);
+								auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
+								ids[i] = dst.first = idx;
+								dst.second.reset(img);
 							}
-							else if (color_map && !alpha_map)
+							else
 							{
-								auto a = mat->color.a() * 255;
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-									{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c((Vec3c&)color_map_d[y * color_map_pitch + x * color_map_ch], a);
-									}
-								}
+								ids[i] = dst.first = -1;
+								dst.second.reset(nullptr);
 							}
-							else if (!color_map && alpha_map)
-							{
-								auto col = Vec3c(Vec3f(mat->color) * 255.f);
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-									{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c(col, alpha_map_d[y * alpha_map_pitch + x * alpha_map_ch]);
-									}
-								}
-							}
-
-							auto img = ImagePrivate::create(device, dst_map);
-							auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
-							mr->textures.emplace_back(idx, img);
-							material_info_buffer.set(dst, S<"color_map_index"_h>, idx);
-
-							dst_map->release();
 						}
-
-						if (roughness_map)
-						{
-							Vec2u size = Vec2u(0U);
-							if (roughness_map)
-								size = max(size, Vec2u(roughness_map->get_width(), roughness_map->get_height()));
-
-							auto dst_map = Bitmap::create(size.x(), size.y());
-							auto dst_map_d = dst_map->get_data();
-							auto dst_map_pitch = size.x() * 4;
-
-							auto roughness_map_d = roughness_map ? roughness_map->get_data() : nullptr;
-							auto roughness_map_pitch = roughness_map ? roughness_map->get_pitch() : 0;
-							auto roughness_map_ch = roughness_map ? roughness_map->get_channel() : 0;
-
-							if (roughness_map)
-							{
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-									{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c(0, roughness_map_d[y * roughness_map_pitch + x * roughness_map_ch], 0, 0);
-									}
-								}
-							}
-
-							auto img = ImagePrivate::create(device, dst_map);
-							auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
-							mr->textures.emplace_back(idx, img);
-							material_info_buffer.set(dst, S<"metallic_roughness_ao_map_index"_h>, idx);
-
-							dst_map->release();
-						}
-
-						if (normal_map || height_map)
-						{
-							Vec2u size = Vec2u(0U);
-							if (normal_map)
-								size = max(size, Vec2u(normal_map->get_width(), normal_map->get_height()));
-							if (height_map)
-								size = max(size, Vec2u(height_map->get_width(), height_map->get_height()));
-
-							auto dst_map = Bitmap::create(size.x(), size.y());
-							auto dst_map_d = dst_map->get_data();
-							auto dst_map_pitch = size.x() * 4;
-
-							auto height_map_d = height_map ? height_map->get_data() : nullptr;
-							auto height_map_pitch = height_map ? height_map->get_pitch() : 0;
-							auto height_map_ch = height_map ? height_map->get_channel() : 0;
-
-							if (normal_map && height_map)
-							{
-
-							}
-							else if (normal_map && !height_map)
-							{
-
-							}
-							else if (!normal_map && height_map)
-							{
-								for (auto y = 0; y < size.y(); y++)
-								{
-									for (auto x = 0; x < size.x(); x++)
-									{
-										(Vec4c&)dst_map_d[y * dst_map_pitch + x * 4] =
-											Vec4c(Vec3f(0.f), height_map_d[y * height_map_pitch + x * height_map_ch]);
-									}
-								}
-							}
-
-							auto img = ImagePrivate::create(device, dst_map);
-							auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
-							mr->textures.emplace_back(idx, img);
-							material_info_buffer.set(dst, S<"normal_hegiht_map_index"_h>, idx);
-
-							dst_map->release();
-						}
-
-						if (color_map)
-							color_map->release();
-						if (alpha_map)
-							alpha_map->release();
-						if (roughness_map)
-							roughness_map->release();
-						if (normal_map)
-							normal_map->release();
-						if (height_map)
-							height_map->release();
+						material_info_buffer.set(dst, S<"map_indices"_h>, ids);
 					}
 
 					ImmediateCommandBuffer icb;
@@ -1708,7 +1646,7 @@ namespace flame
 			meshes_count++;
 		}
 
-		void CanvasPrivate::draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint color_tex_id)
+		void CanvasPrivate::draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id)
 		{
 			auto cmd = new CmdDrawTerrain;
 			cmd->idx = terrains_count;
@@ -1722,7 +1660,7 @@ namespace flame
 			terrain_info_buffer.set(dst, S<"tess_levels"_h>, tess_levels);
 			terrain_info_buffer.set(dst, S<"height_tex_id"_h>, height_tex_id);
 			terrain_info_buffer.set(dst, S<"normal_tex_id"_h>, normal_tex_id);
-			terrain_info_buffer.set(dst, S<"color_tex_id"_h>, color_tex_id);
+			terrain_info_buffer.set(dst, S<"material_id"_h>, material_id);
 
 			terrains_count++;
 		}
@@ -2267,16 +2205,17 @@ namespace flame
 							for (auto& m : c->meshes)
 							{
 								auto mrm = std::get<1>(m);
+								auto mat = material_resources[mrm->material_index].get();
 								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 								if (std::get<3>(m))
 								{
-									cb->bind_pipeline(preferences->mesh_armature_pipeline.get());
+									cb->bind_pipeline(mat->pipelines[MaterialForMeshArmature]);
 									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 									cb->bind_descriptor_set(PipelineGraphics, std::get<3>(m)->descriptorset.get(), 4, nullptr);
 								}
 								else
-									cb->bind_pipeline(preferences->mesh_pipeline.get());
+									cb->bind_pipeline(mat->pipelines[MaterialForMesh]);
 								if (first)
 								{
 									cb->bind_descriptor_set(PipelineGraphics, render_data_descriptorset.get(), 0, nullptr);

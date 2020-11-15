@@ -142,7 +142,7 @@ namespace flame
 			DescriptorBinding* get_binding(uint binding) const override { return bindings[binding].get(); }
 			int find_binding(const std::string& name);
 
-			static DescriptorSetLayoutPrivate* get(const std::filesystem::path& filename);
+			static DescriptorSetLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 			static DescriptorSetLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
@@ -200,6 +200,7 @@ namespace flame
 
 			void release() override { delete this; }
 
+			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 			static PipelineLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
@@ -209,6 +210,7 @@ namespace flame
 		{
 			std::filesystem::path filename;
 			std::string defines;
+			std::string substitutes;
 			ShaderStageFlags type;
 
 			DevicePrivate* device;
@@ -218,7 +220,7 @@ namespace flame
 
 			VkShaderModule vk_module = 0;
 
-			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& spv_content);
+			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::string& spv_content);
 			~ShaderPrivate();
 
 			void release() override { delete this; }
@@ -226,7 +228,7 @@ namespace flame
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 			const char* get_defines() const override { return defines.c_str(); }
 
-			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "");
+			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
 		};
 
 		struct PipelinePrivate : Pipeline

@@ -17,6 +17,15 @@ namespace flame
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
 
+		enum MaterialUsage
+		{
+			MaterialForMesh,
+			MaterialForMeshArmature,
+			MaterialForTerrain,
+
+			MaterialUsageCount
+		};
+
 		struct RenderPreferencesPrivate : RenderPreferences
 		{
 			DevicePrivate* device;
@@ -24,16 +33,18 @@ namespace flame
 			bool hdr;
 			bool msaa_3d;
 
+			ShadingType shading_type = ShadingSolid;
+
 			std::unique_ptr<SamplerPrivate> shadow_sampler;
 			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_r16_renderpass;
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
-			std::vector<std::unique_ptr<ShaderPrivate>> shaders;
+			std::vector<std::pair<uint, std::unique_ptr<ShaderPrivate>>> shaders;
+			std::vector<std::tuple<std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
+			std::unique_ptr<PipelinePrivate> wireframe_pipelines[MaterialUsageCount];
 			std::unique_ptr<PipelinePrivate> element_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_pipeline;
-			std::unique_ptr<PipelinePrivate> mesh_armature_pipeline;
 			std::unique_ptr<PipelinePrivate> terrain_pipeline;
 			std::unique_ptr<PipelinePrivate> depth_pipeline;
 			std::unique_ptr<PipelinePrivate> depth_armature_pipeline;
@@ -49,40 +60,15 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> upsample_pipeline;
 			std::unique_ptr<PipelinePrivate> gamma_pipeline;
 
-			RenderType terrain_render = RenderNormal;
-
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
 
-			ShaderPrivate* add_shader(ShaderPrivate* s)
-			{
-				shaders.emplace_back(s);
-				return s;
-			}
+			ShaderPrivate* get_shader(const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
+			void release_shader(ShaderPrivate* s);
+			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::string& name);
+			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::string& name);
+			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);
 
-			int find_shader(const std::filesystem::path& filename)
-			{
-				for (auto i = 0; i < shaders.size(); i++)
-				{
-					auto s = shaders[i].get();
-					if (s->filename == filename)
-						return i;
-				}
-				return -1;
-			}
-
-			ShaderPrivate* find_or_create_shader(const std::filesystem::path& filename, const std::string& defines = "")
-			{
-				auto ret = find_shader(filename);
-				if (ret != -1)
-					return shaders[ret].get();
-				auto s = ShaderPrivate::create(device, filename, defines);
-				shaders.emplace_back(s);
-				return s;
-			}
-
-			void make_terrain_pipeline();
-
-			void set_terrain_render(RenderType type) override;
+			void set_shading(ShadingType type) override;
 		};
 
 		struct ShaderBufferBase
@@ -347,7 +333,9 @@ namespace flame
 		{
 			std::string name;
 			MaterialPrivate* material;
-			std::vector<std::pair<uint, std::unique_ptr<ImagePrivate>>> textures;
+			std::pair<uint, std::unique_ptr<ImagePrivate>> textures[4];
+
+			PipelinePrivate* pipelines[MaterialUsageCount];
 		};
 
 		struct ModelResourceSlot
@@ -368,7 +356,7 @@ namespace flame
 
 		struct DirectionalShadow
 		{
-			Mat4f matrices[6];
+			Mat4f matrices[4];
 		};
 
 		struct PointShadow
@@ -609,7 +597,7 @@ namespace flame
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer) override;
-			void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint color_tex_id) override;
+			void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
 			void add_light(LightType type, const Mat3f& dirs, const Vec3f& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line3* lines) override;
