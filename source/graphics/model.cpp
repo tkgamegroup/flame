@@ -14,10 +14,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		Material* Material::create(const wchar_t* filename)
+		Material* Material::create(const wchar_t* filename, const char* defines)
 		{
 			auto ret = new MaterialPrivate;
-			ret->pipeline = filename;
+			ret->pipeline_file = filename;
+			ret->pipeline_defines = defines;
 			return ret;
 		}
 
@@ -247,80 +248,148 @@ namespace flame
 
 		void ModelPrivate::save(const std::filesystem::path& filename) const
 		{
-			std::ofstream file(filename, std::ios::binary);
-			
-			write_u(file, materials.size());
-			for (auto& m : materials)
+			auto extension = filename.extension();
+
+			if (extension == L".fb")
 			{
-				write_s(file, m->name);
+				std::ofstream file(filename, std::ios::binary);
 
-				write_t(file, m->color);
-				write_t(file, m->metallic);
-				write_t(file, m->roughness);
-				write_t(file, m->alpha_test);
-
-				for (auto i = 0; i < size(m->textures); i++)
-					write_s(file, m->textures[i].string());
-			}
-
-			write_u(file, meshes.size());
-			for (auto& m : meshes)
-			{
-				write_s(file, m->name);
-
-				write_i(file, m->material_index);
-
-				auto n = m->positions.size();
-				write_u(file, n);
-				file.write((char*)m->positions.data(), sizeof(Vec3f) * n);
-				write_b(file, !m->uvs.empty());
-				if (!m->uvs.empty())
-					file.write((char*)m->uvs.data(), sizeof(Vec2f) * n);
-				write_b(file, !m->normals.empty());
-				if (!m->normals.empty())
-					file.write((char*)m->normals.data(), sizeof(Vec3f) * n);
-				write_v(file, m->indices);
-
-				write_u(file, m->bones.size());
-				for (auto& b : m->bones)
+				write_u(file, materials.size());
+				for (auto& m : materials)
 				{
-					write_s(file, b->name);
-					write_t(file, b->offset_matrix);
-					write_v(file, b->weights);
+					write_s(file, m->name);
+					write_t(file, m->color);
+					write_t(file, m->metallic);
+					write_t(file, m->roughness);
+					write_t(file, m->alpha_test);
+					for (auto i = 0; i < size(m->textures); i++)
+						write_s(file, m->textures[i].string());
+					write_s(file, m->pipeline_file.string());
+					write_s(file, m->pipeline_defines);
 				}
 
-				write_t(file, m->lower_bound);
-				write_t(file, m->upper_bound);
-			}
-
-			root->traverse([&](NodePrivate* n) {
-				write_s(file, n->name);
-
-				write_t(file, n->pos);
-				write_t(file, n->quat);
-				write_t(file, n->scale);
-
-				write_i(file, n->mesh_index);
-
-				write_u(file, n->children.size());
-			});
-
-			write_u(file, animations.size());
-			for (auto& a : animations)
-			{
-				write_s(file, a->name);
-
-				write_u(file, a->channels.size());
-				for (auto& c : a->channels)
+				write_u(file, meshes.size());
+				for (auto& m : meshes)
 				{
-					write_s(file, c->node_name);
-					write_v(file, c->position_keys);
-					write_v(file, c->rotation_keys);
+					write_s(file, m->name);
+					write_i(file, m->material_index);
+					auto n = m->positions.size();
+					write_u(file, n);
+					file.write((char*)m->positions.data(), sizeof(Vec3f) * n);
+					write_b(file, !m->uvs.empty());
+					if (!m->uvs.empty())
+						file.write((char*)m->uvs.data(), sizeof(Vec2f) * n);
+					write_b(file, !m->normals.empty());
+					if (!m->normals.empty())
+						file.write((char*)m->normals.data(), sizeof(Vec3f) * n);
+					write_v(file, m->indices);
+					write_u(file, m->bones.size());
+					for (auto& b : m->bones)
+					{
+						write_s(file, b->name);
+						write_t(file, b->offset_matrix);
+						write_v(file, b->weights);
+					}
+					write_t(file, m->lower_bound);
+					write_t(file, m->upper_bound);
 				}
+
+				root->traverse([&](NodePrivate* n) {
+					write_s(file, n->name);
+					write_t(file, n->pos);
+					write_t(file, n->quat);
+					write_t(file, n->scale);
+					write_i(file, n->mesh_index);
+					write_u(file, n->children.size());
+				});
+
+				write_u(file, animations.size());
+				for (auto& a : animations)
+				{
+					write_s(file, a->name);
+					write_u(file, a->channels.size());
+					for (auto& c : a->channels)
+					{
+						write_s(file, c->node_name);
+						write_v(file, c->position_keys);
+						write_v(file, c->rotation_keys);
+					}
+				}
+
+				file.close();
 			}
+			else if (extension == L".fm")
+			{
+				pugi::xml_document doc;
+				auto doc_root = doc.append_child("model");
 
-			file.close();
+				auto n_materials = doc_root.append_child("materials");
+				for (auto& m : materials)
+				{
+					auto n_material = n_materials.append_child("material");
+					n_material.append_attribute("name").set_value(m->name.c_str());
+					n_material.append_attribute("color").set_value(to_string(m->color).c_str());
+					n_material.append_attribute("metallic").set_value(to_string(m->metallic).c_str());
+					n_material.append_attribute("roughness").set_value(to_string(m->roughness).c_str());
+					n_material.append_attribute("alpha_test").set_value(to_string(m->alpha_test).c_str());
+					n_material.append_attribute("pipeline_file").set_value(m->pipeline_file.string().c_str());
+					n_material.append_attribute("pipeline_defines").set_value(m->pipeline_defines.c_str());
+					n_material.append_attribute("dir").set_value(m->dir.string().c_str());
+					auto n_textures = n_material.append_child("textures");
+					for (auto& t : m->textures)
+						n_textures.append_child("texture").append_attribute("path").set_value(t.string().c_str());
+				}
 
+				auto n_meshes = doc_root.append_child("meshes");
+				for (auto& m : meshes)
+				{
+					auto n_mesh = n_meshes.append_child("mesh");
+					n_mesh.append_attribute("name").set_value(m->name.c_str());
+					n_mesh.append_attribute("material_index").set_value(m->material_index);
+					n_mesh.append_child("positions").append_attribute("data").set_value(base64_encode(std::string((char*)m->positions.data(), m->positions.size() * sizeof(Vec3f))).c_str());
+					if (!m->uvs.empty())
+						n_mesh.append_child("uvs").append_attribute("data").set_value(base64_encode(std::string((char*)m->uvs.data(), m->uvs.size() * sizeof(Vec2f))).c_str());
+					if (!m->normals.empty())
+						n_mesh.append_child("normals").append_attribute("data").set_value(base64_encode(std::string((char*)m->normals.data(), m->normals.size() * sizeof(Vec3f))).c_str());
+				}
+
+				std::function<void(NodePrivate* src, pugi::xml_node dst)> save_node;
+				save_node = [&](NodePrivate* src, pugi::xml_node dst) {
+					dst.append_attribute("name").set_value(src->name.c_str());
+					dst.append_attribute("pos").set_value(to_string(src->pos).c_str());
+					dst.append_attribute("quat").set_value(to_string(src->quat).c_str());
+					dst.append_attribute("scale").set_value(to_string(src->scale).c_str());
+					dst.append_attribute("mesh_index").set_value(src->mesh_index);
+					for (auto& c : src->children)
+					{
+						auto n = dst.append_child("node");
+						save_node(c.get(), n);
+					}
+				};
+
+				save_node(root.get(), doc_root.append_child("node"));
+
+				auto n_animations = doc_root.append_child("animations");
+				for (auto& a : animations)
+				{
+					auto n_animation = n_animations.append_child("animation");
+					n_animation.append_attribute("name").set_value(a->name.c_str());
+					auto n_channels = n_animation.append_child("channels");
+					for (auto& c : a->channels) 
+					{
+						auto n_channel = n_channels.append_child("channel");
+						n_channel.append_attribute("node_name").set_value(c->node_name.c_str());
+						n_channel.append_child("position_keys").append_attribute("data").set_value(base64_encode(std::string((char*)c->position_keys.data(), c->position_keys.size() * sizeof(PositionKey))).c_str());
+						n_channel.append_child("rotation_keys").append_attribute("data").set_value(base64_encode(std::string((char*)c->rotation_keys.data(), c->rotation_keys.size() * sizeof(RotationKey))).c_str());
+					}
+				}
+
+				doc.save_file(filename.c_str());
+			}
+		}
+
+		void ModelPrivate::generate_prefab(const std::filesystem::path& filename) const
+		{
 			pugi::xml_document prefab;
 
 			auto model_name = filename.filename().string();
@@ -417,7 +486,7 @@ namespace flame
 
 			auto extension = filename.extension();
 
-			if (extension == L".fmod")
+			if (extension == L".fb")
 			{
 				ret = new ModelPrivate();
 				ret->filename = filename;
@@ -444,6 +513,13 @@ namespace flame
 						read_s(file, str);
 						m->textures[i] = str;
 					}
+
+					{
+						std::string str;
+						read_s(file, str);
+						m->pipeline_file = str;
+					}
+					read_s(file, m->pipeline_defines);
 				}
 
 				ret->meshes.resize(read_u(file));
@@ -527,6 +603,112 @@ namespace flame
 
 				file.close();
 			}
+			else if (extension == L".fm")
+			{
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
+				{
+					printf("model does not exist: %s\n", filename.string().c_str());
+					return nullptr;
+				}
+
+				ret = new ModelPrivate();
+				ret->filename = filename;
+
+				for (auto n_material : doc_root.child("materials"))
+				{
+					auto m = new MaterialPrivate;
+					m->name = n_material.attribute("name").value();
+					m->color = sto<Vec3f>(n_material.attribute("color").value());
+					m->metallic = sto<float>(n_material.attribute("metallic").value());
+					m->roughness = sto<float>(n_material.attribute("roughness").value());
+					m->alpha_test = sto<float>(n_material.attribute("alpha_test").value());
+					m->pipeline_file = n_material.attribute("pipeline_file").value();
+					m->pipeline_defines = n_material.attribute("pipeline_defines").value();
+					m->dir = n_material.attribute("dir").value();
+					auto itex = 0;
+					for (auto n_texture : n_material.child("textures"))
+					{
+						m->textures[itex] = n_texture.attribute("path").value();
+						itex++;
+					}
+					ret->materials.emplace_back(m);
+				}
+
+				for (auto& n_mesh : doc_root.child("meshes"))
+				{
+					auto m = new MeshPrivate;
+					m->name = n_mesh.attribute("name").value();
+					m->material_index = n_mesh.attribute("material_index").as_uint();
+					{
+						auto str = base64_decode(n_mesh.child("positions").attribute("data").value());
+						m->positions.resize(str.length() / sizeof(Vec3f));
+						memcpy(m->positions.data(), str.data(), str.size());
+					}
+					{
+						auto n = n_mesh.child("uvs");
+						if (n)
+						{
+							auto str = base64_decode(n.attribute("data").value());
+							m->uvs.resize(str.length() / sizeof(Vec2f));
+							memcpy(m->uvs.data(), str.data(), str.size());
+						}
+					}
+					{
+						auto n = n_mesh.child("normals");
+						if (n)
+						{
+							auto str = base64_decode(n.attribute("data").value());
+							m->normals.resize(str.length() / sizeof(Vec3f));
+							memcpy(m->normals.data(), str.data(), str.size());
+						}
+					}
+					ret->meshes.emplace_back(m);
+				}
+
+				std::function<void(pugi::xml_node src, NodePrivate* dst)> load_node;
+				load_node = [&](pugi::xml_node src, NodePrivate* dst) {
+					dst->name = src.attribute("name").value();
+					dst->pos = sto<Vec3f>(src.attribute("pos").value());
+					dst->quat = sto<Vec4f>(src.attribute("quat").value());
+					dst->scale = sto<Vec3f>(src.attribute("scale").value());
+					dst->mesh_index = src.attribute("scale").as_int();
+					for (auto c : src.children())
+					{
+						auto n = new NodePrivate;
+						load_node(c, n);
+						dst->children.emplace_back(n);
+					}
+				};
+
+				load_node(doc_root.child("node"), ret->root.get());
+
+				for (auto n_animation : doc_root.child("animations"))
+				{
+					auto a = new AnimationPrivate;
+					a->name = n_animation.attribute("name").value();
+					for (auto n_channel : n_animation.child("channels"))
+					{
+						auto c = new ChannelPrivate;
+						c->node_name = n_channel.attribute("node_name").value();
+						{
+							auto str = base64_decode(n_channel.child("position_keys").attribute("data").value());
+							c->position_keys.resize(str.size() / sizeof(PositionKey));
+							memcpy(c->position_keys.data(), str.data(), str.size());
+						}
+						{
+							auto str = base64_decode(n_channel.child("rotation_keys").attribute("data").value());
+							c->rotation_keys.resize(str.size() / sizeof(RotationKey));
+							memcpy(c->rotation_keys.data(), str.data(), str.size());
+						}
+						a->channels.emplace_back(c);
+					}
+					ret->animations.emplace_back(a);
+				}
+
+				return ret;
+			}
 			else
 			{
 #ifdef USE_ASSIMP
@@ -569,6 +751,7 @@ namespace flame
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
 						dst->textures[0] = filename;
+						dst->pipeline_defines += "COLOR_MAP ";
 					}
 
 					name.Clear();
@@ -579,6 +762,7 @@ namespace flame
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
 						dst->textures[1] = filename;
+						dst->pipeline_defines += "ALPHA_MAP ";
 					}
 				}
 

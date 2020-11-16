@@ -17,10 +17,11 @@ namespace flame
 			float roughness = 0.5f;
 			float alpha_test = 0.f;
 
+			std::filesystem::path pipeline_file = "standard.mat";
+			std::string pipeline_defines;
+
 			std::filesystem::path dir;
 			std::filesystem::path textures[4];
-
-			std::filesystem::path pipeline = "standard.mat";
 		};
 
 		struct BonePrivate : Bone
@@ -129,6 +130,7 @@ namespace flame
 			int find_animation(const char* name) const override;
 
 			void save(const wchar_t* filename) const override;
+			void generate_prefab(const wchar_t* filename) const override;
 		};
 
 		struct ModelPrivate : ModelBridge
@@ -155,6 +157,7 @@ namespace flame
 			int find_animation(const std::string& name) const;
 
 			void save(const std::filesystem::path& filename) const;
+			void generate_prefab(const std::filesystem::path& filename) const;
 
 			static ModelPrivate* create(const std::filesystem::path& filename);
 		};
@@ -172,6 +175,11 @@ namespace flame
 		inline void ModelBridge::save(const wchar_t* filename) const
 		{
 			return ((ModelPrivate*)this)->save(filename);
+		}
+
+		inline void ModelBridge::generate_prefab(const wchar_t* filename) const
+		{
+			return ((ModelPrivate*)this)->generate_prefab(filename);
 		}
 	}
 }

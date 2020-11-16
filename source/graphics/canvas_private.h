@@ -22,6 +22,8 @@ namespace flame
 			MaterialForMesh,
 			MaterialForMeshArmature,
 			MaterialForTerrain,
+			MaterialForDepth,
+			MaterialForDepthArmature,
 
 			MaterialUsageCount
 		};
@@ -42,12 +44,11 @@ namespace flame
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
 			std::vector<std::pair<uint, std::unique_ptr<ShaderPrivate>>> shaders;
-			std::vector<std::tuple<std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
-			std::unique_ptr<PipelinePrivate> wireframe_pipelines[MaterialUsageCount];
+			std::vector<std::tuple<std::filesystem::path, std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
+			std::unique_ptr<PipelinePrivate> mesh_wireframe_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_armature_wireframe_pipeline;
+			std::unique_ptr<PipelinePrivate> terrain_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> element_pipeline;
-			std::unique_ptr<PipelinePrivate> terrain_pipeline;
-			std::unique_ptr<PipelinePrivate> depth_pipeline;
-			std::unique_ptr<PipelinePrivate> depth_armature_pipeline;
 			std::unique_ptr<PipelinePrivate> line3_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
 			std::unique_ptr<PipelinePrivate> blurv_pipeline[10];
@@ -64,8 +65,8 @@ namespace flame
 
 			ShaderPrivate* get_shader(const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
 			void release_shader(ShaderPrivate* s);
-			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::string& name);
-			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::string& name);
+			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
+			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);
 
 			void set_shading(ShadingType type) override;
@@ -345,7 +346,7 @@ namespace flame
 				ShaderGeometryBuffer<MeshVertex> vertex_buffer;
 				ShaderGeometryBuffer<MeshWeight> weight_buffer;
 				ShaderGeometryBuffer<uint> index_buffer;
-				uint material_index;
+				uint material_id;
 			};
 
 			std::string name;
@@ -403,7 +404,8 @@ namespace flame
 		struct CmdDrawTerrain : Cmd
 		{
 			uint idx;
-			uint dcs;
+			uint drawcall_count;
+			uint material_id;
 
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
 		};

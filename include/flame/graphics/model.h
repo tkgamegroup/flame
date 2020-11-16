@@ -8,11 +8,7 @@ namespace flame
 	{
 		struct Material
 		{
-			//virtual const char* get_name() const = 0;
-
-			//virtual int get_bound_index() const = 0;
-
-			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path);
+			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path, const char* defines);
 		};
 
 		struct Bone
@@ -82,10 +78,6 @@ namespace flame
 
 		struct Model
 		{
-			//virtual uint get_materials_count() const = 0;
-			//virtual Material* get_material(uint idx) const = 0;
-			//virtual int find_material(const char* name) const = 0;
-
 			virtual uint get_meshes_count() const = 0;
 			virtual Mesh* get_mesh(uint idx) const = 0;
 			virtual int find_mesh(const char* name) const = 0;
@@ -97,6 +89,7 @@ namespace flame
 			virtual int find_animation(const char* name) const = 0;
 
 			virtual void save(const wchar_t* filename) const = 0;
+			virtual void generate_prefab(const wchar_t* filename) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Model* get_standard(const char* name);
 			FLAME_GRAPHICS_EXPORTS static Model* create(const wchar_t* filename);

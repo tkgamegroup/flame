@@ -134,45 +134,9 @@ namespace flame
 				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
 			}
 
-			for (auto i = 0; i < MaterialUsageCount; i++)
-				wireframe_pipelines[i].reset(create_material_pipeline((MaterialUsage)i, "WIREFRAME"));
-
-			//make_terrain_pipelines();
-
-			{
-				auto depth_pll = PipelineLayoutPrivate::get(device, L"depth.pll");
-				ShaderPrivate* shaders[] = {
-					get_shader(L"depth.vert"),
-					get_shader(L"depth.frag")
-				};
-				VertexAttributeInfo vias1[2];
-				vias1[0].location = 0;
-				vias1[0].format = Format_R32G32B32_SFLOAT;
-				vias1[1].location = 1;
-				vias1[1].format = Format_R32G32_SFLOAT;
-				VertexBufferInfo vibs[2];
-				vibs[0].attributes_count = size(vias1);
-				vibs[0].attributes = vias1;
-				vibs[0].stride = 8 * sizeof(float);
-				VertexInfo vi;
-				vi.buffers_count = 1;
-				vi.buffers = vibs;
-				RasterInfo rst;
-				rst.cull_mode = CullModeFront;
-				DepthInfo dep;
-				depth_pipeline.reset(PipelinePrivate::create(device, shaders, depth_pll, depth_renderpass.get(), 0, &vi, &rst, &dep));
-
-				shaders[0] = get_shader(L"depth.vert", "ARMATURE");
-				VertexAttributeInfo vias2[2];
-				vias2[0].location = 2;
-				vias2[0].format = Format_R32G32B32A32_INT;
-				vias2[1].location = 3;
-				vias2[1].format = Format_R32G32B32A32_SFLOAT;
-				vibs[1].attributes_count = size(vias2);
-				vibs[1].attributes = vias2;
-				vi.buffers_count = 2;
-				depth_armature_pipeline.reset(PipelinePrivate::create(device, shaders, depth_pll, depth_renderpass.get(), 0, &vi, &rst, &dep));
-			}
+			mesh_wireframe_pipeline.reset(create_material_pipeline(MaterialForMesh, L"", "WIREFRAME"));
+			mesh_armature_wireframe_pipeline.reset(create_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME"));
+			terrain_wireframe_pipeline.reset(create_material_pipeline(MaterialForTerrain, L"", "WIREFRAME"));
 
 			{
 				ShaderPrivate* shaders[] = {
@@ -312,30 +276,40 @@ namespace flame
 			}
 		}
 
-		PipelinePrivate* RenderPreferencesPrivate::get_material_pipeline(MaterialUsage usage, const std::string& name)
+		PipelinePrivate* RenderPreferencesPrivate::get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines)
 		{
 			for (auto& p : material_pipelines[usage])
 			{
-				if (std::get<0>(p) == name)
+				if (std::get<0>(p) == mat && std::get<1>(p) == defines)
 				{
-					std::get<1>(p)++;
-					return std::get<2>(p).get();
+					std::get<2>(p)++;
+					return std::get<3>(p).get();
 				}
 			}
-			auto ret = create_material_pipeline(usage, name);
-			material_pipelines[MaterialForMesh].emplace_back(name, 1, ret);
+			auto ret = create_material_pipeline(usage, mat, defines);
+			material_pipelines[MaterialForMesh].emplace_back(mat, defines, 1, ret);
 			return ret;
 		}
 
-		PipelinePrivate* RenderPreferencesPrivate::create_material_pipeline(MaterialUsage usage, const std::string& name)
+		PipelinePrivate* RenderPreferencesPrivate::create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& _defines)
 		{
+			auto defines = _defines;
+			auto substitutes = std::string();
+			PolygonMode polygon_mode = PolygonModeFill;
+			if (defines != "WIREFRAME")
+			{
+				defines += "MAT ";
+				substitutes += "MAT_FILE \"" + mat.string() + "\"";
+			}
+			else
+				polygon_mode = PolygonModeLine;
 			switch (usage)
 			{
 			case MaterialForMesh:
 			{
 				ShaderPrivate* shaders[] = {
 					get_shader(L"mesh.vert"),
-					get_shader(L"mesh.frag", name != "WIREFRAME" ? "MAT" : "", name != "WIREFRAME" ? ("MAT_FILE \"" + name + "\"") : "")
+					get_shader(L"mesh.frag", defines, substitutes)
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -351,6 +325,7 @@ namespace flame
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
 				RasterInfo rst;
+				rst.polygon_mode = polygon_mode;
 				DepthInfo dep;
 				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
 			}
@@ -359,7 +334,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					get_shader(L"mesh.vert", "ARMATURE"),
-					get_shader(L"mesh.frag")
+					get_shader(L"mesh.frag", defines, substitutes)
 				};
 				VertexAttributeInfo vias1[3];
 				vias1[0].location = 0;
@@ -382,6 +357,7 @@ namespace flame
 				vi.buffers_count = 2;
 				vi.buffers = vibs;
 				RasterInfo rst;
+				rst.polygon_mode = polygon_mode;
 				DepthInfo dep;
 				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
 			}
@@ -392,16 +368,72 @@ namespace flame
 					get_shader(L"terrain.vert"),
 					get_shader(L"terrain.tesc"),
 					get_shader(L"terrain.tese"),
-					get_shader(L"terrain.frag", name)
+					get_shader(L"terrain.frag", defines, substitutes)
 				};
 				VertexInfo vi;
 				vi.primitive_topology = PrimitiveTopologyPatchList;
 				vi.patch_control_points = 4;
 				RasterInfo rst;
-				if (name == "WIREFRAME")
-					rst.polygon_mode = PolygonModeLine;
+				rst.polygon_mode = polygon_mode;
 				DepthInfo dep;
 				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"terrain.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+			}
+				break;
+			case MaterialForDepth:
+			{
+				defines += "DEPTH_PASS ";
+				ShaderPrivate* shaders[] = {
+					get_shader(L"depth.vert"),
+					get_shader(L"depth.frag", defines, substitutes)
+				};
+				VertexAttributeInfo vias[2];
+				vias[0].location = 0;
+				vias[0].format = Format_R32G32B32_SFLOAT;
+				vias[1].location = 1;
+				vias[1].format = Format_R32G32_SFLOAT;
+				VertexBufferInfo vib;
+				vib.attributes_count = size(vias);
+				vib.attributes = vias;
+				vib.stride = 8 * sizeof(float);
+				VertexInfo vi;
+				vi.buffers_count = 1;
+				vi.buffers = &vib;
+				RasterInfo rst;
+				rst.cull_mode = CullModeFront;
+				DepthInfo dep;
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
+			}
+				break;
+			case MaterialForDepthArmature:
+			{
+				defines += "DEPTH_PASS ";
+				ShaderPrivate* shaders[] = {
+					get_shader(L"depth.vert", "ARMATURE"),
+					get_shader(L"depth.frag", defines, substitutes)
+				};
+				VertexAttributeInfo vias1[2];
+				vias1[0].location = 0;
+				vias1[0].format = Format_R32G32B32_SFLOAT;
+				vias1[1].location = 1;
+				vias1[1].format = Format_R32G32_SFLOAT;
+				VertexAttributeInfo vias2[2];
+				vias2[0].location = 2;
+				vias2[0].format = Format_R32G32B32A32_INT;
+				vias2[1].location = 3;
+				vias2[1].format = Format_R32G32B32A32_SFLOAT;
+				VertexBufferInfo vibs[2];
+				vibs[0].attributes_count = size(vias1);
+				vibs[0].attributes = vias1;
+				vibs[0].stride = 8 * sizeof(float);
+				vibs[1].attributes_count = size(vias2);
+				vibs[1].attributes = vias2;
+				VertexInfo vi;
+				vi.buffers_count = 2;
+				vi.buffers = vibs;
+				RasterInfo rst;
+				rst.cull_mode = CullModeFront;
+				DepthInfo dep;
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
 			}
 				break;
 			}
@@ -412,14 +444,14 @@ namespace flame
 		{
 			for (auto it = material_pipelines[usage].begin(); it != material_pipelines[usage].end(); it++)
 			{
-				if (std::get<2>(*it).get() == p)
+				if (std::get<3>(*it).get() == p)
 				{
 					for (auto s : p->shaders)
 						release_shader(s);
-					if (std::get<1>(*it) == 1)
+					if (std::get<2>(*it) == 1)
 						material_pipelines[usage].erase(it);
 					else
-						std::get<1>(*it)--;
+						std::get<2>(*it)--;
 					break;
 				}
 			}
@@ -881,7 +913,7 @@ namespace flame
 					material_resources[slot].reset(mr);
 
 					for (auto i = 0; i < MaterialUsageCount; i++)
-						mr->pipelines[i] = preferences->get_material_pipeline((MaterialUsage)i, mat->pipeline.string());
+						mr->pipelines[i] = preferences->get_material_pipeline((MaterialUsage)i, mat->pipeline, "");
 
 					auto dst = material_info_buffer.mark_item(slot);
 
@@ -1048,7 +1080,7 @@ namespace flame
 						mrm->index_buffer.push(ms->indices.size(), ms->indices.data());
 						mrm->index_buffer.upload(cb);
 
-						mrm->material_index = mr->materials[ms->material_index];
+						mrm->material_id = mr->materials[ms->material_index];
 
 						mr->meshes[i].reset(mrm);
 					}
@@ -1650,7 +1682,8 @@ namespace flame
 		{
 			auto cmd = new CmdDrawTerrain;
 			cmd->idx = terrains_count;
-			cmd->dcs = blocks.mul();
+			cmd->drawcall_count = blocks.mul();
+			cmd->material_id = material_id;
 			cmds.emplace_back(cmd);
 
 			auto dst = terrain_info_buffer.mark_item(terrains_count);
@@ -2024,16 +2057,17 @@ namespace flame
 											if (std::get<2>(m))
 											{
 												auto mrm = std::get<1>(m);
+												auto mat = material_resources[mrm->material_id].get();
 												cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 												if (std::get<3>(m))
 												{
-													cb->bind_pipeline(preferences->depth_armature_pipeline.get());
+													cb->bind_pipeline(mat->pipelines[MaterialForDepthArmature]);
 													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 													cb->bind_descriptor_set(PipelineGraphics, std::get<3>(m)->descriptorset.get(), 2, nullptr);
 												}
 												else
-													cb->bind_pipeline(preferences->depth_pipeline.get());
+													cb->bind_pipeline(mat->pipelines[MaterialForDepth]);
 												if (first)
 												{
 													cb->bind_descriptor_set(PipelineGraphics, mesh_descriptorset.get(), 0, nullptr);
@@ -2050,7 +2084,7 @@ namespace flame
 													cb->push_constant(0, sizeof(pc), &pc, nullptr);
 													first = false;
 												}
-												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
+												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_id);
 											}
 										}
 									}
@@ -2098,16 +2132,17 @@ namespace flame
 											if (std::get<2>(m))
 											{
 												auto mrm = std::get<1>(m);
+												auto mat = material_resources[mrm->material_id].get();
 												cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 												if (std::get<3>(m))
 												{
-													cb->bind_pipeline(preferences->depth_armature_pipeline.get());
+													cb->bind_pipeline(mat->pipelines[MaterialForDepthArmature]);
 													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 													cb->bind_descriptor_set(PipelineGraphics, std::get<3>(m)->descriptorset.get(), 2, nullptr);
 												}
 												else
-													cb->bind_pipeline(preferences->depth_pipeline.get());
+													cb->bind_pipeline(mat->pipelines[MaterialForDepth]);
 												if (first)
 												{
 													cb->bind_descriptor_set(PipelineGraphics, mesh_descriptorset.get(), 0, nullptr);
@@ -2152,7 +2187,7 @@ namespace flame
 													cb->push_constant(0, sizeof(pc), &pc, nullptr);
 													first = false;
 												}
-												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
+												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_id);
 											}
 										}
 									}
@@ -2205,7 +2240,7 @@ namespace flame
 							for (auto& m : c->meshes)
 							{
 								auto mrm = std::get<1>(m);
-								auto mat = material_resources[mrm->material_index].get();
+								auto mat = material_resources[mrm->material_id].get();
 								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 								if (std::get<3>(m))
@@ -2224,19 +2259,20 @@ namespace flame
 									cb->bind_descriptor_set(PipelineGraphics, light_descriptorset.get(), 3, nullptr);
 									first = false;
 								}
-								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_index);
+								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_id);
 							}
 						}
 							break;
 						case Cmd::DrawTerrain:
 						{
 							auto c = (CmdDrawTerrain*)cmd.get();
-							cb->bind_pipeline(preferences->terrain_pipeline.get());
+							auto mat = material_resources[c->material_id].get();
+							cb->bind_pipeline(mat->pipelines[MaterialForTerrain]);
 							cb->bind_descriptor_set(PipelineGraphics, render_data_descriptorset.get(), 0, nullptr);
 							cb->bind_descriptor_set(PipelineGraphics, material_descriptorset.get(), 1, nullptr);
 							cb->bind_descriptor_set(PipelineGraphics, light_descriptorset.get(), 2, nullptr);
 							cb->bind_descriptor_set(PipelineGraphics, terrain_descriptorset.get(), 3, nullptr);
-							cb->draw(4, c->dcs, 0, c->idx << 16);
+							cb->draw(4, c->drawcall_count, 0, c->idx << 16);
 						}
 							break;
 						case Cmd::SetScissor:
