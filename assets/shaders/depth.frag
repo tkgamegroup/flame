@@ -7,13 +7,10 @@ layout (location = 0) out float o_depth;
 
 void main()
 {
+#ifdef MAT
 	MaterialInfo material = material_infos[i_mat_id];
-
-	if (material.alpha_test > 0.0)
-	{
-		if (texture(maps[material.map_indices[0]], i_uv).a < material.alpha_test)
-			discard;
-	}
+	#include MAT_FILE
+#endif
 
 	if (pc.zNear == 0.0)
 		o_depth = gl_FragCoord.z;

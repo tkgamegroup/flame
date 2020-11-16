@@ -913,7 +913,7 @@ namespace flame
 					material_resources[slot].reset(mr);
 
 					for (auto i = 0; i < MaterialUsageCount; i++)
-						mr->pipelines[i] = preferences->get_material_pipeline((MaterialUsage)i, mat->pipeline, "");
+						mr->pipelines[i] = preferences->get_material_pipeline((MaterialUsage)i, mat->pipeline_file, mat->pipeline_defines);
 
 					auto dst = material_info_buffer.mark_item(slot);
 

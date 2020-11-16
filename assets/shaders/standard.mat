@@ -1,5 +1,15 @@
 {
+	float alpha = texture(maps[material.map_indices[1]], i_uv).r;
+	if (alpha < material.alpha_test)
+		discard;
+		
+#ifndef DEPTH_PASS
+
+#ifdef COLOR_MAP
+	vec3 color = texture(maps[material.map_indices[0]], i_uv).rgb;
+#else
 	vec3 color = material.color.rgb;
+#endif
 
 	float metallic = material.metallic;
 	float roughness = material.roughness;
@@ -8,4 +18,6 @@
 	vec3 spec = mix(vec3(0.04), color, metallic);
 	
 	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, spec, roughness), 1.0);
+	
+#endif
 }
