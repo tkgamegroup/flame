@@ -15,6 +15,8 @@ namespace flame
 		{
 			lua_State* lua_state = nullptr;
 
+			void* assert_callback = nullptr;
+
 			InstancePrivate();
 			~InstancePrivate();
 

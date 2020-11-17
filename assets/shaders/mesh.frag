@@ -13,14 +13,12 @@ layout (location = 0) out vec4 o_color;
 
 void main()
 {
-	vec3 res = vec3(0.0);
-
+#ifdef MAT
 	MaterialInfo material = material_infos[i_mat_id];
 
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
 	
-#ifdef MAT
 	#include MAT_FILE
 #else
 	o_color = vec4(0.0, 1.0, 0.0, 1.0);

@@ -176,7 +176,7 @@ namespace flame
 
 			char* mark(uint64 h)
 			{
-				assert(arrsize == 0);
+				fassert(arrsize == 0);
 				auto idx = t->variables_map[h];
 				mark_piece_dirty(idx);
 				return stag + t->variables[idx].offset;
@@ -185,13 +185,13 @@ namespace flame
 			template <class T>
 			void set(uint64 h, const T& v)
 			{
-				assert(arrsize == 0);
+				fassert(arrsize == 0);
 				*(T*)mark(h) = v;
 			}
 
 			char* mark_item(uint idx)
 			{
-				assert(arrsize != 0);
+				fassert(arrsize != 0);
 				mark_piece_dirty(idx);
 				return stag + pieces[idx].beg;
 			}
@@ -199,7 +199,7 @@ namespace flame
 			template <class T>
 			void set(char* p, uint64 h, const T& v)
 			{
-				assert(arrsize != 0);
+				fassert(arrsize != 0);
 				*(T*)dst(h, p) = v;
 			}
 

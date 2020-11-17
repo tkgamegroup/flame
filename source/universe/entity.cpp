@@ -169,8 +169,8 @@ namespace flame
 
 	void EntityPrivate::add_component(Component* c)
 	{
-		assert(!c->entity);
-		assert(components.find(c->type_hash) == components.end());
+		fassert(!c->entity);
+		fassert(components.find(c->type_hash) == components.end());
 
 		ComponentAux aux;
 
@@ -297,7 +297,7 @@ namespace flame
 					}
 						break;
 					case 's':
-						assert(place_str.empty());
+						fassert(place_str.empty());
 
 						r.type = RefSystem;
 
@@ -317,7 +317,7 @@ namespace flame
 						aux.refs.push_back(r);
 						break;
 					default:
-						assert(place_str.empty());
+						fassert(place_str.empty());
 
 						r.type = RefObject;
 
@@ -449,7 +449,7 @@ namespace flame
 		auto it = components.find(c->type_hash);
 		if (it == components.end())
 		{
-			assert(0);
+			fassert(0);
 			return;
 		}
 
@@ -516,7 +516,7 @@ namespace flame
 
 	void EntityPrivate::add_child(EntityPrivate* e, int position)
 	{
-		assert(e && e != this && !e->parent);
+		fassert(e && e != this && !e->parent);
 
 		auto ok = true;
 		e->traversal([this, &ok](EntityPrivate* e) {
@@ -657,7 +657,7 @@ namespace flame
 	{
 		if (pos1 == pos2)
 			return;
-		assert(pos1 < children.size() && pos2 < children.size());
+		fassert(pos1 < children.size() && pos2 < children.size());
 
 		auto a = children[pos1].get();
 		auto b = children[pos2].get();
@@ -746,14 +746,14 @@ namespace flame
 
 	void EntityPrivate::remove_child(EntityPrivate* e, bool destroy)
 	{
-		assert(e && e != this);
+		fassert(e && e != this);
 
 		auto it = std::find_if(children.begin(), children.end(), [&](const auto& t) {
 			return t.get() == e;
 		});
 		if (it == children.end())
 		{
-			assert(0); // not found!
+			fassert(0); // not found!
 			return;
 		}
 

@@ -37,7 +37,7 @@ namespace flame
 
 	void WorldPrivate::add_system(System* s)
 	{
-		assert(!s->world);
+		fassert(!s->world);
 		s->world = this;
 		systems.emplace_back(s);
 		s->on_added();

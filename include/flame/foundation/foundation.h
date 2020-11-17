@@ -574,6 +574,20 @@ namespace flame
 	// if str is null then the output will be redirect to std output
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* str = nullptr);
 	FLAME_FOUNDATION_EXPORTS void debug_break();
+	FLAME_FOUNDATION_EXPORTS void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture);
+	FLAME_FOUNDATION_EXPORTS void remove_assert_callback(void* ret);
+	FLAME_FOUNDATION_EXPORTS void raise_assert(const char* expression, const char* file, uint line);
+
+
+#ifdef NDEBUG
+
+#define fassert(expression)
+
+#else
+
+#define fassert(expression) ((!!(expression)) || (raise_assert(#expression, __FILE__, __LINE__), 0))
+
+#endif
 
 	struct StackFrameInfo
 	{

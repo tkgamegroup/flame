@@ -32,7 +32,7 @@ namespace flame
 
 	void BitmapPrivate::add_alpha_channel()
 	{
-		assert(channel == 3 && byte_per_channel == 1);
+		fassert(channel == 3 && byte_per_channel == 1);
 		if (channel != 3 || byte_per_channel != 1)
 			return;
 
@@ -58,7 +58,7 @@ namespace flame
 
 	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
 	{
-		assert(byte_per_channel == 1 && ch1 < channel&& ch2 < channel);
+		fassert(byte_per_channel == 1 && ch1 < channel&& ch2 < channel);
 		if (byte_per_channel != 1 || ch1 >= channel || ch2 >= channel)
 			return;
 
@@ -77,7 +77,7 @@ namespace flame
 	{
 		auto b1 = border ? 1 : 0;
 		auto b2 = b1 << 1;
-		assert(byte_per_channel == 1 &&
+		fassert(byte_per_channel == 1 &&
 			channel == dst->channel &&
 			byte_per_channel == dst->byte_per_channel &&
 			src_x + w <= width && src_y + h <= height &&
@@ -118,7 +118,7 @@ namespace flame
 
 	void BitmapPrivate::srgb_to_linear()
 	{
-		assert(channel >= 3);
+		fassert(channel >= 3);
 		if (channel < 3)
 			return;
 		for (auto j = 0; j < height; j++)

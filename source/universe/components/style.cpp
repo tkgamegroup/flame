@@ -18,7 +18,7 @@ namespace flame
 		targets.clear();
 
 		auto et = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-		assert(et);
+		fassert(et);
 
 		if (!entity)
 			return;

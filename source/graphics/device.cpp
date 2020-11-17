@@ -17,7 +17,7 @@ namespace flame
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
 			printf("\n%s\n\n", pMessage);
-			assert(0);
+			fassert(0);
 
 			return VK_FALSE;
 		}

@@ -19,7 +19,7 @@ namespace flame
 	static char* (*pf_stralloc)(void* p, uint size);
 	static wchar_t* (*pf_wstralloc)(void* p, uint size);
 
-	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size), 
+	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size),
 		char* (*stralloc)(void* p, uint size), wchar_t* (*wstralloc)(void* p, uint size))
 	{
 		pf_allocate = allocate;
@@ -95,7 +95,7 @@ namespace flame
 		}
 	}
 
-	void *get_hinst()
+	void* get_hinst()
 	{
 		return GetModuleHandle(nullptr);
 	}
@@ -232,7 +232,7 @@ namespace flame
 
 		HRESULT hr;
 
-		IShellFolder* desktop_folder, *shell_folder;
+		IShellFolder* desktop_folder, * shell_folder;
 		SHGetDesktopFolder(&desktop_folder);
 
 		LPITEMIDLIST pidl;
@@ -241,7 +241,7 @@ namespace flame
 		auto pidl_child = ILFindLastID(pidl);
 
 		IThumbnailProvider* thumbnail_provider;
-		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)&pidl_child, IID_IThumbnailProvider, NULL, (void**)& thumbnail_provider);
+		hr = shell_folder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST*)&pidl_child, IID_IThumbnailProvider, NULL, (void**)&thumbnail_provider);
 		HBITMAP hbmp;
 		WTS_ALPHATYPE alpha_type;
 		if (SUCCEEDED(thumbnail_provider->GetThumbnail(width, &hbmp, &alpha_type)))
@@ -680,7 +680,7 @@ namespace flame
 		return l;
 	}
 
-	void remove_global_key_listener(void *handle)
+	void remove_global_key_listener(void* handle)
 	{
 		for (auto it = global_key_listeners.begin(); it != global_key_listeners.end(); it++)
 		{
@@ -755,9 +755,9 @@ namespace flame
 			saAttr.bInheritHandle = TRUE;
 			saAttr.lpSecurityDescriptor = NULL;
 			ok = CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0);
-			assert(ok);
+			fassert(ok);
 			ok = SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0);
-			assert(ok);
+			fassert(ok);
 		}
 		else
 			hChildStd_OUT_Wr = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -771,7 +771,7 @@ namespace flame
 		if (!CreateProcessW(filename, parameters, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info))
 		{
 			auto e = GetLastError();
-			assert(0);
+			fassert(0);
 		}
 
 		WaitForSingleObject(proc_info.hProcess, INFINITE);
@@ -792,6 +792,37 @@ namespace flame
 	{
 #ifdef _DEBUG
 		DebugBreak();
+#endif
+	}
+
+#ifdef _DEBUG
+	static std::vector<std::unique_ptr<Closure<void(Capture&)>>> assert_callbacks;
+#endif
+
+	void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture)
+	{
+#ifdef _DEBUG
+		auto c = new Closure(callback, capture);
+		assert_callbacks.emplace_back(c);
+		return c;
+#endif
+	}
+
+	void remove_assert_callback(void* ret)
+	{
+#ifdef _DEBUG
+		std::erase_if(assert_callbacks, [&](const auto& i) {
+			return i == (decltype(i))ret;
+		});
+#endif
+	}
+
+	void raise_assert(const char* expression, const char* file, uint line)
+	{
+#ifdef _DEBUG
+		for (auto& c : assert_callbacks)
+			c->call();
+		_wassert(s2w(expression).c_str(), s2w(file).c_str(), line);
 #endif
 	}
 
@@ -835,7 +866,7 @@ namespace flame
 	void do_file_watch(void* event_end, bool all_changes, const std::wstring& path, void (*callback)(Capture& c, FileChangeType type, const wchar_t* filename), Capture& capture)
 	{
 		auto dir_handle = CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE | FILE_LIST_DIRECTORY, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_BACKUP_SEMANTICS, NULL);
-		assert(dir_handle != INVALID_HANDLE_VALUE);
+		fassert(dir_handle != INVALID_HANDLE_VALUE);
 
 		BYTE notify_buf[1024];
 
@@ -854,7 +885,7 @@ namespace flame
 			overlapped.hEvent = event_changed;
 
 			ok = ReadDirectoryChangesW(dir_handle, notify_buf, sizeof(notify_buf), true, flags, NULL, &overlapped, NULL);
-			assert(ok);
+			fassert(ok);
 
 			if (event_end)
 			{
@@ -871,7 +902,7 @@ namespace flame
 
 			DWORD ret_bytes;
 			ok = GetOverlappedResult(dir_handle, &overlapped, &ret_bytes, false);
-			assert(ok);
+			fassert(ok);
 
 			auto base = 0;
 			auto p = (FILE_NOTIFY_INFORMATION*)notify_buf;
@@ -1054,7 +1085,7 @@ namespace flame
 		size = _size;
 		style = _style;
 
-		assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+		fassert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
 		Vec2u final_size;
 		auto screen_size = get_screen_size();

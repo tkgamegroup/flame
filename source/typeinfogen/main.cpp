@@ -109,7 +109,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			}
 			break;
 		default:
-			assert(0);
+			fassert(0);
 		}
 	};
 
@@ -137,7 +137,7 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 			name = base_type_name(pointer_type);
 			break;
 		case SymTagPointerType:
-			assert(0);
+			fassert(0);
 			break;
 		case SymTagUDT:
 			pointer_type->get_name(&pwname);
@@ -229,7 +229,7 @@ int main(int argc, char **args)
 	if (FAILED(CoInitialize(NULL)))
 	{
 		printf("com initial failed\n");
-		assert(0);
+		fassert(0);
 		return 0;
 	}
 
@@ -237,27 +237,27 @@ int main(int argc, char **args)
 	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
 	{
 		printf("dia not found\n");
-		assert(0);
+		fassert(0);
 		return 0;
 	}
 	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
 	{
 		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
-		assert(0);
+		fassert(0);
 		return 0;
 	}
 	CComPtr<IDiaSession> session;
 	if (FAILED(dia_source->openSession(&session)))
 	{
 		printf("session failed to open\n");
-		assert(0);
+		fassert(0);
 		return 0;
 	}
 	CComPtr<IDiaSymbol> global;
 	if (FAILED(session->get_globalScope(&global)))
 	{
 		printf("failed to get global\n");
-		assert(0);
+		fassert(0);
 		return 0;
 	}
 

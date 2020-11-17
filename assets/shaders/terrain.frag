@@ -12,16 +12,15 @@ layout(location = 0) out vec4 o_color;
 
 void main()
 {
+#ifdef MAT
+	TerrainInfo terrain = terrain_infos[i_idx];
+	MaterialInfo material = material_infos[terrain.material_id];
+	
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
 
-	TerrainInfo terrain = terrain_infos[i_idx];
-
-	vec3 albedo = texture(maps[terrain.color_tex_id], i_uv).rgb;
-	
-#ifdef WIREFRAME
-	o_color = vec4(0.0, 1.0, 0.0, 1.0);
+	#include MAT_FILE
 #else
-	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, vec3(0.0), 1.0), 1.0);
+	o_color = vec4(0.0, 1.0, 0.0, 1.0);
 #endif
 }

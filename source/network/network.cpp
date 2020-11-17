@@ -1,8 +1,8 @@
 #include <flame/serialize.h>
+#include <flame/foundation/foundation.h>
 #include "network_private.h"
 
 #include <winsock2.h>
-#include <assert.h>
 
 namespace flame
 {
@@ -65,7 +65,7 @@ namespace flame
 							"Data: %s\r\n"
 							"\r\n", key.c_str(), time_str);
 						auto res = send(fd, reply, strlen(reply), 0);
-						assert(res > 0);
+						fassert(res > 0);
 					}
 				}
 
@@ -294,7 +294,7 @@ namespace flame
 			int res;
 
 			auto fd = socket(AF_INET, SOCK_STREAM, 0);
-			assert(fd != INVALID_SOCKET);
+			fassert(fd != INVALID_SOCKET);
 			sockaddr_in address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = inet_addr(ip);
@@ -411,24 +411,24 @@ namespace flame
 			sockaddr_in address;
 
 			auto fd_d = socket(AF_INET, SOCK_DGRAM, 0);
-			assert(fd_d != INVALID_SOCKET);
+			fassert(fd_d != INVALID_SOCKET);
 			address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = INADDR_ANY;
 			address.sin_port = htons(port);
 			res = bind(fd_d, (sockaddr*)&address, sizeof(address));
-			assert(res == 0);
+			fassert(res == 0);
 
 			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-			assert(fd_s != INVALID_SOCKET);
+			fassert(fd_s != INVALID_SOCKET);
 			address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = INADDR_ANY;
 			address.sin_port = htons(port);
 			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-			assert(res == 0);
+			fassert(res == 0);
 			res = listen(fd_s, 1);
-			assert(res == 0);
+			fassert(res == 0);
 
 			auto s = new ServerPrivate;
 			s->type = type;
@@ -539,15 +539,15 @@ namespace flame
 			int res;
 
 			auto fd_s = socket(AF_INET, SOCK_STREAM, 0);
-			assert(fd_s != INVALID_SOCKET);
+			fassert(fd_s != INVALID_SOCKET);
 			sockaddr_in address = {};
 			address.sin_family = AF_INET;
 			address.sin_addr.S_un.S_addr = INADDR_ANY;
 			address.sin_port = htons(port);
 			res = bind(fd_s, (sockaddr*)&address, sizeof(address));
-			assert(res == 0);
+			fassert(res == 0);
 			res = listen(fd_s, client_count);
-			assert(res == 0);
+			fassert(res == 0);
 
 			std::vector<int> fd_cs;
 			while (fd_cs.size() < client_count)
@@ -649,7 +649,7 @@ namespace flame
 			int res;
 
 			auto fd = socket(AF_INET, SOCK_DGRAM, 0);
-			assert(fd != INVALID_SOCKET);
+			fassert(fd != INVALID_SOCKET);
 			auto attr = 1;
 			setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*)&attr, sizeof(attr));
 			sockaddr_in address;

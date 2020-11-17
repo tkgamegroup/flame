@@ -13,7 +13,7 @@ struct TerrainInfo
 
 	uint height_tex_id;
 	uint normal_tex_id;
-	uint color_tex_id;
+	uint material_id;
 };
 
 layout(set = TERRAIN_SET, binding = 0) buffer readonly TerrainInfos

@@ -161,9 +161,9 @@ namespace flame
 
 				//auto gli_texture = gli::load(filename);
 				//if (gli_texture.empty())
-				//	assert(0);
+				//	fassert(0);
 
-				//assert(gli_texture.target() == gli::TARGET_2D);
+				//fassert(gli_texture.target() == gli::TARGET_2D);
 				//auto const gli_format = GL.translate(gli_texture.format(), gli_texture.swizzles());
 
 				//width = gli_texture.extent().x();

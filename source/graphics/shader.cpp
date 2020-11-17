@@ -271,11 +271,11 @@ namespace flame
 							dst->name = "Vec4i";
 							break;
 						default:
-							assert(0);
+							fassert(0);
 						}
 						break;
 					default:
-						assert(0);
+						fassert(0);
 					}
 					break;
 				case spirv_cross::SPIRType::UInt:
@@ -301,11 +301,11 @@ namespace flame
 							dst->name = "Vec4u";
 							break;
 						default:
-							assert(0);
+							fassert(0);
 						}
 						break;
 					default:
-						assert(0);
+						fassert(0);
 					}
 					break;
 				case spirv_cross::SPIRType::Float:
@@ -331,7 +331,7 @@ namespace flame
 							dst->name = "Vec4f";
 							break;
 						default:
-							assert(0);
+							fassert(0);
 						}
 						break;
 					case 2:
@@ -342,7 +342,7 @@ namespace flame
 							dst->name = "Mat2f";
 							break;
 						default:
-							assert(0);
+							fassert(0);
 						}
 						break;
 					case 3:
@@ -353,7 +353,7 @@ namespace flame
 							dst->name = "Mat3f";
 							break;
 						default:
-							assert(0);
+							fassert(0);
 						}
 						break;
 					case 4:
@@ -364,11 +364,11 @@ namespace flame
 							dst->name = "Mat4f";
 							break;
 						default:
-							assert(0);
+							fassert(0);
 						}
 						break;
 					default:
-						assert(0);
+						fassert(0);
 					}
 					break;
 				}
@@ -440,7 +440,7 @@ namespace flame
 					if (!std::filesystem::exists(L"a.spv"))
 					{
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						assert(0);
+						fassert(0);
 						return nullptr;
 					}
 
@@ -505,7 +505,7 @@ namespace flame
 				else
 				{
 					printf("cannot find vk sdk\n");
-					assert(0);
+					fassert(0);
 					return nullptr;
 				}
 			}
@@ -516,7 +516,7 @@ namespace flame
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 				{
 					printf("res file does not exist\n");
-					assert(0);
+					fassert(0);
 					return nullptr;
 				}
 
@@ -777,7 +777,7 @@ namespace flame
 					if (!std::filesystem::exists(L"a.spv"))
 					{
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						assert(0);
+						fassert(0);
 						return nullptr;
 					}
 
@@ -801,7 +801,7 @@ namespace flame
 				else
 				{
 					printf("cannot find vk sdk\n");
-					assert(0);
+					fassert(0);
 					return nullptr;
 				}
 
@@ -822,7 +822,7 @@ namespace flame
 				if (!res.load_file(res_path.c_str()) || (root = res.first_child()).name() != std::string("res"))
 				{
 					printf("res file does not exist\n");
-					assert(0);
+					fassert(0);
 					return nullptr;
 				}
 
@@ -891,7 +891,7 @@ namespace flame
 					std::vector<std::pair<std::string, std::string>> replace_pairs;
 					{
 						auto sp = SUS::split(substitutes);
-						assert(sp.size() % 2 == 0);
+						fassert(sp.size() % 2 == 0);
 						for (auto i = 0; i < sp.size(); i += 2)
 							replace_pairs.emplace_back(sp[i], sp[i + 1]);
 					}
@@ -933,7 +933,7 @@ namespace flame
 					if (!std::filesystem::exists(spv_path))
 					{
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
-						assert(0);
+						fassert(0);
 						return nullptr;
 					}
 
@@ -947,7 +947,7 @@ namespace flame
 					//	if (output.find("ALIGNMENT DISMATCH") != std::string::npos)
 					//	{
 					//		printf("%s\n", output.c_str());
-					//		assert(0);
+					//		fassert(0);
 					//		return nullptr;
 					//	}
 					//}
@@ -955,7 +955,7 @@ namespace flame
 				else
 				{
 					printf("cannot find vk sdk\n");
-					assert(0);
+					fassert(0);
 					return nullptr;
 				}
 			}
@@ -963,7 +963,7 @@ namespace flame
 			auto spv_file = get_file_content(spv_path);
 			if (spv_file.empty())
 			{
-				assert(0);
+				fassert(0);
 				return nullptr;
 			}
 

@@ -251,7 +251,7 @@ namespace flame
 			lua_setglobal(lua_state, "flame_hash");
 
 			if (!excute(L"setup.lua"))
-				assert(0);
+				fassert(0);
 
 			lua_newtable(lua_state);
 			lua_setglobal(lua_state, "udts");
@@ -299,12 +299,20 @@ namespace flame
 				lua_settable(state, -3);
 				lua_pop(state, 1);
 			}, Capture().set_thiz(this));
+
+			assert_callback = add_assert_callback([](Capture& c) {
+				auto state = c.thiz<InstancePrivate>()->lua_state;
+				luaL_traceback(state, state, nullptr, 1);
+				printf("========\nLUA:\n%s\n========\n", lua_tostring(state, -1));
+			}, Capture().set_thiz(this));
 		}
 
 		InstancePrivate::~InstancePrivate()
 		{
 			if (default_instance == this)
 				default_instance = nullptr;
+
+			remove_assert_callback(assert_callback);
 		}
 
 		bool InstancePrivate::check_result(int res)

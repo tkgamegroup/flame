@@ -463,7 +463,7 @@ void cResourceExplorer::draw(graphics::Canvas* canvas)
 		while (!std::filesystem::exists(curr_path))
 		{
 			curr_path = curr_path.parent_path();
-			assert(curr_path != base_path);
+			fassert(curr_path != base_path);
 		}
 
 		navigate(curr_path);

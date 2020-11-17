@@ -75,7 +75,7 @@ namespace flame
 
 				VkBool32 surface_supported;
 				vkGetPhysicalDeviceSurfaceSupportKHR(device->vk_physical_device, 0, vk_surface, &surface_supported);
-				assert(surface_supported);
+				fassert(surface_supported);
 
 				unsigned int present_mode_count = 0;
 				std::vector<VkPresentModeKHR> present_modes;
@@ -96,7 +96,7 @@ namespace flame
 				unsigned int surface_format_count = 0;
 				std::vector<VkSurfaceFormatKHR> surface_formats;
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device, vk_surface, &surface_format_count, nullptr);
-				assert(surface_format_count > 0);
+				fassert(surface_format_count > 0);
 				surface_formats.resize(surface_format_count);
 				vkGetPhysicalDeviceSurfaceFormatsKHR(device->vk_physical_device, vk_surface, &surface_format_count, surface_formats.data());
 

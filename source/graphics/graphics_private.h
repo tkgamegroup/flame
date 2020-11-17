@@ -1,8 +1,7 @@
 #pragma once
 
+#include <flame/foundation/foundation.h>
 #include <flame/graphics/graphics.h>
-
-#include <assert.h>
 
 #define NOMINMAX
 #include <vulkan/vulkan.h>
@@ -14,7 +13,7 @@ namespace flame
 	{
 		inline void chk_res(VkResult res)
 		{
-			assert(res == VK_SUCCESS || res == VK_ERROR_OUT_OF_DATE_KHR);
+			fassert(res == VK_SUCCESS || res == VK_ERROR_OUT_OF_DATE_KHR);
 		}
 
 		template <class T>
@@ -64,7 +63,7 @@ namespace flame
 					return VK_FORMAT_D24_UNORM_S8_UINT;
 
 				default:
-					assert(0);
+					fassert(0);
 			}
 		}
 
@@ -77,7 +76,7 @@ namespace flame
 				case VK_FORMAT_B8G8R8A8_SRGB:
 					return Format_B8G8R8A8_SRGB;
 				default:
-					assert(0);
+					fassert(0);
 			}
 		}
 
@@ -102,7 +101,7 @@ namespace flame
 			//case FLAME_CHASH("Vec(4+float)"):
 			//	return"vec4";
 			//default:
-			//	assert(0);
+			//	fassert(0);
 			//}
 			return "";
 		}
@@ -125,7 +124,7 @@ namespace flame
 			case Format_R32G32B32A32_INT:
 				return 16;
 			default:
-				assert(0);
+				fassert(0);
 			}
 		}
 
@@ -144,7 +143,7 @@ namespace flame
 			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
 				return "Vec(4+float)";
 			default:
-				assert(0);
+				fassert(0);
 			}
 		}
 
@@ -163,7 +162,7 @@ namespace flame
 			case Format_R8G8B8A8_UNORM: case Format_R32G32B32A32_SFLOAT:
 				return "vec4";
 			default:
-				assert(0);
+				fassert(0);
 			}
 		}
 

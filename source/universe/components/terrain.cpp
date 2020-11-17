@@ -102,7 +102,7 @@ namespace flame
 			material_id = canvas->find_material_resource(fn.string().c_str());
 			if (material_id == -1 && isfile)
 			{
-				auto m = graphics::Material::create(fn.c_str());
+				auto m = graphics::Material::create(fn.c_str(), "");
 				material_id = canvas->set_material_resource(-1, m, fn.string().c_str());
 			}
 		}

@@ -813,7 +813,7 @@ void cInspector::refresh()
 						void* component;
 						{
 							auto f = u->find_function("create");
-							assert(f && check_function(f, "P#flame::Component", {}));
+							fassert(f && check_function(f, "P#flame::Component", {}));
 							component = cmf(a2f<MF_vp_v>((char*)library + (uint)f->rva), dummy);
 						}
 						scene_editor.selected->add_component((Component*)component);

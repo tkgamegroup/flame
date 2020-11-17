@@ -1078,7 +1078,7 @@ namespace flame
 	void* FunctionInfoPrivate::get_address(void* obj) const
 	{
 		auto address = rva ? library->address + rva : (obj ? *(void**)((*(char**)obj) + voff) : nullptr);
-		assert(address);
+		fassert(address);
 		return address;
 	}
 
@@ -1211,7 +1211,7 @@ namespace flame
 			if (!file.load_file(typeinfo_path.c_str()) || (file_root = file.first_child()).name() != std::string("typeinfo"))
 			{
 				printf("cannot find typeinfo: %s\n", typeinfo_path.string().c_str());
-				assert(0);
+				fassert(0);
 			}
 
 			for (auto n_enum : file_root.child("enums"))

@@ -924,7 +924,7 @@ void BPEditor::update_gv()
 	//if (!std::filesystem::exists(gv_filename) || std::filesystem::last_write_time(gv_filename) < std::filesystem::last_write_time(filepath))
 	//{
 	//	if (!GRAPHVIZ_PATH[0])
-	//		assert(0);
+	//		fassert(0);
 
 	//	std::string gv = "digraph bp {\nrankdir=LR\nnode [shape = Mrecord];\n";
 	//	for (auto i = 0; i < bp->node_count(); i++)
