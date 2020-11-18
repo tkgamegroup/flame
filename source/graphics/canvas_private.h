@@ -63,7 +63,7 @@ namespace flame
 
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
 
-			ShaderPrivate* get_shader(const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
+			ShaderPrivate* get_shader(const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
 			void release_shader(ShaderPrivate* s);
 			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);

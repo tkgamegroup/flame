@@ -880,7 +880,7 @@ namespace flame
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 		}
 
-		ShaderPrivate* ShaderPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename, const std::string& defines, const std::string& substitutes)
+		ShaderPrivate* ShaderPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
 		{
 			auto filename = _filename;
 			filename.make_preferred();
@@ -891,6 +891,7 @@ namespace flame
 				wprintf(L"cannot find shader: %s\n", filename.c_str());
 				return nullptr;
 			}
+			auto ppath = path.parent_path();
 
 			auto hash = std::hash<std::wstring>()(filename) ^ std::hash<std::string>()(defines) ^ std::hash<std::string>()(substitutes);
 			auto str_hash = std::to_wstring(hash);
@@ -898,7 +899,10 @@ namespace flame
 			auto spv_path = path;
 			spv_path += L"." + str_hash;
 
-			if (should_remake(get_make_dependencies(path), spv_path))
+			auto dependencies = get_make_dependencies(path);
+			for (auto& e : extra_dependencies)
+				dependencies.push_back(e.is_absolute() ? e : (ppath / e));
+			if (should_remake(dependencies, spv_path))
 			{
 				auto vk_sdk_path = getenv("VK_SDK_PATH");
 				if (vk_sdk_path)

@@ -1,7 +1,9 @@
 {
+#ifdef ALPHA_MAP
 	float alpha = texture(maps[material.map_indices[1]], i_uv).r;
 	if (alpha < material.alpha_test)
 		discard;
+#endif
 		
 #ifndef DEPTH_PASS
 

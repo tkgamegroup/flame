@@ -246,7 +246,7 @@ namespace flame
 			}
 		}
 
-		ShaderPrivate* RenderPreferencesPrivate::get_shader(const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes)
+		ShaderPrivate* RenderPreferencesPrivate::get_shader(const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
 		{
 			for (auto& s : shaders)
 			{
@@ -256,7 +256,7 @@ namespace flame
 					return s.second.get();
 				}
 			}
-			auto s = ShaderPrivate::create(device, filename, defines, substitutes);
+			auto s = ShaderPrivate::create(device, filename, defines, substitutes, extra_dependencies);
 			shaders.emplace_back(1, s);
 			return s;
 		}
@@ -296,10 +296,13 @@ namespace flame
 			auto defines = _defines;
 			auto substitutes = std::string();
 			PolygonMode polygon_mode = PolygonModeFill;
+			std::vector<std::filesystem::path> extra_dependencies;
+			std::filesystem::file_time_type lwt = {};
 			if (defines != "WIREFRAME")
 			{
 				defines += "MAT ";
 				substitutes += "MAT_FILE \"" + mat.string() + "\"";
+				extra_dependencies.push_back(mat);
 			}
 			else
 				polygon_mode = PolygonModeLine;
@@ -309,7 +312,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					get_shader(L"mesh.vert"),
-					get_shader(L"mesh.frag", defines, substitutes)
+					get_shader(L"mesh.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -334,7 +337,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					get_shader(L"mesh.vert", "ARMATURE"),
-					get_shader(L"mesh.frag", defines, substitutes)
+					get_shader(L"mesh.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias1[3];
 				vias1[0].location = 0;
@@ -368,7 +371,7 @@ namespace flame
 					get_shader(L"terrain.vert"),
 					get_shader(L"terrain.tesc"),
 					get_shader(L"terrain.tese"),
-					get_shader(L"terrain.frag", defines, substitutes)
+					get_shader(L"terrain.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexInfo vi;
 				vi.primitive_topology = PrimitiveTopologyPatchList;
@@ -384,7 +387,7 @@ namespace flame
 				defines += "DEPTH_PASS ";
 				ShaderPrivate* shaders[] = {
 					get_shader(L"depth.vert"),
-					get_shader(L"depth.frag", defines, substitutes)
+					get_shader(L"depth.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -409,7 +412,7 @@ namespace flame
 				defines += "DEPTH_PASS ";
 				ShaderPrivate* shaders[] = {
 					get_shader(L"depth.vert", "ARMATURE"),
-					get_shader(L"depth.frag", defines, substitutes)
+					get_shader(L"depth.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias1[2];
 				vias1[0].location = 0;

@@ -1297,7 +1297,7 @@ namespace flame
 		{
 			ret[i] = 0;
 			for (auto j = 0; j < M; j++)
-				ret[i] += lhs[i][j] * rhs[i];
+				ret[i] += lhs[j][i] * rhs[j];
 		}
 		return ret;
 	}

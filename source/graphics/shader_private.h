@@ -228,7 +228,7 @@ namespace flame
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 			const char* get_defines() const override { return defines.c_str(); }
 
-			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "");
+			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
 		};
 
 		struct PipelinePrivate : Pipeline
