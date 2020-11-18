@@ -19,7 +19,7 @@
         <cNode pos="0,200,5" />
         <cRigid dynamic="false" />
       </entity>
-      <entity src="D:\character\man" >
+      <entity src="D:\character\character" >
         <cNode pos="0,205,0" />
         <cController radius="0.5" height="1.8" />
         <cScript src="character_controller.lua" />

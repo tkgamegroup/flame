@@ -1047,7 +1047,7 @@ namespace flame
 							{
 								auto& b = ms->bones[j];
 								for (auto& w : b->weights)
-									weights[w.first].emplace_back(j, w.second);
+									weights[w.vid].emplace_back(j, w.w);
 							}
 							for (auto& w : weights)
 							{

@@ -26,10 +26,16 @@ namespace flame
 
 		struct BonePrivate : Bone
 		{
+			struct Weight
+			{
+				uint vid;
+				float w;
+			};
+
 			std::string name;
 
 			Mat4f offset_matrix;
-			std::vector<std::pair<uint, float>> weights;
+			std::vector<Weight> weights;
 
 			const char* get_name() const override { return name.c_str(); }
 		};

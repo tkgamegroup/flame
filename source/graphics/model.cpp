@@ -222,7 +222,6 @@ namespace flame
 
 		ModelPrivate::ModelPrivate()
 		{
-			materials.emplace_back(new MaterialPrivate);
 			root.reset(new NodePrivate);
 		}
 
@@ -273,6 +272,8 @@ namespace flame
 				{
 					write_s(file, m->name);
 					write_i(file, m->material_index);
+					write_t(file, m->lower_bound);
+					write_t(file, m->upper_bound);
 					auto n = m->positions.size();
 					write_u(file, n);
 					file.write((char*)m->positions.data(), sizeof(Vec3f) * n);
@@ -290,8 +291,6 @@ namespace flame
 						write_t(file, b->offset_matrix);
 						write_v(file, b->weights);
 					}
-					write_t(file, m->lower_bound);
-					write_t(file, m->upper_bound);
 				}
 
 				root->traverse([&](NodePrivate* n) {
@@ -346,11 +345,22 @@ namespace flame
 					auto n_mesh = n_meshes.append_child("mesh");
 					n_mesh.append_attribute("name").set_value(m->name.c_str());
 					n_mesh.append_attribute("material_index").set_value(m->material_index);
+					n_mesh.append_attribute("lower_bound").set_value(to_string(m->lower_bound).c_str());
+					n_mesh.append_attribute("upper_bound").set_value(to_string(m->upper_bound).c_str());
 					n_mesh.append_child("positions").append_attribute("data").set_value(base64_encode(std::string((char*)m->positions.data(), m->positions.size() * sizeof(Vec3f))).c_str());
 					if (!m->uvs.empty())
 						n_mesh.append_child("uvs").append_attribute("data").set_value(base64_encode(std::string((char*)m->uvs.data(), m->uvs.size() * sizeof(Vec2f))).c_str());
 					if (!m->normals.empty())
 						n_mesh.append_child("normals").append_attribute("data").set_value(base64_encode(std::string((char*)m->normals.data(), m->normals.size() * sizeof(Vec3f))).c_str());
+					n_mesh.append_child("indices").append_attribute("data").set_value(base64_encode(std::string((char*)m->indices.data(), m->indices.size() * sizeof(uint))).c_str());
+					auto n_bones = n_mesh.append_child("bones");
+					for (auto& b : m->bones)
+					{
+						auto n_bone = n_bones.append_child("bone");
+						n_bone.append_attribute("name").set_value(b->name.c_str());
+						n_bone.append_child("offset_matrix").append_attribute("data").set_value(base64_encode(std::string((char*)&b->offset_matrix, sizeof(Mat4f))).c_str());
+						n_bone.append_child("weights").append_attribute("data").set_value(base64_encode(std::string((char*)b->weights.data(), b->weights.size() * sizeof(BonePrivate::Weight))).c_str());
+					}
 				}
 
 				std::function<void(NodePrivate* src, pugi::xml_node dst)> save_node;
@@ -388,7 +398,7 @@ namespace flame
 			}
 		}
 
-		void ModelPrivate::generate_prefab(const std::filesystem::path& filename) const
+		void ModelPrivate::generate_prefab(const std::filesystem::path& _filename) const
 		{
 			pugi::xml_document prefab;
 
@@ -404,7 +414,7 @@ namespace flame
 				if (src->mesh_index != -1)
 				{
 					auto nm = n.append_child("cMesh");
-					nm.append_attribute("src").set_value((model_name + "." + meshes[src->mesh_index]->name).c_str());
+					nm.append_attribute("src").set_value((model_name + "#" + meshes[src->mesh_index]->name).c_str());
 					if (src->name.starts_with("sm_"))
 					{
 						auto nr = n.append_child("cRigid");
@@ -430,7 +440,7 @@ namespace flame
 			};
 			print_node(prefab.append_child("prefab"), root.get());
 
-			auto prefab_path = filename;
+			auto prefab_path = _filename;
 			prefab_path.replace_extension(L".prefab");
 			prefab.save_file(prefab_path.c_str());
 		}
@@ -446,6 +456,7 @@ namespace flame
 				if (!standard_cube)
 				{
 					auto m = new ModelPrivate;
+					m->materials.emplace_back(new MaterialPrivate);
 					auto mesh = new MeshPrivate;
 					mesh->name = "0";
 					mesh->add_cube(Vec3f(1.f), Vec3f(0.f), Mat3f(1.f));
@@ -461,6 +472,7 @@ namespace flame
 				if (!standard_sphere)
 				{
 					auto m = new ModelPrivate;
+					m->materials.emplace_back(new MaterialPrivate);
 					auto mesh = new MeshPrivate;
 					mesh->name = "0";
 					mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
@@ -499,21 +511,17 @@ namespace flame
 					auto m = new MaterialPrivate;
 					m->dir = filename.parent_path();
 					ret->materials[i].reset(m);
-
 					read_s(file, m->name);
-
 					read_t(file, m->color);
 					read_t(file, m->metallic);
 					read_t(file, m->roughness);
 					read_t(file, m->alpha_test);
-
 					for (auto i = 0; i < size(m->textures); i++)
 					{
 						std::string str;
 						read_s(file, str);
 						m->textures[i] = str;
 					}
-
 					{
 						std::string str;
 						read_s(file, str);
@@ -527,11 +535,10 @@ namespace flame
 				{
 					auto m = new MeshPrivate;
 					ret->meshes[i].reset(m);
-
 					read_s(file, m->name);
-
 					m->material_index = read_i(file);
-
+					read_t(file, m->lower_bound);
+					read_t(file, m->upper_bound);
 					auto n = read_u(file);
 					m->positions.resize(n);
 					file.read((char*)m->positions.data(), sizeof(Vec3f) * n);
@@ -546,7 +553,6 @@ namespace flame
 						file.read((char*)m->normals.data(), sizeof(Vec3f) * n);
 					}
 					read_v(file, m->indices);
-
 					m->bones.resize(read_u(file));
 					for (auto j = 0; j < m->bones.size(); j++)
 					{
@@ -557,21 +563,15 @@ namespace flame
 						read_t(file, b->offset_matrix);
 						read_v(file, b->weights);
 					}
-
-					read_t(file, m->lower_bound);
-					read_t(file, m->upper_bound);
 				}
 
 				std::function<void(NodePrivate*)> load_node;
 				load_node = [&](NodePrivate* n) {
 					read_s(file, n->name);
-
 					read_t(file, n->pos);
 					read_t(file, n->quat);
 					read_t(file, n->scale);
-
 					n->mesh_index = read_i(file);
-
 					n->children.resize(read_u(file));
 					for (auto i = 0; i < n->children.size(); i++)
 					{
@@ -587,9 +587,7 @@ namespace flame
 				{
 					auto a = new AnimationPrivate;
 					ret->animations[i].reset(a);
-
 					read_s(file, a->name);
-
 					a->channels.resize(read_u(file));
 					for (auto j = 0; j < a->channels.size(); j++)
 					{
@@ -641,6 +639,8 @@ namespace flame
 					auto m = new MeshPrivate;
 					m->name = n_mesh.attribute("name").value();
 					m->material_index = n_mesh.attribute("material_index").as_uint();
+					m->lower_bound = sto<Vec3f>(n_mesh.attribute("lower_bound").value());
+					m->upper_bound = sto<Vec3f>(n_mesh.attribute("upper_bound").value());
 					{
 						auto str = base64_decode(n_mesh.child("positions").attribute("data").value());
 						m->positions.resize(str.length() / sizeof(Vec3f));
@@ -663,6 +663,26 @@ namespace flame
 							m->normals.resize(str.length() / sizeof(Vec3f));
 							memcpy(m->normals.data(), str.data(), str.size());
 						}
+					}
+					{
+						auto str = base64_decode(n_mesh.child("indices").attribute("data").value());
+						m->indices.resize(str.length() / sizeof(uint));
+						memcpy(m->indices.data(), str.data(), str.size());
+					}
+					for (auto n_bone : n_mesh.child("bones"))
+					{
+						auto b = new BonePrivate;
+						b->name = n_bone.attribute("name").value();
+						{
+							auto str = base64_decode(n_bone.child("offset_matrix").attribute("data").value());
+							memcpy(&b->offset_matrix, str.data(), sizeof(Mat4f));
+						}
+						{
+							auto str = base64_decode(n_bone.child("weights").attribute("data").value());
+							b->weights.resize(str.size() / sizeof(BonePrivate::Weight));
+							memcpy(b->weights.data(), str.data(), str.size());
+						}
+						m->bones.emplace_back(b);
 					}
 					ret->meshes.emplace_back(m);
 				}
@@ -815,8 +835,8 @@ namespace flame
 						{
 							auto& src_w = src_b->mWeights[k];
 							auto& dst_w = dst_b->weights[k];
-							dst_w.first = src_w.mVertexId;
-							dst_w.second = src_w.mWeight;
+							dst_w.vid = src_w.mVertexId;
+							dst_w.w = src_w.mWeight;
 						}
 					}
 				}

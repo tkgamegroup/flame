@@ -116,8 +116,16 @@ namespace flame
 		void set_visible(bool v) override;
 
 		World* get_world() const override { return (World*)world; }
-
 		Entity* get_parent() const override { return parent; }
+
+		const std::filesystem::path get_closest_filename() const
+		{
+			if (!filename.empty())
+				return filename;
+			if (parent)
+				return parent->get_closest_filename();
+			return L"";
+		}
 
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
