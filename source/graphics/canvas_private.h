@@ -16,6 +16,7 @@ namespace flame
 		struct FramebufferPrivate;
 		struct DescriptorSetPrivate;
 		struct CommandBufferPrivate;
+		struct CanvasPrivate;
 
 		enum MaterialUsage
 		{
@@ -332,11 +333,22 @@ namespace flame
 
 		struct MaterialResourceSlot
 		{
+			CanvasPrivate* canvas;
+
 			std::string name;
 			MaterialPrivate* material;
 			std::pair<uint, std::unique_ptr<ImagePrivate>> textures[4];
 
-			PipelinePrivate* pipelines[MaterialUsageCount];
+			PipelinePrivate* pipelines[MaterialUsageCount] = {};
+
+			MaterialResourceSlot(CanvasPrivate* canvas) :
+				canvas(canvas)
+			{
+			}
+
+			~MaterialResourceSlot();
+
+			PipelinePrivate* get_pipeline(MaterialUsage u);
 		};
 
 		struct ModelResourceSlot
@@ -348,6 +360,15 @@ namespace flame
 				ShaderGeometryBuffer<uint> index_buffer;
 				uint material_id;
 			};
+
+			CanvasPrivate* canvas;
+
+			ModelResourceSlot(CanvasPrivate* canvas) :
+				canvas(canvas)
+			{
+			}
+
+			~ModelResourceSlot();
 
 			std::string name;
 			ModelPrivate* model;

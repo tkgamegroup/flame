@@ -19,7 +19,7 @@ void main()
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
 	
-	#include MAT_FILE
+	MAT_FILE
 #else
 	o_color = vec4(0.0, 1.0, 0.0, 1.0);
 #endif

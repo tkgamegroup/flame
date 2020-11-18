@@ -912,7 +912,18 @@ namespace flame
 						auto sp = SUS::split(substitutes);
 						fassert(sp.size() % 2 == 0);
 						for (auto i = 0; i < sp.size(); i += 2)
-							replace_pairs.emplace_back(sp[i], sp[i + 1]);
+						{
+							auto from = sp[i];
+							auto to = sp[i + 1];
+							if (from.ends_with("_FILE"))
+							{
+								auto fn = std::filesystem::path(to);
+								if (!fn.is_absolute())
+									fn = ppath / fn;
+								to = get_file_content(fn);
+							}
+							replace_pairs.emplace_back(from, to);
+						}
 					}
 
 					auto temp = basic_glsl_prefix();
@@ -957,19 +968,6 @@ namespace flame
 					}
 
 					printf(" done\n");
-
-					//auto shader_info_path = std::filesystem::path(getenv("FLAME_PATH"));
-					//shader_info_path /= L"bin/debug/shader_info.exe";
-					//if (std::filesystem::exists(shader_info_path))
-					//{
-					//	exec(shader_info_path.c_str(), (wchar_t*)spv_path.c_str(), &output);
-					//	if (output.find("ALIGNMENT DISMATCH") != std::string::npos)
-					//	{
-					//		printf("%s\n", output.c_str());
-					//		fassert(0);
-					//		return nullptr;
-					//	}
-					//}
 				}
 				else
 				{

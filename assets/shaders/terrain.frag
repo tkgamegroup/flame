@@ -1,5 +1,6 @@
 #include "terrain.pll"
 #include "shading.glsl"
+#include "math.glsl"
 
 layout (location = 0) in flat uint i_idx;
 layout (location = 1) in vec2 i_uv;
@@ -19,7 +20,7 @@ void main()
 	vec3 N = normalize(i_normal);
 	vec3 V = normalize(i_coordv);
 
-	#include MAT_FILE
+	MAT_FILE
 #else
 	o_color = vec4(0.0, 1.0, 0.0, 1.0);
 #endif

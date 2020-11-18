@@ -301,7 +301,7 @@ namespace flame
 			if (defines != "WIREFRAME")
 			{
 				defines += "MAT ";
-				substitutes += "MAT_FILE \"" + mat.string() + "\"";
+				substitutes += "MAT_FILE " + mat.string();
 				extra_dependencies.push_back(mat);
 			}
 			else
@@ -490,6 +490,30 @@ namespace flame
 			return new ArmatureDeformerPrivate((RenderPreferencesPrivate*)preferences, (MeshPrivate*)mesh);
 		}
 
+		MaterialResourceSlot::~MaterialResourceSlot()
+		{
+			for (auto& t : textures)
+				canvas->set_texture_resource(t.first, nullptr, nullptr, "");
+			for (auto i = 0; i < MaterialUsageCount; i++)
+			{
+				if (pipelines[i])
+					canvas->preferences->release_material_pipeline((MaterialUsage)i, pipelines[i]);
+			}
+		}
+
+		PipelinePrivate* MaterialResourceSlot::get_pipeline(MaterialUsage u)
+		{
+			if (pipelines[u])
+				return pipelines[u];
+			pipelines[u] = canvas->preferences->create_material_pipeline(u, material->pipeline_file, material->pipeline_defines);
+			return pipelines[u];
+		}
+
+		ModelResourceSlot::~ModelResourceSlot()
+		{
+			for (auto& m : materials)
+				canvas->set_material_resource(m, nullptr, "");
+		}
 
 		CanvasPrivate::CanvasPrivate(RenderPreferencesPrivate* preferences) :
 			preferences(preferences)
@@ -896,27 +920,14 @@ namespace flame
 			}
 			if (slot != -1)
 			{
-				{
-					auto prev = material_resources[slot].get();
-					if (prev)
-					{
-						for (auto& t : prev->textures)
-							set_texture_resource(t.first, nullptr, nullptr, "");
-						for (auto i = 0; i < MaterialUsageCount; i++)
-							preferences->release_material_pipeline((MaterialUsage)i, prev->pipelines[i]);
-					}
-				}
-
 				if (!mat)
 					material_resources[slot].reset();
 				else
 				{
-					auto mr = new MaterialResourceSlot;
+					auto mr = new MaterialResourceSlot(this);
 					mr->name = name;
+					mr->material = mat;
 					material_resources[slot].reset(mr);
-
-					for (auto i = 0; i < MaterialUsageCount; i++)
-						mr->pipelines[i] = preferences->get_material_pipeline((MaterialUsage)i, mat->pipeline_file, mat->pipeline_defines);
 
 					auto dst = material_info_buffer.mark_item(slot);
 
@@ -991,20 +1002,11 @@ namespace flame
 			}
 			if (slot != -1)
 			{
-				{
-					auto prev = model_resources[slot].get();
-					if (prev)
-					{
-						for (auto& m : prev->materials)
-							set_material_resource(m, nullptr, "");
-					}
-				}
-
 				if (!mod)
 					model_resources[slot].reset();
 				else
 				{
-					auto mr = new ModelResourceSlot;
+					auto mr = new ModelResourceSlot(this);
 					mr->name = name;
 					mr->model = mod;
 					model_resources[slot].reset(mr);
@@ -2065,12 +2067,12 @@ namespace flame
 												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 												if (std::get<3>(m))
 												{
-													cb->bind_pipeline(mat->pipelines[MaterialForDepthArmature]);
+													cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
 													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 													cb->bind_descriptor_set(PipelineGraphics, std::get<3>(m)->descriptorset.get(), 2, nullptr);
 												}
 												else
-													cb->bind_pipeline(mat->pipelines[MaterialForDepth]);
+													cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
 												if (first)
 												{
 													cb->bind_descriptor_set(PipelineGraphics, mesh_descriptorset.get(), 0, nullptr);
@@ -2140,12 +2142,12 @@ namespace flame
 												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 												if (std::get<3>(m))
 												{
-													cb->bind_pipeline(mat->pipelines[MaterialForDepthArmature]);
+													cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
 													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 													cb->bind_descriptor_set(PipelineGraphics, std::get<3>(m)->descriptorset.get(), 2, nullptr);
 												}
 												else
-													cb->bind_pipeline(mat->pipelines[MaterialForDepth]);
+													cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
 												if (first)
 												{
 													cb->bind_descriptor_set(PipelineGraphics, mesh_descriptorset.get(), 0, nullptr);
@@ -2248,12 +2250,12 @@ namespace flame
 								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 								if (std::get<3>(m))
 								{
-									cb->bind_pipeline(mat->pipelines[MaterialForMeshArmature]);
+									cb->bind_pipeline(mat->get_pipeline(MaterialForMeshArmature));
 									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
 									cb->bind_descriptor_set(PipelineGraphics, std::get<3>(m)->descriptorset.get(), 4, nullptr);
 								}
 								else
-									cb->bind_pipeline(mat->pipelines[MaterialForMesh]);
+									cb->bind_pipeline(mat->get_pipeline(MaterialForMesh));
 								if (first)
 								{
 									cb->bind_descriptor_set(PipelineGraphics, render_data_descriptorset.get(), 0, nullptr);
@@ -2270,7 +2272,7 @@ namespace flame
 						{
 							auto c = (CmdDrawTerrain*)cmd.get();
 							auto mat = material_resources[c->material_id].get();
-							cb->bind_pipeline(mat->pipelines[MaterialForTerrain]);
+							cb->bind_pipeline(mat->get_pipeline(MaterialForTerrain));
 							cb->bind_descriptor_set(PipelineGraphics, render_data_descriptorset.get(), 0, nullptr);
 							cb->bind_descriptor_set(PipelineGraphics, material_descriptorset.get(), 1, nullptr);
 							cb->bind_descriptor_set(PipelineGraphics, light_descriptorset.get(), 2, nullptr);

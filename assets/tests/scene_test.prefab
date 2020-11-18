@@ -29,11 +29,10 @@
           <cScript src="camera_third.lua" />
         </entity>
       </entity>
-	    <entity>
+	    <entity src="D:\terrain\terrain">
 	      <cNode pos="-100,100,-100" />
-	      <cTerrain1 blocks="4,4" scale="100,200,100" tess_levels="32" height_map="D:\terrain\height_map.png" normal_map="D:\terrain\normal_map.png" color_map="D:\terrain\color_map.png" />
-        <cRigid dynamic="false" />
-        <cShape type="HeightField" />
+		  <cRigid dynamic="false" />
+          <cShape type="HeightField" />
 	    </entity>
       <entity>
         <cNode euler="0,60,0" />

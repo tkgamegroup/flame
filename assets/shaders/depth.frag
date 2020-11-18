@@ -9,7 +9,7 @@ void main()
 {
 #ifdef MAT
 	MaterialInfo material = material_infos[i_mat_id];
-	#include MAT_FILE
+	MAT_FILE
 #endif
 
 	if (pc.zNear == 0.0)
