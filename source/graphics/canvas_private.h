@@ -38,13 +38,11 @@ namespace flame
 
 			ShadingType shading_type = ShadingSolid;
 
-			std::unique_ptr<SamplerPrivate> shadow_sampler;
 			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_r16_renderpass;
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
-			std::vector<std::pair<uint, std::unique_ptr<ShaderPrivate>>> shaders;
 			std::vector<std::tuple<std::filesystem::path, std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
 			std::unique_ptr<PipelinePrivate> mesh_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_armature_wireframe_pipeline;
@@ -64,8 +62,6 @@ namespace flame
 
 			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
 
-			ShaderPrivate* get_shader(const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
-			void release_shader(ShaderPrivate* s);
 			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);

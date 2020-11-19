@@ -132,8 +132,6 @@ namespace flame
 			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
 
 			dsp.reset(new DescriptorPoolPrivate(this));
-			nsp.reset(new SamplerPrivate(this, FilterNearest, FilterNearest, AddressClampToEdge));
-			lsp.reset(new SamplerPrivate(this, FilterLinear, FilterLinear, AddressClampToEdge));
 			gcp.reset(graphics_queue_index != -1 ? new CommandPoolPrivate(this, graphics_queue_index) : nullptr);
 			tcp.reset(transfer_queue_index != -1 ? new CommandPoolPrivate(this, transfer_queue_index) : nullptr);
 			gq.reset(graphics_queue_index != -1 ? new QueuePrivate(this, graphics_queue_index) : nullptr);

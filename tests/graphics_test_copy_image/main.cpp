@@ -25,7 +25,7 @@ struct App
 			sc->acquire_image();
 
 			auto dst = sc->image(sc->image_index());
-			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = CommandBuffer::create(CommandPool::get_default(QueueGraphics));
 			cb->begin();
 			cb->image_barrier(dst, ImageLayoutUndefined, ImageLayoutTransferDst);
 			ImageCopy cpy;

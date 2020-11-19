@@ -70,7 +70,7 @@ namespace flame
 				auto dev = graphics::Device::get_default();
 				auto img_size = height_map->get_size();
 				auto buf = graphics::Buffer::create(dev, img_size.x() * img_size.y(), graphics::BufferUsageTransferDst, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent);
-				auto cb = graphics::CommandBuffer::create(dev->get_command_pool(graphics::QueueGraphics));
+				auto cb = graphics::CommandBuffer::create(graphics::CommandPool::get(dev));
 				cb->begin(true);
 				cb->image_barrier(height_map, {}, graphics::ImageLayoutShaderReadOnly, graphics::ImageLayoutTransferSrc);
 				graphics::BufferImageCopy cpy;
@@ -78,7 +78,7 @@ namespace flame
 				cb->copy_image_to_buffer(height_map, buf, 1, &cpy);
 				cb->image_barrier(height_map, {}, graphics::ImageLayoutTransferSrc, graphics::ImageLayoutShaderReadOnly);
 				cb->end();
-				auto que = dev->get_queue(graphics::QueueGraphics);
+				auto que = graphics::Queue::get(dev);
 				que->submit(1, &cb, nullptr, nullptr, nullptr);
 				que->wait_idle();
 				buf->map();

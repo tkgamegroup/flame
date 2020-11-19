@@ -19,8 +19,6 @@ namespace flame
 			hdr(hdr),
 			msaa_3d(msaa_3d)
 		{
-			shadow_sampler.reset(new SamplerPrivate(device, FilterLinear, FilterLinear, AddressClampToBorder));
-
 			{
 				RenderpassAttachmentInfo att;
 				att.format = Swapchain::get_format();
@@ -109,8 +107,8 @@ namespace flame
 
 			{
 				ShaderPrivate* shaders[] = {
-					get_shader(L"element.vert"),
-					get_shader(L"element.frag")
+					ShaderPrivate::get(device, L"element.vert"),
+					ShaderPrivate::get(device, L"element.frag")
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -140,8 +138,8 @@ namespace flame
 
 			{
 				ShaderPrivate* shaders[] = {
-					get_shader(L"line3.vert"),
-					get_shader(L"line3.frag")
+					ShaderPrivate::get(device, L"line3.vert"),
+					ShaderPrivate::get(device, L"line3.frag")
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -159,14 +157,14 @@ namespace flame
 			}
 
 			auto post_pll = PipelineLayoutPrivate::get(device, L"post.pll");
-			auto fullscreen_vert = get_shader(L"fullscreen.vert");
+			auto fullscreen_vert = ShaderPrivate::get(device, L"fullscreen.vert");
 
 			for (auto i = 0; i < 10; i++)
 			{
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_vert,
-						get_shader(L"blur.frag", "R" + std::to_string(i + 1) + " H")
+						ShaderPrivate::get(device, L"blur.frag", "R" + std::to_string(i + 1) + " H")
 					};
 					blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
 				}
@@ -174,7 +172,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_vert,
-						get_shader(L"blur.frag", "R" + std::to_string(i + 1) + " V")
+						ShaderPrivate::get(device, L"blur.frag", "R" + std::to_string(i + 1) + " V")
 					};
 					blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
 				}
@@ -183,7 +181,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					get_shader(L"blur_depth.frag", "H")
+					ShaderPrivate::get(device, L"blur_depth.frag", "H")
 				};
 				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -191,7 +189,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					get_shader(L"blur_depth.frag", "V")
+					ShaderPrivate::get(device, L"blur_depth.frag", "V")
 				};
 				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -199,7 +197,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					get_shader(L"blit.frag")
+					ShaderPrivate::get(device, L"blit.frag")
 				};
 				blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
 				blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
@@ -208,12 +206,12 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					get_shader(L"filter_bright.frag")
+					ShaderPrivate::get(device, L"filter_bright.frag")
 				};
 				filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
 			}
 
-			auto box_frag = get_shader(L"box.frag");
+			auto box_frag = ShaderPrivate::get(device, L"box.frag");
 
 			{
 				ShaderPrivate* shaders[] = {
@@ -240,39 +238,9 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					get_shader(L"gamma.frag")
+					ShaderPrivate::get(device, L"gamma.frag")
 				};
 				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
-			}
-		}
-
-		ShaderPrivate* RenderPreferencesPrivate::get_shader(const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
-		{
-			for (auto& s : shaders)
-			{
-				if (s.second->filename == filename && s.second->defines == defines && s.second->substitutes == substitutes)
-				{
-					s.first++;
-					return s.second.get();
-				}
-			}
-			auto s = ShaderPrivate::create(device, filename, defines, substitutes, extra_dependencies);
-			shaders.emplace_back(1, s);
-			return s;
-		}
-
-		void RenderPreferencesPrivate::release_shader(ShaderPrivate* s)
-		{
-			for (auto it = shaders.begin(); it != shaders.end(); it++)
-			{
-				if (it->second.get() == s)
-				{
-					if (it->first == 1)
-						shaders.erase(it);
-					else
-						it->first--;
-					break;
-				}
 			}
 		}
 
@@ -311,8 +279,8 @@ namespace flame
 			case MaterialForMesh:
 			{
 				ShaderPrivate* shaders[] = {
-					get_shader(L"mesh.vert"),
-					get_shader(L"mesh.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"mesh.vert"),
+					ShaderPrivate::get(device, L"mesh.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -336,8 +304,8 @@ namespace flame
 			case MaterialForMeshArmature:
 			{
 				ShaderPrivate* shaders[] = {
-					get_shader(L"mesh.vert", "ARMATURE"),
-					get_shader(L"mesh.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"mesh.vert", "ARMATURE"),
+					ShaderPrivate::get(device, L"mesh.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias1[3];
 				vias1[0].location = 0;
@@ -368,10 +336,10 @@ namespace flame
 			case MaterialForTerrain:
 			{
 				ShaderPrivate* shaders[] = {
-					get_shader(L"terrain.vert"),
-					get_shader(L"terrain.tesc"),
-					get_shader(L"terrain.tese"),
-					get_shader(L"terrain.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"terrain.vert"),
+					ShaderPrivate::get(device, L"terrain.tesc"),
+					ShaderPrivate::get(device, L"terrain.tese"),
+					ShaderPrivate::get(device, L"terrain.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexInfo vi;
 				vi.primitive_topology = PrimitiveTopologyPatchList;
@@ -386,8 +354,8 @@ namespace flame
 			{
 				defines += "DEPTH_PASS ";
 				ShaderPrivate* shaders[] = {
-					get_shader(L"depth.vert"),
-					get_shader(L"depth.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"depth.vert"),
+					ShaderPrivate::get(device, L"depth.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -411,8 +379,8 @@ namespace flame
 			{
 				defines += "DEPTH_PASS ";
 				ShaderPrivate* shaders[] = {
-					get_shader(L"depth.vert", "ARMATURE"),
-					get_shader(L"depth.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"depth.vert", "ARMATURE"),
+					ShaderPrivate::get(device, L"depth.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias1[2];
 				vias1[0].location = 0;
@@ -450,7 +418,7 @@ namespace flame
 				if (std::get<3>(*it).get() == p)
 				{
 					for (auto s : p->shaders)
-						release_shader(s);
+						s->release();
 					if (std::get<2>(*it) == 1)
 						material_pipelines[usage].erase(it);
 					else
@@ -505,7 +473,10 @@ namespace flame
 		{
 			if (pipelines[u])
 				return pipelines[u];
-			pipelines[u] = canvas->preferences->create_material_pipeline(u, material->pipeline_file, material->pipeline_defines);
+			auto path = material->dir / material->pipeline_file;
+			if (!std::filesystem::exists(path))
+				path = material->pipeline_file;
+			pipelines[u] = canvas->preferences->create_material_pipeline(u, path, material->pipeline_defines);
 			return pipelines[u];
 		}
 
@@ -520,7 +491,7 @@ namespace flame
 		{
 			auto device = preferences->device;
 
-			ImmediateCommandBuffer icb;
+			ImmediateCommandBuffer icb(device);
 			auto cb = icb.cb.get();
 
 			white_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, Vec2u(1), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled));
@@ -554,7 +525,7 @@ namespace flame
 				element_vertex_buffer.create(device, BufferUsageVertex, 360000);
 				element_index_buffer.create(device, BufferUsageIndex, 240000);
 				for (auto i = 0; i < element_resources.size(); i++)
-					element_descriptorset->set_image(dsl->find_binding("images"), i, iv_wht, device->lsp.get());
+					element_descriptorset->set_image(dsl->find_binding("images"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 			}
 			
 			{
@@ -570,7 +541,7 @@ namespace flame
 				material_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MaterialInfo"), 128);
 				material_descriptorset->set_buffer(dsl->find_binding("MaterialInfos"), 0, material_info_buffer.buf.get());
 				for (auto i = 0; i < texture_resources.size(); i++)
-					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, device->lsp.get());
+					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 			}
 
 			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post.dsl");
@@ -588,7 +559,7 @@ namespace flame
 					auto iv = shadow_blur_pingpong_image->views[0].get();
 					shadow_blur_pingpong_image_framebuffer.reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
 					shadow_blur_pingpong_image_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					shadow_blur_pingpong_image_descriptorset->set_image(0, 0, iv, device->nsp.get());
+					shadow_blur_pingpong_image_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
 				}
 
 				light_indices_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightIndices"), 1);
@@ -614,10 +585,10 @@ namespace flame
 						directional_light_shadow_map_depth_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->depth_renderpass.get(), vs));
 						directional_light_shadow_map_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
 						directional_light_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-						directional_light_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, device->lsp.get());
+						directional_light_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 					}
 					auto iv = new ImageViewPrivate(directional_light_shadow_maps[i].get(), true, ImageView2DArray, { 0U, 1U, (uint)0, 4U });
-					light_descriptorset->set_image(dsl->find_binding("directional_light_shadow_maps"), i, iv, preferences->shadow_sampler.get());
+					light_descriptorset->set_image(dsl->find_binding("directional_light_shadow_maps"), i, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToBorder));
 				}
 
 				point_light_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "PointLightInfo"), 10000);
@@ -640,10 +611,10 @@ namespace flame
 						point_light_shadow_map_depth_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->depth_renderpass.get(), vs));
 						point_light_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
 						point_light_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-						point_light_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, device->lsp.get());
+						point_light_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 					}
 					auto iv = new ImageViewPrivate(point_light_shadow_maps[i].get(), true, ImageViewCube, { 0U, 1U, 0U, 6U });
-					light_descriptorset->set_image(dsl->find_binding("point_light_shadow_maps"), i, iv, preferences->shadow_sampler.get());
+					light_descriptorset->set_image(dsl->find_binding("point_light_shadow_maps"), i, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToBorder));
 				}
 			}
 
@@ -693,7 +664,7 @@ namespace flame
 				output_size = 0.f;
 			else
 			{
-				ImmediateCommandBuffer icb;
+				ImmediateCommandBuffer icb(device);
 				auto cb = icb.cb.get();
 
 				output_size = views[0]->image->sizes[0];
@@ -705,7 +676,7 @@ namespace flame
 					output_imageviews[i] = views[i];
 					output_framebuffers[i].reset(new FramebufferPrivate(device, preferences->image1_8_renderpass.get(), { &views[i], 1 }));
 					output_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					output_descriptorsets[i]->set_image(0, 0, views[i], device->nsp.get());
+					output_descriptorsets[i]->set_image(0, 0, views[i], SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
 				}
 
 				if (hdr)
@@ -715,7 +686,7 @@ namespace flame
 					auto iv = hdr_image->views[0].get();
 					hdr_framebuffer.reset(new FramebufferPrivate(device, preferences->image1_16_renderpass.get(), { &iv, 1 }));
 					hdr_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					hdr_descriptorset->set_image(0, 0, iv, device->nsp.get());
+					hdr_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
 				}
 
 				if (msaa_3d)
@@ -733,7 +704,7 @@ namespace flame
 
 					auto iv_res = msaa_resolve_image->views[0].get();
 					msaa_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					msaa_descriptorset->set_image(0, 0, iv_res, device->nsp.get());
+					msaa_descriptorset->set_image(0, 0, iv_res, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
 
 					mesh_framebuffers.resize(1);
 					ImageViewPrivate* vs[] = {
@@ -779,8 +750,8 @@ namespace flame
 					back_framebuffers[i].reset(new FramebufferPrivate(device, hdr ? preferences->image1_16_renderpass.get() : preferences->image1_8_renderpass.get(), { &iv, 1 }));
 					back_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					back_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					back_nearest_descriptorsets[i]->set_image(0, 0, iv, device->nsp.get());
-					back_linear_descriptorsets[i]->set_image(0, 0, iv, device->lsp.get());
+					back_nearest_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
+					back_linear_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 				}
 			}
 		}
@@ -828,11 +799,12 @@ namespace flame
 				dst.ia = (ImageAtlasPrivate*)r.ia;
 				dst.fa = (FontAtlasPrivate*)r.fa;
 				if (dst.ia)
-					element_descriptorset->set_image(0, slot, dst.ia->image->views[0].get(), dst.ia->border ? device->lsp.get() : device->nsp.get());
+					element_descriptorset->set_image(0, slot, dst.ia->image->views[0].get(), dst.ia->border ? 
+						SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge) : SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
 				else if (dst.fa)
-					element_descriptorset->set_image(0, slot, dst.fa->view, device->nsp.get());
+					element_descriptorset->set_image(0, slot, dst.fa->view, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
 				else
-					element_descriptorset->set_image(0, slot, dst.iv ? dst.iv : iv_wht, device->lsp.get());
+					element_descriptorset->set_image(0, slot, dst.iv ? dst.iv : iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 			}
 			return slot;
 		}
@@ -877,7 +849,7 @@ namespace flame
 				auto& r = texture_resources[slot];
 				r.name = name;
 				r.iv = iv;
-				material_descriptorset->set_image(1, slot, iv ? iv : iv_wht, iv && sp ? sp : device->lsp.get());
+				material_descriptorset->set_image(1, slot, iv ? iv : iv_wht, iv && sp ? sp : SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 			}
 			return slot;
 		}
@@ -905,7 +877,6 @@ namespace flame
 		uint CanvasPrivate::set_material_resource(int slot, MaterialPrivate* mat, const std::string& name)
 		{
 			auto device = preferences->device;
-			auto sp = device->lsp.get();
 
 			if (slot == -1)
 			{
@@ -958,7 +929,7 @@ namespace flame
 						material_info_buffer.set(dst, S<"map_indices"_h>, ids);
 					}
 
-					ImmediateCommandBuffer icb;
+					ImmediateCommandBuffer icb(device);
 					auto cb = icb.cb.get();
 					material_info_buffer.upload(cb);
 				}
@@ -989,6 +960,7 @@ namespace flame
 		uint CanvasPrivate::set_model_resource(int slot, ModelPrivate* mod, const std::string& name)
 		{
 			auto device = preferences->device;
+
 			if (slot == -1)
 			{
 				for (auto i = 0; i < model_resources.size(); i++)
@@ -1015,7 +987,7 @@ namespace flame
 					for (auto i = 0; i < mod->materials.size(); i++)
 						mr->materials[i] = set_material_resource(-1, mod->materials[i].get(), "");
 
-					ImmediateCommandBuffer icb;
+					ImmediateCommandBuffer icb(device);
 					auto cb = icb.cb.get();
 
 					mr->meshes.resize(mod->meshes.size());

@@ -45,7 +45,7 @@ struct App
 		auto vp = Vec4f(Vec2f(0.f), Vec2f(img->size));
 		for (auto i = 0; i < image_count; i++)
 		{
-			auto cb = CommandBuffer::create(Commandpool::get_default(QueueGraphics));
+			auto cb = CommandBuffer::create(CommandPool::get_default(QueueGraphics));
 			cb->begin();
 			cb->begin_renderpass(fbs[i], 1, &Vec4f(0.f, 0.f, 0.f, 1.f));
 			cb->set_viewport(vp);

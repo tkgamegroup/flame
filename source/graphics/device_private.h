@@ -9,8 +9,11 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct DescriptorPoolPrivate;
 		struct SamplerPrivate;
+		struct DescriptorPoolPrivate;
+		struct DescriptorSetLayoutPrivate;
+		struct PipelineLayoutPrivate;
+		struct ShaderPrivate;
 		struct CommandPoolPrivate;
 		struct QueuePrivate;
 		struct DevicePrivate;
@@ -26,9 +29,11 @@ namespace flame
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;
 
+			std::vector<std::unique_ptr<SamplerPrivate>> sps;
 			std::unique_ptr<DescriptorPoolPrivate> dsp;
-			std::unique_ptr<SamplerPrivate> nsp;
-			std::unique_ptr<SamplerPrivate> lsp;
+			std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> dsls;
+			std::vector<std::unique_ptr<PipelineLayoutPrivate>> plls;
+			std::vector<std::pair<uint, std::unique_ptr<ShaderPrivate>>> sds;
 			std::unique_ptr<CommandPoolPrivate> gcp;
 			std::unique_ptr<CommandPoolPrivate> tcp;
 			std::unique_ptr<QueuePrivate> gq;
@@ -40,29 +45,6 @@ namespace flame
 			uint find_memory_type(uint type_filter, MemoryPropertyFlags properties);
 
 			void release() override { delete this; }
-
-			CommandPool* get_command_pool(QueueFamily family) const override
-			{
-				switch (family)
-				{
-				case QueueGraphics:
-					return (CommandPool*)gcp.get();
-				case QueueTransfer:
-					return (CommandPool*)tcp.get();
-				}
-				return nullptr;
-			}
-			Queue* get_queue(QueueFamily family) const override
-			{
-				switch (family)
-				{
-				case QueueGraphics:
-					return (Queue*)gq.get();
-				case QueueTransfer:
-					return (Queue*)tq.get();
-				}
-				return nullptr;
-			}
 
 			bool has_feature(Feature f) const override;
 		};

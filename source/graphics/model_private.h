@@ -22,6 +22,8 @@ namespace flame
 
 			std::filesystem::path dir;
 			std::filesystem::path textures[4];
+
+			static MaterialPrivate* create(const std::filesystem::path& filename);
 		};
 
 		struct BonePrivate : Bone

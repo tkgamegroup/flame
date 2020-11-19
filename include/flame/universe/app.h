@@ -253,8 +253,8 @@ namespace flame
 
 		network::initialize();
 		graphics::Device::set_default(graphics::Device::create(graphics_debug));
-		graphics_command_pool = graphics::Device::get_default()->get_command_pool(graphics::QueueGraphics);
-		graphics_queue = graphics::Device::get_default()->get_queue(graphics::QueueGraphics);
+		graphics_command_pool = graphics::CommandPool::get(graphics::Device::get_default());
+		graphics_queue = graphics::Queue::get(graphics::Device::get_default());
 		physics::Device::set_default(physics::Device::create());
 		sound::Device::set_default(sound::Device::create());
 		script::Instance::set_default(script::Instance::create());

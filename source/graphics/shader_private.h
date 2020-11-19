@@ -146,8 +146,6 @@ namespace flame
 			static DescriptorSetLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
-		extern std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> descriptor_set_layouts;
-
 		struct DescriptorSetBridge : DescriptorSet
 		{
 			void set_buffer(uint binding, uint index, Buffer* b, uint offset, uint range) override;
@@ -204,8 +202,6 @@ namespace flame
 			static PipelineLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);
 		};
 
-		extern std::vector<std::unique_ptr<PipelineLayoutPrivate>> pipeline_layouts;
-
 		struct ShaderPrivate : Shader
 		{
 			std::filesystem::path filename;
@@ -223,11 +219,12 @@ namespace flame
 			ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::string& spv_content);
 			~ShaderPrivate();
 
-			void release() override { delete this; }
+			void release() override;
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 			const char* get_defines() const override { return defines.c_str(); }
 
+			static ShaderPrivate* get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
 			static ShaderPrivate* create(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines = "", const std::string& substitutes = "", const std::vector<std::filesystem::path>& extra_dependencies = {});
 		};
 

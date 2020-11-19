@@ -8,7 +8,7 @@ namespace flame
 	{
 		struct Material
 		{
-			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* path, const char* defines);
+			FLAME_GRAPHICS_EXPORTS static Material* create(const wchar_t* filename);
 		};
 
 		struct Bone

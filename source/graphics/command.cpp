@@ -28,6 +28,18 @@ namespace flame
 			vkDestroyCommandPool(device->vk_device, vk_command_buffer_pool, nullptr);
 		}
 
+		CommandPool* CommandPool::get(Device* device, QueueFamily family)
+		{
+			switch (family)
+			{
+			case QueueGraphics:
+				return ((DevicePrivate*)device)->gcp.get();
+			case QueueTransfer:
+				return ((DevicePrivate*)device)->tcp.get();
+			}
+			return nullptr;
+		}
+
 		CommandPool* CommandPool::create(Device* device, int queue_family_idx)
 		{
 			return new CommandPoolPrivate((DevicePrivate*)device, queue_family_idx);
@@ -430,21 +442,34 @@ namespace flame
 			chk_res(vkQueuePresentKHR(vk_queue, &info));
 		}
 
+		Queue* Queue::get(Device* device, QueueFamily family)
+		{
+			switch (family)
+			{
+			case QueueGraphics:
+				return ((DevicePrivate*)device)->gq.get();
+			case QueueTransfer:
+				return ((DevicePrivate*)device)->tq.get();
+			}
+			return nullptr;
+		}
+
 		Queue* Queue::create(Device* device, uint queue_family_idx)
 		{
 			return new QueuePrivate((DevicePrivate*)device, queue_family_idx);
 		}
 
-		ImmediateCommandBuffer::ImmediateCommandBuffer()
+		ImmediateCommandBuffer::ImmediateCommandBuffer(DevicePrivate* d) :
+			d(d)
 		{
-			cb.reset(new CommandBufferPrivate(default_device->gcp.get()));
+			cb.reset(new CommandBufferPrivate(d->gcp.get()));
 			cb->begin(true);
 		}
 
 		ImmediateCommandBuffer::~ImmediateCommandBuffer()
 		{
 			cb->end();
-			auto q = default_device->gq.get();
+			auto q = d->gq.get();
 			q->submit(SP(cb.get()), nullptr, nullptr, nullptr);
 			q->wait_idle();
 		}

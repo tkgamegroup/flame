@@ -14,12 +14,42 @@ namespace flame
 {
 	namespace graphics
 	{
-		Material* Material::create(const wchar_t* filename, const char* defines)
+		void load_material(pugi::xml_node n, MaterialPrivate* m)
 		{
+			m->name = n.attribute("name").value();
+			m->color = sto<Vec3f>(n.attribute("color").value());
+			m->metallic = sto<float>(n.attribute("metallic").value());
+			m->roughness = sto<float>(n.attribute("roughness").value());
+			m->alpha_test = sto<float>(n.attribute("alpha_test").value());
+			m->pipeline_file = n.attribute("pipeline_file").value();
+			m->pipeline_defines = n.attribute("pipeline_defines").value();
+			auto itex = 0;
+			for (auto n_texture : n.child("textures"))
+			{
+				m->textures[itex] = n_texture.attribute("path").value();
+				itex++;
+			}
+		}
+
+		MaterialPrivate* MaterialPrivate::create(const std::filesystem::path& filename)
+		{
+			pugi::xml_document doc;
+			pugi::xml_node doc_root;
+			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("material"))
+			{
+				printf("model does not exist: %s\n", filename.string().c_str());
+				return nullptr;
+			}
+
 			auto ret = new MaterialPrivate;
-			ret->pipeline_file = filename;
-			ret->pipeline_defines = defines;
+			ret->dir = filename.parent_path();
+			load_material(doc_root, ret);
 			return ret;
+		}
+
+		Material* Material::create(const wchar_t* filename)
+		{
+			return MaterialPrivate::create(filename);
 		}
 
 		void MeshPrivate::add_vertices(uint n, Vec3f* _positions, Vec3f* _uvs, Vec3f* _normals)
@@ -249,7 +279,7 @@ namespace flame
 		{
 			auto extension = filename.extension();
 
-			if (extension == L".fb")
+			if (extension == L".fmodb")
 			{
 				std::ofstream file(filename, std::ios::binary);
 
@@ -317,7 +347,7 @@ namespace flame
 
 				file.close();
 			}
-			else if (extension == L".fm")
+			else if (extension == L".fmod")
 			{
 				pugi::xml_document doc;
 				auto doc_root = doc.append_child("model");
@@ -333,7 +363,6 @@ namespace flame
 					n_material.append_attribute("alpha_test").set_value(to_string(m->alpha_test).c_str());
 					n_material.append_attribute("pipeline_file").set_value(m->pipeline_file.string().c_str());
 					n_material.append_attribute("pipeline_defines").set_value(m->pipeline_defines.c_str());
-					n_material.append_attribute("dir").set_value(m->dir.string().c_str());
 					auto n_textures = n_material.append_child("textures");
 					for (auto& t : m->textures)
 						n_textures.append_child("texture").append_attribute("path").set_value(t.string().c_str());
@@ -497,8 +526,9 @@ namespace flame
 			ModelPrivate* ret = nullptr;
 
 			auto extension = filename.extension();
+			auto parent_path = filename.parent_path();
 
-			if (extension == L".fb")
+			if (extension == L".fmodb")
 			{
 				ret = new ModelPrivate();
 				ret->filename = filename;
@@ -509,7 +539,7 @@ namespace flame
 				for (auto i = 0; i < ret->materials.size(); i++)
 				{
 					auto m = new MaterialPrivate;
-					m->dir = filename.parent_path();
+					m->dir = parent_path;
 					ret->materials[i].reset(m);
 					read_s(file, m->name);
 					read_t(file, m->color);
@@ -601,7 +631,7 @@ namespace flame
 
 				file.close();
 			}
-			else if (extension == L".fm")
+			else if (extension == L".fmod")
 			{
 				pugi::xml_document doc;
 				pugi::xml_node doc_root;
@@ -617,6 +647,7 @@ namespace flame
 				for (auto n_material : doc_root.child("materials"))
 				{
 					auto m = new MaterialPrivate;
+					m->dir = parent_path;
 					m->name = n_material.attribute("name").value();
 					m->color = sto<Vec3f>(n_material.attribute("color").value());
 					m->metallic = sto<float>(n_material.attribute("metallic").value());
@@ -624,7 +655,6 @@ namespace flame
 					m->alpha_test = sto<float>(n_material.attribute("alpha_test").value());
 					m->pipeline_file = n_material.attribute("pipeline_file").value();
 					m->pipeline_defines = n_material.attribute("pipeline_defines").value();
-					m->dir = n_material.attribute("dir").value();
 					auto itex = 0;
 					for (auto n_texture : n_material.child("textures"))
 					{

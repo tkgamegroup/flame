@@ -132,8 +132,8 @@ namespace flame
 			auto i = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()),
 				Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
-			ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
-			ImmediateCommandBuffer icb;
+			ImmediateStagingBuffer stag(device, bmp->get_size(), bmp->get_data());
+			ImmediateCommandBuffer icb(device);
 			auto cb = icb.cb.get();
 			BufferImageCopy cpy;
 			cpy.image_extent = i->sizes[0];
@@ -212,8 +212,8 @@ namespace flame
 					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
-				ImmediateStagingBuffer stag(bmp->get_size(), bmp->get_data());
-				ImmediateCommandBuffer icb;
+				ImmediateStagingBuffer stag(device, bmp->get_size(), bmp->get_data());
+				ImmediateCommandBuffer icb(device);
 				auto cb = icb.cb.get();
 				BufferImageCopy cpy;
 				cpy.image_extent = ret->sizes[0];
@@ -274,8 +274,11 @@ namespace flame
 			return new ImageViewPrivate((ImagePrivate*)image, auto_released, type, subresource, swizzle);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates) :
-			device(device)
+		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode) :
+			device(device),
+			mag_filter(mag_filter),
+			min_filter(min_filter),
+			address_mode(address_mode)
 		{
 			VkSamplerCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -290,7 +293,7 @@ namespace flame
 			info.anisotropyEnable = VK_FALSE;
 			info.maxAnisotropy = 1.f;
 			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			info.unnormalizedCoordinates = unnormalized_coordinates;
+			info.unnormalizedCoordinates = false;
 			info.compareEnable = VK_FALSE;
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
 			info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -306,9 +309,21 @@ namespace flame
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 		}
 
-		Sampler* Sampler::create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates)
+		SamplerPrivate* SamplerPrivate::get(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode)
 		{
-			return new SamplerPrivate((DevicePrivate*)device, mag_filter, min_filter, address_mode, unnormalized_coordinates);
+			for (auto& s : device->sps)
+			{
+				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->address_mode == address_mode)
+					return s.get();
+			}
+			auto s = new SamplerPrivate(device, mag_filter, min_filter, address_mode);
+			device->sps.emplace_back(s);
+			return s;
+		}
+
+		Sampler* Sampler::create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode)
+		{
+			return new SamplerPrivate((DevicePrivate*)device, mag_filter, min_filter, address_mode);
 		}
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::wstring& filename)

@@ -22,6 +22,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
+			FLAME_GRAPHICS_EXPORTS static CommandPool* get(Device* device, QueueFamily family = QueueGraphics);
 			FLAME_GRAPHICS_EXPORTS static CommandPool* create(Device* device, int queue_family_idx);
 		};
 
@@ -114,6 +115,7 @@ namespace flame
 			virtual void submit(uint cbs_count, CommandBuffer* const* cbs, Semaphore* wait_semaphore, Semaphore* signal_semaphore, Fence* signal_fence) = 0;
 			virtual void present(Swapchain* s, Semaphore* wait_semaphore) = 0;
 
+			FLAME_GRAPHICS_EXPORTS static Queue* get(Device* device, QueueFamily family = QueueGraphics);
 			FLAME_GRAPHICS_EXPORTS static Queue* create(Device* device, uint queue_family_idx);
 		};
 	}

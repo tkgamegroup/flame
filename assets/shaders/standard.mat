@@ -1,4 +1,4 @@
-{
+
 #ifdef ALPHA_MAP
 	float alpha = texture(maps[material.map_indices[1]], i_uv).r;
 	if (alpha < material.alpha_test)
@@ -22,4 +22,3 @@
 	o_color = vec4(shading(i_coordw, i_coordv, N, V, albedo, spec, roughness), 1.0);
 	
 #endif
-}

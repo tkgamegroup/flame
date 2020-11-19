@@ -83,9 +83,10 @@ namespace flame
 			return new BufferPrivate((DevicePrivate*)device, size, usage, mem_prop);
 		}
 
-		ImmediateStagingBuffer::ImmediateStagingBuffer(uint size, void* data)
+		ImmediateStagingBuffer::ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data) :
+			d(d)
 		{
-			buf.reset(new BufferPrivate(default_device, size, BufferUsageTransferSrc, MemoryPropertyHost));
+			buf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost));
 			buf->map();
 			memcpy(buf->mapped, data, size);
 			buf->flush();

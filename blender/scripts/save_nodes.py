@@ -94,7 +94,7 @@ def get_value(i, b):
             return "ramp2(%s, %s, %s, %s, %s)" % (get_value(n.inputs[0], True), fv1(es[0].color[0]), "%.2f" % es[0].position, fv1(es[1].color[0]), "%.2f" % es[1].position)
         return ""
     elif n.bl_idname == 'ShaderNodeTexImage':
-        return "texture(maps[material.indices[%s]], i_uv * vec2(%s))" % (n.image.name, get_value(n.inputs[0], True))
+        return "texture(maps[material.map_indices[%s]], i_uv * vec2(%s)).rgb" % (n.image.name, get_value(n.inputs[0], True))
     elif n.bl_idname == 'ShaderNodeNewGeometry':
         if s.name == 'Normal':
             return "N"

@@ -34,9 +34,11 @@ namespace flame
 
 		struct ImmediateStagingBuffer
 		{
+			DevicePrivate* d;
+
 			std::unique_ptr<BufferPrivate> buf;
 
-			ImmediateStagingBuffer(uint size, void* data);
+			ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data);
 		};
 	}
 }

@@ -48,8 +48,6 @@ namespace flame
 		{
 		}
 
-		std::vector<std::unique_ptr<DescriptorSetLayoutPrivate>> descriptor_set_layouts;
-
 		static void load_res_types(pugi::xml_node root, std::vector<std::unique_ptr<ShaderType>>& types)
 		{
 			for (auto n_type : root.child("types"))
@@ -189,13 +187,16 @@ namespace flame
 
 		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
 		{
-			for (auto& d : descriptor_set_layouts)
+			for (auto& d : device->dsls)
 			{
 				if (d->filename == filename)
 					return d.get();
 			}
-			return DescriptorSetLayoutPrivate::create(device, filename);
-		};
+			auto dsl = DescriptorSetLayoutPrivate::create(device, filename);
+			fassert(dsl);
+			device->dsls.emplace_back(dsl);
+			return dsl;
+		}
 
 		void get_shader_type(const spirv_cross::CompilerGLSL& glsl, std::vector<std::unique_ptr<ShaderType>>& types, const spirv_cross::SPIRType& src, ShaderType* dst)
 		{
@@ -555,9 +556,7 @@ namespace flame
 				}
 			}
 
-			auto ret = new DescriptorSetLayoutPrivate(device, filename, types, bindings);
-			descriptor_set_layouts.emplace_back(ret);
-			return ret;
+			return new DescriptorSetLayoutPrivate(device, filename, types, bindings);
 		}
 
 		DescriptorSetLayout* DescriptorSetLayout::create(Device* device, uint binding_count, const DescriptorBindingInfo* bindings)
@@ -633,8 +632,6 @@ namespace flame
 		{
 			return new DescriptorSetPrivate((DescriptorPoolPrivate*)p, (DescriptorSetLayoutPrivate*)l);
 		}
-
-		std::vector<std::unique_ptr<PipelineLayoutPrivate>> pipeline_layouts;
 
 		PipelineLayoutPrivate::PipelineLayoutPrivate(DevicePrivate* device, std::span<DescriptorSetLayoutPrivate*> _descriptor_set_layouts, uint push_constant_size) :
 			device(device)
@@ -715,13 +712,16 @@ namespace flame
 
 		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
 		{
-			for (auto& p : pipeline_layouts)
+			for (auto& p : device->plls)
 			{
 				if (p->filename == filename)
 					return p.get();
 			}
-			return PipelineLayoutPrivate::create(device, filename);
-		};
+
+			auto pll = PipelineLayoutPrivate::create(device, filename);
+			device->plls.emplace_back(pll);
+			return pll;
+		}
 
 		PipelineLayoutPrivate* PipelineLayoutPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
@@ -847,14 +847,44 @@ namespace flame
 				push_constant = find_type(types, n_push_constant.attribute("type_id").as_uint());
 			}
 
-			auto ret = new PipelineLayoutPrivate(device, filename, dsls, types, push_constant);
-			pipeline_layouts.emplace_back(ret);
-			return ret;
+			return new PipelineLayoutPrivate(device, filename, dsls, types, push_constant);
 		}
 
 		PipelineLayout* PipelineLayout::create(Device* device, uint descriptorlayout_count, DescriptorSetLayout* const* descriptorlayouts, uint push_constant_size)
 		{
 			return new PipelineLayoutPrivate((DevicePrivate*)device, { (DescriptorSetLayoutPrivate**)descriptorlayouts, descriptorlayout_count }, push_constant_size);
+		}
+
+		void ShaderPrivate::release()
+		{
+			for (auto it = device->sds.begin(); it != device->sds.end(); it++)
+			{
+				if (it->second.get() == this)
+				{
+					if (it->first == 1)
+						device->sds.erase(it);
+					else
+						it->first--;
+					return;
+				}
+			}
+			delete this;
+		}
+
+		ShaderPrivate* ShaderPrivate::get(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::vector<std::filesystem::path>& extra_dependencies)
+		{
+			for (auto& s : device->sds)
+			{
+				if (s.second->filename == filename && s.second->defines == defines && s.second->substitutes == substitutes)
+				{
+					s.first++;
+					return s.second.get();
+				}
+			}
+			auto s = ShaderPrivate::create(device, filename, defines, substitutes, extra_dependencies);
+			fassert(s);
+			device->sds.emplace_back(1, s);
+			return s;
 		}
 
 		ShaderPrivate::ShaderPrivate(DevicePrivate* device, const std::filesystem::path& filename, const std::string& defines, const std::string& substitutes, const std::string& spv_content) :
@@ -921,6 +951,8 @@ namespace flame
 								if (!fn.is_absolute())
 									fn = ppath / fn;
 								to = get_file_content(fn);
+								fassert(!to.empty());
+								SUS::remove_ch(to, '\r');
 							}
 							replace_pairs.emplace_back(from, to);
 						}

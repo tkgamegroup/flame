@@ -88,12 +88,19 @@ namespace flame
 		struct SamplerPrivate : Sampler
 		{
 			DevicePrivate* device;
+
+			Filter mag_filter;
+			Filter min_filter;
+			AddressMode address_mode;
+
 			VkSampler vk_sampler;
 
-			SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode, bool unnormalized_coordinates = false);
+			SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode);
 			~SamplerPrivate();
 
 			void release() override { delete this; }
+
+			static SamplerPrivate* get(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode);
 		};
 
 		struct ImageTilePrivate : ImageTile
