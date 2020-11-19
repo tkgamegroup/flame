@@ -794,6 +794,13 @@ namespace flame
 		f.read(v.data(), v.size());
 	}
 
+	inline void read_fn(std::ifstream& f, std::filesystem::path& fn)
+	{
+		std::string str;
+		read_s(f, str);
+		fn = str;
+	}
+
 	template <class T>
 	void read_t(std::ifstream& f, T& v)
 	{

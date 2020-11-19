@@ -10,6 +10,14 @@ namespace flame
 
 		struct MaterialPrivate : Material
 		{
+			struct Texture
+			{
+				std::filesystem::path filename;
+				Filter mag_filter = FilterLinear;
+				Filter min_filter = FilterLinear;
+				AddressMode address_mode = AddressClampToEdge;
+			};
+
 			std::string name;
 
 			Vec4f color = Vec4f(1.f);
@@ -21,7 +29,7 @@ namespace flame
 			std::string pipeline_defines;
 
 			std::filesystem::path dir;
-			std::filesystem::path textures[4];
+			Texture textures[4];
 
 			static MaterialPrivate* create(const std::filesystem::path& filename);
 		};

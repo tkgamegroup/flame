@@ -912,11 +912,12 @@ namespace flame
 						Vec4i ids;
 						for (auto i = 0; i < size(mr->textures); i++)
 						{
+							auto& src = mat->textures[i];
 							auto& dst = mr->textures[i];
-							if (!mat->textures[i].empty())
+							if (!src.filename.empty())
 							{
-								auto img = ImagePrivate::create(device, mat->dir / mat->textures[i], true);
-								auto idx = set_texture_resource(-1, img->views.back().get(), nullptr, "");
+								auto img = ImagePrivate::create(device, mat->dir / src.filename, true);
+								auto idx = set_texture_resource(-1, img->views.back().get(), SamplerPrivate::get(device, src.mag_filter, src.min_filter, src.address_mode), "");
 								ids[i] = dst.first = idx;
 								dst.second.reset(img);
 							}

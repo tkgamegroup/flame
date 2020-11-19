@@ -90,7 +90,7 @@ namespace flame
 		struct Sampler
 		{
 			virtual void release() = 0;
-			
+
 			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode);
 		};
 

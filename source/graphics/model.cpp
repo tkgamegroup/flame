@@ -26,7 +26,11 @@ namespace flame
 			auto itex = 0;
 			for (auto n_texture : n.child("textures"))
 			{
-				m->textures[itex] = n_texture.attribute("path").value();
+				auto& dst = m->textures[itex];
+				dst.filename = n_texture.attribute("filename").value();
+				dst.mag_filter = (Filter)n_texture.attribute("mag_filter").as_int();
+				dst.min_filter = (Filter)n_texture.attribute("min_filter").as_int();
+				dst.address_mode = (AddressMode)n_texture.attribute("address_mode").as_int();
 				itex++;
 			}
 		}
@@ -291,10 +295,16 @@ namespace flame
 					write_t(file, m->metallic);
 					write_t(file, m->roughness);
 					write_t(file, m->alpha_test);
-					for (auto i = 0; i < size(m->textures); i++)
-						write_s(file, m->textures[i].string());
 					write_s(file, m->pipeline_file.string());
 					write_s(file, m->pipeline_defines);
+					for (auto i = 0; i < size(m->textures); i++)
+					{
+						auto& src = m->textures[i];
+						write_s(file, src.filename.string());
+						write_i(file, src.mag_filter);
+						write_i(file, src.min_filter);
+						write_i(file, src.address_mode);
+					}
 				}
 
 				write_u(file, meshes.size());
@@ -365,7 +375,13 @@ namespace flame
 					n_material.append_attribute("pipeline_defines").set_value(m->pipeline_defines.c_str());
 					auto n_textures = n_material.append_child("textures");
 					for (auto& t : m->textures)
-						n_textures.append_child("texture").append_attribute("path").set_value(t.string().c_str());
+					{
+						auto n_texture = n_textures.append_child("texture");
+						n_texture.append_attribute("filename").set_value(t.filename.string().c_str());
+						n_texture.append_attribute("mag_filter").set_value((int)t.mag_filter);
+						n_texture.append_attribute("min_filter").set_value((int)t.min_filter);
+						n_texture.append_attribute("address_mode").set_value((int)t.address_mode);
+					}
 				}
 
 				auto n_meshes = doc_root.append_child("meshes");
@@ -546,18 +562,16 @@ namespace flame
 					read_t(file, m->metallic);
 					read_t(file, m->roughness);
 					read_t(file, m->alpha_test);
+					read_fn(file, m->pipeline_file);
+					read_s(file, m->pipeline_defines);
 					for (auto i = 0; i < size(m->textures); i++)
 					{
-						std::string str;
-						read_s(file, str);
-						m->textures[i] = str;
+						auto& dst = m->textures[i];
+						read_fn(file, dst.filename);
+						dst.mag_filter = (Filter)read_i(file);
+						dst.min_filter = (Filter)read_i(file);
+						dst.address_mode = (AddressMode)read_i(file);
 					}
-					{
-						std::string str;
-						read_s(file, str);
-						m->pipeline_file = str;
-					}
-					read_s(file, m->pipeline_defines);
 				}
 
 				ret->meshes.resize(read_u(file));
@@ -647,20 +661,7 @@ namespace flame
 				for (auto n_material : doc_root.child("materials"))
 				{
 					auto m = new MaterialPrivate;
-					m->dir = parent_path;
-					m->name = n_material.attribute("name").value();
-					m->color = sto<Vec3f>(n_material.attribute("color").value());
-					m->metallic = sto<float>(n_material.attribute("metallic").value());
-					m->roughness = sto<float>(n_material.attribute("roughness").value());
-					m->alpha_test = sto<float>(n_material.attribute("alpha_test").value());
-					m->pipeline_file = n_material.attribute("pipeline_file").value();
-					m->pipeline_defines = n_material.attribute("pipeline_defines").value();
-					auto itex = 0;
-					for (auto n_texture : n_material.child("textures"))
-					{
-						m->textures[itex] = n_texture.attribute("path").value();
-						itex++;
-					}
+					load_material(n_material, m);
 					ret->materials.emplace_back(m);
 				}
 
@@ -800,7 +801,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						dst->textures[0] = filename;
+						dst->textures[0].filename = filename;
 						dst->pipeline_defines += "COLOR_MAP ";
 					}
 
@@ -811,7 +812,7 @@ namespace flame
 					{
 						if (filename[0] == '/')
 							filename.erase(filename.begin());
-						dst->textures[1] = filename;
+						dst->textures[1].filename = filename;
 						dst->pipeline_defines += "ALPHA_MAP ";
 					}
 				}
