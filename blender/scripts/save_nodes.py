@@ -87,7 +87,7 @@ def get_value(i, b):
             return "dot(%s, %s)" % (get_value(n.inputs[0], True), get_value(n.inputs[1], True))
     elif n.bl_idname == 'ShaderNodeMixRGB':
         vn = new_v(None, n.inputs[0], True)['n']
-        return "((1.0 - %s) * %s + %s * %s)" % (vn, get_value(n.inputs[1], True), vn, get_value(n.inputs[2], True))
+        return "mix(%s, %s, %s)" % (get_value(n.inputs[1], True), get_value(n.inputs[2], True), get_value(n.inputs[0], True))
     elif n.bl_idname == 'ShaderNodeValToRGB':
         es = n.color_ramp.elements
         if len(es) == 2:

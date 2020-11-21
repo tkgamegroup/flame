@@ -37,7 +37,7 @@ root_event_receiver:add_mouse_scroll_listener_s(get_slot(
 				camera:set_pos()
 			end
 		else
-			if camera.length < 40 then
+			if camera.length < 100 then
 				camera.length = camera.length + 1
 				camera:set_pos()
 			end

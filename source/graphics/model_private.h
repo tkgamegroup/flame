@@ -21,8 +21,8 @@ namespace flame
 			std::string name;
 
 			Vec4f color = Vec4f(1.f);
-			float metallic = 0.04f;
-			float roughness = 0.5f;
+			float metallic = 0.f;
+			float roughness = 1.f;
 			float alpha_test = 0.f;
 
 			std::filesystem::path pipeline_file = "standard.mat";

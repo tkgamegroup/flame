@@ -1,33 +1,69 @@
 const float PI = 3.14159265359;
 const float esm_c = 3.0;
 
-vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 intensity, vec3 albedo, vec3 spec, float roughness)
+float distribution_GGX(vec3 N, vec3 H, float roughness)
+{
+	float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float geometry_schlick_GGX(float NdotV, float roughness)
+{
+	float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+
+float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = geometry_schlick_GGX(NdotV, roughness);
+    float ggx1  = geometry_schlick_GGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
+}
+
+vec3 fresnel_schlick(float cos_theta, vec3 f0)
+{
+	return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);
+}
+
+vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 H = normalize(V + L);
 	
-	float NdotV = clamp(dot(N, V), 0.0, 1.0);
-	float NdotL = clamp(dot(N, L), 0.0, 1.0);
-	float NdotH = clamp(dot(N, H), 0.0, 1.0);
-	float LdotH = clamp(dot(L, H), 0.0, 1.0);
+	float NdotV = max(dot(N, V), 0.0);
+	float NdotL = max(dot(N, L), 0.0);
 	
-	float roughness2 = roughness * roughness;
-	float roughness4 = roughness2 * roughness2;
-
-	float d = NdotH * NdotH * (roughness4 - 1.0) + 1.0;
-	float D = roughness4 / (PI * d * d);
-
-	float LdotH5 = 1.0 - LdotH;
-	LdotH5 = LdotH5 * LdotH5 * LdotH5 * LdotH5 * LdotH5;
-	vec3 F = spec + (1.0 - spec) * LdotH5;
-
-	float k = roughness2 / 2.0;
-	float G = (1.0 / (NdotL * (1.0 - k) + k)) * (1.0 / (NdotV * (1.0 - k) + k));
-
-	vec3 brdf = min(F * G * D, vec3(1.0));
-	return ((vec3(1.0) - F) * albedo / PI + brdf) * NdotL * intensity;
+	float NDF = distribution_GGX(N, H, roughness);        
+    float G   = geometry_smith(N, V, L, roughness);      
+    vec3 F    = fresnel_schlick(max(dot(H, V), 0.0), f0);
+	
+	vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;	  
+        
+    vec3 numerator    = NDF * G * F;
+    float denominator = 4.0 * NdotV * NdotL;
+    vec3 specular     = numerator / max(denominator, 0.001);
+	               
+    return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, float roughness)
+vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 spec, float roughness)
 {
 	vec3 color = vec3(0.0);
 
@@ -65,8 +101,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, f
 			}
 		}
 		
-		vec3 intensity = light.color;
-		color += lighting(N, V, L, intensity * shadow, albedo, spec, roughness);
+		color += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
 	}
 	
 	light_count = light_indices_list[0].point_lights_count;
@@ -86,7 +121,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, vec3 albedo, vec3 spec, f
 		}
 
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);
-		color += lighting(N, V, L, intensity * shadow, albedo, spec, roughness);
+		color += lighting(N, V, L, intensity * shadow, metallic, albedo, spec, roughness);
 	}
 
 	return color;

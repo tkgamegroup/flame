@@ -447,7 +447,7 @@ namespace flame
 		{
 			pugi::xml_document prefab;
 
-			auto model_name = filename.filename().string();
+			auto model_name = _filename.filename().string();
 			std::function<void(pugi::xml_node, NodePrivate*)> print_node;
 			print_node = [&](pugi::xml_node dst, NodePrivate* src) {
 				auto n = dst.append_child("entity");
@@ -661,6 +661,7 @@ namespace flame
 				for (auto n_material : doc_root.child("materials"))
 				{
 					auto m = new MaterialPrivate;
+					m->dir = parent_path;
 					load_material(n_material, m);
 					ret->materials.emplace_back(m);
 				}
@@ -784,6 +785,7 @@ namespace flame
 				{
 					auto src = scene->mMaterials[i];
 					auto dst = new MaterialPrivate;
+					dst->dir = parent_path;
 					ret->materials.emplace_back(dst);
 
 					aiString name;
