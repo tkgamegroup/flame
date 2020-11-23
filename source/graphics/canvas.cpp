@@ -105,6 +105,10 @@ namespace flame
 				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 			}
 
+			mesh_wireframe_pipeline.reset(create_material_pipeline(MaterialForMesh, L"", "WIREFRAME"));
+			mesh_armature_wireframe_pipeline.reset(create_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME"));
+			terrain_wireframe_pipeline.reset(create_material_pipeline(MaterialForTerrain, L"", "WIREFRAME"));
+
 			{
 				ShaderPrivate* shaders[] = {
 					ShaderPrivate::get(device, L"element.vert"),
@@ -132,9 +136,13 @@ namespace flame
 				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
 			}
 
-			mesh_wireframe_pipeline.reset(create_material_pipeline(MaterialForMesh, L"", "WIREFRAME"));
-			mesh_armature_wireframe_pipeline.reset(create_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME"));
-			terrain_wireframe_pipeline.reset(create_material_pipeline(MaterialForTerrain, L"", "WIREFRAME"));
+			{
+				ShaderPrivate* shaders[] = {
+					ShaderPrivate::get(device, L"sky.vert"),
+					ShaderPrivate::get(device, L"sky.frag")
+				};
+				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky.pll"), mesh_renderpass.get(), 0));
+			}
 
 			{
 				ShaderPrivate* shaders[] = {
@@ -713,6 +721,8 @@ namespace flame
 						iv_res
 					};
 					mesh_framebuffers[0].reset(new FramebufferPrivate(device, preferences->mesh_renderpass.get(), vs));
+
+					mesh_resolve_resframebuffer.reset(new FramebufferPrivate(device, preferences->image1_16_renderpass.get(), { &iv_res, 1 }));
 				}
 				else
 				{
@@ -737,6 +747,8 @@ namespace flame
 							mesh_framebuffers[i].reset(new FramebufferPrivate(device, preferences->mesh_renderpass.get(), vs));
 						}
 					}
+
+					mesh_resolve_resframebuffer.reset(nullptr);
 				}
 
 				back_image.reset(new ImagePrivate(device, hdr ? Format_R16G16B16A16_SFLOAT : Format_B8G8R8A8_UNORM, output_size, 0xFFFFFFFF, 1, SampleCount_1, ImageUsageSampled | ImageUsageAttachment));
@@ -1604,15 +1616,16 @@ namespace flame
 			dst[7] = Vec3f(transform * Vec4f(-x2, -y2, -zFar, 1.f));
 		}
 
-		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const Mat3f& axes, const Vec3f& _coord)
+		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const Mat3f& dirs, const Vec3f& _coord)
 		{
 			fovy = _fovy;
 			aspect = _aspect;
 			zNear = _zNear;
 			zFar = _zFar;
 			camera_coord = _coord;
+			camera_dirs = dirs;
 
-			view_inv_matrix = Mat4f(Mat<3, 4, float>(axes, Vec3f(0.f)), Vec4f(camera_coord, 1.f));
+			view_inv_matrix = Mat4f(Mat<3, 4, float>(dirs, Vec3f(0.f)), Vec4f(camera_coord, 1.f));
 			view_matrix = inverse(view_inv_matrix);
 			proj_matrix = make_perspective_project_matrix(fovy, aspect, zNear, zFar);
 			proj_view_matrix = proj_matrix * view_matrix;
@@ -1622,6 +1635,7 @@ namespace flame
 			render_data_buffer.set(S<"zNear"_h>, zNear);
 			render_data_buffer.set(S<"zFar"_h>, zFar);
 			render_data_buffer.set(S<"camera_coord"_h>, camera_coord);
+			render_data_buffer.set(S<"camera_dirs"_h>, camera_dirs);
 			render_data_buffer.set(S<"view_inv"_h>, view_inv_matrix);
 			render_data_buffer.set(S<"view"_h>, view_matrix);
 			render_data_buffer.set(S<"proj"_h>, proj_matrix);
@@ -1638,6 +1652,11 @@ namespace flame
 				dst[4] = make_plane(ps[4], ps[5], ps[0]); // top
 				dst[5] = make_plane(ps[3], ps[2], ps[7]); // bottom
 			}
+		}
+
+		void CanvasPrivate::set_sky(int tex_id)
+		{
+			sky_tex_id = tex_id;
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer)
@@ -1818,6 +1837,8 @@ namespace flame
 
 		void CanvasPrivate::prepare()
 		{
+			sky_tex_id = -1;
+
 			element_vertex_buffer.stagnum = 0;
 			element_index_buffer.stagnum = 0;
 
@@ -1946,7 +1967,7 @@ namespace flame
 			cb->set_scissor(Vec4f(Vec2f(0.f), (Vec2f)output_size));
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
-			auto first_mesh = true;
+			auto first_3d = true;
 			auto line3_off = 0;
 
 			for (auto& p : passes)
@@ -1997,11 +2018,12 @@ namespace flame
 					break;
 				case Pass3D:
 				{
-					if (first_mesh)
+					if (first_3d)
 					{
-						first_mesh = false;
+						first_3d = false;
 
 						render_data_buffer.set(S<"fb_size"_h>, output_size);
+						render_data_buffer.set(S<"sky_tex_id"_h>, sky_tex_id);
 
 						render_data_buffer.upload(cb);
 						mesh_matrix_buffer.upload(cb);
@@ -2206,6 +2228,15 @@ namespace flame
 						cvs[2] = Vec4f(0.f, 0.f, 0.f, 0.f);
 						cb->begin_renderpass(nullptr, mesh_framebuffers[0].get(), cvs);
 					}
+
+					if (sky_tex_id != -1)
+					{
+						cb->bind_pipeline(preferences->sky_pipeline.get());
+						cb->bind_descriptor_set(PipelineGraphics, render_data_descriptorset.get(), 0, nullptr);
+						cb->bind_descriptor_set(PipelineGraphics, material_descriptorset.get(), 1, nullptr);
+						cb->draw(3, 1, 0, 0);
+					}
+
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];

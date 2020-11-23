@@ -1,4 +1,5 @@
-const float PI = 3.14159265359;
+#include "math.glsl"
+
 const float esm_c = 3.0;
 
 float distribution_GGX(vec3 N, vec3 H, float roughness)

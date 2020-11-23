@@ -302,7 +302,7 @@ namespace flame
 					ret |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 				else
 					ret |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-				if (sc != SampleCount_1)
+				if (sc != SampleCount_1 && !(fmt >= Format_Depth_Begin && fmt <= Format_Depth_End))
 					ret |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
 			}
 			return ret;

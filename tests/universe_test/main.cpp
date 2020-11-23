@@ -35,11 +35,6 @@ int main(int argc, char** args)
 		w->root->add_component(c);
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
-		{
-			auto n = e->find_child("camera");
-			if (n)
-				w->s_renderer->set_camera(n->get_component_t<cCamera>());
-		}
 		//e->save(L"d:/1.prefab");
 		w->root->add_child(e);
 	}

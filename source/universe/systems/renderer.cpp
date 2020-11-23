@@ -73,14 +73,6 @@ namespace flame
 	{
 		if (!dirty && !always_update)
 			return;
-		if (camera)
-		{
-			auto node = camera->node;
-			node->update_transform();
-			auto out = canvas->get_output(0);
-			auto size = out ? Vec2f(out->get_image()->get_size()) : Vec2f(1.f);
-			canvas->set_camera(camera->fovy, size.x() / size.y(), camera->near, camera->far, node->global_dirs, node->global_pos);
-		}
 		render(world->root.get(), false, !camera);
 		dirty = false;
 	}

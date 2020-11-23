@@ -1,6 +1,5 @@
 #include "terrain.pll"
 #include "shading.glsl"
-#include "math.glsl"
 
 layout (location = 0) in flat uint i_idx;
 layout (location = 1) in vec2 i_uv;

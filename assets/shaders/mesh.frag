@@ -1,5 +1,4 @@
 #include "mesh.pll"
-
 #include "shading.glsl"
 
 layout (location = 0) in flat uint i_mat_id;

@@ -48,6 +48,7 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> mesh_armature_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> terrain_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> element_pipeline;
+			std::unique_ptr<PipelinePrivate> sky_pipeline;
 			std::unique_ptr<PipelinePrivate> line3_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
 			std::unique_ptr<PipelinePrivate> blurv_pipeline[10];
@@ -481,10 +482,13 @@ namespace flame
 			float zNear;
 			float zFar;
 			Vec3f camera_coord;
+			Mat3f camera_dirs;
 			Mat4f view_matrix;
 			Mat4f view_inv_matrix;
 			Mat4f proj_matrix;
 			Mat4f proj_view_matrix;
+
+			int sky_tex_id = -1;
 
 			float shadow_distance = 100.f;
 			uint csm_levels = 3;
@@ -547,6 +551,7 @@ namespace flame
 			std::unique_ptr<DescriptorSetPrivate> msaa_descriptorset;
 
 			std::vector<std::unique_ptr<FramebufferPrivate>> mesh_framebuffers;
+			std::unique_ptr<FramebufferPrivate> mesh_resolve_resframebuffer;
 
 			std::unique_ptr<ImagePrivate> back_image;
 			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
@@ -613,7 +618,8 @@ namespace flame
 			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
 			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
-			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& axes, const Vec3f& coord) override;
+			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& dirs, const Vec3f& coord) override;
+			void set_sky(int tex_id) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;

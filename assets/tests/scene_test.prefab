@@ -7,6 +7,10 @@
     <cNode />
     <entity name="scene">
       <cNode />
+      <entity >
+        <cNode />
+        <cSky texture_name="D:\sky\PurplyBlueSky_low.png" />
+      </entity>
       <entity src="cube">
         <cNode pos="0,200,0" />
         <cRigid dynamic="false" />
@@ -25,7 +29,7 @@
         <cScript src="character_controller.lua" />
         <entity name="camera">
           <cNode pos="0,5,0" euler="0,0,0" />
-          <cCamera />
+          <cCamera current="true" />
           <cScript src="camera_third.lua" />
         </entity>
       </entity>
