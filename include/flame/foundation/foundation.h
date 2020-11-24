@@ -433,6 +433,7 @@ namespace flame
 		{
 			std::ofstream inc(inc_path);
 			inc << path.string() << std::endl;
+			includes.push_back(path);
 			std::stack<std::filesystem::path> remains;
 			remains.push(path);
 			while (!remains.empty())
