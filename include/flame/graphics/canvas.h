@@ -37,8 +37,6 @@ namespace flame
 
 		struct RenderPreferences
 		{
-			virtual void set_shading(ShadingType type) = 0;
-
 			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true, bool msaa_3d = true);
 		};
 
@@ -63,6 +61,9 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual RenderPreferences* get_preferences() const = 0;
+
+			virtual void set_shading(ShadingType type) = 0;
+			virtual void set_shadow(float distance, uint csm_levels, float csm_factor) = 0;
 
 			virtual Vec4c get_clear_color() const = 0;
 			virtual void set_clear_color(const Vec4c& color) = 0;

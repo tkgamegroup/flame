@@ -436,11 +436,6 @@ namespace flame
 			}
 		}
 
-		void RenderPreferencesPrivate::set_shading(ShadingType type)
-		{
-			shading_type = type;
-		}
-
 		RenderPreferences* RenderPreferences::create(Device* device, bool hdr, bool msaa_3d)
 		{
 			return new RenderPreferencesPrivate((DevicePrivate*)device, hdr, msaa_3d);
@@ -524,6 +519,7 @@ namespace flame
 				render_data_buffer.create(device, BufferUsageUniform, find_type(dsl->types, "RenderData"));
 				render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
 				render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
+				render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
 				render_data_descriptorset->set_buffer(dsl->find_binding("RenderData"), 0, render_data_buffer.buf.get());
 			}
 
@@ -637,6 +633,22 @@ namespace flame
 			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 
 			line3_buffer.create(device, BufferUsageVertex, 200000);
+		}
+
+		void CanvasPrivate::set_shading(ShadingType type)
+		{
+			shading_type = type;
+		}
+
+		void CanvasPrivate::set_shadow(float distance, uint _csm_levels, float _csm_factor)
+		{
+			shadow_distance = distance;
+			csm_levels = _csm_levels;
+			csm_factor = _csm_factor;
+
+			render_data_buffer.set(S<"shadow_distance"_h>, shadow_distance);
+			render_data_buffer.set(S<"csm_levels"_h>, csm_levels);
+			render_data_buffer.set(S<"csm_factor"_h>, csm_factor);
 		}
 
 		void CanvasPrivate::set_output(std::span<ImageViewPrivate*> views)
@@ -1635,7 +1647,7 @@ namespace flame
 			render_data_buffer.set(S<"zNear"_h>, zNear);
 			render_data_buffer.set(S<"zFar"_h>, zFar);
 			render_data_buffer.set(S<"camera_coord"_h>, camera_coord);
-			render_data_buffer.set(S<"camera_dirs"_h>, camera_dirs);
+			render_data_buffer.set(S<"camera_dirs"_h>, Mat4f(camera_dirs));
 			render_data_buffer.set(S<"view_inv"_h>, view_inv_matrix);
 			render_data_buffer.set(S<"view"_h>, view_matrix);
 			render_data_buffer.set(S<"proj"_h>, proj_matrix);

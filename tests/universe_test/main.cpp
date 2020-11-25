@@ -23,13 +23,13 @@ int main(int argc, char** args)
 		auto c = cCommand::create();
 		c->add_processor([](Capture& c, const char* _cmd) {
 			auto cmd = std::string(_cmd);
-			if (cmd == "view_solid")
-				g_app.main_window->render_preferences->set_shading(graphics::ShadingSolid);
-			else if (cmd == "view_wireframe")
-				g_app.main_window->render_preferences->set_shading(graphics::ShadingWireframe);
-			else if (cmd == "view_physics_on")
+			if		(cmd == "shading_solid")
+				g_app.main_window->canvas->set_shading(graphics::ShadingSolid);
+			else if (cmd == "shading_wireframe")
+				g_app.main_window->canvas->set_shading(graphics::ShadingWireframe);
+			else if (cmd == "physics_visualization_on")
 				g_app.main_window->s_physic_world->set_visualization(true);
-			else if (cmd == "view_physics_off")
+			else if (cmd == "physics_visualization_off")
 				g_app.main_window->s_physic_world->set_visualization(false);
 		}, Capture());
 		w->root->add_component(c);
@@ -38,18 +38,6 @@ int main(int argc, char** args)
 		//e->save(L"d:/1.prefab");
 		w->root->add_child(e);
 	}
-
-	//add_file_watcher(res_path.c_str(), [](Capture& c, FileChangeType, const wchar_t* filename) {
-	//	auto path = std::filesystem::path(filename);
-	//	if (path.filename() == test_prefab)
-	//	{
-	//		auto e = Entity::create();
-	//		e->load(filename);
-	//		auto root = c.thiz<Entity>();
-	//		root->remove_all_children();
-	//		root->add_child(e);
-	//	}
-	//}, Capture().set_thiz(root), false, false);
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());

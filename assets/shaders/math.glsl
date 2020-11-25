@@ -8,5 +8,5 @@ float ramp2(float v, float c1, float p1, float c2, float p2)
 
 vec2 panorama(vec3 v)
 {
-	return vec2(1.0 + atan(v.x, v.z) * PI_INV, acos(v.y) * PI_INV);
+	return vec2(0.5 + 0.5 * atan(v.x, v.z) * PI_INV, acos(v.y) * PI_INV);
 }

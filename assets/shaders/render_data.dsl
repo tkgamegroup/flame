@@ -6,6 +6,7 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 {
 	float shadow_distance;
 	uint csm_levels;
+	float csm_factor;
 
 	vec2 fb_size;
 	
@@ -15,7 +16,7 @@ layout (set = RENDER_DATA_SET, binding = 0) uniform RenderData
 	float zFar;
 	
 	vec3 camera_coord;
-	mat3 camera_dirs;
+	mat4 camera_dirs;
 
 	mat4 view_inv;
 	mat4 view;

@@ -36,8 +36,6 @@ namespace flame
 			bool hdr;
 			bool msaa_3d;
 
-			ShadingType shading_type = ShadingSolid;
-
 			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_r16_renderpass;
@@ -66,8 +64,6 @@ namespace flame
 			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			void release_material_pipeline(MaterialUsage usage, PipelinePrivate* p);
-
-			void set_shading(ShadingType type) override;
 		};
 
 		struct ShaderBufferBase
@@ -475,6 +471,12 @@ namespace flame
 		{
 			RenderPreferencesPrivate* preferences;
 
+			ShadingType shading_type = ShadingSolid;
+
+			float shadow_distance = 100.f;
+			uint csm_levels = 3;
+			float csm_factor = 0.3f;
+
 			Vec4c clear_color = Vec4c(0, 0, 0, 255);
 
 			float fovy;
@@ -489,9 +491,6 @@ namespace flame
 			Mat4f proj_view_matrix;
 
 			int sky_tex_id = -1;
-
-			float shadow_distance = 100.f;
-			uint csm_levels = 3;
 
 			std::unique_ptr<ImagePrivate> white_image;
 			std::vector < ElementResourceSlot > element_resources;
@@ -581,6 +580,9 @@ namespace flame
 			void release() override { delete this; }
 
 			RenderPreferences* get_preferences() const override { return preferences; };
+
+			void set_shading(ShadingType type) override;
+			void set_shadow(float distance, uint csm_levels, float csm_factor) override;
 
 			Vec4c get_clear_color() const override { return clear_color; }
 			void set_clear_color(const Vec4c& color) override { clear_color = color; }
