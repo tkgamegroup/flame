@@ -14,8 +14,12 @@ namespace flame
 		{
 		}
 
-		virtual const char* get_texture_name() const = 0;
-		virtual void set_texture_name(const char* name) = 0;
+		virtual const char* get_box_texture() const = 0;
+		virtual void set_box_texture(const char* name) = 0;
+		virtual const char* get_irr_texture() const = 0;
+		virtual void set_irr_texture(const char* name) = 0;
+		virtual const char* get_rad_texture() const = 0;
+		virtual void set_rad_texture(const char* name) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cSky* create();
 	};

@@ -7,6 +7,8 @@
 #include "command_private.h"
 #include "shader_private.h"
 
+#include <gli.hpp>
+
 namespace flame
 {
 	namespace graphics
@@ -155,50 +157,54 @@ namespace flame
 			ImagePrivate* ret = nullptr;
 
 			auto ext = filename.extension().string();
-			if (ext == ".ktx" || ext == ".dds")
+			if (ext == ".ktx")
 			{
-				//gli::gl GL(gli::gl::PROFILE_GL33);
+				gli::gl GL(gli::gl::PROFILE_KTX);
 
-				//auto gli_texture = gli::load(filename);
-				//if (gli_texture.empty())
-				//	fassert(0);
+				auto gli_texture = gli::load(filename.string());
+				fassert(gli_texture.target() == gli::TARGET_2D);
 
-				//fassert(gli_texture.target() == gli::TARGET_2D);
-				//auto const gli_format = GL.translate(gli_texture.format(), gli_texture.swizzles());
+				auto size = gli_texture.extent();
+				auto levels = gli_texture.levels();
+				auto layers = gli_texture.layers();
+				auto gli_format = GL.translate(gli_texture.format(), gli_texture.swizzles());
 
-				//width = gli_texture.extent().x();
-				//height = gli_texture.extent().y();
-				//level = gli_texture.levels();
-				//layer = gli_texture.layers();
+				Format format = Format_Undefined;
+				switch (gli_format.Internal)
+				{
+				case gli::gl::INTERNAL_RGBA8_UNORM:
+					format = Format_R8G8B8A8_UNORM;
+					break;
+				case gli::gl::INTERNAL_RGBA_DXT5:
+					format = Format_RGBA_BC3;
+					break;
+				case gli::gl::INTERNAL_RGBA_ETC2:
+					format = Format_RGBA_ETC2;
+					break;
+				}
+				fassert(format != Format_Undefined);
 
-				//switch (gli_format.Internal)
-				//{
-				//case gli::gl::INTERNAL_RGBA_DXT5:
-				//	fmt = Format_RGBA_BC3;
-				//	break;
-				//case gli::gl::INTERNAL_RGBA_ETC2:
-				//	fmt = Format_RGBA_ETC2;
-				//	break;
-				//}
+				auto ret = new ImagePrivate(device, format, Vec2u(size.x, size.y), levels, layers,
+					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 
-				//staging_buffer = create_buffer(d, gli_texture.size(), BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
-				//staging_buffer->_map();
-				//memcpy(staging_buffer->_mapped, gli_texture.data(), staging_buffer->_size);
-				//staging_buffer->_unmap();
-
-				//auto offset override;
-				//for (auto i override; i < level; i++)
-				//{
-				//	BufferTextureCopy c;
-				//	c.buffer_offset = offset;
-				//	c.image_x override;
-				//	c.image_y override;
-				//	c.image_width = gli_texture.extent(i).x();
-				//	c.image_height = gli_texture.extent(i).y();
-				//	c.image_level = i;
-				//	buffer_copy_regions.push_back(c);
-				//	offset += gli_texture.size(i);
-				//}
+				ImmediateStagingBuffer stag(device, gli_texture.size(), gli_texture.data());
+				ImmediateCommandBuffer icb(device);
+				auto cb = icb.cb.get();
+				std::vector<BufferImageCopy> cpies;
+				auto offset = 0;
+				for (auto i = 0; i < levels; i++)
+				{
+					BufferImageCopy cpy;
+					cpy.buffer_offset = offset;
+					auto ext = gli_texture.extent(i);
+					cpy.image_extent = Vec2u(ext.x, ext.y);
+					cpy.image_level = i;
+					cpies.push_back(cpy);
+					offset += gli_texture.size(i);
+				}
+				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
+				cb->copy_buffer_to_image(stag.buf.get(), ret, cpies);
+				cb->image_barrier(ret, {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			}
 			else
 			{

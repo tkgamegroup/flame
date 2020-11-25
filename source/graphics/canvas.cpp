@@ -1666,9 +1666,11 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::set_sky(int tex_id)
+		void CanvasPrivate::set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id)
 		{
-			sky_tex_id = tex_id;
+			sky_box_tex_id = box_tex_id;
+			sky_irr_tex_id = irr_tex_id;
+			sky_rad_tex_id = rad_tex_id;
 		}
 
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer)
@@ -1849,7 +1851,9 @@ namespace flame
 
 		void CanvasPrivate::prepare()
 		{
-			sky_tex_id = -1;
+			sky_box_tex_id = -1;
+			sky_irr_tex_id = -1;
+			sky_rad_tex_id = -1;
 
 			element_vertex_buffer.stagnum = 0;
 			element_index_buffer.stagnum = 0;
@@ -2035,7 +2039,9 @@ namespace flame
 						first_3d = false;
 
 						render_data_buffer.set(S<"fb_size"_h>, output_size);
-						render_data_buffer.set(S<"sky_tex_id"_h>, sky_tex_id);
+						render_data_buffer.set(S<"sky_box_tex_id"_h>, sky_box_tex_id);
+						render_data_buffer.set(S<"sky_box_irr_id"_h>, sky_irr_tex_id);
+						render_data_buffer.set(S<"sky_box_rad_id"_h>, sky_rad_tex_id);
 
 						render_data_buffer.upload(cb);
 						mesh_matrix_buffer.upload(cb);
@@ -2241,7 +2247,7 @@ namespace flame
 						cb->begin_renderpass(nullptr, mesh_framebuffers[0].get(), cvs);
 					}
 
-					if (sky_tex_id != -1)
+					if (sky_box_tex_id != -1)
 					{
 						cb->bind_pipeline(preferences->sky_pipeline.get());
 						cb->bind_descriptor_set(PipelineGraphics, render_data_descriptorset.get(), 0, nullptr);

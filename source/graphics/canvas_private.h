@@ -490,7 +490,9 @@ namespace flame
 			Mat4f proj_matrix;
 			Mat4f proj_view_matrix;
 
-			int sky_tex_id = -1;
+			int sky_box_tex_id = -1;
+			int sky_irr_tex_id = -1;
+			int sky_rad_tex_id = -1;
 
 			std::unique_ptr<ImagePrivate> white_image;
 			std::vector < ElementResourceSlot > element_resources;
@@ -621,7 +623,7 @@ namespace flame
 			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
 
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& dirs, const Vec3f& coord) override;
-			void set_sky(int tex_id) override;
+			void set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
