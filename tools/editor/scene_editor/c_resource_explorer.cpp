@@ -9,7 +9,7 @@ struct cThumbnail : Component
 
 	std::wstring filename;
 	Bitmap* thumbnail;
-	Vec2u* seat;
+	uvec2* seat;
 
 
 	cThumbnail() :
@@ -77,9 +77,9 @@ struct cThumbnail : Component
 				if (seat)
 				{
 					return_seat();
-					image->element->padding = Vec4f(0.f);
+					image->element->padding = vec4(0.f);
 					image->id = 0;
-					image->color = Vec4c(100, 100, 100, 128);
+					image->color = cvec4(100, 100, 100, 128);
 				}
 			}
 			else
@@ -96,17 +96,17 @@ struct cThumbnail : Component
 							auto thiz = c.thiz<cThumbnail>();
 							auto image = thiz->image;
 							auto& thumbnails_img_size = scene_editor.resource_explorer->thumbnails_img->size;
-							auto& thumbnail_size = Vec2u(thiz->thumbnail->get_width(), thiz->thumbnail->get_height());
+							auto& thumbnail_size = uvec2(thiz->thumbnail->get_width(), thiz->thumbnail->get_height());
 
 							scene_editor.resource_explorer->thumbnails_img->set_pixels(*thiz->seat, thumbnail_size, thiz->thumbnail->get_data());
 
-							auto h = (64 - thumbnail_size.x()) * 0.5f;
-							auto v = (64 - thumbnail_size.y()) * 0.5f;
-							image->element->padding = Vec4f(h, v, h, v);
+							auto h = (64 - thumbnail_size.x) * 0.5f;
+							auto v = (64 - thumbnail_size.y) * 0.5f;
+							image->element->padding = vec4(h, v, h, v);
 							image->id = scene_editor.resource_explorer->thumbnails_img_idx << 16;
-							image->uv0 = Vec2f(*thiz->seat) / thumbnails_img_size;
-							image->uv1 = Vec2f(*thiz->seat + thumbnail_size) / thumbnails_img_size;
-							image->color = Vec4c(255);
+							image->uv0 = vec2(*thiz->seat) / thumbnails_img_size;
+							image->uv1 = vec2(*thiz->seat + thumbnail_size) / thumbnails_img_size;
+							image->color = cvec4(255);
 						}, Capture().set_thiz(this), 0.f, FLAME_CHASH("update thumbnail"));
 					}
 				}
@@ -123,22 +123,22 @@ cResourceExplorer::cResourceExplorer() :
 	folder_img_idx = canvas->set_resource(-1, folder_img->default_view());
 	file_img = Image::create_from_file(app.graphics_device, (app.resource_path / L"assets/file.png").c_str());
 	file_img_idx = canvas->set_resource(-1, file_img->default_view());
-	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, Vec2u(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
-	thumbnails_img->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, Vec4c(255));
+	thumbnails_img = Image::create(app.graphics_device, Format_R8G8B8A8_UNORM, uvec2(1920, 1024), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
+	thumbnails_img->clear(ImageLayoutUndefined, ImageLayoutShaderReadOnly, cvec4(255));
 	thumbnails_img_idx = canvas->set_resource(-1, thumbnails_img->default_view(), Sampler::get_default(FilterNearest));
 	{
 		auto x = 0;
 		auto y = 0;
 		while (true)
 		{
-			if (x + 64 > thumbnails_img->size.x())
+			if (x + 64 > thumbnails_img->size.x)
 			{
 				x = 0;
 				y += 64;
-				if (y + 64 > thumbnails_img->size.y())
+				if (y + 64 > thumbnails_img->size.y)
 					break;
 			}
-			auto seat = new Vec2u;
+			auto seat = new uvec2;
 			seat->x() = x;
 			seat->y() = y;
 			thumbnails_seats_free.emplace_back(seat);
@@ -234,14 +234,14 @@ cResourceExplorer::~cResourceExplorer()
 Entity* cResourceExplorer::create_listitem(const std::wstring& title, uint img_id)
 {
 	auto& ui = scene_editor.window->ui;
-	ui.push_style(FrameColorNormal, common(Vec4c(0)));
+	ui.push_style(FrameColorNormal, common(cvec4(0)));
 	auto e_item = ui.e_list_item(L"", 0);
 	ui.pop_style(FrameColorNormal);
 	ui.c_layout(LayoutVertical)->item_padding = 4.f;
 	ui.parents.push(e_item);
 	ui.next_element_size = 64.f;
 	ui.e_image(img_id << 16);
-	ui.e_text(app.font_atlas->wrap_text(ui.style(FontSize).u.x(), 64.f,
+	ui.e_text(app.font_atlas->wrap_text(ui.style(FontSize).u.x, 64.f,
 		title.c_str(), title.c_str() + title.size()).c_str());
 	ui.parents.pop();
 	return e_item;
@@ -260,7 +260,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 
 		address_bar->remove_children(0, -1);
 		ui.parents.push(address_bar);
-		ui.push_style(ButtonColorNormal, common(Vec4c(0)));
+		ui.push_style(ButtonColorNormal, common(cvec4(0)));
 		ui.push_style(ButtonColorHovering, common(ui.style(FrameColorHovering).c));
 		ui.push_style(ButtonColorActive, common(ui.style(FrameColorActive).c));
 
@@ -352,7 +352,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				wchar_t p[256];
 			}capture;
 			wcscpy_s(capture.p, p.c_str());
-			item->get_component(cEventReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			item->get_component(cEventReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 				{
 					auto& capture = c.data<Capturing>();
@@ -385,7 +385,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 			if (is_image_type)
 			{
 				auto e_image = item->children[0];
-				e_image->get_component(cImage)->color = Vec4c(100, 100, 100, 128);
+				e_image->get_component(cImage)->color = cvec4(100, 100, 100, 128);
 
 				auto c_thumbnail = f_new<cThumbnail>();
 				c_thumbnail->filename = std::filesystem::canonical(p).wstring();
@@ -400,7 +400,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
 				auto er = item->get_component(cEventReceiver);
-				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
 						auto& capture = c.data<Capturing>();
@@ -411,7 +411,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				ui.e_begin_popup_menu();
 				ui.e_menu_item(L"Open", [](Capture& c) {
-					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
+					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, ivec2(0));
 				}, Capture().set_thiz(er));
 				ui.e_end_popup_menu();
 			}
@@ -423,7 +423,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
 				auto er = item->get_component(cEventReceiver);
-				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
 						auto& capture = c.data<Capturing>();
@@ -435,7 +435,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				ui.e_begin_popup_menu();
 				ui.e_menu_item(L"Open", [](Capture& c) {
-					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, Vec2i(0));
+					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, ivec2(0));
 				}, Capture().set_thiz(er));
 				ui.e_end_popup_menu();
 			}
@@ -470,7 +470,7 @@ void cResourceExplorer::draw(graphics::Canvas* canvas)
 	}
 	else
 	{
-		auto w = c_list_element->size.x() - c_list_element->padding.xz().sum();
+		auto w = c_list_element->size.x - c_list_element->padding.xz().sum();
 		c_list_layout->set_column(max(1U, uint(w / (c_list_layout->item_padding + 64.f))));
 	}
 }

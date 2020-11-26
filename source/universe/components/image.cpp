@@ -112,11 +112,11 @@ namespace flame
 		atlas = nullptr;
 	}
 
-	void cImagePrivate::measure(Vec2f& ret)
+	void cImagePrivate::measure(vec2& ret)
 	{
 		if (!iv)
 		{
-			ret = Vec2f(-1.f);
+			ret = vec2(-1.f);
 			return;
 		}
 		ret = iv->get_image()->get_size();
@@ -128,7 +128,7 @@ namespace flame
 		{
 			canvas->draw_image(res_id, tile_id,
 				element->global_points[4], element->global_points[5], element->global_points[6], element->global_points[7],
-				uv0, uv1, Vec4c(255));
+				uv0, uv1, cvec4(255));
 		}
 	}
 

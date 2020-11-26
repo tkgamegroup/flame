@@ -31,27 +31,27 @@ namespace flame
 	struct BinPackNode
 	{
 		bool used;
-		Vec2u pos;
-		Vec2u size;
+		uvec2 pos;
+		uvec2 size;
 		std::unique_ptr<BinPackNode> right;
 		std::unique_ptr<BinPackNode> bottom;
 
-		BinPackNode(const Vec2u& size) :
+		BinPackNode(const uvec2& size) :
 			used(false),
 			pos(0),
 			size(size)
 		{
 		}
 
-		BinPackNode* find(const Vec2u& _size)
+		BinPackNode* find(const uvec2& _size)
 		{
-			if (!used && size >= _size)
+			if (!used && size.x >= _size.x && size.y >= size.y)
 			{
 				used = true;
-				right.reset(new BinPackNode(Vec2u(size.x() - _size.x(), _size.y())));
-				right->pos = pos + Vec2u(_size.x(), 0);
-				bottom.reset(new BinPackNode(Vec2u(size.x(), size.y() - _size.y())));
-				bottom->pos = pos + Vec2u(0, _size.y());
+				right.reset(new BinPackNode(uvec2(size.x - _size.x, _size.y)));
+				right->pos = pos + uvec2(_size.x, 0);
+				bottom.reset(new BinPackNode(uvec2(size.x, size.y - _size.y)));
+				bottom->pos = pos + uvec2(0, _size.y);
 				return this;
 			}
 			if (!right || !bottom)
@@ -70,10 +70,10 @@ namespace flame
 	{
 		std::string id;
 		Bitmap* b;
-		Vec2i pos;
+		ivec2 pos;
 	};
 
-	inline void bin_pack(const Vec2u& size, const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
+	inline void bin_pack(const uvec2& size, const std::vector<std::filesystem::path>& inputs, const std::filesystem::path& output, bool border, const std::function<void(const std::vector<BinPackTile>& tiles)>& callback)
 	{
 		auto b1 = border ? 1U : 0U;
 		auto b2 = b1 << 1;
@@ -84,7 +84,7 @@ namespace flame
 			BinPackTile t;
 			t.id = i.filename().stem().string();
 			t.b = Bitmap::create(i.c_str());
-			t.pos = Vec2i(-1);
+			t.pos = ivec2(-1);
 			tiles.push_back(t);
 		}
 		std::sort(tiles.begin(), tiles.end(), [](const auto& a, const auto& b) {
@@ -95,23 +95,23 @@ namespace flame
 
 		for (auto& t : tiles)
 		{
-			auto n = tree->find(Vec2u(t.b->get_width(), t.b->get_height()) + b2);
+			auto n = tree->find(uvec2(t.b->get_width(), t.b->get_height()) + b2);
 			if (n)
 				t.pos = n->pos;
 		}
 
-		auto _size = Vec2u(0);
+		auto _size = uvec2(0);
 		for (auto& t : tiles)
 		{
-			_size.x() = max(t.pos.x() + t.b->get_width() + b1, _size.x());
-			_size.y() = max(t.pos.y() + t.b->get_height() + b1, _size.y());
+			_size.x = max(t.pos.x + t.b->get_width() + b1, _size.x);
+			_size.y = max(t.pos.y + t.b->get_height() + b1, _size.y);
 		}
 
-		auto b = Bitmap::create(_size.x(), _size.y(), 4);
+		auto b = Bitmap::create(_size.x, _size.y, 4);
 		for (auto& t : tiles)
 		{
-			if (t.pos >= 0)
-				t.b->copy_to(b, t.b->get_width(), t.b->get_height(), 0, 0, t.pos.x(), t.pos.y(), border);
+			if (t.pos.x >= 0 && t.pos.y >= 0)
+				t.b->copy_to(b, t.b->get_width(), t.b->get_height(), 0, 0, t.pos.x, t.pos.y, border);
 		}
 
 		b->save(output.c_str());

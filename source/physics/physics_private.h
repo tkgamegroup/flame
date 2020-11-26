@@ -12,24 +12,24 @@ namespace flame
 {
 	namespace physics
 	{
-		inline PxVec3 cvt(const Vec3f& v)
+		inline PxVec3 cvt(const vec3& v)
 		{
-			return PxVec3(v.x(), v.y(), v.z());
+			return PxVec3(v.x, v.y, v.z);
 		}
 
-		inline Vec3f cvt(const PxVec3& v)
+		inline vec3 cvt(const PxVec3& v)
 		{
-			return Vec3f(v.x, v.y, v.z);
+			return vec3(v.x, v.y, v.z);
 		}
 
-		inline PxQuat cvt(const Vec4f& v)
+		inline PxQuat cvt(const vec4& v)
 		{
-			return PxQuat(v.x(), v.y(), v.z(), v.w());
+			return PxQuat(v.x, v.y, v.z, v.w);
 		}
 
-		inline Vec4f cvt(const PxQuat& v)
+		inline vec4 cvt(const PxQuat& v)
 		{
-			return Vec4f(v.x, v.y, v.z, v.w);
+			return vec4(v.x, v.y, v.z, v.w);
 		}
 	}
 }

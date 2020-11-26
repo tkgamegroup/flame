@@ -27,11 +27,11 @@ namespace flame
 		std::pair<bool, bool> kbtns_temp[KeyboardKey_Count];
 		std::pair<bool, bool> mbtns[MouseKeyCount];
 		std::pair<bool, bool> mbtns_temp[MouseKeyCount];
-		Vec2i mpos = Vec2i(-1);
-		Vec2i mdisp, mdisp_temp = Vec2i(0);
+		ivec2 mpos = ivec2(-1);
+		ivec2 mdisp, mdisp_temp = ivec2(0);
 		int mscrl, mscrl_temp = 0;
 
-		Vec2i active_pos = Vec2i(0);
+		ivec2 active_pos = ivec2(0);
 		
 		cEventReceiverPrivate* hovering = nullptr;
 		cEventReceiverPrivate* focusing = nullptr;

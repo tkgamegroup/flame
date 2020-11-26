@@ -43,7 +43,7 @@ namespace flame
 		Entity::report_data_changed(this, S<"absolute"_h>);
 	}
 
-	void cAlignerPrivate::set_margin(const Vec4f& m)
+	void cAlignerPrivate::set_margin(const vec4& m)
 	{
 		if (margin == m)
 			return;

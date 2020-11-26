@@ -18,7 +18,7 @@ namespace flame
 		bool dynamic = true;
 		physics::Rigid* phy_rigid = nullptr;
 		std::vector<physics::Shape*> phy_shapes;
-		Vec3f staging_impulse = Vec3f(0.f);
+		vec3 staging_impulse = vec3(0.f);
 
 		std::vector<std::unique_ptr<Closure<void(Capture&, physics::TouchType, cShape*, cShape*)>>> trigger_listeners;
 
@@ -32,7 +32,7 @@ namespace flame
 		bool get_dynamic() const override { return dynamic; }
 		void set_dynamic(bool v) override;
 
-		void add_impulse(const Vec3f& v) override;
+		void add_impulse(const vec3& v) override;
 
 		void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShape* trigger_shape, cShape* other_shape), const Capture& capture) override;
 		void remove_trigger_listener(void* lis) override;

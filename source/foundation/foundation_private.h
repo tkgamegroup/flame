@@ -16,8 +16,8 @@ namespace flame
 	{
 		HWND hWnd = 0;
 
-		Vec2i pos;
-		Vec2u size;
+		ivec2 pos;
+		uvec2 size;
 		std::string title;
 		int style;
 		CursorType cursor_type = CursorArrow;
@@ -26,35 +26,35 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_down_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_up_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, char)>>> char_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_left_down_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_left_up_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_right_down_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_right_up_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_middle_down_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_middle_up_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2i&)>>> mouse_move_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_left_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_left_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_right_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_right_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_middle_down_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_middle_up_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const ivec2&)>>> mouse_move_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, int)>>> mouse_scroll_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, const Vec2u&)>>> resize_listeners;
+		std::vector<std::unique_ptr<Closure<void(Capture&, const uvec2&)>>> resize_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> destroy_listeners;
 
 		bool sizing = false;
-		Vec2u pending_size;
+		uvec2 pending_size;
 
 		bool dead = false;
 
-		WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent);
+		WindowPrivate(const std::string& _title, const uvec2& _size, uint _style, WindowPrivate* parent);
 		~WindowPrivate();
 
 		void wnd_proc(UINT message, WPARAM wParam, LPARAM lParam);
 
 		void* get_native() override;
 
-		Vec2i get_pos() const override { return pos; }
-		void set_pos(const Vec2i& pos) override;
-		Vec2u get_size() const override { return size; }
-		void set_size(const Vec2u& size) override;
+		ivec2 get_pos() const override { return pos; }
+		void set_pos(const ivec2& pos) override;
+		uvec2 get_size() const override { return size; }
+		void set_size(const uvec2& size) override;
 
-		Vec2i global_to_local(const Vec2i& p) override;
+		ivec2 global_to_local(const ivec2& p) override;
 
 		const char* get_title() const override { return title.c_str(); }
 		void set_title(const std::string& _title);
@@ -72,23 +72,23 @@ namespace flame
 		void remove_key_up_listener(void* lis) override;
 		void* add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture) override;
 		void remove_char_listener(void* lis) override;
-		void* add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_left_down_listener(void* lis) override;
-		void* add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_left_up_listener(void* lis) override;
-		void* add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_right_down_listener(void* lis) override;
-		void* add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_right_up_listener(void* lis) override;
-		void* add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_middle_down_listener(void* lis) override;
-		void* add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_middle_up_listener(void* lis) override;
-		void* add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) override;
+		void* add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) override;
 		void remove_mouse_move_listener(void* lis) override;
 		void* add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture) override;
 		void remove_mouse_scroll_listener(void* lis) override;
-		void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) override;
+		void* add_resize_listener(void (*callback)(Capture& c, const uvec2& size), const Capture& capture) override;
 		void remove_resize_listener(void* lis) override;
 		void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_destroy_listener(void* lis) override;

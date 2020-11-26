@@ -63,9 +63,9 @@ void add_dir(Entity* dst, const std::filesystem::path& dir)
 int main(int argc, char** args)
 {
 	g_app.create();
-	auto w = new GraphicsWindow(&g_app, true, true, "Media Browser", Vec2u(1280, 720), WindowFrame | WindowResizable);
+	auto w = new GraphicsWindow(&g_app, true, true, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable);
 	canvas = w->canvas;
-	canvas->set_clear_color(Vec4c(255));
+	canvas->set_clear_color(cvec4(255));
 	root = w->root;
 
 	auto e = Entity::create();

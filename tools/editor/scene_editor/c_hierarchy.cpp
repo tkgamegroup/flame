@@ -27,16 +27,16 @@ struct cHierarchyItem : Component
 
 				event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
-				event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+				event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const ivec2& pos) {
 					auto thiz = c.thiz<cHierarchyItem>();
 					auto element = thiz->element;
 
 					if (action == BeingOvering)
 					{
-						auto h = element->global_size.y() * 0.3f;
-						if (pos.y() < element->global_pos.y() + h)
+						auto h = element->global_size.y * 0.3f;
+						if (pos.y < element->global_pos.y + h)
 							thiz->drop_pos = 0;
-						else if (pos.y() > element->global_pos.y() + element->global_size.y() - h)
+						else if (pos.y > element->global_pos.y + element->global_size.y - h)
 							thiz->drop_pos = 2;
 						else
 							thiz->drop_pos = 1;
@@ -103,23 +103,23 @@ struct cHierarchyItem : Component
 			drop_pos = -1;
 		if (!element->clipped && drop_pos >= 0)
 		{
-			std::vector<Vec2f> points;
+			std::vector<vec2> points;
 			switch (drop_pos)
 			{
 			case 0:
 				points.push_back(element->global_pos);
-				path_move(points, element->global_size.x(), 0.f);
+				path_move(points, element->global_size.x, 0.f);
 				break;
 			case 1:
 				path_rect(points, element->global_pos, element->global_size);
 				points.push_back(points[0]);
 				break;
 			case 2:
-				points.push_back(element->global_pos + Vec2f(0.f, element->global_size.y()));
-				path_move(points, element->global_size.x(), 0.f);
+				points.push_back(element->global_pos + vec2(0.f, element->global_size.y));
+				path_move(points, element->global_size.x, 0.f);
 				break;
 			}
-			canvas->stroke(points.size(), points.data(), Vec4c(120, 150, 255, 255), 3.f);
+			canvas->stroke(points.size(), points.data(), cvec4(120, 150, 255, 255), 3.f);
 		}
 	}
 };

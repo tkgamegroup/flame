@@ -117,8 +117,8 @@ void cInspector::refresh()
 			auto library = udt->db->library;
 
 			ui.e_begin_layout(LayoutHorizontal, 2.f);
-			ui.e_text(s2w(component->name).c_str())->get_component(cText)->color = Vec4c(30, 40, 160, 255);
-			ui.push_style(ButtonColorNormal, common(Vec4c(0)));
+			ui.e_text(s2w(component->name).c_str())->get_component(cText)->color = cvec4(30, 40, 160, 255);
+			ui.push_style(ButtonColorNormal, common(cvec4(0)));
 			ui.push_style(ButtonColorHovering, common(ui.style(FrameColorHovering).c));
 			ui.push_style(ButtonColorActive, common(ui.style(FrameColorActive).c));
 			ui.e_button(L"X", [](Capture& c) {
@@ -161,7 +161,7 @@ void cInspector::refresh()
 				cDataTracker* tracker = nullptr;
 
 				ui.parents.push(e_name_list);
-				ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+				ui.next_element_padding = vec4(4.f, 2.f, 4.f, 2.f);
 				auto e_name = ui.e_text(s2w(v->name.str()).c_str());
 				ui.c_aligner(AlignMinMax, 0);
 				ui.parents.pop();
@@ -190,7 +190,7 @@ void cInspector::refresh()
 					std::vector<cCheckbox*> checkboxes;
 
 					ui.parents.push(e_value_list);
-					ui.next_element_size = Vec2f(8.f, 4.f + ui.style(FontSize).u[0]);
+					ui.next_element_size = vec2(8.f, 4.f + ui.style(FontSize).u[0]);
 					ui.e_element();
 					ui.c_aligner(AlignMinMax, 0);
 					ui.parents.pop();
@@ -199,7 +199,7 @@ void cInspector::refresh()
 					for (auto i : info->items)
 					{
 						ui.parents.push(e_name_list);
-						ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+						ui.next_element_padding = vec4(4.f, 2.f, 4.f, 2.f);
 						ui.e_text(s2w(i->name.str()).c_str());
 						ui.c_aligner(AlignMinMax, 0);
 						ui.parents.pop();

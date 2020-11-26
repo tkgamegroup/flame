@@ -25,7 +25,7 @@ namespace flame
 		Entity::report_data_changed(this, S<"size"_h>);
 	}
 
-	void cTextPrivate::set_color(const Vec4c& col)
+	void cTextPrivate::set_color(const cvec4& col)
 	{
 		if (color == col)
 			return;
@@ -67,21 +67,21 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->draw_text(res_id, text.c_str(), nullptr, size, color, element->global_points[4], element->global_axes);
+		canvas->draw_text(res_id, text.c_str(), nullptr, size, color, element->padding.xy(), element->transform);
 	}
 
-	void cTextPrivate::measure(Vec2f& ret)
+	void cTextPrivate::measure(vec2& ret)
 	{
 		if (!atlas || (!auto_width && !auto_height))
 		{
-			ret = Vec2f(-1.f);
+			ret = vec2(-1.f);
 			return;
 		}
-		ret = Vec2f(atlas->text_size(size, text.c_str()));
+		ret = vec2(atlas->text_size(size, text.c_str()));
 		if (!auto_width)
-			ret.x() = -1.f;
+			ret.x = -1.f;
 		if (!auto_height)
-			ret.y() = -1.f;
+			ret.y = -1.f;
 	}
 
 	cText* cText::create()

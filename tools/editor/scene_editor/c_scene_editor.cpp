@@ -22,11 +22,11 @@ void _2DGizmo::create()
 
 	auto create_block = [&]() {
 		auto b = ui.e_element()->get_component(cElement);
-		b->size = Vec2f(8.f);
+		b->size = vec2(8.f);
 		b->pivot = 0.5f;
 		b->frame_thickness = 2.f;
-		b->color = Vec4c(255, 255, 255, 255);
-		b->frame_color = Vec4c(0, 0, 0, 255);
+		b->color = cvec4(255, 255, 255, 255);
+		b->frame_color = cvec4(0, 0, 0, 255);
 		b->entity->set_visible(false);
 		return b;
 	};
@@ -34,11 +34,11 @@ void _2DGizmo::create()
 	block_c = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				thiz->target->add_pos(Vec2f(pos) / thiz->base->scale);
+				thiz->target->add_pos(vec2(pos) / thiz->base->scale);
 			}
 			return true;
 		}, Capture().set_thiz(this));
@@ -51,11 +51,11 @@ void _2DGizmo::create()
 	block_l = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto x = pos.x() / thiz->base->scale;
+				auto x = pos.x / thiz->base->scale;
 				thiz->target->add_x(x);
 				thiz->target->add_width(-x);
 			}
@@ -69,11 +69,11 @@ void _2DGizmo::create()
 	block_t = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto y = pos.y() / thiz->base->scale;
+				auto y = pos.y / thiz->base->scale;
 				thiz->target->add_y(y);
 				thiz->target->add_height(-y);
 			}
@@ -87,11 +87,11 @@ void _2DGizmo::create()
 	block_r = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto x = pos.x() / thiz->base->scale;
+				auto x = pos.x / thiz->base->scale;
 				thiz->target->add_width(x);
 			}
 			return true;
@@ -104,11 +104,11 @@ void _2DGizmo::create()
 	block_b = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto y = pos.y() / thiz->base->scale;
+				auto y = pos.y / thiz->base->scale;
 				thiz->target->add_height(y);
 			}
 			return true;
@@ -121,11 +121,11 @@ void _2DGizmo::create()
 	block_lt = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto p = Vec2f(pos) / thiz->base->scale;
+				auto p = vec2(pos) / thiz->base->scale;
 				thiz->target->add_pos(p);
 				thiz->target->add_size(-p);
 			}
@@ -139,13 +139,13 @@ void _2DGizmo::create()
 	block_rt = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto p = Vec2f(pos) / thiz->base->scale;
-				thiz->target->add_y(p.y());
-				thiz->target->add_size(Vec2f(p.x(), -p.y()));
+				auto p = vec2(pos) / thiz->base->scale;
+				thiz->target->add_y(p.y);
+				thiz->target->add_size(vec2(p.x, -p.y));
 			}
 			return true;
 		}, Capture().set_thiz(this));
@@ -157,13 +157,13 @@ void _2DGizmo::create()
 	block_lb = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto p = Vec2f(pos) / thiz->base->scale;
-				thiz->target->add_x(p.x());
-				thiz->target->add_size(Vec2f(-p.x(), p.y()));
+				auto p = vec2(pos) / thiz->base->scale;
+				thiz->target->add_x(p.x);
+				thiz->target->add_size(vec2(-p.x, p.y));
 			}
 			return true;
 		}, Capture().set_thiz(this));
@@ -175,11 +175,11 @@ void _2DGizmo::create()
 	block_rb = create_block();
 	{
 		auto er = ui.c_event_receiver();
-		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
-				auto p = Vec2f(pos) / thiz->base->scale;
+				auto p = vec2(pos) / thiz->base->scale;
 				thiz->target->add_size(p);
 			}
 			return true;
@@ -246,13 +246,13 @@ void _2DGizmo::update_blocks()
 	auto s = target->size * base->scale;
 
 	block_c->set_pos(p + s * 0.5f);
-	block_l->set_pos(p + Vec2f(0.f, s.y() * 0.5f));
-	block_t->set_pos(p + Vec2f(s.x() * 0.5f, 0.f));
-	block_r->set_pos(p + Vec2f(s.x(), s.y() * 0.5f));
-	block_b->set_pos(p + Vec2f(s.x() * 0.5f, s.y()));
+	block_l->set_pos(p + vec2(0.f, s.y * 0.5f));
+	block_t->set_pos(p + vec2(s.x * 0.5f, 0.f));
+	block_r->set_pos(p + vec2(s.x, s.y * 0.5f));
+	block_b->set_pos(p + vec2(s.x * 0.5f, s.y));
 	block_lt->set_pos(p);
-	block_rt->set_pos(p + Vec2f(s.x(), 0.f));
-	block_lb->set_pos(p + Vec2f(0.f, s.y()));
+	block_rt->set_pos(p + vec2(s.x, 0.f));
+	block_lb->set_pos(p + vec2(0.f, s.y));
 	block_rb->set_pos(p + s);
 }
 
@@ -287,8 +287,8 @@ cSceneEditor::cSceneEditor() :
 			}, Capture());
 		ui.e_end_layout();
 
-		edt.create(ui, [](Capture&, const Vec4f& r) {
-			if (r.x() == r.z() && r.y() == r.z())
+		edt.create(ui, [](Capture&, const vec4& r) {
+			if (r.x == r.z && r.y == r.z)
 				scene_editor.select(nullptr);
 			else
 				scene_editor.select(scene_editor.editor->search_hovering(r));
@@ -305,10 +305,10 @@ cSceneEditor::cSceneEditor() :
 						auto se = scene_editor.selected->get_component(cElement);
 						if (se)
 						{
-							std::vector<Vec2f> points;
+							std::vector<vec2> points;
 							path_rect(points, se->global_pos, se->global_size);
 							points.push_back(points[0]);
-							canvas->stroke(points.size(), points.data(), Vec4c(0, 0, 0, 255), 2.f);
+							canvas->stroke(points.size(), points.data(), cvec4(0, 0, 0, 255), 2.f);
 						}
 					}
 					return true;
@@ -319,9 +319,9 @@ cSceneEditor::cSceneEditor() :
 					*pass = true;
 					return true;
 				}, Capture());
-				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
-						scene_editor.select(scene_editor.editor->search_hovering(Vec4f(Vec2f(pos), Vec2f(pos))));
+						scene_editor.select(scene_editor.editor->search_hovering(vec4(vec2(pos), vec2(pos))));
 					return true;
 				}, Capture());
 
@@ -339,7 +339,7 @@ cSceneEditor::~cSceneEditor()
 	scene_editor.editor = nullptr;
 }
 
-Entity* cSceneEditor::search_hovering(const Vec4f& r)
+Entity* cSceneEditor::search_hovering(const vec4& r)
 {
 	Entity* s = nullptr;
 	if (scene_editor.prefab)
@@ -347,7 +347,7 @@ Entity* cSceneEditor::search_hovering(const Vec4f& r)
 	return s;
 }
 
-void cSceneEditor::search_hovering_r(Entity* e, Entity*& s, const Vec4f& r)
+void cSceneEditor::search_hovering_r(Entity* e, Entity*& s, const vec4& r)
 {
 	if (e->children.s > 0)
 	{

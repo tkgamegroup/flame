@@ -20,7 +20,7 @@ namespace flame
 
 			std::string name;
 
-			Vec4f color = Vec4f(1.f);
+			vec4 color = vec4(1.f);
 			float metallic = 0.f;
 			float roughness = 1.f;
 			float alpha_test = 0.f;
@@ -44,7 +44,7 @@ namespace flame
 
 			std::string name;
 
-			Mat4f offset_matrix;
+			mat4 offset_matrix;
 			std::vector<Weight> weights;
 
 			const char* get_name() const override { return name.c_str(); }
@@ -56,43 +56,43 @@ namespace flame
 
 			uint material_index = 0;
 
-			std::vector<Vec3f> positions;
-			std::vector<Vec2f> uvs;
-			std::vector<Vec3f> normals;
+			std::vector<vec3> positions;
+			std::vector<vec2> uvs;
+			std::vector<vec3> normals;
 			std::vector<uint> indices;
 
 			std::vector<std::unique_ptr<BonePrivate>> bones;
 
-			Vec3f lower_bound = Vec3f(0.f);
-			Vec3f upper_bound = Vec3f(0.f);
+			vec3 lower_bound = vec3(0.f);
+			vec3 upper_bound = vec3(0.f);
 
 			uint get_vertices_count() const override { return positions.size(); }
-			const Vec3f* get_positions() const override { return positions.data(); }
-			const Vec2f* get_uvs() const override { return uvs.data(); }
-			const Vec3f* get_normals() const override { return normals.data(); }
+			const vec3* get_positions() const override { return positions.data(); }
+			const vec2* get_uvs() const override { return uvs.data(); }
+			const vec3* get_normals() const override { return normals.data(); }
 			uint get_indices_count() const { return indices.size(); }
 			const uint* get_indices() const { return indices.data(); }
 
 			uint get_bones_count() const override { return bones.size(); }
 			Bone* get_bone(uint idx) const override { return bones[idx].get(); }
 
-			Vec3f get_lower_bound() const override { return lower_bound; }
-			Vec3f get_upper_bound() const override { return upper_bound; }
+			vec3 get_lower_bound() const override { return lower_bound; }
+			vec3 get_upper_bound() const override { return upper_bound; }
 
-			void add_vertices(uint n, Vec3f* positions, Vec3f* uvs, Vec3f* normals);
+			void add_vertices(uint n, vec3* positions, vec3* uvs, vec3* normals);
 			void add_indices(uint n, uint* indices);
 
-			void add_cube(const Vec3f& extent, const Vec3f& center, const Mat3f& rotation);
-			void add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation);
+			void add_cube(const vec3& extent, const vec3& center, const mat3& rotation);
+			void add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const vec3& center, const mat3& rotation);
 		};
 
 		struct NodePrivate : Node
 		{
 			std::string name;
 
-			Vec3f pos = Vec3f(0.f);
-			Vec4f quat = Vec4f(0.f, 0.f, 0.f, 1.f);
-			Vec3f scale = Vec3f(1.f);
+			vec3 pos = vec3(0.f);
+			vec4 quat = vec4(0.f, 0.f, 0.f, 1.f);
+			vec3 scale = vec3(1.f);
 
 			int mesh_index = -1;
 
@@ -103,7 +103,7 @@ namespace flame
 
 			const char* get_name() const override { return name.c_str(); }
 
-			void get_transform(Vec3f& p, Vec4f& q, Vec3f& s) const override { p = pos; q = quat; s = scale; }
+			void get_transform(vec3& p, vec4& q, vec3& s) const override { p = pos; q = quat; s = scale; }
 
 			Node* get_parent() const override { return parent; }
 			uint get_children_count() const { return children.size(); }

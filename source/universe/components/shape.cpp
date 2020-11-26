@@ -23,7 +23,7 @@ namespace flame
 		type = t;
 	}
 
-	void cShapePrivate::set_size(const Vec3f& s)
+	void cShapePrivate::set_size(const vec3& s)
 	{
 		size = s;
 	}
@@ -43,10 +43,10 @@ namespace flame
 			switch (type)
 			{
 			case physics::ShapeCube:
-				phy_shape = physics::Shape::create_box(physics::Device::get_default(), nullptr, size * Vec3f(0.5f) * node->global_scale);
+				phy_shape = physics::Shape::create_box(physics::Device::get_default(), nullptr, size * vec3(0.5f) * node->global_scale);
 				break;
 			case physics::ShapeSphere:
-				phy_shape = physics::Shape::create_sphere(physics::Device::get_default(), nullptr, size.x() * 0.5f * node->global_scale.x());
+				phy_shape = physics::Shape::create_sphere(physics::Device::get_default(), nullptr, size.x * 0.5f * node->global_scale.x);
 				break;
 			case physics::ShapeTriangleMesh:
 				if (mesh && mesh->mesh)
@@ -67,7 +67,7 @@ namespace flame
 						triangle_mesh = physics::TriangleMesh::create(physics::Device::get_default(), m);
 						triangle_meshes.emplace_back(m, triangle_mesh, 1);
 					}
-					phy_shape = physics::Shape::create_triangle_mesh(physics::Device::get_default(), nullptr, triangle_mesh, size.x() * node->global_scale.x());
+					phy_shape = physics::Shape::create_triangle_mesh(physics::Device::get_default(), nullptr, triangle_mesh, size.x * node->global_scale.x);
 					phy_triangle_mesh = triangle_mesh;
 				}
 				break;

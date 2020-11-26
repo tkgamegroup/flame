@@ -71,7 +71,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_left_down_listeners.emplace_back(c);
@@ -85,7 +85,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_left_up_listeners.emplace_back(c);
@@ -99,7 +99,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_right_down_listeners.emplace_back(c);
@@ -113,7 +113,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_right_up_listeners.emplace_back(c);
@@ -127,7 +127,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_middle_down_listeners.emplace_back(c);
@@ -141,7 +141,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_middle_up_listeners.emplace_back(c);
@@ -155,7 +155,7 @@ namespace flame
 		});
 	}
 
-	void* cEventReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& disp, const Vec2i& pos), const Capture& capture)
+	void* cEventReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& disp, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_move_listeners.emplace_back(c);

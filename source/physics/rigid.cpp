@@ -32,7 +32,7 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::get_pose(Vec3f& coord, Vec4f& quat) const
+		void RigidPrivate::get_pose(vec3& coord, vec4& quat) const
 		{
 #ifdef USE_PHYSX
 			auto trans = px_rigid->getGlobalPose();
@@ -41,7 +41,7 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::set_pose(const Vec3f& coord, const Vec4f& quat)
+		void RigidPrivate::set_pose(const vec3& coord, const vec4& quat)
 		{
 #ifdef USE_PHYSX
 			px_rigid->setGlobalPose(PxTransform(cvt(coord), cvt(quat)));
@@ -64,7 +64,7 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::add_impulse(const Vec3f& v)
+		void RigidPrivate::add_impulse(const vec3& v)
 		{
 			if (!dynamic)
 				return;
@@ -73,7 +73,7 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::add_force(const Vec3f& v)
+		void RigidPrivate::add_force(const vec3& v)
 		{
 			if (!dynamic)
 				return;

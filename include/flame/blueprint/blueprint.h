@@ -80,8 +80,8 @@ namespace flame
 		virtual void set_guid(const Guid& guid) = 0;
 		virtual const char* get_id() const = 0;
 		virtual bool set_id(const char* id) = 0;
-		virtual Vec2f get_pos() const = 0;
-		virtual void set_pos(const Vec2f& pos) = 0;
+		virtual vec2 get_pos() const = 0;
+		virtual void set_pos(const vec2& pos) = 0;
 
 		virtual bpNodeType get_type() const = 0;
 		virtual const char* get_type_parameter() const = 0;

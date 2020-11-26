@@ -32,8 +32,8 @@ struct cSceneEditor : Component
 
 	cSceneEditor();
 	~cSceneEditor() override;
-	Entity* search_hovering(const Vec4f& r);
-	void search_hovering_r(Entity* e, Entity*& s, const Vec4f& r);
+	Entity* search_hovering(const vec4& r);
+	void search_hovering_r(Entity* e, Entity*& s, const vec4& r);
 	void on_select();
 };
 
@@ -52,9 +52,9 @@ struct cResourceExplorer : Component
 	uint file_img_idx;
 	Image* thumbnails_img;
 	uint thumbnails_img_idx;
-	Vec2u thumbnails_img_pos;
-	std::vector<std::unique_ptr<Vec2u>> thumbnails_seats_free;
-	std::vector<std::unique_ptr<Vec2u>> thumbnails_seats_occupied;
+	uvec2 thumbnails_img_pos;
+	std::vector<std::unique_ptr<uvec2>> thumbnails_seats_free;
+	std::vector<std::unique_ptr<uvec2>> thumbnails_seats_occupied;
 
 	std::filesystem::path selected;
 

@@ -11,9 +11,9 @@ namespace flame
 		struct Image;
 		struct ImageView;
 
-		inline Vec2u get_latin_code_range()
+		inline uvec2 get_latin_code_range()
 		{
-			return Vec2u(0x20, 0xff);
+			return uvec2(0x20, 0xff);
 		}
 
 		struct Font
@@ -28,9 +28,9 @@ namespace flame
 		struct Glyph
 		{
 			virtual ushort get_code() const = 0;
-			virtual Vec2i get_off() const = 0;
-			virtual Vec2u get_size() const = 0;
-			virtual Vec4f get_uv() const = 0;
+			virtual ivec2 get_off() const = 0;
+			virtual uvec2 get_size() const = 0;
+			virtual vec4 get_uv() const = 0;
 			virtual int get_advance() const = 0;
 		};
 
@@ -38,9 +38,9 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			inline Vec2u text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			inline uvec2 text_offset(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
-				auto off = Vec2u(0);
+				auto off = uvec2(0);
 
 				auto pstr = begin;
 				while (*pstr && pstr != end)
@@ -48,23 +48,23 @@ namespace flame
 					auto ch = *pstr;
 					if (ch == '\n')
 					{
-						off.x() = 0.f;
-						off.y() += font_size;
+						off.x = 0.f;
+						off.y += font_size;
 					}
 					else if (ch != '\r')
 					{
 						if (ch == '\t')
 							ch = ' ';
-						off.x() += get_glyph(ch, font_size)->get_advance();
+						off.x += get_glyph(ch, font_size)->get_advance();
 					}
 					pstr++;
 				}
 				return off;
 			}
 
-			inline Vec2u text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
+			inline uvec2 text_size(uint font_size, const wchar_t* begin, const wchar_t* end = nullptr)
 			{
-				auto size = Vec2u(0, font_size);
+				auto size = uvec2(0, font_size);
 				auto x = 0U;
 
 				auto pstr = begin;
@@ -73,7 +73,7 @@ namespace flame
 					auto ch = *pstr;
 					if (ch == '\n')
 					{
-						size.y() += font_size;
+						size.y += font_size;
 						x = 0;
 					}
 					else if (ch != '\r')
@@ -81,7 +81,7 @@ namespace flame
 						if (ch == '\t')
 							ch = ' ';
 						x += get_glyph(ch, font_size)->get_advance();
-						size.x() = max(size.x(), x);
+						size.x = max(size.x, x);
 					}
 					pstr++;
 				}

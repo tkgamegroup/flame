@@ -49,15 +49,15 @@ namespace flame
 		//			auto e_thumb = e_scrollbar->children[0];
 		//			auto e_tree = thiz->entity;
 		//			auto c_tree_layout = e_tree->get_component(cLayout);
-		//			e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y() *
-		//				(selected->get_component(cElement)->global_pos.y() - e_tree->get_component(cElement)->global_pos.y() - c_tree_layout->scroll_offset.y()) / (c_tree_layout->content_size.y() + 20.f));
+		//			e_thumb->get_component(cElement)->set_y(e_scrollbar->get_component(cElement)->size.y *
+		//				(selected->get_component(cElement)->global_pos.y - e_tree->get_component(cElement)->global_pos.y - c_tree_layout->scroll_offset.y) / (c_tree_layout->content_size.y + 20.f));
 		//			e_thumb->get_component(cScrollbarThumb)->update(0.f);
 		//		}, Capture().set_thiz(this), 1U);
 	}
 
 	void cTreePrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			c.thiz<cTreePrivate>()->set_selected(nullptr);
 		}, Capture().set_thiz(this));
 	}
@@ -74,7 +74,7 @@ namespace flame
 
 	void cTreeLeafPrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cTreeLeafPrivate>();
 			thiz->tree->set_selected(thiz->entity);
 		}, Capture().set_thiz(this));
@@ -92,7 +92,7 @@ namespace flame
 
 	void cTreeNodePrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cTreeNodePrivate>();
 			thiz->tree->set_selected(thiz->entity);
 		}, Capture().set_thiz(this));
@@ -105,7 +105,7 @@ namespace flame
 
 	void cTreeNodePrivate::on_gain_arrow_event_receiver()
 	{
-		arrow_mouse_listener = arrow_event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		arrow_mouse_listener = arrow_event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			c.thiz<cTreeNodePrivate>()->toggle_collapse();
 		}, Capture().set_thiz(this));
 	}

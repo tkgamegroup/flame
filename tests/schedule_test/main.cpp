@@ -20,7 +20,7 @@ struct MyApp : App
 }app;
 
 MainForm::MainForm() :
-	GraphicsWindow(&app, true, true, "Schedule Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+	GraphicsWindow(&app, true, true, "Schedule Test", uvec2(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -34,7 +34,7 @@ MainForm::MainForm() :
 		ui.e_begin_menubar_menu(L"Window");
 			ui.e_menu_item(L"Reflector", [](Capture& c) {
 				auto& ui = main_window->ui;
-				ui.next_element_pos = Vec2f(100.f);
+				ui.next_element_pos = vec2(100.f);
 				create_ui_reflector(ui);
 			}, Capture());
 		ui.e_end_menubar_menu();
@@ -47,17 +47,17 @@ MainForm::MainForm() :
 		c._current = nullptr;
 	}, Capture().set_thiz(e->get_component<cText>()), 1.f);
 
-	ui.next_element_pos = Vec2f(100.f);
-	ui.next_element_size = Vec2f(100.f);
-	ui.next_element_color = Vec4c(255);
+	ui.next_element_pos = vec2(100.f);
+	ui.next_element_size = vec2(100.f);
+	ui.next_element_color = cvec4(255);
 	auto schdule = Schedule::create();
 	auto element = ui.e_element()->get_component(cElement);
 	element->pivot = 0.5f;
 	schdule->begin_group();
 	element->scale_to(schdule, 0.f, 5.f, 3.f);
-	element->move_to(schdule, 3.f, 10.f, Vec2f(500.f));
+	element->move_to(schdule, 3.f, 10.f, vec2(500.f));
 	schdule->end_group();
-	element->move_to(schdule, 0.f, 3.f, Vec2f(1000.f, 100.f));
+	element->move_to(schdule, 0.f, 3.f, vec2(1000.f, 100.f));
 	schdule->start();
 
 	ui.parents.pop();

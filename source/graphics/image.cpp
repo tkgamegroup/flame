@@ -35,19 +35,19 @@ namespace flame
 			return 0;
 		}
 
-		void ImagePrivate::init(const Vec2u& size)
+		void ImagePrivate::init(const uvec2& size)
 		{
 			auto s = size;
 			for (auto i = 0; i < level; i++)
 			{
-				if (s.x() == 0 && s.y() == 0)
+				if (s.x == 0 && s.y == 0)
 				{
 					level = i;
 					break;
 				}
-				sizes.push_back(max(s, Vec2u(1U)));
-				s.x() >>= 1;
-				s.y() >>= 1;
+				sizes.push_back(_max(s, uvec2(1U)));
+				s.x >>= 1;
+				s.y >>= 1;
 			}
 		}
 
@@ -60,7 +60,7 @@ namespace flame
 				views.emplace_back(new ImageViewPrivate(this, false, ImageView2D, { (uint)0, (uint)level }));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
 			device(device),
 			format(format),
 			level(_level),
@@ -75,8 +75,8 @@ namespace flame
 			imageInfo.pNext = nullptr;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
 			imageInfo.format = to_backend(format);
-			imageInfo.extent.width = size.x();
-			imageInfo.extent.height = size.y();
+			imageInfo.extent.width = size.x;
+			imageInfo.extent.height = size.y;
 			imageInfo.extent.depth = 1;
 			imageInfo.mipLevels = level;
 			imageInfo.arrayLayers = layer;
@@ -106,7 +106,7 @@ namespace flame
 			build_default_views();
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint _level, uint layer, void* native) :
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint _level, uint layer, void* native) :
 			device(device),
 			format(format),
 			level(_level),
@@ -132,7 +132,7 @@ namespace flame
 		ImagePrivate* ImagePrivate::create(DevicePrivate* device, Bitmap* bmp)
 		{
 			auto i = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()),
-				Vec2u(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
+				uvec2(bmp->get_width(), bmp->get_height()), 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst);
 
 			ImmediateStagingBuffer stag(device, bmp->get_size(), bmp->get_data());
 			ImmediateCommandBuffer icb(device);
@@ -184,7 +184,7 @@ namespace flame
 				}
 				fassert(format != Format_Undefined);
 
-				auto ret = new ImagePrivate(device, format, Vec2u(size.x, size.y), levels, layers,
+				auto ret = new ImagePrivate(device, format, uvec2(size.x, size.y), levels, layers,
 					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 
 				ImmediateStagingBuffer stag(device, gli_texture.size(), gli_texture.data());
@@ -197,7 +197,7 @@ namespace flame
 					BufferImageCopy cpy;
 					cpy.buffer_offset = offset;
 					auto ext = gli_texture.extent(i);
-					cpy.image_extent = Vec2u(ext.x, ext.y);
+					cpy.image_extent = uvec2(ext.x, ext.y);
 					cpy.image_level = i;
 					cpies.push_back(cpy);
 					offset += gli_texture.size(i);
@@ -214,7 +214,7 @@ namespace flame
 				if (srgb)
 					bmp->srgb_to_linear();
 
-				ret = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), Vec2u(bmp->get_width(), bmp->get_height()), 1, 1,
+				ret = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), uvec2(bmp->get_width(), bmp->get_height()), 1, 1,
 					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
@@ -233,7 +233,7 @@ namespace flame
 			return ret;
 		}
 
-		Image* Image::create(Device* device, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) 
+		Image* Image::create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) 
 		{ 
 			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
 		}
@@ -346,8 +346,8 @@ namespace flame
 
 			image = ImagePrivate::create(device, image_filename.c_str(), false);
 
-			auto w = (float)image->sizes[0].x();
-			auto h = (float)image->sizes[0].y();
+			auto w = (float)image->sizes[0].x;
+			auto h = (float)image->sizes[0].y;
 
 			for (auto& e : ini.get_section_entries("tiles"))
 			{
@@ -358,13 +358,13 @@ namespace flame
 				ss >> t;
 				tile->name = t;
 				ss >> t;
-				auto v = sto<Vec4u>(t.c_str());
-				tile->pos = Vec2i(v.x(), v.y());
-				tile->size = Vec2i(v.z(), v.w());
-				tile->uv.x() = tile->pos.x() / w;
-				tile->uv.y() = tile->pos.y() / h;
-				tile->uv.z() = (tile->pos.x() + tile->size.x()) / w;
-				tile->uv.w() = (tile->pos.y() + tile->size.y()) / h;
+				auto v = sto<uvec4>(t.c_str());
+				tile->pos = ivec2(v.x, v.y);
+				tile->size = ivec2(v.z, v.w);
+				tile->uv.x = tile->pos.x / w;
+				tile->uv.y = tile->pos.y / h;
+				tile->uv.z = (tile->pos.x + tile->size.x) / w;
+				tile->uv.w = (tile->pos.y + tile->size.y) / h;
 
 				tiles.emplace_back(tile);
 			}

@@ -556,7 +556,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS Guid generate_guid();
 	FLAME_FOUNDATION_EXPORTS void get_app_path(wchar_t* dst, bool has_name = false);
 	FLAME_FOUNDATION_EXPORTS void* get_hinst();
-	FLAME_FOUNDATION_EXPORTS Vec2u get_screen_size();
+	FLAME_FOUNDATION_EXPORTS uvec2 get_screen_size();
 	FLAME_FOUNDATION_EXPORTS void* create_event(bool signaled, bool manual = false);
 	FLAME_FOUNDATION_EXPORTS void set_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void reset_event(void* ev);
@@ -570,7 +570,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 	FLAME_FOUNDATION_EXPORTS void send_global_keyboard_event(KeyboardKey key, bool down = true);
 	FLAME_FOUNDATION_EXPORTS void send_global_mouse_event(MouseKey key, bool down = true);
-	FLAME_FOUNDATION_EXPORTS void set_mouse_pos(const Vec2i& pos);
+	FLAME_FOUNDATION_EXPORTS void set_mouse_pos(const ivec2& pos);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	// if str is null then the output will be redirect to std output
 	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* str = nullptr);
@@ -654,12 +654,12 @@ namespace flame
 	{
 		virtual void* get_native() = 0;
 
-		virtual Vec2i get_pos() const = 0;
-		virtual void set_pos(const Vec2i& pos) = 0;
-		virtual Vec2u get_size() const = 0;
-		virtual void set_size(const Vec2u& size) = 0;
+		virtual ivec2 get_pos() const = 0;
+		virtual void set_pos(const ivec2& pos) = 0;
+		virtual uvec2 get_size() const = 0;
+		virtual void set_size(const uvec2& size) = 0;
 
-		virtual Vec2i global_to_local(const Vec2i& p) = 0;
+		virtual ivec2 global_to_local(const ivec2& p) = 0;
 
 		virtual const char* get_title() const = 0;
 		virtual void set_title(const char* title) = 0;
@@ -677,28 +677,28 @@ namespace flame
 		virtual void remove_key_up_listener(void* lis) = 0;
 		virtual void* add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture) = 0;
 		virtual void remove_char_listener(void* lis) = 0;
-		virtual void* add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_left_down_listener(void* lis) = 0;
-		virtual void* add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_left_up_listener(void* lis) = 0;
-		virtual void* add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_right_down_listener(void* lis) = 0;
-		virtual void* add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_right_up_listener(void* lis) = 0;
-		virtual void* add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_middle_down_listener(void* lis) = 0;
-		virtual void* add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_middle_up_listener(void* lis) = 0;
-		virtual void* add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture) = 0;
+		virtual void* add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_move_listener(void* lis) = 0;
 		virtual void* add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture) = 0;
 		virtual void remove_mouse_scroll_listener(void* lis) = 0;
-		virtual void* add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture) = 0;
+		virtual void* add_resize_listener(void (*callback)(Capture& c, const uvec2& size), const Capture& capture) = 0;
 		virtual void remove_resize_listener(void* lis) = 0;
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent = nullptr);
+		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const uvec2& size, WindowStyleFlags style, Window* parent = nullptr);
 	};
 
 	struct Looper

@@ -26,7 +26,7 @@ namespace flame
 				depth_attachment = rp->attachments[info.depth_attachment].get();
 		}
 
-		RenderpassPrivate::RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> _attachments, std::span<const RenderpassSubpassInfo> _subpasses, std::span<const Vec2u> _dependencies) :
+		RenderpassPrivate::RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> _attachments, std::span<const RenderpassSubpassInfo> _subpasses, std::span<const uvec2> _dependencies) :
 			device(device)
 		{
 			std::vector<VkAttachmentDescription> attachment_descs(_attachments.size());
@@ -141,7 +141,7 @@ namespace flame
 			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
 		}
 
-		Renderpass* Renderpass::create(Device* device, uint attachments_count, const RenderpassAttachmentInfo* attachments, uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const Vec2u* dependencies)
+		Renderpass* Renderpass::create(Device* device, uint attachments_count, const RenderpassAttachmentInfo* attachments, uint subpasses_count, const RenderpassSubpassInfo* subpasses, uint dependency_count, const uvec2* dependencies)
 		{
 			return new RenderpassPrivate((DevicePrivate*)device, { attachments, attachments_count }, { subpasses, subpasses_count }, { dependencies, dependency_count });
 		}
@@ -160,8 +160,8 @@ namespace flame
 			create_info.pNext = nullptr;
 			auto first_view = _views[0];
 			auto size = first_view->image->sizes[first_view->subresource.base_level];
-			create_info.width = size.x();
-			create_info.height = size.y();
+			create_info.width = size.x;
+			create_info.height = size.y;
 			create_info.layers = 1;
 			create_info.renderPass = rp->vk_renderpass;
 			create_info.attachmentCount = raw_views.size();

@@ -27,7 +27,7 @@ namespace flame
 
 		std::wstring text;
 		uint size = 14;
-		Vec4c color = Vec4c(0, 0, 0, 255);
+		cvec4 color = cvec4(0, 0, 0, 255);
 
 		int res_id = -1;
 		graphics::FontAtlas* atlas = nullptr;
@@ -39,8 +39,8 @@ namespace flame
 		uint get_size() const override { return size; }
 		void set_size(uint s) override;
 
-		Vec4c get_color() const override { return color; }
-		void set_color(const Vec4c& col) override;
+		cvec4 get_color() const override { return color; }
+		void set_color(const cvec4& col) override;
 
 		bool get_auto_width() const override { return auto_width; }
 		void set_auto_width(bool a) override { auto_width = a; }
@@ -54,7 +54,7 @@ namespace flame
 
 		void draw(graphics::Canvas* canvas); // R
 
-		void measure(Vec2f& ret); // R
+		void measure(vec2& ret); // R
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

@@ -19,7 +19,7 @@ namespace flame
 		virtual float get_height() const = 0;
 		virtual void set_height(float h) = 0;
 
-		virtual void move(const Vec3f& disp) = 0;
+		virtual void move(const vec3& disp) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cController* create();
 	};

@@ -21,9 +21,9 @@ namespace flame
 			//virtual const char* get_name() const = 0;
 
 			virtual uint get_vertices_count() const = 0;
-			virtual const Vec3f* get_positions() const = 0;
-			virtual const Vec2f* get_uvs() const = 0;
-			virtual const Vec3f* get_normals() const = 0;
+			virtual const vec3* get_positions() const = 0;
+			virtual const vec2* get_uvs() const = 0;
+			virtual const vec3* get_normals() const = 0;
 
 			virtual uint get_indices_count() const = 0;
 			virtual const uint* get_indices() const = 0;
@@ -31,15 +31,15 @@ namespace flame
 			virtual uint get_bones_count() const = 0;
 			virtual Bone* get_bone(uint idx) const = 0;
 
-			virtual Vec3f get_lower_bound() const = 0;
-			virtual Vec3f get_upper_bound() const = 0;
+			virtual vec3 get_lower_bound() const = 0;
+			virtual vec3 get_upper_bound() const = 0;
 		};
 		
 		struct Node
 		{
 			virtual const char* get_name() const = 0;
 
-			virtual void get_transform(Vec3f& pos, Vec4f& quat, Vec3f& scale) const = 0;
+			virtual void get_transform(vec3& pos, vec4& quat, vec3& scale) const = 0;
 
 			virtual Node* get_parent() const = 0;
 			virtual uint get_children_count() const = 0;
@@ -51,13 +51,13 @@ namespace flame
 		struct PositionKey
 		{
 			float t;
-			Vec3f v;
+			vec3 v;
 		};
 
 		struct RotationKey
 		{
 			float t;
-			Vec4f v;
+			vec4 v;
 		};
 
 		struct Channel

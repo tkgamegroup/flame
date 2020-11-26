@@ -20,8 +20,8 @@ namespace flame
 
 	struct cTerrainPrivate : cTerrainBridge // R ~ on_*
 	{
-		Vec2u blocks = Vec2u(64);
-		Vec3f scale = Vec3f(100.f);
+		uvec2 blocks = uvec2(64);
+		vec3 scale = vec3(100.f);
 		uint tess_levels = 32.f;
 
 		std::string height_map_name;
@@ -34,10 +34,10 @@ namespace flame
 		cNodePrivate* node = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
 
-		Vec2u get_blocks() const override { return blocks; }
-		void set_blocks(const Vec2u& b) override;
-		Vec3f get_scale() const override { return scale; }
-		void set_scale(const Vec3f& s) override;
+		uvec2 get_blocks() const override { return blocks; }
+		void set_blocks(const uvec2& b) override;
+		vec3 get_scale() const override { return scale; }
+		void set_scale(const vec3& s) override;
 		uint get_tess_levels() const override { return tess_levels; }
 		void set_tess_levels(uint l) override;
 

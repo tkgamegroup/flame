@@ -30,8 +30,8 @@ static const char* basic_types[] = {
 	"flame::StringW"
 };
 
-static Vec4c unselected_col = Vec4c(0, 0, 0, 255);
-static Vec4c selected_col = Vec4c(0, 0, 145, 255);
+static cvec4 unselected_col = cvec4(0, 0, 0, 255);
+static cvec4 selected_col = cvec4(0, 0, 145, 255);
 
 const auto slot_bezier_extent = 50.f;
 
@@ -70,7 +70,7 @@ struct cNode : Component
 	_2DEditor edt;
 
 	bpSlot* dragging_slot;
-	Vec2f dragging_slot_pos;
+	vec2 dragging_slot_pos;
 
 	cNode();
 	void on_event(EntityEvent e, void* t);
@@ -136,7 +136,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 				event_receiver->drag_hash = FLAME_CHASH("output_slot");
 				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
 			}
-			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 				auto thiz = c.thiz<cSlot>();
 				if (thiz->dragging)
 				{
@@ -145,7 +145,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 				}
 				return true;
 			}, Capture().set_thiz(this));
-			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const Vec2i& pos) {
+			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const ivec2& pos) {
 				auto& ui = bp_editor.window->ui;
 				auto thiz = c.thiz<cSlot>();
 				auto element = thiz->element;
@@ -160,14 +160,14 @@ void cSlot::on_event(EntityEvent e, void* t)
 				}
 				else if (action == DragOvering)
 				{
-					thiz->group->dragging_slot_pos = Vec2f(pos);
+					thiz->group->dragging_slot_pos = vec2(pos);
 					bp_editor.window->s_renderer->pending_update = true;
 				}
 				else if (action == DragEnd)
 				{
 					thiz->dragging = false;
 					if (!er)
-						bp_editor.editor->show_add_node_menu(Vec2f(pos));
+						bp_editor.editor->show_add_node_menu(vec2(pos));
 					else
 						thiz->group->dragging_slot = nullptr;
 					bp_editor.window->s_renderer->pending_update = true;
@@ -177,19 +177,19 @@ void cSlot::on_event(EntityEvent e, void* t)
 					auto oth = er->entity->get_component(cSlot)->s;
 					auto ok = (is_in ? bpSlot::can_link(s->type, oth->type) : bpSlot::can_link(oth->type, s->type));
 
-					element->set_frame_color(ok ? Vec4c(0, 255, 0, 255) : Vec4c(255, 0, 0, 255));
+					element->set_frame_color(ok ? cvec4(0, 255, 0, 255) : cvec4(255, 0, 0, 255));
 					element->set_frame_thickness(2.f);
 
 					if (!thiz->tip_link)
 					{
 						thiz->tip_link = ui.e_begin_layout(LayoutVertical, 4.f);
 						auto c_element = thiz->tip_link->get_component(cElement);
-						c_element->pos = thiz->element->global_pos + Vec2f(thiz->element->global_size.x(), -8.f);
-						c_element->pivot = Vec2f(0.5f, 1.f);
+						c_element->pos = thiz->element->global_pos + vec2(thiz->element->global_size.x, -8.f);
+						c_element->pivot = vec2(0.5f, 1.f);
 						c_element->padding = 4.f;
 						c_element->frame_thickness = 2.f;
-						c_element->color = Vec4c(200, 200, 200, 255);
-						c_element->frame_color = Vec4c(0, 0, 0, 255);
+						c_element->color = cvec4(200, 200, 200, 255);
+						c_element->frame_color = cvec4(0, 0, 0, 255);
 						{
 							auto s_type = s->type;
 							auto o_type = oth->type;
@@ -198,7 +198,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 								str = s2w(o_type->name.str()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(s_type->name.str());
 							else
 								str = s2w(s_type->name.str()) + (ok ? L"  =>  " : L"  ¡Ù>  ") + s2w(o_type->name.str());
-							ui.e_text(str.c_str())->get_component(cText)->color = ok ? Vec4c(0, 128, 0, 255) : Vec4c(255, 0, 0, 255);
+							ui.e_text(str.c_str())->get_component(cText)->color = ok ? cvec4(0, 128, 0, 255) : cvec4(255, 0, 0, 255);
 						}
 						ui.e_end_layout();
 						looper().add_event([](Capture& c) {
@@ -237,12 +237,12 @@ void cSlot::on_event(EntityEvent e, void* t)
 					{
 						thiz->tip_info = ui.e_begin_layout(LayoutVertical, 8.f);
 						auto c_element = thiz->tip_info->get_component(cElement);
-						c_element->pos = thiz->element->global_pos + Vec2f(is_in ? -8.f : thiz->element->global_size.x() + 8.f, 0.f);
-						c_element->pivot = Vec2f(is_in ? 1.f : 0.f, 0.f);
+						c_element->pos = thiz->element->global_pos + vec2(is_in ? -8.f : thiz->element->global_size.x + 8.f, 0.f);
+						c_element->pivot = vec2(is_in ? 1.f : 0.f, 0.f);
 						c_element->padding = 4.f;
 						c_element->frame_thickness = 2.f;
-						c_element->color = Vec4c(200, 200, 200, 255);
-						c_element->frame_color = Vec4c(0, 0, 0, 255);
+						c_element->color = cvec4(200, 200, 200, 255);
+						c_element->frame_color = cvec4(0, 0, 0, 255);
 						auto type = s->type;
 						auto tag = type->tag;
 						ui.e_text((type_prefix(tag, type->is_array) + s2w(type->base_name.str())).c_str())->get_component(cText)->color = type_color(tag);
@@ -300,7 +300,7 @@ void cNode::on_event(EntityEvent e, void* t)
 			element = entity->get_component(cElement);
 			event_receiver = entity->get_component(cEventReceiver);
 
-			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 				auto thiz = c.thiz<cNode>();
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
@@ -321,7 +321,7 @@ void cNode::on_event(EntityEvent e, void* t)
 					for (auto& s : bp_editor.selected_nodes)
 					{
 						auto e = ((Entity*)s->user_data)->get_component(cElement);
-						e->add_pos((Vec2f)pos / e->global_scale);
+						e->add_pos((vec2)pos / e->global_scale);
 					}
 					thiz->moved = true;
 				}
@@ -331,7 +331,7 @@ void cNode::on_event(EntityEvent e, void* t)
 				auto thiz = c.thiz<cNode>();
 				if (thiz->moved && !thiz->event_receiver->is_active())
 				{
-					std::vector<Vec2f> poses;
+					std::vector<vec2> poses;
 					for (auto& s : bp_editor.selected_nodes)
 						poses.push_back(((Entity*)s->user_data)->get_component(cElement)->pos);
 					bp_editor.set_nodes_pos(bp_editor.selected_nodes, poses);
@@ -410,9 +410,9 @@ void cBPEditor::on_add_node(bpNode* n)
 			auto input = g->signal;
 
 			ui.next_element_size = ui.style(FontSize).u[0];
-			ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+			ui.next_element_roundness = ui.next_element_size.x * 0.4f;
 			ui.next_element_roundness_lod = 2;
-			ui.next_element_color = Vec4c(200, 200, 200, 255);
+			ui.next_element_color = cvec4(200, 200, 200, 255);
 			ui.e_element();
 			ui.c_event_receiver();
 			auto c_slot = f_new<cSlot>();
@@ -428,8 +428,8 @@ void cBPEditor::on_add_node(bpNode* n)
 			ui.pop_style(TextColorNormal);
 		ui.e_end_layout();
 
-		edt.create(ui, [](Capture&, const Vec4f& r) {
-			if (r.x() == r.z() && r.y() == r.z())
+		edt.create(ui, [](Capture&, const vec4& r) {
+			if (r.x == r.z && r.y == r.z)
 				bp_editor.select();
 			else
 			{
@@ -448,15 +448,15 @@ void cBPEditor::on_add_node(bpNode* n)
 
 				std::vector<bpSlot*> links;
 
-				Vec2f lines[8];
-				lines[0] = Vec2f(r.x(), r.y());
-				lines[1] = Vec2f(r.z(), r.y());
-				lines[2] = Vec2f(r.x(), r.y());
-				lines[3] = Vec2f(r.x(), r.w());
-				lines[4] = Vec2f(r.z(), r.w());
-				lines[5] = Vec2f(r.x(), r.w());
-				lines[6] = Vec2f(r.z(), r.w());
-				lines[7] = Vec2f(r.z(), r.y());
+				vec2 lines[8];
+				lines[0] = vec2(r.x, r.y);
+				lines[1] = vec2(r.z, r.y);
+				lines[2] = vec2(r.x, r.y);
+				lines[3] = vec2(r.x, r.w);
+				lines[4] = vec2(r.z, r.w);
+				lines[5] = vec2(r.x, r.w);
+				lines[6] = vec2(r.z, r.w);
+				lines[7] = vec2(r.z, r.y);
 
 				auto& edt = bp_editor.editor->edt;
 
@@ -472,12 +472,12 @@ void cBPEditor::on_add_node(bpNode* n)
 							continue;
 						auto p1 = ((cSlot*)output->user_data)->element->center();
 						auto p4 = ((cSlot*)input->user_data)->element->center();
-						auto p2 = p1 + Vec2f(extent, 0.f);
-						auto p3 = p4 - Vec2f(extent, 0.f);
+						auto p2 = p1 + vec2(extent, 0.f);
+						auto p3 = p4 - vec2(extent, 0.f);
 						auto bb = rect_from_points(p1, p2, p3, p4);
 						if (rect_overlapping(bb, range))
 						{
-							std::vector<Vec2f> points;
+							std::vector<vec2> points;
 							path_bezier(points, p1, p2, p3, p4);
 							auto ok = false;
 							for (auto k = 0; k < points.size() - 1; k++)
@@ -523,12 +523,12 @@ void cBPEditor::on_add_node(bpNode* n)
 						{
 							auto p1 = e1->center();
 							auto p4 = e2->center();
-							auto p2 = p1 + Vec2f(extent, 0.f);
-							auto p3 = p4 - Vec2f(extent, 0.f);
+							auto p2 = p1 + vec2(extent, 0.f);
+							auto p3 = p4 - vec2(extent, 0.f);
 							auto bb = rect_from_points(p1, p2, p3, p4);
 							if (rect_overlapping(bb, range))
 							{
-								std::vector<Vec2f> points;
+								std::vector<vec2> points;
 								path_bezier(points, p1, p2, p3, p4);
 								auto selected = false;
 								for (auto& s : bp_editor.selected_links)
@@ -539,7 +539,7 @@ void cBPEditor::on_add_node(bpNode* n)
 										break;
 									}
 								}
-								canvas->stroke(points.size(), points.data(), selected ? selected_col : Vec4c(100, 100, 120, 255), line_width);
+								canvas->stroke(points.size(), points.data(), selected ? selected_col : cvec4(100, 100, 120, 255), line_width);
 							}
 						}
 					}
@@ -554,12 +554,12 @@ void cBPEditor::on_add_node(bpNode* n)
 					auto p1 = e1->center();
 					auto p4 = bp_editor.editor->dragging_slot_pos;
 					auto is_in = ds->io == bpSlotIn;
-					auto p2 = p1 + Vec2f(is_in ? -extent : extent, 0.f);
-					auto p3 = p4 + Vec2f(is_in ? extent : -extent, 0.f);
+					auto p2 = p1 + vec2(is_in ? -extent : extent, 0.f);
+					auto p3 = p4 + vec2(is_in ? extent : -extent, 0.f);
 					auto bb = rect_from_points(p1, p2, p3, p4);
 					if (rect_overlapping(bb, range))
 					{
-						std::vector<Vec2f> points;
+						std::vector<vec2> points;
 						path_bezier(points, p1, p2, p3, p4);
 						canvas->stroke(points.size(), points.data(), selected_col, line_width);
 					}
@@ -567,11 +567,11 @@ void cBPEditor::on_add_node(bpNode* n)
 			}
 			return true;
 		}, Capture());
-		edt.event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		edt.event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (is_mouse_up(action, key, true) && key == Mouse_Right)
 			{
 				if (!bp_editor.editor->edt.moved)
-					bp_editor.editor->show_add_node_menu(Vec2f(pos));
+					bp_editor.editor->show_add_node_menu(vec2(pos));
 			}
 			return true;
 		}, Capture());
@@ -594,7 +594,7 @@ void cBPEditor::on_add_node(bpNode* n)
 	ui.next_element_roundness = 8.f;
 	ui.next_element_roundness_lod = 2;
 	ui.next_element_frame_thickness = 4.f;
-	ui.next_element_color = Vec4c(255, 255, 255, 200);
+	ui.next_element_color = cvec4(255, 255, 255, 200);
 	ui.next_element_frame_color = unselected_col;
 	ui.c_element();
 	ui.c_event_receiver();
@@ -620,7 +620,7 @@ void cBPEditor::on_add_node(bpNode* n)
 			auto last_colon = str.find_last_of(L':');
 			if (last_colon != std::wstring::npos)
 				str = std::wstring(str.begin() + last_colon + 1, str.end());
-			ui.next_element_padding = Vec4f(4.f, 2.f, 4.f, 2.f);
+			ui.next_element_padding = vec4(4.f, 2.f, 4.f, 2.f);
 			ui.e_text(str.c_str())->get_component(cText)->color = node_type_color(n_type);
 			ui.pop_style(FontSize);
 		}
@@ -636,9 +636,9 @@ void cBPEditor::on_add_node(bpNode* n)
 				{
 					ui.e_begin_layout(LayoutHorizontal);
 						ui.next_element_size = ui.style(FontSize).u[0];
-						ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+						ui.next_element_roundness = ui.next_element_size.x * 0.4f;
 						ui.next_element_roundness_lod = 2;
-						ui.next_element_color = Vec4c(200, 200, 200, 255);
+						ui.next_element_color = cvec4(200, 200, 200, 255);
 						ui.e_element();
 						ui.c_event_receiver();
 						auto c_slot = f_new<cSlot>();
@@ -715,7 +715,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							auto info = find_enum(base_hash);
 							combobox = ui.e_begin_combobox()->get_component(cCombobox);
 							ui.current_entity = combobox->entity;
-							ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+							ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 							for (auto item : info->items)
 								ui.e_combobox_item(s2w(item->name.str()).c_str());
 							ui.e_end_combobox();
@@ -730,7 +730,7 @@ void cBPEditor::on_add_node(bpNode* n)
 							std::vector<cCheckbox*> checkboxes;
 
 							ui.e_begin_layout(LayoutVertical, 4.f);
-							ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+							ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 							auto info = find_enum(base_hash);
 							for (auto item : info->items)
 							{
@@ -754,7 +754,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cCheckbox* checkbox;
 
 								checkbox = ui.e_checkbox()->get_component(cCheckbox);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 
 								e_name->add_component(f_new<cBoolDataTracker>(input->data, [](Capture& c, bool v) {
 									bp_editor.set_data(c.thiz<bpSlot>(), &v, true);
@@ -767,7 +767,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cText* drag_text;
 
 								auto e = ui.e_drag_edit();
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
@@ -785,7 +785,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 2> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -810,7 +810,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 3> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -833,7 +833,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 4> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -856,7 +856,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cText* drag_text;
 
 								auto e = ui.e_drag_edit();
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
@@ -874,7 +874,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 2> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -897,7 +897,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 3> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -920,7 +920,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 4> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -943,7 +943,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cText* drag_text;
 
 								auto e = ui.e_drag_edit();
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
@@ -961,7 +961,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 2> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -984,7 +984,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 3> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -1007,7 +1007,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 4> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -1030,7 +1030,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cText* drag_text;
 
 								auto e = ui.e_drag_edit();
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								edit_text = e->children[0]->get_component(cText);
 								drag_text = e->children[1]->get_component(cText);
 
@@ -1048,7 +1048,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 2> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 2; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -1071,7 +1071,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 3> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 3; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -1094,7 +1094,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								std::array<cText*, 4> drag_texts;
 
 								ui.e_begin_layout(LayoutHorizontal, 4.f);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 								for (auto i = 0; i < 4; i++)
 								{
 									auto e = ui.e_drag_edit();
@@ -1116,7 +1116,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cText* text;
 
 								text = ui.e_edit(50.f)->get_component(cText);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 
 								e_name->add_component(f_new<cStringADataTracker>(input->data, [](Capture& c, const char* v) {
 									StringA d = v;
@@ -1129,7 +1129,7 @@ void cBPEditor::on_add_node(bpNode* n)
 								cText* text;
 
 								text = ui.e_edit(50.f)->get_component(cText);
-								ui.c_aligner(AlignMin, 0)->margin.x() = ui.style(FontSize).u.x();
+								ui.c_aligner(AlignMin, 0)->margin.x = ui.style(FontSize).u.x;
 
 								e_name->add_component(f_new<cStringWDataTracker>(input->data, [](Capture& c, const wchar_t* v) {
 									StringW d = v;
@@ -1155,9 +1155,9 @@ void cBPEditor::on_add_node(bpNode* n)
 					ui.e_text(s2w(output->name.str()).c_str())->get_component(cText)->color = type_color(output->type->tag);
 
 					ui.next_element_size = ui.style(FontSize).u[0];
-					ui.next_element_roundness = ui.next_element_size.x() * 0.4f;
+					ui.next_element_roundness = ui.next_element_size.x * 0.4f;
 					ui.next_element_roundness_lod = 2;
-					ui.next_element_color = Vec4c(200, 200, 200, 255);
+					ui.next_element_color = cvec4(200, 200, 200, 255);
 					ui.e_element();
 					ui.c_event_receiver();
 					auto c_slot = f_new<cSlot>();
@@ -1176,7 +1176,7 @@ void cBPEditor::on_add_node(bpNode* n)
 
 		if (n_type == 'A')
 		{
-			ui.next_element_padding = Vec4f(5.f, 2.f, 5.f, 2.f);
+			ui.next_element_padding = vec4(5.f, 2.f, 5.f, 2.f);
 			ui.next_element_roundness = 8.f;
 			ui.next_element_roundness_lod = 2;
 			ui.e_button(L"+", [](Capture& c) {
@@ -1245,7 +1245,7 @@ void cBPEditor::on_data_changed(bpSlot* s)
 	((cSlot*)s->user_data)->tracker->update_view();
 }
 
-void cBPEditor::show_add_node_menu(const Vec2f& pos)
+void cBPEditor::show_add_node_menu(const vec2& pos)
 {
 	const TypeInfo* type;
 	TypeTag tag;
@@ -1360,7 +1360,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 				ui.e_text(Icon_SEARCH);
 				auto c_text_search = ui.e_edit(300.f)->get_component(cText);
 			ui.e_end_layout();
-			ui.next_element_size = Vec2f(0.f, 300.f);
+			ui.next_element_size = vec2(0.f, 300.f);
 			ui.next_element_padding = 4.f;
 			ui.e_begin_scrollbar(ScrollbarVertical, false);
 			ui.c_aligner(AlignMinMax | AlignGreedy, 0);
@@ -1368,7 +1368,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 					struct Capturing
 					{
 						Entity* l;
-						Vec2f p;
+						vec2 p;
 
 						void show_enums(TypeTag tag)
 						{
@@ -1388,7 +1388,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							{
 								TypeTag t;
 								const char* s;
-								Vec2f p;
+								vec2 p;
 							}capture;
 							capture.t = tag;
 							capture.p = p;
@@ -1413,7 +1413,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 						}
 					}capture;
 					capture.l = e_list;
-					capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
+					capture.p = (vec2(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 					if (!dragging_slot)
 					{
 						ui.e_menu_item(L"Enum Single", [](Capture& c) {
@@ -1438,7 +1438,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								struct _Capturing
 								{
 									const char* s;
-									Vec2f p;
+									vec2 p;
 								}_capture;
 								_capture.p = capture.p;
 								capture.l->remove_children(0, -1);
@@ -1469,7 +1469,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								struct _Capturing
 								{
 									const char* s;
-									Vec2f p;
+									vec2 p;
 								}_capture;
 								_capture.p = capture.p;
 								capture.l->remove_children(0, -1);
@@ -1501,7 +1501,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							{
 								TypeTag t;
 								const char* s;
-								Vec2f p;
+								vec2 p;
 							}_capture;
 							_capture.t = tag;
 							_capture.p = capture.p;
@@ -1533,7 +1533,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 								struct _Capturing
 								{
 									const char* s;
-									Vec2f p;
+									vec2 p;
 								}_capture;
 								_capture.p = capture.p;
 								_capture.s = base_name;
@@ -1563,7 +1563,7 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							struct _Capturing
 							{
 								const char* s;
-								Vec2f p;
+								vec2 p;
 							}_capture;
 							_capture.p = capture.p;
 							_capture.s = base_name;
@@ -1594,9 +1594,9 @@ void cBPEditor::show_add_node_menu(const Vec2f& pos)
 							bpNodeType t;
 							const char* us;
 							const char* vs;
-							Vec2f p;
+							vec2 p;
 						}capture;
-						capture.p = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
+						capture.p = (vec2(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 						for (auto& t : node_types)
 						{
 							capture.t = t.t;

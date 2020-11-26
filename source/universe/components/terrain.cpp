@@ -8,7 +8,7 @@
 
 namespace flame
 {
-	void cTerrainPrivate::set_blocks(const Vec2u& b)
+	void cTerrainPrivate::set_blocks(const uvec2& b)
 	{
 		if (blocks == b)
 			return;
@@ -17,7 +17,7 @@ namespace flame
 			node->mark_transform_dirty();
 	}
 
-	void cTerrainPrivate::set_scale(const Vec3f& s)
+	void cTerrainPrivate::set_scale(const vec3& s)
 	{
 		if (scale == s)
 			return;

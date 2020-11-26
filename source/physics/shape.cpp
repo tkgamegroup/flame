@@ -58,18 +58,18 @@ namespace flame
 			return new TriangleMeshPrivate((DevicePrivate*)device, mesh);
 		}
 
-		HeightFieldPrivate::HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const Vec2u& blocks, uint tess_levels) :
+		HeightFieldPrivate::HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const uvec2& blocks, uint tess_levels) :
 			tess_levels(tess_levels)
 		{
 #ifdef USE_PHYSX
-			auto w = blocks.x() * tess_levels;
-			auto h = blocks.y() * tess_levels;
+			auto w = blocks.x * tess_levels;
+			auto h = blocks.y * tess_levels;
 			std::vector<uint> samples;
 			samples.resize((w + 1) * (h + 1));
 			{
 				auto dev = graphics::Device::get_default();
 				auto img_size = height_map->get_size();
-				auto buf = graphics::Buffer::create(dev, img_size.x() * img_size.y(), graphics::BufferUsageTransferDst, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent);
+				auto buf = graphics::Buffer::create(dev, img_size.x * img_size.y, graphics::BufferUsageTransferDst, graphics::MemoryPropertyHost | graphics::MemoryPropertyCoherent);
 				auto cb = graphics::CommandBuffer::create(graphics::CommandPool::get(dev));
 				cb->begin(true);
 				cb->image_barrier(height_map, {}, graphics::ImageLayoutShaderReadOnly, graphics::ImageLayoutTransferSrc);
@@ -86,59 +86,59 @@ namespace flame
 				auto dst = (PxHeightFieldSample*)samples.data();
 				auto sample = [&](int x, int y) {
 					if (x < 0)
-						//x = img_size.x() - 1;
+						//x = img_size.x - 1;
 						x = 0;
-					else if (x >= img_size.x())
+					else if (x >= img_size.x)
 						//x = 0;
-						x = img_size.x() - 1;
+						x = img_size.x - 1;
 					if (y < 0)
-						//y = img_size.y() - 1;
+						//y = img_size.y - 1;
 						y = 0;
-					else if (y >= img_size.y())
+					else if (y >= img_size.y)
 						//y = 0;
-						y = img_size.y() - 1;
-					return src[y * img_size.x() + x] / 255.f;
+						y = img_size.y - 1;
+					return src[y * img_size.x + x] / 255.f;
 				};
 				auto lvhf = tess_levels >> 1;
 				for (auto x = 0; x <= w; x++)
 				{
 					for (auto y = 0; y <= h; y++)
 					{
-						auto tc = Vec2f(x / (float)w, y / (float)h) * img_size;
-						auto itc = Vec2i(tc);
+						auto tc = vec2(x / (float)w, y / (float)h) * img_size;
+						auto itc = ivec2(tc);
 						auto ftc = tc - itc;
 						float height;
-						if (ftc.x() > 0.5f && ftc.y() > 0.5f)
+						if (ftc.x > 0.5f && ftc.y > 0.5f)
 						{
-							ftc.x() -= 0.5f;
-							ftc.y() -= 0.5f;
+							ftc.x -= 0.5f;
+							ftc.y -= 0.5f;
 							height =
-								(sample(itc.x(), itc.y()) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y()) * ftc.x()) * (1.f - ftc.y()) +
-								(sample(itc.x(), itc.y() + 1) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y() + 1) * ftc.x()) * ftc.y();
+								(sample(itc.x, itc.y) * (1.f - ftc.x) + sample(itc.x + 1, itc.y) * ftc.x) * (1.f - ftc.y) +
+								(sample(itc.x, itc.y + 1) * (1.f - ftc.x) + sample(itc.x + 1, itc.y + 1) * ftc.x) * ftc.y;
 						}
-						else if (ftc.x() > 0.5f && ftc.y() < 0.5f)
+						else if (ftc.x > 0.5f && ftc.y < 0.5f)
 						{
-							ftc.x() -= 0.5f;
-							ftc.y() += 0.5f;
+							ftc.x -= 0.5f;
+							ftc.y += 0.5f;
 							height =
-								(sample(itc.x(), itc.y() - 1) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y() - 1) * ftc.x()) * (1.f - ftc.y()) +
-								(sample(itc.x(), itc.y()) * (1.f - ftc.x()) + sample(itc.x() + 1, itc.y()) * ftc.x()) * ftc.y();
+								(sample(itc.x, itc.y - 1) * (1.f - ftc.x) + sample(itc.x + 1, itc.y - 1) * ftc.x) * (1.f - ftc.y) +
+								(sample(itc.x, itc.y) * (1.f - ftc.x) + sample(itc.x + 1, itc.y) * ftc.x) * ftc.y;
 						}
-						else if (ftc.x() < 0.5f && ftc.y() > 0.5f)
+						else if (ftc.x < 0.5f && ftc.y > 0.5f)
 						{
-							ftc.x() += 0.5f;
-							ftc.y() -= 0.5f;
+							ftc.x += 0.5f;
+							ftc.y -= 0.5f;
 							height =
-								(sample(itc.x() - 1, itc.y()) * (1.f - ftc.x()) + sample(itc.x(), itc.y()) * ftc.x()) * (1.f - ftc.y()) +
-								(sample(itc.x() - 1, itc.y() + 1) * (1.f - ftc.x()) + sample(itc.x(), itc.y() + 1) * ftc.x()) * ftc.y();
+								(sample(itc.x - 1, itc.y) * (1.f - ftc.x) + sample(itc.x, itc.y) * ftc.x) * (1.f - ftc.y) +
+								(sample(itc.x - 1, itc.y + 1) * (1.f - ftc.x) + sample(itc.x, itc.y + 1) * ftc.x) * ftc.y;
 						}
 						else
 						{
-							ftc.x() += 0.5f;
-							ftc.y() += 0.5f;
+							ftc.x += 0.5f;
+							ftc.y += 0.5f;
 							height =
-								(sample(itc.x() - 1, itc.y() - 1) * (1.f - ftc.x()) + sample(itc.x(), itc.y() - 1) * ftc.x()) * (1.f - ftc.y()) +
-								(sample(itc.x() - 1, itc.y()) * (1.f - ftc.x()) + sample(itc.x(), itc.y()) * ftc.x()) * ftc.y();
+								(sample(itc.x - 1, itc.y - 1) * (1.f - ftc.x) + sample(itc.x, itc.y - 1) * ftc.x) * (1.f - ftc.y) +
+								(sample(itc.x - 1, itc.y) * (1.f - ftc.x) + sample(itc.x, itc.y) * ftc.x) * ftc.y;
 						}
 						dst->height = height * height_field_precision;
 
@@ -173,17 +173,17 @@ namespace flame
 #endif
 		}
 
-		HeightField* HeightField::create(Device* device, graphics::Image* height_map, const Vec2u& blocks, uint tess_levels)
+		HeightField* HeightField::create(Device* device, graphics::Image* height_map, const uvec2& blocks, uint tess_levels)
 		{
 			return new HeightFieldPrivate((DevicePrivate*)device, height_map, blocks, tess_levels);
 		}
 
-		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const Vec3f& hf_ext)
+		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const vec3& hf_ext)
 		{
 			if (!material)
 				material = device->mat.get();
 #ifdef USE_PHYSX
-			px_shape = device->px_instance->createShape(PxBoxGeometry(hf_ext.x(), hf_ext.y(), hf_ext.z()), *material->px_material);
+			px_shape = device->px_instance->createShape(PxBoxGeometry(hf_ext.x, hf_ext.y, hf_ext.z), *material->px_material);
 #endif
 			px_shape->userData = this;
 		}
@@ -220,14 +220,14 @@ namespace flame
 			px_shape->userData = this;
 		}
 
-		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const Vec3f& scale)
+		ShapePrivate::ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const vec3& scale)
 		{
 			if (!material)
 				material = device->mat.get();
 #ifdef USE_PHYSX
 
 			px_shape = device->px_instance->createShape(PxHeightFieldGeometry(height_field->px_height_field, PxMeshGeometryFlags(),
-				scale.y() / height_field_precision, scale.x() / height_field->tess_levels, scale.z() / height_field->tess_levels), *material->px_material);
+				scale.y / height_field_precision, scale.x / height_field->tess_levels, scale.z / height_field->tess_levels), *material->px_material);
 #endif
 			px_shape->userData = this;
 		}
@@ -247,14 +247,14 @@ namespace flame
 #endif
 		}
 
-		void ShapePrivate::set_pose(const Vec3f& coord, const Vec4f& quat)
+		void ShapePrivate::set_pose(const vec3& coord, const vec4& quat)
 		{
 #ifdef USE_PHYSX
 			px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat)));
 #endif
 		}
 
-		Shape* Shape::create_box(Device* device, Material* material, const Vec3f& hf_ext)
+		Shape* Shape::create_box(Device* device, Material* material, const vec3& hf_ext)
 		{
 			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)material, hf_ext);
 		}
@@ -269,7 +269,7 @@ namespace flame
 			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)material, (TriangleMeshPrivate*)tri_mesh, scale);
 		}
 
-		Shape* Shape::create_height_field(Device* device, Material* material, HeightField* height_field, const Vec3f& scale) 
+		Shape* Shape::create_height_field(Device* device, Material* material, HeightField* height_field, const vec3& scale) 
 		{
 			return new ShapePrivate((DevicePrivate*)device, (MaterialPrivate*)material, (HeightFieldPrivate*)height_field, scale);
 		}

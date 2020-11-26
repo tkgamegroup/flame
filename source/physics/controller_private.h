@@ -21,9 +21,9 @@ namespace flame
 
 			void release() override { delete this; }
 
-			Vec3f get_position() const override;
-			void set_position(const Vec3f& pos) override;
-			void move(const Vec3f& disp, float delta_time) override;
+			vec3 get_position() const override;
+			void set_position(const vec3& pos) override;
+			void move(const vec3& disp, float delta_time) override;
 		};
 	}
 }

@@ -40,7 +40,7 @@ struct App
 
 	struct Star
 	{
-		Vec3f p;
+		vec3 p;
 
 		Star()
 		{
@@ -49,30 +49,30 @@ struct App
 
 		void reset()
 		{
-			p.x() = (random() * 2.f - 1.f) * 4.f;
-			p.y() = (random() * 2.f - 1.f) * 4.f;
-			p.z() = projector._far;
+			p.x = (random() * 2.f - 1.f) * 4.f;
+			p.y = (random() * 2.f - 1.f) * 4.f;
+			p.z = projector._far;
 		}
 
 		void move()
 		{
-			p.z() -= 1.5f * dt;
-			if (p.z() <= projector._near)
+			p.z -= 1.5f * dt;
+			if (p.z <= projector._near)
 				reset();
 		}
 
 		void show(Canvas* canvas)
 		{
 			canvas->begin_path();
-			auto r = 4.f / p.z();
+			auto r = 4.f / p.z;
 			auto c = projector.project(p);
-			canvas->move_to(c.x() + r, c.y());
+			canvas->move_to(c.x + r, c.y);
 			for (auto i = 60; i < 360; i += 60)
 			{
-				auto rad = i * ANG_RAD;
-				canvas->line_to(c.x() + cos(rad) * r, c.y() + sin(rad) * r);
+				auto rad = radians(i);
+				canvas->line_to(c.x + cos(rad) * r, c.y + sin(rad) * r);
 			}
-			canvas->fill(Vec4c(255, 255, 255, 80 * (3.f - p.z() + 1.f)));
+			canvas->fill(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
 		}
 	};
 
@@ -84,7 +84,7 @@ struct App
 
 		stars.resize(1000);
 		for (auto& s : stars)
-			s.p.z() = random() * (projector._far - projector._near) + projector._near;
+			s.p.z = random() * (projector._far - projector._near) + projector._near;
 	}
 
 	void run(float delta_time)
@@ -124,13 +124,13 @@ int main(int argc, char** args)
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 	set_engine_path(engine_path.c_str());
 
-	app.w = Window::create("Graphics Test", Vec2u(projector._screen_width, projector._screen_height), WindowFrame);
+	app.w = Window::create("Graphics Test", uvec2(projector._screen_width, projector._screen_height), WindowFrame);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.sc = Swapchain::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.canvas = Canvas::create(app.d);
-	app.canvas->set_clear_color(Vec4c(0, 0, 0, 1.f));
+	app.canvas->set_clear_color(cvec4(0, 0, 0, 1.f));
 	app.on_resize();
 
 	app.setup();

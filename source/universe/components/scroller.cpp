@@ -7,31 +7,31 @@
 
 namespace flame
 {
-	void cScrollerPrivate::scroll(const Vec2f& v)
+	void cScrollerPrivate::scroll(const vec2& v)
 	{
 		if (view_layout && target_element)
 		{
 			if (htrack_element)
 			{
-				auto target_size = target_element->size.x();
-				if (target_size > view_element->size.x())
-					hthumb_element->set_width(view_element->size.x() / target_size * htrack_element->size.x());
+				auto target_size = target_element->size.x;
+				if (target_size > view_element->size.x)
+					hthumb_element->set_width(view_element->size.x / target_size * htrack_element->size.x);
 				else
 					hthumb_element->set_width(0.f);
-				auto x = v.x() + hthumb_element->pos.x();
-				hthumb_element->set_x(hthumb_element->size.x() > 0.f ? clamp(x, 0.f, htrack_element->size.x() - hthumb_element->size.x()) : 0.f);
-				view_layout->set_scrollx(-int(hthumb_element->pos.x() / htrack_element->size.x() * target_size / step) * step);
+				auto x = v.x + hthumb_element->pos.x;
+				hthumb_element->set_x(hthumb_element->size.x > 0.f ? clamp(x, 0.f, htrack_element->size.x - hthumb_element->size.x) : 0.f);
+				view_layout->set_scrollx(-int(hthumb_element->pos.x / htrack_element->size.x * target_size / step) * step);
 			}
 			if (vtrack_element)
 			{
-				auto target_size = target_element->size.y();
-				if (target_size > view_element->size.y())
-					vthumb_element->set_height(view_element->size.y() / target_size * vtrack_element->size.y());
+				auto target_size = target_element->size.y;
+				if (target_size > view_element->size.y)
+					vthumb_element->set_height(view_element->size.y / target_size * vtrack_element->size.y);
 				else
 					vthumb_element->set_height(0.f);
-				auto y = v.y() + vthumb_element->pos.y();
-				vthumb_element->set_y(vthumb_element->size.y() > 0.f ? clamp(y, 0.f, vtrack_element->size.y() - vthumb_element->size.y()) : 0.f);
-				view_layout->set_scrolly(-int(vthumb_element->pos.y() / vtrack_element->size.y() * target_size / step) * step);
+				auto y = v.y + vthumb_element->pos.y;
+				vthumb_element->set_y(vthumb_element->size.y > 0.f ? clamp(y, 0.f, vtrack_element->size.y - vthumb_element->size.y) : 0.f);
+				view_layout->set_scrolly(-int(vthumb_element->pos.y / vtrack_element->size.y * target_size / step) * step);
 			}
 		}
 	}
@@ -39,7 +39,7 @@ namespace flame
 	void cScrollerPrivate::on_gain_event_receiver()
 	{
 		mouse_scroll_listener = event_receiver->add_mouse_scroll_listener([](Capture& c, int v) {
-			c.thiz<cScrollerPrivate>()->scroll(Vec2f(0.f, -v * 20.f));
+			c.thiz<cScrollerPrivate>()->scroll(vec2(0.f, -v * 20.f));
 		}, Capture().set_thiz(this));
 	}
 
@@ -55,7 +55,7 @@ namespace flame
 			if (t == thiz->htrack_element)
 			{
 				if (h == S<"width"_h>)
-					thiz->scroll(Vec2f(0.f));
+					thiz->scroll(vec2(0.f));
 			}
 		}, Capture().set_thiz(this));
 	}
@@ -67,10 +67,10 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_hthumb_event_receiver()
 	{
-		hthumb_mouse_listener = hthumb_event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+		hthumb_mouse_listener = hthumb_event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (thiz->event_receiver->dispatcher->active == thiz->hthumb_event_receiver)
-				thiz->scroll(Vec2f(disp.x(), 0.f));
+				thiz->scroll(vec2(disp.x, 0.f));
 		}, Capture().set_thiz(this));
 	}
 
@@ -86,7 +86,7 @@ namespace flame
 			if (t == thiz->vtrack_element)
 			{
 				if (h == S<"height"_h>)
-					thiz->scroll(Vec2f(0.f));
+					thiz->scroll(vec2(0.f));
 			}
 		}, Capture().set_thiz(this));
 	}
@@ -98,10 +98,10 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_vthumb_event_receiver()
 	{
-		vthumb_mouse_listener = vthumb_event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+		vthumb_mouse_listener = vthumb_event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cScrollerPrivate>();
 			if (thiz->event_receiver->dispatcher->active == thiz->vthumb_event_receiver)
-				thiz->scroll(Vec2f(0.f, disp.y()));
+				thiz->scroll(vec2(0.f, disp.y));
 		}, Capture().set_thiz(this));
 	}
 
@@ -125,14 +125,14 @@ namespace flame
 					{
 						thiz->target_element = ce;
 
-						thiz->scroll(Vec2f(0.f));
+						thiz->scroll(vec2(0.f));
 
 						e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
 							auto thiz = c.thiz<cScrollerPrivate>();
 							if (t == thiz->target_element)
 							{
 								if (h == S<"width"_h> || h == S<"height"_h>)
-									thiz->scroll(Vec2f(0.f));
+									thiz->scroll(vec2(0.f));
 							}
 						}, Capture().set_thiz(thiz));
 					}
@@ -150,7 +150,7 @@ namespace flame
 			if (t == thiz->view_element)
 			{
 				if (h == S<"width"_h> || h == S<"height"_h>)
-					thiz->scroll(Vec2f(0.f));
+					thiz->scroll(vec2(0.f));
 			}
 		}, Capture().set_thiz(this));
 	}

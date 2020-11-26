@@ -35,16 +35,16 @@ namespace flame
 
 		struct ImageCopy
 		{
-			Vec2u src_off = Vec2u(0);
-			Vec2u dst_off = Vec2u(0);
-			Vec2u size;
+			uvec2 src_off = uvec2(0);
+			uvec2 dst_off = uvec2(0);
+			uvec2 size;
 		};
 
 		struct BufferImageCopy
 		{
 			uint buffer_offset = 0;
-			Vec2u image_offset = Vec2u(0);
-			Vec2u image_extent;
+			uvec2 image_offset = uvec2(0);
+			uvec2 image_extent;
 			uint image_level = 0;
 		};
 
@@ -71,10 +71,10 @@ namespace flame
 
 			virtual void begin(bool once = false) = 0;
 
-			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const Vec4f* clearvalues = nullptr) = 0;
+			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues = nullptr) = 0;
 			virtual void end_renderpass() = 0;
-			virtual void set_viewport(const Vec4f& rect) = 0;
-			virtual void set_scissor(const Vec4f& rect) = 0;
+			virtual void set_viewport(const vec4& rect) = 0;
+			virtual void set_scissor(const vec4& rect) = 0;
 			virtual void bind_pipeline(Pipeline* p) = 0;
 			virtual void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) = 0;
 			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;
@@ -89,7 +89,7 @@ namespace flame
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
 			virtual void draw_indirect(Buffer* b, uint offset, uint count) = 0;
 			virtual void draw_indexed_indirect(Buffer* b, uint offset, uint count) = 0;
-			virtual void dispatch(const Vec3u& v) = 0;
+			virtual void dispatch(const uvec3& v) = 0;
 			virtual void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) = 0;
 			virtual void image_barrier(Image* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) = 0;
@@ -99,7 +99,7 @@ namespace flame
 			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) = 0;
 			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) = 0;
 
-			virtual void clear_color_image(Image* i, const Vec4c& color) = 0;
+			virtual void clear_color_image(Image* i, const cvec4& color) = 0;
 			virtual void clear_depth_image(Image* i, float depth) = 0;
 
 			virtual void end() = 0;

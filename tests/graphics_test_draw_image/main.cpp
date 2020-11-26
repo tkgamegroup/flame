@@ -42,12 +42,12 @@ struct App
 			fbs[i] = Framebuffer::create(d, rp, 1, &v);
 		}
 		cbs.resize(image_count);
-		auto vp = Vec4f(Vec2f(0.f), Vec2f(img->size));
+		auto vp = vec4(vec2(0.f), vec2(img->size));
 		for (auto i = 0; i < image_count; i++)
 		{
 			auto cb = CommandBuffer::create(CommandPool::get_default(QueueGraphics));
 			cb->begin();
-			cb->begin_renderpass(fbs[i], 1, &Vec4f(0.f, 0.f, 0.f, 1.f));
+			cb->begin_renderpass(fbs[i], 1, &vec4(0.f, 0.f, 0.f, 1.f));
 			cb->set_viewport(vp);
 			cb->set_scissor(vp);
 			cb->bind_pipeline(pl);
@@ -78,7 +78,7 @@ int main(int argc, char** args)
 {
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 
-	app.w = Window::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
+	app.w = Window::create("Graphics Test", uvec2(800, 600), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);
 	{
@@ -109,7 +109,7 @@ int main(int argc, char** args)
 		app.pl = Pipeline::create(app.d, (engine_path / L"shaders").c_str(), 2, shaders, app.pll, app.rp, 0);
 	}
 	app.on_resize();
-	app.w->add_resize_listener([](Capture&, const Vec2u& s) {
+	app.w->add_resize_listener([](Capture&, const uvec2& s) {
 		app.on_resize();
 	}, Capture());
 	app.fence = Fence::create(app.d);

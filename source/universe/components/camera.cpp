@@ -38,8 +38,8 @@ namespace flame
 	void cCameraPrivate::draw(graphics::Canvas* canvas)
 	{
 		auto out = canvas->get_output(0);
-		auto size = out ? Vec2f(out->get_image()->get_size()) : Vec2f(1.f);
-		canvas->set_camera(fovy, size.x() / size.y(), near, far, node->global_dirs, node->global_pos);
+		auto size = out ? vec2(out->get_image()->get_size()) : vec2(1.f);
+		canvas->set_camera(fovy, size.x / size.y, near, far, node->global_dirs, node->global_pos);
 	}
 
 	void cCameraPrivate::set_current(bool v)

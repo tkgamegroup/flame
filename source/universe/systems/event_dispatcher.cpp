@@ -58,7 +58,7 @@ namespace flame
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
 
-			mouse_left_down_listener = window->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+			mouse_left_down_listener = window->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mbtns_temp[Mouse_Left] = std::make_pair(true, true);
@@ -67,7 +67,7 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			mouse_left_up_listener = window->add_mouse_left_up_listener([](Capture& c, const Vec2i& pos) {
+			mouse_left_up_listener = window->add_mouse_left_up_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mbtns_temp[Mouse_Left] = std::make_pair(false, true);
@@ -76,7 +76,7 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			mouse_right_down_listener = window->add_mouse_right_down_listener([](Capture& c, const Vec2i& pos) {
+			mouse_right_down_listener = window->add_mouse_right_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mbtns_temp[Mouse_Right] = std::make_pair(true, true);
@@ -85,7 +85,7 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			mouse_right_up_listener = window->add_mouse_right_up_listener([](Capture& c, const Vec2i& pos) {
+			mouse_right_up_listener = window->add_mouse_right_up_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mbtns_temp[Mouse_Right] = std::make_pair(false, true);
@@ -94,7 +94,7 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			mouse_middle_down_listener = window->add_mouse_middle_down_listener([](Capture& c, const Vec2i& pos) {
+			mouse_middle_down_listener = window->add_mouse_middle_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mbtns_temp[Mouse_Middle] = std::make_pair(true, true);
@@ -103,7 +103,7 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			mouse_middle_up_listener = window->add_mouse_middle_up_listener([](Capture& c, const Vec2i& pos) {
+			mouse_middle_up_listener = window->add_mouse_middle_up_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mbtns_temp[Mouse_Middle] = std::make_pair(false, true);
@@ -112,7 +112,7 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			mouse_move_listener = window->add_mouse_move_listener([](Capture& c, const Vec2i& pos) {
+			mouse_move_listener = window->add_mouse_move_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<sEventDispatcherPrivate>();
 
 				thiz->mdisp_temp += pos - thiz->mpos;
@@ -161,7 +161,7 @@ namespace flame
 			debug_break();
 		}
 
-		auto mouse_contained = er->element->contains((Vec2f)mpos) && rect_contains(er->element->boundaries, (Vec2f)mpos);
+		auto mouse_contained = er->element->contains((vec2)mpos) && rect_contains(er->element->boundaries, (vec2)mpos);
 
 		if (!hovering && mouse_contained)
 		{
@@ -281,7 +281,7 @@ namespace flame
 //		{
 //			if (focusing->drag_hash)
 //			{
-//				if (mouse_disp != 0 && (abs(mouse_pos.x() - active_pos.x()) > 4.f || abs(mouse_pos.y() - active_pos.y()) > 4.f))
+//				if (mouse_disp != 0 && (abs(mouse_pos.x - active_pos.x) > 4.f || abs(mouse_pos.y - active_pos.y) > 4.f))
 //					focusing_state = FocusingAndDragging;
 //			}
 //		}
@@ -366,8 +366,8 @@ namespace flame
 			}
 		}
 
-		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, Vec2f(mpos)))
-		if (focusing && mbtns[Mouse_Left] == std::make_pair(false, true) && focusing->element->contains(Vec2f(mpos)))
+		//if (focusing && (mbtns[Mouse_Left] == (KeyStateUp | KeyStateJust)) && rect_contains(focusing->element->clipped_rect, vec2(mpos)))
+		if (focusing && mbtns[Mouse_Left] == std::make_pair(false, true) && focusing->element->contains(vec2(mpos)))
 		{
 			//auto disp = mouse_pos - active_pos;
 			//auto db = dbclick_timer > 0.f;

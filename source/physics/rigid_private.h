@@ -29,14 +29,14 @@ namespace flame
 
 			void release() override { delete this; }
 
-			void get_pose(Vec3f& coord, Vec4f& quat) const override;
-			void set_pose(const Vec3f& coord, const Vec4f& quat) override;
+			void get_pose(vec3& coord, vec4& quat) const override;
+			void set_pose(const vec3& coord, const vec4& quat) override;
 
 			void add_shape(ShapePrivate* s);
 			void remove_shape(ShapePrivate* s);
 
-			void add_impulse(const Vec3f& v) override;
-			void add_force(const Vec3f& v) override;
+			void add_impulse(const vec3& v) override;
+			void add_force(const vec3& v) override;
 			void clear_force() override;
 		};
 

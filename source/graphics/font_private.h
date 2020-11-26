@@ -29,15 +29,15 @@ namespace flame
 		struct GlyphPrivate : Glyph
 		{
 			ushort code = 0;
-			Vec2i off = Vec2i(0);
-			Vec2u size = Vec2u(0);
-			Vec4f uv = Vec4f(0.f);
+			ivec2 off = ivec2(0);
+			uvec2 size = uvec2(0);
+			vec4 uv = vec4(0.f);
 			int advance = 0;
 
 			ushort get_code() const override { return code; }
-			Vec2i get_off() const override { return off; }
-			Vec2u get_size() const override { return size; }
-			Vec4f get_uv() const override { return uv; }
+			ivec2 get_off() const override { return off; }
+			uvec2 get_size() const override { return size; }
+			vec4 get_uv() const override { return uv; }
 			int get_advance() const override { return advance; }
 		};
 

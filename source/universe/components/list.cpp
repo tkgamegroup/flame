@@ -6,7 +6,7 @@ namespace flame
 {
 	void cListPrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cListPrivate>();
 			if (thiz->select_air_when_clicked)
 				thiz->set_selected(nullptr);
@@ -37,7 +37,7 @@ namespace flame
 
 	void cListItemPrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cListItemPrivate>();
 			if (thiz->list)
 				thiz->list->set_selected(thiz->entity);

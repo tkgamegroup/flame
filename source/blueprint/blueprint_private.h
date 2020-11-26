@@ -75,7 +75,7 @@ namespace flame
 
 		Guid guid;
 		std::string id;
-		Vec2f pos = Vec2f(0.f);
+		vec2 pos = vec2(0.f);
 
 		bpNodeType type;
 		std::string type_parameter;
@@ -108,8 +108,8 @@ namespace flame
 		void set_guid(const Guid& _guid) override { guid = _guid; }
 		const char* get_id() const override { return id.c_str(); }
 		bool set_id(const std::string& id);
-		Vec2f get_pos() const override { return pos; }
-		void set_pos(const Vec2f& _pos) override { pos = _pos; }
+		vec2 get_pos() const override { return pos; }
+		void set_pos(const vec2& _pos) override { pos = _pos; }
 
 		bpNodeType get_type() const override { return type; }
 		const char* get_type_parameter() const override { return type_parameter.c_str(); }

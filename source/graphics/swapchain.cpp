@@ -17,7 +17,7 @@ namespace flame
 		{
 			update();
 
-			resize_listener = w->add_resize_listener([](Capture& c, const Vec2u& size) {
+			resize_listener = w->add_resize_listener([](Capture& c, const uvec2& size) {
 				c.thiz<SwapchainPrivate>()->update();
 			}, Capture().set_thiz(this));
 			w->add_destroy_listener([](Capture& c) {
@@ -86,10 +86,10 @@ namespace flame
 				VkSurfaceCapabilitiesKHR surface_capabilities;
 				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->vk_physical_device, vk_surface, &surface_capabilities);
 
-				size.x() = clamp(size.x(),
+				size.x = clamp(size.x,
 					surface_capabilities.minImageExtent.width,
 					surface_capabilities.maxImageExtent.width);
-				size.y() = clamp(size.y(),
+				size.y = clamp(size.y,
 					surface_capabilities.minImageExtent.height,
 					surface_capabilities.maxImageExtent.height);
 
@@ -110,8 +110,8 @@ namespace flame
 				swapchain_info.minImageCount = image_count;
 				swapchain_info.imageFormat = to_backend(swapchain_format);
 				swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
-				swapchain_info.imageExtent.width = size.x();
-				swapchain_info.imageExtent.height = size.y();
+				swapchain_info.imageExtent.width = size.x;
+				swapchain_info.imageExtent.height = size.y;
 				swapchain_info.imageArrayLayers = 1;
 				swapchain_info.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 				swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

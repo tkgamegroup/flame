@@ -161,13 +161,13 @@ void SceneEditor::save()
 MyApp app;
 
 SceneEditorWindow::SceneEditorWindow() :
-	GraphicsWindow(&app, true, true, "Scene Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
+	GraphicsWindow(&app, true, true, "Scene Editor", uvec2(300, 200), WindowFrame | WindowResizable, nullptr, true)
 {
 	scene_editor.window = this;
 
 	setup_as_main_window();
 
-	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
+	canvas->clear_color = vec4(100, 100, 100, 255) / 255.f;
 
 	ui.init(world);
 	ui.style_set_to_light();
@@ -285,8 +285,8 @@ SceneEditorWindow::SceneEditorWindow() :
 		{
 			auto& ui = scene_editor.window->ui;
 			ui.parents.push(scene_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			scene_editor.editor = new cSceneEditor;
@@ -300,8 +300,8 @@ SceneEditorWindow::SceneEditorWindow() :
 		{
 			auto& ui = scene_editor.window->ui;
 			ui.parents.push(scene_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			scene_editor.resource_explorer = new cResourceExplorer;
@@ -315,8 +315,8 @@ SceneEditorWindow::SceneEditorWindow() :
 		{
 			auto& ui = scene_editor.window->ui;
 			ui.parents.push(scene_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			scene_editor.hierarchy = new cHierarchy;
@@ -330,8 +330,8 @@ SceneEditorWindow::SceneEditorWindow() :
 		{
 			auto& ui = scene_editor.window->ui;
 			ui.parents.push(scene_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			scene_editor.inspector = new cInspector;

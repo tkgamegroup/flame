@@ -13,37 +13,39 @@ namespace flame
 
 	struct cNodePrivate : cNode // R ~ on_*
 	{
-		Vec3f pos = Vec3f(0.f);
-		Vec4f quat = Vec4f(0.f, 0.f, 0.f, 1.f);
-		Vec3f scale = Vec3f(1.f);
+		vec3 pos = vec3(0.f);
+		vec4 quat = vec4(0.f, 0.f, 0.f, 1.f);
+		vec3 scaling = vec3(1.f);
 
 		bool transform_dirty = true;
-		Mat3f local_dirs;
-		Vec3f global_pos;
-		Vec4f global_quat;
-		Vec3f global_scale;
-		Mat3f global_dirs;
-		Mat4f transform;
+		mat3 local_dirs;
+		vec3 global_pos;
+		vec4 global_quat;
+		vec3 global_scale;
+		mat3 global_dirs;
+		mat4 transform;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
 
 		cNodePrivate* p_node; // R ref place=parent optional
 		sRendererPrivate* renderer = nullptr; // R ref
 
-		Vec3f get_pos() const override { return pos; }
-		void set_pos(const Vec3f& pos) override;
-		Vec4f get_quat() const override { return quat; }
-		void set_quat(const Vec4f& quat) override;
-		Vec3f get_scale() const override { return scale; }
-		void set_scale(const Vec3f & scale) override;
+		vec3 get_pos() const override { return pos; }
+		void set_pos(const vec3& pos) override;
+		vec4 get_quat() const override { return quat; }
+		void set_quat(const vec4& quat) override;
+		vec3 get_scale() const override { return scaling; }
+		void set_scale(const vec3 & scale) override;
 
-		void set_euler(const Vec3f& e) override;
+		void set_euler(const vec3& e) override;
 
-		Vec3f get_local_dir(uint idx) override;
+		vec3 get_local_dir(uint idx) override;
 
-		Vec3f get_global_pos() override;
-		Vec3f get_global_dir(uint idx) override;
-		Vec3f get_global_scale() override;
+		vec3 get_global_pos() override;
+		vec3 get_global_dir(uint idx) override;
+		vec3 get_global_scale() override;
+
+		mat4 get_transform() override;
 
 		void update_transform();
 

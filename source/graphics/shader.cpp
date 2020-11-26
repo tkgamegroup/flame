@@ -262,18 +262,18 @@ namespace flame
 							break;
 						case 2:
 							dst->tag = ShaderTagVec2i;
-							dst->name = "Vec2i";
-							dst->size = sizeof(Vec2i);
+							dst->name = "ivec2";
+							dst->size = sizeof(ivec2);
 							break;
 						case 3:
 							dst->tag = ShaderTagVec3i;
-							dst->name = "Vec3i";
-							dst->size = sizeof(Vec3i);
+							dst->name = "ivec3";
+							dst->size = sizeof(ivec3);
 							break;
 						case 4:
 							dst->tag = ShaderTagVec4i;
-							dst->name = "Vec4i";
-							dst->size = sizeof(Vec4i);
+							dst->name = "ivec4";
+							dst->size = sizeof(ivec4);
 							break;
 						default:
 							fassert(0);
@@ -296,18 +296,18 @@ namespace flame
 							break;
 						case 2:
 							dst->tag = ShaderTagVec2u;
-							dst->name = "Vec2u";
-							dst->size = sizeof(Vec2u);
+							dst->name = "uvec2";
+							dst->size = sizeof(uvec2);
 							break;
 						case 3:
 							dst->tag = ShaderTagVec3u;
-							dst->name = "Vec3u";
-							dst->size = sizeof(Vec3u);
+							dst->name = "uvec3";
+							dst->size = sizeof(uvec3);
 							break;
 						case 4:
 							dst->tag = ShaderTagVec4u;
-							dst->name = "Vec4u";
-							dst->size = sizeof(Vec4u);
+							dst->name = "uvec4";
+							dst->size = sizeof(uvec4);
 							break;
 						default:
 							fassert(0);
@@ -330,18 +330,18 @@ namespace flame
 							break;
 						case 2:
 							dst->tag = ShaderTagVec2f;
-							dst->name = "Vec2f";
-							dst->size = sizeof(Vec2f);
+							dst->name = "vec2";
+							dst->size = sizeof(vec2);
 							break;
 						case 3:
 							dst->tag = ShaderTagVec3f;
-							dst->name = "Vec3f";
-							dst->size = sizeof(Vec3f);
+							dst->name = "vec3";
+							dst->size = sizeof(vec3);
 							break;
 						case 4:
 							dst->tag = ShaderTagVec4f;
-							dst->name = "Vec4f";
-							dst->size = sizeof(Vec4f);
+							dst->name = "vec4";
+							dst->size = sizeof(vec4);
 							break;
 						default:
 							fassert(0);
@@ -352,8 +352,8 @@ namespace flame
 						{
 						case 2:
 							dst->tag = ShaderTagMat2f;
-							dst->name = "Mat2f";
-							dst->size = sizeof(Mat2f);
+							dst->name = "mat2";
+							dst->size = sizeof(mat2);
 							break;
 						default:
 							fassert(0);
@@ -364,8 +364,8 @@ namespace flame
 						{
 						case 3:
 							dst->tag = ShaderTagMat3f;
-							dst->name = "Mat3f";
-							dst->size = sizeof(Mat3f);
+							dst->name = "mat3";
+							dst->size = sizeof(mat3);
 							break;
 						default:
 							fassert(0);
@@ -376,8 +376,8 @@ namespace flame
 						{
 						case 4:
 							dst->tag = ShaderTagMat4f;
-							dst->name = "Mat4f";
-							dst->size = sizeof(Mat4f);
+							dst->name = "mat4";
+							dst->size = sizeof(mat4);
 							break;
 						default:
 							fassert(0);

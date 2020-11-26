@@ -6,7 +6,7 @@ namespace flame
 {
 	void cClickBringToFrontPrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto e = c.thiz<cClickBringToFrontPrivate>()->entity;
 			auto parent = e->parent;
 			if (parent && parent->children.size() > 1)

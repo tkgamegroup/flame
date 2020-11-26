@@ -14,10 +14,10 @@ namespace flame
 		{
 		}
 
-		virtual Vec2u get_blocks() const = 0;
-		virtual void set_blocks(const Vec2u& b) = 0;
-		virtual Vec3f get_scale() const = 0;
-		virtual void set_scale(const Vec3f& s) = 0;
+		virtual uvec2 get_blocks() const = 0;
+		virtual void set_blocks(const uvec2& b) = 0;
+		virtual vec3 get_scale() const = 0;
+		virtual void set_scale(const vec3& s) = 0;
 		virtual uint get_tess_levels() const = 0;
 		virtual void set_tess_levels(uint l) = 0;
 

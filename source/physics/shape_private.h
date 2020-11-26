@@ -31,7 +31,7 @@ namespace flame
 			PxHeightField* px_height_field;
 #endif
 
-			HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const Vec2u& blocks, uint tess_levels);
+			HeightFieldPrivate(DevicePrivate* device, graphics::Image* height_map, const uvec2& blocks, uint tess_levels);
 			~HeightFieldPrivate();
 
 			void release() override { delete this; }
@@ -45,11 +45,11 @@ namespace flame
 			PxShape* px_shape;
 #endif
 
-			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const Vec3f& hf_ext);
+			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, const vec3& hf_ext);
 			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius);
 			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, float radius, float height);
 			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, TriangleMeshPrivate* tri_mesh, float scale);
-			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const Vec3f& scale);
+			ShapePrivate(DevicePrivate* device, MaterialPrivate* material, HeightFieldPrivate* height_field, const vec3& scale);
 			~ShapePrivate();
 
 			void release() override { delete this; }
@@ -58,7 +58,7 @@ namespace flame
 
 			void set_trigger(bool v) override;
 
-			void set_pose(const Vec3f& coord, const Vec4f& quat) override;
+			void set_pose(const vec3& coord, const vec4& quat) override;
 		};
 	}
 }

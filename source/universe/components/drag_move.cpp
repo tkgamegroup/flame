@@ -7,12 +7,12 @@ namespace flame
 {
 	void cDragMovePrivate::on_gain_event_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i&) {
+		mouse_listener = event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 			auto thiz = c.thiz<cDragMovePrivate>();
 			if (thiz->event_receiver->dispatcher->active == thiz->event_receiver)
 			{
-				thiz->element->set_x(thiz->element->pos.x() + disp.x() / thiz->element->scale.x());
-				thiz->element->set_y(thiz->element->pos.y() + disp.y() / thiz->element->scale.y());
+				thiz->element->set_x(thiz->element->pos.x + disp.x / thiz->element->scaling.x);
+				thiz->element->set_y(thiz->element->pos.y + disp.y / thiz->element->scaling.y);
 			}
 		}, Capture().set_thiz(this));
 	}

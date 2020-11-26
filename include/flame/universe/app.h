@@ -81,7 +81,7 @@ namespace flame
 		sPhysicsWorld* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
-		GraphicsWindow(App* app, const char* title, const Vec2u size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
+		GraphicsWindow(App* app, const char* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_output();
 		virtual void on_frame() {}
@@ -105,7 +105,7 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, const char* title, const Vec2u size, WindowStyleFlags styles, bool hdr, bool msaa_3d, Window* parent) :
+	GraphicsWindow::GraphicsWindow(App* app, const char* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool msaa_3d, Window* parent) :
 		app(app)
 	{
 		window = Window::create(title, size, styles, parent);
@@ -127,7 +127,7 @@ namespace flame
 
 		physics_scene = physics::Scene::create(physics::Device::get_default(), -9.81f, 2);
 
-		window->add_resize_listener([](Capture& c, const Vec2u&) {
+		window->add_resize_listener([](Capture& c, const uvec2&) {
 			c.thiz<GraphicsWindow>()->set_canvas_output();
 		}, Capture().set_thiz(this));
 

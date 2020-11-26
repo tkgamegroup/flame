@@ -32,7 +32,7 @@ namespace flame
 		void* vtrack_element_listener = nullptr;
 		void* vthumb_mouse_listener = nullptr;
 
-		void scroll(const Vec2f& v) override;
+		void scroll(const vec2& v) override;
 
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();

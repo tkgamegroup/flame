@@ -7,7 +7,7 @@ int main(int argc, char **args)
 {
 	std::string type = args[1];
 	auto size = stou2(args[2]);
-	auto b = Bitmap::create(size.x(), size.y(), 4);
+	auto b = Bitmap::create(size.x, size.y, 4);
 	auto data = b->get_data();
 	auto pitch = b->get_pitch();
 	std::wstring output;
@@ -15,11 +15,11 @@ int main(int argc, char **args)
 	if (type == "plain")
 	{
 		auto color = stoc4(args[3]);
-		b = Bitmap::create(size.x(), size.y(), 4);
-		for (auto i = 0; i < size.y(); i++)
+		b = Bitmap::create(size.x, size.y, 4);
+		for (auto i = 0; i < size.y; i++)
 		{
-			for (auto j = 0; j < size.x(); j++)
-				memcpy(data + i * pitch + j * 4, &color, sizeof(Vec4c));
+			for (auto j = 0; j < size.x; j++)
+				memcpy(data + i * pitch + j * 4, &color, sizeof(cvec4));
 		}
 		output = s2w(args[4]);
 	}
@@ -30,14 +30,14 @@ int main(int argc, char **args)
 		auto spacing = std::stoul(args[5]);
 		auto foreground_color = stoc4(args[6]);
 		auto background_color = stoc4(args[7]);
-		for (auto i = 0; i < size.y(); i++)
+		for (auto i = 0; i < size.y; i++)
 		{
-			for (auto j = 0; j < size.x(); j++)
+			for (auto j = 0; j < size.x; j++)
 			{
 				if ((i + offset) % spacing < line_width)
-					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(Vec4c));
+					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(cvec4));
 				else
-					memcpy(data + i * pitch + j * 4, &background_color, sizeof(Vec4c));
+					memcpy(data + i * pitch + j * 4, &background_color, sizeof(cvec4));
 			}
 		}
 		output = s2w(args[8]);
@@ -49,14 +49,14 @@ int main(int argc, char **args)
 		auto spacing = std::stoul(args[5]);
 		auto foreground_color = stoc4(args[6]);
 		auto background_color = stoc4(args[7]);
-		for (auto i = 0; i < size.y(); i++)
+		for (auto i = 0; i < size.y; i++)
 		{
-			for (auto j = 0; j < size.x(); j++)
+			for (auto j = 0; j < size.x; j++)
 			{
 				if ((j + offset) % spacing < line_width)
-					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(Vec4c));
+					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(cvec4));
 				else
-					memcpy(data + i * pitch + j * 4, &background_color, sizeof(Vec4c));
+					memcpy(data + i * pitch + j * 4, &background_color, sizeof(cvec4));
 			}
 		}
 		output = s2w(args[8]);
@@ -69,24 +69,24 @@ int main(int argc, char **args)
 		auto brick_height = std::stoul(args[6]);
 		auto foreground_color = stoc4(args[7]);
 		auto background_color = stoc4(args[8]);
-		for (auto i = 0; i < size.y(); i++)
+		for (auto i = 0; i < size.y; i++)
 		{
-			for (auto j = 0; j < size.x(); j++)
+			for (auto j = 0; j < size.x; j++)
 			{
-				if ((i + offset.y()) % brick_height < line_width)
-					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(Vec4c));
+				if ((i + offset.y) % brick_height < line_width)
+					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(cvec4));
 				else
-					memcpy(data + i * pitch + j * 4, &background_color, sizeof(Vec4c));
+					memcpy(data + i * pitch + j * 4, &background_color, sizeof(cvec4));
 			}
 		}
-		for (auto i = 0; i < size.y(); i++)
+		for (auto i = 0; i < size.y; i++)
 		{
-			for (auto j = 0; j < size.x(); j++)
+			for (auto j = 0; j < size.x; j++)
 			{
-				auto ii = i + offset.x();
-				auto jj = j + offset.y();
+				auto ii = i + offset.x;
+				auto jj = j + offset.y;
 				if ((ii / brick_height) % 2 == (jj / half_brick_width) % 2 && ii % brick_height >= line_width && jj % half_brick_width < line_width)
-					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(Vec4c));
+					memcpy(data + i * pitch + j * 4, &foreground_color, sizeof(cvec4));
 			}
 		}
 		output = s2w(args[9]);

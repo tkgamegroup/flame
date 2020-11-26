@@ -36,7 +36,7 @@ namespace flame
 
 		void mark_changed();
 		void flash_cursor(int mode);
-		int locate_cursor(const Vec2f& mpos);
+		int locate_cursor(const vec2& mpos);
 		
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();

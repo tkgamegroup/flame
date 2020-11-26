@@ -14,22 +14,22 @@ namespace flame
 		Entity::report_data_changed(this, S<"res_id"_h>);
 	}
 
-	void cTileMapPrivate::set_cell_count(const Vec2u& c)
+	void cTileMapPrivate::set_cell_count(const uvec2& c)
 	{
 		if (cell_count == c)
 			return;
 		cell_count = c;
 
-		cells.resize(c.y());
+		cells.resize(c.y);
 		for (auto& v : cells)
-			v.resize(c.x());
+			v.resize(c.x);
 
 		if (element)
 			element->mark_drawing_dirty();
 		Entity::report_data_changed(this, S<"cell_count"_h>);
 	}
 
-	void cTileMapPrivate::set_cell_size(const Vec2f& s)
+	void cTileMapPrivate::set_cell_size(const vec2& s)
 	{
 		if (cell_size == s)
 			return;
@@ -39,20 +39,20 @@ namespace flame
 		Entity::report_data_changed(this, S<"cell_size"_h>);
 	}
 
-	void cTileMapPrivate::get_cell(const Vec2u& idx, int& tile_id, Vec4c& color) const
+	void cTileMapPrivate::get_cell(const uvec2& idx, int& tile_id, cvec4& color) const
 	{
-		if (idx.x() >= cell_count.x() || idx.y() >= cell_count.y())
+		if (idx.x >= cell_count.x || idx.y >= cell_count.y)
 			return;
-		auto& cell = cells[idx.y()][idx.x()];
+		auto& cell = cells[idx.y][idx.x];
 		tile_id = cell.first;
 		color = cell.second;
 	}
 
-	void cTileMapPrivate::set_cell(const Vec2u& idx, int tile_id, const Vec4c color)
+	void cTileMapPrivate::set_cell(const uvec2& idx, int tile_id, const cvec4 color)
 	{
-		if (idx.x() >= cell_count.x() || idx.y() >= cell_count.y())
+		if (idx.x >= cell_count.x || idx.y >= cell_count.y)
 			return;
-		auto& cell = cells[idx.y()][idx.x()];
+		auto& cell = cells[idx.y][idx.x];
 		cell.first = tile_id;
 		cell.second = color;
 		if (element)
@@ -71,38 +71,38 @@ namespace flame
 
 	void cTileMapPrivate::draw(graphics::Canvas* canvas)
 	{
-		if (res_id == -1 || cell_count == Vec2u(0) || cell_size == Vec2f(0.f))
+		if (res_id == -1 || cell_count == uvec2(0) || cell_size == vec2(0.f))
 			return;
 
 		auto& axes = element->global_axes;
 		auto& p = element->global_points[4];
 		auto l = 0;
-		auto r = (int)cell_count.x();
+		auto r = (int)cell_count.x;
 		auto t = 0;
-		auto b = (int)cell_count.y();
+		auto b = (int)cell_count.y;
 
 		if (clipping)
 		{
 			auto inv = inverse(axes);
-			Vec2f ps[4];
-			ps[0] = inv * Vec2f(element->boundaries[0] - p.x(), element->boundaries[1] - p.y());
-			ps[1] = inv * Vec2f(element->boundaries[2] - p.x(), element->boundaries[1] - p.y());
-			ps[2] = inv * Vec2f(element->boundaries[2] - p.x(), element->boundaries[3] - p.y());
-			ps[3] = inv * Vec2f(element->boundaries[0] - p.x(), element->boundaries[3] - p.y());
-			Vec4f bb;
-			bb[0] = bb[2] = ps[0].x();
-			bb[1] = bb[3] = ps[0].y();
+			vec2 ps[4];
+			ps[0] = inv * vec2(element->boundaries[0] - p.x, element->boundaries[1] - p.y);
+			ps[1] = inv * vec2(element->boundaries[2] - p.x, element->boundaries[1] - p.y);
+			ps[2] = inv * vec2(element->boundaries[2] - p.x, element->boundaries[3] - p.y);
+			ps[3] = inv * vec2(element->boundaries[0] - p.x, element->boundaries[3] - p.y);
+			vec4 bb;
+			bb[0] = bb[2] = ps[0].x;
+			bb[1] = bb[3] = ps[0].y;
 			for (auto i = 1; i < 4; i++)
 			{
-				bb[0] = min(bb[0], ps[i].x());
-				bb[2] = max(bb[2], ps[i].x());
-				bb[1] = min(bb[1], ps[i].y());
-				bb[3] = max(bb[3], ps[i].y());
+				bb[0] = min(bb[0], ps[i].x);
+				bb[2] = max(bb[2], ps[i].x);
+				bb[1] = min(bb[1], ps[i].y);
+				bb[3] = max(bb[3], ps[i].y);
 			}
-			l = max((int)(bb[0] / cell_size.x()), 0);
-			r = min((int)(bb[2] / cell_size.x()) + 1, r);
-			t = max((int)(bb[1] / cell_size.y()), 0);
-			b = min((int)(bb[3] / cell_size.y()) + 1, b);
+			l = max((int)(bb[0] / cell_size.x), 0);
+			r = min((int)(bb[2] / cell_size.x) + 1, r);
+			t = max((int)(bb[1] / cell_size.y), 0);
+			b = min((int)(bb[3] / cell_size.y) + 1, b);
 		}
 
 		for (auto i = t; i < b; i++)
@@ -113,11 +113,11 @@ namespace flame
 				if (cell.first != -1)
 				{
 					canvas->draw_image(res_id, cell.first,
-						p + axes * (Vec2f(j, i) * cell_size),
-						p + axes * (Vec2f(j + 1, i) * cell_size),
-						p + axes * (Vec2f(j + 1, i + 1) * cell_size),
-						p + axes * (Vec2f(j, i + 1) * cell_size),
-						Vec2f(0.f), Vec2f(1.f), cell.second);
+						p + axes * (vec2(j, i) * cell_size),
+						p + axes * (vec2(j + 1, i) * cell_size),
+						p + axes * (vec2(j + 1, i + 1) * cell_size),
+						p + axes * (vec2(j, i + 1) * cell_size),
+						vec2(0.f), vec2(1.f), cell.second);
 				}
 			}
 		}

@@ -38,7 +38,7 @@ struct App
 		{
 			auto cb = CommandBuffer::create(d->get_command_pool(QueueGraphics));
 			cb->begin();
-			cb->begin_renderpass(app.fbs[i], 1, &Vec4f(0.23f, 0.44f, 0.75f, 1.f));
+			cb->begin_renderpass(app.fbs[i], 1, &vec4(0.23f, 0.44f, 0.75f, 1.f));
 			cb->end_renderpass();
 			cb->end();
 			cbs[i] = cb;
@@ -63,7 +63,7 @@ struct App
 
 int main(int argc, char** args)
 {
-	app.w = Window::create("Graphics Test", Vec2u(800, 600), WindowFrame | WindowResizable);
+	app.w = Window::create("Graphics Test", uvec2(800, 600), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.sc = Swapchain::create(app.d, app.w);
 	{
@@ -80,7 +80,7 @@ int main(int argc, char** args)
 	app.fence = Fence::create(app.d);
 	app.render_finished = Semaphore::create(app.d);
 	app.on_resize();
-	app.w->add_resize_listener([](Capture&, const Vec2u&) {
+	app.w->add_resize_listener([](Capture&, const uvec2&) {
 		app.on_resize();
 	}, Capture());
 

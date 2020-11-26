@@ -25,9 +25,9 @@ namespace flame
 		cElementPrivate* element = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
 
-		Vec2f uv0 = Vec2f(0.f);
-		Vec2f uv1 = Vec2f(1.f);
-		Vec3c color = Vec3c(255);
+		vec2 uv0 = vec2(0.f);
+		vec2 uv1 = vec2(1.f);
+		cvec3 color = cvec3(255);
 
 		int res_id = -1;
 		int tile_id = -1;
@@ -50,7 +50,7 @@ namespace flame
 		void on_gain_canvas();
 		void on_lost_canvas();
 
-		void measure(Vec2f& ret); // R
+		void measure(vec2& ret); // R
 
 		void draw(graphics::Canvas* canvas); // R
 	};

@@ -15,9 +15,9 @@ int main(int argc, char** args)
 {
 	g_app.create();
 
-	auto w = new GraphicsWindow(&g_app, "Universe Test", Vec2u(600, 400), WindowFrame | WindowResizable, true, true);
+	auto w = new GraphicsWindow(&g_app, "Universe Test", uvec2(600, 400), WindowFrame | WindowResizable, true, true);
 
-	w->canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
 
 	{
 		auto c = cCommand::create();

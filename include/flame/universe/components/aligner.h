@@ -30,9 +30,9 @@ namespace flame
 		virtual void set_absolute(bool a) = 0;
 
 		// L T R B
-		virtual Vec4f get_margin() const = 0;
+		virtual vec4 get_margin() const = 0;
 		// L T R B
-		virtual void set_margin(const Vec4f& m) = 0;
+		virtual void set_margin(const vec4& m) = 0;
 
 		virtual bool get_include_in_layout() const = 0;
 		virtual void set_include_in_layout(bool o) = 0;

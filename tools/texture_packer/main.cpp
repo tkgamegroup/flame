@@ -32,13 +32,13 @@ int main(int argc, char **args)
 		std::filesystem::create_directories(p);
 	if (ext == L".atlas")
 	{
-		bin_pack(Vec2u(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
+		bin_pack(uvec2(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
 			std::ofstream file(output);
 			file << "image = \"" << image_path.filename().string() << "\"\n";
 			file << "border = " << (border ? "1" : "0") << "\n";
 			file << "\n[tiles]\n";
 			for (auto& t : tiles)
-				file << t.id + " " + to_string(Vec4u(Vec2u(t.pos) + (border ? 1U : 0U), Vec2u(t.b->get_width(), t.b->get_height()))) + "\n";
+				file << t.id + " " + to_string(uvec4(uvec2(t.pos) + (border ? 1U : 0U), uvec2(t.b->get_width(), t.b->get_height()))) + "\n";
 			file.close();
 		});
 	}

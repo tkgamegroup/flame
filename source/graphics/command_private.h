@@ -30,7 +30,7 @@ namespace flame
 
 		struct CommandBufferBridge : CommandBuffer
 		{
-			void begin_renderpass(Renderpass* rp, Framebuffer* fb, const Vec4f* clearvalues) override;
+			void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues) override;
 			void bind_pipeline(Pipeline* p) override;
 			void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) override;
 			void bind_vertex_buffer(Buffer* b, uint id) override;
@@ -44,7 +44,7 @@ namespace flame
 			void copy_image(Image* src, Image* dst, uint copies_count, ImageCopy* copies) override;
 			void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) override;
 			void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) override;
-			void clear_color_image(Image* i, const Vec4c& color) override;
+			void clear_color_image(Image* i, const cvec4& color) override;
 			void clear_depth_image(Image* i, float depth) override;
 		};
 
@@ -62,10 +62,10 @@ namespace flame
 			void release() override { delete this; }
 
 			void begin(bool once = false);
-			void begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const Vec4f* clearvalues = nullptr);
+			void begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* clearvalues = nullptr);
 			void end_renderpass() override;
-			void set_viewport(const Vec4f& rect) override;
-			void set_scissor(const Vec4f& rect) override;
+			void set_viewport(const vec4& rect) override;
+			void set_scissor(const vec4& rect) override;
 			void bind_pipeline(PipelinePrivate* p);
 			void bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll);
 			void bind_vertex_buffer(BufferPrivate* b, uint id);
@@ -75,19 +75,19 @@ namespace flame
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
 			void draw_indirect(BufferPrivate* b, uint offset, uint count);
 			void draw_indexed_indirect(BufferPrivate* b, uint offset, uint count);
-			void dispatch(const Vec3u& v) override;
+			void dispatch(const uvec3& v) override;
 			void buffer_barrier(BufferPrivate* b, AccessFlags src_access, AccessFlags dst_access);
 			void image_barrier(ImagePrivate* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone);
 			void copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies);
 			void copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies);
 			void copy_buffer_to_image(BufferPrivate* src, ImagePrivate* dst, std::span<BufferImageCopy> copies);
 			void copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies);
-			void clear_color_image(ImagePrivate* i, const Vec4c& color);
+			void clear_color_image(ImagePrivate* i, const cvec4& color);
 			void clear_depth_image(ImagePrivate* i, float depth);
 			void end() override;
 		};
 
-		inline void CommandBufferBridge::begin_renderpass(Renderpass* rp, Framebuffer* fb, const Vec4f* clearvalues)
+		inline void CommandBufferBridge::begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues)
 		{
 			((CommandBufferPrivate*)this)->begin_renderpass((RenderpassPrivate*)rp, (FramebufferPrivate*)fb, clearvalues);
 		}
@@ -157,7 +157,7 @@ namespace flame
 			((CommandBufferPrivate*)this)->copy_image_to_buffer((ImagePrivate*)src, (BufferPrivate*)dst, { copies, copies_count });
 		}
 
-		inline void CommandBufferBridge::clear_color_image(Image* i, const Vec4c& color)
+		inline void CommandBufferBridge::clear_color_image(Image* i, const cvec4& color)
 		{
 			((CommandBufferPrivate*)this)->clear_color_image((ImagePrivate*)i, color);
 		}

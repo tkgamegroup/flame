@@ -58,7 +58,7 @@ namespace flame
 			FLAME_GRAPHICS_EXPORTS static Renderpass* create(Device *d, 
 				uint attachments_count, const RenderpassAttachmentInfo* attachments, 
 				uint subpasses_count, const RenderpassSubpassInfo* subpasses, 
-				uint dependencies_count = 0, const Vec2u* dependencies = nullptr);
+				uint dependencies_count = 0, const uvec2* dependencies = nullptr);
 		};
 
 		struct Framebuffer

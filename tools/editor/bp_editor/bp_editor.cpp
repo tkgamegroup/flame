@@ -50,8 +50,8 @@ struct Action_MoveNodes : Action
 	struct Target
 	{
 		Guid guid;
-		Vec2f before_pos;
-		Vec2f after_pos;
+		vec2 before_pos;
+		vec2 after_pos;
 	};
 	std::vector<Target> targets;
 
@@ -437,11 +437,11 @@ static void add_window(pugi::xml_node n)
 }
 
 BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
-	GraphicsWindow(&app, true, true, "BP Editor", Vec2u(300, 200), WindowFrame | WindowResizable, nullptr, true)
+	GraphicsWindow(&app, true, true, "BP Editor", uvec2(300, 200), WindowFrame | WindowResizable, nullptr, true)
 {
 	bp_editor.window = this;
 
-	canvas->clear_color = Vec4f(100, 100, 100, 255) / 255.f;
+	canvas->clear_color = vec4(100, 100, 100, 255) / 255.f;
 
 	ui.init(world);
 	ui.style_set_to_light();
@@ -452,7 +452,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		ce->pos = 150.f;
 		ce->size = 100.f;
 		ce->pivot = 0.5f;
-		ce->color = Vec4c(0, 0, 0, 255);
+		ce->color = cvec4(0, 0, 0, 255);
 		//cElement::set_linked_object(ce);
 		bp_editor.e_test->add_component(ce);
 	}
@@ -553,8 +553,8 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		{
 			auto& ui = bp_editor.window->ui;
 			ui.parents.push(bp_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			bp_editor.editor = new cBPEditor;
@@ -568,8 +568,8 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		{
 			auto& ui = bp_editor.window->ui;
 			ui.parents.push(bp_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			bp_editor.detail = new cDetail;
@@ -583,8 +583,8 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		{
 			auto& ui = bp_editor.window->ui;
 			ui.parents.push(bp_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			bp_editor.preview = new cPreview;
@@ -598,8 +598,8 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		{
 			auto& ui = bp_editor.window->ui;
 			ui.parents.push(bp_editor.window->root);
-			ui.next_element_pos = Vec2f(100.f);
-			ui.next_element_size = Vec2f(400.f, 300.f);
+			ui.next_element_pos = vec2(100.f);
+			ui.next_element_size = vec2(400.f, 300.f);
 			ui.e_begin_docker_floating_container();
 			ui.e_begin_docker();
 			bp_editor.console = new cConsole;
@@ -654,10 +654,10 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 	ui.e_end_layout();
 
 	ui.push_style(FontSize, common(Vec1u(30)));
-	ui.next_element_padding = Vec4f(20.f, 10.f, 20.f, 10.f);
-	ui.next_element_color = Vec4c(0, 0, 0, 255);
+	ui.next_element_padding = vec4(20.f, 10.f, 20.f, 10.f);
+	ui.next_element_color = cvec4(0, 0, 0, 255);
 	bp_editor.e_notification = ui.e_text(L"");
-	bp_editor.e_notification->get_component(cText)->color = Vec4c(255);
+	bp_editor.e_notification->get_component(cText)->color = cvec4(255);
 	ui.c_aligner(AlignMax, AlignMax);
 	bp_editor.e_notification->set_visible(false);
 	ui.pop_style(FontSize);
@@ -845,7 +845,7 @@ void BPEditor::set_node_id(bpNode* n, const std::string& id)
 	set_changed(true);
 }
 
-void BPEditor::set_nodes_pos(const std::vector<bpNode*>& nodes, const std::vector<Vec2f>& poses)
+void BPEditor::set_nodes_pos(const std::vector<bpNode*>& nodes, const std::vector<vec2>& poses)
 {
 	auto a = new Action_MoveNodes;
 	a->targets.resize(nodes.size());
@@ -1027,7 +1027,7 @@ bool BPEditor::auto_set_layout()
 	//	auto n = bp->root->find_node(res[1].str().c_str());
 	//	if (n)
 	//	{
-	//		n->pos = Vec2f(std::stof(res[2].str().c_str()), std::stof(res[3].str().c_str())) * 100.f;
+	//		n->pos = vec2(std::stof(res[2].str().c_str()), std::stof(res[3].str().c_str())) * 100.f;
 	//		((Entity*)n->user_data)->get_component(cElement)->set_pos(n->pos);
 	//	}
 
@@ -1037,7 +1037,7 @@ bool BPEditor::auto_set_layout()
 	return true;
 }
 
-bpNode* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const Vec2f& pos)
+bpNode* BPEditor::_add_node(bpNodeType node_type, const std::string& id, const std::string& type, const vec2& pos)
 {
 	auto n = bp_editor.bp->root->add_node(id.c_str(), type.c_str(), node_type);
 	if (!n)
@@ -1101,7 +1101,7 @@ std::vector<bpNode*> BPEditor::_duplicate_nodes(const std::vector<bpNode*>& mode
 	for (auto i = 0; i < models.size(); i++)
 	{
 		auto n = models[i];
-		ret[i] = _add_node(n->node_type, "", n->type.v, n->pos + Vec2f(20.f));
+		ret[i] = _add_node(n->node_type, "", n->type.v, n->pos + vec2(20.f));
 	}
 	for (auto i = 0; i < models.size(); i++)
 	{

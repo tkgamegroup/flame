@@ -15,7 +15,7 @@ namespace flame
 			DevicePrivate* device;
 			
 			Format format;
-			std::vector<Vec2u> sizes;
+			std::vector<uvec2> sizes;
 			uint level;
 			uint layer;
 			SampleCount sample_count;
@@ -26,16 +26,16 @@ namespace flame
 			VkImage vk_image = 0;
 			std::vector<std::unique_ptr<ImageViewPrivate>> views;
 
-			void init(const Vec2u& size);
+			void init(const uvec2& size);
 			void build_default_views();
-			ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
-			ImagePrivate(DevicePrivate* device, Format format, const Vec2u& size, uint level, uint layer, void* native);
+			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint level, uint layer, void* native);
 			~ImagePrivate();
 
 			void release() override { delete this; }
 
 			Format get_format() const override { return format; }
-			Vec2u get_size(uint lv) const override { return sizes[lv]; }
+			uvec2 get_size(uint lv) const override { return sizes[lv]; }
 			uint get_level() const override { return level; }
 			uint get_layer() const override { return layer; }
 			SampleCount get_sample_count() const override { return sample_count; }
@@ -107,15 +107,15 @@ namespace flame
 		{
 			uint index;
 			std::string name;
-			Vec2i pos;
-			Vec2i size;
-			Vec4f uv;
+			ivec2 pos;
+			ivec2 size;
+			vec4 uv;
 
 			uint get_index() const override { return index; }
 			const char* get_name() const override { return name.c_str(); }
-			Vec2i get_pos() const override { return pos; }
-			Vec2i get_size() const override { return size; }
-			Vec4f get_uv() const override { return uv; }
+			ivec2 get_pos() const override { return pos; }
+			ivec2 get_size() const override { return size; }
+			vec4 get_uv() const override { return uv; }
 		};
 
 		struct ImageAtlasBridge : ImageAtlas

@@ -21,7 +21,7 @@ struct MainForm : GraphicsWindow
 MainForm* main_window = nullptr;
 
 MainForm::MainForm() :
-	GraphicsWindow(&app, true, true, "BP Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+	GraphicsWindow(&app, true, true, "BP Test", uvec2(1280, 720), WindowFrame | WindowResizable)
 {
 	main_window = this;
 
@@ -42,7 +42,7 @@ MainForm::MainForm() :
 	ui.next_element_size = 10.f;
 	auto patch = ui.e_element()->get_component(cElement);
 	patch->pivot = 0.5f;
-	patch->color = Vec4c(255);
+	patch->color = cvec4(255);
 	//cElement::set_linked_object(patch);
 
 	ui.parents.pop();

@@ -14,23 +14,23 @@ namespace flame
 	void cLayoutPrivate::apply_basic_h(cElementPrivate* e, cAlignerPrivate* a, bool free)
 	{
 		auto alignx = a ? a->alignx : (free ? AlignNone : AlignMin);
-		auto p = ((a && a->absolute) ? Vec2f(0.f) : element->padding.xz()) + (a ? a->margin.xz() : Vec2f(0.f));
+		auto p = ((a && a->absolute) ? vec2(0.f) : element->padding.xz()) + (a ? a->margin.xz() : vec2(0.f));
 		switch (alignx)
 		{
 		case AlignMin:
 			e->set_x(scrollx + p[0]);
 			break;
 		case AlignMax:
-			e->set_x(scrollx + element->size.x() - p[1] - e->size.x());
+			e->set_x(scrollx + element->size.x - p[1] - e->size.x);
 			break;
 		case AlignMiddle:
-			e->set_x(scrollx + p[0] + (element->size.x() - p.sum() - e->size.x()) * 0.5f);
+			e->set_x(scrollx + p[0] + (element->size.x - p.sum() - e->size.x) * 0.5f);
 			break;
 		case AlignMinMax:
-			e->set_width(element->size.x() - p.sum());
+			e->set_width(element->size.x - p.sum());
 			e->set_x(scrollx + p[0]);
 			if (a)
-				a->desired_size.x() = e->size.x();
+				a->desired_size.x = e->size.x;
 			break;
 		}
 	}
@@ -38,23 +38,23 @@ namespace flame
 	void cLayoutPrivate::apply_basic_v(cElementPrivate* e, cAlignerPrivate* a, bool free)
 	{
 		auto aligny = a ? a->aligny : (free ? AlignNone : AlignMin);
-		auto p = ((a && a->absolute) ? Vec2f(0.f) : element->padding.yw()) + (a ? a->margin.yw() : Vec2f(0.f));
+		auto p = ((a && a->absolute) ? vec2(0.f) : element->padding.yw()) + (a ? a->margin.yw() : vec2(0.f));
 		switch (aligny)
 		{
 		case AlignMin:
 			e->set_y(scrolly + p[0]);
 			break;
 		case AlignMax:
-			e->set_y(scrolly + element->size.y() - p[1] - e->size.y());
+			e->set_y(scrolly + element->size.y - p[1] - e->size.y);
 			break;
 		case AlignMiddle:
-			e->set_y(scrolly + p[0] + (element->size.y() - p.sum() - e->size.y()) * 0.5f);
+			e->set_y(scrolly + p[0] + (element->size.y - p.sum() - e->size.y) * 0.5f);
 			break;
 		case AlignMinMax:
-			e->set_height(element->size.y() - p.sum());
+			e->set_height(element->size.y - p.sum());
 			e->set_y(scrolly + p[0]);
 			if (a)
-				a->desired_size.y() = e->size.y();
+				a->desired_size.y = e->size.y;
 			break;
 		}
 	}
@@ -67,10 +67,10 @@ namespace flame
 			if (auto_width && aligner->alignx != AlignMinMax)
 			{
 				element->set_width(w);
-				aligner->desired_size.x() = w;
+				aligner->desired_size.x = w;
 			}
 			else
-				aligner->desired_size.x() = 0.f;
+				aligner->desired_size.x = 0.f;
 		}
 		else if (auto_width)
 			element->set_width(w);
@@ -84,10 +84,10 @@ namespace flame
 			if (auto_height && aligner->aligny != AlignMinMax)
 			{
 				element->set_height(h);
-				aligner->desired_size.y() = h;
+				aligner->desired_size.y = h;
 			}
 			else
-				aligner->desired_size.y() = 0.f;
+				aligner->desired_size.y = 0.f;
 		}
 		else if (auto_height)
 			element->set_height(h);
@@ -137,17 +137,17 @@ namespace flame
 				auto aligner = al.second;
 				auto alignx = aligner ? aligner->alignx : AlignNone;
 				auto aligny = aligner ? aligner->aligny : AlignNone;
-				auto m = aligner ? aligner->margin : Vec4f(0.f);
+				auto m = aligner ? aligner->margin : vec4(0.f);
 
 				if (alignx == AlignMinMax)
 				{
 					factor += aligner->width_factor;
-					w += aligner->desired_size.x();
+					w += aligner->desired_size.x;
 				}
 				else
-					w += element->size.x();
+					w += element->size.x;
 				w += gap + m.xz().sum();
-				h = max((aligny == AlignMinMax ? aligner->desired_size.y() : element->size.y()) + m.yw().sum(), h);
+				h = max((aligny == AlignMinMax ? aligner->desired_size.y : element->size.y) + m.yw().sum(), h);
 
 			}
 			if (!als[0].empty())
@@ -157,7 +157,7 @@ namespace flame
 			judge_width(w);
 			judge_height(h);
 
-			w = element->size.x() - w;
+			w = element->size.x - w;
 			if (w > 0.f && factor > 0.f)
 				w /= factor;
 			else
@@ -168,13 +168,13 @@ namespace flame
 				auto element = al.first;
 				auto aligner = al.second;
 				auto alignx = aligner ? aligner->alignx : AlignNone;
-				auto m = (aligner ? aligner->margin.xz() : Vec2f(0.f));
+				auto m = (aligner ? aligner->margin.xz() : vec2(0.f));
 
 				if (alignx == AlignMinMax)
-					element->set_width(w * aligner->width_factor + aligner->desired_size.x());
+					element->set_width(w * aligner->width_factor + aligner->desired_size.x);
 				x += m[0];
 				element->set_x(scrollx + x);
-				x += element->size.x() + gap + m[1];
+				x += element->size.x + gap + m[1];
 			}
 			for (auto& al : als[0])
 				apply_basic_v(al.first, al.second, false);
@@ -196,16 +196,16 @@ namespace flame
 				auto aligner = al.second;
 				auto alignx = aligner ? aligner->alignx : AlignNone;
 				auto aligny = aligner ? aligner->aligny : AlignNone;
-				auto m = aligner ? aligner->margin : Vec4f(0.f);
+				auto m = aligner ? aligner->margin : vec4(0.f);
 
-				w = max((alignx == AlignMinMax ? aligner->desired_size.x() : element->size.x()) + m.xz().sum(), w);
+				w = max((alignx == AlignMinMax ? aligner->desired_size.x : element->size.x) + m.xz().sum(), w);
 				if (aligny == AlignMinMax)
 				{
 					factor += aligner->height_factor;
-					h += aligner->desired_size.y();
+					h += aligner->desired_size.y;
 				}
 				else
-					h += element->size.y();
+					h += element->size.y;
 				h += gap + m.yw().sum();
 			}
 			if (!als[0].empty())
@@ -217,7 +217,7 @@ namespace flame
 
 			for (auto& al : als[0])
 				apply_basic_h(al.first, al.second, false);
-			h = element->size.y() - h;
+			h = element->size.y - h;
 			if (h > 0.f && factor > 0.f)
 				h /= factor;
 			else
@@ -228,13 +228,13 @@ namespace flame
 				auto element = al.first;
 				auto aligner = al.second;
 				auto aligny = aligner ? aligner->aligny : AlignNone;
-				auto m = (aligner ? aligner->margin.yw() : Vec2f(0.f));
+				auto m = (aligner ? aligner->margin.yw() : vec2(0.f));
 
 				if (aligny == AlignMinMax)
-					element->set_height(h * aligner->height_factor + aligner->desired_size.y());
+					element->set_height(h * aligner->height_factor + aligner->desired_size.y);
 				y += m[0];
 				element->set_y(scrolly + y);
-				y += element->size.y() + gap + m[1];
+				y += element->size.y + gap + m[1];
 			}
 			for (auto& al : als[1])
 			{
@@ -257,8 +257,8 @@ namespace flame
 //					auto element = al.first;
 //					auto aligner = al.second;
 //
-//					element->set_x(scroll_offset.x() + element->padding.x(), this);
-//					element->set_y(scroll_offset.y() + element->padding.y(), this);
+//					element->set_x(scroll_offset.x + element->padding.x, this);
+//					element->set_y(scroll_offset.y + element->padding.y, this);
 //				}
 //				for (auto i = n; i < als.size(); i++)
 //				{
@@ -278,8 +278,8 @@ namespace flame
 //					auto element = al.first;
 //					auto aligner = al.second;
 //
-//					lw += element->size.x() + gap;
-//					lh = max(element->size.y(), lh);
+//					lw += element->size.x + gap;
+//					lh = max(element->size.y, lh);
 //
 //					if ((i + 1) % column == 0)
 //					{
@@ -312,11 +312,11 @@ namespace flame
 //					auto element = al.first;
 //					auto aligner = al.second;
 //
-//					element->set_x(scroll_offset.x() + x, this);
-//					element->set_y(scroll_offset.y() + y, this);
+//					element->set_x(scroll_offset.x + x, this);
+//					element->set_y(scroll_offset.y + y, this);
 //
-//					x += element->size.x() + gap;
-//					lh = max(element->size.y(), lh);
+//					x += element->size.x + gap;
+//					lh = max(element->size.y, lh);
 //
 //					if ((i + 1) % column == 0)
 //					{

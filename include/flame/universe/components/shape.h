@@ -18,8 +18,8 @@ namespace flame
 		virtual physics::ShapeType get_type() const = 0;
 		virtual void set_type(physics::ShapeType t) = 0;
 
-		virtual Vec3f get_size() const = 0;
-		virtual void set_size(const Vec3f& s) = 0;
+		virtual vec3 get_size() const = 0;
+		virtual void set_size(const vec3& s) = 0;
 
 		virtual bool get_trigger() const = 0;
 		virtual void set_trigger(bool v) = 0;

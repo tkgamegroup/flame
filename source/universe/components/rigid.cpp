@@ -34,7 +34,7 @@ namespace flame
 		}
 	}
 
-	void cRigidPrivate::add_impulse(const Vec3f& v)
+	void cRigidPrivate::add_impulse(const vec3& v)
 	{
 		if (dynamic)
 		{

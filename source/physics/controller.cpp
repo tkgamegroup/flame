@@ -28,24 +28,24 @@ namespace flame
 #endif
 		}
 
-		Vec3f ControllerPrivate::get_position() const
+		vec3 ControllerPrivate::get_position() const
 		{
 #ifdef USE_PHYSX
 			auto p = px_controller->getFootPosition();
-			return Vec3f(p.x, p.y, p.z);
+			return vec3(p.x, p.y, p.z);
 #else
-			return Vec3f(0.f);
+			return vec3(0.f);
 #endif
 		}
 
-		void ControllerPrivate::set_position(const Vec3f& pos)
+		void ControllerPrivate::set_position(const vec3& pos)
 		{
 #ifdef USE_PHYSX
-			px_controller->setFootPosition(physx::PxExtendedVec3(pos.x(), pos.y(), pos.z()));
+			px_controller->setFootPosition(physx::PxExtendedVec3(pos.x, pos.y, pos.z));
 #endif
 		}
 
-		void ControllerPrivate::move(const Vec3f& disp, float delta_time)
+		void ControllerPrivate::move(const vec3& disp, float delta_time)
 		{
 #ifdef USE_PHYSX
 			px_controller->move(cvt(disp), 0.f, delta_time, physx::PxControllerFilters());

@@ -52,7 +52,7 @@ namespace flame
 
 			VkRenderPass vk_renderpass;
 
-			RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const Vec2u> dependencies = {});
+			RenderpassPrivate(DevicePrivate* device, std::span<const RenderpassAttachmentInfo> attachments, std::span<const RenderpassSubpassInfo> subpasses, std::span<const uvec2> dependencies = {});
 			~RenderpassPrivate();
 
 			void release() override { delete this; }

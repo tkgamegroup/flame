@@ -281,291 +281,219 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec1c : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Vec1c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,uchar>", sizeof(Vec1c))
-		{
-		}
-
-		void serialize(void* str, const void* src) const override
-		{
-			auto s = to_string(*(Vec1c*)src);
-			strcpy(f_stralloc(str, s.size()), s.data());
-		}
-		void unserialize(void* dst, const char* src) const override
-		{
-			*(Vec1c*)dst = sto<Vec1c>(src);
-		}
-	};
-
 	struct TypeInfoPrivate_Vec2c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uchar>", sizeof(Vec2c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uchar>", sizeof(cvec2))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec2c*)src);
+			auto s = to_string(*(cvec2*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec2c*)dst = sto<Vec2c>(src);
+			*(cvec2*)dst = sto<cvec2>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec3c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uchar>", sizeof(Vec3c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uchar>", sizeof(cvec3))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec3c*)src);
+			auto s = to_string(*(cvec3*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec3c*)dst = sto<Vec3c>(src);
+			*(cvec3*)dst = sto<cvec3>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec4c : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uchar>", sizeof(Vec4c))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uchar>", sizeof(cvec4))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec4c*)src);
+			auto s = to_string(*(cvec4*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec4c*)dst = sto<Vec4c>(src);
-		}
-	};
-
-	struct TypeInfoPrivate_Vec1i : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Vec1i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,int>", sizeof(Vec1i))
-		{
-		}
-
-		void serialize(void* str, const void* src) const override
-		{
-			auto s = to_string(*(Vec1i*)src);
-			strcpy(f_stralloc(str, s.size()), s.data());
-		}
-		void unserialize(void* dst, const char* src) const override
-		{
-			*(Vec1i*)dst = sto<Vec1i>(src);
+			*(cvec4*)dst = sto<cvec4>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec2i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,int>", sizeof(Vec2i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,int>", sizeof(ivec2))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec2i*)src);
+			auto s = to_string(*(ivec2*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec2i*)dst = sto<Vec2i>(src);
+			*(ivec2*)dst = sto<ivec2>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec3i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,int>", sizeof(Vec3i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,int>", sizeof(ivec3))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec3i*)src);
+			auto s = to_string(*(ivec3*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec3i*)dst = sto<Vec3i>(src);
+			*(ivec3*)dst = sto<ivec3>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec4i : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,int>", sizeof(Vec4i))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,int>", sizeof(ivec4))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec4i*)src);
+			auto s = to_string(*(ivec4*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec4i*)dst = sto<Vec4i>(src);
-		}
-	};
-
-	struct TypeInfoPrivate_Vec1u : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Vec1u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,uint>", sizeof(Vec1u))
-		{
-		}
-
-		void serialize(void* str, const void* src) const override
-		{
-			auto s = to_string(*(Vec1u*)src);
-			strcpy(f_stralloc(str, s.size()), s.data());
-		}
-		void unserialize(void* dst, const char* src) const override
-		{
-			*(Vec1u*)dst = sto<Vec1u>(src);
+			*(ivec4*)dst = sto<ivec4>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec2u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uint>", sizeof(Vec2u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uint>", sizeof(uvec2))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec2u*)src);
+			auto s = to_string(*(uvec2*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec2u*)dst = sto<Vec2u>(src);
+			*(uvec2*)dst = sto<uvec2>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec3u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uint>", sizeof(Vec3u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uint>", sizeof(uvec3))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec3u*)src);
+			auto s = to_string(*(uvec3*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec3u*)dst = sto<Vec3u>(src);
+			*(uvec3*)dst = sto<uvec3>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec4u : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uint>", sizeof(Vec4u))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uint>", sizeof(uvec4))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec4u*)src);
+			auto s = to_string(*(uvec4*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec4u*)dst = sto<Vec4u>(src);
-		}
-	};
-
-	struct TypeInfoPrivate_Vec1f : TypeInfoPrivate_Pod
-	{
-		TypeInfoPrivate_Vec1f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<1,float>", sizeof(Vec1f))
-		{
-		}
-
-		void serialize(void* str, const void* src) const override
-		{
-			auto s = to_string(*(Vec1f*)src);
-			strcpy(f_stralloc(str, s.size()), s.data());
-		}
-		void unserialize(void* dst, const char* src) const override
-		{
-			*(Vec1f*)dst = sto<Vec1f>(src);
+			*(uvec4*)dst = sto<uvec4>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec2f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec2f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,float>", sizeof(Vec2f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,float>", sizeof(vec2))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec2f*)src);
+			auto s = to_string(*(vec2*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec2f*)dst = sto<Vec2f>(src);
+			*(vec2*)dst = sto<vec2>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec3f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec3f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,float>", sizeof(Vec3f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,float>", sizeof(vec3))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec3f*)src);
+			auto s = to_string(*(vec3*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec3f*)dst = sto<Vec3f>(src);
+			*(vec3*)dst = sto<vec3>(src);
 		}
 	};
 
 	struct TypeInfoPrivate_Vec4f : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_Vec4f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,float>", sizeof(Vec4f))
+			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,float>", sizeof(vec4))
 		{
 		}
 
 		void serialize(void* str, const void* src) const override
 		{
-			auto s = to_string(*(Vec4f*)src);
+			auto s = to_string(*(vec4*)src);
 			strcpy(f_stralloc(str, s.size()), s.data());
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			*(Vec4f*)dst = sto<Vec4f>(src);
+			*(vec4*)dst = sto<vec4>(src);
 		}
 	};
 
@@ -839,11 +767,6 @@ namespace flame
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec1c;
-				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
-			}
-			{
 				auto t = new TypeInfoPrivate_Vec2c;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
@@ -855,11 +778,6 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4c;
-				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
-			}
-			{
-				auto t = new TypeInfoPrivate_Vec1i;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
@@ -879,11 +797,6 @@ namespace flame
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec1u;
-				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
-			}
-			{
 				auto t = new TypeInfoPrivate_Vec2u;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
@@ -895,11 +808,6 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfoPrivate_Vec4u;
-				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
-			}
-			{
-				auto t = new TypeInfoPrivate_Vec1f;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}

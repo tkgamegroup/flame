@@ -16,11 +16,11 @@ namespace flame
 
 		bool absolute = false;
 
-		Vec4f margin = Vec4f(0.f);
+		vec4 margin = vec4(0.f);
 
 		bool include_in_layout = true;
 
-		Vec2f desired_size = Vec2f(0.f);
+		vec2 desired_size = vec2(0.f);
 
 		cElementPrivate* element = nullptr; // R ref
 
@@ -37,8 +37,8 @@ namespace flame
 		bool get_absolute() const override { return absolute; }
 		void set_absolute(bool a) override;
 
-		Vec4f get_margin() const override { return margin; }
-		void set_margin(const Vec4f& m) override;
+		vec4 get_margin() const override { return margin; }
+		void set_margin(const vec4& m) override;
 
 		bool get_include_in_layout() const override { return include_in_layout; }
 		void set_include_in_layout(bool o) override;

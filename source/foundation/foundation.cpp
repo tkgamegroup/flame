@@ -100,11 +100,11 @@ namespace flame
 		return GetModuleHandle(nullptr);
 	}
 
-	Vec2u get_screen_size()
+	uvec2 get_screen_size()
 	{
-		Vec2u ret;
-		ret.x() = GetSystemMetrics(SM_CXSCREEN);
-		ret.y() = GetSystemMetrics(SM_CYSCREEN);
+		uvec2 ret;
+		ret.x = GetSystemMetrics(SM_CXSCREEN);
+		ret.y = GetSystemMetrics(SM_CYSCREEN);
 		return ret;
 	}
 
@@ -724,9 +724,9 @@ namespace flame
 		mouse_event(flags, 0, 0, 0, NULL);
 	}
 
-	void set_mouse_pos(const Vec2i& pos)
+	void set_mouse_pos(const ivec2& pos)
 	{
-		SetCursorPos(pos.x(), pos.y());
+		SetCursorPos(pos.x, pos.y);
 	}
 
 	void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show)
@@ -1045,7 +1045,7 @@ namespace flame
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 
-	WindowPrivate::WindowPrivate(const std::string& _title, const Vec2u& _size, uint _style, WindowPrivate* parent)
+	WindowPrivate::WindowPrivate(const std::string& _title, const uvec2& _size, uint _style, WindowPrivate* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
@@ -1087,7 +1087,7 @@ namespace flame
 
 		fassert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
 
-		Vec2u final_size;
+		uvec2 final_size;
 		auto screen_size = get_screen_size();
 
 		auto win32_style = WS_VISIBLE;
@@ -1110,18 +1110,18 @@ namespace flame
 			win32_ex_style |= WS_EX_TOPMOST;
 
 		{
-			RECT rect = { 0, 0, size.x(), size.y() };
+			RECT rect = { 0, 0, size.x, size.y };
 			AdjustWindowRect(&rect, win32_style, false);
-			final_size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+			final_size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
 		}
-		pos.x() = (screen_size.x() - final_size.x()) / 2;
-		pos.y() = (screen_size.y() - final_size.y()) / 2;
+		pos.x = (screen_size.x - final_size.x) / 2;
+		pos.y = (screen_size.y - final_size.y) / 2;
 		hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
-			pos.x(), pos.y(), final_size.x(), final_size.y(), parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+			pos.x, pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 		{
 			RECT rect;
 			GetClientRect(hWnd, &rect);
-			size = Vec2u(rect.right - rect.left, rect.bottom - rect.top);
+			size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
 		}
 
 		SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
@@ -1227,7 +1227,7 @@ namespace flame
 		case WM_LBUTTONDOWN:
 		{
 			SetCapture(hWnd);
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_left_down_listeners)
 				l->call(pos);
 		}
@@ -1235,42 +1235,42 @@ namespace flame
 		case WM_LBUTTONUP:
 		{
 			ReleaseCapture();
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_left_up_listeners)
 				l->call(pos);
 		}
 			break;
 		case WM_RBUTTONDOWN:
 		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_right_down_listeners)
 				l->call(pos);
 		}
 			break;
 		case WM_RBUTTONUP:
 		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_right_up_listeners)
 				l->call(pos);
 		}
 			break;
 		case WM_MBUTTONDOWN:
 		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_middle_down_listeners)
 				l->call(pos);
 		}
 			break;
 		case WM_MBUTTONUP:
 		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_middle_up_listeners)
 				l->call(pos);
 		}
 			break;
 		case WM_MOUSEMOVE:
 		{
-			auto pos = Vec2i((int)LOWORD(lParam), (int)HIWORD(lParam));
+			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_move_listeners)
 				l->call(pos);
 		}
@@ -1299,12 +1299,12 @@ namespace flame
 			_looper.one_frame();
 			break;
 		case WM_SIZE:
-			pending_size = Vec2u((int)LOWORD(lParam), (int)HIWORD(lParam));
+			pending_size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			if (!sizing)
 				resize();
 			break;
 		case WM_MOVE:
-			pos = Vec2i((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
+			pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
 			break;
 		case WM_SETCURSOR:
 			SetCursor(cursors[cursor_type]);
@@ -1317,23 +1317,23 @@ namespace flame
 		return hWnd;
 	}
 
-	void WindowPrivate::set_pos(const Vec2i& _pos)
+	void WindowPrivate::set_pos(const ivec2& _pos)
 	{
 		 pos = _pos;
-		SetWindowPos(hWnd, HWND_TOP, pos.x(), pos.y(), 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		SetWindowPos(hWnd, HWND_TOP, pos.x, pos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	}
 
-	void WindowPrivate::set_size(const Vec2u& size)
+	void WindowPrivate::set_size(const uvec2& size)
 	{
 	}
 
-	Vec2i WindowPrivate::global_to_local(const Vec2i& p)
+	ivec2 WindowPrivate::global_to_local(const ivec2& p)
 	{
 		POINT pt;
-		pt.x = p.x();
-		pt.y = p.y();
+		pt.x = p.x;
+		pt.y = p.y;
 		ScreenToClient(hWnd, &pt);
-		return Vec2i(pt.x, pt.y);
+		return ivec2(pt.x, pt.y);
 	}
 
 	void WindowPrivate::set_title(const std::string& _title)
@@ -1403,7 +1403,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_left_down_listeners.emplace_back(c);
@@ -1417,7 +1417,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_left_up_listeners.emplace_back(c);
@@ -1431,7 +1431,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_right_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_right_down_listeners.emplace_back(c);
@@ -1445,7 +1445,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_right_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_right_up_listeners.emplace_back(c);
@@ -1459,7 +1459,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_middle_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_middle_down_listeners.emplace_back(c);
@@ -1473,7 +1473,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_middle_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_middle_up_listeners.emplace_back(c);
@@ -1487,7 +1487,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const Vec2i& pos), const Capture& capture)
+	void* WindowPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		mouse_move_listeners.emplace_back(c);
@@ -1515,7 +1515,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const Vec2u& size), const Capture& capture)
+	void* WindowPrivate::add_resize_listener(void (*callback)(Capture& c, const uvec2& size), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		resize_listeners.emplace_back(c);
@@ -1543,7 +1543,7 @@ namespace flame
 		});
 	}
 
-	Window* Window::create(const char* title, const Vec2u& size, WindowStyleFlags style, Window* parent)
+	Window* Window::create(const char* title, const uvec2& size, WindowStyleFlags style, Window* parent)
 	{
 		return new WindowPrivate(title, size, style, (WindowPrivate*)parent);
 	}

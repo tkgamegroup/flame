@@ -284,30 +284,30 @@ namespace flame
 
 			ArmatureDeformerPrivate(RenderPreferencesPrivate* preferences, MeshPrivate* mesh);
 			void release() override { delete this; }
-			void set_pose(uint id, const Mat4f& pose) override;
+			void set_pose(uint id, const mat4& pose) override;
 		};
 
 		const auto msaa_sample_count = SampleCount_8;
-		const auto shadow_map_size = Vec2u(2048);
+		const auto shadow_map_size = uvec2(2048);
 
 		struct ElementVertex
 		{
-			Vec2f position;
-			Vec2f uv;
-			Vec4c color;
+			vec2 position;
+			vec2 uv;
+			cvec4 color;
 		};
 
 		struct MeshVertex
 		{
-			Vec3f position;
-			Vec2f uv;
-			Vec3f normal;
+			vec3 position;
+			vec2 uv;
+			vec3 normal;
 		};
 
 		struct MeshWeight
 		{
-			Vec4i ids;
-			Vec4f weights;
+			ivec4 ids;
+			vec4 weights;
 		};
 
 		struct ElementResourceSlot
@@ -371,12 +371,12 @@ namespace flame
 
 		struct DirectionalShadow
 		{
-			Mat4f matrices[4];
+			mat4 matrices[4];
 		};
 
 		struct PointShadow
 		{
-			Vec3f coord;
+			vec3 coord;
 			float distance;
 		};
 
@@ -433,17 +433,17 @@ namespace flame
 
 		struct CmdSetScissor : Cmd
 		{
-			Vec4f scissor;
+			vec4 scissor;
 
-			CmdSetScissor(const Vec4f& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
+			CmdSetScissor(const vec4& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
 		};
 
 		struct CmdBlur : Cmd
 		{
-			Vec4f range;
+			vec4 range;
 			uint radius;
 
-			CmdBlur(const Vec4f& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
+			CmdBlur(const vec4& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
 		};
 
 		struct CmdBloom : Cmd
@@ -477,18 +477,18 @@ namespace flame
 			uint csm_levels = 3;
 			float csm_factor = 0.3f;
 
-			Vec4c clear_color = Vec4c(0, 0, 0, 255);
+			cvec4 clear_color = cvec4(0, 0, 0, 255);
 
 			float fovy;
 			float aspect;
 			float zNear;
 			float zFar;
-			Vec3f camera_coord;
-			Mat3f camera_dirs;
-			Mat4f view_matrix;
-			Mat4f view_inv_matrix;
-			Mat4f proj_matrix;
-			Mat4f proj_view_matrix;
+			vec3 camera_coord;
+			mat3 camera_dirs;
+			mat4 view_matrix;
+			mat4 view_inv_matrix;
+			mat4 proj_matrix;
+			mat4 proj_view_matrix;
 
 			int sky_box_tex_id = -1;
 			int sky_irr_tex_id = -1;
@@ -559,7 +559,7 @@ namespace flame
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets;
 
-			std::vector<std::vector<Vec2f>> paths;
+			std::vector<std::vector<vec2>> paths;
 
 			ShaderGeometryBuffer<Line3> line3_buffer;
 
@@ -574,8 +574,8 @@ namespace flame
 			CmdDrawMesh* last_mesh_cmd = nullptr;
 			CmdDrawLine3* last_line3_cmd = nullptr;
 
-			Vec2u output_size;
-			Vec4f curr_scissor;
+			uvec2 output_size;
+			vec4 curr_scissor;
 
 			CanvasPrivate(RenderPreferencesPrivate* preferences);
 
@@ -586,8 +586,8 @@ namespace flame
 			void set_shading(ShadingType type) override;
 			void set_shadow(float distance, uint csm_levels, float csm_factor) override;
 
-			Vec4c get_clear_color() const override { return clear_color; }
-			void set_clear_color(const Vec4c& color) override { clear_color = color; }
+			cvec4 get_clear_color() const override { return clear_color; }
+			void set_clear_color(const cvec4& color) override { clear_color = color; }
 
 			ImageView* get_output(uint idx) const override { return output_imageviews.empty() ? nullptr : (ImageView*)output_imageviews[idx]; }
 			void set_output(std::span<ImageViewPrivate*> views);
@@ -609,32 +609,32 @@ namespace flame
 			uint set_model_resource(int slot, ModelPrivate* mat, const std::string& name);
 
 			void add_draw_element_cmd(uint id);
-			void add_vtx(const Vec2f& position, const Vec2f& uv, const Vec4c& color);
+			void add_vtx(const vec2& position, const vec2& uv, const cvec4& color);
 			void add_idx(uint idx);
 
 			void begin_path() override;
-			void move_to(const Vec2f& pos) override;
-			void line_to(const Vec2f& pos) override;
+			void move_to(const vec2& pos) override;
+			void line_to(const vec2& pos) override;
 			void close_path() override;
 
-			void stroke(const Vec4c& col, float thickness, bool aa = false) override;
-			void fill(const Vec4c& col, bool aa = false) override;
-			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const Vec4c& col, const Vec2f& pos, const Mat2f& axes) override;
-			void draw_image(uint res_id, uint tile_id, const Vec2f& LT, const Vec2f& RT, const Vec2f& RB, const Vec2f& LB, const Vec2f& uv0, const Vec2f& uv1, const Vec4c& tint_col) override;
+			void stroke(const cvec4& col, float thickness, bool aa = false) override;
+			void fill(const cvec4& col, bool aa = false) override;
+			void draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat3& transform, const vec2& uv0, const vec2& uv1, const cvec4& tint_col) override;
+			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat3& transform) override;
 
-			void set_camera(float fovy, float aspect, float zNear, float zFar, const Mat3f& dirs, const Vec3f& coord) override;
+			void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) override;
 			void set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id) override;
 
-			void draw_mesh(uint mod_id, uint mesh_idx, const Mat4f& transform, const Mat3f& dirs, bool cast_shadow, ArmatureDeformer* deformer) override;
-			void draw_terrain(const Vec2u& blocks, const Vec3f& scale, const Vec3f& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
-			void add_light(LightType type, const Mat3f& dirs, const Vec3f& color, bool cast_shadow) override;
+			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, const mat3& dirs, bool cast_shadow, ArmatureDeformer* deformer) override;
+			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
+			void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line3* lines) override;
 
-			Vec4f get_scissor() const override { return curr_scissor; }
-			void set_scissor(const Vec4f& scissor) override;
+			vec4 get_scissor() const override { return curr_scissor; }
+			void set_scissor(const vec4& scissor) override;
 
-			void add_blur(const Vec4f& range, uint radius) override;
+			void add_blur(const vec4& range, uint radius) override;
 			void add_bloom() override;
 
 			void prepare() override;

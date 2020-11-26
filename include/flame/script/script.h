@@ -28,8 +28,8 @@ namespace flame
 			union
 			{
 				void* p;
-				Vec4i i;
-				Vec4f f;
+				ivec4 i;
+				vec4 f;
 			}data;
 		};
 

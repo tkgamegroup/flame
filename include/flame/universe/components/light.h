@@ -18,8 +18,8 @@ namespace flame
 		virtual graphics::LightType get_type() const = 0;
 		virtual void set_type(graphics::LightType t) = 0;
 
-		virtual Vec3f get_color() const = 0;
-		virtual void set_color(const Vec3f& c) = 0;
+		virtual vec3 get_color() const = 0;
+		virtual void set_color(const vec3& c) = 0;
 
 		virtual bool get_cast_shadow() const = 0;
 		virtual void set_cast_shadow(bool v) = 0;

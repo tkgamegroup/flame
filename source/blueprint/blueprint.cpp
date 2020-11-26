@@ -486,9 +486,9 @@ namespace flame
 		}
 		else
 		{
-			id = std::to_string(::rand());
+			id = std::to_string(rand());
 			while (parent->find_child(id))
-				id = std::to_string(::rand());
+				id = std::to_string(rand());
 		}
 		return true;
 	}
@@ -923,7 +923,7 @@ namespace flame
 				auto n = parent->add_child(n_node.attribute("id").value(), (bpNodeType)n_node.attribute("type").as_int(), n_node.attribute("type_parameter").value(), (bpObjectRule)n_node.attribute("object_rule").as_int());
 				if (n)
 				{
-					n->pos = sto<Vec2f>(n_node.attribute("pos").value());
+					n->pos = sto<vec2>(n_node.attribute("pos").value());
 					for (auto n_data : n_node.child("datas"))
 					{
 						auto input = n->find_input(n_data.attribute("name").value());
@@ -968,17 +968,17 @@ namespace flame
 		int x; // R i
 		int y; // R i
 
-		Vec2i out; // R o
+		ivec2 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec2i(x, y);
+			out = ivec2(x, y);
 		}
 	};
 
 	struct R_BreakVec2i // R
 	{
-		Vec2i in; // R i
+		ivec2 in; // R i
 
 		int x; // R o
 		int y; // R o
@@ -996,17 +996,17 @@ namespace flame
 		int y; // R i
 		int z; // R i
 
-		Vec3i out; // R o
+		ivec3 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec3i(x, y, z);
+			out = ivec3(x, y, z);
 		}
 	};
 
 	struct R_BreakVec3i // R
 	{
-		Vec3i in; // R i
+		ivec3 in; // R i
 
 		int x; // R o
 		int y; // R o
@@ -1027,17 +1027,17 @@ namespace flame
 		int z; // R i
 		int w; // R i
 
-		Vec4i out; // R o
+		ivec4 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec4i(x, y, z, w);
+			out = ivec4(x, y, z, w);
 		}
 	};
 
 	struct R_BreakVec4i // R
 	{
-		Vec4i in; // R i
+		ivec4 in; // R i
 
 		int x; // R o
 		int y; // R o
@@ -1058,17 +1058,17 @@ namespace flame
 		uint x; // R i
 		uint y; // R i
 
-		Vec2u out; // R o
+		uvec2 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec2u(x, y);
+			out = uvec2(x, y);
 		}
 	};
 
 	struct R_BreakVec2u // R
 	{
-		Vec2u in; // R i
+		uvec2 in; // R i
 
 		uint x; // R o
 		uint y; // R o
@@ -1086,17 +1086,17 @@ namespace flame
 		uint y; // R i
 		uint z; // R i
 
-		Vec3u out; // R o
+		uvec3 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec3u(x, y, z);
+			out = uvec3(x, y, z);
 		}
 	};
 
 	struct R_BreakVec3u // R
 	{
-		Vec3u in; // R i
+		uvec3 in; // R i
 
 		uint x; // R o
 		uint y; // R o
@@ -1117,17 +1117,17 @@ namespace flame
 		uint z; // R i
 		uint w; // R i
 
-		Vec4u out; // R o
+		uvec4 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec4u(x, y, z, w);
+			out = uvec4(x, y, z, w);
 		}
 	};
 
 	struct R_BreakVec4u // R
 	{
-		Vec4u in; // R i
+		uvec4 in; // R i
 
 		uint x; // R o
 		uint y; // R o
@@ -1148,17 +1148,17 @@ namespace flame
 		float x; // R i
 		float y; // R i
 
-		Vec2f out; // R o
+		vec2 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec2f(x, y);
+			out = vec2(x, y);
 		}
 	};
 
 	struct R_BreakVec2f // R
 	{
-		Vec2f in; // R i
+		vec2 in; // R i
 
 		float x; // R o
 		float y; // R o
@@ -1176,17 +1176,17 @@ namespace flame
 		float y; // R i
 		float z; // R i
 
-		Vec3f out; // R o
+		vec3 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec3f(x, y, z);
+			out = vec3(x, y, z);
 		}
 	};
 
 	struct R_BreakVec3f // R
 	{
-		Vec3f in; // R i
+		vec3 in; // R i
 
 		float x; // R o
 		float y; // R o
@@ -1207,17 +1207,17 @@ namespace flame
 		float z; // R i
 		float w; // R i
 
-		Vec4f out; // R o
+		vec4 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec4f(x, y, z, w);
+			out = vec4(x, y, z, w);
 		}
 	};
 
 	struct R_BreakVec4f // R
 	{
-		Vec4f in; // R i
+		vec4 in; // R i
 
 		float x; // R o
 		float y; // R o
@@ -1238,17 +1238,17 @@ namespace flame
 		uchar x; // R i
 		uchar y; // R i
 
-		Vec2c out; // R o
+		cvec2 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec2c(x, y);
+			out = cvec2(x, y);
 		}
 	};
 
 	struct R_BreakVec2c // R
 	{
-		Vec2c in; // R i
+		cvec2 in; // R i
 
 		uchar x; // R o
 		uchar y; // R o
@@ -1266,17 +1266,17 @@ namespace flame
 		uchar y; // R i
 		uchar z; // R i
 
-		Vec3c out; // R o
+		cvec3 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec3c(x, y, z);
+			out = cvec3(x, y, z);
 		}
 	};
 
 	struct R_BreakVec3c // R
 	{
-		Vec3c in; // R i
+		cvec3 in; // R i
 
 		uchar x; // R o
 		uchar y; // R o
@@ -1297,17 +1297,17 @@ namespace flame
 		uchar z; // R i
 		uchar w; // R i
 
-		Vec4c out; // R o
+		cvec4 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{
-			out = Vec4c(x, y, z, w);
+			out = cvec4(x, y, z, w);
 		}
 	};
 
 	struct R_BreakVec4c // R
 	{
-		Vec4c in; // R i
+		cvec4 in; // R i
 
 		uchar x; // R o
 		uchar y; // R o
@@ -1389,11 +1389,11 @@ namespace flame
 
 	struct R_Linear2d // R
 	{
-		Vec2f a; // R i
-		Vec2f b; // R i
+		vec2 a; // R i
+		vec2 b; // R i
 		float t; // R i
 
-		Vec2f out; // R o
+		vec2 out; // R o
 
 		FLAME_BLUEPRINT_EXPORTS void bp_update() // R code
 		{

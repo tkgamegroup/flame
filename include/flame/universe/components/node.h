@@ -14,21 +14,23 @@ namespace flame
 		{
 		}
 
-		virtual Vec3f get_pos() const = 0;
-		virtual void set_pos(const Vec3f& pos) = 0;
-		virtual Vec4f get_quat() const = 0;
-		virtual void set_quat(const Vec4f& quat) = 0;
-		virtual Vec3f get_scale() const = 0;
-		virtual void set_scale(const Vec3f& scale) = 0;
+		virtual vec3 get_pos() const = 0;
+		virtual void set_pos(const vec3& pos) = 0;
+		virtual vec4 get_quat() const = 0;
+		virtual void set_quat(const vec4& quat) = 0;
+		virtual vec3 get_scale() const = 0;
+		virtual void set_scale(const vec3& scale) = 0;
 
 		// yaw, pitch, roll, in angle
-		virtual void set_euler(const Vec3f& e) = 0;
+		virtual void set_euler(const vec3& e) = 0;
 
-		virtual Vec3f get_local_dir(uint idx) = 0;
+		virtual vec3 get_local_dir(uint idx) = 0;
 
-		virtual Vec3f get_global_pos() = 0;
-		virtual Vec3f get_global_dir(uint idx) = 0;
-		virtual Vec3f get_global_scale() = 0;
+		virtual vec3 get_global_pos() = 0;
+		virtual vec3 get_global_dir(uint idx) = 0;
+		virtual vec3 get_global_scale() = 0;
+
+		virtual mat4 get_transform() = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cNode* create();
 	};

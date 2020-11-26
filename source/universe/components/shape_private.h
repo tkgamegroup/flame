@@ -19,7 +19,7 @@ namespace flame
 	struct cShapePrivate : cShape // R ~ on_*
 	{
 		physics::ShapeType type = physics::ShapeCube;
-		Vec3f size = Vec3f(1.f);
+		vec3 size = vec3(1.f);
 
 		bool trigger = false;
 
@@ -35,8 +35,8 @@ namespace flame
 		physics::ShapeType get_type() const override { return type; }
 		void set_type(physics::ShapeType t) override;
 
-		Vec3f get_size() const override { return size; }
-		void set_size(const Vec3f& s) override;
+		vec3 get_size() const override { return size; }
+		void set_size(const vec3& s) override;
 
 		bool get_trigger() const override { return trigger; }
 		void set_trigger(bool v) override;

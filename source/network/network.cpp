@@ -588,7 +588,7 @@ namespace flame
 				srand(time(0));
 				nlohmann::json json = {
 					{"action", "start"},
-					{"seed", ::rand()}
+					{"seed", rand()}
 				};
 				auto str = json.dump();
 				for (auto fd : fd_cs)

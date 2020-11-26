@@ -19,12 +19,12 @@ enum MinoType
 	MinoTypeCount
 };
 
-Vec2i g_mino_coords[MinoTypeCount][3];
-Vec4c g_mino_colors[MinoTypeCount];
+ivec2 g_mino_coords[MinoTypeCount][3];
+cvec4 g_mino_colors[MinoTypeCount];
 
-Vec2i g_mino_LTSZJ_offsets[5][4];
-Vec2i g_mino_O_offsets[5][4];
-Vec2i g_mino_I_offsets[5][4];
+ivec2 g_mino_LTSZJ_offsets[5][4];
+ivec2 g_mino_O_offsets[5][4];
+ivec2 g_mino_I_offsets[5][4];
 
 enum
 {
@@ -186,7 +186,7 @@ const auto board_width = 10U;
 const auto board_height = 24U;
 const auto DOWN_TICKS = 60U;
 const auto CLEAR_TICKS = 15U;
-const auto mino_col_decay = Vec4c(200, 200, 200, 255);
+const auto mino_col_decay = cvec4(200, 200, 200, 255);
 
 const auto sound_move_volumn = 1.f;
 const auto sound_soft_drop_volumn = 0.7f;
@@ -303,16 +303,16 @@ struct MyApp : App
 	bool back_to_back;
 	std::vector<Garbage> garbages;
 	bool need_update_garbages_tip;
-	Vec2i mino_pos;
+	ivec2 mino_pos;
 	MinoType mino_type;
 	MinoType mino_hold;
 	bool mino_just_hold;
 	uint mino_rotation;
-	Vec2i mino_coords[3];
+	ivec2 mino_coords[3];
 	int mino_reset_times;
 	uint mino_bottom_dist;
 	uint mino_ticks;
-	Vec2u mino_pack_idx;
+	uvec2 mino_pack_idx;
 	MinoType mino_packs[2][MinoTypeCount];
 
 	MyApp();
@@ -343,13 +343,13 @@ struct MyApp : App
 	void update_status();
 	void start_game();
 	void shuffle_pack(uint idx);
-	void draw_mino(cTileMap* board, int idx, const Vec2i& pos, uint offset_y, Vec2i* coords, const Vec4c& col = Vec4c(255));
-	bool check_board(cTileMap* board, const Vec2i& p);
-	bool check_board(cTileMap* board, Vec2i* in, const Vec2i& p);
+	void draw_mino(cTileMap* board, int idx, const ivec2& pos, uint offset_y, ivec2* coords, const cvec4& col = cvec4(255));
+	bool check_board(cTileMap* board, const ivec2& p);
+	bool check_board(cTileMap* board, ivec2* in, const ivec2& p);
 	bool line_empty(cTileMap* board, uint l);
 	bool line_full(cTileMap* board, uint l);
 	uint get_rotation_idx(bool clockwise);
-	bool super_rotation(cTileMap* board, bool clockwise, Vec2i* out_coord, Vec2i* offset);
+	bool super_rotation(cTileMap* board, bool clockwise, ivec2* out_coord, ivec2* offset);
 	void quit_game();
 }g_app;
 
@@ -359,7 +359,7 @@ struct MainForm : GraphicsWindow
 };
 
 MainForm::MainForm() :
-	GraphicsWindow(&g_app, true, true, "Tetris", Vec2u(800, 600), WindowFrame)
+	GraphicsWindow(&g_app, true, true, "Tetris", uvec2(800, 600), WindowFrame)
 {
 	canvas->set_resource(-1, g_app.atlas, "");
 
@@ -380,100 +380,100 @@ MyApp::MyApp()
 	players.resize(1);
 	players[0].id = (void*)0xffff;
 
-	g_mino_coords[Mino_L][0] = Vec2i(-1, +0);
-	g_mino_coords[Mino_L][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_L][2] = Vec2i(-1, -1);
+	g_mino_coords[Mino_L][0] = ivec2(-1, +0);
+	g_mino_coords[Mino_L][1] = ivec2(+1, +0);
+	g_mino_coords[Mino_L][2] = ivec2(-1, -1);
 
-	g_mino_coords[Mino_J][0] = Vec2i(-1, +0);
-	g_mino_coords[Mino_J][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_J][2] = Vec2i(+1, -1);
+	g_mino_coords[Mino_J][0] = ivec2(-1, +0);
+	g_mino_coords[Mino_J][1] = ivec2(+1, +0);
+	g_mino_coords[Mino_J][2] = ivec2(+1, -1);
 
-	g_mino_coords[Mino_T][0] = Vec2i(-1, +0);
-	g_mino_coords[Mino_T][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_T][2] = Vec2i(+0, -1);
+	g_mino_coords[Mino_T][0] = ivec2(-1, +0);
+	g_mino_coords[Mino_T][1] = ivec2(+1, +0);
+	g_mino_coords[Mino_T][2] = ivec2(+0, -1);
 
-	g_mino_coords[Mino_S][0] = Vec2i(-1, +0);
-	g_mino_coords[Mino_S][1] = Vec2i(+0, -1);
-	g_mino_coords[Mino_S][2] = Vec2i(+1, -1);
+	g_mino_coords[Mino_S][0] = ivec2(-1, +0);
+	g_mino_coords[Mino_S][1] = ivec2(+0, -1);
+	g_mino_coords[Mino_S][2] = ivec2(+1, -1);
 
-	g_mino_coords[Mino_Z][0] = Vec2i(-1, -1);
-	g_mino_coords[Mino_Z][1] = Vec2i(+0, -1);
-	g_mino_coords[Mino_Z][2] = Vec2i(+1, +0);
+	g_mino_coords[Mino_Z][0] = ivec2(-1, -1);
+	g_mino_coords[Mino_Z][1] = ivec2(+0, -1);
+	g_mino_coords[Mino_Z][2] = ivec2(+1, +0);
 
-	g_mino_coords[Mino_O][0] = Vec2i(+0, -1);
-	g_mino_coords[Mino_O][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_O][2] = Vec2i(+1, -1);
+	g_mino_coords[Mino_O][0] = ivec2(+0, -1);
+	g_mino_coords[Mino_O][1] = ivec2(+1, +0);
+	g_mino_coords[Mino_O][2] = ivec2(+1, -1);
 
-	g_mino_coords[Mino_I][0] = Vec2i(-1, +0);
-	g_mino_coords[Mino_I][1] = Vec2i(+1, +0);
-	g_mino_coords[Mino_I][2] = Vec2i(+2, +0);
+	g_mino_coords[Mino_I][0] = ivec2(-1, +0);
+	g_mino_coords[Mino_I][1] = ivec2(+1, +0);
+	g_mino_coords[Mino_I][2] = ivec2(+2, +0);
 
-	g_mino_colors[Mino_L] = Vec4c(0, 81, 179, 255);
-	g_mino_colors[Mino_T] = Vec4c(169, 0, 225, 255);
-	g_mino_colors[Mino_S] = Vec4c(0, 221, 50, 255);
-	g_mino_colors[Mino_Z] = Vec4c(193, 0, 0, 255);
-	g_mino_colors[Mino_J] = Vec4c(230, 132, 0, 255);
-	g_mino_colors[Mino_O] = Vec4c(225, 198, 0, 255);
-	g_mino_colors[Mino_I] = Vec4c(0, 184, 217, 255);
+	g_mino_colors[Mino_L] = cvec4(0, 81, 179, 255);
+	g_mino_colors[Mino_T] = cvec4(169, 0, 225, 255);
+	g_mino_colors[Mino_S] = cvec4(0, 221, 50, 255);
+	g_mino_colors[Mino_Z] = cvec4(193, 0, 0, 255);
+	g_mino_colors[Mino_J] = cvec4(230, 132, 0, 255);
+	g_mino_colors[Mino_O] = cvec4(225, 198, 0, 255);
+	g_mino_colors[Mino_I] = cvec4(0, 184, 217, 255);
 
 	memset(g_mino_LTSZJ_offsets, 0, sizeof(g_mino_LTSZJ_offsets));
 	memset(g_mino_O_offsets, 0, sizeof(g_mino_O_offsets));
 	memset(g_mino_I_offsets, 0, sizeof(g_mino_I_offsets));
 
-	g_mino_LTSZJ_offsets[0][0] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[0][1] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[0][2] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[0][3] = Vec2i(+0, +0);
+	g_mino_LTSZJ_offsets[0][0] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[0][1] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[0][2] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[0][3] = ivec2(+0, +0);
 
-	g_mino_LTSZJ_offsets[1][0] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[1][1] = Vec2i(+1, +0);
-	g_mino_LTSZJ_offsets[1][2] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[1][3] = Vec2i(-1, +0);
+	g_mino_LTSZJ_offsets[1][0] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[1][1] = ivec2(+1, +0);
+	g_mino_LTSZJ_offsets[1][2] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[1][3] = ivec2(-1, +0);
 
-	g_mino_LTSZJ_offsets[2][0] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[2][1] = Vec2i(+1, +1);
-	g_mino_LTSZJ_offsets[2][2] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[2][3] = Vec2i(-1, +1);
+	g_mino_LTSZJ_offsets[2][0] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[2][1] = ivec2(+1, +1);
+	g_mino_LTSZJ_offsets[2][2] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[2][3] = ivec2(-1, +1);
 
-	g_mino_LTSZJ_offsets[3][0] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[3][1] = Vec2i(+0, -2);
-	g_mino_LTSZJ_offsets[3][2] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[3][3] = Vec2i(+0, -2);
+	g_mino_LTSZJ_offsets[3][0] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[3][1] = ivec2(+0, -2);
+	g_mino_LTSZJ_offsets[3][2] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[3][3] = ivec2(+0, -2);
 
-	g_mino_LTSZJ_offsets[4][0] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[4][1] = Vec2i(+1, -2);
-	g_mino_LTSZJ_offsets[4][2] = Vec2i(+0, +0);
-	g_mino_LTSZJ_offsets[4][3] = Vec2i(-1, -2);
+	g_mino_LTSZJ_offsets[4][0] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[4][1] = ivec2(+1, -2);
+	g_mino_LTSZJ_offsets[4][2] = ivec2(+0, +0);
+	g_mino_LTSZJ_offsets[4][3] = ivec2(-1, -2);
 
-	g_mino_I_offsets[0][0] = Vec2i(+0, +0);
-	g_mino_I_offsets[0][1] = Vec2i(-1, +0);
-	g_mino_I_offsets[0][2] = Vec2i(-1, -1);
-	g_mino_I_offsets[0][3] = Vec2i(+0, -1);
+	g_mino_I_offsets[0][0] = ivec2(+0, +0);
+	g_mino_I_offsets[0][1] = ivec2(-1, +0);
+	g_mino_I_offsets[0][2] = ivec2(-1, -1);
+	g_mino_I_offsets[0][3] = ivec2(+0, -1);
 
-	g_mino_I_offsets[1][0] = Vec2i(-1, +0);
-	g_mino_I_offsets[1][1] = Vec2i(+0, +0);
-	g_mino_I_offsets[1][2] = Vec2i(+1, -1);
-	g_mino_I_offsets[1][3] = Vec2i(+0, -1);
+	g_mino_I_offsets[1][0] = ivec2(-1, +0);
+	g_mino_I_offsets[1][1] = ivec2(+0, +0);
+	g_mino_I_offsets[1][2] = ivec2(+1, -1);
+	g_mino_I_offsets[1][3] = ivec2(+0, -1);
 
-	g_mino_I_offsets[2][0] = Vec2i(+2, +0);
-	g_mino_I_offsets[2][1] = Vec2i(+0, +0);
-	g_mino_I_offsets[2][2] = Vec2i(-2, -1);
-	g_mino_I_offsets[2][3] = Vec2i(+0, -1);
+	g_mino_I_offsets[2][0] = ivec2(+2, +0);
+	g_mino_I_offsets[2][1] = ivec2(+0, +0);
+	g_mino_I_offsets[2][2] = ivec2(-2, -1);
+	g_mino_I_offsets[2][3] = ivec2(+0, -1);
 
-	g_mino_I_offsets[3][0] = Vec2i(-1, +0);
-	g_mino_I_offsets[3][1] = Vec2i(+0, -1);
-	g_mino_I_offsets[3][2] = Vec2i(+1, +0);
-	g_mino_I_offsets[3][3] = Vec2i(+0, +1);
+	g_mino_I_offsets[3][0] = ivec2(-1, +0);
+	g_mino_I_offsets[3][1] = ivec2(+0, -1);
+	g_mino_I_offsets[3][2] = ivec2(+1, +0);
+	g_mino_I_offsets[3][3] = ivec2(+0, +1);
 
-	g_mino_I_offsets[4][0] = Vec2i(+2, +0);
-	g_mino_I_offsets[4][1] = Vec2i(+0, +2);
-	g_mino_I_offsets[4][2] = Vec2i(-2, +0);
-	g_mino_I_offsets[4][3] = Vec2i(+0, -2);
+	g_mino_I_offsets[4][0] = ivec2(+2, +0);
+	g_mino_I_offsets[4][1] = ivec2(+0, +2);
+	g_mino_I_offsets[4][2] = ivec2(-2, +0);
+	g_mino_I_offsets[4][3] = ivec2(+0, -2);
 
-	g_mino_O_offsets[0][0] = Vec2i(+0, +0);
-	g_mino_O_offsets[0][1] = Vec2i(+0, +1);
-	g_mino_O_offsets[0][2] = Vec2i(-1, +1);
-	g_mino_O_offsets[0][3] = Vec2i(-1, +0);
+	g_mino_O_offsets[0][0] = ivec2(+0, +0);
+	g_mino_O_offsets[0][1] = ivec2(+0, +1);
+	g_mino_O_offsets[0][2] = ivec2(-1, +1);
+	g_mino_O_offsets[0][3] = ivec2(-1, +0);
 
 	key_map[KEY_PAUSE] = Keyboard_Esc;
 	key_map[KEY_LEFT] = Keyboard_A;
@@ -633,20 +633,20 @@ void MyApp::create_player_controls(int player_index)
 	auto scale = (player_index == my_room_index || room_max_people == 2) ? 1.f : 0.5f;
 	auto block_size = 24U * scale;
 
-	auto pos = Vec2f(game_mode != GameVS ? 120.f : 0.f, 0.f);
+	auto pos = vec2(game_mode != GameVS ? 120.f : 0.f, 0.f);
 	if (player_index != my_room_index)
 	{
 		switch (room_max_people)
 		{
 		case 2:
-			pos = Vec2f(420.f, 0.f);
+			pos = vec2(420.f, 0.f);
 			break;
 		case 7:
 		{
 			auto index = player_index;
 			if (index > my_room_index)
 				index--;
-			pos = Vec2f(330.f + (index % 3) * 128.f, (index / 3) * 265.f);
+			pos = vec2(330.f + (index % 3) * 128.f, (index / 3) * 265.f);
 		}
 		break;
 		}
@@ -654,7 +654,7 @@ void MyApp::create_player_controls(int player_index)
 
 	auto& p = players[player_index];
 
-	ui.next_element_pos = pos + Vec2f(80.f, 40.f) * scale;
+	ui.next_element_pos = pos + vec2(80.f, 40.f) * scale;
 	ui.e_begin_layout(LayoutHorizontal, 4.f);
 	ui.push_style(FontSize, common(Vec1u(30 * scale)));
 	p.c_name = ui.e_text([p]() {
@@ -671,7 +671,7 @@ void MyApp::create_player_controls(int player_index)
 		}
 	}())->get_component(cText);
 	if (game_mode == GameVS && player_index == 0)
-		p.c_name->color = Vec4c(91, 82, 119, 255);
+		p.c_name->color = cvec4(91, 82, 119, 255);
 	ui.pop_style(FontSize);
 
 	if (my_room_index == 0 && player_index != my_room_index)
@@ -701,24 +701,24 @@ void MyApp::create_player_controls(int player_index)
 	ui.e_end_layout();
 
 	ui.e_empty();
-	ui.next_element_pos = pos + Vec2f(85.f, 80.f) * scale;
-	ui.next_element_size = Vec2f(block_size * board_width, block_size * (board_height - 3.8f));
+	ui.next_element_pos = pos + vec2(85.f, 80.f) * scale;
+	ui.next_element_size = vec2(block_size * board_width, block_size * (board_height - 3.8f));
 	{
 		auto ce = ui.c_element();
 		ce->frame_thickness = 6.f * scale;
-		ce->color = Vec4c(30, 30, 30, 255);
-		ce->frame_color = Vec4c(255);
+		ce->color = cvec4(30, 30, 30, 255);
+		ce->frame_color = cvec4(255);
 		ce->clip_flags = ClipChildren;;
 	}
 
 	ui.parents.push(ui.current_entity);
 	ui.e_empty();
-	ui.next_element_pos = Vec2f(0.f, -block_size * 3.8f);
-	ui.next_element_size = Vec2f(block_size * board_width, block_size * board_height);
+	ui.next_element_pos = vec2(0.f, -block_size * 3.8f);
+	ui.next_element_size = vec2(block_size * board_width, block_size * board_height);
 	ui.c_element();
 	p.c_main = cTileMap::create();
-	p.c_main->cell_size_ = Vec2f(block_size);
-	p.c_main->set_size(Vec2u(board_width, board_height));
+	p.c_main->cell_size_ = vec2(block_size);
+	p.c_main->set_size(uvec2(board_width, board_height));
 	p.c_main->clear_cells(TileGrid);
 	set_board_tiles(p.c_main);
 	ui.current_entity->add_component(p.c_main);
@@ -728,41 +728,41 @@ void MyApp::create_player_controls(int player_index)
 	{
 		block_size = 16U * scale;
 
-		ui.next_element_pos = pos + Vec2f(22.f, 80.f);
+		ui.next_element_pos = pos + vec2(22.f, 80.f);
 		ui.e_text(L"Hold");
 
-		ui.next_element_pos = pos + Vec2f(8.f, 100.f);
-		ui.next_element_size = Vec2f(block_size * 4 + 8.f);
+		ui.next_element_pos = pos + vec2(8.f, 100.f);
+		ui.next_element_size = vec2(block_size * 4 + 8.f);
 		ui.next_element_padding = 4.f;
-		ui.next_element_color = Vec4c(30, 30, 30, 255);
+		ui.next_element_color = cvec4(30, 30, 30, 255);
 		ui.e_element();
 		{
 			p.c_hold = cTileMap::create();
-			p.c_hold->cell_size_ = Vec2f(block_size);
-			p.c_hold->set_size(Vec2u(4, 3));
+			p.c_hold->cell_size_ = vec2(block_size);
+			p.c_hold->set_size(uvec2(4, 3));
 			set_board_tiles(p.c_hold);
 			ui.current_entity->add_component(p.c_hold);
 		}
 
-		ui.next_element_pos = pos + Vec2f(350.f, 80.f);
+		ui.next_element_pos = pos + vec2(350.f, 80.f);
 		ui.e_text(L"Next");
 
 		ui.e_empty();
-		ui.next_element_pos = pos + Vec2f(330.f, 100.f);
-		ui.next_element_size = Vec2f(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * size(p.c_next) + 8.f - 45.f);
+		ui.next_element_pos = pos + vec2(330.f, 100.f);
+		ui.next_element_size = vec2(block_size * 4 + 8.f, (block_size * 3.f + 4.f) * size(p.c_next) + 8.f - 45.f);
 		{
 			auto ce = ui.c_element();
-			ce->color = Vec4c(30, 30, 30, 255);
+			ce->color = cvec4(30, 30, 30, 255);
 		}
 		auto create_next_board = [&](int i, int base, float y_off, float block_size) {
-			ui.next_element_pos = pos + Vec2f(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
-			ui.next_element_size = Vec2f(block_size * 4 + 8.f);
+			ui.next_element_pos = pos + vec2(330.f, 100.f + y_off + (block_size * 3.f + 4.f) * (i - base));
+			ui.next_element_size = vec2(block_size * 4 + 8.f);
 			ui.next_element_padding = 4.f;
 			ui.e_element();
 			{
 				p.c_next[i] = cTileMap::create();
-				p.c_next[i]->cell_size_ = Vec2f(block_size);
-				p.c_next[i]->set_size(Vec2u(4));
+				p.c_next[i]->cell_size_ = vec2(block_size);
+				p.c_next[i]->set_size(uvec2(4));
 				set_board_tiles(p.c_next[i]);
 				ui.current_entity->add_component(p.c_next[i]);
 			}
@@ -774,7 +774,7 @@ void MyApp::create_player_controls(int player_index)
 		for (auto i = 3; i < size(p.c_next); i++)
 			create_next_board(i, 3, 16.f * 3.f + 4.f + (14.f * 3.f + 4.f) * 2, 12.f);
 
-		ui.next_element_pos = pos + Vec2f(180.f, 250.f);
+		ui.next_element_pos = pos + vec2(180.f, 250.f);
 		ui.push_style(FontSize, common(Vec1u(80)));
 		p.e_count_down = ui.e_text(L"");
 		p.e_count_down->set_visible(false);
@@ -782,7 +782,7 @@ void MyApp::create_player_controls(int player_index)
 
 		if (game_mode == GameVS)
 		{
-			ui.next_element_pos = pos + Vec2f(54.f, 546.f);
+			ui.next_element_pos = pos + vec2(54.f, 546.f);
 			p.e_garbage = ui.e_element();
 		}
 	}
@@ -790,10 +790,10 @@ void MyApp::create_player_controls(int player_index)
 	if (game_mode == GameVS)
 	{
 		ui.push_style(FontSize, common(Vec1u(60 * scale)));
-		ui.next_element_pos = pos + Vec2f(150.f, 200.f) * scale;
+		ui.next_element_pos = pos + vec2(150.f, 200.f) * scale;
 		p.c_ready = ui.e_text(L"Ready")->get_component(cText);
 		p.c_ready->entity->set_visible(false);
-		ui.next_element_pos = pos + Vec2f(160.f, 150.f) * scale;
+		ui.next_element_pos = pos + vec2(160.f, 150.f) * scale;
 		p.c_rank = ui.e_text(L"Ready")->get_component(cText);
 		p.c_rank->entity->set_visible(false);
 		ui.pop_style(FontSize);
@@ -867,7 +867,7 @@ void MyApp::process_report_board(int index, const std::string& d)
 			for (auto x = 0; x < board_width; x++)
 			{
 				auto id = capture.d[y * board_width + x] - '0';
-				capture.b->set_cell(Vec2u(x, y), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+				capture.b->set_cell(uvec2(x, y), id, id == TileGrid ? cvec4(255) : mino_col_decay);
 			}
 		}
 	}, Capture().set_data(&capture));
@@ -1085,7 +1085,7 @@ void MyApp::people_dead(int index)
 void MyApp::create_lan_scene()
 {
 	ui.parents.push(main_window->root);
-	ui.next_element_size = Vec2f(500.f, 0.f);
+	ui.next_element_size = vec2(500.f, 0.f);
 	ui.next_element_padding = 8.f;
 	ui.e_begin_layout(LayoutVertical, 8.f, false, false);
 	ui.c_aligner(AlignMiddle, AlignMinMax);
@@ -1127,7 +1127,7 @@ void MyApp::create_lan_scene()
 				ui.parents.pop();
 			}, Capture().set_thiz(e_room_list));
 		}, Capture().set_thiz(e_room_list));
-	}, Capture().set_thiz(e_room_list))->get_component(cEventReceiver)->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, Vec2i(0));
+	}, Capture().set_thiz(e_room_list))->get_component(cEventReceiver)->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, ivec2(0));
 	ui.e_button(L"Create Room", [](Capture&) {
 		if (g_app.my_name.empty())
 			ui.e_message_dialog(L"Your Name Cannot Not Be Empty");
@@ -1627,43 +1627,43 @@ void MyApp::create_game_scene()
 
 	if (game_mode != GameVS)
 	{
-		ui.next_element_pos = Vec2f(535.f, 150.f);
-		ui.e_text(L"TIME")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+		ui.next_element_pos = vec2(535.f, 150.f);
+		ui.e_text(L"TIME")->get_component(cText)->color = cvec4(40, 80, 200, 255);
 
-		ui.next_element_pos = Vec2f(535.f, 210.f);
-		ui.e_text(L"LEVEL")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+		ui.next_element_pos = vec2(535.f, 210.f);
+		ui.e_text(L"LEVEL")->get_component(cText)->color = cvec4(40, 80, 200, 255);
 
-		ui.next_element_pos = Vec2f(535.f, 270.f);
-		ui.e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+		ui.next_element_pos = vec2(535.f, 270.f);
+		ui.e_text(game_mode == GameSingleRTA ? L"LEFT" : L"LINES")->get_component(cText)->color = cvec4(40, 80, 200, 255);
 
-		ui.next_element_pos = Vec2f(535.f, 330.f);
-		ui.e_text(L"SCORE")->get_component(cText)->color = Vec4c(40, 80, 200, 255);
+		ui.next_element_pos = vec2(535.f, 330.f);
+		ui.e_text(L"SCORE")->get_component(cText)->color = cvec4(40, 80, 200, 255);
 
 		ui.push_style(FontSize, common(Vec1u(40)));
-		ui.next_element_pos = Vec2f(535.f, 170.f);
+		ui.next_element_pos = vec2(535.f, 170.f);
 		c_text_time = ui.e_text(L"")->get_component(cText);
-		ui.next_element_pos = Vec2f(535.f, 230.f);
+		ui.next_element_pos = vec2(535.f, 230.f);
 		c_text_level = ui.e_text(L"")->get_component(cText);
-		ui.next_element_pos = Vec2f(535.f, 290.f);
+		ui.next_element_pos = vec2(535.f, 290.f);
 		c_text_lines = ui.e_text(L"")->get_component(cText);
-		ui.next_element_pos = Vec2f(535.f, 350.f);
+		ui.next_element_pos = vec2(535.f, 350.f);
 		c_text_score = ui.e_text(L"")->get_component(cText);
 		ui.pop_style(FontSize);
 	}
 
 	ui.push_style(FontSize, common(Vec1u(28)));
-	ui.next_element_pos = Vec2f(8.f, 230.f);
+	ui.next_element_pos = vec2(8.f, 230.f);
 	{
 		auto e = ui.e_text(L"");
 		e->set_visible(false);
 		c_text_special = e->get_component(cText);
 	}
-	c_text_special->color = Vec4c(200, 80, 40, 255);
+	c_text_special->color = cvec4(200, 80, 40, 255);
 	ui.pop_style(FontSize);
 
 	if (game_mode == GameVS)
 	{
-		ui.next_element_pos = Vec2f(4.f, 500.f);
+		ui.next_element_pos = vec2(4.f, 500.f);
 		if (my_room_index == 0)
 		{
 			e_start_or_ready = ui.e_button(L"Start", [](Capture&) {
@@ -1814,11 +1814,11 @@ void MyApp::start_game()
 	back_to_back = false;
 	garbages.clear();
 	need_update_garbages_tip = true;
-	mino_pos = Vec2i(0, -1);
+	mino_pos = ivec2(0, -1);
 	mino_type = MinoTypeCount;
 	mino_hold = MinoTypeCount;
 	mino_just_hold = false;
-	mino_pack_idx = Vec2u(0, 0);
+	mino_pack_idx = uvec2(0, 0);
 	mino_rotation = 0;
 	mino_reset_times = -1;
 	mino_bottom_dist = 0;
@@ -1851,15 +1851,15 @@ void MyApp::shuffle_pack(uint idx)
 		std::swap(curr_pack[i], curr_pack[rand() % MinoTypeCount]);
 }
 
-void MyApp::draw_mino(cTileMap* board, int idx, const Vec2i& pos, uint offset_y, Vec2i* coords, const Vec4c& col)
+void MyApp::draw_mino(cTileMap* board, int idx, const ivec2& pos, uint offset_y, ivec2* coords, const cvec4& col)
 {
-	board->set_cell(Vec2u(pos) + Vec2u(0, offset_y), idx, col);
-	board->set_cell(Vec2u(pos + coords[0] + Vec2u(0, offset_y)), idx, col);
-	board->set_cell(Vec2u(pos + coords[1] + Vec2u(0, offset_y)), idx, col);
-	board->set_cell(Vec2u(pos + coords[2] + Vec2u(0, offset_y)), idx, col);
+	board->set_cell(uvec2(pos) + uvec2(0, offset_y), idx, col);
+	board->set_cell(uvec2(pos + coords[0] + uvec2(0, offset_y)), idx, col);
+	board->set_cell(uvec2(pos + coords[1] + uvec2(0, offset_y)), idx, col);
+	board->set_cell(uvec2(pos + coords[2] + uvec2(0, offset_y)), idx, col);
 }
 
-bool MyApp::check_board(cTileMap* board, const Vec2i& p)
+bool MyApp::check_board(cTileMap* board, const ivec2& p)
 {
 	return
 		board->cell(mino_pos + p) == TileGrid &&
@@ -1868,7 +1868,7 @@ bool MyApp::check_board(cTileMap* board, const Vec2i& p)
 		board->cell(mino_pos + p + mino_coords[2]) == TileGrid;
 }
 
-bool MyApp::check_board(cTileMap* board, Vec2i* in, const Vec2i& p)
+bool MyApp::check_board(cTileMap* board, ivec2* in, const ivec2& p)
 {
 	return
 		board->cell(p) == TileGrid &&
@@ -1881,7 +1881,7 @@ bool MyApp::line_empty(cTileMap* board, uint l)
 {
 	for (auto x = 0; x < board_width; x++)
 	{
-		if (board->cell(Vec2i(x, l)) != TileGrid)
+		if (board->cell(ivec2(x, l)) != TileGrid)
 			return false;
 	}
 	return true;
@@ -1891,7 +1891,7 @@ bool MyApp::line_full(cTileMap* board, uint l)
 {
 	for (auto x = 0; x < board_width; x++)
 	{
-		if (board->cell(Vec2i(x, l)) == TileGrid)
+		if (board->cell(ivec2(x, l)) == TileGrid)
 			return false;
 	}
 	return true;
@@ -1904,11 +1904,11 @@ uint MyApp::get_rotation_idx(bool clockwise)
 	return mino_rotation == 0 ? 3 : mino_rotation - 1;
 }
 
-bool MyApp::super_rotation(cTileMap* board, bool clockwise, Vec2i* out_coord, Vec2i* offset)
+bool MyApp::super_rotation(cTileMap* board, bool clockwise, ivec2* out_coord, ivec2* offset)
 {
 	Mat2x2i mats[] = {
-		Mat2x2i(Vec2i(0, -1), Vec2i(1, 0)),
-		Mat2x2i(Vec2i(0, 1), Vec2i(-1, 0))
+		Mat2x2i(ivec2(0, -1), ivec2(1, 0)),
+		Mat2x2i(ivec2(0, 1), ivec2(-1, 0))
 	};
 	auto& mat = mats[clockwise ? 1 : 0];
 	out_coord[0] = mat * mino_coords[0];
@@ -2028,14 +2028,14 @@ void MyApp::do_game_logic()
 							{
 								for (auto x = 0; x < board_width; x++)
 								{
-									auto id = c_main->cell(Vec2i(x, j - 1));
-									c_main->set_cell(Vec2u(x, j), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+									auto id = c_main->cell(ivec2(x, j - 1));
+									c_main->set_cell(uvec2(x, j), id, id == TileGrid ? cvec4(255) : mino_col_decay);
 								}
 							}
 							else
 							{
 								for (auto x = 0; x < board_width; x++)
-									c_main->set_cell(Vec2u(x, j), TileGrid);
+									c_main->set_cell(uvec2(x, j), TileGrid);
 							}
 						}
 					}
@@ -2046,76 +2046,76 @@ void MyApp::do_game_logic()
 		}
 		else
 		{
-			if (mino_pos.y() >= 0)
+			if (mino_pos.y >= 0)
 			{
 				draw_mino(c_main, TileGrid, mino_pos, 0, mino_coords);
 				if (mino_bottom_dist > 0)
 					draw_mino(c_main, TileGrid, mino_pos, mino_bottom_dist, mino_coords);
 			}
 
-			if (mino_pos.y() < 0)
+			if (mino_pos.y < 0)
 			{
-				if (mino_pos.y() == -1 || mino_type == MinoTypeCount)
+				if (mino_pos.y == -1 || mino_type == MinoTypeCount)
 				{
-					mino_type = mino_packs[mino_pack_idx.x()][mino_pack_idx.y()++];
-					if (mino_pack_idx.y() >= MinoTypeCount)
+					mino_type = mino_packs[mino_pack_idx.x][mino_pack_idx.y++];
+					if (mino_pack_idx.y >= MinoTypeCount)
 					{
-						shuffle_pack(mino_pack_idx.x());
-						mino_pack_idx = Vec2i(1 - mino_pack_idx.x(), 0);
+						shuffle_pack(mino_pack_idx.x);
+						mino_pack_idx = ivec2(1 - mino_pack_idx.x, 0);
 					}
 					for (auto i = 0; i < size(c_next); i++)
 					{
 						c_next[i]->clear_cells();
 						auto next_idx = mino_pack_idx;
-						next_idx.y() += i;
-						if (next_idx.y() >= MinoTypeCount)
+						next_idx.y += i;
+						if (next_idx.y >= MinoTypeCount)
 						{
-							next_idx.x() = 1 - next_idx.x();
-							next_idx.y() %= MinoTypeCount;
+							next_idx.x = 1 - next_idx.x;
+							next_idx.y %= MinoTypeCount;
 						}
-						auto t = mino_packs[next_idx.x()][next_idx.y()];
-						Vec2i coords[3];
+						auto t = mino_packs[next_idx.x][next_idx.y];
+						ivec2 coords[3];
 						for (auto j = 0; j < 3; j++)
 							coords[j] = g_mino_coords[t][j];
-						draw_mino(c_next[i], TileMino1 + t, Vec2i(1), 0, coords);
+						draw_mino(c_next[i], TileMino1 + t, ivec2(1), 0, coords);
 					}
 				}
-				if (mino_pos.y() == -2)
+				if (mino_pos.y == -2)
 				{
 					c_hold->clear_cells();
 					if (mino_hold != MinoTypeCount)
 					{
-						Vec2i coords[3];
+						ivec2 coords[3];
 						for (auto i = 0; i < 3; i++)
 							coords[i] = g_mino_coords[mino_hold][i];
-						draw_mino(c_hold, TileMino1 + mino_hold, Vec2i(1), 0, coords);
+						draw_mino(c_hold, TileMino1 + mino_hold, ivec2(1), 0, coords);
 					}
 				}
-				mino_pos = Vec2i(4, 5 - (mino_type == Mino_I ? 1 : 0));
+				mino_pos = ivec2(4, 5 - (mino_type == Mino_I ? 1 : 0));
 				mino_rotation = 0;
 				for (auto i = 0; i < 3; i++)
 					mino_coords[i] = g_mino_coords[mino_type][i];
 				mino_reset_times = -1;
 				mino_ticks = 0;
 
-				dead = !check_board(c_main, Vec2i(0));
+				dead = !check_board(c_main, ivec2(0));
 				if (dead)
 				{
 					{
 						auto pos = mino_pos;
-						c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+						c_main->set_cell(uvec2(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 					}
 					{
 						auto pos = mino_pos + mino_coords[0];
-						c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+						c_main->set_cell(uvec2(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 					}
 					{
 						auto pos = mino_pos + mino_coords[1];
-						c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+						c_main->set_cell(uvec2(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 					}
 					{
 						auto pos = mino_pos + mino_coords[2];
-						c_main->set_cell(Vec2u(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
+						c_main->set_cell(uvec2(pos), c_main->cell(pos) == TileGrid ? TileMino1 + mino_type : TileGray, mino_col_decay);
 					}
 				}
 				if (dead || (game_mode == GameSingleRTA && lines >= 40))
@@ -2150,7 +2150,7 @@ void MyApp::do_game_logic()
 			{
 				if (key_states[key_map[KEY_HOLD]] == (KeyStateDown | KeyStateJust) && (game_mode == GameSinglePractice || mino_just_hold == false))
 				{
-					mino_pos.y() = -2;
+					mino_pos.y = -2;
 					std::swap(mino_hold, mino_type);
 					mino_just_hold = true;
 
@@ -2170,8 +2170,8 @@ void MyApp::do_game_logic()
 						r++;
 					if (r != 0)
 					{
-						Vec2i new_coords[3];
-						Vec2i offset;
+						ivec2 new_coords[3];
+						ivec2 offset;
 						if (super_rotation(c_main, r == 1, new_coords, &offset))
 						{
 							if (offset != 0)
@@ -2215,9 +2215,9 @@ void MyApp::do_game_logic()
 					}
 					else
 						right_frames = -1;
-					if (mx != 0 && check_board(c_main, Vec2i(mx, 0)))
+					if (mx != 0 && check_board(c_main, ivec2(mx, 0)))
 					{
-						mino_pos.x() += mx;
+						mino_pos.x += mx;
 						moved = true;
 
 						sound_move_src->play();
@@ -2229,7 +2229,7 @@ void MyApp::do_game_logic()
 						last_is_rotate_action = !moved;
 
 					mino_bottom_dist = 0;
-					while (check_board(c_main, Vec2i(0, mino_bottom_dist + 1)))
+					while (check_board(c_main, ivec2(0, mino_bottom_dist + 1)))
 						mino_bottom_dist++;
 					if (rotated || moved)
 					{
@@ -2267,7 +2267,7 @@ void MyApp::do_game_logic()
 
 						if (hard_drop || mino_bottom_dist == 0)
 						{
-							mino_pos.y() += mino_bottom_dist;
+							mino_pos.y += mino_bottom_dist;
 							if (hard_drop)
 								score += mino_bottom_dist * 2;
 							mino_bottom_dist = 0;
@@ -2285,14 +2285,14 @@ void MyApp::do_game_logic()
 									{
 										auto cell_size = c_main->cell_size_;
 										auto board_element = c_main->element;
-										auto pos = board_element->global_pos + Vec2f(board_element->padding[0], board_element->padding[1]);
-										pos.y() += i * cell_size.y();
+										auto pos = board_element->global_pos + vec2(board_element->padding[0], board_element->padding[1]);
+										pos.y += i * cell_size.y;
 										ui.parents.push(main_window->root);
 										ui.next_element_pos = pos;
-										ui.next_element_size = Vec2f(cell_size.x() * board_width, cell_size.y());
+										ui.next_element_size = vec2(cell_size.x * board_width, cell_size.y);
 										ui.e_empty();
 										auto element = ui.c_element();
-										element->color = Vec4c(255);
+										element->color = cvec4(255);
 										ui.parents.pop();
 
 										struct Capturing
@@ -2307,11 +2307,11 @@ void MyApp::do_game_logic()
 											capture.f--;
 											if (capture.f > 0)
 											{
-												capture.e->pos.x() -= 10.f;
-												capture.e->size.x() += 20.f;
-												capture.e->pos.y() += 2.4f;
-												capture.e->size.y() -= 4.8f;
-												capture.e->color.a() = max(capture.e->color.a() - 30, 0);
+												capture.e->pos.x -= 10.f;
+												capture.e->size.x += 20.f;
+												capture.e->pos.y += 2.4f;
+												capture.e->size.y -= 4.8f;
+												capture.e->color.a = max(capture.e->color.a - 30, 0);
 												c._current = nullptr;
 											}
 											else
@@ -2339,18 +2339,18 @@ void MyApp::do_game_logic()
 								auto tspin = mino_type == Mino_T && last_is_rotate_action;
 								if (tspin)
 								{
-									Vec2i judge_points[] = {
-										Vec2i(-1, -1),
-										Vec2i(+1, -1),
-										Vec2i(-1, +1),
-										Vec2i(+1, +1),
+									ivec2 judge_points[] = {
+										ivec2(-1, -1),
+										ivec2(+1, -1),
+										ivec2(-1, +1),
+										ivec2(+1, +1),
 									};
 									auto count = 0;
 									for (auto i = 0; i < size(judge_points); i++)
 									{
 										auto p = mino_pos + judge_points[i];
-										if (p.x() < 0 || p.x() >= board_width ||
-											p.y() < 0 || p.y() >= board_height ||
+										if (p.x < 0 || p.x >= board_width ||
+											p.y < 0 || p.y >= board_height ||
 											c_main->cell(p) != TileGrid)
 											count++;
 									}
@@ -2397,7 +2397,7 @@ void MyApp::do_game_logic()
 									nlohmann::json req;
 									req["action"] = "attack";
 									req["value"] = attack;
-									auto n = ::rand() % players.size() + 1;
+									auto n = rand() % players.size() + 1;
 									auto target = -1;
 									while (n > 0)
 									{
@@ -2430,7 +2430,7 @@ void MyApp::do_game_logic()
 								for (auto i = 0; i < l; i++)
 								{
 									for (auto x = 0; x < board_width; x++)
-										c_main->set_cell(Vec2u(x, full_lines[i]), TileGrid);
+										c_main->set_cell(uvec2(x, full_lines[i]), TileGrid);
 								}
 
 								clear_ticks = CLEAR_TICKS;
@@ -2453,17 +2453,17 @@ void MyApp::do_game_logic()
 										{
 											for (auto x = 0; x < board_width; x++)
 											{
-												auto id = c_main->cell(Vec2i(x, i + n));
-												c_main->set_cell(Vec2u(x, i), id, id == TileGrid ? Vec4c(255) : mino_col_decay);
+												auto id = c_main->cell(ivec2(x, i + n));
+												c_main->set_cell(uvec2(x, i), id, id == TileGrid ? cvec4(255) : mino_col_decay);
 											}
 										}
-										auto hole = ::rand() % board_width;
+										auto hole = rand() % board_width;
 										for (auto i = 0; i < n; i++)
 										{
 											auto y = board_height - i - 1;
 											for (auto x = 0; x < board_width; x++)
-												c_main->set_cell(Vec2u(x, y), TileGray, mino_col_decay);
-											c_main->set_cell(Vec2u(hole, y), TileGrid);
+												c_main->set_cell(uvec2(x, y), TileGray, mino_col_decay);
+											c_main->set_cell(uvec2(hole, y), TileGrid);
 										}
 										it = garbages.erase(it);
 										need_update_garbages_tip = true;
@@ -2480,12 +2480,12 @@ void MyApp::do_game_logic()
 								else
 									sound_soft_drop_src->play();
 							}
-							mino_pos.y() = -1;
+							mino_pos.y = -1;
 							mino_just_hold = false;
 						}
 						else
 						{
-							mino_pos.y()++;
+							mino_pos.y++;
 							mino_bottom_dist--;
 							if (is_soft_drop)
 							{
@@ -2498,7 +2498,7 @@ void MyApp::do_game_logic()
 					}
 					mino_ticks++;
 
-					if (mino_pos.y() != -1)
+					if (mino_pos.y != -1)
 					{
 						if (mino_bottom_dist)
 							draw_mino(c_main, TileGhost, mino_pos, mino_bottom_dist, mino_coords, g_mino_colors[mino_type]);
@@ -2518,7 +2518,7 @@ void MyApp::do_game_logic()
 				{
 					for (auto x = 0; x < board_width; x++)
 					{
-						auto id = c_main->cell(Vec2i(x, y));
+						auto id = c_main->cell(ivec2(x, y));
 						d[y * board_width + x] = '0' + id;
 					}
 				}
@@ -2564,8 +2564,8 @@ void MyApp::do_game_logic()
 					auto& g = garbages[i];
 					for (auto j = 0; j < g.lines; j++)
 					{
-						ui.next_element_pos = Vec2f(0.f, -idx * 24.f - i * 4.f);
-						ui.next_element_size = Vec2f(24.f);
+						ui.next_element_pos = vec2(0.f, -idx * 24.f - i * 4.f);
+						ui.next_element_size = vec2(24.f);
 						ui.e_image((atlas->canvas_slot_ << 16) + atlas->find_tile("gray.png"));
 						idx++;
 					}
@@ -2582,7 +2582,7 @@ void MyApp::do_game_logic()
 				if (g.time == 0)
 				{
 					for (auto j = 0; j < g.lines; j++)
-						e_garbage->children[idx + j]->get_component(cImage)->color = Vec4c(255, 0, 0, 255);
+						e_garbage->children[idx + j]->get_component(cImage)->color = cvec4(255, 0, 0, 255);
 				}
 				idx += g.lines;
 			}

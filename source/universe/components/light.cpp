@@ -9,7 +9,7 @@ namespace flame
 		type = t;
 	}
 
-	void cLightPrivate::set_color(const Vec3f& c)
+	void cLightPrivate::set_color(const vec3& c)
 	{
 		color = c;
 	}
@@ -17,7 +17,7 @@ namespace flame
 	void cLightPrivate::draw(graphics::Canvas* canvas)
 	{
 		node->update_transform();
-		canvas->add_light(type, type == graphics::LightPoint ? Mat3f(node->global_pos, Vec3f(0.f), Vec3f(0.f)) : node->global_dirs, color, cast_shadow);
+		canvas->add_light(type, type == graphics::LightPoint ? mat3(node->global_pos, vec3(0.f), vec3(0.f)) : node->global_dirs, color, cast_shadow);
 	}
 
 	void cLightPrivate::set_cast_shadow(bool v)

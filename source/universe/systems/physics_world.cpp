@@ -59,11 +59,11 @@ namespace flame
 		for (auto c : controllers)
 		{
 			auto disp = c->disp;
-			disp.y() -= 1.f;
+			disp.y -= 1.f;
 			// physx::PxVec3 disp(c.x, -gravity * o->floatingTime * o->floatingTime, c.z);
 			// o->floatingTime += dist;
 			c->phy_controller->move(disp, delta_time);
-			c->disp = Vec3f(0.f);
+			c->disp = vec3(0.f);
 		}
 
 		phy_scene->update(delta_time);
@@ -72,14 +72,14 @@ namespace flame
 		{
 			if (r->dynamic)
 			{
-				Vec3f coord;
-				Vec4f quat;
+				vec3 coord;
+				vec4 quat;
 				r->phy_rigid->get_pose(coord, quat);
 				auto pn = r->entity->get_parent_component_t<cNodePrivate>();
 				if (pn)
 				{
 					auto q_inv = pn->global_quat;
-					q_inv = Vec4f(-q_inv.x(), -q_inv.y(), -q_inv.z(), q_inv.w());
+					q_inv = vec4(-q_inv.x, -q_inv.y, -q_inv.z, q_inv.w);
 					r->node->set_pos(quat_mul(q_inv, coord - pn->global_pos) / pn->global_scale);
 					r->node->set_quat(quat_mul(q_inv, quat));
 				}
@@ -97,7 +97,7 @@ namespace flame
 			if (pn)
 			{
 				auto q_inv = pn->global_quat;
-				q_inv = Vec4f(-q_inv.x(), -q_inv.y(), -q_inv.z(), q_inv.w());
+				q_inv = vec4(-q_inv.x, -q_inv.y, -q_inv.z, q_inv.w);
 				c->node->set_pos(quat_mul(q_inv, coord - pn->global_pos) / pn->global_scale);
 			}
 			else

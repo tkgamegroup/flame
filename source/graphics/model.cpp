@@ -17,7 +17,7 @@ namespace flame
 		void load_material(pugi::xml_node n, MaterialPrivate* m)
 		{
 			m->name = n.attribute("name").value();
-			m->color = sto<Vec3f>(n.attribute("color").value());
+			m->color = sto<vec3>(n.attribute("color").value());
 			m->metallic = sto<float>(n.attribute("metallic").value());
 			m->roughness = sto<float>(n.attribute("roughness").value());
 			m->alpha_test = sto<float>(n.attribute("alpha_test").value());
@@ -56,7 +56,7 @@ namespace flame
 			return MaterialPrivate::create(filename);
 		}
 
-		void MeshPrivate::add_vertices(uint n, Vec3f* _positions, Vec3f* _uvs, Vec3f* _normals)
+		void MeshPrivate::add_vertices(uint n, vec3* _positions, vec3* _uvs, vec3* _normals)
 		{
 			auto b = positions.size();
 			positions.resize(b + n);
@@ -64,8 +64,8 @@ namespace flame
 			{
 				auto& p = _positions[i];
 				positions[b + i] = p;
-				lower_bound = min(lower_bound, p);
-				upper_bound = max(upper_bound, p);
+				lower_bound = _min(lower_bound, p);
+				upper_bound = _max(upper_bound, p);
 			}
 			if (_uvs)
 			{
@@ -89,76 +89,76 @@ namespace flame
 				indices[b + i] = _indices[i];
 		}
 
-		void MeshPrivate::add_cube(const Vec3f& extent, const Vec3f& center, const Mat3f& rotation)
+		void MeshPrivate::add_cube(const vec3& extent, const vec3& center, const mat3& rotation)
 		{
-			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, +0.5f) * extent + center);
-			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
-			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
-			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
-			normals.push_back(Vec3f(+0.f, +0.f, +1.f));
+			positions.push_back(rotation * vec3(-0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, -0.5f, +0.5f) * extent + center);
+			normals.push_back(vec3(+0.f, +0.f, +1.f));
+			normals.push_back(vec3(+0.f, +0.f, +1.f));
+			normals.push_back(vec3(+0.f, +0.f, +1.f));
+			normals.push_back(vec3(+0.f, +0.f, +1.f));
 			indices.push_back(0); indices.push_back(2); indices.push_back(1);
 			indices.push_back(0); indices.push_back(3); indices.push_back(2);
 
-			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, -0.5f) * extent + center);
-			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
-			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
-			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
-			normals.push_back(Vec3f(+0.f, +0.f, -1.f));
+			positions.push_back(rotation * vec3(-0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, -0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, -0.5f, -0.5f) * extent + center);
+			normals.push_back(vec3(+0.f, +0.f, -1.f));
+			normals.push_back(vec3(+0.f, +0.f, -1.f));
+			normals.push_back(vec3(+0.f, +0.f, -1.f));
+			normals.push_back(vec3(+0.f, +0.f, -1.f));
 			indices.push_back(5); indices.push_back(7); indices.push_back(4);
 			indices.push_back(5); indices.push_back(6); indices.push_back(7);
 
-			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, +0.5f) * extent + center);
-			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
-			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
-			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
-			normals.push_back(Vec3f(+0.f, +1.f, +0.f));
+			positions.push_back(rotation * vec3(-0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, +0.5f, +0.5f) * extent + center);
+			normals.push_back(vec3(+0.f, +1.f, +0.f));
+			normals.push_back(vec3(+0.f, +1.f, +0.f));
+			normals.push_back(vec3(+0.f, +1.f, +0.f));
+			normals.push_back(vec3(+0.f, +1.f, +0.f));
 			indices.push_back(8); indices.push_back(10); indices.push_back(9);
 			indices.push_back(8); indices.push_back(11); indices.push_back(10);
 
-			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, +0.5f) * extent + center);
-			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
-			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
-			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
-			normals.push_back(Vec3f(+0.f, -1.f, +0.f));
+			positions.push_back(rotation * vec3(-0.5f, -0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, -0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, -0.5f, +0.5f) * extent + center);
+			normals.push_back(vec3(+0.f, -1.f, +0.f));
+			normals.push_back(vec3(+0.f, -1.f, +0.f));
+			normals.push_back(vec3(+0.f, -1.f, +0.f));
+			normals.push_back(vec3(+0.f, -1.f, +0.f));
 			indices.push_back(15); indices.push_back(13); indices.push_back(14);
 			indices.push_back(15); indices.push_back(12); indices.push_back(13);
 
-			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(-0.5f, -0.5f, -0.5f) * extent + center);
-			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
-			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
-			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
-			normals.push_back(Vec3f(-1.f, +0.f, +0.f));
+			positions.push_back(rotation * vec3(-0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(-0.5f, -0.5f, -0.5f) * extent + center);
+			normals.push_back(vec3(-1.f, +0.f, +0.f));
+			normals.push_back(vec3(-1.f, +0.f, +0.f));
+			normals.push_back(vec3(-1.f, +0.f, +0.f));
+			normals.push_back(vec3(-1.f, +0.f, +0.f));
 			indices.push_back(16); indices.push_back(18); indices.push_back(17);
 			indices.push_back(16); indices.push_back(19); indices.push_back(18);
 
-			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, -0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, +0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, +0.5f) * extent + center);
-			positions.push_back(rotation * Vec3f(+0.5f, -0.5f, -0.5f) * extent + center);
-			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
-			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
-			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
-			normals.push_back(Vec3f(+1.f, +0.f, +0.f));
+			positions.push_back(rotation * vec3(+0.5f, +0.5f, -0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, +0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, -0.5f, +0.5f) * extent + center);
+			positions.push_back(rotation * vec3(+0.5f, -0.5f, -0.5f) * extent + center);
+			normals.push_back(vec3(+1.f, +0.f, +0.f));
+			normals.push_back(vec3(+1.f, +0.f, +0.f));
+			normals.push_back(vec3(+1.f, +0.f, +0.f));
+			normals.push_back(vec3(+1.f, +0.f, +0.f));
 			indices.push_back(21); indices.push_back(23); indices.push_back(20);
 			indices.push_back(21); indices.push_back(22); indices.push_back(23);
 		}
 
-		void MeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const Vec3f& center, const Mat3f& rotation)
+		void MeshPrivate::add_sphere(float radius, uint horiSubdiv, uint vertSubdiv, const vec3& center, const mat3& rotation)
 		{
 			std::vector<std::vector<int>> staging_indices;
 			staging_indices.resize(horiSubdiv + 1);
@@ -167,12 +167,12 @@ namespace flame
 			{
 				for (int i = 0; i < vertSubdiv; i++)
 				{
-					auto radian = (level * 180.f / horiSubdiv - 90.f) * ANG_RAD;
+					auto radian = radians((level * 180.f / horiSubdiv - 90.f));
 					auto ring_radius = cos(radian) * radius;
 					auto height = sin(radian) * radius;
-					auto ang = (i * 360.f / vertSubdiv) * ANG_RAD;
+					auto ang = radians((i * 360.f / vertSubdiv));
 					staging_indices[level].push_back(positions.size());
-					auto p = rotation * Vec3f(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
+					auto p = rotation * vec3(cos(ang) * ring_radius, height, sin(ang) * ring_radius);
 					normals.push_back(p);
 					positions.push_back(p + center);
 				}
@@ -180,14 +180,14 @@ namespace flame
 
 			{
 				staging_indices[0].push_back(positions.size());
-				auto p = rotation * Vec3f(0.f, -radius, 0.f);
+				auto p = rotation * vec3(0.f, -radius, 0.f);
 				normals.push_back(p);
 				positions.push_back(p + center);
 			}
 
 			{
 				staging_indices[horiSubdiv].push_back(positions.size());
-				auto p = rotation * Vec3f(0.f, radius, 0.f);
+				auto p = rotation * vec3(0.f, radius, 0.f);
 				normals.push_back(p);
 				positions.push_back(p + center);
 			}
@@ -316,13 +316,13 @@ namespace flame
 					write_t(file, m->upper_bound);
 					auto n = m->positions.size();
 					write_u(file, n);
-					file.write((char*)m->positions.data(), sizeof(Vec3f) * n);
+					file.write((char*)m->positions.data(), sizeof(vec3) * n);
 					write_b(file, !m->uvs.empty());
 					if (!m->uvs.empty())
-						file.write((char*)m->uvs.data(), sizeof(Vec2f) * n);
+						file.write((char*)m->uvs.data(), sizeof(vec2) * n);
 					write_b(file, !m->normals.empty());
 					if (!m->normals.empty())
-						file.write((char*)m->normals.data(), sizeof(Vec3f) * n);
+						file.write((char*)m->normals.data(), sizeof(vec3) * n);
 					write_v(file, m->indices);
 					write_u(file, m->bones.size());
 					for (auto& b : m->bones)
@@ -392,18 +392,18 @@ namespace flame
 					n_mesh.append_attribute("material_index").set_value(m->material_index);
 					n_mesh.append_attribute("lower_bound").set_value(to_string(m->lower_bound).c_str());
 					n_mesh.append_attribute("upper_bound").set_value(to_string(m->upper_bound).c_str());
-					n_mesh.append_child("positions").append_attribute("data").set_value(base64::encode((char*)m->positions.data(), m->positions.size() * sizeof(Vec3f)).c_str());
+					n_mesh.append_child("positions").append_attribute("data").set_value(base64::encode((char*)m->positions.data(), m->positions.size() * sizeof(vec3)).c_str());
 					if (!m->uvs.empty())
-						n_mesh.append_child("uvs").append_attribute("data").set_value(base64::encode((char*)m->uvs.data(), m->uvs.size() * sizeof(Vec2f)).c_str());
+						n_mesh.append_child("uvs").append_attribute("data").set_value(base64::encode((char*)m->uvs.data(), m->uvs.size() * sizeof(vec2)).c_str());
 					if (!m->normals.empty())
-						n_mesh.append_child("normals").append_attribute("data").set_value(base64::encode((char*)m->normals.data(), m->normals.size() * sizeof(Vec3f)).c_str());
+						n_mesh.append_child("normals").append_attribute("data").set_value(base64::encode((char*)m->normals.data(), m->normals.size() * sizeof(vec3)).c_str());
 					n_mesh.append_child("indices").append_attribute("data").set_value(base64::encode((char*)m->indices.data(), m->indices.size() * sizeof(uint)).c_str());
 					auto n_bones = n_mesh.append_child("bones");
 					for (auto& b : m->bones)
 					{
 						auto n_bone = n_bones.append_child("bone");
 						n_bone.append_attribute("name").set_value(b->name.c_str());
-						n_bone.append_child("offset_matrix").append_attribute("data").set_value(base64::encode((char*)&b->offset_matrix, sizeof(Mat4f)).c_str());
+						n_bone.append_child("offset_matrix").append_attribute("data").set_value(base64::encode((char*)&b->offset_matrix, sizeof(mat4)).c_str());
 						n_bone.append_child("weights").append_attribute("data").set_value(base64::encode((char*)b->weights.data(), b->weights.size() * sizeof(BonePrivate::Weight)).c_str());
 					}
 				}
@@ -504,7 +504,7 @@ namespace flame
 					m->materials.emplace_back(new MaterialPrivate);
 					auto mesh = new MeshPrivate;
 					mesh->name = "0";
-					mesh->add_cube(Vec3f(1.f), Vec3f(0.f), Mat3f(1.f));
+					mesh->add_cube(vec3(1.f), vec3(0.f), mat3(1.f));
 					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
 
@@ -520,7 +520,7 @@ namespace flame
 					m->materials.emplace_back(new MaterialPrivate);
 					auto mesh = new MeshPrivate;
 					mesh->name = "0";
-					mesh->add_sphere(0.5f, 12, 12, Vec3f(0.f), Mat3f(1.f));
+					mesh->add_sphere(0.5f, 12, 12, vec3(0.f), mat3(1.f));
 					m->meshes.emplace_back(mesh);
 					m->root->mesh_index = 0;
 
@@ -585,16 +585,16 @@ namespace flame
 					read_t(file, m->upper_bound);
 					auto n = read_u(file);
 					m->positions.resize(n);
-					file.read((char*)m->positions.data(), sizeof(Vec3f) * n);
+					file.read((char*)m->positions.data(), sizeof(vec3) * n);
 					if (read_b(file))
 					{
 						m->uvs.resize(n);
-						file.read((char*)m->uvs.data(), sizeof(Vec2f) * n);
+						file.read((char*)m->uvs.data(), sizeof(vec2) * n);
 					}
 					if (read_b(file))
 					{
 						m->normals.resize(n);
-						file.read((char*)m->normals.data(), sizeof(Vec3f) * n);
+						file.read((char*)m->normals.data(), sizeof(vec3) * n);
 					}
 					read_v(file, m->indices);
 					m->bones.resize(read_u(file));
@@ -671,11 +671,11 @@ namespace flame
 					auto m = new MeshPrivate;
 					m->name = n_mesh.attribute("name").value();
 					m->material_index = n_mesh.attribute("material_index").as_uint();
-					m->lower_bound = sto<Vec3f>(n_mesh.attribute("lower_bound").value());
-					m->upper_bound = sto<Vec3f>(n_mesh.attribute("upper_bound").value());
+					m->lower_bound = sto<vec3>(n_mesh.attribute("lower_bound").value());
+					m->upper_bound = sto<vec3>(n_mesh.attribute("upper_bound").value());
 					{
 						auto res = base64::decode(std::string(n_mesh.child("positions").attribute("data").value()));
-						m->positions.resize(res.size() / sizeof(Vec3f));
+						m->positions.resize(res.size() / sizeof(vec3));
 						memcpy(m->positions.data(), res.data(), res.size());
 					}
 					{
@@ -683,7 +683,7 @@ namespace flame
 						if (n)
 						{
 							auto res = base64::decode(std::string(n.attribute("data").value()));
-							m->uvs.resize(res.size() / sizeof(Vec2f));
+							m->uvs.resize(res.size() / sizeof(vec2));
 							memcpy(m->uvs.data(), res.data(), res.size());
 						}
 					}
@@ -692,7 +692,7 @@ namespace flame
 						if (n)
 						{
 							auto res = base64::decode(std::string(n.attribute("data").value()));
-							m->normals.resize(res.size() / sizeof(Vec3f));
+							m->normals.resize(res.size() / sizeof(vec3));
 							memcpy(m->normals.data(), res.data(), res.size());
 						}
 					}
@@ -707,7 +707,7 @@ namespace flame
 						b->name = n_bone.attribute("name").value();
 						{
 							auto res = base64::decode(std::string(n_bone.child("offset_matrix").attribute("data").value()));
-							memcpy(&b->offset_matrix, res.data(), sizeof(Mat4f));
+							memcpy(&b->offset_matrix, res.data(), sizeof(mat4));
 						}
 						{
 							auto res = base64::decode(std::string(n_bone.child("weights").attribute("data").value()));
@@ -722,9 +722,9 @@ namespace flame
 				std::function<void(pugi::xml_node src, NodePrivate* dst)> load_node;
 				load_node = [&](pugi::xml_node src, NodePrivate* dst) {
 					dst->name = src.attribute("name").value();
-					dst->pos = sto<Vec3f>(src.attribute("pos").value());
-					dst->quat = sto<Vec4f>(src.attribute("quat").value());
-					dst->scale = sto<Vec3f>(src.attribute("scale").value());
+					dst->pos = sto<vec3>(src.attribute("pos").value());
+					dst->quat = sto<vec4>(src.attribute("quat").value());
+					dst->scale = sto<vec3>(src.attribute("scale").value());
 					dst->mesh_index = src.attribute("scale").as_int();
 					for (auto c : src.children())
 					{
@@ -836,7 +836,7 @@ namespace flame
 
 					dst->material_index = src->mMaterialIndex;
 
-					dst->add_vertices(src->mNumVertices, (Vec3f*)src->mVertices, (Vec3f*)src->mTextureCoords[0], (Vec3f*)src->mNormals);
+					dst->add_vertices(src->mNumVertices, (vec3*)src->mVertices, (vec3*)src->mTextureCoords[0], (vec3*)src->mNormals);
 
 					std::vector<uint> indices(src->mNumFaces * 3);
 					for (auto j = 0; j < src->mNumFaces; j++)
@@ -856,11 +856,11 @@ namespace flame
 						dst_b->name = src_b->mName.C_Str();
 						{
 							auto& m = src_b->mOffsetMatrix;
-							dst_b->offset_matrix = Mat4f(
-								Vec4f(m.a1, m.b1, m.c1, m.d1),
-								Vec4f(m.a2, m.b2, m.c2, m.d2),
-								Vec4f(m.a3, m.b3, m.c3, m.d3),
-								Vec4f(m.a4, m.b4, m.c4, m.d4)
+							dst_b->offset_matrix = mat4(
+								vec4(m.a1, m.b1, m.c1, m.d1),
+								vec4(m.a2, m.b2, m.c2, m.d2),
+								vec4(m.a3, m.b3, m.c3, m.d3),
+								vec4(m.a4, m.b4, m.c4, m.d4)
 							);
 						}
 						dst_b->weights.resize(src_b->mNumWeights);
@@ -908,9 +908,9 @@ namespace flame
 						ai_real a;
 						aiVector3D p;
 						src->mTransformation.Decompose(s, r, a, p);
-						dst->pos = Vec3f(p.x, p.y, p.z);
-						dst->quat = make_quat(a * RAD_ANG, Vec3f(r.x, r.y, r.z));
-						dst->scale = Vec3f(s.x, s.y, s.z);
+						dst->pos = vec3(p.x, p.y, p.z);
+						dst->quat = make_quat(degrees(a), vec3(r.x, r.y, r.z));
+						dst->scale = vec3(s.x, s.y, s.z);
 					}
 
 					if (src->mNumMeshes > 0)
@@ -966,7 +966,7 @@ namespace flame
 							auto& dst_k = dst_c->position_keys[k];
 							dst_k.t = src_k.mTime;
 							auto& p = src_k.mValue;
-							dst_k.v = Vec3f(p.x, p.y, p.z);
+							dst_k.v = vec3(p.x, p.y, p.z);
 						}
 						dst_c->rotation_keys.resize(src_c->mNumRotationKeys);
 						for (auto k = 0; k < src_c->mNumRotationKeys; k++)
@@ -975,7 +975,7 @@ namespace flame
 							auto& dst_k = dst_c->rotation_keys[k];
 							dst_k.t = src_k.mTime;
 							auto& q = src_k.mValue;
-							dst_k.v = Vec4f(q.x, q.y, q.z, q.w);
+							dst_k.v = vec4(q.x, q.y, q.z, q.w);
 						}
 					}
 				}

@@ -17,7 +17,7 @@ namespace flame
 	{
 		float radius = 0.f;
 		float height = 0.f;
-		Vec3f disp = Vec3f(0.f);
+		vec3 disp = vec3(0.f);
 
 		physics::Controller* phy_controller = nullptr;
 
@@ -28,7 +28,7 @@ namespace flame
 		void set_radius(float r) override;
 		float get_height() const override { return height; }
 		void set_height(float h) override;
-		void move(const Vec3f& _disp) override { disp = _disp; }
+		void move(const vec3& _disp) override { disp = _disp; }
 
 		void on_gain_physics_world();
 		void on_lost_physics_world();

@@ -34,7 +34,7 @@ namespace flame
 			return new FontPrivate(filename);
 		}
 
-		const auto font_atlas_size = Vec2u(1024);
+		const auto font_atlas_size = uvec2(1024);
 
 		FontAtlasPrivate::FontAtlasPrivate(DevicePrivate* device, std::span<FontPrivate*> _fonts) :
 			device(device)
@@ -48,7 +48,7 @@ namespace flame
 			ImmediateCommandBuffer icb(device);
 			auto cb = icb.cb.get();
 			cb->image_barrier(image.get(), {}, ImageLayoutUndefined, ImageLayoutTransferDst);
-			cb->clear_color_image(image.get(), Vec4c(0, 0, 0, 255));
+			cb->clear_color_image(image.get(), cvec4(0, 0, 0, 255));
 			cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 			ImageSwizzle swz;
 			swz.r = SwizzleOne;
@@ -89,8 +89,8 @@ namespace flame
 					ascent *= scale;
 					stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
 					adv *= scale;
-					g->size = Vec2u(w, h);
-					g->off = Vec2u(x, ascent + h + y);
+					g->size = uvec2(w, h);
+					g->off = uvec2(x, ascent + h + y);
 					g->advance = adv;
 					if (bitmap)
 					{
@@ -99,7 +99,7 @@ namespace flame
 						{
 							auto& atlas_pos = n->pos;
 
-							ImmediateStagingBuffer stag(device, image_pitch(g->size.x()) * g->size.y(), bitmap);
+							ImmediateStagingBuffer stag(device, image_pitch(g->size.x) * g->size.y, bitmap);
 							ImmediateCommandBuffer icb(device);
 							auto cb = icb.cb.get();
 							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
@@ -109,8 +109,8 @@ namespace flame
 							cb->copy_buffer_to_image(stag.buf.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
-							g->uv = Vec4f(Vec2f(atlas_pos.x(), atlas_pos.y() + g->size.y()) / image->sizes[0],
-								Vec2f(atlas_pos.x() + g->size.x(), atlas_pos.y()) / image->sizes[0]);
+							g->uv = vec4(vec2(atlas_pos.x, atlas_pos.y + g->size.y) / image->sizes[0],
+								vec2(atlas_pos.x + g->size.x, atlas_pos.y) / image->sizes[0]);
 						}
 						else
 							printf("font atlas is full\n");

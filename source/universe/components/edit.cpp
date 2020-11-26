@@ -32,7 +32,7 @@ namespace flame
 			show_cursor = !show_cursor;
 	}
 
-	int cEditPrivate::locate_cursor(const Vec2f& mpos)
+	int cEditPrivate::locate_cursor(const vec2& mpos)
 	{
 		const auto& str = text->text;
 		auto atlas = text->atlas;
@@ -41,7 +41,7 @@ namespace flame
 		element->update_transform();
 		auto& pos = element->global_points[4];
 		auto& axes = element->global_axes;
-		auto p = Vec2f(0.f);
+		auto p = vec2(0.f);
 
 		auto i = 0;
 		for (; i < str.size(); i++)
@@ -49,8 +49,8 @@ namespace flame
 			auto ch = str[i];
 			if (ch == '\n')
 			{
-				p.y() += font_size;
-				p.x() = 0.f;
+				p.y += font_size;
+				p.x = 0.f;
 			}
 			else if (ch != '\r')
 			{
@@ -60,16 +60,16 @@ namespace flame
 				auto g = atlas->get_glyph(ch, font_size);
 				auto adv = g->get_advance();
 
-				Vec2f ps[] = { 
+				vec2 ps[] = { 
 					pos + axes * p,
-					pos + axes * (p + Vec2f(adv, 0.f)),
-					pos + axes * (p + Vec2f(adv, font_size)),
-					pos + axes * (p + Vec2f(0.f, font_size))
+					pos + axes * (p + vec2(adv, 0.f)),
+					pos + axes * (p + vec2(adv, font_size)),
+					pos + axes * (p + vec2(0.f, font_size))
 				};
 				if (convex_contains<float>(mpos, ps))
 					return i;
 
-				p.x() += adv;
+				p.x += adv;
 			}
 		}
 		return i;
@@ -286,16 +286,16 @@ namespace flame
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
 
-		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cEditPrivate>();
-			thiz->select_start = thiz->select_end = thiz->locate_cursor((Vec2f)pos);
+			thiz->select_start = thiz->select_end = thiz->locate_cursor((vec2)pos);
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
-		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cEditPrivate>();
 			if (thiz->event_receiver->dispatcher->active == thiz->event_receiver)
 			{
-				thiz->select_end = thiz->locate_cursor((Vec2f)pos);
+				thiz->select_end = thiz->locate_cursor((vec2)pos);
 				thiz->flash_cursor(2);
 			}
 		}, Capture().set_thiz(this));
@@ -398,28 +398,28 @@ namespace flame
 				low = right + 1;
 
 				auto sb = str.c_str() + left, se = str.c_str() + right;
-				auto p1 = Vec2f(atlas->text_offset(font_size, str.c_str(), sb));
-				auto p2 = Vec2f(atlas->text_offset(font_size, str.c_str(), se));
+				auto p1 = vec2(atlas->text_offset(font_size, str.c_str(), sb));
+				auto p2 = vec2(atlas->text_offset(font_size, str.c_str(), se));
 				if (right < high && str[right] == '\n')
-					p2.x() += 4.f;
+					p2.x += 4.f;
 				canvas->begin_path();
 				canvas->move_to(pos + axes * p1);
 				canvas->line_to(pos + axes * p2);
-				canvas->line_to(pos + axes * (p2 + Vec2f(0.f, font_size)));
-				canvas->line_to(pos + axes * (p1 + Vec2f(0.f, font_size)));
-				canvas->fill(Vec4c(128, 128, 255, 255));
-				canvas->draw_text(res_id, sb, se, font_size, Vec4c(255), pos + p1, axes);
+				canvas->line_to(pos + axes * (p2 + vec2(0.f, font_size)));
+				canvas->line_to(pos + axes * (p1 + vec2(0.f, font_size)));
+				canvas->fill(cvec4(128, 128, 255, 255));
+				canvas->draw_text(res_id, sb, se, font_size, cvec4(255), pos + p1, axes);
 			}
 		}
 
 		if (show_cursor)
 		{
-			auto off = (Vec2f)atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end);
-			off.x() += 0.5f;
+			auto off = (vec2)atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end);
+			off.x += 0.5f;
 			canvas->begin_path();
 			canvas->move_to(pos + axes * off);
-			canvas->line_to(pos + axes * (off + Vec2f(0.f, font_size)));
-			canvas->stroke(Vec4c(0, 0, 0, 255), 1.f);
+			canvas->line_to(pos + axes * (off + vec2(0.f, font_size)));
+			canvas->stroke(cvec4(0, 0, 0, 255), 1.f);
 		}
 	}
 

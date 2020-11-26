@@ -78,7 +78,7 @@ namespace flame
 			chk_res(vkBeginCommandBuffer(vk_command_buffer, &info));
 		}
 
-		void CommandBufferPrivate::begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const Vec4f* clearvalues)
+		void CommandBufferPrivate::begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* clearvalues)
 		{
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -89,8 +89,8 @@ namespace flame
 			info.renderArea.offset.y = 0;
 			auto first_view = fb->views[0];
 			auto size = first_view->image->sizes[first_view->subresource.base_level];
-			info.renderArea.extent.width = size.x();
-			info.renderArea.extent.height = size.y();
+			info.renderArea.extent.width = size.x;
+			info.renderArea.extent.height = size.y;
 			info.clearValueCount = clearvalues ? fb->views.size() : 0;
 			info.pClearValues = (VkClearValue*)clearvalues;
 
@@ -102,25 +102,25 @@ namespace flame
 			vkCmdEndRenderPass(vk_command_buffer);
 		}
 
-		void CommandBufferPrivate::set_viewport(const Vec4f& rect)
+		void CommandBufferPrivate::set_viewport(const vec4& rect)
 		{
 			VkViewport vp;
 			vp.minDepth = 0.f;
 			vp.maxDepth = 1.f;
-			vp.x = rect.x();
-			vp.y = rect.y();
-			vp.width = max(rect.z() - rect.x(), 1.f);
-			vp.height = max(rect.w() - rect.y(), 1.f);
+			vp.x = rect.x;
+			vp.y = rect.y;
+			vp.width = max(rect.z - rect.x, 1.f);
+			vp.height = max(rect.w - rect.y, 1.f);
 			vkCmdSetViewport(vk_command_buffer, 0, 1, &vp);
 		}
 
-		void CommandBufferPrivate::set_scissor(const Vec4f& rect)
+		void CommandBufferPrivate::set_scissor(const vec4& rect)
 		{
 			VkRect2D sc;
-			sc.offset.x = max(0.f, rect.x());
-			sc.offset.y = max(0.f, rect.y());
-			sc.extent.width = max(0.f, rect.z() - rect.x());
-			sc.extent.height = max(0.f, rect.w() - rect.y());
+			sc.offset.x = max(0.f, rect.x);
+			sc.offset.y = max(0.f, rect.y);
+			sc.extent.width = max(0.f, rect.z - rect.x);
+			sc.extent.height = max(0.f, rect.w - rect.y);
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
 		}
 
@@ -175,9 +175,9 @@ namespace flame
 			vkCmdDrawIndexedIndirect(vk_command_buffer, b->vk_buffer, offset * sizeof(VkDrawIndexedIndirectCommand), count, sizeof(VkDrawIndexedIndirectCommand));
 		}
 
-		void CommandBufferPrivate::dispatch(const Vec3u& v)
+		void CommandBufferPrivate::dispatch(const uvec3& v)
 		{
-			vkCmdDispatch(vk_command_buffer, v.x(), v.y(), v.z());
+			vkCmdDispatch(vk_command_buffer, v.x, v.y, v.z);
 		}
 
 		void CommandBufferPrivate::buffer_barrier(BufferPrivate* b, AccessFlags src_access, AccessFlags dst_access)
@@ -299,18 +299,18 @@ namespace flame
 				vk_copies[i].srcSubresource.mipLevel = 0;
 				vk_copies[i].srcSubresource.baseArrayLayer = 0;
 				vk_copies[i].srcSubresource.layerCount = 1;
-				vk_copies[i].srcOffset.x = copies[i].src_off.x();
-				vk_copies[i].srcOffset.y = copies[i].src_off.y();
+				vk_copies[i].srcOffset.x = copies[i].src_off.x;
+				vk_copies[i].srcOffset.y = copies[i].src_off.y;
 				vk_copies[i].srcOffset.z = 0;
 				vk_copies[i].dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 				vk_copies[i].dstSubresource.mipLevel = 0;
 				vk_copies[i].dstSubresource.baseArrayLayer = 0;
 				vk_copies[i].dstSubresource.layerCount = 1;
-				vk_copies[i].dstOffset.x = copies[i].dst_off.x();
-				vk_copies[i].dstOffset.y = copies[i].dst_off.y();
+				vk_copies[i].dstOffset.x = copies[i].dst_off.x;
+				vk_copies[i].dstOffset.y = copies[i].dst_off.y;
 				vk_copies[i].dstOffset.z = 0;
-				vk_copies[i].extent.width = copies[i].size.x();
-				vk_copies[i].extent.height = copies[i].size.y();
+				vk_copies[i].extent.width = copies[i].size.x;
+				vk_copies[i].extent.height = copies[i].size.y;
 				vk_copies[i].extent.depth = 1;
 			}
 			vkCmdCopyImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_image,
@@ -321,10 +321,10 @@ namespace flame
 		{
 			VkBufferImageCopy vk_cpy = {};
 			vk_cpy.bufferOffset = cpy.buffer_offset;
-			vk_cpy.imageOffset.x = cpy.image_offset.x();
-			vk_cpy.imageOffset.y = cpy.image_offset.y();
-			vk_cpy.imageExtent.width = cpy.image_extent.x();
-			vk_cpy.imageExtent.height = cpy.image_extent.y();
+			vk_cpy.imageOffset.x = cpy.image_offset.x;
+			vk_cpy.imageOffset.y = cpy.image_offset.y;
+			vk_cpy.imageExtent.width = cpy.image_extent.x;
+			vk_cpy.imageExtent.height = cpy.image_extent.y;
 			vk_cpy.imageExtent.depth = 1;
 			vk_cpy.imageSubresource.aspectMask = aspect;
 			vk_cpy.imageSubresource.mipLevel = cpy.image_level;
@@ -354,13 +354,13 @@ namespace flame
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
-		void CommandBufferPrivate::clear_color_image(ImagePrivate* i, const Vec4c& color)
+		void CommandBufferPrivate::clear_color_image(ImagePrivate* i, const cvec4& color)
 		{
 			VkClearColorValue cv;
-			cv.float32[0] = color.x() / 255.f;
-			cv.float32[1] = color.y() / 255.f;
-			cv.float32[2] = color.z() / 255.f;
-			cv.float32[3] = color.w() / 255.f;
+			cv.float32[0] = color.x / 255.f;
+			cv.float32[1] = color.y / 255.f;
+			cv.float32[2] = color.z / 255.f;
+			cv.float32[3] = color.w / 255.f;
 			VkImageSubresourceRange range;
 			range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 			range.baseMipLevel = 0;

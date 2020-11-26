@@ -53,7 +53,7 @@ struct App
 			canvas->move_to(150.f, 20.f);
 			canvas->line_to(120.f, 70.f);
 			canvas->line_to(190.f, 80.f);
-			canvas->fill(Vec4c(255), true);
+			canvas->fill(cvec4(255), true);
 
 			auto y = 50.f;
 			for (auto i = 0; i < 20; i++)
@@ -63,11 +63,11 @@ struct App
 				canvas->line_to(50.f, y);
 				canvas->line_to(60.f, y - 20.f);
 				canvas->line_to(70.f, y + 20.f);
-				canvas->stroke(Vec4c(255), (i + 1) * 0.5f, true);
+				canvas->stroke(cvec4(255), (i + 1) * 0.5f, true);
 				y += 45.f;
 			}
 
-			//canvas->draw_text(0, L"Hello World  ", 14, Vec2f(5, 0), Vec4c(162, 21, 21, 255));
+			//canvas->draw_text(0, L"Hello World  ", 14, vec2(5, 0), cvec4(162, 21, 21, 255));
 
 			canvas->record(cb, img_idx);
 
@@ -89,13 +89,13 @@ int main(int argc, char** args)
 	std::filesystem::path engine_path = getenv("FLAME_PATH");
 	set_engine_path(engine_path.c_str());
 
-	app.w = Window::create("Graphics Test", Vec2u(1280, 960), WindowFrame | WindowResizable);
+	app.w = Window::create("Graphics Test", uvec2(1280, 960), WindowFrame | WindowResizable);
 	app.d = Device::create(true);
 	app.render_finished = Semaphore::create(app.d);
 	app.sc = Swapchain::create(app.d, app.w);
 	app.fence = Fence::create(app.d);
 	app.canvas = Canvas::create(app.d);
-	app.canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	app.canvas->set_clear_color(cvec4(100, 100, 100, 255));
 	{
 		Font* fonts[] = {
 			Font::create(L"c:/windows/fonts/consola.ttf"),
@@ -105,7 +105,7 @@ int main(int argc, char** args)
 	}
 	app.canvas->set_resource(-1, app.font_atlas->get_view(), app.d->get_sampler(FilterNearest), "", nullptr, app.font_atlas);
 	app.on_resize();
-	app.w->add_resize_listener([](Capture&, const Vec2u&) {
+	app.w->add_resize_listener([](Capture&, const uvec2&) {
 		app.on_resize();
 	}, Capture());
 

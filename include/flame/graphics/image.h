@@ -56,7 +56,7 @@ namespace flame
 			virtual void release() = 0;
 
 			virtual Format get_format() const = 0;
-			virtual Vec2u get_size(uint lv = 0) const = 0;
+			virtual uvec2 get_size(uint lv = 0) const = 0;
 			virtual uint get_level() const = 0;
 			virtual uint get_layer() const = 0;
 			virtual SampleCount get_sample_count() const = 0;
@@ -68,7 +68,7 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const Vec2u& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
 
@@ -98,9 +98,9 @@ namespace flame
 		{
 			virtual uint get_index() const = 0;
 			virtual const char* get_name() const = 0;
-			virtual Vec2i get_pos() const = 0;
-			virtual Vec2i get_size() const = 0;
-			virtual Vec4f get_uv() const = 0;
+			virtual ivec2 get_pos() const = 0;
+			virtual ivec2 get_size() const = 0;
+			virtual vec4 get_uv() const = 0;
 		};
 
 		struct ImageAtlas

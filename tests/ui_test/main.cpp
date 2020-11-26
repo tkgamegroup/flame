@@ -30,7 +30,7 @@ void MyApp::create_widgets()
 //						auto& ui = main_window->ui;
 //						main_window->root->remove_children(0, -1);
 //						ui.style_set_to_dark();
-//						main_window->canvas->clear_color = Vec4f(ui.style(BackgroundColor).c) / 255.f;
+//						main_window->canvas->clear_color = vec4(ui.style(BackgroundColor).c) / 255.f;
 //						g_app.create_widgets();
 //					}, Capture());
 //				}, Capture());
@@ -39,7 +39,7 @@ void MyApp::create_widgets()
 //						auto& ui = main_window->ui;
 //						main_window->root->remove_children(0, -1);
 //						ui.style_set_to_light();
-//						main_window->canvas->clear_color = Vec4f(ui.style(BackgroundColor).c) / 255.f;
+//						main_window->canvas->clear_color = vec4(ui.style(BackgroundColor).c) / 255.f;
 //						g_app.create_widgets();
 //					}, Capture());
 //				}, Capture());
@@ -47,7 +47,7 @@ void MyApp::create_widgets()
 //			ui.e_begin_menubar_menu(L"Window");
 //				ui.e_menu_item(L"Reflector", [](Capture& c) {
 //					auto& ui = main_window->ui;
-//					ui.next_element_pos = Vec2f(100.f);
+//					ui.next_element_pos = vec2(100.f);
 //					create_ui_reflector(ui);
 //				}, Capture());
 //			ui.e_end_menubar_menu();
@@ -55,7 +55,7 @@ void MyApp::create_widgets()
 //
 //		ui.e_begin_layout();
 //		ui.c_aligner(AlignMinMax, AlignMinMax);
-//			ui.next_element_pos = Vec2f(16.f, 10.f);
+//			ui.next_element_pos = vec2(16.f, 10.f);
 //			ui.e_begin_layout(LayoutVertical, 16.f);
 //				ui.e_text(L"Text");
 //				ui.e_button(L"Click Me!", [](Capture& c) {
@@ -74,9 +74,9 @@ void MyApp::create_widgets()
 //				ui.e_edit(100.f);
 //			ui.e_end_layout();
 //
-//			ui.next_element_pos = Vec2f(416.f, 10.f);
+//			ui.next_element_pos = vec2(416.f, 10.f);
 //			ui.e_begin_layout(LayoutVertical, 16.f);
-//			ui.next_element_size = Vec2f(200.f, 100.f);
+//			ui.next_element_size = vec2(200.f, 100.f);
 //			ui.next_element_padding = 4.f;
 //			ui.next_element_frame_thickness = 2.f;
 //			ui.next_element_frame_color = ui.style(ForegroundColor).c;
@@ -109,8 +109,8 @@ void MyApp::create_widgets()
 //
 //	ui.e_end_layout();
 //
-//	ui.next_element_pos = Vec2f(416.f, 300.f);
-//	ui.next_element_size = Vec2f(200.f, 200.f);
+//	ui.next_element_pos = vec2(416.f, 300.f);
+//	ui.next_element_size = vec2(200.f, 200.f);
 //	ui.e_begin_docker_floating_container();
 //		ui.e_begin_docker();
 //			ui.e_begin_docker_page(L"ResourceExplorer").second->get_component(cElement)->color = ui.style(FrameColorNormal).c;
@@ -119,8 +119,8 @@ void MyApp::create_widgets()
 //		ui.e_end_docker();
 //	ui.e_end_docker_floating_container();
 //
-//	ui.next_element_pos = Vec2f(640.f, 300.f);
-//	ui.next_element_size = Vec2f(200.f, 200.f);
+//	ui.next_element_pos = vec2(640.f, 300.f);
+//	ui.next_element_size = vec2(200.f, 200.f);
 //	ui.e_begin_docker_floating_container();
 //		ui.e_begin_docker_layout(LayoutHorizontal);
 //			ui.e_begin_docker();
@@ -185,9 +185,9 @@ void MyApp::create_widgets()
 }
 
 MainForm::MainForm() :
-	GraphicsWindow(&g_app, true, true, "UI Test", Vec2u(1280, 720), WindowFrame | WindowResizable)
+	GraphicsWindow(&g_app, true, true, "UI Test", uvec2(1280, 720), WindowFrame | WindowResizable)
 {
-	canvas->set_clear_color(Vec4c(100, 100, 100, 255));
+	canvas->set_clear_color(cvec4(100, 100, 100, 255));
 	//canvas->set_resource(-1, Image::create_from_file(g_app.graphics_device, (g_app.engine_path / L"assets/9.png").c_str())->default_view());
 
 	g_app.create_widgets();

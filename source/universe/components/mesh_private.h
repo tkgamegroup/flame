@@ -24,8 +24,8 @@ namespace flame
 	{
 		struct FramePose
 		{
-			Vec3f p;
-			Vec4f q;
+			vec3 p;
+			vec4 q;
 		};
 
 		struct Bone

@@ -21,8 +21,8 @@ namespace flame
 		virtual uint get_size() const = 0;
 		virtual void set_size(uint s) = 0;
 
-		virtual Vec4c get_color() const = 0;
-		virtual void set_color(const Vec4c& col) = 0;
+		virtual cvec4 get_color() const = 0;
+		virtual void set_color(const cvec4& col) = 0;
 
 		virtual bool get_auto_width() const = 0;
 		virtual void set_auto_width(bool a) = 0;

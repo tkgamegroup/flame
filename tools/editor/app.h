@@ -26,8 +26,8 @@ struct _2DEditor
 	cText* scale_text;
 
 	bool selecting;
-	Vec2f select_begin;
-	Vec2f select_end;
+	vec2 select_begin;
+	vec2 select_end;
 
 	_2DEditor() :
 		element(nullptr),
@@ -41,7 +41,7 @@ struct _2DEditor
 	{
 	}
 
-	void create(UI& ui, void(*select_callback)(Capture& c, const Vec4f& r), const Capture& _capture)
+	void create(UI& ui, void(*select_callback)(Capture& c, const vec4& r), const Capture& _capture)
 	{
 		ui.e_begin_layout();
 		ui.c_aligner(AlignMinMax, AlignMinMax);
@@ -57,21 +57,21 @@ struct _2DEditor
 				const auto grid_size = 50.f * edt.base->global_scale;
 				auto pos = edt.base->global_pos;
 				auto size = edt.element->global_size + grid_size * 2.f;
-				auto grid_number = Vec2i(size / grid_size) + 2;
+				auto grid_number = ivec2(size / grid_size) + 2;
 				auto grid_offset = edt.element->global_pos + (fract(pos / grid_size) - 1.f) * grid_size;
-				for (auto x = 0; x < grid_number.x(); x++)
+				for (auto x = 0; x < grid_number.x; x++)
 				{
-					std::vector<Vec2f> points;
-					points.push_back(grid_offset + Vec2f(x * grid_size, 0.f));
-					points.push_back(grid_offset + Vec2f(x * grid_size, size.y()));
-					canvas->stroke(points.size(), points.data(), Vec4c(200, 200, 200, 255), 1.f);
+					std::vector<vec2> points;
+					points.push_back(grid_offset + vec2(x * grid_size, 0.f));
+					points.push_back(grid_offset + vec2(x * grid_size, size.y));
+					canvas->stroke(points.size(), points.data(), cvec4(200, 200, 200, 255), 1.f);
 				}
-				for (auto y = 0; y < grid_number.y(); y++)
+				for (auto y = 0; y < grid_number.y; y++)
 				{
-					std::vector<Vec2f> points;
-					points.push_back(grid_offset + Vec2f(0.f, y * grid_size));
-					points.push_back(grid_offset + Vec2f(size.x(), y * grid_size));
-					canvas->stroke(points.size(), points.data(), Vec4c(200, 200, 200, 255), 1.f);
+					std::vector<vec2> points;
+					points.push_back(grid_offset + vec2(0.f, y * grid_size));
+					points.push_back(grid_offset + vec2(size.x, y * grid_size));
+					canvas->stroke(points.size(), points.data(), cvec4(200, 200, 200, 255), 1.f);
 				}
 			}
 
@@ -81,17 +81,17 @@ struct _2DEditor
 		event_receiver->focus_type = FocusByLeftOrRightButton;
 		struct Capturing
 		{
-			void(*f)(Capture&, const Vec4f&);
+			void(*f)(Capture&, const vec4&);
 		}capture;
 		capture.f = select_callback;
-		event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const Vec2i& pos) {
+		event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			auto& capture = c.data<Capturing>();
 			auto& edt = *c.thiz<_2DEditor>();
 			auto dp = c.current<cEventReceiver>()->dispatcher;
-			auto mp = Vec2f(dp->mouse_pos);
+			auto mp = vec2(dp->mouse_pos);
 			if (is_mouse_scroll(action, key))
 			{
-				auto v = pos.x() > 0.f ? 1 : -1;
+				auto v = pos.x > 0.f ? 1 : -1;
 				edt.scale_level += v;
 				if (edt.scale_level < 1 || edt.scale_level > edt.scale_level_max)
 					edt.scale_level -= v;
@@ -106,10 +106,10 @@ struct _2DEditor
 			else if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
 				edt.selecting = true;
-				edt.select_begin = (Vec2f(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
+				edt.select_begin = (vec2(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
 				edt.select_end = edt.select_begin;
 				edt.element->mark_dirty();
-				capture.f(c.release<Capturing>(), Vec4f(0.f));
+				capture.f(c.release<Capturing>(), vec4(0.f));
 			}
 			else if (is_mouse_down(action, key, true) && key == Mouse_Right)
 				edt.moved = false;
@@ -123,7 +123,7 @@ struct _2DEditor
 
 				if (dp->mouse_buttons[Mouse_Right] & KeyStateDown)
 				{
-					edt.base->add_pos(Vec2f(pos));
+					edt.base->add_pos(vec2(pos));
 					edt.moved = true;
 				}
 			}
@@ -157,14 +157,14 @@ struct _2DEditor
 
 			if (edt.selecting)
 			{
-				std::vector<Vec2f> points;
+				std::vector<vec2> points;
 				auto p0 = edt.base->global_pos;
 				auto s = edt.scale_level * 0.1f;
 				auto p1 = edt.select_begin * s + p0;
 				auto p2 = edt.select_end * s + p0;
 				path_rect(points, p1, p2 - p1);
 				points.push_back(points[0]);
-				canvas->stroke(points.size(), points.data(), Vec4c(17, 193, 101, 255), 2.f);
+				canvas->stroke(points.size(), points.data(), cvec4(17, 193, 101, 255), 2.f);
 			}
 
 			return true;

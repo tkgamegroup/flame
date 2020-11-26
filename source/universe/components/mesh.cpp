@@ -165,8 +165,8 @@ namespace flame
 						for (auto j = 0; j < animation_max_frame; j++)
 						{
 							auto& f = b.frames[j];
-							f.p = j < pkc ? pk[j].v : Vec3f(0.f);
-							f.q = j < rkc ? rk[j].v : Vec4f(0.f, 0.f, 0.f, 1.f);
+							f.p = j < pkc ? pk[j].v : vec3(0.f);
+							f.q = j < rkc ? rk[j].v : vec4(0.f, 0.f, 0.f, 1.f);
 						}
 					}
 				}

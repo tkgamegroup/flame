@@ -31,8 +31,8 @@ namespace flame
 		{
 			element->update_transform();
 			auto pos = element->global_points[(type == MenuTop || type == MenuButton) ? 3 : 1];
-			items_element->set_x(pos.x());
-			items_element->set_y(pos.y());
+			items_element->set_x(pos.x);
+			items_element->set_y(pos.y);
 		}
 		entity->remove_child(items, false);
 		items->set_visible(true);
@@ -41,7 +41,7 @@ namespace flame
 		if (type != MenuSub)
 		{
 			root_mouse_listener = root_event_receiver
-				->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+				->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<cMenuPrivate>();
 				if (thiz->frame >= looper().get_frame())
 					return;
@@ -87,7 +87,7 @@ namespace flame
 
 	void cMenuPrivate::on_gain_event_receiver()
 	{
-		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const Vec2i& pos) {
+		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
 			if (thiz->type == MenuTop)
 			{
@@ -100,7 +100,7 @@ namespace flame
 					thiz->open();
 			}
 		}, Capture().set_thiz(this));
-		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const Vec2i& disp, const Vec2i& pos) {
+		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
 			if (thiz->root && !thiz->opened && thiz->items && curr_menu)
 				thiz->open();
