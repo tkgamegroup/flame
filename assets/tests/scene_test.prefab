@@ -9,7 +9,7 @@
       <cNode />
       <entity >
         <cNode />
-        <cSky texture_name="D:\sky\PurplyBlueSky_low.png" />
+        <cSky box_texture="D:\sky\PurplyBlueSky_low.png" />
       </entity>
       <entity src="cube">
         <cNode pos="0,200,0" />

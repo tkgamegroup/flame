@@ -928,7 +928,7 @@ void MyApp::process_gameover()
 
 void MyApp::join_room(const char* ip)
 {
-	g_app.client = Client::create(SocketNormal, ip, 2434,
+	g_app.client = Client::create(SocketTcp, ip, 2434,
 	[](Capture&, const char* msg, uint size) {
 		auto req = nlohmann::json::parse(std::string(msg, size));
 		auto action = req["action"].get<std::string>();
@@ -1177,7 +1177,7 @@ void MyApp::create_lan_scene()
 						me.id = (void*)0xffff;
 						me.name = g_app.my_name;
 					}
-					g_app.server = Server::create(SocketNormal, 2434,
+					g_app.server = Server::create(SocketTcp, 2434,
 					[](Capture&, void* id, const char* msg, uint size) {
 						auto req = nlohmann::json::parse(std::string(msg, size));
 						if (req["action"] == "get_room")

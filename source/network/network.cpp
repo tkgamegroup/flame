@@ -4,11 +4,15 @@
 
 #include <winsock2.h>
 
+#ifdef USE_SHA1
+#include <sha1.hpp>
+#endif
+
 namespace flame
 {
 	namespace network
 	{
-		bool _shakehank(SocketType type, int fd)
+		static bool shakehank(SocketType type, int fd)
 		{
 			if (type == SocketWeb)
 			{
@@ -51,7 +55,23 @@ namespace flame
 						std::string key = res[1];
 						SHA1 sha1;
 						sha1.update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-						key = base64_encode(sha1.final_bin());
+						auto str1 = sha1.final();
+						auto str2 = std::string();
+						str2.resize(sizeof(uint) * (str1.size() / 8));
+						{
+							auto dst = str2.data();
+							for (auto i = 0; i < str2.size(); i++)
+							{
+								uint v;
+								std::stringstream ss;
+								ss << std::hex << str2.substr(i * 8, 8);
+								ss >> v;
+								for (auto j = 0; j < 4; j++)
+									dst[j] = ((char*)(&v))[4 - j - 1];
+								dst += 4;
+							}
+						}
+						key = base64::encode(str2.data(), str2.size());
 
 						char reply[1024 * 16], time_str[128];
 						auto time = std::time(nullptr);
@@ -556,7 +576,7 @@ namespace flame
 				if (fd == INVALID_SOCKET)
 					return nullptr;
 
-				if (!_shakehank(type, fd))
+				if (!shakehank(type, fd))
 					continue;
 
 				fd_cs.push_back(fd);

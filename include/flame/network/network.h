@@ -16,7 +16,7 @@ namespace flame
 
 		enum SocketType
 		{
-			SocketNormal,
+			SocketTcp,
 			SocketWeb
 		};
 

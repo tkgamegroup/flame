@@ -392,19 +392,19 @@ namespace flame
 					n_mesh.append_attribute("material_index").set_value(m->material_index);
 					n_mesh.append_attribute("lower_bound").set_value(to_string(m->lower_bound).c_str());
 					n_mesh.append_attribute("upper_bound").set_value(to_string(m->upper_bound).c_str());
-					n_mesh.append_child("positions").append_attribute("data").set_value(base64_encode(std::string((char*)m->positions.data(), m->positions.size() * sizeof(Vec3f))).c_str());
+					n_mesh.append_child("positions").append_attribute("data").set_value(base64::encode((char*)m->positions.data(), m->positions.size() * sizeof(Vec3f)).c_str());
 					if (!m->uvs.empty())
-						n_mesh.append_child("uvs").append_attribute("data").set_value(base64_encode(std::string((char*)m->uvs.data(), m->uvs.size() * sizeof(Vec2f))).c_str());
+						n_mesh.append_child("uvs").append_attribute("data").set_value(base64::encode((char*)m->uvs.data(), m->uvs.size() * sizeof(Vec2f)).c_str());
 					if (!m->normals.empty())
-						n_mesh.append_child("normals").append_attribute("data").set_value(base64_encode(std::string((char*)m->normals.data(), m->normals.size() * sizeof(Vec3f))).c_str());
-					n_mesh.append_child("indices").append_attribute("data").set_value(base64_encode(std::string((char*)m->indices.data(), m->indices.size() * sizeof(uint))).c_str());
+						n_mesh.append_child("normals").append_attribute("data").set_value(base64::encode((char*)m->normals.data(), m->normals.size() * sizeof(Vec3f)).c_str());
+					n_mesh.append_child("indices").append_attribute("data").set_value(base64::encode((char*)m->indices.data(), m->indices.size() * sizeof(uint)).c_str());
 					auto n_bones = n_mesh.append_child("bones");
 					for (auto& b : m->bones)
 					{
 						auto n_bone = n_bones.append_child("bone");
 						n_bone.append_attribute("name").set_value(b->name.c_str());
-						n_bone.append_child("offset_matrix").append_attribute("data").set_value(base64_encode(std::string((char*)&b->offset_matrix, sizeof(Mat4f))).c_str());
-						n_bone.append_child("weights").append_attribute("data").set_value(base64_encode(std::string((char*)b->weights.data(), b->weights.size() * sizeof(BonePrivate::Weight))).c_str());
+						n_bone.append_child("offset_matrix").append_attribute("data").set_value(base64::encode((char*)&b->offset_matrix, sizeof(Mat4f)).c_str());
+						n_bone.append_child("weights").append_attribute("data").set_value(base64::encode((char*)b->weights.data(), b->weights.size() * sizeof(BonePrivate::Weight)).c_str());
 					}
 				}
 
@@ -434,8 +434,8 @@ namespace flame
 					{
 						auto n_channel = n_channels.append_child("channel");
 						n_channel.append_attribute("node_name").set_value(c->node_name.c_str());
-						n_channel.append_child("position_keys").append_attribute("data").set_value(base64_encode(std::string((char*)c->position_keys.data(), c->position_keys.size() * sizeof(PositionKey))).c_str());
-						n_channel.append_child("rotation_keys").append_attribute("data").set_value(base64_encode(std::string((char*)c->rotation_keys.data(), c->rotation_keys.size() * sizeof(RotationKey))).c_str());
+						n_channel.append_child("position_keys").append_attribute("data").set_value(base64::encode(std::string((char*)c->position_keys.data(), c->position_keys.size() * sizeof(PositionKey))).c_str());
+						n_channel.append_child("rotation_keys").append_attribute("data").set_value(base64::encode(std::string((char*)c->rotation_keys.data(), c->rotation_keys.size() * sizeof(RotationKey))).c_str());
 					}
 				}
 
@@ -674,45 +674,45 @@ namespace flame
 					m->lower_bound = sto<Vec3f>(n_mesh.attribute("lower_bound").value());
 					m->upper_bound = sto<Vec3f>(n_mesh.attribute("upper_bound").value());
 					{
-						auto str = base64_decode(n_mesh.child("positions").attribute("data").value());
-						m->positions.resize(str.length() / sizeof(Vec3f));
-						memcpy(m->positions.data(), str.data(), str.size());
+						auto res = base64::decode(std::string(n_mesh.child("positions").attribute("data").value()));
+						m->positions.resize(res.size() / sizeof(Vec3f));
+						memcpy(m->positions.data(), res.data(), res.size());
 					}
 					{
 						auto n = n_mesh.child("uvs");
 						if (n)
 						{
-							auto str = base64_decode(n.attribute("data").value());
-							m->uvs.resize(str.length() / sizeof(Vec2f));
-							memcpy(m->uvs.data(), str.data(), str.size());
+							auto res = base64::decode(std::string(n.attribute("data").value()));
+							m->uvs.resize(res.size() / sizeof(Vec2f));
+							memcpy(m->uvs.data(), res.data(), res.size());
 						}
 					}
 					{
 						auto n = n_mesh.child("normals");
 						if (n)
 						{
-							auto str = base64_decode(n.attribute("data").value());
-							m->normals.resize(str.length() / sizeof(Vec3f));
-							memcpy(m->normals.data(), str.data(), str.size());
+							auto res = base64::decode(std::string(n.attribute("data").value()));
+							m->normals.resize(res.size() / sizeof(Vec3f));
+							memcpy(m->normals.data(), res.data(), res.size());
 						}
 					}
 					{
-						auto str = base64_decode(n_mesh.child("indices").attribute("data").value());
-						m->indices.resize(str.length() / sizeof(uint));
-						memcpy(m->indices.data(), str.data(), str.size());
+						auto res = base64::decode(std::string(n_mesh.child("indices").attribute("data").value()));
+						m->indices.resize(res.size() / sizeof(uint));
+						memcpy(m->indices.data(), res.data(), res.size());
 					}
 					for (auto n_bone : n_mesh.child("bones"))
 					{
 						auto b = new BonePrivate;
 						b->name = n_bone.attribute("name").value();
 						{
-							auto str = base64_decode(n_bone.child("offset_matrix").attribute("data").value());
-							memcpy(&b->offset_matrix, str.data(), sizeof(Mat4f));
+							auto res = base64::decode(std::string(n_bone.child("offset_matrix").attribute("data").value()));
+							memcpy(&b->offset_matrix, res.data(), sizeof(Mat4f));
 						}
 						{
-							auto str = base64_decode(n_bone.child("weights").attribute("data").value());
-							b->weights.resize(str.size() / sizeof(BonePrivate::Weight));
-							memcpy(b->weights.data(), str.data(), str.size());
+							auto res = base64::decode(std::string(n_bone.child("weights").attribute("data").value()));
+							b->weights.resize(res.size() / sizeof(BonePrivate::Weight));
+							memcpy(b->weights.data(), res.data(), res.size());
 						}
 						m->bones.emplace_back(b);
 					}
@@ -745,14 +745,14 @@ namespace flame
 						auto c = new ChannelPrivate;
 						c->node_name = n_channel.attribute("node_name").value();
 						{
-							auto str = base64_decode(n_channel.child("position_keys").attribute("data").value());
-							c->position_keys.resize(str.size() / sizeof(PositionKey));
-							memcpy(c->position_keys.data(), str.data(), str.size());
+							auto res = base64::decode(std::string(n_channel.child("position_keys").attribute("data").value()));
+							c->position_keys.resize(res.size() / sizeof(PositionKey));
+							memcpy(c->position_keys.data(), res.data(), res.size());
 						}
 						{
-							auto str = base64_decode(n_channel.child("rotation_keys").attribute("data").value());
-							c->rotation_keys.resize(str.size() / sizeof(RotationKey));
-							memcpy(c->rotation_keys.data(), str.data(), str.size());
+							auto res = base64::decode(std::string(n_channel.child("rotation_keys").attribute("data").value()));
+							c->rotation_keys.resize(res.size() / sizeof(RotationKey));
+							memcpy(c->rotation_keys.data(), res.data(), res.size());
 						}
 						a->channels.emplace_back(c);
 					}
