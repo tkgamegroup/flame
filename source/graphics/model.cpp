@@ -17,7 +17,7 @@ namespace flame
 		void load_material(pugi::xml_node n, MaterialPrivate* m)
 		{
 			m->name = n.attribute("name").value();
-			m->color = sto<vec3>(n.attribute("color").value());
+			m->color = sto<vec4>(n.attribute("color").value());
 			m->metallic = sto<float>(n.attribute("metallic").value());
 			m->roughness = sto<float>(n.attribute("roughness").value());
 			m->alpha_test = sto<float>(n.attribute("alpha_test").value());
@@ -64,8 +64,8 @@ namespace flame
 			{
 				auto& p = _positions[i];
 				positions[b + i] = p;
-				lower_bound = _min(lower_bound, p);
-				upper_bound = _max(upper_bound, p);
+				lower_bound = min(lower_bound, p);
+				upper_bound = max(upper_bound, p);
 			}
 			if (_uvs)
 			{
@@ -336,8 +336,8 @@ namespace flame
 				root->traverse([&](NodePrivate* n) {
 					write_s(file, n->name);
 					write_t(file, n->pos);
-					write_t(file, n->quat);
-					write_t(file, n->scale);
+					write_t(file, n->qut);
+					write_t(file, n->scl);
 					write_i(file, n->mesh_index);
 					write_u(file, n->children.size());
 				});
@@ -412,8 +412,8 @@ namespace flame
 				save_node = [&](NodePrivate* src, pugi::xml_node dst) {
 					dst.append_attribute("name").set_value(src->name.c_str());
 					dst.append_attribute("pos").set_value(to_string(src->pos).c_str());
-					dst.append_attribute("quat").set_value(to_string(src->quat).c_str());
-					dst.append_attribute("scale").set_value(to_string(src->scale).c_str());
+					dst.append_attribute("quat").set_value(to_string(src->qut).c_str());
+					dst.append_attribute("scale").set_value(to_string(src->scl).c_str());
 					dst.append_attribute("mesh_index").set_value(src->mesh_index);
 					for (auto& c : src->children)
 					{
@@ -454,8 +454,8 @@ namespace flame
 				n.append_attribute("name").set_value(src->name.c_str());
 				auto nn = n.append_child("cNode");
 				nn.append_attribute("pos").set_value(to_string(src->pos).c_str());
-				nn.append_attribute("quat").set_value(to_string(src->quat).c_str());
-				nn.append_attribute("scale").set_value(to_string(src->scale).c_str());
+				nn.append_attribute("quat").set_value(to_string(*(vec4*)&src->qut).c_str());
+				nn.append_attribute("scale").set_value(to_string(src->scl).c_str());
 				if (src->mesh_index != -1)
 				{
 					auto nm = n.append_child("cMesh");
@@ -613,8 +613,8 @@ namespace flame
 				load_node = [&](NodePrivate* n) {
 					read_s(file, n->name);
 					read_t(file, n->pos);
-					read_t(file, n->quat);
-					read_t(file, n->scale);
+					read_t(file, n->qut);
+					read_t(file, n->scl);
 					n->mesh_index = read_i(file);
 					n->children.resize(read_u(file));
 					for (auto i = 0; i < n->children.size(); i++)
@@ -723,8 +723,8 @@ namespace flame
 				load_node = [&](pugi::xml_node src, NodePrivate* dst) {
 					dst->name = src.attribute("name").value();
 					dst->pos = sto<vec3>(src.attribute("pos").value());
-					dst->quat = sto<vec4>(src.attribute("quat").value());
-					dst->scale = sto<vec3>(src.attribute("scale").value());
+					dst->qut = (quat)sto<vec4>(src.attribute("quat").value());
+					dst->scl = sto<vec3>(src.attribute("scale").value());
 					dst->mesh_index = src.attribute("scale").as_int();
 					for (auto c : src.children())
 					{
@@ -909,8 +909,8 @@ namespace flame
 						aiVector3D p;
 						src->mTransformation.Decompose(s, r, a, p);
 						dst->pos = vec3(p.x, p.y, p.z);
-						dst->quat = make_quat(degrees(a), vec3(r.x, r.y, r.z));
-						dst->scale = vec3(s.x, s.y, s.z);
+						dst->qut = quat(degrees(a), vec3(r.x, r.y, r.z));
+						dst->scl = vec3(s.x, s.y, s.z);
 					}
 
 					if (src->mNumMeshes > 0)
@@ -975,7 +975,7 @@ namespace flame
 							auto& dst_k = dst_c->rotation_keys[k];
 							dst_k.t = src_k.mTime;
 							auto& q = src_k.mValue;
-							dst_k.v = vec4(q.x, q.y, q.z, q.w);
+							dst_k.v = quat(q.w, q.x, q.y, q.z);
 						}
 					}
 				}

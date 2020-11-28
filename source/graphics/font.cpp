@@ -71,7 +71,6 @@ namespace flame
 			{
 				auto g = new GlyphPrivate;
 				g->code = code;
-				g->size = size;
 				map[key].reset(g);
 				ret = g;
 
@@ -109,8 +108,8 @@ namespace flame
 							cb->copy_buffer_to_image(stag.buf.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
-							g->uv = vec4(vec2(atlas_pos.x, atlas_pos.y + g->size.y) / image->sizes[0],
-								vec2(atlas_pos.x + g->size.x, atlas_pos.y) / image->sizes[0]);
+							g->uv = vec4(atlas_pos.x / font_atlas_size.x, (atlas_pos.y + g->size.y) / font_atlas_size.y,
+								(atlas_pos.x + g->size.x) / font_atlas_size.x, atlas_pos.y / font_atlas_size.y);
 						}
 						else
 							printf("font atlas is full\n");

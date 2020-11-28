@@ -1130,17 +1130,11 @@ namespace flame
 		void CanvasPrivate::begin_path()
 		{
 			paths.clear();
+			paths.emplace_back();
 		}
 
 		void CanvasPrivate::move_to(const vec2& pos)
 		{
-			if (paths.empty())
-				paths.emplace_back();
-			if (paths.back().empty())
-			{
-				paths.back().push_back(pos);
-				return;
-			}
 			paths.emplace_back();
 			paths.back().push_back(pos);
 		}
@@ -1258,9 +1252,9 @@ namespace flame
 
 			for (auto& path : paths)
 			{
-				auto points = path;
+				auto& points = path;
 				if (points.size() < 2)
-					return;
+					continue;
 
 				auto vtx_cnt0 = last_element_cmd->vertices_count;
 
@@ -1468,9 +1462,9 @@ namespace flame
 
 			for (auto& path : paths)
 			{
-				auto points = path;
+				auto& points = path;
 				if (points.size() < 3)
-					return;
+					continue;
 
 				for (auto i = 0; i < points.size() - 2; i++)
 				{
@@ -1628,6 +1622,15 @@ namespace flame
 			dst[7] = vec3(transform * vec4(-x2, -y2, -zFar, 1.f));
 		}
 
+		static vec4 make_plane(const vec3& p1, const vec3& p2, const vec3& p3)
+		{
+			auto v1 = p2 - p1;
+			auto v2 = p3 - p1;
+			auto n = -normalize(cross(v1, v2));
+			return vec4(n, dot(n, -p1));
+		}
+
+
 		void CanvasPrivate::set_camera(float _fovy, float _aspect, float _zNear, float _zFar, const mat3& dirs, const vec3& _coord)
 		{
 			fovy = _fovy;
@@ -1749,7 +1752,9 @@ namespace flame
 
 						auto c = (ps[0] + ps[1] + ps[2] + ps[3] +
 							ps[4] + ps[5] + ps[6] + ps[7]) * 0.125f;
-						auto light_inv = inverse(mat4(Mat<3, 4, float>(mat3(side, up, dir), vec3(0.f)), vec4(c, 1.f)));
+						auto light_inv = mat4(mat3(side, up, dir));
+						light_inv[3] = vec4(c, 1.f);
+						light_inv = inverse(light_inv);
 						vec2 LT = vec2(zFar);
 						vec2 RB = vec2(-zFar);
 						for (auto k = 0; k < 8; k++)
@@ -1759,8 +1764,8 @@ namespace flame
 							RB = max(RB, p.xy());
 						}
 
-						shadow.matrices[j] = dstm[j] = make_ortho_project_matrix(LT.x, RB.x, LT.y, RB.y, shadow_distance) *
-							make_view_matrix(c + dir * shadow_distance * 0.5f, c, up);
+						shadow.matrices[j] = dstm[j] = ortho(LT.x, RB.x, LT.y, RB.y, 0.f, shadow_distance) *
+							lookAt(c + dir * shadow_distance * 0.5f, c, up);
 					}
 
 					directional_shadows.push_back(shadow);
@@ -2166,7 +2171,7 @@ namespace flame
 												{
 													cb->bind_descriptor_set(PipelineGraphics, mesh_descriptorset.get(), 0, nullptr);
 													cb->bind_descriptor_set(PipelineGraphics, material_descriptorset.get(), 1, nullptr);
-													auto proj = make_perspective_project_matrix(90.f, 1.f, 1.f, s.distance);
+													auto proj = perspective(90.f, 1.f, 1.f, s.distance);
 													struct
 													{
 														mat4 matrix;
@@ -2178,27 +2183,27 @@ namespace flame
 													{
 													case 0:
 														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * make_view_matrix(s.coord, s.coord + vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
+														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
 														break;
 													case 1:
 														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * make_view_matrix(s.coord, s.coord + vec3(-1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
+														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(-1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
 														break;
 													case 2:
 														pc.matrix[1][1] = -1.f;
-														pc.matrix = pc.matrix * proj * make_view_matrix(s.coord, s.coord + vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f));
+														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f));
 														break;
 													case 3:
 														pc.matrix[1][1] = -1.f;
-														pc.matrix = pc.matrix * proj * make_view_matrix(s.coord, s.coord + vec3(0.f, -1.f, 0.f), vec3(0.f, 0.f, -1.f));
+														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, -1.f, 0.f), vec3(0.f, 0.f, -1.f));
 														break;
 													case 4:
 														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * make_view_matrix(s.coord, s.coord + vec3(0.f, 0.f, 1.f), vec3(0.f, 1.f, 0.f));
+														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, 0.f, 1.f), vec3(0.f, 1.f, 0.f));
 														break;
 													case 5:
 														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * make_view_matrix(s.coord, s.coord + vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f));
+														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f));
 														break;
 													}
 													pc.zNear = 1.f;

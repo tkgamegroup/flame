@@ -21,14 +21,15 @@ namespace flame
 		vec2 pivot = vec2(0.f);
 		vec2 scaling = vec2(1.f);
 		float rotation = 0.f;
-		vec2 skew = vec2(0.f);
+		float skewx = 0.f;
+		float skewy = 0.f;
 
 		bool transform_dirty = true;
 		bool crooked = false;
-		vec2 points[4];
-		mat3 _transform;
+		vec2 points[8];
+		mat3 axes;
 		mat3 transform;
-		vec4 aabb;
+		Rect aabb;
 
 		cvec4 fill_color = cvec4(0);
 
@@ -60,7 +61,7 @@ namespace flame
 		float get_height() const override { return size.y; }
 		void set_height(float h) override;
 
-		vec4 get_padding() override { return padding; }
+		vec4 get_padding() const override { return padding; }
 		void set_padding(const vec4& p) override;
 
 		float get_pivotx() const override { return pivot.x; }
@@ -78,10 +79,10 @@ namespace flame
 		float get_rotation() const override { return rotation; }
 		void set_rotation(float r) override;
 
-		float get_skewx() const override { return skew.x; }
+		float get_skewx() const override { return skewx; }
 		void set_skewx(float s) override;
 
-		float get_skewy() const override { return skew.y; }
+		float get_skewy() const override { return skewy; }
 		void set_skewy(float s) override;
 
 		void update_transform();

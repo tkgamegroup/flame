@@ -26,9 +26,7 @@ namespace flame
 		virtual float get_height() const = 0;
 		virtual void set_height(float h) = 0;
 
-		// L T R B
-		virtual vec4 get_padding() = 0;
-		// L T R B
+		virtual vec4 get_padding() const = 0;
 		virtual void set_padding(const vec4& p) = 0;
 
 		// 0 - 1

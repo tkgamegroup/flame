@@ -72,8 +72,8 @@ namespace flame
 		return ret;
 	}
 
-	template <uint N, class T, qualifier Q>
-	inline int fmt(char* buf, int buf_size, const vec<N, T, Q>& v)
+	template <uint N, class T>
+	int fmt(char* buf, int buf_size, const vec<N, T>& v)
 	{
 		auto p = buf;
 		auto s = buf_size;
@@ -93,15 +93,15 @@ namespace flame
 	}
 
 	template <class T>
-	inline std::string to_string(T v)
+	std::string to_string(T v)
 	{
 		char buf[32];
 		fmt(buf, size(buf), v);
 		return buf;
 	}
 
-	template <uint N, class T, qualifier Q>
-	inline std::string to_string(const vec<N, T, Q>& v)
+	template <uint N, class T>
+	std::string to_string(const vec<N, T>& v)
 	{
 		char buf[32 * N];
 		fmt(buf, size(buf), v);
@@ -164,8 +164,8 @@ namespace flame
 		return ret;
 	}
 
-	template <uint N, class T, qualifier Q>
-	inline int fmt(wchar_t* buf, int buf_size, const vec<N, T, Q>& v)
+	template <uint N, class T>
+	int fmt(wchar_t* buf, int buf_size, const vec<N, T>& v)
 	{
 		auto p = buf;
 		auto s = buf_size;
@@ -185,15 +185,15 @@ namespace flame
 	}
 
 	template <class T>
-	inline std::wstring to_wstring(T v)
+	std::wstring to_wstring(T v)
 	{
 		wchar_t buf[32];
 		fmt(buf, size(buf), v);
 		return buf;
 	}
 
-	template <uint N, class T, qualifier Q>
-	inline std::wstring to_wstring(const vec<N, T, Q>& v)
+	template <uint N, class T>
+	std::wstring to_wstring(const vec<N, T>& v)
 	{
 		wchar_t buf[32 * N];
 		fmt(buf, size(buf), v);

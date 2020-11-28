@@ -74,8 +74,8 @@ namespace flame
 		if (res_id == -1 || cell_count == uvec2(0) || cell_size == vec2(0.f))
 			return;
 
-		auto& axes = element->global_axes;
-		auto& p = element->global_points[4];
+		auto axes = mat2(element->axes);
+		auto p = element->points[4];
 		auto l = 0;
 		auto r = (int)cell_count.x;
 		auto t = 0;
@@ -114,9 +114,7 @@ namespace flame
 				{
 					canvas->draw_image(res_id, cell.first,
 						p + axes * (vec2(j, i) * cell_size),
-						p + axes * (vec2(j + 1, i) * cell_size),
-						p + axes * (vec2(j + 1, i + 1) * cell_size),
-						p + axes * (vec2(j, i + 1) * cell_size),
+						cell_size, element->axes,
 						vec2(0.f), vec2(1.f), cell.second);
 				}
 			}

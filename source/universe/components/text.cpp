@@ -67,7 +67,7 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->draw_text(res_id, text.c_str(), nullptr, size, color, element->padding.xy(), element->transform);
+		canvas->draw_text(res_id, text.c_str(), nullptr, size, color, element->points[4], element->axes);
 	}
 
 	void cTextPrivate::measure(vec2& ret)

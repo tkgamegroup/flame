@@ -39,7 +39,7 @@ namespace flame
 		{
 			virtual const char* get_name() const = 0;
 
-			virtual void get_transform(vec3& pos, vec4& quat, vec3& scale) const = 0;
+			virtual void get_transform(vec3& pos, quat& quat, vec3& scale) const = 0;
 
 			virtual Node* get_parent() const = 0;
 			virtual uint get_children_count() const = 0;
@@ -57,7 +57,7 @@ namespace flame
 		struct RotationKey
 		{
 			float t;
-			vec4 v;
+			quat v;
 		};
 
 		struct Channel

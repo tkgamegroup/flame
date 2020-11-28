@@ -8,6 +8,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
 using namespace glm;
@@ -16,9 +17,9 @@ namespace flame
 {
 	const float EPS = 0.000001f;
 
-	typedef lowp_uvec2 cvec2;
-	typedef lowp_uvec3 cvec3;
-	typedef lowp_uvec4 cvec4;
+	typedef vec<2, uchar> cvec2;
+	typedef vec<3, uchar> cvec3;
+	typedef vec<4, uchar> cvec4;
 
 	template <class T, class ...Args>
 	T minN(T a, T b, Args... args)
@@ -119,41 +120,59 @@ namespace flame
 			cross2(dc, a - d) * cross2(dc, b - d) <= 0.f;
 	}
 
-	inline float random()
+	inline bool convex_contains(const vec2& p, std::span<vec2> points)
 	{
-		return (float)rand() / (float)RAND_MAX;
+		if (points.size() < 3)
+			return false;
+
+		if (cross(vec3(p - points[0], 0), vec3(points[1] - p, 0)).z > 0.f)
+			return false;
+		if (cross(vec3(p - points[points.size() - 1], 0), vec3(points[0] - p, 0)).z > 0.f)
+			return false;
+
+		for (auto i = 1; i < points.size() - 1; i++)
+		{
+			if (cross(vec3(p - points[i], 0), vec3(points[i + 1] - p, 0)).z > 0.f)
+				return false;
+		}
+
+		return true;
 	}
 
 	struct Rect
 	{
-		// (x, y) - min, (z, w) - max
+		vec2 LT;
+		vec2 RB;
 
-		//template <class T>
-		//Vec<4, T> rect(const Vec<2, T>& _min, const Vec<2, T>& _max)
-		//{
-		//	return Vec<4, T>(_min, _max);
-		//}
+		Rect()
+		{
+			reset();
+		}
+		
+		void reset()
+		{
+			LT = vec2(-10000.f);
+			RB = vec2(10000.f);
+		}
 
-		//template <class T>
-		//void rect_expand(Vec<4, T>& rect, T length)
-		//{
-		//	rect.x -= length;
-		//	rect.y -= length;
-		//	rect.z += length;
-		//	rect.w += length;
-		//}
+		void expand(float length)
+		{
+			LT.x -= length;
+			LT.y += length;
+			RB.x -= length;
+			RB.y += length;
+		}
 
-		//template <class T>
-		//void rect_expand(Vec<4, T>& rect, const Vec<2, T>& p)
-		//{
-		//	rect.x = min(rect.x, p.x);
-		//	rect.y = min(rect.y, p.y);
-		//	rect.z = max(rect.z, p.x);
-		//	rect.w = max(rect.w, p.y);
-		//}
+		void expand(const vec2& p)
+		{
+			LT.x = min(LT.x, p.x);
+			LT.y = max(LT.y, p.x);
+			RB.x = min(RB.x, p.y);
+			RB.y = max(RB.y, p.y);
+		}
 
-		//template <class T, class ...Args>
-		//Vec<4, T> rect_from_points(std::span<Vec<2, T>> points)
+		//template <class ...Args>
+		//Vec<4, T> from_points(std::span<Vec<2, T>> points)
 		//{
 		//	auto ret = Vec<4, T>(0);
 		//	for (auto& p : points)
@@ -166,38 +185,16 @@ namespace flame
 		//	return ret;
 		//}
 
-		//template <class T>
-		//bool rect_contains(const Vec<4, T>& rect, const Vec<2, T>& p)
-		//{
-		//	return p.x > rect.x && p.x < rect.z &&
-		//		p.y > rect.y && p.y < rect.w;
-		//}
+		bool contains(const vec2& p)
+		{
+			return p.x > LT.x && p.x < LT.y &&
+				p.y > RB.x && p.y < RB.y;
+		}
 
-		//template <class T>
-		//bool rect_overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
+		//bool overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
 		//{
 		//	return lhs.x <= rhs.z && lhs.z >= rhs.x &&
 		//		lhs.y <= rhs.w && lhs.w >= rhs.y;
-		//}
-
-		//template <class T>
-		//bool convex_contains(const Vec<2, T>& p, std::span<Vec<2, T>> points)
-		//{
-		//	if (points.size() < 3)
-		//		return false;
-
-		//	if (cross(vec3(p - points[0], 0), vec3(points[1] - p, 0)).z > 0.f)
-		//		return false;
-		//	if (cross(vec3(p - points[points.size() - 1], 0), vec3(points[0] - p, 0)).z > 0.f)
-		//		return false;
-
-		//	for (auto i = 1; i < points.size() - 1; i++)
-		//	{
-		//		if (cross(vec3(p - points[i], 0), vec3(points[i + 1] - p, 0)).z > 0.f)
-		//			return false;
-		//	}
-
-		//	return true;
 		//}
 	};
 
@@ -246,15 +243,6 @@ namespace flame
 	struct Plane
 	{
 		// Ax + Bx + Cz + D = 0
-
-		//template <class T>
-		//Vec<4, T> make_plane(const Vec<3, T>& p1, const Vec<3, T>& p2, const Vec<3, T>& p3)
-		//{
-		//	auto v1 = p2 - p1;
-		//	auto v2 = p3 - p1;
-		//	auto n = -normalize(cross(v1, v2));
-		//	return Vec<4, T>(n, dot(n, -p1));
-		//}
 
 		//template <class T>
 		//T plane_intersect(const Vec<4, T>& plane, const Vec<3, T>& origin, const Vec<3, T>& dir)

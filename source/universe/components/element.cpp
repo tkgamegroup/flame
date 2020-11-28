@@ -30,7 +30,7 @@ namespace flame
 		if (size.x == w)
 			return;
 		size.x = w;
-		content_size.x = size.x - padding.xz().sum();
+		content_size.x = size.x - padding[0] - padding[2];
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"width"_h>);
 	}
@@ -40,7 +40,7 @@ namespace flame
 		if (size.y == h)
 			return;
 		size.y = h;
-		content_size.y = size.y - padding.yw().sum();
+		content_size.y = size.y - padding[1] - padding[3];
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"height"_h>);
 	}
@@ -50,6 +50,7 @@ namespace flame
 		if (padding == p)
 			return;
 		padding = p;
+		content_size = size - vec2(padding[0] + padding[2], padding[1] + padding[3]);
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"padding"_h>);
 	}
@@ -110,18 +111,18 @@ namespace flame
 
 	void cElementPrivate::set_skewx(float s)
 	{
-		if (skew.x == s)
+		if (skewx == s)
 			return;
-		skew.x = s;
+		skewx = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"skewx"_h>);
 	}
 
 	void cElementPrivate::set_skewy(float s)
 	{
-		if (skew.y == s)
+		if (skewy == s)
 			return;
-		skew.y = s;
+		skewy = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"skewy"_h>);
 	}
@@ -132,50 +133,35 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			crooked = rotation == 0.f && skew == 0.f;
-			auto base_axes = mat2(1.f);
-			auto base_pos = vec2(0.f);
+			crooked = rotation == 0.f && skewx == 0.f && skewy == 0.f;
 			auto m = mat3(1.f);
 			auto pe = entity->get_parent_component_t<cElementPrivate>();
 			if (pe)
 			{
 				pe->update_transform();
 				crooked = crooked && pe->crooked;
-				base_axes = pe->global_axes;
-				base_pos = pe->global_points[0];
 				m = pe->transform;
 			}
 
-			global_axes = base_axes;
-			auto c = base_pos + global_axes * pos;
+			m = translate(m, pos);
+			axes = rotate(mat3(1.f), radians(rotation));
+			axes = shearX(axes, skewy);
+			axes = shearY(axes, skewx);
+			m = scale(axes, scaling);
 
-			global_axes[0] = make_rotation_matrix(radians(rotation + skew.y)) * global_axes[0];
-			global_axes[1] = make_rotation_matrix(radians(rotation + skew.x)) * global_axes[1];
-			global_axes = global_axes * mat2(scaling);
+			points[0] = m * vec3(-pivot.x * size.x,			-pivot.y * size.y, 1.f);
+			points[1] = m * vec3((1.f - pivot.x) * size.x,	-pivot.y * size.y, 1.f);
+			points[2] = m * vec3((1.f - pivot.x) * size.x,	(1.f - pivot.y) * size.y, 1.f);
+			points[3] = m * vec3(-pivot.x * size.x,			(1.f - pivot.y) * size.y, 1.f);
 
-			{
-				m = rotate(m, radians(rotation));
-				m = shearX(m, skew.x);
-				m = shearY(m, skew.y);
-				m = scale(m, vec2(scaling.x, scaling.y));
-				m = translate(m, vec2(pos.x, pos.y));
-				auto c = m * vec3(-pivot.x * size.x, -pivot.y * size.y, 1.f);
+			points[4] = m * vec3(-pivot.x * size.x + padding[0], -pivot.y * size.y + padding[1], 1.f);
+			points[5] = m * vec3((1.f - pivot.x) * size.x - padding[2], -pivot.y * size.y + padding[1], 1.f);
+			points[6] = m * vec3((1.f - pivot.x) * size.x - padding[2], (1.f - pivot.y) * size.y - padding[3], 1.f);
+			points[7] = m * vec3(-pivot.x * size.x + padding[0], (1.f - pivot.y) * size.y - padding[3], 1.f);
 
-			}
-
-			global_points[0] = c + global_axes * -pivot * size;
-			global_points[1] = global_points[0] + global_axes[0] * size.x;
-			global_points[2] = global_points[0] + global_axes * size;
-			global_points[3] = global_points[0] + global_axes[1] * size.y;
-
-			aabb = vec4(global_points[0], global_points[0]);
-			for (auto i = 1; i < 4; i++)
-			{
-				aabb.x = min(aabb.x, global_points[i].x);
-				aabb.z = max(aabb.z, global_points[i].x);
-				aabb.y = min(aabb.y, global_points[i].y);
-				aabb.w = max(aabb.w, global_points[i].y);
-			}
+			aabb.reset();
+			for (auto i = 0; i < 4; i++)
+				aabb.expand(points[i]);
 		}
 	}
 
@@ -259,16 +245,16 @@ namespace flame
 
 	bool cElementPrivate::contains(const vec2& p)
 	{
-		if (size == 0.f)
+		if (size.x == 0.f || size.y == 0.f)
 			return false;
 		update_transform();
 		if (crooked)
 		{
-			vec2 ps[] = { global_points[0], global_points[1], global_points[2], global_points[3] };
-			return convex_contains<float>(p, ps);
+			vec2 ps[] = { points[0], points[1], points[2], points[3] };
+			return convex_contains(p, ps);
 		}
 		else
-			return rect_contains(aabb, p);
+			return aabb.contains(p);
 	}
 
 	void cElementPrivate::on_local_message(Message msg, void* p)
@@ -364,21 +350,21 @@ namespace flame
 			if (fill_color.a > 0)
 			{
 				canvas->begin_path();
-				canvas->move_to(global_points[0]);
-				canvas->line_to(global_points[1]);
-				canvas->line_to(global_points[2]);
-				canvas->line_to(global_points[3]);
+				canvas->move_to(points[0]);
+				canvas->line_to(points[1]);
+				canvas->line_to(points[2]);
+				canvas->line_to(points[3]);
 				canvas->fill(fill_color);
 			}
 
 			if (border > 0.f && border_color.a > 0)
 			{
 				canvas->begin_path();
-				canvas->move_to(global_points[4]);
-				canvas->line_to(global_points[5]);
-				canvas->line_to(global_points[6]);
-				canvas->line_to(global_points[7]);
-				canvas->line_to(global_points[4]);
+				canvas->move_to(points[0]);
+				canvas->line_to(points[1]);
+				canvas->line_to(points[2]);
+				canvas->line_to(points[3]);
+				canvas->close_path();
 				canvas->stroke(border_color, border);
 			}
 		}

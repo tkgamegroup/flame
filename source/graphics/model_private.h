@@ -91,8 +91,8 @@ namespace flame
 			std::string name;
 
 			vec3 pos = vec3(0.f);
-			vec4 quat = vec4(0.f, 0.f, 0.f, 1.f);
-			vec3 scale = vec3(1.f);
+			quat qut = quat(1.f, 0.f, 0.f, 0.f);
+			vec3 scl = vec3(1.f);
 
 			int mesh_index = -1;
 
@@ -103,7 +103,7 @@ namespace flame
 
 			const char* get_name() const override { return name.c_str(); }
 
-			void get_transform(vec3& p, vec4& q, vec3& s) const override { p = pos; q = quat; s = scale; }
+			void get_transform(vec3& p, quat& q, vec3& s) const override { p = pos; q = qut; s = scl; }
 
 			Node* get_parent() const override { return parent; }
 			uint get_children_count() const { return children.size(); }

@@ -61,13 +61,6 @@ namespace flame
 		return global_dirs[idx];
 	}
 
-	vec3 cNodePrivate::get_global_scale()
-	{
-		update_transform();
-
-		return global_scale;
-	}
-
 	mat4 cNodePrivate::get_transform()
 	{
 		update_transform();

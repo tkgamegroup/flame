@@ -45,7 +45,7 @@ namespace flame
 					level = i;
 					break;
 				}
-				sizes.push_back(_max(s, uvec2(1U)));
+				sizes.push_back(max(s, uvec2(1U)));
 				s.x >>= 1;
 				s.y >>= 1;
 			}

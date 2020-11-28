@@ -18,7 +18,7 @@ namespace flame
 		vec3 scaling = vec3(1.f);
 
 		bool transform_dirty = true;
-		mat3 local_dirs;
+		mat3 rotation;
 		vec3 global_pos;
 		vec4 global_quat;
 		vec3 global_scale;
@@ -43,7 +43,6 @@ namespace flame
 
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
-		vec3 get_global_scale() override;
 
 		mat4 get_transform() override;
 

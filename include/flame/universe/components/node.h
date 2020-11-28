@@ -14,8 +14,8 @@ namespace flame
 		{
 		}
 
-		virtual vec3 get_pos() const = 0;
-		virtual void set_pos(const vec3& pos) = 0;
+		virtual vec3 get_position() const = 0;
+		virtual void set_position(const vec3& pos) = 0;
 		virtual vec4 get_quat() const = 0;
 		virtual void set_quat(const vec4& quat) = 0;
 		virtual vec3 get_scale() const = 0;
@@ -28,7 +28,6 @@ namespace flame
 
 		virtual vec3 get_global_pos() = 0;
 		virtual vec3 get_global_dir(uint idx) = 0;
-		virtual vec3 get_global_scale() = 0;
 
 		virtual mat4 get_transform() = 0;
 
