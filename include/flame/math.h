@@ -148,11 +148,25 @@ namespace flame
 		{
 			reset();
 		}
-		
+
+		Rect(float LT_x, float LT_y, float RB_x, float RB_y)
+		{
+			LT.x = LT_x;
+			LT.y = LT_y;
+			RB.x = RB_x;
+			RB.y = RB_y;
+		}
+
 		void reset()
 		{
 			LT = vec2(-10000.f);
 			RB = vec2(10000.f);
+		}
+
+		bool operator==(const Rect& rhs)
+		{
+			return LT.x == rhs.LT.x && LT.y == rhs.LT.y &&
+				RB.x == rhs.RB.x && RB.y == rhs.RB.y;
 		}
 
 		void expand(float length)
@@ -171,31 +185,17 @@ namespace flame
 			RB.y = max(RB.y, p.y);
 		}
 
-		//template <class ...Args>
-		//Vec<4, T> from_points(std::span<Vec<2, T>> points)
-		//{
-		//	auto ret = Vec<4, T>(0);
-		//	for (auto& p : points)
-		//	{
-		//		ret.x = min(ret.x, p.x);
-		//		ret.y = min(ret.y, p.y);
-		//		ret.z = max(ret.z, p.x);
-		//		ret.w = max(ret.w, p.y);
-		//	}
-		//	return ret;
-		//}
-
 		bool contains(const vec2& p)
 		{
 			return p.x > LT.x && p.x < LT.y &&
 				p.y > RB.x && p.y < RB.y;
 		}
 
-		//bool overlapping(const Vec<4, T>& lhs, const Vec<4, T>& rhs)
-		//{
-		//	return lhs.x <= rhs.z && lhs.z >= rhs.x &&
-		//		lhs.y <= rhs.w && lhs.w >= rhs.y;
-		//}
+		bool overlapping(const Rect& rhs)
+		{
+			return LT.x <= rhs.RB.x && RB.x >= rhs.LT.x &&
+				LT.y <= rhs.RB.y && RB.y >= rhs.LT.y;
+		}
 	};
 
 	// (x, y z) - (yaw pitch roll)

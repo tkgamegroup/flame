@@ -1528,7 +1528,7 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat3& transform, const vec2& uv0, const vec2& uv1, const cvec4& tint_col)
+		void CanvasPrivate::draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat2& axes, const vec2& uv0, const vec2& uv1, const cvec4& tint_col)
 		{
 			if (res_id >= element_resources.size())
 				res_id = 0;
@@ -1549,14 +1549,14 @@ namespace flame
 
 			auto vtx_cnt = last_element_cmd->vertices_count;
 
-			add_vtx(vec2(transform * vec3(pos, 1.f)), _uv0, tint_col);
-			add_vtx(vec2(transform * vec3(pos.x + size.x, pos.y, 1.f)), vec2(_uv1.x, _uv0.y), tint_col);
-			add_vtx(vec2(transform * vec3(pos.x + size.x, pos.y + size.y, 1.f)), _uv1, tint_col);
-			add_vtx(vec2(transform * vec3(pos.x, pos.y + size.y, 1.f)), vec2(_uv0.x, _uv1.y), tint_col);
+			add_vtx(pos, _uv0, tint_col);
+			add_vtx(pos + size.x * axes[0], vec2(_uv1.x, _uv0.y), tint_col);
+			add_vtx(pos + size.x * axes[0] + size.y * axes[1], _uv1, tint_col);
+			add_vtx(pos + size.y * axes[1], vec2(_uv0.x, _uv1.y), tint_col);
 			add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 		}
 
-		void CanvasPrivate::draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat3& transform)
+		void CanvasPrivate::draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes)
 		{
 			auto& res = element_resources[res_id];
 			if (!res.fa)
@@ -1584,7 +1584,7 @@ namespace flame
 						ch = ' ';
 
 					auto g = atlas->get_glyph(ch, font_size);
-					auto o = pos + p + vec2(g->off);
+					auto o = p + vec2(g->off);
 					auto s = vec2(g->size);
 					auto uv = g->uv;
 					auto uv0 = vec2(uv.x, uv.y);
@@ -1592,10 +1592,10 @@ namespace flame
 
 					auto vtx_cnt = last_element_cmd->vertices_count;
 
-					add_vtx(vec2(transform * vec3(o, 1.f)), uv0, col);
-					add_vtx(vec2(transform * vec3(o.x, o.y - s.y, 1.f)), vec2(uv0.x, uv1.y), col);
-					add_vtx(vec2(transform * vec3(o.x + s.x, o.y - s.y, 1.f)), uv1, col);
-					add_vtx(vec2(transform * vec3(o.x + s.x, o.y, 1.f)), vec2(uv1.x, uv0.y), col);
+					add_vtx(pos + axes * o, uv0, col);
+					add_vtx(pos + o.x * axes[0] + (o.y - s.y) * axes[1], vec2(uv0.x, uv1.y), col);
+					add_vtx(pos + (o.x + s.x) * axes[0] + (o.y - s.y) * axes[1], uv1, col);
+					add_vtx(pos + (o.x + s.x) * axes[0], vec2(uv1.x, uv0.y), col);
 					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 
 					p.x += g->advance;
@@ -1827,26 +1827,27 @@ namespace flame
 			last_line3_cmd->count = lines_count;
 		}
 
-		void CanvasPrivate::set_scissor(const vec4& _scissor)
+		void CanvasPrivate::set_scissor(const Rect& _scissor)
 		{
-			auto scissor = vec4(
-				max(_scissor.x, 0.f),
-				max(_scissor.y, 0.f),
-				min(_scissor.z, (float)output_size.x),
-				min(_scissor.w, (float)output_size.y));
+			auto scissor = Rect(
+				max(_scissor.LT.x, 0.f),
+				max(_scissor.LT.y, 0.f),
+				min(_scissor.RB.x, (float)output_size.x),
+				min(_scissor.RB.y, (float)output_size.y)
+			);
 			if (scissor == curr_scissor)
 				return;
 			curr_scissor = scissor;
 			cmds.emplace_back(new CmdSetScissor(scissor));
 		}
 
-		void CanvasPrivate::add_blur(const vec4& _range, uint radius)
+		void CanvasPrivate::add_blur(const Rect& _range, uint radius)
 		{
-			auto range = vec4(
-				max(_range.x, 0.f),
-				max(_range.y, 0.f),
-				min(_range.z, (float)output_size.x),
-				min(_range.w, (float)output_size.y));
+			auto range = Rect(
+				max(_range.LT.x, 0.f),
+				max(_range.LT.y, 0.f),
+				min(_range.RB.x, (float)output_size.x),
+				min(_range.RB.y, (float)output_size.y));
 			cmds.emplace_back(new CmdBlur(range, radius));
 		}
 
@@ -1879,7 +1880,7 @@ namespace flame
 
 			line3_buffer.stagnum = 0;
 
-			curr_scissor = vec4(vec2(0.f), vec2(output_size));
+			curr_scissor = Rect(0.f, 0.f, output_size.x, output_size.y);
 
 			cmds.clear();
 		}
@@ -1985,8 +1986,8 @@ namespace flame
 				cb->image_barrier(depth_image.get(), {}, ImageLayoutTransferDst, ImageLayoutAttachment);
 			}
 
-			cb->set_viewport(vec4(vec2(0.f), (vec2)output_size));
-			cb->set_scissor(vec4(vec2(0.f), (vec2)output_size));
+			cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
+			cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
 			auto first_3d = true;
@@ -2004,7 +2005,7 @@ namespace flame
 						element_index_buffer.upload(cb);
 
 					}
-					cb->set_scissor(vec4(vec2(0.f), (vec2)output_size));
+					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->bind_vertex_buffer(element_vertex_buffer.buf.get(), 0);
 					cb->bind_index_buffer(element_index_buffer.buf.get(), IndiceTypeUint);
 					cb->begin_renderpass(nullptr, dst_fb);
@@ -2056,8 +2057,8 @@ namespace flame
 						directional_light_info_buffer.upload(cb);
 						point_light_info_buffer.upload(cb);
 
-						cb->set_viewport(vec4(vec2(0.f), (vec2)shadow_map_size));
-						cb->set_scissor(vec4(vec2(0.f), (vec2)shadow_map_size));
+						cb->set_viewport(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
+						cb->set_scissor(Rect(0.f, 0.f, shadow_map_size.x, shadow_map_size.y));
 
 						for (auto map_idx = 0; map_idx < directional_shadows.size(); map_idx++)
 						{
@@ -2238,10 +2239,10 @@ namespace flame
 							cb->image_barrier(point_light_shadow_maps[map_idx].get(), { 0U, 1U, 0U, 6U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 						}
 
-						cb->set_viewport(vec4(vec2(0.f), (vec2)output_size));
+						cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 					}
 
-					cb->set_scissor(vec4(vec2(0.f), (vec2)output_size));
+					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					if (!msaa_image)
 						cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
 					else
@@ -2320,7 +2321,7 @@ namespace flame
 					if (msaa_image)
 					{
 						cb->image_barrier(msaa_resolve_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-						cb->set_scissor(vec4(vec2(0.f), (vec2)output_size));
+						cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 						cb->begin_renderpass(nullptr, dst_fb);
 						cb->bind_pipeline(hdr_image ? preferences->blit_16_pipeline.get() : preferences->blit_8_pipeline.get());
 						cb->bind_descriptor_set(PipelineGraphics, msaa_descriptorset.get(), 0, nullptr);
@@ -2333,7 +2334,7 @@ namespace flame
 				{
 					if (line3_off == 0)
 						line3_buffer.upload(cb);
-					cb->set_scissor(vec4(vec2(0.f), (vec2)output_size));
+					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->line3_pipeline.get());
@@ -2366,13 +2367,13 @@ namespace flame
 					auto c = (CmdBlur*)cmds[p.cmd_ids[0]].get();
 					auto blur_radius = clamp(c->radius, 0U, 10U);
 					auto blur_range = c->range;
-					auto blur_size = vec2(blur_range.z - blur_range.x, blur_range.w - blur_range.y);
+					auto blur_size = vec2(blur_range.RB.x - blur_range.LT.x, blur_range.RB.y - blur_range.LT.y);
 					if (blur_size.x < 1.f || blur_size.y < 1.f)
 						continue;
 
 					cb->image_barrier(dst, {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-					cb->set_scissor(vec4(blur_range.x - blur_radius, blur_range.y - blur_radius,
-						blur_range.z + blur_radius, blur_range.w + blur_radius));
+					cb->set_scissor(Rect(blur_range.LT.x - blur_radius, blur_range.LT.y - blur_radius,
+						blur_range.RB.x + blur_radius, blur_range.RB.y + blur_radius));
 					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 					cb->bind_pipeline(preferences->blurh_pipeline[blur_radius - 1].get());
 					cb->bind_descriptor_set(PipelineGraphics, dst_ds, 0, nullptr);
@@ -2395,9 +2396,9 @@ namespace flame
 					if (!hdr_image)
 						continue;
 
-					cb->set_scissor(vec4(vec2(0.f), (vec2)output_size));
+					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 
-					cb->set_viewport(vec4(vec2(0.f), (vec2)output_size));
+					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 					cb->bind_pipeline(preferences->filter_bright_pipeline.get());
@@ -2407,7 +2408,7 @@ namespace flame
 
 					for (auto i = 0; i < back_image->level - 1; i++)
 					{
-						cb->set_viewport(vec4(vec2(0.f), (vec2)back_image->sizes[i + 1]));
+						cb->set_viewport(Rect(0.f, 0.f, back_image->sizes[i + 1].x, back_image->sizes[i + 1].y));
 						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
 						cb->bind_pipeline(preferences->downsample_pipeline.get());
@@ -2418,7 +2419,7 @@ namespace flame
 					}
 					for (auto i = back_image->level - 1; i > 0; i--)
 					{
-						cb->set_viewport(vec4(vec2(0.f), (vec2)back_image->sizes[i - 1]));
+						cb->set_viewport(Rect(0.f, 0.f, back_image->sizes[i - 1].x, back_image->sizes[i - 1].y));
 						cb->image_barrier(back_image.get(), { (uint)i }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
 						cb->bind_pipeline(preferences->upsample_pipeline.get());
@@ -2435,7 +2436,7 @@ namespace flame
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
-					cb->set_viewport(vec4(vec2(0.f), (vec2)output_size));
+					cb->set_viewport(Rect(0.f, 0.f, output_size.x, output_size.y));
 				}
 					break;
 				}
@@ -2445,7 +2446,7 @@ namespace flame
 			{
 				cb->image_barrier(hdr_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
 				cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutPresent, ImageLayoutShaderReadOnly);
-				cb->set_scissor(vec4(vec2(0.f), vec2(output_size)));
+				cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 				cb->begin_renderpass(nullptr, output_framebuffers[image_index].get());
 				cb->bind_pipeline(preferences->gamma_pipeline.get());
 				cb->bind_descriptor_set(PipelineGraphics, hdr_descriptorset.get(), 0, nullptr);

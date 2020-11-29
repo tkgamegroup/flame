@@ -98,9 +98,9 @@ namespace flame
 		physics_world->rigids.push_back(this);
 		physics_world->phy_scene->add_rigid(phy_rigid);
 		node->update_transform();
-		phy_rigid->set_pose(node->global_pos, node->global_quat);
+		phy_rigid->set_pose(node->g_pos, node->g_qut);
 		phy_rigid->add_impulse(staging_impulse);
-		staging_impulse = 0.f;
+		staging_impulse = vec3(0.f);
 	}
 
 	void cRigidPrivate::on_lost_physics_world()

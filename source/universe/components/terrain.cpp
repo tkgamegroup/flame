@@ -111,7 +111,7 @@ namespace flame
 	void cTerrainPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
-			canvas->draw_terrain(blocks, scale, node->global_pos, tess_levels, height_map_id, normal_map_id, material_id);
+			canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id);
 	}
 
 	cTerrain* cTerrain::create()

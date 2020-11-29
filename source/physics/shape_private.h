@@ -58,7 +58,7 @@ namespace flame
 
 			void set_trigger(bool v) override;
 
-			void set_pose(const vec3& coord, const vec4& quat) override;
+			void set_pose(const vec3& coord, const quat& qut) override;
 		};
 	}
 }

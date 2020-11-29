@@ -17,6 +17,7 @@ namespace flame
 		bool absolute = false;
 
 		vec4 margin = vec4(0.f);
+		vec2 margin_size = vec2(0.f);
 
 		bool include_in_layout = true;
 

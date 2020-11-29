@@ -104,9 +104,9 @@ namespace flame
 				{
 					for (auto y = 0; y <= h; y++)
 					{
-						auto tc = vec2(x / (float)w, y / (float)h) * img_size;
+						auto tc = vec2(x / (float)w, y / (float)h) * vec2(img_size);
 						auto itc = ivec2(tc);
-						auto ftc = tc - itc;
+						auto ftc = tc - vec2(itc);
 						float height;
 						if (ftc.x > 0.5f && ftc.y > 0.5f)
 						{
@@ -247,10 +247,10 @@ namespace flame
 #endif
 		}
 
-		void ShapePrivate::set_pose(const vec3& coord, const vec4& quat)
+		void ShapePrivate::set_pose(const vec3& coord, const quat& qut)
 		{
 #ifdef USE_PHYSX
-			px_shape->setLocalPose(PxTransform(cvt(coord), cvt(quat)));
+			px_shape->setLocalPose(PxTransform(cvt(coord), cvt(qut)));
 #endif
 		}
 

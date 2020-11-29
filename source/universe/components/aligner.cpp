@@ -48,6 +48,8 @@ namespace flame
 		if (margin == m)
 			return;
 		margin = m;
+		margin_size[0] = m[0] + m[2];
+		margin_size[1] = m[1] + m[3];
 		Entity::report_data_changed(this, S<"margin"_h>);
 	}
 

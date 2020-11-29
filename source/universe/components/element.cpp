@@ -50,7 +50,9 @@ namespace flame
 		if (padding == p)
 			return;
 		padding = p;
-		content_size = size - vec2(padding[0] + padding[2], padding[1] + padding[3]);
+		padding_size[0] = p[0] + p[2];
+		padding_size[1] = p[1] + p[3];
+		content_size = size - padding_size;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"padding"_h>);
 	}
@@ -84,45 +86,45 @@ namespace flame
 
 	void cElementPrivate::set_scalex(float s)
 	{
-		if (scaling.x == s)
+		if (scl.x == s)
 			return;
-		scaling.x = s;
+		scl.x = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"scalex"_h>);
 	}
 
 	void cElementPrivate::set_scaley(float s)
 	{
-		if (scaling.y == s)
+		if (scl.y == s)
 			return;
-		scaling.y = s;
+		scl.y = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"scaley"_h>);
 	}
 
-	void cElementPrivate::set_rotation(float r)
+	void cElementPrivate::set_angle(float a)
 	{
-		if (rotation == r)
+		if (angle == a)
 			return;
-		rotation = r;
+		angle = a;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"rotation"_h>);
+		Entity::report_data_changed(this, S<"angle"_h>);
 	}
 
 	void cElementPrivate::set_skewx(float s)
 	{
-		if (skewx == s)
+		if (skew.x == s)
 			return;
-		skewx = s;
+		skew.x = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"skewx"_h>);
 	}
 
 	void cElementPrivate::set_skewy(float s)
 	{
-		if (skewy == s)
+		if (skew.y == s)
 			return;
-		skewy = s;
+		skew.y = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"skewy"_h>);
 	}
@@ -133,7 +135,7 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			crooked = rotation == 0.f && skewx == 0.f && skewy == 0.f;
+			crooked = angle == 0.f && skew.x == 0.f && skew.y == 0.f;
 			auto m = mat3(1.f);
 			auto pe = entity->get_parent_component_t<cElementPrivate>();
 			if (pe)
@@ -144,20 +146,50 @@ namespace flame
 			}
 
 			m = translate(m, pos);
-			axes = rotate(mat3(1.f), radians(rotation));
-			axes = shearX(axes, skewy);
-			axes = shearY(axes, skewx);
-			m = scale(axes, scaling);
+			if (crooked)
+			{
+				mat3 axes3 = mat3(1.f);
+				axes3 = rotate(axes3, radians(angle));
+				axes3 = shearX(axes3, skew.y);
+				axes3 = shearY(axes3, skew.x);
+				m = m * axes3;
+				axes = mat2(axes3);
+			}
+			else
+				axes = mat2(1.f);
+			m = scale(m, scl);
 
-			points[0] = m * vec3(-pivot.x * size.x,			-pivot.y * size.y, 1.f);
-			points[1] = m * vec3((1.f - pivot.x) * size.x,	-pivot.y * size.y, 1.f);
-			points[2] = m * vec3((1.f - pivot.x) * size.x,	(1.f - pivot.y) * size.y, 1.f);
-			points[3] = m * vec3(-pivot.x * size.x,			(1.f - pivot.y) * size.y, 1.f);
+			if (crooked)
+			{
+				points[0] = axes * vec2(-pivot.x * size.x,			-pivot.y * size.y);
+				points[1] = axes * vec2((1.f - pivot.x) * size.x,	-pivot.y * size.y);
+				points[2] = axes * vec2((1.f - pivot.x) * size.x,	(1.f - pivot.y) * size.y);
+				points[3] = axes * vec2(-pivot.x * size.x,			(1.f - pivot.y) * size.y);
+			}
+			else
+			{
+				points[0] = vec2(-pivot.x * size.x,			-pivot.y * size.y);
+				points[1] = vec2((1.f - pivot.x) * size.x,	-pivot.y * size.y);
+				points[2] = vec2((1.f - pivot.x) * size.x,	(1.f - pivot.y) * size.y);
+				points[3] = vec2(-pivot.x * size.x,			(1.f - pivot.y) * size.y);
+			}
 
-			points[4] = m * vec3(-pivot.x * size.x + padding[0], -pivot.y * size.y + padding[1], 1.f);
-			points[5] = m * vec3((1.f - pivot.x) * size.x - padding[2], -pivot.y * size.y + padding[1], 1.f);
-			points[6] = m * vec3((1.f - pivot.x) * size.x - padding[2], (1.f - pivot.y) * size.y - padding[3], 1.f);
-			points[7] = m * vec3(-pivot.x * size.x + padding[0], (1.f - pivot.y) * size.y - padding[3], 1.f);
+			for (auto i = 0; i < 4; i++)
+				points[i + 4] = points[i];
+			if (crooked)
+			{
+				points[4] += axes * vec2(padding[0], padding[1]);
+				points[5] += axes * vec2(-padding[2], padding[1]);
+				points[6] += axes * vec2(-padding[2], -padding[3]);
+				points[7] += axes * vec2(padding[0], -padding[3]);
+			}
+			else
+			{
+				points[4] += vec2(padding[0], padding[1]);
+				points[5] += vec2(-padding[2], padding[1]);
+				points[6] += vec2(-padding[2], -padding[3]);
+				points[7] += vec2(padding[0], -padding[3]);
+			}
 
 			aabb.reset();
 			for (auto i = 0; i < 4; i++)

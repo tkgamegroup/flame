@@ -70,38 +70,39 @@ namespace flame
 
 		for (auto r : rigids)
 		{
-			if (r->dynamic)
+			if (r->dynamic && !r->node->transform_dirty)
 			{
 				vec3 coord;
-				vec4 quat;
-				r->phy_rigid->get_pose(coord, quat);
+				quat qut;
+				r->phy_rigid->get_pose(coord, qut);
 				auto pn = r->entity->get_parent_component_t<cNodePrivate>();
 				if (pn)
 				{
-					auto q_inv = pn->global_quat;
-					q_inv = vec4(-q_inv.x, -q_inv.y, -q_inv.z, q_inv.w);
-					r->node->set_pos(quat_mul(q_inv, coord - pn->global_pos) / pn->global_scale);
-					r->node->set_quat(quat_mul(q_inv, quat));
+					auto q_inv = inverse(pn->g_qut);
+					r->node->set_pos(q_inv * (coord - pn->g_pos) / pn->g_scl);
+					r->node->set_quat(q_inv * qut);
 				}
 				else
 				{
 					r->node->set_pos(coord);
-					r->node->set_quat(quat);
+					r->node->set_quat(qut);
 				}
 			}
 		}
 		for (auto c : controllers)
 		{
-			auto coord = c->phy_controller->get_position();
-			auto pn = c->entity->get_parent_component_t<cNodePrivate>();
-			if (pn)
+			if (!c->node->transform_dirty)
 			{
-				auto q_inv = pn->global_quat;
-				q_inv = vec4(-q_inv.x, -q_inv.y, -q_inv.z, q_inv.w);
-				c->node->set_pos(quat_mul(q_inv, coord - pn->global_pos) / pn->global_scale);
+				auto coord = c->phy_controller->get_position();
+				auto pn = c->entity->get_parent_component_t<cNodePrivate>();
+				if (pn)
+				{
+					auto q_inv = inverse(pn->g_qut);
+					c->node->set_pos(q_inv * (coord - pn->g_pos) / pn->g_scl);
+				}
+				else
+					c->node->set_pos(coord);
 			}
-			else
-				c->node->set_pos(coord);
 		}
 	}
 

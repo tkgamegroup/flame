@@ -22,14 +22,14 @@ namespace flame
 			return vec3(v.x, v.y, v.z);
 		}
 
-		inline PxQuat cvt(const vec4& v)
+		inline PxQuat cvt(const quat& v)
 		{
 			return PxQuat(v.x, v.y, v.z, v.w);
 		}
 
-		inline vec4 cvt(const PxQuat& v)
+		inline quat cvt(const PxQuat& v)
 		{
-			return vec4(v.x, v.y, v.z, v.w);
+			return quat(v.w, v.x, v.y, v.z);
 		}
 	}
 }

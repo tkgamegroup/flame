@@ -161,7 +161,7 @@ namespace flame
 			debug_break();
 		}
 
-		auto mouse_contained = er->element->contains((vec2)mpos) && rect_contains(er->element->boundaries, (vec2)mpos);
+		auto mouse_contained = er->element->contains((vec2)mpos) && er->element->parent_scissor.contains((vec2)mpos);
 
 		if (!hovering && mouse_contained)
 		{
@@ -247,7 +247,7 @@ namespace flame
 				mbtns[i].second = false;
 		}
 		mdisp = mdisp_temp;
-		mdisp_temp = 0.f;
+		mdisp_temp = ivec2(0.f);
 		mscrl = mscrl_temp;
 		mscrl_temp = 0;
 
@@ -293,15 +293,15 @@ namespace flame
 
 		for (auto er : staging_mouse_targets)
 		{
-			if (mdisp != 0)
+			if (mdisp.x != 0 && mdisp.y != 0)
 			{
 				for (auto& l : er->mouse_move_listeners)
 					l->call(mdisp, mpos);
 				script::Parameter ps[2];
 				ps[0].type = script::ScriptTypeVec2f;
-				ps[0].data.f.xy() = mdisp;
+				ps[0].data.f.xy = mdisp;
 				ps[1].type = script::ScriptTypeVec2f;
-				ps[1].data.f.xy() = mpos;
+				ps[1].data.f.xy = mpos;
 				for (auto s : er->mouse_move_listeners_s)
 					script::Instance::get_default()->call_slot(s, size(ps), ps);
 			}
@@ -323,7 +323,7 @@ namespace flame
 						l->call(mpos);
 					script::Parameter p;
 					p.type = script::ScriptTypeVec2f;
-					p.data.f.xy() = mpos;
+					p.data.f.xy = mpos;
 					for (auto s : er->mouse_left_down_listeners_s)
 						script::Instance::get_default()->call_slot(s, 1, &p);
 				}
@@ -333,7 +333,7 @@ namespace flame
 						l->call(mpos);
 					script::Parameter p;
 					p.type = script::ScriptTypeVec2f;
-					p.data.f.xy() = mpos;
+					p.data.f.xy = mpos;
 					for (auto s : er->mouse_left_up_listeners_s)
 						script::Instance::get_default()->call_slot(s, 1, &p);
 				}

@@ -73,8 +73,8 @@ namespace flame
 
 			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues = nullptr) = 0;
 			virtual void end_renderpass() = 0;
-			virtual void set_viewport(const vec4& rect) = 0;
-			virtual void set_scissor(const vec4& rect) = 0;
+			virtual void set_viewport(const Rect& rect) = 0;
+			virtual void set_scissor(const Rect& rect) = 0;
 			virtual void bind_pipeline(Pipeline* p) = 0;
 			virtual void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) = 0;
 			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;

@@ -39,7 +39,7 @@ namespace flame
 	{
 		auto out = canvas->get_output(0);
 		auto size = out ? vec2(out->get_image()->get_size()) : vec2(1.f);
-		canvas->set_camera(fovy, size.x / size.y, near, far, node->global_dirs, node->global_pos);
+		canvas->set_camera(fovy, size.x / size.y, near, far, node->g_rot, node->g_pos);
 	}
 
 	void cCameraPrivate::set_current(bool v)

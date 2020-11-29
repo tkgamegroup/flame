@@ -14,15 +14,17 @@ namespace flame
 	struct cNodePrivate : cNode // R ~ on_*
 	{
 		vec3 pos = vec3(0.f);
-		vec4 quat = vec4(0.f, 0.f, 0.f, 1.f);
-		vec3 scaling = vec3(1.f);
+		quat qut = quat(1.f, 0.f, 0.f, 0.f);
+		mat3 rot = mat3(1.f);
+		vec3 scl = vec3(1.f);
+		bool qut_dirty = false;
+		bool rot_dirty = false;
 
 		bool transform_dirty = true;
-		mat3 rotation;
-		vec3 global_pos;
-		vec4 global_quat;
-		vec3 global_scale;
-		mat3 global_dirs;
+		quat g_qut;
+		mat3 g_rot;
+		vec3 g_pos;
+		vec3 g_scl;
 		mat4 transform;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
@@ -32,9 +34,9 @@ namespace flame
 
 		vec3 get_pos() const override { return pos; }
 		void set_pos(const vec3& pos) override;
-		vec4 get_quat() const override { return quat; }
-		void set_quat(const vec4& quat) override;
-		vec3 get_scale() const override { return scaling; }
+		quat get_quat() const override { return qut; }
+		void set_quat(const quat& quat) override;
+		vec3 get_scale() const override { return scl; }
 		void set_scale(const vec3 & scale) override;
 
 		void set_euler(const vec3& e) override;
@@ -44,8 +46,8 @@ namespace flame
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
 
-		mat4 get_transform() override;
-
+		void update_qut();
+		void update_rot();
 		void update_transform();
 
 		void mark_transform_dirty();

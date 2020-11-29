@@ -379,8 +379,7 @@ namespace flame
 		auto font_size = text->size;
 		element->update_transform();
 		auto pos = element->points[4];
-		auto xaxis = vec2(element->transform[0]);
-		auto yaxis = vec2(element->transform[1]);
+		auto axes = element->axes;
 
 		if (select_start != select_end)
 		{
@@ -404,10 +403,10 @@ namespace flame
 				if (right < high && str[right] == '\n')
 					p2.x += 4.f;
 				canvas->begin_path();
-				canvas->move_to(pos + xaxis * p1.x + yaxis * p1.y);
-				canvas->line_to(pos + xaxis * p2.x + yaxis * p2.y);
-				canvas->line_to(pos + xaxis * p2.x + yaxis * (p2.y + font_size));
-				canvas->line_to(pos + xaxis * p1.x + yaxis * (p1.y + font_size));
+				canvas->move_to(pos + axes[0] * p1.x + axes[1] * p1.y);
+				canvas->line_to(pos + axes[0] * p2.x + axes[1] * p2.y);
+				canvas->line_to(pos + axes[0] * p2.x + axes[1] * (p2.y + font_size));
+				canvas->line_to(pos + axes[0] * p1.x + axes[1] * (p1.y + font_size));
 				canvas->fill(cvec4(128, 128, 255, 255));
 				canvas->draw_text(res_id, sb, se, font_size, cvec4(255), pos + p1, element->axes);
 			}
@@ -418,8 +417,8 @@ namespace flame
 			auto off = (vec2)atlas->text_offset(font_size, str.c_str(), str.c_str() + select_end);
 			off.x += 0.5f;
 			canvas->begin_path();
-			canvas->move_to(pos + xaxis * off.x + yaxis * off.y);
-			canvas->line_to(pos + xaxis * off.x + yaxis * (off.y + font_size));
+			canvas->move_to(pos + axes[0] * off.x + axes[1] * off.y);
+			canvas->line_to(pos + axes[0] * off.x + axes[1] * (off.y + font_size));
 			canvas->stroke(cvec4(0, 0, 0, 255), 1.f);
 		}
 	}

@@ -64,8 +64,8 @@ namespace flame
 			void begin(bool once = false);
 			void begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* clearvalues = nullptr);
 			void end_renderpass() override;
-			void set_viewport(const vec4& rect) override;
-			void set_scissor(const vec4& rect) override;
+			void set_viewport(const Rect& rect) override;
+			void set_scissor(const Rect& rect) override;
 			void bind_pipeline(PipelinePrivate* p);
 			void bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll);
 			void bind_vertex_buffer(BufferPrivate* b, uint id);

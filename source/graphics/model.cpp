@@ -454,7 +454,7 @@ namespace flame
 				n.append_attribute("name").set_value(src->name.c_str());
 				auto nn = n.append_child("cNode");
 				nn.append_attribute("pos").set_value(to_string(src->pos).c_str());
-				nn.append_attribute("quat").set_value(to_string(*(vec4*)&src->qut).c_str());
+				nn.append_attribute("quat").set_value(to_string(src->qut).c_str());
 				nn.append_attribute("scale").set_value(to_string(src->scl).c_str());
 				if (src->mesh_index != -1)
 				{
@@ -723,7 +723,7 @@ namespace flame
 				load_node = [&](pugi::xml_node src, NodePrivate* dst) {
 					dst->name = src.attribute("name").value();
 					dst->pos = sto<vec3>(src.attribute("pos").value());
-					dst->qut = (quat)sto<vec4>(src.attribute("quat").value());
+					dst->qut = sto<quat>(src.attribute("quat").value());
 					dst->scl = sto<vec3>(src.attribute("scale").value());
 					dst->mesh_index = src.attribute("scale").as_int();
 					for (auto c : src.children())

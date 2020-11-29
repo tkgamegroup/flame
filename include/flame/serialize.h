@@ -92,6 +92,11 @@ namespace flame
 		return buf_size - s;
 	}
 
+	inline int fmt(char* buf, int buf_size, const quat& q)
+	{
+		return fmt(buf, buf_size, vec4(q.w, q.x, q.y, q.z));
+	}
+
 	template <class T>
 	std::string to_string(T v)
 	{
@@ -182,6 +187,11 @@ namespace flame
 			}
 		}
 		return buf_size - s;
+	}
+
+	inline int fmt(wchar_t* buf, int buf_size, const quat& q)
+	{
+		return fmt(buf, buf_size, vec4(q.w, q.x, q.y, q.z));
 	}
 
 	template <class T>
@@ -347,6 +357,14 @@ namespace flame
 		return ret;
 	}
 
+	template <>
+	inline quat sto<quat>(const char* s)
+	{
+		quat ret;
+		sscanf(s, "%f,%f,%f,%f", &ret.w, &ret.x, &ret.y, &ret.z);
+		return ret;
+	}
+
 	template <class T>
 	T sto(const wchar_t* s);
 
@@ -479,6 +497,14 @@ namespace flame
 	{
 		vec4 ret;
 		swscanf(s, L"%f,%f,%f,%f", &ret.x, &ret.y, &ret.z, &ret.w);
+		return ret;
+	}
+
+	template <>
+	inline quat sto<quat>(const wchar_t* s)
+	{
+		quat ret;
+		swscanf(s, L"%f,%f,%f,%f", &ret.w, &ret.x, &ret.y, &ret.z);
 		return ret;
 	}
 

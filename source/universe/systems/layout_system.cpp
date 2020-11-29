@@ -81,7 +81,7 @@ namespace flame
 				{
 					vec2 r;
 					m.second(m.first, r);
-					size = _max(size, r);
+					size = max(size, r);
 				}
 
 				auto w = 0.f, h = 0.f;

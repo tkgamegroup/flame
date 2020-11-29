@@ -74,7 +74,7 @@ namespace flame
 		if (res_id == -1 || cell_count == uvec2(0) || cell_size == vec2(0.f))
 			return;
 
-		auto axes = mat2(element->axes);
+		auto axes = element->axes;
 		auto p = element->points[4];
 		auto l = 0;
 		auto r = (int)cell_count.x;
@@ -85,10 +85,10 @@ namespace flame
 		{
 			auto inv = inverse(axes);
 			vec2 ps[4];
-			ps[0] = inv * vec2(element->boundaries[0] - p.x, element->boundaries[1] - p.y);
-			ps[1] = inv * vec2(element->boundaries[2] - p.x, element->boundaries[1] - p.y);
-			ps[2] = inv * vec2(element->boundaries[2] - p.x, element->boundaries[3] - p.y);
-			ps[3] = inv * vec2(element->boundaries[0] - p.x, element->boundaries[3] - p.y);
+			ps[0] = inv * vec2(element->parent_scissor.LT.x - p.x, element->parent_scissor.LT.y - p.y);
+			ps[1] = inv * vec2(element->parent_scissor.RB.x - p.x, element->parent_scissor.LT.y - p.y);
+			ps[2] = inv * vec2(element->parent_scissor.RB.x - p.x, element->parent_scissor.RB.y - p.y);
+			ps[3] = inv * vec2(element->parent_scissor.LT.x - p.x, element->parent_scissor.RB.y - p.y);
 			vec4 bb;
 			bb[0] = bb[2] = ps[0].x;
 			bb[1] = bb[3] = ps[0].y;

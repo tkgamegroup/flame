@@ -102,25 +102,25 @@ namespace flame
 			vkCmdEndRenderPass(vk_command_buffer);
 		}
 
-		void CommandBufferPrivate::set_viewport(const vec4& rect)
+		void CommandBufferPrivate::set_viewport(const Rect& rect)
 		{
 			VkViewport vp;
 			vp.minDepth = 0.f;
 			vp.maxDepth = 1.f;
-			vp.x = rect.x;
-			vp.y = rect.y;
-			vp.width = max(rect.z - rect.x, 1.f);
-			vp.height = max(rect.w - rect.y, 1.f);
+			vp.x = rect.LT.x;
+			vp.y = rect.LT.y;
+			vp.width = max(rect.RB.x - rect.LT.x, 1.f);
+			vp.height = max(rect.RB.y - rect.LT.y, 1.f);
 			vkCmdSetViewport(vk_command_buffer, 0, 1, &vp);
 		}
 
-		void CommandBufferPrivate::set_scissor(const vec4& rect)
+		void CommandBufferPrivate::set_scissor(const Rect& rect)
 		{
 			VkRect2D sc;
-			sc.offset.x = max(0.f, rect.x);
-			sc.offset.y = max(0.f, rect.y);
-			sc.extent.width = max(0.f, rect.z - rect.x);
-			sc.extent.height = max(0.f, rect.w - rect.y);
+			sc.offset.x = max(0.f, rect.LT.x);
+			sc.offset.y = max(0.f, rect.LT.y);
+			sc.extent.width = max(0.f, rect.RB.x - rect.LT.x);
+			sc.extent.height = max(0.f, rect.RB.y - rect.LT.y);
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
 		}
 

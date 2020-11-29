@@ -433,17 +433,17 @@ namespace flame
 
 		struct CmdSetScissor : Cmd
 		{
-			vec4 scissor;
+			Rect scissor;
 
-			CmdSetScissor(const vec4& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
+			CmdSetScissor(const Rect& _scissor) : Cmd(SetScissor) { scissor = _scissor; }
 		};
 
 		struct CmdBlur : Cmd
 		{
-			vec4 range;
+			Rect range;
 			uint radius;
 
-			CmdBlur(const vec4& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
+			CmdBlur(const Rect& _range, uint _radius) : Cmd(Blur) { range = _range; radius = _radius; }
 		};
 
 		struct CmdBloom : Cmd
@@ -575,7 +575,7 @@ namespace flame
 			CmdDrawLine3* last_line3_cmd = nullptr;
 
 			uvec2 output_size;
-			vec4 curr_scissor;
+			Rect curr_scissor;
 
 			CanvasPrivate(RenderPreferencesPrivate* preferences);
 
@@ -619,8 +619,8 @@ namespace flame
 
 			void stroke(const cvec4& col, float thickness, bool aa = false) override;
 			void fill(const cvec4& col, bool aa = false) override;
-			void draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat3& transform, const vec2& uv0, const vec2& uv1, const cvec4& tint_col) override;
-			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat3& transform) override;
+			void draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat2& axes, const vec2& uv0, const vec2& uv1, const cvec4& tint_col) override;
+			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes) override;
 
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) override;
 			void set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id) override;
@@ -631,10 +631,10 @@ namespace flame
 
 			void draw_lines(uint lines_count, const Line3* lines) override;
 
-			vec4 get_scissor() const override { return curr_scissor; }
-			void set_scissor(const vec4& scissor) override;
+			Rect get_scissor() const override { return curr_scissor; }
+			void set_scissor(const Rect& scissor) override;
 
-			void add_blur(const vec4& range, uint radius) override;
+			void add_blur(const Rect& range, uint radius) override;
 			void add_bloom() override;
 
 			void prepare() override;

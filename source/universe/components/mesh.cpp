@@ -166,7 +166,7 @@ namespace flame
 						{
 							auto& f = b.frames[j];
 							f.p = j < pkc ? pk[j].v : vec3(0.f);
-							f.q = j < rkc ? rk[j].v : vec4(0.f, 0.f, 0.f, 1.f);
+							f.q = j < rkc ? rk[j].v : quat(1.f, 0.f, 0.f, 0.f);
 						}
 					}
 				}
@@ -200,7 +200,7 @@ namespace flame
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, node->global_dirs, cast_shadow, deformer);
+			canvas->draw_mesh(model_id, mesh_id, node->transform, node->g_rot, cast_shadow, deformer);
 	}
 
 	cMesh* cMesh::create()

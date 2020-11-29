@@ -17,17 +17,17 @@ namespace flame
 		vec2 pos = vec2(0.f);
 		vec2 size = vec2(0.f);
 		vec4 padding = vec4(0.f);
+		vec2 padding_size = vec2(0.f);
 		vec2 content_size = vec2(0.f);
 		vec2 pivot = vec2(0.f);
-		vec2 scaling = vec2(1.f);
-		float rotation = 0.f;
-		float skewx = 0.f;
-		float skewy = 0.f;
+		vec2 scl = vec2(1.f);
+		float angle = 0.f;
+		vec2 skew = vec2(0.f);
 
 		bool transform_dirty = true;
 		bool crooked = false;
 		vec2 points[8];
-		mat3 axes;
+		mat2 axes;
 		mat3 transform;
 		Rect aabb;
 
@@ -38,7 +38,7 @@ namespace flame
 
 		bool clipping = false;
 
-		vec4 boundaries;
+		Rect parent_scissor;
 		bool culled = false;
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers[2];
@@ -70,19 +70,19 @@ namespace flame
 		float get_pivoty() const override { return pivot.y; }
 		void set_pivoty(float p) override;
 
-		float get_scalex() const override { return scaling.x; }
+		float get_scalex() const override { return scl.x; }
 		void set_scalex(float s) override;
 
-		float get_scaley() const override { return scaling.y; }
+		float get_scaley() const override { return scl.y; }
 		void set_scaley(float s) override;
 
-		float get_rotation() const override { return rotation; }
-		void set_rotation(float r) override;
+		float get_angle() const override { return angle; }
+		void set_angle(float a) override;
 
-		float get_skewx() const override { return skewx; }
+		float get_skewx() const override { return skew.x; }
 		void set_skewx(float s) override;
 
-		float get_skewy() const override { return skewy; }
+		float get_skewy() const override { return skew.y; }
 		void set_skewy(float s) override;
 
 		void update_transform();

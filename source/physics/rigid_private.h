@@ -29,8 +29,8 @@ namespace flame
 
 			void release() override { delete this; }
 
-			void get_pose(vec3& coord, vec4& quat) const override;
-			void set_pose(const vec3& coord, const vec4& quat) override;
+			void get_pose(vec3& coord, quat& qut) const override;
+			void set_pose(const vec3& coord, const quat& qut) override;
 
 			void add_shape(ShapePrivate* s);
 			void remove_shape(ShapePrivate* s);

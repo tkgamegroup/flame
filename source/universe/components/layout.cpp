@@ -24,10 +24,10 @@ namespace flame
 			e->set_x(scrollx + element->size.x - p[1] - e->size.x);
 			break;
 		case AlignMiddle:
-			e->set_x(scrollx + p[0] + (element->size.x - p.sum() - e->size.x) * 0.5f);
+			e->set_x(scrollx + p[0] + (element->size.x - p[0] - p[1] - e->size.x) * 0.5f);
 			break;
 		case AlignMinMax:
-			e->set_width(element->size.x - p.sum());
+			e->set_width(element->size.x - p[0] - p[1]);
 			e->set_x(scrollx + p[0]);
 			if (a)
 				a->desired_size.x = e->size.x;
@@ -48,10 +48,10 @@ namespace flame
 			e->set_y(scrolly + element->size.y - p[1] - e->size.y);
 			break;
 		case AlignMiddle:
-			e->set_y(scrolly + p[0] + (element->size.y - p.sum() - e->size.y) * 0.5f);
+			e->set_y(scrolly + p[0] + (element->size.y - p[0] - p[1] - e->size.y) * 0.5f);
 			break;
 		case AlignMinMax:
-			e->set_height(element->size.y - p.sum());
+			e->set_height(element->size.y - p[0] - p[1]);
 			e->set_y(scrolly + p[0]);
 			if (a)
 				a->desired_size.y = e->size.y;
@@ -146,14 +146,14 @@ namespace flame
 				}
 				else
 					w += element->size.x;
-				w += gap + m.xz().sum();
-				h = max((aligny == AlignMinMax ? aligner->desired_size.y : element->size.y) + m.yw().sum(), h);
+				w += gap + m[0] + m[2];
+				h = max((aligny == AlignMinMax ? aligner->desired_size.y : element->size.y) + m[1] + m[3], h);
 
 			}
 			if (!als[0].empty())
 				w -= gap;
-			w += element->padding.xz().sum();
-			h += element->padding.yw().sum();
+			w += element->padding_size[0];
+			h += element->padding_size[1];
 			judge_width(w);
 			judge_height(h);
 
@@ -198,7 +198,7 @@ namespace flame
 				auto aligny = aligner ? aligner->aligny : AlignNone;
 				auto m = aligner ? aligner->margin : vec4(0.f);
 
-				w = max((alignx == AlignMinMax ? aligner->desired_size.x : element->size.x) + m.xz().sum(), w);
+				w = max((alignx == AlignMinMax ? aligner->desired_size.x : element->size.x) + m[0] + m[2], w);
 				if (aligny == AlignMinMax)
 				{
 					factor += aligner->height_factor;
@@ -206,12 +206,12 @@ namespace flame
 				}
 				else
 					h += element->size.y;
-				h += gap + m.yw().sum();
+				h += gap + m[1] + m[3];
 			}
 			if (!als[0].empty())
 				h -= gap;
-			w += element->padding.xz().sum();
-			h += element->padding.yw().sum();
+			w += element->padding_size[0];
+			h += element->padding_size[1];
 			judge_width(w);
 			judge_height(h);
 
@@ -249,8 +249,8 @@ namespace flame
 //
 //			if (column == 0)
 //			{
-//				judge_width(element->padding.xz().sum());
-//				judge_height(element->padding.yw().sum());
+//				judge_width(element->padding_size[0]);
+//				judge_height(element->padding_size[1]);
 //				for (auto i = 0; i < n; i++)
 //				{
 //					auto& al = als[i];
@@ -298,8 +298,8 @@ namespace flame
 //					}
 //					h -= gap;
 //				}
-//				w += element->padding.xz().sum();
-//				h += element->padding.yw().sum();
+//				w += element->padding_size[0];
+//				h += element->padding_size[1];
 //				judge_width(w);
 //				judge_height(h);
 //

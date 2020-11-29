@@ -95,9 +95,9 @@ namespace flame
 			virtual void stroke(const cvec4& col, float thickness, bool aa = false) = 0;
 			virtual void fill(const cvec4& col, bool aa = false) = 0;
 
-			virtual void draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat3& transform = mat3(1.f), const vec2& uv0 = vec2(0.f), const vec2& uv1 = vec2(1.f), const cvec4& tint_col = cvec4(255)) = 0;
+			virtual void draw_image(uint res_id, uint tile_id, const vec2& pos, const vec2& size, const mat2& axes = mat2(1.f), const vec2& uv0 = vec2(0.f), const vec2& uv1 = vec2(1.f), const cvec4& tint_col = cvec4(255)) = 0;
 			// null text_end means render until '\0'
-			virtual void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat3& transform = mat3(1.f)) = 0;
+			virtual void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes = mat2(1.f)) = 0;
 
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) = 0;
 			virtual void set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id) = 0;
@@ -108,10 +108,10 @@ namespace flame
 
 			virtual void draw_lines(uint lines_count, const Line3* lines) = 0;
 
-			virtual vec4 get_scissor() const = 0;
-			virtual void set_scissor(const vec4& scissor) = 0;
+			virtual Rect get_scissor() const = 0;
+			virtual void set_scissor(const Rect& scissor) = 0;
 
-			virtual void add_blur(const vec4& range, uint radius) = 0;
+			virtual void add_blur(const Rect& range, uint radius) = 0;
 			virtual void add_bloom() = 0;
 
 			virtual void prepare() = 0;

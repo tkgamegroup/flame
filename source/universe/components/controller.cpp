@@ -21,7 +21,7 @@ namespace flame
 	{
 		phy_controller = physics::Controller::create(physics_world->phy_scene, nullptr, radius, height);
 		node->update_transform();
-		phy_controller->set_position(node->global_pos);
+		phy_controller->set_position(node->g_pos);
 		physics_world->controllers.push_back(this);
 	}
 

@@ -61,7 +61,7 @@ namespace flame
 			}
 
 			auto size = window->get_size();
-			if (size != 0U)
+			if (size.x != 0U || size.y != 0U)
 			{
 				uint image_count = 3;
 

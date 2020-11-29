@@ -40,13 +40,13 @@ namespace flame
 						{
 							if (disp.x < 0.f)
 							{
-								auto v = min(left_element->size.x - max(1.f, left_aligner ? left_aligner->desired_size.x : left_element->padding.xz().sum()), (float)-disp.x);
+								auto v = min(left_element->size.x - max(1.f, left_aligner ? left_aligner->desired_size.x : left_element->padding_size[0]), (float)-disp.x);
 								left_element->set_width(left_element->size.x - v);
 								right_element->set_width(right_element->size.x + v);
 							}
 							else if (disp.x > 0.f)
 							{
-								auto v = min(right_element->size.x - max(1.f, right_aligner ? right_aligner->desired_size.x : right_element->padding.xz().sum()), (float)disp.x);
+								auto v = min(right_element->size.x - max(1.f, right_aligner ? right_aligner->desired_size.x : right_element->padding_size[0]), (float)disp.x);
 								left_element->set_width(left_element->size.x + v);
 								right_element->set_width(right_element->size.x - v);
 							}
@@ -59,13 +59,13 @@ namespace flame
 						{
 							if (disp.y < 0.f)
 							{
-								auto v = min(left_element->size.y - max(1.f, left_aligner ? left_aligner->desired_size.y : left_element->padding.yw().sum()), (float)-disp.y);
+								auto v = min(left_element->size.y - max(1.f, left_aligner ? left_aligner->desired_size.y : left_element->padding_size[1]), (float)-disp.y);
 								left_element->set_height(left_element->size.y - v);
 								right_element->set_height(right_element->size.y + v);
 							}
 							else if (disp.y > 0.f)
 							{
-								auto v = min(right_element->size.y - max(1.f, right_aligner ? right_aligner->desired_size.y : right_element->padding.yw().sum()), (float)disp.y);
+								auto v = min(right_element->size.y - max(1.f, right_aligner ? right_aligner->desired_size.y : right_element->padding_size[1]), (float)disp.y);
 								left_element->set_height(left_element->size.y + v);
 								right_element->set_height(right_element->size.y - v);
 							}

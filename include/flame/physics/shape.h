@@ -33,7 +33,7 @@ namespace flame
 			// trigger means it will not collide with others but will report when it overlay with others, default is false
 			virtual void set_trigger(bool v) = 0;
 
-			virtual void set_pose(const vec3& coord, const vec4& quat) = 0;
+			virtual void set_pose(const vec3& coord, const quat& qut) = 0;
 
 			void* user_data;
 

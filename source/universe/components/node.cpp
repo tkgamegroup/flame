@@ -14,58 +14,73 @@ namespace flame
 		Entity::report_data_changed(this, S<"pos"_h>);
 	}
 
-	void cNodePrivate::set_quat(const vec4& q)
+	void cNodePrivate::set_quat(const quat& q)
 	{
-		if (quat == q)
+		if (qut == q)
 			return;
-		quat = q;
+		qut = q;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"quat"_h>);
 	}
 
 	void cNodePrivate::set_scale(const vec3& s)
 	{
-		if (scaling == s)
+		if (scl == s)
 			return;
-		scaling = s;
+		scl = s;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"scale"_h>);
 	}
 
 	void cNodePrivate::set_euler(const vec3& e)
 	{
-		auto qy = make_quat(e.x, vec3(0.f, 1.f, 0.f));
-		auto qp = make_quat(e.y, vec3(1.f, 0.f, 0.f));
-		auto qr = make_quat(e.z, vec3(0.f, 0.f, 1.f));
-		set_quat(quat_mul(quat_mul(qy, qp), qr));
+		auto m = rotate(mat4(1.f), e.x, vec3(0.f, 1.f, 0.f));
+		m = rotate(m, e.y, vec3(1.f, 0.f, 0.f));
+		m = rotate(m, e.z, vec3(0.f, 0.f, 1.f));
+		rot = mat3(m);
+		qut_dirty = true;
+		mark_transform_dirty();
 	}
 
 	vec3 cNodePrivate::get_local_dir(uint idx)
 	{
-		update_transform();
+		update_rot();
 
-		return local_dirs[idx];
+		return rot[idx];
 	}
 
 	vec3 cNodePrivate::get_global_pos()
 	{
 		update_transform();
 
-		return global_pos;
+		return transform[3];
 	}
 
 	vec3 cNodePrivate::get_global_dir(uint idx)
 	{
 		update_transform();
 
-		return global_dirs[idx];
+		return g_rot[idx];
 	}
 
-	mat4 cNodePrivate::get_transform()
+	void cNodePrivate::update_qut()
 	{
-		update_transform();
+		if (qut_dirty)
+		{
+			qut_dirty = false;
 
-		return mat4(1.f);
+			qut = quat(rot);
+		}
+	}
+
+	void cNodePrivate::update_rot()
+	{
+		if (rot_dirty)
+		{
+			rot_dirty = false;
+
+			rot = mat3(qut);
+		}
 	}
 
 	void cNodePrivate::update_transform()
@@ -74,25 +89,24 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			local_dirs = make_rotation_matrix(quat) * mat3(scaling);
+			update_rot();
 
+			g_qut = qut;
+			g_rot = rot;
+			g_scl = scl;
+			mat4 m(1.f);
 			auto pn = entity->get_parent_component_t<cNodePrivate>();
 			if (pn)
 			{
 				pn->update_transform();
-				global_pos = pn->global_pos + quat_mul(pn->global_quat, pos * pn->global_scale);
-				global_quat = quat_mul(pn->global_quat, quat);
-				global_scale = pn->global_scale * scaling;
+				g_qut = pn->g_qut * g_qut;
+				g_rot = pn->g_rot * g_rot;
+				g_scl = pn->g_scl * g_scl;
+				m = pn->transform;
 			}
-			else
-			{
-				global_pos = pos;
-				global_quat = quat;
-				global_scale = scaling;
-			}
-
-			global_dirs = make_rotation_matrix(global_quat);
-			transform = mat4(Mat<3, 4, float>(global_dirs * mat3(global_scale), vec3(0.f)), vec4(global_pos, 1.f));
+			m = translate(m, pos) * mat4(rot);
+			g_pos = m[3];
+			m = scale(m, scl);
 
 			Entity::report_data_changed(this, S<"transform"_h>);
 		}

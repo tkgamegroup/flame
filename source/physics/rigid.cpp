@@ -32,19 +32,19 @@ namespace flame
 #endif
 		}
 
-		void RigidPrivate::get_pose(vec3& coord, vec4& quat) const
+		void RigidPrivate::get_pose(vec3& coord, quat& qut) const
 		{
 #ifdef USE_PHYSX
 			auto trans = px_rigid->getGlobalPose();
 			coord = cvt(trans.p);
-			quat = cvt(trans.q);
+			qut = cvt(trans.q);
 #endif
 		}
 
-		void RigidPrivate::set_pose(const vec3& coord, const vec4& quat)
+		void RigidPrivate::set_pose(const vec3& coord, const quat& qut)
 		{
 #ifdef USE_PHYSX
-			px_rigid->setGlobalPose(PxTransform(cvt(coord), cvt(quat)));
+			px_rigid->setGlobalPose(PxTransform(cvt(coord), cvt(qut)));
 #endif
 		}
 
