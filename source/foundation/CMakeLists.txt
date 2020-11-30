@@ -13,3 +13,4 @@ target_include_directories(flame_foundation PUBLIC "${CMAKE_SOURCE_DIR}/include"
 target_link_libraries(flame_foundation imagehlp.lib)
 target_link_libraries(flame_foundation debug "${PUGIXML_DEBUG_STATIC_LIBRARY_PATH}")
 target_link_libraries(flame_foundation optimized "${PUGIXML_RELEASE_STATIC_LIBRARY_PATH}")
+target_precompile_headers(flame_foundation PUBLIC "${CMAKE_SOURCE_DIR}/include/pch.h")

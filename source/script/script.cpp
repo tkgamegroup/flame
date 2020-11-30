@@ -33,7 +33,7 @@ namespace flame
 			}
 		}
 
-		static void l_push_vec2f(lua_State* state, const vec2& v)
+		static void l_push_vec2(lua_State* state, const vec2& v)
 		{
 			lua_newtable(state);
 
@@ -46,7 +46,7 @@ namespace flame
 			lua_settable(state, -3);
 		}
 
-		static void l_push_vec3f(lua_State* state, const vec3& v)
+		static void l_push_vec3(lua_State* state, const vec3& v)
 		{
 			lua_newtable(state);
 
@@ -63,7 +63,7 @@ namespace flame
 			lua_settable(state, -3);
 		}
 
-		static void l_push_vec4f(lua_State* state, const vec4& v)
+		static void l_push_vec4(lua_State* state, const vec4& v)
 		{
 			lua_newtable(state);
 
@@ -212,12 +212,12 @@ namespace flame
 							lua_pushinteger(state, *(int*)ret);
 						else if (tn == "float")
 							lua_pushnumber(state, *(float*)ret);
-						else if (tn == "flame::Vec<2,float>")
-							l_push_vec2f(state, *(vec2*)ret);
-						else if (tn == "flame::Vec<3,float>")
-							l_push_vec3f(state, *(vec3*)ret);
-						else if (tn == "flame::Vec<4,float>")
-							l_push_vec4f(state, *(vec4*)ret);
+						else if (tn == "glm::vec<2,float,0>")
+							l_push_vec2(state, *(vec2*)ret);
+						else if (tn == "glm::vec<3,float,0>")
+							l_push_vec3(state, *(vec3*)ret);
+						else if (tn == "glm::vec<4,float,0>")
+							l_push_vec4(state, *(vec4*)ret);
 						else
 							lua_pushnil(state);
 					}
@@ -370,8 +370,8 @@ namespace flame
 				case ScriptTypePointer:
 					lua_pushlightuserdata(lua_state, p.data.p);
 					break;
-				case ScriptTypeVec2f:
-					l_push_vec2f(lua_state, (vec2)p.data.f);
+				case ScriptTypeVec2:
+					l_push_vec2(lua_state, (vec2)p.data.f);
 					break;
 				}
 			}

@@ -135,7 +135,7 @@ namespace flame
 		{
 			transform_dirty = false;
 
-			crooked = angle == 0.f && skew.x == 0.f && skew.y == 0.f;
+			crooked = !(angle == 0.f && skew.x == 0.f && skew.y == 0.f);
 			auto m = mat3(1.f);
 			auto pe = entity->get_parent_component_t<cElementPrivate>();
 			if (pe)
@@ -159,37 +159,32 @@ namespace flame
 				axes = mat2(1.f);
 			m = scale(m, scl);
 
+			auto a = -pivot * size;
+			auto b = a + size;
+			auto c = a;
+			auto d = b;
 			if (crooked)
 			{
-				points[0] = axes * vec2(-pivot.x * size.x,			-pivot.y * size.y);
-				points[1] = axes * vec2((1.f - pivot.x) * size.x,	-pivot.y * size.y);
-				points[2] = axes * vec2((1.f - pivot.x) * size.x,	(1.f - pivot.y) * size.y);
-				points[3] = axes * vec2(-pivot.x * size.x,			(1.f - pivot.y) * size.y);
+				a = vec2(m[2]) + axes * a;
+				b = vec2(m[2]) + axes * b;
+				c += axes * padding.xy();
+				d -= axes * padding.zw();
 			}
 			else
 			{
-				points[0] = vec2(-pivot.x * size.x,			-pivot.y * size.y);
-				points[1] = vec2((1.f - pivot.x) * size.x,	-pivot.y * size.y);
-				points[2] = vec2((1.f - pivot.x) * size.x,	(1.f - pivot.y) * size.y);
-				points[3] = vec2(-pivot.x * size.x,			(1.f - pivot.y) * size.y);
+				a += vec2(m[2]);
+				b += vec2(m[2]);
+				c += padding.xy();
+				d -= padding.zw();
 			}
-
-			for (auto i = 0; i < 4; i++)
-				points[i + 4] = points[i];
-			if (crooked)
-			{
-				points[4] += axes * vec2(padding[0], padding[1]);
-				points[5] += axes * vec2(-padding[2], padding[1]);
-				points[6] += axes * vec2(-padding[2], -padding[3]);
-				points[7] += axes * vec2(padding[0], -padding[3]);
-			}
-			else
-			{
-				points[4] += vec2(padding[0], padding[1]);
-				points[5] += vec2(-padding[2], padding[1]);
-				points[6] += vec2(-padding[2], -padding[3]);
-				points[7] += vec2(padding[0], -padding[3]);
-			}
+			points[0] = vec2(a.x, a.y);
+			points[1] = vec2(b.x, a.y);
+			points[2] = vec2(b.x, b.y);
+			points[3] = vec2(a.x, b.y);
+			points[4] = vec2(c.x, c.y);
+			points[5] = vec2(d.x, c.y);
+			points[6] = vec2(d.x, d.y);
+			points[7] = vec2(c.x, d.y);
 
 			aabb.reset();
 			for (auto i = 0; i < 4; i++)

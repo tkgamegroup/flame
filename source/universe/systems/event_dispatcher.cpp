@@ -298,9 +298,9 @@ namespace flame
 				for (auto& l : er->mouse_move_listeners)
 					l->call(mdisp, mpos);
 				script::Parameter ps[2];
-				ps[0].type = script::ScriptTypeVec2f;
+				ps[0].type = script::ScriptTypeVec2;
 				ps[0].data.f.xy = mdisp;
-				ps[1].type = script::ScriptTypeVec2f;
+				ps[1].type = script::ScriptTypeVec2;
 				ps[1].data.f.xy = mpos;
 				for (auto s : er->mouse_move_listeners_s)
 					script::Instance::get_default()->call_slot(s, size(ps), ps);
@@ -322,7 +322,7 @@ namespace flame
 					for (auto& l : er->mouse_left_down_listeners)
 						l->call(mpos);
 					script::Parameter p;
-					p.type = script::ScriptTypeVec2f;
+					p.type = script::ScriptTypeVec2;
 					p.data.f.xy = mpos;
 					for (auto s : er->mouse_left_down_listeners_s)
 						script::Instance::get_default()->call_slot(s, 1, &p);
@@ -332,7 +332,7 @@ namespace flame
 					for (auto& l : er->mouse_left_up_listeners)
 						l->call(mpos);
 					script::Parameter p;
-					p.type = script::ScriptTypeVec2f;
+					p.type = script::ScriptTypeVec2;
 					p.data.f.xy = mpos;
 					for (auto s : er->mouse_left_up_listeners_s)
 						script::Instance::get_default()->call_slot(s, 1, &p);

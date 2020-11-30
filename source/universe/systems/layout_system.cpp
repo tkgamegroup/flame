@@ -87,12 +87,12 @@ namespace flame
 				auto w = 0.f, h = 0.f;
 				if (size.x >= 0.f)
 				{
-					w = size.x + e->padding[0] + e->padding[2];
+					w = size.x + e->padding_size[0];
 					e->set_width(w);
 				}
 				if (size.y >= 0.f)
 				{
-					h = size.y + e->padding[1] + e->padding[3];
+					h = size.y + e->padding_size[1];
 					e->set_height(h);
 				}
 

@@ -35,10 +35,14 @@ namespace flame
 		uint depth = 0;
 		uint index = 0;
 
+		std::filesystem::path src;
+		std::filesystem::path src_abs;
+
 		int created_frame;
 		int created_id;
 		std::vector<void*> created_stack;
-		std::filesystem::path filename;
+		std::filesystem::path created_filename;
+		uint created_lineno = 0;
 
 		enum RefType
 		{
@@ -101,8 +105,6 @@ namespace flame
 
 		std::vector<std::pair<uint, void*>> events_s;
 
-		std::filesystem::path src;
-
 		EntityPrivate();
 		~EntityPrivate();
 
@@ -117,15 +119,6 @@ namespace flame
 
 		World* get_world() const override { return (World*)world; }
 		Entity* get_parent() const override { return parent; }
-
-		const std::filesystem::path get_closest_filename() const
-		{
-			if (!filename.empty())
-				return filename;
-			if (parent)
-				return parent->get_closest_filename();
-			return L"";
-		}
 
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;

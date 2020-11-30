@@ -77,11 +77,15 @@ namespace flame
 				{
 					isfile = true;
 					if (!fn.is_absolute())
-						fn = entity->get_closest_filename().parent_path() / fn;
+						fn = entity->src_abs.parent_path() / fn;
 				}
 				model_id = canvas->find_model_resource(fn.string().c_str());
 				if (model_id == -1 && isfile)
-					model_id = canvas->set_model_resource(-1, graphics::Model::create(fn.c_str()), fn.filename().string().c_str());
+				{
+					auto model = graphics::Model::create(fn.c_str());
+					fassert(model);
+					model_id = canvas->set_model_resource(-1, model, fn.filename().string().c_str());
+				}
 
 				if (model_id != -1)
 				{

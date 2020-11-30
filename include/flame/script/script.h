@@ -19,7 +19,7 @@ namespace flame
 			ScriptTypeInt,
 			ScriptTypeFloat,
 			ScriptTypePointer,
-			ScriptTypeVec2f
+			ScriptTypeVec2
 		};
 
 		struct Parameter

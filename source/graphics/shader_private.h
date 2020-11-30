@@ -30,21 +30,7 @@ namespace flame
 
 		enum ShaderTypeTag
 		{
-			ShaderTagInt,
-			ShaderTagVec2i,
-			ShaderTagVec3i,
-			ShaderTagVec4i,
-			ShaderTagUint,
-			ShaderTagVec2u,
-			ShaderTagVec3u,
-			ShaderTagVec4u,
-			ShaderTagFloat,
-			ShaderTagVec2f,
-			ShaderTagVec3f,
-			ShaderTagVec4f,
-			ShaderTagMat2f,
-			ShaderTagMat3f,
-			ShaderTagMat4f,
+			ShaderTagBase,
 			ShaderTagStruct,
 			ShaderTagImage
 		};

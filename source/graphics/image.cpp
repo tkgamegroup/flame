@@ -7,7 +7,7 @@
 #include "command_private.h"
 #include "shader_private.h"
 
-#include <gli.hpp>
+#include <gli/gli.hpp>
 
 namespace flame
 {
@@ -156,13 +156,12 @@ namespace flame
 
 			ImagePrivate* ret = nullptr;
 
-			auto ext = filename.extension().string();
-			if (ext == ".ktx")
+			auto ext = filename.extension();
+			if (ext == L".ktx" || ext == L".dds")
 			{
 				gli::gl GL(gli::gl::PROFILE_KTX);
 
 				auto gli_texture = gli::load(filename.string());
-				fassert(gli_texture.target() == gli::TARGET_2D);
 
 				auto size = gli_texture.extent();
 				auto levels = gli_texture.levels();

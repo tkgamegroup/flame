@@ -900,7 +900,9 @@ namespace flame
 	}
 
 	static void load_prefab(EntityPrivate* dst, pugi::xml_node src, 
-		const std::vector<std::pair<std::string, std::string>>& nss)
+		const std::filesystem::path& filename,
+		const std::vector<std::pair<std::string, std::string>>& nss,
+		const std::vector<uint>& los)
 	{
 		if (src.name() != std::string("entity"))
 			return;
@@ -952,7 +954,18 @@ namespace flame
 			if (name == "entity")
 			{
 				auto e = f_new<EntityPrivate>();
-				load_prefab(e, n_c, nss);
+				e->src_abs = dst->src_abs;
+				e->created_filename = filename;
+				auto offset = n_c.offset_debug();
+				for (auto i = 0; i < los.size(); i++)
+				{
+					if (offset < los[i])
+					{
+						e->created_lineno = i + 1;
+						break;
+					}
+				}
+				load_prefab(e, n_c, filename, nss, los);
 
 				attach->add_child(e);
 			}
@@ -1010,7 +1023,7 @@ namespace flame
 		}
 	}
 
-	std::filesystem::path get_prefab_path(const std::filesystem::path& filename)
+	static std::filesystem::path get_prefab_path(const std::filesystem::path& filename)
 	{
 		auto fn = filename;
 
@@ -1030,14 +1043,15 @@ namespace flame
 		return fn;
 	}
 
-	void EntityPrivate::load(const std::filesystem::path& _filename)
+	void EntityPrivate::load(const std::filesystem::path& filename)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
 
-		if (!doc.load_file(get_prefab_path(_filename).c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
+		auto path = get_prefab_path(filename);
+		if (!doc.load_file(path.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
 		{
-			printf("prefab do not exist or wrong format: %s\n", _filename.string().c_str());
+			printf("prefab do not exist or wrong format: %s\n", filename.string().c_str());
 			return;
 		}
 
@@ -1051,8 +1065,23 @@ namespace flame
 				nss.emplace_back(res[1].str(), a.value());
 		}
 
-		filename = _filename;
-		load_prefab(this, doc_root.first_child(), nss);
+		std::vector<uint> los;
+		{
+			std::ifstream file(path);
+			while (!file.eof())
+			{
+				std::string line;
+				std::getline(file, line);
+				los.push_back(file.tellg());
+			}
+			file.close();
+		}
+
+		if (!path.is_absolute())
+			path = std::filesystem::canonical(path);
+		path.make_preferred();
+		src_abs = path;
+		load_prefab(this, doc_root.first_child(), path, nss, los);
 	}
 
 	static void save_prefab(pugi::xml_node n, EntityPrivate* src)

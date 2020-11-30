@@ -281,10 +281,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec2c : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_cvec2 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec2c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uchar>", sizeof(cvec2))
+		TypeInfoPrivate_cvec2() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,uchar,0>", sizeof(cvec2))
 		{
 		}
 
@@ -299,10 +299,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec3c : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_cvec3 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec3c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uchar>", sizeof(cvec3))
+		TypeInfoPrivate_cvec3() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec3))
 		{
 		}
 
@@ -317,10 +317,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec4c : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_cvec4 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec4c() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uchar>", sizeof(cvec4))
+		TypeInfoPrivate_cvec4() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec4))
 		{
 		}
 
@@ -335,10 +335,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec2i : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_ivec2 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec2i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,int>", sizeof(ivec2))
+		TypeInfoPrivate_ivec2() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,int,0>", sizeof(ivec2))
 		{
 		}
 
@@ -353,10 +353,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec3i : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_ivec3 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec3i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,int>", sizeof(ivec3))
+		TypeInfoPrivate_ivec3() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,int,0>", sizeof(ivec3))
 		{
 		}
 
@@ -371,10 +371,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec4i : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_ivec4 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec4i() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,int>", sizeof(ivec4))
+		TypeInfoPrivate_ivec4() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,int,0>", sizeof(ivec4))
 		{
 		}
 
@@ -389,10 +389,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec2u : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_uvec2 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec2u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,uint>", sizeof(uvec2))
+		TypeInfoPrivate_uvec2() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,uint,0>", sizeof(uvec2))
 		{
 		}
 
@@ -407,10 +407,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec3u : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_uvec3 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec3u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,uint>", sizeof(uvec3))
+		TypeInfoPrivate_uvec3() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uint,0>", sizeof(uvec3))
 		{
 		}
 
@@ -425,10 +425,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec4u : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_uvec4 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec4u() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,uint>", sizeof(uvec4))
+		TypeInfoPrivate_uvec4() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uint,0>", sizeof(uvec4))
 		{
 		}
 
@@ -443,10 +443,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec2f : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_vec2 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec2f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<2,float>", sizeof(vec2))
+		TypeInfoPrivate_vec2() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,float,0>", sizeof(vec2))
 		{
 		}
 
@@ -461,10 +461,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec3f : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_vec3 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec3f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<3,float>", sizeof(vec3))
+		TypeInfoPrivate_vec3() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,float,0>", sizeof(vec3))
 		{
 		}
 
@@ -479,10 +479,10 @@ namespace flame
 		}
 	};
 
-	struct TypeInfoPrivate_Vec4f : TypeInfoPrivate_Pod
+	struct TypeInfoPrivate_vec4 : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate_Vec4f() :
-			TypeInfoPrivate_Pod(TypeData, "flame::Vec<4,float>", sizeof(vec4))
+		TypeInfoPrivate_vec4() :
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,float,0>", sizeof(vec4))
 		{
 		}
 
@@ -494,6 +494,24 @@ namespace flame
 		void unserialize(void* dst, const char* src) const override
 		{
 			*(vec4*)dst = sto<vec4>(src);
+		}
+	};
+
+	struct TypeInfoPrivate_quat : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_quat() :
+			TypeInfoPrivate_Pod(TypeData, "glm::qua<float,0>", sizeof(quat))
+		{
+		}
+
+		void serialize(void* str, const void* src) const override
+		{
+			auto s = to_string(*(quat*)src);
+			strcpy(f_stralloc(str, s.size()), s.data());
+		}
+		void unserialize(void* dst, const char* src) const override
+		{
+			*(quat*)dst = sto<quat>(src);
 		}
 	};
 
@@ -767,62 +785,67 @@ namespace flame
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec2c;
+				auto t = new TypeInfoPrivate_cvec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec3c;
+				auto t = new TypeInfoPrivate_cvec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec4c;
+				auto t = new TypeInfoPrivate_cvec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec2i;
+				auto t = new TypeInfoPrivate_ivec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec3i;
+				auto t = new TypeInfoPrivate_ivec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec4i;
+				auto t = new TypeInfoPrivate_ivec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec2u;
+				auto t = new TypeInfoPrivate_uvec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec3u;
+				auto t = new TypeInfoPrivate_uvec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec4u;
+				auto t = new TypeInfoPrivate_uvec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec2f;
+				auto t = new TypeInfoPrivate_vec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec3f;
+				auto t = new TypeInfoPrivate_vec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}
 			{
-				auto t = new TypeInfoPrivate_Vec4f;
+				auto t = new TypeInfoPrivate_vec4;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+				basic_types.push_back(t);
+			}
+			{
+				auto t = new TypeInfoPrivate_quat;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
 			}

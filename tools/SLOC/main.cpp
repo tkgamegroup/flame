@@ -99,27 +99,24 @@ void iter(const std::wstring &p)
 			if (accept)
 			{
 				std::ifstream file(ffn);
-				if (file.good())
+				while (!file.eof())
 				{
-					while (!file.eof())
+					std::string line;
+					std::getline(file, line);
+
+					total_lines++;
+					empty_lines++;
+					for (auto chr : line)
 					{
-						std::string line;
-						std::getline(file, line);
-
-						total_lines++;
-						empty_lines++;
-						for (auto chr : line)
+						if (!std::isspace((uchar)chr))
 						{
-							if (!std::isspace((uchar)chr))
-							{
-								empty_lines--;
-								break;
-							}
+							empty_lines--;
+							break;
 						}
-
 					}
-					file.close();
+
 				}
+				file.close();
 			}
 		}
 	}

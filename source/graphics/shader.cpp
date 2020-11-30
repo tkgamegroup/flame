@@ -256,22 +256,22 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagInt;
+							dst->tag = ShaderTagBase;
 							dst->name = "int";
 							dst->size = sizeof(int);
 							break;
 						case 2:
-							dst->tag = ShaderTagVec2i;
+							dst->tag = ShaderTagBase;
 							dst->name = "ivec2";
 							dst->size = sizeof(ivec2);
 							break;
 						case 3:
-							dst->tag = ShaderTagVec3i;
+							dst->tag = ShaderTagBase;
 							dst->name = "ivec3";
 							dst->size = sizeof(ivec3);
 							break;
 						case 4:
-							dst->tag = ShaderTagVec4i;
+							dst->tag = ShaderTagBase;
 							dst->name = "ivec4";
 							dst->size = sizeof(ivec4);
 							break;
@@ -290,22 +290,22 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagUint;
+							dst->tag = ShaderTagBase;
 							dst->name = "uint";
 							dst->size = sizeof(uint);
 							break;
 						case 2:
-							dst->tag = ShaderTagVec2u;
+							dst->tag = ShaderTagBase;
 							dst->name = "uvec2";
 							dst->size = sizeof(uvec2);
 							break;
 						case 3:
-							dst->tag = ShaderTagVec3u;
+							dst->tag = ShaderTagBase;
 							dst->name = "uvec3";
 							dst->size = sizeof(uvec3);
 							break;
 						case 4:
-							dst->tag = ShaderTagVec4u;
+							dst->tag = ShaderTagBase;
 							dst->name = "uvec4";
 							dst->size = sizeof(uvec4);
 							break;
@@ -324,22 +324,22 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 1:
-							dst->tag = ShaderTagFloat;
+							dst->tag = ShaderTagBase;
 							dst->name = "float";
 							dst->size = sizeof(float);
 							break;
 						case 2:
-							dst->tag = ShaderTagVec2f;
+							dst->tag = ShaderTagBase;
 							dst->name = "vec2";
 							dst->size = sizeof(vec2);
 							break;
 						case 3:
-							dst->tag = ShaderTagVec3f;
+							dst->tag = ShaderTagBase;
 							dst->name = "vec3";
 							dst->size = sizeof(vec3);
 							break;
 						case 4:
-							dst->tag = ShaderTagVec4f;
+							dst->tag = ShaderTagBase;
 							dst->name = "vec4";
 							dst->size = sizeof(vec4);
 							break;
@@ -351,7 +351,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 2:
-							dst->tag = ShaderTagMat2f;
+							dst->tag = ShaderTagBase;
 							dst->name = "mat2";
 							dst->size = sizeof(mat2);
 							break;
@@ -363,7 +363,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 3:
-							dst->tag = ShaderTagMat3f;
+							dst->tag = ShaderTagBase;
 							dst->name = "mat3";
 							dst->size = sizeof(mat3);
 							break;
@@ -375,7 +375,7 @@ namespace flame
 						switch (src.vecsize)
 						{
 						case 4:
-							dst->tag = ShaderTagMat4f;
+							dst->tag = ShaderTagBase;
 							dst->name = "mat4";
 							dst->size = sizeof(mat4);
 							break;
