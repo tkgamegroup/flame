@@ -115,7 +115,7 @@ namespace flame
 							type->unserialize(p, lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
 						else if (tn == "wchar_t" && tt == TypePointer)
 							type->unserialize(p, lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
-						else if (tn == "flame::Vec<2,float>" && tt == TypePointer)
+						else if (tn == "glm::vec<2,float,0>" && tt == TypePointer)
 						{
 							auto pp = *(void**)p;
 							if (lua_istable(state, -1))
@@ -133,7 +133,7 @@ namespace flame
 							else
 								*(vec2*)pp = vec2(0.f);
 						}
-						else if (tn == "flame::Vec<3,float>" && tt == TypePointer)
+						else if (tn == "glm::vec<3,float,0>" && tt == TypePointer)
 						{
 							auto pp = *(void**)p;
 							if (lua_istable(state, -1))
@@ -156,7 +156,7 @@ namespace flame
 							else
 								*(vec3*)pp = vec3(0.f);
 						}
-						else if (tn == "flame::Vec<4,float>" && tt == TypePointer)
+						else if (tn == "glm::vec<4,float,0>" && tt == TypePointer)
 						{
 							auto pp = *(void**)p;
 							if (lua_istable(state, -1))

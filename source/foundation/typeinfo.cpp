@@ -302,8 +302,9 @@ namespace flame
 	struct TypeInfoPrivate_cvec3 : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_cvec3() :
-			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec3))
+			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uchar,0>", sizeof(cvec3))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -322,6 +323,7 @@ namespace flame
 		TypeInfoPrivate_cvec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec4))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -358,6 +360,7 @@ namespace flame
 		TypeInfoPrivate_ivec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,int,0>", sizeof(ivec3))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -376,6 +379,7 @@ namespace flame
 		TypeInfoPrivate_ivec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,int,0>", sizeof(ivec4))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -412,6 +416,7 @@ namespace flame
 		TypeInfoPrivate_uvec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uint,0>", sizeof(uvec3))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -430,6 +435,7 @@ namespace flame
 		TypeInfoPrivate_uvec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uint,0>", sizeof(uvec4))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -466,6 +472,7 @@ namespace flame
 		TypeInfoPrivate_vec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,float,0>", sizeof(vec3))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -484,6 +491,7 @@ namespace flame
 		TypeInfoPrivate_vec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,float,0>", sizeof(vec4))
 		{
+			can_packed_in_qword = false;
 		}
 
 		void serialize(void* str, const void* src) const override
@@ -887,6 +895,7 @@ namespace flame
 		name(name),
 		size(size)
 	{
+		can_packed_in_qword = size <= sizeof(void*);
 	}
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const char* name)
@@ -1044,9 +1053,7 @@ namespace flame
 		std::vector<float> list2(4);
 		if (obj)
 			list1[idx++] = obj;
-		if (type->size > sizeof(void*)
-			|| type->name == "flame::Vec<3,uchar>"
-			|| type->name == "flame::Vec<4,uchar>")
+		if (!type->can_packed_in_qword)
 		{
 			list1[idx++] = ret;
 			ret = nullptr;

@@ -107,6 +107,7 @@ namespace flame
 			m = translate(m, pos) * mat4(rot);
 			g_pos = m[3];
 			m = scale(m, scl);
+			transform = m;
 
 			Entity::report_data_changed(this, S<"transform"_h>);
 		}

@@ -108,8 +108,8 @@ namespace flame
 							cb->copy_buffer_to_image(stag.buf.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
-							g->uv = vec4(atlas_pos.x / font_atlas_size.x, (atlas_pos.y + g->size.y) / font_atlas_size.y,
-								(atlas_pos.x + g->size.x) / font_atlas_size.x, atlas_pos.y / font_atlas_size.y);
+							g->uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g->size.y) / (float)font_atlas_size.y,
+								(atlas_pos.x + g->size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
 						}
 						else
 							printf("font atlas is full\n");

@@ -176,8 +176,8 @@ namespace flame
 
 		bool contains(const vec2& p)
 		{
-			return p.x > LT.x && p.x < LT.y &&
-				p.y > RB.x && p.y < RB.y;
+			return p.x > LT.x && p.x < RB.x &&
+				p.y > LT.y && p.y < RB.y;
 		}
 
 		bool overlapping(const Rect& rhs)

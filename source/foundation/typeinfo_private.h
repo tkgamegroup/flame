@@ -14,6 +14,8 @@ namespace flame
 		std::string name;
 		uint size;
 
+		bool can_packed_in_qword;
+
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, uint size);
 
 		TypeTag get_tag() const override { return tag; }

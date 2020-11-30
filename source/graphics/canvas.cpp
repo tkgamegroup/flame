@@ -1592,10 +1592,10 @@ namespace flame
 
 					auto vtx_cnt = last_element_cmd->vertices_count;
 
-					add_vtx(pos + axes * o, uv0, col);
+					add_vtx(pos + o * axes, uv0, col);
 					add_vtx(pos + o.x * axes[0] + (o.y - s.y) * axes[1], vec2(uv0.x, uv1.y), col);
 					add_vtx(pos + (o.x + s.x) * axes[0] + (o.y - s.y) * axes[1], uv1, col);
-					add_vtx(pos + (o.x + s.x) * axes[0], vec2(uv1.x, uv0.y), col);
+					add_vtx(pos + (o.x + s.x) * axes[0] + o.y * axes[1], vec2(uv1.x, uv0.y), col);
 					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 
 					p.x += g->advance;

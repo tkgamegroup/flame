@@ -158,24 +158,24 @@ namespace flame
 			else
 				axes = mat2(1.f);
 			m = scale(m, scl);
+			transform = m;
 
 			auto a = -pivot * size;
 			auto b = a + size;
-			auto c = a;
-			auto d = b;
+			vec2 c, d;
 			if (crooked)
 			{
 				a = vec2(m[2]) + axes * a;
 				b = vec2(m[2]) + axes * b;
-				c += axes * padding.xy();
-				d -= axes * padding.zw();
+				c = a + axes * padding.xy();
+				d = b - axes * padding.zw();
 			}
 			else
 			{
 				a += vec2(m[2]);
 				b += vec2(m[2]);
-				c += padding.xy();
-				d -= padding.zw();
+				c = a + padding.xy();
+				d = b - padding.zw();
 			}
 			points[0] = vec2(a.x, a.y);
 			points[1] = vec2(b.x, a.y);
@@ -319,7 +319,7 @@ namespace flame
 				}
 				{
 					auto f = udt->find_function("measure");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::Vec<2,float>"), nullptr))
+					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "glm::vec<2,float,0>"), nullptr))
 					{
 						auto addr = f->get_address();
 						if (addr)
