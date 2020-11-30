@@ -1644,6 +1644,7 @@ namespace flame
 			view_inv_matrix[3] = vec4(camera_coord, 1.f);
 			view_matrix = inverse(view_inv_matrix);
 			proj_matrix = perspective(radians(fovy), aspect, zNear, zFar);
+			proj_matrix[1][1] *= -1.f;
 			proj_view_matrix = proj_matrix * view_matrix;
 
 			render_data_buffer.set(S<"fovy"_h>, fovy);
@@ -2173,6 +2174,7 @@ namespace flame
 													cb->bind_descriptor_set(PipelineGraphics, mesh_descriptorset.get(), 0, nullptr);
 													cb->bind_descriptor_set(PipelineGraphics, material_descriptorset.get(), 1, nullptr);
 													auto proj = perspective(90.f, 1.f, 1.f, s.distance);
+													proj[1][1] *= -1.f;
 													struct
 													{
 														mat4 matrix;

@@ -447,7 +447,7 @@ namespace flame
 		{
 			pugi::xml_document prefab;
 
-			auto model_name = _filename.filename().string();
+			auto model_name = filename.filename().string();
 			std::function<void(pugi::xml_node, NodePrivate*)> print_node;
 			print_node = [&](pugi::xml_node dst, NodePrivate* src) {
 				auto n = dst.append_child("entity");
@@ -779,6 +779,7 @@ namespace flame
 				}
 
 				ret = new ModelPrivate();
+				ret->filename = filename;
 
 				ret->materials.clear();
 				for (auto i = 0; i < scene->mNumMaterials; i++)
@@ -909,7 +910,9 @@ namespace flame
 						aiVector3D p;
 						src->mTransformation.Decompose(s, r, a, p);
 						dst->pos = vec3(p.x, p.y, p.z);
-						dst->qut = quat(degrees(a), vec3(r.x, r.y, r.z));
+						a *= 0.5f;
+						auto q = normalize(vec4(sin(a)* vec3(r.x, r.y, r.z), cos(a)));
+						dst->qut = quat(q.w, q.x, q.y, q.z);
 						dst->scl = vec3(s.x, s.y, s.z);
 					}
 

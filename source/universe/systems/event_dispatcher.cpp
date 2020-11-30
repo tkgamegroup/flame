@@ -293,7 +293,7 @@ namespace flame
 
 		for (auto er : staging_mouse_targets)
 		{
-			if (mdisp.x != 0 && mdisp.y != 0)
+			if (mdisp.x != 0 || mdisp.y != 0)
 			{
 				for (auto& l : er->mouse_move_listeners)
 					l->call(mdisp, mpos);

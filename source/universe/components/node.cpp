@@ -19,6 +19,7 @@ namespace flame
 		if (qut == q)
 			return;
 		qut = q;
+		rot_dirty = true;
 		mark_transform_dirty();
 		Entity::report_data_changed(this, S<"quat"_h>);
 	}
@@ -34,9 +35,10 @@ namespace flame
 
 	void cNodePrivate::set_euler(const vec3& e)
 	{
-		auto m = rotate(mat4(1.f), e.x, vec3(0.f, 1.f, 0.f));
-		m = rotate(m, e.y, vec3(1.f, 0.f, 0.f));
-		m = rotate(m, e.z, vec3(0.f, 0.f, 1.f));
+		auto m = mat4(1.f);
+		m = rotate(m, radians(e.x), vec3(0.f, 1.f, 0.f));
+		m = rotate(m, radians(e.y), vec3(1.f, 0.f, 0.f));
+		m = rotate(m, radians(e.z), vec3(0.f, 0.f, 1.f));
 		rot = mat3(m);
 		qut_dirty = true;
 		mark_transform_dirty();
@@ -90,6 +92,7 @@ namespace flame
 			transform_dirty = false;
 
 			update_rot();
+			update_qut();
 
 			g_qut = qut;
 			g_rot = rot;
@@ -104,8 +107,9 @@ namespace flame
 				g_scl = pn->g_scl * g_scl;
 				m = pn->transform;
 			}
-			m = translate(m, pos) * mat4(rot);
+			m = translate(m, pos);
 			g_pos = m[3];
+			m = m * mat4(rot);
 			m = scale(m, scl);
 			transform = m;
 

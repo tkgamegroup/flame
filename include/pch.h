@@ -23,6 +23,8 @@
 #include <nlohmann/json.hpp>
 #include <cppcodec/base64_default_rfc4648.hpp>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_FORCE_SWIZZLE
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>

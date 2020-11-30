@@ -1,7 +1,5 @@
 #pragma once
 
-#include "pch.h"
-
 namespace flame
 {
 	typedef char*				charptr;
