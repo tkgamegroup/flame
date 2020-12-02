@@ -38,11 +38,13 @@ namespace flame
 		void ImagePrivate::init(const uvec2& size)
 		{
 			auto s = size;
-			for (auto i = 0; i < level; i++)
+			if (levels == 0)
+				levels = 100;
+			for (auto i = 0; i < levels; i++)
 			{
 				if (s.x == 0 && s.y == 0)
 				{
-					level = i;
+					levels = i;
 					break;
 				}
 				sizes.push_back(max(s, uvec2(1U)));
@@ -53,21 +55,23 @@ namespace flame
 
 		void ImagePrivate::build_default_views()
 		{
-			views.resize(level);
-			for (auto i = 0; i < level; i++)
+			views.resize(levels);
+			for (auto i = 0; i < levels; i++)
 				views[i].reset(new ImageViewPrivate(this, false, ImageView2D, { (uint)i }));
-			if (level > 1)
-				views.emplace_back(new ImageViewPrivate(this, false, ImageView2D, { (uint)0, (uint)level }));
+			if (levels > 1 || layers > 1)
+				views.emplace_back(new ImageViewPrivate(this, false, !is_cube ? ImageView2D : ImageViewCube, { 0U, levels, 0U, layers }));
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint _level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube) :
 			device(device),
 			format(format),
-			level(_level),
-			layer(layer),
-			sample_count(sample_count)
+			levels(levels),
+			layers(layers),
+			sample_count(sample_count),
+			is_cube(is_cube)
 		{
 			init(size);
+			levels = ImagePrivate::levels;
 
 			VkImageCreateInfo imageInfo;
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -78,8 +82,8 @@ namespace flame
 			imageInfo.extent.width = size.x;
 			imageInfo.extent.height = size.y;
 			imageInfo.extent.depth = 1;
-			imageInfo.mipLevels = level;
-			imageInfo.arrayLayers = layer;
+			imageInfo.mipLevels = levels;
+			imageInfo.arrayLayers = layers;
 			imageInfo.samples = to_backend(sample_count);
 			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 			imageInfo.usage = get_backend_image_usage_flags(usage, format, sample_count);
@@ -106,11 +110,11 @@ namespace flame
 			build_default_views();
 		}
 
-		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint _level, uint layer, void* native) :
+		ImagePrivate::ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native) :
 			device(device),
 			format(format),
-			level(_level),
-			layer(layer),
+			levels(levels),
+			layers(layers),
 			sample_count(SampleCount_1)
 		{
 			init(size);
@@ -146,7 +150,7 @@ namespace flame
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -184,7 +188,7 @@ namespace flame
 				fassert(format != Format_Undefined);
 
 				auto ret = new ImagePrivate(device, format, uvec2(size.x, size.y), levels, layers,
-					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
+					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage, is_cube);
 
 				ImmediateStagingBuffer stag(device, gli_texture.size(), gli_texture.data());
 				ImmediateCommandBuffer icb(device);
@@ -237,7 +241,7 @@ namespace flame
 			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
 		}
 		Image* Image::create(Device* device, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)device, bmp); }
-		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage); }
+		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage, is_cube); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),

@@ -16,9 +16,10 @@ namespace flame
 			
 			Format format;
 			std::vector<uvec2> sizes;
-			uint level;
-			uint layer;
+			uint levels;
+			uint layers;
 			SampleCount sample_count;
+			bool is_cube = false;
 
 			std::filesystem::path filename;
 
@@ -28,16 +29,16 @@ namespace flame
 
 			void init(const uvec2& size);
 			void build_default_views();
-			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
-			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint level, uint layer, void* native);
+			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
+			ImagePrivate(DevicePrivate* device, Format format, const uvec2& size, uint levels, uint layers, void* native);
 			~ImagePrivate();
 
 			void release() override { delete this; }
 
 			Format get_format() const override { return format; }
 			uvec2 get_size(uint lv) const override { return sizes[lv]; }
-			uint get_level() const override { return level; }
-			uint get_layer() const override { return layer; }
+			uint get_levels() const override { return levels; }
+			uint get_layers() const override { return layers; }
 			SampleCount get_sample_count() const override { return sample_count; }
 
 			const wchar_t* get_filename() const override { return filename.c_str(); }
@@ -45,7 +46,7 @@ namespace flame
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
 			static ImagePrivate* create(DevicePrivate* device, Bitmap* bmp);
-			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
+			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false);
 		};
 
 		struct ImageViewPrivate : ImageView

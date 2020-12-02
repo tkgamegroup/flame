@@ -97,7 +97,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 			if (coordl.z >= 0.0 && coordl.z <= 1.0)
 			{
-				float ref = texture(directional_light_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
+				float ref = texture(directional_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
 				shadow = clamp(exp(-esm_c * 1000.0 * (coordl.z - ref)), 0.0, 1.0);
 			}
 		}
@@ -117,7 +117,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 		float shadow = 1.0;
 		if (light.shadow_map_index != -1)
 		{
-			float ref = texture(point_light_shadow_maps[light.shadow_map_index], -L).r;
+			float ref = texture(point_shadow_maps[light.shadow_map_index], -L).r;
 			shadow = clamp(exp(-esm_c * (dist - ref * light.distance)), 0.0, 1.0);
 		}
 

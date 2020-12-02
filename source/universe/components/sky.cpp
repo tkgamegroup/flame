@@ -25,59 +25,33 @@ namespace flame
 	void cSkyPrivate::on_gain_canvas()
 	{
 		{
-			auto isfile = false;
 			auto fn = std::filesystem::path(box_texture_name);
 			if (!fn.extension().empty())
 			{
-				isfile = true;
 				if (!fn.is_absolute())
 					fn = entity->src_abs.parent_path() / fn;
 			}
-			box_texture_id = canvas->find_texture_resource(fn.string().c_str());
-			if (box_texture_id == -1 && isfile)
-			{
-				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
-				box_texture_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
-			}
+			box_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
 		{
-			auto isfile = false;
 			auto fn = std::filesystem::path(irr_texture_name);
 			if (!fn.extension().empty())
 			{
-				isfile = true;
 				if (!fn.is_absolute())
 					fn = entity->src_abs.parent_path() / fn;
 			}
-			irr_texture_id = canvas->find_texture_resource(fn.string().c_str());
-			if (irr_texture_id == -1 && isfile)
-			{
-				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
-				irr_texture_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
-			}
+			irr_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
 		{
-			auto isfile = false;
 			auto fn = std::filesystem::path(rad_texture_name);
 			if (!fn.extension().empty())
 			{
-				isfile = true;
 				if (!fn.is_absolute())
 					fn = entity->src_abs.parent_path() / fn;
 			}
-			rad_texture_id = canvas->find_texture_resource(fn.string().c_str());
-			if (rad_texture_id == -1 && isfile)
-			{
-				auto t = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), false, graphics::ImageUsageTransferSrc);
-				rad_texture_id = canvas->set_texture_resource(-1, t->get_view(0), nullptr, fn.string().c_str());
-			}
+			rad_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
-	}
-
-	void cSkyPrivate::draw(graphics::Canvas* canvas)
-	{
-		if (box_texture_id != -1)
-			canvas->set_sky(box_texture_id, irr_texture_id, rad_texture_id);
+		canvas->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()), rad_texture->get_view(rad_texture->get_levels()));
 	}
 
 	cSky* cSky::create()

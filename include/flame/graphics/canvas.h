@@ -100,7 +100,7 @@ namespace flame
 			virtual void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes = mat2(1.f)) = 0;
 
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) = 0;
-			virtual void set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id) = 0;
+			virtual void set_sky(ImageView* box, ImageView* irr, ImageView* rad) = 0;
 
 			virtual void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, const mat3& dirs, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
 			virtual void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint mat_id) = 0;

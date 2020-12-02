@@ -32,10 +32,10 @@ namespace flame
 		{
 			void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues) override;
 			void bind_pipeline(Pipeline* p) override;
-			void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) override;
+			void bind_descriptor_set(DescriptorSet* s, uint idx) override;
 			void bind_vertex_buffer(Buffer* b, uint id) override;
 			void bind_index_buffer(Buffer* b, IndiceType t) override;
-			void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll) override;
+			void push_constant(uint offset, uint size, const void* data) override;
 			void draw_indirect(Buffer* b, uint offset, uint count) override;
 			void draw_indexed_indirect(Buffer* b, uint offset, uint count) override;
 			void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) override;
@@ -67,10 +67,10 @@ namespace flame
 			void set_viewport(const Rect& rect) override;
 			void set_scissor(const Rect& rect) override;
 			void bind_pipeline(PipelinePrivate* p);
-			void bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll);
+			void bind_descriptor_set(DescriptorSetPrivate* s, uint idx);
 			void bind_vertex_buffer(BufferPrivate* b, uint id);
 			void bind_index_buffer(BufferPrivate* b, IndiceType t);
-			void push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll);
+			void push_constant(uint offset, uint size, const void* data);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
 			void draw_indirect(BufferPrivate* b, uint offset, uint count);
@@ -97,9 +97,9 @@ namespace flame
 			((CommandBufferPrivate*)this)->bind_pipeline((PipelinePrivate*)p);
 		}
 
-		inline void CommandBufferBridge::bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll)
+		inline void CommandBufferBridge::bind_descriptor_set(DescriptorSet* s, uint idx)
 		{
-			((CommandBufferPrivate*)this)->bind_descriptor_set(type, (DescriptorSetPrivate*)s, idx, (PipelineLayoutPrivate*)pll);
+			((CommandBufferPrivate*)this)->bind_descriptor_set((DescriptorSetPrivate*)s, idx);
 		}
 
 		inline void CommandBufferBridge::bind_vertex_buffer(Buffer* b, uint id)
@@ -112,9 +112,9 @@ namespace flame
 			((CommandBufferPrivate*)this)->bind_index_buffer((BufferPrivate*)b, t);
 		}
 
-		inline void CommandBufferBridge::push_constant(uint offset, uint size, const void* data, PipelineLayout* pll)
+		inline void CommandBufferBridge::push_constant(uint offset, uint size, const void* data)
 		{
-			((CommandBufferPrivate*)this)->push_constant(offset, size, data, (PipelineLayoutPrivate*)pll);
+			((CommandBufferPrivate*)this)->push_constant(offset, size, data);
 		}
 
 		inline void CommandBufferBridge::draw_indirect(Buffer* b, uint offset, uint count)

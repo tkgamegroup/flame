@@ -6,6 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct Image;
 		struct Canvas;
 	}
 
@@ -16,9 +17,9 @@ namespace flame
 		std::string box_texture_name;
 		std::string irr_texture_name;
 		std::string rad_texture_name;
-		int box_texture_id = -1;
-		int irr_texture_id = -1;
-		int rad_texture_id = -1;
+		graphics::Image* box_texture = nullptr;
+		graphics::Image* irr_texture = nullptr;
+		graphics::Image* rad_texture = nullptr;
 
 		cNodePrivate* node = nullptr; // R ref
 		graphics::Canvas* canvas = nullptr; // R ref
@@ -31,7 +32,5 @@ namespace flame
 		void set_rad_texture(const char* name) override;
 
 		void on_gain_canvas();
-
-		void draw(graphics::Canvas* canvas); // R
 	};
 }

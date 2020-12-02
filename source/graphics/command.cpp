@@ -130,11 +130,9 @@ namespace flame
 			vkCmdBindPipeline(vk_command_buffer, to_backend(p->type), p->vk_pipeline);
 		}
 
-		void CommandBufferPrivate::bind_descriptor_set(PipelineType type, DescriptorSetPrivate* s, uint idx, PipelineLayoutPrivate* pll)
+		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* s, uint idx)
 		{
-			if (!pll)
-				pll = pipeline->pipeline_layout;
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(type), pll->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline->type), pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* b, uint id)
@@ -148,11 +146,9 @@ namespace flame
 			vkCmdBindIndexBuffer(vk_command_buffer, b->vk_buffer, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 		}
 
-		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data, PipelineLayoutPrivate* pll)
+		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
-			if (!pll)
-				pll = pipeline->pipeline_layout;
-			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(vk_command_buffer, pipeline->pipeline_layout->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
 		void CommandBufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)

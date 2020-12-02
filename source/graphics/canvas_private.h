@@ -490,10 +490,6 @@ namespace flame
 			mat4 proj_matrix;
 			mat4 proj_view_matrix;
 
-			int sky_box_tex_id = -1;
-			int sky_irr_tex_id = -1;
-			int sky_rad_tex_id = -1;
-
 			std::unique_ptr<ImagePrivate> white_image;
 			std::vector < ElementResourceSlot > element_resources;
 			std::vector<TextureResourceSlot> texture_resources;
@@ -506,6 +502,11 @@ namespace flame
 
 			ShaderBuffer render_data_buffer;
 			std::unique_ptr<DescriptorSetPrivate> render_data_descriptorset;
+
+			std::unique_ptr<ImagePrivate> default_sky_box_image;
+			std::unique_ptr<ImagePrivate> default_sky_irr_image;
+			std::unique_ptr<ImagePrivate> default_sky_rad_image;
+			std::unique_ptr<DescriptorSetPrivate> sky_descriptorset;
 
 			ShaderBuffer mesh_matrix_buffer;
 			std::unique_ptr<DescriptorSetPrivate> mesh_descriptorset;
@@ -521,16 +522,16 @@ namespace flame
 			ShaderBuffer light_indices_buffer;
 
 			ShaderBuffer directional_light_info_buffer;
-			std::vector<std::unique_ptr<ImagePrivate>> directional_light_shadow_maps;
-			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_depth_framebuffers;
-			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_shadow_map_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_light_shadow_map_descriptorsets;
+			std::vector<std::unique_ptr<ImagePrivate>> directional_shadow_maps;
+			std::vector<std::unique_ptr<FramebufferPrivate>> directional_light_depth_framebuffers;
+			std::vector<std::unique_ptr<FramebufferPrivate>> directional_shadow_map_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> directional_shadow_map_descriptorsets;
 
 			ShaderBuffer point_light_info_buffer;
-			std::vector<std::unique_ptr<ImagePrivate>> point_light_shadow_maps;
-			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_depth_framebuffers;
-			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_shadow_map_framebuffers;
-			std::vector<std::unique_ptr<DescriptorSetPrivate>> point_light_shadow_map_descriptorsets;
+			std::vector<std::unique_ptr<ImagePrivate>> point_shadow_maps;
+			std::vector<std::unique_ptr<FramebufferPrivate>> point_light_depth_framebuffers;
+			std::vector<std::unique_ptr<FramebufferPrivate>> point_shadow_map_framebuffers;
+			std::vector<std::unique_ptr<DescriptorSetPrivate>> point_shadow_map_descriptorsets;
 
 			std::unique_ptr<DescriptorSetPrivate> light_descriptorset;
 
@@ -587,7 +588,7 @@ namespace flame
 			void set_shadow(float distance, uint csm_levels, float csm_factor) override;
 
 			cvec4 get_clear_color() const override { return clear_color; }
-			void set_clear_color(const cvec4& color) override { clear_color = color; }
+			void set_clear_color(const cvec4& color) override;
 
 			ImageView* get_output(uint idx) const override { return output_imageviews.empty() ? nullptr : (ImageView*)output_imageviews[idx]; }
 			void set_output(std::span<ImageViewPrivate*> views);
@@ -623,7 +624,7 @@ namespace flame
 			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes) override;
 
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) override;
-			void set_sky(int box_tex_id, int irr_tex_id, int rad_tex_id) override;
+			void set_sky(ImageView* box, ImageView* irr, ImageView* rad) override;
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, const mat3& dirs, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;

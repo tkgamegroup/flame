@@ -400,6 +400,20 @@ namespace flame
 			return ret;
 		}
 
+		static std::string add_lineno_to_temp(const std::string& temp)
+		{
+			auto lines = SUS::split(temp, '\n');
+			auto ret = std::string();
+			auto ndigits = (int)log10(lines.size()) + 1;
+			for (auto i = 0; i < lines.size(); i++)
+			{
+				char buf[32];
+				sprintf(buf, "%*d", ndigits, i + 1);
+				ret += std::string(buf) + "    " + lines[i] + "\n";
+			}
+			return ret;
+		}
+
 		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::create(DevicePrivate* device, const std::filesystem::path& _filename)
 		{
 			auto filename = _filename;
@@ -455,6 +469,7 @@ namespace flame
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(L"a.spv"))
 					{
+						temp = add_lineno_to_temp(temp);
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 						fassert(0);
 						return nullptr;
@@ -791,6 +806,7 @@ namespace flame
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(L"a.spv"))
 					{
+						temp = add_lineno_to_temp(temp);
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 						fassert(0);
 						return nullptr;
@@ -994,6 +1010,7 @@ namespace flame
 					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
 					if (!std::filesystem::exists(spv_path))
 					{
+						temp = add_lineno_to_temp(temp);
 						printf("\n========\n%s\n========\n%s\n", temp.c_str(), output.c_str());
 						fassert(0);
 						return nullptr;
@@ -1062,6 +1079,8 @@ namespace flame
 						VkVertexInputAttributeDescription dst_att;
 						dst_att.location = src_att.location;
 						dst_att.binding = i;
+						if (src_att.offset != -1)
+							offset = src_att.offset;
 						dst_att.offset = offset;
 						offset += format_size(src_att.format);
 						dst_att.format = to_backend(src_att.format);

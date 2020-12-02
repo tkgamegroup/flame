@@ -57,20 +57,20 @@ namespace flame
 
 			virtual Format get_format() const = 0;
 			virtual uvec2 get_size(uint lv = 0) const = 0;
-			virtual uint get_level() const = 0;
-			virtual uint get_layer() const = 0;
+			virtual uint get_levels() const = 0;
+			virtual uint get_layers() const = 0;
 			virtual SampleCount get_sample_count() const = 0;
 
 			virtual const wchar_t* get_filename() const = 0;
 
 			// [0, level-1]: view of that level
-			// [level]: view of all levels
+			// [level]: view of all levels and layers
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false);
 
 		};
 

@@ -76,14 +76,14 @@ namespace flame
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;
 			virtual void bind_pipeline(Pipeline* p) = 0;
-			virtual void bind_descriptor_set(PipelineType type, DescriptorSet* s, uint idx, PipelineLayout* pll) = 0;
+			virtual void bind_descriptor_set(DescriptorSet* s, uint idx) = 0;
 			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;
 			virtual void bind_index_buffer(Buffer* b, IndiceType t) = 0;
-			virtual void push_constant(uint offset, uint size, const void* data, PipelineLayout* pll) = 0;
+			virtual void push_constant(uint offset, uint size, const void* data) = 0;
 			template <class T>
-			inline void push_constant_t(uint offset, const T& data, PipelineLayout* pll = nullptr)
+			inline void push_constant_t(uint offset, const T& data)
 			{
-				push_constant(offset, sizeof(T), &data, pll);
+				push_constant(offset, sizeof(T), &data);
 			}
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;

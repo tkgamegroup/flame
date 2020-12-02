@@ -69,6 +69,7 @@ namespace flame
 		struct VertexAttributeInfo
 		{
 			uint location;
+			int offset = -1;
 			Format format;
 		};
 

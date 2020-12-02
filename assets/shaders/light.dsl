@@ -42,5 +42,5 @@ layout (set = LIGHT_SET, binding = 2) buffer readonly PointLightInfos
 	PointLightInfo point_light_infos[];
 };
 
-layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray directional_light_shadow_maps[4];
-layout (set = LIGHT_SET, binding = 4) uniform samplerCube point_light_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 3) uniform sampler2DArray directional_shadow_maps[4];
+layout (set = LIGHT_SET, binding = 4) uniform samplerCube point_shadow_maps[4];
