@@ -1,16 +1,17 @@
 #pragma once
 
 #include <flame/universe/entity.h>
-#include <flame/universe/component.h>
-#include <flame/universe/driver.h>
 
 #include <functional>
 
 namespace flame
 {
+	struct TypeInfo;
 	struct UdtInfo;
+	struct FunctionInfo;
 	struct VariableInfo;
 
+	struct Driver;
 	struct WorldPrivate;
 
 	struct StateRule
@@ -18,13 +19,9 @@ namespace flame
 		Component* c;
 		TypeInfo* type;
 		FunctionInfo* setter;
-		std::vector<std::pair<StateFlags, void*>> rules;
+		std::vector<std::pair<StateFlags, void*>> values;
 
-		~StateRule()
-		{
-			for (auto& r : rules)
-				type->destroy(r.second);
-		}
+		~StateRule();
 	};
 
 	struct EntityBridge : Entity
@@ -54,7 +51,7 @@ namespace flame
 		EntityPrivate* parent = nullptr;
 
 		StateFlags state = StateNone;
-		std::vector<StateRule> state_rules;
+		std::vector<std::unique_ptr<StateRule>> state_rules;
 
 		uint depth = 0;
 		uint index = 0;

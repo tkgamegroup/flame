@@ -64,9 +64,9 @@ namespace flame
 
 		void on_key_event(KeyboardKey key, bool down) override;
 
-		void on_gain_dispatcher();
-		void on_lost_dispatcher();
-
-		//void on_local_message(Message msg, void* p) override;
+		void on_added() override;
+		void on_visibility_changed(bool v) override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 }

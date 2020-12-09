@@ -255,19 +255,29 @@ namespace flame
 			layout_system->add_to_sizing_list(this);
 	}
 
-	void cElementPrivate::on_gain_renderer()
+	void cElementPrivate::on_entered_world()
+	{
+		renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(renderer);
+		mark_transform_dirty();
+		layout_system = entity->world->get_system_t<sLayoutSystemPrivate>();
+		mark_size_dirty();
+	}
+
+	void cElementPrivate::on_left_world()
 	{
 		mark_transform_dirty();
 	}
 
-	void cElementPrivate::on_lost_renderer()
-	{
-		mark_transform_dirty();
-	}
-
-	void cElementPrivate::on_gain_layout_system()
+	void cElementPrivate::on_visibility_changed(bool v)
 	{
 		mark_size_dirty();
+		mark_transform_dirty();
+	}
+
+	void cElementPrivate::on_reposition(uint from, uint to)
+	{
+		mark_drawing_dirty();
 	}
 
 	bool cElementPrivate::contains(const vec2& p)
@@ -283,79 +293,6 @@ namespace flame
 		else
 			return aabb.contains(p);
 	}
-
-	//void cElementPrivate::on_local_message(Message msg, void* p)
-	//{
-	//	switch (msg)
-	//	{
-	//	case MessageComponentAdded:
-	//	{
-	//		auto udt = find_underlay_udt(((Component*)p)->type_name);
-	//		if (udt)
-	//		{
-	//			{
-	//				auto f = udt->find_function("draw0");
-	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
-	//				{
-	//					auto addr = f->get_address();
-	//					if (addr)
-	//					{
-	//						drawers[0].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
-	//						mark_drawing_dirty();
-	//					}
-	//				}
-	//			}
-	//			{
-	//				auto f = udt->find_function("draw");
-	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
-	//				{
-	//					auto addr = f->get_address();
-	//					if (addr)
-	//					{
-	//						drawers[1].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
-	//						mark_drawing_dirty();
-	//					}
-	//				}
-	//			}
-	//			{
-	//				auto f = udt->find_function("measure");
-	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "glm::vec<2,float,0>"), nullptr))
-	//				{
-	//					auto addr = f->get_address();
-	//					if (addr)
-	//					{
-	//						measurables.emplace_back((Component*)p, (void(*)(Component*, vec2&))addr);
-	//						mark_size_dirty();
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//		break;
-	//	case MessageComponentRemoved:
-	//	{
-	//		if (std::erase_if(measurables, [&](const auto& i) {
-	//			return i.first == (Component*)p;
-	//		}))
-	//			mark_size_dirty();
-	//		auto n = std::erase_if(drawers[0], [&](const auto& i) {
-	//			return i.first == (Component*)p;
-	//		}) + std::erase_if(drawers[1], [&](const auto& i) {
-	//			return i.first == (Component*)p;
-	//		});
-	//		if (n)
-	//			mark_drawing_dirty();
-	//	}
-	//		break;
-	//	case MessageVisibilityChanged:
-	//		mark_size_dirty();
-	//		mark_transform_dirty();
-	//		break;
-	//	case MessagePositionChanged:
-	//		mark_drawing_dirty();
-	//		break;
-	//	}
-	//}
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{

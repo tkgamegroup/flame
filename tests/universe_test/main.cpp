@@ -9,7 +9,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/scene_test");
+auto test_prefab = std::filesystem::path(L"prefabs/button");
 
 int main(int argc, char** args)
 {
@@ -20,21 +20,21 @@ int main(int argc, char** args)
 	w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
 
 	{
-		auto c = cCommand::create();
-		c->add_processor([](Capture& c, const char* _cmd) {
-			auto cmd = std::string(_cmd);
-			if		(cmd == "shading_solid")
-				g_app.main_window->canvas->set_shading(graphics::ShadingSolid);
-			else if (cmd == "shading_wireframe")
-				g_app.main_window->canvas->set_shading(graphics::ShadingWireframe);
-			else if (cmd == "physics_visualization_on")
-				g_app.main_window->s_physic_world->set_visualization(true);
-			else if (cmd == "physics_visualization_off")
-				g_app.main_window->s_physic_world->set_visualization(false);
-			else if (cmd == "capture")
-				g_app.main_window->capture = true;
-		}, Capture());
-		w->root->add_component(c);
+		//auto c = cCommand::create();
+		//c->add_processor([](Capture& c, const char* _cmd) {
+		//	auto cmd = std::string(_cmd);
+		//	if		(cmd == "shading_solid")
+		//		g_app.main_window->canvas->set_shading(graphics::ShadingSolid);
+		//	else if (cmd == "shading_wireframe")
+		//		g_app.main_window->canvas->set_shading(graphics::ShadingWireframe);
+		//	else if (cmd == "physics_visualization_on")
+		//		g_app.main_window->s_physic_world->set_visualization(true);
+		//	else if (cmd == "physics_visualization_off")
+		//		g_app.main_window->s_physic_world->set_visualization(false);
+		//	else if (cmd == "capture")
+		//		g_app.main_window->capture = true;
+		//}, Capture());
+		//w->root->add_component(c);
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
 		//e->save(L"d:/1.prefab");

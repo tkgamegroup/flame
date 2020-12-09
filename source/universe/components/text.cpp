@@ -3,6 +3,7 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "text_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -38,23 +39,6 @@ namespace flame
 		data_changed(S<"color"_h>);
 	}
 
-	void cTextPrivate::on_gain_canvas()
-	{
-		res_id = canvas->find_element_resource("default_font");
-		if (res_id != -1)
-		{
-			atlas = canvas->get_element_resource(res_id).fa;
-			if (!atlas)
-				res_id = -1;
-		}
-	}
-
-	void cTextPrivate::on_lost_canvas()
-	{
-		res_id = -1;
-		atlas = nullptr;
-	}
-
 	void cTextPrivate::mark_text_changed()
 	{
 		if (element)
@@ -82,6 +66,48 @@ namespace flame
 			ret.x = -1.f;
 		if (!auto_height)
 			ret.y = -1.f;
+	}
+
+	void cTextPrivate::on_added()
+	{
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
+
+		element->drawers[1].emplace_back(this, (void(*)(Component*, graphics::Canvas*))f2a(&cTextPrivate::draw));
+		element->measurables.emplace_back(this, (void(*)(Component*, vec2&))f2a(&cTextPrivate::measure));
+		element->mark_drawing_dirty();
+		element->mark_size_dirty();
+	}
+
+	void cTextPrivate::on_removed()
+	{
+		std::erase_if(element->drawers[0], [&](const auto& i) {
+			return i.first == this;
+		});
+		std::erase_if(element->measurables, [&](const auto& i) {
+			return i.first == this;
+		});
+		element->mark_drawing_dirty();
+		element->mark_size_dirty();
+	}
+
+	void cTextPrivate::on_entered_world()
+	{
+		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		fassert(canvas);
+		res_id = canvas->find_element_resource("default_font");
+		if (res_id != -1)
+		{
+			atlas = canvas->get_element_resource(res_id).fa;
+			if (!atlas)
+				res_id = -1;
+		}
+	}
+
+	void cTextPrivate::on_left_world()
+	{
+		res_id = -1;
+		atlas = nullptr;
 	}
 
 	cText* cText::create()

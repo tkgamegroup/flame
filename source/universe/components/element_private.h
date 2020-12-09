@@ -104,13 +104,12 @@ namespace flame
 		void mark_drawing_dirty() override;
 		void mark_size_dirty() override;
 
-		void on_gain_renderer();
-		void on_lost_renderer();
-		void on_gain_layout_system();
-
 		bool contains(const vec2& p) override;
 
-		//void on_local_message(Message msg, void* p) override;
+		void on_entered_world() override;
+		void on_left_world() override;
+		void on_visibility_changed(bool v) override;
+		void on_reposition(uint from, uint to) override;
 
 		void draw(graphics::Canvas* canvas);
 	};

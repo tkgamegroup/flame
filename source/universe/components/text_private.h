@@ -48,14 +48,16 @@ namespace flame
 		bool get_auto_height() const override { return auto_height; }
 		void set_auto_height(bool a) override { auto_height = a; }
 
-		void on_gain_canvas();
-		void on_lost_canvas();
-
 		void mark_text_changed();
 
 		void draw(graphics::Canvas* canvas);
 
 		void measure(vec2& ret);
+
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

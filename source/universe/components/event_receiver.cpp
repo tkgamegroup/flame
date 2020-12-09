@@ -200,6 +200,25 @@ namespace flame
 			l->call(key);
 	}
 
+	void cEventReceiverPrivate::on_added()
+	{
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
+	}
+
+	void cEventReceiverPrivate::on_visibility_changed(bool v)
+	{
+		if (dispatcher)
+			dispatcher->dirty = true;
+	}
+
+	void cEventReceiverPrivate::on_entered_world()
+	{
+		dispatcher = entity->world->get_system_t<sEventDispatcherPrivate>();
+		fassert(dispatcher);
+		dispatcher->dirty = true;
+	}
+
 //	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
 //	{
 //		auto& drops = ((cEventReceiverPrivate*)this)->acceptable_drops;
@@ -208,12 +227,7 @@ namespace flame
 //			drops[i] = _drops[i];
 //	}
 
-	void cEventReceiverPrivate::on_gain_dispatcher()
-	{
-		dispatcher->dirty = true;
-	}
-
-	void cEventReceiverPrivate::on_lost_dispatcher()
+	void cEventReceiverPrivate::on_left_world()
 	{
 		if (this == dispatcher->hovering)
 			dispatcher->hovering = nullptr;
@@ -234,17 +248,6 @@ namespace flame
 
 		dispatcher->dirty = true;
 	}
-
-	//void cEventReceiverPrivate::on_local_message(Message msg, void* p)
-	//{
-	//	switch (msg)
-	//	{
-	//	case MessageVisibilityChanged:
-	//		if (dispatcher)
-	//			dispatcher->dirty = true;
-	//		break;
-	//	}
-	//}
 
 	cEventReceiver* cEventReceiver::create()
 	{

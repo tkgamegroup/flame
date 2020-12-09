@@ -87,7 +87,7 @@ namespace flame
 				if ((v & 1) == 1)
 				{
 					if (i > 0)
-						s += ',';
+						s += '|';
 					s += e->find_item(1 << i)->name;
 				}
 				v >>= 1;
@@ -98,7 +98,7 @@ namespace flame
 		{
 			auto e = find_enum(name);
 			auto v = 0;
-			auto sp = SUS::split(src, ',');
+			auto sp = SUS::split(src, '|');
 			for (auto& t : sp)
 				v |= e->find_item(t)->value;
 			*(int*)dst = v;
