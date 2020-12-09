@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cBlur : Component // R !ctor !dtor !type_name !type_hash
+	struct cBlur : Component
 	{
 		inline static auto type_name = "flame::cBlur";
 		inline static auto type_hash = ch(type_name);

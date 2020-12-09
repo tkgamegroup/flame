@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cMenu : Component // R !ctor !dtor !type_name !type_hash
+	struct cMenu : Component
 	{
 		inline static auto type_name = "flame::cMenu";
 		inline static auto type_hash = ch(type_name);

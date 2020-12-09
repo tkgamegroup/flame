@@ -1,14 +1,14 @@
 #pragma once
 
-#include <flame/universe/components/edit.h>
 #include "element_private.h"
+#include <flame/universe/components/edit.h>
 
 namespace flame
 {
 	struct cTextPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cEditPrivate : cEdit // R ~ on_*
+	struct cEditPrivate : cEdit
 	{
 		uint select_start = 0;
 		uint select_end = 0;
@@ -18,9 +18,9 @@ namespace flame
 		bool enter_to_throw_focus = false;
 		bool trigger_changed_on_lost_focus = false;
 
-		cElementPrivate* element = nullptr; // R ref
-		cTextPrivate* text = nullptr; // R ref
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
+		cElementPrivate* element = nullptr;
+		cTextPrivate* text = nullptr;
+		cEventReceiverPrivate* event_receiver = nullptr;
 
 		void* key_down_listener = nullptr;
 		void* char_listener = nullptr;
@@ -41,9 +41,9 @@ namespace flame
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
 
-		void on_local_message(Message msg, void* p) override;
+		//void on_local_message(Message msg, void* p) override;
 
-		void draw(graphics::Canvas* canvas); // R
+		void draw(graphics::Canvas* canvas);
 
 		static cEditPrivate* create();
 	};

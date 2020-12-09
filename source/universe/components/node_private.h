@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/node.h>
 
 namespace flame
@@ -11,7 +12,7 @@ namespace flame
 	
 	struct sRendererPrivate;
 
-	struct cNodePrivate : cNode // R ~ on_*
+	struct cNodePrivate : cNode
 	{
 		vec3 pos = vec3(0.f);
 		quat qut = quat(1.f, 0.f, 0.f, 0.f);
@@ -29,8 +30,8 @@ namespace flame
 
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
 
-		cNodePrivate* p_node; // R ref place=parent optional
-		sRendererPrivate* renderer = nullptr; // R ref
+		cNodePrivate* p_node;
+		sRendererPrivate* renderer = nullptr;
 
 		vec3 get_pos() const override { return pos; }
 		void set_pos(const vec3& pos) override;
@@ -53,6 +54,6 @@ namespace flame
 		void mark_transform_dirty();
 		void mark_drawing_dirty();
 
-		void on_local_message(Message msg, void* p) override;
+		//void on_local_message(Message msg, void* p) override;
 	};
 }

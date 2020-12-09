@@ -1,14 +1,15 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/list.h>
 
 namespace flame
 {
 	struct cEventReceiverPrivate;
 
-	struct cListPrivate : cList // R ~ on_*
+	struct cListPrivate : cList
 	{
-		cEventReceiverPrivate* event_receiver; // R ref
+		cEventReceiverPrivate* event_receiver;
 
 		void* mouse_listener = nullptr;
 
@@ -22,10 +23,10 @@ namespace flame
 		void set_selected(Entity* e) override;
 	};
 
-	struct cListItemPrivate : cListItem // R ~ on_*
+	struct cListItemPrivate : cListItem
 	{
-		cListPrivate* list; // R ref place=parent optional
-		cEventReceiverPrivate* event_receiver; // R ref
+		cListPrivate* list;
+		cEventReceiverPrivate* event_receiver;
 
 		void* mouse_listener = nullptr;
 

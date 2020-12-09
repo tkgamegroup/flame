@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cDragResize : Component // R !ctor !dtor !type_name !type_hash
+	struct cDragResize : Component
 	{
 		inline static auto type_name = "flame::cDragResize";
 		inline static auto type_hash = ch(type_name);

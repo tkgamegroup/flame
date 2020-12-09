@@ -13,7 +13,7 @@ namespace flame
 			return;
 		pos.x = x;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"x"_h>);
+		data_changed(S<"x"_h>);
 	}
 
 	void cElementPrivate::set_y(float y)
@@ -22,7 +22,7 @@ namespace flame
 			return;
 		pos.y = y;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"y"_h>);
+		data_changed(S<"y"_h>);
 	}
 
 	void cElementPrivate::set_width(float w)
@@ -32,7 +32,7 @@ namespace flame
 		size.x = w;
 		content_size.x = size.x - padding[0] - padding[2];
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"width"_h>);
+		data_changed(S<"width"_h>);
 	}
 
 	void cElementPrivate::set_height(float h)
@@ -42,7 +42,7 @@ namespace flame
 		size.y = h;
 		content_size.y = size.y - padding[1] - padding[3];
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"height"_h>);
+		data_changed(S<"height"_h>);
 	}
 
 	void cElementPrivate::set_padding(const vec4& p)
@@ -54,7 +54,7 @@ namespace flame
 		padding_size[1] = p[1] + p[3];
 		content_size = size - padding_size;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"padding"_h>);
+		data_changed(S<"padding"_h>);
 	}
 
 	//	void cElement::set_roundness(const vec4& r, void* sender)
@@ -72,7 +72,7 @@ namespace flame
 			return;
 		pivot.x = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"pivotx"_h>);
+		data_changed(S<"pivotx"_h>);
 	}
 
 	void cElementPrivate::set_pivoty(float p)
@@ -81,7 +81,7 @@ namespace flame
 			return;
 		pivot.y = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"pivoty"_h>);
+		data_changed(S<"pivoty"_h>);
 	}
 
 	void cElementPrivate::set_scalex(float s)
@@ -90,7 +90,7 @@ namespace flame
 			return;
 		scl.x = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"scalex"_h>);
+		data_changed(S<"scalex"_h>);
 	}
 
 	void cElementPrivate::set_scaley(float s)
@@ -99,7 +99,7 @@ namespace flame
 			return;
 		scl.y = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"scaley"_h>);
+		data_changed(S<"scaley"_h>);
 	}
 
 	void cElementPrivate::set_angle(float a)
@@ -108,7 +108,7 @@ namespace flame
 			return;
 		angle = a;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"angle"_h>);
+		data_changed(S<"angle"_h>);
 	}
 
 	void cElementPrivate::set_skewx(float s)
@@ -117,7 +117,7 @@ namespace flame
 			return;
 		skew.x = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"skewx"_h>);
+		data_changed(S<"skewx"_h>);
 	}
 
 	void cElementPrivate::set_skewy(float s)
@@ -126,7 +126,7 @@ namespace flame
 			return;
 		skew.y = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"skewy"_h>);
+		data_changed(S<"skewy"_h>);
 	}
 
 	void cElementPrivate::update_transform()
@@ -198,7 +198,7 @@ namespace flame
 			return;
 		fill_color = c;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<"fill_color"_h>);
+		data_changed(S<"fill_color"_h>);
 	}
 
 	void cElementPrivate::set_border(float b)
@@ -207,7 +207,7 @@ namespace flame
 			return;
 		border = b;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<"border"_h>);
+		data_changed(S<"border"_h>);
 	}
 
 	void cElementPrivate::set_border_color(const cvec4& c)
@@ -216,7 +216,7 @@ namespace flame
 			return;
 		border_color = c;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<"border_color"_h>);
+		data_changed(S<"border_color"_h>);
 	}
 
 	void cElementPrivate::set_clipping(bool c)
@@ -225,7 +225,7 @@ namespace flame
 			return;
 		clipping = c;
 		mark_drawing_dirty();
-		Entity::report_data_changed(this, S<"clipping"_h>);
+		data_changed(S<"clipping"_h>);
 	}
 
 	void cElementPrivate::mark_transform_dirty()
@@ -284,83 +284,78 @@ namespace flame
 			return aabb.contains(p);
 	}
 
-	void cElementPrivate::on_local_message(Message msg, void* p)
-	{
-		switch (msg)
-		{
-		case MessageComponentAdded:
-		{
-			auto udt = find_underlay_udt(((Component*)p)->type_name);
-			if (udt)
-			{
-				{
-					auto f = udt->find_function("draw0");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
-					{
-						auto addr = f->get_address();
-						if (addr)
-						{
-							drawers[0].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
-							mark_drawing_dirty();
-						}
-					}
-				}
-				{
-					auto f = udt->find_function("draw");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
-					{
-						auto addr = f->get_address();
-						if (addr)
-						{
-							drawers[1].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
-							mark_drawing_dirty();
-						}
-					}
-				}
-				{
-					auto f = udt->find_function("measure");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "glm::vec<2,float,0>"), nullptr))
-					{
-						auto addr = f->get_address();
-						if (addr)
-						{
-							measurables.emplace_back((Component*)p, (void(*)(Component*, vec2&))addr);
-							mark_size_dirty();
-						}
-					}
-				}
-			}
-		}
-			break;
-		case MessageComponentRemoved:
-		{
-			if (std::erase_if(measurables, [&](const auto& i) {
-				return i.first == (Component*)p;
-			}))
-				mark_size_dirty();
-			auto n = std::erase_if(drawers[0], [&](const auto& i) {
-				return i.first == (Component*)p;
-			}) + std::erase_if(drawers[1], [&](const auto& i) {
-				return i.first == (Component*)p;
-			});
-			if (n)
-				mark_drawing_dirty();
-		}
-			break;
-		case MessageVisibilityChanged:
-			mark_size_dirty();
-		case MessageElementTransformDirty:
-			mark_transform_dirty();
-			break;
-		case MessageElementSizeDirty:
-			mark_size_dirty();
-			break;
-		case MessagePositionChanged:
-		case MessageElementDrawingDirty:
-			mark_drawing_dirty();
-			break;
-		}
-	}
+	//void cElementPrivate::on_local_message(Message msg, void* p)
+	//{
+	//	switch (msg)
+	//	{
+	//	case MessageComponentAdded:
+	//	{
+	//		auto udt = find_underlay_udt(((Component*)p)->type_name);
+	//		if (udt)
+	//		{
+	//			{
+	//				auto f = udt->find_function("draw0");
+	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+	//				{
+	//					auto addr = f->get_address();
+	//					if (addr)
+	//					{
+	//						drawers[0].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+	//						mark_drawing_dirty();
+	//					}
+	//				}
+	//			}
+	//			{
+	//				auto f = udt->find_function("draw");
+	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+	//				{
+	//					auto addr = f->get_address();
+	//					if (addr)
+	//					{
+	//						drawers[1].emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+	//						mark_drawing_dirty();
+	//					}
+	//				}
+	//			}
+	//			{
+	//				auto f = udt->find_function("measure");
+	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "glm::vec<2,float,0>"), nullptr))
+	//				{
+	//					auto addr = f->get_address();
+	//					if (addr)
+	//					{
+	//						measurables.emplace_back((Component*)p, (void(*)(Component*, vec2&))addr);
+	//						mark_size_dirty();
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//		break;
+	//	case MessageComponentRemoved:
+	//	{
+	//		if (std::erase_if(measurables, [&](const auto& i) {
+	//			return i.first == (Component*)p;
+	//		}))
+	//			mark_size_dirty();
+	//		auto n = std::erase_if(drawers[0], [&](const auto& i) {
+	//			return i.first == (Component*)p;
+	//		}) + std::erase_if(drawers[1], [&](const auto& i) {
+	//			return i.first == (Component*)p;
+	//		});
+	//		if (n)
+	//			mark_drawing_dirty();
+	//	}
+	//		break;
+	//	case MessageVisibilityChanged:
+	//		mark_size_dirty();
+	//		mark_transform_dirty();
+	//		break;
+	//	case MessagePositionChanged:
+	//		mark_drawing_dirty();
+	//		break;
+	//	}
+	//}
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{

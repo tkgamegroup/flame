@@ -1,15 +1,16 @@
 #pragma once
 
-#include <flame/universe/components/bloom.h>"
+#include "../entity_private.h"
+#include <flame/universe/components/bloom.h>
 
 namespace flame
 {
 	struct cElementPrivate;
 
-	struct cBloomPrivate : cBloom // R ~ on_*
+	struct cBloomPrivate : cBloom
 	{
-		cElementPrivate* element = nullptr; // R ref
+		cElementPrivate* element = nullptr;
 
-		void draw0(graphics::Canvas* canvas); // R
+		void draw0(graphics::Canvas* canvas);
 	};
 }

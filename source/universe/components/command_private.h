@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/command.h>
 
 namespace flame
 {
-	struct cCommandPrivate : cCommand // R ~ on_*
+	struct cCommandPrivate : cCommand
 	{
 		std::vector<std::unique_ptr<Closure<void(Capture&, const char*)>>> processors;
 

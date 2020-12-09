@@ -60,54 +60,6 @@ namespace flame
 		return ret;
 	}
 
-	template <uint N, class T>
-	int fmt(char* buf, int buf_size, const vec<N, T>& v)
-	{
-		auto p = buf;
-		auto s = buf_size;
-		for (auto i = 0; i < N; i++)
-		{
-			auto ret = fmt(p, s, v[i]);
-			p += ret;
-			s -= ret;
-			if (i < N - 1)
-			{
-				*p = ',';
-				p++;
-				s--;
-			}
-		}
-		return buf_size - s;
-	}
-
-	inline int fmt(char* buf, int buf_size, const quat& q)
-	{
-		return fmt(buf, buf_size, vec4(q.w, q.x, q.y, q.z));
-	}
-
-	template <class T>
-	std::string to_string(T v)
-	{
-		char buf[32];
-		fmt(buf, size(buf), v);
-		return buf;
-	}
-
-	template <uint N, class T>
-	std::string to_string(const vec<N, T>& v)
-	{
-		char buf[32 * N];
-		fmt(buf, size(buf), v);
-		return buf;
-	}
-
-	inline std::string to_string(const quat& v)
-	{
-		char buf[32 * 4];
-		fmt(buf, size(buf), v);
-		return buf;
-	}
-
 	inline int fmt(wchar_t* buf, int buf_size, bool v)
 	{
 		return swprintf_s(buf, buf_size, L"%d", v ? L"1" : L"0");
@@ -146,13 +98,13 @@ namespace flame
 			for (ret--; ret >= 0; ret--)
 			{
 				auto ch = buf[ret];
-				if (ch == '.')
+				if (ch == L'.')
 				{
-					buf[ret + 1] = '0';
+					buf[ret + 1] = L'0';
 					ret += 2;
 					break;
 				}
-				if (ch == '0')
+				if (ch == L'0')
 					buf[ret] = 0;
 				else
 				{
@@ -164,8 +116,8 @@ namespace flame
 		return ret;
 	}
 
-	template <uint N, class T>
-	int fmt(wchar_t* buf, int buf_size, const vec<N, T>& v)
+	template <class CH, uint N, class T>
+	int fmt(CH* buf, int buf_size, const vec<N, T>& v)
 	{
 		auto p = buf;
 		auto s = buf_size;
@@ -184,9 +136,39 @@ namespace flame
 		return buf_size - s;
 	}
 
-	inline int fmt(wchar_t* buf, int buf_size, const quat& q)
+	template <class CH>
+	int fmt(CH* buf, int buf_size, const quat& q)
 	{
 		return fmt(buf, buf_size, vec4(q.w, q.x, q.y, q.z));
+	}
+
+	template <class CH>
+	int fmt(CH* buf, int buf_size, const Rect& r)
+	{
+		return fmt(buf, buf_size, vec4(r.LT.x, r.LT.y, r.RB.x, r.RB.y));
+	}
+
+	template <class T>
+	std::string to_string(T v)
+	{
+		char buf[32];
+		fmt(buf, size(buf), v);
+		return buf;
+	}
+
+	template <uint N, class T>
+	std::string to_string(const vec<N, T>& v)
+	{
+		char buf[32 * N];
+		fmt(buf, size(buf), v);
+		return buf;
+	}
+
+	inline std::string to_string(const quat& v)
+	{
+		char buf[32 * 4];
+		fmt(buf, size(buf), v);
+		return buf;
 	}
 
 	template <class T>

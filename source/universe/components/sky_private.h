@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/sky.h>
 
 namespace flame
@@ -12,7 +13,7 @@ namespace flame
 
 	struct cNodePrivate;
 
-	struct cSkyPrivate : cSky // R ~ on_*
+	struct cSkyPrivate : cSky
 	{
 		std::string box_texture_name;
 		std::string irr_texture_name;
@@ -21,8 +22,8 @@ namespace flame
 		graphics::Image* irr_texture = nullptr;
 		graphics::Image* rad_texture = nullptr;
 
-		cNodePrivate* node = nullptr; // R ref
-		graphics::Canvas* canvas = nullptr; // R ref
+		cNodePrivate* node = nullptr;
+		graphics::Canvas* canvas = nullptr;
 
 		const char* get_box_texture() const override { return box_texture_name.c_str(); }
 		void set_box_texture(const char* name) override;

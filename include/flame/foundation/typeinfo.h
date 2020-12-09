@@ -11,6 +11,7 @@ namespace flame
 		TypeEnumMulti,
 		TypeData,
 		TypePointer,
+		TypeFunction,
 		TypeArrayOfData,
 		TypeArrayOfPointer,
 
@@ -141,6 +142,7 @@ namespace flame
 		FLAME_FOUNDATION_EXPORTS static Library* load(const wchar_t* filename, bool require_typeinfo = true);
 	};
 
+	FLAME_FOUNDATION_EXPORTS EnumInfo* add_enum(const char* name, uint items_count, char** item_names, int* item_values);
 	FLAME_FOUNDATION_EXPORTS EnumInfo* find_enum(const char* name);
 	FLAME_FOUNDATION_EXPORTS UdtInfo* find_udt(const char* name);
 	FLAME_FOUNDATION_EXPORTS void traverse_enums(void (*callback)(Capture& c, EnumInfo* ei), const Capture& capture);

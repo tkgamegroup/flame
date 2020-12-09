@@ -4,10 +4,10 @@
 
 namespace flame
 {
-	struct World;
 	struct Component;
+	struct World;
 
-	struct Entity // R !ctor !dtor
+	struct Entity
 	{
 		// if it is a child, it will be removed first
 		virtual void release() = 0;
@@ -25,8 +25,6 @@ namespace flame
 		virtual StateFlags get_state() const = 0;
 		virtual void set_state(StateFlags state) = 0;
 
-		virtual void on_message(Message msg, void* p = nullptr) = 0;
-
 		virtual Component* get_component(uint64 hash) const = 0;
 		virtual Component* get_component_n(const char* name) const = 0;
 		template <class T> inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
@@ -43,28 +41,17 @@ namespace flame
 		virtual void remove_all_children(bool destroy = true) = 0;
 		virtual Entity* find_child(const char* name) const = 0;
 
-		virtual void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
-		virtual void remove_local_message_listener(void* lis) = 0;
-		virtual void* add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) = 0;
-		virtual void remove_child_message_listener(void* lis) = 0;
-		virtual void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture) = 0;
-		virtual void remove_local_data_changed_listener(void* lis) = 0;
+		virtual void data_changed(Component* c, uint64 h) = 0;
+		virtual void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) = 0;
+		virtual void remove_data_listener(Component* c, void* lis) = 0;
 
 		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_event(void* ev) = 0;
 
-		virtual void add_local_data_changed_listener_s(uint slot) = 0;
-		virtual void remove_local_data_changed_listener_s(uint slot) = 0;
-
-		virtual void add_event_s(uint slot) = 0;
-		virtual void remove_event_s(uint slot) = 0;
-
 		virtual void load(const wchar_t* filename) = 0;
 		virtual void save(const wchar_t* filename) = 0;
 
-		virtual const wchar_t* get_src() const = 0;
-
-		FLAME_UNIVERSE_EXPORTS static void report_data_changed(Component* c, uint64 hash);
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
+		FLAME_UNIVERSE_EXPORTS static void set_debug(bool v);
 	};
 }

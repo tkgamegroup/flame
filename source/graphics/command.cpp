@@ -66,7 +66,7 @@ namespace flame
 			vkFreeCommandBuffers(pool->device->vk_device, pool->vk_command_buffer_pool, 1, &vk_command_buffer);
 		}
 
-		void CommandBufferPrivate::begin(bool once)
+		void CommandBufferPrivate::begin(bool once, bool _record)
 		{
 			VkCommandBufferBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -76,9 +76,12 @@ namespace flame
 			info.pInheritanceInfo = nullptr;
 
 			chk_res(vkBeginCommandBuffer(vk_command_buffer, &info));
+
+			record = _record;
+			cmds.clear();
 		}
 
-		void CommandBufferPrivate::begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* clearvalues)
+		void CommandBufferPrivate::begin_renderpass(RenderpassPrivate* rp, FramebufferPrivate* fb, const vec4* cvs)
 		{
 			VkRenderPassBeginInfo info;
 			info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -91,15 +94,31 @@ namespace flame
 			auto size = first_view->image->sizes[first_view->subresource.base_level];
 			info.renderArea.extent.width = size.x;
 			info.renderArea.extent.height = size.y;
-			info.clearValueCount = clearvalues ? fb->views.size() : 0;
-			info.pClearValues = (VkClearValue*)clearvalues;
+			info.clearValueCount = cvs ? fb->views.size() : 0;
+			info.pClearValues = (VkClearValue*)cvs;
 
 			vkCmdBeginRenderPass(vk_command_buffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+
+			if (record)
+			{
+				auto cmd = new CmdBeginRenderpass;
+				cmd->rp = rp;
+				cmd->fb = fb;
+				cmd->cvs.resize(info.clearValueCount);
+				memcpy(cmd->cvs.data(), cvs, sizeof(vec4) * info.clearValueCount);
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::end_renderpass()
 		{
 			vkCmdEndRenderPass(vk_command_buffer);
+
+			if (record)
+			{
+				auto cmd = new CmdEndRenderpass;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::set_viewport(const Rect& rect)
@@ -112,6 +131,13 @@ namespace flame
 			vp.width = max(rect.RB.x - rect.LT.x, 1.f);
 			vp.height = max(rect.RB.y - rect.LT.y, 1.f);
 			vkCmdSetViewport(vk_command_buffer, 0, 1, &vp);
+
+			if (record)
+			{
+				auto cmd = new CmdSetViewport;
+				cmd->rect = rect;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::set_scissor(const Rect& rect)
@@ -122,61 +148,152 @@ namespace flame
 			sc.extent.width = max(0.f, rect.RB.x - rect.LT.x);
 			sc.extent.height = max(0.f, rect.RB.y - rect.LT.y);
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
+
+			if (record)
+			{
+				auto cmd = new CmdSetScissor;
+				cmd->rect = rect;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* p)
+		void CommandBufferPrivate::bind_pipeline(PipelinePrivate* pl)
 		{
-			pipeline = p;
-			vkCmdBindPipeline(vk_command_buffer, to_backend(p->type), p->vk_pipeline);
+			pipeline = pl;
+			vkCmdBindPipeline(vk_command_buffer, to_backend(pl->type), pl->vk_pipeline);
+
+			if (record)
+			{
+				auto cmd = new CmdBindPipeline;
+				cmd->pl = pl;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* s, uint idx)
+		void CommandBufferPrivate::bind_descriptor_set(DescriptorSetPrivate* ds, uint idx)
 		{
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline->type), pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &s->vk_descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline->type), pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &ds->vk_descriptor_set, 0, nullptr);
+
+			if (record)
+			{
+				auto cmd = new CmdBindDescriptorSet;
+				cmd->ds = ds;
+				cmd->idx = idx;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* b, uint id)
+		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* buf, uint id)
 		{
 			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(vk_command_buffer, id, 1, &b->vk_buffer, &offset);
+			vkCmdBindVertexBuffers(vk_command_buffer, id, 1, &buf->vk_buffer, &offset);
+
+			if (record)
+			{
+				auto cmd = new CmdBindVertexBuffer;
+				cmd->buf = buf;
+				cmd->id = id;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::bind_index_buffer(BufferPrivate* b, IndiceType t)
+		void CommandBufferPrivate::bind_index_buffer(BufferPrivate* buf, IndiceType t)
 		{
-			vkCmdBindIndexBuffer(vk_command_buffer, b->vk_buffer, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+			vkCmdBindIndexBuffer(vk_command_buffer, buf->vk_buffer, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
+
+			if (record)
+			{
+				auto cmd = new CmdBindIndexBuffer;
+				cmd->buf = buf;
+				cmd->t = t;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
 			vkCmdPushConstants(vk_command_buffer, pipeline->pipeline_layout->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
+
+			if (record)
+			{
+				auto cmd = new CmdPushConstant;
+				cmd->offset = offset;
+				cmd->data.resize(size);
+				memcpy(cmd->data.data(), data, size);
+			}
 		}
 
 		void CommandBufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
 		{
 			vkCmdDraw(vk_command_buffer, count, instance_count, first_vertex, first_instance);
+
+			if (record)
+			{
+				auto cmd = new CmdDraw;
+				cmd->count = count;
+				cmd->instance_count = instance_count;
+				cmd->first_vertex = first_vertex;
+				cmd->first_instance = first_instance;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance)
 		{
 			vkCmdDrawIndexed(vk_command_buffer, count, instance_count, first_index, vertex_offset, first_instance);
+
+			if (record)
+			{
+				auto cmd = new CmdDrawIndexed;
+				cmd->count = count;
+				cmd->first_index = first_index;
+				cmd->vertex_offset = vertex_offset;
+				cmd->instance_count = instance_count;
+				cmd->first_instance = first_instance;
+			}
 		}
 
-		void CommandBufferPrivate::draw_indirect(BufferPrivate* b, uint offset, uint count)
+		void CommandBufferPrivate::draw_indirect(BufferPrivate* buf, uint offset, uint count)
 		{
-			vkCmdDrawIndirect(vk_command_buffer, b->vk_buffer, offset * sizeof(VkDrawIndirectCommand), count, sizeof(VkDrawIndirectCommand));
+			vkCmdDrawIndirect(vk_command_buffer, buf->vk_buffer, offset * sizeof(VkDrawIndirectCommand), count, sizeof(VkDrawIndirectCommand));
+
+			if (record)
+			{
+				auto cmd = new CmdDrawIndirect;
+				cmd->buf = buf;
+				cmd->offset = offset;
+				cmd->count = count;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::draw_indexed_indirect(BufferPrivate* b, uint offset, uint count)
+		void CommandBufferPrivate::draw_indexed_indirect(BufferPrivate* buf, uint offset, uint count)
 		{
-			vkCmdDrawIndexedIndirect(vk_command_buffer, b->vk_buffer, offset * sizeof(VkDrawIndexedIndirectCommand), count, sizeof(VkDrawIndexedIndirectCommand));
+			vkCmdDrawIndexedIndirect(vk_command_buffer, buf->vk_buffer, offset * sizeof(VkDrawIndexedIndirectCommand), count, sizeof(VkDrawIndexedIndirectCommand));
+
+			if (record)
+			{
+				auto cmd = new CmdDrawIndexedIndirect;
+				cmd->buf = buf;
+				cmd->offset = offset;
+				cmd->count = count;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::dispatch(const uvec3& v)
 		{
 			vkCmdDispatch(vk_command_buffer, v.x, v.y, v.z);
+
+			if (record)
+			{
+				auto cmd = new CmdDispatch;
+				cmd->v = v;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::buffer_barrier(BufferPrivate* b, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::buffer_barrier(BufferPrivate* buf, AccessFlags src_access, AccessFlags dst_access)
 		{
 			VkBufferMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -185,25 +302,34 @@ namespace flame
 			barrier.dstAccessMask = to_backend_flags<AccessFlags>(dst_access);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			barrier.buffer = b->vk_buffer;
+			barrier.buffer = buf->vk_buffer;
 			barrier.offset = 0;
-			barrier.size = b->size;
+			barrier.size = buf->size;
 
 			vkCmdPipelineBarrier(vk_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
+
+			if (record)
+			{
+				auto cmd = new CmdBufferBarrier;
+				cmd->buf = buf;
+				cmd->src_access = src_access;
+				cmd->dst_access = dst_access;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::image_barrier(ImagePrivate* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
+		void CommandBufferPrivate::image_barrier(ImagePrivate* img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, AccessFlags src_access, AccessFlags dst_access)
 		{
 			VkImageMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			barrier.pNext = nullptr;
-			barrier.oldLayout = to_backend(old_layout, i->format);
-			barrier.newLayout = to_backend(new_layout, i->format);
+			barrier.oldLayout = to_backend(old_layout, img->format);
+			barrier.newLayout = to_backend(new_layout, img->format);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-			barrier.image = i->vk_image;
-			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(i->format));
+			barrier.image = img->vk_image;
+			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(img->format));
 			barrier.subresourceRange.baseMipLevel = subresource.base_level;
 			barrier.subresourceRange.levelCount = subresource.level_count;
 			barrier.subresourceRange.baseArrayLayer = subresource.base_layer;
@@ -220,7 +346,7 @@ namespace flame
 					src_access = AccessTransferRead;
 					break;
 				case ImageLayoutAttachment:
-					if (i->format >= Format_Color_Begin && i->format <= Format_Color_End)
+					if (img->format >= Format_Color_Begin && img->format <= Format_Color_End)
 						src_access = AccessColorAttachmentWrite;
 					else
 						src_access = AccessDepthAttachmentWrite;
@@ -248,7 +374,7 @@ namespace flame
 					dst_access = AccessTransferRead;
 					break;
 				case ImageLayoutAttachment:
-					if (i->format >= Format_Color_Begin && i->format <= Format_Color_End)
+					if (img->format >= Format_Color_Begin && img->format <= Format_Color_End)
 						dst_access = AccessColorAttachmentWrite;
 					else
 						dst_access = AccessDepthAttachmentWrite;
@@ -272,6 +398,18 @@ namespace flame
 
 			vkCmdPipelineBarrier(vk_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+			if (record)
+			{
+				auto cmd = new CmdImageBarrier;
+				cmd->img = img;
+				cmd->subresource = subresource;
+				cmd->old_layout = old_layout;
+				cmd->new_layout = new_layout;
+				cmd->src_access = src_access;
+				cmd->dst_access = dst_access;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::copy_buffer(BufferPrivate* src, BufferPrivate* dst, std::span<BufferCopy> copies)
@@ -284,6 +422,16 @@ namespace flame
 				vk_copies[i].size = copies[i].size;
 			}
 			vkCmdCopyBuffer(vk_command_buffer, src->vk_buffer, dst->vk_buffer, vk_copies.size(), vk_copies.data());
+
+			if (record)
+			{
+				auto cmd = new CmdCopyBuffer;
+				cmd->src = src;
+				cmd->dst = dst;
+				cmd->copies.resize(copies.size());
+				memcpy(cmd->copies.data(), copies.data(), sizeof(BufferCopy) * copies.size());
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::copy_image(ImagePrivate* src, ImagePrivate* dst, std::span<ImageCopy> copies)
@@ -311,6 +459,16 @@ namespace flame
 			}
 			vkCmdCopyImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
+
+			if (record)
+			{
+				auto cmd = new CmdCopyImage;
+				cmd->src = src;
+				cmd->dst = dst;
+				cmd->copies.resize(copies.size());
+				memcpy(cmd->copies.data(), copies.data(), sizeof(ImageCopy) * copies.size());
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		VkBufferImageCopy to_backend(const BufferImageCopy& cpy, VkImageAspectFlags aspect)
@@ -337,6 +495,16 @@ namespace flame
 				vk_copies[i] = to_backend(copies[i], aspect);
 			vkCmdCopyBufferToImage(vk_command_buffer, src->vk_buffer, dst->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
+
+			if (record)
+			{
+				auto cmd = new CmdCopyBufferToImage;
+				cmd->src = src;
+				cmd->dst = dst;
+				cmd->copies.resize(copies.size());
+				memcpy(cmd->copies.data(), copies.data(), sizeof(BufferImageCopy) * copies.size());
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::copy_image_to_buffer(ImagePrivate* src, BufferPrivate* dst, std::span<BufferImageCopy> copies)
@@ -348,9 +516,19 @@ namespace flame
 				vk_copies[i] = to_backend(copies[i], aspect);
 			vkCmdCopyImageToBuffer(vk_command_buffer, src->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_buffer, vk_copies.size(), vk_copies.data());
+
+			if (record)
+			{
+				auto cmd = new CmdCopyImageToBuffer;
+				cmd->src = src;
+				cmd->dst = dst;
+				cmd->copies.resize(copies.size());
+				memcpy(cmd->copies.data(), copies.data(), sizeof(BufferImageCopy) * copies.size());
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::clear_color_image(ImagePrivate* i, const cvec4& color)
+		void CommandBufferPrivate::clear_color_image(ImagePrivate* img, const cvec4& color)
 		{
 			VkClearColorValue cv;
 			cv.float32[0] = color.x / 255.f;
@@ -363,10 +541,18 @@ namespace flame
 			range.levelCount = 1;
 			range.baseArrayLayer = 0;
 			range.layerCount = 1;
-			vkCmdClearColorImage(vk_command_buffer, i->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
+			vkCmdClearColorImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
+
+			if (record)
+			{
+				auto cmd = new CmdClearColorImage;
+				cmd->img = img;
+				cmd->color = color;
+				cmds.emplace_back(cmd);
+			}
 		}
 
-		void CommandBufferPrivate::clear_depth_image(ImagePrivate* i, float depth)
+		void CommandBufferPrivate::clear_depth_image(ImagePrivate* img, float depth)
 		{
 			VkClearDepthStencilValue cv;
 			cv.depth = depth;
@@ -377,12 +563,47 @@ namespace flame
 			range.levelCount = 1;
 			range.baseArrayLayer = 0;
 			range.layerCount = 1;
-			vkCmdClearDepthStencilImage(vk_command_buffer, i->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
+			vkCmdClearDepthStencilImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
+
+			if (record)
+			{
+				auto cmd = new CmdClearDepthImage;
+				cmd->img = img;
+				cmd->depth = depth;
+				cmds.emplace_back(cmd);
+			}
 		}
 
 		void CommandBufferPrivate::end()
 		{
 			chk_res(vkEndCommandBuffer(vk_command_buffer));
+
+			record = false;
+		}
+
+		void CommandBufferPrivate::save(const std::filesystem::path& filename)
+		{
+			if (cmds.empty())
+				return;
+
+			pugi::xml_document doc;
+			auto doc_root = doc.append_child("capture");
+
+			auto n_buffers = doc_root.append_child("buffers");
+
+			auto n_images = doc_root.append_child("images");
+
+			auto n_renderpasses = doc_root.append_child("renderpasses");
+
+			auto n_framebuffers = doc_root.append_child("framebuffers");
+
+			auto n_pipelines = doc_root.append_child("pipelines");
+
+			auto n_cmds = doc_root.append_child("cmds");
+			for (auto& cmd : cmds)
+				cmd->save(n_cmds);
+
+			doc.save_file(filename.c_str());
 		}
 
 		CommandBuffer* CommandBuffer::create(CommandPool* p, bool sub)

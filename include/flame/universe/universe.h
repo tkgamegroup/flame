@@ -10,7 +10,7 @@
 
 namespace flame
 {
-	enum StateFlags // R
+	enum StateFlags
 	{
 		StateNone = 0,
 		StateHovering = 1 << 0,
@@ -20,23 +20,6 @@ namespace flame
 	};
 
 	inline StateFlags operator| (StateFlags a, StateFlags b) { return (StateFlags)((int)a | (int)b); }
-
-	enum Message
-	{
-		MessageDestroyed,
-		MessageVisibilityChanged,
-		MessageStateChanged,
-		MessageAdded,
-		MessageRemoved,
-		MessagePositionChanged,
-		MessageEnteredWorld,
-		MessageLeftWorld,
-		MessageComponentAdded,
-		MessageComponentRemoved,
-		MessageElementTransformDirty,
-		MessageElementDrawingDirty,
-		MessageElementSizeDirty
-	};
 
 	enum Align
 	{

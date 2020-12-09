@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/shape.h>
 
 namespace flame
@@ -16,7 +17,7 @@ namespace flame
 	struct cTerrainPrivate;
 	struct cRigidPrivate;
 
-	struct cShapePrivate : cShape // R ~ on_*
+	struct cShapePrivate : cShape
 	{
 		physics::ShapeType type = physics::ShapeCube;
 		vec3 size = vec3(1.f);
@@ -27,10 +28,10 @@ namespace flame
 		physics::TriangleMesh* phy_triangle_mesh = nullptr;
 		physics::HeightField* phy_height_field = nullptr;
 
-		cNodePrivate* node = nullptr; // R ref
-		cMeshPrivate* mesh = nullptr; // R ref optional
-		cTerrainPrivate* terrain = nullptr; // R ref optional
-		cRigidPrivate* rigid = nullptr; // R ref place=local|parent
+		cNodePrivate* node = nullptr;
+		cMeshPrivate* mesh = nullptr;
+		cTerrainPrivate* terrain = nullptr;
+		cRigidPrivate* rigid = nullptr;
 
 		physics::ShapeType get_type() const override { return type; }
 		void set_type(physics::ShapeType t) override;
@@ -41,6 +42,6 @@ namespace flame
 		bool get_trigger() const override { return trigger; }
 		void set_trigger(bool v) override;
 
-		void on_local_message(Message msg, void* p) override;
+		//void on_local_message(Message msg, void* p) override;
 	};
 }

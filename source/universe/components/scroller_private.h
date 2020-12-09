@@ -1,3 +1,6 @@
+#pragma once
+
+#include "../entity_private.h"
 #include <flame/universe/components/scroller.h>
 
 namespace flame
@@ -6,22 +9,22 @@ namespace flame
 	struct cEventReceiverPrivate;
 	struct cLayoutPrivate;
 
-	struct cScrollerPrivate : cScroller // R ~ on_*
+	struct cScrollerPrivate : cScroller
 	{
 		float step = 1.f;
 
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
+		cEventReceiverPrivate* event_receiver = nullptr;
 
-		cElementPrivate* htrack_element = nullptr; // R ref place=htrack
-		cElementPrivate* hthumb_element = nullptr; // R ref place=hthumb
-		cEventReceiverPrivate* hthumb_event_receiver = nullptr; // R ref place=hthumb
+		cElementPrivate* htrack_element = nullptr;
+		cElementPrivate* hthumb_element = nullptr;
+		cEventReceiverPrivate* hthumb_event_receiver = nullptr;
 
-		cElementPrivate* vtrack_element = nullptr; // R ref place=vtrack
-		cElementPrivate* vthumb_element = nullptr; // R ref place=vthumb
-		cEventReceiverPrivate* vthumb_event_receiver = nullptr; // R ref place=vthumb
+		cElementPrivate* vtrack_element = nullptr;
+		cElementPrivate* vthumb_element = nullptr;
+		cEventReceiverPrivate* vthumb_event_receiver = nullptr;
 
-		cElementPrivate* view_element = nullptr; // R ref place=view
-		cLayoutPrivate* view_layout = nullptr; // R ref place=view
+		cElementPrivate* view_element = nullptr;
+		cLayoutPrivate* view_layout = nullptr;
 
 		cElementPrivate* target_element = nullptr;
 
@@ -48,7 +51,5 @@ namespace flame
 		void on_lost_vthumb_event_receiver();
 
 		void on_gain_view_element();
-
-		bool check_refs() override;
 	};
 }

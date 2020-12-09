@@ -1,12 +1,13 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/aligner.h>
 
 namespace flame
 {
 	struct cElementPrivate;
 
-	struct cAlignerPrivate : cAligner  // R ~ on_*
+	struct cAlignerPrivate : cAligner
 	{
 		Align alignx = AlignMin;
 		Align aligny = AlignMin;
@@ -23,7 +24,7 @@ namespace flame
 
 		vec2 desired_size = vec2(0.f);
 
-		cElementPrivate* element = nullptr; // R ref
+		cElementPrivate* element = nullptr;
 
 		Align get_alignx() const override { return alignx; }
 		void set_alignx(Align a) override;

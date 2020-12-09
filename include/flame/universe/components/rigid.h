@@ -7,7 +7,7 @@ namespace flame
 {
 	struct cShape;
 
-	struct cRigid : Component // R !ctor !dtor !type_name !type_hash
+	struct cRigid : Component
 	{
 		inline static auto type_name = "flame::cRigid";
 		inline static auto type_hash = ch(type_name);

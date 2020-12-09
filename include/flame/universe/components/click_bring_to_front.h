@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cClickBringToFront : Component // R !ctor !dtor !type_name !type_hash
+	struct cClickBringToFront : Component
 	{
 		inline static auto type_name = "flame::cClickBringToFront";
 		inline static auto type_hash = ch(type_name);

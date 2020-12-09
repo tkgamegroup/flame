@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/camera.h>
 
 namespace flame
@@ -12,7 +13,7 @@ namespace flame
 	struct cNodePrivate;
 	struct sRendererPrivate;
 
-	struct cCameraPrivate : cCamera // R ~ on_*
+	struct cCameraPrivate : cCamera
 	{
 		float fovy = 40.f;
 		float near = 1.f;
@@ -20,15 +21,15 @@ namespace flame
 
 		bool current = false;
 
-		cNodePrivate* node = nullptr; // R ref
-		sRendererPrivate* renderer = nullptr; // R ref
+		cNodePrivate* node = nullptr;
+		sRendererPrivate* renderer = nullptr;
 
 		void apply_current();
 
 		void on_gain_renderer();
 		void on_lost_renderer();
 
-		void draw(graphics::Canvas* canvas); // R
+		void draw(graphics::Canvas* canvas);
 
 		bool get_current() const override { return current; }
 		void set_current(bool v) override;

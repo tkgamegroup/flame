@@ -17,7 +17,6 @@ namespace flame
 #else
 		Entity* entity = nullptr;
 #endif
-		void* aux = nullptr;
 
 		Component(const char* name, uint64 hash) :
 			type_name(name),
@@ -27,12 +26,22 @@ namespace flame
 
 		virtual ~Component() {}
 
-		virtual bool check_refs() { return true; }
 		virtual void on_added() {}
 		virtual void on_removed() {}
-		virtual void on_local_message(Message msg, void* p = nullptr) {}
-		virtual void on_child_message(Message msg, void* p = nullptr) {}
-		virtual void on_local_data_changed(Component* c, uint64 hash) {}
-		virtual void on_child_data_changed(Component* c, uint64 hash) {}
+		virtual void on_entered_world() {}
+		virtual void on_left_world() {}
+		virtual void on_visibility_changed(bool v) {}
+		virtual void on_state_changed(StateFlags state) {}
+		virtual void on_self_added() {}
+		virtual void on_self_removed() {}
+		virtual void on_child_added(Entity* e) {}
+		virtual void on_child_removed(Entity* e) {}
+		virtual void on_reposition(uint from, uint to) {}
+
+		void data_changed(uint64 h)
+		{
+			if (entity)
+				entity->data_changed(this, h);
+		}
 	};
 }

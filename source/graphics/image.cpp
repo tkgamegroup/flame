@@ -187,7 +187,7 @@ namespace flame
 				}
 				fassert(format != Format_Undefined);
 
-				auto ret = new ImagePrivate(device, format, uvec2(size.x, size.y), levels, layers,
+				ret = new ImagePrivate(device, format, uvec2(size.x, size.y), levels, layers,
 					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage, is_cube);
 
 				ImmediateStagingBuffer stag(device, gli_texture.size(), gli_texture.data());

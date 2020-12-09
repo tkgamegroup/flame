@@ -5,7 +5,7 @@
 
 namespace flame
 {
-	struct cLight : Component // R !ctor !dtor !type_name !type_hash
+	struct cLight : Component
 	{
 		inline static auto type_name = "flame::cLight";
 		inline static auto type_hash = ch(type_name);

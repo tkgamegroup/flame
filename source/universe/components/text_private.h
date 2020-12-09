@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/text.h>
 
 namespace flame
@@ -17,16 +18,16 @@ namespace flame
 		void set_text(const wchar_t* text) override;
 	};
 
-	struct cTextPrivate : cTextBridge // R ~ on_*
+	struct cTextPrivate : cTextBridge
 	{
-		cElementPrivate* element = nullptr; // R ref
-		graphics::Canvas* canvas = nullptr; // R ref
+		cElementPrivate* element = nullptr;
+		graphics::Canvas* canvas = nullptr;
 
 		bool auto_width = true;
 		bool auto_height = true;
 
 		std::wstring text;
-		uint size = 14;
+		uint font_size = 14;
 		cvec4 color = cvec4(0, 0, 0, 255);
 
 		int res_id = -1;
@@ -36,8 +37,8 @@ namespace flame
 		uint get_text_length() const override { return text.size(); }
 		void set_text(const std::wstring& text);
 
-		uint get_size() const override { return size; }
-		void set_size(uint s) override;
+		uint get_font_size() const override { return font_size; }
+		void set_font_size(uint s) override;
 
 		cvec4 get_color() const override { return color; }
 		void set_color(const cvec4& col) override;
@@ -52,9 +53,9 @@ namespace flame
 
 		void mark_text_changed();
 
-		void draw(graphics::Canvas* canvas); // R
+		void draw(graphics::Canvas* canvas);
 
-		void measure(vec2& ret); // R
+		void measure(vec2& ret);
 	};
 
 	inline void cTextBridge::set_text(const wchar_t* text)

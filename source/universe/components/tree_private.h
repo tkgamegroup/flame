@@ -1,3 +1,6 @@
+#pragma once
+
+#include "../entity_private.h"
 #include <flame/universe/components/tree.h>
 
 namespace flame
@@ -5,11 +8,11 @@ namespace flame
 	struct cTextPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cTreePrivate : cTree // R ~ on_*
+	struct cTreePrivate : cTree
 	{
 		EntityPrivate* selected = nullptr;
 
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
+		cEventReceiverPrivate* event_receiver = nullptr;
 
 		void* mouse_listener = nullptr;
 
@@ -22,10 +25,10 @@ namespace flame
 		void expand_to_selected() override;
 	};
 
-	struct cTreeLeafPrivate : cTreeLeaf // R ~ on_*
+	struct cTreeLeafPrivate : cTreeLeaf
 	{
-		cTreePrivate* tree = nullptr; // R ref place=ancestor optional
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
+		cTreePrivate* tree = nullptr;
+		cEventReceiverPrivate* event_receiver = nullptr;
 
 		void* mouse_listener = nullptr;
 
@@ -33,13 +36,13 @@ namespace flame
 		void on_lost_event_receiver();
 	};
 
-	struct cTreeNodePrivate : cTreeNode // R ~ on_*
+	struct cTreeNodePrivate : cTreeNode
 	{
-		cTreePrivate* tree = nullptr; // R ref place=ancestor optional
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
-		cTextPrivate* arrow_text = nullptr; // R ref place=arrow
-		cEventReceiverPrivate* arrow_event_receiver = nullptr; // R ref place=arrow
-		cElementPrivate* items_element = nullptr; // R ref place=items
+		cTreePrivate* tree = nullptr;
+		cEventReceiverPrivate* event_receiver = nullptr;
+		cTextPrivate* arrow_text = nullptr;
+		cEventReceiverPrivate* arrow_event_receiver = nullptr;
+		cElementPrivate* items_element = nullptr;
 
 		void* mouse_listener = nullptr;
 		void* arrow_mouse_listener = nullptr;

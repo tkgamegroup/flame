@@ -17,16 +17,16 @@ namespace flame
 			}
 		}, Capture().set_thiz(this));
 
-		block_event_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {
-			auto thiz = c.thiz<cDragResizePrivate>();
-			switch (msg)
-			{
-			case MessageStateChanged:
-				thiz->block_event_receiver->dispatcher->window->set_cursor(
-					(thiz->block_event_receiver->entity->state & StateHovering) ? CursorSizeNWSE : CursorArrow);
-				break;
-			}
-		}, Capture().set_thiz(this));
+		//block_event_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {
+		//	auto thiz = c.thiz<cDragResizePrivate>();
+		//	switch (msg)
+		//	{
+		//	case MessageStateChanged:
+		//		thiz->block_event_receiver->dispatcher->window->set_cursor(
+		//			(state & StateHovering) ? CursorSizeNWSE : CursorArrow);
+		//		break;
+		//	}
+		//}, Capture().set_thiz(this));
 	}
 
 	void cDragResizePrivate::on_lost_block_event_receiver()

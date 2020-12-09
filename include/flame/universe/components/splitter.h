@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cSplitter : Component // R !ctor !dtor !type_name !type_hash
+	struct cSplitter : Component
 	{
 		inline static auto type_name = "flame::cSplitter";
 		inline static auto type_hash = ch(type_name);

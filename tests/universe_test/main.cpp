@@ -31,6 +31,8 @@ int main(int argc, char** args)
 				g_app.main_window->s_physic_world->set_visualization(true);
 			else if (cmd == "physics_visualization_off")
 				g_app.main_window->s_physic_world->set_visualization(false);
+			else if (cmd == "capture")
+				g_app.main_window->capture = true;
 		}, Capture());
 		w->root->add_component(c);
 		auto e = Entity::create();

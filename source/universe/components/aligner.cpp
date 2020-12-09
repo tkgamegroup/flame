@@ -1,4 +1,5 @@
 #include "../entity_private.h"
+#include "element_private.h"
 #include "aligner_private.h"
 
 namespace flame
@@ -8,7 +9,7 @@ namespace flame
 		if (alignx == a)
 			return;
 		alignx = a;
-		Entity::report_data_changed(this, S<"alignx"_h>);
+		data_changed(S<"alignx"_h>);
 	}
 
 	void cAlignerPrivate::set_aligny(Align a)
@@ -16,7 +17,7 @@ namespace flame
 		if (aligny == a)
 			return;
 		aligny = a;
-		Entity::report_data_changed(this, S<"aligny"_h>);
+		data_changed(S<"aligny"_h>);
 	}
 
 	void cAlignerPrivate::set_width_factor(float f)
@@ -24,7 +25,7 @@ namespace flame
 		if (width_factor == f)
 			return;
 		width_factor = f;
-		Entity::report_data_changed(this, S<"width_factor"_h>);
+		data_changed(S<"width_factor"_h>);
 	}
 
 	void cAlignerPrivate::set_height_factor(float f)
@@ -32,7 +33,7 @@ namespace flame
 		if (height_factor == f)
 			return;
 		height_factor = f;
-		Entity::report_data_changed(this, S<"height_factor"_h>);
+		data_changed(S<"height_factor"_h>);
 	}
 
 	void cAlignerPrivate::set_absolute(bool a)
@@ -40,7 +41,7 @@ namespace flame
 		if (absolute == a)
 			return;
 		absolute = a;
-		Entity::report_data_changed(this, S<"absolute"_h>);
+		data_changed(S<"absolute"_h>);
 	}
 
 	void cAlignerPrivate::set_margin(const vec4& m)
@@ -50,7 +51,7 @@ namespace flame
 		margin = m;
 		margin_size[0] = m[0] + m[2];
 		margin_size[1] = m[1] + m[3];
-		Entity::report_data_changed(this, S<"margin"_h>);
+		data_changed(S<"margin"_h>);
 	}
 
 	void cAlignerPrivate::set_include_in_layout(bool o)
@@ -58,12 +59,12 @@ namespace flame
 		if (include_in_layout == o)
 			return;
 		include_in_layout = o;
-		Entity::report_data_changed(this, S<"include_in_layout"_h>);
+		data_changed(S<"include_in_layout"_h>);
 	}
 
 	void cAlignerPrivate::on_added()
 	{
-		entity->on_message(MessageElementSizeDirty);
+		element->mark_size_dirty();
 	}
 
 	cAligner* cAligner::create()

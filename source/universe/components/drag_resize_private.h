@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/drag_resize.h>
 
 namespace flame
@@ -7,10 +8,10 @@ namespace flame
 	struct cElementPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cDragResizePrivate : cDragResize // R ~ on_*
+	struct cDragResizePrivate : cDragResize
 	{
-		cElementPrivate* element = nullptr; // R ref
-		cEventReceiverPrivate* block_event_receiver = nullptr; // R ref place=drag_resize_block
+		cElementPrivate* element = nullptr;
+		cEventReceiverPrivate* block_event_receiver = nullptr;
 
 		void* block_mouse_listener = nullptr;
 

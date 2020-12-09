@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/rigid.h>
 
 namespace flame
@@ -13,7 +14,7 @@ namespace flame
 	struct cNodePrivate;
 	struct sPhysicsWorldPrivate;
 
-	struct cRigidPrivate : cRigid // R ~ on_*
+	struct cRigidPrivate : cRigid
 	{
 		bool dynamic = true;
 		physics::Rigid* phy_rigid = nullptr;
@@ -24,8 +25,8 @@ namespace flame
 
 		std::vector<uint> trigger_listeners_s;
 
-		cNodePrivate* node = nullptr; // R ref
-		sPhysicsWorldPrivate* physics_world = nullptr; // R ref
+		cNodePrivate* node = nullptr;
+		sPhysicsWorldPrivate* physics_world = nullptr;
 
 		~cRigidPrivate();
 

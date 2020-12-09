@@ -6,24 +6,6 @@
 
 namespace flame
 {
-	cEventReceiverPrivate::~cEventReceiverPrivate()
-	{
-		for (auto s : key_down_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-		for (auto s : key_up_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-		for (auto s : mouse_left_down_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-		for (auto s : mouse_left_up_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-		for (auto s : mouse_move_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-		for (auto s : mouse_scroll_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-		for (auto s : mouse_click_listeners_s)
-			script::Instance::get_default()->release_slot(s);
-	}
-
 	void cEventReceiverPrivate::set_ignore_occluders(bool v)
 	{
 		ignore_occluders = v;
@@ -211,138 +193,11 @@ namespace flame
 		});
 	}
 
-	void cEventReceiverPrivate::add_key_down_listener_s(uint slot)
-	{
-		key_down_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_key_down_listener_s(uint slot)
-	{
-		for (auto it = key_down_listeners_s.begin(); it != key_down_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				key_down_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
-	void cEventReceiverPrivate::add_key_up_listener_s(uint slot)
-	{
-		key_up_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_key_up_listener_s(uint slot)
-	{
-		for (auto it = key_up_listeners_s.begin(); it != key_up_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				key_up_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
-	void cEventReceiverPrivate::add_mouse_left_down_listener_s(uint slot)
-	{
-		mouse_left_down_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_mouse_left_down_listener_s(uint slot)
-	{
-		for (auto it = mouse_left_down_listeners_s.begin(); it != mouse_left_down_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				mouse_left_down_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
-	void cEventReceiverPrivate::add_mouse_left_up_listener_s(uint slot)
-	{
-		mouse_left_up_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_mouse_left_up_listener_s(uint slot)
-	{
-		for (auto it = mouse_left_up_listeners_s.begin(); it != mouse_left_up_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				mouse_left_up_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
-	void cEventReceiverPrivate::add_mouse_move_listener_s(uint slot)
-	{
-		mouse_move_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_mouse_move_listener_s(uint slot)
-	{
-		for (auto it = mouse_move_listeners_s.begin(); it != mouse_move_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				mouse_move_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
-	void cEventReceiverPrivate::add_mouse_scroll_listener_s(uint slot)
-	{
-		mouse_scroll_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_mouse_scroll_listener_s(uint slot)
-	{
-		for (auto it = mouse_scroll_listeners_s.begin(); it != mouse_scroll_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				mouse_scroll_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
-	void cEventReceiverPrivate::add_mouse_click_listener_s(uint slot)
-	{
-		mouse_click_listeners_s.push_back(slot);
-	}
-
-	void cEventReceiverPrivate::remove_mouse_click_listener_s(uint slot)
-	{
-		for (auto it = mouse_click_listeners_s.begin(); it != mouse_click_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				mouse_click_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
 	void cEventReceiverPrivate::on_key_event(KeyboardKey key, bool down)
 	{
 		auto& listeners = down ? key_down_listeners : key_up_listeners;
-		auto& listeners_s = down ? key_down_listeners_s : key_up_listeners_s;
 		for (auto& l : listeners)
 			l->call(key);
-		{
-			script::Parameter p;
-			p.type = script::ScriptTypeInt;
-			p.data.i[0] = key;
-			for (auto s : listeners_s)
-				script::Instance::get_default()->call_slot(s, 1, &p);
-		}
 	}
 
 //	void cEventReceiver::set_acceptable_drops(uint drop_count, const uint* _drops)
@@ -380,16 +235,16 @@ namespace flame
 		dispatcher->dirty = true;
 	}
 
-	void cEventReceiverPrivate::on_local_message(Message msg, void* p)
-	{
-		switch (msg)
-		{
-		case MessageVisibilityChanged:
-			if (dispatcher)
-				dispatcher->dirty = true;
-			break;
-		}
-	}
+	//void cEventReceiverPrivate::on_local_message(Message msg, void* p)
+	//{
+	//	switch (msg)
+	//	{
+	//	case MessageVisibilityChanged:
+	//		if (dispatcher)
+	//			dispatcher->dirty = true;
+	//		break;
+	//	}
+	//}
 
 	cEventReceiver* cEventReceiver::create()
 	{

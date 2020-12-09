@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cElement : Component // R !ctor !dtor !type_name !type_hash
+	struct cElement : Component
 	{
 		inline static auto type_name = "flame::cElement";
 		inline static auto type_hash = ch(type_name);
@@ -74,6 +74,10 @@ namespace flame
 		//FLAME_RV(uint, roundness_lod);
 
 		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const vec4& r);
+
+		virtual void mark_transform_dirty() = 0;
+		virtual void mark_drawing_dirty() = 0;
+		virtual void mark_size_dirty() = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};

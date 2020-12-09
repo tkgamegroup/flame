@@ -8,17 +8,11 @@ int main(int argc, char **args)
 	std::vector<std::filesystem::path> inputs;
 	std::filesystem::path output;
 	auto border = false;
-	for (auto i = 1; i < argc; i++)
-	{
-		auto arg = std::string(args[i]);
-		if (arg[0] == '-' && arg.size() > 1)
-		{
-			if (arg[1] == 'b')
-				border = true;
-			else if (arg[1] == 'o' && arg.size() > 2)
-				output = s2w(std::string(arg.begin() + 2, arg.end()));
-		}
-	}
+	auto ap = pack_args(argc, args);
+	if		(ap.has("-b"))
+		border = true;
+	else if (ap.has("-o"))
+		output = ap.get_items("-o")[0];
 	for (std::filesystem::directory_iterator end, it(std::filesystem::current_path()); it != end; it++)
 	{
 		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))

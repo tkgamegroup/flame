@@ -434,8 +434,8 @@ namespace flame
 					{
 						auto n_channel = n_channels.append_child("channel");
 						n_channel.append_attribute("node_name").set_value(c->node_name.c_str());
-						n_channel.append_child("position_keys").append_attribute("data").set_value(base64::encode(std::string((char*)c->position_keys.data(), c->position_keys.size() * sizeof(PositionKey))).c_str());
-						n_channel.append_child("rotation_keys").append_attribute("data").set_value(base64::encode(std::string((char*)c->rotation_keys.data(), c->rotation_keys.size() * sizeof(RotationKey))).c_str());
+						n_channel.append_child("position_keys").append_attribute("data").set_value(base64::encode((char*)c->position_keys.data(), c->position_keys.size() * sizeof(PositionKey)).c_str());
+						n_channel.append_child("rotation_keys").append_attribute("data").set_value(base64::encode((char*)c->rotation_keys.data(), c->rotation_keys.size() * sizeof(RotationKey)).c_str());
 					}
 				}
 

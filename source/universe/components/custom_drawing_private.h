@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/custom_drawing.h>
 
 namespace flame
 {
-	struct cCustomDrawingPrivate : cCustomDrawing // R ~ on_*
+	struct cCustomDrawingPrivate : cCustomDrawing
 	{
 		std::vector<std::unique_ptr<Closure<void(Capture&, graphics::Canvas*)>>> drawers;
 

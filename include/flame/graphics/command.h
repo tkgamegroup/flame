@@ -69,16 +69,16 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			virtual void begin(bool once = false) = 0;
+			virtual void begin(bool once = false, bool record = false) = 0;
 
-			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues = nullptr) = 0;
+			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* cvs = nullptr) = 0;
 			virtual void end_renderpass() = 0;
 			virtual void set_viewport(const Rect& rect) = 0;
 			virtual void set_scissor(const Rect& rect) = 0;
-			virtual void bind_pipeline(Pipeline* p) = 0;
-			virtual void bind_descriptor_set(DescriptorSet* s, uint idx) = 0;
-			virtual void bind_vertex_buffer(Buffer* b, uint id) = 0;
-			virtual void bind_index_buffer(Buffer* b, IndiceType t) = 0;
+			virtual void bind_pipeline(Pipeline* pl) = 0;
+			virtual void bind_descriptor_set(DescriptorSet* ds, uint idx) = 0;
+			virtual void bind_vertex_buffer(Buffer* buf, uint id) = 0;
+			virtual void bind_index_buffer(Buffer* buf, IndiceType t) = 0;
 			virtual void push_constant(uint offset, uint size, const void* data) = 0;
 			template <class T>
 			inline void push_constant_t(uint offset, const T& data)
@@ -87,11 +87,11 @@ namespace flame
 			}
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
-			virtual void draw_indirect(Buffer* b, uint offset, uint count) = 0;
-			virtual void draw_indexed_indirect(Buffer* b, uint offset, uint count) = 0;
+			virtual void draw_indirect(Buffer* buf, uint offset, uint count) = 0;
+			virtual void draw_indexed_indirect(Buffer* buf, uint offset, uint count) = 0;
 			virtual void dispatch(const uvec3& v) = 0;
-			virtual void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) = 0;
-			virtual void image_barrier(Image* i, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
+			virtual void buffer_barrier(Buffer* buf, AccessFlags src_access, AccessFlags dst_access) = 0;
+			virtual void image_barrier(Image* img, const ImageSubresource& subresource, ImageLayout old_layout, ImageLayout new_layout, 
 				AccessFlags src_access = AccessNone, AccessFlags dst_access = AccessNone) = 0;
 
 			virtual void copy_buffer(Buffer* src, Buffer* dst, uint copies_count, BufferCopy* copies) = 0;
@@ -99,10 +99,12 @@ namespace flame
 			virtual void copy_buffer_to_image(Buffer* src, Image* dst, uint copies_count, BufferImageCopy* copies) = 0;
 			virtual void copy_image_to_buffer(Image* src, Buffer* dst, uint copies_count, BufferImageCopy* copies) = 0;
 
-			virtual void clear_color_image(Image* i, const cvec4& color) = 0;
-			virtual void clear_depth_image(Image* i, float depth) = 0;
+			virtual void clear_color_image(Image* img, const cvec4& color) = 0;
+			virtual void clear_depth_image(Image* img, float depth) = 0;
 
 			virtual void end() = 0;
+
+			virtual void save(const wchar_t* filename) = 0;
 
 			FLAME_GRAPHICS_EXPORTS  static CommandBuffer* create(CommandPool* p, bool sub = false);
 		};

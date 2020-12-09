@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cEdit : Component // R !ctor !dtor !type_name !type_hash
+	struct cEdit : Component
 	{
 		inline static auto type_name = "flame::cEdit";
 		inline static auto type_hash = ch(type_name);

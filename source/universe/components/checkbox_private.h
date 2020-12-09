@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/checkbox.h>
 
 namespace flame
@@ -7,9 +8,9 @@ namespace flame
 	struct cElementPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cCheckboxPrivate : cCheckbox  // R ~ on_*
+	struct cCheckboxPrivate : cCheckbox
 	{
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
+		cEventReceiverPrivate* event_receiver = nullptr;
 
 		void* click_listener = nullptr;
 

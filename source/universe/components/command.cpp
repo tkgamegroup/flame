@@ -1,3 +1,4 @@
+#include "../entity_private.h"
 #include "command_private.h"
 
 namespace flame

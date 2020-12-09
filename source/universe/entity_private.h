@@ -1,6 +1,8 @@
 #pragma once
 
 #include <flame/universe/entity.h>
+#include <flame/universe/component.h>
+#include <flame/universe/driver.h>
 
 #include <functional>
 
@@ -10,6 +12,20 @@ namespace flame
 	struct VariableInfo;
 
 	struct WorldPrivate;
+
+	struct StateRule
+	{
+		Component* c;
+		TypeInfo* type;
+		FunctionInfo* setter;
+		std::vector<std::pair<StateFlags, void*>> rules;
+
+		~StateRule()
+		{
+			for (auto& r : rules)
+				type->destroy(r.second);
+		}
+	};
 
 	struct EntityBridge : Entity
 	{
@@ -22,6 +38,13 @@ namespace flame
 
 	struct EntityPrivate : EntityBridge
 	{
+		struct ComponentSlot
+		{
+			std::unique_ptr<Component, Delector> c;
+			uint id;
+			std::vector<std::unique_ptr<Closure<void(Capture&, uint64)>>> data_listeners;
+		};
+
 		std::string name;
 
 		bool visible = true;
@@ -31,79 +54,26 @@ namespace flame
 		EntityPrivate* parent = nullptr;
 
 		StateFlags state = StateNone;
+		std::vector<StateRule> state_rules;
 
 		uint depth = 0;
 		uint index = 0;
 
-		std::filesystem::path src;
-		std::filesystem::path src_abs;
+		std::string src;
+		std::filesystem::path path;
 
 		int created_frame;
 		int created_id;
-		std::vector<void*> created_stack;
-		std::filesystem::path created_filename;
-		uint created_lineno = 0;
+#ifdef FLAME_UNIVERSE_DEBUG
+		std::vector<StackFrameInfo> created_stack;
+#endif
+		std::pair<std::filesystem::path, uint> created_location;
 
-		enum RefType
-		{
-			RefComponent,
-			RefSystem,
-			RefObject
-		};
-
-		enum Place
-		{
-			PlaceLocal,
-			PlaceParent,
-			PlaceAncestor,
-			PlaceOffspring
-		};
-
-		struct Ref
-		{
-			RefType type;
-			Place place = PlaceLocal;
-			std::string name;
-			uint64 hash;
-			bool optional = false;
-
-			void* staging = INVALID_POINTER;
-			void** dst = nullptr;
-			void(*on_gain)(void*) = nullptr;
-			void(*on_lost)(void*) = nullptr;
-
-			void gain(Component* c);
-			void lost(Component* c);
-		};
-
-		struct ComponentAux
-		{
-			std::vector<Ref> refs;
-
-			std::vector<Component*> list_ref_by;
-
-			bool want_local_message = false;
-			bool want_child_message = false;
-			bool want_local_data_changed = false;
-			bool want_child_data_changed = false;
-		};
-
-		std::unordered_map<uint64, std::unique_ptr<Component, Delector>> components;
+		std::unique_ptr<Driver> driver;
+		std::unordered_map<uint64, ComponentSlot> components;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 
-		std::vector<Component*> local_message_dispatch_list;
-		std::vector<Component*> child_message_dispatch_list;
-		std::vector<Component*> local_data_changed_dispatch_list;
-		std::vector<Component*> child_data_changed_dispatch_list;
-		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> local_message_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, Message, void*)>>> child_message_listeners;
-		std::vector<std::unique_ptr<Closure<void(Capture&, Component*, uint64)>>> local_data_changed_listeners;
-
 		std::vector<void*> events;
-
-		std::vector<uint> local_data_changed_listeners_s;
-
-		std::vector<std::pair<uint, void*>> events_s;
 
 		EntityPrivate();
 		~EntityPrivate();
@@ -123,15 +93,11 @@ namespace flame
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;
 
-		void on_message(Message msg, void* p = nullptr) override;
-
 		Component* get_component(uint64 hash) const override;
 		Component* get_component_n(const char* name) const override;
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
-		void on_component_removed(Component* c);
-		bool check_component_removable(Component* c) const;
 		void remove_component(Component* c, bool destroy = true);
 		void remove_all_components(bool destroy) override;
 
@@ -144,26 +110,15 @@ namespace flame
 		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;
 
-		void* add_local_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) override;
-		void remove_local_message_listener(void* lis) override;
-		void* add_child_message_listener(void (*callback)(Capture& c, Message msg, void* p), const Capture& capture) override;
-		void remove_child_message_listener(void* lis) override;
-		void* add_local_data_changed_listener(void (*callback)(Capture& c, Component* t, uint64 hash), const Capture& capture) override;
-		void remove_local_data_changed_listener(void* lis) override;
+		void data_changed(Component* c, uint64 h) override;
+		void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) override;
+		void remove_data_listener(Component* c, void* lis) override;
 
 		void* add_event(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_event(void* ev) override;
 
-		void add_local_data_changed_listener_s(uint slot) override;
-		void remove_local_data_changed_listener_s(uint slot) override;
-
-		void add_event_s(uint slot) override;
-		void remove_event_s(uint slot) override;
-
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);
-
-		const wchar_t* get_src() const override { return src.c_str(); }
 	};
 
 	inline void EntityBridge::add_child(Entity* e, int position)

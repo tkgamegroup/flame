@@ -50,19 +50,19 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_htrack_element()
 	{
-		htrack_element_listener = htrack_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-			auto thiz = c.thiz<cScrollerPrivate>();
-			if (t == thiz->htrack_element)
-			{
-				if (h == S<"width"_h>)
-					thiz->scroll(vec2(0.f));
-			}
-		}, Capture().set_thiz(this));
+		//htrack_element_listener = htrack_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		//	auto thiz = c.thiz<cScrollerPrivate>();
+		//	if (t == thiz->htrack_element)
+		//	{
+		//		if (h == S<"width"_h>)
+		//			thiz->scroll(vec2(0.f));
+		//	}
+		//}, Capture().set_thiz(this));
 	}
 
 	void cScrollerPrivate::on_lost_htrack_element()
 	{
-		htrack_element->entity->remove_local_data_changed_listener(htrack_element_listener);
+		//htrack_element->entity->remove_local_data_changed_listener(htrack_element_listener);
 	}
 
 	void cScrollerPrivate::on_gain_hthumb_event_receiver()
@@ -81,19 +81,19 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_vtrack_element()
 	{
-		vtrack_element_listener = vtrack_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-			auto thiz = c.thiz<cScrollerPrivate>();
-			if (t == thiz->vtrack_element)
-			{
-				if (h == S<"height"_h>)
-					thiz->scroll(vec2(0.f));
-			}
-		}, Capture().set_thiz(this));
+		//vtrack_element_listener = vtrack_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		//	auto thiz = c.thiz<cScrollerPrivate>();
+		//	if (t == thiz->vtrack_element)
+		//	{
+		//		if (h == S<"height"_h>)
+		//			thiz->scroll(vec2(0.f));
+		//	}
+		//}, Capture().set_thiz(this));
 	}
 
 	void cScrollerPrivate::on_lost_vtrack_element()
 	{
-		vtrack_element->entity->remove_local_data_changed_listener(vtrack_element_listener);
+		//vtrack_element->entity->remove_local_data_changed_listener(vtrack_element_listener);
 	}
 
 	void cScrollerPrivate::on_gain_vthumb_event_receiver()
@@ -112,53 +112,47 @@ namespace flame
 
 	void cScrollerPrivate::on_gain_view_element()
 	{
-		view_element->entity->add_child_message_listener([](Capture& c, Message msg, void* p) {
-			auto thiz = c.thiz<cScrollerPrivate>();
-			switch (msg)
-			{
-			case MessageAdded:
-				if (!thiz->target_element)
-				{
-					auto e = (EntityPrivate*)p;
-					auto ce = e->get_component_t<cElementPrivate>();
-					if (ce)
-					{
-						thiz->target_element = ce;
+		//view_element->entity->add_child_message_listener([](Capture& c, Message msg, void* p) {
+		//	auto thiz = c.thiz<cScrollerPrivate>();
+		//	switch (msg)
+		//	{
+		//	case MessageAdded:
+		//		if (!thiz->target_element)
+		//		{
+		//			auto e = (EntityPrivate*)p;
+		//			auto ce = e->get_component_t<cElementPrivate>();
+		//			if (ce)
+		//			{
+		//				thiz->target_element = ce;
 
-						thiz->scroll(vec2(0.f));
+		//				thiz->scroll(vec2(0.f));
 
-						e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-							auto thiz = c.thiz<cScrollerPrivate>();
-							if (t == thiz->target_element)
-							{
-								if (h == S<"width"_h> || h == S<"height"_h>)
-									thiz->scroll(vec2(0.f));
-							}
-						}, Capture().set_thiz(thiz));
-					}
-				}
-				break;
-			case MessageRemoved:
-				if (thiz->target_element && thiz->target_element == ((EntityPrivate*)p)->get_component_t<cElementPrivate>())
-					thiz->target_element = nullptr;
-				break;
-			}
-		}, Capture().set_thiz(this));
+		//				e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		//					auto thiz = c.thiz<cScrollerPrivate>();
+		//					if (t == thiz->target_element)
+		//					{
+		//						if (h == S<"width"_h> || h == S<"height"_h>)
+		//							thiz->scroll(vec2(0.f));
+		//					}
+		//				}, Capture().set_thiz(thiz));
+		//			}
+		//		}
+		//		break;
+		//	case MessageRemoved:
+		//		if (thiz->target_element && thiz->target_element == ((EntityPrivate*)p)->get_component_t<cElementPrivate>())
+		//			thiz->target_element = nullptr;
+		//		break;
+		//	}
+		//}, Capture().set_thiz(this));
 
-		view_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-			auto thiz = c.thiz<cScrollerPrivate>();
-			if (t == thiz->view_element)
-			{
-				if (h == S<"width"_h> || h == S<"height"_h>)
-					thiz->scroll(vec2(0.f));
-			}
-		}, Capture().set_thiz(this));
-	}
-
-	bool cScrollerPrivate::check_refs()
-	{
-		return (htrack_element && hthumb_element && hthumb_event_receiver) ||
-			(vtrack_element && vthumb_element && vthumb_event_receiver);
+		//view_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		//	auto thiz = c.thiz<cScrollerPrivate>();
+		//	if (t == thiz->view_element)
+		//	{
+		//		if (h == S<"width"_h> || h == S<"height"_h>)
+		//			thiz->scroll(vec2(0.f));
+		//	}
+		//}, Capture().set_thiz(this));
 	}
 
 	cScroller* cScroller::create()

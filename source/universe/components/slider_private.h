@@ -1,3 +1,6 @@
+#pragma once
+
+#include "../entity_private.h"
 #include <flame/universe/components/slider.h>
 
 namespace flame
@@ -6,17 +9,17 @@ namespace flame
 	struct cEventReceiverPrivate;
 	struct cTextPrivate;
 
-	struct cSliderPrivate : cSlider // R ~ on_*
+	struct cSliderPrivate : cSlider
 	{
 		float proportion = 0.f;
 		float value = 0.f;
 		float value_min = 0.f;
 		float value_max = 0.f;
 
-		cElementPrivate* bar_element = nullptr; // R ref place=bar
-		cElementPrivate* thumb_element = nullptr; // R ref place=thumb
-		cEventReceiverPrivate* thumb_event_receiver = nullptr; // R ref place=thumb
-		cTextPrivate* text = nullptr; // R ref place=text
+		cElementPrivate* bar_element = nullptr;
+		cElementPrivate* thumb_element = nullptr;
+		cEventReceiverPrivate* thumb_event_receiver = nullptr;
+		cTextPrivate* text = nullptr;
 
 		void* bar_element_listener = nullptr;
 		void* thumb_mouse_listener = nullptr;

@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cCombobox : Component  // R !ctor !dtor !type_name !type_hash
+	struct cCombobox : Component
 	{
 		inline static auto type_name = "flame::cCombobox";
 		inline static auto type_hash = ch(type_name);
@@ -20,7 +20,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cCombobox* create();
 	};
 
-	struct cComboboxItem : Component  // R !ctor !dtor !type_name !type_hash
+	struct cComboboxItem : Component
 	{
 		inline static auto type_name = "flame::cComboboxItem";
 		inline static auto type_hash = ch(type_name);

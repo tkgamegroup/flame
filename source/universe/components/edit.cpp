@@ -36,7 +36,7 @@ namespace flame
 	{
 		const auto& str = text->text;
 		auto atlas = text->atlas;
-		auto font_size = text->size;
+		auto font_size = text->font_size;
 
 		element->update_transform();
 		auto pos = element->points[4];
@@ -317,66 +317,66 @@ namespace flame
 		event_receiver->remove_mouse_dbclick_listener(mouse_dbclick_listener);
 	}
 
-	void cEditPrivate::on_local_message(Message msg, void* p)
-	{
-		switch (msg)
-		{
-		case MessageVisibilityChanged:
-			if (flash_event && !entity->global_visibility)
-			{
-				looper().remove_event(flash_event);
-				flash_event = nullptr;
-			}
-			break;
-		case MessageStateChanged:
-		{
-			auto s = entity->state;
-			event_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
-			if ((s & StateFocusing) != 0)
-			{
-				if (!flash_event)
-				{
-					flash_event = looper().add_event([](Capture& c) {
-						c.thiz<cEditPrivate>()->flash_cursor(0);
-						c._current = nullptr;
-					}, Capture().set_thiz(this), 0.5f);
-				}
-				//if (select_all_on_focus)
-				//	set_select(0, text->text.s);
-			}
-			else
-			{
-				if (flash_event)
-				{
-					looper().remove_event(flash_event);
-					flash_event = nullptr;
-				}
-				select_start = select_end = 0;
-				flash_cursor(1);
-				//if (thiz->trigger_changed_on_lost_focus && thiz->changed)
-				//{
-				//	thiz->text->set_text(nullptr, -1, thiz);
-				//	thiz->changed = false;
-				//}
-			}
-		}
-			break;
-		case MessageLeftWorld:
-			if (flash_event)
-			{
-				looper().remove_event(flash_event);
-				flash_event = nullptr;
-			}
-			break;
-		}
-	}
+	//void cEditPrivate::on_local_message(Message msg, void* p)
+	//{
+	//	switch (msg)
+	//	{
+	//	case MessageVisibilityChanged:
+	//		if (flash_event && !entity->global_visibility)
+	//		{
+	//			looper().remove_event(flash_event);
+	//			flash_event = nullptr;
+	//		}
+	//		break;
+	//	case MessageStateChanged:
+	//	{
+	//		auto s = entity->state;
+	//		event_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
+	//		if ((s & StateFocusing) != 0)
+	//		{
+	//			if (!flash_event)
+	//			{
+	//				flash_event = looper().add_event([](Capture& c) {
+	//					c.thiz<cEditPrivate>()->flash_cursor(0);
+	//					c._current = nullptr;
+	//				}, Capture().set_thiz(this), 0.5f);
+	//			}
+	//			if (select_all_on_focus)
+	//				set_select(0, text->text.s);
+	//		}
+	//		else
+	//		{
+	//			if (flash_event)
+	//			{
+	//				looper().remove_event(flash_event);
+	//				flash_event = nullptr;
+	//			}
+	//			select_start = select_end = 0;
+	//			flash_cursor(1);
+	//			if (thiz->trigger_changed_on_lost_focus && thiz->changed)
+	//			{
+	//				thiz->text->set_text(nullptr, -1, thiz);
+	//				thiz->changed = false;
+	//			}
+	//		}
+	//	}
+	//		break;
+	//	case MessageLeftWorld:
+	//		if (flash_event)
+	//		{
+	//			looper().remove_event(flash_event);
+	//			flash_event = nullptr;
+	//		}
+	//		break;
+	//	}
+	//}
 
 	void cEditPrivate::draw(graphics::Canvas* canvas)
 	{
 		const auto& str = text->text;
 		auto res_id = text->res_id;
 		auto atlas = text->atlas;
-		auto font_size = text->size;
+		auto font_size = text->font_size;
 		element->update_transform();
 		auto pos = element->points[4];
 		auto axes = element->axes;

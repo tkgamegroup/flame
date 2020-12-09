@@ -27,7 +27,7 @@ namespace flame
 		if (e)
 			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
 		selected = (EntityPrivate*)e;
-		Entity::report_data_changed(this, S<"selected"_h>);
+		data_changed(S<"selected"_h>);
 	}
 
 	cList* cList::create()

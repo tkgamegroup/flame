@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cCamera : Component // R !ctor !dtor !type_name !type_hash
+	struct cCamera : Component
 	{
 		inline static auto type_name = "flame::cCamera";
 		inline static auto type_hash = ch(type_name);

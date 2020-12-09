@@ -9,7 +9,7 @@ namespace flame
 		struct Canvas;
 	}
 
-	struct cCustomDrawing : Component // R !ctor !dtor !type_name !type_hash
+	struct cCustomDrawing : Component
 	{
 		inline static auto type_name = "flame::cCustomDrawing";
 		inline static auto type_hash = ch(type_name);

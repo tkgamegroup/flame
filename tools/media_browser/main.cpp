@@ -111,7 +111,7 @@ int main(int argc, char** args)
 					canvas->set_resource(9, Image::create(g_app.graphics_device, path.c_str())->get_default_view());
 			}
 
-			image->on_message(MessageElementSizeDirty);
+			image->get_component_t<cElement>()->mark_size_dirty();
 
 			prev_selected = s;
 		}

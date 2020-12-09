@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cSlider : Component // R !ctor !dtor !type_name !type_hash
+	struct cSlider : Component
 	{
 		inline static auto type_name = "flame::cSlider";
 		inline static auto type_hash = ch(type_name);

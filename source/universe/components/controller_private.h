@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/controller.h>
 
 namespace flame
@@ -13,7 +14,7 @@ namespace flame
 	struct cMeshPrivate;
 	struct sPhysicsWorldPrivate;
 	
-	struct cControllerPrivate : cController // R ~ on_*
+	struct cControllerPrivate : cController
 	{
 		float radius = 0.f;
 		float height = 0.f;
@@ -21,8 +22,8 @@ namespace flame
 
 		physics::Controller* phy_controller = nullptr;
 
-		cNodePrivate* node = nullptr; // R ref
-		sPhysicsWorldPrivate* physics_world = nullptr; // R ref
+		cNodePrivate* node = nullptr;
+		sPhysicsWorldPrivate* physics_world = nullptr;
 
 		float get_radius() const override { return radius; }
 		void set_radius(float r) override;

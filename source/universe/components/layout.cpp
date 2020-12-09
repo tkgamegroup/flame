@@ -354,7 +354,7 @@ namespace flame
 			return;
 		type = t;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<"type"_h>);
+		data_changed(S<"type"_h>);
 	}
 
 	void cLayoutPrivate::set_gap(float g)
@@ -363,7 +363,7 @@ namespace flame
 			return;
 		gap = g;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<"gap"_h>);
+		data_changed(S<"gap"_h>);
 	}
 
 	void cLayoutPrivate::set_auto_width(bool a)
@@ -372,7 +372,7 @@ namespace flame
 			return;
 		auto_width = a;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<"auto_width"_h>);
+		data_changed(S<"auto_width"_h>);
 	}
 
 	void cLayoutPrivate::set_auto_height(bool a)
@@ -381,7 +381,7 @@ namespace flame
 			return;
 		auto_height = a;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<"auto_height"_h>);
+		data_changed(S<"auto_height"_h>);
 	}
 
 	void cLayoutPrivate::set_scrollx(float s)
@@ -390,7 +390,7 @@ namespace flame
 			return;
 		scrollx = s;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<"scrollx"_h>);
+		data_changed(S<"scrollx"_h>);
 	}
 
 	void cLayoutPrivate::set_scrolly(float s)
@@ -399,7 +399,7 @@ namespace flame
 			return;
 		scrolly = s;
 		mark_layout_dirty();
-		Entity::report_data_changed(this, S<"scrolly"_h>);
+		data_changed(S<"scrolly"_h>);
 	}
 
 	void cLayoutPrivate::on_gain_layout_system()
@@ -418,84 +418,78 @@ namespace flame
 			layout_system->add_to_layouting_list(this);
 	}
 
-	void cLayoutPrivate::on_local_message(Message msg, void* p)
-	{
-		switch (msg)
-		{
-		case MessageElementSizeDirty:
-		case MessageVisibilityChanged:
-			if (entity->global_visibility)
-				mark_layout_dirty();
-			break;
-		}
-	}
+	//void cLayoutPrivate::on_local_message(Message msg, void* p)
+	//{
+	//	switch (msg)
+	//	{
+	//	case MessageVisibilityChanged:
+	//		if (entity->global_visibility)
+	//			mark_layout_dirty();
+	//		break;
+	//	}
+	//}
 
-	void cLayoutPrivate::on_child_message(Message msg, void* p)
-	{
-		switch (msg)
-		{
-		case MessageVisibilityChanged:
-		case MessagePositionChanged:
-		case MessageAdded:
-		case MessageRemoved:
-			if (((EntityPrivate*)p)->get_component_t<cElementPrivate>())
-				mark_layout_dirty();
-			break;
-		case MessageComponentAdded:
-		case MessageComponentRemoved:
-			if (((Component*)p)->type_hash == cElement::type_hash || ((Component*)p)->type_hash == cAligner::type_hash)
-				mark_layout_dirty();
-			break;
-		}
-	}
+	//void cLayoutPrivate::on_child_message(Message msg, void* p)
+	//{
+	//	switch (msg)
+	//	{
+	//	case MessageVisibilityChanged:
+	//	case MessagePositionChanged:
+	//	case MessageAdded:
+	//	case MessageRemoved:
+	//		if (((EntityPrivate*)p)->get_component_t<cElementPrivate>())
+	//			mark_layout_dirty();
+	//		break;
+	//	}
+	//}
 
-	void cLayoutPrivate::on_local_data_changed(Component* c, uint64 hash)
-	{
-		if (c == element)
-		{
-			switch (hash)
-			{
-			case S<"width"_h>:
-			case S<"height"_h>:
-			case S<"padding"_h>:
-				mark_layout_dirty();
-				break;
-			}
-		}
-	}
+	//void cLayoutPrivate::on_local_data_changed(Component* c, uint64 hash)
+	//{
+	//	if (c == element)
+	//	{
+	//		switch (hash)
+	//		{
+	//		case S<"width"_h>:
+	//		case S<"height"_h>:
+	//		case S<"padding"_h>:
+	//			mark_layout_dirty();
+	//			break;
+	//		}
+	//	}
+	//}
 
-	void cLayoutPrivate::on_child_data_changed(Component* c, uint64 hash)
-	{
-		if (updating)
-			return;
-		if (c->type_hash == cElement::type_hash)
-		{
-			switch (hash)
-			{
-			case S<"x"_h>:
-			case S<"y"_h>:
-			case S<"width"_h>:
-			case S<"height"_h>:
-			case S<"padding"_h>:
-				mark_layout_dirty();
-				break;
-			}
-		}
-		else if (c->type_hash == cAligner::type_hash)
-		{
-			switch (hash)
-			{
-			case S<"alignx"_h>:
-			case S<"aligny"_h>:
-			case S<"width_factor"_h>:
-			case S<"height_factor"_h>:
-			case S<"margin"_h>:
-			case S<"include_in_layout"_h>:
-				mark_layout_dirty();
-				break;
-			}
-		}
-	}
+	//void cLayoutPrivate::on_child_data_changed(Component* c, uint64 hash)
+	//{
+	//	if (updating)
+	//		return;
+	//	if (c->type_hash == cElement::type_hash)
+	//	{
+	//		switch (hash)
+	//		{
+	//		case S<"x"_h>:
+	//		case S<"y"_h>:
+	//		case S<"width"_h>:
+	//		case S<"height"_h>:
+	//		case S<"padding"_h>:
+	//			mark_layout_dirty();
+	//			break;
+	//		}
+	//	}
+	//	else if (c->type_hash == cAligner::type_hash)
+	//	{
+	//		switch (hash)
+	//		{
+	//		case S<"alignx"_h>:
+	//		case S<"aligny"_h>:
+	//		case S<"width_factor"_h>:
+	//		case S<"height_factor"_h>:
+	//		case S<"margin"_h>:
+	//		case S<"include_in_layout"_h>:
+	//			mark_layout_dirty();
+	//			break;
+	//		}
+	//	}
+	//}
 
 	cLayout* cLayout::create()
 	{

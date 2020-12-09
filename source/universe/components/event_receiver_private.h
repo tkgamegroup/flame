@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/event_receiver.h>
 
 namespace flame
@@ -7,7 +8,7 @@ namespace flame
 	struct cElementPrivate;
 	struct sEventDispatcherPrivate;
 
-	struct cEventReceiverPrivate : cEventReceiver // R ~ on_*
+	struct cEventReceiverPrivate : cEventReceiver
 	{
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_down_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_up_listeners;
@@ -23,23 +24,13 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> mouse_click_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> mouse_dbclick_listeners;
 
-		std::vector<uint> key_down_listeners_s;
-		std::vector<uint> key_up_listeners_s;
-		std::vector<uint> mouse_left_down_listeners_s;
-		std::vector<uint> mouse_left_up_listeners_s;
-		std::vector<uint> mouse_move_listeners_s;
-		std::vector<uint> mouse_scroll_listeners_s;
-		std::vector<uint> mouse_click_listeners_s;
-
-		cElementPrivate* element = nullptr; // R ref
-		sEventDispatcherPrivate* dispatcher = nullptr; // R ref
+		cElementPrivate* element = nullptr;
+		sEventDispatcherPrivate* dispatcher = nullptr;
 		int frame = -1;
 
 		bool ignore_occluders = false;
 		uint64 drag_hash = 0;
 		std::vector<uint64> acceptable_drops;
-
-		~cEventReceiverPrivate();
 
 		bool get_ignore_occluders() const override { return ignore_occluders; }
 		void set_ignore_occluders(bool v) override;
@@ -71,26 +62,11 @@ namespace flame
 		void* add_mouse_dbclick_listener(void (*callback)(Capture& c), const Capture& capture) override;
 		void remove_mouse_dbclick_listener(void* lis) override;
 
-		void add_key_down_listener_s(uint slot) override;
-		void remove_key_down_listener_s(uint slot) override;
-		void add_key_up_listener_s(uint slot) override;
-		void remove_key_up_listener_s(uint slot) override;
-		void add_mouse_left_down_listener_s(uint slot) override;
-		void remove_mouse_left_down_listener_s(uint slot) override;
-		void add_mouse_left_up_listener_s(uint slot) override;
-		void remove_mouse_left_up_listener_s(uint slot) override;
-		void add_mouse_move_listener_s(uint slot) override;
-		void remove_mouse_move_listener_s(uint slot) override;
-		void add_mouse_scroll_listener_s(uint slot) override;
-		void remove_mouse_scroll_listener_s(uint slot) override;
-		void add_mouse_click_listener_s(uint slot) override;
-		void remove_mouse_click_listener_s(uint slot) override;
-
 		void on_key_event(KeyboardKey key, bool down) override;
 
 		void on_gain_dispatcher();
 		void on_lost_dispatcher();
 
-		void on_local_message(Message msg, void* p) override;
+		//void on_local_message(Message msg, void* p) override;
 	};
 }

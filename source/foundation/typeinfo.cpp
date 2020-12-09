@@ -1271,6 +1271,17 @@ namespace flame
 		return nullptr;
 	}
 
+	EnumInfo* add_enum(const char* name, uint items_count, char** item_names, int* item_values)
+	{
+		auto e = new EnumInfoPrivate(nullptr, name);
+		enums.emplace(e->name, e);
+
+		for (auto i = 0; i < items_count; i++)
+			e->items.emplace_back(new EnumItemPrivate(e, i, item_names[i], item_values[i]));
+
+		return e;
+	}
+
 	EnumInfo* find_enum(const char* name) { return find_enum(std::string(name)); }
 	UdtInfo* find_udt(const char* name) { return find_udt(std::string(name)); }
 

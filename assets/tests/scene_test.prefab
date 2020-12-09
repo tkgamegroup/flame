@@ -51,25 +51,28 @@
       <cLayout />
       <entity src="menu_bar">
         <entity src="top_menu">
-          <cText text="view" />
-          <entity attach="items" src="sub_menu">
-            <cText text="shading"/>
-              <entity name="menu_view_shading_solid" attach="items" src="menu_item">
-                <cText text="solid"/>
-              </entity>
-              <entity name="menu_view_shading_wireframe" attach="items" src="menu_item">
-                <cText text="wireframe"/>
-              </entity>
-          </entity>
-          <entity attach="items" src="sub_menu">
-            <cText text="physics"/>
-              <entity name="menu_view_physics_on" attach="items" src="menu_item">
-                <cText text="on"/>
-              </entity>
-              <entity name="menu_view_physics_off" attach="items" src="menu_item">
-                <cText text="off"/>
-              </entity>
-          </entity>
+          <cText text="shading" />
+		  <entity name="menu_shading_solid" attach="items" src="menu_item">
+			<cText text="solid"/>
+		  </entity>
+		  <entity name="menu_shading_wireframe" attach="items" src="menu_item">
+			<cText text="wireframe"/>
+		  </entity>
+        </entity>
+        <entity src="top_menu">
+          <cText text="physics" />
+		  <entity name="menu_physics_visualization_on" attach="items" src="menu_item">
+			<cText text="visualization_on"/>
+		  </entity>
+		  <entity name="menu_physics_visualization_off" attach="items" src="menu_item">
+			<cText text="visualization_off"/>
+		  </entity>
+        </entity>
+        <entity src="top_menu">
+          <cText text="debug" />
+		  <entity name="menu_capture" attach="items" src="menu_item">
+			<cText text="capture"/>
+		  </entity>
         </entity>
       </entity>
       <cScript src="tests/shoot_ball.lua" />

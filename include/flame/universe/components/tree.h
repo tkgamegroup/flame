@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cTree : Component // R !ctor !dtor !type_name !type_hash
+	struct cTree : Component
 	{
 		inline static auto type_name = "flame::cTree";
 		inline static auto type_hash = ch(type_name);
@@ -22,7 +22,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cTree* create();
 	};
 
-	struct cTreeLeaf : Component // R !ctor !dtor !type_name !type_hash
+	struct cTreeLeaf : Component
 	{
 		inline static auto type_name = "flame::cTreeLeaf";
 		inline static auto type_hash = ch(type_name);
@@ -35,7 +35,7 @@ namespace flame
 		FLAME_UNIVERSE_EXPORTS static cTreeLeaf* create();
 	};
 
-	struct cTreeNode : Component // R !ctor !dtor !type_name !type_hash
+	struct cTreeNode : Component
 	{
 		inline static auto type_name = "flame::cTreeNode";
 		inline static auto type_hash = ch(type_name);

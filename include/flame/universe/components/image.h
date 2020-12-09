@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cElement;
 
-	struct cImage : Component // R !ctor !dtor !type_name !type_hash
+	struct cImage : Component
 	{
 		inline static auto type_name = "flame::cImage";
 		inline static auto type_hash = ch(type_name);

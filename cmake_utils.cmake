@@ -1,7 +1,7 @@
-function(add_typeinfo_support t inc_d src_d)
+function(add_typeinfo_support t d)
 	add_dependencies(${t} typeinfogen)
-	add_custom_command(TARGET ${t} PRE_BUILD COMMAND $<TARGET_FILE:typeinfogen> $<TARGET_FILE:${t}> -c)
-	add_custom_command(TARGET ${t} POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> $<TARGET_FILE:${t}> -d${inc_d} -d${src_d})
+	add_custom_command(TARGET ${t} PRE_BUILD COMMAND powershell -command Remove-Item $<TARGET_PDB_FILE:${t}> -ErrorAction Ignore & set errorlevel=0)
+	add_custom_command(TARGET ${t} POST_BUILD COMMAND $<TARGET_FILE:typeinfogen> -i $<TARGET_FILE:${t}> -d ${d})
 endfunction()
 
 function(generate_config)

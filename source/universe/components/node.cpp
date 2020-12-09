@@ -11,7 +11,7 @@ namespace flame
 			return;
 		pos = p;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"pos"_h>);
+		data_changed(S<"pos"_h>);
 	}
 
 	void cNodePrivate::set_quat(const quat& q)
@@ -21,7 +21,7 @@ namespace flame
 		qut = q;
 		rot_dirty = true;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"quat"_h>);
+		data_changed(S<"quat"_h>);
 	}
 
 	void cNodePrivate::set_scale(const vec3& s)
@@ -30,7 +30,7 @@ namespace flame
 			return;
 		scl = s;
 		mark_transform_dirty();
-		Entity::report_data_changed(this, S<"scale"_h>);
+		data_changed(S<"scale"_h>);
 	}
 
 	void cNodePrivate::set_euler(const vec3& e)
@@ -113,7 +113,7 @@ namespace flame
 			m = scale(m, scl);
 			transform = m;
 
-			Entity::report_data_changed(this, S<"transform"_h>);
+			data_changed(S<"transform"_h>);
 		}
 	}
 
@@ -139,40 +139,40 @@ namespace flame
 			renderer->dirty = true;
 	}
 
-	void cNodePrivate::on_local_message(Message msg, void* p)
-	{
-		switch (msg)
-		{
-		case MessageComponentAdded:
-		{
-			auto udt = find_underlay_udt(((Component*)p)->type_name);
-			if (udt)
-			{
-				{
-					auto f = udt->find_function("draw");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
-					{
-						auto addr = f->get_address();
-						if (addr)
-						{
-							drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
-							mark_drawing_dirty();
-						}
-					}
-				}
-			}
-		}
-			break;
-		case MessageComponentRemoved:
-		{
-			if (std::erase_if(drawers, [&](const auto& i) {
-				return i.first == (Component*)p;
-			}))
-				mark_drawing_dirty();
-		}
-			break;
-		}
-	}
+	//void cNodePrivate::on_local_message(Message msg, void* p)
+	//{
+	//	switch (msg)
+	//	{
+	//	case MessageComponentAdded:
+	//	{
+	//		auto udt = find_underlay_udt(((Component*)p)->type_name);
+	//		if (udt)
+	//		{
+	//			{
+	//				auto f = udt->find_function("draw");
+	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
+	//				{
+	//					auto addr = f->get_address();
+	//					if (addr)
+	//					{
+	//						drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
+	//						mark_drawing_dirty();
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//		break;
+	//	case MessageComponentRemoved:
+	//	{
+	//		if (std::erase_if(drawers, [&](const auto& i) {
+	//			return i.first == (Component*)p;
+	//		}))
+	//			mark_drawing_dirty();
+	//	}
+	//		break;
+	//	}
+	//}
 
 	cNode* cNode::create()
 	{

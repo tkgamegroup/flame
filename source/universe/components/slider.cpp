@@ -13,7 +13,7 @@ namespace flame
 		proportion = (v - value_min) / value_max * bar_element->size.x;
 		thumb_element->set_x(proportion * bar_element->size.x);
 		text->set_text(std::to_wstring(value));
-		Entity::report_data_changed(this, S<"value"_h>);
+		data_changed(S<"value"_h>);
 	}
 
 	void cSliderPrivate::set_value_min(float v)
@@ -21,7 +21,7 @@ namespace flame
 		value_min = v;
 		value = proportion * (value_max -value_min) + value_min;
 		text->set_text(std::to_wstring(value));
-		Entity::report_data_changed(this, S<"value"_h>);
+		data_changed(S<"value"_h>);
 	}
 
 	void cSliderPrivate::set_value_max(float v)
@@ -29,31 +29,31 @@ namespace flame
 		value_max = v;
 		value = proportion * (value_max - value_min) + value_min;
 		text->set_text(std::to_wstring(value));
-		Entity::report_data_changed(this, S<"value"_h>);
+		data_changed(S<"value"_h>);
 	}
 
 	void cSliderPrivate::on_gain_bar_element()
 	{
-		bar_element_listener = bar_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-			auto thiz = c.thiz<cSliderPrivate>();
-			if (t == thiz->bar_element)
-			{
-				switch (h)
-				{
-				case ch("width"):
-					thiz->thumb_element->set_x(thiz->proportion * thiz->bar_element->size.x);
-					break;
-				case ch("height"):
-					thiz->thumb_element->set_y(thiz->bar_element->size.y * 0.5f);
-					break;
-				}
-			}
-		}, Capture().set_thiz(this));
+		//bar_element_listener = bar_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+		//	auto thiz = c.thiz<cSliderPrivate>();
+		//	if (t == thiz->bar_element)
+		//	{
+		//		switch (h)
+		//		{
+		//		case ch("width"):
+		//			thiz->thumb_element->set_x(thiz->proportion * thiz->bar_element->size.x);
+		//			break;
+		//		case ch("height"):
+		//			thiz->thumb_element->set_y(thiz->bar_element->size.y * 0.5f);
+		//			break;
+		//		}
+		//	}
+		//}, Capture().set_thiz(this));
 	}
 
 	void cSliderPrivate::on_lost_bar_element()
 	{
-		bar_element->entity->remove_local_data_changed_listener(bar_element_listener);
+		//bar_element->entity->remove_local_data_changed_listener(bar_element_listener);
 	}
 
 	void cSliderPrivate::on_gain_thumb_event_receiver()
@@ -68,7 +68,7 @@ namespace flame
 				thiz->thumb_element->set_x(x);
 				thiz->thumb_element->set_y(thiz->bar_element->size.y * 0.5f);
 				thiz->text->set_text(std::to_wstring(thiz->value));
-				Entity::report_data_changed(thiz, S<"value"_h>);
+				thiz->data_changed(S<"value"_h>);
 			}
 		}, Capture().set_thiz(this));
 	}

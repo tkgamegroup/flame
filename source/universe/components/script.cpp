@@ -10,7 +10,7 @@ namespace flame
 			return;
 		src = fn;
 		do_file();
-		Entity::report_data_changed(this, S<"src"_h>);
+		data_changed(S<"src"_h>);
 	}
 
 	void cScriptPrivate::do_file()

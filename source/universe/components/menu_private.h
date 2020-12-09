@@ -1,3 +1,6 @@
+#pragma once
+
+#include "../entity_private.h"
 #include <flame/universe/components/menu.h>
 
 namespace flame
@@ -6,10 +9,10 @@ namespace flame
 	struct cElementPrivate;
 	struct cEventReceiverPrivate;
 
-	struct cMenuPrivate : cMenu // R ~ on_*
+	struct cMenuPrivate : cMenu
 	{
-		cElementPrivate* element = nullptr; // R ref
-		cEventReceiverPrivate* event_receiver = nullptr; // R ref
+		cElementPrivate* element = nullptr;
+		cEventReceiverPrivate* event_receiver = nullptr;
 
 		void* mouse_down_listener = nullptr;
 		void* mouse_move_listener = nullptr;
@@ -30,8 +33,5 @@ namespace flame
 
 		void on_gain_event_receiver();
 		void on_lost_event_receiver();
-
-		void on_local_message(Message msg, void* p) override;
-		void on_child_message(Message msg, void* p) override;
 	};
 }

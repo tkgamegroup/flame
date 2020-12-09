@@ -81,6 +81,8 @@ namespace flame
 		sPhysicsWorld* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
+		bool capture = false;
+
 		GraphicsWindow(App* app, const char* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_output();
@@ -207,8 +209,15 @@ namespace flame
 		{
 			auto cb = swapchain_commandbuffers[swapchain_image_index];
 
+			cb->begin(false, capture);
 			if (canvas)
 				canvas->record(cb, swapchain_image_index);
+			cb->end();
+			if (capture)
+			{
+				capture = false;
+				cb->save(L"capture.xml");
+			}
 
 			app->graphics_queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished_semaphore, submit_fence);
 			app->graphics_queue->present(swapchain, render_finished_semaphore);

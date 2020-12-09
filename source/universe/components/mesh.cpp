@@ -44,8 +44,8 @@ namespace flame
 		{
 			deformer->release();
 			deformer = nullptr;
-			for (auto& b : bones)
-				b.node->entity->remove_local_data_changed_listener(b.changed_listener);
+			//for (auto& b : bones)
+			//	b.node->entity->remove_local_data_changed_listener(b.changed_listener);
 			bones.clear();
 		}
 	}
@@ -77,7 +77,7 @@ namespace flame
 				{
 					isfile = true;
 					if (!fn.is_absolute())
-						fn = entity->src_abs.parent_path() / fn;
+						fn = entity->path.parent_path() / fn;
 				}
 				model_id = canvas->find_model_resource(fn.string().c_str());
 				if (model_id == -1 && isfile)
@@ -114,16 +114,16 @@ namespace flame
 										{
 											b.name = name;
 											b.node = n;
-											b.changed_listener = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-												auto thiz = c.thiz<cMeshPrivate>();
-												auto id = c.data<int>();
-												auto& b = thiz->bones[id];
-												if (t == b.node && h == S<"transform"_h>)
-												{
-													b.node->update_transform();
-													thiz->deformer->set_pose(id, b.node->transform);
-												}
-											}, Capture().set_thiz(this).set_data(&i));
+											//b.changed_listener = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
+											//	auto thiz = c.thiz<cMeshPrivate>();
+											//	auto id = c.data<int>();
+											//	auto& b = thiz->bones[id];
+											//	if (t == b.node && h == S<"transform"_h>)
+											//	{
+											//		b.node->update_transform();
+											//		thiz->deformer->set_pose(id, b.node->transform);
+											//	}
+											//}, Capture().set_thiz(this).set_data(&i));
 										}
 									}
 								}

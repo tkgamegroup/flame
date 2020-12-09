@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/layout.h>
 
 namespace flame
@@ -9,7 +10,7 @@ namespace flame
 
 	struct sLayoutSystemPrivate;
 
-	struct cLayoutPrivate : cLayout // R ~ on_*
+	struct cLayoutPrivate : cLayout
 	{
 		LayoutType type = LayoutFree;
 		float gap = 0.f;
@@ -19,8 +20,8 @@ namespace flame
 		float scrollx = 0.f;
 		float scrolly = 0.f;
 
-		cElementPrivate* element = nullptr; // R ref
-		sLayoutSystemPrivate* layout_system = nullptr; // R ref
+		cElementPrivate* element = nullptr;
+		sLayoutSystemPrivate* layout_system = nullptr;
 
 		bool pending_layouting = false;
 		bool updating = false;
@@ -52,9 +53,7 @@ namespace flame
 
 		void mark_layout_dirty();
 
-		void on_local_message(Message msg, void* p) override;
-		void on_child_message(Message msg, void* p) override;
-		void on_local_data_changed(Component* c, uint64 hash) override;
-		void on_child_data_changed(Component* c, uint64 hash) override;
+		//void on_local_message(Message msg, void* p) override;
+		//void on_local_data_changed(Component* c, uint64 hash) override;
 	};
 }

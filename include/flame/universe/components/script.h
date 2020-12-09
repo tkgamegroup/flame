@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cScript : Component // R !ctor !dtor !type_name !type_hash
+	struct cScript : Component
 	{
 		inline static auto type_name = "flame::cScript";
 		inline static auto type_hash = ch(type_name);

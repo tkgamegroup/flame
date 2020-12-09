@@ -581,14 +581,64 @@ namespace flame
 
 
 #ifdef NDEBUG
-
 #define fassert(expression)
-
 #else
-
 #define fassert(expression) ((!!(expression)) || (raise_assert(#expression, __FILE__, __LINE__), 0))
-
 #endif
+
+	struct ArgPack
+	{
+		std::string name;
+		std::vector<std::string> items;
+	};
+
+	struct ArgsPack
+	{
+		std::map<std::string, ArgPack> args;
+
+		bool has(const std::string& name)
+		{
+			return args.find(name) != args.end();
+		}
+
+		const std::vector<std::string>& get_items(const std::string& name)
+		{
+			return args[name].items;
+		}
+	};
+
+	inline ArgsPack pack_args(int argc, char** args)
+	{
+		ArgsPack ret;
+		for (auto i = 1; i < argc; i++)
+		{
+			auto arg = std::string(args[i]);
+			if (arg[0] != '-')
+			{
+				ArgPack ap;
+				ap.name = arg;
+				ret.args[arg] = ap;
+			}
+			else if (arg.size() > 1)
+			{
+				ArgPack ap;
+				ap.name = arg;
+				for (++i; i < argc; i++)
+				{
+					auto arg = std::string(args[i]);
+					if (arg[0] == '-')
+					{
+						i--;
+						break;
+					}
+					else
+						ap.items.push_back(arg);
+				}
+				ret.args[arg] = ap;
+			}
+		}
+		return ret;
+	}
 
 	struct StackFrameInfo
 	{

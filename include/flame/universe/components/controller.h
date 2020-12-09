@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cController : Component // R !ctor !dtor !type_name !type_hash
+	struct cController : Component
 	{
 		inline static auto type_name = "flame::cController";
 		inline static auto type_hash = ch(type_name);

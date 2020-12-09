@@ -297,23 +297,11 @@ namespace flame
 			{
 				for (auto& l : er->mouse_move_listeners)
 					l->call(mdisp, mpos);
-				script::Parameter ps[2];
-				ps[0].type = script::ScriptTypeVec2;
-				ps[0].data.f.xy = mdisp;
-				ps[1].type = script::ScriptTypeVec2;
-				ps[1].data.f.xy = mpos;
-				for (auto s : er->mouse_move_listeners_s)
-					script::Instance::get_default()->call_slot(s, size(ps), ps);
 			}
 			if (mscrl != 0)
 			{
 				for (auto& l : er->mouse_scroll_listeners)
 					l->call(mscrl);
-				script::Parameter p;
-				p.type = script::ScriptTypeInt;
-				p.data.i[0] = mscrl;
-				for (auto s : er->mouse_scroll_listeners_s)
-					script::Instance::get_default()->call_slot(s, 1, &p);
 			}
 			if (mbtns[Mouse_Left].second)
 			{
@@ -321,21 +309,11 @@ namespace flame
 				{
 					for (auto& l : er->mouse_left_down_listeners)
 						l->call(mpos);
-					script::Parameter p;
-					p.type = script::ScriptTypeVec2;
-					p.data.f.xy = mpos;
-					for (auto s : er->mouse_left_down_listeners_s)
-						script::Instance::get_default()->call_slot(s, 1, &p);
 				}
 				else
 				{
 					for (auto& l : er->mouse_left_up_listeners)
 						l->call(mpos);
-					script::Parameter p;
-					p.type = script::ScriptTypeVec2;
-					p.data.f.xy = mpos;
-					for (auto s : er->mouse_left_up_listeners_s)
-						script::Instance::get_default()->call_slot(s, 1, &p);
 				}
 			}
 			if (mbtns[Mouse_Right].second)
@@ -373,8 +351,6 @@ namespace flame
 			//auto db = dbclick_timer > 0.f;
 			for (auto& l : focusing->mouse_click_listeners)
 				l->call();
-			for (auto s : focusing->mouse_click_listeners_s)
-				script::Instance::get_default()->call_slot(s, 0, nullptr);
 			//((cEventReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
 			//if (db)
 			//	dbclick_timer = -1.f;
@@ -382,7 +358,7 @@ namespace flame
 			//	dbclick_timer = 0.5f;
 		}
 
-		auto set_state = [&](cEventReceiver* er) {
+		auto set_state = [&](cEventReceiverPrivate* er) {
 			auto e = er->entity;
 			auto s = (e->state & (~StateHovering) & (~StateActive));
 			if (er == hovering)
@@ -411,8 +387,7 @@ namespace flame
 				while (e)
 				{
 					auto er = e->get_component_t<cEventReceiverPrivate>();
-					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty() &&
-						er->key_down_listeners_s.empty() && er->key_up_listeners_s.empty()))
+					if (er && !(er->key_down_listeners.empty() && er->key_up_listeners.empty() && er->char_listeners.empty()))
 					{
 						keyboard_target = er;
 						break;

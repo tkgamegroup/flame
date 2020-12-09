@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cMesh : Component // R !ctor !dtor !type_name !type_hash
+	struct cMesh : Component
 	{
 		inline static auto type_name = "flame::cMesh";
 		inline static auto type_hash = ch(type_name);

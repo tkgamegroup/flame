@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/element.h>
 
 namespace flame
@@ -12,7 +13,7 @@ namespace flame
 	struct sRendererPrivate;
 	struct sLayoutSystemPrivate;
 
-	struct cElementPrivate : cElement // R ~ on_*
+	struct cElementPrivate : cElement
 	{
 		vec2 pos = vec2(0.f);
 		vec2 size = vec2(0.f);
@@ -46,8 +47,8 @@ namespace flame
 		bool pending_sizing = false;
 		std::vector<std::pair<Component*, void(*)(Component*, vec2&)>> measurables;
 
-		sRendererPrivate* renderer = nullptr; // R ref
-		sLayoutSystemPrivate* layout_system = nullptr; // R ref
+		sRendererPrivate* renderer = nullptr;
+		sLayoutSystemPrivate* layout_system = nullptr;
 
 		float get_x() const override { return pos.x; }
 		void set_x(float x) override;
@@ -99,9 +100,9 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
-		void mark_transform_dirty();
-		void mark_drawing_dirty();
-		void mark_size_dirty();
+		void mark_transform_dirty() override;
+		void mark_drawing_dirty() override;
+		void mark_size_dirty() override;
 
 		void on_gain_renderer();
 		void on_lost_renderer();
@@ -109,7 +110,7 @@ namespace flame
 
 		bool contains(const vec2& p) override;
 
-		void on_local_message(Message msg, void* p) override;
+		//void on_local_message(Message msg, void* p) override;
 
 		void draw(graphics::Canvas* canvas);
 	};

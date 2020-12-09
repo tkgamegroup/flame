@@ -12,17 +12,17 @@ namespace flame
 		mark_text_changed();
 	}
 
-	void cTextPrivate::set_size(uint s)
+	void cTextPrivate::set_font_size(uint s)
 	{
-		if (size == s)
+		if (font_size == s)
 			return;
-		size = s;
+		font_size = s;
 		if (element)
 		{
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
-		Entity::report_data_changed(this, S<"size"_h>);
+		data_changed(S<"size"_h>);
 	}
 
 	void cTextPrivate::set_color(const cvec4& col)
@@ -35,7 +35,7 @@ namespace flame
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
-		Entity::report_data_changed(this, S<"color"_h>);
+		data_changed(S<"color"_h>);
 	}
 
 	void cTextPrivate::on_gain_canvas()
@@ -62,12 +62,12 @@ namespace flame
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
-		Entity::report_data_changed(this, S<"text"_h>);
+		data_changed(S<"text"_h>);
 	}
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->draw_text(res_id, text.c_str(), nullptr, size, color, element->points[4], element->axes);
+		canvas->draw_text(res_id, text.c_str(), nullptr, font_size, color, element->points[4], element->axes);
 	}
 
 	void cTextPrivate::measure(vec2& ret)
@@ -77,7 +77,7 @@ namespace flame
 			ret = vec2(-1.f);
 			return;
 		}
-		ret = vec2(atlas->text_size(size, text.c_str()));
+		ret = vec2(atlas->text_size(font_size, text.c_str()));
 		if (!auto_width)
 			ret.x = -1.f;
 		if (!auto_height)

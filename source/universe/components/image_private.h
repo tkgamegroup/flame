@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/image.h>
 
 namespace flame
@@ -16,14 +17,14 @@ namespace flame
 		void set_src(const char* src) override;
 	};
 
-	struct cImagePrivate : cImageBridge // R ~ on_*
+	struct cImagePrivate : cImageBridge
 	{
 		std::string src;
 
 		bool auto_size = true;
 
-		cElementPrivate* element = nullptr; // R ref
-		graphics::Canvas* canvas = nullptr; // R ref
+		cElementPrivate* element = nullptr;
+		graphics::Canvas* canvas = nullptr;
 
 		vec2 uv0 = vec2(0.f);
 		vec2 uv1 = vec2(1.f);
@@ -50,9 +51,9 @@ namespace flame
 		void on_gain_canvas();
 		void on_lost_canvas();
 
-		void measure(vec2& ret); // R
+		void measure(vec2& ret);
 
-		void draw(graphics::Canvas* canvas); // R
+		void draw(graphics::Canvas* canvas);
 	};
 
 	inline void cImageBridge::set_src(const char* src)

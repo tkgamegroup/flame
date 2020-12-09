@@ -1939,8 +1939,6 @@ namespace flame
 
 		void CanvasPrivate::record(CommandBufferPrivate* cb, uint image_index)
 		{
-			cb->begin();
-
 			enum PassType
 			{
 				PassNone = -1,
@@ -2507,8 +2505,6 @@ namespace flame
 				cb->end_renderpass();
 			}
 			cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutShaderReadOnly, ImageLayoutPresent);
-
-			cb->end();
 
 			cmds.clear();
 		}

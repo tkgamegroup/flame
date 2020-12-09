@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/components/script.h>
 
 namespace flame
 {
-	struct cScriptPrivate : cScript // R ~ on_*
+	struct cScriptPrivate : cScript
 	{
 		std::filesystem::path src;
 

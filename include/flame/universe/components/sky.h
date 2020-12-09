@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	struct cSky : Component // R !ctor !dtor !type_name !type_hash
+	struct cSky : Component
 	{
 		inline static auto type_name = "flame::cSky";
 		inline static auto type_hash = ch(type_name);
