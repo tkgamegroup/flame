@@ -33,9 +33,9 @@ void _2DGizmo::create()
 
 	block_c = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				thiz->target->add_pos(vec2(pos) / thiz->base->scale);
@@ -43,16 +43,16 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeAll : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeAll : CursorArrow);
 			return true;
 		}, Capture());
 	}
 
 	block_l = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto x = pos.x / thiz->base->scale;
@@ -62,15 +62,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_t = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto y = pos.y / thiz->base->scale;
@@ -80,15 +80,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_r = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto x = pos.x / thiz->base->scale;
@@ -97,15 +97,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeWE : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_b = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto y = pos.y / thiz->base->scale;
@@ -114,15 +114,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNS : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_lt = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto p = vec2(pos) / thiz->base->scale;
@@ -132,15 +132,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_rt = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto p = vec2(pos) / thiz->base->scale;
@@ -150,15 +150,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_lb = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto p = vec2(pos) / thiz->base->scale;
@@ -168,15 +168,15 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNESW : CursorArrow);
 			return true;
 		}, Capture());
 	}
 	block_rb = create_block();
 	{
-		auto er = ui.c_event_receiver();
+		auto er = ui.c_receiver();
 		er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
-			if (c.current<cEventReceiver>()->is_active() && is_mouse_move(action, key))
+			if (c.current<cReceiver>()->is_active() && is_mouse_move(action, key))
 			{
 				auto thiz = c.thiz<_2DGizmo>();
 				auto p = vec2(pos) / thiz->base->scale;
@@ -185,7 +185,7 @@ void _2DGizmo::create()
 			return true;
 		}, Capture().set_thiz(this));
 		er->state_listeners.add([](Capture& c, EventReceiverState s) {
-			c.current<cEventReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
+			c.current<cReceiver>()->dispatcher->window->set_cursor(s ? CursorSizeNWSE : CursorArrow);
 			return true;
 		}, Capture());
 	}
@@ -314,12 +314,12 @@ cSceneEditor::cSceneEditor() :
 					return true;
 				}, Capture().set_thiz(edt.overlay));
 				ui.current_entity = e_overlay;
-				auto c_event_receiver = e_overlay->get_component(cEventReceiver);
-				c_event_receiver->pass_checkers.add([](Capture&, cEventReceiver*, bool* pass) {
+				auto c_receiver = e_overlay->get_component(cReceiver);
+				c_receiver->pass_checkers.add([](Capture&, cReceiver*, bool* pass) {
 					*pass = true;
 					return true;
 				}, Capture());
-				c_event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
+				c_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 					if (is_mouse_down(action, key, true) && key == Mouse_Left)
 						scene_editor.select(scene_editor.editor->search_hovering(vec4(vec2(pos), vec2(pos))));
 					return true;

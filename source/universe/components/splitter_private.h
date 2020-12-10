@@ -6,18 +6,18 @@
 namespace flame
 {
 	struct cLayoutPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
 	struct cSplitterPrivate : cSplitter
 	{
 		cLayoutPrivate* layout = nullptr;
-		cEventReceiverPrivate* bar_event_receiver = nullptr;
+		cReceiverPrivate* bar_receiver = nullptr;
 
 		void* bar_state_listener = nullptr;
 		void* bar_mouse_listener = nullptr;
 
-		void on_gain_bar_event_receiver();
-		void on_lost_bar_event_receiver();
+		void on_gain_bar_receiver();
+		void on_lost_bar_receiver();
 
 		//void on_child_message(Message msg, void* p) override;
 	};

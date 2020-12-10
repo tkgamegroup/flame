@@ -37,7 +37,7 @@ int main(int argc, char** args)
 		//w->root->add_component(c);
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
-		//e->save(L"d:/1.prefab");
+		e->save(L"d:/1.prefab");
 		w->root->add_child(e);
 	}
 

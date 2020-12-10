@@ -1,14 +1,14 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/receiver.h>
 
 namespace flame
 {
 	struct cElementPrivate;
-	struct sEventDispatcherPrivate;
+	struct sDispatcherPrivate;
 
-	struct cEventReceiverPrivate : cEventReceiver
+	struct cReceiverPrivate : cReceiver
 	{
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_down_listeners;
 		std::vector<std::unique_ptr<Closure<void(Capture&, KeyboardKey)>>> key_up_listeners;
@@ -25,7 +25,7 @@ namespace flame
 		std::vector<std::unique_ptr<Closure<void(Capture&)>>> mouse_dbclick_listeners;
 
 		cElementPrivate* element = nullptr;
-		sEventDispatcherPrivate* dispatcher = nullptr;
+		sDispatcherPrivate* dispatcher = nullptr;
 		int frame = -1;
 
 		bool ignore_occluders = false;

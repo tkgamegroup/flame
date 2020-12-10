@@ -1127,7 +1127,7 @@ void MyApp::create_lan_scene()
 				ui.parents.pop();
 			}, Capture().set_thiz(e_room_list));
 		}, Capture().set_thiz(e_room_list));
-	}, Capture().set_thiz(e_room_list))->get_component(cEventReceiver)->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, ivec2(0));
+	}, Capture().set_thiz(e_room_list))->get_component(cReceiver)->send_mouse_event(KeyStateDown | KeyStateUp, Mouse_Null, ivec2(0));
 	ui.e_button(L"Create Room", [](Capture&) {
 		if (g_app.my_name.empty())
 			ui.e_message_dialog(L"Your Name Cannot Not Be Empty");
@@ -1448,7 +1448,7 @@ void MyApp::create_key_scene()
 		auto e_edit = ui.e_edit(200.f, s2w(key_info->find_item(key_map[i])->name.str()).c_str());
 		capture.t = e_edit->get_component(cText);
 		capture.i = i;
-		e_edit->get_component(cEventReceiver)->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
+		e_edit->get_component(cReceiver)->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
 			if (action == KeyStateDown)
 			{
 				auto& capture = c.data<Capturing>();
@@ -1956,7 +1956,7 @@ void MyApp::quit_game()
 
 void MyApp::do_game_logic()
 {
-	auto& key_states = main_window->s_event_dispatcher->key_states;
+	auto& key_states = main_window->s_dispatcher->key_states;
 
 	if (game_mode != GameVS)
 	{

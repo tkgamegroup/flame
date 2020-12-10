@@ -620,7 +620,11 @@ int main(int argc, char **args)
 								if (type)
 								{
 									std::string str;
-									type->serialize(&str, (char*)obj + offset);
+									type->serialize((char*)obj + offset, &str, [](void* _str, uint size) {
+										auto& str = *(std::string*)_str;
+										str.resize(size);
+										return str.data();
+									});
 									if (!str.empty())
 										n_variable.append_attribute("default_value").set_value(str.c_str());
 								}

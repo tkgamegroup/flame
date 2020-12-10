@@ -3,7 +3,7 @@
 struct cHierarchyItem : Component
 {
 	cElement* element;
-	cEventReceiver* event_receiver;
+	cReceiver* receiver;
 
 	Entity* e;
 
@@ -23,11 +23,11 @@ struct cHierarchyItem : Component
 			if (t == this)
 			{
 				element = entity->get_component(cElement);
-				event_receiver = entity->get_component(cEventReceiver);
+				receiver = entity->get_component(cReceiver);
 
-				event_receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
-				event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const ivec2& pos) {
+				receiver->drag_hash = FLAME_CHASH("cHierarchyItem");
+				receiver->set_acceptable_drops(1, &FLAME_CHASH("cHierarchyItem"));
+				receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cReceiver* er, const ivec2& pos) {
 					auto thiz = c.thiz<cHierarchyItem>();
 					auto element = thiz->element;
 
@@ -99,7 +99,7 @@ struct cHierarchyItem : Component
 
 	void draw(graphics::Canvas* canvas)
 	{
-		if (event_receiver->dispatcher->drag_overing != event_receiver)
+		if (receiver->dispatcher->drag_overing != receiver)
 			drop_pos = -1;
 		if (!element->clipped && drop_pos >= 0)
 		{

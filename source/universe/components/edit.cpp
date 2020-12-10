@@ -2,7 +2,7 @@
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
 #include "text_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "edit_private.h"
 #include "../systems/event_dispatcher_private.h"
 
@@ -75,16 +75,16 @@ namespace flame
 		return i;
 	}
 
-	void cEditPrivate::on_gain_event_receiver()
+	void cEditPrivate::on_gain_receiver()
 	{
-		key_down_listener = event_receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
+		key_down_listener = receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
 			auto thiz = c.thiz<cEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
 			auto& select_end = thiz->select_end;
 			auto low = min(select_start, select_end);
 			auto high = max(select_start, select_end);
-			auto ed = thiz->event_receiver->dispatcher;
+			auto ed = thiz->receiver->dispatcher;
 
 			auto line_start = [&](int p) {
 				p--;
@@ -213,7 +213,7 @@ namespace flame
 
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
-		char_listener = event_receiver->add_char_listener([](Capture& c, wchar_t ch) {
+		char_listener = receiver->add_char_listener([](Capture& c, wchar_t ch) {
 			auto thiz = c.thiz<cEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
@@ -222,8 +222,8 @@ namespace flame
 			auto high = max(select_start, select_end);
 
 			//auto throw_focus = [&]() {
-			//	auto dp = thiz->event_receiver->dispatcher;
-			//	dp->next_focusing = dp->world_->root->get_component(cEventReceiver);
+			//	auto dp = thiz->receiver->dispatcher;
+			//	dp->next_focusing = dp->world_->root->get_component(cReceiver);
 			//};
 
 			switch (ch)
@@ -256,7 +256,11 @@ namespace flame
 			case 22: // Ctrl+V
 			{
 				std::wstring cb;
-				get_clipboard(&cb);
+				get_clipboard(&cb, [](void* _str, uint size) {
+					auto& str = *(std::wstring*)_str;
+					str.resize(size);
+					return str.data();
+				});
 				cb.erase(std::remove(cb.begin(), cb.end(), '\r'), cb.end());
 				if (!cb.empty())
 				{
@@ -286,20 +290,20 @@ namespace flame
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
 
-		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		mouse_down_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cEditPrivate>();
 			thiz->select_start = thiz->select_end = thiz->locate_cursor((vec2)pos);
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
-		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		mouse_move_listener = receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cEditPrivate>();
-			if (thiz->event_receiver->dispatcher->active == thiz->event_receiver)
+			if (thiz->receiver->dispatcher->active == thiz->receiver)
 			{
 				thiz->select_end = thiz->locate_cursor((vec2)pos);
 				thiz->flash_cursor(2);
 			}
 		}, Capture().set_thiz(this));
-		mouse_dbclick_listener = event_receiver->add_mouse_dbclick_listener([](Capture& c) {
+		mouse_dbclick_listener = receiver->add_mouse_dbclick_listener([](Capture& c) {
 			auto thiz = c.thiz<cEditPrivate>();
 			//	thiz->select_start = 0;
 			//	thiz->select_end = thiz->text->text.size();
@@ -308,13 +312,13 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	void cEditPrivate::on_lost_event_receiver()
+	void cEditPrivate::on_lost_receiver()
 	{
-		event_receiver->remove_key_down_listener(key_down_listener);
-		event_receiver->remove_char_listener(char_listener);
-		event_receiver->remove_mouse_left_down_listener(mouse_down_listener);
-		event_receiver->remove_mouse_move_listener(mouse_move_listener);
-		event_receiver->remove_mouse_dbclick_listener(mouse_dbclick_listener);
+		receiver->remove_key_down_listener(key_down_listener);
+		receiver->remove_char_listener(char_listener);
+		receiver->remove_mouse_left_down_listener(mouse_down_listener);
+		receiver->remove_mouse_move_listener(mouse_move_listener);
+		receiver->remove_mouse_dbclick_listener(mouse_dbclick_listener);
 	}
 
 	//void cEditPrivate::on_local_message(Message msg, void* p)
@@ -331,7 +335,7 @@ namespace flame
 	//	case MessageStateChanged:
 	//	{
 	//		auto s = entity->state;
-	//		event_receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
+	//		receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
 	//		if ((s & StateFocusing) != 0)
 	//		{
 	//			if (!flash_event)

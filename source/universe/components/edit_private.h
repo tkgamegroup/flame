@@ -6,7 +6,7 @@
 namespace flame
 {
 	struct cTextPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
 	struct cEditPrivate : cEdit
 	{
@@ -20,7 +20,7 @@ namespace flame
 
 		cElementPrivate* element = nullptr;
 		cTextPrivate* text = nullptr;
-		cEventReceiverPrivate* event_receiver = nullptr;
+		cReceiverPrivate* receiver = nullptr;
 
 		void* key_down_listener = nullptr;
 		void* char_listener = nullptr;
@@ -38,8 +38,8 @@ namespace flame
 		void flash_cursor(int mode);
 		int locate_cursor(const vec2& mpos);
 		
-		void on_gain_event_receiver();
-		void on_lost_event_receiver();
+		void on_gain_receiver();
+		void on_lost_receiver();
 
 		//void on_local_message(Message msg, void* p) override;
 

@@ -7,12 +7,12 @@ namespace flame
 {
 	struct EntityPrivate;
 	struct cElementPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
 	struct cMenuPrivate : cMenu
 	{
 		cElementPrivate* element = nullptr;
-		cEventReceiverPrivate* event_receiver = nullptr;
+		cReceiverPrivate* receiver = nullptr;
 
 		void* mouse_down_listener = nullptr;
 		void* mouse_move_listener = nullptr;
@@ -21,7 +21,7 @@ namespace flame
 		MenuType type = MenuTop;
 		EntityPrivate* items = nullptr;
 		EntityPrivate* root = nullptr;
-		cEventReceiverPrivate* root_event_receiver = nullptr;
+		cReceiverPrivate* root_receiver = nullptr;
 		bool opened = false;
 		int frame = -1;
 
@@ -31,7 +31,7 @@ namespace flame
 		void open();
 		void close();
 
-		void on_gain_event_receiver();
-		void on_lost_event_receiver();
+		void on_gain_receiver();
+		void on_lost_receiver();
 	};
 }

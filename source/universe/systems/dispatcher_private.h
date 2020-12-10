@@ -1,14 +1,14 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/systems/event_dispatcher.h>
+#include <flame/universe/systems/dispatcher.h>
 
 namespace flame
 {
 	struct EntityPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
-	struct sEventDispatcherPrivate : sEventDispatcher
+	struct sDispatcherPrivate : sDispatcher
 	{
 		Window* window = nullptr;
 		void* key_down_listener = nullptr;
@@ -34,14 +34,14 @@ namespace flame
 
 		ivec2 active_pos = ivec2(0);
 		
-		cEventReceiverPrivate* hovering = nullptr;
-		cEventReceiverPrivate* focusing = nullptr;
-		cEventReceiverPrivate* active = nullptr;
-		cEventReceiverPrivate* dragging = nullptr;
-		cEventReceiverPrivate* keyboard_target = nullptr;
-		cEventReceiverPrivate* drag_overing = nullptr;
+		cReceiverPrivate* hovering = nullptr;
+		cReceiverPrivate* focusing = nullptr;
+		cReceiverPrivate* active = nullptr;
+		cReceiverPrivate* dragging = nullptr;
+		cReceiverPrivate* keyboard_target = nullptr;
+		cReceiverPrivate* drag_overing = nullptr;
 
-		cEventReceiverPrivate* next_focusing = (cEventReceiverPrivate*)INVALID_POINTER;
+		cReceiverPrivate* next_focusing = (cReceiverPrivate*)INVALID_POINTER;
 
 		std::vector<KeyboardKey> key_down_inputs;
 		std::vector<KeyboardKey> key_up_inputs;
@@ -49,18 +49,18 @@ namespace flame
 		bool char_input_compelete = true;
 		float dbclick_timer = -1.f;
 
-		std::vector<cEventReceiverPrivate*> staging_mouse_targets;
+		std::vector<cReceiverPrivate*> staging_mouse_targets;
 
 		bool dirty = false;
 
-		cEventReceiverPrivate* debug_target = nullptr;
+		cReceiverPrivate* debug_target = nullptr;
 
-		sEventDispatcherPrivate();
-		void dispatch_mouse_single(cEventReceiverPrivate* er, bool force);
+		sDispatcherPrivate();
+		void dispatch_mouse_single(cReceiverPrivate* er, bool force);
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
 
-		void set_next_focusing(cEventReceiver* er) override { next_focusing = (cEventReceiverPrivate*)er; }
+		void set_next_focusing(cReceiver* er) override { next_focusing = (cReceiverPrivate*)er; }
 
 		void on_added() override;
 		void on_removed() override;

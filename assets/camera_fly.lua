@@ -33,10 +33,10 @@ function camera:update_dir()
 	self.dir2 = self.node:get_local_dir(0)
 end
 
-local root_event_receiver = root:get_component_n("cEventReceiver")
-make_obj(root_event_receiver, "cEventReceiver")
+local root_receiver = root:get_component_n("cReceiver")
+make_obj(root_receiver, "cReceiver")
 
-root_event_receiver:add_key_down_listener_s(get_slot(
+root_receiver:add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = true
@@ -59,7 +59,7 @@ root_event_receiver:add_key_down_listener_s(get_slot(
 	end
 ))
 
-root_event_receiver:add_key_up_listener_s(get_slot(
+root_receiver:add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = false
@@ -82,19 +82,19 @@ root_event_receiver:add_key_up_listener_s(get_slot(
 	end
 ))
 
-root_event_receiver:add_mouse_left_down_listener_s(get_slot(
+root_receiver:add_mouse_left_down_listener_s(get_slot(
 	function()
 		camera.dragging = true
 	end
 ))
 
-root_event_receiver:add_mouse_left_up_listener_s(get_slot(
+root_receiver:add_mouse_left_up_listener_s(get_slot(
 	function()
 		camera.dragging = false
 	end
 ))
 
-root_event_receiver:add_mouse_move_listener_s(get_slot(
+root_receiver:add_mouse_move_listener_s(get_slot(
 	function(disp)
 		if camera.dragging then
 			camera.yaw = camera.yaw - disp.x

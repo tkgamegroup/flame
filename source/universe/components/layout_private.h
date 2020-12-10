@@ -8,7 +8,7 @@ namespace flame
 	struct cElementPrivate;
 	struct cAlignerPrivate;
 
-	struct sLayoutSystemPrivate;
+	struct sLayoutPrivate;
 
 	struct cLayoutPrivate : cLayout
 	{
@@ -21,7 +21,7 @@ namespace flame
 		float scrolly = 0.f;
 
 		cElementPrivate* element = nullptr;
-		sLayoutSystemPrivate* layout_system = nullptr;
+		sLayoutPrivate* layout_system = nullptr;
 
 		bool pending_layouting = false;
 		bool updating = false;

@@ -1,5 +1,5 @@
 #include "../entity_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "checkbox_private.h"
 
 namespace flame
@@ -17,17 +17,17 @@ namespace flame
 		data_changed(S<"checked"_h>);
 	}
 
-	void cCheckboxPrivate::on_gain_event_receiver()
+	void cCheckboxPrivate::on_gain_receiver()
 	{
-		click_listener = event_receiver->add_mouse_click_listener([](Capture& c) {
+		click_listener = receiver->add_mouse_click_listener([](Capture& c) {
 			auto thiz = c.thiz<cCheckboxPrivate>();
 			thiz->set_checked(!thiz->checked);
 		}, Capture().set_thiz(this));
 	}
 
-	void cCheckboxPrivate::on_lost_event_receiver()
+	void cCheckboxPrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_click_listener(click_listener);
+		receiver->remove_mouse_click_listener(click_listener);
 	}
 
 	cCheckbox* cCheckbox::create()

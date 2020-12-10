@@ -6,11 +6,11 @@
 namespace flame
 {
 	struct cElementPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
 	struct cCheckboxPrivate : cCheckbox
 	{
-		cEventReceiverPrivate* event_receiver = nullptr;
+		cReceiverPrivate* receiver = nullptr;
 
 		void* click_listener = nullptr;
 
@@ -19,7 +19,7 @@ namespace flame
 		bool get_checked() const override { return checked; }
 		void set_checked(bool checked) override;
 
-		void on_gain_event_receiver();
-		void on_lost_event_receiver();
+		void on_gain_receiver();
+		void on_lost_receiver();
 	};
 }

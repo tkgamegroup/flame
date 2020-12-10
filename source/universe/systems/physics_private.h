@@ -1,6 +1,6 @@
 #pragma once
 
-#include <flame/universe/systems/physics_world.h>
+#include <flame/universe/systems/physics.h>
 
 namespace flame
 {
@@ -13,7 +13,7 @@ namespace flame
 	struct cRigidPrivate;
 	struct cControllerPrivate;
 
-	struct sPhysicsWorldPrivate : sPhysicsWorld
+	struct sPhysicsPrivate : sPhysics
 	{
 		std::vector<cRigidPrivate*> rigids;
 		std::vector<cControllerPrivate*> controllers;

@@ -28,12 +28,11 @@ namespace flame
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
 		virtual uint get_size() const = 0;
 
-		// p = null to allocate new memory
-		virtual void* create(void* p = nullptr) const = 0;
-		virtual void destroy(void* p, bool free_memory = true) const = 0;
+		virtual void* create(bool create_pointing = true) const = 0;
+		virtual void destroy(void* p, bool destroy_pointing = true) const = 0;
 		virtual void copy(void* dst, const void* src) const = 0;
 		virtual bool compare(void* dst, const void* src) const = 0;
-		virtual void serialize(void* str, const void* src) const = 0;
+		virtual void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const = 0;
 		virtual void unserialize(void* dst, const char* src) const = 0;
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag, const char* name);
@@ -44,8 +43,8 @@ namespace flame
 	struct ReflectMeta
 	{
 		virtual uint get_tokens_count() const = 0;
-		virtual void get_token(void* name_dst, void* value_dst, uint idx) const = 0;
-		virtual bool get_token(const char* name, void* value_dst = nullptr) const = 0;
+		virtual void get_token(char** name_dst, char** pvalue, uint idx) const = 0;
+		virtual bool get_token(const char* name, char** pvalue = nullptr) const = 0;
 	};
 
 	struct VariableInfo
@@ -115,7 +114,11 @@ namespace flame
 			{
 				auto v = get_variable(i);
 				std::string str;
-				v->get_type()->serialize(&str, src);
+				v->get_type()->serialize(src, &str, [](void* _str, uint size) {
+					auto& str = *(std::string*)_str;
+					str.resize(size);
+					return str.data();
+				});
 				dst[v->get_name()] = str;
 			}
 		}

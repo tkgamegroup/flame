@@ -19,10 +19,10 @@ controller = {
 	_9 = false
 }
 
-local root_event_receiver = root:get_component_n("cEventReceiver")
-make_obj(root_event_receiver, "cEventReceiver")
+local root_receiver = root:get_component_n("cReceiver")
+make_obj(root_receiver, "cReceiver")
 
-root_event_receiver:add_key_down_listener_s(get_slot(
+root_receiver:add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["Numpad0"] then
 			controller._0 = true
@@ -57,7 +57,7 @@ root_event_receiver:add_key_down_listener_s(get_slot(
 	end
 ))
 
-root_event_receiver:add_key_up_listener_s(get_slot(
+root_receiver:add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["Numpad0"] then
 			controller._0 = false

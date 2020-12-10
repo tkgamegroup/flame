@@ -16,7 +16,7 @@ extern MyApp app;
 struct _2DEditor
 {
 	cElement* element;
-	cEventReceiver* event_receiver;
+	cReceiver* receiver;
 
 	cElement* base;
 	bool moved;
@@ -31,7 +31,7 @@ struct _2DEditor
 
 	_2DEditor() :
 		element(nullptr),
-		event_receiver(nullptr),
+		receiver(nullptr),
 		base(nullptr),
 		moved(false),
 		scale_level(10),
@@ -77,17 +77,17 @@ struct _2DEditor
 
 			return true;
 		}, Capture().set_thiz(this));
-		event_receiver = ui.c_event_receiver();
-		event_receiver->focus_type = FocusByLeftOrRightButton;
+		receiver = ui.c_receiver();
+		receiver->focus_type = FocusByLeftOrRightButton;
 		struct Capturing
 		{
 			void(*f)(Capture&, const vec4&);
 		}capture;
 		capture.f = select_callback;
-		event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
+		receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			auto& capture = c.data<Capturing>();
 			auto& edt = *c.thiz<_2DEditor>();
-			auto dp = c.current<cEventReceiver>()->dispatcher;
+			auto dp = c.current<cReceiver>()->dispatcher;
 			auto mp = vec2(dp->mouse_pos);
 			if (is_mouse_scroll(action, key))
 			{
@@ -129,7 +129,7 @@ struct _2DEditor
 			}
 			return true;
 		}, Capture().absorb(&capture, _capture).set_thiz(this));
-		event_receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
+		receiver->state_listeners.add([](Capture& c, EventReceiverState state) {
 			auto& capture = c.data<Capturing>();
 			auto& edt = *c.thiz<_2DEditor>();
 			if (!(state & EventReceiverActive) && edt.selecting)
@@ -169,7 +169,7 @@ struct _2DEditor
 
 			return true;
 		}, Capture().set_thiz(this));
-		ui.c_event_receiver()->pass_checkers.add([](Capture& c, cEventReceiver* er, bool* pass) {
+		ui.c_receiver()->pass_checkers.add([](Capture& c, cReceiver* er, bool* pass) {
 			*pass = true;
 			return true;
 		}, Capture());

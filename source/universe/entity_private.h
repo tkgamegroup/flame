@@ -17,6 +17,7 @@ namespace flame
 	struct StateRule
 	{
 		Component* c;
+		std::string vname;
 		TypeInfo* type;
 		FunctionInfo* setter;
 		std::vector<std::pair<StateFlags, void*>> values;
@@ -66,8 +67,9 @@ namespace flame
 #endif
 		std::pair<std::filesystem::path, uint> created_location;
 
-		std::unique_ptr<Driver> driver;
+		std::unique_ptr<Driver, Delector> driver;
 		std::unordered_map<uint64, ComponentSlot> components;
+		uint component_id = 0;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
 
 		std::vector<void*> events;

@@ -1,6 +1,6 @@
 #include "../entity_private.h"
 #include "text_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "menu_private.h"
 #include "combobox_private.h"
 
@@ -33,18 +33,18 @@ namespace flame
 		return f_new<cComboboxPrivate>();
 	}
 
-	void cComboboxItemPrivate::on_gain_event_receiver()
+	void cComboboxItemPrivate::on_gain_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cComboboxItemPrivate>();
 			if (thiz->staging_combobox)
 				thiz->staging_combobox->set_index(thiz->entity->index);
 		}, Capture().set_thiz(this));
 	}
 
-	void cComboboxItemPrivate::on_lost_event_receiver()
+	void cComboboxItemPrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+		receiver->remove_mouse_left_down_listener(mouse_listener);
 	}
 
 	void cComboboxItemPrivate::on_lost_combobox()

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity>
+  <entity driver="dWindow" >
     <cElement width="200" height="200" padding="8,8,8,8" border="1.0" fill_color="240,240,240,255" />
     <cLayout type="Vertical" gap="4" auto_width="false" auto_height="false" />
-    <cEventReceiver />
+    <cReceiver />
     <cDragMove />
     <cClickBringToFront />
     <entity src="drag_resize_block" />

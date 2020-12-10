@@ -12,7 +12,7 @@ namespace flame
 
 	struct cNodePrivate;
 	struct cMeshPrivate;
-	struct sPhysicsWorldPrivate;
+	struct sPhysicsPrivate;
 	
 	struct cControllerPrivate : cController
 	{
@@ -23,7 +23,7 @@ namespace flame
 		physics::Controller* phy_controller = nullptr;
 
 		cNodePrivate* node = nullptr;
-		sPhysicsWorldPrivate* physics_world = nullptr;
+		sPhysicsPrivate* physics_world = nullptr;
 
 		float get_radius() const override { return radius; }
 		void set_radius(float r) override;

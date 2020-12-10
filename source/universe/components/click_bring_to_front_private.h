@@ -5,15 +5,15 @@
 
 namespace flame
 {
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
 	struct cClickBringToFrontPrivate : cClickBringToFront
 	{
-		cEventReceiverPrivate* event_receiver = nullptr;
+		cReceiverPrivate* receiver = nullptr;
 
 		void* mouse_listener = nullptr;
 
-		void on_gain_event_receiver();
-		void on_lost_event_receiver();
+		void on_gain_receiver();
+		void on_lost_receiver();
 	};
 }

@@ -5,7 +5,7 @@
     <cText text="list item" />
     <cAligner alignx="MinMax" />
     <cElement />
-    <cEventReceiver />
+    <cReceiver />
     <cStyle rule= "Hovering,Active,Selected?cElement.fill_color=195,215,240,255#Active,Selected?cElement.fill_color=200,220,245,255#Hovering,Selected?cElement.fill_color=205,225,250,255#None,Selected?cElement.fill_color=200,220,245,255#Hovering,Active?cElement.fill_color=225,225,225,255#Active?cElement.fill_color=220,220,220,255#Hovering?cElement.fill_color=230,230,230,255#None?cElement.fill_color=220,220,220,0" />
 	<cListItem />
   </entity>

@@ -2,7 +2,7 @@
 <prefab>
   <entity name="drag_resize_block">
       <cElement width="8.0" height="8.0" />
-      <cEventReceiver />
+      <cReceiver />
       <cAligner alignx="Max" aligny="Max" include_in_layout="false" />
       <cStyle rule= "Hovering,Active?cElement.fill_color=225,225,225,255#Active?cElement.fill_color=220,220,220,255#Hovering?cElement.fill_color=230,230,230,255#None?cElement.fill_color=220,220,220,255" />
   </entity>

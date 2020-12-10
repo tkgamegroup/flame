@@ -260,7 +260,7 @@ namespace flame
 		renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(renderer);
 		mark_transform_dirty();
-		layout_system = entity->world->get_system_t<sLayoutSystemPrivate>();
+		layout_system = entity->world->get_system_t<sLayoutPrivate>();
 		mark_size_dirty();
 	}
 

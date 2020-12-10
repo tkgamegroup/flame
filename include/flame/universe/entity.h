@@ -52,6 +52,7 @@ namespace flame
 		virtual void save(const wchar_t* filename) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static Entity* create();
+		FLAME_UNIVERSE_EXPORTS static void initialize();
 		FLAME_UNIVERSE_EXPORTS static void set_debug(bool v);
 	};
 }

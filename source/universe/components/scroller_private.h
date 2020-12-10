@@ -6,22 +6,22 @@
 namespace flame
 {
 	struct cElementPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 	struct cLayoutPrivate;
 
 	struct cScrollerPrivate : cScroller
 	{
 		float step = 1.f;
 
-		cEventReceiverPrivate* event_receiver = nullptr;
+		cReceiverPrivate* receiver = nullptr;
 
 		cElementPrivate* htrack_element = nullptr;
 		cElementPrivate* hthumb_element = nullptr;
-		cEventReceiverPrivate* hthumb_event_receiver = nullptr;
+		cReceiverPrivate* hthumb_receiver = nullptr;
 
 		cElementPrivate* vtrack_element = nullptr;
 		cElementPrivate* vthumb_element = nullptr;
-		cEventReceiverPrivate* vthumb_event_receiver = nullptr;
+		cReceiverPrivate* vthumb_receiver = nullptr;
 
 		cElementPrivate* view_element = nullptr;
 		cLayoutPrivate* view_layout = nullptr;
@@ -37,18 +37,18 @@ namespace flame
 
 		void scroll(const vec2& v) override;
 
-		void on_gain_event_receiver();
-		void on_lost_event_receiver();
+		void on_gain_receiver();
+		void on_lost_receiver();
 
 		void on_gain_htrack_element();
 		void on_lost_htrack_element();
-		void on_gain_hthumb_event_receiver();
-		void on_lost_hthumb_event_receiver();
+		void on_gain_hthumb_receiver();
+		void on_lost_hthumb_receiver();
 
 		void on_gain_vtrack_element();
 		void on_lost_vtrack_element();
-		void on_gain_vthumb_event_receiver();
-		void on_lost_vthumb_event_receiver();
+		void on_gain_vthumb_receiver();
+		void on_lost_vthumb_receiver();
 
 		void on_gain_view_element();
 	};

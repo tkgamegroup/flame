@@ -3,7 +3,7 @@
   <entity>
     <cElement width="100.0" padding="4,2,18,2" border="1.0" />
     <cText text="" auto_width="false" />
-    <cEventReceiver />
+    <cReceiver />
     <cStyle rule=
            "Hovering?cElement.fill_color=230,230,230,255#
             None?cElement.fill_color=0,0,0,0" />

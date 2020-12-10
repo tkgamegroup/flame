@@ -6,7 +6,6 @@ namespace flame
 {
 	struct Entity;
 	struct EntityPrivate;
-	struct Component;
 
 	struct Driver
 	{
@@ -23,7 +22,6 @@ namespace flame
 		{
 		}
 
-		virtual bool on_read_property(Component* c, const char* value) { return true; }
 		virtual void on_load_finished() {}
 	};
 }

@@ -457,8 +457,8 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		bp_editor.e_test->add_component(ce);
 	}
 	{
-		auto cer = cEventReceiver::create();
-		//cEventReceiver::set_linked_object(cer);
+		auto cer = cReceiver::create();
+		//cReceiver::set_linked_object(cer);
 		bp_editor.e_test->add_component(cer);
 	}
 
@@ -483,11 +483,11 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 		window_layout_root = window_layout.first_child();
 
 	{
-		auto c_event_receiver = root->get_component(cEventReceiver);
-		c_event_receiver->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
+		auto c_receiver = root->get_component(cReceiver);
+		c_receiver->key_listeners.add([](Capture& c, KeyStateFlags action, int value) {
 			if (is_key_down(action))
 			{
-				auto ed = c.current<cEventReceiver>()->dispatcher;
+				auto ed = c.current<cReceiver>()->dispatcher;
 				switch (value)
 				{
 				case Keyboard_S:
@@ -519,7 +519,7 @@ BPEditorWindow::BPEditorWindow(const std::filesystem::path& filename) :
 			}
 			return true;
 		}, Capture());
-		s_event_dispatcher->next_focusing = c_event_receiver;
+		s_dispatcher->next_focusing = c_receiver;
 	}
 
 	ui.parents.push(root);

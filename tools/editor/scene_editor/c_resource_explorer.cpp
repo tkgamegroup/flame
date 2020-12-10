@@ -352,7 +352,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				wchar_t p[256];
 			}capture;
 			wcscpy_s(capture.p, p.c_str());
-			item->get_component(cEventReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
+			item->get_component(cReceiver)->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 				if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 				{
 					auto& capture = c.data<Capturing>();
@@ -399,7 +399,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					wchar_t p[256];
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
-				auto er = item->get_component(cEventReceiver);
+				auto er = item->get_component(cReceiver);
 				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
@@ -411,7 +411,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				ui.e_begin_popup_menu();
 				ui.e_menu_item(L"Open", [](Capture& c) {
-					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, ivec2(0));
+					c.thiz<cReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, ivec2(0));
 				}, Capture().set_thiz(er));
 				ui.e_end_popup_menu();
 			}
@@ -422,7 +422,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 					wchar_t p[256];
 				}capture;
 				wcscpy_s(capture.p, p.c_str());
-				auto er = item->get_component(cEventReceiver);
+				auto er = item->get_component(cReceiver);
 				er->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 					if (is_mouse_clicked(action, key) && (action & KeyStateDouble))
 					{
@@ -435,7 +435,7 @@ void cResourceExplorer::navigate(const std::filesystem::path& path)
 				}, Capture().set_data(&capture));
 				ui.e_begin_popup_menu();
 				ui.e_menu_item(L"Open", [](Capture& c) {
-					c.thiz<cEventReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, ivec2(0));
+					c.thiz<cReceiver>()->send_mouse_event(KeyStateDown | KeyStateUp | KeyStateDouble, Mouse_Null, ivec2(0));
 				}, Capture().set_thiz(er));
 				ui.e_end_popup_menu();
 			}

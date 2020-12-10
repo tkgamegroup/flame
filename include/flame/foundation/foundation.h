@@ -14,14 +14,11 @@
 
 namespace flame
 {
-	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size), 
-		char* (*stralloc)(void* p, uint size), wchar_t* (*wstralloc)(void* p, uint size));
+	FLAME_FOUNDATION_EXPORTS void set_allocator(void* (*allocate)(uint size), void (*deallocate)(void* p), void* (*reallocate)(void* p, uint size));
 
 	FLAME_FOUNDATION_EXPORTS void* f_malloc(uint size);
 	FLAME_FOUNDATION_EXPORTS void* f_realloc(void* p, uint size);
 	FLAME_FOUNDATION_EXPORTS void f_free(void* p);
-	FLAME_FOUNDATION_EXPORTS char* f_stralloc(void* p, uint size);
-	FLAME_FOUNDATION_EXPORTS wchar_t* f_wstralloc(void* p, uint size);
 
 	template <class T, class ...Args>
 	T* f_new(Args... args)
@@ -563,7 +560,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS bool wait_event(void* ev, int timeout);
 	FLAME_FOUNDATION_EXPORTS void destroy_event(void* ev);
 	FLAME_FOUNDATION_EXPORTS void get_library_dependencies(const wchar_t* filename, void (*callback)(Capture& c, const wchar_t* filename), const Capture& capture);
-	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str);
+	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str, wchar_t* (*str_allocator)(void* str, uint size));
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, char** out_data);
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(KeyboardKey key, void (*callback)(Capture& c), const Capture& capture, bool down = true, bool ctrl = false, bool shift = false, bool alt = false);
@@ -573,7 +570,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void set_mouse_pos(const ivec2& pos);
 	FLAME_FOUNDATION_EXPORTS void shell_exec(const wchar_t* filename, wchar_t* parameters, bool wait, bool show = false);
 	// if str is null then the output will be redirect to std output
-	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* str = nullptr);
+	FLAME_FOUNDATION_EXPORTS void exec(const wchar_t* filename, wchar_t* parameters, void* output = nullptr, char* (*output_allocator)(void* str, uint size) = nullptr);
 	FLAME_FOUNDATION_EXPORTS void debug_break();
 	FLAME_FOUNDATION_EXPORTS void* add_assert_callback(void (*callback)(Capture& c), const Capture& capture);
 	FLAME_FOUNDATION_EXPORTS void remove_assert_callback(void* ret);

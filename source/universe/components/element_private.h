@@ -11,7 +11,7 @@ namespace flame
 	}
 
 	struct sRendererPrivate;
-	struct sLayoutSystemPrivate;
+	struct sLayoutPrivate;
 
 	struct cElementPrivate : cElement
 	{
@@ -48,7 +48,7 @@ namespace flame
 		std::vector<std::pair<Component*, void(*)(Component*, vec2&)>> measurables;
 
 		sRendererPrivate* renderer = nullptr;
-		sLayoutSystemPrivate* layout_system = nullptr;
+		sLayoutPrivate* layout_system = nullptr;
 
 		float get_x() const override { return pos.x; }
 		void set_x(float x) override;

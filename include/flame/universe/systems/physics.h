@@ -4,18 +4,18 @@
 
 namespace flame
 {
-	struct sPhysicsWorld : System
+	struct sPhysics : System
 	{
-		inline static auto type_name = "flame::sPhysicsWorld";
+		inline static auto type_name = "flame::sPhysics";
 		inline static auto type_hash = ch(type_name);
 
-		sPhysicsWorld() :
+		sPhysics() :
 			System(type_name, type_hash)
 		{
 		}
 
 		virtual void set_visualization(bool v) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static sPhysicsWorld* create();
+		FLAME_UNIVERSE_EXPORTS static sPhysics* create();
 	};
 }

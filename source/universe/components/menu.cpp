@@ -1,7 +1,7 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "text_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "menu_private.h"
 
 namespace flame
@@ -40,12 +40,12 @@ namespace flame
 
 		if (type != MenuSub)
 		{
-			root_mouse_listener = root_event_receiver
+			root_mouse_listener = root_receiver
 				->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 				auto thiz = c.thiz<cMenuPrivate>();
 				if (thiz->frame >= looper().get_frame())
 					return;
-				thiz->root_event_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
+				thiz->root_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
 				thiz->close();
 				if (thiz->type == MenuTop)
 					curr_menu = nullptr;
@@ -74,7 +74,7 @@ namespace flame
 
 		if (type != MenuSub)
 		{
-			root_event_receiver->remove_mouse_left_down_listener(root_mouse_listener);
+			root_receiver->remove_mouse_left_down_listener(root_mouse_listener);
 			if (type == MenuTop)
 				curr_menu = nullptr;
 		}
@@ -85,9 +85,9 @@ namespace flame
 		opened = false;
 	}
 
-	void cMenuPrivate::on_gain_event_receiver()
+	void cMenuPrivate::on_gain_receiver()
 	{
-		mouse_down_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		mouse_down_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
 			if (thiz->type == MenuTop)
 			{
@@ -100,17 +100,17 @@ namespace flame
 					thiz->open();
 			}
 		}, Capture().set_thiz(this));
-		mouse_move_listener = event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		mouse_move_listener = receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cMenuPrivate>();
 			if (thiz->root && !thiz->opened && thiz->items && curr_menu)
 				thiz->open();
 		}, Capture().set_thiz(this));
 	}
 
-	void cMenuPrivate::on_lost_event_receiver()
+	void cMenuPrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_left_down_listener(mouse_down_listener);
-		event_receiver->remove_mouse_move_listener(mouse_move_listener);
+		receiver->remove_mouse_left_down_listener(mouse_down_listener);
+		receiver->remove_mouse_move_listener(mouse_move_listener);
 	}
 
 	//void cMenuPrivate::on_local_message(Message msg, void* p)
@@ -119,11 +119,11 @@ namespace flame
 	//	{
 	//	case MessageEnteredWorld:
 	//		root = entity->world->root.get();
-	//		root_event_receiver = root->get_component_t<cEventReceiverPrivate>();
+	//		root_receiver = root->get_component_t<cReceiverPrivate>();
 	//		break;
 	//	case MessageLeftWorld:
 	//		root = nullptr;
-	//		root_event_receiver = nullptr;
+	//		root_receiver = nullptr;
 	//		break;
 	//	}
 	//}

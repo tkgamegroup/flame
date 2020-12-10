@@ -8,7 +8,7 @@
       <cAligner margin="0,7,0,7" />
       <entity name="thumb">
         <cElement y="3" width="10" height="20" pivotx="0.5" pivoty="0.5" />
-        <cEventReceiver />
+        <cReceiver />
         <cStyle rule="Hovering,Active?cElement.fill_color=69,94,222,255#Active?cElement.fill_color=86,119,252,255#Hovering?cElement.fill_color=78,108,239,255#None?cElement.fill_color=86,119,252,255" />
       </entity>
     </entity>

@@ -36,7 +36,7 @@ struct cNode;
 struct cSlot : Component
 {
 	cElement* element;
-	cEventReceiver* event_receiver;
+	cReceiver* receiver;
 	cDataTracker* tracker;
 
 	bpSlot* s;
@@ -57,7 +57,7 @@ struct cSlot : Component
 struct cNode : Component
 {
 	cElement* element;
-	cEventReceiver* event_receiver;
+	cReceiver* receiver;
 
 	bpNode* n;
 
@@ -76,7 +76,7 @@ cSlot::cSlot() :
 	Component("cSlot")
 {
 	element = nullptr;
-	event_receiver = nullptr;
+	receiver = nullptr;
 	tracker = nullptr;
 
 	dragging = false;
@@ -120,28 +120,28 @@ void cSlot::on_event(EntityEvent e, void* t)
 		if (t == this)
 		{
 			element = entity->get_component(cElement);
-			event_receiver = entity->get_component(cEventReceiver);
+			receiver = entity->get_component(cReceiver);
 
 			if (s->io == bpSlotIn)
 			{
-				event_receiver->drag_hash = FLAME_CHASH("input_slot");
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
+				receiver->drag_hash = FLAME_CHASH("input_slot");
+				receiver->set_acceptable_drops(1, &FLAME_CHASH("output_slot"));
 			}
 			else
 			{
-				event_receiver->drag_hash = FLAME_CHASH("output_slot");
-				event_receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
+				receiver->drag_hash = FLAME_CHASH("output_slot");
+				receiver->set_acceptable_drops(1, &FLAME_CHASH("input_slot"));
 			}
-			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
+			receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 				auto thiz = c.thiz<cSlot>();
 				if (thiz->dragging)
 				{
 					if (is_mouse_scroll(action, key) || is_mouse_move(action, key))
-						thiz->group->edt.event_receiver->send_mouse_event(action, key, pos);
+						thiz->group->edt.receiver->send_mouse_event(action, key, pos);
 				}
 				return true;
 			}, Capture().set_thiz(this));
-			event_receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cEventReceiver* er, const ivec2& pos) {
+			receiver->drag_and_drop_listeners.add([](Capture& c, DragAndDrop action, cReceiver* er, const ivec2& pos) {
 				auto& ui = bp_editor.window->ui;
 				auto thiz = c.thiz<cSlot>();
 				auto element = thiz->element;
@@ -219,7 +219,7 @@ void cSlot::on_event(EntityEvent e, void* t)
 
 				return true;
 			}, Capture().set_thiz(this));
-			event_receiver->hover_listeners.add([](Capture& c, bool hovering) {
+			receiver->hover_listeners.add([](Capture& c, bool hovering) {
 				auto& ui = bp_editor.window->ui;
 				auto thiz = c.thiz<cSlot>();
 				auto s = thiz->s;
@@ -294,9 +294,9 @@ void cNode::on_event(EntityEvent e, void* t)
 		if (t == this)
 		{
 			element = entity->get_component(cElement);
-			event_receiver = entity->get_component(cEventReceiver);
+			receiver = entity->get_component(cReceiver);
 
-			event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
+			receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 				auto thiz = c.thiz<cNode>();
 				if (is_mouse_down(action, key, true) && key == Mouse_Left)
 				{
@@ -312,7 +312,7 @@ void cNode::on_event(EntityEvent e, void* t)
 					if (n)
 						bp_editor.select({ n });
 				}
-				else if (is_mouse_move(action, key) && thiz->event_receiver->is_active())
+				else if (is_mouse_move(action, key) && thiz->receiver->is_active())
 				{
 					for (auto& s : bp_editor.selected_nodes)
 					{
@@ -323,9 +323,9 @@ void cNode::on_event(EntityEvent e, void* t)
 				}
 				return true;
 			}, Capture().set_thiz(this));
-			event_receiver->state_listeners.add([](Capture& c, EventReceiverState) {
+			receiver->state_listeners.add([](Capture& c, EventReceiverState) {
 				auto thiz = c.thiz<cNode>();
-				if (thiz->moved && !thiz->event_receiver->is_active())
+				if (thiz->moved && !thiz->receiver->is_active())
 				{
 					std::vector<vec2> poses;
 					for (auto& s : bp_editor.selected_nodes)
@@ -410,7 +410,7 @@ void cBPEditor::on_add_node(bpNode* n)
 			ui.next_element_roundness_lod = 2;
 			ui.next_element_color = cvec4(200, 200, 200, 255);
 			ui.e_element();
-			ui.c_event_receiver();
+			ui.c_receiver();
 			auto c_slot = f_new<cSlot>();
 			c_slot->s = input;
 			input->user_data = c_slot;
@@ -563,7 +563,7 @@ void cBPEditor::on_add_node(bpNode* n)
 			}
 			return true;
 		}, Capture());
-		edt.event_receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
+		edt.receiver->mouse_listeners.add([](Capture& c, KeyStateFlags action, MouseKey key, const ivec2& pos) {
 			if (is_mouse_up(action, key, true) && key == Mouse_Right)
 			{
 				if (!bp_editor.editor->edt.moved)
@@ -593,7 +593,7 @@ void cBPEditor::on_add_node(bpNode* n)
 	ui.next_element_color = cvec4(255, 255, 255, 200);
 	ui.next_element_frame_color = unselected_col;
 	ui.c_element();
-	ui.c_event_receiver();
+	ui.c_receiver();
 	ui.c_layout(LayoutVertical, 4.f)->fence = -1;
 
 	auto c_node = f_new<cNode>();
@@ -636,7 +636,7 @@ void cBPEditor::on_add_node(bpNode* n)
 						ui.next_element_roundness_lod = 2;
 						ui.next_element_color = cvec4(200, 200, 200, 255);
 						ui.e_element();
-						ui.c_event_receiver();
+						ui.c_receiver();
 						auto c_slot = f_new<cSlot>();
 						c_slot->s = input;
 						c_slot->group = c_node;
@@ -1155,7 +1155,7 @@ void cBPEditor::on_add_node(bpNode* n)
 					ui.next_element_roundness_lod = 2;
 					ui.next_element_color = cvec4(200, 200, 200, 255);
 					ui.e_element();
-					ui.c_event_receiver();
+					ui.c_receiver();
 					auto c_slot = f_new<cSlot>();
 					c_slot->s = output;
 					c_slot->group = c_node;

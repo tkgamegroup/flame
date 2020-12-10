@@ -3,7 +3,7 @@
   <entity>
     <cElement padding="4,2,4,2" />
     <cText text="combobox_item" />
-    <cEventReceiver />
+    <cReceiver />
     <cAligner alignx="MinMax" />
     <cStyle rule=
            "Hovering,Selected?cElement.fill_color=205,225,250,255#

@@ -18,11 +18,11 @@
 #include <flame/universe/world.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
-#include <flame/universe/components/event_receiver.h>
+#include <flame/universe/components/receiver.h>
 #include <flame/universe/components/layout.h>
-#include <flame/universe/systems/layout_system.h>
-#include <flame/universe/systems/event_dispatcher.h>
-#include <flame/universe/systems/physics_world.h>
+#include <flame/universe/systems/layout.h>
+#include <flame/universe/systems/dispatcher.h>
+#include <flame/universe/systems/physics.h>
 #include <flame/universe/systems/renderer.h>
 
 namespace flame
@@ -75,10 +75,10 @@ namespace flame
 		physics::Scene* physics_scene = nullptr;
 
 		World* world = nullptr;
-		sLayoutSystem* s_layout_system = nullptr;
-		sEventDispatcher* s_event_dispatcher = nullptr;
+		sLayout* s_layout = nullptr;
+		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
-		sPhysicsWorld* s_physic_world = nullptr;
+		sPhysics* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
 		bool capture = false;
@@ -137,11 +137,11 @@ namespace flame
 		world->register_object(window, "flame::Window");
 		world->register_object(canvas, "flame::graphics::Canvas");
 		world->register_object(physics_scene, "flame::physics::Scene");
-		s_layout_system = sLayoutSystem::create();
-		world->add_system(s_layout_system);
-		s_event_dispatcher = sEventDispatcher::create();
-		world->add_system(s_event_dispatcher);
-		s_physic_world = sPhysicsWorld::create();
+		s_layout = sLayout::create();
+		world->add_system(s_layout);
+		s_dispatcher = sDispatcher::create();
+		world->add_system(s_dispatcher);
+		s_physic_world = sPhysics::create();
 		world->add_system(s_physic_world);
 		world->add_system(new sBeforeRender(this));
 		s_renderer = sRenderer::create();
@@ -150,10 +150,10 @@ namespace flame
 		root = world->get_root();
 		root->add_component(cElement::create());
 		{
-			auto cer = cEventReceiver::create();
+			auto cer = cReceiver::create();
 			cer->set_ignore_occluders(true);
 			root->add_component(cer);
-			s_event_dispatcher->set_next_focusing(cer);
+			s_dispatcher->set_next_focusing(cer);
 		}
 		root->add_component(cLayout::create());
 
@@ -236,16 +236,6 @@ namespace flame
 			},
 			[](void* p, uint size) {
 				return realloc(p, size);
-			},
-			[](void* p, uint size) {
-				auto& str = *(std::string*)p;
-				str.resize(size);
-				return str.data();
-			},
-			[](void* p, uint size) {
-				auto& str = *(std::wstring*)p;
-				str.resize(size);
-				return str.data();
 			}
 		);
 
@@ -267,6 +257,7 @@ namespace flame
 		physics::Device::set_default(physics::Device::create());
 		sound::Device::set_default(sound::Device::create());
 		script::Instance::set_default(script::Instance::create());
+		Entity::initialize();
 
 		{
 			graphics::Font* fonts[] = {

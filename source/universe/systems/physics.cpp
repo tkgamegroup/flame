@@ -9,13 +9,13 @@
 #include "../components/rigid_private.h"
 #include "../components/shape_private.h"
 #include "../components/controller_private.h"
-#include "physics_world_private.h"
+#include "physics_private.h"
 
 namespace flame
 {
 	using namespace physics;
 
-	void sPhysicsWorldPrivate::set_visualization(bool v)
+	void sPhysicsPrivate::set_visualization(bool v)
 	{
 		if (!v)
 			visualization_layer = nullptr;
@@ -28,7 +28,7 @@ namespace flame
 				{
 					phy_scene->set_visualization(true);
 					visualization_layer->add_drawer([](Capture& c, graphics::Canvas* canvas) {
-						auto thiz = c.thiz<sPhysicsWorldPrivate>();
+						auto thiz = c.thiz<sPhysicsPrivate>();
 						if (thiz->visualization_layer)
 						{
 							uint lines_count;
@@ -42,7 +42,7 @@ namespace flame
 		}
 	}
 
-	void sPhysicsWorldPrivate::on_added()
+	void sPhysicsPrivate::on_added()
 	{
 		phy_scene = (physics::Scene*)world->find_object("flame::physics::Scene");
 		phy_scene->set_trigger_callback([](Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape) {
@@ -52,7 +52,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	void sPhysicsWorldPrivate::update()
+	void sPhysicsPrivate::update()
 	{
 		auto delta_time = looper().get_delta_time();
 
@@ -106,8 +106,8 @@ namespace flame
 		}
 	}
 
-	sPhysicsWorld* sPhysicsWorld::create()
+	sPhysics* sPhysics::create()
 	{
-		return new sPhysicsWorldPrivate();
+		return new sPhysicsPrivate();
 	}
 }

@@ -1,6 +1,6 @@
 local scene = entity:find_child("scene")
-local er = root:get_component_n("cEventReceiver")
-make_obj(er, "cEventReceiver")
+local er = root:get_component_n("cReceiver")
+make_obj(er, "cReceiver")
 er:add_key_down_listener_s(get_slot(
 	function(k)
 		if (k == enums["flame::KeyboardKey"]["F"]) then

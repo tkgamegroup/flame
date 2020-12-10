@@ -2,7 +2,7 @@
 <prefab>
   <entity>
     <cElement />
-    <cEventReceiver />
+    <cReceiver />
     <cImage/>
     <cStyle rule="
               Hovering,Active?cImage.src=3#

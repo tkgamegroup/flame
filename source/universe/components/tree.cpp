@@ -2,7 +2,7 @@
 #include "../entity_private.h"
 #include "element_private.h"
 #include "text_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "tree_private.h"
 
 namespace flame
@@ -55,16 +55,16 @@ namespace flame
 		//		}, Capture().set_thiz(this), 1U);
 	}
 
-	void cTreePrivate::on_gain_event_receiver()
+	void cTreePrivate::on_gain_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			c.thiz<cTreePrivate>()->set_selected(nullptr);
 		}, Capture().set_thiz(this));
 	}
 
-	void cTreePrivate::on_lost_event_receiver()
+	void cTreePrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+		receiver->remove_mouse_left_down_listener(mouse_listener);
 	}
 
 	cTree* cTree::create()
@@ -72,17 +72,17 @@ namespace flame
 		return f_new<cTreePrivate>();
 	}
 
-	void cTreeLeafPrivate::on_gain_event_receiver()
+	void cTreeLeafPrivate::on_gain_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cTreeLeafPrivate>();
 			thiz->tree->set_selected(thiz->entity);
 		}, Capture().set_thiz(this));
 	}
 
-	void cTreeLeafPrivate::on_lost_event_receiver()
+	void cTreeLeafPrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+		receiver->remove_mouse_left_down_listener(mouse_listener);
 	}
 
 	cTreeLeaf* cTreeLeaf::create()
@@ -90,29 +90,29 @@ namespace flame
 		return f_new<cTreeLeafPrivate>();
 	}
 
-	void cTreeNodePrivate::on_gain_event_receiver()
+	void cTreeNodePrivate::on_gain_receiver()
 	{
-		mouse_listener = event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		mouse_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<cTreeNodePrivate>();
 			thiz->tree->set_selected(thiz->entity);
 		}, Capture().set_thiz(this));
 	}
 
-	void cTreeNodePrivate::on_lost_event_receiver()
+	void cTreeNodePrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_left_down_listener(mouse_listener);
+		receiver->remove_mouse_left_down_listener(mouse_listener);
 	}
 
-	void cTreeNodePrivate::on_gain_arrow_event_receiver()
+	void cTreeNodePrivate::on_gain_arrow_receiver()
 	{
-		arrow_mouse_listener = arrow_event_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+		arrow_mouse_listener = arrow_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			c.thiz<cTreeNodePrivate>()->toggle_collapse();
 		}, Capture().set_thiz(this));
 	}
 
-	void cTreeNodePrivate::on_lost_arrow_event_receiver()
+	void cTreeNodePrivate::on_lost_arrow_receiver()
 	{
-		arrow_event_receiver->remove_mouse_left_down_listener(arrow_mouse_listener);
+		arrow_receiver->remove_mouse_left_down_listener(arrow_mouse_listener);
 	}
 
 	void cTreeNodePrivate::toggle_collapse()

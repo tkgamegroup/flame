@@ -6,7 +6,7 @@
 namespace flame
 {
 	struct cElementPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 	struct cTextPrivate;
 
 	struct cSliderPrivate : cSlider
@@ -18,7 +18,7 @@ namespace flame
 
 		cElementPrivate* bar_element = nullptr;
 		cElementPrivate* thumb_element = nullptr;
-		cEventReceiverPrivate* thumb_event_receiver = nullptr;
+		cReceiverPrivate* thumb_receiver = nullptr;
 		cTextPrivate* text = nullptr;
 
 		void* bar_element_listener = nullptr;
@@ -34,7 +34,7 @@ namespace flame
 		void on_gain_bar_element();
 		void on_lost_bar_element();
 
-		void on_gain_thumb_event_receiver();
-		void on_lost_thumb_event_receiver();
+		void on_gain_thumb_receiver();
+		void on_lost_thumb_receiver();
 	};
 }

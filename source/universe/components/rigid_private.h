@@ -12,7 +12,7 @@ namespace flame
 	}
 
 	struct cNodePrivate;
-	struct sPhysicsWorldPrivate;
+	struct sPhysicsPrivate;
 
 	struct cRigidPrivate : cRigid
 	{
@@ -26,7 +26,7 @@ namespace flame
 		std::vector<uint> trigger_listeners_s;
 
 		cNodePrivate* node = nullptr;
-		sPhysicsWorldPrivate* physics_world = nullptr;
+		sPhysicsPrivate* physics_world = nullptr;
 
 		~cRigidPrivate();
 

@@ -16,17 +16,12 @@ namespace flame
 	static void* (*pf_allocate)(uint size);
 	static void  (*pf_deallocate)(void* p);
 	static void* (*pf_reallocate)(void* p, uint size);
-	static char* (*pf_stralloc)(void* p, uint size);
-	static wchar_t* (*pf_wstralloc)(void* p, uint size);
 
-	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size),
-		char* (*stralloc)(void* p, uint size), wchar_t* (*wstralloc)(void* p, uint size))
+	void set_allocator(void* (*allocate)(uint size), void(*deallocate)(void* p), void* (*reallocate)(void* p, uint size))
 	{
 		pf_allocate = allocate;
 		pf_deallocate = deallocate;
 		pf_reallocate = reallocate;
-		pf_stralloc = stralloc;
-		pf_wstralloc = wstralloc;
 	}
 
 	void* f_malloc(uint size)
@@ -53,28 +48,6 @@ namespace flame
 			return;
 		}
 		pf_deallocate(p);
-	}
-
-	char* f_stralloc(void* p, uint size)
-	{
-		if (!pf_stralloc)
-		{
-			auto& str = *(std::string*)p;
-			str.resize(size);
-			return str.data();
-		}
-		return pf_stralloc(p, size);
-	}
-
-	wchar_t* f_wstralloc(void* p, uint size)
-	{
-		if (!pf_stralloc)
-		{
-			auto& str = *(std::wstring*)p;
-			str.resize(size);
-			return str.data();
-		}
-		return pf_wstralloc(p, size);
 	}
 
 	Guid generate_guid()
@@ -201,13 +174,12 @@ namespace flame
 		f_free(capture._data);
 	}
 
-	void get_clipboard(void* str)
+	void get_clipboard(void* str, wchar_t* (*str_allocator)(void* str, uint size))
 	{
 		OpenClipboard(NULL);
 		auto hMemory = GetClipboardData(CF_UNICODETEXT);
 		auto size = GlobalSize(hMemory) / sizeof(wchar_t) - 1;
-		auto dst = f_wstralloc(str, size);
-		wcscpy(dst, (wchar_t*)GlobalLock(hMemory));
+		wcscpy(str_allocator(str, size), (wchar_t*)GlobalLock(hMemory));
 		GlobalUnlock(hMemory);
 		CloseClipboard();
 	}
@@ -743,12 +715,12 @@ namespace flame
 			WaitForSingleObject(info.hProcess, INFINITE);
 	}
 
-	void exec(const wchar_t* filename, wchar_t* parameters, void* str)
+	void exec(const wchar_t* filename, wchar_t* parameters, void* output, char* (*output_allocator)(void* str, uint size))
 	{
 		bool ok;
 		HANDLE hChildStd_OUT_Rd = NULL;
 		HANDLE hChildStd_OUT_Wr = NULL;
-		if (str)
+		if (output)
 		{
 			SECURITY_ATTRIBUTES saAttr;
 			saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -779,12 +751,11 @@ namespace flame
 		CloseHandle(proc_info.hProcess);
 		CloseHandle(proc_info.hThread);
 
-		if (str)
+		if (output)
 		{
 			DWORD size;
 			PeekNamedPipe(hChildStd_OUT_Rd, NULL, NULL, NULL, &size, NULL);
-			auto dst = f_stralloc(str, size);
-			PeekNamedPipe(hChildStd_OUT_Rd, (void*)dst, size, NULL, NULL, NULL);
+			PeekNamedPipe(hChildStd_OUT_Rd, (void*)output_allocator(output, size), size, NULL, NULL, NULL);
 		}
 	}
 

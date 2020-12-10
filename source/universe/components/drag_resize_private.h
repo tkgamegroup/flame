@@ -6,16 +6,16 @@
 namespace flame
 {
 	struct cElementPrivate;
-	struct cEventReceiverPrivate;
+	struct cReceiverPrivate;
 
 	struct cDragResizePrivate : cDragResize
 	{
 		cElementPrivate* element = nullptr;
-		cEventReceiverPrivate* block_event_receiver = nullptr;
+		cReceiverPrivate* block_receiver = nullptr;
 
 		void* block_mouse_listener = nullptr;
 
-		void on_gain_block_event_receiver();
-		void on_lost_block_event_receiver();
+		void on_gain_block_receiver();
+		void on_lost_block_receiver();
 	};
 }

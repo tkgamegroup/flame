@@ -3,7 +3,7 @@
   <entity>
     <cElement width="100.0" padding="4,2,4,2" border="1.0" clipping="true" />
     <cText auto_width="false" />
-    <cEventReceiver />
+    <cReceiver />
     <cEdit />
   </entity>
 </prefab>

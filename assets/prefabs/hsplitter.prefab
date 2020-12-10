@@ -6,7 +6,7 @@
     <entity name="splitter_bar">
       <cElement width="8" />
       <cAligner aligny="MinMax" />
-      <cEventReceiver />
+      <cReceiver />
       <cStyle rule="Hovering,Active?cElement.fill_color=225,225,225,255#Active?cElement.fill_color=220,220,220,255#Hovering?cElement.fill_color=230,230,230,255#None?cElement.fill_color=0,0,0,0" />
     </entity>
     <cSplitter />

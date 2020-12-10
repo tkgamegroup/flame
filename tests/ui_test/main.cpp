@@ -59,7 +59,7 @@ void MyApp::create_widgets()
 //			ui.e_begin_layout(LayoutVertical, 16.f);
 //				ui.e_text(L"Text");
 //				ui.e_button(L"Click Me!", [](Capture& c) {
-//					c.current<cEventReceiver>()->entity->get_component(cText)->set_text(L"Click Me! :)");
+//					c.current<cReceiver>()->entity->get_component(cText)->set_text(L"Click Me! :)");
 //					printf("thank you for clicking me\n");
 //				}, Capture());
 //				ui.e_begin_layout(LayoutHorizontal, 4.f);
@@ -150,35 +150,35 @@ void MyApp::create_widgets()
 //	}
 //	ui.e_begin_popup_menu();
 //		ui.e_menu_item(L"Refresh", [](Capture& c) {
-//			wprintf(L"%s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//			wprintf(L"%s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //		}, Capture());
 //		ui.e_menu_item(L"Save", [](Capture& c) {
-//			wprintf(L"%s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//			wprintf(L"%s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //		}, Capture());
 //		ui.e_menu_item(L"Help", [](Capture& c) {
-//			wprintf(L"%s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//			wprintf(L"%s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //		}, Capture());
 //		ui.e_separator();
 //		ui.e_begin_sub_menu(L"Add");
 //			ui.e_menu_item(L"Tree", [](Capture& c) {
-//				wprintf(L"Add %s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//				wprintf(L"Add %s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //			}, Capture());
 //			ui.e_menu_item(L"Car", [](Capture& c) {
-//				wprintf(L"Add %s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//				wprintf(L"Add %s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //			}, Capture());
 //			ui.e_menu_item(L"House", [](Capture& c) {
-//				wprintf(L"Add %s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//				wprintf(L"Add %s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //			}, Capture());
 //		ui.e_end_sub_menu();
 //		ui.e_begin_sub_menu(L"Remove");
 //			ui.e_menu_item(L"Tree", [](Capture& c) {
-//				wprintf(L"Remove %s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//				wprintf(L"Remove %s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //			}, Capture());
 //			ui.e_menu_item(L"Car", [](Capture& c) {
-//				wprintf(L"Remove %s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//				wprintf(L"Remove %s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //			}, Capture());
 //			ui.e_menu_item(L"House", [](Capture& c) {
-//				wprintf(L"Remove %s!\n", c.current<cEventReceiver>()->entity->get_component(cText)->text.v);
+//				wprintf(L"Remove %s!\n", c.current<cReceiver>()->entity->get_component(cText)->text.v);
 //			}, Capture());
 //		ui.e_end_sub_menu();
 //	ui.e_end_popup_menu();

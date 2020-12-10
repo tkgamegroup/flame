@@ -3,7 +3,7 @@
   <entity>
     <cElement padding="4,2,18,2" />
     <cText text="sub_menu" />
-    <cEventReceiver />
+    <cReceiver />
     <cAligner alignx="MinMax" />
     <cStyle rule=
            "Hovering?cElement.fill_color=230,230,230,255#

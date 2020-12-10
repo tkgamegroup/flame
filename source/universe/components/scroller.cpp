@@ -1,6 +1,6 @@
 #include "../entity_private.h"
 #include "element_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "layout_private.h"
 #include "scroller_private.h"
 #include "../systems/event_dispatcher_private.h"
@@ -36,16 +36,16 @@ namespace flame
 		}
 	}
 
-	void cScrollerPrivate::on_gain_event_receiver()
+	void cScrollerPrivate::on_gain_receiver()
 	{
-		mouse_scroll_listener = event_receiver->add_mouse_scroll_listener([](Capture& c, int v) {
+		mouse_scroll_listener = receiver->add_mouse_scroll_listener([](Capture& c, int v) {
 			c.thiz<cScrollerPrivate>()->scroll(vec2(0.f, -v * 20.f));
 		}, Capture().set_thiz(this));
 	}
 
-	void cScrollerPrivate::on_lost_event_receiver()
+	void cScrollerPrivate::on_lost_receiver()
 	{
-		event_receiver->remove_mouse_scroll_listener(mouse_scroll_listener);
+		receiver->remove_mouse_scroll_listener(mouse_scroll_listener);
 	}
 
 	void cScrollerPrivate::on_gain_htrack_element()
@@ -65,18 +65,18 @@ namespace flame
 		//htrack_element->entity->remove_local_data_changed_listener(htrack_element_listener);
 	}
 
-	void cScrollerPrivate::on_gain_hthumb_event_receiver()
+	void cScrollerPrivate::on_gain_hthumb_receiver()
 	{
-		hthumb_mouse_listener = hthumb_event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		hthumb_mouse_listener = hthumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cScrollerPrivate>();
-			if (thiz->event_receiver->dispatcher->active == thiz->hthumb_event_receiver)
+			if (thiz->receiver->dispatcher->active == thiz->hthumb_receiver)
 				thiz->scroll(vec2(disp.x, 0.f));
 		}, Capture().set_thiz(this));
 	}
 
-	void cScrollerPrivate::on_lost_hthumb_event_receiver()
+	void cScrollerPrivate::on_lost_hthumb_receiver()
 	{
-		hthumb_event_receiver->remove_mouse_move_listener(hthumb_mouse_listener);
+		hthumb_receiver->remove_mouse_move_listener(hthumb_mouse_listener);
 	}
 
 	void cScrollerPrivate::on_gain_vtrack_element()
@@ -96,18 +96,18 @@ namespace flame
 		//vtrack_element->entity->remove_local_data_changed_listener(vtrack_element_listener);
 	}
 
-	void cScrollerPrivate::on_gain_vthumb_event_receiver()
+	void cScrollerPrivate::on_gain_vthumb_receiver()
 	{
-		vthumb_mouse_listener = vthumb_event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		vthumb_mouse_listener = vthumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cScrollerPrivate>();
-			if (thiz->event_receiver->dispatcher->active == thiz->vthumb_event_receiver)
+			if (thiz->receiver->dispatcher->active == thiz->vthumb_receiver)
 				thiz->scroll(vec2(0.f, disp.y));
 		}, Capture().set_thiz(this));
 	}
 
-	void cScrollerPrivate::on_lost_vthumb_event_receiver()
+	void cScrollerPrivate::on_lost_vthumb_receiver()
 	{
-		vthumb_event_receiver->remove_mouse_move_listener(vthumb_mouse_listener);
+		vthumb_receiver->remove_mouse_move_listener(vthumb_mouse_listener);
 	}
 
 	void cScrollerPrivate::on_gain_view_element()

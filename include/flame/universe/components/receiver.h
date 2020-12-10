@@ -4,12 +4,12 @@
 
 namespace flame
 {
-	struct cEventReceiver : Component
+	struct cReceiver : Component
 	{
-		inline static auto type_name = "flame::cEventReceiver";
+		inline static auto type_name = "flame::cReceiver";
 		inline static auto type_hash = ch(type_name);
 
-		cEventReceiver() :
+		cReceiver() :
 			Component(type_name, type_hash)
 		{
 		}
@@ -19,7 +19,7 @@ namespace flame
 
 //		uint drag_hash; // non-zero means it can be draged to drop
 
-//		ListenerHub<bool(Capture& c, DragAndDrop action, cEventReceiver* er, const ivec2& pos)>		drag_and_drop_listeners;
+//		ListenerHub<bool(Capture& c, DragAndDrop action, cReceiver* er, const ivec2& pos)>		drag_and_drop_listeners;
 
 //		FLAME_UNIVERSE_EXPORTS void set_acceptable_drops(uint drops_count, const uint* drops);
 
@@ -52,6 +52,6 @@ namespace flame
 
 		virtual void on_key_event(KeyboardKey key, bool down = true) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cEventReceiver* create();
+		FLAME_UNIVERSE_EXPORTS static cReceiver* create();
 	};
 }

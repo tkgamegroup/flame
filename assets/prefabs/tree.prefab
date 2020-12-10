@@ -4,7 +4,7 @@
     <cElement />
     <cAligner />
     <cLayout type="Vertical" gap="2" />
-    <cEventReceiver />
+    <cReceiver />
     <cTree />
   </entity>
 </prefab>

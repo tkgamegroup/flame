@@ -1,7 +1,7 @@
 #include "../entity_private.h"
 #include "element_private.h"
 #include "text_private.h"
-#include "event_receiver_private.h"
+#include "receiver_private.h"
 #include "slider_private.h"
 #include "../systems/event_dispatcher_private.h"
 
@@ -56,11 +56,11 @@ namespace flame
 		//bar_element->entity->remove_local_data_changed_listener(bar_element_listener);
 	}
 
-	void cSliderPrivate::on_gain_thumb_event_receiver()
+	void cSliderPrivate::on_gain_thumb_receiver()
 	{
-		thumb_mouse_listener = thumb_event_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		thumb_mouse_listener = thumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<cSliderPrivate>();
-			if (thiz->thumb_event_receiver->dispatcher->active == thiz->thumb_event_receiver)
+			if (thiz->thumb_receiver->dispatcher->active == thiz->thumb_receiver)
 			{
 				auto x = clamp(thiz->thumb_element->pos.x + disp.x, 0.f, thiz->bar_element->size.x);
 				thiz->proportion = x / thiz->bar_element->size.x;
@@ -73,9 +73,9 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	void cSliderPrivate::on_lost_thumb_event_receiver()
+	void cSliderPrivate::on_lost_thumb_receiver()
 	{
-		thumb_event_receiver->remove_mouse_move_listener(thumb_mouse_listener);
+		thumb_receiver->remove_mouse_move_listener(thumb_mouse_listener);
 	}
 
 	cSlider* cSlider::create()

@@ -9,6 +9,165 @@ namespace flame
 {
 	static bool debug = false;
 
+	struct ComponentType
+	{
+		struct Attribute
+		{
+			TypeInfo* get_type;
+			TypeInfo* set_type;
+			FunctionInfo* getter;
+			FunctionInfo* setter;
+			std::string default_value;
+
+			Attribute(ComponentType* ct, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+				get_type(get_type),
+				set_type(set_type),
+				getter(getter),
+				setter(setter)
+			{
+				void* d = get_type->create(false);
+				getter->call(ct->dummy, d, {});
+				get_type->serialize(d, &default_value, [](void* _str, uint size) {
+					auto& str = *(std::string*)_str;
+					str.resize(size);
+					return str.data();
+				});
+				get_type->destroy(d, false);
+			}
+
+			std::string serialize(Component* c)
+			{
+				void* d = get_type->create(false);
+				getter->call(c, d, {});
+				std::string str;
+				get_type->serialize(d, &str, [](void* _str, uint size) {
+					auto& str = *(std::string*)_str;
+					str.resize(size);
+					return str.data();
+				});
+				get_type->destroy(d, false);
+				if (str == default_value)
+					str = "";
+				return str;
+			}
+		};
+
+		UdtInfo* udt;
+		FunctionInfo* creator;
+		Component* dummy;
+
+		std::map<std::string, Attribute> attributes;
+
+		ComponentType(UdtInfo* udt) :
+			udt(udt)
+		{
+			auto fc = udt->find_function("create");
+			fassert(fc && fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0);
+			creator = fc;
+			dummy = create();
+			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> getters;
+			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> setters;
+			auto num_funs = udt->get_functions_count();
+			for (auto i = 0; i < num_funs; i++)
+			{
+				auto f = udt->get_function(i);
+				auto name = std::string(f->get_name());
+				if (name.compare(0, 4, "get_") == 0 && f->get_parameters_count() == 0)
+				{
+					auto t = f->get_type();
+					if (t->get_name() != std::string("void"))
+						getters.emplace_back(name.substr(4), t, f);
+				}
+				else if (name.compare(0, 4, "set_") == 0 && f->get_parameters_count() == 1 && f->get_type() == TypeInfo::get(TypeData, "void"))
+				{
+					auto t = f->get_parameter(0);
+					if (t->get_name() != std::string("void"))
+						setters.emplace_back(name.substr(4), t, f);
+				}
+			}
+			for (auto& g : getters)
+			{
+				for (auto& s : setters)
+				{
+					if (std::get<0>(g) == std::get<0>(s) && std::string(std::get<1>(g)->get_name()) == std::string(std::get<1>(s)->get_name()))
+					{
+						attributes.emplace(std::get<0>(g), Attribute(this, std::get<1>(g), std::get<1>(s), std::get<2>(g), std::get<2>(s)));
+						break;
+					}
+				}
+			}
+		}
+
+		Component* create()
+		{
+			Component* ret;
+			creator->call(nullptr, &ret, {});
+			return ret;
+		}
+
+		Attribute* find_attribute(const std::string& name)
+		{
+			auto it = attributes.find(name);
+			if (it == attributes.end())
+				return nullptr;
+			return &it->second;
+		}
+	};
+
+	static std::map<std::string, ComponentType> component_types;
+
+	ComponentType* find_component_type(const std::string& name)
+	{
+		auto it = component_types.find(name);
+		if (it == component_types.end())
+			return nullptr;
+		return &it->second;
+	}
+
+	ComponentType* find_component_type(const std::string& udt_name, std::string& name)
+	{
+		for (auto& t : component_types)
+		{
+			if (t.second.udt->get_name() == udt_name)
+			{
+				name = t.first;
+				return &t.second;
+			}
+		}
+		return nullptr;
+	}
+
+	struct DriverType
+	{
+		UdtInfo* udt;
+		FunctionInfo* creator;
+
+		DriverType(UdtInfo* udt) :
+			udt(udt)
+		{
+			auto fc = udt->find_function("create");
+			fassert(fc && fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0);
+			creator = fc;
+		}
+
+		Driver* create()
+		{
+			Driver* ret;
+			creator->call(nullptr, &ret, {});
+			return ret;
+		}
+	};
+
+	static std::map<std::string, DriverType> driver_types;
+
+	DriverType* find_driver_type(const std::string& name)
+	{
+		auto it = driver_types.find(name);
+		if (it == driver_types.end())
+			return nullptr;
+		return &it->second;
+	}
+
 	StateRule::~StateRule()
 	{
 		for (auto& v : values)
@@ -112,17 +271,15 @@ namespace flame
 
 	Component* EntityPrivate::get_component_n(const char* _name) const
 	{
-		auto name = std::string(_name);
-		for (auto& c : components)
+		auto ct = find_component_type(_name);
+		if (ct)
 		{
-			if (c.second.c->type_name == name)
-				return c.second.c.get();
-		}
-		name = "flame::" + name;
-		for (auto& c : components)
-		{
-			if (c.second.c->type_name == name)
-				return c.second.c.get();
+			auto name = std::string(ct->udt->get_name());
+			for (auto& c : components)
+			{
+				if (c.second.c->type_name == name)
+					return c.second.c.get();
+			}
 		}
 		return nullptr;
 	}
@@ -147,6 +304,7 @@ namespace flame
 
 		ComponentSlot slot;
 		slot.c.reset(c);
+		slot.id = component_id++;
 		components.emplace(c->type_hash, std::move(slot));
 	}
 
@@ -348,14 +506,12 @@ namespace flame
 
 	static void load_prefab(EntityPrivate* e_dst, pugi::xml_node n_src, 
 		const std::filesystem::path& filename,
+		bool first,
 		const std::vector<uint>& los,
 		std::vector<std::unique_ptr<StateRule>>& state_rules)
 	{
 		std::string src;
-
-		if (n_src.name() != std::string("entity"))
-			return;
-
+		std::string dri;
 		for (auto a : n_src.attributes())
 		{
 			auto name = std::string(a.name());
@@ -363,12 +519,10 @@ namespace flame
 				e_dst->name = a.value();
 			else if (name == "visible")
 				e_dst->visible = a.as_bool();
-			else if (name == "driver")
-			{
-
-			}
 			else if (name == "src")
 				src = a.value();
+			else if (name == "driver")
+				dri = a.value();
 		}
 		if (!src.empty())
 		{
@@ -378,6 +532,15 @@ namespace flame
 			if (path.extension().empty())
 				path.replace_extension(L".prefab");
 			e_dst->load(path);
+		}
+		if (!dri.empty())
+		{
+			fassert(first);
+			DriverType* dt = find_driver_type(dri);
+			if (dt)
+				e_dst->driver.reset(dt->create());
+			else
+				printf("cannot find driver type: %s\n", dri.c_str());
 		}
 
 		for (auto n_c : n_src.children())
@@ -408,93 +571,84 @@ namespace flame
 						break;
 					}
 				}
-				load_prefab(e, n_c, filename, los, state_rules);
+				load_prefab(e, n_c, filename, false, los, state_rules);
 
 				attach->add_child(e);
 			}
 			else
 			{
-				name = "flame::" + name;
-				auto udt = find_udt(name.c_str());
-				if (udt)
+				ComponentType* ct = find_component_type(name);
+				if (ct)
 				{
 					auto c = attach->get_component(std::hash<std::string>()(name));
 					auto isnew = false;
 					if (!c)
 					{
-						auto fc = udt->find_function("create");
-						if (fc && fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0)
-						{
-							fc->call(nullptr, &c, {});
-							isnew = true;
-						}
-						else
-							printf("cannot create component of type: %s\n", name.c_str());
+						c = ct->create();
+						isnew = true;
 					}
-					if (c)
+					for (auto a : n_c.attributes())
 					{
-						for (auto a : n_c.attributes())
+						auto vname = std::string(a.name());
+						auto att = ct->find_attribute(vname);
+						if (att)
 						{
-							auto fs = udt->find_function((std::string("set_") + a.name()).c_str());
-							if (fs && fs->get_parameters_count() == 1)
+							auto type = att->set_type;
+							auto fs = att->setter;
+							auto value = std::string(a.value());
+							auto sp = SUS::split(value, ';');
+							if (sp.size() == 1)
 							{
-								auto type = fs->get_parameter(0);
-								auto value = std::string(a.value());
-								auto sp = SUS::split(value, ';');
-								if (sp.size() == 1)
-								{
-									void* d = type->create();
-									type->unserialize(d, value.c_str());
-									void* parms[] = { d };
-									fs->call(c, nullptr, parms);
-									type->destroy(d);
-								}
-								else
-								{
-									auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-									fassert(ei);
-									auto rule = new StateRule;
-									rule->c = c;
-									rule->type = type;
-									rule->setter = fs;
-									for (auto& s : sp)
-									{
-										auto pair = SUS::split(s, ':');
-										auto state = StateNone;
-										void* d = type->create();
-										if (pair.size() == 1)
-										{
-											type->unserialize(d, pair[0].c_str());
-											void* parms[] = { d };
-											fs->call(c, nullptr, parms);
-										}
-										else if (pair.size() == 2)
-										{
-											ei->unserialize(&state, pair[0].c_str());
-											type->unserialize(d, pair[1].c_str());
-										}
-										else
-											fassert(0);
-										rule->values.emplace_back(state, d);
-									}
-									state_rules.emplace_back(rule);
-								}
+								void* d = type->create();
+								type->unserialize(d, value.c_str());
+								void* parms[] = { d };
+								fs->call(c, nullptr, parms);
+								type->destroy(d);
 							}
 							else
-								printf("cannot find setter: %s\n", a.name());
+							{
+								auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
+								fassert(ei);
+								auto rule = new StateRule;
+								rule->c = c;
+								rule->vname = vname;
+								rule->type = type;
+								rule->setter = fs;
+								for (auto& s : sp)
+								{
+									auto pair = SUS::split(s, ':');
+									auto state = StateNone;
+									void* d = type->create();
+									if (pair.size() == 1)
+									{
+										type->unserialize(d, pair[0].c_str());
+										void* parms[] = { d };
+										fs->call(c, nullptr, parms);
+									}
+									else if (pair.size() == 2)
+									{
+										ei->unserialize(&state, pair[0].c_str());
+										type->unserialize(d, pair[1].c_str());
+									}
+									else
+										fassert(0);
+									rule->values.emplace_back(state, d);
+								}
+								state_rules.emplace_back(rule);
+							}
 						}
-						if (isnew)
-							attach->add_component((Component*)c);
+						else
+							printf("cannot find setter: %s\n", a.name());
 					}
-					else
-						printf("cannot create component: %s\n", name.c_str());
+					if (isnew)
+						attach->add_component((Component*)c);
 				}
 				else
-					printf("cannot find udt: %s\n", name.c_str());
+					printf("cannot find component type: %s\n", name.c_str());
 			}
 		}
 
-		if (e_dst->driver)
+		if (first && e_dst->driver)
 			e_dst->driver->on_load_finished();
 	}
 
@@ -546,11 +700,85 @@ namespace flame
 			fn = std::filesystem::canonical(fn);
 		fn.make_preferred();
 		path = fn;
-		load_prefab(this, doc_root.first_child(), fn, los, state_rules);
+		load_prefab(this, doc_root.first_child(), fn, true, los, state_rules);
 	}
 
-	static void save_prefab(pugi::xml_node n, EntityPrivate* src)
+	static void save_prefab(pugi::xml_node n_dst, EntityPrivate* e_src,
+		bool first)
 	{
+		if (!e_src->name.empty())
+			n_dst.append_attribute("name").set_value(e_src->name.c_str());
+		if (!e_src->visible)
+			n_dst.append_attribute("visible").set_value("false");
+		if (e_src->driver)
+			;
+		if (!e_src->src.empty())
+			n_dst.append_attribute("src").set_value(e_src->src.c_str());
+
+		if (e_src->src.empty())
+		{
+			std::vector<std::pair<uint, Component*>> components;
+			for (auto& c : e_src->components)
+				components.emplace_back(c.second.id, c.second.c.get());
+			std::sort(components.begin(), components.end(), [](const auto& a, const auto& b) {
+				return a.first < b.first;
+			});
+			for (auto& c : components)
+			{
+				std::string name;
+				auto ct = find_component_type(c.second->type_name, name);
+				fassert(ct);
+				auto n_c = n_dst.append_child(name.c_str());
+				for (auto& a : ct->attributes)
+				{
+					auto isrule = false;
+					if (first)
+					{
+						auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
+						fassert(ei);
+						for (auto& r : e_src->state_rules)
+						{
+							if (r->vname == a.first)
+							{
+								isrule = true;
+								std::string value;
+								for (auto& v : r->values)
+								{
+									std::string str;
+									auto str_alloc = [](void* _str, uint size) {
+										auto& str = *(std::string*)_str;
+										str.resize(size);
+										return str.data();
+									};
+									if (v.first)
+									{
+										ei->serialize(&v.first, &str, str_alloc);
+										value += str;
+										value += ":";
+									}
+									r->type->serialize(v.second, &str, str_alloc);
+									value += str;
+									value += ";";
+								}
+								value.erase(value.end() - 1);
+								n_c.append_attribute(a.first.c_str()).set_value(value.c_str());
+								break;
+							}
+						}
+					}
+					if (!isrule)
+					{
+						auto value = a.second.serialize(c.second);
+						if (!value.empty())
+							n_c.append_attribute(a.first.c_str()).set_value(value.c_str());
+					}
+				}
+			}
+		}
+		else
+		{
+
+		}
 	}
 
 	void EntityPrivate::save(const std::filesystem::path& filename)
@@ -558,7 +786,7 @@ namespace flame
 		pugi::xml_document file;
 		auto file_root = file.append_child("prefab");
 
-		save_prefab(file_root, this);
+		save_prefab(file_root.append_child("entity"), this, true);
 
 		file.save_file(filename.c_str());
 	}
@@ -566,6 +794,20 @@ namespace flame
 	Entity* Entity::create()
 	{
 		return f_new<EntityPrivate>();
+	}
+
+	void Entity::initialize()
+	{
+		traverse_udts([](Capture&, UdtInfo* ui) {
+			static auto reg_com = std::regex(R"(^flame::(c[\w]+)$)");
+			static auto reg_dri = std::regex(R"(^flame::(d[\w]+)$)");
+			std::smatch res;
+			auto name = std::string(ui->get_name());
+			if (std::regex_search(name, res, reg_com))
+				component_types.emplace(res[1].str(), ui);
+			else if (std::regex_search(name, res, reg_dri))
+				driver_types.emplace(res[1].str(), ui);
+		}, Capture());
 	}
 
 	void Entity::set_debug(bool v)
