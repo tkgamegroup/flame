@@ -2,7 +2,6 @@
 <prefab>
   <entity>
     <cElement width="100.0" height="100.0" fill_color="0,0,0,255" />
-    <cLayout />
     <entity src="drag_resize_block" />
     <cDragResize />
   </entity>

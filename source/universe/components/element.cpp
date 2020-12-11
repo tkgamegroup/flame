@@ -3,7 +3,7 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "../systems/renderer_private.h"
-#include "../systems/layout_system_private.h"
+#include "../systems/layout_private.h"
 
 namespace flame
 {
@@ -13,6 +13,8 @@ namespace flame
 			return;
 		pos.x = x;
 		mark_transform_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
 		data_changed(S<"x"_h>);
 	}
 
@@ -22,6 +24,8 @@ namespace flame
 			return;
 		pos.y = y;
 		mark_transform_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
 		data_changed(S<"y"_h>);
 	}
 
@@ -32,6 +36,9 @@ namespace flame
 		size.x = w;
 		content_size.x = size.x - padding[0] - padding[2];
 		mark_transform_dirty();
+		mark_layout_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
 		data_changed(S<"width"_h>);
 	}
 
@@ -42,6 +49,9 @@ namespace flame
 		size.y = h;
 		content_size.y = size.y - padding[1] - padding[3];
 		mark_transform_dirty();
+		mark_layout_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
 		data_changed(S<"height"_h>);
 	}
 
@@ -54,6 +64,7 @@ namespace flame
 		padding_size[1] = p[1] + p[3];
 		content_size = size - padding_size;
 		mark_transform_dirty();
+		mark_layout_dirty();
 		data_changed(S<"padding"_h>);
 	}
 
@@ -129,6 +140,190 @@ namespace flame
 		data_changed(S<"skewy"_h>);
 	}
 
+	void cElementPrivate::set_align_in_layout(bool v)
+	{
+		if (align_in_layout == v)
+			return;
+		align_in_layout = v;
+		if (pelement)
+			pelement->mark_layout_dirty();
+		data_changed(S<"align_in_layout"_h>);
+	}
+
+	void cElementPrivate::set_align_absolute(bool a)
+	{
+		if (align_absolute == a)
+			return;
+		align_absolute = a;
+		if (pelement)
+			pelement->mark_layout_dirty();
+		data_changed(S<"align_absolute"_h>);
+	}
+
+	void cElementPrivate::set_margin(const vec4& m)
+	{
+		if (margin == m)
+			return;
+		margin = m;
+		margin_size[0] = m[0] + m[2];
+		margin_size[1] = m[1] + m[3];
+		if (pelement)
+			pelement->mark_layout_dirty();
+		data_changed(S<"margin"_h>);
+	}
+
+	void cElementPrivate::set_alignx(Align a)
+	{
+		if (alignx == a)
+			return;
+		alignx = a;
+		if (pelement)
+		{
+			if (a != AlignNone)
+				pelement->need_layout = true;
+			pelement->mark_layout_dirty();
+		}
+		data_changed(S<"alignx"_h>);
+	}
+
+	void cElementPrivate::set_aligny(Align a)
+	{
+		if (aligny == a)
+			return;
+		aligny = a;
+		if (pelement)
+		{
+			if (a != AlignNone)
+				pelement->need_layout = true;
+			pelement->mark_layout_dirty();
+		}
+		data_changed(S<"aligny"_h>);
+	}
+
+	void cElementPrivate::set_width_factor(float f)
+	{
+		if (width_factor == f)
+			return;
+		width_factor = f;
+		if (pelement)
+			pelement->mark_layout_dirty();
+		data_changed(S<"width_factor"_h>);
+	}
+
+	void cElementPrivate::set_height_factor(float f)
+	{
+		if (height_factor == f)
+			return;
+		height_factor = f;
+		if (pelement)
+			pelement->mark_layout_dirty();
+		data_changed(S<"height_factor"_h>);
+	}
+
+	void cElementPrivate::set_layout_type(LayoutType t)
+	{
+		if (layout_type == t)
+			return;
+		layout_type = t;
+		if (t != LayoutFree)
+			need_layout = true;
+		mark_layout_dirty();
+		data_changed(S<"layout_type"_h>);
+	}
+
+	void cElementPrivate::set_layout_gap(float g)
+	{
+		if (layout_gap == g)
+			return;
+		layout_gap = g;
+		mark_layout_dirty();
+		data_changed(S<"layout_gap"_h>);
+	}
+
+	//	void cElementPrivate::set_column(uint c)
+	//	{
+	//		if (column == c)
+	//			return;
+	//		column = c;
+	//		auto thiz = (cElementPrivate*)this;
+	//		if (thiz->management)
+	//			thiz->management->add_to_update_list(thiz);
+	//	}
+
+	void cElementPrivate::set_auto_width(bool a)
+	{
+		if (auto_width == a)
+			return;
+		auto_width = a;
+		mark_size_dirty();
+		mark_layout_dirty();
+		data_changed(S<"auto_width"_h>);
+	}
+
+	void cElementPrivate::set_auto_height(bool a)
+	{
+		if (auto_height == a)
+			return;
+		auto_height = a;
+		mark_size_dirty();
+		mark_layout_dirty();
+		data_changed(S<"auto_height"_h>);
+	}
+
+	void cElementPrivate::set_scrollx(float s)
+	{
+		if (scroll.x == s)
+			return;
+		scroll.x = s;
+		mark_layout_dirty();
+		data_changed(S<"scroll"_h>);
+	}
+
+	void cElementPrivate::set_scrolly(float s)
+	{
+		if (scroll.y == s)
+			return;
+		scroll.y = s;
+		mark_layout_dirty();
+		data_changed(S<"scroll"_h>);
+	}
+
+	void cElementPrivate::set_fill_color(const cvec4& c)
+	{
+		if (fill_color == c)
+			return;
+		fill_color = c;
+		mark_drawing_dirty();
+		data_changed(S<"fill_color"_h>);
+	}
+
+	void cElementPrivate::set_border(float b)
+	{
+		if (border == b)
+			return;
+		border = b;
+		mark_drawing_dirty();
+		data_changed(S<"border"_h>);
+	}
+
+	void cElementPrivate::set_border_color(const cvec4& c)
+	{
+		if (border_color == c)
+			return;
+		border_color = c;
+		mark_drawing_dirty();
+		data_changed(S<"border_color"_h>);
+	}
+
+	void cElementPrivate::set_clipping(bool c)
+	{
+		if (clipping == c)
+			return;
+		clipping = c;
+		mark_drawing_dirty();
+		data_changed(S<"clipping"_h>);
+	}
+
 	void cElementPrivate::update_transform()
 	{
 		if (transform_dirty)
@@ -137,12 +332,11 @@ namespace flame
 
 			crooked = !(angle == 0.f && skew.x == 0.f && skew.y == 0.f);
 			auto m = mat3(1.f);
-			auto pe = entity->get_parent_component_t<cElementPrivate>();
-			if (pe)
+			if (pelement)
 			{
-				pe->update_transform();
-				crooked = crooked && pe->crooked;
-				m = pe->transform;
+				pelement->update_transform();
+				crooked = crooked && pelement->crooked;
+				m = pelement->transform;
 			}
 
 			m = translate(m, pos);
@@ -192,42 +386,6 @@ namespace flame
 		}
 	}
 
-	void cElementPrivate::set_fill_color(const cvec4& c)
-	{
-		if (fill_color == c)
-			return;
-		fill_color = c;
-		mark_drawing_dirty();
-		data_changed(S<"fill_color"_h>);
-	}
-
-	void cElementPrivate::set_border(float b)
-	{
-		if (border == b)
-			return;
-		border = b;
-		mark_drawing_dirty();
-		data_changed(S<"border"_h>);
-	}
-
-	void cElementPrivate::set_border_color(const cvec4& c)
-	{
-		if (border_color == c)
-			return;
-		border_color = c;
-		mark_drawing_dirty();
-		data_changed(S<"border_color"_h>);
-	}
-
-	void cElementPrivate::set_clipping(bool c)
-	{
-		if (clipping == c)
-			return;
-		clipping = c;
-		mark_drawing_dirty();
-		data_changed(S<"clipping"_h>);
-	}
-
 	void cElementPrivate::mark_transform_dirty()
 	{
 		if (!transform_dirty)
@@ -251,33 +409,117 @@ namespace flame
 
 	void cElementPrivate::mark_size_dirty()
 	{
-		if (layout_system)
-			layout_system->add_to_sizing_list(this);
+		if (pending_sizing || measurables.empty() || !(auto_width && auto_height) || !layout_system)
+			return;
+
+		auto it = layout_system->sizing_list.begin();
+		for (; it != layout_system->sizing_list.end(); it++)
+		{
+			if ((*it)->entity->depth < entity->depth)
+				break;
+		}
+		layout_system->sizing_list.emplace(it, this);
+		pending_sizing = true;
+	}
+
+	void cElementPrivate::mark_layout_dirty()
+	{
+		if (pending_layout || !need_layout || !layout_system)
+			return;
+
+		auto it = layout_system->layout_list.begin();
+		for (; it != layout_system->layout_list.end(); it++)
+		{
+			if ((*it)->entity->depth < entity->depth)
+				break;
+		}
+		layout_system->layout_list.emplace(it, this);
+		pending_layout = true;
+	}
+
+	void cElementPrivate::remove_from_sizing_list()
+	{
+		if (!pending_sizing)
+			return;
+		std::erase_if(layout_system->sizing_list, [&](const auto& i) {
+			return i == this;
+		});
+		pending_sizing = false;
+	}
+
+	void cElementPrivate::remove_from_layout_list()
+	{
+		if (!pending_layout)
+			return;
+		std::erase_if(layout_system->layout_list, [&](const auto& i) {
+			return i == this;
+		});
+		pending_layout = false;
+	}
+
+	void cElementPrivate::on_added()
+	{
+		pelement = entity->get_parent_component_t<cElementPrivate>();
+	}
+
+	void cElementPrivate::on_removed()
+	{
+		pelement = nullptr;
+	}
+
+	void cElementPrivate::on_child_added(Entity* e)
+	{
+		auto element = e->get_component_t<cElementPrivate>();
+		fassert(element);
+		if (element->alignx != AlignNone || element->aligny != AlignNone)
+			need_layout = true;
+		mark_layout_dirty();
+	}
+
+	void cElementPrivate::on_child_removed(Entity* e)
+	{
+		mark_layout_dirty();
 	}
 
 	void cElementPrivate::on_entered_world()
 	{
 		renderer = entity->world->get_system_t<sRendererPrivate>();
 		fassert(renderer);
-		mark_transform_dirty();
 		layout_system = entity->world->get_system_t<sLayoutPrivate>();
-		mark_size_dirty();
+		fassert(layout_system);
+		mark_transform_dirty();
 	}
 
 	void cElementPrivate::on_left_world()
 	{
-		mark_transform_dirty();
+		mark_drawing_dirty();
+		remove_from_sizing_list();
+		remove_from_layout_list();
+		renderer = nullptr;
+		layout_system = nullptr;
 	}
 
 	void cElementPrivate::on_visibility_changed(bool v)
 	{
-		mark_size_dirty();
-		mark_transform_dirty();
+		if (v)
+		{
+			mark_size_dirty();
+			mark_layout_dirty();
+		}
+		else
+		{
+			remove_from_sizing_list();
+			remove_from_layout_list();
+		}
+		if (pelement)
+			pelement->mark_layout_dirty();
 	}
 
 	void cElementPrivate::on_reposition(uint from, uint to)
 	{
 		mark_drawing_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
 	}
 
 	bool cElementPrivate::contains(const vec2& p)

@@ -29,14 +29,13 @@ namespace flame
 		virtual vec4 get_padding() const = 0;
 		virtual void set_padding(const vec4& p) = 0;
 
-		// 0 - 1
+		virtual vec4 get_margin() const = 0;
+		virtual void set_margin(const vec4& m) = 0;
+
 		virtual float get_pivotx() const = 0;
-		// 0 - 1
 		virtual void set_pivotx(float p) = 0;
 
-		// 0 - 1
 		virtual float get_pivoty() const = 0;
-		// 0 - 1
 		virtual void set_pivoty(float p) = 0;
 
 		virtual float get_scalex() const = 0;
@@ -53,6 +52,41 @@ namespace flame
 
 		virtual float get_skewy() const = 0;
 		virtual void set_skewy(float angle) = 0;
+
+		virtual bool get_align_in_layout() const = 0;
+		virtual void set_align_in_layout(bool v) = 0;
+
+		virtual bool get_align_absolute() const = 0;
+		virtual void set_align_absolute(bool a) = 0;
+
+		virtual Align get_alignx() const = 0;
+		virtual void set_alignx(Align a) = 0;
+		virtual Align get_aligny() const = 0;
+		virtual void set_aligny(Align a) = 0;
+
+		virtual float get_width_factor() const = 0;
+		virtual void set_width_factor(float f) = 0;
+		virtual float get_height_factor() const = 0;
+		virtual void set_height_factor(float f) = 0;
+
+		virtual LayoutType get_layout_type() const = 0;
+		virtual void set_layout_type(LayoutType t) = 0;
+
+		virtual float get_layout_gap() const = 0;
+		virtual void set_layout_gap(float g) = 0;
+
+		virtual bool get_auto_width() const = 0;
+		virtual void set_auto_width(bool a) = 0;
+		virtual bool get_auto_height() const = 0;
+		virtual void set_auto_height(bool a) = 0;
+
+		virtual float get_scrollx() const = 0;
+		virtual void set_scrollx(float s) = 0;
+		virtual float get_scrolly() const = 0;
+		virtual void set_scrolly(float s) = 0;
+
+		//FLAME_RV(uint, column);
+		//FLAME_UNIVERSE_EXPORTS void set_column(uint c);
 
 		//virtual float get_alpha() const = 0;
 		//virtual void set_alpha(float a) = 0;
@@ -78,6 +112,7 @@ namespace flame
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;
 		virtual void mark_size_dirty() = 0;
+		virtual void mark_layout_dirty() = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cElement* create();
 	};

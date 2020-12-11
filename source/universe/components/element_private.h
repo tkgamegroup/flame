@@ -20,11 +20,30 @@ namespace flame
 		vec4 padding = vec4(0.f);
 		vec2 padding_size = vec2(0.f);
 		vec2 content_size = vec2(0.f);
+		vec4 margin = vec4(0.f);
+		vec2 margin_size = vec2(0.f);
 		vec2 pivot = vec2(0.f);
 		vec2 scl = vec2(1.f);
 		float angle = 0.f;
 		vec2 skew = vec2(0.f);
 
+		bool align_in_layout = true;
+		bool align_absolute = false;
+		Align alignx = AlignNone;
+		Align aligny = AlignNone;
+		float width_factor = 1.f;
+		float height_factor = 1.f;
+		vec2 desired_size = vec2(0.f);
+
+		bool need_layout = false;
+		LayoutType layout_type = LayoutFree;
+		float layout_gap = 0.f;
+		bool auto_width = true;
+		bool auto_height = true;
+
+		vec2 scroll = vec2(0.f);
+
+		cElementPrivate* pelement = nullptr;
 		bool transform_dirty = true;
 		bool crooked = false;
 		vec2 points[8];
@@ -45,6 +64,7 @@ namespace flame
 		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers[2];
 
 		bool pending_sizing = false;
+		bool pending_layout = false;
 		std::vector<std::pair<Component*, void(*)(Component*, vec2&)>> measurables;
 
 		sRendererPrivate* renderer = nullptr;
@@ -64,6 +84,9 @@ namespace flame
 
 		vec4 get_padding() const override { return padding; }
 		void set_padding(const vec4& p) override;
+
+		vec4 get_margin() const override { return margin; }
+		void set_margin(const vec4& m) override;
 
 		float get_pivotx() const override { return pivot.x; }
 		void set_pivotx(float p) override;
@@ -86,7 +109,37 @@ namespace flame
 		float get_skewy() const override { return skew.y; }
 		void set_skewy(float s) override;
 
-		void update_transform();
+		bool get_align_in_layout() const override { return align_in_layout; }
+		void set_align_in_layout(bool v) override;
+
+		bool get_align_absolute() const override { return align_absolute; }
+		void set_align_absolute(bool a) override;
+
+		Align get_alignx() const override { return alignx; }
+		void set_alignx(Align a) override;
+		Align get_aligny() const override { return aligny; }
+		void set_aligny(Align a) override;
+
+		float get_width_factor() const override { return width_factor; }
+		void set_width_factor(float f) override;
+		float get_height_factor() const override { return height_factor; }
+		void set_height_factor(float f) override;
+
+		LayoutType get_layout_type() const override { return layout_type; }
+		void set_layout_type(LayoutType t) override;
+
+		float get_layout_gap() const override { return layout_gap; }
+		void set_layout_gap(float g) override;
+
+		bool get_auto_width() const override { return auto_width; }
+		void set_auto_width(bool a) override;
+		bool get_auto_height() const override { return auto_height; }
+		void set_auto_height(bool a) override;
+
+		float get_scrollx() const override { return scroll.x; }
+		void set_scrollx(float s) override;
+		float get_scrolly() const override { return scroll.y; }
+		void set_scrolly(float s) override;
 
 		cvec4 get_fill_color() override { return fill_color; }
 		void set_fill_color(const cvec4& c) override;
@@ -100,12 +153,21 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
+		void update_transform();
+
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;
 		void mark_size_dirty() override;
+		void mark_layout_dirty() override;
+		void remove_from_sizing_list();
+		void remove_from_layout_list();
 
 		bool contains(const vec2& p) override;
 
+		void on_added() override;
+		void on_removed() override;
+		void on_child_added(Entity* e) override;
+		void on_child_removed(Entity* e) override;
 		void on_entered_world() override;
 		void on_left_world() override;
 		void on_visibility_changed(bool v) override;

@@ -4,8 +4,7 @@
     <cElement />
     <cLayout type="Horizontal" gap="6" />
     <entity name="bar" >
-      <cElement width="100" height="6" border="1" />
-      <cAligner margin="0,7,0,7" />
+      <cElement width="100" height="6" margin="0,7,0,7" border="1" />
       <entity name="thumb">
         <cElement y="3" width="10" height="20" pivotx="0.5" pivoty="0.5" />
         <cReceiver />

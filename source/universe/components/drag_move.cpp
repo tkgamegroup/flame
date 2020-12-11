@@ -1,7 +1,7 @@
 #include "element_private.h"
 #include "receiver_private.h"
 #include "drag_move_private.h"
-#include "../systems/event_dispatcher_private.h"
+#include "../systems/dispatcher_private.h"
 
 namespace flame
 {

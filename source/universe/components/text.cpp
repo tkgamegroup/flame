@@ -56,16 +56,12 @@ namespace flame
 
 	void cTextPrivate::measure(vec2& ret)
 	{
-		if (!atlas || (!auto_width && !auto_height))
+		if (!atlas)
 		{
 			ret = vec2(-1.f);
 			return;
 		}
 		ret = vec2(atlas->text_size(font_size, text.c_str()));
-		if (!auto_width)
-			ret.x = -1.f;
-		if (!auto_height)
-			ret.y = -1.f;
 	}
 
 	void cTextPrivate::on_added()

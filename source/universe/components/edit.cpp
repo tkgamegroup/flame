@@ -4,7 +4,7 @@
 #include "text_private.h"
 #include "receiver_private.h"
 #include "edit_private.h"
-#include "../systems/event_dispatcher_private.h"
+#include "../systems/dispatcher_private.h"
 
 namespace flame
 {

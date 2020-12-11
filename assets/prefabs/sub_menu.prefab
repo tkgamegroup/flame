@@ -1,19 +1,16 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cElement padding="4,2,18,2" />
+    <cElement padding="4,2,18,2" alignx="MinMax" />
     <cText text="sub_menu" />
     <cReceiver />
-    <cAligner alignx="MinMax" />
     <cStyle rule=
            "Hovering?cElement.fill_color=230,230,230,255#
             None?cElement.fill_color=220,220,220,255" />
     <cMenu type="Sub" />
-    <cLayout />
     <entity name="arrow" >
-      <cElement padding="4,2,4,2" />
+      <cElement padding="4,2,4,2" align_absolute="true" alignx="Max" />
       <cText text="" />
-      <cAligner alignx="Max" absolute="true" />
     </entity>
     <entity name="items" src="menu_items" />
   </entity>

@@ -24,11 +24,6 @@ namespace flame
 		virtual cvec4 get_color() const = 0;
 		virtual void set_color(const cvec4& col) = 0;
 
-		virtual bool get_auto_width() const = 0;
-		virtual void set_auto_width(bool a) = 0;
-		virtual bool get_auto_height() const = 0;
-		virtual void set_auto_height(bool a) = 0;
-
 		FLAME_UNIVERSE_EXPORTS static cText* create();
 	};
 }

@@ -9,11 +9,9 @@
             None?cElement.fill_color=0,0,0,0" />
     <cMenu type="MenuButton" />
     <cCombobox />
-    <cLayout />
     <entity name="arrow" >
-      <cElement padding="4,2,4,2" />
+      <cElement padding="4,2,4,2" alignx="Max" absolute="true" />
       <cText text="" />
-      <cAligner alignx="Max" absolute="true" />
     </entity>
   </entity>
 </prefab>

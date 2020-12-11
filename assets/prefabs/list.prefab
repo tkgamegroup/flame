@@ -1,9 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cElement />
-    <cAligner />
-    <cLayout type="Vertical" gap="2" />
+    <cElement layout_type="Vertical" layout_gap="2" />
     <cReceiver />
     <cList />
   </entity>

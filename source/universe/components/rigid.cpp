@@ -5,7 +5,7 @@
 #include "../entity_private.h"
 #include "node_private.h"
 #include "rigid_private.h"
-#include "../systems/physics_world_private.h"
+#include "../systems/physics_private.h"
 
 namespace flame
 {

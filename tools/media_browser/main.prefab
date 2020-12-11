@@ -1,31 +1,26 @@
 <?xml version="1.0"?>
 <prefab>
   <entity src="hsplitter" >
-    <cAligner alignx="MinMax" aligny="MinMax" />
+    <cElement alignx="MinMax" aligny="MinMax" />
     <cLayout auto_width="false" auto_height="false" />
     <entity>
-      <cElement/>
-      <cAligner alignx="MinMax" aligny="MinMax" />
+      <cElement alignx="MinMax" aligny="MinMax" />
       <cLayout type="Vertical" auto_width="false" auto_height="false" />
       <entity name="search" src="edit" >
-        <cAligner alignx="MinMax" />
+        <cElement alignx="MinMax" />
       </entity>
       <entity src="vscroller" >
-        <cElement padding="4,4,4,4" border="1" />
-        <cAligner alignx="MinMax" aligny="MinMax" />
+        <cElement padding="4,4,4,4" alignx="MinMax" aligny="MinMax" border="1" />
         <entity attach="view" name="tree" src="tree">
-          <cElement padding="4,4,4,4" />
-          <cAligner alignx="MinMax" />
+          <cElement padding="4,4,4,4" alignx="MinMax" />
         </entity>
       </entity>
     </entity>
     <entity src="scroller">
-      <cElement />
-      <cAligner alignx="MinMax" aligny="MinMax" />
+      <cElement alignx="MinMax" aligny="MinMax" />
       <entity attach="view" name="image">
         <cElement />
         <cImage />
-        <cAligner />
       </entity>
     </entity>
   </entity>

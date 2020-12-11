@@ -17,11 +17,6 @@ namespace flame
 		{
 		}
 
-		virtual void add_to_sizing_list(cElement* e) = 0;
-		virtual void remove_from_sizing_list(cElement* e) = 0;
-		virtual void add_to_layouting_list(cLayout* l) = 0;
-		virtual void remove_from_layouting_list(cLayout* l) = 0;
-
 		FLAME_UNIVERSE_EXPORTS static sLayout* create();
 	};
 }

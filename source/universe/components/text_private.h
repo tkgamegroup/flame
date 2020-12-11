@@ -23,9 +23,6 @@ namespace flame
 		cElementPrivate* element = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
-		bool auto_width = true;
-		bool auto_height = true;
-
 		std::wstring text;
 		uint font_size = 14;
 		cvec4 color = cvec4(0, 0, 0, 255);
@@ -42,11 +39,6 @@ namespace flame
 
 		cvec4 get_color() const override { return color; }
 		void set_color(const cvec4& col) override;
-
-		bool get_auto_width() const override { return auto_width; }
-		void set_auto_width(bool a) override { auto_width = a; }
-		bool get_auto_height() const override { return auto_height; }
-		void set_auto_height(bool a) override { auto_height = a; }
 
 		void mark_text_changed();
 

@@ -1,9 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cElement />
-    <cAligner alignx="MinMax" aligny="MinMax"/>
-    <cLayout />
+    <cElement alignx="MinMax" aligny="MinMax" />
     <cNode />
     <entity name="scene">
       <cNode />
@@ -46,9 +44,7 @@
       <cCustomDrawing />
     </entity>
     <entity name="ui">
-      <cElement />
-      <cAligner alignx="MinMax" aligny="MinMax"/>
-      <cLayout />
+      <cElement alignx="MinMax" aligny="MinMax" />
       <entity src="menu_bar">
         <entity src="top_menu">
           <cText text="shading" />

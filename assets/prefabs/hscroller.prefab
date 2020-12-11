@@ -3,11 +3,9 @@
   <entity>
     <cElement width="100" height="100" />
     <cReceiver ignore_occluders="true" />
-    <cLayout />
     <entity name="htrack">
-      <cElement width="10" height="10" fill_color="245,245,245,255" />
+      <cElement width="10" height="10" alignx="MinMax" aligny="Max" fill_color="245,245,245,255" />
       <cReceiver />
-      <cAligner alignx="MinMax" aligny="Max" />
       <entity name="hthumb">
         <cElement width="10" height="10" />
         <cReceiver />
@@ -15,7 +13,7 @@
       </entity>
     </entity>
     <entity name="@view" src="scroll_view" >
-      <cAligner margin="0,0,0,10" />
+      <cElement margin="0,0,0,10" />
     </entity>
     <cScroller />
   </entity>

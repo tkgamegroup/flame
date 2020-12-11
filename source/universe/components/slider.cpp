@@ -3,7 +3,7 @@
 #include "text_private.h"
 #include "receiver_private.h"
 #include "slider_private.h"
-#include "../systems/event_dispatcher_private.h"
+#include "../systems/dispatcher_private.h"
 
 namespace flame
 {

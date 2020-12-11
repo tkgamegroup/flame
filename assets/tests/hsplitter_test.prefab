@@ -2,12 +2,10 @@
 <prefab>
   <entity src="hsplitter" >
     <entity>
-      <cElement width="10" height="10" fill_color="255,0,0,255" />
-      <cAligner alignx="MinMax" aligny="MinMax" />
+      <cElement width="10" height="10" alignx="MinMax" aligny="MinMax" fill_color="255,0,0,255" />
     </entity>
     <entity>
-      <cElement width="10" height="10" fill_color="0,255,0,255" />
-      <cAligner alignx="MinMax" aligny="MinMax" />
+      <cElement width="10" height="10" alignx="MinMax" aligny="MinMax" fill_color="0,255,0,255" />
     </entity>
   </entity>
 </prefab>

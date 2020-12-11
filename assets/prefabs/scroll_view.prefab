@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cElement clipping="true" />
-    <cAligner alignx="MinMax" aligny="MinMax" />
-    <cLayout/>
+    <cElement alignx="MinMax" aligny="MinMax" clipping="true" />
   </entity>
 </prefab>
