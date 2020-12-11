@@ -5,12 +5,11 @@
 
 namespace flame
 {
-	struct cLayoutPrivate;
 	struct cReceiverPrivate;
 
 	struct cSplitterPrivate : cSplitter
 	{
-		cLayoutPrivate* layout = nullptr;
+		//cLayoutPrivate* layout = nullptr;
 		cReceiverPrivate* bar_receiver = nullptr;
 
 		void* bar_state_listener = nullptr;

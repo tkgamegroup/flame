@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity >
-    <cElement width="100" height="100" />
-    <cLayout type="Vertical" auto_width="false" auto_height="false" />
+    <cElement width="100" height="100" layout_type="Vertical" auto_width="false" auto_height="false" />
     <entity name="splitter_bar">
       <cElement height="8" alignx="MinMax" />
       <cReceiver />

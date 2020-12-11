@@ -9,7 +9,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"prefabs/button");
+auto test_prefab = std::filesystem::path(L"prefabs/window");
 
 int main(int argc, char** args)
 {

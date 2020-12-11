@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <entity name="drag_resize_block" alignx="Max" aligny="Max" align_in_layout="false" >
-      <cElement width="8.0" height="8.0" />
-      <cReceiver />
-      <cStyle rule= "Hovering,Active?cElement.fill_color=225,225,225,255#Active?cElement.fill_color=220,220,220,255#Hovering?cElement.fill_color=230,230,230,255#None?cElement.fill_color=220,220,220,255" />
-  </entity>
-</prefab>

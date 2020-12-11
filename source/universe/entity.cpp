@@ -1,4 +1,5 @@
 #include <flame/foundation/typeinfo.h>
+#include <flame/foundation/typeinfo.h>
 #include <flame/script/script.h>
 #include "entity_private.h"
 #include <flame/universe/component.h>
@@ -538,7 +539,10 @@ namespace flame
 			fassert(first);
 			DriverType* dt = find_driver_type(dri);
 			if (dt)
+			{
 				e_dst->driver.reset(dt->create());
+				e_dst->driver->entity = e_dst;
+			}
 			else
 				printf("cannot find driver type: %s\n", dri.c_str());
 		}
@@ -546,17 +550,6 @@ namespace flame
 		for (auto n_c : n_src.children())
 		{
 			auto name = std::string(n_c.name());
-			auto attach_address = std::string(n_c.attribute("attach").value());
-			auto attach = e_dst;
-			if (!attach_address.empty())
-			{
-				attach = e_dst->find_child(attach_address);
-				if (!attach)
-				{
-					printf("cannot find child: %s\n", attach_address.c_str());
-					continue;
-				}
-			}
 			if (name == "entity")
 			{
 				auto e = f_new<EntityPrivate>();
@@ -573,14 +566,14 @@ namespace flame
 				}
 				load_prefab(e, n_c, filename, false, los, state_rules);
 
-				attach->add_child(e);
+				e_dst->add_child(e);
 			}
 			else
 			{
 				ComponentType* ct = find_component_type(name);
 				if (ct)
 				{
-					auto c = attach->get_component(std::hash<std::string>()(name));
+					auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
 					auto isnew = false;
 					if (!c)
 					{
@@ -638,10 +631,10 @@ namespace flame
 							}
 						}
 						else
-							printf("cannot find setter: %s\n", a.name());
+							printf("cannot find attribute: %s\n", a.name());
 					}
 					if (isnew)
-						attach->add_component((Component*)c);
+						e_dst->add_component(c);
 				}
 				else
 					printf("cannot find component type: %s\n", name.c_str());

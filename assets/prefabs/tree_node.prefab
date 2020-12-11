@@ -1,10 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cElement />
+    <cElement layout_type="Vertical" />
     <cReceiver />
     <cStyle rule="Active,Hovering,Selected?title.cElement.fill_color=195,215,240,255#Active,Selected?title.cElement.fill_color=200,220,245,255#Hovering,Selected?title.cElement.fill_color=200,220,245,255#None,Selected?title.cElement.fill_color=200,220,245,255#Active,Hovering?title.cElement.fill_color=225,225,225,255#Active?title.cElement.fill_color=220,220,220,255#Hovering?title.cElement.fill_color=230,230,230,255#None?title.cElement.fill_color=220,220,220,0" />
-    <cLayout type="Vertical" />
     <entity name="title">
       <cElement padding="18,2,4,2" alignx="MinMax" />
       <cText text="tree_node" />
@@ -16,8 +15,7 @@
       </entity>
     </entity>
     <entity name="@items">
-      <cElement padding="7,0,0,0" />
-      <cLayout type="Vertical" />
+      <cElement padding="7,0,0,0" layout_type="Vertical" />
     </entity>
     <cTreeNode />
   </entity>

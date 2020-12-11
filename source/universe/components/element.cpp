@@ -457,12 +457,12 @@ namespace flame
 		pending_layout = false;
 	}
 
-	void cElementPrivate::on_added()
+	void cElementPrivate::on_self_added()
 	{
 		pelement = entity->get_parent_component_t<cElementPrivate>();
 	}
 
-	void cElementPrivate::on_removed()
+	void cElementPrivate::on_self_removed()
 	{
 		pelement = nullptr;
 	}
@@ -488,6 +488,8 @@ namespace flame
 		layout_system = entity->world->get_system_t<sLayoutPrivate>();
 		fassert(layout_system);
 		mark_transform_dirty();
+		mark_size_dirty();
+		mark_layout_dirty();
 	}
 
 	void cElementPrivate::on_left_world()

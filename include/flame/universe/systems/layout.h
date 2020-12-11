@@ -5,7 +5,6 @@
 namespace flame
 {
 	struct cElement;
-	struct cLayout;
 
 	struct sLayout : System
 	{

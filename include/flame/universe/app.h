@@ -19,7 +19,6 @@
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/receiver.h>
-#include <flame/universe/components/layout.h>
 #include <flame/universe/systems/layout.h>
 #include <flame/universe/systems/dispatcher.h>
 #include <flame/universe/systems/physics.h>
@@ -155,7 +154,6 @@ namespace flame
 			root->add_component(cer);
 			s_dispatcher->set_next_focusing(cer);
 		}
-		root->add_component(cLayout::create());
 
 		script::Instance::get_default()->add_object(root, "root", "flame::Entity");
 

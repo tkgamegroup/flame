@@ -7,7 +7,6 @@ namespace flame
 {
 	struct cElementPrivate;
 	struct cReceiverPrivate;
-	struct cLayoutPrivate;
 
 	struct cScrollerPrivate : cScroller
 	{
@@ -24,7 +23,7 @@ namespace flame
 		cReceiverPrivate* vthumb_receiver = nullptr;
 
 		cElementPrivate* view_element = nullptr;
-		cLayoutPrivate* view_layout = nullptr;
+		//cLayoutPrivate* view_layout = nullptr;
 
 		cElementPrivate* target_element = nullptr;
 

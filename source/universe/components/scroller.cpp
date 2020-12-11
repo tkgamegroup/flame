@@ -1,7 +1,6 @@
 #include "../entity_private.h"
 #include "element_private.h"
 #include "receiver_private.h"
-#include "layout_private.h"
 #include "scroller_private.h"
 #include "../systems/dispatcher_private.h"
 
@@ -9,31 +8,31 @@ namespace flame
 {
 	void cScrollerPrivate::scroll(const vec2& v)
 	{
-		if (view_layout && target_element)
-		{
-			if (htrack_element)
-			{
-				auto target_size = target_element->size.x;
-				if (target_size > view_element->size.x)
-					hthumb_element->set_width(view_element->size.x / target_size * htrack_element->size.x);
-				else
-					hthumb_element->set_width(0.f);
-				auto x = v.x + hthumb_element->pos.x;
-				hthumb_element->set_x(hthumb_element->size.x > 0.f ? clamp(x, 0.f, htrack_element->size.x - hthumb_element->size.x) : 0.f);
-				view_layout->set_scrollx(-int(hthumb_element->pos.x / htrack_element->size.x * target_size / step) * step);
-			}
-			if (vtrack_element)
-			{
-				auto target_size = target_element->size.y;
-				if (target_size > view_element->size.y)
-					vthumb_element->set_height(view_element->size.y / target_size * vtrack_element->size.y);
-				else
-					vthumb_element->set_height(0.f);
-				auto y = v.y + vthumb_element->pos.y;
-				vthumb_element->set_y(vthumb_element->size.y > 0.f ? clamp(y, 0.f, vtrack_element->size.y - vthumb_element->size.y) : 0.f);
-				view_layout->set_scrolly(-int(vthumb_element->pos.y / vtrack_element->size.y * target_size / step) * step);
-			}
-		}
+		//if (view_layout && target_element)
+		//{
+		//	if (htrack_element)
+		//	{
+		//		auto target_size = target_element->size.x;
+		//		if (target_size > view_element->size.x)
+		//			hthumb_element->set_width(view_element->size.x / target_size * htrack_element->size.x);
+		//		else
+		//			hthumb_element->set_width(0.f);
+		//		auto x = v.x + hthumb_element->pos.x;
+		//		hthumb_element->set_x(hthumb_element->size.x > 0.f ? clamp(x, 0.f, htrack_element->size.x - hthumb_element->size.x) : 0.f);
+		//		view_layout->set_scrollx(-int(hthumb_element->pos.x / htrack_element->size.x * target_size / step) * step);
+		//	}
+		//	if (vtrack_element)
+		//	{
+		//		auto target_size = target_element->size.y;
+		//		if (target_size > view_element->size.y)
+		//			vthumb_element->set_height(view_element->size.y / target_size * vtrack_element->size.y);
+		//		else
+		//			vthumb_element->set_height(0.f);
+		//		auto y = v.y + vthumb_element->pos.y;
+		//		vthumb_element->set_y(vthumb_element->size.y > 0.f ? clamp(y, 0.f, vtrack_element->size.y - vthumb_element->size.y) : 0.f);
+		//		view_layout->set_scrolly(-int(vthumb_element->pos.y / vtrack_element->size.y * target_size / step) * step);
+		//	}
+		//}
 	}
 
 	void cScrollerPrivate::on_gain_receiver()
