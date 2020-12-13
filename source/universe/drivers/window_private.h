@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../entity_private.h"
 #include <flame/universe/drivers/window.h>
 
 namespace flame

@@ -21,8 +21,6 @@ namespace flame
 	{
 		std::string src;
 
-		bool auto_size = true;
-
 		cElementPrivate* element = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
@@ -42,9 +40,6 @@ namespace flame
 
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
-
-		bool get_auto_size() const override { return auto_size; }
-		void set_auto_size(bool a) override { auto_size = a; }
 
 		void apply_src();
 

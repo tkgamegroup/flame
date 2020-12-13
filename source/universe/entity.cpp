@@ -1,5 +1,4 @@
 #include <flame/foundation/typeinfo.h>
-#include <flame/foundation/typeinfo.h>
 #include <flame/script/script.h>
 #include "entity_private.h"
 #include <flame/universe/component.h>
@@ -168,6 +167,8 @@ namespace flame
 			return nullptr;
 		return &it->second;
 	}
+
+	static std::map<std::string, std::filesystem::path> prefabs_map;
 
 	StateRule::~StateRule()
 	{
@@ -511,8 +512,65 @@ namespace flame
 		const std::vector<uint>& los,
 		std::vector<std::unique_ptr<StateRule>>& state_rules)
 	{
-		std::string src;
-		std::string dri;
+		auto set_attribute = [&](Component* c, ComponentType* ct, const std::string& vname, const std::string& value) {
+			auto att = ct->find_attribute(vname);
+			if (att)
+			{
+				auto type = att->set_type;
+				auto fs = att->setter;
+				auto sp = SUS::split(value, ';');
+				if (sp.size() == 1)
+				{
+					void* d = type->create();
+					type->unserialize(d, value.c_str());
+					void* parms[] = { d };
+					fs->call(c, nullptr, parms);
+					type->destroy(d);
+				}
+				else
+				{
+					auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
+					fassert(ei);
+					auto rule = new StateRule;
+					rule->c = c;
+					rule->vname = vname;
+					rule->type = type;
+					rule->setter = fs;
+					for (auto& s : sp)
+					{
+						auto pair = SUS::split(s, ':');
+						auto state = StateNone;
+						void* d = type->create();
+						if (pair.size() == 1)
+						{
+							type->unserialize(d, pair[0].c_str());
+							void* parms[] = { d };
+							fs->call(c, nullptr, parms);
+						}
+						else if (pair.size() == 2)
+						{
+							ei->unserialize(&state, pair[0].c_str());
+							type->unserialize(d, pair[1].c_str());
+						}
+						else
+							fassert(0);
+						rule->values.emplace_back(state, d);
+					}
+					state_rules.emplace_back(rule);
+				}
+				return true;
+			}
+			return false;
+		};
+
+		auto ename = std::string(n_src.name());
+		if (ename != "entity")
+		{
+			auto it = prefabs_map.find(ename);
+			fassert(it != prefabs_map.end());
+			e_dst->load(it->second);
+		}
+
 		for (auto a : n_src.attributes())
 		{
 			auto name = std::string(a.name());
@@ -521,36 +579,63 @@ namespace flame
 			else if (name == "visible")
 				e_dst->visible = a.as_bool();
 			else if (name == "src")
-				src = a.value();
-			else if (name == "driver")
-				dri = a.value();
-		}
-		if (!src.empty())
-		{
-			if (e_dst->src.empty())
-				e_dst->src = src;
-			auto path = std::filesystem::path(src);
-			if (path.extension().empty())
-				path.replace_extension(L".prefab");
-			e_dst->load(path);
-		}
-		if (!dri.empty())
-		{
-			fassert(first);
-			DriverType* dt = find_driver_type(dri);
-			if (dt)
 			{
-				e_dst->driver.reset(dt->create());
-				e_dst->driver->entity = e_dst;
+				if (e_dst->src.empty())
+					e_dst->src = a.value();
+				e_dst->load(a.value());
+			}
+			else if (name == "driver")
+			{
+				fassert(first);
+				DriverType* dt = find_driver_type(a.value());
+				if (dt)
+				{
+					e_dst->driver.reset(dt->create());
+					e_dst->driver->entity = e_dst;
+				}
+				else
+					printf("cannot find driver type: %s\n", a.value());
 			}
 			else
-				printf("cannot find driver type: %s\n", dri.c_str());
+			{
+				auto ok = false;
+				for (auto& c : e_dst->components)
+				{
+					std::string cname;
+					auto ct = find_component_type(c.second.c->type_name, cname);
+					if (set_attribute(c.second.c.get(), ct, a.name(), a.value()))
+					{
+						ok = true;
+						break;
+					}
+				}
+				if (!ok)
+					printf("cannot find attribute: %s\n", a.name());
+			}
 		}
 
 		for (auto n_c : n_src.children())
 		{
 			auto name = std::string(n_c.name());
-			if (name == "entity")
+			ComponentType* ct = find_component_type(name);
+			if (ct)
+			{
+				auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
+				auto isnew = false;
+				if (!c)
+				{
+					c = ct->create();
+					isnew = true;
+				}
+				for (auto a : n_c.attributes())
+				{
+					if (!set_attribute(c, ct, a.name(), a.value()))
+						printf("cannot find attribute: %s\n", a.name());
+				}
+				if (isnew)
+					e_dst->add_component(c);
+			}
+			else
 			{
 				auto e = f_new<EntityPrivate>();
 				e->path = e_dst->path;
@@ -566,83 +651,19 @@ namespace flame
 				}
 				load_prefab(e, n_c, filename, false, los, state_rules);
 
-				e_dst->add_child(e);
-			}
-			else
-			{
-				ComponentType* ct = find_component_type(name);
-				if (ct)
-				{
-					auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
-					auto isnew = false;
-					if (!c)
-					{
-						c = ct->create();
-						isnew = true;
-					}
-					for (auto a : n_c.attributes())
-					{
-						auto vname = std::string(a.name());
-						auto att = ct->find_attribute(vname);
-						if (att)
-						{
-							auto type = att->set_type;
-							auto fs = att->setter;
-							auto value = std::string(a.value());
-							auto sp = SUS::split(value, ';');
-							if (sp.size() == 1)
-							{
-								void* d = type->create();
-								type->unserialize(d, value.c_str());
-								void* parms[] = { d };
-								fs->call(c, nullptr, parms);
-								type->destroy(d);
-							}
-							else
-							{
-								auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
-								fassert(ei);
-								auto rule = new StateRule;
-								rule->c = c;
-								rule->vname = vname;
-								rule->type = type;
-								rule->setter = fs;
-								for (auto& s : sp)
-								{
-									auto pair = SUS::split(s, ':');
-									auto state = StateNone;
-									void* d = type->create();
-									if (pair.size() == 1)
-									{
-										type->unserialize(d, pair[0].c_str());
-										void* parms[] = { d };
-										fs->call(c, nullptr, parms);
-									}
-									else if (pair.size() == 2)
-									{
-										ei->unserialize(&state, pair[0].c_str());
-										type->unserialize(d, pair[1].c_str());
-									}
-									else
-										fassert(0);
-									rule->values.emplace_back(state, d);
-								}
-								state_rules.emplace_back(rule);
-							}
-						}
-						else
-							printf("cannot find attribute: %s\n", a.name());
-					}
-					if (isnew)
-						e_dst->add_component(c);
-				}
-				else
-					printf("cannot find component type: %s\n", name.c_str());
+				auto driver_processed = false;
+				if (e_dst->driver)
+					driver_processed = e_dst->driver->on_child_added(e);
+				if (!driver_processed)
+					e_dst->add_child(e);
 			}
 		}
 
 		if (first && e_dst->driver)
+		{
+			e_dst->driver->load_finished = true;
 			e_dst->driver->on_load_finished();
+		}
 	}
 
 	static std::filesystem::path get_prefab_path(const std::filesystem::path& filename)
@@ -653,13 +674,9 @@ namespace flame
 			fn.replace_extension(L".prefab");
 		if (!std::filesystem::exists(fn))
 		{
-			fn = L"assets" / fn;
-			if (!std::filesystem::exists(fn))
-			{
-				auto engine_path = getenv("FLAME_PATH");
-				if (engine_path)
-					fn = engine_path / fn;
-			}
+			auto engine_path = getenv("FLAME_PATH");
+			if (engine_path)
+				fn = std::filesystem::path(engine_path) / L"assets" / fn;
 		}
 
 		return fn;
@@ -801,6 +818,26 @@ namespace flame
 			else if (std::regex_search(name, res, reg_dri))
 				driver_types.emplace(res[1].str(), ui);
 		}, Capture());
+
+		auto engine_path = getenv("FLAME_PATH");
+		if (engine_path)
+		{
+			auto path = std::filesystem::path(engine_path) / L"assets/prefabs";
+			for (std::filesystem::directory_iterator end, it(path); it != end; it++)
+			{
+				if (it->path().extension() == L".prefab")
+				{
+					std::string name = "e";
+					auto sp = SUS::split(it->path().filename().stem().string(), '_');
+					for (auto& t : sp)
+					{
+						t[0] = std::toupper(t[0]);
+						name += t;
+					}
+					prefabs_map[name] = it->path();
+				}
+			}
+		}
 	}
 
 	void Entity::set_debug(bool v)

@@ -1,11 +1,8 @@
 <?xml version="1.0"?>
 <prefab>
   <entity>
-    <cElement padding="4,2,4,2" alignx="MinMax" />
+    <cElement padding="4,2,4,2" alignx="MinMax" fill_color="0,0,0,0;Hovering:230,230,230,255" />
     <cText text="menu_item" />
     <cReceiver />
-    <cStyle rule=
-           "Hovering?cElement.fill_color=230,230,230,255#
-            None?cElement.fill_color=220,220,220,255" />
   </entity>
 </prefab>

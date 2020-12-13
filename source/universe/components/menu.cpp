@@ -8,103 +8,9 @@ namespace flame
 {
 	static cMenuPrivate* curr_menu = nullptr;
 
-	void cMenuPrivate::open()
-	{
-		if (opened)
-			return;
-
-		if (type != MenuButton)
-		{
-			auto parent = entity->parent;
-			for (auto& e : parent->children)
-			{
-				auto cm = e->get_component_t<cMenuPrivate>();
-				if (cm)
-					cm->close();
-			}
-		}
-
-		opened = true;
-
-		auto items_element = items->get_component_t<cElementPrivate>();
-		if (items_element)
-		{
-			element->update_transform();
-			auto pos = element->points[(type == MenuTop || type == MenuButton) ? 3 : 1];
-			items_element->set_x(pos.x);
-			items_element->set_y(pos.y);
-		}
-		entity->remove_child(items, false);
-		items->set_visible(true);
-		root->add_child(items);
-
-		if (type != MenuSub)
-		{
-			root_mouse_listener = root_receiver
-				->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-				auto thiz = c.thiz<cMenuPrivate>();
-				if (thiz->frame >= looper().get_frame())
-					return;
-				thiz->root_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
-				thiz->close();
-				if (thiz->type == MenuTop)
-					curr_menu = nullptr;
-			}, Capture().set_thiz(this));
-			if (type == MenuTop)
-				curr_menu = this;
-		}
-
-		frame = looper().get_frame();
-	}
-
-	void cMenuPrivate::close()
-	{
-		if (!opened)
-			return;
-
-		if (type != MenuButton)
-		{
-			for (auto& e : items->children)
-			{
-				auto cm = e->get_component_t<cMenuPrivate>();
-				if (cm)
-					cm->close();
-			}
-		}
-
-		if (type != MenuSub)
-		{
-			root_receiver->remove_mouse_left_down_listener(root_mouse_listener);
-			if (type == MenuTop)
-				curr_menu = nullptr;
-		}
-
-		root->remove_child(items, false);
-		items->set_visible(false);
-		entity->add_child(items);
-		opened = false;
-	}
 
 	void cMenuPrivate::on_gain_receiver()
 	{
-		mouse_down_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<cMenuPrivate>();
-			if (thiz->type == MenuTop)
-			{
-				if (thiz->root && !thiz->opened && thiz->items && !curr_menu)
-					thiz->open();
-			}
-			else if (thiz->type == MenuButton)
-			{
-				if (thiz->root && !thiz->opened && thiz->items)
-					thiz->open();
-			}
-		}, Capture().set_thiz(this));
-		mouse_move_listener = receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
-			auto thiz = c.thiz<cMenuPrivate>();
-			if (thiz->root && !thiz->opened && thiz->items && curr_menu)
-				thiz->open();
-		}, Capture().set_thiz(this));
 	}
 
 	void cMenuPrivate::on_lost_receiver()
@@ -120,10 +26,6 @@ namespace flame
 	//	case MessageEnteredWorld:
 	//		root = entity->world->root.get();
 	//		root_receiver = root->get_component_t<cReceiverPrivate>();
-	//		break;
-	//	case MessageLeftWorld:
-	//		root = nullptr;
-	//		root_receiver = nullptr;
 	//		break;
 	//	}
 	//}

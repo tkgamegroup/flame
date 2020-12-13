@@ -22,6 +22,7 @@
         <item type="function" name="^ctor$" />
         <item type="function" name="^dtor$" />
         <item type="variable" name="^type_name$" />
+        <item type="variable" name="^type_hash$" />
       </excludes>
     </rule>
     <rule name="^flame::Entity$">

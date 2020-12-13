@@ -32,6 +32,8 @@ namespace flame
 		uint64 drag_hash = 0;
 		std::vector<uint64> acceptable_drops;
 
+		bool is_active();
+
 		bool get_ignore_occluders() const override { return ignore_occluders; }
 		void set_ignore_occluders(bool v) override;
 

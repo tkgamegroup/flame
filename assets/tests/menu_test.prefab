@@ -1,27 +1,16 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity src="menu_bar">
-    <entity src="top_menu">
-      <cText text="1" />
-      <entity attach="items" src="menu_item">
-        <cText text="apple"/>
-      </entity>
-      <entity attach="items" src="menu_item">
-        <cText text="banana"/>
-      </entity>
-      <entity attach="items" src="menu_item">
-        <cText text="cat"/>
-      </entity>
-      <entity attach="items" src="sub_menu">
-        <cText text="1"/>
-        <entity attach="items" src="menu_item" />
-      </entity>
-    </entity>
-    <entity src="top_menu">
-      <cText text="2" />
-      <entity attach="items" src="menu_item">
-        <cText text="1"/>
-      </entity>
-    </entity>
-  </entity>
+  <eMenuBar>
+    <eMenu text="1" >
+      <eMenuItem text="apple" />
+      <eMenuItem text="banana" />
+      <eMenuItem text="cat" />
+      <eMenu text="1" >
+		<eMenuItem text="1" />
+      </eMenu>
+    </eMenu>
+    <eMenu text="2" >
+      <eMenuItem text="1" />
+    </eMenu>
+  </eMenuBar>
 </prefab>

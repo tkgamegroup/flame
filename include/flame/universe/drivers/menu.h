@@ -4,16 +4,16 @@
 
 namespace flame
 {
-	struct dWindow : Driver
+	struct dMenu : Driver
 	{
 		inline static auto type_name = "flame::dWindow";
 		inline static auto type_hash = ch(type_name);
 
-		dWindow() :
+		dMenu() :
 			Driver(type_name, type_hash)
 		{
 		}
 
-		FLAME_UNIVERSE_EXPORTS static dWindow* create();
+		FLAME_UNIVERSE_EXPORTS static dMenu* create();
 	};
 }

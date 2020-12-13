@@ -10,6 +10,7 @@ namespace flame
 	struct Driver
 	{
 		const char* type_name;
+		const uint64 type_hash;
 
 #ifdef FLAME_UNIVERSE_MODULE
 		EntityPrivate* entity = nullptr;
@@ -17,11 +18,15 @@ namespace flame
 		Entity* entity = nullptr;
 #endif
 
-		Driver(const char* name) :
-			type_name(name)
+		bool load_finished = false;
+
+		Driver(const char* name, uint64 hash) :
+			type_name(name),
+			type_hash(hash)
 		{
 		}
 
 		virtual void on_load_finished() {}
+		virtual bool on_child_added(Entity* e) { return false; }
 	};
 }

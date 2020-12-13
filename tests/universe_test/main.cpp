@@ -1,4 +1,3 @@
-#include <flame/graphics/model.h>
 #include <flame/universe/app.h>
 #include <flame/universe/components/command.h>
 #include <flame/universe/components/custom_drawing.h>
@@ -9,7 +8,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"prefabs/window");
+auto test_prefab = std::filesystem::path(L"tests/menu_test");
 
 int main(int argc, char** args)
 {
@@ -37,7 +36,7 @@ int main(int argc, char** args)
 		//w->root->add_component(c);
 		auto e = Entity::create();
 		e->load(test_prefab.c_str());
-		e->save(L"d:/1.prefab");
+		//e->save(L"d:/1.prefab");
 		w->root->add_child(e);
 	}
 

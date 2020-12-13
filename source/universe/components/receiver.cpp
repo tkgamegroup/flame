@@ -6,6 +6,11 @@
 
 namespace flame
 {
+	bool cReceiverPrivate::is_active()
+	{
+		return dispatcher->active == this;
+	}
+
 	void cReceiverPrivate::set_ignore_occluders(bool v)
 	{
 		ignore_occluders = v;
