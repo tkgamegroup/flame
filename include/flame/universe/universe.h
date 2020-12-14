@@ -41,8 +41,7 @@ namespace flame
 	enum MenuType
 	{
 		MenuTop,
-		MenuSub,
-		MenuButton
+		MenuSub
 	};
 
 	enum ExtraDrawFlags

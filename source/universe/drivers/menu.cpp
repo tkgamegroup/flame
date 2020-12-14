@@ -1,6 +1,7 @@
 #include "../entity_private.h"
 #include "../components/element_private.h"
 #include "../components/receiver_private.h"
+#include "../components/text_private.h"
 #include "../world_private.h"
 #include "menu_private.h"
 
@@ -27,6 +28,9 @@ namespace flame
 		receiver = entity->get_component_t<cReceiverPrivate>();
 		fassert(receiver);
 
+		text = entity->get_component_t<cTextPrivate>();
+		fassert(text);
+
 		items = entity->find_child("items");
 		fassert(items);
 
@@ -37,37 +41,47 @@ namespace flame
 			thiz->open();
 		}, Capture().set_thiz(this));
 
-		//receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
-		//	auto thiz = c.thiz<dMenuPrivate>();
-		//	if (thiz->root && !thiz->opened && curr_menu)
-		//		thiz->open();
-		//}, Capture().set_thiz(this));
+		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+			auto thiz = c.thiz<dMenuPrivate>();
+			if (!thiz->first)
+				thiz->open();
+		}, Capture().set_thiz(this));
 	}
 
-	bool dMenuPrivate::on_child_added(Entity* e)
+	bool dMenuPrivate::on_child_added(Entity* _e)
 	{
 		if (load_finished)
 		{
-			items->add_child((EntityPrivate*)e);
-			if (((EntityPrivate*)e)->driver && ((EntityPrivate*)e)->driver->type_hash == type_hash)
-				((dMenuPrivate*)((EntityPrivate*)e)->driver.get())->type = MenuSub;
+			auto e = (EntityPrivate*)_e;
+			items->add_child(e);
+			if (e->driver && e->driver->type_hash == type_hash)
+			{
+				auto dm = (dMenuPrivate*)e->driver.get();
+				dm->type = MenuSub;
+				dm->element->padding.z += text->font_size;
+				dm->entity->find_child("arrow")->set_visible(true);
+			}
 			return true;
 		}
 		return false;
 	}
+
+	static dMenuPrivate* first_menu = nullptr;
 
 	void dMenuPrivate::open()
 	{
 		if (opened)
 			return;
 
-		//auto parent = entity->parent;
-		//for (auto& e : parent->children)
-		//{
-		//	auto cm = e->get_component_t<cMenuPrivate>();
-		//	if (cm)
-		//		cm->close();
-		//}
+		if (entity->parent)
+		{
+			for (auto& e : entity->parent->children)
+			{
+				auto dm = e->get_driver_t<dMenuPrivate>();
+				if (dm)
+					dm->close();
+			}
+		}
 
 		auto items_element = items->get_component_t<cElementPrivate>();
 		if (items_element)
@@ -81,22 +95,24 @@ namespace flame
 		items->set_visible(true);
 		root->add_child(items);
 
-		//if (type != MenuSub)
-		//{
-		//	root_mouse_listener = root_receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-		//		auto thiz = c.thiz<cMenuPrivate>();
-		//		if (thiz->frame >= looper().get_frame())
-		//			return;
-		//		thiz->root_receiver->remove_mouse_left_down_listener(thiz->root_mouse_listener);
-		//		thiz->close();
-		//		if (thiz->type == MenuTop)
-		//			curr_menu = nullptr;
-		//	}, Capture().set_thiz(this));
-		//	if (type == MenuTop)
-		//		curr_menu = this;
-		//}
+		if (first)
+		{
+			root_mouse_listener = root->get_component_t<cReceiver>()->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+				auto thiz = c.thiz<dMenuPrivate>();
+				thiz->root->get_component_t<cReceiver>()->remove_mouse_left_down_listener(thiz->root_mouse_listener);
+				thiz->root_mouse_listener = nullptr;
+				thiz->close();
+			}, Capture().set_thiz(this));
 
-		//frame = looper().get_frame();
+			first_menu = this;
+		}
+
+		for (auto& e : items->children)
+		{
+			auto dm = e->get_driver_t<dMenuPrivate>();
+			if (dm)
+				dm->first = false;
+		}
 
 		opened = true;
 	}
@@ -106,19 +122,16 @@ namespace flame
 		if (!opened)
 			return;
 
-		//for (auto& e : items->children)
-		//{
-		//	auto cm = e->get_component_t<cMenuPrivate>();
-		//	if (cm)
-		//		cm->close();
-		//}
+		for (auto& e : items->children)
+		{
+			auto dm = e->get_driver_t<dMenuPrivate>();
+			if (dm)
+				dm->close();
+		}
 
-		//if (type != MenuSub)
-		//{
-		//	root_receiver->remove_mouse_left_down_listener(root_mouse_listener);
-		//	if (type == MenuTop)
-		//		curr_menu = nullptr;
-		//}
+		first = true;
+		if (root_mouse_listener)
+			root->get_component_t<cReceiver>()->remove_mouse_left_down_listener(root_mouse_listener);
 
 		root->remove_child(items, false);
 		items->set_visible(false);

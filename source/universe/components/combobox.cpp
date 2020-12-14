@@ -1,29 +1,28 @@
 #include "../entity_private.h"
 #include "text_private.h"
 #include "receiver_private.h"
-#include "menu_private.h"
 #include "combobox_private.h"
 
 namespace flame
 {
 	void cComboboxPrivate::set_index(int i)
 	{
-		if (!menu || index == i)
-			return;
-		auto items = menu->items;
+		//if (!menu || index == i)
+		//	return;
+		//auto items = menu->items;
 		if (index != -1)
 		{
-			auto e = items->children[index].get();
-			e->set_state((StateFlags)(e->state & (~StateSelected)));
+			//auto e = items->children[index].get();
+			//e->set_state((StateFlags)(e->state & (~StateSelected)));
 		}
 		index = i;
 		if (index < 0)
 			text->set_text(L"");
 		else
 		{
-			auto e = items->children[index].get();
-			text->set_text(e->get_component_t<cTextPrivate>()->text.c_str());
-			e->set_state((StateFlags)(e->state | StateSelected));
+			//auto e = items->children[index].get();
+			//text->set_text(e->get_component_t<cTextPrivate>()->text.c_str());
+			//e->set_state((StateFlags)(e->state | StateSelected));
 		}
 		data_changed(S<"index"_h>);
 	}
@@ -49,7 +48,7 @@ namespace flame
 
 	void cComboboxItemPrivate::on_lost_combobox()
 	{
-		staging_combobox = combobox->menu->opened ? combobox : nullptr;
+		//staging_combobox = combobox->menu->opened ? combobox : nullptr;
 	}
 
 	cComboboxItem* cComboboxItem::create()

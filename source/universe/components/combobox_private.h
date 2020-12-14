@@ -6,14 +6,13 @@
 namespace flame
 {
 	struct cTextPrivate;
-	struct cMenuPrivate;
 
 	struct cComboboxPrivate : cCombobox
 	{
 		int index = -1;
 
 		cTextPrivate* text = nullptr;
-		cMenuPrivate* menu = nullptr;
+		//cMenuPrivate* menu = nullptr;
 
 		int get_index() const override { return index; }
 		void set_index(int index) override;

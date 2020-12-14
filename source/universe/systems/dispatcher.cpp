@@ -295,51 +295,75 @@ namespace flame
 		{
 			if (mdisp.x != 0 || mdisp.y != 0)
 			{
-				for (auto& l : er->mouse_move_listeners)
-					l->call(mdisp, mpos);
+				for (auto l : get_temp_listeners(er->mouse_move_listeners))
+				{
+					if (l.first < er->frame)
+						l.second->call(mdisp, mpos);
+				}
 			}
 			if (mscrl != 0)
 			{
-				for (auto& l : er->mouse_scroll_listeners)
-					l->call(mscrl);
+				for (auto l : get_temp_listeners(er->mouse_scroll_listeners))
+				{
+					if (l.first < er->frame)
+						l.second->call(mscrl);
+				}
 			}
 			if (mbtns[Mouse_Left].second)
 			{
 				if (mbtns[Mouse_Left].first)
 				{
-					for (auto& l : er->mouse_left_down_listeners)
-						l->call(mpos);
+					for (auto l : get_temp_listeners(er->mouse_left_down_listeners))
+					{
+						if (l.first < er->frame)
+							l.second->call(mpos);
+					}
 				}
 				else
 				{
-					for (auto& l : er->mouse_left_up_listeners)
-						l->call(mpos);
+					for (auto l : get_temp_listeners(er->mouse_left_up_listeners))
+					{
+						if (l.first < er->frame)
+							l.second->call(mpos);
+					}
 				}
 			}
 			if (mbtns[Mouse_Right].second)
 			{
 				if (mbtns[Mouse_Right].first)
 				{
-					for (auto& l : er->mouse_right_down_listeners)
-						l->call(mpos);
+					for (auto l : get_temp_listeners(er->mouse_right_down_listeners))
+					{
+						if (l.first < er->frame)
+							l.second->call(mpos);
+					}
 				}
 				else
 				{
-					for (auto& l : er->mouse_right_up_listeners)
-						l->call(mpos);
+					for (auto l : get_temp_listeners(er->mouse_right_up_listeners))
+					{
+						if (l.first < er->frame)
+							l.second->call(mpos);
+					}
 				}
 			}
 			if (mbtns[Mouse_Middle].second)
 			{
 				if (mbtns[Mouse_Middle].first)
 				{
-					for (auto& l : er->mouse_middle_down_listeners)
-						l->call(mpos);
+					for (auto l : get_temp_listeners(er->mouse_middle_down_listeners))
+					{
+						if (l.first < er->frame)
+							l.second->call(mpos);
+					}
 				}
 				else
 				{
-					for (auto& l : er->mouse_middle_up_listeners)
-						l->call(mpos);
+					for (auto l : get_temp_listeners(er->mouse_middle_up_listeners))
+					{
+						if (l.first < er->frame)
+							l.second->call(mpos);
+					}
 				}
 			}
 		}
@@ -349,8 +373,11 @@ namespace flame
 		{
 			//auto disp = mouse_pos - active_pos;
 			//auto db = dbclick_timer > 0.f;
-			for (auto& l : focusing->mouse_click_listeners)
-				l->call();
+			for (auto l : get_temp_listeners(focusing->mouse_click_listeners))
+			{
+				if (l.first < focusing->frame)
+					l.second->call();
+			}
 			//((cReceiverPrivate*)focusing)->send_mouse_event(KeyStateDown | KeyStateUp | (db ? KeyStateDouble : 0), Mouse_Null, disp);
 			//if (db)
 			//	dbclick_timer = -1.f;
@@ -427,10 +454,14 @@ namespace flame
 				keyboard_target->on_key_event(key, true);
 			for (auto& key : key_up_inputs)
 				keyboard_target->on_key_event(key, false);
+			auto char_ls = get_temp_listeners(keyboard_target->char_listeners);
 			for (auto& ch : char_inputs)
 			{
-				for (auto& l : keyboard_target->char_listeners)
-					l->call(ch);
+				for (auto l : char_ls)
+				{
+					if (l.first < keyboard_target->frame)
+						l.second->call(ch);
+				}
 			}
 		}
 		key_down_inputs.clear();

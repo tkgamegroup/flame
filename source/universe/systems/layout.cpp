@@ -29,7 +29,6 @@ namespace flame
 		case AlignMinMax:
 			target->set_width(e->size.x - p[0] - p[1]);
 			target->set_x(e->scroll.x + p[0]);
-			target->desired_size.x = target->size.x;
 			break;
 		}
 	}
@@ -54,7 +53,6 @@ namespace flame
 		case AlignMinMax:
 			target->set_height(e->size.y - p[0] - p[1]);
 			target->set_y(e->scroll.y + p[0]);
-			target->desired_size.y = target->size.y;
 			break;
 		}
 	}
@@ -125,6 +123,8 @@ namespace flame
 		while (!layout_list.empty())
 		{
 			auto l = layout_list.front();
+			layout_list.pop_front();
+
 			std::vector<cElementPrivate*> als[2];
 			for (auto& c : l->entity->children)
 			{
@@ -336,8 +336,8 @@ namespace flame
 			}
 				break;
 			}
-			l->pending_layout = false; 
-			layout_list.pop_front();
+			
+			l->pending_layout = false;
 		}
 	}
 

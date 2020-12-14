@@ -5,6 +5,7 @@
 namespace flame
 {
 	struct Component;
+	struct Driver;
 	struct World;
 
 	struct Entity
@@ -40,6 +41,15 @@ namespace flame
 		virtual void remove_child(Entity* e, bool destroy = true) = 0;
 		virtual void remove_all_children(bool destroy = true) = 0;
 		virtual Entity* find_child(const char* name) const = 0;
+
+		virtual Driver* get_driver() const = 0;
+		template <class T> inline T* get_driver_t() const 
+		{
+			auto ret = get_driver();
+			if (ret && ret->type_hash == T::type_hash)
+				return (T*)ret;
+			return nullptr;
+		}
 
 		virtual void data_changed(Component* c, uint64 h) = 0;
 		virtual void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) = 0;

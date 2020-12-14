@@ -15,7 +15,7 @@
 #include <flame/physics/device.h>
 #include <flame/physics/scene.h>
 #include <flame/script/script.h>
-#include <flame/universe/world.h>
+#include <flame/universe/driver.h>
 #include <flame/universe/entity.h>
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/receiver.h>
@@ -23,6 +23,7 @@
 #include <flame/universe/systems/dispatcher.h>
 #include <flame/universe/systems/physics.h>
 #include <flame/universe/systems/renderer.h>
+#include <flame/universe/world.h>
 
 namespace flame
 {

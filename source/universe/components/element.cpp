@@ -430,7 +430,7 @@ namespace flame
 		auto it = layout_system->layout_list.begin();
 		for (; it != layout_system->layout_list.end(); it++)
 		{
-			if ((*it)->entity->depth < entity->depth)
+			if (entity->depth < (*it)->entity->depth)
 				break;
 		}
 		layout_system->layout_list.emplace(it, this);
