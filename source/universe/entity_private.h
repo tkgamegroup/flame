@@ -68,7 +68,7 @@ namespace flame
 #endif
 		std::pair<std::filesystem::path, uint> created_location;
 
-		std::unique_ptr<Driver, Delector> driver;
+		std::vector<std::unique_ptr<Driver, Delector>> drivers;
 		std::unordered_map<uint64, ComponentSlot> components;
 		uint component_id = 0;
 		std::vector<std::unique_ptr<EntityPrivate, Delector>> children;
@@ -110,7 +110,7 @@ namespace flame
 		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;
 
-		Driver* get_driver() const override { return driver.get(); }
+		Driver* get_driver(uint idx) const override { return idx < drivers.size() ? drivers[idx].get() : nullptr; }
 
 		void data_changed(Component* c, uint64 h) override;
 		void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) override;

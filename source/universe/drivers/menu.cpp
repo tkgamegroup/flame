@@ -11,6 +11,8 @@ namespace flame
 	{
 		struct cSpy : Component
 		{
+			dMenuPrivate* thiz;
+
 			cSpy() :
 				Component("cSpy", S<"cSpy"_h>)
 			{
@@ -18,7 +20,7 @@ namespace flame
 
 			void on_entered_world() override
 			{
-				((dMenuPrivate*)entity->driver.get())->root = entity->world->root.get();
+				thiz->root = entity->world->root.get();
 			}
 		};
 
@@ -34,7 +36,9 @@ namespace flame
 		items = entity->find_child("items");
 		fassert(items);
 
-		entity->add_component(f_new<cSpy>());
+		auto c_spy = f_new<cSpy>();
+		c_spy->thiz = this;
+		entity->add_component(c_spy);
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<dMenuPrivate>();
@@ -54,9 +58,9 @@ namespace flame
 		{
 			auto e = (EntityPrivate*)_e;
 			items->add_child(e);
-			if (e->driver && e->driver->type_hash == type_hash)
+			auto dm = e->get_driver_t<dMenuPrivate>();
+			if (dm)
 			{
-				auto dm = (dMenuPrivate*)e->driver.get();
 				dm->type = MenuSub;
 				dm->element->padding.z += text->font_size;
 				dm->entity->find_child("arrow")->set_visible(true);
@@ -65,8 +69,6 @@ namespace flame
 		}
 		return false;
 	}
-
-	static dMenuPrivate* first_menu = nullptr;
 
 	void dMenuPrivate::open()
 	{
@@ -98,13 +100,8 @@ namespace flame
 		if (first)
 		{
 			root_mouse_listener = root->get_component_t<cReceiver>()->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-				auto thiz = c.thiz<dMenuPrivate>();
-				thiz->root->get_component_t<cReceiver>()->remove_mouse_left_down_listener(thiz->root_mouse_listener);
-				thiz->root_mouse_listener = nullptr;
-				thiz->close();
+				c.thiz<dMenuPrivate>()->close();
 			}, Capture().set_thiz(this));
-
-			first_menu = this;
 		}
 
 		for (auto& e : items->children)
@@ -131,7 +128,10 @@ namespace flame
 
 		first = true;
 		if (root_mouse_listener)
+		{
 			root->get_component_t<cReceiver>()->remove_mouse_left_down_listener(root_mouse_listener);
+			root_mouse_listener = nullptr;
+		}
 
 		root->remove_child(items, false);
 		items->set_visible(false);

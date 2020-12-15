@@ -590,8 +590,9 @@ namespace flame
 				DriverType* dt = find_driver_type(a.value());
 				if (dt)
 				{
-					e_dst->driver.reset(dt->create());
-					e_dst->driver->entity = e_dst;
+					auto d = dt->create();
+					d->entity = e_dst;
+					e_dst->drivers.emplace_back(d);
 				}
 				else
 					printf("cannot find driver type: %s\n", a.value());
@@ -652,17 +653,21 @@ namespace flame
 				load_prefab(e, n_c, filename, false, los, state_rules);
 
 				auto driver_processed = false;
-				if (e_dst->driver)
-					driver_processed = e_dst->driver->on_child_added(e);
+				for (auto& d : e_dst->drivers)
+				{
+					if (d->on_child_added(e))
+						driver_processed = true;
+				}
 				if (!driver_processed)
 					e_dst->add_child(e);
 			}
 		}
 
-		if (first && e_dst->driver)
+		if (first && !e_dst->drivers.empty())
 		{
-			e_dst->driver->load_finished = true;
-			e_dst->driver->on_load_finished();
+			auto d = e_dst->drivers.back().get();
+			d->load_finished = true;
+			d->on_load_finished();
 		}
 	}
 
@@ -720,7 +725,7 @@ namespace flame
 			n_dst.append_attribute("name").set_value(e_src->name.c_str());
 		if (!e_src->visible)
 			n_dst.append_attribute("visible").set_value("false");
-		if (e_src->driver)
+		if (!e_src->drivers.empty())
 			;
 		if (!e_src->src.empty())
 			n_dst.append_attribute("src").set_value(e_src->src.c_str());

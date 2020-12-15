@@ -42,12 +42,17 @@ namespace flame
 		virtual void remove_all_children(bool destroy = true) = 0;
 		virtual Entity* find_child(const char* name) const = 0;
 
-		virtual Driver* get_driver() const = 0;
+		virtual Driver* get_driver(uint idx = 0) const = 0;
 		template <class T> inline T* get_driver_t() const 
 		{
-			auto ret = get_driver();
-			if (ret && ret->type_hash == T::type_hash)
-				return (T*)ret;
+			for (auto i = 0; ; i++)
+			{
+				auto d = get_driver(i);
+				if (!d)
+					return nullptr;
+				if (d->type_hash == T::type_hash)
+					return (T*)d;
+			}
 			return nullptr;
 		}
 
