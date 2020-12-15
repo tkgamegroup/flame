@@ -18,8 +18,7 @@ namespace flame
 		MenuType type = MenuTop;
 		EntityPrivate* items;
 		EntityPrivate* root;
-		void* root_mouse_listener = nullptr;
-		bool first = true;
+		bool ancestor_opened = false;
 		bool opened = false;
 
 		void on_load_finished() override;
@@ -27,5 +26,19 @@ namespace flame
 
 		void open();
 		void close();
+
+		void mark_ancestor_opened(bool v);
+	};
+
+	struct dMenuItemPrivate : dMenuItem
+	{
+		cReceiverPrivate* receiver;
+
+		void on_load_finished() override;
+	};
+
+	struct dMenuBarPrivate : dMenuBar
+	{
+
 	};
 }
