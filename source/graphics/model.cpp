@@ -790,8 +790,6 @@ namespace flame
 					ret->materials.emplace_back(dst);
 
 					aiString name;
-					aiColor3D color;
-					ai_real shininess;
 
 					dst->name = src->GetName().C_Str();
 

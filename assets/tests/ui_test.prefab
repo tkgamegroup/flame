@@ -1,4 +1,47 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity src="prefabs/button" />
+	<eElement alignx="MinMax" aligny="MinMax" >
+		<eMenuBar>
+			<eMenu text="1" >
+				<eMenuItem text="1" />
+				<eMenuItem text="2" />
+				<eMenuItem text="3" />
+				<eMenu text="4" >
+					<eMenuItem text="1" />
+				</eMenu>
+			</eMenu>
+			<eMenu text="2" >
+				<eMenuItem text="1" />
+			</eMenu>
+		</eMenuBar>
+		<eButton>
+			<cScript src="tests/button_test.lua" />
+		</eButton>
+    <eCombobox src="combobox">
+      <eComboboxItem text="1" />
+      <eComboboxItem text="2" />
+      <eComboboxItem text="3" />
+    </eCombobox>
+    <eTree width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0">
+      <eTreeNode src="tree_node" >
+        <eTreeLeaf />
+      </eTreeNode>
+      <eTreeNode />
+    </eTree>
+		<eList width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0" >
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		  <eListItem />
+		</eList>
+		<eWindow fill_color="240,240,240,50" >
+		  <cBlur radius="10" />
+		</eWindow>
+	</eElement>
 </prefab>

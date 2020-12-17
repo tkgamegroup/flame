@@ -8,7 +8,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/menu_test");
+auto test_prefab = std::filesystem::path(L"tests/list_test");
 
 int main(int argc, char** args)
 {

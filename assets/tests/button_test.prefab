@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <entity src="button">
-    <cScript src="tests/button_test.lua" />
-  </entity>
-</prefab>

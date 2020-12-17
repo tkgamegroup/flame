@@ -1,14 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity>
-    <cElement width="100.0" padding="4,2,18,2" border="1.0" />
-    <cText text="" auto_width="false" />
+  <entity driver="dCombobox" >
+    <cElement width="100.0" padding="4,2,18,2" auto_width="false" border="1.0" fill_color="0,0,0,0;Hovering:230,230,230,255" />
+    <cText />
     <cReceiver />
-    <cStyle rule=
-           "Hovering?cElement.fill_color=230,230,230,255#
-            None?cElement.fill_color=0,0,0,0" />
-    <cMenu type="MenuButton" />
-    <cCombobox />
     <entity name="arrow" >
       <cElement padding="4,2,4,2" alignx="Max" absolute="true" />
       <cText text="" />

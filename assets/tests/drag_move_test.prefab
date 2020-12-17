@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<prefab>
-  <entity>
-    <cElement width="100.0" height="100.0" fill_color="0,0,0,255" />
-    <cReceiver />
-    <cDragMove />
-  </entity>
-</prefab>

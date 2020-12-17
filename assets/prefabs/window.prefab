@@ -7,5 +7,16 @@
       <cElement width="8.0" height="8.0" alignx="Max" aligny="Max" align_in_layout="false" fill_color="220,220,220,255;Active|Hovering:225,225,225,255;Hovering:230,230,230,255" />
       <cReceiver />
     </entity>
+    <entity>
+      <cElement padding="4,2,26,2" alignx="MinMax" fill_color="0,122,204,255" />
+      <cText text="Window" />
+      <entity src="prefabs/button">
+        <cElement alignx="Max" align_absolute="true" />
+        <cText text="" />
+      </entity>
+    </entity>
+    <entity name="content">
+      <cElement alignx="MinMax" aligny="MinMax" />
+    </entity>
   </entity>
 </prefab>
