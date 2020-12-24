@@ -1,5 +1,20 @@
 #pragma once
 
+#include <regex>
+#include <locale>
+#include <codecvt>
+
+#include <filesystem>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+
+#ifndef FLAME_NO_THIRD_PARTY_SERIALIZE
+#include <pugixml.hpp>
+#include <nlohmann/json.hpp>
+#include <cppcodec/base64_default_rfc4648.hpp>
+#endif
+
 #include <flame/math.h>
 
 namespace flame

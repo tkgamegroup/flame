@@ -1,5 +1,17 @@
 #pragma once
 
+#include <stdarg.h>
+#include <assert.h>
+#include <string>
+#include <array>
+#include <vector>
+#include <span>
+#include <stack>
+#include <list>
+#include <map>
+#include <unordered_map>
+#include <algorithm>
+
 namespace flame
 {
 	typedef char*				charptr;

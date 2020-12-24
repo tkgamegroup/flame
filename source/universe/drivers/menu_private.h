@@ -14,6 +14,7 @@ namespace flame
 		cElementPrivate* element;
 		cReceiverPrivate* receiver;
 		cTextPrivate* text;
+		EntityPrivate* arrow;
 
 		MenuType type = MenuTop;
 		EntityPrivate* items;

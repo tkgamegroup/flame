@@ -16,9 +16,10 @@ namespace flame
 		{
 			dMenuPrivate* thiz;
 
-			cSpy() :
+			cSpy(dMenuPrivate* _thiz) :
 				Component("cSpy", S<"cSpy"_h>)
 			{
+				thiz = _thiz;
 			}
 
 			void on_entered_world() override
@@ -39,9 +40,9 @@ namespace flame
 		items = entity->find_child("items");
 		fassert(items);
 
-		auto c_spy = f_new<cSpy>();
-		c_spy->thiz = this;
-		entity->add_component(c_spy);
+		arrow = entity->find_child("arrow");
+
+		entity->add_component(f_new<cSpy>(this));
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<dMenuPrivate>();
@@ -98,7 +99,7 @@ namespace flame
 			{
 				dm->type = MenuSub;
 				dm->element->padding.z += text->font_size;
-				dm->entity->find_child("arrow")->set_visible(true);
+				dm->arrow->set_visible(true);
 			}
 			return true;
 		}
