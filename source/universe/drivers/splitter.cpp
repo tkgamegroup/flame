@@ -1,6 +1,6 @@
 #include "../entity_private.h"
-#include "element_private.h"
-#include "receiver_private.h"
+#include "../components/element_private.h"
+#include "../components/receiver_private.h"
 #include "splitter_private.h"
 #include "../systems/dispatcher_private.h"
 

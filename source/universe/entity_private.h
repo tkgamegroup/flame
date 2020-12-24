@@ -1,7 +1,8 @@
 #pragma once
 
-#include <flame/universe/driver.h>
 #include <flame/universe/entity.h>
+#include <flame/universe/component.h>
+#include <flame/universe/driver.h>
 
 #include <functional>
 
@@ -110,7 +111,7 @@ namespace flame
 		void remove_all_children(bool destroy) override;
 		EntityPrivate* find_child(const std::string& name) const;
 
-		Driver* get_driver(uint idx) const override { return idx < drivers.size() ? drivers[idx].get() : nullptr; }
+		Driver* get_driver(uint64 hash = 0, uint idx = 0) const override;
 
 		void data_changed(Component* c, uint64 h) override;
 		void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) override;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/components/splitter.h>
+#include <flame/universe/drivers/splitter.h>
 
 namespace flame
 {

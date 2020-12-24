@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/components/tree.h>
+#include <flame/universe/drivers/tree.h>
 
 namespace flame
 {

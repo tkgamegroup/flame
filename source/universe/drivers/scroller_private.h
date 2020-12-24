@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/components/scroller.h>
+#include <flame/universe/drivers/scroller.h>
 
 namespace flame
 {

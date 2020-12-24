@@ -1,8 +1,8 @@
 #include <flame/graphics/font.h>
 #include "../entity_private.h"
-#include "element_private.h"
-#include "text_private.h"
-#include "receiver_private.h"
+#include "../components/element_private.h"
+#include "../components/text_private.h"
+#include "../components/receiver_private.h"
 #include "tree_private.h"
 
 namespace flame
@@ -16,7 +16,8 @@ namespace flame
 		if (e)
 			e->set_state((StateFlags)(((EntityPrivate*)e)->state | StateSelected));
 		selected = (EntityPrivate*)e;
-		data_changed(S<"selected"_h>);
+		if (entity)
+			entity->data_changed(this, S<"selected"_h>);
 	}
 
 	//	static void expand(Entity* e, Entity* r)

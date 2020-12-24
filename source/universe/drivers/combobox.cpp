@@ -1,6 +1,6 @@
 #include "../entity_private.h"
-#include "text_private.h"
-#include "receiver_private.h"
+#include "../components/text_private.h"
+#include "../components/receiver_private.h"
 #include "combobox_private.h"
 
 namespace flame
@@ -36,8 +36,7 @@ namespace flame
 	{
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<dComboboxItemPrivate>();
-			if (thiz->staging_combobox)
-				thiz->staging_combobox->set_index(thiz->entity->index);
+			thiz->combobox->set_index(thiz->entity->index);
 		}, Capture().set_thiz(this));
 	}
 

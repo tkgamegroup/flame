@@ -11,7 +11,8 @@ namespace flame
 			return;
 		pos = p;
 		mark_transform_dirty();
-		data_changed(S<"pos"_h>);
+		if (entity)
+			entity->data_changed(this, S<"pos"_h>);
 	}
 
 	void cNodePrivate::set_quat(const quat& q)
@@ -21,7 +22,8 @@ namespace flame
 		qut = q;
 		rot_dirty = true;
 		mark_transform_dirty();
-		data_changed(S<"quat"_h>);
+		if (entity)
+			entity->data_changed(this, S<"quat"_h>);
 	}
 
 	void cNodePrivate::set_scale(const vec3& s)
@@ -30,7 +32,8 @@ namespace flame
 			return;
 		scl = s;
 		mark_transform_dirty();
-		data_changed(S<"scale"_h>);
+		if (entity)
+			entity->data_changed(this, S<"scale"_h>);
 	}
 
 	void cNodePrivate::set_euler(const vec3& e)
@@ -113,7 +116,8 @@ namespace flame
 			m = scale(m, scl);
 			transform = m;
 
-			data_changed(S<"transform"_h>);
+			if (entity)
+				entity->data_changed(this, S<"transform"_h>);
 		}
 	}
 

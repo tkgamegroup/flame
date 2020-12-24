@@ -454,6 +454,24 @@ namespace flame
 		return nullptr;
 	}
 
+	Driver* EntityPrivate::get_driver(uint64 hash, uint idx) const
+	{
+		if (hash == 0)
+		{
+			for (auto& d : drivers)
+			{
+				if (d->type_hash == hash)
+					return d.get();
+			}
+		}
+		else
+		{
+			idx = max(0U, (int)drivers.size() - 1 - idx);
+			return drivers[idx].get();
+		}
+		return nullptr;
+	}
+
 	void EntityPrivate::data_changed(Component* c, uint64 h)
 	{
 		auto it = components.find(c->type_hash);

@@ -37,11 +37,5 @@ namespace flame
 		virtual void on_child_added(Entity* e) {}
 		virtual void on_child_removed(Entity* e) {}
 		virtual void on_reposition(uint from, uint to) {}
-
-		void data_changed(uint64 h)
-		{
-			if (entity)
-				entity->data_changed(this, h);
-		}
 	};
 }

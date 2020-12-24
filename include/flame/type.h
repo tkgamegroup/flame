@@ -10,6 +10,7 @@
 #include <list>
 #include <map>
 #include <unordered_map>
+#include <memory>
 #include <algorithm>
 
 namespace flame

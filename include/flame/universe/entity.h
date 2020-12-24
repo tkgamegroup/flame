@@ -42,19 +42,8 @@ namespace flame
 		virtual void remove_all_children(bool destroy = true) = 0;
 		virtual Entity* find_child(const char* name) const = 0;
 
-		virtual Driver* get_driver(uint idx = 0) const = 0;
-		template <class T> inline T* get_driver_t() const 
-		{
-			for (auto i = 0; ; i++)
-			{
-				auto d = get_driver(i);
-				if (!d)
-					return nullptr;
-				if (d->type_hash == T::type_hash)
-					return (T*)d;
-			}
-			return nullptr;
-		}
+		virtual Driver* get_driver(uint64 hash = 0, uint idx = 0) const = 0;
+		template <class T> inline T* get_driver_t() const { return (T*)get_driver(T::type_hash, 0); }
 
 		virtual void data_changed(Component* c, uint64 h) = 0;
 		virtual void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) = 0;

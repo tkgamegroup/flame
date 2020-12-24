@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../entity_private.h"
-#include <flame/universe/components/slider.h>
+#include <flame/universe/drivers/slider.h>
 
 namespace flame
 {
@@ -9,7 +9,7 @@ namespace flame
 	struct cReceiverPrivate;
 	struct cTextPrivate;
 
-	struct cSliderPrivate : dSlider
+	struct dSliderPrivate : dSlider
 	{
 		float proportion = 0.f;
 		float value = 0.f;

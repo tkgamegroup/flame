@@ -12,7 +12,8 @@ namespace flame
 		radius = r;
 		if (element)
 			element->mark_drawing_dirty();
-		data_changed(S<"radius"_h>);
+		if (entity)
+			entity->data_changed(this, S<"radius"_h>);
 	}
 
 	void cBlurPrivate::draw0(graphics::Canvas* canvas)

@@ -11,7 +11,8 @@ namespace flame
 		res_id = id;
 		if (element)
 			element->mark_drawing_dirty();
-		data_changed(S<"res_id"_h>);
+		if (entity)
+			entity->data_changed(this, S<"res_id"_h>);
 	}
 
 	void cTileMapPrivate::set_cell_count(const uvec2& c)
@@ -26,7 +27,8 @@ namespace flame
 
 		if (element)
 			element->mark_drawing_dirty();
-		data_changed(S<"cell_count"_h>);
+		if (entity)
+			entity->data_changed(this, S<"cell_count"_h>);
 	}
 
 	void cTileMapPrivate::set_cell_size(const vec2& s)
@@ -36,7 +38,8 @@ namespace flame
 		cell_size = s;
 		if (element)
 			element->mark_drawing_dirty();
-		data_changed(S<"cell_size"_h>);
+		if (entity)
+			entity->data_changed(this, S<"cell_size"_h>);
 	}
 
 	void cTileMapPrivate::get_cell(const uvec2& idx, int& tile_id, cvec4& color) const
@@ -66,7 +69,8 @@ namespace flame
 		clipping = c;
 		if (element)
 			element->mark_drawing_dirty();
-		data_changed(S<"clipping"_h>);
+		if (entity)
+			entity->data_changed(this, S<"clipping"_h>);
 	}
 
 	void cTileMapPrivate::draw(graphics::Canvas* canvas)
