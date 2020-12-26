@@ -62,11 +62,10 @@ namespace flame
 		Rect parent_scissor;
 		bool culled = false;
 
-		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers[2];
-
+		std::vector<std::unique_ptr<Closure<void(Capture&, graphics::Canvas*)>>> drawers[2];
+		std::vector<std::unique_ptr<Closure<void(Capture&, vec2*)>>> measurables;
 		bool pending_sizing = false;
 		bool pending_layout = false;
-		std::vector<std::pair<Component*, void(*)(Component*, vec2&)>> measurables;
 
 		sRendererPrivate* renderer = nullptr;
 		sLayoutPrivate* layout_system = nullptr;
@@ -155,6 +154,11 @@ namespace flame
 		void set_clipping(bool c) override;
 
 		bool get_culled() const override { return culled; }
+
+		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool overlap = true);
+		void remove_drawer(void* drawer, bool overlap = true);
+		void* add_measurable(void (*measurable)(Capture&, vec2*), const Capture& capture);
+		void remove_measurable(void* measurable);
 
 		void update_transform();
 

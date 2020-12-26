@@ -1,16 +1,16 @@
 #pragma once
 
-#include <flame/universe/component.h>
+#include <flame/universe/driver.h>
 
 namespace flame
 {
-	struct cEdit : Component
+	struct dEdit : Driver
 	{
-		inline static auto type_name = "flame::cEdit";
+		inline static auto type_name = "flame::dEdit";
 		inline static auto type_hash = ch(type_name);
 
-		cEdit() :
-			Component(type_name, type_hash)
+		dEdit() :
+			Driver(type_name, type_hash)
 		{
 		}
 
@@ -28,6 +28,6 @@ namespace flame
 		//virtual bool get_trigger_changed_on_lost_focus() const = 0;
 		//virtual void set_trigger_changed_on_lost_focus(bool b) = 0;
 
-		FLAME_UNIVERSE_EXPORTS static cEdit* create();
+		FLAME_UNIVERSE_EXPORTS static dEdit* create();
 	};
 }

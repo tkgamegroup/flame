@@ -22,6 +22,8 @@ namespace flame
 		std::string src;
 
 		cElementPrivate* element = nullptr;
+		void* drawer = nullptr;
+		void* measurable = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		vec2 uv0 = vec2(0.f);
@@ -51,7 +53,7 @@ namespace flame
 		void on_entered_world() override;
 		void on_left_world() override;
 
-		void measure(vec2& ret);
+		void measure(vec2* ret);
 
 		void draw(graphics::Canvas* canvas);
 	};

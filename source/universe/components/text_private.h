@@ -21,11 +21,13 @@ namespace flame
 	struct cTextPrivate : cTextBridge
 	{
 		cElementPrivate* element = nullptr;
+		void* drawer = nullptr;
+		void* measurable = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		std::wstring text;
 		uint font_size = 14;
-		cvec4 color = cvec4(0, 0, 0, 255);
+		cvec4 font_color = cvec4(0, 0, 0, 255);
 
 		int res_id = -1;
 		graphics::FontAtlas* atlas = nullptr;
@@ -37,14 +39,14 @@ namespace flame
 		uint get_font_size() const override { return font_size; }
 		void set_font_size(uint s) override;
 
-		cvec4 get_color() const override { return color; }
-		void set_color(const cvec4& col) override;
+		cvec4 get_font_color() const override { return font_color; }
+		void set_font_color(const cvec4& col) override;
 
 		void mark_text_changed();
 
 		void draw(graphics::Canvas* canvas);
 
-		void measure(vec2& ret);
+		void measure(vec2* ret);
 
 		void on_added() override;
 		void on_removed() override;

@@ -95,8 +95,8 @@ namespace flame
 			auto size = vec2(-1.f);
 			for (auto& m : e->measurables)
 			{
-				vec2 r;
-				m.second(m.first, r);
+				auto r = vec2(0.f);
+				m->call(&r);
 				if (e->auto_width)
 					size.x = max(size.x, r.x);
 				if (e->auto_height)

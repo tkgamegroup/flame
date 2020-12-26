@@ -1,7 +1,13 @@
 <?xml version="1.0"?>
 <prefab>
-  <eScroller type="Vertical" alignx="MinMax" aligny="MinMax" >
-    <eElement name="container" padding="8,8,8,8" alignx="MinMax" layout_type="Tile" layout_gap="4" >
+  <eElement alignx="MinMax" aligny="MinMax" padding="8,8,8,8" layout_type="Vertical" layout_gap="16" >
+    <eElement alignx="MinMax" layout_type="Horizontal" layout_gap="8" >
+      <eEdit alignx="MinMax" border_color="255,255,255,255" font_size="24" font_color="255,255,255,255" />
+      <eButton name="search_btn" font_size="24" text="Search" />
     </eElement>
-  </eScroller>
+    <eScroller type="Vertical" alignx="MinMax" aligny="MinMax" >
+      <eElement name="container" alignx="MinMax" layout_type="Tile" layout_gap="4" >
+      </eElement>
+    </eScroller>
+  </eElement>
 </prefab>

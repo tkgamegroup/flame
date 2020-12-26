@@ -1,14 +1,13 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
-#include "../entity_private.h"
-#include "text_private.h"
-#include "receiver_private.h"
+#include "../components/text_private.h"
+#include "../components/receiver_private.h"
 #include "edit_private.h"
 #include "../systems/dispatcher_private.h"
 
 namespace flame
 {
-	void cEditPrivate::mark_changed()
+	void dEditPrivate::mark_changed()
 	{
 		if (trigger_changed_on_lost_focus)
 			changed = true;
@@ -16,7 +15,7 @@ namespace flame
 			text->mark_text_changed();
 	}
 
-	void cEditPrivate::flash_cursor(int mode)
+	void dEditPrivate::flash_cursor(int mode)
 	{
 		if (element)
 			element->mark_drawing_dirty();
@@ -32,7 +31,7 @@ namespace flame
 			show_cursor = !show_cursor;
 	}
 
-	int cEditPrivate::locate_cursor(const vec2& mpos)
+	int dEditPrivate::locate_cursor(const vec2& mpos)
 	{
 		const auto& str = text->text;
 		auto atlas = text->atlas;
@@ -75,10 +74,87 @@ namespace flame
 		return i;
 	}
 
-	void cEditPrivate::on_gain_receiver()
+	void dEditPrivate::on_load_finished()
 	{
-		key_down_listener = receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
-			auto thiz = c.thiz<cEditPrivate>();
+		struct cSpy : Component
+		{
+			dEditPrivate* thiz;
+
+			cSpy(dEditPrivate* _thiz) :
+				Component("cSpy", S<"cSpy"_h>)
+			{
+				thiz = _thiz;
+			}
+			
+			void on_visibility_changed(bool v) override
+			{
+				if (thiz->flash_event && !v)
+				{
+					looper().remove_event(thiz->flash_event);
+					thiz->flash_event = nullptr;
+				}
+			}
+
+			void on_state_changed(StateFlags s) override
+			{
+				thiz->receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
+				if ((s & StateFocusing) != 0)
+				{
+					if (!thiz->flash_event)
+					{
+						thiz->flash_event = looper().add_event([](Capture& c) {
+							c.thiz<dEditPrivate>()->flash_cursor(0);
+							c._current = nullptr;
+						}, Capture().set_thiz(thiz), 0.5f);
+					}
+					//if (thiz->select_all_on_focus)
+					//	thiz->set_select(0, thiz->text->text.s);
+				}
+				else
+				{
+					if (thiz->flash_event)
+					{
+						looper().remove_event(thiz->flash_event);
+						thiz->flash_event = nullptr;
+					}
+					thiz->select_start = thiz->select_end = 0;
+					thiz->flash_cursor(1);
+					if (thiz->trigger_changed_on_lost_focus && thiz->changed)
+					{
+						thiz->text->mark_text_changed();
+						thiz->changed = false;
+					}
+				}
+			}
+
+			void on_left_world() override
+			{
+				if (thiz->flash_event)
+				{
+					looper().remove_event(thiz->flash_event);
+					thiz->flash_event = nullptr;
+				}
+			}
+		};
+
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
+
+		receiver = entity->get_component_t<cReceiverPrivate>();
+		fassert(receiver);
+
+		text = entity->get_component_t<cTextPrivate>();
+		fassert(text);
+
+		entity->add_component(f_new<cSpy>(this));
+
+		element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+			auto thiz = c.thiz<dEditPrivate>();
+			thiz->draw(canvas);
+		}, Capture().set_thiz(this));
+
+		receiver->add_key_down_listener([](Capture& c, KeyboardKey key) {
+			auto thiz = c.thiz<dEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
 			auto& select_end = thiz->select_end;
@@ -213,8 +289,9 @@ namespace flame
 
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
-		char_listener = receiver->add_char_listener([](Capture& c, wchar_t ch) {
-			auto thiz = c.thiz<cEditPrivate>();
+
+		receiver->add_char_listener([](Capture& c, wchar_t ch) {
+			auto thiz = c.thiz<dEditPrivate>();
 			auto& str = thiz->text->text;
 			auto& select_start = thiz->select_start;
 			auto& select_end = thiz->select_end;
@@ -290,21 +367,23 @@ namespace flame
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
 
-		mouse_down_listener = receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<cEditPrivate>();
+		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+			auto thiz = c.thiz<dEditPrivate>();
 			thiz->select_start = thiz->select_end = thiz->locate_cursor((vec2)pos);
 			thiz->flash_cursor(2);
 		}, Capture().set_thiz(this));
-		mouse_move_listener = receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
-			auto thiz = c.thiz<cEditPrivate>();
+
+		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+			auto thiz = c.thiz<dEditPrivate>();
 			if (thiz->receiver->dispatcher->active == thiz->receiver)
 			{
 				thiz->select_end = thiz->locate_cursor((vec2)pos);
 				thiz->flash_cursor(2);
 			}
 		}, Capture().set_thiz(this));
-		mouse_dbclick_listener = receiver->add_mouse_dbclick_listener([](Capture& c) {
-			auto thiz = c.thiz<cEditPrivate>();
+
+		receiver->add_mouse_dbclick_listener([](Capture& c) {
+			auto thiz = c.thiz<dEditPrivate>();
 			//	thiz->select_start = 0;
 			//	thiz->select_end = thiz->text->text.size();
 			//	if (thiz->element)
@@ -312,70 +391,7 @@ namespace flame
 		}, Capture().set_thiz(this));
 	}
 
-	void cEditPrivate::on_lost_receiver()
-	{
-		receiver->remove_key_down_listener(key_down_listener);
-		receiver->remove_char_listener(char_listener);
-		receiver->remove_mouse_left_down_listener(mouse_down_listener);
-		receiver->remove_mouse_move_listener(mouse_move_listener);
-		receiver->remove_mouse_dbclick_listener(mouse_dbclick_listener);
-	}
-
-	//void cEditPrivate::on_local_message(Message msg, void* p)
-	//{
-	//	switch (msg)
-	//	{
-	//	case MessageVisibilityChanged:
-	//		if (flash_event && !entity->global_visibility)
-	//		{
-	//			looper().remove_event(flash_event);
-	//			flash_event = nullptr;
-	//		}
-	//		break;
-	//	case MessageStateChanged:
-	//	{
-	//		auto s = entity->state;
-	//		receiver->dispatcher->window->set_cursor((s & StateHovering) != 0 ? CursorIBeam : CursorArrow);
-	//		if ((s & StateFocusing) != 0)
-	//		{
-	//			if (!flash_event)
-	//			{
-	//				flash_event = looper().add_event([](Capture& c) {
-	//					c.thiz<cEditPrivate>()->flash_cursor(0);
-	//					c._current = nullptr;
-	//				}, Capture().set_thiz(this), 0.5f);
-	//			}
-	//			if (select_all_on_focus)
-	//				set_select(0, text->text.s);
-	//		}
-	//		else
-	//		{
-	//			if (flash_event)
-	//			{
-	//				looper().remove_event(flash_event);
-	//				flash_event = nullptr;
-	//			}
-	//			select_start = select_end = 0;
-	//			flash_cursor(1);
-	//			if (thiz->trigger_changed_on_lost_focus && thiz->changed)
-	//			{
-	//				thiz->text->set_text(nullptr, -1, thiz);
-	//				thiz->changed = false;
-	//			}
-	//		}
-	//	}
-	//		break;
-	//	case MessageLeftWorld:
-	//		if (flash_event)
-	//		{
-	//			looper().remove_event(flash_event);
-	//			flash_event = nullptr;
-	//		}
-	//		break;
-	//	}
-	//}
-
-	void cEditPrivate::draw(graphics::Canvas* canvas)
+	void dEditPrivate::draw(graphics::Canvas* canvas)
 	{
 		const auto& str = text->text;
 		auto res_id = text->res_id;
@@ -412,7 +428,7 @@ namespace flame
 				canvas->line_to(pos + axes[0] * p2.x + axes[1] * (p2.y + font_size));
 				canvas->line_to(pos + axes[0] * p1.x + axes[1] * (p1.y + font_size));
 				canvas->fill(cvec4(128, 128, 255, 255));
-				canvas->draw_text(res_id, sb, se, font_size, cvec4(255), pos + p1, element->axes);
+				canvas->draw_text(res_id, sb, se, font_size, text->font_color, pos + p1, element->axes);
 			}
 		}
 
@@ -423,12 +439,12 @@ namespace flame
 			canvas->begin_path();
 			canvas->move_to(pos + axes[0] * off.x + axes[1] * off.y);
 			canvas->line_to(pos + axes[0] * off.x + axes[1] * (off.y + font_size));
-			canvas->stroke(cvec4(0, 0, 0, 255), 1.f);
+			canvas->stroke(text->font_color, max(1.f, round(font_size / 14.f)));
 		}
 	}
 
-	cEdit* cEdit::create()
+	dEdit* dEdit::create()
 	{
-		return f_new<cEditPrivate>();
+		return f_new<dEditPrivate>();
 	}
 }

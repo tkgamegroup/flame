@@ -24,21 +24,21 @@ namespace flame
 			element->mark_size_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"size"_h>);
+			entity->data_changed(this, S<"font_size"_h>);
 	}
 
-	void cTextPrivate::set_color(const cvec4& col)
+	void cTextPrivate::set_font_color(const cvec4& col)
 	{
-		if (color == col)
+		if (font_color == col)
 			return;
-		color = col;
+		font_color = col;
 		if (element)
 		{
 			element->mark_drawing_dirty();
 			element->mark_size_dirty();
 		}
 		if (entity)
-			entity->data_changed(this, S<"color"_h>);
+			entity->data_changed(this, S<"font_color"_h>);
 	}
 
 	void cTextPrivate::mark_text_changed()
@@ -54,17 +54,17 @@ namespace flame
 
 	void cTextPrivate::draw(graphics::Canvas* canvas)
 	{
-		canvas->draw_text(res_id, text.c_str(), nullptr, font_size, color, element->points[4], element->axes);
+		canvas->draw_text(res_id, text.c_str(), nullptr, font_size, font_color, element->points[4], element->axes);
 	}
 
-	void cTextPrivate::measure(vec2& ret)
+	void cTextPrivate::measure(vec2* ret)
 	{
 		if (!atlas)
 		{
-			ret = vec2(-1.f);
+			*ret = vec2(-1.f);
 			return;
 		}
-		ret = vec2(atlas->text_size(font_size, text.c_str()));
+		*ret = vec2(atlas->text_size(font_size, text.c_str()));
 	}
 
 	void cTextPrivate::on_added()
@@ -72,20 +72,22 @@ namespace flame
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
-		element->drawers[1].emplace_back(this, (void(*)(Component*, graphics::Canvas*))f2a(&cTextPrivate::draw));
-		element->measurables.emplace_back(this, (void(*)(Component*, vec2&))f2a(&cTextPrivate::measure));
+		drawer = element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+			auto thiz = c.thiz<cTextPrivate>();
+			thiz->draw(canvas);
+		}, Capture().set_thiz(this));
+		measurable = element->add_measurable([](Capture& c, vec2* ret) {
+			auto thiz = c.thiz<cTextPrivate>();
+			thiz->measure(ret);
+		}, Capture().set_thiz(this));
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
 
 	void cTextPrivate::on_removed()
 	{
-		std::erase_if(element->drawers[0], [&](const auto& i) {
-			return i.first == this;
-		});
-		std::erase_if(element->measurables, [&](const auto& i) {
-			return i.first == this;
-		});
+		element->remove_drawer(drawer);
+		element->remove_measurable(measurable);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}

@@ -124,20 +124,22 @@ namespace flame
 		element = entity->get_component_t<cElementPrivate>();
 		fassert(element);
 
-		element->drawers[1].emplace_back(this, (void(*)(Component*, graphics::Canvas*))f2a(&cImagePrivate::draw));
-		element->measurables.emplace_back(this, (void(*)(Component*, vec2&))f2a(&cImagePrivate::measure));
+		drawer = element->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+			auto thiz = c.thiz<cImagePrivate>();
+			thiz->draw(canvas);
+		}, Capture().set_thiz(this));
+		measurable = element->add_measurable([](Capture& c, vec2* ret) {
+			auto thiz = c.thiz<cImagePrivate>();
+			thiz->measure(ret);
+		}, Capture().set_thiz(this));
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
 
 	void cImagePrivate::on_removed()
 	{
-		std::erase_if(element->drawers[0], [&](const auto& i) {
-			return i.first == this;
-		});
-		std::erase_if(element->measurables, [&](const auto& i) {
-			return i.first == this;
-		});
+		element->remove_drawer(drawer);
+		element->remove_measurable(measurable);
 		element->mark_drawing_dirty();
 		element->mark_size_dirty();
 	}
@@ -158,14 +160,14 @@ namespace flame
 		atlas = nullptr;
 	}
 
-	void cImagePrivate::measure(vec2& ret)
+	void cImagePrivate::measure(vec2* ret)
 	{
 		if (!iv)
 		{
-			ret = vec2(-1.f);
+			*ret = vec2(-1.f);
 			return;
 		}
-		ret = iv->get_image()->get_size();
+		*ret = iv->get_image()->get_size();
 	}
 
 	void cImagePrivate::draw(graphics::Canvas* canvas)

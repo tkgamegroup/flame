@@ -154,16 +154,15 @@ int main(int argc, char** args)
 
 	auto w = new GraphicsWindow(&g_app, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
 
+	auto screen_size = get_screen_size();
+	thumbnails_atlas.create(ceil((float)screen_size.x / (float)ThumbnailSize), ceil((float)screen_size.y / (float)ThumbnailSize), ThumbnailSize);
+
 	{
 		auto e = Entity::create();
 		e->load(L"main");
 		w->root->add_child(e);
 
-		auto screen_size = get_screen_size();
-		thumbnails_atlas.create(ceil((float)screen_size.x / (float)ThumbnailSize), ceil((float)screen_size.y / (float)ThumbnailSize), ThumbnailSize);
-	}
-
-	{
+		e->find_child("search_btn");
 		auto res = db->query_fmt([](Capture& c, database::Res* res) {
 			auto container = g_app.main_window->root->find_child("container");
 			for (auto i = 0; i < res->row_count; i++)

@@ -32,12 +32,12 @@ namespace flame
 				else
 				{
 					for (auto& d : element->drawers[0])
-						d.second(d.first, canvas);
+						d->call(canvas);
 					element->draw(canvas);
 					if (element->clipping)
 						canvas->set_scissor(element->aabb);
 					for (auto& d : element->drawers[1])
-						d.second(d.first, canvas);
+						d->call(canvas);
 				}
 			}
 		}

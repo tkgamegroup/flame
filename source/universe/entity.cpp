@@ -624,7 +624,7 @@ namespace flame
 				{
 					std::string cname;
 					auto ct = find_component_type(c.second.c->type_name, cname);
-					if (set_attribute(c.second.c.get(), ct, a.name(), a.value()))
+					if (ct && set_attribute(c.second.c.get(), ct, a.name(), a.value()))
 					{
 						ok = true;
 						break;

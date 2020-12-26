@@ -353,6 +353,34 @@ namespace flame
 			entity->data_changed(this, S<"clipping"_h>);
 	}
 
+	void* cElementPrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool overlap)
+	{
+		auto c = new Closure(drawer, capture);
+		drawers[overlap ? 1 : 0].emplace_back(c);
+		return c;
+	}
+
+	void cElementPrivate::remove_drawer(void* drawer, bool overlap)
+	{
+		std::erase_if(drawers[overlap ? 1 : 0], [&](const auto& i) {
+			return i == (decltype(i))drawer;
+		});
+	}
+
+	void* cElementPrivate::add_measurable(void (*measurable)(Capture&, vec2*), const Capture& capture)
+	{
+		auto c = new Closure(measurable, capture);
+		measurables.emplace_back(c);
+		return c;
+	}
+
+	void cElementPrivate::remove_measurable(void* measurable)
+	{
+		std::erase_if(measurables, [&](const auto& i) {
+			return i == (decltype(i))measurable;
+		});
+	}
+
 	void cElementPrivate::update_transform()
 	{
 		if (transform_dirty)
@@ -438,7 +466,7 @@ namespace flame
 
 	void cElementPrivate::mark_size_dirty()
 	{
-		if (pending_sizing || measurables.empty() || !(auto_width && auto_height) || !layout_system)
+		if (pending_sizing || measurables.empty() || !(auto_width || auto_height) || !layout_system)
 			return;
 
 		auto it = layout_system->sizing_list.begin();
