@@ -86,7 +86,7 @@ struct DynamicAtlas
 		buf->map();
 	}
 
-	uint new_image(uint w, uint h, char* data)
+	uint alloc_image(uint w, uint h, uchar* data)
 	{
 		assert(w <= size && h <= size);
 		for (auto i = 0; i < map.size(); i++)
@@ -110,9 +110,41 @@ struct DynamicAtlas
 		}
 		return -1;
 	}
+
+	void free_image(uint id)
+	{
+		map[id] = 0;
+	}
 }thumbnails_atlas;
 
-const auto ThumbnailSize = 128U;
+const auto ThumbnailSize = 96U;
+
+struct cThumbnail : Component
+{
+	cElement* element;
+	uint w, h;
+	uchar* data;
+	uint id = -1;
+
+	cThumbnail() :
+		Component("cThumbnail", S<"cThumbnail"_h>)
+	{
+	}
+
+	void toggle()
+	{
+		if (element->get_culled())
+		{
+			thumbnails_atlas.free_image(id);
+			id = -1;
+		}
+		else
+			id = thumbnails_atlas.alloc_image(w, h, data);
+		looper().add_event([](Capture& c) {
+			c.thiz<cElement>()->mark_drawing_dirty();
+		}, Capture().set_thiz(element));
+	}
+};
 
 int main(int argc, char** args)
 {
@@ -142,9 +174,9 @@ int main(int argc, char** args)
 				fn /= res->row[0];
 				fn += res->row[1];
 				uint w, h;
-				char* data;
+				uchar* data;
 				get_thumbnail(ThumbnailSize, fn.c_str(), &w, &h, &data);
-				auto id = thumbnails_atlas.new_image(w, h, data);
+				auto id = thumbnails_atlas.alloc_image(w, h, data);
 
 				auto e = Entity::create();
 				e->load(L"prefabs/image");
@@ -159,6 +191,18 @@ int main(int argc, char** args)
 				auto uv0 = vec2((id % thumbnails_atlas.cx) * ThumbnailSize, (id / thumbnails_atlas.cx) * ThumbnailSize);
 				auto uv1 = uv0 + vec2(w, h);
 				image->set_uv(vec4(uv0 / atlas_size, uv1 / atlas_size));
+				auto thumbnail = new cThumbnail;
+				thumbnail->element = element;
+				thumbnail->w = w;
+				thumbnail->h = h;
+				thumbnail->data = data;
+				thumbnail->id = id;
+				e->add_component(thumbnail);
+				e->add_data_listener(element, [](Capture& c, uint64 h) {
+					auto thiz = c.thiz<cThumbnail>();
+					if (h == S<"culled"_h>)
+						thiz->toggle();
+				}, Capture().set_thiz(thumbnail));
 				container->add_child(e);
 			}
 		}, Capture(), "SELECT * FROM `tk`.`ssss`;");

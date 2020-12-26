@@ -33,9 +33,16 @@ namespace flame
 	enum LayoutType
 	{
 		LayoutFree,
-		LayoutVertical,
 		LayoutHorizontal,
+		LayoutVertical,
 		LayoutTile
+	};
+
+	enum ScrollType
+	{
+		ScrollHorizontal,
+		ScrollVertical,
+		ScrollBoth
 	};
 
 	enum MenuType

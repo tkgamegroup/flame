@@ -102,6 +102,8 @@ namespace flame
 		virtual bool get_clipping() const = 0;
 		virtual void set_clipping(bool c) = 0;
 
+		virtual bool get_culled() const = 0;
+
 		virtual bool contains(const vec2& p) = 0;
 
 		//FLAME_RV(vec4, roundness);

@@ -8,47 +8,33 @@ namespace flame
 	struct cElementPrivate;
 	struct cReceiverPrivate;
 
-	struct cScrollerPrivate : dScroller
+	struct dScrollerPrivate : dScroller
 	{
+		ScrollType type = ScrollVertical;
 		float step = 1.f;
 
+		cElementPrivate* element = nullptr;
 		cReceiverPrivate* receiver = nullptr;
 
-		cElementPrivate* htrack_element = nullptr;
-		cElementPrivate* hthumb_element = nullptr;
-		cReceiverPrivate* hthumb_receiver = nullptr;
+		EntityPrivate* track = nullptr;
+		cElementPrivate* track_element = nullptr;
 
-		cElementPrivate* vtrack_element = nullptr;
-		cElementPrivate* vthumb_element = nullptr;
-		cReceiverPrivate* vthumb_receiver = nullptr;
+		EntityPrivate* thumb = nullptr;
+		cElementPrivate* thumb_element = nullptr;
+		cReceiverPrivate* thumb_receiver = nullptr;
 
+		EntityPrivate* view = nullptr;
 		cElementPrivate* view_element = nullptr;
-		//cLayoutPrivate* view_layout = nullptr;
 
+		EntityPrivate* target = nullptr;
 		cElementPrivate* target_element = nullptr;
 
-		void* mouse_scroll_listener = nullptr;
+		ScrollType get_scroll_type() const override { return type; }
+		void set_scroll_type(ScrollType type) override;
 
-		void* htrack_element_listener = nullptr;
-		void* hthumb_mouse_listener = nullptr;
-		void* vtrack_element_listener = nullptr;
-		void* vthumb_mouse_listener = nullptr;
+		void on_load_finished() override;
+		bool on_child_added(Entity* e) override;
 
 		void scroll(const vec2& v) override;
-
-		void on_gain_receiver();
-		void on_lost_receiver();
-
-		void on_gain_htrack_element();
-		void on_lost_htrack_element();
-		void on_gain_hthumb_receiver();
-		void on_lost_hthumb_receiver();
-
-		void on_gain_vtrack_element();
-		void on_lost_vtrack_element();
-		void on_gain_vthumb_receiver();
-		void on_lost_vthumb_receiver();
-
-		void on_gain_view_element();
 	};
 }

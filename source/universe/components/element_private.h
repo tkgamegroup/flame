@@ -154,6 +154,8 @@ namespace flame
 		bool get_clipping() const override { return clipping; }
 		void set_clipping(bool c) override;
 
+		bool get_culled() const override { return culled; }
+
 		void update_transform();
 
 		void mark_transform_dirty() override;

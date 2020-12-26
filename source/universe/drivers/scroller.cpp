@@ -6,156 +6,120 @@
 
 namespace flame
 {
-	void cScrollerPrivate::scroll(const vec2& v)
+	void dScrollerPrivate::set_scroll_type(ScrollType type)
 	{
-		//if (view_layout && target_element)
-		//{
-		//	if (htrack_element)
-		//	{
-		//		auto target_size = target_element->size.x;
-		//		if (target_size > view_element->size.x)
-		//			hthumb_element->set_width(view_element->size.x / target_size * htrack_element->size.x);
-		//		else
-		//			hthumb_element->set_width(0.f);
-		//		auto x = v.x + hthumb_element->pos.x;
-		//		hthumb_element->set_x(hthumb_element->size.x > 0.f ? clamp(x, 0.f, htrack_element->size.x - hthumb_element->size.x) : 0.f);
-		//		view_layout->set_scrollx(-int(hthumb_element->pos.x / htrack_element->size.x * target_size / step) * step);
-		//	}
-		//	if (vtrack_element)
-		//	{
-		//		auto target_size = target_element->size.y;
-		//		if (target_size > view_element->size.y)
-		//			vthumb_element->set_height(view_element->size.y / target_size * vtrack_element->size.y);
-		//		else
-		//			vthumb_element->set_height(0.f);
-		//		auto y = v.y + vthumb_element->pos.y;
-		//		vthumb_element->set_y(vthumb_element->size.y > 0.f ? clamp(y, 0.f, vtrack_element->size.y - vthumb_element->size.y) : 0.f);
-		//		view_layout->set_scrolly(-int(vthumb_element->pos.y / vtrack_element->size.y * target_size / step) * step);
-		//	}
-		//}
+
 	}
 
-	void cScrollerPrivate::on_gain_receiver()
+	void dScrollerPrivate::on_load_finished()
 	{
-		mouse_scroll_listener = receiver->add_mouse_scroll_listener([](Capture& c, int v) {
-			c.thiz<cScrollerPrivate>()->scroll(vec2(0.f, -v * 20.f));
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
+
+		receiver = entity->get_component_t<cReceiverPrivate>();
+		fassert(receiver);
+
+		receiver->add_mouse_scroll_listener([](Capture& c, int v) {
+			c.thiz<dScrollerPrivate>()->scroll(vec2(0.f, -v * 20.f));
 		}, Capture().set_thiz(this));
-	}
 
-	void cScrollerPrivate::on_lost_receiver()
-	{
-		receiver->remove_mouse_scroll_listener(mouse_scroll_listener);
-	}
+		track = entity->find_child("track");
+		fassert(track);
+		track_element = track->get_component_t<cElementPrivate>();
+		fassert(track_element);
 
-	void cScrollerPrivate::on_gain_htrack_element()
-	{
-		//htrack_element_listener = htrack_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-		//	auto thiz = c.thiz<cScrollerPrivate>();
-		//	if (t == thiz->htrack_element)
-		//	{
-		//		if (h == S<"width"_h>)
-		//			thiz->scroll(vec2(0.f));
-		//	}
+		thumb = entity->find_child("thumb");
+		fassert(thumb);
+		thumb_element = thumb->get_component_t<cElementPrivate>();
+		fassert(thumb_element);
+		thumb_receiver = thumb->get_component_t<cReceiverPrivate>();
+		fassert(thumb_receiver);
+		 
+		// hthumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+		//	auto thiz = c.thiz<dScrollerPrivate>();
+		//	if (thiz->receiver->dispatcher->active == thiz->hthumb_receiver)
+		//		thiz->scroll(vec2(disp.x, 0.f));
 		//}, Capture().set_thiz(this));
-	}
 
-	void cScrollerPrivate::on_lost_htrack_element()
-	{
-		//htrack_element->entity->remove_local_data_changed_listener(htrack_element_listener);
-	}
+		view = entity->find_child("view");
+		fassert(view);
+		view_element = view->get_component_t<cElementPrivate>();
+		fassert(view_element);
 
-	void cScrollerPrivate::on_gain_hthumb_receiver()
-	{
-		hthumb_mouse_listener = hthumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
-			auto thiz = c.thiz<cScrollerPrivate>();
-			if (thiz->receiver->dispatcher->active == thiz->hthumb_receiver)
-				thiz->scroll(vec2(disp.x, 0.f));
+		view->add_data_listener(view_element, [](Capture& c, uint64 h) {
+			auto thiz = c.thiz<dScrollerPrivate>();
+			switch (h)
+			{
+			case S<"width"_h>:
+				if (thiz->type != ScrollVertical)
+					thiz->scroll(vec2(0.f));
+				break;
+			case S<"height"_h>:
+				if (thiz->type != ScrollHorizontal)
+					thiz->scroll(vec2(0.f));
+				break;
+			}
 		}, Capture().set_thiz(this));
+
+		switch (type)
+		{
+		case ScrollHorizontal:
+			break;
+		case ScrollVertical:
+			element->set_layout_type(LayoutHorizontal);
+			track_element->set_alignx(AlignMax);
+			track_element->set_aligny(AlignMinMax);
+			break;
+		case ScrollBoth:
+			break;
+		}
 	}
 
-	void cScrollerPrivate::on_lost_hthumb_receiver()
+	bool dScrollerPrivate::on_child_added(Entity* e)
 	{
-		hthumb_receiver->remove_mouse_move_listener(hthumb_mouse_listener);
+		if (load_finished && !target)
+		{
+			target = (EntityPrivate*)e;
+			target_element = target->get_component_t<cElementPrivate>();
+			fassert(target_element);
+			target->add_data_listener(target_element, [](Capture& c, uint64 h) {
+				auto thiz = c.thiz<dScrollerPrivate>();
+				switch (h)
+				{
+				case S<"width"_h>:
+					if (thiz->type != ScrollVertical)
+						thiz->scroll(vec2(0.f));
+					break;
+				case S<"height"_h>:
+					if (thiz->type != ScrollHorizontal)
+						thiz->scroll(vec2(0.f));
+					break;
+				}
+			}, Capture().set_thiz(this));
+
+			view->add_child(target);
+			return true;
+		}
+		return false;
 	}
 
-	void cScrollerPrivate::on_gain_vtrack_element()
+	void dScrollerPrivate::scroll(const vec2& v)
 	{
-		//vtrack_element_listener = vtrack_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-		//	auto thiz = c.thiz<cScrollerPrivate>();
-		//	if (t == thiz->vtrack_element)
-		//	{
-		//		if (h == S<"height"_h>)
-		//			thiz->scroll(vec2(0.f));
-		//	}
-		//}, Capture().set_thiz(this));
-	}
-
-	void cScrollerPrivate::on_lost_vtrack_element()
-	{
-		//vtrack_element->entity->remove_local_data_changed_listener(vtrack_element_listener);
-	}
-
-	void cScrollerPrivate::on_gain_vthumb_receiver()
-	{
-		vthumb_mouse_listener = vthumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
-			auto thiz = c.thiz<cScrollerPrivate>();
-			if (thiz->receiver->dispatcher->active == thiz->vthumb_receiver)
-				thiz->scroll(vec2(0.f, disp.y));
-		}, Capture().set_thiz(this));
-	}
-
-	void cScrollerPrivate::on_lost_vthumb_receiver()
-	{
-		vthumb_receiver->remove_mouse_move_listener(vthumb_mouse_listener);
-	}
-
-	void cScrollerPrivate::on_gain_view_element()
-	{
-		//view_element->entity->add_child_message_listener([](Capture& c, Message msg, void* p) {
-		//	auto thiz = c.thiz<cScrollerPrivate>();
-		//	switch (msg)
-		//	{
-		//	case MessageAdded:
-		//		if (!thiz->target_element)
-		//		{
-		//			auto e = (EntityPrivate*)p;
-		//			auto ce = e->get_component_t<cElementPrivate>();
-		//			if (ce)
-		//			{
-		//				thiz->target_element = ce;
-
-		//				thiz->scroll(vec2(0.f));
-
-		//				e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-		//					auto thiz = c.thiz<cScrollerPrivate>();
-		//					if (t == thiz->target_element)
-		//					{
-		//						if (h == S<"width"_h> || h == S<"height"_h>)
-		//							thiz->scroll(vec2(0.f));
-		//					}
-		//				}, Capture().set_thiz(thiz));
-		//			}
-		//		}
-		//		break;
-		//	case MessageRemoved:
-		//		if (thiz->target_element && thiz->target_element == ((EntityPrivate*)p)->get_component_t<cElementPrivate>())
-		//			thiz->target_element = nullptr;
-		//		break;
-		//	}
-		//}, Capture().set_thiz(this));
-
-		//view_element->entity->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-		//	auto thiz = c.thiz<cScrollerPrivate>();
-		//	if (t == thiz->view_element)
-		//	{
-		//		if (h == S<"width"_h> || h == S<"height"_h>)
-		//			thiz->scroll(vec2(0.f));
-		//	}
-		//}, Capture().set_thiz(this));
+		if (target)
+		{
+			auto target_size = target_element->size.y;
+			if (target_size > view_element->size.y)
+				thumb_element->set_height(view_element->size.y / target_size * track_element->size.y);
+			else
+				thumb_element->set_height(0.f);
+			auto y = v.y + thumb_element->pos.y;
+			thumb_element->set_y(thumb_element->size.y > 0.f ? clamp(y, 0.f, track_element->size.y - thumb_element->size.y) : 0.f);
+			target_element->set_scrolly(-int(thumb_element->pos.y / track_element->size.y * target_size / step) * step);
+		}
 	}
 
 	dScroller* dScroller::create()
 	{
-		return f_new<cScrollerPrivate>();
+		return f_new<dScrollerPrivate>();
 	}
 }

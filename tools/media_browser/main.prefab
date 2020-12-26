@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
-  <eElement name="container" padding="8,8,8,8" alignx="MinMax" aligny="MinMax" layout_type="Tile" layout_gap="4" >
-  </eElement>
+  <eScroller type="Vertical" alignx="MinMax" aligny="MinMax" >
+    <eElement name="container" padding="8,8,8,8" alignx="MinMax" layout_type="Tile" layout_gap="4" >
+    </eElement>
+  </eScroller>
 </prefab>

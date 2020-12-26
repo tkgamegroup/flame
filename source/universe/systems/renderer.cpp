@@ -23,9 +23,12 @@ namespace flame
 			{
 				element->parent_scissor = last_scissor;
 				element->update_transform();
-				element->culled = !last_scissor.overlapping(element->aabb);
-				if (element->culled)
-					element_culled = true;
+				element_culled = !last_scissor.overlapping(element->aabb);
+				if (element->culled != element_culled)
+				{
+					element->culled = element_culled;
+					e->data_changed(element, S<"culled"_h>);
+				}
 				else
 				{
 					for (auto& d : element->drawers[0])
