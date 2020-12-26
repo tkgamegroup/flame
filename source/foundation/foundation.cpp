@@ -1018,24 +1018,23 @@ namespace flame
 		KeyEventUp
 	};
 
-	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+	static LRESULT CALLBACK _wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto w = (WindowPrivate*)GetWindowLongPtr(hWnd, 0);
 		if (w)
-			w->wnd_proc(message, wParam, lParam);
-
-		return DefWindowProc(hWnd, message, wParam, lParam);
+			return w->wnd_proc(message, wParam, lParam);
+		return DefWindowProcW(hWnd, message, wParam, lParam);
 	}
 
-	WindowPrivate::WindowPrivate(const std::string& _title, const uvec2& _size, uint _style, WindowPrivate* parent)
+	WindowPrivate::WindowPrivate(const std::wstring& _title, const uvec2& _size, uint _style, WindowPrivate* parent)
 	{
 		static bool initialized = false;
 		if (!initialized)
 		{
-			WNDCLASSEXA wcex;
-			wcex.cbSize = sizeof(WNDCLASSEXA);
+			WNDCLASSEXW wcex;
+			wcex.cbSize = sizeof(WNDCLASSEXW);
 			wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-			wcex.lpfnWndProc = ::flame::wnd_proc;
+			wcex.lpfnWndProc = _wnd_proc;
 			wcex.cbClsExtra = 0;
 			wcex.cbWndExtra = sizeof(void*);
 			wcex.hInstance = (HINSTANCE)get_hinst();
@@ -1055,9 +1054,9 @@ namespace flame
 			wcex.hCursor = NULL;
 			wcex.hbrBackground = 0;
 			wcex.lpszMenuName = 0;
-			wcex.lpszClassName = "flame_wnd";
+			wcex.lpszClassName = L"flame_wnd";
 			wcex.hIconSm = wcex.hIcon;
-			RegisterClassExA(&wcex);
+			RegisterClassExW(&wcex);
 
 			initialized = true;
 		}
@@ -1098,8 +1097,9 @@ namespace flame
 		}
 		pos.x = (screen_size.x - final_size.x) / 2;
 		pos.y = (screen_size.y - final_size.y) / 2;
-		hWnd = CreateWindowEx(win32_ex_style, "flame_wnd", title.c_str(), win32_style,
+		hWnd = CreateWindowExW(win32_ex_style, L"flame_wnd", title.c_str(), win32_style,
 			pos.x, pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+		assert(IsWindowUnicode(hWnd));
 		{
 			RECT rect;
 			GetClientRect(hWnd, &rect);
@@ -1169,7 +1169,7 @@ namespace flame
 			l->call();
 	}
 
-	void WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
+	LRESULT WindowPrivate::wnd_proc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		auto resize = [=]() {
 			if (size != pending_size)
@@ -1191,7 +1191,7 @@ namespace flame
 					l->call(v);
 			}
 		}
-			break;
+			return true;
 		case WM_KEYUP:
 		{
 			auto v = vk_code_to_key(wParam);
@@ -1201,11 +1201,11 @@ namespace flame
 					l->call(v);
 			}
 		}
-			break;
+			return true;
 		case WM_CHAR:
 			for (auto& l : char_listeners)
 				l->call(wParam);
-			break;
+			return true;
 		case WM_LBUTTONDOWN:
 		{
 			SetCapture(hWnd);
@@ -1213,7 +1213,7 @@ namespace flame
 			for (auto& l : mouse_left_down_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_LBUTTONUP:
 		{
 			ReleaseCapture();
@@ -1221,76 +1221,79 @@ namespace flame
 			for (auto& l : mouse_left_up_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_RBUTTONDOWN:
 		{
 			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_right_down_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_RBUTTONUP:
 		{
 			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_right_up_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_MBUTTONDOWN:
 		{
 			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_middle_down_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_MBUTTONUP:
 		{
 			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_middle_up_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_MOUSEMOVE:
 		{
 			auto pos = ivec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			for (auto& l : mouse_move_listeners)
 				l->call(pos);
 		}
-			break;
+			return true;
 		case WM_MOUSEWHEEL:
 		{
 			auto v = (short)HIWORD(wParam) > 0 ? 1 : -1;
 			for (auto& l : mouse_scroll_listeners)
 				l->call(v);
 		}
-			break;
+			return true;
 		case WM_DESTROY:
-			dead = true;
+			dead = true; 
+			return true;
 		case WM_ENTERSIZEMOVE:
 			sizing = true;
 			SetTimer(hWnd, 0, 16, NULL);
-			break;
+			return true;
 		case WM_EXITSIZEMOVE:
 			sizing = false;
 			KillTimer(hWnd, 0);
 			resize();
-			break;
+			return true;
 		case WM_TIMER:
 			if (wParam == 0)
 				resize();
 			_looper.one_frame();
-			break;
+			return true;
 		case WM_SIZE:
 			pending_size = uvec2((int)LOWORD(lParam), (int)HIWORD(lParam));
 			if (!sizing)
 				resize();
-			break;
+			return true;
 		case WM_MOVE:
 			pos = ivec2((int)(short)LOWORD(lParam), (int)(short)HIWORD(lParam));
-			break;
+			return true;
 		case WM_SETCURSOR:
 			SetCursor(cursors[cursor_type]);
-			break;
+			return true;
+		default:
+			return DefWindowProcW(hWnd, message, wParam, lParam);
 		}
 	}
 
@@ -1318,10 +1321,10 @@ namespace flame
 		return ivec2(pt.x, pt.y);
 	}
 
-	void WindowPrivate::set_title(const std::string& _title)
+	void WindowPrivate::set_title(const std::wstring& _title)
 	{
 		title = _title;
-		SetWindowTextA(hWnd, title.c_str());
+		SetWindowTextW(hWnd, title.c_str());
 	}
 
 	void WindowPrivate::set_cursor(CursorType type) 
@@ -1371,7 +1374,7 @@ namespace flame
 		});
 	}
 
-	void* WindowPrivate::add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture)
+	void* WindowPrivate::add_char_listener(void (*callback)(Capture& c, wchar_t ch), const Capture& capture)
 	{
 		auto c = new Closure(callback, capture);
 		char_listeners.emplace_back(c);
@@ -1525,7 +1528,7 @@ namespace flame
 		});
 	}
 
-	Window* Window::create(const char* title, const uvec2& size, WindowStyleFlags style, Window* parent)
+	Window* Window::create(const wchar_t* title, const uvec2& size, WindowStyleFlags style, Window* parent)
 	{
 		return new WindowPrivate(title, size, style, (WindowPrivate*)parent);
 	}
@@ -1537,10 +1540,10 @@ namespace flame
 			for (;;)
 			{
 				MSG msg;
-				while (GetMessage(&msg, NULL, 0, 0))
+				while (GetMessageW(&msg, NULL, 0, 0))
 				{
 					TranslateMessage(&msg);
-					DispatchMessage(&msg);
+					DispatchMessageW(&msg);
 				}
 			}
 		}
@@ -1557,10 +1560,10 @@ namespace flame
 		for (;;)
 		{
 			MSG msg;
-			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
-				DispatchMessage(&msg);
+				DispatchMessageW(&msg);
 			}
 			if (!one_frame())
 				break;

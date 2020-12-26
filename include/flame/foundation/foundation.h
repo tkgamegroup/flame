@@ -708,8 +708,8 @@ namespace flame
 
 		virtual ivec2 global_to_local(const ivec2& p) = 0;
 
-		virtual const char* get_title() const = 0;
-		virtual void set_title(const char* title) = 0;
+		virtual const wchar_t* get_title() const = 0;
+		virtual void set_title(const wchar_t* title) = 0;
 
 		virtual int get_style() const = 0;
 
@@ -722,7 +722,7 @@ namespace flame
 		virtual void remove_key_down_listener(void* lis) = 0;
 		virtual void* add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) = 0;
 		virtual void remove_key_up_listener(void* lis) = 0;
-		virtual void* add_char_listener(void (*callback)(Capture& c, char ch), const Capture& capture) = 0;
+		virtual void* add_char_listener(void (*callback)(Capture& c, wchar_t ch), const Capture& capture) = 0;
 		virtual void remove_char_listener(void* lis) = 0;
 		virtual void* add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture) = 0;
 		virtual void remove_mouse_left_down_listener(void* lis) = 0;
@@ -745,7 +745,7 @@ namespace flame
 		virtual void* add_destroy_listener(void (*callback)(Capture& c), const Capture& capture) = 0;
 		virtual void remove_destroy_listener(void* lis) = 0;
 
-		FLAME_FOUNDATION_EXPORTS static Window* create(const char* title, const uvec2& size, WindowStyleFlags style, Window* parent = nullptr);
+		FLAME_FOUNDATION_EXPORTS static Window* create(const wchar_t* title, const uvec2& size, WindowStyleFlags style, Window* parent = nullptr);
 	};
 
 	struct Looper

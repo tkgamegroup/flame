@@ -1,6 +1,7 @@
 ﻿#include <flame/foundation/bitmap.h>
 #include <flame/database/database.h>
 #include <flame/graphics/buffer.h>
+#include <flame/universe/components/text.h>
 #include <flame/universe/components/image.h>
 #include <flame/universe/app.h>
 
@@ -9,15 +10,16 @@ using namespace graphics;
 
 App g_app;
 
+database::Connection* db;
 std::filesystem::path stored_path = "E:/ssss/__/";
 
-void add_tag(database::Connection* db, const char* name)
+void add_tag(const char* name)
 {
 	auto res = db->query_fmt("INSERT INTO `tk`.`tags` (`id`, `name`) VALUES ('%s', '%s');", std::to_string(ch(name)).c_str(), name);
 	assert(res == database::NoError || res == database::ErrorDuplicated);
 }
 
-void collect_files(database::Connection* db, const std::filesystem::path& dir, const std::vector<std::string>& tags)
+void collect_files(const std::filesystem::path& dir, const std::vector<char*>& tags)
 {
 	std::vector<std::pair<std::string, std::filesystem::path>> list;
 	for (std::filesystem::directory_iterator end, it(dir); it != end; it++)
@@ -45,7 +47,7 @@ void collect_files(database::Connection* db, const std::filesystem::path& dir, c
 		std::filesystem::copy_file(item.second, stored_path.string() + item.first + ext, std::filesystem::copy_options::skip_existing);
 		for (auto& t : tags)
 		{
-			auto tag_id = std::to_string(ch(t.c_str()));
+			auto tag_id = std::to_string(ch(t));
 			{
 				uint row_count;
 				auto res = db->query_fmt(&row_count, "SELECT * FROM `tk`.`ssss_tags` WHERE ssss_id='%s' AND tag_id='%s';", item.first.c_str(), tag_id.c_str());
@@ -146,7 +148,7 @@ struct cThumbnail : Component
 	}
 };
 
-database::Connection* db;
+cText* c_search;
 
 int main(int argc, char** args)
 {
@@ -154,7 +156,7 @@ int main(int argc, char** args)
 
 	g_app.create();
 
-	auto w = new GraphicsWindow(&g_app, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
+	auto w = new GraphicsWindow(&g_app, L"Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
 
 	auto screen_size = get_screen_size();
 	thumbnails_atlas.create(ceil((float)screen_size.x / (float)ThumbnailSize), ceil((float)screen_size.y / (float)ThumbnailSize), ThumbnailSize);
@@ -164,7 +166,20 @@ int main(int argc, char** args)
 		e->load(L"main");
 		w->root->add_child(e);
 
+		c_search = e->find_child("search_bar")->get_component_t<cText>();
+
 		e->find_child("search_btn")->get_component_t<cReceiver>()->add_mouse_click_listener([](Capture& c) {
+			auto sp = SUS::split(w2s(c_search->get_text()));
+			if (sp.size() == 0)
+				return;
+			auto tag_str = std::string("(");
+			for (auto i = 0; i < sp.size(); i++)
+			{
+				tag_str += "'" + sp[i] + "'";
+				if (i < sp.size() - 1)
+					tag_str += ", ";
+			}
+			tag_str += ")";
 			auto res = db->query_fmt([](Capture& c, database::Res* res) {
 				auto container = g_app.main_window->root->find_child("container");
 				for (auto i = 0; i < res->row_count; i++)
@@ -206,7 +221,7 @@ int main(int argc, char** args)
 					}, Capture().set_thiz(thumbnail));
 					container->add_child(e);
 				}
-			}, Capture(), "SELECT * FROM `tk`.`ssss`;");
+			}, Capture(), "SELECT * FROM tk.ssss WHERE id in (SELECT ssss_id FROM tk.ssss_tags WHERE tag_id in (SELECT id FROM tk.tags WHERE name in (%s)));", tag_str.c_str());
 			assert(res == database::NoError);
 		}, Capture());
 	}

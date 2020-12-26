@@ -36,24 +36,10 @@ namespace flame
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));
-			char_listener = window->add_char_listener([](Capture& c, char ch) {
+			char_listener = window->add_char_listener([](Capture& c, wchar_t ch) {
 				auto thiz = c.thiz<sDispatcherPrivate>();
 
-				if (!thiz->char_input_compelete && !thiz->char_inputs.empty())
-				{
-					std::string ansi;
-					ansi += thiz->char_inputs.back();
-					ansi += ch;
-					auto wstr = a2w(ansi);
-					thiz->char_inputs.back() = wstr[0];
-					thiz->char_input_compelete = true;
-				}
-				else
-				{
-					thiz->char_inputs.push_back(ch);
-					if (ch >= 0x80)
-						thiz->char_input_compelete = false;
-				}
+				thiz->char_inputs.push_back(ch);
 
 				thiz->dirty = true;
 			}, Capture().set_thiz(this));

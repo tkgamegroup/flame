@@ -83,7 +83,7 @@ namespace flame
 
 		bool capture = false;
 
-		GraphicsWindow(App* app, const char* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
+		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_output();
 		virtual void on_frame() {}
@@ -107,7 +107,7 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, const char* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool msaa_3d, Window* parent) :
+	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool msaa_3d, Window* parent) :
 		app(app)
 	{
 		window = Window::create(title, size, styles, parent);

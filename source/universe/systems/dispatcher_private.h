@@ -46,7 +46,6 @@ namespace flame
 		std::vector<KeyboardKey> key_down_inputs;
 		std::vector<KeyboardKey> key_up_inputs;
 		std::vector<wchar_t> char_inputs;
-		bool char_input_compelete = true;
 		float dbclick_timer = -1.f;
 
 		std::vector<cReceiverPrivate*> staging_mouse_targets;
