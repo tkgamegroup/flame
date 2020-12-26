@@ -9,7 +9,7 @@ namespace flame
 		struct Scene;
 	}
 	
-	struct cCustomDrawingPrivate;
+	struct cElementPrivate;
 	struct cRigidPrivate;
 	struct cControllerPrivate;
 
@@ -17,7 +17,7 @@ namespace flame
 	{
 		std::vector<cRigidPrivate*> rigids;
 		std::vector<cControllerPrivate*> controllers;
-		cCustomDrawingPrivate* visualization_layer = nullptr;
+		cElementPrivate* visualization_layer = nullptr;
 
 		physics::Scene* phy_scene = nullptr;
 

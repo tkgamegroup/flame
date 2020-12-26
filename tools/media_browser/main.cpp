@@ -146,9 +146,11 @@ struct cThumbnail : Component
 	}
 };
 
+database::Connection* db;
+
 int main(int argc, char** args)
 {
-	auto db = database::Connection::create("tk");
+	db = database::Connection::create("tk");
 
 	g_app.create();
 
@@ -162,50 +164,51 @@ int main(int argc, char** args)
 		e->load(L"main");
 		w->root->add_child(e);
 
-		e->find_child("search_btn");
-		auto res = db->query_fmt([](Capture& c, database::Res* res) {
-			auto container = g_app.main_window->root->find_child("container");
-			for (auto i = 0; i < res->row_count; i++)
-			{
-				res->fetch_row();
+		e->find_child("search_btn")->get_component_t<cReceiver>()->add_mouse_click_listener([](Capture& c) {
+			auto res = db->query_fmt([](Capture& c, database::Res* res) {
+				auto container = g_app.main_window->root->find_child("container");
+				for (auto i = 0; i < res->row_count; i++)
+				{
+					res->fetch_row();
 
-				auto fn = stored_path;
-				fn /= res->row[0];
-				fn += res->row[1];
-				uint w, h;
-				uchar* data;
-				get_thumbnail(ThumbnailSize, fn.c_str(), &w, &h, &data);
-				auto id = thumbnails_atlas.alloc_image(w, h, data);
+					auto fn = stored_path;
+					fn /= res->row[0];
+					fn += res->row[1];
+					uint w, h;
+					uchar* data;
+					get_thumbnail(ThumbnailSize, fn.c_str(), &w, &h, &data);
+					auto id = thumbnails_atlas.alloc_image(w, h, data);
 
-				auto e = Entity::create();
-				e->load(L"prefabs/image");
-				auto element = e->get_component_t<cElement>();
-				element->set_width(ThumbnailSize);
-				element->set_height(ThumbnailSize);
-				auto padding_v = (ThumbnailSize - h) * 0.5f;
-				element->set_padding(vec4(0, padding_v, 0, padding_v));
-				auto image = e->get_component_t<cImage>();
-				image->set_res_id(thumbnails_atlas.id);
-				auto atlas_size = vec2(thumbnails_atlas.image->get_size());
-				auto uv0 = vec2((id % thumbnails_atlas.cx) * ThumbnailSize, (id / thumbnails_atlas.cx) * ThumbnailSize);
-				auto uv1 = uv0 + vec2(w, h);
-				image->set_uv(vec4(uv0 / atlas_size, uv1 / atlas_size));
-				auto thumbnail = new cThumbnail;
-				thumbnail->element = element;
-				thumbnail->w = w;
-				thumbnail->h = h;
-				thumbnail->data = data;
-				thumbnail->id = id;
-				e->add_component(thumbnail);
-				e->add_data_listener(element, [](Capture& c, uint64 h) {
-					auto thiz = c.thiz<cThumbnail>();
-					if (h == S<"culled"_h>)
-						thiz->toggle();
-				}, Capture().set_thiz(thumbnail));
-				container->add_child(e);
-			}
-		}, Capture(), "SELECT * FROM `tk`.`ssss`;");
-		assert(res == database::NoError);
+					auto e = Entity::create();
+					e->load(L"prefabs/image");
+					auto element = e->get_component_t<cElement>();
+					element->set_width(ThumbnailSize);
+					element->set_height(ThumbnailSize);
+					auto padding_v = (ThumbnailSize - h) * 0.5f;
+					element->set_padding(vec4(0, padding_v, 0, padding_v));
+					auto image = e->get_component_t<cImage>();
+					image->set_res_id(thumbnails_atlas.id);
+					auto atlas_size = vec2(thumbnails_atlas.image->get_size());
+					auto uv0 = vec2((id % thumbnails_atlas.cx) * ThumbnailSize, (id / thumbnails_atlas.cx) * ThumbnailSize);
+					auto uv1 = uv0 + vec2(w, h);
+					image->set_uv(vec4(uv0 / atlas_size, uv1 / atlas_size));
+					auto thumbnail = new cThumbnail;
+					thumbnail->element = element;
+					thumbnail->w = w;
+					thumbnail->h = h;
+					thumbnail->data = data;
+					thumbnail->id = id;
+					e->add_component(thumbnail);
+					e->add_data_listener(element, [](Capture& c, uint64 h) {
+						auto thiz = c.thiz<cThumbnail>();
+						if (h == S<"culled"_h>)
+							thiz->toggle();
+					}, Capture().set_thiz(thumbnail));
+					container->add_child(e);
+				}
+			}, Capture(), "SELECT * FROM `tk`.`ssss`;");
+			assert(res == database::NoError);
+		}, Capture());
 	}
 
 	looper().add_event([](Capture& c) {

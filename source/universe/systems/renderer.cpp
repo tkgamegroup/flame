@@ -3,7 +3,6 @@
 #include "../world_private.h"
 #include "../components/element_private.h"
 #include "../components/node_private.h"
-#include "../components/custom_drawing_private.h"
 #include "../components/camera_private.h"
 #include "renderer_private.h"
 
@@ -49,15 +48,6 @@ namespace flame
 				node->update_transform();
 				for (auto& d : node->drawers)
 					d.second(d.first, canvas);
-			}
-		}
-
-		{
-			auto custom = e->get_component_t<cCustomDrawingPrivate>();
-			if (custom)
-			{
-				for (auto& d : custom->drawers)
-					d->call(canvas);
 			}
 		}
 

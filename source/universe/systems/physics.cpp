@@ -5,7 +5,7 @@
 #include <flame/script/script.h>
 #include "../world_private.h"
 #include "../components/node_private.h"
-#include "../components/custom_drawing_private.h"
+#include "../components/element_private.h"
 #include "../components/rigid_private.h"
 #include "../components/shape_private.h"
 #include "../components/controller_private.h"
@@ -23,7 +23,7 @@ namespace flame
 		{
 			if (world && phy_scene)
 			{
-				visualization_layer = world->root->find_child("debug")->get_component_t<cCustomDrawingPrivate>();
+				visualization_layer = world->root->find_child("debug")->get_component_t<cElementPrivate>();
 				if (visualization_layer)
 				{
 					phy_scene->set_visualization(true);

@@ -41,7 +41,7 @@
       <cBloom />
     </entity>
     <entity name="debug">
-      <cCustomDrawing />
+      <cElement />
     </entity>
     <entity name="ui">
       <cElement alignx="MinMax" aligny="MinMax" />
