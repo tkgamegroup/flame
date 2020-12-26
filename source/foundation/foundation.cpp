@@ -222,8 +222,16 @@ namespace flame
 			GetObject(hbmp, sizeof(bmp), &bmp);
 			*out_width = bmp.bmWidth;
 			*out_height = bmp.bmHeight;
-			*out_data = new char[bmp.bmWidth * bmp.bmHeight * 4];
+			*out_data = (char*)f_malloc(bmp.bmWidth * bmp.bmHeight * 4);
 			GetBitmapBits(hbmp, bmp.bmWidthBytes * bmp.bmHeight, *out_data);
+			for (auto y = 0; y < bmp.bmHeight; y++)
+			{
+				for (auto x = 0; x < bmp.bmWidth; x++)
+				{
+					auto pixel = *out_data + (y * bmp.bmWidth * 4 + x * 4);
+					std::swap(pixel[0], pixel[2]);
+				}
+			}
 			DeleteObject(hbmp);
 		}
 
@@ -1257,7 +1265,7 @@ namespace flame
 			dead = true;
 		case WM_ENTERSIZEMOVE:
 			sizing = true;
-			SetTimer(hWnd, 0, 100, NULL);
+			SetTimer(hWnd, 0, 16, NULL);
 			break;
 		case WM_EXITSIZEMOVE:
 			sizing = false;

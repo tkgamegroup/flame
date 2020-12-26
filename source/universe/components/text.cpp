@@ -105,6 +105,7 @@ namespace flame
 
 	void cTextPrivate::on_left_world()
 	{
+		canvas = nullptr;
 		res_id = -1;
 		atlas = nullptr;
 	}

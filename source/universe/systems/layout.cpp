@@ -247,92 +247,72 @@ namespace flame
 				break;
 			case LayoutTile:
 			{
-				//			auto n = fence >= 0 ? min(fence, (int)als.size()) : max(0, (int)als.size() + fence);
-				//
-				//			if (column == 0)
-				//			{
-				//				judge_width(l, l->padding_size[0]);
-				//				judge_height(l, l->padding_size[1]);
-				//				for (auto i = 0; i < n; i++)
-				//				{
-				//					auto& al = als[i];
-				//					auto element = al.first;
-				//					auto aligner = al.second;
-				//
-				//					l->set_x(scroll_offset.x + l->padding.x, this);
-				//					l->set_y(scroll_offset.y + l->padding.y, this);
-				//				}
-				//				for (auto i = n; i < als.size(); i++)
-				//				{
-				//					apply_basic_h(als[i].first, als[i].second, true);
-				//					apply_basic_v(als[i].first, als[i].second, true);
-				//				}
-				//			}
-				//			else
-				//			{
-				//				auto w = 0.f;
-				//				auto h = 0.f;
-				//				auto lw = 0.f;
-				//				auto lh = 0.f;
-				//				for (auto i = 0; i < n; i++)
-				//				{
-				//					auto& al = als[i];
-				//					auto element = al.first;
-				//					auto aligner = al.second;
-				//
-				//					lw += l->size.x + l->layout_gap;
-				//					lh = max(l->size.y, lh);
-				//
-				//					if ((i + 1) % column == 0)
-				//					{
-				//						w = max(lw - l->layout_gap, w);
-				//						h += lh + l->layout_gap;
-				//						lw = 0.f;
-				//						lh = 0.f;
-				//					}
-				//				}
-				//				if (fence != 0 && !als.empty())
-				//				{
-				//					if (n % column != 0)
-				//					{
-				//						w = max(lw - l->layout_gap, w);
-				//						h += lh + l->layout_gap;
-				//					}
-				//					h -= l->layout_gap;
-				//				}
-				//				w += l->padding_size[0];
-				//				h += l->padding_size[1];
-				//				judge_width(l, w);
-				//				judge_height(l, h);
-				//
-				//				auto x = l->padding[0];
-				//				auto y = l->padding[1];
-				//				lh = 0.f;
-				//				for (auto i = 0; i < n; i++)
-				//				{
-				//					auto& al = als[i];
-				//					auto element = al.first;
-				//					auto aligner = al.second;
-				//
-				//					l->set_x(scroll_offset.x + x, this);
-				//					l->set_y(scroll_offset.y + y, this);
-				//
-				//					x += l->size.x + l->layout_gap;
-				//					lh = max(l->size.y, lh);
-				//
-				//					if ((i + 1) % column == 0)
-				//					{
-				//						x = l->padding[0];
-				//						y += lh + l->layout_gap;
-				//						lh = 0.f;
-				//					}
-				//				}
-				//				for (auto i = n; i < als.size(); i++)
-				//				{
-				//					apply_basic_h(als[i].first, als[i].second, true);
-				//					apply_basic_v(als[i].first, als[i].second, true);
-				//				}
-				//			}
+				auto w = 0.f;
+				auto h = 0.f;
+				auto lw = 0.f;
+				auto lh = 0.f;
+
+				if (/*auto column*/true)
+				{
+					if (als[0].size() > 0)
+						l->layout_columns = (l->size.x - l->padding_size[0]) / (als[0][0]->size.x + l->layout_gap);
+					l->layout_columns = max(1U, l->layout_columns);
+				}
+
+				for (auto i = 0; i < als[0].size(); i++)
+				{
+					auto& al = als[0][i];
+
+					lw += al->size.x + l->layout_gap;
+					lh = max(al->size.y, lh);
+
+					if ((i + 1) % l->layout_columns == 0)
+					{
+						w = max(lw - l->layout_gap, w);
+						h += lh + l->layout_gap;
+						lw = 0.f;
+						lh = 0.f;
+					}
+				}
+				if (!als[0].empty())
+				{
+					if (als[0].size() % l->layout_columns != 0)
+					{
+						w = max(lw - l->layout_gap, w);
+						h += lh + l->layout_gap;
+					}
+					h -= l->layout_gap;
+				}
+				w += l->padding_size[0];
+				h += l->padding_size[1];
+				judge_width(l, w);
+				judge_height(l, h);
+
+				auto x = l->padding[0];
+				auto y = l->padding[1];
+				lh = 0.f;
+				for (auto i = 0; i < als[0].size(); i++)
+				{
+					auto& al = als[0][i];
+
+					al->set_x(l->scroll.x + x);
+					al->set_y(l->scroll.y + y);
+
+					x += al->size.x + l->layout_gap;
+					lh = max(al->size.y, lh);
+
+					if ((i + 1) % l->layout_columns == 0)
+					{
+						x = l->padding[0];
+						y += lh + l->layout_gap;
+						lh = 0.f;
+					}
+				}
+				for (auto al : als[1])
+				{
+					apply_basic_h(l, al, false);
+					apply_basic_v(l, al, false);
+				}
 			}
 				break;
 			}

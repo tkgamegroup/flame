@@ -1,123 +1,169 @@
-#include <flame/universe/app.h>
-#include <flame/universe/components/text.h>
+﻿#include <flame/foundation/bitmap.h>
+#include <flame/database/database.h>
+#include <flame/graphics/buffer.h>
 #include <flame/universe/components/image.h>
-#include <flame/universe/components/tree.h>
+#include <flame/universe/app.h>
 
 using namespace flame;
 using namespace graphics;
 
 App g_app;
 
-Canvas* canvas;
-Entity* root;
+std::filesystem::path stored_path = "E:/ssss/__/";
 
-Entity* search;
-Entity* tree;
-Entity* image;
-
-ImageView* white_view;
-
-Entity* prev_selected = nullptr;
-
-struct cTreeLeafPath : Component
+void add_tag(database::Connection* db, const char* name)
 {
-	inline static auto type_name = "cTreeLeafPath";
-	inline static auto type_hash = ch(type_name);
+	auto res = db->query_fmt("INSERT INTO `tk`.`tags` (`id`, `name`) VALUES ('%s', '%s');", std::to_string(ch(name)).c_str(), name);
+	assert(res == database::NoError || res == database::ErrorDuplicated);
+}
 
-	std::filesystem::path path;
-
-	cTreeLeafPath() : 
-		Component("cTreeLeafPath", type_hash)
-	{
-	}
-};
-
-void add_dir(Entity* dst, const std::filesystem::path& dir)
+void collect_files(database::Connection* db, const std::filesystem::path& dir, const std::vector<std::string>& tags)
 {
+	std::vector<std::pair<std::string, std::filesystem::path>> list;
 	for (std::filesystem::directory_iterator end, it(dir); it != end; it++)
 	{
-		auto& path = it->path();
-		if (it->is_directory())
+		if (!std::filesystem::is_directory(it->status()))
 		{
-			auto e = Entity::create();
-			e->load(L"tree_node");
-			e->find_child("title")->get_component_t<cText>()->set_text(path.filename().c_str());
-			e->get_component_t<cTreeNode>()->toggle_collapse();
-			dst->add_child(e);
-
-			add_dir(e->find_child("items"), path);
+			auto& path = it->path();
+			auto fn = std::to_string(ch(w2s(path.wstring()).c_str()));
+			list.emplace_back(fn, path);
 		}
-		else
+	}
+	char time_str[100];
+	{
+		time_t t;
+		time(&t);
+		auto ti = localtime(&t);
+		strftime(time_str, sizeof(time_str), "%Y-%m-%d", ti);
+	}
+	for (auto i = 0; i < list.size(); i++)
+	{
+		auto& item = list[i];
+		auto ext = item.second.extension().string();
+		auto res = db->query_fmt("INSERT INTO `tk`.`ssss` (`id`, `ext`, `time`, `order`) VALUES ('%s', '%s', '%s', '%s');", item.first.c_str(), ext.c_str(), time_str, std::to_string(i).c_str());
+		assert(res == database::NoError || res == database::ErrorDuplicated);
+		std::filesystem::copy_file(item.second, stored_path.string() + item.first + ext, std::filesystem::copy_options::skip_existing);
+		for (auto& t : tags)
 		{
-			auto e = Entity::create();
-			e->load(L"tree_leaf");
-			auto ctfp = new cTreeLeafPath();
-			ctfp->path = path;
-			e->add_component(ctfp);
-			e->get_component_t<cText>()->set_text(path.filename().c_str());
-			dst->add_child(e);
+			auto tag_id = std::to_string(ch(t.c_str()));
+			{
+				uint row_count;
+				auto res = db->query_fmt(&row_count, "SELECT * FROM `tk`.`ssss_tags` WHERE ssss_id='%s' AND tag_id='%s';", item.first.c_str(), tag_id.c_str());
+				assert(res == database::NoError);
+				if (row_count > 0)
+					continue;
+			}
+			auto res = db->query_fmt("INSERT INTO `tk`.`ssss_tags` (`ssss_id`, `tag_id`) VALUES ('%s', '%s')", item.first.c_str(), tag_id.c_str());
+			assert(res == database::NoError);
 		}
 	}
 }
 
-int main(int argc, char** args)
+struct DynamicAtlas
 {
-	g_app.create();
-	auto w = new GraphicsWindow(&g_app, true, true, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable);
-	canvas = w->canvas;
-	canvas->set_clear_color(cvec4(255));
-	root = w->root;
+	uint cx, cy;
+	uint size;
+	Image* image;
+	uint id;
+	std::vector<uint> map;
 
-	auto e = Entity::create();
-	e->load(L"main");
-	root->add_child(e);
+	CommandBuffer* cb;
+	Buffer* buf;
 
-	search = e->find_child("search");
-	search->add_local_data_changed_listener([](Capture&, Component* t, uint64 h) {
-		if (t->type_hash == cText::type_hash && h == S<ch("text")>::v)
-		{
-
-		}
-	}, Capture());
-	tree = e->find_child("tree");
-	image = e->find_child("image");
+	void create(uint _cx, uint _cy, uint _size)
 	{
-		auto ci = image->get_component_t<cImage>();
-		ci->set_res_id(9);
-		ci->set_tile_id(0);
+		cx = _cx;
+		cy = _cy;
+		size = _size;
+		image = Image::create(Device::get_default(), Format_R8G8B8A8_UNORM, uvec2(cx * size, cy * size), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
+		id = g_app.main_window->canvas->set_element_resource(-1, { image->get_view(), nullptr, nullptr });
+		map.resize(cx * cy);
+		for (auto i = 0; i < map.size(); i++)
+			map[i] = 0;
+
+		cb = CommandBuffer::create(CommandPool::get(Device::get_default()));
+		buf = Buffer::create(Device::get_default(), sizeof(cvec4) * size * size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent);
+		buf->map();
 	}
 
-	white_view = canvas->get_resource(9)->get_view();
-
-	tree->add_local_data_changed_listener([](Capture&, Component* t, uint64 h) {
-		if (t->type_hash == cTree::type_hash && h == S<ch("selected")>::v)
+	uint new_image(uint w, uint h, char* data)
+	{
+		assert(w <= size && h <= size);
+		for (auto i = 0; i < map.size(); i++)
 		{
-			auto s = ((cTree*)t)->get_selected();
-
-			if (prev_selected == s)
-				return;
-
-			auto prev_view = canvas->get_resource(9)->get_view();
-			if (prev_view != white_view)
-				prev_view->get_image()->release();
-			canvas->set_resource(9, white_view);
-
-			if (auto ctf = s ? s->get_component_t<cTreeLeafPath>() : nullptr; ctf)
+			if (map[i] == 0)
 			{
-				auto path = s->get_component_t<cTreeLeafPath>()->path;
-				auto ext = path.extension();
-				if (ext == L".jpg" ||
-					ext == L".png")
-					canvas->set_resource(9, Image::create(g_app.graphics_device, path.c_str())->get_default_view());
+				memcpy(buf->get_mapped(), data, sizeof(cvec4) * w * h);
+				cb->begin(true);
+				BufferImageCopy cpy;
+				cpy.image_offset.x = size * (i % cx);
+				cpy.image_offset.y = size * (i / cx);
+				cpy.image_extent = uvec2(w, h);
+				cb->copy_buffer_to_image(buf, image, 1, &cpy);
+				cb->end();
+				auto q = Queue::get(Device::get_default());
+				q->submit(1, &cb, nullptr, nullptr, nullptr);
+				q->wait_idle();
+				map[i] = 1;
+				return i;
 			}
-
-			image->get_component_t<cElement>()->mark_size_dirty();
-
-			prev_selected = s;
 		}
-	}, Capture());
+		return -1;
+	}
+}thumbnails_atlas;
 
-	add_dir(tree, L"E:/pic/pic");
+const auto ThumbnailSize = 128U;
+
+int main(int argc, char** args)
+{
+	auto db = database::Connection::create("tk");
+
+	g_app.create();
+
+	auto w = new GraphicsWindow(&g_app, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
+
+	{
+		auto e = Entity::create();
+		e->load(L"main");
+		w->root->add_child(e);
+
+		auto screen_size = get_screen_size();
+		thumbnails_atlas.create(ceil((float)screen_size.x / (float)ThumbnailSize), ceil((float)screen_size.y / (float)ThumbnailSize), ThumbnailSize);
+	}
+
+	{
+		auto res = db->query_fmt([](Capture& c, database::Res* res) {
+			auto container = g_app.main_window->root->find_child("container");
+			for (auto i = 0; i < res->row_count; i++)
+			{
+				res->fetch_row();
+
+				auto fn = stored_path;
+				fn /= res->row[0];
+				fn += res->row[1];
+				uint w, h;
+				char* data;
+				get_thumbnail(ThumbnailSize, fn.c_str(), &w, &h, &data);
+				auto id = thumbnails_atlas.new_image(w, h, data);
+
+				auto e = Entity::create();
+				e->load(L"prefabs/image");
+				auto element = e->get_component_t<cElement>();
+				element->set_width(ThumbnailSize);
+				element->set_height(ThumbnailSize);
+				auto padding_v = (ThumbnailSize - h) * 0.5f;
+				element->set_padding(vec4(0, padding_v, 0, padding_v));
+				auto image = e->get_component_t<cImage>();
+				image->set_res_id(thumbnails_atlas.id);
+				auto atlas_size = vec2(thumbnails_atlas.image->get_size());
+				auto uv0 = vec2((id % thumbnails_atlas.cx) * ThumbnailSize, (id / thumbnails_atlas.cx) * ThumbnailSize);
+				auto uv1 = uv0 + vec2(w, h);
+				image->set_uv(vec4(uv0 / atlas_size, uv1 / atlas_size));
+				container->add_child(e);
+			}
+		}, Capture(), "SELECT * FROM `tk`.`ssss`;");
+		assert(res == database::NoError);
+	}
 
 	looper().add_event([](Capture& c) {
 		printf("%d\n", looper().get_fps());

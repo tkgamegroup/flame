@@ -79,6 +79,11 @@ set(LUA_INCLUDE_DIR "${temp}/include" CACHE PATH "LUA Include Directory")
 set(LUA_STATIC_LIBRARY_PATH "${temp}/liblua54.a" CACHE FILEPATH "LUA STATIC Library Path")
 set(LUA_DYNAMIC_LIBRARY_PATH "${temp}/lua54.dll" CACHE FILEPATH "LUA DYNAMIC Library Path")
 
+option(USE_MYSQL "Use MySQL" OFF)
+set(MYSQL_INCLUDE_DIR "C:/Program Files/MySQL/MySQL Server 8.0/include" CACHE PATH "MYSQL Include Directory")
+set(MYSQL_STATIC_LIBRARY_PATH "C:/Program Files/MySQL/MySQL Server 8.0/lib/libmysql.lib" CACHE FILEPATH "MYSQL STATIC Library Path")
+set(MYSQL_DYNAMIC_LIBRARY_PATH "C:/Program Files/MySQL/MySQL Server 8.0/lib/libmysql.dll" CACHE FILEPATH "MYSQL DYNAMIC Library Path")
+
 set(temp "${dir}/SPIRV-Cross")
 if (NOT EXISTS "${temp}")
 	set(temp "")

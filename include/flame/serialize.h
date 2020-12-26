@@ -599,7 +599,7 @@ namespace flame
 
 	inline std::string sfmt(const char* fmt, ...)
 	{
-		static char buf[1024];
+		char buf[1024];
 		va_list ap;
 		va_start(ap, &fmt);
 		vsprintf(buf, fmt, ap);
@@ -609,7 +609,7 @@ namespace flame
 
 	inline std::wstring wfmt(const wchar_t* fmt, ...)
 	{
-		static wchar_t buf[1024];
+		wchar_t buf[1024];
 		va_list ap;
 		va_start(ap, &fmt);
 		vswprintf(buf, fmt, ap);

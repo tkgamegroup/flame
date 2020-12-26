@@ -4,6 +4,7 @@
 #include "../world_private.h"
 #include "element_private.h"
 #include "image_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -48,6 +49,18 @@ namespace flame
 		}
 		if (entity)
 			entity->data_changed(this, S<"src"_h>);
+	}
+
+	void cImagePrivate::set_uv(const vec4& uv)
+	{
+		if (uv0 == uv.xy() && uv1 == uv.zw())
+			return;
+		uv0 = uv.xy;
+		uv1 = uv.zw;
+		if (element)
+			element->mark_drawing_dirty();
+		if (entity)
+			entity->data_changed(this, S<"uv"_h>);
 	}
 
 	void cImagePrivate::apply_src()
@@ -106,13 +119,39 @@ namespace flame
 		}
 	}
 
-	void cImagePrivate::on_gain_canvas()
+	void cImagePrivate::on_added()
 	{
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
+
+		element->drawers[1].emplace_back(this, (void(*)(Component*, graphics::Canvas*))f2a(&cImagePrivate::draw));
+		element->measurables.emplace_back(this, (void(*)(Component*, vec2&))f2a(&cImagePrivate::measure));
+		element->mark_drawing_dirty();
+		element->mark_size_dirty();
+	}
+
+	void cImagePrivate::on_removed()
+	{
+		std::erase_if(element->drawers[0], [&](const auto& i) {
+			return i.first == this;
+		});
+		std::erase_if(element->measurables, [&](const auto& i) {
+			return i.first == this;
+		});
+		element->mark_drawing_dirty();
+		element->mark_size_dirty();
+	}
+
+	void cImagePrivate::on_entered_world()
+	{
+		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		fassert(canvas);
 		apply_src();
 	}
 
-	void cImagePrivate::on_lost_canvas()
+	void cImagePrivate::on_left_world()
 	{
+		canvas = nullptr;
 		res_id = -1;
 		tile_id = -1;
 		iv = nullptr;
@@ -131,7 +170,7 @@ namespace flame
 
 	void cImagePrivate::draw(graphics::Canvas* canvas)
 	{
-		if (res_id != -1 && tile_id != -1)
+		if (res_id != -1)
 		{
 			canvas->draw_image(res_id, tile_id, element->points[4], 
 				element->content_size, element->axes, uv0, uv1, cvec4(255));

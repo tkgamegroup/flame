@@ -38,6 +38,7 @@ namespace flame
 		bool need_layout = false;
 		LayoutType layout_type = LayoutFree;
 		float layout_gap = 0.f;
+		uint layout_columns = 1;
 		bool auto_width = true;
 		bool auto_height = true;
 

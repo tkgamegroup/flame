@@ -303,6 +303,8 @@ namespace flame
 		c->entity = this;
 
 		c->on_added();
+		if (world)
+			c->on_entered_world();
 
 		ComponentSlot slot;
 		slot.c.reset(c);

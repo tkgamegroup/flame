@@ -1,4 +1,3 @@
-#include <flame/serialize.h>
 #include <flame/foundation/foundation.h>
 #include "network_private.h"
 

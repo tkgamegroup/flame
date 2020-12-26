@@ -41,10 +41,15 @@ namespace flame
 		const char* get_src() const override { return src.c_str(); }
 		void set_src(const std::string& src);
 
+		vec4 get_uv() const override { return vec4(uv0, uv1); }
+		void set_uv(const vec4& uv) override;
+
 		void apply_src();
 
-		void on_gain_canvas();
-		void on_lost_canvas();
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 
 		void measure(vec2& ret);
 
