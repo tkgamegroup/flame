@@ -141,6 +141,10 @@ namespace flame
 
 	void sDispatcherPrivate::dispatch_mouse_single(cReceiverPrivate* er, bool force)
 	{
+		auto frame = looper().get_frame();
+		if (er->frame >= frame)
+			return;
+
 		if (debug_target == er)
 		{
 			debug_target = nullptr;
@@ -165,7 +169,7 @@ namespace flame
 			}
 		}
 		if (hovering == er || force || (er->ignore_occluders && mouse_contained))
-			staging_mouse_targets.push_back(er);
+			mouse_targets.push_back(er);
 
 //		if (!drag_overing && mouse_contained && focusing && focusing_state == FocusingAndDragging && er != focusing)
 //		{
@@ -272,12 +276,12 @@ namespace flame
 //			}
 //		}
 		
-		staging_mouse_targets.clear();
+		mouse_targets.clear();
 		if (active)
 			dispatch_mouse_single(active, true);
 		dispatch_mouse_recursively(world->root.get());
 
-		for (auto er : staging_mouse_targets)
+		for (auto er : mouse_targets)
 		{
 			if (mdisp.x != 0 || mdisp.y != 0)
 			{
@@ -373,7 +377,7 @@ namespace flame
 
 		auto set_state = [&](cReceiverPrivate* er) {
 			auto e = er->entity;
-			auto s = (e->state & (~StateHovering) & (~StateActive));
+			auto s = (e->state & (~StateHovering) & (~StateFocusing) & (~StateActive));
 			if (er == hovering)
 				s |= StateHovering;
 			if (er == focusing)

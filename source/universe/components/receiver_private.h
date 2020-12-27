@@ -26,7 +26,7 @@ namespace flame
 
 		cElementPrivate* element = nullptr;
 		sDispatcherPrivate* dispatcher = nullptr;
-		int frame = -1;
+		uint frame = 0;
 
 		bool ignore_occluders = false;
 		uint64 drag_hash = 0;

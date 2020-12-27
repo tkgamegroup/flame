@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity src="dComboboxItem" >
+  <entity driver="dComboboxItem" >
     <cElement padding="4,2,4,2" alignx="MinMax" fill_color="220,220,220,255;Selected|Hovering:205,225,250,255;Selected:200,220,245,255;Hovering:230,230,230,255" />
     <cText text="combobox_item" />
     <cReceiver />

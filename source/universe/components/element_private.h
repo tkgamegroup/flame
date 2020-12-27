@@ -49,6 +49,7 @@ namespace flame
 		bool crooked = false;
 		vec2 points[8];
 		mat2 axes;
+		mat2 axes_inv;
 		mat3 transform;
 		Rect aabb;
 

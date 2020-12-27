@@ -458,7 +458,7 @@ namespace flame
 
 	Driver* EntityPrivate::get_driver(uint64 hash, uint idx) const
 	{
-		if (hash == 0)
+		if (idx == 0)
 		{
 			for (auto& d : drivers)
 			{
@@ -587,8 +587,10 @@ namespace flame
 		if (ename != "entity")
 		{
 			auto it = prefabs_map.find(ename);
-			fassert(it != prefabs_map.end());
-			e_dst->load(it->second);
+			if (it != prefabs_map.end())
+				e_dst->load(it->second);
+			else
+				printf("cannot find prefab: %s\n", ename.c_str());
 		}
 
 		for (auto a : n_src.attributes())
@@ -638,25 +640,30 @@ namespace flame
 		for (auto n_c : n_src.children())
 		{
 			auto name = std::string(n_c.name());
-			ComponentType* ct = find_component_type(name);
-			if (ct)
+			if (name[0] == 'c')
 			{
-				auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
-				auto isnew = false;
-				if (!c)
+				ComponentType* ct = find_component_type(name);
+				if (ct)
 				{
-					c = ct->create();
-					isnew = true;
+					auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
+					auto isnew = false;
+					if (!c)
+					{
+						c = ct->create();
+						isnew = true;
+					}
+					for (auto a : n_c.attributes())
+					{
+						if (!set_attribute(c, ct, a.name(), a.value()))
+							printf("cannot find attribute: %s\n", a.name());
+					}
+					if (isnew)
+						e_dst->add_component(c);
 				}
-				for (auto a : n_c.attributes())
-				{
-					if (!set_attribute(c, ct, a.name(), a.value()))
-						printf("cannot find attribute: %s\n", a.name());
-				}
-				if (isnew)
-					e_dst->add_component(c);
+				else
+					printf("cannot find component: %s\n", name.c_str());
 			}
-			else
+			else if (name[0] == 'e')
 			{
 				auto e = f_new<EntityPrivate>();
 				e->path = e_dst->path;
@@ -681,6 +688,8 @@ namespace flame
 				if (!driver_processed)
 					e_dst->add_child(e);
 			}
+			else
+				fassert(0);
 		}
 
 		if (first && !e_dst->drivers.empty())

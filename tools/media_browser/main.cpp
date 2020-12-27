@@ -19,7 +19,7 @@ void add_tag(const char* name)
 	assert(res == database::NoError || res == database::ErrorDuplicated);
 }
 
-void collect_files(const std::filesystem::path& dir, const std::vector<char*>& tags)
+void collect_files(const std::filesystem::path& dir, const std::vector<const char*>& tags)
 {
 	std::vector<std::pair<std::string, std::filesystem::path>> list;
 	for (std::filesystem::directory_iterator end, it(dir); it != end; it++)
@@ -133,6 +133,11 @@ struct cThumbnail : Component
 	{
 	}
 
+	~cThumbnail()
+	{
+		id = thumbnails_atlas.alloc_image(w, h, data);
+	}
+
 	void toggle()
 	{
 		if (element->get_culled())
@@ -170,8 +175,6 @@ int main(int argc, char** args)
 
 		e->find_child("search_btn")->get_component_t<cReceiver>()->add_mouse_click_listener([](Capture& c) {
 			auto sp = SUS::split(w2s(c_search->get_text()));
-			if (sp.size() == 0)
-				return;
 			auto tag_str = std::string("(");
 			for (auto i = 0; i < sp.size(); i++)
 			{
@@ -179,9 +182,12 @@ int main(int argc, char** args)
 				if (i < sp.size() - 1)
 					tag_str += ", ";
 			}
+			if (sp.empty())
+				tag_str += "''";
 			tag_str += ")";
 			auto res = db->query_fmt([](Capture& c, database::Res* res) {
 				auto container = g_app.main_window->root->find_child("container");
+				container->remove_all_children();
 				for (auto i = 0; i < res->row_count; i++)
 				{
 					res->fetch_row();
@@ -227,7 +233,16 @@ int main(int argc, char** args)
 	}
 
 	looper().add_event([](Capture& c) {
-		printf("%d\n", looper().get_fps());
+		auto dispatcher = g_app.main_window->s_dispatcher;
+		printf("------------------------\n");
+		auto hovering = dispatcher->get_hovering();
+		auto focusing = dispatcher->get_focusing();
+		auto active = dispatcher->get_active();
+		printf("hovering: %s, focusing: %s, active: %s\n", 
+			hovering ? hovering->entity->get_name() : "",
+			focusing ? focusing->entity->get_name() : "",
+			active ? active->entity->get_name() : "");
+		printf("fps: %d\n", looper().get_fps());
 		c._current = nullptr;
 	}, Capture(), 1.f);
 

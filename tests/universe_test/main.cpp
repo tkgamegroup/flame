@@ -1,6 +1,5 @@
 #include <flame/universe/app.h>
 #include <flame/universe/components/command.h>
-#include <flame/universe/components/custom_drawing.h>
 #include <flame/universe/components/camera.h>
 
 using namespace flame;
@@ -8,13 +7,13 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/list_test");
+auto test_prefab = std::filesystem::path(L"tests/ui_test");
 
 int main(int argc, char** args)
 {
 	g_app.create();
 
-	auto w = new GraphicsWindow(&g_app, "Universe Test", uvec2(600, 400), WindowFrame | WindowResizable, true, true);
+	auto w = new GraphicsWindow(&g_app, L"Universe Test", uvec2(600, 400), WindowFrame | WindowResizable, true, true);
 
 	w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
 
@@ -41,7 +40,16 @@ int main(int argc, char** args)
 	}
 
 	looper().add_event([](Capture& c) {
-		printf("%d\n", looper().get_fps());
+		auto dispatcher = g_app.main_window->s_dispatcher;
+		printf("------------------------\n");
+		auto hovering = dispatcher->get_hovering();
+		auto focusing = dispatcher->get_focusing();
+		auto active = dispatcher->get_active();
+		printf("hovering: %s, focusing: %s, active: %s\n",
+			hovering ? hovering->entity->get_name() : "",
+			focusing ? focusing->entity->get_name() : "",
+			active ? active->entity->get_name() : "");
+		printf("fps: %d\n", looper().get_fps());
 		c._current = nullptr;
 	}, Capture(), 1.f);
 

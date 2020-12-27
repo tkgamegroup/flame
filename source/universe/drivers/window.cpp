@@ -35,7 +35,7 @@ namespace flame
 			size_dragger_receiver = size_dragger->get_component_t<cReceiverPrivate>();
 			fassert(size_dragger_receiver);
 
-			receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
+			size_dragger_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 				auto thiz = c.thiz<dWindowPrivate>();
 				if (thiz->size_dragger_receiver->is_active())
 				{

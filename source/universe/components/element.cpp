@@ -405,9 +405,13 @@ namespace flame
 				axes3 = shearY(axes3, skew.x);
 				m = m * axes3;
 				axes = mat2(axes3);
+				axes_inv = inverse(axes);
 			}
 			else
+			{
 				axes = mat2(1.f);
+				axes_inv = mat2(1.f);
+			}
 			m = scale(m, scl);
 			transform = m;
 
@@ -588,8 +592,8 @@ namespace flame
 		update_transform();
 		if (crooked)
 		{
-			vec2 ps[] = { points[0], points[1], points[2], points[3] };
-			return convex_contains(p, ps);
+			auto pp = axes_inv * (p - points[0]);
+			return pp.x >= 0.f && pp.x <= size.x && pp.y >= 0.f && pp.y <= size.y;
 		}
 		else
 			return aabb.contains(p);

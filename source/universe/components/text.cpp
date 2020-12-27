@@ -1,4 +1,3 @@
-#include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
 #include "../world_private.h"
 #include "element_private.h"
@@ -39,6 +38,30 @@ namespace flame
 		}
 		if (entity)
 			entity->data_changed(this, S<"font_color"_h>);
+	}
+
+	void cTextPrivate::row_layout(int offset, vec2& size, uint& num_chars)
+	{
+		auto width = 0.f;
+
+		auto beg = text.c_str() + offset;
+		auto end = text.c_str() + text.size();
+		auto s = beg;
+		while (s < end)
+		{
+			auto c = *s++;
+			if (c == L'\n')
+				break;
+			if (c == L'\r')
+				continue;
+
+			width += atlas->get_glyph(c, font_size)->get_advance();
+		}
+
+		width = max(width, (float)font_size);
+
+		size = vec2(width, font_size);
+		num_chars = s - beg;
 	}
 
 	void cTextPrivate::mark_text_changed()

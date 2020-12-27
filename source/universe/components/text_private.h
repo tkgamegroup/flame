@@ -1,5 +1,6 @@
 #pragma once
 
+#include <flame/graphics/font.h>
 #include "../entity_private.h"
 #include <flame/universe/components/text.h>
 
@@ -41,6 +42,8 @@ namespace flame
 
 		cvec4 get_font_color() const override { return font_color; }
 		void set_font_color(const cvec4& col) override;
+
+		void row_layout(int offset, vec2& size, uint& num_chars);
 
 		void mark_text_changed();
 

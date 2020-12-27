@@ -1,5 +1,6 @@
 #include <flame/graphics/font.h>
 #include <flame/graphics/canvas.h>
+#include "../world_private.h"
 #include "../components/text_private.h"
 #include "../components/receiver_private.h"
 #include "edit_private.h"
@@ -38,40 +39,59 @@ namespace flame
 		auto font_size = text->font_size;
 
 		element->update_transform();
-		auto pos = element->points[4];
-		auto axes = mat2(element->axes);
-		auto p = vec2(0.f);
 
-		auto i = 0;
-		for (; i < str.size(); i++)
+		auto pp = element->axes_inv * (mpos - element->points[0]);
+
+		int n = str.size();
+		float base_y = 0, prev_x;
+		int i = 0, k;
+
+		auto r_size = vec2(0.f);
+		auto r_num_chars = 0U;
+
+		while (i < n)
 		{
-			auto ch = str[i];
-			if (ch == '\n')
+			text->row_layout(i, r_size, r_num_chars);
+			if (r_num_chars <= 0)
+				return n;
+
+			if (i == 0 && pp.y < base_y)
+				return 0;
+
+			if (pp.y < base_y + r_size.y)
+				break;
+
+			i += r_num_chars;
+			base_y += r_size.y;
+		}
+
+		if (i >= n)
+			return n;
+
+		if (pp.x < 0.f)
+			return i;
+
+		if (pp.x < r_size.x)
+		{
+			prev_x = 0.f;
+			for (k = 0; k < r_num_chars; ++k)
 			{
-				p.y += font_size;
-				p.x = 0.f;
-			}
-			else if (ch != '\r')
-			{
-				if (ch == '\t')
-					ch = ' ';
-
-				auto g = atlas->get_glyph(ch, font_size);
-				auto adv = g->get_advance();
-
-				vec2 ps[] = { 
-					pos + axes * p,
-					pos + axes * (p + vec2(adv, 0.f)),
-					pos + axes * (p + vec2(adv, font_size)),
-					pos + axes * (p + vec2(0.f, font_size))
-				};
-				if (convex_contains(mpos, ps))
-					return i;
-
-				p.x += adv;
+				auto w = atlas->get_glyph(str[i], font_size)->get_advance();
+				if (pp.x < prev_x + w)
+				{
+					if (pp.x < prev_x + w / 2)
+						return k + i;
+					else
+						return k + i + 1;
+				}
+				prev_x += w;
 			}
 		}
-		return i;
+
+		if (str[i + r_num_chars - 1] == L'\n')
+			return i + r_num_chars - 1;
+		else
+			return i + r_num_chars;
 	}
 
 	void dEditPrivate::on_load_finished()
@@ -187,8 +207,11 @@ namespace flame
 			switch (key)
 			{
 			case Keyboard_Enter:
-				//if (thiz->enter_to_throw_focus)
-				//	throw_focus();
+				if (thiz->enter_to_throw_focus)
+				{
+					auto dp = thiz->receiver->dispatcher;
+					dp->next_focusing = dp->world->root->get_component_t<cReceiverPrivate>();
+				}
 				break;
 			case Keyboard_Left:
 				if (ed->kbtns[Keyboard_Shift].first)
@@ -298,11 +321,6 @@ namespace flame
 			auto low = min(select_start, select_end);
 			auto high = max(select_start, select_end);
 
-			//auto throw_focus = [&]() {
-			//	auto dp = thiz->receiver->dispatcher;
-			//	dp->next_focusing = dp->world_->root->get_component(cReceiver);
-			//};
-
 			switch (ch)
 			{
 			case 24: // Ctrl+X
@@ -350,16 +368,11 @@ namespace flame
 			case 27:
 				break;
 			case '\r':
-				break;
-			case '\n':
-				//if (thiz->enter_to_throw_focus)
-				//{
-				//	throw_focus();
-				//	break;
-				//}
+				if (thiz->enter_to_throw_focus)
+					break;
 				ch = '\n';
 			default:
-				str = str.substr(0, low) + std::wstring(1, ch) + str.substr(high);
+				str = str.substr(0, low) + ch + str.substr(high);
 				thiz->mark_changed();
 				select_start = select_end = high + 1 - (high - low);
 			}

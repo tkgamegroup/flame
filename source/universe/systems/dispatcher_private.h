@@ -48,7 +48,7 @@ namespace flame
 		std::vector<wchar_t> char_inputs;
 		float dbclick_timer = -1.f;
 
-		std::vector<cReceiverPrivate*> staging_mouse_targets;
+		std::vector<cReceiverPrivate*> mouse_targets;
 
 		bool dirty = false;
 
@@ -59,6 +59,9 @@ namespace flame
 		void dispatch_mouse_recursively(EntityPrivate* e);
 		void update() override;
 
+		cReceiver* get_hovering() const override { return hovering; }
+		cReceiver* get_focusing() const override { return focusing; }
+		cReceiver* get_active() const override { return active; }
 		void set_next_focusing(cReceiver* er) override { next_focusing = (cReceiverPrivate*)er; }
 
 		void on_added() override;

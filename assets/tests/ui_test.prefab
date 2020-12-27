@@ -17,17 +17,17 @@
 		<eButton>
 			<cScript src="tests/button_test.lua" />
 		</eButton>
-    <eCombobox src="combobox">
-      <eComboboxItem text="1" />
-      <eComboboxItem text="2" />
-      <eComboboxItem text="3" />
-    </eCombobox>
-    <eTree width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0">
-      <eTreeNode src="tree_node" >
-        <eTreeLeaf />
-      </eTreeNode>
-      <eTreeNode />
-    </eTree>
+		<eCombobox src="combobox">
+		  <eComboboxItem text="1" />
+		  <eComboboxItem text="2" />
+		  <eComboboxItem text="3" />
+		</eCombobox>
+		<eTree width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0">
+		  <eTreeNode src="tree_node" >
+			<eTreeLeaf />
+		  </eTreeNode>
+		  <eTreeNode />
+		</eTree>
 		<eList width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0" >
 		  <eListItem />
 		  <eListItem />
