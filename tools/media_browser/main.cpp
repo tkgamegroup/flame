@@ -32,23 +32,63 @@ cText* c_search = nullptr;
 
 struct ImageView
 {
-	Entity* e = nullptr;
 	Image* image = nullptr;
-	uint id = -1;
+	Entity* e = nullptr;
+	cImage* c_image = nullptr;
+	uint res_id = -1;
+	uint id;
 
-	void show(const std::filesystem::path& filename)
+	void show(uint _id)
 	{
+		id = _id;
 		if (image)
 			image->release();
-		image = Image::create(Device::get_default(), filename.c_str(), true);
-		canvas->set_element_resource(id, { image->get_view(), nullptr, nullptr });
+		image = Image::create(Device::get_default(), items[id].filename.c_str(), true);
+		canvas->set_element_resource(res_id, { image->get_view(), nullptr, nullptr });
 
 		if (!e)
 		{
 			e = Entity::create();
 			e->load(L"image_view");
-			e->find_child("image")->get_component_t<cImage>()->set_res_id(id);
+			c_image = e->find_child("image")->get_component_t<cImage>();
+			c_image->set_res_id(res_id);
+			e->get_component_t<cReceiver>()->add_key_down_listener([](Capture& c, KeyboardKey key) {
+				auto thiz = c.thiz<ImageView>();
+				switch (key)
+				{
+				case Keyboard_Esc:
+					looper().add_event([](Capture& c) {
+						auto thiz = c.thiz<ImageView>();
+						thiz->close();
+					}, Capture().set_thiz(thiz));
+					break;
+				case Keyboard_Left:
+					if (thiz->id > 0)
+						thiz->show(thiz->id - 1);
+					break;
+				case Keyboard_Right:
+					if (thiz->id < items.size() - 1)
+						thiz->show(thiz->id + 1);
+					break;
+				}
+			}, Capture().set_thiz(this));
 			root->add_child(e);
+		}
+		c_image->refres_res();
+	}
+
+	void close()
+	{
+		if (image)
+		{
+			image->release();
+			image = nullptr;
+		}
+
+		if (e)
+		{
+			e->get_parent()->remove_child(e);
+			e = nullptr;
 		}
 	}
 }image_view;
@@ -206,7 +246,7 @@ int main(int argc, char** args)
 	auto screen_size = get_screen_size();
 	thumbnails_atlas.create(ceil((float)screen_size.x / (float)ThumbnailSize), ceil((float)screen_size.y / (float)ThumbnailSize), ThumbnailSize);
 
-	image_view.id = canvas->set_element_resource(-1, { nullptr, nullptr, nullptr });
+	image_view.res_id = canvas->set_element_resource(-1, { nullptr, nullptr, nullptr });
 
 	{
 		auto e = Entity::create();
@@ -270,7 +310,7 @@ int main(int argc, char** args)
 					}, Capture().set_thiz(thumbnail));
 					auto receiver = cReceiver::create();
 					receiver->add_mouse_click_listener([](Capture& c) {
-						image_view.show(items[c.data<int>()].filename);
+						image_view.show(c.data<int>());
 					}, Capture().set_data(&i));
 					e->add_component(receiver);
 					container->add_child(e);

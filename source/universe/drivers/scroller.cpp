@@ -34,17 +34,30 @@ namespace flame
 		fassert(thumb_element);
 		thumb_receiver = thumb->get_component_t<cReceiverPrivate>();
 		fassert(thumb_receiver);
-		 
-		// hthumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
-		//	auto thiz = c.thiz<dScrollerPrivate>();
-		//	if (thiz->receiver->dispatcher->active == thiz->hthumb_receiver)
-		//		thiz->scroll(vec2(disp.x, 0.f));
-		//}, Capture().set_thiz(this));
 
 		view = entity->find_child("view");
 		fassert(view);
 		view_element = view->get_component_t<cElementPrivate>();
 		fassert(view_element);
+		 
+		thumb_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
+			auto thiz = c.thiz<dScrollerPrivate>();
+			if (thiz->receiver->dispatcher->active == thiz->thumb_receiver)
+			{
+				switch (thiz->type)
+				{
+				case ScrollHorizontal:
+					thiz->scroll(vec2(disp.x, 0.f));
+					break;
+				case ScrollVertical:
+					thiz->scroll(vec2(0.f, disp.y));
+					break;
+				case ScrollBoth:
+					thiz->scroll(vec2(disp));
+					break;
+				}
+			}
+		}, Capture().set_thiz(this));
 
 		view->add_data_listener(view_element, [](Capture& c, uint64 h) {
 			auto thiz = c.thiz<dScrollerPrivate>();

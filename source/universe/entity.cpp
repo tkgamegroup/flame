@@ -695,8 +695,11 @@ namespace flame
 		if (first && !e_dst->drivers.empty())
 		{
 			auto d = e_dst->drivers.back().get();
-			d->load_finished = true;
-			d->on_load_finished();
+			if (!d->load_finished)
+			{
+				d->load_finished = true;
+				d->on_load_finished();
+			}
 		}
 	}
 

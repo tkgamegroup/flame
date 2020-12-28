@@ -46,7 +46,7 @@ namespace flame
 		vec4 get_uv() const override { return vec4(uv0, uv1); }
 		void set_uv(const vec4& uv) override;
 
-		void apply_src();
+		void refres_res() override;
 
 		void on_added() override;
 		void on_removed() override;

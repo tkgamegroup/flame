@@ -45,6 +45,12 @@ namespace flame
 		ScrollBoth
 	};
 
+	enum SplitterType
+	{
+		SplitterHorizontal,
+		SplitterVertical
+	};
+
 	enum MenuType
 	{
 		MenuTop,

@@ -90,6 +90,7 @@ namespace flame
 
 		World* get_world() const override { return (World*)world; }
 		Entity* get_parent() const override { return parent; }
+		uint get_index() const override { return index; }
 
 		StateFlags get_state() const override { return state; }
 		void set_state(StateFlags state) override;

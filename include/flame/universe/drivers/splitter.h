@@ -1,16 +1,16 @@
 #pragma once
 
-#include <flame/universe/component.h>
+#include <flame/universe/driver.h>
 
 namespace flame
 {
-	struct dSplitter : Component
+	struct dSplitter : Driver
 	{
 		inline static auto type_name = "flame::dSplitter";
 		inline static auto type_hash = ch(type_name);
 
 		dSplitter() :
-			Component(type_name, type_hash)
+			Driver(type_name, type_hash)
 		{
 		}
 

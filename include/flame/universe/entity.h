@@ -20,8 +20,8 @@ namespace flame
 		virtual void set_visible(bool v) = 0;
 
 		virtual World* get_world() const = 0;
-
 		virtual Entity* get_parent() const = 0;
+		virtual uint get_index() const = 0;
 
 		virtual StateFlags get_state() const = 0;
 		virtual void set_state(StateFlags state) = 0;
