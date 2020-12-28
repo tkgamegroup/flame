@@ -149,6 +149,17 @@ namespace flame
 		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
 		fassert(canvas);
 		apply_src();
+		if (!iv && res_id != -1)
+		{
+			if (tile_id != -1)
+			{
+				auto r = canvas->get_element_resource(res_id);
+				atlas = r.ia;
+				iv = r.ia->get_image()->get_view();
+			}
+			else
+				iv = canvas->get_element_resource(res_id).iv;
+		}
 	}
 
 	void cImagePrivate::on_left_world()

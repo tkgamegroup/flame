@@ -18,7 +18,6 @@ namespace flame
 		virtual uint get_size() const = 0;
 		virtual bool get_srgb() const = 0;
 
-		virtual void add_alpha_channel() = 0;
 		virtual void swap_channel(uint ch1, uint ch2) = 0;
 		virtual void copy_to(Bitmap* dst, uint width, uint height, uint src_x = 0, uint src_y = 0, uint dst_x = 0, uint dst_y = 0, bool border = false) = 0;
 		virtual void srgb_to_linear() = 0;

@@ -20,11 +20,19 @@ namespace flame
 		virtual float get_y() const = 0;
 		virtual void set_y(float y) = 0;
 
+		virtual vec2 get_pos() const = 0;
+		virtual void set_pos(const vec2& p) = 0;
+		virtual void add_pos(const vec2& p) = 0;
+
 		virtual float get_width() const = 0;
 		virtual void set_width(float w) = 0;
 
 		virtual float get_height() const = 0;
 		virtual void set_height(float h) = 0;
+
+		virtual vec2 get_size() const = 0;
+		virtual void set_size(const vec2& s) = 0;
+		virtual void add_size(const vec2& s) = 0;
 
 		virtual vec4 get_padding() const = 0;
 		virtual void set_padding(const vec4& p) = 0;
@@ -43,6 +51,9 @@ namespace flame
 
 		virtual float get_scaley() const = 0;
 		virtual void set_scaley(float s) = 0;
+
+		virtual vec2 get_scale() const = 0;
+		virtual void set_scale(const vec2& s) = 0;
 
 		virtual float get_angle() const = 0;
 		virtual void set_angle(float angle) = 0;

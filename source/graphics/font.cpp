@@ -58,21 +58,18 @@ namespace flame
 			view = new ImageViewPrivate(image.get(), true, ImageView2D, {}, swz);
 		}
 
-		GlyphPrivate* FontAtlasPrivate::get_glyph(wchar_t code, uint size)
+		const Glyph& FontAtlasPrivate::get_glyph(wchar_t code, uint size)
 		{
 			if (size == 0)
-				return nullptr;
+				return empty_glyph;
 
 			auto key = GlyphKey(code, size);
 
-			GlyphPrivate* ret = nullptr;
 			auto it = map.find(key);
 			if (it == map.end())
 			{
-				auto g = new GlyphPrivate;
-				g->code = code;
-				map[key].reset(g);
-				ret = g;
+				Glyph g;
+				g.code = code;
 
 				for (auto font : fonts)
 				{
@@ -88,28 +85,28 @@ namespace flame
 					ascent *= scale;
 					stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
 					adv *= scale;
-					g->size = uvec2(w, h);
-					g->off = uvec2(x, ascent + h + y);
-					g->advance = adv;
+					g.size = uvec2(w, h);
+					g.off = uvec2(x, ascent + h + y);
+					g.advance = adv;
 					if (bitmap)
 					{
-						auto n = bin_pack_root->find(g->size);
+						auto n = bin_pack_root->find(g.size);
 						if (n)
 						{
 							auto& atlas_pos = n->pos;
 
-							ImmediateStagingBuffer stag(device, image_pitch(g->size.x) * g->size.y, bitmap);
+							ImmediateStagingBuffer stag(device, image_pitch(g.size.x) * g.size.y, bitmap);
 							ImmediateCommandBuffer icb(device);
 							auto cb = icb.cb.get();
 							cb->image_barrier(image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutTransferDst);
 							BufferImageCopy cpy;
 							cpy.image_offset = atlas_pos;
-							cpy.image_extent = g->size;
+							cpy.image_extent = g.size;
 							cb->copy_buffer_to_image(stag.buf.get(), image.get(), { &cpy, 1 });
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst, ImageLayoutShaderReadOnly);
 
-							g->uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g->size.y) / (float)font_atlas_size.y,
-								(atlas_pos.x + g->size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + g.size.y) / (float)font_atlas_size.y,
+								(atlas_pos.x + g.size.x) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
 						}
 						else
 							printf("font atlas is full\n");
@@ -118,11 +115,14 @@ namespace flame
 
 					break;
 				}
+
+				it = map.insert(std::make_pair(key, g)).first;
+				return it->second;
 			}
 			else
-				ret = it->second.get();
+				return it->second;
 
-			return ret;
+			return empty_glyph;
 		}
 
 		FontAtlas* FontAtlas::create(Device* device, uint font_count, Font* const* fonts)

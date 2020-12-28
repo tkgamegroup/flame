@@ -16,10 +16,7 @@ namespace flame
 		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 			auto thiz = c.thiz<dWindowPrivate>();
 			if (thiz->receiver->is_active())
-			{
-				thiz->element->set_x(thiz->element->pos.x + disp.x / thiz->element->scl.x);
-				thiz->element->set_y(thiz->element->pos.y + disp.y / thiz->element->scl.y);
-			}
+				thiz->element->add_pos(vec2(disp) / thiz->element->scl);
 		}, Capture().set_thiz(this));
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
@@ -38,10 +35,7 @@ namespace flame
 			size_dragger_receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2&) {
 				auto thiz = c.thiz<dWindowPrivate>();
 				if (thiz->size_dragger_receiver->is_active())
-				{
-					thiz->element->set_width(thiz->element->size.x + disp.x);
-					thiz->element->set_height(thiz->element->size.y + disp.y);
-				}
+					thiz->element->add_size(disp);
 			}, Capture().set_thiz(this));
 
 			//block_receiver->entity->add_local_message_listener([](Capture& c, Message msg, void*) {

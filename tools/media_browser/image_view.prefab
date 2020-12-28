@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<prefab>
+  <eGrid>
+    <eImage name="image" alignx="Min" aligny="Min" />
+  </eGrid>
+</prefab>

@@ -26,21 +26,6 @@ namespace flame
 			const wchar_t* get_filename() const override { return filename.c_str(); }
 		};
 
-		struct GlyphPrivate : Glyph
-		{
-			ushort code = 0;
-			ivec2 off = ivec2(0);
-			uvec2 size = uvec2(0);
-			vec4 uv = vec4(0.f);
-			int advance = 0;
-
-			ushort get_code() const override { return code; }
-			ivec2 get_off() const override { return off; }
-			uvec2 get_size() const override { return size; }
-			vec4 get_uv() const override { return uv; }
-			int get_advance() const override { return advance; }
-		};
-
 		struct GlyphKey
 		{
 			ushort c;
@@ -66,34 +51,26 @@ namespace flame
 			}
 		};
 
-		struct FontAtlasBridge : FontAtlas
-		{
-			Glyph* get_glyph(wchar_t code, uint size) override;
-		};
-
 		struct FontAtlasPrivate : FontAtlas
 		{
 			std::vector<FontPrivate*> fonts;
 
-			std::unordered_map<GlyphKey, std::unique_ptr<GlyphPrivate>, Hasher_GlyphKey> map;
+			std::unordered_map<GlyphKey, Glyph, Hasher_GlyphKey> map;
 			std::unique_ptr<BinPackNode> bin_pack_root;
 
 			DevicePrivate* device;
 			std::unique_ptr<ImagePrivate> image;
 			ImageViewPrivate* view;
 
+			Glyph empty_glyph;
+
 			FontAtlasPrivate(DevicePrivate* device, std::span<FontPrivate*> fonts);
 
 			void release() override { delete this; }
 
-			GlyphPrivate* get_glyph(wchar_t code, uint size);
+			const Glyph& get_glyph(wchar_t code, uint size) override;
 
 			ImageView* get_view() const override { return view; }
 		};
-
-		inline Glyph* FontAtlasBridge::get_glyph(wchar_t code, uint size)
-		{
-			return ((FontAtlasPrivate*)this)->get_glyph(code, size);
-		}
 	}
 }

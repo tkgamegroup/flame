@@ -35,7 +35,6 @@ namespace flame
 		uint get_size() const override { return size; }
 		bool get_srgb() const override { return srgb; }
 
-		void add_alpha_channel() override;
 		void swap_channel(uint ch1, uint ch2) override;
 		void copy_to(BitmapPrivate* dst, uint w, uint h, uint src_x, uint src_y, uint dst_x, uint dst_y, bool border);
 		void srgb_to_linear() override;

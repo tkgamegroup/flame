@@ -30,32 +30,6 @@ namespace flame
 		delete[]data;
 	}
 
-	void BitmapPrivate::add_alpha_channel()
-	{
-		fassert(channel == 3 && byte_per_channel == 1);
-		if (channel != 3 || byte_per_channel != 1)
-			return;
-
-		auto new_data = new uchar[width * height * 4];
-		auto dst = new_data;
-		for (auto j = 0; j < height; j++)
-		{
-			auto src = data + j * pitch;
-			for (auto i = 0; i < width; i++)
-			{
-				*dst++ = *src++;
-				*dst++ = *src++;
-				*dst++ = *src++;
-				*dst++ = 255;
-			}
-		}
-		channel = 4;
-		pitch = image_pitch(width * channel * byte_per_channel);
-		size = pitch * height;
-		delete[]data;
-		data = new_data;
-	}
-
 	void BitmapPrivate::swap_channel(uint ch1, uint ch2)
 	{
 		fassert(byte_per_channel == 1 && ch1 < channel&& ch2 < channel);
@@ -159,10 +133,11 @@ namespace flame
 			return nullptr;
 
 		int cx, cy, channel;
-		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 0);
+		
+		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 4);
 		if (!data)
 			return nullptr;
-		auto b = new BitmapPrivate(cx, cy, channel, 1, data);
+		auto b = new BitmapPrivate(cx, cy, 4, 1, data);
 		stbi_image_free(data);
 		return b;
 	}

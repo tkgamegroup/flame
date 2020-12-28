@@ -89,21 +89,7 @@ struct _2DEditor
 			auto& edt = *c.thiz<_2DEditor>();
 			auto dp = c.current<cReceiver>()->dispatcher;
 			auto mp = vec2(dp->mouse_pos);
-			if (is_mouse_scroll(action, key))
-			{
-				auto v = pos.x > 0.f ? 1 : -1;
-				edt.scale_level += v;
-				if (edt.scale_level < 1 || edt.scale_level > edt.scale_level_max)
-					edt.scale_level -= v;
-				else
-				{
-					auto p = (mp - edt.base->global_pos) / ((edt.scale_level - v) * 0.1f);
-					edt.base->add_pos(float(v) * p * -0.1f);
-					edt.base->set_scale(edt.scale_level * 0.1f);
-					edt.scale_text->set_text((std::to_wstring(edt.scale_level * 10) + L"%").c_str());
-				}
-			}
-			else if (is_mouse_down(action, key, true) && key == Mouse_Left)
+			if (is_mouse_down(action, key, true) && key == Mouse_Left)
 			{
 				edt.selecting = true;
 				edt.select_begin = (vec2(pos) - edt.base->global_pos) / (edt.scale_level * 0.1f);
@@ -119,12 +105,6 @@ struct _2DEditor
 				{
 					edt.select_end = (mp - edt.base->global_pos) / (edt.scale_level * 0.1f);
 					edt.element->mark_dirty();
-				}
-
-				if (dp->mouse_buttons[Mouse_Right] & KeyStateDown)
-				{
-					edt.base->add_pos(vec2(pos));
-					edt.moved = true;
 				}
 			}
 			return true;

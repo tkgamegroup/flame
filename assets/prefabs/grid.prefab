@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<prefab>
+  <eElement driver="dGrid" alignx="MinMax" aligny="MinMax" fill_color="0,0,0,160" >
+    <cReceiver />
+    <eElement name="anchor" />
+  </eElement>
+</prefab>

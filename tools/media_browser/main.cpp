@@ -13,6 +13,46 @@ App g_app;
 database::Connection* db;
 std::filesystem::path stored_path = "E:/ssss/__/";
 
+struct Item
+{
+	std::filesystem::path filename;
+
+	void get_filename(const std::filesystem::path& fn, const std::filesystem::path& ext)
+	{
+		filename = stored_path;
+		filename /= fn;
+		filename += ext;
+	}
+};
+std::vector<Item> items;
+
+Entity* root = nullptr;
+Canvas* canvas = nullptr;
+cText* c_search = nullptr;
+
+struct ImageView
+{
+	Entity* e = nullptr;
+	Image* image = nullptr;
+	uint id = -1;
+
+	void show(const std::filesystem::path& filename)
+	{
+		if (image)
+			image->release();
+		image = Image::create(Device::get_default(), filename.c_str(), true);
+		canvas->set_element_resource(id, { image->get_view(), nullptr, nullptr });
+
+		if (!e)
+		{
+			e = Entity::create();
+			e->load(L"image_view");
+			e->find_child("image")->get_component_t<cImage>()->set_res_id(id);
+			root->add_child(e);
+		}
+	}
+}image_view;
+
 void add_tag(const char* name)
 {
 	auto res = db->query_fmt("INSERT INTO `tk`.`tags` (`id`, `name`) VALUES ('%s', '%s');", std::to_string(ch(name)).c_str(), name);
@@ -78,7 +118,7 @@ struct DynamicAtlas
 		cy = _cy;
 		size = _size;
 		image = Image::create(Device::get_default(), Format_R8G8B8A8_UNORM, uvec2(cx * size, cy * size), 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled);
-		id = g_app.main_window->canvas->set_element_resource(-1, { image->get_view(), nullptr, nullptr });
+		id = canvas->set_element_resource(-1, { image->get_view(), nullptr, nullptr });
 		map.resize(cx * cy);
 		for (auto i = 0; i < map.size(); i++)
 			map[i] = 0;
@@ -153,8 +193,6 @@ struct cThumbnail : Component
 	}
 };
 
-cText* c_search;
-
 int main(int argc, char** args)
 {
 	db = database::Connection::create("tk");
@@ -162,18 +200,23 @@ int main(int argc, char** args)
 	g_app.create();
 
 	auto w = new GraphicsWindow(&g_app, L"Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable, true, true);
+	root = w->root;
+	canvas = w->canvas;
 
 	auto screen_size = get_screen_size();
 	thumbnails_atlas.create(ceil((float)screen_size.x / (float)ThumbnailSize), ceil((float)screen_size.y / (float)ThumbnailSize), ThumbnailSize);
 
+	image_view.id = canvas->set_element_resource(-1, { nullptr, nullptr, nullptr });
+
 	{
 		auto e = Entity::create();
 		e->load(L"main");
-		w->root->add_child(e);
+		root->add_child(e);
 
 		c_search = e->find_child("search_bar")->get_component_t<cText>();
 
 		e->find_child("search_btn")->get_component_t<cReceiver>()->add_mouse_click_listener([](Capture& c) {
+			items.clear();
 			auto sp = SUS::split(w2s(c_search->get_text()));
 			auto tag_str = std::string("(");
 			for (auto i = 0; i < sp.size(); i++)
@@ -186,22 +229,22 @@ int main(int argc, char** args)
 				tag_str += "''";
 			tag_str += ")";
 			auto res = db->query_fmt([](Capture& c, database::Res* res) {
-				auto container = g_app.main_window->root->find_child("container");
+				auto container = root->find_child("container");
 				container->remove_all_children();
-				for (auto i = 0; i < res->row_count; i++)
+				items.resize(res->row_count);
+				for (auto i = 0; i < items.size(); i++)
 				{
 					res->fetch_row();
 
-					auto fn = stored_path;
-					fn /= res->row[0];
-					fn += res->row[1];
+					items[i].get_filename(res->row[0], res->row[1]);
+
 					uint w, h;
 					uchar* data;
-					get_thumbnail(ThumbnailSize, fn.c_str(), &w, &h, &data);
+					get_thumbnail(ThumbnailSize, items[i].filename.c_str(), &w, &h, &data);
 					auto id = thumbnails_atlas.alloc_image(w, h, data);
 
 					auto e = Entity::create();
-					e->load(L"prefabs/image");
+					e->load(L"item");
 					auto element = e->get_component_t<cElement>();
 					element->set_width(ThumbnailSize);
 					element->set_height(ThumbnailSize);
@@ -225,9 +268,14 @@ int main(int argc, char** args)
 						if (h == S<"culled"_h>)
 							thiz->toggle();
 					}, Capture().set_thiz(thumbnail));
+					auto receiver = cReceiver::create();
+					receiver->add_mouse_click_listener([](Capture& c) {
+						image_view.show(items[c.data<int>()].filename);
+					}, Capture().set_data(&i));
+					e->add_component(receiver);
 					container->add_child(e);
 				}
-			}, Capture(), "SELECT * FROM tk.ssss WHERE id in (SELECT ssss_id FROM tk.ssss_tags WHERE tag_id in (SELECT id FROM tk.tags WHERE name in (%s)));", tag_str.c_str());
+			}, Capture(), "SELECT * FROM tk.ssss WHERE id in (SELECT ssss_id FROM tk.ssss_tags WHERE tag_id in (SELECT id FROM tk.tags WHERE name in (%s))) ORDER BY 'order';", tag_str.c_str());
 			assert(res == database::NoError);
 		}, Capture());
 	}

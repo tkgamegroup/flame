@@ -55,7 +55,7 @@ namespace flame
 			if (c == L'\r')
 				continue;
 
-			width += atlas->get_glyph(c, font_size)->get_advance();
+			width += atlas->get_glyph(c, font_size).advance;
 		}
 
 		width = max(width, (float)font_size);
@@ -119,12 +119,20 @@ namespace flame
 	{
 		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
 		fassert(canvas);
-		res_id = canvas->find_element_resource("default_font");
 		if (res_id != -1)
 		{
-			atlas = canvas->get_element_resource(res_id).fa;
 			if (!atlas)
-				res_id = -1;
+				canvas->get_element_resource(res_id).fa;
+		}
+		else
+		{
+			res_id = canvas->find_element_resource("default_font");
+			if (res_id != -1)
+			{
+				atlas = canvas->get_element_resource(res_id).fa;
+				if (!atlas)
+					res_id = -1;
+			}
 		}
 	}
 

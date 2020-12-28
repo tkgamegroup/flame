@@ -27,11 +27,11 @@ namespace flame
 
 		struct Glyph
 		{
-			virtual ushort get_code() const = 0;
-			virtual ivec2 get_off() const = 0;
-			virtual uvec2 get_size() const = 0;
-			virtual vec4 get_uv() const = 0;
-			virtual int get_advance() const = 0;
+			ushort code = 0;
+			ivec2 off = ivec2(0);
+			uvec2 size = uvec2(0);
+			vec4 uv = vec4(0.f);
+			int advance = 0;
 		};
 
 		struct FontAtlas
@@ -55,7 +55,7 @@ namespace flame
 					{
 						if (ch == '\t')
 							ch = ' ';
-						off.x += get_glyph(ch, font_size)->get_advance();
+						off.x += get_glyph(ch, font_size).advance;
 					}
 					pstr++;
 				}
@@ -80,7 +80,7 @@ namespace flame
 					{
 						if (ch == '\t')
 							ch = ' ';
-						x += get_glyph(ch, font_size)->get_advance();
+						x += get_glyph(ch, font_size).advance;
 						size.x = max(size.x, x);
 					}
 					pstr++;
@@ -114,7 +114,7 @@ namespace flame
 					case '\t':
 						ch = ' ';
 					default:
-						auto adv = get_glyph(ch, font_size)->get_advance();
+						auto adv = get_glyph(ch, font_size).advance;
 						if (w + adv >= width)
 						{
 							w = adv;
@@ -130,7 +130,7 @@ namespace flame
 				return ret;
 			}
 
-			virtual Glyph* get_glyph(wchar_t unicode, uint font_size) = 0;
+			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;
 
 			virtual ImageView* get_view() const = 0;
 

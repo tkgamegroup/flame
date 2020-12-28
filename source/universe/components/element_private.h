@@ -77,11 +77,19 @@ namespace flame
 		float get_y() const override { return pos.y; }
 		void set_y(float y) override;
 
+		vec2 get_pos() const override { return pos; }
+		void set_pos(const vec2& p) override;
+		void add_pos(const vec2& p) override;
+
 		float get_width() const override { return size.x; }
 		void set_width(float w) override;
 
 		float get_height() const override { return size.y; }
 		void set_height(float h) override;
+
+		vec2 get_size() const override { return size; }
+		void set_size(const vec2& s) override;
+		void add_size(const vec2& s) override;
 
 		vec4 get_padding() const override { return padding; }
 		void set_padding(const vec4& p) override;
@@ -100,6 +108,9 @@ namespace flame
 
 		float get_scaley() const override { return scl.y; }
 		void set_scaley(float s) override;
+
+		vec2 get_scale() const override { return scl; }
+		void set_scale(const vec2& s) override;
 
 		float get_angle() const override { return angle; }
 		void set_angle(float a) override;

@@ -31,6 +31,30 @@ namespace flame
 			entity->data_changed(this, S<"y"_h>);
 	}
 
+	void cElementPrivate::set_pos(const vec2& p)
+	{
+		if (pos == p)
+			return;
+		pos = p;
+		mark_transform_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
+		if (entity)
+			entity->data_changed(this, S<"pos"_h>);
+	}
+
+	void cElementPrivate::add_pos(const vec2& p)
+	{
+		if (p.x == 0.f && p.y == 0.f)
+			return;
+		pos += p;
+		mark_transform_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
+		if (entity)
+			entity->data_changed(this, S<"pos"_h>);
+	}
+
 	void cElementPrivate::set_width(float w)
 	{
 		if (size.x == w)
@@ -57,6 +81,36 @@ namespace flame
 			pelement->mark_layout_dirty();
 		if (entity)
 			entity->data_changed(this, S<"height"_h>);
+	}
+
+	void cElementPrivate::set_size(const vec2& s)
+	{
+		if (size == s)
+			return;
+		size = s;
+		content_size[0] = size.x - padding[0] - padding[2];
+		content_size[1] = size.y - padding[1] - padding[3];
+		mark_transform_dirty();
+		mark_layout_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
+		if (entity)
+			entity->data_changed(this, S<"size"_h>);
+	}
+
+	void cElementPrivate::add_size(const vec2& s)
+	{
+		if (s.x == 0.f && s.y == 0.f)
+			return;
+		size = s;
+		content_size[0] = size.x - padding[0] - padding[2];
+		content_size[1] = size.y - padding[1] - padding[3];
+		mark_transform_dirty();
+		mark_layout_dirty();
+		if (pelement)
+			pelement->mark_layout_dirty();
+		if (entity)
+			entity->data_changed(this, S<"size"_h>);
 	}
 
 	void cElementPrivate::set_padding(const vec4& p)
@@ -120,6 +174,16 @@ namespace flame
 		mark_transform_dirty();
 		if (entity)
 			entity->data_changed(this, S<"scaley"_h>);
+	}
+
+	void cElementPrivate::set_scale(const vec2& s)
+	{
+		if (scl == s)
+			return;
+		scl = s;
+		mark_transform_dirty();
+		if (entity)
+			entity->data_changed(this, S<"scale"_h>);
 	}
 
 	void cElementPrivate::set_angle(float a)
@@ -241,11 +305,10 @@ namespace flame
 
 	void cElementPrivate::set_layout_type(LayoutType t)
 	{
+		need_layout = true;
 		if (layout_type == t)
 			return;
 		layout_type = t;
-		if (t != LayoutFree)
-			need_layout = true;
 		mark_layout_dirty();
 		if (entity)
 			entity->data_changed(this, S<"layout_type"_h>);
@@ -388,47 +451,41 @@ namespace flame
 			transform_dirty = false;
 
 			crooked = !(angle == 0.f && skew.x == 0.f && skew.y == 0.f);
-			auto m = mat3(1.f);
+			transform = mat3(1.f);
 			if (pelement)
 			{
 				pelement->update_transform();
 				crooked = crooked && pelement->crooked;
-				m = pelement->transform;
+				transform = pelement->transform;
 			}
 
-			m = translate(m, pos);
+			transform = translate(transform, pos);
 			if (crooked)
 			{
 				mat3 axes3 = mat3(1.f);
 				axes3 = rotate(axes3, radians(angle));
 				axes3 = shearX(axes3, skew.y);
 				axes3 = shearY(axes3, skew.x);
-				m = m * axes3;
-				axes = mat2(axes3);
-				axes_inv = inverse(axes);
+				transform = transform * axes3;
 			}
-			else
-			{
-				axes = mat2(1.f);
-				axes_inv = mat2(1.f);
-			}
-			m = scale(m, scl);
-			transform = m;
+			transform = scale(transform, scl);
+			axes = mat2(transform);
+			axes_inv = inverse(axes);
 
 			auto a = -pivot * size;
 			auto b = a + size;
 			vec2 c, d;
 			if (crooked)
 			{
-				a = vec2(m[2]) + axes * a;
-				b = vec2(m[2]) + axes * b;
+				a = vec2(transform[2]) + axes * a;
+				b = vec2(transform[2]) + axes * b;
 				c = a + axes * padding.xy();
 				d = b - axes * padding.zw();
 			}
 			else
 			{
-				a += vec2(m[2]);
-				b += vec2(m[2]);
+				a += vec2(transform[2]);
+				b += vec2(transform[2]);
 				c = a + padding.xy();
 				d = b - padding.zw();
 			}

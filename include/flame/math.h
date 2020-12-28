@@ -193,8 +193,7 @@ namespace flame
 
 		bool overlapping(const Rect& rhs)
 		{
-			return LT.x <= rhs.RB.x && RB.x >= rhs.LT.x &&
-				LT.y <= rhs.RB.y && RB.y >= rhs.LT.y;
+			return !(rhs.LT.x > RB.x || rhs.LT.y > RB.y);
 		}
 	};
 }

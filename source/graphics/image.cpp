@@ -212,8 +212,6 @@ namespace flame
 			else
 			{
 				auto bmp = Bitmap::create(filename.c_str());
-				if (bmp->get_channel() == 3)
-					bmp->add_alpha_channel();
 				if (srgb)
 					bmp->srgb_to_linear();
 

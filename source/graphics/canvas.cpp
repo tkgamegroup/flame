@@ -1635,10 +1635,10 @@ namespace flame
 					if (ch == '\t')
 						ch = ' ';
 
-					auto g = atlas->get_glyph(ch, font_size);
-					auto o = p + vec2(g->off);
-					auto s = vec2(g->size);
-					auto uv = g->uv;
+					auto& g = atlas->get_glyph(ch, font_size);
+					auto o = p + vec2(g.off);
+					auto s = vec2(g.size);
+					auto uv = g.uv;
 					auto uv0 = vec2(uv.x, uv.y);
 					auto uv1 = vec2(uv.z, uv.w);
 
@@ -1650,7 +1650,7 @@ namespace flame
 					add_vtx(pos + (o.x + s.x) * axes[0] + o.y * axes[1], vec2(uv1.x, uv0.y), col);
 					add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 2); add_idx(vtx_cnt + 1); add_idx(vtx_cnt + 0); add_idx(vtx_cnt + 3); add_idx(vtx_cnt + 2);
 
-					p.x += g->advance;
+					p.x += g.advance;
 				}
 
 				ptext++;
