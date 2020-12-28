@@ -20,12 +20,4 @@ namespace flame
 		Entity* get_selected() const override { return selected; }
 		void set_selected(Entity* e) override;
 	};
-
-	struct dListItemPrivate : dListItem
-	{
-		dListPrivate* list;
-		cReceiverPrivate* receiver;
-
-		void on_load_finished() override;
-	};
 }

@@ -18,14 +18,8 @@ namespace flame
 
 		int get_index() const override { return index; }
 		void set_index(int index) override;
-	};
 
-	struct dComboboxItemPrivate : dComboboxItem
-	{
-		dComboboxPrivate* combobox = nullptr;
-
-		cReceiverPrivate* receiver = nullptr;
-
-		void on_gain_receiver();
+		void on_load_finished() override;
+		bool on_child_added(Entity* e) override;
 	};
 }

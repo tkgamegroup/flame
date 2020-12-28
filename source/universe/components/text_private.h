@@ -27,7 +27,7 @@ namespace flame
 		graphics::Canvas* canvas = nullptr;
 
 		std::wstring text;
-		uint font_size = 14;
+		uint font_size = 16;
 		cvec4 font_color = cvec4(0, 0, 0, 255);
 
 		int res_id = -1;

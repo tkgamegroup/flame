@@ -19,17 +19,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static dCombobox* create();
 	};
-
-	struct dComboboxItem : Driver
-	{
-		inline static auto type_name = "flame::dComboboxItem";
-		inline static auto type_hash = ch(type_name);
-
-		dComboboxItem() :
-			Driver(type_name, type_hash)
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS static dComboboxItem* create();
-	};
 }

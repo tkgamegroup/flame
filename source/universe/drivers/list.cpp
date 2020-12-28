@@ -21,9 +21,12 @@ namespace flame
 		if (load_finished)
 		{
 			auto e = (EntityPrivate*)_e;
-			auto dli = e->get_driver_t<dListItemPrivate>();
-			if (dli)
-				dli->list = this;
+			auto receiver = e->get_component_t<cReceiverPrivate>();
+			fassert(receiver);
+			receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
+				auto thiz = c.thiz<dListPrivate>();
+				thiz->set_selected(c.data<EntityPrivate*>());
+			}, Capture().set_thiz(this).set_data(&e));
 		}
 		return false;
 	}
@@ -43,22 +46,5 @@ namespace flame
 	dList* dList::create()
 	{
 		return f_new<dListPrivate>();
-	}
-
-	void dListItemPrivate::on_load_finished()
-	{
-		receiver = entity->get_component_t<cReceiverPrivate>();
-		fassert(receiver);
-
-		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
-			auto thiz = c.thiz<dListItemPrivate>();
-			if (thiz->list)
-				thiz->list->set_selected(thiz->entity);
-		}, Capture().set_thiz(this));
-	}
-
-	dListItem* dListItem::create()
-	{
-		return f_new<dListItemPrivate>();
 	}
 }

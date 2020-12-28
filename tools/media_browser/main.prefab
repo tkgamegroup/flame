@@ -11,7 +11,7 @@
         <eButton name="search_btn" font_size="24" text="Search" />
       </eElement>
       <eScroller type="Vertical" alignx="MinMax" aligny="MinMax" >
-        <eElement name="container" alignx="MinMax" layout_type="Tile" layout_gap="4" >
+        <eElement name="list" alignx="MinMax" layout_type="Tile" layout_gap="4" >
         </eElement>
       </eScroller>
     </eElement>

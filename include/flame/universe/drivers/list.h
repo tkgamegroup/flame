@@ -19,17 +19,4 @@ namespace flame
 
 		FLAME_UNIVERSE_EXPORTS static dList* create();
 	};
-
-	struct dListItem : Driver
-	{
-		inline static auto type_name = "flame::dListItem";
-		inline static auto type_hash = ch(type_name);
-
-		dListItem() :
-			Driver(type_name, type_hash)
-		{
-		}
-
-		FLAME_UNIVERSE_EXPORTS static dListItem* create();
-	};
 }
