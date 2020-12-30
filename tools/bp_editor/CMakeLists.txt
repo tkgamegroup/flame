@@ -1,5 +1,5 @@
 generate_config()
-file(GLOB_RECURSE SOURCE_LIST "*.c*")
-add_executable(bp_editor ${SOURCE_LIST})
+file(GLOB_RECURSE SOURCES "*.c*")
+add_executable(bp_editor ${SOURCES})
 set_target_properties(bp_editor PROPERTIES FOLDER "tools")
 target_link_libraries(bp_editor flame_universe)

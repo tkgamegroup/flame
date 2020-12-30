@@ -1,5 +1,5 @@
-file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
-add_executable(typeinfogen ${SOURCE_LIST})
+file(GLOB_RECURSE SOURCES "*.h*" "*.c*")
+add_executable(typeinfogen ${SOURCES})
 set_target_properties(typeinfogen PROPERTIES FOLDER "flame")
 target_include_directories(typeinfogen PRIVATE "${VS_LOCATION}/DIA SDK/include")
 target_link_libraries(typeinfogen flame_foundation)

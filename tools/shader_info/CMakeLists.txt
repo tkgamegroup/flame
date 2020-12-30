@@ -1,5 +1,5 @@
-file(GLOB_RECURSE SOURCE_LIST "*.h*" "*.c*")
-add_executable(shader_info ${SOURCE_LIST})
+file(GLOB_RECURSE SOURCES "*.h*" "*.c*")
+add_executable(shader_info ${SOURCES})
 set_target_properties(shader_info PROPERTIES FOLDER "tools")
 target_include_directories(shader_info PRIVATE "${SPIRV_CROSS_INCLUDE_DIR}")
 target_link_libraries(shader_info flame_foundation)
