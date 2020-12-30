@@ -22,16 +22,19 @@ namespace flame
 		bool current = false;
 
 		cNodePrivate* node = nullptr;
+		void* drawer = nullptr;
 		sRendererPrivate* renderer = nullptr;
 
 		void apply_current();
 
-		void on_gain_renderer();
-		void on_lost_renderer();
+		bool get_current() const override { return current; }
+		void set_current(bool v) override;
 
 		void draw(graphics::Canvas* canvas);
 
-		bool get_current() const override { return current; }
-		void set_current(bool v) override;
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 }

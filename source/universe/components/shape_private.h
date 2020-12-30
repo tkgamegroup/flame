@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/shape.h>
 
 namespace flame
@@ -42,6 +41,9 @@ namespace flame
 		bool get_trigger() const override { return trigger; }
 		void set_trigger(bool v) override;
 
-		//void on_local_message(Message msg, void* p) override;
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 }

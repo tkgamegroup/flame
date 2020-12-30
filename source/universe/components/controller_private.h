@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/controller.h>
 
 namespace flame

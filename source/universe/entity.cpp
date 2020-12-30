@@ -9,7 +9,7 @@ namespace flame
 {
 	static bool debug = false;
 
-	struct ComponentType
+	struct Type
 	{
 		struct Attribute
 		{
@@ -19,7 +19,7 @@ namespace flame
 			FunctionInfo* setter;
 			std::string default_value;
 
-			Attribute(ComponentType* ct, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
+			Attribute(Type* ct, TypeInfo* get_type, TypeInfo* set_type, FunctionInfo* getter, FunctionInfo* setter) :
 				get_type(get_type),
 				set_type(set_type),
 				getter(getter),
@@ -35,7 +35,7 @@ namespace flame
 				get_type->destroy(d, false);
 			}
 
-			std::string serialize(Component* c)
+			std::string serialize(void* c)
 			{
 				void* d = get_type->create(false);
 				getter->call(c, d, {});
@@ -54,11 +54,11 @@ namespace flame
 
 		UdtInfo* udt;
 		FunctionInfo* creator;
-		Component* dummy;
+		void* dummy;
 
 		std::map<std::string, Attribute> attributes;
 
-		ComponentType(UdtInfo* udt) :
+		Type(UdtInfo* udt) :
 			udt(udt)
 		{
 			auto fc = udt->find_function("create");
@@ -98,9 +98,9 @@ namespace flame
 			}
 		}
 
-		Component* create()
+		void* create()
 		{
-			Component* ret;
+			void* ret;
 			creator->call(nullptr, &ret, {});
 			return ret;
 		}
@@ -114,9 +114,9 @@ namespace flame
 		}
 	};
 
-	static std::map<std::string, ComponentType> component_types;
+	static std::map<std::string, Type> component_types;
 
-	ComponentType* find_component_type(const std::string& name)
+	Type* find_component_type(const std::string& name)
 	{
 		auto it = component_types.find(name);
 		if (it == component_types.end())
@@ -124,43 +124,23 @@ namespace flame
 		return &it->second;
 	}
 
-	ComponentType* find_component_type(const std::string& udt_name, std::string& name)
+	Type* find_component_type(const std::string& udt_name, std::string* name)
 	{
 		for (auto& t : component_types)
 		{
 			if (t.second.udt->get_name() == udt_name)
 			{
-				name = t.first;
+				if (name)
+					*name = t.first;
 				return &t.second;
 			}
 		}
 		return nullptr;
 	}
 
-	struct DriverType
-	{
-		UdtInfo* udt;
-		FunctionInfo* creator;
+	static std::map<std::string, Type> driver_types;
 
-		DriverType(UdtInfo* udt) :
-			udt(udt)
-		{
-			auto fc = udt->find_function("create");
-			fassert(fc && fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0);
-			creator = fc;
-		}
-
-		Driver* create()
-		{
-			Driver* ret;
-			creator->call(nullptr, &ret, {});
-			return ret;
-		}
-	};
-
-	static std::map<std::string, DriverType> driver_types;
-
-	DriverType* find_driver_type(const std::string& name)
+	Type* find_driver_type(const std::string& name)
 	{
 		auto it = driver_types.find(name);
 		if (it == driver_types.end())
@@ -532,7 +512,7 @@ namespace flame
 		const std::vector<uint>& los,
 		std::vector<std::unique_ptr<StateRule>>& state_rules)
 	{
-		auto set_attribute = [&](Component* c, ComponentType* ct, const std::string& vname, const std::string& value) {
+		auto set_attribute = [&](Component* c, Type* ct, const std::string& vname, const std::string& value) {
 			auto att = ct->find_attribute(vname);
 			if (att)
 			{
@@ -609,10 +589,10 @@ namespace flame
 			else if (name == "driver")
 			{
 				fassert(first);
-				DriverType* dt = find_driver_type(a.value());
+				Type* dt = find_driver_type(a.value());
 				if (dt)
 				{
-					auto d = dt->create();
+					auto d = (Driver*)dt->create();
 					d->entity = e_dst;
 					e_dst->drivers.emplace_back(d);
 				}
@@ -622,10 +602,13 @@ namespace flame
 			else
 			{
 				auto ok = false;
+				for (auto& d : e_dst->drivers)
+				{
+
+				}
 				for (auto& c : e_dst->components)
 				{
-					std::string cname;
-					auto ct = find_component_type(c.second.c->type_name, cname);
+					auto ct = find_component_type(c.second.c->type_name, nullptr);
 					if (ct && set_attribute(c.second.c.get(), ct, a.name(), a.value()))
 					{
 						ok = true;
@@ -642,14 +625,14 @@ namespace flame
 			auto name = std::string(n_c.name());
 			if (name[0] == 'c')
 			{
-				ComponentType* ct = find_component_type(name);
+				Type* ct = find_component_type(name);
 				if (ct)
 				{
 					auto c = e_dst->get_component(std::hash<std::string>()(ct->udt->get_name()));
 					auto isnew = false;
 					if (!c)
 					{
-						c = ct->create();
+						c = (Component*)ct->create();
 						isnew = true;
 					}
 					for (auto a : n_c.attributes())
@@ -772,10 +755,10 @@ namespace flame
 			});
 			for (auto& c : components)
 			{
-				std::string name;
-				auto ct = find_component_type(c.second->type_name, name);
+				std::string cname;
+				auto ct = find_component_type(c.second->type_name, &cname);
 				fassert(ct);
-				auto n_c = n_dst.append_child(name.c_str());
+				auto n_c = n_dst.append_child(cname.c_str());
 				for (auto& a : ct->attributes)
 				{
 					auto isrule = false;

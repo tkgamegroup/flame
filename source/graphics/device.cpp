@@ -33,28 +33,27 @@ namespace flame
 			appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 			appInfo.apiVersion = VK_API_VERSION_1_0;
 
-			std::vector<const char*> instLayers;
-			if (debug)
-				instLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-
-			std::vector<const char*> instExtensions;
-			instExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-			instExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-			if (debug)
-				instExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+			std::vector<const char*> extensions;
+			std::vector<const char*> layers;
+			extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+			extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+			if (debug) 
+			{
+				extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+				layers.push_back("VK_LAYER_LUNARG_standard_validation");
+			}
 			VkInstanceCreateInfo instInfo = {};
 			instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 			instInfo.pApplicationInfo = &appInfo;
-			instInfo.enabledExtensionCount = instExtensions.size();
-			instInfo.ppEnabledExtensionNames = instExtensions.data();
-			instInfo.enabledLayerCount = instLayers.size();
-			instInfo.ppEnabledLayerNames = instLayers.data();
+			instInfo.enabledExtensionCount = extensions.size();
+			instInfo.ppEnabledExtensionNames = extensions.data();
+			instInfo.enabledLayerCount = layers.size();
+			instInfo.ppEnabledLayerNames = layers.data();
 			chk_res(vkCreateInstance(&instInfo, nullptr, &vk_instance));
+			printf("vulkan: instance created\n");
 
 			if (debug)
 			{
-				static auto _vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)(vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"));
-
 				VkDebugReportCallbackCreateInfoEXT callbackCreateInfo;
 				callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
 				callbackCreateInfo.pNext = nullptr;
@@ -63,7 +62,8 @@ namespace flame
 				callbackCreateInfo.pUserData = nullptr;
 
 				VkDebugReportCallbackEXT callback;
-				chk_res(_vkCreateDebugReportCallbackEXT(vk_instance, &callbackCreateInfo, nullptr, &callback));
+				chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(vk_instance, "vkCreateDebugReportCallbackEXT"))(vk_instance, &callbackCreateInfo, nullptr, &callback));
+				printf("vulkan: debug report callback created\n");
 			}
 
 			uint32_t gpu_count = 0;
@@ -100,24 +100,21 @@ namespace flame
 			}
 
 			transfer_queue_index = -1;
-			for (auto i = 0; i < queue_family_properties.size(); i++)
-			{
-				if (!(queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
-					(queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT))
-				{
-					transfer_queue_index = i;
-					VkDeviceQueueCreateInfo queue_info = {};
-					queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-					queue_info.queueFamilyIndex = i;
-					queue_info.queueCount = 1;
-					queue_info.pQueuePriorities = queue_porities;
-					queue_infos.push_back(queue_info);
-					break;
-				}
-			}
-
-			VkPhysicalDeviceFeatures features;
-			vkGetPhysicalDeviceFeatures(vk_physical_device, &features);
+			//for (auto i = 0; i < queue_family_properties.size(); i++)
+			//{
+			//	if (!(queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+			//		(queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT))
+			//	{
+			//		transfer_queue_index = i;
+			//		VkDeviceQueueCreateInfo queue_info = {};
+			//		queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			//		queue_info.queueFamilyIndex = i;
+			//		queue_info.queueCount = 1;
+			//		queue_info.pQueuePriorities = queue_porities;
+			//		queue_infos.push_back(queue_info);
+			//		break;
+			//	}
+			//}
 
 			vkGetPhysicalDeviceMemoryProperties(vk_physical_device, &vk_mem_props);
 
@@ -128,8 +125,9 @@ namespace flame
 			device_info.queueCreateInfoCount = queue_infos.size();
 			device_info.enabledExtensionCount = device_extensions.size();
 			device_info.ppEnabledExtensionNames = device_extensions.data();
-			device_info.pEnabledFeatures = &features;
+			printf("vulkan: creating device\n");
 			chk_res(vkCreateDevice(vk_physical_device, &device_info, nullptr, &vk_device));
+			printf("vulkan: device created\n");
 
 			dsp.reset(new DescriptorPoolPrivate(this));
 			gcp.reset(graphics_queue_index != -1 ? new CommandPoolPrivate(this, graphics_queue_index) : nullptr);

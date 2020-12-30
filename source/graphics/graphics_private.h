@@ -13,7 +13,11 @@ namespace flame
 	{
 		inline void chk_res(VkResult res)
 		{
-			fassert(res == VK_SUCCESS || res == VK_ERROR_OUT_OF_DATE_KHR);
+			if (res != VK_SUCCESS && res != VK_ERROR_OUT_OF_DATE_KHR)
+			{
+				printf("graphics error: %d\n", res);
+				fassert(0);
+			}
 		}
 
 		template <class T>

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/terrain.h>
 
 namespace flame
@@ -33,6 +32,7 @@ namespace flame
 		int material_id = -1;
 
 		cNodePrivate* node = nullptr;
+		void* drawer = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		uvec2 get_blocks() const override { return blocks; }
@@ -49,9 +49,12 @@ namespace flame
 		const char* get_material_name() const override { return material_name.c_str(); }
 		void set_material_name(const std::string& name);
 
-		void on_gain_canvas();
-
 		void draw(graphics::Canvas* canvas);
+
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 
 	inline void cTerrainBridge::set_height_map(const char* name)

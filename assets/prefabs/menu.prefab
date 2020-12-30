@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
   <entity driver="dMenu" >
-    <cElement padding="4,2,4,2" alignx="MinMax" fill_color="200,200,200,255;Hovering:230,230,230,255" />
+    <cElement padding="4,2,4,2" fill_color="200,200,200,255;Hovering:230,230,230,255" />
     <cText text="menu" />
     <cReceiver />
     <entity name="arrow" visible="false" >

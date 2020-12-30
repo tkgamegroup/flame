@@ -45,6 +45,12 @@ namespace flame
 			std::vector<std::unique_ptr<Closure<void(Capture&, uint64)>>> data_listeners;
 		};
 
+		struct DriverSlot
+		{
+			std::unique_ptr<Driver, Delector> d;
+			std::vector<std::unique_ptr<Closure<void(Capture&, uint64)>>> data_listeners;
+		};
+
 		std::string name;
 
 		bool visible = true;

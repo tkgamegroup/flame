@@ -3,6 +3,7 @@
 #include <flame/physics/rigid.h>
 #include <flame/script/script.h>
 #include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "rigid_private.h"
 #include "../systems/physics_private.h"
@@ -11,7 +12,7 @@ namespace flame
 {
 	cRigidPrivate::~cRigidPrivate()
 	{
-		on_lost_physics_world();
+		destroy();
 
 		for (auto s : trigger_listeners_s)
 			script::Instance::get_default()->release_slot(s);
@@ -26,8 +27,8 @@ namespace flame
 			{
 				for (auto s : phy_shapes)
 					phy_rigid->remove_shape(s);
-				on_lost_physics_world();
-				on_gain_physics_world();
+				destroy();
+				create();
 				for (auto s : phy_shapes)
 					phy_rigid->add_shape(s);
 			}
@@ -91,25 +92,49 @@ namespace flame
 			script::Instance::get_default()->call_slot(s, size(ps), ps);
 	}
 
-	void cRigidPrivate::on_gain_physics_world()
+	void cRigidPrivate::create()
 	{
 		phy_rigid = physics::Rigid::create(physics::Device::get_default(), dynamic);
 		phy_rigid->user_data = this;
-		physics_world->rigids.push_back(this);
-		physics_world->phy_scene->add_rigid(phy_rigid);
+		physics->rigids.push_back(this);
+		physics->phy_scene->add_rigid(phy_rigid);
 		node->update_transform();
 		phy_rigid->set_pose(node->g_pos, node->g_qut);
+	}
+
+	void cRigidPrivate::destroy()
+	{
+		std::erase_if(physics->rigids, [&](const auto& i) {
+			return i == this;
+		});
+		physics->phy_scene->remove_rigid(phy_rigid);
+		phy_rigid->release();
+	}
+
+	void cRigidPrivate::on_added()
+	{
+		node = entity->get_component_t<cNodePrivate>();
+		fassert(node);
+	}
+
+	void cRigidPrivate::on_removed()
+	{
+		node = nullptr;
+	}
+
+	void cRigidPrivate::on_entered_world()
+	{
+		physics = entity->world->get_system_t<sPhysicsPrivate>();
+		fassert(physics);
+
+		create();
 		phy_rigid->add_impulse(staging_impulse);
 		staging_impulse = vec3(0.f);
 	}
 
-	void cRigidPrivate::on_lost_physics_world()
+	void cRigidPrivate::on_left_world()
 	{
-		std::erase_if(physics_world->rigids, [&](const auto& i) {
-			return i == this;
-		});
-		physics_world->phy_scene->remove_rigid(phy_rigid);
-		phy_rigid->release();
+		destroy();
 		phy_rigid = nullptr;
 	}
 

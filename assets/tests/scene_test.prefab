@@ -6,15 +6,15 @@
     <entity name="scene">
       <cNode />
       <entity src="D:\sky\sky" />
-      <entity src="cube">
+      <entity src="prefabs/cube">
         <cNode pos="0,200,0" />
         <cRigid dynamic="false" />
       </entity>
-      <entity src="cube">
+      <entity src="prefabs/cube">
         <cNode pos="10,200,0" />
         <cRigid dynamic="false" />
       </entity>
-      <entity src="cube">
+      <entity src="prefabs/cube">
         <cNode pos="0,200,5" />
         <cRigid dynamic="false" />
       </entity>
@@ -35,44 +35,30 @@
         <cNode euler="0,60,0" />
         <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
       </entity>
+      <cScript src="tests/shoot_ball.lua" />
     </entity>
     <entity>
       <cElement />
-      <cBloom />
+      <cPostEffect enable_bloom="true" />
     </entity>
     <entity name="debug">
       <cElement />
     </entity>
-    <entity name="ui">
-      <cElement alignx="MinMax" aligny="MinMax" />
-      <entity src="menu_bar">
-        <entity src="top_menu">
-          <cText text="shading" />
-		  <entity name="menu_shading_solid" attach="items" src="menu_item">
-			<cText text="solid"/>
-		  </entity>
-		  <entity name="menu_shading_wireframe" attach="items" src="menu_item">
-			<cText text="wireframe"/>
-		  </entity>
-        </entity>
-        <entity src="top_menu">
-          <cText text="physics" />
-		  <entity name="menu_physics_visualization_on" attach="items" src="menu_item">
-			<cText text="visualization_on"/>
-		  </entity>
-		  <entity name="menu_physics_visualization_off" attach="items" src="menu_item">
-			<cText text="visualization_off"/>
-		  </entity>
-        </entity>
-        <entity src="top_menu">
-          <cText text="debug" />
-		  <entity name="menu_capture" attach="items" src="menu_item">
-			<cText text="capture"/>
-		  </entity>
-        </entity>
-      </entity>
-      <cScript src="tests/shoot_ball.lua" />
-    </entity>
+    <eElement name="ui" alignx="MinMax" aligny="MinMax" >
+      <eMenuBar>
+        <eMenu text="shading" >
+		      <eMenuItem name="menu_shading_solid" text="solid" />
+		      <eMenuItem name="menu_shading_wireframe" text="wireframe" />
+        </eMenu>
+        <eMenu text="physics" >
+		      <eMenuItem name="menu_physics_visualization_on" text="visualization_on" />
+		      <eMenuItem name="menu_physics_visualization_off" text="visualization_off" />
+        </eMenu>
+        <eMenu text="debug" >
+		      <eMenuItem name="menu_capture" text="capture" />
+        </eMenu>
+      </eMenuBar>
+    </eElement>
     <cScript src="tests/scene_test.lua" />
   </entity>
 </prefab>

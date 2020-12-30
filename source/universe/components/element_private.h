@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/element.h>
 
 namespace flame
@@ -167,8 +166,8 @@ namespace flame
 
 		bool get_culled() const override { return culled; }
 
-		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool overlap = true);
-		void remove_drawer(void* drawer, bool overlap = true);
+		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true);
+		void remove_drawer(void* drawer, bool ontop = true);
 		void* add_measurable(void (*measurable)(Capture&, vec2*), const Capture& capture);
 		void remove_measurable(void* measurable);
 

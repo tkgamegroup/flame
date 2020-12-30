@@ -47,7 +47,7 @@ namespace flame
 			{
 				node->update_transform();
 				for (auto& d : node->drawers)
-					d.second(d.first, canvas);
+					d->call(canvas);
 			}
 		}
 

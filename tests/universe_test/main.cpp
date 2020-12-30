@@ -7,7 +7,7 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/ui_test");
+auto test_prefab = std::filesystem::path(L"tests/scene_test");
 
 int main(int argc, char** args)
 {

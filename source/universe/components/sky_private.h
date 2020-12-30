@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/sky.h>
 
 namespace flame
@@ -32,6 +31,7 @@ namespace flame
 		const char* get_rad_texture() const override { return rad_texture_name.c_str(); }
 		void set_rad_texture(const char* name) override;
 
-		void on_gain_canvas();
+		void on_entered_world();
+		void on_left_world();
 	};
 }

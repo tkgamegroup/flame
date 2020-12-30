@@ -3,8 +3,10 @@
 #include <flame/graphics/model.h>
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "terrain_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -56,8 +58,35 @@ namespace flame
 		material_name = name;
 	}
 
-	void cTerrainPrivate::on_gain_canvas()
+	void cTerrainPrivate::draw(graphics::Canvas* canvas)
 	{
+		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
+			canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id);
+	}
+
+	void cTerrainPrivate::on_added()
+	{
+		node = entity->get_component_t<cNodePrivate>();
+		fassert(node);
+
+		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+			auto thiz = c.thiz<cTerrainPrivate>();
+			thiz->draw(canvas);
+		}, Capture().set_thiz(this));
+		node->mark_drawing_dirty();
+	}
+
+	void cTerrainPrivate::on_removed()
+	{
+		node->remove_drawer(drawer);
+		node = nullptr;
+	}
+
+	void cTerrainPrivate::on_entered_world()
+	{
+		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		fassert(canvas);
+
 		{
 			auto isfile = false;
 			auto fn = std::filesystem::path(height_map_name);
@@ -108,10 +137,9 @@ namespace flame
 		}
 	}
 
-	void cTerrainPrivate::draw(graphics::Canvas* canvas)
+	void cTerrainPrivate::on_left_world()
 	{
-		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
-			canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id);
+		canvas = nullptr;
 	}
 
 	cTerrain* cTerrain::create()

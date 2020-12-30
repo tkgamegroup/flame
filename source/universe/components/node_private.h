@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/node.h>
 
 namespace flame
@@ -28,7 +27,7 @@ namespace flame
 		vec3 g_scl;
 		mat4 transform;
 
-		std::vector<std::pair<Component*, void(*)(Component*, graphics::Canvas*)>> drawers;
+		std::vector<std::unique_ptr<Closure<void(Capture&, graphics::Canvas*)>>> drawers;
 
 		cNodePrivate* p_node;
 		sRendererPrivate* renderer = nullptr;
@@ -46,6 +45,9 @@ namespace flame
 
 		vec3 get_global_pos() override;
 		vec3 get_global_dir(uint idx) override;
+
+		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture);
+		void remove_drawer(void* drawer);
 
 		void update_qut();
 		void update_rot();

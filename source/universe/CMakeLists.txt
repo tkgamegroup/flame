@@ -4,9 +4,9 @@ file(GLOB COMPONENT_INCLUDES "${INCLUDE_DIR}/${DIR}/components/*.h*")
 file(GLOB DRIVER_INCLUDES "${INCLUDE_DIR}/${DIR}/drivers/*.h*")
 file(GLOB SYSTEM_INCLUDES "${INCLUDE_DIR}/${DIR}/systems/*.h*")
 file(GLOB SOURCES "*.h*" "*.c*")
-file(GLOB COMPONENT_SOURCES "components/*.c*")
-file(GLOB DRIVER_SOURCES "drivers/*.c*")
-file(GLOB SYSTEM_SOURCES "systems/*.c*")
+file(GLOB COMPONENT_SOURCES "components/*.h*" "components/*.c*")
+file(GLOB DRIVER_SOURCES "drivers/*.h*" "drivers/*.c*")
+file(GLOB SYSTEM_SOURCES "systems/*.h*" "systems/*.c*")
 add_library(flame_universe SHARED 
 	${INCLUDES} ${COMPONENT_INCLUDES} ${DRIVER_INCLUDES} ${SYSTEM_INCLUDES} 
 	${SOURCES} ${COMPONENT_SOURCES} ${DRIVER_SOURCES} ${SYSTEM_SOURCES})

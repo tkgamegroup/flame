@@ -1,6 +1,6 @@
 #pragma once
+#pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/light.h>
 
 namespace flame
@@ -20,6 +20,7 @@ namespace flame
 		bool cast_shadow = false;
 
 		cNodePrivate* node = nullptr;
+		void* drawer = nullptr;
 
 		graphics::LightType get_type() const override { return type; }
 		void set_type(graphics::LightType t) override;
@@ -31,5 +32,8 @@ namespace flame
 		void set_cast_shadow(bool v) override;
 
 		void draw(graphics::Canvas* canvas);
+
+		void on_added() override;
+		void on_removed() override;
 	};
 }

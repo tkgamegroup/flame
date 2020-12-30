@@ -131,10 +131,13 @@ namespace flame
 				if (c->global_visibility)
 				{
 					auto e = c->get_component_t<cElementPrivate>();
-					if (!e->align_in_layout)
-						als[1].push_back(e);
-					else
-						als[0].push_back(e);
+					if (e)
+					{
+						if (!e->align_in_layout)
+							als[1].push_back(e);
+						else
+							als[0].push_back(e);
+					}
 				}
 			}
 

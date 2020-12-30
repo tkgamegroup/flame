@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/mesh.h>
 
 namespace flame
@@ -44,6 +43,7 @@ namespace flame
 		std::string animation_name;
 
 		cNodePrivate* node = nullptr;
+		void* drawer = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		int model_id = -1;
@@ -73,9 +73,12 @@ namespace flame
 		void apply_src();
 		void apply_animation();
 
-		void on_gain_canvas();
-
 		void draw(graphics::Canvas* canvas);
+
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 
 	inline void cMeshBridge::set_src(const char* src)

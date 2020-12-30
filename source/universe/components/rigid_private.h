@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../entity_private.h"
 #include <flame/universe/components/rigid.h>
 
 namespace flame
@@ -26,7 +25,7 @@ namespace flame
 		std::vector<uint> trigger_listeners_s;
 
 		cNodePrivate* node = nullptr;
-		sPhysicsPrivate* physics_world = nullptr;
+		sPhysicsPrivate* physics = nullptr;
 
 		~cRigidPrivate();
 
@@ -43,7 +42,12 @@ namespace flame
 
 		void on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape) override;
 
-		void on_gain_physics_world();
-		void on_lost_physics_world();
+		void create();
+		void destroy();
+
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 }

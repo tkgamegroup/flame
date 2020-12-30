@@ -1,7 +1,6 @@
 #pragma once
 
 #include <flame/graphics/font.h>
-#include "../entity_private.h"
 #include <flame/universe/components/text.h>
 
 namespace flame

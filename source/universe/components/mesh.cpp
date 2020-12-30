@@ -2,8 +2,10 @@
 #include <flame/graphics/model.h>
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "mesh_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -135,6 +137,12 @@ namespace flame
 		}
 	}
 
+	void cMeshPrivate::draw(graphics::Canvas* canvas)
+	{
+		if (model_id != -1 && mesh_id != -1)
+			canvas->draw_mesh(model_id, mesh_id, node->transform, node->g_rot, cast_shadow, deformer);
+	}
+
 	void cMeshPrivate::apply_animation()
 	{
 		stop_animation();
@@ -195,16 +203,40 @@ namespace flame
 		}
 	}
 
-	void cMeshPrivate::on_gain_canvas()
+	void cMeshPrivate::on_added()
 	{
+		node = entity->get_component_t<cNodePrivate>();
+		fassert(node);
+
+		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+			auto thiz = c.thiz<cMeshPrivate>();
+			thiz->draw(canvas);
+		}, Capture().set_thiz(this));
+		node->mark_drawing_dirty();
+	}
+
+	void cMeshPrivate::on_removed()
+	{
+		node->remove_drawer(drawer);
+		node = nullptr;
+	}
+
+	void cMeshPrivate::on_entered_world()
+	{
+		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		fassert(canvas);
+
 		apply_src();
 		apply_animation();
 	}
 
-	void cMeshPrivate::draw(graphics::Canvas* canvas)
+	void cMeshPrivate::on_left_world()
 	{
-		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, node->g_rot, cast_shadow, deformer);
+		canvas = nullptr;
+		model_id = -1;
+		mesh_id = -1;
+		model = nullptr;
+		mesh = nullptr;
 	}
 
 	cMesh* cMesh::create()

@@ -68,6 +68,20 @@ namespace flame
 		return g_rot[idx];
 	}
 
+	void* cNodePrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture)
+	{
+		auto c = new Closure(drawer, capture);
+		drawers.emplace_back(c);
+		return c;
+	}
+
+	void cNodePrivate::remove_drawer(void* drawer)
+	{
+		std::erase_if(drawers, [&](const auto& i) {
+			return i == (decltype(i))drawer;
+		});
+	}
+
 	void cNodePrivate::update_qut()
 	{
 		if (qut_dirty)

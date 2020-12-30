@@ -1,5 +1,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
+#include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "camera_private.h"
 #include "../systems/renderer_private.h"
@@ -24,15 +26,37 @@ namespace flame
 		}
 	}
 
-	void cCameraPrivate::on_gain_renderer()
+	void cCameraPrivate::on_added()
 	{
+		node = entity->get_component_t<cNodePrivate>();
+		fassert(node);
+
+		drawer = node->add_drawer([](Capture& c, graphics::Canvas* canvas) {
+			auto thiz = c.thiz<cCameraPrivate>();
+			thiz->draw(canvas);
+		}, Capture().set_thiz(this));
+		node->mark_drawing_dirty();
+	}
+
+	void cCameraPrivate::on_removed()
+	{
+		node->remove_drawer(drawer);
+		node = nullptr;
+	}
+
+	void cCameraPrivate::on_entered_world()
+	{
+		renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(renderer);
+
 		apply_current();
 	}
 
-	void cCameraPrivate::on_lost_renderer()
+	void cCameraPrivate::on_left_world()
 	{
 		current = false;
 		apply_current();
+		renderer = nullptr;
 	}
 
 	void cCameraPrivate::draw(graphics::Canvas* canvas)

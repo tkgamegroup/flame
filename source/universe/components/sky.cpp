@@ -2,8 +2,10 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/canvas.h>
 #include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "sky_private.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -22,8 +24,11 @@ namespace flame
 		rad_texture_name = name;
 	}
 
-	void cSkyPrivate::on_gain_canvas()
+	void cSkyPrivate::on_entered_world()
 	{
+		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		fassert(canvas);
+
 		{
 			auto fn = std::filesystem::path(box_texture_name);
 			if (!fn.extension().empty())
@@ -52,6 +57,11 @@ namespace flame
 			rad_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
 		canvas->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()), rad_texture->get_view(rad_texture->get_levels()));
+	}
+
+	void cSkyPrivate::on_left_world()
+	{
+		canvas = nullptr;
 	}
 
 	cSky* cSky::create()

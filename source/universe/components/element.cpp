@@ -416,16 +416,16 @@ namespace flame
 			entity->data_changed(this, S<"clipping"_h>);
 	}
 
-	void* cElementPrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool overlap)
+	void* cElementPrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop)
 	{
 		auto c = new Closure(drawer, capture);
-		drawers[overlap ? 1 : 0].emplace_back(c);
+		drawers[ontop ? 1 : 0].emplace_back(c);
 		return c;
 	}
 
-	void cElementPrivate::remove_drawer(void* drawer, bool overlap)
+	void cElementPrivate::remove_drawer(void* drawer, bool ontop)
 	{
-		std::erase_if(drawers[overlap ? 1 : 0], [&](const auto& i) {
+		std::erase_if(drawers[ontop ? 1 : 0], [&](const auto& i) {
 			return i == (decltype(i))drawer;
 		});
 	}
@@ -588,10 +588,12 @@ namespace flame
 	void cElementPrivate::on_child_added(Entity* e)
 	{
 		auto element = e->get_component_t<cElementPrivate>();
-		fassert(element);
-		if (element->alignx != AlignNone || element->aligny != AlignNone)
-			need_layout = true;
-		mark_layout_dirty();
+		if (element)
+		{
+			if (element->alignx != AlignNone || element->aligny != AlignNone)
+				need_layout = true;
+			mark_layout_dirty();
+		}
 	}
 
 	void cElementPrivate::on_child_removed(Entity* e)

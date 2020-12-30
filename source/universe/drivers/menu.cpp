@@ -93,7 +93,9 @@ namespace flame
 		if (load_finished)
 		{
 			auto e = (EntityPrivate*)_e;
-			items->add_child(e);
+			auto element = e->get_component_t<cElementPrivate>();
+			fassert(element);
+			element->set_alignx(AlignMinMax);
 			auto dm = e->get_driver_t<dMenuPrivate>();
 			if (dm)
 			{
@@ -101,6 +103,7 @@ namespace flame
 				dm->element->padding.z += text->font_size;
 				dm->arrow->set_visible(true);
 			}
+			items->add_child(e);
 			return true;
 		}
 		return false;
