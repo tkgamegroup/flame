@@ -9,24 +9,18 @@ namespace flame
 		if (src == fn)
 			return;
 		src = fn;
-		do_file();
 		if (entity)
 			entity->data_changed(this, S<"src"_h>);
 	}
 
-	void cScriptPrivate::do_file()
+	void cScriptPrivate::on_entered_world()
 	{
-		if (!src.empty() && entity)
+		if (!src.empty())
 		{
 			auto ins = script::Instance::get_default();
 			ins->add_object(entity, "entity", "Entity");
 			ins->excute(src.c_str());
 		}
-	}
-
-	void cScriptPrivate::on_added()
-	{
-		do_file();
 	}
 
 	cScript* cScript::create()

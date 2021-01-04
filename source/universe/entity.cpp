@@ -251,7 +251,7 @@ namespace flame
 		return nullptr;
 	}
 
-	Component* EntityPrivate::get_component_n(const char* _name) const
+	Component* EntityPrivate::find_component(const char* _name) const
 	{
 		auto ct = find_component_type(_name);
 		if (ct)
@@ -260,7 +260,12 @@ namespace flame
 			for (auto& c : components)
 			{
 				if (c.second.c->type_name == name)
+				{
+					auto script = script::Instance::get_default();
+					script->push_string(name.c_str());
+					script->set_global_name("__type__");
 					return c.second.c.get();
+				}
 			}
 		}
 		return nullptr;
@@ -399,7 +404,7 @@ namespace flame
 		});
 		if (it == children.end())
 		{
-			fassert(0); // not found!
+			fassert(0);
 			return;
 		}
 

@@ -1,5 +1,4 @@
-local node = entity:get_component_n("cNode")
-make_obj(node, "cNode")
+local node = entity:find_component("cNode")
 
 camera = {
 	node = node,
@@ -14,8 +13,7 @@ function camera:set_pos()
 	self.node:set_pos({x=dir.x*self.length, y=dir.y*self.length, z=dir.z*self.length})
 end
 
-local root_receiver = root:get_component_n("cReceiver")
-make_obj(root_receiver, "cReceiver")
+local root_receiver = root:find_component("cReceiver")
 
 root_receiver:add_mouse_left_down_listener_s(get_slot(
 	function()

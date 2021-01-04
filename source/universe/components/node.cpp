@@ -36,6 +36,11 @@ namespace flame
 			entity->data_changed(this, S<"scale"_h>);
 	}
 
+	vec3 cNodePrivate::get_euler() const
+	{
+		return vec3(0.f); // TODO: from qut?
+	}
+
 	void cNodePrivate::set_euler(const vec3& e)
 	{
 		auto m = mat4(1.f);
@@ -156,41 +161,6 @@ namespace flame
 		if (renderer)
 			renderer->dirty = true;
 	}
-
-	//void cNodePrivate::on_local_message(Message msg, void* p)
-	//{
-	//	switch (msg)
-	//	{
-	//	case MessageComponentAdded:
-	//	{
-	//		auto udt = find_underlay_udt(((Component*)p)->type_name);
-	//		if (udt)
-	//		{
-	//			{
-	//				auto f = udt->find_function("draw");
-	//				if (f && f->check(TypeInfo::get(TypeData, "void"), TypeInfo::get(TypePointer, "flame::graphics::Canvas"), nullptr))
-	//				{
-	//					auto addr = f->get_address();
-	//					if (addr)
-	//					{
-	//						drawers.emplace_back((Component*)p, (void(*)(Component*, graphics::Canvas*))addr);
-	//						mark_drawing_dirty();
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//		break;
-	//	case MessageComponentRemoved:
-	//	{
-	//		if (std::erase_if(drawers, [&](const auto& i) {
-	//			return i.first == (Component*)p;
-	//		}))
-	//			mark_drawing_dirty();
-	//	}
-	//		break;
-	//	}
-	//}
 
 	cNode* cNode::create()
 	{

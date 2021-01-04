@@ -1,9 +1,7 @@
 local NDF_s = entity:find_child("NDF_s")
 local NDF_t = entity:find_child("NDF_t")
-local NDF_s_s = NDF_s:get_component_n("cSlider")
-make_obj(NDF_s_s, "cSlider")
-local NDF_t_t = NDF_t:get_component_n("cText")
-make_obj(NDF_t_t, "cText")
+local NDF_s_s = NDF_s:find_component("cSlider")
+local NDF_t_t = NDF_t:find_component("cText")
 
 local hValue = flame_hash("value")
 NDF_s:add_local_data_changed_listener_s(get_slot(

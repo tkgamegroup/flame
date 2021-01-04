@@ -15,6 +15,7 @@ namespace flame
 		{
 			if (type == SocketWeb)
 			{
+#ifdef USE_SHA1
 				int res;
 
 				fd_set rfds;
@@ -89,6 +90,9 @@ namespace flame
 				}
 
 				return true;
+#else
+				return false;
+#endif
 			}
 			else
 				return true;

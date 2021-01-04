@@ -1,5 +1,4 @@
-local node = entity:get_component_n("cNode")
-make_obj(node, "cNode")
+local node = entity:find_component("cNode")
 
 controller = {
 	speed = 0.5,
@@ -19,8 +18,7 @@ controller = {
 	_9 = false
 }
 
-local root_receiver = root:get_component_n("cReceiver")
-make_obj(root_receiver, "cReceiver")
+local root_receiver = root:find_component("cReceiver")
 
 root_receiver:add_key_down_listener_s(get_slot(
 	function(k)

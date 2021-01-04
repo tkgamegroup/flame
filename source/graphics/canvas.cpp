@@ -154,6 +154,7 @@ namespace flame
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
 				RasterInfo rst;
+				rst.depth_clamp = true;
 				DepthInfo dep;
 				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 			}

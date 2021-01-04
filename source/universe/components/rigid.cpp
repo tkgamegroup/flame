@@ -13,9 +13,6 @@ namespace flame
 	cRigidPrivate::~cRigidPrivate()
 	{
 		destroy();
-
-		for (auto s : trigger_listeners_s)
-			script::Instance::get_default()->release_slot(s);
 	}
 
 	void cRigidPrivate::set_dynamic(bool v)
@@ -60,36 +57,10 @@ namespace flame
 		});
 	}
 
-	void cRigidPrivate::add_trigger_listener_s(uint slot)
-	{
-		trigger_listeners_s.push_back(slot);
-	}
-
-	void cRigidPrivate::remove_trigger_listener_s(uint slot)
-	{
-		for (auto it = trigger_listeners_s.begin(); it != trigger_listeners_s.end(); it++)
-		{
-			if (*it == slot)
-			{
-				trigger_listeners_s.erase(it);
-				script::Instance::get_default()->release_slot(slot);
-			}
-		}
-	}
-
 	void cRigidPrivate::on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape)
 	{
 		for (auto& l : trigger_listeners)
 			l->call(type, trigger_shape, other_shape);
-		script::Parameter ps[3];
-		ps[0].type = script::ScriptTypeInt;
-		ps[0].data.i[0] = type;
-		ps[1].type = script::ScriptTypePointer;
-		ps[1].data.p = trigger_shape;
-		ps[2].type = script::ScriptTypePointer;
-		ps[2].data.p = other_shape;
-		for (auto s : trigger_listeners_s)
-			script::Instance::get_default()->call_slot(s, size(ps), ps);
 	}
 
 	void cRigidPrivate::create()

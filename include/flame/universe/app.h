@@ -156,7 +156,10 @@ namespace flame
 			s_dispatcher->set_next_focusing(cer);
 		}
 
-		script::Instance::get_default()->add_object(root, "root", "flame::Entity");
+		auto script = script::Instance::get_default();
+		script->push_object();
+		script->set_object_type("flame::Entity");
+		script->set_global_name("root");
 
 		if (app->windows.empty())
 		{

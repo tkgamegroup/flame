@@ -23,8 +23,6 @@ string(SUBSTRING  "${CMAKE_LINKER}" 0 ${pos} VS_LOCATION)
 
 get_filename_component(dir ${CMAKE_SOURCE_DIR} DIRECTORY)
 
-set(GRAPHVIZ_PATH "" CACHE PATH "Graphviz Path (optional)")
-
 set(temp "${dir}/glm")
 if (NOT EXISTS "${temp}")
 	set(temp "")
@@ -64,7 +62,7 @@ if (NOT EXISTS "${temp}")
 endif()
 set(SHA1_INCLUDE_DIR "${temp}" CACHE PATH "SHA1 Include Directory")
 
-set(temp "${dir}/OpenAL 1.1 SDK")
+set(temp "C:/Program Files (x86)/OpenAL 1.1 SDK")
 if (NOT EXISTS "${temp}")
 	set(temp "")
 endif()

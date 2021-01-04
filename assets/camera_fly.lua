@@ -1,5 +1,4 @@
-local node = entity:get_component_n("cNode")
-make_obj(node, "cNode")
+local node = entity:find_component("cNode")
 
 camera = {
 	speed = 0.5,
@@ -33,8 +32,7 @@ function camera:update_dir()
 	self.dir2 = self.node:get_local_dir(0)
 end
 
-local root_receiver = root:get_component_n("cReceiver")
-make_obj(root_receiver, "cReceiver")
+local root_receiver = root:find_component("cReceiver")
 
 root_receiver:add_key_down_listener_s(get_slot(
 	function(k)

@@ -91,7 +91,7 @@ namespace flame
 
 		struct RasterInfo
 		{
-			bool depth_clamp = true;
+			bool depth_clamp = false;
 			PolygonMode polygon_mode = PolygonModeFill;
 			CullMode cull_mode = CullModeBack;
 		};

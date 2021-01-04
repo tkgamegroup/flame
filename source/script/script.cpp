@@ -9,7 +9,41 @@ namespace flame
 	{
 		thread_local InstancePrivate* default_instance = nullptr;
 
-		static void print_lua_stack(lua_State* state)
+		bool lua_check_result(lua_State* state, int res)
+		{
+			if (res != LUA_OK)
+			{
+				printf("%s\n", lua_tostring(state, -1));
+				return false;
+			}
+			return true;
+		}
+
+		template <uint N>
+		void lua_push(lua_State* state, const vec<N, float>& v)
+		{
+			lua_newtable(state);
+
+			const char* names[] = {
+				"x", "y", "z", "w"
+			};
+			for (auto i = 0; i < N; i++)
+			{
+				lua_pushstring(state, names[i]);
+				lua_pushnumber(state, v[i]);
+				lua_settable(state, -3);
+			}
+		}
+
+		void lua_set_object_type(lua_State* state, const char* type_name)
+		{
+			lua_getglobal(state, "make_obj");
+			lua_pushvalue(state, -1);
+			lua_pushstring(state, type_name);
+			lua_check_result(state, lua_pcall(state, 2, 0, 0));
+		}
+
+		void lua_print_stack(lua_State* state)
 		{
 			printf("lua stack:\n");
 			auto n = lua_gettop(state);
@@ -33,58 +67,7 @@ namespace flame
 			}
 		}
 
-		static void l_push_vec2(lua_State* state, const vec2& v)
-		{
-			lua_newtable(state);
-
-			lua_pushstring(state, "x");
-			lua_pushnumber(state, v.x);
-			lua_settable(state, -3);
-
-			lua_pushstring(state, "y");
-			lua_pushnumber(state, v.y);
-			lua_settable(state, -3);
-		}
-
-		static void l_push_vec3(lua_State* state, const vec3& v)
-		{
-			lua_newtable(state);
-
-			lua_pushstring(state, "x");
-			lua_pushnumber(state, v.x);
-			lua_settable(state, -3);
-
-			lua_pushstring(state, "y");
-			lua_pushnumber(state, v.y);
-			lua_settable(state, -3);
-
-			lua_pushstring(state, "z");
-			lua_pushnumber(state, v.z);
-			lua_settable(state, -3);
-		}
-
-		static void l_push_vec4(lua_State* state, const vec4& v)
-		{
-			lua_newtable(state);
-
-			lua_pushstring(state, "x");
-			lua_pushnumber(state, v.x);
-			lua_settable(state, -3);
-
-			lua_pushstring(state, "y");
-			lua_pushnumber(state, v.y);
-			lua_settable(state, -3);
-
-			lua_pushstring(state, "z");
-			lua_pushnumber(state, v.z);
-			lua_settable(state, -3);
-
-			lua_pushstring(state, "w");
-			lua_pushnumber(state, v.w);
-			lua_settable(state, -3);
-		}
-
-		static int l_call(lua_State* state)
+		int lua_flame_call(lua_State* state)
 		{
 			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
 			auto p = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : (lua_isnil(state, -2) ? nullptr : INVALID_POINTER);
@@ -185,11 +168,26 @@ namespace flame
 								*(vec4*)pp = vec4(0.f);
 						}
 						else if (tt == TypePointer)
-							*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
+						{
+							if (lua_isuserdata(state, -1))
+								*(void**)p = lua_touserdata(state, -1);
+							else if (lua_istable(state, -1))
+							{
+								lua_pushstring(state, "p");
+								lua_gettable(state, -2);
+								*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
+								lua_pop(state, 1);
+							}
+							else
+								*(void**)p = nullptr;
+						}
 						lua_pop(state, 1);
 					}
 					parms[i] = p;
 				}
+
+				lua_pushstring(state, "");
+				lua_setglobal(state, "__type__");
 
 				f->call(p, ret, parms.data());
 				for (auto i = 0; i < parms.size(); i++)
@@ -203,8 +201,21 @@ namespace flame
 					auto tn = std::string(ret_type->get_name());
 					if (ret_type->get_tag() == TypePointer)
 					{
-						default_instance->add_object(*(void**)ret, "staging", tn.c_str());
-						lua_getglobal(state, "staging");
+						lua_getglobal(state, "__type__");
+						if (lua_isstring(state, -1))
+							tn = lua_tostring(state, -1);
+						lua_pop(state, 1);
+
+						lua_newtable(state);
+						if (p)
+						{
+							lua_pushstring(state, "p");
+							lua_pushlightuserdata(state, p);
+							lua_settable(state, -3);
+						}
+
+						if (!tn.empty())
+							lua_set_object_type(state, tn.c_str());
 					}
 					else
 					{
@@ -213,11 +224,11 @@ namespace flame
 						else if (tn == "float")
 							lua_pushnumber(state, *(float*)ret);
 						else if (tn == "glm::vec<2,float,0>")
-							l_push_vec2(state, *(vec2*)ret);
+							lua_push(state, *(vec2*)ret);
 						else if (tn == "glm::vec<3,float,0>")
-							l_push_vec3(state, *(vec3*)ret);
+							lua_push(state, *(vec3*)ret);
 						else if (tn == "glm::vec<4,float,0>")
-							l_push_vec4(state, *(vec4*)ret);
+							lua_push(state, *(vec4*)ret);
 						else
 							lua_pushnil(state);
 					}
@@ -228,7 +239,7 @@ namespace flame
 			return 0;
 		}
 
-		static int l_hash(lua_State* state)
+		int lua_hash(lua_State* state)
 		{
 			if (lua_isstring(state, -1))
 			{
@@ -244,45 +255,23 @@ namespace flame
 			lua_state = luaL_newstate();
 			luaL_openlibs(lua_state);
 
-			lua_pushcfunction(lua_state, l_call);
+			lua_pushcfunction(lua_state, lua_flame_call);
 			lua_setglobal(lua_state, "flame_call");
 
-			lua_pushcfunction(lua_state, l_hash);
+			lua_pushcfunction(lua_state, lua_hash);
 			lua_setglobal(lua_state, "flame_hash");
 
 			if (!excute(L"setup.lua"))
 				fassert(0);
 
 			lua_newtable(lua_state);
-			lua_setglobal(lua_state, "udts");
-			traverse_udts([](Capture& c, UdtInfo* ui) {
-				auto state = c.thiz<InstancePrivate>()->lua_state;
-				auto udt_name = std::string(ui->get_name());
-				if (udt_name.ends_with("Private"))
-					return;
-				lua_newtable(state);
-				auto count = ui->get_functions_count();
-				for (auto i = 0; i < count; i++)
-				{
-					auto function = ui->get_function(i);
-					lua_pushstring(state, function->get_name());
-					lua_pushlightuserdata(state, function);
-					lua_settable(state, -3);
-				}
-				lua_setglobal(state, "udt");
-
-				lua_getglobal(state, "udts");
-				lua_pushstring(state, udt_name.c_str());
-				lua_getglobal(state, "udt");
-				lua_settable(state, -3);
-				lua_pop(state, 1);
-			}, Capture().set_thiz(this));
-
-			lua_newtable(lua_state);
-			lua_setglobal(lua_state, "enums");
 			traverse_enums([](Capture& c, EnumInfo* ei) {
 				auto state = c.thiz<InstancePrivate>()->lua_state;
+
+				lua_pushstring(state, ei->get_name());
+
 				lua_newtable(state);
+
 				auto count = ei->get_items_count();
 				for (auto i = 0; i < count; i++)
 				{
@@ -291,19 +280,60 @@ namespace flame
 					lua_pushinteger(state, item->get_value());
 					lua_settable(state, -3);
 				}
-				lua_setglobal(state, "enum");
 
-				lua_getglobal(state, "enums");
-				lua_pushstring(state, ei->get_name());
-				lua_getglobal(state, "enum");
 				lua_settable(state, -3);
-				lua_pop(state, 1);
 			}, Capture().set_thiz(this));
+			lua_setglobal(lua_state, "enums");
+
+			lua_newtable(lua_state);
+			traverse_udts([](Capture& c, UdtInfo* ui) {
+				auto state = c.thiz<InstancePrivate>()->lua_state;
+				auto udt_name = std::string(ui->get_name());
+				if (!udt_name.ends_with("Private"))
+				{
+					lua_pushstring(state, udt_name.c_str());
+
+					lua_newtable(state);
+
+					auto count = ui->get_functions_count();
+					std::vector<FunctionInfo*> normal_functions;
+					std::vector<std::pair<FunctionInfo*, FunctionInfo*>> callback_interfaces;
+					for (auto i = 0; i < count; i++)
+					{
+						auto function = ui->get_function(i);
+						auto count = function->get_parameters_count();
+						for (auto j = 0; j < count; j++)
+						{
+							auto parameter = function->get_parameter(j);
+							if (parameter->get_name() == "flame::Capture")
+							{
+
+								break;
+							}
+						}
+						lua_pushstring(state, function->get_name());
+						lua_pushlightuserdata(state, function);
+						lua_settable(state, -3);
+					}
+
+					lua_settable(state, -3);
+				}
+			}, Capture().set_thiz(this));
+			lua_setglobal(lua_state, "udts");
 
 			assert_callback = add_assert_callback([](Capture& c) {
-				auto state = c.thiz<InstancePrivate>()->lua_state;
+				auto thiz = c.thiz<InstancePrivate>();
+				auto state = thiz->lua_state;
 				luaL_traceback(state, state, nullptr, 1);
-				printf("========\nLUA:\n%s\n========\n", lua_tostring(state, -1));
+				auto str = std::string(lua_tostring(state, -1));
+				if (str != "stack traceback:")
+				{
+					printf("assertion happened in lua\n%s\nenter debug mode\n", str.c_str());
+					lua_getglobal(state, "debug");
+					lua_pushstring(state, "debug");
+					lua_gettable(state, -2);
+					lua_check_result(state, lua_pcall(state, 0, 0, 0));
+				}
 			}, Capture().set_thiz(this));
 		}
 
@@ -315,16 +345,6 @@ namespace flame
 			remove_assert_callback(assert_callback);
 		}
 
-		bool InstancePrivate::check_result(int res)
-		{
-			if (res != LUA_OK)
-			{
-				printf("%s\n", lua_tostring(lua_state, -1));
-				return false;
-			}
-			return true;
-		}
-
 		bool InstancePrivate::excute(const std::filesystem::path& filename)
 		{
 			auto path = filename;
@@ -334,56 +354,27 @@ namespace flame
 				if (engine_path)
 					path = std::filesystem::path(engine_path) / "assets" / path;
 			}
-			return check_result(luaL_dofile(lua_state, path.string().c_str()));
+			return lua_check_result(lua_state, luaL_dofile(lua_state, path.string().c_str()));
 		}
 
-		void InstancePrivate::add_object(void* p, const char* name, const char* type_name)
+		void InstancePrivate::push_string(const char* value, const char* member_name)
+		{
+			lua_pushstring(lua_state, value);
+		}
+
+		void InstancePrivate::push_object(const char* member_name)
 		{
 			lua_newtable(lua_state);
-			lua_pushstring(lua_state, "p");
-			lua_pushlightuserdata(lua_state, p);
-			lua_settable(lua_state, -3);
+		}
+
+		void InstancePrivate::set_global_name(const char* name)
+		{
 			lua_setglobal(lua_state, name);
-
-			lua_getglobal(lua_state, "make_obj");
-			lua_getglobal(lua_state, name);
-			lua_pushstring(lua_state, type_name);
-			check_result(lua_pcall(lua_state, 2, 0, 0));
 		}
 
-		void InstancePrivate::call_slot(uint s, uint parameters_count, Parameter* parameters)
+		void InstancePrivate::set_object_type(const char* type_name)
 		{
-			lua_getglobal(lua_state, "slots");
-			lua_pushinteger(lua_state, s);
-			lua_gettable(lua_state, -2);
-			for (auto i = 0; i < parameters_count; i++)
-			{
-				auto& p = parameters[i];
-				switch (p.type)
-				{
-				case ScriptTypeInt:
-					lua_pushinteger(lua_state, p.data.i[0]);
-					break;
-				case ScriptTypeFloat:
-					lua_pushinteger(lua_state, p.data.f[0]);
-					break;
-				case ScriptTypePointer:
-					lua_pushlightuserdata(lua_state, p.data.p);
-					break;
-				case ScriptTypeVec2:
-					l_push_vec2(lua_state, (vec2)p.data.f);
-					break;
-				}
-			}
-			check_result(lua_pcall(lua_state, parameters_count, 0, 0));
-			lua_pop(lua_state, 1);
-		}
-
-		void InstancePrivate::release_slot(uint s)
-		{
-			lua_getglobal(lua_state, "release_slot");
-			lua_pushinteger(lua_state, s);
-			check_result(lua_pcall(lua_state, 1, 0, 0));
+			lua_set_object_type(lua_state, type_name);
 		}
 
 		Instance* Instance::get_default()

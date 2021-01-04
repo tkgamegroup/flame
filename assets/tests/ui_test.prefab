@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <prefab>
 	<eElement alignx="MinMax" aligny="MinMax" >
-		<eMenuBar>
+		<CeMenuBar>
 			<eMenu text="1" >
 				<eMenuItem text="1" />
 				<eMenuItem text="2" />
@@ -13,22 +13,22 @@
 			<eMenu text="2" >
 				<eMenuItem text="1" />
 			</eMenu>
-		</eMenuBar>
+		</CeMenuBar>
 		<eButton>
 			<cScript src="tests/button_test.lua" />
 		</eButton>
-		<eCombobox src="combobox">
+		<CeCombobox src="combobox">
 		  <eComboboxItem text="1" />
 		  <eComboboxItem text="2" />
 		  <eComboboxItem text="3" />
-		</eCombobox>
-		<eTree width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0">
+		</CeCombobox>
+		<CeTree width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0">
 		  <eTreeNode src="tree_node" >
 			<eTreeLeaf />
 		  </eTreeNode>
 		  <eTreeNode />
-		</eTree>
-		<eList width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0" >
+		</CeTree>
+		<CeList width="200.0" height="400.0" auto_width="false" auto_height="false" padding="8,8,8,8" border="1.0" >
 		  <eListItem />
 		  <eListItem />
 		  <eListItem />
@@ -39,9 +39,9 @@
 		  <eListItem />
 		  <eListItem />
 		  <eListItem />
-		</eList>
-		<eWindow fill_color="240,240,240,50" >
+		</CeList>
+		<CeWindow fill_color="240,240,240,50" >
 		  <cBlur radius="10" />
-		</eWindow>
+		</CeWindow>
 	</eElement>
 </prefab>

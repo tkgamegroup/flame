@@ -1,11 +1,8 @@
-local node = entity:get_component_n("cNode")
-make_obj(node, "cNode")
+local node = entity:find_component("cNode")
 
-local mesh = entity:find_child("mesh"):get_component_n("cMesh")
-make_obj(mesh, "cMesh")
+local mesh = entity:find_child("mesh"):find_component("cMesh")
 
-local controller = entity:get_component_n("cController")
-make_obj(controller, "cController")
+local controller = entity:find_component("cController")
 
 character = {
 	speed = 0.1,
@@ -29,8 +26,7 @@ function character:update_dir()
 	self.dir2 = self.node:get_local_dir(0)
 end
 
-local root_receiver = root:get_component_n("cReceiver")
-make_obj(root_receiver, "cReceiver")
+local root_receiver = root:find_component("cReceiver")
 
 root_receiver:add_key_down_listener_s(get_slot(
 	function(k)

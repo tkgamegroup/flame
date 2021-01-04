@@ -37,18 +37,15 @@ namespace flame
 			std::vector<const char*> layers;
 			extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 			extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-			if (debug) 
-			{
+			if (debug)
 				extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-				layers.push_back("VK_LAYER_LUNARG_standard_validation");
-			}
 			VkInstanceCreateInfo instInfo = {};
 			instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 			instInfo.pApplicationInfo = &appInfo;
 			instInfo.enabledExtensionCount = extensions.size();
-			instInfo.ppEnabledExtensionNames = extensions.data();
+			instInfo.ppEnabledExtensionNames = extensions.empty() ? nullptr : extensions.data();
 			instInfo.enabledLayerCount = layers.size();
-			instInfo.ppEnabledLayerNames = layers.data();
+			instInfo.ppEnabledLayerNames = layers.empty() ? nullptr : layers.data();
 			chk_res(vkCreateInstance(&instInfo, nullptr, &vk_instance));
 			printf("vulkan: instance created\n");
 

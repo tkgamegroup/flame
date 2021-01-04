@@ -102,7 +102,7 @@ namespace flame
 		void set_state(StateFlags state) override;
 
 		Component* get_component(uint64 hash) const override;
-		Component* get_component_n(const char* name) const override;
+		Component* find_component(const char* name) const override;
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);

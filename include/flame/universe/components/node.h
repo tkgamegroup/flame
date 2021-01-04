@@ -22,6 +22,7 @@ namespace flame
 		virtual void set_scale(const vec3& scale) = 0;
 
 		// yaw, pitch, roll, in angle
+		virtual vec3 get_euler() const = 0;
 		virtual void set_euler(const vec3& e) = 0;
 
 		virtual vec3 get_local_dir(uint idx) = 0;

@@ -27,7 +27,7 @@ namespace flame
 		virtual void set_state(StateFlags state) = 0;
 
 		virtual Component* get_component(uint64 hash) const = 0;
-		virtual Component* get_component_n(const char* name) const = 0;
+		virtual Component* find_component(const char* name) const = 0;
 		template <class T> inline T* get_component_t() const { return (T*)get_component(T::type_hash); }
 
 		virtual void add_component(Component* c) = 0;

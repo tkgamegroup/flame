@@ -24,10 +24,7 @@ namespace flame
 
 		virtual void* add_trigger_listener(void (*callback)(Capture& c, physics::TouchType type, cShape* trigger_shape, cShape* other_shape), const Capture& capture) = 0;
 		virtual void remove_trigger_listener(void* lis) = 0;
-
-		virtual void add_trigger_listener_s(uint slot) = 0;
-		virtual void remove_trigger_listener_s(uint slot) = 0;
-
+		
 		virtual void on_trigger_event(physics::TouchType type, cShape* trigger_shape, cShape* other_shape) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cRigid* create();

@@ -11,8 +11,6 @@ namespace flame
 		const wchar_t* get_src() const override { return src.c_str(); }
 		void set_src(const wchar_t* fn) override;
 
-		void do_file();
-
-		void on_added() override;
+		void on_entered_world() override;
 	};
 }

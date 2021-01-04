@@ -39,6 +39,7 @@ namespace flame
 		vec3 get_scale() const override { return scl; }
 		void set_scale(const vec3 & scale) override;
 
+		vec3 get_euler() const override;
 		void set_euler(const vec3& e) override;
 
 		vec3 get_local_dir(uint idx) override;

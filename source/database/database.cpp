@@ -7,7 +7,9 @@ namespace flame
 	{
 		void ResPrivate::fetch_row()
 		{
+#ifdef USE_MYSQL
 			row = mysql_fetch_row(mysql_res);
+#endif
 		}
 
 		Error ConnectionPrivate::query(const char* sql, uint* row_count, void (*callback)(Capture& c, Res* res), const Capture& capture)

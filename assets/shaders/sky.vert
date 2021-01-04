@@ -8,5 +8,5 @@ layout (location = 0) out vec3 o_dir;
 void main()
 {
 	o_dir = -i_normal;
-	gl_Position = render_data.proj_view * vec4(i_position, 1.0);
+	gl_Position = render_data.proj_view * vec4(i_position, 0.0);
 }

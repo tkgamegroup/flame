@@ -10,35 +10,15 @@
 
 namespace flame
 {
-	struct UdtInfo;
-
 	namespace script
 	{
-		enum ScriptType
-		{
-			ScriptTypeInt,
-			ScriptTypeFloat,
-			ScriptTypePointer,
-			ScriptTypeVec2
-		};
-
-		struct Parameter
-		{
-			ScriptType type;
-			union
-			{
-				void* p;
-				ivec4 i;
-				vec4 f;
-			}data;
-		};
-
 		struct Instance
 		{
 			virtual bool excute(const wchar_t* filename) = 0;
-			virtual void add_object(void* p, const char* name, const char* type_name) = 0;
-			virtual void call_slot(uint s, uint parameters_count, Parameter* parameters) = 0;
-			virtual void release_slot(uint s) = 0;
+			virtual void push_string(const char* str, const char* member_name = nullptr) = 0;
+			virtual void push_object(const char* member_name = nullptr) = 0;
+			virtual void set_global_name(const char* name) = 0;
+			virtual void set_object_type(const char* type_name) = 0;
 
 			FLAME_SCRIPT_EXPORTS static Instance* get_default();
 			FLAME_SCRIPT_EXPORTS static void set_default(Instance* instance);

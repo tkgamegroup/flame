@@ -1007,7 +1007,11 @@ namespace flame
 					printf("compiling shader: %s (%s) (%s)", path.string().c_str(), defines.c_str(), substitutes.c_str());
 
 					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
+						auto& str = *(std::string*)_str;
+						str.resize(size);
+						return str.data();
+					});
 					if (!std::filesystem::exists(spv_path))
 					{
 						temp = add_lineno_to_temp(temp);
