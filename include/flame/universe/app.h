@@ -156,10 +156,12 @@ namespace flame
 			s_dispatcher->set_next_focusing(cer);
 		}
 
-		auto script = script::Instance::get_default();
-		script->push_object();
-		script->set_object_type("flame::Entity");
-		script->set_global_name("root");
+		auto scr_ins = script::Instance::get_default();
+		scr_ins->push_object();
+		scr_ins->push_pointer(root);
+		scr_ins->set_member_name("p");
+		scr_ins->set_object_type("flame::Entity");
+		scr_ins->set_global_name("root");
 
 		if (app->windows.empty())
 		{

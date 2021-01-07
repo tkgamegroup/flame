@@ -172,6 +172,21 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_click_listener(void (*callback)(Capture& c), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->call(0);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			mouse_click_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		mouse_click_listeners.emplace_back(looper().get_frame(), c);
 		return c;

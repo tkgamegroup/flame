@@ -78,7 +78,7 @@ namespace flame
 					if (t->get_name() != std::string("void"))
 						getters.emplace_back(name.substr(4), t, f);
 				}
-				else if (name.compare(0, 4, "set_") == 0 && f->get_parameters_count() == 1 && f->get_type() == TypeInfo::get(TypeData, "void"))
+				else if (name.compare(0, 4, "set_") == 0 && f->get_parameters_count() == 1 && f->get_type() == TypeInfo::get(TypeData, ""))
 				{
 					auto t = f->get_parameter(0);
 					if (t->get_name() != std::string("void"))
@@ -676,8 +676,6 @@ namespace flame
 				if (!driver_processed)
 					e_dst->add_child(e);
 			}
-			else
-				fassert(0);
 		}
 
 		if (first && !e_dst->drivers.empty())

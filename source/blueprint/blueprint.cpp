@@ -326,19 +326,19 @@ namespace flame
 
 				{
 					auto f = udt->find_function("ctor");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), nullptr))
+					if (f && f->check(TypeInfo::get(TypeData, ""), nullptr))
 						a2f<void(*)(void*)>(f->get_address())(object);
 				}
 
 				{
 					auto f = udt->find_function("dtor");
-					if (f && f->check(TypeInfo::get(TypeData, "void"), nullptr))
+					if (f && f->check(TypeInfo::get(TypeData, ""), nullptr))
 						dtor_addr = f->get_address();
 				}
 
 				{
 					auto f = udt->find_function("bp_update");
-					fassert(f && f->check(TypeInfo::get(TypeData, "void"), nullptr));
+					fassert(f && f->check(TypeInfo::get(TypeData, ""), nullptr));
 					update_addr = f->get_address();
 				}
 

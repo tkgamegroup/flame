@@ -15,10 +15,16 @@ namespace flame
 		struct Instance
 		{
 			virtual bool excute(const wchar_t* filename) = 0;
-			virtual void push_string(const char* str, const char* member_name = nullptr) = 0;
-			virtual void push_object(const char* member_name = nullptr) = 0;
-			virtual void set_global_name(const char* name) = 0;
+			virtual void push_string(const char* str) = 0;
+			virtual void push_pointer(void* p) = 0;
+			virtual void push_object() = 0;
+			virtual void pop(uint number) = 0;
+			virtual void get_global(const char* name) = 0;
+			virtual void get_member(const char* name, uint idx = 0 /* when name = null*/ ) = 0;
 			virtual void set_object_type(const char* type_name) = 0;
+			virtual void set_member_name(const char* name) = 0;
+			virtual void set_global_name(const char* name) = 0;
+			virtual void call(uint parameters_count) = 0;
 
 			FLAME_SCRIPT_EXPORTS static Instance* get_default();
 			FLAME_SCRIPT_EXPORTS static void set_default(Instance* instance);

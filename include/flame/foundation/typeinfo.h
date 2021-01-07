@@ -35,7 +35,7 @@ namespace flame
 		virtual void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const = 0;
 		virtual void unserialize(void* dst, const char* src) const = 0;
 
-		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag, const char* name);
+		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name);
 		// in the callback: return a space that will be fill with the typeinfos, which size must bigger than sizeof(void*) * size
 		FLAME_FOUNDATION_EXPORTS static void get_basic_types(TypeInfo** (*callback)(Capture& c, uint size), const Capture& capture);
 	};

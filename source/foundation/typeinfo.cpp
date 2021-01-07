@@ -725,6 +725,7 @@ namespace flame
 		}
 	};
 
+	static TypeInfoPrivate* void_type = nullptr;
 	static std::vector<TypeInfoPrivate*> basic_types;
 
 	struct _Initializer
@@ -735,6 +736,7 @@ namespace flame
 				auto t = new TypeInfoPrivate_void;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 				basic_types.push_back(t);
+				void_type = t;
 			}
 			{
 				auto t = new TypeInfoPrivate_bool;
@@ -894,6 +896,9 @@ namespace flame
 
 	TypeInfoPrivate* TypeInfoPrivate::get(TypeTag tag, const std::string& name)
 	{
+		if (tag == TypeData && name.empty())
+			return void_type;
+
 		auto key = TypeInfoKey(tag, name);
 		auto it = typeinfos.find(key);
 		if (it != typeinfos.end())

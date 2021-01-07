@@ -17,9 +17,13 @@ namespace flame
 	{
 		if (!src.empty())
 		{
-			auto ins = script::Instance::get_default();
-			ins->add_object(entity, "entity", "Entity");
-			ins->excute(src.c_str());
+			auto scr_ins = script::Instance::get_default();
+			scr_ins->push_object();
+			scr_ins->push_pointer(entity);
+			scr_ins->set_member_name("p");
+			scr_ins->set_object_type("flame::Entity");
+			scr_ins->set_global_name("entity");
+			scr_ins->excute(src.c_str());
 		}
 	}
 
