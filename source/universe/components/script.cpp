@@ -13,18 +13,23 @@ namespace flame
 			entity->data_changed(this, S<"src"_h>);
 	}
 
+	void cScriptPrivate::set_content(const char* _content)
+	{
+		content = _content;
+	}
+
 	void cScriptPrivate::on_entered_world()
 	{
+		auto scr_ins = script::Instance::get_default();
+		scr_ins->push_object();
+		scr_ins->push_pointer(entity);
+		scr_ins->set_member_name("p");
+		scr_ins->set_object_type("flame::Entity");
+		scr_ins->set_global_name("entity");
 		if (!src.empty())
-		{
-			auto scr_ins = script::Instance::get_default();
-			scr_ins->push_object();
-			scr_ins->push_pointer(entity);
-			scr_ins->set_member_name("p");
-			scr_ins->set_object_type("flame::Entity");
-			scr_ins->set_global_name("entity");
-			scr_ins->excute(src.c_str());
-		}
+			scr_ins->excute_file(src.c_str());
+		if (!content.empty())
+			scr_ins->excute(content.c_str());
 	}
 
 	cScript* cScript::create()

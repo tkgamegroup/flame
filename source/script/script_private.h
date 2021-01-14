@@ -6,12 +6,7 @@ namespace flame
 {
 	namespace script
 	{
-		struct InstanceBridge : Instance
-		{
-			bool excute(const wchar_t* filename) override;
-		};
-
-		struct InstancePrivate : InstanceBridge
+		struct InstancePrivate : Instance
 		{
 			lua_State* lua_state = nullptr;
 
@@ -20,7 +15,6 @@ namespace flame
 			InstancePrivate();
 			~InstancePrivate();
 
-			bool excute(const std::filesystem::path& filename);
 			void push_string(const char* value) override;
 			void push_pointer(void* p) override;
 			void push_object() override;
@@ -31,12 +25,9 @@ namespace flame
 			void set_member_name(const char* name) override;
 			void set_global_name(const char* name) override;
 			void call(uint parameters_count) override;
+			bool excute(const char* str) override;
+			bool excute_file(const wchar_t* filename) override;
 		};
-
-		inline bool InstanceBridge::excute(const wchar_t* filename)
-		{
-			return ((InstancePrivate*)this)->excute(filename);
-		}
 
 		extern thread_local InstancePrivate* default_instance;
 	}

@@ -14,7 +14,6 @@ namespace flame
 	{
 		struct Instance
 		{
-			virtual bool excute(const wchar_t* filename) = 0;
 			virtual void push_string(const char* str) = 0;
 			virtual void push_pointer(void* p) = 0;
 			virtual void push_object() = 0;
@@ -25,6 +24,8 @@ namespace flame
 			virtual void set_member_name(const char* name) = 0;
 			virtual void set_global_name(const char* name) = 0;
 			virtual void call(uint parameters_count) = 0;
+			virtual bool excute(const char* str) = 0;
+			virtual bool excute_file(const wchar_t* filename) = 0;
 
 			FLAME_SCRIPT_EXPORTS static Instance* get_default();
 			FLAME_SCRIPT_EXPORTS static void set_default(Instance* instance);

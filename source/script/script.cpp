@@ -236,7 +236,7 @@ namespace flame
 			lua_pushcfunction(lua_state, lua_hash);
 			lua_setglobal(lua_state, "flame_hash");
 
-			if (!excute(L"setup.lua"))
+			if (!excute_file(L"setup.lua"))
 				fassert(0);
 
 			lua_newtable(lua_state);
@@ -355,18 +355,6 @@ namespace flame
 			remove_assert_callback(assert_callback);
 		}
 
-		bool InstancePrivate::excute(const std::filesystem::path& filename)
-		{
-			auto path = filename;
-			if (!std::filesystem::exists(path))
-			{
-				auto engine_path = getenv("FLAME_PATH");
-				if (engine_path)
-					path = std::filesystem::path(engine_path) / "assets" / path;
-			}
-			return lua_check_result(lua_state, luaL_dofile(lua_state, path.string().c_str()));
-		}
-
 		void InstancePrivate::push_string(const char* value)
 		{
 			lua_pushstring(lua_state, value);
@@ -427,6 +415,23 @@ namespace flame
 		void InstancePrivate::call(uint parameters_count)
 		{
 			lua_check_result(lua_state, lua_pcall(lua_state, parameters_count, 0, 0));
+		}
+
+		bool InstancePrivate::excute(const char* str)
+		{
+			return lua_check_result(lua_state, luaL_dostring(lua_state, str));
+		}
+
+		bool InstancePrivate::excute_file(const wchar_t* filename)
+		{
+			auto path = std::filesystem::path(filename);
+			if (!std::filesystem::exists(path))
+			{
+				auto engine_path = getenv("FLAME_PATH");
+				if (engine_path)
+					path = std::filesystem::path(engine_path) / "assets" / path;
+			}
+			return lua_check_result(lua_state, luaL_dofile(lua_state, path.string().c_str()));
 		}
 
 		Instance* Instance::get_default()

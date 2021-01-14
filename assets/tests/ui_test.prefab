@@ -15,7 +15,11 @@
 			</eMenu>
 		</CeMenuBar>
 		<eButton>
-			<cScript src="tests/button_test.lua" />
+			<cScript>
+        entity:find_component("cReceiver"):add_mouse_click_listener(function()
+					print("Hello World")
+        end)
+      </cScript>
 		</eButton>
 		<CeCombobox src="combobox">
 		  <eComboboxItem text="1" />

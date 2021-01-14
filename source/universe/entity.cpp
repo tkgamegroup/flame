@@ -645,6 +645,12 @@ namespace flame
 						if (!set_attribute(c, ct, a.name(), a.value()))
 							printf("cannot find attribute: %s\n", a.name());
 					}
+					auto content = std::string(n_c.child_value());
+					if (!content.empty())
+					{
+						if (!set_attribute(c, ct, "content", content))
+							printf("cannot find attribute: content\n");
+					}
 					if (isnew)
 						e_dst->add_component(c);
 				}
