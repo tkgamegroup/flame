@@ -155,7 +155,10 @@ namespace flame
 				vi.buffers = &vib;
 				RasterInfo rst;
 				rst.depth_clamp = true;
+				rst.cull_mode = CullModeFront;
 				DepthInfo dep;
+				dep.test = false;
+				dep.write = false;
 				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 			}
 
@@ -1734,7 +1737,7 @@ namespace flame
 			sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, (ImageViewPrivate*)rad, sp);
 		}
 
-		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, const mat3& dirs, bool cast_shadow, ArmatureDeformer* deformer)
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer)
 		{
 			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
 			{
@@ -1744,7 +1747,7 @@ namespace flame
 
 			auto dst = mesh_matrix_buffer.mark_item(meshes_count);
 			mesh_matrix_buffer.set(dst, S<"transform"_h>, transform);
-			mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(dirs));
+			mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(transpose(inverse(mat3(transform)))));
 
 			last_mesh_cmd->meshes.emplace_back(meshes_count, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow, (ArmatureDeformerPrivate*)deformer);
 			meshes_count++;

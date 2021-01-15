@@ -46,6 +46,8 @@ namespace flame
 			uvec2 image_offset = uvec2(0);
 			uvec2 image_extent;
 			uint image_level = 0;
+			uint image_base_layer = 0;
+			uint image_layer_count = 1;
 		};
 
 		struct DrawIndirectCommand

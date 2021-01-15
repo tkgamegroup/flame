@@ -326,7 +326,8 @@ namespace flame
 			vk_cpy.imageExtent.depth = 1;
 			vk_cpy.imageSubresource.aspectMask = aspect;
 			vk_cpy.imageSubresource.mipLevel = cpy.image_level;
-			vk_cpy.imageSubresource.layerCount = 1;
+			vk_cpy.imageSubresource.baseArrayLayer = cpy.image_base_layer;
+			vk_cpy.imageSubresource.layerCount = cpy.image_layer_count;
 			return vk_cpy;
 		}
 

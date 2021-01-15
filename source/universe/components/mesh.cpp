@@ -140,7 +140,7 @@ namespace flame
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, node->g_rot, cast_shadow, deformer);
+			canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer);
 	}
 
 	void cMeshPrivate::apply_animation()

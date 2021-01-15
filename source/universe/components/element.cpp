@@ -660,14 +660,6 @@ namespace flame
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
-//#ifdef _DEBUG
-//		if (debug_level > 0)
-//		{
-//			debug_break();
-//			debug_level = 0;
-//		}
-//#endif
-//
 		//if (alpha > 0.f)
 		{
 			if (fill_color.a > 0)

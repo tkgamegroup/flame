@@ -1,5 +1,5 @@
 #include <flame/foundation/typeinfo.h>
-#include "../entity_private.h"
+#include "../world_private.h"
 #include "node_private.h"
 #include "../systems/renderer_private.h"
 
@@ -160,6 +160,19 @@ namespace flame
 	{
 		if (renderer)
 			renderer->dirty = true;
+	}
+
+	void cNodePrivate::on_entered_world()
+	{
+		renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(renderer);
+		mark_transform_dirty();
+	}
+
+	void cNodePrivate::on_left_world()
+	{
+		mark_drawing_dirty();
+		renderer = nullptr;
 	}
 
 	cNode* cNode::create()

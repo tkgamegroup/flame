@@ -166,6 +166,7 @@ namespace flame
 				gli::gl GL(gli::gl::PROFILE_KTX);
 
 				auto gli_texture = gli::load(filename.string());
+				gli_texture.swizzle<cvec4>(gli::swizzles(gli::SWIZZLE_BLUE, gli::SWIZZLE_GREEN, gli::SWIZZLE_RED, gli::SWIZZLE_ALPHA));
 
 				auto size = gli_texture.extent();
 				auto levels = gli_texture.levels();
@@ -195,15 +196,19 @@ namespace flame
 				auto cb = icb.cb.get();
 				std::vector<BufferImageCopy> cpies;
 				auto offset = 0;
-				for (auto i = 0; i < levels; i++)
+				for (auto i = 0; i < layers; i++)
 				{
-					BufferImageCopy cpy;
-					cpy.buffer_offset = offset;
-					auto ext = gli_texture.extent(i);
-					cpy.image_extent = uvec2(ext.x, ext.y);
-					cpy.image_level = i;
-					cpies.push_back(cpy);
-					offset += gli_texture.size(i);
+					for (auto j = 0; j < levels; j++)
+					{
+						BufferImageCopy cpy;
+						cpy.buffer_offset = offset;
+						auto ext = gli_texture.extent(j);
+						cpy.image_extent = uvec2(ext.x, ext.y);
+						cpy.image_level = j;
+						cpy.image_base_layer = i;
+						cpies.push_back(cpy);
+						offset += gli_texture.size(j);
+					}
 				}
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
 				cb->copy_buffer_to_image(stag.buf.get(), ret, cpies);

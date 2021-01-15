@@ -57,6 +57,7 @@ namespace flame
 		void mark_transform_dirty();
 		void mark_drawing_dirty();
 
-		//void on_local_message(Message msg, void* p) override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 }

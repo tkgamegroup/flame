@@ -13,7 +13,7 @@ int main(int argc, char** args)
 {
 	g_app.create();
 
-	auto w = new GraphicsWindow(&g_app, L"Universe Test", uvec2(800, 600), WindowFrame | WindowResizable, true, true, true);
+	auto w = new GraphicsWindow(&g_app, L"Universe Test", uvec2(800, 600), WindowFrame | WindowResizable, true, true);
 
 	w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
 
