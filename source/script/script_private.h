@@ -15,6 +15,11 @@ namespace flame
 			InstancePrivate();
 			~InstancePrivate();
 
+			void push_int(int i) override;
+			void push_float(float f) override;
+			void push_vec2(const vec2& v) override;
+			void push_vec3(const vec3& v) override;
+			void push_vec4(const vec4& v) override;
 			void push_string(const char* value) override;
 			void push_pointer(void* p) override;
 			void push_object() override;

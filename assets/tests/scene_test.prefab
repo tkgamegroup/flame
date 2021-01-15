@@ -5,6 +5,7 @@
     <cNode />
     <entity name="scene">
       <cNode />
+      <cScript src="tests/shoot_ball.lua" />
       <entity src="D:\sky\sky" />
       <entity src="prefabs/cube">
         <cNode pos="0,200,0" />
@@ -28,14 +29,13 @@
           <cScript src="camera_third.lua" />
         </entity>
       </entity>
-	    <entity src="D:\terrain\terrain">
-	      <cNode pos="-100,100,-100" />
-	    </entity>
+      <entity src="D:\terrain\terrain">
+        <cNode pos="-100,100,-100" />
+      </entity>
       <entity>
         <cNode euler="0,60,0" />
         <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
       </entity>
-      <cScript src="tests/shoot_ball.lua" />
     </entity>
     <entity>
       <cElement />
@@ -47,18 +47,38 @@
     <eElement name="ui" alignx="MinMax" aligny="MinMax" >
       <eMenuBar>
         <eMenu text="shading" >
-		      <eMenuItem name="menu_shading_solid" text="solid" />
-		      <eMenuItem name="menu_shading_wireframe" text="wireframe" />
+		      <eMenuItem text="solid" >
+            <cScript>
+              entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
+		            cmd:excute("view_shading_solid")
+	            end)
+            </cScript>
+          </eMenuItem>
+		      <eMenuItem text="wireframe" >
+            <cScript>
+              entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
+                cmd:excute("view_shading_wireframe")
+              end)
+            </cScript>
+          </eMenuItem>
         </eMenu>
         <eMenu text="physics" >
-		      <eMenuItem name="menu_physics_visualization_on" text="visualization_on" />
-		      <eMenuItem name="menu_physics_visualization_off" text="visualization_off" />
-        </eMenu>
-        <eMenu text="debug" >
-		      <eMenuItem name="menu_capture" text="capture" />
+		      <eMenuItem text="visualization_on" >
+            <cScript>
+              entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
+                cmd:excute("view_physics_on")
+              end)
+            </cScript>
+          </eMenuItem>
+		      <eMenuItem text="visualization_off" >
+            <cScript>
+              entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
+                cmd:excute("view_physics_off")
+              end)
+            </cScript>
+          </eMenuItem>
         </eMenu>
       </eMenuBar>
     </eElement>
-    <cScript src="tests/scene_test.lua" />
   </entity>
 </prefab>

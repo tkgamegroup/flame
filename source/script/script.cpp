@@ -355,6 +355,31 @@ namespace flame
 			remove_assert_callback(assert_callback);
 		}
 
+		void InstancePrivate::push_int(int i)
+		{
+			lua_pushinteger(lua_state, i);
+		}
+
+		void InstancePrivate::push_float(float f)
+		{
+			lua_pushnumber(lua_state, f);
+		}
+
+		void InstancePrivate::push_vec2(const vec2& v)
+		{
+			lua_push(lua_state, v);
+		}
+
+		void InstancePrivate::push_vec3(const vec3& v)
+		{
+			lua_push(lua_state, v);
+		}
+
+		void InstancePrivate::push_vec4(const vec4& v)
+		{
+			lua_push(lua_state, v);
+		}
+
 		void InstancePrivate::push_string(const char* value)
 		{
 			lua_pushstring(lua_state, value);

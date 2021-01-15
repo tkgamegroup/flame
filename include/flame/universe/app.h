@@ -81,9 +81,7 @@ namespace flame
 		sPhysics* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
-		bool capture = false;
-
-		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, Window* parent = nullptr);
+		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, bool always_update = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_output();
 		virtual void on_frame() {}
@@ -107,7 +105,7 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool msaa_3d, Window* parent) :
+	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool msaa_3d, bool always_update, Window* parent) :
 		app(app)
 	{
 		window = Window::create(title, size, styles, parent);
@@ -145,6 +143,8 @@ namespace flame
 		world->add_system(s_physic_world);
 		world->add_system(new sBeforeRender(this));
 		s_renderer = sRenderer::create();
+		if (always_update)
+			s_renderer->set_always_update(true);
 		world->add_system(s_renderer);
 
 		root = world->get_root();
@@ -213,15 +213,10 @@ namespace flame
 		{
 			auto cb = swapchain_commandbuffers[swapchain_image_index];
 
-			cb->begin(false, capture);
+			cb->begin(false);
 			if (canvas)
 				canvas->record(cb, swapchain_image_index);
 			cb->end();
-			if (capture)
-			{
-				capture = false;
-				cb->save(L"capture.xml");
-			}
 
 			app->graphics_queue->submit(1, &cb, swapchain->get_image_avalible(), render_finished_semaphore, submit_fence);
 			app->graphics_queue->present(swapchain, render_finished_semaphore);

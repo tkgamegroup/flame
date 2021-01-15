@@ -69,7 +69,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			virtual void begin(bool once = false, bool record = false) = 0;
+			virtual void begin(bool once = false) = 0;
 
 			virtual void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* cvs = nullptr) = 0;
 			virtual void end_renderpass() = 0;

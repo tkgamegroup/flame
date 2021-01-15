@@ -18,6 +18,22 @@ namespace flame
 
 	void* cReceiverPrivate::add_key_down_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture) 
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, KeyboardKey key) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_int(key);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			key_down_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		key_down_listeners.emplace_back(looper().get_frame(), c);
 		return c;
@@ -32,6 +48,22 @@ namespace flame
 
 	void* cReceiverPrivate::add_key_up_listener(void (*callback)(Capture& c, KeyboardKey key), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, KeyboardKey key) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_int(key);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			key_up_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		key_up_listeners.emplace_back(looper().get_frame(), c);
 		return c;
@@ -60,6 +92,22 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_left_down_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, const ivec2& pos) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_vec2(pos);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			mouse_left_down_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		mouse_left_down_listeners.emplace_back(looper().get_frame(), c);
 		return c;
@@ -74,6 +122,22 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_left_up_listener(void (*callback)(Capture& c, const ivec2& pos), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, const ivec2& pos) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_vec2(pos);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			mouse_left_up_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		mouse_left_up_listeners.emplace_back(looper().get_frame(), c);
 		return c;
@@ -144,6 +208,23 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_move_listener(void (*callback)(Capture& c, const ivec2& disp, const ivec2& pos), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, const ivec2& disp, const ivec2& pos) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_vec2(disp);
+				scr_ins->push_vec2(pos);
+				scr_ins->call(2);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			mouse_move_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		mouse_move_listeners.emplace_back(looper().get_frame(), c);
 		return c;
@@ -158,6 +239,22 @@ namespace flame
 
 	void* cReceiverPrivate::add_mouse_scroll_listener(void (*callback)(Capture& c, int scroll), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c, int scroll) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_int(scroll);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(callback, Capture().set_data(&slot));
+			mouse_scroll_listeners.emplace_back(looper().get_frame(), c);
+			return c;
+		}
 		auto c = new Closure(callback, capture);
 		mouse_scroll_listeners.emplace_back(looper().get_frame(), c);
 		return c;

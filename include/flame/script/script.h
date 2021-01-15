@@ -14,12 +14,17 @@ namespace flame
 	{
 		struct Instance
 		{
+			virtual void push_int(int i) = 0;
+			virtual void push_float(float f) = 0;
+			virtual void push_vec2(const vec2& v) = 0;
+			virtual void push_vec3(const vec3& v) = 0;
+			virtual void push_vec4(const vec4& v) = 0;
 			virtual void push_string(const char* str) = 0;
 			virtual void push_pointer(void* p) = 0;
 			virtual void push_object() = 0;
 			virtual void pop(uint number) = 0;
 			virtual void get_global(const char* name) = 0;
-			virtual void get_member(const char* name, uint idx = 0 /* when name = null*/ ) = 0;
+			virtual void get_member(const char* name, uint idx = 0 /* when name = null */ ) = 0;
 			virtual void set_object_type(const char* type_name) = 0;
 			virtual void set_member_name(const char* name) = 0;
 			virtual void set_global_name(const char* name) = 0;

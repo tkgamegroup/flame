@@ -7,13 +7,13 @@ using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/ui_test");
+auto test_prefab = std::filesystem::path(L"tests/scene_test");
 
 int main(int argc, char** args)
 {
 	g_app.create();
 
-	auto w = new GraphicsWindow(&g_app, L"Universe Test", uvec2(600, 400), WindowFrame | WindowResizable, true, true);
+	auto w = new GraphicsWindow(&g_app, L"Universe Test", uvec2(800, 600), WindowFrame | WindowResizable, true, true, true);
 
 	w->canvas->set_clear_color(cvec4(100, 100, 100, 255));
 
@@ -29,8 +29,6 @@ int main(int argc, char** args)
 		//		g_app.main_window->s_physic_world->set_visualization(true);
 		//	else if (cmd == "physics_visualization_off")
 		//		g_app.main_window->s_physic_world->set_visualization(false);
-		//	else if (cmd == "capture")
-		//		g_app.main_window->capture = true;
 		//}, Capture());
 		//w->root->add_component(c);
 		auto e = Entity::create();
