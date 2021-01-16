@@ -1824,8 +1824,8 @@ namespace flame
 							RB = max(RB, p.xy());
 						}
 
-						shadow.matrices[j] = dstm[j] = ortho(LT.x, RB.x, LT.y, RB.y, 0.f, shadow_distance) *
-							lookAt(c + dir * shadow_distance * 0.5f, c, up);
+						shadow.matrices[j] = dstm[j] = orthoRH(LT.x, RB.x, LT.y, RB.y, 0.f, shadow_distance) *
+							lookAt(c + dir * shadow_distance * 0.05f, c, up);
 					}
 
 					directional_shadows.push_back(shadow);

@@ -4,7 +4,7 @@ camera = {
 	node = node,
 	length = 5,
 	yaw = 0,
-	pitch = 0,
+	pitch = -90,
 	dragging = false,
 }
 
@@ -45,3 +45,6 @@ root_receiver:add_mouse_move_listener(function(disp)
 		camera:set_pos()
 	end
 end)
+
+camera.node:set_euler({ x=camera.yaw, y=camera.pitch, z=0 })
+camera:set_pos()

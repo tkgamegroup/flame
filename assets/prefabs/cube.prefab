@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <prefab>
 	<entity>
-	<cNode />
-	<cMesh src="cube#0" />
-    <cRigid />
-    <cShape type="Cube" />
+		<cNode />
+		<cMesh src="cube#0" />
+		<cRigid />
+		<cShape type="Cube" />
 	</entity>
 </prefab>

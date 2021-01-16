@@ -79,7 +79,6 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 		vec3 L = light.dir;
 		
 		float shadow = 1.0;
-
 		if (light.shadow_map_index != -1 && distancev < render_data.shadow_distance)
 		{
 			float d = distancev / render_data.shadow_distance;
@@ -89,16 +88,15 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 			for (; lv < lvs; lv++)
 			{
 				float v = (lv + 1) * div;
-				if (d < v * v)
+				if (d <= v * v)
 					break;
 			}
-			lv = min(lv, lvs - 1);
 			vec4 coordl = light.shadow_matrices[lv] * vec4(coordw, 1.0);
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
 			if (coordl.z >= 0.0 && coordl.z <= 1.0)
 			{
 				float ref = texture(directional_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
-				shadow = clamp(exp(-esm_c * 1000.0 * (coordl.z - ref)), 0.0, 1.0);
+				shadow = clamp(exp(-esm_c * render_data.zFar * (coordl.z - ref)), 0.0, 1.0);
 			}
 		}
 		

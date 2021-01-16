@@ -33,7 +33,7 @@
         <cNode pos="-100,100,-100" />
       </entity>
       <entity>
-        <cNode euler="0,60,0" />
+        <cNode euler="0,90,0" />
         <cLight type="Directional" color="1.0,1.0,1.0" cast_shadow="true" />
       </entity>
     </entity>
