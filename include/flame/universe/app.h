@@ -81,7 +81,7 @@ namespace flame
 		sPhysics* s_physic_world = nullptr;
 		Entity* root = nullptr;
 
-		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool msaa_3d = false, bool always_update = false, Window* parent = nullptr);
+		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool always_update = false, Window* parent = nullptr);
 		virtual ~GraphicsWindow();
 		void set_canvas_output();
 		virtual void on_frame() {}
@@ -105,7 +105,7 @@ namespace flame
 		void run();
 	};
 
-	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool msaa_3d, bool always_update, Window* parent) :
+	GraphicsWindow::GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr, bool always_update, Window* parent) :
 		app(app)
 	{
 		window = Window::create(title, size, styles, parent);
@@ -120,7 +120,7 @@ namespace flame
 		submit_fence = graphics::Fence::create(graphics::Device::get_default());
 		render_finished_semaphore = graphics::Semaphore::create(graphics::Device::get_default());
 
-		render_preferences = graphics::RenderPreferences::create(graphics::Device::get_default(), hdr, msaa_3d);
+		render_preferences = graphics::RenderPreferences::create(graphics::Device::get_default(), hdr);
 		canvas = graphics::Canvas::create(render_preferences);
 		set_canvas_output();
 		canvas->set_element_resource(-1, { nullptr, nullptr, app->font_atlas }, "default_font");

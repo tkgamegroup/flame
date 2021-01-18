@@ -34,7 +34,6 @@ namespace flame
 			DevicePrivate* device;
 
 			bool hdr;
-			bool msaa_3d;
 
 			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
 			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
@@ -59,7 +58,7 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> upsample_pipeline;
 			std::unique_ptr<PipelinePrivate> gamma_pipeline;
 
-			RenderPreferencesPrivate(DevicePrivate* device, bool hdr, bool msaa_3d);
+			RenderPreferencesPrivate(DevicePrivate* device, bool hdr);
 
 			PipelinePrivate* get_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
 			PipelinePrivate* create_material_pipeline(MaterialUsage usage, const std::filesystem::path& mat, const std::string& defines);
@@ -516,8 +515,8 @@ namespace flame
 
 			std::unique_ptr<ImagePrivate> shadow_depth_image;
 			std::unique_ptr<ImagePrivate> shadow_blur_pingpong_image;
-			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_image_framebuffer;
-			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_image_descriptorset;
+			std::unique_ptr<FramebufferPrivate> shadow_blur_pingpong_framebuffer;
+			std::unique_ptr<DescriptorSetPrivate> shadow_blur_pingpong_descriptorset;
 
 			ShaderBuffer light_indices_buffer;
 
@@ -548,12 +547,7 @@ namespace flame
 
 			std::unique_ptr<ImagePrivate> depth_image;
 
-			std::unique_ptr<ImagePrivate> msaa_image;
-			std::unique_ptr<ImagePrivate> msaa_resolve_image;
-			std::unique_ptr<DescriptorSetPrivate> msaa_descriptorset;
-
 			std::vector<std::unique_ptr<FramebufferPrivate>> mesh_framebuffers;
-			std::unique_ptr<FramebufferPrivate> mesh_resolve_resframebuffer;
 
 			std::unique_ptr<ImagePrivate> back_image;
 			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;

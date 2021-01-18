@@ -37,7 +37,7 @@ namespace flame
 
 		struct RenderPreferences
 		{
-			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true, bool msaa_3d = true);
+			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true);
 		};
 
 		struct ArmatureDeformer

@@ -85,10 +85,14 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 			uint lvs = min(render_data.csm_levels, 4);
 			float div = 1.0 / lvs;
 			uint lv = 0;
-			for (; lv < lvs; lv++)
+			while (true)
 			{
 				float v = (lv + 1) * div;
 				if (d <= v * v)
+					break;
+				else if (lv < lvs - 1)
+					lv++;
+				else
 					break;
 			}
 			vec4 coordl = light.shadow_matrices[lv] * vec4(coordw, 1.0);
