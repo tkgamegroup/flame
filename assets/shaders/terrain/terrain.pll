@@ -1,10 +1,10 @@
 #ifndef MAKE_PLL
 #define RENDER_DATA_SET 0
-#include "render_data.dsl"
+#include "../render_data.dsl"
 #define MATERIAL_SET 1
-#include "material.dsl"
+#include "../material.dsl"
 #define LIGHT_SET 2
-#include "light.dsl"
+#include "../light.dsl"
 #define TERRAIN_SET 3
 #include "terrain.dsl"
 #endif

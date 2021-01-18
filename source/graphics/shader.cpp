@@ -187,9 +187,10 @@ namespace flame
 
 		DescriptorSetLayoutPrivate* DescriptorSetLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
 		{
+			auto fn = filename.filename();
 			for (auto& d : device->dsls)
 			{
-				if (d->filename == filename)
+				if (d->filename.filename() == fn)
 					return d.get();
 			}
 			auto dsl = DescriptorSetLayoutPrivate::create(device, filename);
@@ -466,7 +467,11 @@ namespace flame
 					printf("compiling dsl: %s", path.string().c_str());
 
 					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
+						auto& str = *(std::string*)_str;
+						str.resize(size);
+						return str.data();
+					});
 					if (!std::filesystem::exists(L"a.spv"))
 					{
 						temp = add_lineno_to_temp(temp);
@@ -477,7 +482,10 @@ namespace flame
 
 					printf(" done\n");
 
+					std::filesystem::remove(temp_fn);
+
 					auto spv = get_file_content(L"a.spv");
+					std::filesystem::remove(L"a.spv");
 					auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
 					auto resources = glsl.get_shader_resources();
 
@@ -727,9 +735,10 @@ namespace flame
 
 		PipelineLayoutPrivate* PipelineLayoutPrivate::get(DevicePrivate* device, const std::filesystem::path& filename)
 		{
+			auto fn = filename.filename();
 			for (auto& p : device->plls)
 			{
-				if (p->filename == filename)
+				if (p->filename == fn)
 					return p.get();
 			}
 
@@ -760,10 +769,7 @@ namespace flame
 			for (auto& d : dependencies)
 			{
 				if (d.extension() == L".dsl")
-				{
-					auto fn = d.lexically_relative(ppath);
-					dsls.push_back(DescriptorSetLayoutPrivate::get(device, fn));
-				}
+					dsls.push_back(DescriptorSetLayoutPrivate::get(device, d));
 			}
 
 			std::vector<std::unique_ptr<ShaderType>> types;
@@ -803,7 +809,11 @@ namespace flame
 					printf("compiling pll: %s", path.string().c_str());
 
 					std::string output;
-					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output);
+					exec(glslc_path.c_str(), (wchar_t*)command_line.c_str(), &output, [](void* _str, uint size) {
+						auto& str = *(std::string*)_str;
+						str.resize(size);
+						return str.data();
+					});
 					if (!std::filesystem::exists(L"a.spv"))
 					{
 						temp = add_lineno_to_temp(temp);
@@ -814,7 +824,10 @@ namespace flame
 
 					printf(" done\n");
 
+					std::filesystem::remove(temp_fn);
+
 					auto spv = get_file_content(L"a.spv");
+					std::filesystem::remove(L"a.spv");
 					auto glsl = spirv_cross::CompilerGLSL((uint*)spv.c_str(), spv.size() / sizeof(uint));
 					auto resources = glsl.get_shader_resources();
 
@@ -1021,6 +1034,8 @@ namespace flame
 					}
 
 					printf(" done\n");
+
+					std::filesystem::remove(temp_fn);
 				}
 				else
 				{

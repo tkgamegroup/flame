@@ -1,5 +1,5 @@
 #include "mesh.pll"
-#include "shading.glsl"
+#include "../shading.glsl"
 
 layout (location = 0) in flat uint i_mat_id;
 layout (location = 1) in vec2 i_uv;

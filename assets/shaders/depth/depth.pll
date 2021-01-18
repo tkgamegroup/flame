@@ -1,10 +1,10 @@
 #ifndef MAKE_PLL
 #define MESH_SET 0
-#include "mesh.dsl"
+#include "../mesh.dsl"
 #define MATERIAL_SET 1
-#include "material.dsl"
+#include "../material.dsl"
 #define ARMATURE_SET 2
-#include "armature.dsl"
+#include "../armature.dsl"
 #endif
 
 layout (push_constant) uniform PushConstant

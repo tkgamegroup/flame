@@ -1,5 +1,5 @@
 #include "sky.pll"
-#include "math.glsl"
+#include "../math.glsl"
 
 layout (location = 0) in vec3 i_dir;
 

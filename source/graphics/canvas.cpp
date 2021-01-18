@@ -79,8 +79,8 @@ namespace flame
 
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"element.vert"),
-					ShaderPrivate::get(device, L"element.frag")
+					ShaderPrivate::get(device, L"element/element.vert"),
+					ShaderPrivate::get(device, L"element/element.frag")
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -101,13 +101,13 @@ namespace flame
 				bo.dst_color = BlendFactorOneMinusSrcAlpha;
 				bo.src_alpha = BlendFactorOne;
 				bo.dst_alpha = BlendFactorZero;
-				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
+				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element/element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
 			}
 
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"sky.vert"),
-					ShaderPrivate::get(device, L"sky.frag")
+					ShaderPrivate::get(device, L"sky/sky.vert"),
+					ShaderPrivate::get(device, L"sky/sky.frag")
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -127,7 +127,7 @@ namespace flame
 				DepthInfo dep;
 				dep.test = false;
 				dep.write = false;
-				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
+				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 			}
 
 			{
@@ -147,10 +147,10 @@ namespace flame
 				vi.primitive_topology = PrimitiveTopologyLineList;
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
-				line3_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"simple3d.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, &vi));
+				line3_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"simple3D.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, &vi));
 			}
 
-			auto post_pll = PipelineLayoutPrivate::get(device, L"post.pll");
+			auto post_pll = PipelineLayoutPrivate::get(device, L"post/post.pll");
 			auto fullscreen_vert = ShaderPrivate::get(device, L"fullscreen.vert");
 
 			for (auto i = 0; i < 10; i++)
@@ -158,7 +158,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_vert,
-						ShaderPrivate::get(device, L"blur.frag", "R" + std::to_string(i + 1) + " H")
+						ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " H")
 					};
 					blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
 				}
@@ -166,7 +166,7 @@ namespace flame
 				{
 					ShaderPrivate* shaders[] = {
 						fullscreen_vert,
-						ShaderPrivate::get(device, L"blur.frag", "R" + std::to_string(i + 1) + " V")
+						ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " V")
 					};
 					blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
 				}
@@ -175,7 +175,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					ShaderPrivate::get(device, L"blur_depth.frag", "H")
+					ShaderPrivate::get(device, L"post/blur_depth.frag", "H")
 				};
 				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -183,7 +183,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					ShaderPrivate::get(device, L"blur_depth.frag", "V")
+					ShaderPrivate::get(device, L"post/blur_depth.frag", "V")
 				};
 				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
 			}
@@ -191,7 +191,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					ShaderPrivate::get(device, L"blit.frag")
+					ShaderPrivate::get(device, L"post/blit.frag")
 				};
 				blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
 				blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
@@ -200,12 +200,12 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					ShaderPrivate::get(device, L"filter_bright.frag")
+					ShaderPrivate::get(device, L"post/filter_bright.frag")
 				};
 				filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
 			}
 
-			auto box_frag = ShaderPrivate::get(device, L"box.frag");
+			auto box_frag = ShaderPrivate::get(device, L"post/box.frag");
 
 			{
 				ShaderPrivate* shaders[] = {
@@ -232,7 +232,7 @@ namespace flame
 			{
 				ShaderPrivate* shaders[] = {
 					fullscreen_vert,
-					ShaderPrivate::get(device, L"gamma.frag")
+					ShaderPrivate::get(device, L"post/gamma.frag")
 				};
 				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
 			}
@@ -273,8 +273,8 @@ namespace flame
 			case MaterialForMesh:
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"mesh.vert"),
-					ShaderPrivate::get(device, L"mesh.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"mesh/mesh.vert"),
+					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias[3];
 				vias[0].location = 0;
@@ -292,14 +292,14 @@ namespace flame
 				RasterInfo rst;
 				rst.polygon_mode = polygon_mode;
 				DepthInfo dep;
-				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh/mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
 			}
 				break;
 			case MaterialForMeshArmature:
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"mesh.vert", "ARMATURE"),
-					ShaderPrivate::get(device, L"mesh.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"mesh/mesh.vert", "ARMATURE"),
+					ShaderPrivate::get(device, L"mesh/mesh.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias1[3];
 				vias1[0].location = 0;
@@ -324,16 +324,16 @@ namespace flame
 				RasterInfo rst;
 				rst.polygon_mode = polygon_mode;
 				DepthInfo dep;
-				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"mesh/mesh.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
 			}
 				break;
 			case MaterialForTerrain:
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"terrain.vert"),
-					ShaderPrivate::get(device, L"terrain.tesc"),
-					ShaderPrivate::get(device, L"terrain.tese"),
-					ShaderPrivate::get(device, L"terrain.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"terrain/terrain.vert"),
+					ShaderPrivate::get(device, L"terrain/terrain.tesc"),
+					ShaderPrivate::get(device, L"terrain/terrain.tese"),
+					ShaderPrivate::get(device, L"terrain/terrain.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexInfo vi;
 				vi.primitive_topology = PrimitiveTopologyPatchList;
@@ -341,15 +341,15 @@ namespace flame
 				RasterInfo rst;
 				rst.polygon_mode = polygon_mode;
 				DepthInfo dep;
-				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"terrain.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"terrain/terrain.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep);
 			}
 				break;
 			case MaterialForDepth:
 			{
 				defines += "DEPTH_PASS ";
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"depth.vert"),
-					ShaderPrivate::get(device, L"depth.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"depth/depth.vert"),
+					ShaderPrivate::get(device, L"depth/depth.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -366,15 +366,15 @@ namespace flame
 				RasterInfo rst;
 				rst.cull_mode = CullModeFront;
 				DepthInfo dep;
-				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth/depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
 			}
 				break;
 			case MaterialForDepthArmature:
 			{
 				defines += "DEPTH_PASS ";
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"depth.vert", "ARMATURE"),
-					ShaderPrivate::get(device, L"depth.frag", defines, substitutes, extra_dependencies)
+					ShaderPrivate::get(device, L"depth/depth.vert", "ARMATURE"),
+					ShaderPrivate::get(device, L"depth/depth.frag", defines, substitutes, extra_dependencies)
 				};
 				VertexAttributeInfo vias1[2];
 				vias1[0].location = 0;
@@ -398,7 +398,7 @@ namespace flame
 				RasterInfo rst;
 				rst.cull_mode = CullModeFront;
 				DepthInfo dep;
-				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
+				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth/depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
 			}
 				break;
 			}
@@ -464,7 +464,10 @@ namespace flame
 				return pipelines[u];
 			auto path = material->dir / material->pipeline_file;
 			if (!std::filesystem::exists(path))
+			{
 				path = material->pipeline_file;
+				get_resource_path(path, L"assets\\shaders");
+			}
 			pipelines[u] = canvas->preferences->create_material_pipeline(u, path, material->pipeline_defines);
 			return pipelines[u];
 		}
@@ -549,7 +552,7 @@ namespace flame
 					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
 			}
 
-			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post.dsl");
+			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post/post.dsl");
 
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"light.dsl");
@@ -697,7 +700,7 @@ namespace flame
 			back_nearest_descriptorsets.clear();
 			back_linear_descriptorsets.clear();
 
-			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post.dsl");
+			auto post_dsl = DescriptorSetLayoutPrivate::get(device, L"post.dsl");
 
 			if (views.empty())
 				output_size = vec2(0.f);

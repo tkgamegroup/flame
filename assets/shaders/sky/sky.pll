@@ -1,6 +1,6 @@
 #ifndef MAKE_PLL
 #define RENDER_DATA_SET 0
-#include "render_data.dsl"
+#include "../render_data.dsl"
 #define SKY_SET 1
 #include "sky.dsl"
 #endif
