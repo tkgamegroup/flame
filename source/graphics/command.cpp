@@ -136,6 +136,13 @@ namespace flame
 				pipeline->pipeline_layout->vk_pipeline_layout, idx, 1, &ds->vk_descriptor_set, 0, nullptr);
 		}
 
+		void CommandBufferPrivate::bind_descriptor_set(uint64 h, DescriptorSetPrivate* ds)
+		{
+			auto pll = pipeline->pipeline_layout;
+			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(pipeline->type),
+				pll->vk_pipeline_layout, pll->get_idx(h), 1, &ds->vk_descriptor_set, 0, nullptr);
+		}
+
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPrivate* buf, uint id)
 		{
 			VkDeviceSize offset = 0;

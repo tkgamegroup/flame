@@ -24,6 +24,11 @@ namespace flame
 		rad_texture_name = name;
 	}
 
+	void cSkyPrivate::set_lut_texture(const char* name)
+	{
+		lut_texture_name = name;
+	}
+
 	void cSkyPrivate::on_entered_world()
 	{
 		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
@@ -56,7 +61,17 @@ namespace flame
 			}
 			rad_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
-		canvas->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()), rad_texture->get_view(rad_texture->get_levels()));
+		{
+			auto fn = std::filesystem::path(lut_texture_name);
+			if (!fn.extension().empty())
+			{
+				if (!fn.is_absolute())
+					fn = entity->path.parent_path() / fn;
+			}
+			lut_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
+		}
+		canvas->set_sky(box_texture->get_view(box_texture->get_levels()), irr_texture->get_view(irr_texture->get_levels()),
+			rad_texture->get_view(rad_texture->get_levels()), lut_texture->get_view());
 	}
 
 	void cSkyPrivate::on_left_world()

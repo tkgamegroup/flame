@@ -166,7 +166,6 @@ namespace flame
 				gli::gl GL(gli::gl::PROFILE_KTX);
 
 				auto gli_texture = gli::load(filename.string());
-				gli_texture.swizzle<cvec4>(gli::swizzles(gli::SWIZZLE_BLUE, gli::SWIZZLE_GREEN, gli::SWIZZLE_RED, gli::SWIZZLE_ALPHA));
 
 				auto size = gli_texture.extent();
 				auto levels = gli_texture.levels();
@@ -178,6 +177,9 @@ namespace flame
 				{
 				case gli::gl::INTERNAL_RGBA8_UNORM:
 					format = Format_R8G8B8A8_UNORM;
+					break;
+				case gli::gl::INTERNAL_RGBA16F:
+					format = Format_R16G16B16A16_SFLOAT;
 					break;
 				case gli::gl::INTERNAL_RGBA_DXT5:
 					format = Format_RGBA_BC3;

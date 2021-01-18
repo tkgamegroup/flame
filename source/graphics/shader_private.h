@@ -172,6 +172,7 @@ namespace flame
 			std::filesystem::path filename;
 
 			std::vector<DescriptorSetLayoutPrivate*> descriptor_set_layouts;
+			std::unordered_map<uint64, uint> descriptor_set_layouts_map;
 
 			std::vector<std::unique_ptr<ShaderType>> types;
 			ShaderType* push_constant = nullptr;
@@ -183,6 +184,8 @@ namespace flame
 			~PipelineLayoutPrivate();
 
 			void release() override { delete this; }
+
+			uint get_idx(uint64 h) { return descriptor_set_layouts_map[h]; };
 
 			static PipelineLayoutPrivate* get(DevicePrivate* device, const std::filesystem::path& filename);
 			static PipelineLayoutPrivate* create(DevicePrivate* device, const std::filesystem::path& filename);

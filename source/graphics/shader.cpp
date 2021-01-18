@@ -694,7 +694,14 @@ namespace flame
 		{
 			descriptor_set_layouts.resize(_descriptor_set_layouts.size());
 			for (auto i = 0; i < descriptor_set_layouts.size(); i++)
-				descriptor_set_layouts[i] = _descriptor_set_layouts[i];
+			{
+				auto dsl = _descriptor_set_layouts[i];
+				descriptor_set_layouts[i] = dsl;
+				auto fn = dsl->filename.filename().stem().string();
+				descriptor_set_layouts_map[ch(fn.c_str())] = i;
+			}
+
+
 			types.resize(_types.size());
 			for (auto i = 0; i < types.size(); i++)
 				types[i].reset(_types[i].release());
@@ -1069,10 +1076,13 @@ namespace flame
 			std::vector<VkPipelineColorBlendAttachmentState> vk_blend_attachment_states;
 			std::vector<VkDynamicState> vk_dynamic_states;
 
+			shaders.resize(_shaders.size());
 			vk_stage_infos.resize(_shaders.size());
 			for (auto i = 0; i < _shaders.size(); i++)
 			{
-				auto& src = _shaders[i];
+				auto src = _shaders[i];
+				shaders[i] = src;
+
 				auto& dst = vk_stage_infos[i];
 				dst.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 				dst.flags = 0;
@@ -1274,6 +1284,9 @@ namespace flame
 			pipeline_layout(pll)
 		{
 			type = PipelineCompute;
+
+			shaders.resize(1);
+			shaders[0] = compute_shader;
 
 			VkComputePipelineCreateInfo pipeline_info;
 			pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

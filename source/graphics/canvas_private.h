@@ -463,6 +463,8 @@ namespace flame
 			int find_model_resource(const char* name) override;
 			uint set_model_resource(int slot, Model* mod, const char* name) override;
 
+			void set_sky(ImageView* box, ImageView* irr, ImageView* rad, ImageView* lut) override;
+
 			void record(CommandBuffer* cb, uint image_index) override;
 		};
 
@@ -618,7 +620,7 @@ namespace flame
 			void draw_text(uint res_id, const wchar_t* text_beg, const wchar_t* text_end, uint font_size, const cvec4& col, const vec2& pos, const mat2& axes) override;
 
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) override;
-			void set_sky(ImageView* box, ImageView* irr, ImageView* rad) override;
+			void set_sky(ImageViewPrivate* box, ImageViewPrivate* irr, ImageViewPrivate* rad, ImageViewPrivate* lut);
 
 			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer) override;
 			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
@@ -680,6 +682,11 @@ namespace flame
 		inline uint CanvasBridge::set_model_resource(int slot, Model* mod, const char* name)
 		{
 			return ((CanvasPrivate*)this)->set_model_resource(slot, (ModelPrivate*)mod, name ? name : "");
+		}
+
+		inline void CanvasBridge::set_sky(ImageView* box, ImageView* irr, ImageView* rad, ImageView* lut)
+		{
+			return ((CanvasPrivate*)this)->set_sky((ImageViewPrivate*)box, (ImageViewPrivate*)irr, (ImageViewPrivate*)rad, (ImageViewPrivate*)lut);
 		}
 
 		inline void CanvasBridge::record(CommandBuffer* cb, uint image_index)

@@ -7,6 +7,8 @@
 #include "../material.dsl"
 #define LIGHT_SET 3
 #include "../light.dsl"
-#define ARMATURE_SET 4
+#define SKY_SET 4
+#include "../sky.dsl"
+#define ARMATURE_SET 5
 #include "../armature.dsl"
 #endif

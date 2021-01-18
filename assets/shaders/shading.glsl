@@ -42,6 +42,11 @@ vec3 fresnel_schlick(float cos_theta, vec3 f0)
 	return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);
 }
 
+vec3 fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness)
+{
+    return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(max(1.0 - cos_theta, 0.0), 5.0);
+}   
+
 vec3 lighting(vec3 N, vec3 V, vec3 L, vec3 radiance, float metallic, vec3 albedo, vec3 f0, float roughness)
 {
 	vec3 H = normalize(V + L);
@@ -126,6 +131,23 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 		vec3 intensity = light.color / max(dist * dist * 0.01, 1.0);
 		color += lighting(N, V, L, intensity * shadow, metallic, albedo, spec, roughness);
 	}
+
+	{
+		vec3 R = reflect(-V, N);
+		vec3 F = fresnel_schlick_roughness(max(dot(N, V), 0.0), spec, roughness);
+		vec3 kS = F;
+		vec3 kD = 1.0 - kS;
+		kD *= 1.0 - metallic;	  
+  
+		vec3 irradiance = texture(sky_irr, N).rgb;
+		vec3 diffuse    = irradiance * albedo;
+  
+		vec3 prefilteredColor = textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb;   
+		vec2 envBRDF  = texture(sky_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
+		vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+  
+		color += (kD * diffuse + specular) * 0.2;
+	} 
 
 	return color;
 }

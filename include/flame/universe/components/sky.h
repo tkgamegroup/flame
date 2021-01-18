@@ -20,6 +20,8 @@ namespace flame
 		virtual void set_irr_texture(const char* name) = 0;
 		virtual const char* get_rad_texture() const = 0;
 		virtual void set_rad_texture(const char* name) = 0;
+		virtual const char* get_lut_texture() const = 0;
+		virtual void set_lut_texture(const char* name) = 0;
 
 		FLAME_UNIVERSE_EXPORTS static cSky* create();
 	};

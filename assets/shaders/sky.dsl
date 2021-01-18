@@ -5,3 +5,4 @@
 layout (set = SKY_SET, binding = 0) uniform samplerCube sky_box;
 layout (set = SKY_SET, binding = 1) uniform samplerCube sky_irr;
 layout (set = SKY_SET, binding = 2) uniform samplerCube sky_rad;
+layout (set = SKY_SET, binding = 3) uniform sampler2D sky_lut;

@@ -33,6 +33,7 @@ namespace flame
 			void begin_renderpass(Renderpass* rp, Framebuffer* fb, const vec4* clearvalues) override;
 			void bind_pipeline(Pipeline* p) override;
 			void bind_descriptor_set(DescriptorSet* s, uint idx) override;
+			void bind_descriptor_set(uint64 h, DescriptorSet* s) override;
 			void bind_vertex_buffer(Buffer* b, uint id) override;
 			void bind_index_buffer(Buffer* b, IndiceType t) override;
 			void push_constant(uint offset, uint size, const void* data) override;
@@ -70,6 +71,7 @@ namespace flame
 			void set_scissor(const Rect& rect) override;
 			void bind_pipeline(PipelinePrivate* pl);
 			void bind_descriptor_set(DescriptorSetPrivate* ds, uint idx);
+			void bind_descriptor_set(uint64 h, DescriptorSetPrivate* ds);
 			void bind_vertex_buffer(BufferPrivate* buf, uint id);
 			void bind_index_buffer(BufferPrivate* buf, IndiceType t);
 			void push_constant(uint offset, uint size, const void* data);
@@ -102,6 +104,11 @@ namespace flame
 		inline void CommandBufferBridge::bind_descriptor_set(DescriptorSet* ds, uint idx)
 		{
 			((CommandBufferPrivate*)this)->bind_descriptor_set((DescriptorSetPrivate*)ds, idx);
+		}
+
+		inline void CommandBufferBridge::bind_descriptor_set(uint64 h, DescriptorSet* ds)
+		{
+			((CommandBufferPrivate*)this)->bind_descriptor_set(h, (DescriptorSetPrivate*)ds);
 		}
 
 		inline void CommandBufferBridge::bind_vertex_buffer(Buffer* buf, uint id)
