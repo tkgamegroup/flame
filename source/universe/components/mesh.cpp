@@ -116,16 +116,16 @@ namespace flame
 										{
 											b.name = name;
 											b.node = n;
-											//b.changed_listener = e->add_local_data_changed_listener([](Capture& c, Component* t, uint64 h) {
-											//	auto thiz = c.thiz<cMeshPrivate>();
-											//	auto id = c.data<int>();
-											//	auto& b = thiz->bones[id];
-											//	if (t == b.node && h == S<"transform"_h>)
-											//	{
-											//		b.node->update_transform();
-											//		thiz->deformer->set_pose(id, b.node->transform);
-											//	}
-											//}, Capture().set_thiz(this).set_data(&i));
+											b.changed_listener = e->add_data_listener(b.node, [](Capture& c, uint64 h) {
+												auto thiz = c.thiz<cMeshPrivate>();
+												auto id = c.data<int>();
+												auto& b = thiz->bones[id];
+												if (h == S<"transform"_h>)
+												{
+													b.node->update_transform();
+													thiz->deformer->set_pose(id, b.node->transform);
+												}
+											}, Capture().set_thiz(this).set_data(&i));
 										}
 									}
 								}
@@ -146,7 +146,7 @@ namespace flame
 	void cMeshPrivate::apply_animation()
 	{
 		stop_animation();
-		if (canvas && model && deformer && !animation_name.empty())
+		if (model && deformer && !animation_name.empty())
 		{
 			auto animation_id = model->find_animation(animation_name.c_str());
 			if (animation_id != -1)

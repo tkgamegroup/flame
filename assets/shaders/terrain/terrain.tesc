@@ -7,7 +7,6 @@ layout (location = 1) in vec2 i_uvs[];
  
 layout (location = 0) out flat uint o_idxs[4];
 layout (location = 1) out vec2 o_uvs[4];
-layout (location = 2) out vec4 o_debug[4];
 
 TerrainInfo terrain;
 

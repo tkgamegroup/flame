@@ -15,7 +15,6 @@ layout (location = 1) out vec2 o_uv;
 layout (location = 2) out vec3 o_coordw;
 layout (location = 3) out vec3 o_coordv;
 layout (location = 4) out vec3 o_normal;
-layout (location = 5) out vec4 o_debug;
 
 void main()
 {

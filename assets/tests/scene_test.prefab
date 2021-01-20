@@ -8,19 +8,22 @@
       <cScript src="tests/shoot_ball.lua" />
       <entity src="D:\sky\sky" />
       <entity src="prefabs/cube">
-        <cNode pos="0,200,0" />
+        <cNode pos="0,150,0" />
         <cRigid dynamic="false" />
       </entity>
       <entity src="prefabs/cube">
-        <cNode pos="10,200,0" />
+        <cNode pos="10,150,0" />
         <cRigid dynamic="false" />
       </entity>
       <entity src="prefabs/cube">
-        <cNode pos="0,200,5" />
+        <cNode pos="0,150,5" />
         <cRigid dynamic="false" />
       </entity>
-      <entity src="D:\character\character" >
-        <cNode pos="0,205,0" />
+      <entity src="D:\test_model\cube1">
+        <cNode pos="0,155,0" />
+      </entity>
+      <entity src="D:\character\character1" >
+        <cNode pos="0,155,0" />
         <cController radius="0.5" height="1.8" />
         <cScript src="character_controller.lua" />
         <entity name="camera">

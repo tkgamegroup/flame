@@ -758,8 +758,6 @@ namespace flame
 					}
 					ret->animations.emplace_back(a);
 				}
-
-				return ret;
 			}
 			else
 			{
@@ -993,7 +991,7 @@ namespace flame
 #endif
 			}
 
-			if (ret && ret->root->children.empty())
+			if (ret && ret->root->children.empty()) // if only has one node, wrap it with a new root
 			{
 				auto n = new NodePrivate;
 				auto r = ret->root.release();

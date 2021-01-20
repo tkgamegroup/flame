@@ -78,6 +78,8 @@ namespace flame
 
 		struct Model
 		{
+			virtual void release() = 0;
+
 			virtual uint get_meshes_count() const = 0;
 			virtual Mesh* get_mesh(uint idx) const = 0;
 			virtual int find_mesh(const char* name) const = 0;

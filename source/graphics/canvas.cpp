@@ -359,12 +359,11 @@ namespace flame
 				VertexBufferInfo vib;
 				vib.attributes_count = size(vias);
 				vib.attributes = vias;
-				vib.stride = 8 * sizeof(float);
+				vib.stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
 				VertexInfo vi;
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
 				RasterInfo rst;
-				rst.cull_mode = CullModeFront;
 				DepthInfo dep;
 				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth/depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
 			}
@@ -389,14 +388,13 @@ namespace flame
 				VertexBufferInfo vibs[2];
 				vibs[0].attributes_count = size(vias1);
 				vibs[0].attributes = vias1;
-				vibs[0].stride = 8 * sizeof(float);
+				vibs[0].stride = sizeof(vec3) + sizeof(vec2) + sizeof(vec3);
 				vibs[1].attributes_count = size(vias2);
 				vibs[1].attributes = vias2;
 				VertexInfo vi;
 				vi.buffers_count = 2;
 				vi.buffers = vibs;
 				RasterInfo rst;
-				rst.cull_mode = CullModeFront;
 				DepthInfo dep;
 				return PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"depth/depth.pll"), depth_renderpass.get(), 0, &vi, &rst, &dep);
 			}
@@ -1766,7 +1764,7 @@ namespace flame
 						}
 
 						shadow.matrices[j] = dstm[j] = orthoRH(LT.x, RB.x, LT.y, RB.y, 0.f, shadow_distance) *
-							lookAt(c + dir * shadow_distance * 0.05f, c, up);
+							lookAt(c + dir * shadow_distance * 0.5f, c, up);
 					}
 
 					directional_shadows.push_back(shadow);

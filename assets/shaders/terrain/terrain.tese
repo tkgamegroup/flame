@@ -4,14 +4,12 @@ layout(quads, equal_spacing, ccw) in;
 
 layout (location = 0) in flat uint i_idxs[];
 layout (location = 1) in vec2 i_uvs[];
-layout (location = 2) in vec4 i_debug[];
  
 layout (location = 0) out flat uint o_idx;
 layout (location = 1) out vec2 o_uv;
 layout (location = 2) out vec3 o_coordw;
 layout (location = 3) out vec3 o_coordv;
 layout (location = 4) out vec3 o_normal;
-layout (location = 5) out vec4 o_debug;
 
 vec3 normalx(vec3 v)
 {

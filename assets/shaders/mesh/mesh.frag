@@ -6,7 +6,6 @@ layout (location = 1) in vec2 i_uv;
 layout (location = 2) in vec3 i_coordw;
 layout (location = 3) in vec3 i_coordv;
 layout (location = 4) in vec3 i_normal;
-layout (location = 5) in vec4 i_debug;
 
 layout (location = 0) out vec4 o_color;
 

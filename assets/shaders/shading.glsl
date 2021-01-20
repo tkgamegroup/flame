@@ -87,7 +87,7 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 		if (light.shadow_map_index != -1 && distancev < render_data.shadow_distance)
 		{
 			float d = distancev / render_data.shadow_distance;
-			uint lvs = min(render_data.csm_levels, 4);
+			uint lvs = render_data.csm_levels;
 			float div = 1.0 / lvs;
 			uint lv = 0;
 			while (true)
@@ -102,11 +102,8 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 			}
 			vec4 coordl = light.shadow_matrices[lv] * vec4(coordw, 1.0);
 			coordl.xy = coordl.xy * 0.5 + vec2(0.5);
-			if (coordl.z >= 0.0 && coordl.z <= 1.0)
-			{
-				float ref = texture(directional_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
-				shadow = clamp(exp(-esm_c * render_data.zFar * (coordl.z - ref)), 0.0, 1.0);
-			}
+			float ref = texture(directional_shadow_maps[light.shadow_map_index], vec3(coordl.xy, lv)).r;
+			shadow = clamp(exp(-esm_c * render_data.zFar * (coordl.z - ref)), 0.0, 1.0);
 		}
 		
 		color += lighting(N, V, L, light.color * shadow, metallic, albedo, spec, roughness);
@@ -135,18 +132,11 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 	{
 		vec3 R = reflect(-V, N);
 		vec3 F = fresnel_schlick_roughness(max(dot(N, V), 0.0), spec, roughness);
-		vec3 kS = F;
-		vec3 kD = 1.0 - kS;
-		kD *= 1.0 - metallic;	  
-  
-		vec3 irradiance = texture(sky_irr, N).rgb;
-		vec3 diffuse    = irradiance * albedo;
-  
-		vec3 prefilteredColor = textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb;   
+   
 		vec2 envBRDF  = texture(sky_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
-		vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+		vec3 specular = textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
   
-		color += (kD * diffuse + specular) * 0.2;
+		color += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * albedo + specular) * 0.2;
 	} 
 
 	return color;

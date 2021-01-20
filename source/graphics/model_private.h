@@ -162,6 +162,8 @@ namespace flame
 
 			ModelPrivate();
 
+			void release() override { delete this; }
+
 			uint get_meshes_count() const override { return meshes.size(); }
 			Mesh* get_mesh(uint idx) const override { return meshes[idx].get(); }
 			int find_mesh(const std::string& name) const;
