@@ -79,7 +79,7 @@ namespace flame
 				{
 					isfile = true;
 					if (!fn.is_absolute())
-						fn = entity->path.parent_path() / fn;
+						fn = (path.empty() ? entity->path.parent_path() : path) / fn;
 				}
 				model_id = canvas->find_model_resource(fn.string().c_str());
 				if (model_id == -1 && isfile)

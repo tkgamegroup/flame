@@ -36,6 +36,7 @@ namespace flame
 			std::vector<FramePose> frames;
 		};
 
+		std::filesystem::path path;
 		std::string src;
 
 		bool cast_shadow = true;
@@ -79,6 +80,8 @@ namespace flame
 		void on_removed() override;
 		void on_entered_world() override;
 		void on_left_world() override;
+
+		void set_path(const wchar_t* _path) override { path = _path; path = path.parent_path(); }
 	};
 
 	inline void cMeshBridge::set_src(const char* src)

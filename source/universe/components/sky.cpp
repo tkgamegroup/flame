@@ -39,7 +39,7 @@ namespace flame
 			if (!fn.extension().empty())
 			{
 				if (!fn.is_absolute())
-					fn = entity->path.parent_path() / fn;
+					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
 			}
 			box_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
@@ -48,7 +48,7 @@ namespace flame
 			if (!fn.extension().empty())
 			{
 				if (!fn.is_absolute())
-					fn = entity->path.parent_path() / fn;
+					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
 			}
 			irr_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
@@ -57,7 +57,7 @@ namespace flame
 			if (!fn.extension().empty())
 			{
 				if (!fn.is_absolute())
-					fn = entity->path.parent_path() / fn;
+					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
 			}
 			rad_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}
@@ -66,7 +66,7 @@ namespace flame
 			if (!fn.extension().empty())
 			{
 				if (!fn.is_absolute())
-					fn = entity->path.parent_path() / fn;
+					fn = (path.empty() ? entity->path.parent_path() : path) / fn;
 			}
 			lut_texture = graphics::Image::create(graphics::Device::get_default(), fn.c_str(), true, graphics::ImageUsageNone, true);
 		}

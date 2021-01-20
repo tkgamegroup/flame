@@ -638,6 +638,7 @@ namespace flame
 					if (!c)
 					{
 						c = (Component*)ct->create();
+						c->set_path(filename.c_str());
 						isnew = true;
 					}
 					for (auto a : n_c.attributes())

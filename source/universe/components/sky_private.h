@@ -14,6 +14,7 @@ namespace flame
 
 	struct cSkyPrivate : cSky
 	{
+		std::filesystem::path path;
 		std::string box_texture_name;
 		std::string irr_texture_name;
 		std::string rad_texture_name;
@@ -35,7 +36,9 @@ namespace flame
 		const char* get_lut_texture() const override { return lut_texture_name.c_str(); }
 		void set_lut_texture(const char* name) override;
 
-		void on_entered_world();
-		void on_left_world();
+		void on_entered_world() override;
+		void on_left_world() override;
+
+		void set_path(const wchar_t* _path) override { path = _path; path = path.parent_path(); }
 	};
 }

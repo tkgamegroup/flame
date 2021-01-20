@@ -450,12 +450,11 @@ namespace flame
 			auto model_name = filename.filename().string();
 			std::function<void(pugi::xml_node, NodePrivate*)> print_node;
 			print_node = [&](pugi::xml_node dst, NodePrivate* src) {
-				auto n = dst.append_child("entity");
+				auto n = dst.append_child("eNode");
 				n.append_attribute("name").set_value(src->name.c_str());
-				auto nn = n.append_child("cNode");
-				nn.append_attribute("pos").set_value(to_string(src->pos).c_str());
-				nn.append_attribute("quat").set_value(to_string(src->qut).c_str());
-				nn.append_attribute("scale").set_value(to_string(src->scl).c_str());
+				n.append_attribute("pos").set_value(to_string(src->pos).c_str());
+				n.append_attribute("quat").set_value(to_string(src->qut).c_str());
+				n.append_attribute("scale").set_value(to_string(src->scl).c_str());
 				if (src->mesh_index != -1)
 				{
 					auto nm = n.append_child("cMesh");
