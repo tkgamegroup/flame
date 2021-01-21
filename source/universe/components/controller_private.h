@@ -22,15 +22,17 @@ namespace flame
 		physics::Controller* phy_controller = nullptr;
 
 		cNodePrivate* node = nullptr;
-		sPhysicsPrivate* physics_world = nullptr;
+		sPhysicsPrivate* physics = nullptr;
 
 		float get_radius() const override { return radius; }
 		void set_radius(float r) override;
 		float get_height() const override { return height; }
 		void set_height(float h) override;
-		void move(const vec3& _disp) override { disp = _disp; }
+		void move(const vec3& _disp) override;
 
-		void on_gain_physics_world();
-		void on_lost_physics_world();
+		void on_added() override;
+		void on_removed() override;
+		void on_entered_world() override;
+		void on_left_world() override;
 	};
 }

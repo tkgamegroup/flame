@@ -134,10 +134,15 @@ namespace flame
 
 		int cx, cy, channel;
 		
-		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 4);
+		auto data = stbi_load(filename.string().c_str(), &cx, &cy, &channel, 0);
 		if (!data)
 			return nullptr;
-		auto b = new BitmapPrivate(cx, cy, 4, 1, data);
+		if (channel == 3)
+		{
+			data = stbi__convert_format(data, 3, 4, cx, cy);
+			channel = 4;
+		}
+		auto b = new BitmapPrivate(cx, cy, channel, 1, data);
 		stbi_image_free(data);
 		return b;
 	}

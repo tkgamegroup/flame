@@ -91,18 +91,15 @@ namespace flame
 		}
 		for (auto c : controllers)
 		{
-			if (!c->node->transform_dirty)
+			auto coord = c->phy_controller->get_position();
+			auto pn = c->entity->get_parent_component_t<cNodePrivate>();
+			if (pn)
 			{
-				auto coord = c->phy_controller->get_position();
-				auto pn = c->entity->get_parent_component_t<cNodePrivate>();
-				if (pn)
-				{
-					auto q_inv = inverse(pn->g_qut);
-					c->node->set_pos(q_inv * (coord - pn->g_pos) / pn->g_scl);
-				}
-				else
-					c->node->set_pos(coord);
+				auto q_inv = inverse(pn->g_qut);
+				c->node->set_pos(q_inv * (coord - pn->g_pos) / pn->g_scl);
 			}
+			else
+				c->node->set_pos(coord);
 		}
 	}
 

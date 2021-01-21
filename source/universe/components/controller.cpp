@@ -1,6 +1,7 @@
 #include <flame/physics/device.h>
 #include <flame/physics/material.h>
 #include <flame/physics/controller.h>
+#include "../world_private.h"
 #include "node_private.h"
 #include "controller_private.h"
 #include "../systems/physics_private.h"
@@ -17,24 +18,45 @@ namespace flame
 		height = h;
 	}
 
-	void cControllerPrivate::on_gain_physics_world()
-	{
-		phy_controller = physics::Controller::create(physics_world->phy_scene, nullptr, radius, height);
-		node->update_transform();
-		phy_controller->set_position(node->g_pos);
-		physics_world->controllers.push_back(this);
+	void cControllerPrivate::move(const vec3& _disp)
+	{ 
+		disp = _disp; 
 	}
 
-	void cControllerPrivate::on_lost_physics_world()
+	void cControllerPrivate::on_added()
+	{
+		node = entity->get_component_t<cNodePrivate>();
+		fassert(node);
+	}
+
+	void cControllerPrivate::on_removed()
+	{
+		node = nullptr;
+	}
+
+	void cControllerPrivate::on_entered_world()
+	{
+		physics = entity->world->get_system_t<sPhysicsPrivate>();
+		fassert(physics);
+
+		phy_controller = physics::Controller::create(physics->phy_scene, nullptr, radius, height);
+		node->update_transform();
+		phy_controller->set_position(node->g_pos);
+		physics->controllers.push_back(this);
+	}
+
+	void cControllerPrivate::on_left_world()
 	{
 		if (phy_controller)
 		{
-			std::erase_if(physics_world->controllers, [&](const auto& i) {
+			std::erase_if(physics->controllers, [&](const auto& i) {
 				return i == this;
 			});
 			phy_controller->release();
 			phy_controller = nullptr;
 		}
+
+		physics = nullptr;
 	}
 
 	cController* cController::create()

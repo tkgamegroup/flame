@@ -86,16 +86,12 @@ namespace flame
 				auto dst = (PxHeightFieldSample*)samples.data();
 				auto sample = [&](int x, int y) {
 					if (x < 0)
-						//x = img_size.x - 1;
 						x = 0;
 					else if (x >= img_size.x)
-						//x = 0;
 						x = img_size.x - 1;
 					if (y < 0)
-						//y = img_size.y - 1;
 						y = 0;
 					else if (y >= img_size.y)
-						//y = 0;
 						y = img_size.y - 1;
 					return src[y * img_size.x + x] / 255.f;
 				};

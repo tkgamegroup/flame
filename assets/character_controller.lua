@@ -73,24 +73,39 @@ root_receiver:add_key_up_listener(function(k)
 end)
 
 entity:add_event(function()
-	if character.w then
-		character.controller:move({x=character.dir1.x * character.speed, y=character.dir1.y * character.speed, z=character.dir1.z * character.speed})
-	end
-	if character.s then
-		character.controller:move({x=-character.dir1.x * character.speed, y=-character.dir1.y * character.speed, z=-character.dir1.z * character.speed})
-	end
-	if character.q then
-		character.controller:move({x=character.dir2.x * character.speed, y=character.dir2.y * character.speed, z=character.dir2.z * character.speed})
-	end
-	if character.e then
-		character.controller:move({x=-character.dir2.x * character.speed, y=-character.dir2.y * character.speed, z=-character.dir2.z * character.speed})
-	end
+	yaw = 0
 	if character.a then
-		character.yaw = character.yaw + 1
-		character:update_dir()
+		yaw = yaw + 1
 	end
 	if character.d then
-		character.yaw = character.yaw - 1
+		yaw = yaw - 1
+	end
+	if yaw ~= 0 then
+		character.yaw = character.yaw + yaw
 		character:update_dir()
+	end
+	disp = {x=0, y=0, z=0}
+	if character.w then
+		disp.x = disp.x + character.dir1.x * character.speed
+		disp.y = disp.y + character.dir1.y * character.speed
+		disp.z = disp.z + character.dir1.z * character.speed
+	end
+	if character.s then
+		disp.x = disp.x - character.dir1.x * character.speed
+		disp.y = disp.y - character.dir1.y * character.speed
+		disp.z = disp.z - character.dir1.z * character.speed
+	end
+	if character.q then
+		disp.x = disp.x + character.dir2.x * character.speed
+		disp.y = disp.y + character.dir2.y * character.speed
+		disp.z = disp.z + character.dir2.z * character.speed
+	end
+	if character.e then
+		disp.x = disp.x - character.dir2.x * character.speed
+		disp.y = disp.y - character.dir2.y * character.speed
+		disp.z = disp.z - character.dir2.z * character.speed
+	end
+	if disp.x ~= 0 or disp.y ~= 0 or disp.z ~= 0 then
+		character.controller:move(disp)
 	end
 end)

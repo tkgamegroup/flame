@@ -177,7 +177,11 @@ namespace flame
 					{
 						lua_getglobal(state, "__type__");
 						if (lua_isstring(state, -1))
-							tn = lua_tostring(state, -1);
+						{
+							auto str = std::string(lua_tostring(state, -1));
+							if (!str.empty())
+								tn = str;
+						}
 						lua_pop(state, 1);
 
 						lua_newtable(state);
@@ -189,7 +193,7 @@ namespace flame
 							lua_settable(state, -3);
 						}
 
-						if (!tn.empty())
+						if (!tn.empty() && tn != "void")
 							lua_set_object_type(state, tn.c_str());
 					}
 					else

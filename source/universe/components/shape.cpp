@@ -38,6 +38,8 @@ namespace flame
 		node = entity->get_component_t<cNodePrivate>();
 		fassert(node);
 
+		terrain = entity->get_component_t<cTerrainPrivate>();
+
 		auto e = entity;
 		while (e)
 		{

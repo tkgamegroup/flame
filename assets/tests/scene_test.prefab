@@ -23,7 +23,7 @@
         <cNode pos="0,155,0" />
       </entity>
       <entity src="D:\character\character" >
-        <cNode pos="0,0,0" />
+        <cNode pos="0,155,0" />
         <cController radius="0.5" height="1.8" />
         <cScript src="character_controller.lua" />
         <entity name="camera">
@@ -53,14 +53,14 @@
 		      <eMenuItem text="solid" >
             <cScript>
               entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
-		            cmd:excute("view_shading_solid")
-	            end)
+                root:find_component("cCommand"):excute("shading_solid")
+              end)
             </cScript>
           </eMenuItem>
 		      <eMenuItem text="wireframe" >
             <cScript>
               entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
-                cmd:excute("view_shading_wireframe")
+                root:find_component("cCommand"):excute("shading_wireframe")
               end)
             </cScript>
           </eMenuItem>
@@ -69,14 +69,14 @@
 		      <eMenuItem text="visualization_on" >
             <cScript>
               entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
-                cmd:excute("view_physics_on")
+                root:find_component("cCommand"):excute("physics_visualization_on")
               end)
             </cScript>
           </eMenuItem>
 		      <eMenuItem text="visualization_off" >
             <cScript>
               entity:find_component("cReceiver"):add_mouse_left_down_listener(function()
-                cmd:excute("view_physics_off")
+                root:find_component("cCommand"):excute("physics_visualization_off")
               end)
             </cScript>
           </eMenuItem>

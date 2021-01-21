@@ -494,6 +494,22 @@ namespace flame
 
 	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture)
 	{
+		if (!callback)
+		{
+			auto slot = (uint)&capture;
+			callback = [](Capture& c) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->call(0);
+				scr_ins->pop(2);
+				c._current = nullptr;
+			};
+			auto ev = looper().add_event(callback, Capture().set_data(&slot));
+			events.push_back(ev);
+			return ev;
+		}
 		auto ev = looper().add_event(callback, capture);
 		events.push_back(ev);
 		return ev;
