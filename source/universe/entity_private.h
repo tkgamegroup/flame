@@ -29,6 +29,8 @@ namespace flame
 
 	struct EntityBridge : Entity
 	{
+		Component* find_component(const char* name) const override;
+		Component* find_first_dfs_component(const char* name) const override;
 		void add_child(Entity* e, int position) override;
 		void remove_child(Entity* e, bool destroy) override;
 		Entity* find_child(const char* name) const override;
@@ -102,7 +104,8 @@ namespace flame
 		void set_state(StateFlags state) override;
 
 		Component* get_component(uint64 hash) const override;
-		Component* find_component(const char* name) const override;
+		Component* find_component(const std::string& name) const;
+		Component* find_first_dfs_component(const std::string& name) const;
 		template <class T> inline T* get_parent_component_t() const { return !parent ? nullptr : parent->get_component_t<T>(); }
 		void traversal(const std::function<bool(EntityPrivate*)>& callback);
 		void add_component(Component* c);
@@ -130,6 +133,16 @@ namespace flame
 		void load(const std::filesystem::path& filename);
 		void save(const std::filesystem::path& filename);
 	};
+
+	inline Component* EntityBridge::find_component(const char* name) const
+	{
+		return ((EntityPrivate*)this)->find_component(name);
+	}
+
+	inline Component* EntityBridge::find_first_dfs_component(const char* name) const
+	{
+		return ((EntityPrivate*)this)->find_first_dfs_component(name);
+	}
 
 	inline void EntityBridge::add_child(Entity* e, int position)
 	{

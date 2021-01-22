@@ -119,6 +119,8 @@ namespace flame
 							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
 						else if (tn == "float")
 							*(float*)p = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : -1.f;
+						else if (tn == "bool")
+							*(bool*)p = lua_isboolean(state, -1) ? lua_toboolean(state, -1) : true;
 						else if (tn == "char" && tt == TypePointer)
 							type->unserialize(p, lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
 						else if (tn == "wchar_t" && tt == TypePointer)

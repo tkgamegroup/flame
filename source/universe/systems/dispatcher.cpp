@@ -23,6 +23,8 @@ namespace flame
 			key_down_listener = window->add_key_down_listener([](Capture& c, KeyboardKey key) {
 				auto thiz = c.thiz<sDispatcherPrivate>();
 
+				if (thiz->kbtns_temp[key].first)
+					return;
 				thiz->kbtns_temp[key] = std::make_pair(true, true);
 				thiz->key_down_inputs.push_back(key);
 

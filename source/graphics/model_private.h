@@ -145,7 +145,7 @@ namespace flame
 			int find_mesh(const char* name) const override;
 			int find_animation(const char* name) const override;
 
-			void save(const wchar_t* filename) const override;
+			void save(const wchar_t* filename) override;
 			void generate_prefab(const wchar_t* filename) const override;
 		};
 
@@ -174,7 +174,7 @@ namespace flame
 			Animation* get_animation(uint idx) const override { return animations[idx].get(); }
 			int find_animation(const std::string& name) const;
 
-			void save(const std::filesystem::path& filename) const;
+			void save(const std::filesystem::path& filename);
 			void generate_prefab(const std::filesystem::path& filename) const;
 
 			static ModelPrivate* create(const std::filesystem::path& filename);
@@ -190,7 +190,7 @@ namespace flame
 			return ((ModelPrivate*)this)->find_animation(name);
 		}
 
-		inline void ModelBridge::save(const wchar_t* filename) const
+		inline void ModelBridge::save(const wchar_t* filename)
 		{
 			return ((ModelPrivate*)this)->save(filename);
 		}

@@ -251,7 +251,7 @@ namespace flame
 		return nullptr;
 	}
 
-	Component* EntityPrivate::find_component(const char* _name) const
+	Component* EntityPrivate::find_component(const std::string& _name) const
 	{
 		auto ct = find_component_type(_name);
 		if (ct)
@@ -267,6 +267,20 @@ namespace flame
 					return c.second.c.get();
 				}
 			}
+		}
+		return nullptr;
+	}
+
+	Component* EntityPrivate::find_first_dfs_component(const std::string& name) const
+	{
+		auto ret = find_component(name);
+		if (ret)
+			return ret;
+		for (auto& c : children)
+		{
+			auto ret = c->find_first_dfs_component(name);
+			if (ret)
+				return ret;
 		}
 		return nullptr;
 	}

@@ -1,6 +1,6 @@
 local node = entity:find_component("cNode")
 
-local mesh = entity:find_child("mesh"):find_component("cMesh")
+local mesh = entity:find_first_dfs_component("cMesh")
 
 local controller = entity:find_component("cController")
 
@@ -31,7 +31,7 @@ local root_receiver = root:find_component("cReceiver")
 root_receiver:add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = true
-		character.mesh:set_animation_name("walk")
+		character.mesh:set_animation("walk", true, 0)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = true
@@ -53,7 +53,7 @@ end)
 root_receiver:add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = false
-		character.mesh:set_animation_name("")
+		character.mesh:set_animation("", false, 0)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = false
@@ -70,6 +70,10 @@ root_receiver:add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["E"] then
 		character.e = false
 	end
+end)
+
+root_receiver:add_mouse_left_down_listener(function()
+	character.mesh:set_animation("attack", false, 1)
 end)
 
 entity:add_event(function()

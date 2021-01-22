@@ -90,7 +90,7 @@ namespace flame
 			virtual Animation* get_animation(uint idx) const = 0;
 			virtual int find_animation(const char* name) const = 0;
 
-			virtual void save(const wchar_t* filename) const = 0;
+			virtual void save(const wchar_t* filename) = 0;
 			virtual void generate_prefab(const wchar_t* filename) const = 0;
 
 			FLAME_GRAPHICS_EXPORTS static Model* get_standard(const char* name);

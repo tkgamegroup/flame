@@ -279,8 +279,9 @@ namespace flame
 			return -1;
 		}
 
-		void ModelPrivate::save(const std::filesystem::path& filename) const
+		void ModelPrivate::save(const std::filesystem::path& _filename)
 		{
+			filename = _filename;
 			auto extension = filename.extension();
 
 			if (extension == L".fmodb")
@@ -775,6 +776,9 @@ namespace flame
 					return nullptr;
 				}
 
+				auto scale_factor = 0.0;
+				scene->mMetaData->Get("UnitScaleFactor", scale_factor);
+
 				ret = new ModelPrivate();
 				ret->filename = filename;
 
@@ -948,12 +952,10 @@ namespace flame
 					ret->animations.emplace_back(dst);
 
 					dst->name = src->mName.C_Str();
-					dst->channels.resize(src->mNumChannels);
 					for (auto j = 0; j < src->mNumChannels; j++)
 					{
 						auto src_c = src->mChannels[j];
 						auto dst_c = new ChannelPrivate;
-						dst->channels[j].reset(dst_c);
 
 						dst_c->node_name = src_c->mNodeName.C_Str();
 
@@ -975,6 +977,39 @@ namespace flame
 							auto& q = src_k.mValue;
 							dst_k.v = quat(q.w, q.x, q.y, q.z);
 						}
+
+						auto non_changed_position = true;
+						if (!dst_c->position_keys.empty())
+						{
+							auto first_p = dst_c->position_keys[0].v;
+							for (auto& k : dst_c->position_keys)
+							{
+								auto judge = epsilonNotEqual(k.v, first_p, 0.0001f);
+								if (judge.x || judge.y || judge.z)
+								{
+									non_changed_position = false;
+									break;
+								}
+							}
+						}
+						auto non_changed_rotation = true;
+						if (!dst_c->rotation_keys.empty())
+						{
+							auto first_r = dst_c->rotation_keys[0].v;
+							for (auto& k : dst_c->rotation_keys)
+							{
+								auto judge = epsilonNotEqual(k.v, first_r, 0.0001f);
+								if (judge.x || judge.y || judge.z)
+								{
+									non_changed_rotation = false;
+									break;
+								}
+							}
+						}
+						if (!non_changed_position || !non_changed_rotation)
+							dst->channels.emplace_back(dst_c);
+						else
+							delete dst_c;
 					}
 				}
 
