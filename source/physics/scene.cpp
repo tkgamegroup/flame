@@ -45,6 +45,7 @@ namespace flame
 		ScenePrivate::ScenePrivate(DevicePrivate* device, float gravity, uint thread_count) :
 			device(device)
 		{
+
 #ifdef USE_PHYSX
 			PxSceneDesc desc(device->px_instance->getTolerancesScale());
 			desc.gravity = PxVec3(0.0f, gravity, 0.0f);
@@ -69,6 +70,15 @@ namespace flame
 		{
 #ifdef USE_PHYSX
 			px_scene->removeActor(*r->px_rigid);
+#endif
+		}
+
+		vec3 ScenePrivate::raycast(const vec3& origin, const vec3& dir, float max_distance)
+		{
+#ifdef USE_PHYSX
+			PxRaycastBuffer hit;
+			px_scene->raycast(cvt(origin), cvt(dir), max_distance, hit, PxHitFlag::ePOSITION);
+			return cvt(hit.block.position);
 #endif
 		}
 

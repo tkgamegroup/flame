@@ -15,8 +15,6 @@ using namespace glm;
 
 namespace flame
 {
-	const float EPS = 0.000001f;
-
 	typedef vec<2, uchar> cvec2;
 	typedef vec<3, uchar> cvec3;
 	typedef vec<4, uchar> cvec4;

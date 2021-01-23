@@ -15,6 +15,7 @@ namespace flame
 		virtual void* find_object(const char* name) const = 0;
 
 		virtual System* get_system(uint64 type_hash) const = 0;
+		virtual System* find_system(const char* name) const = 0;
 		template <class T> inline T* get_system_t() const { return (T*)get_system(T::type_hash); }
 
 		virtual void add_system(System* s) = 0;

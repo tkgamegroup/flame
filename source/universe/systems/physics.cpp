@@ -15,6 +15,11 @@ namespace flame
 {
 	using namespace physics;
 
+	vec3 sPhysicsPrivate::raycast(const vec3& origin, const vec3& dir)
+	{
+		return phy_scene->raycast(origin, dir, 1000.f);
+	}
+
 	void sPhysicsPrivate::set_visualization(bool v)
 	{
 		if (!v)

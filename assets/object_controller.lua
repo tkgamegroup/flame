@@ -90,8 +90,7 @@ root_receiver:add_key_up_listener_s(get_slot(
 	end
 ))
 
-entity:add_event_s(get_slot(
-	function()
+entity:add_event(function()
 		if controller._8 then
 			controller.pos.x = controller.pos.x + controller.speed
 			controller.node:set_pos(controller.pos)
@@ -132,5 +131,4 @@ entity:add_event_s(get_slot(
 			controller.pitch = controller.pitch - 1
 			controller.node:set_euler({ x=controller.yaw, y=controller.pitch, z=0 })
 		end
-	end
-))
+end)

@@ -253,22 +253,32 @@ namespace flame
 
 	Component* EntityPrivate::find_component(const std::string& _name) const
 	{
-		auto ct = find_component_type(_name);
-		if (ct)
+		Component* ret = nullptr;
+		auto name = _name;
+		for (auto& c : components)
 		{
-			auto name = std::string(ct->udt->get_name());
-			for (auto& c : components)
+			if (c.second.c->type_name == _name)
 			{
-				if (c.second.c->type_name == name)
-				{
-					auto script = script::Instance::get_default();
-					script->push_string(name.c_str());
-					script->set_global_name("__type__");
-					return c.second.c.get();
-				}
+				ret = c.second.c.get();
+				break;
 			}
 		}
-		return nullptr;
+		name = "flame::" + _name;
+		for (auto& c : components)
+		{
+			if (c.second.c->type_name == name)
+			{
+				ret = c.second.c.get();
+				break;
+			}
+		}
+		if (ret)
+		{
+			auto script = script::Instance::get_default();
+			script->push_string(name.c_str());
+			script->set_global_name("__type__");
+		}
+		return ret;
 	}
 
 	Component* EntityPrivate::find_first_dfs_component(const std::string& name) const
@@ -483,11 +493,27 @@ namespace flame
 		}
 	}
 
-	void* EntityPrivate::add_data_listener(Component* c, void (*callback)(Capture& c, uint64 h), const Capture& capture)
+	void* EntityPrivate::add_data_listener(void (*callback)(Capture& c, uint64 h), const Capture& capture, Component* c)
 	{
 		auto it = components.find(c->type_hash);
 		if (it != components.end())
 		{
+			if (!callback)
+			{
+				auto slot = (uint)&capture;
+				callback = [](Capture& c, uint64 h) {
+					auto scr_ins = script::Instance::get_default();
+					scr_ins->get_global("callbacks");
+					scr_ins->get_member(nullptr, c.data<uint>());
+					scr_ins->get_member("f");
+					scr_ins->push_pointer((void*)h);
+					scr_ins->call(1);
+					scr_ins->pop(2);
+				};
+				auto c = new Closure(callback, Capture().set_data(&slot));
+				it->second.data_listeners.emplace_back(c);
+				return c;
+			}
 			auto c = new Closure(callback, capture);
 			it->second.data_listeners.emplace_back(c);
 			return c;
@@ -495,7 +521,7 @@ namespace flame
 		return nullptr;
 	}
 
-	void EntityPrivate::remove_data_listener(Component* c, void* lis)
+	void EntityPrivate::remove_data_listener(void* lis, Component* c)
 	{
 		auto it = components.find(c->type_hash);
 		if (it != components.end())
@@ -506,8 +532,14 @@ namespace flame
 		}
 	}
 
-	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture)
+	void* EntityPrivate::add_event(void (*callback)(Capture& c), const Capture& capture, float interval)
 	{
+		CountDown cd;
+		if (interval != 0.f)
+		{
+			cd.is_frame = false;
+			cd.v.time = interval;
+		}
 		if (!callback)
 		{
 			auto slot = (uint)&capture;
@@ -520,11 +552,11 @@ namespace flame
 				scr_ins->pop(2);
 				c._current = nullptr;
 			};
-			auto ev = looper().add_event(callback, Capture().set_data(&slot));
+			auto ev = looper().add_event(callback, Capture().set_data(&slot), cd);
 			events.push_back(ev);
 			return ev;
 		}
-		auto ev = looper().add_event(callback, capture);
+		auto ev = looper().add_event(callback, capture, cd);
 		events.push_back(ev);
 		return ev;
 	}

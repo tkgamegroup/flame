@@ -35,19 +35,44 @@ function make_obj(o, n)
 	for k, v in pairs(udt.callback_interfaces) do
 		o["add_"..k] = function(self, f, ...)
 			n = get_callback_slot(f)
-			parms = {...}
-			parms[#parms + 1] = 0
-			parms[#parms + 1] = n
-			callbacks[n].c = flame_call(parms, o.p, v.add)
+			callbacks[n].c = flame_call({ 0, n, ... }, o.p, v.add)
 			return n
 		end
 		o["remove_"..k] = function(self, n, ...)
-			parms = {...}
-			parms[#parms + 1] = callbacks[n].c
-			parms[#parms + 1] = n
-			flame_call(parms, o.p, v.remove)
+			flame_call({ callbacks[n].c, ...}, o.p, v.remove)
 			callbacks[n] = nil
 			return n
 		end
 	end
+end
+
+function v3_neg(a)
+	return { 
+		x = -a.x, 
+		y = -a.y,
+		z = -a.z
+	}
+end
+
+function v3_add(a, b)
+	return { 
+		x = a.x + b.x, 
+		y = a.y + b.y,
+		z = a.z + b.z
+	}
+end
+
+function v3_mul(a, b)
+	return { 
+		x = a.x * b, 
+		y = a.y * b,
+		z = a.z * b
+	}
+end
+
+function v3_distance(a, b)
+	local x = a.x - b.x
+	local y = a.y - b.y
+	local z = a.z - b.z
+	return math.sqrt(x * x + y * y + z * z)
 end

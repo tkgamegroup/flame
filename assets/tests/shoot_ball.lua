@@ -15,13 +15,11 @@ er:add_key_down_listener(function(k)
 		scene:add_child(e.p)
 			
 		local t = 60 * 30
-		e:add_event_s(get_slot(
-			function()
+		e:add_event(function()
 				t = t - 1
 				if t == 0 then
 					scene:remove_child(e.p)
 				end
-			end
-		))
+		end)
 	end
 end)

@@ -17,6 +17,7 @@ namespace flame
 
 			virtual void add_rigid(Rigid* r) = 0;
 			virtual void remove_rigid(Rigid* r) = 0;
+			virtual vec3 raycast(const vec3& origin, const vec3& dir, float max_distance = 1000.f) = 0;
 			virtual void update(float disp) = 0;
 			virtual void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) = 0;
 			virtual void set_visualization(bool v) = 0;

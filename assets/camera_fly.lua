@@ -102,8 +102,7 @@ root_receiver:add_mouse_move_listener_s(get_slot(
 	end
 ))
 
-entity:add_event_s(get_slot(
-	function()
+entity:add_event(function()
 		if camera.w then
 			camera:move(camera.dir1, -camera.speed)
 		end
@@ -124,5 +123,4 @@ entity:add_event_s(get_slot(
 			camera.pos.y = camera.pos.y - camera.speed
 			camera.node:set_pos(camera.pos)
 		end
-	end
-))
+end)

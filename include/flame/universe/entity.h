@@ -47,10 +47,10 @@ namespace flame
 		template <class T> inline T* get_driver_t() const { return (T*)get_driver(T::type_hash, 0); }
 
 		virtual void data_changed(Component* c, uint64 h) = 0;
-		virtual void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) = 0;
-		virtual void remove_data_listener(Component* c, void* lis) = 0;
+		virtual void* add_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) = 0;
+		virtual void remove_data_listener(void* lis, Component* c) = 0;
 
-		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture) = 0;
+		virtual void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f /* 0 means every frame */ ) = 0;
 		virtual void remove_event(void* ev) = 0;
 
 		virtual void load(const wchar_t* filename) = 0;

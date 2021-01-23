@@ -10,6 +10,7 @@ namespace flame
 	{
 		void register_object(void* o, const char* name) override;
 		void* find_object(const char* name) const override;
+		System* find_system(const char* name) const override;
 	};
 
 	struct WorldPrivate : WorldBridge
@@ -27,6 +28,7 @@ namespace flame
 		void* find_object(const std::string& name) const;
 
 		System* get_system(uint64 type_hash) const override;
+		System* find_system(const std::string& name) const;
 		void add_system(System* s) override;
 		void remove_system(System* s) override;
 
@@ -43,5 +45,10 @@ namespace flame
 	inline void* WorldBridge::find_object(const char* name) const
 	{
 		return ((WorldPrivate*)this)->find_object(name);
+	}
+
+	inline System* WorldBridge::find_system(const char* name) const
+	{
+		return ((WorldPrivate*)this)->find_system(name);
 	}
 }

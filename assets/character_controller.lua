@@ -72,7 +72,7 @@ root_receiver:add_key_up_listener(function(k)
 	end
 end)
 
-root_receiver:add_mouse_left_down_listener(function()
+root_receiver:add_mouse_left_up_listener(function()
 	character.mesh:set_animation("attack", false, 1)
 end)
 
@@ -90,26 +90,18 @@ entity:add_event(function()
 	end
 	disp = {x=0, y=0, z=0}
 	if character.w then
-		disp.x = disp.x + character.dir1.x * character.speed
-		disp.y = disp.y + character.dir1.y * character.speed
-		disp.z = disp.z + character.dir1.z * character.speed
+		disp = v3_add(disp, v3_mul(character.dir1, character.speed))
 	end
 	if character.s then
-		disp.x = disp.x - character.dir1.x * character.speed
-		disp.y = disp.y - character.dir1.y * character.speed
-		disp.z = disp.z - character.dir1.z * character.speed
+		disp = v3_add(disp, v3_mul(character.dir1, -character.speed))
 	end
 	if character.q then
-		disp.x = disp.x + character.dir2.x * character.speed
-		disp.y = disp.y + character.dir2.y * character.speed
-		disp.z = disp.z + character.dir2.z * character.speed
+		disp = v3_add(disp, v3_mul(character.dir2, character.speed))
 	end
 	if character.e then
-		disp.x = disp.x - character.dir2.x * character.speed
-		disp.y = disp.y - character.dir2.y * character.speed
-		disp.z = disp.z - character.dir2.z * character.speed
+		disp = v3_add(disp, v3_mul(character.dir2, -character.speed))
 	end
 	if disp.x ~= 0 or disp.y ~= 0 or disp.z ~= 0 then
 		character.controller:move(disp)
 	end
-end)
+end, 0)

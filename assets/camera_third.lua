@@ -1,17 +1,37 @@
 local node = entity:find_component("cNode")
+local pnode = entity:get_parent():find_component("cNode")
+local physics = root:get_world():find_system("sPhysics")
 
 camera = {
 	node = node,
 	length = 5,
 	yaw = 0,
 	pitch = -90,
-	dragging = false,
+	dragging = false
 }
 
 function camera:set_pos()
-	local dir = self.node:get_local_dir(2)
-	self.node:set_pos({ x = dir.x * self.length, y = dir.y * self.length, z = dir.z * self.length })
+	local off = { x=0, y=3, z=0}
+	local d = 0
+	if physics.p then
+		local o = v3_add(pnode:get_global_pos(), off)
+		local p = physics:raycast(o, self.node:get_global_dir(2))
+		d = v3_distance(o, p)
+		if d < self.length then
+			d = d - 1
+		else
+			d = self.length
+		end
+	else
+		d = self.length
+	end
+	if d < 1 then d = 1 end
+	self.node:set_pos(v3_add(v3_mul(self.node:get_local_dir(2), d), off))
 end
+
+entity:add_event(function()
+	camera:set_pos()
+end, 0.5)
 
 local root_receiver = root:find_component("cReceiver")
 

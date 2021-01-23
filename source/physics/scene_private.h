@@ -46,6 +46,7 @@ namespace flame
 
 			void add_rigid(RigidPrivate* r);
 			void remove_rigid(RigidPrivate* r);
+			vec3 raycast(const vec3& origin, const vec3& dir, float max_distance = 1000.f) override;
 			void update(float disp) override;
 			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) override;
 			void set_visualization(bool v) override;

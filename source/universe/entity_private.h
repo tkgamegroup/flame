@@ -124,10 +124,10 @@ namespace flame
 		Driver* get_driver(uint64 hash = 0, uint idx = 0) const override;
 
 		void data_changed(Component* c, uint64 h) override;
-		void* add_data_listener(Component* c, void (*callback)(Capture& c, uint64 hash), const Capture& capture) override;
-		void remove_data_listener(Component* c, void* lis) override;
+		void* add_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;
+		void remove_data_listener(void* lis, Component* c) override;
 
-		void* add_event(void (*callback)(Capture& c), const Capture& capture) override;
+		void* add_event(void (*callback)(Capture& c), const Capture& capture, float interval = 0.f) override;
 		void remove_event(void* ev) override;
 
 		void load(const std::filesystem::path& filename);

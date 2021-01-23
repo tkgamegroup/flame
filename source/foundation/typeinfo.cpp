@@ -1043,8 +1043,8 @@ namespace flame
 	void FunctionInfoPrivate::call(void* obj, void* ret, void** parms) const
 	{
 		auto idx = 0;
-		std::vector<void*> list1(6);
-		std::vector<float> list2(4);
+		void* list1[6];
+		float list2[4];
 		if (obj)
 			list1[idx++] = obj;
 		if (!type->can_packed_in_qword)
@@ -1083,7 +1083,7 @@ namespace flame
 		float staging_xmm0;
 		list1[4] = &staging_rax;
 		list1[5] = &staging_xmm0;
-		__call(get_address(obj), list1.data(), list2.data(), nullptr);
+		__call(get_address(obj), list1, list2, nullptr);
 		if (ret)
 		{
 			if (type->name == "float")
