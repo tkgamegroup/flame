@@ -645,6 +645,11 @@ namespace flame
 		return CallNextHookEx(global_key_hook, nCode, wParam, lParam);
 	}
 
+	bool is_keyboard_key_pressing(KeyboardKey key)
+	{
+		return GetAsyncKeyState(key_to_vk_code(key)) & 0x8000;
+	}
+
 	void* add_global_key_listener(KeyboardKey key, void (*callback)(Capture& c), const Capture& capture, bool down, bool ctrl, bool shift, bool alt)
 	{
 		auto l = new GlobalKeyListener;

@@ -47,6 +47,7 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> element_pipeline;
 			std::unique_ptr<PipelinePrivate> sky_pipeline;
 			std::unique_ptr<PipelinePrivate> line3_pipeline;
+			std::unique_ptr<PipelinePrivate> triangle3_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
 			std::unique_ptr<PipelinePrivate> blurv_pipeline[10];
 			std::unique_ptr<PipelinePrivate> blurh_depth_pipeline;
@@ -386,7 +387,8 @@ namespace flame
 				DrawElement,
 				DrawMesh,
 				DrawTerrain,
-				DrawLine3,
+				DrawLines3,
+				DrawTriangles3,
 				SetScissor,
 				Blur,
 				Bloom
@@ -409,7 +411,14 @@ namespace flame
 
 		struct CmdDrawMesh : Cmd
 		{
-			std::vector<std::tuple<uint, ModelResourceSlot::Mesh*, bool, ArmatureDeformerPrivate*>> meshes;
+			struct Item
+			{
+				uint id;
+				ModelResourceSlot::Mesh* mesh;
+				bool cast_shadow;
+				ArmatureDeformerPrivate* deformer;
+			};
+			std::vector<Item> items;
 
 			CmdDrawMesh() : Cmd(DrawMesh) {}
 		};
@@ -423,11 +432,18 @@ namespace flame
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
 		};
 
-		struct CmdDrawLine3 : Cmd
+		struct CmdDrawLines3 : Cmd
 		{
-			uint count;
+			uint count = 0;
 
-			CmdDrawLine3() : Cmd(DrawLine3) {}
+			CmdDrawLines3() : Cmd(DrawLines3) {}
+		};
+
+		struct CmdDrawTriangles3 : Cmd
+		{
+			uint count = 0;
+
+			CmdDrawTriangles3() : Cmd(DrawTriangles3) {}
 		};
 
 		struct CmdSetScissor : Cmd
@@ -559,17 +575,15 @@ namespace flame
 			std::vector<std::vector<vec2>> paths;
 
 			ShaderGeometryBuffer<Line3> line3_buffer;
+			ShaderGeometryBuffer<Triangle3> triangle3_buffer;
 
 			std::vector<std::unique_ptr<Cmd>> cmds;
-			CmdDrawElement* last_element_cmd = nullptr;
 			uint  meshes_count = 0;
 			uint terrains_count = 0;
 			uint directional_lights_count;
 			uint point_lights_count;
 			std::vector<DirectionalShadow> directional_shadows;
 			std::vector<PointShadow> point_shadows;
-			CmdDrawMesh* last_mesh_cmd = nullptr;
-			CmdDrawLine3* last_line3_cmd = nullptr;
 
 			uvec2 output_size;
 			Rect curr_scissor;
@@ -605,7 +619,7 @@ namespace flame
 			int find_model_resource(const std::string& name);
 			uint set_model_resource(int slot, ModelPrivate* mat, const std::string& name);
 
-			void add_draw_element_cmd(uint id);
+			CmdDrawElement* add_draw_element_cmd(uint id);
 			void add_vtx(const vec2& position, const vec2& uv, const cvec4& color);
 			void add_idx(uint idx);
 
@@ -627,6 +641,7 @@ namespace flame
 			void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line3* lines) override;
+			void draw_triangles(uint triangles_count, const Triangle3* triangles) override;
 
 			Rect get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Rect& scissor) override;

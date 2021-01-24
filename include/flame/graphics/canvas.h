@@ -35,6 +35,13 @@ namespace flame
 			Point3 b;
 		};
 
+		struct Triangle3
+		{
+			Point3 a;
+			Point3 b;
+			Point3 c;
+		};
+
 		struct RenderPreferences
 		{
 			FLAME_GRAPHICS_EXPORTS static RenderPreferences* create(Device* device, bool hdr = true);
@@ -107,6 +114,7 @@ namespace flame
 			virtual void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow = false) = 0;
 
 			virtual void draw_lines(uint lines_count, const Line3* lines) = 0;
+			virtual void draw_triangles(uint triangles_count, const Triangle3* triangles) = 0;
 
 			virtual Rect get_scissor() const = 0;
 			virtual void set_scissor(const Rect& scissor) = 0;

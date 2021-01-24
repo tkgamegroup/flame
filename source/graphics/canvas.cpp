@@ -132,8 +132,8 @@ namespace flame
 
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"line3.vert"),
-					ShaderPrivate::get(device, L"line3.frag")
+					ShaderPrivate::get(device, L"plain/plain3.vert"),
+					ShaderPrivate::get(device, L"plain/plain3.frag")
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -147,7 +147,21 @@ namespace flame
 				vi.primitive_topology = PrimitiveTopologyLineList;
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
-				line3_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"simple3D.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, &vi));
+				RasterInfo rst;
+				rst.cull_mode = CullModeNone;
+				DepthInfo dep;
+				dep.test = true;
+				dep.write = false;
+				BlendOption bo;
+				bo.enable = true;
+				bo.src_color = BlendFactorSrcAlpha;
+				bo.dst_color = BlendFactorOneMinusSrcAlpha;
+				bo.src_alpha = BlendFactorOne;
+				bo.dst_alpha = BlendFactorZero;
+				auto pll = PipelineLayoutPrivate::get(device, L"plain/plain.pll");
+				line3_pipeline.reset(PipelinePrivate::create(device, shaders, pll, mesh_renderpass.get(), 0, &vi, &rst, &dep, { &bo, 1 }));
+				vi.primitive_topology = PrimitiveTopologyTriangleList;
+				triangle3_pipeline.reset(PipelinePrivate::create(device, shaders, pll, mesh_renderpass.get(), 0, &vi, &rst, &dep, { &bo, 1 }));
 			}
 
 			auto post_pll = PipelineLayoutPrivate::get(device, L"post/post.pll");
@@ -639,6 +653,7 @@ namespace flame
 			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 
 			line3_buffer.create(device, BufferUsageVertex, 200000);
+			triangle3_buffer.create(device, BufferUsageVertex, 1000);
 		}
 
 		void CanvasPrivate::set_shading(ShadingType type)
@@ -1083,22 +1098,16 @@ namespace flame
 			return slot;
 		}
 
-		void CanvasPrivate::add_draw_element_cmd(uint id)
+		CmdDrawElement* CanvasPrivate::add_draw_element_cmd(uint id)
 		{
-			if (cmds.empty())
+			if (cmds.empty() || cmds.back()->type != Cmd::DrawElement || ((CmdDrawElement*)cmds.back().get())->id != id)
 			{
-				last_element_cmd = new CmdDrawElement(id);
-				cmds.emplace_back(last_element_cmd);
+				auto cmd = new CmdDrawElement(id);
+				cmds.emplace_back(cmd);
+				return cmd;
 			}
 			else
-			{
-				auto back = cmds.back().get();
-				if (back->type != Cmd::DrawElement || ((CmdDrawElement*)back)->id != id)
-				{
-					last_element_cmd = new CmdDrawElement(id);
-					cmds.emplace_back(last_element_cmd);
-				}
-			}
+				return (CmdDrawElement*)cmds.back().get();
 		}
 
 		void CanvasPrivate::add_vtx(const vec2& position, const vec2& uv, const cvec4& color)
@@ -1109,14 +1118,14 @@ namespace flame
 			v.color = color;
 			element_vertex_buffer.push(1, &v);
 			
-			last_element_cmd->vertices_count++;
+			((CmdDrawElement*)cmds.back().get())->vertices_count++;
 		}
 
 		void CanvasPrivate::add_idx(uint idx)
 		{
 			element_index_buffer.push(1, &idx);
 
-			last_element_cmd->indices_count++;
+			((CmdDrawElement*)cmds.back().get())->indices_count++;
 		}
 
 		void CanvasPrivate::begin_path()
@@ -1239,7 +1248,8 @@ namespace flame
 		{
 			thickness *= 0.5f;
 
-			add_draw_element_cmd(0);
+			auto cmd = add_draw_element_cmd(0);
+
 			auto uv = vec2(0.5f);
 
 			for (auto& path : paths)
@@ -1248,7 +1258,7 @@ namespace flame
 				if (points.size() < 2)
 					continue;
 
-				auto vtx_cnt0 = last_element_cmd->vertices_count;
+				auto vtx_cnt0 = cmd->vertices_count;
 
 				auto closed = points[0] == points[points.size() - 1];
 				auto normals = calculate_normals(points, closed);
@@ -1274,7 +1284,7 @@ namespace flame
 								auto n0 = normals[0];
 								auto n1 = normals[1];
 
-								auto vtx_cnt = last_element_cmd->vertices_count;
+								auto vtx_cnt = cmd->vertices_count;
 
 								add_vtx(p0 + n0 * thickness, uv, col_t);
 								add_vtx(p0 + n0 * edge, uv, col_c);
@@ -1290,7 +1300,7 @@ namespace flame
 							}
 							else if (closed && i == points.size() - 2)
 							{
-								auto vtx_cnt = last_element_cmd->vertices_count;
+								auto vtx_cnt = cmd->vertices_count;
 
 								add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
 								add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 3); add_idx(vtx_cnt - 4); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
@@ -1302,7 +1312,7 @@ namespace flame
 
 								auto n1 = normals[i + 1];
 
-								auto vtx_cnt = last_element_cmd->vertices_count;
+								auto vtx_cnt = cmd->vertices_count;
 
 								add_vtx(p1 + n1 * thickness, uv, col_t);
 								add_vtx(p1 + n1 * edge, uv, col_c);
@@ -1326,7 +1336,7 @@ namespace flame
 								auto n0 = normals[0];
 								auto n1 = normals[1];
 
-								auto vtx_cnt = last_element_cmd->vertices_count;
+								auto vtx_cnt = cmd->vertices_count;
 
 								add_vtx(p0 + n0 * feather, uv, col_t);
 								add_vtx(p0, uv, col_c);
@@ -1339,7 +1349,7 @@ namespace flame
 							}
 							else if (closed && i == points.size() - 2)
 							{
-								auto vtx_cnt = last_element_cmd->vertices_count;
+								auto vtx_cnt = cmd->vertices_count;
 
 								add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt - 3); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
 								add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 2); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt0 + 2);
@@ -1350,7 +1360,7 @@ namespace flame
 
 								auto n1 = normals[i + 1];
 
-								auto vtx_cnt = last_element_cmd->vertices_count;
+								auto vtx_cnt = cmd->vertices_count;
 
 								add_vtx(p1 + n1 * feather, uv, col_t);
 								add_vtx(p1, uv, col_c);
@@ -1366,7 +1376,7 @@ namespace flame
 						auto ext = max(feather, thickness);
 
 						{
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							auto p0 = points[0];
 							auto p1 = points[1];
@@ -1385,7 +1395,7 @@ namespace flame
 						}
 
 						{
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							auto p0 = points[points.size() - 2];
 							auto p1 = points[points.size() - 1];
@@ -1416,7 +1426,7 @@ namespace flame
 							auto n0 = normals[0];
 							auto n1 = normals[1];
 
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							add_vtx(p0 + n0 * thickness, uv, col);
 							add_vtx(p0 - n0 * thickness, uv, col);
@@ -1426,7 +1436,7 @@ namespace flame
 						}
 						else if (closed && i == points.size() - 2)
 						{
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
 						}
@@ -1436,7 +1446,7 @@ namespace flame
 
 							auto n1 = normals[i + 1];
 
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							add_vtx(p1 + n1 * thickness, uv, col);
 							add_vtx(p1 - n1 * thickness, uv, col);
@@ -1449,7 +1459,8 @@ namespace flame
 
 		void CanvasPrivate::fill(const cvec4& col, bool aa)
 		{
-			add_draw_element_cmd(0);
+			auto cmd = add_draw_element_cmd(0);
+
 			auto uv = vec2(0.5f);
 
 			for (auto& path : paths)
@@ -1460,7 +1471,7 @@ namespace flame
 
 				for (auto i = 0; i < points.size() - 2; i++)
 				{
-					auto vtx_cnt = last_element_cmd->vertices_count;
+					auto vtx_cnt = cmd->vertices_count;
 
 					add_vtx(points[0], uv, col);
 					add_vtx(points[i + 1], uv, col);
@@ -1470,7 +1481,7 @@ namespace flame
 
 				if (aa)
 				{
-					auto vtx_cnt0 = last_element_cmd->vertices_count;
+					auto vtx_cnt0 = cmd->vertices_count;
 					auto _feather = feather * 2.f;
 
 					points.push_back(points.front());
@@ -1489,7 +1500,7 @@ namespace flame
 							auto n0 = normals[0];
 							auto n1 = normals[1];
 
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							add_vtx(p0, uv, col);
 							add_vtx(p0 - n0 * _feather, uv, col_t);
@@ -1499,7 +1510,7 @@ namespace flame
 						}
 						else if (i == points.size() - 2)
 						{
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 1); add_idx(vtx_cnt - 1); add_idx(vtx_cnt - 2); add_idx(vtx_cnt0 + 0); add_idx(vtx_cnt0 + 1);
 						}
@@ -1509,7 +1520,7 @@ namespace flame
 
 							auto n1 = normals[i + 1];
 
-							auto vtx_cnt = last_element_cmd->vertices_count;
+							auto vtx_cnt = cmd->vertices_count;
 
 							add_vtx(p1, uv, col);
 							add_vtx(p1 - n1 * _feather, uv, col_t);
@@ -1537,9 +1548,9 @@ namespace flame
 				_uv1 = mix(tuv0, tuv1, uv1);
 			}
 
-			add_draw_element_cmd(res_id);
+			auto cmd = add_draw_element_cmd(res_id);
 
-			auto vtx_cnt = last_element_cmd->vertices_count;
+			auto vtx_cnt = cmd->vertices_count;
 
 			add_vtx(pos, _uv0, tint_col);
 			add_vtx(pos + size.x * axes[0], vec2(_uv1.x, _uv0.y), tint_col);
@@ -1555,7 +1566,7 @@ namespace flame
 				return;
 			auto atlas = res.fa;
 
-			add_draw_element_cmd(res_id);
+			auto cmd = add_draw_element_cmd(res_id);
 
 			auto p = vec2(0.f);
 
@@ -1582,7 +1593,7 @@ namespace flame
 					auto uv0 = vec2(uv.x, uv.y);
 					auto uv1 = vec2(uv.z, uv.w);
 
-					auto vtx_cnt = last_element_cmd->vertices_count;
+					auto vtx_cnt = cmd->vertices_count;
 
 					add_vtx(pos + o * axes, uv0, col);
 					add_vtx(pos + o.x * axes[0] + (o.y - s.y) * axes[1], vec2(uv0.x, uv1.y), col);
@@ -1596,6 +1607,35 @@ namespace flame
 				ptext++;
 			}
 		}
+
+		struct KeyAction
+		{
+			bool up = true;
+			KeyboardKey key;
+
+			KeyAction(KeyboardKey key) :
+				key(key)
+			{
+			}
+
+			bool is_down()
+			{
+				if (is_keyboard_key_pressing(key))
+				{
+					if (up)
+					{
+						up = false;
+						return true;
+					}
+				}
+				else
+				{
+					if (!up)
+						up = true;
+				}
+				return false;
+			}
+		};
 
 		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const mat4& transform, vec3* dst)
 		{
@@ -1612,6 +1652,53 @@ namespace flame
 			dst[5] = vec3(transform * vec4(x2, y2, -zFar, 1.f));
 			dst[6] = vec3(transform * vec4(x2, -y2, -zFar, 1.f));
 			dst[7] = vec3(transform * vec4(-x2, -y2, -zFar, 1.f));
+		}
+
+		static void get_frustum_points(const mat4& m, vec3* dst)
+		{
+			dst[0] = vec3(m * vec4(-1.f, 1.f, 0.f, 1.f));
+			dst[1] = vec3(m * vec4(1.f, 1.f, 0.f, 1.f));
+			dst[2] = vec3(m * vec4(1.f, -1.f, 0.f, 1.f));
+			dst[3] = vec3(m * vec4(-1.f, -1.f, 0.f, 1.f));
+			dst[4] = vec3(m * vec4(-1.f, 1.f, 1.f, 1.f));
+			dst[5] = vec3(m * vec4(1.f, 1.f, 1.f, 1.f));
+			dst[6] = vec3(m * vec4(1.f, -1.f, 1.f, 1.f));
+			dst[7] = vec3(m * vec4(-1.f, -1.f, 1.f, 1.f));
+		}
+
+		static void draw_frustum(CanvasPrivate* thiz, vec3* ps, const cvec4& col0, const cvec4& col1)
+		{
+			std::vector<Triangle3> triangles;
+			std::vector<Line3> lines;
+
+			triangles.push_back({ { ps[0], col0 }, { ps[3], col0 }, { ps[1], col0 } });
+			triangles.push_back({ { ps[1], col0 }, { ps[3], col0 }, { ps[2], col0 } });
+			triangles.push_back({ { ps[4], col0 }, { ps[5], col0 }, { ps[6], col0 } });
+			triangles.push_back({ { ps[4], col0 }, { ps[6], col0 }, { ps[7], col0 } });
+			triangles.push_back({ { ps[5], col0 }, { ps[4], col0 }, { ps[0], col0 } });
+			triangles.push_back({ { ps[5], col0 }, { ps[0], col0 }, { ps[1], col0 } });
+			triangles.push_back({ { ps[7], col0 }, { ps[6], col0 }, { ps[2], col0 } });
+			triangles.push_back({ { ps[7], col0 }, { ps[2], col0 }, { ps[3], col0 } });
+			triangles.push_back({ { ps[0], col0 }, { ps[4], col0 }, { ps[7], col0 } });
+			triangles.push_back({ { ps[0], col0 }, { ps[7], col0 }, { ps[3], col0 } });
+			triangles.push_back({ { ps[5], col0 }, { ps[1], col0 }, { ps[2], col0 } });
+			triangles.push_back({ { ps[5], col0 }, { ps[2], col0 }, { ps[6], col0 } });
+
+			lines.push_back({ { ps[0], col1 }, { ps[1], col1 } });
+			lines.push_back({ { ps[1], col1 }, { ps[2], col1 } });
+			lines.push_back({ { ps[2], col1 }, { ps[3], col1 } });
+			lines.push_back({ { ps[3], col1 }, { ps[0], col1 } });
+			lines.push_back({ { ps[4], col1 }, { ps[5], col1 } });
+			lines.push_back({ { ps[5], col1 }, { ps[6], col1 } });
+			lines.push_back({ { ps[6], col1 }, { ps[7], col1 } });
+			lines.push_back({ { ps[7], col1 }, { ps[4], col1 } });
+			lines.push_back({ { ps[0], col1 }, { ps[4], col1 } });
+			lines.push_back({ { ps[1], col1 }, { ps[5], col1 } });
+			lines.push_back({ { ps[2], col1 }, { ps[6], col1 } });
+			lines.push_back({ { ps[3], col1 }, { ps[7], col1 } });
+
+			thiz->draw_triangles(triangles.size(), triangles.data());
+			thiz->draw_lines(lines.size(), lines.data());
 		}
 
 		static vec4 make_plane(const vec3& p1, const vec3& p2, const vec3& p3)
@@ -1679,16 +1766,18 @@ namespace flame
 		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer)
 		{
 			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
-			{
-				last_mesh_cmd = new CmdDrawMesh;
-				cmds.emplace_back(last_mesh_cmd);
-			}
+				cmds.emplace_back(new CmdDrawMesh);
 
 			auto dst = mesh_matrix_buffer.mark_item(meshes_count);
 			mesh_matrix_buffer.set(dst, S<"transform"_h>, transform);
 			mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(transpose(inverse(mat3(transform)))));
 
-			last_mesh_cmd->meshes.emplace_back(meshes_count, model_resources[mod_id]->meshes[mesh_idx].get(), cast_shadow, (ArmatureDeformerPrivate*)deformer);
+			CmdDrawMesh::Item item;
+			item.id = meshes_count;
+			item.mesh = model_resources[mod_id]->meshes[mesh_idx].get();
+			item.cast_shadow = cast_shadow;
+			item.deformer = (ArmatureDeformerPrivate*)deformer;
+			((CmdDrawMesh*)cmds.back().get())->items.push_back(item);
 			meshes_count++;
 		}
 
@@ -1738,6 +1827,17 @@ namespace flame
 
 					DirectionalShadow shadow;
 
+					static KeyAction F1(Keyboard_F1), F2(Keyboard_F2), F3(Keyboard_F3), F4(Keyboard_F4);
+					static bool show[3] = {};
+					static bool show1 = false, show2 = false, show3 = false;
+					if (F1.is_down())
+						show1 = !show1;
+					if (F2.is_down())
+						show2 = !show2;
+					if (F3.is_down())
+						show3 = !show3;
+					auto new_data = F4.is_down();
+
 					auto dstm = (mat4*)directional_light_info_buffer.dst(S<"shadow_matrices"_h>, dst);
 					for (auto j = 0; j < csm_levels; j++)
 					{
@@ -1749,22 +1849,63 @@ namespace flame
 						vec3 ps[8];
 						get_frustum_points(n, f, tan_hf_fovy, aspect, view_inv, ps);
 
-						auto c = (ps[0] + ps[1] + ps[2] + ps[3] +
-							ps[4] + ps[5] + ps[6] + ps[7]) * 0.125f;
-						auto light_inv = mat4(mat3(side, up, dir));
-						light_inv[3] = vec4(c, 1.f);
-						light_inv = inverse(light_inv);
-						vec2 LT = vec2(zFar);
-						vec2 RB = vec2(-zFar);
+						auto light = mat3(side, up, dir);
+						auto light_inv = inverse(light);
+						vec3 LT = vec3(+10000.f);
+						vec3 RB = vec3(-10000.f);
 						for (auto k = 0; k < 8; k++)
 						{
-							auto p = light_inv * vec4(ps[k], 1.f);
-							LT = min(LT, p.xy());
-							RB = max(RB, p.xy());
+							auto p = light_inv * ps[k];
+							LT = min(LT, p);
+							RB = max(RB, p);
+						}
+						auto c = light * ((LT + RB) * 0.5f);
+						auto w = (RB.x - LT.x) * 0.5f;
+						auto h = (RB.y - LT.y) * 0.5f;
+						shadow.matrices[j] = dstm[j] = orthoRH(-w, w, -h, h, 0.f, shadow_distance) *
+							lookAt(c + dir * shadow_distance * 0.5f, c, up);
+
+						if (show1 && j == 0)
+						{
+							static vec3 sps0[8];
+							static vec3 sps1[8];
+							if (new_data)
+							{
+								memcpy(sps0, ps, sizeof(ps));
+								get_frustum_points(inverse(shadow.matrices[j]), sps1);
+							}
+
+							draw_frustum(this, sps0, cvec4(255, 255, 0, 50), cvec4(255, 0, 0, 255));
+							draw_frustum(this, sps1, cvec4(0, 0, 255, 50), cvec4(0, 255, 0, 255));
 						}
 
-						shadow.matrices[j] = dstm[j] = orthoRH(LT.x, RB.x, LT.y, RB.y, 0.f, shadow_distance) *
-							lookAt(c + dir * shadow_distance * 0.5f, c, up);
+						if (show2 && j == 1)
+						{
+							static vec3 sps0[8];
+							static vec3 sps1[8];
+							if (new_data)
+							{
+								memcpy(sps0, ps, sizeof(ps));
+								get_frustum_points(inverse(shadow.matrices[j]), sps1);
+							}
+
+							draw_frustum(this, sps0, cvec4(255, 255, 0, 50), cvec4(255, 0, 0, 255));
+							draw_frustum(this, sps1, cvec4(0, 0, 255, 50), cvec4(0, 255, 0, 255));
+						}
+
+						if (show3 && j == 2)
+						{
+							static vec3 sps0[8];
+							static vec3 sps1[8];
+							if (new_data)
+							{
+								memcpy(sps0, ps, sizeof(ps));
+								get_frustum_points(inverse(shadow.matrices[j]), sps1);
+							}
+
+							draw_frustum(this, sps0, cvec4(255, 255, 0, 50), cvec4(255, 0, 0, 255));
+							draw_frustum(this, sps1, cvec4(0, 0, 255, 50), cvec4(0, 255, 0, 255));
+						}
 					}
 
 					directional_shadows.push_back(shadow);
@@ -1815,15 +1956,22 @@ namespace flame
 
 		void CanvasPrivate::draw_lines(uint lines_count, const Line3* lines)
 		{
-			if (cmds.empty() || cmds.back()->type != Cmd::DrawLine3)
-			{
-				last_line3_cmd = new CmdDrawLine3;
-				cmds.emplace_back(last_line3_cmd);
-			}
+			if (cmds.empty() || cmds.back()->type != Cmd::DrawLines3)
+				cmds.emplace_back(new CmdDrawLines3);
 
 			line3_buffer.push(lines_count, lines);
 
-			last_line3_cmd->count = lines_count;
+			((CmdDrawLines3*)cmds.back().get())->count += lines_count;
+		}
+
+		void CanvasPrivate::draw_triangles(uint triangles_count, const Triangle3* triangles)
+		{
+			if (cmds.empty() || cmds.back()->type != Cmd::DrawTriangles3)
+				cmds.emplace_back(new CmdDrawTriangles3);
+
+			triangle3_buffer.push(triangles_count, triangles);
+
+			((CmdDrawTriangles3*)cmds.back().get())->count += triangles_count;
 		}
 
 		void CanvasPrivate::set_scissor(const Rect& _scissor)
@@ -1874,6 +2022,7 @@ namespace flame
 			point_shadows.clear();
 
 			line3_buffer.stagnum = 0;
+			triangle3_buffer.stagnum = 0;
 
 			curr_scissor = Rect(0.f, 0.f, output_size.x, output_size.y);
 
@@ -1887,7 +2036,8 @@ namespace flame
 				PassNone = -1,
 				Pass2D,
 				Pass3D,
-				PassLine3,
+				PassLines3,
+				PassTriangles3,
 				PassBlur,
 				PassBloom
 			};
@@ -1914,11 +2064,10 @@ namespace flame
 				case Cmd::DrawMesh:
 				{
 					auto cmd = (CmdDrawMesh*)cmds[i].get();
-					for (auto& m : cmd->meshes)
+					for (auto& it : cmd->items)
 					{
-						auto deformer = std::get<3>(m);
-						if (deformer)
-							deformer->poses_buffer.upload(cb);
+						if (it.deformer)
+							it.deformer->poses_buffer.upload(cb);
 					}
 				}
 				case Cmd::DrawTerrain:
@@ -1930,17 +2079,25 @@ namespace flame
 
 				}
 					break;
-				case Cmd::DrawLine3:
+				case Cmd::DrawLines3:
 				{
-					if (passes.empty() || (passes.back().type != PassLine3 && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != PassLines3 && passes.back().type != PassNone))
 						passes.emplace_back();
-					passes.back().type = PassLine3;
+					passes.back().type = PassLines3;
 					passes.back().cmd_ids.push_back(i);
 				}
 					break;
+				case Cmd::DrawTriangles3:
+				{
+					if (passes.empty() || (passes.back().type != PassTriangles3 && passes.back().type != PassNone))
+						passes.emplace_back();
+					passes.back().type = PassTriangles3;
+					passes.back().cmd_ids.push_back(i);
+				}
+				break;
 				case Cmd::SetScissor:
 				{
-					if (passes.empty() || (passes.back().type != Pass2D && passes.back().type != Pass3D && passes.back().type != PassLine3 && passes.back().type != PassNone))
+					if (passes.empty() || passes.back().type == PassBlur || passes.back().type == PassBloom)
 						passes.emplace_back();
 					passes.back().cmd_ids.push_back(i);
 				}
@@ -1982,6 +2139,7 @@ namespace flame
 			auto ele_idx_off = 0;
 			auto first_3d = true;
 			auto line3_off = 0;
+			auto triangle3_off = 0;
 
 			for (auto& p : passes)
 			{
@@ -2064,19 +2222,19 @@ namespace flame
 									if (cmd->type == Cmd::DrawMesh)
 									{
 										auto c = (CmdDrawMesh*)cmd.get();
-										for (auto& m : c->meshes)
+										for (auto& it : c->items)
 										{
-											if (std::get<2>(m))
+											if (it.cast_shadow)
 											{
-												auto mrm = std::get<1>(m);
+												auto mrm = it.mesh;
 												auto mat = material_resources[mrm->material_id].get();
 												cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-												if (std::get<3>(m))
+												if (it.deformer)
 												{
 													cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
 													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-													cb->bind_descriptor_set(S<"armature"_h>, std::get<3>(m)->descriptorset.get());
+													cb->bind_descriptor_set(S<"armature"_h>, it.deformer->descriptorset.get());
 												}
 												else
 													cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
@@ -2096,7 +2254,7 @@ namespace flame
 													cb->push_constant(0, sizeof(pc), &pc);
 													first = false;
 												}
-												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_id);
+												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (it.id << 16) + mrm->material_id);
 											}
 										}
 									}
@@ -2139,19 +2297,19 @@ namespace flame
 									if (cmd->type == Cmd::DrawMesh)
 									{
 										auto c = (CmdDrawMesh*)cmd.get();
-										for (auto& m : c->meshes)
+										for (auto& it : c->items)
 										{
-											if (std::get<2>(m))
+											if (it.cast_shadow)
 											{
-												auto mrm = std::get<1>(m);
+												auto mrm = it.mesh;
 												auto mat = material_resources[mrm->material_id].get();
 												cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-												if (std::get<3>(m))
+												if (it.deformer)
 												{
 													cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
 													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-													cb->bind_descriptor_set(S<"armature"_h>, std::get<3>(m)->descriptorset.get());
+													cb->bind_descriptor_set(S<"armature"_h>, it.deformer->descriptorset.get());
 												}
 												else
 													cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
@@ -2200,28 +2358,28 @@ namespace flame
 													cb->push_constant(0, sizeof(pc), &pc);
 													first = false;
 												}
-												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_id);
+												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (it.id << 16) + mrm->material_id);
 											}
 										}
 									}
 								}
 								cb->end_renderpass();
 
-								cb->image_barrier(point_shadow_maps[map_idx].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-								cb->begin_renderpass(nullptr, shadow_blur_pingpong_framebuffer.get());
-								cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
-								cb->bind_descriptor_set(S<"post"_h>, point_shadow_map_descriptorsets[map_idx * 6 + i].get());
-								cb->push_constant_t(0, 1.f / shadow_map_size.x);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
+								//cb->image_barrier(point_shadow_maps[map_idx].get(), { 0U, 1U, (uint)i, 1U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+								//cb->begin_renderpass(nullptr, shadow_blur_pingpong_framebuffer.get());
+								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
+								//cb->bind_descriptor_set(S<"post"_h>, point_shadow_map_descriptorsets[map_idx * 6 + i].get());
+								//cb->push_constant_t(0, 1.f / shadow_map_size.x);
+								//cb->draw(3, 1, 0, 0);
+								//cb->end_renderpass();
 
-								cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
-								cb->begin_renderpass(nullptr, point_shadow_map_framebuffers[map_idx * 6 + i].get());
-								cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
-								cb->bind_descriptor_set(S<"post"_h>, shadow_blur_pingpong_descriptorset.get());
-								cb->push_constant_t(0, 1.f / shadow_map_size.y);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
+								//cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
+								//cb->begin_renderpass(nullptr, point_shadow_map_framebuffers[map_idx * 6 + i].get());
+								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
+								//cb->bind_descriptor_set(S<"post"_h>, shadow_blur_pingpong_descriptorset.get());
+								//cb->push_constant_t(0, 1.f / shadow_map_size.y);
+								//cb->draw(3, 1, 0, 0);
+								//cb->end_renderpass();
 							}
 
 							cb->image_barrier(point_shadow_maps[map_idx].get(), { 0U, 1U, 0U, 6U }, ImageLayoutShaderReadOnly, ImageLayoutShaderReadOnly, AccessColorAttachmentWrite);
@@ -2237,8 +2395,7 @@ namespace flame
 						cb->bind_pipeline(preferences->sky_pipeline.get());
 						cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
 						cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-						auto mr = model_resources[1].get();
-						auto mrm = mr->meshes[0].get();
+						auto mrm = model_resources[1]->meshes[0].get();
 						cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 						cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
 						cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, 0);
@@ -2253,17 +2410,17 @@ namespace flame
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
 							auto first = true;
-							for (auto& m : c->meshes)
+							for (auto& it : c->items)
 							{
-								auto mrm = std::get<1>(m);
+								auto mrm = it.mesh;
 								auto mat = material_resources[mrm->material_id].get();
 								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
 								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-								if (std::get<3>(m))
+								if (it.deformer)
 								{
 									cb->bind_pipeline(mat->get_pipeline(MaterialForMeshArmature));
 									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-									cb->bind_descriptor_set(S<"armature"_h>, std::get<3>(m)->descriptorset.get());
+									cb->bind_descriptor_set(S<"armature"_h>, it.deformer->descriptorset.get());
 								}
 								else
 									cb->bind_pipeline(mat->get_pipeline(MaterialForMesh));
@@ -2276,7 +2433,7 @@ namespace flame
 									cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
 									first = false;
 								}
-								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (std::get<0>(m) << 16) + mrm->material_id);
+								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (it.id << 16) + mrm->material_id);
 							}
 						}
 							break;
@@ -2304,12 +2461,12 @@ namespace flame
 					cb->end_renderpass();
 				}
 					break;
-				case PassLine3:
+				case PassLines3:
 				{
 					if (line3_off == 0)
 						line3_buffer.upload(cb);
 					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
-					cb->begin_renderpass(nullptr, dst_fb);
+					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
 					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->line3_pipeline.get());
 					cb->push_constant(0, sizeof(mat4), &proj_view_matrix);
@@ -2318,11 +2475,43 @@ namespace flame
 						auto& cmd = cmds[i];
 						switch (cmd->type)
 						{
-						case Cmd::DrawLine3:
+						case Cmd::DrawLines3:
 						{
-							auto c = (CmdDrawLine3*)cmd.get();
+							auto c = (CmdDrawLines3*)cmd.get();
 							cb->draw(c->count * 2, 1, line3_off, 0);
-							line3_off += c->count;
+							line3_off += c->count * 2;
+						}
+							break;
+						case Cmd::SetScissor:
+						{
+							auto c = (CmdSetScissor*)cmd.get();
+							cb->set_scissor(c->scissor);
+						}
+							break;
+						}
+					}
+					cb->end_renderpass();
+				}
+					break;
+				case PassTriangles3:
+				{
+					if (triangle3_off == 0)
+						triangle3_buffer.upload(cb);
+					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
+					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
+					cb->bind_vertex_buffer(triangle3_buffer.buf.get(), 0);
+					cb->bind_pipeline(preferences->triangle3_pipeline.get());
+					cb->push_constant(0, sizeof(mat4), &proj_view_matrix);
+					for (auto& i : p.cmd_ids)
+					{
+						auto& cmd = cmds[i];
+						switch (cmd->type)
+						{
+						case Cmd::DrawTriangles3:
+						{
+							auto c = (CmdDrawTriangles3*)cmd.get();
+							cb->draw(c->count * 3, 1, triangle3_off, 0);
+							triangle3_off += c->count * 3;
 						}
 							break;
 						case Cmd::SetScissor:

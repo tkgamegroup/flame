@@ -563,6 +563,7 @@ namespace flame
 	FLAME_FOUNDATION_EXPORTS void get_clipboard(void* str, wchar_t* (*str_allocator)(void* str, uint size));
 	FLAME_FOUNDATION_EXPORTS void set_clipboard(const wchar_t* s);
 	FLAME_FOUNDATION_EXPORTS void get_thumbnail(uint width, const wchar_t* filename, uint* out_width, uint* out_height, uchar** out_data);
+	FLAME_FOUNDATION_EXPORTS bool is_keyboard_key_pressing(KeyboardKey key);
 	FLAME_FOUNDATION_EXPORTS void* add_global_key_listener(KeyboardKey key, void (*callback)(Capture& c), const Capture& capture, bool down = true, bool ctrl = false, bool shift = false, bool alt = false);
 	FLAME_FOUNDATION_EXPORTS void remove_global_key_listener(void* handle/* return by add_global_key_listener */);
 	FLAME_FOUNDATION_EXPORTS void send_global_keyboard_event(KeyboardKey key, bool down = true);
