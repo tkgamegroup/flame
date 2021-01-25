@@ -1889,19 +1889,6 @@ namespace flame
 			((CmdDrawTriangles*)cmds.back().get())->count += triangles_count;
 		}
 
-		vec2 CanvasPrivate::perspective_project(const vec4& p)
-		{
-			if (p.w == 0.f)
-			{
-				auto pp = proj_matrix * mat4(mat3(view_matrix)) * vec4(vec3(p), 1.f);
-				pp /= pp.w;
-				return pp.xy();
-			}
-			auto pp = proj_view_matrix * vec4(vec3(p), 1.f);
-			pp /= pp.w;
-			return pp.xy();
-		}
-
 		void CanvasPrivate::set_scissor(const Rect& _scissor)
 		{
 			auto scissor = Rect(

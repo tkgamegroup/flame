@@ -118,6 +118,7 @@ namespace flame
 		TypeInfoPrivate_bool() :
 			TypeInfoPrivate_Pod(TypeData, "bool", sizeof(bool))
 		{
+			basic_type = BooleanType;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -142,6 +143,7 @@ namespace flame
 		TypeInfoPrivate_char() :
 			TypeInfoPrivate_Pod(TypeData, "char", sizeof(char))
 		{
+			basic_type = CharType;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -160,6 +162,8 @@ namespace flame
 		TypeInfoPrivate_uchar() :
 			TypeInfoPrivate_Pod(TypeData, "uchar", sizeof(uchar))
 		{
+			basic_type = CharType;
+			is_signed = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -178,6 +182,7 @@ namespace flame
 		TypeInfoPrivate_wchar() :
 			TypeInfoPrivate_Pod(TypeData, "wchar_t", sizeof(wchar_t))
 		{
+			basic_type = WideCharType;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -196,6 +201,7 @@ namespace flame
 		TypeInfoPrivate_int() :
 			TypeInfoPrivate_Pod(TypeData, "int", sizeof(int))
 		{
+			basic_type = IntegerType;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -214,6 +220,8 @@ namespace flame
 		TypeInfoPrivate_uint() :
 			TypeInfoPrivate_Pod(TypeData, "uint", sizeof(uint))
 		{
+			basic_type = IntegerType;
+			is_signed = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -232,6 +240,7 @@ namespace flame
 		TypeInfoPrivate_int64() :
 			TypeInfoPrivate_Pod(TypeData, "int64", sizeof(int64))
 		{
+			basic_type = IntegerType;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -250,6 +259,8 @@ namespace flame
 		TypeInfoPrivate_uint64() :
 			TypeInfoPrivate_Pod(TypeData, "uint64", sizeof(uint64))
 		{
+			basic_type = IntegerType;
+			is_signed = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -268,6 +279,7 @@ namespace flame
 		TypeInfoPrivate_float() :
 			TypeInfoPrivate_Pod(TypeData, "float", sizeof(float))
 		{
+			basic_type = FloatingType;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -286,6 +298,9 @@ namespace flame
 		TypeInfoPrivate_cvec2() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,uchar,0>", sizeof(cvec2))
 		{
+			basic_type = CharType;
+			is_signed = false;
+			vec_size = 2;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -304,7 +319,10 @@ namespace flame
 		TypeInfoPrivate_cvec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uchar,0>", sizeof(cvec3))
 		{
-			can_packed_in_qword = false;
+			basic_type = CharType;
+			is_signed = false;
+			vec_size = 3;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -323,7 +341,10 @@ namespace flame
 		TypeInfoPrivate_cvec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uchar,0>", sizeof(cvec4))
 		{
-			can_packed_in_qword = false;
+			basic_type = CharType;
+			is_signed = false;
+			vec_size = 4;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -342,7 +363,9 @@ namespace flame
 		TypeInfoPrivate_ivec2() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,int,0>", sizeof(ivec2))
 		{
-			can_packed_in_qword = false;
+			basic_type = IntegerType;
+			vec_size = 2;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -361,7 +384,9 @@ namespace flame
 		TypeInfoPrivate_ivec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,int,0>", sizeof(ivec3))
 		{
-			can_packed_in_qword = false;
+			basic_type = IntegerType;
+			vec_size = 3;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -380,7 +405,9 @@ namespace flame
 		TypeInfoPrivate_ivec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,int,0>", sizeof(ivec4))
 		{
-			can_packed_in_qword = false;
+			basic_type = IntegerType;
+			vec_size = 4;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -399,7 +426,10 @@ namespace flame
 		TypeInfoPrivate_uvec2() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,uint,0>", sizeof(uvec2))
 		{
-			can_packed_in_qword = false;
+			basic_type = IntegerType;
+			is_signed = false;
+			vec_size = 2;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -418,7 +448,10 @@ namespace flame
 		TypeInfoPrivate_uvec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,uint,0>", sizeof(uvec3))
 		{
-			can_packed_in_qword = false;
+			basic_type = IntegerType;
+			is_signed = false;
+			vec_size = 3;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -437,7 +470,10 @@ namespace flame
 		TypeInfoPrivate_uvec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,uint,0>", sizeof(uvec4))
 		{
-			can_packed_in_qword = false;
+			basic_type = IntegerType;
+			is_signed = false;
+			vec_size = 4;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -456,7 +492,9 @@ namespace flame
 		TypeInfoPrivate_vec2() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<2,float,0>", sizeof(vec2))
 		{
-			can_packed_in_qword = false;
+			basic_type = FloatingType;
+			vec_size = 2;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -475,7 +513,9 @@ namespace flame
 		TypeInfoPrivate_vec3() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<3,float,0>", sizeof(vec3))
 		{
-			can_packed_in_qword = false;
+			basic_type = FloatingType;
+			vec_size = 3;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -494,7 +534,9 @@ namespace flame
 		TypeInfoPrivate_vec4() :
 			TypeInfoPrivate_Pod(TypeData, "glm::vec<4,float,0>", sizeof(vec4))
 		{
-			can_packed_in_qword = false;
+			basic_type = FloatingType;
+			vec_size = 4;
+			ret_by_reg = false;
 		}
 
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
@@ -600,36 +642,34 @@ namespace flame
 
 	struct TypeInfoPrivate_Pointer : TypeInfoPrivate_Pod
 	{
-		TypeInfoPrivate* base;
-
 		TypeInfoPrivate_Pointer(const std::string& base_name) :
 			TypeInfoPrivate_Pod(TypePointer, base_name, sizeof(void*))
 		{
-			base = TypeInfoPrivate::get(TypeData, name);
+			pointed_type = TypeInfoPrivate::get(TypeData, name);
 		}
 
 		void* create(bool create_pointing) const override 
 		{ 
 			auto p = new void*;
-			if (create_pointing && base)
-				*(void**)p = base->create();
+			if (create_pointing && pointed_type)
+				*(void**)p = pointed_type->create();
 			return p; 
 		}
 		void destroy(void* p, bool destroy_pointing) const override
 		{
-			if (destroy_pointing && base)
-				base->destroy(*(void**)p);
+			if (destroy_pointing && pointed_type)
+				pointed_type->destroy(*(void**)p);
 			free(p); 
 		}
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
 		{
-			if (base)
-				base->serialize(*(void**)src, str, str_allocator);
+			if (pointed_type)
+				pointed_type->serialize(*(void**)src, str, str_allocator);
 		}
 		void unserialize(void* dst, const char* src) const override
 		{
-			if (base)
-				base->unserialize(*(void**)dst, src);
+			if (pointed_type)
+				pointed_type->unserialize(*(void**)dst, src);
 		}
 	};
 
@@ -886,7 +926,7 @@ namespace flame
 		name(name),
 		size(size)
 	{
-		can_packed_in_qword = size <= sizeof(void*);
+		ret_by_reg = size <= sizeof(void*);
 	}
 
 	TypeInfo* TypeInfo::get(TypeTag tag, const char* name)
@@ -1016,65 +1056,70 @@ namespace flame
 		return address;
 	}
 
-	bool FunctionInfoPrivate::check(void* _type, ...) const
+	bool FunctionInfoPrivate::check(TypeInfo* ret, uint parms_count, TypeInfo* const* parms) const
 	{
-		if (type != _type)
+		if (type != ret)
 			return false;
-		auto ap = (char*)var_end(&_type);
-		auto c = 0;
-		while (true)
+		if (parameters.size() != parms_count)
+			return false;
+		for (auto i = 0; i < parms_count; i++)
 		{
-			auto t = va_arg(ap, TypeInfoPrivate*);
-			if (!t)
-				break;
-			auto p = parameters[c];
-			if (t != p)
-			{
-				c = -1;
-				break;
-			}
-			c++;
+			if (parameters[i] != parms[i])
+				return false;
 		}
-		return c == parameters.size();
+		return true;
 	}
 
 	extern "C" void __call(void* f, void* list1, void* list2, void* dummy);
 
-	void FunctionInfoPrivate::call(void* obj, void* ret, void** parms) const
+	void FunctionInfoPrivate::call(void* obj, void* ret, void* ps) const
 	{
 		auto idx = 0;
 		void* list1[6];
 		float list2[4];
 		if (obj)
 			list1[idx++] = obj;
-		if (!type->can_packed_in_qword)
+		if (!type->ret_by_reg)
 		{
 			list1[idx++] = ret;
 			ret = nullptr;
 		}
 
-		auto _p = parms;
-		for (auto p : parameters)
+		auto p = (char*)ps;
+		for (auto parm : parameters)
 		{
-			switch (p->tag)
+			switch (parm->tag)
 			{
 			case TypeEnumSingle:
 			case TypeEnumMulti:
-				list1[idx++] = (void*)*((int*)*_p++);
+				list1[idx++] = (void*)*(int*)p;
+				p += sizeof(int);
 				break;
 			case TypeData:
-				if (p->name == "float")
-					list2[idx++] = *((float*)*_p++);
-				else if (p->size == 1)
-					list1[idx++] = (void*)*((char*)*_p++);
-				else if (p->size == 4)
-					list1[idx++] = (void*)*((int*)*_p++);
-				else if (p->size == 8)
-					list1[idx++] = *((void**)*_p++);
+				if (parm->basic_type == FloatingType)
+				{
+					list2[idx++] = *(float*)p;
+					p += sizeof(float);
+				}
+				else if (parm->size == 1)
+				{
+					list1[idx++] = (void*)*(char*)p;
+					p += 1;
+				}
+				else if (parm->size == 4)
+				{
+					list1[idx++] = (void*)*(int*)p;
+					p += 4;
+				}
+				else if (parm->size == 8)
+				{
+					list1[idx++] = *(void**)p;
+					p += 8;
+				}
 				break;
 			case TypePointer:
-				list1[idx++] = *(void**)(*_p);
-				_p++;
+				list1[idx++] = *(void**)p;
+				p += 8;
 				break;
 			}
 		}
@@ -1086,7 +1131,7 @@ namespace flame
 		__call(get_address(obj), list1, list2, nullptr);
 		if (ret)
 		{
-			if (type->name == "float")
+			if (type->basic_type == FloatingType)
 				memcpy(ret, &staging_xmm0, type->size);
 			else
 				memcpy(ret, &staging_rax, type->size);

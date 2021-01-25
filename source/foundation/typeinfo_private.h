@@ -14,13 +14,22 @@ namespace flame
 		std::string name;
 		uint size;
 
-		bool can_packed_in_qword;
+		BasicType basic_type = ElseType;
+		bool is_signed = true;
+		uint vec_size = 1;
+		bool ret_by_reg;
+		TypeInfoPrivate* pointed_type = nullptr;
 
 		TypeInfoPrivate(TypeTag tag, const std::string& base_name, uint size);
 
 		TypeTag get_tag() const override { return tag; }
 		const char* get_name() const override { return name.c_str(); }
 		uint get_size() const override { return size; }
+
+		BasicType get_basic() const override { return basic_type; }
+		bool get_signed() const override { return is_signed; }
+		uint get_vec_size() const override { return vec_size; }
+		TypeInfo* get_pointed_type() const override { return pointed_type; }
 
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name);
 	};
@@ -137,9 +146,9 @@ namespace flame
 		TypeInfo* get_parameter(uint idx) const override { return parameters[idx]; }
 		const char* get_code() const override { return code.c_str(); }
 
-		bool check(void* type, ...) const override;
+		bool check(TypeInfo* ret, uint parms_count = 0, TypeInfo* const* parms = nullptr) const override;
 
-		void call(void* obj, void* ret, void** parameters) const override;
+		void call(void* obj, void* ret, void* parameters) const override;
 	};
 
 	struct UdtInfoBridge : UdtInfo 

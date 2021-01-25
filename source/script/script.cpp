@@ -92,132 +92,175 @@ namespace flame
 		int lua_flame_call(lua_State* state)
 		{
 			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
-			auto p = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : (lua_isnil(state, -2) ? nullptr : INVALID_POINTER);
-			if (f && p != INVALID_POINTER)
+			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : (lua_isnil(state, -2) ? nullptr : INVALID_POINTER);
+			if (f && o != INVALID_POINTER)
 			{
-				void* ret = nullptr;
-				auto ret_type = f->get_type();
-				if (ret_type != TypeInfo::get(TypeData, ""))
-					ret = ret_type->create(false);
-
-				std::vector<void*> parms;
-				parms.resize(f->get_parameters_count());
-
-				for (auto i = 0; i < parms.size(); i++)
+				char parms[4 * sizeof(void*)];
+				auto parms_count = f->get_parameters_count();
+				auto p = parms;
+				std::vector<std::unique_ptr<std::string>> temp_strs;
+				std::vector<std::unique_ptr<std::wstring>> temp_wstrs;
+				std::vector<std::unique_ptr<char>> temp_datas;
+				for (auto i = 0; i < parms_count; i++)
 				{
 					auto type = f->get_parameter(i);
-					auto tt = type->get_tag();
-					auto tn = std::string(type->get_name());
-					auto p = type->create();
+					auto tag = type->get_tag();
+					auto basic = type->get_basic();
 
 					if (lua_istable(state, -3))
 					{
 						lua_pushinteger(state, i + 1);
 						lua_gettable(state, -4);
 
-						if (tn == "int" || tn == "uint")
-							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
-						else if (tn == "float")
-							*(float*)p = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : -1.f;
-						else if (tn == "bool")
-							*(bool*)p = lua_isboolean(state, -1) ? lua_toboolean(state, -1) : true;
-						else if (tn == "char" && tt == TypePointer)
-							type->unserialize(p, lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
-						else if (tn == "wchar_t" && tt == TypePointer)
-							type->unserialize(p, lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
-						else if (tn == "glm::vec<2,float,0>" && tt == TypePointer)
+						switch (type->get_tag())
 						{
-							auto pp = *(void**)p;
-							*(vec2*)pp = lua_pull<2>(state);
-						}
-						else if (tn == "glm::vec<3,float,0>" && tt == TypePointer)
-						{
-							auto pp = *(void**)p;
-							*(vec3*)pp = lua_pull<3>(state);
-						}
-						else if (tn == "glm::vec<4,float,0>" && tt == TypePointer)
-						{
-							auto pp = *(void**)p;
-							*(vec4*)pp = lua_pull<4>(state);
-						}
-						else if (tn == "glm::vec<4,float,0>" && tt == TypePointer)
-						{
-							auto pp = *(void**)p;
-							*(vec4*)pp = lua_pull<4>(state);
-						}
-						else if (tn == "glm::vec<4,uchar,0>" && tt == TypePointer)
-						{
-							auto pp = *(void**)p;
-							*(cvec4*)pp = lua_pull<4>(state);
-						}
-						else if (tt == TypePointer)
-						{
-							if (lua_isuserdata(state, -1))
-								*(void**)p = lua_touserdata(state, -1);
-							else if (lua_isnumber(state, -1))
-								*(void**)p = (void*)lua_tointeger(state, -1);
-							else if (lua_istable(state, -1))
+						case TypeData:
+							switch (basic)
 							{
-								lua_pushstring(state, "p");
-								lua_gettable(state, -2);
-								*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
-								lua_pop(state, 1);
+							case BooleanType:
+								*(bool*)p = lua_isboolean(state, -1) ? lua_toboolean(state, -1) : true;
+								p += sizeof(bool);
+								break;
+							case IntegerType:
+								*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
+								p += sizeof(int);
+								break;
+							case FloatingType:
+								*(float*)p = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : -1.f;
+								p += sizeof(float);
+								break;
+							}
+							break;
+						case TypePointer:
+							auto pointed_type = type->get_pointed_type();
+							auto basic = pointed_type ? pointed_type->get_basic() : ElseType;
+							auto vec_size = pointed_type ? pointed_type->get_vec_size() : 1;
+							if (vec_size == 1)
+							{
+								switch (basic)
+								{
+								case CharType:
+								{
+									auto t = type->create();
+									auto str = new std::string(lua_isstring(state, -1) ? lua_tostring(state, -1) : "");
+									*(void**)p = (char*)str->c_str();
+									temp_strs.emplace_back(str);
+								}
+									break;
+								case WideCharType:
+								{
+									auto str = new std::wstring(s2w(lua_isstring(state, -1) ? lua_tostring(state, -1) : ""));
+									*(void**)p = (wchar_t*)str->c_str();
+									temp_wstrs.emplace_back(str);
+								}
+									break;
+								default:
+									if (lua_isuserdata(state, -1))
+										*(void**)p = lua_touserdata(state, -1);
+									else if (lua_isnumber(state, -1))
+										*(void**)p = (void*)lua_tointeger(state, -1);
+									else if (lua_istable(state, -1))
+									{
+										lua_pushstring(state, "p");
+										lua_gettable(state, -2);
+										*(void**)p = lua_isuserdata(state, -1) ? lua_touserdata(state, -1) : nullptr;
+										lua_pop(state, 1);
+									}
+									else
+										*(void**)p = nullptr;
+								}
 							}
 							else
-								*(void**)p = nullptr;
+							{
+								auto d = new char[pointed_type->get_size()];
+								switch (basic)
+								{
+								case FloatingType:
+									switch (vec_size)
+									{
+									case 2:
+										*(vec2*)d = lua_pull<2>(state);
+										break;
+									case 3:
+										*(vec3*)d = lua_pull<3>(state);
+										break;
+									case 4:
+										*(vec4*)d = lua_pull<4>(state);
+										break;
+									}
+									break;
+								case CharType:
+									switch (vec_size)
+									{
+									case 4:
+										*(cvec4*)d = lua_pull<4>(state);
+										break;
+									}
+									break;
+								}
+								*(void**)p = d;
+								temp_datas.emplace_back(d);
+							}
+
+							p += sizeof(void*);
+							break;
 						}
 						lua_pop(state, 1);
 					}
-
-					parms[i] = p;
 				}
 
-				lua_pushstring(state, "");
-				lua_setglobal(state, "__type__");
+				void* ret = nullptr;
+				auto ret_type = f->get_type();
+				if (ret_type != TypeInfo::get(TypeData, ""))
+					ret = ret_type->create(false);
 
-				f->call(p, ret, parms.data());
-				for (auto i = 0; i < parms.size(); i++)
-				{
-					auto type = f->get_parameter(i);
-					type->destroy(parms[i]);
-				}
+				f->call(o, ret, parms);
 
 				if (ret)
 				{
-					auto tn = std::string(ret_type->get_name());
 					if (ret_type->get_tag() == TypePointer)
-					{
-						lua_getglobal(state, "__type__");
-						if (lua_isstring(state, -1))
-						{
-							auto str = std::string(lua_tostring(state, -1));
-							if (!str.empty())
-								tn = str;
-						}
-						lua_pop(state, 1);
-
-						lua_newtable(state);
-						auto p = *(void**)ret;
-						lua_pushstring(state, "p");
-						lua_pushlightuserdata(state, p);
-						lua_settable(state, -3);
-						if (!tn.empty() && tn != "void")
-							lua_set_object_type(state, tn.c_str());
-					}
+						lua_pushlightuserdata(state, *(void**)ret);
 					else
 					{
-						if (tn == "int" || tn == "uint")
-							lua_pushinteger(state, *(int*)ret);
-						else if (tn == "float")
-							lua_pushnumber(state, *(float*)ret);
-						else if (tn == "glm::vec<2,float,0>")
-							lua_push(state, *(vec2*)ret);
-						else if (tn == "glm::vec<3,float,0>")
-							lua_push(state, *(vec3*)ret);
-						else if (tn == "glm::vec<4,float,0>")
-							lua_push(state, *(vec4*)ret);
-						else
-							lua_pushnil(state);
+						auto basic = ret_type->get_basic();
+						switch (ret_type->get_vec_size())
+						{
+						case 1:
+							switch (basic)
+							{
+							case IntegerType:
+								lua_pushinteger(state, *(int*)ret);
+								break;
+							case FloatingType:
+								lua_pushnumber(state, *(float*)ret);
+								break;
+							}
+							break;
+						case 2:
+							switch (basic)
+							{
+							case FloatingType:
+								lua_push(state, *(vec2*)ret);
+								break;
+							}
+							break;
+						case 3:
+							switch (basic)
+							{
+							case FloatingType:
+								lua_push(state, *(vec3*)ret);
+								break;
+							}
+							break;
+						case 4:
+							switch (basic)
+							{
+							case FloatingType:
+								lua_push(state, *(vec4*)ret);
+								break;
+							}
+							break;
+						}
 					}
 					ret_type->destroy(ret, false);
 					return 1;
@@ -284,6 +327,7 @@ namespace flame
 
 					auto count = ui->get_functions_count();
 					std::vector<FunctionInfo*> normal_functions;
+					std::vector<std::pair<FunctionInfo*, std::string>> type_needed_functions;
 					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> callback_interfaces;
 					for (auto i = 0; i < count; i++)
 					{
@@ -307,10 +351,23 @@ namespace flame
 							}
 						}
 						if (function)
+						{
+							auto ret = function->get_type();
+							if (ret->get_tag() == TypePointer)
+							{
+								auto type = std::string(ret->get_name());
+								if (type != "void")
+								{
+									type_needed_functions.emplace_back(function, type);
+									function = nullptr;
+								}
+							}
+						}
+						if (function)
 							normal_functions.push_back(function);
 					}
 
-					lua_pushstring(state, "functions");
+					lua_pushstring(state, "normal_functions");
 					lua_newtable(state);
 					for (auto& f : normal_functions)
 					{
@@ -332,6 +389,24 @@ namespace flame
 						lua_settable(state, -3);
 						lua_pushstring(state, "remove");
 						lua_pushlightuserdata(state, std::get<2>(c));
+						lua_settable(state, -3);
+
+						lua_settable(state, -3);
+					}
+					lua_settable(state, -3);
+
+					lua_pushstring(state, "type_needed_functions");
+					lua_newtable(state);
+					for (auto& f : type_needed_functions)
+					{
+						lua_pushstring(state, f.first->get_name());
+
+						lua_newtable(state);
+						lua_pushstring(state, "func");
+						lua_pushlightuserdata(state, f.first);
+						lua_settable(state, -3);
+						lua_pushstring(state, "type");
+						lua_pushstring(state, f.second.c_str());
 						lua_settable(state, -3);
 
 						lua_settable(state, -3);

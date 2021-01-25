@@ -643,8 +643,6 @@ namespace flame
 			void draw_lines(uint lines_count, const Line* lines) override;
 			void draw_triangles(uint triangles_count, const Triangle* triangles) override;
 
-			vec2 perspective_project(const vec4& p) override;
-
 			Rect get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Rect& scissor) override;
 

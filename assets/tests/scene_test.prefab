@@ -46,8 +46,8 @@
         local p0 = element:get_point(0)
         local p2 = element:get_point(2)
         local sz = v2_sub(p2, p0)
-        local a0 = v2_add(v2_mul(canvas:perspective_project({x=0, y=0, z=0, w=0}), 0.5), {x=0.5, y=0.5})
-        local ax = v2_add(v2_mul(canvas:perspective_project({x=1, y=0, z=0, w=0}), 0.5), {x=0.5, y=0.5})
+        local a0 = {x=0, y=0}
+        local ax = {x=1, y=1}
         canvas:begin_path()
         canvas:move_to(v2_add(v2_mul(a0, sz), p0))
         canvas:line_to(v2_add(v2_mul(ax, sz), p0))

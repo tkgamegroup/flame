@@ -26,7 +26,7 @@ namespace flame
 				setter(setter)
 			{
 				void* d = get_type->create(false);
-				getter->call(ct->dummy, d, {});
+				getter->call(ct->dummy, d, nullptr);
 				get_type->serialize(d, &default_value, [](void* _str, uint size) {
 					auto& str = *(std::string*)_str;
 					str.resize(size);
@@ -38,7 +38,7 @@ namespace flame
 			std::string serialize(void* c)
 			{
 				void* d = get_type->create(false);
-				getter->call(c, d, {});
+				getter->call(c, d, nullptr);
 				std::string str;
 				get_type->serialize(d, &str, [](void* _str, uint size) {
 					auto& str = *(std::string*)_str;
@@ -101,7 +101,7 @@ namespace flame
 		void* create()
 		{
 			void* ret;
-			creator->call(nullptr, &ret, {});
+			creator->call(nullptr, &ret, nullptr);
 			return ret;
 		}
 
@@ -235,8 +235,7 @@ namespace flame
 				}
 			}
 
-			void* parms[] = { d };
-			r->setter->call(r->c, nullptr, parms);
+			r->setter->call(r->c, nullptr, d);
 		}
 
 		for (auto& c : components)
@@ -590,8 +589,7 @@ namespace flame
 				{
 					void* d = type->create();
 					type->unserialize(d, value.c_str());
-					void* parms[] = { d };
-					fs->call(c, nullptr, parms);
+					fs->call(c, nullptr, d);
 					type->destroy(d);
 				}
 				else
@@ -611,8 +609,7 @@ namespace flame
 						if (pair.size() == 1)
 						{
 							type->unserialize(d, pair[0].c_str());
-							void* parms[] = { d };
-							fs->call(c, nullptr, parms);
+							fs->call(c, nullptr, d);
 						}
 						else if (pair.size() == 2)
 						{
@@ -637,8 +634,7 @@ namespace flame
 				auto fs = att->setter;
 				void* d = type->create();
 				type->unserialize(d, value.c_str());
-				void* parms[] = { d };
-				fs->call(c, nullptr, parms);
+				fs->call(c, nullptr, d);
 				type->destroy(d);
 				return true;
 			}

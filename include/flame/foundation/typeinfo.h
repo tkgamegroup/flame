@@ -5,6 +5,16 @@
 
 namespace flame
 {
+	enum BasicType
+	{
+		BooleanType,
+		IntegerType,
+		FloatingType,
+		CharType,
+		WideCharType,
+		ElseType
+	};
+
 	enum TypeTag
 	{
 		TypeEnumSingle,
@@ -28,6 +38,11 @@ namespace flame
 		virtual const char* get_name() const = 0; // no space, 'unsigned ' will be replace to 'u'
 		virtual uint get_size() const = 0;
 
+		virtual BasicType get_basic() const = 0;
+		virtual bool get_signed() const = 0;
+		virtual uint get_vec_size() const = 0;
+		virtual TypeInfo* get_pointed_type() const = 0;
+
 		virtual void* create(bool create_pointing = true) const = 0;
 		virtual void destroy(void* p, bool destroy_pointing = true) const = 0;
 		virtual void copy(void* dst, const void* src) const = 0;
@@ -36,8 +51,6 @@ namespace flame
 		virtual void unserialize(void* dst, const char* src) const = 0;
 
 		FLAME_FOUNDATION_EXPORTS static TypeInfo* get(TypeTag tag, const char* name);
-		// in the callback: return a space that will be fill with the typeinfos, which size must bigger than sizeof(void*) * size
-		FLAME_FOUNDATION_EXPORTS static void get_basic_types(TypeInfo** (*callback)(Capture& c, uint size), const Capture& capture);
 	};
 
 	struct ReflectMeta
@@ -88,9 +101,9 @@ namespace flame
 		virtual TypeInfo* get_parameter(uint idx) const = 0;
 		virtual const char* get_code() const = 0;
 
-		// first is return type, next followed by all parameters, parameters are end by null
-		virtual bool check(void* type, ...) const = 0;
-		virtual void call(void* obj, void* ret, void** parameters) const = 0;
+		virtual bool check(TypeInfo* ret, uint parms_count = 0, TypeInfo* const* parms = nullptr) const = 0;
+
+		virtual void call(void* obj, void* ret, void* parameters) const = 0;
 	};
 
 	struct UdtInfo

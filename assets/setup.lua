@@ -27,9 +27,18 @@ function make_obj(o, n)
 	if (udt == nil) then
 		return
 	end
-	for k, v in pairs(udt.functions) do
+	for k, v in pairs(udt.normal_functions) do
 		o[k] = function(self, ...)
 			return flame_call({...}, o.p, v)
+		end
+	end
+	for k, v in pairs(udt.type_needed_functions) do
+		o[k] = function(self, ...)
+			__type__ = v.type
+			local ret = {}
+			ret.p = flame_call({...}, o.p, v.func)
+			make_obj(ret, __type__)
+			return ret
 		end
 	end
 	for k, v in pairs(udt.callback_interfaces) do
