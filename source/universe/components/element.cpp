@@ -1,5 +1,6 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/canvas.h>
+#include <flame/script/script.h>
 #include "../world_private.h"
 #include "element_private.h"
 #include "../systems/renderer_private.h"
@@ -418,6 +419,23 @@ namespace flame
 
 	void* cElementPrivate::add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop)
 	{
+		if (!drawer)
+		{
+			auto slot = (uint)&capture;
+			drawer = [](Capture& c, graphics::Canvas* canvas) {
+				auto scr_ins = script::Instance::get_default();
+				scr_ins->get_global("callbacks");
+				scr_ins->get_member(nullptr, c.data<uint>());
+				scr_ins->get_member("f");
+				scr_ins->push_object();
+				scr_ins->set_object_type("flame::graphics::Canvas", canvas);
+				scr_ins->call(1);
+				scr_ins->pop(2);
+			};
+			auto c = new Closure(drawer, Capture().set_data(&slot));
+			drawers[ontop ? 1 : 0].emplace_back(c);
+			return c;
+		}
 		auto c = new Closure(drawer, capture);
 		drawers[ontop ? 1 : 0].emplace_back(c);
 		return c;
@@ -660,7 +678,7 @@ namespace flame
 
 	void cElementPrivate::draw(graphics::Canvas* canvas)
 	{
-		//if (alpha > 0.f)
+		if (alpha > 0.f)
 		{
 			if (fill_color.a > 0)
 			{

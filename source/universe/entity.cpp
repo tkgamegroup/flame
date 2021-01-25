@@ -629,6 +629,21 @@ namespace flame
 			}
 			return false;
 		};
+		auto set_content = [&](Component* c, Type* ct, const std::string& value) {
+			auto att = ct->find_attribute("content");
+			if (att)
+			{
+				auto type = att->set_type;
+				auto fs = att->setter;
+				void* d = type->create();
+				type->unserialize(d, value.c_str());
+				void* parms[] = { d };
+				fs->call(c, nullptr, parms);
+				type->destroy(d);
+				return true;
+			}
+			return false;
+		};
 
 		auto ename = std::string(n_src.name());
 		if (ename != "entity")
@@ -711,7 +726,7 @@ namespace flame
 					auto content = std::string(n_c.child_value());
 					if (!content.empty())
 					{
-						if (!set_attribute(c, ct, "content", content))
+						if (!set_content(c, ct, content))
 							printf("cannot find attribute: content\n");
 					}
 					if (isnew)

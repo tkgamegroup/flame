@@ -140,6 +140,16 @@ namespace flame
 							auto pp = *(void**)p;
 							*(vec4*)pp = lua_pull<4>(state);
 						}
+						else if (tn == "glm::vec<4,float,0>" && tt == TypePointer)
+						{
+							auto pp = *(void**)p;
+							*(vec4*)pp = lua_pull<4>(state);
+						}
+						else if (tn == "glm::vec<4,uchar,0>" && tt == TypePointer)
+						{
+							auto pp = *(void**)p;
+							*(cvec4*)pp = lua_pull<4>(state);
+						}
 						else if (tt == TypePointer)
 						{
 							if (lua_isuserdata(state, -1))
@@ -188,13 +198,9 @@ namespace flame
 
 						lua_newtable(state);
 						auto p = *(void**)ret;
-						if (p)
-						{
-							lua_pushstring(state, "p");
-							lua_pushlightuserdata(state, p);
-							lua_settable(state, -3);
-						}
-
+						lua_pushstring(state, "p");
+						lua_pushlightuserdata(state, p);
+						lua_settable(state, -3);
 						if (!tn.empty() && tn != "void")
 							lua_set_object_type(state, tn.c_str());
 					}
@@ -425,8 +431,14 @@ namespace flame
 			}
 		}
 
-		void InstancePrivate::set_object_type(const char* type_name)
+		void InstancePrivate::set_object_type(const char* type_name, void* p)
 		{
+			if (p != INVALID_POINTER)
+			{
+				lua_pushstring(lua_state, "p");
+				lua_pushlightuserdata(lua_state, p);
+				lua_settable(lua_state, -3);
+			}
 			lua_set_object_type(lua_state, type_name);
 		}
 

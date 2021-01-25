@@ -50,7 +50,7 @@ namespace flame
 			void update(float disp) override;
 			void set_trigger_callback(void (*callback)(Capture& c, TouchType type, Shape* trigger_shape, Shape* other_shape), const Capture& capture) override;
 			void set_visualization(bool v) override;
-			void get_visualization_data(uint* lines_count, graphics::Line3** lines) override;
+			void get_visualization_data(uint* lines_count, graphics::Line** lines) override;
 		};
 
 		inline void SceneBridge::add_rigid(Rigid* s)

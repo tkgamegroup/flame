@@ -4,6 +4,11 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
+
 	struct cElement : Component
 	{
 		inline static auto type_name = "flame::cElement";
@@ -96,8 +101,8 @@ namespace flame
 		virtual float get_scrolly() const = 0;
 		virtual void set_scrolly(float s) = 0;
 
-		//FLAME_RV(uint, column);
-		//FLAME_UNIVERSE_EXPORTS void set_column(uint c);
+		//virtual uint get_layout_column() const = 0;
+		//virtual void set_layout_column(uint c) = 0;
 
 		//virtual float get_alpha() const = 0;
 		//virtual void set_alpha(float a) = 0;
@@ -110,17 +115,20 @@ namespace flame
 		virtual cvec4 get_border_color() = 0;
 		virtual void set_border_color(const cvec4& c) = 0;
 
+		//virtual float get_roughness() const = 0;
+		//virtual void set_roughness(float r) = 0;
+
 		virtual bool get_clipping() const = 0;
 		virtual void set_clipping(bool c) = 0;
 
 		virtual bool get_culled() const = 0;
 
+		virtual vec2 get_point(uint idx) const = 0;
+
 		virtual bool contains(const vec2& p) = 0;
 
-		//FLAME_RV(vec4, roundness);
-		//FLAME_RV(uint, roundness_lod);
-
-		//FLAME_UNIVERSE_EXPORTS void FLAME_RF(set_roundness)(const vec4& r);
+		virtual void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true) = 0;
+		virtual void remove_drawer(void* drawer, bool ontop = true) = 0;
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;

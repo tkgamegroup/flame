@@ -46,6 +46,40 @@ function make_obj(o, n)
 	end
 end
 
+function v2_neg(a)
+	return { 
+		x = -a.x, 
+		y = -a.y
+	}
+end
+
+function v2_add(a, b)
+	return { 
+		x = a.x + b.x, 
+		y = a.y + b.y
+	}
+end
+
+function v2_sub(a, b)
+	return { 
+		x = a.x - b.x, 
+		y = a.y - b.y
+	}
+end
+
+function v2_mul(a, b)
+	if type(b) == "table" then
+		return { 
+			x = a.x * b.x, 
+			y = a.y * b.x
+		}
+	end
+	return { 
+		x = a.x * b, 
+		y = a.y * b
+	}
+end
+
 function v3_neg(a)
 	return { 
 		x = -a.x, 
@@ -62,7 +96,22 @@ function v3_add(a, b)
 	}
 end
 
+function v3_sub(a, b)
+	return { 
+		x = a.x - b.x, 
+		y = a.y - b.y,
+		z = a.z - b.z
+	}
+end
+
 function v3_mul(a, b)
+	if type(b) == "table" then
+		return { 
+			x = a.x * b.x, 
+			y = a.y * b.x,
+			z = a.z * b.z
+		}
+	end
 	return { 
 		x = a.x * b, 
 		y = a.y * b,

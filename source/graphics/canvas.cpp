@@ -109,15 +109,12 @@ namespace flame
 					ShaderPrivate::get(device, L"sky/sky.vert"),
 					ShaderPrivate::get(device, L"sky/sky.frag")
 				};
-				VertexAttributeInfo vias[2];
-				vias[0].location = 0;
-				vias[0].format = Format_R32G32B32_SFLOAT;
-				vias[1].location = 2;
-				vias[1].offset = 5 * sizeof(float);
-				vias[1].format = Format_R32G32B32_SFLOAT;
+				VertexAttributeInfo via;
+				via.location = 0;
+				via.format = Format_R32G32B32_SFLOAT;
 				VertexBufferInfo vib;
-				vib.attributes_count = size(vias);
-				vib.attributes = vias;
+				vib.attributes_count = 1;
+				vib.attributes = &via;
 				VertexInfo vi;
 				vi.buffers_count = 1;
 				vi.buffers = &vib;
@@ -652,8 +649,8 @@ namespace flame
 			set_model_resource(-1, (ModelPrivate*)Model::get_standard("cube"), "cube");
 			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 
-			line3_buffer.create(device, BufferUsageVertex, 200000);
-			triangle3_buffer.create(device, BufferUsageVertex, 1000);
+			line_buffer.create(device, BufferUsageVertex, 200000);
+			triangle_buffer.create(device, BufferUsageVertex, 1000);
 		}
 
 		void CanvasPrivate::set_shading(ShadingType type)
@@ -1131,7 +1128,6 @@ namespace flame
 		void CanvasPrivate::begin_path()
 		{
 			paths.clear();
-			paths.emplace_back();
 		}
 
 		void CanvasPrivate::move_to(const vec2& pos)
@@ -1608,35 +1604,6 @@ namespace flame
 			}
 		}
 
-		struct KeyAction
-		{
-			bool up = true;
-			KeyboardKey key;
-
-			KeyAction(KeyboardKey key) :
-				key(key)
-			{
-			}
-
-			bool is_down()
-			{
-				if (is_keyboard_key_pressing(key))
-				{
-					if (up)
-					{
-						up = false;
-						return true;
-					}
-				}
-				else
-				{
-					if (!up)
-						up = true;
-				}
-				return false;
-			}
-		};
-
 		static void get_frustum_points(float zNear, float zFar, float tan_hf_fovy, float aspect, const mat4& transform, vec3* dst)
 		{
 			auto y1 = zNear * tan_hf_fovy;
@@ -1668,8 +1635,8 @@ namespace flame
 
 		static void draw_frustum(CanvasPrivate* thiz, vec3* ps, const cvec4& col0, const cvec4& col1)
 		{
-			std::vector<Triangle3> triangles;
-			std::vector<Line3> lines;
+			std::vector<Triangle> triangles;
+			std::vector<Line> lines;
 
 			triangles.push_back({ { ps[0], col0 }, { ps[3], col0 }, { ps[1], col0 } });
 			triangles.push_back({ { ps[1], col0 }, { ps[3], col0 }, { ps[2], col0 } });
@@ -1827,17 +1794,6 @@ namespace flame
 
 					DirectionalShadow shadow;
 
-					static KeyAction F1(Keyboard_F1), F2(Keyboard_F2), F3(Keyboard_F3), F4(Keyboard_F4);
-					static bool show[3] = {};
-					static bool show1 = false, show2 = false, show3 = false;
-					if (F1.is_down())
-						show1 = !show1;
-					if (F2.is_down())
-						show2 = !show2;
-					if (F3.is_down())
-						show3 = !show3;
-					auto new_data = F4.is_down();
-
 					auto dstm = (mat4*)directional_light_info_buffer.dst(S<"shadow_matrices"_h>, dst);
 					for (auto j = 0; j < csm_levels; j++)
 					{
@@ -1865,47 +1821,6 @@ namespace flame
 						shadow.matrices[j] = dstm[j] = orthoRH(-w, w, -h, h, 0.f, shadow_distance) *
 							lookAt(c + dir * shadow_distance * 0.5f, c, up);
 
-						if (show1 && j == 0)
-						{
-							static vec3 sps0[8];
-							static vec3 sps1[8];
-							if (new_data)
-							{
-								memcpy(sps0, ps, sizeof(ps));
-								get_frustum_points(inverse(shadow.matrices[j]), sps1);
-							}
-
-							draw_frustum(this, sps0, cvec4(255, 255, 0, 50), cvec4(255, 0, 0, 255));
-							draw_frustum(this, sps1, cvec4(0, 0, 255, 50), cvec4(0, 255, 0, 255));
-						}
-
-						if (show2 && j == 1)
-						{
-							static vec3 sps0[8];
-							static vec3 sps1[8];
-							if (new_data)
-							{
-								memcpy(sps0, ps, sizeof(ps));
-								get_frustum_points(inverse(shadow.matrices[j]), sps1);
-							}
-
-							draw_frustum(this, sps0, cvec4(255, 255, 0, 50), cvec4(255, 0, 0, 255));
-							draw_frustum(this, sps1, cvec4(0, 0, 255, 50), cvec4(0, 255, 0, 255));
-						}
-
-						if (show3 && j == 2)
-						{
-							static vec3 sps0[8];
-							static vec3 sps1[8];
-							if (new_data)
-							{
-								memcpy(sps0, ps, sizeof(ps));
-								get_frustum_points(inverse(shadow.matrices[j]), sps1);
-							}
-
-							draw_frustum(this, sps0, cvec4(255, 255, 0, 50), cvec4(255, 0, 0, 255));
-							draw_frustum(this, sps1, cvec4(0, 0, 255, 50), cvec4(0, 255, 0, 255));
-						}
 					}
 
 					directional_shadows.push_back(shadow);
@@ -1954,24 +1869,37 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::draw_lines(uint lines_count, const Line3* lines)
+		void CanvasPrivate::draw_lines(uint lines_count, const Line* lines)
 		{
-			if (cmds.empty() || cmds.back()->type != Cmd::DrawLines3)
-				cmds.emplace_back(new CmdDrawLines3);
+			if (cmds.empty() || cmds.back()->type != Cmd::DrawLines)
+				cmds.emplace_back(new CmdDrawLines);
 
-			line3_buffer.push(lines_count, lines);
+			line_buffer.push(lines_count, lines);
 
-			((CmdDrawLines3*)cmds.back().get())->count += lines_count;
+			((CmdDrawLines*)cmds.back().get())->count += lines_count;
 		}
 
-		void CanvasPrivate::draw_triangles(uint triangles_count, const Triangle3* triangles)
+		void CanvasPrivate::draw_triangles(uint triangles_count, const Triangle* triangles)
 		{
-			if (cmds.empty() || cmds.back()->type != Cmd::DrawTriangles3)
-				cmds.emplace_back(new CmdDrawTriangles3);
+			if (cmds.empty() || cmds.back()->type != Cmd::DrawTriangles)
+				cmds.emplace_back(new CmdDrawTriangles);
 
-			triangle3_buffer.push(triangles_count, triangles);
+			triangle_buffer.push(triangles_count, triangles);
 
-			((CmdDrawTriangles3*)cmds.back().get())->count += triangles_count;
+			((CmdDrawTriangles*)cmds.back().get())->count += triangles_count;
+		}
+
+		vec2 CanvasPrivate::perspective_project(const vec4& p)
+		{
+			if (p.w == 0.f)
+			{
+				auto pp = proj_matrix * mat4(mat3(view_matrix)) * vec4(vec3(p), 1.f);
+				pp /= pp.w;
+				return pp.xy();
+			}
+			auto pp = proj_view_matrix * vec4(vec3(p), 1.f);
+			pp /= pp.w;
+			return pp.xy();
 		}
 
 		void CanvasPrivate::set_scissor(const Rect& _scissor)
@@ -2021,8 +1949,8 @@ namespace flame
 			directional_shadows.clear();
 			point_shadows.clear();
 
-			line3_buffer.stagnum = 0;
-			triangle3_buffer.stagnum = 0;
+			line_buffer.stagnum = 0;
+			triangle_buffer.stagnum = 0;
 
 			curr_scissor = Rect(0.f, 0.f, output_size.x, output_size.y);
 
@@ -2036,8 +1964,8 @@ namespace flame
 				PassNone = -1,
 				Pass2D,
 				Pass3D,
-				PassLines3,
-				PassTriangles3,
+				PassLines,
+				PassTriangles,
 				PassBlur,
 				PassBloom
 			};
@@ -2079,19 +2007,19 @@ namespace flame
 
 				}
 					break;
-				case Cmd::DrawLines3:
+				case Cmd::DrawLines:
 				{
-					if (passes.empty() || (passes.back().type != PassLines3 && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != PassLines && passes.back().type != PassNone))
 						passes.emplace_back();
-					passes.back().type = PassLines3;
+					passes.back().type = PassLines;
 					passes.back().cmd_ids.push_back(i);
 				}
 					break;
-				case Cmd::DrawTriangles3:
+				case Cmd::DrawTriangles:
 				{
-					if (passes.empty() || (passes.back().type != PassTriangles3 && passes.back().type != PassNone))
+					if (passes.empty() || (passes.back().type != PassTriangles && passes.back().type != PassNone))
 						passes.emplace_back();
-					passes.back().type = PassTriangles3;
+					passes.back().type = PassTriangles;
 					passes.back().cmd_ids.push_back(i);
 				}
 				break;
@@ -2461,13 +2389,13 @@ namespace flame
 					cb->end_renderpass();
 				}
 					break;
-				case PassLines3:
+				case PassLines:
 				{
 					if (line3_off == 0)
-						line3_buffer.upload(cb);
+						line_buffer.upload(cb);
 					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
-					cb->bind_vertex_buffer(line3_buffer.buf.get(), 0);
+					cb->bind_vertex_buffer(line_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->line3_pipeline.get());
 					cb->push_constant(0, sizeof(mat4), &proj_view_matrix);
 					for (auto& i : p.cmd_ids)
@@ -2475,9 +2403,9 @@ namespace flame
 						auto& cmd = cmds[i];
 						switch (cmd->type)
 						{
-						case Cmd::DrawLines3:
+						case Cmd::DrawLines:
 						{
-							auto c = (CmdDrawLines3*)cmd.get();
+							auto c = (CmdDrawLines*)cmd.get();
 							cb->draw(c->count * 2, 1, line3_off, 0);
 							line3_off += c->count * 2;
 						}
@@ -2493,13 +2421,13 @@ namespace flame
 					cb->end_renderpass();
 				}
 					break;
-				case PassTriangles3:
+				case PassTriangles:
 				{
 					if (triangle3_off == 0)
-						triangle3_buffer.upload(cb);
+						triangle_buffer.upload(cb);
 					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
-					cb->bind_vertex_buffer(triangle3_buffer.buf.get(), 0);
+					cb->bind_vertex_buffer(triangle_buffer.buf.get(), 0);
 					cb->bind_pipeline(preferences->triangle3_pipeline.get());
 					cb->push_constant(0, sizeof(mat4), &proj_view_matrix);
 					for (auto& i : p.cmd_ids)
@@ -2507,9 +2435,9 @@ namespace flame
 						auto& cmd = cmds[i];
 						switch (cmd->type)
 						{
-						case Cmd::DrawTriangles3:
+						case Cmd::DrawTriangles:
 						{
-							auto c = (CmdDrawTriangles3*)cmd.get();
+							auto c = (CmdDrawTriangles*)cmd.get();
 							cb->draw(c->count * 3, 1, triangle3_off, 0);
 							triangle3_off += c->count * 3;
 						}

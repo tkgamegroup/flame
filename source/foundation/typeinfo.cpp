@@ -44,8 +44,8 @@ namespace flame
 		{
 		}
 
-		void* create(bool) const override { return f_malloc(size); }
-		void destroy(void* p, bool) const override { f_free(p); }
+		void* create(bool) const override { return malloc(size); }
+		void destroy(void* p, bool) const override { free(p); }
 		void copy(void* dst, const void* src) const override { memcpy(dst, src, size); }
 		bool compare(void* a, const void* b) const override { return memcmp(a, b, size) == 0; }
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override {}
@@ -619,7 +619,7 @@ namespace flame
 		{
 			if (destroy_pointing && base)
 				base->destroy(*(void**)p);
-			f_free(p); 
+			free(p); 
 		}
 		void serialize(const void* src, void* str, char* (*str_allocator)(void* str, uint size)) const override
 		{
@@ -642,10 +642,10 @@ namespace flame
 
 		void* create(bool create_pointing) const override
 		{
-			auto p = f_malloc(sizeof(void*));
+			auto p = malloc(sizeof(void*));
 			if (create_pointing)
 			{
-				*(char**)p = (char*)f_malloc(sizeof(char));
+				*(char**)p = (char*)malloc(sizeof(char));
 				(*(char**)p)[0] = 0;
 			}
 			return p;
@@ -653,8 +653,8 @@ namespace flame
 		void destroy(void* p, bool destroy_pointing) const override
 		{
 			if (destroy_pointing)
-				f_free(*(char**)p);
-			f_free(p);
+				free(*(char**)p);
+			free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -672,8 +672,8 @@ namespace flame
 		void unserialize(void* dst, const char* src) const override
 		{
 			auto& p = *(char**)dst;
-			f_free(p);
-			p = (char*)f_malloc(strlen(src) + 1);
+			free(p);
+			p = (char*)malloc(strlen(src) + 1);
 			strcpy(p, src);
 		}
 	};
@@ -687,10 +687,10 @@ namespace flame
 
 		void* create(bool create_pointing) const override
 		{
-			auto p = f_malloc(sizeof(void*));
+			auto p = malloc(sizeof(void*));
 			if (create_pointing)
 			{
-				*(wchar_t**)p = (wchar_t*)f_malloc(sizeof(wchar_t));
+				*(wchar_t**)p = (wchar_t*)malloc(sizeof(wchar_t));
 				(*(wchar_t**)p)[0] = 0;
 			}
 			return p;
@@ -698,8 +698,8 @@ namespace flame
 		void destroy(void* p, bool destroy_pointing) const override
 		{
 			if (destroy_pointing)
-				f_free(*(wchar_t**)p);
-			f_free(p);
+				free(*(wchar_t**)p);
+			free(p);
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -719,7 +719,7 @@ namespace flame
 		{
 			auto str = s2w(src);
 			auto& p = *(wchar_t**)dst;
-			f_free(p);
+			free(p);
 			p = new wchar_t[str.size() + 1];
 			wcscpy(p, str.c_str());
 		}
@@ -1283,13 +1283,13 @@ namespace flame
 	{
 		for (auto& e : enums)
 			callback((Capture&)capture, e.second.get());
-		f_free(capture._data);
+		free(capture._data);
 	}
 
 	void traverse_udts(void (*callback)(Capture& c, UdtInfo* ui), const Capture& capture)
 	{
 		for (auto& u : udts)
 			callback((Capture&)capture, u.second.get());
-		f_free(capture._data);
+		free(capture._data);
 	}
 }

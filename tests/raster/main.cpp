@@ -2,18 +2,21 @@
 
 using namespace flame;
 
-struct Renderbuffer {
+struct Renderbuffer 
+{
     int w, h, ys;
     void* data;
 };
 
-struct Vert {
+struct Vert 
+{
     vec4 position;
     vec4 texcoord;
     vec4 color;
 };
 
-struct Varying {
+struct Varying 
+{
     vec4 texcoord;
     vec4 color;
 };

@@ -26,7 +26,7 @@ namespace flame
 			void pop(uint number) override;
 			void get_global(const char* name) override;
 			void get_member(const char* name, uint idx = 0) override;
-			void set_object_type(const char* type_name) override;
+			void set_object_type(const char* type_name, void* p = INVALID_POINTER) override;
 			void set_member_name(const char* name) override;
 			void set_global_name(const char* name) override;
 			void call(uint parameters_count) override;

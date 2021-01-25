@@ -1,0 +1,15 @@
+<desc>
+  <udts>
+    <rule name="^flame::graphics::Canvas$" >
+      <includes>
+        <item type="function" name="[\w]+$" />
+      </includes>
+      <excludes>
+        <item type="function" name="^ctor$" />
+        <item type="function" name="^dtor$" />
+        <item type="function" name="^[\w]+_output$" />
+        <item type="function" name="^[\w]+_resource$" />
+      </excludes>
+    </rule>
+  </udts>
+</desc>

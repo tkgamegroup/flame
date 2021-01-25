@@ -37,7 +37,7 @@ namespace flame
 						if (thiz->visualization_layer)
 						{
 							uint lines_count;
-							graphics::Line3* lines;
+							graphics::Line* lines;
 							thiz->phy_scene->get_visualization_data(&lines_count, &lines);
 							canvas->draw_lines(lines_count, lines);
 						}

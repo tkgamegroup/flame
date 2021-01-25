@@ -23,23 +23,23 @@ namespace flame
 			ShadingWireframe
 		};
 
-		struct Point3
+		struct Point
 		{
 			vec3 position;
 			cvec4 color;
 		};
 
-		struct Line3
+		struct Line
 		{
-			Point3 a;
-			Point3 b;
+			Point a;
+			Point b;
 		};
 
-		struct Triangle3
+		struct Triangle
 		{
-			Point3 a;
-			Point3 b;
-			Point3 c;
+			Point a;
+			Point b;
+			Point c;
 		};
 
 		struct RenderPreferences
@@ -113,8 +113,10 @@ namespace flame
 			virtual void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint mat_id) = 0;
 			virtual void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow = false) = 0;
 
-			virtual void draw_lines(uint lines_count, const Line3* lines) = 0;
-			virtual void draw_triangles(uint triangles_count, const Triangle3* triangles) = 0;
+			virtual void draw_lines(uint lines_count, const Line* lines) = 0;
+			virtual void draw_triangles(uint triangles_count, const Triangle* triangles) = 0;
+
+			virtual vec2 perspective_project(const vec4& p) = 0;
 
 			virtual Rect get_scissor() const = 0;
 			virtual void set_scissor(const Rect& scissor) = 0;

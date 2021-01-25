@@ -113,12 +113,12 @@ namespace flame
 #endif
 		}
 
-		void ScenePrivate::get_visualization_data(uint* lines_count, graphics::Line3** lines)
+		void ScenePrivate::get_visualization_data(uint* lines_count, graphics::Line** lines)
 		{
 #ifdef USE_PHYSX
 			auto& rb = px_scene->getRenderBuffer();
 			*lines_count = rb.getNbLines();
-			*lines = (graphics::Line3*)rb.getLines();
+			*lines = (graphics::Line*)rb.getLines();
 #endif
 		}
 

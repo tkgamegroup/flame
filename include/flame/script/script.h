@@ -25,7 +25,7 @@ namespace flame
 			virtual void pop(uint number) = 0;
 			virtual void get_global(const char* name) = 0;
 			virtual void get_member(const char* name, uint idx = 0 /* when name = null */ ) = 0;
-			virtual void set_object_type(const char* type_name) = 0;
+			virtual void set_object_type(const char* type_name, void* p = INVALID_POINTER) = 0;
 			virtual void set_member_name(const char* name) = 0;
 			virtual void set_global_name(const char* name) = 0;
 			virtual void call(uint parameters_count) = 0;

@@ -4,11 +4,6 @@
 
 namespace flame
 {
-	namespace graphics
-	{
-		struct Canvas;
-	}
-
 	struct sRendererPrivate;
 	struct sLayoutPrivate;
 
@@ -51,6 +46,8 @@ namespace flame
 		mat2 axes_inv;
 		mat3 transform;
 		Rect aabb;
+
+		float alpha = 1.f;
 
 		cvec4 fill_color = cvec4(0);
 
@@ -166,8 +163,10 @@ namespace flame
 
 		bool get_culled() const override { return culled; }
 
-		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true);
-		void remove_drawer(void* drawer, bool ontop = true);
+		vec2 get_point(uint idx) const override { return points[idx]; };
+
+		void* add_drawer(void (*drawer)(Capture&, graphics::Canvas*), const Capture& capture, bool ontop = true) override;
+		void remove_drawer(void* drawer, bool ontop = true) override;
 		void* add_measurable(void (*measurable)(Capture&, vec2*), const Capture& capture);
 		void remove_measurable(void* measurable);
 

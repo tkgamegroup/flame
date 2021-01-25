@@ -387,8 +387,8 @@ namespace flame
 				DrawElement,
 				DrawMesh,
 				DrawTerrain,
-				DrawLines3,
-				DrawTriangles3,
+				DrawLines,
+				DrawTriangles,
 				SetScissor,
 				Blur,
 				Bloom
@@ -432,18 +432,18 @@ namespace flame
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
 		};
 
-		struct CmdDrawLines3 : Cmd
+		struct CmdDrawLines : Cmd
 		{
 			uint count = 0;
 
-			CmdDrawLines3() : Cmd(DrawLines3) {}
+			CmdDrawLines() : Cmd(DrawLines) {}
 		};
 
-		struct CmdDrawTriangles3 : Cmd
+		struct CmdDrawTriangles : Cmd
 		{
 			uint count = 0;
 
-			CmdDrawTriangles3() : Cmd(DrawTriangles3) {}
+			CmdDrawTriangles() : Cmd(DrawTriangles) {}
 		};
 
 		struct CmdSetScissor : Cmd
@@ -574,8 +574,8 @@ namespace flame
 
 			std::vector<std::vector<vec2>> paths;
 
-			ShaderGeometryBuffer<Line3> line3_buffer;
-			ShaderGeometryBuffer<Triangle3> triangle3_buffer;
+			ShaderGeometryBuffer<Line> line_buffer;
+			ShaderGeometryBuffer<Triangle> triangle_buffer;
 
 			std::vector<std::unique_ptr<Cmd>> cmds;
 			uint  meshes_count = 0;
@@ -640,8 +640,10 @@ namespace flame
 			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
 			void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow) override;
 
-			void draw_lines(uint lines_count, const Line3* lines) override;
-			void draw_triangles(uint triangles_count, const Triangle3* triangles) override;
+			void draw_lines(uint lines_count, const Line* lines) override;
+			void draw_triangles(uint triangles_count, const Triangle* triangles) override;
+
+			vec2 perspective_project(const vec4& p) override;
 
 			Rect get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Rect& scissor) override;
