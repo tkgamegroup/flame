@@ -1,8 +1,8 @@
-local node = entity:find_component("cNode")
+local node = entity.find_component("cNode")
 
-local mesh = entity:find_first_dfs_component("cMesh")
+local mesh = entity.find_first_dfs_component("cMesh")
 
-local controller = entity:find_component("cController")
+local controller = entity.find_component("cController")
 
 character = {
 	speed = 0.1,
@@ -10,8 +10,8 @@ character = {
 	mesh = mesh,
 	controller = controller,
 	yaw = 0,
-	dir1 = { x=0, y=0, z=1 },
-	dir2 = { x=1, y=0, z=0 },
+	dir1 = vec3(0, 0, 1),
+	dir2 = vec3(1, 0, 0),
 	w = false,
 	s = false,
 	a = false,
@@ -20,18 +20,18 @@ character = {
 	e = false
 }
 
-function character:update_dir()
-	self.node:set_euler({ x=self.yaw, y=0, z=0 })
-	self.dir1 = self.node:get_local_dir(2)
-	self.dir2 = self.node:get_local_dir(0)
+character.update_dir = function()
+	character.node.set_euler(vec3(character.yaw, 0, 0))
+	character.dir1 = character.node.get_local_dir(2)
+	character.dir2 = character.node.get_local_dir(0)
 end
 
-local root_receiver = root:find_component("cReceiver")
+local root_receiver = root.find_component("cReceiver")
 
-root_receiver:add_key_down_listener(function(k)
+root_receiver.add_key_down_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = true
-		character.mesh:set_animation("walk", true, 0)
+		character.mesh.set_animation("walk", true, 0)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = true
@@ -50,10 +50,10 @@ root_receiver:add_key_down_listener(function(k)
 	end
 end)
 
-root_receiver:add_key_up_listener(function(k)
+root_receiver.add_key_up_listener(function(k)
 	if k == enums["flame::KeyboardKey"]["W"] then
 		character.w = false
-		character.mesh:set_animation("", false, 0)
+		character.mesh.set_animation("", false, 0)
 	end
 	if k == enums["flame::KeyboardKey"]["S"] then
 		character.s = false
@@ -72,11 +72,11 @@ root_receiver:add_key_up_listener(function(k)
 	end
 end)
 
-root_receiver:add_mouse_left_up_listener(function()
-	character.mesh:set_animation("attack", false, 1)
+root_receiver.add_mouse_left_up_listener(function()
+	character.mesh.set_animation("attack", false, 1)
 end)
 
-entity:add_event(function()
+entity.add_event(function()
 	yaw = 0
 	if character.a then
 		yaw = yaw + 1
@@ -86,22 +86,22 @@ entity:add_event(function()
 	end
 	if yaw ~= 0 then
 		character.yaw = character.yaw + yaw
-		character:update_dir()
+		character.update_dir()
 	end
-	disp = {x=0, y=0, z=0}
+	disp = vec3(0, 0, 0)
 	if character.w then
-		disp = v3_add(disp, v3_mul(character.dir1, character.speed))
+		disp = disp + character.dir1 * character.speed
 	end
 	if character.s then
-		disp = v3_add(disp, v3_mul(character.dir1, -character.speed))
+		disp = disp + character.dir1 * -character.speed
 	end
 	if character.q then
-		disp = v3_add(disp, v3_mul(character.dir2, character.speed))
+		disp = disp + character.dir2 * character.speed
 	end
 	if character.e then
-		disp = v3_add(disp, v3_mul(character.dir2, -character.speed))
+		disp = disp + character.dir2 * -character.speed
 	end
 	if disp.x ~= 0 or disp.y ~= 0 or disp.z ~= 0 then
-		character.controller:move(disp)
+		character.controller.move(disp)
 	end
 end, 0)

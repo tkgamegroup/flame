@@ -19,44 +19,6 @@ namespace flame
 			return true;
 		}
 
-		template <uint N>
-		void lua_push(lua_State* state, const vec<N, float>& v)
-		{
-			const char* names[] = {
-				"x", "y", "z", "w"
-			};
-
-			lua_newtable(state);
-
-			for (auto i = 0; i < N; i++)
-			{
-				lua_pushstring(state, names[i]);
-				lua_pushnumber(state, v[i]);
-				lua_settable(state, -3);
-			}
-		}
-
-		template <uint N>
-		vec<N, float> lua_pull(lua_State* state)
-		{
-			const char* names[] = {
-				"x", "y", "z", "w"
-			};
-
-			vec<N, float> ret(0.f);
-			if (lua_istable(state, -1))
-			{
-				for (auto i = 0; i < N; i++)
-				{
-					lua_pushstring(state, names[i]);
-					lua_gettable(state, -2);
-					ret[i] = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : -1.f;
-					lua_pop(state, 1);
-				}
-			}
-			return ret;
-		}
-
 		void lua_set_object_type(lua_State* state, const char* type_name)
 		{
 			lua_getglobal(state, "make_obj");
@@ -89,11 +51,106 @@ namespace flame
 			}
 		}
 
+		void lua_push_vec2(lua_State* state, const vec2& v)
+		{
+			lua_getglobal(state, "vec2");
+			lua_pushnumber(state, v.x);
+			lua_pushnumber(state, v.y);
+			lua_check_result(state, lua_pcall(state, 2, 1, 0));
+		}
+
+		void lua_push_vec3(lua_State* state, const vec3& v)
+		{
+			lua_getglobal(state, "vec3");
+			lua_pushnumber(state, v.x);
+			lua_pushnumber(state, v.y);
+			lua_pushnumber(state, v.z);
+			lua_check_result(state, lua_pcall(state, 3, 1, 0));
+		}
+
+		void lua_push_vec4(lua_State* state, const vec4& v)
+		{
+			lua_getglobal(state, "vec4");
+			lua_pushnumber(state, v.x);
+			lua_pushnumber(state, v.y);
+			lua_pushnumber(state, v.z);
+			lua_pushnumber(state, v.w);
+			lua_check_result(state, lua_pcall(state, 4, 1, 0));
+		}
+
+		vec2 lua_to_vec2(lua_State* state)
+		{
+			lua_pushstring(state, "push");
+			lua_gettable(state, -2);
+			lua_check_result(state, lua_pcall(state, 0, 2, 0));
+			vec2 ret;
+			ret.x = lua_tonumber(state, -2);
+			ret.y = lua_tonumber(state, -1);
+			lua_pop(state, 2);
+			return ret;
+		}
+
+		vec3 lua_to_vec3(lua_State* state)
+		{
+			lua_pushstring(state, "push");
+			lua_gettable(state, -2);
+			lua_check_result(state, lua_pcall(state, 0, 3, 0));
+			vec3 ret;
+			ret.x = lua_tonumber(state, -3);
+			ret.y = lua_tonumber(state, -2);
+			ret.z = lua_tonumber(state, -1);
+			lua_pop(state, 3);
+			return ret;
+		}
+
+		vec4 lua_to_vec4(lua_State* state)
+		{
+			lua_pushstring(state, "push");
+			lua_gettable(state, -2);
+			lua_check_result(state, lua_pcall(state, 0, 4, 0));
+			vec4 ret;
+			ret.x = lua_tonumber(state, -4);
+			ret.y = lua_tonumber(state, -3);
+			ret.z = lua_tonumber(state, -2);
+			ret.w = lua_tonumber(state, -1);
+			lua_pop(state, 4);
+			return ret;
+		}
+
+		thread_local mat4 matrices[100];
+
+		int lua_flame_transform(lua_State* state)
+		{
+			auto mat_id = lua_isinteger(state, -2) ? lua_tointeger(state, -2) : -1;
+			auto v = lua_to_vec4(state);
+			if (mat_id != -1)
+			{
+				lua_push_vec4(state, matrices[mat_id] * v);
+				return 1;
+			}
+			return 0;
+		}
+
+		int lua_flame_perspective(lua_State* state)
+		{
+			auto mat_id = lua_isinteger(state, -5) ? lua_tointeger(state, -5) : -1;
+			auto fovy = lua_isnumber(state, -4) ? lua_tonumber(state, -4) : 0.f;
+			auto aspect = lua_isnumber(state, -3) ? lua_tonumber(state, -3) : 0.f;
+			auto zNear = lua_isnumber(state, -2) ? lua_tonumber(state, -2) : 0.f;
+			auto zFar = lua_isnumber(state, -1) ? lua_tonumber(state, -1) : 0.f;
+			if (mat_id != -1)
+			{
+				matrices[mat_id] = perspective(radians(fovy), aspect, zNear, zFar);
+				matrices[mat_id][1][1] *= -1.f;
+			}
+			return 0;
+		}
+
 		int lua_flame_call(lua_State* state)
 		{
+			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
 			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
-			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : (lua_isnil(state, -2) ? nullptr : INVALID_POINTER);
-			if (f && o != INVALID_POINTER)
+			if (f && o)
 			{
 				char parms[4 * sizeof(void*)];
 				auto parms_count = f->get_parameters_count();
@@ -179,13 +236,13 @@ namespace flame
 									switch (vec_size)
 									{
 									case 2:
-										*(vec2*)d = lua_pull<2>(state);
+										*(vec2*)d = lua_to_vec2(state);
 										break;
 									case 3:
-										*(vec3*)d = lua_pull<3>(state);
+										*(vec3*)d = lua_to_vec3(state);
 										break;
 									case 4:
-										*(vec4*)d = lua_pull<4>(state);
+										*(vec4*)d = lua_to_vec4(state);
 										break;
 									}
 									break;
@@ -193,7 +250,7 @@ namespace flame
 									switch (vec_size)
 									{
 									case 4:
-										*(cvec4*)d = lua_pull<4>(state);
+										*(cvec4*)d = lua_to_vec4(state);
 										break;
 									}
 									break;
@@ -218,58 +275,83 @@ namespace flame
 
 				if (ret)
 				{
+					auto pushed_number = 1;
 					if (ret_type->get_tag() == TypePointer)
 						lua_pushlightuserdata(state, *(void**)ret);
 					else
 					{
 						auto basic = ret_type->get_basic();
-						switch (ret_type->get_vec_size())
+						auto vec_size = ret_type->get_vec_size();
+						switch (ret_type->get_col_size())
 						{
 						case 1:
-							switch (basic)
+							switch (vec_size)
 							{
-							case IntegerType:
-								lua_pushinteger(state, *(int*)ret);
+							case 1:
+								switch (basic)
+								{
+								case IntegerType:
+									lua_pushinteger(state, *(int*)ret);
+									break;
+								case FloatingType:
+									lua_pushnumber(state, *(float*)ret);
+									break;
+								}
 								break;
-							case FloatingType:
-								lua_pushnumber(state, *(float*)ret);
+							case 2:
+								switch (basic)
+								{
+								case FloatingType:
+									lua_push_vec2(state, *(vec2*)ret);
+									break;
+								}
 								break;
-							}
-							break;
-						case 2:
-							switch (basic)
-							{
-							case FloatingType:
-								lua_push(state, *(vec2*)ret);
+							case 3:
+								switch (basic)
+								{
+								case FloatingType:
+									lua_push_vec3(state, *(vec3*)ret);
+									break;
+								}
 								break;
-							}
-							break;
-						case 3:
-							switch (basic)
-							{
-							case FloatingType:
-								lua_push(state, *(vec3*)ret);
+							case 4:
+								switch (basic)
+								{
+								case FloatingType:
+									lua_push_vec4(state, *(vec4*)ret);
+									break;
+								}
 								break;
 							}
 							break;
 						case 4:
-							switch (basic)
+							switch (vec_size)
 							{
-							case FloatingType:
-								lua_push(state, *(vec4*)ret);
+							case 4:
+								switch (basic)
+								{
+								case FloatingType:
+									lua_getglobal(state, "__mat_id__");
+									auto mat_id = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
+									lua_pop(state, 1);
+									if (mat_id != -1)
+										memcpy(&matrices[mat_id], ret, sizeof(mat4));
+									pushed_number = 0;
+									break;
+								}
 								break;
 							}
 							break;
 						}
 					}
 					ret_type->destroy(ret, false);
-					return 1;
+					return pushed_number;
 				}
 			}
 			return 0;
 		}
 
-		int lua_hash(lua_State* state)
+		int lua_flame_hash(lua_State* state)
 		{
 			if (lua_isstring(state, -1))
 			{
@@ -288,8 +370,14 @@ namespace flame
 			lua_pushcfunction(lua_state, lua_flame_call);
 			lua_setglobal(lua_state, "flame_call");
 
-			lua_pushcfunction(lua_state, lua_hash);
+			lua_pushcfunction(lua_state, lua_flame_hash);
 			lua_setglobal(lua_state, "flame_hash");
+
+			lua_pushcfunction(lua_state, lua_flame_transform);
+			lua_setglobal(lua_state, "flame_transform");
+
+			lua_pushcfunction(lua_state, lua_flame_perspective);
+			lua_setglobal(lua_state, "flame_perspective");
 
 			if (!excute_file(L"setup.lua"))
 				fassert(0);
@@ -454,17 +542,17 @@ namespace flame
 
 		void InstancePrivate::push_vec2(const vec2& v)
 		{
-			lua_push(lua_state, v);
+			lua_push_vec2(lua_state, v);
 		}
 
 		void InstancePrivate::push_vec3(const vec3& v)
 		{
-			lua_push(lua_state, v);
+			lua_push_vec3(lua_state, v);
 		}
 
 		void InstancePrivate::push_vec4(const vec4& v)
 		{
-			lua_push(lua_state, v);
+			lua_push_vec4(lua_state, v);
 		}
 
 		void InstancePrivate::push_string(const char* value)

@@ -17,6 +17,7 @@ namespace flame
 		BasicType basic_type = ElseType;
 		bool is_signed = true;
 		uint vec_size = 1;
+		uint col_size = 1;
 		bool ret_by_reg;
 		TypeInfoPrivate* pointed_type = nullptr;
 
@@ -29,6 +30,7 @@ namespace flame
 		BasicType get_basic() const override { return basic_type; }
 		bool get_signed() const override { return is_signed; }
 		uint get_vec_size() const override { return vec_size; }
+		uint get_col_size() const override { return col_size; }
 		TypeInfo* get_pointed_type() const override { return pointed_type; }
 
 		static TypeInfoPrivate* get(TypeTag tag, const std::string& name);

@@ -116,6 +116,9 @@ namespace flame
 			virtual void draw_lines(uint lines_count, const Line* lines) = 0;
 			virtual void draw_triangles(uint triangles_count, const Triangle* triangles) = 0;
 
+			virtual mat4 get_view_matrix() const = 0;
+			virtual mat4 get_proj_matrix() const = 0;
+
 			virtual Rect get_scissor() const = 0;
 			virtual void set_scissor(const Rect& scissor) = 0;
 

@@ -41,6 +41,7 @@ namespace flame
 		virtual BasicType get_basic() const = 0;
 		virtual bool get_signed() const = 0;
 		virtual uint get_vec_size() const = 0;
+		virtual uint get_col_size() const = 0;
 		virtual TypeInfo* get_pointed_type() const = 0;
 
 		virtual void* create(bool create_pointing = true) const = 0;

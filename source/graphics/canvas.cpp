@@ -2232,7 +2232,7 @@ namespace flame
 												{
 													cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
 													cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-													auto proj = perspective(90.f, 1.f, 1.f, s.distance);
+													auto proj = perspective(radians(90.f), 1.f, 1.f, s.distance);
 													proj[1][1] *= -1.f;
 													struct
 													{

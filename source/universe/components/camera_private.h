@@ -15,7 +15,7 @@ namespace flame
 
 	struct cCameraPrivate : cCamera
 	{
-		float fovy = 40.f;
+		float fovy = 45.f;
 		float near = 1.f;
 		float far = 1000.f;
 

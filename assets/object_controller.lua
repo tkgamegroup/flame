@@ -1,9 +1,9 @@
-local node = entity:find_component("cNode")
+local node = entity.find_component("cNode")
 
 controller = {
 	speed = 0.5,
 	node = node,
-	pos = node:get_pos(),
+	pos = node.get_pos(),
 	yaw = 0,
 	pitch = 0,
 	_0 = false,
@@ -18,9 +18,9 @@ controller = {
 	_9 = false
 }
 
-local root_receiver = root:find_component("cReceiver")
+local root_receiver = root.find_component("cReceiver")
 
-root_receiver:add_key_down_listener_s(get_slot(
+root_receiver.add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["Numpad0"] then
 			controller._0 = true
@@ -55,7 +55,7 @@ root_receiver:add_key_down_listener_s(get_slot(
 	end
 ))
 
-root_receiver:add_key_up_listener_s(get_slot(
+root_receiver.add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["Numpad0"] then
 			controller._0 = false
@@ -90,45 +90,45 @@ root_receiver:add_key_up_listener_s(get_slot(
 	end
 ))
 
-entity:add_event(function()
+entity.add_event(function()
 		if controller._8 then
 			controller.pos.x = controller.pos.x + controller.speed
-			controller.node:set_pos(controller.pos)
+			controller.node.set_pos(controller.pos)
 		end
 		if controller._5 then
 			controller.pos.x = controller.pos.x - controller.speed
-			controller.node:set_pos(controller.pos)
+			controller.node.set_pos(controller.pos)
 		end
 		if controller._4 then
 			controller.pos.z = controller.pos.z - controller.speed
-			controller.node:set_pos(controller.pos)
+			controller.node.set_pos(controller.pos)
 		end
 		if controller._6 then
 			controller.pos.z = controller.pos.z + controller.speed
-			controller.node:set_pos(controller.pos)
+			controller.node.set_pos(controller.pos)
 		end
 		if controller._7 then
 			controller.pos.y = controller.pos.y - controller.speed
-			controller.node:set_pos(controller.pos)
+			controller.node.set_pos(controller.pos)
 		end
 		if controller._9 then
 			controller.pos.y = controller.pos.y + controller.speed
-			controller.node:set_pos(controller.pos)
+			controller.node.set_pos(controller.pos)
 		end
 		if controller._0 then
 			controller.yaw = controller.yaw + 1
-			controller.node:set_euler({ x=controller.yaw, y=controller.pitch, z=0 })
+			controller.node.set_euler(vec3(controller.yaw, controller.pitch, 0))
 		end
 		if controller._1 then
 			controller.yaw = controller.yaw - 1
-			controller.node:set_euler({ x=controller.yaw, y=controller.pitch, z=0 })
+			controller.node.set_euler(vec3(controller.yaw, controller.pitch, 0))
 		end
 		if controller._2 then
 			controller.pitch = controller.pitch + 1
-			controller.node:set_euler({ x=controller.yaw, y=controller.pitch, z=0 })
+			controller.node.set_euler(vec3(controller.yaw, controller.pitch, 0))
 		end
 		if controller._3 then
 			controller.pitch = controller.pitch - 1
-			controller.node:set_euler({ x=controller.yaw, y=controller.pitch, z=0 })
+			controller.node.set_euler(vec3(controller.yaw, controller.pitch, 0))
 		end
 end)

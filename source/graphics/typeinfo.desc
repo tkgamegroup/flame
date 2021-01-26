@@ -8,6 +8,8 @@
         <item type="function" name="^close_path$" />
         <item type="function" name="^stroke$" />
         <item type="function" name="^fill$" />
+        <item type="function" name="^get_view_matrix$" />
+        <item type="function" name="^get_proj_matrix$" />
       </includes>
       <excludes>
       </excludes>

@@ -28,12 +28,12 @@ function make_obj(o, n)
 		return
 	end
 	for k, v in pairs(udt.normal_functions) do
-		o[k] = function(self, ...)
+		o[k] = function(...)
 			return flame_call({...}, o.p, v)
 		end
 	end
 	for k, v in pairs(udt.type_needed_functions) do
-		o[k] = function(self, ...)
+		o[k] = function(...)
 			__type__ = v.type
 			local ret = {}
 			ret.p = flame_call({...}, o.p, v.func)
@@ -42,12 +42,12 @@ function make_obj(o, n)
 		end
 	end
 	for k, v in pairs(udt.callback_interfaces) do
-		o["add_"..k] = function(self, f, ...)
+		o["add_"..k] = function(f, ...)
 			n = get_callback_slot(f)
 			callbacks[n].c = flame_call({ 0, n, ... }, o.p, v.add)
 			return n
 		end
-		o["remove_"..k] = function(self, n, ...)
+		o["remove_"..k] = function(n, ...)
 			flame_call({ callbacks[n].c, ...}, o.p, v.remove)
 			callbacks[n] = nil
 			return n
@@ -55,77 +55,59 @@ function make_obj(o, n)
 	end
 end
 
-function v2_neg(a)
-	return { 
-		x = -a.x, 
-		y = -a.y
-	}
-end
-
-function v2_add(a, b)
-	return { 
-		x = a.x + b.x, 
-		y = a.y + b.y
-	}
-end
-
-function v2_sub(a, b)
-	return { 
-		x = a.x - b.x, 
-		y = a.y - b.y
-	}
-end
-
-function v2_mul(a, b)
-	if type(b) == "table" then
-		return { 
-			x = a.x * b.x, 
-			y = a.y * b.x
-		}
+function vec2(x, y)
+	if x == nil then x = 0 end
+	if y == nil then y = 0 end
+	local o = { x=x, y=y }
+	o.push = function()
+		return  o.x, o.y
 	end
-	return { 
-		x = a.x * b, 
-		y = a.y * b
-	}
+	setmetatable(o, {
+		__unm = function(a)
+			return vec2(-a.x, -a.y)
+		end,
+		__add = function(a, b)
+			return vec2(a.x + b.x, a.y + b.y)
+		end,
+		__sub = function(a, b)
+			return vec2(a.x - b.x, a.y - b.y)
+		end,
+		__mul = function(a, b)
+			if type(b) == "table" then
+				return vec2(a.x * b.x, a.y * b.y)
+			end
+			return vec2(a.x * b, a.y * b)
+		end
+	})
+	return o
 end
 
-function v3_neg(a)
-	return { 
-		x = -a.x, 
-		y = -a.y,
-		z = -a.z
-	}
-end
-
-function v3_add(a, b)
-	return { 
-		x = a.x + b.x, 
-		y = a.y + b.y,
-		z = a.z + b.z
-	}
-end
-
-function v3_sub(a, b)
-	return { 
-		x = a.x - b.x, 
-		y = a.y - b.y,
-		z = a.z - b.z
-	}
-end
-
-function v3_mul(a, b)
-	if type(b) == "table" then
-		return { 
-			x = a.x * b.x, 
-			y = a.y * b.x,
-			z = a.z * b.z
-		}
+function vec3(x, y, z)
+	if x == nil then x = 0 end
+	if y == nil then y = 0 end
+	if z == nil then z = 0 end
+	local o = { x=x, y=y, z=z }
+	o.push = function()
+		return  o.x, o.y, o.z
 	end
-	return { 
-		x = a.x * b, 
-		y = a.y * b,
-		z = a.z * b
-	}
+	setmetatable(o, {
+		__unm = function(a)
+			return vec3(-a.x, -a.y, -a.z)
+		end,
+		__add = function(a, b)
+			return vec3(a.x + b.x, a.y + b.y, a.z + b.z)
+		end,
+		__sub = function(a, b)
+			return vec3(a.x - b.x, a.y - b.y, a.z - b.z)
+		end,
+		__mul = function(a, b)
+			if type(b) == "table" then
+				return vec3(a.x * b.x, a.y * b.y, a.z * b.z)
+			end
+			return vec3(a.x * b, a.y * b, a.z * b)
+		end
+	})
+	return o
 end
 
 function v3_distance(a, b)
@@ -133,4 +115,33 @@ function v3_distance(a, b)
 	local y = a.y - b.y
 	local z = a.z - b.z
 	return math.sqrt(x * x + y * y + z * z)
+end
+
+function vec4(x, y, z, w)
+	if x == nil then x = 0 end
+	if y == nil then y = 0 end
+	if z == nil then z = 0 end
+	if w == nil then w = 0 end
+	local o = { x=x, y=y, z=z, w=w }
+	o.push = function()
+		return  o.x, o.y, o.z, o.w
+	end
+	setmetatable(o, {
+		__unm = function(a)
+			return vec4(-a.x, -a.y, -a.z, -a.w)
+		end,
+		__add = function(a, b)
+			return vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
+		end,
+		__sub = function(a, b)
+			return vec4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)
+		end,
+		__mul = function(a, b)
+			if type(b) == "table" then
+				return vec4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w)
+			end
+			return vec4(a.x * b, a.y * b, a.z * b, a.w * b)
+		end
+	})
+	return o
 end

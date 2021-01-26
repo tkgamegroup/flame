@@ -643,6 +643,9 @@ namespace flame
 			void draw_lines(uint lines_count, const Line* lines) override;
 			void draw_triangles(uint triangles_count, const Triangle* triangles) override;
 
+			mat4 get_view_matrix() const override { return view_matrix; }
+			mat4 get_proj_matrix() const override { return proj_matrix; }
+
 			Rect get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Rect& scissor) override;
 

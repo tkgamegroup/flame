@@ -1,6 +1,6 @@
-local node = entity:find_component("cNode")
-local pnode = entity:get_parent():find_component("cNode")
-local physics = root:get_world():find_system("sPhysics")
+local node = entity.find_component("cNode")
+local pnode = entity.get_parent().find_component("cNode")
+local physics = root.get_world().find_system("sPhysics")
 
 camera = {
 	node = node,
@@ -10,61 +10,61 @@ camera = {
 	dragging = false
 }
 
-function camera:set_pos()
-	local off = { x=0, y=3, z=0}
+camera.set_pos = function ()
+	local off = vec3(0, 3, 0)
 	local d = 0
 	if physics.p then
-		local o = v3_add(pnode:get_global_pos(), off)
-		local p = physics:raycast(o, self.node:get_global_dir(2))
+		local o = pnode.get_global_pos() + off
+		local p = physics.raycast(o, camera.node.get_global_dir(2))
 		d = v3_distance(o, p)
-		if d < self.length then
+		if d < camera.length then
 			d = d - 1
 		else
-			d = self.length
+			d = camera.length
 		end
 	else
-		d = self.length
+		d = camera.length
 	end
 	if d < 1 then d = 1 end
-	self.node:set_pos(v3_add(v3_mul(self.node:get_local_dir(2), d), off))
+	camera.node.set_pos(camera.node.get_local_dir(2) * d + off)
 end
 
-entity:add_event(function()
-	camera:set_pos()
+entity.add_event(function()
+	camera.set_pos()
 end, 0.5)
 
-local root_receiver = root:find_component("cReceiver")
+local root_receiver = root.find_component("cReceiver")
 
-root_receiver:add_mouse_left_down_listener(function()
+root_receiver.add_mouse_left_down_listener(function()
 	camera.dragging = true
 end)
 
-root_receiver:add_mouse_left_up_listener(function()
+root_receiver.add_mouse_left_up_listener(function()
 	camera.dragging = false
 end)
 
-root_receiver:add_mouse_scroll_listener(function(scroll)
+root_receiver.add_mouse_scroll_listener(function(scroll)
 	if scroll > 0 then
 		if camera.length > 5 then
 			camera.length = camera.length - 1
-			camera:set_pos()
+			camera.set_pos()
 		end
 	else
 		if camera.length < 100 then
 			camera.length = camera.length + 1
-			camera:set_pos()
+			camera.set_pos()
 		end
 	end
 end)
 
-root_receiver:add_mouse_move_listener(function(disp)
+root_receiver.add_mouse_move_listener(function(disp)
 	if camera.dragging then
 		camera.yaw = camera.yaw - disp.x
 		camera.pitch = camera.pitch - disp.y
-		camera.node:set_euler({ x=camera.yaw, y=camera.pitch, z=0 })
-		camera:set_pos()
+		camera.node.set_euler(vec3(camera.yaw, camera.pitch, 0))
+		camera.set_pos()
 	end
 end)
 
-camera.node:set_euler({ x=camera.yaw, y=camera.pitch, z=0 })
-camera:set_pos()
+camera.node.set_euler(vec3(camera.yaw, camera.pitch, 0))
+camera.set_pos()

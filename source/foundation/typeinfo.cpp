@@ -550,6 +550,42 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoPrivate_mat2 : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_mat2() :
+			TypeInfoPrivate_Pod(TypeData, "glm::mat<2,2,float,0>", sizeof(mat2))
+		{
+			basic_type = FloatingType;
+			vec_size = 2;
+			col_size = 2;
+			ret_by_reg = false;
+		}
+	};
+
+	struct TypeInfoPrivate_mat3 : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_mat3() :
+			TypeInfoPrivate_Pod(TypeData, "glm::mat<3,3,float,0>", sizeof(mat3))
+		{
+			basic_type = FloatingType;
+			vec_size = 3;
+			col_size = 3;
+			ret_by_reg = false;
+		}
+	};
+
+	struct TypeInfoPrivate_mat4 : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_mat4() :
+			TypeInfoPrivate_Pod(TypeData, "glm::mat<4,4,float,0>", sizeof(mat4))
+		{
+			basic_type = FloatingType;
+			vec_size = 4;
+			col_size = 4;
+			ret_by_reg = false;
+		}
+	};
+
 	struct TypeInfoPrivate_quat : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_quat() :
@@ -766,7 +802,6 @@ namespace flame
 	};
 
 	static TypeInfoPrivate* void_type = nullptr;
-	static std::vector<TypeInfoPrivate*> basic_types;
 
 	struct _Initializer
 	{
@@ -775,138 +810,123 @@ namespace flame
 			{
 				auto t = new TypeInfoPrivate_void;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 				void_type = t;
 			}
 			{
 				auto t = new TypeInfoPrivate_bool;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_char;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uchar;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_wchar;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_int;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uint;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_int64;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uint64;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_float;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_cvec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_cvec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_cvec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_ivec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_ivec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_ivec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uvec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uvec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_uvec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_vec2;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_vec3;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_vec4;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
+			}
+			{
+				auto t = new TypeInfoPrivate_mat2;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+			}
+			{
+				auto t = new TypeInfoPrivate_mat3;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+			}
+			{
+				auto t = new TypeInfoPrivate_mat4;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 			}
 			{
 				auto t = new TypeInfoPrivate_quat;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_StringA;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_StringW;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_charp;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 			{
 				auto t = new TypeInfoPrivate_wcharp;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
-				basic_types.push_back(t);
 			}
 
 			wchar_t app_name[260];

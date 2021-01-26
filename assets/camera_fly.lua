@@ -1,13 +1,13 @@
-local node = entity:find_component("cNode")
+local node = entity.find_component("cNode")
 
 camera = {
 	speed = 0.5,
 	node = node,
-	pos = node:get_pos(),
+	pos = node.get_pos(),
 	yaw = 0,
 	pitch = 0,
-	dir1 = { x=0, y=0, z=1 },
-	dir2 = { x=1, y=0, z=0 },
+	dir1 = vec3(0, 0, 1),
+	dir2 = vec3(1, 0, 0),
 	dragging = false,
 	w = false,
 	s = false,
@@ -19,22 +19,22 @@ camera = {
 	sh = false
 }
 
-function camera:move(dir, v)
-	self.pos.x = self.pos.x + dir.x * v
-	self.pos.y = self.pos.y + dir.y * v
-	self.pos.z = self.pos.z + dir.z * v
-	self.node:set_pos(self.pos)
+camera.move = function (dir, v)
+	camera.pos.x = camera.pos.x + dir.x * v
+	camera.pos.y = camera.pos.y + dir.y * v
+	camera.pos.z = camera.pos.z + dir.z * v
+	camera.node.set_pos(camera.pos)
 end
 
-function camera:update_dir()
-	self.node:set_euler({ x=self.yaw, y=self.pitch, z=0 })
-	self.dir1 = self.node:get_local_dir(2)
-	self.dir2 = self.node:get_local_dir(0)
+camera.update_dir = function ()
+	camera.node.set_euler(vec3(camera.yaw, camera.pitch, 0))
+	camera.dir1 = camera.node.get_local_dir(2)
+	camera.dir2 = camera.node.get_local_dir(0)
 end
 
-local root_receiver = root:find_component("cReceiver")
+local root_receiver = root.find_component("cReceiver")
 
-root_receiver:add_key_down_listener_s(get_slot(
+root_receiver.add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = true
@@ -57,7 +57,7 @@ root_receiver:add_key_down_listener_s(get_slot(
 	end
 ))
 
-root_receiver:add_key_up_listener_s(get_slot(
+root_receiver.add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = false
@@ -80,47 +80,47 @@ root_receiver:add_key_up_listener_s(get_slot(
 	end
 ))
 
-root_receiver:add_mouse_left_down_listener_s(get_slot(
+root_receiver.add_mouse_left_down_listener_s(get_slot(
 	function()
 		camera.dragging = true
 	end
 ))
 
-root_receiver:add_mouse_left_up_listener_s(get_slot(
+root_receiver.add_mouse_left_up_listener_s(get_slot(
 	function()
 		camera.dragging = false
 	end
 ))
 
-root_receiver:add_mouse_move_listener_s(get_slot(
+root_receiver.add_mouse_move_listener_s(get_slot(
 	function(disp)
 		if camera.dragging then
 			camera.yaw = camera.yaw - disp.x
 			camera.pitch = camera.pitch - disp.y
-			camera:update_dir()
+			camera.update_dir()
 		end
 	end
 ))
 
-entity:add_event(function()
+entity.add_event(function()
 		if camera.w then
-			camera:move(camera.dir1, -camera.speed)
+			camera.move(camera.dir1, -camera.speed)
 		end
 		if camera.s then
-			camera:move(camera.dir1, camera.speed)
+			camera.move(camera.dir1, camera.speed)
 		end
 		if camera.a then
-			camera:move(camera.dir2, -camera.speed)
+			camera.move(camera.dir2, -camera.speed)
 		end
 		if camera.d then
-			camera:move(camera.dir2, camera.speed)
+			camera.move(camera.dir2, camera.speed)
 		end
 		if camera.sp then
 			camera.pos.y = camera.pos.y + camera.speed
-			camera.node:set_pos(camera.pos)
+			camera.node.set_pos(camera.pos)
 		end
 		if camera.sh then
 			camera.pos.y = camera.pos.y - camera.speed
-			camera.node:set_pos(camera.pos)
+			camera.node.set_pos(camera.pos)
 		end
 end)
