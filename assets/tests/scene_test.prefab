@@ -3,6 +3,9 @@
   <entity>
     <cElement alignx="MinMax" aligny="MinMax" />
     <cNode />
+    <cScript>
+      cmd = root.find_component("cCommand")
+    </cScript>
     <entity name="scene">
       <cNode />
       <cScript src="tests/shoot_ball.lua" />
@@ -39,7 +42,7 @@
       <cElement />
     </entity>
     <entity name="hud_global_axes">
-      <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,50" />
+      <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,100" />
       <cScript>
         local element = entity.find_component("cElement")
         flame_perspective(0, 45, 1, 1, 100)
@@ -93,33 +96,34 @@
     <eElement name="ui" alignx="MinMax" aligny="MinMax" >
       <eMenuBar>
         <eMenu text="shading" >
-		      <eMenuItem text="solid" >
+		      <eMenuItem checkable="true" checked="true" text="solid" >
             <cScript>
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                root.find_component("cCommand").excute("shading_solid")
+                cmd.excute("shading_solid")
               end)
             </cScript>
           </eMenuItem>
-		      <eMenuItem text="wireframe" >
+		      <eMenuItem checkable="true" text="wireframe" >
             <cScript>
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                root.find_component("cCommand").excute("shading_wireframe")
+                cmd.excute("shading_wireframe")
               end)
             </cScript>
           </eMenuItem>
         </eMenu>
         <eMenu text="physics" >
-		      <eMenuItem text="visualization_on" >
+		      <eMenuItem checkable="true" text="visualization" >
             <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                root.find_component("cCommand").excute("physics_visualization_on")
-              end)
-            </cScript>
-          </eMenuItem>
-		      <eMenuItem text="visualization_off" >
-            <cScript>
-              entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                root.find_component("cCommand").excute("physics_visualization_off")
+                local checked = menu_item.get_checked()
+                checked = not checked
+                menu_item.set_checked(checked)
+                if checked then
+                  cmd.excute("physics_visualization_on")
+                else
+                  cmd.excute("physics_visualization_off")
+                end
               end)
             </cScript>
           </eMenuItem>

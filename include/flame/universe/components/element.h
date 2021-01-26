@@ -41,6 +41,7 @@ namespace flame
 
 		virtual vec4 get_padding() const = 0;
 		virtual void set_padding(const vec4& p) = 0;
+		virtual void add_padding(const vec4& p) = 0;
 
 		virtual vec4 get_margin() const = 0;
 		virtual void set_margin(const vec4& m) = 0;

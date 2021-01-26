@@ -33,13 +33,24 @@ namespace flame
 
 	struct dMenuItemPrivate : dMenuItem
 	{
+		cElementPrivate* element;
 		cReceiverPrivate* receiver;
+		cTextPrivate* text;
+		EntityPrivate* arrow;
+
+		bool checkable = false;
+		bool checked = false;
+
+		bool get_checkable() const override { return checkable; }
+		void set_checkable(bool v) override;
+
+		bool get_checked() const override { return checked; }
+		void set_checked(bool v) override;
 
 		void on_load_finished() override;
 	};
 
 	struct dMenuBarPrivate : dMenuBar
 	{
-
 	};
 }

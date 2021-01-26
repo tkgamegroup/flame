@@ -44,6 +44,7 @@ namespace flame
 		virtual Entity* find_child(const char* name) const = 0;
 
 		virtual Driver* get_driver(uint64 hash = 0, uint idx = 0) const = 0;
+		virtual Driver* find_driver(const char* name) const = 0;
 		template <class T> inline T* get_driver_t() const { return (T*)get_driver(T::type_hash, 0); }
 
 		virtual void data_changed(Component* c, uint64 h) = 0;

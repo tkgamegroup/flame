@@ -46,14 +46,7 @@ namespace flame
 
 	void cElementPrivate::add_pos(const vec2& p)
 	{
-		if (p.x == 0.f && p.y == 0.f)
-			return;
-		pos += p;
-		mark_transform_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-		if (entity)
-			entity->data_changed(this, S<"pos"_h>);
+		set_pos(pos + p);
 	}
 
 	void cElementPrivate::set_width(float w)
@@ -101,17 +94,7 @@ namespace flame
 
 	void cElementPrivate::add_size(const vec2& s)
 	{
-		if (s.x == 0.f && s.y == 0.f)
-			return;
-		size = s;
-		content_size[0] = size.x - padding[0] - padding[2];
-		content_size[1] = size.y - padding[1] - padding[3];
-		mark_transform_dirty();
-		mark_layout_dirty();
-		if (pelement)
-			pelement->mark_layout_dirty();
-		if (entity)
-			entity->data_changed(this, S<"size"_h>);
+		set_size(size + s);
 	}
 
 	void cElementPrivate::set_padding(const vec4& p)
@@ -126,6 +109,11 @@ namespace flame
 		mark_layout_dirty();
 		if (entity)
 			entity->data_changed(this, S<"padding"_h>);
+	}
+
+	void cElementPrivate::add_padding(const vec4& p)
+	{
+		set_padding(padding + p);
 	}
 
 	//	void cElement::set_roundness(const vec4& r, void* sender)

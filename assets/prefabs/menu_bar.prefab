@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <prefab>
   <entity driver="dMenuBar" >
-    <cElement alignx="MinMax" layout_type="Horizontal" layout_gap="4" fill_color="220,220,220,255" />
+    <cElement alignx="MinMax" layout_type="Horizontal" layout_gap="4" fill_color="190,190,190,255" />
   </entity>
 </prefab>

@@ -148,6 +148,20 @@ namespace flame
 		return &it->second;
 	}
 
+	Type* find_driver_type(const std::string& udt_name, std::string* name)
+	{
+		for (auto& t : driver_types)
+		{
+			if (t.second.udt->get_name() == udt_name)
+			{
+				if (name)
+					*name = t.first;
+				return &t.second;
+			}
+		}
+		return nullptr;
+	}
+
 	static std::map<std::string, std::filesystem::path> prefabs_map;
 
 	StateRule::~StateRule()
@@ -235,7 +249,7 @@ namespace flame
 				}
 			}
 
-			r->setter->call(r->c, nullptr, d);
+			r->setter->call(r->o, nullptr, d);
 		}
 
 		for (auto& c : components)
@@ -482,6 +496,36 @@ namespace flame
 		return nullptr;
 	}
 
+	Driver* EntityPrivate::find_driver(const std::string& _name) const
+	{
+		Driver* ret = nullptr;
+		auto name = _name;
+		for (auto& d : drivers)
+		{
+			if (d->type_name == _name)
+			{
+				ret = d.get();
+				break;
+			}
+		}
+		name = "flame::" + _name;
+		for (auto& d : drivers)
+		{
+			if (d->type_name == name)
+			{
+				ret = d.get();
+				break;
+			}
+		}
+		if (ret)
+		{
+			auto script = script::Instance::get_default();
+			script->push_string(name.c_str());
+			script->set_global_name("__type__");
+		}
+		return ret;
+	}
+
 	void EntityPrivate::data_changed(Component* c, uint64 h)
 	{
 		auto it = components.find(c->type_hash);
@@ -578,8 +622,8 @@ namespace flame
 		const std::vector<uint>& los,
 		std::vector<std::unique_ptr<StateRule>>& state_rules)
 	{
-		auto set_attribute = [&](Component* c, Type* ct, const std::string& vname, const std::string& value) {
-			auto att = ct->find_attribute(vname);
+		auto set_attribute = [&](void* o, Type* ot, const std::string& vname, const std::string& value) {
+			auto att = ot->find_attribute(vname);
 			if (att)
 			{
 				auto type = att->set_type;
@@ -589,7 +633,7 @@ namespace flame
 				{
 					void* d = type->create();
 					type->unserialize(d, value.c_str());
-					fs->call(c, nullptr, d);
+					fs->call(o, nullptr, d);
 					type->destroy(d);
 				}
 				else
@@ -597,7 +641,7 @@ namespace flame
 					auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 					fassert(ei);
 					auto rule = new StateRule;
-					rule->c = c;
+					rule->o = o;
 					rule->vname = vname;
 					rule->type = type;
 					rule->setter = fs;
@@ -609,7 +653,7 @@ namespace flame
 						if (pair.size() == 1)
 						{
 							type->unserialize(d, pair[0].c_str());
-							fs->call(c, nullptr, d);
+							fs->call(o, nullptr, d);
 						}
 						else if (pair.size() == 2)
 						{
@@ -680,17 +724,27 @@ namespace flame
 			else
 			{
 				auto ok = false;
+				auto name = std::string(a.name());
+				auto value = std::string(a.value());
 				for (auto& d : e_dst->drivers)
 				{
-
-				}
-				for (auto& c : e_dst->components)
-				{
-					auto ct = find_component_type(c.second.c->type_name, nullptr);
-					if (ct && set_attribute(c.second.c.get(), ct, a.name(), a.value()))
+					auto dt = find_driver_type(d->type_name, nullptr);
+					if (dt && set_attribute(d.get(), dt, name, value))
 					{
 						ok = true;
 						break;
+					}
+				}
+				if (!ok)
+				{
+					for (auto& c : e_dst->components)
+					{
+						auto ct = find_component_type(c.second.c->type_name, nullptr);
+						if (ct && set_attribute(c.second.c.get(), ct, name, value))
+						{
+							ok = true;
+							break;
+						}
 					}
 				}
 				if (!ok)

@@ -37,10 +37,10 @@ namespace flame
 		text = entity->get_component_t<cTextPrivate>();
 		fassert(text);
 
+		arrow = entity->find_child("arrow");
+
 		items = entity->find_child("items");
 		fassert(items);
-
-		arrow = entity->find_child("arrow");
 
 		entity->add_component(f_new<cSpy>(this));
 
@@ -100,7 +100,7 @@ namespace flame
 			if (dm)
 			{
 				dm->type = MenuSub;
-				dm->element->padding.z += text->font_size;
+				dm->element->add_padding(vec4(0.f, 0.f, text->font_size, 0.f));
 				dm->arrow->set_visible(true);
 			}
 			items->add_child(e);
@@ -175,10 +175,34 @@ namespace flame
 		return f_new<dMenuPrivate>();
 	}
 
+	void dMenuItemPrivate::set_checkable(bool v)
+	{
+		checkable = v;
+	}
+
+	void dMenuItemPrivate::set_checked(bool v)
+	{
+		if (!checkable)
+			return;
+		if (checked == v)
+			return;
+		checked = v;
+		if (arrow)
+			arrow->set_visible(checked);
+	}
+
 	void dMenuItemPrivate::on_load_finished()
 	{
+		element = entity->get_component_t<cElementPrivate>();
+		fassert(element);
+
 		receiver = entity->get_component_t<cReceiverPrivate>();
 		fassert(receiver);
+
+		text = entity->get_component_t<cTextPrivate>();
+		fassert(text);
+
+		arrow = entity->find_child("arrow");
 
 		receiver->add_mouse_move_listener([](Capture& c, const ivec2& disp, const ivec2& pos) {
 			auto thiz = c.thiz<dMenuItemPrivate>();
@@ -193,6 +217,8 @@ namespace flame
 				}
 			}
 		}, Capture().set_thiz(this));
+
+		element->add_padding(vec4(text->font_size, 0.f, 0.f, 0.f));
 	}
 
 	dMenuItem* dMenuItem::create()

@@ -10,6 +10,8 @@ namespace flame
 
 		std::string content;
 
+		bool first = true;
+
 		const wchar_t* get_src() const override { return src.c_str(); }
 		void set_src(const wchar_t* fn) override;
 

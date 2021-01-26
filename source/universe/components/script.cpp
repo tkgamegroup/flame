@@ -20,6 +20,10 @@ namespace flame
 
 	void cScriptPrivate::on_entered_world()
 	{
+		if (!first)
+			return;
+		first = false;
+
 		auto scr_ins = script::Instance::get_default();
 		scr_ins->push_object();
 		scr_ins->push_pointer(entity);

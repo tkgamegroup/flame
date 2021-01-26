@@ -290,6 +290,9 @@ namespace flame
 							case 1:
 								switch (basic)
 								{
+								case BooleanType:
+									lua_pushboolean(state, *(bool*)ret);
+									break;
 								case IntegerType:
 									lua_pushinteger(state, *(int*)ret);
 									break;

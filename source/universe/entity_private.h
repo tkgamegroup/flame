@@ -18,7 +18,7 @@ namespace flame
 
 	struct StateRule
 	{
-		Component* c;
+		void* o;
 		std::string vname;
 		TypeInfo* type;
 		FunctionInfo* setter;
@@ -34,6 +34,7 @@ namespace flame
 		void add_child(Entity* e, int position) override;
 		void remove_child(Entity* e, bool destroy) override;
 		Entity* find_child(const char* name) const override;
+		Driver* find_driver(const char* name) const override;
 		void load(const wchar_t* filename) override;
 		void save(const wchar_t* filename) override;
 	};
@@ -122,6 +123,7 @@ namespace flame
 		EntityPrivate* find_child(const std::string& name) const;
 
 		Driver* get_driver(uint64 hash = 0, uint idx = 0) const override;
+		Driver* find_driver(const std::string& name) const;
 
 		void data_changed(Component* c, uint64 h) override;
 		void* add_data_listener(void (*callback)(Capture& c, uint64 hash), const Capture& capture, Component* c) override;
@@ -157,6 +159,11 @@ namespace flame
 	inline void EntityBridge::remove_child(Entity* e, bool destroy)
 	{
 		((EntityPrivate*)this)->remove_child((EntityPrivate*)e, destroy);
+	}
+
+	inline Driver* EntityBridge::find_driver(const char* name) const
+	{
+		return ((EntityPrivate*)this)->find_driver(name);
 	}
 
 	inline void EntityBridge::load(const wchar_t* filename)

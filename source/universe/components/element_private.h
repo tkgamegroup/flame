@@ -89,6 +89,7 @@ namespace flame
 
 		vec4 get_padding() const override { return padding; }
 		void set_padding(const vec4& p) override;
+		void add_padding(const vec4& p) override;
 
 		vec4 get_margin() const override { return margin; }
 		void set_margin(const vec4& m) override;
