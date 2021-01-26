@@ -131,13 +131,14 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
 
 	{
 		vec3 R = reflect(-V, N);
-		vec3 F = fresnel_schlick_roughness(max(dot(N, V), 0.0), spec, roughness);
+		float NdotV = max(dot(N, V), 0.0);
+		vec3 F = fresnel_schlick_roughness(NdotV, spec, roughness);
    
-		vec2 envBRDF  = texture(sky_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
-		vec3 specular = textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y);
+		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rb;
   
-		color += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * albedo + specular) * 0.2;
-	} 
+		color += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * albedo + 
+			textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y)) * 0.2;
+	}
 
 	return color;
 }
