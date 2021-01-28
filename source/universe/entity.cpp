@@ -5,8 +5,6 @@
 #include <flame/universe/driver.h>
 #include "world_private.h"
 
-#include "components/image_private.h"
-
 namespace flame
 {
 	static bool debug = false;
@@ -66,8 +64,6 @@ namespace flame
 			auto fc = udt->find_function("create");
 			fassert(fc && fc->check(TypeInfo::get(TypePointer, udt->get_name())));
 			creator = fc;
-
-			auto ci = cImage::create();
 
 			dummy = create();
 			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> getters;
@@ -384,11 +380,10 @@ namespace flame
 			c.second.c->on_self_added();
 
 		e->traversal([this](EntityPrivate* e) {
-			e->world = world;
-
-			for (auto& c : e->components)
+			if (!e->world && world)
 			{
-				if (world)
+				e->world = world;
+				for (auto& c : e->components)
 					c.second.c->on_entered_world();
 			}
 			return true;

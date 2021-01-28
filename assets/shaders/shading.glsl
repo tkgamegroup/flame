@@ -136,9 +136,12 @@ vec3 shading(vec3 coordw, vec3 coordv, vec3 N, vec3 V, float metallic, vec3 albe
    
 		vec2 envBRDF = texture(sky_lut, vec2(NdotV, roughness)).rb;
   
+		float ao = 0.2; // TODO
 		color += ((1.0 - F) * (1.0 - metallic) * texture(sky_irr, N).rgb * albedo + 
-			textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y)) * 0.2;
+			textureLod(sky_rad, R, roughness * render_data.sky_rad_levels).rgb * (F * envBRDF.x + envBRDF.y)) * ao;
 	}
+
+	color = mix(color, vec3(1), distancev / 1000.0); // TODO: replace this basic fog
 
 	return color;
 }

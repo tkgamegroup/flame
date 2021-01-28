@@ -27,28 +27,29 @@ function make_obj(o, n)
 	if (udt == nil) then
 		return
 	end
-	for k, v in pairs(udt.normal_functions) do
-		o[k] = function(...)
-			return flame_call({...}, o.p, v)
+	for k, func in pairs(udt.functions) do
+		if func.type == "" then
+			o[k] = function(...)
+				return flame_call({...}, o.p, func.func)
+			end
+		else
+			o[k] = function(...)
+				__type__ = func.type
+				local ret = {}
+				ret.p = flame_call({...}, o.p, func.func)
+				make_obj(ret, __type__)
+				return ret
+			end
 		end
 	end
-	for k, v in pairs(udt.type_needed_functions) do
-		o[k] = function(...)
-			__type__ = v.type
-			local ret = {}
-			ret.p = flame_call({...}, o.p, v.func)
-			make_obj(ret, __type__)
-			return ret
-		end
-	end
-	for k, v in pairs(udt.callback_interfaces) do
+	for k, func in pairs(udt.callbacks) do
 		o["add_"..k] = function(f, ...)
 			n = get_callback_slot(f)
-			callbacks[n].c = flame_call({ 0, n, ... }, o.p, v.add)
+			callbacks[n].c = flame_call({ 0, n, ... }, o.p, func.add)
 			return n
 		end
 		o["remove_"..k] = function(n, ...)
-			flame_call({ callbacks[n].c, ...}, o.p, v.remove)
+			flame_call({ callbacks[n].c, ...}, o.p, func.remove)
 			callbacks[n] = nil
 			return n
 		end
@@ -144,4 +145,27 @@ function vec4(x, y, z, w)
 		end
 	})
 	return o
+end
+
+function __setup()
+	for k, udt in pairs(udts) do
+		udt.static_functions = {}
+		for k, func in pairs(udt.functions) do
+			if func.static then
+				if func.type == "" then
+					udt.static_functions[k] = function(...)
+						return flame_call({...}, func.func)
+					end
+				else
+					udt.static_functions[k] = function(...)
+						__type__ = func.type
+						local ret = {}
+						ret.p = flame_call({...}, func.func)
+						make_obj(ret, __type__)
+						return ret
+					end
+				end
+			end
+		end
+	end
 end

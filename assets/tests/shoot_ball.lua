@@ -1,9 +1,8 @@
-local scene = entity.find_child("scene")
+local scene = entity
 root.find_component("cReceiver").add_key_down_listener(function(k)
---[[
-	if (k == enums["flame..KeyboardKey"]["F"]) then
-		local e = flame_call(nil, find_udt("Entity")["create"])
-		e.load("sphere")
+	if (k == enums["flame::KeyboardKey"]["F"]) then
+		local e = find_udt("Entity").static_functions.create()
+		e.load("prefabs/sphere")
 			
 		local node = e.find_component("cNode")
 		node.set_pos(camera.node.get_global_pos())
@@ -22,5 +21,4 @@ root.find_component("cReceiver").add_key_down_listener(function(k)
 				end
 		end)
 	end
---]]
 end)

@@ -75,6 +75,8 @@ namespace flame
 
 	void cRigidPrivate::destroy()
 	{
+		if (!phy_rigid)
+			return;
 		std::erase_if(physics->rigids, [&](const auto& i) {
 			return i == this;
 		});

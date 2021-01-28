@@ -142,6 +142,8 @@ namespace flame
 		UdtInfo* get_udt() const override { return (UdtInfo*)udt; }
 		uint get_index() const override { return index; }
 		const char* get_name() const override { return name.c_str(); }
+		uint get_rva() const override { return rva; }
+		uint get_voff() const override { return voff; }
 		void* get_address(void* obj) const override;
 		TypeInfo* get_type() const override { return type; }
 		uint get_parameters_count() const override { return parameters.size(); }

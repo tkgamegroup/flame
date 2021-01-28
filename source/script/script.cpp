@@ -150,8 +150,11 @@ namespace flame
 		{
 			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
 			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
-			if (f && o)
+			if (f)
 			{
+				if (f->get_name() == std::string("create"))
+					int cut = 1;
+
 				char parms[4 * sizeof(void*)];
 				auto parms_count = f->get_parameters_count();
 				auto p = parms;
@@ -417,9 +420,8 @@ namespace flame
 					lua_newtable(state);
 
 					auto count = ui->get_functions_count();
-					std::vector<FunctionInfo*> normal_functions;
-					std::vector<std::pair<FunctionInfo*, std::string>> type_needed_functions;
-					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> callback_interfaces;
+					std::vector<std::tuple<FunctionInfo*, std::string, bool>> functions;
+					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> callbacks;
 					for (auto i = 0; i < count; i++)
 					{
 						auto function = ui->get_function(i);
@@ -435,7 +437,7 @@ namespace flame
 									auto name = fname.substr(4);
 									auto function2 = ui->find_function(("remove_" + name).c_str());
 									if (function2)
-										callback_interfaces.emplace_back(name, function, function2);
+										callbacks.emplace_back(name, function, function2);
 								}
 								function = nullptr;
 								break;
@@ -443,34 +445,42 @@ namespace flame
 						}
 						if (function)
 						{
+							std::string type;
 							auto ret = function->get_type();
 							if (ret->get_tag() == TypePointer)
 							{
-								auto type = std::string(ret->get_name());
-								if (type != "void")
-								{
-									type_needed_functions.emplace_back(function, type);
-									function = nullptr;
-								}
+								type = std::string(ret->get_name());
+								if (type == "void")
+									type = "";
 							}
+							functions.emplace_back(function, type, function->get_rva());
 						}
-						if (function)
-							normal_functions.push_back(function);
 					}
 
-					lua_pushstring(state, "normal_functions");
+					lua_pushstring(state, "functions");
 					lua_newtable(state);
-					for (auto& f : normal_functions)
+					for (auto& f : functions)
 					{
-						lua_pushstring(state, f->get_name());
-						lua_pushlightuserdata(state, f);
+						lua_pushstring(state, std::get<0>(f)->get_name());
+
+						lua_newtable(state);
+						lua_pushstring(state, "func");
+						lua_pushlightuserdata(state, std::get<0>(f));
+						lua_settable(state, -3);
+						lua_pushstring(state, "type");
+						lua_pushstring(state, std::get<1>(f).c_str());
+						lua_settable(state, -3);
+						lua_pushstring(state, "static");
+						lua_pushboolean(state, std::get<2>(f));
+						lua_settable(state, -3);
+
 						lua_settable(state, -3);
 					}
 					lua_settable(state, -3);
 
-					lua_pushstring(state, "callback_interfaces");
+					lua_pushstring(state, "callbacks");
 					lua_newtable(state);
-					for (auto& c : callback_interfaces)
+					for (auto& c : callbacks)
 					{
 						lua_pushstring(state, std::get<0>(c).c_str());
 
@@ -480,24 +490,6 @@ namespace flame
 						lua_settable(state, -3);
 						lua_pushstring(state, "remove");
 						lua_pushlightuserdata(state, std::get<2>(c));
-						lua_settable(state, -3);
-
-						lua_settable(state, -3);
-					}
-					lua_settable(state, -3);
-
-					lua_pushstring(state, "type_needed_functions");
-					lua_newtable(state);
-					for (auto& f : type_needed_functions)
-					{
-						lua_pushstring(state, f.first->get_name());
-
-						lua_newtable(state);
-						lua_pushstring(state, "func");
-						lua_pushlightuserdata(state, f.first);
-						lua_settable(state, -3);
-						lua_pushstring(state, "type");
-						lua_pushstring(state, f.second.c_str());
 						lua_settable(state, -3);
 
 						lua_settable(state, -3);
@@ -516,13 +508,16 @@ namespace flame
 				auto str = std::string(lua_tostring(state, -1));
 				if (str != "stack traceback:")
 				{
-					printf("assertion happened in lua\n%s\nenter debug mode\n", str.c_str());
+					printf("assertion happened in lua\n%s\nenter debug mode (cont to exit)\n", str.c_str());
 					lua_getglobal(state, "debug");
 					lua_pushstring(state, "debug");
 					lua_gettable(state, -2);
 					lua_check_result(state, lua_pcall(state, 0, 0, 0));
 				}
 			}, Capture().set_thiz(this));
+
+			lua_getglobal(lua_state, "__setup");
+			lua_check_result(lua_state, lua_pcall(lua_state, 0, 0, 0));
 		}
 
 		InstancePrivate::~InstancePrivate()

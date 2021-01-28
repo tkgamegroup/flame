@@ -67,7 +67,7 @@ namespace flame
 				{
 					auto model = graphics::Model::create(fn.c_str());
 					fassert(model);
-					model_id = canvas->set_model_resource(-1, model, fn.filename().string().c_str());
+					model_id = canvas->set_model_resource(-1, model, fn.string().c_str());
 				}
 
 				if (model_id != -1)
