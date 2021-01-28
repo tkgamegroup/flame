@@ -31,7 +31,10 @@ namespace flame
 		scr_ins->set_object_type("flame::Entity");
 		scr_ins->set_global_name("entity");
 		if (!src.empty())
-			scr_ins->excute_file(src.c_str());
+		{
+			for (auto& s : SUW::split_with_spaces(src.wstring()))
+				scr_ins->excute_file(s.c_str());
+		}
 		if (!content.empty())
 			scr_ins->excute(content.c_str());
 	}

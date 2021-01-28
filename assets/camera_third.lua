@@ -1,6 +1,5 @@
 local node = entity.find_component("cNode")
 local pnode = entity.get_parent().find_component("cNode")
-local physics = root.get_world().find_system("sPhysics")
 
 camera = {
 	node = node,
@@ -13,9 +12,9 @@ camera = {
 camera.set_pos = function ()
 	local off = vec3(0, 3, 0)
 	local d = 0
-	if physics.p then
+	if s_physics.p then
 		local o = pnode.get_global_pos() + off
-		local p = physics.raycast(o, camera.node.get_global_dir(2))
+		local p = s_physics.raycast(o, camera.node.get_global_dir(2))
 		d = v3_distance(o, p)
 		if d < camera.length then
 			d = d - 1

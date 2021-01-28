@@ -523,25 +523,24 @@ namespace flame
 	template <class CH>
 	struct StrUtils
 	{
-		static std::basic_string<CH> trim(const std::basic_string<CH>& str)
+		static void ltrim(std::basic_string<CH>& s)
 		{
-			auto begin = 0;
-			auto end = (int)str.size();
-			for (; begin < str.size(); begin++)
-			{
-				auto ch = str[begin];
-				if (ch != ' ' && ch != '\t')
-					break;
-			}
-			for (; end > 0; end--)
-			{
-				auto ch = str[end - 1];
-				if (ch != ' ' && ch != '\t' && ch != '\r')
-					break;
-			}
-			if (begin >= end)
-				return "";
-			return str.substr(begin, end);
+			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
+				return !std::isspace(ch);
+			}));
+		}
+
+		static void rtrim(std::basic_string<CH>& s)
+		{
+			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
+				return !std::isspace(ch);
+			}).base(), s.end());
+		}
+
+		static void trim(std::basic_string<CH>& s)
+		{
+			ltrim(s);
+			rtrim(s);
 		}
 
 		static void remove_ch(std::basic_string<CH>& str, CH ch = ' ')
@@ -551,8 +550,21 @@ namespace flame
 
 		static void remove_spaces(std::basic_string<CH>& str)
 		{
-			remove_ch(str, ' ');
-			remove_ch(str, '\t');
+			str.erase(std::remove_if(str.begin(), str.end(), [](char ch) {
+				return std::isspace(ch);
+			}), str.end());
+		}
+
+		static std::vector<std::basic_string<CH>> split_with_spaces(const std::basic_string<CH>& str)
+		{
+			std::basic_istringstream<CH> iss(str);
+			std::vector<std::basic_string<CH>> ret;
+
+			std::basic_string<CH> s;
+			while (iss >> s)
+				ret.push_back(s);
+
+			return ret;
 		}
 
 		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
@@ -837,7 +849,7 @@ namespace flame
 			std::getline(file, line);
 			if (!line.empty() && line[0] != ';')
 			{
-				line = SUS::trim(line);
+				SUS::trim(line);
 				if (line.size() > 2 && line.front() == '[' && line.back() == ']')
 				{
 					INI_Section section;
@@ -863,7 +875,7 @@ namespace flame
 					}
 					else
 						entry.value = line;
-					entry.value = SUS::trim(entry.value);
+					SUS::trim(entry.value);
 					if (std::regex_search(entry.value, res, reg_quot))
 						entry.value = res[1].str();
 

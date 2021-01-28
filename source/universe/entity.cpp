@@ -623,21 +623,22 @@ namespace flame
 		const std::vector<uint>& los,
 		std::vector<std::unique_ptr<StateRule>>& state_rules)
 	{
-		auto set_attribute = [&](void* o, Type* ot, const std::string& vname, const std::string& value) {
+		auto set_attribute = [&](void* o, Type* ot, const std::string& name, const std::string& value) {
+			auto sp = SUS::split(name, '.');
+			std::string vname;
+			std::string rule;
+			vname = sp[0];
+			if (sp.size() == 2)
+			{
+				vname = sp[0];
+				rule = sp[1];
+			}
 			auto att = ot->find_attribute(vname);
 			if (att)
 			{
 				auto type = att->set_type;
 				auto fs = att->setter;
-				auto sp = SUS::split(value, ';');
-				if (sp.size() == 1)
-				{
-					void* d = type->create();
-					type->unserialize(d, value.c_str());
-					fs->call(o, nullptr, d);
-					type->destroy(d);
-				}
-				else
+				if (rule == "state_rules")
 				{
 					auto ei = TypeInfo::get(TypeEnumMulti, "flame::StateFlags");
 					fassert(ei);
@@ -646,7 +647,7 @@ namespace flame
 					rule->vname = vname;
 					rule->type = type;
 					rule->setter = fs;
-					for (auto& s : sp)
+					for (auto& s : SUS::split_with_spaces(value))
 					{
 						auto pair = SUS::split(s, ':');
 						auto state = StateNone;
@@ -666,6 +667,13 @@ namespace flame
 						rule->values.emplace_back(state, d);
 					}
 					state_rules.emplace_back(rule);
+				}
+				else
+				{
+					void* d = type->create();
+					type->unserialize(d, value.c_str());
+					fs->call(o, nullptr, d);
+					type->destroy(d);
 				}
 				return true;
 			}
@@ -926,10 +934,10 @@ namespace flame
 									}
 									r->type->serialize(v.second, &str, str_alloc);
 									value += str;
-									value += ";";
+									value += "  ";
 								}
 								value.erase(value.end() - 1);
-								n_c.append_attribute(a.first.c_str()).set_value(value.c_str());
+								n_c.append_attribute((a.first + "state_rules").c_str()).set_value(value.c_str());
 								break;
 							}
 						}

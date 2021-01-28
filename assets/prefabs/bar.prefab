@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 <prefab>
   <entity name="bar">
-    <cElement width="8" height="8" fill_color="0,0,0,0;Active:200,200,200,255;Hovering:255,255,255,255" />
+    <cElement width="8" height="8" 
+              fill_color.state_rules="0,0,0,0
+              Active:200,200,200,255
+              Hovering:255,255,255,255" />
     <cReceiver />
   </entity>
 </prefab>

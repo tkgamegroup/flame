@@ -4,19 +4,19 @@
     <cElement alignx="MinMax" aligny="MinMax" />
     <cNode />
     <cScript>
+      world = root.get_world()
+      s_physics = world.find_system("sPhysics")
       cmd = root.find_component("cCommand")
     </cScript>
     <entity name="scene">
       <cNode />
-      <cScript src="tests/shoot_ball.lua" />
+      <cScript src="tests/shoot_ball.lua
+               tests/plane_tree.lua" />
       <entity src="D:\sky\sky" />
       <eCube pos="0,150,0" dynamic="false" />
       <eCube pos="10,150,0" dynamic="false" />
       <eCube pos="0,150,5" dynamic="false" />
-      <entity src="D:\tree02\tree">
-        <cNode pos="10,143,10" />
-      </entity>
-      <entity src="D:\character\character" >
+      <entity name="character" src="D:\character\character" >
         <cNode pos="0,155,0" />
         <cController radius="0.5" height="1.8" />
         <cScript src="character_controller.lua" />

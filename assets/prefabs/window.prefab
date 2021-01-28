@@ -4,7 +4,10 @@
     <cElement width="200" height="200" padding="8,8,8,8" layout_type="Vertical" layout_gap="4" auto_width="false" auto_height="false"  border="1.0" fill_color="240,240,240,255" />
     <cReceiver />
     <entity name="size_dragger" >
-      <cElement width="8.0" height="8.0" alignx="Max" aligny="Max" align_in_layout="false" fill_color="220,220,220,255;Active|Hovering:225,225,225,255;Hovering:230,230,230,255" />
+      <cElement width="8.0" height="8.0" alignx="Max" aligny="Max" align_in_layout="false" 
+                fill_color.state_rules="220,220,220,255
+                Active|Hovering:225,225,225,255
+                Hovering:230,230,230,255" />
       <cReceiver />
     </entity>
     <entity>
