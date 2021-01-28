@@ -68,9 +68,11 @@ namespace flame
 			// [>level]: auto released views
 			virtual ImageView* get_view(uint idx = 0) const = 0;
 
+			virtual void save(const wchar_t* filename) = 0;
+
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Format format, const uvec2& size, uint level, uint layer, SampleCount sample_count, ImageUsageFlags usage, bool is_cube = false);
 			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, Bitmap* bmp);
-			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false);
+			FLAME_GRAPHICS_EXPORTS static Image* create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false, bool generate_mipmaps = false);
 
 		};
 
@@ -91,7 +93,7 @@ namespace flame
 		{
 			virtual void release() = 0;
 
-			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode);
+			FLAME_GRAPHICS_EXPORTS static Sampler* create(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
 		};
 
 		struct ImageTile

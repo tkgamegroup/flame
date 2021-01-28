@@ -5,29 +5,30 @@ using namespace flame;
 
 int main(int argc, char **args)
 {
-	std::vector<std::filesystem::path> inputs;
-	std::filesystem::path output;
-	auto border = false;
+	std::string output;
 	auto ap = pack_args(argc, args);
-	if		(ap.has("-b"))
+	auto border = false;
+	if (!ap.get_item("-o", output))
+		return 0;
+	if (ap.has("-b"))
 		border = true;
-	else if (ap.has("-o"))
-		output = ap.get_items("-o")[0];
+	auto output_path = std::filesystem::path(output);
+	std::vector<std::filesystem::path> inputs;
 	for (std::filesystem::directory_iterator end, it(std::filesystem::current_path()); it != end; it++)
 	{
 		if (!std::filesystem::is_directory(it->status()) && is_image_file(it->path().extension()))
 			inputs.push_back(it->path());
 	}
 
-	auto image_path = output;
+	auto image_path = output_path;
 	image_path.replace_extension(L".png");
-	auto ext = output.extension();
-	if (auto p = output.parent_path(); !std::filesystem::exists(p))
+	auto ext = output_path.extension();
+	if (auto p = output_path.parent_path(); !std::filesystem::exists(p))
 		std::filesystem::create_directories(p);
 	if (ext == L".atlas")
 	{
 		bin_pack(uvec2(1024, 4096), inputs, image_path, border, [&](const std::vector<BinPackTile>& tiles) {
-			std::ofstream file(output);
+			std::ofstream file(output_path);
 			file << "image = \"" << image_path.filename().string() << "\"\n";
 			file << "border = " << (border ? "1" : "0") << "\n";
 			file << "\n[tiles]\n";

@@ -15,6 +15,7 @@ namespace flame
 				std::filesystem::path filename;
 				Filter mag_filter = FilterLinear;
 				Filter min_filter = FilterLinear;
+				bool linear_mipmap = true;
 				AddressMode address_mode = AddressClampToEdge;
 			};
 

@@ -10,7 +10,12 @@ namespace flame
 		struct DevicePrivate;
 		struct ImageViewPrivate;
 
-		struct ImagePrivate : Image
+		struct ImageBridge : Image
+		{
+			void save(const wchar_t* filename) override;
+		};
+
+		struct ImagePrivate : ImageBridge
 		{
 			DevicePrivate* device;
 			
@@ -19,6 +24,7 @@ namespace flame
 			uint levels;
 			uint layers;
 			SampleCount sample_count;
+			ImageUsageFlags usage;
 			bool is_cube = false;
 
 			std::filesystem::path filename;
@@ -45,9 +51,16 @@ namespace flame
 
 			ImageView* get_view(uint idx) const override { return (ImageView*)views[idx].get(); }
 
+			void save(const std::filesystem::path& filename);
+
 			static ImagePrivate* create(DevicePrivate* device, Bitmap* bmp);
-			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false);
+			static ImagePrivate* create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage = ImageUsageNone, bool is_cube = false, bool generate_mipmaps = false);
 		};
+
+		inline void ImageBridge::save(const wchar_t* filename)
+		{
+			((ImagePrivate*)this)->save(filename);
+		}
 
 		struct ImageViewPrivate : ImageView
 		{
@@ -92,16 +105,17 @@ namespace flame
 
 			Filter mag_filter;
 			Filter min_filter;
+			bool linear_mipmap;
 			AddressMode address_mode;
 
 			VkSampler vk_sampler;
 
-			SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode);
+			SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
 			~SamplerPrivate();
 
 			void release() override { delete this; }
 
-			static SamplerPrivate* get(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode);
+			static SamplerPrivate* get(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode);
 		};
 
 		struct ImageTilePrivate : ImageTile

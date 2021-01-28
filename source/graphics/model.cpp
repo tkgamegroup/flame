@@ -30,6 +30,7 @@ namespace flame
 				dst.filename = n_texture.attribute("filename").value();
 				dst.mag_filter = (Filter)n_texture.attribute("mag_filter").as_int();
 				dst.min_filter = (Filter)n_texture.attribute("min_filter").as_int();
+				dst.linear_mipmap = n_texture.attribute("linear_mipmap").as_bool();
 				dst.address_mode = (AddressMode)n_texture.attribute("address_mode").as_int();
 				itex++;
 			}
@@ -304,6 +305,7 @@ namespace flame
 						write_s(file, src.filename.string());
 						write_i(file, src.mag_filter);
 						write_i(file, src.min_filter);
+						write_i(file, src.linear_mipmap);
 						write_i(file, src.address_mode);
 					}
 				}
@@ -381,6 +383,7 @@ namespace flame
 						n_texture.append_attribute("filename").set_value(t.filename.string().c_str());
 						n_texture.append_attribute("mag_filter").set_value((int)t.mag_filter);
 						n_texture.append_attribute("min_filter").set_value((int)t.min_filter);
+						n_texture.append_attribute("linear_mipmap").set_value((int)t.linear_mipmap);
 						n_texture.append_attribute("address_mode").set_value((int)t.address_mode);
 					}
 				}
@@ -570,6 +573,7 @@ namespace flame
 						read_fn(file, dst.filename);
 						dst.mag_filter = (Filter)read_i(file);
 						dst.min_filter = (Filter)read_i(file);
+						dst.linear_mipmap = read_i(file);
 						dst.address_mode = (AddressMode)read_i(file);
 					}
 				}

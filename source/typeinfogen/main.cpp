@@ -167,17 +167,23 @@ TagAndName typeinfo_from_symbol(IDiaSymbol* s_type)
 
 int main(int argc, char **args)
 {
+	std::string input;
+	std::string desc;
 	auto ap = pack_args(argc, args);
-	if (!ap.has("-i") || ap.get_items("-i").size() == 0 ||
-		!ap.has("-d") || ap.get_items("-d").size() == 0)
-	{
-		printf("usage: typeinfogen -i filename -d filename\n"
-			"-i: specify the target executable\n"
-			"-d: specify the desc file, which contains the reflect rules\n");
-		return 0;
-	}
+	if (!ap.get_item("-i", input) || !ap.get_item("-d", desc))
+		goto show_usage;
 
-	auto executable_path = std::filesystem::path(ap.get_items("-i")[0]);
+	goto process;
+
+show_usage:
+	printf("usage: typeinfogen -i filename -d filename\n"
+		"-i: specify the target executable\n"
+		"-d: specify the desc file, which contains the reflect rules\n");
+	return 0;
+
+process:
+
+	auto executable_path = std::filesystem::path(input);
 	if (!std::filesystem::exists(executable_path))
 	{
 		printf("executable does not exist: %s\n", executable_path.string().c_str());
@@ -254,7 +260,7 @@ int main(int argc, char **args)
 	std::vector<EnumRule> enum_rules;
 	std::vector<UdtRule> udt_rules;
 
-	auto desc_path = std::filesystem::path(ap.get_items("-d")[0]);
+	auto desc_path = std::filesystem::path(desc);
 	pugi::xml_document desc_doc;
 	pugi::xml_node desc_root;
 	if (!desc_doc.load_file(desc_path.c_str()) || (desc_root = desc_doc.first_child()).name() != std::string("desc"))

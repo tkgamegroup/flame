@@ -6,6 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct ImageView;
+		struct ImageAtlas;
 		struct Canvas;
 	}
 

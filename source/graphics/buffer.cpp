@@ -86,10 +86,10 @@ namespace flame
 		ImmediateStagingBuffer::ImmediateStagingBuffer(DevicePrivate* d, uint size, void* data) :
 			d(d)
 		{
-			buf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost));
+			buf.reset(new BufferPrivate(d, size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 			buf->map();
-			memcpy(buf->mapped, data, size);
-			buf->flush();
+			if (data)
+				memcpy(buf->mapped, data, size);
 		}
 	}
 }

@@ -525,7 +525,7 @@ namespace flame
 			{
 				auto dsl = DescriptorSetLayoutPrivate::get(device, L"sky.dsl");
 				sky_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), dsl));
-				auto sp = SamplerPrivate::get(preferences->device, FilterLinear, FilterLinear, AddressClampToEdge);
+				auto sp = SamplerPrivate::get(preferences->device, FilterLinear, FilterLinear, false, AddressClampToEdge);
 				default_sky_box_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, uvec2(4), 1, 6, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment, true));
 				cb->image_barrier(default_sky_box_image.get(), { 0U, 1U, 0U, 6U }, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 				sky_descriptorset->set_image(dsl->find_binding("sky_box"), 0, default_sky_box_image->views.back().get(), sp);
@@ -543,7 +543,7 @@ namespace flame
 				element_vertex_buffer.create(device, BufferUsageVertex, 360000);
 				element_index_buffer.create(device, BufferUsageIndex, 240000);
 				for (auto i = 0; i < element_resources.size(); i++)
-					element_descriptorset->set_image(dsl->find_binding("images"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
+					element_descriptorset->set_image(dsl->find_binding("images"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
 			
 			{
@@ -559,7 +559,7 @@ namespace flame
 				material_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "MaterialInfo"), 128);
 				material_descriptorset->set_buffer(dsl->find_binding("MaterialInfos"), 0, material_info_buffer.buf.get());
 				for (auto i = 0; i < texture_resources.size(); i++)
-					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
+					material_descriptorset->set_image(dsl->find_binding("maps"), i, iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
 
 			auto post_dsl = DescriptorSetLayoutPrivate::create(device, L"post/post.dsl");
@@ -577,14 +577,14 @@ namespace flame
 					auto iv = shadow_blur_pingpong_image->views[0].get();
 					shadow_blur_pingpong_framebuffer.reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
 					shadow_blur_pingpong_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					shadow_blur_pingpong_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
+					shadow_blur_pingpong_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
 
 				light_indices_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "LightIndices"), 1);
 				light_descriptorset->set_buffer(dsl->find_binding("LightIndicesList"), 0, light_indices_buffer.buf.get());
 
-				auto sp1 = SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge);
-				auto sp2 = SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToBorder);
+				auto sp1 = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
+				auto sp2 = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToBorder);
 
 				directional_light_info_buffer.create(device, BufferUsageStorage, find_type(dsl->types, "DirectionalLightInfo"), 10);
 				light_descriptorset->set_buffer(dsl->find_binding("DirectionalLightInfos"), 0, directional_light_info_buffer.buf.get());
@@ -729,7 +729,7 @@ namespace flame
 					output_imageviews[i] = views[i];
 					output_framebuffers[i].reset(new FramebufferPrivate(device, preferences->image1_8_renderpass.get(), { &views[i], 1 }));
 					output_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					output_descriptorsets[i]->set_image(0, 0, views[i], SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
+					output_descriptorsets[i]->set_image(0, 0, views[i], SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
 
 				if (hdr)
@@ -739,7 +739,7 @@ namespace flame
 					auto iv = hdr_image->views[0].get();
 					hdr_framebuffer.reset(new FramebufferPrivate(device, preferences->image1_16_renderpass.get(), { &iv, 1 }));
 					hdr_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					hdr_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
+					hdr_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
 
 				depth_image.reset(new ImagePrivate(device, Format_Depth16, output_size, 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment));
@@ -778,8 +778,8 @@ namespace flame
 					back_framebuffers[i].reset(new FramebufferPrivate(device, hdr ? preferences->image1_16_renderpass.get() : preferences->image1_8_renderpass.get(), { &iv, 1 }));
 					back_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					back_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
-					back_nearest_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
-					back_linear_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
+					back_nearest_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
+					back_linear_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 				}
 			}
 		}
@@ -828,11 +828,12 @@ namespace flame
 				dst.fa = (FontAtlasPrivate*)r.fa;
 				if (dst.ia)
 					element_descriptorset->set_image(0, slot, dst.ia->image->views[0].get(), dst.ia->border ? 
-						SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge) : SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
+						SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge) : 
+						SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				else if (dst.fa)
-					element_descriptorset->set_image(0, slot, dst.fa->view, SamplerPrivate::get(device, FilterNearest, FilterNearest, AddressClampToEdge));
+					element_descriptorset->set_image(0, slot, dst.fa->view, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				else
-					element_descriptorset->set_image(0, slot, dst.iv ? dst.iv : iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
+					element_descriptorset->set_image(0, slot, dst.iv ? dst.iv : iv_wht, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
 			return slot;
 		}
@@ -877,7 +878,7 @@ namespace flame
 				auto& r = texture_resources[slot];
 				r.name = name;
 				r.iv = iv;
-				material_descriptorset->set_image(1, slot, iv ? iv : iv_wht, iv && sp ? sp : SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge));
+				material_descriptorset->set_image(1, slot, iv ? iv : iv_wht, iv && sp ? sp : SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
 			}
 			return slot;
 		}
@@ -945,7 +946,8 @@ namespace flame
 							if (!src.filename.empty())
 							{
 								auto img = ImagePrivate::create(device, mat->dir / src.filename, true);
-								auto idx = set_texture_resource(-1, img->views.back().get(), SamplerPrivate::get(device, src.mag_filter, src.min_filter, src.address_mode), "");
+								auto idx = set_texture_resource(-1, img->views.back().get(), SamplerPrivate::get(device, 
+									src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), "");
 								ids[i] = dst.first = idx;
 								dst.second.reset(img);
 							}
@@ -1721,7 +1723,7 @@ namespace flame
 		{
 			auto device = preferences->device;
 			auto dsl = DescriptorSetLayoutPrivate::get(device, L"sky.dsl");
-			auto sp = SamplerPrivate::get(device, FilterLinear, FilterLinear, AddressClampToEdge);
+			auto sp = SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge);
 			sky_descriptorset->set_image(dsl->find_binding("sky_box"), 0, box, sp);
 			sky_descriptorset->set_image(dsl->find_binding("sky_irr"), 0, irr, sp);
 			sky_descriptorset->set_image(dsl->find_binding("sky_rad"), 0, rad, sp);

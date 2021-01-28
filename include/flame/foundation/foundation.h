@@ -599,9 +599,23 @@ namespace flame
 			return args.find(name) != args.end();
 		}
 
-		const std::vector<std::string>& get_items(const std::string& name)
+		bool get_items(const std::string& name, std::vector<std::string>& dst)
 		{
-			return args[name].items;
+			if (!has(name))
+				return false;
+			dst = args[name].items;
+			return true;
+		}
+
+		bool get_item(const std::string& name, std::string& dst)
+		{
+			if (!has(name))
+				return false;
+			auto& items = args[name].items;
+			if (items.size() != 1)
+				return false;
+			dst = items[0];
+			return true;
 		}
 	};
 

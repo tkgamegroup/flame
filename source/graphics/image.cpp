@@ -68,6 +68,7 @@ namespace flame
 			levels(levels),
 			layers(layers),
 			sample_count(sample_count),
+			usage(usage),
 			is_cube(is_cube)
 		{
 			init(size);
@@ -115,7 +116,8 @@ namespace flame
 			format(format),
 			levels(levels),
 			layers(layers),
-			sample_count(SampleCount_1)
+			sample_count(SampleCount_1),
+			usage(usage)
 		{
 			init(size);
 
@@ -130,6 +132,69 @@ namespace flame
 			{
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
 				vkDestroyImage(device->vk_device, vk_image, nullptr);
+			}
+		}
+
+		void ImagePrivate::save(const std::filesystem::path& filename)
+		{
+			fassert(usage & ImageUsageTransferSrc);
+
+			auto ext = filename.extension();
+			if (ext == L".ktx" || ext == L".dds")
+			{
+				auto gli_fmt = gli::FORMAT_UNDEFINED;
+				switch (format)
+				{
+				case Format_R8G8B8A8_UNORM:
+					gli_fmt = gli::FORMAT_RGBA8_UNORM_PACK8;
+					break;
+				case Format_R16G16B16A16_SFLOAT:
+					gli_fmt = gli::FORMAT_RGBA16_SFLOAT_PACK16;
+					break;
+				}
+				fassert(gli_fmt != gli::FORMAT_UNDEFINED);
+				
+				auto gli_texture = gli::texture(gli::TARGET_2D, gli_fmt, ivec3(sizes[0], 1), layers, 1, levels);
+
+				ImmediateStagingBuffer stag(device, gli_texture.size(), nullptr);
+				std::vector<std::tuple<void*, void*, uint>> gli_cpies;
+				{
+					ImmediateCommandBuffer icb(device);
+					auto cb = icb.cb.get();
+					std::vector<BufferImageCopy> cpies;
+					auto dst = (char*)stag.buf->mapped;
+					auto offset = 0;
+					for (auto i = 0; i < layers; i++)
+					{
+						for (auto j = 0; j < levels; j++)
+						{
+							auto size = (uint)gli_texture.size(j);
+							
+							gli_cpies.emplace_back(gli_texture.data(i, 0, j), dst + offset, size);
+
+							BufferImageCopy cpy;
+							cpy.buffer_offset = offset;
+							auto ext = gli_texture.extent(j);
+							cpy.image_extent = uvec2(ext.x, ext.y);
+							cpy.image_level = j;
+							cpy.image_base_layer = i;
+							cpies.push_back(cpy);
+
+							offset += size;
+						}
+					}
+					cb->image_barrier(this, {}, ImageLayoutUndefined, ImageLayoutTransferSrc);
+					cb->copy_image_to_buffer(this, stag.buf.get(), cpies);
+					cb->image_barrier(this, {}, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly);
+				}
+				for (auto& c : gli_cpies)
+					memcpy(std::get<0>(c), std::get<1>(c), std::get<2>(c));
+
+				gli::save(gli_texture, filename.string());
+			}
+			else
+			{
+
 			}
 		}
 
@@ -150,7 +215,7 @@ namespace flame
 			return i;
 		}
 
-		ImagePrivate* ImagePrivate::create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube)
+		ImagePrivate* ImagePrivate::create(DevicePrivate* device, const std::filesystem::path& filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube, bool generate_mipmaps)
 		{
 			if (!std::filesystem::exists(filename))
 			{
@@ -160,56 +225,57 @@ namespace flame
 
 			ImagePrivate* ret = nullptr;
 
+			if (generate_mipmaps)
+				additional_usage = additional_usage | ImageUsageTransferSrc;
+
 			auto ext = filename.extension();
 			if (ext == L".ktx" || ext == L".dds")
 			{
-				gli::gl GL(gli::gl::PROFILE_KTX);
-
 				auto gli_texture = gli::load(filename.string());
 
-				auto size = gli_texture.extent();
+				auto ext = gli_texture.extent();
 				auto levels = gli_texture.levels();
 				auto layers = gli_texture.layers();
-				auto gli_format = GL.translate(gli_texture.format(), gli_texture.swizzles());
+
+				fassert(!(generate_mipmaps && levels != 1));
 
 				Format format = Format_Undefined;
-				switch (gli_format.Internal)
+				switch (gli_texture.format())
 				{
-				case gli::gl::INTERNAL_RGBA8_UNORM:
+				case gli::FORMAT_RGBA8_UNORM_PACK8:
 					format = Format_R8G8B8A8_UNORM;
 					break;
-				case gli::gl::INTERNAL_RGBA16F:
+				case gli::FORMAT_RGBA16_SFLOAT_PACK16:
 					format = Format_R16G16B16A16_SFLOAT;
-					break;
-				case gli::gl::INTERNAL_RGBA_DXT5:
-					format = Format_RGBA_BC3;
-					break;
-				case gli::gl::INTERNAL_RGBA_ETC2:
-					format = Format_RGBA_ETC2;
 					break;
 				}
 				fassert(format != Format_Undefined);
 
-				ret = new ImagePrivate(device, format, uvec2(size.x, size.y), levels, layers,
-					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage, is_cube);
+				ret = new ImagePrivate(device, format, ext, generate_mipmaps ? 0 : levels, layers,
+					SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | additional_usage, is_cube);
 
-				ImmediateStagingBuffer stag(device, gli_texture.size(), gli_texture.data());
+				ImmediateStagingBuffer stag(device, gli_texture.size(), nullptr);
 				ImmediateCommandBuffer icb(device);
 				auto cb = icb.cb.get();
 				std::vector<BufferImageCopy> cpies;
+				auto dst = (char*)stag.buf->mapped;
 				auto offset = 0;
 				for (auto i = 0; i < layers; i++)
 				{
 					for (auto j = 0; j < levels; j++)
 					{
+						auto size = gli_texture.size(j);
+						auto ext = gli_texture.extent(j);
+						memcpy(dst + offset, gli_texture.data(i, 0, j), size);
+
 						BufferImageCopy cpy;
 						cpy.buffer_offset = offset;
-						auto ext = gli_texture.extent(j);
-						cpy.image_extent = uvec2(ext.x, ext.y);
+						cpy.image_extent = ext;
 						cpy.image_level = j;
 						cpy.image_base_layer = i;
 						cpies.push_back(cpy);
-						offset += gli_texture.size(j);
+
+						offset += size;
 					}
 				}
 				cb->image_barrier(ret, {}, ImageLayoutUndefined, ImageLayoutTransferDst);
@@ -222,8 +288,8 @@ namespace flame
 				if (srgb)
 					bmp->srgb_to_linear();
 
-				ret = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), uvec2(bmp->get_width(), bmp->get_height()), 1, 1,
-					SampleCount_1, ImageUsageSampled | ImageUsageStorage | ImageUsageTransferDst | additional_usage);
+				ret = new ImagePrivate(device, get_image_format(bmp->get_channel(), bmp->get_byte_per_channel()), uvec2(bmp->get_width(), bmp->get_height()), 
+					generate_mipmaps ? 0 : 1, 1, SampleCount_1, ImageUsageSampled | ImageUsageTransferDst | additional_usage);
 				ret->filename = filename;
 
 				ImmediateStagingBuffer stag(device, bmp->get_size(), bmp->get_data());
@@ -238,6 +304,41 @@ namespace flame
 				bmp->release();
 			}
 
+			if (generate_mipmaps)
+			{
+				ImmediateCommandBuffer icb(device);
+				auto cb = icb.cb.get();
+
+				for (auto i = 1U; i < ret->levels; i++) 
+				{
+					cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutShaderReadOnly, ImageLayoutTransferSrc, AccessShaderRead, AccessTransferRead);
+
+					auto s1 = (ivec2)ret->sizes[i - 1];
+					auto s2 = (ivec2)ret->sizes[i];
+
+					VkImageBlit blit{};
+					blit.srcOffsets[0] = { 0, 0, 0 };
+					blit.srcOffsets[1] = { s1.x, s1.y, 1 };
+					blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					blit.srcSubresource.mipLevel = i - 1;
+					blit.srcSubresource.baseArrayLayer = 0;
+					blit.srcSubresource.layerCount = 1;
+					blit.dstOffsets[0] = { 0, 0, 0 };
+					blit.dstOffsets[1] = { s2.x, s2.y, 1 };
+					blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					blit.dstSubresource.mipLevel = i;
+					blit.dstSubresource.baseArrayLayer = 0;
+					blit.dstSubresource.layerCount = 1;
+
+					vkCmdBlitImage(cb->vk_command_buffer, ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+						ret->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+					cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc, ImageLayoutShaderReadOnly, AccessTransferRead, AccessShaderRead);
+				}
+
+				cb->image_barrier(ret, { ret->levels - 1, 1, 0, 1 }, ImageLayoutTransferDst, ImageLayoutShaderReadOnly, AccessTransferWrite, AccessShaderRead);
+			}
+
 			return ret;
 		}
 
@@ -246,7 +347,7 @@ namespace flame
 			return new ImagePrivate((DevicePrivate*)device, format, size, level, layer, sample_count, usage, is_cube);
 		}
 		Image* Image::create(Device* device, Bitmap* bmp) { return ImagePrivate::create((DevicePrivate*)device, bmp); }
-		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage, is_cube); }
+		Image* Image::create(Device* device, const wchar_t* filename, bool srgb, ImageUsageFlags additional_usage, bool is_cube, bool generate_mipmaps) { return ImagePrivate::create((DevicePrivate*)device, filename, srgb, additional_usage, is_cube, generate_mipmaps); }
 
 		ImageViewPrivate::ImageViewPrivate(ImagePrivate* image, bool auto_released, ImageViewType type, const ImageSubresource& subresource, const ImageSwizzle& swizzle) :
 			image(image),
@@ -288,32 +389,23 @@ namespace flame
 			return new ImageViewPrivate((ImagePrivate*)image, auto_released, type, subresource, swizzle);
 		}
 
-		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode) :
+		SamplerPrivate::SamplerPrivate(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode) :
 			device(device),
 			mag_filter(mag_filter),
 			min_filter(min_filter),
+			linear_mipmap(linear_mipmap),
 			address_mode(address_mode)
 		{
-			VkSamplerCreateInfo info;
+			VkSamplerCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-			info.flags = 0;
-			info.pNext = nullptr;
 			info.magFilter = to_backend(mag_filter);
 			info.minFilter = to_backend(min_filter);
-			auto vk_address_mode = to_backend(address_mode);
-			info.addressModeU = vk_address_mode;
-			info.addressModeV = vk_address_mode;
-			info.addressModeW = vk_address_mode;
-			info.anisotropyEnable = VK_FALSE;
+			info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+			info.addressModeU = info.addressModeV = info.addressModeW =
+				to_backend(address_mode);
 			info.maxAnisotropy = 1.f;
 			info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			info.unnormalizedCoordinates = false;
-			info.compareEnable = VK_FALSE;
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
-			info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-			info.mipLodBias = 0.f;
-			info.minLod = 0.f;
-			info.maxLod = 0.f;
 
 			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &vk_sampler));
 		}
@@ -323,21 +415,21 @@ namespace flame
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 		}
 
-		SamplerPrivate* SamplerPrivate::get(DevicePrivate* device, Filter mag_filter, Filter min_filter, AddressMode address_mode)
+		SamplerPrivate* SamplerPrivate::get(DevicePrivate* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
 		{
 			for (auto& s : device->sps)
 			{
-				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->address_mode == address_mode)
+				if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode)
 					return s.get();
 			}
-			auto s = new SamplerPrivate(device, mag_filter, min_filter, address_mode);
+			auto s = new SamplerPrivate(device, mag_filter, min_filter, linear_mipmap, address_mode);
 			device->sps.emplace_back(s);
 			return s;
 		}
 
-		Sampler* Sampler::create(Device* device, Filter mag_filter, Filter min_filter, AddressMode address_mode)
+		Sampler* Sampler::create(Device* device, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode)
 		{
-			return new SamplerPrivate((DevicePrivate*)device, mag_filter, min_filter, address_mode);
+			return new SamplerPrivate((DevicePrivate*)device, mag_filter, min_filter, linear_mipmap, address_mode);
 		}
 
 		ImageAtlasPrivate::ImageAtlasPrivate(DevicePrivate* device, const std::wstring& filename)

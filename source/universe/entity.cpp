@@ -5,6 +5,8 @@
 #include <flame/universe/driver.h>
 #include "world_private.h"
 
+#include "components/image_private.h"
+
 namespace flame
 {
 	static bool debug = false;
@@ -62,8 +64,11 @@ namespace flame
 			udt(udt)
 		{
 			auto fc = udt->find_function("create");
-			fassert(fc && fc->get_type()->get_tag() == TypePointer && fc->get_parameters_count() == 0);
+			fassert(fc && fc->check(TypeInfo::get(TypePointer, udt->get_name())));
 			creator = fc;
+
+			auto ci = cImage::create();
+
 			dummy = create();
 			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> getters;
 			std::vector<std::tuple<std::string, TypeInfo*, FunctionInfo*>> setters;
@@ -72,13 +77,14 @@ namespace flame
 			{
 				auto f = udt->get_function(i);
 				auto name = std::string(f->get_name());
-				if (name.compare(0, 4, "get_") == 0 && f->get_parameters_count() == 0)
+				auto ft = f->get_type();
+				auto pc = f->get_parameters_count();
+				if (name.compare(0, 4, "get_") == 0 && pc == 0)
 				{
-					auto t = f->get_type();
-					if (t->get_name() != std::string("void"))
-						getters.emplace_back(name.substr(4), t, f);
+					if (ft->get_name() != std::string("void"))
+						getters.emplace_back(name.substr(4), ft, f);
 				}
-				else if (name.compare(0, 4, "set_") == 0 && f->get_parameters_count() == 1 && f->get_type() == TypeInfo::get(TypeData, ""))
+				else if (name.compare(0, 4, "set_") == 0 && pc == 1 && ft == TypeInfo::get(TypeData, ""))
 				{
 					auto t = f->get_parameter(0);
 					if (t->get_name() != std::string("void"))
