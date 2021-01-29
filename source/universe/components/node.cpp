@@ -48,6 +48,7 @@ namespace flame
 		m = rotate(m, radians(e.y), vec3(1.f, 0.f, 0.f));
 		m = rotate(m, radians(e.z), vec3(0.f, 0.f, 1.f));
 		rot = mat3(m);
+		rot_dirty = false;
 		qut_dirty = true;
 		mark_transform_dirty();
 	}

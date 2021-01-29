@@ -78,7 +78,7 @@ namespace flame
 		sLayout* s_layout = nullptr;
 		sDispatcher* s_dispatcher = nullptr;
 		sRenderer* s_renderer = nullptr;
-		sPhysics* s_physic_world = nullptr;
+		sPhysics* s_physics = nullptr;
 		Entity* root = nullptr;
 
 		GraphicsWindow(App* app, const wchar_t* title, const uvec2 size, WindowStyleFlags styles, bool hdr = false, bool always_update = false, Window* parent = nullptr);
@@ -139,8 +139,8 @@ namespace flame
 		world->add_system(s_layout);
 		s_dispatcher = sDispatcher::create();
 		world->add_system(s_dispatcher);
-		s_physic_world = sPhysics::create();
-		world->add_system(s_physic_world);
+		s_physics = sPhysics::create();
+		world->add_system(s_physics);
 		world->add_system(new sBeforeRender(this));
 		s_renderer = sRenderer::create();
 		if (always_update)

@@ -2,16 +2,15 @@
   <udts>
     <rule name="^flame::graphics::Canvas$" >
       <includes>
-        <item type="function" name="^begin_path$" />
-        <item type="function" name="^move_to$" />
-        <item type="function" name="^line_to$" />
-        <item type="function" name="^close_path$" />
-        <item type="function" name="^stroke$" />
-        <item type="function" name="^fill$" />
-        <item type="function" name="^get_view_matrix$" />
-        <item type="function" name="^get_proj_matrix$" />
+        <item type="function" name="[\w]+$" />
       </includes>
       <excludes>
+        <item type="function" name="^ctor$" />
+        <item type="function" name="^dtor$" />
+        <item type="function" name="_output$" />
+        <item type="function" name="_resource$" />
+        <item type="function" name="^prepare$" />
+        <item type="function" name="^record$" />
       </excludes>
     </rule>
   </udts>

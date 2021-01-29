@@ -8,7 +8,9 @@ root.find_component("cReceiver").add_key_down_listener(function(k)
 		pos.y = -100
 		pos = s_physics.raycast(pos, vec3(0, 1, 0))
 
-		e.find_component("cNode").set_pos(pos)
+		local node = e.find_component("cNode")
+		node.set_pos(pos)
+		--node.set_quat(character.node.get_quat())
 		scene.add_child(e.p)
 	end
 end)

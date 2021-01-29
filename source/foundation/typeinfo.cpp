@@ -550,6 +550,15 @@ namespace flame
 		}
 	};
 
+	struct TypeInfoPrivate_Rect : TypeInfoPrivate_Pod
+	{
+		TypeInfoPrivate_Rect() :
+			TypeInfoPrivate_Pod(TypeData, "flame::Rect", sizeof(Rect))
+		{
+			ret_by_reg = false;
+		}
+	};
+
 	struct TypeInfoPrivate_mat2 : TypeInfoPrivate_Pod
 	{
 		TypeInfoPrivate_mat2() :
@@ -894,6 +903,10 @@ namespace flame
 			}
 			{
 				auto t = new TypeInfoPrivate_vec4;
+				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
+			}
+			{
+				auto t = new TypeInfoPrivate_Rect;
 				typeinfos.emplace(TypeInfoKey(t->tag, t->name), t);
 			}
 			{

@@ -6,7 +6,10 @@
     <cScript>
       world = root.get_world()
       s_physics = world.find_system("sPhysics")
-      cmd = root.find_component("cCommand")
+      s_dispatcher = world.find_system("sDispatcher")
+
+      status_str = ""
+      status_str_changed = false
     </cScript>
     <entity name="scene">
       <cNode />
@@ -93,20 +96,38 @@
         end, true)
       </cScript>
     </entity>
+    <entity name="hud_crosshair" visible="false" >
+      <cElement alignx="MinMax" aligny="MinMax" />
+      <cScript>
+        local element = entity.find_component("cElement")
+        element.add_drawer(function(canvas)
+          local p0 = element.get_point(0)
+          local p2 = element.get_point(2)
+          local sz = p2 - p0
+          p0 = p0 + sz * 0.5
+          canvas.begin_path()
+          canvas.move_to(p0 - vec2(4, 0))
+          canvas.line_to(p0 + vec2(4, 0))
+          canvas.move_to(p0 - vec2(0, 4))
+          canvas.line_to(p0 + vec2(0, 4))
+          canvas.stroke(vec4(255, 0, 0, 255), 1, false)
+        end, true)
+      </cScript>
+    </entity>
     <eElement name="ui" alignx="MinMax" aligny="MinMax" >
       <eMenuBar>
         <eMenu text="shading" >
 		      <eMenuItem checkable="true" checked="true" text="solid" >
             <cScript>
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                cmd.excute("shading_solid")
+                canvas.set_shading(ShadingSolid)
               end)
             </cScript>
           </eMenuItem>
 		      <eMenuItem checkable="true" text="wireframe" >
             <cScript>
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                cmd.excute("shading_wireframe")
+                canvas.set_shading(ShadingWireframe)
               end)
             </cScript>
           </eMenuItem>
@@ -119,15 +140,85 @@
                 local checked = menu_item.get_checked()
                 checked = not checked
                 menu_item.set_checked(checked)
-                if checked then
-                  cmd.excute("physics_visualization_on")
-                else
-                  cmd.excute("physics_visualization_off")
-                end
+                s_physics.set_visualization(checked)
               end)
             </cScript>
           </eMenuItem>
         </eMenu>
+        <eMenu text="scene" >
+          <eMenu text="hud" >
+            <eMenuItem checkable="true" checked="true" text="global axes" >
+              <cScript>
+                local menu_item = entity.find_driver("dMenuItem")
+                local global_axes = root.find_child("hud_global_axes")
+                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                  local checked = menu_item.get_checked()
+                  checked = not checked
+                  menu_item.set_checked(checked)
+                  global_axes.set_visible(checked)
+                end)
+              </cScript>
+            </eMenuItem>
+            <eMenuItem checkable="true" text="crosshair" >
+              <cScript>
+                local menu_item = entity.find_driver("dMenuItem")
+                local crosshair = root.find_child("hud_crosshair")
+                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                  local checked = menu_item.get_checked()
+                  checked = not checked
+                  menu_item.set_checked(checked)
+                  crosshair.set_visible(checked)
+                end)
+              </cScript>
+            </eMenuItem>
+            <eMenuItem checkable="true" text="ui state" >
+              <cScript>
+                local menu_item = entity.find_driver("dMenuItem")
+                show_ui_state = false
+                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                  local checked = menu_item.get_checked()
+                  checked = not checked
+                  menu_item.set_checked(checked)
+                  show_ui_state = checked
+                    status_str = ""
+                    status_str_changed = true
+                end)
+                entity.add_event(function()
+                  if show_ui_state then
+                    local hovering = s_dispatcher.get_hovering()
+                    local focusing = s_dispatcher.get_focusing()
+                    local active = s_dispatcher.get_active()
+                    status_str = "hovering: , focusing: , active: "
+                    status_str_changed = true
+                  end
+                end)
+              </cScript>
+            </eMenuItem>
+          </eMenu>
+        </eMenu>
+        <eMenu text="settings" >
+          <eMenuItem checkable="true" text="always update" >
+            <cScript>
+                local menu_item = entity.find_driver("dMenuItem")
+                entity.find_component("cReceiver").add_mouse_left_down_listener(function()
+                  local checked = menu_item.get_checked()
+                  checked = not checked
+                  menu_item.set_checked(checked)
+                end)
+            </cScript>
+          </eMenuItem>
+        </eMenu>
+        <eText name="status" alignx="Max" aligny="Min" align_in_layout="false" >
+          <cScript>
+            local text = entity.find_component("cText")
+            entity.add_event(function()
+              if status_str_changed then
+                text.set_text(status_str)
+                status_str_changed = false
+              end
+            end)
+          </cScript>
+        </eText>
       </eMenuBar>
     </eElement>
   </entity>

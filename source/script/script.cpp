@@ -146,6 +146,12 @@ namespace flame
 			return 0;
 		}
 
+		int lua_flame_get_fps(lua_State* state)
+		{
+			lua_pushinteger(state, looper().get_fps());
+			return 1;
+		}
+
 		int lua_flame_call(lua_State* state)
 		{
 			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
@@ -384,6 +390,9 @@ namespace flame
 
 			lua_pushcfunction(lua_state, lua_flame_perspective);
 			lua_setglobal(lua_state, "flame_perspective");
+
+			lua_pushcfunction(lua_state, lua_flame_get_fps);
+			lua_setglobal(lua_state, "flame_get_fps");
 
 			if (!excute_file(L"setup.lua"))
 				fassert(0);
