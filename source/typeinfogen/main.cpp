@@ -577,70 +577,82 @@ process:
 
 					auto obj = malloc(udt_size);
 					memset(obj, 0, udt_size);
-
 					if (ctor)
 						a2f<void(*)(void*)>((char*)library + ctor)(obj);
 
 					pugi::xml_node n_variables;
 
-					IDiaEnumSymbols* s_variables;
-					s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
-					IDiaSymbol* s_variable;
-					while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
-					{
-						s_variable->get_name(&pwname);
-						auto name = w2s(pwname);
-						if (ur.pass_item(TypeData, name))
+					IDiaEnumSymbols* s_base_classes;
+					IDiaSymbol* s_base_class;
+					s_udt->findChildren(SymTagBaseClass, NULL, nsNone, &s_base_classes);
+					s_base_classes->Next(1, &s_base_class, &ul);
+					s_base_class->get_name(&pwname);
+
+					auto get_variables = [&](IDiaSymbol* s_udt) {
+						IDiaEnumSymbols* s_variables;
+						s_udt->findChildren(SymTagData, NULL, nsNone, &s_variables);
+						IDiaSymbol* s_variable;
+						while (SUCCEEDED(s_variables->Next(1, &s_variable, &ul)) && (ul == 1))
 						{
-							IDiaSymbol* s_type;
-							s_variable->get_type(&s_type);
-
-							s_variable->get_offset(&l);
-							auto offset = l;
-							s_type->get_length(&ull);
-
-							auto desc = typeinfo_from_symbol(s_type);
-							if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
-								new_enum(desc.name, s_type);
-
-							if (!n_variables)
-								n_variables = n_udt.prepend_child("variables");
-							auto n_variable = n_variables.append_child("variable");
-							n_variable.append_attribute("type_tag").set_value(desc.tag);
-							n_variable.append_attribute("type_name").set_value(desc.name.c_str());
-							n_variable.append_attribute("name").set_value(name.c_str());
-							n_variable.append_attribute("offset").set_value(offset);
-							//auto meta = std::string();
-							//if (vt)
-							//{
-							//	for (auto& t : vt->meta)
-							//		meta += t + " ";
-							//	if (!meta.empty())
-							//		meta.erase(meta.end() - 1);
-							//}
-							//n_variable.append_attribute("meta").set_value(meta.c_str());
-
-							if (desc.tag != TypePointer)
+							s_variable->get_name(&pwname);
+							auto name = w2s(pwname);
+							if (ur.pass_item(TypeData, name))
 							{
-								auto type = TypeInfo::get(desc.tag, desc.name.c_str());
-								if (type)
-								{
-									std::string str;
-									type->serialize((char*)obj + offset, &str, [](void* _str, uint size) {
-										auto& str = *(std::string*)_str;
-										str.resize(size);
-										return str.data();
-									});
-									if (!str.empty())
-										n_variable.append_attribute("default_value").set_value(str.c_str());
-								}
-							}
+								IDiaSymbol* s_type;
+								s_variable->get_type(&s_type);
 
-							s_type->Release();
+								s_variable->get_offset(&l);
+								auto offset = l;
+								s_type->get_length(&ull);
+
+								auto desc = typeinfo_from_symbol(s_type);
+								if (desc.name.starts_with("flame::"))
+									desc.name = SUS::cut_tail_if(desc.name, "Private");
+								if (desc.tag == TypeEnumSingle || desc.tag == TypeEnumMulti)
+									new_enum(desc.name, s_type);
+
+								if (!n_variables)
+									n_variables = n_udt.prepend_child("variables");
+								auto n_variable = n_variables.append_child("variable");
+								n_variable.append_attribute("type_tag").set_value(desc.tag);
+								n_variable.append_attribute("type_name").set_value(desc.name.c_str());
+								n_variable.append_attribute("name").set_value(name.c_str());
+								n_variable.append_attribute("offset").set_value(offset);
+								//auto meta = std::string();
+								//if (vt)
+								//{
+								//	for (auto& t : vt->meta)
+								//		meta += t + " ";
+								//	if (!meta.empty())
+								//		meta.erase(meta.end() - 1);
+								//}
+								//n_variable.append_attribute("meta").set_value(meta.c_str());
+
+								if (desc.tag != TypePointer)
+								{
+									auto type = TypeInfo::get(desc.tag, desc.name.c_str());
+									if (type)
+									{
+										std::string str;
+										type->serialize((char*)obj + offset, &str, [](void* _str, uint size) {
+											auto& str = *(std::string*)_str;
+											str.resize(size);
+											return str.data();
+										});
+										if (!str.empty())
+											n_variable.append_attribute("default_value").set_value(str.c_str());
+									}
+								}
+
+								s_type->Release();
+							}
+							s_variable->Release();
 						}
-						s_variable->Release();
-					}
-					s_variables->Release();
+						s_variables->Release();
+					};
+
+					get_variables(s_udt);
+					get_variables(s_base_class);
 
 					if (dtor)
 						a2f<void(*)(void*)>((char*)library + dtor)(obj);

@@ -27,6 +27,15 @@ function make_obj(o, n)
 	if (udt == nil) then
 		return
 	end
+	if not o.p then return end
+	for k, vari in pairs(udt.variables) do
+		if vari.tag == "pointer" then
+			local v = {}
+			v.p = flame_get_pointer_variable(o.p, vari.offset)
+			make_obj(v, vari.type)
+			o[k] = v
+		end
+	end
 	for k, func in pairs(udt.functions) do
 		if func.type == "" then
 			o[k] = function(...)

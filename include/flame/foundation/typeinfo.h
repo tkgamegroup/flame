@@ -7,6 +7,7 @@ namespace flame
 {
 	enum BasicType
 	{
+		VoidType,
 		BooleanType,
 		IntegerType,
 		FloatingType,

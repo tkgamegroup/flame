@@ -110,6 +110,7 @@ namespace flame
 		TypeInfoPrivate_void() :
 			TypeInfoPrivate_Pod(TypeData, "void", 0)
 		{
+			basic_type = VoidType;
 		}
 	};
 

@@ -152,15 +152,23 @@ namespace flame
 			return 1;
 		}
 
+		int lua_flame_get_pointer_variable(lua_State* state)
+		{
+			auto obj = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
+			auto off = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : 0;
+			void* ret = nullptr;
+			if (obj)
+				ret = *(void**)((char*)obj + off);
+			lua_pushlightuserdata(state, ret);
+			return 1;
+		}
+
 		int lua_flame_call(lua_State* state)
 		{
 			auto o = lua_isuserdata(state, -2) ? lua_touserdata(state, -2) : nullptr;
 			auto f = lua_isuserdata(state, -1) ? (FunctionInfo*)lua_touserdata(state, -1) : nullptr;
 			if (f)
 			{
-				if (f->get_name() == std::string("create"))
-					int cut = 1;
-
 				char parms[4 * sizeof(void*)];
 				auto parms_count = f->get_parameters_count();
 				auto p = parms;
@@ -288,13 +296,14 @@ namespace flame
 				if (ret)
 				{
 					auto pushed_number = 1;
+					auto basic = ret_type->get_basic();
+					auto vec_size = ret_type->get_vec_size();
+					auto col_size = ret_type->get_col_size();
 					switch (ret_type->get_tag())
 					{
 					case TypeData:
 					{
-						auto basic = ret_type->get_basic();
-						auto vec_size = ret_type->get_vec_size();
-						switch (ret_type->get_col_size())
+						switch (col_size)
 						{
 						case 1:
 							switch (vec_size)
@@ -361,7 +370,40 @@ namespace flame
 					}
 						break;
 					case TypePointer:
-						lua_pushlightuserdata(state, *(void**)ret);
+					{
+						auto pointer = *(void**)ret;
+						if (pointer)
+						{
+							auto pointed_type = ret_type->get_pointed_type();
+							auto basic = pointed_type ? pointed_type->get_basic() : ElseType;
+							auto vec_size = pointed_type ? pointed_type->get_vec_size() : 1;
+							auto col_size = pointed_type ? pointed_type->get_col_size() : 1;
+							switch (col_size)
+							{
+							case 1:
+								switch (vec_size)
+								{
+								case 1:
+									switch (basic)
+									{
+									case CharType:
+										lua_pushstring(state, (char*)pointer);
+										break;
+									case WideCharType:
+										lua_pushstring(state, w2s((wchar_t*)pointer).c_str());
+										break;
+									case ElseType:
+										lua_pushlightuserdata(state, pointer);
+										break;
+									}
+									break;
+								}
+								break;
+							}
+						}
+						else
+							lua_pushnil(state);
+					}
 						break;
 					}
 					ret_type->destroy(ret, false);
@@ -387,9 +429,6 @@ namespace flame
 			lua_state = luaL_newstate();
 			luaL_openlibs(lua_state);
 
-			lua_pushcfunction(lua_state, lua_flame_call);
-			lua_setglobal(lua_state, "flame_call");
-
 			lua_pushcfunction(lua_state, lua_flame_hash);
 			lua_setglobal(lua_state, "flame_hash");
 
@@ -401,6 +440,12 @@ namespace flame
 
 			lua_pushcfunction(lua_state, lua_flame_get_fps);
 			lua_setglobal(lua_state, "flame_get_fps");
+
+			lua_pushcfunction(lua_state, lua_flame_get_pointer_variable);
+			lua_setglobal(lua_state, "flame_get_pointer_variable");
+
+			lua_pushcfunction(lua_state, lua_flame_call);
+			lua_setglobal(lua_state, "flame_call");
 
 			if (!excute_file(L"setup.lua"))
 				fassert(0);
@@ -436,10 +481,39 @@ namespace flame
 
 					lua_newtable(state);
 
-					auto count = ui->get_functions_count();
+					lua_pushstring(state, "variables");
+					lua_newtable(state);
+					auto variables_count = ui->get_variables_count();
+					for (auto i = 0; i < variables_count; i++)
+					{
+						auto variable = ui->get_variable(0);
+						auto type = variable->get_type();
+						switch (type->get_tag())
+						{
+						case TypePointer:
+							lua_pushstring(state, variable->get_name());
+
+							lua_newtable(state);
+							lua_pushstring(state, "tag");
+							lua_pushstring(state, "pointer");
+							lua_settable(state, -3);
+							lua_pushstring(state, "offset");
+							lua_pushinteger(state, variable->get_offset());
+							lua_settable(state, -3);
+							lua_pushstring(state, "type");
+							lua_pushstring(state, type->get_name());
+							lua_settable(state, -3);
+
+							lua_settable(state, -3);
+							break;
+						}
+					}
+					lua_settable(state, -3);
+
+					auto functions_count = ui->get_functions_count();
 					std::vector<std::tuple<FunctionInfo*, std::string, bool>> functions;
 					std::vector<std::tuple<std::string, FunctionInfo*, FunctionInfo*>> callbacks;
-					for (auto i = 0; i < count; i++)
+					for (auto i = 0; i < functions_count; i++)
 					{
 						auto function = ui->get_function(i);
 						auto parms_count = function->get_parameters_count();
@@ -466,9 +540,10 @@ namespace flame
 							auto ret = function->get_type();
 							if (ret->get_tag() == TypePointer)
 							{
-								type = std::string(ret->get_name());
-								if (type == "void")
-									type = "";
+								auto pt = ret->get_pointed_type();
+								auto basic = pt ? pt->get_basic() : ElseType;
+								if (basic != VoidType && basic != CharType && basic != WideCharType)
+									type = std::string(ret->get_name());
 							}
 							functions.emplace_back(function, type, function->get_rva());
 						}

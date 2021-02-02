@@ -197,21 +197,29 @@
                 local menu_item = entity.find_driver("dMenuItem")
                 show_ui_state = false
                 entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                  local checked = menu_item.get_checked()
-                  checked = not checked
-                  menu_item.set_checked(checked)
-                  show_ui_state = checked
-                    status_str = ""
-                    status_str_changed = true
+                local checked = menu_item.get_checked()
+                checked = not checked
+                menu_item.set_checked(checked)
+                show_ui_state = checked
+                status_str = ""
+                status_str_changed = true
                 end)
                 entity.add_event(function()
-                  if show_ui_state then
-                    local hovering = s_dispatcher.get_hovering()
-                    local focusing = s_dispatcher.get_focusing()
-                    local active = s_dispatcher.get_active()
-                    status_str = "hovering: , focusing: , active: "
-                    status_str_changed = true
-                  end
+                if show_ui_state then
+                local hovering = s_dispatcher.get_hovering()
+                local focusing = s_dispatcher.get_focusing()
+                local active = s_dispatcher.get_active()
+                local hovering_name = "null"
+                if hovering.p then hovering_name = string.sub(tostring(hovering.entity.p), 10).." ["..hovering.entity.get_name().."]" end
+                local focusing_name = "null"
+                if focusing.p then focusing_name = string.sub(tostring(focusing.entity.p), 10).." ["..focusing.entity.get_name().."]" end
+                local active_name = "null"
+                if active.p then active_name = string.sub(tostring(active.entity.p), 10).." ["..active.entity.get_name().."]" end
+
+                status_str = string.format("hovering: %s, focusing: %s, active: %s",
+                  hovering_name, focusing_name, active_name)
+                status_str_changed = true
+                end
                 end)
               </cScript>
             </eMenuItem>
