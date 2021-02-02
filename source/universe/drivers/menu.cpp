@@ -46,6 +46,10 @@ namespace flame
 
 		receiver->add_mouse_left_down_listener([](Capture& c, const ivec2& pos) {
 			auto thiz = c.thiz<dMenuPrivate>();
+
+			if (thiz->opened)
+				return;
+
 			auto p = thiz->entity->parent;
 			if (p && p->get_driver_t<dMenuBarPrivate>())
 			{
