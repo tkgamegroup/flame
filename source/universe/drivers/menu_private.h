@@ -46,6 +46,7 @@ namespace flame
 
 		bool get_checked() const override { return checked; }
 		void set_checked(bool v) override;
+		void set_single_checked() override;
 
 		void on_load_finished() override;
 	};

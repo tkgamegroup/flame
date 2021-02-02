@@ -17,6 +17,8 @@ namespace flame
 
 		void set_always_update(bool a) override { always_update = a; }
 
+		graphics::Canvas* get_canvas() const override { return canvas; }
+
 		cCamera* get_camera() const override { return (cCamera*)camera; }
 		void set_camera(cCamera* c) override { camera = (cCameraPrivate*)c; }
 

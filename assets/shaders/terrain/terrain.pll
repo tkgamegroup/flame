@@ -10,3 +10,8 @@
 #define TERRAIN_SET 4
 #include "terrain.dsl"
 #endif
+
+layout (push_constant) uniform PushConstantT
+{
+	uint id;
+}pc;

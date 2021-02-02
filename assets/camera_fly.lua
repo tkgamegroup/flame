@@ -32,9 +32,9 @@ camera.update_dir = function ()
 	camera.dir2 = camera.node.get_local_dir(0)
 end
 
-local root_receiver = root.find_component("cReceiver")
+local base_receiver = base.find_component("cReceiver")
 
-root_receiver.add_key_down_listener_s(get_slot(
+base_receiver.add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = true
@@ -57,7 +57,7 @@ root_receiver.add_key_down_listener_s(get_slot(
 	end
 ))
 
-root_receiver.add_key_up_listener_s(get_slot(
+base_receiver.add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["W"] then
 			camera.w = false
@@ -80,19 +80,19 @@ root_receiver.add_key_up_listener_s(get_slot(
 	end
 ))
 
-root_receiver.add_mouse_left_down_listener_s(get_slot(
+base_receiver.add_mouse_left_down_listener_s(get_slot(
 	function()
 		camera.dragging = true
 	end
 ))
 
-root_receiver.add_mouse_left_up_listener_s(get_slot(
+base_receiver.add_mouse_left_up_listener_s(get_slot(
 	function()
 		camera.dragging = false
 	end
 ))
 
-root_receiver.add_mouse_move_listener_s(get_slot(
+base_receiver.add_mouse_move_listener_s(get_slot(
 	function(disp)
 		if camera.dragging then
 			camera.yaw = camera.yaw - disp.x

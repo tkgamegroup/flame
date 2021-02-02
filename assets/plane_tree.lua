@@ -1,5 +1,4 @@
-local scene = entity
-root.find_component("cReceiver").add_key_down_listener(function(k)
+base.find_component("cReceiver").add_key_down_listener(function(k)
 	if (k == enums["flame::KeyboardKey"]["T"]) then
 		local e = find_udt("Entity").static_functions.create()
 		e.load("D:/tree02/tree")

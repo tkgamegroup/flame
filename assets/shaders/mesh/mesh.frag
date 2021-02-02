@@ -19,6 +19,19 @@ void main()
 	
 	MAT_FILE
 #else
+
+#ifdef PICKUP
+	uint id = pc.id;
+	o_color[0] = id & 0xff;
+	id >>= 8;
+	o_color[1] = id & 0xff;
+	id >>= 8;
+	o_color[2] = id & 0xff;
+	id >>= 8;
+	o_color[3] = id & 0xff;
+#else
 	o_color = vec4(0.0, 1.0, 0.0, 1.0);
+#endif
+
 #endif
 }

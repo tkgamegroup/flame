@@ -180,6 +180,9 @@ namespace flame
 
 						switch (type->get_tag())
 						{
+						case TypeEnumSingle:
+							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
+							break;
 						case TypeData:
 							switch (basic)
 							{
@@ -285,9 +288,9 @@ namespace flame
 				if (ret)
 				{
 					auto pushed_number = 1;
-					if (ret_type->get_tag() == TypePointer)
-						lua_pushlightuserdata(state, *(void**)ret);
-					else
+					switch (ret_type->get_tag())
+					{
+					case TypeData:
 					{
 						auto basic = ret_type->get_basic();
 						auto vec_size = ret_type->get_vec_size();
@@ -355,6 +358,11 @@ namespace flame
 							}
 							break;
 						}
+					}
+						break;
+					case TypePointer:
+						lua_pushlightuserdata(state, *(void**)ret);
+						break;
 					}
 					ret_type->destroy(ret, false);
 					return pushed_number;

@@ -4,6 +4,10 @@
 
 namespace flame
 {
+	namespace graphics
+	{
+		struct Canvas;
+	}
 	struct cCamera;
 
 	struct sRenderer : System
@@ -17,6 +21,8 @@ namespace flame
 		}
 
 		virtual void set_always_update(bool a) = 0;
+
+		virtual graphics::Canvas* get_canvas() const = 0;
 
 		virtual cCamera* get_camera() const = 0;
 		virtual void set_camera(cCamera* camera) = 0;

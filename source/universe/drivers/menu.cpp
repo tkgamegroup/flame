@@ -191,6 +191,19 @@ namespace flame
 			arrow->set_visible(checked);
 	}
 
+	void dMenuItemPrivate::set_single_checked()
+	{
+		set_checked(true);
+		for (auto& c : entity->parent->children)
+		{
+			if (c.get() == entity)
+				continue;
+			auto dmi = c->get_driver_t<dMenuItemPrivate>();
+			if (dmi)
+				dmi->set_checked(false);
+		}
+	}
+
 	void dMenuItemPrivate::on_load_finished()
 	{
 		element = entity->get_component_t<cElementPrivate>();

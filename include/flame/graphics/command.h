@@ -88,6 +88,12 @@ namespace flame
 			{
 				push_constant(offset, sizeof(T), &data);
 			}
+			virtual void push_constant_h(uint64 h, uint size, const void* data) = 0;
+			template <class T>
+			inline void push_constant_ht(uint64 h, const T& data)
+			{
+				push_constant_h(h, sizeof(T), &data);
+			}
 			virtual void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) = 0;
 			virtual void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) = 0;
 			virtual void draw_indirect(Buffer* buf, uint offset, uint count) = 0;

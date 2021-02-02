@@ -160,6 +160,14 @@ namespace flame
 				to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
+		void CommandBufferPrivate::push_constant_h(uint64 h, uint size, const void* data)
+		{
+			auto pll = pipeline->pipeline_layout;
+			auto pct = pll->push_constant;
+			vkCmdPushConstants(vk_command_buffer, pll->vk_pipeline_layout,
+				to_backend_flags<ShaderStageFlags>(ShaderStageAll), pct->variables[pct->variables_map[h]].offset, size, data);
+		}
+
 		void CommandBufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
 		{
 			vkCmdDraw(vk_command_buffer, count, instance_count, first_vertex, first_instance);

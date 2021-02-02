@@ -36,7 +36,6 @@ namespace flame
 			void bind_descriptor_set(uint64 h, DescriptorSet* s) override;
 			void bind_vertex_buffer(Buffer* b, uint id) override;
 			void bind_index_buffer(Buffer* b, IndiceType t) override;
-			void push_constant(uint offset, uint size, const void* data) override;
 			void draw_indirect(Buffer* b, uint offset, uint count) override;
 			void draw_indexed_indirect(Buffer* b, uint offset, uint count) override;
 			void buffer_barrier(Buffer* b, AccessFlags src_access, AccessFlags dst_access) override;
@@ -74,7 +73,8 @@ namespace flame
 			void bind_descriptor_set(uint64 h, DescriptorSetPrivate* ds);
 			void bind_vertex_buffer(BufferPrivate* buf, uint id);
 			void bind_index_buffer(BufferPrivate* buf, IndiceType t);
-			void push_constant(uint offset, uint size, const void* data);
+			void push_constant(uint offset, uint size, const void* data) override;
+			void push_constant_h(uint64 h, uint size, const void* data);
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;
 			void draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance) override;
 			void draw_indirect(BufferPrivate* buf, uint offset, uint count);
@@ -119,11 +119,6 @@ namespace flame
 		inline void CommandBufferBridge::bind_index_buffer(Buffer* buf, IndiceType t)
 		{
 			((CommandBufferPrivate*)this)->bind_index_buffer((BufferPrivate*)buf, t);
-		}
-
-		inline void CommandBufferBridge::push_constant(uint offset, uint size, const void* data)
-		{
-			((CommandBufferPrivate*)this)->push_constant(offset, size, data);
 		}
 
 		inline void CommandBufferBridge::draw_indirect(Buffer* b, uint offset, uint count)

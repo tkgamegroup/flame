@@ -20,7 +20,7 @@ namespace flame
 		{
 			{
 				RenderpassAttachmentInfo att;
-				att.format = Swapchain::get_format();
+				att.format = Format_R8G8B8A8_UNORM;
 				att.load_op = AttachmentLoad;
 				att.initia_layout = ImageLayoutShaderReadOnly;
 				att.final_layout = ImageLayoutShaderReadOnly;
@@ -30,15 +30,33 @@ namespace flame
 				};
 				sp.color_attachments_count = 1;
 				sp.color_attachments = col_refs;
-				image1_8_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
+				rgba8_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
 				att.format = Format_R16G16B16A16_SFLOAT;
-				image1_16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
+				rgba16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
 				att.format = Format_R16_SFLOAT;
-				image1_r16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
+				r16_renderpass.reset(new RenderpassPrivate(device, { &att, 1 }, { &sp, 1 }));
 			}
 			{
 				RenderpassAttachmentInfo atts[2];
-				atts[0].format = hdr ? Format_R16G16B16A16_SFLOAT : Swapchain::get_format();
+				atts[0].format = Format_R8G8B8A8_UNORM;
+				atts[0].load_op = AttachmentClear;
+				atts[0].initia_layout = ImageLayoutShaderReadOnly;
+				atts[1].format = Format_Depth16;
+				atts[1].load_op = AttachmentClear;
+				atts[1].initia_layout = ImageLayoutAttachment;
+				atts[1].final_layout = ImageLayoutAttachment;
+				RenderpassSubpassInfo sp;
+				uint col_refs[] = {
+					0
+				};
+				sp.color_attachments_count = 1;
+				sp.color_attachments = col_refs;
+				sp.depth_attachment = 1;
+				pickup_renderpass.reset(new RenderpassPrivate(device, atts, { &sp, 1 }));
+			}
+			{
+				RenderpassAttachmentInfo atts[2];
+				atts[0].format = hdr ? Format_R16G16B16A16_SFLOAT : Format_R8G8B8A8_UNORM;
 				atts[0].load_op = AttachmentLoad;
 				atts[0].initia_layout = ImageLayoutShaderReadOnly;
 				atts[1].format = Format_Depth16;
@@ -73,10 +91,6 @@ namespace flame
 				depth_renderpass.reset(new RenderpassPrivate(device, atts, { &sp,1 }));
 			}
 
-			mesh_wireframe_pipeline.reset(create_material_pipeline(MaterialForMesh, L"", "WIREFRAME"));
-			mesh_armature_wireframe_pipeline.reset(create_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME"));
-			terrain_wireframe_pipeline.reset(create_material_pipeline(MaterialForTerrain, L"", "WIREFRAME"));
-
 			{
 				ShaderPrivate* shaders[] = {
 					ShaderPrivate::get(device, L"element/element.vert"),
@@ -101,7 +115,7 @@ namespace flame
 				bo.dst_color = BlendFactorOneMinusSrcAlpha;
 				bo.src_alpha = BlendFactorOne;
 				bo.dst_alpha = BlendFactorZero;
-				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element/element.pll"), hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0, & vi, nullptr, nullptr, { &bo, 1 }));
+				element_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"element/element.pll"), hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0, &vi, nullptr, nullptr, { &bo, 1 }));
 			}
 
 			{
@@ -127,10 +141,17 @@ namespace flame
 				sky_pipeline.reset(PipelinePrivate::create(device, shaders, PipelineLayoutPrivate::get(device, L"sky/sky.pll"), mesh_renderpass.get(), 0, &vi, &rst, &dep));
 			}
 
+			mesh_wireframe_pipeline.reset(create_material_pipeline(MaterialForMesh, L"", "WIREFRAME"));
+			mesh_armature_wireframe_pipeline.reset(create_material_pipeline(MaterialForMeshArmature, L"", "WIREFRAME"));
+			terrain_wireframe_pipeline.reset(create_material_pipeline(MaterialForTerrain, L"", "WIREFRAME"));
+
+			mesh_pickup_pipeline.reset(create_material_pipeline(MaterialForMesh, L"", "PICKUP"));
+			mesh_armature_pickup_pipeline.reset(create_material_pipeline(MaterialForMeshArmature, L"", "PICKUP"));
+
 			{
 				ShaderPrivate* shaders[] = {
-					ShaderPrivate::get(device, L"plain/plain3.vert"),
-					ShaderPrivate::get(device, L"plain/plain3.frag")
+					ShaderPrivate::get(device, L"plain/plain.vert"),
+					ShaderPrivate::get(device, L"plain/plain.frag")
 				};
 				VertexAttributeInfo vias[2];
 				vias[0].location = 0;
@@ -156,9 +177,10 @@ namespace flame
 				bo.src_alpha = BlendFactorOne;
 				bo.dst_alpha = BlendFactorZero;
 				auto pll = PipelineLayoutPrivate::get(device, L"plain/plain.pll");
-				line3_pipeline.reset(PipelinePrivate::create(device, shaders, pll, mesh_renderpass.get(), 0, &vi, &rst, &dep, { &bo, 1 }));
+				auto rp = mesh_renderpass.get();
+				line_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
 				vi.primitive_topology = PrimitiveTopologyTriangleList;
-				triangle3_pipeline.reset(PipelinePrivate::create(device, shaders, pll, mesh_renderpass.get(), 0, &vi, &rst, &dep, { &bo, 1 }));
+				triangle_pipeline.reset(PipelinePrivate::create(device, shaders, pll, rp, 0, &vi, &rst, &dep, { &bo, 1 }));
 			}
 
 			auto post_pll = PipelineLayoutPrivate::get(device, L"post/post.pll");
@@ -171,7 +193,7 @@ namespace flame
 						fullscreen_vert,
 						ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " H")
 					};
-					blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
+					blurh_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0));
 				}
 
 				{
@@ -179,7 +201,7 @@ namespace flame
 						fullscreen_vert,
 						ShaderPrivate::get(device, L"post/blur.frag", "R" + std::to_string(i + 1) + " V")
 					};
-					blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? image1_16_renderpass.get() : image1_8_renderpass.get(), 0));
+					blurv_pipeline[i].reset(PipelinePrivate::create(device, shaders, post_pll, hdr ? rgba16_renderpass.get() : rgba8_renderpass.get(), 0));
 				}
 			}
 
@@ -188,7 +210,7 @@ namespace flame
 					fullscreen_vert,
 					ShaderPrivate::get(device, L"post/blur_depth.frag", "H")
 				};
-				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
+				blurh_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
 			}
 
 			{
@@ -196,7 +218,7 @@ namespace flame
 					fullscreen_vert,
 					ShaderPrivate::get(device, L"post/blur_depth.frag", "V")
 				};
-				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_r16_renderpass.get(), 0));
+				blurv_depth_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, r16_renderpass.get(), 0));
 			}
 
 			{
@@ -204,8 +226,8 @@ namespace flame
 					fullscreen_vert,
 					ShaderPrivate::get(device, L"post/blit.frag")
 				};
-				blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
-				blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
+				blit_8_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
+				blit_16_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
 			}
 
 			{
@@ -213,7 +235,7 @@ namespace flame
 					fullscreen_vert,
 					ShaderPrivate::get(device, L"post/filter_bright.frag")
 				};
-				filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
+				filter_bright_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
 			}
 
 			auto box_frag = ShaderPrivate::get(device, L"post/box.frag");
@@ -223,7 +245,7 @@ namespace flame
 					fullscreen_vert,
 					box_frag
 				};
-				downsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0));
+				downsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0));
 			}
 
 			{
@@ -237,7 +259,7 @@ namespace flame
 				bo.dst_color = BlendFactorOne;
 				bo.src_alpha = BlendFactorZero;
 				bo.dst_alpha = BlendFactorOne;
-				upsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
+				upsample_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba16_renderpass.get(), 0, nullptr, nullptr, nullptr, { &bo, 1 }));
 			}
 
 			{
@@ -245,7 +267,7 @@ namespace flame
 					fullscreen_vert,
 					ShaderPrivate::get(device, L"post/gamma.frag")
 				};
-				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, image1_8_renderpass.get(), 0));
+				gamma_pipeline.reset(PipelinePrivate::create(device, shaders, post_pll, rgba8_renderpass.get(), 0));
 			}
 		}
 
@@ -271,7 +293,7 @@ namespace flame
 			PolygonMode polygon_mode = PolygonModeFill;
 			std::vector<std::filesystem::path> extra_dependencies;
 			std::filesystem::file_time_type lwt = {};
-			if (defines != "WIREFRAME")
+			if (defines != "WIREFRAME" && defines != "PICKUP")
 			{
 				defines += "MAT ";
 				substitutes += "MAT_FILE " + mat.string();
@@ -456,7 +478,7 @@ namespace flame
 			return new ArmatureDeformerPrivate((RenderPreferencesPrivate*)preferences, (MeshPrivate*)mesh);
 		}
 
-		MaterialResourceSlot::~MaterialResourceSlot()
+		MaterialResourcePrivate::~MaterialResourcePrivate()
 		{
 			for (auto& t : textures)
 				canvas->set_texture_resource(t.first, nullptr, nullptr, "");
@@ -467,7 +489,7 @@ namespace flame
 			}
 		}
 
-		PipelinePrivate* MaterialResourceSlot::get_pipeline(MaterialUsage u)
+		PipelinePrivate* MaterialResourcePrivate::get_pipeline(MaterialUsage u)
 		{
 			if (pipelines[u])
 				return pipelines[u];
@@ -481,7 +503,7 @@ namespace flame
 			return pipelines[u];
 		}
 
-		ModelResourceSlot::~ModelResourceSlot()
+		ModelResourcePrivate::~ModelResourcePrivate()
 		{
 			for (auto& m : materials)
 				canvas->set_material_resource(m, nullptr, "");
@@ -575,7 +597,7 @@ namespace flame
 				cb->image_barrier(shadow_blur_pingpong_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 				{
 					auto iv = shadow_blur_pingpong_image->views[0].get();
-					shadow_blur_pingpong_framebuffer.reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
+					shadow_blur_pingpong_framebuffer.reset(new FramebufferPrivate(device, preferences->r16_renderpass.get(), { &iv, 1 }));
 					shadow_blur_pingpong_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					shadow_blur_pingpong_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
@@ -604,7 +626,7 @@ namespace flame
 							shadow_depth_image->views[0].get()
 						};
 						directional_light_depth_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->depth_renderpass.get(), vs));
-						directional_shadow_map_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
+						directional_shadow_map_framebuffers[i * 4 + j].reset(new FramebufferPrivate(device, preferences->r16_renderpass.get(), { &iv, 1 }));
 						directional_shadow_map_descriptorsets[i * 4 + j].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 						directional_shadow_map_descriptorsets[i * 4 + j]->set_image(0, 0, iv, sp1);
 					}
@@ -630,7 +652,7 @@ namespace flame
 							shadow_depth_image->views[0].get()
 						};
 						point_light_depth_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->depth_renderpass.get(), vs));
-						point_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->image1_r16_renderpass.get(), { &iv, 1 }));
+						point_shadow_map_framebuffers[i * 6 + j].reset(new FramebufferPrivate(device, preferences->r16_renderpass.get(), { &iv, 1 }));
 						point_shadow_map_descriptorsets[i * 6 + j].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 						point_shadow_map_descriptorsets[i * 6 + j]->set_image(0, 0, iv, sp1);
 					}
@@ -646,11 +668,11 @@ namespace flame
 				terrain_descriptorset->set_buffer(dsl->find_binding("TerrainInfos"), 0, terrain_info_buffer.buf.get());
 			}
 
-			set_model_resource(-1, (ModelPrivate*)Model::get_standard("cube"), "cube");
-			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
-
 			line_buffer.create(device, BufferUsageVertex, 200000);
 			triangle_buffer.create(device, BufferUsageVertex, 1000);
+
+			set_model_resource(-1, (ModelPrivate*)Model::get_standard("cube"), "cube");
+			set_model_resource(-1, (ModelPrivate*)Model::get_standard("sphere"), "sphere");
 		}
 
 		void CanvasPrivate::set_shading(ShadingType type)
@@ -727,7 +749,7 @@ namespace flame
 				for (auto i = 0; i < views.size(); i++)
 				{
 					output_imageviews[i] = views[i];
-					output_framebuffers[i].reset(new FramebufferPrivate(device, preferences->image1_8_renderpass.get(), { &views[i], 1 }));
+					output_framebuffers[i].reset(new FramebufferPrivate(device, preferences->rgba8_renderpass.get(), { &views[i], 1 }));
 					output_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					output_descriptorsets[i]->set_image(0, 0, views[i], SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
@@ -737,7 +759,7 @@ namespace flame
 					hdr_image.reset(new ImagePrivate(device, Format_R16G16B16A16_SFLOAT, output_size, 1, 1, SampleCount_1, ImageUsageTransferDst | ImageUsageSampled | ImageUsageAttachment));
 					cb->image_barrier(hdr_image.get(), {}, ImageLayoutUndefined, ImageLayoutShaderReadOnly);
 					auto iv = hdr_image->views[0].get();
-					hdr_framebuffer.reset(new FramebufferPrivate(device, preferences->image1_16_renderpass.get(), { &iv, 1 }));
+					hdr_framebuffer.reset(new FramebufferPrivate(device, preferences->rgba16_renderpass.get(), { &iv, 1 }));
 					hdr_descriptorset.reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					hdr_descriptorset->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 				}
@@ -775,11 +797,20 @@ namespace flame
 				for (auto i = 0; i < back_image->levels; i++)
 				{
 					auto iv = back_image->views[i].get();
-					back_framebuffers[i].reset(new FramebufferPrivate(device, hdr ? preferences->image1_16_renderpass.get() : preferences->image1_8_renderpass.get(), { &iv, 1 }));
+					back_framebuffers[i].reset(new FramebufferPrivate(device, hdr ? preferences->rgba16_renderpass.get() : preferences->rgba8_renderpass.get(), { &iv, 1 }));
 					back_nearest_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					back_linear_descriptorsets[i].reset(new DescriptorSetPrivate(device->dsp.get(), post_dsl));
 					back_nearest_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterNearest, FilterNearest, false, AddressClampToEdge));
 					back_linear_descriptorsets[i]->set_image(0, 0, iv, SamplerPrivate::get(device, FilterLinear, FilterLinear, false, AddressClampToEdge));
+				}
+
+				{
+					pickup_image.reset(new ImagePrivate(device, Format_R8G8B8A8_UNORM, output_size, 1, 1, SampleCount_1, ImageUsageTransferSrc | ImageUsageAttachment));
+					ImageViewPrivate* vs[] = {
+						pickup_image->views[0].get(),
+						depth_image->views[0].get()
+					};
+					pickup_framebuffer.reset(new FramebufferPrivate(device, preferences->pickup_renderpass.get(), vs));
 				}
 			}
 		}
@@ -924,7 +955,7 @@ namespace flame
 					material_resources[slot].reset();
 				else
 				{
-					auto mr = new MaterialResourceSlot(this);
+					auto mr = new MaterialResourcePrivate(this);
 					mr->name = name;
 					mr->material = mat;
 					material_resources[slot].reset(mr);
@@ -1009,7 +1040,7 @@ namespace flame
 					model_resources[slot].reset();
 				else
 				{
-					auto mr = new ModelResourceSlot(this);
+					auto mr = new ModelResourcePrivate(this);
 					mr->name = name;
 					mr->model = mod;
 					model_resources[slot].reset(mr);
@@ -1026,7 +1057,7 @@ namespace flame
 					{
 						auto ms = mod->meshes[i].get();
 
-						auto mrm = new ModelResourceSlot::Mesh;
+						auto mrm = new MeshResourcePrivate;
 
 						mrm->vertex_buffer.create(device, BufferUsageVertex, ms->positions.size());
 						std::vector<MeshVertex> vertices;
@@ -1732,30 +1763,28 @@ namespace flame
 			render_data_buffer.set(S<"sky_rad_levels"_h>, rad->subresource.layer_count);
 		}
 
-		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer)
+		void CanvasPrivate::draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer, void* userdata)
 		{
-			if (cmds.empty() || cmds.back()->type != Cmd::DrawMesh)
-				cmds.emplace_back(new CmdDrawMesh);
+			auto cmd = new CmdDrawMesh;
+			cmd->mesh_resource = model_resources[mod_id]->meshes[mesh_idx].get();
+			cmd->cast_shadow = cast_shadow;
+			cmd->deformer = (ArmatureDeformerPrivate*)deformer;
+			cmd->userdata = userdata;
+			cmds.emplace_back(cmd);
 
 			auto dst = mesh_matrix_buffer.mark_item(meshes_count);
 			mesh_matrix_buffer.set(dst, S<"transform"_h>, transform);
 			mesh_matrix_buffer.set(dst, S<"normal_matrix"_h>, mat4(transpose(inverse(mat3(transform)))));
 
-			CmdDrawMesh::Item item;
-			item.id = meshes_count;
-			item.mesh = model_resources[mod_id]->meshes[mesh_idx].get();
-			item.cast_shadow = cast_shadow;
-			item.deformer = (ArmatureDeformerPrivate*)deformer;
-			((CmdDrawMesh*)cmds.back().get())->items.push_back(item);
 			meshes_count++;
 		}
 
-		void CanvasPrivate::draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id)
+		void CanvasPrivate::draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id, void* userdata)
 		{
 			auto cmd = new CmdDrawTerrain;
-			cmd->idx = terrains_count;
-			cmd->drawcall_count = blocks.x * blocks.y;
+			cmd->blocks = blocks;
 			cmd->material_id = material_id;
+			cmd->userdata = userdata;
 			cmds.emplace_back(cmd);
 
 			auto dst = terrain_info_buffer.mark_item(terrains_count);
@@ -1891,6 +1920,36 @@ namespace flame
 			((CmdDrawTriangles*)cmds.back().get())->count += triangles_count;
 		}
 
+		void* CanvasPrivate::pickup(const vec2& p)
+		{
+			std::vector<void*> userdatas;
+			ImmediateCommandBuffer icb(preferences->device);
+			auto cb = icb.cb.get();
+
+			cb->begin_renderpass(nullptr, pickup_framebuffer.get());
+			for (auto i = 0; i < cmds.size(); i++)
+			{
+				switch (cmds[i]->type)
+				{
+				case Cmd::DrawMesh:
+				{
+					auto cmd = (CmdDrawMesh*)cmds[i].get();
+					userdatas.push_back(cmd->userdata);
+
+				}
+					break;
+				case Cmd::DrawTerrain:
+				{
+					auto cmd = (CmdDrawTerrain*)cmds[i].get();
+					userdatas.push_back(cmd->userdata);
+
+				}
+					break;
+				}
+			}
+			return nullptr;
+		}
+
 		void CanvasPrivate::set_scissor(const Rect& _scissor)
 		{
 			auto scissor = Rect(
@@ -1981,11 +2040,8 @@ namespace flame
 				case Cmd::DrawMesh:
 				{
 					auto cmd = (CmdDrawMesh*)cmds[i].get();
-					for (auto& it : cmd->items)
-					{
-						if (it.deformer)
-							it.deformer->poses_buffer.upload(cb);
-					}
+					if (cmd->deformer)
+						cmd->deformer->poses_buffer.upload(cb);
 				}
 				case Cmd::DrawTerrain:
 				{
@@ -2054,9 +2110,10 @@ namespace flame
 			cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 			auto ele_vtx_off = 0;
 			auto ele_idx_off = 0;
-			auto first_3d = true;
-			auto line3_off = 0;
-			auto triangle3_off = 0;
+			auto mesh_off = 0;
+			auto terr_off = 0;
+			auto line_off = 0;
+			auto tri_off = 0;
 
 			for (auto& p : passes)
 			{
@@ -2076,7 +2133,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_pipeline(preferences->element_pipeline.get());
 					cb->bind_descriptor_set(S<"element"_h>, element_descriptorset.get());
-					cb->push_constant_t(0, vec2(2.f / output_size.x, 2.f / output_size.y));
+					cb->push_constant_ht(S<"scale"_h>, 2.f / vec2(output_size));
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2106,10 +2163,8 @@ namespace flame
 					break;
 				case Pass3D:
 				{
-					if (first_3d)
+					if (mesh_off == 0 && terr_off == 0)
 					{
-						first_3d = false;
-
 						render_data_buffer.set(S<"fb_size"_h>, output_size);
 
 						render_data_buffer.upload(cb);
@@ -2133,46 +2188,36 @@ namespace flame
 									vec4(1.f, 0.f, 0.f, 0.f)
 								};
 								cb->begin_renderpass(nullptr, directional_light_depth_framebuffers[map_idx * 4 + i].get(), cvs);
-								auto first = true;
+								auto off = 0;
 								for (auto& cmd : cmds)
 								{
 									if (cmd->type == Cmd::DrawMesh)
 									{
 										auto c = (CmdDrawMesh*)cmd.get();
-										for (auto& it : c->items)
+										if (c->cast_shadow)
 										{
-											if (it.cast_shadow)
+											auto mrm = c->mesh_resource;
+											auto mat = material_resources[mrm->material_id].get();
+											cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
+											cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
+											if (c->deformer)
 											{
-												auto mrm = it.mesh;
-												auto mat = material_resources[mrm->material_id].get();
-												cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-												if (it.deformer)
-												{
-													cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
-													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-													cb->bind_descriptor_set(S<"armature"_h>, it.deformer->descriptorset.get());
-												}
-												else
-													cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
-												if (first)
-												{
-													cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-													cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-													struct
-													{
-														mat4 proj_view;
-														float zNear;
-														float zFar;
-													}pc;
-													pc.proj_view = s.matrices[i];
-													pc.zNear = 0.f;
-													pc.zFar = 100.f;
-													cb->push_constant(0, sizeof(pc), &pc);
-													first = false;
-												}
-												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (it.id << 16) + mrm->material_id);
+												cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
+												cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
+												cb->bind_descriptor_set(S<"armature"_h>, c->deformer->descriptorset.get());
 											}
+											else
+												cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
+											if (off == 0)
+											{
+												cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+												cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+												cb->push_constant_ht(S<"proj_view"_h>, s.matrices[i]);
+												cb->push_constant_ht(S<"zNear"_h>, 0.f);
+												cb->push_constant_ht(S<"zFar"_h>, 100.f);
+											}
+											cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (off << 16) + mrm->material_id);
+											off++;
 										}
 									}
 								}
@@ -2182,7 +2227,7 @@ namespace flame
 								//cb->begin_renderpass(nullptr, shadow_blur_pingpong_framebuffer.get());
 								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
 								//cb->bind_descriptor_set(S<"post"_h>, directional_shadow_map_descriptorsets[map_idx * 4 + i].get());
-								//cb->push_constant_t(0, 1.f / shadow_map_size.x);
+								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.x);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
 
@@ -2190,7 +2235,7 @@ namespace flame
 								//cb->begin_renderpass(nullptr, directional_shadow_map_framebuffers[map_idx * 4 + i].get());
 								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
 								//cb->bind_descriptor_set(S<"post"_h>, shadow_blur_pingpong_descriptorset.get());
-								//cb->push_constant_t(0, 1.f / shadow_map_size.y);
+								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.y);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
 							}
@@ -2208,76 +2253,64 @@ namespace flame
 									vec4(1.f, 0.f, 0.f, 0.f)
 								};
 								cb->begin_renderpass(nullptr, point_light_depth_framebuffers[map_idx * 6 + i].get(), cvs);
-								auto first = true;
+								auto off = 0;
 								for (auto& cmd : cmds)
 								{
 									if (cmd->type == Cmd::DrawMesh)
 									{
 										auto c = (CmdDrawMesh*)cmd.get();
-										for (auto& it : c->items)
+										auto mrm = c->mesh_resource;
+										auto mat = material_resources[mrm->material_id].get();
+										cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
+										cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
+										if (c->deformer)
 										{
-											if (it.cast_shadow)
-											{
-												auto mrm = it.mesh;
-												auto mat = material_resources[mrm->material_id].get();
-												cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-												cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-												if (it.deformer)
-												{
-													cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
-													cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-													cb->bind_descriptor_set(S<"armature"_h>, it.deformer->descriptorset.get());
-												}
-												else
-													cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
-												if (first)
-												{
-													cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-													cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-													auto proj = perspective(radians(90.f), 1.f, 1.f, s.distance);
-													proj[1][1] *= -1.f;
-													struct
-													{
-														mat4 matrix;
-														float zNear;
-														float zFar;
-													}pc;
-													pc.matrix = mat4(1.f);
-													switch (i)
-													{
-													case 0:
-														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
-														break;
-													case 1:
-														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(-1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
-														break;
-													case 2:
-														pc.matrix[1][1] = -1.f;
-														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f));
-														break;
-													case 3:
-														pc.matrix[1][1] = -1.f;
-														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, -1.f, 0.f), vec3(0.f, 0.f, -1.f));
-														break;
-													case 4:
-														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, 0.f, 1.f), vec3(0.f, 1.f, 0.f));
-														break;
-													case 5:
-														pc.matrix[0][0] = -1.f;
-														pc.matrix = pc.matrix * proj * lookAt(s.coord, s.coord + vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f));
-														break;
-													}
-													pc.zNear = 1.f;
-													pc.zFar = s.distance;
-													cb->push_constant(0, sizeof(pc), &pc);
-													first = false;
-												}
-												cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (it.id << 16) + mrm->material_id);
-											}
+											cb->bind_pipeline(mat->get_pipeline(MaterialForDepthArmature));
+											cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
+											cb->bind_descriptor_set(S<"armature"_h>, c->deformer->descriptorset.get());
 										}
+										else
+											cb->bind_pipeline(mat->get_pipeline(MaterialForDepth));
+										if (off == 0)
+										{
+											cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+											cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+											auto proj = perspective(radians(90.f), 1.f, 1.f, s.distance);
+											proj[1][1] *= -1.f;
+											auto mat = mat4(1.f);
+											switch (i)
+											{
+											case 0:
+												mat[0][0] = -1.f;
+												mat = mat * proj * lookAt(s.coord, s.coord + vec3(1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
+												break;
+											case 1:
+												mat[0][0] = -1.f;
+												mat = mat * proj * lookAt(s.coord, s.coord + vec3(-1.f, 0.f, 0.f), vec3(0.f, 1.f, 0.f));
+												break;
+											case 2:
+												mat[1][1] = -1.f;
+												mat = mat * proj * lookAt(s.coord, s.coord + vec3(0.f, 1.f, 0.f), vec3(1.f, 0.f, 0.f));
+												break;
+											case 3:
+												mat[1][1] = -1.f;
+												mat = mat * proj * lookAt(s.coord, s.coord + vec3(0.f, -1.f, 0.f), vec3(0.f, 0.f, -1.f));
+												break;
+											case 4:
+												mat[0][0] = -1.f;
+												mat = mat * proj * lookAt(s.coord, s.coord + vec3(0.f, 0.f, 1.f), vec3(0.f, 1.f, 0.f));
+												break;
+											case 5:
+												mat[0][0] = -1.f;
+												mat = mat * proj * lookAt(s.coord, s.coord + vec3(0.f, 0.f, -1.f), vec3(0.f, 1.f, 0.f));
+												break;
+											}
+											cb->push_constant_ht(S<"proj_view"_h>, mat);
+											cb->push_constant_ht(S<"zNear"_h>, 1.f);
+											cb->push_constant_ht(S<"zFar"_h>, s.distance);
+										}
+										cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (off << 16) + mrm->material_id);
+										off++;
 									}
 								}
 								cb->end_renderpass();
@@ -2286,7 +2319,7 @@ namespace flame
 								//cb->begin_renderpass(nullptr, shadow_blur_pingpong_framebuffer.get());
 								//cb->bind_pipeline(preferences->blurh_depth_pipeline.get());
 								//cb->bind_descriptor_set(S<"post"_h>, point_shadow_map_descriptorsets[map_idx * 6 + i].get());
-								//cb->push_constant_t(0, 1.f / shadow_map_size.x);
+								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.x);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
 
@@ -2294,7 +2327,7 @@ namespace flame
 								//cb->begin_renderpass(nullptr, point_shadow_map_framebuffers[map_idx * 6 + i].get());
 								//cb->bind_pipeline(preferences->blurv_depth_pipeline.get());
 								//cb->bind_descriptor_set(S<"post"_h>, shadow_blur_pingpong_descriptorset.get());
-								//cb->push_constant_t(0, 1.f / shadow_map_size.y);
+								//cb->push_constant_ht(S<"pxsz"_h>, 1.f / shadow_map_size.y);
 								//cb->draw(3, 1, 0, 0);
 								//cb->end_renderpass();
 							}
@@ -2326,45 +2359,39 @@ namespace flame
 						case Cmd::DrawMesh:
 						{
 							auto c = (CmdDrawMesh*)cmd.get();
-							auto first = true;
-							for (auto& it : c->items)
+							auto mrm = c->mesh_resource;
+							auto mat = material_resources[mrm->material_id].get();
+							cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
+							cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
+							if (c->deformer)
 							{
-								auto mrm = it.mesh;
-								auto mat = material_resources[mrm->material_id].get();
-								cb->bind_vertex_buffer(mrm->vertex_buffer.buf.get(), 0);
-								cb->bind_index_buffer(mrm->index_buffer.buf.get(), IndiceTypeUint);
-								if (it.deformer)
-								{
-									cb->bind_pipeline(mat->get_pipeline(MaterialForMeshArmature));
-									cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
-									cb->bind_descriptor_set(S<"armature"_h>, it.deformer->descriptorset.get());
-								}
-								else
-									cb->bind_pipeline(mat->get_pipeline(MaterialForMesh));
-								if (first)
-								{
-									cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
-									cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
-									cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
-									cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
-									cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
-									first = false;
-								}
-								cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (it.id << 16) + mrm->material_id);
+								cb->bind_pipeline(shading_type == ShadingSolid ? mat->get_pipeline(MaterialForMeshArmature) : preferences->mesh_armature_wireframe_pipeline.get());
+								cb->bind_vertex_buffer(mrm->weight_buffer.buf.get(), 1);
+								cb->bind_descriptor_set(S<"armature"_h>, c->deformer->descriptorset.get());
 							}
+							else
+								cb->bind_pipeline(shading_type == ShadingSolid ? mat->get_pipeline(MaterialForMesh) : preferences->mesh_wireframe_pipeline.get());
+							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
+							cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
+							cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
+							cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
+							cb->bind_descriptor_set(S<"mesh"_h>, mesh_descriptorset.get());
+							cb->draw_indexed(mrm->index_buffer.capacity, 0, 0, 1, (mesh_off << 16) + mrm->material_id);
+							mesh_off++;
 						}
 							break;
 						case Cmd::DrawTerrain:
 						{
 							auto c = (CmdDrawTerrain*)cmd.get();
 							auto mat = material_resources[c->material_id].get();
-							cb->bind_pipeline(mat->get_pipeline(MaterialForTerrain));
+							cb->bind_pipeline(shading_type == ShadingSolid ? mat->get_pipeline(MaterialForTerrain) : preferences->terrain_wireframe_pipeline.get());
 							cb->bind_descriptor_set(S<"render_data"_h>, render_data_descriptorset.get());
 							cb->bind_descriptor_set(S<"material"_h>, material_descriptorset.get());
 							cb->bind_descriptor_set(S<"light"_h>, light_descriptorset.get());
 							cb->bind_descriptor_set(S<"sky"_h>, sky_descriptorset.get());
 							cb->bind_descriptor_set(S<"terrain"_h>, terrain_descriptorset.get());
-							cb->draw(4, c->drawcall_count, 0, c->idx << 16);
+							cb->draw(4, c->blocks.x * c->blocks.y, 0, terr_off << 16);
+							terr_off++;
 						}
 							break;
 						case Cmd::SetScissor:
@@ -2380,13 +2407,13 @@ namespace flame
 					break;
 				case PassLines:
 				{
-					if (line3_off == 0)
+					if (line_off == 0)
 						line_buffer.upload(cb);
 					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
 					cb->bind_vertex_buffer(line_buffer.buf.get(), 0);
-					cb->bind_pipeline(preferences->line3_pipeline.get());
-					cb->push_constant(0, sizeof(mat4), &proj_view_matrix);
+					cb->bind_pipeline(preferences->line_pipeline.get());
+					cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2395,8 +2422,8 @@ namespace flame
 						case Cmd::DrawLines:
 						{
 							auto c = (CmdDrawLines*)cmd.get();
-							cb->draw(c->count * 2, 1, line3_off, 0);
-							line3_off += c->count * 2;
+							cb->draw(c->count * 2, 1, line_off, 0);
+							line_off += c->count * 2;
 						}
 							break;
 						case Cmd::SetScissor:
@@ -2412,13 +2439,13 @@ namespace flame
 					break;
 				case PassTriangles:
 				{
-					if (triangle3_off == 0)
+					if (tri_off == 0)
 						triangle_buffer.upload(cb);
 					cb->set_scissor(Rect(0.f, 0.f, output_size.x, output_size.y));
 					cb->begin_renderpass(nullptr, mesh_framebuffers[hdr_image ? 0 : image_index].get());
 					cb->bind_vertex_buffer(triangle_buffer.buf.get(), 0);
-					cb->bind_pipeline(preferences->triangle3_pipeline.get());
-					cb->push_constant(0, sizeof(mat4), &proj_view_matrix);
+					cb->bind_pipeline(preferences->triangle_pipeline.get());
+					cb->push_constant_ht(S<"proj_view"_h>, proj_view_matrix);
 					for (auto& i : p.cmd_ids)
 					{
 						auto& cmd = cmds[i];
@@ -2427,8 +2454,8 @@ namespace flame
 						case Cmd::DrawTriangles:
 						{
 							auto c = (CmdDrawTriangles*)cmd.get();
-							cb->draw(c->count * 3, 1, triangle3_off, 0);
-							triangle3_off += c->count * 3;
+							cb->draw(c->count * 3, 1, tri_off, 0);
+							tri_off += c->count * 3;
 						}
 							break;
 						case Cmd::SetScissor:
@@ -2457,7 +2484,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, back_framebuffers[0].get());
 					cb->bind_pipeline(preferences->blurh_pipeline[blur_radius - 1].get());
 					cb->bind_descriptor_set(dst_ds, 0);
-					cb->push_constant_t(0, 1.f / output_size.x);
+					cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.x);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
@@ -2466,7 +2493,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, dst_fb);
 					cb->bind_pipeline(preferences->blurv_pipeline[blur_radius - 1].get());
 					cb->bind_descriptor_set(back_nearest_descriptorsets[0].get(), 0);
-					cb->push_constant_t(0, 1.f / output_size.y);
+					cb->push_constant_ht(S<"pxsz"_h>, 1.f / output_size.y);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}
@@ -2493,7 +2520,7 @@ namespace flame
 						cb->begin_renderpass(nullptr, back_framebuffers[i + 1].get());
 						cb->bind_pipeline(preferences->downsample_pipeline.get());
 						cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-						cb->push_constant_t(0, 1.f / (vec2)back_image->sizes[i]);
+						cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[i]));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2504,7 +2531,7 @@ namespace flame
 						cb->begin_renderpass(nullptr, back_framebuffers[i - 1].get());
 						cb->bind_pipeline(preferences->upsample_pipeline.get());
 						cb->bind_descriptor_set(back_linear_descriptorsets[i].get(), 0);
-						cb->push_constant_t(0, 1.f / (vec2)back_image->sizes[(uint)i - 1]);
+						cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(back_image->sizes[(uint)i - 1]));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2512,7 +2539,7 @@ namespace flame
 					cb->begin_renderpass(nullptr, hdr_framebuffer.get());
 					cb->bind_pipeline(preferences->upsample_pipeline.get());
 					cb->bind_descriptor_set(back_linear_descriptorsets[1].get(), 0);
-					cb->push_constant_t(0, 1.f / output_size.y);
+					cb->push_constant_ht(S<"pxsz"_h>, 1.f / vec2(output_size));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
@@ -2534,8 +2561,6 @@ namespace flame
 				cb->end_renderpass();
 			}
 			cb->image_barrier(output_imageviews[image_index]->image, {}, ImageLayoutShaderReadOnly, ImageLayoutPresent);
-
-			cmds.clear();
 		}
 
 		Canvas* Canvas::create(RenderPreferences* preferences)

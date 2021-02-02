@@ -18,9 +18,9 @@ controller = {
 	_9 = false
 }
 
-local root_receiver = root.find_component("cReceiver")
+local base_receiver = base.find_component("cReceiver")
 
-root_receiver.add_key_down_listener_s(get_slot(
+base_receiver.add_key_down_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["Numpad0"] then
 			controller._0 = true
@@ -55,7 +55,7 @@ root_receiver.add_key_down_listener_s(get_slot(
 	end
 ))
 
-root_receiver.add_key_up_listener_s(get_slot(
+base_receiver.add_key_up_listener_s(get_slot(
 	function(k)
 		if k == enums["flame::KeyboardKey"]["Numpad0"] then
 			controller._0 = false

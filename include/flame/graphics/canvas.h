@@ -109,8 +109,8 @@ namespace flame
 			virtual void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) = 0;
 			virtual void set_sky(ImageView* box, ImageView* irr, ImageView* rad, ImageView* lut) = 0;
 
-			virtual void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr) = 0;
-			virtual void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint mat_id) = 0;
+			virtual void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow = true, ArmatureDeformer* deformer = nullptr, void* userdata = nullptr) = 0;
+			virtual void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint mat_id, void* userdata = nullptr) = 0;
 			virtual void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow = false) = 0;
 
 			virtual void draw_lines(uint lines_count, const Line* lines) = 0;
@@ -118,6 +118,8 @@ namespace flame
 
 			virtual mat4 get_view_matrix() const = 0;
 			virtual mat4 get_proj_matrix() const = 0;
+
+			virtual void* pickup(const vec2& p) = 0;
 
 			virtual Rect get_scissor() const = 0;
 			virtual void set_scissor(const Rect& scissor) = 0;

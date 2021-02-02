@@ -1,20 +1,39 @@
 <?xml version="1.0"?>
 <prefab>
-  <entity>
+  <entity name="base">
     <cElement alignx="MinMax" aligny="MinMax" />
+    <cReceiver />
     <cNode />
     <cScript>
       world = root.get_world()
       s_physics = world.find_system("sPhysics")
       s_dispatcher = world.find_system("sDispatcher")
+      s_renderer = world.find_system("sRenderer")
+      canvas = s_renderer.get_canvas()
+
+      base = entity
 
       status_str = ""
       status_str_changed = false
     </cScript>
     <entity name="scene">
       <cNode />
-      <cScript src="tests/shoot_ball.lua
-               tests/plane_tree.lua" />
+      <cScript src="defe:shoot_ball.lua
+               defe:plane_tree.lua" >
+        scene = entity
+
+        local last_mpos = vec2(0, 0)
+        local base_receiver = base.find_component("cReceiver")
+        base_receiver.add_mouse_left_down_listener(function(p)
+          last_mpos.x = p.x
+          last_mpos.y = p.y
+        end)
+        base_receiver.add_mouse_left_up_listener(function(p)
+          if p.x == last_mpos.x and p.y == last_mpos.y then
+            print("123")
+          end
+        end)
+      </cScript>
       <entity src="D:\sky\sky" />
       <eCube pos="0,150,0" dynamic="false" />
       <eCube pos="10,150,0" dynamic="false" />
@@ -41,9 +60,7 @@
       <cElement />
       <cPostEffect enable_bloom="true" />
     </entity>
-    <entity name="debug">
-      <cElement />
-    </entity>
+    <eElement name="debug" />
     <entity name="hud_global_axes">
       <cElement width="100" height="100" alignx="Max" aligny="Max" fill_color="0,0,0,100" />
       <cScript>
@@ -119,15 +136,19 @@
         <eMenu text="shading" >
 		      <eMenuItem checkable="true" checked="true" text="solid" >
             <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                canvas.set_shading(ShadingSolid)
+                canvas.set_shading(0)
+                menu_item.set_single_checked()
               end)
             </cScript>
           </eMenuItem>
 		      <eMenuItem checkable="true" text="wireframe" >
             <cScript>
+              local menu_item = entity.find_driver("dMenuItem")
               entity.find_component("cReceiver").add_mouse_left_down_listener(function()
-                canvas.set_shading(ShadingWireframe)
+                canvas.set_shading(1)
+                menu_item.set_single_checked()
               end)
             </cScript>
           </eMenuItem>
@@ -150,7 +171,7 @@
             <eMenuItem checkable="true" checked="true" text="global axes" >
               <cScript>
                 local menu_item = entity.find_driver("dMenuItem")
-                local global_axes = root.find_child("hud_global_axes")
+                local global_axes = base.find_child("hud_global_axes")
                 entity.find_component("cReceiver").add_mouse_left_down_listener(function()
                   local checked = menu_item.get_checked()
                   checked = not checked
@@ -162,7 +183,7 @@
             <eMenuItem checkable="true" text="crosshair" >
               <cScript>
                 local menu_item = entity.find_driver("dMenuItem")
-                local crosshair = root.find_child("hud_crosshair")
+                local crosshair = base.find_child("hud_crosshair")
                 entity.find_component("cReceiver").add_mouse_left_down_listener(function()
                   local checked = menu_item.get_checked()
                   checked = not checked

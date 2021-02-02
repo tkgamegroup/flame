@@ -1,12 +1,11 @@
 #include <flame/universe/app.h>
-#include <flame/universe/components/camera.h>
 
 using namespace flame;
 using namespace graphics;
 
 App g_app;
 
-auto test_prefab = std::filesystem::path(L"tests/scene_test");
+auto test_prefab = std::filesystem::path(L"scene_test");
 
 int main(int argc, char** args)
 {

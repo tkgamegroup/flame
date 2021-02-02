@@ -35,19 +35,22 @@ namespace flame
 
 			bool hdr;
 
-			std::unique_ptr<RenderpassPrivate> image1_8_renderpass;
-			std::unique_ptr<RenderpassPrivate> image1_16_renderpass;
-			std::unique_ptr<RenderpassPrivate> image1_r16_renderpass;
+			std::unique_ptr<RenderpassPrivate> rgba8_renderpass;
+			std::unique_ptr<RenderpassPrivate> rgba16_renderpass;
+			std::unique_ptr<RenderpassPrivate> r16_renderpass;
 			std::unique_ptr<RenderpassPrivate> mesh_renderpass;
 			std::unique_ptr<RenderpassPrivate> depth_renderpass;
+			std::unique_ptr<RenderpassPrivate> pickup_renderpass;
 			std::vector<std::tuple<std::filesystem::path, std::string, uint, std::unique_ptr<PipelinePrivate>>> material_pipelines[MaterialUsageCount];
+			std::unique_ptr<PipelinePrivate> element_pipeline;
+			std::unique_ptr<PipelinePrivate> sky_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_armature_wireframe_pipeline;
 			std::unique_ptr<PipelinePrivate> terrain_wireframe_pipeline;
-			std::unique_ptr<PipelinePrivate> element_pipeline;
-			std::unique_ptr<PipelinePrivate> sky_pipeline;
-			std::unique_ptr<PipelinePrivate> line3_pipeline;
-			std::unique_ptr<PipelinePrivate> triangle3_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_pickup_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_armature_pickup_pipeline;
+			std::unique_ptr<PipelinePrivate> line_pipeline;
+			std::unique_ptr<PipelinePrivate> triangle_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];
 			std::unique_ptr<PipelinePrivate> blurv_pipeline[10];
 			std::unique_ptr<PipelinePrivate> blurh_depth_pipeline;
@@ -310,7 +313,7 @@ namespace flame
 			vec4 weights;
 		};
 
-		struct ElementResourceSlot
+		struct ElementResourcePrivate
 		{
 			std::string name;
 			ImageViewPrivate* iv;
@@ -318,13 +321,13 @@ namespace flame
 			FontAtlasPrivate* fa;
 		};
 
-		struct TextureResourceSlot
+		struct TextureResourcePrivate
 		{
 			std::string name;
 			ImageViewPrivate* iv;
 		};
 
-		struct MaterialResourceSlot
+		struct MaterialResourcePrivate
 		{
 			CanvasPrivate* canvas;
 
@@ -334,39 +337,39 @@ namespace flame
 
 			PipelinePrivate* pipelines[MaterialUsageCount] = {};
 
-			MaterialResourceSlot(CanvasPrivate* canvas) :
+			MaterialResourcePrivate(CanvasPrivate* canvas) :
 				canvas(canvas)
 			{
 			}
 
-			~MaterialResourceSlot();
+			~MaterialResourcePrivate();
 
 			PipelinePrivate* get_pipeline(MaterialUsage u);
 		};
 
-		struct ModelResourceSlot
+		struct MeshResourcePrivate
 		{
-			struct Mesh
-			{
-				ShaderGeometryBuffer<MeshVertex> vertex_buffer;
-				ShaderGeometryBuffer<MeshWeight> weight_buffer;
-				ShaderGeometryBuffer<uint> index_buffer;
-				uint material_id;
-			};
+			ShaderGeometryBuffer<MeshVertex> vertex_buffer;
+			ShaderGeometryBuffer<MeshWeight> weight_buffer;
+			ShaderGeometryBuffer<uint> index_buffer;
+			uint material_id;
+		};
 
+		struct ModelResourcePrivate
+		{
 			CanvasPrivate* canvas;
 
-			ModelResourceSlot(CanvasPrivate* canvas) :
+			ModelResourcePrivate(CanvasPrivate* canvas) :
 				canvas(canvas)
 			{
 			}
 
-			~ModelResourceSlot();
+			~ModelResourcePrivate();
 
 			std::string name;
 			ModelPrivate* model;
 			std::vector<uint> materials;
-			std::vector<std::unique_ptr<Mesh>> meshes;
+			std::vector<std::unique_ptr<MeshResourcePrivate>> meshes;
 		};
 
 		struct DirectionalShadow
@@ -411,23 +414,19 @@ namespace flame
 
 		struct CmdDrawMesh : Cmd
 		{
-			struct Item
-			{
-				uint id;
-				ModelResourceSlot::Mesh* mesh;
-				bool cast_shadow;
-				ArmatureDeformerPrivate* deformer;
-			};
-			std::vector<Item> items;
+			MeshResourcePrivate* mesh_resource;
+			bool cast_shadow;
+			ArmatureDeformerPrivate* deformer;
+			void* userdata;
 
 			CmdDrawMesh() : Cmd(DrawMesh) {}
 		};
 
 		struct CmdDrawTerrain : Cmd
 		{
-			uint idx;
-			uint drawcall_count;
+			uvec2 blocks;
 			uint material_id;
+			void* userdata;
 
 			CmdDrawTerrain() : Cmd(DrawTerrain) {}
 		};
@@ -508,10 +507,10 @@ namespace flame
 			mat4 proj_view_matrix;
 
 			std::unique_ptr<ImagePrivate> white_image;
-			std::vector < ElementResourceSlot > element_resources;
-			std::vector<TextureResourceSlot> texture_resources;
-			std::vector<std::unique_ptr<MaterialResourceSlot>> material_resources;
-			std::vector<std::unique_ptr<ModelResourceSlot>> model_resources;
+			std::vector < ElementResourcePrivate > element_resources;
+			std::vector<TextureResourcePrivate> texture_resources;
+			std::vector<std::unique_ptr<MaterialResourcePrivate>> material_resources;
+			std::vector<std::unique_ptr<ModelResourcePrivate>> model_resources;
 
 			ShaderGeometryBuffer<ElementVertex> element_vertex_buffer;
 			ShaderGeometryBuffer<uint> element_index_buffer;
@@ -571,6 +570,9 @@ namespace flame
 			std::vector<std::unique_ptr<FramebufferPrivate>> back_framebuffers;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_nearest_descriptorsets;
 			std::vector<std::unique_ptr<DescriptorSetPrivate>> back_linear_descriptorsets;
+
+			std::unique_ptr<ImagePrivate> pickup_image;
+			std::unique_ptr<FramebufferPrivate> pickup_framebuffer;
 
 			std::vector<std::vector<vec2>> paths;
 
@@ -636,8 +638,8 @@ namespace flame
 			void set_camera(float fovy, float aspect, float zNear, float zFar, const mat3& dirs, const vec3& coord) override;
 			void set_sky(ImageViewPrivate* box, ImageViewPrivate* irr, ImageViewPrivate* rad, ImageViewPrivate* lut);
 
-			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer) override;
-			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id) override;
+			void draw_mesh(uint mod_id, uint mesh_idx, const mat4& transform, bool cast_shadow, ArmatureDeformer* deformer, void* userdata = nullptr) override;
+			void draw_terrain(const uvec2& blocks, const vec3& scale, const vec3& coord, float tess_levels, uint height_tex_id, uint normal_tex_id, uint material_id, void* userdata = nullptr) override;
 			void add_light(LightType type, const mat3& dirs, const vec3& color, bool cast_shadow) override;
 
 			void draw_lines(uint lines_count, const Line* lines) override;
@@ -645,6 +647,8 @@ namespace flame
 
 			mat4 get_view_matrix() const override { return view_matrix; }
 			mat4 get_proj_matrix() const override { return proj_matrix; }
+
+			void* pickup(const vec2& p) override;
 
 			Rect get_scissor() const override { return curr_scissor; }
 			void set_scissor(const Rect& scissor) override;
