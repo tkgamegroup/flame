@@ -39,12 +39,12 @@ void main()
 	));
 	p.y += texture(maps[terrain.height_tex_id], uv).r * terrain.scale.y;
 
-	gl_Position = render_data.proj_view * vec4(p, 1.0);
-
 	o_idx = idx;
 	o_uv = uv;
 	o_coordw = p;
 	o_coordv = render_data.camera_coord - p;
 	vec3 n = texture(maps[terrain.normal_tex_id], uv).xyz * 2.0 - vec3(1.0);
 	o_normal = vec3(n.x, n.z, -n.y);
+
+	gl_Position = render_data.proj_view * vec4(p, 1.0);
 }

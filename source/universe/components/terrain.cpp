@@ -61,7 +61,13 @@ namespace flame
 	void cTerrainPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (height_map_id != -1 && normal_map_id != -1 && material_id != -1)
-			canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id, graphics::ShadeMaterial, entity);
+		{
+			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
+			if (entity->state & StateSelected)
+				flags = flags | graphics::ShadeWireframe;
+			canvas->draw_terrain(blocks, scale, node->g_pos, tess_levels, height_map_id, normal_map_id, material_id,
+				flags, entity);
+		}
 	}
 
 	void cTerrainPrivate::on_added()
@@ -84,7 +90,9 @@ namespace flame
 
 	void cTerrainPrivate::on_entered_world()
 	{
-		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(renderer);
+		canvas = renderer->canvas;
 		fassert(canvas);
 
 		{

@@ -191,6 +191,9 @@ namespace flame
 						case TypeEnumSingle:
 							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
 							break;
+						case TypeEnumMulti:
+							*(int*)p = lua_isinteger(state, -1) ? lua_tointeger(state, -1) : -1;
+							break;
 						case TypeData:
 							switch (basic)
 							{
@@ -392,7 +395,7 @@ namespace flame
 									case WideCharType:
 										lua_pushstring(state, w2s((wchar_t*)pointer).c_str());
 										break;
-									case ElseType:
+									default:
 										lua_pushlightuserdata(state, pointer);
 										break;
 									}

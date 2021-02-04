@@ -13,6 +13,7 @@ namespace flame
 	}
 
 	struct cNodePrivate;
+	struct sRendererPrivate;
 
 	struct cMeshBridge : cMesh
 	{
@@ -61,6 +62,7 @@ namespace flame
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
+		sRendererPrivate* renderer = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		int model_id = -1;

@@ -52,6 +52,9 @@ namespace flame
 			std::unique_ptr<PipelinePrivate> mesh_pickup_pipeline;
 			std::unique_ptr<PipelinePrivate> mesh_armature_pickup_pipeline;
 			std::unique_ptr<PipelinePrivate> terrain_pickup_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_outline_pipeline;
+			std::unique_ptr<PipelinePrivate> mesh_armature_outline_pipeline;
+			std::unique_ptr<PipelinePrivate> terrain_outline_pipeline;
 			std::unique_ptr<PipelinePrivate> line_pipeline;
 			std::unique_ptr<PipelinePrivate> triangle_pipeline;
 			std::unique_ptr<PipelinePrivate> blurh_pipeline[10];

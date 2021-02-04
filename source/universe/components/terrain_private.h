@@ -10,6 +10,7 @@ namespace flame
 	}
 
 	struct cNodePrivate;
+	struct sRendererPrivate;
 
 	struct cTerrainBridge : cTerrain
 	{
@@ -34,6 +35,7 @@ namespace flame
 
 		cNodePrivate* node = nullptr;
 		void* drawer = nullptr;
+		sRendererPrivate* renderer = nullptr;
 		graphics::Canvas* canvas = nullptr;
 
 		uvec2 get_blocks() const override { return blocks; }

@@ -226,7 +226,13 @@ namespace flame
 	void cMeshPrivate::draw(graphics::Canvas* canvas)
 	{
 		if (model_id != -1 && mesh_id != -1)
-			canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer, graphics::ShadeMaterial, entity);
+		{
+			auto flags = renderer->wireframe ? graphics::ShadeWireframe : graphics::ShadeMaterial;
+			if (entity->state & StateSelected)
+				flags = flags | graphics::ShadeWireframe;
+			canvas->draw_mesh(model_id, mesh_id, node->transform, cast_shadow, deformer,
+				flags, entity);
+		}
 	}
 
 	void cMeshPrivate::on_added()
@@ -249,7 +255,9 @@ namespace flame
 
 	void cMeshPrivate::on_entered_world()
 	{
-		canvas = entity->world->get_system_t<sRendererPrivate>()->canvas;
+		renderer = entity->world->get_system_t<sRendererPrivate>();
+		fassert(renderer);
+		canvas = renderer->canvas;
 		fassert(canvas);
 
 		apply_src();

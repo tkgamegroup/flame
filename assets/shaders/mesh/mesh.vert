@@ -23,6 +23,7 @@ void main()
 	uint mod_idx = gl_InstanceIndex >> 16;
 	o_mat_id = gl_InstanceIndex & 0xffff;
 	o_uv = i_uv;
+
 #ifdef ARMATURE
 	mat4 deform = mat4(0.0);
 	for (int i = 0; i < 4; i++)
@@ -46,8 +47,8 @@ void main()
 	o_coordv = render_data.camera_coord - o_coordw;
 
 	#ifndef SHADOW_PASS
-	gl_Position = render_data.proj_view * vec4(o_coordw, 1.0);
+		gl_Position = render_data.proj_view * vec4(o_coordw, 1.0);
 	#else
-	gl_Position = shadow_matrices[pc.i[0]] * vec4(o_coordw, 1.0);
+		gl_Position = shadow_matrices[pc.i[0]] * vec4(o_coordw, 1.0);
 	#endif
 }

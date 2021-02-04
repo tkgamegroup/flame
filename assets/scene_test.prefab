@@ -9,8 +9,22 @@
       s_physics = world.find_system("sPhysics")
       s_dispatcher = world.find_system("sDispatcher")
       s_renderer = world.find_system("sRenderer")
+      canvas = s_renderer.get_canvas()
 
       base = entity
+      
+      selected = {}
+      selected.p = nil
+      function select(e)
+        if selected.p then
+          selected.set_state(0)
+        end
+        selected = e
+        if selected.p then
+          selected.set_state(8)
+        end
+        s_renderer.mark_dirty()
+      end
 
       status_str = ""
       status_str_changed = false
@@ -32,8 +46,10 @@
         end)
         base_receiver.add_mouse_left_up_listener(function(p)
           if p.x == last_mpos.x and p.y == last_mpos.y then
-            local e = canvas.pickup(last_mpos)
-            
+            local e = {}
+            e.p = canvas.pickup(last_mpos)
+            make_obj(e, "flame::Entity")
+            select(e)
           end
         end)
       </cScript>
